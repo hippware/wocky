@@ -1,0 +1,18 @@
+%% Script to append a list of dirs to lib_dirs
+%%
+%% This script is executed by rebar's "Dynamic configuration" feature.
+%%
+%% It allows us to add to (or modify) the settings in reltool.config 
+%% without having to modify the file itself.
+
+ExtraDirs = ["../deps/mongooseim/apps"],
+
+{_, Sys} = lists:keyfind(sys, 1, CONFIG),
+
+AppendedDirs = case lists:keyfind(lib_dirs, 1, Sys) of
+    {_, Dirs} -> lists:append(Dirs, ExtraDirs);
+    _ -> ExtraDirs
+end,
+
+% Poke into CONFIG["sys"]["lib_dirs"]
+lists:keystore(sys, 1, CONFIG, {sys, lists:keystore(lib_dirs, 1, Sys, {lib_dirs, AppendedDirs})}).
