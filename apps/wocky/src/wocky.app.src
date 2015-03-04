@@ -1,0 +1,7 @@
+{application,wocky,
+             [{description,wocky},
+              {id,wocky},
+              {vsn,git},
+              {modules,[]},
+              {registered,[]},
+              {applications,[]}]}.
