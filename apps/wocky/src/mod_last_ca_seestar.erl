@@ -24,7 +24,11 @@
 %%% CREATE INDEX last_activity_timestamp ON last_activity(timestamp);
 
 %%% Enable with the following in ejabberd.cfg
-%%%  {mod_last, [{backend, ca_seestar}, {keyspace, "<keyspace>"}]},
+%%% {mod_last, [{backend, ca_seestar}, 
+%%%             % For protocol_v2
+%%%             {auth, {seestar_password_auth, {<<"username">>, <<"password">>}}},      
+%%%             {keyspace, "<keyspace>"}
+%%%            ]},
 
 -module(mod_last_ca_seestar).
 
@@ -145,7 +149,7 @@ set_last_info(LUser, LServer, TimeStamp, Status) ->
                                     one),
     {atomic, ok}.
 
--spec remove_user(ejabberd:luse(), ejabberd:lserver()) -> ok.
+-spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
     ?INFO_MSG("~p ~p", [LUser, LServer]),
 
