@@ -110,7 +110,7 @@ pquery(Host, Query, Values, Consistency, PageSize) ->
 %%====================================================================
 
 prepare_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
-    {P, NewState} = case maps:find(Query, PQueries) of
+    case maps:find(Query, PQueries) of
         {ok, Value} -> 
             {Value, State};
         error ->
@@ -134,11 +134,11 @@ init([Host, Server]) ->
         pqueries=#{}},
     {ok, State}.
 
-handle_call({adhoc_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
+handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
     {ok, Result} = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
     {reply, Result, State};
 
-handle_call({prepared_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid, pqueries=PQueries}) ->
+handle_call({prepared_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
     {P, NewState} = prepare_query(Query, State),
     {ok, Result} = seestar_session:execute(ConnPid, 
                                     P#pquery.id, 
@@ -155,7 +155,7 @@ handle_info(Msg, State) ->
     ?WARNING_MSG("Unknown info message ~p.", [Msg]),
     {noreply, State}.
 
-terminate(_Reason, State=#state{conn=ConnPid}) ->
+terminate(_Reason, _State=#state{conn=ConnPid}) ->
     seestar_session:stop(ConnPid).
 
 code_change(_OldVsn, State, _Extra) ->
