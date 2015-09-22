@@ -106,6 +106,21 @@ pquery(Host, Query, Values, Consistency, PageSize) ->
                     {prepared_query, Query, Values, Consistency, PageSize}).
 
 %%====================================================================
+%% Other internal functions
+%%====================================================================
+
+prepare_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
+    {P, NewState} = case maps:find(Query, PQueries) of
+        {ok, Value} -> 
+            {Value, State};
+        error ->
+            {ok, QueryRes} = seestar_session:prepare(ConnPid, Query),
+            NewQuery = #pquery{query = Query, id = seestar_result:query_id(QueryRes), types = seestar_result:types(QueryRes)},
+            Key = Query,
+            {NewQuery, State#state{pqueries = maps:put(Key, NewQuery, PQueries)}}
+    end.
+
+%%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
@@ -124,15 +139,7 @@ handle_call({adhoc_query, Query, Values, Consistency, PageSize}, From, State=#st
     {reply, Result, State};
 
 handle_call({prepared_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid, pqueries=PQueries}) ->
-    {NewState, P} = case maps:find(Query, PQueries) of
-        {ok, Value} -> 
-            {State, Value};
-        error ->
-            {ok, QueryRes} = seestar_session:prepare(ConnPid, Query),
-            NewQuery = #pquery{query = Query, id = seestar_result:query_id(QueryRes), types = seestar_result:types(QueryRes)},
-            Key = Query,
-            {State#state{pqueries = maps:put(Key, NewQuery, PQueries)} , NewQuery}
-    end,
+    {P, NewState} = prepare_query(Query, State),
     {ok, Result} = seestar_session:execute(ConnPid, 
                                     P#pquery.id, 
                                     P#pquery.types, 
@@ -140,9 +147,13 @@ handle_call({prepared_query, Query, Values, Consistency, PageSize}, From, State=
                                     Consistency, PageSize),
     {reply, Result, NewState}.
 
-handle_cast(_,_) -> ok.
+handle_cast(Msg, State) ->
+    ?WARNING_MSG("Unknown cast message ~p.", [Msg]),
+    {noreply, State}.
 
-handle_info(_,_) -> ok.
+handle_info(Msg, State) ->
+    ?WARNING_MSG("Unknown info message ~p.", [Msg]),
+    {noreply, State}.
 
 terminate(_Reason, State=#state{conn=ConnPid}) ->
     seestar_session:stop(ConnPid).
