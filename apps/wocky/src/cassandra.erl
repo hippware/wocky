@@ -28,7 +28,8 @@
 
 %% API
 -export([aquery/3, aquery/4, aquery/5, 
-         pquery/3, pquery/4, pquery/5]).
+         pquery/3, pquery/4, pquery/5,
+         pquery_async/3, pquery_async/4, pquery_async/5]).
 
 %% gen_mod
 -behaviour(gen_mod).
@@ -90,3 +91,15 @@ pquery(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
 
 pquery(Host, Query, Values, Consistency, PageSize) ->
     ?BACKEND:pquery(Host, Query, Values, Consistency, PageSize).
+
+pquery_async(Host, Query, Consistency) ->
+    pquery_async(Host, Query, [], Consistency).
+
+pquery_async(Host, Query, Values, Consistency) when is_list(Values) ->
+    pquery_async(Host, Query, Values, Consistency, undefined);
+
+pquery_async(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
+    pquery_async(Host, Query, [], Consistency, PageSize).
+
+pquery_async(Host, Query, Values, Consistency, PageSize) ->
+    ?BACKEND:pquery_async(Host, Query, Values, Consistency, PageSize).

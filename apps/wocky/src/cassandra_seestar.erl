@@ -34,11 +34,13 @@
 %% Interface functions
 -export([start_link/2,
          aquery/5, 
-         pquery/5]).
+         pquery/5, pquery_async/5]).
 
 -record(state, {
     host,
-    conn, pqueries}).
+    conn, 
+    pqueries, 
+    async_query_refs}).
 
 -record(pquery, {query, id, types}).
 
@@ -105,6 +107,10 @@ pquery(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {prepared_query, Query, Values, Consistency, PageSize}).
 
+pquery_async(Host, Query, Values, Consistency, PageSize) ->
+    gen_server:call(select_worker(Host, Query), 
+                    {prepared_query_async, Query, Values, Consistency, PageSize}).
+
 %%====================================================================
 %% Other internal functions
 %%====================================================================
@@ -120,6 +126,21 @@ prepare_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
             {NewQuery, State#state{pqueries = maps:put(Key, NewQuery, PQueries)}}
     end.
 
+% Save an async query ref
+save_async_query_ref(From, QueryRef, State=#state{async_query_refs=Refs}) ->
+    State#state{async_query_refs=dict:store(QueryRef, From, Refs)}.
+
+forward_async_query_response(ResultFunc, QueryRef, State=#state{async_query_refs=Refs}) ->
+    case dict:find(QueryRef, Refs) of
+        {ok, From} ->
+            Refs2 = dict:erase(QueryRef, Refs),
+            gen_server:reply(From, ResultFunc),
+            State#state{async_query_refs=Refs2};
+        error ->
+            ?WARNING_MSG("Dropping async response ~p ~p", [QueryRef, ResultFunc()]),
+            State
+    end.
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -131,7 +152,8 @@ init([Host, Server]) ->
     State = #state{
         host=Host,
         conn=ConnPid,
-        pqueries=#{}},
+        pqueries=#{}, 
+        async_query_refs=dict:new()},
     {ok, State}.
 
 handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
@@ -145,12 +167,23 @@ handle_call({prepared_query, Query, Values, Consistency, PageSize}, _From, State
                                     P#pquery.types, 
                                     Values, 
                                     Consistency, PageSize),
-    {reply, Result, NewState}.
+    {reply, Result, NewState};
+
+handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
+    {P, NewState} = prepare_query(Query, State),
+    QueryRef = seestar_session:execute_async(ConnPid, 
+                                    P#pquery.id, 
+                                    P#pquery.types, 
+                                    Values, 
+                                    Consistency, PageSize),
+    {noreply, save_async_query_ref(From, QueryRef, NewState)}.
 
 handle_cast(Msg, State) ->
     ?WARNING_MSG("Unknown cast message ~p.", [Msg]),
     {noreply, State}.
 
+handle_info({seestar_response, QueryRef, ResultFunc}, State) ->
+    {noreply, forward_async_query_response(ResultFunc, QueryRef, State)};
 handle_info(Msg, State) ->
     ?WARNING_MSG("Unknown info message ~p.", [Msg]),
     {noreply, State}.
