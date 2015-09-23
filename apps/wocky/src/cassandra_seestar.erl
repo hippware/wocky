@@ -32,6 +32,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 %% Interface functions
+-behaviour(cassandra_gen_backend).
 -export([start_link/2,
          aquery/5, 
          pquery/5, pquery_async/5]).
