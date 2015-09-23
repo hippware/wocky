@@ -107,6 +107,9 @@ pquery(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {prepared_query, Query, Values, Consistency, PageSize}).
 
+% ToDo:
+% Needs review to ensure the function preconditions are suitable. 
+% Maybe should be a gen_server:cast() instead?
 pquery_async(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {prepared_query_async, Query, Values, Consistency, PageSize}).
