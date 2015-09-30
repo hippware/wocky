@@ -26,6 +26,14 @@
 
 -define(BACKEND, (cassandra_backend:backend())).
 
+% Borrow definitions from seestar. If we change backend, then this may change too.
+-type value() :: seestar_cqltypes:value().
+% seestar:consistency()
+-type consistency() :: any | one | two | three | quorum | all | local_quorum | each_quorum.
+-type result() :: seestar_result:result().
+-type error() :: seestar_error:error().
+-export_type([value/0, consistency/0, result/0, error/0]).
+
 %% API
 -export([aquery/3, aquery/4, aquery/5, 
          pquery/3, pquery/4, pquery/5,
@@ -89,6 +97,12 @@ pquery(Host, Query, Values, Consistency) when is_list(Values) ->
 pquery(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
     pquery(Host, Query, [], Consistency, PageSize).
 
+-spec pquery(binary(), % ejabberd:server(),
+             binary() | string(), % seestar_session:'query'()
+             [value()],
+             consistency(),
+             non_neg_integer() | undefined) ->
+        {ok, Result :: result()} | {error, Error :: error()}.
 pquery(Host, Query, Values, Consistency, PageSize) ->
     ?BACKEND:pquery(Host, Query, Values, Consistency, PageSize).
 

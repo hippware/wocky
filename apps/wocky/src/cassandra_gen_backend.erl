@@ -8,25 +8,23 @@
 
 -module(cassandra_gen_backend).
 
-% Temporarily use definitions from seestar. If we change backend, then this may change too.
--type value() :: seestar_cqltypes:value().
--type consistency() :: seestar:consistency().
--export_type([value/0, consistency/0]).
+-callback aquery(Host :: binary(), 
+                 Query :: binary() | string(),
+                 Values :: [cassandra:value()], 
+                 Consistency :: cassandra:consistency(),
+                 PageSize :: non_neg_integer() | undefined) ->
+            {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
 
--callback aquery(Host :: ejabberd:lserver(), 
-                 Query :: nonempty_string(),
-                 Values :: [value()], 
-                 Consistency :: consistency(),
-                 PageSize :: non_neg_integer() | undefined) -> ok.
+-callback pquery(Host :: binary(), 
+                 Query :: binary() | string(),
+                 Values :: [cassandra:value()], 
+                 Consistency :: cassandra:consistency(),
+                 PageSize :: non_neg_integer() | undefined) ->
+            {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
 
--callback pquery(Host :: ejabberd:lserver(), 
-                 Query :: nonempty_string(),
-                 Values :: [value()], 
-                 Consistency :: consistency(),
-                 PageSize :: non_neg_integer() | undefined) -> ok.
-
--callback pquery_async(Host :: ejabberd:lserver(), 
-                       Query :: nonempty_string(),
-                       Values :: [value()], 
-                       Consistency :: consistency(),
-                       PageSize :: non_neg_integer() | undefined) -> ok.
+-callback pquery_async(Host :: binary(), 
+                       Query :: binary() | string(),
+                       Values :: [cassandra:value()], 
+                       Consistency :: cassandra:consistency(),
+                       PageSize :: non_neg_integer() | undefined) ->
+            {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
