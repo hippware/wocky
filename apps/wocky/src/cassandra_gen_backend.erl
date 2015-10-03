@@ -28,3 +28,5 @@
                        Consistency :: cassandra:consistency(),
                        PageSize :: non_neg_integer() | undefined) ->
             {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
+
+-callback rows(Rows :: cassandra:rows_result()) -> [[cassandra:value()]].

@@ -2,12 +2,12 @@
 %%% File    : cassandra.erl
 %%% Author  : Beng Tan
 %%% Purpose : Cassandra dispatcher 
+%%% Copyright (c) 2015 Hippware
 %%%
 %%% This initialises, and dispatches to, a configurable backend. 
 %%% The backend interfaces with the Cassandra driver.
 %%% 
 %%% This is implemented as an ejabberd module. 
-%%%
 %%% To use it, add this to the modules list in ejabberd.cfg (preferably first):
 %%%
 %%% {cassandra, [{backend, <backend>}]},
@@ -16,10 +16,13 @@
 %%% backend-specific and will be passed as-is to the backend module.
 %%%
 %%%
+%%% Whilst this is supposed to be a generic Cassandra interface, for practical
+%%% purposes, it is still closely coupled to the backend. If we ever support 
+%%% more than one backend, then the interface needs to be made backend agnostic.
+%%%
+%%%
 %%% The other reason for this module is to reduce verbosity. 
 %%% It's nicer to write cassandra:func_1() rather than cassandra_seestar:func_1().
-%%%
-%%% Copyright (C) 2015 Hippware
 %%%----------------------------------------------------------------------
 
 -module(cassandra).
@@ -33,11 +36,14 @@
 -type result() :: seestar_result:result().
 -type error() :: seestar_error:error().
 -export_type([value/0, consistency/0, result/0, error/0]).
+-type rows_result() :: seestar_result:rows_result().
 
 %% API
 -export([aquery/3, aquery/4, aquery/5, 
          pquery/3, pquery/4, pquery/5,
-         pquery_async/3, pquery_async/4, pquery_async/5]).
+         pquery_async/3, pquery_async/4, pquery_async/5,
+         rows/1,
+         uuid1/1, uuid4/1, timeuuid/1]).
 
 %% gen_mod
 -behaviour(gen_mod).
@@ -117,3 +123,20 @@ pquery_async(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
 
 pquery_async(Host, Query, Values, Consistency, PageSize) ->
     ?BACKEND:pquery_async(Host, Query, Values, Consistency, PageSize).
+
+rows(Result) ->
+    ?BACKEND:rows(Result).
+
+uuid1(Host) ->
+    {ok, Result} = pquery(Host, <<"SELECT NOW() from uuidgen">>, one),
+    [[Value | _] | _]= rows(Result),
+    Value.
+
+uuid4(Host) ->
+    {ok, Result} = pquery(Host, <<"SELECT UUID() from uuidgen">>, one),
+    [[Value | _] | _]= rows(Result),
+    Value.
+
+timeuuid(Host) ->
+    uuid1(Host).
+

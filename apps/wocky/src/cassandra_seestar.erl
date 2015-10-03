@@ -37,7 +37,8 @@
 -behaviour(cassandra_gen_backend).
 -export([start_link/2,
          aquery/5, 
-         pquery/5, pquery_async/5]).
+         pquery/5, pquery_async/5,
+         rows/1]).
 
 -record(state, {
     host,
@@ -116,6 +117,9 @@ pquery(Host, Query, Values, Consistency, PageSize) ->
 pquery_async(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {prepared_query_async, Query, Values, Consistency, PageSize}).
+
+rows(Result) ->
+    seestar_result:rows(Result).
 
 %%====================================================================
 %% Other internal functions
