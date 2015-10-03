@@ -23,6 +23,8 @@
 -module(cassandra_seestar).
 -include("ejabberd.hrl").
 
+-include_lib("seestar/include/constants.hrl").
+
 %% gen_mod
 -behaviour(gen_mod).
 -export([start/2, stop/1]).
@@ -130,6 +132,9 @@ prepare_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
             {NewQuery, State#state{pqueries = maps:put(Key, NewQuery, PQueries)}}
     end.
 
+remove_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
+    State#state{pqueries = maps:remove(Query, PQueries)}.
+
 % Save an async query ref
 save_async_query_ref(From, QueryRef, State=#state{async_query_refs=Refs}) ->
     State#state{async_query_refs=dict:store(QueryRef, From, Refs)}.
@@ -161,17 +166,11 @@ init([Host, Server]) ->
     {ok, State}.
 
 handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
-    {ok, Result} = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
+    Result = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
     {reply, Result, State};
 
-handle_call({prepared_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
-    {P, NewState} = prepare_query(Query, State),
-    {ok, Result} = seestar_session:execute(ConnPid, 
-                                    P#pquery.id, 
-                                    P#pquery.types, 
-                                    Values, 
-                                    Consistency, PageSize),
-    {reply, Result, NewState};
+handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From, State) ->
+    handle_call(Request, From, State, 3);
 
 handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
     {P, NewState} = prepare_query(Query, State),
@@ -181,6 +180,25 @@ handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, 
                                     Values, 
                                     Consistency, PageSize),
     {noreply, save_async_query_ref(From, QueryRef, NewState)}.
+
+handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
+    {P, NewState} = prepare_query(Query, State),
+    Result = seestar_session:execute(ConnPid, 
+                                    P#pquery.id, 
+                                    P#pquery.types, 
+                                    Values, 
+                                    Consistency, PageSize),
+    case Result of 
+        % If the query is unavailable (ie. schema changed), then forget it and retry
+        {error, {error, ?UNPREPARED, _, _}} when Retry > 0 ->
+            ?WARNING_MSG("Unprepared query ~p: Retrying (~p)", [Query, Retry]),
+            handle_call(Request, From, remove_prepared_query(Query, State), Retry - 1);
+        {error, {error, ?UNPREPARED, _, _}} ->
+            ?ERROR_MSG("Unprepared query ~p: Terminated", [Query]),
+            {reply, Result, NewState};
+        _ -> 
+            {reply, Result, NewState}
+    end.
 
 handle_cast(Msg, State) ->
     ?WARNING_MSG("Unknown cast message ~p.", [Msg]),
