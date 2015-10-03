@@ -16,3 +16,7 @@ clean:
 
 rel: compile
 	$(REBAR) generate -f skip_deps=true
+
+# Compile only the project, exclude dependencies
+nodeps:
+	$(REBAR) compile skip_deps=true
