@@ -37,7 +37,7 @@
 -behaviour(cassandra_gen_backend).
 -export([start_link/2,
          aquery/5, 
-         pquery/5, pquery_async/5,
+         prepare_query/2, pquery/5, pquery_async/5,
          rows/1]).
 
 -record(state, {
@@ -107,6 +107,10 @@ aquery(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {adhoc_query, Query, Values, Consistency, PageSize}).
 
+prepare_query(Host, Query) ->
+    gen_server:call(select_worker(Host, Query), 
+                    {prepare_query, Query}).
+
 pquery(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {prepared_query, Query, Values, Consistency, PageSize}).
@@ -125,7 +129,7 @@ rows(Result) ->
 %% Other internal functions
 %%====================================================================
 
-prepare_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
+add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
     case maps:find(Query, PQueries) of
         {ok, Value} -> 
             {Value, State};
@@ -136,7 +140,7 @@ prepare_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
             {NewQuery, State#state{pqueries = maps:put(Key, NewQuery, PQueries)}}
     end.
 
-remove_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
+remove_prepared_query(Query, State=#state{pqueries=PQueries}) ->
     State#state{pqueries = maps:remove(Query, PQueries)}.
 
 % Save an async query ref
@@ -173,11 +177,15 @@ handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#s
     Result = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
     {reply, Result, State};
 
-handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From, State) ->
+handle_call({prepare_query, Query}, _From, State) ->
+    {_P, NewState} = add_prepared_query(Query, State),
+    {reply, ok, NewState};
+
+handle_call(Request={prepared_query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
     handle_call(Request, From, State, 3);
 
 handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
-    {P, NewState} = prepare_query(Query, State),
+    {P, NewState} = add_prepared_query(Query, State),
     QueryRef = seestar_session:execute_async(ConnPid, 
                                     P#pquery.id, 
                                     P#pquery.types, 
@@ -186,7 +194,7 @@ handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, 
     {noreply, save_async_query_ref(From, QueryRef, NewState)}.
 
 handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
-    {P, NewState} = prepare_query(Query, State),
+    {P, NewState} = add_prepared_query(Query, State),
     Result = seestar_session:execute(ConnPid, 
                                     P#pquery.id, 
                                     P#pquery.types, 

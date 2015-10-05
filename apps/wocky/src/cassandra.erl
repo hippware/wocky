@@ -40,9 +40,10 @@
 
 %% API
 -export([aquery/3, aquery/4, aquery/5, 
+         prepare_query/2,
          pquery/3, pquery/4, pquery/5,
          pquery_async/3, pquery_async/4, pquery_async/5,
-         rows/1,
+         rows/1, single_result/1,
          uuid1/1, uuid4/1, timeuuid/1]).
 
 %% gen_mod
@@ -94,6 +95,9 @@ aquery(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
 aquery(Host, Query, Values, Consistency, PageSize) ->
     ?BACKEND:aquery(Host, Query, Values, Consistency, PageSize).
 
+prepare_query(Host, Query) ->
+    ?BACKEND:prepare_query(Host, Query).
+
 pquery(Host, Query, Consistency) ->
     pquery(Host, Query, [], Consistency).
 
@@ -126,6 +130,10 @@ pquery_async(Host, Query, Values, Consistency, PageSize) ->
 
 rows(Result) ->
     ?BACKEND:rows(Result).
+
+single_result(Result) ->
+    [[Value | _] | _]= ?BACKEND:rows(Result),
+    Value.
 
 uuid1(Host) ->
     {ok, Result} = pquery(Host, <<"SELECT NOW() from uuidgen">>, one),
