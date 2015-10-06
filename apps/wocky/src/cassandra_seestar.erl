@@ -38,6 +38,7 @@
 -export([start_link/2,
          aquery/5, 
          prepare_query/2, pquery/5, pquery_async/5,
+         batch_pquery/4,
          rows/1]).
 
 -record(state, {
@@ -122,6 +123,10 @@ pquery_async(Host, Query, Values, Consistency, PageSize) ->
     gen_server:call(select_worker(Host, Query), 
                     {prepared_query_async, Query, Values, Consistency, PageSize}).
 
+batch_pquery(Host, Queries, Type, Consistency) ->
+    gen_server:call(select_worker(Host, Queries), 
+                    {batch_prepared_queries, Queries, Type, Consistency}).
+
 rows(Result) ->
     seestar_result:rows(Result).
 
@@ -183,6 +188,16 @@ handle_call({prepare_query, Query}, _From, State) ->
 
 handle_call(Request={prepared_query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
     handle_call(Request, From, State, 3);
+
+handle_call({batch_prepared_queries, Queries, Type, Consistency}, _From, State=#state{conn=ConnPid}) ->
+    {ReversedQueries, NewState} = lists:foldl(
+                fun ({Query, Values}, {Acc, State0}) -> 
+                    {P, State1} = add_prepared_query(Query, State0),
+                    {[seestar_batch:prepared_query(P#pquery.id, P#pquery.types, Values) | Acc], State1}
+                end, {[], State}, Queries),
+    Batch = seestar_batch:batch_request(Type, Consistency, lists:reverse(ReversedQueries)),
+    Result = seestar_session:batch(ConnPid, Batch),
+    {reply, Result, NewState};
 
 handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
     {P, NewState} = add_prepared_query(Query, State),

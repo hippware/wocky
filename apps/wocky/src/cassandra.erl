@@ -43,6 +43,7 @@
          prepare_query/2,
          pquery/3, pquery/4, pquery/5,
          pquery_async/3, pquery_async/4, pquery_async/5,
+         batch_pquery/4,
          rows/1, single_result/1,
          uuid1/1, uuid4/1, timeuuid/1]).
 
@@ -127,6 +128,9 @@ pquery_async(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
 
 pquery_async(Host, Query, Values, Consistency, PageSize) ->
     ?BACKEND:pquery_async(Host, Query, Values, Consistency, PageSize).
+
+batch_pquery(Host, Queries, Type, Consistency) ->
+    ?BACKEND:batch_pquery(Host, Queries, Type, Consistency).
 
 rows(Result) ->
     ?BACKEND:rows(Result).

@@ -33,4 +33,10 @@
                        PageSize :: non_neg_integer() | undefined) ->
             {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
 
+-callback batch_pquery(Host :: binary(), 
+                 Queries :: [{binary() | string(), [cassandra:value()]}],
+                 Type :: logged | unlogged | counter, 
+                 Consistency :: cassandra:consistency()) ->
+            {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
+
 -callback rows(Rows :: cassandra:rows_result()) -> [[cassandra:value()]].
