@@ -45,7 +45,7 @@
          pquery_async/3, pquery_async/4, pquery_async/5,
          batch_pquery/4,
          rows/1, single_result/1,
-         uuid1/1, uuid4/1, timeuuid/1]).
+         uuid1/1, uuid4/1, timeuuid/1, to_keyspace/1]).
 
 %% gen_mod
 -behaviour(gen_mod).
@@ -152,3 +152,13 @@ uuid4(Host) ->
 timeuuid(Host) ->
     uuid1(Host).
 
+% Modify a string so it is a valid keyspace
+to_keyspace(String) ->
+    Space = iolist_to_binary(re:replace(String, "[^0-9a-z]", "_", [global])),
+    case byte_size(Space) of
+        Size when Size > 48 -> 
+            {Head, _} = split_binary(Space, 48),
+            Head;
+        _ -> 
+            Space
+    end.
