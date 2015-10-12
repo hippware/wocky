@@ -23,7 +23,12 @@ stop(Host) ->
     supervisor:delete_child(ejabberd_sup, Tag).
 
 start_link(Host, Servers) ->
-    supervisor2:start_link({local, ?MODULE}, ?MODULE, [Host, Servers]).
+    % Hacky: Need a different atom for the shared keyspace
+    Name = case Host of
+        shared -> cassandra_seestar_sup_shared;
+        _ -> ?MODULE
+    end,
+    supervisor2:start_link({local, Name}, ?MODULE, [Host, Servers]).
 
 supervisor_spec(Host, Servers) ->
     {{?MODULE, Host},

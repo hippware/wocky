@@ -6,19 +6,51 @@
 %%% Copyright (C) 2015 Hippware
 %%%----------------------------------------------------------------------
 
-%%% Enable with the following in ejabberd.cfg (preferably first)
-%%%
-%%% {cassandra, [
-%%%     {backend, seestar},
-%%%     % common settings which are inserted into servers list
-%%%     {keyspace, "<keyspace>"}, 
-%%%     {auth, {seestar_password_auth, {<<"username">>, <<"password">>}}}, % For protocol_v2
-%%%     % An optional list of servers. 
-%%%     % Each server entry inherits common settings from the top level
-%%%     {servers, [
-%%%         [{server, "localhost"}, {port, 9042}, {workers, 1}]
+%%% Configuration
+%%% 
+%%% There are two keyspaces. The "host" keyspace is for host/domain/vhost-specific tables.
+%%% The "shared" keyspace is for tables shared across all nodes in all data centers.
+%%% 
+%%% Each keyspace contains a list of server entries. 
+%%% Each server entry contains connection (server,port,workers) and credential information (auth).
+%%% 
+%%% Any tuples in the top level (besides {keyspaces, ...}) is replicated into each keyspace.
+%%% Any tuples in the keyspace level (besides {keyspace, ...}) is replicated into each server entry.
+%%% This allows credentials to be set at the server, keyspace, or top level.
+%%% 
+%%% In the keyspace name(s), %h will be replaced by the name of the host/domain/vhost, 
+%%% after replacing punctuation with underscores and truncating to 48 characters.
+%%% 
+%%% {cassandra_seestar, [
+%%%     % Optional common username/password
+%%%     {auth, {seestar_password_auth, {<<"common-username">>, <<"common-password">>}}},
+%%%     {keyspaces, [
+%%%         {host, [
+%%% 	        {keyspace, "prefix_%h"},
+%%% 	        % Optional keyspace-specific username/password
+%%% 	        {auth, {seestar_password_auth, {<<"keyspace-username">>, <<"keyspace-password">>}}},
+%%% 	        {servers, [
+%%% 		        [{server, "localhost"}, {port, 9042}, {workers, 1}, 
+%%% 		         % Optional server-specific username/password
+%%% 		         {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}],
+%%% 		        [{server, "localhost"}, {port, 9042}, {workers, 1}, 
+%%% 		         {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}]
+%%% 	        ]}	
+%%% 	    ]},
+%%% 	    {shared, [
+%%% 	        {keyspace, "prefix_shared"},
+%%% 	        {auth, {seestar_password_auth, {<<"keyspace-username">>, <<"keyspace-password">>}}},
+%%% 	        {servers, [
+%%% 		        [{server, "localhost"}, {port, 9042}, {workers, 2}, 
+%%% 		         {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}]
+%%% 	        ]}	
+%%% 	    ]}
 %%%     ]}
-%%%     ]},
+%%% ]}.
+
+%%% To enable, add the following to the modules list in ejabberd.cfg
+%%% 
+%%%   {cassandra, [{backend, seestar}],
 
 -module(cassandra_seestar).
 -include("ejabberd.hrl").
@@ -54,21 +86,66 @@
 
 %% gen_mod callbacks
 start(Host, Opts) ->
-    create_worker_pool(Host),
-    cassandra_seestar_sup:start(Host, get_servers(Opts)).
+    {HostServers, SharedServers} = get_servers(Host),
 
-get_servers(Opts) ->
-    {Properties, Servers} = case lists:keytake(servers, 1, Opts) of
-        false ->
-            {Opts, ?DEFAULT_SERVERS};
-        {value, Tuple, TupleList} ->
-            {servers, Value} = Tuple,
-            {TupleList, Value}
+    if 
+        length(SharedServers) > 0 ->
+            create_worker_pool(shared),
+            cassandra_seestar_sup:start(shared, SharedServers);
+        true ->
+            ok
     end,
-    % Merge top level properties into servers list
-    lists:map(fun(A) -> lists:ukeymerge(1, lists:ukeysort(1, A), lists:ukeysort(1, Properties)) end, Servers).
+
+    create_worker_pool(Host),
+    cassandra_seestar_sup:start(Host, HostServers).
+
+%% Return {HostServers, SharedServers} : A list of server connection details for the host keyspace, and a list of the same for the shared keyspace
+get_servers(Host) ->
+    Config = ejabberd_config:get_local_option({?MODULE, Host}),
+
+    % Merge top level properties into keyspace properties
+    {value, {keyspaces, Keyspaces0}, TopProperties} = lists:keytake(keyspaces, 1, Config),
+    Keyspaces = lists:map(fun ({KeyspaceType, KeyspaceProperties}) -> 
+                        Properties = lists:ukeymerge(1, lists:ukeysort(1,KeyspaceProperties), lists:ukeysort(1, TopProperties)),
+
+                        % Also extract keyspace name and ...
+                        {keyspace, Name0} = lists:keyfind(keyspace, 1, Properties),
+                        % ... replace %h with Host
+                        Name1 = re:replace(Name0, "%h", Host, [global]),
+                        {KeyspaceType, lists:keyreplace(keyspace, 1, Properties, {keyspace, cassandra:to_keyspace(Name1)})}
+                     end, Keyspaces0),
+
+    % Merge keyspace properties into servers list
+    Result = lists:foldl(fun ({KeyspaceType, Opts}, {HostServers, SharedServers}) -> 
+                    {Properties, Servers} = case lists:keytake(servers, 1, Opts) of
+                        false ->
+                            {Opts, ?DEFAULT_SERVERS};
+                        {value, Tuple, TupleList} ->
+                            {servers, Value} = Tuple,
+                            {TupleList, Value}
+                    end,
+                    NewServers = lists:map(fun(A) -> lists:ukeymerge(1, lists:ukeysort(1, A), lists:ukeysort(1, Properties)) end, Servers),
+
+                    case KeyspaceType of 
+                        host -> 
+                            {NewServers, SharedServers};
+                        shared ->
+                            {HostServers, NewServers};
+                        _ ->
+                            {HostServers, SharedServers}
+                    end                    
+                end, {[], []}, Keyspaces),
+    Result.
 
 stop(Host) ->
+    {_, SharedServers} = get_servers(Host),
+    if 
+        length(SharedServers) > 0 ->
+            delete_worker_pool(shared),
+            cassandra_seestar_sup:stop(shared);
+        true ->
+            ok
+    end,
     delete_worker_pool(Host),
     cassandra_seestar_sup:stop(Host).
 
@@ -167,9 +244,9 @@ forward_async_query_response(ResultFunc, QueryRef, State=#state{async_query_refs
 %% gen_server callbacks
 %%====================================================================
 
-init([Host, Server]) ->
+init([Host, ServerSettings]) ->
     register_worker(Host, self()),
-    {ok, ConnPid} = seestar_session:start_link(proplists:get_value(server, Server), proplists:get_value(port, Server), Server),
+    {ok, ConnPid} = seestar_session:start_link(proplists:get_value(server, ServerSettings), proplists:get_value(port, ServerSettings), ServerSettings),
 
     State = #state{
         host=Host,
