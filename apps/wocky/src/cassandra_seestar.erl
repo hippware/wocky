@@ -11,6 +11,9 @@
 %%% There are two keyspaces. The "host" keyspace is for host/domain/vhost-specific tables.
 %%% The "shared" keyspace is for tables shared across all nodes in all data centers.
 %%% 
+%%% If there are multiple vhosts, there should only be one vhost with one 
+%%% shared keyspace since the shared keyspace is common across vhosts.
+%%% 
 %%% Each keyspace contains a list of server entries. 
 %%% Each server entry contains connection (server,port,workers) and credential information (auth).
 %%% 
