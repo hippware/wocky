@@ -20,3 +20,17 @@ CREATE TABLE uuidgen (
 );
 -- Needs at least one row
 INSERT INTO uuidgen (id) VALUES (0);
+
+CREATE TABLE username_to_user (
+    username text,
+    id timeuuid,
+    domain text,
+    PRIMARY KEY (username)
+);
+
+CREATE TABLE phone_number_to_user (
+    phone_number text,
+    id timeuuid,
+    domain text,
+    PRIMARY KEY (phone_number)
+);

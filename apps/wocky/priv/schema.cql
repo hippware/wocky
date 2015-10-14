@@ -20,3 +20,19 @@ CREATE TABLE uuidgen (
 );
 -- Needs at least one row
 INSERT INTO uuidgen (id) VALUES (0);
+
+-- ToDo: firstname, lastname
+CREATE TABLE user (
+    id timeuuid,
+    domain text,
+    username text,
+    stored_key text,
+    server_key text,
+    salt text,
+    iteration_count int,
+    phone_number text,
+    status bigint,
+    user_status text,
+    avatar timeuuid,
+    PRIMARY KEY (id)
+);
