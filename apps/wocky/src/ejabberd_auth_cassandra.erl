@@ -17,6 +17,8 @@
 -export([start/1,
          stop/1,
          try_register/3,
+         get_vh_registered_users_number/1,
+         get_vh_registered_users_number/2,
          is_user_exists/2
          ]).
 
@@ -73,14 +75,20 @@ try_register(User, Server, Password) ->
                     
                     {ok, _} = cassandra:pquery(LServer, <<"INSERT INTO user (id, domain, username, stored_key, server_key, salt, iteration_count) VALUES (?, ?, ?, ?, ?, ?, ?)">>, 
                         [Id, LServer, LUser, Password2#scram.storedkey, Password2#scram.serverkey, Password2#scram.salt, Password2#scram.iterationcount], quorum),
-                    
-                    % ToDo: Update reg_users_counter
-                    
                     {atomic, ok};
                 false ->
                     {atomic, exists}
             end
     end.
+
+-spec get_vh_registered_users_number(Server :: ejabberd:server()
+                                    ) -> non_neg_integer().
+get_vh_registered_users_number(Server) ->
+    % Let's not do a SELECT COUNT(*)
+    -1.
+
+get_vh_registered_users_number(Server, _) ->
+    get_vh_registered_users_number(Server).
 
 -spec is_user_exists(User :: ejabberd:user(),
                      Server :: ejabberd:server()
