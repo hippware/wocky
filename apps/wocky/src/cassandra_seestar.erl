@@ -88,7 +88,7 @@
 -define(DEFAULT_SERVERS, [[{server, "localhost"}, {port, 9042}, {workers, 1}]]).
 
 %% gen_mod callbacks
-start(Host, Opts) ->
+start(Host, _Opts) ->
     {HostServers, SharedServers} = get_servers(Host),
 
     if 
