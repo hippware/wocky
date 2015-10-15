@@ -19,7 +19,8 @@
          try_register/3,
          get_vh_registered_users_number/1,
          get_vh_registered_users_number/2,
-         is_user_exists/2
+         is_user_exists/2,
+         remove_user/3
          ]).
 
 -include("ejabberd.hrl").
@@ -83,7 +84,7 @@ try_register(User, Server, Password) ->
 
 -spec get_vh_registered_users_number(Server :: ejabberd:server()
                                     ) -> non_neg_integer().
-get_vh_registered_users_number(Server) ->
+get_vh_registered_users_number(_Server) ->
     % Let's not do a SELECT COUNT(*)
     -1.
 
@@ -99,6 +100,17 @@ is_user_exists(User, _Server) ->
     Result = cassandra:rows(Return),
     length(Result) > 0.
 
+%% @doc Remove user if the provided password is correct.
+%% This functionality is unused (only called from mod_register) so just stub it out. 
+-spec remove_user(User :: ejabberd:user(),
+                  Server :: ejabberd:server(),
+                  Password :: binary()
+                  ) -> ok | not_exists | not_allowed | bad_request | error.
+remove_user(User, Server, _Password) ->
+    case is_user_exists(User, Server) of
+        true -> not_allowed;
+        false -> not_exists
+    end.
 
 %% @doc gen_auth unimplemented callbacks
 login(_User, _Server) -> erlang:error(not_implemented).
