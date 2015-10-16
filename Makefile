@@ -20,3 +20,7 @@ rel: compile
 # Compile only the project, exclude dependencies
 nodeps:
 	$(REBAR) compile skip_deps=true
+
+doc:
+	$(REBAR) doc skip_deps=true
+
