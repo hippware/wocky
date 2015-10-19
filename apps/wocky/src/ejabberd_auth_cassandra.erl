@@ -1,15 +1,26 @@
-%%%----------------------------------------------------------------------
-%%% File    : ejabberd_auth_cassandra.erl
-%%% Author  : Beng Tan
-%%% Purpose : Authentication via cassandra
-%%% Copyright (c) 2015 Hippware
+%%% @copyright 2015+ Hippware, Inc.
+%%% @doc Cassandra-backed authentication backend
+%%%
+%%% This module serves a number of purposes: 
+%%%
+%%% 1) Pluggable ejabberd authentication backend ({@link ejabberd_gen_auth})
+%%% 2) Application specific user functionality
+%%%
+%%% Complications arise because they are not identical.
+%%%
+%%% Ejabberd users are a (localpart, domainpart) pair with localpart being the 'username'.
+%%% Wocky users are a (localpart, domainpart, username) tuple with username being a separate quantity (which is also globally unique across all domains).
+%%%
+%%% In order to utilise existing code, this module needs to conform to {@link ejabberd_gen_auth} but not all of the functions required of (1) make sense for (2). Hence, for those functions which don't make sense, a "best effort" implementation which is "least surprising" will have to suffice. In other words, all the functions of (1) need to be implemented, but not all of them will be useful or are expected to be used in normal operations. 
 %%%
 %%%
-%%% For schema, see priv/schema.cql
+%%% For schema, see priv/schema*.cql
 %%%
 %%% Enable with the following in ejabberd.cfg
+%%%
+%%% ```
 %%% {auth_method, cassandra}. 
-%%%----------------------------------------------------------------------
+%%% '''
 
 -module(ejabberd_auth_cassandra).
 

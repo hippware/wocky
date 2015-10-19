@@ -1,15 +1,10 @@
-%%%----------------------------------------------------------------------
-%%% File    : cassandra_seestar.erl
-%%% Author  : Beng Tan
-%%% Purpose : Backend module which interfaces with the Cassandra driver.
-%%%
-%%% Copyright (C) 2015 Hippware
-%%%----------------------------------------------------------------------
-
-%%% Configuration
+%%% @copyright 2015+ Hippware, Inc.
+%%% @doc Backend module which interfaces with the Cassandra driver.
+%%% 
+%%% == Configuration ==
 %%% 
 %%% There are two keyspaces. The "host" keyspace is for host/domain/vhost-specific tables.
-%%% The "shared" keyspace is for tables shared across all nodes in all data centers.
+%%% The `shared' keyspace is for tables shared across all nodes in all data centers.
 %%% 
 %%% If there are multiple vhosts, there should only be one vhost with one 
 %%% shared keyspace since the shared keyspace is common across vhosts.
@@ -17,13 +12,14 @@
 %%% Each keyspace contains a list of server entries. 
 %%% Each server entry contains connection (server,port,workers) and credential information (auth).
 %%% 
-%%% Any tuples in the top level (besides {keyspaces, ...}) is replicated into each keyspace.
-%%% Any tuples in the keyspace level (besides {keyspace, ...}) is replicated into each server entry.
+%%% Any tuples in the top level (besides `{keyspaces, ...}') is replicated into each keyspace.
+%%% Any tuples in the keyspace level (besides `{keyspace, ...}') is replicated into each server entry.
 %%% This allows credentials to be set at the server, keyspace, or top level.
 %%% 
-%%% In the keyspace name(s), %h will be replaced by the name of the host/domain/vhost, 
+%%% In the keyspace name(s), `%h' will be replaced by the name of the host/domain/vhost, 
 %%% after replacing punctuation with underscores and truncating to 48 characters.
 %%% 
+%%% ```
 %%% {cassandra_seestar, [
 %%%     % Optional common username/password
 %%%     {auth, {seestar_password_auth, {<<"common-username">>, <<"common-password">>}}},
@@ -50,10 +46,17 @@
 %%% 	    ]}
 %%%     ]}
 %%% ]}.
-
+%%% '''
+%%% 
 %%% To enable, add the following to the modules list in ejabberd.cfg
 %%% 
+%%% ```
 %%%   {cassandra, [{backend, seestar}],
+%%% '''
+%%% 
+%%% == API ==
+%%% 
+%%% For API documentation, see {@link cassandra}
 
 -module(cassandra_seestar).
 -include("ejabberd.hrl").

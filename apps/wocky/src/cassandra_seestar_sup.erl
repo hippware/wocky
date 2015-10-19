@@ -1,10 +1,5 @@
-%%%----------------------------------------------------------------------
-%%% File    : cassandra_seestar_sup.erl
-%%% Author  : Beng Tan
-%%% Purpose : Supervisor for cassandra_seestar.erl
-%%%
-%%% Copyright (C) 2015 Hippware
-%%%----------------------------------------------------------------------
+%%% @copyright 2015+ Hippware, Inc.
+%%% @doc Supervisor for cassandra_seestar.erl
 
 -module(cassandra_seestar_sup).
 

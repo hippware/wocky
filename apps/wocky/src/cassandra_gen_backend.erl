@@ -1,10 +1,5 @@
-%%%----------------------------------------------------------------------
-%%% File    : cassandra_gen_backend.erl
-%%% Author  : Beng Tan
-%%% Purpose : Specification for cassandra backend modules
-%%%
-%%% Copyright (C) 2015 Hippware
-%%%----------------------------------------------------------------------
+%%% @copyright 2015+ Hippware, Inc.
+%%% @doc Behaviour specification for cassandra backend modules
 
 -module(cassandra_gen_backend).
 
@@ -14,10 +9,6 @@
                  Consistency :: cassandra:consistency(),
                  PageSize :: non_neg_integer() | undefined) ->
             {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()}.
-
--callback prepare_query(Host :: binary(), 
-                 Query :: binary() | string()) ->
-            ok | error.
 
 -callback pquery(Host :: binary(), 
                  Query :: binary() | string(),

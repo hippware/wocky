@@ -24,3 +24,10 @@ nodeps:
 doc:
 	$(REBAR) doc skip_deps=true
 
+depsdoc:
+	$(REBAR) doc
+
+docclean: cleandoc
+
+cleandoc:
+	rm -f apps/wocky/doc/*html apps/wocky/doc/stylesheet.css apps/wocky/doc/edoc-info apps/wocky/doc/erlang.png

@@ -1,13 +1,8 @@
-%%%----------------------------------------------------------------------
-%%% File    : mod_last_ca_seestar.erl
-%%% Author  : Beng Tan
-%%% Purpose : A trial module to store XEP-0012 Last Activity data into Cassandra with seestar
+%%% @copyright 2015+ Hippware, Inc.
+%%% @doc A trial module to store XEP-0012 Last Activity data into Cassandra with seestar
 %%%
 %%% This module is just for testing and demonstration purposes. 
 %%% It is not suitable for production.
-%%%
-%%% Copyright (C) 2015 Hippware
-%%%----------------------------------------------------------------------
 
 %%% Cassandra CQL initialisation 
 %%%
@@ -52,6 +47,7 @@
 % Using ets to store state for lack of a more convenient cross-process alternative
 -define(TABLE, mod_last_ca_seestar).
 
+%% @doc Initialise this module (from {@link mod_last})
 -spec init(ejabberd:server(), list()) -> ok.
 init(_Host, Opts) ->
     ets:new(?TABLE, [named_table]),

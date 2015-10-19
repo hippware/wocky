@@ -1,10 +1,7 @@
-%%%----------------------------------------------------------------------
-%%% File    : wocky_debug.erl
-%%% Author  : Beng Tan
-%%% Purpose : Debugging utilities
-%%% Copyright (c) 2015 Hippware
+%%% @copyright 2015+ Hippware, Inc.
+%%% @doc Debugging utilities
 %%%
-%%%----------------------------------------------------------------------
+%%% Registers the "poke[0|1|2]" commands so it can be called from the command line to execute arbitrary code.
 
 -module(wocky_debug).
 
@@ -17,10 +14,11 @@
 -behaviour(gen_mod).
 -export([start/2, stop/1]).
 
-%% gen_mod callbacks
+%% @doc Start the module
 start(_Host, _Opts) ->
     ejabberd_commands:register_commands(commands()).
 
+%% @doc Stop the module
 stop(_Host) ->
     ejabberd_commands:unregister_commands(commands()).
 
@@ -48,13 +46,15 @@ commands() ->
                         result = {res, restuple}}
     ].
 
+%% @doc Call poke/2 with default arguments
 poke() ->
     poke(<<"">>, <<"">>).
 
+%% @doc Call poke/2 with default arguments
 poke(Arg1) ->
     poke(Arg1, <<"">>).
 
-% To run arbitrary code, add the code here.
+%% @doc A placeholder function. To run arbitrary code, insert the code here.
 poke(Arg1, Arg2) ->
     Text = io_lib:format("Poke ~p ~p", [Arg1, Arg2]),
     {ok, Text}.
