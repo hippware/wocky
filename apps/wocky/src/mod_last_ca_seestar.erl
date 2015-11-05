@@ -1,10 +1,10 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc A trial module to store XEP-0012 Last Activity data into Cassandra with seestar
 %%%
-%%% This module is just for testing and demonstration purposes. 
+%%% This module is just for testing and demonstration purposes.
 %%% It is not suitable for production.
 
-%%% Cassandra CQL initialisation 
+%%% Cassandra CQL initialisation
 %%%
 %%% USE <keyspace>;
 %%%
@@ -19,9 +19,9 @@
 %%% CREATE INDEX last_activity_timestamp ON last_activity(timestamp);
 
 %%% Enable with the following in ejabberd.cfg
-%%% {mod_last, [{backend, ca_seestar}, 
+%%% {mod_last, [{backend, ca_seestar},
 %%%             % For protocol_v2
-%%%             {auth, {seestar_password_auth, {<<"username">>, <<"password">>}}},      
+%%%             {auth, {seestar_password_auth, {<<"username">>, <<"password">>}}},
 %%%             {keyspace, "<keyspace>"}
 %%%            ]},
 
@@ -35,12 +35,12 @@
          set_last_info/4,
          remove_user/2]).
 
--include("ejabberd.hrl").
--include("mod_last.hrl").
+-include_lib("ejabberd/include/ejabberd.hrl").
+-include_lib("ejabberd/include/mod_last.hrl").
 
 % Default configuration
 -define(DEFAULTS, [
-    {address, {"localhost", 9042}}, 
+    {address, {"localhost", 9042}},
     {keyspace, ?MODULE}
 ]).
 
@@ -95,16 +95,16 @@ get_last(LUser, LServer) ->
     ?INFO_MSG("~p ~p", [LUser, LServer]),
 
     Args = [iolist_to_binary(LUser), iolist_to_binary(LServer)],
-    {ok, Result} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2), 
-                                    ets:lookup_element(?TABLE, select_query_id, 2), 
-                                    ets:lookup_element(?TABLE, select_query_types, 2), 
-                                    Args, 
+    {ok, Result} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2),
+                                    ets:lookup_element(?TABLE, select_query_id, 2),
+                                    ets:lookup_element(?TABLE, select_query_types, 2),
+                                    Args,
                                     one),
 
     case seestar_result:rows(Result) of
-        [] -> 
+        [] ->
             not_found;
-        [FirstRow | _] -> 
+        [FirstRow | _] ->
             [_, _, {MegaSeconds, Seconds, _MicroSeconds}, Status] = FirstRow,
             {ok, (MegaSeconds * 1000000 + Seconds), Status}
     end.
@@ -115,14 +115,14 @@ count_active_users(LServer, TimeStamp, Comparator) ->
     ?INFO_MSG("~p ~p ~p", [LServer, TimeStamp, Comparator]),
 
     {QueryId, QueryTypes} = case Comparator of
-        '<' -> 
+        '<' ->
             {ets:lookup_element(?TABLE, count_lt_query_id, 2), ets:lookup_element(?TABLE, count_lt_query_types, 2)};
-        '>' -> 
+        '>' ->
             {ets:lookup_element(?TABLE, count_gt_query_id, 2), ets:lookup_element(?TABLE, count_gt_query_types, 2)}
     end,
 
     Args = [iolist_to_binary(LServer), {0, TimeStamp, 0}],
-    {ok, Result} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2), 
+    {ok, Result} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2),
                                     QueryId, QueryTypes, Args, one),
     [FirstRow | _] = seestar_result:rows(Result),
     [Count | _] = FirstRow,
@@ -134,14 +134,14 @@ count_active_users(LServer, TimeStamp, Comparator) ->
 set_last_info(LUser, LServer, TimeStamp, Status) ->
     ?INFO_MSG("~p ~p ~p ~p", [LUser, LServer, TimeStamp, Status]),
 
-    % Silly: Despite the function spec saying LUser and Status are binaries, 
+    % Silly: Despite the function spec saying LUser and Status are binaries,
     % they might also be lists.
     % Consider: seestar should be doing more auto-conversion
     Args = [iolist_to_binary(LUser), iolist_to_binary(LServer), {0, TimeStamp, 0}, iolist_to_binary(Status)],
-    {ok, _} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2), 
-                                    ets:lookup_element(?TABLE, insert_query_id, 2), 
-                                    ets:lookup_element(?TABLE, insert_query_types, 2), 
-                                    Args, 
+    {ok, _} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2),
+                                    ets:lookup_element(?TABLE, insert_query_id, 2),
+                                    ets:lookup_element(?TABLE, insert_query_types, 2),
+                                    Args,
                                     one),
     {atomic, ok}.
 
@@ -150,9 +150,9 @@ remove_user(LUser, LServer) ->
     ?INFO_MSG("~p ~p", [LUser, LServer]),
 
     Args = [iolist_to_binary(LUser), iolist_to_binary(LServer)],
-    {ok, _} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2), 
-                                    ets:lookup_element(?TABLE, delete_query_id, 2), 
-                                    ets:lookup_element(?TABLE, delete_query_types, 2), 
-                                    Args, 
+    {ok, _} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2),
+                                    ets:lookup_element(?TABLE, delete_query_id, 2),
+                                    ets:lookup_element(?TABLE, delete_query_types, 2),
+                                    Args,
                                     one),
     ok.

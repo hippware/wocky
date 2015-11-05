@@ -1,0 +1,83 @@
+BaseAppsToRun = [compiler,
+                 lager,
+                 kernel,
+                 mnesia,
+                 sasl,
+                 ssl,
+                 stdlib,
+                 ejabberd,
+                 inets,
+                 syntax_tools,
+                 p1_stringprep,
+                 xmerl,
+                 exml,
+                 cowboy,
+                 fusco,
+                 folsom,
+                 exometer],
+
+AppsToRun = ordsets:to_list(ordsets:from_list(BaseAppsToRun)),
+
+BaseAppsToInclude = AppsToRun ++
+                    [asn1,
+                     crypto,
+                     public_key,
+                     goldrush,
+                     runtime_tools,
+                     p1_utils,
+                     ranch,
+                     cowlib,
+                     bear,
+                     mochijson2,
+                     p1_cache_tab,
+                     pa,
+                     base16,
+                     cuesport,
+                     alarms,
+                     idna,
+                     recon,
+                     setup,
+                     seestar],
+
+AppsToInclude = ordsets:to_list(ordsets:from_list(BaseAppsToInclude)),
+
+IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, AppsToInclude),
+
+[{sys, [
+        {lib_dirs, ["../apps", "../deps"]},
+        {incl_cond, exclude},
+        {rel, "wocky", "", [wocky | AppsToRun]},
+        {rel, "start_clean", "", [kernel, stdlib]},
+        {boot_rel, "wocky"},
+        {profile, embedded},
+        {excl_archive_filters, [".*"]}, % do no archive built libs
+        {excl_sys_filters, ["^bin/.*",
+                            "^erts.*/bin/(dialyzer|typer)"]},
+        {app, wocky, [{incl_cond, include}, {lib_dir, ".."}]}
+       ] ++ IncludeApps},
+
+{target_dir, "wocky"},
+
+{overlay_vars, "vars.config"},
+
+{overlay, [{mkdir, "log/sasl"},
+           {mkdir, "var"},
+           {mkdir, "var/log"},
+           {mkdir, "priv"},
+           {mkdir, "priv/ssl"},
+
+           {copy, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
+           {copy, "files/nodetool", "\{\{erts_vsn\}\}/bin/nodetool"},
+           {copy, "files/wockyctl", "bin/wockyctl"},
+
+           {template, "files/wocky", "bin/wocky"},
+           {template, "files/app.config", "etc/app.config"},
+           {template, "files/vm.args", "etc/vm.args"},
+           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"},
+
+           {copy, "../fake_cert.pem", "priv/ssl/fake_cert.pem"},
+           {copy, "../fake_key.pem", "priv/ssl/fake_key.pem"},
+           {copy, "../fake_server.pem", "priv/ssl/fake_server.pem"},
+           {copy, "files/sample_external_auth.py", "priv/sample_external_auth.py"}
+          ]}
+].
