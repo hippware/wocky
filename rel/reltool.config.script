@@ -53,7 +53,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
         {excl_archive_filters, [".*"]}, % do no archive built libs
         {excl_sys_filters, ["^bin/.*",
                             "^erts.*/bin/(dialyzer|typer)"]},
-        {app, wocky, [{incl_cond, include}, {lib_dir, ".."}]}
+        {app, wocky, [{incl_cond, include}]}
        ] ++ IncludeApps},
 
 {target_dir, "wocky"},
