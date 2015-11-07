@@ -7,12 +7,12 @@
 
 -behaviour(gen_mod).
 
--export([start/2, 
+-export([start/2,
          stop/1,
          process_local_iq/3]).
 
--include("ejabberd.hrl").
--include("jlib.hrl").
+-include_lib("ejabberd/include/ejabberd.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 
 %% @doc Start the module
@@ -37,10 +37,10 @@ process_local_iq(_From, _To,
         set ->
             IQ#iq{type = error, sub_el = [SubEl, ?ERR_NOT_ALLOWED]};
         get ->
-            IQ#iq{type = result, 
+            IQ#iq{type = result,
                 sub_el = [
-                    #xmlel{name = <<"query">>, 
-                        attrs = [{<<"xmlns">>, ?NS_VERSION}], 
+                    #xmlel{name = <<"query">>,
+                        attrs = [{<<"xmlns">>, ?NS_VERSION}],
                         children=[
                             #xmlel{name = <<"name">>, children = [{xmlcdata, <<"wocky">>}]},
                             #xmlel{name = <<"version">>, children = [{xmlcdata, ?WOCKY_VERSION}]}

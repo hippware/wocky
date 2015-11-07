@@ -1,7 +1,6 @@
 {application,wocky,
-             [{description,wocky},
-              {id,wocky},
+             [{description,"JabberWocky"},
               {vsn,git},
               {modules,[]},
               {registered,[]},
-              {applications,[]}]}.
+              {applications,[ejabberd]}]}.

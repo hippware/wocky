@@ -6,9 +6,9 @@ RUNNER_SCRIPT_DIR=$(cd ${0%/*} && pwd)
 
 RUNNER_BASE_DIR=${RUNNER_SCRIPT_DIR%/*}
 RUNNER_ETC_DIR=$RUNNER_BASE_DIR/etc
-RUNNER_LOG_DIR=$RUNNER_BASE_DIR/log
+RUNNER_LOG_DIR={{wocky_runner_log_dir}}
 # Note the trailing slash on $PIPE_DIR/
-PIPE_DIR=/tmp/mongooseim_pipe_`whoami`/
+PIPE_DIR=/tmp/wocky_pipe_`whoami`/
 RUNNER_USER=
 
 EJABBERD_SO_PATH=`ls -dt $RUNNER_BASE_DIR/lib/ejabberd-2.1.8*/priv/lib | head -1`
@@ -118,7 +118,7 @@ case "$1" in
         if [ "$RES2" = "pong" ]; then
             RES3=`$ADD_TO_CLUSTER_CMD`
             if [ "$RES3" = "ok" ]; then
-                echo "Node added to cluster. Run mongooseimctl live or mongooseimclt start."
+                echo "Node added to cluster. Run wockyctl live or wockyclt start."
             else
                 echo "Adding Node to cluster failed:  $RES3"
                 exit 1
@@ -222,14 +222,14 @@ case "$1" in
         ;;
 
     version)
-        MIM=`ls $RUNNER_BASE_DIR/lib/mongooseim*/ebin/mongooseim.app | head -1`
+        WKY=`ls $RUNNER_BASE_DIR/lib/wocky*/ebin/wocky.app | head -1`
         if [ $# == 2 ] && [ $2 == '--simple' ]
         then
-            $NODETOOL version $MIM
+            $NODETOOL version $WKY
         else
-            cat $RUNNER_BASE_DIR/lib/mongooseim*/priv/logo.txt
-            echo -n "MongooseIM version "
-            $NODETOOL version $MIM
+            cat $RUNNER_BASE_DIR/lib/wocky*/priv/logo.txt
+            echo -n "wocky version "
+            $NODETOOL version $WKY
         fi
         ;;
     *)

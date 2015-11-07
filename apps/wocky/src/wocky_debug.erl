@@ -5,8 +5,8 @@
 
 -module(wocky_debug).
 
--include("ejabberd.hrl").
--include("ejabberd_commands.hrl").
+-include_lib("ejabberd/include/ejabberd.hrl").
+-include_lib("ejabberd/include/ejabberd_commands.hrl").
 
 -export([poke/0, poke/1, poke/2]).
 

@@ -14,7 +14,7 @@ main(Args) ->
     %% checking the version number doesn't need the running node
     case RestArgs of
         ["version", AppFile] ->
-            {ok, [{application, mongooseim, Env}]} = file:consult(AppFile),
+            {ok, [{application, wocky, Env}]} = file:consult(AppFile),
             {vsn, Version} = lists:keyfind(vsn, 1, Env),
             io:format("~s~n", [Version]),
             halt(0);
