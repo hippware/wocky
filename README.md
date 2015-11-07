@@ -21,16 +21,32 @@ following commands:
 
 To build, once the repository is checked out type
 
-    $ make
+    $ make deps
     $ make rel
-
-(The first `make` is optional but shown for completeness.)
 
 This will build wocky into rel/wocky. Once the release is built, start the
 server using
 
     $ cd rel/wocky
     $ bin/wocky live
+
+Running integration tests
+=========================
+
+To run the ejabberd integration tests, you need to build and start two test
+nodes:
+
+    $ make testrel
+
+This creates two new test nodes in the `test/nodes` directory. For each node,
+cd into the node directory and start it:
+
+    $ cd test/nodes/wocky_node1
+    $ bin/wocky live
+
+Once both nodes are started, run the tests with:
+
+    $ make quicktest
 
 Repository separation
 =====================
