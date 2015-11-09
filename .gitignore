@@ -2,4 +2,8 @@
 # You can add personal rules in your file .git/info/exclude
 deps
 ebin
+test/nodes
 rel/wocky
+.eunit
+.rebar
+fake_*.pem
