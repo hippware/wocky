@@ -1,6 +1,7 @@
 .PHONY: compile rel test
 
 REBAR=./rebar $(REBAR_OPTS)
+RELX=./relx
 
 
 # Compile the application, but do not touch the dependencies
@@ -39,7 +40,7 @@ fake_server.pem:
 	cat fake_cert.pem fake_key.pem > fake_server.pem
 
 rel: certs compile
-	$(REBAR) generate -f skip_deps=true
+	$(RELX) --config rel/relx.config --output rel
 
 relclean:
 	rm -rf rel/wocky
@@ -94,7 +95,8 @@ test_node_dir:
 
 $(TESTNODES): compile test_node_dir
 	@echo "building $@"
-	(cd rel && ../rebar generate -f target_dir=../test/nodes/wocky_$@ overlay_vars=./reltool_vars/$@_vars.config)
+	$(RELX) --config rel/relx.config --output-dir test/nodes --overlay_vars rel/reltool_vars/$@_vars.config
+	mv test/nodes/wocky test/nodes/wocky_$@
 	cp -R `dirname $(shell ./readlink.sh $(shell which erl))`/../lib/tools-* test/nodes/wocky_$@/lib/
 
 test_deps:
