@@ -4,6 +4,6 @@
   {modules, []},
   {registered, []},
   {applications, [ejabberd, seestar]},
-  {mod, {wocky, []}},
+  %{mod, {wocky_app, []}},
   {env, []}
  ]}.
