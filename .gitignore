@@ -7,4 +7,3 @@ rel/wocky
 _build
 .eunit
 .rebar
-fake_*.pem

@@ -3,7 +3,7 @@
 ## or
 ##   -name node@fully.qualified.domain.name
 ## Without @something suffix `wockyctl debug` breaks.
--sname {{node_name}}
+-sname wocky@localhost
 
 ## Cookie for distributed erlang
 -setcookie ejabberd
