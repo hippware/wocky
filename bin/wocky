@@ -127,7 +127,7 @@ if [ $RELX_REPLACE_OS_VARS ]; then
 fi
 
 # Extract the target node name from node.args
-NAME_ARG=$(egrep '^-s?name' "$VMARGS_PATH")
+NAME_ARG=$(egrep '^-s?name' "$VMARGS_PATH" || true)
 if [ -z "$NAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
     exit 1
@@ -140,7 +140,7 @@ NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 PIPE_DIR="${PIPE_DIR:-/tmp/erl_pipes/$NAME/}"
 
 # Extract the target cookie
-COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH")"
+COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
 if [ -z "$COOKIE_ARG" ]; then
     echo "vm.args needs to have a -setcookie parameter."
     exit 1
@@ -277,7 +277,7 @@ case "$1" in
         exec "$BINDIR/to_erl" "$PIPE_DIR"
         ;;
 
-    remote_console)
+    remote_console|debug)
         # Make sure a node IS running
         if ! relx_nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -303,7 +303,7 @@ case "$1" in
         fi
 
         exec "$BINDIR/escript" "$ROOTDIR/bin/install_upgrade.escript" \
-             "install" "$REL_NAME" "$NAME" "$COOKIE" "$2"
+             "install" "$REL_NAME" "$NAME_TYPE" "$NAME" "$COOKIE" "$2"
         ;;
 
     unpack)
@@ -321,7 +321,7 @@ case "$1" in
         fi
 
         exec "$BINDIR/escript" "$ROOTDIR/bin/install_upgrade.escript" \
-             "unpack" "$REL_NAME" "$NAME" "$COOKIE" "$2"
+             "unpack" "$REL_NAME" "$NAME_TYPE" "$NAME" "$COOKIE" "$2"
         ;;
 
     console|live|console_clean|console_boot)
@@ -430,8 +430,54 @@ case "$1" in
         relx_nodetool rpcterms $@
         ;;
 
+    add_to_cluster)
+        NAME_TYPE_ARG=$(echo $NAME_TYPE | sed 's/^\-//')
+        TARGETNODETOOL="$ERTS_DIR/bin/escript $ROOTDIR/bin/nodetool $NAME_TYPE $2 $COOKIE_ARG"
+        ADD_TO_CLUSTER_CMD="$ERTS_DIR/bin/escript $ROOTDIR/bin/nodetool -exact_$NAME_TYPE_ARG $NAME $COOKIE_ARG add_to_cluster $2"
+
+        if relx_nodetool "ping" > /dev/null; then
+            echo "Error: Node is already running! Stop the node and delete Mnesia database directory ($MNESIA_DIR)."
+            exit 1
+        fi
+
+        MNESIA_DIR="$RELEASE_ROOT_DIR/Mnesia.$NODE"
+        if [ -d "$MNESIA_DIR" ]; then
+            echo "Error: $MNESIA_DIR already exists. Please remove whole directory before continuing."
+            exit 1
+        fi
+        RES2=`$TARGETNODETOOL ping`
+        if [ "$RES2" = "pong" ]; then
+            RES3=`$ADD_TO_CLUSTER_CMD`
+            if [ "$RES3" = "ok" ]; then
+                echo "Node added to cluster. Run wockyctl live or wockyclt start."
+            else
+                echo "Adding Node to cluster failed:  $RES3"
+                exit 1
+            fi
+        else
+            echo "Error: Node $2 is not reachable."
+            exit 1
+        fi
+        ;;
+
+    remove_from_cluster)
+        relx_nodetool remove_from_cluster $2
+        ;;
+
+    version)
+        WKY=`ls $RELEASE_ROOT_DIR/lib/wocky*/ebin/wocky.app | head -1`
+        if [ $# == 2 ] && [ $2 == '--simple' ]
+        then
+            relx_nodetool version $WKY
+        else
+            cat $RELEASE_ROOT_DIR/lib/wocky*/priv/logo.txt
+            echo -n "wocky version "
+            relx_nodetool version $WKY
+        fi
+        ;;
+
     *)
-        echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|console_clean|console_boot <file>|attach|remote_console|upgrade|escript|rpc|rpcterms}"
+        echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|live|console_clean|console_boot <file>|attach|remote_console|debug|upgrade|escript|rpc|rpcterms|add_to_cluster|remove_from_cluster}"
         exit 1
         ;;
 esac
