@@ -21,14 +21,23 @@ following commands:
 
 To build, once the repository is checked out type
 
-    $ make deps
-    $ make rel
+    $ ./rebar3 release
 
-This will build wocky into rel/wocky. Once the release is built, start the
-server using
+This will download all of the dependencies, compile everything and create a
+release in _build/default/rel/wocky. Once the release is built, start the
+server using:
 
-    $ cd rel/wocky
+    $ cd _build/default/rel/wocky
     $ bin/wocky live
+
+To create a production release, use:
+
+    $ ./rebar3 as prod release
+
+The production release will be built in _build/prod/rel/wocky. If you want a
+tarball of the production release use the command:
+
+    $ ./rebar3 as prod tar
 
 Running integration tests
 =========================
@@ -38,10 +47,10 @@ nodes:
 
     $ make testrel
 
-This creates two new test nodes in the `test/nodes` directory. For each node,
+This creates two new test nodes in the directory _build/test\_nodeN/rel/wocky. For each node,
 cd into the node directory and start it:
 
-    $ cd test/nodes/wocky_node1
+    $ cd _build/test_node1/rel/wocky
     $ bin/wocky live
 
 Once both nodes are started, run the tests with:
