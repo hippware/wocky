@@ -1,6 +1,9 @@
-{application,wocky,
-             [{description,"JabberWocky"},
-              {vsn,git},
-              {modules,[]},
-              {registered,[]},
-              {applications,[ejabberd]}]}.
+{application, wocky,
+ [{description, "JabberWocky"},
+  {vsn, git},
+  {modules, []},
+  {registered, []},
+  {applications, [ejabberd, seestar]},
+  %{mod, {wocky_app, []}},
+  {env, []}
+ ]}.

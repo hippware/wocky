@@ -1,48 +1,25 @@
-.PHONY: compile rel test
+.PHONY: all compile clean cleanall rel prodrel test
 
-REBAR=./rebar $(REBAR_OPTS)
+REBAR=./rebar3 $(REBAR_OPTS)
 
 
-# Compile the application, but do not touch the dependencies
-compile: deps
-	$(REBAR) compile skip_deps=true
+all: compile
 
-compileall:
+compile:
 	$(REBAR) compile
 
-# Download and compile all dependencies, but not the application itself
-deps:
-	$(REBAR) get-deps
-	$(REBAR) compile skip_apps=ejabberd,wocky
-
-all: deps compile
-
-clean:
+clean: docclean
 	rm -rf apps/*/logs
 	$(REBAR) clean
 
-depsclean:
-	rm -rf deps
+cleanall:
+	rm -rf _build
 
-cleanall: clean depsclean relclean testclean docclean
-	rm -f fake_*.pem
+rel:
+	$(REBAR) release
 
-certs: fake_cert.pem fake_server.pem
-
-fake_cert.pem:
-	openssl req \
-	-x509 -nodes -days 365 \
-	-subj '/C=PL/ST=ML/L=Krakow/CN=mongoose-im' \
-	-newkey rsa:2048 -keyout fake_key.pem -out fake_cert.pem
-
-fake_server.pem:
-	cat fake_cert.pem fake_key.pem > fake_server.pem
-
-rel: certs compile
-	$(REBAR) generate -f skip_deps=true
-
-relclean:
-	rm -rf rel/wocky
+prodrel:
+	$(REBAR) as prod release
 
 
 ##
@@ -50,10 +27,7 @@ relclean:
 ##
 
 doc:
-	$(REBAR) doc skip_deps=true
-
-depsdoc:
-	$(REBAR) doc
+	$(REBAR) edoc
 
 docclean: cleandoc
 
@@ -65,16 +39,16 @@ cleandoc:
 ## Unit/Functional Testing
 ##
 
-eunit: compile
-	$(REBAR) skip_deps=true eunit
+eunit:
+	$(REBAR) eunit --cover --application wocky
 
-ct: compile
-	@if [ "$(SUITE)" ]; then $(REBAR) ct suite=$(SUITE) skip_deps=true;\
-	else $(REBAR) ct skip_deps=true; fi
+ct:
+	@if [ "$(SUITE)" ]; then $(REBAR) ct --cover --suite $(SUITE);\
+	else $(REBAR) ct --cover; fi
 
 # This compiles and runs one test suite. For quick feedback/TDD.
 # Example:
-# $ make qct SUITE=amp_resolver_SUITE
+# $ make qct SUITE=amp_resolver
 qct:
 	mkdir -p /tmp/ct_log
 	ct_run -pa apps/*/ebin -pa deps/*/ebin -dir apps/*/test\
@@ -87,15 +61,11 @@ qct:
 
 TESTNODES = node1 node2
 
-testrel: certs $(TESTNODES)
+testrel: $(TESTNODES)
 
-test_node_dir:
-	mkdir -p test/nodes
-
-$(TESTNODES): compile test_node_dir
+$(TESTNODES):
 	@echo "building $@"
-	(cd rel && ../rebar generate -f target_dir=../test/nodes/wocky_$@ overlay_vars=./reltool_vars/$@_vars.config)
-	cp -R `dirname $(shell ./readlink.sh $(shell which erl))`/../lib/tools-* test/nodes/wocky_$@/lib/
+	$(REBAR) as test_$@ release
 
 test_deps:
 	cd test/ejabberd; make get-deps
@@ -114,9 +84,6 @@ cover_test_preset: test_deps
 
 quicktest: test_deps
 	cd test/ejabberd; make quicktest
-
-testclean:
-	rm -rf test/nodes
 
 
 ##
