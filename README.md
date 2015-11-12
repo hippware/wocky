@@ -19,6 +19,12 @@ following commands:
     $ git submodule init
     $ git submodule update
 
+Then, the rebar3 package index needs to be initialized by typing:
+
+    $ ./rebar3 update
+
+This tells rebar3 how to fetch rebar3 plugins. It only needs to be done once.
+
 To build, once the repository is checked out type
 
     $ ./rebar3 release
