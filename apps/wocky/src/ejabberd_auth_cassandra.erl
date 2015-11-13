@@ -97,15 +97,14 @@ check_password(_User, _Server, _Password) ->
 
 
 -spec check_password(User :: ejabberd:luser(),
-                         Server :: ejabberd:lserver(),
-                         Password :: binary(),
-                         Digest :: binary(),
-                         DigestGen :: fun()) -> boolean().
+                     Server :: ejabberd:lserver(),
+                     Password :: binary(),
+                     Digest :: binary(),
+                     DigestGen :: fun()) -> boolean().
 check_password(_User, _Server, _Password, _Digest, _DigestGen) ->
     false.
 
 
-%% This is invoked from ejabberd_auth:try_register().
 %% Not really suitable for use since it does not pass in extra profile information.
 %% Exists for completeness more than anything else (at the moment)
 -spec try_register(User :: ejabberd:luser(),
@@ -113,34 +112,8 @@ check_password(_User, _Server, _Password, _Digest, _DigestGen) ->
                    Password :: binary()
                   ) -> ok | {error, exists | not_allowed | term()}.
 try_register(User, Server, Password) ->
-    Id = cassandra:timeuuid(Server),
-    {ok, Return} = cassandra:pquery(shared, <<"INSERT INTO username_to_user (username, id, domain) VALUES (?, ?, ?) IF NOT EXISTS">>, [User, Id, Server], quorum),
-    Result = cassandra:single_result(Return),
-    %% Note: Result is <<1>> for success, <<0>> if error.
-    %% There is no documentation on the return type so it's possible,
-    %%   in the future, this may not be a binary.
-    Success = Result /= <<0>>,
-
-    case Success of
-        true ->
-            Password2 = case scram:enabled(Server) and is_binary(Password) of
-                            true ->
-                                scram:password_to_scram(Password, scram:iterations(Server));
-                            false ->
-                                %% Store plaintext passwords inside scram fields with iteration = 0 (which is an invalid value)
-                                #scram{storedkey = Password,
-                                       serverkey = <<"">>,
-                                       salt = <<"">>,
-                                       iterationcount = 0}
-                        end,
-
-            {ok, _} = cassandra:pquery(Server, <<"INSERT INTO user (id, domain, username, stored_key, server_key, salt, iteration_count) VALUES (?, ?, ?, ?, ?, ?, ?)">>,
-                                       [Id, Server, User, Password2#scram.storedkey, Password2#scram.serverkey, Password2#scram.salt, Password2#scram.iterationcount], quorum),
-            ok;
-
-        false ->
-            {error, exists}
-    end.
+    SCRAM = create_scram_password(Server, Password),
+    wocky_user:create_user(Server, User, SCRAM).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
@@ -197,9 +170,7 @@ get_password(_User, _Server, _DefaultValue) ->
                       Server :: ejabberd:lserver()
                      ) -> boolean() | {error, atom()}.
 does_user_exist(User, _Server) ->
-    {ok, Return} = cassandra:pquery(shared, <<"SELECT username, id, domain FROM username_to_user WHERE username = ?">>, [User], quorum),
-    Result = cassandra:rows(Return),
-    length(Result) > 0.
+    wocky_user:does_user_exist(User).
 
 
 -spec remove_user(User :: ejabberd:luser(),
@@ -226,3 +197,21 @@ remove_user(User, Server, _Password) ->
 plain_password_required() ->
     false.
 
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+create_scram_password(Server, Password) ->
+    case scram:enabled(Server) and is_binary(Password) of
+        true ->
+            scram:password_to_scram(Password, scram:iterations(Server));
+
+        false ->
+            %% Store plaintext passwords inside scram
+            %% fields with iteration = 0 (which is an invalid value)
+            #scram{storedkey = Password,
+                   serverkey = <<"">>,
+                   salt = <<"">>,
+                   iterationcount = 0}
+    end.
