@@ -5,10 +5,9 @@
 
 %% API
 -export([create_user/3,
-         does_user_exist/1]).
+         does_user_exist/1,
+         set_password/3]).
 
-%% For the #scram{} record
--include_lib("ejabberd/include/ejabberd.hrl").
 
 %%%===================================================================
 %%% API
@@ -16,13 +15,13 @@
 
 -spec create_user(Domain :: binary(),
                   UserName :: binary(),
-                  SCRAM :: #scram{}
+                  Password :: binary()
                  ) -> ok | {error, exists}.
-create_user(Domain, UserName, SCRAM) ->
+create_user(Domain, UserName, Password) ->
     Id = create_user_id(Domain),
     case create_username_lookup(Id, Domain, UserName) of
         true ->
-            {ok, _} = create_user_record(Id, Domain, UserName, SCRAM),
+            {ok, _} = create_user_record(Id, Domain, UserName, Password),
             ok;
 
         false ->
@@ -37,6 +36,10 @@ does_user_exist(UserName) ->
     Result = cassandra:rows(Return),
     length(Result) > 0.
 
+
+set_password(Domain, UserName, Password) ->
+    Query = <<"UPDATE user SET password = ? WHERE username = ?">>,
+    {ok, _} = cassandra:pquery(Domain, Query, [Password, UserName], quorum).
 
 %%%===================================================================
 %%% Internal functions
@@ -53,14 +56,6 @@ create_username_lookup(Id, Domain, UserName) ->
     %%   in the future, this may not be a binary.
     cassandra:single_result(Return) /= <<0>>.
 
-create_user_record(Id, Domain, UserName, SCRAM) ->
-    Query = <<"INSERT INTO user (id, domain, username, stored_key, server_key, salt, iteration_count) VALUES (?, ?, ?, ?, ?, ?, ?)">>,
-    cassandra:pquery(Domain, Query, [Id,
-                                     Domain,
-                                     UserName,
-                                     SCRAM#scram.storedkey,
-                                     SCRAM#scram.serverkey,
-                                     SCRAM#scram.salt,
-                                     SCRAM#scram.iterationcount],
-                     quorum).
-
+create_user_record(Id, Domain, UserName, Password) ->
+    Query = <<"INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)">>,
+    cassandra:pquery(Domain, Query, [Id, Domain, UserName, Password], quorum).

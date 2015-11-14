@@ -71,22 +71,26 @@ stop(_Host) ->
 
 
 -spec store_type(Host :: ejabberd:lserver()) -> scram | plain | external.
-store_type(_Host) ->
-    scram.
+store_type(Host) ->
+    case scram:enabled(Host) of
+        false -> plain;
+        true -> scram
+    end.
 
 
 -spec login(User :: ejabberd:luser(),
             Server :: ejabberd:lserver()) -> boolean().
 login(_User, _Server) ->
-    false.
+    erlang:error(not_implemented).
 
 
 -spec set_password(User :: ejabberd:luser(),
                    Server :: ejabberd:lserver(),
                    Password :: binary()
                   ) -> ok | {error, not_allowed | invalid_jid}.
-set_password(_User, _Server, _Password) ->
-    {error, not_allowed}.
+set_password(User, Server, Password) ->
+    PreparedPass = prepare_password(Server, Password),
+    wocky_user:set_password(Server, User, PreparedPass).
 
 
 -spec check_password(User :: ejabberd:luser(),
@@ -112,8 +116,8 @@ check_password(_User, _Server, _Password, _Digest, _DigestGen) ->
                    Password :: binary()
                   ) -> ok | {error, exists | not_allowed | term()}.
 try_register(User, Server, Password) ->
-    SCRAM = create_scram_password(Server, Password),
-    wocky_user:create_user(Server, User, SCRAM).
+    PreparedPass = prepare_password(Server, Password),
+    wocky_user:create_user(Server, User, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
@@ -202,16 +206,12 @@ plain_password_required() ->
 %%% Internal functions
 %%%===================================================================
 
-create_scram_password(Server, Password) ->
-    case scram:enabled(Server) and is_binary(Password) of
+prepare_password(Server, Password) ->
+    case scram:enabled(Server) of
         true ->
-            scram:password_to_scram(Password, scram:iterations(Server));
+            Scram = scram:password_to_scram(Password, scram:iterations(Server)),
+            scram:serialize(Scram);
 
         false ->
-            %% Store plaintext passwords inside scram
-            %% fields with iteration = 0 (which is an invalid value)
-            #scram{storedkey = Password,
-                   serverkey = <<"">>,
-                   salt = <<"">>,
-                   iterationcount = 0}
+            Password
     end.
