@@ -96,8 +96,21 @@ set_password(User, Server, Password) ->
 -spec check_password(User :: ejabberd:luser(),
                      Server :: ejabberd:lserver(),
                      Password :: binary()) -> boolean().
-check_password(_User, _Server, _Password) ->
-    false.
+check_password(User, Server, Password) ->
+    case wocky_user:get_password(Server, User) of
+        StoredPassword when is_binary(StoredPassword) ->
+            case scram:deserialize(StoredPassword) of
+                #scram{} = Scram ->
+                    scram:check_password(Password, Scram);
+
+                {error, _}->
+                    %% Not a SCRAM password
+                    Password == StoredPassword
+                end;
+
+        {error, _} ->
+            false
+    end.
 
 
 -spec check_password(User :: ejabberd:luser(),
@@ -105,8 +118,21 @@ check_password(_User, _Server, _Password) ->
                      Password :: binary(),
                      Digest :: binary(),
                      DigestGen :: fun()) -> boolean().
-check_password(_User, _Server, _Password, _Digest, _DigestGen) ->
-    false.
+check_password(User, Server, Password, Digest, DigestGen) ->
+    case wocky_user:get_password(Server, User) of
+        StoredPassword when is_binary(StoredPassword) ->
+            case scram:deserialize(StoredPassword) of
+                #scram{} = Scram ->
+                    scram:check_digest(Scram, Digest, DigestGen, Password);
+
+                {error, _}->
+                    %% Not a SCRAM password
+                    Password == StoredPassword
+                end;
+
+        {error, _} ->
+            false
+    end.
 
 
 %% Not really suitable for use since it does not pass in extra profile information.
@@ -122,25 +148,29 @@ try_register(User, Server, Password) ->
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
 dirty_get_registered_users() ->
-    erlang:error(not_implemented).
+    Servers = ejabberd_config:get_vh_by_auth_method(cassandra),
+    lists:flatmap(
+        fun(Server) ->
+            get_vh_registered_users(Server)
+        end, Servers).
 
 
 -spec get_vh_registered_users(Server :: ejabberd:lserver()) -> [ejabberd:simple_bare_jid()].
-get_vh_registered_users(_Server) ->
-    erlang:error(not_implemented).
+get_vh_registered_users(Server) ->
+    Users = wocky_user:get_users(Server),
+    [{User, Server} || User <- Users].
     
 
 -spec get_vh_registered_users(Server :: ejabberd:lserver(),
                               Opts :: list()
                              ) -> [ejabberd:simple_bare_jid()].
-get_vh_registered_users(_Server, _Opts) ->
-    erlang:error(not_implemented).
+get_vh_registered_users(Server, _Opts) ->
+    get_vh_registered_users(Server).
 
 
 -spec get_vh_registered_users_number(Server :: ejabberd:lserver()) -> integer().
-get_vh_registered_users_number(_Server) ->
-    % Let's not do a SELECT COUNT(*)
-    -1.
+get_vh_registered_users_number(Server) ->
+    length(get_vh_registered_users(Server)).
 
 
 -spec get_vh_registered_users_number(Server :: ejabberd:lserver(),
@@ -152,29 +182,48 @@ get_vh_registered_users_number(Server, _Opts) ->
 -spec get_password(User :: ejabberd:luser(),
                    Server :: ejabberd:lserver()
                   ) -> scram:scram_tuple() | binary() | false.
-get_password(_User, _Server) ->
-    false.
+get_password(User, Server) ->
+    case wocky_user:get_password(Server, User) of
+        StoredPassword when is_binary(StoredPassword) ->
+            case scram:deserialize(StoredPassword) of
+                #scram{} = Scram ->
+                    scram:scram_to_tuple(Scram);
+
+                {error, _}->
+                    %% Not a SCRAM password
+                    StoredPassword
+            end;
+
+        {error, _} ->
+            false
+    end.
 
 
 -spec get_password_s(User :: ejabberd:luser(),
                      Server :: ejabberd:lserver()) -> binary().
-get_password_s(_User, _Server) ->
-    <<"">>.
+get_password_s(User, Server) ->
+    case get_password(User, Server) of
+        Password when is_binary(Password) ->
+            Password;
+
+        _ ->
+            <<"">>
+    end.
 
 
 -spec get_password(User :: ejabberd:luser(),
                    Server :: ejabberd:lserver(),
                    DefaultValue :: binary()
                   ) -> scram:scram_tuple() | binary() | false.
-get_password(_User, _Server, _DefaultValue) ->
-    false.
+get_password(User, Server, _DefaultValue) ->
+    get_password(User, Server).
 
 
 -spec does_user_exist(User :: ejabberd:luser(),
                       Server :: ejabberd:lserver()
                      ) -> boolean() | {error, atom()}.
-does_user_exist(User, _Server) ->
-    wocky_user:does_user_exist(User).
+does_user_exist(User, Server) ->
+    wocky_user:does_user_exist(Server, User).
 
 
 -spec remove_user(User :: ejabberd:luser(),
@@ -182,8 +231,12 @@ does_user_exist(User, _Server) ->
                  ) -> ok | {error, not_allowed}.
 remove_user(User, Server) ->
     case does_user_exist(User, Server) of
-        true -> {error, not_allowed};
-        false -> {error, not_exists}
+        true ->
+            wocky_user:remove_user(Server, User);
+
+        false ->
+            %% Mission accomplished, the user no longer exists
+            ok
     end.
 
 
@@ -193,8 +246,17 @@ remove_user(User, Server) ->
                   Server :: ejabberd:lserver(),
                   Password :: binary()
                  ) -> ok | {error, not_exists | not_allowed | bad_request}.
-remove_user(User, Server, _Password) ->
-    remove_user(User, Server).
+remove_user(User, Server, Password) ->
+    case does_user_exist(User, Server) of
+        true ->
+          case check_password(User, Server, Password) of
+              true -> wocky_user:remove_user(Server, User);
+              false -> {error, not_allowed}
+          end;
+
+        false ->
+            {error, not_exists}
+    end.
 
 
 -spec plain_password_required() -> boolean().
