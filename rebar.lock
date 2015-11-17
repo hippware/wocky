@@ -102,6 +102,10 @@
   {git,"git://github.com/esl/erlang_protobuffs.git",
        {ref,"5e425135ca54e479409bf60a7040c85ee7078675"}},
   0},
+ {<<"quickrand">>,
+  {git,"https://github.com/okeuday/quickrand.git",
+       {ref,"36bc75ac538430f6858453576850ea088d22c183"}},
+  1},
  {<<"ranch">>,
   {git,"git://github.com/ninenines/ranch.git",
        {ref,"adf1822defc2b7cfdc7aca112adabfa1d614043c"}},
@@ -129,4 +133,8 @@
  {<<"setup">>,
   {git,"git://github.com/uwiger/setup.git",
        {ref,"51ee7c9f64d2bbe9dcbb58c278e8fbfd4d0ca5e2"}},
-  1}].
+  1},
+ {<<"uuid">>,
+  {git,"git://github.com/okeuday/uuid.git",
+       {ref,"24325ae6309d03897735c3a320aab6f74b189ab7"}},
+  0}].

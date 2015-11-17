@@ -29,7 +29,7 @@ get_users(Domain) ->
                   Password :: binary()
                  ) -> ok | {error, exists}.
 create_user(Domain, UserName, Password) ->
-    Id = create_user_id(Domain),
+    Id = create_user_id(),
     case create_username_lookup(Id, Domain, UserName) of
         true ->
             {ok, _} = create_user_record(Id, Domain, UserName, Password),
@@ -87,9 +87,10 @@ remove_user(Domain, UserName) ->
 %%% Internal functions
 %%%===================================================================
 
-create_user_id(Domain) ->
-    cassandra:timeuuid(Domain).
-    
+create_user_id() ->
+    {UUID, _} = uuid:get_v1(uuid:new(self())),
+    UUID.
+
 create_username_lookup(Id, Domain, UserName) ->
     Query = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?) IF NOT EXISTS">>,
     {ok, Return} = cassandra:pquery(shared, Query, [Id, Domain, UserName], quorum),
