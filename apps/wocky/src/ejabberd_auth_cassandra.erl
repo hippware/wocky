@@ -90,7 +90,13 @@ login(_User, _Server) ->
                   ) -> ok | {error, not_allowed | invalid_jid}.
 set_password(User, Server, Password) ->
     PreparedPass = prepare_password(Server, Password),
-    wocky_user:set_password(Server, User, PreparedPass).
+    case wocky_user:set_password(Server, User, PreparedPass) of
+        ok ->
+            ok;
+
+        {error, not_found} ->
+            {error, invalid_jid}
+    end.
 
 
 -spec check_password(User :: ejabberd:luser(),

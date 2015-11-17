@@ -32,44 +32,47 @@ create_user(Domain, UserName, Password) ->
 
 
 -spec does_user_exist(Domin :: binary(), UserName :: binary()) -> boolean().
-does_user_exist(Domain, UserName) ->
-    Query = <<"SELECT id FROM username_to_user WHERE domain = ? AND username = ?">>,
-    {ok, Return} = cassandra:pquery(shared, Query, [Domain, UserName], quorum),
-    Result = cassandra:rows(Return),
-    length(Result) > 0.
+does_user_exist(_Domain, UserName) ->
+    case user_id_from_username(UserName) of
+        undefined -> false;
+        _         -> true
+    end.
 
 
 -spec get_password(Domain :: binary(),
                    UserName :: binary()
                   ) -> binary() | {error, not_found}.
 get_password(Domain, UserName) ->
-    Query = <<"SELECT password FROM user WHERE domain = ? AND username = ?">>,
-    case cassandra:pquery(Domain, Query, [UserName], quorum) of
-        {ok, Return} ->
-            cassandra:single_result(Return);
-
-        {error, _} = E -> E
+    case user_id_from_username(UserName) of
+        undefined -> {error, not_found};
+        Id ->
+            Query = <<"SELECT password FROM user WHERE id = ?">>,
+            {ok, Return} = cassandra:pquery(Domain, Query, [Id], quorum),
+            cassandra:single_result(Return)
     end.
 
 
 -spec set_password(Domain :: binary(),
                    UserName :: binary(),
                    Password :: binary()
-                  ) -> ok.
+                  ) -> ok | {error, not_found}.
 set_password(Domain, UserName, Password) ->
-    Query = <<"UPDATE user SET password = ? WHERE username = ?">>,
-    {ok, _} = cassandra:pquery(Domain, Query, [Password, UserName], quorum),
-    ok.
+    case user_id_from_username(UserName) of
+        undefined -> {error, not_found};
+        Id ->
+            Query = <<"UPDATE user SET password = ? WHERE id = ?">>,
+            {ok, _} = cassandra:pquery(Domain, Query, [Password, Id], quorum),
+            ok
+    end.
 
 
 -spec remove_user(Domain :: binary(), UserName :: binary()) -> ok.
 remove_user(Domain, UserName) ->
-    case remove_username_lookup(Domain, UserName) of
-        true ->
-            {ok, _} = remove_user_record(Domain, UserName),
-            ok;
-
-        false ->
+    case user_id_from_username(UserName) of
+        undefined -> ok;
+        Id ->
+            {ok, _} = remove_username_lookup(UserName),
+            {ok, _} = remove_user_record(Id, Domain),
             ok
     end.
 
@@ -82,26 +85,24 @@ create_user_id() ->
     {UUID, _} = uuid:get_v1(uuid:new(self())),
     UUID.
 
+user_id_from_username(UserName) ->
+    Query = <<"SELECT id FROM username_to_user WHERE username = ?">>,
+    {ok, Return} = cassandra:pquery(shared, Query, [UserName], quorum),
+    cassandra:single_result(Return).
+
 create_username_lookup(Id, Domain, UserName) ->
     Query = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?) IF NOT EXISTS">>,
     {ok, Return} = cassandra:pquery(shared, Query, [Id, Domain, UserName], quorum),
-    %% Note: Result is <<1>> for success, <<0>> if error.
-    %% There is no documentation on the return type so it's possible,
-    %%   in the future, this may not be a binary.
-    cassandra:single_result(Return) /= <<0>>.
+    cassandra:boolean_result(Return).
 
 create_user_record(Id, Domain, UserName, Password) ->
     Query = <<"INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)">>,
     cassandra:pquery(Domain, Query, [Id, Domain, UserName, Password], quorum).
 
-remove_username_lookup(Domain, UserName) ->
-    Query = <<"DELETE FROM username_to_user where domain = ? AND username = ?">>,
-    {ok, Return} = cassandra:pquery(shared, Query, [Domain, UserName], quorum),
-    %% Note: Result is <<1>> for success, <<0>> if error.
-    %% There is no documentation on the return type so it's possible,
-    %%   in the future, this may not be a binary.
-    cassandra:single_result(Return) /= <<0>>.
+remove_username_lookup(UserName) ->
+    Query = <<"DELETE FROM username_to_user WHERE username = ?">>,
+    cassandra:pquery(shared, Query, [UserName], quorum).
 
-remove_user_record(Domain, UserName) ->
-    Query = <<"DELETE FROM user WHERE domain = ? AND username = ?">>,
-    cassandra:pquery(Domain, Query, [Domain, UserName], quorum).
+remove_user_record(Id, Domain) ->
+    Query = <<"DELETE FROM user WHERE id = ?">>,
+    cassandra:pquery(Domain, Query, [Id], quorum).

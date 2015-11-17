@@ -41,7 +41,7 @@
          pquery/3, pquery/4, pquery/5,
          pquery_async/3, pquery_async/4, pquery_async/5,
          batch_pquery/4,
-         rows/1, single_result/1,
+         rows/1, single_result/1, boolean_result/1,
          uuid1/1, uuid4/1, timeuuid/1, to_keyspace/1]).
 
 %% gen_mod
@@ -188,19 +188,30 @@ batch_pquery(Host, Queries, Type, Consistency) ->
     ?BACKEND:batch_pquery(Host, Queries, Type, Consistency).
 
 %% @doc Extracts rows from a query result
-%% 
+%%
 %% Returns a list of rows. Each row is a list of values.
-%% 
--spec rows(Rows :: rows_result()) -> [[value()]].
+%%
+-spec rows(Result :: rows_result()) -> [[value()]].
 rows(Result) ->
     ?BACKEND:rows(Result).
 
 %% @doc Extracts the value of the first column of the first row from a query result
-%% 
--spec single_result(Rows :: rows_result()) -> value().
+%%
+-spec single_result(Result :: rows_result()) -> value() | undefined.
 single_result(Result) ->
-    [[Value | _] | _]= rows(Result),
-    Value.
+    case rows(Result) of
+        [] -> undefined;
+        [[Value | _] | _] -> Value
+    end.
+
+%% @doc Extracts the boolean value from the result of a 'IF NOT EXISTS' query
+%%
+-spec boolean_result(Result :: rows_result()) -> boolean().
+boolean_result(Result) ->
+    %% Note: Result is <<1>> for success, <<0>> if error.
+    %% There is no documentation on the return type so it's possible,
+    %%   in the future, this may not be a binary.
+    cassandra:single_result(Result) /= <<0>>.
 
 %% @doc Uses cassandra to generate a version 1 UUID
 %% 
