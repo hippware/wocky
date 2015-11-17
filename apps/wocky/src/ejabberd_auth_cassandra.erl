@@ -155,11 +155,10 @@ dirty_get_registered_users() ->
         end, Servers).
 
 
+%% This call is costly and infrequently used. Stub it out.
 -spec get_vh_registered_users(Server :: ejabberd:lserver()) -> [ejabberd:simple_bare_jid()].
-get_vh_registered_users(Server) ->
-    Users = wocky_user:get_users(Server),
-    [{User, Server} || User <- Users].
-    
+get_vh_registered_users(_Server) ->
+    [].
 
 -spec get_vh_registered_users(Server :: ejabberd:lserver(),
                               Opts :: list()

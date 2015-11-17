@@ -4,8 +4,7 @@
 -module(wocky_user).
 
 %% API
--export([get_users/1,
-         create_user/3,
+-export([create_user/3,
          does_user_exist/2,
          get_password/2,
          set_password/3,
@@ -15,14 +14,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
--spec get_users(Domain :: binary()) -> [binary()].
-get_users(Domain) ->
-    Query = <<"SELECT username FROM username_to_user WHERE domain = ?">>,
-    {ok, Return} = cassandra:pquery(shared, Query, [Domain], quorum),
-    Result = cassandra:rows(Return),
-    lists:flatten(Result).
-
 
 -spec create_user(Domain :: binary(),
                   UserName :: binary(),
