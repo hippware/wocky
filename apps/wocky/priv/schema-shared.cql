@@ -22,10 +22,10 @@ CREATE TABLE uuidgen (
 INSERT INTO uuidgen (id) VALUES (0);
 
 CREATE TABLE username_to_user (
+    domain text,
     username text,
     id timeuuid,
-    domain text,
-    PRIMARY KEY (username)
+    PRIMARY KEY (domain, username)
 );
 
 CREATE TABLE phone_number_to_user (
