@@ -32,8 +32,8 @@ create_user(Domain, UserName, Password) ->
 
 
 -spec does_user_exist(Domin :: binary(), UserName :: binary()) -> boolean().
-does_user_exist(_Domain, UserName) ->
-    case user_id_from_username(UserName) of
+does_user_exist(Domain, UserName) ->
+    case user_id_from_username(Domain, UserName) of
         undefined -> false;
         _         -> true
     end.
@@ -43,7 +43,7 @@ does_user_exist(_Domain, UserName) ->
                    UserName :: binary()
                   ) -> binary() | {error, not_found}.
 get_password(Domain, UserName) ->
-    case user_id_from_username(UserName) of
+    case user_id_from_username(Domain, UserName) of
         undefined -> {error, not_found};
         Id ->
             Query = <<"SELECT password FROM user WHERE id = ?">>,
@@ -57,7 +57,7 @@ get_password(Domain, UserName) ->
                    Password :: binary()
                   ) -> ok | {error, not_found}.
 set_password(Domain, UserName, Password) ->
-    case user_id_from_username(UserName) of
+    case user_id_from_username(Domain, UserName) of
         undefined -> {error, not_found};
         Id ->
             Query = <<"UPDATE user SET password = ? WHERE id = ?">>,
@@ -68,10 +68,10 @@ set_password(Domain, UserName, Password) ->
 
 -spec remove_user(Domain :: binary(), UserName :: binary()) -> ok.
 remove_user(Domain, UserName) ->
-    case user_id_from_username(UserName) of
+    case user_id_from_username(Domain, UserName) of
         undefined -> ok;
         Id ->
-            {ok, _} = remove_username_lookup(UserName),
+            {ok, _} = remove_username_lookup(Domain, UserName),
             {ok, _} = remove_user_record(Id, Domain),
             ok
     end.
@@ -85,9 +85,9 @@ create_user_id() ->
     {UUID, _} = uuid:get_v1(uuid:new(self())),
     UUID.
 
-user_id_from_username(UserName) ->
-    Query = <<"SELECT id FROM username_to_user WHERE username = ?">>,
-    {ok, Return} = cassandra:pquery(shared, Query, [UserName], quorum),
+user_id_from_username(Domain, UserName) ->
+    Query = <<"SELECT id FROM username_to_user WHERE domain = ? AND username = ?">>,
+    {ok, Return} = cassandra:pquery(shared, Query, [Domain, UserName], quorum),
     cassandra:single_result(Return).
 
 create_username_lookup(Id, Domain, UserName) ->
@@ -99,9 +99,9 @@ create_user_record(Id, Domain, UserName, Password) ->
     Query = <<"INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)">>,
     cassandra:pquery(Domain, Query, [Id, Domain, UserName, Password], quorum).
 
-remove_username_lookup(UserName) ->
-    Query = <<"DELETE FROM username_to_user WHERE username = ?">>,
-    cassandra:pquery(shared, Query, [UserName], quorum).
+remove_username_lookup(Domain, UserName) ->
+    Query = <<"DELETE FROM username_to_user WHERE domain = ? AND username = ?">>,
+    cassandra:pquery(shared, Query, [Domain, UserName], quorum).
 
 remove_user_record(Id, Domain) ->
     Query = <<"DELETE FROM user WHERE id = ?">>,
