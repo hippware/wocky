@@ -5,7 +5,11 @@
   {vsn, git},
   {modules, []},
   {registered, []},
-  {applications, [ejabberd, seestar]},
-  %{mod, {wocky_app, []}},
-  {env, []}
+  {applications, [lager, uuid, seestar]},
+  {included_applications, [ejabberd, pooler]},
+  {mod, {wocky_app, []}},
+  {env, [
+         {backend, seestar},
+         {start_ejabberd, false}
+        ]}
  ]}.

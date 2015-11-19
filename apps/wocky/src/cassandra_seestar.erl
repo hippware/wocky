@@ -21,29 +21,29 @@
 %%%
 %%% ```
 %%% {cassandra_seestar, [
-%%%     % Optional common username/password
+%%%     %% Optional common username/password
 %%%     {auth, {seestar_password_auth, {<<"common-username">>, <<"common-password">>}}},
 %%%     {keyspaces, [
 %%%         {host, [
-%%% 	        {keyspace, "prefix_%h"},
-%%% 	        % Optional keyspace-specific username/password
-%%% 	        {auth, {seestar_password_auth, {<<"keyspace-username">>, <<"keyspace-password">>}}},
-%%% 	        {servers, [
-%%% 		        [{server, "localhost"}, {port, 9042}, {workers, 1},
-%%% 		         % Optional server-specific username/password
-%%% 		         {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}],
-%%% 		        [{server, "localhost"}, {port, 9042}, {workers, 1},
-%%% 		         {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}]
-%%% 	        ]}
-%%% 	    ]},
-%%% 	    {shared, [
-%%% 	        {keyspace, "prefix_shared"},
-%%% 	        {auth, {seestar_password_auth, {<<"keyspace-username">>, <<"keyspace-password">>}}},
-%%% 	        {servers, [
-%%% 		        [{server, "localhost"}, {port, 9042}, {workers, 2},
-%%% 		         {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}]
-%%% 	        ]}
-%%% 	    ]}
+%%%           {keyspace, "prefix_%h"},
+%%%           %% Optional keyspace-specific username/password
+%%%           {auth, {seestar_password_auth, {<<"keyspace-username">>, <<"keyspace-password">>}}},
+%%%           {servers, [
+%%%             [{server, "localhost"}, {port, 9042}, {min_workers, 1}, {max_workers, 5},
+%%%              %% Optional server-specific username/password
+%%%              {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}],
+%%%             [{server, "localhost"}, {port, 9042}, {min_workers, 1}, {max_workers, 5},
+%%%              {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}]
+%%%           ]}
+%%%       ]},
+%%%       {shared, [
+%%%           {keyspace, "prefix_shared"},
+%%%           {auth, {seestar_password_auth, {<<"keyspace-username">>, <<"keyspace-password">>}}},
+%%%           {servers, [
+%%%             [{server, "localhost"}, {port, 9042}, {min_workers, 2}, {max_workers, 5},
+%%%              {auth, {seestar_password_auth, {<<"server-username">>, <<"server-password">>}}}]
+%%%           ]}
+%%%       ]}
 %%%     ]}
 %%% ]}.
 %%% '''
@@ -59,25 +59,29 @@
 %%% For API documentation, see {@link cassandra}
 
 -module(cassandra_seestar).
--include_lib("ejabberd/include/ejabberd.hrl").
 
 -include_lib("seestar/include/constants.hrl").
-
-%% gen_mod
--behaviour(gen_mod).
--export([start/2, stop/1]).
 
 %% gen_server
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([start_link/2]).
 
 %% Interface functions
 -behaviour(cassandra_gen_backend).
--export([start_link/2,
+-export([configure/2, clear/0,
          aquery/5,
          prepare_query/2, pquery/5, pquery_async/5,
          batch_pquery/4,
          rows/1]).
+
+% Default configuration
+-define(DEFAULT_MIN_WORKERS, 2).
+-define(DEFAULT_MAX_WORKERS, 5).
+-define(DEFAULT_SERVERS, [[{server, "localhost"},
+                           {port, 9042},
+                           {min_workers, ?DEFAULT_MIN_WORKERS},
+                           {max_workers, ?DEFAULT_MAX_WORKERS}]]).
 
 -record(state, {
     host,
@@ -87,178 +91,59 @@
 
 -record(pquery, {query, id, types}).
 
-% Default configuration
--define(DEFAULT_SERVERS, [[{server, "localhost"}, {port, 9042}, {workers, 1}]]).
-
-%% gen_mod callbacks
-start(Host, _Opts) ->
-    {HostServers, SharedServers} = get_servers(Host),
-
-    if
-        length(SharedServers) > 0 ->
-            create_worker_pool(shared),
-            cassandra_seestar_sup:start(shared, SharedServers);
-        true ->
-            ok
-    end,
-
-    create_worker_pool(Host),
-    cassandra_seestar_sup:start(Host, HostServers).
-
-%% Return {HostServers, SharedServers} : A list of server connection details for the host keyspace, and a list of the same for the shared keyspace
-get_servers(Host) ->
-    Config = ejabberd_config:get_local_option({?MODULE, Host}),
-
-    % Merge top level properties into keyspace properties
-    {value, {keyspaces, Keyspaces0}, TopProperties} = lists:keytake(keyspaces, 1, Config),
-    Keyspaces = lists:map(fun ({KeyspaceType, KeyspaceProperties}) ->
-                        Properties = lists:ukeymerge(1, lists:ukeysort(1,KeyspaceProperties), lists:ukeysort(1, TopProperties)),
-
-                        % Also extract keyspace name and ...
-                        {keyspace, Name0} = lists:keyfind(keyspace, 1, Properties),
-                        % ... replace %h with Host
-                        Name1 = re:replace(Name0, "%h", Host, [global]),
-                        {KeyspaceType, lists:keyreplace(keyspace, 1, Properties, {keyspace, cassandra:to_keyspace(Name1)})}
-                     end, Keyspaces0),
-
-    % Merge keyspace properties into servers list
-    Result = lists:foldl(fun ({KeyspaceType, Opts}, {HostServers, SharedServers}) ->
-                    {Properties, Servers} = case lists:keytake(servers, 1, Opts) of
-                        false ->
-                            {Opts, ?DEFAULT_SERVERS};
-                        {value, Tuple, TupleList} ->
-                            {servers, Value} = Tuple,
-                            {TupleList, Value}
-                    end,
-                    NewServers = lists:map(fun(A) -> lists:ukeymerge(1, lists:ukeysort(1, A), lists:ukeysort(1, Properties)) end, Servers),
-
-                    case KeyspaceType of
-                        host ->
-                            {NewServers, SharedServers};
-                        shared ->
-                            {HostServers, NewServers};
-                        _ ->
-                            {HostServers, SharedServers}
-                    end
-                end, {[], []}, Keyspaces),
-    Result.
-
-stop(Host) ->
-    {_, SharedServers} = get_servers(Host),
-    if
-        length(SharedServers) > 0 ->
-            delete_worker_pool(shared),
-            cassandra_seestar_sup:stop(shared);
-        true ->
-            ok
-    end,
-    delete_worker_pool(Host),
-    cassandra_seestar_sup:stop(Host).
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
-
-create_worker_pool(Host) ->
-    pg2:create(group_name(Host)).
-
-delete_worker_pool(Host) ->
-    pg2:delete(group_name(Host)).
-
-register_worker(Host, WorkerPid) ->
-    pg2:join(group_name(Host), WorkerPid).
-
-select_worker(Host, Query) ->
-    case pg2:get_local_members(group_name(Host)) of
-        [] ->
-            error({no_worker, Host});
-        Workers ->
-            N = erlang:phash2(Query, length(Workers)) + 1,
-            lists:nth(N, Workers)
-    end.
-
-group_name(Host) ->
-    {?MODULE, Host}.
 
 %%====================================================================
 %% Interface functions
 %%====================================================================
 
-start_link(Host, Server) ->
-    gen_server:start_link(?MODULE, [Host, Server], []).
+configure(Host, Config) ->
+    {HostServers, [SharedServers]} = prepare_config(Host, Config),
+    {ok, _} = create_worker_pool(shared, SharedServers),
+    lists:foreach(fun(HostServer) ->
+                          {ok, _} = create_worker_pool(Host, HostServer)
+                  end, HostServers).
+
+clear() ->
+    delete_worker_pools().
 
 aquery(Host, Query, Values, Consistency, PageSize) ->
-    gen_server:call(select_worker(Host, Query),
-                    {adhoc_query, Query, Values, Consistency, PageSize}).
+    call_worker(Host, {adhoc_query, Query, Values, Consistency, PageSize}).
 
 prepare_query(Host, Query) ->
-    gen_server:call(select_worker(Host, Query),
-                    {prepare_query, Query}).
+    call_worker(Host, {prepare_query, Query}).
 
 pquery(Host, Query, Values, Consistency, PageSize) ->
-    gen_server:call(select_worker(Host, Query),
-                    {prepared_query, Query, Values, Consistency, PageSize}).
+    call_worker(Host, {prepared_query, Query, Values, Consistency, PageSize}).
 
 % ToDo:
 % Needs review to ensure the function preconditions are suitable.
 % Maybe should be a gen_server:cast() instead?
 pquery_async(Host, Query, Values, Consistency, PageSize) ->
-    gen_server:call(select_worker(Host, Query),
-                    {prepared_query_async, Query, Values, Consistency, PageSize}).
+    call_worker(Host, {prepared_query_async, Query, Values, Consistency, PageSize}).
 
 batch_pquery(Host, Queries, Type, Consistency) ->
-    gen_server:call(select_worker(Host, Queries),
-                    {batch_prepared_queries, Queries, Type, Consistency}).
+    call_worker(Host, {batch_prepared_queries, Queries, Type, Consistency}).
 
 rows(Result) ->
     seestar_result:rows(Result).
 
 %%====================================================================
-%% Other internal functions
-%%====================================================================
-
-add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
-    case maps:find(Query, PQueries) of
-        {ok, Value} ->
-            {Value, State};
-        error ->
-            {ok, QueryRes} = seestar_session:prepare(ConnPid, Query),
-            NewQuery = #pquery{query = Query, id = seestar_result:query_id(QueryRes), types = seestar_result:types(QueryRes)},
-            Key = Query,
-            {NewQuery, State#state{pqueries = maps:put(Key, NewQuery, PQueries)}}
-    end.
-
-remove_prepared_query(Query, State=#state{pqueries=PQueries}) ->
-    State#state{pqueries = maps:remove(Query, PQueries)}.
-
-% Save an async query ref
-save_async_query_ref(From, QueryRef, State=#state{async_query_refs=Refs}) ->
-    State#state{async_query_refs=dict:store(QueryRef, From, Refs)}.
-
-forward_async_query_response(ResultFunc, QueryRef, State=#state{async_query_refs=Refs}) ->
-    case dict:find(QueryRef, Refs) of
-        {ok, From} ->
-            Refs2 = dict:erase(QueryRef, Refs),
-            gen_server:reply(From, ResultFunc),
-            State#state{async_query_refs=Refs2};
-        error ->
-            ?WARNING_MSG("Dropping async response ~p ~p", [QueryRef, ResultFunc()]),
-            State
-    end.
-
-%%====================================================================
 %% gen_server callbacks
 %%====================================================================
 
-init([Host, ServerSettings]) ->
-    register_worker(Host, self()),
-    {ok, ConnPid} = seestar_session:start_link(proplists:get_value(server, ServerSettings), proplists:get_value(port, ServerSettings), ServerSettings),
+start_link(Host, Server) ->
+    gen_server:start_link(?MODULE, [Host, Server], []).
 
-    State = #state{
-        host=Host,
-        conn=ConnPid,
-        pqueries=#{},
-        async_query_refs=dict:new()},
+init([Host, ServerSettings]) ->
+    lager:info("Seestar worker starting up for ~p", [Host]),
+    Server = proplists:get_value(server, ServerSettings),
+    Port = proplists:get_value(port, ServerSettings),
+    {ok, ConnPid} = seestar_session:start_link(Server, Port, ServerSettings),
+
+    State = #state{host=Host,
+                   conn=ConnPid,
+                   pqueries=#{},
+                   async_query_refs=dict:new()},
     {ok, State}.
 
 handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
@@ -301,23 +186,23 @@ handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From
     case Result of
         % If the query is unavailable (ie. schema changed), then forget it and retry
         {error, {error, ?UNPREPARED, _, _}} when Retry > 0 ->
-            ?WARNING_MSG("Unprepared query ~p: Retrying (~p)", [Query, Retry]),
+            lager:warning("Unprepared query ~p: Retrying (~p)", [Query, Retry]),
             handle_call(Request, From, remove_prepared_query(Query, State), Retry - 1);
         {error, {error, ?UNPREPARED, _, _}} ->
-            ?ERROR_MSG("Unprepared query ~p: Terminated", [Query]),
+            lager:error("Unprepared query ~p: Terminated", [Query]),
             {reply, Result, NewState};
         _ ->
             {reply, Result, NewState}
     end.
 
 handle_cast(Msg, State) ->
-    ?WARNING_MSG("Unknown cast message ~p.", [Msg]),
+    lager:warning("Unknown cast message ~p.", [Msg]),
     {noreply, State}.
 
 handle_info({seestar_response, QueryRef, ResultFunc}, State) ->
     {noreply, forward_async_query_response(ResultFunc, QueryRef, State)};
 handle_info(Msg, State) ->
-    ?WARNING_MSG("Unknown info message ~p.", [Msg]),
+    lager:warning("Unknown info message ~p.", [Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State=#state{conn=ConnPid}) ->
@@ -325,3 +210,129 @@ terminate(_Reason, _State=#state{conn=ConnPid}) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+
+%%====================================================================
+%% Internal functions
+%%====================================================================
+
+%% Return {HostServers, SharedServers} : A list of server connection details
+%% for the host keyspace, and a list of the same for the shared keyspace
+prepare_config(Host, Config) ->
+    %% Merge top level properties into keyspace properties
+    {value, {keyspaces, Keyspaces0}, TopProperties} = lists:keytake(keyspaces, 1, Config),
+    Keyspaces = lists:map(
+                  fun ({KeyspaceType, KeyspaceProperties}) ->
+                          Properties =
+                              lists:ukeymerge(1,
+                                              lists:ukeysort(1, KeyspaceProperties),
+                                              lists:ukeysort(1, TopProperties)),
+
+                          %% Also extract keyspace name and ...
+                          {keyspace, Name0} = lists:keyfind(keyspace, 1, Properties),
+                          %% ... replace %h with Host
+                          Name1 = re:replace(Name0, "%h", Host, [global]),
+                          KeyspaceName = cassandra:to_keyspace(Name1),
+
+                          {KeyspaceType,
+                           lists:keyreplace(keyspace, 1, Properties, {keyspace, KeyspaceName})}
+                  end, Keyspaces0),
+
+    %% Merge keyspace properties into servers list
+    Result = lists:foldl(
+               fun ({KeyspaceType, Opts}, {HostServers, SharedServers}) ->
+                       {Properties, Servers} =
+                           case lists:keytake(servers, 1, Opts) of
+                               false ->
+                                   {Opts, ?DEFAULT_SERVERS};
+
+                               {value, Tuple, TupleList} ->
+                                   {servers, Value} = Tuple,
+                                   {TupleList, Value}
+                           end,
+                       NewServers = lists:map(
+                                      fun(A) ->
+                                              lists:ukeymerge(1,
+                                                              lists:ukeysort(1, A),
+                                                              lists:ukeysort(1, Properties))
+                                      end, Servers),
+
+                       case KeyspaceType of
+                           host ->
+                               {NewServers, SharedServers};
+
+                           shared ->
+                               {HostServers, NewServers};
+
+                           _ ->
+                               {HostServers, SharedServers}
+                       end
+               end, {[], []}, Keyspaces),
+    Result.
+
+create_worker_pool(_Name, []) ->
+    {ok, empty};
+create_worker_pool(Name, Config) when is_list(Name) ->
+    create_worker_pool(list_to_atom(Name), Config);
+create_worker_pool(Name, Config) when is_binary(Name) ->
+    create_worker_pool(binary_to_atom(Name, utf8), Config);
+create_worker_pool(Name, Config) when is_atom(Name) ->
+    %% Ensure that there isn't an old pool with the same name
+    ok = pooler:rm_pool(Name),
+
+    MinWorkers = proplists:get_value(min_workers, Config, ?DEFAULT_MIN_WORKERS),
+    MaxWorkers = proplists:get_value(max_workers, Config, ?DEFAULT_MAX_WORKERS),
+    PoolConfig = [{name, Name},
+                  {group, seestar},
+                  {init_count, MinWorkers},
+                  {max_count, MaxWorkers},
+                  {start_mfa,
+                   {cassandra_seestar, start_link, [Name, Config]}}],
+
+    pooler:new_pool(PoolConfig).
+
+delete_worker_pools() ->
+    pooler:rm_group(seestar).
+
+call_worker(Host, Request) when is_list(Host) ->
+    Name = list_to_existing_atom(Host),
+    call_worker(Name, Request);
+call_worker(Host, Request) when is_binary(Host) ->
+    Name = binary_to_existing_atom(Host, utf8),
+    call_worker(Name, Request);
+call_worker(Host, Request) when is_atom(Host) ->
+    Pid = pooler:take_member(Host),
+    try
+        gen_server:call(Pid, Request)
+    after
+        pooler:return_member(Host, Pid, ok)
+    end.
+
+add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
+    case maps:find(Query, PQueries) of
+        {ok, Value} ->
+            {Value, State};
+        error ->
+            {ok, QueryRes} = seestar_session:prepare(ConnPid, Query),
+            NewQuery = #pquery{query = Query, id = seestar_result:query_id(QueryRes), types = seestar_result:types(QueryRes)},
+            Key = Query,
+            {NewQuery, State#state{pqueries = maps:put(Key, NewQuery, PQueries)}}
+    end.
+
+remove_prepared_query(Query, State=#state{pqueries=PQueries}) ->
+    State#state{pqueries = maps:remove(Query, PQueries)}.
+
+% Save an async query ref
+save_async_query_ref(From, QueryRef, State=#state{async_query_refs=Refs}) ->
+    State#state{async_query_refs=dict:store(QueryRef, From, Refs)}.
+
+forward_async_query_response(ResultFunc, QueryRef, State=#state{async_query_refs=Refs}) ->
+    case dict:find(QueryRef, Refs) of
+        {ok, From} ->
+            Refs2 = dict:erase(QueryRef, Refs),
+            gen_server:reply(From, ResultFunc),
+            State#state{async_query_refs=Refs2};
+        error ->
+            lager:warning("Dropping async response ~p ~p", [QueryRef, ResultFunc()]),
+            State
+    end.

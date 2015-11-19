@@ -3,6 +3,11 @@
 
 -module(cassandra_gen_backend).
 
+
+-callback configure(Host :: string(), Config :: [proplists:property()]) -> ok | {error, any()}.
+
+-callback clear() -> ok.
+
 -callback aquery(Host :: binary(), 
                  Query :: binary() | string(),
                  Values :: [cassandra:value()], 
