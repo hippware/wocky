@@ -71,7 +71,7 @@
 -behaviour(cassandra_gen_backend).
 -export([configure/2, clear/0,
          aquery/5,
-         prepare_query/2, pquery/5, pquery_async/5,
+         pquery/5, pquery_async/5,
          batch_pquery/4,
          rows/1]).
 
@@ -108,9 +108,6 @@ clear() ->
 
 aquery(Host, Query, Values, Consistency, PageSize) ->
     call_worker(Host, {adhoc_query, Query, Values, Consistency, PageSize}).
-
-prepare_query(Host, Query) ->
-    call_worker(Host, {prepare_query, Query}).
 
 pquery(Host, Query, Values, Consistency, PageSize) ->
     call_worker(Host, {prepared_query, Query, Values, Consistency, PageSize}).
@@ -149,10 +146,6 @@ init([Host, ServerSettings]) ->
 handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
     Result = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
     {reply, Result, State};
-
-handle_call({prepare_query, Query}, _From, State) ->
-    {_P, NewState} = add_prepared_query(Query, State),
-    {reply, ok, NewState};
 
 handle_call(Request={prepared_query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
     handle_call(Request, From, State, 3);
