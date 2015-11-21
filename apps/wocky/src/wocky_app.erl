@@ -10,8 +10,7 @@
 
 
 start() ->
-    application:start(wocky),
-    ejabberd:start().
+    application:start(wocky).
 
 %%%===================================================================
 %%% Application callbacks

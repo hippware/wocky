@@ -82,8 +82,7 @@ remove_user(Domain, UserName) ->
 %%%===================================================================
 
 create_user_id() ->
-    {UUID, _} = uuid:get_v1(uuid:new(self())),
-    UUID.
+    ossp_uuid:make(v1, binary).
 
 user_id_from_username(Domain, UserName) ->
     Query = <<"SELECT id FROM username_to_user WHERE domain = ? AND username = ?">>,
