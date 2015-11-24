@@ -1,16 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-$erlang_install = <<SCRIPT
-  if [ ! -x /usr/bin/erl ]; then
-    wget -nv https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
-    && dpkg -i esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
-    && apt-get update \
-    && apt-get install -y esl-erlang \
-    || apt-get -y -f install
-  fi
-SCRIPT
-
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -20,10 +10,50 @@ Vagrant.configure(2) do |config|
   # For a complete reference, please see the online documentation at
   # https://docs.vagrantup.com.
 
-  config.vm.define "local", primary: true do |local|
+  config.vm.define "wocky-local", primary: true do |local|
+    # Using Ubuntu 15.10 until the next LTS release comes out
     local.vm.box = "ubuntu/wily64"
+
+    # Forward the XMPP port to the host
     local.vm.network "forwarded_port", guest: 5280, host: 5280, auto_correct: true
-    local.vm.provision "shell", inline: $erlang_install
+
+    # Install Erlang from ESL, Cassandra from Datastax then load the wocky dev
+    # schema into Cassandra.
+    config.vm.provision "shell", inline: <<-SHELL
+      if [ ! -x /usr/bin/erl ]; then
+        wget -nv https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
+        && dpkg -i esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
+        && apt-get update \
+        && apt-get install -y esl-erlang \
+        || apt-get -y -f install
+      fi
+
+      if [ ! -x /usr/sbin/cassandra ]; then
+        echo 'deb http://debian.datastax.com/community stable main' > /etc/apt/sources.list.d/cassandra.list \
+        && curl -L https://debian.datastax.com/debian/repo_key | sudo apt-key add - \
+        && apt-get update \
+        && apt-get install -y openjdk-8-jre-headless \
+        && apt-get install -y cassandra=2.2.3 cassandra-tools=2.2.3 dsc22
+      fi
+
+      sleep 5
+      cqlsh -k wocky_shared -e 'EXIT' || cqlsh -f /vagrant/apps/wocky/priv/dev-bootstrap.cql
+    SHELL
+
+    # Technically we could provision Cassandra using Docker, but I was
+    # having problems getting the container to start properly
+    # local.vm.provision "docker" do |d|
+    #   d.pull_images "cassandra"
+    #   d.run 'cassandra',
+    #         args: '--name wocky-cassandra -d cassandra:2.2'
+    # end
+
+    # Since we are running Cassandra in the VM we need to allocate more
+    # RAM and another VCPU or Cassandra won't start due to OOM errors
+    local.vm.provider "virtualbox" do |vbox|
+      vbox.memory = 2048
+      vbox.cpus = 2
+    end
   end
 
   # Every Vagrant development environment requires a box. You can search for
