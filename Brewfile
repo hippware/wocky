@@ -11,6 +11,9 @@
 # Now you can run `brew bundle` from the root directory of the wocky project
 # and Homebrew will install everything you need.
 
+cask_args appdir: '/Applications'
+tap 'caskroom/cask'
+
 # Our core tech stack
 brew 'cassandra'
 brew 'erlang'
@@ -28,3 +31,7 @@ brew 'unixodbc'
 # CLI tools for services we use
 brew 'awscli'
 brew 'lastpass-cli'
+
+# Vagrant and dependencies
+cask 'virtualbox'
+cask 'vagrant'
