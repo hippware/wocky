@@ -1,6 +1,16 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+$erlang_install = <<SCRIPT
+  if [ ! -x /usr/bin/erl ]; then
+    wget -nv https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
+    && dpkg -i esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
+    && apt-get update \
+    && apt-get install -y esl-erlang \
+    || apt-get -y -f install
+  fi
+SCRIPT
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -13,7 +23,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "local", primary: true do |local|
     local.vm.box = "ubuntu/wily64"
     local.vm.network "forwarded_port", guest: 5280, host: 5280, auto_correct: true
-    local.vm.provision "shell", inline: "apt-get install -y erlang"
+    local.vm.provision "shell", inline: $erlang_install
   end
 
   # Every Vagrant development environment requires a box. You can search for
