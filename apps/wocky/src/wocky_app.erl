@@ -6,11 +6,24 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start/0]).
+-export([start/0, start/1, stop/0]).
 
 
 start() ->
-    application:start(wocky).
+    {ok, _} = application:ensure_all_started(wocky),
+    case application:start(wocky) of
+        ok -> ok;
+        {error, {already_started, _}} -> ok;
+        {error, _} = E -> E
+    end.
+
+start(Config) ->
+    ok = application:load(wocky),
+    [application:set_env(wocky, Key, Value) || {Key, Value} <- Config],
+    start().
+
+stop() ->
+    application:stop(wocky).
 
 %%%===================================================================
 %%% Application callbacks
