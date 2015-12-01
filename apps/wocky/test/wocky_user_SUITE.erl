@@ -34,11 +34,21 @@ suite() ->
 %%
 
 init_per_suite(Config) ->
-    application:start(wocky),
+    AppConfig = [
+        {host, "localhost"},
+        {cassandra_seestar, [
+            {auth, {seestar_password_auth, {<<"cassandra">>, <<"cassandra">>}}},
+            {keyspaces, [
+                {host, [{keyspace, "wocky_test_%h"}]},
+                {shared, [{keyspace, "wocky_test_shared"}]}
+            ]}
+        ]}
+    ],
+    ok = wocky_app:start(AppConfig),
     Config.
 
 end_per_suite(_Config) ->
-    application:stop(wocky),
+    ok = wocky_app:stop(),
     ok.
 
 init_per_testcase(_TestCase, Config) ->
@@ -90,11 +100,11 @@ set_password_fails_if_user_dne(_Config) ->
 remove_user_removes_user(_Config) ->
     ok    = wocky_user:create_user(?DOMAIN, ?USERNAME, ?PASSWORD),
     true  = wocky_user:does_user_exist(?DOMAIN, ?USERNAME),
-    ok    = wocky_user:remove_user(?DOMAIN, ?USERNAME, ?PASSWORD),
+    ok    = wocky_user:remove_user(?DOMAIN, ?USERNAME),
     false = wocky_user:does_user_exist(?DOMAIN, ?USERNAME),
     ok.
 
 remove_user_succeeds_if_user_dne(_Config) ->
     false = wocky_user:does_user_exist(?DOMAIN, ?USERNAME),
-    ok    = wocky_user:remove_user(?DOMAIN, ?USERNAME, ?PASSWORD),
+    ok    = wocky_user:remove_user(?DOMAIN, ?USERNAME),
     ok.
