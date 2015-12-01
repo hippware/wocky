@@ -82,6 +82,7 @@ maybe_configure() ->
 
         _Else ->
             %% Silently continue
+            lager:warning("No configuration found. Starting unconfigured!"),
             ok
     end.
 
