@@ -19,13 +19,13 @@
 %%% CREATE INDEX last_activity_timestamp ON last_activity(timestamp);
 
 %%% Enable with the following in ejabberd.cfg
-%%% {mod_last, [{backend, ca_seestar},
+%%% {mod_last, [{backend, wocky},
 %%%             % For protocol_v2
 %%%             {auth, {seestar_password_auth, {<<"username">>, <<"password">>}}},
 %%%             {keyspace, "<keyspace>"}
 %%%            ]},
 
--module(mod_last_ca_seestar).
+-module(mod_last_wocky).
 
 -behaviour(mod_last).
 
@@ -45,7 +45,7 @@
 ]).
 
 % Using ets to store state for lack of a more convenient cross-process alternative
--define(TABLE, mod_last_ca_seestar).
+-define(TABLE, mod_last_wocky).
 
 %% @doc Initialise this module (from {@link mod_last})
 -spec init(ejabberd:server(), list()) -> ok.

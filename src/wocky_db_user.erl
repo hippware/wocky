@@ -1,7 +1,7 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Wocky user model
 
--module(wocky_user).
+-module(wocky_db_user).
 
 %% API
 -export([create_user/3,
@@ -47,8 +47,8 @@ get_password(Domain, UserName) ->
         undefined -> {error, not_found};
         Id ->
             Query = <<"SELECT password FROM user WHERE id = ?">>,
-            {ok, Return} = cassandra:pquery(Domain, Query, [Id], quorum),
-            cassandra:single_result(Return)
+            {ok, Return} = wocky_db:pquery(Domain, Query, [Id], quorum),
+            wocky_db:single_result(Return)
     end.
 
 
@@ -61,7 +61,7 @@ set_password(Domain, UserName, Password) ->
         undefined -> {error, not_found};
         Id ->
             Query = <<"UPDATE user SET password = ? WHERE id = ?">>,
-            {ok, _} = cassandra:pquery(Domain, Query, [Password, Id], quorum),
+            {ok, _} = wocky_db:pquery(Domain, Query, [Password, Id], quorum),
             ok
     end.
 
@@ -86,22 +86,22 @@ create_user_id() ->
 
 user_id_from_username(Domain, UserName) ->
     Query = <<"SELECT id FROM username_to_user WHERE domain = ? AND username = ?">>,
-    {ok, Return} = cassandra:pquery(shared, Query, [Domain, UserName], quorum),
-    cassandra:single_result(Return).
+    {ok, Return} = wocky_db:pquery(shared, Query, [Domain, UserName], quorum),
+    wocky_db:single_result(Return).
 
 create_username_lookup(Id, Domain, UserName) ->
     Query = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?) IF NOT EXISTS">>,
-    {ok, Return} = cassandra:pquery(shared, Query, [Id, Domain, UserName], quorum),
-    cassandra:boolean_result(Return).
+    {ok, Return} = wocky_db:pquery(shared, Query, [Id, Domain, UserName], quorum),
+    wocky_db:boolean_result(Return).
 
 create_user_record(Id, Domain, UserName, Password) ->
     Query = <<"INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)">>,
-    cassandra:pquery(Domain, Query, [Id, Domain, UserName, Password], quorum).
+    wocky_db:pquery(Domain, Query, [Id, Domain, UserName, Password], quorum).
 
 remove_username_lookup(Domain, UserName) ->
     Query = <<"DELETE FROM username_to_user WHERE domain = ? AND username = ?">>,
-    cassandra:pquery(shared, Query, [Domain, UserName], quorum).
+    wocky_db:pquery(shared, Query, [Domain, UserName], quorum).
 
 remove_user_record(Id, Domain) ->
     Query = <<"DELETE FROM user WHERE id = ?">>,
-    cassandra:pquery(Domain, Query, [Id], quorum).
+    wocky_db:pquery(Domain, Query, [Id], quorum).

@@ -3,7 +3,7 @@
 %%%
 %%% Registers the "poke[0|1|2]" commands so it can be called from the command line to execute arbitrary code.
 
--module(wocky_debug).
+-module(mod_wocky_debug).
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/ejabberd_commands.hrl").

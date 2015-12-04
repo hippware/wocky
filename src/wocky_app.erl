@@ -33,10 +33,10 @@ start(_StartType, _StartArgs) ->
     {ok, Pid} = wocky_sup:start_link(),
 
     {ok, Backend} = application:get_env(wocky, backend),
-    ok = cassandra:start_backend(Backend),
+    ok = wocky_db:start_backend(Backend),
 
     %% Try to configure wocky using settings in the application environment
-    ok = cassandra:maybe_configure(),
+    ok = wocky_db:maybe_configure(),
 
     case application:get_env(wocky, start_ejabberd, false) of
         true  -> ejabberd:start();
