@@ -56,9 +56,9 @@
 %%%
 %%% == API ==
 %%%
-%%% For API documentation, see {@link cassandra}
+%%% For API documentation, see {@link wocky_db}
 
--module(cassandra_seestar).
+-module(wocky_db_seestar).
 
 -include_lib("seestar/include/constants.hrl").
 
@@ -68,7 +68,7 @@
 -export([start_link/2]).
 
 %% Interface functions
--behaviour(cassandra_gen_backend).
+-behaviour(wocky_db_backend).
 -export([configure/2, clear/0,
          aquery/5,
          pquery/5, pquery_async/5,
@@ -225,7 +225,7 @@ prepare_config(Host, Config) ->
                           {keyspace, Name0} = lists:keyfind(keyspace, 1, Properties),
                           %% ... replace %h with Host
                           Name1 = re:replace(Name0, "%h", Host, [global]),
-                          KeyspaceName = cassandra:to_keyspace(Name1),
+                          KeyspaceName = wocky_db:to_keyspace(Name1),
 
                           {KeyspaceType,
                            lists:keyreplace(keyspace, 1, Properties, {keyspace, KeyspaceName})}
@@ -280,7 +280,7 @@ create_worker_pool(Name, Config) when is_atom(Name) ->
                   {init_count, MinWorkers},
                   {max_count, MaxWorkers},
                   {start_mfa,
-                   {cassandra_seestar, start_link, [Name, Config]}}],
+                   {wocky_db_seestar, start_link, [Name, Config]}}],
 
     pooler:new_pool(PoolConfig).
 

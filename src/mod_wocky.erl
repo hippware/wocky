@@ -10,7 +10,7 @@
 %%% Other values can be added to the module options list. They are
 %%% backend-specific and will be passed as-is to the backend module.
 %%%
--module(mod_cassandra).
+-module(mod_wocky).
 
 %% gen_mod
 -behaviour(gen_mod).
@@ -19,7 +19,7 @@
 
 start(Host, _Opts) ->
     Config = ejabberd_config:get_local_option({cassandra_backend:backend(), Host}),
-    cassandra:configure(Host, Config).
+    wocky_db:configure(Host, Config).
 
 stop(_Host) ->
     ok.

@@ -3,7 +3,7 @@
 %%%
 %%% This is more of an example rather than something intended to be used in production.
 
--module(wocky_version).
+-module(mod_wocky_version).
 
 -behaviour(gen_mod).
 

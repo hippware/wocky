@@ -1,7 +1,7 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Cassandra based implementation of mod_roster
 
--module(mod_roster_cassandra).
+-module(mod_roster_wocky).
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
@@ -30,67 +30,67 @@
 %%%===================================================================
 
 -spec init(ejabberd:server(), list()) -> ok.
-init(Host, Opts) ->
+init(_Host, _Opts) ->
     ok.
 
 -spec transaction(ejabberd:lserver(), fun())
                  -> {aborted, any()} | {atomic, any()}.
-transaction(LServer, F) ->
+transaction(_LServer, _F) ->
     {aborted, []}.
 
 -spec read_roster_version(ejabberd:luser(), ejabberd:lserver())
                          -> binary() | error.
-read_roster_version(LUser, LServer) ->
+read_roster_version(_LUser, _LServer) ->
     error.
 
 -spec write_roster_version(ejabberd:luser(), ejabberd:lserver(),
                            boolean(), binary()) -> any().
-write_roster_version(LUser, LServer, InTransaction, Ver) ->
+write_roster_version(_LUser, _LServer, _InTransaction, _Ver) ->
     ok.
 
 -spec get_roster(ejabberd:luser(), ejabberd:lserver()) -> [mod_roster:roster()].
-get_roster(LUser, LServer) ->
+get_roster(_LUser, _LServer) ->
     [].
 
 -spec get_roster_by_jid_t(ejabberd:luser(), ejabberd:lserver(),
                           ejabberd:simple_jid()) -> term().
-get_roster_by_jid_t(LUser, LServer, LJid) ->
+get_roster_by_jid_t(_LUser, _LServer, _LJid) ->
     ok.
 
 -spec get_subscription_lists(term(), ejabberd:luser(), ejabberd:lserver())
                             -> term().
-get_subscription_lists(Acc, LUser, LServer) ->
+get_subscription_lists(_Acc, _LUser, _LServer) ->
     ok.
 
 -spec roster_subscribe_t(ejabberd:luser(), ejabberd:lserver(),
                          ejabberd:simple_jid(), mod_roster:roster()) -> term().
-roster_subscribe_t(LUser, LServer, LJid, SJid) ->
+roster_subscribe_t(_LUser, _LServer, _LJid, _SJid) ->
     ok.
 
 -spec get_roster_by_jid_with_groups_t(ejabberd:luser(), ejabberd:lserver(),
                                       ejabberd:simple_jid()) -> term().
-get_roster_by_jid_with_groups_t(LUser, LServer, LJid) ->
+get_roster_by_jid_with_groups_t(_LUser, _LServer, _LJid) ->
     ok.
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> term().
-remove_user(LUser, LServer) ->
+remove_user(_LUser, _LServer) ->
     ok.
 
 -spec update_roster_t(ejabberd:luser(), ejabberd:lserver(),
                       ejabberd:simple_jid(), mod_roster:roster()) -> term().
-update_roster_t(LUser, LServer, LJid, Item) ->
+update_roster_t(_LUser, _LServer, _LJid, _Item) ->
     ok.
 
 -spec del_roster_t(ejabberd:luser(), ejabberd:lserver(), ejabberd:simple_jid())
                   -> term().
-del_roster_t(LUser, LServer, LJid) ->
+del_roster_t(_LUser, _LServer, _LJid) ->
     ok.
 
 -spec read_subscription_and_groups(ejabberd:luser(), ejabberd:lserver(),
                                    ejabberd:simple_jid()) -> term().
-read_subscription_and_groups(LUser, LServer, LJid) ->
+read_subscription_and_groups(_LUser, _LServer, _LJid) ->
     ok.
 
 -spec raw_to_record(ejabberd:lserver(), term()) -> error | mod_roster:roster().
-raw_to_record(LServer, Item) ->
+raw_to_record(_LServer, _Item) ->
     ok.

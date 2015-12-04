@@ -1,6 +1,6 @@
 %%% @copyright 2015+ Hippware, Inc.
-%%% @doc Test suite for mod_roster_cassandra.erl
--module(mod_roster_cassandra_SUITE).
+%%% @doc Test suite for cassandra_seestar.erl
+-module(wocky_db_seestar_SUITE).
 
 -compile(export_all).
 

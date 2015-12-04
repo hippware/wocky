@@ -26,10 +26,10 @@
 %%% Enable with the following in ejabberd.cfg
 %%%
 %%% ```
-%%% {auth_method, cassandra}.
+%%% {auth_method, wocky}.
 %%% '''
 
--module(ejabberd_auth_cassandra).
+-module(ejabberd_auth_wocky).
 
 -behaviour(ejabberd_gen_auth).
 -export([start/1,
@@ -90,7 +90,7 @@ login(_User, _Server) ->
                   ) -> ok | {error, not_allowed | invalid_jid}.
 set_password(User, Server, Password) ->
     PreparedPass = prepare_password(Server, Password),
-    case wocky_user:set_password(Server, User, PreparedPass) of
+    case wocky_db_user:set_password(Server, User, PreparedPass) of
         ok ->
             ok;
 
@@ -103,7 +103,7 @@ set_password(User, Server, Password) ->
                      Server :: ejabberd:lserver(),
                      Password :: binary()) -> boolean().
 check_password(User, Server, Password) ->
-    case wocky_user:get_password(Server, User) of
+    case wocky_db_user:get_password(Server, User) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 #scram{} = Scram ->
@@ -125,7 +125,7 @@ check_password(User, Server, Password) ->
                      Digest :: binary(),
                      DigestGen :: fun()) -> boolean().
 check_password(User, Server, Password, Digest, DigestGen) ->
-    case wocky_user:get_password(Server, User) of
+    case wocky_db_user:get_password(Server, User) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 #scram{} = Scram ->
@@ -149,7 +149,7 @@ check_password(User, Server, Password, Digest, DigestGen) ->
                   ) -> ok | {error, exists | not_allowed | term()}.
 try_register(User, Server, Password) ->
     PreparedPass = prepare_password(Server, Password),
-    wocky_user:create_user(Server, User, PreparedPass).
+    wocky_db_user:create_user(Server, User, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
@@ -188,7 +188,7 @@ get_vh_registered_users_number(Server, _Opts) ->
                    Server :: ejabberd:lserver()
                   ) -> scram:scram_tuple() | binary() | false.
 get_password(User, Server) ->
-    case wocky_user:get_password(Server, User) of
+    case wocky_db_user:get_password(Server, User) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 #scram{} = Scram ->
@@ -228,7 +228,7 @@ get_password(User, Server, _DefaultValue) ->
                       Server :: ejabberd:lserver()
                      ) -> boolean() | {error, atom()}.
 does_user_exist(User, Server) ->
-    wocky_user:does_user_exist(Server, User).
+    wocky_db_user:does_user_exist(Server, User).
 
 
 -spec remove_user(User :: ejabberd:luser(),
@@ -237,7 +237,7 @@ does_user_exist(User, Server) ->
 remove_user(User, Server) ->
     case does_user_exist(User, Server) of
         true ->
-            wocky_user:remove_user(Server, User);
+            wocky_db_user:remove_user(Server, User);
 
         false ->
             %% Mission accomplished, the user no longer exists
@@ -255,7 +255,7 @@ remove_user(User, Server, Password) ->
     case does_user_exist(User, Server) of
         true ->
           case check_password(User, Server, Password) of
-              true -> wocky_user:remove_user(Server, User);
+              true -> wocky_db_user:remove_user(Server, User);
               false -> {error, not_allowed}
           end;
 

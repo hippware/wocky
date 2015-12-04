@@ -1,6 +1,6 @@
 %%% @copyright 2015+ Hippware, Inc.
-%%% @doc Test suite for cassandra_seestar.erl
--module(cassandra_seestar_SUITE).
+%%% @doc Test suite for ejabberd_auth_cassandra.erl
+-module(wocky_db_SUITE).
 
 -compile(export_all).
 
