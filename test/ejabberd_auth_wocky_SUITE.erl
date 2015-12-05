@@ -1,6 +1,6 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Test suite for ejabberd_auth_cassandra.erl
--module(wocky_user_SUITE).
+-module(ejabberd_auth_wocky_SUITE).
 
 -compile(export_all).
 
@@ -11,7 +11,7 @@
 %% Suite configuration
 %%
 
-all() -> 
+all() ->
     [my_test_case].
 
 groups() ->
@@ -48,5 +48,5 @@ end_per_testcase(_TestCase, _Config) ->
 %% Testcases
 %%
 
-my_test_case(_Config) -> 
+my_test_case(_Config) ->
     ok.

@@ -17,7 +17,7 @@
 %%% return `{ok, rows_result()}'. `result()' is a generalisation/superset of
 %%% `rows_result()'.
 
--module(cassandra).
+-module(wocky_db).
 
 -define(BACKEND, (cassandra_backend:backend())).
 
@@ -66,7 +66,7 @@ cassandra_backend(Backend) when is_atom(Backend) ->
 
         -spec backend() -> atom().
         backend() ->
-            cassandra_",
+            wocky_db_",
             atom_to_list(Backend),
             ".\n"]).
 
@@ -82,13 +82,14 @@ maybe_configure() ->
 
         _Else ->
             %% Silently continue
+            lager:warning("No configuration found. Starting unconfigured!"),
             ok
     end.
 
 %% @doc Configure the Cassandra backend using settings in the application
 %% environment. The settings are backend-dependent and should be in a tuple
 %% that is named the same as the backed; e.g, the configuration tuple for
-%% cassandra_seestar will be in a tuple that looks like {cassandra_seestar, [...]}.
+%% wocky_db_seestar will be in a tuple that looks like {wocky_db_seestar, [...]}.
 %%
 %% This function can be called multiple times and the configuration will be
 %% merged with the curent configuration with more recent entries overwriting
@@ -250,7 +251,7 @@ boolean_result(Result) ->
     %% Note: Result is <<1>> for success, <<0>> if error.
     %% There is no documentation on the return type so it's possible,
     %%   in the future, this may not be a binary.
-    cassandra:single_result(Result) /= <<0>>.
+    wocky_db:single_result(Result) /= <<0>>.
 
 %% @doc Uses cassandra to generate a version 1 UUID
 %%

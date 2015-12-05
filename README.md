@@ -63,6 +63,19 @@ Once both nodes are started, run the tests with:
 
     $ make quicktest
 
+Module naming convention
+========================
+
+To help keep everything straight we are following a simple naming convention.
+
+Erlang modules that:
+* interact with the database are prefixed with 'wocky_db'
+* implement functionality unique to wocky as ejabberd modules are prefixed with
+'mod_wocky'
+* implement backend functionality for existing ejabberd modules follow the naming
+convention established by ejabberd with 'wocky' as the backend name (i.e.,
+'ejabberd\_auth\_wocky' or 'mod\_roster\_wocky')
+
 Repository separation
 =====================
 Wocky incorporates an open source XMPP server. It also contains fully
