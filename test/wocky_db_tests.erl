@@ -5,6 +5,72 @@
 -include_lib("eunit/include/eunit.hrl").
 
 
+wocky_db_start_backend_test_() -> {
+  "wocky_db:start_backend",
+  foreach,
+  fun _Before() ->
+    code:purge(cassandra_backend),
+    code:delete(cassandra_backend),
+    ok = wocky_db:start_backend(seestar)
+  end,
+  fun _After(_) ->
+    ok
+  end,
+  [
+    { "should generate and load cassandra_backend", [
+      ?_assertMatch({file, _}, code:is_loaded(cassandra_backend))
+    ]},
+    { "should make cassandra_backend return seestar", [
+      ?_assertMatch(wocky_db_seestar, cassandra_backend:backend())
+    ]}
+  ]
+}.
+
+wocky_db_configure_test_() -> {
+  setup,
+  fun _Before() ->
+    meck:new(wocky_db_seestar),
+    meck:expect(wocky_db_seestar, configure,
+                fun(env_host, env_params) -> env_configured;
+                   (par_host, par_params) -> par_configured end),
+
+    meck:new(application, [unstick]),
+    meck:expect(application, get_env,
+                fun(wocky, host) -> {ok, env_host};
+                   (wocky, wocky_db_seestar) -> {ok, env_params} end)
+  end,
+  fun _After(_) ->
+    meck:unload(wocky_db_seestar),
+    meck:unload(application)
+  end,
+  [
+    { "maybe_configure/0 should call backend with settings from environment", [
+      ?_assertMatch(env_configured, wocky_db:maybe_configure()),
+      ?_assert(meck:validate(wocky_db_seestar)),
+      ?_assert(meck:validate(application))
+    ]},
+    { "maybe_configure/0 should return ok if no settings in environment", [
+      %% TODO: Need a good negative test here
+    ]},
+    { "maybe_configure/0 should return ok if bad settings in environment", [
+      %% TODO: Need a good negative test here
+    ]},
+    { "configure/0 should call backend with settings from environment", [
+      ?_assertMatch(env_configured, wocky_db:configure()),
+      ?_assert(meck:validate(wocky_db_seestar)),
+      ?_assert(meck:validate(application))
+    ]},
+    { "configure/0 should visibly fail if no settings in environment", [
+      %% TODO: Need a good negative test here
+    ]},
+    { "configure/2 should call backend with supplied params", [
+      ?_assertMatch(par_configured, wocky_db:configure(par_host, par_params)),
+      ?_assert(meck:validate(wocky_db_seestar)),
+      ?_assert(meck:validate(application))
+    ]}
+  ]
+}.
+
 wocky_db_test_() -> {
   "wocky_db",
   setup, fun before_all/0, fun after_all/1,
