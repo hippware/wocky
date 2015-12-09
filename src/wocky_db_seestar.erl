@@ -263,6 +263,12 @@ prepare_config(Host, Config) ->
                end, {[], []}, Keyspaces),
     Result.
 
+pool_name(Name) when is_atom(Name) ->
+    pool_name(atom_to_list(Name));
+pool_name(Name) ->
+    PoolName = ["wocky_db_", Name, "_pool"],
+    binary_to_atom(iolist_to_binary(PoolName), utf8).
+
 create_worker_pool(_Name, []) ->
     {ok, empty};
 create_worker_pool(Name, Config) when is_list(Name) ->
@@ -271,11 +277,12 @@ create_worker_pool(Name, Config) when is_binary(Name) ->
     create_worker_pool(binary_to_atom(Name, utf8), Config);
 create_worker_pool(Name, Config) when is_atom(Name) ->
     %% Ensure that there isn't an old pool with the same name
-    ok = pooler:rm_pool(Name),
+    PoolName = pool_name(Name),
+    ok = pooler:rm_pool(PoolName),
 
     MinWorkers = proplists:get_value(min_workers, Config, ?DEFAULT_MIN_WORKERS),
     MaxWorkers = proplists:get_value(max_workers, Config, ?DEFAULT_MAX_WORKERS),
-    PoolConfig = [{name, Name},
+    PoolConfig = [{name, PoolName},
                   {group, seestar},
                   {init_count, MinWorkers},
                   {max_count, MaxWorkers},
@@ -294,11 +301,12 @@ call_worker(Host, Request) when is_binary(Host) ->
     Name = binary_to_existing_atom(Host, utf8),
     call_worker(Name, Request);
 call_worker(Host, Request) when is_atom(Host) ->
-    Pid = pooler:take_member(Host),
+    Name = pool_name(Host),
+    Pid = pooler:take_member(Name),
     try
         gen_server:call(Pid, Request)
     after
-        pooler:return_member(Host, Pid, ok)
+        pooler:return_member(Name, Pid, ok)
     end.
 
 add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
