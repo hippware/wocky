@@ -1,0 +1,23 @@
+#!/bin/sh
+
+EXOMETER_PACKAGES="(minimal)"
+REBAR_CMD=./rebar3
+
+case $1 in
+    as)
+        case $2 in
+            test)
+                ERL_FLAGS="-config etc/test.config" $REBAR_CMD $@
+                ;;
+            *)
+                $REBAR_CMD $@
+                ;;
+        esac
+        ;;
+    (eunit|ct)
+        ERL_FLAGS="-config etc/test.config" $REBAR_CMD $@
+        ;;
+    *)
+        $REBAR_CMD $@
+        ;;
+esac
