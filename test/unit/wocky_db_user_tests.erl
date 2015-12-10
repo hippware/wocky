@@ -13,6 +13,7 @@ wocky_db_user_test_() -> {
   "wocky_db_user",
   setup, fun before_all/0, fun after_all/1,
   [
+    test_does_user_exist(),
     test_create_user(),
     test_get_password(),
     test_set_password(),
@@ -42,8 +43,18 @@ after_each(_) ->
     {ok, _} = wocky_db:pquery(?DOMAIN, <<"TRUNCATE user">>, [], quorum),
     ok.
 
+test_does_user_exist() ->
+  { "does_user_exist", setup, fun before_each/0, fun after_each/1, [
+    { "returns true if the user exists", [
+      ?_assert(wocky_db_user:does_user_exist(?DOMAIN, ?USER))
+    ]},
+    { "returns false if the user does not exist", [
+      ?_assertNot(wocky_db_user:does_user_exist(?DOMAIN, <<"baduser">>))
+    ]}
+  ]}.
+
 test_create_user() ->
-  { "create_user", foreach, fun before_each/0, fun after_each/1, [
+  { "create_user", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
       ?_assertMatch(ok, wocky_db_user:create_user(?DOMAIN, <<"alice">>, ?PASS)),
       ?_assert(wocky_db_user:does_user_exist(?DOMAIN, <<"alice">>))
@@ -55,7 +66,7 @@ test_create_user() ->
   ]}.
 
 test_get_password() ->
-  { "get_password", foreach, fun before_each/0, fun after_each/1, [
+  { "get_password", setup, fun before_each/0, fun after_each/1, [
     { "returns password if user exists", [
       ?_assertMatch(?PASS, wocky_db_user:get_password(?DOMAIN, ?USER))
     ]},
@@ -66,7 +77,7 @@ test_get_password() ->
   ]}.
 
 test_set_password() ->
-  { "set_password", foreach, fun before_each/0, fun after_each/1, [
+  { "set_password", setup, fun before_each/0, fun after_each/1, [
     { "sets password if user exists", [
       ?_assertMatch(ok, wocky_db_user:set_password(?DOMAIN, ?USER, <<"newpass">>)),
       ?_assertMatch(<<"newpass">>, wocky_db_user:get_password(?DOMAIN, ?USER))
@@ -78,7 +89,7 @@ test_set_password() ->
   ]}.
 
 test_remove_user() ->
-  { "remove_user", foreach, fun before_each/0, fun after_each/1, [
+  { "remove_user", setup, fun before_each/0, fun after_each/1, [
     { "removes user if user exists", [
       ?_assertMatch(ok, wocky_db_user:remove_user(?DOMAIN, ?USER)),
       ?_assertNot(wocky_db_user:does_user_exist(?DOMAIN, ?USER))
