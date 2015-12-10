@@ -6,7 +6,7 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start/0, start/1, stop/0]).
+-export([start/0, stop/0]).
 
 
 start() ->
@@ -17,11 +17,6 @@ start() ->
         {error, _} = E -> E
     end.
 
-start(Config) ->
-    ok = application:load(wocky),
-    [application:set_env(wocky, Key, Value) || {Key, Value} <- Config],
-    start().
-
 stop() ->
     application:stop(wocky).
 
@@ -31,9 +26,6 @@ stop() ->
 
 start(_StartType, _StartArgs) ->
     {ok, Pid} = wocky_sup:start_link(),
-
-    {ok, Backend} = application:get_env(wocky, backend),
-    ok = wocky_db:start_backend(Backend),
 
     %% Try to configure wocky using settings in the application environment
     ok = wocky_db:maybe_configure(),

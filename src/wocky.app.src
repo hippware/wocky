@@ -9,7 +9,6 @@
   {included_applications, [ejabberd, pooler]},
   {mod, {wocky_app, []}},
   {env, [
-         {backend, seestar},
          {start_ejabberd, false}
         ]}
  ]}.

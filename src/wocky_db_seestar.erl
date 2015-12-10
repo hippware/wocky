@@ -68,7 +68,6 @@
 -export([start_link/2]).
 
 %% Interface functions
--behaviour(wocky_db_backend).
 -export([configure/2, clear/0,
          aquery/5,
          pquery/5, pquery_async/5,

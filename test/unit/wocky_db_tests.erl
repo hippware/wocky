@@ -5,28 +5,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 
-wocky_db_start_backend_test_() -> {
-  "wocky_db:start_backend",
-  foreach,
-  fun _Before() ->
-    code:purge(cassandra_backend),
-    code:delete(cassandra_backend),
-    ok = wocky_db:start_backend(seestar)
-  end,
-  fun _After(_) ->
-    ok
-  end,
-  [
-    { "should generate and load cassandra_backend", [
-      ?_assertMatch({file, _}, code:is_loaded(cassandra_backend))
-    ]},
-    { "should make cassandra_backend return seestar", [
-      ?_assertMatch(wocky_db_seestar, cassandra_backend:backend())
-    ]}
-  ]
-}.
-
-wocky_db_configure_test_() -> {
 wocky_db_configure_from_env_test_() -> {
   setup,
   fun _Before() ->
@@ -39,7 +17,7 @@ wocky_db_configure_from_env_test_() -> {
     meck:new(application, [unstick]),
     meck:expect(application, get_env,
                 fun(wocky, host) -> {ok, env_host};
-                   (wocky, wocky_db_seestar) -> {ok, env_params} end)
+                   (wocky, wocky_db) -> {ok, env_params} end)
   end,
   fun _After(_) ->
     meck:unload(wocky_db_seestar),
@@ -77,7 +55,7 @@ wocky_db_configure_no_env_test_() -> {
     meck:new(application, [unstick]),
     meck:expect(application, get_env,
                 fun(wocky, host) -> undefined;
-                   (wocky, wocky_db_seestar) -> undefined end)
+                   (wocky, wocky_db) -> undefined end)
   end,
   fun _After(_) ->
     meck:unload(wocky_db_seestar),

@@ -18,7 +18,7 @@
 
 
 start(Host, _Opts) ->
-    Config = ejabberd_config:get_local_option({cassandra_backend:backend(), Host}),
+    Config = ejabberd_config:get_local_option({wocky_db, Host}),
     wocky_db:configure(Host, Config).
 
 stop(_Host) ->
