@@ -75,32 +75,15 @@ wocky_db_configure_no_env_test_() -> {
   ]
 }.
 
-wocky_db_test_() -> {
-  "wocky_db",
-  setup, fun before_all/0, fun after_all/1,
-  [
-    test_module_is_loaded()
-  ]
-}.
+-define(LONG_STRING, <<"Lorem ipsum dolor sit amet, consectetur cras amet.">>).
 
-before_all() ->
-    ok = wocky_app:start(),
-    ok.
-
-after_all(_) ->
-    ok = wocky_app:stop(),
-    ok.
-
-before_each() ->
-    ok.
-
-after_each(_) ->
-    ok.
-
-%% Simple placeholder test. Delete and replace with something more meaningful.
-test_module_is_loaded() ->
-  { "module", foreach, fun before_each/0, fun after_each/1, [
-    { "is loaded", [
-      ?_assertMatch({file, _}, code:is_loaded(wocky_db))
+wocky_db_to_keyspace_test_() -> {
+  "to_keyspace/1", [
+    { "should replace non-alphanumeric characters with underscores", [
+      ?_assertEqual(<<"abc123___">>, wocky_db:to_keyspace("abc123$!@"))
+    ]},
+    { "should truncate strings at 48 characters", [
+      ?_assert(byte_size(?LONG_STRING) > 48),
+      ?_assertEqual(48, byte_size(wocky_db:to_keyspace(?LONG_STRING)))
     ]}
-  ]}.
+]}.

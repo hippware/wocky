@@ -68,10 +68,11 @@
 -export([start_link/2]).
 
 %% Interface functions
--export([configure/2, clear/0,
-         aquery/5,
-         pquery/5, pquery_async/5,
-         batch_pquery/4,
+-export([configure/2,
+         clear/0,
+         query/5,
+         query_async/5,
+         batch_query/4,
          rows/1]).
 
 % Default configuration
@@ -105,20 +106,17 @@ configure(Host, Config) ->
 clear() ->
     delete_worker_pools().
 
-aquery(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {adhoc_query, Query, Values, Consistency, PageSize}).
-
-pquery(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {prepared_query, Query, Values, Consistency, PageSize}).
+query(Host, Query, Values, Consistency, PageSize) ->
+    call_worker(Host, {query, Query, Values, Consistency, PageSize}).
 
 % ToDo:
 % Needs review to ensure the function preconditions are suitable.
 % Maybe should be a gen_server:cast() instead?
-pquery_async(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {prepared_query_async, Query, Values, Consistency, PageSize}).
+query_async(Host, Query, Values, Consistency, PageSize) ->
+    call_worker(Host, {query_async, Query, Values, Consistency, PageSize}).
 
-batch_pquery(Host, Queries, Type, Consistency) ->
-    call_worker(Host, {batch_prepared_queries, Queries, Type, Consistency}).
+batch_query(Host, Queries, Type, Consistency) ->
+    call_worker(Host, {batch_queries, Queries, Type, Consistency}).
 
 rows(Result) ->
     seestar_result:rows(Result).
@@ -142,14 +140,10 @@ init([Host, ServerSettings]) ->
                    async_query_refs=dict:new()},
     {ok, State}.
 
-handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
-    Result = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
-    {reply, Result, State};
-
-handle_call(Request={prepared_query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
+handle_call(Request={query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
     handle_call(Request, From, State, 3);
 
-handle_call({batch_prepared_queries, Queries, Type, Consistency}, _From, State=#state{conn=ConnPid}) ->
+handle_call({batch_queries, Queries, Type, Consistency}, _From, State=#state{conn=ConnPid}) ->
     {ReversedQueries, NewState} = lists:foldl(
                 fun ({Query, Values}, {Acc, State0}) ->
                     {P, State1} = add_prepared_query(Query, State0),
@@ -159,7 +153,7 @@ handle_call({batch_prepared_queries, Queries, Type, Consistency}, _From, State=#
     Result = seestar_session:batch(ConnPid, Batch),
     {reply, Result, NewState};
 
-handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
+handle_call({query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
     {P, NewState} = add_prepared_query(Query, State),
     QueryRef = seestar_session:execute_async(ConnPid,
                                     P#pquery.id,
@@ -168,7 +162,7 @@ handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, 
                                     Consistency, PageSize),
     {noreply, save_async_query_ref(From, QueryRef, NewState)}.
 
-handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
+handle_call(Request={query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
     {P, NewState} = add_prepared_query(Query, State),
     Result = seestar_session:execute(ConnPid,
                                     P#pquery.id,
