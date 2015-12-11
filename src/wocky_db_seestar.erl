@@ -68,11 +68,10 @@
 -export([start_link/2]).
 
 %% Interface functions
--behaviour(wocky_db_backend).
--export([configure/2, clear/0,
-         aquery/5,
-         pquery/5, pquery_async/5,
-         batch_pquery/4,
+-export([configure/2,
+         clear/0,
+         query/5,
+         batch_query/4,
          rows/1]).
 
 % Default configuration
@@ -106,20 +105,11 @@ configure(Host, Config) ->
 clear() ->
     delete_worker_pools().
 
-aquery(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {adhoc_query, Query, Values, Consistency, PageSize}).
+query(Host, Query, Values, Consistency, PageSize) ->
+    call_worker(Host, {query, Query, Values, Consistency, PageSize}).
 
-pquery(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {prepared_query, Query, Values, Consistency, PageSize}).
-
-% ToDo:
-% Needs review to ensure the function preconditions are suitable.
-% Maybe should be a gen_server:cast() instead?
-pquery_async(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {prepared_query_async, Query, Values, Consistency, PageSize}).
-
-batch_pquery(Host, Queries, Type, Consistency) ->
-    call_worker(Host, {batch_prepared_queries, Queries, Type, Consistency}).
+batch_query(Host, Queries, Type, Consistency) ->
+    call_worker(Host, {batch_queries, Queries, Type, Consistency}).
 
 rows(Result) ->
     seestar_result:rows(Result).
@@ -143,14 +133,10 @@ init([Host, ServerSettings]) ->
                    async_query_refs=dict:new()},
     {ok, State}.
 
-handle_call({adhoc_query, Query, Values, Consistency, PageSize}, _From, State=#state{conn=ConnPid}) ->
-    Result = seestar_session:perform(ConnPid, Query, Consistency, Values, PageSize),
-    {reply, Result, State};
-
-handle_call(Request={prepared_query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
+handle_call(Request={query, _Query, _Values, _Consistency, _PageSize}, From, State) ->
     handle_call(Request, From, State, 3);
 
-handle_call({batch_prepared_queries, Queries, Type, Consistency}, _From, State=#state{conn=ConnPid}) ->
+handle_call({batch_queries, Queries, Type, Consistency}, _From, State=#state{conn=ConnPid}) ->
     {ReversedQueries, NewState} = lists:foldl(
                 fun ({Query, Values}, {Acc, State0}) ->
                     {P, State1} = add_prepared_query(Query, State0),
@@ -158,18 +144,9 @@ handle_call({batch_prepared_queries, Queries, Type, Consistency}, _From, State=#
                 end, {[], State}, Queries),
     Batch = seestar_batch:batch_request(Type, Consistency, lists:reverse(ReversedQueries)),
     Result = seestar_session:batch(ConnPid, Batch),
-    {reply, Result, NewState};
+    {reply, Result, NewState}.
 
-handle_call({prepared_query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
-    {P, NewState} = add_prepared_query(Query, State),
-    QueryRef = seestar_session:execute_async(ConnPid,
-                                    P#pquery.id,
-                                    P#pquery.types,
-                                    Values,
-                                    Consistency, PageSize),
-    {noreply, save_async_query_ref(From, QueryRef, NewState)}.
-
-handle_call(Request={prepared_query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
+handle_call(Request={query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
     {P, NewState} = add_prepared_query(Query, State),
     Result = seestar_session:execute(ConnPid,
                                     P#pquery.id,
@@ -192,8 +169,6 @@ handle_cast(Msg, State) ->
     lager:warning("Unknown cast message ~p.", [Msg]),
     {noreply, State}.
 
-handle_info({seestar_response, QueryRef, ResultFunc}, State) ->
-    {noreply, forward_async_query_response(ResultFunc, QueryRef, State)};
 handle_info(Msg, State) ->
     lager:warning("Unknown info message ~p.", [Msg]),
     {noreply, State}.
@@ -263,6 +238,12 @@ prepare_config(Host, Config) ->
                end, {[], []}, Keyspaces),
     Result.
 
+pool_name(Name) when is_atom(Name) ->
+    pool_name(atom_to_list(Name));
+pool_name(Name) ->
+    PoolName = ["wocky_db_", Name, "_pool"],
+    binary_to_atom(iolist_to_binary(PoolName), utf8).
+
 create_worker_pool(_Name, []) ->
     {ok, empty};
 create_worker_pool(Name, Config) when is_list(Name) ->
@@ -271,11 +252,12 @@ create_worker_pool(Name, Config) when is_binary(Name) ->
     create_worker_pool(binary_to_atom(Name, utf8), Config);
 create_worker_pool(Name, Config) when is_atom(Name) ->
     %% Ensure that there isn't an old pool with the same name
-    ok = pooler:rm_pool(Name),
+    PoolName = pool_name(Name),
+    ok = pooler:rm_pool(PoolName),
 
     MinWorkers = proplists:get_value(min_workers, Config, ?DEFAULT_MIN_WORKERS),
     MaxWorkers = proplists:get_value(max_workers, Config, ?DEFAULT_MAX_WORKERS),
-    PoolConfig = [{name, Name},
+    PoolConfig = [{name, PoolName},
                   {group, seestar},
                   {init_count, MinWorkers},
                   {max_count, MaxWorkers},
@@ -294,11 +276,12 @@ call_worker(Host, Request) when is_binary(Host) ->
     Name = binary_to_existing_atom(Host, utf8),
     call_worker(Name, Request);
 call_worker(Host, Request) when is_atom(Host) ->
-    Pid = pooler:take_member(Host),
+    Name = pool_name(Host),
+    Pid = pooler:take_member(Name),
     try
         gen_server:call(Pid, Request)
     after
-        pooler:return_member(Host, Pid, ok)
+        pooler:return_member(Name, Pid, ok)
     end.
 
 add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
@@ -314,18 +297,3 @@ add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
 
 remove_prepared_query(Query, State=#state{pqueries=PQueries}) ->
     State#state{pqueries = maps:remove(Query, PQueries)}.
-
-% Save an async query ref
-save_async_query_ref(From, QueryRef, State=#state{async_query_refs=Refs}) ->
-    State#state{async_query_refs=dict:store(QueryRef, From, Refs)}.
-
-forward_async_query_response(ResultFunc, QueryRef, State=#state{async_query_refs=Refs}) ->
-    case dict:find(QueryRef, Refs) of
-        {ok, From} ->
-            Refs2 = dict:erase(QueryRef, Refs),
-            gen_server:reply(From, ResultFunc),
-            State#state{async_query_refs=Refs2};
-        error ->
-            lager:warning("Dropping async response ~p ~p", [QueryRef, ResultFunc()]),
-            State
-    end.

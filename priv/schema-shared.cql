@@ -13,14 +13,6 @@ CREATE KEYSPACE wocky_shared
 USE wocky_shared;
 */
 
--- A dummy table for generating UUIDs ie. "SELECT NOW() from uuidgen"
-CREATE TABLE uuidgen (
-    id int,
-    PRIMARY KEY (id)
-);
--- Needs at least one row
-INSERT INTO uuidgen (id) VALUES (0);
-
 CREATE TABLE username_to_user (
     domain text,
     username text,

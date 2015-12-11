@@ -6,21 +6,12 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start/0, start/1, stop/0]).
+-export([start/0, stop/0]).
 
 
 start() ->
     {ok, _} = application:ensure_all_started(wocky),
-    case application:start(wocky) of
-        ok -> ok;
-        {error, {already_started, _}} -> ok;
-        {error, _} = E -> E
-    end.
-
-start(Config) ->
-    ok = application:load(wocky),
-    [application:set_env(wocky, Key, Value) || {Key, Value} <- Config],
-    start().
+    ok = application:ensure_started(wocky).
 
 stop() ->
     application:stop(wocky).
@@ -32,16 +23,11 @@ stop() ->
 start(_StartType, _StartArgs) ->
     {ok, Pid} = wocky_sup:start_link(),
 
-    {ok, Backend} = application:get_env(wocky, backend),
-    ok = wocky_db:start_backend(Backend),
-
     %% Try to configure wocky using settings in the application environment
     ok = wocky_db:maybe_configure(),
 
-    case application:get_env(wocky, start_ejabberd, false) of
-        true  -> ejabberd:start();
-        false -> ok
-    end,
+    StartEJD = application:get_env(wocky, start_ejabberd, false),
+    ok = maybe_start_ejabberd(StartEJD),
 
     {ok, Pid}.
 
@@ -51,3 +37,6 @@ stop(_State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+maybe_start_ejabberd(true)  -> ejabberd:start();
+maybe_start_ejabberd(false) -> ok.

@@ -1,4 +1,5 @@
 [submodule "ext/MongooseIM"]
 	path = ext/MongooseIM
 	url = git@github.com:esl/MongooseIM.git
-	branch = origin/1.6.0
+	branch = origin/1.6.1
+	ignore = dirty

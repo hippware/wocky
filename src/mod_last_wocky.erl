@@ -31,7 +31,7 @@
 
 -export([init/2,
          get_last/2,
-         count_active_users/3,
+         count_active_users/2,
          set_last_info/4,
          remove_user/2]).
 
@@ -109,17 +109,13 @@ get_last(LUser, LServer) ->
             {ok, (MegaSeconds * 1000000 + Seconds), Status}
     end.
 
--spec count_active_users(ejabberd:lserver(), non_neg_integer(), '<' | '>') ->
+-spec count_active_users(ejabberd:lserver(), non_neg_integer()) ->
     non_neg_integer().
-count_active_users(LServer, TimeStamp, Comparator) ->
-    ?INFO_MSG("~p ~p ~p", [LServer, TimeStamp, Comparator]),
+count_active_users(LServer, TimeStamp) ->
+    ?INFO_MSG("~p ~p", [LServer, TimeStamp]),
 
-    {QueryId, QueryTypes} = case Comparator of
-        '<' ->
-            {ets:lookup_element(?TABLE, count_lt_query_id, 2), ets:lookup_element(?TABLE, count_lt_query_types, 2)};
-        '>' ->
-            {ets:lookup_element(?TABLE, count_gt_query_id, 2), ets:lookup_element(?TABLE, count_gt_query_types, 2)}
-    end,
+    QueryId = ets:lookup_element(?TABLE, count_lt_query_id, 2),
+    QueryTypes = ets:lookup_element(?TABLE, count_lt_query_types, 2),
 
     Args = [iolist_to_binary(LServer), {0, TimeStamp, 0}],
     {ok, Result} = seestar_session:execute(ets:lookup_element(?TABLE, conn_pid, 2),
