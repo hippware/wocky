@@ -34,9 +34,7 @@
          configure/2,
          clear/0]).
 
--export([query/3, query/4, query/5,
-         query_async/3, query_async/4, query_async/5,
-         batch_query/4,
+-export([query/3, query/4, query/5, batch_query/4,
          rows/1, single_result/1, boolean_result/1,
          to_keyspace/1]).
 
@@ -125,37 +123,6 @@ query(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
              PageSize :: non_neg_integer() | undefined.
 query(Host, Query, Values, Consistency, PageSize) ->
     wocky_db_seestar:query(Host, Query, Values, Consistency, PageSize).
-
-%% @doc A wrapper around {@link query_async/5}
-%% @spec query_async(Host, Query, Consistency) -> ok
-query_async(Host, Query, Consistency) ->
-    query_async(Host, Query, [], Consistency, undefined).
-
-%% @doc A wrapper around {@link query_async/5}
-%% @spec query_async(Host, Query, Values, Consistency) -> ok
-query_async(Host, Query, Values, Consistency) when is_list(Values) ->
-    query_async(Host, Query, Values, Consistency, undefined);
-
-query_async(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
-    query_async(Host, Query, [], Consistency, PageSize).
-
-%% @doc Execute an asynchronous prepared query (in the context of a virtual host).
-%%
-%% `Query' is a query string where '?' characters are substituted with
-%% parameters from the `Values' list.
-%% `Host' is the virtual host to execute the query for.
-%%
-%% ToDo: The return value and how to signal the result to the caller hasn't
-%% been determined. Needs review and may change in the future.
-%%
--spec query_async(Host, Query, Values, Consistency, PageSize) -> ok when
-             Host :: binary(),
-             Query :: binary() | string(),
-             Values :: [value()],
-             Consistency :: consistency(),
-             PageSize :: non_neg_integer() | undefined.
-query_async(Host, Query, Values, Consistency, PageSize) ->
-    wocky_db_seestar:query_async(Host, Query, Values, Consistency, PageSize).
 
 %% @doc Executes a batch of queries as prepared queries (in the context of a virtual host).
 %%

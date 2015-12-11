@@ -110,5 +110,5 @@ wocky_db_api_smoke_test() ->
     ?assertEqual(3, length(wocky_db:rows(Result))),
 
     Q3 = <<"TRUNCATE username_to_user">>,
-    wocky_db:query_async(shared, Q3, quorum),
+    {ok, _} = wocky_db:query(shared, Q3, quorum, undefined),
     ok.

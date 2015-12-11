@@ -71,7 +71,6 @@
 -export([configure/2,
          clear/0,
          query/5,
-         query_async/5,
          batch_query/4,
          rows/1]).
 
@@ -109,12 +108,6 @@ clear() ->
 query(Host, Query, Values, Consistency, PageSize) ->
     call_worker(Host, {query, Query, Values, Consistency, PageSize}).
 
-% ToDo:
-% Needs review to ensure the function preconditions are suitable.
-% Maybe should be a gen_server:cast() instead?
-query_async(Host, Query, Values, Consistency, PageSize) ->
-    call_worker(Host, {query_async, Query, Values, Consistency, PageSize}).
-
 batch_query(Host, Queries, Type, Consistency) ->
     call_worker(Host, {batch_queries, Queries, Type, Consistency}).
 
@@ -151,16 +144,7 @@ handle_call({batch_queries, Queries, Type, Consistency}, _From, State=#state{con
                 end, {[], State}, Queries),
     Batch = seestar_batch:batch_request(Type, Consistency, lists:reverse(ReversedQueries)),
     Result = seestar_session:batch(ConnPid, Batch),
-    {reply, Result, NewState};
-
-handle_call({query_async, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}) ->
-    {P, NewState} = add_prepared_query(Query, State),
-    QueryRef = seestar_session:execute_async(ConnPid,
-                                    P#pquery.id,
-                                    P#pquery.types,
-                                    Values,
-                                    Consistency, PageSize),
-    {noreply, save_async_query_ref(From, QueryRef, NewState)}.
+    {reply, Result, NewState}.
 
 handle_call(Request={query, Query, Values, Consistency, PageSize}, From, State=#state{conn=ConnPid}, Retry) ->
     {P, NewState} = add_prepared_query(Query, State),
@@ -185,8 +169,6 @@ handle_cast(Msg, State) ->
     lager:warning("Unknown cast message ~p.", [Msg]),
     {noreply, State}.
 
-handle_info({seestar_response, QueryRef, ResultFunc}, State) ->
-    {noreply, forward_async_query_response(ResultFunc, QueryRef, State)};
 handle_info(Msg, State) ->
     lager:warning("Unknown info message ~p.", [Msg]),
     {noreply, State}.
@@ -315,18 +297,3 @@ add_prepared_query(Query, State=#state{conn=ConnPid, pqueries=PQueries}) ->
 
 remove_prepared_query(Query, State=#state{pqueries=PQueries}) ->
     State#state{pqueries = maps:remove(Query, PQueries)}.
-
-% Save an async query ref
-save_async_query_ref(From, QueryRef, State=#state{async_query_refs=Refs}) ->
-    State#state{async_query_refs=dict:store(QueryRef, From, Refs)}.
-
-forward_async_query_response(ResultFunc, QueryRef, State=#state{async_query_refs=Refs}) ->
-    case dict:find(QueryRef, Refs) of
-        {ok, From} ->
-            Refs2 = dict:erase(QueryRef, Refs),
-            gen_server:reply(From, ResultFunc),
-            State#state{async_query_refs=Refs2};
-        error ->
-            lager:warning("Dropping async response ~p ~p", [QueryRef, ResultFunc()]),
-            State
-    end.
