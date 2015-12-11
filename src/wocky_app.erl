@@ -11,11 +11,7 @@
 
 start() ->
     {ok, _} = application:ensure_all_started(wocky),
-    case application:start(wocky) of
-        ok -> ok;
-        {error, {already_started, _}} -> ok;
-        {error, _} = E -> E
-    end.
+    ok = application:ensure_started(wocky).
 
 stop() ->
     application:stop(wocky).
@@ -30,10 +26,8 @@ start(_StartType, _StartArgs) ->
     %% Try to configure wocky using settings in the application environment
     ok = wocky_db:maybe_configure(),
 
-    case application:get_env(wocky, start_ejabberd, false) of
-        true  -> ejabberd:start();
-        false -> ok
-    end,
+    StartEJD = application:get_env(wocky, start_ejabberd, false),
+    ok = maybe_start_ejabberd(StartEJD),
 
     {ok, Pid}.
 
@@ -43,3 +37,6 @@ stop(_State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+maybe_start_ejabberd(true)  -> ejabberd:start();
+maybe_start_ejabberd(false) -> ok.
