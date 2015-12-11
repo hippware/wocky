@@ -1,7 +1,6 @@
 .PHONY: all cleanall distclean eunit ct
 
 REBAR=./rebar3 $(REBAR_OPTS)
-TEST_REBAR=ERL_FLAGS="-config etc/test.config" $(REBAR)
 
 all: compile
 
@@ -12,7 +11,7 @@ distclean: clean
 	rm -rf _build
 
 eunit:
-	$(TEST_REBAR) eunit
+	$(REBAR) eunit
 
 # This compiles and runs one test suite. For quick feedback/TDD.
 # Example:
