@@ -7,14 +7,6 @@ CREATE KEYSPACE wocky_shared
 -- Use the keyspace just created
 USE wocky_shared;
 
--- A dummy table for generating UUIDs ie. "SELECT NOW() from uuidgen"
-CREATE TABLE uuidgen (
-    id int,
-    PRIMARY KEY (id)
-);
--- Needs at least one row
-INSERT INTO uuidgen (id) VALUES (0);
-
 CREATE TABLE username_to_user (
     domain text,
     username text,
@@ -35,14 +27,6 @@ CREATE KEYSPACE wocky_localhost
 
 -- Use the keyspace just created
 USE wocky_localhost;
-
--- A dummy table for generating UUIDs ie. "SELECT NOW() from uuidgen"
-CREATE TABLE uuidgen (
-    id int,
-    PRIMARY KEY (id)
-);
--- Needs at least one row
-INSERT INTO uuidgen (id) VALUES (0);
 
 -- ToDo: firstname, lastname
 CREATE TABLE user (
