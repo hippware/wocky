@@ -18,78 +18,19 @@
 %%% `rows_result()'.
 
 -module(wocky_db).
+-include_lib("cqerl/include/cqerl.hrl").
 
-
-%% Borrow definitions from seestar. If we change backend, then this may change too.
--type value() :: seestar_cqltypes:value().
--type consistency() :: any | one | two | three | quorum | all | local_quorum | each_quorum.
--type result() :: seestar_result:result().
--type error() :: seestar_error:error().
+%% Borrow definitions from cqerl.
+-type value() :: cqerl:parameter_val().
+-type consistency() :: cqerl:consistency_level().
+-type result() :: #cql_result{}.
+-type error() :: term().
 -export_type([value/0, consistency/0, result/0, error/0]).
--type rows_result() :: seestar_result:rows_result().
 
 %% API
--export([maybe_configure/0,
-         configure/0,
-         configure/2,
-         clear/0]).
-
 -export([query/3, query/4, query/5, batch_query/4,
-         rows/1, single_result/1, boolean_result/1,
+         rows/1, single_result/1,
          to_keyspace/1]).
-
-
-%%====================================================================
-%% Backend configuration
-%%====================================================================
-
-%% @doc Calls configure/0 if a configuration has been provided in the
-%% application environment. If no configuration is available, do nothing.
--spec maybe_configure() -> ok | {error, any()}.
-maybe_configure() ->
-    case config_env() of
-        {ok, Host, Config} ->
-            configure(Host, Config);
-
-        {error, no_config} ->
-            %% Silently continue
-            %% TODO: how do we handle lager in eunit tests?
-            %% lager:warning("No configuration found. Starting unconfigured!"),
-            ok
-    end.
-
-%% @doc Configure the Cassandra backend using settings in the application
-%% environment. The settings are backend-dependent and should be in a tuple
-%% that is named the same as the backed; e.g, the configuration tuple for
-%% wocky_db will be in a tuple that looks like {wocky_db, [...]}.
-%%
-%% This function can be called multiple times and the configuration will be
-%% merged with the curent configuration with more recent entries overwriting
-%% older ones.
--spec configure() -> ok | {error, any()}.
-configure() ->
-    case config_env() of
-        {ok, Host, Config} -> configure(Host, Config);
-        {error, no_config} = E -> E
-    end.
-
-%% @doc Configure the Cassandra backend using settings passed as arguments. The
-%% settings should be in the same format as if they were provided in the application
-%% environment.
-%%
-%% This function can be called multiple times and the configuration will be
-%% merged with the curent configuration with more recent entries overwriting
-%% older ones.
--spec configure(Host :: string(), Config :: [proplists:property()]) -> ok | {error, any()}.
-configure(Host, Config) ->
-    wocky_db_seestar:configure(Host, Config).
-
-%% @doc Clear the Cassandra backend configuration. After this call, the backend
-%% will be in a pristine state and it will be safe to call configure/0 or
-%% configure/2 again.
--spec clear() -> ok.
-clear() ->
-    wocky_db_seestar:clear().
 
 
 %%====================================================================
@@ -122,7 +63,11 @@ query(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
              Consistency :: consistency(),
              PageSize :: non_neg_integer() | undefined.
 query(Host, Query, Values, Consistency, PageSize) ->
-    wocky_db_seestar:query(Host, Query, Values, Consistency, PageSize).
+    run_query(Host, #cql_query{statement = Query,
+                               values = Values,
+                               reusable = true,
+                               consistency = Consistency,
+                               page_size = PageSize}).
 
 %% @doc Executes a batch of queries as prepared queries (in the context of a virtual host).
 %%
@@ -135,34 +80,27 @@ query(Host, Query, Values, Consistency, PageSize) ->
              Queries :: [{binary() | string(), [value()]}],
              Type :: logged | unlogged | counter,
              Consistency :: consistency().
-batch_query(Host, Queries, Type, Consistency) ->
-    wocky_db_seestar:batch_query(Host, Queries, Type, Consistency).
+batch_query(_Host, _Queries, _Type, _Consistency) ->
+    %% TODO: Implement this functions using cqerl
+    %% wocky_db_seestar:batch_query(Host, Queries, Type, Consistency).
+    {error, not_implemented}.
 
 %% @doc Extracts rows from a query result
 %%
 %% Returns a list of rows. Each row is a list of values.
 %%
--spec rows(Result :: rows_result()) -> [[value()]].
+-spec rows(Result :: result()) -> [[value()]].
 rows(Result) ->
-    wocky_db_seestar:rows(Result).
+    cqerl:all_rows(Result).
 
 %% @doc Extracts the value of the first column of the first row from a query result
 %%
--spec single_result(Result :: rows_result()) -> value() | undefined.
+-spec single_result(Result :: result()) -> value() | undefined.
 single_result(Result) ->
-    case rows(Result) of
-        [] -> undefined;
-        [[Value | _] | _] -> Value
+    case cqerl:head(Result) of
+        empty_dataset -> undefined;
+        [{_Name, Value}|_] -> Value
     end.
-
-%% @doc Extracts the boolean value from the result of a 'IF NOT EXISTS' query
-%%
--spec boolean_result(Result :: rows_result()) -> boolean().
-boolean_result(Result) ->
-    %% Note: Result is <<1>> for success, <<0>> if error.
-    %% There is no documentation on the return type so it's possible,
-    %%   in the future, this may not be a binary.
-    single_result(Result) /= <<0>>.
 
 %% @doc Modify a string so it is a valid keyspace
 %%
@@ -185,10 +123,13 @@ to_keyspace(String) ->
 %% Internal functions
 %%====================================================================
 
-config_env() ->
-    HostRes = application:get_env(wocky, host),
-    ConfigRes = application:get_env(wocky, wocky_db),
-    case {HostRes, ConfigRes} of
-        {{ok, Host}, {ok, Config}} -> {ok, Host, Config};
-        _Else -> {error, no_config}
-    end.
+keyspace_name(KS) when is_atom(KS) ->
+    keyspace_name(atom_to_list(KS));
+keyspace_name(KS) ->
+    iolist_to_binary(["wocky_", KS]).
+
+run_query(Keyspace, Query) ->
+    {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Keyspace)}]),
+    {ok, Result} = cqerl:run_query(Client, Query),
+    cqerl:close_client(Client),
+    {ok, Result}.
