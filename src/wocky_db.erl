@@ -28,7 +28,7 @@
 -export_type([value/0, consistency/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, query/5, batch_query/4,
+-export([query/3, query/4, query/5, batch_query/5,
          rows/1, single_result/1,
          to_keyspace/1]).
 
@@ -75,15 +75,19 @@ query(Host, Query, Values, Consistency, PageSize) ->
 %% `Query' is a query string where '?' characters are substituted with
 %% parameters from the list `Values'.
 %%
--spec batch_query(Host, Queries, Type, Consistency) -> {ok, Result :: seestar_result:result()} | {error, Error :: seestar_error:error()} when
+-spec batch_query(Host, Query, Values, Mode, Consistency)
+                 -> {ok, Result :: result()}
+                 | {error, Error :: any()} when
              Host :: binary(),
-             Queries :: [{binary() | string(), [value()]}],
-             Type :: logged | unlogged | counter,
+             Query :: binary() | string(),
+             Values :: [value()],
+             Mode :: logged | unlogged | counter,
              Consistency :: consistency().
-batch_query(_Host, _Queries, _Type, _Consistency) ->
-    %% TODO: Implement this functions using cqerl
-    %% wocky_db_seestar:batch_query(Host, Queries, Type, Consistency).
-    {error, not_implemented}.
+batch_query(Host, Query, Values, Mode, Consistency) ->
+    Q = #cql_query{statement = Query},
+    BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
+    {ok, void} = run_query(Host, make_batch_query(Q, Values, BQ)).
+
 
 %% @doc Extracts rows from a query result
 %%
@@ -133,3 +137,9 @@ run_query(Keyspace, Query) ->
     {ok, Result} = cqerl:run_query(Client, Query),
     cqerl:close_client(Client),
     {ok, Result}.
+
+make_batch_query(_Q, [], #cql_query_batch{queries = Qs} = Batch) ->
+    Batch#cql_query_batch{queries = lists:reverse(Qs)};
+make_batch_query(Q, [Vs | Rest], #cql_query_batch{queries = Qs} = Batch) ->
+    make_batch_query(Q, Rest,
+        Batch#cql_query_batch{queries = [Q#cql_query{values = Vs} | Qs]}).

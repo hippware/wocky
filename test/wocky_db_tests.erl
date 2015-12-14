@@ -23,23 +23,26 @@ wocky_db_to_keyspace_test_() -> {
 %% thoroughly since at that point we would essentially be testing the
 %% Cassandra driver.
 
-wocky_db_api_smoke_testx() ->
+wocky_db_api_smoke_test() ->
     ok = wocky_app:start(),
 
     Q1 = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?)">>,
-    Queries = [
-      {Q1, [ossp_uuid:make(v1, binary), <<"localhost">>, <<"alice">>]},
-      {Q1, [ossp_uuid:make(v1, binary), <<"localhost">>, <<"bob">>]},
-      {Q1, [ossp_uuid:make(v1, binary), <<"localhost">>, <<"charlie">>]}
+    Values = [
+      [{id, now}, {domain, <<"localhost">>}, {username, <<"alice">>}],
+      [{id, now}, {domain, <<"localhost">>}, {username, <<"bob">>}],
+      [{id, now}, {domain, <<"localhost">>}, {username, <<"charlie">>}]
     ],
-    {ok, _} = wocky_db:batch_query(shared, Queries, unlogged, quorum),
+    {ok, _} = wocky_db:batch_query(shared, Q1, Values, unlogged, quorum),
 
     Q2 = <<"SELECT username FROM username_to_user">>,
-    {ok, Result} = wocky_db:query(shared, Q2, quorum),
-    ?assertEqual(3, length(wocky_db:rows(Result))),
+    {ok, R1} = wocky_db:query(shared, Q2, quorum),
+    ?assertEqual(3, length(wocky_db:rows(R1))),
 
     Q3 = <<"TRUNCATE username_to_user">>,
     {ok, _} = wocky_db:query(shared, Q3, quorum, undefined),
+
+    {ok, R2} = wocky_db:query(shared, Q2, quorum),
+    ?assertEqual(0, length(wocky_db:rows(R2))),
 
     wocky_app:stop(),
     ok.
