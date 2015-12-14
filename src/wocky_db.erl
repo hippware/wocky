@@ -127,10 +127,13 @@ to_keyspace(String) ->
 %% Internal functions
 %%====================================================================
 
+keyspace_prefix() ->
+    application:get_env(wocky, keyspace_prefix, "wocky_").
+
 keyspace_name(KS) when is_atom(KS) ->
     keyspace_name(atom_to_list(KS));
 keyspace_name(KS) ->
-    iolist_to_binary(["wocky_", KS]).
+    iolist_to_binary([keyspace_prefix(), KS]).
 
 run_query(Keyspace, Query) ->
     {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Keyspace)}]),
