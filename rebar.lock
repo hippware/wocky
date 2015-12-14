@@ -1,6 +1,6 @@
 [{<<"alarms">>,
   {git,"https://github.com/toland/alarms",
-       {ref,"34d3909e6d0066576704f08934ee33190782db94"}},
+       {ref,"8c21f357d8ea6fe2dbd0beb20bde131b355612de"}},
   0},
  {<<"base16">>,
   {git,"https://github.com/goj/base16",
