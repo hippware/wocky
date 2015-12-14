@@ -1,17 +1,11 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Cassandra dispatcher
 %%%
-%%% This initialises, and dispatches to, a configurable backend.
-%%% The backend interfaces with the Cassandra driver.
+%%% This dispatches to the Cassandra driver.
 %%%
 %%% Whilst this is supposed to be a generic Cassandra interface, for practical
 %%% purposes, it is still closely coupled to the backend. If we ever support
 %%% more than one backend, then the interface needs to be made backend agnostic.
-%%%
-%%% The other reason for this module is to reduce verbosity.
-%%% It's nicer to write cassandra:func() rather than cassandra_seestar:func().
-%%%
-%%% Generally, use prepared queries unless there is a good reason not to.
 %%%
 %%% The query functions are spec-ced to return `{ok, result()}' but usually
 %%% return `{ok, rows_result()}'. `result()' is a generalisation/superset of

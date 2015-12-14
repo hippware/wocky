@@ -29,12 +29,13 @@ init([]) ->
                  intensity => 1,
                  period    => 5},
 
-    %% PoolerSup = #{id       => pooler_sup,
-    %%               start    => {pooler_sup, start_link, []},
-    %%               restart  => permanent,
-    %%               shutdown => infinity,
-    %%               type     => supervisor,
-    %%               modules  => [pooler_sup]},
+    %% Example child supervisor spec
+    %% ChildSup = #{id       => child_sup,
+    %%              start    => {child_sup, start_link, []},
+    %%              restart  => permanent,
+    %%              shutdown => infinity,
+    %%              type     => supervisor,
+    %%              modules  => [child_sup]},
 
     {ok, {SupFlags, []}}.
 
