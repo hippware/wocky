@@ -67,7 +67,7 @@ query(Host, Query, Values, Consistency) ->
 batch_query(Host, Query, Values, Mode, Consistency) ->
     Q = #cql_query{statement = Query},
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
-    {ok, void} = run_query(Host, make_batch_query(Q, Values, BQ)).
+    run_query(Host, make_batch_query(Q, Values, BQ)).
 
 
 %% @doc Extracts rows from a query result
@@ -119,9 +119,9 @@ keyspace_name(KS) ->
 
 run_query(Keyspace, Query) ->
     {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Keyspace)}]),
-    {ok, Result} = cqerl:run_query(Client, Query),
+    Return = cqerl:run_query(Client, Query),
     cqerl:close_client(Client),
-    {ok, Result}.
+    Return.
 
 make_batch_query(_Q, [], #cql_query_batch{queries = Qs} = Batch) ->
     Batch#cql_query_batch{queries = lists:reverse(Qs)};
