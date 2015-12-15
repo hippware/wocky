@@ -26,7 +26,7 @@
 -export_type([result/0, error/0]).
 
 %% API
--export([query/3, query/4, query/5, batch_query/5,
+-export([query/3, query/4, batch_query/5,
          rows/1, single_result/1,
          to_keyspace/1]).
 
@@ -35,37 +35,25 @@
 %% API
 %%====================================================================
 
-%% @doc A wrapper around {@link query/5}
-%% @spec query(Host, Query, Consistency) -> {ok, Result :: result()} | {error, Error :: error()}
-query(Host, Query, Consistency) ->
-    query(Host, Query, [], Consistency, undefined).
-
-%% @doc A wrapper around {@link query/5}
-%% @spec query(Host, Query, Values, Consistency) -> {ok, Result :: result()} | {error, Error :: error()}
-query(Host, Query, Values, Consistency) when is_list(Values) ->
-    query(Host, Query, Values, Consistency, undefined);
-
-query(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
-    query(Host, Query, [], Consistency, PageSize).
-
 %% @doc Execute a query as a prepared query (in the context of a virtual host).
 %%
+%% @doc A wrapper around {@link query/5}
+-spec query(host(), query(), consistency())
+           -> {ok, void} | {ok, result()} | {error, error()}.
+query(Host, Query, Consistency) ->
+    query(Host, Query, [], Consistency).
+
 %% `Query' is a query string where '?' characters are substituted with
 %% parameters from the `Values' list.
 %% `Host' is the virtual host to execute the query for.
 %%
--spec query(Host, Query, Values, Consistency, PageSize) -> {ok, Result :: result()} | {error, Error :: error()} when
-             Host :: binary(), % ejabberd:server()
-             Query :: binary() | string(), % seestar_session:'query'()
-             Values :: [value()],
-             Consistency :: consistency(),
-             PageSize :: non_neg_integer() | undefined.
-query(Host, Query, Values, Consistency, PageSize) ->
+-spec query(host(), query(), values(), consistency())
+           -> {ok, void} | {ok, result()} | {error, error()}.
+query(Host, Query, Values, Consistency) ->
     run_query(Host, #cql_query{statement = Query,
                                values = Values,
                                reusable = true,
-                               consistency = Consistency,
-                               page_size = PageSize}).
+                               consistency = Consistency}).
 
 %% @doc Executes a batch of queries as prepared queries (in the context of a
 %% virtual host).
