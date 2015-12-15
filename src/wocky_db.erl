@@ -14,12 +14,16 @@
 -module(wocky_db).
 -include_lib("cqerl/include/cqerl.hrl").
 
-%% Borrow definitions from cqerl.
+-type host() :: binary().
+-type query() :: iodata().
 -type value() :: cqerl:parameter_val().
+-type values() :: [value()].
 -type consistency() :: cqerl:consistency_level().
+-type batch_mode() :: logged | unlogged | counter.
 -type result() :: #cql_result{}.
 -type error() :: term().
--export_type([value/0, consistency/0, result/0, error/0]).
+-export_type([host/0, query/0, value/0, values/0, consistency/0, batch_mode/0]).
+-export_type([result/0, error/0]).
 
 %% API
 -export([query/3, query/4, query/5, batch_query/5,
@@ -63,20 +67,15 @@ query(Host, Query, Values, Consistency, PageSize) ->
                                consistency = Consistency,
                                page_size = PageSize}).
 
-%% @doc Executes a batch of queries as prepared queries (in the context of a virtual host).
+%% @doc Executes a batch of queries as prepared queries (in the context of a
+%% virtual host).
 %%
 %% `Queries' is a list of `{Query, Values}' tuples where
 %% `Query' is a query string where '?' characters are substituted with
 %% parameters from the list `Values'.
 %%
--spec batch_query(Host, Query, Values, Mode, Consistency)
-                 -> {ok, Result :: result()}
-                 | {error, Error :: any()} when
-             Host :: binary(),
-             Query :: binary() | string(),
-             Values :: [value()],
-             Mode :: logged | unlogged | counter,
-             Consistency :: consistency().
+-spec batch_query(host(), query(), values(), batch_mode(), consistency())
+                 -> {ok, void} | {error, error()}.
 batch_query(Host, Query, Values, Mode, Consistency) ->
     Q = #cql_query{statement = Query},
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
@@ -87,13 +86,14 @@ batch_query(Host, Query, Values, Mode, Consistency) ->
 %%
 %% Returns a list of rows. Each row is a list of values.
 %%
--spec rows(Result :: result()) -> [[value()]].
+-spec rows(result()) -> [values()].
 rows(Result) ->
     cqerl:all_rows(Result).
 
-%% @doc Extracts the value of the first column of the first row from a query result
+%% @doc Extracts the value of the first column of the first row from a query
+%% result
 %%
--spec single_result(Result :: result()) -> value() | undefined.
+-spec single_result(result()) -> value() | undefined.
 single_result(Result) ->
     case cqerl:head(Result) of
         empty_dataset -> undefined;
@@ -105,7 +105,7 @@ single_result(Result) ->
 %% All invalid characters are replaced with underscore and then
 %% truncated to 48 characters. Returns the modified string.
 %%
--spec to_keyspace(String :: binary()) -> binary().
+-spec to_keyspace(binary()) -> binary().
 to_keyspace(String) ->
     Space = iolist_to_binary(re:replace(String, "[^0-9a-z]", "_", [global])),
     case byte_size(Space) of
