@@ -23,9 +23,6 @@ stop() ->
 start(_StartType, _StartArgs) ->
     {ok, Pid} = wocky_sup:start_link(),
 
-    %% Try to configure wocky using settings in the application environment
-    ok = wocky_db:maybe_configure(),
-
     StartEJD = application:get_env(wocky, start_ejabberd, false),
     ok = maybe_start_ejabberd(StartEJD),
 

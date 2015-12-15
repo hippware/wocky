@@ -32,15 +32,17 @@ after_all(_) ->
 before_each() ->
     UUID = ossp_uuid:make(v1, binary),
     Query1 = "INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?)",
-    {ok, _} = wocky_db:query(shared, Query1, [UUID, ?DOMAIN, ?USER], quorum),
+    Values1 = [{id, UUID}, {domain, ?DOMAIN}, {username, ?USER}],
+    {ok, _} = wocky_db:query(shared, Query1, Values1, quorum),
 
     Query2 = "INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)",
-    {ok, _} = wocky_db:query(?DOMAIN, Query2, [UUID, ?DOMAIN, ?USER, ?PASS], quorum),
+    Values2 = [{id, UUID}, {domain, ?DOMAIN}, {username, ?USER}, {password, ?PASS}],
+    {ok, _} = wocky_db:query(?DOMAIN, Query2, Values2, quorum),
     ok.
 
 after_each(_) ->
-    {ok, _} = wocky_db:query(shared, <<"TRUNCATE username_to_user">>, [], quorum),
-    {ok, _} = wocky_db:query(?DOMAIN, <<"TRUNCATE user">>, [], quorum),
+    {ok, _} = wocky_db:query(shared, <<"TRUNCATE username_to_user">>, quorum),
+    {ok, _} = wocky_db:query(?DOMAIN, <<"TRUNCATE user">>, quorum),
     ok.
 
 test_does_user_exist() ->

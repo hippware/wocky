@@ -4,6 +4,7 @@ deps
 ebin
 test/nodes
 _build
+_checkouts
 .eunit
 .rebar
 *.nonode@nohost

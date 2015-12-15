@@ -47,7 +47,7 @@ get_password(Domain, UserName) ->
         undefined -> {error, not_found};
         Id ->
             Query = <<"SELECT password FROM user WHERE id = ?">>,
-            {ok, Return} = wocky_db:query(Domain, Query, [Id], quorum),
+            {ok, Return} = wocky_db:query(Domain, Query, [{id, Id}], quorum),
             wocky_db:single_result(Return)
     end.
 
@@ -61,7 +61,8 @@ set_password(Domain, UserName, Password) ->
         undefined -> {error, not_found};
         Id ->
             Query = <<"UPDATE user SET password = ? WHERE id = ?">>,
-            {ok, _} = wocky_db:query(Domain, Query, [Password, Id], quorum),
+            Values = [{password, Password}, {id, Id}],
+            {ok, _} = wocky_db:query(Domain, Query, Values, quorum),
             ok
     end.
 
@@ -86,22 +87,26 @@ create_user_id() ->
 
 user_id_from_username(Domain, UserName) ->
     Query = <<"SELECT id FROM username_to_user WHERE domain = ? AND username = ?">>,
-    {ok, Return} = wocky_db:query(shared, Query, [Domain, UserName], quorum),
+    Values = [{domain, Domain}, {username, UserName}],
+    {ok, Return} = wocky_db:query(shared, Query, Values, quorum),
     wocky_db:single_result(Return).
 
 create_username_lookup(Id, Domain, UserName) ->
     Query = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?) IF NOT EXISTS">>,
-    {ok, Return} = wocky_db:query(shared, Query, [Id, Domain, UserName], quorum),
-    wocky_db:boolean_result(Return).
+    Values = [{id, Id}, {domain, Domain}, {username, UserName}],
+    {ok, Return} = wocky_db:query(shared, Query, Values, quorum),
+    wocky_db:single_result(Return).
 
 create_user_record(Id, Domain, UserName, Password) ->
     Query = <<"INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)">>,
-    wocky_db:query(Domain, Query, [Id, Domain, UserName, Password], quorum).
+    Values = [{id, Id}, {domain, Domain}, {username, UserName}, {password, Password}],
+    wocky_db:query(Domain, Query, Values, quorum).
 
 remove_username_lookup(Domain, UserName) ->
     Query = <<"DELETE FROM username_to_user WHERE domain = ? AND username = ?">>,
-    wocky_db:query(shared, Query, [Domain, UserName], quorum).
+    Values = [{domain, Domain}, {username, UserName}],
+    wocky_db:query(shared, Query, Values, quorum).
 
 remove_user_record(Id, Domain) ->
     Query = <<"DELETE FROM user WHERE id = ?">>,
-    wocky_db:query(Domain, Query, [Id], quorum).
+    wocky_db:query(Domain, Query, [{id, Id}], quorum).
