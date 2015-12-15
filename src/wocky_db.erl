@@ -14,10 +14,10 @@
 -module(wocky_db).
 -include_lib("cqerl/include/cqerl.hrl").
 
--type host() :: binary().
+-type host() :: atom() | binary().
 -type query() :: iodata().
 -type value() :: cqerl:parameter_val().
--type values() :: [value()].
+-type values() :: [cqerl:named_parameter()].
 -type consistency() :: cqerl:consistency_level().
 -type batch_mode() :: logged | unlogged | counter.
 -type result() :: #cql_result{}.
@@ -68,7 +68,6 @@ batch_query(Host, Query, Values, Mode, Consistency) ->
     Q = #cql_query{statement = Query},
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
     run_query(Host, make_batch_query(Q, Values, BQ)).
-
 
 %% @doc Extracts rows from a query result
 %%
