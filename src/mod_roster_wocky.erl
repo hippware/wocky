@@ -93,4 +93,4 @@ read_subscription_and_groups(_LUser, _LServer, _LJid) ->
 
 -spec raw_to_record(ejabberd:lserver(), term()) -> error | mod_roster:roster().
 raw_to_record(_LServer, _Item) ->
-    ok.
+    error.
