@@ -26,7 +26,7 @@ wocky_db_to_keyspace_test_() -> {
 wocky_db_api_smoke_test() ->
     ok = wocky_app:start(),
 
-    Q1 = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?)">>,
+    Q1 = "INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?)",
     Values = [
       [{id, now}, {domain, <<"localhost">>}, {username, <<"alice">>}],
       [{id, now}, {domain, <<"localhost">>}, {username, <<"bob">>}],
@@ -34,11 +34,11 @@ wocky_db_api_smoke_test() ->
     ],
     {ok, _} = wocky_db:batch_query(shared, Q1, Values, unlogged, quorum),
 
-    Q2 = <<"SELECT username FROM username_to_user">>,
+    Q2 = "SELECT username FROM username_to_user",
     {ok, R1} = wocky_db:query(shared, Q2, quorum),
     ?assertEqual(3, length(wocky_db:rows(R1))),
 
-    Q3 = <<"TRUNCATE username_to_user">>,
+    Q3 = "TRUNCATE username_to_user",
     {ok, _} = wocky_db:query(shared, Q3, quorum),
 
     {ok, R2} = wocky_db:query(shared, Q2, quorum),

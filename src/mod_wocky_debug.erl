@@ -1,7 +1,8 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Debugging utilities
 %%%
-%%% Registers the "poke[0|1|2]" commands so it can be called from the command line to execute arbitrary code.
+%%% Registers the "poke[0|1|2]" commands so it can be called from the command
+%%% line to execute arbitrary code.
 
 -module(mod_wocky_debug).
 

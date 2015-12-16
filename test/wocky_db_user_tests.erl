@@ -8,6 +8,8 @@
 -define(USER, <<"bob">>).
 -define(PASS, <<"password">>).
 
+-define(BADUSER, <<"doesnotexist">>).
+
 
 wocky_db_user_test_() -> {
   "wocky_db_user",
@@ -31,12 +33,15 @@ after_all(_) ->
 
 before_each() ->
     UUID = ossp_uuid:make(v1, binary),
-    Query1 = "INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?)",
+    Query1 = "INSERT INTO username_to_user (id, domain, username)" ++
+             " VALUES (?, ?, ?)",
     Values1 = [{id, UUID}, {domain, ?DOMAIN}, {username, ?USER}],
     {ok, _} = wocky_db:query(shared, Query1, Values1, quorum),
 
-    Query2 = "INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)",
-    Values2 = [{id, UUID}, {domain, ?DOMAIN}, {username, ?USER}, {password, ?PASS}],
+    Query2 = "INSERT INTO user (id, domain, username, password)" ++
+             " VALUES (?, ?, ?, ?)",
+    Values2 = [{id, UUID}, {domain, ?DOMAIN},
+               {username, ?USER}, {password, ?PASS}],
     {ok, _} = wocky_db:query(?DOMAIN, Query2, Values2, quorum),
     ok.
 
@@ -51,7 +56,7 @@ test_does_user_exist() ->
       ?_assert(wocky_db_user:does_user_exist(?DOMAIN, ?USER))
     ]},
     { "returns false if the user does not exist", [
-      ?_assertNot(wocky_db_user:does_user_exist(?DOMAIN, <<"baduser">>))
+      ?_assertNot(wocky_db_user:does_user_exist(?DOMAIN, ?BADUSER))
     ]}
   ]}.
 
@@ -74,19 +79,21 @@ test_get_password() ->
     ]},
     { "returns {error, not_found} if user does not exist", [
       ?_assertMatch({error, not_found},
-                    wocky_db_user:get_password(?DOMAIN, <<"doesnotexist">>))
+                    wocky_db_user:get_password(?DOMAIN, ?BADUSER))
     ]}
   ]}.
 
 test_set_password() ->
   { "set_password", setup, fun before_each/0, fun after_each/1, [
     { "sets password if user exists", [
-      ?_assertMatch(ok, wocky_db_user:set_password(?DOMAIN, ?USER, <<"newpass">>)),
+      ?_assertMatch(ok, wocky_db_user:set_password(?DOMAIN, ?USER,
+                                                   <<"newpass">>)),
+
       ?_assertMatch(<<"newpass">>, wocky_db_user:get_password(?DOMAIN, ?USER))
     ]},
     { "returns {error, not_found} if user does not exist", [
       ?_assertMatch({error, not_found},
-                    wocky_db_user:set_password(?DOMAIN, <<"doesnotexist">>, ?PASS))
+                    wocky_db_user:set_password(?DOMAIN, ?BADUSER, ?PASS))
     ]}
   ]}.
 
@@ -97,6 +104,6 @@ test_remove_user() ->
       ?_assertNot(wocky_db_user:does_user_exist(?DOMAIN, ?USER))
     ]},
     { "succeeds if user does not exist", [
-      ?_assertMatch(ok, wocky_db_user:remove_user(?DOMAIN, <<"doesnotexist">>))
+      ?_assertMatch(ok, wocky_db_user:remove_user(?DOMAIN, ?BADUSER))
     ]}
   ]}.

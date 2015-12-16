@@ -1,7 +1,8 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc A sample implementation of XEP-0092: Software Version
 %%%
-%%% This is more of an example rather than something intended to be used in production.
+%%% This is more of an example rather than something intended to be used
+%%% in production.
 
 -module(mod_wocky_version).
 
@@ -20,17 +21,17 @@
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
 
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host,
-        ?NS_VERSION, ?MODULE, process_local_iq, IQDisc).
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VERSION, ?MODULE,
+                                  process_local_iq, IQDisc).
 
 %% @doc Stop the module
 -spec stop(ejabberd:server()) -> ok.
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host,
-        ?NS_VERSION).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VERSION).
 
 %% @doc Process the iq stanza
--spec process_local_iq(ejabberd:jid(), ejabberd:jid(), ejabberd:iq()) -> ejabberd:iq().
+-spec process_local_iq(ejabberd:jid(), ejabberd:jid(), ejabberd:iq())
+                      -> ejabberd:iq().
 process_local_iq(_From, _To,
     #iq{type = Type, sub_el = SubEl} = IQ) ->
     case Type of
@@ -42,7 +43,9 @@ process_local_iq(_From, _To,
                     #xmlel{name = <<"query">>,
                         attrs = [{<<"xmlns">>, ?NS_VERSION}],
                         children=[
-                            #xmlel{name = <<"name">>, children = [{xmlcdata, <<"wocky">>}]},
-                            #xmlel{name = <<"version">>, children = [{xmlcdata, ?WOCKY_VERSION}]}
+                            #xmlel{name = <<"name">>,
+                                   children = [{xmlcdata, <<"wocky">>}]},
+                            #xmlel{name = <<"version">>,
+                                   children = [{xmlcdata, ?WOCKY_VERSION}]}
                         ]}]}
     end.
