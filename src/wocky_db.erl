@@ -1,28 +1,30 @@
 %%% @copyright 2015+ Hippware, Inc.
-%%% @doc Cassandra dispatcher
+%%% @doc Wocky specific interface to Cassandra
 %%%
-%%% This dispatches to the Cassandra driver.
+%%% This module wraps the Cassandra driver providing a simpler interface and
+%%% some abstractions that are specific to Wocky.
 %%%
-%%% Whilst this is supposed to be a generic Cassandra interface, for practical
-%%% purposes, it is still closely coupled to the backend. If we ever support
-%%% more than one backend, then the interface needs to be made backend agnostic.
+%%% All queries are executed within a specific "context". This context can
+%%% either be "shared" for data that is used by all instances of Wocky, or
+%%% it can be a name specific to this instance (or cluster of instances). The
+%%% keyspace name is deduced from the context.
 %%%
-%%% The query functions are spec-ced to return `{ok, result()}' but usually
-%%% return `{ok, rows_result()}'. `result()' is a generalisation/superset of
-%%% `rows_result()'.
-
 -module(wocky_db).
 -include_lib("cqerl/include/cqerl.hrl").
 
-%% Borrow definitions from cqerl.
+-type context() :: shared | binary().
+-type query() :: iodata().
 -type value() :: cqerl:parameter_val().
+-type values() :: [cqerl:named_parameter()].
 -type consistency() :: cqerl:consistency_level().
--type result() :: #cql_result{}.
+-type batch_mode() :: cqerl:batch_mode().
 -type error() :: term().
--export_type([value/0, consistency/0, result/0, error/0]).
+-opaque result() :: #cql_result{}.
+-export_type([context/0, query/0, value/0, values/0, consistency/0,
+              batch_mode/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, query/5, batch_query/5,
+-export([query/3, query/4, batch_query/5,
          rows/1, single_result/1,
          to_keyspace/1]).
 
@@ -31,69 +33,71 @@
 %% API
 %%====================================================================
 
-%% @doc A wrapper around {@link query/5}
-%% @spec query(Host, Query, Consistency) -> {ok, Result :: result()} | {error, Error :: error()}
-query(Host, Query, Consistency) ->
-    query(Host, Query, [], Consistency, undefined).
+%% @doc Execute a query.
+%%
+%% A wrapper around {@link query/4}
+-spec query(context(), query(), consistency())
+           -> {ok, void} | {ok, result()} | {error, error()}.
+query(Context, Query, Consistency) ->
+    query(Context, Query, [], Consistency).
 
-%% @doc A wrapper around {@link query/5}
-%% @spec query(Host, Query, Values, Consistency) -> {ok, Result :: result()} | {error, Error :: error()}
-query(Host, Query, Values, Consistency) when is_list(Values) ->
-    query(Host, Query, Values, Consistency, undefined);
-
-query(Host, Query, Consistency, PageSize) when is_atom(PageSize) ->
-    query(Host, Query, [], Consistency, PageSize).
-
-%% @doc Execute a query as a prepared query (in the context of a virtual host).
+%% @doc Execute a query.
+%%
+%% `Context' is the context to execute the query in.
 %%
 %% `Query' is a query string where '?' characters are substituted with
 %% parameters from the `Values' list.
-%% `Host' is the virtual host to execute the query for.
 %%
--spec query(Host, Query, Values, Consistency, PageSize) -> {ok, Result :: result()} | {error, Error :: error()} when
-             Host :: binary(), % ejabberd:server()
-             Query :: binary() | string(), % seestar_session:'query'()
-             Values :: [value()],
-             Consistency :: consistency(),
-             PageSize :: non_neg_integer() | undefined.
-query(Host, Query, Values, Consistency, PageSize) ->
-    run_query(Host, #cql_query{statement = Query,
-                               values = Values,
-                               reusable = true,
-                               consistency = Consistency,
-                               page_size = PageSize}).
+%% `Values' is a property list of column name, value pairs. The pairs must be
+%% in the same order that the columns are listed in `Query'.
+%%
+%% On successful completion, the function returns `{ok, void}' when there are
+%% no results to return and `{ok, Result}' when there is. `Result' is an
+%% abstract datatype that can be passed to {@link rows/1} or
+%% {@link single_result/1}.
+%%
+-spec query(context(), query(), values(), consistency())
+           -> {ok, void} | {ok, result()} | {error, error()}.
+query(Context, Query, Values, Consistency) ->
+    run_query(Context, #cql_query{statement = Query,
+                                  values = Values,
+                                  reusable = true,
+                                  consistency = Consistency}).
 
-%% @doc Executes a batch of queries as prepared queries (in the context of a virtual host).
+%% @doc Executes a query multiple times with different datasets in a single
+%% batch.
 %%
-%% `Queries' is a list of `{Query, Values}' tuples where
+%% `Context' is the context to execute the query in.
+%%
 %% `Query' is a query string where '?' characters are substituted with
-%% parameters from the list `Values'.
+%% parameters from the entries in the `Values' list.
 %%
--spec batch_query(Host, Query, Values, Mode, Consistency)
-                 -> {ok, Result :: result()}
-                 | {error, Error :: any()} when
-             Host :: binary(),
-             Query :: binary() | string(),
-             Values :: [value()],
-             Mode :: logged | unlogged | counter,
-             Consistency :: consistency().
-batch_query(Host, Query, Values, Mode, Consistency) ->
+%% `Values' is a list where each element is a property list of column name,
+%% value pairs. The pairs must be in the same order that the columns are
+%% listed in `Query'.
+%%
+%% On successful completion, the function returns `{ok, void}'.
+%%
+-spec batch_query(context(), query(), values(), batch_mode(), consistency())
+                 -> {ok, void} | {error, error()}.
+batch_query(Context, Query, Values, Mode, Consistency) ->
     Q = #cql_query{statement = Query},
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
-    {ok, void} = run_query(Host, make_batch_query(Q, Values, BQ)).
-
+    run_query(Context, make_batch_query(Q, Values, BQ)).
 
 %% @doc Extracts rows from a query result
 %%
-%% Returns a list of rows. Each row is a list of values.
+%% Returns a list of rows. Each row is a property list of column name, value
+%% pairs.
 %%
--spec rows(Result :: result()) -> [[value()]].
+-spec rows(result()) -> [values()].
 rows(Result) ->
     cqerl:all_rows(Result).
 
-%% @doc Extracts the value of the first column of the first row from a query result
+%% @doc Extracts the value of the first column of the first row from a query
+%% result
 %%
--spec single_result(Result :: result()) -> value() | undefined.
+-spec single_result(result()) -> value() | undefined.
 single_result(Result) ->
     case cqerl:head(Result) of
         empty_dataset -> undefined;
@@ -105,7 +109,7 @@ single_result(Result) ->
 %% All invalid characters are replaced with underscore and then
 %% truncated to 48 characters. Returns the modified string.
 %%
--spec to_keyspace(String :: binary()) -> binary().
+-spec to_keyspace(binary()) -> binary().
 to_keyspace(String) ->
     Space = iolist_to_binary(re:replace(String, "[^0-9a-z]", "_", [global])),
     case byte_size(Space) of
@@ -124,16 +128,16 @@ to_keyspace(String) ->
 keyspace_prefix() ->
     application:get_env(wocky, keyspace_prefix, "wocky_").
 
-keyspace_name(KS) when is_atom(KS) ->
-    keyspace_name(atom_to_list(KS));
-keyspace_name(KS) ->
-    iolist_to_binary([keyspace_prefix(), KS]).
+keyspace_name(Context) when is_atom(Context) ->
+    keyspace_name(atom_to_list(Context));
+keyspace_name(Context) ->
+    iolist_to_binary([keyspace_prefix(), Context]).
 
-run_query(Keyspace, Query) ->
-    {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Keyspace)}]),
-    {ok, Result} = cqerl:run_query(Client, Query),
+run_query(Context, Query) ->
+    {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Context)}]),
+    Return = cqerl:run_query(Client, Query),
     cqerl:close_client(Client),
-    {ok, Result}.
+    Return.
 
 make_batch_query(_Q, [], #cql_query_batch{queries = Qs} = Batch) ->
     Batch#cql_query_batch{queries = lists:reverse(Qs)};

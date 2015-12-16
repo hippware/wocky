@@ -60,17 +60,17 @@
 %%% API
 %%%----------------------------------------------------------------------
 
--spec start(Host :: ejabberd:server()) -> ok.
+-spec start(ejabberd:server()) -> ok.
 start(_Host) ->
     ok.
 
 
--spec stop(Host :: ejabberd:server()) -> ok.
+-spec stop(ejabberd:server()) -> ok.
 stop(_Host) ->
     ok.
 
 
--spec store_type(Host :: ejabberd:lserver()) -> scram | plain | external.
+-spec store_type(ejabberd:lserver()) -> scram | plain.
 store_type(Host) ->
     case scram:enabled(Host) of
         false -> plain;
@@ -78,16 +78,13 @@ store_type(Host) ->
     end.
 
 
--spec login(User :: ejabberd:luser(),
-            Server :: ejabberd:lserver()) -> boolean().
+-spec login(ejabberd:luser(), ejabberd:lserver()) -> no_return().
 login(_User, _Server) ->
     erlang:error(not_implemented).
 
 
--spec set_password(User :: ejabberd:luser(),
-                   Server :: ejabberd:lserver(),
-                   Password :: binary()
-                  ) -> ok | {error, not_allowed | invalid_jid}.
+-spec set_password(ejabberd:luser(), ejabberd:lserver(), binary())
+                  -> ok | {error, not_allowed | invalid_jid}.
 set_password(User, Server, Password) ->
     PreparedPass = prepare_password(Server, Password),
     case wocky_db_user:set_password(Server, User, PreparedPass) of
@@ -99,14 +96,13 @@ set_password(User, Server, Password) ->
     end.
 
 
--spec check_password(User :: ejabberd:luser(),
-                     Server :: ejabberd:lserver(),
-                     Password :: binary()) -> boolean().
+-spec check_password(ejabberd:luser(), ejabberd:lserver(), binary())
+                    -> boolean().
 check_password(User, Server, Password) ->
     case wocky_db_user:get_password(Server, User) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
-                #scram{} = Scram ->
+                {ok, #scram{} = Scram} ->
                     scram:check_password(Password, Scram);
 
                 {error, _}->
@@ -119,16 +115,13 @@ check_password(User, Server, Password) ->
     end.
 
 
--spec check_password(User :: ejabberd:luser(),
-                     Server :: ejabberd:lserver(),
-                     Password :: binary(),
-                     Digest :: binary(),
-                     DigestGen :: fun()) -> boolean().
+-spec check_password(ejabberd:luser(), ejabberd:lserver(), binary(), binary(),
+                     fun()) -> boolean().
 check_password(User, Server, Password, Digest, DigestGen) ->
     case wocky_db_user:get_password(Server, User) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
-                #scram{} = Scram ->
+                {ok, #scram{} = Scram} ->
                     scram:check_digest(Scram, Digest, DigestGen, Password);
 
                 {error, _}->
@@ -141,12 +134,10 @@ check_password(User, Server, Password, Digest, DigestGen) ->
     end.
 
 
-%% Not really suitable for use since it does not pass in extra profile information.
-%% Exists for completeness more than anything else (at the moment)
--spec try_register(User :: ejabberd:luser(),
-                   Server :: ejabberd:lserver(),
-                   Password :: binary()
-                  ) -> ok | {error, exists | not_allowed | term()}.
+%% Not really suitable for use since it does not pass in extra profile
+%% information. Exists for completeness more than anything else (at the moment)
+-spec try_register(ejabberd:luser(), ejabberd:lserver(), binary())
+                  -> ok | {error, exists | not_allowed | term()}.
 try_register(User, Server, Password) ->
     PreparedPass = prepare_password(Server, Password),
     wocky_db_user:create_user(Server, User, PreparedPass).
@@ -162,36 +153,35 @@ dirty_get_registered_users() ->
 
 
 %% This call is costly and infrequently used. Stub it out.
--spec get_vh_registered_users(Server :: ejabberd:lserver()) -> [ejabberd:simple_bare_jid()].
+-spec get_vh_registered_users(ejabberd:lserver())
+                             -> [ejabberd:simple_bare_jid()].
 get_vh_registered_users(_Server) ->
     [].
 
--spec get_vh_registered_users(Server :: ejabberd:lserver(),
-                              Opts :: list()
-                             ) -> [ejabberd:simple_bare_jid()].
+-spec get_vh_registered_users(ejabberd:lserver(), list())
+                             -> [ejabberd:simple_bare_jid()].
 get_vh_registered_users(Server, _Opts) ->
     get_vh_registered_users(Server).
 
 
--spec get_vh_registered_users_number(Server :: ejabberd:lserver()) -> integer().
+-spec get_vh_registered_users_number(ejabberd:lserver()) -> non_neg_integer().
 get_vh_registered_users_number(Server) ->
     length(get_vh_registered_users(Server)).
 
 
--spec get_vh_registered_users_number(Server :: ejabberd:lserver(),
-                                     Opts :: list()) -> integer().
+-spec get_vh_registered_users_number(ejabberd:lserver(), list())
+                                    -> non_neg_integer().
 get_vh_registered_users_number(Server, _Opts) ->
     get_vh_registered_users_number(Server).
 
 
--spec get_password(User :: ejabberd:luser(),
-                   Server :: ejabberd:lserver()
-                  ) -> scram:scram_tuple() | binary() | false.
+-spec get_password(ejabberd:luser(), ejabberd:lserver())
+                  -> scram:scram_tuple() | binary() | false.
 get_password(User, Server) ->
     case wocky_db_user:get_password(Server, User) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
-                #scram{} = Scram ->
+                {ok, #scram{} = Scram} ->
                     scram:scram_to_tuple(Scram);
 
                 {error, _}->
@@ -204,8 +194,7 @@ get_password(User, Server) ->
     end.
 
 
--spec get_password_s(User :: ejabberd:luser(),
-                     Server :: ejabberd:lserver()) -> binary().
+-spec get_password_s(ejabberd:luser(), ejabberd:lserver()) -> binary().
 get_password_s(User, Server) ->
     case get_password(User, Server) of
         Password when is_binary(Password) ->
@@ -216,24 +205,18 @@ get_password_s(User, Server) ->
     end.
 
 
--spec get_password(User :: ejabberd:luser(),
-                   Server :: ejabberd:lserver(),
-                   DefaultValue :: binary()
-                  ) -> scram:scram_tuple() | binary() | false.
+-spec get_password(ejabberd:luser(), ejabberd:lserver(), binary())
+                  -> scram:scram_tuple() | binary() | false.
 get_password(User, Server, _DefaultValue) ->
     get_password(User, Server).
 
 
--spec does_user_exist(User :: ejabberd:luser(),
-                      Server :: ejabberd:lserver()
-                     ) -> boolean() | {error, atom()}.
+-spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
 does_user_exist(User, Server) ->
     wocky_db_user:does_user_exist(Server, User).
 
 
--spec remove_user(User :: ejabberd:luser(),
-                  Server :: ejabberd:lserver()
-                 ) -> ok | {error, not_allowed}.
+-spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(User, Server) ->
     case does_user_exist(User, Server) of
         true ->
@@ -246,11 +229,10 @@ remove_user(User, Server) ->
 
 
 %% @doc Remove user if the provided password is correct.
-%% This functionality is unused (only called from mod_register) so just stub it out.
--spec remove_user(User :: ejabberd:luser(),
-                  Server :: ejabberd:lserver(),
-                  Password :: binary()
-                 ) -> ok | {error, not_exists | not_allowed | bad_request}.
+%% This functionality is unused (only called from mod_register)
+%% so just stub it out.
+-spec remove_user(ejabberd:luser(), ejabberd:lserver(), binary())
+                 -> ok | {error, not_exists | not_allowed | bad_request}.
 remove_user(User, Server, Password) ->
     case does_user_exist(User, Server) of
         true ->
@@ -264,7 +246,7 @@ remove_user(User, Server, Password) ->
     end.
 
 
--spec plain_password_required() -> boolean().
+-spec plain_password_required() -> false.
 plain_password_required() ->
     false.
 

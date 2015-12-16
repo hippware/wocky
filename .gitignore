@@ -10,3 +10,7 @@ _checkouts
 *.nonode@nohost
 log/*
 .vagrant
+doc/*.html
+doc/*.css
+doc/*.png
+doc/edoc-info

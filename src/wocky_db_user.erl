@@ -86,24 +86,29 @@ create_user_id() ->
     ossp_uuid:make(v1, binary).
 
 user_id_from_username(Domain, UserName) ->
-    Query = <<"SELECT id FROM username_to_user WHERE domain = ? AND username = ?">>,
+    Query = "SELECT id FROM username_to_user WHERE domain = ? AND username = ?",
     Values = [{domain, Domain}, {username, UserName}],
     {ok, Return} = wocky_db:query(shared, Query, Values, quorum),
     wocky_db:single_result(Return).
 
 create_username_lookup(Id, Domain, UserName) ->
-    Query = <<"INSERT INTO username_to_user (id, domain, username) VALUES (?, ?, ?) IF NOT EXISTS">>,
+    Query = "INSERT INTO username_to_user (id, domain, username)" ++
+            " VALUES (?, ?, ?) IF NOT EXISTS",
     Values = [{id, Id}, {domain, Domain}, {username, UserName}],
     {ok, Return} = wocky_db:query(shared, Query, Values, quorum),
     wocky_db:single_result(Return).
 
 create_user_record(Id, Domain, UserName, Password) ->
-    Query = <<"INSERT INTO user (id, domain, username, password) VALUES (?, ?, ?, ?)">>,
-    Values = [{id, Id}, {domain, Domain}, {username, UserName}, {password, Password}],
+    Query = "INSERT INTO user (id, domain, username, password)" ++
+            " VALUES (?, ?, ?, ?)",
+    Values = [{id, Id},
+              {domain, Domain},
+              {username, UserName},
+              {password, Password}],
     wocky_db:query(Domain, Query, Values, quorum).
 
 remove_username_lookup(Domain, UserName) ->
-    Query = <<"DELETE FROM username_to_user WHERE domain = ? AND username = ?">>,
+    Query = "DELETE FROM username_to_user WHERE domain = ? AND username = ?",
     Values = [{domain, Domain}, {username, UserName}],
     wocky_db:query(shared, Query, Values, quorum).
 
