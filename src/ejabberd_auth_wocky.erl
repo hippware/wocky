@@ -122,11 +122,16 @@ check_password(User, Server, Password, Digest, DigestGen) ->
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 {ok, #scram{} = Scram} ->
+                    %% For the record, this function doesn't make any sense
+                    %% when SCRAM is enabled. It just doesn't work. However,
+                    %% this is how the other auth modules implement it, so that
+                    %% is what we are going to do.
                     scram:check_digest(Scram, Digest, DigestGen, Password);
 
                 {error, _}->
                     %% Not a SCRAM password
-                    Password == StoredPassword
+                    ejabberd_auth:check_digest(Digest, DigestGen,
+                                               Password, StoredPassword)
                 end;
 
         {error, _} ->
@@ -145,7 +150,7 @@ try_register(User, Server, Password) ->
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
 dirty_get_registered_users() ->
-    Servers = ejabberd_config:get_vh_by_auth_method(cassandra),
+    Servers = ejabberd_config:get_vh_by_auth_method(wocky),
     lists:flatmap(
         fun(Server) ->
             get_vh_registered_users(Server)
