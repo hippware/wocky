@@ -24,20 +24,46 @@ init(_Host, _Opts) ->
               -> {ok, non_neg_integer(), binary()}
                | {error, term()}
                | not_found.
-get_last(_LUser, _LServer) ->
-    not_found.
+get_last(LUser, LServer) ->
+    Q = "SELECT timestamp, status FROM last_activity WHERE user = ? AND server = ?",
+    Values = [{user, LUser}, {server, LServer}],
+    case wocky_db:query(shared, Q, Values, quorum) of
+        {error, E} -> {error, E};
+        {ok, R} ->
+            case wocky_db:single_row(R) of
+                undefined -> not_found;
+                Row -> {ok, proplists:get_value(timestamp, Row), proplists:get_value(status, Row)}
+            end
+    end.
 
 -spec count_active_users(ejabberd:lserver(), non_neg_integer())
                         -> non_neg_integer().
-count_active_users(_LServer, _TimeStamp) ->
-    0.
+count_active_users(LServer, TimeStamp) ->
+    Q = "SELECT timestamp FROM last_activity WHERE server = ?",
+    Values = [{server, LServer}, {timestamp, TimeStamp}],
+    case wocky_db:query(shared, Q, Values, quorum) of
+        {error, E} -> {error, E};
+        {ok, R} ->
+            Pred = fun([{timestamp, Val}]) -> Val > TimeStamp end,
+            wocky_db:count(Pred, R)
+    end.
 
 -spec set_last_info(ejabberd:luser(), ejabberd:lserver(),
                     non_neg_integer(), binary())
                    -> ok | {error, term()}.
-set_last_info(_LUser, _LServer, _TimeStamp, _Status) ->
-    ok.
+set_last_info(LUser, LServer, TimeStamp, Status) ->
+    Q = "INSERT INTO last_activity (user, server, timestamp, status) VALUES (?, ?, ?, ?)",
+    Values = [{user, LUser}, {server, LServer}, {timestamp, TimeStamp}, {status, Status}],
+    case wocky_db:query(shared, Q, Values, quorum) of
+        {error, E} -> {error, E};
+        {ok, void} -> ok
+    end.
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
-remove_user(_LUser, _LServer) ->
-    ok.
+remove_user(LUser, LServer) ->
+    Q = "DELETE FROM last_activity WHERE user = ? AND server = ?",
+    Values = [{user, LUser}, {server, LServer}],
+    case wocky_db:query(shared, Q, Values, quorum) of
+        {error, E} -> {error, E};
+        {ok, void} -> ok
+    end.

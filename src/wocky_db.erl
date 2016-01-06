@@ -24,8 +24,8 @@
               batch_mode/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, batch_query/5,
-         rows/1, single_result/1,
+-export([query/3, query/4, batch_query/5, count/2,
+         rows/1, single_result/1, single_row/1,
          to_keyspace/1]).
 
 
@@ -85,6 +85,17 @@ batch_query(Context, Query, Values, Mode, Consistency) ->
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
     run_query(Context, make_batch_query(Q, Values, BQ)).
 
+%% @doc Extracts the first row from a query result
+%%
+%% The row is a property list of column name, value pairs.
+%%
+-spec single_row(result()) -> proplists:proplist() | undefined.
+single_row(Result) ->
+    case cqerl:head(Result) of
+        empty_dataset -> undefined;
+        R -> R
+    end.
+
 %% @doc Extracts rows from a query result
 %%
 %% Returns a list of rows. Each row is a property list of column name, value
@@ -103,6 +114,23 @@ single_result(Result) ->
         empty_dataset -> undefined;
         [{_Name, Value}|_] -> Value
     end.
+
+%% @doc Counts the number of rows in a result that match the predicate.
+%%
+%% The predicate function must take a row and return a boolean.
+%%
+-spec count(fun ((values()) -> boolean()), result()) -> non_neg_integer().
+count(Pred, Result) ->
+    Rows = rows(Result),
+    lists:foldl(
+      fun(E, Acc) ->
+              case Pred(E) of
+                  true -> Acc+1;
+                  false -> Acc
+              end
+      end,
+      0,
+      Rows).
 
 %% @doc Modify a string so it is a valid keyspace
 %%

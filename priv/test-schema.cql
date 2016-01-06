@@ -19,6 +19,16 @@ CREATE TABLE phone_number_to_user (
     PRIMARY KEY (phone_number)
 );
 
+CREATE TABLE last_activity (
+    user text,
+    server text,
+    timestamp timestamp,
+    status text,
+    PRIMARY KEY (user)
+);
+
+CREATE INDEX last_activity_server ON last_activity (server);
+
 CREATE KEYSPACE wocky_test_localhost
     WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor': 1};
 
