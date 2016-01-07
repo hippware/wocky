@@ -17,6 +17,7 @@ wocky_db_user_test_() -> {
   [
     test_does_user_exist(),
     test_create_user(),
+    test_get_user_id(),
     test_get_password(),
     test_set_password(),
     test_remove_user()
@@ -69,6 +70,17 @@ test_create_user() ->
     { "fails if user already exists", [
       ?_assertMatch({error, exists},
                     wocky_db_user:create_user(?DOMAIN, ?USER, ?PASS))
+    ]}
+  ]}.
+
+test_get_user_id() ->
+  { "get_user_id", setup, fun before_each/0, fun after_each/1, [
+    { "returns {ok, UserId} if user exists", [
+      ?_assertMatch({ok, _}, wocky_db_user:get_user_id(?DOMAIN, ?USER))
+    ]},
+    { "returns {error, not_found} if user does not exist", [
+      ?_assertMatch({error, not_found},
+                    wocky_db_user:get_user_id(?DOMAIN, ?BADUSER))
     ]}
   ]}.
 
