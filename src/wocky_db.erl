@@ -22,8 +22,8 @@
 
 %% API
 -export([query/3, query/4, batch_query/5,
-         rows/1, single_result/1,
-         to_keyspace/1]).
+         rows/1, single_row/1, single_result/1,
+         count/2, to_keyspace/1]).
 
 
 %%====================================================================
@@ -92,6 +92,17 @@ batch_query(Context, Query, Values, Mode, Consistency) ->
 rows(Result) ->
     cqerl:all_rows(Result).
 
+%% @doc Extracts the first row from a query result
+%%
+%% The row is a property list of column name, value pairs.
+%%
+-spec single_row(result()) -> proplists:proplist().
+single_row(Result) ->
+    case cqerl:head(Result) of
+        empty_dataset -> [];
+        R -> R
+    end.
+
 %% @doc Extracts the value of the first column of the first row from a query
 %% result
 %%
@@ -101,6 +112,23 @@ single_result(Result) ->
         empty_dataset -> undefined;
         [{_Name, Value}|_] -> Value
     end.
+
+%% @doc Counts the number of rows in a result that match the predicate.
+%%
+%% The predicate function must take a row and return a boolean.
+%%
+-spec count(fun ((values()) -> boolean()), result()) -> non_neg_integer().
+count(Pred, Result) ->
+    Rows = rows(Result),
+    lists:foldl(
+      fun(E, Acc) ->
+              case Pred(E) of
+                  true -> Acc + 1;
+                  false -> Acc
+              end
+      end,
+      0,
+      Rows).
 
 %% @doc Modify a string so it is a valid keyspace
 %%
