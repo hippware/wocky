@@ -23,9 +23,9 @@
               row/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, batch_query/5, count/2,
-         rows/1, single_result/1, single_row/1, to_keyspace/1,
-         seconds_to_timestamp/1, timestamp_to_seconds/1]).
+-export([query/3, query/4, batch_query/4, multi_query/4,
+         rows/1, single_row/1, single_result/1, count/2,
+         to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1]).
 
 
 %%====================================================================
@@ -58,13 +58,41 @@ query(Context, Query, Consistency) ->
 -spec query(context(), query(), values(), consistency_level())
            -> {ok, void} | {ok, result()} | {error, error()}.
 query(Context, Query, Values, Consistency) ->
-    run_query(Context, #cql_query{statement = Query,
-                                  values = Values,
-                                  reusable = true,
-                                  consistency = Consistency}).
+    run_query(Context, make_query(Query, Values, Consistency)).
 
-%% @doc Executes a query multiple times with different datasets in a single
-%% batch.
+%% @doc Executes a batch query.
+%%
+%% In a batch query, multiple queries are executed atomically, but not in
+%% isolation. Note that it is a bad idea to update multiple rows on the same
+%% table with a batch for performance reasons. This will likely result in worse
+%% performance. Executing the same query multiple times with different data sets
+%% performs best when normal prepared queries are used (see
+%% {@link multi_query/4})
+%%
+%% This feature is meant for updating multiple tables containing the same
+%% denormalized data atomically.
+%%
+%% `Context' is the context to execute the query in.
+%%
+%% `Queries' is a list of query/values pairs. The first element is a query
+%% string where '?' characters are substituted with parameters from the entries
+%% in the values list. The values list is a property list of column name,
+%% value pairs. The pairs must be in the same order that the columns are
+%% listed in the query.
+%%
+%% `Mode' is one of the values `logged' (default), `counter' or `unlogged'
+%% (deprecated). Use `logged' unless all of the queries update counter columns,
+%% then use `counter'.
+%%
+%% On successful completion, the function returns `{ok, void}'.
+%%
+-spec batch_query(context(), [{query(), values()}],
+                  batch_mode(), consistency_level()
+                 ) -> {ok, void} | {error, error()}.
+batch_query(Context, QueryList, Mode, Consistency) ->
+    run_query(Context, make_batch_query(QueryList, Consistency, Mode)).
+
+%% @doc Executes a query multiple times with different datasets.
 %%
 %% `Context' is the context to execute the query in.
 %%
@@ -75,15 +103,22 @@ query(Context, Query, Values, Consistency) ->
 %% value pairs. The pairs must be in the same order that the columns are
 %% listed in `Query'.
 %%
-%% On successful completion, the function returns `{ok, void}'.
+%% Returns a list of results, one for each value set.
+-spec multi_query(context(), query(), [values()], consistency_level())
+                 -> [{ok, result()} | {error, error()}].
+multi_query(Context, Query, ValuesList, Consistency) ->
+    lists:map(fun (Values) ->
+                      run_query(Context, make_query(Query, Values, Consistency))
+              end, ValuesList).
+
+%% @doc Extracts rows from a query result
 %%
--spec batch_query(context(), query(), values(),
-                  batch_mode(), consistency_level()
-                 ) -> {ok, void} | {error, error()}.
-batch_query(Context, Query, Values, Mode, Consistency) ->
-    Q = #cql_query{statement = Query},
-    BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
-    run_query(Context, make_batch_query(Q, Values, BQ)).
+%% Returns a list of rows. Each row is a property list of column name, value
+%% pairs.
+%%
+-spec rows(result()) -> [values()].
+rows(Result) ->
+    cqerl:all_rows(Result).
 
 %% @doc Extracts the first row from a query result
 %%
@@ -95,15 +130,6 @@ single_row(Result) ->
         empty_dataset -> [];
         R -> R
     end.
-
-%% @doc Extracts rows from a query result
-%%
-%% Returns a list of rows. Each row is a property list of column name, value
-%% pairs.
-%%
--spec rows(result()) -> [values()].
-rows(Result) ->
-    cqerl:all_rows(Result).
 
 %% @doc Extracts the value of the first column of the first row from a query
 %% result
@@ -184,8 +210,18 @@ run_query(Context, Query) ->
             {error, Error}
     end.
 
-make_batch_query(_Q, [], #cql_query_batch{queries = Qs} = Batch) ->
-    Batch#cql_query_batch{queries = lists:reverse(Qs)};
-make_batch_query(Q, [Vs | Rest], #cql_query_batch{queries = Qs} = Batch) ->
-    make_batch_query(Q, Rest,
-        Batch#cql_query_batch{queries = [Q#cql_query{values = Vs} | Qs]}).
+make_query(Query, Values, Consistency) ->
+    #cql_query{statement = Query,
+               values = Values,
+               reusable = true,
+               consistency = Consistency}.
+
+make_batch_query(QueryList, Consistency, Mode) ->
+    #cql_query_batch{queries = batch_query_list(QueryList),
+                     consistency = Consistency,
+                     mode = Mode}.
+
+batch_query_list(QueryList) ->
+    lists:map(fun ({Query, Values}) ->
+                      #cql_query{statement = Query, values = Values}
+              end, QueryList).

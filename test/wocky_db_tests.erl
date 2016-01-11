@@ -32,7 +32,7 @@ wocky_db_api_smoke_test() ->
       [{id, now}, {domain, <<"localhost">>}, {username, <<"bob">>}],
       [{id, now}, {domain, <<"localhost">>}, {username, <<"charlie">>}]
     ],
-    {ok, _} = wocky_db:batch_query(shared, Q1, Values, unlogged, quorum),
+    wocky_db:multi_query(shared, Q1, Values, quorum),
 
     Q2 = "SELECT username FROM username_to_user",
     {ok, R1} = wocky_db:query(shared, Q2, quorum),

@@ -42,7 +42,7 @@ before_each() ->
                {status, S}, {domain, ?DOMAIN}] || {_, T, S, UID} <- Users],
 
     Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
-    {ok, _} = wocky_db:batch_query(?DOMAIN, Q, Values, logged, quorum),
+    wocky_db:multi_query(?DOMAIN, Q, Values, quorum),
     Users ++ InactiveUsers.
 
 after_each(_) ->
