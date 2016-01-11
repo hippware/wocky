@@ -118,7 +118,7 @@ multi_query(Context, Query, ValuesList, Consistency) ->
 %%
 -spec rows(result()) -> [values()].
 rows(Result) ->
-    cqerl:all_rows(Result).
+    drop_all_nulls(cqerl:all_rows(Result)).
 
 %% @doc Extracts the first row from a query result
 %%
@@ -128,7 +128,7 @@ rows(Result) ->
 single_row(Result) ->
     case cqerl:head(Result) of
         empty_dataset -> [];
-        R -> R
+        R -> drop_nulls(R)
     end.
 
 %% @doc Extracts the value of the first column of the first row from a query
@@ -225,3 +225,10 @@ batch_query_list(QueryList) ->
     lists:map(fun ({Query, Values}) ->
                       #cql_query{statement = Query, values = Values}
               end, QueryList).
+
+drop_all_nulls(Rows) ->
+    [drop_nulls(Row) || Row <- Rows].
+
+drop_nulls(Row) ->
+    lists:filter(fun ({_, null}) -> false;
+                     (_) -> true end, Row).
