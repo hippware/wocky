@@ -20,9 +20,11 @@ Vagrant.configure(2) do |config|
     # Install Erlang from ESL, Cassandra from Datastax then load the wocky dev
     # schema into Cassandra.
     config.vm.provision "shell", inline: <<-SHELL
+      apt-get install -y libexpat1 libexpat1-dev
+
       if [ ! -x /usr/bin/erl ]; then
-        wget -nv https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
-        && dpkg -i esl-erlang_18.1-1~ubuntu~precise_amd64.deb \
+        wget -nv https://packages.erlang-solutions.com/erlang/esl-erlang/FLAVOUR_1_general/esl-erlang_18.2-1~ubuntu~precise_amd64.deb \
+        && dpkg -i esl-erlang_18.2-1~ubuntu~precise_amd64.deb \
         && apt-get update \
         && apt-get install -y esl-erlang \
         || apt-get -y -f install
@@ -33,7 +35,7 @@ Vagrant.configure(2) do |config|
         && curl -L https://debian.datastax.com/debian/repo_key | sudo apt-key add - \
         && apt-get update \
         && apt-get install -y openjdk-8-jre-headless \
-        && apt-get install -y cassandra=2.2.3 cassandra-tools=2.2.3 dsc22
+        && apt-get install -y cassandra=3.0.1 cassandra-tools=3.0.1 dsc30
       fi
 
       sleep 5
