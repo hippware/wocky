@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
       fi
 
       sleep 5
-      cqlsh -k wocky_shared -e 'EXIT' || cqlsh -f /vagrant/apps/wocky/priv/dev-bootstrap.cql
+      /vagrant/priv/db/create-schema.sh
     SHELL
 
     # Technically we could provision Cassandra using Docker, but I was
