@@ -3,9 +3,12 @@
 
 -module(wocky_db_user).
 
+-type user_id() :: binary().
+
 %% API
 -export([create_user/3,
          does_user_exist/2,
+         get_user_id/2,
          get_password/2,
          set_password/3,
          remove_user/2]).
@@ -36,6 +39,15 @@ does_user_exist(Domain, UserName) ->
     case user_id_from_username(Domain, UserName) of
         undefined -> false;
         _         -> true
+    end.
+
+
+-spec get_user_id(Domain :: binary(), UserName :: binary())
+                 -> {ok, user_id()} | {error, not_found}.
+get_user_id(Domain, UserName) ->
+    case user_id_from_username(Domain, UserName) of
+        undefined -> {error, not_found};
+        UserId -> {ok, UserId}
     end.
 
 

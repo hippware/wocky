@@ -37,12 +37,17 @@ wocky_db_api_smoke_test() ->
     Q2 = "SELECT username FROM username_to_user",
     {ok, R1} = wocky_db:query(shared, Q2, quorum),
     ?assertEqual(3, length(wocky_db:rows(R1))),
+    ?assertEqual(1, length(wocky_db:single_row(R1))),
+
+    NotBob = fun (Row) -> proplists:get_value(username, Row) =/= <<"bob">> end,
+    ?assertEqual(2, wocky_db:count(NotBob, R1)),
 
     Q3 = "TRUNCATE username_to_user",
     {ok, _} = wocky_db:query(shared, Q3, quorum),
 
     {ok, R2} = wocky_db:query(shared, Q2, quorum),
     ?assertEqual(0, length(wocky_db:rows(R2))),
+    ?assertEqual([], wocky_db:single_row(R2)),
 
     wocky_app:stop(),
     ok.

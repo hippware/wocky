@@ -14,19 +14,16 @@
 
 -type context() :: shared | binary().
 -type query() :: iodata().
--type value() :: cqerl:parameter_val().
--type values() :: [cqerl:named_parameter()].
--type consistency() :: cqerl:consistency_level().
--type batch_mode() :: cqerl:batch_mode().
+-type value() :: parameter_val().
+-type values() :: [named_parameter()].
 -type error() :: term().
 -opaque result() :: #cql_result{}.
--export_type([context/0, query/0, value/0, values/0, consistency/0,
-              batch_mode/0, result/0, error/0]).
+-export_type([context/0, query/0, value/0, values/0, result/0, error/0]).
 
 %% API
 -export([query/3, query/4, batch_query/5, count/2,
          rows/1, single_result/1, single_row/1,
-         to_keyspace/1]).
+         count/2 to_keyspace/1]).
 
 
 %%====================================================================
@@ -36,7 +33,7 @@
 %% @doc Execute a query.
 %%
 %% A wrapper around {@link query/4}
--spec query(context(), query(), consistency())
+-spec query(context(), query(), consistency_level())
            -> {ok, void} | {ok, result()} | {error, error()}.
 query(Context, Query, Consistency) ->
     query(Context, Query, [], Consistency).
@@ -56,7 +53,7 @@ query(Context, Query, Consistency) ->
 %% abstract datatype that can be passed to {@link rows/1} or
 %% {@link single_result/1}.
 %%
--spec query(context(), query(), values(), consistency())
+-spec query(context(), query(), values(), consistency_level())
            -> {ok, void} | {ok, result()} | {error, error()}.
 query(Context, Query, Values, Consistency) ->
     run_query(Context, #cql_query{statement = Query,
@@ -78,8 +75,9 @@ query(Context, Query, Values, Consistency) ->
 %%
 %% On successful completion, the function returns `{ok, void}'.
 %%
--spec batch_query(context(), query(), values(), batch_mode(), consistency())
-                 -> {ok, void} | {error, error()}.
+-spec batch_query(context(), query(), values(),
+                  batch_mode(), consistency_level()
+                 ) -> {ok, void} | {error, error()}.
 batch_query(Context, Query, Values, Mode, Consistency) ->
     Q = #cql_query{statement = Query},
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
@@ -105,6 +103,17 @@ single_row(Result) ->
 rows(Result) ->
     cqerl:all_rows(Result).
 
+%% @doc Extracts the first row from a query result
+%%
+%% The row is a property list of column name, value pairs.
+%%
+-spec single_row(result()) -> proplists:proplist().
+single_row(Result) ->
+    case cqerl:head(Result) of
+        empty_dataset -> [];
+        R -> R
+    end.
+
 %% @doc Extracts the value of the first column of the first row from a query
 %% result
 %%
@@ -125,7 +134,7 @@ count(Pred, Result) ->
     lists:foldl(
       fun(E, Acc) ->
               case Pred(E) of
-                  true -> Acc+1;
+                  true -> Acc + 1;
                   false -> Acc
               end
       end,
