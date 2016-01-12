@@ -71,6 +71,11 @@ test_set_last_info() ->
             ?_assertMatch({ok, 1024, <<"This is Tim's status">>},
                           mod_last_wocky:get_last(<<"tim">>, ?DOMAIN))
         ]},
+        { "Returns an error for an update for an unkonwn user", [
+            ?_assertMatch({error, _},
+                          mod_last_wocky:set_last_info(<<"mistypedusername">>,
+                             ?DOMAIN, 111, <<"Huh?">>))
+        ]},
         { "Returns an error for an insert into an unknown domain", [
             ?_assertMatch({error, _},
                           mod_last_wocky:set_last_info(<<"tim">>,
@@ -126,6 +131,11 @@ test_remove_user() ->
                           mod_last_wocky:get_last(<<"bob">>, ?DOMAIN)),
             ?_assertMatch(not_found,
                           mod_last_wocky:get_last(<<"alicia">>, ?DOMAIN))
+        ]},
+        { "Returns an error for an update for an unkonwn user", [
+            ?_assertMatch({error, _},
+                          mod_last_wocky:remove_user(<<"mistypedusername">>,
+                             ?DOMAIN))
         ]},
         { "Returns an error for an insert into an unknown domain", [
             ?_assertMatch({error, _},
