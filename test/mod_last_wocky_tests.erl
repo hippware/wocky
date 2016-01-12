@@ -23,19 +23,41 @@ before_all() ->
 after_all(_) ->
     ok = wocky_app:stop().
 
+make_user_vals(Username, Timestamp, Status, Domain) ->
+    ID = ossp_uuid:make(v1, binary),
+    [{id, ID}, {user, ID}, {username, Username}, {timestamp, Timestamp},
+     {status, Status}, {domain, Domain}].
+
 before_each() ->
-    InitialVals = [{<<"bob">>, 666, <<"">>},
-                   {<<"alicia">>, 777, <<"Ennui">>},
-                   {<<"robert">>, 888, <<"Bored">>},
-                   {<<"karen">>, 999, <<"Excited">>},
-                   {<<"alice">>, 1000, <<"Still not here">>}],
-    Values = [[{user, N}, {timestamp, T}, {status, S}] ||
-              {N, T, S} <- InitialVals],
-    Q = "INSERT INTO last_activity (user, timestamp, status) VALUES (?, ?, ?)",
-    {ok, _} = wocky_db:batch_query(?DOMAIN, Q, Values, logged, quorum),
+    Users = [{<<"bob">>, 666, <<"">>},
+             {<<"alicia">>, 777, <<"Ennui">>},
+             {<<"robert">>, 888, <<"Bored">>},
+             {<<"karen">>, 999, <<"Excited">>},
+             {<<"alice">>, 1000, <<"Still not here">>}],
+
+    InactiveUsers = [<<"tim">>],
+
+    OtherServerUsers = [{<<"tim">>, <<"otherdomain">>},
+                        {<<"xyzzy">>, <<"xyzzy">>},
+                        {<<"wapsi">>, <<"flibble">>}],
+
+
+    Values = [make_user_vals(U, T, S, ?DOMAIN) || {U, T, S} <- Users],
+    InactiveVals = [make_user_vals(U, not_set, not_set, ?DOMAIN)
+                    || U <- InactiveUsers],
+    OtherServerVals = [make_user_vals(U, not_set, not_set, D)
+                       || {U, D} <- OtherServerUsers],
+
+    Q1 = "INSERT INTO username_to_user (id, username, domain) VALUES (?, ?, ?)",
+    UserTableVals = Values ++ InactiveVals ++ OtherServerVals,
+    {ok, _} = wocky_db:batch_query(shared, Q1, UserTableVals, logged, quorum),
+
+    Q2 = "INSERT INTO last_activity (user, timestamp, status) VALUES (?, ?, ?)",
+    {ok, _} = wocky_db:batch_query(?DOMAIN, Q2, Values, logged, quorum),
     ok.
 
 after_each(_) ->
+    {ok, _} = wocky_db:query(shared, <<"TRUNCATE username_to_user">>, quorum),
     {ok, _} = wocky_db:query(?DOMAIN, <<"TRUNCATE last_activity">>, quorum),
     ok.
 
@@ -67,7 +89,7 @@ test_active_user_count() ->
         ]},
         { "Returns 0 for unknown domain", [
             ?_assertMatch(0,
-                   mod_last_wocky:count_active_users(<<"otherdomain2">>, 1))
+                   mod_last_wocky:count_active_users(<<"otherdomain">>, 1))
         ]}
     ]}.
 
@@ -107,6 +129,6 @@ test_remove_user() ->
         ]},
         { "Returns an error for an insert into an unknown domain", [
             ?_assertMatch({error, _},
-                          mod_last_wocky:remove_user(<<"tim">>, <<"flibble">>))
+                          mod_last_wocky:remove_user(<<"wapsi">>, <<"flibble">>))
         ]}
     ]}.

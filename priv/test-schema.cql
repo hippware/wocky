@@ -37,7 +37,7 @@ CREATE TABLE user (
 );
 
 CREATE TABLE last_activity (
-    user text,
+    user timeuuid,
     timestamp timestamp,
     status text,
     PRIMARY KEY (user)

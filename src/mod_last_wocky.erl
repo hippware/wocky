@@ -24,17 +24,22 @@ init(_Host, _Opts) ->
                | {error, term()}
                | not_found.
 get_last(LUser, LServer) ->
-    Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
-    Values = [{user, LUser}],
-    case wocky_db:query(LServer, Q, Values, quorum) of
-        {error, E} -> {error, E};
-        {ok, R} ->
-            case wocky_db:single_row(R) of
-                undefined -> not_found;
-                Row -> {ok, proplists:get_value(timestamp, Row),
-                        proplists:get_value(status, Row)}
+    case wocky_db_user:get_user_id(LServer, LUser) of
+        {error, not_found} -> not_found;
+        {ok, UID} -> 
+            Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
+            Values = [{user, UID}],
+            case wocky_db:query(LServer, Q, Values, quorum) of
+                {error, E} -> {error, E};
+                {ok, R} ->
+                    case wocky_db:single_row(R) of
+                        undefined -> not_found;
+                        Row -> {ok, proplists:get_value(timestamp, Row),
+                                proplists:get_value(status, Row)}
+                    end
             end
     end.
+
 
 -spec count_active_users(ejabberd:lserver(), non_neg_integer())
                         -> non_neg_integer().
@@ -50,19 +55,27 @@ count_active_users(LServer, TimeStamp) ->
 -spec set_last_info(ejabberd:luser(), ejabberd:lserver(),
                     non_neg_integer(), binary()) -> ok | {error, term()}.
 set_last_info(LUser, LServer, TimeStamp, Status) ->
-    Q = "INSERT INTO last_activity (user, timestamp, status) VALUES (?, ?, ?)",
-    Values = [{user, LUser}, {timestamp, TimeStamp}, {status, Status}],
-    case wocky_db:query(LServer, Q, Values, quorum) of
-        {error, E} -> {error, E};
-        {ok, void} -> ok
+    case wocky_db_user:get_user_id(LServer, LUser) of
+        {error, not_found} -> {error, not_found};
+        {ok, UID} ->
+            Q = "INSERT INTO last_activity (user, timestamp, status) VALUES (?, ?, ?)",
+            Values = [{user, UID}, {timestamp, TimeStamp}, {status, Status}],
+            case wocky_db:query(LServer, Q, Values, quorum) of
+                {error, E} -> {error, E};
+                {ok, void} -> ok
+            end
     end.
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) ->
     ok | {error, term()}.
 remove_user(LUser, LServer) ->
-    Q = "DELETE FROM last_activity WHERE user = ?",
-    Values = [{user, LUser}],
-    case wocky_db:query(LServer, Q, Values, quorum) of
-        {error, E} -> {error, E};
-        {ok, void} -> ok
+    case wocky_db_user:get_user_id(LServer, LUser) of
+        {error, not_found} -> {error, not_found};
+        {ok, UID} ->
+            Q = "DELETE FROM last_activity WHERE user = ?",
+            Values = [{user, UID}],
+            case wocky_db:query(LServer, Q, Values, quorum) of
+                {error, E} -> {error, E};
+                {ok, void} -> ok
+            end
     end.
