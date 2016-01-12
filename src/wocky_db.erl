@@ -16,14 +16,15 @@
 -type query() :: iodata().
 -type value() :: parameter_val().
 -type values() :: [named_parameter()].
+-type row() :: values() | maps:map().
 -type error() :: term().
 -opaque result() :: #cql_result{}.
--export_type([context/0, query/0, value/0, values/0, result/0, error/0]).
+-export_type([context/0, query/0, value/0, values/0,
+              row/0, result/0, error/0]).
 
 %% API
 -export([query/3, query/4, batch_query/5, count/2,
-         rows/1, single_result/1, single_row/1,
-         count/2 to_keyspace/1]).
+         rows/1, single_result/1, single_row/1, to_keyspace/1]).
 
 
 %%====================================================================
@@ -87,7 +88,7 @@ batch_query(Context, Query, Values, Mode, Consistency) ->
 %%
 %% The row is a property list of column name, value pairs.
 %%
--spec single_row(result()) -> proplists:proplist() | undefined.
+-spec single_row(result()) -> row() | undefined.
 single_row(Result) ->
     case cqerl:head(Result) of
         empty_dataset -> undefined;
@@ -102,17 +103,6 @@ single_row(Result) ->
 -spec rows(result()) -> [values()].
 rows(Result) ->
     cqerl:all_rows(Result).
-
-%% @doc Extracts the first row from a query result
-%%
-%% The row is a property list of column name, value pairs.
-%%
--spec single_row(result()) -> proplists:proplist().
-single_row(Result) ->
-    case cqerl:head(Result) of
-        empty_dataset -> [];
-        R -> R
-    end.
 
 %% @doc Extracts the value of the first column of the first row from a query
 %% result
@@ -171,10 +161,14 @@ keyspace_name(Context) ->
     iolist_to_binary([keyspace_prefix(), Context]).
 
 run_query(Context, Query) ->
-    {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Context)}]),
-    Return = cqerl:run_query(Client, Query),
-    cqerl:close_client(Client),
-    Return.
+    case cqerl:new_client({}, [{keyspace, keyspace_name(Context)}]) of
+        {ok, Client} ->
+            Return = cqerl:run_query(Client, Query),
+            cqerl:close_client(Client),
+            Return;
+        {closed, Error} ->
+            {error, Error}
+    end.
 
 make_batch_query(_Q, [], #cql_query_batch{queries = Qs} = Batch) ->
     Batch#cql_query_batch{queries = lists:reverse(Qs)};
