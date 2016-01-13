@@ -71,23 +71,23 @@ stop(_Host) ->
 
 
 -spec store_type(ejabberd:lserver()) -> scram | plain.
-store_type(Host) ->
-    case scram:enabled(Host) of
+store_type(LServer) ->
+    case scram:enabled(LServer) of
         false -> plain;
         true -> scram
     end.
 
 
 -spec login(ejabberd:luser(), ejabberd:lserver()) -> no_return().
-login(_User, _Server) ->
+login(_LUser, _LServer) ->
     erlang:error(not_implemented).
 
 
 -spec set_password(ejabberd:luser(), ejabberd:lserver(), binary())
                   -> ok | {error, not_allowed | invalid_jid}.
-set_password(User, Server, Password) ->
-    PreparedPass = prepare_password(Server, Password),
-    case wocky_db_user:set_password(Server, User, PreparedPass) of
+set_password(LUser, LServer, Password) ->
+    PreparedPass = prepare_password(LServer, Password),
+    case wocky_db_user:set_password(LUser, LServer, PreparedPass) of
         ok ->
             ok;
 
@@ -98,8 +98,8 @@ set_password(User, Server, Password) ->
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary())
                     -> boolean().
-check_password(User, Server, Password) ->
-    case wocky_db_user:get_password(Server, User) of
+check_password(LUser, LServer, Password) ->
+    case wocky_db_user:get_password(LUser, LServer) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 {ok, #scram{} = Scram} ->
@@ -117,8 +117,8 @@ check_password(User, Server, Password) ->
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary(), binary(),
                      fun()) -> boolean().
-check_password(User, Server, Password, Digest, DigestGen) ->
-    case wocky_db_user:get_password(Server, User) of
+check_password(LUser, LServer, Password, Digest, DigestGen) ->
+    case wocky_db_user:get_password(LUser, LServer) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 {ok, #scram{} = Scram} ->
@@ -143,9 +143,10 @@ check_password(User, Server, Password, Digest, DigestGen) ->
 %% information. Exists for completeness more than anything else (at the moment)
 -spec try_register(ejabberd:luser(), ejabberd:lserver(), binary())
                   -> ok | {error, exists | not_allowed | term()}.
-try_register(User, Server, Password) ->
-    PreparedPass = prepare_password(Server, Password),
-    wocky_db_user:create_user(Server, User, PreparedPass).
+try_register(Name, LServer, Password) ->
+    LUser = wocky_db_user:create_id(),
+    PreparedPass = prepare_password(LServer, Password),
+    wocky_db_user:create_user(LUser, LServer, Name, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
@@ -160,30 +161,30 @@ dirty_get_registered_users() ->
 %% This call is costly and infrequently used. Stub it out.
 -spec get_vh_registered_users(ejabberd:lserver())
                              -> [ejabberd:simple_bare_jid()].
-get_vh_registered_users(_Server) ->
+get_vh_registered_users(_LServer) ->
     [].
 
 -spec get_vh_registered_users(ejabberd:lserver(), list())
                              -> [ejabberd:simple_bare_jid()].
-get_vh_registered_users(Server, _Opts) ->
-    get_vh_registered_users(Server).
+get_vh_registered_users(LServer, _Opts) ->
+    get_vh_registered_users(LServer).
 
 
 -spec get_vh_registered_users_number(ejabberd:lserver()) -> non_neg_integer().
-get_vh_registered_users_number(Server) ->
-    length(get_vh_registered_users(Server)).
+get_vh_registered_users_number(LServer) ->
+    length(get_vh_registered_users(LServer)).
 
 
 -spec get_vh_registered_users_number(ejabberd:lserver(), list())
                                     -> non_neg_integer().
-get_vh_registered_users_number(Server, _Opts) ->
-    get_vh_registered_users_number(Server).
+get_vh_registered_users_number(LServer, _Opts) ->
+    get_vh_registered_users_number(LServer).
 
 
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> scram:scram_tuple() | binary() | false.
-get_password(User, Server) ->
-    case wocky_db_user:get_password(Server, User) of
+get_password(LUser, LServer) ->
+    case wocky_db_user:get_password(LUser, LServer) of
         StoredPassword when is_binary(StoredPassword) ->
             case scram:deserialize(StoredPassword) of
                 {ok, #scram{} = Scram} ->
@@ -200,8 +201,8 @@ get_password(User, Server) ->
 
 
 -spec get_password_s(ejabberd:luser(), ejabberd:lserver()) -> binary().
-get_password_s(User, Server) ->
-    case get_password(User, Server) of
+get_password_s(LUser, LServer) ->
+    case get_password(LUser, LServer) of
         Password when is_binary(Password) ->
             Password;
 
@@ -212,20 +213,20 @@ get_password_s(User, Server) ->
 
 -spec get_password(ejabberd:luser(), ejabberd:lserver(), binary())
                   -> scram:scram_tuple() | binary() | false.
-get_password(User, Server, _DefaultValue) ->
-    get_password(User, Server).
+get_password(LUser, LServer, _DefaultValue) ->
+    get_password(LUser, LServer).
 
 
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
-does_user_exist(User, Server) ->
-    wocky_db_user:does_user_exist(Server, User).
+does_user_exist(LUser, LServer) ->
+    wocky_db_user:does_user_exist(LUser, LServer).
 
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
-remove_user(User, Server) ->
-    case does_user_exist(User, Server) of
+remove_user(LUser, LServer) ->
+    case does_user_exist(LUser, LServer) of
         true ->
-            wocky_db_user:remove_user(Server, User);
+            wocky_db_user:remove_user(LUser, LServer);
 
         false ->
             %% Mission accomplished, the user no longer exists
@@ -238,11 +239,11 @@ remove_user(User, Server) ->
 %% so just stub it out.
 -spec remove_user(ejabberd:luser(), ejabberd:lserver(), binary())
                  -> ok | {error, not_exists | not_allowed | bad_request}.
-remove_user(User, Server, Password) ->
-    case does_user_exist(User, Server) of
+remove_user(LUser, LServer, Password) ->
+    case does_user_exist(LUser, LServer) of
         true ->
-          case check_password(User, Server, Password) of
-              true -> wocky_db_user:remove_user(Server, User);
+          case check_password(LUser, LServer, Password) of
+              true -> wocky_db_user:remove_user(LUser, LServer);
               false -> {error, not_allowed}
           end;
 
