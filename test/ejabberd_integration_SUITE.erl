@@ -11,10 +11,16 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, smoke}].
+    [{group, smoke},
+     {group, last_activity}].
 
 groups() ->
-    [{smoke, [sequence], [messages_story, activity_stories]}].
+    [{smoke, [sequence], [messages_story]},
+     {last_activity, [sequence], [activity_story,
+                                  update_activity_story,
+                                  server_uptime_story,
+                                  unknown_user_acivity_story]
+     }].
 
 suite() ->
     escalus:suite().
@@ -43,7 +49,11 @@ end_per_suite(Config) ->
     ok.
 
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config).
+    escalus:create_users(Config),
+    Config2 = escalus:make_everyone_friends(Config),
+    escalus_ejabberd:wait_for_session_count(Config2, 0),
+    Config2.
+
 
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
@@ -75,12 +85,9 @@ messages_story(Config) ->
 %% mod_last tests
 %%--------------------------------------------------------------------
 
-activity_stories(Config) ->
-    Config2 = escalus:make_everyone_friends(Config),
-    escalus_ejabberd:wait_for_session_count(Config2, 0),
-
+activity_story(Config) ->
     % Last online story
-    escalus:story(Config2, [1, 1],
+    escalus:story(Config, [1, 1],
         fun(Alice, _Bob) ->
             %% Alice asks about Bob's last activity
             escalus_client:send(Alice, escalus_stanza:last_activity(bob)),
@@ -89,13 +96,14 @@ activity_stories(Config) ->
             Stanza = escalus_client:wait_for_stanza(Alice),
             escalus:assert(is_last_result, Stanza),
             0 = get_last_activity(Stanza)
-        end),
+        end).
 
-    % Update status story
-    escalus:story(Config2, [1],
+
+update_activity_story(Config) ->
+    escalus:story(Config, [1],
         fun(Alice) ->
             %% Bob logs in
-            {ok, Bob} = escalus_client:start_for(Config2, bob, <<"bob">>),
+            {ok, Bob} = escalus_client:start_for(Config, bob, <<"bob">>),
 
             %% Bob logs out with a status
             Status = escalus_stanza:tags([{<<"status">>,
@@ -113,23 +121,23 @@ activity_stories(Config) ->
             escalus:assert(is_last_result, Stanza),
             true = (1 =< get_last_activity(Stanza)),
             <<"I am a banana!">> = get_last_status(Stanza)
-        end),
+        end).
 
-    % Server uptime story
-    escalus:story(Config2, [1],
+server_uptime_story(Config) ->
+    escalus:story(Config, [1],
         fun(Alice) ->
             %% Alice asks for server's uptime
-            Server = escalus_users:get_server(Config2, alice),
+            Server = escalus_users:get_server(Config, alice),
             escalus_client:send(Alice, escalus_stanza:last_activity(Server)),
 
             %% Server replies with the uptime > 0
             Stanza = escalus_client:wait_for_stanza(Alice),
             escalus:assert(is_last_result, Stanza),
             true = (get_last_activity(Stanza) > 0)
-        end),
+        end).
 
-    % Unknown user story
-    escalus:story(Config2, [1],
+unknown_user_acivity_story(Config) ->
+    escalus:story(Config, [1],
         fun(Alice) ->
             escalus_client:send(Alice,
                                 escalus_stanza:last_activity(<<"sven">>)),
@@ -137,8 +145,6 @@ activity_stories(Config) ->
             escalus:assert(is_error,
                            [<<"cancel">>, <<"service-unavailable">>], Stanza)
         end),
-
-
     ok.
 
 
