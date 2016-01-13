@@ -48,7 +48,7 @@ count_active_users(LServer, TimeStamp) ->
                     non_neg_integer(), binary()) -> ok.
 set_last_info(LUser, LServer, TimeStamp, Status) ->
     Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
-    Values = [{user, LUser}, {domain, LServer}, 
+    Values = [{user, LUser}, {domain, LServer},
               {timestamp, wocky_db:seconds_to_timestamp(TimeStamp)},
               {status, Status}],
     {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
