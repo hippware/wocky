@@ -35,3 +35,11 @@ CREATE TABLE user (
     avatar timeuuid,
     PRIMARY KEY (id)
 );
+
+CREATE TABLE last_activity (
+    user timeuuid,
+    domain text,
+    timestamp timestamp,
+    status text,
+    PRIMARY KEY (user)
+);

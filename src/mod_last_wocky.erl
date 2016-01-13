@@ -14,30 +14,49 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/mod_last.hrl").
 
-
 %% @doc Initialise this module (from {@link mod_last})
 -spec init(ejabberd:server(), list()) -> ok.
 init(_Host, _Opts) ->
     ok.
 
 -spec get_last(ejabberd:luser(), ejabberd:lserver())
-              -> {ok, non_neg_integer(), binary()}
-               | {error, term()}
-               | not_found.
-get_last(_LUser, _LServer) ->
-    not_found.
+              -> {ok, non_neg_integer(), string()} | not_found.
+get_last(LUser, LServer) ->
+    Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
+    Values = [{user, LUser}],
+    {ok, R} = wocky_db:query(LServer, Q, Values, quorum),
+    case wocky_db:single_row(R) of
+        [] -> not_found;
+        Row ->
+            TS = proplists:get_value(timestamp, Row),
+            {ok, wocky_db:timestamp_to_seconds(TS),
+                binary_to_list(proplists:get_value(status, Row))}
+    end.
+
 
 -spec count_active_users(ejabberd:lserver(), non_neg_integer())
                         -> non_neg_integer().
-count_active_users(_LServer, _TimeStamp) ->
-    0.
+count_active_users(LServer, TimeStamp) ->
+    Q = "SELECT timestamp FROM last_activity",
+    {ok, R} = wocky_db:query(LServer, Q, quorum),
+    Pred = fun([{timestamp, Val}]) -> 
+                   wocky_db:timestamp_to_seconds(Val) > TimeStamp end,
+    wocky_db:count(Pred, R).
+
 
 -spec set_last_info(ejabberd:luser(), ejabberd:lserver(),
-                    non_neg_integer(), binary())
-                   -> ok | {error, term()}.
-set_last_info(_LUser, _LServer, _TimeStamp, _Status) ->
+                    non_neg_integer(), binary()) -> ok.
+set_last_info(LUser, LServer, TimeStamp, Status) ->
+    Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
+    Values = [{user, LUser}, {domain, LServer},
+              {timestamp, wocky_db:seconds_to_timestamp(TimeStamp)},
+              {status, Status}],
+    {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
     ok.
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
-remove_user(_LUser, _LServer) ->
+remove_user(LUser, LServer) ->
+    Q = "DELETE FROM last_activity WHERE user = ?",
+    Values = [{user, LUser}],
+    {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
     ok.

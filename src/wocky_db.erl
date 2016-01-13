@@ -16,14 +16,16 @@
 -type query() :: iodata().
 -type value() :: parameter_val().
 -type values() :: [named_parameter()].
+-type row() :: values() | maps:map().
 -type error() :: term().
 -opaque result() :: #cql_result{}.
--export_type([context/0, query/0, value/0, values/0, result/0, error/0]).
+-export_type([context/0, query/0, value/0, values/0,
+              row/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, batch_query/5,
-         rows/1, single_row/1, single_result/1,
-         count/2, to_keyspace/1]).
+-export([query/3, query/4, batch_query/5, count/2,
+         rows/1, single_result/1, single_row/1, to_keyspace/1,
+         seconds_to_timestamp/1, timestamp_to_seconds/1]).
 
 
 %%====================================================================
@@ -83,6 +85,17 @@ batch_query(Context, Query, Values, Mode, Consistency) ->
     BQ = #cql_query_batch{mode = Mode, consistency = Consistency},
     run_query(Context, make_batch_query(Q, Values, BQ)).
 
+%% @doc Extracts the first row from a query result
+%%
+%% The row is a property list of column name, value pairs.
+%%
+-spec single_row(result()) -> row().
+single_row(Result) ->
+    case cqerl:head(Result) of
+        empty_dataset -> [];
+        R -> R
+    end.
+
 %% @doc Extracts rows from a query result
 %%
 %% Returns a list of rows. Each row is a property list of column name, value
@@ -91,17 +104,6 @@ batch_query(Context, Query, Values, Mode, Consistency) ->
 -spec rows(result()) -> [values()].
 rows(Result) ->
     cqerl:all_rows(Result).
-
-%% @doc Extracts the first row from a query result
-%%
-%% The row is a property list of column name, value pairs.
-%%
--spec single_row(result()) -> proplists:proplist().
-single_row(Result) ->
-    case cqerl:head(Result) of
-        empty_dataset -> [];
-        R -> R
-    end.
 
 %% @doc Extracts the value of the first column of the first row from a query
 %% result
@@ -146,6 +148,19 @@ to_keyspace(String) ->
             Space
     end.
 
+%% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
+%%
+%% Cassandra timestamps are, internally, ms since epoch and can be passed
+%% in in that format.
+-spec seconds_to_timestamp(non_neg_integer()) -> non_neg_integer().
+seconds_to_timestamp(S) ->
+    S * 1000.
+
+%% @doc Convert a Cassandra timestamp into seconds-since-epoch
+%%
+-spec timestamp_to_seconds(non_neg_integer()) -> non_neg_integer().
+timestamp_to_seconds(S) ->
+    S div 1000.
 
 %%====================================================================
 %% Internal functions
@@ -160,10 +175,14 @@ keyspace_name(Context) ->
     iolist_to_binary([keyspace_prefix(), Context]).
 
 run_query(Context, Query) ->
-    {ok, Client} = cqerl:new_client({}, [{keyspace, keyspace_name(Context)}]),
-    Return = cqerl:run_query(Client, Query),
-    cqerl:close_client(Client),
-    Return.
+    case cqerl:new_client({}, [{keyspace, keyspace_name(Context)}]) of
+        {ok, Client} ->
+            Return = cqerl:run_query(Client, Query),
+            cqerl:close_client(Client),
+            Return;
+        {closed, Error} ->
+            {error, Error}
+    end.
 
 make_batch_query(_Q, [], #cql_query_batch{queries = Qs} = Batch) ->
     Batch#cql_query_batch{queries = lists:reverse(Qs)};
