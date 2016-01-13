@@ -120,7 +120,6 @@ create_user_record(Id, Domain, UserName, Password) ->
     wocky_db:query(Domain, Query, Values, quorum).
 
 remove_username_lookup(Domain, UserName) ->
-    ct:log("BJD ~p ~p", [Domain, UserName]),
     Query = "DELETE FROM username_to_user WHERE domain = ? AND username = ?",
     Values = [{domain, Domain}, {username, UserName}],
     wocky_db:query(shared, Query, Values, quorum).

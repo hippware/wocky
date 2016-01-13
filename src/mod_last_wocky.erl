@@ -20,7 +20,7 @@ init(_Host, _Opts) ->
     ok.
 
 -spec get_last(ejabberd:luser(), ejabberd:lserver())
-              -> {ok, integer(), string()} | not_found.
+              -> {ok, non_neg_integer(), string()} | not_found.
 get_last(LUser, LServer) ->
     Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
     Values = [{user, LUser}],
