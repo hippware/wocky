@@ -20,24 +20,17 @@ init(_Host, _Opts) ->
     ok.
 
 -spec get_last(ejabberd:luser(), ejabberd:lserver())
-              -> {ok, non_neg_integer(), binary()}
-               | {error, term()}
-               | not_found.
+              -> {ok, integer(), string()} | not_found.
 get_last(LUser, LServer) ->
-    case wocky_db_user:get_user_id(LServer, LUser) of
-        {error, not_found} -> not_found;
-        {ok, UID} -> 
-            Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
-            Values = [{user, UID}],
-            case wocky_db:query(LServer, Q, Values, quorum) of
-                {error, E} -> {error, E};
-                {ok, R} ->
-                    case wocky_db:single_row(R) of
-                        [] -> not_found;
-                        Row -> {ok, proplists:get_value(timestamp, Row),
-                                proplists:get_value(status, Row)}
-                    end
-            end
+    Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
+    Values = [{user, LUser}],
+    {ok, R} = wocky_db:query(LServer, Q, Values, quorum),
+    case wocky_db:single_row(R) of
+        [] -> not_found;
+        Row ->
+            TS = proplists:get_value(timestamp, Row),
+            {ok, wocky_db:timestamp_to_seconds(TS),
+                binary_to_list(proplists:get_value(status, Row))}
     end.
 
 
@@ -45,37 +38,25 @@ get_last(LUser, LServer) ->
                         -> non_neg_integer().
 count_active_users(LServer, TimeStamp) ->
     Q = "SELECT timestamp FROM last_activity",
-    case wocky_db:query(LServer, Q, quorum) of
-        {error, _} -> 0;
-        {ok, R} ->
-            Pred = fun([{timestamp, Val}]) -> Val > TimeStamp end,
-            wocky_db:count(Pred, R)
-    end.
+    {ok, R} = wocky_db:query(LServer, Q, quorum),
+    Pred = fun([{timestamp, Val}]) -> 
+                   wocky_db:timestamp_to_seconds(Val) > TimeStamp end,
+    wocky_db:count(Pred, R).
+
 
 -spec set_last_info(ejabberd:luser(), ejabberd:lserver(),
-                    non_neg_integer(), binary()) -> ok | {error, term()}.
+                    non_neg_integer(), binary()) -> ok.
 set_last_info(LUser, LServer, TimeStamp, Status) ->
-    case wocky_db_user:get_user_id(LServer, LUser) of
-        {error, not_found} -> {error, not_found};
-        {ok, UID} ->
-            Q = "INSERT INTO last_activity (user, timestamp, status) VALUES (?, ?, ?)",
-            Values = [{user, UID}, {timestamp, TimeStamp}, {status, Status}],
-            case wocky_db:query(LServer, Q, Values, quorum) of
-                {error, E} -> {error, E};
-                {ok, void} -> ok
-            end
-    end.
+    Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
+    Values = [{user, LUser}, {domain, LServer}, 
+              {timestamp, wocky_db:seconds_to_timestamp(TimeStamp)},
+              {status, Status}],
+    {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
+    ok.
 
--spec remove_user(ejabberd:luser(), ejabberd:lserver()) ->
-    ok | {error, term()}.
+-spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    case wocky_db_user:get_user_id(LServer, LUser) of
-        {error, not_found} -> {error, not_found};
-        {ok, UID} ->
-            Q = "DELETE FROM last_activity WHERE user = ?",
-            Values = [{user, UID}],
-            case wocky_db:query(LServer, Q, Values, quorum) of
-                {error, E} -> {error, E};
-                {ok, void} -> ok
-            end
-    end.
+    Q = "DELETE FROM last_activity WHERE user = ?",
+    Values = [{user, LUser}],
+    {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
+    ok.

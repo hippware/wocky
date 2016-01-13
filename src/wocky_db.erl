@@ -24,7 +24,8 @@
 
 %% API
 -export([query/3, query/4, batch_query/5, count/2,
-         rows/1, single_result/1, single_row/1, to_keyspace/1]).
+         rows/1, single_result/1, single_row/1, to_keyspace/1,
+         seconds_to_timestamp/1, timestamp_to_seconds/1]).
 
 
 %%====================================================================
@@ -147,6 +148,19 @@ to_keyspace(String) ->
             Space
     end.
 
+%% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
+%%
+%% Cassandra timestamps are, internally, ms since epoch and can be passed
+%% in in that format.
+-spec seconds_to_timestamp(non_neg_integer()) -> non_neg_integer().
+seconds_to_timestamp(S) ->
+    S * 1000.
+
+%% @doc Convert a Cassandra timestamp into seconds-since-epoch
+%%
+-spec timestamp_to_seconds(non_neg_integer()) -> non_neg_integer().
+timestamp_to_seconds(S) ->
+    S div 1000.
 
 %%====================================================================
 %% Internal functions

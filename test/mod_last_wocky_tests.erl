@@ -6,6 +6,8 @@
 
 -define(DOMAIN, "localhost").
 
+-compile(export_all).
+
 mod_last_wocky_test_() -> {
   "mod_last_wocky",
   setup, fun before_all/0, fun after_all/1,
@@ -23,65 +25,45 @@ before_all() ->
 after_all(_) ->
     ok = wocky_app:stop().
 
-make_user_vals(Username, Timestamp, Status, Domain) ->
-    ID = ossp_uuid:make(v1, binary),
-    [{id, ID}, {user, ID}, {username, Username}, {timestamp, Timestamp},
-     {status, Status}, {domain, Domain}].
+uuid(Name, Users) ->
+    E = lists:keyfind(Name, 1, Users),
+    element(4, E).
 
 before_each() ->
-    Users = [{<<"bob">>, 666, <<"">>},
-             {<<"alicia">>, 777, <<"Ennui">>},
-             {<<"robert">>, 888, <<"Bored">>},
-             {<<"karen">>, 999, <<"Excited">>},
-             {<<"alice">>, 1000, <<"Still not here">>}],
+    Users = [{<<"bob">>, 666, <<"">>, ossp_uuid:make(v1, binary)},
+             {<<"alicia">>, 777, <<"Ennui">>, ossp_uuid:make(v1, binary)},
+             {<<"robert">>, 888, <<"Bored">>, ossp_uuid:make(v1, binary)},
+             {<<"karen">>, 999, <<"Excited">>, ossp_uuid:make(v1, binary)},
+             {<<"alice">>, 1000, <<"Not here">>, ossp_uuid:make(v1, binary)}],
 
-    InactiveUsers = [<<"tim">>],
+    InactiveUsers = [{<<"tim">>, not_set, not_set, ossp_uuid:make(v1, binary)}],
 
-    OtherServerUsers = [{<<"tim">>, <<"otherdomain">>},
-                        {<<"xyzzy">>, <<"xyzzy">>},
-                        {<<"wapsi">>, <<"flibble">>}],
+    Values = [[{user, UID}, {timestamp, wocky_db:seconds_to_timestamp(T)},
+               {status, S}, {domain, ?DOMAIN}] || {_, T, S, UID} <- Users],
 
-
-    Values = [make_user_vals(U, T, S, ?DOMAIN) || {U, T, S} <- Users],
-    InactiveVals = [make_user_vals(U, not_set, not_set, ?DOMAIN)
-                    || U <- InactiveUsers],
-    OtherServerVals = [make_user_vals(U, not_set, not_set, D)
-                       || {U, D} <- OtherServerUsers],
-
-    Q1 = "INSERT INTO username_to_user (id, username, domain) VALUES (?, ?, ?)",
-    UserTableVals = Values ++ InactiveVals ++ OtherServerVals,
-    {ok, _} = wocky_db:batch_query(shared, Q1, UserTableVals, logged, quorum),
-
-    Q2 = "INSERT INTO last_activity (user, timestamp, status) VALUES (?, ?, ?)",
-    {ok, _} = wocky_db:batch_query(?DOMAIN, Q2, Values, logged, quorum),
-    ok.
+    Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
+    {ok, _} = wocky_db:batch_query(?DOMAIN, Q, Values, logged, quorum),
+    Users ++ InactiveUsers.
 
 after_each(_) ->
-    {ok, _} = wocky_db:query(shared, <<"TRUNCATE username_to_user">>, quorum),
     {ok, _} = wocky_db:query(?DOMAIN, <<"TRUNCATE last_activity">>, quorum),
     ok.
 
 test_set_last_info() ->
-    { "set_last_info", foreach, fun before_each/0, fun after_each/1, [
-        { "Creates a new user", [
+    { "set_last_info", setup, fun before_each/0, fun after_each/1, fun(Users) -> [
+        { "Creates a new user and validates their state", [
             ?_assertMatch(not_found,
-                          mod_last_wocky:get_last(<<"tim">>, ?DOMAIN)),
-            ?_assertMatch(ok, mod_last_wocky:set_last_info(<<"tim">>, ?DOMAIN,
+                          mod_last_wocky:get_last(uuid(<<"tim">>, Users),
+                                                  ?DOMAIN)),
+            ?_assertMatch(ok,
+                          mod_last_wocky:set_last_info(uuid(<<"tim">>, Users),
+                                                  ?DOMAIN,
                           1024, <<"This is Tim's status">>)),
-            ?_assertMatch({ok, 1024, <<"This is Tim's status">>},
-                          mod_last_wocky:get_last(<<"tim">>, ?DOMAIN))
-        ]},
-        { "Returns an error for an update for an unkonwn user", [
-            ?_assertMatch({error, _},
-                          mod_last_wocky:set_last_info(<<"mistypedusername">>,
-                             ?DOMAIN, 111, <<"Huh?">>))
-        ]},
-        { "Returns an error for an insert into an unknown domain", [
-            ?_assertMatch({error, _},
-                          mod_last_wocky:set_last_info(<<"tim">>,
-                             <<"otherdomain">>, 1024, <<"Tim's not here man">>))
+            ?_assertMatch({ok, 1024, "This is Tim's status"},
+                          mod_last_wocky:get_last(uuid(<<"tim">>, Users),
+                                                  ?DOMAIN))
         ]}
-    ]}.
+    ] end}.
 
 test_active_user_count() ->
     { "active_user_count", foreach, fun before_each/0, fun after_each/1, [
@@ -91,54 +73,42 @@ test_active_user_count() ->
             ?_assertMatch(2, mod_last_wocky:count_active_users(?DOMAIN, 998)),
             ?_assertMatch(1, mod_last_wocky:count_active_users(?DOMAIN, 999)),
             ?_assertMatch(0, mod_last_wocky:count_active_users(?DOMAIN, 1000))
-        ]},
-        { "Returns 0 for unknown domain", [
-            ?_assertMatch(0,
-                   mod_last_wocky:count_active_users(<<"otherdomain">>, 1))
         ]}
     ]}.
 
 test_last_activity() ->
-    { "last_activity", foreach,  fun before_each/0, fun after_each/1, [
+    { "last_activity", setup,  fun before_each/0, fun after_each/1, fun(Users) -> [
         { "Returns timestamp and status where record exists", [
-            ?_assertMatch({ok, 1000, <<"Still not here">>},
-                          mod_last_wocky:get_last(<<"alice">>, ?DOMAIN)),
-            ?_assertMatch({ok, 666, <<"">>}, 
-                          mod_last_wocky:get_last(<<"bob">>, ?DOMAIN)),
-            ?_assertMatch({ok, 999, <<"Excited">>},
-                          mod_last_wocky:get_last(<<"karen">>, ?DOMAIN)),
-            ?_assertMatch({ok, 777, <<"Ennui">>},
-                          mod_last_wocky:get_last(<<"alicia">>, ?DOMAIN))
+            ?_assertMatch({ok, 1000, "Not here"},
+                          mod_last_wocky:get_last(uuid(<<"alice">>, Users),
+                                                  ?DOMAIN)),
+            ?_assertMatch({ok, 666, ""},
+                          mod_last_wocky:get_last(uuid(<<"bob">>, Users),
+                                                  ?DOMAIN)),
+            ?_assertMatch({ok, 999, "Excited"},
+                          mod_last_wocky:get_last(uuid(<<"karen">>, Users),
+                                                  ?DOMAIN)),
+            ?_assertMatch({ok, 777, "Ennui"},
+                          mod_last_wocky:get_last(uuid(<<"alicia">>, Users),
+                                                  ?DOMAIN))
         ]},
         { "Returns not_found when a record does not exist", [
             ?_assertMatch(not_found,
-                          mod_last_wocky:get_last(<<"Bob">>, ?DOMAIN))
-        ]},
-        { "Returns an error when the domain is invalid", [
-            ?_assertMatch({error, _},
-                          mod_last_wocky:get_last(<<"xyzzy">>, <<"xyzzy">>))
+                          mod_last_wocky:get_last(ossp_uuid:make(v1, binary), ?DOMAIN))
         ]}
-    ]}.
+    ] end}.
 
 test_remove_user() ->
-    { "remove_user", foreach, fun before_each/0, fun after_each/1, [
+    { "remove_user", setup, fun before_each/0, fun after_each/1, fun(Users) -> [
         { "Deletes existing users", [
-            ?_assertMatch(ok, mod_last_wocky:remove_user(<<"bob">>, ?DOMAIN)),
-            ?_assertMatch(ok,
-                          mod_last_wocky:remove_user(<<"alicia">>, ?DOMAIN)),
+            ?_assertMatch(ok, mod_last_wocky:remove_user(uuid(<<"bob">>,
+                                                              Users), ?DOMAIN)),
+            ?_assertMatch(ok, mod_last_wocky:remove_user(uuid(<<"alicia">>,
+                                                              Users), ?DOMAIN)),
             ?_assertMatch(3, mod_last_wocky:count_active_users(?DOMAIN, 0)),
-            ?_assertMatch(not_found,
-                          mod_last_wocky:get_last(<<"bob">>, ?DOMAIN)),
-            ?_assertMatch(not_found,
-                          mod_last_wocky:get_last(<<"alicia">>, ?DOMAIN))
-        ]},
-        { "Returns an error for an update for an unkonwn user", [
-            ?_assertMatch({error, _},
-                          mod_last_wocky:remove_user(<<"mistypedusername">>,
-                             ?DOMAIN))
-        ]},
-        { "Returns an error for an insert into an unknown domain", [
-            ?_assertMatch({error, _},
-                          mod_last_wocky:remove_user(<<"wapsi">>, <<"flibble">>))
+            ?_assertMatch(not_found, mod_last_wocky:get_last(uuid(<<"bob">>,
+                                                              Users), ?DOMAIN)),
+            ?_assertMatch(not_found, mod_last_wocky:get_last(uuid(<<"alicia">>,
+                                                              Users), ?DOMAIN))
         ]}
-    ]}.
+    ] end}.

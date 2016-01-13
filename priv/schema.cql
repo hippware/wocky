@@ -28,6 +28,7 @@ CREATE TABLE user (
 
 CREATE TABLE last_activity (
     user timeuuid,
+    domain text,
     timestamp timestamp,
     status text,
     PRIMARY KEY (user)
