@@ -33,7 +33,7 @@ get_last(LUser, LServer) ->
                 {error, E} -> {error, E};
                 {ok, R} ->
                     case wocky_db:single_row(R) of
-                        undefined -> not_found;
+                        [] -> not_found;
                         Row -> {ok, proplists:get_value(timestamp, Row),
                                 proplists:get_value(status, Row)}
                     end

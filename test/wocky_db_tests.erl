@@ -47,7 +47,7 @@ wocky_db_api_smoke_test() ->
 
     {ok, R2} = wocky_db:query(shared, Q2, quorum),
     ?assertEqual(0, length(wocky_db:rows(R2))),
-    ?assertEqual(undefined, wocky_db:single_row(R2)),
+    ?assertEqual([], wocky_db:single_row(R2)),
 
     wocky_app:stop(),
     ok.

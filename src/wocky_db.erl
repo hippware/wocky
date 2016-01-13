@@ -88,10 +88,10 @@ batch_query(Context, Query, Values, Mode, Consistency) ->
 %%
 %% The row is a property list of column name, value pairs.
 %%
--spec single_row(result()) -> row() | undefined.
+-spec single_row(result()) -> row().
 single_row(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> undefined;
+        empty_dataset -> [];
         R -> R
     end.
 
