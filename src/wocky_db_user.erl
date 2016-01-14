@@ -1,6 +1,20 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Wocky user model
-
+%%%
+%%% Terminology
+%%% User/LUser:
+%%%   The local part of the JID. For us, it is a timeuuid generated when the
+%%%   user is created. This is not meant for display to the end user.
+%%%
+%%% Server/LServer:
+%%%   The virtual host that the user connects to. This is not the physical
+%%%   machine that is handling the user's connection, but a domain representing
+%%%   a single cluster of application instances.
+%%%
+%%% Handle:
+%%%   This is the name that is displayed to the user and is chosen by the user
+%%%   when they create their account. It must be globally unique.
+%%%
 -module(wocky_db_user).
 
 -type handle()   :: binary().
