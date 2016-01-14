@@ -39,7 +39,7 @@ get_last(LUser, LServer) ->
 count_active_users(LServer, TimeStamp) ->
     Q = "SELECT timestamp FROM last_activity",
     {ok, R} = wocky_db:query(LServer, Q, quorum),
-    Pred = fun([{timestamp, Val}]) -> 
+    Pred = fun([{timestamp, Val}]) ->
                    wocky_db:timestamp_to_seconds(Val) > TimeStamp end,
     wocky_db:count(Pred, R).
 
@@ -47,8 +47,9 @@ count_active_users(LServer, TimeStamp) ->
 -spec set_last_info(ejabberd:luser(), ejabberd:lserver(),
                     non_neg_integer(), binary()) -> ok.
 set_last_info(LUser, LServer, TimeStamp, Status) ->
-    Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
-    Values = [{user, LUser}, {domain, LServer},
+    Q = "INSERT INTO last_activity (user, server, timestamp, status)"
+        " VALUES (?, ?, ?, ?)",
+    Values = [{user, LUser}, {server, LServer},
               {timestamp, wocky_db:seconds_to_timestamp(TimeStamp)},
               {status, Status}],
     {ok, void} = wocky_db:query(LServer, Q, Values, quorum),

@@ -143,10 +143,10 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 %% information. Exists for completeness more than anything else (at the moment)
 -spec try_register(ejabberd:luser(), ejabberd:lserver(), binary())
                   -> ok | {error, exists | not_allowed | term()}.
-try_register(Name, LServer, Password) ->
+try_register(Handle, LServer, Password) ->
     LUser = wocky_db_user:create_id(),
     PreparedPass = prepare_password(LServer, Password),
-    wocky_db_user:create_user(LUser, LServer, Name, PreparedPass).
+    wocky_db_user:create_user(LUser, LServer, Handle, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].

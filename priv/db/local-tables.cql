@@ -15,20 +15,20 @@ USE <name>;
 
 -- ToDo: firstname, lastname
 CREATE TABLE user (
-    id timeuuid,
-    domain text,
-    username text,
+    user timeuuid,
+    server text,
+    handle text,
     password text,
     phone_number text,
     status bigint,
     user_status text,
     avatar timeuuid,
-    PRIMARY KEY (id)
+    PRIMARY KEY (user)
 );
 
 CREATE TABLE last_activity (
     user timeuuid,
-    domain text,
+    server text,
     timestamp timestamp,
     status text,
     PRIMARY KEY (user)
@@ -36,7 +36,7 @@ CREATE TABLE last_activity (
 
 CREATE TABLE roster (
     user timeuuid,
-    domain text,
+    server text,
     contact text,
     active boolean,
     nick text,

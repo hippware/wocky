@@ -13,16 +13,16 @@ CREATE KEYSPACE wocky_shared
 USE wocky_shared;
 */
 
-CREATE TABLE username_to_user (
-    domain text,
-    username text,
-    id timeuuid,
-    PRIMARY KEY (domain, username)
+CREATE TABLE handle_to_user (
+    user timeuuid,
+    server text,
+    handle text,
+    PRIMARY KEY (server, handle)
 );
 
 CREATE TABLE phone_number_to_user (
+    user timeuuid,
+    server text,
     phone_number text,
-    id timeuuid,
-    domain text,
     PRIMARY KEY (phone_number)
 );
