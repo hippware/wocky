@@ -17,7 +17,7 @@ CREATE TABLE handle_to_user (
     user timeuuid,
     server text,
     handle text,
-    PRIMARY KEY (server, handle)
+    PRIMARY KEY (handle)
 );
 
 CREATE TABLE phone_number_to_user (

@@ -119,7 +119,7 @@ remove_user(LUser, LServer) ->
             %% TODO this really needs to be done in a batch, but we don't
             %% currently have a clean way to run queries in different keyspaces
             %% in the same batch.
-            {ok, _} = remove_handle_lookup(LServer, Handle),
+            {ok, _} = remove_handle_lookup(Handle),
             {ok, _} = remove_user_record(LUser, LServer),
             ok
     end.
@@ -143,10 +143,9 @@ create_user_record(LUser, LServer, Handle, Password) ->
                handle => Handle, password => Password},
     wocky_db:query(LServer, Query, Values, quorum).
 
-remove_handle_lookup(LServer, Handle) ->
-    Query = "DELETE FROM handle_to_user WHERE server = ? AND handle = ?",
-    Values = #{server => LServer, handle => Handle},
-    wocky_db:query(shared, Query, Values, quorum).
+remove_handle_lookup(Handle) ->
+    Query = "DELETE FROM handle_to_user WHERE handle = ?",
+    wocky_db:query(shared, Query, #{handle => Handle}, quorum).
 
 remove_user_record(LUser, LServer) ->
     Query = "DELETE FROM user WHERE user = ?",
