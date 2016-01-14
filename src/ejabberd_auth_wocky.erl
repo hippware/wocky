@@ -140,13 +140,13 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 
 
 %% Not really suitable for use since it does not pass in extra profile
-%% information. Exists for completeness more than anything else (at the moment)
+%% information and we expect LUser to be a timeuuid. It is implemented
+%% here to enable Escalus to create users in integration tests.
 -spec try_register(ejabberd:luser(), ejabberd:lserver(), binary())
                   -> ok | {error, exists | not_allowed | term()}.
-try_register(Handle, LServer, Password) ->
-    LUser = wocky_db_user:create_id(),
+try_register(LUser, LServer, Password) ->
     PreparedPass = prepare_password(LServer, Password),
-    wocky_db_user:create_user(LUser, LServer, Handle, PreparedPass).
+    wocky_db_user:create_user(LUser, LServer, LUser, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].

@@ -293,11 +293,14 @@ test_remove_user_with_password() ->
 test_try_register() ->
   { "try_register/3", foreach, fun before_each/0, fun after_each/1, [
     { "creates the user if it does not already exist", [
-      ?_assertEqual(ok, ejabberd_auth_wocky:try_register(
-                          <<"madhatter">>, ?SERVER, <<"ticktock">>))
+      ?_assertEqual(ok,
+                    ejabberd_auth_wocky:try_register(?NEWUSER, ?SERVER, ?PASS)),
+      ?_assert(ejabberd_auth_wocky:does_user_exist(?NEWUSER, ?SERVER))
     ]},
     { "returns {error, exists} if the user already exists", [
+      ?_assertEqual(ok,
+                    ejabberd_auth_wocky:try_register(?NEWUSER, ?SERVER, ?PASS)),
       ?_assertEqual({error, exists},
-                    ejabberd_auth_wocky:try_register(?HANDLE, ?SERVER, ?PASS))
+                    ejabberd_auth_wocky:try_register(?NEWUSER, ?SERVER, ?PASS))
     ]}
   ]}.
