@@ -35,27 +35,30 @@ wocky_db_api_smoke_test() ->
 
     Q1 = "INSERT INTO handle_to_user (user, server, handle) VALUES (?, ?, ?)",
     Values = [
-      [{user, now}, {server, <<"localhost">>}, {handle, <<"alice">>}],
-      [{user, now}, {server, <<"localhost">>}, {handle, <<"bob">>}],
-      [{user, now}, {server, <<"localhost">>}, {handle, <<"charlie">>}]
+      #{user => now, server => <<"localhost">>, handle => <<"alice">>},
+      #{user => now, server => <<"localhost">>, handle => <<"bob">>},
+      #{user => now, server => <<"localhost">>, handle => <<"charlie">>}
     ],
     [{ok, _}, {ok, _}, {ok, _}] =
         wocky_db:multi_query(shared, Q1, Values, quorum),
 
     %% You aren't supposed to use batches like this, but this is just a test
     Queries = [
-      {Q1, [{user, now}, {server, <<"localhost">>}, {handle, <<"dan">>}]},
-      {Q1, [{user, now}, {server, <<"localhost">>}, {handle, <<"ed">>}]},
-      {Q1, [{user, now}, {server, <<"localhost">>}, {handle, <<"frank">>}]}
+      {Q1, #{user => now, server => <<"localhost">>, handle => <<"dan">>}},
+      {Q1, #{user => now, server => <<"localhost">>, handle => <<"ed">>}},
+      {Q1, #{user => now, server => <<"localhost">>, handle => <<"frank">>}}
     ],
     {ok, void} = wocky_db:batch_query(shared, Queries, logged, quorum),
 
     Q2 = "SELECT handle FROM handle_to_user",
     {ok, R1} = wocky_db:query(shared, Q2, quorum),
+    ?assert(is_list(wocky_db:rows(R1))),
     ?assertEqual(6, length(wocky_db:rows(R1))),
-    ?assertEqual(1, length(wocky_db:single_row(R1))),
 
-    NotBob = fun (Row) -> proplists:get_value(handle, Row) =/= <<"bob">> end,
+    ?assert(is_map(wocky_db:single_row(R1))),
+    ?assertEqual(1, maps:size(wocky_db:single_row(R1))),
+
+    NotBob = fun (#{handle := H}) -> H =/= <<"bob">> end,
     ?assertEqual(5, wocky_db:count(NotBob, R1)),
 
     Q3 = "TRUNCATE handle_to_user",
@@ -63,7 +66,7 @@ wocky_db_api_smoke_test() ->
 
     {ok, R2} = wocky_db:query(shared, Q2, quorum),
     ?assertEqual(0, length(wocky_db:rows(R2))),
-    ?assertEqual([], wocky_db:single_row(R2)),
+    ?assertEqual(0, maps:size(wocky_db:single_row(R2))),
 
     wocky_app:stop(),
     ok.

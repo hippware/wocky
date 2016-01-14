@@ -37,13 +37,13 @@ after_all(_) ->
 before_each() ->
     Query1 = "INSERT INTO handle_to_user (user, server, handle)" ++
              " VALUES (?, ?, ?)",
-    Values1 = [{user, ?USER}, {server, ?SERVER}, {handle, ?HANDLE}],
+    Values1 = #{user => ?USER, server => ?SERVER, handle => ?HANDLE},
     {ok, _} = wocky_db:query(shared, Query1, Values1, quorum),
 
     Query2 = "INSERT INTO user (user, server, handle, password)" ++
              " VALUES (?, ?, ?, ?)",
-    Values2 = [{user, ?USER}, {server, ?SERVER},
-               {handle, ?HANDLE}, {password, ?PASS}],
+    Values2 = #{user => ?USER, server => ?SERVER,
+                handle => ?HANDLE, password => ?PASS},
     {ok, _} = wocky_db:query(?SERVER, Query2, Values2, quorum),
     ok.
 

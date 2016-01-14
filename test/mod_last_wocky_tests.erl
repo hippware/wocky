@@ -38,8 +38,8 @@ before_each() ->
 
     InactiveUsers = [{<<"tim">>, not_set, not_set, ossp_uuid:make(v1, text)}],
 
-    Values = [[{user, UID}, {timestamp, wocky_db:seconds_to_timestamp(T)},
-               {status, S}, {server, ?SERVER}] || {_, T, S, UID} <- Users],
+    Values = [#{user => UID, timestamp => wocky_db:seconds_to_timestamp(T),
+                status => S, server => ?SERVER} || {_, T, S, UID} <- Users],
 
     Q = "INSERT INTO last_activity (user, server, timestamp, status)"
         " VALUES (?, ?, ?, ?)",

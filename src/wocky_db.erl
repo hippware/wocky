@@ -12,12 +12,13 @@
 -module(wocky_db).
 -include_lib("cqerl/include/cqerl.hrl").
 
--type context() :: shared | binary().
--type query() :: iodata().
--type value() :: parameter_val().
--type values() :: [named_parameter()].
--type row() :: values() | maps:map().
--type error() :: term().
+-type context()  :: shared | binary().
+-type query()    :: iodata().
+-type value()    :: parameter_val().
+-type values()   :: maps:map().
+-type row()      :: maps:map().
+-type rows()     :: [row()].
+-type error()    :: term().
 -opaque result() :: #cql_result{}.
 -export_type([context/0, query/0, value/0, values/0,
               row/0, result/0, error/0]).
@@ -116,7 +117,7 @@ multi_query(Context, Query, ValuesList, Consistency) ->
 %% Returns a list of rows. Each row is a property list of column name, value
 %% pairs.
 %%
--spec rows(result()) -> [values()].
+-spec rows(result()) -> rows().
 rows(Result) ->
     drop_all_nulls(cqerl:all_rows(Result)).
 
@@ -127,7 +128,7 @@ rows(Result) ->
 -spec single_row(result()) -> row().
 single_row(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> [];
+        empty_dataset -> #{};
         R -> drop_nulls(R)
     end.
 
@@ -137,8 +138,11 @@ single_row(Result) ->
 -spec single_result(result()) -> value() | undefined.
 single_result(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> undefined;
-        [{_Name, Value}|_] -> Value
+        empty_dataset ->
+            undefined;
+        Map ->
+            [{_, Value}|_] = maps:to_list(Map),
+            Value
     end.
 
 %% @doc Counts the number of rows in a result that match the predicate.
@@ -230,5 +234,5 @@ drop_all_nulls(Rows) ->
     [drop_nulls(Row) || Row <- Rows].
 
 drop_nulls(Row) ->
-    lists:filter(fun ({_, null}) -> false;
-                     (_) -> true end, Row).
+    maps:filter(fun (_, null) -> false;
+                    (_, _) -> true end, Row).
