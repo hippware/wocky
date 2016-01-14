@@ -56,7 +56,6 @@ CREATE TABLE roster (
     user timeuuid,
     server text,
     contact text,
-    active boolean,
     nick text,
     groups set<text>,
     ask text,
@@ -66,7 +65,6 @@ CREATE TABLE roster (
     PRIMARY KEY (user, contact)
 );
 
-CREATE INDEX ON roster(active);
 CREATE INDEX ON roster(version);
 
 CREATE TABLE session (
