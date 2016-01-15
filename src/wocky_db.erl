@@ -26,7 +26,8 @@
 %% API
 -export([query/3, query/4, batch_query/4, multi_query/4,
          rows/1, single_row/1, single_result/1, count/2,
-         to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1]).
+         to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1,
+         expire_to_ttl/1]).
 
 
 %%====================================================================
@@ -191,6 +192,18 @@ seconds_to_timestamp(S) ->
 -spec timestamp_to_seconds(non_neg_integer()) -> non_neg_integer().
 timestamp_to_seconds(S) ->
     S div 1000.
+
+%% @doc Convert a seconds-since-epoch expiry time to a value for C*'s TTL
+%%
+%% Note that because C* will throw an error for non-positive values in TTL, we
+%% clamp the return to no less than 1, allowing this function's result to be
+%% safely passed straight into a TTL binding in a query.
+%%
+-spec expire_to_ttl(non_neg_integer()) -> pos_integer().
+expire_to_ttl(ExpireEpochSeconds) ->
+    {MegaSecs, Secs, _} = os:timestamp(),
+    NowSecs = (MegaSecs * 1000000) + Secs,
+    lists:max([ExpireEpochSeconds - NowSecs, 1]).
 
 %%====================================================================
 %% Internal functions
