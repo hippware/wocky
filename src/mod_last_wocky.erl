@@ -23,14 +23,13 @@ init(_Host, _Opts) ->
               -> {ok, non_neg_integer(), string()} | not_found.
 get_last(LUser, LServer) ->
     Q = "SELECT timestamp, status FROM last_activity WHERE user = ?",
-    Values = [{user, LUser}],
-    {ok, R} = wocky_db:query(LServer, Q, Values, quorum),
+    {ok, R} = wocky_db:query(LServer, Q, #{user => LUser}, quorum),
     case wocky_db:single_row(R) of
-        [] -> not_found;
-        Row ->
-            TS = proplists:get_value(timestamp, Row),
-            {ok, wocky_db:timestamp_to_seconds(TS),
-                binary_to_list(proplists:get_value(status, Row))}
+        #{timestamp := TS, status := S} ->
+            {ok, wocky_db:timestamp_to_seconds(TS), binary_to_list(S)};
+
+        _ ->
+            not_found
     end.
 
 
@@ -39,7 +38,7 @@ get_last(LUser, LServer) ->
 count_active_users(LServer, TimeStamp) ->
     Q = "SELECT timestamp FROM last_activity",
     {ok, R} = wocky_db:query(LServer, Q, quorum),
-    Pred = fun([{timestamp, Val}]) -> 
+    Pred = fun(#{timestamp := Val}) ->
                    wocky_db:timestamp_to_seconds(Val) > TimeStamp end,
     wocky_db:count(Pred, R).
 
@@ -47,16 +46,15 @@ count_active_users(LServer, TimeStamp) ->
 -spec set_last_info(ejabberd:luser(), ejabberd:lserver(),
                     non_neg_integer(), binary()) -> ok.
 set_last_info(LUser, LServer, TimeStamp, Status) ->
-    Q = "INSERT INTO last_activity (user, domain, timestamp, status) VALUES (?, ?, ?, ?)",
-    Values = [{user, LUser}, {domain, LServer},
-              {timestamp, wocky_db:seconds_to_timestamp(TimeStamp)},
-              {status, Status}],
+    Q = "INSERT INTO last_activity (user, server, timestamp, status)"
+        " VALUES (?, ?, ?, ?)",
+    Values = #{user => LUser, server => LServer, status => Status,
+               timestamp => wocky_db:seconds_to_timestamp(TimeStamp)},
     {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
     ok.
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
     Q = "DELETE FROM last_activity WHERE user = ?",
-    Values = [{user, LUser}],
-    {ok, void} = wocky_db:query(LServer, Q, Values, quorum),
+    {ok, void} = wocky_db:query(LServer, Q, #{user => LUser}, quorum),
     ok.
