@@ -22,7 +22,7 @@ mod_offline_wocky_test_() -> {
   [
     test_pop_messages(),
     test_write_messages(),
-%    test_message_expiry(),
+    test_message_expiry(),
     test_remove_user()
   ]
 }.
@@ -137,7 +137,7 @@ test_write_messages() ->
                end
               )
          ]},
-         { "Write and retrieve lots of messages", [
+         { "Write and retrieve lots of randomly ordered messages", [
             ?_test(
                begin
                    UUID = uuid(<<"tim">>, Config),
@@ -164,6 +164,32 @@ test_write_messages() ->
          ]}
      ] end}.
 
+test_message_expiry() ->
+    { "message_expiry", setup, fun before_each/0, fun after_each/1, fun(Config) -> [
+        { "Ensure messages expire at their allotted time", [
+            ?_test(
+               begin
+                   UUID = uuid(<<"tim">>, Config),
+                   make_msg_structs(UUID, <<"tim">>,
+                                                 Config#config.nowsecs, 0),
+
+                   Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I) ||
+                             I <- lists:seq(1,10)],
+                   {_Maps, Recs} = lists:unzip(Values),
+                   NowSecs = get_nowsecs(),
+                   ShortExipreRecs = [R#offline_msg{expire = NowSecs + 1} ||
+                                      R <- Recs],
+                   ?assertEqual(ok, mod_offline_wocky:write_messages(UUID,
+                                                 ?SERVER, ShortExipreRecs, unused)),
+
+                   timer:sleep(2000),
+                   ?assertEqual({ok, []},
+                                mod_offline_wocky:pop_messages(UUID, ?SERVER))
+               end
+             )
+        ]}
+    ] end}.
+
 test_remove_user() ->
     { "remove_user", setup, fun before_each/0, fun after_each/1, fun(Config) -> [
         { "Remove a user and ensure no messages remain", [
@@ -176,6 +202,6 @@ test_remove_user() ->
     ] end}.
 
 
-% Little helper function to randomly shuffle a list of elements
+% Little helper function to pseudo-randomly shuffle a list of elements
 shuffle_list(L) ->
     [X || {_,X} <- lists:sort([{random:uniform(), E} || E <- L])].
