@@ -12,7 +12,7 @@
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"1.0.2">>},1},
  {<<"cqerl">>,
   {git,"https://github.com/hippware/cqerl",
-       {ref,"0663a4019eb41b0b2c8c5cd4a83bf03fbda017c5"}},
+       {ref,"a80595f70432ec4795b84c8f2c6d8a2501e05a35"}},
   0},
  {<<"cuesport">>,
   {git,"https://github.com/esl/cuesport",
