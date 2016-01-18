@@ -16,7 +16,6 @@
          remove_old_messages/2,
          remove_user/2]).
 
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -28,27 +27,9 @@ init(_Host, _Opts) ->
 -spec pop_messages(ejabberd:luser(), ejabberd:lserver()) ->
     {ok, [#offline_msg{}]}.
 pop_messages(LUser, LServer) ->
-    Q1 = "SELECT * FROM offline_msg WHERE user = ?",
-    Value = #{user => LUser},
-    {ok, Results} = wocky_db:query(LServer, Q1, Value, quorum),
-    Rows = wocky_db:rows(Results),
-    Msgs = [
-            #offline_msg{
-               us = {LUser,LServer},
-               timestamp = wocky_db:timestamp_to_now(Timestamp),
-               expire = wocky_db:timestamp_to_now(Expire),
-               from = jid:from_binary(From),
-               to = jid:from_binary(To),
-               packet = binary_to_xml(Packet)
-              }
-            || #{timestamp := Timestamp, expire := Expire,
-                 from_id := From, to_id := To, packet := Packet}
-               <- Rows
-           ],
-    Q2 = "DELETE FROM offline_msg WHERE user = ?
-            AND timestamp = ? AND msg_id = ?",
-    Expected = lists:duplicate(length(Msgs), {ok, void}),
-    Expected = wocky_db:multi_query(LServer, Q2, Rows, quorum),
+    Rows = get_user_messages(LUser, LServer),
+    purge_messages(LServer, Rows),
+    Msgs = [ row_to_rec(LUser, LServer, Row) || Row <- Rows ],
     {ok, Msgs}.
 
 -spec write_messages(ejabberd:luser(), ejabberd:lserver(),
@@ -64,26 +45,11 @@ write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
                     never -> Q;
                     _ -> QTTL
                 end,
-                #{user => LUser, server => LServer,
-                  msg_id => ossp_uuid:make(v1, binary),
-                  timestamp =>
-                  wocky_db:now_to_timestamp(M#offline_msg.timestamp),
-                  expire => wocky_db:now_to_timestamp(M#offline_msg.expire),
-                  from_id => jid:to_binary(M#offline_msg.from),
-                  to_id => jid:to_binary(M#offline_msg.to),
-                  packet => exml:to_binary(M#offline_msg.packet),
-                  '[ttl]' => wocky_db:expire_to_ttl(M#offline_msg.expire)}
+                rec_to_row(LUser, M)
               }
               || M <- Msgs
              ],
-    % This loop explicitly returns 'ok' for each iteration because otherwise
-    % dialyzer complains, under the unmatched_returns warning clas.
-    [begin
-         {ok, void} = wocky_db:query(LServer, Query, Vals, quorum),
-         ok
-     end
-     || {Query, Vals} <- QueryValues],
-    ok.
+    wocky_db:multi_query(LServer, QueryValues, quorum).
 
 -spec remove_expired_messages(ejabberd:lserver()) ->
     {ok, integer()}.
@@ -109,3 +75,39 @@ remove_user(User, Server) ->
 binary_to_xml(XML) ->
     {ok, Binary} = exml:parse(XML),
     Binary.
+
+get_user_messages(LUser, LServer) ->
+    Q = "SELECT * FROM offline_msg WHERE user = ?",
+    Value = #{user => LUser},
+    {ok, Results} = wocky_db:query(LServer, Q, Value, quorum),
+    wocky_db:rows(Results).
+
+purge_messages(LServer, Rows) ->
+    Q = "DELETE FROM offline_msg WHERE user = ?
+            AND timestamp = ? AND msg_id = ?",
+    wocky_db:multi_query(LServer, Q, Rows, quorum).
+
+row_to_rec(LUser, LServer, #{timestamp := Timestamp, expire := Expire,
+                             from_id := From, to_id := To, packet := Packet}) ->
+    #offline_msg{
+       us =         {LUser,LServer},
+       timestamp =  wocky_db:timestamp_to_now(Timestamp),
+       expire =     wocky_db:timestamp_to_now(Expire),
+       from =       jid:from_binary(From),
+       to =         jid:from_binary(To),
+       packet =     binary_to_xml(Packet)
+      }.
+
+rec_to_row(LUser, #offline_msg{us = {_, LServer}, timestamp = Timestamp,
+                               expire = Expire, from = From, to = To,
+                               packet = Packet}) ->
+    #{user =>       LUser,
+      server =>     LServer,
+      msg_id =>     ossp_uuid:make(v1, binary),
+      timestamp =>  wocky_db:now_to_timestamp(Timestamp),
+      expire =>     wocky_db:now_to_timestamp(Expire),
+      from_id =>    jid:to_binary(From),
+      to_id =>      jid:to_binary(To),
+      packet =>     exml:to_binary(Packet),
+      '[ttl]' =>    wocky_db:expire_to_ttl(Expire)
+     }.

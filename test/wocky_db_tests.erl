@@ -39,8 +39,7 @@ wocky_db_api_smoke_test() ->
       #{user => now, server => <<"localhost">>, handle => <<"bob">>},
       #{user => now, server => <<"localhost">>, handle => <<"charlie">>}
     ],
-    [{ok, _}, {ok, _}, {ok, _}] =
-        wocky_db:multi_query(shared, Q1, Values, quorum),
+    ok = wocky_db:multi_query(shared, Q1, Values, quorum),
 
     %% You aren't supposed to use batches like this, but this is just a test
     Queries = [

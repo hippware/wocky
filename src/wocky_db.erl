@@ -24,7 +24,7 @@
               row/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, batch_query/4, multi_query/4,
+-export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
          rows/1, single_row/1, single_result/1, count/2,
          to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1,
          timestamp_to_now/1, now_to_timestamp/1, expire_to_ttl/1]).
@@ -105,13 +105,30 @@ batch_query(Context, QueryList, Mode, Consistency) ->
 %% value pairs. The pairs must be in the same order that the columns are
 %% listed in `Query'.
 %%
-%% Returns a list of results, one for each value set.
--spec multi_query(context(), query(), [values()], consistency_level())
-                 -> [{ok, result()} | {error, error()}].
+%% Returns `ok'.
+-spec multi_query(context(), query(), [values()], consistency_level()) -> ok.
 multi_query(Context, Query, ValuesList, Consistency) ->
-    lists:map(fun (Values) ->
-                      run_query(Context, make_query(Query, Values, Consistency))
-              end, ValuesList).
+    lists:foreach(fun (Values) ->
+                          {ok, void} = run_query(Context,
+                               make_query(Query, Values, Consistency))
+                  end, ValuesList),
+    ok.
+
+%% @doc Executes multipe queries with different datasets.
+%%
+%% `Context' is the context to execute the query in.
+%%
+%% `QueryVals' is a list of tuples `{Query, Values}' where `Query' and `Values'
+%% are as for {@link query/4}.
+%%
+%% Returns `ok'.
+-spec multi_query(context(), [{query(), values()}], consistency_level()) -> ok.
+multi_query(Context, QueryVals, Consistency) ->
+    lists:foreach(fun ({Query, Values}) ->
+                          {ok, void} = run_query(Context,
+                               make_query(Query, Values, Consistency))
+                  end, QueryVals),
+    ok.
 
 %% @doc Extracts rows from a query result
 %%

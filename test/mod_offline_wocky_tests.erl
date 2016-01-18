@@ -8,8 +8,6 @@
 
 -define(SERVER, "localhost").
 
--compile(export_all).
-
 -record(config, {
           users,
           nowsecs,
@@ -43,15 +41,15 @@ get_nowsecs() ->
     (Mega * 1000000) + Sec.
 
 before_each() ->
-    Users = [{<<"bob">>, ossp_uuid:make(v1, text)},
-             {<<"alicia">>, ossp_uuid:make(v1, text)},
-             {<<"robert">>, ossp_uuid:make(v1, text)},
-             {<<"karen">>, ossp_uuid:make(v1, text)},
-             {<<"alice">>, ossp_uuid:make(v1, text)}],
+    Users = [{<<"bob">>, wocky_db_user:create_id()},
+             {<<"alicia">>, wocky_db_user:create_id()},
+             {<<"robert">>, wocky_db_user:create_id()},
+             {<<"karen">>, wocky_db_user:create_id()},
+             {<<"alice">>, wocky_db_user:create_id()}],
 
     NowSecs = get_nowsecs(),
 
-    MessagelessUsers = [{<<"tim">>, ossp_uuid:make(v1, text)}],
+    MessagelessUsers = [{<<"tim">>, wocky_db_user:create_id()}],
 
     Values = [make_msg_structs(User, Handle, NowSecs, I) ||
               {Handle, User} <- Users, I <- lists:seq(1,10)],
@@ -61,15 +59,14 @@ before_each() ->
     Q = "INSERT INTO offline_msg (user, server, msg_id, timestamp, expire,
             from_id, to_id, packet) VALUES (?, ?, ?, ?, ?, ?, ?, ?) USING TTL ?",
 
-    Expected = lists:duplicate(length(Recs), {ok, void}),
-    Expected = wocky_db:multi_query(?SERVER, Q, Maps, quorum),
+    ok = wocky_db:multi_query(?SERVER, Q, Maps, quorum),
     #config{users = Users ++ MessagelessUsers, nowsecs = NowSecs,
             maps = Maps, recs = Recs}.
 
 make_msg_structs(User, Handle, NowSecs, I) ->
     RecSecs = NowSecs + I,
     TS = wocky_db:seconds_to_timestamp(RecSecs),
-    MID = ossp_uuid:make(v1, text),
+    MID = wocky_db_user:create_id(),
     ExpireSecs = NowSecs + 1000,
     FromJID = #jid{user = <<"from_user">>, server = <<"from_server">>, resource
                    = <<"res1">>, luser = <<"from_user">>, lserver =
@@ -126,7 +123,7 @@ test_pop_messages() ->
         ]},
         { "A non-existant user should have no messges", [
             ?_assertEqual({ok, []}, mod_offline_wocky:pop_messages(
-                                      ossp_uuid:make(v1, text), ?SERVER))
+                                      wocky_db_user:create_id(), ?SERVER))
         ]}
     ] end}.
 
@@ -215,6 +212,3 @@ test_remove_user() ->
 % Little helper function to pseudo-randomly shuffle a list of elements
 shuffle_list(L) ->
     [X || {_,X} <- lists:sort([{random:uniform(), E} || E <- L])].
-
-secs_to_now(S) ->
-    wocky_db:timestamp_to_now(S*1000).
