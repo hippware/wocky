@@ -52,12 +52,13 @@ before_each() ->
     MessagelessUsers = [{<<"tim">>, wocky_db_user:create_id()}],
 
     Values = [make_msg_structs(User, Handle, NowSecs, I) ||
-              {Handle, User} <- Users, I <- lists:seq(1,10)],
+              {Handle, User} <- Users, I <- lists:seq(1, 10)],
 
     {Maps, Recs} = lists:unzip(Values),
 
-    Q = "INSERT INTO offline_msg (user, server, msg_id, timestamp, expire,
-            from_id, to_id, packet) VALUES (?, ?, ?, ?, ?, ?, ?, ?) USING TTL ?",
+    Q = "INSERT INTO offline_msg
+            (user, server, msg_id, timestamp, expire, from_id, to_id, packet)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?) USING TTL ?",
 
     ok = wocky_db:multi_query(?SERVER, Q, Maps, quorum),
     #config{users = Users ++ MessagelessUsers, nowsecs = NowSecs,
@@ -103,7 +104,8 @@ after_each(_) ->
     ok.
 
 test_pop_messages() ->
-    { "pop_messages", setup, fun before_each/0, fun after_each/1, fun(Config) -> [
+    { "pop_messages", setup, fun before_each/0, fun after_each/1,
+      fun(Config) -> [
         { "Get a user's messages and check they're cleared correctly", [
             ?_test(
                begin
@@ -128,7 +130,8 @@ test_pop_messages() ->
     ] end}.
 
 test_write_messages() ->
-    { "write_messages", setup, fun before_each/0, fun after_each/1, fun(Config) -> [
+    { "write_messages", setup, fun before_each/0, fun after_each/1,
+      fun(Config) -> [
         { "Write and retrieve a single message", [
             ?_test(
                begin
@@ -149,8 +152,8 @@ test_write_messages() ->
                begin
                    UUID = uuid(<<"tim">>, Config),
 
-                   Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I) ||
-                             I <- lists:seq(1,10)],
+                   Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I)
+                             || I <- lists:seq(1, 10)],
                    {_Maps, Recs} = lists:unzip(Values),
 
                    ShuffledRecs = shuffle_list(Recs),
@@ -170,7 +173,8 @@ test_write_messages() ->
      ] end}.
 
 test_message_expiry() ->
-    { "message_expiry", setup, fun before_each/0, fun after_each/1, fun(Config) -> [
+    { "message_expiry", setup, fun before_each/0, fun after_each/1,
+      fun(Config) -> [
         { "Ensure messages expire at their allotted time", [
             ?_test(
                begin
@@ -178,16 +182,16 @@ test_message_expiry() ->
                    make_msg_structs(UUID, <<"tim">>,
                                                  Config#config.nowsecs, 0),
 
-                   Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I) ||
-                             I <- lists:seq(1,10)],
+                   Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I)
+                             || I <- lists:seq(1, 10)],
                    {_Maps, Recs} = lists:unzip(Values),
                    NowTS = wocky_db:now_to_timestamp(os:timestamp()),
                    ExpireTS = NowTS + 1000,
                    ShortExipreRecs = [R#offline_msg{expire =
-                                            wocky_db:timestamp_to_now(ExpireTS)} ||
-                                      R <- Recs],
+                                            wocky_db:timestamp_to_now(ExpireTS)}
+                                      || R <- Recs],
                    ?assertEqual(ok, mod_offline_wocky:write_messages(UUID,
-                                                 ?SERVER, ShortExipreRecs, unused)),
+                                     ?SERVER, ShortExipreRecs, unused)),
 
                    timer:sleep(2000),
                    ?assertEqual({ok, []},
@@ -198,7 +202,8 @@ test_message_expiry() ->
     ] end}.
 
 test_remove_user() ->
-    { "remove_user", setup, fun before_each/0, fun after_each/1, fun(Config) -> [
+    { "remove_user", setup, fun before_each/0, fun after_each/1,
+      fun(Config) -> [
         { "Remove a user and ensure no messages remain", [
             ?_assertEqual(ok, mod_offline_wocky:remove_user(
                                 uuid(<<"alice">>, Config), ?SERVER)),
@@ -211,4 +216,4 @@ test_remove_user() ->
 
 % Little helper function to pseudo-randomly shuffle a list of elements
 shuffle_list(L) ->
-    [X || {_,X} <- lists:sort([{random:uniform(), E} || E <- L])].
+    [X || {_, X} <- lists:sort([{random:uniform(), E} || E <- L])].

@@ -152,7 +152,8 @@ unknown_user_acivity_story(Config) ->
 
 
 get_last_activity(Stanza) ->
-    S = exml_query:path(Stanza, [{element, <<"query">>}, {attr, <<"seconds">>}]),
+    S = exml_query:path(Stanza, [{element, <<"query">>},
+                                 {attr, <<"seconds">>}]),
     list_to_integer(binary_to_list(S)).
 
 get_last_status(Stanza) ->

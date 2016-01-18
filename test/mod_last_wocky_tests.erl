@@ -51,7 +51,8 @@ after_each(_) ->
     ok.
 
 test_set_last_info() ->
-    { "set_last_info", setup, fun before_each/0, fun after_each/1, fun(Users) -> [
+    { "set_last_info", setup, fun before_each/0, fun after_each/1,
+      fun(Users) -> [
         { "Creates a new user and validates their state", [
             ?_assertMatch(not_found,
                           mod_last_wocky:get_last(uuid(<<"tim">>, Users),
@@ -78,7 +79,8 @@ test_active_user_count() ->
     ]}.
 
 test_last_activity() ->
-    { "last_activity", setup,  fun before_each/0, fun after_each/1, fun(Users) -> [
+    { "last_activity", setup,  fun before_each/0, fun after_each/1,
+      fun(Users) -> [
         { "Returns timestamp and status where record exists", [
             ?_assertMatch({ok, 1000, "Not here"},
                           mod_last_wocky:get_last(uuid(<<"alice">>, Users),
