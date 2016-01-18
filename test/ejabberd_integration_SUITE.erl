@@ -12,15 +12,18 @@
 
 all() ->
     [{group, smoke},
-     {group, last_activity}].
+     {group, last_activity},
+     {group, offline}
+    ].
 
 groups() ->
     [{smoke, [sequence], [messages_story]},
      {last_activity, [sequence], [activity_story,
                                   update_activity_story,
                                   server_uptime_story,
-                                  unknown_user_acivity_story]
-     }].
+                                  unknown_user_acivity_story]},
+     {offline, [sequence], [offline_message_story]}
+    ].
 
 suite() ->
     escalus:suite().
@@ -30,7 +33,7 @@ suite() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    net_kernel:start(['mongooseim@localhost', longnames]),
+    {ok, _Pid} = net_kernel:start(['mongooseim@localhost', longnames]),
 
     wocky_app:start(),
 
@@ -154,3 +157,33 @@ get_last_activity(Stanza) ->
 
 get_last_status(Stanza) ->
     exml_query:path(Stanza, [{element, <<"query">>}, cdata]).
+
+
+%%--------------------------------------------------------------------
+%% mod_offline tests
+%%--------------------------------------------------------------------
+
+offline_message_story(Config) ->
+    %% Alice sends a message to Bob, who is offline
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        escalus:send(Alice, escalus_stanza:chat_to(bob, <<"Hi, Offline!">>))
+    end),
+
+    %% Bob logs in
+    Bob = login_send_presence(Config, bob),
+
+    %% He receives his initial presence and the message
+    Stanzas = escalus:wait_for_stanzas(Bob, 2),
+    escalus_new_assert:mix_match([is_presence,
+                                  is_chat(<<"Hi, Offline!">>)],
+                                 Stanzas),
+    escalus_cleaner:clean(Config).
+
+is_chat(Content) ->
+    fun(Stanza) -> escalus_pred:is_chat_message(Content, Stanza) end.
+
+login_send_presence(Config, User) ->
+    Spec = escalus_users:get_userspec(Config, User),
+    {ok, Client} = escalus_client:start(Config, Spec, <<"dummy">>),
+    escalus:send(Client, escalus_stanza:presence(<<"available">>)),
+    Client.
