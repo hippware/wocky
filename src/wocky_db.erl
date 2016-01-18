@@ -27,7 +27,7 @@
 -export([query/3, query/4, batch_query/4, multi_query/4,
          rows/1, single_row/1, single_result/1, count/2,
          to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1,
-         expire_to_ttl/1]).
+         timestamp_to_now/1, now_to_timestamp/1, expire_to_ttl/1]).
 
 
 %%====================================================================
@@ -193,17 +193,39 @@ seconds_to_timestamp(S) ->
 timestamp_to_seconds(S) ->
     S div 1000.
 
-%% @doc Convert a seconds-since-epoch expiry time to a value for C*'s TTL
+%% @doc Convert a Cassandra timestamp into {MegaSecs, Secs, MicroSecs}
+%%
+%% The expiry timestamps can also have a value of `never`. We store that as 0 in
+%% Cassandra.
+-spec timestamp_to_now(non_neg_integer()) ->
+    {non_neg_integer(), non_neg_integer(), non_neg_integer()} | never.
+timestamp_to_now(0) -> never;
+timestamp_to_now(TimestampMS) ->
+    MegaSecs = TimestampMS div 1000000000,
+    Secs = (TimestampMS div 1000) - (MegaSecs * 1000000),
+    MicroSecs = (TimestampMS rem 1000) * 1000,
+    {MegaSecs, Secs, MicroSecs}.
+
+%% @doc Convert a {MegaSecs, Secs, MicroSecs} time to a Cassandra timestamp
+%%
+-spec now_to_timestamp({non_neg_integer(), non_neg_integer(), non_neg_integer()}
+                       | never) -> non_neg_integer().
+now_to_timestamp(never) -> 0;
+now_to_timestamp({MegaSecs, Secs, MicroSecs}) ->
+    (MegaSecs * 1000000000) + (Secs * 1000) + (MicroSecs div 1000).
+
+%% @doc Convert a now() style expiry time to a value for C*'s TTL
 %%
 %% Note that because C* will throw an error for non-positive values in TTL, we
 %% clamp the return to no less than 1, allowing this function's result to be
 %% safely passed straight into a TTL binding in a query.
 %%
 -spec expire_to_ttl(non_neg_integer()) -> pos_integer().
-expire_to_ttl(ExpireEpochSeconds) ->
-    {MegaSecs, Secs, _} = os:timestamp(),
-    NowSecs = (MegaSecs * 1000000) + Secs,
-    lists:max([ExpireEpochSeconds - NowSecs, 1]).
+expire_to_ttl(never) -> never;
+expire_to_ttl(Expire) ->
+    Now = os:timestamp(),
+    TTL = timer:now_diff(Now, Expire) div 1000000,
+    lists:max([TTL, 1]).
 
 %%====================================================================
 %% Internal functions

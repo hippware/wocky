@@ -4,6 +4,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/mod_offline.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 
 -define(SERVER, "localhost").
 
@@ -60,7 +61,8 @@ before_each() ->
     Q = "INSERT INTO offline_msg (user, server, msg_id, timestamp, expire,
             from_id, to_id, packet) VALUES (?, ?, ?, ?, ?, ?, ?, ?) USING TTL ?",
 
-    wocky_db:multi_query(?SERVER, Q, Maps, quorum),
+    Expected = lists:duplicate(length(Recs), {ok, void}),
+    Expected = wocky_db:multi_query(?SERVER, Q, Maps, quorum),
     #config{users = Users ++ MessagelessUsers, nowsecs = NowSecs,
             maps = Maps, recs = Recs}.
 
@@ -69,25 +71,33 @@ make_msg_structs(User, Handle, NowSecs, I) ->
     TS = wocky_db:seconds_to_timestamp(RecSecs),
     MID = ossp_uuid:make(v1, text),
     ExpireSecs = NowSecs + 1000,
-    PacketStr = "Message from test to " ++ binary_to_list(Handle) ++ " " ++
-                integer_to_list(I),
-    Packet = list_to_binary(PacketStr),
+    FromJID = #jid{user = <<"from_user">>, server = <<"from_server">>, resource
+                   = <<"res1">>, luser = <<"from_user">>, lserver =
+                   <<"from_server">>, lresource = <<"res1">>},
+    ToJID = #jid{user = <<"to_user">>, server = <<"to_server">>, resource
+                   = <<"res2">>, luser = <<"to_user">>, lserver =
+                   <<"to_server">>, lresource = <<"res2">>},
+    PacketXML = <<"<message xml:lan=\"en\" type=\"chat\"
+                    to=\"278e4ba0-b9ae-11e5-a436-080027f70e96@localhost\"
+                      ><body>Hi, ", Handle/binary, "</body></message>">>,
     Map = #{user => User,
             server => ?SERVER,
             msg_id => MID,
             timestamp => TS,
             expire => wocky_db:seconds_to_timestamp(ExpireSecs),
-            from_id => <<"offline_from">>,
-            to_id => User,
-            packet => Packet,
-            '[ttl]' => wocky_db:expire_to_ttl(ExpireSecs)
+            from_id => jid:to_binary(FromJID),
+            to_id => jid:to_binary(ToJID),
+            packet => PacketXML,
+            '[ttl]' =>
+            wocky_db:expire_to_ttl(wocky_db:timestamp_to_now(ExpireSecs * 1000))
            },
+    {ok, PacketBinary} = exml:parse(PacketXML),
     Rec = #offline_msg{us = {User, ?SERVER},
-                       timestamp = RecSecs,
-                       expire = ExpireSecs,
-                       from = <<"offline_from">>,
-                       to = User,
-                       packet = Packet
+                       timestamp = wocky_db:timestamp_to_now(TS),
+                       expire = wocky_db:timestamp_to_now(ExpireSecs * 1000),
+                       from = FromJID,
+                       to = ToJID,
+                       packet = PacketBinary
                       },
     {Map, Rec}.
 
@@ -141,8 +151,6 @@ test_write_messages() ->
             ?_test(
                begin
                    UUID = uuid(<<"tim">>, Config),
-                   make_msg_structs(UUID, <<"tim">>,
-                                                 Config#config.nowsecs, 0),
 
                    Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I) ||
                              I <- lists:seq(1,10)],
@@ -176,8 +184,10 @@ test_message_expiry() ->
                    Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I) ||
                              I <- lists:seq(1,10)],
                    {_Maps, Recs} = lists:unzip(Values),
-                   NowSecs = get_nowsecs(),
-                   ShortExipreRecs = [R#offline_msg{expire = NowSecs + 1} ||
+                   NowTS = wocky_db:now_to_timestamp(os:timestamp()),
+                   ExpireTS = NowTS + 1000,
+                   ShortExipreRecs = [R#offline_msg{expire =
+                                            wocky_db:timestamp_to_now(ExpireTS)} ||
                                       R <- Recs],
                    ?assertEqual(ok, mod_offline_wocky:write_messages(UUID,
                                                  ?SERVER, ShortExipreRecs, unused)),
@@ -205,3 +215,6 @@ test_remove_user() ->
 % Little helper function to pseudo-randomly shuffle a list of elements
 shuffle_list(L) ->
     [X || {_,X} <- lists:sort([{random:uniform(), E} || E <- L])].
+
+secs_to_now(S) ->
+    wocky_db:timestamp_to_now(S*1000).

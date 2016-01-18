@@ -35,13 +35,11 @@ pop_messages(LUser, LServer) ->
     Msgs = [
             #offline_msg{
                us = {LUser,LServer},
-               timestamp = wocky_db:timestamp_to_seconds(
-                             Timestamp),
-               expire = wocky_db:timestamp_to_seconds(
-                          Expire),
-               from = From,
-               to = To,
-               packet = Packet
+               timestamp = wocky_db:timestamp_to_now(Timestamp),
+               expire = wocky_db:timestamp_to_now(Expire),
+               from = jid:from_binary(From),
+               to = jid:from_binary(To),
+               packet = binary_to_xml(Packet)
               }
             || #{timestamp := Timestamp, expire := Expire,
                  from_id := From, to_id := To, packet := Packet}
@@ -49,7 +47,8 @@ pop_messages(LUser, LServer) ->
            ],
     Q2 = "DELETE FROM offline_msg WHERE user = ?
             AND timestamp = ? AND msg_id = ?",
-    wocky_db:multi_query(LServer, Q2, Rows, quorum),
+    Expected = lists:duplicate(length(Msgs), {ok, void}),
+    Expected = wocky_db:multi_query(LServer, Q2, Rows, quorum),
     {ok, Msgs}.
 
 -spec write_messages(ejabberd:luser(), ejabberd:lserver(),
@@ -58,20 +57,27 @@ write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
     % NOTE: The MaxOfflineMsgs value is not supported and will be ignored
     Q = "INSERT INTO offline_msg
             (user, server, msg_id, expire, timestamp, from_id, to_id, packet)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?) USING TTL ?",
-    Values = [#{user => LUser, server => LServer,
-                 msg_id => ossp_uuid:make(v1, binary),
-                 timestamp =>
-                 wocky_db:seconds_to_timestamp(M#offline_msg.timestamp),
-                 expire => wocky_db:seconds_to_timestamp(M#offline_msg.expire),
-                 from_id => M#offline_msg.from,
-                 to_id => M#offline_msg.to,
-                 packet => M#offline_msg.packet,
-                 '[ttl]' => wocky_db:expire_to_ttl(M#offline_msg.expire)}
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    QTTL = Q ++ " USING TTL ?",
+    QueryValues = [{
+                case M#offline_msg.expire of
+                    never -> Q;
+                    _ -> QTTL
+                end,
+                #{user => LUser, server => LServer,
+                  msg_id => ossp_uuid:make(v1, binary),
+                  timestamp =>
+                  wocky_db:now_to_timestamp(M#offline_msg.timestamp),
+                  expire => wocky_db:now_to_timestamp(M#offline_msg.expire),
+                  from_id => jid:to_binary(M#offline_msg.from),
+                  to_id => jid:to_binary(M#offline_msg.to),
+                  packet => exml:to_binary(M#offline_msg.packet),
+                  '[ttl]' => wocky_db:expire_to_ttl(M#offline_msg.expire)}
+              }
               || M <- Msgs
              ],
-    Expected = lists:duplicate(length(Msgs), {ok, void}),
-    Expected = wocky_db:multi_query(LServer, Q, Values, quorum),
+    [{ok, void} = wocky_db:query(LServer, Query, Vals, quorum) || {Query, Vals}
+                                                               <- QueryValues],
     ok.
 
 -spec remove_expired_messages(ejabberd:lserver()) ->
@@ -90,3 +96,7 @@ remove_user(User, Server) ->
     Q = "DELETE FROM offline_msg WHERE user = ?",
     {ok, void} = wocky_db:query(Server, Q, #{user => User}, quorum),
     ok.
+
+binary_to_xml(XML) ->
+    {ok, Binary} = exml:parse(XML),
+    Binary.
