@@ -26,7 +26,7 @@ init(_Host, _Opts) ->
     ok.
 
 -spec pop_messages(ejabberd:luser(), ejabberd:lserver()) ->
-    {ok, list(#offline_msg{})}.
+    {ok, [#offline_msg{}]}.
 pop_messages(LUser, LServer) ->
     Q1 = "SELECT * FROM offline_msg WHERE user = ?",
     Value = #{user => LUser},
@@ -76,8 +76,13 @@ write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
               }
               || M <- Msgs
              ],
-    [{ok, void} = wocky_db:query(LServer, Query, Vals, quorum) || {Query, Vals}
-                                                               <- QueryValues],
+    % This loop explicitly returns 'ok' for each iteration because otherwise
+    % dialyzer complains, under the unmatched_returns warning clas.
+    [begin
+         {ok, void} = wocky_db:query(LServer, Query, Vals, quorum),
+         ok
+     end
+     || {Query, Vals} <- QueryValues],
     ok.
 
 -spec remove_expired_messages(ejabberd:lserver()) ->
@@ -96,6 +101,10 @@ remove_user(User, Server) ->
     Q = "DELETE FROM offline_msg WHERE user = ?",
     {ok, void} = wocky_db:query(Server, Q, #{user => User}, quorum),
     ok.
+
+%%%===================================================================
+%%% Helper functions
+%%%===================================================================
 
 binary_to_xml(XML) ->
     {ok, Binary} = exml:parse(XML),

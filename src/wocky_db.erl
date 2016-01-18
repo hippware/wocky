@@ -218,9 +218,12 @@ now_to_timestamp({MegaSecs, Secs, MicroSecs}) ->
 %%
 %% Note that because C* will throw an error for non-positive values in TTL, we
 %% clamp the return to no less than 1, allowing this function's result to be
-%% safely passed straight into a TTL binding in a query.
+%% safely passed straight into a TTL binding in a query. The 'never' atom is
+%% left unchanged intentionally - it is up to the caller to avoid using the TTL
+%% value at all in this case. Leaving the value as 'never' ensures it will cause
+%% the query to fail if used.
 %%
--spec expire_to_ttl(non_neg_integer()) -> pos_integer().
+-spec expire_to_ttl(never | non_neg_integer()) -> never | pos_integer().
 expire_to_ttl(never) -> never;
 expire_to_ttl(Expire) ->
     Now = os:timestamp(),
