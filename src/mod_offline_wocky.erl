@@ -29,8 +29,8 @@ init(_Host, _Opts) ->
 pop_messages(LUser, LServer) ->
     Rows = get_user_messages(LUser, LServer),
     purge_messages(LServer, Rows),
-    Msgs = [ row_to_rec(LUser, LServer, Row) || Row <- Rows ],
-    {ok, Msgs}.
+    Recs = [ row_to_rec(LUser, LServer, Row) || Row <- Rows ],
+    {ok, Recs}.
 
 -spec write_messages(ejabberd:luser(), ejabberd:lserver(),
                      [#offline_msg{}], integer()) -> ok.
@@ -90,7 +90,7 @@ purge_messages(LServer, Rows) ->
 row_to_rec(LUser, LServer, #{timestamp := Timestamp, expire := Expire,
                              from_id := From, to_id := To, packet := Packet}) ->
     #offline_msg{
-       us =         {LUser,LServer},
+       us =         {LUser, LServer},
        timestamp =  wocky_db:timestamp_to_now(Timestamp),
        expire =     wocky_db:timestamp_to_now(Expire),
        from =       jid:from_binary(From),

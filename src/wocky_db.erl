@@ -116,6 +116,16 @@ multi_query(Context, Query, ValuesList, Consistency) ->
 
 %% @doc Executes multipe queries with different datasets.
 %%
+%% This is functionally similar to {@link batch_query/4}, however this
+%% function executes the queries individually rather than using C*'s batching
+%% system. This is more appropriate (and performant) when operating over
+%% multiple bits of data on a single table requiring varied query strings. An
+%% example may be where certain rows of data require a TTL setting but others do
+%% not. Don't be afraid to use this form if the query strings may be all
+%% identical - in this case it will perform exactly the same as {@link
+%% multi_query/4} (with the relatively small exception of the extra cost of
+%% passing multiple copies of the same query string).
+%%
 %% `Context' is the context to execute the query in.
 %%
 %% `QueryVals' is a list of tuples `{Query, Values}' where `Query' and `Values'
