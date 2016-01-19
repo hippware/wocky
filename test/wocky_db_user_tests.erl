@@ -5,6 +5,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky_db_seed.hrl").
 
+-import(wocky_db_user, [does_user_exist/2, create_user/3, create_user/4,
+                        remove_user/2, get_password/2, set_password/3]).
+
 
 wocky_db_user_test_() -> {
   "wocky_db_user",
@@ -42,70 +45,64 @@ after_each(_) ->
 test_does_user_exist() ->
   { "does_user_exist", setup, fun before_each/0, fun after_each/1, [
     { "returns true if the user exists", [
-      ?_assert(wocky_db_user:does_user_exist(?USER, ?SERVER))
+      ?_assert(does_user_exist(?USER, ?SERVER))
     ]},
     { "returns false if the user does not exist", [
-      ?_assertNot(wocky_db_user:does_user_exist(?BADUSER, ?SERVER))
+      ?_assertNot(does_user_exist(?BADUSER, ?SERVER))
     ]}
   ]}.
 
 test_create_user_without_id() ->
   { "create_user", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
-      ?_assertMatch({ok, _}, wocky_db_user:create_user(
-                               ?SERVER, <<"nosuchuser">>, ?PASS))
+      ?_assertMatch({ok, _}, create_user(?SERVER, <<"nosuchuser">>, ?PASS))
     ]},
     { "fails if user already exists", [
-      ?_assertMatch({error, exists},
-                    wocky_db_user:create_user(?SERVER, ?HANDLE, ?PASS))
+      ?_assertMatch({error, exists}, create_user(?SERVER, ?HANDLE, ?PASS))
     ]}
   ]}.
 
 test_create_user_with_id() ->
   { "create_user", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
-      ?_assertMatch(ok, wocky_db_user:create_user(?NEWUSER, ?SERVER,
-                                                  <<"nosuchuser">>, ?PASS)),
-      ?_assert(wocky_db_user:does_user_exist(?NEWUSER, ?SERVER))
+      ?_assertMatch(ok, create_user(?NEWUSER, ?SERVER,
+                                    <<"nosuchuser">>, ?PASS)),
+      ?_assert(does_user_exist(?NEWUSER, ?SERVER))
     ]},
     { "fails if user already exists", [
       ?_assertMatch({error, exists},
-                    wocky_db_user:create_user(?USER, ?SERVER, ?HANDLE, ?PASS))
+                    create_user(?USER, ?SERVER, ?HANDLE, ?PASS))
     ]}
   ]}.
 
 test_get_password() ->
   { "get_password", setup, fun before_each/0, fun after_each/1, [
     { "returns password if user exists", [
-      ?_assertMatch(?PASS, wocky_db_user:get_password(?USER, ?SERVER))
+      ?_assertMatch(?PASS, get_password(?USER, ?SERVER))
     ]},
     { "returns {error, not_found} if user does not exist", [
-      ?_assertMatch({error, not_found},
-                    wocky_db_user:get_password(?BADUSER, ?SERVER))
+      ?_assertMatch({error, not_found}, get_password(?BADUSER, ?SERVER))
     ]}
   ]}.
 
 test_set_password() ->
   { "set_password", setup, fun before_each/0, fun after_each/1, [
     { "sets password if user exists", [
-      ?_assertMatch(ok, wocky_db_user:set_password(?USER, ?SERVER,
-                                                   <<"newpass">>)),
-
-      ?_assertMatch(<<"newpass">>, wocky_db_user:get_password(?USER, ?SERVER))
+      ?_assertMatch(ok, set_password(?USER, ?SERVER, <<"newpass">>)),
+      ?_assertMatch(<<"newpass">>, get_password(?USER, ?SERVER))
     ]},
     { "returns {error, not_found} if user does not exist", [
-      ?_assertMatch({error, not_found},
-                    wocky_db_user:set_password(?BADUSER, ?SERVER, ?PASS))
+      ?_assertMatch({error, not_found}, set_password(?BADUSER, ?SERVER, ?PASS))
     ]}
   ]}.
 
 test_remove_user() ->
   { "remove_user", setup, fun before_each/0, fun after_each/1, [
     { "removes user if user exists", [
-      ?_assertMatch(ok, wocky_db_user:remove_user(?USER, ?SERVER)),
-      ?_assertNot(wocky_db_user:does_user_exist(?USER, ?SERVER))
+      ?_assertMatch(ok, remove_user(?USER, ?SERVER)),
+      ?_assertNot(does_user_exist(?USER, ?SERVER))
     ]},
     { "succeeds if user does not exist", [
-      ?_assertMatch(ok, wocky_db_user:remove_user(?BADUSER, ?SERVER))
+      ?_assertMatch(ok, remove_user(?BADUSER, ?SERVER))
     ]}
   ]}.
