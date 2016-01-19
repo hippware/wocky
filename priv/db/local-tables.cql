@@ -34,6 +34,18 @@ CREATE TABLE last_activity (
     PRIMARY KEY (user)
 );
 
+CREATE TABLE offline_msg (
+    user timeuuid,
+    server text,
+    msg_id timeuuid,
+    timestamp timestamp,
+    expire timestamp,
+    from_id text,
+    to_id text,
+    packet text,
+    PRIMARY KEY (user, timestamp, msg_id)
+) WITH CLUSTERING ORDER BY (timestamp ASC);
+
 CREATE TABLE roster (
     user timeuuid,
     server text,

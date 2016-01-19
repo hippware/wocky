@@ -24,9 +24,10 @@
               row/0, result/0, error/0]).
 
 %% API
--export([query/3, query/4, batch_query/4, multi_query/4,
+-export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
          rows/1, single_row/1, single_result/1, count/2,
-         to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1]).
+         to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1,
+         timestamp_to_now/1, now_to_timestamp/1, expire_to_ttl/1]).
 
 
 %%====================================================================
@@ -104,13 +105,40 @@ batch_query(Context, QueryList, Mode, Consistency) ->
 %% value pairs. The pairs must be in the same order that the columns are
 %% listed in `Query'.
 %%
-%% Returns a list of results, one for each value set.
--spec multi_query(context(), query(), [values()], consistency_level())
-                 -> [{ok, result()} | {error, error()}].
+%% Returns `ok'.
+-spec multi_query(context(), query(), [values()], consistency_level()) -> ok.
 multi_query(Context, Query, ValuesList, Consistency) ->
-    lists:map(fun (Values) ->
-                      run_query(Context, make_query(Query, Values, Consistency))
-              end, ValuesList).
+    lists:foreach(fun (Values) ->
+                          {ok, void} = run_query(Context,
+                               make_query(Query, Values, Consistency))
+                  end, ValuesList),
+    ok.
+
+%% @doc Executes multipe queries with different datasets.
+%%
+%% This is functionally similar to {@link batch_query/4}, however this
+%% function executes the queries individually rather than using C*'s batching
+%% system. This is more appropriate (and performant) when operating over
+%% multiple bits of data on a single table requiring varied query strings. An
+%% example may be where certain rows of data require a TTL setting but others do
+%% not. Don't be afraid to use this form if the query strings may be all
+%% identical - in this case it will perform exactly the same as {@link
+%% multi_query/4} (with the relatively small exception of the extra cost of
+%% passing multiple copies of the same query string).
+%%
+%% `Context' is the context to execute the query in.
+%%
+%% `QueryVals' is a list of tuples `{Query, Values}' where `Query' and `Values'
+%% are as for {@link query/4}.
+%%
+%% Returns `ok'.
+-spec multi_query(context(), [{query(), values()}], consistency_level()) -> ok.
+multi_query(Context, QueryVals, Consistency) ->
+    lists:foreach(fun ({Query, Values}) ->
+                          {ok, void} = run_query(Context,
+                               make_query(Query, Values, Consistency))
+                  end, QueryVals),
+    ok.
 
 %% @doc Extracts rows from a query result
 %%
@@ -191,6 +219,43 @@ seconds_to_timestamp(S) ->
 -spec timestamp_to_seconds(non_neg_integer()) -> non_neg_integer().
 timestamp_to_seconds(S) ->
     S div 1000.
+
+%% @doc Convert a Cassandra timestamp into {MegaSecs, Secs, MicroSecs}
+%%
+%% The expiry timestamps can also have a value of `never`. We store that as 0 in
+%% Cassandra.
+-spec timestamp_to_now(non_neg_integer()) ->
+    {non_neg_integer(), non_neg_integer(), non_neg_integer()} | never.
+timestamp_to_now(0) -> never;
+timestamp_to_now(TimestampMS) ->
+    MegaSecs = TimestampMS div 1000000000,
+    Secs = (TimestampMS div 1000) - (MegaSecs * 1000000),
+    MicroSecs = (TimestampMS rem 1000) * 1000,
+    {MegaSecs, Secs, MicroSecs}.
+
+%% @doc Convert a {MegaSecs, Secs, MicroSecs} time to a Cassandra timestamp
+%%
+-spec now_to_timestamp({non_neg_integer(), non_neg_integer(), non_neg_integer()}
+                       | never) -> non_neg_integer().
+now_to_timestamp(never) -> 0;
+now_to_timestamp({MegaSecs, Secs, MicroSecs}) ->
+    (MegaSecs * 1000000000) + (Secs * 1000) + (MicroSecs div 1000).
+
+%% @doc Convert a now() style expiry time to a value for C*'s TTL
+%%
+%% Note that because C* will throw an error for non-positive values in TTL, we
+%% clamp the return to no less than 1, allowing this function's result to be
+%% safely passed straight into a TTL binding in a query. The 'never' atom is
+%% left unchanged intentionally - it is up to the caller to avoid using the TTL
+%% value at all in this case. Leaving the value as 'never' ensures it will cause
+%% the query to fail if used.
+%%
+-spec expire_to_ttl(never | non_neg_integer()) -> never | pos_integer().
+expire_to_ttl(never) -> never;
+expire_to_ttl(Expire) ->
+    Now = os:timestamp(),
+    TTL = timer:now_diff(Now, Expire) div 1000000,
+    lists:max([TTL, 1]).
 
 %%====================================================================
 %% Internal functions
