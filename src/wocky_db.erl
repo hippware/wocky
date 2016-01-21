@@ -254,7 +254,7 @@ now_to_timestamp({MegaSecs, Secs, MicroSecs}) ->
 expire_to_ttl(never) -> never;
 expire_to_ttl(Expire) ->
     Now = os:timestamp(),
-    TTL = timer:now_diff(Now, Expire) div 1000000,
+    TTL = timer:now_diff(Expire, Now) div 1000000,
     lists:max([TTL, 1]).
 
 %%====================================================================
