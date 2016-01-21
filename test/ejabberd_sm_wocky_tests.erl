@@ -54,7 +54,10 @@ make_session(ID) ->
     SIDPID = spawn(fun() -> ok end), % Unique(ish) PID
     USR = {ID, ?SERVER, integer_to_binary(erlang:unique_integer())},
     US = {ID, ?SERVER},
-    Priority = random:uniform(10),
+    Priority = case random:uniform(11) of
+                   11 -> undefined;
+                   N -> N
+               end,
     Info = [{ip, {{127, 0, 0, 1}, random:uniform(65536)}},
             {conn, c2s_tls},
             {auth_module, ejabberd_auth_wocky}],
@@ -70,7 +73,10 @@ write_session(#session{sid = Sid = {_, Pid}, us = {User, Server},
     V1 = #{sid => term_to_binary(Sid), user => User, server => Server,
            node => node(Pid),
            jid_user => JIDUser, jid_server => JIDServer,
-           jid_resource => JIDResource, priority => Priority,
+           jid_resource => JIDResource,
+           priority => case Priority of undefined -> -1;
+                                        N -> N
+                       end,
            info => term_to_binary(Info)},
     Q2 = "UPDATE user_to_sids SET sids = sids + ? WHERE jid_user = ?",
     V2 = #{jid_user => JIDUser, sids => [term_to_binary(Sid)]},
