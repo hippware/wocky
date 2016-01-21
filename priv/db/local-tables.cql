@@ -64,22 +64,22 @@ CREATE INDEX ON roster(active);
 CREATE INDEX ON roster(version);
 
 CREATE TABLE session (
-    sid blob,               delete_session/4
-    node text,              cleanup/1
+    sid blob,
+    node text,
     user timeuuid,
     server text,
-    jid_user blob,          get_sessions/2,3
-    jid_server blob,
+    jid_user timeuuid,
+    jid_server text,
     jid_resource blob,
-    priority integer,
+    priority int,
     info blob,
-    PRIMARY KEY (jid_user)
+    PRIMARY KEY (sid)
 );
 
 CREATE INDEX ON session(node);
 
-CREATE TABLE sid_to_user (
-    sid blob,
-    jid_user blob,
-    PRIMARY KEY (sid)
+CREATE TABLE user_to_sids (
+    jid_user timeuuid,
+    sids set<blob>,
+    PRIMARY KEY (jid_user)
 );
