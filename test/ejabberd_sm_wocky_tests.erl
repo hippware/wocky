@@ -108,6 +108,10 @@ test_get_sessions() ->
                                                                 ?SERVER)))
              end)
         ]},
+        { "Invalid user should return an empty list", [
+             ?_assertEqual([], ejabberd_sm_wocky:get_sessions(
+                                 wocky_db_user:create_id(), ?SERVER))
+        ]},
         { "Get sessions by server + user + resource", [
           ?_test(
              begin

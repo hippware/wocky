@@ -131,8 +131,10 @@ sessions_from_queries(Server, Queries) ->
 user_sids(Server, User) ->
     {Q, V} = sessions_query(User),
     {ok, Result} = wocky_db:query(Server, Q, V, quorum),
-    #{sids := SIDBins} = wocky_db:single_row(Result),
-    SIDBins.
+    case wocky_db:single_row(Result) of
+        #{sids := SIDBins} -> SIDBins;
+        #{} -> []
+    end.
 
 session_query(SIDBin) ->
     {"SELECT * FROM session WHERE sid = ?",
