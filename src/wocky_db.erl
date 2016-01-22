@@ -91,7 +91,7 @@ query(Context, Query, Values, Consistency) ->
 -spec batch_query(context(), [{query(), values()}],
                   batch_mode(), consistency_level()
                  ) -> {ok, void} | {error, error()}.
-% Cassandra throws an exceptoin if you try to batch zero queries. Early-out
+% Cassandra throws an exception if you try to batch zero queries. Early-out
 % here:
 batch_query(_Context, [], _Mode, _Consistency) -> {ok, void};
 batch_query(Context, QueryList, Mode, Consistency) ->
