@@ -1,5 +1,5 @@
 %%% @copyright 2015+ Hippware, Inc.
-%%% @doc Cassandra based implementation of mod_offline
+%%% @doc Cassandra backend implementation for ejabberd_sm
 
 %% Structure of a session record:
 %%
