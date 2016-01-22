@@ -198,6 +198,32 @@ test_message_expiry() ->
                                 mod_offline_wocky:pop_messages(UUID, ?SERVER))
                end
              )
+        ]},
+        { "Ensure messages don't expire too soon", [
+            ?_test(
+               begin
+                   UUID = uuid(<<"tim">>, Config),
+                   make_msg_structs(UUID, <<"tim">>,
+                                                 Config#config.nowsecs, 0),
+
+                   Values = [make_msg_structs(UUID, <<"tim">>, get_nowsecs(), I)
+                             || I <- lists:seq(1, 10)],
+                   {_Maps, Recs} = lists:unzip(Values),
+                   NowTS = wocky_db:now_to_timestamp(os:timestamp()),
+                   ExpireTS = NowTS + 3000,
+                   ShortExipreRecs = [R#offline_msg{expire =
+                                            wocky_db:timestamp_to_now(ExpireTS)}
+                                      || R <- Recs],
+                   ?assertEqual(ok, mod_offline_wocky:write_messages(UUID,
+                                     ?SERVER, ShortExipreRecs, unused)),
+                   % Only sleep for one second - rounding effects can mean the
+                   % expiry time can end up only being two seconds (TTL rounds
+                   % to the nearest second).
+                   timer:sleep(1000),
+                   ?assertEqual({ok, ShortExipreRecs},
+                                mod_offline_wocky:pop_messages(UUID, ?SERVER))
+               end
+             )
         ]}
     ] end}.
 
