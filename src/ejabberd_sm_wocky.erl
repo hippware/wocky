@@ -34,6 +34,7 @@
 
 -spec start(list()) -> any().
 start(_Opts) ->
+    maybe_cleanup(),
     ok.
 
 % `get_sessions/0' is only used by testing and extra admin tools. It doesn't
@@ -233,3 +234,18 @@ sid_node({_Now, Pid}) -> node(Pid).
 
 servers() ->
     ejabberd_config:get_global_option(hosts).
+
+maybe_cleanup() ->
+    % Use the existance of an ETS table to determine whether we need to do a
+    % cleanup when the SM is started. We only want to cleanup in the case of a
+    % node startup, not of a crash recovery. The heir'd ETS table will persist
+    % across the former but not the latter.
+    case ets:info(ejabberd_sm_wocky_startup) of
+        undefined ->
+            ejabberd_sm_wocky_startup =
+                ets:new(ejabberd_sm_wocky_startup,
+                        [named_table, {heir, group_leader(), none}]),
+            cleanup(node());
+        _ ->
+            ok
+    end.
