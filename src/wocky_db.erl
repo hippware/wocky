@@ -449,6 +449,7 @@ get_client(Spec, Context) ->
     cqerl:new_client(Spec, [{keyspace, keyspace_name(Context)}]).
 
 make_query(Query, Values, Consistency) ->
+    log_query(Query, Values),
     #cql_query{statement = Query,
                values = Values,
                reusable = true,
@@ -461,8 +462,13 @@ make_batch_query(QueryList, Consistency, Mode) ->
 
 batch_query_list(QueryList) ->
     lists:map(fun ({Query, Values}) ->
+                      log_query(Query, Values),
                       #cql_query{statement = Query, values = Values}
               end, QueryList).
+
+log_query(Query, Values) ->
+    lager:info("Creating CQL query with statement ~s and values ~p",
+               [Query, Values]).
 
 drop_all_nulls(Rows) ->
     [drop_nulls(Row) || Row <- Rows].
