@@ -177,10 +177,21 @@ column_strings(Cols) ->
      || {CName, CType} <- Cols].
 
 primary_key_string(PK) when is_atom(PK) ->
-    ["PRIMARY KEY (", atom_to_list(PK), ")"].
+    primary_key_string([PK]);
+primary_key_string(PK) ->
+    primary_key_string(lists:reverse(PK), []).
 
-sorting_option_string(undefined) ->
-    "".
+primary_key_string([PK], Acc) ->
+    ["PRIMARY KEY (", atom_to_list(PK), Acc, ")"];
+primary_key_string([First | Rest], Acc) ->
+    primary_key_string(Rest, [", ", atom_to_list(First)|Acc]).
+
+sorting_option_string(undefined) -> "";
+sorting_option_string(Field) when is_atom(Field) ->
+    sorting_option_string([{Field, asc}]);
+sorting_option_string([{Field, Dir}]) ->
+    [" WITH CLUSTERING ORDER BY (", atom_to_list(Field), " ",
+     string:to_upper(atom_to_list(Dir)), ")"].
 
 
 %%====================================================================

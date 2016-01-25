@@ -87,7 +87,24 @@ build_create_table_query_test() ->
     TD = #table_def{name = test_tbl, columns = [{id, uuid}], primary_key = id},
     test_build_query_cases(fun wocky_db:build_create_table_query/1, [
         {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))",
-         [TD]}
+         [TD]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))",
+         [TD#table_def{primary_key = [id]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl"
+         " (id uuid, PRIMARY KEY (foo, bar, baz))",
+         [TD#table_def{primary_key = [foo, bar, baz]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl"
+         " (first text, second text, PRIMARY KEY (id))",
+         [TD#table_def{columns = [{first, text}, {second, text}]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))"
+         " WITH CLUSTERING ORDER BY (foo ASC)",
+         [TD#table_def{order_by = foo}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))"
+         " WITH CLUSTERING ORDER BY (foo ASC)",
+         [TD#table_def{order_by = [{foo, asc}]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))"
+         " WITH CLUSTERING ORDER BY (bar DESC)",
+         [TD#table_def{order_by = [{bar, desc}]}]}
     ]).
 
 
