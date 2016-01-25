@@ -11,27 +11,180 @@
 %%%
 -module(wocky_db).
 -include_lib("cqerl/include/cqerl.hrl").
+-include("wocky.hrl").
 
--type context()  :: shared | binary().
--type query()    :: iodata().
--type value()    :: parameter_val().
--type values()   :: maps:map().
--type row()      :: maps:map().
--type rows()     :: [row()].
--type error()    :: term().
--opaque result() :: #cql_result{}.
+-type table_def() :: #table_def{}.
+-type context()   :: none | shared | binary().
+-type query()     :: iodata().
+-type value()     :: parameter_val().
+-type values()    :: maps:map().
+-type row()       :: maps:map().
+-type rows()      :: [row()].
+-type error()     :: term().
+-opaque result()  :: #cql_result{}.
 -export_type([context/0, query/0, value/0, values/0,
               row/0, result/0, error/0]).
 
-%% API
+
+%% High Level API
+-export([select/4, insert/3, insert_unique/3, truncate/2, drop/3,
+         create_keyspace/3, create_table/2]).
+
+%% Query API
 -export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
-         rows/1, single_row/1, single_result/1, count/2,
-         to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1,
-         timestamp_to_now/1, now_to_timestamp/1, expire_to_ttl/1]).
+         rows/1, single_row/1, single_result/1, count/2]).
+
+%% Utility API
+-export([to_keyspace/1, keyspace_name/1, seconds_to_timestamp/1,
+         timestamp_to_seconds/1, timestamp_to_now/1, now_to_timestamp/1,
+         expire_to_ttl/1]).
+
+-ifdef(TEST).
+%% Query building functions exported for unit tests
+-export([build_select_query/3, build_insert_query/2, build_truncate_query/1,
+         build_drop_query/2, build_create_keyspace_query/3,
+         build_create_table_query/1]).
+-endif.
 
 
 %%====================================================================
-%% API
+%% High Level API
+%%====================================================================
+
+%% @doc TBD
+-spec select(context(), atom(), all | [atom()], [{atom(), term()}]) -> rows().
+select(Context, Table, Columns, Conditions) ->
+    Query = build_select_query(Table, Columns, Conditions),
+    {ok, R} = query(Context, Query, Conditions, quorum),
+    rows(R).
+
+build_select_query(Table, Columns, Conditions) ->
+    ["SELECT ", columns(Columns), " FROM ", atom_to_list(Table),
+     conditions(Conditions)].
+
+columns(all) -> "*";
+columns([First|Rest]) ->
+    lists:foldl(
+      fun (Column, Str) -> [Str, ", ", atom_to_list(Column)] end,
+      atom_to_list(First),
+      Rest).
+
+conditions([]) -> "";
+conditions([{First, _}|Rest]) ->
+    Start = [" WHERE ", atom_to_list(First), " = ?"],
+    lists:foldl(
+      fun ({Name, _}, Str) -> [Str, " AND ", atom_to_list(Name), " = ?"] end,
+      Start,
+      Rest).
+
+
+%% @doc TBD
+-spec insert(context(), atom(), maps:map()) -> ok.
+insert(Context, Table, Values) ->
+    Keys = maps:keys(Values),
+    Query = build_insert_query(Table, Keys),
+    {ok, void} = query(Context, Query, Values, quorum),
+    ok.
+
+
+%% @doc TBD
+-spec insert_unique(context(), atom(), maps:map()) -> ok.
+insert_unique(Context, Table, Values) ->
+    Keys = maps:keys(Values),
+    Query = [build_insert_query(Table, Keys), " IF NOT EXISTS"],
+    {ok, R} = query(Context, Query, Values, quorum),
+    single_result(R).
+
+build_insert_query(Table, Keys) ->
+    ["INSERT INTO ", atom_to_list(Table), " ", names(Keys),
+     " VALUES ", placeholders(length(Keys))].
+
+placeholders(1) -> "(?)";
+placeholders(N) -> ["(", ["?, " || _X <- lists:seq(2, N)], "?)"].
+
+names(Keys) ->
+    names(lists:reverse(Keys), []).
+
+names([Key], Acc) ->
+    ["(", [atom_to_list(Key) | Acc], ")"];
+names([Key | Keys], Acc) ->
+    names(Keys, [[", ", atom_to_list(Key)] | Acc]).
+
+
+%% @doc TBD
+-spec truncate(context(), atom()) -> ok.
+truncate(Context, Name) ->
+    Query = build_truncate_query(Name),
+    {ok, void} = query(Context, Query, all),
+    ok.
+
+build_truncate_query(Name) ->
+    ["TRUNCATE TABLE ", atom_to_list(Name)].
+
+
+%% @doc TBD
+-spec drop(context(), atom(), atom()) -> ok.
+drop(Context, Type, Name) ->
+    Query = build_drop_query(Type, Name),
+    {ok, void} = query(Context, Query, all),
+    ok.
+
+build_drop_query(Type, Name) ->
+    ["DROP ", string:to_upper(atom_to_list(Type)), " ", atom_to_list(Name)].
+
+
+%% @doc TBD
+-spec create_keyspace(context(), simple | topology,
+                      non_neg_integer() | [{binary(), non_neg_integer}]) -> ok.
+create_keyspace(Context, Class, Factor) ->
+    Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
+    {ok, void} = query(none, Query, all),
+    ok.
+
+build_create_keyspace_query(Name, Class, Factor) ->
+    ["CREATE KEYSPACE IF NOT EXISTS ", atom_to_list(Name),
+     " WITH REPLICATION = ", replication_strategy(Class, Factor)].
+
+replication_strategy(simple, Factor) ->
+    ["{'class': 'SimpleStrategy',"
+     " 'replication_factor': ", integer_to_list(Factor), "}"];
+replication_strategy(topology, DCs) ->
+    ["{'class': 'NetworkTopologyStrategy'", dc_factors(DCs, []), "}"].
+
+dc_factors([], Factors) ->
+    Factors;
+dc_factors([{DC, Factor} | Rest], Factors) ->
+    FactorString = [", '", atom_to_list(DC), "': ", integer_to_list(Factor)],
+    dc_factors(Rest, [Factors | FactorString]).
+
+
+%% @doc TBD
+-spec create_table(context(), table_def()) -> ok.
+create_table(Context, TableDef) ->
+    Query = build_create_table_query(TableDef),
+    {ok, void} = query(Context, Query, all),
+    ok.
+
+build_create_table_query(TD) ->
+    Name = atom_to_list(TD#table_def.name),
+    ["CREATE TABLE IF NOT EXISTS ", Name, " (",
+     column_strings(TD#table_def.columns),
+     primary_key_string(TD#table_def.primary_key),
+     ")", sorting_option_string(TD#table_def.order_by)].
+
+column_strings(Cols) ->
+    [[atom_to_list(CName), " ", atom_to_list(CType), ", "]
+     || {CName, CType} <- Cols].
+
+primary_key_string(PK) when is_atom(PK) ->
+    ["PRIMARY KEY (", atom_to_list(PK), ")"].
+
+sorting_option_string(undefined) ->
+    "".
+
+
+%%====================================================================
+%% Query API
 %%====================================================================
 
 %% @doc Execute a query.
@@ -193,6 +346,11 @@ count(Pred, Result) ->
       0,
       Rows).
 
+
+%%====================================================================
+%% Utility API
+%%====================================================================
+
 %% @doc Modify a string so it is a valid keyspace
 %%
 %% All invalid characters are replaced with underscore and then
@@ -208,6 +366,16 @@ to_keyspace(String) ->
         _ ->
             Space
     end.
+
+%% @doc Return the keyspace name for the given context.
+-spec keyspace_name(context) -> binary().
+keyspace_name(Context) when is_atom(Context) ->
+    keyspace_name(atom_to_list(Context));
+keyspace_name(Context) ->
+    iolist_to_binary([keyspace_prefix(), Context]).
+
+keyspace_prefix() ->
+    application:get_env(wocky, keyspace_prefix, "wocky_").
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
 %%
@@ -260,20 +428,13 @@ expire_to_ttl(Expire) ->
     TTL = timer:now_diff(Expire, Now) div 1000000,
     lists:max([TTL, 1]).
 
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
-keyspace_prefix() ->
-    application:get_env(wocky, keyspace_prefix, "wocky_").
-
-keyspace_name(Context) when is_atom(Context) ->
-    keyspace_name(atom_to_list(Context));
-keyspace_name(Context) ->
-    iolist_to_binary([keyspace_prefix(), Context]).
-
 run_query(Context, Query) ->
-    case cqerl:new_client({}, [{keyspace, keyspace_name(Context)}]) of
+    case get_client({}, Context) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
             cqerl:close_client(Client),
@@ -281,6 +442,11 @@ run_query(Context, Query) ->
         {closed, Error} ->
             {error, Error}
     end.
+
+get_client(Spec, none) ->
+    cqerl:new_client(Spec);
+get_client(Spec, Context) ->
+    cqerl:new_client(Spec, [{keyspace, keyspace_name(Context)}]).
 
 make_query(Query, Values, Consistency) ->
     #cql_query{statement = Query,

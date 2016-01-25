@@ -3,10 +3,12 @@
 -module(wocky_db_tests).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("wocky.hrl").
+
 
 -define(LONG_STRING, <<"Lorem ipsum dolor sit amet, consectetur cras amet.">>).
 
-wocky_db_to_keyspace_test_() -> {
+to_keyspace_test_() -> {
   "to_keyspace/1", [
     { "should replace non-alphanumeric characters with underscores", [
       ?_assertEqual(<<"abc123___">>, wocky_db:to_keyspace("abc123$!@"))
@@ -17,13 +19,77 @@ wocky_db_to_keyspace_test_() -> {
     ]}
 ]}.
 
-wocky_db_invalid_keyspace_test_() -> {
+invalid_keyspace_test_() -> {
   "query", [
     { "should return an error when given an invalid keyspace", [
       ?_assertMatch({error, _},
                     wocky_db:query(<<"bogus">>, "SELECT * FROM user", quorum))
     ]}
 ]}.
+
+
+test_build_query_cases(Fun, Cases) ->
+    lists:foreach(
+      fun ({Query, Args}) ->
+          ?assertEqual(Query, lists:flatten(apply(Fun, Args)))
+      end,
+      Cases).
+
+build_select_query_test() ->
+    test_build_query_cases(fun wocky_db:build_select_query/3, [
+        {"SELECT * FROM users",
+         [users, all, []]},
+        {"SELECT * FROM users WHERE user = ?",
+         [users, all, [{user, foo}]]},
+        {"SELECT * FROM users WHERE user = ? AND server = ?",
+         [users, all, [{user, foo}, {server, bar}]]},
+        {"SELECT user FROM users",
+         [users, [user], []]},
+        {"SELECT user FROM users WHERE server = ?",
+         [users, [user], [{server, foo}]]},
+        {"SELECT user, server FROM users",
+         [users, [user, server], []]}
+    ]).
+
+build_insert_query_test() ->
+    test_build_query_cases(fun wocky_db:build_insert_query/2, [
+        {"INSERT INTO users (user) VALUES (?)",
+         [users, [user]]},
+        {"INSERT INTO users (user, server) VALUES (?, ?)",
+         [users, [user, server]]}
+    ]).
+
+build_truncate_query_test() ->
+    test_build_query_cases(fun wocky_db:build_truncate_query/1, [
+        {"TRUNCATE TABLE users", [users]}
+    ]).
+
+build_drop_query_test() ->
+    test_build_query_cases(fun wocky_db:build_drop_query/2, [
+        {"DROP TABLE users", [table, users]},
+        {"DROP KEYSPACE users", [keyspace, users]}
+    ]).
+
+build_create_keyspace_query_test() ->
+    test_build_query_cases(fun wocky_db:build_create_keyspace_query/3, [
+        {"CREATE KEYSPACE IF NOT EXISTS test_ks WITH REPLICATION = "
+         "{'class': 'SimpleStrategy', 'replication_factor': 1}",
+         [test_ks, simple, 1]},
+        {"CREATE KEYSPACE IF NOT EXISTS test_ks WITH REPLICATION = "
+         "{'class': 'NetworkTopologyStrategy', 'dc1': 3}",
+         [test_ks, topology, [{dc1, 3}]]},
+        {"CREATE KEYSPACE IF NOT EXISTS test_ks WITH REPLICATION = "
+         "{'class': 'NetworkTopologyStrategy', 'dc1': 3, 'dc2': 2}",
+         [test_ks, topology, [{dc1, 3}, {dc2, 2}]]}
+    ]).
+
+build_create_table_query_test() ->
+    TD = #table_def{name = test_tbl, columns = [{id, uuid}], primary_key = id},
+    test_build_query_cases(fun wocky_db:build_create_table_query/1, [
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))",
+         [TD]}
+    ]).
+
 
 %% This is a very simple test to verify that basic communication with
 %% Cassandra works. It probably isn't worth testing this functionality more
