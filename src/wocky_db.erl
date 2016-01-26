@@ -43,7 +43,7 @@
 %% Query building functions exported for unit tests
 -export([build_select_query/3, build_insert_query/2, build_truncate_query/1,
          build_drop_query/2, build_create_keyspace_query/3,
-         build_create_table_query/1]).
+         build_create_table_query/1, build_create_index_query/2]).
 -endif.
 
 
@@ -52,12 +52,15 @@
 %%====================================================================
 
 %% @doc TBD
--spec select(context(), atom(), all | [atom()], [{atom(), term()}]) -> rows().
+-spec select(context(), atom(), all | [atom()], [{atom(), term()}] | #{})
+            -> rows().
 select(Context, Table, Columns, Conditions) ->
     Query = build_select_query(Table, Columns, Conditions),
     {ok, R} = query(Context, Query, Conditions, quorum),
     rows(R).
 
+build_select_query(Table, Columns, Conditions) when is_map(Conditions) ->
+    build_select_query(Table, Columns, maps:to_list(Conditions));
 build_select_query(Table, Columns, Conditions) ->
     ["SELECT ", columns(Columns), " FROM ", atom_to_list(Table),
      conditions(Conditions)].
@@ -126,11 +129,12 @@ build_truncate_query(Name) ->
 -spec drop(context(), atom(), atom()) -> ok.
 drop(Context, Type, Name) ->
     Query = build_drop_query(Type, Name),
-    {ok, void} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, all),
     ok.
 
 build_drop_query(Type, Name) ->
-    ["DROP ", string:to_upper(atom_to_list(Type)), " ", atom_to_list(Name)].
+    ["DROP ", string:to_upper(atom_to_list(Type)), " IF EXISTS ",
+     atom_to_list(Name)].
 
 
 %% @doc TBD
@@ -138,11 +142,11 @@ build_drop_query(Type, Name) ->
                       non_neg_integer() | [{binary(), non_neg_integer}]) -> ok.
 create_keyspace(Context, Class, Factor) ->
     Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
-    {ok, void} = query(none, Query, all),
+    {ok, _} = query(none, Query, all),
     ok.
 
 build_create_keyspace_query(Name, Class, Factor) ->
-    ["CREATE KEYSPACE IF NOT EXISTS ", atom_to_list(Name),
+    ["CREATE KEYSPACE IF NOT EXISTS ", binary_to_list(Name),
      " WITH REPLICATION = ", replication_strategy(Class, Factor)].
 
 replication_strategy(simple, Factor) ->
@@ -162,7 +166,7 @@ dc_factors([{DC, Factor} | Rest], Factors) ->
 -spec create_table(context(), table_def()) -> ok.
 create_table(Context, TableDef) ->
     Query = build_create_table_query(TableDef),
-    {ok, void} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, all),
     ok.
 
 build_create_table_query(TD) ->
@@ -198,7 +202,7 @@ sorting_option_string([{Field, Dir}]) ->
 -spec create_index(context(), atom(), [atom()]) -> ok.
 create_index(Context, Table, Keys) ->
     Query = build_create_index_query(Table, Keys),
-    {ok, void} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, all),
     ok.
 
 build_create_index_query(Table, Keys) ->
