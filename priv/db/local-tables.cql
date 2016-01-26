@@ -62,3 +62,24 @@ CREATE TABLE roster (
 
 CREATE INDEX ON roster(active);
 CREATE INDEX ON roster(version);
+
+CREATE TABLE session (
+    sid blob,
+    node text,
+    user timeuuid,
+    server text,
+    jid_user timeuuid,
+    jid_server text,
+    jid_resource blob,
+    priority int,
+    info blob,
+    PRIMARY KEY (sid)
+);
+
+CREATE INDEX ON session(node);
+
+CREATE TABLE user_to_sids (
+    jid_user timeuuid,
+    sids set<blob>,
+    PRIMARY KEY (jid_user)
+);

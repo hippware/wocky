@@ -91,6 +91,9 @@ query(Context, Query, Values, Consistency) ->
 -spec batch_query(context(), [{query(), values()}],
                   batch_mode(), consistency_level()
                  ) -> {ok, void} | {error, error()}.
+% Cassandra throws an exception if you try to batch zero queries. Early-out
+% here:
+batch_query(_Context, [], _Mode, _Consistency) -> {ok, void};
 batch_query(Context, QueryList, Mode, Consistency) ->
     run_query(Context, make_batch_query(QueryList, Consistency, Mode)).
 
@@ -153,10 +156,10 @@ rows(Result) ->
 %%
 %% The row is a property list of column name, value pairs.
 %%
--spec single_row(result()) -> row().
+-spec single_row(result()) -> row() | undefined.
 single_row(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> #{};
+        empty_dataset -> undefined;
         R -> drop_nulls(R)
     end.
 
