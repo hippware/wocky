@@ -134,7 +134,7 @@ user_sids(Server, User) ->
     {ok, Result} = wocky_db:query(Server, Q, V, quorum),
     case wocky_db:single_row(Result) of
         #{sids := SIDBins} -> SIDBins;
-        #{} -> []
+        undefined -> []
     end.
 
 session_query(SIDBin) ->

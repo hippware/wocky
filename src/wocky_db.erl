@@ -156,10 +156,10 @@ rows(Result) ->
 %%
 %% The row is a property list of column name, value pairs.
 %%
--spec single_row(result()) -> row().
+-spec single_row(result()) -> row() | undefined.
 single_row(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> #{};
+        empty_dataset -> undefined;
         R -> drop_nulls(R)
     end.
 
