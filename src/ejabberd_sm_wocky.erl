@@ -239,7 +239,7 @@ maybe_cleanup() ->
     % Use the existance of an ETS table to determine whether we need to do a
     % cleanup when the SM is started. We only want to cleanup in the case of a
     % node startup, not of a crash recovery. The heir'd ETS table will persist
-    % across the former but not the latter.
+    % across the latter but not the former.
     case ets:info(ejabberd_sm_wocky_startup) of
         undefined ->
             ejabberd_sm_wocky_startup =
