@@ -1,27 +1,41 @@
 -module(wocky_db_seed).
 
 -include("wocky.hrl").
+-define(LOCAL_CONTEXT, <<"localhost">>).
 
--export([recreate_schema/1, recreate_keyspace/1, recreate_table/2]).
+-export([create_schema/0, create_schema_for/1, recreate_table/2,
+         prepare_table/2, seed_table/2]).
 
 
 %%====================================================================
 %% Helpers
 %%====================================================================
 
-recreate_schema(Context) ->
-    ok = recreate_keyspace(Context),
+create_schema() ->
+    create_schema_for(shared),
+    create_schema_for(?LOCAL_CONTEXT).
+
+create_schema_for(Context) ->
+    ok = wocky_db:create_keyspace(wocky_db:keyspace_name(Context), simple, 1),
     lists:foreach(
       fun (Table) -> ok = recreate_table(Context, Table) end,
-      keyspace_tables(wocky_db:keyspace_name(Context))).
-
-recreate_keyspace(Context) ->
-    ok = wocky_db:drop(Context, keyspace, wocky_db:keyspace_name(Context)),
-    wocky_db:create_keyspace(Context, simple, 1).
+      keyspace_tables(Context)).
 
 recreate_table(Context, Name) ->
     ok = wocky_db:drop(Context, table, Name),
     wocky_db:create_table(Context, table_definition(Name)).
+
+prepare_table(Context, Name) ->
+    ok = wocky_db:create_keyspace(wocky_db:keyspace_name(Context), simple, 1),
+    ok = recreate_table(Context, Name),
+    seed_table(Context, Name).
+
+seed_table(Context, Name) ->
+    Data = table_data(Name),
+    lists:foreach(
+      fun (Row) -> {ok, void} = wocky_db:insert_unique(Context, Name, Row) end,
+      Data),
+    Data.
 
 
 %%====================================================================
@@ -118,3 +132,11 @@ table_definition(roster) ->
        ],
        primary_key = [user, contact]
     }.
+
+
+%%====================================================================
+%% Seed data
+%%====================================================================
+
+table_data(_) ->
+    [].
