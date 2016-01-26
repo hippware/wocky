@@ -119,15 +119,12 @@ delete_session_queries(SIDBin, User) ->
     [delete_session_data_query(SIDBin), delete_session_map_query(SIDBin, User)].
 
 sessions_from_queries(Server, Queries) ->
-    Rows = lists:foldl(
-      fun({Q, V}, Acc) ->
+    lists:flatmap(
+      fun({Q, V}) ->
               {ok, Results} = wocky_db:query(Server, Q, V, quorum),
-              wocky_db:rows(Results) ++ Acc
+              [row_to_rec(R) || R <- wocky_db:rows(Results)]
       end,
-      [],
-      Queries),
-
-    [row_to_rec(R) || R <- Rows].
+      Queries).
 
 user_sids(Server, User) ->
     {Q, V} = sessions_query(User),
