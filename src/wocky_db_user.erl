@@ -68,7 +68,7 @@
 
 %% API
 -export([create_id/0,
-         import_id/1,
+         normalize_id/1,
          create_user/3,
          create_user/4,
          does_user_exist/2,
@@ -89,8 +89,8 @@ create_id() ->
 
 %% @doc Takes a raw binary UUID (as retrieved through C* queries) and converts
 %% to the cannonical textual binary UUID form.
--spec import_id(binary()) -> ejabberd:luser().
-import_id(UUID) ->
+-spec normalize_id(binary()) -> ejabberd:luser().
+normalize_id(UUID) ->
     ossp_uuid:import(UUID, text).
 
 %% @equiv create_user(create_id(), LServer, Handle, Password)
