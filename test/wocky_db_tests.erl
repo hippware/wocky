@@ -66,21 +66,21 @@ build_truncate_query_test() ->
 
 build_drop_query_test() ->
     test_build_query_cases(fun wocky_db:build_drop_query/2, [
-        {"DROP TABLE users", [table, users]},
-        {"DROP KEYSPACE users", [keyspace, users]}
+        {"DROP TABLE IF EXISTS users", [table, users]},
+        {"DROP KEYSPACE IF EXISTS users", [keyspace, users]}
     ]).
 
 build_create_keyspace_query_test() ->
     test_build_query_cases(fun wocky_db:build_create_keyspace_query/3, [
         {"CREATE KEYSPACE IF NOT EXISTS test_ks WITH REPLICATION = "
          "{'class': 'SimpleStrategy', 'replication_factor': 1}",
-         [test_ks, simple, 1]},
+         [<<"test_ks">>, simple, 1]},
         {"CREATE KEYSPACE IF NOT EXISTS test_ks WITH REPLICATION = "
          "{'class': 'NetworkTopologyStrategy', 'dc1': 3}",
-         [test_ks, topology, [{dc1, 3}]]},
+         [<<"test_ks">>, topology, [{dc1, 3}]]},
         {"CREATE KEYSPACE IF NOT EXISTS test_ks WITH REPLICATION = "
          "{'class': 'NetworkTopologyStrategy', 'dc1': 3, 'dc2': 2}",
-         [test_ks, topology, [{dc1, 3}, {dc2, 2}]]}
+         [<<"test_ks">>, topology, [{dc1, 3}, {dc2, 2}]]}
     ]).
 
 build_create_table_query_test() ->
