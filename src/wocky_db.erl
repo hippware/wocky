@@ -28,7 +28,7 @@
 
 %% High Level API
 -export([select/4, insert/3, insert_unique/3, truncate/2, drop/3,
-         create_keyspace/3, create_table/2]).
+         create_keyspace/3, create_table/2, create_index/3]).
 
 %% Query API
 -export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
@@ -192,6 +192,25 @@ sorting_option_string(Field) when is_atom(Field) ->
 sorting_option_string([{Field, Dir}]) ->
     [" WITH CLUSTERING ORDER BY (", atom_to_list(Field), " ",
      string:to_upper(atom_to_list(Dir)), ")"].
+
+
+%% @doc TBD
+-spec create_index(context(), atom(), [atom()]) -> ok.
+create_index(Context, Table, Keys) ->
+    Query = build_create_index_query(Table, Keys),
+    {ok, void} = query(Context, Query, all),
+    ok.
+
+build_create_index_query(Table, Keys) ->
+    ["CREATE INDEX IF NOT EXISTS ON ", atom_to_list(Table), index_keys(Keys)].
+
+index_keys(Keys) ->
+    index_keys(lists:reverse(Keys), []).
+
+index_keys([K], Acc) ->
+    [" (", atom_to_list(K), Acc, ")"];
+index_keys([First | Rest], Acc) ->
+    index_keys(Rest, [", ", atom_to_list(First)|Acc]).
 
 
 %%====================================================================

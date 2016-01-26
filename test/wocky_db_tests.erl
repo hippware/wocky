@@ -107,6 +107,14 @@ build_create_table_query_test() ->
          [TD#table_def{order_by = [{bar, desc}]}]}
     ]).
 
+build_create_index_query_test() ->
+    test_build_query_cases(fun wocky_db:build_create_index_query/2, [
+        {"CREATE INDEX IF NOT EXISTS ON users (user)",
+         [users, [user]]},
+        {"CREATE INDEX IF NOT EXISTS ON users (user, server)",
+         [users, [user, server]]}
+    ]).
+
 
 %% This is a very simple test to verify that basic communication with
 %% Cassandra works. It probably isn't worth testing this functionality more
