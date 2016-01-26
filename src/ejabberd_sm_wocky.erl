@@ -97,12 +97,12 @@ cleanup_server(Server, Node) ->
                   end,
                   QuerySets).
 
--spec total_count() -> 0.
+-spec total_count() -> non_neg_integer().
 total_count() ->
     lists:sum(
       lists:map(fun count_on_server/1, servers())).
 
--spec unique_count() -> 0.
+-spec unique_count() -> non_neg_integer().
 unique_count() ->
     length(
       lists:usort(
