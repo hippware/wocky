@@ -40,23 +40,64 @@ build_select_query_test() ->
         {"SELECT * FROM users",
          [users, all, []]},
         {"SELECT * FROM users WHERE user = ?",
-         [users, all, [{user, foo}]]},
+         [users, all, [user]]},
         {"SELECT * FROM users WHERE user = ? AND server = ?",
-         [users, all, [{user, foo}, {server, bar}]]},
+         [users, all, [user, server]]},
         {"SELECT user FROM users",
          [users, [user], []]},
         {"SELECT user FROM users WHERE server = ?",
-         [users, [user], [{server, foo}]]},
+         [users, [user], [server]]},
         {"SELECT user, server FROM users",
          [users, [user, server], []]}
     ]).
 
 build_insert_query_test() ->
-    test_build_query_cases(fun wocky_db:build_insert_query/2, [
+    test_build_query_cases(fun wocky_db:build_insert_query/3, [
         {"INSERT INTO users (user) VALUES (?)",
-         [users, [user]]},
+         [users, [user], false]},
         {"INSERT INTO users (user, server) VALUES (?, ?)",
-         [users, [user, server]]}
+         [users, [user, server], false]},
+        {"INSERT INTO users (user) VALUES (?) IF NOT EXISTS",
+         [users, [user], true]},
+        {"INSERT INTO users (user, server) VALUES (?, ?) IF NOT EXISTS",
+         [users, [user, server], true]}
+    ]).
+
+build_update_query_test() ->
+    test_build_query_cases(fun wocky_db:build_update_query/3, [
+        {"UPDATE users SET password = ?",
+         [users, [password], []]},
+        {"UPDATE users SET password = ?, handle = ?",
+         [users, [password, handle], []]},
+        {"UPDATE users SET password = ? WHERE user = ?",
+         [users, [password], [user]]},
+        {"UPDATE users SET password = ? WHERE user = ? AND server = ?",
+         [users, [password], [user, server]]},
+        {"UPDATE users SET password = ?, handle = ? WHERE user = ?",
+         [users, [password, handle], [user]]},
+        {"UPDATE users SET password = ?, handle = ?"
+         " WHERE user = ? AND server = ?",
+         [users, [password, handle], [user, server]]}
+    ]).
+
+build_delete_query_test() ->
+    test_build_query_cases(fun wocky_db:build_delete_query/3, [
+        {"DELETE FROM users",
+         [users, all, []]},
+        {"DELETE FROM users",
+         [users, [], []]},
+        {"DELETE FROM users WHERE user = ?",
+         [users, all, [user]]},
+        {"DELETE FROM users WHERE user = ? AND server = ?",
+         [users, all, [user, server]]},
+        {"DELETE server FROM users",
+         [users, [server], []]},
+        {"DELETE user, server FROM users",
+         [users, [user, server], []]},
+        {"DELETE server FROM users WHERE user = ?",
+         [users, [server], [user]]},
+        {"DELETE server FROM users WHERE user = ? AND server = ?",
+         [users, [server], [user, server]]}
     ]).
 
 build_truncate_query_test() ->

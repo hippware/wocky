@@ -13,8 +13,16 @@
 -include_lib("cqerl/include/cqerl.hrl").
 -include("wocky.hrl").
 
--type table_def() :: #table_def{}.
--type context()   :: none | shared | binary().
+-type context()    :: none | shared | binary().
+-type table()      :: atom().
+-type columns()    :: all | [atom()].
+-type conditions() :: [{atom(), term()}] | maps:map().
+-type ks_class()   :: simple | topology.
+-type ks_factor()  :: non_neg_integer() | [{binary(), non_neg_integer}].
+-type table_def()  :: #table_def{}.
+-export_type([context/0, table/0, columns/0, conditions/0,
+              ks_class/0, ks_factor/0, table_def/0]).
+
 -type query()     :: iodata().
 -type value()     :: parameter_val().
 -type values()    :: maps:map().
@@ -22,13 +30,13 @@
 -type rows()      :: [row()].
 -type error()     :: term().
 -opaque result()  :: #cql_result{}.
--export_type([context/0, query/0, value/0, values/0,
-              row/0, result/0, error/0]).
+-export_type([query/0, value/0, values/0, row/0, result/0, error/0]).
 
 
 %% High Level API
--export([select/4, insert/3, insert_unique/3, truncate/2, drop/3,
-         create_keyspace/3, create_table/2, create_index/3]).
+-export([select_one/4, select/4, insert/3, insert_unique/3, update/4, delete/4,
+         truncate/2, drop/3, create_keyspace/3, create_table/2,
+         create_index/3]).
 
 %% Query API
 -export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
@@ -41,9 +49,10 @@
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
--export([build_select_query/3, build_insert_query/2, build_truncate_query/1,
-         build_drop_query/2, build_create_keyspace_query/3,
-         build_create_table_query/1, build_create_index_query/2]).
+-export([build_select_query/3, build_insert_query/3, build_delete_query/3,
+         build_update_query/3, build_truncate_query/1, build_drop_query/2,
+         build_create_keyspace_query/3, build_create_table_query/1,
+         build_create_index_query/2]).
 -endif.
 
 
@@ -52,53 +61,64 @@
 %%====================================================================
 
 %% @doc TBD
--spec select(context(), atom(), all | [atom()], [{atom(), term()}] | #{})
-            -> rows().
-select(Context, Table, Columns, Conditions) ->
-    Query = build_select_query(Table, Columns, Conditions),
-    {ok, R} = query(Context, Query, Conditions, quorum),
-    rows(R).
-
-build_select_query(Table, Columns, Conditions) when is_map(Conditions) ->
-    build_select_query(Table, Columns, maps:to_list(Conditions));
-build_select_query(Table, Columns, Conditions) ->
-    ["SELECT ", columns(Columns), " FROM ", atom_to_list(Table),
-     conditions(Conditions)].
-
-columns(all) -> "*";
-columns([First|Rest]) ->
-    lists:foldl(
-      fun (Column, Str) -> [Str, ", ", atom_to_list(Column)] end,
-      atom_to_list(First),
-      Rest).
-
-conditions([]) -> "";
-conditions([{First, _}|Rest]) ->
-    Start = [" WHERE ", atom_to_list(First), " = ?"],
-    lists:foldl(
-      fun ({Name, _}, Str) -> [Str, " AND ", atom_to_list(Name), " = ?"] end,
-      Start,
-      Rest).
-
-
-%% @doc TBD
--spec insert(context(), atom(), maps:map()) -> ok.
-insert(Context, Table, Values) ->
-    Keys = maps:keys(Values),
-    Query = build_insert_query(Table, Keys),
-    {ok, void} = query(Context, Query, Values, quorum),
-    ok.
-
-
-%% @doc TBD
--spec insert_unique(context(), atom(), maps:map()) -> ok.
-insert_unique(Context, Table, Values) ->
-    Keys = maps:keys(Values),
-    Query = [build_insert_query(Table, Keys), " IF NOT EXISTS"],
-    {ok, R} = query(Context, Query, Values, quorum),
+-spec select_one(context(), table(), columns(), conditions()) -> term().
+select_one(Context, Table, Columns, Conditions) ->
+    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
     single_result(R).
 
-build_insert_query(Table, Keys) ->
+%% @doc TBD
+-spec select(context(), table(), columns(), conditions()) -> rows().
+select(Context, Table, Columns, Conditions) ->
+    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
+    rows(R).
+
+run_select_query(Context, Table, Columns, Conditions) ->
+    Query = build_select_query(Table, Columns, keys(Conditions)),
+    query(Context, Query, Conditions, quorum).
+
+keys(Map) when is_map(Map) -> maps:keys(Map);
+keys([{_, _}|_] = List) -> proplists:get_keys(List);
+keys([]) -> [].
+
+build_select_query(Table, Columns, Keys) ->
+    ["SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
+     conditions(Keys)].
+
+columns(all, Default) -> Default;
+columns([], Default) -> Default;
+columns([First|Rest], _) ->
+    [lists:foldl(
+       fun (Column, Str) -> [Str, ", ", atom_to_list(Column)] end,
+       [" ", atom_to_list(First)],
+       Rest), " "].
+
+conditions([]) -> "";
+conditions([First|Rest]) ->
+    lists:foldl(
+      fun (Name, Str) -> [Str, " AND ", atom_to_list(Name), " = ?"] end,
+      [" WHERE ", atom_to_list(First), " = ?"],
+      Rest).
+
+
+%% @doc TBD
+-spec insert(context(), table(), values()) -> ok.
+insert(Context, Table, Values) ->
+    {ok, void} = run_insert_query(Context, Table, Values, false),
+    ok.
+
+%% @doc TBD
+-spec insert_unique(context(), table(), values()) -> boolean().
+insert_unique(Context, Table, Values) ->
+    {ok, R} = run_insert_query(Context, Table, Values, true),
+    single_result(R).
+
+run_insert_query(Context, Table, Values, UseLWT) ->
+    Query = build_insert_query(Table, keys(Values), UseLWT),
+    query(Context, Query, Values, quorum).
+
+build_insert_query(Table, Keys, true) ->
+    [build_insert_query(Table, Keys, false), " IF NOT EXISTS"];
+build_insert_query(Table, Keys, false) ->
     ["INSERT INTO ", atom_to_list(Table), " ", names(Keys),
      " VALUES ", placeholders(length(Keys))].
 
@@ -114,8 +134,40 @@ names([Key | Keys], Acc) ->
     names(Keys, [[", ", atom_to_list(Key)] | Acc]).
 
 
+%% @TBD
+-spec update(context(), table(), conditions(), conditions()) -> ok.
+update(Context, Table, Updates, Conditions) ->
+    Values = maps:merge(Updates, Conditions),
+    Query = build_update_query(Table, keys(Updates), keys(Conditions)),
+    {ok, _} = query(Context, Query, Values, quorum),
+    ok.
+
+build_update_query(Table, Columns, Keys) ->
+    ["UPDATE ", atom_to_list(Table), " SET ", update_columns(Columns),
+     conditions(Keys)].
+
+update_columns([]) -> "";
+update_columns([First|Rest]) ->
+    lists:foldl(
+      fun (Name, Str) -> [Str, ", ", atom_to_list(Name), " = ?"] end,
+      [atom_to_list(First), " = ?"],
+      Rest).
+
+
+%% @TBD
+-spec delete(context(), table(), columns(), conditions()) -> ok.
+delete(Context, Table, Columns, Conditions) ->
+    Query = build_delete_query(Table, Columns, keys(Conditions)),
+    {ok, void} = query(Context, Query, Conditions, quorum),
+    ok.
+
+build_delete_query(Table, Columns, Keys) ->
+    ["DELETE", columns(Columns, " "), "FROM ", atom_to_list(Table),
+     conditions(Keys)].
+
+
 %% @doc TBD
--spec truncate(context(), atom()) -> ok.
+-spec truncate(context(), table()) -> ok.
 truncate(Context, Name) ->
     Query = build_truncate_query(Name),
     {ok, void} = query(Context, Query, all),
@@ -138,8 +190,7 @@ build_drop_query(Type, Name) ->
 
 
 %% @doc TBD
--spec create_keyspace(context(), simple | topology,
-                      non_neg_integer() | [{binary(), non_neg_integer}]) -> ok.
+-spec create_keyspace(context(), ks_class(), ks_factor()) -> ok.
 create_keyspace(Context, Class, Factor) ->
     Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
     {ok, _} = query(none, Query, all),
@@ -199,7 +250,7 @@ sorting_option_string([{Field, Dir}]) ->
 
 
 %% @doc TBD
--spec create_index(context(), atom(), [atom()]) -> ok.
+-spec create_index(context(), table(), [atom()]) -> ok.
 create_index(Context, Table, Keys) ->
     Query = build_create_index_query(Table, Keys),
     {ok, _} = query(Context, Query, all),
@@ -513,7 +564,7 @@ batch_query_list(QueryList) ->
               end, QueryList).
 
 log_query(Query, Values) ->
-    lager:info("Creating CQL query with statement ~s and values ~p",
+    lager:info("Creating CQL query with statement '~s' and values ~p",
                [Query, Values]).
 
 drop_all_nulls(Rows) ->
