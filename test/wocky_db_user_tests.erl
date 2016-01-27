@@ -3,14 +3,7 @@
 -module(wocky_db_user_tests).
 
 -include_lib("eunit/include/eunit.hrl").
-
--define(USER,    <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>).
--define(SERVER,  <<"localhost">>).
--define(HANDLE,  <<"bob">>).
--define(PASS,    <<"password">>).
-
--define(BADUSER, <<"d51f92c8-ba40-11e5-9912-ba0be0483c18">>).
--define(NEWUSER, <<"9d7acab4-ba30-11e5-9912-ba0be0483c18">>).
+-include("wocky_db_seed.hrl").
 
 
 wocky_db_user_test_() -> {
@@ -28,6 +21,8 @@ wocky_db_user_test_() -> {
 
 before_all() ->
     ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
 after_all(_) ->
@@ -35,21 +30,13 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    Query1 = "INSERT INTO handle_to_user (user, server, handle)" ++
-             " VALUES (?, ?, ?)",
-    Values1 = #{user => ?USER, server => ?SERVER, handle => ?HANDLE},
-    {ok, _} = wocky_db:query(shared, Query1, Values1, quorum),
-
-    Query2 = "INSERT INTO user (user, server, handle, password)" ++
-             " VALUES (?, ?, ?, ?)",
-    Values2 = #{user => ?USER, server => ?SERVER,
-                handle => ?HANDLE, password => ?PASS},
-    {ok, _} = wocky_db:query(?SERVER, Query2, Values2, quorum),
+    {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
+    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user),
     ok.
 
 after_each(_) ->
-    {ok, _} = wocky_db:query(shared, <<"TRUNCATE handle_to_user">>, quorum),
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE user">>, quorum),
+    ok = wocky_db_seed:clear_tables(shared, [handle_to_user]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
 test_does_user_exist() ->
@@ -66,7 +53,7 @@ test_create_user_without_id() ->
   { "create_user", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
       ?_assertMatch({ok, _}, wocky_db_user:create_user(
-                               ?SERVER, <<"alice">>, ?PASS))
+                               ?SERVER, <<"nosuchuser">>, ?PASS))
     ]},
     { "fails if user already exists", [
       ?_assertMatch({error, exists},
@@ -78,7 +65,7 @@ test_create_user_with_id() ->
   { "create_user", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
       ?_assertMatch(ok, wocky_db_user:create_user(?NEWUSER, ?SERVER,
-                                                  <<"alice">>, ?PASS)),
+                                                  <<"nosuchuser">>, ?PASS)),
       ?_assert(wocky_db_user:does_user_exist(?NEWUSER, ?SERVER))
     ]},
     { "fails if user already exists", [

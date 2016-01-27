@@ -164,6 +164,7 @@ build_create_index_query_test() ->
 
 wocky_db_api_smoke_test() ->
     ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
 
     Q1 = "INSERT INTO handle_to_user (user, server, handle) VALUES (?, ?, ?)",
     Values = [
