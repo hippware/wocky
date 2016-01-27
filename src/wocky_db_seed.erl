@@ -89,6 +89,7 @@ keyspace_tables(_) -> [
     roster
 ].
 
+%% A lookup table that maps globally unique handle to user account id
 table_definition(handle_to_user) ->
     #table_def{
        name = handle_to_user,
@@ -99,6 +100,8 @@ table_definition(handle_to_user) ->
        ],
        primary_key = handle
     };
+
+%% A lookup table that maps globally unique phone number to user account id
 table_definition(phone_number_to_user) ->
     #table_def{
        name = phone_number_to_user,
@@ -109,64 +112,104 @@ table_definition(phone_number_to_user) ->
        ],
        primary_key = phone_number
     };
+
+%% Table for storing the details of a user's account
 table_definition(user) ->
     #table_def{
        name = user,
        columns = [
-           {user, timeuuid},
-           {server, text},
-           {handle, text},
-           {password, text},
-           {phone_number, text},
-           {status, bigint},
-           {user_status, text},
-           {avatar, timeuuid}
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % User Server (domainpart of JID)
+           {handle, text},         % User handle (as seen by other users)
+           {password, text},       % Password hash
+           {phone_number, text},   % User's phone number
+           {status, bigint},       %
+           {user_status, text},    %
+           {avatar, timeuuid}      % UUID of file containing user's avatar
        ],
        primary_key = user
     };
+
+%% Table for storing details of users' last activty on the server. This is
+%% updated only when a user logs out or disconnects
 table_definition(last_activity) ->
     #table_def{
        name = last_activity,
        columns = [
-           {user, timeuuid},
-           {server, text},
-           {timestamp, timestamp},
-           {status, text}
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % User Server (domainpart of JID)
+           {timestamp, timestamp}, % Timestamp of last user logoff
+           {status, text}          % Text set in last user presence
+                                   % with type of "unavailable"
        ],
        primary_key = user
     };
+
+%% Table for storing messages sent to a user while they're offline
 table_definition(offline_msg) ->
     #table_def{
        name = offline_msg,
        columns = [
-           {user, timeuuid},
-           {server, text},
-           {msg_id, timeuuid},
-           {timestamp, timestamp},
-           {expire, timestamp},
-           {from_id, text},
-           {to_id, text},
-           {packet, text}
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % User Server (domainpart of JID)
+           {msg_id, timeuuid},     % Unique message ID
+           {timestamp, timestamp}, % Message timestamp
+           {expire, timestamp},    % Message expiry (as timestamp)
+           {from_id, text},        % Sending user JID
+           {to_id, text},          % Receiving user JID
+           {packet, text}          % Full XML of <message> element
        ],
        primary_key = [user, timestamp, msg_id],
        order_by = [{timestamp, asc}]
     };
+
+%% Table for storing a user's roster
 table_definition(roster) ->
     #table_def{
        name = roster,
        columns = [
-           {user, timeuuid},
-           {server, text},
-           {contact, text},
-           {active, boolean},
-           {nick, text},
-           {groups, {set, text}},
-           {ask, text},
-           {askmessage, text},
-           {subscription, text},
-           {version, timeuuid}
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % User Server (domainpart of JID)
+           {contact, text},        % Simple JID for contact
+           {active, boolean},      % True if the roster item is not deleted
+           {nick, text},           % Display name for contact chosen by the user
+           {groups, {set, text}},  % List of groups the contact belongs to
+           {ask, text},            %
+           {askmessage, text},     %
+           {subscription, text},   %
+           {version, timeuuid}     % Timeuuid indicating when the roster was
+                                   % last updated
        ],
        primary_key = [user, contact]
+    };
+
+%% Table for storing transient data for active user sessions
+table_definition(session) ->
+    #table_def{
+       name = session,
+       columns = [
+           {sid, blob},            % Session ID
+           {node, text},           % Node handling the active session
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % User Server (domainpart of JID)
+           {jid_user, timeuuid},   % Provided JID userpart
+           {jid_server, text},     % Provided JID domainpart
+           {jid_resource, blob},   % Provided JID resourcepart
+           {priority, int},        % Session priority
+           {info, blob}            % Session info
+       ],
+       primary_key = sid
+    };
+
+%% Lookup table mapping user ids to a list of session ids
+table_definition(user_to_sids) ->
+    #table_def{
+       name = user_to_sids,
+       columns = [
+           {jid_user, timeuuid},   % User ID (userpart of JID)
+           {sids, {set, blob}}     % List of session IDs
+       ],
+       primary_key = jid_user
     }.
 
 
