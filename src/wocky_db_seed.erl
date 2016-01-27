@@ -6,9 +6,9 @@
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 
--export([create_schema/0, create_schema_for/1, recreate_table/2, seed_table/2,
-         foreach_table/3, map_tables/3, prepare_tables/2, seed_tables/2,
-         clear_tables/2]).
+-export([create_schema/0, create_schema_for/1, recreate_table/2,
+         create_table_indexes/2, seed_table/2, foreach_table/3, map_tables/3,
+         prepare_tables/2, seed_tables/2, clear_tables/2]).
 
 
 %%====================================================================
@@ -24,7 +24,13 @@ create_schema_for(Context) ->
 
 recreate_table(Context, Name) ->
     ok = wocky_db:drop(Context, table, Name),
-    wocky_db:create_table(Context, table_definition(Name)).
+    ok = wocky_db:create_table(Context, table_definition(Name)),
+    create_table_indexes(Context, Name).
+
+create_table_indexes(Context, Table) ->
+    lists:foreach(
+      fun (IdxKeys) -> ok = wocky_db:create_index(Context, Table, IdxKeys) end,
+      table_indexes(Table)).
 
 seed_table(Context, Name) ->
     Data = table_data(Name),
@@ -211,6 +217,15 @@ table_definition(user_to_sids) ->
        ],
        primary_key = jid_user
     }.
+
+table_indexes(roster) -> [
+    [active],
+    [version]
+];
+table_indexes(session) -> [
+    [node]
+];
+table_indexes(_) -> [].
 
 
 %%====================================================================
