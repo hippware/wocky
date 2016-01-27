@@ -4,7 +4,7 @@
 -module(wocky_db_seed).
 
 -include("wocky.hrl").
--define(LOCAL_CONTEXT, <<"localhost">>).
+-include("wocky_db_seed.hrl").
 
 -export([create_schema/0, create_schema_for/1, recreate_table/2, seed_table/2,
          foreach_table/3, map_tables/3, prepare_tables/2, seed_tables/2,
@@ -174,5 +174,11 @@ table_definition(roster) ->
 %% Seed data
 %%====================================================================
 
+table_data(handle_to_user) -> [
+    #{user => ?USER, server => ?SERVER, handle => ?HANDLE}
+];
+table_data(user) -> [
+    #{user => ?USER, server => ?SERVER, handle => ?HANDLE, password => ?PASS}
+];
 table_data(_) ->
     [].
