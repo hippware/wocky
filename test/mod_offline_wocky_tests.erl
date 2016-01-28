@@ -5,8 +5,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/mod_offline.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky_db_seed.hrl").
 
--define(SERVER, "localhost").
 
 -record(config, {
           users,
@@ -27,7 +27,9 @@ mod_offline_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_app:start().
+    ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [offline_msg]),
+    ok.
 
 after_all(_) ->
     ok = wocky_app:stop().
@@ -100,7 +102,7 @@ make_msg_structs(User, Handle, NowSecs, I) ->
     {Map, Rec}.
 
 after_each(_) ->
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE offline_msg">>, quorum),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [offline_msg]),
     ok.
 
 test_pop_messages() ->

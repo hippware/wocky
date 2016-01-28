@@ -5,8 +5,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/ejabberd_config.hrl").
+-include("wocky_db_seed.hrl").
 
--define(SERVER, <<"localhost">>).
 
 ejabberd_sm_wocky_test_() -> {
   "ejabberd_sm_wocky",
@@ -24,8 +24,9 @@ ejabberd_sm_wocky_test_() -> {
 before_all() ->
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
-    clear_tables(),
-    ok = wocky_app:start().
+    ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [session, user_to_sids]),
+    ok.
 
 after_all(_) ->
     ets:delete(config),
@@ -42,7 +43,7 @@ before_each() ->
     Sessions.
 
 after_each(_) ->
-    clear_tables(),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session, user_to_sids]),
     ok.
 
 fake_now() ->
@@ -86,11 +87,6 @@ write_session(#session{sid = Sid = {_, Pid}, us = {User, Server},
 session_to_ses_tuple(#session{sid = SID, usr = USR,
                               priority = Priority, info = Info}) ->
     {USR, SID, Priority, Info}.
-
-clear_tables() ->
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE session">>, quorum),
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE user_to_sids">>, quorum),
-    ok.
 
 test_get_sessions() ->
     { "get_sessions", setup, fun before_each/0, fun after_each/1,
