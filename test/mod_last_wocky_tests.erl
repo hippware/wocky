@@ -3,10 +3,8 @@
 -module(mod_last_wocky_tests).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("wocky_db_seed.hrl").
 
--define(SERVER, <<"localhost">>).
-
--compile(export_all).
 
 mod_last_wocky_test_() -> {
   "mod_last_wocky",
@@ -20,7 +18,9 @@ mod_last_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_app:start().
+    ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [last_activity]),
+    ok.
 
 after_all(_) ->
     ok = wocky_app:stop().
@@ -47,7 +47,7 @@ before_each() ->
     Users ++ InactiveUsers.
 
 after_each(_) ->
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE last_activity">>, quorum),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]),
     ok.
 
 test_set_last_info() ->
