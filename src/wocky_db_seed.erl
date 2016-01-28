@@ -35,7 +35,7 @@ create_table_indexes(Context, Table) ->
 seed_table(Context, Name) ->
     Data = table_data(Name),
     lists:foreach(
-      fun (Row) -> true = wocky_db:insert_unique(Context, Name, Row) end,
+      fun (Row) -> true = wocky_db:insert_new(Context, Name, Row) end,
       Data),
     {ok, Data}.
 

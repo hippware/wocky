@@ -139,7 +139,7 @@ create_user(LUser, LServer, Handle, Password) ->
 %% @private
 create_handle_lookup(LUser, LServer, Handle) ->
     Values = #{user => LUser, server => LServer, handle => Handle},
-    wocky_db:insert_unique(shared, handle_to_user, Values).
+    wocky_db:insert_new(shared, handle_to_user, Values).
 
 %% @private
 create_user_record(LUser, LServer, Handle, Password) ->
