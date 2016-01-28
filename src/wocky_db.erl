@@ -34,7 +34,7 @@
 
 
 %% High Level API
--export([select_one/4, select/4, insert/3, insert_unique/3, update/4, delete/4,
+-export([select_one/4, select/4, insert/3, insert_new/3, update/4, delete/4,
          truncate/2, drop/3, create_keyspace/3, create_table/2,
          create_index/3]).
 
@@ -77,8 +77,7 @@ run_select_query(Context, Table, Columns, Conditions) ->
     query(Context, Query, Conditions, quorum).
 
 keys(Map) when is_map(Map) -> maps:keys(Map);
-keys([{_, _}|_] = List) -> proplists:get_keys(List);
-keys([]) -> [].
+keys(List) when is_list(List) -> proplists:get_keys(List).
 
 build_select_query(Table, Columns, Keys) ->
     ["SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
@@ -107,8 +106,8 @@ insert(Context, Table, Values) ->
     ok.
 
 %% @doc TBD
--spec insert_unique(context(), table(), values()) -> boolean().
-insert_unique(Context, Table, Values) ->
+-spec insert_new(context(), table(), values()) -> boolean().
+insert_new(Context, Table, Values) ->
     {ok, R} = run_insert_query(Context, Table, Values, true),
     single_result(R).
 
@@ -123,7 +122,7 @@ build_insert_query(Table, Keys, false) ->
      " VALUES ", placeholders(length(Keys))].
 
 placeholders(1) -> "(?)";
-placeholders(N) -> ["(", ["?, " || _X <- lists:seq(2, N)], "?)"].
+placeholders(N) -> ["(", lists:duplicate(N - 1, "?, "), "?)"].
 
 names(Keys) ->
     names(lists:reverse(Keys), []).
@@ -221,8 +220,7 @@ create_table(Context, TableDef) ->
     ok.
 
 build_create_table_query(TD) ->
-    Name = atom_to_list(TD#table_def.name),
-    ["CREATE TABLE IF NOT EXISTS ", Name, " (",
+    ["CREATE TABLE IF NOT EXISTS ", atom_to_list(TD#table_def.name), " (",
      column_strings(TD#table_def.columns),
      primary_key_string(TD#table_def.primary_key),
      ")", sorting_option_string(TD#table_def.order_by)].
