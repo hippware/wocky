@@ -183,8 +183,8 @@ table_definition(roster) ->
            {ask, text},            %
            {askmessage, text},     %
            {subscription, text},   %
-           {version, timeuuid}     % Timeuuid indicating when the roster was
-                                   % last updated
+           {version, timeuuid}     % Timeuuid indicating when the roster item
+                                   % was last updated
        ],
        primary_key = [user, contact]
     };

@@ -145,7 +145,14 @@ build_create_table_query_test() ->
          [TD#table_def{order_by = [{foo, asc}]}]},
         {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))"
          " WITH CLUSTERING ORDER BY (bar DESC)",
-         [TD#table_def{order_by = [{bar, desc}]}]}
+         [TD#table_def{order_by = [{bar, desc}]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id set<int>, PRIMARY KEY (id))",
+         [TD#table_def{columns = [{id, {set, int}}]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl (id list<int>, PRIMARY KEY (id))",
+         [TD#table_def{columns = [{id, {list, int}}]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl"
+         " (id map<int,int>, PRIMARY KEY (id))",
+         [TD#table_def{columns = [{id, {map, int, int}}]}]}
     ]).
 
 build_create_index_query_test() ->
