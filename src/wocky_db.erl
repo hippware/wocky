@@ -228,8 +228,15 @@ build_create_table_query(TD) ->
      ")", sorting_option_string(TD#table_def.order_by)].
 
 column_strings(Cols) ->
-    [[atom_to_list(CName), " ", atom_to_list(CType), ", "]
+    [[atom_to_list(CName), " ", column_type(CType), ", "]
      || {CName, CType} <- Cols].
+
+column_type({map, Type1, Type2}) ->
+    ["map<", atom_to_list(Type1), ",", atom_to_list(Type2), ">"];
+column_type({Coll, Type}) when Coll == set; Coll == list ->
+    [atom_to_list(Coll), "<", atom_to_list(Type), ">"];
+column_type(Type) when is_atom(Type) ->
+    atom_to_list(Type).
 
 primary_key_string(PK) when is_atom(PK) ->
     primary_key_string([PK]);
