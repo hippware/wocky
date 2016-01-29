@@ -60,7 +60,11 @@ build_insert_query_test() ->
         {"INSERT INTO users (user) VALUES (?) IF NOT EXISTS",
          [users, [user], true]},
         {"INSERT INTO users (user, server) VALUES (?, ?) IF NOT EXISTS",
-         [users, [user, server], true]}
+         [users, [user, server], true]},
+        {"INSERT INTO users (user) VALUES (?) USING TTL ?",
+         [users, [user, '[ttl]'], false]},
+        {"INSERT INTO users (user) VALUES (?) IF NOT EXISTS USING TTL ?",
+         [users, [user, '[ttl]'], true]}
     ]).
 
 build_update_query_test() ->
