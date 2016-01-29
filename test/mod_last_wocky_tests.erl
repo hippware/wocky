@@ -25,47 +25,25 @@ before_all() ->
 after_all(_) ->
     ok = wocky_app:stop().
 
-uuid(Name, Users) ->
-    E = lists:keyfind(Name, 1, Users),
-    element(4, E).
-
 before_each() ->
-    Users = [{<<"bob">>, 666, <<"">>, ossp_uuid:make(v1, text)},
-             {<<"alicia">>, 777, <<"Ennui">>, ossp_uuid:make(v1, text)},
-             {<<"robert">>, 888, <<"Bored">>, ossp_uuid:make(v1, text)},
-             {<<"karen">>, 999, <<"Excited">>, ossp_uuid:make(v1, text)},
-             {<<"alice">>, 1000, <<"Not here">>, ossp_uuid:make(v1, text)}],
-
-    InactiveUsers = [{<<"tim">>, not_set, not_set, ossp_uuid:make(v1, text)}],
-
-    Values = [#{user => UID, timestamp => wocky_db:seconds_to_timestamp(T),
-                status => S, server => ?SERVER} || {_, T, S, UID} <- Users],
-
-    Q = "INSERT INTO last_activity (user, server, timestamp, status)"
-        " VALUES (?, ?, ?, ?)",
-    wocky_db:multi_query(?SERVER, Q, Values, quorum),
-    Users ++ InactiveUsers.
+    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, last_activity),
+    ok.
 
 after_each(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]),
     ok.
 
 test_set_last_info() ->
-    { "set_last_info", setup, fun before_each/0, fun after_each/1,
-      fun(Users) -> [
+    { "set_last_info", setup, fun before_each/0, fun after_each/1, [
         { "Creates a new user and validates their state", [
-            ?_assertMatch(not_found,
-                          mod_last_wocky:get_last(uuid(<<"tim">>, Users),
-                                                  ?SERVER)),
+            ?_assertMatch(not_found, mod_last_wocky:get_last(?TIM, ?SERVER)),
             ?_assertMatch(ok,
-                          mod_last_wocky:set_last_info(uuid(<<"tim">>, Users),
-                                                  ?SERVER,
-                          1024, <<"This is Tim's status">>)),
+                          mod_last_wocky:set_last_info(
+                            ?TIM, ?SERVER, 1024, <<"This is Tim's status">>)),
             ?_assertMatch({ok, 1024, "This is Tim's status"},
-                          mod_last_wocky:get_last(uuid(<<"tim">>, Users),
-                                                  ?SERVER))
+                          mod_last_wocky:get_last(?TIM, ?SERVER))
         ]}
-    ] end}.
+    ]}.
 
 test_active_user_count() ->
     { "active_user_count", foreach, fun before_each/0, fun after_each/1, [
@@ -79,40 +57,30 @@ test_active_user_count() ->
     ]}.
 
 test_last_activity() ->
-    { "last_activity", setup,  fun before_each/0, fun after_each/1,
-      fun(Users) -> [
+    { "last_activity", setup,  fun before_each/0, fun after_each/1, [
         { "Returns timestamp and status where record exists", [
             ?_assertMatch({ok, 1000, "Not here"},
-                          mod_last_wocky:get_last(uuid(<<"alice">>, Users),
-                                                  ?SERVER)),
+                          mod_last_wocky:get_last(?ALICE, ?SERVER)),
             ?_assertMatch({ok, 666, ""},
-                          mod_last_wocky:get_last(uuid(<<"bob">>, Users),
-                                                  ?SERVER)),
+                          mod_last_wocky:get_last(?BOB, ?SERVER)),
             ?_assertMatch({ok, 999, "Excited"},
-                          mod_last_wocky:get_last(uuid(<<"karen">>, Users),
-                                                  ?SERVER)),
+                          mod_last_wocky:get_last(?KAREN, ?SERVER)),
             ?_assertMatch({ok, 777, "Ennui"},
-                          mod_last_wocky:get_last(uuid(<<"alicia">>, Users),
-                                                  ?SERVER))
+                          mod_last_wocky:get_last(?ALICIA, ?SERVER))
         ]},
         { "Returns not_found when a record does not exist", [
             ?_assertMatch(not_found,
-                          mod_last_wocky:get_last(
-                            ossp_uuid:make(v1, text), ?SERVER))
+                          mod_last_wocky:get_last(?BADUSER, ?SERVER))
         ]}
-    ] end}.
+    ]}.
 
 test_remove_user() ->
-    { "remove_user", setup, fun before_each/0, fun after_each/1, fun(Users) -> [
+    { "remove_user", setup, fun before_each/0, fun after_each/1, [
         { "Deletes existing users", [
-            ?_assertMatch(ok, mod_last_wocky:remove_user(uuid(<<"bob">>,
-                                                              Users), ?SERVER)),
-            ?_assertMatch(ok, mod_last_wocky:remove_user(uuid(<<"alicia">>,
-                                                              Users), ?SERVER)),
+            ?_assertMatch(ok, mod_last_wocky:remove_user(?BOB, ?SERVER)),
+            ?_assertMatch(ok, mod_last_wocky:remove_user(?ALICIA, ?SERVER)),
             ?_assertMatch(3, mod_last_wocky:count_active_users(?SERVER, 0)),
-            ?_assertMatch(not_found, mod_last_wocky:get_last(uuid(<<"bob">>,
-                                                              Users), ?SERVER)),
-            ?_assertMatch(not_found, mod_last_wocky:get_last(uuid(<<"alicia">>,
-                                                              Users), ?SERVER))
+            ?_assertMatch(not_found, mod_last_wocky:get_last(?BOB, ?SERVER)),
+            ?_assertMatch(not_found, mod_last_wocky:get_last(?ALICIA, ?SERVER))
         ]}
-    ] end}.
+    ]}.
