@@ -111,15 +111,17 @@ insert_new(Context, Table, Values) ->
     {ok, R} = run_insert_query(Context, Table, Values, true),
     single_result(R).
 
+run_insert_query(Context, Table, Values, UseLWT) when is_map(Values) ->
+    run_insert_query(Context, Table, maps:to_list(Values), UseLWT);
 run_insert_query(Context, Table, Values, UseLWT) ->
     Query = build_insert_query(Table, keys(Values), UseLWT),
     query(Context, Query, Values, quorum).
 
-build_insert_query(Table, Keys, true) ->
-    [build_insert_query(Table, Keys, false), " IF NOT EXISTS"];
-build_insert_query(Table, Keys, false) ->
+build_insert_query(Table, AllKeys, UseLWT) ->
+    {TTL, Keys} = lists:partition(fun (K) -> K == '[ttl]' end, AllKeys),
     ["INSERT INTO ", atom_to_list(Table), " ", names(Keys),
-     " VALUES ", placeholders(length(Keys))].
+     " VALUES ", placeholders(length(Keys)), use_lwt(UseLWT),
+     ttl_option(TTL)].
 
 placeholders(1) -> "(?)";
 placeholders(N) -> ["(", lists:duplicate(N - 1, "?, "), "?)"].
@@ -131,6 +133,12 @@ names([Key], Acc) ->
     ["(", [atom_to_list(Key) | Acc], ")"];
 names([Key | Keys], Acc) ->
     names(Keys, [[", ", atom_to_list(Key)] | Acc]).
+
+use_lwt(false) -> "";
+use_lwt(true) -> " IF NOT EXISTS".
+
+ttl_option([]) -> "";
+ttl_option(['[ttl]']) -> " USING TTL ?".
 
 
 %% @TBD
