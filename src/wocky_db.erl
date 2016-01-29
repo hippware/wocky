@@ -16,7 +16,7 @@
 -type context()    :: none | shared | binary().
 -type table()      :: atom().
 -type columns()    :: all | [atom()].
--type conditions() :: [{atom(), term()}] | maps:map().
+-type conditions() :: map().
 -type ks_class()   :: simple | topology.
 -type ks_factor()  :: non_neg_integer() | [{binary(), non_neg_integer}].
 -type table_def()  :: #table_def{}.
@@ -25,8 +25,8 @@
 
 -type query()     :: iodata().
 -type value()     :: parameter_val().
--type values()    :: maps:map().
--type row()       :: maps:map().
+-type values()    :: map().
+-type row()       :: map().
 -type rows()      :: [row()].
 -type error()     :: term().
 -opaque result()  :: #cql_result{}.
@@ -85,8 +85,7 @@ run_select_query(Context, Table, Columns, Conditions) ->
     Query = build_select_query(Table, Columns, keys(Conditions)),
     query(Context, Query, Conditions, quorum).
 
-keys(Map) when is_map(Map) -> maps:keys(Map);
-keys(List) when is_list(List) -> proplists:get_keys(List).
+keys(Map) -> maps:keys(Map).
 
 build_select_query(Table, Columns, Keys) ->
     ["SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
@@ -120,8 +119,6 @@ insert_new(Context, Table, Values) ->
     {ok, R} = run_insert_query(Context, Table, Values, true),
     single_result(R).
 
-run_insert_query(Context, Table, Values, UseLWT) when is_map(Values) ->
-    run_insert_query(Context, Table, maps:to_list(Values), UseLWT);
 run_insert_query(Context, Table, Values, UseLWT) ->
     Query = build_insert_query(Table, keys(Values), UseLWT),
     query(Context, Query, Values, quorum).
@@ -185,7 +182,7 @@ build_delete_query(Table, Columns, Keys) ->
 -spec truncate(context(), table()) -> ok.
 truncate(Context, Name) ->
     Query = build_truncate_query(Name),
-    {ok, void} = query(Context, Query, [], all),
+    {ok, void} = query(Context, Query, #{}, all),
     ok.
 
 build_truncate_query(Name) ->
@@ -196,7 +193,7 @@ build_truncate_query(Name) ->
 -spec drop(context(), atom(), atom()) -> ok.
 drop(Context, Type, Name) ->
     Query = build_drop_query(Type, Name),
-    {ok, _} = query(Context, Query, [], all),
+    {ok, _} = query(Context, Query, #{}, all),
     ok.
 
 build_drop_query(Type, Name) ->
@@ -208,7 +205,7 @@ build_drop_query(Type, Name) ->
 -spec create_keyspace(context(), ks_class(), ks_factor()) -> ok.
 create_keyspace(Context, Class, Factor) ->
     Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
-    {ok, _} = query(none, Query, [], all),
+    {ok, _} = query(none, Query, #{}, all),
     ok.
 
 build_create_keyspace_query(Name, Class, Factor) ->
@@ -232,7 +229,7 @@ dc_factors([{DC, Factor} | Rest], Factors) ->
 -spec create_table(context(), table_def()) -> ok.
 create_table(Context, TableDef) ->
     Query = build_create_table_query(TableDef),
-    {ok, _} = query(Context, Query, [], all),
+    {ok, _} = query(Context, Query, #{}, all),
     ok.
 
 build_create_table_query(TD) ->
@@ -274,7 +271,7 @@ sorting_option_string([{Field, Dir}]) ->
 -spec create_index(context(), table(), [atom()]) -> ok.
 create_index(Context, Table, Keys) ->
     Query = build_create_index_query(Table, Keys),
-    {ok, _} = query(Context, Query, [], all),
+    {ok, _} = query(Context, Query, #{}, all),
     ok.
 
 build_create_index_query(Table, Keys) ->
@@ -294,7 +291,7 @@ index_keys([First | Rest], Acc) ->
                   [{atom, asc | desc}]) -> ok.
 create_view(Context, Name, Table, Keys, OrderBy) ->
     Query = build_create_view_query(Name, Table, Keys, OrderBy),
-    {ok, _} = query(Context, Query, [], all),
+    {ok, _} = query(Context, Query, #{}, all),
     ok.
 
 build_create_view_query(Name, Table, Keys, OrderBy) ->
@@ -444,7 +441,7 @@ timestamp_to_seconds(S) ->
 
 %% @doc Convert a Cassandra timestamp into {MegaSecs, Secs, MicroSecs}
 %%
-%% The expiry timestamps can also have a value of `never`. We store that as 0 in
+%% The expiry timestamps can also have a value of `never'. We store that as 0 in
 %% Cassandra.
 -spec timestamp_to_now(non_neg_integer()) ->
     {non_neg_integer(), non_neg_integer(), non_neg_integer()} | never.

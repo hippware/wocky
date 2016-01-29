@@ -3,7 +3,7 @@
 -module(ejabberd_integration_SUITE).
 -compile(export_all).
 
--include_lib("escalus/include/escalus.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 
 %%--------------------------------------------------------------------
@@ -11,9 +11,11 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, smoke},
+    [
+     {group, smoke},
      {group, last_activity},
-     {group, offline}
+     {group, offline},
+     {group, hxep}
     ].
 
 groups() ->
@@ -22,7 +24,8 @@ groups() ->
                                   update_activity_story,
                                   server_uptime_story,
                                   unknown_user_acivity_story]},
-     {offline, [sequence], [offline_message_story]}
+     {offline, [sequence], [offline_message_story]},
+     {hxep, [sequence], [file_updown_story]}
     ].
 
 suite() ->
@@ -177,3 +180,100 @@ login_send_presence(Config, User) ->
     {ok, Client} = escalus_client:start(Config, Spec, <<"dummy">>),
     escalus:send(Client, escalus_stanza:presence(<<"available">>)),
     Client.
+
+
+%%--------------------------------------------------------------------
+%% mod_hexp tests
+%%--------------------------------------------------------------------
+
+file_updown_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+
+        %%% Upload
+        DataDir = proplists:get_value(data_dir, Config),
+        ImageFile = filename:join(DataDir, "test_image.png"),
+        {ok, ImageData} = file:read_file(ImageFile),
+        FileSize = byte_size(ImageData),
+        QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
+                                    FileSize, <<"image/png">>),
+
+        ResultStanza = escalus:send_and_wait(Alice, QueryStanza),
+
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+
+        UploadEl = exml_query:path(ResultStanza, [{element, <<"upload">>}]),
+        URL = exml_query:path(UploadEl, [{element, <<"url">>}, cdata]),
+        Method = exml_query:path(UploadEl, [{element, <<"method">>}, cdata]),
+        HeadersEl = exml_query:path(UploadEl, [{element, <<"headers">>}]),
+        FileID = exml_query:path(UploadEl, [{element, <<"id">>}, cdata]),
+        Headers = get_headers(HeadersEl),
+        ContentType = proplists:get_value("content-type", Headers),
+        FinalHeaders = Headers -- [ContentType],
+        {ok, Result} = httpc:request(list_to_atom(
+                                       string:to_lower(
+                                         binary_to_list(Method))),
+                                     {binary_to_list(URL),
+                                      FinalHeaders,
+                                      ContentType,
+                                      ImageData},
+                                     [], []),
+        {Response, _RespHeaders, RespContent} = Result,
+        {_, 200, "OK"} = Response,
+        [] = RespContent,
+
+
+        %% Download
+        DLQueryStanza = download_stanza(<<"456">>, FileID),
+        escalus:send(Alice, DLQueryStanza),
+
+        DLResultStanza = escalus:wait_for_stanza(Alice),
+        escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
+
+        DownloadEl = exml_query:path(DLResultStanza,
+                                     [{element, <<"download">>}]),
+        DLURL = exml_query:path(DownloadEl, [{element, <<"url">>}, cdata]),
+        DLHeadersEl = exml_query:path(DownloadEl, [{element, <<"headers">>}]),
+        DLHeaders = get_headers(DLHeadersEl),
+
+        {ok, DLResult} = httpc:request(get,
+                                       {binary_to_list(DLURL), DLHeaders},
+                                       [], []),
+        {DLResponse, DLRespHeaders, DLRespContent} = DLResult,
+        {_, 200, "OK"} = DLResponse,
+        true = lists:member({"content-length", integer_to_list(FileSize)},
+                            DLRespHeaders),
+        true = lists:member({"content-type","image/png"}, DLRespHeaders),
+        ImageData = list_to_binary(DLRespContent)
+    end).
+
+request_wrapper(ID, Type, Name, DataFields) ->
+    #xmlel{name = <<"iq">>,
+           attrs = [{<<"id">>, ID},
+                    {<<"type">>, Type}],
+           children = [#xmlel{name = Name,
+                              attrs = [{<<"xmlns">>,
+                                        <<"hippware.com/hxep/http-file">>}],
+                              children = DataFields
+                             }]}.
+
+upload_stanza(ID, FileName, Size, Type) ->
+    FieldData = [{<<"filename">>, FileName},
+                 {<<"size">>, integer_to_list(Size)},
+                 {<<"mime-type">>, Type}],
+    UploadFields = [#xmlel{name = N, children = [#xmlcdata{content = V}]}
+                    || {N, V} <- FieldData],
+    request_wrapper(ID, <<"set">>, <<"upload-request">>, UploadFields).
+
+download_stanza(ID, FileID) ->
+    Field = #xmlel{name = <<"id">>, children = [#xmlcdata{content = FileID}]},
+    request_wrapper(ID, <<"get">>, <<"download-request">>, [Field]).
+
+get_headers(HeadersEl) ->
+    [get_header(HeaderEl)
+     || HeaderEl <- exml_query:paths(HeadersEl, [{element, <<"header">>}])].
+
+get_header(HeaderEl) ->
+    list_to_tuple(
+      [binary_to_list(exml_query:path(HeaderEl, [{attr, Attr}]))
+       || Attr <- [<<"name">>, <<"value">>]]).
+

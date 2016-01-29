@@ -119,7 +119,9 @@ keyspace_tables(_) -> [
     offline_msg,
     roster,
     session,
-    user_to_sids
+    user_to_sids,
+    media,
+    media_data
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -241,6 +243,33 @@ table_definition(user_to_sids) ->
            {sids, {set, blob}}     % List of session IDs
        ],
        primary_key = jid_user
+    };
+
+%% Francus file-store metadata table
+table_definition(media) ->
+    #table_def{
+       name = media,
+       columns = [
+           {id, timeuuid},         % ID of the file
+           {user, timeuuid},       % User ID of the file owner
+           {content_type, text},   % MIME content type of the file
+           {size, int},            % File size in bytes
+           {chunks, {list, timeuuid}} % Ordered list of media_data table
+                                      % chunks comprising the file
+       ],
+       primary_key = id
+    };
+
+%% Franks file-store data table
+table_definition(media_data) ->
+    #table_def{
+       name = media_data,
+       columns = [
+           {chunk_id, timeuuid},   % ID of chunk
+           {file_id, timeuuid},    % ID of the file
+           {data, blob}            % Data in this chunk
+       ],
+       primary_key = chunk_id
     }.
 
 table_indexes(session) -> [
