@@ -39,7 +39,7 @@ start(_Opts) ->
 
 % `get_sessions/0' is only used by testing and extra admin tools. It doesn't
 % make sense in our setup because it gives us no keyspace to work with, so it's
-% not implmented.
+% not implemented.
 -spec get_sessions() -> [].
 get_sessions() ->
     [].
