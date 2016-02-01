@@ -46,9 +46,8 @@ get_sessions() ->
 
 -spec get_sessions(ejabberd:server()) -> [ejabberd_sm:ses_tuple()].
 get_sessions(Server) ->
-    Q = "SELECT * FROM session",
-    {ok, Result} = wocky_db:query(Server, Q, [], quorum),
-    [row_to_ses_tuple(R) || R <- wocky_db:rows(Result)].
+    Rows = wocky_db:select(Server, session, all, []),
+    [row_to_ses_tuple(R) || R <- Rows].
 
 -spec get_sessions(ejabberd:user(), ejabberd:server()) ->
     [ejabberd_sm:session()].
@@ -110,10 +109,8 @@ unique_count() ->
           lists:map(fun uss_on_server/1, servers())))).
 
 sids_users_on_node(Server, Node) ->
-    Q = "SELECT sid, jid_user FROM session WHERE node = ?",
-    V = #{node => atom_to_list(Node)},
-    {ok, Result} = wocky_db:query(Server, Q, V, quorum),
-    wocky_db:rows(Result).
+    wocky_db:select(Server, session, [sid, jid_user],
+                    #{node => atom_to_list(Node)}).
 
 delete_session_queries(SIDBin, User) ->
     [delete_session_data_query(SIDBin), delete_session_map_query(SIDBin, User)].
@@ -127,11 +124,10 @@ sessions_from_queries(Server, Queries) ->
       Queries).
 
 user_sids(Server, User) ->
-    {Q, V} = sessions_query(User),
-    {ok, Result} = wocky_db:query(Server, Q, V, quorum),
-    case wocky_db:single_row(Result) of
-        #{sids := SIDBins} -> SIDBins;
-        undefined -> []
+    Rows = wocky_db:select(Server, user_to_sids, [sids], #{jid_user => User}),
+    case Rows of
+        [#{sids := SIDBins}] -> SIDBins;
+        [] -> []
     end.
 
 session_query(SIDBin) ->
@@ -141,10 +137,6 @@ session_query(SIDBin) ->
 session_query(SIDBin, Resource) ->
     {"SELECT * FROM session WHERE sid = ? AND jid_resource = ? ALLOW FILTERING",
      #{sid => SIDBin, jid_resource => Resource}}.
-
-sessions_query(User) ->
-    {"SELECT sids FROM user_to_sids WHERE jid_user = ?",
-     #{jid_user => User}}.
 
 add_session_data_query(Session) ->
     {"INSERT INTO session (sid, node, user, server, jid_user, jid_server,
@@ -210,15 +202,11 @@ row_to_ses_tuple(#{sid := SID,
 jid_user(#session{usr = {User, _Server, _Resource}}) -> User.
 
 count_on_server(Server) ->
-    Q = "SELECT sid FROM session",
-    {ok, Results} = wocky_db:query(Server, Q, [], quorum),
-    length(wocky_db:rows(Results)).
+    length(wocky_db:select(Server, session, [sid], [])).
 
 uss_on_server(Server) ->
-    Q = "SELECT user, server FROM session",
-    {ok, Results} = wocky_db:query(Server, Q, [], quorum),
-    [{wocky_db_user:normalize_id(U), S} || #{user := U, server := S}
-                                        <- wocky_db:rows(Results)].
+    Rows = wocky_db:select(Server, session, [user, server], []),
+    [{wocky_db_user:normalize_id(U), S} || #{user := U, server := S} <- Rows].
 
 % Priority can be undefined. Store this as -1 (an otherwise invalid priority)
 pri_to_int(undefined) -> -1;
