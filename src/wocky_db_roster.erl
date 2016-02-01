@@ -103,11 +103,13 @@ pack_roster(LUser, LServer, Rows) ->
     [pack_roster_item(LUser, LServer, Row) || Row <- Rows].
 
 pack_roster_item(LUser, LServer, #{contact := C} = Row) ->
-    JID = jid:to_lower(jid:from_binary(C)),
-    pack_roster_item(LUser, LServer, JID, Row).
+    pack_roster_item(LUser, LServer, C, Row).
 
 pack_roster_item(LUser, LServer, ContactJID, undefined) ->
     pack_roster_item(LUser, LServer, ContactJID, #{});
+pack_roster_item(LUser, LServer, Contact, Row) when is_binary(Contact) ->
+    ContactJID = jid:to_lower(jid:from_binary(Contact)),
+    pack_roster_item(LUser, LServer, ContactJID, Row);
 pack_roster_item(LUser, LServer, ContactJID, Row) ->
     #roster{
        usj          = {LUser, LServer, ContactJID},
