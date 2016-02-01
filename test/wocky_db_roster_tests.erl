@@ -83,7 +83,7 @@ test_get_roster() ->
 test_get_roster_version() ->
   { "get_roster_version/2", foreach, fun before_each/0, fun after_each/1, [
     { "returns the roster version for a known user", [
-      ?_assertEqual(1000, get_roster_version(?USER, ?SERVER))
+      ?_assertEqual(<<"1000">>, get_roster_version(?USER, ?SERVER))
     ]},
     { "returns a not found error for an unknown user", [
       ?_assertEqual({error, not_found}, get_roster_version(?BADUSER, ?SERVER))
@@ -97,18 +97,18 @@ test_get_roster_updates() ->
                                            get_roster_version(?USER, ?SERVER)))
     ]},
     { "returns an empty roster when the specified version is too large", [
-      ?_assertEqual([], get_roster_updates(?USER, ?SERVER, 9999))
+      ?_assertEqual([], get_roster_updates(?USER, ?SERVER, <<"9999">>))
     ]},
     { "returns a full roster when the specified version is too small", [
-      ?_assertMatch([#roster{}|_], get_roster_updates(?USER, ?SERVER, 0)),
-      ?_assertEqual(5, length(get_roster_updates(?USER, ?SERVER, 0)))
+      ?_assertMatch([#roster{}|_], get_roster_updates(?USER, ?SERVER, <<"0">>)),
+      ?_assertEqual(5, length(get_roster_updates(?USER, ?SERVER, <<"0">>)))
     ]},
     { "returns a partial roster when the versions do not match", [
-      ?_assertMatch([#roster{}], get_roster_updates(?USER, ?SERVER, 999)),
-      ?_assertEqual(3, length(get_roster_updates(?USER, ?SERVER, 777)))
+      ?_assertMatch([#roster{}], get_roster_updates(?USER, ?SERVER, <<"999">>)),
+      ?_assertEqual(3, length(get_roster_updates(?USER, ?SERVER, <<"777">>)))
     ]},
     { "returns an empty roster for an unknown user", [
-      ?_assertEqual([], get_roster_updates(?BADUSER, ?SERVER, 0))
+      ?_assertEqual([], get_roster_updates(?BADUSER, ?SERVER, <<"0">>))
     ]}
   ]}.
 

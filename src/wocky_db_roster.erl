@@ -41,7 +41,7 @@ get_roster_version(LUser, LServer) ->
     {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
     case wocky_db:single_result(R) of
         null -> {error, not_found};
-        Version -> Version
+        Version -> integer_to_binary(Version)
     end.
 
 
@@ -50,7 +50,7 @@ get_roster_version(LUser, LServer) ->
                         -> roster() | not_found().
 get_roster_updates(LUser, LServer, Version) ->
     Query = "SELECT * FROM roster_version WHERE user = ? AND version > ?",
-    Values = #{user => LUser, version => Version},
+    Values = #{user => LUser, version => binary_to_integer(Version)},
     {ok, R} = wocky_db:query(LServer, Query, Values, quorum),
     pack_roster(LUser, LServer, wocky_db:rows(R)).
 
