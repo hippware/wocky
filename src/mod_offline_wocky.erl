@@ -35,7 +35,7 @@ pop_messages(LUser, LServer) ->
 -spec write_messages(ejabberd:luser(), ejabberd:lserver(),
                      [#offline_msg{}], integer()) -> ok.
 write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
-    % NOTE: The MaxOfflineMsgs value is not supported and will be ignored
+    %% NOTE: The MaxOfflineMsgs value is not supported and will be ignored
     Q = "INSERT INTO offline_msg
             (user, server, msg_id, expire, timestamp, from_id, to_id, packet)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -54,7 +54,7 @@ write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
 -spec remove_expired_messages(ejabberd:lserver()) ->
     {ok, integer()}.
 remove_expired_messages(_Host) ->
-    % Expiry of messages is automatically handled by Cassandra's TTL system
+    %% Expiry of messages is automatically handled by Cassandra's TTL system
     {ok, 0}.
 
 -spec remove_old_messages(ejabberd:lserver(), integer()) ->
@@ -64,8 +64,7 @@ remove_old_messages(_Host, _Days) ->
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
-    Q = "DELETE FROM offline_msg WHERE user = ?",
-    {ok, void} = wocky_db:query(Server, Q, #{user => User}, quorum),
+    ok = wocky_db:delete(Server, offline_msg, all, #{user => User}),
     ok.
 
 %%%===================================================================
@@ -77,10 +76,7 @@ binary_to_xml(XML) ->
     Binary.
 
 get_user_messages(LUser, LServer) ->
-    Q = "SELECT * FROM offline_msg WHERE user = ?",
-    Value = #{user => LUser},
-    {ok, Results} = wocky_db:query(LServer, Q, Value, quorum),
-    wocky_db:rows(Results).
+    wocky_db:select(LServer, offline_msg, all, #{user => LUser}).
 
 purge_messages(LServer, Rows) ->
     Q = "DELETE FROM offline_msg WHERE user = ?
