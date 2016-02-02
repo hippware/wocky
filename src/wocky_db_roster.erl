@@ -14,8 +14,9 @@
          delete_roster_item/3]).
 
 -type roster_item() :: #roster{}.
--type roster()      :: [roster()].
+-type roster()      :: [roster_item()].
 -type version()     :: binary().
+-type contact()     :: binary().
 -type not_found()   :: {error, not_found}.
 -export_type([roster_item/0, roster/0, version/0]).
 
@@ -25,8 +26,7 @@
 %%%===================================================================
 
 %% @doc TBD
--spec get_roster(ejabberd:luser(), ejabberd:lserver())
-                -> roster() | not_found().
+-spec get_roster(ejabberd:luser(), ejabberd:lserver()) -> roster().
 get_roster(LUser, LServer) ->
     Query = "SELECT * FROM roster WHERE user = ?",
     {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
@@ -47,7 +47,7 @@ get_roster_version(LUser, LServer) ->
 
 %% @doc TBD
 -spec get_roster_updates(ejabberd:luser(), ejabberd:lserver(), version())
-                        -> roster() | not_found().
+                        -> roster().
 get_roster_updates(LUser, LServer, Version) ->
     Query = "SELECT * FROM roster_version WHERE user = ? AND version > ?",
     Values = #{user => LUser, version => binary_to_integer(Version)},
@@ -64,7 +64,7 @@ delete_roster(LUser, LServer) ->
 
 
 %% @doc TBD
--spec get_roster_item(ejabberd:luser(), ejabberd:lserver(), binary())
+-spec get_roster_item(ejabberd:luser(), ejabberd:lserver(), contact())
                      -> roster_item().
 get_roster_item(LUser, LServer, ContactJID) ->
     Query = "SELECT * FROM roster WHERE user = ? AND contact = ?",
@@ -75,7 +75,7 @@ get_roster_item(LUser, LServer, ContactJID) ->
 
 %% @doc TBD
 -spec update_roster_item(ejabberd:luser(), ejabberd:lserver(),
-                         binary(), roster_item()) -> ok.
+                         contact(), roster_item()) -> ok.
 update_roster_item(LUser, LServer, ContactJID, Item) ->
     Query = "INSERT INTO roster ("
             "  user, server, contact, nick, groups,"
@@ -87,7 +87,7 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
 
 
 %% @doc TBD
--spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok.
+-spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), contact()) -> ok.
 delete_roster_item(LUser, LServer, ContactJID) ->
     Query = "DELETE FROM roster WHERE user = ? AND contact = ?",
     Values = #{user => LUser, contact => ContactJID},
