@@ -17,7 +17,6 @@
 -type roster()      :: [roster_item()].
 -type version()     :: binary().
 -type contact()     :: binary().
--type not_found()   :: {error, not_found}.
 -export_type([roster_item/0, roster/0, version/0]).
 
 
@@ -35,12 +34,12 @@ get_roster(LUser, LServer) ->
 
 %% @doc TDB
 -spec get_roster_version(ejabberd:luser(), ejabberd:lserver())
-                        -> version() | not_found().
+                        -> version().
 get_roster_version(LUser, LServer) ->
     Query = "SELECT max(version) FROM roster WHERE user = ?",
     {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
     case wocky_db:single_result(R) of
-        null -> {error, not_found};
+        null -> <<"0">>;
         Version -> integer_to_binary(Version)
     end.
 

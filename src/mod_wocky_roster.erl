@@ -45,6 +45,8 @@
 -type roster() :: #roster{}.
 -export_type([roster/0]).
 
+-define(NULL_VERSION, <<"0">>).
+
 
 %%%===================================================================
 %%% gen_mod implementation
@@ -119,15 +121,17 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
                   sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
 
+get_user_roster_based_on_version(false, From, To) ->
+    get_user_roster_based_on_version({value, ?NULL_VERSION}, From, To);
 get_user_roster_based_on_version({value, RequestedVersion}, From, To) ->
     LUser = From#jid.luser,
     LServer = From#jid.lserver,
     case wocky_db_roster:get_roster_version(LUser, LServer) of
-        {error, not_found} ->
-            {false, false};
+        ?NULL_VERSION ->
+            {[], ?NULL_VERSION};
 
         RequestedVersion ->
-            {false, false};
+            {[], RequestedVersion};
 
         NewVersion ->
             US = {LUser, LServer},
@@ -137,8 +141,6 @@ get_user_roster_based_on_version({value, RequestedVersion}, From, To) ->
              NewVersion}
     end.
 
-create_sub_el(false, false) ->
-    [];
 create_sub_el(Items, Version) ->
     [#xmlel{name = <<"query">>,
             attrs = [{<<"xmlns">>, ?NS_ROSTER},
@@ -540,10 +542,7 @@ push_item(User, Server, Resource, From, Item, RosterVersion) ->
                 %% Roster push, calculate and include the version attribute.
                 %% TODO: don't push to those who didn't load roster
                 id = list_to_binary("push" ++ randoms:get_string()),
-                sub_el = [#xmlel{name = <<"query">>,
-                                 attrs = [{<<"xmlns">>, ?NS_ROSTER},
-                                          {<<"ver">>, RosterVersion}],
-                                 children = [item_to_xml(Item)]}]},
+                sub_el = create_sub_el([item_to_xml(Item)], RosterVersion)},
     ejabberd_router:route(From,
                           jid:make(User, Server, Resource),
                           jlib:iq_to_xml(ResIQ)).
