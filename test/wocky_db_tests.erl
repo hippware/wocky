@@ -167,6 +167,18 @@ build_create_index_query_test() ->
          [users, [user, server]]}
     ]).
 
+build_create_view_query_test() ->
+    test_build_query_cases(fun wocky_db:build_create_view_query/4, [
+        {"CREATE MATERIALIZED VIEW IF NOT EXISTS roster_version AS"
+         " SELECT * FROM roster"
+         " WHERE user IS NOT NULL"
+           " AND version IS NOT NULL"
+           " AND contact IS NOT NULL"
+         " PRIMARY KEY (user, version, contact)"
+         " WITH CLUSTERING ORDER BY (version ASC)",
+        [roster_version, roster, [user, version, contact], [{version, asc}]]}
+    ]).
+
 
 %% This is a very simple test to verify that basic communication with
 %% Cassandra works. It probably isn't worth testing this functionality more

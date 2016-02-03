@@ -8,8 +8,9 @@
 -include("wocky_db_seed.hrl").
 
 -export([create_schema/0, create_schema_for/1, recreate_table/2,
-         create_table_indexes/2, seed_table/2, foreach_table/3, map_tables/3,
-         prepare_tables/2, seed_tables/2, clear_tables/2]).
+         create_table_indexes/2, create_table_views/2, drop_table_views/2,
+         seed_table/2, foreach_table/3, map_tables/3, prepare_tables/2,
+         seed_tables/2, clear_tables/2]).
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
          fake_resource/0, random_priority/0, session_info/0,
@@ -28,14 +29,31 @@ create_schema_for(Context) ->
     prepare_tables(Context, keyspace_tables(Context)).
 
 recreate_table(Context, Name) ->
+    ok = drop_table_views(Context, Name),
     ok = wocky_db:drop(Context, table, Name),
     ok = wocky_db:create_table(Context, table_definition(Name)),
-    create_table_indexes(Context, Name).
+    ok = create_table_indexes(Context, Name),
+    ok = create_table_views(Context, Name),
+    ok.
 
 create_table_indexes(Context, Table) ->
     lists:foreach(
       fun (IdxKeys) -> ok = wocky_db:create_index(Context, Table, IdxKeys) end,
       table_indexes(Table)).
+
+create_table_views(Context, Table) ->
+    lists:foreach(
+      fun ({Name, Keys, OrderBy}) ->
+          ok = wocky_db:create_view(Context, Name, Table, Keys, OrderBy)
+      end,
+      table_views(Table)).
+
+drop_table_views(Context, Table) ->
+    lists:foreach(
+      fun ({Name, _, _}) ->
+          ok = wocky_db:drop(Context, 'materialized view', Name)
+      end,
+      table_views(Table)).
 
 seed_table(Context, Name) ->
     Data = seed_data(Name),
@@ -231,6 +249,8 @@ table_indexes(session) -> [
     [node]
 ];
 table_indexes(_) -> [].
+
+table_views(_) -> [].
 
 
 %%====================================================================
