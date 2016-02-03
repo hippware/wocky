@@ -249,27 +249,30 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
     #roster{subscription = Subscription, ask = Ask} = Item,
 
-    case state_change(Direction, Subscription, Ask, Type) of
-        none ->
-            none;
+    Push = case state_change(Direction, Subscription, Ask, Type) of
+               none ->
+                   none;
 
-        {none, none} when Subscription == none, Ask == in ->
-            wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
-            none;
+               {none, none} when Subscription == none, Ask == in ->
+                   wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
+                   none;
 
-        {NewSubscription, Pending} ->
-            AskMessage = case Pending of
-                             both -> Reason;
-                             in -> Reason;
-                             _ -> <<"">>
-                         end,
+               {NewSubscription, Pending} ->
+                   AskMsg = case Pending of
+                                both -> Reason;
+                                in -> Reason;
+                                _ -> <<"">>
+                            end,
 
-            NewItem = Item#roster{subscription = NewSubscription, ask = Pending,
-                                  askmessage = iolist_to_binary(AskMessage)},
-            wocky_db_roster:update_roster_item(LUser, LServer, LJID, NewItem),
-            push_item(User, Server, jid:make(User, Server, <<"">>), Item)
-    end,
+                   NewItem = Item#roster{subscription = NewSubscription,
+                                         ask = Pending,
+                                         askmessage = iolist_to_binary(AskMsg)},
+                   wocky_db_roster:update_roster_item(LUser, LServer,
+                                                      LJID, NewItem),
+                   {push, NewItem}
+           end,
 
+    ToJID = jid:make(User, Server, <<"">>),
     case auto_reply(Direction, Subscription, Ask, Type) of
         none -> ok;
         AutoReply ->
@@ -277,10 +280,23 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                     subscribed -> <<"subscribed">>;
                     unsubscribed -> <<"unsubscribed">>
                 end,
-            ejabberd_router:route(jid:make(User, Server, <<"">>), JID1,
+            ejabberd_router:route(ToJID, JID1,
                                   #xmlel{name = <<"presence">>,
                                          attrs = [{<<"type">>, T}],
                                          children = []})
+    end,
+    case Push of
+        {push, PushItem} ->
+            if PushItem#roster.subscription == none,
+               PushItem#roster.ask == in ->
+                    ok;
+               true ->
+                    push_item(User, Server, ToJID, PushItem)
+            end,
+            true;
+
+        none ->
+            false
     end.
 
 state_change(in, S, A, T) -> in_state_change(S, A, T);
@@ -484,7 +500,8 @@ send_unsubscribing_presence(From, Item) ->
 
     case {IsTo, IsFrom} of
         {true, _} -> send_presence_type(LFrom, JID, <<"unsubscribe">>);
-        {_, true} -> send_presence_type(LFrom, JID, <<"unsubscribed">>)
+        {_, true} -> send_presence_type(LFrom, JID, <<"unsubscribed">>);
+        {false, false} -> ok
     end,
     ok.
 
