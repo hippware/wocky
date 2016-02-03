@@ -60,13 +60,15 @@
 %% High Level API
 %%====================================================================
 
-%% @doc TBD
+%% @doc Retrieves data from a table based on the parameters and
+%% returns the first value of the first row.
 -spec select_one(context(), table(), columns(), conditions()) -> term().
 select_one(Context, Table, Columns, Conditions) ->
     {ok, R} = run_select_query(Context, Table, Columns, Conditions),
     single_result(R).
 
-%% @doc TBD
+%% @doc Retrieves data from a table based on the parameters and
+%% returns all rows of the result set.
 -spec select(context(), table(), columns(), conditions()) -> rows().
 select(Context, Table, Columns, Conditions) ->
     {ok, R} = run_select_query(Context, Table, Columns, Conditions),
@@ -99,13 +101,13 @@ conditions([First|Rest]) ->
       Rest).
 
 
-%% @doc TBD
+%% @doc Inserts the provided row into the table.
 -spec insert(context(), table(), values()) -> ok.
 insert(Context, Table, Values) ->
     {ok, void} = run_insert_query(Context, Table, Values, false),
     ok.
 
-%% @doc TBD
+%% @doc Inserts the provided row into the table using a Lightweight Transaction.
 -spec insert_new(context(), table(), values()) -> boolean().
 insert_new(Context, Table, Values) ->
     {ok, R} = run_insert_query(Context, Table, Values, true),
@@ -141,7 +143,7 @@ ttl_option([]) -> "";
 ttl_option(['[ttl]']) -> " USING TTL ?".
 
 
-%% @TBD
+%% @doc Updates rows in the table based on the parameters.
 -spec update(context(), table(), conditions(), conditions()) -> ok.
 update(Context, Table, Updates, Conditions) ->
     Values = maps:merge(Updates, Conditions),
@@ -161,7 +163,7 @@ update_columns([First|Rest]) ->
       Rest).
 
 
-%% @TBD
+%% @doc Deletes rows from a table.
 -spec delete(context(), table(), columns(), conditions()) -> ok.
 delete(Context, Table, Columns, Conditions) ->
     Query = build_delete_query(Table, Columns, keys(Conditions)),
@@ -173,7 +175,7 @@ build_delete_query(Table, Columns, Keys) ->
      conditions(Keys)].
 
 
-%% @doc TBD
+%% @doc Deletes all data in a table.
 -spec truncate(context(), table()) -> ok.
 truncate(Context, Name) ->
     Query = build_truncate_query(Name),
@@ -184,7 +186,7 @@ build_truncate_query(Name) ->
     ["TRUNCATE TABLE ", atom_to_list(Name)].
 
 
-%% @doc TBD
+%% @doc Drops the specified database artifact.
 -spec drop(context(), atom(), atom()) -> ok.
 drop(Context, Type, Name) ->
     Query = build_drop_query(Type, Name),
@@ -196,7 +198,7 @@ build_drop_query(Type, Name) ->
      atom_to_list(Name)].
 
 
-%% @doc TBD
+%% @doc Creates a keyspace if it does not already exist.
 -spec create_keyspace(context(), ks_class(), ks_factor()) -> ok.
 create_keyspace(Context, Class, Factor) ->
     Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
@@ -220,7 +222,7 @@ dc_factors([{DC, Factor} | Rest], Factors) ->
     dc_factors(Rest, [Factors | FactorString]).
 
 
-%% @doc TBD
+%% @doc Creates a table if it does not already exist.
 -spec create_table(context(), table_def()) -> ok.
 create_table(Context, TableDef) ->
     Query = build_create_table_query(TableDef),
@@ -262,7 +264,7 @@ sorting_option_string([{Field, Dir}]) ->
      string:to_upper(atom_to_list(Dir)), ")"].
 
 
-%% @doc TBD
+%% @doc Creates an index if it does not already exist.
 -spec create_index(context(), table(), [atom()]) -> ok.
 create_index(Context, Table, Keys) ->
     Query = build_create_index_query(Table, Keys),
