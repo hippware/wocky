@@ -38,10 +38,8 @@ get_roster(LUser, LServer) ->
 get_roster_version(LUser, LServer) ->
     Query = "SELECT max(version) FROM roster WHERE user = ?",
     {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
-    case wocky_db:single_result(R) of
-        null -> <<"0">>;
-        Version -> integer_to_binary(Version)
-    end.
+    Version = wocky_db:single_result(R, 0),
+    integer_to_binary(Version).
 
 
 %% @doc TBD
