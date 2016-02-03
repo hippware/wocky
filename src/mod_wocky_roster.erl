@@ -42,9 +42,6 @@
          remove_user_hook/2,
          roster_get_versioning_feature_hook/2]).
 
--type roster() :: #roster{}.
--export_type([roster/0]).
-
 -define(NULL_VERSION, <<"0">>).
 
 
@@ -89,9 +86,7 @@ delete_hooks(Host, Hooks) ->
 %%% IQ handler callback
 %%%===================================================================
 
-process_iq(From, To, IQ) ->
-    #iq{sub_el = SubEl} = IQ,
-    #jid{lserver = LServer} = From,
+process_iq(#jid{lserver = LServer} = From, To, #iq{sub_el = SubEl} = IQ) ->
     case lists:member(LServer, ?MYHOSTS) of
         true ->
             process_local_iq(From, To, IQ);
@@ -117,9 +112,9 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
               sub_el = create_sub_el(ItemsToSend, VersionToSend)}
     catch
         Class:Exception ->
-            lager:error("Error retrieving roster for user '~s': ~p ~p ~p",
-                        [jid:to_binary(From), Class, Exception,
-                         erlang:get_stacktrace()]),
+            ok = lager:error("Error retrieving roster for user '~s': ~p ~p ~p",
+                             [jid:to_binary(From), Class, Exception,
+                              erlang:get_stacktrace()]),
             IQ#iq{type = error,
                   sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
@@ -127,8 +122,7 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
 get_user_roster_based_on_version(false, From, To) ->
     get_user_roster_based_on_version({value, ?NULL_VERSION}, From, To);
 get_user_roster_based_on_version({value, RequestedVersion}, From, To) ->
-    LUser = From#jid.luser,
-    LServer = From#jid.lserver,
+    #jid{luser = LUser, lserver = LServer} = From,
     case wocky_db_roster:get_roster_version(LUser, LServer) of
         ?NULL_VERSION ->
             {[], ?NULL_VERSION};
@@ -209,8 +203,7 @@ process_item_els(Item, [#xmlel{} = El | Els]) ->
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
         <<"">> -> process_item_els(Item, Els);
         _ ->
-            XEls = [#xmlel{name = Name, attrs = Attrs,
-                           children = SEls}
+            XEls = [#xmlel{name = Name, attrs = Attrs, children = SEls}
                     | Item#roster.xs],
             process_item_els(Item#roster{xs = XEls}, Els)
     end;
@@ -543,10 +536,11 @@ ask_to_pending(unsubscribe) -> none;
 ask_to_pending(Ask) -> Ask.
 
 push_item(User, Server, From, Item) ->
-    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-                      jid:make(User, Server, <<"">>),
-                      {broadcast, {item, Item#roster.jid,
-                                   Item#roster.subscription}}),
+    ok = route(ejabberd_sm,
+               jid:make(<<"">>, <<"">>, <<"">>),
+               jid:make(User, Server, <<"">>),
+               {broadcast, {item, Item#roster.jid,
+                            Item#roster.subscription}}),
     push_item(User, Server, From, Item,
               wocky_db_roster:get_roster_version(jid:nodeprep(User), Server)).
 
@@ -563,6 +557,22 @@ push_item(User, Server, Resource, From, Item, RosterVersion) ->
                 %% TODO: don't push to those who didn't load roster
                 id = list_to_binary("push" ++ randoms:get_string()),
                 sub_el = create_sub_el([item_to_xml(Item)], RosterVersion)},
-    ejabberd_router:route(From,
-                          jid:make(User, Server, Resource),
-                          jlib:iq_to_xml(ResIQ)).
+    route(ejabberd_router, From, jid:make(User, Server, Resource),
+          jlib:iq_to_xml(ResIQ)).
+
+%% NOTE: This was borrowed from the xmpp_router module. Unfortunately, the
+%% original is typed incorrectly causing false-positive dialyzer errors in this
+%% module.
+%% TODO: Remove this when the original is updated to have an appropriate
+%% type spec
+route(Module, From, To, Packet) ->
+    try
+        Module:do_route(From, To, Packet)
+    catch
+        Class:Exception ->
+            lager:error("error when routing from=~ts to=~ts in module=~p, "
+                        "reason=~p:~p, packet=~ts, stack_trace=~p",
+                        [jid:to_binary(From), jid:to_binary(To),
+                         Module, Class, Exception, exml:to_binary(Packet),
+                         erlang:get_stacktrace()])
+    end.
