@@ -3,14 +3,8 @@
 -module(ejabberd_auth_wocky_tests).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("wocky_db_seed.hrl").
 
--define(USER,    <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>).
--define(SERVER,  <<"localhost">>).
--define(HANDLE,  <<"bob">>).
--define(PASS,    <<"password">>).
-
--define(BADUSER, <<"d51f92c8-ba40-11e5-9912-ba0be0483c18">>).
--define(NEWUSER, <<"9d7acab4-ba30-11e5-9912-ba0be0483c18">>).
 
 encode_password(Password) ->
     do_encode_password(Password, scram:enabled(?SERVER)).
@@ -101,6 +95,8 @@ before_all(PasswordFormat) ->
 
     application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user]),
     ok = ejabberd_auth_wocky:start(?SERVER),
     ok.
 
@@ -121,8 +117,8 @@ before_each() ->
     ok.
 
 after_each(_) ->
-    {ok, _} = wocky_db:query(shared, <<"TRUNCATE handle_to_user">>, quorum),
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE user">>, quorum),
+    ok = wocky_db_seed:clear_tables(shared, [handle_to_user]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
 

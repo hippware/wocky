@@ -129,7 +129,7 @@ create_user(LUser, LServer, Handle, Password) ->
     %% have a clean way to run queries in different keyspaces in the same batch.
     case create_handle_lookup(LUser, LServer, Handle) of
         true ->
-            {ok, _} = create_user_record(LUser, LServer, Handle, Password),
+            ok = create_user_record(LUser, LServer, Handle, Password),
             ok;
 
         false ->
@@ -138,19 +138,14 @@ create_user(LUser, LServer, Handle, Password) ->
 
 %% @private
 create_handle_lookup(LUser, LServer, Handle) ->
-    Query = "INSERT INTO handle_to_user (user, server, handle)" ++
-            " VALUES (?, ?, ?) IF NOT EXISTS",
     Values = #{user => LUser, server => LServer, handle => Handle},
-    {ok, R} = wocky_db:query(shared, Query, Values, quorum),
-    wocky_db:single_result(R).
+    wocky_db:insert_new(shared, handle_to_user, Values).
 
 %% @private
 create_user_record(LUser, LServer, Handle, Password) ->
-    Query = "INSERT INTO user (user, server, handle, password)" ++
-            " VALUES (?, ?, ?, ?)",
     Values = #{user => LUser, server => LServer,
                handle => Handle, password => Password},
-    wocky_db:query(LServer, Query, Values, quorum).
+    wocky_db:insert(LServer, user, Values).
 
 
 %% @doc Returns `true' if the user exists in the database.
@@ -176,9 +171,7 @@ does_user_exist(LUser, LServer) ->
 -spec get_handle(ejabberd:luser(), ejabberd:lserver())
               -> handle() | {error, not_found}.
 get_handle(LUser, LServer) ->
-    Query = "SELECT handle FROM user WHERE user = ?",
-    {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
-    case wocky_db:single_result(R) of
+    case wocky_db:select_one(LServer, user, [handle], #{user => LUser}) of
         undefined -> {error, not_found};
         Handle -> Handle
     end.
@@ -193,9 +186,7 @@ get_handle(LUser, LServer) ->
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> password() | {error, not_found}.
 get_password(LUser, LServer) ->
-    Query = "SELECT password FROM user WHERE user = ?",
-    {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
-    case wocky_db:single_result(R) of
+    case wocky_db:select_one(LServer, user, [password], #{user => LUser}) of
         undefined -> {error, not_found};
         Password -> Password
     end.
@@ -216,11 +207,9 @@ get_password(LUser, LServer) ->
 set_password(LUser, LServer, Password) ->
     case does_user_exist(LUser, LServer) of
         false -> {error, not_found};
-        true ->
-            Query = "UPDATE user SET password = ? WHERE user = ?",
-            Values = #{password => Password, user => LUser},
-            {ok, _} = wocky_db:query(LServer, Query, Values, quorum),
-            ok
+        true -> wocky_db:update(LServer, user,
+                                #{password => Password},
+                                #{user => LUser})
     end.
 
 
@@ -240,17 +229,15 @@ remove_user(LUser, LServer) ->
             %% TODO: this really needs to be done in a batch, but we don't
             %% currently have a clean way to run queries in different keyspaces
             %% in the same batch.
-            {ok, _} = remove_handle_lookup(Handle),
-            {ok, _} = remove_user_record(LUser, LServer),
+            ok = remove_handle_lookup(Handle),
+            ok = remove_user_record(LUser, LServer),
             ok
     end.
 
 %% @private
 remove_handle_lookup(Handle) ->
-    Query = "DELETE FROM handle_to_user WHERE handle = ?",
-    wocky_db:query(shared, Query, #{handle => Handle}, quorum).
+    wocky_db:delete(shared, handle_to_user, all, #{handle => Handle}).
 
 %% @private
 remove_user_record(LUser, LServer) ->
-    Query = "DELETE FROM user WHERE user = ?",
-    wocky_db:query(LServer, Query, #{user => LUser}, quorum).
+    wocky_db:delete(LServer, user, all, #{user => LUser}).
