@@ -85,8 +85,8 @@ test_get_roster_version() ->
     { "returns the roster version for a known user", [
       ?_assertEqual(<<"1000">>, get_roster_version(?USER, ?SERVER))
     ]},
-    { "returns a not found error for an unknown user", [
-      ?_assertEqual({error, not_found}, get_roster_version(?BADUSER, ?SERVER))
+    { "returns a null version for an unknown user", [
+      ?_assertEqual(<<"0">>, get_roster_version(?BADUSER, ?SERVER))
     ]}
   ]}.
 
