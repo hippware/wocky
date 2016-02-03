@@ -25,7 +25,7 @@ create_schema() ->
     create_schema_for(?LOCAL_CONTEXT).
 
 create_schema_for(Context) ->
-    prepare_tables(Context, keyspace_tables(wocky_db:keyspace_name(Context))).
+    prepare_tables(Context, keyspace_tables(Context)).
 
 recreate_table(Context, Name) ->
     ok = wocky_db:drop(Context, table, Name),

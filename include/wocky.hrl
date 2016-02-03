@@ -14,9 +14,11 @@
 
 -record(table_def, {
           name        :: atom(),
-          columns     :: [{atom(), atom()}],
+          columns     :: [{atom(), atom()
+                                 | {set | list, atom()}
+                                 | {map, atom(), atom()}}],
           primary_key :: atom() | [atom()],
-          order_by    :: atom() | [atom()]
+          order_by    :: atom() | [{atom(), asc | desc}]
          }).
 
 -endif. % ifdef WOCKY_HRL

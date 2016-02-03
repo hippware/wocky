@@ -480,9 +480,9 @@ to_keyspace(String) ->
     end.
 
 %% @doc Return the keyspace name for the given context.
--spec keyspace_name(context) -> binary().
+-spec keyspace_name(context()) -> binary().
 keyspace_name(Context) when is_atom(Context) ->
-    keyspace_name(atom_to_list(Context));
+    keyspace_name(atom_to_binary(Context, utf8));
 keyspace_name(Context) ->
     iolist_to_binary([keyspace_prefix(), Context]).
 
@@ -579,8 +579,8 @@ batch_query_list(QueryList) ->
               end, QueryList).
 
 log_query(Query, Values) ->
-    lager:info("Creating CQL query with statement '~s' and values ~p",
-               [Query, Values]).
+    ok = lager:info("Creating CQL query with statement '~s' and values ~p",
+                    [Query, Values]).
 
 drop_all_nulls(Rows) ->
     [drop_nulls(Row) || Row <- Rows].
