@@ -24,7 +24,8 @@
 %%% API
 %%%===================================================================
 
-%% @doc TBD
+%% @doc Returns the roster for the given user in the form of a list of
+%% roster entries, or an empty list if no entries were found for the user.
 -spec get_roster(ejabberd:luser(), ejabberd:lserver()) -> roster().
 get_roster(LUser, LServer) ->
     Query = "SELECT * FROM roster WHERE user = ?",
@@ -32,7 +33,8 @@ get_roster(LUser, LServer) ->
     pack_roster(LUser, LServer, wocky_db:rows(R)).
 
 
-%% @doc TDB
+%% @doc Returns the version of the given user's roster. If there are no roster
+%% entries for the user, returns the null version of `0'.
 -spec get_roster_version(ejabberd:luser(), ejabberd:lserver())
                         -> version().
 get_roster_version(LUser, LServer) ->
@@ -42,7 +44,9 @@ get_roster_version(LUser, LServer) ->
     integer_to_binary(Version).
 
 
-%% @doc TBD
+%% @doc Returns all roster entries for the user that have a version higher
+%% than the one specified. Returns an empty list if not roster items have a
+%% higher version or if there are no roster items for the user.
 -spec get_roster_updates(ejabberd:luser(), ejabberd:lserver(), version())
                         -> roster().
 get_roster_updates(LUser, LServer, Version) ->
@@ -52,7 +56,7 @@ get_roster_updates(LUser, LServer, Version) ->
     pack_roster(LUser, LServer, wocky_db:rows(R)).
 
 
-%% @doc TBD
+%% @doc Deletes all roster items for the specified user.
 -spec delete_roster(ejabberd:luser(), ejabberd:lserver()) -> ok.
 delete_roster(LUser, LServer) ->
     Query = "DELETE FROM roster WHERE user = ?",
@@ -60,7 +64,9 @@ delete_roster(LUser, LServer) ->
     ok.
 
 
-%% @doc TBD
+%% @doc Returns the roster item for the specified user and contact. If the user
+%% does not have a roster item for the specified contact, returns a fresh
+%% roster item that has not been stored in the database.
 -spec get_roster_item(ejabberd:luser(), ejabberd:lserver(), contact())
                      -> roster_item().
 get_roster_item(LUser, LServer, ContactJID) ->
@@ -70,7 +76,7 @@ get_roster_item(LUser, LServer, ContactJID) ->
     pack_roster_item(LUser, LServer, ContactJID, wocky_db:single_row(R)).
 
 
-%% @doc TBD
+%% @doc Stores the roster item in the database.
 -spec update_roster_item(ejabberd:luser(), ejabberd:lserver(),
                          contact(), roster_item()) -> ok.
 update_roster_item(LUser, LServer, ContactJID, Item) ->
@@ -83,7 +89,7 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
     ok.
 
 
-%% @doc TBD
+%% @doc Deletes the roster item from the database.
 -spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), contact()) -> ok.
 delete_roster_item(LUser, LServer, ContactJID) ->
     Query = "DELETE FROM roster WHERE user = ? AND contact = ?",
