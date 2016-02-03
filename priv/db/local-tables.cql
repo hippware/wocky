@@ -56,18 +56,20 @@ CREATE TABLE roster (
     user timeuuid,
     server text,
     contact text,
-    active boolean,
     nick text,
     groups set<text>,
     ask text,
     askmessage text,
     subscription text,
-    version timeuuid,
+    version timestamp,
     PRIMARY KEY (user, contact)
 );
 
-CREATE INDEX ON roster(active);
-CREATE INDEX ON roster(version);
+CREATE MATERIALIZED VIEW roster_version AS
+  SELECT * FROM roster
+  WHERE contact IS NOT NULL AND version IS NOT NULL
+  PRIMARY KEY (user, version, contact)
+  WITH CLUSTERING ORDER BY (version ASC);
 
 CREATE TABLE session (
     sid blob,

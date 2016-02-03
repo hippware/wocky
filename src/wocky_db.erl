@@ -25,7 +25,7 @@
 
 %% API
 -export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
-         rows/1, single_row/1, single_result/1, count/2,
+         rows/1, single_row/1, single_result/1, single_result/2, count/2,
          to_keyspace/1, seconds_to_timestamp/1, timestamp_to_seconds/1,
          timestamp_to_now/1, now_to_timestamp/1, expire_to_ttl/1]).
 
@@ -174,6 +174,18 @@ single_result(Result) ->
         Map ->
             [{_, Value}|_] = maps:to_list(Map),
             Value
+    end.
+
+%% @doc Extracts the value of the first column of the first row from a query
+%% result. Returns `Default' if the result set is empty or if first value
+%% is `null'.
+%%
+-spec single_result(result(), term()) -> term().
+single_result(Result, Default) ->
+    case single_result(Result) of
+        undefined -> Default;
+        null      -> Default;
+        Value     -> Value
     end.
 
 %% @doc Counts the number of rows in a result that match the predicate.
