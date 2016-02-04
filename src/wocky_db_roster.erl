@@ -28,9 +28,8 @@
 %% roster entries, or an empty list if no entries were found for the user.
 -spec get_roster(ejabberd:luser(), ejabberd:lserver()) -> roster().
 get_roster(LUser, LServer) ->
-    Query = "SELECT * FROM roster WHERE user = ?",
-    {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
-    pack_roster(LUser, LServer, wocky_db:rows(R)).
+    Rows = wocky_db:select(LServer, roster, all, #{user => LUser}),
+    pack_roster(LUser, LServer, Rows).
 
 
 %% @doc Returns the version of the given user's roster. If there are no roster
@@ -38,10 +37,12 @@ get_roster(LUser, LServer) ->
 -spec get_roster_version(ejabberd:luser(), ejabberd:lserver())
                         -> version().
 get_roster_version(LUser, LServer) ->
-    Query = "SELECT max(version) FROM roster WHERE user = ?",
-    {ok, R} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
-    Version = wocky_db:single_result(R, 0),
-    integer_to_binary(Version).
+    Result = wocky_db:select_one(LServer, roster, ['max(version)'],
+                                 #{user => LUser}),
+    case Result of
+        null -> <<"0">>;
+        Version -> integer_to_binary(Version)
+    end.
 
 
 %% @doc Returns all roster entries for the user that have a version higher
@@ -59,9 +60,7 @@ get_roster_updates(LUser, LServer, Version) ->
 %% @doc Deletes all roster items for the specified user.
 -spec delete_roster(ejabberd:luser(), ejabberd:lserver()) -> ok.
 delete_roster(LUser, LServer) ->
-    Query = "DELETE FROM roster WHERE user = ?",
-    {ok, void} = wocky_db:query(LServer, Query, #{user => LUser}, quorum),
-    ok.
+    wocky_db:delete(LServer, roster, all, #{user => LUser}).
 
 
 %% @doc Returns the roster item for the specified user and contact. If the user
@@ -70,10 +69,9 @@ delete_roster(LUser, LServer) ->
 -spec get_roster_item(ejabberd:luser(), ejabberd:lserver(), contact())
                      -> roster_item().
 get_roster_item(LUser, LServer, ContactJID) ->
-    Query = "SELECT * FROM roster WHERE user = ? AND contact = ?",
-    Values = #{user => LUser, contact => ContactJID},
-    {ok, R} = wocky_db:query(LServer, Query, Values, quorum),
-    pack_roster_item(LUser, LServer, ContactJID, wocky_db:single_row(R)).
+    Conditions = #{user => LUser, contact => ContactJID},
+    Rows = wocky_db:select(LServer, roster, all, Conditions),
+    pack_roster_item(LUser, LServer, ContactJID, Rows).
 
 
 %% @doc Stores the roster item in the database.
@@ -92,10 +90,8 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
 %% @doc Deletes the roster item from the database.
 -spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), contact()) -> ok.
 delete_roster_item(LUser, LServer, ContactJID) ->
-    Query = "DELETE FROM roster WHERE user = ? AND contact = ?",
-    Values = #{user => LUser, contact => ContactJID},
-    {ok, void} = wocky_db:query(LServer, Query, Values, quorum),
-    ok.
+    Conditions = #{user => LUser, contact => ContactJID},
+    wocky_db:delete(LServer, roster, all, Conditions).
 
 
 %%%===================================================================
@@ -108,8 +104,10 @@ pack_roster(LUser, LServer, Rows) ->
 pack_roster_item(LUser, LServer, #{contact := C} = Row) ->
     pack_roster_item(LUser, LServer, C, Row).
 
-pack_roster_item(LUser, LServer, ContactJID, undefined) ->
+pack_roster_item(LUser, LServer, ContactJID, []) ->
     pack_roster_item(LUser, LServer, ContactJID, #{});
+pack_roster_item(LUser, LServer, ContactJID, [Row]) ->
+    pack_roster_item(LUser, LServer, ContactJID, Row);
 pack_roster_item(LUser, LServer, Contact, Row) when is_binary(Contact) ->
     ContactJID = jid:to_lower(jid:from_binary(Contact)),
     pack_roster_item(LUser, LServer, ContactJID, Row);

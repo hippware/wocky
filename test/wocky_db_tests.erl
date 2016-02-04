@@ -48,7 +48,9 @@ build_select_query_test() ->
         {"SELECT user FROM users WHERE server = ?",
          [users, [user], [server]]},
         {"SELECT user, server FROM users",
-         [users, [user, server], []]}
+         [users, [user, server], []]},
+        {"SELECT max(version) FROM users",
+         [users, ['max(version)'], []]}
     ]).
 
 build_insert_query_test() ->
@@ -112,7 +114,8 @@ build_truncate_query_test() ->
 build_drop_query_test() ->
     test_build_query_cases(fun wocky_db:build_drop_query/2, [
         {"DROP TABLE IF EXISTS users", [table, users]},
-        {"DROP KEYSPACE IF EXISTS users", [keyspace, users]}
+        {"DROP KEYSPACE IF EXISTS users", [keyspace, users]},
+        {"DROP MATERIALIZED VIEW IF EXISTS users", ['materialized view', users]}
     ]).
 
 build_create_keyspace_query_test() ->
