@@ -64,8 +64,8 @@ remove_old_messages(_Host, _Days) ->
 
 -spec remove_user(binary(), binary()) -> ok.
 remove_user(User, Server) ->
-    ok = wocky_db:delete(Server, offline_msg, all, #{user => User}),
-    ok.
+    wocky_db:delete(Server, offline_msg, all, #{user => User}).
+
 
 %%%===================================================================
 %%% Helper functions
