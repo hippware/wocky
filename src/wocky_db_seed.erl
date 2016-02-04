@@ -9,8 +9,7 @@
 
 -export([create_schema/0, create_schema_for/1, recreate_table/2,
          create_table_indexes/2, create_table_views/2, drop_table_views/2,
-         seed_table/2, foreach_table/3, map_tables/3, prepare_tables/2,
-         seed_tables/2, clear_tables/2]).
+         seed_table/2, foreach_table/3, prepare_tables/2, clear_tables/2]).
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
          fake_resource/0, random_priority/0, session_info/0, sjid/1, jid/3,
@@ -66,21 +65,10 @@ seed_table(Context, Name) ->
 foreach_table(Context, Fun, Tables) ->
     lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
 
-map_tables(Context, Fun, Tables) ->
-    lists:map(fun (Table) -> Fun(Context, Table) end, Tables).
-
 prepare_tables(Context, Tables) ->
     ok = wocky_db:create_keyspace(Context, simple, 1),
     ok = foreach_table(Context, fun recreate_table/2, Tables),
     flush_cqerl_prepared_query_cache().
-
-seed_tables(Context, Tables) ->
-    map_tables(Context,
-               fun (_, Table) ->
-                   {ok, Data} = seed_table(Context, Table),
-                   {Table, Data}
-               end,
-               Tables).
 
 clear_tables(Context, Tables) ->
     foreach_table(Context, fun wocky_db:truncate/2, Tables).

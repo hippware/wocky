@@ -39,13 +39,11 @@
          create_index/3, create_view/5]).
 
 %% Query API
--export([query/3, query/4, batch_query/4, multi_query/3, multi_query/4,
-         rows/1, single_row/1, single_result/1, single_result/2, count/2]).
+-export([query/4, batch_query/4, multi_query/3, multi_query/4, rows/1]).
 
 %% Utility API
--export([to_keyspace/1, keyspace_name/1, seconds_to_timestamp/1,
-         timestamp_to_seconds/1, timestamp_to_now/1, now_to_timestamp/1,
-         expire_to_ttl/1]).
+-export([seconds_to_timestamp/1, timestamp_to_seconds/1, timestamp_to_now/1,
+         now_to_timestamp/1, expire_to_ttl/1]).
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
@@ -155,7 +153,6 @@ build_update_query(Table, Columns, Keys) ->
     ["UPDATE ", atom_to_list(Table), " SET ", update_columns(Columns),
      conditions(Keys)].
 
-update_columns([]) -> "";
 update_columns([First|Rest]) ->
     lists:foldl(
       fun (Name, Str) -> [Str, ", ", atom_to_list(Name), " = ?"] end,
@@ -179,7 +176,7 @@ build_delete_query(Table, Columns, Keys) ->
 -spec truncate(context(), table()) -> ok.
 truncate(Context, Name) ->
     Query = build_truncate_query(Name),
-    {ok, void} = query(Context, Query, all),
+    {ok, void} = query(Context, Query, [], all),
     ok.
 
 build_truncate_query(Name) ->
@@ -190,7 +187,7 @@ build_truncate_query(Name) ->
 -spec drop(context(), atom(), atom()) -> ok.
 drop(Context, Type, Name) ->
     Query = build_drop_query(Type, Name),
-    {ok, _} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, [], all),
     ok.
 
 build_drop_query(Type, Name) ->
@@ -202,7 +199,7 @@ build_drop_query(Type, Name) ->
 -spec create_keyspace(context(), ks_class(), ks_factor()) -> ok.
 create_keyspace(Context, Class, Factor) ->
     Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
-    {ok, _} = query(none, Query, all),
+    {ok, _} = query(none, Query, [], all),
     ok.
 
 build_create_keyspace_query(Name, Class, Factor) ->
@@ -226,7 +223,7 @@ dc_factors([{DC, Factor} | Rest], Factors) ->
 -spec create_table(context(), table_def()) -> ok.
 create_table(Context, TableDef) ->
     Query = build_create_table_query(TableDef),
-    {ok, _} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, [], all),
     ok.
 
 build_create_table_query(TD) ->
@@ -268,7 +265,7 @@ sorting_option_string([{Field, Dir}]) ->
 -spec create_index(context(), table(), [atom()]) -> ok.
 create_index(Context, Table, Keys) ->
     Query = build_create_index_query(Table, Keys),
-    {ok, _} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, [], all),
     ok.
 
 build_create_index_query(Table, Keys) ->
@@ -288,7 +285,7 @@ index_keys([First | Rest], Acc) ->
                   [{atom, asc | desc}]) -> ok.
 create_view(Context, Name, Table, Keys, OrderBy) ->
     Query = build_create_view_query(Name, Table, Keys, OrderBy),
-    {ok, _} = query(Context, Query, all),
+    {ok, _} = query(Context, Query, [], all),
     ok.
 
 build_create_view_query(Name, Table, Keys, OrderBy) ->
@@ -306,14 +303,6 @@ view_conditions([First|Rest]) ->
 %%====================================================================
 %% Query API
 %%====================================================================
-
-%% @doc Execute a query.
-%%
-%% A wrapper around {@link query/4}
--spec query(context(), query(), consistency_level())
-           -> {ok, void} | {ok, result()} | {error, error()}.
-query(Context, Query, Consistency) ->
-    query(Context, Query, [], Consistency).
 
 %% @doc Execute a query.
 %%
@@ -425,89 +414,11 @@ multi_query(Context, QueryVals, Consistency) ->
 rows(Result) ->
     drop_all_nulls(cqerl:all_rows(Result)).
 
-%% @doc Extracts the first row from a query result
-%%
-%% The row is a property list of column name, value pairs.
-%%
--spec single_row(result()) -> row() | undefined.
-single_row(Result) ->
-    case cqerl:head(Result) of
-        empty_dataset -> undefined;
-        R -> drop_nulls(R)
-    end.
-
-%% @doc Extracts the value of the first column of the first row from a query
-%% result
-%%
--spec single_result(result()) -> value() | undefined.
-single_result(Result) ->
-    case cqerl:head(Result) of
-        empty_dataset ->
-            undefined;
-        Map ->
-            [{_, Value}|_] = maps:to_list(Map),
-            Value
-    end.
-
-%% @doc Extracts the value of the first column of the first row from a query
-%% result. Returns `Default' if the result set is empty or if first value
-%% is `null'.
-%%
--spec single_result(result(), term()) -> term().
-single_result(Result, Default) ->
-    case single_result(Result) of
-        undefined -> Default;
-        null      -> Default;
-        Value     -> Value
-    end.
-
-%% @doc Counts the number of rows in a result that match the predicate.
-%%
-%% The predicate function must take a row and return a boolean.
-%%
--spec count(fun ((values()) -> boolean()), result()) -> non_neg_integer().
-count(Pred, Result) ->
-    Rows = rows(Result),
-    lists:foldl(
-      fun(E, Acc) ->
-              case Pred(E) of
-                  true -> Acc + 1;
-                  false -> Acc
-              end
-      end,
-      0,
-      Rows).
 
 
 %%====================================================================
 %% Utility API
 %%====================================================================
-
-%% @doc Modify a string so it is a valid keyspace
-%%
-%% All invalid characters are replaced with underscore and then
-%% truncated to 48 characters. Returns the modified string.
-%%
--spec to_keyspace(binary()) -> binary().
-to_keyspace(String) ->
-    Space = iolist_to_binary(re:replace(String, "[^0-9a-z]", "_", [global])),
-    case byte_size(Space) of
-        Size when Size > 48 ->
-            {Head, _} = split_binary(Space, 48),
-            Head;
-        _ ->
-            Space
-    end.
-
-%% @doc Return the keyspace name for the given context.
--spec keyspace_name(context()) -> binary().
-keyspace_name(Context) when is_atom(Context) ->
-    keyspace_name(atom_to_binary(Context, utf8));
-keyspace_name(Context) ->
-    iolist_to_binary([keyspace_prefix(), Context]).
-
-keyspace_prefix() ->
-    application:get_env(wocky, keyspace_prefix, "wocky_").
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
 %%
@@ -580,6 +491,16 @@ get_client(Spec, none) ->
 get_client(Spec, Context) ->
     cqerl:new_client(Spec, [{keyspace, keyspace_name(Context)}]).
 
+%% Return the keyspace name for the given context.
+-spec keyspace_name(context()) -> binary().
+keyspace_name(Context) when is_atom(Context) ->
+    keyspace_name(atom_to_binary(Context, utf8));
+keyspace_name(Context) ->
+    iolist_to_binary([keyspace_prefix(), Context]).
+
+keyspace_prefix() ->
+    application:get_env(wocky, keyspace_prefix, "wocky_").
+
 make_query(Query, Values, Consistency) ->
     log_query(Query, Values),
     #cql_query{statement = Query,
@@ -608,3 +529,14 @@ drop_all_nulls(Rows) ->
 drop_nulls(Row) ->
     maps:filter(fun (_, null) -> false;
                     (_, _) -> true end, Row).
+
+%% Extracts the value of the first column of the first row from a query result
+-spec single_result(result()) -> value() | undefined.
+single_result(Result) ->
+    case cqerl:head(Result) of
+        empty_dataset ->
+            undefined;
+        Map ->
+            [{_, Value}|_] = maps:to_list(Map),
+            Value
+    end.
