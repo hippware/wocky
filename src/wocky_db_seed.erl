@@ -13,7 +13,7 @@
          seed_tables/2, clear_tables/2]).
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
-         fake_resource/0, random_priority/0, session_info/0,
+         fake_resource/0, random_priority/0, session_info/0, sjid/1, jid/3,
          make_offline_msgs/4, make_offline_msg/4, get_nowsecs/0]).
 
 
@@ -199,14 +199,14 @@ table_definition(roster) ->
        columns = [
            {user, timeuuid},       % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
-           {contact, text},        % Simple JID for contact
+           {contact, text},        % Bare JID for contact
            {active, boolean},      % True if the roster item is not deleted
            {nick, text},           % Display name for contact chosen by the user
            {groups, {set, text}},  % List of groups the contact belongs to
-           {ask, text},            %
-           {askmessage, text},     %
-           {subscription, text},   %
-           {version, timeuuid}     % Timeuuid indicating when the roster item
+           {ask, text},            % Status if the item is pending approval
+           {askmessage, text},     % Message to be used when getting approval
+           {subscription, text},   % Subscription state of the roster item
+           {version, timestamp}    % Timestamp indicating when the roster item
                                    % was last updated
        ],
        primary_key = [user, contact]
@@ -241,15 +241,14 @@ table_definition(user_to_sids) ->
        primary_key = jid_user
     }.
 
-table_indexes(roster) -> [
-    [active],
-    [version]
-];
 table_indexes(session) -> [
     [node]
 ];
 table_indexes(_) -> [].
 
+table_views(roster) -> [
+    {roster_version, [user, version, contact], [{version, asc}]}
+];
 table_views(_) -> [].
 
 
@@ -267,7 +266,7 @@ seed_data(user) ->
         #{user => ?KAREN,  handle => <<"karen">>},
         #{user => ?ROBERT, handle => <<"robert">>}
     ],
-    [maps:merge(U, #{server => ?SERVER, password => ?PASS}) || U <- Users];
+    [U#{server => ?SERVER, password => ?PASS} || U <- Users];
 seed_data(last_activity) ->
     Activity = [
         #{user => ?ALICE,  timestamp => 1000, status => <<"Not here">>},
@@ -301,6 +300,15 @@ seed_data(offline_msg) ->
           make_offline_msgs(User, Handle, NowSecs, 10)
       end,
       seed_data(user));
+seed_data(roster) ->
+    Items = [
+        #{contact => sjid(?BOB),    nick => <<"bobby">>, version => 666},
+        #{contact => sjid(?ALICIA), nick => <<"allie">>, version => 777},
+        #{contact => sjid(?ROBERT), nick => <<"bob2">>,  version => 888},
+        #{contact => sjid(?KAREN),  nick => <<"kk">>,    version => 999}
+    ],
+    [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
+        I <- Items];
 seed_data(_) ->
     [].
 
@@ -398,6 +406,9 @@ make_offline_msg(User, Handle, NowSecs, I) ->
       to_id => jid:to_binary(ToJID),
       packet => msg_xml_packet(Handle),
       '[ttl]' => ts_to_ttl(ExpireSecs)}.
+
+sjid(User) ->
+    iolist_to_binary([User, "@", ?SERVER]).
 
 jid(User, Server, Resource) ->
     #jid{user = User, server = Server, resource = Resource,
