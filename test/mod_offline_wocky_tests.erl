@@ -19,6 +19,14 @@ mod_offline_wocky_test_() -> {
   ]
 }.
 
+%% Some functions that are required by the mod_offline behaviour are
+%% intentionally stubbed out. Make sure they are doing what is expected
+sanity_test_() -> [
+    ?_assertEqual({ok, 0}, mod_offline_wocky:remove_expired_messages(?SERVER)),
+    ?_assertEqual({error, not_implemented},
+                  mod_offline_wocky:remove_old_messages(?SERVER, 1))
+].
+
 before_all() ->
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [offline_msg]),
@@ -57,8 +65,8 @@ test_pop_messages() ->
             ?_test(
                begin
                    Msgs = lists:filter(
-                            fun (#offline_msg{us = {UUID, _}}) -> UUID =:= ?BOB;
-                                (_) -> false
+                            fun (#offline_msg{us = {UUID, _}}) ->
+                                    UUID =:= ?BOB
                             end,
                             Config),
                    ?assertEqual({ok, Msgs},
