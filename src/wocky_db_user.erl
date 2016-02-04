@@ -171,7 +171,7 @@ does_user_exist(LUser, LServer) ->
 -spec get_handle(ejabberd:luser(), ejabberd:lserver())
               -> handle() | {error, not_found}.
 get_handle(LUser, LServer) ->
-    case wocky_db:select_one(LServer, user, [handle], #{user => LUser}) of
+    case wocky_db:select_one(LServer, user, handle, #{user => LUser}) of
         undefined -> {error, not_found};
         Handle -> Handle
     end.
@@ -186,7 +186,7 @@ get_handle(LUser, LServer) ->
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> password() | {error, not_found}.
 get_password(LUser, LServer) ->
-    case wocky_db:select_one(LServer, user, [password], #{user => LUser}) of
+    case wocky_db:select_one(LServer, user, password, #{user => LUser}) of
         undefined -> {error, not_found};
         Password -> Password
     end.

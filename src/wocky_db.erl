@@ -60,11 +60,11 @@
 %% High Level API
 %%====================================================================
 
-%% @doc Retrieves data from a table based on the parameters and
-%% returns the first value of the first row.
--spec select_one(context(), table(), columns(), conditions()) -> term().
-select_one(Context, Table, Columns, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
+%% @doc Retrieves a single value from a table based on the parameters.
+%% Returns the first value of the first row.
+-spec select_one(context(), table(), atom(), conditions()) -> term().
+select_one(Context, Table, Column, Conditions) ->
+    {ok, R} = run_select_query(Context, Table, [Column], Conditions),
     single_result(R).
 
 %% @doc Retrieves data from a table based on the parameters and

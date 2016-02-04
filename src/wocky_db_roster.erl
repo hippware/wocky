@@ -37,9 +37,9 @@ get_roster(LUser, LServer) ->
 -spec get_roster_version(ejabberd:luser(), ejabberd:lserver())
                         -> version().
 get_roster_version(LUser, LServer) ->
-    Result = wocky_db:select_one(LServer, roster, ['max(version)'],
-                                 #{user => LUser}),
-    case Result of
+    Value = wocky_db:select_one(LServer, roster, 'max(version)',
+                                #{user => LUser}),
+    case Value of
         null -> <<"0">>;
         Version -> integer_to_binary(Version)
     end.
