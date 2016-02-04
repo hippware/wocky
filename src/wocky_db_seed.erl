@@ -140,8 +140,6 @@ table_definition(user) ->
            {handle, text},         % User handle (as seen by other users)
            {password, text},       % Password hash
            {phone_number, text},   % User's phone number
-           {status, bigint},       %
-           {user_status, text},    %
            {avatar, timeuuid}      % UUID of file containing user's avatar
        ],
        primary_key = user
