@@ -42,8 +42,7 @@ before_each() ->
     [data_to_rec(Sess) || Sess <- SessData].
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session, user_to_sids]),
-    ok.
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session, user_to_sids]).
 
 data_to_rec(#{user := User, server := Server, sid := SID, priority := Priority,
               info := Info, jid_user := JU, jid_server := JS,

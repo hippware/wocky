@@ -129,8 +129,7 @@ create_user(LUser, LServer, Handle, Password) ->
     %% have a clean way to run queries in different keyspaces in the same batch.
     case create_handle_lookup(LUser, LServer, Handle) of
         true ->
-            ok = create_user_record(LUser, LServer, Handle, Password),
-            ok;
+            create_user_record(LUser, LServer, Handle, Password);
 
         false ->
             {error, exists}

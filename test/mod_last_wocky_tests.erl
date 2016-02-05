@@ -33,8 +33,7 @@ before_each() ->
     ok.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]),
-    ok.
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]).
 
 test_set_last_info() ->
     { "set_last_info", setup, fun before_each/0, fun after_each/1, [

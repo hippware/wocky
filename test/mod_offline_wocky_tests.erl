@@ -58,8 +58,7 @@ make_msg_recs(User, Handle, N) ->
     [data_to_rec(D) || D <- Data].
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [offline_msg]),
-    ok.
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [offline_msg]).
 
 test_pop_messages() ->
     { "pop_messages", setup, fun before_each/0, fun after_each/1,
