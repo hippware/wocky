@@ -252,7 +252,7 @@ seed_data(user) ->
         #{user => ?KAREN,  handle => <<"karen">>},
         #{user => ?ROBERT, handle => <<"robert">>}
     ],
-    [U#{server => ?SERVER, password => ?PASS} || U <- Users];
+    [U#{server => ?SERVER, password => ?SCRAM} || U <- Users];
 seed_data(last_activity) ->
     Activity = [
         #{user => ?ALICE,  timestamp => 1000, status => <<"Not here">>},
