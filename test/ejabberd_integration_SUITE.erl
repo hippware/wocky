@@ -28,35 +28,24 @@ groups() ->
 suite() ->
     escalus:suite().
 
+
 %%--------------------------------------------------------------------
 %% Init & teardown
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    {ok, _Pid} = net_kernel:start(['mongooseim@localhost', longnames]),
-
-    wocky_app:start(),
-
-    application:load(ejabberd),
-    DataDir = proplists:get_value(data_dir, Config),
-    ConfigPath = filename:join([DataDir, "ejabberd.cfg"]),
-    application:set_env(ejabberd, config, ConfigPath),
-    application:ensure_all_started(ejabberd),
-
+    ok = test_helper:start_ejabberd(),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config),
-    application:stop(ejabberd),
-    wocky_app:stop(),
-    ok.
+    test_helper:stop_ejabberd().
 
 init_per_group(_GroupName, Config) ->
     escalus:create_users(Config),
     Config2 = escalus:make_everyone_friends(Config),
     escalus_ejabberd:wait_for_session_count(Config2, 0),
     Config2.
-
 
 end_per_group(_GroupName, Config) ->
     escalus:delete_users(Config).
@@ -66,6 +55,7 @@ init_per_testcase(CaseName, Config) ->
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
 
 %%--------------------------------------------------------------------
 %% Message tests
@@ -100,7 +90,6 @@ activity_story(Config) ->
             escalus:assert(is_last_result, Stanza),
             0 = get_last_activity(Stanza)
         end).
-
 
 update_activity_story(Config) ->
     escalus:story(Config, [1],
