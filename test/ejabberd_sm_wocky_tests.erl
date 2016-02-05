@@ -5,8 +5,12 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/ejabberd_config.hrl").
+-include("wocky_db_seed.hrl").
 
--define(SERVER, <<"localhost">>).
+-import(ejabberd_sm_wocky, [get_sessions/1, get_sessions/2, get_sessions/3,
+                            create_session/4, delete_session/4, cleanup/1,
+                            total_count/0, unique_count/0]).
+
 
 ejabberd_sm_wocky_test_() -> {
   "ejabberd_sm_wocky",
@@ -24,73 +28,37 @@ ejabberd_sm_wocky_test_() -> {
 before_all() ->
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
-    clear_tables(),
-    ok = wocky_app:start().
+    ok = wocky_app:start(),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [session, user_to_sids]),
+    ok.
 
 after_all(_) ->
     ets:delete(config),
     ok = wocky_app:stop().
 
 before_each() ->
-    Users = [{<<"bob">>, wocky_db_user:create_id()},
-             {<<"alicia">>, wocky_db_user:create_id()},
-             {<<"robert">>, wocky_db_user:create_id()},
-             {<<"karen">>, wocky_db_user:create_id()},
-             {<<"alice">>, wocky_db_user:create_id()}],
-    Sessions = [make_session(ID) || _ <- lists:seq(1, 5), {_, ID} <- Users],
-    [write_session(S) || S <- Sessions],
-    Sessions.
+    {ok, SessData} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, session),
+    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user_to_sids),
+    [data_to_rec(Sess) || Sess <- SessData].
 
 after_each(_) ->
-    clear_tables(),
-    ok.
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session, user_to_sids]).
 
-fake_now() ->
-    list_to_tuple([erlang:unique_integer([positive, monotonic])
-                   || _ <- lists:seq(1, 3)]).
+data_to_rec(#{user := User, server := Server, sid := SID, priority := Priority,
+              info := Info, jid_user := JU, jid_server := JS,
+              jid_resource := JR}) ->
+    #session{sid = binary_to_term(SID),
+             usr = {JU, JS, JR},
+             us = {User, Server},
+             priority = priority(Priority),
+             info = binary_to_term(Info)}.
 
-make_session(ID) ->
-    SIDNow = fake_now(),
-    SIDPID = spawn(fun() -> ok end), % Unique(ish) PID
-    USR = {ID, ?SERVER, integer_to_binary(erlang:unique_integer())},
-    US = {ID, ?SERVER},
-    Priority = case random:uniform(11) of
-                   11 -> undefined;
-                   N -> N
-               end,
-    Info = [{ip, {{127, 0, 0, 1}, random:uniform(65536)}},
-            {conn, c2s_tls},
-            {auth_module, ejabberd_auth_wocky}],
-    #session{
-       sid = {SIDNow, SIDPID}, usr = USR, us = US,
-       priority = Priority, info = Info}.
-
-write_session(#session{sid = Sid = {_, Pid}, us = {User, Server},
-                       usr = {JIDUser, JIDServer, JIDResource},
-                       priority = Priority, info = Info}) ->
-    Q1 = "INSERT INTO session (sid, node, user, server, jid_user, jid_server,
-        jid_resource, priority, info) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    V1 = #{sid => term_to_binary(Sid), user => User, server => Server,
-           node => node(Pid),
-           jid_user => JIDUser, jid_server => JIDServer,
-           jid_resource => JIDResource,
-           priority => case Priority of undefined -> -1;
-                                        N -> N
-                       end,
-           info => term_to_binary(Info)},
-    Q2 = "UPDATE user_to_sids SET sids = sids + ? WHERE jid_user = ?",
-    V2 = #{jid_user => JIDUser, sids => [term_to_binary(Sid)]},
-    {ok, void} = wocky_db:batch_query(?SERVER, [{Q1, V1}, {Q2, V2}], logged,
-                                      quorum).
+priority(-1) -> undefined;
+priority(N) -> N.
 
 session_to_ses_tuple(#session{sid = SID, usr = USR,
                               priority = Priority, info = Info}) ->
     {USR, SID, Priority, Info}.
-
-clear_tables() ->
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE session">>, quorum),
-    {ok, _} = wocky_db:query(?SERVER, <<"TRUNCATE user_to_sids">>, quorum),
-    ok.
 
 test_get_sessions() ->
     { "get_sessions", setup, fun before_each/0, fun after_each/1,
@@ -100,7 +68,7 @@ test_get_sessions() ->
              begin
                  SessTuples = [session_to_ses_tuple(S) || S <- Sessions],
                  ?assertEqual(lists:sort(SessTuples),
-                           lists:sort(ejabberd_sm_wocky:get_sessions(?SERVER)))
+                           lists:sort(get_sessions(?SERVER)))
              end)
         ]},
         { "Get sessions by server + user", [
@@ -110,21 +78,18 @@ test_get_sessions() ->
                  Expected = lists:filter(fun(S) -> S#session.us =:= US end,
                                          Sessions),
                  ?assertEqual(lists:sort(Expected),
-                              lists:sort(ejabberd_sm_wocky:get_sessions(User,
-                                                                ?SERVER)))
+                              lists:sort(get_sessions(User, ?SERVER)))
              end)
         ]},
         { "Invalid user should return an empty list", [
-             ?_assertEqual([], ejabberd_sm_wocky:get_sessions(
-                                 wocky_db_user:create_id(), ?SERVER))
+             ?_assertEqual([], get_sessions(?BADUSER, ?SERVER))
         ]},
         { "Get sessions by server + user + resource", [
           ?_test(
              begin
                  S = lists:nth(18, Sessions),
                  {User, _, Resource} = S#session.usr,
-                 ?assertEqual([S], ejabberd_sm_wocky:get_sessions(User, ?SERVER,
-                                                                Resource))
+                 ?assertEqual([S], get_sessions(User, ?SERVER, Resource))
              end)
         ]}
 
@@ -133,34 +98,28 @@ test_get_sessions() ->
 test_total_count() ->
     { "total_count",  setup, fun before_each/0, fun after_each/1, [
         { "Count total sessions", [
-            ?_assertEqual(25, ejabberd_sm_wocky:total_count())
+            ?_assertEqual(25, total_count())
         ]}
     ]}.
 
 test_unique_count() ->
     { "total_count",  setup, fun before_each/0, fun after_each/1, [
         { "Count \"unique sessions\" (sessions owned by unique users)", [
-            ?_assertEqual(5, ejabberd_sm_wocky:unique_count())
+            ?_assertEqual(5, unique_count())
         ]}
     ]}.
 
 test_create_session() ->
-    { "create_session", setup, fun before_each/0, fun after_each/1,
-      [
+    Data = wocky_db_seed:make_session(?NEWUSER),
+    Session = data_to_rec(Data),
+    Resource = element(3, Session#session.usr),
+    { "create_session", setup, fun before_each/0, fun after_each/1, [
         { "Create session", [
-            ?_test(
-               begin
-                   ID = wocky_db_user:create_id(),
-                   Session = make_session(ID),
-                   Resource = element(3, Session#session.usr),
-                   ?assertEqual(ok, ejabberd_sm_wocky:create_session(
-                                      ID, ?SERVER, Resource, Session)),
-                   ?assertEqual([Session], ejabberd_sm_wocky:get_sessions(
-                                             ID, ?SERVER)),
-                   ?assertEqual(26, ejabberd_sm_wocky:total_count()),
-                   ?assertEqual(6, ejabberd_sm_wocky:unique_count())
-               end
-              )
+            ?_assertEqual(ok, create_session(
+                                ?NEWUSER, ?SERVER, Resource, Session)),
+            ?_assertEqual([Session], get_sessions(?NEWUSER, ?SERVER)),
+            ?_assertEqual(26, total_count()),
+            ?_assertEqual(6, unique_count())
         ]}
      ]}.
 
@@ -172,15 +131,14 @@ test_delete_session() ->
              begin
                  S = lists:nth(6, Sessions),
                  {User, _, Resource} = S#session.usr,
-                 ?assertEqual(ok, ejabberd_sm_wocky:delete_session(
+                 ?assertEqual(ok, delete_session(
                                     S#session.sid, User, ?SERVER, Resource)),
-                 ?assertEqual(24, ejabberd_sm_wocky:total_count()),
-                 ?assertEqual(5, ejabberd_sm_wocky:unique_count()),
+                 ?assertEqual(24, total_count()),
+                 ?assertEqual(5, unique_count()),
                  ?assertEqual(lists:sort(
                                 [session_to_ses_tuple(Sess)
                                  || Sess <- Sessions -- [S]]),
-                              lists:sort(ejabberd_sm_wocky:get_sessions(
-                                           ?SERVER)))
+                              lists:sort(get_sessions(?SERVER)))
              end
             )
         ]}
@@ -190,7 +148,7 @@ test_cleanup() ->
     { "create_session", setup, fun before_each/0, fun after_each/1,
       [
         { "Cleanup node sessions", [
-          ?_assertEqual(ok, ejabberd_sm_wocky:cleanup(node())),
-          ?_assertEqual(0, ejabberd_sm_wocky:total_count())
+          ?_assertEqual(ok, cleanup(node())),
+          ?_assertEqual(0, total_count())
         ]}
     ]}.

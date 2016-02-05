@@ -246,7 +246,7 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                none ->
                    none;
 
-               {none, none} when Subscription == none, Ask == in ->
+               {none, none} when Subscription =:= none, Ask =:= in ->
                    wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
                    none;
 
@@ -280,8 +280,8 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     end,
     case Push of
         {push, PushItem} ->
-            if PushItem#roster.subscription == none,
-               PushItem#roster.ask == in ->
+            if PushItem#roster.subscription =:= none,
+               PushItem#roster.ask =:= in ->
                     ok;
                true ->
                     push_item(User, Server, ToJID, PushItem)
@@ -414,7 +414,7 @@ fill_subscription_lists(_, _, [], F, T, P) ->
     {F, T, P}.
 
 build_pending(#roster{ask = Ask} = I, JID, P)
-  when Ask == in; Ask == both ->
+  when Ask =:= in; Ask =:= both ->
     Message = I#roster.askmessage,
     Status  = if is_binary(Message) -> Message;
                  true -> <<>>

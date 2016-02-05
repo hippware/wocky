@@ -12,4 +12,13 @@
 
 -define(WOCKY_VERSION, element(2, application:get_key(wocky,vsn))).
 
+-record(table_def, {
+          name        :: atom(),
+          columns     :: [{atom(), atom()
+                                 | {set | list, atom()}
+                                 | {map, atom(), atom()}}],
+          primary_key :: atom() | [atom()],
+          order_by    :: atom() | [{atom(), asc | desc}]
+         }).
+
 -endif. % ifdef WOCKY_HRL
