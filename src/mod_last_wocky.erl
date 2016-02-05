@@ -23,13 +23,13 @@ init(_Host, _Opts) ->
 -spec get_last(ejabberd:luser(), ejabberd:lserver())
               -> {ok, non_neg_integer(), string()} | not_found.
 get_last(LUser, LServer) ->
-    Values = wocky_db:select(LServer, last_activity, [timestamp, status],
-                             #{user => LUser}),
-    case Values of
-        [#{timestamp := TS, status := S}] ->
+    Value = wocky_db:select_row(LServer, last_activity, [timestamp, status],
+                                #{user => LUser}),
+    case Value of
+        #{timestamp := TS, status := S} ->
             {ok, wocky_db:timestamp_to_seconds(TS), binary_to_list(S)};
 
-        [] ->
+        undefined ->
             not_found
     end.
 

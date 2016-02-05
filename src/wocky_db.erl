@@ -34,8 +34,8 @@
 
 
 %% High Level API
--export([select_one/4, select/4, insert/3, insert_new/3, update/4, delete/4,
-         truncate/2, drop/3, create_keyspace/3, create_table/2,
+-export([select_one/4, select_row/4, select/4, insert/3, insert_new/3, update/4,
+         delete/4, truncate/2, drop/3, create_keyspace/3, create_table/2,
          create_index/3, create_view/5]).
 
 %% Query API
@@ -64,6 +64,14 @@
 select_one(Context, Table, Column, Conditions) ->
     {ok, R} = run_select_query(Context, Table, [Column], Conditions),
     single_result(R).
+
+%% @doc Retrieves a single row from a table based on the parameters.
+%% Returns the first row of the result set.
+-spec select_row(context(), table(), columns(), conditions())
+                -> row() | undefined.
+select_row(Context, Table, Columns, Conditions) ->
+    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
+    single_row(R).
 
 %% @doc Retrieves data from a table based on the parameters and
 %% returns all rows of the result set.
@@ -539,4 +547,13 @@ single_result(Result) ->
         Map ->
             [{_, Value}|_] = maps:to_list(Map),
             Value
+    end.
+
+%% Extracts the first row from a query result
+%% The row is a property list of column name, value pairs.
+-spec single_row(result()) -> row() | undefined.
+single_row(Result) ->
+    case cqerl:head(Result) of
+        empty_dataset -> undefined;
+        R -> drop_nulls(R)
     end.
