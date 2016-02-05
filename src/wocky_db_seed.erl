@@ -7,9 +7,10 @@
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 
--export([create_schema/0, create_schema_for/1, recreate_table/2,
-         create_table_indexes/2, create_table_views/2, drop_table_views/2,
-         seed_table/2, foreach_table/3, prepare_tables/2, clear_tables/2]).
+-export([bootstrap/0, bootstrap/1, create_schema/0, create_schema_for/1,
+         foreach_table/3, recreate_table/2, create_table_indexes/2,
+         create_table_views/2, drop_table_views/2, seed_table/2,
+         seed_keyspace/1, prepare_tables/2, clear_tables/2]).
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
          fake_resource/0, random_priority/0, session_info/0, sjid/1, jid/3,
@@ -20,12 +21,23 @@
 %% Helpers
 %%====================================================================
 
+bootstrap() ->
+    bootstrap(shared),
+    bootstrap(?LOCAL_CONTEXT).
+
+bootstrap(Context) ->
+    create_schema_for(Context),
+    seed_keyspace(Context).
+
 create_schema() ->
     create_schema_for(shared),
     create_schema_for(?LOCAL_CONTEXT).
 
 create_schema_for(Context) ->
     prepare_tables(Context, keyspace_tables(Context)).
+
+foreach_table(Context, Fun, Tables) ->
+    lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
 
 recreate_table(Context, Name) ->
     ok = drop_table_views(Context, Name),
@@ -61,9 +73,11 @@ seed_table(Context, Name) ->
       Data),
     {ok, Data}.
 
-
-foreach_table(Context, Fun, Tables) ->
-    lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
+seed_keyspace(Context) ->
+    foreach_table(
+      Context,
+      fun (_, Table) -> {ok, _} = seed_table(Context, Table), ok end,
+      keyspace_tables(Context)).
 
 prepare_tables(Context, Tables) ->
     ok = wocky_db:create_keyspace(Context, simple, 1),
