@@ -118,7 +118,7 @@ run_insert_query(Context, Table, Values, UseLWT) ->
     query(Context, Query, Values, quorum).
 
 build_insert_query(Table, AllKeys, UseLWT) ->
-    {TTL, Keys} = lists:partition(fun (K) -> K == '[ttl]' end, AllKeys),
+    {TTL, Keys} = lists:partition(fun (K) -> K =:= '[ttl]' end, AllKeys),
     ["INSERT INTO ", atom_to_list(Table), " ", names(Keys),
      " VALUES ", placeholders(length(Keys)), use_lwt(UseLWT),
      ttl_option(TTL)].
@@ -238,7 +238,7 @@ column_strings(Cols) ->
 
 column_type({map, Type1, Type2}) ->
     ["map<", atom_to_list(Type1), ",", atom_to_list(Type2), ">"];
-column_type({Coll, Type}) when Coll == set; Coll == list ->
+column_type({Coll, Type}) when Coll =:= set; Coll =:= list ->
     [atom_to_list(Coll), "<", atom_to_list(Type), ">"];
 column_type(Type) when is_atom(Type) ->
     atom_to_list(Type).

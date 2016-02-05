@@ -107,7 +107,7 @@ check_password(LUser, LServer, Password) ->
 
                 {error, _}->
                     %% Not a SCRAM password
-                    Password == StoredPassword
+                    Password =:= StoredPassword
                 end;
 
         {error, _} ->
