@@ -103,7 +103,9 @@ keyspace_tables(_) -> [
     user,
     last_activity,
     offline_msg,
-    roster
+    roster,
+    session,
+    user_to_sids
 ].
 
 %% A lookup table that maps globally unique handle to user account id
