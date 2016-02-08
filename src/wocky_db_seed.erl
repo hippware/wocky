@@ -94,11 +94,11 @@ clear_tables(Context, Tables) ->
 %% error returned from the server that says "this prepared query doesn't exist".
 %% TODO: Fix cqerl so that it properly handles the server message indicating
 %% that a prepared query no longer exists in the cache. Example:
-%% {error, {9472, <<"Prepared query with ID a458ba918d03a5959c2fb8498882cfc5
+%% `{error, {9472, <<"Prepared query with ID a458ba918d03a5959c2fb8498882cfc5
 %% not found (either the query was not prepared on this host (maybe the host
 %% has been restarted?) or you have prepared too many queries and it has been
 %% evicted from the internal cache)">>,
-%% <<164,88,186,145,141,3,165,149,156,47,184,73,136,130,207,197>>}}
+%% <<164,88,186,145,141,3,165,149,156,47,184,73,136,130,207,197>>}}'
 flush_cqerl_prepared_query_cache() ->
     ok = supervisor:terminate_child(cqerl_sup, cqerl_cache),
     {ok, _} = supervisor:restart_child(cqerl_sup, cqerl_cache),
