@@ -53,6 +53,7 @@ before_all(Backend) ->
 after_all(_) ->
     mod_hxep:stop(?SERVER),
     ok = wocky_app:stop(),
+    lists:foreach(fun(M) -> true = meck:validate(M) end, mecks()),
     lists:foreach(fun meck:unload/1, mecks()).
 
 before_each() ->

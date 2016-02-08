@@ -16,7 +16,8 @@
 -export([
    start/2,
    stop/1,
-   handle_iq/3
+   handle_iq/3,
+   make_file_id/0
         ]).
 
 -ifdef(TEST).
@@ -100,7 +101,7 @@ check_fields(Fields, [H|T]) ->
 
 send_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
                      ReqFields) ->
-    FileID = ossp_uuid:make(v1, text),
+    FileID = make_file_id(),
     MimeType = proplists:get_value(<<"mime-type">>, ReqFields),
 
     {Headers, RespFields} =
@@ -153,3 +154,6 @@ backend() ->
     list_to_atom("mod_hxep_" ++
       atom_to_list(
         ejabberd_config:get_local_option(hxep_backend))).
+
+make_file_id() ->
+    ossp_uuid:make(v1, text).

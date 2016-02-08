@@ -45,11 +45,12 @@ before_all() ->
                 end).
 
 after_all(_) ->
+    true = meck:validate(ejabberd_config),
     meck:unload(ejabberd_config),
     ok = wocky_app:stop().
 
 make_file(Size) ->
-    ID = ossp_uuid:make(v1, text),
+    ID = mod_hxep:make_file_id(),
     Data = crypto:rand_bytes(Size),
     {ID, Data}.
 
@@ -71,7 +72,7 @@ write_file(ID, Data, User, ChunkSize, Size, ChunkList) ->
                [write_chunk(ID, ToWrite) | ChunkList]).
 
 write_chunk(FileID, Data) ->
-    ChunkID = ossp_uuid:make(v1, text),
+    ChunkID = mod_hxep:make_file_id(),
     V = #{chunk_id => ChunkID, file_id => FileID, data => Data},
     ok = wocky_db:insert(?SERVER, media_data, V),
     ChunkID.
@@ -108,7 +109,7 @@ test_read() ->
        { "Check return value for non-existant files",
          [
           ?_assertEqual(not_found, francus:open_read(?SERVER,
-                                                    ossp_uuid:make(v1, text)))
+                                                     mod_hxep:make_file_id()))
          ]
        },
        { "Read in smaller chunks",
@@ -146,7 +147,7 @@ test_write() ->
        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
          [?_test(
              begin
-                 ID = ossp_uuid:make(v1, text),
+                 ID = mod_hxep:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
                                               wocky_db_user:create_id(),
                                               ?CONTENT_TYPE),
@@ -178,8 +179,7 @@ test_delete() ->
        },
        { "Non-existant files should still return ok on delete",
          [
-          ?_assertEqual(ok, francus:delete(?SERVER,
-                                                  ossp_uuid:make(v1, text)))
+          ?_assertEqual(ok, francus:delete(?SERVER, mod_hxep:make_file_id()))
          ]
        },
        { "Check that the DB is properly empty after we deleted everything",
@@ -215,7 +215,7 @@ test_accessors() ->
          [?_test(
              begin
                  User = wocky_db_user:create_id(),
-                 {ok, F} = francus:open_write(?SERVER, ossp_uuid:make(v1, text),
+                 {ok, F} = francus:open_write(?SERVER, mod_hxep:make_file_id(),
                                               User, ?CONTENT_TYPE),
                  ?assertEqual(?CONTENT_TYPE, francus:content_type(F)),
                  ?assertEqual(User, francus:owner(F))
