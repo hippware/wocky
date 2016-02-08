@@ -78,7 +78,7 @@ test_create_user_with_id() ->
 test_get_password() ->
   { "get_password", setup, fun before_each/0, fun after_each/1, [
     { "returns password if user exists", [
-      ?_assertMatch(?PASS, get_password(?USER, ?SERVER))
+      ?_assertMatch(?SCRAM, get_password(?USER, ?SERVER))
     ]},
     { "returns {error, not_found} if user does not exist", [
       ?_assertMatch({error, not_found}, get_password(?BADUSER, ?SERVER))

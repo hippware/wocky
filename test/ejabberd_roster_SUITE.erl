@@ -50,25 +50,13 @@ suite() ->
 %% Init & teardown
 %%--------------------------------------------------------------------
 
-
 init_per_suite(Config) ->
-    net_kernel:start(['mongooseim@localhost', longnames]),
-
-    wocky_app:start(),
-
-    application:load(ejabberd),
-    DataDir = proplists:get_value(data_dir, Config),
-    ConfigPath = filename:join([DataDir, "ejabberd.cfg"]),
-    application:set_env(ejabberd, config, ConfigPath),
-    application:ensure_all_started(ejabberd),
-
+    ok = test_helper:start_ejabberd(),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config),
-    application:stop(ejabberd),
-    wocky_app:stop(),
-    ok.
+    test_helper:stop_ejabberd().
 
 init_per_group(_GroupName, Config) ->
     escalus:create_users(Config, {by_name, [alice, bob]}).
@@ -80,13 +68,13 @@ init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
 end_per_testcase(CaseName, Config)
-  when CaseName == add_contact; CaseName == roster_push ->
+  when CaseName =:= add_contact; CaseName =:= roster_push ->
     [{_, UserSpec} | _] = escalus_config:get_config(escalus_users, Config),
     remove_roster(Config, UserSpec),
     escalus:end_per_testcase(CaseName, Config);
 end_per_testcase(CaseName, Config)
-  when CaseName == subscribe; CaseName == subscribe_decline;
-       CaseName == unsubscribe; CaseName == versioning ->
+  when CaseName =:= subscribe; CaseName =:= subscribe_decline;
+       CaseName =:= unsubscribe; CaseName =:= versioning ->
     [{_, UserSpec1}, {_, UserSpec2} | _] =
         escalus_config:get_config(escalus_users, Config),
     remove_roster(Config, UserSpec1),
