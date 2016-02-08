@@ -26,21 +26,24 @@ before_all(Backend) ->
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
     meck:expect(ejabberd_config, add_local_option, 2, {atomic, ok}),
     meck:expect(ejabberd_config, get_local_option,
-                fun(hxep_backend) -> Backend
+                fun(hxep_backend) -> Backend;
+                   (s3_bucket) -> "hxep-test";
+                   (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
+                   (s3_secret_key) -> "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"
                 end),
     meck:expect(ejabberd_config, get_global_option,
                 fun(francus_chunk_size) -> undefined % Use the default
                 end),
 
-    meck:expect(ejabberd_sm, register_iq_handler, 4, ok),
-    meck:expect(ejabberd_sm, unregister_iq_handler, 2, ok),
+    meck:expect(gen_iq_handler, add_iq_handler, 6, ok),
+    meck:expect(gen_iq_handler, remove_iq_handler, 3, ok),
 
     meck:expect(httpd_util, rfc1123_date, 1,
                 "Fri, 29 Jan 2016 02:54:44 GMT"),
 
     meck:expect(ossp_uuid, make, 2, file_uuid()),
 
-    meck:expect(cowboy, start_http, 4, ok),
+    meck:expect(cowboy, start_https, 4, ok),
 
     meck:expect(mod_hxep_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 128)) end),
@@ -89,7 +92,7 @@ file_uuid() ->
     <<"a65ecb4e-c633-11e5-9fdc-080027f70e96">>.
 
 test_user() ->
-    <<"testuser@localhost/myphone">>.
+    <<"testuser@localhost.example.com/myphone">>.
 
 test_user_jid() -> jid:from_binary(test_user()).
 
@@ -150,8 +153,8 @@ expected_upload_packet(francus) ->
       "<id>a65ecb4e-c633-11e5-9fdc-080027f70e96</id>"
       "<jid>testuser@localhost.example.com/"
       "a65ecb4e-c633-11e5-9fdc-080027f70e96</jid>"
-      "<url>http://localhost.example.com:1025/testuser/"
-      "a65ecb4e-c633-11e5-9fdc-080027f70e96</url>"
+      "<url>https://localhost.example.com:1025/users/testuser/"
+      "files/a65ecb4e-c633-11e5-9fdc-080027f70e96</url>"
       "<method>PUT</method></upload></iq>">>.
 
 expected_download_packet(s3) ->
@@ -169,6 +172,6 @@ expected_download_packet(francus) ->
       "BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG"
       "BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG"
       "BgYGBgYGBgYGBgY='/></headers>"
-      "<url>http://localhost.example.com:1025/testuser/"
-      "a65ecb4e-c633-11e5-9fdc-080027f70e96</url>"
+      "<url>https://localhost.example.com:1025/users/testuser/"
+      "files/a65ecb4e-c633-11e5-9fdc-080027f70e96</url>"
       "<method>GET</method></download></iq>">>.

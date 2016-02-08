@@ -16,11 +16,12 @@
 -export([
    start/2,
    stop/1,
-   handle_iq/3,
-
-   % Exports for testing only:
-   backend/0
+   handle_iq/3
         ]).
+
+-ifdef(TEST).
+-export([backend/0]).
+-endif.
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
@@ -37,11 +38,12 @@
 
 start(Host, Opts) ->
     set_backend_from_opts(Opts),
-    (backend()):start(),
-    ejabberd_sm:register_iq_handler(Host, ?HXEP_NS, ?MODULE, handle_iq).
+    (backend()):start(Opts),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?HXEP_NS,
+                                  ?MODULE, handle_iq, parallel).
 
 stop(Host) ->
-    _ = ejabberd_sm:unregister_iq_handler(Host, ?HXEP_NS),
+    _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?HXEP_NS),
     (backend()):stop().
 
 -spec handle_iq(From :: ejabberd:jid(),
@@ -49,34 +51,29 @@ stop(Host) ->
                 IQ :: iq()) -> ignore | iq().
 handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     Req = #request{from_jid = FromJID, to_jid = ToJID, iq = IQ},
-    case Type of
-        get -> do_get(Req, ReqEl);
-        set -> do_set(Req, ReqEl);
-        _ -> ignore
-    end.
+    handle_request(Req, Type, ReqEl).
 
-do_get(Req, ReqEl = #xmlel{name = <<"download-request">>}) ->
-    process_download_request(Req, ReqEl);
-do_get(_, _) -> ignore.
+handle_request(Req, get, ReqEl = #xmlel{name = <<"download-request">>}) ->
+    handle_download_request(Req, ReqEl);
+handle_request(Req, set, ReqEl = #xmlel{name = <<"upload-request">>}) ->
+    handle_upload_request(Req, ReqEl);
+handle_request(_, _, _) ->
+    ignore.
 
-do_set(Req, ReqEl = #xmlel{name = <<"upload-request">>}) ->
-    process_upload_request(Req, ReqEl);
-do_set(_, _) -> ignore.
-
-process_download_request(Req, DR) ->
+handle_download_request(Req = #request{iq = IQ}, DR) ->
     case extract_fields(DR, [<<"id">>], []) of
         failed ->
-            ignore;
+            send_error_response(IQ, ?ERR_BAD_REQUEST);
         {ok, Fields} ->
-            send_download_resposne(Req, Fields)
+            send_download_respone(Req, Fields)
     end.
 
-process_upload_request(Req, UR) ->
+handle_upload_request(Req = #request{iq = IQ}, UR) ->
     RequiredFields = [<<"filename">>, <<"size">>, <<"mime-type">>],
     OptionalFields = [<<"width">>, <<"height">>, <<"purpose">>],
     case extract_fields(UR, RequiredFields, OptionalFields) of
         failed ->
-            ignore;
+            send_error_response(IQ, ?ERR_BAD_REQUEST);
         {ok, Fields} ->
             send_upload_response(Req, Fields)
     end.
@@ -109,10 +106,10 @@ send_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
     {Headers, RespFields} =
         (backend()):make_upload_response(FromJID, ToJID, FileID, MimeType),
 
-    FullFields = common_fields(FromJID, ToJID, FileID) ++ RespFields,
+    FullFields = common_fields(FromJID, FileID) ++ RespFields,
     send_response(Req, Headers, FullFields, <<"upload">>).
 
-send_download_resposne(Req = #request{from_jid = FromJID, to_jid = ToJID},
+send_download_respone(Req = #request{from_jid = FromJID, to_jid = ToJID},
                        ReqFields) ->
     FileID = proplists:get_value(<<"id">>, ReqFields),
 
@@ -133,9 +130,10 @@ send_response(#request{iq = IQ}, Headers, RespFields, RespType) ->
 
     IQ#iq{type = result, sub_el = ActionElement}.
 
-common_fields(FromJID, ToJID, FileID) ->
-    User = FromJID#jid.luser,
-    Server = ToJID#jid.lserver,
+send_error_response(IQ = #iq{sub_el = SubEl}, Error) ->
+    IQ#iq{type = error, sub_el = [SubEl, Error]}.
+
+common_fields(#jid{luser = User, lserver = Server}, FileID) ->
     [{<<"id">>, FileID},
      {<<"jid">>, jid:to_binary(jid:make(User, Server, FileID))}].
 

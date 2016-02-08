@@ -196,8 +196,12 @@ file_updown_story(Config) ->
         FileSize = byte_size(ImageData),
         QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
                                     FileSize, <<"image/png">>),
+        FinalQueryStanza =
+        escalus_stanza:to(
+          escalus_stanza:from(QueryStanza, alice),
+          escalus_users:get_server(Config, alice)),
 
-        ResultStanza = escalus:send_and_wait(Alice, QueryStanza),
+        ResultStanza = escalus:send_and_wait(Alice, FinalQueryStanza),
 
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
 
@@ -224,9 +228,13 @@ file_updown_story(Config) ->
 
         %% Download
         DLQueryStanza = download_stanza(<<"456">>, FileID),
-        escalus:send(Alice, DLQueryStanza),
+        FinalDLStanza =
+        escalus_stanza:to(
+          escalus_stanza:from(DLQueryStanza, alice),
+          escalus_users:get_server(Config, alice)),
 
-        DLResultStanza = escalus:wait_for_stanza(Alice),
+        DLResultStanza = escalus:send_and_wait(Alice, FinalDLStanza),
+
         escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
 
         DownloadEl = exml_query:path(DLResultStanza,

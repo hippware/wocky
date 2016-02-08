@@ -10,25 +10,31 @@
          delete/2,
          owner/1,
          content_type/1,
-         size/1,
-
-         % Exported for testing purposes only
-         default_chunk_size/0
+         size/1
         ]).
+
+-ifdef(TEST).
+-export([default_chunk_size/0]).
+-endif.
 
 -export_type([
               francus_file/0
              ]).
 
+-type file_id() :: binary().
+-type user_id() :: binary().
+-type content() :: binary().
+-type content_type() :: binary().
+
 -record(state, {
-          file_id :: binary(),
-          user_id :: binary(),
-          content_type :: binary(),
+          file_id :: file_id(),
+          user_id :: user_id(),
+          content_type :: content_type(),
           context :: wocky_db:context(),
-          pending = <<>> :: binary(),
+          pending = <<>> :: content(),
           size = 0 :: non_neg_integer(),
           committed_size = 0 :: non_neg_integer(),
-          chunks = [] :: [binary()]
+          chunks = [] :: [content()]
          }).
 
 -opaque francus_file() :: #state{}.
@@ -37,7 +43,7 @@
 
 %%% WRITE %%%
 
--spec open_write(wocky_db:context(), binary(), binary(), binary()) ->
+-spec open_write(wocky_db:context(), file_id(), user_id(), content_type()) ->
     {ok, francus_file()}.
 open_write(Context, FileID, UserID, ContentType) ->
     Values = #{id => FileID,
@@ -50,7 +56,7 @@ open_write(Context, FileID, UserID, ContentType) ->
                 content_type = ContentType,
                 context = Context}}.
 
--spec write(francus_file(), binary()) -> francus_file().
+-spec write(francus_file(), content()) -> francus_file().
 write(S = #state{pending = Pending, size = Size}, Data) ->
     NewData = <<Pending/binary, Data/binary>>,
     NewSize = Size + byte_size(Data),
@@ -72,11 +78,11 @@ commit(S = #state{file_id = FileID, committed_size = CS, context = Context},
     maybe_commit(S#state{committed_size = NewCommittedSize}, Remaining).
 
 commit_chunk(FileID, Context, NewCommittedSize, Data) ->
-    % This would ideally be a batch query. However apparently C* doesn't
-    % particularly like batches where the total data size is > 50kb. This is
-    % configurable (batch_size_fail_threshold_in_kb) but the comments
-    % specifically advise against it, waving their hands about "node
-    % instability". Which sounds bad.
+    %% This would ideally be a batch query. However apparently C* doesn't
+    %% particularly like batches where the total data size is > 50kb. This is
+    %% configurable (batch_size_fail_threshold_in_kb) but the comments
+    %% specifically advise against it, waving their hands about "node
+    %% instability". Which sounds bad.
     ChunkID = ossp_uuid:make(v1, text),
     Q = "UPDATE media SET chunks = chunks + ?, size = ? WHERE id = ?",
     V1 = #{id => FileID,
@@ -99,7 +105,7 @@ close(#state{file_id = FileID, committed_size = CS,
 
 %%% READ %%%%
 
--spec open_read(wocky_db:context(), binary()) ->
+-spec open_read(wocky_db:context(), file_id()) ->
     {ok, francus_file()} | not_found.
 open_read(Context, FileID) ->
     Row = wocky_db:select_row(Context, media,
@@ -123,11 +129,11 @@ maybe_add_chunks(State, #{chunks := Chunks}) -> State#state{chunks = Chunks};
 % An empty file will have no chunks entry in the map
 maybe_add_chunks(State, _) -> State.
 
--spec read(francus_file()) -> eof | {francus_file(), binary()}.
+-spec read(francus_file()) -> eof | {francus_file(), content()}.
 read(State) -> read(State, infinity).
 
 -spec read(francus_file(), pos_integer() | infinity) ->
-    eof | {francus_file(), binary()}.
+    eof | {francus_file(), content()}.
 % End of file reached:
 read(#state{chunks = [], pending = <<>>}, _) -> eof;
 % Read everything from DB, but still have some to return:
@@ -153,11 +159,11 @@ read_chunk(S = #state{context = Context, chunks = [Chunk | Rest],
 
 %%% DELETE %%%
 
--spec delete(wocky_db:context(), binary()) -> not_found | ok.
+-spec delete(wocky_db:context(), file_id()) -> ok.
 delete(Context, FileID) ->
     case open_read(Context, FileID) of
         not_found ->
-            not_found;
+            ok;
         {ok, File} ->
             delete_file(File)
     end.
@@ -175,10 +181,10 @@ delete_chunk(Context, Chunk) ->
 delete_metadata(Context, FileID) ->
     wocky_db:delete(Context, media, all, #{id => FileID}).
 
--spec owner(francus_file()) -> binary().
+-spec owner(francus_file()) -> user_id().
 owner(#state{user_id = Owner}) -> wocky_db_user:normalize_id(Owner).
 
--spec content_type(francus_file()) -> binary().
+-spec content_type(francus_file()) -> content_type().
 content_type(#state{content_type = ContentType}) -> ContentType.
 
 -spec size(francus_file()) -> non_neg_integer().
@@ -187,7 +193,7 @@ size(#state{size = Size}) -> Size.
 default_chunk_size() -> ?DEFAULT_CHUNK_SIZE.
 
 chunk_size() ->
-    case ejabberd_config:get_global_option(francus_chunk_size) of
-        X when is_integer(X) -> X;
-        _ -> ?DEFAULT_CHUNK_SIZE
+    case application:get_env(wocky, francus_chunk_size) of
+        undefined -> default_chunk_size();
+        {ok, X} when is_integer(X) -> X
     end.

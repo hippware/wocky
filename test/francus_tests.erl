@@ -176,9 +176,9 @@ test_delete() ->
                  ?assertEqual(not_found, francus:open_read(?SERVER, ID))
              end) || {ID, _} <- Config#config.files]
        },
-       { "Non-existant files should fail on delete",
+       { "Non-existant files should still return ok on delete",
          [
-          ?_assertEqual(not_found, francus:delete(?SERVER,
+          ?_assertEqual(ok, francus:delete(?SERVER,
                                                   ossp_uuid:make(v1, text)))
          ]
        },

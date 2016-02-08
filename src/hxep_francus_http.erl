@@ -24,8 +24,8 @@ handle(Req, State) ->
 
 handle_req(Req) ->
     case passes_auth(Req) of
-        {true, AR = #hxep_request{op = get}, Req2} -> do_get(AR, Req2);
-        {true, AR = #hxep_request{op = put}, Req2} -> do_put(AR, Req2);
+        {AR = #hxep_request{op = get}, Req2} -> do_get(AR, Req2);
+        {AR = #hxep_request{op = put}, Req2} -> do_put(AR, Req2);
         {false, Req2} ->
             success(cowboy_req:reply(401, plain_header(),
                                      "Unauthorised request", Req2))
@@ -36,28 +36,21 @@ passes_auth(Req) ->
     {User, File} = user_file(Path),
     {Auth, Req3} = cowboy_req:header(<<"authorization">>, Req2, <<>>),
     AuthReqKey = {User, File, Auth},
-    case ets:lookup(hxep_requests, AuthReqKey) of
-        [AuthReq = #hxep_request{tref = TRef}] ->
-            % Timer may already have been cancelled - ignore return:
-            _ = timer:cancel(TRef),
-            ets:delete_object(hxep_requests, AuthReq),
-            {true, AuthReq, Req3};
-        [] ->
-            {false, Req3}
-    end.
+    AuthResult = hxep_req_tracker:get_delete(AuthReqKey),
+    {AuthResult, Req3}.
 
 plain_header() -> [{<<"content-type">>, <<"text/plain">>}].
 
 user_file(<<$/, Path/binary>>) ->
     case binary:split(Path, <<$/>>, [global]) of
-        [User, File] -> {User, File};
+        [<<"users">>, User, <<"files">>, File] -> {User, File};
         _ -> {<<>>, <<>>}
     end.
 
 do_get(#hxep_request{request = {_User, FileID, _},
                      user_server = Context}, Req) ->
     case francus:open_read(Context, FileID) of
-        % TODO: Chunked writes for larger files
+        %% TODO: Chunked writes for larger files
         {ok, F} -> send_file(F, Req);
         not_found ->
             success(cowboy_req:reply(404, plain_header(), "Not found", Req))

@@ -6,14 +6,21 @@
 
 -include_lib("ejabberd/include/jlib.hrl").
 
--export([start/0,
+-export([start/1,
          stop/0,
          make_download_response/3,
          make_upload_response/4]).
 
-start() -> ok.
+start(Opts) ->
+    Configs = [s3_bucket, s3_access_key_id, s3_secret_key],
+    lists:foreach(fun(C) -> extract_config(Opts, C) end, Configs),
+    ok.
 
 stop() -> ok.
+
+extract_config(Opts, Config) ->
+    Value = proplists:get_value(Config, Opts),
+    ejabberd_config:add_local_option(Config, Value).
 
 make_download_response(FromJID, _ToJID, FileID) ->
     User = FromJID#jid.luser,
@@ -55,19 +62,22 @@ s3_url(User, ID) ->
     iolist_to_binary(["https://", host(), "/", path(User, ID)]).
 
 bucket() ->
-    <<"hxep-test">>.
+    ejabberd_config:get_local_option(s3_bucket).
 
 host() ->
-    <<(bucket())/binary, ".s3.amazonaws.com">>.
+    <<(list_to_binary(bucket()))/binary, ".s3.amazonaws.com">>.
+
+access_key_id() ->
+    ejabberd_config:get_local_option(s3_access_key_id).
+
+secret_key() ->
+    ejabberd_config:get_local_option(s3_secret_key).
 
 path(User, File) ->
     [User, "/", File].
 
 -spec make_auth(atom(), iodata(), iodata(), iodata(), iodata()) -> binary().
 make_auth(Method, Date, MimeType, User, File) ->
-    AccessKey = "AKIAI4OZWBAA4SP6Y3WA",
-    SecretKey = "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",
-
     StringToSign = [string:to_upper(atom_to_list(Method)), $\n,
                     "", $\n, % ContentMD5
                     MimeType, $\n,
@@ -76,6 +86,6 @@ make_auth(Method, Date, MimeType, User, File) ->
                     [$/, bucket(), $/],
                     path(User, File)
                    ],
-    Signature = base64:encode(crypto:hmac(sha, SecretKey, StringToSign)),
-    iolist_to_binary(["AWS ", AccessKey, $:, Signature]).
+    Signature = base64:encode(crypto:hmac(sha, secret_key(), StringToSign)),
+    iolist_to_binary(["AWS ", access_key_id(), $:, Signature]).
 
