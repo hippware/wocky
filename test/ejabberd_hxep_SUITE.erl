@@ -29,22 +29,12 @@ groups() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    net_kernel:start(['mongooseim@localhost', longnames]),
-
-    wocky_app:start(),
-
-    application:load(ejabberd),
-    DataDir = proplists:get_value(data_dir, Config),
-    ConfigPath = filename:join([DataDir, "ejabberd.cfg"]),
-    application:set_env(ejabberd, config, ConfigPath),
-    application:ensure_all_started(ejabberd),
-
+    test_helper:start_ejabberd(),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config),
-    application:stop(ejabberd),
-    wocky_app:stop(),
+    test_helper:stop_ejabberd(),
     wocky_db_seed:clear_tables(<<"localhost">>, [media, media_data]),
     ok.
 
