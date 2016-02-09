@@ -149,7 +149,7 @@ get_last_activity(Stanza) ->
     list_to_integer(binary_to_list(S)).
 
 get_last_status(Stanza) ->
-    exml_query:path(Stanza, [{element, <<"query">>}, cdata]).
+    get_cdata(Stanza, <<"query">>).
 
 
 %%--------------------------------------------------------------------
@@ -188,71 +188,77 @@ login_send_presence(Config, User) ->
 
 file_updown_story(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ImageData = load_test_file(Config),
+        FileSize = byte_size(ImageData),
+
 
         %%% Upload
-        DataDir = proplists:get_value(data_dir, Config),
-        ImageFile = filename:join(DataDir, "test_image.png"),
-        {ok, ImageData} = file:read_file(ImageFile),
-        FileSize = byte_size(ImageData),
         QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
                                     FileSize, <<"image/png">>),
-        FinalQueryStanza =
-        escalus_stanza:to(
-          escalus_stanza:from(QueryStanza, alice),
-          escalus_users:get_server(Config, alice)),
-
+        FinalQueryStanza = add_to_from(Config, QueryStanza),
         ResultStanza = escalus:send_and_wait(Alice, FinalQueryStanza),
-
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-
-        UploadEl = exml_query:path(ResultStanza, [{element, <<"upload">>}]),
-        URL = exml_query:path(UploadEl, [{element, <<"url">>}, cdata]),
-        Method = exml_query:path(UploadEl, [{element, <<"method">>}, cdata]),
-        HeadersEl = exml_query:path(UploadEl, [{element, <<"headers">>}]),
-        FileID = exml_query:path(UploadEl, [{element, <<"id">>}, cdata]),
-        Headers = get_headers(HeadersEl),
-        ContentType = proplists:get_value("content-type", Headers),
-        FinalHeaders = Headers -- [ContentType],
-        {ok, Result} = httpc:request(list_to_atom(
-                                       string:to_lower(
-                                         binary_to_list(Method))),
-                                     {binary_to_list(URL),
-                                      FinalHeaders,
-                                      ContentType,
-                                      ImageData},
-                                     [], []),
-        {Response, _RespHeaders, RespContent} = Result,
-        {_, 200, "OK"} = Response,
-        [] = RespContent,
+        FileID = do_upload(ResultStanza, ImageData),
 
 
         %% Download
         DLQueryStanza = download_stanza(<<"456">>, FileID),
-        FinalDLStanza =
-        escalus_stanza:to(
-          escalus_stanza:from(DLQueryStanza, alice),
-          escalus_users:get_server(Config, alice)),
-
+        FinalDLStanza = add_to_from(Config, DLQueryStanza),
         DLResultStanza = escalus:send_and_wait(Alice, FinalDLStanza),
-
         escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
-
-        DownloadEl = exml_query:path(DLResultStanza,
-                                     [{element, <<"download">>}]),
-        DLURL = exml_query:path(DownloadEl, [{element, <<"url">>}, cdata]),
-        DLHeadersEl = exml_query:path(DownloadEl, [{element, <<"headers">>}]),
-        DLHeaders = get_headers(DLHeadersEl),
-
-        {ok, DLResult} = httpc:request(get,
-                                       {binary_to_list(DLURL), DLHeaders},
-                                       [], []),
-        {DLResponse, DLRespHeaders, DLRespContent} = DLResult,
-        {_, 200, "OK"} = DLResponse,
-        true = lists:member({"content-length", integer_to_list(FileSize)},
-                            DLRespHeaders),
-        true = lists:member({"content-type","image/png"}, DLRespHeaders),
-        ImageData = list_to_binary(DLRespContent)
+        ImageData = do_download(DLResultStanza)
     end).
+
+load_test_file(Config) ->
+    DataDir = proplists:get_value(data_dir, Config),
+    ImageFile = filename:join(DataDir, "test_image.png"),
+    {ok, ImageData} = file:read_file(ImageFile),
+    ImageData.
+
+add_to_from(Config, Stanza) ->
+    escalus_stanza:to(
+      escalus_stanza:from(Stanza, alice),
+      escalus_users:get_server(Config, alice)).
+
+do_upload(ResultStanza, ImageData) ->
+    UploadEl = get_element(ResultStanza, <<"upload">>),
+    URL = get_cdata(UploadEl, <<"url">>),
+    Method = get_cdata(UploadEl, <<"method">>),
+    HeadersEl = get_element(UploadEl, <<"headers">>),
+    FileID = get_cdata(UploadEl, <<"id">>),
+    Headers = get_headers(HeadersEl),
+    ContentType = proplists:get_value("content-type", Headers),
+    FinalHeaders = Headers -- [ContentType],
+    {ok, Result} = httpc:request(list_to_atom(
+                                   string:to_lower(
+                                     binary_to_list(Method))),
+                                 {binary_to_list(URL),
+                                  FinalHeaders,
+                                  ContentType,
+                                  ImageData},
+                                 [], []),
+    {Response, _RespHeaders, RespContent} = Result,
+    {_, 200, "OK"} = Response,
+    [] = RespContent,
+    FileID.
+
+do_download(ResultStanza) ->
+    DownloadEl = get_element(ResultStanza, <<"download">>),
+    URL = get_cdata(DownloadEl, <<"url">>),
+    HeadersEl = get_element(DownloadEl, <<"headers">>),
+    Headers = get_headers(HeadersEl),
+
+    {ok, Result} = httpc:request(get,
+                                 {binary_to_list(URL), Headers},
+                                 [], []),
+    {Response, RespHeaders, RespContent} = Result,
+    {_, 200, "OK"} = Response,
+    RespBin = list_to_binary(RespContent),
+    true = lists:member({"content-length",
+                         integer_to_list(byte_size(RespBin))},
+                        RespHeaders),
+    true = lists:member({"content-type","image/png"}, RespHeaders),
+    RespBin.
 
 request_wrapper(ID, Type, Name, DataFields) ->
     #xmlel{name = <<"iq">>,
@@ -285,3 +291,8 @@ get_header(HeaderEl) ->
       [binary_to_list(exml_query:path(HeaderEl, [{attr, Attr}]))
        || Attr <- [<<"name">>, <<"value">>]]).
 
+get_cdata(Element, Name) ->
+    exml_query:path(Element, [{element, Name}, cdata]).
+
+get_element(ParentElement, Name) ->
+    exml_query:path(ParentElement, [{element, Name}]).
