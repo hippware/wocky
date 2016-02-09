@@ -5,7 +5,7 @@
   {vsn, git},
   {modules, []},
   {registered, []},
-  {applications, [lager, ossp_uuid, cqerl]},
+  {applications, [sasl, lager, ossp_uuid, cqerl]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [
