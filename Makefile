@@ -17,8 +17,8 @@ eunit:
 # Example:
 # $ make ct SUITE=amp_resolver
 ct:
-	@if [ "$(SUITE)" ]; then $(TEST_REBAR) ct --suite $(SUITE);\
-	else $(TEST_REBAR) ct; fi
+	@if [ "$(SUITE)" ]; then $(REBAR) ct --suite $(SUITE);\
+	else $(REBAR) ct; fi
 
 %:
 	$(REBAR) $@
