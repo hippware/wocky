@@ -51,7 +51,8 @@ do_get(#hxep_request{request = {_User, FileID, _},
                      user_server = Context}, Req) ->
     case francus:open_read(Context, FileID) of
         %% TODO: Chunked writes for larger files
-        {ok, F} -> send_file(F, Req);
+        {ok, F} ->
+            send_file(F, Req);
         not_found ->
             success(cowboy_req:reply(404, plain_header(), "Not found", Req))
     end.
@@ -63,21 +64,51 @@ send_file(File, Req) ->
                                francus:content_type(File2)}],
                              Data, Req)).
 
-do_put(#hxep_request{request = {User, FileID, _},
-                     user_server = Context}, Req) ->
+do_put(Request = #hxep_request{request = {User, FileID, _},
+                               user_server = Context}, Req) ->
     {ContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
     {ok, F} = francus:open_write(Context, FileID, User, ContentType),
-    write_data(F, Req2).
+    write_data(F, Request, Req2).
 
-write_data(F, Req) ->
-    {More, Data, Req2} = cowboy_req:body(Req),
-    F2 = francus:write(F, Data),
-    case More of
+write_data(F, Request = #hxep_request{size = SizeRemaining}, Req) ->
+    {Result, Data, NewSizeRemaining, Req2} = get_data(SizeRemaining, Req),
+    Request2 = Request#hxep_request{size = NewSizeRemaining},
+    case Result of
         more ->
-            write_data(F2, Req2);
+            F2 = francus:write(F, Data),
+            write_data(F2, Request2, Req2);
         ok ->
-            ok = francus:close(F2),
-            success(cowboy_req:reply(200, Req2))
+            F2 = francus:write(F, Data),
+            finish_write(F2, Request2, Req2);
+        excess_data ->
+            finish_write(F, Request2, Req2)
+    end.
+
+get_data(SizeRemaining, Req) ->
+    {Result, Data, Req2} = cowboy_req:body(Req),
+    NewSizeRemaining = SizeRemaining - byte_size(Data),
+    case NewSizeRemaining of
+        X when X >= 0 -> {Result, Data, NewSizeRemaining, Req2};
+        _ ->             {excess_data, <<>>, NewSizeRemaining, Req2}
+    end.
+
+% Exactly the right number of bytes received and written. All is well.
+finish_write(F, #hxep_request{size = 0}, Req) ->
+    ok = francus:close(F),
+    success(cowboy_req:reply(200, Req));
+
+% Too many or too few bytes received - close and delete the file and send an
+% error code.
+finish_write(F, #hxep_request{request = {_, File, _},
+                              user_server = Context,
+                              size = BytesRemaining}, Req) ->
+    ok = francus:close(F),
+    francus:delete(Context, File),
+    case BytesRemaining of
+        X when X > 0 ->
+            success(cowboy_req:reply(400, [], "File was truncated", Req));
+        X when X < 0 ->
+            success(cowboy_req:reply(413, Req))
     end.
 
 success({ok, Req}) -> Req.

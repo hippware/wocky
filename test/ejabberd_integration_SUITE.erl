@@ -25,7 +25,11 @@ groups() ->
                                   server_uptime_story,
                                   unknown_user_acivity_story]},
      {offline, [sequence], [offline_message_story]},
-     {hxep, [sequence], [file_updown_story]}
+     {hxep, [sequence], [file_updown_story,
+                         file_up_too_big_story,
+                         file_up_too_small_story,
+                         request_too_big_story
+                        ]}
     ].
 
 suite() ->
@@ -193,12 +197,10 @@ file_updown_story(Config) ->
 
 
         %%% Upload
-        QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
-                                    FileSize, <<"image/png">>),
-        FinalQueryStanza = add_to_from(Config, QueryStanza),
-        ResultStanza = escalus:send_and_wait(Alice, FinalQueryStanza),
+        {QueryStanza, ResultStanza} =
+        common_upload_request(FileSize, Config, Alice),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData),
+        FileID = do_upload(ResultStanza, ImageData, 200),
 
 
         %% Download
@@ -208,6 +210,43 @@ file_updown_story(Config) ->
         escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
         ImageData = do_download(DLResultStanza)
     end).
+
+file_up_too_big_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ImageData = load_test_file(Config),
+        FileSize = byte_size(ImageData),
+
+        {QueryStanza, ResultStanza} =
+        common_upload_request(FileSize div 2, Config, Alice),
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+        do_upload(ResultStanza, ImageData, 413)
+    end).
+
+file_up_too_small_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ImageData = load_test_file(Config),
+        FileSize = byte_size(ImageData),
+
+        {QueryStanza, ResultStanza} =
+        common_upload_request(FileSize * 2, Config, Alice),
+
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+        do_upload(ResultStanza, ImageData, 400)
+    end).
+
+request_too_big_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        {_, ResultStanza} = common_upload_request((1024*1024*10)+1,
+                                             Config, Alice),
+        escalus:assert(is_iq_error, ResultStanza)
+    end).
+
+common_upload_request(Size, Config, User) ->
+    QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
+                                Size, <<"image/png">>),
+    FinalQueryStanza = add_to_from(Config, QueryStanza),
+    ResultStanza = escalus:send_and_wait(User, FinalQueryStanza),
+    {QueryStanza, ResultStanza}.
 
 load_test_file(Config) ->
     DataDir = proplists:get_value(data_dir, Config),
@@ -220,7 +259,7 @@ add_to_from(Config, Stanza) ->
       escalus_stanza:from(Stanza, alice),
       escalus_users:get_server(Config, alice)).
 
-do_upload(ResultStanza, ImageData) ->
+do_upload(ResultStanza, ImageData, ExpectedCode) ->
     UploadEl = get_element(ResultStanza, <<"upload">>),
     URL = get_cdata(UploadEl, <<"url">>),
     Method = get_cdata(UploadEl, <<"method">>),
@@ -237,9 +276,8 @@ do_upload(ResultStanza, ImageData) ->
                                   ContentType,
                                   ImageData},
                                  [], []),
-    {Response, _RespHeaders, RespContent} = Result,
-    {_, 200, "OK"} = Response,
-    [] = RespContent,
+    {Response, _RespHeaders, _RespContent} = Result,
+    {_, ExpectedCode, _} = Response,
     FileID.
 
 do_download(ResultStanza) ->

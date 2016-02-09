@@ -9,7 +9,7 @@
 -export([start/1,
          stop/0,
          make_download_response/3,
-         make_upload_response/4]).
+         make_upload_response/5]).
 
 start(Opts) ->
     Configs = [s3_bucket, s3_access_key_id, s3_secret_key],
@@ -39,7 +39,7 @@ make_download_response(FromJID, _ToJID, FileID) ->
 
     {Headers, RespFields}.
 
-make_upload_response(FromJID, _ToJID, FileID, MimeType) ->
+make_upload_response(FromJID, _ToJID, FileID, MimeType, _Size) ->
     User = FromJID#jid.luser,
 
     Date = list_to_binary(httpd_util:rfc1123_date(erlang:localtime())),

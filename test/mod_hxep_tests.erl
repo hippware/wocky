@@ -12,6 +12,7 @@ mod_hxep_test_() -> {
   [{setup, fun() -> before_all(Backend) end, fun after_all/1,
     [
      test_upload_request(Backend),
+     test_oversized_upload_request(Backend),
      test_download_request(Backend)
     ]}
    || Backend <- [s3, francus]
@@ -29,10 +30,13 @@ before_all(Backend) ->
                 fun(hxep_backend) -> Backend;
                    (s3_bucket) -> "hxep-test";
                    (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
-                   (s3_secret_key) -> "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"
+                   (s3_secret_key) ->
+                        "2nuvW8zXWvED/h5SUfcAU/37c2yaY3JM7ew9BUag";
+                   (hxep_max_upload_size) -> 1024 * 1024 * 10
                 end),
     meck:expect(ejabberd_config, get_global_option,
-                fun(francus_chunk_size) -> undefined % Use the default
+                fun(francus_chunk_size) -> undefined; % Use the default
+                   (language) -> <<"en">>
                 end),
 
     meck:expect(gen_iq_handler, add_iq_handler, 6, ok),
@@ -73,7 +77,19 @@ test_upload_request(Backend) ->
                jlib:iq_to_xml(
                  mod_hxep:handle_iq(test_user_jid(),
                                     test_server_jid(),
-                                    upload_packet()))))
+                                    upload_packet(10000)))))
+    ]}]}.
+
+test_oversized_upload_request(_Backend) ->
+    {"Big upload request", [
+        {"Oversize request", foreach, fun before_each/0, fun after_each/1, [
+          ?_assertEqual(
+             expected_error_packet(),
+             exml:to_binary(
+               jlib:iq_to_xml(
+                 mod_hxep:handle_iq(test_user_jid(),
+                                    test_server_jid(),
+                                    upload_packet(1024*1024*10 + 1)))))
     ]}]}.
 
 test_download_request(Backend) ->
@@ -108,12 +124,12 @@ common_packet(Type, Request) ->
         sub_el = Request
        }.
 
-upload_packet() ->
-    common_packet(set, upload_request()).
+upload_packet(Size) ->
+    common_packet(set, upload_request(Size)).
 
-upload_request() ->
+upload_request(Size) ->
     Elements = [{<<"filename">>, <<"photo.jpeg">>},
-                {<<"size">>, <<"10000">>},
+                {<<"size">>, integer_to_binary(Size)},
                 {<<"mime-type">>, <<"image/jpeg">>}],
     #xmlel{name = <<"upload-request">>,
            attrs = [{<<"xmlns">>, <<"hippware.com/hxep/http-file">>}],
@@ -176,3 +192,12 @@ expected_download_packet(francus) ->
       "<url>https://localhost.example.com:1025/users/testuser/"
       "files/a65ecb4e-c633-11e5-9fdc-080027f70e96</url>"
       "<method>GET</method></download></iq>">>.
+
+expected_error_packet() ->
+    <<"<iq id='123456' type='error'><upload-request xmlns='hippware.com/"
+      "hxep/http-file'><filename>photo.jpeg</filename><size>10485761</size>"
+      "<mime-type>image/jpeg</mime-type></upload-request>"
+      "<error code='406' type='modify'><not-acceptable "
+      "xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
+      "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
+      "Upload request denied: Invalid file size</text></error></iq>">>.
