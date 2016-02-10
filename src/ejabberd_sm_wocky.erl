@@ -124,11 +124,12 @@ sessions_from_queries(Server, Queries) ->
       Queries).
 
 user_sids(Server, User) ->
-    Row = wocky_db:select_row(Server, user_to_sids, [sids],
-                              #{jid_user => User}),
-    case Row of
-        #{sids := SIDBins} -> SIDBins;
-        not_found -> []
+    Value = wocky_db:select_one(Server, user_to_sids, sids,
+                                #{jid_user => User}),
+    case Value of
+        not_found -> [];
+        null      -> [];
+        SIDBins   -> SIDBins
     end.
 
 session_query(SIDBin) ->
