@@ -252,8 +252,8 @@ table_definition(media) ->
        columns = [
            {id, timeuuid},         % ID of the file
            {user, timeuuid},       % User ID of the file owner
-           {content_type, text},   % MIME content type of the file
            {size, int},            % File size in bytes
+           {metadata, {map, text, text}}, % General purpose metadata field
            {chunks, {list, timeuuid}} % Ordered list of media_data table
                                       % chunks comprising the file
        ],

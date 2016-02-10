@@ -5,6 +5,7 @@
 
 -define(SERVER, "localhost").
 -define(CONTENT_TYPE, <<"image/jpeg">>).
+-define(NAME, <<"testfile.txt">>).
 
 francus_test_() -> {
   "francus",
@@ -54,9 +55,13 @@ make_file(Size) ->
     Data = crypto:rand_bytes(Size),
     {ID, Data}.
 
+metadata() ->
+    #{<<"content-type">> => ?CONTENT_TYPE, <<"name">> => ?NAME}.
+
 write_file(ID, <<>>, User, _, Size, ChunkList) ->
     Chunks = lists:reverse(ChunkList),
-    V = #{id => ID, user => User, content_type => ?CONTENT_TYPE,
+    V = #{id => ID, user => User,
+          metadata => metadata(),
           chunks => Chunks, size => Size},
     ok = wocky_db:insert(?SERVER, media, V);
 write_file(ID, Data, User, ChunkSize, Size, ChunkList) ->
@@ -150,7 +155,7 @@ test_write() ->
                  ID = mod_hxep:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
                                               wocky_db_user:create_id(),
-                                              ?CONTENT_TYPE),
+                                              metadata()),
                  Data = crypto:rand_bytes(Size),
                  F2 = francus:write(F, Data),
                  ok = francus:close(F2),
@@ -205,7 +210,10 @@ test_accessors() ->
         [?_test(
             begin
                 {ok, F} = francus:open_read(?SERVER, ID),
-                ?assertEqual(?CONTENT_TYPE, francus:content_type(F)),
+                #{<<"content-type">> := CT, <<"name">> := Name}
+                = francus:metadata(F),
+                ?assertEqual(?CONTENT_TYPE, CT),
+                ?assertEqual(?NAME, Name),
                 ?assertEqual(Config#config.user, francus:owner(F)),
                 ?assertEqual(byte_size(Data), francus:size(F))
             end) || {ID, Data} <- Config#config.files
@@ -216,8 +224,11 @@ test_accessors() ->
              begin
                  User = wocky_db_user:create_id(),
                  {ok, F} = francus:open_write(?SERVER, mod_hxep:make_file_id(),
-                                              User, ?CONTENT_TYPE),
-                 ?assertEqual(?CONTENT_TYPE, francus:content_type(F)),
+                                              User, metadata()),
+                 #{<<"content-type">> := CT, <<"name">> := Name}
+                 = francus:metadata(F),
+                 ?assertEqual(?CONTENT_TYPE, CT),
+                 ?assertEqual(?NAME, Name),
                  ?assertEqual(User, francus:owner(F))
              end)
          ]

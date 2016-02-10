@@ -59,15 +59,16 @@ do_get(#hxep_request{request = {_User, FileID, _},
 
 send_file(File, Req) ->
     {File2, Data} = francus:read(File),
+    #{<<"content-type">> := ContentType} = francus:metadata(File2),
     success(cowboy_req:reply(200,
-                             [{<<"content-type">>,
-                               francus:content_type(File2)}],
+                             [{<<"content-type">>, ContentType}],
                              Data, Req)).
 
 do_put(Request = #hxep_request{request = {User, FileID, _},
                                user_server = Context}, Req) ->
     {ContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
-    {ok, F} = francus:open_write(Context, FileID, User, ContentType),
+    Metadata = #{<<"content-type">> => ContentType},
+    {ok, F} = francus:open_write(Context, FileID, User, Metadata),
     write_data(F, Request, Req2).
 
 write_data(F, Request = #hxep_request{size = SizeRemaining}, Req) ->
