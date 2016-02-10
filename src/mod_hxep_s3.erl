@@ -1,8 +1,6 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc Amazon AWS S3 backend for `mod_hxep'
 -module(mod_hxep_s3).
-
-% Bucket: hxep-test
-% Access Key ID: AKIAI4OZWBAA4SP6Y3WA
-% Secret Access Key: 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
 
 -include_lib("ejabberd/include/jlib.hrl").
 

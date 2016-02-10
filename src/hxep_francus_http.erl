@@ -1,3 +1,5 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc Cowboy HTTP server listener for HXEP Francus interface
 -module(hxep_francus_http).
 
 -include("mod_hxep_francus.hrl").

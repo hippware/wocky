@@ -1,3 +1,4 @@
+%%% @copyright 2016+ Hippware, Inc.
 -ifndef(MOD_HXEP_FRANCUS_HRL).
 -define(MOD_HXEP_FRANCUS_HRL, 1).
 

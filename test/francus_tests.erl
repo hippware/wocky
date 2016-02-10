@@ -1,3 +1,5 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc Unit tests for Francus C* file store
 -module(francus_tests).
 
 -include_lib("eunit/include/eunit.hrl").

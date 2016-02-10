@@ -1,3 +1,5 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc Francus backend for `mod_hxep'
 -module(mod_hxep_francus).
 
 -include_lib("ejabberd/include/jlib.hrl").

@@ -1,4 +1,4 @@
-%%% @copyright 2015+ Hippware, Inc.
+%%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for HXEP
 -module(ejabberd_hxep_SUITE).
 -compile(export_all).

@@ -1,3 +1,5 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc HXEP request tracker for Francus interface
 -module(hxep_req_tracker).
 
 -export([
