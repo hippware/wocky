@@ -60,7 +60,8 @@
 
 %% @doc Retrieves a single value from a table based on the parameters.
 %% Returns the first value of the first row.
--spec select_one(context(), table(), atom(), conditions()) -> term().
+-spec select_one(context(), table(), atom(), conditions())
+                -> term() | not_found.
 select_one(Context, Table, Column, Conditions) ->
     {ok, R} = run_select_query(Context, Table, [Column], Conditions),
     single_result(R).
@@ -68,7 +69,7 @@ select_one(Context, Table, Column, Conditions) ->
 %% @doc Retrieves a single row from a table based on the parameters.
 %% Returns the first row of the result set.
 -spec select_row(context(), table(), columns(), conditions())
-                -> row() | undefined.
+                -> row() | not_found.
 select_row(Context, Table, Columns, Conditions) ->
     {ok, R} = run_select_query(Context, Table, Columns, Conditions),
     single_row(R).
@@ -539,11 +540,11 @@ drop_nulls(Row) ->
                     (_, _) -> true end, Row).
 
 %% Extracts the value of the first column of the first row from a query result
--spec single_result(result()) -> value() | undefined.
+-spec single_result(result()) -> term() | not_found.
 single_result(Result) ->
     case cqerl:head(Result) of
         empty_dataset ->
-            undefined;
+            not_found;
         Map ->
             [{_, Value}|_] = maps:to_list(Map),
             Value
@@ -551,9 +552,9 @@ single_result(Result) ->
 
 %% Extracts the first row from a query result
 %% The row is a property list of column name, value pairs.
--spec single_row(result()) -> row() | undefined.
+-spec single_row(result()) -> row() | not_found.
 single_row(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> undefined;
+        empty_dataset -> not_found;
         R -> drop_nulls(R)
     end.

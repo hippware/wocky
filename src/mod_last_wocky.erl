@@ -29,7 +29,7 @@ get_last(LUser, LServer) ->
         #{timestamp := TS, status := S} ->
             {ok, wocky_db:timestamp_to_seconds(TS), binary_to_list(S)};
 
-        undefined ->
+        not_found ->
             not_found
     end.
 

@@ -128,7 +128,7 @@ user_sids(Server, User) ->
                               #{jid_user => User}),
     case Row of
         #{sids := SIDBins} -> SIDBins;
-        undefined -> []
+        not_found -> []
     end.
 
 session_query(SIDBin) ->
