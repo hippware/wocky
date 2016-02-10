@@ -121,10 +121,13 @@ send_validation_error(IQ, ErrorStr) ->
 
 send_upload_response(Req = #request{iq = IQ}, ReqFields) ->
     MimeType = proplists:get_value(<<"mime-type">>, ReqFields),
+    Name = proplists:get_value(<<"filename">>, ReqFields),
+    Metadata = #{<<"content-type">> => MimeType,
+                 <<"name">> => Name},
     Size = binary_to_integer_def(
              proplists:get_value(<<"size">>, ReqFields), 0),
     case validate_upload_req(Size, MimeType) of
-        ok -> send_ok_upload_response(Req, MimeType, Size);
+        ok -> send_ok_upload_response(Req, Size, Metadata);
         {failed, Error} -> send_validation_error(IQ, Error)
     end.
 
@@ -148,11 +151,11 @@ validate_upload_size(Size) ->
 validate_upload_type(_MimeType) -> true.
 
 send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                        MimeType, Size) ->
+                        Size, Metadata) ->
     FileID = make_file_id(),
     {Headers, RespFields} =
         (backend()):make_upload_response(FromJID, ToJID, FileID,
-                                         MimeType, Size),
+                                         Size, Metadata),
 
 
     FullFields = common_fields(FromJID, FileID) ++ RespFields,

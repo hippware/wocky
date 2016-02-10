@@ -65,11 +65,21 @@ send_file(File, Req) ->
                              Data, Req)).
 
 do_put(Request = #hxep_request{request = {User, FileID, _},
-                               user_server = Context}, Req) ->
-    {ContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
-    Metadata = #{<<"content-type">> => ContentType},
-    {ok, F} = francus:open_write(Context, FileID, User, Metadata),
-    write_data(F, Request, Req2).
+                               user_server = Context,
+                               metadata = Metadata =
+                                          #{<<"content-type">> := ContentType}
+                              }, Req) ->
+    {ReqContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
+    case ReqContentType of
+        ContentType ->
+            {ok, F} = francus:open_write(Context, FileID, User, Metadata),
+            write_data(F, Request, Req2);
+        _ ->
+            success(
+              cowboy_req:reply(415, [],
+                               "Mismatched media types between IQ and PUT",
+                               Req2))
+    end.
 
 write_data(F, Request = #hxep_request{size = SizeRemaining}, Req) ->
     {Result, Data, NewSizeRemaining, Req2} = get_data(SizeRemaining, Req),

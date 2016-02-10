@@ -34,7 +34,7 @@ stop() ->
 make_download_response(FromJID, ToJID, FileID) ->
     {Auth, User, UserServer, URL} =
         common_response_data(FromJID, ToJID, FileID),
-    add_request(get, User, FileID, UserServer, Auth, 0),
+    add_request(get, User, FileID, UserServer, Auth, 0, #{}),
     Headers = [{<<"authorization">>, Auth}],
     RespFields = [
                   {<<"url">>, URL},
@@ -42,12 +42,13 @@ make_download_response(FromJID, ToJID, FileID) ->
                  ],
     {Headers, RespFields}.
 
-make_upload_response(FromJID, ToJID, FileID, MimeType, Size) ->
+make_upload_response(FromJID, ToJID, FileID, Size, Metadata =
+                     #{<<"content-type">> := ContentType}) ->
     {Auth, User, UserServer, URL} =
         common_response_data(FromJID, ToJID, FileID),
-    add_request(put, User, FileID, UserServer, Auth, Size),
+    add_request(put, User, FileID, UserServer, Auth, Size, Metadata),
     Headers = [
-               {<<"content-type">>, MimeType},
+               {<<"content-type">>, ContentType},
                {<<"authorization">>, Auth}
               ],
     RespFields = [
@@ -69,9 +70,11 @@ common_response_data(FromJID, ToJID, FileID) ->
 make_auth() ->
     base64:encode(crypto:strong_rand_bytes(128)).
 
-add_request(Op, User, FileID, UserServer, Auth, Size) ->
+add_request(Op, User, FileID, UserServer, Auth, Size, Metadata) ->
     Req = #hxep_request{op = Op, request = {User, FileID, Auth},
-                        user_server = UserServer, size = Size},
+                        user_server = UserServer, size = Size,
+                        metadata = Metadata
+                       },
     hxep_req_tracker:add(Req).
 
 port() -> ?DEFAULT_PORT.

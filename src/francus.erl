@@ -23,7 +23,8 @@
 -endif.
 
 -export_type([
-              francus_file/0
+              francus_file/0,
+              metadata/0
              ]).
 
 -type file_id() :: binary().

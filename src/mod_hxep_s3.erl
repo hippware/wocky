@@ -39,16 +39,17 @@ make_download_response(FromJID, _ToJID, FileID) ->
 
     {Headers, RespFields}.
 
-make_upload_response(FromJID, _ToJID, FileID, MimeType, _Size) ->
+make_upload_response(FromJID, _ToJID, FileID, _Size,
+                     #{<<"content-type">> := ContentType}) ->
     User = FromJID#jid.luser,
 
     Date = list_to_binary(httpd_util:rfc1123_date(erlang:localtime())),
     Headers = [
                {<<"host">>, host()},
-               {<<"content-type">>, MimeType},
+               {<<"content-type">>, ContentType},
                {<<"date">>, Date},
                {<<"authorization">>,
-                make_auth(put, Date, MimeType, User, FileID)}
+                make_auth(put, Date, ContentType, User, FileID)}
               ],
 
     RespFields = [

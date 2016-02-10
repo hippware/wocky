@@ -20,7 +20,8 @@ groups() ->
      {hxep, [sequence], [file_updown_story,
                          file_up_too_big_story,
                          file_up_too_small_story,
-                         request_too_big_story
+                         request_too_big_story,
+                         wrong_type_story
                         ]}
     ].
 
@@ -107,6 +108,14 @@ request_too_big_story(Config) ->
         escalus:assert(is_iq_error, ResultStanza)
     end).
 
+wrong_type_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        {QueryStanza, ResultStanza} = common_upload_request(1204,
+                                                            Config, Alice),
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+        do_upload(ResultStanza, <<"datadata">>, 415, "image/jpeg")
+    end).
+
 common_upload_request(Size, Config, User) ->
     QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
                                 Size, <<"image/png">>),
@@ -126,20 +135,27 @@ add_to_from(Config, Stanza) ->
       escalus_users:get_server(Config, alice)).
 
 do_upload(ResultStanza, ImageData, ExpectedCode) ->
+    do_upload(ResultStanza, ImageData, ExpectedCode, undefined).
+
+do_upload(ResultStanza, ImageData, ExpectedCode, ContentType) ->
     UploadEl = get_element(ResultStanza, <<"upload">>),
     URL = get_cdata(UploadEl, <<"url">>),
     Method = get_cdata(UploadEl, <<"method">>),
     HeadersEl = get_element(UploadEl, <<"headers">>),
     FileID = get_cdata(UploadEl, <<"id">>),
     Headers = get_headers(HeadersEl),
-    ContentType = proplists:get_value("content-type", Headers),
+    ReqContentType =
+    case ContentType of
+        undefined -> proplists:get_value("content-type", Headers);
+        _ -> ContentType
+    end,
     FinalHeaders = Headers -- [ContentType],
     {ok, Result} = httpc:request(list_to_atom(
                                    string:to_lower(
                                      binary_to_list(Method))),
                                  {binary_to_list(URL),
                                   FinalHeaders,
-                                  ContentType,
+                                  ReqContentType,
                                   ImageData},
                                  [], []),
     {Response, _RespHeaders, _RespContent} = Result,

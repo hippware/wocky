@@ -6,6 +6,7 @@
           request       :: {binary(), binary(), binary()}, % {User, File, Auth}
           user_server   :: binary(),
           size          :: integer(),
+          metadata      :: francus:metadata(),
           tref          :: timer:tref()
          }).
 
