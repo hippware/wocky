@@ -69,6 +69,7 @@
 %% API
 -export([create_id/0,
          normalize_id/1,
+         is_valid_id/1,
          create_user/3,
          create_user/4,
          does_user_exist/2,
@@ -87,11 +88,25 @@
 create_id() ->
     ossp_uuid:make(v1, text).
 
+
 %% @doc Takes a raw binary UUID (as retrieved through C* queries) and converts
 %% to the cannonical textual binary UUID form.
 -spec normalize_id(binary()) -> ejabberd:luser().
 normalize_id(UUID) ->
     ossp_uuid:import(UUID, text).
+
+
+%% @doc Returns true if the user ID is a valid UUID.
+-spec is_valid_id(ejabberd:luser()) -> boolean().
+is_valid_id(LUser) ->
+    try
+        ossp_uuid:import(LUser, binary),
+        true
+    catch
+        _:_ ->
+            false
+    end.
+
 
 %% @equiv create_user(create_id(), LServer, Handle, Password)
 %%
@@ -123,8 +138,12 @@ create_user(LServer, Handle, Password) ->
 %% database.
 %%
 -spec create_user(ejabberd:luser(), ejabberd:lserver(), handle(), password())
-                 -> ok | {error, exists}.
+                 -> ok | {error, exists | invalid_id}.
 create_user(LUser, LServer, Handle, Password) ->
+    create_user(LUser, LServer, Handle, Password, is_valid_id(LUser)).
+
+%% @private
+create_user(LUser, LServer, Handle, Password, true) ->
     %% TODO: this really needs to be done in a batch, but we don't currently
     %% have a clean way to run queries in different keyspaces in the same batch.
     case create_handle_lookup(LUser, LServer, Handle) of
@@ -133,7 +152,9 @@ create_user(LUser, LServer, Handle, Password) ->
 
         false ->
             {error, exists}
-    end.
+    end;
+create_user(_, _, _, _, false) ->
+    {error, invalid_id}.
 
 %% @private
 create_handle_lookup(LUser, LServer, Handle) ->
@@ -168,12 +189,18 @@ does_user_exist(LUser, LServer) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec get_handle(ejabberd:luser(), ejabberd:lserver())
-              -> handle() | {error, not_found}.
+                -> handle() | {error, not_found}.
 get_handle(LUser, LServer) ->
+    get_handle(LUser, LServer, is_valid_id(LUser)).
+
+%% @private
+get_handle(LUser, LServer, true) ->
     case wocky_db:select_one(LServer, user, handle, #{user => LUser}) of
-        undefined -> {error, not_found};
+        not_found -> {error, not_found};
         Handle -> Handle
-    end.
+    end;
+get_handle(_, _, false) ->
+    {error, not_found}.
 
 
 %% @doc Returns the user's password.
@@ -185,10 +212,16 @@ get_handle(LUser, LServer) ->
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> password() | {error, not_found}.
 get_password(LUser, LServer) ->
+    get_password(LUser, LServer, is_valid_id(LUser)).
+
+%% @private
+get_password(LUser, LServer, true) ->
     case wocky_db:select_one(LServer, user, password, #{user => LUser}) of
-        undefined -> {error, not_found};
+        not_found -> {error, not_found};
         Password -> Password
-    end.
+    end;
+get_password(_, _, false) ->
+    {error, not_found}.
 
 
 %% @doc Updates the user's password.

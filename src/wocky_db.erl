@@ -43,7 +43,7 @@
 
 %% Utility API
 -export([seconds_to_timestamp/1, timestamp_to_seconds/1, timestamp_to_now/1,
-         now_to_timestamp/1, expire_to_ttl/1]).
+         now_to_timestamp/1, expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1]).
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
@@ -60,7 +60,8 @@
 
 %% @doc Retrieves a single value from a table based on the parameters.
 %% Returns the first value of the first row.
--spec select_one(context(), table(), atom(), conditions()) -> term().
+-spec select_one(context(), table(), atom(), conditions())
+                -> term() | not_found.
 select_one(Context, Table, Column, Conditions) ->
     {ok, R} = run_select_query(Context, Table, [Column], Conditions),
     single_result(R).
@@ -68,7 +69,7 @@ select_one(Context, Table, Column, Conditions) ->
 %% @doc Retrieves a single row from a table based on the parameters.
 %% Returns the first row of the result set.
 -spec select_row(context(), table(), columns(), conditions())
-                -> row() | undefined.
+                -> row() | not_found.
 select_row(Context, Table, Columns, Conditions) ->
     {ok, R} = run_select_query(Context, Table, Columns, Conditions),
     single_row(R).
@@ -420,8 +421,7 @@ multi_query(Context, QueryVals, Consistency) ->
 %%
 -spec rows(result()) -> rows().
 rows(Result) ->
-    drop_all_nulls(cqerl:all_rows(Result)).
-
+    cqerl:all_rows(Result).
 
 
 %%====================================================================
@@ -479,6 +479,17 @@ expire_to_ttl(Expire) ->
     TTL = timer:now_diff(Expire, Now) div 1000000,
     lists:max([TTL, 1]).
 
+%% @doc TBD
+-spec drop_all_nulls(rows()) -> rows().
+drop_all_nulls(Rows) ->
+    [drop_nulls(Row) || Row <- Rows].
+
+%% @doc TBD
+-spec drop_nulls(row()) -> row().
+drop_nulls(Row) ->
+    maps:filter(fun (_, null) -> false;
+                    (_, _) -> true end, Row).
+
 
 %%====================================================================
 %% Internal functions
@@ -531,19 +542,12 @@ log_query(Query, Values) ->
     ok = lager:info("Creating CQL query with statement '~s' and values ~p",
                     [Query, Values]).
 
-drop_all_nulls(Rows) ->
-    [drop_nulls(Row) || Row <- Rows].
-
-drop_nulls(Row) ->
-    maps:filter(fun (_, null) -> false;
-                    (_, _) -> true end, Row).
-
 %% Extracts the value of the first column of the first row from a query result
--spec single_result(result()) -> value() | undefined.
+-spec single_result(result()) -> term() | not_found.
 single_result(Result) ->
     case cqerl:head(Result) of
         empty_dataset ->
-            undefined;
+            not_found;
         Map ->
             [{_, Value}|_] = maps:to_list(Map),
             Value
@@ -551,9 +555,9 @@ single_result(Result) ->
 
 %% Extracts the first row from a query result
 %% The row is a property list of column name, value pairs.
--spec single_row(result()) -> row() | undefined.
+-spec single_row(result()) -> row() | not_found.
 single_row(Result) ->
     case cqerl:head(Result) of
-        empty_dataset -> undefined;
-        R -> drop_nulls(R)
+        empty_dataset -> not_found;
+        R -> R
     end.
