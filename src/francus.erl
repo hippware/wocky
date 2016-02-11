@@ -102,7 +102,7 @@ open_read(Context, FileID) ->
                               [metadata, user, size, chunks],
                               #{id => FileID}),
     case Row of
-        undefined -> not_found;
+        not_found -> not_found;
         Row -> {ok, open_result(Context, FileID, Row)}
     end.
 
@@ -207,9 +207,8 @@ open_result(Context, FileID,
                             size = Size,
                             metadata = Metadata}, Row).
 
-maybe_add_chunks(State, #{chunks := Chunks}) -> State#state{chunks = Chunks};
-% An empty file will have no chunks entry in the map
-maybe_add_chunks(State, _) -> State.
+maybe_add_chunks(State, #{chunks := null}) -> State;
+maybe_add_chunks(State, #{chunks := Chunks}) -> State#state{chunks = Chunks}.
 
 read_chunk(S = #state{context = Context, chunks = [Chunk | Rest],
                       pending = Pending}) ->
