@@ -52,25 +52,20 @@ get_sessions(Server) ->
 -spec get_sessions(ejabberd:user(), ejabberd:server()) ->
     [ejabberd_sm:session()].
 get_sessions(User, Server) ->
-    SIDBins = user_sids(Server, User),
-    Queries = [session_query(SB) || SB <- SIDBins],
-    sessions_from_queries(Server, Queries).
+    query_sessions(Server, user_sessions, #{jid_user => User}).
 
 -spec get_sessions(ejabberd:user(), ejabberd:server(), ejabberd:resource()
                   ) -> [ejabberd_sm:session()].
 get_sessions(User, Server, Resource) ->
-    SIDBins = user_sids(Server, User),
-    Queries = [session_query(SB, Resource) || SB <- SIDBins],
-    sessions_from_queries(Server, Queries).
+    query_sessions(Server, user_sessions,
+                   #{jid_user => User, jid_resource => Resource}).
 
 -spec create_session(ejabberd:user(),
                      ejabberd:server(),
                      ejabberd:resource(),
                      ejabberd_sm:session()) -> ok.
 create_session(_User, Server, _Resource, Session) ->
-    Queries = [add_session_data_query(Session), add_session_map_query(Session)],
-    {ok, void} = wocky_db:batch_query(Server, Queries, logged, quorum),
-    ok.
+    ok = wocky_db:insert(Server, session, rec_to_row(Session)).
 
 -spec delete_session(ejabberd_sm:sid(),
                      ejabberd:user(),
@@ -78,23 +73,21 @@ create_session(_User, Server, _Resource, Session) ->
                      ejabberd:resource()) -> ok.
 delete_session(SID, User, Server, _Resource) ->
     SIDBin = term_to_binary(SID),
-    Queries = delete_session_queries(SIDBin, User),
-    {ok, void} = wocky_db:batch_query(Server, Queries, logged, quorum),
-    ok.
+    ok = wocky_db:delete(Server, session, [],
+                         #{sid => SIDBin, jid_user => User}).
 
 -spec cleanup(atom()) -> ok.
 cleanup(Node) ->
     lists:foreach(fun(D) -> cleanup_server(D, Node) end, servers()).
 
 cleanup_server(Server, Node) ->
-    SidsUsers = sids_users_on_node(Server, Node),
-    QuerySets = [delete_session_queries(S, U)
-                 || #{sid := S, jid_user := U} <- SidsUsers],
-    lists:foreach(fun(Q) ->
-                          {ok, void} = wocky_db:batch_query(Server, Q,
-                                                            logged, quorum)
-                  end,
-                  QuerySets).
+    % Can't delete by a secondary index, so we have to go the long way around:
+    SidsOnNode = wocky_db:select(Server, session, [sid],
+                                 #{node => atom_to_list(Node)}),
+    lists:foreach(
+      fun(#{sid := S}) ->
+              ok = wocky_db:delete(Server, session, [], #{sid => S}) end,
+      SidsOnNode).
 
 -spec total_count() -> non_neg_integer().
 total_count() ->
@@ -108,55 +101,8 @@ unique_count() ->
         lists:flatten(
           lists:map(fun uss_on_server/1, servers())))).
 
-sids_users_on_node(Server, Node) ->
-    wocky_db:select(Server, session, [sid, jid_user],
-                    #{node => atom_to_list(Node)}).
-
-delete_session_queries(SIDBin, User) ->
-    [delete_session_data_query(SIDBin), delete_session_map_query(SIDBin, User)].
-
-sessions_from_queries(Server, Queries) ->
-    lists:flatmap(
-      fun({Q, V}) ->
-              {ok, Results} = wocky_db:query(Server, Q, V, quorum),
-              [row_to_rec(R) || R <- wocky_db:rows(Results)]
-      end,
-      Queries).
-
-user_sids(Server, User) ->
-    Value = wocky_db:select_one(Server, user_to_sids, sids,
-                                #{jid_user => User}),
-    case Value of
-        not_found -> [];
-        null      -> [];
-        SIDBins   -> SIDBins
-    end.
-
-session_query(SIDBin) ->
-    {"SELECT * FROM session WHERE sid = ?",
-     #{sid => SIDBin}}.
-
-session_query(SIDBin, Resource) ->
-    {"SELECT * FROM session WHERE sid = ? AND jid_resource = ? ALLOW FILTERING",
-     #{sid => SIDBin, jid_resource => Resource}}.
-
-add_session_data_query(Session) ->
-    {"INSERT INTO session (sid, node, user, server, jid_user, jid_server,
-        jid_resource, priority, info) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-     rec_to_row(Session)}.
-
-add_session_map_query(Session) ->
-    {"UPDATE user_to_sids SET sids = sids + ? WHERE jid_user = ?",
-     #{jid_user => jid_user(Session),
-       sids => [term_to_binary(Session#session.sid)]}}.
-
-delete_session_data_query(SIDBin) ->
-    {"DELETE FROM session WHERE sid = ?",
-     #{sid => SIDBin}}.
-
-delete_session_map_query(SIDBin, User) ->
-    {"UPDATE user_to_sids SET sids = sids - ? where jid_user = ?",
-     #{jid_user => User, sids => [SIDBin]}}.
+query_sessions(Server, Table, Values) ->
+    [row_to_rec(R) || R <- wocky_db:select(Server, Table, all, Values)].
 
 rec_to_row(#session{
               sid = SID,
@@ -200,8 +146,6 @@ row_to_ses_tuple(#{sid := SID,
      binary_to_term(SID),
      int_to_pri(Priority),
      binary_to_term(Info)}.
-
-jid_user(#session{usr = {User, _Server, _Resource}}) -> User.
 
 count_on_server(Server) ->
     length(wocky_db:select(Server, session, [sid], #{})).

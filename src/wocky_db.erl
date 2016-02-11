@@ -36,7 +36,7 @@
 %% High Level API
 -export([select_one/4, select_row/4, select/4, insert/3, insert_new/3, update/4,
          delete/4, truncate/2, drop/3, create_keyspace/3, create_table/2,
-         create_index/3, create_view/5]).
+         create_index/3, create_view/6]).
 
 %% Query API
 -export([query/4, batch_query/4, multi_query/3, multi_query/4, rows/1]).
@@ -50,7 +50,7 @@
 -export([build_select_query/3, build_insert_query/3, build_delete_query/3,
          build_update_query/3, build_truncate_query/1, build_drop_query/2,
          build_create_keyspace_query/3, build_create_table_query/1,
-         build_create_index_query/2, build_create_view_query/4]).
+         build_create_index_query/2, build_create_view_query/5]).
 -endif.
 
 
@@ -259,7 +259,7 @@ primary_key_string([PK], Acc) ->
 primary_key_string([First | Rest], Acc) ->
     primary_key_string(Rest, [", ", atom_to_list(First)|Acc]).
 
-sorting_option_string(undefined) -> "";
+sorting_option_string([]) -> "";
 sorting_option_string(Field) when is_atom(Field) ->
     sorting_option_string([{Field, asc}]);
 sorting_option_string([{Field, Dir}]) ->
@@ -287,17 +287,18 @@ index_keys([First | Rest], Acc) ->
 
 
 %% @doc Creates a materialized view if it does not already exist.
--spec create_view(context(), atom(), table(), [atom()],
+-spec create_view(context(), atom(), table(), [atom() | all], [atom()],
                   [{atom, asc | desc}]) -> ok.
-create_view(Context, Name, Table, Keys, OrderBy) ->
-    Query = build_create_view_query(Name, Table, Keys, OrderBy),
+create_view(Context, Name, Table, Columns, Keys, OrderBy) ->
+    Query = build_create_view_query(Name, Table, Columns, Keys, OrderBy),
     {ok, _} = query(Context, Query, #{}, all),
     ok.
 
-build_create_view_query(Name, Table, Keys, OrderBy) ->
+build_create_view_query(Name, Table, Columns, Keys, OrderBy) ->
     ["CREATE MATERIALIZED VIEW IF NOT EXISTS ", atom_to_list(Name), " AS ",
-     "SELECT * FROM ", atom_to_list(Table), view_conditions(Keys),
-     " ", primary_key_string(Keys), sorting_option_string(OrderBy)].
+     "SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
+     view_conditions(Keys), " ", primary_key_string(Keys),
+     sorting_option_string(OrderBy)].
 
 view_conditions([First|Rest]) ->
     lists:foldl(
