@@ -17,7 +17,7 @@
           columns       :: [{atom(), atom()
                                  | {set | list, atom()}
                                  | {map, atom(), atom()}}],
-          primary_key   :: atom() | [atom()],
+          primary_key   :: atom() | [[atom()] | atom()],
           order_by = [] :: atom() | [{atom(), asc | desc}]
          }).
 

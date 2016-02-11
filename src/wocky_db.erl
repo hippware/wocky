@@ -29,17 +29,18 @@
 -type row()       :: map().
 -type rows()      :: [row()].
 -type error()     :: term().
--opaque result()  :: #cql_result{}.
+-type result()    :: #cql_result{}.
 -export_type([query/0, value/0, values/0, row/0, result/0, error/0]).
 
 
 %% High Level API
 -export([select_one/4, select_row/4, select/4, insert/3, insert_new/3, update/4,
-         delete/4, truncate/2, drop/3, create_keyspace/3, create_table/2,
-         create_index/3, create_view/6]).
+         delete/4, count/3, truncate/2, drop/3, create_keyspace/3,
+         create_table/2, create_index/3, create_view/6]).
 
 %% Query API
--export([query/4, batch_query/4, multi_query/3, multi_query/4, rows/1]).
+-export([query/4, batch_query/4, multi_query/3, multi_query/4, rows/1,
+         single_result/1]).
 
 %% Utility API
 -export([seconds_to_timestamp/1, timestamp_to_seconds/1, timestamp_to_now/1,
@@ -178,6 +179,16 @@ build_delete_query(Table, Columns, Keys) ->
     ["DELETE", columns(Columns, " "), "FROM ", atom_to_list(Table),
      conditions(Keys)].
 
+%% @doc Counts the rows in a table matching the conditions
+-spec count(context(), table(), conditions()) -> non_neg_integer().
+count(Context, Table, Conditions) ->
+    Query = build_count_query(Table, keys(Conditions)),
+    {ok, Result} = query(Context, Query, Conditions, quorum),
+    single_result(Result).
+
+build_count_query(Table, Keys) ->
+    ["SELECT COUNT(*) FROM ", atom_to_list(Table), conditions(Keys)].
+
 
 %% @doc Deletes all data in a table.
 -spec truncate(context(), table()) -> ok.
@@ -256,9 +267,14 @@ primary_key_string(PK) ->
     primary_key_string(lists:reverse(PK), []).
 
 primary_key_string([PK], Acc) ->
-    ["PRIMARY KEY (", atom_to_list(PK), Acc, ")"];
+    ["PRIMARY KEY (", primary_key_element(PK), Acc, ")"];
 primary_key_string([First | Rest], Acc) ->
-    primary_key_string(Rest, [", ", atom_to_list(First)|Acc]).
+    primary_key_string(Rest, [", ", primary_key_element(First)|Acc]).
+
+primary_key_element(Columns) when is_list(Columns) ->
+    ["(", columns(Columns, ""), ")"];
+primary_key_element(Col) when is_atom(Col) ->
+    atom_to_list(Col).
 
 sorting_option_string([]) -> "";
 sorting_option_string(Field) when is_atom(Field) ->
@@ -466,13 +482,10 @@ now_to_timestamp({MegaSecs, Secs, MicroSecs}) ->
 %%
 %% Note that because C* will throw an error for non-positive values in TTL, we
 %% clamp the return to no less than 1, allowing this function's result to be
-%% safely passed straight into a TTL binding in a query. The 'never' atom is
-%% left unchanged intentionally - it is up to the caller to avoid using the TTL
-%% value at all in this case. Leaving the value as 'never' ensures it will cause
-%% the query to fail if used.
+%% safely passed straight into a TTL binding in a query.
 %%
--spec expire_to_ttl(never | non_neg_integer()) -> never | pos_integer().
-expire_to_ttl(never) -> never;
+-spec expire_to_ttl(never | non_neg_integer()) -> infinity | pos_integer().
+expire_to_ttl(never) -> infinity;
 expire_to_ttl(Expire) ->
     Now = os:timestamp(),
     TTL = timer:now_diff(Expire, Now) div 1000000,
