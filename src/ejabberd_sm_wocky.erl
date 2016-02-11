@@ -46,7 +46,7 @@ get_sessions() ->
 
 -spec get_sessions(ejabberd:server()) -> [ejabberd_sm:ses_tuple()].
 get_sessions(Server) ->
-    Rows = wocky_db:select(Server, session, all, []),
+    Rows = wocky_db:select(Server, session, all, #{}),
     [row_to_ses_tuple(R) || R <- Rows].
 
 -spec get_sessions(ejabberd:user(), ejabberd:server()) ->
@@ -148,10 +148,10 @@ row_to_ses_tuple(#{sid := SID,
      binary_to_term(Info)}.
 
 count_on_server(Server) ->
-    length(wocky_db:select(Server, session, [sid], [])).
+    length(wocky_db:select(Server, session, [sid], #{})).
 
 uss_on_server(Server) ->
-    Rows = wocky_db:select(Server, session, [user, server], []),
+    Rows = wocky_db:select(Server, session, [user, server], #{}),
     [{wocky_db_user:normalize_id(U), S} || #{user := U, server := S} <- Rows].
 
 % Priority can be undefined. Store this as -1 (an otherwise invalid priority)

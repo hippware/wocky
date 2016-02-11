@@ -95,11 +95,11 @@ clear_tables(Context, Tables) ->
 %% error returned from the server that says "this prepared query doesn't exist".
 %% TODO: Fix cqerl so that it properly handles the server message indicating
 %% that a prepared query no longer exists in the cache. Example:
-%% {error, {9472, <<"Prepared query with ID a458ba918d03a5959c2fb8498882cfc5
+%% `{error, {9472, <<"Prepared query with ID a458ba918d03a5959c2fb8498882cfc5
 %% not found (either the query was not prepared on this host (maybe the host
 %% has been restarted?) or you have prepared too many queries and it has been
 %% evicted from the internal cache)">>,
-%% <<164,88,186,145,141,3,165,149,156,47,184,73,136,130,207,197>>}}
+%% <<164,88,186,145,141,3,165,149,156,47,184,73,136,130,207,197>>}}'
 flush_cqerl_prepared_query_cache() ->
     ok = supervisor:terminate_child(cqerl_sup, cqerl_cache),
     {ok, _} = supervisor:restart_child(cqerl_sup, cqerl_cache),
@@ -119,7 +119,9 @@ keyspace_tables(_) -> [
     last_activity,
     offline_msg,
     roster,
-    session
+    session,
+    media,
+    media_data
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -230,6 +232,44 @@ table_definition(session) ->
            {info, blob}            % Session info
        ],
        primary_key = [sid, jid_user]
+    };
+
+%% Lookup table mapping user ids to a list of session ids
+table_definition(user_to_sids) ->
+    #table_def{
+       name = user_to_sids,
+       columns = [
+           {jid_user, timeuuid},   % User ID (userpart of JID)
+           {sids, {set, blob}}     % List of session IDs
+       ],
+       primary_key = jid_user
+    };
+
+%% Francus file-store metadata table
+table_definition(media) ->
+    #table_def{
+       name = media,
+       columns = [
+           {id, timeuuid},         % ID of the file
+           {user, timeuuid},       % User ID of the file owner
+           {size, int},            % File size in bytes
+           {metadata, {map, text, text}}, % General purpose metadata field
+           {chunks, {list, timeuuid}} % Ordered list of media_data table
+                                      % chunks comprising the file
+       ],
+       primary_key = id
+    };
+
+%% Franks file-store data table
+table_definition(media_data) ->
+    #table_def{
+       name = media_data,
+       columns = [
+           {chunk_id, timeuuid},   % ID of chunk
+           {file_id, timeuuid},    % ID of the file
+           {data, blob}            % Data in this chunk
+       ],
+       primary_key = chunk_id
     }.
 
 table_indexes(session) -> [

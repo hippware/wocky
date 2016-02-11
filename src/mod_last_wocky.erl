@@ -37,7 +37,7 @@ get_last(LUser, LServer) ->
 -spec count_active_users(ejabberd:lserver(), non_neg_integer())
                         -> non_neg_integer().
 count_active_users(LServer, TimeStamp) ->
-    Rows = wocky_db:select(LServer, last_activity, [timestamp], []),
+    Rows = wocky_db:select(LServer, last_activity, [timestamp], #{}),
     Pred = fun(#{timestamp := Val}) ->
                    wocky_db:timestamp_to_seconds(Val) > TimeStamp end,
     length(lists:filter(Pred, Rows)).

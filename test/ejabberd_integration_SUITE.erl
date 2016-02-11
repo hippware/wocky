@@ -3,7 +3,7 @@
 -module(ejabberd_integration_SUITE).
 -compile(export_all).
 
--include_lib("escalus/include/escalus.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 
 %%--------------------------------------------------------------------
@@ -11,7 +11,8 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [{group, smoke},
+    [
+     {group, smoke},
      {group, last_activity},
      {group, offline}
     ].
@@ -177,3 +178,5 @@ login_send_presence(Config, User) ->
     {ok, Client} = escalus_client:start(Config, Spec, <<"dummy">>),
     escalus:send(Client, escalus_stanza:presence(<<"available">>)),
     Client.
+
+

@@ -9,6 +9,7 @@
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [
-         {start_ejabberd, false}
+         {start_ejabberd, false},
+         {francus_chunk_size, 1048576} % 1MB
         ]}
  ]}.
