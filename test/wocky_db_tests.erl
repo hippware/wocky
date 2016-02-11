@@ -175,5 +175,23 @@ build_create_view_query_test() ->
          " PRIMARY KEY (user, version, contact)"
          " WITH CLUSTERING ORDER BY (version ASC)",
         [roster_version, roster, all, [user, version, contact],
+         [{version, asc}]]},
+        {"CREATE MATERIALIZED VIEW IF NOT EXISTS roster_version AS"
+         " SELECT * FROM roster"
+         " WHERE user IS NOT NULL"
+           " AND version IS NOT NULL"
+           " AND contact IS NOT NULL"
+         " PRIMARY KEY (user, version, contact)"
+         " WITH CLUSTERING ORDER BY (version ASC)",
+        [roster_version, roster, [], [user, version, contact],
+         [{version, asc}]]},
+        {"CREATE MATERIALIZED VIEW IF NOT EXISTS roster_version AS"
+         " SELECT user, version FROM roster"
+         " WHERE user IS NOT NULL"
+           " AND version IS NOT NULL"
+           " AND contact IS NOT NULL"
+         " PRIMARY KEY (user, version, contact)"
+         " WITH CLUSTERING ORDER BY (version ASC)",
+        [roster_version, roster, [user, version], [user, version, contact],
          [{version, asc}]]}
     ]).
