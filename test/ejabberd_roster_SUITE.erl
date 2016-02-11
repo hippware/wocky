@@ -154,8 +154,7 @@ versioning(Config) ->
         RosterResult = escalus:wait_for_stanza(Alice),
 
         escalus_assert:is_roster_result(RosterResult),
-        Ver = exml_query:path(RosterResult, [{element, <<"query">>},
-                                             {attr, <<"ver">>}]),
+        Ver = get_ver(RosterResult),
 
         true = Ver /= undefined,
 
@@ -169,8 +168,7 @@ versioning(Config) ->
 
         RosterSet = hd(Received),
 
-        Ver2 = exml_query:path(RosterSet, [{element, <<"query">>},
-                                           {attr, <<"ver">>}]),
+        Ver2 = get_ver(RosterSet),
 
         true = Ver2 /= undefined,
 
@@ -186,8 +184,7 @@ versioning(Config) ->
         escalus:assert(roster_contains, [bob], Received2),
 
         %% check version
-        Ver2 = exml_query:path(Received2, [{element, <<"query">>},
-                                           {attr, <<"ver">>}]),
+        Ver2 = get_ver(Received2),
 
         %% check roster, send correct Ver
         escalus:send(Alice, escalus_stanza:roster_get(Ver2)),
@@ -459,3 +456,6 @@ remove_roster(Config, UserSpec) ->
 
     ok = escalus_ejabberd:rpc(mod_wocky_roster, remove_user_hook,
                               [User, Server]).
+
+get_ver(Element) ->
+    exml_query:path(Element, [{element, <<"query">>}, {attr, <<"ver">>}]).

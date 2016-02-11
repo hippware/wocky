@@ -30,6 +30,10 @@
 -behaviour(gen_mod).
 -export([start/2, stop/1]).
 
+-callback do_route(From :: ejabberd:jid(),
+                   To :: ejabberd:jid(),
+                   Packet :: any()) -> ok.
+
 %% IQ handler callback
 -export([process_iq/3]).
 
@@ -279,15 +283,11 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                                          children = []})
     end,
     case Push of
-        {push, PushItem} ->
-            if PushItem#roster.subscription =:= none,
-               PushItem#roster.ask =:= in ->
-                    ok;
-               true ->
-                    push_item(User, Server, ToJID, PushItem)
-            end,
+        {push, #roster{subscription = none, ask = in}} ->
             true;
-
+        {push, PushItem} ->
+            push_item(User, Server, ToJID, PushItem),
+            true;
         none ->
             false
     end.
@@ -416,8 +416,9 @@ fill_subscription_lists(_, _, [], F, T, P) ->
 build_pending(#roster{ask = Ask} = I, JID, P)
   when Ask =:= in; Ask =:= both ->
     Message = I#roster.askmessage,
-    Status  = if is_binary(Message) -> Message;
-                 true -> <<>>
+    Status  = case is_binary(Message) of
+                  true -> Message;
+                  false -> <<>>
               end,
 
     StatusEl = #xmlel{name = <<"status">>,
