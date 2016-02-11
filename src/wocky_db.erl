@@ -262,7 +262,7 @@ primary_key_string([PK], Acc) ->
 primary_key_string([First | Rest], Acc) ->
     primary_key_string(Rest, [", ", atom_to_list(First)|Acc]).
 
-sorting_option_string(undefined) -> "";
+sorting_option_string([]) -> "";
 sorting_option_string(Field) when is_atom(Field) ->
     sorting_option_string([{Field, asc}]);
 sorting_option_string([{Field, Dir}]) ->

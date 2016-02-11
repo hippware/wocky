@@ -241,7 +241,7 @@ table_views(roster) -> [
     {roster_version, all, [user, version, contact], [{version, asc}]}
 ];
 table_views(session) -> [
-    {user_sessions, all, [jid_user, jid_resource, sid], undefined}
+    {user_sessions, all, [jid_user, jid_resource, sid], []}
 ];
 table_views(_) -> [].
 
