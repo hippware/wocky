@@ -166,7 +166,7 @@ build_create_index_query_test() ->
     ]).
 
 build_create_view_query_test() ->
-    test_build_query_cases(fun wocky_db:build_create_view_query/4, [
+    test_build_query_cases(fun wocky_db:build_create_view_query/5, [
         {"CREATE MATERIALIZED VIEW IF NOT EXISTS roster_version AS"
          " SELECT * FROM roster"
          " WHERE user IS NOT NULL"
@@ -174,5 +174,6 @@ build_create_view_query_test() ->
            " AND contact IS NOT NULL"
          " PRIMARY KEY (user, version, contact)"
          " WITH CLUSTERING ORDER BY (version ASC)",
-        [roster_version, roster, [user, version, contact], [{version, asc}]]}
+        [roster_version, roster, all, [user, version, contact],
+         [{version, asc}]]}
     ]).

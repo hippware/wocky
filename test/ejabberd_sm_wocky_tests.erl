@@ -29,7 +29,7 @@ before_all() ->
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [session, user_to_sids]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [session]),
     ok.
 
 after_all(_) ->
@@ -38,11 +38,10 @@ after_all(_) ->
 
 before_each() ->
     {ok, SessData} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, session),
-    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user_to_sids),
     [data_to_rec(Sess) || Sess <- SessData].
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session, user_to_sids]).
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session]).
 
 data_to_rec(#{user := User, server := Server, sid := SID, priority := Priority,
               info := Info, jid_user := JU, jid_server := JS,

@@ -54,14 +54,15 @@ create_table_indexes(Context, Table) ->
 
 create_table_views(Context, Table) ->
     lists:foreach(
-      fun ({Name, Keys, OrderBy}) ->
-          ok = wocky_db:create_view(Context, Name, Table, Keys, OrderBy)
+      fun ({Name, Columns, Keys, OrderBy}) ->
+          ok = wocky_db:create_view(Context, Name, Table,
+                                    Columns, Keys, OrderBy)
       end,
       table_views(Table)).
 
 drop_table_views(Context, Table) ->
     lists:foreach(
-      fun ({Name, _, _}) ->
+      fun ({Name, _, _, _}) ->
           ok = wocky_db:drop(Context, 'materialized view', Name)
       end,
       table_views(Table)).
@@ -118,8 +119,7 @@ keyspace_tables(_) -> [
     last_activity,
     offline_msg,
     roster,
-    session,
-    user_to_sids
+    session
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -229,18 +229,7 @@ table_definition(session) ->
            {priority, int},        % Session priority
            {info, blob}            % Session info
        ],
-       primary_key = sid
-    };
-
-%% Lookup table mapping user ids to a list of session ids
-table_definition(user_to_sids) ->
-    #table_def{
-       name = user_to_sids,
-       columns = [
-           {jid_user, timeuuid},   % User ID (userpart of JID)
-           {sids, {set, blob}}     % List of session IDs
-       ],
-       primary_key = jid_user
+       primary_key = [sid, jid_user]
     }.
 
 table_indexes(session) -> [
@@ -249,7 +238,10 @@ table_indexes(session) -> [
 table_indexes(_) -> [].
 
 table_views(roster) -> [
-    {roster_version, [user, version, contact], [{version, asc}]}
+    {roster_version, all, [user, version, contact], [{version, asc}]}
+];
+table_views(session) -> [
+    {user_sessions, all, [jid_user, jid_resource, sid], undefined}
 ];
 table_views(_) -> [].
 
@@ -288,13 +280,6 @@ seed_data(session) ->
           [make_session(User, SID) || SID <- SIDs]
       end,
       session_sids());
-seed_data(user_to_sids) ->
-    lists:map(
-      fun (#{user := User, sids := SIDs}) ->
-          #{jid_user => User,
-            sids => [term_to_binary(SID) || SID <- SIDs]}
-      end,
-      session_sids());
 seed_data(offline_msg) ->
     NowSecs = get_nowsecs(),
     lists:flatmap(
@@ -314,8 +299,8 @@ seed_data(roster) ->
 seed_data(_) ->
     [].
 
-%% Static SID data that can be used to populate the session and user_to_sids
-%% tables. We are using static SIDs rather than radomly generated values so that
+%% Static SID data that can be used to populate the session
+%% table. We are using static SIDs rather than radomly generated values so that
 %% we can populate both tables without having to memoize the random data.
 session_sids() -> [
     #{user => ?ALICE,  sids => [{{1,2,3},    list_to_pid("<0.2319.0>")},
