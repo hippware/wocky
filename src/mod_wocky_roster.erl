@@ -30,10 +30,6 @@
 -behaviour(gen_mod).
 -export([start/2, stop/1]).
 
--callback do_route(From :: ejabberd:jid(),
-                   To :: ejabberd:jid(),
-                   Packet :: any()) -> ok.
-
 %% IQ handler callback
 -export([process_iq/3]).
 
