@@ -494,7 +494,8 @@ drop_nulls(Row) ->
 %%====================================================================
 
 run_query(Context, Query) ->
-    case get_client({}, Context) of
+    Spec = application:get_env(wocky, cqerl_node, {}),
+    case get_client(Spec, Context) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
             cqerl:close_client(Client),
