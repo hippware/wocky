@@ -1,21 +1,36 @@
 #!/bin/sh
 
-RUNNER_SCRIPT_DIR=$(cd ${0%/*} && pwd)
-EJABBERD_DIR=${RUNNER_SCRIPT_DIR%/*}
-EJABBERD_VMARGS_PATH=$EJABBERD_DIR/etc/vm.args
-START_ERL=`cat $EJABBERD_DIR/releases/start_erl.data`
+SCRIPT=$(readlink $0 || true)
+if [ -z $SCRIPT ]; then
+    SCRIPT=$0
+fi;
+SCRIPT_DIR="$(cd `dirname "$SCRIPT"` && pwd -P)"
+RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+START_ERL=`cat $RELEASE_ROOT_DIR/releases/start_erl.data`
+REL_NAME="wocky"
+REL_VSN=${START_ERL#* }
 ERTS_VSN=${START_ERL% *}
-ERTS_PATH=$EJABBERD_DIR/erts-$ERTS_VSN/bin
+ERTS_PATH=$RELEASE_ROOT_DIR/erts-$ERTS_VSN/bin
+REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
 ERL=$ERTS_PATH/erl
-EJABBERD_EBIN_PATH=$EJABBERD_DIR/lib/ejabberd-*/ebin/
+EJABBERD_EBIN_PATH=$RELEASE_ROOT_DIR/lib/ejabberd-*/ebin/
 
-COOKIE_ARG=`grep -e '^-setcookie' $EJABBERD_VMARGS_PATH`
+# Use $CWD/vm.args if exists, otherwise releases/VSN/vm.args
+if [ -z "$VMARGS_PATH" ]; then
+    if [ -f "$RELEASE_ROOT_DIR/vm.args" ]; then
+        VMARGS_PATH="$RELEASE_ROOT_DIR/vm.args"
+    else
+        VMARGS_PATH="$REL_DIR/vm.args"
+    fi
+fi
+
+COOKIE_ARG=`grep -e '^-setcookie' $VMARGS_PATH`
 if [ -z "$COOKIE_ARG" ]; then
     echo "vm.args needs to have a -setcookie parameter."
     exit 1
 fi
 
-NODENAME_ARG=`egrep -e '^-s?name' $EJABBERD_VMARGS_PATH`
+NODENAME_ARG=`egrep -e '^-s?name' $VMARGS_PATH`
 if [ -z "$NODENAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
     exit 1
@@ -26,29 +41,29 @@ NODENAME="${NODENAME_ARG#* }"
 
 add_to_cluster()
 {
-    $RUNNER_SCRIPT_DIR/wocky $ARGS
+    $SCRIPT_DIR/wocky $ARGS
 }
 
 remove_from_cluster()
 {
-    $RUNNER_SCRIPT_DIR/wocky $ARGS
+    $SCRIPT_DIR/wocky $ARGS
 }
 
 start ()
 {
-    $RUNNER_SCRIPT_DIR/wocky start
+    $SCRIPT_DIR/wocky start
 }
 
 # attach to server
 debug ()
 {
-    $RUNNER_SCRIPT_DIR/wocky debug
+    $SCRIPT_DIR/wocky debug
 }
 
 # start interactive server
 live ()
 {
-    $RUNNER_SCRIPT_DIR/wocky console
+    $SCRIPT_DIR/wocky console
 }
 
 help ()
@@ -77,66 +92,66 @@ ctl ()
     mkdir -p $CONNLOCKDIR
     FLOCK='/usr/bin/flock'
     if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
-	JOT='/usr/bin/jot'
-	if [ ! -x "$JOT" ] ; then
-	    # no flock or jot, simply invoke ctlexec()
-	    CTL_CONN="ctl-${NODENAME}"
-	    ctlexec $CTL_CONN $COMMAND
-	    result=$?
-	else
-	    # no flock, but at least there is jot
-	    RAND=`jot -r 1 0 $MAXCONNID`
-	    CTL_CONN="ctl-${RAND}-${NODENAME}"
-	    ctlexec $CTL_CONN $COMMAND
-	    result=$?
-	fi
+        JOT='/usr/bin/jot'
+        if [ ! -x "$JOT" ] ; then
+            # no flock or jot, simply invoke ctlexec()
+            CTL_CONN="ctl-${NODENAME}"
+            ctlexec $CTL_CONN $COMMAND
+            result=$?
+        else
+            # no flock, but at least there is jot
+            RAND=`jot -r 1 0 $MAXCONNID`
+            CTL_CONN="ctl-${RAND}-${NODENAME}"
+            ctlexec $CTL_CONN $COMMAND
+            result=$?
+        fi
     else
-	# we have flock so we get a lock
-	# on one of a limited number of
-	# conn names -- this allows
-	# concurrent invocations using a bound
-	# number of atoms
-	for N in $(seq 1 $MAXCONNID); do
-	    CTL_CONN="wockyctl-$N"
-	    CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
-	    (
-		exec 8>"$CTL_LOCKFILE"
-		if flock --nb 8; then
-		    ctlexec $CTL_CONN $COMMAND
+        # we have flock so we get a lock
+        # on one of a limited number of
+        # conn names -- this allows
+        # concurrent invocations using a bound
+        # number of atoms
+        for N in $(seq 1 $MAXCONNID); do
+            CTL_CONN="wockyctl-$N"
+            CTL_LOCKFILE="$CONNLOCKDIR/$CTL_CONN"
+            (
+                exec 8>"$CTL_LOCKFILE"
+                if flock --nb 8; then
+                    ctlexec $CTL_CONN $COMMAND
                     ssresult=$?
                     # segregate from possible flock exit(1)
-		    ssresult=$(expr $ssresult \* 10)
-		    exit $ssresult
-		else
-		    exit 1
-		fi
+                    ssresult=$(expr $ssresult \* 10)
+                    exit $ssresult
+                else
+                    exit 1
+                fi
             )
-	    result=$?
-	    if [ $result -eq 1 ]; then
+            result=$?
+            if [ $result -eq 1 ]; then
                 # means we errored out in flock
                 # rather than in the exec - stay in the loop
                 # trying other conn names...
-		badlock=1
-	    else
-		badlock=""
-		break;
-	    fi
-	done
-	result=$(expr $result / 10)
+                badlock=1
+            else
+                badlock=""
+                break;
+            fi
+        done
+        result=$(expr $result / 10)
     fi
 
-    if [ "$badlock" ];then
-	echo "Ran out of connections to try. Your wocky processes" >&2
-	echo "may be stuck or this is a very busy server. For very"   >&2
-	echo "busy servers, consider raising MAXCONNID in wockyctl">&2
-	exit 1;
+    if [ "$badlock" ]; then
+        echo "Ran out of connections to try. Your wocky processes" >&2
+        echo "may be stuck or this is a very busy server. For very"   >&2
+        echo "busy servers, consider raising MAXCONNID in wockyctl">&2
+        exit 1;
     fi
 
     case $result in
-	0) :;;
-	1) :;;
-	2) help;;
-	3) help;;
+        0) :;;
+        1) :;;
+        2) help;;
+        3) help;;
     esac
     return $result
 }
@@ -199,10 +214,10 @@ for PARAM in "$@"
 do
     case $PARAM in
         --)
-	    break ;;
-         *)
-	    ARGS="$ARGS$PARAM"; ARGS="$ARGS ";
-	    QUOTED_ARGS=$QUOTED_ARGS'"'$PARAM'"'; QUOTED_ARGS=$QUOTED_ARGS" " ;;
+            break ;;
+        *)
+            ARGS="$ARGS$PARAM"; ARGS="$ARGS ";
+            QUOTED_ARGS=$QUOTED_ARGS'"'$PARAM'"'; QUOTED_ARGS=$QUOTED_ARGS" " ;;
     esac
 done
 
