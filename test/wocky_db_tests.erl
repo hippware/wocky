@@ -6,6 +6,19 @@
 -include("wocky.hrl").
 
 
+-define(LONG_STRING, <<"Lorem ipsum dolor sit amet, consectetur cras amet.">>).
+
+to_keyspace_test_() -> {
+  "to_keyspace/1", [
+    { "should replace non-alphanumeric characters with underscores", [
+      ?_assertEqual(<<"abc123___">>, wocky_db:to_keyspace("abc123$!@"))
+    ]},
+    { "should truncate strings at 48 characters", [
+      ?_assert(byte_size(?LONG_STRING) > 48),
+      ?_assertEqual(48, byte_size(wocky_db:to_keyspace(?LONG_STRING)))
+    ]}
+]}.
+
 invalid_keyspace_test_() -> {
   "query", [
     { "should return an error when given an invalid keyspace", [

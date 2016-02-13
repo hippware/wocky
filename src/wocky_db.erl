@@ -47,6 +47,7 @@
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
+-export([to_keyspace/1]).
 -export([build_select_query/3, build_insert_query/3, build_delete_query/3,
          build_update_query/3, build_truncate_query/1, build_drop_query/2,
          build_create_keyspace_query/3, build_create_table_query/1,
@@ -514,10 +515,24 @@ get_client(Spec, Context) ->
 keyspace_name(Context) when is_atom(Context) ->
     keyspace_name(atom_to_binary(Context, utf8));
 keyspace_name(Context) ->
-    iolist_to_binary([keyspace_prefix(), Context]).
+    to_keyspace([keyspace_prefix(), Context]).
 
 keyspace_prefix() ->
     application:get_env(wocky, keyspace_prefix, "wocky_").
+
+%% Modify a string so it is a valid keyspace
+%% All invalid characters are replaced with underscore and then
+%% truncated to 48 characters. Returns the modified string.
+-spec to_keyspace(iodata()) -> binary().
+to_keyspace(String) ->
+    Space = iolist_to_binary(re:replace(String, "[^0-9a-z]", "_", [global])),
+    case byte_size(Space) of
+        Size when Size > 48 ->
+            {Head, _} = split_binary(Space, 48),
+            Head;
+        _ ->
+            Space
+    end.
 
 make_query(Query, Values, Consistency) ->
     log_query(Query, Values),
