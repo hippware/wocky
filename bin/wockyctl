@@ -1,21 +1,36 @@
 #!/bin/sh
 
-RUNNER_SCRIPT_DIR=$(cd ${0%/*} && pwd)
-EJABBERD_DIR=${RUNNER_SCRIPT_DIR%/*}
-EJABBERD_VMARGS_PATH=$EJABBERD_DIR/etc/vm.args
-START_ERL=`cat $EJABBERD_DIR/releases/start_erl.data`
+SCRIPT=$(readlink $0 || true)
+if [ -z $SCRIPT ]; then
+    SCRIPT=$0
+fi;
+SCRIPT_DIR="$(cd `dirname "$SCRIPT"` && pwd -P)"
+RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+START_ERL=`cat $RELEASE_ROOT_DIR/releases/start_erl.data`
+REL_NAME="wocky"
+REL_VSN=${START_ERL#* }
 ERTS_VSN=${START_ERL% *}
-ERTS_PATH=$EJABBERD_DIR/erts-$ERTS_VSN/bin
+ERTS_PATH=$RELEASE_ROOT_DIR/erts-$ERTS_VSN/bin
+REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
 ERL=$ERTS_PATH/erl
-EJABBERD_EBIN_PATH=$EJABBERD_DIR/lib/ejabberd-*/ebin/
+EJABBERD_EBIN_PATH=$RELEASE_ROOT_DIR/lib/ejabberd-*/ebin/
 
-COOKIE_ARG=`grep -e '^-setcookie' $EJABBERD_VMARGS_PATH`
+# Use $CWD/vm.args if exists, otherwise releases/VSN/vm.args
+if [ -z "$VMARGS_PATH" ]; then
+    if [ -f "$RELEASE_ROOT_DIR/vm.args" ]; then
+        VMARGS_PATH="$RELEASE_ROOT_DIR/vm.args"
+    else
+        VMARGS_PATH="$REL_DIR/vm.args"
+    fi
+fi
+
+COOKIE_ARG=`grep -e '^-setcookie' $VMARGS_PATH`
 if [ -z "$COOKIE_ARG" ]; then
     echo "vm.args needs to have a -setcookie parameter."
     exit 1
 fi
 
-NODENAME_ARG=`egrep -e '^-s?name' $EJABBERD_VMARGS_PATH`
+NODENAME_ARG=`egrep -e '^-s?name' $VMARGS_PATH`
 if [ -z "$NODENAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
     exit 1
@@ -26,29 +41,29 @@ NODENAME="${NODENAME_ARG#* }"
 
 add_to_cluster()
 {
-    $RUNNER_SCRIPT_DIR/wocky $ARGS
+    $SCRIPT_DIR/wocky $ARGS
 }
 
 remove_from_cluster()
 {
-    $RUNNER_SCRIPT_DIR/wocky $ARGS
+    $SCRIPT_DIR/wocky $ARGS
 }
 
 start ()
 {
-    $RUNNER_SCRIPT_DIR/wocky start
+    $SCRIPT_DIR/wocky start
 }
 
 # attach to server
 debug ()
 {
-    $RUNNER_SCRIPT_DIR/wocky debug
+    $SCRIPT_DIR/wocky debug
 }
 
 # start interactive server
 live ()
 {
-    $RUNNER_SCRIPT_DIR/wocky console
+    $SCRIPT_DIR/wocky console
 }
 
 help ()
