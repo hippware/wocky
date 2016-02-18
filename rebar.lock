@@ -79,7 +79,7 @@
   {git,"https://github.com/okeuday/quickrand.git",
        {ref,"3eadabe05bddbffe9e3d5cf17a9384319d8756a1"}},
   2},
- {<<"ranch">>,{pkg,<<"ranch">>,<<"1.2.0">>},1},
+ {<<"ranch">>,{pkg,<<"ranch">>,<<"1.2.1">>},1},
  {<<"re2">>,
   {git,"https://github.com/tuncer/re2.git",
        {ref,"cdc0b51a95e6af6736551d730b4ca96459f1ab90"}},
