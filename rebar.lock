@@ -17,6 +17,7 @@
   0},
  {<<"edown">>,{pkg,<<"edown">>,<<"0.7.0">>},0},
  {<<"ejabberd">>,{rsync,"ext/MongooseIM/apps/ejabberd"},0},
+ {<<"eper">>,{pkg,<<"eper">>,<<"0.94.0">>},0},
  {<<"escalus">>,
   {git,"https://github.com/esl/escalus",
        {ref,"f6395195959fb819172a2283d35ef2e89f533da2"}},
