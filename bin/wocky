@@ -470,7 +470,6 @@ case "$1" in
         then
             relx_nodetool version $WKY
         else
-            cat $RELEASE_ROOT_DIR/lib/wocky*/priv/logo.txt
             echo -n "wocky version "
             relx_nodetool version $WKY
         fi
