@@ -88,7 +88,7 @@ ctl ()
     # using flock if available. Expects a linux-style
     # flock that can lock a file descriptor.
     MAXCONNID=100
-    CONNLOCKDIR=$EJABBERD_DIR/var/lock/wockyctl
+    CONNLOCKDIR=$RELEASE_ROOT_DIR/var/lock/wockyctl
     mkdir -p $CONNLOCKDIR
     FLOCK='/usr/bin/flock'
     if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
@@ -162,6 +162,7 @@ ctlexec ()
     COMMAND=$@
     $ERL \
       $NAME_TYPE ${CONN_NAME} \
+      -boot start_clean \
       -noinput \
       -hidden \
       $COOKIE_ARG \
