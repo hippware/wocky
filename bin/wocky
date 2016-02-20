@@ -65,7 +65,7 @@ relx_rem_sh() {
     # Setup remote shell command to control node
     exec "$BINDIR/erl" "$NAME_TYPE" "$id" -remsh "$NAME" -boot start_clean \
          -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-         -setcookie "$COOKIE" -kernel net_ticktime $TICKTIME
+         -setcookie "$COOKIE" -hidden -kernel net_ticktime $TICKTIME
 }
 
 # Generate a random id
@@ -104,9 +104,23 @@ if [ -z "$VMARGS_PATH" ]; then
     fi
 fi
 
+orig_vmargs_path="$VMARGS_PATH.orig"
 if [ $RELX_REPLACE_OS_VARS ]; then
-    awk '{while(match($0,"[$]{[^}]*}")) {var=substr($0,RSTART+2,RLENGTH -3);gsub("[$]{"var"}",ENVIRON[var])}}1' < $VMARGS_PATH > $VMARGS_PATH.2.config
-    VMARGS_PATH=$VMARGS_PATH.2.config
+    #Make sure we don't break dev mode by keeping the symbolic link to
+    #the user's vm.args
+    if [ ! -L "$orig_vmargs_path" ]; then
+       #we're in copy mode, rename the vm.args file to vm.args.orig
+       mv "$VMARGS_PATH" "$orig_vmargs_path"
+    fi
+
+    awk '{while(match($0,"[$]{[^}]*}")) {var=substr($0,RSTART+2,RLENGTH -3);gsub("[$]{"var"}",ENVIRON[var])}}1' < "$orig_vmargs_path" > "$VMARGS_PATH"
+ else
+    #We don't need to replace env. vars, just rename the
+    #symlink vm.args.orig to vm.args, and keep it as a
+    #symlink.
+    if [ -L "$orig_vmargs_path" ]; then
+       mv "$orig_vmargs_path" "$VMARGS_PATH"
+    fi
 fi
 
 # Make sure log directory exists
@@ -121,9 +135,23 @@ if [ -z "$RELX_CONFIG_PATH" ]; then
     fi
 fi
 
+orig_relx_config_path="$RELX_CONFIG_PATH.orig"
 if [ $RELX_REPLACE_OS_VARS ]; then
-    awk '{while(match($0,"[$]{[^}]*}")) {var=substr($0,RSTART+2,RLENGTH -3);gsub("[$]{"var"}",ENVIRON[var])}}1' < $RELX_CONFIG_PATH > $RELX_CONFIG_PATH.2.config
-    RELX_CONFIG_PATH=$RELX_CONFIG_PATH.2.config
+    #Make sure we don't break dev mode by keeping the symbolic link to
+    #the user's sys.config
+    if [ ! -L "$orig_relx_config_path" ]; then
+       #We're in copy mode, rename sys.config to sys.config.orig
+       mv "$RELX_CONFIG_PATH" "$orig_relx_config_path"
+    fi
+
+    awk '{while(match($0,"[$]{[^}]*}")) {var=substr($0,RSTART+2,RLENGTH -3);gsub("[$]{"var"}",ENVIRON[var])}}1' < "$orig_relx_config_path" > "$RELX_CONFIG_PATH"
+ else
+    #We don't need to replace env. vars, just rename the
+    #symlink sys.config.orig to sys.config. Keep it as
+    #a symlink.
+    if [ -L "$orig_relx_config_path" ]; then
+       mv "$orig_relx_config_path"  "$RELX_CONFIG_PATH"
+    fi
 fi
 
 # Extract the target node name from node.args
@@ -357,7 +385,7 @@ case "$1" in
 
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
-        set -- "$BINDIR/erlexec" -boot "$BOOTFILE" \
+        set -- "$BINDIR/erlexec" -boot "$BOOTFILE" -mode "$CODE_LOADING_MODE" \
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -config "$RELX_CONFIG_PATH" \
             -args_file "$VMARGS_PATH"
