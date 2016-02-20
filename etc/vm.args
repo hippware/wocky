@@ -1,12 +1,8 @@
 ## -*- mode: shell-script; indent-tabs-mode: nil -*-
 ## ex: ts=4 sw=4 ft=sh et
 
-## Name of the node:
-##   -sname node@host
-## or
-##   -name node@fully.qualified.domain.name
-## Without @something suffix `wockyctl debug` breaks.
--sname wocky@localhost
+## Name of the node
+-sname wocky
 
 ## Cookie for distributed erlang
 -setcookie ejabberd
