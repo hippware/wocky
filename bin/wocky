@@ -17,11 +17,6 @@ REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
 ERL_OPTS=""
 RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_ROOT_DIR/log}"
 
-EJABBERD_SO_PATH=`ls -dt $RELEASE_ROOT_DIR/lib/ejabberd-2.1.8*/priv/lib | head -1`
-EJABBERD_CONFIG_PATH=$RELEASE_ROOT_DIR/priv/ejabberd.cfg
-export EJABBERD_SO_PATH
-export EJABBERD_CONFIG_PATH
-
 find_erts_dir() {
     __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
     if [ -d "$__erts_dir" ]; then

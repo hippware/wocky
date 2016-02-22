@@ -494,8 +494,23 @@ drop_nulls(Row) ->
 %% Internal functions
 %%====================================================================
 
+default_db_config() ->
+    application:get_env(wocky, cqerl_node, {}).
+
+get_db_config() ->
+    %% Try pulling the config from ejabberd
+    try
+        case ejabberd_config:get_global_option(cqerl_node) of
+            undefined -> default_db_config();
+            Value -> Value
+        end
+    catch
+        _:_ ->
+            default_db_config()
+    end.
+
 run_query(Context, Query) ->
-    Spec = application:get_env(wocky, cqerl_node, {}),
+    Spec = get_db_config(),
     case get_client(Spec, Context) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
@@ -518,7 +533,8 @@ keyspace_name(Context) ->
     to_keyspace([keyspace_prefix(), Context]).
 
 keyspace_prefix() ->
-    application:get_env(wocky, keyspace_prefix, "wocky_").
+    {ok, Prefix} = application:get_env(wocky, keyspace_prefix),
+    Prefix.
 
 %% Modify a string so it is a valid keyspace
 %% All invalid characters are replaced with underscore and then

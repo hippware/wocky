@@ -5,11 +5,15 @@
   {vsn, git},
   {modules, []},
   {registered, []},
-  {applications, [lager, ossp_uuid, cqerl]},
+  {applications, [kernel, stdlib, crypto, lager, ossp_uuid, cqerl]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [
+         {wocky_env, "dev"},
+         {config_dir, "etc"},
          {start_ejabberd, false},
+         {cqerl_node, {"127.0.0.1", 9042}},
+         {keyspace_prefix, "wocky_"},
          {francus_chunk_size, 1048576} % 1MB
         ]}
  ]}.

@@ -10,15 +10,8 @@ start_ejabberd() ->
         {error, {already_started, _Pid}} -> ok
     end,
 
-    wocky_app:start(),
-
-    application:load(ejabberd),
-    ConfigPath = "../../../../etc/ejabberd.cfg",
-    application:set_env(ejabberd, config, ConfigPath),
-    application:ensure_all_started(ejabberd),
-    ok.
+    ok = wocky_app:start("test"),
+    wocky_app:start_ejabberd("../../../../etc").
 
 stop_ejabberd() ->
-    application:stop(ejabberd),
-    wocky_app:stop(),
-    ok.
+    wocky_app:stop().
