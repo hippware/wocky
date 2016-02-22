@@ -41,15 +41,9 @@ test_sizes() ->
 
 before_all() ->
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(?SERVER, [media, media_data]),
-    meck:new(ejabberd_config),
-    meck:expect(ejabberd_config, get_global_option,
-                fun(francus_chunk_size) -> undefined % Use the default
-                end).
+    ok = wocky_db_seed:prepare_tables(?SERVER, [media, media_data]).
 
 after_all(_) ->
-    true = meck:validate(ejabberd_config),
-    meck:unload(ejabberd_config),
     ok = wocky_app:stop().
 
 make_file(Size) ->
