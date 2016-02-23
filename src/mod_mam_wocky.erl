@@ -36,24 +36,19 @@
                     {time, non_neg_integer()} |
                     undefined.
 
--define(HOOK_SEQ, 50).
-
-hooks(Host) ->
+hooks() ->
     [
-     [mam_archive_message, Host, ?MODULE, archive_message_hook, ?HOOK_SEQ],
-     [mam_lookup_messages, Host, ?MODULE, lookup_messages_hook, ?HOOK_SEQ]
+     {mam_archive_message, archive_message_hook},
+     {mam_lookup_messages, lookup_messages_hook}
     ].
 
 start(Host, _Opts) ->
-    hooks_op(Host, add),
+    wocky_util:add_hooks(hooks(), Host, ?MODULE, 50),
     ok.
 
 stop(Host) ->
-    hooks_op(Host, delete),
+    wocky_util:delete_hooks(hooks(), Host, ?MODULE, 50),
     ok.
-
-hooks_op(Host, Op) ->
-    lists:foreach(fun(H) -> apply(ejabberd_hooks, Op, H) end, hooks(Host)).
 
 -spec archive_message_hook(Result :: any(),
                       Host   :: ejabberd:server(),
