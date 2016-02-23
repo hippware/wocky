@@ -273,7 +273,7 @@ primary_key_string([First | Rest], Acc) ->
     primary_key_string(Rest, [", ", primary_key_element(First)|Acc]).
 
 primary_key_element(Columns) when is_list(Columns) ->
-    ["(", columns(Columns, ""), ")"];
+    names(Columns);
 primary_key_element(Col) when is_atom(Col) ->
     atom_to_list(Col).
 

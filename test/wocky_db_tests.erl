@@ -150,6 +150,12 @@ build_create_table_query_test() ->
          " (id uuid, PRIMARY KEY (foo, bar, baz))",
          [TD#table_def{primary_key = [foo, bar, baz]}]},
         {"CREATE TABLE IF NOT EXISTS test_tbl"
+         " (id uuid, PRIMARY KEY ((foo, bar), baz))",
+         [TD#table_def{primary_key = [[foo, bar], baz]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl"
+         " (id uuid, PRIMARY KEY ((foo, bar, baz)))",
+         [TD#table_def{primary_key = [[foo, bar, baz]]}]},
+        {"CREATE TABLE IF NOT EXISTS test_tbl"
          " (first text, second text, PRIMARY KEY (id))",
          [TD#table_def{columns = [{first, text}, {second, text}]}]},
         {"CREATE TABLE IF NOT EXISTS test_tbl (id uuid, PRIMARY KEY (id))"
