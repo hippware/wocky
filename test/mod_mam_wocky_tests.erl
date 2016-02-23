@@ -36,7 +36,7 @@ before_all() ->
 
 after_all(_) ->
     ets:delete(config),
-    meck:validate(gen_mod),
+    ?assert(meck:validate(gen_mod)),
     meck:unload(gen_mod),
     ok = wocky_app:stop().
 
