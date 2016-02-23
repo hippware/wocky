@@ -10,16 +10,18 @@
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
-%% MAM hook handlers
 -export([
-         archive_message/9,
-         lookup_messages/14,
+         %% MAM hook handlers
+         archive_message_hook/9,
+         lookup_messages_hook/14,
+         %% Export for DB seeding
          jid_key/2
         ]).
 
 -ifdef(TEST).
 -export([
-         archive_test_message/7
+         archive_test_message/7,
+         do_lookup/7
         ]).
 -endif.
 
@@ -30,13 +32,16 @@
          add_limit/2]).
 
 -type result_row() :: {non_neg_integer(), ejabberd:jid(), exml:element()}.
+-type mam_time() :: {uuid, inclusive | exclusive, binary()} |
+                    {time, non_neg_integer()} |
+                    undefined.
 
 -define(HOOK_SEQ, 50).
 
 hooks(Host) ->
     [
-     [mam_archive_message, Host, ?MODULE, archive_message, ?HOOK_SEQ],
-     [mam_lookup_messages, Host, ?MODULE, lookup_messages, ?HOOK_SEQ]
+     [mam_archive_message, Host, ?MODULE, archive_message_hook, ?HOOK_SEQ],
+     [mam_lookup_messages, Host, ?MODULE, lookup_messages_hook, ?HOOK_SEQ]
     ].
 
 start(Host, _Opts) ->
@@ -50,7 +55,7 @@ stop(Host) ->
 hooks_op(Host, Op) ->
     lists:foreach(fun(H) -> apply(ejabberd_hooks, Op, H) end, hooks(Host)).
 
--spec archive_message(Result :: any(),
+-spec archive_message_hook(Result :: any(),
                       Host   :: ejabberd:server(),
                       MessID :: mod_mam:message_id(),
                       ArcID  :: mod_mam:archive_id(),
@@ -60,7 +65,7 @@ hooks_op(Host, Op) ->
                       Dir    :: incoming | outgoing,
                       Packet :: exml:element()
                      ) -> ok.
-archive_message(_Result, Host, MessID, _UserID,
+archive_message_hook(_Result, Host, MessID, _UserID,
                 LocJID, RemJID, _SrcJID, incoming, Packet) ->
     TTL = gen_mod:get_module_opt(global, ?MODULE, message_ttl, infinity),
     PartKey = jid_key(LocJID, RemJID),
@@ -70,12 +75,12 @@ archive_message(_Result, Host, MessID, _UserID,
                    sent_to_lower => ToLower},
     ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row, TTL));
 
-archive_message(_Result, _Host, _MessID, _UserID,
+archive_message_hook(_Result, _Host, _MessID, _UserID,
                 _LocJID, _RemJID, _SrcJID, outgoing, _Packet) ->
     %% Will be archived by remote jid.
     ok.
 
--spec lookup_messages(
+-spec lookup_messages_hook(
         Result         :: term(),
         Host           :: ejabberd:server(),
         UserID         :: mod_mam:archive_id(),
@@ -97,20 +102,20 @@ archive_message(_Result, _Host, _MessID, _UserID,
     | {error, missing_with_jid}.
 
 %% No second JID - not implemented nor expected to be:
-lookup_messages(_, _, _, _, _, _, _, _, _, undefined, _, _, _, _) ->
+lookup_messages_hook(_, _, _, _, _, _, _, _, _, undefined, _, _, _, _) ->
     {error, missing_with_jid};
 
 %% No RSM data, no borders; time only - generate some RSM data and use the
 %% function below:
-lookup_messages(Result, Host, UserID, UserJID,
+lookup_messages_hook(Result, Host, UserID, UserJID,
                 undefined, undefined,
                 Start, End, Now, WithJID,
                 PageSize, LimitPassed, MaxResultLimit, Simple) ->
-    lookup_messages(Result, Host, UserID, UserJID,
+    lookup_messages_hook(Result, Host, UserID, UserJID,
                     #rsm_in{max = PageSize}, undefined, Start, End, Now,
                     WithJID, PageSize, LimitPassed, MaxResultLimit, Simple);
 
-lookup_messages(_Result, Host, _UserID, UserJID,
+lookup_messages_hook(_Result, Host, _UserID, UserJID,
                 #rsm_in{id = undefined, index = undefined,
                         max = RSMMax, direction = Direction},
                 undefined, Start, End, _Now, WithJID,
@@ -125,15 +130,15 @@ lookup_messages(_Result, Host, _UserID, UserJID,
 
 %% No RSM data, borders present. Generate RSM based off the pagesize and use
 %% the function below:
-lookup_messages(Result, Host, UserID, UserJID,
+lookup_messages_hook(Result, Host, UserID, UserJID,
                 undefined, Borders,
                 undefined, undefined, Now, WithJID,
                 PageSize, LimitPassed, MaxResultLimit, Simple) ->
-    lookup_messages(Result, Host, UserID, UserJID,
+    lookup_messages_hook(Result, Host, UserID, UserJID,
                 #rsm_in{max = PageSize}, Borders, undefined, undefined,
                 Now, WithJID, PageSize, LimitPassed, MaxResultLimit, Simple);
 
-lookup_messages(_Result, Host, _UserID, UserJID,
+lookup_messages_hook(_Result, Host, _UserID, UserJID,
                 #rsm_in{
                    max = RSMMax,
                    direction = Direction,
@@ -157,7 +162,7 @@ lookup_messages(_Result, Host, _UserID, UserJID,
     return_result(Counts, Rows);
 
 %% RSM data present with index only (out-of-order retrieval):
-lookup_messages(_Result, Host, _UserID, UserJID,
+lookup_messages_hook(_Result, Host, _UserID, UserJID,
                 #rsm_in{id = undefined, index = Index,
                         max = RSMMax, direction = Direction},
                 undefined, undefined, undefined, _Now, WithJID,
@@ -172,7 +177,7 @@ lookup_messages(_Result, Host, _UserID, UserJID,
 
 %% RSM data present with ID - find the timestamp for that ID and do a timestamp
 %% based lookup:
-lookup_messages(_Result, Host, _UserID, UserJID,
+lookup_messages_hook(_Result, Host, _UserID, UserJID,
                 #rsm_in{direction = Direction, id = ID,
                         index = undefined, max = RSMMax},
                 undefined, undefined, undefined, _Now, WithJID,
@@ -186,10 +191,20 @@ lookup_messages(_Result, Host, _UserID, UserJID,
                              undefined, undefined, undefined, Rows),
     return_result(Counts, Rows);
 
-lookup_messages(_, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
+lookup_messages_hook(_, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
     error(unhandled_lookup_parameters).
 
-do_lookup(_Host, _UserJID, _WithJID, _Start, _End, 0, _Direction) ->
+-spec do_lookup(
+        Host  :: binary(),
+        JID1  :: ejabberd:jid(),
+        JID2  :: ejabberd:jid(),
+        Start :: mam_time(),
+        End   :: mam_time(),
+        Max   :: undefined | non_neg_integer(),
+        Direction :: undefined | before | aft) ->
+    [#{}].
+
+do_lookup(_Host, _JID1, _JID2, _Start, _End, 0, _Direction) ->
     [];
 
 do_lookup(Host, JID1, JID2, Start, End, Max, Direction) ->
@@ -231,10 +246,10 @@ add_borders({Q, V},
                          from_id = FromID, to_id = ToID}) ->
     lists:foldl(fun({B, Op}, Acc) -> add_border(Acc, B, Op) end,
                 {Q, V},
-                [{AfterID, ">"},
+                [{AfterID,  ">"},
                  {BeforeID, "<"},
-                 {FromID, ">="},
-                 {ToID, "<="}]).
+                 {FromID,   ">="},
+                 {ToID,     "<="}]).
 
 
 add_border({Q, V}, undefined, _Op) -> {Q, V};
@@ -344,6 +359,16 @@ standard_counts(CountType, RSMMax, Host, JID1, JID2, TaggedStart, TaggedEnd,
     standard_counts(NeedCount, Host, JID1, JID2, TaggedStart, TaggedEnd,
                     Borders, Rows).
 
+-spec standard_counts(
+        NeedCount   :: boolean(),
+        Host        :: binary(),
+        JID1        :: ejabberd:jid(),
+        JID2        :: ejabberd:jid(),
+        TaggedStart :: undefined | mam_time(),
+        TaggedEnd   :: undefined | mam_time(),
+        Borders     :: undefined | mod_mam:borders(),
+        Rows        :: [#{}]
+       ) -> {undefined | non_neg_integer(), undefined | non_neg_integer()}.
 standard_counts(false, _, _, _, _, _, _, _) -> {undefined, undefined};
 standard_counts(true, Host, JID1, JID2, TaggedStart,
                 TaggedEnd, Borders, Rows) ->

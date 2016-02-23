@@ -8,8 +8,8 @@
 -include("wocky_db_seed.hrl").
 
 -import(mod_mam_wocky, [
-                        archive_message/9,
-                        lookup_messages/14]).
+                        archive_message_hook/9,
+                        lookup_messages_hook/14]).
 
 -define(FIRST_ID(N), nth_id(U1, U2, N, Rows)).
 
@@ -17,8 +17,8 @@ mod_mam_wocky_test_() -> {
   "mod_mam_wocky",
   setup, fun before_all/0, fun after_all/1,
   [
-   test_archive_message(),
-   test_lookup_messages()
+   test_archive_message_hook(),
+   test_lookup_messages_hook()
   ]
  }.
 
@@ -48,7 +48,7 @@ before_each() ->
 after_each(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive]).
 
-test_archive_message() ->
+test_archive_message_hook() ->
     Users = wocky_db_seed:archive_users(),
     U1 = hd(Users),
     U2 = lists:last(Users),
@@ -67,7 +67,7 @@ test_archive_message() ->
         { "Message should archive safely and should only be stored once", [
             ?_test(
                begin
-                   [?assertEqual(ok, archive_message(ok, ?LOCAL_CONTEXT, ID,
+                   [?assertEqual(ok, archive_message_hook(ok, ?LOCAL_CONTEXT, ID,
                                                      not_used,
                                                     jid:from_binary(U1),
                                                     jid:from_binary(U2),
@@ -88,7 +88,7 @@ test_archive_message() ->
      ]
     }.
 
-test_lookup_messages() ->
+test_lookup_messages_hook() ->
     Users = wocky_db_seed:archive_users(),
     U1 = hd(Users),
     U2 = lists:last(Users),
@@ -295,28 +295,28 @@ lt(High, Val) ->
     Val < High.
 
 lookup_by_users(User1, User2) ->
-    lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
+    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
                     undefined, undefined, undefined, User2, 10000, not_used,
                     not_used, false).
 
 lookup_by_time(User1, User2, Start, End) ->
-    lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
+    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
                     ms_to_us(Start), ms_to_us(End), undefined, User2, 10000,
                     false, 10000, false).
 
 lookup_by_borders(User1, User2, Borders) ->
-    lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, Borders,
+    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, Borders,
                     undefined, undefined, undefined, User2, 10000, false, 10000,
                     false).
 
 lookup_by_index(User1, User2, Index, Max) ->
-    lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1,
+    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1,
                     #rsm_in{index = Index, max = Max}, undefined, undefined,
                     undefined, undefined, User2, Max, undefined, undefined,
                     false).
 
 lookup_by_id(User1, User2, ID, Max, Direction) ->
-    lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1,
+    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1,
                     #rsm_in{id = ID, max = Max, direction = Direction},
                     undefined, undefined, undefined, undefined, User2,
                     Max, undefined, undefined, false).
