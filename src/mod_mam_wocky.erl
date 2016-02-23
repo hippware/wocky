@@ -5,6 +5,8 @@
 
 -behaviour(gen_mod).
 
+-compile({parse_transform, fun_chain}).
+
 -include_lib("ejabberd/include/jlib.hrl").
 
 %% gen_mod handlers
@@ -26,8 +28,8 @@
 -endif.
 
 %% Query construction internal exports
--export([add_jids/3,
-         add_times/3,
+-export([add_jids/2,
+         add_times/2,
          add_ordering/2,
          add_limit/2]).
 
@@ -204,14 +206,15 @@ do_lookup(_Host, _JID1, _JID2, _Start, _End, 0, _Direction) ->
 
 do_lookup(Host, JID1, JID2, Start, End, Max, Direction) ->
     InitialQuery = "SELECT * FROM message_archive WHERE ",
-    {Query, Values} =
-    lists:foldl(fun({F, A}, {Q, V}) -> apply(?MODULE, F, [{Q, V} | A]) end,
-                {InitialQuery, #{}},
-                [{add_jids,     [JID1, JID2]},
-                 {add_times,    [Start, End]},
-                 {add_ordering, [Direction]},
-                 {add_limit,    [Max]}]),
-    run_paging_query(Host, Query, Values).
+    {Q, V} =
+    fun_chain:last(
+      {InitialQuery, #{}},
+      add_jids({JID1, JID2}),
+      add_times({Start, End}),
+      add_ordering(Direction),
+      add_limit(Max)
+     ),
+    run_paging_query(Host, Q, V).
 
 return_result({Total, OffsetCount}, Rows) ->
     {ok, {Total, OffsetCount, lists:sort([row_to_msg(R) || R <- Rows])}}.
@@ -222,7 +225,7 @@ make_start(aft, Time) -> Time.
 make_end(before, Time) -> Time;
 make_end(aft, _) -> undefined.
 
-add_jids({Q, V}, UserJID, WithJID) ->
+add_jids({UserJID, WithJID}, {Q, V}) ->
     {[Q, " lower_jid = ? AND upper_jid = ?"],
      maps:merge(V, jid_key(UserJID, WithJID))}.
 
@@ -236,36 +239,34 @@ get_time_from_id(Host, JID1, JID2, ID) ->
     PartKey = jid_key(JID1, JID2),
     wocky_db:select_one(Host, archive_id, time, PartKey#{id => ID}).
 
-add_borders({Q, V},
-            #mam_borders{after_id = AfterID, before_id = BeforeID,
-                         from_id = FromID, to_id = ToID}) ->
-    lists:foldl(fun({B, Op}, Acc) -> add_border(Acc, B, Op) end,
+add_borders(#mam_borders{after_id = AfterID, before_id = BeforeID,
+                         from_id = FromID, to_id = ToID}, {Q, V}) ->
+    lists:foldl(fun add_border/2,
                 {Q, V},
                 [{AfterID,  ">"},
                  {BeforeID, "<"},
                  {FromID,   ">="},
                  {ToID,     "<="}]).
 
-
-add_border({Q, V}, undefined, _Op) -> {Q, V};
-add_border({Q, V}, Border, Op) ->
+add_border({undefined, _Op}, {Q, V}) -> {Q, V};
+add_border({Border, Op}, {Q, V}) ->
     {BindStr, BindAtom} = make_binding("border", Op),
     {[Q, " AND id ", Op, " ", BindStr], V#{BindAtom => Border}}.
 
-add_times({Q, V}, Start, End) ->
-    lists:foldl(fun({Time, Op}, Acc) -> add_time(Acc, Time, Op) end,
+add_times({Start, End}, {Q, V}) ->
+    lists:foldl(fun add_time/2,
                 {Q, V},
                 [{Start, ">"},
-                 {End, "<"}]).
+                 {End,   "<"}]).
 
-add_time({Q, V}, undefined, _) -> {Q, V};
-add_time({Q, V}, {_, undefined}, _) -> {Q, V};
-add_time({Q, V}, {time, Time}, Op) ->
+add_time({undefined, _}, {Q, V}) -> {Q, V};
+add_time({{_, undefined}, _}, {Q, V}) -> {Q, V};
+add_time({{time, Time}, Op}, {Q, V}) ->
     {BindStr, BindAtom} = make_binding("time", Op),
     {UUIDFun, CompareTS} = uuid_fun(Op, mam_to_wocky_ts(Time)),
     {[Q, " AND time ", Op, " ", UUIDFun, "(", BindStr, ")"],
      V#{BindAtom => CompareTS}};
-add_time({Q, V}, {uuid, Type, Time}, Op) ->
+add_time({{uuid, Type, Time}, Op}, {Q, V}) ->
     {BindStr, BindAtom} = make_binding("time_uuid", Op),
     AllowMatch = maybe_inclusive(Type),
     {[Q, " AND time ", Op, AllowMatch, " ", BindStr],
@@ -283,11 +284,11 @@ uuid_fun(">", Time) ->
 uuid_fun("<", Time) ->
     {"minTimeuuid", Time+1}.
 
-add_ordering({Q, V}, before) -> {[Q, " ORDER BY time DESC"], V};
-add_ordering({Q, V}, _) -> {Q, V}.
+add_ordering(before, {Q, V}) -> {[Q, " ORDER BY time DESC"], V};
+add_ordering(_, {Q, V}) -> {Q, V}.
 
-add_limit({Q, V}, undefined) -> {Q, V};
-add_limit({Q, V}, Limit) ->
+add_limit(undefined, {Q, V}) -> {Q, V};
+add_limit(Limit, {Q, V}) ->
     {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
 
 jid_key(JID1 = #jid{}, JID2 = #jid{}) ->
@@ -312,13 +313,13 @@ need_count(opt_count, _) -> true.
 
 total_count(Host, JID1, JID2, FirstTime, LastTime) ->
     InitialQuery = "SELECT COUNT(*) FROM message_archive WHERE ",
-    InitialValues = #{},
-    {Query, Values} =
-    lists:foldl(fun({F, A}, {Q, V}) -> apply(?MODULE, F, [{Q, V} | A]) end,
-                {InitialQuery, InitialValues},
-                [{add_jids, [JID1, JID2]},
-                 {add_times, [FirstTime, LastTime]}]),
-    {ok, Result} = wocky_db:query(Host, Query, Values, quorum),
+    {Q, V} =
+    fun_chain:last(
+      {InitialQuery, #{}},
+      add_jids({JID1, JID2}),
+      add_times({FirstTime, LastTime})
+    ),
+    {ok, Result} = wocky_db:query(Host, Q, V, quorum),
     wocky_db:single_result(Result).
 
 offset_count(_, _, _, _, []) -> undefined;
@@ -332,10 +333,13 @@ offset_count(Host, JID1, JID2,
     offset_count(Host, JID1, JID2, NewBorders).
 
 offset_count(Host, JID1, JID2, Borders) ->
-    BaseQuery = ["SELECT COUNT(*) FROM archive_id WHERE lower_jid = ? AND
-            upper_jid = ?"],
-    PartKey = jid_key(JID1, JID2),
-    {Q, V} = add_borders({BaseQuery, PartKey}, Borders),
+    InitialQuery = "SELECT COUNT(*) FROM archive_id WHERE ",
+    {Q, V} =
+    fun_chain:last(
+      {InitialQuery, #{}},
+      add_jids({JID1, JID2}),
+      add_borders(Borders)
+    ),
     {ok, Result} = wocky_db:query(Host, Q, V, quorum),
     wocky_db:single_result(Result).
 
@@ -377,10 +381,13 @@ index_id(Rows) ->
     min(FirstID, LastID).
 
 find_nth_query_val(JID1, JID2, Index, Max, Direction) ->
-    Q = "SELECT * FROM message_archive WHERE lower_jid = ? AND upper_jid = ?",
-    V = jid_key(JID1, JID2),
-    {Q2, V2} = add_limit({Q, V}, maybe_add(Index, Max)),
-    add_ordering({Q2, V2}, Direction).
+    InitialQuery = "SELECT * FROM message_archive WHERE ",
+    fun_chain:last(
+      {InitialQuery, #{}},
+      add_jids({JID1, JID2}),
+      add_limit(maybe_add(Index, Max)),
+      add_ordering(Direction)
+    ).
 
 row_to_msg(#{id := ID, sent_to_lower := true,
              upper_jid := SrcJID, message := Packet}) ->
