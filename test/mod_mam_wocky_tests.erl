@@ -189,35 +189,50 @@ test_lookup_messages() ->
          ]
         },
         { "Check counts", [
-            ?_assertEqual({length(user_msgs(U1, U2, Rows)), 0},
-                          counts(lookup_by_users(U1, U2))),
-            ?_assertEqual({length(time_msgs(5, 50,
+            { "Test count of user-based lookup",
+              [?_assertEqual({length(user_msgs(U1, U2, Rows)), 0},
+                          counts(lookup_by_users(U1, U2)))]},
+            { "Test counts of time-based lookup",
+              [?_assertEqual({length(time_msgs(5, 50,
                                             user_msgs(U1, U2, Rows))),
                            offset_of(U1, U2, ?FIRST_ID(5), Rows)-1
                           },
-                          counts(lookup_by_time(U1, U2, 5, 50))),
-            ?_assertEqual({length(id_msgs_exclusive(?FIRST_ID(8), ?FIRST_ID(35),
-                                              user_msgs(U1, U2, Rows))), 0},
-                          counts(lookup_by_borders(U1, U2,
+                          counts(lookup_by_time(U1, U2, 5, 50)))]},
+            { "Test counts of border-based exclusive lookup",
+              [?_assertEqual({length(
+                                id_msgs_exclusive(?FIRST_ID(8),
+                                                  ?FIRST_ID(35),
+                                                  user_msgs(U1, U2, Rows))), 0
+                             },
+                             counts(lookup_by_borders(U1, U2,
                                     #mam_borders{after_id = ?FIRST_ID(8),
                                                  before_id = ?FIRST_ID(35)
-                                                }))),
-            ?_assertEqual({length(id_msgs_inclusive(?FIRST_ID(8), ?FIRST_ID(35),
-                                              user_msgs(U1, U2, Rows))), 0},
-                          counts(lookup_by_borders(U1, U2,
+                                                })))]},
+            { "Test counts of border-based inclusive lookup",
+              [?_assertEqual({length(
+                                id_msgs_inclusive(?FIRST_ID(8),
+                                                  ?FIRST_ID(35),
+                                                  user_msgs(U1, U2, Rows))), 0
+                             },
+                             counts(lookup_by_borders(U1, U2,
                                     #mam_borders{from_id = ?FIRST_ID(8),
                                                  to_id = ?FIRST_ID(35)
-                                                }))),
-            ?_assertEqual({length(messages_from_index(0, undefined,
-                                                user_msgs(U1, U2, Rows))), 16},
-                          counts(lookup_by_index(U1, U2, 16, 5))),
-            ?_assertEqual({length(
-                            messages_from_id(-1, undefined, aft,
-                                             user_msgs(U1, U2, Rows))),
-                           offset_of(U1, U2, ?FIRST_ID(6), Rows)
+                                                })))]},
+            { "Test counts of index-based lookup",
+              [?_assertEqual({length(messages_from_index(0, undefined,
+                                                user_msgs(U1, U2, Rows))), 16
+                             },
+                          counts(lookup_by_index(U1, U2, 16, 5)))]},
+            { "Test counts of ID-based lookup",
+              [?_assertEqual({length(
+                                messages_from_id(-1, undefined, aft,
+                                                 user_msgs(U1, U2, Rows))),
+                              offset_of(U1, U2, ?FIRST_ID(6), Rows)
                           },
-                          counts(lookup_by_id(U1, U2, ?FIRST_ID(6), 10, aft))),
-            ?_assertEqual({length(
+                          counts(lookup_by_id(U1, U2, ?FIRST_ID(6),
+                                              10, aft)))]},
+            { "Test counts of ID-based lookup with reverse ordering",
+              [?_assertEqual({length(
                             messages_from_id(-1, undefined, aft,
                                              user_msgs(U1, U2, Rows))),
                            %% Subtract 10 for the count (because we're going
@@ -227,7 +242,7 @@ test_lookup_messages() ->
                            offset_of(U1, U2, ?FIRST_ID(200), Rows) - 10 - 1
                           },
                             counts(lookup_by_id(U1, U2, ?FIRST_ID(200), 10,
-                                              before)))
+                                              before)))]}
          ]
         }
 
