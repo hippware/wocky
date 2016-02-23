@@ -52,6 +52,16 @@ If you want a tarball of the production release use the command:
 
     $ ./rebar3 tar
 
+Database schema and seed data
+=============================
+You can create the database schema and load it with seed data using:
+
+    > wocky_db_seed:bootstrap().
+
+To create the schema without loading seed data use:
+
+    > wocky_db_seed:create_schema().
+
 Runtime diagnostic tools
 ========================
 
