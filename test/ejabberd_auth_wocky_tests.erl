@@ -39,7 +39,7 @@ ejabberd_auth_wocky_with_scram_test_() -> {
   fun after_all/1,
   [
     test_store_type_with_scram(),
-    test_check_password_with_options(),
+    test_check_password_with_digest(),
     test_check_password(),
     test_set_password(),
     test_get_password_with_default(),
@@ -59,7 +59,7 @@ ejabberd_auth_wocky_without_scram_test_() -> {
   fun after_all/1,
   [
     test_store_type_without_scram(),
-    test_check_password_with_options(),
+    test_check_password_with_digest(),
     test_check_password(),
     test_set_password(),
     test_get_password_with_default(),
@@ -103,7 +103,7 @@ before_all(PasswordFormat) ->
     application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
     ok = ejabberd_auth_wocky:start(?SERVER),
     ok.
 
@@ -121,11 +121,12 @@ after_all(_) ->
 before_each() ->
     ok = wocky_db_user:create_user(?USER, ?SERVER, ?HANDLE,
                                    encode_password(?PASS)),
+    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, auth_token),
     ok.
 
 after_each(_) ->
     ok = wocky_db_seed:clear_tables(shared, [handle_to_user]),
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, auth_token]),
     ok.
 
 
@@ -145,7 +146,7 @@ test_store_type_without_scram() ->
     ]}
   ]}.
 
-test_check_password_with_options() ->
+test_check_password_with_digest() ->
   DigestGen = fun(X) -> X end,
   { "check_password/5", foreach, fun before_each/0, fun after_each/1, [
     { "returns true when user exists and password digest matches", [
@@ -167,8 +168,15 @@ test_check_password() ->
     { "returns true when user exists and password matches", [
       ?_assert(check_password(?USER, ?SERVER, ?PASS))
     ]},
+    { "returns true when user exists and token matches", [
+      ?_assert(check_password(?USER, ?SERVER, ?TOKEN))
+    ]},
     { "returns false when user exists but password does not match", [
       ?_assertNot(check_password(?USER, ?SERVER, <<"niemakota">>))
+    ]},
+    { "returns false when user exists but token does not match", [
+      ?_assertNot(check_password(?USER, ?SERVER,
+                                 wocky_db_user:generate_token()))
     ]},
     { "returns false when user does not exist", [
       ?_assertNot(check_password(?BADUSER, ?SERVER, ?PASS))

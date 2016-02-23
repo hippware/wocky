@@ -98,19 +98,16 @@ set_password(LUser, LServer, Password) ->
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary())
                     -> boolean().
+check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
+    lists:member(Token, wocky_db_user:get_tokens(LUser, LServer));
 check_password(LUser, LServer, Password) ->
     case wocky_db_user:get_password(LUser, LServer) of
         {error, _} ->
             false;
 
         <<"==SCRAM==,", _/binary>> = ScramPassword ->
-            case scram:deserialize(ScramPassword) of
-                {ok, #scram{} = Scram} ->
-                    scram:check_password(Password, Scram);
-
-                {error, _}->
-                    false
-            end;
+            {ok, Scram} = scram:deserialize(ScramPassword),
+            scram:check_password(Password, Scram);
 
         StoredPassword ->
             %% Not a SCRAM password
@@ -126,17 +123,12 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
             false;
 
         <<"==SCRAM==,", _/binary>> = ScramPassword ->
-            case scram:deserialize(ScramPassword) of
-                {ok, #scram{} = Scram} ->
-                    %% For the record, this function doesn't make any sense
-                    %% when SCRAM is enabled. It just doesn't work. However,
-                    %% this is how the other auth modules implement it, so that
-                    %% is what we are going to do.
-                    scram:check_digest(Scram, Digest, DigestGen, Password);
-
-                {error, _}->
-                    false
-            end;
+            {ok, Scram} = scram:deserialize(ScramPassword),
+            %% For the record, this function doesn't make any sense
+            %% when SCRAM is enabled. It just doesn't work. However,
+            %% this is how the other auth modules implement it, so that
+            %% is what we are going to do.
+            scram:check_digest(Scram, Digest, DigestGen, Password);
 
         StoredPassword ->
             %% Not a SCRAM password
