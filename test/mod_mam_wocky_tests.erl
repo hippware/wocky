@@ -102,89 +102,132 @@ test_lookup_messages() ->
         },
         { "Lookup by user", [
             ?_assertEqual(to_ret_rows(user_msgs(U1, U2, Rows)),
-                          lookup_by_users(U1, U2))
+                          rows(lookup_by_users(U1, U2)))
          ]
         },
         { "Lookup by time", [
             ?_assertEqual(to_ret_rows(time_msgs(5, 50,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_time(U1, U2, 5, 50)),
+                          rows(lookup_by_time(U1, U2, 5, 50))),
             ?_assertEqual(to_ret_rows(time_msgs(7, 8,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_time(U1, U2, 7, 8)),
+                          rows(lookup_by_time(U1, U2, 7, 8))),
             ?_assertEqual(to_ret_rows(time_msgs(10, undefined,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_time(U1, U2, 10, undefined)),
+                          rows(lookup_by_time(U1, U2, 10, undefined))),
             ?_assertEqual(to_ret_rows(time_msgs(undefined, 30,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_time(U1, U2, undefined, 30))
+                          rows(lookup_by_time(U1, U2, undefined, 30)))
          ]
         },
         { "Lookup by borders exclusive", [
             ?_assertEqual(to_ret_rows(
                             id_msgs_exclusive(?FIRST_ID(8), ?FIRST_ID(35),
                                               user_msgs(U1, U2, Rows))),
-                          lookup_by_borders(U1, U2,
+                          rows(lookup_by_borders(U1, U2,
                                     #mam_borders{after_id = ?FIRST_ID(8),
                                                  before_id = ?FIRST_ID(35)
-                                                })),
+                                                }))),
             ?_assertEqual(to_ret_rows(
                             id_msgs_exclusive(?FIRST_ID(-1), ?FIRST_ID(60),
                                               user_msgs(U1, U2, Rows))),
-                          lookup_by_borders(U1, U2,
+                          rows(lookup_by_borders(U1, U2,
                                     #mam_borders{after_id = ?FIRST_ID(-1),
                                                  before_id = ?FIRST_ID(60)
-                                                }))
+                                                })))
          ]
         },
         { "Lookup by borders inclusive", [
             ?_assertEqual(to_ret_rows(
                             id_msgs_inclusive(?FIRST_ID(8), ?FIRST_ID(35),
                                               user_msgs(U1, U2, Rows))),
-                          lookup_by_borders(U1, U2,
+                          rows(lookup_by_borders(U1, U2,
                                     #mam_borders{from_id = ?FIRST_ID(8),
                                                  to_id = ?FIRST_ID(35)
-                                                })),
+                                                }))),
             ?_assertEqual(to_ret_rows(
                             id_msgs_inclusive(?FIRST_ID(-1), ?FIRST_ID(60),
                                               user_msgs(U1, U2, Rows))),
-                          lookup_by_borders(U1, U2,
+                          rows(lookup_by_borders(U1, U2,
                                     #mam_borders{from_id = ?FIRST_ID(-1),
                                                  to_id = ?FIRST_ID(60)
-                                                })),
+                                                }))),
             ?_assertEqual(to_ret_rows(
                             id_msgs_inclusive(?FIRST_ID(10), undefined,
                                               user_msgs(U1, U2, Rows))),
-                          lookup_by_borders(U1, U2,
-                                    #mam_borders{from_id = ?FIRST_ID(10)}))
+                          rows(lookup_by_borders(U1, U2,
+                                    #mam_borders{from_id = ?FIRST_ID(10)})))
          ]
         },
         { "Lookup by Index", [
             ?_assertEqual(to_ret_rows(
                             messages_from_index(16, 5,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_index(U1, U2, 16, 5)),
+                          rows(lookup_by_index(U1, U2, 16, 5))),
             ?_assertEqual(to_ret_rows(
                             messages_from_index(0, 5000,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_index(U1, U2, 0, 5000)),
+                          rows(lookup_by_index(U1, U2, 0, 5000))),
             % 'undefined' should return all records from the index; much fewer
             % than 5000:
             ?_assertEqual(to_ret_rows(
                             messages_from_index(0, 5000,
                                                 user_msgs(U1, U2, Rows))),
-                          lookup_by_index(U1, U2, 0, undefined))
+                          rows(lookup_by_index(U1, U2, 0, undefined)))
          ]
         },
         { "Lookup by RSM ID", [
             ?_assertEqual(to_ret_rows(
                             messages_from_id(?FIRST_ID(6), 10, aft,
                                              user_msgs(U1, U2, Rows))),
-                            lookup_by_id(U1, U2, ?FIRST_ID(6), 10, aft)),
+                            rows(lookup_by_id(U1, U2, ?FIRST_ID(6), 10, aft))),
             ?_assertEqual(to_ret_rows(
                             messages_from_id(?FIRST_ID(30), 10, before,
                                              user_msgs(U1, U2, Rows))),
-                            lookup_by_id(U1, U2, ?FIRST_ID(30), 10, before))
+                            rows(lookup_by_id(U1, U2, ?FIRST_ID(30), 10,
+                                              before)))
+         ]
+        },
+        { "Check counts", [
+            ?_assertEqual({length(user_msgs(U1, U2, Rows)), 0},
+                          counts(lookup_by_users(U1, U2))),
+            ?_assertEqual({length(time_msgs(5, 50,
+                                            user_msgs(U1, U2, Rows))),
+                           offset_of(U1, U2, ?FIRST_ID(5), Rows)-1
+                          },
+                          counts(lookup_by_time(U1, U2, 5, 50))),
+            ?_assertEqual({length(id_msgs_exclusive(?FIRST_ID(8), ?FIRST_ID(35),
+                                              user_msgs(U1, U2, Rows))), 0},
+                          counts(lookup_by_borders(U1, U2,
+                                    #mam_borders{after_id = ?FIRST_ID(8),
+                                                 before_id = ?FIRST_ID(35)
+                                                }))),
+            ?_assertEqual({length(id_msgs_inclusive(?FIRST_ID(8), ?FIRST_ID(35),
+                                              user_msgs(U1, U2, Rows))), 0},
+                          counts(lookup_by_borders(U1, U2,
+                                    #mam_borders{from_id = ?FIRST_ID(8),
+                                                 to_id = ?FIRST_ID(35)
+                                                }))),
+            ?_assertEqual({length(messages_from_index(0, undefined,
+                                                user_msgs(U1, U2, Rows))), 16},
+                          counts(lookup_by_index(U1, U2, 16, 5))),
+            ?_assertEqual({length(
+                            messages_from_id(-1, undefined, aft,
+                                             user_msgs(U1, U2, Rows))),
+                           offset_of(U1, U2, ?FIRST_ID(6), Rows)
+                          },
+                          counts(lookup_by_id(U1, U2, ?FIRST_ID(6), 10, aft))),
+            ?_assertEqual({length(
+                            messages_from_id(-1, undefined, aft,
+                                             user_msgs(U1, U2, Rows))),
+                           %% Subtract 10 for the count (because we're going
+                           %% backwards) and 1 for the fact that we're using
+                           %% 'before', not 'after' so the starting point is
+                           %% inside the range
+                           offset_of(U1, U2, ?FIRST_ID(200), Rows) - 10 - 1
+                          },
+                            counts(lookup_by_id(U1, U2, ?FIRST_ID(200), 10,
+                                              before)))
          ]
         }
 
@@ -236,49 +279,32 @@ lt(undefined, _) -> true;
 lt(High, Val) ->
     Val < High.
 
-% This case should throw an error - don't match the return - leave that to the
-% test assertion
-lookup_by_users(User1, User2 = undefined) ->
-    lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
-                    undefined, undefined, undefined, User2, 10000, not_used,
-                    not_used, false);
-
 lookup_by_users(User1, User2) ->
-    {ok, {_Total, _Offset, Msgs}} =
     lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
                     undefined, undefined, undefined, User2, 10000, not_used,
-                    not_used, false),
-    Msgs.
+                    not_used, false).
 
 lookup_by_time(User1, User2, Start, End) ->
-    {ok, {_Total, _Offset, Msgs}} =
     lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
                     ms_to_us(Start), ms_to_us(End), undefined, User2, 10000,
-                    false, 10000, false),
-    Msgs.
+                    false, 10000, false).
 
 lookup_by_borders(User1, User2, Borders) ->
-    {ok, {_Total, _Offset, Msgs}} =
     lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, Borders,
                     undefined, undefined, undefined, User2, 10000, false, 10000,
-                    false),
-    Msgs.
+                    false).
 
 lookup_by_index(User1, User2, Index, Max) ->
-    {ok, {_Total, _Offset, Msgs}} =
     lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1,
                     #rsm_in{index = Index, max = Max}, undefined, undefined,
                     undefined, undefined, User2, Max, undefined, undefined,
-                    false),
-    Msgs.
+                    false).
 
 lookup_by_id(User1, User2, ID, Max, Direction) ->
-    {ok, {_Total, _Offset, Msgs}} =
     lookup_messages(ok, ?LOCAL_CONTEXT, not_used, User1,
                     #rsm_in{id = ID, max = Max, direction = Direction},
                     undefined, undefined, undefined, undefined, User2,
-                    Max, undefined, undefined, false),
-    Msgs.
+                    Max, undefined, undefined, false).
 
 ms_to_us(undefined) -> undefined;
 ms_to_us(Time) -> Time * 1000.
@@ -307,16 +333,29 @@ first_id([#{id := ID} | _]) -> ID.
 
 messages_from_index(Index, N, Rows) ->
     {_, Tail} = lists:split(min(Index, length(Rows)), Rows),
-    {Ret, _} = lists:split(min(N, length(Tail)), Tail),
-    Ret.
+    limit_results(N, Tail, aft).
 
 messages_from_id(TargetID, N, aft, Rows) ->
     AfterID = lists:dropwhile(fun(#{id := ID}) -> ID =< TargetID end, Rows),
-    {Ret, _} = lists:split(min(N, length(AfterID)), AfterID),
-    Ret;
+    limit_results(N, AfterID, aft);
 messages_from_id(TargetID, N, before, Rows) ->
     BeforeID = lists:takewhile(fun(#{id := ID}) -> ID < TargetID end, Rows),
-    SplitAt = length(BeforeID) - N,
-    {_, Ret} = lists:split(max(0, SplitAt), BeforeID),
+    limit_results(N, BeforeID, before).
+
+limit_results(undefined, Results, _Direction) ->
+    Results;
+limit_results(N, Results, aft) ->
+    {Ret, _} = lists:split(min(N, length(Results)), Results),
+    Ret;
+limit_results(N, Results, before) ->
+    SplitAt = length(Results) - N,
+    {_, Ret} = lists:split(max(0, SplitAt), Results),
     Ret.
 
+
+rows({ok, {_Total, _Offset, Rows}}) -> Rows.
+counts({ok, {Total, Offset, _Rows}}) -> {Total, Offset}.
+
+offset_of(U1, U2, PivotID, Rows) ->
+    length(lists:takewhile(fun(#{id := ID}) -> ID =/= PivotID end,
+                           user_msgs(U1, U2, Rows))) + 1.

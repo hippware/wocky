@@ -967,7 +967,6 @@ parse_messages(Messages) ->
     end.
 
 bootstrap_archive(Config) ->
-%    random:seed(now()),
     ArcJID = ?BALICE,
     OtherUsers = [?BBOB, ?BCAROL],
     Msgs = generate_msgs_for_days(ArcJID, OtherUsers, 16),
@@ -1000,16 +999,16 @@ generate_msg_for_date_user(OwnerJID, RemoteJID, DateTime) ->
                          [rpc_apply(erlang, now, [])]),
     Microsec = min(NowMicro, MicrosecDateTime),
     MsgIdOwner = rpc_apply(mod_mam_utils, encode_compact_uuid,
-                           [Microsec, random:uniform(20)]),
+                           [Microsec, rand:uniform(20)]),
     MsgIdRemote = rpc_apply(mod_mam_utils, encode_compact_uuid,
-                            [Microsec+1, random:uniform(20)]),
+                            [Microsec+1, rand:uniform(20)]),
     Packet = escalus_stanza:chat_to(RemoteJID,
                                     base16:encode(crypto:rand_bytes(4))),
     {{MsgIdOwner, MsgIdRemote}, OwnerJID, RemoteJID, Packet}.
 
 random_time() ->
     MaxSecondsInDay = 86399,
-    RandSeconds = random:uniform(MaxSecondsInDay),
+    RandSeconds = rand:uniform(MaxSecondsInDay),
     calendar:seconds_to_time(RandSeconds).
 
 datetime_to_microseconds({{_, _, _}, {_, _, _}} = DateTime) ->

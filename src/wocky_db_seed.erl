@@ -440,13 +440,13 @@ fake_resource() ->
     integer_to_binary(erlang:unique_integer()).
 
 random_priority() ->
-    case random:uniform(11) of
+    case rand:uniform(11) of
         11 -> -1;
         N -> N
     end.
 
 session_info() ->
-    [{ip, {{127, 0, 0, 1}, random:uniform(65536)}},
+    [{ip, {{127, 0, 0, 1}, rand:uniform(65536)}},
      {conn, c2s_tls},
      {auth_module, ejabberd_auth_wocky}].
 
@@ -494,16 +494,16 @@ archive_users() ->
     ].
 
 random_message(ID, Users) ->
-    From = lists:nth(random:uniform(length(Users)), Users),
+    From = lists:nth(rand:uniform(length(Users)), Users),
     RemainingUsers = Users -- [From],
-    To = lists:nth(random:uniform(length(RemainingUsers)), RemainingUsers),
+    To = lists:nth(rand:uniform(length(RemainingUsers)), RemainingUsers),
     archive_row(ID, From, To).
 
 archive_row(ID, From, To) ->
     V = mod_mam_wocky:jid_key(From, To),
     V#{id => ID,
        time => ID,
-       sent_to_lower => random:uniform(2) =:= 1,
+       sent_to_lower => rand:uniform(2) =:= 1,
        message => msg_xml_packet(<<To/binary,
                                    (integer_to_binary(ID))/binary>>)
       }.
