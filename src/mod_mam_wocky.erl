@@ -391,8 +391,8 @@ run_paging_query(Host, Query, Values) ->
 
 continue_paging_query(no_more_result, Acc) -> Acc;
 continue_paging_query({ok, Result}, Acc) ->
-    Rows = cqerl:all_rows(Result),
-    NextResult = cqerl:fetch_more(Result),
+    Rows = wocky_db:rows(Result),
+    NextResult = wocky_db:fetch_more(Result),
     continue_paging_query(NextResult, Acc ++ Rows).
 
 

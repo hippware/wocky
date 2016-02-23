@@ -29,7 +29,7 @@
 -type row()       :: map().
 -type rows()      :: [row()].
 -type error()     :: term().
--type result()    :: #cql_result{}.
+-opaque result()  :: #cql_result{}.
 -export_type([query/0, value/0, values/0, row/0, result/0, error/0]).
 
 
@@ -40,7 +40,7 @@
 
 %% Query API
 -export([query/4, batch_query/4, multi_query/3, multi_query/4, rows/1,
-         single_result/1]).
+         single_result/1, fetch_more/1]).
 
 %% Utility API
 -export([seconds_to_timestamp/1, timestamp_to_seconds/1, timestamp_to_now/1,
@@ -437,6 +437,15 @@ multi_query(Context, QueryVals, Consistency) ->
 -spec rows(result()) -> rows().
 rows(Result) ->
     cqerl:all_rows(Result).
+
+%% @doc Fetch more results from a multi-page query
+%%
+%% Returns the next result object, or `no_more_result' if the end of the
+%% result set has been reached.
+%%
+-spec fetch_more(result()) -> {ok, result()} | no_more_result.
+fetch_more(Result) ->
+    cqerl:fetch_more(Result).
 
 
 %%====================================================================
