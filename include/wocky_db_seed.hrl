@@ -8,11 +8,13 @@
 
 -define(USER,    <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>).
 -define(SERVER,  <<"localhost">>).
+-define(RESOURCE,<<"testing">>).
 -define(HANDLE,  <<"alice">>).
 -define(PASS,    <<"password">>).
 -define(SCRAM,   <<"==SCRAM==,8dncGDJ45eXoMzqZ3zT6F/8gJt0=,"
                    "aEsAiUKWIdvXDW5oSaQxUJKHcOU=,Q0t9V/6+rkA1jv0LGA/IHw==,"
                    "4096">>).
+-define(TOKEN,   <<"$T$QU15BwZioTHgSlcIk6D0odmfaXirL9ajzu7qeeFkAuU=">>).
 
 -define(BADUSER, <<"d51f92c8-ba40-11e5-9912-ba0be0483c18">>).
 -define(NEWUSER, <<"31a07b20-c5fe-11e5-9912-ba0be0483c18">>).

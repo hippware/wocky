@@ -64,7 +64,8 @@
 
 -type handle()   :: binary().
 -type password() :: binary().
--export_type([handle/0, password/0]).
+-type token() :: binary().
+-export_type([handle/0, password/0, token/0]).
 
 %% API
 -export([create_id/0,
@@ -76,7 +77,16 @@
          get_handle/2,
          get_password/2,
          set_password/3,
-         remove_user/2]).
+         remove_user/2,
+         generate_token/0,
+         assign_token/3,
+         release_token/3,
+         get_tokens/2]).
+
+-define(TOKEN_SEED_BYTES, 128).
+-define(TOKEN_HASH, sha256).
+-define(TOKEN_MARKER, "$T$").
+-define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
 
 
 %%%===================================================================
@@ -273,3 +283,82 @@ remove_handle_lookup(Handle) ->
 %% @private
 remove_user_record(LUser, LServer) ->
     wocky_db:delete(LServer, user, all, #{user => LUser}).
+
+
+%% @doc Generates a token.
+-spec generate_token() -> token().
+generate_token() ->
+    RandomBytes = crypto:strong_rand_bytes(?TOKEN_SEED_BYTES),
+    Digest = crypto:hash(?TOKEN_HASH, RandomBytes),
+    String = base64:encode_to_string(Digest),
+    iolist_to_binary([?TOKEN_MARKER, String]).
+
+
+%% @doc Generates a token and assigns it to the specified user and resource.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `LResource': the "resourcepart" of the user's JID.
+%%
+-spec assign_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
+                  -> {ok, token()} | {error, not_found}.
+assign_token(LUser, LServer, LResource) ->
+    case does_user_exist(LUser, LServer) of
+        true ->
+            Token = generate_token(),
+            ok = wocky_db:insert(LServer, auth_token,
+                                 #{user => LUser,
+                                   server => LServer,
+                                   resource => LResource,
+                                   auth_token => Token,
+                                   '[ttl]' => ?TOKEN_EXPIRE}),
+            {ok, Token};
+
+        false ->
+            {error, not_found}
+    end.
+
+
+%% @doc Releases any token currently assigned to the specified user and
+%% resource.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `LResource': the "resourcepart" of the user's JID.
+%%
+-spec release_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
+                   -> ok.
+release_token(LUser, LServer, LResource) ->
+    ok = release_token(LUser, LServer, LResource, is_valid_id(LUser)).
+
+%% @private
+release_token(LUser, LServer, LResource, true) ->
+    wocky_db:delete(LServer, auth_token, all, #{user => LUser,
+                                                server => LServer,
+                                                resource => LResource});
+release_token(_, _, _, false) ->
+    ok.
+
+
+%% @doc Returns all tokens currently assigned to resources belonging to the
+%% specified user.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+-spec get_tokens(ejabberd:luser(), ejabberd:lserver()) -> [token()].
+get_tokens(LUser, LServer) ->
+    Rows = get_tokens(LUser, LServer, is_valid_id(LUser)),
+    [Token || #{auth_token := Token} <- Rows].
+
+%% @private
+get_tokens(LUser, LServer, true) ->
+    wocky_db:select(LServer, auth_token, [auth_token],
+                    #{user => LUser, server => LServer});
+get_tokens(_, _, false) ->
+    [].

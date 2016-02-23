@@ -132,7 +132,8 @@ keyspace_tables(_) -> [
     session,
     media,
     media_data,
-    message_archive
+    message_archive,
+    auth_token
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -296,6 +297,19 @@ table_definition(message_archive) ->
        ],
        primary_key = [[lower_jid, upper_jid], time],
        order_by = [{time, asc}]
+    };
+
+%% Tokens for authenticating individual resources
+table_definition(auth_token) ->
+    #table_def{
+       name = auth_token,
+       columns = [
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % Server (domainpart of JID)
+           {resource, text},       % Resource (resourcepart of JID)
+           {auth_token, text}      % Token
+       ],
+       primary_key = [user, server, resource]
     }.
 
 table_indexes(session) -> [
@@ -372,7 +386,9 @@ seed_data(message_archive) ->
     Q = "INSERT INTO message_archive (id, time, lower_jid, upper_jid,
          sent_to_lower, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
     {Q, Rows};
-
+seed_data(auth_token) ->
+    [#{user => ?ALICE, server => ?SERVER, resource => ?RESOURCE,
+       auth_token => ?TOKEN}];
 seed_data(_) ->
     [].
 
