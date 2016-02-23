@@ -205,3 +205,13 @@ build_create_view_query_test() ->
         [roster_version, roster, [user, version], [user, version, contact],
          [{version, asc}]]}
     ]).
+
+build_count_query_test() ->
+    test_build_query_cases(fun wocky_db:build_count_query/2, [
+        {"SELECT COUNT(*) FROM users WHERE user = ? AND server = ?",
+         [users, [user, server]]},
+        {"SELECT COUNT(*) FROM roster",
+         [roster, []]},
+        {"SELECT COUNT(*) FROM roster WHERE user = ?",
+         [roster, [user]]}
+    ]).

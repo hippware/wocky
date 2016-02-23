@@ -52,7 +52,8 @@
 -export([build_select_query/3, build_insert_query/3, build_delete_query/3,
          build_update_query/3, build_truncate_query/1, build_drop_query/2,
          build_create_keyspace_query/3, build_create_table_query/1,
-         build_create_index_query/2, build_create_view_query/5]).
+         build_create_index_query/2, build_create_view_query/5,
+         build_count_query/2]).
 -endif.
 
 
