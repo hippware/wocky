@@ -12,6 +12,7 @@
 
 -spec start(string()) -> ok.
 start(Env) ->
+    ok = ensure_loaded(wocky),
     ok = application:set_env(wocky, wocky_env, Env),
     start().
 
@@ -35,7 +36,7 @@ start_ejabberd(CfgDir) ->
     {ok, Env} = application:get_env(wocky, wocky_env),
     CfgPath = filename:join(CfgDir, Env ++ ".cfg"),
 
-    _ = application:load(ejabberd),
+    ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
     ejabberd:start().
 
@@ -57,6 +58,13 @@ stop(_State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+ensure_loaded(App) ->
+    case application:load(App) of
+        ok -> ok;
+        {error, {already_loaded, _}} -> ok;
+        {error, _} = Error -> Error
+    end.
 
 set_wocky_env() ->
     Env = case os:getenv("WOCKY_ENV") of
