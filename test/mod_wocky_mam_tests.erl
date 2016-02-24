@@ -207,7 +207,7 @@ test_standard_counts() ->
       [
         { "No count needed", [
           ?_assertEqual({undefined, undefined},
-                        standard_counts(false, ?LOCAL_CONTEXT, U1, U2, 
+                        standard_counts(false, ?LOCAL_CONTEXT, U1, U2,
                                         undefined, undefined, undefined,
                                         UserRows))
         ]},
@@ -232,7 +232,6 @@ test_standard_counts() ->
                                         time_msgs(100, undefined, UserRows)))
         ]}
      ] end}.
-
 
 
 user_msgs(User1, User2, Rows) ->
