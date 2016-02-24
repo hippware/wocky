@@ -39,6 +39,36 @@ fi
 NAME_TYPE="${NODENAME_ARG% *}"
 NODENAME="${NODENAME_ARG#* }"
 
+# Generate a random id
+relx_gen_id() {
+    od -X -N 4 /dev/urandom | head -n1 | awk '{print $2}'
+}
+
+relx_get_longname() {
+    id="longname$(relx_gen_id)-${NAME}"
+    "$ERL" -boot start_clean -eval 'io:format("~s~n", [node()]), halt()' -noshell -name $id | sed -e 's/.*@//g'
+}
+
+# User can specify an sname without @hostname
+# This will fail when creating remote shell
+# So here we check for @ and add @hostname if missing
+case $NODENAME in
+    *@*)
+    # Nothing to do
+    ;;
+    *)
+        # Add @hostname
+        case $NAME_TYPE in
+            -sname)
+                NODENAME=$NODENAME@`hostname -s`
+                ;;
+            -name)
+                NODENAME=$NODENAME@$(relx_get_longname)
+                ;;
+        esac
+        ;;
+esac
+
 add_to_cluster()
 {
     $SCRIPT_DIR/wocky $ARGS
@@ -88,7 +118,7 @@ ctl ()
     # using flock if available. Expects a linux-style
     # flock that can lock a file descriptor.
     MAXCONNID=100
-    CONNLOCKDIR=$EJABBERD_DIR/var/lock/wockyctl
+    CONNLOCKDIR=$RELEASE_ROOT_DIR/var/lock/wockyctl
     mkdir -p $CONNLOCKDIR
     FLOCK='/usr/bin/flock'
     if [ ! -x "$FLOCK" ] || [ ! -d "$CONNLOCKDIR" ] ; then
@@ -162,6 +192,7 @@ ctlexec ()
     COMMAND=$@
     $ERL \
       $NAME_TYPE ${CONN_NAME} \
+      -boot start_clean \
       -noinput \
       -hidden \
       $COOKIE_ARG \

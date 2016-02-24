@@ -27,41 +27,54 @@ This tells rebar3 how to fetch rebar3 plugins. It only needs to be done once.
 
 To build, once the repository is checked out type
 
-    $ ./rebar3 release
+    $ ./rebar3 compile
 
-This will download all of the dependencies, compile everything and create a
-release in _build/default/rel/wocky. Once the release is built, start the
-server using:
+This will download all of the dependencies and compile everything. Once the
+code is built, start the application using:
 
-    $ cd _build/default/rel/wocky
-    $ bin/wocky live
+    $ ./rebar3 shell
 
 To create a production release, use:
 
-    $ ./rebar3 as prod release
+    $ ./rebar3 release
 
-The production release will be built in _build/prod/rel/wocky. If you want a
-tarball of the production release use the command:
+The production release will be built in _build/default/rel/wocky. If you want to
+run the release you can use one of two methods:
 
-    $ ./rebar3 as prod tar
+    $ ./rebar3 run
 
-Running integration tests
-=========================
+or
 
-To run the ejabberd integration tests, you need to build and start two test
-nodes:
+    $ cd _build/default/rel/wocky
+    $ bin/wocky console
 
-    $ make testrel
+If you want a tarball of the production release use the command:
 
-This creates two new test nodes in the directory _build/test\_nodeN/rel/wocky. For each node,
-cd into the node directory and start it:
+    $ ./rebar3 tar
 
-    $ cd _build/test_node1/rel/wocky
-    $ bin/wocky live
+Database schema and seed data
+=============================
+You can create the database schema and load it with seed data using:
 
-Once both nodes are started, run the tests with:
+    > wocky_db_seed:bootstrap().
 
-    $ make quicktest
+To create the schema without loading seed data use:
+
+    > wocky_db_seed:create_schema().
+
+Runtime diagnostic tools
+========================
+
+The Wocky application includes a number of runtime diagnostic tools. You can
+find more information on these tools below:
+
+* redbug: https://github.com/massemanet/eper/blob/master/doc/redbug.txt
+* recon: http://ferd.github.io/recon/
+* binpp: https://github.com/jtendo/binpp/blob/master/README.md
+* pretty\_errors: https://github.com/eproxus/pretty_errors/blob/master/README.md
+
+In addition, there are a number of helper functions that can be used in the
+shell defined in the module `user_default.erl`.
 
 Module naming convention
 ========================
@@ -69,9 +82,9 @@ Module naming convention
 To help keep everything straight we are following a simple naming convention.
 
 Erlang modules that:
-* interact with the database are prefixed with 'wocky_db'
+* interact with the database are prefixed with 'wocky\_db'
 * implement functionality unique to wocky as ejabberd modules are prefixed with
-'mod_wocky'
+'mod\_wocky'
 * implement backend functionality for existing ejabberd modules follow the naming
 convention established by ejabberd with 'wocky' as the backend name (i.e.,
 'ejabberd\_auth\_wocky' or 'mod\_roster\_wocky')
@@ -102,4 +115,3 @@ the directory structure used by Erlang/OTP and various build tools (ie. rebar).
 
 This repository will contain all of the custom functionality and features which
 extend the vanilla XMPP server.
-
