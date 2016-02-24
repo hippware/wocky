@@ -46,7 +46,7 @@ before_each() ->
     Rows.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive]).
+    ok.
 
 test_archive_message_hook() ->
     Users = wocky_db_seed:archive_users(),
