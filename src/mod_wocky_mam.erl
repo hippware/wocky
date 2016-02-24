@@ -1,7 +1,7 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Wocky C* Backend for mod_mam
 %%%
--module(mod_mam_wocky).
+-module(mod_wocky_mam).
 
 -behaviour(gen_mod).
 

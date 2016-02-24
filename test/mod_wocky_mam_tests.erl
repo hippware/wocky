@@ -1,20 +1,20 @@
 %%% @copyright 2015+ Hippware, Inc.
-%%% @doc Test suite for mod_mam_wocky.erl
--module(mod_mam_wocky_tests).
+%%% @doc Test suite for mod_wocky_mam.erl
+-module(mod_wocky_mam_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd_config.hrl").
 -include("wocky_db_seed.hrl").
 
--import(mod_mam_wocky, [
+-import(mod_wocky_mam, [
                         archive_message_hook/9,
                         lookup_messages_hook/14]).
 
 -define(FIRST_ID(N), nth_id(U1, U2, N, Rows)).
 
-mod_mam_wocky_test_() -> {
-  "mod_mam_wocky",
+mod_wocky_mam_test_() -> {
+  "mod_wocky_mam",
   setup, fun before_all/0, fun after_all/1,
   [
    test_archive_message_hook(),
@@ -25,7 +25,7 @@ mod_mam_wocky_test_() -> {
 before_all() ->
     meck:new(gen_mod, [passthrough]),
     meck:expect(gen_mod, get_module_opt,
-                fun(global, mod_mam_wocky, message_ttl, infinity) -> infinity
+                fun(global, mod_wocky_mam, message_ttl, infinity) -> infinity
                 end),
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),

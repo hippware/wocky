@@ -195,7 +195,7 @@ end_modules(_, Config) ->
 mam_modules() ->
     [
      mod_mam,
-     mod_mam_wocky
+     mod_wocky_mam
     ].
 
 init_state(rsm, Config) ->
@@ -1038,7 +1038,7 @@ put_msg({{MsgIdOwner, MsgIdRemote},
                      incoming, Packet, ToTS div 1000]).
 
 archive_message(Args) ->
-    rpc_apply(mod_mam_wocky, archive_test_message, Args).
+    rpc_apply(mod_wocky_mam, archive_test_message, Args).
 
 
 %% @doc Get a binary jid of the user, that tagged with `Username' in the config.

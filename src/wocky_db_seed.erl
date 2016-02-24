@@ -500,7 +500,7 @@ random_message(ID, Users) ->
     archive_row(ID, From, To).
 
 archive_row(ID, From, To) ->
-    V = mod_mam_wocky:jid_key(From, To),
+    V = mod_wocky_mam:jid_key(From, To),
     V#{id => ID,
        time => ID,
        sent_to_lower => rand:uniform(2) =:= 1,
