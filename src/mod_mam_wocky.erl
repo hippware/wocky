@@ -27,12 +27,6 @@
         ]).
 -endif.
 
-%% Query construction internal exports
-%-export([add_jids/2,
-%         add_times/2,
-%         add_ordering/2,
-%         add_limit/2]).
-
 -type result_row() :: {non_neg_integer(), ejabberd:jid(), exml:element()}.
 -type mam_time() :: {uuid, inclusive | exclusive, binary()} |
                     {time, non_neg_integer()} |
