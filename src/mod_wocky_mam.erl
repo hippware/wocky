@@ -95,6 +95,10 @@
                     {time, non_neg_integer()} |
                     undefined.
 
+%%%===================================================================
+%%% gen_mod implementation
+%%%===================================================================
+
 hooks() ->
     [
      {mam_archive_message, archive_message_hook},
@@ -108,6 +112,10 @@ start(Host, _Opts) ->
 stop(Host) ->
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 50),
     ok.
+
+%%%===================================================================
+%%% mam_archive_message callback
+%%%===================================================================
 
 -spec archive_message_hook(Result :: any(),
                       Host   :: ejabberd:server(),
@@ -133,6 +141,10 @@ archive_message_hook(_Result, _Host, _MessID, _UserID,
                 _LocJID, _RemJID, _SrcJID, outgoing, _Packet) ->
     %% Will be archived by remote jid.
     ok.
+
+%%%===================================================================
+%%% mam_lookup_messages callback
+%%%===================================================================
 
 -spec lookup_messages_hook(
         Result         :: term(),
@@ -249,120 +261,9 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
 lookup_messages_hook(_, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
     error(unhandled_lookup_parameters).
 
--spec do_lookup(
-        Host  :: binary(),
-        JID1  :: ejabberd:jid(),
-        JID2  :: ejabberd:jid(),
-        Start :: mam_time(),
-        End   :: mam_time(),
-        Max   :: undefined | non_neg_integer(),
-        Direction :: undefined | before | aft) ->
-    [#{}].
-
-do_lookup(_Host, _JID1, _JID2, _Start, _End, 0, _Direction) ->
-    [];
-
-do_lookup(Host, JID1, JID2, Start, End, Max, Direction) ->
-    InitialQuery = "SELECT * FROM message_archive WHERE ",
-    {Q, V} =
-    fun_chain:last(
-      {InitialQuery, #{}},
-      add_jids({JID1, JID2}),
-      add_times({Start, End}),
-      add_ordering(Direction),
-      add_limit(Max)
-     ),
-    run_paging_query(Host, Q, V).
-
-return_result({Total, OffsetCount}, Rows) ->
-    {ok, {Total, OffsetCount, lists:sort([row_to_msg(R) || R <- Rows])}}.
-
-make_start(before, _) -> undefined;
-make_start(aft, Time) -> Time.
-
-make_end(before, Time) -> Time;
-make_end(aft, _) -> undefined.
-
-add_jids({UserJID, WithJID}, {Q, V}) ->
-    {[Q, " lower_jid = ? AND upper_jid = ?"],
-     maps:merge(V, jid_key(UserJID, WithJID))}.
-
-get_time_from_id(_Host, _, _, undefined, undefined) -> undefined;
-get_time_from_id(Host, JID1, JID2, Exclusive, undefined) ->
-    {uuid, exclusive, get_time_from_id(Host, JID1, JID2, Exclusive)};
-get_time_from_id(Host, JID1, JID2, undefined, Inclusive) ->
-    {uuid, inclusive, get_time_from_id(Host, JID1, JID2, Inclusive)}.
-
-get_time_from_id(Host, JID1, JID2, ID) ->
-    PartKey = jid_key(JID1, JID2),
-    wocky_db:select_one(Host, archive_id, time, PartKey#{id => ID}).
-
-add_borders(#mam_borders{after_id = AfterID, before_id = BeforeID,
-                         from_id = FromID, to_id = ToID}, {Q, V}) ->
-    lists:foldl(fun add_border/2,
-                {Q, V},
-                [{AfterID,  ">"},
-                 {BeforeID, "<"},
-                 {FromID,   ">="},
-                 {ToID,     "<="}]).
-
-add_border({undefined, _Op}, {Q, V}) -> {Q, V};
-add_border({Border, Op}, {Q, V}) ->
-    {BindStr, BindAtom} = make_binding("border", Op),
-    {[Q, " AND id ", Op, " ", BindStr], V#{BindAtom => Border}}.
-
-add_times({Start, End}, {Q, V}) ->
-    lists:foldl(fun add_time/2,
-                {Q, V},
-                [{Start, ">"},
-                 {End,   "<"}]).
-
-add_time({undefined, _}, {Q, V}) -> {Q, V};
-add_time({{_, undefined}, _}, {Q, V}) -> {Q, V};
-add_time({{time, Time}, Op}, {Q, V}) ->
-    {BindStr, BindAtom} = make_binding("time", Op),
-    {UUIDFun, CompareTS} = uuid_fun(Op, mam_to_wocky_ts(Time)),
-    {[Q, " AND time ", Op, " ", UUIDFun, "(", BindStr, ")"],
-     V#{BindAtom => CompareTS}};
-add_time({{uuid, Type, Time}, Op}, {Q, V}) ->
-    {BindStr, BindAtom} = make_binding("time_uuid", Op),
-    AllowMatch = maybe_inclusive(Type),
-    {[Q, " AND time ", Op, AllowMatch, " ", BindStr],
-     V#{BindAtom => Time}}.
-
-maybe_inclusive(inclusive) -> "=";
-maybe_inclusive(exclusive) -> "".
-
-% mod_mam uses microsecd timestamps; wocky_db uses millisecond
-mam_to_wocky_ts(TimeUS) ->
-    TimeUS div 1000.
-
-uuid_fun(">", Time) ->
-    {"maxTimeuuid", Time-1};
-uuid_fun("<", Time) ->
-    {"minTimeuuid", Time+1}.
-
-add_ordering(before, {Q, V}) -> {[Q, " ORDER BY time DESC"], V};
-add_ordering(_, {Q, V}) -> {Q, V}.
-
-add_limit(undefined, {Q, V}) -> {Q, V};
-add_limit(Limit, {Q, V}) ->
-    {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
-
-jid_key(JID1 = #jid{}, JID2 = #jid{}) ->
-    jid_key(archive_jid(JID1), archive_jid(JID2));
-jid_key(JID1, JID2) ->
-    [Lower, Higher] = lists:sort([JID1, JID2]),
-    #{lower_jid => Lower,
-      upper_jid => Higher}.
-
-archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
-
-sent_to_lower(Receiver, Sender) ->
-    archive_jid(Receiver) < archive_jid(Sender).
-
-maybe_add_ttl(Row, infinity) -> Row;
-maybe_add_ttl(Row, TTL) -> Row#{'[ttl]' => TTL}.
+%%%===================================================================
+%%% Count functions
+%%%===================================================================
 
 need_count(_, 0) -> true;
 need_count(true, _) -> false;
@@ -433,10 +334,53 @@ standard_counts(true, Host, JID1, JID2, TaggedStart,
     OffsetCount = offset_count(Host, JID1, JID2, Borders, Rows),
     {Total, OffsetCount}.
 
-index_id(Rows) ->
-    #{id := FirstID} = hd(Rows),
-    #{id := LastID} = lists:last(Rows),
-    min(FirstID, LastID).
+%%%===================================================================
+%%% Helper functions
+%%%===================================================================
+
+-spec do_lookup(
+        Host  :: binary(),
+        JID1  :: ejabberd:jid(),
+        JID2  :: ejabberd:jid(),
+        Start :: mam_time(),
+        End   :: mam_time(),
+        Max   :: undefined | non_neg_integer(),
+        Direction :: undefined | before | aft) ->
+    [#{}].
+
+do_lookup(_Host, _JID1, _JID2, _Start, _End, 0, _Direction) ->
+    [];
+
+do_lookup(Host, JID1, JID2, Start, End, Max, Direction) ->
+    InitialQuery = "SELECT * FROM message_archive WHERE ",
+    {Q, V} =
+    fun_chain:last(
+      {InitialQuery, #{}},
+      add_jids({JID1, JID2}),
+      add_times({Start, End}),
+      add_ordering(Direction),
+      add_limit(Max)
+     ),
+    run_paging_query(Host, Q, V).
+
+return_result({Total, OffsetCount}, Rows) ->
+    {ok, {Total, OffsetCount, lists:sort([row_to_msg(R) || R <- Rows])}}.
+
+make_start(before, _) -> undefined;
+make_start(aft, Time) -> Time.
+
+make_end(before, Time) -> Time;
+make_end(aft, _) -> undefined.
+
+get_time_from_id(_Host, _, _, undefined, undefined) -> undefined;
+get_time_from_id(Host, JID1, JID2, Exclusive, undefined) ->
+    {uuid, exclusive, get_time_from_id(Host, JID1, JID2, Exclusive)};
+get_time_from_id(Host, JID1, JID2, undefined, Inclusive) ->
+    {uuid, inclusive, get_time_from_id(Host, JID1, JID2, Inclusive)}.
+
+get_time_from_id(Host, JID1, JID2, ID) ->
+    PartKey = jid_key(JID1, JID2),
+    wocky_db:select_one(Host, archive_id, time, PartKey#{id => ID}).
 
 find_nth_query_val(JID1, JID2, Index, Max, Direction) ->
     InitialQuery = "SELECT * FROM message_archive WHERE ",
@@ -446,6 +390,90 @@ find_nth_query_val(JID1, JID2, Index, Max, Direction) ->
       add_limit(maybe_add(Index, Max)),
       add_ordering(Direction)
     ).
+
+%%%===================================================================
+%%% Query element constructors
+%%%===================================================================
+
+add_jids({UserJID, WithJID}, {Q, V}) ->
+    {[Q, " lower_jid = ? AND upper_jid = ?"],
+     maps:merge(V, jid_key(UserJID, WithJID))}.
+
+add_borders(#mam_borders{after_id = AfterID, before_id = BeforeID,
+                         from_id = FromID, to_id = ToID}, {Q, V}) ->
+    lists:foldl(fun add_border/2,
+                {Q, V},
+                [{AfterID,  ">"},
+                 {BeforeID, "<"},
+                 {FromID,   ">="},
+                 {ToID,     "<="}]).
+
+add_border({undefined, _Op}, {Q, V}) -> {Q, V};
+add_border({Border, Op}, {Q, V}) ->
+    {BindStr, BindAtom} = make_binding("border", Op),
+    {[Q, " AND id ", Op, " ", BindStr], V#{BindAtom => Border}}.
+
+add_times({Start, End}, {Q, V}) ->
+    lists:foldl(fun add_time/2,
+                {Q, V},
+                [{Start, ">"},
+                 {End,   "<"}]).
+
+add_time({undefined, _}, {Q, V}) -> {Q, V};
+add_time({{_, undefined}, _}, {Q, V}) -> {Q, V};
+add_time({{time, Time}, Op}, {Q, V}) ->
+    {BindStr, BindAtom} = make_binding("time", Op),
+    {UUIDFun, CompareTS} = uuid_fun(Op, mam_to_wocky_ts(Time)),
+    {[Q, " AND time ", Op, " ", UUIDFun, "(", BindStr, ")"],
+     V#{BindAtom => CompareTS}};
+add_time({{uuid, Type, Time}, Op}, {Q, V}) ->
+    {BindStr, BindAtom} = make_binding("time_uuid", Op),
+    AllowMatch = maybe_inclusive(Type),
+    {[Q, " AND time ", Op, AllowMatch, " ", BindStr],
+     V#{BindAtom => Time}}.
+
+add_ordering(before, {Q, V}) -> {[Q, " ORDER BY time DESC"], V};
+add_ordering(_, {Q, V}) -> {Q, V}.
+
+add_limit(undefined, {Q, V}) -> {Q, V};
+add_limit(Limit, {Q, V}) ->
+    {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
+
+maybe_add_ttl(Row, infinity) -> Row;
+maybe_add_ttl(Row, TTL) -> Row#{'[ttl]' => TTL}.
+
+%%%===================================================================
+%%% Other utility functions
+%%%===================================================================
+
+maybe_inclusive(inclusive) -> "=";
+maybe_inclusive(exclusive) -> "".
+
+% mod_mam uses microsecd timestamps; wocky_db uses millisecond
+mam_to_wocky_ts(TimeUS) ->
+    TimeUS div 1000.
+
+uuid_fun(">", Time) ->
+    {"maxTimeuuid", Time-1};
+uuid_fun("<", Time) ->
+    {"minTimeuuid", Time+1}.
+
+jid_key(JID1 = #jid{}, JID2 = #jid{}) ->
+    jid_key(archive_jid(JID1), archive_jid(JID2));
+jid_key(JID1, JID2) ->
+    [Lower, Higher] = lists:sort([JID1, JID2]),
+    #{lower_jid => Lower,
+      upper_jid => Higher}.
+
+archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
+
+sent_to_lower(Receiver, Sender) ->
+    archive_jid(Receiver) < archive_jid(Sender).
+
+index_id(Rows) ->
+    #{id := FirstID} = hd(Rows),
+    #{id := LastID} = lists:last(Rows),
+    min(FirstID, LastID).
 
 row_to_msg(#{id := ID, sent_to_lower := true,
              upper_jid := SrcJID, message := Packet}) ->
