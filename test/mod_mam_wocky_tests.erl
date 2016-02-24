@@ -36,7 +36,6 @@ before_all() ->
 
 after_all(_) ->
     ets:delete(config),
-    ?assert(meck:validate(gen_mod)),
     meck:unload(gen_mod),
     ok = wocky_app:stop().
 
@@ -83,6 +82,10 @@ test_archive_message_hook() ->
                                                   message_archive,
                                                   SelectRow))
                end)
+         ]
+        },
+        { "Archiving should access TTL value from module options", [
+            ?_assert(meck:validate(gen_mod))
          ]
         }
      ]
