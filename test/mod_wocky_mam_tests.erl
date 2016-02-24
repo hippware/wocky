@@ -9,7 +9,10 @@
 
 -import(mod_wocky_mam, [
                         archive_message_hook/9,
-                        lookup_messages_hook/14]).
+                        lookup_messages_hook/14,
+                        do_lookup/7,
+                        standard_counts/8
+                       ]).
 
 -define(FIRST_ID(N), nth_id(U1, U2, N, Rows)).
 
@@ -18,7 +21,9 @@ mod_wocky_mam_test_() -> {
   setup, fun before_all/0, fun after_all/1,
   [
    test_archive_message_hook(),
-   test_lookup_messages_hook()
+   test_lookup_messages_hook(),
+   test_do_lookup(),
+   test_standard_counts()
   ]
  }.
 
@@ -48,9 +53,8 @@ after_each(_) ->
     ok.
 
 test_archive_message_hook() ->
-    Users = wocky_db_seed:archive_users(),
-    U1 = hd(Users),
-    U2 = lists:last(Users),
+    %% fixture setup code...
+    {U1, U2} = users_to_test(),
 
     OrigMsg = wocky_db_seed:msg_xml_packet(<<"Test Handle">>),
     {ok, MsgXML} = exml:parse(OrigMsg),
@@ -63,25 +67,60 @@ test_archive_message_hook() ->
     SelectRow = #{lower_jid => Lower, upper_jid => Upper},
 
     { "archive_message", [
-        { "Message should archive safely and should only be stored once", [
-            ?_test(
-               begin
-                   [?assertEqual(ok, archive_message_hook(ok, ?LOCAL_CONTEXT, ID,
-                                                     not_used,
-                                                    jid:from_binary(U1),
-                                                    jid:from_binary(U2),
-                                                    not_used, Dir, MsgXML))
-                   || Dir <- [incoming, outgoing]],
-                   ?assertEqual(Row,
-                                wocky_db:select_row(?LOCAL_CONTEXT,
-                                                    message_archive,
-                                                    [id, lower_jid, upper_jid,
-                                                     sent_to_lower, message],
-                                                    SelectRow)),
-                   ?assertEqual(1, wocky_db:count(?LOCAL_CONTEXT,
-                                                  message_archive,
-                                                  SelectRow))
-               end)
+       { "should use TTL value from module options", [
+          ?_assert(meck:validate(gen_mod))
+       ]},
+       { "with an incoming message",
+         setup,
+         fun () ->
+                 ok = archive_message_hook(ok, ?LOCAL_CONTEXT, ID,
+                                           not_used,
+                                           jid:from_binary(U1),
+                                           jid:from_binary(U2),
+                                           not_used, incoming, MsgXML)
+         end,
+         fun (_) ->
+                 ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT,
+                                                 [message_archive])
+         end,
+         [
+          { "should archive the message so that it can be retrieved later", [
+             ?_assertEqual(Row,
+                           wocky_db:select_row(?LOCAL_CONTEXT,
+                                               message_archive,
+                                               [id, lower_jid, upper_jid,
+                                                sent_to_lower, message],
+                                               SelectRow))
+          ]},
+          { "should archive the message once", [
+             ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT,
+                                             message_archive,
+                                             SelectRow))
+          ]}
+         ]
+       },
+       { "with an outgoing message",
+         setup,
+         fun () ->
+                 ok = archive_message_hook(ok, ?LOCAL_CONTEXT, ID,
+                                           not_used,
+                                           jid:from_binary(U1),
+                                           jid:from_binary(U2),
+                                           not_used, outgoing, MsgXML)
+         end,
+         fun (_) ->
+                 ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT,
+                                                 [message_archive])
+         end,
+         [
+          { "should not archive the message", [
+             ?_assertEqual(not_found,
+                           wocky_db:select_row(?LOCAL_CONTEXT,
+                                               message_archive,
+                                               [id, lower_jid, upper_jid,
+                                                sent_to_lower, message],
+                                               SelectRow))
+          ]}
          ]
         },
         { "Archiving should access TTL value from module options", [
@@ -91,165 +130,110 @@ test_archive_message_hook() ->
      ]
     }.
 
+% Only do the simplest of tests here - the other cases produce test code that is
+% too complex and fragile, and is effectively covered by integration tets.
 test_lookup_messages_hook() ->
-    Users = wocky_db_seed:archive_users(),
-    U1 = hd(Users),
-    U2 = lists:last(Users),
+    {U1, _} = users_to_test(),
 
     { "lookup_message", setup, fun before_each/0, fun after_each/1,
-      fun(Rows) -> [
+      [
         { "Lookup with no 2nd JID", [
             ?_assertEqual({error, missing_with_jid},
-                          lookup_by_users(U1, undefined))
-         ]
-        },
-        { "Lookup by user", [
-            ?_assertEqual(to_ret_rows(user_msgs(U1, U2, Rows)),
-                          rows(lookup_by_users(U1, U2)))
-         ]
-        },
-        { "Lookup by time", [
-            ?_assertEqual(to_ret_rows(time_msgs(5, 50,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_time(U1, U2, 5, 50))),
-            ?_assertEqual(to_ret_rows(time_msgs(7, 8,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_time(U1, U2, 7, 8))),
-            ?_assertEqual(to_ret_rows(time_msgs(10, undefined,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_time(U1, U2, 10, undefined))),
-            ?_assertEqual(to_ret_rows(time_msgs(undefined, 30,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_time(U1, U2, undefined, 30)))
-         ]
-        },
-        { "Lookup by borders exclusive", [
-            ?_assertEqual(to_ret_rows(
-                            id_msgs_exclusive(?FIRST_ID(8), ?FIRST_ID(35),
-                                              user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_borders(U1, U2,
-                                    #mam_borders{after_id = ?FIRST_ID(8),
-                                                 before_id = ?FIRST_ID(35)
-                                                }))),
-            ?_assertEqual(to_ret_rows(
-                            id_msgs_exclusive(?FIRST_ID(-1), ?FIRST_ID(60),
-                                              user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_borders(U1, U2,
-                                    #mam_borders{after_id = ?FIRST_ID(-1),
-                                                 before_id = ?FIRST_ID(60)
-                                                })))
-         ]
-        },
-        { "Lookup by borders inclusive", [
-            ?_assertEqual(to_ret_rows(
-                            id_msgs_inclusive(?FIRST_ID(8), ?FIRST_ID(35),
-                                              user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_borders(U1, U2,
-                                    #mam_borders{from_id = ?FIRST_ID(8),
-                                                 to_id = ?FIRST_ID(35)
-                                                }))),
-            ?_assertEqual(to_ret_rows(
-                            id_msgs_inclusive(?FIRST_ID(-1), ?FIRST_ID(60),
-                                              user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_borders(U1, U2,
-                                    #mam_borders{from_id = ?FIRST_ID(-1),
-                                                 to_id = ?FIRST_ID(60)
-                                                }))),
-            ?_assertEqual(to_ret_rows(
-                            id_msgs_inclusive(?FIRST_ID(10), undefined,
-                                              user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_borders(U1, U2,
-                                    #mam_borders{from_id = ?FIRST_ID(10)})))
-         ]
-        },
-        { "Lookup by Index", [
-            ?_assertEqual(to_ret_rows(
-                            messages_from_index(16, 5,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_index(U1, U2, 16, 5))),
-            ?_assertEqual(to_ret_rows(
-                            messages_from_index(0, 5000,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_index(U1, U2, 0, 5000))),
-            % 'undefined' should return all records from the index; much fewer
-            % than 5000:
-            ?_assertEqual(to_ret_rows(
-                            messages_from_index(0, 5000,
-                                                user_msgs(U1, U2, Rows))),
-                          rows(lookup_by_index(U1, U2, 0, undefined)))
-         ]
-        },
-        { "Lookup by RSM ID", [
-            ?_assertEqual(to_ret_rows(
-                            messages_from_id(?FIRST_ID(6), 10, aft,
-                                             user_msgs(U1, U2, Rows))),
-                            rows(lookup_by_id(U1, U2, ?FIRST_ID(6), 10, aft))),
-            ?_assertEqual(to_ret_rows(
-                            messages_from_id(?FIRST_ID(30), 10, before,
-                                             user_msgs(U1, U2, Rows))),
-                            rows(lookup_by_id(U1, U2, ?FIRST_ID(30), 10,
-                                              before)))
-         ]
-        },
-        { "Check counts", [
-            { "Test count of user-based lookup",
-              [?_assertEqual({length(user_msgs(U1, U2, Rows)), 0},
-                          counts(lookup_by_users(U1, U2)))]},
-            { "Test counts of time-based lookup",
-              [?_assertEqual({length(time_msgs(5, 50,
-                                            user_msgs(U1, U2, Rows))),
-                           offset_of(U1, U2, ?FIRST_ID(5), Rows)-1
-                          },
-                          counts(lookup_by_time(U1, U2, 5, 50)))]},
-            { "Test counts of border-based exclusive lookup",
-              [?_assertEqual({length(
-                                id_msgs_exclusive(?FIRST_ID(8),
-                                                  ?FIRST_ID(35),
-                                                  user_msgs(U1, U2, Rows))), 0
-                             },
-                             counts(lookup_by_borders(U1, U2,
-                                    #mam_borders{after_id = ?FIRST_ID(8),
-                                                 before_id = ?FIRST_ID(35)
-                                                })))]},
-            { "Test counts of border-based inclusive lookup",
-              [?_assertEqual({length(
-                                id_msgs_inclusive(?FIRST_ID(8),
-                                                  ?FIRST_ID(35),
-                                                  user_msgs(U1, U2, Rows))), 0
-                             },
-                             counts(lookup_by_borders(U1, U2,
-                                    #mam_borders{from_id = ?FIRST_ID(8),
-                                                 to_id = ?FIRST_ID(35)
-                                                })))]},
-            { "Test counts of index-based lookup",
-              [?_assertEqual({length(messages_from_index(0, undefined,
-                                                user_msgs(U1, U2, Rows))), 16
-                             },
-                          counts(lookup_by_index(U1, U2, 16, 5)))]},
-            { "Test counts of ID-based lookup",
-              [?_assertEqual({length(
-                                messages_from_id(-1, undefined, aft,
-                                                 user_msgs(U1, U2, Rows))),
-                              offset_of(U1, U2, ?FIRST_ID(6), Rows)
-                          },
-                          counts(lookup_by_id(U1, U2, ?FIRST_ID(6),
-                                              10, aft)))]},
-            { "Test counts of ID-based lookup with reverse ordering",
-              [?_assertEqual({length(
-                            messages_from_id(-1, undefined, aft,
-                                             user_msgs(U1, U2, Rows))),
-                           %% Subtract 10 for the count (because we're going
-                           %% backwards) and 1 for the fact that we're using
-                           %% 'before', not 'after' so the starting point is
-                           %% inside the range
-                           offset_of(U1, U2, ?FIRST_ID(200), Rows) - 10 - 1
-                          },
-                            counts(lookup_by_id(U1, U2, ?FIRST_ID(200), 10,
-                                              before)))]}
-         ]
-        }
+                          lookup_messages_hook(ok, ?LOCAL_CONTEXT,
+                                               not_used, U1, not_used,
+                                               not_used, not_used, not_used,
+                                               not_used, undefined, not_used,
+                                               not_used, not_used, not_used))
+         ]}
+     ]}.
 
+test_do_lookup() ->
+    {U1, U2} = users_to_test(),
+
+    { "do_lookup", setup, fun before_each/0, fun after_each/1,
+      fun(Rows) ->
+        UserRows = user_msgs(U1, U2, Rows),
+      [
+        { "with only JIDS", [
+          ?_assertEqual(UserRows,
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    undefined, undefined,
+                                    undefined, undefined)))
+        ]},
+        { "with a limit", [
+          ?_assertEqual(limit_results(4, UserRows, aft),
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    undefined, undefined, 4, undefined)))
+        ]},
+        { "with times", [
+          ?_assertEqual(time_msgs(6, 50, UserRows),
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    ms_to_time(6), ms_to_time(50),
+                                    undefined, undefined))),
+          ?_assertEqual(time_msgs(undefined, 50, UserRows),
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    {time, undefined}, ms_to_time(50),
+                                    undefined, undefined))),
+          ?_assertEqual(time_msgs(10, undefined, UserRows),
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    ms_to_time(10), {time, undefined},
+                                    undefined, undefined)))
+        ]},
+        { "with time and reversed direction", [
+          ?_assertEqual(rev_time_msgs(6, 50, UserRows),
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    ms_to_time(6), ms_to_time(50),
+                                    undefined, before))),
+          ?_assertEqual(rev_time_msgs(undefined, 50, UserRows),
+                        match_rows(
+                          do_lookup(?LOCAL_CONTEXT, U1, U2,
+                                    {time, undefined}, ms_to_time(50),
+                                    undefined, before)))
+        ]}
+    ] end}.
+
+test_standard_counts() ->
+    {U1, U2} = users_to_test(),
+
+    { "standard_counts", setup, fun before_each/0, fun after_each/1,
+      fun(Rows) ->
+        UserRows = user_msgs(U1, U2, Rows),
+      [
+        { "No count needed", [
+          ?_assertEqual({undefined, undefined},
+                        standard_counts(false, ?LOCAL_CONTEXT, U1, U2, 
+                                        undefined, undefined, undefined,
+                                        UserRows))
+        ]},
+        { "Simple full count", [
+          ?_assertEqual({length(UserRows), 0},
+                        standard_counts(true, ?LOCAL_CONTEXT, U1, U2,
+                                        undefined, undefined, undefined,
+                                        UserRows))
+        ]},
+        { "Time restricted count", [
+          ?_assertEqual({length(time_msgs(6, 50, UserRows)),
+                         length(time_msgs(undefined, 5, UserRows))},
+                        standard_counts(true, ?LOCAL_CONTEXT, U1, U2,
+                                        ms_to_time(6), ms_to_time(50),
+                                        undefined,
+                                        time_msgs(6, 50, UserRows))),
+          ?_assertEqual({length(time_msgs(100, undefined, UserRows)),
+                         length(time_msgs(undefined, 99, UserRows))},
+                        standard_counts(true, ?LOCAL_CONTEXT, U1, U2,
+                                        ms_to_time(100), undefined,
+                                        undefined,
+                                        time_msgs(100, undefined, UserRows)))
+        ]}
      ] end}.
+
+
 
 user_msgs(User1, User2, Rows) ->
     lists:filter(fun(M) -> is_user_msg(M, User1, User2) end,
@@ -263,22 +247,11 @@ is_user_msg(#{lower_jid := Lower, upper_jid := Upper}, User1, User2)
        -> true;
 is_user_msg(_, _, _) -> false.
 
+rev_time_msgs(Start, End, Rows) -> lists:reverse(time_msgs(Start, End, Rows)).
 time_msgs(Start, End, Rows) ->
     lists:filter(fun(#{time := Time}) ->
                          gte(Start, Time) andalso
                          lte(End, Time)
-                 end, Rows).
-
-id_msgs_inclusive(Low, High, Rows) ->
-    lists:filter(fun(#{id := ID}) ->
-                         gte(Low, ID) andalso
-                         lte(High, ID)
-                 end, Rows).
-
-id_msgs_exclusive(Low, High, Rows) ->
-    lists:filter(fun(#{id := ID}) ->
-                         gt(Low, ID) andalso
-                         lt(High, ID)
                  end, Rows).
 
 gte(undefined, _) -> true;
@@ -289,76 +262,8 @@ lte(undefined, _) -> true;
 lte(High, Val) ->
     Val =< High.
 
-gt(undefined, _) -> true;
-gt(Low, Val) ->
-    Val > Low.
-
-lt(undefined, _) -> true;
-lt(High, Val) ->
-    Val < High.
-
-lookup_by_users(User1, User2) ->
-    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
-                    undefined, undefined, undefined, User2, 10000, not_used,
-                    not_used, false).
-
-lookup_by_time(User1, User2, Start, End) ->
-    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, undefined,
-                    ms_to_us(Start), ms_to_us(End), undefined, User2, 10000,
-                    false, 10000, false).
-
-lookup_by_borders(User1, User2, Borders) ->
-    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1, undefined, Borders,
-                    undefined, undefined, undefined, User2, 10000, false, 10000,
-                    false).
-
-lookup_by_index(User1, User2, Index, Max) ->
-    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1,
-                    #rsm_in{index = Index, max = Max}, undefined, undefined,
-                    undefined, undefined, User2, Max, undefined, undefined,
-                    false).
-
-lookup_by_id(User1, User2, ID, Max, Direction) ->
-    lookup_messages_hook(ok, ?LOCAL_CONTEXT, not_used, User1,
-                    #rsm_in{id = ID, max = Max, direction = Direction},
-                    undefined, undefined, undefined, undefined, User2,
-                    Max, undefined, undefined, false).
-
-ms_to_us(undefined) -> undefined;
-ms_to_us(Time) -> Time * 1000.
-
-to_ret_rows(Rows) -> [to_ret_row(R) || R <- Rows].
-
-to_ret_row(#{id := ID, lower_jid := LowerJID, upper_jid := UpperJID,
-             sent_to_lower := ToLower, message := Message}) ->
-    SrcJID = src_jid(LowerJID, UpperJID, ToLower),
-    {ok, MsgXML} = exml:parse(Message),
-    {ID, jid:from_binary(SrcJID), MsgXML}.
-
-src_jid(Lower, _, false) -> Lower;
-src_jid(_, Upper, true) -> Upper.
-
-nth_id(User1, User2, TargetID, Rows) ->
-    first_id(
-      lists:dropwhile(fun(#{id := ID, lower_jid := JID1, upper_jid := JID2}) ->
-                              ID < TargetID orelse
-                              (JID1 =/= User1 andalso JID2 =/= User1) orelse
-                              (JID1 =/= User2 andalso JID2 =/= User2)
-                      end, Rows)).
-
-first_id([]) -> undefined;
-first_id([#{id := ID} | _]) -> ID.
-
-messages_from_index(Index, N, Rows) ->
-    {_, Tail} = lists:split(min(Index, length(Rows)), Rows),
-    limit_results(N, Tail, aft).
-
-messages_from_id(TargetID, N, aft, Rows) ->
-    AfterID = lists:dropwhile(fun(#{id := ID}) -> ID =< TargetID end, Rows),
-    limit_results(N, AfterID, aft);
-messages_from_id(TargetID, N, before, Rows) ->
-    BeforeID = lists:takewhile(fun(#{id := ID}) -> ID < TargetID end, Rows),
-    limit_results(N, BeforeID, before).
+ms_to_time(undefined) -> {time, undefined};
+ms_to_time(Time) -> {time, Time * 1000}.
 
 limit_results(undefined, Results, _Direction) ->
     Results;
@@ -370,10 +275,10 @@ limit_results(N, Results, before) ->
     {_, Ret} = lists:split(max(0, SplitAt), Results),
     Ret.
 
+match_rows(Rows) -> [match_row(R) || R <- Rows].
+match_row(Row = #{time := Time}) ->
+    Row#{time => uuid:get_v1_time(Time) div 1000}.
 
-rows({ok, {_Total, _Offset, Rows}}) -> Rows.
-counts({ok, {Total, Offset, _Rows}}) -> {Total, Offset}.
-
-offset_of(U1, U2, PivotID, Rows) ->
-    length(lists:takewhile(fun(#{id := ID}) -> ID =/= PivotID end,
-                           user_msgs(U1, U2, Rows))) + 1.
+users_to_test() ->
+    Users = wocky_db_seed:archive_users(),
+    {hd(Users), lists:last(Users)}.

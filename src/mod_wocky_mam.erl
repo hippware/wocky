@@ -23,7 +23,8 @@
 -ifdef(TEST).
 -export([
          archive_test_message/7,
-         do_lookup/7
+         do_lookup/7,
+         standard_counts/8
         ]).
 -endif.
 
