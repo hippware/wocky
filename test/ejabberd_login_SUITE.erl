@@ -26,6 +26,7 @@
 -include_lib("exml/include/exml.hrl").
 
 -include("wocky_db_seed.hrl").
+-include("wocky.hrl").
 
 
 %%--------------------------------------------------------------------
@@ -36,14 +37,14 @@ all() ->
     [{group, login},
      {group, login_scram},
      {group, login_scram_store_plain},
-     %% {group, token_auth},
+     {group, token_auth},
      {group, messages}].
 
 groups() ->
     [{login, [no_sequence], login_tests()},
      {login_scram, [sequence], scram_tests()},
      {login_scram_store_plain, [sequence], scram_tests()},
-     {token_auth, [sequence], [acquire_token, login_with_token, release_token]},
+     {token_auth, [sequence], [acquire_token, release_token, login_with_token]},
      {messages, [sequence], [messages_story]}].
 
 login_tests() ->
@@ -108,11 +109,11 @@ end_per_testcase(CaseName, Config) ->
 %% login groups
 
 log_one(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+    escalus:story(Config, [{alice, 1}], fun (Alice) ->
         escalus_client:send(Alice, escalus_stanza:chat_to(Alice, <<"Hi!">>)),
         escalus:assert(is_chat_message, [<<"Hi!">>],
                        escalus_client:wait_for_stanza(Alice))
-        end).
+    end).
 
 log_one_digest(Config) ->
     log_one([{escalus_auth_method, <<"DIGEST-MD5">>} | Config]).
@@ -151,10 +152,37 @@ blocked_user(_Config) ->
 
 
 %%--------------------------------------------------------------------
+%% token group
+
+acquire_token(Config) ->
+    escalus:story(Config, [{alice, 1}], fun (Alice) ->
+        escalus_client:send(Alice, token_stanza(<<"get">>)),
+        Reply = escalus_client:wait_for_stanza(Alice),
+        <<"result">> = exml_query:path(Reply, [{attr, <<"type">>}]),
+        <<"$T$", _/binary>> =
+            exml_query:path(Reply, [{element, <<"query">>}, cdata])
+    end).
+
+release_token(Config) ->
+    escalus:story(Config, [{alice, 1}], fun (Alice) ->
+        escalus_client:send(Alice, token_stanza(<<"set">>)),
+        Reply = escalus_client:wait_for_stanza(Alice),
+        <<"result">> = exml_query:path(Reply, [{attr, <<"type">>}])
+    end).
+
+login_with_token(Config) ->
+    Domain = ct:get_config(ejabberd_domain),
+    {ok, Token} = escalus_ejabberd:rpc(wocky_db_user, assign_token,
+                                       [?ALICE, Domain, <<"res1">>]),
+    Config2 = escalus_users:update_userspec(Config, alice, password, Token),
+    log_one(Config2).
+
+
+%%--------------------------------------------------------------------
 %% message group
 
 messages_story(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
         % Alice sends a message to Bob
         escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi!">>)),
 
@@ -168,24 +196,8 @@ messages_story(Config) ->
 %% Helpers
 %%--------------------------------------------------------------------
 
-strong_pwd() ->
-    <<"Sup3r","c4li","fr4g1","l1571c","3xp1","4l1","d0c10u5">>.
-
-get_client_details(Identifier) ->
-    [{Identifier, Details}] = escalus_users:get_users({by_name, [Identifier]}),
-    {username, Name} = lists:keyfind(username, 1, Details),
-    {server, Server} = lists:keyfind(server, 1, Details),
-    {string(Name), string(Server)}.
-
-get_auth_method() ->
-    XMPPDomain = escalus_ejabberd:unify_str_arg(
-                   ct:get_config(ejabberd_domain)),
-    escalus_ejabberd:rpc(ejabberd_auth, store_type,
-                         [XMPPDomain]).
-
 set_store_password(Type) ->
-    XMPPDomain = escalus_ejabberd:unify_str_arg(
-                   ct:get_config(ejabberd_domain)),
+    XMPPDomain = escalus_ejabberd:unify_str_arg(ct:get_config(ejabberd_domain)),
     AuthOpts = escalus_ejabberd:rpc(ejabberd_config, get_local_option,
                                     [{auth_opts, XMPPDomain}]),
     NewAuthOpts = lists:keystore(password_format, 1, AuthOpts,
@@ -218,10 +230,5 @@ do_verify_format(login_scram, _Password, SPassword) ->
 do_verify_format(_, Password, SPassword) ->
     Password = SPassword.
 
-user_exists(Name, Config) ->
-    {Name, Client} = escalus_users:get_user_by_name(Name),
-    [Username, Server, _Pass] = escalus_users:get_usp(Config, Client),
-    escalus_ejabberd:rpc(ejabberd_auth, is_user_exists, [Username, Server]).
-
-string(<<_/binary>> = Subject) ->
-    erlang:binary_to_list(Subject).
+token_stanza(Type) ->
+    escalus_stanza:iq(Type, escalus_stanza:query_el(?NS_TOKEN, [])).

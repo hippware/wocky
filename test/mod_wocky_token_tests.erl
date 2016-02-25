@@ -24,7 +24,6 @@ mod_wocky_token_test_() -> {
 before_all() ->
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [?SERVER]}),
-    %% application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),

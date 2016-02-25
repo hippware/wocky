@@ -21,4 +21,6 @@
           order_by = [] :: atom() | [{atom(), asc | desc}]
          }).
 
+-define(NS_TOKEN, <<"hippware.com/token">>).
+
 -endif. % ifdef WOCKY_HRL

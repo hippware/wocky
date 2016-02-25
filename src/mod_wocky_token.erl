@@ -4,6 +4,7 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).
@@ -11,8 +12,6 @@
 
 %% IQ handler callback
 -export([handle_iq/3]).
-
--define(NS_TOKEN, <<"hippware.com/token">>).
 
 
 %%%===================================================================
