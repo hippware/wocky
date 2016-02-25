@@ -50,13 +50,13 @@
 %%%===================================================================
 
 start(Host, Opts) ->
-    add_hooks(Host, hooks()),
+    wocky_util:add_hooks(hooks(), Host, ?MODULE, 50),
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_ROSTER,
                                   ?MODULE, process_iq, IQDisc).
 
 stop(Host) ->
-    delete_hooks(Host, hooks()),
+    wocky_util:delete_hooks(hooks(), Host, ?MODULE, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_ROSTER).
 
 hooks() ->
@@ -68,19 +68,6 @@ hooks() ->
      {remove_user,                   remove_user_hook},
      {anonymous_purge_hook,          remove_user_hook},
      {roster_get_versioning_feature, roster_get_versioning_feature_hook}].
-
-add_hooks(Host, Hooks) ->
-    lists:foreach(
-      fun ({Hook, Callback}) ->
-              ejabberd_hooks:add(Hook, Host, ?MODULE, Callback, 50)
-      end, Hooks).
-
-delete_hooks(Host, Hooks) ->
-    lists:foreach(
-      fun ({Hook, Callback}) ->
-              ejabberd_hooks:delete(Hook, Host, ?MODULE, Callback, 50)
-      end, Hooks).
-
 
 %%%===================================================================
 %%% IQ handler callback

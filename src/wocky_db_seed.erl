@@ -14,7 +14,8 @@
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
          fake_resource/0, random_priority/0, session_info/0, sjid/1, jid/3,
-         make_offline_msgs/4, make_offline_msg/4, get_nowsecs/0]).
+         make_offline_msgs/4, make_offline_msg/4, get_nowsecs/0,
+         archive_users/0, msg_xml_packet/1]).
 
 
 %%====================================================================
@@ -69,10 +70,19 @@ drop_table_views(Context, Table) ->
 
 seed_table(Context, Name) ->
     Data = seed_data(Name),
+    seed_with_data(Context, Name, Data).
+
+seed_with_data(Context, _Name, {Query, Rows}) ->
+    lists:foreach(
+      fun (Row) -> {ok, void} = wocky_db:query(Context, Query, Row, quorum) end,
+      Rows),
+    {ok, Rows};
+
+seed_with_data(Context, Name, Rows) when is_list(Rows)->
     lists:foreach(
       fun (Row) -> wocky_db:insert_new(Context, Name, Row) end,
-      Data),
-    {ok, Data}.
+      Rows),
+    {ok, Rows}.
 
 seed_keyspace(Context) ->
     foreach_table(
@@ -121,7 +131,8 @@ keyspace_tables(_) -> [
     roster,
     session,
     media,
-    media_data
+    media_data,
+    message_archive
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -240,7 +251,7 @@ table_definition(user_to_sids) ->
        name = user_to_sids,
        columns = [
            {jid_user, timeuuid},   % User ID (userpart of JID)
-           {sids, {set, blob}}     % List of session IDs
+           {sids, {set, blob}}     % Set of session IDs
        ],
        primary_key = jid_user
     };
@@ -270,6 +281,21 @@ table_definition(media_data) ->
            {data, blob}            % Data in this chunk
        ],
        primary_key = chunk_id
+    };
+
+table_definition(message_archive) ->
+    #table_def{
+       name = message_archive,
+       columns = [
+           {id, varint}, % IDs are 64-bit unsigned
+           {lower_jid, text},
+           {upper_jid, text},
+           {time, timeuuid},
+           {sent_to_lower, boolean},
+           {message, blob}
+       ],
+       primary_key = [[lower_jid, upper_jid], time],
+       order_by = [{time, asc}]
     }.
 
 table_indexes(session) -> [
@@ -283,6 +309,11 @@ table_views(roster) -> [
 table_views(session) -> [
     {user_sessions, all, [jid_user, jid_resource, sid], []}
 ];
+table_views(message_archive) -> [
+    {archive_id, [id, lower_jid, upper_jid, time],
+     [lower_jid, upper_jid, id, time], []}
+];
+
 table_views(_) -> [].
 
 
@@ -336,6 +367,12 @@ seed_data(roster) ->
     ],
     [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
         I <- Items];
+seed_data(message_archive) ->
+    Rows = [random_message(ID, archive_users()) || ID <- lists:seq(1, 300)],
+    Q = "INSERT INTO message_archive (id, time, lower_jid, upper_jid,
+         sent_to_lower, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
+    {Q, Rows};
+
 seed_data(_) ->
     [].
 
@@ -403,13 +440,13 @@ fake_resource() ->
     integer_to_binary(erlang:unique_integer()).
 
 random_priority() ->
-    case random:uniform(11) of
+    case rand:uniform(11) of
         11 -> -1;
         N -> N
     end.
 
 session_info() ->
-    [{ip, {{127, 0, 0, 1}, random:uniform(65536)}},
+    [{ip, {{127, 0, 0, 1}, rand:uniform(65536)}},
      {conn, c2s_tls},
      {auth_module, ejabberd_auth_wocky}].
 
@@ -449,3 +486,24 @@ msg_xml_packet(Handle) ->
 
 ts_to_ttl(TS) ->
     wocky_db:expire_to_ttl(wocky_db:timestamp_to_now(TS * 1000)).
+
+archive_users() ->
+    [<<"bob@localhost">>,
+     <<"alice@localhost">>,
+     <<"karen@localhost">>
+    ].
+
+random_message(ID, Users) ->
+    From = lists:nth(rand:uniform(length(Users)), Users),
+    RemainingUsers = Users -- [From],
+    To = lists:nth(rand:uniform(length(RemainingUsers)), RemainingUsers),
+    archive_row(ID, From, To).
+
+archive_row(ID, From, To) ->
+    V = mod_wocky_mam:jid_key(From, To),
+    V#{id => ID,
+       time => ID,
+       sent_to_lower => rand:uniform(2) =:= 1,
+       message => msg_xml_packet(<<To/binary,
+                                   (integer_to_binary(ID))/binary>>)
+      }.
