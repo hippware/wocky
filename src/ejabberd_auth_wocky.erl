@@ -100,18 +100,21 @@ set_password(LUser, LServer, Password) ->
                     -> boolean().
 check_password(LUser, LServer, Password) ->
     case wocky_db_user:get_password(LUser, LServer) of
-        StoredPassword when is_binary(StoredPassword) ->
-            case scram:deserialize(StoredPassword) of
+        {error, _} ->
+            false;
+
+        <<"==SCRAM==,", _/binary>> = ScramPassword ->
+            case scram:deserialize(ScramPassword) of
                 {ok, #scram{} = Scram} ->
                     scram:check_password(Password, Scram);
 
                 {error, _}->
-                    %% Not a SCRAM password
-                    Password =:= StoredPassword
-                end;
+                    false
+            end;
 
-        {error, _} ->
-            false
+        StoredPassword ->
+            %% Not a SCRAM password
+            Password =:= StoredPassword
     end.
 
 
@@ -119,8 +122,11 @@ check_password(LUser, LServer, Password) ->
                      fun()) -> boolean().
 check_password(LUser, LServer, Password, Digest, DigestGen) ->
     case wocky_db_user:get_password(LUser, LServer) of
-        StoredPassword when is_binary(StoredPassword) ->
-            case scram:deserialize(StoredPassword) of
+        {error, _} ->
+            false;
+
+        <<"==SCRAM==,", _/binary>> = ScramPassword ->
+            case scram:deserialize(ScramPassword) of
                 {ok, #scram{} = Scram} ->
                     %% For the record, this function doesn't make any sense
                     %% when SCRAM is enabled. It just doesn't work. However,
@@ -129,13 +135,13 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
                     scram:check_digest(Scram, Digest, DigestGen, Password);
 
                 {error, _}->
-                    %% Not a SCRAM password
-                    ejabberd_auth:check_digest(Digest, DigestGen,
-                                               Password, StoredPassword)
-                end;
+                    false
+            end;
 
-        {error, _} ->
-            false
+        StoredPassword ->
+            %% Not a SCRAM password
+            ejabberd_auth:check_digest(Digest, DigestGen,
+                                       Password, StoredPassword)
     end.
 
 
