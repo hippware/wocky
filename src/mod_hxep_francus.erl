@@ -19,16 +19,10 @@ start(_Opts) ->
     Dispatch = cowboy_router:compile([{'_', [{'_', hxep_francus_http, []}]}]),
     cowboy:start_https(hxep_francus_listener, 100,
                        [
-                        {port, port()},
-                        {cacertfile, ssl_file("fake_cert.pem")},
-                        {certfile, ssl_file("fake_server.pem")},
-                        {keyfile, ssl_file("fake_key.pem")}
+                        {port, port()} |
+                        wocky_util:ssl_opts()
                        ],
                        [{env, [{dispatch, Dispatch}]}]).
-
-ssl_file(Filename) ->
-    PrivDir = code:priv_dir(wocky),
-    filename:join([PrivDir, "ssl", Filename]).
 
 stop() ->
     hxep_req_tracker:stop().

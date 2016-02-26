@@ -144,7 +144,7 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
                   -> ok | {error, exists | not_allowed | term()}.
 try_register(LUser, LServer, Password) ->
     PreparedPass = prepare_password(LServer, Password),
-    wocky_db_user:create_user(LUser, LServer, LUser, PreparedPass).
+    wocky_db_user:create_user_with_handle(LUser, LServer, LUser, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].

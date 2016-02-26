@@ -64,24 +64,36 @@
 
 -type handle()   :: binary().
 -type password() :: binary().
--type token() :: binary().
+-type token()    :: binary().
 -export_type([handle/0, password/0, token/0]).
 
 %% API
 -export([create_id/0,
          normalize_id/1,
          is_valid_id/1,
-         create_user/3,
-         create_user/4,
+         create_user_with_handle/3,
+         create_user_with_handle/4,
+         create_user/1,
+         maybe_set_handle/3,
+         set_phone_number/3,
          does_user_exist/2,
          get_handle/2,
+         get_phone_number/2,
          get_password/2,
          set_password/3,
          remove_user/2,
          generate_token/0,
          assign_token/3,
          release_token/3,
-         get_tokens/2]).
+         get_tokens/2,
+         update_user/1,
+         get_user_data/2,
+         check_token/4,
+         auth_user_user/2,
+         auth_user/2,
+         get_by_handle/1,
+         get_by_phone_number/1
+        ]).
 
 -define(TOKEN_BYTES, 32).
 -define(TOKEN_MARKER, "$T$").
@@ -100,10 +112,16 @@ create_id() ->
 
 %% @doc Takes a raw binary UUID (as retrieved through C* queries) and converts
 %% to the cannonical textual binary UUID form.
--spec normalize_id(binary()) -> ejabberd:luser().
+-spec normalize_id(binary() | not_found) -> ejabberd:luser() | not_found.
+normalize_id(not_found) ->
+    not_found;
 normalize_id(UUID) ->
     ossp_uuid:import(UUID, text).
 
+normalize_user(not_found) ->
+    not_found;
+normalize_user(Data = #{user := User}) ->
+    Data#{user => normalize_id(User)}.
 
 %% @doc Returns true if the user ID is a valid UUID.
 -spec is_valid_id(ejabberd:luser()) -> boolean().
@@ -122,15 +140,43 @@ is_valid_id(LUser) ->
 %% @see create_id/0
 %% @see create_user/4
 %%
--spec create_user(ejabberd:lserver(), handle(), password())
+-spec create_user_with_handle(ejabberd:lserver(), handle(), password())
                  -> {ok, ejabberd:luser()} | {error, exists}.
-create_user(LServer, Handle, Password) ->
+create_user_with_handle(LServer, Handle, Password) ->
     LUser = create_id(),
-    case create_user(LUser, LServer, Handle, Password) of
+    case create_user_with_handle(LUser, LServer, Handle, Password) of
         ok -> {ok, LUser};
         Error -> Error
     end.
 
+create_user(Fields = #{server := LServer}) ->
+    CreationFields = maps:without([handle, phoneNumber], Fields),
+    true = wocky_db:insert_new(LServer, user, CreationFields).
+
+maybe_set_handle(LUser, LServer, Handle) ->
+    maybe_set_gkey(LUser, LServer, handle_to_user,
+                   handle, Handle).
+
+set_phone_number(LUser, LServer, PhoneNumber) ->
+    create_gkey_lookup(LUser, LServer, phone_number_to_user,
+                       phone_number, PhoneNumber),
+    update_gkey(LUser, LServer, phone_number_to_user,
+                phone_number, PhoneNumber).
+
+maybe_set_gkey(LUser, LServer, Table, Col, Key) ->
+    maybe_create_gkey_lookup(LUser, LServer, Table, Col, Key)
+    andalso
+    update_gkey(LUser, LServer, Table, Col, Key).
+
+update_gkey(LUser, LServer, Table, Col, Key) ->
+    case wocky_db:select_one(LServer, user, Col, #{user => LUser}) of
+        K when K =:= null; K =:= Key ->
+            ok;
+        OldKey ->
+            wocky_db:delete(shared, Table, all, #{Col => OldKey})
+    end,
+    wocky_db:update(LServer, user, #{Col => Key}, #{user => LUser}),
+    true.
 
 %% @doc Creates a new user record in the database.
 %%
@@ -146,29 +192,46 @@ create_user(LServer, Handle, Password) ->
 %% is performed on the password at this level; it is stored as-is in the
 %% database.
 %%
--spec create_user(ejabberd:luser(), ejabberd:lserver(), handle(), password())
+-spec create_user_with_handle(ejabberd:luser(), ejabberd:lserver(),
+                              handle(), password())
                  -> ok | {error, exists | invalid_id}.
-create_user(LUser, LServer, Handle, Password) ->
-    create_user(LUser, LServer, Handle, Password, is_valid_id(LUser)).
+create_user_with_handle(LUser, LServer, Handle, Password) ->
+    create_user_with_handle(LUser, LServer, Handle,
+                            Password, is_valid_id(LUser)).
 
 %% @private
-create_user(LUser, LServer, Handle, Password, true) ->
+create_user_with_handle(LUser, LServer, Handle, Password, true) ->
     %% TODO: this really needs to be done in a batch, but we don't currently
     %% have a clean way to run queries in different keyspaces in the same batch.
-    case create_handle_lookup(LUser, LServer, Handle) of
+    Res = maybe_create_gkey_lookup(LUser, LServer,
+                                   handle_to_user, handle, Handle),
+    case Res of
         true ->
             create_user_record(LUser, LServer, Handle, Password);
 
         false ->
             {error, exists}
     end;
-create_user(_, _, _, _, false) ->
+create_user_with_handle(_, _, _, _, false) ->
     {error, invalid_id}.
 
-%% @private
-create_handle_lookup(LUser, LServer, Handle) ->
-    Values = #{user => LUser, server => LServer, handle => Handle},
-    wocky_db:insert_new(shared, handle_to_user, Values).
+maybe_create_gkey_lookup(LUser, LServer, Table, Col, Key) ->
+    Values = #{user => LUser, server => LServer, Col => Key},
+    wocky_db:insert_new(shared, Table, Values).
+
+create_gkey_lookup(LUser, LServer, Table, Col, Key) ->
+    case get_by_gkey(Table, Col, Key) of
+        not_found -> ok;
+        {LUser, LServer} -> ok;
+        {CurrentUser, CurrentServer} ->
+            remove_gkey(CurrentUser, CurrentServer, Col)
+    end,
+    Values = #{user => LUser, server => LServer},
+    Conditions = #{Col => Key},
+    wocky_db:update(shared, Table, Values, Conditions).
+
+remove_gkey(LUser, LServer, Col) ->
+    wocky_db:update(LServer, user, #{Col => null}, #{user => LUser}).
 
 %% @private
 create_user_record(LUser, LServer, Handle, Password) ->
@@ -200,15 +263,23 @@ does_user_exist(LUser, LServer) ->
 -spec get_handle(ejabberd:luser(), ejabberd:lserver())
                 -> handle() | {error, not_found}.
 get_handle(LUser, LServer) ->
-    get_handle(LUser, LServer, is_valid_id(LUser)).
+    get_gkey(LUser, LServer, handle).
+
+-spec get_phone_number(ejabberd:luser(), ejabberd:lserver())
+                       -> binary() | {error, not_found}.
+get_phone_number(LUser, LServer) ->
+    get_gkey(LUser, LServer, phone_number).
+
+get_gkey(LUser, LServer, Col) ->
+    get_gkey(LUser, LServer, Col, is_valid_id(LUser)).
 
 %% @private
-get_handle(LUser, LServer, true) ->
-    case wocky_db:select_one(LServer, user, handle, #{user => LUser}) of
+get_gkey(LUser, LServer, Col, true) ->
+    case wocky_db:select_one(LServer, user, Col, #{user => LUser}) of
         not_found -> {error, not_found};
-        Handle -> Handle
+        Value -> Value
     end;
-get_handle(_, _, false) ->
+get_gkey(_, _, _, false) ->
     {error, not_found}.
 
 
@@ -360,3 +431,45 @@ get_tokens(LUser, LServer, true) ->
                     #{user => LUser, server => LServer});
 get_tokens(_, _, false) ->
     [].
+
+get_user_data(LServer, LUser) ->
+    Data = wocky_db:drop_nulls(
+      wocky_db:select_row(LServer, user, all, #{user => LUser})),
+    normalize_user(Data).
+
+update_user(DBFields = #{user := User, server := LServer}) ->
+    wocky_db:update(LServer, user, maps:remove(user, DBFields),
+                    #{user => User}).
+
+-spec check_token(ejabberd:lserver(), ejabberd:luser(), binary(), token())
+                  -> boolean().
+check_token(LUser, LServer, Resource, Token) ->
+    Values = #{user => LUser,
+               server => LServer,
+               resource => Resource},
+    case wocky_db:select_one(LServer, auth_token, auth_token, Values) of
+        Token -> true;
+        not_found -> false
+    end.
+
+auth_user_user(LServer, AuthUser) ->
+    normalize_id(
+      wocky_db:select_one(LServer, auth_user, user, #{auth_user => AuthUser})).
+
+auth_user(LServer, AuthUser) ->
+    normalize_user(
+      wocky_db:select_row(LServer, auth_user, all, #{auth_user => AuthUser})).
+
+get_by_handle(Handle) ->
+    get_by_gkey(handle_to_user, handle, Handle).
+
+get_by_phone_number(PhoneNumber) ->
+    get_by_gkey(phone_number_to_user, phone_number, PhoneNumber).
+
+get_by_gkey(Table, Col, Value) ->
+    case wocky_db:select_row(shared, Table, [user, server], #{Col => Value}) of
+        #{user := User, server := Server} ->
+            {normalize_id(User), Server};
+        not_found ->
+            not_found
+    end.

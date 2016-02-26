@@ -5,10 +5,16 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky_db_seed.hrl").
 
--import(wocky_db_user, [is_valid_id/1, does_user_exist/2, create_user/3,
-                        create_user/4, remove_user/2, get_password/2,
-                        set_password/3, generate_token/0, assign_token/3,
-                        release_token/3, get_tokens/2]).
+-import(wocky_db_user,
+        [is_valid_id/1, does_user_exist/2, create_user_with_handle/3,
+         create_user_with_handle/4, remove_user/2, get_password/2,
+         set_password/3, generate_token/0, assign_token/3,
+         release_token/3, get_tokens/2, check_token/4,
+         maybe_set_handle/3,
+         get_handle/2, get_by_handle/1,
+         set_phone_number/3,
+         get_phone_number/2, get_by_phone_number/1
+        ]).
 
 
 wocky_db_user_test_() -> {
@@ -25,13 +31,17 @@ wocky_db_user_test_() -> {
     test_generate_token(),
     test_assign_token(),
     test_release_token(),
-    test_get_tokens()
+    test_get_tokens(),
+    test_check_token(),
+    test_maybe_set_handle(),
+    test_set_phone_number()
   ]
 }.
 
 before_all() ->
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
+    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user,
+                                               phone_number_to_user]),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
     ok.
 
@@ -40,12 +50,14 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
+    ok = wocky_db_seed:seed_tables(shared, [handle_to_user,
+                                            phone_number_to_user]),
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user),
     ok.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(shared, [handle_to_user]),
+    ok = wocky_db_seed:clear_tables(shared, [handle_to_user,
+                                             phone_number_to_user]),
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
@@ -75,29 +87,32 @@ test_does_user_exist() ->
   ]}.
 
 test_create_user_without_id() ->
-  { "create_user", setup, fun before_each/0, fun after_each/1, [
+  { "create_user_with_handle", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
-      ?_assertMatch({ok, _}, create_user(?SERVER, <<"nosuchuser">>, ?PASS))
+      ?_assertMatch({ok, _}, create_user_with_handle(?SERVER,
+                                                     <<"nosuchuser">>, ?PASS))
     ]},
     { "fails if user already exists", [
-      ?_assertMatch({error, exists}, create_user(?SERVER, ?HANDLE, ?PASS))
+      ?_assertMatch({error, exists}, create_user_with_handle(?SERVER,
+                                                             ?HANDLE, ?PASS))
     ]}
   ]}.
 
 test_create_user_with_id() ->
-  { "create_user", setup, fun before_each/0, fun after_each/1, [
+  { "create_user_with_handle", setup, fun before_each/0, fun after_each/1, [
     { "creates a user if none exists", [
-      ?_assertMatch(ok, create_user(?NEWUSER, ?SERVER,
+      ?_assertMatch(ok, create_user_with_handle(?NEWUSER, ?SERVER,
                                     <<"nosuchuser">>, ?PASS)),
       ?_assert(does_user_exist(?NEWUSER, ?SERVER))
     ]},
     { "returns {error, exists} if user already exists", [
       ?_assertMatch({error, exists},
-                    create_user(?USER, ?SERVER, ?HANDLE, ?PASS))
+                    create_user_with_handle(?USER, ?SERVER, ?HANDLE, ?PASS))
     ]},
     { "returns {error, invalid_id} if user ID is not a valid UUID", [
       ?_assertMatch({error, invalid_id},
-                    create_user(<<"alice">>, ?SERVER, ?HANDLE, ?PASS))
+                    create_user_with_handle(<<"alice">>, ?SERVER,
+                                            ?HANDLE, ?PASS))
     ]}
   ]}.
 
@@ -217,5 +232,64 @@ test_get_tokens() ->
     ]},
     { "returns [] if user ID is not a valid UUID", [
       ?_assertEqual([], get_tokens(<<"alice">>, ?SERVER))
+    ]}
+  ]}.
+
+test_check_token() ->
+  { "check_token", setup, fun before_each/0, fun after_each/1, [
+    { "accepts a valid token",
+      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
+        ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
+    ] end},
+    { "denies any other token", [
+      ?_assertNot(check_token(?USER, ?SERVER, ?RESOURCE, <<"badtoken">>))
+    ]},
+    { "denies tokens with a bad user or resource",
+      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
+        ?_assertNot(check_token(wocky_db_user:create_id(),
+                                ?SERVER, ?RESOURCE, Token)),
+        ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
+    ] end}
+   ]}.
+
+test_maybe_set_handle() ->
+  { "maybe_set_handle", foreach, fun before_each/0, fun after_each/1, [
+    { "sets a handle on a user", [
+        ?_assert(maybe_set_handle(?ALICE, ?SERVER, <<"shinynewhandle">>)),
+        ?_assertEqual(<<"shinynewhandle">>, get_handle(?ALICE, ?SERVER)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_by_handle(<<"shinynewhandle">>)),
+        ?_assertEqual(not_found, get_by_handle(?HANDLE))
+    ]},
+    { "won't set a handle that's already in use", [
+        ?_assertNot(maybe_set_handle(?ALICE, ?SERVER, <<"carol">>)),
+        ?_assertEqual(?HANDLE, get_handle(?ALICE, ?SERVER)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_by_handle(?HANDLE))
+    ]},
+    { "will fail and remain valid for the same value", [
+        ?_assertNot(maybe_set_handle(?ALICE, ?SERVER, ?HANDLE)),
+        ?_assertEqual(?HANDLE, get_handle(?ALICE, ?SERVER)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_by_handle(?HANDLE))
+    ]}
+  ]}.
+
+test_set_phone_number() ->
+  { "set_phone_number", foreach, fun before_each/0, fun after_each/1, [
+    { "sets a phone number on a user", [
+        ?_assert(set_phone_number(?ALICE, ?SERVER, <<"+614444">>)),
+        ?_assertEqual(<<"+614444">>, get_phone_number(?ALICE, ?SERVER)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(<<"+614444">>)),
+        ?_assertEqual(not_found, get_by_phone_number(?PHONE_NUMBER))
+    ]},
+    { "will set a phone number that's already in use,"
+      " and remove from the currently holding user", [
+        ?_assert(set_phone_number(?ALICE, ?SERVER, <<"+4567">>)),
+        ?_assertEqual(<<"+4567">>, get_phone_number(?ALICE, ?SERVER)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(<<"+4567">>)),
+        ?_assertEqual(null, get_phone_number(?CAROL, ?SERVER))
+    ]},
+    { "will succeed and remain valid for the same value", [
+        ?_assert(set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),
+        ?_assertEqual(?PHONE_NUMBER, get_phone_number(?ALICE, ?SERVER)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(?PHONE_NUMBER))
     ]}
   ]}.

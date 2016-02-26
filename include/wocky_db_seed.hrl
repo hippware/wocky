@@ -10,6 +10,7 @@
 -define(SERVER,  <<"localhost">>).
 -define(RESOURCE,<<"testing">>).
 -define(HANDLE,  <<"alice">>).
+-define(PHONE_NUMBER,<<"+1234">>).
 -define(PASS,    <<"password">>).
 -define(SCRAM,   <<"==SCRAM==,8dncGDJ45eXoMzqZ3zT6F/8gJt0=,"
                    "aEsAiUKWIdvXDW5oSaQxUJKHcOU=,Q0t9V/6+rkA1jv0LGA/IHw==,"

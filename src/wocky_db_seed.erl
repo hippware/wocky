@@ -9,7 +9,7 @@
 
 -export([bootstrap/0, bootstrap/1, create_schema/0, create_schema_for/1,
          foreach_table/3, recreate_table/2, create_table_indexes/2,
-         create_table_views/2, drop_table_views/2, seed_table/2,
+         create_table_views/2, drop_table_views/2, seed_table/2, seed_tables/2,
          seed_keyspace/1, prepare_tables/2, clear_tables/2]).
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
@@ -67,6 +67,9 @@ drop_table_views(Context, Table) ->
           ok = wocky_db:drop(Context, 'materialized view', Name)
       end,
       table_views(Table)).
+
+seed_tables(Context, Tables) ->
+    lists:foreach(fun(T) -> {ok, _} = seed_table(Context, T) end, Tables).
 
 seed_table(Context, Name) ->
     Data = seed_data(Name),
@@ -170,7 +173,11 @@ table_definition(user) ->
            {handle, text},         % User handle (as seen by other users)
            {password, text},       % Password hash
            {phone_number, text},   % User's phone number
-           {avatar, timeuuid}      % UUID of file containing user's avatar
+           {avatar, timeuuid},     % UUID of file containing user's avatar
+           {first_name, text},     % User's first name
+           {last_name, text},      % User's last name
+           {email, text},          % User's email address
+           {auth_user, text}       % The user ID received from Twitter Digits
        ],
        primary_key = user
     };
@@ -317,6 +324,9 @@ table_indexes(session) -> [
 ];
 table_indexes(_) -> [].
 
+table_views(user) -> [
+    {auth_user, all, [auth_user, user], []}
+];
 table_views(roster) -> [
     {roster_version, all, [user, version, contact], [{version, asc}]}
 ];
@@ -337,13 +347,20 @@ table_views(_) -> [].
 
 seed_data(handle_to_user) ->
     [maps:with([user, server, handle, skip], U) || U <- seed_data(user)];
+seed_data(phone_number_to_user) ->
+    [maps:with([user, server, phone_number, skip], U) || U <- seed_data(user)];
 seed_data(user) ->
     Users = [
-        #{user => ?ALICE,  handle => ?HANDLE},
-        #{user => ?CAROL,  handle => <<"carol">>},
-        #{user => ?BOB,    handle => <<"bob">>},
-        #{user => ?KAREN,  handle => <<"karen">>},
-        #{user => ?ROBERT, handle => <<"robert">>}
+        #{user => ?ALICE,  handle => ?HANDLE,
+          phone_number => ?PHONE_NUMBER},
+        #{user => ?CAROL,  handle => <<"carol">>,
+          phone_number => <<"+4567">>},
+        #{user => ?BOB,    handle => <<"bob">>,
+          phone_number => <<"+8901">>},
+        #{user => ?KAREN,  handle => <<"karen">>,
+          phone_number => <<"+5555">>},
+        #{user => ?ROBERT, handle => <<"robert">>,
+          phone_number => <<"+6666">>}
     ],
     [U#{server => ?SERVER, password => ?SCRAM} || U <- Users];
 seed_data(last_activity) ->
