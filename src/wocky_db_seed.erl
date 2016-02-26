@@ -132,7 +132,8 @@ keyspace_tables(_) -> [
     session,
     media,
     media_data,
-    message_archive
+    message_archive,
+    auth_token
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -296,6 +297,19 @@ table_definition(message_archive) ->
        ],
        primary_key = [[lower_jid, upper_jid], time],
        order_by = [{time, asc}]
+    };
+
+%% Tokens for authenticating individual resources
+table_definition(auth_token) ->
+    #table_def{
+       name = auth_token,
+       columns = [
+           {user, timeuuid},       % User ID (userpart of JID)
+           {server, text},         % Server (domainpart of JID)
+           {resource, text},       % Resource (resourcepart of JID)
+           {auth_token, text}      % Token
+       ],
+       primary_key = [user, server, resource]
     }.
 
 table_indexes(session) -> [
@@ -326,7 +340,7 @@ seed_data(handle_to_user) ->
 seed_data(user) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE},
-        #{user => ?ALICIA, handle => <<"alicia">>},
+        #{user => ?CAROL,  handle => <<"carol">>},
         #{user => ?BOB,    handle => <<"bob">>},
         #{user => ?KAREN,  handle => <<"karen">>},
         #{user => ?ROBERT, handle => <<"robert">>}
@@ -335,7 +349,7 @@ seed_data(user) ->
 seed_data(last_activity) ->
     Activity = [
         #{user => ?ALICE,  timestamp => 1000, status => <<"Not here">>},
-        #{user => ?ALICIA, timestamp => 777,  status => <<"Ennui">>},
+        #{user => ?CAROL,  timestamp => 777,  status => <<"Ennui">>},
         #{user => ?BOB,    timestamp => 666,  status => <<"">>},
         #{user => ?KAREN,  timestamp => 999,  status => <<"Excited">>},
         #{user => ?ROBERT, timestamp => 888,  status => <<"Bored">>}
@@ -360,10 +374,10 @@ seed_data(offline_msg) ->
       seed_data(user));
 seed_data(roster) ->
     Items = [
-        #{contact => sjid(?BOB),    nick => <<"bobby">>, version => 666},
-        #{contact => sjid(?ALICIA), nick => <<"allie">>, version => 777},
-        #{contact => sjid(?ROBERT), nick => <<"bob2">>,  version => 888},
-        #{contact => sjid(?KAREN),  nick => <<"kk">>,    version => 999}
+        #{contact => sjid(?BOB),    nick => <<"bobby">>,  version => 666},
+        #{contact => sjid(?CAROL),  nick => <<"carrie">>, version => 777},
+        #{contact => sjid(?ROBERT), nick => <<"bob2">>,   version => 888},
+        #{contact => sjid(?KAREN),  nick => <<"kk">>,     version => 999}
     ],
     [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
         I <- Items];
@@ -372,7 +386,9 @@ seed_data(message_archive) ->
     Q = "INSERT INTO message_archive (id, time, lower_jid, upper_jid,
          sent_to_lower, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
     {Q, Rows};
-
+seed_data(auth_token) ->
+    [#{user => ?ALICE, server => ?SERVER, resource => ?RESOURCE,
+       auth_token => ?TOKEN}];
 seed_data(_) ->
     [].
 
@@ -385,7 +401,7 @@ session_sids() -> [
                                 {{7, 8, 9},    list_to_pid("<0.2323.0>")},
                                 {{10, 11, 12}, list_to_pid("<0.2325.0>")},
                                 {{13, 14, 15}, list_to_pid("<0.2327.0>")}]},
-    #{user => ?ALICIA, sids => [{{16, 17, 18}, list_to_pid("<0.2456.0>")},
+    #{user => ?CAROL,  sids => [{{16, 17, 18}, list_to_pid("<0.2456.0>")},
                                 {{19, 20, 21}, list_to_pid("<0.2457.0>")},
                                 {{22, 23, 24}, list_to_pid("<0.2458.0>")},
                                 {{25, 26, 27}, list_to_pid("<0.2459.0>")},

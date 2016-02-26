@@ -67,7 +67,7 @@ test_last_activity() ->
             ?_assertMatch({ok, 999, "Excited"},
                           get_last(?KAREN, ?SERVER)),
             ?_assertMatch({ok, 777, "Ennui"},
-                          get_last(?ALICIA, ?SERVER))
+                          get_last(?CAROL, ?SERVER))
         ]},
         { "Returns not_found when a record does not exist", [
             ?_assertMatch(not_found, get_last(?BADUSER, ?SERVER))
@@ -78,9 +78,9 @@ test_remove_user() ->
     { "remove_user", setup, fun before_each/0, fun after_each/1, [
         { "Deletes existing users", [
             ?_assertMatch(ok, remove_user(?BOB, ?SERVER)),
-            ?_assertMatch(ok, remove_user(?ALICIA, ?SERVER)),
+            ?_assertMatch(ok, remove_user(?CAROL, ?SERVER)),
             ?_assertMatch(3, count_active_users(?SERVER, 0)),
             ?_assertMatch(not_found, get_last(?BOB, ?SERVER)),
-            ?_assertMatch(not_found, get_last(?ALICIA, ?SERVER))
+            ?_assertMatch(not_found, get_last(?CAROL, ?SERVER))
         ]}
     ]}.
