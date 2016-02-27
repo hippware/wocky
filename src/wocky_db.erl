@@ -523,7 +523,8 @@ default_db_config() ->
 get_db_config() ->
     %% Try pulling the config from ejabberd
     try
-        case ejabberd_config:get_global_option(cqerl_node) of
+        [Host] = ejabberd_config:get_global_option(hosts),
+        case ejabberd_config:get_local_option(cqerl_node, Host) of
             undefined -> default_db_config();
             Value -> Value
         end
@@ -534,6 +535,7 @@ get_db_config() ->
 
 run_query(Context, Query) ->
     Spec = get_db_config(),
+    ok = lager:debug("DB connection spec: ~p~n", [Spec]),
     case get_client(Spec, Context) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
