@@ -34,7 +34,14 @@
 
 -spec start(list()) -> any().
 start(_Opts) ->
-    maybe_cleanup(),
+    try
+        maybe_cleanup()
+    catch
+        Class:Reason ->
+            ok = lager:error(
+              "Error cleaning up node session data!~nStacktrace:~s",
+              [lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason})])
+    end,
     ok.
 
 % `get_sessions/0' is only used by testing and extra admin tools. It doesn't
