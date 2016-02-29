@@ -38,7 +38,8 @@ start_ejabberd(CfgDir) ->
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
-    ejabberd:start().
+    {ok, _} = ejabberd:start(),
+    ok.
 
 
 %%%===================================================================
