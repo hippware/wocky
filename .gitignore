@@ -5,8 +5,10 @@ ebin
 test/nodes
 _build
 _checkouts
+_rel/*
 .eunit
 .rebar
+.deliver/releases
 *.nonode@nohost
 log/*
 .vagrant

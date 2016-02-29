@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+BUILD_CMD="rebar3"
+REBAR_CMD="./rebar3"
+RELEASE_CMD="relx"
+RELX_CMD="./rebar3"
+
+# name of your release
+APP="wocky"
+
+# host where to build the release
+BUILD_HOST="build.dev.tinyrobot.com"
+
+# local user at build host
+BUILD_USER="ubuntu"
+
+# build directory on build host
+BUILD_AT="/home/ubuntu/wocky"
+
+
+##
+## STAGING / TEST
+##
+
+# staging / test hosts separated by space
+STAGING_HOSTS="app1.dev.tinyrobot.com app2.dev.tinyrobot.com app3.dev.tinyrobot.com"
+
+# local user at staging hosts
+STAGING_USER="ubuntu"
+
+# deploy directory on staging hosts. default is DELIVER_TO
+TEST_AT="/opt/wocky"
+
+
+##
+## PRODUCTION
+##
+
+# deploy / production hosts separated by space
+PRODUCTION_HOSTS="app1.prod.tinyrobot.com app2.prod.tinyrobot.com app3.prod.tinyrobot.com"
+
+# local user at deploy hosts
+PRODUCTION_USER="ubuntu"
+
+# deploy directory on production hosts
+DELIVER_TO="/opt/wocky"
