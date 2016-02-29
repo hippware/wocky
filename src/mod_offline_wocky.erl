@@ -11,7 +11,8 @@
 -behaviour(mod_offline).
 -export([init/2,
          pop_messages/2,
-         write_messages/4,
+         write_messages/3,
+         count_offline_messages/3,
          remove_expired_messages/1,
          remove_old_messages/2,
          remove_user/2]).
@@ -32,10 +33,9 @@ pop_messages(LUser, LServer) ->
     Recs = [ row_to_rec(LUser, LServer, Row) || Row <- Rows ],
     {ok, Recs}.
 
--spec write_messages(ejabberd:luser(), ejabberd:lserver(),
-                     [#offline_msg{}], integer()) -> ok.
-write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
-    %% NOTE: The MaxOfflineMsgs value is not supported and will be ignored
+-spec write_messages(ejabberd:luser(), ejabberd:lserver(), [#offline_msg{}])
+                    -> ok.
+write_messages(LUser, LServer, Msgs) ->
     Q = "INSERT INTO offline_msg
             (user, server, msg_id, expire, timestamp, from_id, to_id, packet)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -51,15 +51,24 @@ write_messages(LUser, LServer, Msgs, _MaxOfflineMsgs) ->
              ],
     wocky_db:multi_query(LServer, QueryValues, quorum).
 
+-spec count_offline_messages(ejabberd:luser(), ejabberd:server(), integer())
+                            -> integer().
+count_offline_messages(_LUser, _LServer, _MaxToArchive) ->
+    %% This function is used to implement offline messages thresholds/limits.
+    %% We aren't supporting that feature at this time, and it isn't clear that
+    %% we will need it. Returning 0 here satisfies the code in `mod_offline`
+    %% and doesn't cause us obvious problems.
+    0.
+
 -spec remove_expired_messages(ejabberd:lserver()) ->
     {ok, integer()}.
 remove_expired_messages(_Host) ->
     %% Expiry of messages is automatically handled by Cassandra's TTL system
     {ok, 0}.
 
--spec remove_old_messages(ejabberd:lserver(), integer()) ->
+-spec remove_old_messages(ejabberd:lserver(), erlang:timestamp()) ->
     {error, not_implemented}.
-remove_old_messages(_Host, _Days) ->
+remove_old_messages(_Host, _Timestamp) ->
     {error, not_implemented}.
 
 -spec remove_user(binary(), binary()) -> ok.
