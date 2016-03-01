@@ -264,10 +264,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                     subscribed -> <<"subscribed">>;
                     unsubscribed -> <<"unsubscribed">>
                 end,
-            ejabberd_router:route(ToJID, JID1,
-                                  #xmlel{name = <<"presence">>,
-                                         attrs = [{<<"type">>, T}],
-                                         children = []})
+            route(ejabberd_router, ToJID, JID1,
+                  #xmlel{name = <<"presence">>,
+                         attrs = [{<<"type">>, T}],
+                         children = []})
     end,
     case Push of
         {push, #roster{subscription = none, ask = in}} ->
@@ -487,9 +487,9 @@ send_unsubscribing_presence(From, Item) ->
     ok.
 
 send_presence_type(From, To, Type) ->
-    ejabberd_router:route(From, To,
-                          #xmlel{name = <<"presence">>,
-                                 attrs = [{<<"type">>, Type}], children = []}).
+    route(ejabberd_router, From, To,
+          #xmlel{name = <<"presence">>,
+                 attrs = [{<<"type">>, Type}], children = []}).
 
 item_to_xml(Item) ->
     Attrs1 = [{<<"jid">>,
