@@ -83,8 +83,7 @@
          release_token/3,
          get_tokens/2]).
 
--define(TOKEN_SEED_BYTES, 128).
--define(TOKEN_HASH, sha256).
+-define(TOKEN_BYTES, 32).
 -define(TOKEN_MARKER, "$T$").
 -define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
 
@@ -288,9 +287,8 @@ remove_user_record(LUser, LServer) ->
 %% @doc Generates a token.
 -spec generate_token() -> token().
 generate_token() ->
-    RandomBytes = crypto:strong_rand_bytes(?TOKEN_SEED_BYTES),
-    Digest = crypto:hash(?TOKEN_HASH, RandomBytes),
-    String = base64:encode_to_string(Digest),
+    RandomBytes = crypto:strong_rand_bytes(?TOKEN_BYTES),
+    String = base64:encode_to_string(RandomBytes),
     iolist_to_binary([?TOKEN_MARKER, String]).
 
 
