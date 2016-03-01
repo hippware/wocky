@@ -3,7 +3,7 @@
 -module(wocky_db_roster_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("ejabberd/include/mod_roster.hrl").
+-include("wocky_roster.hrl").
 -include("wocky_db_seed.hrl").
 
 

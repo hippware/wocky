@@ -24,7 +24,7 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/mod_roster.hrl").
+-include("wocky_roster.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).
@@ -175,7 +175,7 @@ process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
             process_item_attrs(Item, Attrs);
         JID1 ->
             JID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
-            process_item_attrs(Item#roster{jid = JID}, Attrs)
+            process_item_attrs(Item#roster{contact_jid = JID}, Attrs)
     end;
 process_item_attrs(Item, [{<<"name">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{name = Val}, Attrs);
@@ -383,7 +383,7 @@ roster_get_subscription_lists_hook(_Acc, User, Server) ->
     fill_subscription_lists(JID, LServer, Items, [], [], []).
 
 fill_subscription_lists(JID, LServer, [#roster{} = I | Is], F, T, P) ->
-    J = element(3, I#roster.usj),
+    J = I#roster.contact_jid,
 
     NewP = build_pending(I, JID, P),
 
@@ -402,17 +402,11 @@ fill_subscription_lists(_, _, [], F, T, P) ->
 
 build_pending(#roster{ask = Ask} = I, JID, P)
   when Ask =:= in; Ask =:= both ->
-    Message = I#roster.askmessage,
-    Status  = case is_binary(Message) of
-                  true -> Message;
-                  false -> <<>>
-              end,
-
     StatusEl = #xmlel{name = <<"status">>,
-                      children = [#xmlcdata{content = Status}]},
+                      children = [#xmlcdata{content = I#roster.askmessage}]},
 
     El = #xmlel{name = <<"presence">>,
-                attrs = [{<<"from">>, jid:to_binary(I#roster.jid)},
+                attrs = [{<<"from">>, jid:to_binary(I#roster.contact_jid)},
                          {<<"to">>, jid:to_binary(JID)},
                          {<<"type">>, <<"subscribe">>}],
                 children = [StatusEl]},
@@ -466,7 +460,7 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
 %% @spec (From::jid(), Item::roster()) -> ok
 send_unsubscribing_presence(From, Item) ->
     LFrom = jid:to_bare(From),
-    JID = jid:make(Item#roster.jid),
+    JID = jid:make(Item#roster.contact_jid),
 
     IsTo = case Item#roster.subscription of
                both -> true;
@@ -495,7 +489,7 @@ item_to_xml(Item) ->
     #xmlel{
        name = <<"item">>,
        attrs = lists:flatten(
-                 [item_jid_to_xml(Item#roster.jid),
+                 [item_jid_to_xml(Item#roster.contact_jid),
                   item_name_to_xml(Item#roster.name),
                   item_sub_to_xml(Item#roster.subscription),
                   item_ask_to_xml(Item#roster.ask)]),
@@ -524,7 +518,7 @@ push_item(User, Server, From, Item) ->
     ok = route(ejabberd_sm,
                jid:make(<<"">>, <<"">>, <<"">>),
                jid:make(User, Server, <<"">>),
-               {broadcast, {item, Item#roster.jid,
+               {broadcast, {item, Item#roster.contact_jid,
                             Item#roster.subscription}}),
     push_item(User, Server, From, Item,
               wocky_db_roster:get_roster_version(jid:nodeprep(User), Server)).

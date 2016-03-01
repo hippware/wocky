@@ -2,7 +2,7 @@
 %%% @doc Wocky roster model
 -module(wocky_db_roster).
 
--include_lib("ejabberd/include/mod_roster.hrl").
+-include("wocky_roster.hrl").
 
 %% API
 -export([get_roster/2,
@@ -112,9 +112,9 @@ pack_roster_item(LUser, LServer, Contact, Row) when is_binary(Contact) ->
 pack_roster_item(LUser, LServer, ContactJID, Row0) ->
     Row = wocky_db:drop_nulls(Row0),
     #roster{
-       usj          = {LUser, LServer, ContactJID},
-       us           = {LUser, LServer},
-       jid          = ContactJID,
+       user         = LUser,
+       server       = LServer,
+       contact_jid  = ContactJID,
        name         = maps:get(nick, Row, <<>>),
        groups       = maps:get(groups, Row, []),
        ask          = binary_to_atom(maps:get(ask, Row, <<"none">>), utf8),
