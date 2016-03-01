@@ -492,36 +492,33 @@ send_presence_type(From, To, Type) ->
                  attrs = [{<<"type">>, Type}], children = []}).
 
 item_to_xml(Item) ->
-    Attrs1 = [{<<"jid">>,
-               jid:to_binary(Item#roster.jid)}],
-    Attrs2 = case Item#roster.name of
-                 <<"">> -> Attrs1;
-                 Name -> [{<<"name">>, Name} | Attrs1]
-             end,
-    Attrs3 = case Item#roster.subscription of
-                 none -> [{<<"subscription">>, <<"none">>} | Attrs2];
-                 from -> [{<<"subscription">>, <<"from">>} | Attrs2];
-                 to -> [{<<"subscription">>, <<"to">>} | Attrs2];
-                 both -> [{<<"subscription">>, <<"both">>} | Attrs2];
-                 remove -> [{<<"subscription">>, <<"remove">>} | Attrs2]
-             end,
-    Attrs4 = case ask_to_pending(Item#roster.ask) of
-                 out -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-                 both -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-                 _ -> Attrs3
-             end,
-    SubEls1 = lists:map(fun (G) ->
-                                #xmlel{name = <<"group">>, attrs = [],
-                                       children = [{xmlcdata, G}]}
-                        end,
-                        Item#roster.groups),
-    SubEls = SubEls1 ++ Item#roster.xs,
-    #xmlel{name = <<"item">>, attrs = Attrs4,
-           children = SubEls}.
+    #xmlel{
+       name = <<"item">>,
+       attrs = lists:flatten(
+                 [item_jid_to_xml(Item#roster.jid),
+                  item_name_to_xml(Item#roster.name),
+                  item_sub_to_xml(Item#roster.subscription),
+                  item_ask_to_xml(Item#roster.ask)]),
+       children = [#xmlel{
+                      name = <<"group">>, attrs = [],
+                      children = [{xmlcdata, G}]
+                     } || G <- Item#roster.groups] ++ Item#roster.xs
+      }.
 
-ask_to_pending(subscribe) -> out;
-ask_to_pending(unsubscribe) -> none;
-ask_to_pending(Ask) -> Ask.
+item_jid_to_xml(JID) ->
+    {<<"jid">>, jid:to_binary(JID)}.
+
+item_name_to_xml(<<"">>) -> [];
+item_name_to_xml(Name) -> {<<"name">>, Name}.
+
+item_sub_to_xml(Subscription) ->
+    {<<"subscription">>, erlang:atom_to_binary(Subscription, utf8)}.
+
+item_ask_to_xml(Ask)
+  when Ask =:= out orelse Ask =:= both ->
+    {<<"ask">>, <<"subscribe">>};
+item_ask_to_xml(_) ->
+    [].
 
 push_item(User, Server, From, Item) ->
     ok = route(ejabberd_sm,
