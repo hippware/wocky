@@ -69,7 +69,7 @@ delete_roster(LUser, LServer) ->
 -spec get_roster_item(ejabberd:luser(), ejabberd:lserver(), contact())
                      -> roster_item().
 get_roster_item(LUser, LServer, ContactJID) ->
-    Conditions = #{user => LUser, contact => ContactJID},
+    Conditions = #{user => LUser, contact_jid => ContactJID},
     Row = wocky_db:select_row(LServer, roster, all, Conditions),
     pack_roster_item(LUser, LServer, ContactJID, Row).
 
@@ -79,9 +79,9 @@ get_roster_item(LUser, LServer, ContactJID) ->
                          contact(), roster_item()) -> ok.
 update_roster_item(LUser, LServer, ContactJID, Item) ->
     Query = "INSERT INTO roster ("
-            "  user, server, contact, nick, groups,"
-            "  ask, askmessage, subscription, version"
-            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, toTimestamp(now()))",
+            "  user, server, contact_jid, contact_handle, nick, naturalname,"
+            "  avatar, groups, ask, askmessage, subscription, version"
+            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, toTimestamp(now()))",
     Values = unpack_roster_item(LUser, LServer, ContactJID, Item),
     {ok, void} = wocky_db:query(LServer, Query, Values, quorum),
     ok.
@@ -90,7 +90,7 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
 %% @doc Deletes the roster item from the database.
 -spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), contact()) -> ok.
 delete_roster_item(LUser, LServer, ContactJID) ->
-    Conditions = #{user => LUser, contact => ContactJID},
+    Conditions = #{user => LUser, contact_jid => ContactJID},
     wocky_db:delete(LServer, roster, all, Conditions).
 
 
@@ -101,7 +101,7 @@ delete_roster_item(LUser, LServer, ContactJID) ->
 pack_roster(LUser, LServer, Rows) ->
     [pack_roster_item(LUser, LServer, Row) || Row <- Rows].
 
-pack_roster_item(LUser, LServer, #{contact := C} = Row) ->
+pack_roster_item(LUser, LServer, #{contact_jid := C} = Row) ->
     pack_roster_item(LUser, LServer, C, Row).
 
 pack_roster_item(LUser, LServer, ContactJID, not_found) ->
@@ -112,22 +112,28 @@ pack_roster_item(LUser, LServer, Contact, Row) when is_binary(Contact) ->
 pack_roster_item(LUser, LServer, ContactJID, Row0) ->
     Row = wocky_db:drop_nulls(Row0),
     #roster{
-       user         = LUser,
-       server       = LServer,
-       contact_jid  = ContactJID,
-       name         = maps:get(nick, Row, <<>>),
-       groups       = maps:get(groups, Row, []),
-       ask          = binary_to_atom(maps:get(ask, Row, <<"none">>), utf8),
-       askmessage   = maps:get(askmessage, Row, <<>>),
-       subscription = binary_to_atom(
-                        maps:get(subscription, Row, <<"none">>), utf8)}.
+       user           = LUser,
+       server         = LServer,
+       contact_jid    = ContactJID,
+       contact_handle = maps:get(contact_handle, Row, <<>>),
+       naturalname    = maps:get(naturalname, Row, <<>>),
+       name           = maps:get(nick, Row, <<>>),
+       avatar         = maps:get(avatar, Row, <<>>),
+       groups         = maps:get(groups, Row, []),
+       ask            = binary_to_atom(maps:get(ask, Row, <<"none">>), utf8),
+       askmessage     = maps:get(askmessage, Row, <<>>),
+       subscription   = binary_to_atom(
+                          maps:get(subscription, Row, <<"none">>), utf8)}.
 
 unpack_roster_item(LUser, LServer, ContactJID, Item) ->
-    #{user         => LUser,
-      server       => LServer,
-      contact      => ContactJID,
-      nick         => Item#roster.name,
-      groups       => Item#roster.groups,
-      ask          => atom_to_binary(Item#roster.ask, utf8),
-      askmessage   => Item#roster.askmessage,
-      subscription => atom_to_binary(Item#roster.subscription, utf8)}.
+    #{user           => LUser,
+      server         => LServer,
+      contact_jid    => ContactJID,
+      contact_handle => Item#roster.contact_handle,
+      naturalname    => Item#roster.naturalname,
+      nick           => Item#roster.name,
+      avatar         => Item#roster.avatar,
+      groups         => Item#roster.groups,
+      ask            => atom_to_binary(Item#roster.ask, utf8),
+      askmessage     => Item#roster.askmessage,
+      subscription   => atom_to_binary(Item#roster.subscription, utf8)}.

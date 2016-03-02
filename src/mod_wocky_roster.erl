@@ -177,8 +177,14 @@ process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
             JID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
             process_item_attrs(Item#roster{contact_jid = JID}, Attrs)
     end;
+process_item_attrs(Item, [{<<"handle">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{contact_handle = Val}, Attrs);
+process_item_attrs(Item, [{<<"naturalname">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{naturalname = Val}, Attrs);
 process_item_attrs(Item, [{<<"name">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{name = Val}, Attrs);
+process_item_attrs(Item, [{<<"avatar">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{avatar = Val}, Attrs);
 process_item_attrs(Item, [{<<"subscription">>, <<"remove">>} | Attrs]) ->
     process_item_attrs(Item#roster{subscription = remove}, Attrs);
 process_item_attrs(Item, [_ | Attrs]) ->
@@ -490,7 +496,10 @@ item_to_xml(Item) ->
        name = <<"item">>,
        attrs = lists:flatten(
                  [item_jid_to_xml(Item#roster.contact_jid),
-                  item_name_to_xml(Item#roster.name),
+                  item_name_to_xml(name, Item#roster.name),
+                  item_name_to_xml(handle, Item#roster.contact_handle),
+                  item_name_to_xml(naturalname, Item#roster.naturalname),
+                  item_name_to_xml(avatar, Item#roster.avatar),
                   item_sub_to_xml(Item#roster.subscription),
                   item_ask_to_xml(Item#roster.ask)]),
        children = [#xmlel{
@@ -502,8 +511,9 @@ item_to_xml(Item) ->
 item_jid_to_xml(JID) ->
     {<<"jid">>, jid:to_binary(JID)}.
 
-item_name_to_xml(<<"">>) -> [];
-item_name_to_xml(Name) -> {<<"name">>, Name}.
+item_name_to_xml(_Key, <<"">>) -> [];
+item_name_to_xml(Key, Name) ->
+    {erlang:atom_to_binary(Key, utf8), Name}.
 
 item_sub_to_xml(Subscription) ->
     {<<"subscription">>, erlang:atom_to_binary(Subscription, utf8)}.
