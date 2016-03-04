@@ -18,6 +18,12 @@
          to_json/2
         ]).
 
+-ifdef(TEST).
+-export([verify_session/2,
+         verify_auth/4
+        ]).
+-endif.
+
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("webmachine/include/webmachine.hrl").
 
@@ -50,7 +56,7 @@ start(Opts) ->
     ok.
 
 stop() ->
-    ok = webmachine_mochiweb:stop(wocky_reg),
+    ok = webmachine_mochiweb:stop(wocky_reg_mochiweb),
     ok.
 
 %%%===================================================================
@@ -60,7 +66,7 @@ stop() ->
 init(Opts) ->
     AuthProviders = proplists:get_value(auth_providers, Opts),
     Server = proplists:get_value(server, Opts),
-    {{trace, "/tmp"}, #state{
+    {ok, #state{
             auth_providers = AuthProviders,
             server = Server
            }}.
@@ -115,14 +121,17 @@ authenticate(
     end;
 authenticate(
     Fields = #{
-      sessionID := SessionID
+      sessionID := SessionID,
+      server    := _
      }, RD, Ctx) ->
     case verify_session(Fields, SessionID) of
         true ->
             UpdateFields = maps:remove(phoneNumber, Fields),
             maybe_update_user(UpdateFields, RD, Ctx);
         false ->
-            {{halt, {401, "Invalid sessionID"}}, RD, Ctx}
+            {{halt, {401, "Invalid sessionID"}}, RD, Ctx};
+        missing_fields ->
+            {{halt, {400, "Missing auth fields"}}, RD, Ctx}
     end;
 authenticate(_, RD, Ctx) ->
     missing_field(RD, Ctx).
@@ -131,12 +140,14 @@ verify_session(#{uuid := UUID, server := Server, resource := Resource},
                SessionID) ->
     wocky_db_user:check_token(UUID, Server, Resource, SessionID);
 verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
-    case wocky_db_user:auth_user_user(Server, UserID) of
-        not_found -> false;
-        User -> verify_session(Fields#{uuid => User}, SessionID)
+    case wocky_db_user:auth_user(Server, UserID) of
+        not_found ->
+            false;
+        User ->
+            verify_session(Fields#{uuid => User}, SessionID)
     end;
 verify_session(_, _) ->
-    false.
+    missing_fields.
 
 % Check that the auth server is one that we have configured as valid
 verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
@@ -150,41 +161,23 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
 %% Check if the user handle exists; create it if it doesnt, possibly update
 %% the user data otherwise
 maybe_create_user(Fields = #{userID := AuthUser, server := Server}, RD, Ctx) ->
-    case wocky_db_user:auth_user_user(Server, AuthUser) of
+    case wocky_db_user:auth_user(Server, AuthUser) of
         not_found ->
-            NewUser = wocky_db_user:create_id(),
-            create_user(Fields#{uuid => NewUser}, RD, Ctx);
+            create_user(Fields, RD, Ctx);
         ExistingUser ->
             maybe_update_user(Fields#{uuid => ExistingUser}, RD, Ctx)
     end.
 
 %% Check that the required fields are present, then create the user
 create_user(Fields, RD, Ctx) ->
-    wocky_db_user:create_user(json_to_row(Fields)),
-    finalise_changes(Fields, RD, Ctx#state{is_new = true}).
+    UUID = wocky_db_user:create_user(json_to_row(Fields)),
+    finalise_changes(Fields#{uuid => UUID}, RD, Ctx#state{is_new = true}).
 
-maybe_update_user(Fields = #{uuid := User, server := Server}, RD, Ctx) ->
-    ExistingUser = row_to_json(wocky_db_user:get_user_data(Server, User)),
-    check_update_user(ExistingUser, Fields, RD, Ctx);
-
+maybe_update_user(Fields = #{uuid := _}, RD, Ctx) ->
+    update_user(Fields, RD, Ctx);
 maybe_update_user(Fields = #{userID := AuthUser, server := Server}, RD, Ctx) ->
-    ExistingUser = row_to_json(wocky_db_user:auth_user(Server, AuthUser)),
-    check_update_user(ExistingUser, Fields, RD, Ctx).
-
-%% Update the user but only if the userID (auth_user) matches the one
-%% currently in the DB
-check_update_user(_ExistingUser = #{userID := ExistingAU, uuid := User},
-                  NewUser       = #{userID := ExistingAU},
-                  RD, Ctx) ->
-    update_user(NewUser#{uuid => User}, RD, Ctx);
-
-check_update_user(_ExistingUser = #{uuid := ExistingUUID},
-                  NewUser       = #{uuid := ExistingUUID},
-                  RD, Ctx) ->
-    update_user(NewUser, RD, Ctx);
-
-check_update_user(_, _, RD, Ctx) ->
-    {{halt, {401, "User credentials do not match existing user"}}, RD, Ctx}.
+    UUID = wocky_db_user:auth_user(Server, AuthUser),
+    update_user(Fields#{uuid => UUID}, RD, Ctx).
 
 update_user(Fields, RD, Ctx) ->
     wocky_db_user:update_user(json_to_row(Fields)),
@@ -212,7 +205,9 @@ set_result(UUID, RD, Ctx = #state{server = Server,
                                   phone_number_set = PhoneNumberSet,
                                   handle_set = HandleSet,
                                   resource = Resource}) ->
-    Fields = row_to_json(wocky_db_user:get_user_data(Server, UUID)),
+    Fields = row_to_json(
+               wocky_db:drop_nulls(
+                 wocky_db_user:get_user_data(Server, UUID))),
     JSONFields = prepare_for_encoding(Fields),
     {ok, Token} = wocky_db_user:assign_token(UUID, Server, Resource),
     Ret = [{sessionID, Token}, {isNew, IsNew},
@@ -223,6 +218,9 @@ set_result(UUID, RD, Ctx = #state{server = Server,
     RD3 = wrq:set_resp_body(Body, RD2),
     {true, RD3, Ctx}.
 
+% This function is required to keep webmachine happy (since it must be
+% specified in content_types_provided) but is not actually called because
+% the body is set in set_result, above.
 to_json(RD, Ctx) ->
     {wrq:resp_body(RD), RD, Ctx}.
 

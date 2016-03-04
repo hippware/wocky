@@ -352,15 +352,15 @@ seed_data(phone_number_to_user) ->
 seed_data(user) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE,
-          phone_number => ?PHONE_NUMBER},
+          phone_number => ?PHONE_NUMBER, auth_user => ?AUTH_USER},
         #{user => ?CAROL,  handle => <<"carol">>,
-          phone_number => <<"+4567">>},
+          phone_number => <<"+4567">>, auth_user => <<"123456">>},
         #{user => ?BOB,    handle => <<"bob">>,
-          phone_number => <<"+8901">>},
+          phone_number => <<"+8901">>, auth_user => <<"958731">>},
         #{user => ?KAREN,  handle => <<"karen">>,
-          phone_number => <<"+5555">>},
+          phone_number => <<"+5555">>, auth_user => <<"598234">>},
         #{user => ?ROBERT, handle => <<"robert">>,
-          phone_number => <<"+6666">>}
+          phone_number => <<"+6666">>, auth_user => <<"888312">>}
     ],
     [U#{server => ?SERVER, password => ?SCRAM} || U <- Users];
 seed_data(last_activity) ->

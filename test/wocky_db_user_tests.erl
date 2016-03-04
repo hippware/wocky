@@ -239,16 +239,17 @@ test_check_token() ->
   { "check_token", setup, fun before_each/0, fun after_each/1, [
     { "accepts a valid token",
       setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
-        ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
+      ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
     ] end},
-    { "denies any other token", [
+    { "denies any other token",
+      setup, fun token_setup/0, fun token_cleanup/1, [
       ?_assertNot(check_token(?USER, ?SERVER, ?RESOURCE, <<"badtoken">>))
     ]},
     { "denies tokens with a bad user or resource",
       setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
-        ?_assertNot(check_token(wocky_db_user:create_id(),
-                                ?SERVER, ?RESOURCE, Token)),
-        ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
+      ?_assertNot(check_token(wocky_db_user:create_id(),
+                              ?SERVER, ?RESOURCE, Token)),
+      ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
     ] end}
    ]}.
 

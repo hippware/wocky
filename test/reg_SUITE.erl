@@ -20,7 +20,13 @@
          update/1,
          invalid_phone_number/1,
          session_id_update/1,
-         session_id_update_phone_number/1
+         session_id_update_phone_number/1,
+         invalid_auth_provider/1,
+         invalid_session_id/1,
+         missing_auth_data/1,
+         session_with_userid/1,
+         invalid_user_id/1,
+         missing_user_id/1
         ]).
 
 -include("wocky_db_seed.hrl").
@@ -43,8 +49,13 @@ reg_cases() ->
      update,
      invalid_phone_number,
      session_id_update,
-     session_id_update_phone_number
-%     large_request,
+     session_id_update_phone_number,
+     invalid_auth_provider,
+     invalid_session_id,
+     missing_auth_data,
+     session_with_userid,
+     invalid_user_id,
+     missing_user_id
     ].
 
 suite() ->
@@ -136,8 +147,7 @@ session_id_update(_) ->
     {struct, Elements} = mochijson2:decode(Body),
     SessionID = proplists:get_value(<<"sessionID">>, Elements),
     UUID = proplists:get_value(<<"uuid">>, Elements),
-    Data = lists:keyreplace(handle, 1, session_test_data(UUID, SessionID),
-                            {handle, <<"NewHandle">>}),
+    Data = [{handle, <<"NewHandle">>} | session_test_data(UUID, SessionID)],
     {ok, {201, Body2}} = request(encode(Data)),
     {struct, Elements2} = mochijson2:decode(Body2),
     true = proplists:get_value(<<"handleSet">>, Elements2),
@@ -163,6 +173,48 @@ session_id_update_phone_number(_) ->
     verify_phone_number(User, ?PHONE_NUMBER),
     stop_digits_server().
 
+invalid_auth_provider(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user]),
+    Data = lists:keyreplace('X-Auth-Service-Provider', 1, test_data(),
+                            {'X-Auth-Service-Provider',
+                             <<"http://evilhost.com">>}),
+    JSON = encode(Data),
+    {ok, {401, _Body}} = request(JSON).
+
+invalid_session_id(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    Data = lists:keyreplace(sessionID, 1, session_test_data(?ALICE, ?TOKEN),
+                            {sessionID, <<"$T$Icantotallyhackthissession">>}),
+    JSON = encode(Data),
+    {ok, {401, _Body}} = request(JSON).
+
+missing_auth_data(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    Data = lists:keydelete(sessionID, 1, session_test_data(?ALICE, ?TOKEN)),
+    JSON = encode(Data),
+    {ok, {400, _Body}} = request(JSON).
+
+session_with_userid(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
+                            {userID, ?AUTH_USER}),
+    ct:log("Data: ~p", [Data]),
+    JSON = encode(Data),
+    {ok, {201, _Body}} = request(JSON).
+
+invalid_user_id(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
+                            {userID, <<"999999999">>}),
+    JSON = encode(Data),
+    {ok, {401, _Body}} = request(JSON).
+
+missing_user_id(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    Data = lists:keydelete(uuid, 1, session_test_data(?ALICE, ?TOKEN)),
+    JSON = encode(Data),
+    {ok, {400, _Body}} = request(JSON).
+
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
@@ -176,32 +228,28 @@ encode(Data) ->
     iolist_to_binary(mochijson2:encode({struct, Data})).
 
 request(Body) ->
-    httpc:request(post, {?URL, [{"Accept", "application/json"}], "application/json", Body},
-                  [], [{full_result, false}]).
+    httpc:request(post, {?URL, [{"Accept", "application/json"}],
+                  "application/json", Body}, [], [{full_result, false}]).
 
 test_data() ->
     [{handle, ?TEST_HANDLE},
-     {resource, <<"Kurita">>},
+     {resource, ?RESOURCE},
      {emailAddress, <<"me@alice.com">>},
-     {userID, <<"701990807448920064">>},
+     {userID, ?AUTH_USER},
      {phoneNumber, ?PHONE_NUMBER},
      {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
-     {'X-Verify-Credentials-Authorization',
-        <<"OAuth oauth_signature=\"32%2Bf2UY9txk%2BIcV0mV7P55R9%2Fkw%3D\","
-        "oauth_nonce=\"EF4F602C-0BBF-48F1-91C7-7CD344E7D0A1\","
-        "oauth_timestamp=\"1456795178\","
-        "oauth_consumer_key=\"e527IQiWSXZ5WHNxROUZk87uV\","
-        "oauth_token=\"701990807448920064-JxNX4i57y5Wp6xBDVjNwKB4ZYUcC8FJ\","
-        "oauth_version=\"1.0\",oauth_signature_method=\"HMAC-SHA1\"">>},
+     {'X-Verify-Credentials-Authorization', ?DIGITS_AUTH},
      {firstName, <<"Alice">>},
-     {lastName, <<"Alison">>}
+     {lastName, <<"Alison">>},
+     % Key this off a binary to test the atom-creation defence:
+     {<<"extraRandomField">>, <<"Ignore me entirely!">>}
     ].
 
 session_test_data(UUID, SessionID) ->
-    [{handle, ?TEST_HANDLE},
+    [
      {uuid, UUID},
      {sessionID, SessionID},
-     {resource, <<"Kurita">>},
+     {resource, ?RESOURCE},
      {emailAddress, <<"me@alice.com">>},
      {phoneNumber, ?PHONE_NUMBER},
      {firstName, <<"Alice">>},
@@ -214,9 +262,9 @@ verify_new_result(Body) ->
 
 verify_elements(#{
   <<"handle">> := ?TEST_HANDLE,
-  <<"resource">> := <<"Kurita">>,
+  <<"resource">> := ?RESOURCE,
   <<"emailAddress">> := <<"me@alice.com">>,
-  <<"userID">> := <<"701990807448920064">>,
+  <<"userID">> := ?AUTH_USER,
   <<"phoneNumber">> := ?PHONE_NUMBER,
   <<"firstName">> := <<"Alice">>,
   <<"lastName">> := <<"Alison">>,
@@ -230,18 +278,16 @@ verify_elements(Fields) ->
     ct:fail("Missing or incorrect fields: ~p", [Fields]).
 
 create_user() ->
-    User = wocky_db_user:create_id(),
     Fields = #{
-      user => User,
       server => ?LOCAL_CONTEXT,
       handle => ?TEST_HANDLE,
       email => <<"me@alice.com">>,
-      auth_user => <<"701990807448920064">>,
+      auth_user => ?AUTH_USER,
       phone_number => ?PHONE_NUMBER,
       first_name => <<"Alice">>,
       last_name => <<"Alison">>
      },
-    wocky_db_user:create_user(Fields),
+    User = wocky_db_user:create_user(Fields),
     true = wocky_db_user:maybe_set_handle(User, ?LOCAL_CONTEXT, ?TEST_HANDLE),
     true = wocky_db_user:set_phone_number(User, ?LOCAL_CONTEXT,
                                                 ?PHONE_NUMBER),

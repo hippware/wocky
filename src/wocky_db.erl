@@ -26,7 +26,7 @@
 -type query()     :: iodata().
 -type value()     :: parameter_val().
 -type values()    :: map().
--type row()       :: map().
+-type row()       :: map() | not_found.
 -type rows()      :: [row()].
 -type error()     :: term().
 -opaque result()  :: #cql_result{}.
@@ -72,7 +72,7 @@ select_one(Context, Table, Column, Conditions) ->
 %% @doc Retrieves a single row from a table based on the parameters.
 %% Returns the first row of the result set.
 -spec select_row(context(), table(), columns(), conditions())
-                -> row() | not_found.
+                -> row().
 select_row(Context, Table, Columns, Conditions) ->
     {ok, R} = run_select_query(Context, Table, Columns, Conditions),
     single_row(R).
@@ -508,6 +508,7 @@ drop_all_nulls(Rows) ->
 
 %% @doc TBD
 -spec drop_nulls(row()) -> row().
+drop_nulls(not_found) -> not_found;
 drop_nulls(Row) ->
     maps:filter(fun (_, null) -> false;
                     (_, _) -> true end, Row).
@@ -610,7 +611,7 @@ single_result(Result) ->
 
 %% Extracts the first row from a query result
 %% The row is a property list of column name, value pairs.
--spec single_row(result()) -> row() | not_found.
+-spec single_row(result()) -> row().
 single_row(Result) ->
     case cqerl:head(Result) of
         empty_dataset -> not_found;

@@ -89,7 +89,6 @@
          update_user/1,
          get_user_data/2,
          check_token/4,
-         auth_user_user/2,
          auth_user/2,
          get_by_handle/1,
          get_by_phone_number/1
@@ -150,8 +149,11 @@ create_user_with_handle(LServer, Handle, Password) ->
     end.
 
 create_user(Fields = #{server := LServer}) ->
-    CreationFields = maps:without([handle, phoneNumber], Fields),
-    true = wocky_db:insert_new(LServer, user, CreationFields).
+    NewID = create_id(),
+    WithUser = Fields#{user => NewID},
+    CreationFields = maps:without([handle, phoneNumber], WithUser),
+    true = wocky_db:insert_new(LServer, user, CreationFields),
+    NewID.
 
 maybe_set_handle(LUser, LServer, Handle) ->
     maybe_set_gkey(LUser, LServer, handle_to_user,
@@ -433,8 +435,7 @@ get_tokens(_, _, false) ->
     [].
 
 get_user_data(LServer, LUser) ->
-    Data = wocky_db:drop_nulls(
-      wocky_db:select_row(LServer, user, all, #{user => LUser})),
+    Data = wocky_db:select_row(LServer, user, all, #{user => LUser}),
     normalize_user(Data).
 
 update_user(DBFields = #{user := User, server := LServer}) ->
@@ -449,16 +450,12 @@ check_token(LUser, LServer, Resource, Token) ->
                resource => Resource},
     case wocky_db:select_one(LServer, auth_token, auth_token, Values) of
         Token -> true;
-        not_found -> false
+        _ -> false
     end.
 
-auth_user_user(LServer, AuthUser) ->
+auth_user(LServer, AuthUser) ->
     normalize_id(
       wocky_db:select_one(LServer, auth_user, user, #{auth_user => AuthUser})).
-
-auth_user(LServer, AuthUser) ->
-    normalize_user(
-      wocky_db:select_row(LServer, auth_user, all, #{auth_user => AuthUser})).
 
 get_by_handle(Handle) ->
     get_by_gkey(handle_to_user, handle, Handle).
