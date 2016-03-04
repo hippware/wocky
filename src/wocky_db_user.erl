@@ -434,7 +434,7 @@ get_tokens(LUser, LServer, true) ->
 get_tokens(_, _, false) ->
     [].
 
-get_user_data(LServer, LUser) ->
+get_user_data(LUser, LServer) ->
     Data = wocky_db:select_row(LServer, user, all, #{user => LUser}),
     normalize_user(Data).
 

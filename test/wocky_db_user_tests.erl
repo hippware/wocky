@@ -13,7 +13,9 @@
          maybe_set_handle/3,
          get_handle/2, get_by_handle/1,
          set_phone_number/3,
-         get_phone_number/2, get_by_phone_number/1
+         get_phone_number/2, get_by_phone_number/1,
+         get_user_data/2,
+         auth_user/2
         ]).
 
 
@@ -34,7 +36,9 @@ wocky_db_user_test_() -> {
     test_get_tokens(),
     test_check_token(),
     test_maybe_set_handle(),
-    test_set_phone_number()
+    test_set_phone_number(),
+    test_get_user_data(),
+    test_auth_user()
   ]
 }.
 
@@ -292,5 +296,30 @@ test_set_phone_number() ->
         ?_assert(set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),
         ?_assertEqual(?PHONE_NUMBER, get_phone_number(?ALICE, ?SERVER)),
         ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(?PHONE_NUMBER))
+    ]}
+  ]}.
+
+test_get_user_data() ->
+  { "get_user_data", setup, fun before_each/0, fun after_each/1, [
+    { "gets an existing user's data", [
+        ?_assertMatch(#{user := ?ALICE,
+                        handle := ?HANDLE,
+                        phone_number := ?PHONE_NUMBER,
+                        auth_user := ?AUTH_USER},
+                      get_user_data(?ALICE, ?LOCAL_CONTEXT))
+    ]},
+    { "returns not_found for non-existant users", [
+        ?_assertEqual(not_found, get_user_data(wocky_db_user:create_id(),
+                                               ?LOCAL_CONTEXT))
+    ]}
+  ]}.
+
+test_auth_user() ->
+  { "auth_user", setup, fun before_each/0, fun after_each/1, [
+    { "gets an existing user from the auth_user", [
+        ?_assertEqual(?ALICE, auth_user(?LOCAL_CONTEXT, ?AUTH_USER))
+    ]},
+    { "gets not_found for non-existant auth_users", [
+        ?_assertEqual(not_found, auth_user(?LOCAL_CONTEXT, <<"3413212312">>))
     ]}
   ]}.

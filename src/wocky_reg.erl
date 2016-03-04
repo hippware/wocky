@@ -207,7 +207,7 @@ set_result(UUID, RD, Ctx = #state{server = Server,
                                   resource = Resource}) ->
     Fields = row_to_json(
                wocky_db:drop_nulls(
-                 wocky_db_user:get_user_data(Server, UUID))),
+                 wocky_db_user:get_user_data(UUID, Server))),
     JSONFields = prepare_for_encoding(Fields),
     {ok, Token} = wocky_db_user:assign_token(UUID, Server, Resource),
     Ret = [{sessionID, Token}, {isNew, IsNew},
