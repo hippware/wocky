@@ -237,7 +237,7 @@ field_mappings() ->
      {firstName,    first_name},
      {lastName,     last_name},
      {phoneNumber,  phone_number},
-     {emailAddress, email}
+     {email,        email}
      % Strip all other fields
     ].
 

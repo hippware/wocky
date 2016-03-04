@@ -234,7 +234,7 @@ request(Body) ->
 test_data() ->
     [{handle, ?TEST_HANDLE},
      {resource, ?RESOURCE},
-     {emailAddress, <<"me@alice.com">>},
+     {email, <<"me@alice.com">>},
      {userID, ?AUTH_USER},
      {phoneNumber, ?PHONE_NUMBER},
      {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
@@ -250,7 +250,7 @@ session_test_data(UUID, SessionID) ->
      {uuid, UUID},
      {sessionID, SessionID},
      {resource, ?RESOURCE},
-     {emailAddress, <<"me@alice.com">>},
+     {email, <<"me@alice.com">>},
      {phoneNumber, ?PHONE_NUMBER},
      {firstName, <<"Alice">>},
      {lastName, <<"Alison">>}
@@ -263,7 +263,7 @@ verify_new_result(Body) ->
 verify_elements(#{
   <<"handle">> := ?TEST_HANDLE,
   <<"resource">> := ?RESOURCE,
-  <<"emailAddress">> := <<"me@alice.com">>,
+  <<"email">> := <<"me@alice.com">>,
   <<"userID">> := ?AUTH_USER,
   <<"phoneNumber">> := ?PHONE_NUMBER,
   <<"firstName">> := <<"Alice">>,
