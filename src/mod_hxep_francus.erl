@@ -17,10 +17,9 @@
 start(_Opts) ->
     hxep_req_tracker:start(),
     Dispatch = cowboy_router:compile([{'_', [{'_', hxep_francus_http, []}]}]),
-    cowboy:start_https(hxep_francus_listener, 100,
+    cowboy:start_http(hxep_francus_listener, 100,
                        [
-                        {port, port()} |
-                        wocky_util:ssl_opts()
+                        {port, port()}
                        ],
                        [{env, [{dispatch, Dispatch}]}]).
 

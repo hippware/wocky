@@ -294,9 +294,11 @@ create_user() ->
     User.
 
 verify_handle(User, Handle) ->
-    {User, ?LOCAL_CONTEXT} = wocky_db_user:get_by_handle(Handle),
+    {User, ?LOCAL_CONTEXT} =
+    wocky_db_user:get_user_by_handle(Handle),
     Handle = wocky_db_user:get_handle(User, ?LOCAL_CONTEXT).
 
 verify_phone_number(User, PhoneNumber) ->
-    {User, ?LOCAL_CONTEXT} = wocky_db_user:get_by_phone_number(PhoneNumber),
+    {User, ?LOCAL_CONTEXT} =
+    wocky_db_user:get_user_by_phone_number(PhoneNumber),
     PhoneNumber = wocky_db_user:get_phone_number(User, ?LOCAL_CONTEXT).

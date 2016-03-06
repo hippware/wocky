@@ -86,12 +86,12 @@
          assign_token/3,
          release_token/3,
          get_tokens/2,
+         check_token/4,
          update_user/1,
          get_user_data/2,
-         check_token/4,
-         auth_user/2,
-         get_by_handle/1,
-         get_by_phone_number/1
+         get_user_by_auth_name/2,
+         get_user_by_handle/1,
+         get_user_by_phone_number/1
         ]).
 
 -define(TOKEN_BYTES, 32).
@@ -175,9 +175,9 @@ update_gkey(LUser, LServer, Table, Col, Key) ->
         K when K =:= null; K =:= Key ->
             ok;
         OldKey ->
-            wocky_db:delete(shared, Table, all, #{Col => OldKey})
+            ok = wocky_db:delete(shared, Table, all, #{Col => OldKey})
     end,
-    wocky_db:update(LServer, user, #{Col => Key}, #{user => LUser}),
+    ok = wocky_db:update(LServer, user, #{Col => Key}, #{user => LUser}),
     true.
 
 %% @doc Creates a new user record in the database.
@@ -222,11 +222,11 @@ maybe_create_gkey_lookup(LUser, LServer, Table, Col, Key) ->
     wocky_db:insert_new(shared, Table, Values).
 
 create_gkey_lookup(LUser, LServer, Table, Col, Key) ->
-    case get_by_gkey(Table, Col, Key) of
+    case get_user_by_gkey(Table, Col, Key) of
         not_found -> ok;
         {LUser, LServer} -> ok;
-        {CurrentUser, CurrentServer} ->
-            remove_gkey(CurrentUser, CurrentServer, Col)
+        {OtherUser, OtherServer} ->
+            remove_gkey(OtherUser, OtherServer, Col)
     end,
     Values = #{user => LUser, server => LServer},
     Conditions = #{Col => Key},
@@ -434,14 +434,6 @@ get_tokens(LUser, LServer, true) ->
 get_tokens(_, _, false) ->
     [].
 
-get_user_data(LUser, LServer) ->
-    Data = wocky_db:select_row(LServer, user, all, #{user => LUser}),
-    normalize_user(Data).
-
-update_user(DBFields = #{user := User, server := LServer}) ->
-    wocky_db:update(LServer, user, maps:remove(user, DBFields),
-                    #{user => User}).
-
 -spec check_token(ejabberd:lserver(), ejabberd:luser(), binary(), token())
                   -> boolean().
 check_token(LUser, LServer, Resource, Token) ->
@@ -453,17 +445,26 @@ check_token(LUser, LServer, Resource, Token) ->
         _ -> false
     end.
 
-auth_user(LServer, AuthUser) ->
+
+get_user_data(LUser, LServer) ->
+    Data = wocky_db:select_row(LServer, user, all, #{user => LUser}),
+    normalize_user(Data).
+
+update_user(DBFields = #{user := User, server := LServer}) ->
+    wocky_db:update(LServer, user, maps:remove(user, DBFields),
+                    #{user => User}).
+
+get_user_by_auth_name(LServer, AuthUser) ->
     normalize_id(
       wocky_db:select_one(LServer, auth_user, user, #{auth_user => AuthUser})).
 
-get_by_handle(Handle) ->
-    get_by_gkey(handle_to_user, handle, Handle).
+get_user_by_handle(Handle) ->
+    get_user_by_gkey(handle_to_user, handle, Handle).
 
-get_by_phone_number(PhoneNumber) ->
-    get_by_gkey(phone_number_to_user, phone_number, PhoneNumber).
+get_user_by_phone_number(PhoneNumber) ->
+    get_user_by_gkey(phone_number_to_user, phone_number, PhoneNumber).
 
-get_by_gkey(Table, Col, Value) ->
+get_user_by_gkey(Table, Col, Value) ->
     case wocky_db:select_row(shared, Table, [user, server], #{Col => Value}) of
         #{user := User, server := Server} ->
             {normalize_id(User), Server};

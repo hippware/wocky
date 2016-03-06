@@ -11,11 +11,11 @@
          set_password/3, generate_token/0, assign_token/3,
          release_token/3, get_tokens/2, check_token/4,
          maybe_set_handle/3,
-         get_handle/2, get_by_handle/1,
+         get_handle/2, get_user_by_handle/1,
          set_phone_number/3,
-         get_phone_number/2, get_by_phone_number/1,
+         get_phone_number/2, get_user_by_phone_number/1,
          get_user_data/2,
-         auth_user/2
+         get_user_by_auth_name/2
         ]).
 
 
@@ -262,18 +262,19 @@ test_maybe_set_handle() ->
     { "sets a handle on a user", [
         ?_assert(maybe_set_handle(?ALICE, ?SERVER, <<"shinynewhandle">>)),
         ?_assertEqual(<<"shinynewhandle">>, get_handle(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_by_handle(<<"shinynewhandle">>)),
-        ?_assertEqual(not_found, get_by_handle(?HANDLE))
+        ?_assertEqual({?ALICE, ?SERVER},
+                      get_user_by_handle(<<"shinynewhandle">>)),
+        ?_assertEqual(not_found, get_user_by_handle(?HANDLE))
     ]},
     { "won't set a handle that's already in use", [
         ?_assertNot(maybe_set_handle(?ALICE, ?SERVER, <<"carol">>)),
         ?_assertEqual(?HANDLE, get_handle(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_by_handle(?HANDLE))
+        ?_assertEqual({?ALICE, ?SERVER}, get_user_by_handle(?HANDLE))
     ]},
     { "will fail and remain valid for the same value", [
         ?_assertNot(maybe_set_handle(?ALICE, ?SERVER, ?HANDLE)),
         ?_assertEqual(?HANDLE, get_handle(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_by_handle(?HANDLE))
+        ?_assertEqual({?ALICE, ?SERVER}, get_user_by_handle(?HANDLE))
     ]}
   ]}.
 
@@ -282,20 +283,22 @@ test_set_phone_number() ->
     { "sets a phone number on a user", [
         ?_assert(set_phone_number(?ALICE, ?SERVER, <<"+614444">>)),
         ?_assertEqual(<<"+614444">>, get_phone_number(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(<<"+614444">>)),
-        ?_assertEqual(not_found, get_by_phone_number(?PHONE_NUMBER))
+        ?_assertEqual({?ALICE, ?SERVER},
+                      get_user_by_phone_number(<<"+614444">>)),
+        ?_assertEqual(not_found, get_user_by_phone_number(?PHONE_NUMBER))
     ]},
     { "will set a phone number that's already in use,"
       " and remove from the currently holding user", [
         ?_assert(set_phone_number(?ALICE, ?SERVER, <<"+4567">>)),
         ?_assertEqual(<<"+4567">>, get_phone_number(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(<<"+4567">>)),
+        ?_assertEqual({?ALICE, ?SERVER}, get_user_by_phone_number(<<"+4567">>)),
         ?_assertEqual(null, get_phone_number(?CAROL, ?SERVER))
     ]},
     { "will succeed and remain valid for the same value", [
         ?_assert(set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),
         ?_assertEqual(?PHONE_NUMBER, get_phone_number(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_by_phone_number(?PHONE_NUMBER))
+        ?_assertEqual({?ALICE, ?SERVER},
+                      get_user_by_phone_number(?PHONE_NUMBER))
     ]}
   ]}.
 
@@ -317,9 +320,11 @@ test_get_user_data() ->
 test_auth_user() ->
   { "auth_user", setup, fun before_each/0, fun after_each/1, [
     { "gets an existing user from the auth_user", [
-        ?_assertEqual(?ALICE, auth_user(?LOCAL_CONTEXT, ?AUTH_USER))
+        ?_assertEqual(?ALICE,
+                      get_user_by_auth_name(?LOCAL_CONTEXT, ?AUTH_USER))
     ]},
     { "gets not_found for non-existant auth_users", [
-        ?_assertEqual(not_found, auth_user(?LOCAL_CONTEXT, <<"3413212312">>))
+        ?_assertEqual(not_found,
+                      get_user_by_auth_name(?LOCAL_CONTEXT, <<"3413212312">>))
     ]}
   ]}.

@@ -4,7 +4,7 @@
 %%% This module implements verification against Tiwtter Digits servers.
 %%% It checks the authorisation strings as well as verifying that the phone
 %%% number returned matches the one the user supplied.
--module(digits_auth).
+-module(wocky_digits_auth).
 
 -export([verify/3]).
 

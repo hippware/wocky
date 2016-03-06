@@ -6,12 +6,9 @@
 
 start(AllowAuth) ->
     Dispatch = cowboy_router:compile([{'_', [{'_', ?MODULE, AllowAuth}]}]),
-    cowboy:start_https(fake_digits_listener, 1,
-                       [
-                        {port, port()} |
-                        wocky_util:ssl_opts()
-                       ],
-                       [{env, [{dispatch, Dispatch}]}]).
+    cowboy:start_http(fake_digits_listener, 1,
+                      [{port, port()}],
+                      [{env, [{dispatch, Dispatch}]}]).
 
 stop() ->
     ok = cowboy:stop_listener(fake_digits_listener).
@@ -28,7 +25,7 @@ handle(Req, AllowAuth) ->
 
 terminate(_Reason, _Req, _State) -> ok.
 
-url() -> "https://localhost:" ++ integer_to_list(port()).
+url() -> "http://localhost:" ++ integer_to_list(port()).
 port() -> 9999.
 
 headers() -> [{"content-type", "application/json"}].

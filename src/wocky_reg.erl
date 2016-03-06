@@ -50,8 +50,6 @@ start(Opts) ->
     webmachine_mochiweb:start(
       [{name, wocky_reg},
        {port, Port},
-%       {ssl, true},
-%       {ssl_opts, wocky_util:ssl_opts()},
        {dispatch, [{[], ?MODULE, Opts}]}]),
     ok.
 
@@ -140,7 +138,7 @@ verify_session(#{uuid := UUID, server := Server, resource := Resource},
                SessionID) ->
     wocky_db_user:check_token(UUID, Server, Resource, SessionID);
 verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
-    case wocky_db_user:auth_user(Server, UserID) of
+    case wocky_db_user:get_user_by_auth_name(Server, UserID) of
         not_found ->
             false;
         User ->
@@ -153,7 +151,7 @@ verify_session(_, _) ->
 verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
     case lists:member(binary_to_list(AuthProvider), ValidProviders) of
         true ->
-            digits_auth:verify(Auth, PhoneNumber, AuthProvider);
+            wocky_digits_auth:verify(Auth, PhoneNumber, AuthProvider);
         false ->
             {false, 401, "Invalid authentication provider"}
     end.
@@ -161,7 +159,7 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
 %% Check if the user handle exists; create it if it doesnt, possibly update
 %% the user data otherwise
 maybe_create_user(Fields = #{userID := AuthUser, server := Server}, RD, Ctx) ->
-    case wocky_db_user:auth_user(Server, AuthUser) of
+    case wocky_db_user:get_user_by_auth_name(Server, AuthUser) of
         not_found ->
             create_user(Fields, RD, Ctx);
         ExistingUser ->
@@ -176,7 +174,7 @@ create_user(Fields, RD, Ctx) ->
 maybe_update_user(Fields = #{uuid := _}, RD, Ctx) ->
     update_user(Fields, RD, Ctx);
 maybe_update_user(Fields = #{userID := AuthUser, server := Server}, RD, Ctx) ->
-    UUID = wocky_db_user:auth_user(Server, AuthUser),
+    UUID = wocky_db_user:get_user_by_auth_name(Server, AuthUser),
     update_user(Fields#{uuid => UUID}, RD, Ctx).
 
 update_user(Fields, RD, Ctx) ->
