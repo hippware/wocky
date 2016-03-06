@@ -119,8 +119,8 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    ok = wocky_db_user:create_user_with_handle(?USER, ?SERVER, ?HANDLE,
-                                               encode_password(?PASS)),
+    ok = wocky_db_user:create_user(?USER, ?SERVER, ?HANDLE,
+                                   encode_password(?PASS)),
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, auth_token),
     ok.
 

@@ -71,8 +71,8 @@
 -export([create_id/0,
          normalize_id/1,
          is_valid_id/1,
-         create_user_with_handle/3,
-         create_user_with_handle/4,
+         create_user/3,
+         create_user/4,
          create_user/1,
          maybe_set_handle/3,
          set_phone_number/3,
@@ -139,11 +139,11 @@ is_valid_id(LUser) ->
 %% @see create_id/0
 %% @see create_user/4
 %%
--spec create_user_with_handle(ejabberd:lserver(), handle(), password())
+-spec create_user(ejabberd:lserver(), handle(), password())
                  -> {ok, ejabberd:luser()} | {error, exists}.
-create_user_with_handle(LServer, Handle, Password) ->
+create_user(LServer, Handle, Password) ->
     LUser = create_id(),
-    case create_user_with_handle(LUser, LServer, Handle, Password) of
+    case create_user(LUser, LServer, Handle, Password) of
         ok -> {ok, LUser};
         Error -> Error
     end.
@@ -194,15 +194,14 @@ update_gkey(LUser, LServer, Table, Col, Key) ->
 %% is performed on the password at this level; it is stored as-is in the
 %% database.
 %%
--spec create_user_with_handle(ejabberd:luser(), ejabberd:lserver(),
-                              handle(), password())
+-spec create_user(ejabberd:luser(), ejabberd:lserver(),
+                  handle(), password())
                  -> ok | {error, exists | invalid_id}.
-create_user_with_handle(LUser, LServer, Handle, Password) ->
-    create_user_with_handle(LUser, LServer, Handle,
-                            Password, is_valid_id(LUser)).
+create_user(LUser, LServer, Handle, Password) ->
+    create_user(LUser, LServer, Handle, Password, is_valid_id(LUser)).
 
 %% @private
-create_user_with_handle(LUser, LServer, Handle, Password, true) ->
+create_user(LUser, LServer, Handle, Password, true) ->
     %% TODO: this really needs to be done in a batch, but we don't currently
     %% have a clean way to run queries in different keyspaces in the same batch.
     Res = maybe_create_gkey_lookup(LUser, LServer,
@@ -214,7 +213,7 @@ create_user_with_handle(LUser, LServer, Handle, Password, true) ->
         false ->
             {error, exists}
     end;
-create_user_with_handle(_, _, _, _, false) ->
+create_user(_, _, _, _, false) ->
     {error, invalid_id}.
 
 maybe_create_gkey_lookup(LUser, LServer, Table, Col, Key) ->
