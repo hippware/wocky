@@ -117,7 +117,7 @@ from_json(RD, Ctx) ->
 % This function is required to keep webmachine happy (since it must be
 % specified in content_types_provided, which in turn is required to avoid
 % errors if the client inclused an 'Accept' header) but is not actually
-% called because the body is set in set_result.
+% called because we're using post_is_create.
 to_json(RD, Ctx) ->
     {wrq:resp_body(RD), RD, Ctx}.
 
