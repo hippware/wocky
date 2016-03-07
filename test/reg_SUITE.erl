@@ -1,3 +1,5 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc Integration test suite for wocky_reg
 -module(reg_SUITE).
 
 -export([

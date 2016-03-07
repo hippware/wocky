@@ -1,9 +1,14 @@
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc Simple server to emulate the interface of the Twitter Digits
+%%% authroization server.
 -module(fake_digits_server).
 
 -export([start/1, stop/0, url/0, init/3, handle/2, terminate/3]).
 
 -include("wocky_db_seed.hrl").
 
+%% Start the server. `AllowAuth' specifies whether requests to this server
+%% should succeed or fail.
 start(AllowAuth) ->
     Dispatch = cowboy_router:compile([{'_', [{'_', ?MODULE, AllowAuth}]}]),
     cowboy:start_http(fake_digits_listener, 1,
