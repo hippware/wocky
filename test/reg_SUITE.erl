@@ -289,8 +289,7 @@ create_user() ->
      },
     User = wocky_db_user:create_user(Fields),
     true = wocky_db_user:maybe_set_handle(User, ?LOCAL_CONTEXT, ?TEST_HANDLE),
-    true = wocky_db_user:set_phone_number(User, ?LOCAL_CONTEXT,
-                                                ?PHONE_NUMBER),
+    ok = wocky_db_user:set_phone_number(User, ?LOCAL_CONTEXT, ?PHONE_NUMBER),
     User.
 
 verify_handle(User, Handle) ->

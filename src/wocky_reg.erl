@@ -194,8 +194,8 @@ maybe_update_handle(_, Ctx) -> Ctx.
 
 maybe_update_phone_number(#{uuid := User, phoneNumber := PhoneNumber},
                          Ctx = #state{server = Server}) ->
-    Set = wocky_db_user:set_phone_number(User, Server, PhoneNumber),
-    Ctx#state{phone_number_set = Set};
+    wocky_db_user:set_phone_number(User, Server, PhoneNumber),
+    Ctx#state{phone_number_set = true};
 maybe_update_phone_number(_, Ctx) -> Ctx.
 
 set_result(UUID, RD, Ctx = #state{server = Server,
