@@ -103,12 +103,23 @@ forbidden(RD, Ctx = #state{fields = Fields,
             {true, RD2, Ctx}
     end.
 
+post_is_create(RD, Ctx) -> {true, RD, Ctx}.
+
+create_path(RD, Ctx) -> {"", RD, Ctx}.
+
 -spec from_json(#wm_reqdata{}, #state{}) ->
     {true, #wm_reqdata{}, #state{}}.
 from_json(RD, Ctx = #state{create_allowed = true}) ->
     create_or_update_user(RD, Ctx);
 from_json(RD, Ctx) ->
     find_and_update_user(RD, Ctx).
+
+% This function is required to keep webmachine happy (since it must be
+% specified in content_types_provided, which in turn is required to avoid
+% errors if the client inclused an 'Accept' header) but is not actually
+% called because the body is set in set_result.
+to_json(RD, Ctx) ->
+    {wrq:resp_body(RD), RD, Ctx}.
 
 %%%===================================================================
 %%% Request processing helper functions
@@ -146,10 +157,6 @@ verify_user_fields(_) -> false.
 
 maybe_add_default_server(Fields = #{server := _}, _) -> Fields;
 maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.
-
-post_is_create(RD, Ctx) -> {true, RD, Ctx}.
-
-create_path(RD, Ctx) -> {"", RD, Ctx}.
 
 authenticate(
     #{
@@ -264,12 +271,6 @@ set_result(RD, Ctx = #state{server = Server,
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
     RD3 = wrq:set_resp_body(Body, RD2),
     {true, RD3, Ctx}.
-
-% This function is required to keep webmachine happy (since it must be
-% specified in content_types_provided) but is not actually called because
-% the body is set in set_result, above.
-to_json(RD, Ctx) ->
-    {wrq:resp_body(RD), RD, Ctx}.
 
 %%%===================================================================
 %%% Helper funcitons
