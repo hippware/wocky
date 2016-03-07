@@ -229,7 +229,7 @@ create_phone_number_lookup(LUser, LServer, PhoneNumber) ->
     maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber),
     Values = #{user => LUser, server => LServer},
     Conditions = #{phone_number => PhoneNumber},
-    wocky_db:update(shared, phone_number_to_user, Values, Conditions).
+    ok = wocky_db:update(shared, phone_number_to_user, Values, Conditions).
 
 %% @private
 maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
@@ -237,8 +237,8 @@ maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
         not_found -> ok;
         {LUser, LServer} -> ok;
         {OtherUser, OtherServer} ->
-            wocky_db:update(OtherServer, user, #{phone_number => null},
-                            #{user => OtherUser})
+            ok = wocky_db:update(OtherServer, user, #{phone_number => null},
+                                 #{user => OtherUser})
     end.
 
 %% @private
