@@ -12,6 +12,8 @@
          allowed_methods/2,
          content_types_accepted/2,
          content_types_provided/2,
+         malformed_request/2,
+         forbidden/2,
          post_is_create/2,
          create_path/2,
          from_json/2,
@@ -36,7 +38,8 @@
           is_new = false :: boolean(),
           handle_set = false :: boolean(),
           phone_number_set = false :: boolean(),
-          resource :: binary()
+          fields :: map(),           % Parsed request fields
+          create_allowed = false :: boolean()
          }).
 
 %%%===================================================================
@@ -78,74 +81,98 @@ content_types_accepted(RD, Ctx) ->
 content_types_provided(RD, Ctx) ->
     {[{"application/json", to_json}], RD, Ctx}.
 
+malformed_request(RD, Ctx) ->
+    try mochijson2:decode(wrq:req_body(RD)) of
+        {struct, Elements} ->
+            malformed_request(Elements, RD, Ctx)
+    catch
+        error:_ ->
+            RD2 = set_resp_body(400, "Invalid JSON", RD),
+            {true, RD2, Ctx}
+    end.
+
+forbidden(RD, Ctx = #state{fields = Fields,
+                           auth_providers = AuthProviders}) ->
+    case authenticate(Fields, AuthProviders) of
+        {true, digits} ->
+            {false, RD, Ctx#state{create_allowed = true}};
+        {true, session} ->
+            {false, RD, Ctx#state{fields = maps:remove(phoneNumber, Fields)}};
+        {false, Code, Error} ->
+            RD2 = set_resp_body(Code, Error, RD),
+            {true, RD2, Ctx}
+    end.
+
+-spec from_json(#wm_reqdata{}, #state{}) ->
+    {true, #wm_reqdata{}, #state{}}.
+from_json(RD, Ctx = #state{create_allowed = true}) ->
+    create_or_update_user(RD, Ctx);
+from_json(RD, Ctx) ->
+    find_and_update_user(RD, Ctx).
+
+%%%===================================================================
+%%% Request processing helper functions
+%%%===================================================================
+
+malformed_request(Elements, RD, Ctx = #state{server = Server}) ->
+    Fields = map_keys_to_atoms(maps:from_list(Elements)),
+    case verify_fields(Fields) of
+        true ->
+            Fields2 = maybe_add_default_server(Fields, Server),
+            {false, RD, Ctx#state{fields = Fields2}};
+        false ->
+            RD2 = set_resp_body(400, "Missing required element(s)", RD),
+            {true, RD2, Ctx}
+    end.
+
+verify_fields(Fields) ->
+    verify_auth_fields(Fields) andalso
+    verify_user_fields(Fields).
+
+verify_auth_fields(#{sessionID := _}) -> true;
+verify_auth_fields(#{'X-Auth-Service-Provider'            := _,
+                     'X-Verify-Credentials-Authorization' := _,
+                     phoneNumber                          := _
+                    }) -> true;
+verify_auth_fields(_) -> false.
+
+verify_user_fields(#{uuid     := _,
+                     resource := _
+                    }) -> true;
+verify_user_fields(#{userID   := _,
+                     resource := _
+                    }) -> true;
+verify_user_fields(_) -> false.
+
+maybe_add_default_server(Fields = #{server := _}, _) -> Fields;
+maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.
+
 post_is_create(RD, Ctx) -> {true, RD, Ctx}.
 
 create_path(RD, Ctx) -> {"", RD, Ctx}.
 
-%%%===================================================================
-%%% Request processing functions
-%%%===================================================================
-
-%% Pull out the JSON and convert it to an atom-keyed map
--spec from_json(#wm_reqdata{}, #state{}) ->
-    {true | {halt, {non_neg_integer(), string()} | non_neg_integer()},
-     #wm_reqdata{}, #state{}}.
-from_json(RD, Ctx) ->
-    {struct, Elements} = mochijson2:decode(wrq:req_body(RD)),
-    Fields = map_keys_to_atoms(maps:from_list(Elements)),
-    check_and_authenticate(Fields, RD, Ctx).
-
-%% Check for required field being present and call the authentication function
-check_and_authenticate(
-  Fields = #{resource := Resource}, RD, Ctx) ->
-    authenticate(Fields#{server => Ctx#state.server},
-                 RD, Ctx#state{resource = Resource});
-check_and_authenticate(_, RD, Ctx) ->
-    missing_field(RD, Ctx).
-
 authenticate(
-    Fields = #{
+    #{
       'X-Auth-Service-Provider'            := AuthProvider,
       'X-Verify-Credentials-Authorization' := Auth,
       phoneNumber                          := PhoneNumber
-     }, RD, Ctx) ->
-    case verify_auth(Auth, PhoneNumber, AuthProvider,
-                     Ctx#state.auth_providers) of
+     }, AuthProviders) ->
+    case verify_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) of
         true ->
-            maybe_create_user(Fields, RD, Ctx);
+            {true, digits};
         {false, Code, Error} ->
-            RD1 = wrq:set_resp_body(Error, RD),
-            {{halt, Code}, RD1, Ctx}
+            {false, Code, Error}
     end;
 authenticate(
     Fields = #{
-      sessionID := SessionID,
-      server    := _
-     }, RD, Ctx) ->
+      sessionID := SessionID
+     }, _) ->
     case verify_session(Fields, SessionID) of
         true ->
-            UpdateFields = maps:remove(phoneNumber, Fields),
-            maybe_update_user(UpdateFields, RD, Ctx);
+            {true, session};
         false ->
-            {{halt, {401, "Invalid sessionID"}}, RD, Ctx};
-        missing_fields ->
-            {{halt, {400, "Missing auth fields"}}, RD, Ctx}
-    end;
-authenticate(_, RD, Ctx) ->
-    missing_field(RD, Ctx).
-
-verify_session(#{uuid := UUID, server := Server, resource := Resource},
-               SessionID) ->
-    wocky_db_user:check_token(UUID, Server, Resource, SessionID);
-verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
-    case wocky_db_user:get_user_by_auth_name(Server, UserID) of
-        not_found ->
-            false;
-        User ->
-            verify_session(Fields#{uuid => User}, SessionID)
-    end;
-verify_session(_, _) ->
-    missing_fields.
+            {false, 401, "Invalid sessionID"}
+    end.
 
 % Check that the auth server is one that we have configured as valid
 verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
@@ -156,53 +183,75 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
             {false, 401, "Invalid authentication provider"}
     end.
 
+verify_session(#{uuid := UUID, server := Server, resource := Resource},
+               SessionID) ->
+    wocky_db_user:check_token(UUID, Server, Resource, SessionID);
+verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
+    case wocky_db_user:get_user_by_auth_name(Server, UserID) of
+        not_found ->
+            false;
+        User ->
+            verify_session(Fields#{uuid => User}, SessionID)
+    end.
+
 %% Check if the user handle exists; create it if it doesnt, possibly update
 %% the user data otherwise
-maybe_create_user(Fields = #{userID := AuthUser, server := Server}, RD, Ctx) ->
+create_or_update_user(RD, Ctx = #state{fields = Fields
+                                              = #{userID := AuthUser,
+                                                  server := Server}}) ->
     case wocky_db_user:get_user_by_auth_name(Server, AuthUser) of
         not_found ->
-            create_user(Fields, RD, Ctx);
+            create_user(RD, Ctx);
         ExistingUser ->
-            maybe_update_user(Fields#{uuid => ExistingUser}, RD, Ctx)
+            find_and_update_user(RD,
+                                 Ctx#state{fields =
+                                           Fields#{uuid => ExistingUser}})
     end.
 
 %% Check that the required fields are present, then create the user
-create_user(Fields, RD, Ctx) ->
+create_user(RD, Ctx = #state{fields = Fields}) ->
     UUID = wocky_db_user:create_user(json_to_row(Fields)),
-    finalise_changes(Fields#{uuid => UUID}, RD, Ctx#state{is_new = true}).
+    finalize_changes(RD, Ctx#state{is_new = true,
+                                   fields = Fields#{uuid => UUID}}).
 
-maybe_update_user(Fields = #{uuid := _}, RD, Ctx) ->
-    update_user(Fields, RD, Ctx);
-maybe_update_user(Fields = #{userID := AuthUser, server := Server}, RD, Ctx) ->
+find_and_update_user(RD, Ctx = #state{fields = #{uuid := _}}) ->
+    update_user(RD, Ctx);
+find_and_update_user(RD, Ctx = #state{fields = Fields
+                                             = #{userID := AuthUser,
+                                                 server := Server}}) ->
     UUID = wocky_db_user:get_user_by_auth_name(Server, AuthUser),
-    update_user(Fields#{uuid => UUID}, RD, Ctx).
+    update_user(RD, Ctx#state{fields = Fields#{uuid => UUID}}).
 
-update_user(Fields, RD, Ctx) ->
+update_user(RD, Ctx = #state{fields = Fields}) ->
     wocky_db_user:update_user(json_to_row(Fields)),
-    finalise_changes(Fields, RD, Ctx).
+    finalize_changes(RD, Ctx).
 
-finalise_changes(Fields = #{uuid := UUID}, RD, Ctx) ->
-    Ctx2 = maybe_update_handle(Fields, Ctx),
-    Ctx3 = maybe_update_phone_number(Fields, Ctx2),
-    set_result(UUID, RD, Ctx3).
+finalize_changes(RD, Ctx) ->
+    Ctx2 = maybe_update_handle(Ctx),
+    Ctx3 = maybe_update_phone_number(Ctx2),
+    set_result(RD, Ctx3).
 
-maybe_update_handle(#{uuid := User, handle := Handle},
-                    Ctx = #state{server = Server}) ->
+maybe_update_handle(Ctx = #state{server = Server,
+                                 fields = #{uuid := User,
+                                            handle := Handle}}) ->
     Set = wocky_db_user:maybe_set_handle(User, Server, Handle),
     Ctx#state{handle_set = Set};
-maybe_update_handle(_, Ctx) -> Ctx.
+maybe_update_handle(Ctx) -> Ctx.
 
-maybe_update_phone_number(#{uuid := User, phoneNumber := PhoneNumber},
-                         Ctx = #state{server = Server}) ->
+maybe_update_phone_number(Ctx = #state{server = Server,
+                                       fields = #{uuid := User,
+                                                  phoneNumber
+                                                  := PhoneNumber}}) ->
     wocky_db_user:set_phone_number(User, Server, PhoneNumber),
     Ctx#state{phone_number_set = true};
-maybe_update_phone_number(_, Ctx) -> Ctx.
+maybe_update_phone_number(Ctx) -> Ctx.
 
-set_result(UUID, RD, Ctx = #state{server = Server,
-                                  is_new = IsNew,
-                                  phone_number_set = PhoneNumberSet,
-                                  handle_set = HandleSet,
-                                  resource = Resource}) ->
+set_result(RD, Ctx = #state{server = Server,
+                            is_new = IsNew,
+                            phone_number_set = PhoneNumberSet,
+                            handle_set = HandleSet,
+                            fields = #{uuid := UUID,
+                                       resource := Resource}}) ->
     Fields = row_to_json(
                wocky_db:drop_nulls(
                  wocky_db_user:get_user_data(UUID, Server))),
@@ -271,6 +320,7 @@ maybe_add_as_atom(Key, Val, Map) ->
 prepare_for_encoding(Fields = #{uuid := UUID}) ->
     Fields#{uuid => wocky_db_user:normalize_id(UUID)}.
 
-missing_field(RD, Ctx) ->
-    {{halt, {400, "Missing mandatory field"}}, RD, Ctx}.
-
+set_resp_body(Code, Error, RD) ->
+    JSON = mochijson2:encode({struct, [{code, Code},
+                                       {error, list_to_binary(Error)}]}),
+    wrq:set_resp_body(JSON, RD).

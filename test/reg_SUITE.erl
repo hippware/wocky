@@ -102,7 +102,7 @@ missing_fields(_) ->
 unauthorized_new(_) ->
     start_digits_server(false),
     JSON = encode(test_data()),
-    {ok, {401, _}} = request(JSON),
+    {ok, {403, _}} = request(JSON),
     stop_digits_server().
 
 new_user(_) ->
@@ -118,7 +118,7 @@ unauthorized_update(_) ->
     verify_handle(User, ?TEST_HANDLE),
     Data = lists:keyreplace(handle, 1, test_data(), {handle, <<"NewHandle">>}),
     JSON = encode(Data),
-    {ok, {401, _}} = request(JSON),
+    {ok, {403, _}} = request(JSON),
     verify_handle(User, ?TEST_HANDLE),
     stop_digits_server().
 
@@ -137,7 +137,7 @@ invalid_phone_number(_) ->
     Data = lists:keyreplace(phoneNumber, 1, test_data(),
                             {phoneNumber, <<"+5551231234">>}),
     JSON = encode(Data),
-    {ok, {401, _Body}} = request(JSON),
+    {ok, {403, _Body}} = request(JSON),
     verify_phone_number(User, ?PHONE_NUMBER),
     stop_digits_server().
 
@@ -181,14 +181,14 @@ invalid_auth_provider(_) ->
                             {'X-Auth-Service-Provider',
                              <<"http://evilhost.com">>}),
     JSON = encode(Data),
-    {ok, {401, _Body}} = request(JSON).
+    {ok, {403, _Body}} = request(JSON).
 
 invalid_session_id(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
     Data = lists:keyreplace(sessionID, 1, session_test_data(?ALICE, ?TOKEN),
                             {sessionID, <<"$T$Icantotallyhackthissession">>}),
     JSON = encode(Data),
-    {ok, {401, _Body}} = request(JSON).
+    {ok, {403, _Body}} = request(JSON).
 
 missing_auth_data(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
@@ -209,7 +209,7 @@ invalid_user_id(_) ->
     Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
                             {userID, <<"999999999">>}),
     JSON = encode(Data),
-    {ok, {401, _Body}} = request(JSON).
+    {ok, {403, _Body}} = request(JSON).
 
 missing_user_id(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
