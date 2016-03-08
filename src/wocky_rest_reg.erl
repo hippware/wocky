@@ -28,6 +28,7 @@
 -record(state, {
           server                   :: binary(),
           auth_providers           :: [string()],
+          auth_bypass_prefixes     :: [binary()],
           is_new           = false :: boolean(),
           handle_set       = false :: boolean(),
           phone_number_set = false :: boolean(),
@@ -41,9 +42,11 @@
 
 init(Opts) ->
     AuthProviders = proplists:get_value(auth_providers, Opts),
+    AuthBypassPrefixes = proplists:get_value(auth_bypass_prefixes, Opts, []),
     Server = proplists:get_value(server, Opts),
     {ok, #state{
             auth_providers = AuthProviders,
+            auth_bypass_prefixes = AuthBypassPrefixes,
             server = Server
            }}.
 
@@ -67,8 +70,10 @@ malformed_request(RD, Ctx) ->
     end.
 
 forbidden(RD, Ctx = #state{fields = Fields,
-                           auth_providers = AuthProviders}) ->
-    case authenticate(Fields, AuthProviders) of
+                           auth_providers = AuthProviders,
+                           auth_bypass_prefixes = AuthBypassPrefixes
+                          }) ->
+    case authenticate(Fields, AuthProviders, AuthBypassPrefixes) of
         {true, digits} ->
             {false, RD, Ctx#state{create_allowed = true}};
         {true, session} ->
@@ -138,22 +143,30 @@ authenticate(
       'X-Auth-Service-Provider'            := AuthProvider,
       'X-Verify-Credentials-Authorization' := Auth,
       phoneNumber                          := PhoneNumber
-     }, AuthProviders) ->
-    case verify_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) of
+     }, AuthProviders, AuthBypassPrefixes) ->
+    case has_any_prefix(PhoneNumber, AuthBypassPrefixes) of
         true ->
             {true, digits};
-        {false, Code, Error} ->
-            {false, Code, Error}
+        false ->
+            verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders)
     end;
 authenticate(
     Fields = #{
       sessionID := SessionID
-     }, _) ->
+     }, _, _) ->
     case verify_session(Fields, SessionID) of
         true ->
             {true, session};
         false ->
             {false, 401, "Invalid sessionID"}
+    end.
+
+verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) ->
+    case verify_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) of
+        true ->
+            {true, digits};
+        {false, Code, Error} ->
+            {false, Code, Error}
     end.
 
 % Check that the auth server is one that we have configured as valid
@@ -282,3 +295,10 @@ set_resp_body(Code, Error, RD) ->
     JSON = mochijson2:encode({struct, [{code, Code},
                                        {error, list_to_binary(Error)}]}),
     wrq:set_resp_body(JSON, RD).
+
+has_any_prefix(PhoneNumber, Prefixes) ->
+    lists:any(fun(Prefix) -> has_prefix(PhoneNumber, Prefix) end,
+              Prefixes).
+
+has_prefix(Subject, Prefix) ->
+    binary:longest_common_prefix([Subject, Prefix]) =:= byte_size(Prefix).
