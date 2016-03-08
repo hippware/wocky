@@ -28,7 +28,8 @@
          missing_auth_data/1,
          session_with_userid/1,
          invalid_user_id/1,
-         missing_user_id/1
+         missing_user_id/1,
+         bypass_prefixes/1
         ]).
 
 -include("wocky_db_seed.hrl").
@@ -57,7 +58,8 @@ reg_cases() ->
      missing_auth_data,
      session_with_userid,
      invalid_user_id,
-     missing_user_id
+     missing_user_id,
+     bypass_prefixes
     ].
 
 suite() ->
@@ -216,6 +218,18 @@ missing_user_id(_) ->
     Data = lists:keydelete(uuid, 1, session_test_data(?ALICE, ?TOKEN)),
     JSON = encode(Data),
     {ok, {400, _Body}} = request(JSON).
+
+bypass_prefixes(_) ->
+    start_digits_server(false),
+    Data = [{resource, ?RESOURCE},
+            {userID, ?AUTH_USER},
+            {phoneNumber, <<"+15556667777">>},
+            {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
+            {'X-Verify-Credentials-Authorization', <<"badDigitsAuth">>}
+           ],
+    JSON = encode(Data),
+    {ok, {201, _Body}} = request(JSON),
+    stop_digits_server().
 
 %%%===================================================================
 %%% Helpers
