@@ -38,7 +38,7 @@ binary_key_to_atom(Key, Map) ->
     maybe_add_as_atom(Key, Val, (maps:remove(Key, Map))).
 
 maybe_add_as_atom(Key, Val, Map) ->
-    try list_to_existing_atom(binary_to_list(Key)) of
+    try binary_to_existing_atom(Key, utf8) of
         AtomKey -> Map#{AtomKey => Val}
     catch
         error:badarg -> Map
