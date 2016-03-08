@@ -31,7 +31,7 @@
           is_new           = false :: boolean(),
           handle_set       = false :: boolean(),
           phone_number_set = false :: boolean(),
-          fields                   :: map(),% Parsed request fields
+          fields                   :: map(), % Parsed request fields
           create_allowed   = false :: boolean()
          }).
 
@@ -101,7 +101,7 @@ to_json(RD, Ctx) ->
 %%%===================================================================
 
 malformed_request(Elements, RD, Ctx = #state{server = Server}) ->
-    Fields = map_keys_to_atoms(maps:from_list(Elements)),
+    Fields = wocky_rest:map_keys_to_atoms(maps:from_list(Elements)),
     case verify_fields(Fields) of
         true ->
             Fields2 = maybe_add_default_server(Fields, Server),
@@ -273,21 +273,6 @@ map_transform(A, B, SourceMap, Map) ->
     case maps:find(A, SourceMap) of
         {ok, Val} -> Map#{B => Val};
         error -> Map
-    end.
-
-map_keys_to_atoms(Map) ->
-    lists:foldl(fun(K, M) -> binary_key_to_atom(K, M) end,
-                Map, maps:keys(Map)).
-
-binary_key_to_atom(Key, Map) ->
-    {ok, Val} = maps:find(Key, Map),
-    maybe_add_as_atom(Key, Val, (maps:remove(Key, Map))).
-
-maybe_add_as_atom(Key, Val, Map) ->
-    try list_to_existing_atom(binary_to_list(Key)) of
-        AtomKey -> Map#{AtomKey => Val}
-    catch
-        error:badarg -> Map
     end.
 
 prepare_for_encoding(Fields = #{uuid := UUID}) ->
