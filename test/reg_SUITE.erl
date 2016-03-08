@@ -33,7 +33,7 @@
 
 -include("wocky_db_seed.hrl").
 
--define(URL, "http://localhost:1096").
+-define(URL, "http://localhost:1096/wocky/v1/user").
 -define(TEST_HANDLE, <<"TinyRooooobot">>).
 
 all() -> [{group, reg}].

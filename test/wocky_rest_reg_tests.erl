@@ -1,15 +1,15 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Test suite for wocky_reg_tests.erl
--module(wocky_reg_tests).
+-module(wocky_rest_reg_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky_db_seed.hrl").
 
--import(wocky_reg,
+-import(wocky_rest_reg,
         [verify_session/2]).
 
-wocky_reg_test_() -> {
-  "wocky_reg",
+wocky_rest_reg_test_() -> {
+  "wocky_rest_reg",
   setup, fun before_all/0, fun after_all/1,
   [
     test_verify_session()

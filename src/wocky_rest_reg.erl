@@ -3,9 +3,7 @@
 %%%
 %%% This module implements the Wocky registration protocol described at
 %%% https://github.com/hippware/tr-wiki/wiki/Registration-Protocol
--module(wocky_reg).
-
--export([start/1, stop/0]).
+-module(wocky_rest_reg).
 
 %% Webmachine callbacks
 -export([init/1,
@@ -29,9 +27,6 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("webmachine/include/webmachine.hrl").
 
--define(DEFAULT_PORT, 1096).
--define(MAX_REQ_LEN, 4096).
-
 -record(state, {
           server :: binary(),
           auth_providers :: [string()],
@@ -41,24 +36,6 @@
           fields :: map(),           % Parsed request fields
           create_allowed = false :: boolean()
          }).
-
-%%%===================================================================
-%%% Top-level interface
-%%%===================================================================
-
-start(Opts) ->
-    Port = proplists:get_value(port, Opts, ?DEFAULT_PORT),
-
-    {ok, _} = application:ensure_all_started(webmachine),
-    webmachine_mochiweb:start(
-      [{name, wocky_reg},
-       {port, Port},
-       {dispatch, [{[], ?MODULE, Opts}]}]),
-    ok.
-
-stop() ->
-    ok = webmachine_mochiweb:stop(wocky_reg_mochiweb),
-    ok.
 
 %%%===================================================================
 %%% Webmachine callbacks
