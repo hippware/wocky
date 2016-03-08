@@ -19,9 +19,7 @@
         ]).
 
 -ifdef(TEST).
--export([verify_session/2,
-         verify_auth/4
-        ]).
+-export([verify_session/2]).
 -endif.
 
 -include_lib("ejabberd/include/ejabberd.hrl").
@@ -178,8 +176,6 @@ verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
             verify_session(Fields#{uuid => User}, SessionID)
     end.
 
-%% Check if the user handle exists; create it if it doesnt, possibly update
-%% the user data otherwise
 create_or_update_user(RD, Ctx = #state{fields = Fields
                                               = #{userID := AuthUser,
                                                   server := Server}}) ->
@@ -192,7 +188,6 @@ create_or_update_user(RD, Ctx = #state{fields = Fields
                                            Fields#{uuid => ExistingUser}})
     end.
 
-%% Check that the required fields are present, then create the user
 create_user(RD, Ctx = #state{fields = Fields}) ->
     UUID = wocky_db_user:create_user(json_to_row(Fields)),
     finalize_changes(RD, Ctx#state{is_new = true,
