@@ -156,7 +156,7 @@ versioning(Config) ->
         escalus_assert:is_roster_result(RosterResult),
         Ver = get_ver(RosterResult),
 
-        true = Ver /= undefined,
+        true = Ver =:= undefined,
 
         %% add contact
         Stanza = escalus_stanza:roster_add_contact(Bob, [<<"friends">>],
@@ -176,8 +176,8 @@ versioning(Config) ->
         escalus:assert(count_roster_items, [1], Result),
         escalus:send(Alice, escalus_stanza:iq_result(Result)),
 
-        %% check roster, send old ver
-        escalus:send(Alice, escalus_stanza:roster_get(Ver)),
+        %% check roster, no old ver
+        escalus:send(Alice, escalus_stanza:roster_get()),
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
