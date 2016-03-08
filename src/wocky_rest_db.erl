@@ -9,11 +9,13 @@
          resource_exists/2,
          allowed_methods/2,
          content_types_accepted/2,
+         content_types_provided/2,
          malformed_request/2,
          forbidden/2,
          post_is_create/2,
          create_path/2,
-         from_json/2
+         from_json/2,
+         to_json/2
         ]).
 
 -include_lib("webmachine/include/webmachine.hrl").
@@ -46,6 +48,9 @@ resource_exists(RD, Ctx) ->
 content_types_accepted(RD, Ctx) ->
     {[{"application/json", from_json}], RD, Ctx}.
 
+content_types_provided(RD, Ctx) ->
+    {[{"application/json", to_json}], RD, Ctx}.
+
 malformed_request(RD, Ctx) ->
     try mochijson2:decode(wrq:req_body(RD)) of
         {struct, Elements} ->
@@ -75,6 +80,13 @@ from_json(RD, Ctx) ->
     %% in 'resource_exists/2', so just do that if we get this far.
     wocky_db_seed:bootstrap(),
     {true, RD, Ctx}.
+
+% This function is required to keep webmachine happy (since it must be
+% specified in content_types_provided, which in turn is required to avoid
+% errors if the client inclused an 'Accept' header) but is not actually
+% called because we're using post_is_create.
+to_json(RD, Ctx) ->
+    {wrq:resp_body(RD), RD, Ctx}.
 
 %%%===================================================================
 %%% Helpers

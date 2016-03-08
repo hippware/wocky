@@ -77,8 +77,6 @@ reset_db(_) ->
     #{auth_user := ?AUTH_USER} = wocky_db_user:get_user_data(?ALICE,
                                                              ?LOCAL_CONTEXT).
 
-
-
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
@@ -87,7 +85,7 @@ encode(Data) ->
     iolist_to_binary(mochijson2:encode({struct, Data})).
 
 request(Body) ->
-    httpc:request(post, {?URL, [],
+    httpc:request(post, {?URL, [{"Accept", "application/json"}],
                   "application/json", Body}, [], [{full_result, false}]).
 
 unauthorized_test_data() ->
