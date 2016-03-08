@@ -26,13 +26,13 @@
 -include_lib("webmachine/include/webmachine.hrl").
 
 -record(state, {
-          server :: binary(),
-          auth_providers :: [string()],
-          is_new = false :: boolean(),
-          handle_set = false :: boolean(),
+          server                   :: binary(),
+          auth_providers           :: [string()],
+          is_new           = false :: boolean(),
+          handle_set       = false :: boolean(),
           phone_number_set = false :: boolean(),
-          fields :: map(),           % Parsed request fields
-          create_allowed = false :: boolean()
+          fields                   :: map(),% Parsed request fields
+          create_allowed   = false :: boolean()
          }).
 
 %%%===================================================================
