@@ -25,4 +25,3 @@ start(Opts) ->
 stop() ->
     ok = webmachine_mochiweb:stop(wocky_reg_mochiweb),
     ok.
-
