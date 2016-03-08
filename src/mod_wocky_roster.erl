@@ -24,7 +24,7 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/mod_roster.hrl").
+-include("wocky_roster.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).
@@ -175,10 +175,16 @@ process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
             process_item_attrs(Item, Attrs);
         JID1 ->
             JID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
-            process_item_attrs(Item#roster{jid = JID}, Attrs)
+            process_item_attrs(Item#roster{contact_jid = JID}, Attrs)
     end;
+process_item_attrs(Item, [{<<"handle">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{contact_handle = Val}, Attrs);
+process_item_attrs(Item, [{<<"naturalname">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{naturalname = Val}, Attrs);
 process_item_attrs(Item, [{<<"name">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{name = Val}, Attrs);
+process_item_attrs(Item, [{<<"avatar">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{avatar = Val}, Attrs);
 process_item_attrs(Item, [{<<"subscription">>, <<"remove">>} | Attrs]) ->
     process_item_attrs(Item#roster{subscription = remove}, Attrs);
 process_item_attrs(Item, [_ | Attrs]) ->
@@ -264,10 +270,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                     subscribed -> <<"subscribed">>;
                     unsubscribed -> <<"unsubscribed">>
                 end,
-            ejabberd_router:route(ToJID, JID1,
-                                  #xmlel{name = <<"presence">>,
-                                         attrs = [{<<"type">>, T}],
-                                         children = []})
+            route(ejabberd_router, ToJID, JID1,
+                  #xmlel{name = <<"presence">>,
+                         attrs = [{<<"type">>, T}],
+                         children = []})
     end,
     case Push of
         {push, #roster{subscription = none, ask = in}} ->
@@ -383,7 +389,7 @@ roster_get_subscription_lists_hook(_Acc, User, Server) ->
     fill_subscription_lists(JID, LServer, Items, [], [], []).
 
 fill_subscription_lists(JID, LServer, [#roster{} = I | Is], F, T, P) ->
-    J = element(3, I#roster.usj),
+    J = I#roster.contact_jid,
 
     NewP = build_pending(I, JID, P),
 
@@ -402,17 +408,11 @@ fill_subscription_lists(_, _, [], F, T, P) ->
 
 build_pending(#roster{ask = Ask} = I, JID, P)
   when Ask =:= in; Ask =:= both ->
-    Message = I#roster.askmessage,
-    Status  = case is_binary(Message) of
-                  true -> Message;
-                  false -> <<>>
-              end,
-
     StatusEl = #xmlel{name = <<"status">>,
-                      children = [#xmlcdata{content = Status}]},
+                      children = [#xmlcdata{content = I#roster.askmessage}]},
 
     El = #xmlel{name = <<"presence">>,
-                attrs = [{<<"from">>, jid:to_binary(I#roster.jid)},
+                attrs = [{<<"from">>, jid:to_binary(I#roster.contact_jid)},
                          {<<"to">>, jid:to_binary(JID)},
                          {<<"type">>, <<"subscribe">>}],
                 children = [StatusEl]},
@@ -466,7 +466,7 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
 %% @spec (From::jid(), Item::roster()) -> ok
 send_unsubscribing_presence(From, Item) ->
     LFrom = jid:to_bare(From),
-    JID = jid:make(Item#roster.jid),
+    JID = jid:make(Item#roster.contact_jid),
 
     IsTo = case Item#roster.subscription of
                both -> true;
@@ -487,47 +487,48 @@ send_unsubscribing_presence(From, Item) ->
     ok.
 
 send_presence_type(From, To, Type) ->
-    ejabberd_router:route(From, To,
-                          #xmlel{name = <<"presence">>,
-                                 attrs = [{<<"type">>, Type}], children = []}).
+    route(ejabberd_router, From, To,
+          #xmlel{name = <<"presence">>,
+                 attrs = [{<<"type">>, Type}], children = []}).
 
 item_to_xml(Item) ->
-    Attrs1 = [{<<"jid">>,
-               jid:to_binary(Item#roster.jid)}],
-    Attrs2 = case Item#roster.name of
-                 <<"">> -> Attrs1;
-                 Name -> [{<<"name">>, Name} | Attrs1]
-             end,
-    Attrs3 = case Item#roster.subscription of
-                 none -> [{<<"subscription">>, <<"none">>} | Attrs2];
-                 from -> [{<<"subscription">>, <<"from">>} | Attrs2];
-                 to -> [{<<"subscription">>, <<"to">>} | Attrs2];
-                 both -> [{<<"subscription">>, <<"both">>} | Attrs2];
-                 remove -> [{<<"subscription">>, <<"remove">>} | Attrs2]
-             end,
-    Attrs4 = case ask_to_pending(Item#roster.ask) of
-                 out -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-                 both -> [{<<"ask">>, <<"subscribe">>} | Attrs3];
-                 _ -> Attrs3
-             end,
-    SubEls1 = lists:map(fun (G) ->
-                                #xmlel{name = <<"group">>, attrs = [],
-                                       children = [{xmlcdata, G}]}
-                        end,
-                        Item#roster.groups),
-    SubEls = SubEls1 ++ Item#roster.xs,
-    #xmlel{name = <<"item">>, attrs = Attrs4,
-           children = SubEls}.
+    #xmlel{
+       name = <<"item">>,
+       attrs = lists:flatten(
+                 [item_jid_to_xml(Item#roster.contact_jid),
+                  item_name_to_xml(name, Item#roster.name),
+                  item_name_to_xml(handle, Item#roster.contact_handle),
+                  item_name_to_xml(naturalname, Item#roster.naturalname),
+                  item_name_to_xml(avatar, Item#roster.avatar),
+                  item_sub_to_xml(Item#roster.subscription),
+                  item_ask_to_xml(Item#roster.ask)]),
+       children = [#xmlel{
+                      name = <<"group">>, attrs = [],
+                      children = [{xmlcdata, G}]
+                     } || G <- Item#roster.groups] ++ Item#roster.xs
+      }.
 
-ask_to_pending(subscribe) -> out;
-ask_to_pending(unsubscribe) -> none;
-ask_to_pending(Ask) -> Ask.
+item_jid_to_xml(JID) ->
+    {<<"jid">>, jid:to_binary(JID)}.
+
+item_name_to_xml(_Key, <<"">>) -> [];
+item_name_to_xml(Key, Name) ->
+    {erlang:atom_to_binary(Key, utf8), Name}.
+
+item_sub_to_xml(Subscription) ->
+    {<<"subscription">>, erlang:atom_to_binary(Subscription, utf8)}.
+
+item_ask_to_xml(Ask)
+  when Ask =:= out orelse Ask =:= both ->
+    {<<"ask">>, <<"subscribe">>};
+item_ask_to_xml(_) ->
+    [].
 
 push_item(User, Server, From, Item) ->
     ok = route(ejabberd_sm,
                jid:make(<<"">>, <<"">>, <<"">>),
                jid:make(User, Server, <<"">>),
-               {broadcast, {item, Item#roster.jid,
+               {broadcast, {item, Item#roster.contact_jid,
                             Item#roster.subscription}}),
     push_item(User, Server, From, Item,
               wocky_db_roster:get_roster_version(jid:nodeprep(User), Server)).
