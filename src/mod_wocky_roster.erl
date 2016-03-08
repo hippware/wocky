@@ -127,9 +127,13 @@ get_user_roster_based_on_version({value, RequestedVersion}, From, To) ->
 
 create_sub_el(Items, Version) ->
     [#xmlel{name = <<"query">>,
-            attrs = [{<<"xmlns">>, ?NS_ROSTER},
-                     {<<"ver">>, Version}],
+            attrs = [{<<"xmlns">>, ?NS_ROSTER} |
+                     maybe_version(Items, Version)],
             children = Items}].
+
+% If there are no items, there shouldn't be a version attribute
+maybe_version([], _) -> [];
+maybe_version(_, Version) -> [{<<"ver">>, Version}].
 
 process_iq_set(#jid{lserver = LServer} = From, To, #iq{sub_el = SubEl} = IQ) ->
     #xmlel{children = Els} = SubEl,

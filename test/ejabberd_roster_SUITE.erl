@@ -59,10 +59,10 @@ end_per_suite(Config) ->
     test_helper:stop_ejabberd().
 
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, {by_name, [alice, bob]}).
+    escalus:create_users(Config, {by_name, [alice, bob, carol]}).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, {by_name, [alice, bob]}).
+    escalus:delete_users(Config, {by_name, [alice, bob, carol]}).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -149,14 +149,15 @@ remove_contact(Config) ->
     end).
 
 versioning(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+                  fun(Alice, Bob, Carol) ->
         escalus:send(Alice, escalus_stanza:roster_get(<<"">>)),
         RosterResult = escalus:wait_for_stanza(Alice),
 
         escalus_assert:is_roster_result(RosterResult),
         Ver = get_ver(RosterResult),
 
-        true = Ver /= undefined,
+        true = Ver =:= undefined,
 
         %% add contact
         Stanza = escalus_stanza:roster_add_contact(Bob, [<<"friends">>],
@@ -170,14 +171,14 @@ versioning(Config) ->
 
         Ver2 = get_ver(RosterSet),
 
-        true = Ver2 /= undefined,
+        true = Ver2 =/= undefined,
 
         Result = hd([R || R <- Received, escalus_pred:is_roster_set(R)]),
         escalus:assert(count_roster_items, [1], Result),
         escalus:send(Alice, escalus_stanza:iq_result(Result)),
 
-        %% check roster, send old ver
-        escalus:send(Alice, escalus_stanza:roster_get(Ver)),
+        %% check roster, no old ver
+        escalus:send(Alice, escalus_stanza:roster_get()),
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
@@ -193,7 +194,37 @@ versioning(Config) ->
         escalus:assert(is_iq_result, Received3),
 
         %% There are no items as version matches
-        undefined = exml_query:path(Received3, [{element, <<"item">>}])
+        undefined = exml_query:path(Received3, [{element, <<"query">>},
+                                                {element, <<"item">>}]),
+
+        %% add another contact
+        Stanza2 = escalus_stanza:roster_add_contact(Carol, [<<"friends">>],
+                                                    <<"Cazza">>),
+        escalus:send(Alice, Stanza2),
+        Received4 = escalus:wait_for_stanzas(Alice, 2),
+
+        escalus:assert_many([is_roster_set, is_iq_result], Received4),
+
+        RosterSet2 = hd(Received4),
+
+        Ver3 = get_ver(RosterSet2),
+
+        true = Ver3 =/= undefined,
+
+        Result2 = hd([R || R <- Received4, escalus_pred:is_roster_set(R)]),
+        escalus:assert(count_roster_items, [1], Result2),
+        escalus:send(Alice, escalus_stanza:iq_result(Result2)),
+
+        % Get the roster update, based on an older version:
+        escalus:send(Alice, escalus_stanza:roster_get(Ver2)),
+        Received5 = escalus:wait_for_stanza(Alice),
+
+        escalus:assert(is_iq_result, Received5),
+
+        % We asked for an old version, so we should get an update with
+        % both records in it.
+        2 = length(exml_query:paths(Received5, [{element, <<"query">>},
+                                                {element, <<"item">>}]))
     end).
 
 subscribe(Config) ->
