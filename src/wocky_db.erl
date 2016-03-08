@@ -508,6 +508,7 @@ drop_all_nulls(Rows) ->
 
 %% @doc TBD
 -spec drop_nulls(row()) -> row().
+drop_nulls(not_found) -> not_found;
 drop_nulls(Row) ->
     maps:filter(fun (_, null) -> false;
                     (_, _) -> true end, Row).
