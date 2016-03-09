@@ -75,10 +75,11 @@ post_is_create(RD, Ctx) -> {true, RD, Ctx}.
 
 create_path(RD, Ctx) -> {"", RD, Ctx}.
 
-from_json(RD, Ctx) ->
+from_json(RD, Ctx = #state{server = Server}) ->
     %% Currently 'reset' is the only operation (and already checked for
     %% in 'resource_exists/2', so just do that if we get this far.
-    wocky_db_seed:bootstrap(),
+    wocky_db_seed:bootstrap(shared),
+    wocky_db_seed:bootstrap(Server),
     {true, RD, Ctx}.
 
 % This function is required to keep webmachine happy (since it must be
