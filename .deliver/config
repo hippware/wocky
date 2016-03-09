@@ -9,7 +9,7 @@ RELX_CMD="./rebar3"
 APP="wocky"
 
 # host where to build the release
-BUILD_HOST="build.dev.tinyrobot.com"
+BUILD_HOST="build1.dev.tinyrobot.com"
 
 # local user at build host
 BUILD_USER="ubuntu"
