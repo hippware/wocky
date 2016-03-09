@@ -6,6 +6,8 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 
+-include("wocky_db_seed.hrl").
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -31,12 +33,13 @@ groups() ->
 
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
+    wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config),
     test_helper:stop_ejabberd(),
-    wocky_db_seed:clear_tables(<<"localhost">>, [media, media_data]),
     ok.
 
 init_per_group(_GroupName, Config) ->
@@ -139,7 +142,7 @@ do_upload(ResultStanza, ImageData, ExpectedCode) ->
 
 do_upload(ResultStanza, ImageData, ExpectedCode, ContentType) ->
     UploadEl = get_element(ResultStanza, <<"upload">>),
-    URL = get_cdata(UploadEl, <<"url">>),
+    URL = desecure_url(get_cdata(UploadEl, <<"url">>)),
     Method = get_cdata(UploadEl, <<"method">>),
     HeadersEl = get_element(UploadEl, <<"headers">>),
     FileID = get_cdata(UploadEl, <<"id">>),
@@ -164,7 +167,7 @@ do_upload(ResultStanza, ImageData, ExpectedCode, ContentType) ->
 
 do_download(ResultStanza) ->
     DownloadEl = get_element(ResultStanza, <<"download">>),
-    URL = get_cdata(DownloadEl, <<"url">>),
+    URL = desecure_url(get_cdata(DownloadEl, <<"url">>)),
     HeadersEl = get_element(DownloadEl, <<"headers">>),
     Headers = get_headers(HeadersEl),
 
@@ -179,6 +182,9 @@ do_download(ResultStanza) ->
                         RespHeaders),
     true = lists:member({"content-type","image/png"}, RespHeaders),
     RespBin.
+
+desecure_url(<<"https", URL/binary>>) ->
+    <<"http", URL/binary>>.
 
 request_wrapper(ID, Type, Name, DataFields) ->
     #xmlel{name = <<"iq">>,

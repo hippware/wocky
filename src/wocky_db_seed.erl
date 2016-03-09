@@ -10,7 +10,7 @@
 -export([bootstrap/0, bootstrap/1, create_schema/0, create_schema_for/1,
          foreach_table/3, recreate_table/2, create_table_indexes/2,
          create_table_views/2, drop_table_views/2, seed_table/2, seed_tables/2,
-         seed_keyspace/1, prepare_tables/2, clear_tables/2]).
+         seed_keyspace/1, prepare_tables/2, clear_tables/2, clear_user_tables/1]).
 
 -export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
          fake_resource/0, random_priority/0, session_info/0, sjid/1, jid/3,
@@ -101,6 +101,9 @@ prepare_tables(Context, Tables) ->
 clear_tables(Context, Tables) ->
     foreach_table(Context, fun wocky_db:truncate/2, Tables).
 
+clear_user_tables(Context) ->
+    wocky_db_seed:clear_tables(shared, [handle_to_user, phone_number_to_user]),
+    wocky_db_seed:clear_tables(Context, [user]).
 
 %% This is an incredibly ugly hack to work around a problem in cqerl.
 %% When we drop tables the C* server discards all cached prepared queries

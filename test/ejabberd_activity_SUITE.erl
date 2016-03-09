@@ -6,6 +6,8 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 
+-include("wocky_db_seed.hrl").
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -30,6 +32,8 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:start_ejabberd(),
+    wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->

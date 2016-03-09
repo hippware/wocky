@@ -34,9 +34,6 @@ db_cases() ->
 
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user,
-                                               phone_number_to_user]),
     Config.
 
 end_per_suite(_Config) ->
