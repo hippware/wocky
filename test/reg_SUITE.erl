@@ -221,7 +221,8 @@ bypass_prefixes(_) ->
     Data = [{resource, ?RESOURCE},
             {userID, ?AUTH_USER},
             {phoneNumber, <<"+15556667777">>},
-            {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
+            {'X-Auth-Service-Provider',
+             list_to_binary(fake_digits_server:url())},
             {'X-Verify-Credentials-Authorization', <<"badDigitsAuth">>}
            ],
     JSON = encode(Data),
