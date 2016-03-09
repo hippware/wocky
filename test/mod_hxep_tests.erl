@@ -23,7 +23,9 @@ mecks() -> [ejabberd_config, ejabberd_sm, httpd_util, ossp_uuid,
             cowboy, mod_hxep_francus].
 
 before_all(Backend) ->
+    {ok, _} = application:ensure_all_started(p1_stringprep),
     ok = wocky_app:start(),
+
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
     meck:expect(ejabberd_config, add_local_option, 2, {atomic, ok}),
     meck:expect(ejabberd_config, get_local_option,
@@ -47,7 +49,7 @@ before_all(Backend) ->
 
     meck:expect(ossp_uuid, make, 2, file_uuid()),
 
-    meck:expect(cowboy, start_https, 4, ok),
+    meck:expect(cowboy, start_http, 4, ok),
 
     meck:expect(mod_hxep_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 128)) end),
@@ -58,14 +60,13 @@ after_all(_) ->
     mod_hxep:stop(?SERVER),
     ok = wocky_app:stop(),
     lists:foreach(fun(M) -> true = meck:validate(M) end, mecks()),
-    lists:foreach(fun meck:unload/1, mecks()).
+    meck:unload().
+
 
 before_each() ->
-    meck:new(ejabberd_router),
     ok.
 
 after_each(_) ->
-    meck:unload(ejabberd_router),
     ok.
 
 test_upload_request(Backend) ->
