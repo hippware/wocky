@@ -360,13 +360,15 @@ seed_data(user) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE,
           phone_number => ?PHONE_NUMBER, auth_user => ?AUTH_USER},
-        #{user => ?CAROL,  handle => <<"carol">>,
+        #{user => ?CAROL,  handle => <<"carol">>, first_name => <<"Carol">>,
           phone_number => <<"+4567">>, auth_user => <<"123456">>},
         #{user => ?BOB,    handle => <<"bob">>,
           phone_number => <<"+8901">>, auth_user => <<"958731">>},
-        #{user => ?KAREN,  handle => <<"karen">>,
+        #{user => ?KAREN,  handle => <<"karen">>, avatar => ?AVATAR_ID,
+          first_name => <<"Karen">>, last_name => <<"Kismet">>,
           phone_number => <<"+5555">>, auth_user => <<"598234">>},
         #{user => ?ROBERT, handle => <<"robert">>,
+          last_name => <<"Robert The Bruce">>,
           phone_number => <<"+6666">>, auth_user => <<"888312">>}
     ],
     [U#{server => ?SERVER, password => ?SCRAM} || U <- Users];
@@ -399,17 +401,14 @@ seed_data(offline_msg) ->
 seed_data(roster) ->
     Items = [
         #{contact_jid => sjid(?BOB), contact_handle => <<"bob">>,
-          naturalname => <<"Bob Bobsson">>, nick => <<"bobby">>,
-          version => 666},
+          naturalname => <<"Bob Bobsson">>, avatar => ?AVATAR_ID,
+          nick => <<"bobby">>, version => 666},
         #{contact_jid => sjid(?CAROL), contact_handle => <<"carol">>,
-          naturalname => <<"Carol Bell">>, nick => <<"carrie">>,
-          version => 777},
+          nick => <<"carrie">>, avatar => ?AVATAR_ID, version => 777},
         #{contact_jid => sjid(?ROBERT), contact_handle => <<"robert">>,
-          naturalname => <<"Robert the Bruce">>, nick => <<"bob2">>,
-          version => 888},
+          nick => <<"bob2">>, version => 888},
         #{contact_jid => sjid(?KAREN), contact_handle => <<"karen">>,
-          naturalname => <<"Karen Kismet">>, nick => <<"kk">>,
-          version => 999}
+          nick => <<"kk">>, version => 999}
     ],
     [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
         I <- Items];
@@ -520,7 +519,7 @@ make_offline_msg(User, Handle, NowSecs, I) ->
       '[ttl]' => ts_to_ttl(ExpireSecs)}.
 
 sjid(User) ->
-    iolist_to_binary([User, "@", ?SERVER]).
+    jid:to_binary({User, ?SERVER, <<>>}).
 
 jid(User, Server, Resource) ->
     #jid{user = User, server = Server, resource = Resource,

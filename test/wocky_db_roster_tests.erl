@@ -30,8 +30,9 @@ mod_roster_wocky_test_() -> {
 }.
 
 before_all() ->
+    application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [roster]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, roster]),
     ok.
 
 after_all(_) ->
@@ -39,11 +40,12 @@ after_all(_) ->
     ok.
 
 before_each() ->
+    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user),
     {ok, Data} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, roster),
     Data.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [roster]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, roster]),
     ok.
 
 make_jid(U) ->
@@ -108,6 +110,18 @@ test_get_roster_item() ->
       { "returns the roster item for a known user and contact", [
         ?_assertMatch(#roster{name = <<"bobby">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?BOB)))
+      ]},
+      { "returns a roster item with avatar pulled from the user record", [
+        ?_assertMatch(#roster{avatar = ?AVATAR_ID},
+                      get_roster_item(?USER, ?SERVER, make_jid(?KAREN)))
+      ]},
+      { "returns a roster item with naturalname pulled from the user record", [
+        ?_assertMatch(#roster{naturalname = <<"Carol">>},
+                      get_roster_item(?USER, ?SERVER, make_jid(?CAROL))),
+        ?_assertMatch(#roster{naturalname = <<"Karen Kismet">>},
+                      get_roster_item(?USER, ?SERVER, make_jid(?KAREN))),
+        ?_assertMatch(#roster{naturalname = <<"Robert The Bruce">>},
+                      get_roster_item(?USER, ?SERVER, make_jid(?ROBERT)))
       ]},
       { "returns an empty roster item for a known user and unknown contact", [
         ?_assertMatch(#roster{name = <<>>},

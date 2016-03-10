@@ -29,7 +29,8 @@
 -spec get_roster(ejabberd:luser(), ejabberd:lserver()) -> roster().
 get_roster(LUser, LServer) ->
     Rows = wocky_db:select(LServer, roster, all, #{user => LUser}),
-    pack_roster(LUser, LServer, Rows).
+    Items = pack_roster(LUser, LServer, Rows),
+    fill_extra_fields(Items).
 
 
 %% @doc Returns the version of the given user's roster. If there are no roster
@@ -54,7 +55,8 @@ get_roster_updates(LUser, LServer, Version) ->
     Query = "SELECT * FROM roster_version WHERE user = ? AND version > ?",
     Values = #{user => LUser, version => binary_to_integer(Version)},
     {ok, R} = wocky_db:query(LServer, Query, Values, quorum),
-    pack_roster(LUser, LServer, wocky_db:rows(R)).
+    Items = pack_roster(LUser, LServer, wocky_db:rows(R)),
+    fill_extra_fields(Items).
 
 
 %% @doc Deletes all roster items for the specified user.
@@ -71,7 +73,8 @@ delete_roster(LUser, LServer) ->
 get_roster_item(LUser, LServer, ContactJID) ->
     Conditions = #{user => LUser, contact_jid => ContactJID},
     Row = wocky_db:select_row(LServer, roster, all, Conditions),
-    pack_roster_item(LUser, LServer, ContactJID, Row).
+    Item = pack_roster_item(LUser, LServer, ContactJID, Row),
+    fill_extra_fields(Item).
 
 
 %% @doc Stores the roster item in the database.
@@ -124,6 +127,41 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
        askmessage     = maps:get(askmessage, Row, <<>>),
        subscription   = binary_to_atom(
                           maps:get(subscription, Row, <<"none">>), utf8)}.
+
+fill_extra_fields(Items) when is_list(Items) ->
+    [fill_extra_fields(Item) || Item <- Items];
+
+fill_extra_fields(#roster{avatar = Avatar, naturalname = NaturalName} = Item)
+  when Avatar =/= <<>> andalso NaturalName =/= <<>> ->
+    %% We have the fields that we need, skip the db round-trip
+    Item;
+
+fill_extra_fields(#roster{contact_jid = {LUser, LServer, _}} = Item) ->
+    Row = wocky_db:select_row(LServer, user, [avatar, first_name, last_name],
+                              #{user => LUser}),
+    case Row of
+        not_found ->
+            Item;
+
+        #{avatar := AvatarID, first_name := First, last_name := Last} ->
+            Item#roster{
+              avatar = which(Item#roster.avatar, normalize_avatar(AvatarID)),
+              naturalname = which(Item#roster.naturalname,
+                                  naturalname(First, Last))
+             }
+    end.
+
+normalize_avatar(null)     -> null;
+normalize_avatar(AvatarID) -> wocky_db_user:normalize_id(AvatarID).
+
+which(<<>>,  null)  -> <<>>;
+which(<<>>,  Value) -> Value;
+which(Value, _)     -> Value.
+
+naturalname(null,  null) -> <<>>;
+naturalname(First, null) -> First;
+naturalname(null,  Last) -> Last;
+naturalname(First, Last) -> iolist_to_binary([First, " ", Last]).
 
 unpack_roster_item(LUser, LServer, ContactJID, Item) ->
     #{user           => LUser,
