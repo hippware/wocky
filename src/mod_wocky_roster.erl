@@ -265,14 +265,20 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     ToJID = jid:make(User, Server, <<"">>),
     case auto_reply(Direction, Subscription, Ask, Type) of
         none -> ok;
-        AutoReply ->
-            T = case AutoReply of
-                    subscribed -> <<"subscribed">>;
-                    unsubscribed -> <<"unsubscribed">>
-                end,
+        unsubscribed ->
             route(ejabberd_router, ToJID, JID1,
                   #xmlel{name = <<"presence">>,
-                         attrs = [{<<"type">>, T}],
+                         attrs = [{<<"type">>, <<"unsubscribed">>}],
+                         children = []});
+        subscribed ->
+            Attrs = lists:flatten(
+                     [{<<"type">>, <<"subscribed">>},
+                      item_name_to_xml(handle, Item#roster.contact_handle),
+                      item_name_to_xml(naturalname, Item#roster.naturalname),
+                      item_name_to_xml(avatar, Item#roster.avatar)]),
+            route(ejabberd_router, ToJID, JID1,
+                  #xmlel{name = <<"presence">>,
+                         attrs = Attrs,
                          children = []})
     end,
     case Push of
