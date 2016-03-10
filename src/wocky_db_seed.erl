@@ -177,7 +177,7 @@ table_definition(user) ->
            {handle, text},         % User handle (as seen by other users)
            {password, text},       % Password hash
            {phone_number, text},   % User's phone number
-           {avatar, timeuuid},     % UUID of file containing user's avatar
+           {avatar, text},         % ID of file containing user's avatar
            {first_name, text},     % User's first name
            {last_name, text},      % User's last name
            {email, text},          % User's email address

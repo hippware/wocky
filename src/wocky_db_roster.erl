@@ -143,16 +143,13 @@ fill_extra_fields(#roster{contact_jid = {LUser, LServer, _}} = Item) ->
         not_found ->
             Item;
 
-        #{avatar := AvatarID, first_name := First, last_name := Last} ->
+        #{avatar := Avatar, first_name := First, last_name := Last} ->
             Item#roster{
-              avatar = which(Item#roster.avatar, normalize_avatar(AvatarID)),
+              avatar = which(Item#roster.avatar, Avatar),
               naturalname = which(Item#roster.naturalname,
                                   naturalname(First, Last))
              }
     end.
-
-normalize_avatar(null)     -> null;
-normalize_avatar(AvatarID) -> wocky_db_user:normalize_id(AvatarID).
 
 which(<<>>,  null)  -> <<>>;
 which(<<>>,  Value) -> Value;
