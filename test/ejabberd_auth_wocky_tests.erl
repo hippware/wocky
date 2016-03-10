@@ -110,10 +110,6 @@ before_all(PasswordFormat) ->
 after_all(_) ->
     ok = ejabberd_auth_wocky:stop(?SERVER),
     ok = wocky_app:stop(),
-    application:stop(p1_stringprep),
-    application:unload(p1_stringprep),
-    code:delete(p1_stringprep),
-    code:purge(p1_stringprep),
 
     meck:unload(),
     ok.

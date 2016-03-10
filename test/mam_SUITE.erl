@@ -54,6 +54,8 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 
+-include("wocky_db_seed.hrl").
+
 -define(ASSERT_EQUAL(E, V), (
     [ct:fail("ASSERT EQUAL~n\tExpected ~p~n\tValue ~p~n", [(E), (V)])
      || (E) =/= (V)]
@@ -156,6 +158,7 @@ suite() ->
 
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
+    wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->

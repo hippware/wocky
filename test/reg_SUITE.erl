@@ -67,9 +67,6 @@ suite() ->
 
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user,
-                                               phone_number_to_user]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
@@ -224,7 +221,8 @@ bypass_prefixes(_) ->
     Data = [{resource, ?RESOURCE},
             {userID, ?AUTH_USER},
             {phoneNumber, <<"+15556667777">>},
-            {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
+            {'X-Auth-Service-Provider',
+             list_to_binary(fake_digits_server:url())},
             {'X-Verify-Credentials-Authorization', <<"badDigitsAuth">>}
            ],
     JSON = encode(Data),
