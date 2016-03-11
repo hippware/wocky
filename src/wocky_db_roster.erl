@@ -128,17 +128,17 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
 fill_extra_fields(Items) when is_list(Items) ->
     [fill_extra_fields(Item) || Item <- Items];
 
-fill_extra_fields(#roster{contact_jid = {LUser, LServer, _}} = Item) ->
+fill_extra_fields(#roster{server = LServer, contact_jid = {LUser, _, _}} = I) ->
     Row = wocky_db:select_row(LServer, user,
                               [handle, avatar, first_name, last_name],
                               #{user => LUser}),
     case Row of
         not_found ->
-            Item;
+            I;
 
         #{handle := Handle, avatar := Avatar,
           first_name := First, last_name := Last} ->
-            Item#roster{
+            I#roster{
               avatar = safe_value(Avatar),
               contact_handle = safe_value(Handle),
               naturalname = naturalname(safe_value(First), safe_value(Last))
