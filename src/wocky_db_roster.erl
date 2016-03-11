@@ -82,9 +82,9 @@ get_roster_item(LUser, LServer, ContactJID) ->
                          contact(), roster_item()) -> ok.
 update_roster_item(LUser, LServer, ContactJID, Item) ->
     Query = "INSERT INTO roster ("
-            "  user, server, contact_jid, contact_handle, nick, naturalname,"
-            "  avatar, groups, ask, askmessage, subscription, version"
-            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, toTimestamp(now()))",
+            " user, server, contact_jid, nick, groups, ask, askmessage,"
+            " subscription, version"
+            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, toTimestamp(now()))",
     Values = unpack_roster_item(LUser, LServer, ContactJID, Item),
     {ok, void} = wocky_db:query(LServer, Query, Values, quorum),
     ok.
@@ -118,10 +118,7 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
        user           = LUser,
        server         = LServer,
        contact_jid    = ContactJID,
-       contact_handle = maps:get(contact_handle, Row, <<>>),
-       naturalname    = maps:get(naturalname, Row, <<>>),
        name           = maps:get(nick, Row, <<>>),
-       avatar         = maps:get(avatar, Row, <<>>),
        groups         = maps:get(groups, Row, []),
        ask            = binary_to_atom(maps:get(ask, Row, <<"none">>), utf8),
        askmessage     = maps:get(askmessage, Row, <<>>),
@@ -131,43 +128,36 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
 fill_extra_fields(Items) when is_list(Items) ->
     [fill_extra_fields(Item) || Item <- Items];
 
-fill_extra_fields(#roster{avatar = Avatar, naturalname = NaturalName} = Item)
-  when Avatar =/= <<>> andalso NaturalName =/= <<>> ->
-    %% We have the fields that we need, skip the db round-trip
-    Item;
-
 fill_extra_fields(#roster{contact_jid = {LUser, LServer, _}} = Item) ->
-    Row = wocky_db:select_row(LServer, user, [avatar, first_name, last_name],
+    Row = wocky_db:select_row(LServer, user,
+                              [handle, avatar, first_name, last_name],
                               #{user => LUser}),
     case Row of
         not_found ->
             Item;
 
-        #{avatar := Avatar, first_name := First, last_name := Last} ->
+        #{handle := Handle, avatar := Avatar,
+          first_name := First, last_name := Last} ->
             Item#roster{
-              avatar = which(Item#roster.avatar, Avatar),
-              naturalname = which(Item#roster.naturalname,
-                                  naturalname(First, Last))
+              avatar = safe_value(Avatar),
+              contact_handle = safe_value(Handle),
+              naturalname = naturalname(safe_value(First), safe_value(Last))
              }
     end.
 
-which(<<>>,  null)  -> <<>>;
-which(<<>>,  Value) -> Value;
-which(Value, _)     -> Value.
+safe_value(null) -> <<>>;
+safe_value(Value) -> Value.
 
-naturalname(null,  null) -> <<>>;
-naturalname(First, null) -> First;
-naturalname(null,  Last) -> Last;
+naturalname(<<>>,  <<>>) -> <<>>;
+naturalname(First, <<>>) -> First;
+naturalname(<<>>,  Last) -> Last;
 naturalname(First, Last) -> iolist_to_binary([First, " ", Last]).
 
 unpack_roster_item(LUser, LServer, ContactJID, Item) ->
     #{user           => LUser,
       server         => LServer,
       contact_jid    => ContactJID,
-      contact_handle => Item#roster.contact_handle,
-      naturalname    => Item#roster.naturalname,
       nick           => Item#roster.name,
-      avatar         => Item#roster.avatar,
       groups         => Item#roster.groups,
       ask            => atom_to_binary(Item#roster.ask, utf8),
       askmessage     => Item#roster.askmessage,

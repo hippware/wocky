@@ -227,11 +227,8 @@ table_definition(roster) ->
            {user, timeuuid},       % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
            {contact_jid, text},    % Bare JID for contact
-           {contact_handle, text}, % Handle (display name) for contact
            {active, boolean},      % True if the roster item is not deleted
            {nick, text},           % Display name for contact chosen by the user
-           {naturalname, text},    % Contact's real name formatted
-           {avatar, text},         % File resource identifier for contact avatar
            {groups, {set, text}},  % List of groups the contact belongs to
            {ask, text},            % Status if the item is pending approval
            {askmessage, text},     % Message to be used when getting approval
@@ -400,15 +397,10 @@ seed_data(offline_msg) ->
       seed_data(user));
 seed_data(roster) ->
     Items = [
-        #{contact_jid => sjid(?BOB), contact_handle => <<"bob">>,
-          naturalname => <<"Bob Bobsson">>, avatar => ?AVATAR_ID,
-          nick => <<"bobby">>, version => 666},
-        #{contact_jid => sjid(?CAROL), contact_handle => <<"carol">>,
-          nick => <<"carrie">>, avatar => ?AVATAR_ID, version => 777},
-        #{contact_jid => sjid(?ROBERT), contact_handle => <<"robert">>,
-          nick => <<"bob2">>, version => 888},
-        #{contact_jid => sjid(?KAREN), contact_handle => <<"karen">>,
-          nick => <<"kk">>, version => 999}
+        #{contact_jid => sjid(?BOB), nick => <<"bobby">>, version => 666},
+        #{contact_jid => sjid(?CAROL), nick => <<"carrie">>, version => 777},
+        #{contact_jid => sjid(?ROBERT), nick => <<"bob2">>, version => 888},
+        #{contact_jid => sjid(?KAREN), nick => <<"kk">>, version => 999}
     ],
     [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
         I <- Items];
