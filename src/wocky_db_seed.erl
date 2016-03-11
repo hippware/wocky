@@ -231,7 +231,7 @@ table_definition(roster) ->
            {nick, text},           % Display name for contact chosen by the user
            {groups, {set, text}},  % List of groups the contact belongs to
            {ask, text},            % Status if the item is pending approval
-           {askmessage, text},     % Message to be used when getting approval
+           {ask_message, text},    % Message to be used when getting approval
            {subscription, text},   % Subscription state of the roster item
            {version, timestamp}    % Timestamp indicating when the roster item
                                    % was last updated

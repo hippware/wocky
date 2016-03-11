@@ -82,7 +82,7 @@ get_roster_item(LUser, LServer, ContactJID) ->
                          contact(), roster_item()) -> ok.
 update_roster_item(LUser, LServer, ContactJID, Item) ->
     Query = "INSERT INTO roster ("
-            " user, server, contact_jid, nick, groups, ask, askmessage,"
+            " user, server, contact_jid, nick, groups, ask, ask_message,"
             " subscription, version"
             ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, toTimestamp(now()))",
     Values = unpack_roster_item(LUser, LServer, ContactJID, Item),
@@ -121,7 +121,7 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
        name           = maps:get(nick, Row, <<>>),
        groups         = maps:get(groups, Row, []),
        ask            = binary_to_atom(maps:get(ask, Row, <<"none">>), utf8),
-       askmessage     = maps:get(askmessage, Row, <<>>),
+       ask_message    = maps:get(ask_message, Row, <<>>),
        subscription   = binary_to_atom(
                           maps:get(subscription, Row, <<"none">>), utf8)}.
 
@@ -141,17 +141,17 @@ fill_extra_fields(#roster{server = LServer, contact_jid = {LUser, _, _}} = I) ->
             I#roster{
               avatar = safe_value(Avatar),
               contact_handle = safe_value(Handle),
-              naturalname = naturalname(safe_value(First), safe_value(Last))
+              natural_name = natural_name(safe_value(First), safe_value(Last))
              }
     end.
 
 safe_value(null) -> <<>>;
 safe_value(Value) -> Value.
 
-naturalname(<<>>,  <<>>) -> <<>>;
-naturalname(First, <<>>) -> First;
-naturalname(<<>>,  Last) -> Last;
-naturalname(First, Last) -> iolist_to_binary([First, " ", Last]).
+natural_name(<<>>,  <<>>) -> <<>>;
+natural_name(First, <<>>) -> First;
+natural_name(<<>>,  Last) -> Last;
+natural_name(First, Last) -> iolist_to_binary([First, " ", Last]).
 
 unpack_roster_item(LUser, LServer, ContactJID, Item) ->
     #{user           => LUser,
@@ -160,5 +160,5 @@ unpack_roster_item(LUser, LServer, ContactJID, Item) ->
       nick           => Item#roster.name,
       groups         => Item#roster.groups,
       ask            => atom_to_binary(Item#roster.ask, utf8),
-      askmessage     => Item#roster.askmessage,
+      ask_message    => Item#roster.ask_message,
       subscription   => atom_to_binary(Item#roster.subscription, utf8)}.

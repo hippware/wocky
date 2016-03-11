@@ -7,13 +7,13 @@
           server                :: binary(),
           contact_jid           :: ejabberd:simple_jid(),
           contact_handle = <<>> :: binary(),
-          naturalname = <<>>    :: binary(),
+          natural_name = <<>>   :: binary(),
           name = <<>>           :: binary(),
           avatar = <<>>         :: binary(),
           subscription = none   :: both | from | to | none | remove,
           ask = none            :: in | out | both | none,
           groups = []           :: [binary()],
-          askmessage = <<>>     :: binary(),
+          ask_message = <<>>    :: binary(),
           xs = []               :: [term()]
          }).
 
