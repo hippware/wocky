@@ -60,7 +60,10 @@ do_get(#hxep_request{request = {_User, FileID, _},
     end.
 
 send_file(File, Req) ->
-    {File2, Data} = francus:read(File),
+    {File2, Data} = case francus:read(File) of
+                        eof -> {File, <<>>};
+                        X -> X
+                    end,
     #{<<"content-type">> := ContentType} = francus:metadata(File2),
     success(cowboy_req:reply(200,
                              [{<<"content-type">>, ContentType}],
