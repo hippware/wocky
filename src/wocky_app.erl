@@ -2,12 +2,15 @@
 %%% @doc Wocky application module
 -module(wocky_app).
 
+-include("wocky.hrl").
+
 -behaviour(application).
 
 %% Application callbacks
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0,
-         start_ejabberd/0, start_ejabberd/1]).
+         start_ejabberd/0, start_ejabberd/1,
+         version/0]).
 
 
 -spec start(string()) -> ok.
@@ -40,6 +43,9 @@ start_ejabberd(CfgDir) ->
     ok = application:set_env(ejabberd, config, CfgPath),
     {ok, _} = ejabberd:start(),
     ok.
+
+version() ->
+    ?WOCKY_VERSION.
 
 
 %%%===================================================================
