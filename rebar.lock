@@ -21,7 +21,7 @@
   0},
  {<<"edeliver">>,
   {git,"https://github.com/hippware/edeliver",
-       {ref,"d9d5d813bb16c4eb3b0be3e3b5c1eca07b9c5890"}},
+       {ref,"33f9eab866b5833d136d05a791bcab559ce2420d"}},
   0},
  {<<"edown">>,{pkg,<<"edown">>,<<"0.7.0">>},0},
  {<<"ejabberd">>,{rsync,"ext/MongooseIM/apps/ejabberd"},0},
