@@ -26,10 +26,10 @@ BUILD_AT="/home/ubuntu/wocky"
 STAGING_HOSTS="app1.dev.tinyrobot.com app2.dev.tinyrobot.com app3.dev.tinyrobot.com"
 
 # local user at staging hosts
-STAGING_USER="ubuntu"
+STAGING_USER="wocky"
 
 # deploy directory on staging hosts. default is DELIVER_TO
-TEST_AT="/opt/wocky"
+TEST_AT="/opt"
 
 
 ##
@@ -40,7 +40,7 @@ TEST_AT="/opt/wocky"
 PRODUCTION_HOSTS="app1.prod.tinyrobot.com app2.prod.tinyrobot.com app3.prod.tinyrobot.com"
 
 # local user at deploy hosts
-PRODUCTION_USER="ubuntu"
+PRODUCTION_USER="wocky"
 
 # deploy directory on production hosts
-DELIVER_TO="/opt/wocky"
+DELIVER_TO="/opt"
