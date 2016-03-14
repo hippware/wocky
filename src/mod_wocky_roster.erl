@@ -179,8 +179,8 @@ process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
     end;
 process_item_attrs(Item, [{<<"handle">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{contact_handle = Val}, Attrs);
-process_item_attrs(Item, [{<<"naturalname">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{naturalname = Val}, Attrs);
+process_item_attrs(Item, [{<<"natural_name">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{natural_name = Val}, Attrs);
 process_item_attrs(Item, [{<<"name">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{name = Val}, Attrs);
 process_item_attrs(Item, [{<<"avatar">>, Val} | Attrs]) ->
@@ -254,9 +254,11 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                                 _ -> <<"">>
                             end,
 
-                   NewItem = Item#roster{subscription = NewSubscription,
-                                         ask = Pending,
-                                         askmessage = iolist_to_binary(AskMsg)},
+                   NewItem = Item#roster{
+                               subscription = NewSubscription,
+                               ask = Pending,
+                               ask_message = iolist_to_binary(AskMsg)
+                              },
                    wocky_db_roster:update_roster_item(LUser, LServer,
                                                       LJID, NewItem),
                    {push, NewItem}
@@ -265,14 +267,20 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     ToJID = jid:make(User, Server, <<"">>),
     case auto_reply(Direction, Subscription, Ask, Type) of
         none -> ok;
-        AutoReply ->
-            T = case AutoReply of
-                    subscribed -> <<"subscribed">>;
-                    unsubscribed -> <<"unsubscribed">>
-                end,
+        unsubscribed ->
             route(ejabberd_router, ToJID, JID1,
                   #xmlel{name = <<"presence">>,
-                         attrs = [{<<"type">>, T}],
+                         attrs = [{<<"type">>, <<"unsubscribed">>}],
+                         children = []});
+        subscribed ->
+            Attrs = lists:flatten(
+                     [{<<"type">>, <<"subscribed">>},
+                      item_name_to_xml(handle, Item#roster.contact_handle),
+                      item_name_to_xml(natural_name, Item#roster.natural_name),
+                      item_name_to_xml(avatar, Item#roster.avatar)]),
+            route(ejabberd_router, ToJID, JID1,
+                  #xmlel{name = <<"presence">>,
+                         attrs = Attrs,
                          children = []})
     end,
     case Push of
@@ -409,7 +417,7 @@ fill_subscription_lists(_, _, [], F, T, P) ->
 build_pending(#roster{ask = Ask} = I, JID, P)
   when Ask =:= in; Ask =:= both ->
     StatusEl = #xmlel{name = <<"status">>,
-                      children = [#xmlcdata{content = I#roster.askmessage}]},
+                      children = [#xmlcdata{content = I#roster.ask_message}]},
 
     El = #xmlel{name = <<"presence">>,
                 attrs = [{<<"from">>, jid:to_binary(I#roster.contact_jid)},
@@ -498,7 +506,7 @@ item_to_xml(Item) ->
                  [item_jid_to_xml(Item#roster.contact_jid),
                   item_name_to_xml(name, Item#roster.name),
                   item_name_to_xml(handle, Item#roster.contact_handle),
-                  item_name_to_xml(naturalname, Item#roster.naturalname),
+                  item_name_to_xml(natural_name, Item#roster.natural_name),
                   item_name_to_xml(avatar, Item#roster.avatar),
                   item_sub_to_xml(Item#roster.subscription),
                   item_ask_to_xml(Item#roster.ask)]),

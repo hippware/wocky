@@ -177,7 +177,7 @@ table_definition(user) ->
            {handle, text},         % User handle (as seen by other users)
            {password, text},       % Password hash
            {phone_number, text},   % User's phone number
-           {avatar, timeuuid},     % UUID of file containing user's avatar
+           {avatar, text},         % ID of file containing user's avatar
            {first_name, text},     % User's first name
            {last_name, text},      % User's last name
            {email, text},          % User's email address
@@ -227,14 +227,11 @@ table_definition(roster) ->
            {user, timeuuid},       % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
            {contact_jid, text},    % Bare JID for contact
-           {contact_handle, text}, % Handle (display name) for contact
            {active, boolean},      % True if the roster item is not deleted
            {nick, text},           % Display name for contact chosen by the user
-           {naturalname, text},    % Contact's real name formatted
-           {avatar, text},         % File resource identifier for contact avatar
            {groups, {set, text}},  % List of groups the contact belongs to
            {ask, text},            % Status if the item is pending approval
-           {askmessage, text},     % Message to be used when getting approval
+           {ask_message, text},    % Message to be used when getting approval
            {subscription, text},   % Subscription state of the roster item
            {version, timestamp}    % Timestamp indicating when the roster item
                                    % was last updated
@@ -360,13 +357,15 @@ seed_data(user) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE,
           phone_number => ?PHONE_NUMBER, auth_user => ?AUTH_USER},
-        #{user => ?CAROL,  handle => <<"carol">>,
+        #{user => ?CAROL,  handle => <<"carol">>, first_name => <<"Carol">>,
           phone_number => <<"+4567">>, auth_user => <<"123456">>},
         #{user => ?BOB,    handle => <<"bob">>,
           phone_number => <<"+8901">>, auth_user => <<"958731">>},
-        #{user => ?KAREN,  handle => <<"karen">>,
+        #{user => ?KAREN,  handle => <<"karen">>, avatar => ?AVATAR_ID,
+          first_name => <<"Karen">>, last_name => <<"Kismet">>,
           phone_number => <<"+5555">>, auth_user => <<"598234">>},
         #{user => ?ROBERT, handle => <<"robert">>,
+          last_name => <<"Robert The Bruce">>,
           phone_number => <<"+6666">>, auth_user => <<"888312">>}
     ],
     [U#{server => ?SERVER, password => ?SCRAM} || U <- Users];
@@ -398,18 +397,10 @@ seed_data(offline_msg) ->
       seed_data(user));
 seed_data(roster) ->
     Items = [
-        #{contact_jid => sjid(?BOB), contact_handle => <<"bob">>,
-          naturalname => <<"Bob Bobsson">>, nick => <<"bobby">>,
-          version => 666},
-        #{contact_jid => sjid(?CAROL), contact_handle => <<"carol">>,
-          naturalname => <<"Carol Bell">>, nick => <<"carrie">>,
-          version => 777},
-        #{contact_jid => sjid(?ROBERT), contact_handle => <<"robert">>,
-          naturalname => <<"Robert the Bruce">>, nick => <<"bob2">>,
-          version => 888},
-        #{contact_jid => sjid(?KAREN), contact_handle => <<"karen">>,
-          naturalname => <<"Karen Kismet">>, nick => <<"kk">>,
-          version => 999}
+        #{contact_jid => sjid(?BOB), nick => <<"bobby">>, version => 666},
+        #{contact_jid => sjid(?CAROL), nick => <<"carrie">>, version => 777},
+        #{contact_jid => sjid(?ROBERT), nick => <<"bob2">>, version => 888},
+        #{contact_jid => sjid(?KAREN), nick => <<"kk">>, version => 999}
     ],
     [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
         I <- Items];
@@ -520,7 +511,7 @@ make_offline_msg(User, Handle, NowSecs, I) ->
       '[ttl]' => ts_to_ttl(ExpireSecs)}.
 
 sjid(User) ->
-    iolist_to_binary([User, "@", ?SERVER]).
+    jid:to_binary({User, ?SERVER, <<>>}).
 
 jid(User, Server, Resource) ->
     #jid{user = User, server = Server, resource = Resource,
