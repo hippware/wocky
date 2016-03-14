@@ -213,8 +213,7 @@ send_error_response(IQ = #iq{sub_el = SubEl}, Error) ->
 
 common_fields(#jid{lserver = Server}, FileID) ->
     [{<<"id">>, FileID},
-     {<<"jid">>, jid:to_binary(
-                   jid:make(<<>>, Server, <<"file/", FileID/binary>>))}].
+     {<<"jid">>, hxep:make_jid(Server, FileID)}].
 
 to_header_element({Name, Value}) ->
     #xmlel{name = <<"header">>,

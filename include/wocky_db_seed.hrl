@@ -36,13 +36,16 @@
 -define(ROBERT, <<"2c33f32e-c5fe-11e5-9912-ba0be0483c18">>).
 -define(TIM,    <<"31a07b20-c5fe-11e5-9912-ba0be0483c18">>).
 
--define(AVATAR_FILE, <<"ee880476-e712-11e5-990d-08002719e96e">>).
--define(MEDIA_FILE,  <<"ff9451f2-e712-11e5-9ab0-08002719e96e">>).
+-define(AVATAR_FILE,  <<"ee880476-e712-11e5-990d-08002719e96e">>).
+-define(AVATAR_FILE2, <<"5620c844-e98d-11e5-b97b-08002719e96e">>).
+-define(MEDIA_FILE,   <<"ff9451f2-e712-11e5-9ab0-08002719e96e">>).
 
--define(AVATAR_CHUNK, <<"24634ec0-e96b-11e5-8f6e-08002719e96e">>).
--define(MEDIA_CHUNK,  <<"24f99f56-e96b-11e5-8e11-08002719e96e">>).
+-define(AVATAR_CHUNK,  <<"24634ec0-e96b-11e5-8f6e-08002719e96e">>).
+-define(AVATAR_CHUNK2, <<"54559742-e98d-11e5-bc3d-08002719e96e">>).
+-define(MEDIA_CHUNK,   <<"24f99f56-e96b-11e5-8e11-08002719e96e">>).
 
--define(AVATAR_DATA, <<"avatar file contents">>).
--define(MEDIA_DATA,  <<"media file contents">>).
+-define(AVATAR_DATA,  <<"avatar file contents">>).
+-define(AVATAR_DATA2, <<"alternative avatar file contents">>).
+-define(MEDIA_DATA,   <<"media file contents">>).
 
 -endif.

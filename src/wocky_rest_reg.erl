@@ -107,18 +107,21 @@ to_json(RD, Ctx) ->
 
 malformed_request(Elements, RD, Ctx = #state{server = Server}) ->
     Fields = wocky_rest:map_keys_to_atoms(maps:from_list(Elements)),
-    case verify_fields(Fields) of
+    Fields2 = maybe_add_default_server(Fields, Server),
+    case verify_fields(Fields2) of
         true ->
-            Fields2 = maybe_add_default_server(Fields, Server),
             {false, RD, Ctx#state{fields = Fields2}};
         false ->
-            RD2 = set_resp_body(400, "Missing required element(s)", RD),
+            RD2 = set_resp_body(400,
+                                "Missing or malformed required element(s)",
+                                RD),
             {true, RD2, Ctx}
     end.
 
 verify_fields(Fields) ->
     verify_auth_fields(Fields) andalso
-    verify_user_fields(Fields).
+    verify_user_fields(Fields) andalso
+    verify_avatar_field(Fields).
 
 verify_auth_fields(#{sessionID := _}) -> true;
 verify_auth_fields(#{'X-Auth-Service-Provider'            := _,
@@ -127,13 +130,21 @@ verify_auth_fields(#{'X-Auth-Service-Provider'            := _,
                     }) -> true;
 verify_auth_fields(_) -> false.
 
-verify_user_fields(#{uuid     := _,
+verify_user_fields(#{uuid     := UUID,
                      resource := _
-                    }) -> true;
+                    }) -> wocky_db_user:is_valid_id(UUID);
 verify_user_fields(#{userID   := _,
                      resource := _
                     }) -> true;
 verify_user_fields(_) -> false.
+
+verify_avatar_field(#{avatar := Avatar,
+                      server := Server}) ->
+    case hxep:parse_url(Avatar) of
+        {ok, {Server, FileID}} -> francus:is_valid_id(FileID);
+        _ -> false
+    end;
+verify_avatar_field(_) -> true.
 
 maybe_add_default_server(Fields = #{server := _}, _) -> Fields;
 maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.

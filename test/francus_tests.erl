@@ -16,7 +16,9 @@ francus_test_() -> {
     test_read(),
     test_write(),
     test_delete(),
-    test_accessors()
+    test_accessors(),
+    test_expire(),
+    test_keep()
   ]
 }.
 
@@ -143,8 +145,8 @@ read_eof(F, Acc) ->
 test_write() ->
     { "francus:write",
       [
-       % Don't do setup here - it takes time and we're not going to use the
-       % standard files. Still do cleanup though.
+       %% Don't do setup here - it takes time and we're not going to use the
+       %% standard files. Still do cleanup though.
        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
          [?_test(
              begin
@@ -160,6 +162,44 @@ test_write() ->
        }
       ]
     }.
+
+test_expire() ->
+    { "francus expiry",
+      [
+       { "should clear a file after the expiry period",
+         [?_test(
+             begin
+                 ID = mod_hxep:make_file_id(),
+                 {ok, F} = francus:open_write(?SERVER, ID,
+                                              wocky_db_user:create_id(),
+                                              metadata(), 1),
+                 F1 = francus:write(F, <<"abc">>),
+                 francus:close(F1),
+                 timer:sleep(timer:seconds(3)),
+                 ?assertEqual(not_found, francus:open_read(?SERVER, ID))
+             end
+            )]
+       }]}.
+
+test_keep() ->
+    { "francus keep",
+      [
+       { "should keep a previously expiring file",
+         [?_test(
+             begin
+                 ID = mod_hxep:make_file_id(),
+                 {ok, F} = francus:open_write(?SERVER, ID,
+                                              wocky_db_user:create_id(),
+                                              metadata(), 2),
+                 F1 = francus:write(F, <<"abc">>),
+                 francus:close(F1),
+                 francus:keep(?SERVER, ID),
+                 timer:sleep(timer:seconds(3)),
+                 ?assert(is_tuple(francus:open_read(?SERVER, ID)))
+             end
+            )]
+       }]}.
+
 
 verify_contents(ID, Data) ->
     {ok, F} = francus:open_read(?SERVER, ID),

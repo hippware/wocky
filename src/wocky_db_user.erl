@@ -170,6 +170,7 @@ create_user(Fields = #{server := LServer}) ->
     NewID = create_id(),
     WithUser = Fields#{user => NewID},
     CreationFields = maps:without([handle, phone_number], WithUser),
+    maybe_update_avatar(Fields),
     true = wocky_db:insert_new(LServer, user, CreationFields),
     NewID.
 
@@ -181,7 +182,52 @@ create_user(Fields = #{server := LServer}) ->
 -spec update_user(map()) -> ok.
 update_user(Fields = #{user := User, server := LServer}) ->
     UpdateFields = maps:without([user, handle, phone_number], Fields),
+    maybe_update_avatar(Fields),
     ok = wocky_db:update(LServer, user, UpdateFields, #{user => User}).
+
+
+%% @private
+maybe_update_avatar(#{user := UserID, avatar := Avatar, server := LServer}) ->
+    {ok, {LServer, FileID}} = hxep:parse_url(Avatar),
+    check_update_avatar(UserID, LServer, Avatar, FileID);
+maybe_update_avatar(_) -> ok.
+
+%% @private
+check_update_avatar(UserID, LServer, Avatar, FileID) ->
+    case francus:open_read(LServer, FileID) of
+        {ok, F} -> maybe_assign_avatar(UserID, LServer, Avatar, F);
+        _ -> throw(file_not_found)
+    end.
+
+%% @private
+maybe_assign_avatar(UserID, LServer, Avatar, File) ->
+    case francus:owner(File) of
+        UserID -> ok;
+        _ -> throw(not_file_owner)
+    end,
+    UserJID = jid:to_binary(jid:make(UserID, LServer, <<>>)),
+    case francus:metadata(File) of
+        #{<<"purpose">> := <<"avatar:", UserJID/binary>>} ->
+            francus:keep(LServer, francus:id(File)),
+            assign_avatar(UserID, LServer, Avatar);
+        _ ->
+            throw(not_avatar_file)
+    end.
+
+%% @private
+assign_avatar(UserID, LServer, Avatar) ->
+    maybe_delete_existing_avatar(UserID, LServer),
+    wocky_db:update(LServer, user, #{avatar => Avatar}, #{user => UserID}).
+
+%% @private
+maybe_delete_existing_avatar(UserID, LServer) ->
+    case wocky_db:select_one(LServer, user, avatar, #{user => UserID}) of
+        URL = <<"hxep:", _/binary>> ->
+            {ok, {Server, FileID}} = hxep:parse_url(URL),
+            francus:delete(Server, FileID);
+        _ ->
+            ok
+    end.
 
 
 %% @doc Attempts to set a handle for a given user. The attempt will fail
