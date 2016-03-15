@@ -22,7 +22,7 @@ can_download(User = #jid{lserver = Server}, FileID) ->
             Result = can_download_file(User, File),
             francus:close(File),
             Result;
-        not_found ->
+        {error, not_found} ->
             {false, not_found}
     end.
 

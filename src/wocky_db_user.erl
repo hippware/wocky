@@ -195,10 +195,10 @@ maybe_update_avatar(#{user := UserID, avatar := Avatar, server := LServer}) ->
     do([error_m ||
         {FileServer, FileID} <- hxep:parse_url(Avatar),
         check_file_location(LServer, FileServer),
-        File <- open_avatar_file(LServer, FileID),
+        File <- francus:open_read(LServer, FileID),
         check_avatar_owner(UserID, File),
         check_avatar_purpose(UserID, LServer, File),
-        keep_avatar_file(LServer, File),
+        francus:keep(LServer, francus:id(File)),
         assign_avatar(UserID, LServer, Avatar)
        ]);
 
@@ -207,13 +207,6 @@ maybe_update_avatar(_) -> ok.
 %% @private
 check_file_location(Server, Server) -> ok;
 check_file_location(_, _) -> {error, not_local_file}.
-
-%% @private
-open_avatar_file(LServer, FileID) ->
-    case francus:open_read(LServer, FileID) of
-        {ok, F} -> {ok, F};
-        _ -> {error, file_not_found}
-    end.
 
 %% @private
 check_avatar_owner(UserID, File) ->
@@ -230,13 +223,6 @@ check_avatar_purpose(UserID, LServer, File) ->
             ok;
         _ ->
             {error, not_avatar_file}
-    end.
-
-%% @private
-keep_avatar_file(LServer, File) ->
-    case francus:keep(LServer, francus:id(File)) of
-        ok -> ok;
-        not_found -> {error, file_not_found}
     end.
 
 %% @private

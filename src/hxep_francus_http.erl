@@ -55,7 +55,7 @@ do_get(#hxep_request{request = {_User, FileID, _},
         %% TODO: Chunked writes for larger files
         {ok, F} ->
             send_file(F, Req);
-        not_found ->
+        {error, not_found} ->
             success(cowboy_req:reply(404, plain_header(), "Not found", Req))
     end.
 

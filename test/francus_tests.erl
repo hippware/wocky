@@ -111,8 +111,8 @@ test_read() ->
        },
        { "Check return value for non-existant files",
          [
-          ?_assertEqual(not_found, francus:open_read(?SERVER,
-                                                     mod_hxep:make_file_id()))
+          ?_assertEqual({error, not_found},
+                        francus:open_read(?SERVER, mod_hxep:make_file_id()))
          ]
        },
        { "Read in smaller chunks",
@@ -176,7 +176,8 @@ test_expire() ->
                  F1 = francus:write(F, <<"abc">>),
                  francus:close(F1),
                  timer:sleep(timer:seconds(3)),
-                 ?assertEqual(not_found, francus:open_read(?SERVER, ID))
+                 ?assertEqual({error, not_found},
+                              francus:open_read(?SERVER, ID))
              end
             )]
        }]}.
@@ -215,7 +216,8 @@ test_delete() ->
          [?_test(
              begin
                  ?assertEqual(ok, francus:delete(?SERVER, ID)),
-                 ?assertEqual(not_found, francus:open_read(?SERVER, ID))
+                 ?assertEqual({error, not_found},
+                              francus:open_read(?SERVER, ID))
              end) || {ID, _} <- Config#config.files]
        },
        { "Non-existant files should still return ok on delete",

@@ -410,7 +410,7 @@ test_set_avatar() ->
                                                          ?LOCAL_CONTEXT)))
     ]},
     { "fail to set avatar due to non-existant file", [
-      ?_assertEqual({error, file_not_found},
+      ?_assertEqual({error, not_found},
                         update_user(Fields#{avatar => NonExistantURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
