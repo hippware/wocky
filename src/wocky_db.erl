@@ -29,7 +29,7 @@
 -type row()       :: map().
 -type rows()      :: [row()].
 -type error()     :: term().
--type ttl()       :: non_neg_integer() | infinity.
+-type ttl()       :: pos_integer() | infinity.
 -opaque result()  :: #cql_result{}.
 -export_type([query/0, value/0, values/0, row/0, result/0, error/0, ttl/0]).
 

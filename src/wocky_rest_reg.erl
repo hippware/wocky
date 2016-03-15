@@ -226,7 +226,7 @@ find_and_update_user(RD, Ctx = #state{fields = Fields
     update_user(RD, Ctx#state{fields = Fields#{uuid => UUID}}).
 
 update_user(RD, Ctx = #state{fields = Fields}) ->
-    wocky_db_user:update_user(json_to_row(Fields)),
+    ok = wocky_db_user:update_user(json_to_row(Fields)),
     finalize_changes(RD, Ctx).
 
 finalize_changes(RD, Ctx) ->

@@ -24,7 +24,7 @@ wocky_db_user_test_() ->
     {ok, _} = application:ensure_all_started(p1_stringprep),
     {
      "wocky_db_user",
-     setup, fun before_all/0, fun after_all/1, 
+     setup, fun before_all/0, fun after_all/1,
      [
       test_is_valid_id(),
       test_does_user_exist(),
@@ -382,24 +382,27 @@ test_update_user_from_map() ->
   ]}.
 
 test_set_avatar() ->
-  Avatar = hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
+  AvatarURL = hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
   Fields = #{user => ?ALICE,
              server => ?LOCAL_CONTEXT,
-             avatar => Avatar
+             avatar => AvatarURL
             },
-  BadAvatar = hxep:make_url(?LOCAL_CONTEXT, mod_hxep:make_file_id()),
-  MediaFile = hxep:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
+  NonExistantURL = hxep:make_url(?LOCAL_CONTEXT, mod_hxep:make_file_id()),
+  MediaURL = hxep:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
 
   { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
-    { "succesfully set avatar", [
+    { "succesfully set avatar and delete the old one", [
       ?_assertEqual(ok, update_user(Fields)),
-      ?_assertEqual(Avatar,
+      ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:get_user_data(?ALICE,
-                                                         ?LOCAL_CONTEXT)))
+                                                         ?LOCAL_CONTEXT))),
+      ?_assertEqual(not_found,
+                    wocky_db:select_one(?LOCAL_CONTEXT, media,
+                                        id, #{id => ?AVATAR_FILE}))
     ]},
     { "fail to set avatar due to wrong owner", [
-      ?_assertException(throw, not_file_owner,
+      ?_assertEqual({error, not_file_owner},
                         update_user(Fields#{user => ?BOB})),
       ?_assertEqual(null,
                     maps:get(avatar,
@@ -407,17 +410,17 @@ test_set_avatar() ->
                                                          ?LOCAL_CONTEXT)))
     ]},
     { "fail to set avatar due to non-existant file", [
-      ?_assertException(throw, file_not_found,
-                        update_user(Fields#{avatar => BadAvatar})),
-      ?_assertEqual(Avatar,
+      ?_assertEqual({error, file_not_found},
+                        update_user(Fields#{avatar => NonExistantURL})),
+      ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:get_user_data(?ALICE,
                                                          ?LOCAL_CONTEXT)))
     ]},
     { "fail to set avatar due to non-avatar type file", [
-      ?_assertException(throw, not_avatar_file,
-                        update_user(Fields#{avatar => MediaFile})),
-      ?_assertEqual(Avatar,
+      ?_assertEqual({error, not_avatar_file},
+                        update_user(Fields#{avatar => MediaURL})),
+      ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:get_user_data(?ALICE,
                                                          ?LOCAL_CONTEXT)))
