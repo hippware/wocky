@@ -240,10 +240,14 @@ bypass_prefixes(_) ->
 valid_avatar(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
                                                media_data]),
-    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2)}|
+    AvatarURL = hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
+    Data = [{avatar, AvatarURL}|
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
-    {ok, {201, _Body}} = request(JSON).
+    {ok, {201, Body}} = request(JSON),
+    verify_avatar(?ALICE, AvatarURL),
+    verify_avatar_in_body(Body, AvatarURL).
+
 
 non_existant_avatar(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
@@ -355,3 +359,11 @@ verify_phone_number(User, PhoneNumber) ->
     {User, ?LOCAL_CONTEXT} =
     wocky_db_user:get_user_by_phone_number(PhoneNumber),
     PhoneNumber = wocky_db_user:get_phone_number(User, ?LOCAL_CONTEXT).
+
+verify_avatar(User, Avatar) ->
+    Avatar = wocky_db:select_one(?LOCAL_CONTEXT, user,
+                                 avatar, #{user => User}).
+
+verify_avatar_in_body(Body, Avatar) ->
+    {struct, Elements} = mochijson2:decode(Body),
+    Avatar = proplists:get_value(<<"avatar">>, Elements).
