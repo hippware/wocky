@@ -29,7 +29,11 @@
          session_with_userid/1,
          invalid_user_id/1,
          missing_user_id/1,
-         bypass_prefixes/1
+         bypass_prefixes/1,
+         valid_avatar/1,
+         non_existant_avatar/1,
+         unowned_avatar/1,
+         wrong_purpose_avatar/1
         ]).
 
 -include("wocky_db_seed.hrl").
@@ -59,7 +63,11 @@ reg_cases() ->
      session_with_userid,
      invalid_user_id,
      missing_user_id,
-     bypass_prefixes
+     bypass_prefixes,
+     valid_avatar,
+     non_existant_avatar,
+     unowned_avatar,
+     wrong_purpose_avatar
     ].
 
 suite() ->
@@ -228,6 +236,38 @@ bypass_prefixes(_) ->
     JSON = encode(Data),
     {ok, {201, _Body}} = request(JSON),
     stop_digits_server().
+
+valid_avatar(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
+                                               media_data]),
+    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2)}|
+            session_test_data(?ALICE, ?TOKEN)],
+    JSON = encode(Data),
+    {ok, {201, _Body}} = request(JSON).
+
+non_existant_avatar(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
+                                               media_data]),
+    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, mod_hxep:make_file_id())} |
+            session_test_data(?ALICE, ?TOKEN)],
+    JSON = encode(Data),
+    {ok, {409, _Body}} = request(JSON).
+
+unowned_avatar(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
+                                               media_data]),
+    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE3)} |
+            session_test_data(?ALICE, ?TOKEN)],
+    JSON = encode(Data),
+    {ok, {409, _Body}} = request(JSON).
+
+wrong_purpose_avatar(_) ->
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
+                                               media_data]),
+    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE)} |
+            session_test_data(?ALICE, ?TOKEN)],
+    JSON = encode(Data),
+    {ok, {409, _Body}} = request(JSON).
 
 %%%===================================================================
 %%% Helpers

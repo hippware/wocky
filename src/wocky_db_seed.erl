@@ -415,6 +415,7 @@ seed_data(auth_token) ->
        auth_token => ?TOKEN}];
 seed_data(media) ->
     AvatarTypeData = jid:to_binary(jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)),
+    BobAvatarTypeData = jid:to_binary(jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)),
     MediaTypeData = jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
     [#{id => ?AVATAR_FILE, user => ?ALICE, size => byte_size(?AVATAR_DATA),
        chunks => [?AVATAR_CHUNK],
@@ -423,6 +424,10 @@ seed_data(media) ->
      #{id => ?AVATAR_FILE2, user => ?ALICE, size => byte_size(?AVATAR_DATA2),
        chunks => [?AVATAR_CHUNK2],
        metadata => #{<<"purpose">> => <<"avatar:", AvatarTypeData/binary>>,
+                     <<"content-type">> => <<"image/png">>}},
+     #{id => ?AVATAR_FILE3, user => ?BOB,   size => byte_size(?AVATAR_DATA3),
+       chunks => [?AVATAR_CHUNK3],
+       metadata => #{<<"purpose">> => <<"avatar:", BobAvatarTypeData/binary>>,
                      <<"content-type">> => <<"image/png">>}},
      #{id => ?MEDIA_FILE, user => ?ALICE, size => byte_size(?MEDIA_DATA),
        chunks => [?MEDIA_CHUNK],
@@ -434,6 +439,8 @@ seed_data(media_data) ->
        data => ?AVATAR_DATA},
      #{chunk_id => ?AVATAR_CHUNK2, file_id => ?AVATAR_FILE2,
        data => ?AVATAR_DATA2},
+     #{chunk_id => ?AVATAR_CHUNK3, file_id => ?AVATAR_FILE3,
+       data => ?AVATAR_DATA3},
      #{chunk_id => ?MEDIA_CHUNK,   file_id => ?MEDIA_FILE,
        data => ?MEDIA_DATA}];
 seed_data(_) ->
