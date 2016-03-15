@@ -137,8 +137,8 @@ row_to_rec(#{sid := SID,
              info := Info}) ->
     #session{
        sid = binary_to_term(SID),
-       usr = {wocky_db_user:normalize_id(User), Server, Resource},
-       us = {wocky_db_user:normalize_id(LUser), LServer},
+       usr = {User, Server, Resource},
+       us = {LUser, LServer},
        priority = int_to_pri(Priority),
        info = binary_to_term(Info)}.
 
@@ -149,7 +149,7 @@ row_to_ses_tuple(#{sid := SID,
                    jid_resource := Resource,
                    priority := Priority,
                    info := Info}) ->
-    {{wocky_db_user:normalize_id(User), Server, Resource},
+    {{User, Server, Resource},
      binary_to_term(SID),
      int_to_pri(Priority),
      binary_to_term(Info)}.
@@ -159,7 +159,7 @@ count_on_server(Server) ->
 
 uss_on_server(Server) ->
     Rows = wocky_db:select(Server, session, [user, server], #{}),
-    [{wocky_db_user:normalize_id(U), S} || #{user := U, server := S} <- Rows].
+    [{U, S} || #{user := U, server := S} <- Rows].
 
 % Priority can be undefined. Store this as -1 (an otherwise invalid priority)
 pri_to_int(undefined) -> -1;

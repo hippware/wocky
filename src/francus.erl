@@ -306,7 +306,7 @@ delete_metadata(Context, FileID) ->
     wocky_db:delete(Context, media, all, #{id => FileID}).
 
 -spec owner(francus_file()) -> user_id().
-owner(#state{user_id = Owner}) -> wocky_db_user:normalize_id(Owner).
+owner(#state{user_id = Owner}) -> Owner.
 
 -spec metadata(francus_file()) -> metadata().
 metadata(#state{metadata = Metadata}) -> Metadata.

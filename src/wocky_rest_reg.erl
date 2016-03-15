@@ -315,7 +315,7 @@ map_transform(A, B, SourceMap, Map) ->
     end.
 
 prepare_for_encoding(Fields = #{uuid := UUID}) ->
-    Fields#{uuid => wocky_db_user:normalize_id(UUID)}.
+    Fields#{uuid => UUID}.
 
 set_resp_body(Code, Error, RD) ->
     JSON = mochijson2:encode({struct, [{code, Code},
