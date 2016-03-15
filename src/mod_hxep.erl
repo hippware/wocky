@@ -20,7 +20,8 @@
 
 -export([
    validate_upload_size/1,
-   validate_upload_type/1
+   validate_upload_type/1,
+   validate_upload_permissions/2
         ]).
 
 -ifdef(TEST).
@@ -80,8 +81,9 @@ handle_download_request(Req = #request{iq = IQ}, DR) ->
     end.
 
 handle_upload_request(Req = #request{iq = IQ}, UR) ->
-    RequiredFields = [<<"filename">>, <<"size">>, <<"mime-type">>],
-    OptionalFields = [<<"width">>, <<"height">>, <<"purpose">>],
+    RequiredFields = [<<"filename">>, <<"size">>,
+                      <<"mime-type">>, <<"purpose">>],
+    OptionalFields = [<<"width">>, <<"height">>],
     case extract_fields(UR, RequiredFields, OptionalFields) of
         {failed, Missing} ->
             send_missing_field_error(IQ, Missing);
@@ -90,7 +92,7 @@ handle_upload_request(Req = #request{iq = IQ}, UR) ->
     end.
 
 extract_fields(Req, RequiredFields, OptionalFields) ->
-    Fields = lists:foldl(fun(F, Acc) -> add_field(Req, F, Acc) end, [],
+    Fields = lists:foldl(fun(F, Acc) -> add_field(Req, F, Acc) end, #{},
                          RequiredFields ++ OptionalFields),
     check_fields(Fields, RequiredFields).
 
@@ -99,14 +101,14 @@ add_field(UR, Field, Acc) ->
         undefined ->
             Acc;
         Value when is_binary(Value) ->
-            [{Field, Value} | Acc]
+            Acc#{Field => Value}
     end.
 
 check_fields(Fields, []) -> {ok, Fields};
 check_fields(Fields, [H|T]) ->
-    case proplists:lookup(H, Fields) of
-        none -> {failed, H};
-        _ -> check_fields(Fields, T)
+    case maps:is_key(H, Fields) of
+        false -> {failed, H};
+        true -> check_fields(Fields, T)
     end.
 
 send_missing_field_error(IQ, FieldName) ->
@@ -114,33 +116,45 @@ send_missing_field_error(IQ, FieldName) ->
     Error = ?ERRT_BAD_REQUEST(?MYLANG, Text),
     send_error_response(IQ, Error).
 
-send_validation_error(IQ, ErrorStr) ->
+send_upload_validation_error(IQ, ErrorStr) ->
     Text = iolist_to_binary(["Upload request denied: ", ErrorStr]),
+    send_validation_error(IQ, Text).
+
+send_download_validation_error(IQ, ErrorStr) ->
+    Text = iolist_to_binary(["Download request denied: ", ErrorStr]),
+    send_validation_error(IQ, Text).
+
+send_validation_error(IQ, Text) ->
     Error = ?ERRT_NOT_ACCEPTABLE(?MYLANG, Text),
     send_error_response(IQ, Error).
 
-send_upload_response(Req = #request{iq = IQ}, ReqFields) ->
-    MimeType = proplists:get_value(<<"mime-type">>, ReqFields),
-    Name = proplists:get_value(<<"filename">>, ReqFields),
+send_upload_response(Req = #request{iq = IQ,
+                                    from_jid = FromJID},
+                     ReqFields = #{<<"mime-type">> := MimeType,
+                                   <<"filename">> := Filename,
+                                   <<"purpose">> := Purpose}) ->
     Metadata = #{<<"content-type">> => MimeType,
-                 <<"name">> => Name},
-    Size = binary_to_integer_def(
-             proplists:get_value(<<"size">>, ReqFields), 0),
-    case validate_upload_req(Size, MimeType) of
+                 <<"name">> => Filename,
+                 <<"purpose">> => Purpose},
+    Size = binary_to_integer_def(maps:get(<<"size">>, ReqFields, <<>>), 0),
+    case validate_upload_req(FromJID, Purpose, Size, MimeType) of
         ok -> send_ok_upload_response(Req, Size, Metadata);
-        {failed, Error} -> send_validation_error(IQ, Error)
+        {failed, Error} -> send_upload_validation_error(IQ, Error)
     end.
 
-validate_upload_req(Size, MimeType) ->
-    Validations = [{validate_upload_size, Size, "Invalid file size"},
-                   {validate_upload_type, MimeType, "File is an invalid type"}],
-                   % Additional upload validations can go here
+validate_upload_req(FromJID, Purpose, Size, MimeType) ->
+    Validations =
+    [{validate_upload_size, [Size], "Invalid file size"},
+     {validate_upload_type, [MimeType], "File is an invalid type"},
+     {validate_upload_permissions, [FromJID, Purpose], "Permission denied"}
+    ],
+    % Additional upload validations can go here
 
     Failures = lists:dropwhile(fun({F, P, _}) ->
-                                       apply(?MODULE, F, [P]) end, Validations),
+                                       apply(?MODULE, F, P) end, Validations),
     case Failures of
         [] -> ok;
-        [{_, _, Text}|_] -> {failed, Text}
+        [{_, _, Text}|_] -> {failed, [Text]}
     end.
 
 validate_upload_size(Size) ->
@@ -149,6 +163,9 @@ validate_upload_size(Size) ->
 
 % TODO: configure a list of valid upload types
 validate_upload_type(_MimeType) -> true.
+
+validate_upload_permissions(FromJID, Purpose) ->
+    hxep_permissions:can_upload(FromJID, Purpose).
 
 send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
                         Size, Metadata) ->
@@ -161,12 +178,21 @@ send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
     FullFields = common_fields(FromJID, FileID) ++ RespFields,
     send_response(Req, Headers, FullFields, <<"upload">>).
 
-send_download_respone(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                       ReqFields) ->
-    FileID = proplists:get_value(<<"id">>, ReqFields),
+send_download_respone(Req = #request{iq = IQ,
+                                     from_jid = FromJID},
+                      #{<<"id">> := FileID}) ->
+    case hxep_permissions:can_download(FromJID, FileID) of
+        {true, OwnerID} -> send_ok_download_response(Req, OwnerID, FileID);
+        {false, Reason} ->
+            send_download_validation_error(IQ, ["Permission denied: ",
+                                                atom_to_list(Reason)])
+    end.
 
-    {Headers, RespFields} = (backend()):make_download_response(FromJID,
-                                                            ToJID, FileID),
+
+send_ok_download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
+                          OwnerID, FileID) ->
+    {Headers, RespFields} =
+    (backend()):make_download_response(FromJID, ToJID, OwnerID, FileID),
 
     send_response(Req, Headers, RespFields, <<"download">>).
 
@@ -185,9 +211,9 @@ send_response(#request{iq = IQ}, Headers, RespFields, RespType) ->
 send_error_response(IQ = #iq{sub_el = SubEl}, Error) ->
     IQ#iq{type = error, sub_el = [SubEl, Error]}.
 
-common_fields(#jid{luser = User, lserver = Server}, FileID) ->
+common_fields(#jid{lserver = Server}, FileID) ->
     [{<<"id">>, FileID},
-     {<<"jid">>, jid:to_binary(jid:make(User, Server, FileID))}].
+     {<<"jid">>, jid:to_binary(hxep:make_jid(Server, FileID))}].
 
 to_header_element({Name, Value}) ->
     #xmlel{name = <<"header">>,

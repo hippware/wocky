@@ -14,8 +14,7 @@
          forbidden/2,
          post_is_create/2,
          create_path/2,
-         from_json/2,
-         to_json/2
+         from_json/2
         ]).
 
 -ifdef(TEST).
@@ -24,6 +23,8 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("webmachine/include/webmachine.hrl").
+
+-compile({parse_transform, do}).
 
 -record(state, {
           server                   :: binary(),
@@ -57,15 +58,14 @@ content_types_accepted(RD, Ctx) ->
     {[{"application/json", from_json}], RD, Ctx}.
 
 content_types_provided(RD, Ctx) ->
-    {[{"application/json", to_json}], RD, Ctx}.
+    {[{"application/json", undefined}], RD, Ctx}.
 
-malformed_request(RD, Ctx) ->
-    try mochijson2:decode(wrq:req_body(RD)) of
-        {struct, Elements} ->
-            malformed_request(Elements, RD, Ctx)
-    catch
-        error:_ ->
-            RD2 = set_resp_body(400, "Invalid JSON", RD),
+malformed_request(RD, Ctx = #state{server = Server}) ->
+    case parse_request(wrq:req_body(RD), Server) of
+        {ok, Fields} ->
+            {false, RD, Ctx#state{fields = Fields}};
+        {error, {Code, Error}} ->
+            RD2 = set_resp_body(Code, Error, RD),
             {true, RD2, Ctx}
     end.
 
@@ -94,46 +94,60 @@ from_json(RD, Ctx = #state{create_allowed = true}) ->
 from_json(RD, Ctx) ->
     find_and_update_user(RD, Ctx).
 
-% This function is required to keep webmachine happy (since it must be
-% specified in content_types_provided, which in turn is required to avoid
-% errors if the client inclused an 'Accept' header) but is not actually
-% called because we're using post_is_create.
-to_json(RD, Ctx) ->
-    {wrq:resp_body(RD), RD, Ctx}.
-
 %%%===================================================================
 %%% Request processing helper functions
 %%%===================================================================
 
-malformed_request(Elements, RD, Ctx = #state{server = Server}) ->
-    Fields = wocky_rest:map_keys_to_atoms(maps:from_list(Elements)),
-    case verify_fields(Fields) of
-        true ->
-            Fields2 = maybe_add_default_server(Fields, Server),
-            {false, RD, Ctx#state{fields = Fields2}};
-        false ->
-            RD2 = set_resp_body(400, "Missing required element(s)", RD),
-            {true, RD2, Ctx}
+parse_request(Body, Server) ->
+    do([error_m ||
+        Elements <- decode_json(Body),
+        Fields <- {ok, wocky_rest:map_keys_to_atoms(maps:from_list(Elements))},
+        Fields2 <- {ok, maybe_add_default_server(Fields, Server)},
+        verify_auth_fields(Fields2),
+        verify_user_fields(Fields2),
+        verify_avatar_field(Fields2),
+        {ok, Fields2}
+       ]).
+
+decode_json(Body) ->
+    try mochijson2:decode(Body) of
+        {struct, Elements} -> {ok, Elements}
+    catch
+        error:_ -> {error, {400, "Could not parse JSON"}}
     end.
 
-verify_fields(Fields) ->
-    verify_auth_fields(Fields) andalso
-    verify_user_fields(Fields).
-
-verify_auth_fields(#{sessionID := _}) -> true;
+verify_auth_fields(#{sessionID := _}) -> ok;
 verify_auth_fields(#{'X-Auth-Service-Provider'            := _,
                      'X-Verify-Credentials-Authorization' := _,
                      phoneNumber                          := _
-                    }) -> true;
-verify_auth_fields(_) -> false.
+                    }) -> ok;
+verify_auth_fields(_) -> {error, {400, "Missing authentication data"}}.
 
-verify_user_fields(#{uuid     := _,
+verify_user_fields(#{uuid     := UUID,
                      resource := _
-                    }) -> true;
+                    }) ->
+    case wocky_db_user:is_valid_id(UUID) of
+        true -> ok;
+        false -> {error, {400, "Invalid UUID"}}
+    end;
 verify_user_fields(#{userID   := _,
                      resource := _
-                    }) -> true;
-verify_user_fields(_) -> false.
+                    }) -> ok;
+verify_user_fields(_) -> {error, {400, "Missing user identifier or resource"}}.
+
+verify_avatar_field(#{avatar := Avatar,
+                      server := Server}) ->
+    case hxep:parse_url(Avatar) of
+        {ok, {Server, FileID}} -> verify_file_id(FileID);
+        _ -> {error, {400, "Invalid or non-local avatar URL"}}
+    end;
+verify_avatar_field(_) -> ok.
+
+verify_file_id(FileID) ->
+    case francus:is_valid_id(FileID) of
+        true -> ok;
+        false -> {error, {400, "Invalid file ID in URL"}}
+    end.
 
 maybe_add_default_server(Fields = #{server := _}, _) -> Fields;
 maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.
@@ -202,9 +216,12 @@ create_or_update_user(RD, Ctx = #state{fields = Fields
     end.
 
 create_user(RD, Ctx = #state{fields = Fields}) ->
-    UUID = wocky_db_user:create_user(json_to_row(Fields)),
-    finalize_changes(RD, Ctx#state{is_new = true,
-                                   fields = Fields#{uuid => UUID}}).
+    case wocky_db_user:create_user(json_to_row(Fields)) of
+        {error, E} -> create_update_error(E, RD, Ctx);
+        UUID ->
+            finalize_changes(RD, Ctx#state{is_new = true,
+                                           fields = Fields#{uuid => UUID}})
+    end.
 
 find_and_update_user(RD, Ctx = #state{fields = #{uuid := _}}) ->
     update_user(RD, Ctx);
@@ -215,8 +232,10 @@ find_and_update_user(RD, Ctx = #state{fields = Fields
     update_user(RD, Ctx#state{fields = Fields#{uuid => UUID}}).
 
 update_user(RD, Ctx = #state{fields = Fields}) ->
-    wocky_db_user:update_user(json_to_row(Fields)),
-    finalize_changes(RD, Ctx).
+    case wocky_db_user:update_user(json_to_row(Fields)) of
+        ok -> finalize_changes(RD, Ctx);
+        {error, E} -> create_update_error(E, RD, Ctx)
+    end.
 
 finalize_changes(RD, Ctx) ->
     Ctx2 = maybe_update_handle(Ctx),
@@ -257,6 +276,12 @@ set_result(RD, Ctx = #state{server = Server,
     RD3 = wrq:set_resp_body(Body, RD2),
     {true, RD3, Ctx}.
 
+create_update_error(E, RD, Ctx) ->
+    RD2 = wrq:set_resp_header("content-type", "application/json", RD),
+    RD3 = set_resp_body(409, atom_to_list(E), RD2),
+    {{halt, 409}, RD3, Ctx}.
+
+
 %%%===================================================================
 %%% Helper funcitons
 %%%===================================================================
@@ -270,7 +295,8 @@ field_mappings() ->
      {firstName,    first_name},
      {lastName,     last_name},
      {phoneNumber,  phone_number},
-     {email,        email}
+     {email,        email},
+     {avatar,       avatar}
      % Strip all other fields
     ].
 

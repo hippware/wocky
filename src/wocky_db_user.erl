@@ -100,6 +100,7 @@
 -define(TOKEN_MARKER, "$T$").
 -define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
 
+-compile({parse_transform, do}).
 
 %%%===================================================================
 %%% API
@@ -165,23 +166,79 @@ create_user(LServer, Handle, Password) ->
 %%
 %% `Fields' is a map containing fields to set. At a minimum, `server', must
 %% be set.
--spec create_user(map()) -> ejabberd:luser().
+-spec create_user(map()) -> ejabberd:luser() | {error, atom()}.
 create_user(Fields = #{server := LServer}) ->
     NewID = create_id(),
     WithUser = Fields#{user => NewID},
     CreationFields = maps:without([handle, phone_number], WithUser),
-    true = wocky_db:insert_new(LServer, user, CreationFields),
-    NewID.
+    do([error_m ||
+       maybe_update_avatar(Fields),
+       error_m:return(
+         true = wocky_db:insert_new(LServer, user, CreationFields)),
+       NewID]).
 
 %% @doc Update the data on an existing user. As with {@link create_user/1},
 %% `handle' and `phone_number' will be ignored and must be set separately.
 %%
 %% `Fields' is a map containing fields to update. At a minimum, `server' and
 %% `user' must be set.
--spec update_user(map()) -> ok.
+-spec update_user(map()) -> ok | {error, atom()}.
 update_user(Fields = #{user := User, server := LServer}) ->
     UpdateFields = maps:without([user, handle, phone_number], Fields),
-    ok = wocky_db:update(LServer, user, UpdateFields, #{user => User}).
+    do([error_m ||
+        maybe_update_avatar(Fields),
+        wocky_db:update(LServer, user, UpdateFields, #{user => User})
+       ]).
+
+%% @private
+maybe_update_avatar(#{user := UserID, avatar := Avatar, server := LServer}) ->
+    do([error_m ||
+        {FileServer, FileID} <- hxep:parse_url(Avatar),
+        check_file_location(LServer, FileServer),
+        File <- francus:open_read(LServer, FileID),
+        check_avatar_owner(UserID, File),
+        check_avatar_purpose(UserID, LServer, File),
+        francus:keep(LServer, francus:id(File)),
+        assign_avatar(UserID, LServer, Avatar)
+       ]);
+
+maybe_update_avatar(_) -> ok.
+
+%% @private
+check_file_location(Server, Server) -> ok;
+check_file_location(_, _) -> {error, not_local_file}.
+
+%% @private
+check_avatar_owner(UserID, File) ->
+    case francus:owner(File) of
+        UserID -> ok;
+        _ -> {error, not_file_owner}
+    end.
+
+%% @private
+check_avatar_purpose(UserID, LServer, File) ->
+    UserJID = jid:to_binary(jid:make(UserID, LServer, <<>>)),
+    case francus:metadata(File) of
+        #{<<"purpose">> := <<"avatar:", UserJID/binary>>} ->
+            ok;
+        _ ->
+            {error, not_avatar_file}
+    end.
+
+%% @private
+assign_avatar(UserID, LServer, Avatar) ->
+    maybe_delete_existing_avatar(UserID, LServer),
+    wocky_db:update(LServer, user, #{avatar => Avatar}, #{user => UserID}).
+
+%% @private
+maybe_delete_existing_avatar(UserID, LServer) ->
+    case wocky_db:select_one(LServer, user, avatar, #{user => UserID}) of
+        URL = <<"hxep:", _/binary>> ->
+            {ok, {Server, FileID}} = hxep:parse_url(URL),
+            francus:delete(Server, FileID);
+        _ ->
+            ok
+    end.
 
 
 %% @doc Attempts to set a handle for a given user. The attempt will fail

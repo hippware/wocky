@@ -29,8 +29,9 @@
 -type row()       :: map().
 -type rows()      :: [row()].
 -type error()     :: term().
+-type ttl()       :: pos_integer() | infinity.
 -opaque result()  :: #cql_result{}.
--export_type([query/0, value/0, values/0, row/0, result/0, error/0]).
+-export_type([query/0, value/0, values/0, row/0, result/0, error/0, ttl/0]).
 
 
 %% High Level API
@@ -123,14 +124,19 @@ insert_new(Context, Table, Values) ->
     single_result(R).
 
 run_insert_query(Context, Table, Values, UseLWT) ->
-    Query = build_insert_query(Table, keys(Values), UseLWT),
-    query(Context, Query, Values, quorum).
+    FilteredValues = strip_infinite_ttl(Values),
+    Query = build_insert_query(Table, keys(FilteredValues), UseLWT),
+    query(Context, Query, FilteredValues, quorum).
 
 build_insert_query(Table, AllKeys, UseLWT) ->
     {TTL, Keys} = lists:partition(fun (K) -> K =:= '[ttl]' end, AllKeys),
     ["INSERT INTO ", atom_to_list(Table), " ", names(Keys),
      " VALUES ", placeholders(length(Keys)), use_lwt(UseLWT),
      ttl_option(TTL)].
+
+strip_infinite_ttl(Values = #{'[ttl]' := infinity}) ->
+    maps:remove('[ttl]', Values);
+strip_infinite_ttl(Values) -> Values.
 
 placeholders(1) -> "(?)";
 placeholders(N) -> ["(", lists:duplicate(N - 1, "?, "), "?)"].
@@ -494,7 +500,7 @@ now_to_timestamp({MegaSecs, Secs, MicroSecs}) ->
 %% clamp the return to no less than 1, allowing this function's result to be
 %% safely passed straight into a TTL binding in a query.
 %%
--spec expire_to_ttl(never | non_neg_integer()) -> infinity | pos_integer().
+-spec expire_to_ttl(never | non_neg_integer()) -> ttl().
 expire_to_ttl(never) -> infinity;
 expire_to_ttl(Expire) ->
     Now = os:timestamp(),

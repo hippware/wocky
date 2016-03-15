@@ -20,9 +20,12 @@ all() ->
 groups() ->
     [
      {hxep, [sequence], [file_updown_story,
+                         file_down_bob_story,
+                         file_down_carol_story,
                          file_up_too_big_story,
                          file_up_too_small_story,
                          request_too_big_story,
+                         wrong_purpose_story,
                          wrong_type_story
                         ]}
     ].
@@ -35,6 +38,7 @@ init_per_suite(Config) ->
     test_helper:start_ejabberd(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
@@ -56,6 +60,7 @@ init_per_testcase(CaseName, Config) ->
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
 %%--------------------------------------------------------------------
 %% mod_hexp tests
 %%--------------------------------------------------------------------
@@ -68,18 +73,46 @@ file_updown_story(Config) ->
 
         %%% Upload
         {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize, Config, Alice),
+        common_upload_request(FileSize, Config, Alice, avatar_purpose()),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200),
 
 
         %% Download
         DLQueryStanza = download_stanza(<<"456">>, FileID),
-        FinalDLStanza = add_to_from(Config, DLQueryStanza),
+        FinalDLStanza = add_to_from(Config, DLQueryStanza, alice),
         DLResultStanza = escalus:send_and_wait(Alice, FinalDLStanza),
         escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
         ImageData = do_download(DLResultStanza)
     end).
+
+file_down_bob_story(Config) ->
+    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+        %% Download avatar
+        DLQueryStanza = download_stanza(<<"800">>, ?AVATAR_FILE),
+        FinalDLStanza = add_to_from(Config, DLQueryStanza, bob),
+        DLResultStanza = escalus:send_and_wait(Bob, FinalDLStanza),
+        escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
+        ?AVATAR_DATA = do_download(DLResultStanza),
+
+        %% Download media file
+        DLQueryStanza2 = download_stanza(<<"801">>, ?MEDIA_FILE),
+        FinalDLStanza2 = add_to_from(Config, DLQueryStanza2, bob),
+        DLResultStanza2 = escalus:send_and_wait(Bob, FinalDLStanza2),
+        escalus:assert(is_iq_result, [DLQueryStanza2], DLResultStanza2),
+        ?MEDIA_DATA = do_download(DLResultStanza2)
+    end).
+
+file_down_carol_story(Config) ->
+    escalus:story(Config, [{carol, 1}], fun(Carol) ->
+        %% Fail to download media file since we are neither the owner
+        %% nor the participant
+        DLQueryStanza = download_stanza(<<"805">>, ?MEDIA_FILE),
+        FinalDLStanza = add_to_from(Config, DLQueryStanza, carol),
+        DLResultStanza = escalus:send_and_wait(Carol, FinalDLStanza),
+        escalus:assert(is_iq_error, DLResultStanza)
+    end).
+
 
 file_up_too_big_story(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
@@ -87,7 +120,7 @@ file_up_too_big_story(Config) ->
         FileSize = byte_size(ImageData),
 
         {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize div 2, Config, Alice),
+        common_upload_request(FileSize div 2, Config, Alice, avatar_purpose()),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         do_upload(ResultStanza, ImageData, 413)
     end).
@@ -98,7 +131,7 @@ file_up_too_small_story(Config) ->
         FileSize = byte_size(ImageData),
 
         {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize * 2, Config, Alice),
+        common_upload_request(FileSize * 2, Config, Alice, avatar_purpose()),
 
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         do_upload(ResultStanza, ImageData, 400)
@@ -107,22 +140,36 @@ file_up_too_small_story(Config) ->
 request_too_big_story(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         {_, ResultStanza} = common_upload_request((1024*1024*10)+1,
-                                             Config, Alice),
+                                             Config, Alice, avatar_purpose()),
+        escalus:assert(is_iq_error, ResultStanza)
+    end).
+
+wrong_purpose_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        {_, ResultStanza} =
+        common_upload_request(1204, Config, Alice, <<"invalidpurpose:abc">>),
         escalus:assert(is_iq_error, ResultStanza)
     end).
 
 wrong_type_story(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         {QueryStanza, ResultStanza} = common_upload_request(1204,
-                                                            Config, Alice),
+                                                            Config, Alice,
+                                                            avatar_purpose()),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         do_upload(ResultStanza, <<"datadata">>, 415, "image/jpeg")
     end).
 
-common_upload_request(Size, Config, User) ->
+
+%%--------------------------------------------------------------------
+%% Helpers
+%%--------------------------------------------------------------------
+
+common_upload_request(Size, Config, User, Purpose) ->
     QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
-                                Size, <<"image/png">>),
-    FinalQueryStanza = add_to_from(Config, QueryStanza),
+                                Size, <<"image/png">>,
+                                Purpose),
+    FinalQueryStanza = add_to_from(Config, QueryStanza, alice),
     ResultStanza = escalus:send_and_wait(User, FinalQueryStanza),
     {QueryStanza, ResultStanza}.
 
@@ -132,10 +179,10 @@ load_test_file(Config) ->
     {ok, ImageData} = file:read_file(ImageFile),
     ImageData.
 
-add_to_from(Config, Stanza) ->
+add_to_from(Config, Stanza, User) ->
     escalus_stanza:to(
-      escalus_stanza:from(Stanza, alice),
-      escalus_users:get_server(Config, alice)).
+      escalus_stanza:from(Stanza, User),
+      escalus_users:get_server(Config, User)).
 
 do_upload(ResultStanza, ImageData, ExpectedCode) ->
     do_upload(ResultStanza, ImageData, ExpectedCode, undefined).
@@ -196,10 +243,11 @@ request_wrapper(ID, Type, Name, DataFields) ->
                               children = DataFields
                              }]}.
 
-upload_stanza(ID, FileName, Size, Type) ->
+upload_stanza(ID, FileName, Size, Type, Purpose) ->
     FieldData = [{<<"filename">>, FileName},
                  {<<"size">>, integer_to_list(Size)},
-                 {<<"mime-type">>, Type}],
+                 {<<"mime-type">>, Type},
+                 {<<"purpose">>, Purpose}],
     UploadFields = [#xmlel{name = N, children = [#xmlcdata{content = V}]}
                     || {N, V} <- FieldData],
     request_wrapper(ID, <<"set">>, <<"upload-request">>, UploadFields).
@@ -222,3 +270,7 @@ get_cdata(Element, Name) ->
 
 get_element(ParentElement, Name) ->
     exml_query:path(ParentElement, [{element, Name}]).
+
+avatar_purpose() ->
+    <<"avatar:",
+      (jid:to_binary(jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)))/binary>>.

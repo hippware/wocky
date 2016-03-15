@@ -18,37 +18,40 @@
          get_user_by_auth_name/2
         ]).
 
-
-wocky_db_user_test_() -> {
-  "wocky_db_user",
-  setup, fun before_all/0, fun after_all/1,
-  [
-    test_is_valid_id(),
-    test_does_user_exist(),
-    test_create_user_without_id(),
-    test_create_user_with_id(),
-    test_get_password(),
-    test_set_password(),
-    test_remove_user(),
-    test_generate_token(),
-    test_assign_token(),
-    test_release_token(),
-    test_get_tokens(),
-    test_check_token(),
-    test_maybe_set_handle(),
-    test_set_phone_number(),
-    test_get_user_data(),
-    test_auth_user(),
-    test_create_user_from_map(),
-    test_update_user_from_map()
-  ]
-}.
+wocky_db_user_test_() ->
+    {ok, _} = application:ensure_all_started(p1_stringprep),
+    {
+     "wocky_db_user",
+     setup, fun before_all/0, fun after_all/1,
+     [
+      test_is_valid_id(),
+      test_does_user_exist(),
+      test_create_user_without_id(),
+      test_create_user_with_id(),
+      test_get_password(),
+      test_set_password(),
+      test_remove_user(),
+      test_generate_token(),
+      test_assign_token(),
+      test_release_token(),
+      test_get_tokens(),
+      test_check_token(),
+      test_maybe_set_handle(),
+      test_set_phone_number(),
+      test_get_user_data(),
+      test_auth_user(),
+      test_create_user_from_map(),
+      test_update_user_from_map(),
+      test_set_avatar()
+     ]
+    }.
 
 before_all() ->
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [handle_to_user,
                                                phone_number_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token,
+                                                       media, media_data]),
     ok.
 
 after_all(_) ->
@@ -58,7 +61,7 @@ after_all(_) ->
 before_each() ->
     ok = wocky_db_seed:seed_tables(shared, [handle_to_user,
                                             phone_number_to_user]),
-    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user),
+    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
 after_each(_) ->
@@ -66,6 +69,14 @@ after_each(_) ->
                                              phone_number_to_user]),
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user]),
     ok.
+
+before_avatar() ->
+    before_each(),
+    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
+    ok.
+
+after_avatar(_) ->
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 test_is_valid_id() ->
   { "is_valid_id", [
@@ -365,5 +376,51 @@ test_update_user_from_map() ->
                       phone_number := ?PHONE_NUMBER,
                       first_name := <<"Olaf">>},
                     wocky_db_user:get_user_data(?ALICE, ?LOCAL_CONTEXT))
+    ]}
+  ]}.
+
+test_set_avatar() ->
+  AvatarURL = hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
+  Fields = #{user => ?ALICE,
+             server => ?LOCAL_CONTEXT,
+             avatar => AvatarURL
+            },
+  NonExistantURL = hxep:make_url(?LOCAL_CONTEXT, mod_hxep:make_file_id()),
+  MediaURL = hxep:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
+
+  { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
+    { "succesfully set avatar and delete the old one", [
+      ?_assertEqual(ok, update_user(Fields)),
+      ?_assertEqual(AvatarURL,
+                    maps:get(avatar,
+                             wocky_db_user:get_user_data(?ALICE,
+                                                         ?LOCAL_CONTEXT))),
+      ?_assertEqual(not_found,
+                    wocky_db:select_one(?LOCAL_CONTEXT, media,
+                                        id, #{id => ?AVATAR_FILE}))
+    ]},
+    { "fail to set avatar due to wrong owner", [
+      ?_assertEqual({error, not_file_owner},
+                        update_user(Fields#{user => ?BOB})),
+      ?_assertEqual(null,
+                    maps:get(avatar,
+                             wocky_db_user:get_user_data(?BOB,
+                                                         ?LOCAL_CONTEXT)))
+    ]},
+    { "fail to set avatar due to non-existant file", [
+      ?_assertEqual({error, not_found},
+                        update_user(Fields#{avatar => NonExistantURL})),
+      ?_assertEqual(AvatarURL,
+                    maps:get(avatar,
+                             wocky_db_user:get_user_data(?ALICE,
+                                                         ?LOCAL_CONTEXT)))
+    ]},
+    { "fail to set avatar due to non-avatar type file", [
+      ?_assertEqual({error, not_avatar_file},
+                        update_user(Fields#{avatar => MediaURL})),
+      ?_assertEqual(AvatarURL,
+                    maps:get(avatar,
+                             wocky_db_user:get_user_data(?ALICE,
+                                                         ?LOCAL_CONTEXT)))
     ]}
   ]}.
