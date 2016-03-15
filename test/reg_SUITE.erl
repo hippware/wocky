@@ -240,7 +240,7 @@ bypass_prefixes(_) ->
 valid_avatar(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
                                                media_data]),
-    AvatarURL = hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
+    AvatarURL = tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
     Data = [{avatar, AvatarURL}|
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
@@ -252,7 +252,7 @@ valid_avatar(_) ->
 non_existant_avatar(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
                                                media_data]),
-    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, mod_hxep:make_file_id())} |
+    Data = [{avatar, tros:make_url(?LOCAL_CONTEXT, mod_tros:make_file_id())} |
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
     {ok, {409, _Body}} = request(JSON).
@@ -260,7 +260,7 @@ non_existant_avatar(_) ->
 unowned_avatar(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
                                                media_data]),
-    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE3)} |
+    Data = [{avatar, tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE3)} |
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
     {ok, {409, _Body}} = request(JSON).
@@ -268,7 +268,7 @@ unowned_avatar(_) ->
 wrong_purpose_avatar(_) ->
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
                                                media_data]),
-    Data = [{avatar, hxep:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE)} |
+    Data = [{avatar, tros:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE)} |
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
     {ok, {409, _Body}} = request(JSON).

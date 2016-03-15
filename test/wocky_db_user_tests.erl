@@ -380,13 +380,13 @@ test_update_user_from_map() ->
   ]}.
 
 test_set_avatar() ->
-  AvatarURL = hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
+  AvatarURL = tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
   Fields = #{user => ?ALICE,
              server => ?LOCAL_CONTEXT,
              avatar => AvatarURL
             },
-  NonExistantURL = hxep:make_url(?LOCAL_CONTEXT, mod_hxep:make_file_id()),
-  MediaURL = hxep:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
+  NonExistantURL = tros:make_url(?LOCAL_CONTEXT, mod_tros:make_file_id()),
+  MediaURL = tros:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
 
   { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
     { "succesfully set avatar and delete the old one", [

@@ -137,7 +137,7 @@ verify_user_fields(_) -> {error, {400, "Missing user identifier or resource"}}.
 
 verify_avatar_field(#{avatar := Avatar,
                       server := Server}) ->
-    case hxep:parse_url(Avatar) of
+    case tros:parse_url(Avatar) of
         {ok, {Server, FileID}} -> verify_file_id(FileID);
         _ -> {error, {400, "Invalid or non-local avatar URL"}}
     end;

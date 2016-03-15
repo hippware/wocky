@@ -1,8 +1,8 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Cowboy HTTP server listener for HXEP Francus interface
--module(hxep_francus_http).
+%%% @doc Cowboy HTTP server listener for TROS-Francus interface
+-module(tros_francus_http).
 
--include("mod_hxep_francus.hrl").
+-include("mod_tros_francus.hrl").
 
 -export([init/3,
          handle/2,
@@ -26,8 +26,8 @@ handle(Req, State) ->
 
 handle_req(Req) ->
     case passes_auth(Req) of
-        {AR = #hxep_request{op = get}, Req2} -> do_get(AR, Req2);
-        {AR = #hxep_request{op = put}, Req2} -> do_put(AR, Req2);
+        {AR = #tros_request{op = get}, Req2} -> do_get(AR, Req2);
+        {AR = #tros_request{op = put}, Req2} -> do_put(AR, Req2);
         {false, Req2} ->
             success(cowboy_req:reply(401, plain_header(),
                                      "Unauthorised request", Req2))
@@ -38,7 +38,7 @@ passes_auth(Req) ->
     {User, File} = user_file(Path),
     {Auth, Req3} = cowboy_req:header(<<"authorization">>, Req2, <<>>),
     AuthReqKey = {User, File, Auth},
-    AuthResult = hxep_req_tracker:get_delete(AuthReqKey),
+    AuthResult = tros_req_tracker:get_delete(AuthReqKey),
     {AuthResult, Req3}.
 
 plain_header() -> [{<<"content-type">>, <<"text/plain">>}].
@@ -49,7 +49,7 @@ user_file(<<$/, Path/binary>>) ->
         _ -> {<<>>, <<>>}
     end.
 
-do_get(#hxep_request{request = {_User, FileID, _},
+do_get(#tros_request{request = {_User, FileID, _},
                      user_server = Context}, Req) ->
     case francus:open_read(Context, FileID) of
         %% TODO: Chunked writes for larger files
@@ -69,7 +69,7 @@ send_file(File, Req) ->
                              [{<<"content-type">>, ContentType}],
                              Data, Req)).
 
-do_put(Request = #hxep_request{request = {User, FileID, _},
+do_put(Request = #tros_request{request = {User, FileID, _},
                                user_server = Context,
                                metadata = Metadata =
                                           #{<<"content-type">> := ContentType}
@@ -86,9 +86,9 @@ do_put(Request = #hxep_request{request = {User, FileID, _},
                                Req2))
     end.
 
-write_data(F, Request = #hxep_request{size = SizeRemaining}, Req) ->
+write_data(F, Request = #tros_request{size = SizeRemaining}, Req) ->
     {Result, Data, NewSizeRemaining, Req2} = get_data(SizeRemaining, Req),
-    Request2 = Request#hxep_request{size = NewSizeRemaining},
+    Request2 = Request#tros_request{size = NewSizeRemaining},
     case Result of
         more ->
             F2 = francus:write(F, Data),
@@ -109,13 +109,13 @@ get_data(SizeRemaining, Req) ->
     end.
 
 % Exactly the right number of bytes received and written. All is well.
-finish_write(F, #hxep_request{size = 0}, Req) ->
+finish_write(F, #tros_request{size = 0}, Req) ->
     ok = francus:close(F),
     success(cowboy_req:reply(200, Req));
 
 % Too many or too few bytes received - close and delete the file and send an
 % error code.
-finish_write(F, #hxep_request{request = {_, File, _},
+finish_write(F, #tros_request{request = {_, File, _},
                               user_server = Context,
                               size = BytesRemaining}, Req) ->
     ok = francus:close(F),

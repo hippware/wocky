@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for HXEP
--module(ejabberd_hxep_SUITE).
+-module(ejabberd_tros_SUITE).
 -compile(export_all).
 
 -include_lib("ejabberd/include/jlib.hrl").
@@ -14,12 +14,12 @@
 
 all() ->
     [
-     {group, hxep}
+     {group, tros}
     ].
 
 groups() ->
     [
-     {hxep, [sequence], [file_updown_story,
+     {tros, [sequence], [file_updown_story,
                          file_down_bob_story,
                          file_down_carol_story,
                          file_up_too_big_story,

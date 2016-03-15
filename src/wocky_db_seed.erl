@@ -357,7 +357,7 @@ seed_data(user) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE,
           phone_number => ?PHONE_NUMBER, auth_user => ?AUTH_USER,
-          avatar => hxep:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE)},
+          avatar => tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE)},
         #{user => ?CAROL,  handle => <<"carol">>, first_name => <<"Carol">>,
           phone_number => <<"+4567">>, auth_user => <<"123456">>},
         #{user => ?BOB,    handle => <<"bob">>,

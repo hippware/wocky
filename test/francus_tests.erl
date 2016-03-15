@@ -49,7 +49,7 @@ after_all(_) ->
     ok = wocky_app:stop().
 
 make_file(Size) ->
-    ID = mod_hxep:make_file_id(),
+    ID = mod_tros:make_file_id(),
     Data = crypto:rand_bytes(Size),
     {ID, Data}.
 
@@ -75,7 +75,7 @@ write_file(ID, Data, User, ChunkSize, Size, ChunkList) ->
                [write_chunk(ID, ToWrite) | ChunkList]).
 
 write_chunk(FileID, Data) ->
-    ChunkID = mod_hxep:make_file_id(),
+    ChunkID = mod_tros:make_file_id(),
     V = #{chunk_id => ChunkID, file_id => FileID, data => Data},
     ok = wocky_db:insert(?SERVER, media_data, V),
     ChunkID.
@@ -112,7 +112,7 @@ test_read() ->
        { "Check return value for non-existant files",
          [
           ?_assertEqual({error, not_found},
-                        francus:open_read(?SERVER, mod_hxep:make_file_id()))
+                        francus:open_read(?SERVER, mod_tros:make_file_id()))
          ]
        },
        { "Read in smaller chunks",
@@ -150,7 +150,7 @@ test_write() ->
        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
          [?_test(
              begin
-                 ID = mod_hxep:make_file_id(),
+                 ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
                                               wocky_db_user:create_id(),
                                               metadata()),
@@ -169,7 +169,7 @@ test_expire() ->
        { "should clear a file after the expiry period",
          [?_test(
              begin
-                 ID = mod_hxep:make_file_id(),
+                 ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
                                               wocky_db_user:create_id(),
                                               metadata(), 1),
@@ -188,7 +188,7 @@ test_keep() ->
        { "should keep a previously expiring file",
          [?_test(
              begin
-                 ID = mod_hxep:make_file_id(),
+                 ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
                                               wocky_db_user:create_id(),
                                               metadata(), 2),
@@ -222,7 +222,7 @@ test_delete() ->
        },
        { "Non-existant files should still return ok on delete",
          [
-          ?_assertEqual(ok, francus:delete(?SERVER, mod_hxep:make_file_id()))
+          ?_assertEqual(ok, francus:delete(?SERVER, mod_tros:make_file_id()))
          ]
        },
        { "Check that the DB is properly empty after we deleted everything",
@@ -261,7 +261,7 @@ test_accessors() ->
          [?_test(
              begin
                  User = wocky_db_user:create_id(),
-                 {ok, F} = francus:open_write(?SERVER, mod_hxep:make_file_id(),
+                 {ok, F} = francus:open_write(?SERVER, mod_tros:make_file_id(),
                                               User, metadata()),
                  #{<<"content-type">> := CT, <<"name">> := Name}
                  = francus:metadata(F),

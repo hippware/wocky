@@ -1,4 +1,4 @@
--module(hxep_permissions).
+-module(tros_permissions).
 
 -export([can_upload/2,
          can_download/2]).

@@ -1,4 +1,6 @@
--module(hxep).
+%%% @copyright 2016+ Hippware, Inc.
+%%% @doc TROS helper functions
+-module(tros).
 
 -export([parse_url/1,
          make_jid/2,
@@ -7,7 +9,7 @@
 
 -include_lib("ejabberd/include/jlib.hrl").
 
-parse_url(<<"hxep:", JID/binary>>) ->
+parse_url(<<"tros:", JID/binary>>) ->
     #jid{lserver = Server, lresource = Resource} = jid:from_binary(JID),
     case Resource of
         <<"file/", FileID/binary>> -> {ok, {Server, FileID}};
@@ -21,4 +23,4 @@ make_jid(Server, FileID) ->
     jid:make(<<>>, Server, <<"file/", FileID/binary>>).
 
 make_url(Server, FileID) ->
-    <<"hxep:", (jid:to_binary(make_jid(Server, FileID)))/binary>>.
+    <<"tros:", (jid:to_binary(make_jid(Server, FileID)))/binary>>.

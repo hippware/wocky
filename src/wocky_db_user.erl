@@ -173,7 +173,7 @@ update_user(Fields = #{user := User, server := LServer}) ->
 %% @private
 maybe_update_avatar(#{user := UserID, avatar := Avatar, server := LServer}) ->
     do([error_m ||
-        {FileServer, FileID} <- hxep:parse_url(Avatar),
+        {FileServer, FileID} <- tros:parse_url(Avatar),
         check_file_location(LServer, FileServer),
         File <- francus:open_read(LServer, FileID),
         check_avatar_owner(UserID, File),
@@ -213,8 +213,8 @@ assign_avatar(UserID, LServer, Avatar) ->
 %% @private
 maybe_delete_existing_avatar(UserID, LServer) ->
     case wocky_db:select_one(LServer, user, avatar, #{user => UserID}) of
-        URL = <<"hxep:", _/binary>> ->
-            {ok, {Server, FileID}} = hxep:parse_url(URL),
+        URL = <<"tros:", _/binary>> ->
+            {ok, {Server, FileID}} = tros:parse_url(URL),
             francus:delete(Server, FileID);
         _ ->
             ok
