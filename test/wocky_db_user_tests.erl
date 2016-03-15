@@ -18,8 +18,6 @@
          get_user_by_auth_name/2
         ]).
 
--compile(export_all).
-
 wocky_db_user_test_() ->
     {ok, _} = application:ensure_all_started(p1_stringprep),
     {
