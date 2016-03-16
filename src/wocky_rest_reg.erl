@@ -193,7 +193,8 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
         true ->
             wocky_digits_auth:verify(Auth, PhoneNumber, AuthProvider);
         false ->
-            ok = lager:info("Invalid authentication provider: ~p", [AuthProvider]),
+            ok = lager:info("Invalid authentication provider: ~p",
+                            [AuthProvider]),
             {false, 401, "Invalid authentication provider"}
     end.
 
