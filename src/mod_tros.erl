@@ -7,9 +7,9 @@
 %%% * Impelment purpose system?
 %%% * Store supplied filename?
 %%%
--module(mod_hxep).
+-module(mod_tros).
 
--define(HXEP_NS, <<"hippware.com/hxep/http-file">>).
+-define(TROS_NS, <<"hippware.com/hxep/http-file">>).
 
 -export([
    start/2,
@@ -44,18 +44,18 @@
 
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
-    [{backend,         hxep_backend,          ?DEFAULT_BACKEND},
-     {max_upload_size, hxep_max_upload_size, ?DEFAULT_MAX_UPLOAD_SIZE}
+    [{backend,         tros_backend,          ?DEFAULT_BACKEND},
+     {max_upload_size, tros_max_upload_size, ?DEFAULT_MAX_UPLOAD_SIZE}
     ].
 
 start(Host, Opts) ->
     lists:foreach(fun(C) -> set_config_from_opt(C, Opts) end, configs()),
     (backend()):start(Opts),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?HXEP_NS,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?TROS_NS,
                                   ?MODULE, handle_iq, parallel).
 
 stop(Host) ->
-    _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?HXEP_NS),
+    _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?TROS_NS),
     (backend()):stop().
 
 -spec handle_iq(From :: ejabberd:jid(),
@@ -158,14 +158,14 @@ validate_upload_req(FromJID, Purpose, Size, MimeType) ->
     end.
 
 validate_upload_size(Size) ->
-    MaxSize = ejabberd_config:get_local_option(hxep_max_upload_size),
+    MaxSize = ejabberd_config:get_local_option(tros_max_upload_size),
     Size =< MaxSize andalso Size > 0.
 
 % TODO: configure a list of valid upload types
 validate_upload_type(_MimeType) -> true.
 
 validate_upload_permissions(FromJID, Purpose) ->
-    hxep_permissions:can_upload(FromJID, Purpose).
+    tros_permissions:can_upload(FromJID, Purpose).
 
 send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
                         Size, Metadata) ->
@@ -181,7 +181,7 @@ send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
 send_download_respone(Req = #request{iq = IQ,
                                      from_jid = FromJID},
                       #{<<"id">> := FileID}) ->
-    case hxep_permissions:can_download(FromJID, FileID) of
+    case tros_permissions:can_download(FromJID, FileID) of
         {true, OwnerID} -> send_ok_download_response(Req, OwnerID, FileID);
         {false, Reason} ->
             send_download_validation_error(IQ, ["Permission denied: ",
@@ -213,7 +213,7 @@ send_error_response(IQ = #iq{sub_el = SubEl}, Error) ->
 
 common_fields(#jid{lserver = Server}, FileID) ->
     [{<<"id">>, FileID},
-     {<<"jid">>, jid:to_binary(hxep:make_jid(Server, FileID))}].
+     {<<"jid">>, jid:to_binary(tros:make_jid(Server, FileID))}].
 
 to_header_element({Name, Value}) ->
     #xmlel{name = <<"header">>,
@@ -228,9 +228,9 @@ set_config_from_opt({CfgName, EJDName, Default}, Opts) ->
     ok.
 
 backend() ->
-    list_to_atom("mod_hxep_" ++
+    list_to_atom("mod_tros_" ++
       atom_to_list(
-        ejabberd_config:get_local_option(hxep_backend))).
+        ejabberd_config:get_local_option(tros_backend))).
 
 make_file_id() ->
     ossp_uuid:make(v1, text).

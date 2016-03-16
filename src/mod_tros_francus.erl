@@ -1,9 +1,9 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Francus backend for `mod_hxep'
--module(mod_hxep_francus).
+%%% @doc Francus backend for `mod_tros'
+-module(mod_tros_francus).
 
 -include_lib("ejabberd/include/jlib.hrl").
--include("mod_hxep_francus.hrl").
+-include("mod_tros_francus.hrl").
 
 -export([start/1,
          stop/0,
@@ -15,16 +15,16 @@
 -define(DEFAULT_PORT, 1025).
 
 start(_Opts) ->
-    hxep_req_tracker:start(),
-    Dispatch = cowboy_router:compile([{'_', [{'_', hxep_francus_http, []}]}]),
-    cowboy:start_http(hxep_francus_listener, 100,
+    tros_req_tracker:start(),
+    Dispatch = cowboy_router:compile([{'_', [{'_', tros_francus_http, []}]}]),
+    cowboy:start_http(tros_francus_listener, 100,
                        [
                         {port, port()}
                        ],
                        [{env, [{dispatch, Dispatch}]}]).
 
 stop() ->
-    hxep_req_tracker:stop().
+    tros_req_tracker:stop().
 
 make_download_response(FromJID, ToJID, OwnerID, FileID) ->
     {Auth, _User, UserServer, URL} =
@@ -66,11 +66,11 @@ make_auth() ->
     base64:encode(crypto:strong_rand_bytes(48)).
 
 add_request(Op, User, FileID, UserServer, Auth, Size, Metadata) ->
-    Req = #hxep_request{op = Op, request = {User, FileID, Auth},
+    Req = #tros_request{op = Op, request = {User, FileID, Auth},
                         user_server = UserServer, size = Size,
                         metadata = Metadata
                        },
-    hxep_req_tracker:add(Req).
+    tros_req_tracker:add(Req).
 
 port() -> ?DEFAULT_PORT.
 

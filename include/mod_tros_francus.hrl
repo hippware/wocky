@@ -1,8 +1,8 @@
 %%% @copyright 2016+ Hippware, Inc.
--ifndef(MOD_HXEP_FRANCUS_HRL).
--define(MOD_HXEP_FRANCUS_HRL, 1).
+-ifndef(MOD_TROS_FRANCUS_HRL).
+-define(MOD_TROS_FRANCUS_HRL, 1).
 
--record(hxep_request, {
+-record(tros_request, {
           op            :: get | put,
           request       :: {binary(), binary(), binary()}, % {User, File, Auth}
           user_server   :: binary(),
@@ -11,4 +11,4 @@
           tref          :: timer:tref()
          }).
 
--endif. % ifdef MOD_HXEP_FRANCUS_HRL
+-endif. % ifdef MOD_TROS_FRANCUS_HRL

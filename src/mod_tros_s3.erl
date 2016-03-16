@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Amazon AWS S3 backend for `mod_hxep'
--module(mod_hxep_s3).
+%%% @doc Amazon AWS S3 backend for `mod_tros'
+-module(mod_tros_s3).
 
 -include_lib("ejabberd/include/jlib.hrl").
 

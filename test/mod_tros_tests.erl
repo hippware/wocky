@@ -1,13 +1,13 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Test suite for mod_hxep.erl
--module(mod_hxep_tests).
+%%% @doc Test suite for mod_tros.erl
+-module(mod_tros_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_db_seed.hrl").
 
-mod_hxep_test_() -> {
-  "mod_hxep",
+mod_tros_test_() -> {
+  "mod_tros",
   [{setup, fun() -> before_all(Backend) end, fun after_all/1,
     [
      test_avatar_upload_request(Backend),
@@ -22,7 +22,7 @@ mod_hxep_test_() -> {
 }.
 
 mecks() -> [ejabberd_config, ejabberd_sm, httpd_util, ossp_uuid,
-            cowboy, mod_hxep_francus, mod_hxep_s3].
+            cowboy, mod_tros_francus, mod_tros_s3].
 
 before_all(Backend) ->
     {ok, _} = application:ensure_all_started(p1_stringprep),
@@ -33,12 +33,12 @@ before_all(Backend) ->
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
     meck:expect(ejabberd_config, add_local_option, 2, {atomic, ok}),
     meck:expect(ejabberd_config, get_local_option,
-                fun(hxep_backend) -> Backend;
-                   (s3_bucket) -> "hxep-test";
+                fun(tros_backend) -> Backend;
+                   (s3_bucket) -> "tros-test";
                    (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
                    (s3_secret_key) ->
                         "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";
-                   (hxep_max_upload_size) -> 1024 * 1024 * 10
+                   (tros_max_upload_size) -> 1024 * 1024 * 10
                 end),
     meck:expect(ejabberd_config, get_local_option,
                 fun(cqerl_node, _) -> {"127.0.0.1", 9042}
@@ -64,16 +64,16 @@ before_all(Backend) ->
 
     meck:expect(cowboy, start_http, 4, ok),
 
-    meck:expect(mod_hxep_francus, make_auth,
+    meck:expect(mod_tros_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 48)) end),
 
-    meck:expect(mod_hxep_s3, make_auth, 5,
+    meck:expect(mod_tros_s3, make_auth, 5,
                 base64:encode(binary:copy(<<6:8>>, 48))),
 
-    mod_hxep:start(?LOCAL_CONTEXT, []).
+    mod_tros:start(?LOCAL_CONTEXT, []).
 
 after_all(_) ->
-    mod_hxep:stop(?LOCAL_CONTEXT),
+    mod_tros:stop(?LOCAL_CONTEXT),
     ok = wocky_app:stop(),
     meck:unload().
 
@@ -190,7 +190,7 @@ test_meck_validate() ->
 handle_iq(FromJID, ServerJID, Packet) ->
     exml:to_binary(
       jlib:iq_to_xml(
-        mod_hxep:handle_iq(FromJID, ServerJID, Packet))).
+        mod_tros:handle_iq(FromJID, ServerJID, Packet))).
 
 new_file_uuid() ->
     <<"a65ecb4e-c633-11e5-9fdc-080027f70e96">>.
@@ -235,7 +235,7 @@ avatar_data(User) -> jid:to_binary(jid:to_bare(test_user_jid(User))).
 
 expected_upload_packet(s3) ->
     <<"<iq id='123456' type='result'><upload><headers>"
-      "<header name='host' value='hxep-test.s3.amazonaws.com'/>"
+      "<header name='host' value='tros-test.s3.amazonaws.com'/>"
       "<header name='content-type' value='image/jpeg'/>"
       "<header name='date' value='Fri, 29 Jan 2016 02:54:44 GMT'/>"
       "<header name='authorization' value="
@@ -243,7 +243,7 @@ expected_upload_packet(s3) ->
       "/></headers>"
       "<id>a65ecb4e-c633-11e5-9fdc-080027f70e96</id>"
       "<jid>", ?LOCAL_CONTEXT/binary, "/file/", (new_file_uuid())/binary,
-      "</jid><url>https://hxep-test.s3.amazonaws.com/", ?ALICE/binary, "/",
+      "</jid><url>https://tros-test.s3.amazonaws.com/", ?ALICE/binary, "/",
       (new_file_uuid())/binary, "</url><method>PUT</method>"
       "</upload></iq>">>;
 
@@ -263,12 +263,12 @@ expected_upload_packet(francus) ->
 
 expected_download_packet(s3, FileID) ->
     <<"<iq id='123456' type='result'><download><headers>"
-      "<header name='host' value='hxep-test.s3.amazonaws.com'/>"
+      "<header name='host' value='tros-test.s3.amazonaws.com'/>"
       "<header name='date' value='Fri, 29 Jan 2016 02:54:44 GMT'/>"
       "<header name='authorization' value="
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
       "/></headers>"
-      "<url>https://hxep-test.s3.amazonaws.com/", ?ALICE/binary, "/",
+      "<url>https://tros-test.s3.amazonaws.com/", ?ALICE/binary, "/",
       FileID/binary, "</url></download></iq>">>;
 
 expected_download_packet(francus, FileID) ->
