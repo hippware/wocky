@@ -70,9 +70,7 @@
 -export_type([handle/0, phone_number/0, password/0, token/0]).
 
 %% API
--export([create_id/0,
-         is_valid_id/1,
-         create_user/3,
+-export([create_user/3,
          create_user/4,
          create_user/1,
          update_user/1,
@@ -93,8 +91,7 @@
          get_user_data/2,
          get_user_by_auth_name/2,
          get_user_by_handle/1,
-         get_user_by_phone_number/1
-        ]).
+         get_user_by_phone_number/1]).
 
 -define(TOKEN_BYTES, 32).
 -define(TOKEN_MARKER, "$T$").
@@ -102,37 +99,20 @@
 
 -compile({parse_transform, do}).
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-%% @doc Generates a timeuuid in canonical text format for use as a user id.
--spec create_id() -> ejabberd:luser().
-create_id() ->
-    ossp_uuid:make(v1, text).
-
-
-%% @doc Returns true if the user ID is a valid UUID.
--spec is_valid_id(ejabberd:luser()) -> boolean().
-is_valid_id(LUser) ->
-    try
-        ossp_uuid:import(LUser, binary),
-        true
-    catch
-        _:_ ->
-            false
-    end.
-
-
-%% @equiv create_user(create_id(), LServer, Handle, Password)
+%% @equiv create_user(wocky_db:create_id(), LServer, Handle, Password)
 %%
-%% @see create_id/0
+%% @see wocky_db:create_id/0
 %% @see create_user/4
 %%
 -spec create_user(ejabberd:lserver(), handle(), password())
                  -> {ok, ejabberd:luser()} | {error, exists}.
 create_user(LServer, Handle, Password) ->
-    LUser = create_id(),
+    LUser = wocky_db:create_id(),
     case create_user(LUser, LServer, Handle, Password) of
         ok -> {ok, LUser};
         Error -> Error
@@ -149,7 +129,7 @@ create_user(LServer, Handle, Password) ->
 %% be set.
 -spec create_user(map()) -> ejabberd:luser() | {error, atom()}.
 create_user(Fields = #{server := LServer}) ->
-    NewID = create_id(),
+    NewID = wocky_db:create_id(),
     WithUser = Fields#{user => NewID},
     CreationFields = maps:without([handle, phone_number], WithUser),
     do([error_m ||
@@ -309,7 +289,7 @@ update_lookup(LUser, LServer, Table, Col, Key) ->
                   handle(), password())
                  -> ok | {error, exists | invalid_id}.
 create_user(LUser, LServer, Handle, Password) ->
-    create_user(LUser, LServer, Handle, Password, is_valid_id(LUser)).
+    create_user(LUser, LServer, Handle, Password, wocky_db:is_valid_id(LUser)).
 
 %% @private
 create_user(LUser, LServer, Handle, Password, true) ->
@@ -341,7 +321,7 @@ create_user_record(LUser, LServer, Handle, Password) ->
 %%
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
 does_user_exist(LUser, LServer) ->
-    does_user_exist(LUser, LServer, is_valid_id(LUser)).
+    does_user_exist(LUser, LServer, wocky_db:is_valid_id(LUser)).
 
 %% @private
 does_user_exist(LUser, LServer, true) ->
@@ -378,7 +358,7 @@ get_phone_number(LUser, LServer) ->
 
 %% @private
 get_lookup(LUser, LServer, Col) ->
-    get_lookup(LUser, LServer, Col, is_valid_id(LUser)).
+    get_lookup(LUser, LServer, Col, wocky_db:is_valid_id(LUser)).
 
 %% @private
 get_lookup(LUser, LServer, Col, true) ->
@@ -400,7 +380,7 @@ get_lookup(_, _, _, false) ->
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> password() | {error, not_found}.
 get_password(LUser, LServer) ->
-    get_password(LUser, LServer, is_valid_id(LUser)).
+    get_password(LUser, LServer, wocky_db:is_valid_id(LUser)).
 
 %% @private
 get_password(LUser, LServer, true) ->
@@ -534,7 +514,7 @@ assign_token(LUser, LServer, LResource) ->
 -spec release_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
                    -> ok.
 release_token(LUser, LServer, LResource) ->
-    ok = release_token(LUser, LServer, LResource, is_valid_id(LUser)).
+    ok = release_token(LUser, LServer, LResource, wocky_db:is_valid_id(LUser)).
 
 %% @private
 release_token(LUser, LServer, LResource, true) ->
@@ -554,7 +534,7 @@ release_token(_, _, _, false) ->
 %%
 -spec get_tokens(ejabberd:luser(), ejabberd:lserver()) -> [token()].
 get_tokens(LUser, LServer) ->
-    Rows = get_tokens(LUser, LServer, is_valid_id(LUser)),
+    Rows = get_tokens(LUser, LServer, wocky_db:is_valid_id(LUser)),
     [Token || #{auth_token := Token} <- Rows].
 
 %% @private

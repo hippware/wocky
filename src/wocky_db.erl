@@ -30,8 +30,10 @@
 -type rows()      :: [row()].
 -type error()     :: term().
 -type ttl()       :: pos_integer() | infinity.
+-type id()        :: binary().
 -opaque result()  :: #cql_result{}.
--export_type([query/0, value/0, values/0, row/0, result/0, error/0, ttl/0]).
+-export_type([query/0, value/0, values/0, row/0, result/0, error/0,
+              ttl/0, id/0]).
 
 
 %% High Level API
@@ -44,8 +46,9 @@
          single_result/1, fetch_more/1]).
 
 %% Utility API
--export([seconds_to_timestamp/1, timestamp_to_seconds/1, timestamp_to_now/1,
-         now_to_timestamp/1, expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1]).
+-export([create_id/0, is_valid_id/1, seconds_to_timestamp/1,
+         timestamp_to_seconds/1, timestamp_to_now/1, now_to_timestamp/1,
+         expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1]).
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
@@ -458,6 +461,22 @@ fetch_more(Result) ->
 %%====================================================================
 %% Utility API
 %%====================================================================
+
+%% @doc Generates a timeuuid in canonical text format for use as an id.
+-spec create_id() -> id().
+create_id() ->
+    ossp_uuid:make(v1, text).
+
+%% @doc Returns true if the ID is a valid UUID.
+-spec is_valid_id(id()) -> boolean().
+is_valid_id(ID) ->
+    try
+        ossp_uuid:import(ID, binary),
+        true
+    catch
+        _:_ ->
+            false
+    end.
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
 %%

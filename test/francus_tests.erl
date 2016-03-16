@@ -81,7 +81,7 @@ write_chunk(FileID, Data) ->
     ChunkID.
 
 before_each() ->
-    User = wocky_db_user:create_id(),
+    User = wocky_db:create_id(),
     ChunkSize = francus:default_chunk_size(),
     Files = [make_file(Size) || Size <- test_sizes()],
     [write_file(ID, Data, User, ChunkSize, byte_size(Data), [])
@@ -152,7 +152,7 @@ test_write() ->
              begin
                  ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
-                                              wocky_db_user:create_id(),
+                                              wocky_db:create_id(),
                                               metadata()),
                  Data = crypto:rand_bytes(Size),
                  F2 = francus:write(F, Data),
@@ -171,7 +171,7 @@ test_expire() ->
              begin
                  ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
-                                              wocky_db_user:create_id(),
+                                              wocky_db:create_id(),
                                               metadata(), 1),
                  F1 = francus:write(F, <<"abc">>),
                  francus:close(F1),
@@ -190,7 +190,7 @@ test_keep() ->
              begin
                  ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?SERVER, ID,
-                                              wocky_db_user:create_id(),
+                                              wocky_db:create_id(),
                                               metadata(), 2),
                  F1 = francus:write(F, <<"abc">>),
                  francus:close(F1),
@@ -260,7 +260,7 @@ test_accessors() ->
        { "Test accessors for new file",
          [?_test(
              begin
-                 User = wocky_db_user:create_id(),
+                 User = wocky_db:create_id(),
                  {ok, F} = francus:open_write(?SERVER, mod_tros:make_file_id(),
                                               User, metadata()),
                  #{<<"content-type">> := CT, <<"name">> := Name}
