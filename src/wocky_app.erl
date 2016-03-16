@@ -82,7 +82,8 @@ set_wocky_env() ->
               Value ->
                   Value
           end,
-    ok = lager:info("Wocky starting in the '~s' environment.", [Env]),
+    ok = lager:info("Wocky ~s starting in the '~s' environment.",
+                    [version(), Env]),
     application:set_env(wocky, wocky_env, Env).
 
 maybe_start_ejabberd() ->
