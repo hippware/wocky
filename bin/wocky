@@ -494,14 +494,7 @@ case "$1" in
         ;;
 
     version)
-        WKY=`ls $RELEASE_ROOT_DIR/lib/wocky*/ebin/wocky.app | head -1`
-        if [ $# == 2 ] && [ $2 == '--simple' ]
-        then
-            relx_nodetool version $WKY
-        else
-            echo -n "wocky version "
-            relx_nodetool version $WKY
-        fi
+        relx_nodetool version
         ;;
 
     *)
