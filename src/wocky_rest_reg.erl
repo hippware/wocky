@@ -61,12 +61,12 @@ content_types_provided(RD, Ctx) ->
     {[{"application/json", undefined}], RD, Ctx}.
 
 malformed_request(RD, Ctx = #state{server = Server}) ->
-    ok = lager:info("Received REST request: ~p", [wrq:req_body(RD)]),
+    ok = lager:warning("Received REST request: ~p", [wrq:req_body(RD)]),
     case parse_request(wrq:req_body(RD), Server) of
         {ok, Fields} ->
             {false, RD, Ctx#state{fields = Fields}};
         {error, {Code, Error}} ->
-            ok = lager:info("Error in parsing phase: ~p ~p", [Code, Error]),
+            ok = lager:warning("Error in parsing phase: ~p ~p", [Code, Error]),
             RD2 = set_resp_body(Code, Error, RD),
             {true, RD2, Ctx}
     end.
@@ -174,7 +174,7 @@ authenticate(
         true ->
             {true, session};
         false ->
-            ok = lager:info("Invalid sessionID: ~p", [SessionID]),
+            ok = lager:warning("Invalid sessionID: ~p", [SessionID]),
             {false, 401, "Invalid sessionID"}
     end.
 
@@ -183,7 +183,7 @@ verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) ->
         true ->
             {true, digits};
         {false, Code, Error} ->
-            ok = lager:info("Failed digits auth: ~p ~p", [Code, Error]),
+            ok = lager:warning("Failed digits auth: ~p ~p", [Code, Error]),
             {false, Code, Error}
     end.
 
@@ -193,7 +193,7 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
         true ->
             wocky_digits_auth:verify(Auth, PhoneNumber, AuthProvider);
         false ->
-            ok = lager:info("Invalid authentication provider: ~p",
+            ok = lager:warning("Invalid authentication provider: ~p",
                             [AuthProvider]),
             {false, 401, "Invalid authentication provider"}
     end.
@@ -281,14 +281,14 @@ set_result(RD, Ctx = #state{server = Server,
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
     RD3 = wrq:set_resp_body(Body, RD2),
 
-    ok = lager:info("Operation complete. Replying: ~p", [Body]),
+    ok = lager:warning("Operation complete. Replying: ~p", [Body]),
     {true, RD3, Ctx}.
 
 create_update_error(E, RD, Ctx) ->
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
     RD3 = set_resp_body(409, atom_to_list(E), RD2),
 
-    ok = lager:info("Error in operation: ~p", [E]),
+    ok = lager:warning("Error in operation: ~p", [E]),
     {{halt, 409}, RD3, Ctx}.
 
 
