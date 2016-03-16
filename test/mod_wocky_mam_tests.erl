@@ -276,7 +276,7 @@ limit_results(N, Results, before) ->
 
 match_rows(Rows) -> [match_row(R) || R <- Rows].
 match_row(Row = #{time := Time}) ->
-    Row#{time => uuid:get_v1_time(Time) div 1000}.
+    Row#{time => uuid:get_v1_time(uuid:string_to_uuid(Time)) div 1000}.
 
 users_to_test() ->
     Users = wocky_db_seed:archive_users(),

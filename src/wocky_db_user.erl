@@ -71,7 +71,6 @@
 
 %% API
 -export([create_id/0,
-         normalize_id/1,
          is_valid_id/1,
          create_user/3,
          create_user/4,
@@ -111,25 +110,6 @@
 create_id() ->
     ossp_uuid:make(v1, text).
 
-
-%% @doc Takes a raw binary UUID (as retrieved through C* queries) and converts
-%% to the cannonical textual binary UUID form.
--spec normalize_id(binary() | not_found) -> ejabberd:luser() | not_found.
-normalize_id(not_found) ->
-    not_found;
-normalize_id(UUID) ->
-    ossp_uuid:import(UUID, text).
-
-
-%% @doc Normalize all fields in a user record map (currently only the `user'
-%% field).
-%%
-%% `Data' the user record map to be normalized
--spec normalize_user(map() | not_found) -> map() | not_found.
-normalize_user(not_found) ->
-    not_found;
-normalize_user(Data = #{user := User}) ->
-    Data#{user => normalize_id(User)}.
 
 %% @doc Returns true if the user ID is a valid UUID.
 -spec is_valid_id(ejabberd:luser()) -> boolean().
@@ -587,8 +567,7 @@ check_token(LUser, LServer, Resource, Token) ->
 -spec get_user_data(ejabberd:lserver(), ejabberd:lserver())
         -> map() | not_found.
 get_user_data(LUser, LServer) ->
-    Data = wocky_db:select_row(LServer, user, all, #{user => LUser}),
-    normalize_user(Data).
+    wocky_db:select_row(LServer, user, all, #{user => LUser}).
 
 
 %% @doc Returns the user ID associated with an authorization user name such
@@ -601,8 +580,7 @@ get_user_data(LUser, LServer) ->
 -spec get_user_by_auth_name(ejabberd:lserver(), auth_name())
         -> ejabberd:luser() | not_found.
 get_user_by_auth_name(LServer, AuthUser) ->
-    normalize_id(
-      wocky_db:select_one(LServer, auth_user, user, #{auth_user => AuthUser})).
+    wocky_db:select_one(LServer, auth_user, user, #{auth_user => AuthUser}).
 
 
 %% @doc Returns the user ID and server associated with an given handle
@@ -630,7 +608,7 @@ get_user_by_phone_number(PhoneNumber) ->
 get_user_by_gkey(Table, Col, Value) ->
     case wocky_db:select_row(shared, Table, [user, server], #{Col => Value}) of
         #{user := User, server := Server} ->
-            {normalize_id(User), Server};
+            {User, Server};
         not_found ->
             not_found
     end.
