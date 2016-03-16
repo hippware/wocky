@@ -494,6 +494,12 @@ case "$1" in
         ;;
 
     version)
+        # Make sure a node IS running
+        if ! relx_nodetool "ping" > /dev/null; then
+            echo "Node is not running!"
+            exit 1
+        fi
+
         relx_nodetool version
         ;;
 
