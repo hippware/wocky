@@ -51,4 +51,10 @@
 -define(AVATAR_DATA3, <<"bob's avatar file contents">>).
 -define(MEDIA_DATA,   <<"media file contents">>).
 
+-define(PRIVACY_LIST1, <<"privacy list 1">>).
+-define(PRIVACY_LIST2, <<"privacy list 2">>).
+
+-define(PRIVACY_ITEM1, <<"3f2d5e24-ecba-11e5-951e-08002719e96e">>).
+-define(PRIVACY_ITEM2, <<"3fa76372-ecba-11e5-a383-08002719e96e">>).
+-define(PRIVACY_ITEM3, <<"3fd96ee4-ecba-11e5-83d6-08002719e96e">>).
 -endif.
