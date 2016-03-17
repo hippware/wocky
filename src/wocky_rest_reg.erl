@@ -26,6 +26,8 @@
 
 -compile({parse_transform, do}).
 
+-define(NOT_EMPTY, <<_:8, _/binary>>).
+
 -record(state, {
           server                   :: binary(),
           auth_providers           :: [string()],
@@ -119,23 +121,18 @@ decode_json(Body) ->
         error:_ -> {error, {400, "Could not parse JSON"}}
     end.
 
-verify_auth_fields(#{sessionID := _}) -> ok;
+verify_auth_fields(#{sessionID := ?NOT_EMPTY}) -> ok;
 verify_auth_fields(#{'X-Auth-Service-Provider'            := _,
                      'X-Verify-Credentials-Authorization' := _,
-                     phoneNumber                          := _
-                    }) -> ok;
+                     phoneNumber                          := ?NOT_EMPTY}) -> ok;
 verify_auth_fields(_) -> {error, {400, "Missing authentication data"}}.
 
-verify_user_fields(#{uuid     := UUID,
-                     resource := _
-                    }) ->
+verify_user_fields(#{uuid := UUID, resource := ?NOT_EMPTY}) ->
     case wocky_db_user:is_valid_id(UUID) of
         true -> ok;
         false -> {error, {400, "Invalid UUID"}}
     end;
-verify_user_fields(#{userID   := _,
-                     resource := _
-                    }) -> ok;
+verify_user_fields(#{userID := ?NOT_EMPTY, resource := ?NOT_EMPTY}) -> ok;
 verify_user_fields(_) -> {error, {400, "Missing user identifier or resource"}}.
 
 verify_avatar_field(#{avatar := Avatar,
