@@ -19,8 +19,10 @@
          missing_fields/1,
          unauthorized_new/1,
          new_user/1,
+         new_ephemeral_user/1,
          unauthorized_update/1,
          update/1,
+         update_ephemeral_user/1,
          invalid_phone_number/1,
          session_id_update/1,
          session_id_update_phone_number/1,
@@ -41,6 +43,7 @@
 
 -define(URL, "http://localhost:1096/wocky/v1/user").
 -define(TEST_HANDLE, <<"TinyRooooobot">>).
+-define(EPHEMERAL_NUMBER, <<"+12126647665">>).
 
 all() -> [{group, reg}].
 
@@ -54,8 +57,10 @@ reg_cases() ->
      missing_fields,
      unauthorized_new,
      new_user,
+     new_ephemeral_user,
      unauthorized_update,
      update,
+     update_ephemeral_user,
      invalid_phone_number,
      session_id_update,
      session_id_update_phone_number,
@@ -137,6 +142,15 @@ new_user(_) ->
     verify_new_result(Body),
     stop_digits_server().
 
+new_ephemeral_user(_) ->
+    Data = lists:keyreplace(phoneNumber, 1, test_data(),
+                            {phoneNumber, ?EPHEMERAL_NUMBER}),
+    JSON = encode(Data),
+    {ok, {201, _Body}} = request(JSON),
+    not_found = wocky_db_user:get_user_by_phone_number(?EPHEMERAL_NUMBER),
+    not_found = wocky_db_user:get_user_by_handle(?TEST_HANDLE),
+    not_found = wocky_db_user:get_user_by_auth_name(?SERVER, ?AUTH_USER).
+
 unauthorized_update(_) ->
     start_digits_server(false),
     User = create_user(),
@@ -155,6 +169,16 @@ update(_) ->
     {ok, {201, _Body}} = request(JSON),
     verify_handle(User, <<"NewHandle">>),
     stop_digits_server().
+
+update_ephemeral_user(_) ->
+    User = create_user(),
+    Data = lists:keyreplace(phoneNumber, 1, test_data(),
+                            {phoneNumber, ?EPHEMERAL_NUMBER}),
+    Data2 = lists:keyreplace(handle, 1, Data, {handle, <<"NewHandle">>}),
+    JSON = encode(Data2),
+    {ok, {201, _Body}} = request(JSON),
+    not_found = wocky_db_user:get_user_by_phone_number(?EPHEMERAL_NUMBER),
+    verify_handle(User, ?TEST_HANDLE).
 
 invalid_phone_number(_) ->
     start_digits_server(true),
@@ -181,7 +205,6 @@ session_id_update(_) ->
     <<"NewHandle">> = proplists:get_value(<<"handle">>, Elements2),
     verify_handle(User, <<"NewHandle">>),
     stop_digits_server().
-
 
 session_id_update_phone_number(_) ->
     start_digits_server(true),
