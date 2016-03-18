@@ -98,10 +98,11 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
         IQ#iq{type = result,
               sub_el = create_sub_el(ItemsToSend, VersionToSend)}
     catch
-        Class:Exception ->
-            ok = lager:error("Error retrieving roster for user '~s': ~p ~p ~p",
-                             [jid:to_binary(From), Class, Exception,
-                              erlang:get_stacktrace()]),
+        Class:Reason ->
+            ok = lager:error("Error retrieving roster for user '~ts': ~ts",
+                             [jid:to_binary(From),
+                              lager:pr_stacktrace(erlang:get_stacktrace(),
+                                                  {Class, Reason})]),
             IQ#iq{type = error,
                   sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
     end.
@@ -568,8 +569,9 @@ route(Module, From, To, Packet) ->
     catch
         Class:Exception ->
             lager:error("error when routing from=~ts to=~ts in module=~p, "
-                        "reason=~p:~p, packet=~ts, stack_trace=~p",
-                        [jid:to_binary(From), jid:to_binary(To),
-                         Module, Class, Exception, exml:to_binary(Packet),
-                         erlang:get_stacktrace()])
+                        "packet=~ts, stack_trace=~ts",
+                        [jid:to_binary(From), jid:to_binary(To), Module,
+                         exml:to_binary(Packet),
+                         lager:pr_stacktrace(erlang:get_stacktrace(),
+                                             {Class, Exception})])
     end.
