@@ -15,6 +15,7 @@
 
 -export([
          incorrect_req_type/1,
+         invalid_json/1,
          missing_fields/1,
          unauthorized_new/1,
          new_user/1,
@@ -49,6 +50,7 @@ groups() ->
 reg_cases() ->
     [
      incorrect_req_type,
+     invalid_json,
      missing_fields,
      unauthorized_new,
      new_user,
@@ -102,9 +104,25 @@ end_per_testcase(_CaseName, Config) ->
 incorrect_req_type(_) ->
     {ok, {405, _}} = httpc:request(get, {?URL, []}, [], [{full_result, false}]).
 
+invalid_json(_) ->
+    {ok, {400, _}} = request(<<"bogus">>).
+
 missing_fields(_) ->
     JSON2 = encode(proplists:delete(resource, test_data())),
-    {ok, {400, _}} = request(JSON2).
+    {ok, {400, _}} = request(JSON2),
+
+    JSON3 = encode(proplists:delete(phoneNumber, test_data())),
+    {ok, {400, _}} = request(JSON3),
+
+    JSON4 = encode([{uuid, <<"bogus">>} | test_data()]),
+    {ok, {400, _}} = request(JSON4),
+
+    JSON5 = encode([{avatar, <<"bogus">>} | test_data()]),
+    {ok, {400, _}} = request(JSON5),
+
+    AvatarURL = tros:make_url(?LOCAL_CONTEXT, <<"bogus">>),
+    JSON6 = encode([{avatar, AvatarURL} | test_data()]),
+    {ok, {400, _}} = request(JSON6).
 
 unauthorized_new(_) ->
     start_digits_server(false),
@@ -133,7 +151,7 @@ update(_) ->
     start_digits_server(true),
     User = create_user(),
     Data = lists:keyreplace(handle, 1, test_data(), {handle, <<"NewHandle">>}),
-    JSON = encode(Data),
+    JSON = encode([{server, ?SERVER} | Data]),
     {ok, {201, _Body}} = request(JSON),
     verify_handle(User, <<"NewHandle">>),
     stop_digits_server().
