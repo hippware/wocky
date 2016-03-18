@@ -370,7 +370,6 @@ table_definition(privacy_item) ->
        primary_key = [id]
     }.
 
-
 table_indexes(session) -> [
     [node]
 ];
