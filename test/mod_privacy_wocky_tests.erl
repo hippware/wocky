@@ -28,7 +28,7 @@ mod_privacy_wocky_test_() -> {
   ]
  }.
 
-privacy_tables() -> [privacy, privacy_list, privacy_item].
+privacy_tables() -> [privacy, privacy_item].
 
 before_all() ->
     {ok, _} = application:ensure_all_started(p1_stringprep),

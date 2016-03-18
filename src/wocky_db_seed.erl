@@ -336,28 +336,18 @@ table_definition(privacy) ->
        primary_key = [user]
     };
 
-% mod_privacy privacy lists
-table_definition(privacy_list) ->
-    #table_def{
-       name = privacy_list,
-       columns = [
-           {user, timeuuid},        % User ID of privacy list owner
-           {name, text},            % Name of the privacy list
-           {items, {set, timeuuid}} % Set of items in the list
-       ],
-       primary_key = [user, name]
-    };
-
 % mod_privacy privacy list items
 table_definition(privacy_item) ->
     #table_def{
        name = privacy_item,
        columns = [
-           {id, timeuuid},  % ID of this item
-           {type, text},    % Type of this item: jid | subscription | group
-           {value, text},   % For subscriptions: none | from | to | both
-                            % For JID: String representation
-                            % For group: Name of the group
+           {user, timeuuid},  % User ID for this item
+           {list, text},      % List name for this item
+           {id, timeuuid},    % ID of this item
+           {type, text},      % Type of this item: jid | subscription | group
+           {value, text},     % For subscriptions: none | from | to | both
+                              % For JID: String representation
+                              % For group: Name of the group
            {action, boolean}, % true = allow | false = deny
            {item_order, int}, % Sequence in which to apply this item
            % Events to which to apply this item:
@@ -367,7 +357,7 @@ table_definition(privacy_item) ->
            {match_presence_in, boolean},
            {match_presence_out, boolean}
        ],
-       primary_key = [id]
+       primary_key = [user, list, id]
     }.
 
 table_indexes(session) -> [
@@ -495,23 +485,21 @@ seed_data(privacy) ->
        lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
      #{user => ?BOB, default => null,
        lists => []}];
-seed_data(privacy_list) ->
-    [#{user => ?ALICE, name => ?PRIVACY_LIST1,
-       items => [?PRIVACY_ITEM1, ?PRIVACY_ITEM2]},
-     #{user => ?ALICE, name => ?PRIVACY_LIST2,
-       items => [?PRIVACY_ITEM3]}];
 seed_data(privacy_item) ->
-    [#{id => ?PRIVACY_ITEM1, type => <<"jid">>,
+    [#{user => ?ALICE, list => ?PRIVACY_LIST1,
+       id => ?PRIVACY_ITEM1, type => <<"jid">>,
        value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
        action => false, item_order => 1, match_all => true,
        match_iq => false, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{id => ?PRIVACY_ITEM2, type => <<"jid">>,
+     #{user => ?ALICE, list => ?PRIVACY_LIST1,
+       id => ?PRIVACY_ITEM2, type => <<"jid">>,
        value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
        action => false, item_order => 2, match_all => false,
        match_iq => true, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{id => ?PRIVACY_ITEM3, type => <<"subscription">>,
+     #{user => ?ALICE, list => ?PRIVACY_LIST2,
+       id => ?PRIVACY_ITEM3, type => <<"subscription">>,
        value => <<"both">>,
        action => false, item_order => 1, match_all => false,
        match_iq => false, match_message => true,

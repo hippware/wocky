@@ -85,7 +85,7 @@ suite() ->
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
     wocky_db_seed:prepare_tables(?LOCAL_CONTEXT,
-                                 [privacy, privacy_list, privacy_item]),
+                                 [privacy, privacy_item]),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     [{escalus_no_stanzas_after_story, true} |
      escalus:init_per_suite(Config)].
@@ -97,7 +97,7 @@ end_per_suite(Config) ->
 
 init_per_group(_GroupName, Config) ->
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT,
-                               [privacy, privacy_list, privacy_item]),
+                               [privacy, privacy_item]),
     escalus:create_users(Config, {by_name, [alice, bob]}).
 
 end_per_group(_GroupName, Config) ->
