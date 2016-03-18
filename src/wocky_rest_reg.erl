@@ -94,10 +94,20 @@ create_path(RD, Ctx) -> {"", RD, Ctx}.
 
 -spec from_json(#wm_reqdata{}, #state{}) ->
     {true, #wm_reqdata{}, #state{}}.
-from_json(RD, Ctx = #state{create_allowed = true}) ->
-    create_or_update_user(RD, Ctx);
-from_json(RD, Ctx) ->
-    find_and_update_user(RD, Ctx).
+from_json(RD, Ctx = #state{create_allowed = true, fields = Fields}) ->
+    try
+        create_or_update_user(RD, Ctx)
+    catch
+        Class:Reason ->
+            create_internal_error(Class, Reason, Fields, RD, Ctx)
+    end;
+from_json(RD, Ctx = #state{fields = Fields}) ->
+    try
+        find_and_update_user(RD, Ctx)
+    catch
+        Class:Reason ->
+            create_internal_error(Class, Reason, Fields, RD, Ctx)
+    end.
 
 %%%===================================================================
 %%% Request processing helper functions
@@ -290,6 +300,12 @@ create_update_error(E, RD, Ctx) ->
 
     ok = lager:warning("Error during registration: ~p", [E]),
     {{halt, 409}, RD3, Ctx}.
+
+create_internal_error(Class, Reason, Fields, RD, Ctx) ->
+  ST = lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason}),
+  Msg = io_lib:format("Internal error registering user. ~p ~s", [Fields, ST]),
+  ok = lager:error(Msg),
+  {{halt, 500}, set_resp_body(500, Msg, RD), Ctx}.
 
 
 %%%===================================================================
