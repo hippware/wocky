@@ -329,11 +329,12 @@ table_definition(privacy) ->
     #table_def{
        name = privacy,
        columns = [
-           {user, timeuuid},     % User ID of privacy setting owner
+           {user, timeuuid},     % User ID (userpart of JID)
+           {server, text},       % Server (domainpart of JID)
            {default, text},      % Default privacy list
            {lists, {set, text}}  % Set of configured privacy lists
        ],
-       primary_key = [user]
+       primary_key = [user, server]
     };
 
 % mod_privacy privacy list items
@@ -341,7 +342,8 @@ table_definition(privacy_item) ->
     #table_def{
        name = privacy_item,
        columns = [
-           {user, timeuuid},  % User ID for this item
+           {user, timeuuid},  % User ID (userpart of JID)
+           {server, text},    % Server (domainpart of JID)
            {list, text},      % List name for this item
            {id, timeuuid},    % ID of this item
            {type, text},      % Type of this item: jid | subscription | group
@@ -357,7 +359,7 @@ table_definition(privacy_item) ->
            {match_presence_in, boolean},
            {match_presence_out, boolean}
        ],
-       primary_key = [user, list, id]
+       primary_key = [user, server, list, id]
     }.
 
 table_indexes(session) -> [
@@ -481,24 +483,24 @@ seed_data(media_data) ->
      #{chunk_id => ?MEDIA_CHUNK,   file_id => ?MEDIA_FILE,
        data => ?MEDIA_DATA}];
 seed_data(privacy) ->
-    [#{user => ?ALICE, default => ?PRIVACY_LIST1,
+    [#{user => ?ALICE, server => ?LOCAL_CONTEXT, default => ?PRIVACY_LIST1,
        lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
-     #{user => ?BOB, default => null,
+     #{user => ?BOB, server => ?LOCAL_CONTEXT, default => null,
        lists => []}];
 seed_data(privacy_item) ->
-    [#{user => ?ALICE, list => ?PRIVACY_LIST1,
+    [#{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST1,
        id => ?PRIVACY_ITEM1, type => <<"jid">>,
        value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
        action => false, item_order => 1, match_all => true,
        match_iq => false, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{user => ?ALICE, list => ?PRIVACY_LIST1,
+     #{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST1,
        id => ?PRIVACY_ITEM2, type => <<"jid">>,
        value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
        action => false, item_order => 2, match_all => false,
        match_iq => true, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{user => ?ALICE, list => ?PRIVACY_LIST2,
+     #{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST2,
        id => ?PRIVACY_ITEM3, type => <<"subscription">>,
        value => <<"both">>,
        action => false, item_order => 1, match_all => false,

@@ -26,7 +26,8 @@ init(_Host, _Opts) ->
     ok.
 
 get_default_list(LUser, LServer) ->
-    case wocky_db:select_one(LServer, privacy, default, #{user => LUser}) of
+    case wocky_db:select_one(LServer, privacy, default,
+                             #{user => LUser, server => LServer}) of
         not_found ->
             {error, not_found};
         null ->
@@ -42,7 +43,7 @@ get_default_list(LUser, LServer) ->
 
 get_list_names(LUser, LServer) ->
     case wocky_db:select_row(LServer, privacy, [default, lists],
-                             #{user => LUser}) of
+                             #{user => LUser, server => LServer}) of
         not_found ->
             {error, not_found};
         #{default := Default, lists := Lists} ->
@@ -59,7 +60,7 @@ get_privacy_list(LUser, LServer, Name) ->
 
 forget_default_list(LUser, LServer) ->
     ok = wocky_db:update(LServer, privacy, #{default => null},
-                         #{user => LUser}).
+                         #{user => LUser, server => LServer}).
 
 set_default_list(LUser, LServer, Name) ->
     case get_user_lists(LUser, LServer) of
@@ -71,7 +72,7 @@ set_default_list(LUser, LServer, Name) ->
 
 remove_privacy_list(LUser, LServer, Name) ->
     case wocky_db:select_row(LServer, privacy, [default, lists],
-                             #{user => LUser}) of
+                             #{user => LUser, server => LServer}) of
         not_found ->
             ok;
         #{default := Name} ->
@@ -98,7 +99,8 @@ remove_user(LUser, LServer) ->
         Lists ->
             lists:foreach(fun(L) -> delete_list(LUser, LServer, L) end,
                           Lists),
-            ok = wocky_db:delete(LServer, privacy, all, #{user => LUser})
+            ok = wocky_db:delete(LServer, privacy, all,
+                                 #{user => LUser, server => LServer})
     end.
 
 %%====================================================================
@@ -107,11 +109,12 @@ remove_user(LUser, LServer) ->
 
 get_user_lists(LUser, LServer) ->
     null_to_list(
-      wocky_db:select_one(LServer, privacy, lists, #{user => LUser})).
+      wocky_db:select_one(LServer, privacy, lists,
+                          #{user => LUser, server => LServer})).
 
 get_list(LUser, LServer, Name) ->
     Rows = wocky_db:select(LServer, privacy_item, all,
-                           #{user => LUser, list => Name}),
+                           #{user => LUser, server => LServer, list => Name}),
     [row_to_item(R) || R <- Rows].
 
 maybe_set_default_list(LUser, LServer, Name, Lists) ->
@@ -120,7 +123,7 @@ maybe_set_default_list(LUser, LServer, Name, Lists) ->
             {error, not_found};
         true ->
             ok = wocky_db:update(LServer, privacy, #{default => Name},
-                                 #{user => LUser})
+                                 #{user => LUser, server => LServer})
     end.
 
 maybe_delete_list(LUser, LServer, Name, Lists) ->
@@ -133,11 +136,11 @@ maybe_delete_list(LUser, LServer, Name, Lists) ->
 
 delete_list(LUser, LServer, Name) ->
     ok = wocky_db:delete(LServer, privacy_item, all,
-                         #{user => LUser, list => Name}),
+                         #{user => LUser, server => LServer, list => Name}),
     delete_list_from_user(LUser, LServer, Name).
 
 add_list(LUser, LServer, Name, Items) ->
-    Rows = [item_to_row(LUser, Name, I) || I <- Items],
+    Rows = [item_to_row(LUser, LServer, Name, I) || I <- Items],
     lists:foreach(fun(R) -> ok = wocky_db:insert(LServer, privacy_item, R) end,
                   Rows),
     add_list_to_user(LUser, LServer, Name).
@@ -148,8 +151,10 @@ delete_list_from_user(LUser, LServer, Name) ->
     modify_user_lists(LUser, LServer, Name, "-").
 
 modify_user_lists(LUser, LServer, Name, Op) ->
-    Q = ["UPDATE privacy SET lists = lists ", Op, " ? WHERE user = ?"],
+    Q = ["UPDATE privacy SET lists = lists ", Op,
+         " ? WHERE user = ? AND server = ?"],
     V = #{user => LUser,
+          server => LServer,
           lists => [Name]},
     {ok, void} = wocky_db:query(LServer, Q, V, quorum),
     ok.
@@ -177,7 +182,7 @@ row_to_item(#{
        match_presence_out = MatchPresenceOut
     }.
 
-item_to_row(LUser, List,
+item_to_row(LUser, LServer, List,
     #listitem{
        type = Type,
        value = Value,
@@ -191,6 +196,7 @@ item_to_row(LUser, List,
     }) ->
     #{
        user => LUser,
+       server => LServer,
        list => List,
        id => ossp_uuid:make(v1, text),
        type => atom_to_binary(Type, utf8),
