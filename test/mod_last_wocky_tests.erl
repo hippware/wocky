@@ -41,7 +41,7 @@ test_set_last_info() ->
             ?_assertMatch(not_found, get_last(?TIM, ?SERVER)),
             ?_assertMatch(ok, set_last_info(?TIM, ?SERVER, 1024,
                                             <<"This is Tim's status">>)),
-            ?_assertMatch({ok, 1024, "This is Tim's status"},
+            ?_assertMatch({ok, 1024, <<"This is Tim's status">>},
                           get_last(?TIM, ?SERVER))
         ]}
     ]}.
@@ -60,13 +60,13 @@ test_active_user_count() ->
 test_last_activity() ->
     { "last_activity", setup,  fun before_each/0, fun after_each/1, [
         { "Returns timestamp and status where record exists", [
-            ?_assertMatch({ok, 1000, "Not here"},
+            ?_assertMatch({ok, 1000, <<"Not here">>},
                           get_last(?ALICE, ?SERVER)),
-            ?_assertMatch({ok, 666, ""},
+            ?_assertMatch({ok, 666, <<"">>},
                           get_last(?BOB, ?SERVER)),
-            ?_assertMatch({ok, 999, "Excited"},
+            ?_assertMatch({ok, 999, <<"Excited">>},
                           get_last(?KAREN, ?SERVER)),
-            ?_assertMatch({ok, 777, "Ennui"},
+            ?_assertMatch({ok, 777, <<"Ennui">>},
                           get_last(?CAROL, ?SERVER))
         ]},
         { "Returns not_found when a record does not exist", [

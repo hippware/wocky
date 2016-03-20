@@ -104,7 +104,8 @@ clear_tables(Context, Tables) ->
 
 clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(shared, [handle_to_user, phone_number_to_user]),
-    wocky_db_seed:clear_tables(Context, [user]).
+    wocky_db_seed:clear_tables(Context, [user, session,
+                                         auth_token, last_activity]).
 
 %% This is an incredibly ugly hack to work around a problem in cqerl.
 %% When we drop tables the C* server discards all cached prepared queries
@@ -321,6 +322,44 @@ table_definition(auth_token) ->
            {auth_token, text}      % Token
        ],
        primary_key = [user, server, resource]
+    };
+
+% mod_privacy settings for users
+table_definition(privacy) ->
+    #table_def{
+       name = privacy,
+       columns = [
+           {user, timeuuid},     % User ID (userpart of JID)
+           {server, text},       % Server (domainpart of JID)
+           {default, text},      % Default privacy list
+           {lists, {set, text}}  % Set of configured privacy lists
+       ],
+       primary_key = [user, server]
+    };
+
+% mod_privacy privacy list items
+table_definition(privacy_item) ->
+    #table_def{
+       name = privacy_item,
+       columns = [
+           {user, timeuuid},  % User ID (userpart of JID)
+           {server, text},    % Server (domainpart of JID)
+           {list, text},      % List name for this item
+           {id, timeuuid},    % ID of this item
+           {type, text},      % Type of this item: jid | subscription | group
+           {value, text},     % For subscriptions: none | from | to | both
+                              % For JID: String representation
+                              % For group: Name of the group
+           {action, boolean}, % true = allow | false = deny
+           {item_order, int}, % Sequence in which to apply this item
+           % Events to which to apply this item:
+           {match_all, boolean},
+           {match_iq, boolean},
+           {match_message, boolean},
+           {match_presence_in, boolean},
+           {match_presence_out, boolean}
+       ],
+       primary_key = [user, server, list, id]
     }.
 
 table_indexes(session) -> [
@@ -443,6 +482,30 @@ seed_data(media_data) ->
        data => ?AVATAR_DATA3},
      #{chunk_id => ?MEDIA_CHUNK,   file_id => ?MEDIA_FILE,
        data => ?MEDIA_DATA}];
+seed_data(privacy) ->
+    [#{user => ?ALICE, server => ?LOCAL_CONTEXT, default => ?PRIVACY_LIST1,
+       lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
+     #{user => ?BOB, server => ?LOCAL_CONTEXT, default => null,
+       lists => []}];
+seed_data(privacy_item) ->
+    [#{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST1,
+       id => ?PRIVACY_ITEM1, type => <<"jid">>,
+       value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
+       action => false, item_order => 1, match_all => true,
+       match_iq => false, match_message => false,
+       match_presence_in => false, match_presence_out => false},
+     #{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST1,
+       id => ?PRIVACY_ITEM2, type => <<"jid">>,
+       value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
+       action => false, item_order => 2, match_all => false,
+       match_iq => true, match_message => false,
+       match_presence_in => false, match_presence_out => false},
+     #{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST2,
+       id => ?PRIVACY_ITEM3, type => <<"subscription">>,
+       value => <<"both">>,
+       action => false, item_order => 1, match_all => false,
+       match_iq => false, match_message => true,
+       match_presence_in => false, match_presence_out => true}];
 seed_data(_) ->
     [].
 
