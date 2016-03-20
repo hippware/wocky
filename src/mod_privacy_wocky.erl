@@ -59,7 +59,7 @@ get_privacy_list(LUser, LServer, Name) ->
     end.
 
 forget_default_list(LUser, LServer) ->
-    ok = wocky_db:update(LServer, privacy, #{default => null},
+    ok = wocky_db:delete(LServer, privacy, [default],
                          #{user => LUser, server => LServer}).
 
 set_default_list(LUser, LServer, Name) ->
