@@ -22,9 +22,13 @@
 %% mod_privacy callbacks
 %%====================================================================
 
+-spec init(ejabberd:lserver(), [term()]) -> ok.
 init(_Host, _Opts) ->
     ok.
 
+-spec get_default_list(ejabberd:luser(), ejabberd:lserver()) ->
+    {error, not_found} |
+    {ok, {mod_privacy:list_name(), [mod_privacy:list_item()]}}.
 get_default_list(LUser, LServer) ->
     case wocky_db:select_one(LServer, privacy, default,
                              #{user => LUser, server => LServer}) of
@@ -41,6 +45,9 @@ get_default_list(LUser, LServer) ->
             end
     end.
 
+-spec get_list_names(ejabberd:luser(), ejabberd:lserver()) ->
+    {error, not_found} |
+    {ok, {mod_privacy:list_name(), [mod_privacy:list_name()]}}.
 get_list_names(LUser, LServer) ->
     case wocky_db:select_row(LServer, privacy, [default, lists],
                              #{user => LUser, server => LServer}) of
@@ -50,6 +57,10 @@ get_list_names(LUser, LServer) ->
             {ok, {null_to_binary(Default), null_to_list(Lists)}}
     end.
 
+-spec get_privacy_list(ejabberd:luser(),
+                       ejabberd:lserver(),
+                       mod_privacy:list_name()) ->
+    {error, not_found} | {ok, [mod_privacy:list_item()]}.
 get_privacy_list(LUser, LServer, Name) ->
     case get_list(LUser, LServer, Name) of
         [] ->
@@ -58,10 +69,15 @@ get_privacy_list(LUser, LServer, Name) ->
             {ok, Items}
     end.
 
+-spec forget_default_list(ejabberd:luser(), ejabberd:lserver()) -> ok.
 forget_default_list(LUser, LServer) ->
     ok = wocky_db:delete(LServer, privacy, [default],
                          #{user => LUser, server => LServer}).
 
+-spec set_default_list(ejabberd:luser(),
+                       ejabberd:lserver(),
+                       mod_privacy:list_name()) ->
+    {error, not_found} | ok.
 set_default_list(LUser, LServer, Name) ->
     case get_user_lists(LUser, LServer) of
         not_found ->
@@ -70,6 +86,10 @@ set_default_list(LUser, LServer, Name) ->
             maybe_set_default_list(LUser, LServer, Name, Lists)
     end.
 
+-spec remove_privacy_list(ejabberd:luser(),
+                          ejabberd:lserver(),
+                          mod_privacy:list_name()) ->
+    {error, conflict} | ok.
 remove_privacy_list(LUser, LServer, Name) ->
     case wocky_db:select_row(LServer, privacy, [default, lists],
                              #{user => LUser, server => LServer}) of
@@ -82,6 +102,10 @@ remove_privacy_list(LUser, LServer, Name) ->
             ok
     end.
 
+-spec replace_privacy_list(ejabberd:luser(),
+                           ejabberd:lserver(),
+                           mod_privacy:list_name(),
+                           [mod_privacy:list_item()]) -> ok.
 replace_privacy_list(LUser, LServer, Name, Items) ->
     case get_user_lists(LUser, LServer) of
         not_found ->
@@ -92,6 +116,7 @@ replace_privacy_list(LUser, LServer, Name, Items) ->
     add_list(LUser, LServer, Name, Items),
     ok.
 
+-spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
     case get_user_lists(LUser, LServer) of
         not_found ->
