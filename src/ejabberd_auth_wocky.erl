@@ -99,7 +99,7 @@ set_password(LUser, LServer, Password) ->
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary())
                     -> boolean().
 check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
-    lists:member(Token, wocky_db_user:get_tokens(LUser, LServer));
+    wocky_db_user:check_token(LUser, LServer, Token);
 check_password(LUser, LServer, Password) ->
     case wocky_db_user:get_password(LUser, LServer) of
         {error, _} ->
@@ -227,14 +227,12 @@ remove_user(LUser, LServer) ->
             wocky_db_user:remove_user(LUser, LServer);
 
         false ->
-            %% Mission accomplished, the user no longer exists
+            %% Mission accomplished, the user does not exist
             ok
     end.
 
 
-%% @doc Remove user if the provided password is correct.
-%% This functionality is unused (only called from mod_register)
-%% so just stub it out.
+%% @doc Remove user if the provided password or token is correct.
 -spec remove_user(ejabberd:luser(), ejabberd:lserver(), binary())
                  -> ok | {error, not_exists | not_allowed | bad_request}.
 remove_user(LUser, LServer, Password) ->
@@ -246,7 +244,8 @@ remove_user(LUser, LServer, Password) ->
           end;
 
         false ->
-            {error, not_exists}
+            %% Mission accomplished, the user does not exist
+            ok
     end.
 
 

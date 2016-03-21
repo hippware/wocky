@@ -88,6 +88,7 @@
          assign_token/3,
          release_token/3,
          get_tokens/2,
+         check_token/3,
          check_token/4,
          get_user_data/2,
          get_user_by_auth_name/2,
@@ -534,8 +535,21 @@ get_tokens(_, _, false) ->
 
 
 %% @doc Returns `true' if a token is valid for the supplied
+%% user or `false' otherwise.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `Token': the token to test
+%%
+-spec check_token(ejabberd:lserver(), ejabberd:luser(), token()) -> boolean().
+check_token(LUser, LServer, Token) ->
+    lists:member(Token, get_tokens(LUser, LServer)).
+
+
+%% @doc Returns `true' if a token is valid for the supplied
 %% user/server/resource triplet, or `false' otherwise.
-%% specified user.
 %%
 %% `LUser': the "localpart" of the user's JID.
 %%
