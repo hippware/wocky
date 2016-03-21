@@ -34,8 +34,6 @@
           server                   :: binary(),
           auth_providers           :: [string()],
           auth_bypass_prefixes     :: [binary()],
-          ephemeral_number         :: binary(),
-          is_ephemeral     = false :: boolean(),
           is_new           = false :: boolean(),
           handle_set       = false :: boolean(),
           phone_number_set = false :: boolean(),
@@ -50,12 +48,10 @@
 init(Opts) ->
     AuthProviders = proplists:get_value(auth_providers, Opts),
     AuthBypassPrefixes = proplists:get_value(auth_bypass_prefixes, Opts, []),
-    EphemeralNumber = proplists:get_value(ephemeral_number, Opts),
     Server = proplists:get_value(server, Opts),
     {ok, #state{
             auth_providers = AuthProviders,
-            auth_bypass_prefixes = [EphemeralNumber | AuthBypassPrefixes],
-            ephemeral_number = EphemeralNumber,
+            auth_bypass_prefixes = AuthBypassPrefixes,
             server = Server
            }}.
 
@@ -98,14 +94,18 @@ post_is_create(RD, Ctx) -> {true, RD, Ctx}.
 
 create_path(RD, Ctx) -> {"", RD, Ctx}.
 
--spec from_json(#wm_reqdata{}, #state{}) -> {true, #wm_reqdata{}, #state{}}.
-from_json(RD, Ctx = #state{create_allowed = Create, fields = Fields}) ->
+-spec from_json(#wm_reqdata{}, #state{}) ->
+    {true, #wm_reqdata{}, #state{}}.
+from_json(RD, Ctx = #state{create_allowed = true, fields = Fields}) ->
     try
-        Ctx2 = maybe_set_ephemeral_flag(Ctx),
-        case Create of
-            true  -> create_or_update_user(RD, Ctx2);
-            false -> find_and_update_user(RD, Ctx2)
-        end
+        create_or_update_user(RD, Ctx)
+    catch
+        Class:Reason ->
+            create_internal_error(Class, Reason, Fields, RD, Ctx)
+    end;
+from_json(RD, Ctx = #state{fields = Fields}) ->
+    try
+        find_and_update_user(RD, Ctx)
     catch
         Class:Reason ->
             create_internal_error(Class, Reason, Fields, RD, Ctx)
@@ -253,13 +253,6 @@ verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
             verify_session(Fields#{uuid => User}, SessionID)
     end.
 
-maybe_set_ephemeral_flag(#state{fields = Fields} = Ctx) ->
-    PhoneNumber = maps:get(phoneNumber, Fields, <<"bogus">>),
-    case Ctx#state.ephemeral_number of
-      PhoneNumber -> Ctx#state{is_ephemeral = true};
-      _Other -> Ctx
-    end.
-
 create_or_update_user(RD, Ctx = #state{fields = Fields
                                               = #{userID := AuthUser,
                                                   server := Server}}) ->
@@ -272,10 +265,6 @@ create_or_update_user(RD, Ctx = #state{fields = Fields
                                            Fields#{uuid => ExistingUser}})
     end.
 
-create_user(RD, Ctx = #state{is_ephemeral = true, fields = Fields}) ->
-    UUID = wocky_db_user:create_id(),
-    finalize_changes(RD, Ctx#state{is_new = true,
-                                   fields = Fields#{uuid => UUID}});
 create_user(RD, Ctx = #state{fields = Fields}) ->
     case wocky_db_user:create_user(json_to_row(Fields)) of
         {error, E} -> create_update_error(E, RD, Ctx);
@@ -292,8 +281,6 @@ find_and_update_user(RD, Ctx = #state{fields = Fields
     UUID = wocky_db_user:get_user_by_auth_name(Server, AuthUser),
     update_user(RD, Ctx#state{fields = Fields#{uuid => UUID}}).
 
-update_user(RD, Ctx = #state{is_ephemeral = true}) ->
-    finalize_changes(RD, Ctx);
 update_user(RD, Ctx = #state{fields = Fields}) ->
     case wocky_db_user:update_user(json_to_row(Fields)) of
         ok -> finalize_changes(RD, Ctx);
@@ -305,16 +292,14 @@ finalize_changes(RD, Ctx) ->
     Ctx3 = maybe_update_phone_number(Ctx2),
     set_result(RD, Ctx3).
 
-maybe_update_handle(Ctx = #state{is_ephemeral = false,
-                                 server = Server,
+maybe_update_handle(Ctx = #state{server = Server,
                                  fields = #{uuid := User,
                                             handle := Handle}}) ->
     Set = wocky_db_user:maybe_set_handle(User, Server, Handle),
     Ctx#state{handle_set = Set};
 maybe_update_handle(Ctx) -> Ctx.
 
-maybe_update_phone_number(Ctx = #state{is_ephemeral = false,
-                                       server = Server,
+maybe_update_phone_number(Ctx = #state{server = Server,
                                        fields = #{uuid := User,
                                                   phoneNumber
                                                   := PhoneNumber}}) ->
@@ -324,14 +309,15 @@ maybe_update_phone_number(Ctx) -> Ctx.
 
 set_result(RD, Ctx = #state{server = Server,
                             is_new = IsNew,
-                            is_ephemeral = IsEphemeral,
                             phone_number_set = PhoneNumberSet,
                             handle_set = HandleSet,
                             fields = #{uuid := UUID,
                                        resource := Resource}}) ->
-    Fields = get_user_data(Ctx),
+    Fields = row_to_json(
+               wocky_db:drop_nulls(
+                 wocky_db_user:get_user_data(UUID, Server))),
     JSONFields = prepare_for_encoding(Fields),
-    {ok, Token} = assign_token(UUID, Server, Resource, IsEphemeral),
+    {ok, Token} = wocky_db_user:assign_token(UUID, Server, Resource),
     Ret = [{sessionID, Token}, {isNew, IsNew},
            {phoneNumberSet, PhoneNumberSet}, {handleSet, HandleSet},
            {resource, Resource} | maps:to_list(JSONFields)],
@@ -341,28 +327,6 @@ set_result(RD, Ctx = #state{server = Server,
 
     ok = lager:info("Registration complete. Replying with ~s", [Body]),
     {true, RD3, Ctx}.
-
-get_user_data(#state{is_ephemeral = true, server = Server,
-                     fields = #{uuid := UUID} = Fields}) ->
-    Defaults = maps:with([userID, uuid, server, handle, firstName,
-                          lastName, phoneNumber, email, avatar], Fields),
-    case wocky_db_user:get_user_data(UUID, Server) of
-        not_found -> Defaults;
-        Row ->
-            DbData = row_to_json(wocky_db:drop_nulls(Row)),
-            maps:merge(Defaults, DbData)
-    end;
-get_user_data(#state{server = Server, fields = #{uuid := UUID}}) ->
-  fun_chain:first(
-      wocky_db_user:get_user_data(UUID, Server),
-      wocky_db:drop_nulls(),
-      row_to_json()
-     ).
-
-assign_token(UUID, Server, Resource, false) ->
-    wocky_db_user:assign_token(UUID, Server, Resource);
-assign_token(_, _, _, true) ->
-    {ok, wocky_db_user:generate_token()}.
 
 create_update_error(E, RD, Ctx) ->
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
