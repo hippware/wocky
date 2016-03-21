@@ -52,13 +52,16 @@ content_types_provided(RD, Ctx) ->
     {[{"application/json", to_json}], RD, Ctx}.
 
 malformed_request(RD, Ctx) ->
-    try mochijson2:decode(wrq:req_body(RD)) of
+    Body = wrq:req_body(RD),
+    try mochijson2:decode(Body) of
         {struct, Elements} ->
             is_malformed(Elements, RD, Ctx)
     catch
-        error:_ ->
-            RD2 = set_resp_body(400, "Invalid JSON", RD),
-            {true, RD2, Ctx}
+        Class:Reason ->
+            ST = lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason}),
+            Msg = io_lib:format("Invalid JSON. ~p ~s", [Body, ST]),
+            ok = lager:error(Msg),
+            {true, set_resp_body(400, Msg, RD), Ctx}
     end.
 
 forbidden(RD, Ctx = #state{fields = Fields,
