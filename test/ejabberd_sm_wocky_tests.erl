@@ -109,7 +109,7 @@ test_unique_count() ->
     ]}.
 
 test_create_session() ->
-    Data = wocky_db_seed:make_session(?NEWUSER),
+    Data = wocky_db_seed:make_session(?NEWUSER, ?SERVER),
     Session = data_to_rec(Data),
     Resource = element(3, Session#session.usr),
     { "create_session", setup, fun before_each/0, fun after_each/1, [

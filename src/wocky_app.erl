@@ -10,7 +10,7 @@
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0,
          start_ejabberd/0, start_ejabberd/1,
-         version/0]).
+         version/0, server/0, is_testing/0]).
 
 
 -spec start(string()) -> ok.
@@ -44,8 +44,22 @@ start_ejabberd(CfgDir) ->
     {ok, _} = ejabberd:start(),
     ok.
 
+-spec version() -> binary().
 version() ->
     ?WOCKY_VERSION.
+
+-spec server() -> binary().
+server() ->
+    try
+        hd(ejabberd_config:get_global_option(hosts))
+    catch
+        _:_ ->
+            <<"localhost">>
+    end.
+
+-spec is_testing() -> boolean().
+is_testing() ->
+    is_testing_server(server()).
 
 
 %%%===================================================================
@@ -82,7 +96,8 @@ set_wocky_env() ->
               Value ->
                   Value
           end,
-    ok = lager:info("Wocky starting in the '~s' environment.", [Env]),
+    ok = lager:info("Wocky ~s starting in the '~s' environment.",
+                    [version(), Env]),
     application:set_env(wocky, wocky_env, Env).
 
 maybe_start_ejabberd() ->
@@ -91,3 +106,7 @@ maybe_start_ejabberd() ->
 
 maybe_start_ejabberd(true)  -> start_ejabberd();
 maybe_start_ejabberd(false) -> ok.
+
+is_testing_server(<<"localhost">>) -> true;
+is_testing_server(<<"testing.", _/binary>>) -> true;
+is_testing_server(_) -> false.

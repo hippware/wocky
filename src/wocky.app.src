@@ -2,10 +2,16 @@
 %% ex: ts=4 sw=4 ft=erlang et
 {application, wocky,
  [{description, "JabberWocky"},
-  {vsn, git},
+  {vsn, {cmd, "echo `date -u +%y.%m.%d`+`git rev-list HEAD|wc -l|tr -d ' '`"}},
   {modules, []},
   {registered, []},
-  {applications, [kernel, stdlib, crypto, lager, ossp_uuid, cqerl]},
+  {applications, [kernel,
+                  stdlib,
+                  crypto,
+                  lager,
+                  ossp_uuid,
+                  cqerl,
+                  p1_stringprep]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [

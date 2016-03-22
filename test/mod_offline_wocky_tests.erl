@@ -55,7 +55,7 @@ data_to_rec(#{user := User, timestamp := TS, expire := Expire,
 
 make_msg_recs(User, Handle, N) ->
     NowSecs = wocky_db_seed:get_nowsecs(),
-    Data = wocky_db_seed:make_offline_msgs(User, Handle, NowSecs, N),
+    Data = wocky_db_seed:make_offline_msgs(User, ?SERVER, Handle, NowSecs, N),
     [data_to_rec(D) || D <- Data].
 
 after_each(_) ->

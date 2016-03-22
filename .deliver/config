@@ -17,13 +17,16 @@ BUILD_USER="ubuntu"
 # build directory on build host
 BUILD_AT="/home/ubuntu/wocky"
 
+# Restart the node after deploying
+START_DEPLOY=true
+
 
 ##
 ## STAGING / TEST
 ##
 
 # staging / test hosts separated by space
-STAGING_HOSTS="app1.dev.tinyrobot.com app2.dev.tinyrobot.com app3.dev.tinyrobot.com"
+STAGING_HOSTS="app1.dev.tinyrobot.com app2.dev.tinyrobot.com app3.dev.tinyrobot.com test1.dev.tinyrobot.com"
 
 # local user at staging hosts
 STAGING_USER="wocky"

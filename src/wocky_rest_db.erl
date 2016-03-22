@@ -15,15 +15,13 @@
          post_is_create/2,
          create_path/2,
          from_json/2,
-         to_json/2
-        ]).
+         to_json/2]).
 
 -include_lib("webmachine/include/webmachine.hrl").
 
--record(state, {
-          server         :: binary(),
-          fields         :: map()
-         }).
+-record(state, { user   :: binary(),
+                 server :: binary(),
+                 token  :: binary() }).
 
 %%%===================================================================
 %%% Webmachine Callbacks
@@ -31,9 +29,7 @@
 
 init(Opts) ->
     Server = proplists:get_value(server, Opts),
-    {ok, #state{
-            server = Server
-           }}.
+    {ok, #state{ server = Server }}.
 
 allowed_methods(RD, Ctx) ->
     {['POST'], RD, Ctx}.
@@ -42,6 +38,7 @@ resource_exists(RD, Ctx) ->
     Info = wrq:path_info(RD),
     case Info of
         [{operation, "reset"}] -> {true, RD, Ctx};
+        [{operation, "delete"}] -> {true, RD, Ctx};
         _ -> {false, RD, Ctx}
     end.
 
@@ -52,20 +49,23 @@ content_types_provided(RD, Ctx) ->
     {[{"application/json", to_json}], RD, Ctx}.
 
 malformed_request(RD, Ctx) ->
-    try mochijson2:decode(wrq:req_body(RD)) of
+    Body = wrq:req_body(RD),
+    try mochijson2:decode(Body) of
         {struct, Elements} ->
             is_malformed(Elements, RD, Ctx)
     catch
-        error:_ ->
-            RD2 = set_resp_body(400, "Invalid JSON", RD),
-            {true, RD2, Ctx}
+        Class:Reason ->
+            ST = lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason}),
+            Msg = io_lib:format("Invalid JSON. ~p ~s", [Body, ST]),
+            ok = lager:error(Msg),
+            {true, set_resp_body(400, Msg, RD), Ctx}
     end.
 
-forbidden(RD, Ctx = #state{fields = Fields,
-                           server = Server}) ->
-    case verify_session(Fields, Server) of
+forbidden(RD, Ctx = #state{user = User, server = Server, token = Token}) ->
+    case verify_session(User, Server, Token) of
         true ->
             {false, RD, Ctx};
+
         false ->
             RD2 = set_resp_body(403, "SessionID could not be verified", RD),
             {true, RD2, Ctx}
@@ -75,12 +75,23 @@ post_is_create(RD, Ctx) -> {true, RD, Ctx}.
 
 create_path(RD, Ctx) -> {"", RD, Ctx}.
 
-from_json(RD, Ctx = #state{server = Server}) ->
-    %% Currently 'reset' is the only operation (and already checked for
-    %% in 'resource_exists/2', so just do that if we get this far.
-    wocky_db_seed:bootstrap(shared),
-    wocky_db_seed:bootstrap(Server),
-    {true, RD, Ctx}.
+from_json(RD, Ctx = #state{user = User, server = Server}) ->
+    case wrq:path_info(RD) of
+        [{operation, "reset"}] ->
+            wocky_db_seed:bootstrap(shared, Server),
+            wocky_db_seed:bootstrap(Server, Server),
+            {true, RD, Ctx};
+
+        [{operation, "delete"}] ->
+            case ejabberd_auth:remove_user(User, Server) of
+                ok ->
+                    {true, RD, Ctx};
+
+                Error ->
+                    Msg = io_lib:format("Error removing user: ~p", [Error]),
+                    {true, set_resp_body(500, Msg, RD), Ctx}
+            end
+    end.
 
 % This function is required to keep webmachine happy (since it must be
 % specified in content_types_provided, which in turn is required to avoid
@@ -98,23 +109,21 @@ is_malformed(Elements, RD, Ctx) ->
                maps:from_list(Elements)),
     case verify_fields(Fields) of
         true ->
-            {false, RD, Ctx#state{fields = Fields}};
+            #{uuid := User, sessionID := Token} = Fields,
+            {false, RD, Ctx#state{user = User, token = Token}};
+
         false ->
             RD2 = set_resp_body(400, "Missing field(s)", RD),
             {true, RD2, Ctx}
     end.
 
-verify_fields(#{sessionID := _,
-                uuid      := _,
-                resource  := _
-               }) -> true;
+verify_fields(#{sessionID := _, uuid := _}) -> true;
 verify_fields(_) -> false.
 
-verify_session(#{uuid := UUID, sessionID := SessionID, resource := Resource},
-               Server) ->
-    wocky_db_user:check_token(UUID, Server, Resource, SessionID).
+verify_session(User, Server, Token) ->
+    wocky_db_user:check_token(User, Server, Token).
 
 set_resp_body(Code, Error, RD) ->
-    JSON = mochijson2:encode({struct, [{code, Code},
-                                       {error, list_to_binary(Error)}]}),
+    JSON = mochijson2:encode(
+             {struct, [{code, Code}, {error, iolist_to_binary(Error)}]}),
     wrq:set_resp_body(JSON, RD).

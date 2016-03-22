@@ -7,15 +7,16 @@
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 
--export([bootstrap/0, bootstrap/1, create_schema/0, create_schema_for/1,
-         foreach_table/3, recreate_table/2, create_table_indexes/2,
-         create_table_views/2, drop_table_views/2, seed_table/2, seed_tables/2,
-         seed_keyspace/1, prepare_tables/2, clear_tables/2,
-         clear_user_tables/1]).
+-export([bootstrap_all/0, bootstrap_all/1, bootstrap/2,
+         create_schema/0, create_schema/1, create_schema_for/1,
+         foreach_table/3, recreate_table/2,
+         create_table_indexes/2, create_table_views/2, drop_table_views/2,
+         seed_table/2, seed_tables/2, seed_keyspace/2,
+         prepare_tables/2, clear_tables/2, clear_user_tables/1]).
 
--export([make_session/1, make_session/2, fake_sid/0, fake_now/0, fake_pid/0,
-         fake_resource/0, random_priority/0, session_info/0, sjid/1, jid/3,
-         make_offline_msgs/4, make_offline_msg/4, get_nowsecs/0,
+-export([make_session/2, make_session/3, fake_sid/0, fake_now/0, fake_pid/0,
+         fake_resource/0, random_priority/0, session_info/0, sjid/2, jid/3,
+         make_offline_msgs/5, make_offline_msg/5, get_nowsecs/0,
          archive_users/0, msg_xml_packet/1]).
 
 
@@ -23,17 +24,23 @@
 %% Helpers
 %%====================================================================
 
-bootstrap() ->
-    bootstrap(shared),
-    bootstrap(?LOCAL_CONTEXT).
+bootstrap_all() ->
+    bootstrap_all(wocky_app:server()).
 
-bootstrap(Context) ->
-    create_schema_for(Context),
-    seed_keyspace(Context).
+bootstrap_all(Context) ->
+    bootstrap(shared, Context),
+    bootstrap(Context, Context).
+
+bootstrap(Keyspace, Server) ->
+    create_schema_for(Keyspace),
+    seed_keyspace(Keyspace, Server).
 
 create_schema() ->
+    create_schema(wocky_app:server()).
+
+create_schema(Context) ->
     create_schema_for(shared),
-    create_schema_for(?LOCAL_CONTEXT).
+    create_schema_for(Context).
 
 create_schema_for(Context) ->
     prepare_tables(Context, keyspace_tables(Context)).
@@ -73,7 +80,10 @@ seed_tables(Context, Tables) ->
     lists:foreach(fun(T) -> {ok, _} = seed_table(Context, T) end, Tables).
 
 seed_table(Context, Name) ->
-    Data = seed_data(Name),
+    seed_table(Context, Name, ?SERVER).
+
+seed_table(Context, Name, Server) ->
+    Data = seed_data(Name, Server),
     seed_with_data(Context, Name, Data).
 
 seed_with_data(Context, _Name, {Query, Rows}) ->
@@ -88,10 +98,10 @@ seed_with_data(Context, Name, Rows) when is_list(Rows)->
       Rows),
     {ok, Rows}.
 
-seed_keyspace(Context) ->
+seed_keyspace(Context, Server) ->
     foreach_table(
       Context,
-      fun (_, Table) -> {ok, _} = seed_table(Context, Table), ok end,
+      fun (_, Table) -> {ok, _} = seed_table(Context, Table, Server), ok end,
       keyspace_tables(Context)).
 
 prepare_tables(Context, Tables) ->
@@ -388,15 +398,17 @@ table_views(_) -> [].
 %% Seed data
 %%====================================================================
 
-seed_data(handle_to_user) ->
-    [maps:with([user, server, handle, skip], U) || U <- seed_data(user)];
-seed_data(phone_number_to_user) ->
-    [maps:with([user, server, phone_number, skip], U) || U <- seed_data(user)];
-seed_data(user) ->
+seed_data(handle_to_user, Server) ->
+    [maps:with([user, server, handle, skip], U) ||
+     U <- seed_data(user, Server)];
+seed_data(phone_number_to_user, Server) ->
+    [maps:with([user, server, phone_number, skip], U) ||
+     U <- seed_data(user, Server)];
+seed_data(user, Server) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE,
           phone_number => ?PHONE_NUMBER, auth_user => ?AUTH_USER,
-          avatar => tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE)},
+          avatar => tros:make_url(Server, ?AVATAR_FILE)},
         #{user => ?CAROL,  handle => <<"carol">>, first_name => <<"Carol">>,
           phone_number => <<"+4567">>, auth_user => <<"123456">>},
         #{user => ?BOB,    handle => <<"bob">>,
@@ -408,8 +420,8 @@ seed_data(user) ->
           last_name => <<"Robert The Bruce">>,
           phone_number => <<"+6666">>, auth_user => <<"888312">>}
     ],
-    [U#{server => ?SERVER, password => ?SCRAM} || U <- Users];
-seed_data(last_activity) ->
+    [U#{server => Server, password => ?SCRAM} || U <- Users];
+seed_data(last_activity, Server) ->
     Activity = [
         #{user => ?ALICE,  timestamp => 1000, status => <<"Not here">>},
         #{user => ?CAROL,  timestamp => 777,  status => <<"Ennui">>},
@@ -419,43 +431,47 @@ seed_data(last_activity) ->
     ],
     lists:map(
       fun (#{timestamp := TS} = A) ->
-          A#{timestamp := wocky_db:seconds_to_timestamp(TS), server => ?SERVER}
+          A#{timestamp := wocky_db:seconds_to_timestamp(TS), server => Server}
       end,
       Activity);
-seed_data(session) ->
+seed_data(session, Server) ->
     lists:flatmap(
       fun (#{user := User, sids := SIDs}) ->
-          [make_session(User, SID) || SID <- SIDs]
+          [make_session(User, Server, SID) || SID <- SIDs]
       end,
       session_sids());
-seed_data(offline_msg) ->
+seed_data(offline_msg, Server) ->
     NowSecs = get_nowsecs(),
     lists:flatmap(
       fun (#{user := User, handle := Handle}) ->
-          make_offline_msgs(User, Handle, NowSecs, 10)
+          make_offline_msgs(User, Server, Handle, NowSecs, 10)
       end,
-      seed_data(user));
-seed_data(roster) ->
+      seed_data(user, Server));
+seed_data(roster, Server) ->
     Items = [
-        #{contact_jid => sjid(?BOB), nick => <<"bobby">>, version => 666},
-        #{contact_jid => sjid(?CAROL), nick => <<"carrie">>, version => 777},
-        #{contact_jid => sjid(?ROBERT), nick => <<"bob2">>, version => 888},
-        #{contact_jid => sjid(?KAREN), nick => <<"kk">>, version => 999}
+        #{contact_jid => sjid(?BOB, Server), nick => <<"bobby">>,
+          version => 666},
+        #{contact_jid => sjid(?CAROL, Server), nick => <<"carrie">>,
+          version => 777},
+        #{contact_jid => sjid(?ROBERT, Server), nick => <<"bob2">>,
+          version => 888},
+        #{contact_jid => sjid(?KAREN, Server), nick => <<"kk">>,
+          version => 999}
     ],
-    [I#{user => ?ALICE, server => ?SERVER, groups => [<<"friends">>]} ||
-        I <- Items];
-seed_data(message_archive) ->
+    [I#{user => ?ALICE, server => Server, groups => [<<"friends">>]}
+     || I <- Items];
+seed_data(message_archive, _Server) ->
     Rows = [random_message(ID, archive_users()) || ID <- lists:seq(1, 300)],
     Q = "INSERT INTO message_archive (id, time, lower_jid, upper_jid,
          sent_to_lower, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
     {Q, Rows};
-seed_data(auth_token) ->
-    [#{user => ?ALICE, server => ?SERVER, resource => ?RESOURCE,
+seed_data(auth_token, Server) ->
+    [#{user => ?ALICE, server => Server, resource => ?RESOURCE,
        auth_token => ?TOKEN}];
-seed_data(media) ->
-    AvatarTypeData = jid:to_binary(jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)),
-    BobAvatarTypeData = jid:to_binary(jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)),
-    MediaTypeData = jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
+seed_data(media, Server) ->
+    AvatarTypeData = jid:to_binary(jid:make(?ALICE, Server, <<>>)),
+    BobAvatarTypeData = jid:to_binary(jid:make(?ALICE, Server, <<>>)),
+    MediaTypeData = jid:to_binary(jid:make(?BOB, Server, <<>>)),
     [#{id => ?AVATAR_FILE, user => ?ALICE, size => byte_size(?AVATAR_DATA),
        chunks => [?AVATAR_CHUNK],
        metadata => #{<<"purpose">> => <<"avatar:", AvatarTypeData/binary>>,
@@ -473,7 +489,7 @@ seed_data(media) ->
        metadata => #{<<"purpose">> => <<"message_media:",
                                         MediaTypeData/binary>>,
                      <<"content-type">> => <<"image/png">>}}];
-seed_data(media_data) ->
+seed_data(media_data, _Server) ->
     [#{chunk_id => ?AVATAR_CHUNK,  file_id => ?AVATAR_FILE,
        data => ?AVATAR_DATA},
      #{chunk_id => ?AVATAR_CHUNK2, file_id => ?AVATAR_FILE2,
@@ -482,31 +498,31 @@ seed_data(media_data) ->
        data => ?AVATAR_DATA3},
      #{chunk_id => ?MEDIA_CHUNK,   file_id => ?MEDIA_FILE,
        data => ?MEDIA_DATA}];
-seed_data(privacy) ->
-    [#{user => ?ALICE, server => ?LOCAL_CONTEXT, default => ?PRIVACY_LIST1,
+seed_data(privacy, Server) ->
+    [#{user => ?ALICE, server => Server, default => ?PRIVACY_LIST1,
        lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
-     #{user => ?BOB, server => ?LOCAL_CONTEXT, default => null,
+     #{user => ?BOB, server => Server, default => null,
        lists => []}];
-seed_data(privacy_item) ->
-    [#{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST1,
+seed_data(privacy_item, Server) ->
+    [#{user => ?ALICE, server => Server, list => ?PRIVACY_LIST1,
        id => ?PRIVACY_ITEM1, type => <<"jid">>,
-       value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
+       value => jid:to_binary(jid:make(?BOB, Server, <<>>)),
        action => false, item_order => 1, match_all => true,
        match_iq => false, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST1,
+     #{user => ?ALICE, server => Server, list => ?PRIVACY_LIST1,
        id => ?PRIVACY_ITEM2, type => <<"jid">>,
-       value => jid:to_binary(jid:make(?BOB, ?LOCAL_CONTEXT, <<>>)),
+       value => jid:to_binary(jid:make(?BOB, Server, <<>>)),
        action => false, item_order => 2, match_all => false,
        match_iq => true, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{user => ?ALICE, server => ?LOCAL_CONTEXT, list => ?PRIVACY_LIST2,
+     #{user => ?ALICE, server => Server, list => ?PRIVACY_LIST2,
        id => ?PRIVACY_ITEM3, type => <<"subscription">>,
        value => <<"both">>,
        action => false, item_order => 1, match_all => false,
        match_iq => false, match_message => true,
        match_presence_in => false, match_presence_out => true}];
-seed_data(_) ->
+seed_data(_, _) ->
     [].
 
 %% Static SID data that can be used to populate the session
@@ -545,16 +561,16 @@ session_sids() -> [
 %% Data generation helpers
 %%====================================================================
 
-make_session(User) ->
-    make_session(User, fake_sid()).
+make_session(User, Server) ->
+    make_session(User, Server, fake_sid()).
 
-make_session(User, SID) ->
+make_session(User, Server, SID) ->
     #{user => User,
       sid => term_to_binary(SID),
-      server => ?SERVER,
+      server => Server,
       node => node(),
       jid_user => User,
-      jid_server => ?SERVER,
+      jid_server => Server,
       jid_resource => fake_resource(),
       priority => random_priority(),
       info => term_to_binary(session_info())}.
@@ -587,15 +603,16 @@ get_nowsecs() ->
     {Mega, Sec, _} = os:timestamp(),
     (Mega * 1000000) + Sec.
 
-make_offline_msgs(User, Handle, NowSecs, N) ->
-    [make_offline_msg(User, Handle, NowSecs, I) || I <- lists:seq(1, N)].
+make_offline_msgs(User, Server, Handle, NowSecs, N) ->
+    [make_offline_msg(User, Server, Handle, NowSecs, I) ||
+     I <- lists:seq(1, N)].
 
-make_offline_msg(User, Handle, NowSecs, I) ->
+make_offline_msg(User, Server, Handle, NowSecs, I) ->
     ExpireSecs = NowSecs + 1000,
     FromJID = jid(<<"from_user">>, <<"from_server">>, <<"res1">>),
     ToJID = jid(<<"to_user">>, <<"to_server">>, <<"res2">>),
     #{user => User,
-      server => ?SERVER,
+      server => Server,
       msg_id => wocky_db_user:create_id(),
       timestamp => wocky_db:seconds_to_timestamp(NowSecs + I),
       expire => wocky_db:seconds_to_timestamp(ExpireSecs),
@@ -604,8 +621,8 @@ make_offline_msg(User, Handle, NowSecs, I) ->
       packet => msg_xml_packet(Handle),
       '[ttl]' => ts_to_ttl(ExpireSecs)}.
 
-sjid(User) ->
-    jid:to_binary({User, ?SERVER, <<>>}).
+sjid(User, Server) ->
+    jid:to_binary({User, Server, <<>>}).
 
 jid(User, Server, Resource) ->
     #jid{user = User, server = Server, resource = Resource,

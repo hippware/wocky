@@ -16,6 +16,12 @@ CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
 REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
 ERL_OPTS=""
 RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_ROOT_DIR/log}"
+RUNNER_USER=${WOCKY_USER:-wocky}
+
+# Make sure this script is running as the appropriate user
+if [ ! -z "$RUNNER_USER" ] && [ `whoami` != "$RUNNER_USER" ]; then
+    exec sudo -u $RUNNER_USER -i $SCRIPT_DIR/$REL_NAME $@
+fi
 
 find_erts_dir() {
     __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
@@ -488,14 +494,13 @@ case "$1" in
         ;;
 
     version)
-        WKY=`ls $RELEASE_ROOT_DIR/lib/wocky*/ebin/wocky.app | head -1`
-        if [ $# == 2 ] && [ $2 == '--simple' ]
-        then
-            relx_nodetool version $WKY
-        else
-            echo -n "wocky version "
-            relx_nodetool version $WKY
+        # Make sure a node IS running
+        if ! relx_nodetool "ping" > /dev/null; then
+            echo "Node is not running!"
+            exit 1
         fi
+
+        relx_nodetool version
         ;;
 
     *)

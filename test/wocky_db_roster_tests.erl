@@ -49,7 +49,7 @@ after_each(_) ->
     ok.
 
 make_jid(U) ->
-    wocky_db_seed:sjid(U).
+    wocky_db_seed:sjid(U, ?SERVER).
 
 test_get_roster() ->
   { "get_roster/2", foreach, fun before_each/0, fun after_each/1, [

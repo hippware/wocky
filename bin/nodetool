@@ -14,11 +14,6 @@ main(Args) ->
 
     %% checking the version number doesn't need the running node
     case RestArgs of
-        ["version", AppFile] ->
-            {ok, [{application, wocky, Env}]} = file:consult(AppFile),
-            {vsn, Version} = lists:keyfind(vsn, 1, Env),
-            io:format("~s~n", [Version]),
-            halt(0);
         ["add_to_cluster", ExtraNode] ->
             ok = mnesia:start(),
             NodeName = list_to_atom(ExtraNode),
@@ -53,6 +48,8 @@ main(Args) ->
             io:format("~p\n", [rpc:call(TargetNode, init, restart, [], 60000)]);
         ["reboot"] ->
             io:format("~p\n", [rpc:call(TargetNode, init, reboot, [], 60000)]);
+        ["version"] ->
+            io:format("~s\n", [rpc:call(TargetNode, wocky_app, version, [], 60000)]);
         ["remove_from_cluster", DeadNode] ->
             io:format("~p\n", [rpc:call(TargetNode, mnesia, del_table_copy, [schema, list_to_atom(DeadNode)] )]);
         ["rpc", Module, Function | RpcArgs] ->

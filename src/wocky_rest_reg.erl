@@ -25,6 +25,10 @@
 -include_lib("webmachine/include/webmachine.hrl").
 
 -compile({parse_transform, do}).
+-compile({parse_transform, fun_chain}).
+
+-define(EMPTY,     <<>>).
+-define(NOT_EMPTY, <<_:8, _/binary>>).
 
 -record(state, {
           server                   :: binary(),
@@ -61,12 +65,13 @@ content_types_provided(RD, Ctx) ->
     {[{"application/json", undefined}], RD, Ctx}.
 
 malformed_request(RD, Ctx = #state{server = Server}) ->
-    ok = lager:warning("Received REST request: ~p", [wrq:req_body(RD)]),
+    ok = lager:info("Received registration request: ~s", [wrq:req_body(RD)]),
     case parse_request(wrq:req_body(RD), Server) of
         {ok, Fields} ->
             {false, RD, Ctx#state{fields = Fields}};
         {error, {Code, Error}} ->
-            ok = lager:warning("Error in parsing phase: ~p ~p", [Code, Error]),
+            ok = lager:warning("Error parsing registration request: ~B ~s",
+                               [Code, Error]),
             RD2 = set_resp_body(Code, Error, RD),
             {true, RD2, Ctx}
     end.
@@ -91,10 +96,20 @@ create_path(RD, Ctx) -> {"", RD, Ctx}.
 
 -spec from_json(#wm_reqdata{}, #state{}) ->
     {true, #wm_reqdata{}, #state{}}.
-from_json(RD, Ctx = #state{create_allowed = true}) ->
-    create_or_update_user(RD, Ctx);
-from_json(RD, Ctx) ->
-    find_and_update_user(RD, Ctx).
+from_json(RD, Ctx = #state{create_allowed = true, fields = Fields}) ->
+    try
+        create_or_update_user(RD, Ctx)
+    catch
+        Class:Reason ->
+            create_internal_error(Class, Reason, Fields, RD, Ctx)
+    end;
+from_json(RD, Ctx = #state{fields = Fields}) ->
+    try
+        find_and_update_user(RD, Ctx)
+    catch
+        Class:Reason ->
+            create_internal_error(Class, Reason, Fields, RD, Ctx)
+    end.
 
 %%%===================================================================
 %%% Request processing helper functions
@@ -103,12 +118,11 @@ from_json(RD, Ctx) ->
 parse_request(Body, Server) ->
     do([error_m ||
         Elements <- decode_json(Body),
-        Fields <- {ok, wocky_rest:map_keys_to_atoms(maps:from_list(Elements))},
-        Fields2 <- {ok, maybe_add_default_server(Fields, Server)},
-        verify_auth_fields(Fields2),
-        verify_user_fields(Fields2),
-        verify_avatar_field(Fields2),
-        {ok, Fields2}
+        Fields <- elements_to_map(Elements, Server),
+        verify_auth_fields(Fields),
+        verify_user_fields(Fields),
+        verify_avatar_field(Fields),
+        strip_empty_fields(Fields)
        ]).
 
 decode_json(Body) ->
@@ -118,64 +132,93 @@ decode_json(Body) ->
         error:_ -> {error, {400, "Could not parse JSON"}}
     end.
 
-verify_auth_fields(#{sessionID := _}) -> ok;
-verify_auth_fields(#{'X-Auth-Service-Provider'            := _,
-                     'X-Verify-Credentials-Authorization' := _,
-                     phoneNumber                          := _
-                    }) -> ok;
-verify_auth_fields(_) -> {error, {400, "Missing authentication data"}}.
+elements_to_map(Elements, Server) ->
+    Map = fun_chain:first(
+            Elements,
+            maps:from_list(),
+            wocky_rest:map_keys_to_atoms(),
+            maybe_add_default_server(Server),
+            merge_defaults()
+           ),
+    {ok, Map}.
 
-verify_user_fields(#{uuid     := UUID,
-                     resource := _
-                    }) ->
+merge_defaults(Fields) ->
+    Defaults = #{
+      userID                               => ?EMPTY,
+      uuid                                 => ?EMPTY,
+      handle                               => ?EMPTY,
+      firstName                            => ?EMPTY,
+      lastName                             => ?EMPTY,
+      resource                             => ?EMPTY,
+      phoneNumber                          => ?EMPTY,
+      email                                => ?EMPTY,
+      sessionID                            => ?EMPTY,
+      'X-Auth-Service-Provider'            => undefined,
+      'X-Verify-Credentials-Authorization' => undefined
+     },
+    maps:merge(Defaults, Fields).
+
+strip_empty_fields(Fields) ->
+  {ok, maps:filter(fun (_, <<>>) -> false;
+                       (_, undefined) -> false;
+                       (_, _) -> true end,
+                   Fields)}.
+
+verify_auth_fields(#{phoneNumber := ?EMPTY}) ->
+    {error, {400, "Missing or empty phoneNumber"}};
+verify_auth_fields(#{'X-Auth-Service-Provider'            := X1,
+                     'X-Verify-Credentials-Authorization' := X2,
+                     sessionID                            := ?EMPTY})
+  when X1 =:= undefined orelse X2 =:= undefined ->
+    {error, {400, "The Digits fields or sessionID (or both) must be supplied"}};
+verify_auth_fields(_) -> ok.
+
+verify_user_fields(#{userID := ?EMPTY, uuid := ?EMPTY}) ->
+    {error, {400, "userID or uuid (or both) must be supplied"}};
+verify_user_fields(#{resource := ?EMPTY}) ->
+    {error, {400, "resource must be supplied"}};
+verify_user_fields(#{uuid := UUID}) when UUID =/= ?EMPTY ->
     case wocky_db_user:is_valid_id(UUID) of
         true -> ok;
-        false -> {error, {400, "Invalid UUID"}}
+        false -> {error, {400, ["Invalid UUID: ", UUID]}}
     end;
-verify_user_fields(#{userID   := _,
-                     resource := _
-                    }) -> ok;
-verify_user_fields(_) -> {error, {400, "Missing user identifier or resource"}}.
+verify_user_fields(_) -> ok.
 
 verify_avatar_field(#{avatar := Avatar,
                       server := Server}) ->
     case tros:parse_url(Avatar) of
         {ok, {Server, FileID}} -> verify_file_id(FileID);
-        _ -> {error, {400, "Invalid or non-local avatar URL"}}
+        _ -> {error, {400, ["Invalid or non-local avatar URL: ", Avatar]}}
     end;
 verify_avatar_field(_) -> ok.
 
 verify_file_id(FileID) ->
     case francus:is_valid_id(FileID) of
         true -> ok;
-        false -> {error, {400, "Invalid file ID in URL"}}
+        false -> {error, {400, ["Invalid file ID in URL: ", FileID]}}
     end.
 
-maybe_add_default_server(Fields = #{server := _}, _) -> Fields;
+maybe_add_default_server(Fields = #{server := ?NOT_EMPTY}, _) -> Fields;
 maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.
 
-authenticate(
-    #{
-      'X-Auth-Service-Provider'            := AuthProvider,
-      'X-Verify-Credentials-Authorization' := Auth,
-      phoneNumber                          := PhoneNumber
-     }, AuthProviders, AuthBypassPrefixes) ->
-    case has_any_prefix(PhoneNumber, AuthBypassPrefixes) of
-        true ->
-            {true, digits};
-        false ->
-            verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders)
-    end;
-authenticate(
-    Fields = #{
-      sessionID := SessionID
-     }, _, _) ->
+authenticate(Fields = #{sessionID := SessionID}, _, _) ->
     case verify_session(Fields, SessionID) of
         true ->
             {true, session};
         false ->
-            ok = lager:warning("Invalid sessionID: ~p", [SessionID]),
+            ok = lager:warning("Invalid registration session id '~s'",
+                               [SessionID]),
             {false, 401, "Invalid sessionID"}
+    end;
+authenticate(#{phoneNumber := PhoneNumber} = Fields,
+             AuthProviders, AuthBypassPrefixes) ->
+    case has_any_prefix(PhoneNumber, AuthBypassPrefixes) of
+        true ->
+            {true, digits};
+        false ->
+            AuthProvider = maps:get('X-Auth-Service-Provider', Fields, <<>>),
+            Auth = maps:get('X-Verify-Credentials-Authorization', Fields, <<>>),
+            verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders)
     end.
 
 verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) ->
@@ -183,7 +226,8 @@ verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) ->
         true ->
             {true, digits};
         {false, Code, Error} ->
-            ok = lager:warning("Failed digits auth: ~p ~p", [Code, Error]),
+            ok = lager:warning("Failed Digits auth during registration: ~B ~s",
+                               [Code, Error]),
             {false, Code, Error}
     end.
 
@@ -193,8 +237,8 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
         true ->
             wocky_digits_auth:verify(Auth, PhoneNumber, AuthProvider);
         false ->
-            ok = lager:warning("Invalid authentication provider: ~p",
-                            [AuthProvider]),
+            ok = lager:warning("Invalid authentication provider '~s'",
+                               [AuthProvider]),
             {false, 401, "Invalid authentication provider"}
     end.
 
@@ -281,15 +325,21 @@ set_result(RD, Ctx = #state{server = Server,
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
     RD3 = wrq:set_resp_body(Body, RD2),
 
-    ok = lager:warning("Operation complete. Replying: ~p", [Body]),
+    ok = lager:info("Registration complete. Replying with ~s", [Body]),
     {true, RD3, Ctx}.
 
 create_update_error(E, RD, Ctx) ->
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
     RD3 = set_resp_body(409, atom_to_list(E), RD2),
 
-    ok = lager:warning("Error in operation: ~p", [E]),
+    ok = lager:warning("Error during registration: ~p", [E]),
     {{halt, 409}, RD3, Ctx}.
+
+create_internal_error(Class, Reason, Fields, RD, Ctx) ->
+  ST = lager:pr_stacktrace(erlang:get_stacktrace(), {Class, Reason}),
+  Msg = io_lib:format("Internal error registering user. ~p ~s", [Fields, ST]),
+  ok = lager:error(Msg),
+  {{halt, 500}, set_resp_body(500, Msg, RD), Ctx}.
 
 
 %%%===================================================================
@@ -329,7 +379,7 @@ prepare_for_encoding(Fields = #{uuid := UUID}) ->
 
 set_resp_body(Code, Error, RD) ->
     JSON = mochijson2:encode({struct, [{code, Code},
-                                       {error, list_to_binary(Error)}]}),
+                                       {error, iolist_to_binary(Error)}]}),
     wrq:set_resp_body(JSON, RD).
 
 has_any_prefix(PhoneNumber, Prefixes) ->
