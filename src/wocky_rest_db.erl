@@ -78,8 +78,8 @@ create_path(RD, Ctx) -> {"", RD, Ctx}.
 from_json(RD, Ctx = #state{user = User, server = Server}) ->
     case wrq:path_info(RD) of
         [{operation, "reset"}] ->
-            wocky_db_seed:bootstrap(shared),
-            wocky_db_seed:bootstrap(Server),
+            wocky_db_seed:bootstrap(shared, Server),
+            wocky_db_seed:bootstrap(Server, Server),
             {true, RD, Ctx};
 
         [{operation, "delete"}] ->

@@ -276,9 +276,8 @@ test_remove_user_with_password() ->
                     remove_user(?USER, ?SERVER, <<"niemakota">>)),
       ?_assert(does_user_exist(?USER, ?SERVER))
     ]},
-    { "returns {error, not_exists} if the user doesn't exist", [
-      ?_assertEqual({error, not_exists},
-                    remove_user(?BADUSER, ?SERVER, <<"ticktock">>))
+    { "returns ok if the user doesn't exist", [
+      ?_assertEqual(ok, remove_user(?BADUSER, ?SERVER, <<"ticktock">>))
     ]}
   ]}.
 
