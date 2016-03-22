@@ -12,23 +12,22 @@
 
 -define(DEFAULT_PORT, 1096).
 
+-spec start(list()) -> ok.
 start(Opts) ->
     Port = proplists:get_value(port, Opts, ?DEFAULT_PORT),
 
     {ok, _} = application:ensure_all_started(webmachine),
-    webmachine_mochiweb:start(
-      [{name, wocky_reg},
-       {port, Port},
-       {dispatch, [
-                   {["wocky", "v1", "user"], wocky_rest_reg, Opts},
-                   {["wocky", "v1", "db", operation], wocky_rest_db, Opts}
-                  ]}]),
+    webmachine_mochiweb:start([{name, wocky_api},
+                               {port, Port},
+                               {dispatch, routes(Opts)}]),
     ok.
 
+-spec stop() -> ok.
 stop() ->
-    ok = webmachine_mochiweb:stop(wocky_reg_mochiweb),
+    ok = webmachine_mochiweb:stop(wocky_api_mochiweb),
     ok.
 
+-spec map_keys_to_atoms(map()) -> map().
 map_keys_to_atoms(Map) ->
     lists:foldl(fun(K, M) -> binary_key_to_atom(K, M) end,
                 Map, maps:keys(Map)).
@@ -43,3 +42,12 @@ maybe_add_as_atom(Key, Val, Map) ->
     catch
         error:badarg -> Map
     end.
+
+routes(Opts) ->
+    Routes = [{["wocky", "v1", "user"], wocky_rest_reg, Opts}],
+    maybe_add_testing_routes(wocky_app:is_testing(), Routes, Opts).
+
+maybe_add_testing_routes(true, Routes, Opts) ->
+    [{["wocky", "v1", "db", operation], wocky_rest_db, Opts}|Routes];
+maybe_add_testing_routes(false, Routes, _Opts) ->
+    Routes.
