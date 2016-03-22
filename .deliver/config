@@ -17,6 +17,9 @@ BUILD_USER="ubuntu"
 # build directory on build host
 BUILD_AT="/home/ubuntu/wocky"
 
+# Restart the node after deploying
+START_DEPLOY=true
+
 
 ##
 ## STAGING / TEST
