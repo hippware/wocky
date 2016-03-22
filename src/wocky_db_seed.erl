@@ -116,7 +116,8 @@ clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(shared, [user,
                                         handle_to_user,
                                         phone_number_to_user]),
-    wocky_db_seed:clear_tables(Context, [session, auth_token, last_activity]).
+    wocky_db_seed:clear_tables(Context, [session, roster,
+                                         auth_token, last_activity]).
 
 %% This is an incredibly ugly hack to work around a problem in cqerl.
 %% When we drop tables the C* server discards all cached prepared queries
@@ -454,13 +455,13 @@ seed_data(offline_msg, Server) ->
 seed_data(roster, Server) ->
     Items = [
         #{contact_jid => sjid(?BOB, Server), nick => <<"bobby">>,
-          version => 666},
+          ask => <<"none">>, version => 666},
         #{contact_jid => sjid(?CAROL, Server), nick => <<"carrie">>,
-          version => 777},
+          ask => <<"none">>, version => 777},
         #{contact_jid => sjid(?ROBERT, Server), nick => <<"bob2">>,
-          version => 888},
+          ask => <<"none">>, version => 888},
         #{contact_jid => sjid(?KAREN, Server), nick => <<"kk">>,
-          version => 999}
+          ask => <<"none">>, version => 999}
     ],
     [I#{user => ?ALICE, server => Server, groups => [<<"friends">>]}
      || I <- Items];

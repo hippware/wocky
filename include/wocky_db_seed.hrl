@@ -36,6 +36,11 @@
 -define(ROBERT, <<"2c33f32e-c5fe-11e5-9912-ba0be0483c18">>).
 -define(TIM,    <<"31a07b20-c5fe-11e5-9912-ba0be0483c18">>).
 
+-define(ALICE_JID, jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)).
+-define(BOB_JID,   jid:make(?BOB,   ?LOCAL_CONTEXT, <<>>)).
+-define(CAROL_JID, jid:make(?CAROL, ?LOCAL_CONTEXT, <<>>)).
+-define(KAREN_JID, jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)).
+
 -define(AVATAR_FILE,  <<"ee880476-e712-11e5-990d-08002719e96e">>).
 -define(AVATAR_FILE2, <<"5620c844-e98d-11e5-b97b-08002719e96e">>).
 -define(AVATAR_FILE3, <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).

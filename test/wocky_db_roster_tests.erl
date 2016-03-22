@@ -13,7 +13,9 @@
                           delete_roster/2,
                           get_roster_item/3,
                           update_roster_item/4,
-                          delete_roster_item/3]).
+                          delete_roster_item/3,
+                          has_contact/2
+                         ]).
 
 mod_roster_wocky_test_() -> {
   "wocky_db_roster",
@@ -25,7 +27,8 @@ mod_roster_wocky_test_() -> {
     test_delete_roster(),
     test_get_roster_item(),
     test_update_roster_item(),
-    test_delete_roster_item()
+    test_delete_roster_item(),
+    test_has_contact()
   ]
 }.
 
@@ -161,4 +164,16 @@ test_delete_roster_item() ->
         ?_assertEqual(ok, delete_roster_item(?USER, ?SERVER,
                                              make_jid(?BADUSER)))
       ]}
+  ]}.
+
+test_has_contact() ->
+  { "has_contact/2", setup, fun before_each/0, fun after_each/1, [
+    { "returns true when user A has user B in their roster", [
+      ?_assert(has_contact(?ALICE_JID, ?BOB_JID)),
+      ?_assert(has_contact(?ALICE_JID, ?CAROL_JID))
+    ]},
+    { "returns false when users are not friends", [
+      ?_assertNot(has_contact(?CAROL_JID, ?ALICE_JID)),
+      ?_assertNot(has_contact(?KAREN_JID, ?CAROL_JID))
+    ]}
   ]}.
