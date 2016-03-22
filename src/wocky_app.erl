@@ -10,7 +10,7 @@
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0,
          start_ejabberd/0, start_ejabberd/1,
-         version/0]).
+         version/0, server/0]).
 
 
 -spec start(string()) -> ok.
@@ -46,6 +46,14 @@ start_ejabberd(CfgDir) ->
 
 version() ->
     ?WOCKY_VERSION.
+
+server() ->
+    try
+        hd(ejabberd_config:get_global_option(hosts))
+    catch
+        _:_ ->
+            <<"localhost">>
+    end.
 
 
 %%%===================================================================
