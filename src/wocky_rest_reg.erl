@@ -178,7 +178,7 @@ verify_user_fields(#{userID := ?EMPTY, uuid := ?EMPTY}) ->
 verify_user_fields(#{resource := ?EMPTY}) ->
     {error, {400, "resource must be supplied"}};
 verify_user_fields(#{uuid := UUID}) when UUID =/= ?EMPTY ->
-    case wocky_db_user:is_valid_id(UUID) of
+    case wocky_db:is_valid_id(UUID) of
         true -> ok;
         false -> {error, {400, ["Invalid UUID: ", UUID]}}
     end;
@@ -193,7 +193,7 @@ verify_avatar_field(#{avatar := Avatar,
 verify_avatar_field(_) -> ok.
 
 verify_file_id(FileID) ->
-    case francus:is_valid_id(FileID) of
+    case wocky_db:is_valid_id(FileID) of
         true -> ok;
         false -> {error, {400, ["Invalid file ID in URL: ", FileID]}}
     end.

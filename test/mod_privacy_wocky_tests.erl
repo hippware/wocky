@@ -31,13 +31,13 @@ mod_privacy_wocky_test_() -> {
 privacy_tables() -> [privacy, privacy_item].
 
 before_all() ->
-    {ok, _} = application:ensure_all_started(p1_stringprep),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, privacy_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, privacy_tables()),
     ok.
 
 after_all(_) ->
+    ok = wocky_app:stop(),
     ok.
 
 test_get_default_list() -> {
@@ -194,7 +194,7 @@ test_remove_user() -> {
     { "does not fail on repeated calls with non-existant users", [
       ?_assertEqual(ok, remove_user(?CAROL, ?LOCAL_CONTEXT)),
       ?_assertEqual(ok, remove_user(?CAROL, ?LOCAL_CONTEXT)),
-      ?_assertEqual(ok, remove_user(wocky_db_user:create_id(), ?LOCAL_CONTEXT))
+      ?_assertEqual(ok, remove_user(wocky_db:create_id(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 

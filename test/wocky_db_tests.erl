@@ -4,6 +4,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky.hrl").
+-include("wocky_db_seed.hrl").
 
 
 -define(LONG_STRING, <<"Lorem ipsum dolor sit amet, consectetur cras amet.">>).
@@ -34,6 +35,20 @@ empty_batch_test_() -> {
                     wocky_db:batch_query(shared, [], logged, quorum))
     ]}
 ]}.
+
+is_valid_id_test_() ->
+  { "is_valid_id", [
+    { "returns true if the user ID is a valid UUID", [
+      ?_assert(wocky_db:is_valid_id(?USER)),
+      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v1, text))),
+      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v1, binary))),
+      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v4, text))),
+      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v4, binary)))
+    ]},
+    { "returns false if the user ID is not a valid UUID", [
+      ?_assertNot(wocky_db:is_valid_id(<<"alice">>))
+    ]}
+  ]}.
 
 
 test_build_query_cases(Fun, Cases) ->

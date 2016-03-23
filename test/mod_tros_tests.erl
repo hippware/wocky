@@ -25,7 +25,6 @@ mecks() -> [ejabberd_config, ejabberd_sm, httpd_util, ossp_uuid,
             cowboy, mod_tros_francus, mod_tros_s3].
 
 before_all(Backend) ->
-    {ok, _} = application:ensure_all_started(p1_stringprep),
     ok = wocky_app:start(),
 
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media]),

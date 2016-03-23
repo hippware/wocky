@@ -34,7 +34,6 @@ before_all() ->
                 end),
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
-    application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [message_archive]),
     ok.

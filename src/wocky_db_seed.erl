@@ -148,10 +148,13 @@ keyspace_tables(_) -> [
     offline_msg,
     roster,
     session,
+    user_to_sids,
     media,
     media_data,
     message_archive,
-    auth_token
+    auth_token,
+    privacy,
+    privacy_item
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -613,7 +616,7 @@ make_offline_msg(User, Server, Handle, NowSecs, I) ->
     ToJID = jid(<<"to_user">>, <<"to_server">>, <<"res2">>),
     #{user => User,
       server => Server,
-      msg_id => wocky_db_user:create_id(),
+      msg_id => wocky_db:create_id(),
       timestamp => wocky_db:seconds_to_timestamp(NowSecs + I),
       expire => wocky_db:seconds_to_timestamp(ExpireSecs),
       from_id => jid:to_binary(FromJID),

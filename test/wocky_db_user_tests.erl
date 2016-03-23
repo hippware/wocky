@@ -6,10 +6,10 @@
 -include("wocky_db_seed.hrl").
 
 -import(wocky_db_user,
-        [is_valid_id/1, does_user_exist/2, create_user/1, create_user/3,
+        [does_user_exist/2, create_user/1, create_user/3,
          create_user/4, update_user/1, remove_user/2, get_password/2,
          set_password/3, generate_token/0, assign_token/3,
-         release_token/3, get_tokens/2, check_token/4, create_id/0,
+         release_token/3, get_tokens/2, check_token/4,
          maybe_set_handle/3,
          get_handle/2, get_user_by_handle/1,
          set_phone_number/3,
@@ -24,7 +24,6 @@ wocky_db_user_test_() ->
      "wocky_db_user",
      setup, fun before_all/0, fun after_all/1,
      [
-      test_is_valid_id(),
       test_does_user_exist(),
       test_create_user_without_id(),
       test_create_user_with_id(),
@@ -77,20 +76,6 @@ before_avatar() ->
 
 after_avatar(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]).
-
-test_is_valid_id() ->
-  { "is_valid_id", [
-    { "returns true if the user ID is a valid UUID", [
-      ?_assert(is_valid_id(?USER)),
-      ?_assert(is_valid_id(ossp_uuid:make(v1, text))),
-      ?_assert(is_valid_id(ossp_uuid:make(v1, binary))),
-      ?_assert(is_valid_id(ossp_uuid:make(v4, text))),
-      ?_assert(is_valid_id(ossp_uuid:make(v4, binary)))
-    ]},
-    { "returns false if the user ID is not a valid UUID", [
-      ?_assertNot(is_valid_id(<<"alice">>))
-    ]}
-  ]}.
 
 test_does_user_exist() ->
   { "does_user_exist", setup, fun before_each/0, fun after_each/1, [
@@ -261,7 +246,8 @@ test_check_token() ->
     ]},
     { "denies tokens with a bad user or resource",
       setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
-      ?_assertNot(check_token(create_id(), ?SERVER, ?RESOURCE, Token)),
+      ?_assertNot(check_token(wocky_db:create_id(),
+                              ?SERVER, ?RESOURCE, Token)),
       ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
     ] end}
    ]}.
@@ -301,7 +287,7 @@ test_set_phone_number() ->
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, <<"+4567">>)),
         ?_assertEqual(<<"+4567">>, get_phone_number(?ALICE, ?SERVER)),
         ?_assertEqual({?ALICE, ?SERVER}, get_user_by_phone_number(<<"+4567">>)),
-        ?_assertEqual(null, get_phone_number(?CAROL, ?SERVER))
+        ?_assertEqual({error, not_found}, get_phone_number(?CAROL, ?SERVER))
     ]},
     { "will succeed and remain valid for the same value", [
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),
@@ -321,7 +307,8 @@ test_get_user_data() ->
                       get_user_data(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "returns not_found for non-existant users", [
-        ?_assertEqual(not_found, get_user_data(create_id(), ?LOCAL_CONTEXT))
+        ?_assertEqual(not_found,
+                      get_user_data(wocky_db:create_id(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 
