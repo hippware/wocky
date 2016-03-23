@@ -148,10 +148,13 @@ keyspace_tables(_) -> [
     offline_msg,
     roster,
     session,
+    user_to_sids,
     media,
     media_data,
     message_archive,
-    auth_token
+    auth_token,
+    privacy,
+    privacy_item
 ].
 
 %% A lookup table that maps globally unique handle to user account id
