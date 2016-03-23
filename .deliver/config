@@ -26,7 +26,7 @@ START_DEPLOY=true
 ##
 
 # staging / test hosts separated by space
-STAGING_HOSTS="app1.dev.tinyrobot.com app2.dev.tinyrobot.com app3.dev.tinyrobot.com test1.dev.tinyrobot.com"
+STAGING_HOSTS="app1.dev.tinyrobot.com app2.dev.tinyrobot.com app3.dev.tinyrobot.com"
 
 # local user at staging hosts
 STAGING_USER="wocky"
@@ -40,7 +40,10 @@ TEST_AT="/opt"
 ##
 
 # deploy / production hosts separated by space
-PRODUCTION_HOSTS="app1.prod.tinyrobot.com app2.prod.tinyrobot.com app3.prod.tinyrobot.com"
+# Using this to deploy to the testing nodes since we don't have production
+# nodes yet. Gonna have problems when we start deploying production
+# environments.
+PRODUCTION_HOSTS="test1.dev.tinyrobot.com"
 
 # local user at deploy hosts
 PRODUCTION_USER="wocky"
