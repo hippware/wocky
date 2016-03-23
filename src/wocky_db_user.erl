@@ -341,10 +341,16 @@ create_user_record(LUser, LServer, Handle, Password) ->
 %%
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
 does_user_exist(LUser, LServer) ->
-    case get_handle(LUser, LServer) of
-        {error, not_found} -> false;
-        _Handle -> true
-    end.
+    does_user_exist(LUser, LServer, is_valid_id(LUser)).
+
+%% @private
+does_user_exist(LUser, LServer, true) ->
+    case wocky_db:select_one(LServer, user, user, #{user => LUser}) of
+        not_found -> false;
+        LUser -> true
+    end;
+does_user_exist(_, _, false) ->
+    false.
 
 
 %% @doc Returns the user's handle.
@@ -434,15 +440,15 @@ set_password(LUser, LServer, Password) ->
 %%
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    case get_handle(LUser, LServer) of
-        {error, not_found} ->
+    case does_user_exist(LUser, LServer) of
+        false ->
             ok;
 
-        Handle ->
+        true ->
             %% TODO: this really needs to be done in a batch, but we don't
             %% currently have a clean way to run queries in different keyspaces
             %% in the same batch.
-            ok = remove_handle_lookup(Handle),
+            ok = remove_handle_lookup(LUser, LServer),
             ok = remove_phone_lookup(LUser, LServer),
             ok = remove_user_record(LUser, LServer),
             ok = remove_tokens(LUser, LServer),
@@ -450,8 +456,17 @@ remove_user(LUser, LServer) ->
     end.
 
 %% @private
-remove_handle_lookup(Handle) ->
-    wocky_db:delete(shared, handle_to_user, all, #{handle => Handle}).
+remove_handle_lookup(LUser, LServer) ->
+    case get_handle(LUser, LServer) of
+        {error, not_found} ->
+            ok;
+
+        null ->
+            ok;
+
+        Handle ->
+            wocky_db:delete(shared, handle_to_user, all, #{handle => Handle})
+    end.
 
 %% @private
 remove_phone_lookup(LUser, LServer) ->
