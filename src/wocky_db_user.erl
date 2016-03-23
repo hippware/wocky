@@ -443,7 +443,9 @@ remove_user(LUser, LServer) ->
             %% currently have a clean way to run queries in different keyspaces
             %% in the same batch.
             ok = remove_handle_lookup(Handle),
+            ok = remove_phone_lookup(LUser, LServer),
             ok = remove_user_record(LUser, LServer),
+            ok = remove_tokens(LUser, LServer),
             ok
     end.
 
@@ -452,8 +454,27 @@ remove_handle_lookup(Handle) ->
     wocky_db:delete(shared, handle_to_user, all, #{handle => Handle}).
 
 %% @private
+remove_phone_lookup(LUser, LServer) ->
+    case get_phone_number(LUser, LServer) of
+        {error, not_found} ->
+            ok;
+
+        null ->
+            ok;
+
+        PhoneNumber ->
+            wocky_db:delete(shared, phone_number_to_user, all,
+                            #{phone_number => PhoneNumber})
+    end.
+
+%% @private
 remove_user_record(LUser, LServer) ->
     wocky_db:delete(LServer, user, all, #{user => LUser}).
+
+%% @private
+remove_tokens(LUser, LServer) ->
+    wocky_db:delete(LServer, auth_token, all,
+                    #{user => LUser, server => LServer}).
 
 
 %% @doc Generates a token.
