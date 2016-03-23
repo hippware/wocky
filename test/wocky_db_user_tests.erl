@@ -301,7 +301,7 @@ test_set_phone_number() ->
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, <<"+4567">>)),
         ?_assertEqual(<<"+4567">>, get_phone_number(?ALICE, ?SERVER)),
         ?_assertEqual({?ALICE, ?SERVER}, get_user_by_phone_number(<<"+4567">>)),
-        ?_assertEqual(null, get_phone_number(?CAROL, ?SERVER))
+        ?_assertEqual({error, not_found}, get_phone_number(?CAROL, ?SERVER))
     ]},
     { "will succeed and remain valid for the same value", [
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),

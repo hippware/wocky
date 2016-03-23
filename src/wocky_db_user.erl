@@ -259,7 +259,7 @@ maybe_create_handle(LUser, LServer, Handle) ->
 set_phone_number(LUser, LServer, PhoneNumber) ->
     create_phone_number_lookup(LUser, LServer, PhoneNumber),
     update_lookup(LUser, LServer, phone_number_to_user,
-                phone_number, PhoneNumber),
+                  phone_number, PhoneNumber),
     ok.
 
 %% @private
@@ -384,6 +384,7 @@ get_lookup(LUser, LServer, Col) ->
 get_lookup(LUser, LServer, Col, true) ->
     case wocky_db:select_one(LServer, user, Col, #{user => LUser}) of
         not_found -> {error, not_found};
+        null -> {error, not_found};
         Value -> Value
     end;
 get_lookup(_, _, _, false) ->
@@ -461,9 +462,6 @@ remove_handle_lookup(LUser, LServer) ->
         {error, not_found} ->
             ok;
 
-        null ->
-            ok;
-
         Handle ->
             wocky_db:delete(shared, handle_to_user, all, #{handle => Handle})
     end.
@@ -472,9 +470,6 @@ remove_handle_lookup(LUser, LServer) ->
 remove_phone_lookup(LUser, LServer) ->
     case get_phone_number(LUser, LServer) of
         {error, not_found} ->
-            ok;
-
-        null ->
             ok;
 
         PhoneNumber ->
