@@ -30,7 +30,6 @@ mod_roster_wocky_test_() -> {
 }.
 
 before_all() ->
-    application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, roster]),
     ok.

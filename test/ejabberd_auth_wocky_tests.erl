@@ -100,7 +100,6 @@ before_all(PasswordFormat) ->
                     [{password_format, PasswordFormat}]
                 end),
 
-    application:ensure_started(p1_stringprep),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
