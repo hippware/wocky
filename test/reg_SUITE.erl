@@ -89,8 +89,8 @@ init_per_group(_Group, ConfigIn) -> ConfigIn.
 end_per_group(_Group, Config) -> Config.
 
 init_per_testcase(_CaseName, Config) ->
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, auth_token]),
-    wocky_db_seed:clear_tables(shared, [handle_to_user,
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
+    wocky_db_seed:clear_tables(shared, [user, handle_to_user,
                                         phone_number_to_user]),
     Config.
 
@@ -201,7 +201,7 @@ session_id_update_phone_number(_) ->
     stop_digits_server().
 
 invalid_auth_provider(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user]),
+    wocky_db_seed:seed_tables(shared, [user]),
     Data = lists:keyreplace('X-Auth-Service-Provider', 1, test_data(),
                             {'X-Auth-Service-Provider',
                              <<"http://evilhost.com">>}),
@@ -209,20 +209,23 @@ invalid_auth_provider(_) ->
     {ok, {403, _Body}} = request(JSON).
 
 invalid_session_id(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keyreplace(sessionID, 1, session_test_data(?ALICE, ?TOKEN),
                             {sessionID, <<"$T$Icantotallyhackthissession">>}),
     JSON = encode(Data),
     {ok, {403, _Body}} = request(JSON).
 
 missing_auth_data(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keydelete(sessionID, 1, session_test_data(?ALICE, ?TOKEN)),
     JSON = encode(Data),
     {ok, {400, _Body}} = request(JSON).
 
 session_with_userid(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
                             {userID, ?AUTH_USER}),
     ct:log("Data: ~p", [Data]),
@@ -230,14 +233,16 @@ session_with_userid(_) ->
     {ok, {201, _Body}} = request(JSON).
 
 invalid_user_id(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
                             {userID, <<"999999999">>}),
     JSON = encode(Data),
     {ok, {403, _Body}} = request(JSON).
 
 missing_user_id(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keydelete(uuid, 1, session_test_data(?ALICE, ?TOKEN)),
     JSON = encode(Data),
     {ok, {400, _Body}} = request(JSON).
@@ -256,8 +261,8 @@ bypass_prefixes(_) ->
     stop_digits_server().
 
 valid_avatar(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
-                                               media_data]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token, media, media_data]),
     AvatarURL = tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
     Data = [{avatar, AvatarURL}|
             session_test_data(?ALICE, ?TOKEN)],
@@ -268,24 +273,24 @@ valid_avatar(_) ->
 
 
 non_existant_avatar(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
-                                               media_data]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token, media, media_data]),
     Data = [{avatar, tros:make_url(?LOCAL_CONTEXT, mod_tros:make_file_id())} |
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
     {ok, {409, _Body}} = request(JSON).
 
 unowned_avatar(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
-                                               media_data]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token, media, media_data]),
     Data = [{avatar, tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE3)} |
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
     {ok, {409, _Body}} = request(JSON).
 
 wrong_purpose_avatar(_) ->
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token, media,
-                                               media_data]),
+    wocky_db_seed:seed_tables(shared, [user]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token, media, media_data]),
     Data = [{avatar, tros:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE)} |
             session_test_data(?ALICE, ?TOKEN)],
     JSON = encode(Data),
@@ -379,8 +384,7 @@ verify_phone_number(User, PhoneNumber) ->
     PhoneNumber = wocky_db_user:get_phone_number(User, ?LOCAL_CONTEXT).
 
 verify_avatar(User, Avatar) ->
-    Avatar = wocky_db:select_one(?LOCAL_CONTEXT, user,
-                                 avatar, #{user => User}).
+    Avatar = wocky_db:select_one(shared, user, avatar, #{user => User}).
 
 verify_avatar_in_body(Body, Avatar) ->
     {struct, Elements} = mochijson2:decode(Body),

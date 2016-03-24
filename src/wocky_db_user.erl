@@ -128,15 +128,15 @@ create_user(LServer, Handle, Password) ->
 %% `Fields' is a map containing fields to set. At a minimum, `server', must
 %% be set.
 -spec create_user(map()) -> ejabberd:luser() | {error, atom()}.
-create_user(Fields = #{server := LServer}) ->
+create_user(Fields) ->
     NewID = wocky_db:create_id(),
     WithUser = Fields#{user => NewID},
     CreationFields = maps:without([handle, phone_number], WithUser),
     do([error_m ||
-       maybe_update_avatar(Fields),
-       error_m:return(
-         true = wocky_db:insert_new(LServer, user, CreationFields)),
-       NewID]).
+        maybe_update_avatar(Fields),
+        error_m:return(
+          true = wocky_db:insert_new(shared, user, CreationFields)),
+        NewID]).
 
 %% @doc Update the data on an existing user. As with {@link create_user/1},
 %% `handle' and `phone_number' will be ignored and must be set separately.
@@ -144,11 +144,11 @@ create_user(Fields = #{server := LServer}) ->
 %% `Fields' is a map containing fields to update. At a minimum, `server' and
 %% `user' must be set.
 -spec update_user(map()) -> ok | {error, atom()}.
-update_user(Fields = #{user := User, server := LServer}) ->
+update_user(Fields = #{user := User}) ->
     UpdateFields = maps:without([user, handle, phone_number], Fields),
     do([error_m ||
         maybe_update_avatar(Fields),
-        wocky_db:update(LServer, user, UpdateFields, #{user => User})
+        wocky_db:update(shared, user, UpdateFields, #{user => User})
        ]).
 
 %% @private
@@ -189,11 +189,11 @@ check_avatar_purpose(UserID, LServer, File) ->
 %% @private
 assign_avatar(UserID, LServer, Avatar) ->
     maybe_delete_existing_avatar(UserID, LServer),
-    wocky_db:update(LServer, user, #{avatar => Avatar}, #{user => UserID}).
+    wocky_db:update(shared, user, #{avatar => Avatar}, #{user => UserID}).
 
 %% @private
-maybe_delete_existing_avatar(UserID, LServer) ->
-    case wocky_db:select_one(LServer, user, avatar, #{user => UserID}) of
+maybe_delete_existing_avatar(UserID, _LServer) ->
+    case wocky_db:select_one(shared, user, avatar, #{user => UserID}) of
         URL = <<"tros:", _/binary>> ->
             {ok, {Server, FileID}} = tros:parse_url(URL),
             francus:delete(Server, FileID);
@@ -254,20 +254,20 @@ maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
     case get_user_by_phone_number(PhoneNumber) of
         not_found -> ok;
         {LUser, LServer} -> ok;
-        {OtherUser, OtherServer} ->
-            ok = wocky_db:update(OtherServer, user, #{phone_number => null},
+        {OtherUser, _OtherServer} ->
+            ok = wocky_db:update(shared, user, #{phone_number => null},
                                  #{user => OtherUser})
     end.
 
 %% @private
-update_lookup(LUser, LServer, Table, Col, Key) ->
-    case wocky_db:select_one(LServer, user, Col, #{user => LUser}) of
+update_lookup(LUser, _LServer, Table, Col, Key) ->
+    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
         K when K =:= null; K =:= Key ->
             ok;
         OldKey ->
             ok = wocky_db:delete(shared, Table, all, #{Col => OldKey})
     end,
-    ok = wocky_db:update(LServer, user, #{Col => Key}, #{user => LUser}),
+    ok = wocky_db:update(shared, user, #{Col => Key}, #{user => LUser}),
     true.
 
 
@@ -310,7 +310,7 @@ create_user(_, _, _, _, false) ->
 create_user_record(LUser, LServer, Handle, Password) ->
     Values = #{user => LUser, server => LServer,
                handle => Handle, password => Password},
-    wocky_db:insert(LServer, user, Values).
+    wocky_db:insert(shared, user, Values).
 
 
 %% @doc Returns `true' if the user exists in the database.
@@ -324,8 +324,8 @@ does_user_exist(LUser, LServer) ->
     does_user_exist(LUser, LServer, wocky_db:is_valid_id(LUser)).
 
 %% @private
-does_user_exist(LUser, LServer, true) ->
-    case wocky_db:select_one(LServer, user, user, #{user => LUser}) of
+does_user_exist(LUser, _LServer, true) ->
+    case wocky_db:select_one(shared, user, user, #{user => LUser}) of
         not_found -> false;
         LUser -> true
     end;
@@ -361,8 +361,8 @@ get_lookup(LUser, LServer, Col) ->
     get_lookup(LUser, LServer, Col, wocky_db:is_valid_id(LUser)).
 
 %% @private
-get_lookup(LUser, LServer, Col, true) ->
-    case wocky_db:select_one(LServer, user, Col, #{user => LUser}) of
+get_lookup(LUser, _LServer, Col, true) ->
+    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
         not_found -> {error, not_found};
         null -> {error, not_found};
         Value -> Value
@@ -383,8 +383,8 @@ get_password(LUser, LServer) ->
     get_password(LUser, LServer, wocky_db:is_valid_id(LUser)).
 
 %% @private
-get_password(LUser, LServer, true) ->
-    case wocky_db:select_one(LServer, user, password, #{user => LUser}) of
+get_password(LUser, _LServer, true) ->
+    case wocky_db:select_one(shared, user, password, #{user => LUser}) of
         not_found -> {error, not_found};
         Password -> Password
     end;
@@ -407,7 +407,7 @@ get_password(_, _, false) ->
 set_password(LUser, LServer, Password) ->
     case does_user_exist(LUser, LServer) of
         false -> {error, not_found};
-        true -> wocky_db:update(LServer, user,
+        true -> wocky_db:update(shared, user,
                                 #{password => Password},
                                 #{user => LUser})
     end.
@@ -421,45 +421,42 @@ set_password(LUser, LServer, Password) ->
 %%
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    case does_user_exist(LUser, LServer) of
-        false ->
+    remove_user(LUser, LServer, wocky_db:is_valid_id(LUser)).
+
+%% @private
+remove_user(LUser, LServer, true) ->
+    Columns = [handle, phone_number],
+    case wocky_db:select_row(shared, user, Columns, #{user => LUser}) of
+        not_found ->
             ok;
 
-        true ->
+        #{handle := Handle, phone_number := PhoneNumber} ->
             %% TODO: this really needs to be done in a batch, but we don't
             %% currently have a clean way to run queries in different keyspaces
             %% in the same batch.
-            ok = remove_handle_lookup(LUser, LServer),
-            ok = remove_phone_lookup(LUser, LServer),
-            ok = remove_user_record(LUser, LServer),
+            ok = remove_handle_lookup(Handle),
+            ok = remove_phone_lookup(PhoneNumber),
+            ok = remove_user_record(LUser),
             ok = remove_tokens(LUser, LServer),
             ok
-    end.
+    end;
+remove_user(_, _, false) ->
+    ok.
 
 %% @private
-remove_handle_lookup(LUser, LServer) ->
-    case get_handle(LUser, LServer) of
-        {error, not_found} ->
-            ok;
-
-        Handle ->
-            wocky_db:delete(shared, handle_to_user, all, #{handle => Handle})
-    end.
+remove_handle_lookup(null) -> ok;
+remove_handle_lookup(Handle) ->
+    wocky_db:delete(shared, handle_to_user, all, #{handle => Handle}).
 
 %% @private
-remove_phone_lookup(LUser, LServer) ->
-    case get_phone_number(LUser, LServer) of
-        {error, not_found} ->
-            ok;
-
-        PhoneNumber ->
-            wocky_db:delete(shared, phone_number_to_user, all,
-                            #{phone_number => PhoneNumber})
-    end.
+remove_phone_lookup(null) -> ok;
+remove_phone_lookup(PhoneNumber) ->
+    wocky_db:delete(shared, phone_number_to_user, all,
+                    #{phone_number => PhoneNumber}).
 
 %% @private
-remove_user_record(LUser, LServer) ->
-    wocky_db:delete(LServer, user, all, #{user => LUser}).
+remove_user_record(LUser) ->
+    wocky_db:delete(shared, user, all, #{user => LUser}).
 
 %% @private
 remove_tokens(LUser, LServer) ->
@@ -591,8 +588,8 @@ check_token(LUser, LServer, Resource, Token) ->
 %%
 -spec get_user_data(ejabberd:lserver(), ejabberd:lserver())
         -> map() | not_found.
-get_user_data(LUser, LServer) ->
-    wocky_db:select_row(LServer, user, all, #{user => LUser}).
+get_user_data(LUser, _LServer) ->
+    wocky_db:select_row(shared, user, all, #{user => LUser}).
 
 
 %% @doc Returns the user ID associated with an authorization user name such
@@ -604,8 +601,8 @@ get_user_data(LUser, LServer) ->
 %%
 -spec get_user_by_auth_name(ejabberd:lserver(), auth_name())
         -> ejabberd:luser() | not_found.
-get_user_by_auth_name(LServer, AuthUser) ->
-    wocky_db:select_one(LServer, auth_user, user, #{auth_user => AuthUser}).
+get_user_by_auth_name(_LServer, AuthUser) ->
+    wocky_db:select_one(shared, auth_user, user, #{auth_user => AuthUser}).
 
 
 %% @doc Returns the user ID and server associated with an given handle

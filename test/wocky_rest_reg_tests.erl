@@ -17,12 +17,14 @@ wocky_rest_reg_test_() -> {
 
 before_all() ->
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:prepare_tables(shared, [user,
+                                               handle_to_user,
                                                phone_number_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
-    ok = wocky_db_seed:seed_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token]),
+    ok = wocky_db_seed:seed_tables(shared, [user,
+                                            handle_to_user,
                                             phone_number_to_user]),
-    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     ok.
 
 after_all(_) ->
