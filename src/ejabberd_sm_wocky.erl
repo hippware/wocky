@@ -59,13 +59,14 @@ get_sessions(Server) ->
 -spec get_sessions(ejabberd:user(), ejabberd:server()) ->
     [ejabberd_sm:session()].
 get_sessions(User, Server) ->
-    query_sessions(Server, user_sessions, #{jid_user => User}).
+    query_sessions(Server, #{jid_user => User}, wocky_db:is_valid_id(User)).
 
 -spec get_sessions(ejabberd:user(), ejabberd:server(), ejabberd:resource()
                   ) -> [ejabberd_sm:session()].
 get_sessions(User, Server, Resource) ->
-    query_sessions(Server, user_sessions,
-                   #{jid_user => User, jid_resource => Resource}).
+    query_sessions(Server,
+                   #{jid_user => User, jid_resource => Resource},
+                   wocky_db:is_valid_id(User)).
 
 -spec create_session(ejabberd:user(),
                      ejabberd:server(),
@@ -108,8 +109,10 @@ unique_count() ->
         lists:flatten(
           lists:map(fun uss_on_server/1, servers())))).
 
-query_sessions(Server, Table, Values) ->
-    [row_to_rec(R) || R <- wocky_db:select(Server, Table, all, Values)].
+query_sessions(Server, Values, true) ->
+    [row_to_rec(R) || R <- wocky_db:select(Server, user_sessions, all, Values)];
+query_sessions(_, _, false) ->
+    [].
 
 rec_to_row(#session{
               sid = SID,
