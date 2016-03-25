@@ -46,9 +46,9 @@
 %%%===================================================================
 
 init(Opts) ->
-    AuthProviders = proplists:get_value(auth_providers, Opts),
-    AuthBypassPrefixes = proplists:get_value(auth_bypass_prefixes, Opts, []),
     Server = proplists:get_value(server, Opts),
+    AuthProviders = proplists:get_value(auth_providers, Opts),
+    AuthBypassPrefixes = get_auth_bypass_prefixes(Opts),
     {ok, #state{
             auth_providers = AuthProviders,
             auth_bypass_prefixes = AuthBypassPrefixes,
@@ -341,6 +341,12 @@ create_internal_error(Class, Reason, Fields, RD, Ctx) ->
 %%%===================================================================
 %%% Helper funcitons
 %%%===================================================================
+
+get_auth_bypass_prefixes(Opts) ->
+  case wocky_app:is_testing() of
+    true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
+    false -> []
+  end.
 
 field_mappings() ->
       %JSON Tag     %DB field name
