@@ -33,7 +33,8 @@ suite() ->
 init_per_suite(Config) ->
     ok = test_helper:start_ejabberd(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]),
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity, privacy,
+                                                privacy_item]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
