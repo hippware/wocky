@@ -620,8 +620,8 @@ batch_query_list(QueryList) ->
               end, QueryList).
 
 log_query(Query, Values) ->
-    ok = lager:info("Creating CQL query with statement '~s' and values ~p",
-                    [Query, Values]).
+    ok = lager:debug("Creating CQL query with statement '~s' and values ~p",
+                     [Query, Values]).
 
 %% Extracts the value of the first column of the first row from a query result
 -spec single_result(result()) -> term() | not_found.
