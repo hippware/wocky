@@ -101,8 +101,8 @@ before_all(PasswordFormat) ->
                 end),
 
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    ok = wocky_db_seed:prepare_tables(shared, [user, handle_to_user]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token]),
     ok = ejabberd_auth_wocky:start(?SERVER),
     ok.
 

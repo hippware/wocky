@@ -31,7 +31,8 @@ mod_roster_wocky_test_() -> {
 
 before_all() ->
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, roster]),
+    ok = wocky_db_seed:prepare_tables(shared, [user]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [roster]),
     ok.
 
 after_all(_) ->
@@ -39,12 +40,13 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user),
+    {ok, _} = wocky_db_seed:seed_table(shared, user),
     {ok, Data} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, roster),
     Data.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, roster]),
+    ok = wocky_db_seed:clear_tables(shared, [user]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [roster]),
     ok.
 
 make_jid(U) ->

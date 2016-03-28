@@ -47,10 +47,12 @@ wocky_db_user_test_() ->
 
 before_all() ->
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:prepare_tables(shared, [user,
+                                               handle_to_user,
                                                phone_number_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token,
-                                                       media, media_data]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token,
+                                                       media,
+                                                       media_data]),
     ok.
 
 after_all(_) ->
@@ -58,15 +60,15 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    ok = wocky_db_seed:seed_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:seed_tables(shared, [user,
+                                            handle_to_user,
                                             phone_number_to_user]),
-    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:clear_tables(shared, [user,
+                                             handle_to_user,
                                              phone_number_to_user]),
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user]),
     ok.
 
 before_avatar() ->
@@ -344,7 +346,7 @@ test_create_user_from_map() ->
                       phone_number := null,
                       handle := null
                      },
-                    wocky_db:select_row(?LOCAL_CONTEXT, user, all, #{}))
+                    wocky_db:select_row(shared, user, all, #{}))
     ]}
   ]}.
 

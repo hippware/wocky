@@ -25,8 +25,8 @@ before_all() ->
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [?SERVER]}),
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(shared, [handle_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    ok = wocky_db_seed:prepare_tables(shared, [user, handle_to_user]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token]),
     ok.
 
 after_all(_) ->
@@ -35,13 +35,13 @@ after_all(_) ->
 
 before_each() ->
     {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
-    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, user),
+    {ok, _} = wocky_db_seed:seed_table(shared, user),
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, auth_token),
     ok.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(shared, [handle_to_user]),
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    ok = wocky_db_seed:clear_tables(shared, [user, handle_to_user]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
     ok.
 
 jid() ->
