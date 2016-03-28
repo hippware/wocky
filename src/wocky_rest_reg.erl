@@ -46,9 +46,9 @@
 %%%===================================================================
 
 init(Opts) ->
-    AuthProviders = proplists:get_value(auth_providers, Opts),
-    AuthBypassPrefixes = proplists:get_value(auth_bypass_prefixes, Opts, []),
     Server = proplists:get_value(server, Opts),
+    AuthProviders = proplists:get_value(auth_providers, Opts),
+    AuthBypassPrefixes = get_auth_bypass_prefixes(Opts),
     {ok, #state{
             auth_providers = AuthProviders,
             auth_bypass_prefixes = AuthBypassPrefixes,
@@ -96,16 +96,12 @@ create_path(RD, Ctx) -> {"", RD, Ctx}.
 
 -spec from_json(#wm_reqdata{}, #state{}) ->
     {true, #wm_reqdata{}, #state{}}.
-from_json(RD, Ctx = #state{create_allowed = true, fields = Fields}) ->
+from_json(RD, Ctx = #state{create_allowed = Create, fields = Fields}) ->
     try
-        create_or_update_user(RD, Ctx)
-    catch
-        Class:Reason ->
-            create_internal_error(Class, Reason, Fields, RD, Ctx)
-    end;
-from_json(RD, Ctx = #state{fields = Fields}) ->
-    try
-        find_and_update_user(RD, Ctx)
+      case Create of
+        true  -> create_or_update_user(RD, Ctx);
+        false -> find_and_update_user(RD, Ctx)
+      end
     catch
         Class:Reason ->
             create_internal_error(Class, Reason, Fields, RD, Ctx)
@@ -345,6 +341,12 @@ create_internal_error(Class, Reason, Fields, RD, Ctx) ->
 %%%===================================================================
 %%% Helper funcitons
 %%%===================================================================
+
+get_auth_bypass_prefixes(Opts) ->
+  case wocky_app:is_testing() of
+    true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
+    false -> []
+  end.
 
 field_mappings() ->
       %JSON Tag     %DB field name
