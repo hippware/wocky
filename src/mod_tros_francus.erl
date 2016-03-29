@@ -75,6 +75,7 @@ add_request(Op, User, FileID, UserServer, Auth, Size, Metadata) ->
 port() -> ?DEFAULT_PORT.
 
 url(Server, User, FileID) ->
+    Scheme = ejabberd_config:get_local_option(tros_scheme),
     iolist_to_binary(
-      ["https://", Server, ":", integer_to_list(port()),
+      [Scheme, Server, ":", integer_to_list(port()),
        "/users/", User, "/files/", FileID]).

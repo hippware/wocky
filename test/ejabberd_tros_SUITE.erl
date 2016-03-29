@@ -230,8 +230,9 @@ do_download(ResultStanza) ->
     true = lists:member({"content-type","image/png"}, RespHeaders),
     RespBin.
 
-desecure_url(<<"https", URL/binary>>) ->
-    <<"http", URL/binary>>.
+desecure_url(<<"https:", URL/binary>>) ->
+    <<"http:", URL/binary>>;
+desecure_url(URL) -> URL.
 
 request_wrapper(ID, Type, Name, DataFields) ->
     #xmlel{name = <<"iq">>,
