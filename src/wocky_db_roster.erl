@@ -3,6 +3,7 @@
 -module(wocky_db_roster).
 
 -include("wocky_roster.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 
 %% API
 -export([get_roster/2,
@@ -11,7 +12,8 @@
          delete_roster/2,
          get_roster_item/3,
          update_roster_item/4,
-         delete_roster_item/3]).
+         delete_roster_item/3,
+         has_contact/2]).
 
 -type roster_item() :: #roster{}.
 -type roster()      :: [roster_item()].
@@ -96,6 +98,16 @@ delete_roster_item(LUser, LServer, ContactJID) ->
     Conditions = #{user => LUser, contact_jid => ContactJID},
     wocky_db:delete(LServer, roster, all, Conditions).
 
+%% @doc Checks whether a user has another user as an authorized contact
+-spec has_contact(ejabberd:jid(), ejabberd:jid()) -> boolean().
+has_contact(#jid{luser = LUser, lserver = LServer}, OtherJID) ->
+    ContactJID = jid:to_binary(jid:to_bare(OtherJID)),
+    case wocky_db:select(LServer, roster, [ask],
+                         #{user => LUser,
+                           contact_jid => ContactJID}) of
+        [#{ask := <<"none">>}] -> true;
+        _ -> false
+    end.
 
 %%%===================================================================
 %%% Internal functions

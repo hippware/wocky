@@ -348,27 +348,13 @@ get_auth_bypass_prefixes(Opts) ->
     false -> []
   end.
 
-field_mappings() ->
-      %JSON Tag     %DB field name
-    [{userID,       auth_user},
-     {uuid,         user},
-     {server,       server},
-     {handle,       handle},
-     {firstName,    first_name},
-     {lastName,     last_name},
-     {phoneNumber,  phone_number},
-     {email,        email},
-     {avatar,       avatar}
-     % Strip all other fields
-    ].
-
 json_to_row(JSONFields) ->
     lists:foldl(fun({J, R}, Map) -> map_transform(J, R, JSONFields, Map) end,
-                #{}, field_mappings()).
+                #{}, client_db_map:fields()).
 
 row_to_json(DBFields) ->
     lists:foldl(fun({J, R}, Map) -> map_transform(R, J, DBFields, Map) end,
-                #{}, field_mappings()).
+                #{}, client_db_map:fields()).
 
 map_transform(A, B, SourceMap, Map) ->
     case maps:find(A, SourceMap) of
