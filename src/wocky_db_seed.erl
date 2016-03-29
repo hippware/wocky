@@ -116,7 +116,8 @@ clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(shared, [user,
                                         handle_to_user,
                                         phone_number_to_user]),
-    wocky_db_seed:clear_tables(Context, [session, auth_token, last_activity]).
+    wocky_db_seed:clear_tables(Context, [session, auth_token, last_activity,
+                                         privacy, privacy_item]).
 
 %% This is an incredibly ugly hack to work around a problem in cqerl.
 %% When we drop tables the C* server discards all cached prepared queries
@@ -503,24 +504,24 @@ seed_data(media_data, _Server) ->
      #{chunk_id => ?MEDIA_CHUNK,   file_id => ?MEDIA_FILE,
        data => ?MEDIA_DATA}];
 seed_data(privacy, Server) ->
-    [#{user => ?ALICE, server => Server, default => ?PRIVACY_LIST1,
+    [#{user => ?CAROL, server => Server, default => ?PRIVACY_LIST1,
        lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
-     #{user => ?BOB, server => Server, default => null,
+     #{user => ?KAREN, server => Server, default => null,
        lists => []}];
 seed_data(privacy_item, Server) ->
-    [#{user => ?ALICE, server => Server, list => ?PRIVACY_LIST1,
+    [#{user => ?CAROL, server => Server, list => ?PRIVACY_LIST1,
        id => ?PRIVACY_ITEM1, type => <<"jid">>,
-       value => jid:to_binary(jid:make(?BOB, Server, <<>>)),
+       value => jid:to_binary(jid:make(?KAREN, Server, <<>>)),
        action => false, item_order => 1, match_all => true,
        match_iq => false, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{user => ?ALICE, server => Server, list => ?PRIVACY_LIST1,
+     #{user => ?CAROL, server => Server, list => ?PRIVACY_LIST1,
        id => ?PRIVACY_ITEM2, type => <<"jid">>,
-       value => jid:to_binary(jid:make(?BOB, Server, <<>>)),
+       value => jid:to_binary(jid:make(?KAREN, Server, <<>>)),
        action => false, item_order => 2, match_all => false,
        match_iq => true, match_message => false,
        match_presence_in => false, match_presence_out => false},
-     #{user => ?ALICE, server => Server, list => ?PRIVACY_LIST2,
+     #{user => ?CAROL, server => Server, list => ?PRIVACY_LIST2,
        id => ?PRIVACY_ITEM3, type => <<"subscription">>,
        value => <<"both">>,
        action => false, item_order => 1, match_all => false,
