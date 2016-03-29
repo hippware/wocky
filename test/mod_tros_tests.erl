@@ -37,7 +37,8 @@ before_all(Backend) ->
                    (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
                    (s3_secret_key) ->
                         "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";
-                   (tros_max_upload_size) -> 1024 * 1024 * 10
+                   (tros_max_upload_size) -> 1024 * 1024 * 10;
+                   (tros_scheme) -> "http://"
                 end),
     meck:expect(ejabberd_config, get_local_option,
                 fun(cqerl_node, _) -> {"127.0.0.1", 9042}
@@ -255,7 +256,7 @@ expected_upload_packet(francus) ->
       "<id>a65ecb4e-c633-11e5-9fdc-080027f70e96</id>"
       "<jid>", ?LOCAL_CONTEXT/binary, "/file/",
       (new_file_uuid())/binary, "</jid>"
-      "<url>https://", ?LOCAL_CONTEXT/binary,
+      "<url>http://", ?LOCAL_CONTEXT/binary,
       ":1025/users/", ?ALICE/binary, "/",
       "files/", (new_file_uuid())/binary, "</url>"
       "<method>PUT</method></upload></iq>">>.
@@ -275,7 +276,7 @@ expected_download_packet(francus, FileID) ->
       "<header name='authorization' value="
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
       "/></headers>"
-      "<url>https://", ?LOCAL_CONTEXT/binary, ":1025/users/", ?ALICE/binary,
+      "<url>http://", ?LOCAL_CONTEXT/binary, ":1025/users/", ?ALICE/binary,
       "/files/", FileID/binary, "</url>"
       "<method>GET</method></download></iq>">>.
 

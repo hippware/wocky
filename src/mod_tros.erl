@@ -35,6 +35,7 @@
 
 -define(DEFAULT_BACKEND, francus).
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
+-define(DEFAULT_SCHEME, "https://").
 
 -record(request, {
           from_jid :: ejabberd:jid(),
@@ -44,8 +45,10 @@
 
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
-    [{backend,         tros_backend,          ?DEFAULT_BACKEND},
-     {max_upload_size, tros_max_upload_size, ?DEFAULT_MAX_UPLOAD_SIZE}
+    [
+     {backend,         tros_backend,          ?DEFAULT_BACKEND},
+     {max_upload_size, tros_max_upload_size,  ?DEFAULT_MAX_UPLOAD_SIZE},
+     {scheme,          tros_scheme,           ?DEFAULT_SCHEME}
     ].
 
 start(Host, Opts) ->
