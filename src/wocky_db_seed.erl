@@ -116,7 +116,8 @@ clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(shared, [user,
                                         handle_to_user,
                                         phone_number_to_user]),
-    wocky_db_seed:clear_tables(Context, [session, auth_token, last_activity]).
+    wocky_db_seed:clear_tables(Context, [session, auth_token, last_activity,
+                                         privacy, privacy_item]).
 
 %% This is an incredibly ugly hack to work around a problem in cqerl.
 %% When we drop tables the C* server discards all cached prepared queries
