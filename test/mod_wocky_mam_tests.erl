@@ -9,19 +9,19 @@
 
 -import(mod_wocky_mam, [
                         archive_message_hook/9,
-                        lookup_messages_hook/14,
                         do_lookup/7,
                         standard_counts/8
                        ]).
 
 -define(FIRST_ID(N), nth_id(U1, U2, N, Rows)).
 
-mod_wocky_mam_test_() -> {
+mod_wocky_mam_test_() ->
+ {ok, _} = application:ensure_all_started(p1_stringprep),
+ {
   "mod_wocky_mam",
   setup, fun before_all/0, fun after_all/1,
   [
    test_archive_message_hook(),
-   test_lookup_messages_hook(),
    test_do_lookup(),
    test_standard_counts()
   ]
@@ -59,11 +59,10 @@ test_archive_message_hook() ->
     {ok, MsgXML} = exml:parse(OrigMsg),
     MsgBin = exml:to_binary(MsgXML),
     ID = 888888,
-    Lower = min(U1, U2),
-    Upper = max(U1, U2),
-    Row = #{id => ID, lower_jid => Lower, upper_jid => Upper,
-            sent_to_lower => U1 < U2, message => MsgBin},
-    SelectRow = #{lower_jid => Lower, upper_jid => Upper},
+    Row = #{id => ID, user_jid => jid:to_binary(U1),
+            other_jid => jid:to_binary(U2),
+            message => MsgBin},
+    SelectRow = #{user_jid => jid:to_binary(U1)},
 
     { "archive_message", [
        { "should use TTL value from module options", [
@@ -74,8 +73,7 @@ test_archive_message_hook() ->
          fun () ->
                  ok = archive_message_hook(ok, ?LOCAL_CONTEXT, ID,
                                            not_used,
-                                           jid:from_binary(U1),
-                                           jid:from_binary(U2),
+                                           U1, U2,
                                            not_used, incoming, MsgXML)
          end,
          fun (_) ->
@@ -84,14 +82,14 @@ test_archive_message_hook() ->
          end,
          [
           { "should archive the message so that it can be retrieved later", [
-             ?_assertEqual(Row,
+             ?_assertEqual(Row#{outgoing => false},
                            wocky_db:select_row(?LOCAL_CONTEXT,
                                                message_archive,
-                                               [id, lower_jid, upper_jid,
-                                                sent_to_lower, message],
-                                               SelectRow))
+                                               [id, user_jid, other_jid,
+                                                outgoing, message],
+                                                SelectRow))
           ]},
-          { "should archive the message once", [
+          { "should archive the message once for this user", [
              ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT,
                                              message_archive,
                                              SelectRow))
@@ -102,9 +100,7 @@ test_archive_message_hook() ->
          setup,
          fun () ->
                  ok = archive_message_hook(ok, ?LOCAL_CONTEXT, ID,
-                                           not_used,
-                                           jid:from_binary(U1),
-                                           jid:from_binary(U2),
+                                           not_used, U1, U2,
                                            not_used, outgoing, MsgXML)
          end,
          fun (_) ->
@@ -112,13 +108,18 @@ test_archive_message_hook() ->
                                                  [message_archive])
          end,
          [
-          { "should not archive the message", [
-             ?_assertEqual(not_found,
+          { "should archive the message so that it can be retrieved later", [
+             ?_assertEqual(Row#{outgoing => true},
                            wocky_db:select_row(?LOCAL_CONTEXT,
                                                message_archive,
-                                               [id, lower_jid, upper_jid,
-                                                sent_to_lower, message],
-                                               SelectRow))
+                                               [id, user_jid, other_jid,
+                                                outgoing, message],
+                                                SelectRow))
+          ]},
+          { "should archive the message once for this user", [
+             ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT,
+                                             message_archive,
+                                             SelectRow))
           ]}
          ]
         },
@@ -128,23 +129,6 @@ test_archive_message_hook() ->
         }
      ]
     }.
-
-% Only do the simplest of tests here - the other cases produce test code that is
-% too complex and fragile, and is effectively covered by integration tets.
-test_lookup_messages_hook() ->
-    {U1, _} = users_to_test(),
-
-    { "lookup_message", setup, fun before_each/0, fun after_each/1,
-      [
-        { "Lookup with no 2nd JID", [
-            ?_assertEqual({error, missing_with_jid},
-                          lookup_messages_hook(ok, ?LOCAL_CONTEXT,
-                                               not_used, U1, not_used,
-                                               not_used, not_used, not_used,
-                                               not_used, undefined, not_used,
-                                               not_used, not_used, not_used))
-         ]}
-     ]}.
 
 test_do_lookup() ->
     {U1, U2} = users_to_test(),
@@ -233,17 +217,16 @@ test_standard_counts() ->
      ] end}.
 
 
-user_msgs(User1, User2, Rows) ->
-    lists:filter(fun(M) -> is_user_msg(M, User1, User2) end,
+user_msgs(UserJID, OtherJID, Rows) ->
+    lists:filter(fun(M) -> is_user_msg(M,
+                                       jid:to_binary(UserJID),
+                                       jid:to_binary(OtherJID)) end,
                  Rows).
 
-is_user_msg(#{lower_jid := Lower, upper_jid := Upper}, User1, User2)
-  when Lower =:= User1, Upper =:= User2, User1 < User2
-       -> true;
-is_user_msg(#{lower_jid := Lower, upper_jid := Upper}, User1, User2)
-  when Lower =:= User2, Upper =:= User1, User2 < User1
-       -> true;
-is_user_msg(_, _, _) -> false.
+is_user_msg(#{user_jid := UserJID, other_jid := OtherJID}, UserJID, OtherJID) ->
+    true;
+is_user_msg(_, _, _) ->
+    false.
 
 rev_time_msgs(Start, End, Rows) -> lists:reverse(time_msgs(Start, End, Rows)).
 time_msgs(Start, End, Rows) ->
@@ -279,4 +262,4 @@ match_row(Row = #{time := Time}) ->
 
 users_to_test() ->
     Users = wocky_db_seed:archive_users(),
-    {hd(Users), lists:last(Users)}.
+    {jid:from_binary(hd(Users)), jid:from_binary(lists:last(Users))}.

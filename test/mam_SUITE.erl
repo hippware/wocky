@@ -46,6 +46,7 @@
          pagination_offset5_opt_count/1,
          pagination_offset5_opt_count_all/1,
          querying_for_all_messages_with_jid/1,
+         querying_for_all_messages_with_no_jid/1,
          iq_spoofing/1
         ]).
 
@@ -121,7 +122,9 @@ groups() ->
     ].
 
 bootstrapped_cases() ->
-      [querying_for_all_messages_with_jid].
+      [querying_for_all_messages_with_jid,
+       querying_for_all_messages_with_no_jid
+      ].
 
 mam_cases() ->
     [
@@ -213,6 +216,9 @@ init_state(_, Config) ->
 init_per_testcase(C=querying_for_all_messages_with_jid, Config) ->
     escalus:init_per_testcase(C,
         bootstrap_archive(clean_archives(Config)));
+init_per_testcase(C=querying_for_all_messages_with_no_jid, Config) ->
+    escalus:init_per_testcase(C,
+        bootstrap_archive(clean_archives(Config)));
 init_per_testcase(C=range_archive_request_not_empty, Config) ->
     escalus:init_per_testcase(C,
         bootstrap_archive(clean_archives(Config)));
@@ -285,11 +291,22 @@ querying_for_all_messages_with_jid(Config) ->
     F = fun(Alice) ->
         Pregenerated = ?config(pre_generated_msgs, Config),
 
-        WithBob = [1 || {_, _, JID, _} <- Pregenerated, JID =:= ?BBOB],
+        WithBob = [true || {_, _, JID, _} <- Pregenerated, JID =:= ?BBOB],
 
-        CountWithBob = lists:sum(WithBob),
+        CountWithBob = length(WithBob),
         escalus:send(Alice, stanza_filtered_by_jid_request(?BBOB)),
         assert_respond_size(CountWithBob, wait_archive_respond_iq_first(Alice)),
+        ok
+        end,
+    escalus:story(Config, [1], F).
+
+querying_for_all_messages_with_no_jid(Config) ->
+    F = fun(Alice) ->
+        Pregenerated = ?config(pre_generated_msgs, Config),
+
+        Count = length(Pregenerated),
+        escalus:send(Alice, stanza_filtered_by_jid_request(<<"">>)),
+        assert_respond_size(Count, wait_archive_respond_iq_first(Alice)),
         ok
         end,
     escalus:story(Config, [1], F).
@@ -973,7 +990,9 @@ bootstrap_archive(Config) ->
     ArcJID = ?BALICE,
     OtherUsers = [?BBOB, ?BCAROL],
     Msgs = generate_msgs_for_days(ArcJID, OtherUsers, 16),
+    ets:new(used_times, [private, named_table]),
     put_msgs(Msgs),
+    ets:delete(used_times),
     timer:sleep(1500),
     [{pre_generated_msgs, sort_msgs(Msgs)} | Config].
 
@@ -1029,16 +1048,16 @@ put_msg({{MsgIdOwner, MsgIdRemote},
          RemoteBJID,
          Packet}) ->
     Host = escalus_ct:get_config(ejabberd_domain),
-    OwnerJID = jlib:binary_to_jid(OwnerBJID),
-    RemoteJID = jlib:binary_to_jid(RemoteBJID),
+    OwnerJID = jid:from_binary(OwnerBJID),
+    RemoteJID = jid:from_binary(RemoteBJID),
     {FromTS, _} = rpc_apply(mod_mam_utils, decode_compact_uuid,
                                 [MsgIdOwner]),
     archive_message([Host, MsgIdOwner, OwnerJID, RemoteJID,
-                     outgoing, Packet, FromTS div 1000]),
+                     outgoing, Packet, ensure_unique(FromTS div 1000)]),
     {ToTS, _} = rpc_apply(mod_mam_utils, decode_compact_uuid,
                                 [MsgIdRemote]),
     archive_message([Host, MsgIdRemote, RemoteJID, OwnerJID,
-                     incoming, Packet, ToTS div 1000]).
+                     incoming, Packet, ensure_unique(ToTS div 1000)]).
 
 archive_message(Args) ->
     rpc_apply(mod_wocky_mam, archive_test_message, Args).
@@ -1054,3 +1073,12 @@ msgs_with_user(BJID, Config) ->
     lists:filter(fun(M) -> msg_has_user(BJID, M) end, Msgs).
 
 msg_has_user(User, {_, A, B, _}) -> A =:= User orelse B =:= User.
+
+ensure_unique(T) ->
+    case ets:lookup(used_times, T) of
+        [] ->
+            ets:insert(used_times, {T, true}),
+            T;
+        _ ->
+            ensure_unique(T+1)
+    end.
