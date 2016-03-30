@@ -76,10 +76,10 @@
 
 -export([
          %% MAM hook handlers
+         archive_size_hook/4,
+         remove_archive_hook/3,
          archive_message_hook/9,
-         lookup_messages_hook/14,
-         %% Export for DB seeding
-         jid_key/2
+         lookup_messages_hook/14
         ]).
 
 -ifdef(TEST).
@@ -102,7 +102,9 @@
 hooks() ->
     [
      {mam_archive_message, archive_message_hook},
-     {mam_lookup_messages, lookup_messages_hook}
+     {mam_lookup_messages, lookup_messages_hook},
+     {mam_archive_size,    archive_size_hook},
+     {mam_remove_archive,  remove_archive_hook}
     ].
 
 start(Host, _Opts) ->
@@ -111,6 +113,23 @@ start(Host, _Opts) ->
 
 stop(Host) ->
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 50),
+    ok.
+
+%%%===================================================================
+%%% mam_archive_message callback
+%%%===================================================================
+
+archive_size_hook(_Size, Host, _ArcID, UserJID) ->
+    wocky_db:count(Host, message_archive,
+                   #{user_jid => jid:to_binary(UserJID)}).
+
+%%%===================================================================
+%%% mam_remove_archive callback
+%%%===================================================================
+
+remove_archive_hook(Host, _ArcID, UserJID) ->
+    wocky_db:delete(Host, message_archive, all,
+                    #{user_jid => jid:to_binary(UserJID)}),
     ok.
 
 %%%===================================================================
@@ -128,19 +147,14 @@ stop(Host) ->
                       Packet :: exml:element()
                      ) -> ok.
 archive_message_hook(_Result, Host, MessID, _UserID,
-                LocJID, RemJID, _SrcJID, incoming, Packet) ->
+                LocJID, RemJID, _SrcJID, Direction, Packet) ->
     TTL = gen_mod:get_module_opt(global, ?MODULE, message_ttl, infinity),
-    PartKey = jid_key(LocJID, RemJID),
     PacketBin = exml:to_binary(Packet),
-    ToLower = sent_to_lower(LocJID, RemJID),
-    Row = PartKey#{id => MessID, time => now, message => PacketBin,
-                   sent_to_lower => ToLower},
-    ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row, TTL));
-
-archive_message_hook(_Result, _Host, _MessID, _UserID,
-                _LocJID, _RemJID, _SrcJID, outgoing, _Packet) ->
-    %% Will be archived by remote jid.
-    ok.
+    Row = #{id => MessID, user_jid => archive_jid(LocJID),
+            other_jid => archive_jid(RemJID),
+            time => now, message => PacketBin,
+            outgoing => Direction =:= outgoing},
+    ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row, TTL)).
 
 %%%===================================================================
 %%% mam_lookup_messages callback
@@ -164,15 +178,10 @@ archive_message_hook(_Result, _Host, _MessID, _UserID,
        ) ->
     {ok, {TotalCount  :: non_neg_integer() | undefined,
           Offset      :: non_neg_integer() | undefined,
-          MessageRows :: [result_row()]}}
-    | {error, missing_with_jid}.
+          MessageRows :: [result_row()]}}.
 
-%% No second JID - not implemented nor expected to be:
-lookup_messages_hook(_, _, _, _, _, _, _, _, _, undefined, _, _, _, _) ->
-    {error, missing_with_jid};
-
-%% No RSM data, no borders; time only - generate some RSM data and use the
-%% function below:
+%% No RSM data, no borders; time may be present - generate some RSM data
+%% and use the function below:
 lookup_messages_hook(Result, Host, UserID, UserJID,
                 undefined, undefined,
                 Start, End, Now, WithJID,
@@ -220,8 +229,8 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
                             },
                 undefined, undefined, _Now, WithJID,
                 RSMMax, _LimitPassed, _MaxResultLimit, Simple) ->
-    TaggedStart = get_time_from_id(Host, UserJID, WithJID, AfterID, FromID),
-    TaggedEnd = get_time_from_id(Host, UserJID, WithJID, BeforeID, ToID),
+    TaggedStart = get_time_from_id(Host, UserJID, AfterID, FromID),
+    TaggedEnd = get_time_from_id(Host, UserJID, BeforeID, ToID),
     Rows = do_lookup(Host, UserJID, WithJID, TaggedStart, TaggedEnd,
                      RSMMax, Direction),
     Counts = standard_counts(Simple, RSMMax, Host, UserJID, WithJID,
@@ -249,7 +258,7 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
                         index = undefined, max = RSMMax},
                 undefined, undefined, undefined, _Now, WithJID,
                 RSMMax, _LimitPassed, _MaxResultLimit, Simple) ->
-    StartPoint = get_time_from_id(Host, UserJID, WithJID, ID, undefined),
+    StartPoint = get_time_from_id(Host, UserJID, ID, undefined),
     TaggedStart = make_start(Direction, StartPoint),
     TaggedEnd = make_end(Direction, StartPoint),
     Rows = do_lookup(Host, UserJID, WithJID, TaggedStart, TaggedEnd,
@@ -270,68 +279,81 @@ need_count(true, _) -> false;
 need_count(false, _) -> true;
 need_count(opt_count, _) -> true.
 
-total_count(Host, JID1, JID2, FirstTime, LastTime) ->
+total_count(Host, UserJID, OtherJID, FirstTime, LastTime) ->
     InitialQuery = "SELECT COUNT(*) FROM message_archive WHERE ",
     {Q, V} =
     fun_chain:last(
       {InitialQuery, #{}},
-      add_jids({JID1, JID2}),
-      add_times({FirstTime, LastTime})
+      add_user_jid(UserJID),
+      add_other_jid(OtherJID),
+      add_times({FirstTime, LastTime}),
+      add_filtering(OtherJID)
     ),
     {ok, Result} = wocky_db:query(Host, Q, V, quorum),
     wocky_db:single_result(Result).
 
 offset_count(_, _, _, _, []) -> undefined;
-offset_count(Host, JID1, JID2, undefined, Rows) ->
-    offset_count(Host, JID1, JID2, #mam_borders{}, Rows);
-offset_count(Host, JID1, JID2,
+offset_count(Host, UserJID, OtherJID, undefined, Rows) ->
+    offset_count(Host, UserJID, OtherJID, #mam_borders{}, Rows);
+offset_count(Host, UserJID, OtherJID,
              Borders = #mam_borders{before_id = BeforeID}, Rows) ->
     IndexID = index_id(Rows),
     NewBorders = Borders#mam_borders{before_id = min(IndexID, BeforeID),
                                      to_id = undefined},
-    offset_count(Host, JID1, JID2, NewBorders).
+    offset_count(Host, UserJID, OtherJID, NewBorders).
 
-offset_count(Host, JID1, JID2, Borders) ->
+offset_count(Host, UserJID, OtherJID, Borders) ->
     InitialQuery = "SELECT COUNT(*) FROM archive_id WHERE ",
     {Q, V} =
     fun_chain:last(
       {InitialQuery, #{}},
-      add_jids({JID1, JID2}),
-      add_borders(Borders)
+      add_user_jid(UserJID),
+      add_other_jid(OtherJID),
+      add_borders(Borders),
+      add_filtering(OtherJID)
     ),
     {ok, Result} = wocky_db:query(Host, Q, V, quorum),
     wocky_db:single_result(Result).
 
-index_only_counts(CountType, RSMMax, Host, JID1, JID2, Index) ->
+index_only_counts(CountType, RSMMax, Host, UserJID, OtherJID, Index) ->
     NeedCount = need_count(CountType, RSMMax),
-    index_only_counts(NeedCount, Host, JID1, JID2, Index).
+    index_only_counts(NeedCount, Host, UserJID, OtherJID, Index).
 
 index_only_counts(false, _, _, _, _) -> {undefined, undefined};
-index_only_counts(true, Host, JID1, JID2, Index) ->
-    Total = wocky_db:count(Host, message_archive, jid_key(JID1, JID2)),
+index_only_counts(true, Host, UserJID, OtherJID, Index) ->
+    InitialQuery = "SELECT COUNT(*) FROM archive_id WHERE ",
+    {Q, V} =
+    fun_chain:last(
+      {InitialQuery, #{}},
+      add_user_jid(UserJID),
+      add_other_jid(OtherJID),
+      add_filtering(OtherJID)
+    ),
+    {ok, Result} = wocky_db:query(Host, Q, V, quorum),
+    Total = wocky_db:single_result(Result),
     {Total, Index}.
 
-standard_counts(CountType, RSMMax, Host, JID1, JID2, TaggedStart, TaggedEnd,
-                Borders, Rows) ->
+standard_counts(CountType, RSMMax, Host, UserJID, OtherJID,
+                TaggedStart, TaggedEnd, Borders, Rows) ->
     NeedCount = need_count(CountType, RSMMax),
-    standard_counts(NeedCount, Host, JID1, JID2, TaggedStart, TaggedEnd,
-                    Borders, Rows).
+    standard_counts(NeedCount, Host, UserJID, OtherJID,
+                    TaggedStart, TaggedEnd, Borders, Rows).
 
 -spec standard_counts(
         NeedCount   :: boolean(),
         Host        :: binary(),
-        JID1        :: ejabberd:jid(),
-        JID2        :: ejabberd:jid(),
+        UserJID     :: ejabberd:jid(),
+        OtherJID    :: undefined | ejabberd:jid(),
         TaggedStart :: undefined | mam_time(),
         TaggedEnd   :: undefined | mam_time(),
         Borders     :: undefined | mod_mam:borders(),
         Rows        :: [#{}]
        ) -> {undefined | non_neg_integer(), undefined | non_neg_integer()}.
 standard_counts(false, _, _, _, _, _, _, _) -> {undefined, undefined};
-standard_counts(true, Host, JID1, JID2, TaggedStart,
+standard_counts(true, Host, UserJID, OtherJID, TaggedStart,
                 TaggedEnd, Borders, Rows) ->
-    Total = total_count(Host, JID1, JID2, TaggedStart, TaggedEnd),
-    OffsetCount = offset_count(Host, JID1, JID2, Borders, Rows),
+    Total = total_count(Host, UserJID, OtherJID, TaggedStart, TaggedEnd),
+    OffsetCount = offset_count(Host, UserJID, OtherJID, Borders, Rows),
     {Total, OffsetCount}.
 
 %%%===================================================================
@@ -339,27 +361,29 @@ standard_counts(true, Host, JID1, JID2, TaggedStart,
 %%%===================================================================
 
 -spec do_lookup(
-        Host  :: binary(),
-        JID1  :: ejabberd:jid(),
-        JID2  :: ejabberd:jid(),
-        Start :: mam_time(),
-        End   :: mam_time(),
-        Max   :: undefined | non_neg_integer(),
+        Host      :: binary(),
+        UserJID   :: ejabberd:jid(),
+        OtherJID  :: undefined | ejabberd:jid(),
+        Start     :: mam_time(),
+        End       :: mam_time(),
+        Max       :: undefined | non_neg_integer(),
         Direction :: undefined | before | aft) ->
     [#{}].
 
-do_lookup(_Host, _JID1, _JID2, _Start, _End, 0, _Direction) ->
+do_lookup(_Host, _UserJID, _OtherJID, _Start, _End, 0, _Direction) ->
     [];
 
-do_lookup(Host, JID1, JID2, Start, End, Max, Direction) ->
+do_lookup(Host, UserJID, OtherJID, Start, End, Max, Direction) ->
     InitialQuery = "SELECT * FROM message_archive WHERE ",
     {Q, V} =
     fun_chain:last(
       {InitialQuery, #{}},
-      add_jids({JID1, JID2}),
+      add_user_jid(UserJID),
+      add_other_jid(OtherJID),
       add_times({Start, End}),
       add_ordering(Direction),
-      add_limit(Max)
+      add_limit(Max),
+      add_filtering(OtherJID)
      ),
     run_paging_query(Host, Q, V).
 
@@ -372,32 +396,39 @@ make_start(aft, Time) -> Time.
 make_end(before, Time) -> Time;
 make_end(aft, _) -> undefined.
 
-get_time_from_id(_Host, _, _, undefined, undefined) -> undefined;
-get_time_from_id(Host, JID1, JID2, Exclusive, undefined) ->
-    {uuid, exclusive, get_time_from_id(Host, JID1, JID2, Exclusive)};
-get_time_from_id(Host, JID1, JID2, undefined, Inclusive) ->
-    {uuid, inclusive, get_time_from_id(Host, JID1, JID2, Inclusive)}.
+get_time_from_id(_Host, _, undefined, undefined) -> undefined;
+get_time_from_id(Host, UserJID, Exclusive, undefined) ->
+    {uuid, exclusive, get_time_from_id(Host, UserJID, Exclusive)};
+get_time_from_id(Host, UserJID, undefined, Inclusive) ->
+    {uuid, inclusive, get_time_from_id(Host, UserJID, Inclusive)}.
 
-get_time_from_id(Host, JID1, JID2, ID) ->
-    PartKey = jid_key(JID1, JID2),
-    wocky_db:select_one(Host, archive_id, time, PartKey#{id => ID}).
+get_time_from_id(Host, UserJID, ID) ->
+    wocky_db:select_one(Host, archive_id, time,
+                        #{user_jid => archive_jid(UserJID), id => ID}).
 
-find_nth_query_val(JID1, JID2, Index, Max, Direction) ->
+find_nth_query_val(UserJID, OtherJID, Index, Max, Direction) ->
     InitialQuery = "SELECT * FROM message_archive WHERE ",
     fun_chain:last(
       {InitialQuery, #{}},
-      add_jids({JID1, JID2}),
+      add_user_jid(UserJID),
+      add_other_jid(OtherJID),
       add_limit(maybe_add(Index, Max)),
-      add_ordering(Direction)
+      add_ordering(Direction),
+      add_filtering(OtherJID)
     ).
 
 %%%===================================================================
 %%% Query element constructors
 %%%===================================================================
 
-add_jids({UserJID, WithJID}, {Q, V}) ->
-    {[Q, " lower_jid = ? AND upper_jid = ?"],
-     maps:merge(V, jid_key(UserJID, WithJID))}.
+add_user_jid(UserJID, {Q, V}) ->
+    {[Q, " user_jid = ? "],
+     V#{user_jid => archive_jid(UserJID)}}.
+
+add_other_jid(undefined, {Q, V}) -> {Q, V};
+add_other_jid(OtherJID, {Q, V}) ->
+    {[Q, " AND other_jid = ? "],
+     V#{other_jid => archive_jid(OtherJID)}}.
 
 add_borders(#mam_borders{after_id = AfterID, before_id = BeforeID,
                          from_id = FromID, to_id = ToID}, {Q, V}) ->
@@ -442,6 +473,10 @@ add_limit(Limit, {Q, V}) ->
 maybe_add_ttl(Row, infinity) -> Row;
 maybe_add_ttl(Row, TTL) -> Row#{'[ttl]' => TTL}.
 
+add_filtering(undefined, {Q, V}) -> {Q, V};
+add_filtering(_, {Q, V}) ->
+    {[Q, " ALLOW FILTERING"], V}.
+
 %%%===================================================================
 %%% Other utility functions
 %%%===================================================================
@@ -458,28 +493,18 @@ uuid_fun(">", Time) ->
 uuid_fun("<", Time) ->
     {"minTimeuuid", Time+1}.
 
-jid_key(JID1 = #jid{}, JID2 = #jid{}) ->
-    jid_key(archive_jid(JID1), archive_jid(JID2));
-jid_key(JID1, JID2) ->
-    [Lower, Higher] = lists:sort([JID1, JID2]),
-    #{lower_jid => Lower,
-      upper_jid => Higher}.
-
 archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
-
-sent_to_lower(Receiver, Sender) ->
-    archive_jid(Receiver) < archive_jid(Sender).
 
 index_id(Rows) ->
     #{id := FirstID} = hd(Rows),
     #{id := LastID} = lists:last(Rows),
     min(FirstID, LastID).
 
-row_to_msg(#{id := ID, sent_to_lower := true,
-             upper_jid := SrcJID, message := Packet}) ->
+row_to_msg(#{id := ID, outgoing := true,
+             user_jid := SrcJID, message := Packet}) ->
     format_msg(ID, SrcJID, Packet);
-row_to_msg(#{id := ID, sent_to_lower := false,
-             lower_jid := SrcJID, message := Packet}) ->
+row_to_msg(#{id := ID, outgoing := false,
+             other_jid := SrcJID, message := Packet}) ->
     format_msg(ID, SrcJID, Packet).
 
 format_msg(ID, SrcJID, Packet) ->
@@ -511,12 +536,12 @@ continue_paging_query({ok, Result}, Acc) ->
 
 -ifdef(TEST).
 archive_test_message(Host, MessID, LocJID, RemJID, Dir, Packet, Timestamp) ->
-    Q = "INSERT INTO message_archive (id, lower_jid, upper_jid, time,
-         sent_to_lower, message) VALUES (?, ?, ?, minTimeuuid(:time), ?, ?)",
-    PartKey = jid_key(LocJID, RemJID),
-    SentToLower = sent_to_lower(LocJID, RemJID) xor (Dir =:= outgoing),
-    V = PartKey#{id => MessID, message => exml:to_binary(Packet),
-                 time => Timestamp, sent_to_lower => SentToLower},
+    Q = "INSERT INTO message_archive (id, user_jid, other_jid, time,
+         outgoing, message) VALUES (?, ?, ?, minTimeuuid(:time), ?, ?)",
+    V = #{user_jid => archive_jid(LocJID),
+          other_jid => archive_jid(RemJID),
+          id => MessID, message => exml:to_binary(Packet),
+          time => Timestamp, outgoing => Dir =:= outgoing},
     {ok, void} = wocky_db:query(Host, Q, V, quorum),
     ok.
 -endif.

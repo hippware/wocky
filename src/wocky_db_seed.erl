@@ -317,13 +317,13 @@ table_definition(message_archive) ->
        name = message_archive,
        columns = [
            {id, varint}, % IDs are 64-bit unsigned
-           {lower_jid, text},
-           {upper_jid, text},
+           {user_jid, text},
+           {other_jid, text},
            {time, timeuuid},
-           {sent_to_lower, boolean},
+           {outgoing, boolean},
            {message, blob}
        ],
-       primary_key = [[lower_jid, upper_jid], time],
+       primary_key = [user_jid, time],
        order_by = [{time, asc}]
     };
 
@@ -393,8 +393,8 @@ table_views(session) -> [
     {user_sessions, all, [jid_user, jid_resource, sid], []}
 ];
 table_views(message_archive) -> [
-    {archive_id, [id, lower_jid, upper_jid, time],
-     [lower_jid, upper_jid, id, time], []}
+    {archive_id, [id, user_jid, other_jid, time],
+     [user_jid, id, time], []}
 ];
 
 table_views(_) -> [].
@@ -468,8 +468,8 @@ seed_data(roster, Server) ->
      || I <- Items];
 seed_data(message_archive, _Server) ->
     Rows = [random_message(ID, archive_users()) || ID <- lists:seq(1, 300)],
-    Q = "INSERT INTO message_archive (id, time, lower_jid, upper_jid,
-         sent_to_lower, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
+    Q = "INSERT INTO message_archive (id, time, user_jid, other_jid,
+         outgoing, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
     {Q, Rows};
 seed_data(auth_token, Server) ->
     [#{user => ?ALICE, server => Server, resource => ?RESOURCE,
@@ -656,10 +656,11 @@ random_message(ID, Users) ->
     archive_row(ID, From, To).
 
 archive_row(ID, From, To) ->
-    V = mod_wocky_mam:jid_key(From, To),
-    V#{id => ID,
-       time => ID,
-       sent_to_lower => rand:uniform(2) =:= 1,
-       message => msg_xml_packet(<<To/binary,
-                                   (integer_to_binary(ID))/binary>>)
-      }.
+    #{user_jid => From,
+      other_jid => To,
+      id => ID,
+      time => ID,
+      outgoing => rand:uniform(2) =:= 1,
+      message => msg_xml_packet(<<To/binary,
+                                  (integer_to_binary(ID))/binary>>)
+     }.
