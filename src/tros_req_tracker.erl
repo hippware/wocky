@@ -12,8 +12,6 @@
 
 -include("mod_tros_francus.hrl").
 
--define(DEFAULT_TIMEOUT, timer:seconds(60)).
-
 start() ->
     tros_requests = ets:new(tros_requests, [named_table, public,
                                             {keypos, #tros_request.request}]).
@@ -40,4 +38,4 @@ get_delete(RequestKey) ->
             false
     end.
 
-timeout() -> ?DEFAULT_TIMEOUT.
+timeout() -> ejabberd_config:get_local_option(tros_auth_validity).

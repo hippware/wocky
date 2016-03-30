@@ -33,22 +33,24 @@
 
 -behaviour(gen_mod).
 
--define(DEFAULT_BACKEND, francus).
--define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
--define(DEFAULT_SCHEME, "https://").
-
 -record(request, {
           from_jid :: ejabberd:jid(),
           to_jid :: ejabberd:jid(),
           iq :: iq()
          }).
 
+-define(DEFAULT_BACKEND, francus).
+-define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
+-define(DEFAULT_SCHEME, "https://").
+-define(DEFAULT_AUTH_VALIDITY, timer:minutes(60)).
+
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
     [
      {backend,         tros_backend,          ?DEFAULT_BACKEND},
      {max_upload_size, tros_max_upload_size,  ?DEFAULT_MAX_UPLOAD_SIZE},
-     {scheme,          tros_scheme,           ?DEFAULT_SCHEME}
+     {scheme,          tros_scheme,           ?DEFAULT_SCHEME},
+     {auth_validity,   tros_auth_validity,    ?DEFAULT_AUTH_VALIDITY}
     ].
 
 start(Host, Opts) ->
