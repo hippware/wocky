@@ -27,7 +27,8 @@ mecks() -> [ejabberd_config, ejabberd_sm, httpd_util, ossp_uuid,
 before_all(Backend) ->
     ok = wocky_app:start(),
 
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media]),
+    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request]),
 
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
     meck:expect(ejabberd_config, add_local_option, 2, {atomic, ok}),
@@ -38,7 +39,8 @@ before_all(Backend) ->
                    (s3_secret_key) ->
                         "2nuvW8zXWvED/h5SUfcAU/37c2yaY3JM7ew9BUag";
                    (tros_max_upload_size) -> 1024 * 1024 * 10;
-                   (tros_scheme) -> "http://"
+                   (tros_scheme) -> "http://";
+                   (tros_auth_validity) -> 3600
                 end),
     meck:expect(ejabberd_config, get_local_option,
                 fun(cqerl_node, _) -> {"127.0.0.1", 9042}
@@ -259,7 +261,7 @@ expected_upload_packet(francus) ->
       "<url>http://", ?LOCAL_CONTEXT/binary,
       ":1025/users/", ?ALICE/binary, "/",
       "files/", (new_file_uuid())/binary, "</url>"
-      "<method>PUT</method></upload></iq>">>.
+      "<method>POST</method></upload></iq>">>.
 
 expected_download_packet(s3, FileID) ->
     <<"<iq id='123456' type='result'><download><headers>"

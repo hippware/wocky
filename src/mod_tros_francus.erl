@@ -27,9 +27,9 @@ stop() ->
     tros_req_tracker:stop().
 
 make_download_response(FromJID, ToJID, OwnerID, FileID) ->
-    {Auth, _User, UserServer, URL} =
+    {Auth, _User, URL} =
         common_response_data(FromJID, ToJID, OwnerID, FileID),
-    add_request(get, OwnerID, FileID, UserServer, Auth, 0, #{}),
+    add_request(get, OwnerID, FileID, Auth, 0, #{}),
     Headers = [{<<"authorization">>, Auth}],
     RespFields = [
                   {<<"url">>, URL},
@@ -39,16 +39,16 @@ make_download_response(FromJID, ToJID, OwnerID, FileID) ->
 
 make_upload_response(FromJID, ToJID, FileID, Size, Metadata =
                      #{<<"content-type">> := ContentType}) ->
-    {Auth, User, UserServer, URL} =
+    {Auth, User, URL} =
         common_response_data(FromJID, ToJID, FromJID#jid.luser, FileID),
-    add_request(put, User, FileID, UserServer, Auth, Size, Metadata),
+    add_request(post, User, FileID, Auth, Size, Metadata),
     Headers = [
                {<<"content-type">>, ContentType},
                {<<"authorization">>, Auth}
               ],
     RespFields = [
                   {<<"url">>, URL},
-                  {<<"method">>, <<"PUT">>}
+                  {<<"method">>, <<"POST">>}
                  ],
     {Headers, RespFields}.
 
@@ -57,18 +57,16 @@ common_response_data(FromJID, ToJID, Owner, FileID) ->
     %% testing
     Auth = ?MODULE:make_auth(),
     User = FromJID#jid.luser,
-    UserServer = FromJID#jid.lserver,
     Server = ToJID#jid.lserver,
     URL = url(Server, Owner, FileID),
-    {Auth, User, UserServer, URL}.
+    {Auth, User, URL}.
 
 make_auth() ->
     base64:encode(crypto:strong_rand_bytes(48)).
 
-add_request(Op, User, FileID, UserServer, Auth, Size, Metadata) ->
-    Req = #tros_request{op = Op, request = {User, FileID, Auth},
-                        user_server = UserServer, size = Size,
-                        metadata = Metadata
+add_request(Method, User, FileID, Auth, Size, Metadata) ->
+    Req = #tros_request{method = Method, user = User, file = FileID,
+                        auth = Auth, size = Size, metadata = Metadata
                        },
     tros_req_tracker:add(Req).
 

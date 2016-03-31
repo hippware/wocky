@@ -4,6 +4,8 @@
 
 -include("mod_tros_francus.hrl").
 
+-compile({parse_transform, do}).
+
 -export([init/3,
          handle/2,
          terminate/3]).
@@ -15,31 +17,36 @@ init({_TransportName, http}, Req, _Opts) ->
 
 -spec handle(cowboy_req:req(), any()) -> {ok, cowboy_req:req(), any()}.
 handle(Req, State) ->
-    Req3 = case cowboy_req:method(Req) of
-        {<<"GET">>, Req2} -> handle_req(Req2);
-        {<<"PUT">>, Req2} -> handle_req(Req2);
-        {_, Req2} ->
-                   success(cowboy_req:reply(405, plain_header(),
-                                            "Unsupported method.", Req2))
+    Req4 = case handle_req(Req) of
+        {ok, Req2} ->
+            Req2;
+        {error, {Code, Msg, Req2}} ->
+            {ok, Req3} = cowboy_req:reply(Code, plain_header(), Msg, Req2),
+            Req3
     end,
-    {ok, Req3, State}.
+    {ok, Req4, State}.
 
 handle_req(Req) ->
-    case passes_auth(Req) of
-        {AR = #tros_request{op = get}, Req2} -> do_get(AR, Req2);
-        {AR = #tros_request{op = put}, Req2} -> do_put(AR, Req2);
-        {false, Req2} ->
-            success(cowboy_req:reply(401, plain_header(),
-                                     "Unauthorised request", Req2))
+    do([error_m ||
+        {Method, Req2} <- check_method(Req),
+        {AuthReq, Req3} <- check_auth(Method, Req2),
+        do_op(Method, AuthReq, Req3)]).
+
+check_method(Req) ->
+    case cowboy_req:method(Req) of
+        {<<"GET">>, Req2} -> {ok, {get, Req2}};
+        {<<"POST">>, Req2} -> {ok, {post, Req2}};
+        {_, Req2} -> {error, {405, "Unsupported method.", Req2}}
     end.
 
-passes_auth(Req) ->
+check_auth(Method, Req) ->
     {Path, Req2} = cowboy_req:path(Req),
     {User, File} = user_file(Path),
     {Auth, Req3} = cowboy_req:header(<<"authorization">>, Req2, <<>>),
-    AuthReqKey = {User, File, Auth},
-    AuthResult = tros_req_tracker:get_delete(AuthReqKey),
-    {AuthResult, Req3}.
+    case tros_req_tracker:check(User, File, Auth, Method) of
+        false -> {error, {401, "Unauthorised request", Req3}};
+        AuthReq -> {ok, {AuthReq, Req3}}
+    end.
 
 plain_header() -> [{<<"content-type">>, <<"text/plain">>}].
 
@@ -49,14 +56,28 @@ user_file(<<$/, Path/binary>>) ->
         _ -> {<<>>, <<>>}
     end.
 
-do_get(#tros_request{request = {_User, FileID, _},
-                     user_server = Context}, Req) ->
-    case francus:open_read(Context, FileID) of
-        %% TODO: Chunked writes for larger files
+do_op(get, #tros_request{file = FileID}, Req) ->
+    case francus:open_read(wocky_app:server(), FileID) of
+        %% TODO: Chunked writes for larger files?
         {ok, F} ->
             send_file(F, Req);
         {error, not_found} ->
-            success(cowboy_req:reply(404, plain_header(), "Not found", Req))
+            {error, {404, "Not found", Req}}
+    end;
+
+do_op(post, Request = #tros_request{user = User,
+                                    file = FileID,
+                                    metadata = Metadata =
+                                    #{<<"content-type">> := ContentType}
+                                   }, Req) ->
+    {ReqContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
+    case ReqContentType of
+        ContentType ->
+            {ok, F} = francus:open_write(wocky_app:server(),
+                                         FileID, User, Metadata),
+            write_data(F, Request, Req2);
+        _ ->
+            {error, {415, "Mismatched media types between IQ and POST", Req2}}
     end.
 
 send_file(File, Req) ->
@@ -65,26 +86,9 @@ send_file(File, Req) ->
                         X -> X
                     end,
     #{<<"content-type">> := ContentType} = francus:metadata(File2),
-    success(cowboy_req:reply(200,
-                             [{<<"content-type">>, ContentType}],
-                             Data, Req)).
+    francus:close(File2),
+    cowboy_req:reply(200, [{<<"content-type">>, ContentType}], Data, Req).
 
-do_put(Request = #tros_request{request = {User, FileID, _},
-                               user_server = Context,
-                               metadata = Metadata =
-                                          #{<<"content-type">> := ContentType}
-                              }, Req) ->
-    {ReqContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
-    case ReqContentType of
-        ContentType ->
-            {ok, F} = francus:open_write(Context, FileID, User, Metadata),
-            write_data(F, Request, Req2);
-        _ ->
-            success(
-              cowboy_req:reply(415, [],
-                               "Mismatched media types between IQ and PUT",
-                               Req2))
-    end.
 
 write_data(F, Request = #tros_request{size = SizeRemaining}, Req) ->
     {Result, Data, NewSizeRemaining, Req2} = get_data(SizeRemaining, Req),
@@ -111,23 +115,20 @@ get_data(SizeRemaining, Req) ->
 % Exactly the right number of bytes received and written. All is well.
 finish_write(F, #tros_request{size = 0}, Req) ->
     ok = francus:close(F),
-    success(cowboy_req:reply(200, Req));
+    cowboy_req:reply(200, Req);
 
 % Too many or too few bytes received - close and delete the file and send an
 % error code.
-finish_write(F, #tros_request{request = {_, File, _},
-                              user_server = Context,
+finish_write(F, #tros_request{file = File,
                               size = BytesRemaining}, Req) ->
     ok = francus:close(F),
-    francus:delete(Context, File),
+    francus:delete(wocky_app:server(), File),
     case BytesRemaining of
         X when X > 0 ->
-            success(cowboy_req:reply(400, [], "File was truncated", Req));
+            {error, {400, "File was truncated", Req}};
         X when X < 0 ->
-            success(cowboy_req:reply(413, Req))
+            {error, {413, "", Req}}
     end.
-
-success({ok, Req}) -> Req.
 
 -spec terminate({normal, shutdown} | {error, atom()}, cowboy_req:req(), any())
                 -> ok.

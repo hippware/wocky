@@ -157,7 +157,8 @@ keyspace_tables(_) -> [
     message_archive,
     auth_token,
     privacy,
-    privacy_item
+    privacy_item,
+    tros_request
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -376,6 +377,21 @@ table_definition(privacy_item) ->
            {match_presence_out, boolean}
        ],
        primary_key = [user, server, list, id]
+    };
+
+% Table of pending TROS/Francus requests
+table_definition(tros_request) ->
+    #table_def{
+       name = tros_request,
+       columns = [
+           {user, timeuuid}, % User making the request
+           {file, text},     % File name of the request
+           {auth, blob},     % Authorization key for the request
+           {method, text},   % HTTP method for the request (get/post)
+           {size, int},      % Size of the requested file (upload only)
+           {metadata, {map, text, text}} % File metadata (key => value)
+       ],
+       primary_key = [user, file, auth, method]
     }.
 
 table_indexes(session) -> [

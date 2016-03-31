@@ -42,7 +42,7 @@
 -define(DEFAULT_BACKEND, francus).
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
 -define(DEFAULT_SCHEME, "https://").
--define(DEFAULT_AUTH_VALIDITY, timer:minutes(60)).
+-define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
