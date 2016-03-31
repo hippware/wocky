@@ -213,7 +213,7 @@ do_upload(ResultStanza, ImageData, ExpectedCode, Multipart) ->
 
 do_upload(ResultStanza, ImageData, ExpectedCode, ContentType, Multipart) ->
     UploadEl = get_element(ResultStanza, <<"upload">>),
-    URL = desecure_url(get_cdata(UploadEl, <<"url">>)),
+    URL = get_cdata(UploadEl, <<"url">>),
     Method = get_cdata(UploadEl, <<"method">>),
     HeadersEl = get_element(UploadEl, <<"headers">>),
     FileID = get_cdata(UploadEl, <<"id">>),
@@ -250,7 +250,7 @@ make_multipart_body(ContentType, ImageData) ->
 
 do_download(ResultStanza) ->
     DownloadEl = get_element(ResultStanza, <<"download">>),
-    URL = desecure_url(get_cdata(DownloadEl, <<"url">>)),
+    URL = get_cdata(DownloadEl, <<"url">>),
     HeadersEl = get_element(DownloadEl, <<"headers">>),
     Headers = get_headers(HeadersEl),
 
@@ -265,10 +265,6 @@ do_download(ResultStanza) ->
                         RespHeaders),
     true = lists:member({"content-type","image/png"}, RespHeaders),
     RespBin.
-
-desecure_url(<<"https:", URL/binary>>) ->
-    <<"http:", URL/binary>>;
-desecure_url(URL) -> URL.
 
 request_wrapper(ID, Type, Name, DataFields) ->
     #xmlel{name = <<"iq">>,
