@@ -22,5 +22,6 @@
          }).
 
 -define(NS_TOKEN, <<"hippware.com/token">>).
+-define(NS_PHONE, <<"hippware.com/hxep/phone">>).
 
 -endif. % ifdef WOCKY_HRL
