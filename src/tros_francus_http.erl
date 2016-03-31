@@ -65,19 +65,33 @@ do_op(get, #tros_request{file = FileID}, Req) ->
             {error, {404, "Not found", Req}}
     end;
 
-do_op(post, Request = #tros_request{user = User,
-                                    file = FileID,
-                                    metadata = Metadata =
-                                    #{<<"content-type">> := ContentType}
-                                   }, Req) ->
+do_op(post,
+      Request = #tros_request{metadata = #{<<"content-type">> := ContentType}},
+      Req) ->
     {ReqContentType, Req2} = cowboy_req:header(<<"content-type">>, Req, <<>>),
     case ReqContentType of
         ContentType ->
-            {ok, F} = francus:open_write(wocky_app:server(),
-                                         FileID, User, Metadata),
-            write_data(F, Request, Req2);
+            open_and_write(Request, fun cowboy_req:body/1, Req2);
+        <<"multipart/form-data", _/binary>> ->
+            handle_multipart(Request, ContentType, Req2);
         _ ->
             {error, {415, "Mismatched media types between IQ and POST", Req2}}
+    end.
+
+handle_multipart(Request, ReqContentType, Req) ->
+    case cowboy_req:part(Req) of
+        {ok, Headers, Req2} ->
+            process_part_headers(Request, ReqContentType, Headers, Req2);
+        {done, Req2} ->
+            {error, {400, "Could not find file part", Req2}}
+    end.
+
+process_part_headers(Request, ReqContentType, Headers, Req) ->
+    case lists:keyfind(<<"content-type">>, 1, Headers) of
+        {_, ReqContentType} ->
+            open_and_write(Request, fun cowboy_req:part_body/1, Req);
+        _ ->
+            handle_multipart(Request, ReqContentType, Req)
     end.
 
 send_file(File, Req) ->
@@ -89,14 +103,21 @@ send_file(File, Req) ->
     francus:close(File2),
     cowboy_req:reply(200, [{<<"content-type">>, ContentType}], Data, Req).
 
+open_and_write(Request = #tros_request{user = User, file = FileID,
+                                       metadata = Metadata},
+               ChunkFun, Req) ->
+    {ok, F} = francus:open_write(wocky_app:server(),
+                                 FileID, User, Metadata),
+    write_data(F, Request, ChunkFun, Req).
 
-write_data(F, Request = #tros_request{size = SizeRemaining}, Req) ->
-    {Result, Data, NewSizeRemaining, Req2} = get_data(SizeRemaining, Req),
+write_data(F, Request = #tros_request{size = SizeRemaining}, ChunkFun, Req) ->
+    {Result, Data, NewSizeRemaining, Req2} =
+    get_data(SizeRemaining, ChunkFun, Req),
     Request2 = Request#tros_request{size = NewSizeRemaining},
     case Result of
         more ->
             F2 = francus:write(F, Data),
-            write_data(F2, Request2, Req2);
+            write_data(F2, Request2, ChunkFun, Req2);
         ok ->
             F2 = francus:write(F, Data),
             finish_write(F2, Request2, Req2);
@@ -104,8 +125,8 @@ write_data(F, Request = #tros_request{size = SizeRemaining}, Req) ->
             finish_write(F, Request2, Req2)
     end.
 
-get_data(SizeRemaining, Req) ->
-    {Result, Data, Req2} = cowboy_req:body(Req),
+get_data(SizeRemaining, ChunkFun, Req) ->
+    {Result, Data, Req2} = ChunkFun(Req),
     NewSizeRemaining = SizeRemaining - byte_size(Data),
     case NewSizeRemaining of
         X when X >= 0 -> {Result, Data, NewSizeRemaining, Req2};
