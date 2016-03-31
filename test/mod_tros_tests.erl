@@ -40,7 +40,9 @@ before_all(Backend) ->
                         "2nuvW8zXWvED/h5SUfcAU/37c2yaY3JM7ew9BUag";
                    (tros_max_upload_size) -> 1024 * 1024 * 10;
                    (tros_scheme) -> "http://";
-                   (tros_auth_validity) -> 3600
+                   (tros_auth_validity) -> 3600;
+                   (tros_port) -> 1025;
+                   (tros_public_port) -> 1025
                 end),
     meck:expect(ejabberd_config, get_local_option,
                 fun(cqerl_node, _) -> {"127.0.0.1", 9042}

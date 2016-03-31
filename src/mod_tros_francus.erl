@@ -12,9 +12,22 @@
          make_auth/0
         ]).
 
+-define(DEFAULT_SCHEME, "https://").
+-define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 -define(DEFAULT_PORT, 1025).
 
-start(_Opts) ->
+configs() ->
+    %% Name in .cfg   |Name in ejabberd_config|Default value
+    [
+     {scheme,          tros_scheme,           ?DEFAULT_SCHEME},
+     {auth_validity,   tros_auth_validity,    ?DEFAULT_AUTH_VALIDITY},
+     {port,            tros_port,             ?DEFAULT_PORT},
+     {public_port,     tros_public_port,      ?DEFAULT_PORT}
+    ].
+
+start(Opts) ->
+    lists:foreach(fun(C) -> mod_tros:set_config_from_opt(C, Opts) end,
+                  configs()),
     tros_req_tracker:start(),
     Dispatch = cowboy_router:compile([{'_', [{'_', tros_francus_http, []}]}]),
     cowboy:start_http(tros_francus_listener, 100,
@@ -70,10 +83,11 @@ add_request(Method, User, FileID, Auth, Size, Metadata) ->
                        },
     tros_req_tracker:add(Req).
 
-port() -> ?DEFAULT_PORT.
+port() -> ejabberd_config:get_local_option(tros_port).
+public_port() -> ejabberd_config:get_local_option(tros_public_port).
 
 url(Server, User, FileID) ->
     Scheme = ejabberd_config:get_local_option(tros_scheme),
     iolist_to_binary(
-      [Scheme, Server, ":", integer_to_list(port()),
+      [Scheme, Server, ":", integer_to_list(public_port()),
        "/users/", User, "/files/", FileID]).

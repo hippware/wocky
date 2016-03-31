@@ -15,7 +15,8 @@
    start/2,
    stop/1,
    handle_iq/3,
-   make_file_id/0
+   make_file_id/0,
+   set_config_from_opt/2
         ]).
 
 -export([
@@ -41,16 +42,12 @@
 
 -define(DEFAULT_BACKEND, francus).
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
--define(DEFAULT_SCHEME, "https://").
--define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
     [
      {backend,         tros_backend,          ?DEFAULT_BACKEND},
-     {max_upload_size, tros_max_upload_size,  ?DEFAULT_MAX_UPLOAD_SIZE},
-     {scheme,          tros_scheme,           ?DEFAULT_SCHEME},
-     {auth_validity,   tros_auth_validity,    ?DEFAULT_AUTH_VALIDITY}
+     {max_upload_size, tros_max_upload_size,  ?DEFAULT_MAX_UPLOAD_SIZE}
     ].
 
 start(Host, Opts) ->
