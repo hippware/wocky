@@ -95,7 +95,7 @@ validate_user(User) ->
 validate_same_user(FromJID, User, ToJID) ->
     case relationship(FromJID, User, ToJID) of
         self -> ok;
-        _ -> not_valid("Can only modify yourself")
+        _ -> {error, ?ERRT_FORBIDDEN(?MYLANG, <<"Can only modify yourself">>)}
     end.
 
 
