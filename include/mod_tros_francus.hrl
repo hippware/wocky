@@ -3,12 +3,12 @@
 -define(MOD_TROS_FRANCUS_HRL, 1).
 
 -record(tros_request, {
-          op            :: get | put,
-          request       :: {binary(), binary(), binary()}, % {User, File, Auth}
-          user_server   :: binary(),
+          method        :: get | post,
+          user          :: binary(),
+          file          :: binary(),
+          auth          :: binary(),
           size          :: integer(),
-          metadata      :: francus:metadata(),
-          tref          :: timer:tref()
+          metadata      :: francus:metadata()
          }).
 
 -endif. % ifdef MOD_TROS_FRANCUS_HRL

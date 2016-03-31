@@ -6,38 +6,59 @@
          start/0,
          stop/0,
          add/1,
-         get_delete/1,
-         expire/1
+         check/4
         ]).
 
 -include("mod_tros_francus.hrl").
 
--define(DEFAULT_TIMEOUT, timer:seconds(60)).
+start() -> ok.
 
-start() ->
-    tros_requests = ets:new(tros_requests, [named_table, public,
-                                            {keypos, #tros_request.request}]).
+stop() -> ok.
 
-stop() ->
-    ets:delete(tros_requests).
+add(#tros_request{
+       user     = User,
+       file     = File,
+       auth     = Auth,
+       method   = Method,
+       size     = Size,
+       metadata = Metadata}) ->
 
-add(Req) ->
-    {ok, TRef} = timer:apply_after(timeout(), ?MODULE, expire,
-                                   [Req#tros_request.request]),
-    ets:insert(tros_requests, Req#tros_request{tref = TRef}).
+    Q = "INSERT INTO tros_request (user, file, auth, method, size, metadata)"
+        " VALUES(?, ?, ?, ?, ?, ?) USING TTL ?",
+    V = #{user     => User,
+          file     => File,
+          auth     => Auth,
+          method   => atom_to_binary(Method, utf8),
+          size     => Size,
+          metadata => Metadata,
+          '[ttl]'  => timeout()},
+    {ok, void} = wocky_db:query(wocky_app:server(), Q, V, quorum),
+    ok.
 
-expire(Request) ->
-    ets:delete(tros_requests, Request).
-
-get_delete(RequestKey) ->
-    case ets:lookup(tros_requests, RequestKey) of
-        [AuthReq = #tros_request{tref = TRef}] ->
-            %% Timer may already fired - ignore return:
-            _ = timer:cancel(TRef),
-            ets:delete_object(tros_requests, AuthReq),
-            AuthReq;
-        [] ->
-            false
+check(User, File, Auth, Method) ->
+    R = wocky_db:select_row(wocky_app:server(), tros_request, all,
+                            #{user   => User,
+                              file   => File,
+                              auth   => Auth,
+                              method => atom_to_binary(Method, utf8)}),
+    case R of
+        not_found -> false;
+        _ -> row_to_rec(R)
     end.
 
-timeout() -> ?DEFAULT_TIMEOUT.
+row_to_rec(#{
+  user     := User,
+  file     := File,
+  auth     := Auth,
+  method   := Method,
+  size     := Size,
+  metadata := Metadata}) ->
+
+    #tros_request{user     = User,
+                  file     = File,
+                  auth     = Auth,
+                  method   = binary_to_existing_atom(Method, utf8),
+                  size     = Size,
+                  metadata = Metadata}.
+
+timeout() -> ejabberd_config:get_local_option(tros_auth_validity).

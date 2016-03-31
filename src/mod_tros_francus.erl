@@ -12,9 +12,22 @@
          make_auth/0
         ]).
 
+-define(DEFAULT_SCHEME, "https://").
+-define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 -define(DEFAULT_PORT, 1025).
 
-start(_Opts) ->
+configs() ->
+    %% Name in .cfg   |Name in ejabberd_config|Default value
+    [
+     {scheme,          tros_scheme,           ?DEFAULT_SCHEME},
+     {auth_validity,   tros_auth_validity,    ?DEFAULT_AUTH_VALIDITY},
+     {port,            tros_port,             ?DEFAULT_PORT},
+     {public_port,     tros_public_port,      ?DEFAULT_PORT}
+    ].
+
+start(Opts) ->
+    lists:foreach(fun(C) -> mod_tros:set_config_from_opt(C, Opts) end,
+                  configs()),
     tros_req_tracker:start(),
     Dispatch = cowboy_router:compile([{'_', [{'_', tros_francus_http, []}]}]),
     cowboy:start_http(tros_francus_listener, 100,
@@ -27,9 +40,9 @@ stop() ->
     tros_req_tracker:stop().
 
 make_download_response(FromJID, ToJID, OwnerID, FileID) ->
-    {Auth, _User, UserServer, URL} =
+    {Auth, _User, URL} =
         common_response_data(FromJID, ToJID, OwnerID, FileID),
-    add_request(get, OwnerID, FileID, UserServer, Auth, 0, #{}),
+    add_request(get, OwnerID, FileID, Auth, 0, #{}),
     Headers = [{<<"authorization">>, Auth}],
     RespFields = [
                   {<<"url">>, URL},
@@ -39,16 +52,16 @@ make_download_response(FromJID, ToJID, OwnerID, FileID) ->
 
 make_upload_response(FromJID, ToJID, FileID, Size, Metadata =
                      #{<<"content-type">> := ContentType}) ->
-    {Auth, User, UserServer, URL} =
+    {Auth, User, URL} =
         common_response_data(FromJID, ToJID, FromJID#jid.luser, FileID),
-    add_request(put, User, FileID, UserServer, Auth, Size, Metadata),
+    add_request(post, User, FileID, Auth, Size, Metadata),
     Headers = [
                {<<"content-type">>, ContentType},
                {<<"authorization">>, Auth}
               ],
     RespFields = [
                   {<<"url">>, URL},
-                  {<<"method">>, <<"PUT">>}
+                  {<<"method">>, <<"POST">>}
                  ],
     {Headers, RespFields}.
 
@@ -57,25 +70,24 @@ common_response_data(FromJID, ToJID, Owner, FileID) ->
     %% testing
     Auth = ?MODULE:make_auth(),
     User = FromJID#jid.luser,
-    UserServer = FromJID#jid.lserver,
     Server = ToJID#jid.lserver,
     URL = url(Server, Owner, FileID),
-    {Auth, User, UserServer, URL}.
+    {Auth, User, URL}.
 
 make_auth() ->
     base64:encode(crypto:strong_rand_bytes(48)).
 
-add_request(Op, User, FileID, UserServer, Auth, Size, Metadata) ->
-    Req = #tros_request{op = Op, request = {User, FileID, Auth},
-                        user_server = UserServer, size = Size,
-                        metadata = Metadata
+add_request(Method, User, FileID, Auth, Size, Metadata) ->
+    Req = #tros_request{method = Method, user = User, file = FileID,
+                        auth = Auth, size = Size, metadata = Metadata
                        },
     tros_req_tracker:add(Req).
 
-port() -> ?DEFAULT_PORT.
+port() -> ejabberd_config:get_local_option(tros_port).
+public_port() -> ejabberd_config:get_local_option(tros_public_port).
 
 url(Server, User, FileID) ->
     Scheme = ejabberd_config:get_local_option(tros_scheme),
     iolist_to_binary(
-      [Scheme, Server, ":", integer_to_list(port()),
+      [Scheme, Server, ":", integer_to_list(public_port()),
        "/users/", User, "/files/", FileID]).

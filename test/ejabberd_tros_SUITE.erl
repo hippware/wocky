@@ -1,5 +1,5 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Integration test suite for HXEP
+%%% @doc Integration test suite for TROS
 -module(ejabberd_tros_SUITE).
 -compile(export_all).
 
@@ -20,6 +20,7 @@ all() ->
 groups() ->
     [
      {tros, [sequence], [file_updown_story,
+                         multipart_story,
                          file_down_bob_story,
                          file_down_carol_story,
                          file_up_too_big_story,
@@ -62,7 +63,7 @@ end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
 %%--------------------------------------------------------------------
-%% mod_hexp tests
+%% mod_tros tests
 %%--------------------------------------------------------------------
 
 file_updown_story(Config) ->
@@ -75,7 +76,7 @@ file_updown_story(Config) ->
         {QueryStanza, ResultStanza} =
         common_upload_request(FileSize, Config, Alice, avatar_purpose()),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData, 200),
+        FileID = do_upload(ResultStanza, ImageData, 200, false),
 
 
         %% Download
@@ -85,6 +86,27 @@ file_updown_story(Config) ->
         escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
         ImageData = do_download(DLResultStanza)
     end).
+
+multipart_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ImageData = load_test_file(Config),
+        FileSize = byte_size(ImageData),
+
+        %%% Upload
+        {QueryStanza, ResultStanza} =
+        common_upload_request(FileSize, Config, Alice, avatar_purpose()),
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+        FileID = do_upload(ResultStanza, ImageData, 200, true),
+
+        %% Download
+        DLQueryStanza = download_stanza(<<"456">>, FileID),
+        FinalDLStanza = add_to_from(Config, DLQueryStanza, alice),
+        DLResultStanza = escalus:send_and_wait(Alice, FinalDLStanza),
+        escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
+        ImageData = do_download(DLResultStanza)
+    end).
+
+
 
 file_down_bob_story(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
@@ -122,7 +144,7 @@ file_up_too_big_story(Config) ->
         {QueryStanza, ResultStanza} =
         common_upload_request(FileSize div 2, Config, Alice, avatar_purpose()),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        do_upload(ResultStanza, ImageData, 413)
+        do_upload(ResultStanza, ImageData, 413, false)
     end).
 
 file_up_too_small_story(Config) ->
@@ -134,7 +156,7 @@ file_up_too_small_story(Config) ->
         common_upload_request(FileSize * 2, Config, Alice, avatar_purpose()),
 
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        do_upload(ResultStanza, ImageData, 400)
+        do_upload(ResultStanza, ImageData, 400, false)
     end).
 
 request_too_big_story(Config) ->
@@ -157,7 +179,7 @@ wrong_type_story(Config) ->
                                                             Config, Alice,
                                                             avatar_purpose()),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        do_upload(ResultStanza, <<"datadata">>, 415, "image/jpeg")
+        do_upload(ResultStanza, <<"datadata">>, 415, "image/jpeg", false)
     end).
 
 
@@ -184,12 +206,14 @@ add_to_from(Config, Stanza, User) ->
       escalus_stanza:from(Stanza, User),
       escalus_users:get_server(Config, User)).
 
-do_upload(ResultStanza, ImageData, ExpectedCode) ->
-    do_upload(ResultStanza, ImageData, ExpectedCode, undefined).
+do_upload(ResultStanza, ImageData, ExpectedCode, Multipart) ->
+    do_upload(ResultStanza, ImageData, ExpectedCode, undefined, Multipart).
 
-do_upload(ResultStanza, ImageData, ExpectedCode, ContentType) ->
+-define(MP_BOUNDARY, "------").
+
+do_upload(ResultStanza, ImageData, ExpectedCode, ContentType, Multipart) ->
     UploadEl = get_element(ResultStanza, <<"upload">>),
-    URL = desecure_url(get_cdata(UploadEl, <<"url">>)),
+    URL = get_cdata(UploadEl, <<"url">>),
     Method = get_cdata(UploadEl, <<"method">>),
     HeadersEl = get_element(UploadEl, <<"headers">>),
     FileID = get_cdata(UploadEl, <<"id">>),
@@ -200,21 +224,33 @@ do_upload(ResultStanza, ImageData, ExpectedCode, ContentType) ->
         _ -> ContentType
     end,
     FinalHeaders = Headers -- [ContentType],
+    {OuterContentType, Body} =
+    case Multipart of
+        false ->
+            {ReqContentType, ImageData};
+        true ->
+            {"multipart/form-data; boundary=" ++ ?MP_BOUNDARY,
+            make_multipart_body(ReqContentType, ImageData)}
+    end,
     {ok, Result} = httpc:request(list_to_atom(
                                    string:to_lower(
                                      binary_to_list(Method))),
                                  {binary_to_list(URL),
                                   FinalHeaders,
-                                  ReqContentType,
-                                  ImageData},
+                                  OuterContentType,
+                                  Body},
                                  [], []),
     {Response, _RespHeaders, _RespContent} = Result,
     {_, ExpectedCode, _} = Response,
     FileID.
 
+make_multipart_body(ContentType, ImageData) ->
+    Prefix = cow_multipart:part(?MP_BOUNDARY, [{"content-type", ContentType}]),
+    iolist_to_binary([Prefix, ImageData, cow_multipart:close(?MP_BOUNDARY)]).
+
 do_download(ResultStanza) ->
     DownloadEl = get_element(ResultStanza, <<"download">>),
-    URL = desecure_url(get_cdata(DownloadEl, <<"url">>)),
+    URL = get_cdata(DownloadEl, <<"url">>),
     HeadersEl = get_element(DownloadEl, <<"headers">>),
     Headers = get_headers(HeadersEl),
 
@@ -229,10 +265,6 @@ do_download(ResultStanza) ->
                         RespHeaders),
     true = lists:member({"content-type","image/png"}, RespHeaders),
     RespBin.
-
-desecure_url(<<"https:", URL/binary>>) ->
-    <<"http:", URL/binary>>;
-desecure_url(URL) -> URL.
 
 request_wrapper(ID, Type, Name, DataFields) ->
     #xmlel{name = <<"iq">>,
