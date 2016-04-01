@@ -32,7 +32,9 @@ stop(Host) ->
 
 handle_iq(_From, _To, #iq{type = get, sub_el = #xmlel{children = Els}} = IQ) ->
     Users = lookup_numbers(numbers_from_xml(Els)),
-    iq_result(IQ, users_to_xml(Users)).
+    iq_result(IQ, users_to_xml(Users));
+handle_iq(_From, _To, #iq{type = set} = IQ) ->
+    IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
 
 numbers_from_xml(Els) ->
     [number_from_xml(El) || #xmlel{name = <<"item">>} = El <- Els].
