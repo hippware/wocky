@@ -11,6 +11,8 @@
         ]).
 
 -define(USER_NS, <<"hippware.com/hxep/user">>).
+-define(ERROR_NS, <<"hippware.com/hxep/errors">>).
+
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
@@ -40,7 +42,7 @@ stop(Host) ->
 handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     case handle_request(IQ, FromJID, ToJID, Type, ReqEl) of
         {ok, Result} -> Result;
-        {error, {Error, Stanza}} -> make_error_response(IQ, Error, Stanza)
+        {error, Stanza} -> make_error_response(IQ, Stanza)
     end.
 
 
@@ -57,7 +59,7 @@ handle_request(IQ, FromJID, ToJID, get,
         Fields <- get_get_req_fields(Children, []),
         check_field_permissions(Relationship, Fields),
         XMLFields <- get_resp_fields(ToJID, User, Fields),
-        {ok, make_response_iq(IQ, User, XMLFields)}]);
+        {ok, make_get_response_iq(IQ, User, XMLFields)}]);
 
 handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, set,
                ReqEl = #xmlel{name = <<"set">>, children = Children}) ->
@@ -69,7 +71,7 @@ handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, set,
         check_duplicate_unique_fields(Fields),
         set_unique_fields(User, LServer, Fields),
         set_other_fields(User, Fields),
-        {ok, make_response_iq(IQ, User, [])}]).
+        {ok, make_set_response_iq(IQ, User)}]).
 
 
 get_user(ReqEl) ->
@@ -77,23 +79,23 @@ get_user(ReqEl) ->
         <<"user/", User/binary>> ->
             {ok, User};
         undefined ->
-            {error, {"Missing node attribute", ?ERR_BAD_REQUEST}};
+            not_valid("Missing node attribute");
         _ ->
-            {error, {"Malformed node attribute", ?ERR_BAD_REQUEST}}
+            not_valid("Malformed node attribute")
     end.
 
 
 validate_user(User) ->
     case wocky_db:is_valid_id(User) of
         true -> ok;
-        false -> {error, {"Invalid user ID", ?ERR_BAD_REQUEST}}
+        false -> not_valid("Invalid user ID")
     end.
 
 
 validate_same_user(FromJID, User, ToJID) ->
     case relationship(FromJID, User, ToJID) of
         self -> ok;
-        _ -> {error, {"Can only modify yourself", ?ERR_FORBIDDEN}}
+        _ -> {error, ?ERRT_FORBIDDEN(?MYLANG, <<"Can only modify yourself">>)}
     end.
 
 
@@ -114,7 +116,7 @@ relationship(FromJID, TargetJID) ->
 get_field(Var) ->
     case lists:keyfind(binary_to_list(Var), 1, fields()) of
         false ->
-            {error, {["Unknown field name: ", Var], ?ERR_BAD_REQUEST}};
+            not_valid(["Unknown field name: ", Var]);
         Field ->
             {ok, Field}
     end.
@@ -155,7 +157,7 @@ get_get_req_fields([], Fields) ->
 get_get_req_fields([El = #xmlel{name = <<"field">>} | Tail], Acc) ->
     case exml_query:attr(El, <<"var">>) of
         undefined ->
-            {error, {"Missing var attribute on field", ?ERR_BAD_REQUEST}};
+            not_valid(<<"Missing var attribute on field">>);
         Var ->
             add_get_req_field(Tail, Acc, Var)
     end;
@@ -176,7 +178,7 @@ check_field_permissions(Relationship, Fields) ->
     case lists:all(fun(F) -> is_visible(Relationship, field_visibility(F)) end,
                    Fields) of
         true -> ok;
-        false -> {error, {"No access to field", ?ERR_FORBIDDEN}}
+        false -> {error, ?ERRT_FORBIDDEN(?MYLANG, <<"No access to field">>)}
     end.
 
 
@@ -191,7 +193,7 @@ get_resp_fields(ToJID, LUser, Fields) ->
     LServer = ToJID#jid.lserver,
     case wocky_db_user:get_user_data(LUser, LServer) of
         not_found ->
-            {error, {"User not found", ?ERR_ITEM_NOT_FOUND}};
+            {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->
             {ok, build_resp_fields(Row, Fields)}
     end.
@@ -223,16 +225,26 @@ value_element(Value) ->
            children = [#xmlcdata{content = null_to_bin(Value)}]}.
 
 
-make_response_iq(IQ, User, Fields) ->
+make_get_response_iq(IQ, User, Fields) ->
     IQ#iq{type = result,
           sub_el = #xmlel{name = <<"fields">>,
-                          attrs = [{<<"xmlns">>, ?USER_NS},
-                                   {<<"node">>, <<"user/", User/binary>>}],
+                          attrs = response_attrs(User),
                           children = Fields}}.
 
 
-make_error_response(IQ, Error, ErrStanza) ->
-    ok = lager:warning("Error on user IQ request: ~p", [Error]),
+make_set_response_iq(IQ, User) ->
+    IQ#iq{type = result,
+          sub_el = #xmlel{name = <<"setResponse">>,
+                          attrs = response_attrs(User)}}.
+
+
+response_attrs(User) ->
+    [{<<"xmlns">>, ?USER_NS},
+     {<<"node">>, <<"user/", User/binary>>}].
+
+
+make_error_response(IQ, ErrStanza) ->
+    ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
 
 
@@ -264,7 +276,7 @@ get_set_req_field(#xmlel{attrs = Attrs, children = Children}) ->
         Field <- get_field(Var),
         check_type(Field, Type),
         check_editability(Field),
-        Value <- get_value(Children),
+        Value <- get_value(Children, Field),
         {ok, {Var, Value}}]).
 
 
@@ -279,8 +291,7 @@ get_type(Attrs) ->
 get_attr(Name, Attrs) ->
     case proplists:get_value(Name, Attrs) of
         undefined ->
-            {error, {["Missing ", Name, " attribute on field"],
-                     ?ERR_BAD_REQUEST}};
+            not_valid(["Missing ", Name, " attribute on field"]);
         Value ->
             {ok, Value}
     end.
@@ -291,38 +302,41 @@ check_type({Name, StrType, _, _, _}, Type) ->
         StrType ->
             ok;
         _ ->
-            {error, {["Bad type on field ", Name, ": ", Type],
-                     ?ERR_BAD_REQUEST}}
+            not_valid(["Bad type on field ", Name, ": ", Type])
     end.
 
 
 check_editability(Field) ->
     case field_access(Field) of
         read_only ->
-            {error, {["Field ", field_name(Field), " is read-only"],
-                     ?ERR_FORBIDDEN}};
-        rest_only ->
             {error,
-             {["Field ", field_name(Field),
-               " may only be changed through REST interface"],
-             ?ERR_FORBIDDEN}};
+             ?ERRT_FORBIDDEN(?MYLANG,
+                             iolist_to_binary(
+                               ["Field ", field_name(Field),
+                                " is read-only"]))};
+        rest_only ->
+            Error = iolist_to_binary(
+                      ["Field ", field_name(Field),
+                       " may only be changed through REST interface"]),
+            {error, ?ERRT_FORBIDDEN(?MYLANG, Error)};
         write ->
             ok
     end.
 
 
 get_value([#xmlel{name = <<"value">>,
-                  children = [#xmlcdata{content = Value}]} | _]) ->
+                  children = [#xmlcdata{content = Value}]} | _], _Field) ->
     {ok, Value};
 
-get_value([#xmlel{name = <<"value">>} | _]) ->
-    {error, {"Missing value", ?ERR_BAD_REQUEST}};
+get_value([#xmlel{name = <<"value">>} | _], Field) ->
+    % Missing value content - treat the same as an absent value field
+    get_value([], Field);
 
-get_value([]) ->
-    {error, {"Missing value", ?ERR_BAD_REQUEST}};
+get_value([], Field) ->
+    not_valid(["Missing value on ", field_name(Field)]);
 
-get_value([_ | Tail]) ->
-    get_value(Tail).
+get_value([_ | Tail], Field) ->
+    get_value(Tail, Field).
 
 
 check_duplicate_unique_fields(_Fields) -> ok.
@@ -337,9 +351,14 @@ set_unique_fields(LUser, LServer, Fields) ->
 
 set_handle(LUser, LServer, Handle) ->
     case wocky_db_user:maybe_set_handle(LUser, LServer, Handle) of
-        true -> ok;
-        false -> {error, {"Could not set handle - already in use",
-                          ?ERR_CONFLICT}}
+        true ->
+            ok;
+        false ->
+            error_with_child(
+              ?ERRT_CONFLICT(?MYLANG,
+                             <<"Could not set handle - already in use">>),
+              #xmlel{name = <<"field">>,
+                     attrs = [{<<"var">>, <<"handle">>}]})
     end.
 
 
@@ -360,3 +379,15 @@ build_row(Fields) ->
                 end,
                 #{},
                 Fields).
+
+not_valid(Message) ->
+    El = #xmlel{children = Children} =
+    jlib:stanza_errort(<<"500">>, <<"modify">>, <<"undefined-condition">>,
+                       ?MYLANG, iolist_to_binary(Message)),
+    Stanza = El#xmlel{children = [#xmlel{name = <<"not-valid">>,
+                                         attrs = [{<<"xmlns">>, ?ERROR_NS}]}
+                                  | Children]},
+    {error, Stanza}.
+
+error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
+    {error, Stanza#xmlel{children = [ExtraChild | Children]}}.
