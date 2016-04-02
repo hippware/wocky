@@ -180,8 +180,10 @@ process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
     end;
 process_item_attrs(Item, [{<<"handle">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{contact_handle = Val}, Attrs);
-process_item_attrs(Item, [{<<"natural_name">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{natural_name = Val}, Attrs);
+process_item_attrs(Item, [{<<"first_name">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{first_name = Val}, Attrs);
+process_item_attrs(Item, [{<<"last_name">>, Val} | Attrs]) ->
+    process_item_attrs(Item#roster{last_name = Val}, Attrs);
 process_item_attrs(Item, [{<<"name">>, Val} | Attrs]) ->
     process_item_attrs(Item#roster{name = Val}, Attrs);
 process_item_attrs(Item, [{<<"avatar">>, Val} | Attrs]) ->
@@ -277,7 +279,8 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
             Attrs = lists:flatten(
                      [{<<"type">>, <<"subscribed">>},
                       item_name_to_xml(handle, Item#roster.contact_handle),
-                      item_name_to_xml(natural_name, Item#roster.natural_name),
+                      item_name_to_xml(first_name, Item#roster.first_name),
+                      item_name_to_xml(last_name, Item#roster.last_name),
                       item_name_to_xml(avatar, Item#roster.avatar)]),
             route(ejabberd_router, ToJID, JID1,
                   #xmlel{name = <<"presence">>,
@@ -507,7 +510,8 @@ item_to_xml(Item) ->
                  [item_jid_to_xml(Item#roster.contact_jid),
                   item_name_to_xml(name, Item#roster.name),
                   item_name_to_xml(handle, Item#roster.contact_handle),
-                  item_name_to_xml(natural_name, Item#roster.natural_name),
+                  item_name_to_xml(first_name, Item#roster.first_name),
+                  item_name_to_xml(last_name, Item#roster.last_name),
                   item_name_to_xml(avatar, Item#roster.avatar),
                   item_sub_to_xml(Item#roster.subscription),
                   item_ask_to_xml(Item#roster.ask)]),

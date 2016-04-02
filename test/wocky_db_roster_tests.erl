@@ -119,12 +119,14 @@ test_get_roster_item() ->
         ?_assertMatch(#roster{avatar = ?AVATAR_ID},
                       get_roster_item(?USER, ?SERVER, make_jid(?KAREN)))
       ]},
-      { "returns a roster item with natural_name pulled from the user record", [
-        ?_assertMatch(#roster{natural_name = <<"Carol">>},
+      { "returns a roster item with name pulled from the user record", [
+        ?_assertMatch(#roster{first_name = <<"Carol">>, last_name = <<>>},
                       get_roster_item(?USER, ?SERVER, make_jid(?CAROL))),
-        ?_assertMatch(#roster{natural_name = <<"Karen Kismet">>},
+        ?_assertMatch(#roster{first_name = <<"Karen">>,
+                              last_name = <<"Kismet">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?KAREN))),
-        ?_assertMatch(#roster{natural_name = <<"Robert The Bruce">>},
+        ?_assertMatch(#roster{first_name = <<>>,
+                              last_name = <<"Robert The Bruce">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?ROBERT)))
       ]},
       { "returns an empty roster item for a known user and unknown contact", [
