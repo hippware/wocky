@@ -11,10 +11,6 @@
  {<<"cache_tab">>,{pkg,<<"cache_tab">>,<<"1.0.2">>},0},
  {<<"cowboy">>,{pkg,<<"cowboy">>,<<"1.0.4">>},0},
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"1.0.2">>},1},
- {<<"cqerl">>,
-  {git,"https://github.com/hippware/cqerl",
-       {ref,"505b2d1e2b30d9b8530d25b52f038c0f95aab1b2"}},
-  0},
  {<<"cuesport">>,
   {git,"https://github.com/esl/cuesport",
        {ref,"d82ff25baf393eb11712721fb1b881b4b9f80176"}},
@@ -143,4 +139,8 @@
  {<<"wsock">>,
   {git,"https://github.com/esl/wsock",
        {ref,"251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383"}},
-  2}].
+  2},
+ {<<"z_stdlib">>,
+  {git,"https://github.com/zotonic/z_stdlib",
+       {ref,"b9f19b95e12c53b0287abab74f1dbaf84c0ef2f6"}},
+  0}].

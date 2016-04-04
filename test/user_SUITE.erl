@@ -60,7 +60,11 @@ groups() ->
                               set_wrong_type,
                               set_missing_var,
                               set_missing_value,
-                              handle_clash
+                              handle_clash,
+                              invalid_email,
+                              invalid_avatar,
+                              non_local_avatar,
+                              non_uuid_avatar
                              ]}
     ].
 
@@ -387,6 +391,42 @@ garbage_set(Config) ->
         expect_success(Config, QueryStanza, Alice, alice)
     end).
 
+invalid_email(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza =
+        set_request(<<"584">>, ?ALICE_UUID,
+                    [{<<"email">>, <<"string">>, <<"notanemail">>}]),
+        expect_error(Config, QueryStanza, Alice, alice)
+    end).
+
+invalid_avatar(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza =
+        set_request(<<"585">>, ?ALICE_UUID,
+                    [{<<"avatar">>, <<"file">>, <<"notaURL">>}]),
+        expect_error(Config, QueryStanza, Alice, alice)
+    end).
+
+non_local_avatar(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza =
+        set_request(<<"586">>, ?ALICE_UUID,
+                    [{<<"avatar">>, <<"file">>,
+                      <<"tros:user@otherserver.com/file/",
+                        ?AVATAR_FILE/binary>>}]),
+        expect_error(Config, QueryStanza, Alice, alice)
+    end).
+
+non_uuid_avatar(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza =
+        set_request(<<"587">>, ?ALICE_UUID,
+                    [{<<"avatar">>, <<"file">>,
+                      <<"tros:", (?ALICE_UUID)/binary, "@",
+                        ?LOCAL_CONTEXT/binary, "/file/blahblah">>}]),
+        expect_error(Config, QueryStanza, Alice, alice)
+    end).
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -430,7 +470,11 @@ garbage_request(ID, User, Type) ->
 
 set_fields() ->
     [{<<"handle">>, <<"string">>, <<"Alieee">>},
-     {<<"firstName">>, <<"string">>, <<"Bob">>}].
+     {<<"firstName">>, <<"string">>, <<"Bob">>},
+     {<<"email">>, <<"string">>, <<"bob@alice.com">>},
+     {<<"avatar">>, <<"file">>,
+      <<"tros:043e8c96-ba30-11e5-9912-ba0be0483c18@",
+        ?LOCAL_CONTEXT/binary, "/file/", ?AVATAR_FILE/binary>>}].
 
 add_to_from(Config, Stanza, User) ->
     escalus_stanza:to(
