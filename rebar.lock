@@ -139,4 +139,8 @@
  {<<"wsock">>,
   {git,"https://github.com/esl/wsock",
        {ref,"251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383"}},
-  2}].
+  2},
+ {<<"z_stdlib">>,
+  {git,"https://github.com/zotonic/z_stdlib",
+       {ref,"b9f19b95e12c53b0287abab74f1dbaf84c0ef2f6"}},
+  0}].

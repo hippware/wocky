@@ -276,6 +276,7 @@ get_set_req_field(#xmlel{attrs = Attrs, children = Children}) ->
         check_type(Field, Type),
         check_editability(Field),
         Value <- get_value(Children, Field),
+        check_valid_value(field_name(Field), field_type(Field), Value),
         {ok, {Var, Value}}]).
 
 
@@ -339,6 +340,32 @@ get_value([_ | Tail], Field) ->
 
 
 check_duplicate_unique_fields(_Fields) -> ok.
+
+
+check_valid_value("email", "string", Value) ->
+    case z_email_utils:is_email(Value) of
+        true -> ok;
+        false -> not_valid("Invalid email address")
+    end;
+
+check_valid_value(_, "file", Value) ->
+    Server = wocky_app:server(),
+    case (tros:parse_url(Value)) of
+        {ok, {Server, File}} -> check_file(File);
+        {ok, {OtherServer, _}} -> not_valid(["Server ", OtherServer,
+                                             " is not local"]);
+        {error, invalid_url} -> not_valid("Invalid file URL")
+    end;
+
+check_valid_value(_, _, _) ->
+    ok.
+
+
+check_file(File) ->
+    case wocky_db:is_valid_id(File) of
+        true -> ok;
+        false -> not_valid("Invalid file name (must be UUID)")
+    end.
 
 
 set_unique_fields(LUser, LServer, Fields) ->
