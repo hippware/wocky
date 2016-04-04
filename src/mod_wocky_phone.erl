@@ -30,11 +30,19 @@ stop(Host) ->
 %%% IQ handler callback
 %%%===================================================================
 
-handle_iq(_From, _To, #iq{type = get, sub_el = #xmlel{children = Els}} = IQ) ->
-    Users = lookup_numbers(numbers_from_xml(Els)),
+handle_iq(From, _To, #iq{type = get, sub_el = #xmlel{children = Els}} = IQ) ->
+    Reductions = lookup_reductions(From),
+    {Users, Remaining} = lookup_numbers(numbers_from_xml(Els), Reductions),
+    ok = save_reductions(From, Remaining),
     iq_result(IQ, users_to_xml(Users));
 handle_iq(_From, _To, #iq{type = set} = IQ) ->
     IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
+
+lookup_reductions(_From) ->
+    10.
+
+save_reductions(_From, _Reductions) ->
+    ok.
 
 numbers_from_xml(Els) ->
     [number_from_xml(El) || #xmlel{name = <<"item">>} = El <- Els].
@@ -45,8 +53,17 @@ number_from_xml(El) ->
 attr_value({value, Number}) -> Number;
 attr_value(Value) -> Value.
 
-lookup_numbers(Numbers) ->
-    [{Number, lookup_number(Number)} || Number <- Numbers, Number =/= false].
+lookup_numbers(Numbers, StartingReductions) ->
+    lists:foldr(fun (false, Acc) -> Acc;
+                    (Number, {UserData, Reductions}) ->
+                        {Result, Remaining} = lookup_number(Number, Reductions),
+                        {[{Number, Result} | UserData], Remaining}
+                end, {[], StartingReductions}, Numbers).
+
+lookup_number(_Number, 0) ->
+    {not_acceptable, 0};
+lookup_number(Number, Reductions) ->
+    {lookup_number(Number), Reductions - 1}.
 
 lookup_number(Number) ->
     case wocky_db:select_one(shared, phone_number_to_user, user,
@@ -74,6 +91,8 @@ xml_user_attrs(#{user := User, server := Server, handle := Handle,
      {<<"handle">>, safe_string(Handle)},
      {<<"firstname">>, safe_string(FirstName)},
      {<<"lastname">>, safe_string(LastName)}];
+xml_user_attrs(not_acceptable) ->
+    [{<<"error">>, <<"not-acceptable">>}];
 xml_user_attrs(not_found) ->
     [{<<"error">>, <<"item-not-found">>}].
 
