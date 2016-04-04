@@ -153,17 +153,13 @@ fill_extra_fields(#roster{contact_jid = {LUser, _, _}} = I) ->
             I#roster{
               avatar = safe_value(Avatar),
               contact_handle = safe_value(Handle),
-              natural_name = natural_name(safe_value(First), safe_value(Last))
+              first_name = safe_value(First),
+              last_name = safe_value(Last)
              }
     end.
 
 safe_value(null) -> <<>>;
 safe_value(Value) -> Value.
-
-natural_name(<<>>,  <<>>) -> <<>>;
-natural_name(First, <<>>) -> First;
-natural_name(<<>>,  Last) -> Last;
-natural_name(First, Last) -> iolist_to_binary([First, " ", Last]).
 
 unpack_roster_item(LUser, LServer, ContactJID, Item) ->
     #{user           => LUser,
