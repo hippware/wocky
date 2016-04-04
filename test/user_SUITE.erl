@@ -19,7 +19,7 @@ all() ->
     [
      {group, self},
      {group, other},
-     {group, friend},
+%    {group, friend},
      {group, error},
      {group, set},
      {group, error_set}
@@ -37,10 +37,10 @@ groups() ->
                           other_user_mixed_fields,
                           non_existant_user,
                           invalid_user]},
-     {friend, [sequence], [friend_all_fields,
-                           friend_allowed_fields,
-                           friend_denied_field,
-                           friend_mixed_fields]},
+%     {friend, [sequence], [friend_all_fields,
+%                          friend_allowed_fields,
+%                          friend_denied_field,
+%                          friend_mixed_fields]},
      {error, [sequence], [missing_node,
                           malformed_user,
                           wrong_type,
@@ -167,32 +167,32 @@ invalid_user(Config) ->
         expect_error(Config, QueryStanza, Bob, bob)
     end).
 
-friend_all_fields(Config) ->
-    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = get_request(<<"463">>, ?ALICE_UUID, []),
-        expect_error(Config, QueryStanza, Bob, bob)
-    end).
+%friend_all_fields(Config) ->
+%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%        QueryStanza = get_request(<<"463">>, ?ALICE_UUID, []),
+%        expect_error(Config, QueryStanza, Bob, bob)
+%    end).
 
-friend_allowed_fields(Config) ->
-    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = get_request(<<"464">>, ?ALICE_UUID,
-                                  [<<"handle">>, <<"avatar">>,
-                                   <<"phoneNumber">>]),
-        expect_success(Config, QueryStanza, Bob, bob)
-    end).
+%friend_allowed_fields(Config) ->
+%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%        QueryStanza = get_request(<<"464">>, ?ALICE_UUID,
+%                                  [<<"handle">>, <<"avatar">>,
+%                                   <<"phoneNumber">>]),
+%        expect_success(Config, QueryStanza, Bob, bob)
+%    end).
 
-friend_denied_field(Config) ->
-    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = get_request(<<"465">>, ?ALICE_UUID, [<<"userID">>]),
-        expect_error(Config, QueryStanza, Bob, bob)
-    end).
+%friend_denied_field(Config) ->
+%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%        QueryStanza = get_request(<<"465">>, ?ALICE_UUID, [<<"userID">>]),
+%        expect_error(Config, QueryStanza, Bob, bob)
+%    end).
 
-friend_mixed_fields(Config) ->
-    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = get_request(<<"466">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
-        expect_error(Config, QueryStanza, Bob, bob)
-    end).
+%friend_mixed_fields(Config) ->
+%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%        QueryStanza = get_request(<<"466">>, ?ALICE_UUID,
+%                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
+%        expect_error(Config, QueryStanza, Bob, bob)
+%    end).
 
 missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->

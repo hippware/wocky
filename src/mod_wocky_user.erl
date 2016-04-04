@@ -128,12 +128,12 @@ fields() ->
      {"uuid",        "uuid",   public,      read_only, default},
      {"server",      "string", public,      read_only, default},
      {"handle",      "string", public,      write,     default},
-     {"phoneNumber", "string", friends,     rest_only, default},
+     {"phoneNumber", "string", private,     rest_only, default},
      {"status",      "int",    private,     read_only, fun(_) -> <<"0">> end},
      {"avatar",      "file",   public,      write,     default},
-     {"firstName",   "string", friends,     write,     default},
-     {"lastName",    "string", friends,     write,     default},
-     {"email",       "string", friends,     write,     default},
+     {"firstName",   "string", public,      write,     default},
+     {"lastName",    "string", public,      write,     default},
+     {"email",       "string", private,     write,     default},
      {"userID",      "string", private,     rest_only, default}
     ].
 
