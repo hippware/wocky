@@ -129,7 +129,6 @@ fields() ->
      {"server",      "string", public,      read_only, default},
      {"handle",      "string", public,      write,     default},
      {"phoneNumber", "string", private,     rest_only, default},
-     {"status",      "int",    private,     read_only, fun(_) -> <<"0">> end},
      {"avatar",      "file",   public,      write,     default},
      {"firstName",   "string", public,      write,     default},
      {"lastName",    "string", public,      write,     default},

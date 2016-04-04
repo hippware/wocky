@@ -107,7 +107,7 @@ all_fields(Config) ->
                                   []),
         ResultStanza = expect_success(Config, QueryStanza, Alice, alice),
         FieldsXML = exml_query:path(ResultStanza, [{element, <<"fields">>}]),
-        11 = length(FieldsXML#xmlel.children)
+        10 = length(FieldsXML#xmlel.children)
     end).
 
 some_fields(Config) ->
