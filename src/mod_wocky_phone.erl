@@ -12,6 +12,16 @@
 %% IQ handler callback
 -export([handle_iq/3]).
 
+-ifdef(TEST).
+-export([lookup_reductions/2, save_reductions/3]).
+-endif.
+
+-define(DEFAULT_REDUCTIONS, 5000).
+-define(REDUCTION_TTL, 86400). % 24 hours
+
+%% calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}})
+-define(EPOCH_SECONDS, 62167219200).
+
 
 %%%===================================================================
 %%% gen_mod implementation
@@ -31,18 +41,43 @@ stop(Host) ->
 %%%===================================================================
 
 handle_iq(From, _To, #iq{type = get, sub_el = #xmlel{children = Els}} = IQ) ->
-    Reductions = lookup_reductions(From),
-    {Users, Remaining} = lookup_numbers(numbers_from_xml(Els), Reductions),
-    ok = save_reductions(From, Remaining),
-    iq_result(IQ, users_to_xml(Users));
+    #jid{luser = LUser, lserver = LServer} = From,
+    case wocky_db:is_valid_id(LUser) of
+        true ->
+            handle_iq_get(LUser, LServer, Els, IQ);
+
+        false ->
+            IQ#iq{type = error, sub_el = [?ERR_JID_MALFORMED]}
+    end;
 handle_iq(_From, _To, #iq{type = set} = IQ) ->
     IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
 
-lookup_reductions(_From) ->
-    10.
+handle_iq_get(User, Server, Els, IQ) ->
+    Reductions = lookup_reductions(Server, User),
+    {Users, Remaining} = lookup_numbers(numbers_from_xml(Els), Reductions),
+    ok = save_reductions(Server, User, Remaining),
+    iq_result(IQ, users_to_xml(Users)).
 
-save_reductions(_From, _Reductions) ->
-    ok.
+lookup_reductions(Server, User) ->
+    Criteria = #{user => User, server => Server, date => get_date()},
+    case wocky_db:select_one(Server, phone_lookup_count, count, Criteria) of
+        not_found -> ?DEFAULT_REDUCTIONS;
+        null -> ?DEFAULT_REDUCTIONS;
+        Reductions -> Reductions
+    end.
+
+save_reductions(Server, User, Reductions) ->
+    ok = wocky_db:insert(Server, phone_lookup_count,
+                         #{user => User,
+                           server => Server,
+                           date => get_date(),
+                           count => Reductions,
+                           '[ttl]' => ?REDUCTION_TTL}).
+
+get_date() ->
+    {Date, _Time} = calendar:universal_time(),
+    Seconds = calendar:datetime_to_gregorian_seconds({Date, {0, 0, 0}}),
+    wocky_db:seconds_to_timestamp(Seconds - ?EPOCH_SECONDS).
 
 numbers_from_xml(Els) ->
     [number_from_xml(El) || #xmlel{name = <<"item">>} = El <- Els].
