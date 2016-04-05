@@ -158,7 +158,8 @@ keyspace_tables(_) -> [
     auth_token,
     privacy,
     privacy_item,
-    tros_request
+    tros_request,
+    phone_lookup_count
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -392,6 +393,18 @@ table_definition(tros_request) ->
            {metadata, {map, text, text}} % File metadata (key => value)
        ],
        primary_key = [user, file, auth, method]
+    };
+
+table_definition(phone_lookup_count) ->
+    #table_def{
+       name = phone_lookup_count,
+       columns = [
+           {user, timeuuid},  % User ID (userpart of JID)
+           {server, text},    % Server (domainpart of JID)
+           {date, timestamp}, % Date of the last request
+           {count, int}       % Number of requests during the day
+       ],
+       primary_key = [user, server, date]
     }.
 
 table_indexes(session) -> [
