@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for TROS
--module(ejabberd_tros_SUITE).
+-module(tros_SUITE).
 -compile(export_all).
 
 -include_lib("ejabberd/include/jlib.hrl").

@@ -19,12 +19,6 @@
    set_config_from_opt/2
         ]).
 
--export([
-   validate_upload_size/1,
-   validate_upload_type/1,
-   validate_upload_permissions/2
-        ]).
-
 -ifdef(TEST).
 -export([backend/0]).
 -endif.
@@ -33,6 +27,8 @@
 -include_lib("ejabberd/include/jlib.hrl").
 
 -behaviour(gen_mod).
+
+-compile({parse_transform, do}).
 
 -record(request, {
           from_jid :: ejabberd:jid(),
@@ -65,33 +61,37 @@ stop(Host) ->
                 IQ :: iq()) -> ignore | iq().
 handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     Req = #request{from_jid = FromJID, to_jid = ToJID, iq = IQ},
-    handle_request(Req, Type, ReqEl).
+    case handle_request(Req, Type, ReqEl) of
+        {error, E} -> error_response(IQ, E);
+        {ok, R} -> R
+    end.
 
 handle_request(Req, get, ReqEl = #xmlel{name = <<"download-request">>}) ->
     handle_download_request(Req, ReqEl);
 handle_request(Req, set, ReqEl = #xmlel{name = <<"upload-request">>}) ->
     handle_upload_request(Req, ReqEl);
 handle_request(_, _, _) ->
-    ignore.
+    {ok, ignore}.
 
-handle_download_request(Req = #request{iq = IQ}, DR) ->
-    case extract_fields(DR, [<<"id">>], []) of
-        {failed, Missing} ->
-            send_missing_field_error(IQ, Missing);
-        {ok, Fields} ->
-            send_download_respone(Req, Fields)
-    end.
+handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
+    do([error_m ||
+        Fields <- extract_fields(DR, [<<"id">>], []),
+        FileID <- check_file_id(Fields),
+        OwnerID <- check_download_permissions(FromJID, FileID),
+        download_response(Req, OwnerID, FileID)
+       ]).
 
-handle_upload_request(Req = #request{iq = IQ}, UR) ->
+handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
     RequiredFields = [<<"filename">>, <<"size">>,
                       <<"mime-type">>, <<"purpose">>],
     OptionalFields = [<<"width">>, <<"height">>],
-    case extract_fields(UR, RequiredFields, OptionalFields) of
-        {failed, Missing} ->
-            send_missing_field_error(IQ, Missing);
-        {ok, Fields} ->
-            send_upload_response(Req, Fields)
-    end.
+    do([error_m ||
+        Fields <- extract_fields(UR, RequiredFields, OptionalFields),
+        Size <- check_upload_size(Fields),
+        check_upload_type(Fields),
+        check_upload_permissions(FromJID, Fields),
+        upload_response(Req, Fields, Size)
+       ]).
 
 extract_fields(Req, RequiredFields, OptionalFields) ->
     Fields = lists:foldl(fun(F, Acc) -> add_field(Req, F, Acc) end, #{},
@@ -109,68 +109,78 @@ add_field(UR, Field, Acc) ->
 check_fields(Fields, []) -> {ok, Fields};
 check_fields(Fields, [H|T]) ->
     case maps:is_key(H, Fields) of
-        false -> {failed, H};
+        false -> {error, missing_field_error(H)};
         true -> check_fields(Fields, T)
     end.
 
-send_missing_field_error(IQ, FieldName) ->
+missing_field_error(FieldName) ->
     Text = iolist_to_binary(["Required field missing: ", FieldName]),
-    Error = ?ERRT_BAD_REQUEST(?MYLANG, Text),
-    send_error_response(IQ, Error).
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, Text)}.
 
-send_upload_validation_error(IQ, ErrorStr) ->
+upload_validation_error(ErrorStr) ->
     Text = iolist_to_binary(["Upload request denied: ", ErrorStr]),
-    send_validation_error(IQ, Text).
+    validation_error(Text).
 
-send_download_validation_error(IQ, ErrorStr) ->
+download_validation_error(ErrorStr) ->
     Text = iolist_to_binary(["Download request denied: ", ErrorStr]),
-    send_validation_error(IQ, Text).
+    validation_error(Text).
 
-send_validation_error(IQ, Text) ->
-    Error = ?ERRT_NOT_ACCEPTABLE(?MYLANG, Text),
-    send_error_response(IQ, Error).
+validation_error(Text) ->
+    {error, ?ERRT_NOT_ACCEPTABLE(?MYLANG, Text)}.
 
-send_upload_response(Req = #request{iq = IQ,
-                                    from_jid = FromJID},
-                     ReqFields = #{<<"mime-type">> := MimeType,
-                                   <<"filename">> := Filename,
-                                   <<"purpose">> := Purpose}) ->
+check_file_id(#{<<"id">> := <<"tros:", JID/binary>>}) ->
+    case jid:from_binary(JID) of
+        #jid{lresource = <<"file/", LResource/binary>>} ->
+            check_file_id(LResource);
+        _ ->
+            download_validation_error("Invalid file URL")
+    end;
+
+check_file_id(#{<<"id">> := ID}) ->
+    check_file_id(ID);
+
+check_file_id(ID) when is_binary(ID) ->
+    case wocky_db:is_valid_id(ID) of
+        true -> {ok, ID};
+        false -> download_validation_error(["Invalid file ID: ", ID])
+    end.
+
+check_upload_size(#{<<"size">> := SizeBin}) ->
+    Size = binary_to_integer_def(SizeBin, 0),
+    MaxSize = ejabberd_config:get_local_option(tros_max_upload_size),
+    case Size =< MaxSize andalso Size > 0 of
+        true -> {ok, Size};
+        false -> upload_validation_error(["Invalid size: ", SizeBin])
+    end.
+
+% TODO: configure a list of valid upload types
+check_upload_type(_Fields) -> ok.
+
+check_upload_permissions(FromJID, #{<<"purpose">> := Purpose}) ->
+    case tros_permissions:can_upload(FromJID, Purpose) of
+        true -> ok;
+        false -> upload_validation_error("Permission denied")
+    end.
+
+check_download_permissions(FromJID, FileID) ->
+    case tros_permissions:can_download(FromJID, FileID) of
+        {true, OwnerID} ->
+            {ok, OwnerID};
+        {false, Reason} ->
+            {error, ?ERRT_FORBIDDEN(?MYLANG,
+                                    iolist_to_binary(
+                                      ["No permission to download this file: ",
+                                       atom_to_list(Reason)]))}
+    end.
+
+upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
+                #{<<"mime-type">> := MimeType,
+                  <<"filename">> := Filename,
+                  <<"purpose">> := Purpose},
+                Size) ->
     Metadata = #{<<"content-type">> => MimeType,
                  <<"name">> => Filename,
                  <<"purpose">> => Purpose},
-    Size = binary_to_integer_def(maps:get(<<"size">>, ReqFields, <<>>), 0),
-    case validate_upload_req(FromJID, Purpose, Size, MimeType) of
-        ok -> send_ok_upload_response(Req, Size, Metadata);
-        {failed, Error} -> send_upload_validation_error(IQ, Error)
-    end.
-
-validate_upload_req(FromJID, Purpose, Size, MimeType) ->
-    Validations =
-    [{validate_upload_size, [Size], "Invalid file size"},
-     {validate_upload_type, [MimeType], "File is an invalid type"},
-     {validate_upload_permissions, [FromJID, Purpose], "Permission denied"}
-    ],
-    % Additional upload validations can go here
-
-    Failures = lists:dropwhile(fun({F, P, _}) ->
-                                       apply(?MODULE, F, P) end, Validations),
-    case Failures of
-        [] -> ok;
-        [{_, _, Text}|_] -> {failed, [Text]}
-    end.
-
-validate_upload_size(Size) ->
-    MaxSize = ejabberd_config:get_local_option(tros_max_upload_size),
-    Size =< MaxSize andalso Size > 0.
-
-% TODO: configure a list of valid upload types
-validate_upload_type(_MimeType) -> true.
-
-validate_upload_permissions(FromJID, Purpose) ->
-    tros_permissions:can_upload(FromJID, Purpose).
-
-send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                        Size, Metadata) ->
     FileID = make_file_id(),
     {Headers, RespFields} =
         (backend()):make_upload_response(FromJID, ToJID, FileID,
@@ -178,27 +188,16 @@ send_ok_upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
 
 
     FullFields = common_fields(FromJID, FileID) ++ RespFields,
-    send_response(Req, Headers, FullFields, <<"upload">>).
+    response(Req, Headers, FullFields, <<"upload">>).
 
-send_download_respone(Req = #request{iq = IQ,
-                                     from_jid = FromJID},
-                      #{<<"id">> := FileID}) ->
-    case tros_permissions:can_download(FromJID, FileID) of
-        {true, OwnerID} -> send_ok_download_response(Req, OwnerID, FileID);
-        {false, Reason} ->
-            send_download_validation_error(IQ, ["Permission denied: ",
-                                                atom_to_list(Reason)])
-    end.
-
-
-send_ok_download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
+download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
                           OwnerID, FileID) ->
     {Headers, RespFields} =
     (backend()):make_download_response(FromJID, ToJID, OwnerID, FileID),
 
-    send_response(Req, Headers, RespFields, <<"download">>).
+    response(Req, Headers, RespFields, <<"download">>).
 
-send_response(#request{iq = IQ}, Headers, RespFields, RespType) ->
+response(#request{iq = IQ}, Headers, RespFields, RespType) ->
     HeaderElement = #xmlel{name = <<"headers">>,
                            children =
                            [to_header_element(H) || H <- Headers]},
@@ -208,9 +207,9 @@ send_response(#request{iq = IQ}, Headers, RespFields, RespType) ->
                            [HeaderElement |
                             [to_xmlel(F) || F <- RespFields]]},
 
-    IQ#iq{type = result, sub_el = ActionElement}.
+    {ok, IQ#iq{type = result, sub_el = ActionElement}}.
 
-send_error_response(IQ = #iq{sub_el = SubEl}, Error) ->
+error_response(IQ = #iq{sub_el = SubEl}, Error) ->
     IQ#iq{type = error, sub_el = [SubEl, Error]}.
 
 common_fields(#jid{lserver = Server}, FileID) ->
