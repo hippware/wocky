@@ -11,7 +11,9 @@
                   lager,
                   ossp_uuid,
                   cqerl,
-                  p1_stringprep]},
+                  p1_stringprep,
+                  webmachine,
+                  z_stdlib]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [
