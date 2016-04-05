@@ -15,6 +15,7 @@ mod_tros_test_() -> {
      test_oversized_upload_request(Backend),
      test_avatar_download_request(Backend),
      test_message_media_download_request(Backend),
+     test_bad_download_ids(Backend),
      test_meck_validate()
     ]}
    || Backend <- [s3, francus]
@@ -64,7 +65,10 @@ before_all(Backend) ->
     % So we reimplement it here by calling a non-NIF version:
     meck:expect(ossp_uuid, import, fun(UUID, text) ->
                                            list_to_binary(
-                                             uuid:uuid_to_string(UUID)) end),
+                                             uuid:uuid_to_string(UUID));
+                                      (UUID, binary) ->
+                                             uuid:string_to_uuid(UUID)
+                                   end),
 
     meck:expect(cowboy, start_http, 4, ok),
 
@@ -129,7 +133,7 @@ test_oversized_upload_request(_Backend) ->
     {"Big upload request", [
         {"Oversize request", [
           ?_assertEqual(
-             expected_ul_error_packet("Invalid file size", "avatar",
+             expected_ul_error_packet("Invalid size: 10485761", "avatar",
                                       avatar_data(?ALICE), Size),
              handle_iq(test_user_jid(?ALICE),
                        test_server_jid(),
@@ -141,12 +145,21 @@ test_oversized_upload_request(_Backend) ->
 
 test_avatar_download_request(Backend) ->
     {"Avatar download request", [
-        {"Successful request on own avatar", [
+        {"Successful request on own avatar using an ID", [
           ?_assertEqual(
              expected_download_packet(Backend, ?AVATAR_FILE),
              handle_iq(test_user_jid(?ALICE),
                        test_server_jid(),
                        download_packet(?AVATAR_FILE)))
+    ]},
+        {"Successful request on own avatar using a URL", [
+          ?_assertEqual(
+             expected_download_packet(Backend, ?AVATAR_FILE),
+             handle_iq(test_user_jid(?ALICE),
+                       test_server_jid(),
+                       download_packet(
+                         <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+                           "/file/", ?AVATAR_FILE/binary>>)))
     ]},
         {"Successful request on someone else's avatar", [
           ?_assertEqual(
@@ -174,16 +187,39 @@ test_message_media_download_request(Backend) ->
     ]},
         {"Failed request on someone else's media that was NOT sent to us", [
           ?_assertEqual(
-             expected_dl_error_packet("Permission denied: permission_denied",
-                                      ?MEDIA_FILE),
+             expected_dl_auth_error_packet(?MEDIA_FILE),
              handle_iq(test_user_jid(?CAROL),
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
     ]}]}.
 
+test_bad_download_ids(_Backend) ->
+    BadUUID = binary:part(?MEDIA_FILE, 0, byte_size(?MEDIA_FILE) - 1),
+    BadURL = <<"tros:">>,
+    {"Bad file ID on download request", [
+        {"Failed due to malformed UUID", [
+            ?_assertEqual(
+               expected_dl_error_packet(
+                 ["Invalid file ID: ", BadUUID], BadUUID),
+                 handle_iq(test_user_jid(?CAROL),
+                           test_server_jid(),
+                           download_packet(BadUUID)))
+        ]},
+        {"Failed due to malformed URL", [
+            ?_assertEqual(
+               expected_dl_error_packet("Invalid file URL", BadURL),
+                 handle_iq(test_user_jid(?CAROL),
+                           test_server_jid(),
+                           download_packet(BadURL)))
+        ]}
+    ]}.
+
+
 test_meck_validate() ->
     {"Check that all mecks were called", [
-        ?_assert(meck:validate(M)) || M <- mecks()]
+        % Exclude ossp_uuid since we *expect* some of the calls to it to
+        % throw exceptions, since that's how we detect invalid UUIDs
+        ?_assert(meck:validate(M)) || M <- mecks() -- [ossp_uuid]]
     }.
 
 
@@ -245,7 +281,7 @@ expected_upload_packet(s3) ->
       "<header name='authorization' value="
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
       "/></headers>"
-      "<id>a65ecb4e-c633-11e5-9fdc-080027f70e96</id>"
+      "<id>", (new_file_uuid())/binary, "</id>"
       "<jid>", ?LOCAL_CONTEXT/binary, "/file/", (new_file_uuid())/binary,
       "</jid><url>https://tros-test.s3.amazonaws.com/", ?ALICE/binary, "/",
       (new_file_uuid())/binary, "</url><method>PUT</method>"
@@ -257,13 +293,16 @@ expected_upload_packet(francus) ->
       "<header name='authorization' value="
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
       "/></headers>"
-      "<id>a65ecb4e-c633-11e5-9fdc-080027f70e96</id>"
+      "<id>", (new_file_uuid())/binary, "</id>"
       "<jid>", ?LOCAL_CONTEXT/binary, "/file/",
       (new_file_uuid())/binary, "</jid>"
       "<url>http://", ?LOCAL_CONTEXT/binary,
       ":1025/users/", ?ALICE/binary, "/",
       "files/", (new_file_uuid())/binary, "</url>"
-      "<method>POST</method></upload></iq>">>.
+      "<method>POST</method>"
+      "<referenceURL>tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+      "/file/", (new_file_uuid())/binary, "</referenceURL>"
+      "</upload></iq>">>.
 
 expected_download_packet(s3, FileID) ->
     <<"<iq id='123456' type='result'><download><headers>"
@@ -305,4 +344,14 @@ expected_dl_error_packet(Reason, FileID) ->
       "xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
       "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
       "Download request denied: ",
-      (list_to_binary(Reason))/binary, "</text></error></iq>">>.
+      (iolist_to_binary(Reason))/binary, "</text></error></iq>">>.
+
+expected_dl_auth_error_packet(FileID) ->
+    <<"<iq id='123456' type='error'><download-request "
+      "xmlns='hippware.com/hxep/http-file'>"
+      "<id>", FileID/binary, "</id></download-request>"
+      "<error code='403' type='auth'><forbidden "
+      "xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
+      "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
+      "No permission to download this file: permission_denied"
+      "</text></error></iq>">>.

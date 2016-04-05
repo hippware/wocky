@@ -59,10 +59,12 @@ make_upload_response(FromJID, ToJID, FileID, Size, Metadata =
                {<<"content-type">>, ContentType},
                {<<"authorization">>, Auth}
               ],
+    FileJID = jid:replace_resource(FromJID, <<"file/", FileID/binary>>),
+    ReferenceURL = <<"tros:", (jid:to_binary(FileJID))/binary>>,
     RespFields = [
                   {<<"url">>, URL},
-                  {<<"method">>, <<"POST">>}
-                 ],
+                  {<<"method">>, <<"POST">>},
+                  {<<"referenceURL">>, ReferenceURL}],
     {Headers, RespFields}.
 
 common_response_data(FromJID, ToJID, Owner, FileID) ->
