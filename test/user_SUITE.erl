@@ -61,6 +61,7 @@ groups() ->
                               set_missing_var,
                               set_missing_value,
                               handle_clash,
+                              same_handle,
                               invalid_email,
                               invalid_avatar,
                               non_local_avatar,
@@ -383,10 +384,17 @@ handle_clash(Config) ->
         wocky_db_user:get_user_data(?BOB_UUID, ?LOCAL_CONTEXT)
     end).
 
+same_handle(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza =
+        set_request(<<"583">>, ?ALICE_UUID, set_fields()),
+        expect_success(Config, QueryStanza, Alice, alice)
+    end).
+
 garbage_set(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        garbage_request(<<"583">>, ?ALICE_UUID, <<"set">>),
+        garbage_request(<<"584">>, ?ALICE_UUID, <<"set">>),
         % Successfully set nothing:
         expect_success(Config, QueryStanza, Alice, alice)
     end).
@@ -394,7 +402,7 @@ garbage_set(Config) ->
 invalid_email(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(<<"584">>, ?ALICE_UUID,
+        set_request(<<"585">>, ?ALICE_UUID,
                     [{<<"email">>, <<"string">>, <<"notanemail">>}]),
         expect_error(Config, QueryStanza, Alice, alice)
     end).
@@ -402,7 +410,7 @@ invalid_email(Config) ->
 invalid_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(<<"585">>, ?ALICE_UUID,
+        set_request(<<"586">>, ?ALICE_UUID,
                     [{<<"avatar">>, <<"file">>, <<"notaURL">>}]),
         expect_error(Config, QueryStanza, Alice, alice)
     end).
@@ -410,7 +418,7 @@ invalid_avatar(Config) ->
 non_local_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(<<"586">>, ?ALICE_UUID,
+        set_request(<<"587">>, ?ALICE_UUID,
                     [{<<"avatar">>, <<"file">>,
                       <<"tros:user@otherserver.com/file/",
                         ?AVATAR_FILE/binary>>}]),
@@ -420,7 +428,7 @@ non_local_avatar(Config) ->
 non_uuid_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(<<"587">>, ?ALICE_UUID,
+        set_request(<<"588">>, ?ALICE_UUID,
                     [{<<"avatar">>, <<"file">>,
                       <<"tros:", (?ALICE_UUID)/binary, "@",
                         ?LOCAL_CONTEXT/binary, "/file/blahblah">>}]),

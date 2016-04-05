@@ -371,9 +371,14 @@ check_file(File) ->
 set_unique_fields(LUser, LServer, Fields) ->
     case proplists:get_value(<<"handle">>, Fields) of
         undefined -> ok;
-        Handle -> set_handle(LUser, LServer, Handle)
+        Handle -> set_handle_if_changed(LUser, LServer, Handle)
     end.
 
+set_handle_if_changed(LUser, LServer, Handle) ->
+    case wocky_db_user:get_handle(LUser, LServer) of
+        Handle -> ok;
+        _ -> set_handle(LUser, LServer, Handle)
+    end.
 
 set_handle(LUser, LServer, Handle) ->
     case wocky_db_user:maybe_set_handle(LUser, LServer, Handle) of
