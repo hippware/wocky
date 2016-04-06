@@ -37,6 +37,8 @@ groups() ->
 
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
+    ejabberd_config:del_local_option(tros_public_port),
+    ejabberd_config:add_local_option(tros_public_port, 1025),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
