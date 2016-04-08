@@ -567,7 +567,7 @@ run_query(Context, Query) ->
             Return = cqerl:run_query(Client, Query),
             cqerl:close_client(Client),
             Return;
-        {closed, Error} ->
+        {error, Error} ->
             {error, Error}
     end.
 
