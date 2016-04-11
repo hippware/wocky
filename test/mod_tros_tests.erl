@@ -77,6 +77,9 @@ before_all(Backend) ->
 
     meck:expect(mod_tros_s3, make_auth, 5,
                 base64:encode(binary:copy(<<6:8>>, 48))),
+    meck:expect(mod_tros_s3, get_owner, 2, {ok, ?ALICE}),
+    meck:expect(mod_tros_s3, get_metadata,
+                fun(A, B) -> mod_tros_francus:get_metadata(A, B) end),
 
     mod_tros:start(?LOCAL_CONTEXT, []).
 
@@ -249,7 +252,7 @@ upload_packet(Size, Type, TypeData) ->
     common_packet(set, upload_request(Size, Type, TypeData)).
 
 upload_request(Size, Type, TypeData) ->
-    Elements = [{<<"filename">>, <<"photo.jpeg">>},
+    Elements = [{<<"filename">>, ?FILENAME},
                 {<<"size">>, integer_to_binary(Size)},
                 {<<"mime-type">>, <<"image/jpeg">>},
                 {<<"purpose">>, <<(list_to_binary(Type))/binary, ":",
@@ -320,12 +323,12 @@ expected_download_packet(francus, FileID) ->
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
       "/></headers>"
       "<url>http://", ?LOCAL_CONTEXT/binary, ":1025/users/", ?ALICE/binary,
-      "/files/", FileID/binary, "</url>"
+      "/files/", FileID/binary, "/", ?FILENAME/binary, "</url>"
       "<method>GET</method></download></iq>">>.
 
 expected_ul_error_packet(Reason, Type, TypeData, Size) ->
     <<"<iq id='123456' type='error'><upload-request xmlns='hippware.com/"
-      "hxep/http-file'><filename>photo.jpeg</filename><size>",
+      "hxep/http-file'><filename>", ?FILENAME/binary, "</filename><size>",
       (integer_to_binary(Size))/binary, "</size>"
       "<mime-type>image/jpeg</mime-type>"
       "<purpose>", (list_to_binary(Type))/binary, ":",
