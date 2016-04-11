@@ -52,6 +52,10 @@ plain_header() -> [{<<"content-type">>, <<"text/plain">>}].
 
 user_file(<<$/, Path/binary>>) ->
     case binary:split(Path, <<$/>>, [global]) of
+        % Download tacks on the original filename at the end to help
+        % client libraries (React) figure out the type - discard it:
+        [<<"users">>, User, <<"files">>, File, _OriginalName] -> {User, File};
+        % Uploads don't bother:
         [<<"users">>, User, <<"files">>, File] -> {User, File};
         _ -> {<<>>, <<>>}
     end.

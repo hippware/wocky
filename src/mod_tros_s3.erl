@@ -6,9 +6,11 @@
 
 -export([start/1,
          stop/0,
-         make_download_response/4,
+         make_download_response/5,
          make_upload_response/5,
-         make_auth/5
+         make_auth/5,
+         get_owner/2,
+         get_metadata/2
         ]).
 
 start(Opts) ->
@@ -22,7 +24,7 @@ extract_config(Opts, Config) ->
     Value = proplists:get_value(Config, Opts),
     ejabberd_config:add_local_option(Config, Value).
 
-make_download_response(_FromJID, _ToJID, OwnerID, FileID) ->
+make_download_response(_FromJID, _ToJID, OwnerID, FileID, _Metadata) ->
     Date = list_to_binary(httpd_util:rfc1123_date(erlang:localtime())),
     Headers = [
                {<<"host">>, host()},
@@ -92,3 +94,10 @@ make_auth(Method, Date, MimeType, User, File) ->
     Signature = base64:encode(crypto:hmac(sha, secret_key(), StringToSign)),
     iolist_to_binary(["AWS ", access_key_id(), $:, Signature]).
 
+get_owner(_LServer, _FileID) ->
+    % TODO
+    {ok, undefined}.
+
+get_metadata(_LServer, _FileID) ->
+    % TODO
+    {ok, #{}}.

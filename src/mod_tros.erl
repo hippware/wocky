@@ -1,12 +1,8 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Implementation module for HXEP file transfer system
+%%% @doc Implementation module for TROS file transfer system
 %%% (https://github.com/hippware/tr-wiki/wiki/HXEP%3A-Files-over-http).
 %%%
-%%% TODO:
-%%% * Implement permission system
-%%% * Impelment purpose system?
-%%% * Store supplied filename?
-%%%
+
 -module(mod_tros).
 
 -define(TROS_NS, <<"hippware.com/hxep/http-file">>).
@@ -50,7 +46,8 @@ start(Host, Opts) ->
     lists:foreach(fun(C) -> set_config_from_opt(C, Opts) end, configs()),
     (backend()):start(Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?TROS_NS,
-                                  ?MODULE, handle_iq, parallel).
+                                  ?MODULE, handle_iq, parallel),
+    ok.
 
 stop(Host) ->
     _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?TROS_NS),
@@ -74,11 +71,14 @@ handle_request(_, _, _) ->
     {ok, ignore}.
 
 handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
+    LServer = FromJID#jid.lserver,
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], []),
         FileID <- check_file_id(Fields),
-        OwnerID <- check_download_permissions(FromJID, FileID),
-        download_response(Req, OwnerID, FileID)
+        OwnerID <- (backend()):get_owner(LServer, FileID),
+        Metadata <- (backend()):get_metadata(LServer, FileID),
+        check_download_permissions(FromJID, OwnerID, Metadata),
+        download_response(Req, OwnerID, FileID, Metadata)
        ]).
 
 handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
@@ -162,10 +162,10 @@ check_upload_permissions(FromJID, #{<<"purpose">> := Purpose}) ->
         false -> upload_validation_error("Permission denied")
     end.
 
-check_download_permissions(FromJID, FileID) ->
-    case tros_permissions:can_download(FromJID, FileID) of
-        {true, OwnerID} ->
-            {ok, OwnerID};
+check_download_permissions(FromJID, OwnerID, Metadata) ->
+    case tros_permissions:can_download(FromJID, OwnerID, Metadata) of
+        true ->
+            ok;
         {false, Reason} ->
             {error, ?ERRT_FORBIDDEN(?MYLANG,
                                     iolist_to_binary(
@@ -191,9 +191,10 @@ upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
     response(Req, Headers, FullFields, <<"upload">>).
 
 download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                          OwnerID, FileID) ->
+                          OwnerID, FileID, Metadata) ->
     {Headers, RespFields} =
-    (backend()):make_download_response(FromJID, ToJID, OwnerID, FileID),
+    (backend()):make_download_response(FromJID, ToJID, OwnerID,
+                                       FileID, Metadata),
 
     response(Req, Headers, RespFields, <<"download">>).
 

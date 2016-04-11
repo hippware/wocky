@@ -7,9 +7,11 @@
 
 -export([start/1,
          stop/0,
-         make_download_response/4,
+         make_download_response/5,
          make_upload_response/5,
-         make_auth/0
+         make_auth/0,
+         get_owner/2,
+         get_metadata/2
         ]).
 
 -define(DEFAULT_SCHEME, "https://").
@@ -37,15 +39,17 @@ start(Opts) ->
                        [{env, [{dispatch, Dispatch}]}]).
 
 stop() ->
+    ok = cowboy:stop_listener(tros_francus_listener),
     tros_req_tracker:stop().
 
-make_download_response(FromJID, ToJID, OwnerID, FileID) ->
+make_download_response(FromJID, ToJID, OwnerID, FileID,
+                       #{<<"name">> := Name}) ->
     {Auth, _User, URL} =
         common_response_data(FromJID, ToJID, OwnerID, FileID),
     add_request(get, OwnerID, FileID, Auth, 0, #{}),
     Headers = [{<<"authorization">>, Auth}],
     RespFields = [
-                  {<<"url">>, URL},
+                  {<<"url">>, [URL, "/", Name]},
                   {<<"method">>, <<"GET">>}
                  ],
     {Headers, RespFields}.
@@ -93,3 +97,23 @@ url(Server, User, FileID) ->
     iolist_to_binary(
       [Scheme, Server, ":", integer_to_list(public_port()),
        "/users/", User, "/files/", FileID]).
+
+get_owner(Server, FileID) ->
+    case francus:open_read(Server, FileID) of
+        {error, E} ->
+            {error, E};
+        {ok, File} ->
+            OwnerID = francus:owner(File),
+            francus:close(File),
+            {ok, OwnerID}
+    end.
+
+get_metadata(Server, FileID) ->
+    case francus:open_read(Server, FileID) of
+        {error, E} ->
+            {error, E};
+        {ok, File} ->
+            Metadata = francus:metadata(File),
+            francus:close(File),
+            {ok, Metadata}
+    end.

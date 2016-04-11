@@ -1,7 +1,7 @@
 -module(tros_permissions).
 
 -export([can_upload/2,
-         can_download/2]).
+         can_download/3]).
 
 -include_lib("ejabberd/include/jlib.hrl").
 
@@ -16,40 +16,30 @@ can_upload(_, <<"message_media:", _/binary>>) -> true;
 can_upload(_, _) -> false.
 
 
-can_download(User = #jid{lserver = Server}, FileID) ->
-    case francus:open_read(Server, FileID) of
-        {ok, File} ->
-            Result = can_download_file(User, File),
-            francus:close(File),
-            Result;
-        {error, not_found} ->
-            {false, not_found}
-    end.
-
-can_download_file(User = #jid{luser = UserID}, File) ->
-    case francus:owner(File) of
+can_download(User = #jid{luser = UserID}, OwnerID, Metadata) ->
+    case OwnerID of
         UserID ->
-            {true, UserID}; %% Users can always get their own files
-        OwnerID ->
-            can_download_with_metadata(User, OwnerID, francus:metadata(File))
+            true; %% Users can always get their own files
+        _ ->
+            can_download_with_metadata(User, Metadata)
     end.
 
-can_download_with_metadata(User, OwnerID, #{<<"purpose">> := Purpose}) ->
-    can_download_purpose(User, OwnerID, Purpose);
-can_download_with_metadata(_, _, #{}) ->
+can_download_with_metadata(User, #{<<"purpose">> := Purpose}) ->
+    can_download_purpose(User, Purpose);
+can_download_with_metadata(_, #{}) ->
     {false, no_purpose}.
 
 %% Anyone can view avatars
-can_download_purpose(_, OwnerID, <<"avatar:", _/binary>>) -> {true, OwnerID};
+can_download_purpose(_, <<"avatar:", _/binary>>) -> true;
 
 %% Media within messages is only viewable by the two parties involved in
 %% the message
-can_download_purpose(User, OwnerID, <<"message_media:", OtherID/binary>>) ->
+can_download_purpose(User, <<"message_media:", OtherID/binary>>) ->
     case jid:are_bare_equal(User, jid:from_binary(OtherID)) of
-        true -> {true, OwnerID};
+        true -> true;
         false -> {false, permission_denied}
     end;
 
 %% Default to false
-can_download_purpose(_, _, _) ->
+can_download_purpose(_, _) ->
     {false, permission_denied}.

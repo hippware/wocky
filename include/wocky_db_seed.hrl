@@ -56,6 +56,8 @@
 -define(AVATAR_DATA3, <<"bob's avatar file contents">>).
 -define(MEDIA_DATA,   <<"media file contents">>).
 
+-define(FILENAME,     <<"photo.jpg">>).
+
 -define(PRIVACY_LIST1, <<"privacy list 1">>).
 -define(PRIVACY_LIST2, <<"privacy list 2">>).
 
