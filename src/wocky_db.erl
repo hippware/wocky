@@ -567,14 +567,14 @@ run_query(Context, Query) ->
             Return = cqerl:run_query(Client, Query),
             cqerl:close_client(Client),
             Return;
-        {closed, Error} ->
+        {error, Error} ->
             {error, Error}
     end.
 
 get_client(Spec, none) ->
-    cqerl:new_client(Spec);
+    cqerl:get_client(Spec, []);
 get_client(Spec, Context) ->
-    cqerl:new_client(Spec, [{keyspace, keyspace_name(Context)}]).
+    cqerl:get_client(Spec, [{keyspace, keyspace_name(Context)}]).
 
 %% Return the keyspace name for the given context.
 -spec keyspace_name(context()) -> binary().
