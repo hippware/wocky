@@ -151,7 +151,6 @@ keyspace_tables(_) -> [
     offline_msg,
     roster,
     session,
-    user_to_sids,
     media,
     media_data,
     message_archive,
@@ -274,17 +273,6 @@ table_definition(session) ->
            {info, blob}            % Session info
        ],
        primary_key = [sid, jid_user]
-    };
-
-%% Lookup table mapping user ids to a list of session ids
-table_definition(user_to_sids) ->
-    #table_def{
-       name = user_to_sids,
-       columns = [
-           {jid_user, timeuuid},   % User ID (userpart of JID)
-           {sids, {set, blob}}     % Set of session IDs
-       ],
-       primary_key = jid_user
     };
 
 %% Francus file-store metadata table
