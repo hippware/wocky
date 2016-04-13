@@ -45,11 +45,11 @@ init_per_group(_Group, ConfigIn) -> ConfigIn.
 end_per_group(_Group, Config) -> Config.
 
 init_per_testcase(_CaseName, Config) ->
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, auth_token]),
-    wocky_db_seed:clear_tables(shared, [handle_to_user,
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
+    wocky_db_seed:clear_tables(shared, [user, handle_to_user,
                                         phone_number_to_user]),
-    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [user, auth_token]),
-    ok = wocky_db_seed:seed_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
+    ok = wocky_db_seed:seed_tables(shared, [user, handle_to_user,
                                             phone_number_to_user]),
     Config.
 
