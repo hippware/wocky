@@ -39,7 +39,6 @@ start(Opts) ->
                        [{env, [{dispatch, Dispatch}]}]).
 
 stop() ->
-    ok = cowboy:stop_listener(tros_francus_listener),
     tros_req_tracker:stop().
 
 make_download_response(FromJID, ToJID, OwnerID, FileID,
