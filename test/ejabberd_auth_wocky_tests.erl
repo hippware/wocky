@@ -120,8 +120,8 @@ before_each() ->
     ok.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(shared, [handle_to_user]),
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [user, auth_token]),
+    ok = wocky_db_seed:clear_tables(shared, [user, handle_to_user]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
     ok.
 
 
