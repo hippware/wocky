@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Module to handle token related IQs
--module(mod_wocky_phone).
+%%% @doc Module to handle phone number and handle lookups
+-module(mod_wocky_lookup).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
@@ -10,7 +10,7 @@
 -export([start/2, stop/1]).
 
 %% IQ handler callback
--export([handle_iq/3]).
+-export([handle_phone_iq/3, handle_handle_iq/3]).
 
 -ifdef(TEST).
 -export([lookup_reductions/2, save_reductions/3]).
@@ -30,31 +30,35 @@
 start(Host, Opts) ->
     IQDisc = gen_mod:get_opt(iqdisc, Opts, one_queue),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_PHONE,
-                                  ?MODULE, handle_iq, IQDisc).
+                                  ?MODULE, handle_phone_iq, IQDisc),
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_HANDLE,
+                                  ?MODULE, handle_handle_iq, IQDisc).
 
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PHONE).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_PHONE),
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_HANDLE).
 
 
 %%%===================================================================
-%%% IQ handler callback
+%%% Phone lookup IQ handler callback
 %%%===================================================================
 
-handle_iq(From, _To, #iq{type = get, sub_el = #xmlel{children = Els}} = IQ) ->
+handle_phone_iq(From, _To, #iq{type = get} = IQ) ->
+    #iq{sub_el = #xmlel{children = Els}} = IQ,
     #jid{luser = LUser, lserver = LServer} = From,
     case wocky_db:is_valid_id(LUser) of
         true ->
-            handle_iq_get(LUser, LServer, Els, IQ);
+            handle_phone_iq_get(LUser, LServer, Els, IQ);
 
         false ->
             IQ#iq{type = error, sub_el = [?ERR_JID_MALFORMED]}
     end;
-handle_iq(_From, _To, #iq{type = set} = IQ) ->
+handle_phone_iq(_From, _To, #iq{type = set} = IQ) ->
     IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
 
-handle_iq_get(User, Server, Els, IQ) ->
+handle_phone_iq_get(User, Server, Els, IQ) ->
     Reductions = lookup_reductions(Server, User),
-    {Users, Remaining} = lookup_numbers(numbers_from_xml(Els), Reductions),
+    {Users, Remaining} = lookup_numbers(items_from_xml(Els), Reductions),
     ok = save_reductions(Server, User, Remaining),
     iq_result(IQ, users_to_xml(Users)).
 
@@ -79,15 +83,6 @@ get_date() ->
     Seconds = calendar:datetime_to_gregorian_seconds({Date, {0, 0, 0}}),
     wocky_db:seconds_to_timestamp(Seconds - ?EPOCH_SECONDS).
 
-numbers_from_xml(Els) ->
-    [number_from_xml(El) || #xmlel{name = <<"item">>} = El <- Els].
-
-number_from_xml(El) ->
-    attr_value(xml:get_tag_attr(<<"id">>, El)).
-
-attr_value({value, Number}) -> Number;
-attr_value(Value) -> Value.
-
 lookup_numbers(Numbers, StartingReductions) ->
     lists:foldr(fun (false, Acc) -> Acc;
                     (Number, {UserData, Reductions}) ->
@@ -101,8 +96,41 @@ lookup_number(Number, Reductions) ->
     {lookup_number(Number), Reductions - 1}.
 
 lookup_number(Number) ->
-    case wocky_db:select_one(shared, phone_number_to_user, user,
-                             #{phone_number => maybe_add_plus(Number)}) of
+    lookup_item(phone_number_to_user,
+                #{phone_number => maybe_add_plus(Number)}).
+
+maybe_add_plus(<<"+", _/binary>> = String) -> String;
+maybe_add_plus(String) -> <<"+", String/binary>>.
+
+
+%%%===================================================================
+%%% Handle lookup IQ handler callback
+%%%===================================================================
+
+handle_handle_iq(_From, _To, #iq{type = get} = IQ) ->
+    #iq{sub_el = #xmlel{children = Els}} = IQ,
+    Users = lookup_handles(items_from_xml(Els)),
+    iq_result(IQ, users_to_xml(Users));
+handle_handle_iq(_From, _To, #iq{type = set} = IQ) ->
+    IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
+
+lookup_handles(Handles) ->
+    lists:foldr(fun (false, Acc) -> Acc;
+                    (Handle, UserData) ->
+                        Result = lookup_handle(Handle),
+                        [{Handle, Result} | UserData]
+                end, [], Handles).
+
+lookup_handle(Handle) ->
+    lookup_item(handle_to_user, #{handle => Handle}).
+
+
+%%%===================================================================
+%%% Helper functions
+%%%===================================================================
+
+lookup_item(Table, Condition) ->
+    case wocky_db:select_one(shared, Table, user, Condition) of
         not_found -> not_found;
         null -> not_found;
         User ->
@@ -110,8 +138,14 @@ lookup_number(Number) ->
             wocky_db:select_row(shared, user, Columns, #{user => User})
     end.
 
-maybe_add_plus(<<"+", _/binary>> = String) -> String;
-maybe_add_plus(String) -> <<"+", String/binary>>.
+items_from_xml(Els) ->
+    [item_from_xml(El) || #xmlel{name = <<"item">>} = El <- Els].
+
+item_from_xml(El) ->
+    attr_value(xml:get_tag_attr(<<"id">>, El)).
+
+attr_value({value, Value}) -> Value;
+attr_value(Value) -> Value.
 
 users_to_xml(Users) ->
     [user_to_xml(User) || User <- Users].
