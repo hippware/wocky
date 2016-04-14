@@ -198,7 +198,6 @@ test_handle_iq_get_results() ->
     ] end
   }.
 
-
 test_handle_iq_set() ->
   ErrorIQ = #iq{type = error, sub_el = [?ERR_NOT_ALLOWED]},
   { "handle_handle_iq returns a error IQ when the IQ type is set", [

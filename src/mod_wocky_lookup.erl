@@ -158,8 +158,8 @@ xml_user_attrs(#{user := User, server := Server, handle := Handle,
                  first_name := FirstName, last_name := LastName}) ->
     [{<<"jid">>, jid:to_binary({User, Server, <<>>})},
      {<<"handle">>, safe_string(Handle)},
-     {<<"firstname">>, safe_string(FirstName)},
-     {<<"lastname">>, safe_string(LastName)}];
+     {<<"first_name">>, safe_string(FirstName)},
+     {<<"last_name">>, safe_string(LastName)}];
 xml_user_attrs(not_acceptable) ->
     [{<<"error">>, <<"not-acceptable">>}];
 xml_user_attrs(not_found) ->
