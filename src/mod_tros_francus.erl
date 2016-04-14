@@ -47,8 +47,9 @@ make_download_response(FromJID, ToJID, OwnerID, FileID,
         common_response_data(FromJID, ToJID, OwnerID, FileID),
     add_request(get, OwnerID, FileID, Auth, 0, #{}),
     Headers = [{<<"authorization">>, Auth}],
+    EncodedFile = http_uri:encode(binary_to_list(Name)),
     RespFields = [
-                  {<<"url">>, [URL, "/", Name]},
+                  {<<"url">>, [URL, "/", EncodedFile]},
                   {<<"method">>, <<"GET">>}
                  ],
     {Headers, RespFields}.

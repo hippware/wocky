@@ -323,7 +323,7 @@ expected_download_packet(francus, FileID) ->
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
       "/></headers>"
       "<url>http://", ?LOCAL_CONTEXT/binary, ":1025/users/", ?ALICE/binary,
-      "/files/", FileID/binary, "/", ?FILENAME/binary, "</url>"
+      "/files/", FileID/binary, "/", ?URL_FILENAME/binary, "</url>"
       "<method>GET</method></download></iq>">>.
 
 expected_ul_error_packet(Reason, Type, TypeData, Size) ->
