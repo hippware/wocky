@@ -190,9 +190,9 @@ test_handle_iq_get_results() ->
                       proplists:get_value(<<"error">>, ?LAST(Els)))
       ]},
       { "returns the proper user information for a handle", [
-        ?_assertMatch(<<"alice">>,
+        ?_assertEqual(<<"alice">>,
                       proplists:get_value(<<"id">>, ?FIRST(Els))),
-        ?_assertMatch(<<"043e8c96-ba30-11e5-9912-ba0be0483c18@localhost">>,
+        ?_assertEqual(<<?ALICE/binary, "@", ?LOCAL_CONTEXT/binary>>,
                       proplists:get_value(<<"jid">>, ?FIRST(Els)))
       ]}
     ] end
