@@ -51,7 +51,7 @@
 
 -define(DEFAULT_CHUNK_SIZE, 1024 * 1024).
 
--define(DEFAULT_TTL, infinity).
+-define(DEFAULT_TTL, 60 * 60 * 24 * 28 * 6). % 6 months
 -define(DATA_GRACE_SECONDS, 300).
 
 %%%===================================================================
@@ -65,7 +65,8 @@
 -spec open_write(wocky_db:context(), file_id(), user_id(), metadata()) ->
     {ok, francus_file()}.
 open_write(Context, FileID, UserID, Metadata) ->
-    open_write(Context, FileID, UserID, Metadata, ?DEFAULT_TTL).
+    TTL = application:get_env(wocky, francus_file_ttl, ?DEFAULT_TTL),
+    open_write(Context, FileID, UserID, Metadata, TTL).
 
 %% @doc Open a file for writing
 %%
@@ -125,10 +126,7 @@ write(S = #state{pending = Pending, size = Size}, Data) ->
 -spec open_read(wocky_db:context(), file_id()) ->
     {ok, francus_file()} | {error, not_found}.
 open_read(Context, FileID) ->
-    Row = wocky_db:select_row(Context, media,
-                              [metadata, user, size, chunks],
-                              #{id => FileID}),
-    case Row of
+    case read_keep_file(Context, FileID) of
         not_found -> {error, not_found};
         Row -> {ok, open_result(Context, FileID, Row)}
     end.
@@ -242,18 +240,33 @@ close(#state{file_id = FileID, committed_size = CS,
     commit_chunk(FileID, Context, TTL, CS + byte_size(Pending), Pending),
     ok.
 
--spec keep(wocky_db:context(), file_id()) -> ok | {error, not_found}.
-keep(Context, FileID) ->
-    FileCond = #{id => FileID},
-    case wocky_db:select_row(Context, media, all, FileCond) of
+read_keep_file(Context, FileID) ->
+    Columns = wocky_db:table_columns(media),
+    Row = wocky_db:select_row(Context, media,
+                              ['ttl(user)' | Columns],
+                              #{id => FileID}),
+    case Row of
         not_found ->
-            {error, not_found};
-        Row = #{chunks := Chunks} ->
-            ok = wocky_db:insert(Context, media, Row),
+            not_found;
+        #{'ttl(user)' := null} ->
+            %% TTL is already cleared - nothing to do
+            Row;
+        #{chunks := Chunks} ->
+            ok = wocky_db:insert(Context, media, maps:remove('ttl(user)', Row)),
             keep_chunks(Context, Chunks),
-            ok
+            Row
     end.
 
+
+-spec keep(wocky_db:context(), file_id()) -> ok | {error, not_found}.
+keep(Context, FileID) ->
+    case read_keep_file(Context, FileID) of
+        not_found -> {error, not_found};
+        _ -> ok
+    end.
+
+keep_chunks(_Context, null) ->
+    ok;
 keep_chunks(Context, Chunks) ->
     lists:foreach(fun(C) -> keep_chunk(Context, C) end, Chunks).
 
