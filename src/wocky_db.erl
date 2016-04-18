@@ -15,12 +15,13 @@
 
 -type context()    :: none | shared | binary().
 -type table()      :: atom().
--type columns()    :: all | [atom()].
+-type explicit_columns() :: [atom()].
+-type columns()    :: all | explicit_columns().
 -type conditions() :: map().
 -type ks_class()   :: simple | topology.
 -type ks_factor()  :: non_neg_integer() | [{binary(), non_neg_integer}].
 -type table_def()  :: #table_def{}.
--export_type([context/0, table/0, columns/0, conditions/0,
+-export_type([context/0, table/0, explicit_columns/0, columns/0, conditions/0,
               ks_class/0, ks_factor/0, table_def/0]).
 
 -type query()     :: iodata().
@@ -48,7 +49,8 @@
 %% Utility API
 -export([create_id/0, is_valid_id/1, seconds_to_timestamp/1,
          timestamp_to_seconds/1, timestamp_to_now/1, now_to_timestamp/1,
-         expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1]).
+         expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1,
+         table_columns/1]).
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
@@ -537,6 +539,13 @@ drop_nulls(not_found) -> not_found;
 drop_nulls(Row) ->
     maps:filter(fun (_, null) -> false;
                     (_, _) -> true end, Row).
+
+%% @doc Return a list of all columns defined for the specified table
+-spec table_columns(table()) -> explicit_columns().
+table_columns(Table) ->
+    {Cols, _} = lists:unzip(
+                    (wocky_db_seed:table_definition(Table))#table_def.columns),
+    Cols.
 
 
 %%====================================================================

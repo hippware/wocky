@@ -4,8 +4,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky_db_seed.hrl").
 
--define(SERVER, "localhost").
 -define(CONTENT_TYPE, <<"image/jpeg">>).
 -define(NAME, <<"testfile.txt">>).
 
@@ -43,7 +43,7 @@ test_sizes() ->
 
 before_all() ->
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(?SERVER, [media, media_data]).
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 after_all(_) ->
     ok = wocky_app:stop().
@@ -61,7 +61,7 @@ write_file(ID, <<>>, User, _, Size, ChunkList) ->
     V = #{id => ID, user => User,
           metadata => metadata(),
           chunks => Chunks, size => Size},
-    ok = wocky_db:insert(?SERVER, media, V);
+    ok = wocky_db:insert(?LOCAL_CONTEXT, media, V);
 write_file(ID, Data, User, ChunkSize, Size, ChunkList) ->
     {ToWrite, Rest} =
     case ChunkSize of
@@ -77,7 +77,7 @@ write_file(ID, Data, User, ChunkSize, Size, ChunkList) ->
 write_chunk(FileID, Data) ->
     ChunkID = mod_tros:make_file_id(),
     V = #{chunk_id => ChunkID, file_id => FileID, data => Data},
-    ok = wocky_db:insert(?SERVER, media_data, V),
+    ok = wocky_db:insert(?LOCAL_CONTEXT, media_data, V),
     ChunkID.
 
 before_each() ->
@@ -89,7 +89,7 @@ before_each() ->
     #config{user = User, files = Files}.
 
 after_each(_) ->
-    wocky_db_seed:clear_tables(?SERVER, [media, media_data]),
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     ok.
 
 test_read() ->
@@ -98,27 +98,28 @@ test_read() ->
        { "Read entire files from the DB",
          [?_test(
              begin
-                 {ok, F} = francus:open_read(?SERVER, ID),
+                 {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  {F2, ReadData} = francus:read(F),
                  ?assertEqual(Data, ReadData),
                  ?assertEqual(eof, francus:read(F2))
              end) || {ID, Data} <- Config#config.files, Data =/= <<>>] ++
          [?_test(
              begin
-                 {ok, F} = francus:open_read(?SERVER, ID),
+                 {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  ?assertEqual(eof, francus:read(F))
              end) || {ID, Data} <- Config#config.files, Data =:= <<>>]
        },
        { "Check return value for non-existant files",
          [
           ?_assertEqual({error, not_found},
-                        francus:open_read(?SERVER, mod_tros:make_file_id()))
+                        francus:open_read(?LOCAL_CONTEXT,
+                                          mod_tros:make_file_id()))
          ]
        },
        { "Read in smaller chunks",
          [?_test(
              begin
-                 {ok, F} = francus:open_read(?SERVER, ID),
+                 {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  Result = read_random_chunks(F, <<>>),
                  ?assertEqual(Data, Result)
              end) || {ID, Data} <- Config#config.files, Data =/= <<>>]
@@ -151,7 +152,7 @@ test_write() ->
          [?_test(
              begin
                  ID = mod_tros:make_file_id(),
-                 {ok, F} = francus:open_write(?SERVER, ID,
+                 {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
                                               wocky_db:create_id(),
                                               metadata()),
                  Data = crypto:rand_bytes(Size),
@@ -169,15 +170,22 @@ test_expire() ->
        { "should clear a file after the expiry period",
          [?_test(
              begin
-                 ID = mod_tros:make_file_id(),
-                 {ok, F} = francus:open_write(?SERVER, ID,
-                                              wocky_db:create_id(),
-                                              metadata(), 1),
-                 F1 = francus:write(F, <<"abc">>),
-                 francus:close(F1),
+                 ID = create_small_file(1),
                  timer:sleep(timer:seconds(3)),
                  ?assertEqual({error, not_found},
-                              francus:open_read(?SERVER, ID))
+                              francus:open_read(?LOCAL_CONTEXT, ID))
+             end
+            )]
+       },
+       { "should not clear a file that's been accessed",
+         [?_test(
+             begin
+                 ID = create_small_file(1),
+                 {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
+                 francus:close(F),
+                 timer:sleep(timer:seconds(3)),
+                 ?assertMatch({ok, _},
+                              francus:open_read(?LOCAL_CONTEXT, ID))
              end
             )]
        }]}.
@@ -188,22 +196,17 @@ test_keep() ->
        { "should keep a previously expiring file",
          [?_test(
              begin
-                 ID = mod_tros:make_file_id(),
-                 {ok, F} = francus:open_write(?SERVER, ID,
-                                              wocky_db:create_id(),
-                                              metadata(), 2),
-                 F1 = francus:write(F, <<"abc">>),
-                 francus:close(F1),
-                 francus:keep(?SERVER, ID),
+                 ID = create_small_file(2),
+                 francus:keep(?LOCAL_CONTEXT, ID),
                  timer:sleep(timer:seconds(3)),
-                 ?assert(is_tuple(francus:open_read(?SERVER, ID)))
+                 ?assert(is_tuple(francus:open_read(?LOCAL_CONTEXT, ID)))
              end
             )]
        }]}.
 
 
 verify_contents(ID, Data) ->
-    {ok, F} = francus:open_read(?SERVER, ID),
+    {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
     {F2, ReadData} = francus:read(F),
     ?assertEqual(eof, francus:read(F2)),
     ?assertEqual(Data, ReadData).
@@ -215,14 +218,15 @@ test_delete() ->
        { "Delete all files",
          [?_test(
              begin
-                 ?assertEqual(ok, francus:delete(?SERVER, ID)),
+                 ?assertEqual(ok, francus:delete(?LOCAL_CONTEXT, ID)),
                  ?assertEqual({error, not_found},
-                              francus:open_read(?SERVER, ID))
+                              francus:open_read(?LOCAL_CONTEXT, ID))
              end) || {ID, _} <- Config#config.files]
        },
        { "Non-existant files should still return ok on delete",
          [
-          ?_assertEqual(ok, francus:delete(?SERVER, mod_tros:make_file_id()))
+          ?_assertEqual(ok, francus:delete(?LOCAL_CONTEXT,
+                                           mod_tros:make_file_id()))
          ]
        },
        { "Check that the DB is properly empty after we deleted everything",
@@ -230,7 +234,7 @@ test_delete() ->
           ?_test(
              begin
                  Q = "SELECT " ++ Key ++ " FROM " ++ Table,
-                 {ok, R} = wocky_db:query(?SERVER, Q, [], quorum),
+                 {ok, R} = wocky_db:query(?LOCAL_CONTEXT, Q, [], quorum),
                  ?assertEqual([], wocky_db:rows(R))
              end) || {Key, Table} <-
                      [{"id", "media"}, {"chunk_id", "media_data"}]
@@ -247,7 +251,7 @@ test_accessors() ->
        { "Test accessors for existing files",
         [?_test(
             begin
-                {ok, F} = francus:open_read(?SERVER, ID),
+                {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                 #{<<"content-type">> := CT, <<"name">> := Name}
                 = francus:metadata(F),
                 ?assertEqual(?CONTENT_TYPE, CT),
@@ -261,7 +265,8 @@ test_accessors() ->
          [?_test(
              begin
                  User = wocky_db:create_id(),
-                 {ok, F} = francus:open_write(?SERVER, mod_tros:make_file_id(),
+                 {ok, F} = francus:open_write(?LOCAL_CONTEXT,
+                                              mod_tros:make_file_id(),
                                               User, metadata()),
                  #{<<"content-type">> := CT, <<"name">> := Name}
                  = francus:metadata(F),
@@ -271,9 +276,16 @@ test_accessors() ->
              end)
          ]
        }
-
       ]
       end
     }.
 
 
+create_small_file(TTL) ->
+    ID = mod_tros:make_file_id(),
+    {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
+                                 wocky_db:create_id(),
+                                 metadata(), TTL),
+    F1 = francus:write(F, <<"abc">>),
+    francus:close(F1),
+    ID.
