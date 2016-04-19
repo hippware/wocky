@@ -394,6 +394,18 @@ table_definition(phone_lookup_count) ->
            {count, int}       % Number of requests during the day
        ],
        primary_key = [user, server, date]
+    };
+
+table_definition(group_chat) ->
+    #table_def{
+       name = group_chat,
+       columns = [
+           {id, timeuuid},
+           {owner, timeuuid},
+           {participants, {set, text}},
+           {title, text}
+       ],
+       primary_key = [id]
     }.
 
 table_indexes(session) -> [
