@@ -75,8 +75,8 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], []),
         FileID <- check_file_id(Fields),
-        OwnerID <- (backend()):get_owner(LServer, FileID),
-        Metadata <- (backend()):get_metadata(LServer, FileID),
+        OwnerID <- get_owner(LServer, FileID),
+        Metadata <- get_metadata(LServer, FileID),
         check_download_permissions(FromJID, OwnerID, Metadata),
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
@@ -144,6 +144,25 @@ check_file_id(ID) when is_binary(ID) ->
         true -> {ok, ID};
         false -> download_validation_error(["Invalid file ID: ", ID])
     end.
+
+get_owner(LServer, FileID) ->
+   case (backend()):get_owner(LServer, FileID) of
+      {ok, _} = Success -> Success;
+      {error, Error} -> file_retrieval_error(Error)
+   end.
+
+get_metadata(LServer, FileID) ->
+   case (backend()):get_metadata(LServer, FileID) of
+      {ok, _} = Success -> Success;
+      {error, Error} -> file_retrieval_error(Error)
+   end.
+
+file_retrieval_error(not_found) ->
+   Text = <<"File metadata not found.">>,
+   {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
+file_retrieval_error(Error) ->
+   Text = list_to_binary(io_lib:format("Error retrieving file: ~p", [Error])),
+   {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Text)}.
 
 check_upload_size(#{<<"size">> := SizeBin}) ->
     Size = binary_to_integer_def(SizeBin, 0),
