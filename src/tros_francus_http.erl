@@ -28,24 +28,30 @@ handle(Req, State) ->
 
 handle_req(Req) ->
     do([error_m ||
-        {Method, Req2} <- check_method(Req),
-        {AuthReq, Req3} <- check_auth(Method, Req2),
+        {Method, Req1} <- check_method(Req),
+        {User, File, Req2} <- check_path(Req1),
+        {AuthReq, Req3} <- check_auth(User, File, Method, Req2),
         do_op(Method, AuthReq, Req3)]).
 
 check_method(Req) ->
     case cowboy_req:method(Req) of
         {<<"GET">>, Req2} -> {ok, {get, Req2}};
         {<<"POST">>, Req2} -> {ok, {post, Req2}};
-        {_, Req2} -> {error, {405, "Unsupported method.", Req2}}
+        {_, Req2} -> {error, {405, "Unsupported method", Req2}}
     end.
 
-check_auth(Method, Req) ->
+check_path(Req) ->
     {Path, Req2} = cowboy_req:path(Req),
-    {User, File} = user_file(Path),
-    {Auth, Req3} = cowboy_req:header(<<"authorization">>, Req2, <<>>),
+    case user_file(Path) of
+        {<<>>, <<>>} -> {error, {404, "Not found", Req2}};
+        {User, File} -> {ok, {User, File, Req2}}
+    end.
+
+check_auth(User, File, Method, Req) ->
+    {Auth, Req2} = cowboy_req:header(<<"authorization">>, Req, <<>>),
     case tros_req_tracker:check(User, File, Auth, Method) of
-        false -> {error, {401, "Unauthorised request", Req3}};
-        AuthReq -> {ok, {AuthReq, Req3}}
+        false -> {error, {401, "Unauthorised request", Req2}};
+        AuthReq -> {ok, {AuthReq, Req2}}
     end.
 
 plain_header() -> [{<<"content-type">>, <<"text/plain">>}].

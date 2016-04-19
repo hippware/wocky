@@ -49,8 +49,7 @@ before_all(Backend) ->
                 fun(cqerl_node, _) -> {"127.0.0.1", 9042}
                 end),
     meck:expect(ejabberd_config, get_global_option,
-                fun(francus_chunk_size) -> undefined; % Use the default
-                   (language) -> <<"en">>;
+                fun(language) -> <<"en">>;
                    (hosts) -> [?LOCAL_CONTEXT]
                 end),
 
@@ -199,6 +198,7 @@ test_message_media_download_request(Backend) ->
 test_bad_download_ids(_Backend) ->
     BadUUID = binary:part(?MEDIA_FILE, 0, byte_size(?MEDIA_FILE) - 1),
     BadURL = <<"tros:">>,
+    MissingID = wocky_db:create_id(),
     {"Bad file ID on download request", [
         {"Failed due to malformed UUID", [
             ?_assertEqual(
@@ -214,6 +214,13 @@ test_bad_download_ids(_Backend) ->
                  handle_iq(test_user_jid(?CAROL),
                            test_server_jid(),
                            download_packet(BadURL)))
+        ]},
+        {"Failed due to missing file metadata", [
+            ?_assertEqual(
+               expected_dl_missing_error_packet(MissingID),
+                 handle_iq(test_user_jid(?CAROL),
+                           test_server_jid(),
+                           download_packet(MissingID)))
         ]}
     ]}.
 
@@ -348,6 +355,19 @@ expected_dl_error_packet(Reason, FileID) ->
       "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
       "Download request denied: ",
       (iolist_to_binary(Reason))/binary, "</text></error></iq>">>.
+
+expected_dl_missing_error_packet(FileID) ->
+    <<"<iq id='123456' type='error'>"
+        "<download-request xmlns='hippware.com/hxep/http-file'>"
+          "<id>", FileID/binary, "</id>"
+        "</download-request>"
+        "<error code='404' type='cancel'>"
+          "<item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
+          "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
+            "File metadata not found."
+          "</text>"
+        "</error>"
+      "</iq>">>.
 
 expected_dl_auth_error_packet(FileID) ->
     <<"<iq id='123456' type='error'><download-request "
