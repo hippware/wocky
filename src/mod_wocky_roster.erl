@@ -154,7 +154,7 @@ do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
 
     OldItem = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
     Item1 = process_item_attrs(OldItem, Attrs),
-    Item2 = process_item_els(Item1, Els),
+    Item2 = process_item_els(Item1#roster{groups = []}, Els),
 
     case Item2#roster.subscription of
         remove ->
