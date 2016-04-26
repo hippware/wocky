@@ -134,7 +134,7 @@ lookup_item(Table, Condition) ->
         not_found -> not_found;
         null -> not_found;
         User ->
-            Columns = [user, server, handle, first_name, last_name],
+            Columns = [user, server, handle, first_name, last_name, avatar],
             wocky_db:select_row(shared, user, Columns, #{user => User})
     end.
 
@@ -155,11 +155,13 @@ user_to_xml({Number, UserData}) ->
            attrs = [{<<"id">>, Number} | xml_user_attrs(UserData)]}.
 
 xml_user_attrs(#{user := User, server := Server, handle := Handle,
-                 first_name := FirstName, last_name := LastName}) ->
+                 first_name := FirstName, last_name := LastName,
+                 avatar := Avatar}) ->
     [{<<"jid">>, jid:to_binary({User, Server, <<>>})},
      {<<"handle">>, safe_string(Handle)},
      {<<"first_name">>, safe_string(FirstName)},
-     {<<"last_name">>, safe_string(LastName)}];
+     {<<"last_name">>, safe_string(LastName)},
+     {<<"avatar">>, safe_string(Avatar)}];
 xml_user_attrs(not_acceptable) ->
     [{<<"error">>, <<"not-acceptable">>}];
 xml_user_attrs(not_found) ->
