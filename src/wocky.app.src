@@ -14,7 +14,11 @@
                   stringprep,
                   z_stdlib,
                   mochijson2,
-                  qdate]},
+                  qdate,
+                  ssl,
+                  ibrowse,
+                  jiffy,
+                  algolia]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [
