@@ -111,10 +111,10 @@ missing_fields(_) ->
     JSON2 = encode(proplists:delete(resource, test_data())),
     {ok, {400, _}} = request(JSON2),
 
-    JSON3 = encode(proplists:delete(phoneNumber, test_data())),
+    JSON3 = encode(proplists:delete(phone_number, test_data())),
     {ok, {400, _}} = request(JSON3),
 
-    JSON4 = encode([{uuid, <<"bogus">>} | test_data()]),
+    JSON4 = encode([{user, <<"bogus">>} | test_data()]),
     {ok, {400, _}} = request(JSON4),
 
     JSON5 = encode([{avatar, <<"bogus">>} | test_data()]),
@@ -159,8 +159,8 @@ update(_) ->
 invalid_phone_number(_) ->
     start_digits_server(true),
     User = create_user(),
-    Data = lists:keyreplace(phoneNumber, 1, test_data(),
-                            {phoneNumber, <<"+5551231234">>}),
+    Data = lists:keyreplace(phone_number, 1, test_data(),
+                            {phone_number, <<"+5551231234">>}),
     JSON = encode(Data),
     {ok, {403, _Body}} = request(JSON),
     verify_phone_number(User, ?PHONE_NUMBER),
@@ -172,12 +172,12 @@ session_id_update(_) ->
     JSON = encode(test_data()),
     {ok, {201, Body}} = request(JSON),
     {struct, Elements} = mochijson2:decode(Body),
-    SessionID = proplists:get_value(<<"sessionID">>, Elements),
-    UUID = proplists:get_value(<<"uuid">>, Elements),
+    SessionID = proplists:get_value(<<"token">>, Elements),
+    UUID = proplists:get_value(<<"user">>, Elements),
     Data = [{handle, <<"NewHandle">>} | session_test_data(UUID, SessionID)],
     {ok, {201, Body2}} = request(encode(Data)),
     {struct, Elements2} = mochijson2:decode(Body2),
-    true = proplists:get_value(<<"handleSet">>, Elements2),
+    true = proplists:get_value(<<"handle_set">>, Elements2),
     <<"NewHandle">> = proplists:get_value(<<"handle">>, Elements2),
     verify_handle(User, <<"NewHandle">>),
     stop_digits_server().
@@ -189,14 +189,14 @@ session_id_update_phone_number(_) ->
     JSON = encode(test_data()),
     {ok, {201, Body}} = request(JSON),
     {struct, Elements} = mochijson2:decode(Body),
-    SessionID = proplists:get_value(<<"sessionID">>, Elements),
-    UUID = proplists:get_value(<<"uuid">>, Elements),
-    Data = lists:keyreplace(phoneNumber, 1, session_test_data(UUID, SessionID),
-                            {phoneNumber, <<"+5551231234">>}),
+    SessionID = proplists:get_value(<<"token">>, Elements),
+    UUID = proplists:get_value(<<"user">>, Elements),
+    Data = lists:keyreplace(phone_number, 1, session_test_data(UUID, SessionID),
+                            {phone_number, <<"+5551231234">>}),
     {ok, {201, Body2}} = request(encode(Data)),
     {struct, Elements2} = mochijson2:decode(Body2),
-    false = proplists:get_value(<<"phoneNumberSet">>, Elements2),
-    ?PHONE_NUMBER = proplists:get_value(<<"phoneNumber">>, Elements2),
+    false = proplists:get_value(<<"phone_number_set">>, Elements2),
+    ?PHONE_NUMBER = proplists:get_value(<<"phone_number">>, Elements2),
     verify_phone_number(User, ?PHONE_NUMBER),
     stop_digits_server().
 
@@ -211,23 +211,23 @@ invalid_auth_provider(_) ->
 invalid_session_id(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
-    Data = lists:keyreplace(sessionID, 1, session_test_data(?ALICE, ?TOKEN),
-                            {sessionID, <<"$T$Icantotallyhackthissession">>}),
+    Data = lists:keyreplace(token, 1, session_test_data(?ALICE, ?TOKEN),
+                            {token, <<"$T$Icantotallyhackthissession">>}),
     JSON = encode(Data),
     {ok, {403, _Body}} = request(JSON).
 
 missing_auth_data(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
-    Data = lists:keydelete(sessionID, 1, session_test_data(?ALICE, ?TOKEN)),
+    Data = lists:keydelete(token, 1, session_test_data(?ALICE, ?TOKEN)),
     JSON = encode(Data),
     {ok, {400, _Body}} = request(JSON).
 
 session_with_userid(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
-    Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
-                            {userID, ?AUTH_USER}),
+    Data = lists:keyreplace(user, 1, session_test_data(?ALICE, ?TOKEN),
+                            {auth_user, ?AUTH_USER}),
     ct:log("Data: ~p", [Data]),
     JSON = encode(Data),
     {ok, {201, _Body}} = request(JSON).
@@ -235,23 +235,23 @@ session_with_userid(_) ->
 invalid_user_id(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
-    Data = lists:keyreplace(uuid, 1, session_test_data(?ALICE, ?TOKEN),
-                            {userID, <<"999999999">>}),
+    Data = lists:keyreplace(user, 1, session_test_data(?ALICE, ?TOKEN),
+                            {auth_user, <<"999999999">>}),
     JSON = encode(Data),
     {ok, {403, _Body}} = request(JSON).
 
 missing_user_id(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
-    Data = lists:keydelete(uuid, 1, session_test_data(?ALICE, ?TOKEN)),
+    Data = lists:keydelete(user, 1, session_test_data(?ALICE, ?TOKEN)),
     JSON = encode(Data),
     {ok, {400, _Body}} = request(JSON).
 
 bypass_prefixes(_) ->
     start_digits_server(false),
     Data = [{resource, ?RESOURCE},
-            {userID, ?AUTH_USER},
-            {phoneNumber, <<"+15556667777">>},
+            {auth_user, ?AUTH_USER},
+            {phone_number, <<"+15556667777">>},
             {'X-Auth-Service-Provider',
              list_to_binary(fake_digits_server:url())},
             {'X-Verify-Credentials-Authorization', <<"badDigitsAuth">>}
@@ -316,25 +316,25 @@ test_data() ->
     [{handle, ?TEST_HANDLE},
      {resource, ?RESOURCE},
      {email, <<"me@alice.com">>},
-     {userID, ?AUTH_USER},
-     {phoneNumber, ?PHONE_NUMBER},
+     {auth_user, ?AUTH_USER},
+     {phone_number, ?PHONE_NUMBER},
      {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
      {'X-Verify-Credentials-Authorization', ?DIGITS_AUTH},
-     {firstName, <<"Alice">>},
-     {lastName, <<"Alison">>},
+     {first_name, <<"Alice">>},
+     {last_name, <<"Alison">>},
      % Key this off a binary to test the atom-creation defence:
      {<<"extraRandomField">>, <<"Ignore me entirely!">>}
     ].
 
 session_test_data(UUID, SessionID) ->
     [
-     {uuid, UUID},
-     {sessionID, SessionID},
+     {user, UUID},
+     {token, SessionID},
      {resource, ?RESOURCE},
      {email, <<"me@alice.com">>},
-     {phoneNumber, ?PHONE_NUMBER},
-     {firstName, <<"Alice">>},
-     {lastName, <<"Alison">>}
+     {phone_number, ?PHONE_NUMBER},
+     {first_name, <<"Alice">>},
+     {last_name, <<"Alison">>}
     ].
 
 verify_new_result(Body) ->
@@ -345,15 +345,15 @@ verify_elements(#{
   <<"handle">> := ?TEST_HANDLE,
   <<"resource">> := ?RESOURCE,
   <<"email">> := <<"me@alice.com">>,
-  <<"userID">> := ?AUTH_USER,
-  <<"phoneNumber">> := ?PHONE_NUMBER,
-  <<"firstName">> := <<"Alice">>,
-  <<"lastName">> := <<"Alison">>,
-  <<"uuid">> := _,
-  <<"sessionID">> := _,
-  <<"isNew">> := true,
-  <<"phoneNumberSet">> := true,
-  <<"handleSet">> := true
+  <<"auth_user">> := ?AUTH_USER,
+  <<"phone_number">> := ?PHONE_NUMBER,
+  <<"first_name">> := <<"Alice">>,
+  <<"last_name">> := <<"Alison">>,
+  <<"user">> := _,
+  <<"token">> := _,
+  <<"is_new">> := true,
+  <<"phone_number_set">> := true,
+  <<"handle_set">> := true
  }) -> ok;
 verify_elements(Fields) ->
     ct:fail("Missing or incorrect fields: ~p", [Fields]).

@@ -34,7 +34,7 @@ after_all(_) ->
 test_verify_session() ->
     BaseFields = #{server => ?LOCAL_CONTEXT,
                    resource => ?RESOURCE},
-    Fields = BaseFields#{uuid => ?ALICE},
+    Fields = BaseFields#{user => ?ALICE},
 
     { "verify_session", [
        { "accepts a valid session/user combination", [
@@ -44,9 +44,9 @@ test_verify_session() ->
          ?_assertNot(verify_session(Fields, <<"$T$invalidToken">>))
        ]},
        { "maps auth_user to the right uuid", [
-         ?_assert(verify_session(BaseFields#{userID => ?AUTH_USER},
+         ?_assert(verify_session(BaseFields#{auth_user => ?AUTH_USER},
                                  ?TOKEN)),
-         ?_assertNot(verify_session(BaseFields#{userID => ?AUTH_USER},
+         ?_assertNot(verify_session(BaseFields#{auth_user => ?AUTH_USER},
                                     <<"$T$badtoken">>))
        ]}
     ]}.
