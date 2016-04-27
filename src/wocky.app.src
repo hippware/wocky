@@ -29,6 +29,10 @@
          {cassandra_nodes, [{"127.0.0.1", 9042}]},
          {cassandra_opts, []},
          {keyspace_prefix, "wocky_test_"},
-         {keyspace_replication, {simple, 1}}
+         {keyspace_replication, {simple, 1}},
+         {indexing_enabled, false},
+         {algolia_app_id, "HIE75ZR7Q7"},
+         {algolia_app_key, "79602842342e137c97ce188013131a89"},
+         {algolia_index_name, "dev_wocky_users"}
         ]}
  ]}.

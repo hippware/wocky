@@ -20,7 +20,9 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {client :: term(), index :: term()}).
+-record(state, {enabled = false :: boolean(),
+                client :: term(),
+                index :: term()}).
 -type state() :: #state{}.
 
 
@@ -57,10 +59,17 @@ user_removed(UserID) ->
 %% @doc Initializes the server
 -spec init([]) -> {ok, state()}.
 init([]) ->
-    Client = algolia:make_client(
-               "HIE75ZR7Q7", "79602842342e137c97ce188013131a89"),
-    Index = algolia:init_index(Client, "dev_wocky_users"),
-    {ok, #state{client = Client, index = Index}}.
+    {ok, ID} = application:get_env(wocky, algolia_app_id),
+    {ok, Key} = application:get_env(wocky, algolia_app_key),
+    {ok, IdxName} = application:get_env(wocky, algolia_index_name),
+
+    Enabled = wocky_app:get_config(indexing_enabled),
+    Client = algolia:make_client(ID, Key),
+    Index = algolia:init_index(Client, IdxName),
+
+    {ok, #state{enabled = Enabled,
+                client = Client,
+                index = Index}}.
 
 %% @private
 %% @doc Handling call messages
@@ -72,18 +81,21 @@ handle_call(_Request, _From, State) ->
 %% @doc Handling cast messages
 -spec handle_cast({atom(), binary()} | {atom(), binary(), map()} | any(),
                   state()) -> {noreply, state()}.
+handle_cast(_Msg, #state{enabled = false} = State) ->
+    %% do nothing
+    {noreply, State};
 handle_cast({user_created, UserID, Data}, #state{index = Index} = State) ->
     Object = map_to_object(UserID, Data),
-    lager:debug("Updating user index with new object ~p", [Object]),
+    ok = lager:debug("Updating user index with new object ~p", [Object]),
     {ok, _} = algolia_index:add_object(Index, Object),
     {noreply, State};
 handle_cast({user_updated, UserID, Data}, #state{index = Index} = State) ->
     Object = map_to_object(UserID, Data),
-    lager:debug("Updating user index with object ~p", [Object]),
+    ok = lager:debug("Updating user index with object ~p", [Object]),
     {ok, _} = algolia_index:update_object(Index, Object),
     {noreply, State};
 handle_cast({user_removed, UserID}, #state{index = Index} = State) ->
-    lager:debug("Removing user ~s from index", [UserID]),
+    ok = lager:debug("Removing user ~s from index", [UserID]),
     {ok, _} = algolia_index:delete_object(Index, UserID),
     {noreply, State};
 handle_cast(Msg, State) ->
