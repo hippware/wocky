@@ -87,15 +87,15 @@ request(Body) ->
 
 unauthorized_test_data() ->
     [
-     {uuid, ?ALICE},
+     {user, ?ALICE},
      {resource, ?RESOURCE},
-     {sessionID, <<"asldkfjsadlkj">>}
+     {token, <<"asldkfjsadlkj">>}
     ].
 
 test_data() ->
     [
-     {uuid, ?ALICE},
+     {user, ?ALICE},
      {resource, ?RESOURCE},
-     {sessionID, ?TOKEN}
+     {token, ?TOKEN}
     ].
 

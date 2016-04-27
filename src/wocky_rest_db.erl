@@ -109,7 +109,7 @@ is_malformed(Elements, RD, Ctx) ->
                maps:from_list(Elements)),
     case verify_fields(Fields) of
         true ->
-            #{uuid := User, sessionID := Token} = Fields,
+            #{user := User, token := Token} = Fields,
             {false, RD, Ctx#state{user = User, token = Token}};
 
         false ->
@@ -117,7 +117,7 @@ is_malformed(Elements, RD, Ctx) ->
             {true, RD2, Ctx}
     end.
 
-verify_fields(#{sessionID := _, uuid := _}) -> true;
+verify_fields(#{token := _, user := _}) -> true;
 verify_fields(_) -> false.
 
 verify_session(User, Server, Token) ->
