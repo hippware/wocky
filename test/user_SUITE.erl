@@ -118,8 +118,8 @@ all_fields(Config) ->
 some_fields(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"457">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"phoneNumber">>,
-                                   <<"userID">>]),
+                                  [<<"user">>, <<"phone_number">>,
+                                   <<"auth_user">>]),
         ResultStanza = expect_success(Config, QueryStanza, Alice, alice),
 
         FieldsXML = exml_query:path(ResultStanza, [{element, <<"fields">>}]),
@@ -146,14 +146,15 @@ other_user_allowed_fields(Config) ->
 
 other_user_denied_field(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = get_request(<<"460">>, ?ALICE_UUID, [<<"phoneNumber">>]),
+        QueryStanza = get_request(<<"460">>, ?ALICE_UUID, [<<"phone_number">>]),
         expect_error(Config, QueryStanza, Bob, bob)
     end).
 
 other_user_mixed_fields(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
         QueryStanza = get_request(<<"461">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"email">>, <<"phoneNumber">>]),
+                                  [<<"user">>, <<"email">>,
+                                   <<"phone_number">>]),
         expect_error(Config, QueryStanza, Bob, bob)
     end).
 
@@ -202,7 +203,7 @@ invalid_user(Config) ->
 missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"467">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
+                                  [<<"uuid">>, <<"email">>, <<"auth_user">>]),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = proplists:delete(<<"node">>, Attrs),
         BrokenStanza =
@@ -215,7 +216,7 @@ missing_node(Config) ->
 malformed_user(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"468">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
+                                  [<<"user">>, <<"email">>, <<"auth_user">>]),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = [{<<"node">>, <<"baduserbad">>} |
                        proplists:delete(<<"node">>, Attrs)],
@@ -249,14 +250,14 @@ missing_var(Config) ->
 non_existant_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"471">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"doesntexist">>]),
+                                  [<<"user">>, <<"doesntexist">>]),
         expect_error(Config, QueryStanza, Alice, alice)
     end).
 
 wrong_type2(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = invalid_request(<<"472">>, ?ALICE_UUID,
-                                      [<<"uuid">>, <<"doesntexist">>]),
+                                      [<<"user">>, <<"doesntexist">>]),
         expect_error(Config, QueryStanza, Alice, alice)
     end).
 
@@ -305,7 +306,7 @@ rest_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
         set_request(<<"574">>, ?ALICE_UUID,
-                    [{<<"phoneNumber">>, <<"string">>, <<"+1444">>}]),
+                    [{<<"phone_number">>, <<"string">>, <<"+1444">>}]),
         expect_error(Config, QueryStanza, Alice, alice)
     end).
 
@@ -313,7 +314,7 @@ non_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
         set_request(<<"575">>, ?ALICE_UUID,
-                    [{<<"uuid">>, <<"uuid">>, wocky_db:create_id()}]),
+                    [{<<"user">>, <<"uuid">>, wocky_db:create_id()}]),
         expect_error(Config, QueryStanza, Alice, alice)
     end).
 
@@ -344,7 +345,7 @@ set_wrong_type(Config) ->
         QueryStanza =
         request_wrapper(<<"578">>, <<"set">>, ?ALICE_UUID,
                         [#xmlel{name = <<"field">>,
-                                attrs = [{<<"var">>, <<"firstName">>},
+                                attrs = [{<<"var">>, <<"first_name">>},
                                          {<<"type">>, <<"strOng">>}]
                                }]),
         expect_error(Config, QueryStanza, Alice, alice)
@@ -363,7 +364,7 @@ set_missing_value(Config) ->
         BrokenStanza =
         request_wrapper(<<"580">>, <<"set">>, ?ALICE_UUID,
                         [#xmlel{name = <<"field">>,
-                                attrs = [{<<"var">>, <<"firstName">>},
+                                attrs = [{<<"var">>, <<"first_name">>},
                                          {<<"type">>, <<"string">>}],
                                 children = [#xmlel{name = <<"other">>}]
                                }]),
@@ -478,7 +479,7 @@ garbage_request(ID, User, Type) ->
 
 set_fields() ->
     [{<<"handle">>, <<"string">>, <<"Alieee">>},
-     {<<"firstName">>, <<"string">>, <<"Bob">>},
+     {<<"first_name">>, <<"string">>, <<"Bob">>},
      {<<"email">>, <<"string">>, <<"bob@alice.com">>},
      {<<"avatar">>, <<"file">>,
       <<"tros:043e8c96-ba30-11e5-9912-ba0be0483c18@",

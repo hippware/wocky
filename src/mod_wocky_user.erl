@@ -123,19 +123,19 @@ get_field(Var) ->
 
 
 fields() ->
-     % Field name    % Type    % Visibility % Access   % Accessor
-    [{"jid",         "jid",    public,      read_only,
+     % Field name     % Type    % Visibility % Access   % Accessor
+    [{"jid",          "jid",    public,      read_only,
       fun(#{user := LUser, server := LServer}) ->
               jid:to_binary(jid:make(LUser, LServer, <<>>)) end},
-     {"uuid",        "uuid",   public,      read_only, default},
-     {"server",      "string", public,      read_only, default},
-     {"handle",      "string", public,      write,     default},
-     {"phoneNumber", "string", private,     rest_only, default},
-     {"avatar",      "file",   public,      write,     default},
-     {"firstName",   "string", public,      write,     default},
-     {"lastName",    "string", public,      write,     default},
-     {"email",       "string", private,     write,     default},
-     {"userID",      "string", private,     rest_only, default}
+     {"user",         "uuid",   public,      read_only, default},
+     {"server",       "string", public,      read_only, default},
+     {"handle",       "string", public,      write,     default},
+     {"phone_number", "string", private,     rest_only, default},
+     {"avatar",       "file",   public,      write,     default},
+     {"first_name",   "string", public,      write,     default},
+     {"last_name",    "string", public,      write,     default},
+     {"email",        "string", private,     write,     default},
+     {"auth_user",    "string", private,     rest_only, default}
     ].
 
 
@@ -212,9 +212,8 @@ build_resp_field(Row, Field) ->
                                              field_accessor(Field)))]}.
 
 
-extract(Name, Row, default) ->
-    Key = client_db_map:client_to_db(list_to_atom(Name)),
-    maps:get(Key, Row);
+extract(Key, Row, default) ->
+    maps:get(list_to_existing_atom(Key), Row);
 
 extract(_, Row, Fun) -> Fun(Row).
 
@@ -405,8 +404,7 @@ set_other_fields(LUser, Fields) ->
 build_row(Fields) ->
     lists:foldl(fun({Name, Value}, Acc) ->
                         NameAtom = binary_to_atom(Name, utf8),
-                        DBField = client_db_map:client_to_db(NameAtom),
-                        Acc#{DBField => Value}
+                        Acc#{NameAtom => Value}
                 end,
                 #{},
                 Fields).
