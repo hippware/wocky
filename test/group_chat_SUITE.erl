@@ -178,7 +178,7 @@ invalid_iq(Config) ->
 %%--------------------------------------------------------------------
 
 start_chat(Owner, Participants) ->
-    QueryStanza = chat_request([?BOB_B_JID, ?CAROL_B_JID], ?CHAT_TITLE),
+    QueryStanza = chat_request(Participants, ?CHAT_TITLE),
     ResultStanza = expect_iq_success(QueryStanza, Owner),
     FieldsXML = exml_query:path(ResultStanza,
                                 [{element, <<"chat-created">>}]),
@@ -205,7 +205,8 @@ participants_field(Participants) ->
 
 participant_field(Participant) ->
     #xmlel{name = <<"participant">>,
-           children = [#xmlcdata{content = Participant}]}.
+           children = [#xmlcdata{content =
+                                 escalus_client:short_jid(Participant)}]}.
 
 title_field(Title) ->
     #xmlel{name = <<"title">>,
