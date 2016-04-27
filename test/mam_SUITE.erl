@@ -50,6 +50,12 @@
          iq_spoofing/1
         ]).
 
+% Exports used by group_chat_SUITE to test group chat MAM functionality
+-export([stanza_archive_request/2,
+         assert_respond_size/2,
+         wait_archive_respond_iq_first/1
+        ]).
+
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("escalus/include/escalus_xmlns.hrl").
 -include_lib("common_test/include/ct.hrl").
