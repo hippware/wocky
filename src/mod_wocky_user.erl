@@ -54,7 +54,6 @@ handle_request(IQ, FromJID, ToJID, get,
                ReqEl = #xmlel{name = <<"get">>, children = Children}) ->
     do([error_m ||
         User <- get_user(ReqEl),
-        validate_user(User),
         Relationship <- {ok, relationship(FromJID, User, ToJID)},
         Fields <- get_get_req_fields(Children, []),
         check_field_permissions(Relationship, Fields),
@@ -65,7 +64,6 @@ handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, set,
                ReqEl = #xmlel{name = <<"set">>, children = Children}) ->
     do([error_m ||
         User <- get_user(ReqEl),
-        validate_user(User),
         validate_same_user(FromJID, User, ToJID),
         Fields <- get_set_req_fields(Children, []),
         check_duplicate_unique_fields(Fields),
@@ -82,13 +80,6 @@ get_user(ReqEl) ->
             not_valid("Missing node attribute");
         _ ->
             not_valid("Malformed node attribute")
-    end.
-
-
-validate_user(User) ->
-    case wocky_db:is_valid_id(User) of
-        true -> ok;
-        false -> not_valid("Invalid user ID")
     end.
 
 

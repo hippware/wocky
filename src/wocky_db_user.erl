@@ -320,17 +320,11 @@ create_user_record(LUser, LServer, Handle, Password) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
-does_user_exist(LUser, LServer) ->
-    does_user_exist(LUser, LServer, wocky_db:is_valid_id(LUser)).
-
-%% @private
-does_user_exist(LUser, _LServer, true) ->
+does_user_exist(LUser, _LServer) ->
     case wocky_db:select_one(shared, user, user, #{user => LUser}) of
         not_found -> false;
         LUser -> true
-    end;
-does_user_exist(_, _, false) ->
-    false.
+    end.
 
 
 %% @doc Returns the user's handle.
@@ -357,18 +351,12 @@ get_phone_number(LUser, LServer) ->
     get_lookup(LUser, LServer, phone_number).
 
 %% @private
-get_lookup(LUser, LServer, Col) ->
-    get_lookup(LUser, LServer, Col, wocky_db:is_valid_id(LUser)).
-
-%% @private
-get_lookup(LUser, _LServer, Col, true) ->
+get_lookup(LUser, _LServer, Col) ->
     case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
         not_found -> {error, not_found};
         null -> {error, not_found};
         Value -> Value
-    end;
-get_lookup(_, _, _, false) ->
-    {error, not_found}.
+    end.
 
 
 %% @doc Returns the user's password.
@@ -379,17 +367,11 @@ get_lookup(_, _, _, false) ->
 %%
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> password() | {error, not_found}.
-get_password(LUser, LServer) ->
-    get_password(LUser, LServer, wocky_db:is_valid_id(LUser)).
-
-%% @private
-get_password(LUser, _LServer, true) ->
+get_password(LUser, _LServer) ->
     case wocky_db:select_one(shared, user, password, #{user => LUser}) of
         not_found -> {error, not_found};
         Password -> Password
-    end;
-get_password(_, _, false) ->
-    {error, not_found}.
+    end.
 
 
 %% @doc Updates the user's password.
@@ -421,10 +403,6 @@ set_password(LUser, LServer, Password) ->
 %%
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    remove_user(LUser, LServer, wocky_db:is_valid_id(LUser)).
-
-%% @private
-remove_user(LUser, LServer, true) ->
     Columns = [handle, phone_number],
     case wocky_db:select_row(shared, user, Columns, #{user => LUser}) of
         not_found ->
@@ -439,9 +417,7 @@ remove_user(LUser, LServer, true) ->
             ok = remove_user_record(LUser),
             ok = remove_tokens(LUser, LServer),
             ok
-    end;
-remove_user(_, _, false) ->
-    ok.
+    end.
 
 %% @private
 remove_handle_lookup(null) -> ok;
@@ -511,15 +487,9 @@ assign_token(LUser, LServer, LResource) ->
 -spec release_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
                    -> ok.
 release_token(LUser, LServer, LResource) ->
-    ok = release_token(LUser, LServer, LResource, wocky_db:is_valid_id(LUser)).
-
-%% @private
-release_token(LUser, LServer, LResource, true) ->
     wocky_db:delete(LServer, auth_token, all, #{user => LUser,
                                                 server => LServer,
-                                                resource => LResource});
-release_token(_, _, _, false) ->
-    ok.
+                                                resource => LResource}).
 
 
 %% @doc Returns all tokens currently assigned to resources belonging to the
@@ -531,15 +501,9 @@ release_token(_, _, _, false) ->
 %%
 -spec get_tokens(ejabberd:luser(), ejabberd:lserver()) -> [token()].
 get_tokens(LUser, LServer) ->
-    Rows = get_tokens(LUser, LServer, wocky_db:is_valid_id(LUser)),
+    Rows = wocky_db:select(LServer, auth_token, [auth_token],
+                           #{user => LUser, server => LServer}),
     [Token || #{auth_token := Token} <- Rows].
-
-%% @private
-get_tokens(LUser, LServer, true) ->
-    wocky_db:select(LServer, auth_token, [auth_token],
-                    #{user => LUser, server => LServer});
-get_tokens(_, _, false) ->
-    [].
 
 
 %% @doc Returns `true' if a token is valid for the supplied
