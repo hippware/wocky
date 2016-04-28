@@ -84,7 +84,7 @@ forbidden(RD, Ctx = #state{fields = Fields,
         {true, digits} ->
             {false, RD, Ctx#state{create_allowed = true}};
         {true, session} ->
-            {false, RD, Ctx#state{fields = maps:remove(phoneNumber, Fields)}};
+            {false, RD, Ctx#state{fields = maps:remove(phone_number, Fields)}};
         {false, Code, Error} ->
             RD2 = set_resp_body(Code, Error, RD),
             {true, RD2, Ctx}
@@ -140,15 +140,15 @@ elements_to_map(Elements, Server) ->
 
 merge_defaults(Fields) ->
     Defaults = #{
-      userID                               => ?EMPTY,
-      uuid                                 => ?EMPTY,
+      auth_user                            => ?EMPTY,
+      user                                 => ?EMPTY,
       handle                               => ?EMPTY,
-      firstName                            => ?EMPTY,
-      lastName                             => ?EMPTY,
+      first_name                           => ?EMPTY,
+      last_name                            => ?EMPTY,
       resource                             => ?EMPTY,
-      phoneNumber                          => ?EMPTY,
+      phone_number                         => ?EMPTY,
       email                                => ?EMPTY,
-      sessionID                            => ?EMPTY,
+      token                                => ?EMPTY,
       'X-Auth-Service-Provider'            => undefined,
       'X-Verify-Credentials-Authorization' => undefined
      },
@@ -160,17 +160,17 @@ strip_empty_fields(Fields) ->
                        (_, _) -> true end,
                    Fields)}.
 
-verify_auth_fields(#{phoneNumber := ?EMPTY}) ->
-    {error, {400, "Missing or empty phoneNumber"}};
+verify_auth_fields(#{phone_number := ?EMPTY}) ->
+    {error, {400, "Missing or empty phone_numbeer"}};
 verify_auth_fields(#{'X-Auth-Service-Provider'            := X1,
                      'X-Verify-Credentials-Authorization' := X2,
-                     sessionID                            := ?EMPTY})
+                     token                                := ?EMPTY})
   when X1 =:= undefined orelse X2 =:= undefined ->
-    {error, {400, "The Digits fields or sessionID (or both) must be supplied"}};
+    {error, {400, "The Digits fields or token (or both) must be supplied"}};
 verify_auth_fields(_) -> ok.
 
-verify_user_fields(#{userID := ?EMPTY, uuid := ?EMPTY}) ->
-    {error, {400, "userID or uuid (or both) must be supplied"}};
+verify_user_fields(#{auth_user := ?EMPTY, user := ?EMPTY}) ->
+    {error, {400, "auth_user or user (or both) must be supplied"}};
 verify_user_fields(#{resource := ?EMPTY}) ->
     {error, {400, "resource must be supplied"}};
 verify_user_fields(_) -> ok.
@@ -186,16 +186,16 @@ verify_avatar_field(_) -> ok.
 maybe_add_default_server(Fields = #{server := ?NOT_EMPTY}, _) -> Fields;
 maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.
 
-authenticate(Fields = #{sessionID := SessionID}, _, _) ->
-    case verify_session(Fields, SessionID) of
+authenticate(Fields = #{token := Token}, _, _) ->
+    case verify_session(Fields, Token) of
         true ->
             {true, session};
         false ->
-            ok = lager:warning("Invalid registration session id '~s'",
-                               [SessionID]),
-            {false, 401, "Invalid sessionID"}
+            ok = lager:warning("Invalid registration token '~s'",
+                               [Token]),
+            {false, 401, "Invalid token"}
     end;
-authenticate(#{phoneNumber := PhoneNumber} = Fields,
+authenticate(#{phone_number := PhoneNumber} = Fields,
              AuthProviders, AuthBypassPrefixes) ->
     case has_any_prefix(PhoneNumber, AuthBypassPrefixes) of
         true ->
@@ -227,19 +227,19 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
             {false, 401, "Invalid authentication provider"}
     end.
 
-verify_session(#{uuid := UUID, server := Server, resource := Resource},
+verify_session(#{user := UUID, server := Server, resource := Resource},
                SessionID) ->
     wocky_db_user:check_token(UUID, Server, Resource, SessionID);
-verify_session(Fields = #{userID := UserID, server := Server}, SessionID) ->
+verify_session(Fields = #{auth_user := UserID, server := Server}, SessionID) ->
     case wocky_db_user:get_user_by_auth_name(Server, UserID) of
         not_found ->
             false;
         User ->
-            verify_session(Fields#{uuid => User}, SessionID)
+            verify_session(Fields#{user => User}, SessionID)
     end.
 
 create_or_update_user(RD, Ctx = #state{fields = Fields
-                                              = #{userID := AuthUser,
+                                              = #{auth_user := AuthUser,
                                                   server := Server}}) ->
     case wocky_db_user:get_user_by_auth_name(Server, AuthUser) of
         not_found ->
@@ -247,7 +247,7 @@ create_or_update_user(RD, Ctx = #state{fields = Fields
         ExistingUser ->
             find_and_update_user(RD,
                                  Ctx#state{fields =
-                                           Fields#{uuid => ExistingUser}})
+                                           Fields#{user => ExistingUser}})
     end.
 
 create_user(RD, Ctx = #state{fields = Fields}) ->
@@ -255,16 +255,16 @@ create_user(RD, Ctx = #state{fields = Fields}) ->
         {error, E} -> create_update_error(E, RD, Ctx);
         UUID ->
             finalize_changes(RD, Ctx#state{is_new = true,
-                                           fields = Fields#{uuid => UUID}})
+                                           fields = Fields#{user => UUID}})
     end.
 
-find_and_update_user(RD, Ctx = #state{fields = #{uuid := _}}) ->
+find_and_update_user(RD, Ctx = #state{fields = #{user := _}}) ->
     update_user(RD, Ctx);
 find_and_update_user(RD, Ctx = #state{fields = Fields
-                                             = #{userID := AuthUser,
+                                             = #{auth_user := AuthUser,
                                                  server := Server}}) ->
     UUID = wocky_db_user:get_user_by_auth_name(Server, AuthUser),
-    update_user(RD, Ctx#state{fields = Fields#{uuid => UUID}}).
+    update_user(RD, Ctx#state{fields = Fields#{user => UUID}}).
 
 update_user(RD, Ctx = #state{fields = Fields}) ->
     case wocky_db_user:update_user(json_to_row(Fields)) of
@@ -278,15 +278,15 @@ finalize_changes(RD, Ctx) ->
     set_result(RD, Ctx3).
 
 maybe_update_handle(Ctx = #state{server = Server,
-                                 fields = #{uuid := User,
+                                 fields = #{user := User,
                                             handle := Handle}}) ->
     Set = wocky_db_user:maybe_set_handle(User, Server, Handle),
     Ctx#state{handle_set = Set};
 maybe_update_handle(Ctx) -> Ctx.
 
 maybe_update_phone_number(Ctx = #state{server = Server,
-                                       fields = #{uuid := User,
-                                                  phoneNumber
+                                       fields = #{user := User,
+                                                  phone_number
                                                   := PhoneNumber}}) ->
     wocky_db_user:set_phone_number(User, Server, PhoneNumber),
     Ctx#state{phone_number_set = true};
@@ -296,16 +296,14 @@ set_result(RD, Ctx = #state{server = Server,
                             is_new = IsNew,
                             phone_number_set = PhoneNumberSet,
                             handle_set = HandleSet,
-                            fields = #{uuid := UUID,
+                            fields = #{user := UUID,
                                        resource := Resource}}) ->
-    Fields = row_to_json(
-               wocky_db:drop_nulls(
-                 wocky_db_user:get_user_data(UUID, Server))),
-    JSONFields = prepare_for_encoding(Fields),
+    Fields = wocky_db:drop_nulls(
+               wocky_db_user:get_user_data(UUID, Server)),
     {ok, Token} = wocky_db_user:assign_token(UUID, Server, Resource),
-    Ret = [{sessionID, Token}, {isNew, IsNew},
-           {phoneNumberSet, PhoneNumberSet}, {handleSet, HandleSet},
-           {resource, Resource} | maps:to_list(JSONFields)],
+    Ret = [{token, Token}, {is_new, IsNew},
+           {phone_number_set, PhoneNumberSet}, {handle_set, HandleSet},
+           {resource, Resource} | maps:to_list(Fields)],
     Body = mochijson2:encode({struct, Ret}),
     RD2 = wrq:set_resp_header("content-type", "application/json", RD),
     RD3 = wrq:set_resp_body(Body, RD2),
@@ -337,23 +335,6 @@ get_auth_bypass_prefixes(Opts) ->
     false -> []
   end.
 
-json_to_row(JSONFields) ->
-    lists:foldl(fun({J, R}, Map) -> map_transform(J, R, JSONFields, Map) end,
-                #{}, client_db_map:fields()).
-
-row_to_json(DBFields) ->
-    lists:foldl(fun({J, R}, Map) -> map_transform(R, J, DBFields, Map) end,
-                #{}, client_db_map:fields()).
-
-map_transform(A, B, SourceMap, Map) ->
-    case maps:find(A, SourceMap) of
-        {ok, Val} -> Map#{B => Val};
-        error -> Map
-    end.
-
-prepare_for_encoding(Fields = #{uuid := UUID}) ->
-    Fields#{uuid => UUID}.
-
 set_resp_body(Code, Error, RD) ->
     JSON = mochijson2:encode({struct, [{code, Code},
                                        {error, iolist_to_binary(Error)}]}),
@@ -365,3 +346,6 @@ has_any_prefix(PhoneNumber, Prefixes) ->
 
 has_prefix(Subject, Prefix) ->
     binary:longest_common_prefix([Subject, Prefix]) =:= byte_size(Prefix).
+
+json_to_row(JSONFields) ->
+    maps:with(wocky_db:table_columns(user), JSONFields).
