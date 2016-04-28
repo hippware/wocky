@@ -40,6 +40,7 @@
 -define(BOB_JID,   jid:make(?BOB,   ?LOCAL_CONTEXT, <<>>)).
 -define(CAROL_JID, jid:make(?CAROL, ?LOCAL_CONTEXT, <<>>)).
 -define(KAREN_JID, jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)).
+-define(SERVER_JID,jid:make(<<>>,   ?LOCAL_CONTEXT, <<>>)).
 
 -define(AVATAR_FILE,  <<"ee880476-e712-11e5-990d-08002719e96e">>).
 -define(AVATAR_FILE2, <<"5620c844-e98d-11e5-b97b-08002719e96e">>).
@@ -65,4 +66,6 @@
 -define(PRIVACY_ITEM1, <<"3f2d5e24-ecba-11e5-951e-08002719e96e">>).
 -define(PRIVACY_ITEM2, <<"3fa76372-ecba-11e5-a383-08002719e96e">>).
 -define(PRIVACY_ITEM3, <<"3fd96ee4-ecba-11e5-83d6-08002719e96e">>).
+
+-define(CHAT_TITLE, <<"Chatty McChatface">>).
 -endif.
