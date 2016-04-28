@@ -107,8 +107,7 @@ seed_keyspace(Context, Server) ->
 
 prepare_tables(Context, Tables) ->
     ok = wocky_db:create_keyspace(Context, simple, 1),
-    ok = foreach_table(Context, fun recreate_table/2, Tables),
-    flush_cqerl_prepared_query_cache().
+    ok = foreach_table(Context, fun recreate_table/2, Tables).
 
 clear_tables(Context, Tables) ->
     foreach_table(Context, fun wocky_db:truncate/2, Tables).
@@ -120,22 +119,6 @@ clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(Context, [session, roster,
                                          auth_token, last_activity,
                                          privacy, privacy_item]).
-
-%% This is an incredibly ugly hack to work around a problem in cqerl.
-%% When we drop tables the C* server discards all cached prepared queries
-%% related to that table. cqerl doesn't do this, and it does not handle the
-%% error returned from the server that says "this prepared query doesn't exist".
-%% TODO: Fix cqerl so that it properly handles the server message indicating
-%% that a prepared query no longer exists in the cache. Example:
-%% `{error, {9472, <<"Prepared query with ID a458ba918d03a5959c2fb8498882cfc5
-%% not found (either the query was not prepared on this host (maybe the host
-%% has been restarted?) or you have prepared too many queries and it has been
-%% evicted from the internal cache)">>,
-%% <<164,88,186,145,141,3,165,149,156,47,184,73,136,130,207,197>>}}'
-flush_cqerl_prepared_query_cache() ->
-    ok = supervisor:terminate_child(cqerl_sup, cqerl_cache),
-    {ok, _} = supervisor:restart_child(cqerl_sup, cqerl_cache),
-    ok.
 
 
 %%====================================================================
