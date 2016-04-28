@@ -173,26 +173,15 @@ verify_user_fields(#{auth_user := ?EMPTY, user := ?EMPTY}) ->
     {error, {400, "auth_user or user (or both) must be supplied"}};
 verify_user_fields(#{resource := ?EMPTY}) ->
     {error, {400, "resource must be supplied"}};
-verify_user_fields(#{user := User}) when User =/= ?EMPTY ->
-    case wocky_db:is_valid_id(User) of
-        true -> ok;
-        false -> {error, {400, ["Invalid User: ", User]}}
-    end;
 verify_user_fields(_) -> ok.
 
 verify_avatar_field(#{avatar := Avatar,
                       server := Server}) ->
     case tros:parse_url(Avatar) of
-        {ok, {Server, FileID}} -> verify_file_id(FileID);
+        {ok, {Server, _FileID}} -> ok;
         _ -> {error, {400, ["Invalid or non-local avatar URL: ", Avatar]}}
     end;
 verify_avatar_field(_) -> ok.
-
-verify_file_id(FileID) ->
-    case wocky_db:is_valid_id(FileID) of
-        true -> ok;
-        false -> {error, {400, ["Invalid file ID in URL: ", FileID]}}
-    end.
 
 maybe_add_default_server(Fields = #{server := ?NOT_EMPTY}, _) -> Fields;
 maybe_add_default_server(Fields, Server) -> Fields#{server => Server}.

@@ -46,13 +46,7 @@ stop(Host) ->
 handle_phone_iq(From, _To, #iq{type = get} = IQ) ->
     #iq{sub_el = #xmlel{children = Els}} = IQ,
     #jid{luser = LUser, lserver = LServer} = From,
-    case wocky_db:is_valid_id(LUser) of
-        true ->
-            handle_phone_iq_get(LUser, LServer, Els, IQ);
-
-        false ->
-            IQ#iq{type = error, sub_el = [?ERR_JID_MALFORMED]}
-    end;
+    handle_phone_iq_get(LUser, LServer, Els, IQ);
 handle_phone_iq(_From, _To, #iq{type = set} = IQ) ->
     IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
 
@@ -134,7 +128,7 @@ lookup_item(Table, Condition) ->
         not_found -> not_found;
         null -> not_found;
         User ->
-            Columns = [user, server, handle, first_name, last_name],
+            Columns = [user, server, handle, first_name, last_name, avatar],
             wocky_db:select_row(shared, user, Columns, #{user => User})
     end.
 
@@ -155,11 +149,13 @@ user_to_xml({Number, UserData}) ->
            attrs = [{<<"id">>, Number} | xml_user_attrs(UserData)]}.
 
 xml_user_attrs(#{user := User, server := Server, handle := Handle,
-                 first_name := FirstName, last_name := LastName}) ->
+                 first_name := FirstName, last_name := LastName,
+                 avatar := Avatar}) ->
     [{<<"jid">>, jid:to_binary({User, Server, <<>>})},
      {<<"handle">>, safe_string(Handle)},
      {<<"first_name">>, safe_string(FirstName)},
-     {<<"last_name">>, safe_string(LastName)}];
+     {<<"last_name">>, safe_string(LastName)},
+     {<<"avatar">>, safe_string(Avatar)}];
 xml_user_attrs(not_acceptable) ->
     [{<<"error">>, <<"not-acceptable">>}];
 xml_user_attrs(not_found) ->

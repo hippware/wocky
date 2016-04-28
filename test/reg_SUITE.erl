@@ -108,6 +108,7 @@ invalid_json(_) ->
     {ok, {400, _}} = request(<<"bogus">>).
 
 missing_fields(_) ->
+    start_digits_server(false),
     JSON2 = encode(proplists:delete(resource, test_data())),
     {ok, {400, _}} = request(JSON2),
 
@@ -115,14 +116,15 @@ missing_fields(_) ->
     {ok, {400, _}} = request(JSON3),
 
     JSON4 = encode([{user, <<"bogus">>} | test_data()]),
-    {ok, {400, _}} = request(JSON4),
+    {ok, {403, _}} = request(JSON4),
 
     JSON5 = encode([{avatar, <<"bogus">>} | test_data()]),
     {ok, {400, _}} = request(JSON5),
 
     AvatarURL = tros:make_url(?LOCAL_CONTEXT, <<"bogus">>),
     JSON6 = encode([{avatar, AvatarURL} | test_data()]),
-    {ok, {400, _}} = request(JSON6).
+    {ok, {403, _}} = request(JSON6),
+    stop_digits_server().
 
 unauthorized_new(_) ->
     start_digits_server(false),

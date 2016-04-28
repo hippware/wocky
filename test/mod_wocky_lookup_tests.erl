@@ -68,11 +68,12 @@ item_el(I) ->
            attrs = [{<<"id">>, iolist_to_binary(I)}]}.
 
 test_phone_iq_get_request() ->
-  ErrorIQ = #iq{type = error, sub_el = [?ERR_JID_MALFORMED]},
   { "handle_phone_iq with type get", [
-    { "returns an error IQ when the JID is not a UUID", [
-      ?_assertMatch(ErrorIQ, handle_phone_iq(#jid{luser = "foo"}, ?TO,
-                                             make_iq([])))
+    { "returns an empty result when the JID is not a UUID", [
+      ?_assertMatch(?RESULT_IQ([]),
+                    handle_phone_iq(#jid{luser = <<"foo">>,
+                                         lserver = ?LOCAL_CONTEXT},
+                                    ?TO, make_iq([])))
     ]},
     { "returns an empty result IQ if there are no item elements", [
       ?_assertMatch(?RESULT_IQ([]), handle_phone_iq(?FROM, ?TO, make_iq([])))
@@ -115,12 +116,14 @@ test_phone_iq_get_results() ->
                       proplists:get_value(<<"error">>, ?LAST(Els)))
       ]},
       { "returns the proper user information for a phone number", [
-        ?_assertMatch(<<"+1234">>,
+        ?_assertEqual(<<"+1234">>,
                       proplists:get_value(<<"id">>, ?FIRST(Els))),
-        ?_assertMatch(<<"043e8c96-ba30-11e5-9912-ba0be0483c18@localhost">>,
+        ?_assertEqual(<<?ALICE/binary, "@", ?LOCAL_CONTEXT/binary>>,
                       proplists:get_value(<<"jid">>, ?FIRST(Els))),
-        ?_assertMatch(<<"alice">>,
-                      proplists:get_value(<<"handle">>, ?FIRST(Els)))
+        ?_assertEqual(<<"alice">>,
+                      proplists:get_value(<<"handle">>, ?FIRST(Els))),
+        ?_assertMatch(<<"tros:", _/binary>>,
+                      proplists:get_value(<<"avatar">>, ?FIRST(Els)))
       ]}
     ] end
   }.

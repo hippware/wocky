@@ -107,8 +107,7 @@ seed_keyspace(Context, Server) ->
 
 prepare_tables(Context, Tables) ->
     ok = wocky_db:create_keyspace(Context, simple, 1),
-    ok = foreach_table(Context, fun recreate_table/2, Tables),
-    flush_cqerl_prepared_query_cache().
+    ok = foreach_table(Context, fun recreate_table/2, Tables).
 
 clear_tables(Context, Tables) ->
     foreach_table(Context, fun wocky_db:truncate/2, Tables).
@@ -120,22 +119,6 @@ clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(Context, [session, roster,
                                          auth_token, last_activity,
                                          privacy, privacy_item]).
-
-%% This is an incredibly ugly hack to work around a problem in cqerl.
-%% When we drop tables the C* server discards all cached prepared queries
-%% related to that table. cqerl doesn't do this, and it does not handle the
-%% error returned from the server that says "this prepared query doesn't exist".
-%% TODO: Fix cqerl so that it properly handles the server message indicating
-%% that a prepared query no longer exists in the cache. Example:
-%% `{error, {9472, <<"Prepared query with ID a458ba918d03a5959c2fb8498882cfc5
-%% not found (either the query was not prepared on this host (maybe the host
-%% has been restarted?) or you have prepared too many queries and it has been
-%% evicted from the internal cache)">>,
-%% <<164,88,186,145,141,3,165,149,156,47,184,73,136,130,207,197>>}}'
-flush_cqerl_prepared_query_cache() ->
-    ok = supervisor:terminate_child(cqerl_sup, cqerl_cache),
-    {ok, _} = supervisor:restart_child(cqerl_sup, cqerl_cache),
-    ok.
 
 
 %%====================================================================
@@ -167,7 +150,7 @@ table_definition(handle_to_user) ->
     #table_def{
        name = handle_to_user,
        columns = [
-           {user, timeuuid},
+           {user, text},
            {server, text},
            {handle, text}
        ],
@@ -179,7 +162,7 @@ table_definition(phone_number_to_user) ->
     #table_def{
        name = phone_number_to_user,
        columns = [
-           {user, timeuuid},
+           {user, text},
            {server, text},
            {phone_number, text}
        ],
@@ -191,7 +174,7 @@ table_definition(user) ->
     #table_def{
        name = user,
        columns = [
-           {user, timeuuid},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
            {handle, text},         % User handle (as seen by other users)
            {password, text},       % Password hash
@@ -211,7 +194,7 @@ table_definition(last_activity) ->
     #table_def{
        name = last_activity,
        columns = [
-           {user, timeuuid},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
            {timestamp, timestamp}, % Timestamp of last user logoff
            {status, text}          % Text set in last user presence
@@ -225,7 +208,7 @@ table_definition(offline_msg) ->
     #table_def{
        name = offline_msg,
        columns = [
-           {user, timeuuid},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
            {msg_id, timeuuid},     % Unique message ID
            {timestamp, timestamp}, % Message timestamp
@@ -243,7 +226,7 @@ table_definition(roster) ->
     #table_def{
        name = roster,
        columns = [
-           {user, timeuuid},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
            {contact_jid, text},    % Bare JID for contact
            {active, boolean},      % True if the roster item is not deleted
@@ -265,9 +248,9 @@ table_definition(session) ->
        columns = [
            {sid, blob},            % Session ID
            {node, text},           % Node handling the active session
-           {user, timeuuid},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % User Server (domainpart of JID)
-           {jid_user, timeuuid},   % Provided JID userpart
+           {jid_user, text},       % Provided JID userpart
            {jid_server, text},     % Provided JID domainpart
            {jid_resource, blob},   % Provided JID resourcepart
            {priority, int},        % Session priority
@@ -281,8 +264,8 @@ table_definition(media) ->
     #table_def{
        name = media,
        columns = [
-           {id, timeuuid},         % ID of the file
-           {user, timeuuid},       % User ID of the file owner
+           {id, text},         % ID of the file
+           {user, text},       % User ID of the file owner
            {size, int},            % File size in bytes
            {metadata, {map, text, text}}, % General purpose metadata field
            {chunks, {list, timeuuid}} % Ordered list of media_data table
@@ -297,7 +280,7 @@ table_definition(media_data) ->
        name = media_data,
        columns = [
            {chunk_id, timeuuid},   % ID of chunk
-           {file_id, timeuuid},    % ID of the file
+           {file_id, text},        % ID of the file
            {data, blob}            % Data in this chunk
        ],
        primary_key = chunk_id
@@ -323,7 +306,7 @@ table_definition(auth_token) ->
     #table_def{
        name = auth_token,
        columns = [
-           {user, timeuuid},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % Server (domainpart of JID)
            {resource, text},       % Resource (resourcepart of JID)
            {auth_token, text}      % Token
@@ -336,7 +319,7 @@ table_definition(privacy) ->
     #table_def{
        name = privacy,
        columns = [
-           {user, timeuuid},     % User ID (userpart of JID)
+           {user, text},         % User ID (userpart of JID)
            {server, text},       % Server (domainpart of JID)
            {default, text},      % Default privacy list
            {lists, {set, text}}  % Set of configured privacy lists
@@ -349,7 +332,7 @@ table_definition(privacy_item) ->
     #table_def{
        name = privacy_item,
        columns = [
-           {user, timeuuid},  % User ID (userpart of JID)
+           {user, text},      % User ID (userpart of JID)
            {server, text},    % Server (domainpart of JID)
            {list, text},      % List name for this item
            {id, timeuuid},    % ID of this item
@@ -374,7 +357,7 @@ table_definition(tros_request) ->
     #table_def{
        name = tros_request,
        columns = [
-           {user, timeuuid}, % User making the request
+           {user, text},     % User making the request
            {file, text},     % File name of the request
            {auth, blob},     % Authorization key for the request
            {method, text},   % HTTP method for the request (get/post)
@@ -388,12 +371,24 @@ table_definition(phone_lookup_count) ->
     #table_def{
        name = phone_lookup_count,
        columns = [
-           {user, timeuuid},  % User ID (userpart of JID)
+           {user, text},      % User ID (userpart of JID)
            {server, text},    % Server (domainpart of JID)
            {date, timestamp}, % Date of the last request
            {count, int}       % Number of requests during the day
        ],
        primary_key = [user, server, date]
+    };
+
+table_definition(group_chat) ->
+    #table_def{
+       name = group_chat,
+       columns = [
+           {id, timeuuid},
+           {owner, timeuuid},
+           {participants, {set, text}},
+           {title, text}
+       ],
+       primary_key = [id]
     }.
 
 table_indexes(session) -> [

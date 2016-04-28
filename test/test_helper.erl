@@ -4,6 +4,8 @@
 
 -export([start_ejabberd/0, stop_ejabberd/0]).
 
+-export([expect_iq_success/2, expect_iq_error/2]).
+
 start_ejabberd() ->
     case net_kernel:start(['mongooseim@localhost', longnames]) of
         {ok, _Pid} -> ok;
@@ -15,3 +17,23 @@ start_ejabberd() ->
 
 stop_ejabberd() ->
     wocky_app:stop().
+
+expect_iq_success(Stanza, User) ->
+    expect_something(Stanza, User, is_iq_result).
+
+expect_iq_error(Stanza, User) ->
+    expect_something(Stanza, User, is_iq_error).
+
+expect_something(Stanza, User, Expect) ->
+    FinalStanza = add_to_from(Stanza, User),
+    ct:log("Sending stanza: ~p", [FinalStanza]),
+    ResultStanza = escalus:send_and_wait(User, FinalStanza),
+    ct:log("Result stanza: ~p", [ResultStanza]),
+    escalus:assert(Expect, ResultStanza),
+    ResultStanza.
+
+add_to_from(Stanza, User) ->
+    escalus_stanza:to(
+      escalus_stanza:from(Stanza, User),
+      escalus_client:server(User)).
+

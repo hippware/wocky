@@ -140,10 +140,7 @@ check_file_id(#{<<"id">> := ID}) ->
     check_file_id(ID);
 
 check_file_id(ID) when is_binary(ID) ->
-    case wocky_db:is_valid_id(ID) of
-        true -> {ok, ID};
-        false -> download_validation_error(["Invalid file ID: ", ID])
-    end.
+    {ok, ID}.
 
 get_owner(LServer, FileID) ->
    case (backend()):get_owner(LServer, FileID) of
@@ -158,7 +155,7 @@ get_metadata(LServer, FileID) ->
    end.
 
 file_retrieval_error(not_found) ->
-   Text = <<"File metadata not found.">>,
+   Text = <<"File metadata not found">>,
    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
 file_retrieval_error(Error) ->
    Text = list_to_binary(io_lib:format("Error retrieving file: ~p", [Error])),
