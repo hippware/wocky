@@ -142,7 +142,8 @@ keyspace_tables(_) -> [
     privacy,
     privacy_item,
     tros_request,
-    phone_lookup_count
+    phone_lookup_count,
+    group_chat
 ].
 
 %% A lookup table that maps globally unique handle to user account id
