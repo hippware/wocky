@@ -22,20 +22,14 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [
-     {group, chat}
+    [send_messages,
+     add_user,
+     remove_user,
+     get_info,
+     invalid_messages,
+     invalid_iq
     ].
 
-groups() ->
-    [
-     {chat, [sequence], [send_messages,
-                         add_user,
-                         remove_user,
-                         get_info,
-                         invalid_messages,
-                         invalid_iq
-                        ]}
-    ].
 
 %%--------------------------------------------------------------------
 %% Init & teardown
@@ -43,24 +37,16 @@ groups() ->
 
 init_per_suite(Config) ->
     test_helper:start_ejabberd(),
-    {ok, _} = application:ensure_all_started(p1_stringprep),
     wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [group_chat]),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
+    escalus:create_users(Config),
+    escalus_ejabberd:wait_for_session_count(Config, 0),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config),
     test_helper:stop_ejabberd(),
     ok.
-
-init_per_group(_GroupName, Config) ->
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [group_chat]),
-    escalus:create_users(Config),
-    escalus_ejabberd:wait_for_session_count(Config, 0),
-    Config.
-
-end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
