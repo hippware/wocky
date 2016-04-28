@@ -323,7 +323,7 @@ table_definition(auth_token) ->
     #table_def{
        name = auth_token,
        columns = [
-           {user, text},       % User ID (userpart of JID)
+           {user, text},           % User ID (userpart of JID)
            {server, text},         % Server (domainpart of JID)
            {resource, text},       % Resource (resourcepart of JID)
            {auth_token, text}      % Token
