@@ -17,6 +17,14 @@
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 
+% There's some overlap here where we want to test the MAM operation
+% on group messages, so it's handy to use a couple of functions from the
+% MAM suite.
+-import(mam_SUITE, [stanza_archive_request/2,
+                    assert_respond_size/2,
+                    wait_archive_respond_iq_first/1
+                   ]).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -27,7 +35,8 @@ all() ->
      remove_user,
      get_info,
      invalid_messages,
-     invalid_iq
+     invalid_iq,
+     archive
     ].
 
 
@@ -151,6 +160,41 @@ invalid_messages(Config) ->
         lists:foreach(fun(U) -> assert_no_stanzas(U) end,
                       [Alice, Bob, Carol])
       end).
+
+archive(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        GroupID = start_chat(Alice, [Bob]),
+        Msg = <<"Archive me!">>,
+        MsgStanza = chat_stanza(?ALICE_B_JID, GroupID, Msg),
+        escalus:send(Alice, MsgStanza),
+        wait_for_msg(Bob, ?ALICE_B_JID, Msg),
+        GroupJIDBin = jid:to_binary(jid:make(GroupID, ?LOCAL_CONTEXT, <<>>)),
+        ArchReq = stanza_archive_request(<<"q1">>, GroupJIDBin),
+        escalus:send(Alice, ArchReq),
+        assert_respond_size(1, wait_archive_respond_iq_first(Alice)),
+        escalus:send(Bob, ArchReq),
+        assert_respond_size(1, wait_archive_respond_iq_first(Bob)),
+
+        % Carol's not in the chat, so she can't see the archive:
+        expect_iq_error(ArchReq, Carol),
+
+        % Let's add her
+        AddStanza = add_participant_stanza(?ALICE_B_JID, ?CAROL_B_JID,
+                                           GroupID),
+        expect_iq_success(AddStanza, Alice),
+        wait_for_add(Carol, GroupID),
+        wait_for_other_add(Bob, ?CAROL_B_JID, GroupID),
+
+        % Carol can now read the archive
+        escalus:send(Carol, ArchReq),
+        assert_respond_size(1, wait_archive_respond_iq_first(Carol)),
+
+        timer:sleep(500),
+        lists:foreach(fun(U) -> assert_no_stanzas(U) end,
+                      [Alice, Bob, Carol])
+      end).
+
 
 invalid_iq(Config) ->
     escalus:story(Config, [{alice, 1}],

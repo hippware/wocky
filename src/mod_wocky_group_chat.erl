@@ -81,10 +81,11 @@ handle_packet(From, LServer, Group, Packet) ->
 
 process_packet(From, LServer, Node, Packet) ->
     do([error_m ||
-        Group <- check_node(Node),
-        check_group(Group),
-        GroupRec <- get_group(LServer, Group),
-        forward_packet(From, GroupRec, Packet)
+        GroupID <- check_node(Node),
+        check_group(GroupID),
+        GroupRec <- get_group(LServer, GroupID),
+        forward_packet(From, GroupRec, Packet),
+        archive_packet(LServer, GroupID, Packet)
        ]).
 
 check_group(Group) ->
@@ -110,6 +111,13 @@ forward_packet(From, #{participants := Participants},
 
 forward_to_participant(From, To, Packet) ->
     ejabberd_router:route(From, jid:from_binary(To), Packet).
+
+archive_packet(LServer, GroupID, Packet) ->
+    GroupJID = jid:make(GroupID, LServer, <<>>),
+    ejabberd_hooks:run(user_send_packet, LServer,
+                       [GroupJID,
+                        jid:from_binary(?GROUP_CHAT_WITH_JID),
+                        Packet]).
 
 msg_error_response(From, E, Orig) ->
     Msg = xml:replace_tag_attr(<<"type">>, <<"error">>, Orig),

@@ -27,5 +27,6 @@
 -define(NS_GROUP_CHAT, <<"hippware.com/hxep/groupchat">>).
 
 -define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
+-define(GROUP_CHAT_WITH_JID, <<"$$GROUP_CHAT$$">>).
 
 -endif. % ifdef WOCKY_HRL

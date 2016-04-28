@@ -30,7 +30,8 @@ mod_wocky_mam_test_() ->
 before_all() ->
     meck:new(gen_mod, [passthrough]),
     meck:expect(gen_mod, get_module_opt,
-                fun(global, mod_wocky_mam, message_ttl, infinity) -> infinity
+                fun(global, mod_wocky_mam, message_archive_ttl, infinity) ->
+                        infinity
                 end),
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),

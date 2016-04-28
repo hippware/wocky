@@ -69,6 +69,7 @@
 
 -compile({parse_transform, fun_chain}).
 
+-include("wocky.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
 %% gen_mod handlers
@@ -148,13 +149,14 @@ remove_archive_hook(Host, _ArcID, UserJID) ->
                      ) -> ok.
 archive_message_hook(_Result, Host, MessID, _UserID,
                 LocJID, RemJID, _SrcJID, Direction, Packet) ->
-    TTL = gen_mod:get_module_opt(global, ?MODULE, message_ttl, infinity),
     PacketBin = exml:to_binary(Packet),
-    Row = #{id => MessID, user_jid => archive_jid(LocJID),
+    Row = #{id => MessID,
+            user_jid => archive_jid(LocJID),
             other_jid => archive_jid(RemJID),
-            time => now, message => PacketBin,
+            time => now,
+            message => PacketBin,
             outgoing => Direction =:= outgoing},
-    ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row, TTL)).
+    ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row)).
 
 %%%===================================================================
 %%% mam_lookup_messages callback
@@ -180,17 +182,29 @@ archive_message_hook(_Result, Host, MessID, _UserID,
           Offset      :: non_neg_integer() | undefined,
           MessageRows :: [result_row()]}}.
 
+lookup_messages_hook(Result, Host, UserID, UserJID, RSM, Borders, Start, End,
+                     Now, WithJID, PageSize, LimitPassed, MaxResultLimit,
+                     Simple) ->
+    {UserJID1, WithJID1} =
+    case is_local_group_chat_member(UserJID, WithJID, Host) of
+        true -> {WithJID, undefined};
+        false -> {UserJID, WithJID}
+    end,
+    lookup_messages(Result, Host, UserID, UserJID1, RSM, Borders, Start, End,
+                    Now, WithJID1, PageSize, LimitPassed, MaxResultLimit,
+                    Simple).
+
 %% No RSM data, no borders; time may be present - generate some RSM data
 %% and use the function below:
-lookup_messages_hook(Result, Host, UserID, UserJID,
+lookup_messages(Result, Host, UserID, UserJID,
                 undefined, undefined,
                 Start, End, Now, WithJID,
                 PageSize, LimitPassed, MaxResultLimit, Simple) ->
-    lookup_messages_hook(Result, Host, UserID, UserJID,
+    lookup_messages(Result, Host, UserID, UserJID,
                     #rsm_in{max = PageSize}, undefined, Start, End, Now,
                     WithJID, PageSize, LimitPassed, MaxResultLimit, Simple);
 
-lookup_messages_hook(_Result, Host, _UserID, UserJID,
+lookup_messages(_Result, Host, _UserID, UserJID,
                 #rsm_in{id = undefined, index = undefined,
                         max = RSMMax, direction = Direction},
                 undefined, Start, End, _Now, WithJID,
@@ -205,16 +219,16 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
 
 %% No RSM data, borders present. Generate RSM based off the pagesize and use
 %% the function below:
-lookup_messages_hook(Result, Host, UserID, UserJID,
+lookup_messages(Result, Host, UserID, UserJID,
                 undefined, Borders,
                 undefined, undefined, Now, WithJID,
                 PageSize, LimitPassed, MaxResultLimit, Simple) ->
-    lookup_messages_hook(Result, Host, UserID, UserJID,
+    lookup_messages(Result, Host, UserID, UserJID,
                 #rsm_in{max = PageSize}, Borders, undefined, undefined,
                 Now, WithJID, PageSize, LimitPassed, MaxResultLimit, Simple);
 
 %% RSM direction/limit data and borders present.
-lookup_messages_hook(_Result, Host, _UserID, UserJID,
+lookup_messages(_Result, Host, _UserID, UserJID,
                 #rsm_in{
                    max = RSMMax,
                    direction = Direction,
@@ -238,7 +252,7 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
     return_result(Counts, Rows);
 
 %% RSM data present with index only (out-of-order retrieval):
-lookup_messages_hook(_Result, Host, _UserID, UserJID,
+lookup_messages(_Result, Host, _UserID, UserJID,
                 #rsm_in{id = undefined, index = Index,
                         max = RSMMax, direction = Direction},
                 undefined, undefined, undefined, _Now, WithJID,
@@ -253,7 +267,7 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
 
 %% RSM data present with ID - find the timestamp for that ID and do a timestamp
 %% based lookup:
-lookup_messages_hook(_Result, Host, _UserID, UserJID,
+lookup_messages(_Result, Host, _UserID, UserJID,
                 #rsm_in{direction = Direction, id = ID,
                         index = undefined, max = RSMMax},
                 undefined, undefined, undefined, _Now, WithJID,
@@ -267,7 +281,7 @@ lookup_messages_hook(_Result, Host, _UserID, UserJID,
                              undefined, undefined, undefined, Rows),
     return_result(Counts, Rows);
 
-lookup_messages_hook(_, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
+lookup_messages(_, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
     error(unhandled_lookup_parameters).
 
 %%%===================================================================
@@ -470,8 +484,20 @@ add_limit(undefined, {Q, V}) -> {Q, V};
 add_limit(Limit, {Q, V}) ->
     {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
 
+maybe_add_ttl(Row = #{with_jid := ?GROUP_CHAT_WITH_JID}) ->
+    TTL = gen_mod:get_module_opt(global, ?MODULE,
+                                 group_chat_archive_ttl, infinity),
+    maybe_add_ttl(Row, TTL);
+maybe_add_ttl(Row) ->
+    TTL = gen_mod:get_module_opt(global, ?MODULE,
+                                 message_archive_ttl, infinity),
+    maybe_add_ttl(Row, TTL).
+
 maybe_add_ttl(Row, infinity) -> Row;
 maybe_add_ttl(Row, TTL) -> Row#{'[ttl]' => TTL}.
+
+
+
 
 add_filtering(undefined, {Q, V}) -> {Q, V};
 add_filtering(_, {Q, V}) ->
@@ -480,6 +506,17 @@ add_filtering(_, {Q, V}) ->
 %%%===================================================================
 %%% Other utility functions
 %%%===================================================================
+
+is_local_group_chat_member(User, #jid{luser = LUser, lserver = Host}, Host) ->
+    case wocky_db:select_one(Host, group_chat, participants, #{id => LUser}) of
+        not_found -> false;
+        Participants -> is_participant(User, Participants)
+    end;
+is_local_group_chat_member(_, _, _) ->
+    false.
+
+is_participant(User, Participants) ->
+    lists:member(jid:to_binary(jid:to_bare(User)), Participants).
 
 maybe_inclusive(inclusive) -> "=";
 maybe_inclusive(exclusive) -> "".
