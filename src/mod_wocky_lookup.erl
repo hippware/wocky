@@ -58,7 +58,6 @@ handle_phone_iq_get(User, Server, Els, IQ) ->
 
 lookup_reductions(Server, User) ->
     Criteria = #{user => User, server => Server, date => get_date()},
-    io:fwrite("BJD ~p", [Criteria]),
     case wocky_db:select_one(Server, phone_lookup_count, count, Criteria) of
         not_found -> ?DEFAULT_REDUCTIONS;
         null -> ?DEFAULT_REDUCTIONS;
