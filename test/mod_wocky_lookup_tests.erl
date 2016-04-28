@@ -68,11 +68,12 @@ item_el(I) ->
            attrs = [{<<"id">>, iolist_to_binary(I)}]}.
 
 test_phone_iq_get_request() ->
-  ErrorIQ = #iq{type = error, sub_el = [?ERR_JID_MALFORMED]},
   { "handle_phone_iq with type get", [
-    { "returns an error IQ when the JID is not a UUID", [
-      ?_assertMatch(ErrorIQ, handle_phone_iq(#jid{luser = "foo"}, ?TO,
-                                             make_iq([])))
+    { "returns an empty result when the JID is not a UUID", [
+      ?_assertMatch(?RESULT_IQ([]),
+                    handle_phone_iq(#jid{luser = <<"foo">>,
+                                         lserver = ?LOCAL_CONTEXT},
+                                    ?TO, make_iq([])))
     ]},
     { "returns an empty result IQ if there are no item elements", [
       ?_assertMatch(?RESULT_IQ([]), handle_phone_iq(?FROM, ?TO, make_iq([])))

@@ -46,13 +46,7 @@ stop(Host) ->
 handle_phone_iq(From, _To, #iq{type = get} = IQ) ->
     #iq{sub_el = #xmlel{children = Els}} = IQ,
     #jid{luser = LUser, lserver = LServer} = From,
-    case wocky_db:is_valid_id(LUser) of
-        true ->
-            handle_phone_iq_get(LUser, LServer, Els, IQ);
-
-        false ->
-            IQ#iq{type = error, sub_el = [?ERR_JID_MALFORMED]}
-    end;
+    handle_phone_iq_get(LUser, LServer, Els, IQ);
 handle_phone_iq(_From, _To, #iq{type = set} = IQ) ->
     IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
 
@@ -64,6 +58,7 @@ handle_phone_iq_get(User, Server, Els, IQ) ->
 
 lookup_reductions(Server, User) ->
     Criteria = #{user => User, server => Server, date => get_date()},
+    io:fwrite("BJD ~p", [Criteria]),
     case wocky_db:select_one(Server, phone_lookup_count, count, Criteria) of
         not_found -> ?DEFAULT_REDUCTIONS;
         null -> ?DEFAULT_REDUCTIONS;

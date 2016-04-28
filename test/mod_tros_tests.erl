@@ -202,8 +202,7 @@ test_bad_download_ids(_Backend) ->
     {"Bad file ID on download request", [
         {"Failed due to malformed UUID", [
             ?_assertEqual(
-               expected_dl_error_packet(
-                 ["Invalid file ID: ", BadUUID], BadUUID),
+               expected_dl_missing_error_packet(BadUUID),
                  handle_iq(test_user_jid(?CAROL),
                            test_server_jid(),
                            download_packet(BadUUID)))
@@ -364,7 +363,7 @@ expected_dl_missing_error_packet(FileID) ->
         "<error code='404' type='cancel'>"
           "<item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
           "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
-            "File metadata not found."
+            "File metadata not found"
           "</text>"
         "</error>"
       "</iq>">>.
