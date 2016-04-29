@@ -25,15 +25,14 @@ expect_iq_error(Stanza, User) ->
     expect_something(Stanza, User, is_iq_error).
 
 expect_something(Stanza, User, Expect) ->
-    FinalStanza = add_to_from(Stanza, User),
+    FinalStanza = add_to(Stanza, User),
     ct:log("Sending stanza: ~p", [FinalStanza]),
     ResultStanza = escalus:send_and_wait(User, FinalStanza),
     ct:log("Result stanza: ~p", [ResultStanza]),
     escalus:assert(Expect, ResultStanza),
     ResultStanza.
 
-add_to_from(Stanza, User) ->
-    escalus_stanza:to(
-      escalus_stanza:from(Stanza, User),
+add_to(Stanza, User) ->
+    escalus_stanza:to(Stanza,
       escalus_client:server(User)).
 
