@@ -35,7 +35,7 @@ port() -> 9999.
 
 headers() -> [{"content-type", "application/json"}].
 body() ->
-    JSON = [{phone_number, ?PHONE_NUMBER},
+    JSON = [{phoneNumber, ?PHONE_NUMBER},
             {access_token, {struct,
                             %% Obviously these aren't valid, but we don't
                             %% check them so just jam anything in for now
