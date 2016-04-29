@@ -10,7 +10,8 @@
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0,
          start_ejabberd/0, start_ejabberd/1,
-         version/0, server/0, is_testing/0]).
+         version/0, server/0, is_testing/0,
+         get_config/1]).
 
 
 -spec start(string()) -> ok.
@@ -61,6 +62,20 @@ server() ->
 -spec is_testing() -> boolean().
 is_testing() ->
     is_testing_server(server()).
+
+-spec get_config(atom()) -> term().
+get_config(Key) ->
+    %% Try pulling the config from ejabberd
+    try
+        Host = hd(ejabberd_config:get_global_option(hosts)),
+        case ejabberd_config:get_local_option(Key, Host) of
+            undefined -> default_config(Key);
+            Value -> Value
+        end
+    catch
+        _:_ ->
+            default_config(Key)
+    end.
 
 
 %%%===================================================================
@@ -118,3 +133,7 @@ reset_log_levels() ->
     ok = lager:set_loglevel(lager_file_backend, "debug.log", debug),
     ok = lager:set_loglevel(lager_file_backend, "wocky.log", warning),
     ok.
+
+default_config(Key) ->
+    {ok, Value} = application:get_env(wocky, Key),
+    Value.
