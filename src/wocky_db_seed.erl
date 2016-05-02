@@ -106,7 +106,8 @@ seed_keyspace(Context, Server) ->
       keyspace_tables(Context)).
 
 prepare_tables(Context, Tables) ->
-    ok = wocky_db:create_keyspace(Context, simple, 1),
+    {Strategy, Factor} = wocky_app:get_config(keyspace_replication),
+    ok = wocky_db:create_keyspace(Context, Strategy, Factor),
     ok = foreach_table(Context, fun recreate_table/2, Tables).
 
 clear_tables(Context, Tables) ->

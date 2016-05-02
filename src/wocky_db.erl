@@ -553,9 +553,10 @@ table_columns(Table) ->
 %%====================================================================
 
 run_query(Context, Query) ->
-    Spec = wocky_app:get_config(cqerl_node),
-    ok = lager:debug("DB connection spec: ~p~n", [Spec]),
-    case get_client(Spec, Context) of
+    Nodes = wocky_app:get_config(cassandra_nodes),
+    Opts = wocky_app:get_config(cassandra_opts),
+    ok = lager:debug("DB connection: ~p - ~p", [Nodes, Opts]),
+    case get_client(Context, hd(Nodes), Opts) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
             cqerl:close_client(Client),
@@ -564,10 +565,10 @@ run_query(Context, Query) ->
             {error, Error}
     end.
 
-get_client(Spec, none) ->
-    cqerl:get_client(Spec, []);
-get_client(Spec, Context) ->
-    cqerl:get_client(Spec, [{keyspace, keyspace_name(Context)}]).
+get_client(none, Node, Opts) ->
+    cqerl:get_client(Node, Opts);
+get_client(Context, Node, Opts) ->
+    cqerl:get_client(Node, [{keyspace, keyspace_name(Context)}|Opts]).
 
 %% Return the keyspace name for the given context.
 -spec keyspace_name(context()) -> binary().
