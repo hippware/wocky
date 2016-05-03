@@ -599,7 +599,8 @@ make_query(Query, Values, Consistency) ->
     #cql_query{statement = Query,
                values = Values,
                reusable = true,
-               consistency = Consistency}.
+               consistency = Consistency,
+               serial_consistency = local_serial}.
 
 make_batch_query(QueryList, Consistency, Mode) ->
     #cql_query_batch{queries = batch_query_list(QueryList),
