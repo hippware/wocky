@@ -190,6 +190,10 @@ archive(Config) ->
         escalus:send(Carol, ArchReq),
         assert_respond_size(1, wait_archive_respond_iq_first(Carol)),
 
+        % Test with XEP-313 style form-baed query
+        escalus:send(Carol, xep_0313_gc_query(GroupID)),
+        assert_respond_size(1, wait_archive_respond_iq_first(Carol)),
+
         timer:sleep(500),
         lists:foreach(fun(U) -> assert_no_stanzas(U) end,
                       [Alice, Bob, Carol])
@@ -420,3 +424,19 @@ invalid_iq_stanza() ->
            children = [#xmlel{name = <<"new-chat">>,
                               attrs = [{<<"xmlns">>,
                                         ?NS_GROUP_CHAT}]}]}.
+
+xep_0313_gc_query(GroupID) ->
+    {ok, XML} = exml:parse(iolist_to_binary(
+        ["<iq type='set' id='juliet1'>"
+          "<query xmlns='urn:xmpp:mam:1'>"
+            "<x xmlns='jabber:x:data' type='submit'>"
+              "<field var='FORM_TYPE' type='hidden'>"
+                "<value>urn:xmpp:mam:1</value>"
+              "</field>"
+              "<field var='with'>"
+                "<value>", GroupID, "@", ?LOCAL_CONTEXT, "</value>"
+              "</field>"
+            "</x>"
+          "</query>"
+        "</iq>"])),
+    XML.

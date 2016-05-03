@@ -265,7 +265,7 @@ do_download(ResultStanza) ->
     true = lists:member({"content-length",
                          integer_to_list(byte_size(RespBin))},
                         RespHeaders),
-    true = lists:member({"content-type","image/png"}, RespHeaders),
+    true = lists:member({"content-type", "image/png"}, RespHeaders),
     RespBin.
 
 request_wrapper(ID, Type, Name, DataFields) ->
