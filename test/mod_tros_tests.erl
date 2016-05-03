@@ -46,7 +46,11 @@ before_all(Backend) ->
                    (tros_public_port) -> 1025
                 end),
     meck:expect(ejabberd_config, get_local_option,
-                fun(cqerl_node, _) -> {"127.0.0.1", 9042}
+                %% Let these options fall through to the test config
+                fun(cassandra_nodes, _) -> undefined;
+                   (cassandra_opts, _) -> undefined;
+                   (keyspace_prefix, _) -> undefined;
+                   (keyspace_replication, _) -> undefined
                 end),
     meck:expect(ejabberd_config, get_global_option,
                 fun(language) -> <<"en">>;

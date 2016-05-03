@@ -20,8 +20,10 @@
          {wocky_env, "dev"},
          {config_dir, "etc"},
          {start_ejabberd, false},
-         {cqerl_node, {"127.0.0.1", 9042}},
+         {francus_chunk_size, 1048576}, % 1MB
+         {cassandra_nodes, [{"127.0.0.1", 9042}]},
+         {cassandra_opts, []},
          {keyspace_prefix, "wocky_test_"},
-         {francus_chunk_size, 1048576} % 1MB
+         {keyspace_replication, {simple, 1}}
         ]}
  ]}.

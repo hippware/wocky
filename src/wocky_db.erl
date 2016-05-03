@@ -552,26 +552,11 @@ table_columns(Table) ->
 %% Internal functions
 %%====================================================================
 
-default_db_config() ->
-    application:get_env(wocky, cqerl_node, {}).
-
-get_db_config() ->
-    %% Try pulling the config from ejabberd
-    try
-        [Host] = ejabberd_config:get_global_option(hosts),
-        case ejabberd_config:get_local_option(cqerl_node, Host) of
-            undefined -> default_db_config();
-            Value -> Value
-        end
-    catch
-        _:_ ->
-            default_db_config()
-    end.
-
 run_query(Context, Query) ->
-    Spec = get_db_config(),
-    ok = lager:debug("DB connection spec: ~p~n", [Spec]),
-    case get_client(Spec, Context) of
+    Nodes = wocky_app:get_config(cassandra_nodes),
+    Opts = wocky_app:get_config(cassandra_opts),
+    ok = lager:debug("DB connection: ~p - ~p", [Nodes, Opts]),
+    case get_client(Context, hd(Nodes), Opts) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
             cqerl:close_client(Client),
@@ -580,10 +565,10 @@ run_query(Context, Query) ->
             {error, Error}
     end.
 
-get_client(Spec, none) ->
-    cqerl:get_client(Spec, []);
-get_client(Spec, Context) ->
-    cqerl:get_client(Spec, [{keyspace, keyspace_name(Context)}]).
+get_client(none, Node, Opts) ->
+    cqerl:get_client(Node, Opts);
+get_client(Context, Node, Opts) ->
+    cqerl:get_client(Node, [{keyspace, keyspace_name(Context)}|Opts]).
 
 %% Return the keyspace name for the given context.
 -spec keyspace_name(context()) -> binary().
@@ -593,8 +578,7 @@ keyspace_name(Context) ->
     to_keyspace([keyspace_prefix(), Context]).
 
 keyspace_prefix() ->
-    {ok, Prefix} = application:get_env(wocky, keyspace_prefix),
-    Prefix.
+    wocky_app:get_config(keyspace_prefix).
 
 %% Modify a string so it is a valid keyspace
 %% All invalid characters are replaced with underscore and then

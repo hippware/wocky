@@ -320,6 +320,8 @@ create_user_record(LUser, LServer, Handle, Password) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
+does_user_exist(<<>>, _LServer) ->
+    false;
 does_user_exist(LUser, _LServer) ->
     case wocky_db:select_one(shared, user, user, #{user => LUser}) of
         not_found -> false;
