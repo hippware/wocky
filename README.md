@@ -39,11 +39,7 @@ To create a production release, use:
     $ ./rebar3 release
 
 The production release will be built in _build/default/rel/wocky. If you want to
-run the release you can use one of two methods:
-
-    $ ./rebar3 run
-
-or
+run the release, you can:
 
     $ cd _build/default/rel/wocky
     $ bin/wocky console
