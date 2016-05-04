@@ -46,13 +46,16 @@ get_required_field(Elements, Field) ->
     end.
 
 get_token(Elements) ->
-    maps:get(<<"token">>, Elements, false).
+    {ok, maps:get(<<"token">>, Elements, false)}.
 
 get_provider_data(Elements) ->
-    maps:get(<<"provider_data">>, Elements, #{}).
+    case maps:get(<<"provider_data">>, Elements, {struct, []}) of
+        {struct, ProviderData} -> {ok, maps:from_list(ProviderData)};
+        _ -> {error, {"malformed-request", "Invalid provider_data"}}
+    end.
 
-check_provider_auth(<<"digits">>, ProviderData) ->
-    case wocky_digits_auth:verify(maps:from_list(ProviderData)) of
+check_provider_auth("digits", ProviderData) ->
+    case wocky_digits_auth:verify(ProviderData) of
         {ok, Result} -> {ok, Result};
         {error, {500, Error}} -> {error, {"temporary-auth-failure", Error}};
         {error, {_, Error}} -> {error, {"not-authorized", Error}}
@@ -66,19 +69,27 @@ create_or_update_user(ExternalID, PhoneNumber) ->
            wocky_app:server(), ExternalID) of
         not_found ->
             create_user(ExternalID, PhoneNumber);
-        #{user := User, phone_number := PhoneNumber, server := Server} ->
-            {ok, {User, Server, false}};
-        #{user := User, server := Server} ->
-            ok = wocky_db_user:set_phone_number(User, Server, PhoneNumber),
-            {ok, {User, Server, false}}
+        User ->
+            update_user(User, PhoneNumber)
     end.
+
+update_user(User, PhoneNumber) ->
+    Server = case wocky_db_user:get_user_data(User, wocky_app:server()) of
+        #{phone_number := PhoneNumber, server := Server_} ->
+            Server_;
+        #{server := Server_} ->
+            ok = wocky_db_user:set_phone_number(User, Server_, PhoneNumber),
+            Server_
+    end,
+    {ok, {User, Server, false}}.
 
 create_user(ExternalID, PhoneNumber) ->
     % TODO: This is where the code to assign a user to a particular server
     % will go:
     Server = wocky_app:server(),
+    ct:log("BJD Server = ~p", [Server]),
 
-    User = wocky_db_user:create_user(#{external_id => ExternalID}),
+    User = wocky_db_user:create_user(#{external_id => ExternalID, server => Server}),
     ok = wocky_db_user:set_phone_number(User, Server, PhoneNumber),
     {ok, {User, Server, true}}.
 

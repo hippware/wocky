@@ -44,6 +44,7 @@
 -record(state, {check_password}).
 
 start(_Host, Opts) ->
+    ok = lager:info("BJD Starting mod_wocky_sasl_plain"),
     Providers = proplists:get_value(auth_providers, Opts),
     {atomic, _} = ejabberd_config:add_local_option(wocky_sasl_auth_providers,
                                                    Providers),
@@ -71,10 +72,13 @@ mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
                 ClientIn :: binary()
                ) -> {ok, proplists:proplist()} | {error, binary()}.
 mech_step(State, ClientIn) ->
+    ok = lager:info("BJD mech_step ~p", [ClientIn]),
     case prepare(ClientIn) of
         [_AuthzId, <<"register">>, <<"$J$", JSON/binary>>] ->
+            ok = lager:info("BJD mech_step ~p ~p", [_AuthzId, JSON]),
             do_registration(JSON);
         [AuthzId, User, Password] ->
+            ok = lager:info("BJD mech_step ~p ~p ~p", [AuthzId, User, Password]),
             case (State#state.check_password)(User,
                                               Password
                                              ) of
@@ -153,7 +157,7 @@ do_registration(JSON) ->
         {ok, RegResult} ->
             make_register_response(RegResult);
         {error, {Response, Text}} ->
-            {false, {list_to_binary(Response), list_to_binary(Text)}}
+            {error, {list_to_binary(Response), list_to_binary(Text)}}
     end.
 
 make_register_response(#reg_result{user = User,
@@ -163,7 +167,10 @@ make_register_response(#reg_result{user = User,
                                    token = Token,
                                    token_expiry = TokenExpiry,
                                    external_id = ExternalID}) ->
-   Handle = wocky_db_user:get_handle(User, Server),
+   Handle = case wocky_db_user:get_handle(User, Server) of
+                {error, not_found} -> <<>>;
+                H -> H
+            end,
    JSONFields = [{user, User},
                  {server, Server},
                  {handle, Handle},
@@ -172,7 +179,7 @@ make_register_response(#reg_result{user = User,
                  {token, Token},
                  {token_expiry, TokenExpiry},
                  {external_id, ExternalID}],
-   JSON = mochijson2:encode(JSONFields),
-   {false, {<<"redirect">>, JSON}}.
+   JSON = mochijson2:encode({struct, JSONFields}),
+   {error, {<<"redirect">>, JSON}}.
 
 

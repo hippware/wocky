@@ -66,7 +66,7 @@ verify_phone_number(PhoneNumber, Body) ->
 
 get_required_field(Field, Elements) ->
     case maps:find(Field, Elements) of
-        {ok, Value} -> {ok, Value};
+        {ok, Value} -> {ok, list_to_binary(Value)};
         error -> {error, {401, ["Missing '", Field, "' field"]}}
     end.
 
