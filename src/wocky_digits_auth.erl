@@ -71,7 +71,8 @@ get_required_field(Field, Elements) ->
     end.
 
 has_bypass_prefix(PhoneNumber) ->
-    Prefixes = ejabberd_config:get_local_option_or_default(wocky_sasl_bypass_prefixes, []),
+    Prefixes = ejabberd_config:get_local_option_or_default(
+                 wocky_sasl_bypass_prefixes, []),
     lists:any(fun(Prefix) -> has_prefix(PhoneNumber, Prefix) end,
               Prefixes).
 

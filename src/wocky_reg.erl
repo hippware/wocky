@@ -17,8 +17,10 @@ register_user(JSON) ->
         Resource <- get_required_field(Elements, <<"resource">>),
         ProviderData <- get_provider_data(Elements),
         GetToken <- get_token(Elements),
-        {ExternalID, PhoneNumber} <- check_provider_auth(Provider, ProviderData),
-        {User, Server, IsNew} <- create_or_update_user(ExternalID, PhoneNumber),
+        {ExternalID, PhoneNumber} <- check_provider_auth(Provider,
+                                                         ProviderData),
+        {User, Server, IsNew} <- create_or_update_user(ExternalID,
+                                                       PhoneNumber),
         Token <- maybe_get_token(GetToken, User, Server, Resource),
         {ok, #reg_result{
                 user = User,
@@ -60,7 +62,8 @@ check_provider_auth(P, _) -> {error, {"not-authorized",
                                       ["Unsupported provider: ", P]}}.
 
 create_or_update_user(ExternalID, PhoneNumber) ->
-    case wocky_db_user:get_user_by_external_id(wocky_app:server(), ExternalID) of
+    case wocky_db_user:get_user_by_external_id(
+           wocky_app:server(), ExternalID) of
         not_found ->
             create_user(ExternalID, PhoneNumber);
         #{user := User, phone_number := PhoneNumber, server := Server} ->

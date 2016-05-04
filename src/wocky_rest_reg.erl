@@ -230,7 +230,8 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
 verify_session(#{user := UUID, server := Server, resource := Resource},
                SessionID) ->
     wocky_db_user:check_token(UUID, Server, Resource, SessionID);
-verify_session(Fields = #{external_id := ExternalID, server := Server}, SessionID) ->
+verify_session(Fields = #{external_id := ExternalID, server := Server},
+               SessionID) ->
     case wocky_db_user:get_user_by_external_id(Server, ExternalID) of
         not_found ->
             false;

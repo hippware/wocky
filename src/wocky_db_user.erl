@@ -566,7 +566,8 @@ get_user_data(LUser, _LServer) ->
 -spec get_user_by_external_id(ejabberd:lserver(), auth_name())
         -> ejabberd:luser() | not_found.
 get_user_by_external_id(_LServer, ExternalID) ->
-    wocky_db:select_one(shared, external_id, user, #{external_id => ExternalID}).
+    wocky_db:select_one(shared, external_id, user,
+                        #{external_id => ExternalID}).
 
 
 %% @doc Returns the user ID and server associated with an given handle
