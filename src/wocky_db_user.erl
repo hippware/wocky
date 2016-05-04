@@ -62,6 +62,8 @@
 %%%
 -module(wocky_db_user).
 
+-include("wocky.hrl").
+
 -type handle()       :: binary().
 -type phone_number() :: binary().
 -type auth_name()    :: binary().
@@ -92,10 +94,6 @@
          get_user_by_auth_name/2,
          get_user_by_handle/1,
          get_user_by_phone_number/1]).
-
--define(TOKEN_BYTES, 32).
--define(TOKEN_MARKER, "$T$").
--define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
 
 -compile({parse_transform, do}).
 

@@ -51,5 +51,9 @@ handle_local_iq(LUser, LServer, LResource, #iq{type = set} = IQ) ->
 iq_result(IQ, Content) ->
     IQ#iq{type = result,
           sub_el = [#xmlel{name = <<"query">>,
-                           attrs = [{<<"xmlns">>, ?NS_TOKEN}],
+                           attrs = [{<<"xmlns">>, ?NS_TOKEN},
+                                    {<<"duration">>, expiry_string()}],
                            children = Content}]}.
+
+expiry_string() ->
+    integer_to_binary(?TOKEN_EXPIRE).

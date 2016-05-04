@@ -29,4 +29,8 @@
 -define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
 -define(GROUP_CHAT_WITH_JID, <<"$$GROUP_CHAT$$">>).
 
+-define(TOKEN_BYTES, 32).
+-define(TOKEN_MARKER, "$T$").
+-define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
+
 -endif. % ifdef WOCKY_HRL
