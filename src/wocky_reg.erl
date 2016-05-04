@@ -1,5 +1,6 @@
 -module(wocky_reg).
 
+-include("wocky.hrl").
 -include("wocky_reg.hrl").
 
 -export([register_user/1]).
@@ -28,6 +29,7 @@ register_user(JSON) ->
                 provider = Provider,
                 is_new = IsNew,
                 token = Token,
+                token_expiry = ?TOKEN_EXPIRE,
                 external_id = ExternalID}}
        ]).
 
