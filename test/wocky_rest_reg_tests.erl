@@ -43,10 +43,10 @@ test_verify_session() ->
        { "rejects an invalid session/user combination", [
          ?_assertNot(verify_session(Fields, <<"$T$invalidToken">>))
        ]},
-       { "maps auth_user to the right uuid", [
-         ?_assert(verify_session(BaseFields#{auth_user => ?AUTH_USER},
+       { "maps external_id to the right uuid", [
+         ?_assert(verify_session(BaseFields#{external_id => ?EXTERNAL_ID},
                                  ?TOKEN)),
-         ?_assertNot(verify_session(BaseFields#{auth_user => ?AUTH_USER},
+         ?_assertNot(verify_session(BaseFields#{external_id => ?EXTERNAL_ID},
                                     <<"$T$badtoken">>))
        ]}
     ]}.

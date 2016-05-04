@@ -140,7 +140,7 @@ elements_to_map(Elements, Server) ->
 
 merge_defaults(Fields) ->
     Defaults = #{
-      auth_user                            => ?EMPTY,
+      external_id                          => ?EMPTY,
       user                                 => ?EMPTY,
       handle                               => ?EMPTY,
       first_name                           => ?EMPTY,
@@ -169,8 +169,8 @@ verify_auth_fields(#{'X-Auth-Service-Provider'            := X1,
     {error, {400, "The Digits fields or token (or both) must be supplied"}};
 verify_auth_fields(_) -> ok.
 
-verify_user_fields(#{auth_user := ?EMPTY, user := ?EMPTY}) ->
-    {error, {400, "auth_user or user (or both) must be supplied"}};
+verify_user_fields(#{external_id := ?EMPTY, user := ?EMPTY}) ->
+    {error, {400, "external_id or user (or both) must be supplied"}};
 verify_user_fields(#{resource := ?EMPTY}) ->
     {error, {400, "resource must be supplied"}};
 verify_user_fields(_) -> ok.
@@ -208,9 +208,9 @@ authenticate(#{phone_number := PhoneNumber} = Fields,
 
 verify_digits_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) ->
     case verify_auth(Auth, PhoneNumber, AuthProvider, AuthProviders) of
-        true ->
+        ok ->
             {true, digits};
-        {false, Code, Error} ->
+        {error, {Code, Error}} ->
             ok = lager:warning("Failed Digits auth during registration: ~B ~s",
                                [Code, Error]),
             {false, Code, Error}
@@ -224,14 +224,14 @@ verify_auth(Auth, PhoneNumber, AuthProvider, ValidProviders) ->
         false ->
             ok = lager:warning("Invalid authentication provider '~s'",
                                [AuthProvider]),
-            {false, 401, "Invalid authentication provider"}
+            {error, {401, "Invalid authentication provider"}}
     end.
 
 verify_session(#{user := UUID, server := Server, resource := Resource},
                SessionID) ->
     wocky_db_user:check_token(UUID, Server, Resource, SessionID);
-verify_session(Fields = #{auth_user := UserID, server := Server}, SessionID) ->
-    case wocky_db_user:get_user_by_auth_name(Server, UserID) of
+verify_session(Fields = #{external_id := ExternalID, server := Server}, SessionID) ->
+    case wocky_db_user:get_user_by_external_id(Server, ExternalID) of
         not_found ->
             false;
         User ->
@@ -239,9 +239,9 @@ verify_session(Fields = #{auth_user := UserID, server := Server}, SessionID) ->
     end.
 
 create_or_update_user(RD, Ctx = #state{fields = Fields
-                                              = #{auth_user := AuthUser,
+                                              = #{external_id := ExternalID,
                                                   server := Server}}) ->
-    case wocky_db_user:get_user_by_auth_name(Server, AuthUser) of
+    case wocky_db_user:get_user_by_external_id(Server, ExternalID) of
         not_found ->
             create_user(RD, Ctx);
         ExistingUser ->
@@ -261,9 +261,9 @@ create_user(RD, Ctx = #state{fields = Fields}) ->
 find_and_update_user(RD, Ctx = #state{fields = #{user := _}}) ->
     update_user(RD, Ctx);
 find_and_update_user(RD, Ctx = #state{fields = Fields
-                                             = #{auth_user := AuthUser,
+                                             = #{external_id := ExternalID,
                                                  server := Server}}) ->
-    UUID = wocky_db_user:get_user_by_auth_name(Server, AuthUser),
+    UUID = wocky_db_user:get_user_by_external_id(Server, ExternalID),
     update_user(RD, Ctx#state{fields = Fields#{user => UUID}}).
 
 update_user(RD, Ctx = #state{fields = Fields}) ->

@@ -91,7 +91,7 @@
          check_token/3,
          check_token/4,
          get_user_data/2,
-         get_user_by_auth_name/2,
+         get_user_by_external_id/2,
          get_user_by_handle/1,
          get_user_by_phone_number/1]).
 
@@ -561,12 +561,12 @@ get_user_data(LUser, _LServer) ->
 %%
 %% `LServer': the "domainpart" of the user's JID.
 %%
-%% `AuthUser': the authorization user name to look up.
+%% `ExternalID': the authorization user name to look up.
 %%
--spec get_user_by_auth_name(ejabberd:lserver(), auth_name())
+-spec get_user_by_external_id(ejabberd:lserver(), auth_name())
         -> ejabberd:luser() | not_found.
-get_user_by_auth_name(_LServer, AuthUser) ->
-    wocky_db:select_one(shared, auth_user, user, #{auth_user => AuthUser}).
+get_user_by_external_id(_LServer, ExternalID) ->
+    wocky_db:select_one(shared, external_id, user, #{external_id => ExternalID}).
 
 
 %% @doc Returns the user ID and server associated with an given handle

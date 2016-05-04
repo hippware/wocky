@@ -15,7 +15,7 @@
          set_phone_number/3,
          get_phone_number/2, get_user_by_phone_number/1,
          get_user_data/2,
-         get_user_by_auth_name/2
+         get_user_by_external_id/2
         ]).
 
 wocky_db_user_test_() ->
@@ -38,7 +38,7 @@ wocky_db_user_test_() ->
       test_maybe_set_handle(),
       test_set_phone_number(),
       test_get_user_data(),
-      test_auth_user(),
+      test_external_id(),
       test_create_user_from_map(),
       test_update_user_from_map(),
       test_set_avatar()
@@ -305,7 +305,7 @@ test_get_user_data() ->
         ?_assertMatch(#{user := ?ALICE,
                         handle := ?HANDLE,
                         phone_number := ?PHONE_NUMBER,
-                        auth_user := ?AUTH_USER},
+                        external_id := ?EXTERNAL_ID},
                       get_user_data(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "returns not_found for non-existant users", [
@@ -314,15 +314,15 @@ test_get_user_data() ->
     ]}
   ]}.
 
-test_auth_user() ->
-  { "auth_user", setup, fun before_each/0, fun after_each/1, [
-    { "gets an existing user from the auth_user", [
+test_external_id() ->
+  { "external_id", setup, fun before_each/0, fun after_each/1, [
+    { "gets an existing user from the external_id", [
         ?_assertEqual(?ALICE,
-                      get_user_by_auth_name(?LOCAL_CONTEXT, ?AUTH_USER))
+                      get_user_by_external_id(?LOCAL_CONTEXT, ?EXTERNAL_ID))
     ]},
-    { "gets not_found for non-existant auth_users", [
+    { "gets not_found for non-existant external_id", [
         ?_assertEqual(not_found,
-                      get_user_by_auth_name(?LOCAL_CONTEXT, <<"3413212312">>))
+                      get_user_by_external_id(?LOCAL_CONTEXT, <<"3413212312">>))
     ]}
   ]}.
 
@@ -333,7 +333,7 @@ test_create_user_from_map() ->
              first_name => <<"Alice">>,
              last_name => <<"Bobson">>,
              email => <<"alice@bob.com">>,
-             auth_user => ?AUTH_USER
+             external_id => ?EXTERNAL_ID
             },
   { "create_user", [
     { "creates a user excluding handle and phone_number fields", [
@@ -342,7 +342,7 @@ test_create_user_from_map() ->
                       first_name := <<"Alice">>,
                       last_name := <<"Bobson">>,
                       email := <<"alice@bob.com">>,
-                      auth_user := ?AUTH_USER,
+                      external_id := ?EXTERNAL_ID,
                       phone_number := null,
                       handle := null
                      },

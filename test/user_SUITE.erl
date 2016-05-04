@@ -121,7 +121,7 @@ some_fields(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"457">>, ?ALICE_UUID,
                                   [<<"user">>, <<"phone_number">>,
-                                   <<"auth_user">>]),
+                                   <<"external_id">>]),
         ResultStanza = expect_iq_success(QueryStanza, Alice),
 
         FieldsXML = exml_query:path(ResultStanza, [{element, <<"fields">>}]),
@@ -205,7 +205,7 @@ invalid_user(Config) ->
 missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"467">>, ?ALICE_UUID,
-                                  [<<"uuid">>, <<"email">>, <<"auth_user">>]),
+                                  [<<"uuid">>, <<"email">>, <<"external_id">>]),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = proplists:delete(<<"node">>, Attrs),
         BrokenStanza =
@@ -218,7 +218,7 @@ missing_node(Config) ->
 malformed_user(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = get_request(<<"468">>, ?ALICE_UUID,
-                                  [<<"user">>, <<"email">>, <<"auth_user">>]),
+                                  [<<"user">>, <<"email">>, <<"external_id">>]),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = [{<<"node">>, <<"baduserbad">>} |
                        proplists:delete(<<"node">>, Attrs)],
