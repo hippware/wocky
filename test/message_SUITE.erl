@@ -75,7 +75,6 @@ extended_fields(Config) ->
 
         RecStanza = escalus_client:wait_for_stanza(Bob),
 
-        ct:log("BJD\n~p\n~p", [ImageField, RecStanza#xmlel.children]),
         ?assert(lists:member(ImageField, RecStanza#xmlel.children))
     end).
 

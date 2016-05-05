@@ -459,7 +459,6 @@ generate_token() ->
 -spec assign_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
                   -> {ok, token()} | {error, not_found}.
 assign_token(LUser, LServer, LResource) ->
-    ct:log("BJD ~p ~p ~p", [LUser, LServer, LResource]),
     case does_user_exist(LUser, LServer) of
         true ->
             Token = generate_token(),

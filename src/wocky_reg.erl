@@ -56,7 +56,7 @@ get_provider_data(Elements) ->
         _ -> {error, {"malformed-request", "Invalid provider_data"}}
     end.
 
-check_provider_auth("digits", ProviderData) ->
+check_provider_auth(<<"digits">>, ProviderData) ->
     case wocky_digits_auth:verify(ProviderData) of
         {ok, Result} -> {ok, Result};
         {error, {500, Error}} -> {error, {"temporary-auth-failure", Error}};
@@ -89,9 +89,8 @@ create_user(ExternalID, PhoneNumber) ->
     % TODO: This is where the code to assign a user to a particular server
     % will go:
     Server = wocky_app:server(),
-    ct:log("BJD Server = ~p", [Server]),
-
-    User = wocky_db_user:create_user(#{external_id => ExternalID, server => Server}),
+    User = wocky_db_user:create_user(#{external_id => ExternalID,
+                                       server => Server}),
     ok = wocky_db_user:set_phone_number(User, Server, PhoneNumber),
     {ok, {User, Server, true}}.
 

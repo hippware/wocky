@@ -44,7 +44,6 @@
 -record(state, {check_password}).
 
 start(_Host, Opts) ->
-    ok = lager:info("BJD Starting mod_wocky_sasl_plain"),
     Providers = proplists:get_value(auth_providers, Opts),
     {atomic, _} = ejabberd_config:add_local_option(wocky_sasl_auth_providers,
                                                    Providers),
@@ -72,13 +71,10 @@ mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
                 ClientIn :: binary()
                ) -> {ok, proplists:proplist()} | {error, binary()}.
 mech_step(State, ClientIn) ->
-    ok = lager:info("BJD mech_step ~p", [ClientIn]),
     case prepare(ClientIn) of
         [_AuthzId, <<"register">>, <<"$J$", JSON/binary>>] ->
-            ok = lager:info("BJD mech_step ~p ~p", [_AuthzId, JSON]),
             do_registration(JSON);
         [AuthzId, User, Password] ->
-            ok = lager:info("BJD mech_step ~p ~p ~p", [AuthzId, User, Password]),
             case (State#state.check_password)(User,
                                               Password
                                              ) of
@@ -176,10 +172,12 @@ make_register_response(#reg_result{user = User,
                  {handle, Handle},
                  {provider, Provider},
                  {is_new, IsNew},
-                 {token, Token},
-                 {token_expiry, TokenExpiry},
-                 {external_id, ExternalID}],
+                 {external_id, ExternalID} |
+                 maybe_token_fields(Token, TokenExpiry)],
    JSON = mochijson2:encode({struct, JSONFields}),
    {error, {<<"redirect">>, JSON}}.
 
-
+maybe_token_fields(undefined, _) -> [];
+maybe_token_fields(Token, TokenExpiry) ->
+   [{token, Token},
+    {token_expiry, TokenExpiry}].
