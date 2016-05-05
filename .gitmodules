@@ -1,5 +1,5 @@
 [submodule "ext/MongooseIM"]
     path = ext/MongooseIM
     url = https://github.com/hippware/MongooseIM.git
-    branch = hippware/working
+    branch = origin/working
     ignore = dirty
