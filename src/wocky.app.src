@@ -11,7 +11,7 @@
                   lager,
                   ossp_uuid,
                   cqerl,
-                  p1_stringprep,
+                  stringprep,
                   webmachine,
                   z_stdlib]},
   {included_applications, [ejabberd]},
