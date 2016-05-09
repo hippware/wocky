@@ -35,7 +35,6 @@
 -export([start/1,
          stop/1,
          store_type/1,
-         login/2,
          set_password/3,
          check_password/3,
          check_password/5,
@@ -47,11 +46,9 @@
          get_vh_registered_users_number/2,
          get_password/2,
          get_password_s/2,
-         get_password/3,
          does_user_exist/2,
          remove_user/2,
-         remove_user/3,
-         plain_password_required/0]).
+         remove_user/3]).
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 
@@ -76,11 +73,6 @@ store_type(LServer) ->
         false -> plain;
         true -> scram
     end.
-
-
--spec login(ejabberd:luser(), ejabberd:lserver()) -> no_return().
-login(_LUser, _LServer) ->
-    erlang:error(not_implemented).
 
 
 -spec set_password(ejabberd:luser(), ejabberd:lserver(), binary())
@@ -209,12 +201,6 @@ get_password_s(LUser, LServer) ->
     end.
 
 
--spec get_password(ejabberd:luser(), ejabberd:lserver(), binary())
-                  -> scram:scram_tuple() | binary() | false.
-get_password(LUser, LServer, _DefaultValue) ->
-    get_password(LUser, LServer).
-
-
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
 does_user_exist(LUser, LServer) ->
     wocky_db_user:does_user_exist(LUser, LServer).
@@ -247,11 +233,6 @@ remove_user(LUser, LServer, Password) ->
             %% Mission accomplished, the user does not exist
             ok
     end.
-
-
--spec plain_password_required() -> false.
-plain_password_required() ->
-    false.
 
 
 %%%===================================================================
