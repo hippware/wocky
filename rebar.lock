@@ -32,7 +32,7 @@
   0},
  {<<"escalus">>,
   {git,"https://github.com/esl/escalus",
-       {ref,"f6395195959fb819172a2283d35ef2e89f533da2"}},
+       {ref,"b58c908de364cc936185016c6cea0b8dab2e9b39"}},
   0},
  {<<"exml">>,
   {git,"https://github.com/esl/exml",
