@@ -133,7 +133,7 @@ fields() ->
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
      {"email",        "string", private,     write,     default},
-     {"auth_user",    "string", private,     rest_only, default}
+     {"external_id",  "string", private,     rest_only, default}
     ].
 
 

@@ -66,13 +66,13 @@ unauthorized(_) ->
 
 reset_db(_) ->
     wocky_db_user:update_user(#{user => ?ALICE, server => ?LOCAL_CONTEXT,
-                                auth_user => <<"badauthuser">>}),
+                                external_id => <<"badexternalid">>}),
 
     JSON = encode(test_data()),
     {ok, {201, []}} = request(JSON),
 
-    #{auth_user := ?AUTH_USER} = wocky_db_user:get_user_data(?ALICE,
-                                                             ?LOCAL_CONTEXT).
+    #{external_id := ?EXTERNAL_ID} =
+    wocky_db_user:get_user_data(?ALICE, ?LOCAL_CONTEXT).
 
 %%%===================================================================
 %%% Helpers
