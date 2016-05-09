@@ -12,7 +12,7 @@
 -define(HANDLE,      <<"alice">>).
 -define(PHONE_NUMBER,<<"+1234">>).
 -define(AVATAR_ID,   <<"tros:8b70de6c-e6fe-11e5-9730-9a79f06e9478@localhost">>).
--define(AUTH_USER,   <<"701990807448920064">>).
+-define(EXTERNAL_ID, <<"701990807448920064">>).
 -define(PASS,        <<"password">>).
 -define(SCRAM,       <<"==SCRAM==,8dncGDJ45eXoMzqZ3zT6F/8gJt0=,"
                        "aEsAiUKWIdvXDW5oSaQxUJKHcOU=,Q0t9V/6+rkA1jv0LGA/IHw==,"

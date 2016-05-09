@@ -229,7 +229,7 @@ session_with_userid(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keyreplace(user, 1, session_test_data(?ALICE, ?TOKEN),
-                            {auth_user, ?AUTH_USER}),
+                            {external_id, ?EXTERNAL_ID}),
     ct:log("Data: ~p", [Data]),
     JSON = encode(Data),
     {ok, {201, _Body}} = request(JSON).
@@ -238,7 +238,7 @@ invalid_user_id(_) ->
     wocky_db_seed:seed_tables(shared, [user]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [auth_token]),
     Data = lists:keyreplace(user, 1, session_test_data(?ALICE, ?TOKEN),
-                            {auth_user, <<"999999999">>}),
+                            {external_id, <<"999999999">>}),
     JSON = encode(Data),
     {ok, {403, _Body}} = request(JSON).
 
@@ -252,7 +252,7 @@ missing_user_id(_) ->
 bypass_prefixes(_) ->
     start_digits_server(false),
     Data = [{resource, ?RESOURCE},
-            {auth_user, ?AUTH_USER},
+            {external_id, ?EXTERNAL_ID},
             {phone_number, <<"+15556667777">>},
             {'X-Auth-Service-Provider',
              list_to_binary(fake_digits_server:url())},
@@ -318,7 +318,7 @@ test_data() ->
     [{handle, ?TEST_HANDLE},
      {resource, ?RESOURCE},
      {email, <<"me@alice.com">>},
-     {auth_user, ?AUTH_USER},
+     {external_id, ?EXTERNAL_ID},
      {phone_number, ?PHONE_NUMBER},
      {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
      {'X-Verify-Credentials-Authorization', ?DIGITS_AUTH},
@@ -347,7 +347,7 @@ verify_elements(#{
   <<"handle">> := ?TEST_HANDLE,
   <<"resource">> := ?RESOURCE,
   <<"email">> := <<"me@alice.com">>,
-  <<"auth_user">> := ?AUTH_USER,
+  <<"external_id">> := ?EXTERNAL_ID,
   <<"phone_number">> := ?PHONE_NUMBER,
   <<"first_name">> := <<"Alice">>,
   <<"last_name">> := <<"Alison">>,
@@ -365,7 +365,7 @@ create_user() ->
       server => ?LOCAL_CONTEXT,
       handle => ?TEST_HANDLE,
       email => <<"me@alice.com">>,
-      auth_user => ?AUTH_USER,
+      external_id => ?EXTERNAL_ID,
       phone_number => ?PHONE_NUMBER,
       first_name => <<"Alice">>,
       last_name => <<"Alison">>

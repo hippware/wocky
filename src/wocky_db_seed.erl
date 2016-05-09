@@ -185,7 +185,7 @@ table_definition(user) ->
            {first_name, text},     % User's first name
            {last_name, text},      % User's last name
            {email, text},          % User's email address
-           {auth_user, text}       % The user ID received from Twitter Digits
+           {external_id, text}     % The user ID received from Twitter Digits
        ],
        primary_key = user
     };
@@ -399,7 +399,7 @@ table_indexes(session) -> [
 table_indexes(_) -> [].
 
 table_views(user) -> [
-    {auth_user, all, [auth_user, user], []}
+    {external_id, all, [external_id, user], []}
 ];
 table_views(roster) -> [
     {roster_version, all, [user, version, contact_jid], [{version, asc}]}
@@ -428,18 +428,18 @@ seed_data(phone_number_to_user, Server) ->
 seed_data(user, Server) ->
     Users = [
         #{user => ?ALICE,  handle => ?HANDLE,
-          phone_number => ?PHONE_NUMBER, auth_user => ?AUTH_USER,
+          phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
           avatar => tros:make_url(Server, ?AVATAR_FILE)},
         #{user => ?CAROL,  handle => <<"carol">>, first_name => <<"Carol">>,
-          phone_number => <<"+4567">>, auth_user => <<"123456">>},
+          phone_number => <<"+4567">>, external_id => <<"123456">>},
         #{user => ?BOB,    handle => <<"bob">>,
-          phone_number => <<"+8901">>, auth_user => <<"958731">>},
+          phone_number => <<"+8901">>, external_id => <<"958731">>},
         #{user => ?KAREN,  handle => <<"karen">>, avatar => ?AVATAR_ID,
           first_name => <<"Karen">>, last_name => <<"Kismet">>,
-          phone_number => <<"+5555">>, auth_user => <<"598234">>},
+          phone_number => <<"+5555">>, external_id => <<"598234">>},
         #{user => ?ROBERT, handle => <<"robert">>,
           last_name => <<"Robert The Bruce">>,
-          phone_number => <<"+6666">>, auth_user => <<"888312">>}
+          phone_number => <<"+6666">>, external_id => <<"888312">>}
     ],
     [U#{server => Server, password => ?SCRAM} || U <- Users];
 seed_data(last_activity, Server) ->
