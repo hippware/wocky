@@ -14,6 +14,7 @@
 -define(ERROR_NS, <<"hippware.com/hxep/errors">>).
 
 
+-include("wocky.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
@@ -69,8 +70,14 @@ handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, set,
         check_duplicate_unique_fields(Fields),
         set_unique_fields(User, LServer, Fields),
         set_other_fields(User, Fields),
-        {ok, make_set_response_iq(IQ, User)}]).
+        {ok, make_set_response_iq(IQ, User)}]);
 
+handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
+               #xmlel{name = <<"delete">>}) ->
+    ok = wocky_db_user:remove_user(LUser, LServer),
+    {ok, _Ref} = timer:apply_after(?USER_DELETE_DELAY, ejabberd_hooks, run,
+                                   [remove_user, LServer, [LUser, LServer]]),
+    {ok, make_delete_response_iq(IQ)}.
 
 get_user(ReqEl) ->
     case exml_query:attr(ReqEl, <<"node">>) of
@@ -226,6 +233,8 @@ make_set_response_iq(IQ, User) ->
           sub_el = #xmlel{name = <<"setResponse">>,
                           attrs = response_attrs(User)}}.
 
+make_delete_response_iq(IQ) ->
+    IQ#iq{type = result, sub_el = []}.
 
 response_attrs(User) ->
     [{<<"xmlns">>, ?USER_NS},

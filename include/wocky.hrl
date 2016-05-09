@@ -33,4 +33,10 @@
 -define(TOKEN_MARKER, "$T$").
 -define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
 
+% Delay between sending result of a delete request and calling the
+% delete hook (which terminates the connection). This is needed to
+% ensure that the deleting user receives the IQ response before
+% the connection is dropped.
+-define(USER_DELETE_DELAY, 2000).
+
 -endif. % ifdef WOCKY_HRL
