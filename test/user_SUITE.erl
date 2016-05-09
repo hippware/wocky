@@ -5,6 +5,7 @@
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
+-include_lib("stdlib/include/assert.hrl").
 
 -include("wocky_db_seed.hrl").
 
@@ -52,7 +53,8 @@ groups() ->
                          ]},
      {set, [sequence], [set_fields,
                         set_other_user,
-                        garbage_set
+                        garbage_set,
+                        delete_user
                        ]},
      {error_set, [sequence], [set_missing_node,
                               rest_writable_field,
@@ -304,6 +306,21 @@ set_missing_node(Config) ->
         expect_iq_error(BrokenStanza, Alice)
     end).
 
+delete_user(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza = delete_request(<<"999">>),
+        expect_iq_success(QueryStanza, Alice),
+        R = escalus:wait_for_stanza(Alice, 3000),
+        escalus:assert(is_stream_error,
+                       [<<"conflict">>, <<"User removed">>], R),
+        timer:sleep(500),
+        ?assertNot(escalus_connection:is_connected(Alice))
+    end).
+
+%%--------------------------------------------------------------------
+%% mod_wocky_user 'set' tests with errors
+%%--------------------------------------------------------------------
+
 rest_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
@@ -486,3 +503,12 @@ set_fields() ->
      {<<"avatar">>, <<"file">>,
       <<"tros:043e8c96-ba30-11e5-9912-ba0be0483c18@",
         ?LOCAL_CONTEXT/binary, "/file/", ?AVATAR_FILE/binary>>}].
+
+delete_request(ID) ->
+    #xmlel{name = <<"iq">>,
+           attrs = [{<<"id">>, ID},
+                    {<<"type">>, <<"set">>}],
+           children = [#xmlel{name = <<"delete">>,
+                              attrs = [{<<"xmlns">>,
+                                        <<"hippware.com/hxep/user">>}]
+                             }]}.
