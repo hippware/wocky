@@ -311,7 +311,8 @@ delete_user(Config) ->
         QueryStanza = delete_request(<<"999">>),
         expect_iq_success(QueryStanza, Alice),
         R = escalus:wait_for_stanza(Alice, 3000),
-        escalus:assert(is_stream_error, [<<"conflict">>, <<"User removed">>], R),
+        escalus:assert(is_stream_error,
+                       [<<"conflict">>, <<"User removed">>], R),
         timer:sleep(500),
         ?assertNot(escalus_connection:is_connected(Alice))
     end).
