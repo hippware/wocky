@@ -69,14 +69,34 @@ case $NODENAME in
         ;;
 esac
 
-add_to_cluster()
+join_cluster()
 {
-    $SCRIPT_DIR/wocky $ARGS
+    echo "Warning. This will drop all current connections and will discard all persistent data from Mnesia.
+            Do you want to continue? (yes/no)"
+    read GUARD
+
+    if [ $GUARD =  "yes" ]; then
+        echo "Joining the cluster..."
+        ctl $QUOTED_ARGS
+    else
+        echo "Operation discarded by user"
+        exit 1
+    fi
 }
 
-remove_from_cluster()
+leave_cluster()
 {
-    $SCRIPT_DIR/wocky $ARGS
+    echo "Warning. This will drop all current connections and will discard all persistent data from Mnesia.
+            Do you want to continue? (yes/no)"
+    read GUARD
+
+    if [ $GUARD =  "yes" ]; then
+        echo "Leaving the cluster..."
+        ctl $QUOTED_ARGS
+    else
+        echo "Operation discarded by user"
+        exit 1
+    fi
 }
 
 start ()
@@ -104,8 +124,8 @@ help ()
     echo "  debug  Attach an interactive Erlang shell to a running wocky node"
     echo "  live   Start wocky node in live (interactive) mode"
     echo "wocky cluster management commads:"
-    echo "  add_to_cluster other_node_name       Add current node to cluster"
-    echo "  remove_from_cluster dead_node_name   Remove other node from cluster"
+    echo "  join_cluster other_node_name       Add current node to cluster"
+    echo "  leave_cluster                      Remove current node from cluster"
     echo ""
 }
 
@@ -254,8 +274,8 @@ done
 
 case $1 in
     'start') start;;
-    'add_to_cluster') add_to_cluster;;
-    'remove_from_cluster') remove_from_cluster;;
+    'join_cluster') join_cluster;;
+    'leave_cluster') leave_cluster;;
     'debug') debug;;
     'live') live;;
     'started') wait_for_status 0 30 2;; # wait 30x2s before timeout
