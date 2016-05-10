@@ -17,8 +17,7 @@ francus_test_() -> {
     test_write(),
     test_delete(),
     test_accessors(),
-    test_expire(),
-    test_keep()
+    test_expire()
   ]
 }.
 
@@ -38,7 +37,7 @@ test_sizes() ->
      2 * ChunkSize - 1,
      2 * ChunkSize,
      2 * ChunkSize + 1,
-     10000000
+     1000000
     ].
 
 before_all() ->
@@ -94,8 +93,8 @@ after_each(_) ->
 
 test_read() ->
     { "francus:read", setup, fun before_each/0, fun after_each/1, fun(Config) ->
-      [
-       { "Read entire files from the DB",
+     {inparallel, [
+       { "Read entire files from the DB", {inparallel,
          [?_test(
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
@@ -107,7 +106,7 @@ test_read() ->
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  ?assertEqual(eof, francus:read(F))
-             end) || {ID, Data} <- Config#config.files, Data =:= <<>>]
+             end) || {ID, Data} <- Config#config.files, Data =:= <<>>]}
        },
        { "Check return value for non-existant files",
          [
@@ -116,15 +115,15 @@ test_read() ->
                                           mod_tros:make_file_id()))
          ]
        },
-       { "Read in smaller chunks",
+       { "Read in smaller chunks", {inparallel,
          [?_test(
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  Result = read_random_chunks(F, <<>>),
                  ?assertEqual(Data, Result)
-             end) || {ID, Data} <- Config#config.files, Data =/= <<>>]
+             end) || {ID, Data} <- Config#config.files, Data =/= <<>>]}
        }
-      ]end}.
+      ]} end}.
 
 read_random_chunks(F, Acc) ->
     ReadSize = random:uniform(2*francus:default_chunk_size()),
@@ -142,14 +141,14 @@ read_eof(F, Acc) ->
     Acc.
 
 
-
 test_write() ->
     { "francus:write",
       [
        %% Don't do setup here - it takes time and we're not going to use the
        %% standard files. Still do cleanup though.
        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
-         [?_test(
+         {inparallel,
+          [?_test(
              begin
                  ID = mod_tros:make_file_id(),
                  {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
@@ -159,13 +158,13 @@ test_write() ->
                  F2 = francus:write(F, Data),
                  ok = francus:close(F2),
                  verify_contents(ID, Data)
-             end) || Size <- test_sizes(), Size =/= 0]
+             end) || Size <- test_sizes(), Size =/= 0]}
        }
       ]
     }.
 
 test_expire() ->
-    { "francus expiry",
+    { "francus expiry", {inparallel,
       [
        { "should clear a file after the expiry period",
          [?_test(
@@ -188,21 +187,18 @@ test_expire() ->
                               francus:open_read(?LOCAL_CONTEXT, ID))
              end
             )]
-       }]}.
-
-test_keep() ->
-    { "francus keep",
-      [
+       },
        { "should keep a previously expiring file",
          [?_test(
-             begin
-                 ID = create_small_file(2),
-                 francus:keep(?LOCAL_CONTEXT, ID),
-                 timer:sleep(timer:seconds(3)),
-                 ?assert(is_tuple(francus:open_read(?LOCAL_CONTEXT, ID)))
-             end
-            )]
-       }]}.
+            begin
+                ID = create_small_file(2),
+                francus:keep(?LOCAL_CONTEXT, ID),
+                timer:sleep(timer:seconds(3)),
+                ?assert(is_tuple(francus:open_read(?LOCAL_CONTEXT, ID)))
+            end
+           )]
+       }
+      ]}}.
 
 
 verify_contents(ID, Data) ->
@@ -247,9 +243,10 @@ test_delete() ->
 test_accessors() ->
     { "Francus accessors", setup, fun before_each/0, fun after_each/1,
       fun(Config) ->
-      [
+      {inparallel, [
        { "Test accessors for existing files",
-        [?_test(
+         {inparallel,
+          [?_test(
             begin
                 {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                 #{<<"content-type">> := CT, <<"name">> := Name}
@@ -259,7 +256,7 @@ test_accessors() ->
                 ?assertEqual(Config#config.user, francus:owner(F)),
                 ?assertEqual(byte_size(Data), francus:size(F))
             end) || {ID, Data} <- Config#config.files
-        ]
+          ]}
        },
        { "Test accessors for new file",
          [?_test(
@@ -276,7 +273,7 @@ test_accessors() ->
              end)
          ]
        }
-      ]
+      ]}
       end
     }.
 
