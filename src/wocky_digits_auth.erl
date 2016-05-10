@@ -57,7 +57,7 @@ do_digits_verify(Auth, PhoneNumber, AuthProvider) ->
 
 verify_phone_number(PhoneNumber, Body) ->
     {struct, Elements} = mochijson2:decode(Body),
-    case proplists:get_value(<<"phoneNumber">>, Elements) of
+    case proplists:get_value(<<"phone_number">>, Elements) of
         PhoneNumber -> ok;
         undefined -> {error, {401, "No phone number returned by Digits"}};
         OtherNumber -> {error, {401, ["Supplied phone number ", PhoneNumber,

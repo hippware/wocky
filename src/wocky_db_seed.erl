@@ -64,7 +64,8 @@ create_table_indexes(Context, Table) ->
 
 create_table_views(Context, Table) ->
     lists:foreach(
-      fun ({Name, Columns, Keys, OrderBy}) ->
+      fun ({_, none, _, _}) -> ok;
+          ({Name, Columns, Keys, OrderBy}) ->
           ok = wocky_db:create_view(Context, Name, Table,
                                     Columns, Keys, OrderBy)
       end,
@@ -399,6 +400,7 @@ table_indexes(session) -> [
 table_indexes(_) -> [].
 
 table_views(user) -> [
+    {auth_user, none, [], []},
     {external_id, all, [external_id, user], []}
 ];
 table_views(roster) -> [
