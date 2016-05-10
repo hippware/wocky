@@ -46,6 +46,7 @@ do_digits_verify(Auth, PhoneNumber, AuthProvider) ->
                              [{"Authorization", binary_to_list(Auth)}]},
                              [], [{full_result, false}]) of
         {ok, {200, Body}} ->
+            ok = lager:debug("Received Digits response: ~s", [Body]),
             verify_phone_number(PhoneNumber, Body);
         {ok, {Code, Body}} ->
             {error, {401, ["Digits validation error: ",
