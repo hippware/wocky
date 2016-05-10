@@ -15,14 +15,18 @@
 ejabberd_sm_wocky_test_() -> {
   "ejabberd_sm_wocky",
   setup, fun before_all/0, fun after_all/1,
-  [
-   test_get_sessions(),
-   test_create_session(),
-   test_total_count(),
-   test_unique_count(),
-   test_delete_session(),
-   test_cleanup()
-  ]
+  {foreach, fun before_each/0, fun after_each/1, [
+    fun (Sessions) -> [
+      {inparallel, [
+        test_get_sessions(Sessions),
+        test_total_count(),
+        test_unique_count(),
+        test_create_session()
+      ]},
+      test_cleanup()
+    ] end,
+    fun test_delete_session/1
+  ]}
 }.
 
 before_all() ->
@@ -59,95 +63,80 @@ session_to_ses_tuple(#session{sid = SID, usr = USR,
                               priority = Priority, info = Info}) ->
     {USR, SID, Priority, Info}.
 
-test_get_sessions() ->
-    { "get_sessions", setup, fun before_each/0, fun after_each/1,
-      fun(Sessions) -> [
-        { "Get sessions by server", [
-          ?_test(
-             begin
-                 SessTuples = [session_to_ses_tuple(S) || S <- Sessions],
-                 ?assertEqual(lists:sort(SessTuples),
-                           lists:sort(get_sessions(?SERVER)))
-             end)
-        ]},
-        { "Get sessions by server + user", [
-          ?_test(
-             begin
-                 US = {User, _} = (lists:nth(11, Sessions))#session.us,
-                 Expected = lists:filter(fun(S) -> S#session.us =:= US end,
-                                         Sessions),
-                 ?assertEqual(lists:sort(Expected),
-                              lists:sort(get_sessions(User, ?SERVER)))
-             end)
-        ]},
-        { "Invalid user should return an empty list", [
-             ?_assertEqual([], get_sessions(?BADUSER, ?SERVER))
-        ]},
-        { "Get sessions by server + user + resource", [
-          ?_test(
-             begin
-                 S = lists:nth(18, Sessions),
-                 {User, _, Resource} = S#session.usr,
-                 ?assertEqual([S], get_sessions(User, ?SERVER, Resource))
-             end)
-        ]}
-
-    ] end}.
+test_get_sessions(Sessions) ->
+  {inparallel, [
+    { "Get sessions by server", [
+      ?_test(
+         begin
+             SessTuples = [session_to_ses_tuple(S) || S <- Sessions],
+             ?assertEqual(lists:sort(SessTuples),
+                       lists:sort(get_sessions(?SERVER)))
+         end)
+    ]},
+    { "Get sessions by server + user", [
+      ?_test(
+         begin
+             US = {User, _} = (lists:nth(11, Sessions))#session.us,
+             Expected = lists:filter(fun(S) -> S#session.us =:= US end,
+                                     Sessions),
+             ?assertEqual(lists:sort(Expected),
+                          lists:sort(get_sessions(User, ?SERVER)))
+         end)
+    ]},
+    { "Invalid user should return an empty list", [
+      ?_assertEqual([], get_sessions(?BADUSER, ?SERVER))
+    ]},
+    { "Get sessions by server + user + resource", [
+      ?_test(
+         begin
+             S = lists:nth(18, Sessions),
+             {User, _, Resource} = S#session.usr,
+             ?assertEqual([S], get_sessions(User, ?SERVER, Resource))
+         end)
+    ]}
+  ]}.
 
 test_total_count() ->
-    { "total_count",  setup, fun before_each/0, fun after_each/1, [
-        { "Count total sessions", [
-            ?_assertEqual(25, total_count())
-        ]}
-    ]}.
+  { "Count total sessions", [
+    ?_assertEqual(25, total_count())
+  ]}.
 
 test_unique_count() ->
-    { "total_count",  setup, fun before_each/0, fun after_each/1, [
-        { "Count \"unique sessions\" (sessions owned by unique users)", [
-            ?_assertEqual(5, unique_count())
-        ]}
-    ]}.
+  { "Count unique sessions (sessions owned by unique users)", [
+    ?_assertEqual(5, unique_count())
+  ]}.
 
 test_create_session() ->
-    Data = wocky_db_seed:make_session(?NEWUSER, ?SERVER),
-    Session = data_to_rec(Data),
-    Resource = element(3, Session#session.usr),
-    { "create_session", setup, fun before_each/0, fun after_each/1, [
-        { "Create session", [
-            ?_assertEqual(ok, create_session(
-                                ?NEWUSER, ?SERVER, Resource, Session)),
-            ?_assertEqual([Session], get_sessions(?NEWUSER, ?SERVER)),
-            ?_assertEqual(26, total_count()),
-            ?_assertEqual(6, unique_count())
-        ]}
-     ]}.
+   Data = wocky_db_seed:make_session(?NEWUSER, ?SERVER),
+   Session = data_to_rec(Data),
+   Resource = element(3, Session#session.usr),
+   { "Create session", {inorder, [
+     ?_assertEqual(ok, create_session(?NEWUSER, ?SERVER, Resource, Session)),
+     ?_assertEqual([Session], get_sessions(?NEWUSER, ?SERVER)),
+     ?_assertEqual(26, total_count()),
+     ?_assertEqual(6, unique_count())
+   ]}}.
 
-test_delete_session() ->
-    { "delete_session", setup, fun before_each/0, fun after_each/1,
-      fun(Sessions) -> [
-        { "Delete sessions", [
-          ?_test(
-             begin
-                 S = lists:nth(6, Sessions),
-                 {User, _, Resource} = S#session.usr,
-                 ?assertEqual(ok, delete_session(
-                                    S#session.sid, User, ?SERVER, Resource)),
-                 ?assertEqual(24, total_count()),
-                 ?assertEqual(5, unique_count()),
-                 ?assertEqual(lists:sort(
-                                [session_to_ses_tuple(Sess)
-                                 || Sess <- Sessions -- [S]]),
-                              lists:sort(get_sessions(?SERVER)))
-             end
-            )
-        ]}
-     ] end}.
+test_delete_session(Sessions) ->
+  { "Delete sessions", [
+    ?_test(
+       begin
+           S = lists:nth(6, Sessions),
+           {User, _, Resource} = S#session.usr,
+           ?assertEqual(ok, delete_session(
+                              S#session.sid, User, ?SERVER, Resource)),
+           ?assertEqual(24, total_count()),
+           ?assertEqual(5, unique_count()),
+           ?assertEqual(lists:sort(
+                          [session_to_ses_tuple(Sess)
+                           || Sess <- Sessions -- [S]]),
+                        lists:sort(get_sessions(?SERVER)))
+       end
+      )
+  ]}.
 
 test_cleanup() ->
-    { "create_session", setup, fun before_each/0, fun after_each/1,
-      [
-        { "Cleanup node sessions", [
-          ?_assertEqual(ok, cleanup(node())),
-          ?_assertEqual(0, total_count())
-        ]}
-    ]}.
+  { "Cleanup node sessions", [
+    ?_assertEqual(ok, cleanup(node())),
+    ?_assertEqual(0, total_count())
+  ]}.
