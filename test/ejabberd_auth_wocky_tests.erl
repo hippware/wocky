@@ -6,11 +6,11 @@
 -include("wocky_db_seed.hrl").
 
 -import(ejabberd_auth_wocky, [
-    login/2, plain_password_required/0, dirty_get_registered_users/0,
+    dirty_get_registered_users/0,
     get_vh_registered_users/1, get_vh_registered_users/2,
     get_vh_registered_users_number/1, get_vh_registered_users_number/2,
     store_type/1, check_password/5, check_password/3, set_password/3,
-    get_password/2, get_password/3, get_password_s/2, does_user_exist/2,
+    get_password/2, get_password_s/2, does_user_exist/2,
     remove_user/2, remove_user/3, try_register/3
 ]).
 
@@ -42,7 +42,6 @@ ejabberd_auth_wocky_with_scram_test_() -> {
     test_check_password_with_digest(),
     test_check_password(),
     test_set_password(),
-    test_get_password_with_default(),
     test_get_password_with_scram(),
     test_get_password_s_with_scram(),
     test_does_user_exist(),
@@ -62,7 +61,6 @@ ejabberd_auth_wocky_without_scram_test_() -> {
     test_check_password_with_digest(),
     test_check_password(),
     test_set_password(),
-    test_get_password_with_default(),
     test_get_password_without_scram(),
     test_get_password_s_without_scram(),
     test_does_user_exist(),
@@ -78,9 +76,6 @@ ejabberd_auth_wocky_sanity_test_() -> {
   fun() -> before_all(scram) end,
   fun after_all/1,
   [
-    ?_assertError(not_implemented, login(user, server)),
-    ?_assertNot(plain_password_required()),
-
     ?_assertEqual([], dirty_get_registered_users()),
     ?_assertEqual([], get_vh_registered_users(?SERVER)),
     ?_assertEqual([], get_vh_registered_users(?SERVER, [])),
@@ -187,16 +182,6 @@ test_set_password() ->
     { "returns {error, invalid_jid} if the user doesn't exist", [
       ?_assertEqual({error, invalid_jid},
                     set_password(?BADUSER, ?SERVER, <<"ticktock">>))
-    ]}
-  ]}.
-
-test_get_password_with_default() ->
-  { "get_password/3", foreach, fun before_each/0, fun after_each/1, [
-    { "returns the same value as get_password/2", [
-      ?_assertEqual(get_password(?USER, ?SERVER),
-                    get_password(?USER, ?SERVER, [])),
-      ?_assertEqual(get_password(?BADUSER, ?SERVER),
-                    get_password(?BADUSER, ?SERVER, []))
     ]}
   ]}.
 

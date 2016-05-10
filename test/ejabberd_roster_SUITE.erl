@@ -62,10 +62,10 @@ end_per_suite(Config) ->
     test_helper:stop_ejabberd().
 
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, {by_name, [alice, bob, carol]}).
+    escalus:create_users(Config, escalus:get_users([alice, bob, carol])).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, {by_name, [alice, bob, carol]}).
+    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).

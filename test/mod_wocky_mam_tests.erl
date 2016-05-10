@@ -16,7 +16,7 @@
 -define(FIRST_ID(N), nth_id(U1, U2, N, Rows)).
 
 mod_wocky_mam_test_() ->
- {ok, _} = application:ensure_all_started(p1_stringprep),
+ {ok, _} = application:ensure_all_started(stringprep),
  {
   "mod_wocky_mam",
   setup, fun before_all/0, fun after_all/1,

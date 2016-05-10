@@ -98,10 +98,10 @@ end_per_suite(Config) ->
 init_per_group(_GroupName, Config) ->
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT,
                                [privacy, privacy_item]),
-    escalus:create_users(Config, {by_name, [carol, karen]}).
+    escalus:create_users(Config, escalus:get_users([carol, karen])).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, {by_name, [carol, karen]}).
+    escalus:delete_users(Config, escalus:get_users([carol, karen])).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -485,7 +485,7 @@ allow_subscription_to_from_message(Config) ->
 allow_subscription_both_message(Config) ->
     escalus:story(Config, [{carol, 1}], fun(Carol) ->
 
-        [{_, Spec}] = escalus_users:get_users({by_name, [karen]}),
+        [{_, Spec}] = escalus_users:get_users([karen]),
         {ok, Karen, _Spec2, _Features} = escalus_connection:start(Spec),
         %escalus_story:send_initial_presence(Carol),
         escalus_story:send_initial_presence(Karen),

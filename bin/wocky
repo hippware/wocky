@@ -459,40 +459,6 @@ case "$1" in
         relx_nodetool rpcterms $@
         ;;
 
-    add_to_cluster)
-        NAME_TYPE_ARG=$(echo $NAME_TYPE | sed 's/^\-//')
-        TARGETNODETOOL="$ERTS_DIR/bin/escript $ROOTDIR/bin/nodetool $NAME_TYPE $2 $COOKIE_ARG"
-        ADD_TO_CLUSTER_CMD="$ERTS_DIR/bin/escript $ROOTDIR/bin/nodetool -exact_$NAME_TYPE_ARG $NAME $COOKIE_ARG add_to_cluster $2"
-
-        if relx_nodetool "ping" > /dev/null; then
-            echo "Error: Node is already running! Stop the node and delete Mnesia database directory ($MNESIA_DIR)."
-            exit 1
-        fi
-
-        MNESIA_DIR="$RELEASE_ROOT_DIR/Mnesia.$NODE"
-        if [ -d "$MNESIA_DIR" ]; then
-            echo "Error: $MNESIA_DIR already exists. Please remove whole directory before continuing."
-            exit 1
-        fi
-        RES2=`$TARGETNODETOOL ping`
-        if [ "$RES2" = "pong" ]; then
-            RES3=`$ADD_TO_CLUSTER_CMD`
-            if [ "$RES3" = "ok" ]; then
-                echo "Node added to cluster. Run wockyctl live or wockyclt start."
-            else
-                echo "Adding Node to cluster failed:  $RES3"
-                exit 1
-            fi
-        else
-            echo "Error: Node $2 is not reachable."
-            exit 1
-        fi
-        ;;
-
-    remove_from_cluster)
-        relx_nodetool remove_from_cluster $2
-        ;;
-
     version)
         # Make sure a node IS running
         if ! relx_nodetool "ping" > /dev/null; then
@@ -504,7 +470,7 @@ case "$1" in
         ;;
 
     *)
-        echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|live|console_clean|console_boot <file>|attach|remote_console|debug|upgrade|escript|rpc|rpcterms|add_to_cluster|remove_from_cluster}"
+        echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|live|console_clean|console_boot <file>|attach|remote_console|debug|upgrade|escript|rpc|rpcterms}"
         exit 1
         ;;
 esac

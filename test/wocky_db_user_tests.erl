@@ -19,7 +19,7 @@
         ]).
 
 wocky_db_user_test_() ->
-    {ok, _} = application:ensure_all_started(p1_stringprep),
+    {ok, _} = application:ensure_all_started(stringprep),
     {
      "wocky_db_user",
      setup, fun before_all/0, fun after_all/1,

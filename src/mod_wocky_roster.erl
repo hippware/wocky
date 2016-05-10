@@ -271,10 +271,10 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     case auto_reply(Direction, Subscription, Ask, Type) of
         none -> ok;
         unsubscribed ->
-            route(ejabberd_router, ToJID, JID1,
-                  #xmlel{name = <<"presence">>,
-                         attrs = [{<<"type">>, <<"unsubscribed">>}],
-                         children = []});
+            Attrs = [{<<"type">>, <<"unsubscribed">>}],
+            ejabberd_router:route(ToJID, JID1, #xmlel{name = <<"presence">>,
+                                                      attrs = Attrs,
+                                                      children = []});
         subscribed ->
             Attrs = lists:flatten(
                      [{<<"type">>, <<"subscribed">>},
@@ -282,10 +282,9 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
                       item_name_to_xml(first_name, Item#roster.first_name),
                       item_name_to_xml(last_name, Item#roster.last_name),
                       item_name_to_xml(avatar, Item#roster.avatar)]),
-            route(ejabberd_router, ToJID, JID1,
-                  #xmlel{name = <<"presence">>,
-                         attrs = Attrs,
-                         children = []})
+            ejabberd_router:route(ToJID, JID1, #xmlel{name = <<"presence">>,
+                                                      attrs = Attrs,
+                                                      children = []})
     end,
     case Push of
         {push, #roster{subscription = none, ask = in}} ->
@@ -499,9 +498,9 @@ send_unsubscribing_presence(From, Item) ->
     ok.
 
 send_presence_type(From, To, Type) ->
-    route(ejabberd_router, From, To,
-          #xmlel{name = <<"presence">>,
-                 attrs = [{<<"type">>, Type}], children = []}).
+    ejabberd_router:route(From, To,
+                          #xmlel{name = <<"presence">>,
+                                 attrs = [{<<"type">>, Type}], children = []}).
 
 item_to_xml(Item) ->
     #xmlel{
@@ -538,11 +537,10 @@ item_ask_to_xml(_) ->
     [].
 
 push_item(User, Server, From, Item) ->
-    ok = route(ejabberd_sm,
-               jid:make(<<"">>, <<"">>, <<"">>),
-               jid:make(User, Server, <<"">>),
-               {broadcast, {item, Item#roster.contact_jid,
-                            Item#roster.subscription}}),
+    ok = ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
+                           jid:make(User, Server, <<"">>),
+                           {broadcast, {item, Item#roster.contact_jid,
+                                        Item#roster.subscription}}),
     push_item(User, Server, From, Item,
               wocky_db_roster:get_roster_version(jid:nodeprep(User), Server)).
 
@@ -559,23 +557,5 @@ push_item(User, Server, Resource, From, Item, RosterVersion) ->
                 %% TODO: don't push to those who didn't load roster
                 id = list_to_binary("push" ++ randoms:get_string()),
                 sub_el = create_sub_el([item_to_xml(Item)], RosterVersion)},
-    route(ejabberd_router, From, jid:make(User, Server, Resource),
-          jlib:iq_to_xml(ResIQ)).
-
-%% NOTE: This was borrowed from the xmpp_router module. Unfortunately, the
-%% original is typed incorrectly causing false-positive dialyzer errors in this
-%% module.
-%% TODO: Remove this when the original is updated to have an appropriate
-%% type spec
-route(Module, From, To, Packet) ->
-    try
-        Module:do_route(From, To, Packet)
-    catch
-        Class:Exception ->
-            lager:error("error when routing from=~ts to=~ts in module=~p, "
-                        "packet=~ts, stack_trace=~ts",
-                        [jid:to_binary(From), jid:to_binary(To), Module,
-                         exml:to_binary(Packet),
-                         lager:pr_stacktrace(erlang:get_stacktrace(),
-                                             {Class, Exception})])
-    end.
+    ejabberd_router:route(From, jid:make(User, Server, Resource),
+                          jlib:iq_to_xml(ResIQ)).

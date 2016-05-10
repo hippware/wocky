@@ -79,13 +79,13 @@ end_per_suite(Config) ->
 init_per_group(GroupName, Config) when GroupName =:= login;
       GroupName =:= login_scram; GroupName =:= login_scram_store_plain ->
     config_password_format(GroupName),
-    Config2 = escalus:create_users(Config, {by_name, [alice, bob]}),
+    Config2 = escalus:create_users(Config, escalus:get_users([alice, bob])),
     assert_password_format(GroupName, Config2);
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, {by_name, [alice, bob]}).
+    escalus:create_users(Config, escalus:get_users([alice, bob])).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, {by_name, [alice, bob]}).
+    escalus:delete_users(Config, escalus:get_users([alice, bob])).
 
 init_per_testcase(blocked_user, Config) ->
     Domain = ct:get_config(ejabberd_domain),
@@ -134,13 +134,13 @@ log_non_existent_scram(Config) ->
     {expected_challenge, _, _} = R.
 
 log_non_existent(Config) ->
-    [{karen, UserSpec}] = escalus_users:get_users({by_name, [karen]}),
+    [{karen, UserSpec}] = escalus_users:get_users([karen]),
     {error, {connection_step_failed, _, R}} =
         escalus_client:start(Config, UserSpec, <<"res">>),
     R.
 
 blocked_user(_Config) ->
-    [{_, Spec}] = escalus_users:get_users({by_name, [alice]}),
+    [{_, Spec}] = escalus_users:get_users([alice]),
     try
         {ok, _Alice, _Spec2, _Features} = escalus_connection:start(Spec),
         ct:fail("Alice authenticated but shouldn't")
