@@ -555,7 +555,6 @@ table_columns(Table) ->
 run_query(Context, Query) ->
     Nodes = wocky_app:get_config(cassandra_nodes),
     Opts = wocky_app:get_config(cassandra_opts),
-    ok = lager:debug("DB connection: ~p - ~p", [Nodes, Opts]),
     case get_client(Context, hd(Nodes), Opts) of
         {ok, Client} ->
             Return = cqerl:run_query(Client, Query),
