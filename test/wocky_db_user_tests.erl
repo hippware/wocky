@@ -20,30 +20,31 @@
 
 wocky_db_user_test_() ->
     {ok, _} = application:ensure_all_started(stringprep),
-    {
-     "wocky_db_user",
-     setup, fun before_all/0, fun after_all/1,
-     [
-      test_does_user_exist(),
-      test_create_user_without_id(),
-      test_create_user_with_id(),
-      test_get_password(),
-      test_set_password(),
-      test_remove_user(),
-      test_generate_token(),
-      test_assign_token(),
-      test_release_token(),
-      test_get_tokens(),
-      test_check_token(),
-      test_maybe_set_handle(),
-      test_set_phone_number(),
-      test_get_user_data(),
-      test_external_id(),
-      test_create_user_from_map(),
-      test_update_user_from_map(),
-      test_set_avatar()
-     ]
-    }.
+    {"wocky_db_user",
+     setup, fun before_all/0, fun after_all/1, [
+     {foreach, fun before_each/0, fun after_each/1, [
+       [
+         test_does_user_exist(),
+         test_get_password(),
+         test_get_user_data(),
+         test_external_id(),
+         test_generate_token(),
+         test_get_tokens(),
+         test_assign_token(),
+         test_release_token(),
+         test_check_token()
+       ],
+       test_create_user_without_id(),
+       test_create_user_with_id(),
+       test_set_password(),
+       test_remove_user(),
+       test_set_phone_number(),
+       test_update_user_from_map(),
+       test_set_avatar()
+     ]},
+     test_create_user_from_map(),
+     test_maybe_set_handle()
+    ]}.
 
 before_all() ->
     ok = wocky_app:start(),
@@ -72,7 +73,6 @@ after_each(_) ->
     ok.
 
 before_avatar() ->
-    before_each(),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
     ok.
 
@@ -80,7 +80,7 @@ after_avatar(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 test_does_user_exist() ->
-  { "does_user_exist", setup, fun before_each/0, fun after_each/1, [
+  { "does_user_exist", [
     { "returns true if the user exists", [
       ?_assert(does_user_exist(?USER, ?SERVER))
     ]},
@@ -91,7 +91,7 @@ test_does_user_exist() ->
   ]}.
 
 test_create_user_without_id() ->
-  { "create_user", setup, fun before_each/0, fun after_each/1, [
+  { "create_user", [
     { "creates a user if none exists", [
       ?_assertMatch({ok, _}, create_user(?SERVER, <<"nosuchuser">>, ?PASS))
     ]},
@@ -101,7 +101,7 @@ test_create_user_without_id() ->
   ]}.
 
 test_create_user_with_id() ->
-  { "create_user", setup, fun before_each/0, fun after_each/1, [
+  { "create_user", [
     { "creates a user if none exists", [
       ?_assertMatch(ok, create_user(?NEWUSER, ?SERVER,
                                     <<"nosuchuser">>, ?PASS)),
@@ -118,7 +118,7 @@ test_create_user_with_id() ->
   ]}.
 
 test_get_password() ->
-  { "get_password", setup, fun before_each/0, fun after_each/1, [
+  { "get_password", [
     { "returns password if user exists", [
       ?_assertMatch(?SCRAM, get_password(?USER, ?SERVER))
     ]},
@@ -131,7 +131,7 @@ test_get_password() ->
   ]}.
 
 test_set_password() ->
-  { "set_password", setup, fun before_each/0, fun after_each/1, [
+  { "set_password", [
     { "sets password if user exists", [
       ?_assertMatch(ok, set_password(?USER, ?SERVER, <<"newpass">>)),
       ?_assertMatch(<<"newpass">>, get_password(?USER, ?SERVER))
@@ -146,7 +146,7 @@ test_set_password() ->
   ]}.
 
 test_remove_user() ->
-  { "remove_user", setup, fun before_each/0, fun after_each/1, [
+  { "remove_user", [
     { "removes user if user exists", [
       ?_assertMatch(ok, remove_user(?USER, ?SERVER)),
       ?_assertNot(does_user_exist(?USER, ?SERVER))
@@ -174,18 +174,19 @@ token_cleanup(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]).
 
 test_assign_token() ->
-  { "assign_token", setup, fun before_each/0, fun after_each/1, [
+  { "assign_token", [
     { "generates and stores a token for the user",
-      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
+      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) ->
+      {inorder, [
         ?_assertMatch(<<"$T$", _/binary>>, Token),
         ?_assertEqual([Token], get_tokens(?USER, ?SERVER))
-    ] end},
-    { "overwrites tokens when there are multiple requests", [
+      ]} end},
+    { "overwrites tokens when there are multiple requests", {inorder, [
       ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
       ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
       ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
       ?_assertEqual(1, length(get_tokens(?USER, ?SERVER)))
-    ]},
+    ]}},
     { "returns {error, not_found} if user does not exist", [
       ?_assertEqual({error, not_found},
                     assign_token(?BADUSER, ?SERVER, ?RESOURCE))
@@ -197,7 +198,7 @@ test_assign_token() ->
   ]}.
 
 test_release_token() ->
-  { "release_token", setup, fun before_each/0, fun after_each/1, [
+  { "release_token", [
     { "destroys a stored token",
       setup, fun token_setup/0, fun token_cleanup/1, [
         ?_assertEqual(ok, release_token(?USER, ?SERVER, ?RESOURCE)),
@@ -217,14 +218,15 @@ test_release_token() ->
   ]}.
 
 test_get_tokens() ->
-  { "get_tokens", setup, fun before_each/0, fun after_each/1, [
+  { "get_tokens", [
     { "returns all tokens for a user",
-      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
+      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) ->
+      {inorder, [
         ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, <<"test1">>)),
         ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, <<"test2">>)),
         ?_assertEqual(3, length(get_tokens(?USER, ?SERVER))),
         ?_assert(lists:member(Token, get_tokens(?USER, ?SERVER)))
-    ] end},
+    ]} end},
     { "returns [] if there are no tokens associated with the user", [
         ?_assertEqual([], get_tokens(?BOB, ?SERVER))
     ]},
@@ -237,22 +239,20 @@ test_get_tokens() ->
   ]}.
 
 test_check_token() ->
-  { "check_token", setup, fun before_each/0, fun after_each/1, [
-    { "accepts a valid token",
-      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
-      ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
-    ] end},
-    { "denies any other token",
-      setup, fun token_setup/0, fun token_cleanup/1, [
-      ?_assertNot(check_token(?USER, ?SERVER, ?RESOURCE, <<"badtoken">>))
-    ]},
-    { "denies tokens with a bad user or resource",
-      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) -> [
-      ?_assertNot(check_token(wocky_db:create_id(),
-                              ?SERVER, ?RESOURCE, Token)),
-      ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
-    ] end}
-   ]}.
+  { "check_token", setup, fun token_setup/0, fun token_cleanup/1,
+    fun (Token) -> [
+      { "accepts a valid token", [
+        ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
+      ]},
+      { "denies any other token", [
+        ?_assertNot(check_token(?USER, ?SERVER, ?RESOURCE, <<"badtoken">>))
+      ]},
+      { "denies tokens with a bad user or resource", [
+        ?_assertNot(check_token(wocky_db:create_id(),
+                                ?SERVER, ?RESOURCE, Token)),
+        ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
+      ]}
+   ] end}.
 
 test_maybe_set_handle() ->
   { "maybe_set_handle", foreach, fun before_each/0, fun after_each/1, [
@@ -276,7 +276,7 @@ test_maybe_set_handle() ->
   ]}.
 
 test_set_phone_number() ->
-  { "set_phone_number", foreach, fun before_each/0, fun after_each/1, [
+  { "set_phone_number", [
     { "sets a phone number on a user", [
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, <<"+614444">>)),
         ?_assertEqual(<<"+614444">>, get_phone_number(?ALICE, ?SERVER)),
@@ -300,7 +300,7 @@ test_set_phone_number() ->
   ]}.
 
 test_get_user_data() ->
-  { "get_user_data", setup, fun before_each/0, fun after_each/1, [
+  { "get_user_data", [
     { "gets an existing user's data", [
         ?_assertMatch(#{user := ?ALICE,
                         handle := ?HANDLE,
@@ -315,7 +315,7 @@ test_get_user_data() ->
   ]}.
 
 test_external_id() ->
-  { "external_id", setup, fun before_each/0, fun after_each/1, [
+  { "external_id", [
     { "gets an existing user from the external_id", [
         ?_assertEqual(?ALICE,
                       get_user_by_external_id(?LOCAL_CONTEXT, ?EXTERNAL_ID))
@@ -357,7 +357,7 @@ test_update_user_from_map() ->
              phone_number => <<"+9999">>,
              first_name => <<"Olaf">>
             },
-  { "update_user", setup, fun before_each/0, fun after_each/1, [
+  { "update_user", [
     { "updates a user excluding handle and phone_number fields", [
       ?_assertEqual(ok, update_user(Fields)),
       ?_assertMatch(#{user := ?ALICE,

@@ -15,12 +15,12 @@
 mod_offline_wocky_test_() -> {
   "mod_offline_wocky",
   setup, fun before_all/0, fun after_all/1,
-  [
-    test_pop_messages(),
+  {foreach, fun before_each/0, fun after_each/1, [
+    fun test_pop_messages/1,
     test_write_messages(),
     test_message_expiry(),
     test_remove_user()
-  ]
+  ]}
 }.
 
 %% Some functions that are required by the mod_offline behaviour are
@@ -61,9 +61,8 @@ make_msg_recs(User, Handle, N) ->
 after_each(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [offline_msg]).
 
-test_pop_messages() ->
-    { "pop_messages", setup, fun before_each/0, fun after_each/1,
-      fun(Config) -> [
+test_pop_messages(Config) ->
+    { "pop_messages", [
         { "Get a user's messages and check they're cleared correctly", [
             ?_test(
                begin
@@ -80,10 +79,10 @@ test_pop_messages() ->
         { "A non-existant user should have no messges", [
             ?_assertEqual({ok, []}, pop_messages(?BADUSER, ?SERVER))
         ]}
-    ] end}.
+    ]}.
 
 test_write_messages() ->
-    { "write_messages", setup, fun before_each/0, fun after_each/1, [
+    { "write_messages", [
         { "Write and retrieve a single message", [
             ?_test(
                begin
@@ -116,7 +115,7 @@ test_write_messages() ->
      ]}.
 
 test_message_expiry() ->
-    { "message_expiry", setup, fun before_each/0, fun after_each/1, [
+    { "message_expiry", {inparallel, [
         { "Ensure messages expire at their allotted time", [
             ?_test(
                begin
@@ -156,10 +155,10 @@ test_message_expiry() ->
                end
              )
         ]}
-    ]}.
+    ]}}.
 
 test_remove_user() ->
-    { "remove_user", setup, fun before_each/0, fun after_each/1, [
+    { "remove_user", [
         { "Remove a user and ensure no messages remain", [
             ?_assertEqual(ok, remove_user(?ALICE, ?SERVER)),
             ?_assertEqual({ok, []},

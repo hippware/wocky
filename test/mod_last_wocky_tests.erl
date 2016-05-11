@@ -12,12 +12,14 @@
 mod_last_wocky_test_() -> {
   "mod_last_wocky",
   setup, fun before_all/0, fun after_all/1,
-  [
+  {foreach, fun before_each/0, fun after_each/1, [
+    {inparallel, [
+      test_active_user_count(),
+      test_last_activity()
+    ]},
     test_set_last_info(),
-    test_active_user_count(),
-    test_last_activity(),
     test_remove_user()
-  ]
+  ]}
 }.
 
 before_all() ->
@@ -36,7 +38,7 @@ after_each(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]).
 
 test_set_last_info() ->
-    { "set_last_info", setup, fun before_each/0, fun after_each/1, [
+    { "set_last_info", [
         { "Creates a new user and validates their state", [
             ?_assertMatch(not_found, get_last(?TIM, ?SERVER)),
             ?_assertMatch(ok, set_last_info(?TIM, ?SERVER, 1024,
@@ -47,7 +49,7 @@ test_set_last_info() ->
     ]}.
 
 test_active_user_count() ->
-    { "active_user_count", foreach, fun before_each/0, fun after_each/1, [
+    { "active_user_count", [
         { "Returns a count of active users for a given server and timestamp", [
             ?_assertMatch(5, count_active_users(?SERVER, 0)),
             ?_assertMatch(3, count_active_users(?SERVER, 800)),
@@ -58,7 +60,7 @@ test_active_user_count() ->
     ]}.
 
 test_last_activity() ->
-    { "last_activity", setup,  fun before_each/0, fun after_each/1, [
+    { "last_activity", [
         { "Returns timestamp and status where record exists", [
             ?_assertMatch({ok, 1000, <<"Not here">>},
                           get_last(?ALICE, ?SERVER)),
@@ -75,7 +77,7 @@ test_last_activity() ->
     ]}.
 
 test_remove_user() ->
-    { "remove_user", setup, fun before_each/0, fun after_each/1, [
+    { "remove_user", [
         { "Deletes existing users", [
             ?_assertMatch(ok, remove_user(?BOB, ?SERVER)),
             ?_assertMatch(ok, remove_user(?CAROL, ?SERVER)),

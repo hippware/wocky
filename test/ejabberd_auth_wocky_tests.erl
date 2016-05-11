@@ -34,48 +34,47 @@ do_mk_digest(U, _P, true) ->
 
 ejabberd_auth_wocky_with_scram_test_() -> {
   "ejabberd_auth_wocky with scram",
-  setup,
-  fun() -> before_all(scram) end,
-  fun after_all/1,
-  [
-    test_store_type_with_scram(),
-    test_check_password_with_digest(),
-    test_check_password(),
+  setup, fun() -> before_all(scram) end, fun after_all/1,
+  {foreach, fun before_each/0, fun after_each/1, [
+    {inparallel, [
+      test_store_type_with_scram(),
+      test_check_password_with_digest(),
+      test_check_password(),
+      test_get_password_with_scram(),
+      test_get_password_s_with_scram(),
+      test_does_user_exist()
+    ]},
+
     test_set_password(),
-    test_get_password_with_scram(),
-    test_get_password_s_with_scram(),
-    test_does_user_exist(),
     test_remove_user(),
     test_remove_user_with_password(),
     test_try_register()
-  ]
+  ]}
 }.
 
 ejabberd_auth_wocky_without_scram_test_() -> {
   "ejabberd_auth_wocky without scram",
-  setup,
-  fun() -> before_all(plain) end,
-  fun after_all/1,
-  [
-    test_store_type_without_scram(),
-    test_check_password_with_digest(),
-    test_check_password(),
+  setup, fun() -> before_all(plain) end, fun after_all/1,
+  {foreach, fun before_each/0, fun after_each/1, [
+    {inparallel, [
+      test_store_type_without_scram(),
+      test_check_password_with_digest(),
+      test_check_password(),
+      test_get_password_without_scram(),
+      test_get_password_s_without_scram(),
+      test_does_user_exist()
+    ]},
+
     test_set_password(),
-    test_get_password_without_scram(),
-    test_get_password_s_without_scram(),
-    test_does_user_exist(),
     test_remove_user(),
     test_remove_user_with_password(),
     test_try_register()
-  ]
+  ]}
 }.
 
 ejabberd_auth_wocky_sanity_test_() -> {
   "sanity check stubbed module functions",
-  setup,
-  fun() -> before_all(scram) end,
-  fun after_all/1,
-  [
+  setup, fun() -> before_all(scram) end, fun after_all/1, [
     ?_assertEqual([], dirty_get_registered_users()),
     ?_assertEqual([], get_vh_registered_users(?SERVER)),
     ?_assertEqual([], get_vh_registered_users(?SERVER, [])),
@@ -121,24 +120,18 @@ after_each(_) ->
 
 
 test_store_type_with_scram() ->
-  { "store_type/1 with scram",
-    foreach, fun before_each/0, fun after_each/1, [
-    { "returns 'scram'", [
-      ?_assertEqual(scram, store_type(?SERVER))
-    ]}
+  { "store_type/1 with scram returns 'scram'", [
+    ?_assertEqual(scram, store_type(?SERVER))
   ]}.
 
 test_store_type_without_scram() ->
-  { "store_type/1 without scram",
-    foreach, fun before_each/0, fun after_each/1, [
-    { "returns 'plain'", [
-      ?_assertEqual(plain, store_type(?SERVER))
-    ]}
+  { "store_type/1 without scram returns 'plain'", [
+    ?_assertEqual(plain, store_type(?SERVER))
   ]}.
 
 test_check_password_with_digest() ->
   DigestGen = fun(X) -> X end,
-  { "check_password/5", foreach, fun before_each/0, fun after_each/1, [
+  { "check_password/5", [
     { "returns true when user exists and password digest matches", [
       ?_assert(check_password(?USER, ?SERVER, ?PASS,
                               mk_digest(?USER, ?PASS), DigestGen))
@@ -154,7 +147,7 @@ test_check_password_with_digest() ->
   ]}.
 
 test_check_password() ->
-  { "check_password/3", foreach, fun before_each/0, fun after_each/1, [
+  { "check_password/3", [
     { "returns true when user exists and password matches", [
       ?_assert(check_password(?USER, ?SERVER, ?PASS))
     ]},
@@ -173,21 +166,8 @@ test_check_password() ->
     ]}
   ]}.
 
-test_set_password() ->
-  { "set_password/3", foreach, fun before_each/0, fun after_each/1, [
-    { "changes the user's password", [
-      ?_assertEqual(ok, set_password(?USER, ?SERVER, <<"mialakota">>)),
-      ?_assert(check_password(?USER, ?SERVER, <<"mialakota">>))
-    ]},
-    { "returns {error, invalid_jid} if the user doesn't exist", [
-      ?_assertEqual({error, invalid_jid},
-                    set_password(?BADUSER, ?SERVER, <<"ticktock">>))
-    ]}
-  ]}.
-
 test_get_password_with_scram() ->
-  { "get_password/2 with scram",
-    foreach, fun before_each/0, fun after_each/1, [
+  { "get_password/2 with scram", [
     { "returns a tuple with scram data when the user exists", [
       ?_assertMatch({_, _, _, 4096},
                     get_password(?USER, ?SERVER))
@@ -198,8 +178,7 @@ test_get_password_with_scram() ->
   ]}.
 
 test_get_password_without_scram() ->
-  { "get_password/2 without scram",
-    foreach, fun before_each/0, fun after_each/1, [
+  { "get_password/2 without scram", [
     { "returns the stored password", [
       ?_assertMatch(?PASS, get_password(?USER, ?SERVER))
     ]},
@@ -209,8 +188,7 @@ test_get_password_without_scram() ->
   ]}.
 
 test_get_password_s_with_scram() ->
-  { "get_password_s/2 with scram",
-    foreach, fun before_each/0, fun after_each/1, [
+  { "get_password_s/2 with scram", [
     { "returns an empty binary regardless of whether the user exists", [
       ?_assertEqual(<<>>, get_password_s(?USER, ?SERVER)),
       ?_assertEqual(<<>>, get_password_s(?BADUSER, ?SERVER))
@@ -218,8 +196,7 @@ test_get_password_s_with_scram() ->
   ]}.
 
 test_get_password_s_without_scram() ->
-  { "get_password_s/2 without scram",
-    foreach, fun before_each/0, fun after_each/1, [
+  { "get_password_s/2 without scram", [
     { "returns the stored password if the user exists", [
       ?_assertEqual(?PASS, get_password_s(?USER, ?SERVER))
     ]},
@@ -229,7 +206,7 @@ test_get_password_s_without_scram() ->
   ]}.
 
 test_does_user_exist() ->
-  { "does_user_exist/2", foreach, fun before_each/0, fun after_each/1, [
+  { "does_user_exist/2", [
     { "returns true if the user exists", [
       ?_assert(does_user_exist(?USER, ?SERVER))
     ]},
@@ -238,8 +215,20 @@ test_does_user_exist() ->
     ]}
   ]}.
 
+test_set_password() ->
+  { "set_password/3", [
+    { "changes the user's password", [
+      ?_assertEqual(ok, set_password(?USER, ?SERVER, <<"mialakota">>)),
+      ?_assert(check_password(?USER, ?SERVER, <<"mialakota">>))
+    ]},
+    { "returns {error, invalid_jid} if the user doesn't exist", [
+      ?_assertEqual({error, invalid_jid},
+                    set_password(?BADUSER, ?SERVER, <<"ticktock">>))
+    ]}
+  ]}.
+
 test_remove_user() ->
-  { "remove_user/2", foreach, fun before_each/0, fun after_each/1, [
+  { "remove_user/2", [
     { "removes the user if the user exists", [
       ?_assertEqual(ok, remove_user(?USER, ?SERVER)),
       ?_assertNot(does_user_exist(?USER, ?SERVER))
@@ -250,15 +239,15 @@ test_remove_user() ->
   ]}.
 
 test_remove_user_with_password() ->
-  { "remove_user/3", foreach, fun before_each/0, fun after_each/1, [
-    { "removes the user if the user exists and the password matches", [
-      ?_assertEqual(ok, remove_user(?USER, ?SERVER, ?PASS)),
-      ?_assertNot(does_user_exist(?USER, ?SERVER))
-    ]},
+  { "remove_user/3", [
     { "returns {error, not_allowed} if the password does not match", [
       ?_assertEqual({error, not_allowed},
                     remove_user(?USER, ?SERVER, <<"niemakota">>)),
       ?_assert(does_user_exist(?USER, ?SERVER))
+    ]},
+    { "removes the user if the user exists and the password matches", [
+      ?_assertEqual(ok, remove_user(?USER, ?SERVER, ?PASS)),
+      ?_assertNot(does_user_exist(?USER, ?SERVER))
     ]},
     { "returns ok if the user doesn't exist", [
       ?_assertEqual(ok, remove_user(?BADUSER, ?SERVER, <<"ticktock">>))
@@ -266,13 +255,10 @@ test_remove_user_with_password() ->
   ]}.
 
 test_try_register() ->
-  { "try_register/3", foreach, fun before_each/0, fun after_each/1, [
+  { "try_register/3", [
     { "creates the user if it does not already exist", [
       ?_assertEqual(ok, try_register(?NEWUSER, ?SERVER, ?PASS)),
-      ?_assert(does_user_exist(?NEWUSER, ?SERVER))
-    ]},
-    { "returns {error, exists} if the user already exists", [
-      ?_assertEqual(ok, try_register(?NEWUSER, ?SERVER, ?PASS)),
+      ?_assert(does_user_exist(?NEWUSER, ?SERVER)),
       ?_assertEqual({error, exists}, try_register(?NEWUSER, ?SERVER, ?PASS))
     ]}
   ]}.

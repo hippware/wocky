@@ -20,16 +20,18 @@
 mod_roster_wocky_test_() -> {
   "wocky_db_roster",
   setup, fun before_all/0, fun after_all/1,
-  [
-    test_get_roster(),
-    test_get_roster_version(),
-    test_get_roster_updates(),
-    test_delete_roster(),
-    test_get_roster_item(),
+  {foreach, fun before_each/0, fun after_each/1, [
+    {inparallel, [
+      test_get_roster(),
+      test_get_roster_version(),
+      test_get_roster_updates(),
+      test_get_roster_item(),
+      test_has_contact()
+    ]},
     test_update_roster_item(),
     test_delete_roster_item(),
-    test_has_contact()
-  ]
+    test_delete_roster()
+  ]}
 }.
 
 before_all() ->
@@ -56,7 +58,7 @@ make_jid(U) ->
     wocky_db_seed:sjid(U, ?SERVER).
 
 test_get_roster() ->
-  { "get_roster/2", foreach, fun before_each/0, fun after_each/1, [
+  { "get_roster/2", [
     { "returns the roster for a known user", [
       ?_assertMatch([#roster{}|_], get_roster(?USER, ?SERVER)),
       ?_assertEqual(4, length(get_roster(?USER, ?SERVER)))
@@ -67,7 +69,7 @@ test_get_roster() ->
   ]}.
 
 test_get_roster_version() ->
-  { "get_roster_version/2", foreach, fun before_each/0, fun after_each/1, [
+  { "get_roster_version/2", [
     { "returns the roster version for a known user", [
       ?_assertEqual(<<"999">>, get_roster_version(?USER, ?SERVER))
     ]},
@@ -77,7 +79,7 @@ test_get_roster_version() ->
   ]}.
 
 test_get_roster_updates() ->
-  { "get_roster_updates/3", foreach, fun before_each/0, fun after_each/1, [
+  { "get_roster_updates/3", [
     { "returns an empty roster when the versions match", [
       ?_assertEqual([], get_roster_updates(?USER, ?SERVER,
                                            get_roster_version(?USER, ?SERVER)))
@@ -99,7 +101,7 @@ test_get_roster_updates() ->
   ]}.
 
 test_delete_roster() ->
-  { "delete_roster/2", foreach, fun before_each/0, fun after_each/1, [
+  { "delete_roster/2", [
     { "deletes all roster items for a known user", [
       ?_assertEqual(ok, delete_roster(?USER, ?SERVER)),
       ?_assertEqual([], get_roster(?USER, ?SERVER))
@@ -110,7 +112,7 @@ test_delete_roster() ->
   ]}.
 
 test_get_roster_item() ->
-  { "get_roster_item/3", setup, fun before_each/0, fun after_each/1, [
+  { "get_roster_item/3", [
       { "returns the roster item for a known user and contact", [
         ?_assertMatch(#roster{name = <<"bobby">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?BOB)))
@@ -140,7 +142,7 @@ test_get_roster_item() ->
   ]}.
 
 test_update_roster_item() ->
-  { "update_roster_item/4", setup, fun before_each/0, fun after_each/1, [
+  { "update_roster_item/4", [
       { "inserts a new roster item if one does not exist", [
         ?_assertEqual(ok, update_roster_item(?USER, ?SERVER, make_jid(?TIM),
                                              #roster{name = <<"tim">>})),
@@ -156,7 +158,7 @@ test_update_roster_item() ->
   ]}.
 
 test_delete_roster_item() ->
-  { "delete_roster_item/3", setup, fun before_each/0, fun after_each/1, [
+  { "delete_roster_item/3", [
       { "deletes an existing roster item", [
         ?_assertEqual(ok, delete_roster_item(?USER, ?SERVER, make_jid(?BOB))),
         ?_assertMatch(#roster{name = <<>>},
@@ -169,7 +171,7 @@ test_delete_roster_item() ->
   ]}.
 
 test_has_contact() ->
-  { "has_contact/2", setup, fun before_each/0, fun after_each/1, [
+  { "has_contact/2", [
     { "returns true when user A has user B in their roster", [
       ?_assert(has_contact(?ALICE_JID, ?BOB_JID)),
       ?_assert(has_contact(?ALICE_JID, ?CAROL_JID))
