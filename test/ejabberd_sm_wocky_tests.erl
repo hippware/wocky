@@ -20,9 +20,9 @@ ejabberd_sm_wocky_test_() -> {
       {inparallel, [
         test_get_sessions(Sessions),
         test_total_count(),
-        test_unique_count(),
-        test_create_session()
+        test_unique_count()
       ]},
+      test_create_session(),
       test_cleanup()
     ] end,
     fun test_delete_session/1
