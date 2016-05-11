@@ -5,10 +5,13 @@ REBAR=./rebar3 $(REBAR_OPTS)
 all: compile
 
 cleanall:
-	$(REBAR) clean --all
+	@$(REBAR) clean --all
+	@rm -rf _build/default/lib/ejabberd
+	@rm -rf _build/test
+	@rm -rf log
 
 distclean: clean
-	rm -rf _build
+	@rm -rf _build
 
 # This compiles and runs one test suite. For quick feedback/TDD.
 # Example:
@@ -28,4 +31,4 @@ ci: cleanall compile lint dialyzer eunit ct
 	@echo "Build complete."
 
 %:
-	$(REBAR) $@
+	@$(REBAR) $@
