@@ -68,7 +68,7 @@ make_upload_response(FromJID, ToJID, FileID, Size, Metadata =
     RespFields = [
                   {<<"url">>, URL},
                   {<<"method">>, <<"POST">>},
-                  {<<"referenceURL">>, ReferenceURL}],
+                  {<<"reference_url">>, ReferenceURL}],
     {Headers, RespFields}.
 
 common_response_data(FromJID, ToJID, Owner, FileID) ->

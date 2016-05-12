@@ -313,8 +313,8 @@ expected_upload_packet(francus) ->
       ":1025/users/", ?ALICE/binary, "/",
       "files/", (new_file_uuid())/binary, "</url>"
       "<method>POST</method>"
-      "<referenceURL>tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
-      "/file/", (new_file_uuid())/binary, "</referenceURL>"
+      "<reference_url>tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+      "/file/", (new_file_uuid())/binary, "</reference_url>"
       "</upload></iq>">>.
 
 expected_download_packet(s3, FileID) ->
