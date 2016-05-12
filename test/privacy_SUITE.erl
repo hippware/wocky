@@ -36,10 +36,11 @@ all() ->
     ].
 
 groups() ->
-    [{management, [sequence], management_test_cases()},
-     {blocking, [sequence], blocking_test_cases()},
-     {allowing, [sequence], allowing_test_cases()}
+    [{management, [], management_test_cases()},
+     {blocking, [], blocking_test_cases()},
+     {allowing, [], allowing_test_cases()}
     ].
+
 management_test_cases() ->
     [get_all_lists,
      get_existing_list,
@@ -83,25 +84,16 @@ suite() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
-    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT,
-                                 [privacy, privacy_item]),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [privacy, privacy_item]),
+    Config1 = escalus:create_users(Config, escalus:get_users([carol, karen])),
     [{escalus_no_stanzas_after_story, true} |
-     escalus:init_per_suite(Config)].
+     escalus:init_per_suite(Config1)].
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
-    ok.
-
-init_per_group(_GroupName, Config) ->
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT,
-                               [privacy, privacy_item]),
-    escalus:create_users(Config, escalus:get_users([carol, karen])).
-
-end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, escalus:get_users([carol, karen])).
+    escalus:delete_users(Config, escalus:get_users([carol, karen])),
+    escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).

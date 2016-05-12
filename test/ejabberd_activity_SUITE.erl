@@ -2,6 +2,7 @@
 %%% @doc Integration test suite for last activity and offline modules
 -module(ejabberd_activity_SUITE).
 -compile(export_all).
+-compile({parse_transform, fun_chain}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -16,11 +17,11 @@ all() ->
     [{group, last_activity}, {group, offline}].
 
 groups() ->
-    [{last_activity, [sequence], [activity_story,
-                                  update_activity_story,
-                                  server_uptime_story,
-                                  unknown_user_acivity_story]},
-     {offline, [sequence], [offline_message_story]}].
+    [{last_activity, [], [activity_story,
+                          update_activity_story,
+                          server_uptime_story,
+                          unknown_user_acivity_story]},
+     {offline, [], [offline_message_story]}].
 
 suite() ->
     escalus:suite().
@@ -31,22 +32,18 @@ suite() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    ok = test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
-    escalus:init_per_suite(Config).
+    Users = escalus:get_users([alice, bob]),
+    fun_chain:first(Config,
+        escalus:init_per_suite(),
+        escalus:create_users(Users),
+        escalus_story:make_everyone_friends(Users)
+    ).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd().
-
-init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config),
-    Config2 = escalus:make_everyone_friends(Config),
-    escalus_ejabberd:wait_for_session_count(Config2, 0),
-    Config2.
-
-end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config).
+    escalus:delete_users(Config, escalus:get_users([alice, bob])),
+    escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -61,7 +58,7 @@ end_per_testcase(CaseName, Config) ->
 
 activity_story(Config) ->
     % Last online story
-    escalus:story(Config, [1, 1],
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
         fun(Alice, _Bob) ->
             %% Alice asks about Bob's last activity
             escalus_client:send(Alice, escalus_stanza:last_activity(bob)),
@@ -73,7 +70,7 @@ activity_story(Config) ->
         end).
 
 update_activity_story(Config) ->
-    escalus:story(Config, [1],
+    escalus:story(Config, [{alice, 1}],
         fun(Alice) ->
             %% Bob logs in
             {ok, Bob} = escalus_client:start_for(Config, bob, <<"bob">>),
@@ -97,7 +94,7 @@ update_activity_story(Config) ->
         end).
 
 server_uptime_story(Config) ->
-    escalus:story(Config, [1],
+    escalus:story(Config, [{alice, 1}],
         fun(Alice) ->
             %% Alice asks for server's uptime
             Server = escalus_users:get_server(Config, alice),
@@ -110,7 +107,7 @@ server_uptime_story(Config) ->
         end).
 
 unknown_user_acivity_story(Config) ->
-    escalus:story(Config, [1],
+    escalus:story(Config, [{alice, 1}],
         fun(Alice) ->
             escalus_client:send(Alice,
                                 escalus_stanza:last_activity(<<"sven">>)),

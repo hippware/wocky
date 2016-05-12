@@ -2,6 +2,7 @@
 %%% @doc Integration test suite for mod_wocky_user
 -module(user_SUITE).
 -compile(export_all).
+-compile({parse_transform, fun_chain}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -22,7 +23,7 @@ all() ->
     [
      {group, self},
      {group, other},
-%    {group, friend},
+%%    {group, friend},
      {group, error},
      {group, set},
      {group, error_set}
@@ -30,81 +31,79 @@ all() ->
 
 groups() ->
     [
-     {self, [sequence], [all_fields,
-                         some_fields,
-                         garbage_get
-                        ]},
-     {other, [sequence], [other_user_all_fields,
-                          other_user_allowed_fields,
-                          other_user_denied_field,
-                          other_user_mixed_fields,
-                          non_existant_user,
-                          invalid_user]},
-%     {friend, [sequence], [friend_all_fields,
-%                          friend_allowed_fields,
-%                          friend_denied_field,
-%                          friend_mixed_fields]},
-     {error, [sequence], [missing_node,
-                          malformed_user,
-                          wrong_type,
-                          wrong_type2,
-                          missing_var,
-                          non_existant_field
-                         ]},
-     {set, [sequence], [set_fields,
-                        set_other_user,
-                        garbage_set,
-                        delete_user
-                       ]},
-     {error_set, [sequence], [set_missing_node,
-                              rest_writable_field,
-                              non_writable_field,
-                              blank_handle,
-                              set_malformed_user,
-                              set_wrong_type,
-                              set_missing_var,
-                              set_missing_value,
-                              handle_clash,
-                              same_handle,
-                              invalid_email,
-                              invalid_avatar,
-                              non_local_avatar,
-                              non_uuid_avatar
-                             ]}
+     {self, [], [all_fields,
+                 some_fields,
+                 garbage_get]},
+     {other, [], [other_user_all_fields,
+                  other_user_allowed_fields,
+                  other_user_denied_field,
+                  other_user_mixed_fields,
+                  non_existant_user,
+                  invalid_user]},
+%%     {friend, [], [friend_all_fields,
+%%                   friend_allowed_fields,
+%%                   friend_denied_field,
+%%                   friend_mixed_fields]},
+     {error, [], [missing_node,
+                  malformed_user,
+                  wrong_type,
+                  wrong_type2,
+                  missing_var,
+                  non_existant_field]},
+     {set, [], [set_fields,
+                set_other_user,
+                garbage_set,
+                delete_user]},
+     {error_set, [], [set_missing_node,
+                      rest_writable_field,
+                      non_writable_field,
+                      blank_handle,
+                      set_malformed_user,
+                      set_wrong_type,
+                      set_missing_var,
+                      set_missing_value,
+                      handle_clash,
+                      same_handle,
+                      invalid_email,
+                      invalid_avatar,
+                      non_local_avatar,
+                      non_uuid_avatar]}
     ].
+
+suite() ->
+    escalus:suite().
+
 
 %%--------------------------------------------------------------------
 %% Init & teardown
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
-    ok.
+    escalus:end_per_suite(Config).
 
-init_per_group(friend, Config) ->
-    Config2 = escalus:create_users(Config),
-    escalus:make_everyone_friends(Config2),
-    escalus_ejabberd:wait_for_session_count(Config2, 0),
-    Config2;
+%% init_per_group(friend, Config) ->
+%%     Users = escalus:get_users([alice, bob]),
+%%     fun_chain:first(Config,
+%%         escalus:create_users(Users),
+%%         escalus_story:make_everyone_friends(Users)
+%%     );
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config),
-    escalus_ejabberd:wait_for_session_count(Config, 0),
-    Config.
+    escalus:create_users(Config, escalus:get_users([alice, bob])).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config).
+    escalus:delete_users(Config, escalus:get_users([alice, bob])).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
 
 %%--------------------------------------------------------------------
 %% mod_wocky_user 'get' tests
@@ -177,32 +176,32 @@ invalid_user(Config) ->
         expect_iq_error(QueryStanza, Bob)
     end).
 
-%friend_all_fields(Config) ->
-%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%        QueryStanza = get_request(<<"463">>, ?ALICE_UUID, []),
-%        expect_iq_error(QueryStanza, Bob)
-%    end).
+%%friend_all_fields(Config) ->
+%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%%        QueryStanza = get_request(<<"463">>, ?ALICE_UUID, []),
+%%        expect_iq_error(QueryStanza, Bob)
+%%    end).
 
-%friend_allowed_fields(Config) ->
-%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%        QueryStanza = get_request(<<"464">>, ?ALICE_UUID,
-%                                  [<<"handle">>, <<"avatar">>,
-%                                   <<"phoneNumber">>]),
-%        expect_iq_success(QueryStanza, Bob)
-%    end).
+%%friend_allowed_fields(Config) ->
+%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%%        QueryStanza = get_request(<<"464">>, ?ALICE_UUID,
+%%                                  [<<"handle">>, <<"avatar">>,
+%%                                   <<"phoneNumber">>]),
+%%        expect_iq_success(QueryStanza, Bob)
+%%    end).
 
-%friend_denied_field(Config) ->
-%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%        QueryStanza = get_request(<<"465">>, ?ALICE_UUID, [<<"userID">>]),
-%        expect_iq_error(QueryStanza, Bob)
-%    end).
+%%friend_denied_field(Config) ->
+%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%%        QueryStanza = get_request(<<"465">>, ?ALICE_UUID, [<<"userID">>]),
+%%        expect_iq_error(QueryStanza, Bob)
+%%    end).
 
-%friend_mixed_fields(Config) ->
-%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%        QueryStanza = get_request(<<"466">>, ?ALICE_UUID,
-%                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
-%        expect_iq_error(QueryStanza, Bob)
-%    end).
+%%friend_mixed_fields(Config) ->
+%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
+%%        QueryStanza = get_request(<<"466">>, ?ALICE_UUID,
+%%                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
+%%        expect_iq_error(QueryStanza, Bob)
+%%    end).
 
 missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->

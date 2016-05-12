@@ -26,8 +26,8 @@ all() ->
     ].
 
 groups() ->
-    [{new, [sequence], new_cases()},
-     {existing, [sequence], existing_cases()}
+    [{new, [], new_cases()},
+     {existing, [], existing_cases()}
     ].
 
 new_cases() ->
@@ -51,22 +51,25 @@ existing_cases() ->
      digits_unavailable
     ].
 
+suite() ->
+    escalus:suite().
+
+
 %%--------------------------------------------------------------------
 %% Init & teardown
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     fake_digits_server:start(true),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
-    ok.
+    fake_digits_server:stop(),
+    escalus:end_per_suite(Config).
 
-init_per_group(_, Config) ->
+init_per_group(_GroupName, Config) ->
     Config.
 
 end_per_group(_GroupName, Config) ->
@@ -77,6 +80,7 @@ init_per_testcase(CaseName, Config) ->
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
 
 %%--------------------------------------------------------------------
 %% mod_wocky_reg new user tests
@@ -136,6 +140,7 @@ invalid_provider_data(Config) ->
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
     assert_is_malformed_error(Result).
+
 
 %%--------------------------------------------------------------------
 %% mod_wocky_reg existing user tests

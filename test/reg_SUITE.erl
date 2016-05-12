@@ -2,14 +2,9 @@
 %%% @doc Integration test suite for wocky_reg
 -module(reg_SUITE).
 
--export([
-         suite/0,
-         all/0,
-         groups/0,
+-export([all/0,
          init_per_suite/1,
          end_per_suite/1,
-         init_per_group/2,
-         end_per_group/2,
          init_per_testcase/2,
          end_per_testcase/2]).
 
@@ -42,12 +37,7 @@
 -define(URL, "http://localhost:1096/wocky/v1/user").
 -define(TEST_HANDLE, <<"TinyRooooobot">>).
 
-all() -> [{group, reg}].
-
-groups() ->
-    [{reg, [sequence], reg_cases()}].
-
-reg_cases() ->
+all() ->
     [
      incorrect_req_type,
      invalid_json,
@@ -72,21 +62,12 @@ reg_cases() ->
      wrong_purpose_avatar
     ].
 
-suite() ->
-    escalus:suite().
-
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
-    escalus:init_per_suite(Config).
+    ok = test_helper:ensure_wocky_is_running(),
+    Config.
 
-end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
+end_per_suite(_Config) ->
     ok.
-
-init_per_group(_Group, ConfigIn) -> ConfigIn.
-
-end_per_group(_Group, Config) -> Config.
 
 init_per_testcase(_CaseName, Config) ->
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
@@ -96,6 +77,7 @@ init_per_testcase(_CaseName, Config) ->
 
 end_per_testcase(_CaseName, Config) ->
     Config.
+
 
 %%%===================================================================
 %%% Tests
