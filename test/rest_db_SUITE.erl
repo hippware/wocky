@@ -2,13 +2,9 @@
 %%% @doc Integration test suite for wocky_reg
 -module(rest_db_SUITE).
 
--export([
-         all/0,
-         groups/0,
+-export([all/0,
          init_per_suite/1,
          end_per_suite/1,
-         init_per_group/2,
-         end_per_group/2,
          init_per_testcase/2,
          end_per_testcase/2]).
 
@@ -21,28 +17,15 @@
 
 -define(URL, "http://localhost:1096/wocky/v1/db/reset").
 
-all() -> [{group, db}].
-
-groups() ->
-    [{db, [sequence], db_cases()}].
-
-db_cases() ->
-    [
-     unauthorized,
-     reset_db
-    ].
+all() ->
+    [unauthorized, reset_db].
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     Config.
 
 end_per_suite(_Config) ->
-    test_helper:stop_ejabberd(),
     ok.
-
-init_per_group(_Group, ConfigIn) -> ConfigIn.
-
-end_per_group(_Group, Config) -> Config.
 
 init_per_testcase(_CaseName, Config) ->
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
@@ -55,6 +38,7 @@ init_per_testcase(_CaseName, Config) ->
 
 end_per_testcase(_CaseName, Config) ->
     Config.
+
 
 %%%===================================================================
 %%% Tests

@@ -2,6 +2,7 @@
 %%% @doc Integration test suite for mod_wocky_user
 -module(group_chat_SUITE).
 -compile(export_all).
+-compile({parse_transform, fun_chain}).
 
 -include("wocky.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
@@ -39,29 +40,32 @@ all() ->
      archive
     ].
 
+suite() ->
+    escalus:suite().
 
 %%--------------------------------------------------------------------
 %% Init & teardown
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
-    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [group_chat]),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
-    escalus:create_users(Config),
-    escalus_ejabberd:wait_for_session_count(Config, 0),
-    escalus:init_per_suite(Config).
+    Users = escalus:get_users([alice, bob, carol, karen]),
+    fun_chain:first(Config,
+        escalus:init_per_suite(),
+        escalus:create_users(Users)
+    ).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
-    ok.
+    escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
+    escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
 
 %%--------------------------------------------------------------------
 %% mod_group_chat tests

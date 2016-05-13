@@ -16,6 +16,7 @@
 
 -module(ejabberd_roster_SUITE).
 -compile(export_all).
+-compile({parse_transform, fun_chain}).
 
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -32,19 +33,19 @@ all() ->
      {group, subscribe_group}].
 
 groups() ->
-    [{roster, [sequence], [get_roster,
-                           add_contact,
-                           roster_push,
-                           remove_contact]},
-     {roster_versioning, [sequence], [versioning]},
-     {subscribe_group, [sequence], [subscribe,
-                                    subscribe_decline,
-                                    subscribe_relog,
-                                    unsubscribe,
-                                    remove_unsubscribe]}].
+  [{roster, [], [get_roster,
+                 add_contact,
+                 roster_push,
+                 remove_contact]},
+   {roster_versioning, [], [versioning]},
+   {subscribe_group, [], [subscribe,
+                          subscribe_decline,
+                          subscribe_relog,
+                          unsubscribe,
+                          remove_unsubscribe]}].
 
 suite() ->
-    [{required, ejabberd_node} | escalus:suite()].
+    escalus:suite().
 
 
 %%--------------------------------------------------------------------
@@ -52,20 +53,18 @@ suite() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    ok = test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [roster]),
-    escalus:init_per_suite(Config).
+    Users = escalus:get_users([alice, bob, carol]),
+    fun_chain:first(Config,
+        escalus:init_per_suite(),
+        escalus:create_users(Users)
+    ).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd().
-
-init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, escalus:get_users([alice, bob, carol])).
-
-end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])).
+    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])),
+    escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).

@@ -2,21 +2,32 @@
 %%% @doc Helper functions for Wocky integration test suites
 -module(test_helper).
 
--export([start_ejabberd/0, stop_ejabberd/0]).
+-export([ensure_wocky_is_running/0]).
 
 -export([expect_iq_success/2, expect_iq_error/2]).
 
-start_ejabberd() ->
+ensure_wocky_is_running() ->
     case net_kernel:start(['mongooseim@localhost', longnames]) of
         {ok, _Pid} -> ok;
         {error, {already_started, _Pid}} -> ok
     end,
 
-    ok = wocky_app:start("test"),
-    wocky_app:start_ejabberd("../../../../etc").
+    Applications = application:which_applications(),
+    case app_is_running(Applications, wocky) of
+        true -> ok;
+        false -> ok = wocky_app:start("test")
+    end,
+    case app_is_running(Applications, ejabberd) of
+        true -> ok;
+        false -> wocky_app:start_ejabberd("../../../../etc")
+    end.
 
-stop_ejabberd() ->
-    wocky_app:stop().
+app_is_running(Applications, Name) ->
+    case lists:keysearch(Name, 1, Applications) of
+        {value, _} -> true;
+        false -> false
+    end.
+
 
 expect_iq_success(Stanza, User) ->
     expect_something(Stanza, User, is_iq_result).
@@ -35,4 +46,3 @@ expect_something(Stanza, User, Expect) ->
 add_to(Stanza, User) ->
     escalus_stanza:to(Stanza,
       escalus_client:server(User)).
-

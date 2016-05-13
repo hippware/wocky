@@ -2,6 +2,7 @@
 %%% @doc Integration test suite for TROS
 -module(tros_SUITE).
 -compile(export_all).
+-compile({parse_transform, fun_chain}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -14,55 +15,49 @@
 
 all() ->
     [
-     {group, tros}
+     file_updown_story,
+     multipart_story,
+     file_down_bob_story,
+     file_down_carol_story,
+     file_up_too_big_story,
+     file_up_too_small_story,
+     request_too_big_story,
+     wrong_purpose_story,
+     wrong_type_story
     ].
 
-groups() ->
-    [
-     {tros, [sequence], [file_updown_story,
-                         multipart_story,
-                         file_down_bob_story,
-                         file_down_carol_story,
-                         file_up_too_big_story,
-                         file_up_too_small_story,
-                         request_too_big_story,
-                         wrong_purpose_story,
-                         wrong_type_story
-                        ]}
-    ].
+suite() ->
+    escalus:suite().
+
 
 %%--------------------------------------------------------------------
 %% Init & teardown
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     ejabberd_config:del_local_option(tros_public_port),
     ejabberd_config:add_local_option(tros_public_port, 1025),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
-    escalus:init_per_suite(Config).
+    Users = escalus:get_users([alice, bob, carol]),
+    fun_chain:first(Config,
+        escalus:init_per_suite(),
+        escalus:create_users(Users),
+        escalus_story:make_everyone_friends(Users)
+    ).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
-    ok.
-
-init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config),
-    Config2 = escalus:make_everyone_friends(Config),
-    escalus_ejabberd:wait_for_session_count(Config2, 0),
-    Config2.
-
-end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config).
+    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])),
+    escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
 
 %%--------------------------------------------------------------------
 %% mod_tros tests

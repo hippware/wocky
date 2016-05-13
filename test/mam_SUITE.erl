@@ -122,9 +122,9 @@ all() ->
     ].
 
 groups() ->
-    [{mam, [sequence], mam_cases()},
-     {bootstrapped, [sequence], bootstrapped_cases()},
-     {rsm, [sequence], rsm_cases()}
+    [{mam, [], mam_cases()},
+     {bootstrapped, [], bootstrapped_cases()},
+     {rsm, [], rsm_cases()}
     ].
 
 bootstrapped_cases() ->
@@ -166,14 +166,13 @@ suite() ->
     escalus:suite().
 
 init_per_suite(Config) ->
-    test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd(),
-    ok.
+    escalus:end_per_suite(Config).
 
 user_names() ->
     [alice, bob, carol].
@@ -186,14 +185,11 @@ delete_users(Config) ->
 
 init_per_group(Group, ConfigIn) ->
     Config0 = init_modules(ConfigIn),
-    wocky_db_seed:clear_tables(<<"localhost">>, [message_archive]),
-    ct:pal("Init per group ~p", [Group]),
     Config1 = create_users(Config0),
     init_state(Group, Config1).
 
 end_per_group(Group, Config) ->
     delete_users(Config),
-    wocky_db_seed:clear_tables(<<"localhost">>, [message_archive]),
     end_modules(Group, Config).
 
 init_modules(Config) ->

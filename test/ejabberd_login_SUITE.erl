@@ -41,11 +41,11 @@ all() ->
      {group, messages}].
 
 groups() ->
-    [{login, [no_sequence], login_tests()},
-     {login_scram, [sequence], scram_tests()},
-     {login_scram_store_plain, [sequence], scram_tests()},
-     {token_auth, [sequence], [acquire_token, release_token, login_with_token]},
-     {messages, [sequence], [messages_story]}].
+    [{login, [], login_tests()},
+     {login_scram, [], scram_tests()},
+     {login_scram_store_plain, [], scram_tests()},
+     {token_auth, [], [acquire_token, release_token, login_with_token]},
+     {messages, [], [messages_story]}].
 
 login_tests() ->
     [log_one,
@@ -68,13 +68,12 @@ suite() ->
 %%--------------------------------------------------------------------
 
 init_per_suite(Config) ->
-    ok = test_helper:start_ejabberd(),
+    ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    escalus:end_per_suite(Config),
-    test_helper:stop_ejabberd().
+    escalus:end_per_suite(Config).
 
 init_per_group(GroupName, Config) when GroupName =:= login;
       GroupName =:= login_scram; GroupName =:= login_scram_store_plain ->
