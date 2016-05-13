@@ -484,7 +484,7 @@ is_valid_id(ID) ->
 %% @doc Convert a Cassandra timestamp to an ISO-8601 string
 -spec timestamp_to_string(non_neg_integer()) -> binary().
 timestamp_to_string(TS) ->
-    qdate:to_string("c", timestamp_to_seconds(TS)).
+    list_to_binary(qdate:to_string("c", timestamp_to_seconds(TS))).
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
 %%

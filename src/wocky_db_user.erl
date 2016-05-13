@@ -457,18 +457,22 @@ generate_token() ->
 %% `LResource': the "resourcepart" of the user's JID.
 %%
 -spec assign_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
-                  -> {ok, token()} | {error, not_found}.
+                  -> {ok, token(), pos_integer()} | {error, not_found}.
 assign_token(LUser, LServer, LResource) ->
     case does_user_exist(LUser, LServer) of
         true ->
             Token = generate_token(),
+            CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
+            ExpiresAt = CreatedAt + ?TOKEN_EXPIRE,
             ok = wocky_db:insert(LServer, auth_token,
                                  #{user => LUser,
                                    server => LServer,
                                    resource => LResource,
                                    auth_token => Token,
+                                   created_at => CreatedAt,
+                                   expires_at => ExpiresAt,
                                    '[ttl]' => ?TOKEN_EXPIRE}),
-            {ok, Token};
+            {ok, Token, ExpiresAt};
 
         false ->
             {error, not_found}
