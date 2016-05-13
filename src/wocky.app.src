@@ -13,7 +13,8 @@
                   cqerl,
                   stringprep,
                   webmachine,
-                  z_stdlib]},
+                  z_stdlib,
+                  qdate]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [
