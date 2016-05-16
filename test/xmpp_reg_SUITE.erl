@@ -66,7 +66,6 @@ init_per_suite(Config) ->
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    fake_digits_server:stop(),
     escalus:end_per_suite(Config).
 
 init_per_group(_GroupName, Config) ->
