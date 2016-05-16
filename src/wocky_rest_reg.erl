@@ -301,7 +301,7 @@ set_result(RD, Ctx = #state{server = Server,
                                        resource := Resource}}) ->
     Fields = wocky_db:drop_nulls(
                wocky_db_user:get_user_data(UUID, Server)),
-    {ok, Token} = wocky_db_user:assign_token(UUID, Server, Resource),
+    {ok, Token, _} = wocky_db_user:assign_token(UUID, Server, Resource),
     Ret = [{token, Token}, {is_new, IsNew},
            {phone_number_set, PhoneNumberSet}, {handle_set, HandleSet},
            {resource, Resource} | maps:to_list(Fields)],

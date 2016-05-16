@@ -10,6 +10,9 @@
 
 -import(mod_wocky_token, [handle_iq/3]).
 
+-define(ISO8601_REGEX,
+        "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d\\+\\d\\d:\\d\\d").
+
 
 mod_wocky_token_test_() -> {
   "mod_wocky_token",
@@ -53,11 +56,26 @@ test_non_local_domain() ->
                     handle_iq(#jid{lserver = <<"remote">>}, #jid{}, #iq{}))
   ]}.
 
+before() ->
+    handle_iq(jid(), #jid{}, #iq{type = get}).
+
 test_iq_get() ->
-  { "handle_iq returns a result IQ with a token when the IQ type is get", [
-      ?_assertMatch(?RESULT_IQ([#xmlcdata{content = <<"$T$", _/binary>>}]),
-                    handle_iq(jid(), #jid{}, #iq{type = get}))
-  ]}.
+  { "handle_iq with type get", setup, fun before/0, fun (IQ) -> [
+    { "returns a result IQ", [
+      ?_assertMatch(#iq{type = result}, IQ)
+    ]},
+    { "returns an IQ with a token", [
+      ?_assertMatch(?RESULT_IQ([#xmlcdata{content = <<"$T$", _/binary>>}]), IQ)
+    ]},
+    { "returns an IQ with an expiry", [
+      ?_test(
+       begin
+         #iq{sub_el = [#xmlel{attrs = [{<<"xmlns">>, _},
+                                      {<<"expiry">>, Expiry}]}]} = IQ,
+         ?assertMatch({match, _}, re:run(Expiry, ?ISO8601_REGEX))
+       end)
+    ]}
+  ] end}.
 
 test_iq_set() ->
   { "handle_iq returns an empty result IQ when the IQ type is set", [

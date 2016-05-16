@@ -167,8 +167,8 @@ test_generate_token() ->
   ]}.
 
 token_setup() ->
-    {ok, Token} = assign_token(?USER, ?SERVER, ?RESOURCE),
-    Token.
+    {ok, Token, Expiry} = assign_token(?USER, ?SERVER, ?RESOURCE),
+    {Token, Expiry}.
 
 token_cleanup(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]).
@@ -176,15 +176,16 @@ token_cleanup(_) ->
 test_assign_token() ->
   { "assign_token", [
     { "generates and stores a token for the user",
-      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) ->
+      setup, fun token_setup/0, fun token_cleanup/1, fun ({Token, Expiry}) ->
       {inorder, [
         ?_assertMatch(<<"$T$", _/binary>>, Token),
-        ?_assertEqual([Token], get_tokens(?USER, ?SERVER))
+        ?_assertEqual([Token], get_tokens(?USER, ?SERVER)),
+        ?_assert(is_integer(Expiry))
       ]} end},
     { "overwrites tokens when there are multiple requests", {inorder, [
-      ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
-      ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
-      ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
+      ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
+      ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
+      ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
       ?_assertEqual(1, length(get_tokens(?USER, ?SERVER)))
     ]}},
     { "returns {error, not_found} if user does not exist", [
@@ -220,10 +221,10 @@ test_release_token() ->
 test_get_tokens() ->
   { "get_tokens", [
     { "returns all tokens for a user",
-      setup, fun token_setup/0, fun token_cleanup/1, fun (Token) ->
+      setup, fun token_setup/0, fun token_cleanup/1, fun ({Token, _Expiry}) ->
       {inorder, [
-        ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, <<"test1">>)),
-        ?_assertMatch({ok, _}, assign_token(?USER, ?SERVER, <<"test2">>)),
+        ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, <<"test1">>)),
+        ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, <<"test2">>)),
         ?_assertEqual(3, length(get_tokens(?USER, ?SERVER))),
         ?_assert(lists:member(Token, get_tokens(?USER, ?SERVER)))
     ]} end},
@@ -240,7 +241,7 @@ test_get_tokens() ->
 
 test_check_token() ->
   { "check_token", setup, fun token_setup/0, fun token_cleanup/1,
-    fun (Token) -> [
+    fun ({Token, _Expiry}) -> [
       { "accepts a valid token", [
         ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
       ]},

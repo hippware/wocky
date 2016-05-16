@@ -8,7 +8,7 @@
           provider      :: binary(),
           is_new        :: boolean(),
           token         :: wocky_db_user:token() | undefined,
-          token_expiry  :: non_neg_integer(),
+          token_expiry  :: binary(),
           external_id   :: binary()
          }).
 
