@@ -22,14 +22,14 @@ register_user(JSON) ->
                                                          ProviderData),
         {User, Server, IsNew} <- create_or_update_user(ExternalID,
                                                        PhoneNumber),
-        Token <- maybe_get_token(GetToken, User, Server, Resource),
+        {Token, Expiry} <- maybe_get_token(GetToken, User, Server, Resource),
         {ok, #reg_result{
                 user = User,
                 server = Server,
                 provider = Provider,
                 is_new = IsNew,
                 token = Token,
-                token_expiry = ?TOKEN_EXPIRE,
+                token_expiry = Expiry,
                 external_id = ExternalID}}
        ]).
 
@@ -95,7 +95,7 @@ create_user(ExternalID, PhoneNumber) ->
     {ok, {User, Server, true}}.
 
 maybe_get_token(false, _, _, _) ->
-    {ok, undefined};
+    {ok, {undefined, undefined}};
 maybe_get_token(true, User, Server, Resource) ->
-    {ok, Token} = wocky_db_user:assign_token(User, Server, Resource),
-    {ok, Token}.
+    {ok, Token, Expiry} = wocky_db_user:assign_token(User, Server, Resource),
+    {ok, {Token, wocky_db:timestamp_to_string(Expiry)}}.

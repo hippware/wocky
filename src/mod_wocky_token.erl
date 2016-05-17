@@ -42,18 +42,19 @@ handle_iq(From, _To, #iq{sub_el = SubEl} = IQ) ->
     end.
 
 handle_local_iq(LUser, LServer, LResource, #iq{type = get} = IQ) ->
-    {ok, Token} = wocky_db_user:assign_token(LUser, LServer, LResource),
-    iq_result(IQ, [#xmlcdata{content = Token}]);
+    {ok, Token, Expiry} = wocky_db_user:assign_token(LUser, LServer, LResource),
+    iq_result(IQ,
+              [{<<"expiry">>, expiry_string(Expiry)}],
+              [#xmlcdata{content = Token}]);
 handle_local_iq(LUser, LServer, LResource, #iq{type = set} = IQ) ->
     ok = wocky_db_user:release_token(LUser, LServer, LResource),
-    iq_result(IQ, []).
+    iq_result(IQ, [], []).
 
-iq_result(IQ, Content) ->
+iq_result(IQ, Attrs, Content) ->
     IQ#iq{type = result,
           sub_el = [#xmlel{name = <<"query">>,
-                           attrs = [{<<"xmlns">>, ?NS_TOKEN},
-                                    {<<"duration">>, expiry_string()}],
+                           attrs = [{<<"xmlns">>, ?NS_TOKEN} | Attrs],
                            children = Content}]}.
 
-expiry_string() ->
-    integer_to_binary(?TOKEN_EXPIRE).
+expiry_string(Expiry) ->
+    wocky_db:timestamp_to_string(Expiry).
