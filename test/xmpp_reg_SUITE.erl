@@ -22,12 +22,14 @@
 all() ->
     [
      {group, new},
-     {group, existing}
+     {group, existing},
+     {group, no_digits}
     ].
 
 groups() ->
     [{new, [], new_cases()},
-     {existing, [], existing_cases()}
+     {existing, [], existing_cases()},
+     {no_digits, [], no_digits_cases()}
     ].
 
 new_cases() ->
@@ -47,7 +49,11 @@ existing_cases() ->
      update,
      update_no_changes,
      no_token,
-     unauthorized_update,
+     unauthorized_update
+    ].
+
+no_digits_cases() ->
+    [
      digits_unavailable
     ].
 
@@ -61,17 +67,22 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    fake_digits_server:start(true),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
+init_per_group(no_digits, Config) ->
+    Config;
 init_per_group(_GroupName, Config) ->
+    fake_digits_server:start(true),
     Config.
 
+end_per_group(no_digits, Config) ->
+    Config;
 end_per_group(_GroupName, Config) ->
+    fake_digits_server:stop(),
     escalus:delete_users(Config).
 
 init_per_testcase(CaseName, Config) ->
@@ -178,7 +189,6 @@ unauthorized_update(Config) ->
     unauthorized_new(Config).
 
 digits_unavailable(Config) ->
-    fake_digits_server:stop(),
     Client = start_client(Config),
     Stanza = request_stanza(request_data(provider_data())),
     Result = escalus:send_and_wait(Client, Stanza),
