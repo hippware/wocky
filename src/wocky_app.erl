@@ -86,7 +86,6 @@ bake_cookie() ->
 %%%===================================================================
 
 start(_StartType, _StartArgs) ->
-    erlang:set_cookie(node(), bake_cookie()),
     ok = set_wocky_env(),
     {ok, Pid} = wocky_sup:start_link(),
     ok = maybe_start_ejabberd(),
