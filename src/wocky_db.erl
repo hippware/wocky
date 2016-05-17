@@ -47,8 +47,9 @@
          single_result/1, fetch_more/1]).
 
 %% Utility API
--export([create_id/0, is_valid_id/1, seconds_to_timestamp/1,
-         timestamp_to_seconds/1, timestamp_to_now/1, now_to_timestamp/1,
+-export([create_id/0, is_valid_id/1, timestamp_to_string/1,
+         seconds_to_timestamp/1, timestamp_to_seconds/1,
+         timestamp_to_now/1, now_to_timestamp/1,
          expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1,
          table_columns/1]).
 
@@ -479,6 +480,11 @@ is_valid_id(ID) ->
         _:_ ->
             false
     end.
+
+%% @doc Convert a Cassandra timestamp to an ISO-8601 string
+-spec timestamp_to_string(non_neg_integer()) -> binary().
+timestamp_to_string(TS) ->
+    list_to_binary(qdate:to_string("c", timestamp_to_seconds(TS))).
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
 %%

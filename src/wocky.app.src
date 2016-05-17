@@ -14,6 +14,7 @@
                   stringprep,
                   webmachine,
                   z_stdlib,
+                  qdate,
                   erld_erlang_app]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
