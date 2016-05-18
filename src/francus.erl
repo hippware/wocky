@@ -7,7 +7,6 @@
 
 -export([
          open_write/4,
-         open_write/5,
          open_read/2,
          read/1,
          read/2,
@@ -21,8 +20,11 @@
          id/1
         ]).
 
+-ignore_xref([{read, 2}, {size, 1}]).
+
 -ifdef(TEST).
--export([default_chunk_size/0]).
+-export([open_write/5,
+         default_chunk_size/0]).
 -endif.
 
 -export_type([

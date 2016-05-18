@@ -6,10 +6,10 @@
 -include("wocky_db_seed.hrl").
 
 -import(wocky_db_user,
-        [does_user_exist/2, create_user/1, create_user/3,
-         create_user/4, update_user/1, remove_user/2, get_password/2,
+        [does_user_exist/2, create_user/1, create_user/4,
+         update_user/1, remove_user/2, get_password/2,
          set_password/3, generate_token/0, assign_token/3,
-         release_token/3, get_tokens/2, check_token/4,
+         release_token/3, get_tokens/2, check_token/3,
          maybe_set_handle/3,
          get_handle/2, get_user_by_handle/1,
          set_phone_number/3,
@@ -34,7 +34,6 @@ wocky_db_user_test_() ->
          test_release_token(),
          test_check_token()
        ],
-       test_create_user_without_id(),
        test_create_user_with_id(),
        test_set_password(),
        test_remove_user(),
@@ -87,16 +86,6 @@ test_does_user_exist() ->
     { "returns false if the user does not exist", [
       ?_assertNot(does_user_exist(?BADUSER, ?SERVER)),
       ?_assertNot(does_user_exist(<<"alice">>, ?SERVER))
-    ]}
-  ]}.
-
-test_create_user_without_id() ->
-  { "create_user", [
-    { "creates a user if none exists", [
-      ?_assertMatch({ok, _}, create_user(?SERVER, <<"nosuchuser">>, ?PASS))
-    ]},
-    { "fails if user already exists", [
-      ?_assertMatch({error, exists}, create_user(?SERVER, ?HANDLE, ?PASS))
     ]}
   ]}.
 
@@ -243,15 +232,13 @@ test_check_token() ->
   { "check_token", setup, fun token_setup/0, fun token_cleanup/1,
     fun ({Token, _Expiry}) -> [
       { "accepts a valid token", [
-        ?_assert(check_token(?USER, ?SERVER, ?RESOURCE, Token))
+        ?_assert(check_token(?USER, ?SERVER, Token))
       ]},
       { "denies any other token", [
-        ?_assertNot(check_token(?USER, ?SERVER, ?RESOURCE, <<"badtoken">>))
+        ?_assertNot(check_token(?USER, ?SERVER, <<"badtoken">>))
       ]},
-      { "denies tokens with a bad user or resource", [
-        ?_assertNot(check_token(wocky_db:create_id(),
-                                ?SERVER, ?RESOURCE, Token)),
-        ?_assertNot(check_token(?USER, ?SERVER, <<"badresource">>, Token))
+      { "denies tokens with a bad user", [
+        ?_assertNot(check_token(wocky_db:create_id(), ?SERVER, Token))
       ]}
    ] end}.
 

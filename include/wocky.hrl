@@ -10,8 +10,6 @@
 -ifndef(WOCKY_HRL).
 -define(WOCKY_HRL, true).
 
--define(WOCKY_VERSION, element(2, application:get_key(wocky,vsn))).
-
 -record(table_def, {
           name          :: atom(),
           columns       :: [{atom(), atom()

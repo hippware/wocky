@@ -27,7 +27,7 @@ ct:
 	@if [ "$(SUITE)" ]; then $(REBAR) ct --suite $(SUITE);\
 	else $(REBAR) ct; fi
 
-ci: cleanall compile lint dialyzer eunit ct
+ci: cleanall compile lint xref dialyzer eunit ct cover
 	@echo "Build complete."
 
 %:

@@ -11,6 +11,7 @@
 
 %% IQ handler callback
 -export([handle_phone_iq/3, handle_handle_iq/3]).
+-ignore_xref([{handle_phone_iq, 3}, {handle_handle_iq, 3}]).
 
 -ifdef(TEST).
 -export([lookup_reductions/2, save_reductions/3]).

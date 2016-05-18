@@ -13,6 +13,12 @@
          version/0, server/0, is_testing/0,
          get_config/1]).
 
+-ignore_xref([{start, 0},
+              {start, 1},
+              {start_ejabberd, 0},
+              {start_ejabberd, 1},
+              {stop, 0}]).
+
 
 -spec start(string()) -> ok.
 start(Env) ->
@@ -48,7 +54,7 @@ start_ejabberd(CfgDir) ->
 
 -spec version() -> binary().
 version() ->
-    ?WOCKY_VERSION.
+    element(2, application:get_key(wocky, vsn)).
 
 -spec server() -> binary().
 server() ->

@@ -12,6 +12,8 @@
          stop/1,
          process_local_iq/3]).
 
+-ignore_xref([{process_local_iq, 3}]).
+
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
@@ -46,6 +48,6 @@ process_local_iq(_From, _To,
                             #xmlel{name = <<"name">>,
                                    children = [{xmlcdata, <<"wocky">>}]},
                             #xmlel{name = <<"version">>,
-                                   children = [{xmlcdata, ?WOCKY_VERSION}]}
+                                   children = [{xmlcdata, wocky_app:version()}]}
                         ]}]}
     end.

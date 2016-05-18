@@ -50,8 +50,9 @@
 -export([create_id/0, is_valid_id/1, timestamp_to_string/1,
          seconds_to_timestamp/1, timestamp_to_seconds/1,
          timestamp_to_now/1, now_to_timestamp/1,
-         expire_to_ttl/1, drop_all_nulls/1, drop_nulls/1,
-         table_columns/1]).
+         expire_to_ttl/1, drop_nulls/1, table_columns/1]).
+
+-ignore_xref([{batch_query, 4}]).
 
 -ifdef(TEST).
 %% Query building functions exported for unit tests
@@ -533,11 +534,6 @@ expire_to_ttl(Expire) ->
     Now = os:timestamp(),
     TTL = timer:now_diff(Expire, Now) div 1000000,
     lists:max([TTL, 1]).
-
-%% @doc TBD
--spec drop_all_nulls(rows()) -> rows().
-drop_all_nulls(Rows) ->
-    [drop_nulls(Row) || Row <- Rows].
 
 %% @doc TBD
 -spec drop_nulls(row()) -> row().

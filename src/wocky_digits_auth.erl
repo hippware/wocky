@@ -6,7 +6,7 @@
 %%% number returned matches the one the user supplied.
 -module(wocky_digits_auth).
 
--export([verify/1, verify/3]).
+-export([verify/1]).
 
 -compile({parse_transform, do}).
 
