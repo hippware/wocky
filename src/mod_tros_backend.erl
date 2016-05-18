@@ -2,6 +2,9 @@
 %%% @doc Behaviour definition for mod_tros backends
 -module(mod_tros_backend).
 
+%% I die a little inside when I have to do this.
+-ignore_xref([{behaviour_info, 1}]).
+
 -callback start(list()) -> any().
 
 -callback stop() -> any().
