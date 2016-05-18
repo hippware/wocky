@@ -5,6 +5,8 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("mod_tros_francus.hrl").
 
+-behaviour(mod_tros_backend).
+
 -export([start/1,
          stop/0,
          make_download_response/5,
