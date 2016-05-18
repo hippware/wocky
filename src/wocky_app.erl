@@ -54,7 +54,7 @@ start_ejabberd(CfgDir) ->
 
 -spec version() -> binary().
 version() ->
-    ?WOCKY_VERSION.
+    element(2, application:get_key(wocky, vsn)).
 
 -spec server() -> binary().
 server() ->

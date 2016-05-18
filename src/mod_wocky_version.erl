@@ -48,6 +48,6 @@ process_local_iq(_From, _To,
                             #xmlel{name = <<"name">>,
                                    children = [{xmlcdata, <<"wocky">>}]},
                             #xmlel{name = <<"version">>,
-                                   children = [{xmlcdata, ?WOCKY_VERSION}]}
+                                   children = [{xmlcdata, wocky_app:version()}]}
                         ]}]}
     end.
