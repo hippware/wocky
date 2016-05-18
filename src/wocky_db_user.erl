@@ -72,8 +72,7 @@
 -export_type([handle/0, phone_number/0, password/0, token/0]).
 
 %% API
--export([create_user/3,
-         create_user/4,
+-export([create_user/4,
          create_user/1,
          update_user/1,
          maybe_set_handle/3,
@@ -84,16 +83,21 @@
          get_password/2,
          set_password/3,
          remove_user/2,
-         generate_token/0,
          assign_token/3,
          release_token/3,
-         get_tokens/2,
          check_token/3,
-         check_token/4,
          get_user_data/2,
          get_user_by_external_id/2,
          get_user_by_handle/1,
          get_user_by_phone_number/1]).
+
+-ignore_xref([{get_phone_number, 2},
+              {get_user_by_handle, 1},
+              {get_user_by_phone_number, 1}]).
+
+-ifdef(TEST).
+-export([generate_token/0, get_tokens/2]).
+-endif.
 
 -compile({parse_transform, do}).
 
@@ -101,21 +105,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-%% @equiv create_user(wocky_db:create_id(), LServer, Handle, Password)
-%%
-%% @see wocky_db:create_id/0
-%% @see create_user/4
-%%
--spec create_user(ejabberd:lserver(), handle(), password())
-                 -> {ok, ejabberd:luser()} | {error, exists}.
-create_user(LServer, Handle, Password) ->
-    LUser = wocky_db:create_id(),
-    case create_user(LUser, LServer, Handle, Password) of
-        ok -> {ok, LUser};
-        Error -> Error
-    end.
-
 
 %% @doc Create a user based on the fields supplied in `Fields. This function
 %% will <b>NOT</b> fill in `handle' nor `phone_number' fields since these
@@ -522,29 +511,6 @@ get_tokens(LUser, LServer) ->
 -spec check_token(ejabberd:lserver(), ejabberd:luser(), token()) -> boolean().
 check_token(LUser, LServer, Token) ->
     lists:member(Token, get_tokens(LUser, LServer)).
-
-
-%% @doc Returns `true' if a token is valid for the supplied
-%% user/server/resource triplet, or `false' otherwise.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `Resource': the "resourcepart" of the user's JID.
-%%
-%% `Token': the token to test
-%%
--spec check_token(ejabberd:lserver(), ejabberd:luser(),
-                  ejabberd:lresource(), token()) -> boolean().
-check_token(LUser, LServer, Resource, Token) ->
-    Values = #{user => LUser,
-               server => LServer,
-               resource => Resource},
-    case wocky_db:select_one(LServer, auth_token, auth_token, Values) of
-        Token -> true;
-        _ -> false
-    end.
 
 
 %% @doc Returns a map of all fields for a given user or `not_found' if no such

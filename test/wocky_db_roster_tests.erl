@@ -9,7 +9,6 @@
 
 -import(wocky_db_roster, [get_roster/2,
                           get_roster_version/2,
-                          get_roster_updates/3,
                           delete_roster/2,
                           get_roster_item/3,
                           update_roster_item/4,
@@ -24,7 +23,6 @@ mod_roster_wocky_test_() -> {
     {inparallel, [
       test_get_roster(),
       test_get_roster_version(),
-      test_get_roster_updates(),
       test_get_roster_item(),
       test_has_contact()
     ]},
@@ -75,28 +73,6 @@ test_get_roster_version() ->
     ]},
     { "returns a null version for an unknown user", [
       ?_assertEqual(<<"0">>, get_roster_version(?BADUSER, ?SERVER))
-    ]}
-  ]}.
-
-test_get_roster_updates() ->
-  { "get_roster_updates/3", [
-    { "returns an empty roster when the versions match", [
-      ?_assertEqual([], get_roster_updates(?USER, ?SERVER,
-                                           get_roster_version(?USER, ?SERVER)))
-    ]},
-    { "returns an empty roster when the specified version is too large", [
-      ?_assertEqual([], get_roster_updates(?USER, ?SERVER, <<"9999">>))
-    ]},
-    { "returns a full roster when the specified version is too small", [
-      ?_assertMatch([#roster{}|_], get_roster_updates(?USER, ?SERVER, <<"0">>)),
-      ?_assertEqual(4, length(get_roster_updates(?USER, ?SERVER, <<"0">>)))
-    ]},
-    { "returns a partial roster when the versions do not match", [
-      ?_assertMatch([#roster{}], get_roster_updates(?USER, ?SERVER, <<"888">>)),
-      ?_assertEqual(2, length(get_roster_updates(?USER, ?SERVER, <<"777">>)))
-    ]},
-    { "returns an empty roster for an unknown user", [
-      ?_assertEqual([], get_roster_updates(?BADUSER, ?SERVER, <<"0">>))
     ]}
   ]}.
 

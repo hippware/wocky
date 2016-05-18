@@ -47,6 +47,19 @@ before_each() ->
 after_each(_) ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session]).
 
+make_session(User, Server) ->
+    wocky_db_seed:make_session(User, Server, fake_sid()).
+
+fake_sid() ->
+    {fake_now(), fake_pid()}.
+
+fake_now() ->
+    list_to_tuple([erlang:unique_integer([positive, monotonic])
+                   || _ <- lists:seq(1, 3)]).
+
+fake_pid() ->
+    spawn(fun() -> ok end). % Unique(ish) PID
+
 data_to_rec(#{user := User, server := Server, sid := SID, priority := Priority,
               info := Info, jid_user := JU, jid_server := JS,
               jid_resource := JR}) ->
@@ -107,7 +120,7 @@ test_unique_count() ->
   ]}.
 
 test_create_session() ->
-   Data = wocky_db_seed:make_session(?NEWUSER, ?SERVER),
+   Data = make_session(?NEWUSER, ?SERVER),
    Session = data_to_rec(Data),
    Resource = element(3, Session#session.usr),
    { "Create session", {inorder, [

@@ -8,7 +8,6 @@
 %% API
 -export([get_roster/2,
          get_roster_version/2,
-         get_roster_updates/3,
          delete_roster/2,
          get_roster_item/3,
          update_roster_item/4,
@@ -46,19 +45,6 @@ get_roster_version(LUser, LServer) ->
         null -> <<"0">>;
         Version -> integer_to_binary(Version)
     end.
-
-
-%% @doc Returns all roster entries for the user that have a version higher
-%% than the one specified. Returns an empty list if not roster items have a
-%% higher version or if there are no roster items for the user.
--spec get_roster_updates(ejabberd:luser(), ejabberd:lserver(), version())
-                        -> roster().
-get_roster_updates(LUser, LServer, Version) ->
-    Query = "SELECT * FROM roster_version WHERE user = ? AND version > ?",
-    Values = #{user => LUser, version => binary_to_integer(Version)},
-    {ok, R} = wocky_db:query(LServer, Query, Values, quorum),
-    Items = pack_roster(LUser, LServer, wocky_db:rows(R)),
-    fill_extra_fields(Items).
 
 
 %% @doc Deletes all roster items for the specified user.

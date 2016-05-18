@@ -15,10 +15,29 @@
          prepare_tables/2, clear_tables/2, clear_user_tables/1,
          table_definition/1]).
 
--export([make_session/2, make_session/3, fake_sid/0, fake_now/0, fake_pid/0,
-         fake_resource/0, random_priority/0, session_info/0, sjid/2, jid/3,
-         make_offline_msgs/5, make_offline_msg/5, get_nowsecs/0,
-         archive_users/0, msg_xml_packet/1]).
+-ignore_xref([{bootstrap, 2},
+              {bootstrap_all, 0},
+              {bootstrap_all, 1},
+              {clear_user_tables, 1},
+              {create_schema, 0},
+              {create_schema, 1},
+              {create_schema_for, 1},
+              {create_table_indexes, 2},
+              {create_table_views, 2},
+              {drop_table_views, 2},
+              {foreach_table, 3},
+              {prepare_tables, 2},
+              {recreate_table, 2},
+              {seed_keyspace, 2},
+              {seed_table, 2},
+              {seed_tables, 2}]).
+
+-ifdef(TEST).
+-export([make_session/3, fake_resource/0, random_priority/0,
+         session_info/0, sjid/2, jid/3, make_offline_msgs/5,
+         make_offline_msg/5, get_nowsecs/0, archive_users/0,
+         msg_xml_packet/1]).
+-endif.
 
 
 %%====================================================================
@@ -590,9 +609,6 @@ session_sids() -> [
 %% Data generation helpers
 %%====================================================================
 
-make_session(User, Server) ->
-    make_session(User, Server, fake_sid()).
-
 make_session(User, Server, SID) ->
     #{user => User,
       sid => term_to_binary(SID),
@@ -603,16 +619,6 @@ make_session(User, Server, SID) ->
       jid_resource => fake_resource(),
       priority => random_priority(),
       info => term_to_binary(session_info())}.
-
-fake_sid() ->
-    {fake_now(), fake_pid()}.
-
-fake_now() ->
-    list_to_tuple([erlang:unique_integer([positive, monotonic])
-                   || _ <- lists:seq(1, 3)]).
-
-fake_pid() ->
-    spawn(fun() -> ok end). % Unique(ish) PID
 
 fake_resource() ->
     integer_to_binary(erlang:unique_integer()).
