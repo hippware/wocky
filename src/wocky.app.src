@@ -12,7 +12,6 @@
                   ossp_uuid,
                   cqerl,
                   stringprep,
-                  webmachine,
                   z_stdlib,
                   qdate]},
   {included_applications, [ejabberd]},
