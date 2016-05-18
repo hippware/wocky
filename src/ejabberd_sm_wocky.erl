@@ -17,7 +17,7 @@
 
 -module(ejabberd_sm_wocky).
 
--behavior(ejabberd_gen_sm).
+-behaviour(ejabberd_gen_sm).
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 
