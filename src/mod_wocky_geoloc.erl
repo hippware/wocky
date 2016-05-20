@@ -39,6 +39,11 @@ stop(_Host) ->
 %%%===================================================================
 
 -spec handle_pep(jid(), exml:element()) -> exml:element().
+handle_pep(_From, Item = #xmlel{name = <<"geoloc">>, children = []}) ->
+    % Special case for end-of-location-data message (see
+    % XEP-0080 s4.1). This _should_ be rebroadcast in spite of lacking
+    % lat and lon fields.
+    Item;
 handle_pep(From, Item = #xmlel{name = <<"geoloc">>}) ->
     case handle_geoloc(Item) of
         {ok, Lat, Lon, Accuracy} ->

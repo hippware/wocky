@@ -19,6 +19,7 @@ all() ->
     [publish,
      geoloc,
      bad_geoloc,
+     end_geoloc,
      bad_requests
     ].
 
@@ -98,6 +99,21 @@ bad_geoloc(Config) ->
         assert_no_stanzas(Carol)
     end).
 
+end_geoloc(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+                  fun (Alice, Bob, Carol) ->
+        test_helper:subscribe(Alice, Bob),
+        Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
+                                               end_geoloc_item(), <<"123">>,
+                                               {pep, ?NS_GEOLOC}),
+        escalus:send(Alice, Stanza),
+        Received = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_message, is_iq_result], Received),
+        Recieved2 = escalus:wait_for_stanza(Bob),
+        escalus:assert(is_message, Recieved2),
+        assert_no_stanzas(Carol)
+    end).
+
 bad_requests(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         %% Non pubsub request
@@ -163,6 +179,11 @@ bad_geoloc_item() ->
     #xmlel{name = <<"geoloc">>,
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
            children = tl(geoloc_data())}.
+
+end_geoloc_item() ->
+    #xmlel{name = <<"geoloc">>,
+           attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
+           children = []}.
 
 geoloc_data() ->
     [cdata_item(<<"lat">>, <<"6.789">>),
