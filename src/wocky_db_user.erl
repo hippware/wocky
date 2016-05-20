@@ -588,7 +588,7 @@ get_user_by_gkey(Table, Col, Value) ->
 %%
 %% `Accuracy': the accuracy of the user's location in meters
 %%
--spec set_location(User :: jid(), float(), float(), float()) -> ok.
+-spec set_location(User :: jid(), number(), number(), number()) -> ok.
 set_location(#jid{luser = LUser, lserver = LServer, lresource = LResource},
              Lat, Lon, Accuracy) ->
     wocky_db:insert(LServer, location, #{user =>     LUser,
