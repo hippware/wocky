@@ -578,7 +578,17 @@ get_user_by_gkey(Table, Col, Value) ->
             not_found
     end.
 
--spec set_location(jid(), float(), float(), float()) -> ok.
+%% @doc Updates the user's location.
+%%
+%% `User': the full JID (including resource) of the user to update
+%%
+%% `Lat': the latitude of the user's location in degrees North
+%%
+%% `Lon': the longditude of the user's location in degrees East
+%%
+%% `Accuracy': the accuracy of the user's location in meters
+%%
+-spec set_location(User :: jid(), float(), float(), float()) -> ok.
 set_location(#jid{luser = LUser, lserver = LServer, lresource = LResource},
              Lat, Lon, Accuracy) ->
     wocky_db:insert(LServer, location, #{user =>     LUser,
