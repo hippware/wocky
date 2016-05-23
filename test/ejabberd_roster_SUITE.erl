@@ -134,7 +134,7 @@ roster_push(Config) ->
 remove_contact(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
         %% add contact
-        add_sample_contact(Alice, Bob),
+        test_helper:add_sample_contact(Alice, Bob),
 
         %% check roster
         escalus:send(Alice, escalus_stanza:roster_get()),
@@ -231,42 +231,7 @@ versioning(Config) ->
 
 subscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        %% Alice adds Bob as a contact
-        add_sample_contact(Alice, Bob),
-
-        %% She subscribes to his presences
-        escalus:send(Alice, escalus_stanza:presence_direct(bob,
-                                                           <<"subscribe">>)),
-        PushReq = escalus:wait_for_stanza(Alice),
-        escalus:assert(is_roster_set, PushReq),
-        escalus:send(Alice, escalus_stanza:iq_result(PushReq)),
-
-        %% Bob receives subscription reqest
-        Received = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_presence_with_type, [<<"subscribe">>], Received),
-
-        %% Bob adds new contact to his roster
-        escalus:send(Bob, escalus_stanza:roster_add_contact(Alice,
-                                                            [<<"enemies">>],
-                                                             <<"Alice">>)),
-        PushReqB = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_roster_set, PushReqB),
-        escalus:send(Bob, escalus_stanza:iq_result(PushReqB)),
-        escalus:assert(is_iq_result, escalus:wait_for_stanza(Bob)),
-
-        %% Bob sends subscribed presence
-        escalus:send(Bob, escalus_stanza:presence_direct(alice,
-                                                         <<"subscribed">>)),
-
-        %% Alice receives subscribed
-        Stanzas = escalus:wait_for_stanzas(Alice, 2),
-
-        check_subscription_stanzas(Stanzas, <<"subscribed">>),
-        escalus:assert(is_presence, escalus:wait_for_stanza(Alice)),
-
-        %% Bob receives roster push
-        PushReqB1 = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_roster_set, PushReqB1),
+        test_helper:subscribe(Alice, Bob),
 
         %% Bob sends presence
         escalus:send(Bob, escalus_stanza:presence(<<"available">>)),
@@ -281,7 +246,7 @@ subscribe(Config) ->
 subscribe_decline(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
         %% add contact
-        add_sample_contact(Alice, Bob),
+        test_helper:add_sample_contact(Alice, Bob),
 
         %% subscribe
         escalus:send(Alice, escalus_stanza:presence_direct(bob,
@@ -301,14 +266,14 @@ subscribe_decline(Config) ->
         %% Alice receives subscribed
         Stanzas = escalus:wait_for_stanzas(Alice, 2),
 
-        check_subscription_stanzas(Stanzas, <<"unsubscribed">>)
+        test_helper:check_subscription_stanzas(Stanzas, <<"unsubscribed">>)
     end).
 
 
 subscribe_relog(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
         %% Alice adds Bob as a contact
-        add_sample_contact(Alice, Bob),
+        test_helper:add_sample_contact(Alice, Bob),
 
         %% She subscribes to his presences
         escalus:send(Alice,
@@ -356,39 +321,7 @@ subscribe_relog(Config) ->
 
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        %% add contact
-        add_sample_contact(Alice, Bob),
-
-        %% subscribe
-        escalus:send(Alice,
-                     escalus_stanza:presence_direct(bob, <<"subscribe">>)),
-        PushReq = escalus:wait_for_stanza(Alice),
-        escalus:send(Alice, escalus_stanza:iq_result(PushReq)),
-
-        %% Bob receives subscription reqest
-        escalus:assert(is_presence_with_type, [<<"subscribe">>],
-                       escalus:wait_for_stanza(Bob)),
-        %% Bob adds new contact to his roster
-        escalus:send(Bob, escalus_stanza:roster_add_contact(Alice,
-                                                            [<<"enemies">>],
-                                                             <<"Alice">>)),
-        PushReqB = escalus:wait_for_stanza(Bob),
-        escalus:send(Bob, escalus_stanza:iq_result(PushReqB)),
-        escalus:assert(is_iq_result, escalus:wait_for_stanza(Bob)),
-
-        %% Bob sends subscribed presence
-        escalus:send(Bob,
-                     escalus_stanza:presence_direct(alice, <<"subscribed">>)),
-
-        %% Alice receives subscribed
-        Stanzas = escalus:wait_for_stanzas(Alice, 2),
-
-        check_subscription_stanzas(Stanzas, <<"subscribed">>),
-        escalus:assert(is_presence, escalus:wait_for_stanza(Alice)),
-
-        %% Bob receives roster push
-        PushReqB1 = escalus:wait_for_stanza(Bob),
-        escalus_assert:is_roster_set(PushReqB1),
+        test_helper:subscribe(Alice, Bob),
 
         %% Alice sends unsubscribe
         escalus:send(Alice,
@@ -402,7 +335,7 @@ unsubscribe(Config) ->
 
         StanzasB = escalus:wait_for_stanzas(Bob, 2),
 
-        check_subscription_stanzas(StanzasB, <<"unsubscribe">>),
+        test_helper:check_subscription_stanzas(StanzasB, <<"unsubscribe">>),
 
         %% Alice receives unsubscribed
         escalus:assert(is_presence_with_type, [<<"unavailable">>],
@@ -411,41 +344,7 @@ unsubscribe(Config) ->
 
 remove_unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        %% add contact
-        add_sample_contact(Alice, Bob),
-
-        %% subscribe
-        escalus:send(Alice,
-                     escalus_stanza:presence_direct(bob, <<"subscribe">>)),
-        PushReq = escalus:wait_for_stanza(Alice),
-        escalus:send(Alice, escalus_stanza:iq_result(PushReq)),
-
-        %% Bob receives subscription reqest
-        escalus:assert(is_presence_with_type, [<<"subscribe">>],
-                       escalus:wait_for_stanza(Bob)),
-
-        %% Bob adds new contact to his roster
-        escalus:send(Bob, escalus_stanza:roster_add_contact(Alice,
-                                                            [<<"enemies">>],
-                                                            <<"Alice">>)),
-        PushReqB = escalus:wait_for_stanza(Bob),
-        escalus:send(Bob, escalus_stanza:iq_result(PushReqB)),
-        escalus:assert(is_iq_result, escalus:wait_for_stanza(Bob)),
-
-        %% Bob sends subscribed presence
-        escalus:send(Bob, escalus_stanza:presence_direct(alice,
-                                                         <<"subscribed">>)),
-
-        %% Alice receives subscribed
-        Stanzas = [escalus:wait_for_stanza(Alice),
-                   escalus:wait_for_stanza(Alice)],
-
-        check_subscription_stanzas(Stanzas, <<"subscribed">>),
-        escalus:assert(is_presence, escalus:wait_for_stanza(Alice)),
-
-        %% Bob receives roster push
-        PushReqB1 = escalus:wait_for_stanza(Bob),
-        escalus_assert:is_roster_set(PushReqB1),
+        test_helper:subscribe(Alice, Bob),
 
         %% remove contact
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
@@ -456,7 +355,7 @@ remove_unsubscribe(Config) ->
                 end,
         escalus:assert_many([is_roster_set, is_iq_result, IsPresUnavailable],
                             escalus:wait_for_stanzas(Alice, 3)),
-        check_subscription_stanzas(escalus:wait_for_stanzas(Bob, 2),
+        test_helper:check_subscription_stanzas(escalus:wait_for_stanzas(Bob, 2),
                                    <<"unsubscribe">>)
     end).
 
@@ -464,24 +363,6 @@ remove_unsubscribe(Config) ->
 %%-----------------------------------------------------------------
 %% Helpers
 %%-----------------------------------------------------------------
-
-add_sample_contact(Alice, Bob) ->
-    escalus:send(Alice,
-                 escalus_stanza:roster_add_contact(Bob, [<<"friends">>],
-                                                   <<"Bobby">>)),
-
-    Received = escalus:wait_for_stanzas(Alice, 2),
-    escalus:assert_many([is_roster_set, is_iq_result], Received),
-
-    Result = hd([R || R <- Received, escalus_pred:is_roster_set(R)]),
-    escalus:assert(count_roster_items, [1], Result),
-    escalus:send(Alice, escalus_stanza:iq_result(Result)).
-
-check_subscription_stanzas(Stanzas, Type) ->
-    IsPresWithType = fun (S) ->
-                         escalus_pred:is_presence_with_type(Type, S)
-                     end,
-    escalus:assert_many([is_roster_set, IsPresWithType], Stanzas).
 
 remove_roster(Config, UserSpec) ->
     [User, Server, _] = [escalus_ejabberd:unify_str_arg(Item) ||

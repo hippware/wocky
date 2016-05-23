@@ -15,7 +15,8 @@
          set_phone_number/3,
          get_phone_number/2, get_user_by_phone_number/1,
          get_user_data/2,
-         get_user_by_external_id/2
+         get_user_by_external_id/2,
+         set_location/4
         ]).
 
 wocky_db_user_test_() ->
@@ -42,7 +43,8 @@ wocky_db_user_test_() ->
        test_set_avatar()
      ]},
      test_create_user_from_map(),
-     test_maybe_set_handle()
+     test_maybe_set_handle(),
+     test_set_location()
     ]}.
 
 before_all() ->
@@ -52,7 +54,8 @@ before_all() ->
                                                phone_number_to_user]),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token,
                                                        media,
-                                                       media_data]),
+                                                       media_data,
+                                                       location]),
     ok.
 
 after_all(_) ->
@@ -401,3 +404,26 @@ test_set_avatar() ->
                                                          ?LOCAL_CONTEXT)))
     ]}
   ]}.
+
+test_set_location() ->
+    AliceJID = jid:make(?ALICE, ?LOCAL_CONTEXT, ?RESOURCE),
+    CountMatch = #{user => ?ALICE, server => ?LOCAL_CONTEXT},
+    { "set a user's location", [
+      { "set a user's location without overwriting previous ones", [
+        ?_assertEqual(ok, set_location(AliceJID, 1, 2, 3)),
+        ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT, location,
+                                        CountMatch)),
+        ?_assertEqual(ok, set_location(AliceJID, 4.0, 5.0, 6.0)),
+        ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location,
+                                        CountMatch)),
+        ?_assertEqual(ok, set_location(AliceJID, 6.6, 7.7, 8.8)),
+        ?_assertEqual(3, wocky_db:count(?LOCAL_CONTEXT, location,
+                                        CountMatch))
+      ]},
+      { "first location result should be most recently set location", [
+        ?_assertEqual(#{lat => 6.6, lon => 7.7, accuracy => 8.8},
+                      wocky_db:select_row(?LOCAL_CONTEXT, location,
+                                          [lat, lon, accuracy],
+                                          CountMatch))
+      ]}
+    ]}.

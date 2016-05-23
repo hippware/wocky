@@ -63,6 +63,7 @@
 -module(wocky_db_user).
 
 -include("wocky.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 
 -type handle()       :: binary().
 -type phone_number() :: binary().
@@ -89,7 +90,9 @@
          get_user_data/2,
          get_user_by_external_id/2,
          get_user_by_handle/1,
-         get_user_by_phone_number/1]).
+         get_user_by_phone_number/1,
+         set_location/4
+        ]).
 
 -ignore_xref([{get_phone_number, 2},
               {get_user_by_handle, 1},
@@ -405,6 +408,7 @@ remove_user(LUser, LServer) ->
             ok = remove_phone_lookup(PhoneNumber),
             ok = remove_user_record(LUser),
             ok = remove_tokens(LUser, LServer),
+            ok = remove_locations(LUser, LServer),
             ok
     end.
 
@@ -428,6 +432,10 @@ remove_tokens(LUser, LServer) ->
     wocky_db:delete(LServer, auth_token, all,
                     #{user => LUser, server => LServer}).
 
+%% @private
+remove_locations(LUser, LServer) ->
+    wocky_db:delete(LServer, location, all,
+                    #{user => LUser, server => LServer}).
 
 %% @doc Generates a token.
 -spec generate_token() -> token().
@@ -569,3 +577,25 @@ get_user_by_gkey(Table, Col, Value) ->
         not_found ->
             not_found
     end.
+
+%% @doc Updates the user's location.
+%%
+%% `User': the full JID (including resource) of the user to update
+%%
+%% `Lat': the latitude of the user's location in degrees North
+%%
+%% `Lon': the longditude of the user's location in degrees East
+%%
+%% `Accuracy': the accuracy of the user's location in meters
+%%
+-spec set_location(User :: jid(), number(), number(), number()) -> ok.
+set_location(#jid{luser = LUser, lserver = LServer, lresource = LResource},
+             Lat, Lon, Accuracy) ->
+    wocky_db:insert(LServer, location, #{user =>     LUser,
+                                         server =>   LServer,
+                                         resource => LResource,
+                                         time =>     now,
+                                         lat =>      Lat,
+                                         lon =>      Lon,
+                                         accuracy => Accuracy}).
+

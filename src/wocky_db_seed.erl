@@ -6,6 +6,7 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
+-include("wocky_roster.hrl").
 
 -export([bootstrap_all/0, bootstrap_all/1, bootstrap/2,
          create_schema/0, create_schema/1, create_schema_for/1,
@@ -139,7 +140,8 @@ clear_user_tables(Context) ->
                                         phone_number_to_user]),
     wocky_db_seed:clear_tables(Context, [session, roster,
                                          auth_token, last_activity,
-                                         privacy, privacy_item]).
+                                         privacy, privacy_item,
+                                         location]).
 
 
 %%====================================================================
@@ -152,6 +154,7 @@ keyspace_tables(shared) -> [
     user
 ];
 keyspace_tables(_) -> [
+    location,
     last_activity,
     offline_msg,
     roster,
@@ -208,6 +211,23 @@ table_definition(user) ->
            {external_id, text}     % The user ID received from Twitter Digits
        ],
        primary_key = user
+    };
+
+%% Table for storing the location history of users
+table_definition(location) ->
+    #table_def{
+       name = location,
+       columns = [
+           {user, text},        % User ID (userpart of JID)
+           {server, text},      % User Server (domainpart of JID)
+           {resource, text},    % Resource that reported this location
+           {time, timestamp},   % Time of location report
+           {lat, double},       % Latitude (degrees North)
+           {lon, double},       % Longditude (degrees East)
+           {accuracy, double}   % Accuracy reported by device (meters)
+       ],
+       primary_key = [[user, server], time],
+       order_by = [{time, desc}]
     };
 
 %% Table for storing details of users' last activty on the server. This is
