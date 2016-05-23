@@ -38,7 +38,6 @@ new_cases() ->
      invalid_json,
      missing_field,
      unauthorized_new,
-     invalid_phone_number,
      invalid_auth_provider,
      invalid_provider_data
     ].
@@ -123,16 +122,6 @@ unauthorized_new(Config) ->
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_not_authorized(Result).
 
-invalid_phone_number(Config) ->
-    fake_digits_server:set_allow(true),
-    Client = start_client(Config),
-    ProviderData = provider_data(),
-    BrokenProviderData = [{phoneNumber, <<"+1322232131">>} |
-                           proplists:delete(phoneNumber, ProviderData)],
-    Stanza = request_stanza(request_data(BrokenProviderData)),
-    Result = escalus:send_and_wait(Client, Stanza),
-    assert_is_not_authorized(Result).
-
 invalid_auth_provider(Config) ->
     Client = start_client(Config),
     Data = request_data(provider_data()),
@@ -159,9 +148,10 @@ invalid_provider_data(Config) ->
 bypass_prefix(Config) ->
     Client = start_client(Config),
     ProviderData = provider_data(),
-    BrokenProviderData = [{phoneNumber, <<"+155566854">>} |
-                           proplists:delete(phoneNumber, ProviderData)],
-    Stanza = request_stanza(request_data(BrokenProviderData)),
+    BypassProviderData = [{userID, ?EXTERNAL_ID},
+                          {phoneNumber, <<"+155566854">>} |
+                          proplists:delete(phoneNumber, ProviderData)],
+    Stanza = request_stanza(request_data(BypassProviderData)),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_redirect(Result, false, true).
 
@@ -256,9 +246,7 @@ request_data(ProviderData) ->
      {provider_data, {struct, ProviderData}}].
 
 provider_data() ->
-    [{userID, ?EXTERNAL_ID},
-     {phoneNumber, ?PHONE_NUMBER},
-     {authTokenSecret, <<"vViH56F2f1sNi6RYZZeztDo8NoQMWxhGMDKAL0wCFcIUH">>},
+    [{authTokenSecret, <<"vViH56F2f1sNi6RYZZeztDo8NoQMWxhGMDKAL0wCFcIUH">>},
      {authToken, <<"701990807448920064-JxNX4i57y5Wp6xBDVjNwKB4ZYUcC8FK">>},
      {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
      {'X-Verify-Credentials-Authorization',
