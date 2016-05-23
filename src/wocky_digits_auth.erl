@@ -14,14 +14,18 @@
                        {error, {non_neg_integer(), iolist()}}.
 verify(Fields) ->
     do([error_m ||
-        UserID <- get_required_field(<<"userID">>, Fields),
-        PhoneNumber <- get_required_field(<<"phoneNumber">>, Fields),
+        SuppliedPhoneNumber <- get_optional_field(
+                                 <<"phoneNumber">>, Fields, <<>>),
+        SuppliedUserID <- get_optional_field(
+                                 <<"userID">>, Fields, <<>>),
         AuthProvider <- get_required_field(
                           <<"X-Auth-Service-Provider">>, Fields),
         Auth <- get_required_field(
                   <<"X-Verify-Credentials-Authorization">>, Fields),
         check_valid_provider(AuthProvider),
-        verify(Auth, PhoneNumber, AuthProvider),
+        {UserID, PhoneNumber} <- verify(
+                                   Auth, AuthProvider,
+                                   SuppliedUserID, SuppliedPhoneNumber),
         {ok, {UserID, PhoneNumber}}
        ]).
 
@@ -33,21 +37,21 @@ check_valid_provider(AuthProvider) ->
         false -> {error, {401, "Invalid authentication provider"}}
     end.
 
--spec verify(binary(), binary(), binary()) ->
-    ok | {error, {non_neg_integer(), iolist()}}.
-verify(Auth, PhoneNumber, AuthProvider) ->
+-spec verify(binary(), binary(), binary(), binary()) ->
+    {ok, {binary(), binary()}} | {error, {non_neg_integer(), iolist()}}.
+verify(Auth, AuthProvider, UserID, PhoneNumber) ->
     case has_bypass_prefix(PhoneNumber) of
-        true -> ok;
-        false -> do_digits_verify(Auth, PhoneNumber, AuthProvider)
+        true -> {ok, {UserID, PhoneNumber}};
+        false -> do_digits_verify(Auth, AuthProvider)
     end.
 
-do_digits_verify(Auth, PhoneNumber, AuthProvider) ->
+do_digits_verify(Auth, AuthProvider) ->
     case httpc:request(get, {binary_to_list(AuthProvider),
                              [{"Authorization", binary_to_list(Auth)}]},
                              [], [{full_result, false}]) of
         {ok, {200, Body}} ->
             ok = lager:debug("Received Digits response: ~s", [Body]),
-            verify_phone_number(PhoneNumber, Body);
+            get_userid_and_phonenumber(Body);
         {ok, {Code, Body}} ->
             {error, {401, ["Digits validation error: ",
                            integer_to_list(Code), " ", Body]}};
@@ -55,20 +59,30 @@ do_digits_verify(Auth, PhoneNumber, AuthProvider) ->
             {error, {500, ["Digits error: ", io_lib:format("~p", [Reason])]}}
     end.
 
-verify_phone_number(PhoneNumber, Body) ->
+get_userid_and_phonenumber(Body) ->
     {struct, Elements} = mochijson2:decode(Body),
-    case proplists:get_value(<<"phone_number">>, Elements) of
-        PhoneNumber -> ok;
-        undefined -> {error, {401, "No phone number returned by Digits"}};
-        OtherNumber -> {error, {401, ["Supplied phone number ", PhoneNumber,
-                                      " did not match Digits-provided one ",
-                                      OtherNumber]}}
+    do([error_m ||
+        PhoneNumber <- get_digits_value(<<"phone_number">>, Elements),
+        UserID <- get_digits_value(<<"id_str">>, Elements),
+        {ok, {UserID, PhoneNumber}}
+       ]).
+
+get_digits_value(Key, Elements) ->
+    case proplists:get_value(Key, Elements) of
+        undefined -> {error, {500, ["No ", Key, " returned by Digits"]}};
+        Value -> {ok, Value}
     end.
 
 get_required_field(Field, Elements) ->
     case maps:find(Field, Elements) of
         {ok, Value} -> {ok, Value};
         error -> {error, {401, ["Missing '", Field, "' field"]}}
+    end.
+
+get_optional_field(Field, Elements, Default) ->
+    case maps:find(Field, Elements) of
+        {ok, Value} -> {ok, Value};
+        error -> {ok, Default}
     end.
 
 has_bypass_prefix(PhoneNumber) ->
