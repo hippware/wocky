@@ -2,7 +2,6 @@
 %%% @doc Integration test suite for mod_wocky_pep
 -module(pep_SUITE).
 -compile(export_all).
--compile({parse_transform, fun_chain}).
 
 -include("wocky.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
@@ -32,7 +31,7 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    Config.
+    escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
@@ -40,10 +39,7 @@ end_per_suite(Config) ->
 init_per_testcase(CaseName, Config) ->
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     Users = escalus:get_users([alice, bob, carol]),
-    Config1 = fun_chain:first(Config,
-        escalus:init_per_suite(),
-        escalus:create_users(Users)
-    ),
+    Config1 = escalus:create_users(Config, Users),
     escalus:init_per_testcase(CaseName, Config1).
 
 end_per_testcase(CaseName, Config) ->

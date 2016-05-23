@@ -12,7 +12,6 @@
                           ]).
 
 mod_wocky_mam_test_() ->
- {ok, _} = application:ensure_all_started(stringprep),
  {
   "mod_wocky_geoloc",
   setup, fun before_all/0, fun after_all/1,
