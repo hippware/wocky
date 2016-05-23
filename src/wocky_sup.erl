@@ -37,7 +37,9 @@ init([]) ->
     %%              type     => supervisor,
     %%              modules  => [child_sup]},
 
-    {ok, {SupFlags, []}}.
+    {ok, {SupFlags, [
+                     erld_heartbeat:erld_heartbeat_spec()
+                    ]}}.
 
 
 %%%===================================================================

@@ -13,7 +13,8 @@
                   cqerl,
                   stringprep,
                   z_stdlib,
-                  qdate]},
+                  qdate,
+                  erld_erlang_app]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
   {env, [

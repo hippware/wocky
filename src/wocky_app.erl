@@ -5,13 +5,14 @@
 -include("wocky.hrl").
 
 -behaviour(application).
+-behaviour(erld_app).
 
 %% Application callbacks
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0,
          start_ejabberd/0, start_ejabberd/1,
          version/0, server/0, is_testing/0,
-         get_config/1]).
+         get_config/1, bake_cookie/0]).
 
 -ignore_xref([{start, 0},
               {start, 1},
@@ -83,6 +84,8 @@ get_config(Key) ->
             default_config(Key)
     end.
 
+bake_cookie() ->
+    'ejabberd'.
 
 %%%===================================================================
 %%% Application callbacks
@@ -92,6 +95,7 @@ start(_StartType, _StartArgs) ->
     ok = set_wocky_env(),
     {ok, Pid} = wocky_sup:start_link(),
     ok = maybe_start_ejabberd(),
+    erld:detach(),
     {ok, Pid}.
 
 stop(_State) ->
