@@ -32,7 +32,7 @@ empty_batch_test_() -> {
   "batch_query", [
     { "should return {ok, void} when given an empty query list", [
       ?_assertEqual({ok, void},
-                    wocky_db:batch_query(shared, [], logged, quorum))
+                    wocky_db:batch_query(shared, [], quorum))
     ]}
 ]}.
 
