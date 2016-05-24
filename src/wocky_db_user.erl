@@ -76,22 +76,22 @@
 -export([create_user/4,
          create_user/1,
          update_user/1,
-         maybe_set_handle/3,
-         set_phone_number/3,
-         does_user_exist/2,
-         get_handle/2,
-         get_phone_number/2,
-         get_password/2,
-         set_password/3,
          remove_user/2,
-         assign_token/3,
-         release_token/3,
-         check_token/3,
+         does_user_exist/2,
          get_user_data/2,
          get_user_by_external_id/2,
          get_user_by_handle/1,
          get_user_by_phone_number/1,
-         set_location/4
+         get_handle/2,
+         maybe_set_handle/3,
+         get_phone_number/2,
+         set_phone_number/3,
+         get_password/2,
+         set_password/3,
+         set_location/4,
+         assign_token/3,
+         release_token/3,
+         check_token/3
         ]).
 
 -ignore_xref([{get_phone_number, 2},
@@ -108,6 +108,48 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+%% @doc Creates a new user record in the database.
+%%
+%% `LUser': the "localpart" of the user's JID. Must be a unique timeuuid
+%% generated for this user and in canonical string format.
+%%
+%% `LServer': the "domainpart" of the user's JID. Used to determine which
+%% keyspace to store the user's data in.
+%%
+%% `Handle': the user's preferred display name. Must be globally unique.
+%%
+%% `Password': the processed password for the user. No encryption or obfuscation
+%% is performed on the password at this level; it is stored as-is in the
+%% database.
+%%
+-spec create_user(ejabberd:luser(), ejabberd:lserver(),
+                  handle(), password())
+                 -> ok | {error, exists | invalid_id}.
+create_user(LUser, LServer, Handle, Password) ->
+    create_user(LUser, LServer, Handle, Password, wocky_db:is_valid_id(LUser)).
+
+%% @private
+create_user(LUser, LServer, Handle, Password, true) ->
+    %% TODO: this really needs to be done in a batch, but we don't currently
+    %% have a clean way to run queries in different keyspaces in the same batch.
+    Res = maybe_create_handle(LUser, LServer, Handle),
+    case Res of
+        true ->
+            create_user_record(LUser, LServer, Handle, Password);
+
+        false ->
+            {error, exists}
+    end;
+create_user(_, _, _, _, false) ->
+    {error, invalid_id}.
+
+%% @private
+create_user_record(LUser, LServer, Handle, Password) ->
+    Values = #{user => LUser, server => LServer,
+               handle => Handle, password => Password},
+    wocky_db:insert(shared, user, Values).
+
 
 %% @doc Create a user based on the fields supplied in `Fields. This function
 %% will <b>NOT</b> fill in `handle' nor `phone_number' fields since these
@@ -127,6 +169,7 @@ create_user(Fields) ->
         error_m:return(
           true = wocky_db:insert_new(shared, user, CreationFields)),
         NewID]).
+
 
 %% @doc Update the data on an existing user. As with {@link create_user/1},
 %% `handle' and `phone_number' will be ignored and must be set separately.
@@ -192,201 +235,6 @@ maybe_delete_existing_avatar(UserID, _LServer) ->
     end.
 
 
-%% @doc Attempts to set a handle for a given user. The attempt will fail
-%% and `false' returned if the requested handle is already held by another
-%% user. On success, returns `true'.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `Handle': the user's preferred display name.
-%%
--spec maybe_set_handle(ejabberd:luser(), ejabberd:lserver(), handle())
-        -> boolean().
-maybe_set_handle(LUser, LServer, Handle) ->
-    maybe_create_handle(LUser, LServer, Handle)
-    andalso
-    update_lookup(LUser, LServer, handle_to_user, handle, Handle).
-
-%% @private
-maybe_create_handle(LUser, LServer, Handle) ->
-    Values = #{user => LUser, server => LServer, handle => Handle},
-    wocky_db:insert_new(shared, handle_to_user, Values).
-
-
-%% @doc Sets the phone number for a given user. If a different user already
-%% has the same phone number, it will be entirely removed from their record.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `PhoneNumber': the phone number to assign to the user.
-%%
--spec set_phone_number(ejabberd:luser(), ejabberd:lserver(), phone_number())
-        -> ok.
-set_phone_number(LUser, LServer, PhoneNumber) ->
-    create_phone_number_lookup(LUser, LServer, PhoneNumber),
-    update_lookup(LUser, LServer, phone_number_to_user,
-                  phone_number, PhoneNumber),
-    ok.
-
-%% @private
-create_phone_number_lookup(LUser, LServer, PhoneNumber) ->
-    maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber),
-    Values = #{user => LUser, server => LServer},
-    Conditions = #{phone_number => PhoneNumber},
-    ok = wocky_db:update(shared, phone_number_to_user, Values, Conditions).
-
-%% @private
-maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
-    case get_user_by_phone_number(PhoneNumber) of
-        not_found -> ok;
-        {LUser, LServer} -> ok;
-        {OtherUser, _OtherServer} ->
-            ok = wocky_db:update(shared, user, #{phone_number => null},
-                                 #{user => OtherUser})
-    end.
-
-%% @private
-update_lookup(LUser, _LServer, Table, Col, Key) ->
-    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
-        K when K =:= null; K =:= Key ->
-            ok;
-        OldKey ->
-            ok = wocky_db:delete(shared, Table, all, #{Col => OldKey})
-    end,
-    ok = wocky_db:update(shared, user, #{Col => Key}, #{user => LUser}),
-    true.
-
-
-%% @doc Creates a new user record in the database.
-%%
-%% `LUser': the "localpart" of the user's JID. Must be a unique timeuuid
-%% generated for this user and in canonical string format.
-%%
-%% `LServer': the "domainpart" of the user's JID. Used to determine which
-%% keyspace to store the user's data in.
-%%
-%% `Handle': the user's preferred display name. Must be globally unique.
-%%
-%% `Password': the processed password for the user. No encryption or obfuscation
-%% is performed on the password at this level; it is stored as-is in the
-%% database.
-%%
--spec create_user(ejabberd:luser(), ejabberd:lserver(),
-                  handle(), password())
-                 -> ok | {error, exists | invalid_id}.
-create_user(LUser, LServer, Handle, Password) ->
-    create_user(LUser, LServer, Handle, Password, wocky_db:is_valid_id(LUser)).
-
-%% @private
-create_user(LUser, LServer, Handle, Password, true) ->
-    %% TODO: this really needs to be done in a batch, but we don't currently
-    %% have a clean way to run queries in different keyspaces in the same batch.
-    Res = maybe_create_handle(LUser, LServer, Handle),
-    case Res of
-        true ->
-            create_user_record(LUser, LServer, Handle, Password);
-
-        false ->
-            {error, exists}
-    end;
-create_user(_, _, _, _, false) ->
-    {error, invalid_id}.
-
-%% @private
-create_user_record(LUser, LServer, Handle, Password) ->
-    Values = #{user => LUser, server => LServer,
-               handle => Handle, password => Password},
-    wocky_db:insert(shared, user, Values).
-
-
-%% @doc Returns `true' if the user exists in the database.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
-does_user_exist(<<>>, _LServer) ->
-    false;
-does_user_exist(LUser, _LServer) ->
-    case wocky_db:select_one(shared, user, user, #{user => LUser}) of
-        not_found -> false;
-        LUser -> true
-    end.
-
-
-%% @doc Returns the user's handle.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_handle(ejabberd:luser(), ejabberd:lserver())
-                -> handle() | {error, not_found}.
-get_handle(LUser, LServer) ->
-    get_lookup(LUser, LServer, handle).
-
-
-%% @doc Returns the user's phone number.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_phone_number(ejabberd:luser(), ejabberd:lserver())
-                       -> phone_number() | {error, not_found}.
-get_phone_number(LUser, LServer) ->
-    get_lookup(LUser, LServer, phone_number).
-
-%% @private
-get_lookup(LUser, _LServer, Col) ->
-    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
-        not_found -> {error, not_found};
-        null -> {error, not_found};
-        Value -> Value
-    end.
-
-
-%% @doc Returns the user's password.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_password(ejabberd:luser(), ejabberd:lserver())
-                  -> password() | {error, not_found}.
-get_password(LUser, _LServer) ->
-    case wocky_db:select_one(shared, user, password, #{user => LUser}) of
-        not_found -> {error, not_found};
-        Password -> Password
-    end.
-
-
-%% @doc Updates the user's password.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `Password': the processed password for the user. No encryption or obfuscation
-%% is performed on the password at this level; it is stored as-is in the
-%% database.
-%%
--spec set_password(ejabberd:luser(), ejabberd:lserver(), password())
-                  -> ok | {error, not_found}.
-set_password(LUser, LServer, Password) ->
-    case does_user_exist(LUser, LServer) of
-        false -> {error, not_found};
-        true -> wocky_db:update(shared, user,
-                                #{password => Password},
-                                #{user => LUser})
-    end.
-
-
 %% @doc Removes the user from the database.
 %%
 %% `LUser': the "localpart" of the user's JID.
@@ -436,6 +284,240 @@ remove_tokens(LUser, LServer) ->
 remove_locations(LUser, LServer) ->
     wocky_db:delete(LServer, location, all,
                     #{user => LUser, server => LServer}).
+
+
+%% @doc Returns `true' if the user exists in the database.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+-spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
+does_user_exist(<<>>, _LServer) ->
+    false;
+does_user_exist(LUser, _LServer) ->
+    case wocky_db:select_one(shared, user, user, #{user => LUser}) of
+        not_found -> false;
+        LUser -> true
+    end.
+
+
+%% @doc Returns a map of all fields for a given user or `not_found' if no such
+%% user exists.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+-spec get_user_data(ejabberd:lserver(), ejabberd:lserver())
+        -> map() | not_found.
+get_user_data(LUser, _LServer) ->
+    wocky_db:select_row(shared, user, all, #{user => LUser}).
+
+
+%% @doc Returns the user ID associated with an authorization user name such
+%% as that supplied by Tiwtter Digits.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `ExternalID': the authorization user name to look up.
+%%
+-spec get_user_by_external_id(ejabberd:lserver(), auth_name())
+        -> ejabberd:luser() | not_found.
+get_user_by_external_id(_LServer, ExternalID) ->
+    wocky_db:select_one(shared, external_id, user,
+                        #{external_id => ExternalID}).
+
+
+%% @doc Returns the user ID and server associated with an given handle
+%% or `not_found' if no such user exists.
+%%
+%% `Handle': the handle to look up.
+%%
+-spec get_user_by_handle(handle())
+        -> {ejabberd:luser(), ejabberd:lserver()} | not_found.
+get_user_by_handle(Handle) ->
+    get_user_by_gkey(handle_to_user, handle, Handle).
+
+
+%% @doc Returns the user ID and server associated with an given phone number
+%% or `not_found' if no such user exists.
+%%
+%% `PhoneNumber': the phone number to look up.
+%%
+-spec get_user_by_phone_number(phone_number())
+        -> {ejabberd:luser(), ejabberd:lserver()} | not_found.
+get_user_by_phone_number(PhoneNumber) ->
+    get_user_by_gkey(phone_number_to_user, phone_number, PhoneNumber).
+
+%% @private
+get_user_by_gkey(Table, Col, Value) ->
+    case wocky_db:select_row(shared, Table, [user, server], #{Col => Value}) of
+        #{user := User, server := Server} ->
+            {User, Server};
+        not_found ->
+            not_found
+    end.
+
+
+%% @doc Returns the user's handle.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+-spec get_handle(ejabberd:luser(), ejabberd:lserver())
+                -> handle() | {error, not_found}.
+get_handle(LUser, LServer) ->
+    get_lookup(LUser, LServer, handle).
+
+
+%% @doc Attempts to set a handle for a given user. The attempt will fail
+%% and `false' returned if the requested handle is already held by another
+%% user. On success, returns `true'.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `Handle': the user's preferred display name.
+%%
+-spec maybe_set_handle(ejabberd:luser(), ejabberd:lserver(), handle())
+        -> boolean().
+maybe_set_handle(LUser, LServer, Handle) ->
+    maybe_create_handle(LUser, LServer, Handle)
+    andalso
+    update_lookup(LUser, LServer, handle_to_user, handle, Handle).
+
+%% @private
+maybe_create_handle(LUser, LServer, Handle) ->
+    Values = #{user => LUser, server => LServer, handle => Handle},
+    wocky_db:insert_new(shared, handle_to_user, Values).
+
+
+%% @doc Returns the user's phone number.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+-spec get_phone_number(ejabberd:luser(), ejabberd:lserver())
+                       -> phone_number() | {error, not_found}.
+get_phone_number(LUser, LServer) ->
+    get_lookup(LUser, LServer, phone_number).
+
+%% @private
+get_lookup(LUser, _LServer, Col) ->
+    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
+        not_found -> {error, not_found};
+        null -> {error, not_found};
+        Value -> Value
+    end.
+
+
+%% @doc Sets the phone number for a given user. If a different user already
+%% has the same phone number, it will be entirely removed from their record.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `PhoneNumber': the phone number to assign to the user.
+%%
+-spec set_phone_number(ejabberd:luser(), ejabberd:lserver(), phone_number())
+        -> ok.
+set_phone_number(LUser, LServer, PhoneNumber) ->
+    create_phone_number_lookup(LUser, LServer, PhoneNumber),
+    update_lookup(LUser, LServer, phone_number_to_user,
+                  phone_number, PhoneNumber),
+    ok.
+
+%% @private
+create_phone_number_lookup(LUser, LServer, PhoneNumber) ->
+    maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber),
+    Values = #{user => LUser, server => LServer},
+    Conditions = #{phone_number => PhoneNumber},
+    ok = wocky_db:update(shared, phone_number_to_user, Values, Conditions).
+
+%% @private
+maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
+    case get_user_by_phone_number(PhoneNumber) of
+        not_found -> ok;
+        {LUser, LServer} -> ok;
+        {OtherUser, _OtherServer} ->
+            ok = wocky_db:update(shared, user, #{phone_number => null},
+                                 #{user => OtherUser})
+    end.
+
+%% @private
+update_lookup(LUser, _LServer, Table, Col, Key) ->
+    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
+        K when K =:= null; K =:= Key ->
+            ok;
+        OldKey ->
+            ok = wocky_db:delete(shared, Table, all, #{Col => OldKey})
+    end,
+    ok = wocky_db:update(shared, user, #{Col => Key}, #{user => LUser}),
+    true.
+
+
+%% @doc Returns the user's password.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+-spec get_password(ejabberd:luser(), ejabberd:lserver())
+                  -> password() | {error, not_found}.
+get_password(LUser, _LServer) ->
+    case wocky_db:select_one(shared, user, password, #{user => LUser}) of
+        not_found -> {error, not_found};
+        Password -> Password
+    end.
+
+
+%% @doc Updates the user's password.
+%%
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `Password': the processed password for the user. No encryption or obfuscation
+%% is performed on the password at this level; it is stored as-is in the
+%% database.
+%%
+-spec set_password(ejabberd:luser(), ejabberd:lserver(), password())
+                  -> ok | {error, not_found}.
+set_password(LUser, LServer, Password) ->
+    case does_user_exist(LUser, LServer) of
+        false -> {error, not_found};
+        true -> wocky_db:update(shared, user,
+                                #{password => Password},
+                                #{user => LUser})
+    end.
+
+
+%% @doc Updates the user's location.
+%%
+%% `User': the full JID (including resource) of the user to update
+%%
+%% `Lat': the latitude of the user's location in degrees North
+%%
+%% `Lon': the longditude of the user's location in degrees East
+%%
+%% `Accuracy': the accuracy of the user's location in meters
+%%
+-spec set_location(User :: jid(), number(), number(), number()) -> ok.
+set_location(#jid{luser = LUser, lserver = LServer, lresource = LResource},
+             Lat, Lon, Accuracy) ->
+    wocky_db:insert(LServer, location, #{user =>     LUser,
+                                         server =>   LServer,
+                                         resource => LResource,
+                                         time =>     now,
+                                         lat =>      Lat,
+                                         lon =>      Lon,
+                                         accuracy => Accuracy}).
+
 
 %% @doc Generates a token.
 -spec generate_token() -> token().
@@ -519,83 +601,3 @@ get_tokens(LUser, LServer) ->
 -spec check_token(ejabberd:lserver(), ejabberd:luser(), token()) -> boolean().
 check_token(LUser, LServer, Token) ->
     lists:member(Token, get_tokens(LUser, LServer)).
-
-
-%% @doc Returns a map of all fields for a given user or `not_found' if no such
-%% user exists.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_user_data(ejabberd:lserver(), ejabberd:lserver())
-        -> map() | not_found.
-get_user_data(LUser, _LServer) ->
-    wocky_db:select_row(shared, user, all, #{user => LUser}).
-
-
-%% @doc Returns the user ID associated with an authorization user name such
-%% as that supplied by Tiwtter Digits.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `ExternalID': the authorization user name to look up.
-%%
--spec get_user_by_external_id(ejabberd:lserver(), auth_name())
-        -> ejabberd:luser() | not_found.
-get_user_by_external_id(_LServer, ExternalID) ->
-    wocky_db:select_one(shared, external_id, user,
-                        #{external_id => ExternalID}).
-
-
-%% @doc Returns the user ID and server associated with an given handle
-%% or `not_found' if no such user exists.
-%%
-%% `Handle': the handle to look up.
-%%
--spec get_user_by_handle(handle())
-        -> {ejabberd:luser(), ejabberd:lserver()} | not_found.
-get_user_by_handle(Handle) ->
-    get_user_by_gkey(handle_to_user, handle, Handle).
-
-
-%% @doc Returns the user ID and server associated with an given phone number
-%% or `not_found' if no such user exists.
-%%
-%% `PhoneNumber': the phone number to look up.
-%%
--spec get_user_by_phone_number(phone_number())
-        -> {ejabberd:luser(), ejabberd:lserver()} | not_found.
-get_user_by_phone_number(PhoneNumber) ->
-    get_user_by_gkey(phone_number_to_user, phone_number, PhoneNumber).
-
-%% @private
-get_user_by_gkey(Table, Col, Value) ->
-    case wocky_db:select_row(shared, Table, [user, server], #{Col => Value}) of
-        #{user := User, server := Server} ->
-            {User, Server};
-        not_found ->
-            not_found
-    end.
-
-%% @doc Updates the user's location.
-%%
-%% `User': the full JID (including resource) of the user to update
-%%
-%% `Lat': the latitude of the user's location in degrees North
-%%
-%% `Lon': the longditude of the user's location in degrees East
-%%
-%% `Accuracy': the accuracy of the user's location in meters
-%%
--spec set_location(User :: jid(), number(), number(), number()) -> ok.
-set_location(#jid{luser = LUser, lserver = LServer, lresource = LResource},
-             Lat, Lon, Accuracy) ->
-    wocky_db:insert(LServer, location, #{user =>     LUser,
-                                         server =>   LServer,
-                                         resource => LResource,
-                                         time =>     now,
-                                         lat =>      Lat,
-                                         lon =>      Lon,
-                                         accuracy => Accuracy}).
-
