@@ -13,6 +13,7 @@
                   cqerl,
                   stringprep,
                   z_stdlib,
+                  mochijson2,
                   qdate]},
   {included_applications, [ejabberd]},
   {mod, {wocky_app, []}},
