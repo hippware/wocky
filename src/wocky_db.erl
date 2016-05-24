@@ -55,7 +55,7 @@
 -ifdef(TEST).
 %% Query building functions exported for unit tests
 -export([to_keyspace/1]).
--export([build_select_query/3, build_insert_query/3, build_delete_query/3,
+-export([build_select_query/4, build_insert_query/3, build_delete_query/3,
          build_update_query/3, build_truncate_query/1, build_drop_query/2,
          build_create_keyspace_query/3, build_create_table_query/1,
          build_create_index_query/2, build_create_view_query/5,
@@ -72,7 +72,7 @@
 -spec select_one(context(), table(), atom(), conditions())
                 -> term() | not_found.
 select_one(Context, Table, Column, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, [Column], Conditions),
+    {ok, R} = run_select_query(Context, Table, [Column], Conditions, 1),
     single_result(R).
 
 %% @doc Retrieves a single row from a table based on the parameters.
@@ -80,7 +80,7 @@ select_one(Context, Table, Column, Conditions) ->
 -spec select_row(context(), table(), columns(), conditions())
                 -> row() | not_found.
 select_row(Context, Table, Columns, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
+    {ok, R} = run_select_query(Context, Table, Columns, Conditions, 1),
     single_row(R).
 
 %% @doc Retrieves data from a table based on the parameters and
@@ -91,14 +91,17 @@ select(Context, Table, Columns, Conditions) ->
     rows(R).
 
 run_select_query(Context, Table, Columns, Conditions) ->
-    Query = build_select_query(Table, Columns, keys(Conditions)),
+    run_select_query(Context, Table, Columns, Conditions, 0).
+
+run_select_query(Context, Table, Columns, Conditions, Limit) ->
+    Query = build_select_query(Table, Columns, keys(Conditions), Limit),
     query(Context, Query, Conditions, quorum).
 
 keys(Map) -> maps:keys(Map).
 
-build_select_query(Table, Columns, Keys) ->
+build_select_query(Table, Columns, Keys, Limit) ->
     ["SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
-     conditions(Keys)].
+     conditions(Keys), limit(Limit)].
 
 columns(all, Default) -> Default;
 columns([], Default) -> Default;
@@ -114,6 +117,9 @@ conditions([First|Rest]) ->
       fun (Name, Str) -> [Str, " AND ", atom_to_list(Name), " = ?"] end,
       [" WHERE ", atom_to_list(First), " = ?"],
       Rest).
+
+limit(N) when N < 1 -> "";
+limit(N) -> [" LIMIT ", integer_to_list(N)].
 
 
 %% @doc Inserts the provided row into the table.
