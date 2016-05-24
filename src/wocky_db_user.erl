@@ -174,11 +174,12 @@ create_user(Fields) ->
 %% `Fields' is a map containing fields to update. At a minimum, `server' and
 %% `user' must be set.
 -spec update_user(map()) -> ok | {error, atom()}.
-update_user(Fields = #{user := User}) ->
-    UpdateFields = maps:without([user, handle, phone_number], Fields),
+update_user(Fields = #{user := User, server := Server}) ->
+    UpdateFields = maps:without([user, server, handle, phone_number], Fields),
     do([error_m ||
         maybe_update_avatar(Fields),
-        wocky_db:update(shared, user, UpdateFields, #{user => User})
+        wocky_db:update(shared, user, UpdateFields,
+                        #{user => User, server => Server})
        ]).
 
 %% @private
@@ -219,11 +220,13 @@ check_avatar_purpose(UserID, LServer, File) ->
 %% @private
 assign_avatar(UserID, LServer, Avatar) ->
     maybe_delete_existing_avatar(UserID, LServer),
-    wocky_db:update(shared, user, #{avatar => Avatar}, #{user => UserID}).
+    wocky_db:update(shared, user, #{avatar => Avatar},
+                    #{user => UserID, server => LServer}).
 
 %% @private
-maybe_delete_existing_avatar(UserID, _LServer) ->
-    case wocky_db:select_one(shared, user, avatar, #{user => UserID}) of
+maybe_delete_existing_avatar(UserID, LServer) ->
+    Conditions = #{user => UserID, server => LServer},
+    case wocky_db:select_one(shared, user, avatar, Conditions) of
         URL = <<"tros:", _/binary>> ->
             {ok, {Server, FileID}} = tros:parse_url(URL),
             francus:delete(Server, FileID);
@@ -241,7 +244,8 @@ maybe_delete_existing_avatar(UserID, _LServer) ->
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
     Columns = [handle, phone_number],
-    case wocky_db:select_row(shared, user, Columns, #{user => LUser}) of
+    Conditions = #{user => LUser, server => LServer},
+    case wocky_db:select_row(shared, user, Columns, Conditions) of
         not_found ->
             ok;
 
@@ -251,7 +255,7 @@ remove_user(LUser, LServer) ->
             %% in the same batch.
             ok = remove_handle_lookup(Handle),
             ok = remove_phone_lookup(PhoneNumber),
-            ok = remove_user_record(LUser),
+            ok = remove_user_record(LUser, LServer),
             ok = remove_tokens(LUser, LServer),
             ok = remove_locations(LUser, LServer),
             ok
@@ -269,8 +273,8 @@ remove_phone_lookup(PhoneNumber) ->
                     #{phone_number => PhoneNumber}).
 
 %% @private
-remove_user_record(LUser) ->
-    wocky_db:delete(shared, user, all, #{user => LUser}).
+remove_user_record(LUser, LServer) ->
+    wocky_db:delete(shared, user, all, #{user => LUser, server => LServer}).
 
 %% @private
 remove_tokens(LUser, LServer) ->
@@ -292,10 +296,10 @@ remove_locations(LUser, LServer) ->
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
 does_user_exist(<<>>, _LServer) ->
     false;
-does_user_exist(LUser, _LServer) ->
-    case wocky_db:select_one(shared, user, user, #{user => LUser}) of
+does_user_exist(LUser, LServer) ->
+    case find_user(LUser, LServer) of
         not_found -> false;
-        LUser -> true
+        _UserData -> true
     end.
 
 
@@ -307,8 +311,9 @@ does_user_exist(LUser, _LServer) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec find_user(ejabberd:lserver(), ejabberd:lserver()) -> map() | not_found.
-find_user(LUser, _LServer) ->
-    wocky_db:select_row(shared, user, all, #{user => LUser}).
+find_user(LUser, LServer) ->
+    Conditions = #{user => LUser, server => LServer},
+    wocky_db:select_row(shared, user, all, Conditions).
 
 
 %% @doc Returns a map of all fields for a given user or `not_found' if no such
@@ -391,8 +396,9 @@ get_phone_number(LUser, LServer) ->
     get_lookup(LUser, LServer, phone_number).
 
 %% @private
-get_lookup(LUser, _LServer, Col) ->
-    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
+get_lookup(LUser, LServer, Col) ->
+    Conditions = #{user => LUser, server => LServer},
+    case wocky_db:select_one(shared, user, Col, Conditions) of
         not_found -> not_found;
         null -> not_found;
         Value -> Value
@@ -428,20 +434,21 @@ maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
     case lookup_userid(phone_number_to_user, phone_number, PhoneNumber) of
         not_found -> ok;
         {LUser, LServer} -> ok;
-        {OtherUser, _OtherServer} ->
+        {OtherUser, OtherServer} ->
             ok = wocky_db:update(shared, user, #{phone_number => null},
-                                 #{user => OtherUser})
+                                 #{user => OtherUser, server => OtherServer})
     end.
 
 %% @private
-update_lookup(LUser, _LServer, Table, Col, Key) ->
-    case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
+update_lookup(LUser, LServer, Table, Col, Key) ->
+    Conditions = #{user => LUser, server => LServer},
+    case wocky_db:select_one(shared, user, Col, Conditions) of
         K when K =:= null; K =:= Key ->
             ok;
         OldKey ->
             ok = wocky_db:delete(shared, Table, all, #{Col => OldKey})
     end,
-    ok = wocky_db:update(shared, user, #{Col => Key}, #{user => LUser}),
+    ok = wocky_db:update(shared, user, #{Col => Key}, Conditions),
     true.
 
 
@@ -453,8 +460,9 @@ update_lookup(LUser, _LServer, Table, Col, Key) ->
 %%
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
                   -> password() | not_found.
-get_password(LUser, _LServer) ->
-    wocky_db:select_one(shared, user, password, #{user => LUser}).
+get_password(LUser, LServer) ->
+    Conditions = #{user => LUser, server => LServer},
+    wocky_db:select_one(shared, user, password, Conditions).
 
 
 %% @doc Updates the user's password.
@@ -474,7 +482,7 @@ set_password(LUser, LServer, Password) ->
         false -> not_found;
         true -> wocky_db:update(shared, user,
                                 #{password => Password},
-                                #{user => LUser})
+                                #{user => LUser, server => LServer})
     end.
 
 

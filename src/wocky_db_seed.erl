@@ -210,7 +210,7 @@ table_definition(user) ->
            {email, text},          % User's email address
            {external_id, text}     % The user ID received from Twitter Digits
        ],
-       primary_key = user
+       primary_key = [server, user]
     };
 
 %% Table for storing the location history of users
@@ -443,7 +443,7 @@ table_indexes(_) -> [].
 table_views(user) -> [
     {auth_user, none, [], []},
     {external_id, none, [], []},
-    {external_id_to_user, all, [external_id, user], []}
+    {external_id_to_user, all, [external_id, server, user], []}
 ];
 table_views(roster) -> [
     {roster_version, all, [user, version, contact_jid], [{version, asc}]}
