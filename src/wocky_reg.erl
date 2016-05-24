@@ -66,33 +66,8 @@ check_provider_auth(<<"digits">>, ProviderData) ->
 check_provider_auth(P, _) -> {error, {"not-authorized",
                                       ["Unsupported provider: ", P]}}.
 
-create_or_update_user(ExternalID, PhoneNumber) ->
-    case wocky_db_user:get_user_by_external_id(
-           wocky_app:server(), ExternalID) of
-        not_found ->
-            create_user(ExternalID, PhoneNumber);
-        User ->
-            update_user(User, PhoneNumber)
-    end.
-
-update_user(User, PhoneNumber) ->
-    Server = case wocky_db_user:find_user(User, wocky_app:server()) of
-        #{phone_number := PhoneNumber, server := Server_} ->
-            Server_;
-        #{server := Server_} ->
-            ok = wocky_db_user:set_phone_number(User, Server_, PhoneNumber),
-            Server_
-    end,
-    {ok, {User, Server, false}}.
-
-create_user(ExternalID, PhoneNumber) ->
-    % TODO: This is where the code to assign a user to a particular server
-    % will go:
-    Server = wocky_app:server(),
-    User = wocky_db_user:create_user(#{external_id => ExternalID,
-                                       server => Server}),
-    ok = wocky_db_user:set_phone_number(User, Server, PhoneNumber),
-    {ok, {User, Server, true}}.
+create_or_update_user(ExternalId, PhoneNumber) ->
+    wocky_db_user:register_user(ExternalId, PhoneNumber).
 
 maybe_get_token(false, _, _, _) ->
     {ok, {undefined, undefined}};

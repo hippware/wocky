@@ -108,8 +108,7 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    ok = wocky_db_user:create_user(?USER, ?SERVER, ?HANDLE,
-                                   encode_password(?PASS)),
+    ok = wocky_db_user:register_user(?USER, ?SERVER, encode_password(?PASS)),
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, auth_token),
     ok.
 
@@ -256,9 +255,12 @@ test_remove_user_with_password() ->
 
 test_try_register() ->
   { "try_register/3", [
-    { "creates the user if it does not already exist", [
+    { "creates a new user", [
       ?_assertEqual(ok, try_register(?NEWUSER, ?SERVER, ?PASS)),
-      ?_assert(does_user_exist(?NEWUSER, ?SERVER)),
-      ?_assertEqual({error, exists}, try_register(?NEWUSER, ?SERVER, ?PASS))
+      ?_assert(does_user_exist(?NEWUSER, ?SERVER))
+    ]},
+    { "updates an existing user", [
+      ?_assertEqual(ok, try_register(?USER, ?SERVER, ?PASS)),
+      ?_assert(does_user_exist(?USER, ?SERVER))
     ]}
   ]}.

@@ -203,7 +203,6 @@ table_definition(user) ->
            {server, text},         % User Server (domainpart of JID)
            {handle, text},         % User handle (as seen by other users)
            {password, text},       % Password hash
-           {phone_number, text},   % User's phone number
            {avatar, text},         % ID of file containing user's avatar
            {first_name, text},     % User's first name
            {last_name, text},      % User's last name
@@ -445,6 +444,9 @@ table_views(user) -> [
     {external_id, none, [], []},
     {external_id_to_user, all, [external_id, server, user], []}
 ];
+table_views(phone_number_to_user) -> [
+    {user_to_phone_number, all, [user, phone_number], []}
+];
 table_views(roster) -> [
     {roster_version, all, [user, version, contact_jid], [{version, asc}]}
 ];
@@ -463,29 +465,33 @@ table_views(_) -> [].
 %% Seed data
 %%====================================================================
 
+user_data(Server) ->
+    [
+     #{user => ?ALICE,  server => Server,  handle => ?HANDLE,
+       phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
+       avatar => tros:make_url(Server, ?AVATAR_FILE)},
+     #{user => ?CAROL,  server => Server,  handle => <<"carol">>,
+       first_name => <<"Carol">>,
+       phone_number => <<"+4567">>, external_id => <<"123456">>},
+     #{user => ?BOB,    server => Server,  handle => <<"bob">>,
+       phone_number => <<"+8901">>, external_id => <<"958731">>},
+     #{user => ?KAREN,  server => Server,  handle => <<"karen">>,
+       avatar => ?AVATAR_ID,
+       first_name => <<"Karen">>, last_name => <<"Kismet">>,
+       phone_number => <<"+5555">>, external_id => <<"598234">>},
+     #{user => ?ROBERT, server => Server,  handle => <<"robert">>,
+       last_name => <<"Robert The Bruce">>,
+       phone_number => <<"+6666">>, external_id => <<"888312">>}
+    ].
+
 seed_data(handle_to_user, Server) ->
-    [maps:with([user, server, handle, skip], U) ||
-     U <- seed_data(user, Server)];
+    [maps:with([user, server, handle, skip], U) || U <- user_data(Server)];
 seed_data(phone_number_to_user, Server) ->
     [maps:with([user, server, phone_number, skip], U) ||
-     U <- seed_data(user, Server)];
+     U <- user_data(Server)];
 seed_data(user, Server) ->
-    Users = [
-        #{user => ?ALICE,  handle => ?HANDLE,
-          phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
-          avatar => tros:make_url(Server, ?AVATAR_FILE)},
-        #{user => ?CAROL,  handle => <<"carol">>, first_name => <<"Carol">>,
-          phone_number => <<"+4567">>, external_id => <<"123456">>},
-        #{user => ?BOB,    handle => <<"bob">>,
-          phone_number => <<"+8901">>, external_id => <<"958731">>},
-        #{user => ?KAREN,  handle => <<"karen">>, avatar => ?AVATAR_ID,
-          first_name => <<"Karen">>, last_name => <<"Kismet">>,
-          phone_number => <<"+5555">>, external_id => <<"598234">>},
-        #{user => ?ROBERT, handle => <<"robert">>,
-          last_name => <<"Robert The Bruce">>,
-          phone_number => <<"+6666">>, external_id => <<"888312">>}
-    ],
-    [U#{server => Server, password => ?SCRAM} || U <- Users];
+    [maps:without([phone_number], U#{password => ?SCRAM}) ||
+     U <- user_data(Server)];
 seed_data(last_activity, Server) ->
     Activity = [
         #{user => ?ALICE,  timestamp => 1000, status => <<"Not here">>},

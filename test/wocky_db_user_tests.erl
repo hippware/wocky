@@ -6,15 +6,12 @@
 -include("wocky_db_seed.hrl").
 
 -import(wocky_db_user,
-        [does_user_exist/2, create_user/1, create_user/4,
-         update_user/1, remove_user/2, get_password/2,
-         set_password/3, generate_token/0, assign_token/3,
-         release_token/3, get_tokens/2, check_token/3,
-         maybe_set_handle/3, get_handle/2,
-         set_phone_number/3, get_phone_number/2,
-         find_user/2, find_user_by/2,
-         set_location/4
-        ]).
+        [register_user/3, register_user/2, update_user/3, remove_user/2,
+         does_user_exist/2, find_user/2, find_user_by/2,
+         %% TODO get_handle/2, get_phone_number/2,
+         get_password/2, set_password/3, set_location/4,
+         assign_token/3, release_token/3, check_token/3,
+         generate_token/0, get_tokens/2]).
 
 wocky_db_user_test_() ->
     {ok, _} = application:ensure_all_started(stringprep),
@@ -32,15 +29,13 @@ wocky_db_user_test_() ->
          test_release_token(),
          test_check_token()
        ],
-       test_create_user_with_id(),
+       test_register_user_with_id(),
+       test_update_user(),
+       test_update_user_with_avatar(),
        test_set_password(),
-       test_remove_user(),
-       test_set_phone_number(),
-       test_update_user_from_map(),
-       test_set_avatar()
+       test_remove_user()
      ]},
-     test_create_user_from_map(),
-     test_maybe_set_handle(),
+     test_register_user_with_external_id(),
      test_set_location()
     ]}.
 
@@ -89,20 +84,14 @@ test_does_user_exist() ->
     ]}
   ]}.
 
-test_create_user_with_id() ->
-  { "create_user", [
+test_register_user_with_id() ->
+  { "register_user/3", [
     { "creates a user if none exists", [
-      ?_assertMatch(ok, create_user(?NEWUSER, ?SERVER,
-                                    <<"nosuchuser">>, ?PASS)),
+      ?_assertMatch(ok, register_user(?NEWUSER, ?SERVER, ?PASS)),
       ?_assert(does_user_exist(?NEWUSER, ?SERVER))
     ]},
-    { "returns {error, exists} if user already exists", [
-      ?_assertMatch({error, exists},
-                    create_user(?USER, ?SERVER, ?HANDLE, ?PASS))
-    ]},
-    { "returns {error, invalid_id} if user ID is not a valid UUID", [
-      ?_assertMatch({error, invalid_id},
-                    create_user(<<"alice">>, ?SERVER, ?HANDLE, ?PASS))
+    { "updates the user if it already exists", [
+      ?_assertMatch(ok, register_user(?USER, ?SERVER, ?PASS))
     ]}
   ]}.
 
@@ -239,73 +228,11 @@ test_check_token() ->
       ]}
    ] end}.
 
-get_user_by_handle(Handle) ->
-    case find_user_by(handle, Handle) of
-        #{user := User, server := Server} ->
-            {User, Server};
-
-        Other -> Other
-    end.
-
-test_maybe_set_handle() ->
-  { "maybe_set_handle", foreach, fun before_each/0, fun after_each/1, [
-    { "sets a handle on a user", [
-        ?_assert(maybe_set_handle(?ALICE, ?SERVER, <<"shinynewhandle">>)),
-        ?_assertEqual(<<"shinynewhandle">>, get_handle(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER},
-                      get_user_by_handle(<<"shinynewhandle">>)),
-        ?_assertEqual(not_found, get_user_by_handle(?HANDLE))
-    ]},
-    { "won't set a handle that's already in use", [
-        ?_assertNot(maybe_set_handle(?ALICE, ?SERVER, <<"carol">>)),
-        ?_assertEqual(?HANDLE, get_handle(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_user_by_handle(?HANDLE))
-    ]},
-    { "will fail and remain valid for the same value", [
-        ?_assertNot(maybe_set_handle(?ALICE, ?SERVER, ?HANDLE)),
-        ?_assertEqual(?HANDLE, get_handle(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_user_by_handle(?HANDLE))
-    ]}
-  ]}.
-
-get_user_by_phone_number(PhoneNumber) ->
-    case find_user_by(phone_number, PhoneNumber) of
-        #{user := User, server := Server} ->
-            {User, Server};
-
-        Other -> Other
-    end.
-
-test_set_phone_number() ->
-  { "set_phone_number", [
-    { "sets a phone number on a user", [
-        ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, <<"+614444">>)),
-        ?_assertEqual(<<"+614444">>, get_phone_number(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER},
-                      get_user_by_phone_number(<<"+614444">>)),
-        ?_assertEqual(not_found, get_user_by_phone_number(?PHONE_NUMBER))
-    ]},
-    { "will set a phone number that's already in use,"
-      " and remove from the currently holding user", [
-        ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, <<"+4567">>)),
-        ?_assertEqual(<<"+4567">>, get_phone_number(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER}, get_user_by_phone_number(<<"+4567">>)),
-        ?_assertEqual(not_found, get_phone_number(?CAROL, ?SERVER))
-    ]},
-    { "will succeed and remain valid for the same value", [
-        ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),
-        ?_assertEqual(?PHONE_NUMBER, get_phone_number(?ALICE, ?SERVER)),
-        ?_assertEqual({?ALICE, ?SERVER},
-                      get_user_by_phone_number(?PHONE_NUMBER))
-    ]}
-  ]}.
-
 test_find_user() ->
   { "find_user", [
     { "gets an existing user's data", [
         ?_assertMatch(#{user := ?ALICE,
                         handle := ?HANDLE,
-                        phone_number := ?PHONE_NUMBER,
                         external_id := ?EXTERNAL_ID},
                       find_user(?ALICE, ?LOCAL_CONTEXT))
     ]},
@@ -340,60 +267,39 @@ test_find_user_by() ->
     ]}
   ]}.
 
-test_create_user_from_map() ->
-  Fields = #{server => ?LOCAL_CONTEXT,
-             handle => ?HANDLE,
-             phone_number => ?PHONE_NUMBER,
-             first_name => <<"Alice">>,
-             last_name => <<"Bobson">>,
-             email => <<"alice@bob.com">>,
-             external_id => ?EXTERNAL_ID
-            },
+test_register_user_with_external_id() ->
   { "create_user", [
     { "creates a user excluding handle and phone_number fields", [
-      ?_assert(is_binary(create_user(Fields))),
-      ?_assertMatch(#{server := ?LOCAL_CONTEXT,
-                      first_name := <<"Alice">>,
-                      last_name := <<"Bobson">>,
-                      email := <<"alice@bob.com">>,
+      ?_assertMatch({ok, _}, register_user(?EXTERNAL_ID, ?PHONE_NUMBER)),
+      ?_assertMatch(#{server := ?SERVER,
                       external_id := ?EXTERNAL_ID,
-                      phone_number := null,
-                      handle := null
-                     },
+                      handle := null},
                     wocky_db:select_row(shared, user, all, #{}))
     ]}
   ]}.
 
-test_update_user_from_map() ->
-  Fields = #{user => ?ALICE,
-             server => ?LOCAL_CONTEXT,
-             handle => <<"NewHandle">>,
-             phone_number => <<"+9999">>,
-             first_name => <<"Olaf">>
-            },
+test_update_user() ->
+  Fields = #{handle => <<"NewHandle">>,
+             first_name => <<"Olaf">>},
   { "update_user", [
     { "updates a user excluding handle and phone_number fields", [
-      ?_assertEqual(ok, update_user(Fields)),
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER, Fields)),
       ?_assertMatch(#{user := ?ALICE,
-                      handle := ?HANDLE,
-                      phone_number := ?PHONE_NUMBER,
+                      handle := <<"NewHandle">>,
                       first_name := <<"Olaf">>},
                     wocky_db_user:find_user(?ALICE, ?LOCAL_CONTEXT))
     ]}
   ]}.
 
-test_set_avatar() ->
+test_update_user_with_avatar() ->
   AvatarURL = tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
-  Fields = #{user => ?ALICE,
-             server => ?LOCAL_CONTEXT,
-             avatar => AvatarURL
-            },
+  Fields = #{avatar => AvatarURL},
   NonExistantURL = tros:make_url(?LOCAL_CONTEXT, mod_tros:make_file_id()),
   MediaURL = tros:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
 
   { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
     { "succesfully set avatar and delete the old one", [
-      ?_assertEqual(ok, update_user(Fields)),
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER, Fields)),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:find_user(?ALICE, ?SERVER))),
@@ -403,21 +309,22 @@ test_set_avatar() ->
     ]},
     { "fail to set avatar due to wrong owner", [
       ?_assertEqual({error, not_file_owner},
-                        update_user(Fields#{user => ?BOB})),
+                        update_user(?BOB, ?SERVER, Fields)),
       ?_assertEqual(null,
                     maps:get(avatar,
                              wocky_db_user:find_user(?BOB, ?SERVER)))
     ]},
     { "fail to set avatar due to non-existant file", [
       ?_assertEqual({error, not_found},
-                        update_user(Fields#{avatar => NonExistantURL})),
+                        update_user(?ALICE, ?SERVER,
+                                    #{avatar => NonExistantURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:find_user(?ALICE, ?SERVER)))
     ]},
     { "fail to set avatar due to non-avatar type file", [
       ?_assertEqual({error, not_avatar_file},
-                        update_user(Fields#{avatar => MediaURL})),
+                        update_user(?ALICE, ?SERVER, #{avatar => MediaURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:find_user(?ALICE, ?SERVER)))
