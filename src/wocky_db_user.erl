@@ -325,7 +325,7 @@ find_user_by(handle, Handle) ->
 find_user_by(phone_number, PhoneNumber) ->
     find_user_by_lookup(phone_number_to_user, phone_number, PhoneNumber);
 find_user_by(external_id, ExternalId) ->
-    find_user_by_lookup(external_id, external_id, ExternalId);
+    find_user_by_lookup(external_id_to_user, external_id, ExternalId);
 find_user_by(_, _) ->
     erlang:error(not_implemented).
 

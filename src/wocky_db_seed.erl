@@ -442,7 +442,8 @@ table_indexes(_) -> [].
 
 table_views(user) -> [
     {auth_user, none, [], []},
-    {external_id, all, [external_id, user], []}
+    {external_id, none, [], []},
+    {external_id_to_user, all, [external_id, user], []}
 ];
 table_views(roster) -> [
     {roster_version, all, [user, version, contact_jid], [{version, asc}]}
