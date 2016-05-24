@@ -367,7 +367,7 @@ get_user_by_gkey(Table, Col, Value) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec get_handle(ejabberd:luser(), ejabberd:lserver())
-                -> handle() | {error, not_found}.
+                -> handle() | not_found.
 get_handle(LUser, LServer) ->
     get_lookup(LUser, LServer, handle).
 
@@ -402,15 +402,15 @@ maybe_create_handle(LUser, LServer, Handle) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec get_phone_number(ejabberd:luser(), ejabberd:lserver())
-                       -> phone_number() | {error, not_found}.
+                       -> phone_number() | not_found.
 get_phone_number(LUser, LServer) ->
     get_lookup(LUser, LServer, phone_number).
 
 %% @private
 get_lookup(LUser, _LServer, Col) ->
     case wocky_db:select_one(shared, user, Col, #{user => LUser}) of
-        not_found -> {error, not_found};
-        null -> {error, not_found};
+        not_found -> not_found;
+        null -> not_found;
         Value -> Value
     end.
 
@@ -468,12 +468,9 @@ update_lookup(LUser, _LServer, Table, Col, Key) ->
 %% `LServer': the "domainpart" of the user's JID.
 %%
 -spec get_password(ejabberd:luser(), ejabberd:lserver())
-                  -> password() | {error, not_found}.
+                  -> password() | not_found.
 get_password(LUser, _LServer) ->
-    case wocky_db:select_one(shared, user, password, #{user => LUser}) of
-        not_found -> {error, not_found};
-        Password -> Password
-    end.
+    wocky_db:select_one(shared, user, password, #{user => LUser}).
 
 
 %% @doc Updates the user's password.
@@ -487,10 +484,10 @@ get_password(LUser, _LServer) ->
 %% database.
 %%
 -spec set_password(ejabberd:luser(), ejabberd:lserver(), password())
-                  -> ok | {error, not_found}.
+                  -> ok | not_found.
 set_password(LUser, LServer, Password) ->
     case does_user_exist(LUser, LServer) of
-        false -> {error, not_found};
+        false -> not_found;
         true -> wocky_db:update(shared, user,
                                 #{password => Password},
                                 #{user => LUser})
@@ -536,7 +533,7 @@ generate_token() ->
 %% `LResource': the "resourcepart" of the user's JID.
 %%
 -spec assign_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
-                  -> {ok, token(), pos_integer()} | {error, not_found}.
+                  -> {ok, token(), pos_integer()} | not_found.
 assign_token(LUser, LServer, LResource) ->
     case does_user_exist(LUser, LServer) of
         true ->
@@ -554,7 +551,7 @@ assign_token(LUser, LServer, LResource) ->
             {ok, Token, ExpiresAt};
 
         false ->
-            {error, not_found}
+            not_found
     end.
 
 

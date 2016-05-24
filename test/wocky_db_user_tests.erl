@@ -114,11 +114,11 @@ test_get_password() ->
     { "returns password if user exists", [
       ?_assertMatch(?SCRAM, get_password(?USER, ?SERVER))
     ]},
-    { "returns {error, not_found} if user does not exist", [
-      ?_assertMatch({error, not_found}, get_password(?BADUSER, ?SERVER))
+    { "returns not_found if user does not exist", [
+      ?_assertMatch(not_found, get_password(?BADUSER, ?SERVER))
     ]},
-    { "returns {error, not_found} if user ID is not a valid UUID", [
-      ?_assertMatch({error, not_found}, get_password(<<"alice">>, ?SERVER))
+    { "returns not_found if user ID is not a valid UUID", [
+      ?_assertMatch(not_found, get_password(<<"alice">>, ?SERVER))
     ]}
   ]}.
 
@@ -128,12 +128,11 @@ test_set_password() ->
       ?_assertMatch(ok, set_password(?USER, ?SERVER, <<"newpass">>)),
       ?_assertMatch(<<"newpass">>, get_password(?USER, ?SERVER))
     ]},
-    { "returns {error, not_found} if user does not exist", [
-      ?_assertMatch({error, not_found}, set_password(?BADUSER, ?SERVER, ?PASS))
+    { "returns not_found if user does not exist", [
+      ?_assertMatch(not_found, set_password(?BADUSER, ?SERVER, ?PASS))
     ]},
-    { "returns {error, not_found} if user ID is not a valid UUID", [
-      ?_assertMatch({error, not_found},
-                    set_password(<<"alice">>, ?SERVER, ?PASS))
+    { "returns not_found if user ID is not a valid UUID", [
+      ?_assertMatch(not_found, set_password(<<"alice">>, ?SERVER, ?PASS))
     ]}
   ]}.
 
@@ -180,13 +179,11 @@ test_assign_token() ->
       ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
       ?_assertEqual(1, length(get_tokens(?USER, ?SERVER)))
     ]}},
-    { "returns {error, not_found} if user does not exist", [
-      ?_assertEqual({error, not_found},
-                    assign_token(?BADUSER, ?SERVER, ?RESOURCE))
+    { "returns not_found if user does not exist", [
+      ?_assertEqual(not_found, assign_token(?BADUSER, ?SERVER, ?RESOURCE))
     ]},
-    { "returns {error, not_found} if user ID is not a valid UUID", [
-      ?_assertEqual({error, not_found},
-                    assign_token(<<"alice">>, ?SERVER, ?RESOURCE))
+    { "returns not_found if user ID is not a valid UUID", [
+      ?_assertEqual(not_found, assign_token(<<"alice">>, ?SERVER, ?RESOURCE))
     ]}
   ]}.
 
@@ -280,7 +277,7 @@ test_set_phone_number() ->
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, <<"+4567">>)),
         ?_assertEqual(<<"+4567">>, get_phone_number(?ALICE, ?SERVER)),
         ?_assertEqual({?ALICE, ?SERVER}, get_user_by_phone_number(<<"+4567">>)),
-        ?_assertEqual({error, not_found}, get_phone_number(?CAROL, ?SERVER))
+        ?_assertEqual(not_found, get_phone_number(?CAROL, ?SERVER))
     ]},
     { "will succeed and remain valid for the same value", [
         ?_assertEqual(ok, set_phone_number(?ALICE, ?SERVER, ?PHONE_NUMBER)),

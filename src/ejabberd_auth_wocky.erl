@@ -83,7 +83,7 @@ set_password(LUser, LServer, Password) ->
         ok ->
             ok;
 
-        {error, not_found} ->
+        not_found ->
             {error, invalid_jid}
     end.
 
@@ -94,7 +94,7 @@ check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
     wocky_db_user:check_token(LUser, LServer, Token);
 check_password(LUser, LServer, Password) ->
     case wocky_db_user:get_password(LUser, LServer) of
-        {error, _} ->
+        not_found ->
             false;
 
         <<"==SCRAM==,", _/binary>> = ScramPassword ->
@@ -111,7 +111,7 @@ check_password(LUser, LServer, Password) ->
                      fun()) -> boolean().
 check_password(LUser, LServer, Password, Digest, DigestGen) ->
     case wocky_db_user:get_password(LUser, LServer) of
-        {error, _} ->
+        not_found ->
             false;
 
         <<"==SCRAM==,", _/binary>> = ScramPassword ->
@@ -185,7 +185,7 @@ get_password(LUser, LServer) ->
                     StoredPassword
             end;
 
-        {error, _} ->
+        not_found ->
             false
     end.
 
