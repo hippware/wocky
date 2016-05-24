@@ -76,7 +76,7 @@ create_or_update_user(ExternalID, PhoneNumber) ->
     end.
 
 update_user(User, PhoneNumber) ->
-    Server = case wocky_db_user:get_user_data(User, wocky_app:server()) of
+    Server = case wocky_db_user:find_user(User, wocky_app:server()) of
         #{phone_number := PhoneNumber, server := Server_} ->
             Server_;
         #{server := Server_} ->

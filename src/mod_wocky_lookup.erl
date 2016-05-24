@@ -91,8 +91,7 @@ lookup_number(Number, Reductions) ->
     {lookup_number(Number), Reductions - 1}.
 
 lookup_number(Number) ->
-    lookup_item(phone_number_to_user,
-                #{phone_number => maybe_add_plus(Number)}).
+    wocky_db_user:find_user_by(phone_number, maybe_add_plus(Number)).
 
 maybe_add_plus(<<"+", _/binary>> = String) -> String;
 maybe_add_plus(String) -> <<"+", String/binary>>.
@@ -117,21 +116,12 @@ lookup_handles(Handles) ->
                 end, [], Handles).
 
 lookup_handle(Handle) ->
-    lookup_item(handle_to_user, #{handle => Handle}).
+    wocky_db_user:find_user_by(handle, Handle).
 
 
 %%%===================================================================
 %%% Helper functions
 %%%===================================================================
-
-lookup_item(Table, Condition) ->
-    case wocky_db:select_one(shared, Table, user, Condition) of
-        not_found -> not_found;
-        null -> not_found;
-        User ->
-            Columns = [user, server, handle, first_name, last_name, avatar],
-            wocky_db:select_row(shared, user, Columns, #{user => User})
-    end.
 
 items_from_xml(Els) ->
     [item_from_xml(El) || #xmlel{name = <<"item">>} = El <- Els].

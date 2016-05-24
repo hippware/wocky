@@ -282,7 +282,7 @@ set_fields(Config) ->
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
-        wocky_db_user:get_user_data(?ALICE_UUID, ?LOCAL_CONTEXT)
+        wocky_db_user:find_user(?ALICE_UUID, ?LOCAL_CONTEXT)
     end).
 
 set_other_user(Config) ->
@@ -400,7 +400,7 @@ handle_clash(Config) ->
 
         BobUUID = ?BOB_UUID,
         #{handle := BobUUID, first_name := null} =
-        wocky_db_user:get_user_data(?BOB_UUID, ?LOCAL_CONTEXT)
+        wocky_db_user:find_user(?BOB_UUID, ?LOCAL_CONTEXT)
     end).
 
 same_handle(Config) ->

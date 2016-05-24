@@ -190,7 +190,7 @@ is_visible(stranger, _)      -> false.
 
 get_resp_fields(ToJID, LUser, Fields) ->
     LServer = ToJID#jid.lserver,
-    case wocky_db_user:get_user_data(LUser, LServer) of
+    case wocky_db_user:find_user(LUser, LServer) of
         not_found ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->

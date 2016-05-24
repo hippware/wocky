@@ -67,7 +67,6 @@
 
 -type handle()       :: binary().
 -type phone_number() :: binary().
--type auth_name()    :: binary().
 -type password()     :: binary().
 -type token()        :: binary().
 -export_type([handle/0, phone_number/0, password/0, token/0]).
@@ -78,10 +77,8 @@
          update_user/1,
          remove_user/2,
          does_user_exist/2,
-         get_user_data/2,
-         get_user_by_external_id/2,
-         get_user_by_handle/1,
-         get_user_by_phone_number/1,
+         find_user/2,
+         find_user_by/2,
          get_handle/2,
          maybe_set_handle/3,
          get_phone_number/2,
@@ -309,54 +306,41 @@ does_user_exist(LUser, _LServer) ->
 %%
 %% `LServer': the "domainpart" of the user's JID.
 %%
--spec get_user_data(ejabberd:lserver(), ejabberd:lserver())
-        -> map() | not_found.
-get_user_data(LUser, _LServer) ->
+-spec find_user(ejabberd:lserver(), ejabberd:lserver()) -> map() | not_found.
+find_user(LUser, _LServer) ->
     wocky_db:select_row(shared, user, all, #{user => LUser}).
 
 
-%% @doc Returns the user ID associated with an authorization user name such
-%% as that supplied by Tiwtter Digits.
+%% @doc Returns a map of all fields for a given user or `not_found' if no such
+%% user exists.
 %%
-%% `LServer': the "domainpart" of the user's JID.
+%% `Key': the key to use to lookup the user. Acceptable values include
+%%        `handle', `phone_number' and `external_id'.
 %%
-%% `ExternalID': the authorization user name to look up.
+%% `Value': the value that corresponds to `Key'.
 %%
--spec get_user_by_external_id(ejabberd:lserver(), auth_name())
-        -> ejabberd:luser() | not_found.
-get_user_by_external_id(_LServer, ExternalID) ->
-    wocky_db:select_one(shared, external_id, user,
-                        #{external_id => ExternalID}).
-
-
-%% @doc Returns the user ID and server associated with an given handle
-%% or `not_found' if no such user exists.
-%%
-%% `Handle': the handle to look up.
-%%
--spec get_user_by_handle(handle())
-        -> {ejabberd:luser(), ejabberd:lserver()} | not_found.
-get_user_by_handle(Handle) ->
-    get_user_by_gkey(handle_to_user, handle, Handle).
-
-
-%% @doc Returns the user ID and server associated with an given phone number
-%% or `not_found' if no such user exists.
-%%
-%% `PhoneNumber': the phone number to look up.
-%%
--spec get_user_by_phone_number(phone_number())
-        -> {ejabberd:luser(), ejabberd:lserver()} | not_found.
-get_user_by_phone_number(PhoneNumber) ->
-    get_user_by_gkey(phone_number_to_user, phone_number, PhoneNumber).
+-spec find_user_by(Key :: atom(), Value :: binary()) -> map() | not_found.
+find_user_by(handle, Handle) ->
+    find_user_by_lookup(handle_to_user, handle, Handle);
+find_user_by(phone_number, PhoneNumber) ->
+    find_user_by_lookup(phone_number_to_user, phone_number, PhoneNumber);
+find_user_by(external_id, ExternalId) ->
+    find_user_by_lookup(external_id, external_id, ExternalId);
+find_user_by(_, _) ->
+    erlang:error(not_implemented).
 
 %% @private
-get_user_by_gkey(Table, Col, Value) ->
+find_user_by_lookup(Table, Col, Value) ->
+    case lookup_userid(Table, Col, Value) of
+        {User, Server} -> find_user(User, Server);
+        not_found -> not_found
+    end.
+
+%% @private
+lookup_userid(Table, Col, Value) ->
     case wocky_db:select_row(shared, Table, [user, server], #{Col => Value}) of
-        #{user := User, server := Server} ->
-            {User, Server};
-        not_found ->
-            not_found
+        not_found -> not_found;
+        #{user := User, server := Server} -> {User, Server}
     end.
 
 
@@ -441,7 +425,7 @@ create_phone_number_lookup(LUser, LServer, PhoneNumber) ->
 
 %% @private
 maybe_remove_phone_number_from_other_user(LUser, LServer, PhoneNumber) ->
-    case get_user_by_phone_number(PhoneNumber) of
+    case lookup_userid(phone_number_to_user, phone_number, PhoneNumber) of
         not_found -> ok;
         {LUser, LServer} -> ok;
         {OtherUser, _OtherServer} ->

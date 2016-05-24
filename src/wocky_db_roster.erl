@@ -126,11 +126,8 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
 fill_extra_fields(Items) when is_list(Items) ->
     [fill_extra_fields(Item) || Item <- Items];
 
-fill_extra_fields(#roster{contact_jid = {LUser, _, _}} = I) ->
-    Row = wocky_db:select_row(shared, user,
-                              [handle, avatar, first_name, last_name],
-                              #{user => LUser}),
-    case Row of
+fill_extra_fields(#roster{contact_jid = {LUser, LServer, _}} = I) ->
+    case wocky_db_user:find_user(LUser, LServer) of
         not_found ->
             I;
 

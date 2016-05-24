@@ -10,12 +10,9 @@
          update_user/1, remove_user/2, get_password/2,
          set_password/3, generate_token/0, assign_token/3,
          release_token/3, get_tokens/2, check_token/3,
-         maybe_set_handle/3,
-         get_handle/2, get_user_by_handle/1,
-         set_phone_number/3,
-         get_phone_number/2, get_user_by_phone_number/1,
-         get_user_data/2,
-         get_user_by_external_id/2,
+         maybe_set_handle/3, get_handle/2,
+         set_phone_number/3, get_phone_number/2,
+         find_user/2, find_user_by/2,
          set_location/4
         ]).
 
@@ -27,8 +24,8 @@ wocky_db_user_test_() ->
        [
          test_does_user_exist(),
          test_get_password(),
-         test_get_user_data(),
-         test_external_id(),
+         test_find_user(),
+         test_find_user_by(),
          test_generate_token(),
          test_get_tokens(),
          test_assign_token(),
@@ -242,6 +239,14 @@ test_check_token() ->
       ]}
    ] end}.
 
+get_user_by_handle(Handle) ->
+    case find_user_by(handle, Handle) of
+        #{user := User, server := Server} ->
+            {User, Server};
+
+        Other -> Other
+    end.
+
 test_maybe_set_handle() ->
   { "maybe_set_handle", foreach, fun before_each/0, fun after_each/1, [
     { "sets a handle on a user", [
@@ -262,6 +267,14 @@ test_maybe_set_handle() ->
         ?_assertEqual({?ALICE, ?SERVER}, get_user_by_handle(?HANDLE))
     ]}
   ]}.
+
+get_user_by_phone_number(PhoneNumber) ->
+    case find_user_by(phone_number, PhoneNumber) of
+        #{user := User, server := Server} ->
+            {User, Server};
+
+        Other -> Other
+    end.
 
 test_set_phone_number() ->
   { "set_phone_number", [
@@ -287,30 +300,43 @@ test_set_phone_number() ->
     ]}
   ]}.
 
-test_get_user_data() ->
-  { "get_user_data", [
+test_find_user() ->
+  { "find_user", [
     { "gets an existing user's data", [
         ?_assertMatch(#{user := ?ALICE,
                         handle := ?HANDLE,
                         phone_number := ?PHONE_NUMBER,
                         external_id := ?EXTERNAL_ID},
-                      get_user_data(?ALICE, ?LOCAL_CONTEXT))
+                      find_user(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "returns not_found for non-existant users", [
         ?_assertEqual(not_found,
-                      get_user_data(wocky_db:create_id(), ?LOCAL_CONTEXT))
+                      find_user(wocky_db:create_id(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 
-test_external_id() ->
-  { "external_id", [
+test_find_user_by() ->
+  { "find_user_by", [
     { "gets an existing user from the external_id", [
-        ?_assertEqual(?ALICE,
-                      get_user_by_external_id(?LOCAL_CONTEXT, ?EXTERNAL_ID))
+        ?_assertMatch(#{user := ?ALICE},
+                      find_user_by(external_id, ?EXTERNAL_ID))
     ]},
     { "gets not_found for non-existant external_id", [
-        ?_assertEqual(not_found,
-                      get_user_by_external_id(?LOCAL_CONTEXT, <<"3413212312">>))
+        ?_assertEqual(not_found, find_user_by(external_id, <<"3413212312">>))
+    ]},
+    { "gets an existing user from the handle", [
+        ?_assertMatch(#{user := ?ALICE},
+                      find_user_by(handle, ?HANDLE))
+    ]},
+    { "gets not_found for non-existant handle", [
+        ?_assertEqual(not_found, find_user_by(handle, <<"nosuchhandle">>))
+    ]},
+    { "gets an existing user from the phone number", [
+        ?_assertMatch(#{user := ?ALICE},
+                      find_user_by(phone_number, ?PHONE_NUMBER))
+    ]},
+    { "gets not_found for non-existant phone number", [
+        ?_assertEqual(not_found, find_user_by(phone_number, <<"+1555bogus">>))
     ]}
   ]}.
 
@@ -352,7 +378,7 @@ test_update_user_from_map() ->
                       handle := ?HANDLE,
                       phone_number := ?PHONE_NUMBER,
                       first_name := <<"Olaf">>},
-                    wocky_db_user:get_user_data(?ALICE, ?LOCAL_CONTEXT))
+                    wocky_db_user:find_user(?ALICE, ?LOCAL_CONTEXT))
     ]}
   ]}.
 
@@ -370,8 +396,7 @@ test_set_avatar() ->
       ?_assertEqual(ok, update_user(Fields)),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
-                             wocky_db_user:get_user_data(?ALICE,
-                                                         ?LOCAL_CONTEXT))),
+                             wocky_db_user:find_user(?ALICE, ?SERVER))),
       ?_assertEqual(not_found,
                     wocky_db:select_one(?LOCAL_CONTEXT, media,
                                         id, #{id => ?AVATAR_FILE}))
@@ -381,24 +406,21 @@ test_set_avatar() ->
                         update_user(Fields#{user => ?BOB})),
       ?_assertEqual(null,
                     maps:get(avatar,
-                             wocky_db_user:get_user_data(?BOB,
-                                                         ?LOCAL_CONTEXT)))
+                             wocky_db_user:find_user(?BOB, ?SERVER)))
     ]},
     { "fail to set avatar due to non-existant file", [
       ?_assertEqual({error, not_found},
                         update_user(Fields#{avatar => NonExistantURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
-                             wocky_db_user:get_user_data(?ALICE,
-                                                         ?LOCAL_CONTEXT)))
+                             wocky_db_user:find_user(?ALICE, ?SERVER)))
     ]},
     { "fail to set avatar due to non-avatar type file", [
       ?_assertEqual({error, not_avatar_file},
                         update_user(Fields#{avatar => MediaURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
-                             wocky_db_user:get_user_data(?ALICE,
-                                                         ?LOCAL_CONTEXT)))
+                             wocky_db_user:find_user(?ALICE, ?SERVER)))
     ]}
   ]}.
 
