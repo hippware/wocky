@@ -197,9 +197,15 @@ update_user(User, Server, Fields) ->
         prepare_avatar(User, Server, Fields),
         update_handle_lookup(User, Server, UserData, Fields),
         delete_existing_avatar(UserData),
-        wocky_db:update(shared, user, UpdateFields,
-                        #{user => User, server => Server})
+        do_update_user(User, Server, UpdateFields, maps:size(UpdateFields))
        ]).
+
+%% @private
+do_update_user(_, _, _, 0) ->
+    ok;
+do_update_user(User, Server, UpdateFields, _) ->
+    wocky_db:update(shared, user, UpdateFields,
+                    #{user => User, server => Server}).
 
 %% @private
 valid_user_fields() ->
