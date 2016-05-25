@@ -133,12 +133,12 @@ fields() ->
      {"user",         "uuid",   public,      read_only, default},
      {"server",       "string", public,      read_only, default},
      {"handle",       "string", public,      write,     default},
-     {"phone_number", "string", private,     rest_only, fun get_phone_number/1},
+     {"phone_number", "string", private,     read_only, fun get_phone_number/1},
      {"avatar",       "file",   public,      write,     default},
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
      {"email",        "string", private,     write,     default},
-     {"external_id",  "string", private,     rest_only, default}
+     {"external_id",  "string", private,     read_only, default}
     ].
 
 
@@ -318,11 +318,6 @@ check_editability(Field) ->
                              iolist_to_binary(
                                ["Field ", field_name(Field),
                                 " is read-only"]))};
-        rest_only ->
-            Error = iolist_to_binary(
-                      ["Field ", field_name(Field),
-                       " may only be changed through REST interface"]),
-            {error, ?ERRT_FORBIDDEN(?MYLANG, Error)};
         write ->
             ok
     end.
