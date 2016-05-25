@@ -401,7 +401,7 @@ handle_clash(Config) ->
         expect_iq_error(BobQueryStanza, Bob),
 
         BobUUID = ?BOB_UUID,
-        #{handle := BobUUID, first_name := null} =
+        #{user := BobUUID, first_name := null} =
         wocky_db_user:find_user(?BOB_UUID, ?LOCAL_CONTEXT)
     end).
 

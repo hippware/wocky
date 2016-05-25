@@ -115,22 +115,10 @@
 %%
 -spec register_user(ejabberd:luser(), ejabberd:lserver(), password()) -> ok.
 register_user(LUser, LServer, Password) ->
-    Handle = LUser, % Reuse the username as the handle.
-    Queries = [insert_handle_lookup_query(LUser, LServer, Handle),
-               insert_user_record_query(LUser, LServer, Handle, Password)],
-    {ok, void} = wocky_db:batch_query(shared, Queries, quorum),
-    ok.
-
-%% @private
-insert_handle_lookup_query(LUser, LServer, Handle) ->
-    {"INSERT INTO handle_to_user (user, server, handle) VALUES (?, ?, ?) ",
-     #{user => LUser, server => LServer, handle => Handle}}.
-
-%% @private
-insert_user_record_query(LUser, LServer, Handle, Password) ->
-    {"INSERT INTO user (user, server, handle, password) VALUES (?, ?, ?, ?)",
-     #{user => LUser, server => LServer,
-       handle => Handle, password => Password}}.
+    wocky_db:insert(shared, user,
+                    #{user => LUser,
+                      server => LServer,
+                      password => Password}).
 
 
 %% @doc Creates or updates a user based on the external authentication ID and
