@@ -8,7 +8,7 @@
 -import(wocky_db_user,
         [register_user/3, register_user/2, update_user/3, remove_user/2,
          does_user_exist/2, find_user/2, find_user_by/2,
-         %% TODO get_handle/2, get_phone_number/2,
+         get_handle/2, get_phone_number/2,
          get_password/2, set_password/3, set_location/6,
          assign_token/3, release_token/3, check_token/3,
          generate_token/0, get_tokens/2]).
@@ -21,6 +21,8 @@ wocky_db_user_test_() ->
        [
          test_does_user_exist(),
          test_get_password(),
+         test_get_handle(),
+         test_get_phone_number(),
          test_find_user(),
          test_find_user_by(),
          test_generate_token(),
@@ -30,12 +32,12 @@ wocky_db_user_test_() ->
          test_check_token()
        ],
        test_register_user_with_id(),
+       test_register_user_with_external_id(),
        test_update_user(),
        test_update_user_with_avatar(),
        test_set_password(),
        test_remove_user()
      ]},
-     test_register_user_with_external_id(),
      test_set_location()
     ]}.
 
@@ -80,7 +82,36 @@ test_does_user_exist() ->
     ]},
     { "returns false if the user does not exist", [
       ?_assertNot(does_user_exist(?BADUSER, ?SERVER)),
-      ?_assertNot(does_user_exist(<<"alice">>, ?SERVER))
+      ?_assertNot(does_user_exist(<<"alice">>, ?SERVER)),
+      ?_assertNot(does_user_exist(<<>>, ?SERVER))
+    ]}
+  ]}.
+
+test_get_handle() ->
+  { "get_handle", [
+    { "returns the user's handle", [
+      ?_assertEqual(?HANDLE, get_handle(?USER, ?SERVER))
+    ]},
+    { "returns not_found if the user does not exist", [
+      ?_assertEqual(not_found, get_handle(?BADUSER, ?SERVER))
+    ]},
+    { "returns not_found if the user does not have a handle", [
+      ?_assertEqual(ok, register_user(?NEWUSER, ?SERVER, ?PASS)),
+      ?_assertEqual(not_found, get_handle(?NEWUSER, ?SERVER))
+    ]}
+  ]}.
+
+test_get_phone_number() ->
+  { "get_phone_number", [
+    { "returns the user's phone number", [
+      ?_assertEqual(?PHONE_NUMBER, get_phone_number(?USER, ?SERVER))
+    ]},
+    { "returns not_found if the user does not exist", [
+      ?_assertEqual(not_found, get_phone_number(?BADUSER, ?SERVER))
+    ]},
+    { "returns not_found if the user does not have a phone_number", [
+      ?_assertEqual(ok, register_user(?NEWUSER, ?SERVER, ?PASS)),
+      ?_assertEqual(not_found, get_phone_number(?NEWUSER, ?SERVER))
     ]}
   ]}.
 
@@ -269,33 +300,85 @@ test_find_user_by() ->
 
 test_register_user_with_external_id() ->
   { "create_user", [
-    { "creates a user excluding handle and phone_number fields", [
-      ?_assertMatch({ok, _}, register_user(?EXTERNAL_ID, ?PHONE_NUMBER)),
-      ?_assertMatch(#{server := ?SERVER,
-                      external_id := ?EXTERNAL_ID,
-                      handle := null},
-                    wocky_db:select_row(shared, user, all, #{}))
+    { "creates a user when none exists", [
+      ?_assertMatch({ok, {_, ?SERVER, true}},
+                    register_user(<<"987654321">>, <<"+15559876543">>))
+    ]},
+    { "updates an existing user when one exists", [
+      ?_assertMatch({ok, {?ALICE, ?SERVER, false}},
+                    register_user(?EXTERNAL_ID, ?PHONE_NUMBER))
     ]}
   ]}.
 
 test_update_user() ->
-  Fields = #{handle => <<"NewHandle">>,
-             first_name => <<"Olaf">>},
+  NullHandleUser = wocky_db:create_id(),
   { "update_user", [
-    { "updates a user excluding handle and phone_number fields", [
-      ?_assertEqual(ok, update_user(?ALICE, ?SERVER, Fields)),
+    { "updates a user's handle if it is unique", [
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
+                                    #{handle => <<"NewHandle">>})),
+      ?_assertMatch(#{user := ?ALICE, handle := <<"NewHandle">>},
+                    wocky_db_user:find_user(?ALICE, ?SERVER))
+    ]},
+    { "returns ok if the new handle is the same as the old handle", [
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
+                                    #{handle => ?HANDLE})),
+      ?_assertMatch(#{user := ?ALICE, handle := ?HANDLE},
+                    wocky_db_user:find_user(?ALICE, ?SERVER))
+    ]},
+    { "updates a user's handle when the old handle is null", [
+      ?_assertNot(does_user_exist(NullHandleUser, ?SERVER)),
+      ?_assertEqual(ok, register_user(NullHandleUser, ?SERVER, ?PASS)),
+      ?_assertEqual(ok, update_user(NullHandleUser, ?SERVER,
+                                    #{handle => <<"NewHandle">>})),
+      ?_assertMatch(#{user := NullHandleUser, handle := <<"NewHandle">>},
+                    wocky_db_user:find_user(NullHandleUser, ?SERVER))
+    ]},
+    { "returns {error, duplicate_handle} if the new handle already exists", [
+      ?_assertEqual({error, duplicate_handle},
+                    update_user(?ALICE, ?SERVER, #{handle => <<"carol">>}))
+    ]},
+    { "updates a user's email", [
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
+                                    #{email => <<"alice@wonderland.lit">>})),
+      ?_assertMatch(#{user := ?ALICE, email := <<"alice@wonderland.lit">>},
+                    wocky_db_user:find_user(?ALICE, ?SERVER))
+    ]},
+    { "updates a user's first and last name", [
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
+                                    #{first_name => <<"Svein">>,
+                                      last_name => <<"Forkbeard">>})),
       ?_assertMatch(#{user := ?ALICE,
-                      handle := <<"NewHandle">>,
-                      first_name := <<"Olaf">>},
-                    wocky_db_user:find_user(?ALICE, ?LOCAL_CONTEXT))
+                      first_name := <<"Svein">>,
+                      last_name := <<"Forkbeard">>},
+                    wocky_db_user:find_user(?ALICE, ?SERVER))
+    ]},
+    { "returns ok if passed an empty list of fields", [
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER, #{}))
+    ]},
+    { "won't update a user's server or external id", [
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
+                                    #{server => <<"neverwhere">>,
+                                      external_id => <<"987654321">>})),
+      ?_assertMatch(#{user := ?ALICE,
+                      server := ?SERVER,
+                      external_id := ?EXTERNAL_ID},
+                    wocky_db_user:find_user(?ALICE, ?SERVER))
+    ]},
+    { "will 'upsert' a user that doesn't already exist", [
+      ?_assertNot(does_user_exist(?NEWUSER, ?SERVER)),
+      ?_assertEqual(ok, update_user(?NEWUSER, ?SERVER,
+                                    #{handle => <<"auniquehandle">>})),
+      ?_assertMatch(#{user := ?NEWUSER, handle := <<"auniquehandle">>},
+                    wocky_db_user:find_user(?NEWUSER, ?SERVER))
     ]}
   ]}.
 
 test_update_user_with_avatar() ->
-  AvatarURL = tros:make_url(?LOCAL_CONTEXT, ?AVATAR_FILE2),
+  AvatarURL = tros:make_url(?SERVER, ?AVATAR_FILE2),
   Fields = #{avatar => AvatarURL},
-  NonExistantURL = tros:make_url(?LOCAL_CONTEXT, mod_tros:make_file_id()),
-  MediaURL = tros:make_url(?LOCAL_CONTEXT, ?MEDIA_FILE),
+  NonExistantURL = tros:make_url(?SERVER, mod_tros:make_file_id()),
+  NonLocalURL = tros:make_url(<<"nonlocal.com">>, mod_tros:make_file_id()),
+  MediaURL = tros:make_url(?SERVER, ?MEDIA_FILE),
 
   { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
     { "succesfully set avatar and delete the old one", [
@@ -306,6 +389,15 @@ test_update_user_with_avatar() ->
       ?_assertEqual(not_found,
                     wocky_db:select_one(?LOCAL_CONTEXT, media,
                                         id, #{id => ?AVATAR_FILE}))
+    ]},
+    { "succesfully set avatar when the existing avatar is bogus", [
+      ?_assertEqual(ok, wocky_db:update(shared, user,
+                                        #{avatar => <<"bogus">>},
+                                        #{user => ?ALICE, server => ?SERVER})),
+      ?_assertEqual(ok, update_user(?ALICE, ?SERVER, Fields)),
+      ?_assertEqual(AvatarURL,
+                    maps:get(avatar,
+                             wocky_db_user:find_user(?ALICE, ?SERVER)))
     ]},
     { "fail to set avatar due to wrong owner", [
       ?_assertEqual({error, not_file_owner},
@@ -318,6 +410,14 @@ test_update_user_with_avatar() ->
       ?_assertEqual({error, not_found},
                         update_user(?ALICE, ?SERVER,
                                     #{avatar => NonExistantURL})),
+      ?_assertEqual(AvatarURL,
+                    maps:get(avatar,
+                             wocky_db_user:find_user(?ALICE, ?SERVER)))
+    ]},
+    { "fail to set avatar due to non-local file", [
+      ?_assertEqual({error, not_local_file},
+                        update_user(?ALICE, ?SERVER,
+                                    #{avatar => NonLocalURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:find_user(?ALICE, ?SERVER)))
