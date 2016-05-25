@@ -63,7 +63,6 @@
 -module(wocky_db_user).
 
 -include("wocky.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 
 -type handle()       :: binary().
 -type phone_number() :: binary().
@@ -83,7 +82,7 @@
          get_phone_number/2,
          get_password/2,
          set_password/3,
-         set_location/4,
+         set_location/6,
          assign_token/3,
          release_token/3,
          check_token/3]).
@@ -464,7 +463,11 @@ set_password(LUser, LServer, Password) ->
 
 %% @doc Updates the user's location.
 %%
-%% `User': the full JID (including resource) of the user to update
+%% `LUser': the "localpart" of the user's JID.
+%%
+%% `LServer': the "domainpart" of the user's JID.
+%%
+%% `LResource': the "resourcepart" of the user's JID.
 %%
 %% `Lat': the latitude of the user's location in degrees North
 %%
@@ -472,9 +475,9 @@ set_password(LUser, LServer, Password) ->
 %%
 %% `Accuracy': the accuracy of the user's location in meters
 %%
--spec set_location(User :: jid(), number(), number(), number()) -> ok.
-set_location(#jid{luser = LUser, lserver = LServer, lresource = LResource},
-             Lat, Lon, Accuracy) ->
+-spec set_location(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource(),
+                   number(), number(), number()) -> ok.
+set_location(LUser, LServer, LResource, Lat, Lon, Accuracy) ->
     wocky_db:insert(LServer, location, #{user =>     LUser,
                                          server =>   LServer,
                                          resource => LResource,

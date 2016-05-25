@@ -47,7 +47,11 @@ handle_pep(_From, Item = #xmlel{name = <<"geoloc">>, children = []}) ->
 handle_pep(From, Item = #xmlel{name = <<"geoloc">>}) ->
     case handle_geoloc(Item) of
         {ok, Lat, Lon, Accuracy} ->
-            wocky_db_user:set_location(From, Lat, Lon, Accuracy),
+            #jid{luser = LUser,
+                 lserver = LServer,
+                 lresource = LResource} = From,
+            wocky_db_user:set_location(LUser, LServer, LResource,
+                                       Lat, Lon, Accuracy),
             Item;
         {error, _} ->
             undefined

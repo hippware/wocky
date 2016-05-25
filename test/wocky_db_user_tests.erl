@@ -9,7 +9,7 @@
         [register_user/3, register_user/2, update_user/3, remove_user/2,
          does_user_exist/2, find_user/2, find_user_by/2,
          %% TODO get_handle/2, get_phone_number/2,
-         get_password/2, set_password/3, set_location/4,
+         get_password/2, set_password/3, set_location/6,
          assign_token/3, release_token/3, check_token/3,
          generate_token/0, get_tokens/2]).
 
@@ -332,19 +332,17 @@ test_update_user_with_avatar() ->
   ]}.
 
 test_set_location() ->
-    AliceJID = jid:make(?ALICE, ?LOCAL_CONTEXT, ?RESOURCE),
-    CountMatch = #{user => ?ALICE, server => ?LOCAL_CONTEXT},
+    CountMatch = #{user => ?ALICE, server => ?SERVER},
     { "set a user's location", [
       { "set a user's location without overwriting previous ones", [
-        ?_assertEqual(ok, set_location(AliceJID, 1, 2, 3)),
-        ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT, location,
-                                        CountMatch)),
-        ?_assertEqual(ok, set_location(AliceJID, 4.0, 5.0, 6.0)),
-        ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location,
-                                        CountMatch)),
-        ?_assertEqual(ok, set_location(AliceJID, 6.6, 7.7, 8.8)),
-        ?_assertEqual(3, wocky_db:count(?LOCAL_CONTEXT, location,
-                                        CountMatch))
+        ?_assertEqual(ok, set_location(?ALICE, ?SERVER, ?RESOURCE, 1, 2, 3)),
+        ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch)),
+        ?_assertEqual(ok, set_location(?ALICE, ?SERVER, ?RESOURCE,
+                                       4.0, 5.0, 6.0)),
+        ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch)),
+        ?_assertEqual(ok, set_location(?ALICE, ?SERVER, ?RESOURCE,
+                                       6.6, 7.7, 8.8)),
+        ?_assertEqual(3, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
       ]},
       { "first location result should be most recently set location", [
         ?_assertEqual(#{lat => 6.6, lon => 7.7, accuracy => 8.8},
