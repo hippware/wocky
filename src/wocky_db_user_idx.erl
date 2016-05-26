@@ -62,10 +62,14 @@ init([]) ->
     {ok, ID} = application:get_env(wocky, algolia_app_id),
     {ok, Key} = application:get_env(wocky, algolia_app_key),
     {ok, IdxName} = application:get_env(wocky, algolia_index_name),
+    {ok, IndexingEnvs} = application:get_env(wocky, indexing_enabled_envs),
+    {ok, CurrentEnv} = application:get_env(wocky, wocky_env),
 
-    Enabled = wocky_app:get_config(indexing_enabled),
+    Enabled = lists:member(CurrentEnv, IndexingEnvs),
     Client = algolia:make_client(ID, Key),
     Index = algolia:init_index(Client, IdxName),
+
+    ok = lager:info("Indexing enabled: ~p", [Enabled]),
 
     {ok, #state{enabled = Enabled,
                 client = Client,
@@ -99,7 +103,7 @@ handle_cast({user_removed, UserID}, #state{index = Index} = State) ->
     {ok, _} = algolia_index:delete_object(Index, UserID),
     {noreply, State};
 handle_cast(Msg, State) ->
-    lager:warning("Unhandled cast: ~p", [Msg]),
+    ok = lager:warning("Unhandled cast: ~p", [Msg]),
     {noreply, State}.
 
 %% @private
