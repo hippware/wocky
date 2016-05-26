@@ -91,7 +91,7 @@ select(Context, Table, Columns, Conditions) ->
     rows(R).
 
 run_select_query(Context, Table, Columns, Conditions) ->
-    run_select_query(Context, Table, Columns, Conditions, 0).
+    run_select_query(Context, Table, Columns, Conditions, none).
 
 run_select_query(Context, Table, Columns, Conditions, Limit) ->
     Query = build_select_query(Table, Columns, keys(Conditions), Limit),
@@ -118,8 +118,10 @@ conditions([First|Rest]) ->
       [" WHERE ", atom_to_list(First), " = ?"],
       Rest).
 
-limit(N) when N < 1 -> "";
-limit(N) -> [" LIMIT ", integer_to_list(N)].
+limit(N) when is_integer(N) andalso N > 0 ->
+    [" LIMIT ", integer_to_list(N)];
+limit(_) ->
+    "".
 
 
 %% @doc Inserts the provided row into the table.
