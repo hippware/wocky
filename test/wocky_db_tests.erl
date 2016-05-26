@@ -32,7 +32,7 @@ empty_batch_test_() -> {
   "batch_query", [
     { "should return {ok, void} when given an empty query list", [
       ?_assertEqual({ok, void},
-                    wocky_db:batch_query(shared, [], logged, quorum))
+                    wocky_db:batch_query(shared, [], quorum))
     ]}
 ]}.
 
@@ -59,21 +59,23 @@ test_build_query_cases(Fun, Cases) ->
       Cases).
 
 build_select_query_test() ->
-    test_build_query_cases(fun wocky_db:build_select_query/3, [
+    test_build_query_cases(fun wocky_db:build_select_query/4, [
         {"SELECT * FROM users",
-         [users, all, []]},
+         [users, all, [], 0]},
         {"SELECT * FROM users WHERE user = ?",
-         [users, all, [user]]},
+         [users, all, [user], 0]},
         {"SELECT * FROM users WHERE user = ? AND server = ?",
-         [users, all, [user, server]]},
+         [users, all, [user, server], 0]},
+        {"SELECT * FROM users WHERE user = ? AND server = ? LIMIT 1",
+         [users, all, [user, server], 1]},
         {"SELECT user FROM users",
-         [users, [user], []]},
+         [users, [user], [], 0]},
         {"SELECT user FROM users WHERE server = ?",
-         [users, [user], [server]]},
+         [users, [user], [server], 0]},
         {"SELECT user, server FROM users",
-         [users, [user, server], []]},
+         [users, [user, server], [], 0]},
         {"SELECT max(version) FROM users",
-         [users, ['max(version)'], []]}
+         [users, ['max(version)'], [], 0]}
     ]).
 
 build_insert_query_test() ->

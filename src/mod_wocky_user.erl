@@ -69,9 +69,7 @@ handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, set,
         User <- get_user(ReqEl),
         validate_same_user(FromJID, User, ToJID),
         Fields <- get_set_req_fields(Children, []),
-        check_duplicate_unique_fields(Fields),
-        set_unique_fields(User, LServer, Fields),
-        set_other_fields(User, Fields),
+        set_user_fields(User, LServer, Fields),
         {ok, make_set_response_iq(IQ, User)}]);
 
 handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
@@ -121,6 +119,11 @@ get_field(Var) ->
             {ok, Field}
     end.
 
+get_phone_number(#{user := LUser, server := LServer}) ->
+   case wocky_db_user:get_phone_number(LUser, LServer) of
+      not_found -> <<>>;
+      PhoneNumber -> PhoneNumber
+   end.
 
 fields() ->
      % Field name     % Type    % Visibility % Access   % Accessor
@@ -130,12 +133,12 @@ fields() ->
      {"user",         "uuid",   public,      read_only, default},
      {"server",       "string", public,      read_only, default},
      {"handle",       "string", public,      write,     default},
-     {"phone_number", "string", private,     rest_only, default},
+     {"phone_number", "string", private,     read_only, fun get_phone_number/1},
      {"avatar",       "file",   public,      write,     default},
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
      {"email",        "string", private,     write,     default},
-     {"external_id",  "string", private,     rest_only, default}
+     {"external_id",  "string", private,     read_only, default}
     ].
 
 
@@ -190,7 +193,7 @@ is_visible(stranger, _)      -> false.
 
 get_resp_fields(ToJID, LUser, Fields) ->
     LServer = ToJID#jid.lserver,
-    case wocky_db_user:get_user_data(LUser, LServer) of
+    case wocky_db_user:find_user(LUser, LServer) of
         not_found ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->
@@ -315,11 +318,6 @@ check_editability(Field) ->
                              iolist_to_binary(
                                ["Field ", field_name(Field),
                                 " is read-only"]))};
-        rest_only ->
-            Error = iolist_to_binary(
-                      ["Field ", field_name(Field),
-                       " may only be changed through REST interface"]),
-            {error, ?ERRT_FORBIDDEN(?MYLANG, Error)};
         write ->
             ok
     end.
@@ -338,9 +336,6 @@ get_value([], Field) ->
 
 get_value([_ | Tail], Field) ->
     get_value(Tail, Field).
-
-
-check_duplicate_unique_fields(_Fields) -> ok.
 
 
 check_valid_value("email", "string", Value) ->
@@ -369,47 +364,45 @@ check_file(File) ->
     end.
 
 
-set_unique_fields(LUser, LServer, Fields) ->
-    case proplists:get_value(<<"handle">>, Fields) of
-        undefined -> ok;
-        Handle -> set_handle_if_changed(LUser, LServer, Handle)
-    end.
-
-set_handle_if_changed(LUser, LServer, Handle) ->
-    case wocky_db_user:get_handle(LUser, LServer) of
-        Handle -> ok;
-        _ -> set_handle(LUser, LServer, Handle)
-    end.
-
-set_handle(LUser, LServer, Handle) ->
-    case wocky_db_user:maybe_set_handle(LUser, LServer, Handle) of
-        true ->
-            ok;
-        false ->
-            error_with_child(
-              ?ERRT_CONFLICT(?MYLANG,
-                             <<"Could not set handle - already in use">>),
-              #xmlel{name = <<"field">>,
-                     attrs = [{<<"var">>, <<"handle">>}]})
-    end.
-
-
-set_other_fields(LUser, Fields) ->
-    OtherFields = proplists:delete(<<"handle">>, Fields),
-    Row = build_row(OtherFields),
+set_user_fields(LUser, LServer, Fields) ->
+    Row = build_row(Fields),
     case maps:size(Row) of
         0 -> ok;
-        _ -> ok = wocky_db_user:update_user(Row#{user => LUser})
+        _ -> update_user(LUser, LServer, Row)
     end.
-
 
 build_row(Fields) ->
     lists:foldl(fun({Name, Value}, Acc) ->
-                        NameAtom = binary_to_atom(Name, utf8),
-                        Acc#{NameAtom => Value}
+                      case lists:member(Name, valid_user_fields()) of
+                         true ->
+                            NameAtom = binary_to_atom(Name, utf8),
+                            Acc#{NameAtom => Value};
+                         false ->
+                            Acc
+                      end
                 end,
                 #{},
                 Fields).
+
+valid_user_fields() ->
+    [<<"handle">>, <<"avatar">>, <<"first_name">>,
+     <<"last_name">>, <<"email">>].
+
+update_user(LUser, LServer, Row) ->
+   case wocky_db_user:update_user(LUser, LServer, Row) of
+       ok ->
+         ok;
+
+      {error, duplicate_handle} ->
+         error_with_child(
+           ?ERRT_CONFLICT(?MYLANG, <<"Could not set handle - already in use">>),
+           #xmlel{name = <<"field">>, attrs = [{<<"var">>, <<"handle">>}]});
+
+      {error, Reason} ->
+         Message = iolist_to_binary(["Unexpected error: ",
+                                     atom_to_list(Reason)]),
+         {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Message)}
+   end.
 
 not_valid(Message) ->
     El = #xmlel{children = Children} =

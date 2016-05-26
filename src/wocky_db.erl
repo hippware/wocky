@@ -43,7 +43,7 @@
          create_table/2, create_index/3, create_view/6]).
 
 %% Query API
--export([query/4, batch_query/4, multi_query/3, multi_query/4, rows/1,
+-export([query/4, batch_query/3, multi_query/3, multi_query/4, rows/1,
          single_result/1, fetch_more/1]).
 
 %% Utility API
@@ -52,12 +52,10 @@
          timestamp_to_now/1, now_to_timestamp/1,
          expire_to_ttl/1, drop_nulls/1, table_columns/1]).
 
--ignore_xref([{batch_query, 4}]).
-
 -ifdef(TEST).
 %% Query building functions exported for unit tests
 -export([to_keyspace/1]).
--export([build_select_query/3, build_insert_query/3, build_delete_query/3,
+-export([build_select_query/4, build_insert_query/3, build_delete_query/3,
          build_update_query/3, build_truncate_query/1, build_drop_query/2,
          build_create_keyspace_query/3, build_create_table_query/1,
          build_create_index_query/2, build_create_view_query/5,
@@ -74,7 +72,7 @@
 -spec select_one(context(), table(), atom(), conditions())
                 -> term() | not_found.
 select_one(Context, Table, Column, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, [Column], Conditions),
+    {ok, R} = run_select_query(Context, Table, [Column], Conditions, 1),
     single_result(R).
 
 %% @doc Retrieves a single row from a table based on the parameters.
@@ -82,7 +80,7 @@ select_one(Context, Table, Column, Conditions) ->
 -spec select_row(context(), table(), columns(), conditions())
                 -> row() | not_found.
 select_row(Context, Table, Columns, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
+    {ok, R} = run_select_query(Context, Table, Columns, Conditions, 1),
     single_row(R).
 
 %% @doc Retrieves data from a table based on the parameters and
@@ -93,14 +91,17 @@ select(Context, Table, Columns, Conditions) ->
     rows(R).
 
 run_select_query(Context, Table, Columns, Conditions) ->
-    Query = build_select_query(Table, Columns, keys(Conditions)),
+    run_select_query(Context, Table, Columns, Conditions, none).
+
+run_select_query(Context, Table, Columns, Conditions, Limit) ->
+    Query = build_select_query(Table, Columns, keys(Conditions), Limit),
     query(Context, Query, Conditions, quorum).
 
 keys(Map) -> maps:keys(Map).
 
-build_select_query(Table, Columns, Keys) ->
+build_select_query(Table, Columns, Keys, Limit) ->
     ["SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
-     conditions(Keys)].
+     conditions(Keys), limit(Limit)].
 
 columns(all, Default) -> Default;
 columns([], Default) -> Default;
@@ -116,6 +117,11 @@ conditions([First|Rest]) ->
       fun (Name, Str) -> [Str, " AND ", atom_to_list(Name), " = ?"] end,
       [" WHERE ", atom_to_list(First), " = ?"],
       Rest).
+
+limit(N) when is_integer(N) andalso N > 0 ->
+    [" LIMIT ", integer_to_list(N)];
+limit(_) ->
+    "".
 
 
 %% @doc Inserts the provided row into the table.
@@ -382,20 +388,16 @@ query(Context, Query, Values, Consistency) ->
 %% value pairs. The pairs must be in the same order that the columns are
 %% listed in the query.
 %%
-%% `Mode' is one of the values `logged' (default), `counter' or `unlogged'
-%% (deprecated). Use `logged' unless all of the queries update counter columns,
-%% then use `counter'.
-%%
 %% On successful completion, the function returns `{ok, void}'.
 %%
--spec batch_query(context(), [{query(), values()}],
-                  batch_mode(), consistency_level()
-                 ) -> {ok, void} | {error, error()}.
-% Cassandra throws an exception if you try to batch zero queries. Early-out
-% here:
-batch_query(_Context, [], _Mode, _Consistency) -> {ok, void};
-batch_query(Context, QueryList, Mode, Consistency) ->
-    run_query(Context, make_batch_query(QueryList, Consistency, Mode)).
+-spec batch_query(context(), [{query(), values()}], consistency_level())
+                 -> {ok, void} | {error, error()}.
+batch_query(_Context, [], _Consistency) ->
+    %% Cassandra throws an exception if you try to batch zero queries.
+    %% Early-out here.
+    {ok, void};
+batch_query(Context, QueryList, Consistency) ->
+    run_query(Context, make_batch_query(QueryList, Consistency, logged)).
 
 %% @doc Executes a query multiple times with different datasets.
 %%

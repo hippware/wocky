@@ -83,7 +83,7 @@ set_password(LUser, LServer, Password) ->
         ok ->
             ok;
 
-        {error, not_found} ->
+        not_found ->
             {error, invalid_jid}
     end.
 
@@ -94,7 +94,7 @@ check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
     wocky_db_user:check_token(LUser, LServer, Token);
 check_password(LUser, LServer, Password) ->
     case wocky_db_user:get_password(LUser, LServer) of
-        {error, _} ->
+        not_found ->
             false;
 
         <<"==SCRAM==,", _/binary>> = ScramPassword ->
@@ -111,7 +111,7 @@ check_password(LUser, LServer, Password) ->
                      fun()) -> boolean().
 check_password(LUser, LServer, Password, Digest, DigestGen) ->
     case wocky_db_user:get_password(LUser, LServer) of
-        {error, _} ->
+        not_found ->
             false;
 
         <<"==SCRAM==,", _/binary>> = ScramPassword ->
@@ -132,11 +132,10 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 %% Not really suitable for use since it does not pass in extra profile
 %% information and we expect LUser to be a timeuuid. It is implemented
 %% here to enable Escalus to create users in integration tests.
--spec try_register(ejabberd:luser(), ejabberd:lserver(), binary())
-                  -> ok | {error, exists | not_allowed | term()}.
+-spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok.
 try_register(LUser, LServer, Password) ->
     PreparedPass = prepare_password(LServer, Password),
-    wocky_db_user:create_user(LUser, LServer, LUser, PreparedPass).
+    wocky_db_user:register_user(LUser, LServer, PreparedPass).
 
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
@@ -185,7 +184,7 @@ get_password(LUser, LServer) ->
                     StoredPassword
             end;
 
-        {error, _} ->
+        not_found ->
             false
     end.
 

@@ -164,7 +164,7 @@ make_register_response(#reg_result{user = User,
                                    token_expiry = TokenExpiry,
                                    external_id = ExternalID}) ->
    Handle = case wocky_db_user:get_handle(User, Server) of
-                {error, not_found} -> <<>>;
+                not_found -> <<>>;
                 H -> H
             end,
    JSONFields = [{user, User},
