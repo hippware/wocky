@@ -10,6 +10,8 @@
          user_updated/2,
          user_removed/1]).
 
+-ignore_xref([{start_link, 0}, {user_created, 2}]).
+
 %% gen_server callbacks
 -export([init/1,
          handle_call/3,
