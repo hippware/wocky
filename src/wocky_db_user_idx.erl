@@ -81,7 +81,7 @@ init([]) ->
 %% @doc Handling call messages
 -spec handle_call(any(), {pid(), any()}, state()) -> {reply, ok, state()}.
 handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+    {reply, {error, bad_call}, State}.
 
 %% @private
 %% @doc Handling cast messages
