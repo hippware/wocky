@@ -32,7 +32,8 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(filter_local_packet, Host,
                        ?MODULE, filter_packet, 200),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_GROUP_CHAT,
-                                  ?MODULE, handle_iq, parallel).
+                                  ?MODULE, handle_iq, parallel),
+    setup_metrics().
 
 stop(Host) ->
     ejabberd_hooks:delete(filter_local_packet, Host,
@@ -86,7 +87,8 @@ process_packet(From, LServer, Node, Packet) ->
         check_group(GroupID),
         GroupRec <- get_group(LServer, GroupID),
         forward_packet(From, GroupRec, Packet),
-        archive_packet(LServer, GroupID, Packet)
+        archive_packet(LServer, GroupID, Packet),
+        {ok, wocky_metrics:inc(mod_group_chat_messages)}
        ]).
 
 check_group(Group) ->
@@ -167,6 +169,7 @@ new_chat(From, To, IQ = #iq{sub_el = SubEl}) ->
         Participants <- check_participants(SubEl),
         GroupRec <- create_chat(From, Title, Participants),
         notify_other_participants(From, Participants, GroupRec),
+        {ok, wocky_metrics:inc(mod_group_chat_joins, length(Participants) + 1)},
         create_response(IQ, GroupRec)
        ]).
 
@@ -267,6 +270,7 @@ add_participant(From, IQ = #iq{sub_el = SubEl}) ->
         GroupRec2 <- do_add_participant(Participant, GroupRec),
         notify_add(From, Participant, GroupRec2),
         R <- add_remove_success(IQ, GroupRec2),
+        {ok, wocky_metrics:inc(mod_group_chat_joins)},
         {ok, R}
        ]).
 
@@ -301,6 +305,7 @@ remove_participant(From, IQ = #iq{sub_el = SubEl}) ->
         check_existing_participant(Participant, GroupRec),
         GroupRec2 <- do_remove_participant(Participant, GroupRec),
         notify_remove(From, Participant, GroupRec2),
+        {ok, wocky_metrics:inc(mod_group_chat_departs)},
         add_remove_success(IQ, GroupRec2)
        ]).
 
@@ -454,3 +459,9 @@ check_node(_) -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid node">>)}.
 make_error_iq_response(IQ, ErrStanza) ->
     ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
+
+setup_metrics() ->
+    Metrics = [mod_group_chat_messages,
+               mod_group_chat_joins,
+               mod_group_chat_departs],
+    wocky_metrics:setup_spiral(Metrics).
