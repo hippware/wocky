@@ -5,7 +5,8 @@
 -export([ensure_wocky_is_running/0]).
 
 -export([expect_iq_success/2, expect_iq_error/2, expect_friendship_presence/2,
-         subscribe/2, check_subscription_stanzas/2, add_sample_contact/2]).
+         subscribe/2, check_subscription_stanzas/2, add_sample_contact/2,
+         meck_metrics/0]).
 
 ensure_wocky_is_running() ->
     case net_kernel:start(['mongooseim@localhost', longnames]) of
@@ -112,3 +113,7 @@ add_sample_contact(Alice, Bob) ->
     escalus:assert(count_roster_items, [1], Result),
     escalus:send(Alice, escalus_stanza:iq_result(Result)).
 
+meck_metrics() ->
+    meck:new(mongoose_metrics),
+    meck:expect(mongoose_metrics, create, 2, ok),
+    meck:expect(mongoose_metrics, update, 2, ok).

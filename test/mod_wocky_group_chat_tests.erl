@@ -58,6 +58,7 @@ before_all() ->
                  mongoose_router_external_localnode,
                  mongoose_router_external,
                  ejabberd_s2s]),
+    test_helper:meck_metrics(),
     ok.
 
 after_all(_) ->
