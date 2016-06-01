@@ -73,7 +73,7 @@ before_all(Backend) ->
                                              uuid:string_to_uuid(UUID)
                                    end),
 
-    meck:expect(cowboy, start_http, 4, ok),
+    meck:expect(cowboy, start_http, 4, {ok, unused}),
 
     meck:expect(mod_tros_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 48)) end),
@@ -83,6 +83,7 @@ before_all(Backend) ->
     meck:expect(mod_tros_s3, get_owner, 2, {ok, ?ALICE}),
     meck:expect(mod_tros_s3, get_metadata,
                 fun(A, B) -> mod_tros_francus:get_metadata(A, B) end),
+    test_helper:meck_metrics(),
 
     mod_tros:start(?LOCAL_CONTEXT, []).
 

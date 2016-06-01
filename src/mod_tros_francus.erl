@@ -34,11 +34,12 @@ start(Opts) ->
                   configs()),
     tros_req_tracker:start(),
     Dispatch = cowboy_router:compile([{'_', [{'_', tros_francus_http, []}]}]),
-    cowboy:start_http(tros_francus_listener, 100,
-                       [
-                        {port, port()}
-                       ],
-                       [{env, [{dispatch, Dispatch}]}]).
+    {ok, _} = cowboy:start_http(tros_francus_listener, 100,
+                                [
+                                 {port, port()}
+                                ],
+                                [{env, [{dispatch, Dispatch}]}]),
+    setup_metrics().
 
 stop() ->
     tros_req_tracker:stop().
@@ -119,3 +120,8 @@ get_metadata(Server, FileID) ->
             francus:close(File),
             {ok, Metadata}
     end.
+
+setup_metrics() ->
+    Metrics = [tros_francus_bytes_sent,
+               tros_francus_bytes_received],
+    wocky_metrics:setup_spiral(Metrics).

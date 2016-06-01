@@ -48,6 +48,7 @@ start(Host, Opts) ->
     (backend()):start(Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?TROS_NS,
                                   ?MODULE, handle_iq, parallel),
+    setup_metrics(),
     ok.
 
 stop(Host) ->
@@ -60,7 +61,9 @@ stop(Host) ->
 handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     Req = #request{from_jid = FromJID, to_jid = ToJID, iq = IQ},
     case handle_request(Req, Type, ReqEl) of
-        {error, E} -> error_response(IQ, E);
+        {error, E} ->
+            wocky_metrics:inc(mod_tros_failed_requests),
+            error_response(IQ, E);
         {ok, R} -> R
     end.
 
@@ -79,6 +82,7 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         OwnerID <- get_owner(LServer, FileID),
         Metadata <- get_metadata(LServer, FileID),
         check_download_permissions(FromJID, OwnerID, Metadata),
+        {ok, wocky_metrics:inc(mod_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
 
@@ -91,6 +95,7 @@ handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
         Size <- check_upload_size(Fields),
         check_upload_type(Fields),
         check_upload_permissions(FromJID, Fields),
+        {ok, wocky_metrics:inc(mod_tros_upload_requests)},
         upload_response(Req, Fields, Size)
        ]).
 
@@ -260,3 +265,9 @@ binary_to_integer_def(Binary, Default) ->
     catch
         error:badarg -> Default
     end.
+
+setup_metrics() ->
+    Metrics = [mod_tros_download_requests,
+               mod_tros_upload_requests,
+               mod_tros_failed_requests],
+    wocky_metrics:setup_spiral(Metrics).
