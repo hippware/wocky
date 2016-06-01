@@ -29,17 +29,11 @@ init([]) ->
                  intensity => 1,
                  period    => 5},
 
-    %% Example child supervisor spec
-    %% ChildSup = #{id       => child_sup,
-    %%              start    => {child_sup, start_link, []},
-    %%              restart  => permanent,
-    %%              shutdown => infinity,
-    %%              type     => supervisor,
-    %%              modules  => [child_sup]},
+    UserIdx = #{id       => wocky_db_user_idx,
+                start    => {wocky_db_user_idx, start_link, []},
+                restart  => permanent,
+                shutdown => 5000,
+                type     => worker,
+                modules  => [wocky_db_user_idx]},
 
-    {ok, {SupFlags, []}}.
-
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
+    {ok, {SupFlags, [UserIdx]}}.

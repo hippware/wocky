@@ -192,8 +192,9 @@ update_user(User, Server, Fields) ->
 do_update_user(_, _, _, 0) ->
     ok;
 do_update_user(User, Server, UpdateFields, _) ->
-    wocky_db:update(shared, user, UpdateFields,
-                    #{user => User, server => Server}).
+    ok = wocky_db:update(shared, user, UpdateFields,
+                         #{user => User, server => Server}),
+    wocky_db_user_idx:user_updated(User, UpdateFields).
 
 %% @private
 valid_user_fields() ->
@@ -282,6 +283,7 @@ delete_existing_avatar(_) -> ok.
 remove_user(LUser, LServer) ->
     ok = remove_shared_user_data(LUser, LServer),
     ok = remove_local_user_data(LUser, LServer),
+    ok = wocky_db_user_idx:user_removed(LUser),
     ok.
 
 %% @private
