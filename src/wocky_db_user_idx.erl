@@ -79,7 +79,8 @@ init([]) ->
 
 %% @private
 %% @doc Handling call messages
--spec handle_call(any(), {pid(), any()}, state()) -> {reply, ok, state()}.
+-spec handle_call(any(), {pid(), any()}, state()) ->
+    {reply, {error, bad_call}, state()}.
 handle_call(_Request, _From, State) ->
     {reply, {error, bad_call}, State}.
 
