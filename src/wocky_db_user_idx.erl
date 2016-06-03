@@ -94,12 +94,12 @@ handle_cast(_Msg, #state{enabled = false} = State) ->
 handle_cast({user_created, UserID, Data}, #state{index = Index} = State) ->
     Object = map_to_object(UserID, Data),
     ok = lager:debug("Updating user index with new object ~p", [Object]),
-    {ok, _} = algolia_index:add_object(Index, Object),
+    {ok, _} = update_index(Index, Object, fun algolia_index:add_object/2),
     {noreply, State};
 handle_cast({user_updated, UserID, Data}, #state{index = Index} = State) ->
     Object = map_to_object(UserID, Data),
     ok = lager:debug("Updating user index with object ~p", [Object]),
-    {ok, _} = algolia_index:update_object(Index, Object),
+    {ok, _} = update_index(Index, Object, fun algolia_index:update_object/2),
     {noreply, State};
 handle_cast({user_removed, UserID}, #state{index = Index} = State) ->
     ok = lager:debug("Removing user ~s from index", [UserID]),
@@ -142,3 +142,11 @@ map_to_object(UserID, MapData) ->
     maps:fold(fun (K, V, Acc) -> Acc#{atom_to_binary(K, utf8) => V} end,
               #{<<"objectID">> => UserID},
               maps:with(indexed_fields(), MapData)).
+
+update_index(Index, Object, Fun) ->
+    case maps:size(Object) < 1 of
+        true ->
+            {ok, no_changes};
+        false ->
+            Fun(Index, Object)
+    end.
