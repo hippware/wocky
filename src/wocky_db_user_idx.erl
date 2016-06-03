@@ -6,11 +6,11 @@
 
 %% API
 -export([start_link/0,
-         user_created/2,
          user_updated/2,
-         user_removed/1]).
+         user_removed/1,
+         reindex/0]).
 
--ignore_xref([{start_link, 0}, {user_created, 2}]).
+-ignore_xref([{start_link, 0}, {reindex, 0}]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -37,11 +37,6 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-%% @doc Called after a user is created to update the index.
--spec user_created(binary(), map()) -> ok.
-user_created(UserID, Data) ->
-    gen_server:cast(?SERVER, {user_created, UserID, Data}).
-
 %% @doc Called after a user is updated to update the index.
 -spec user_updated(binary(), map()) -> ok.
 user_updated(UserID, Data) ->
@@ -51,6 +46,12 @@ user_updated(UserID, Data) ->
 -spec user_removed(binary()) -> ok.
 user_removed(UserID) ->
     gen_server:cast(?SERVER, {user_removed, UserID}).
+
+%% @doc Update the index for all of the users in the databse.
+%% NOTE: This is meant for dev and test. It is probably not appropriate
+%% for production environments.
+reindex() ->
+    gen_server:call(?SERVER, reindex).
 
 
 %%%===================================================================
@@ -79,7 +80,16 @@ init([]) ->
 
 %% @private
 %% @doc Handling call messages
--spec handle_call(any(), {pid(), any()}, state()) -> {reply, ok, state()}.
+-spec handle_call(any(), {pid(), any()}, state()) ->
+    {reply, ok | {error, term()}, state()}.
+handle_call(reindex, _From, #state{index = Index} = State) ->
+    Users = wocky_db:select(shared, user, all, #{}),
+    lists:foreach(
+      fun (#{user := UserID} = User) ->
+              Object = map_to_object(UserID, User),
+              update_index(Index, Object)
+      end, Users),
+    {reply, ok, State};
 handle_call(_Request, _From, State) ->
     {reply, {error, bad_call}, State}.
 
@@ -90,15 +100,10 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, #state{enabled = false} = State) ->
     %% do nothing
     {noreply, State};
-handle_cast({user_created, UserID, Data}, #state{index = Index} = State) ->
-    Object = map_to_object(UserID, Data),
-    ok = lager:debug("Updating user index with new object ~p", [Object]),
-    {ok, _} = algolia_index:add_object(Index, Object),
-    {noreply, State};
 handle_cast({user_updated, UserID, Data}, #state{index = Index} = State) ->
     Object = map_to_object(UserID, Data),
     ok = lager:debug("Updating user index with object ~p", [Object]),
-    {ok, _} = algolia_index:update_object(Index, Object),
+    {ok, _} = update_index(Index, Object),
     {noreply, State};
 handle_cast({user_removed, UserID}, #state{index = Index} = State) ->
     ok = lager:debug("Removing user ~s from index", [UserID]),
@@ -134,7 +139,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+indexed_fields() ->
+    [handle, last_name, first_name, email, avatar].
+
 map_to_object(UserID, MapData) ->
     maps:fold(fun (K, V, Acc) -> Acc#{atom_to_binary(K, utf8) => V} end,
               #{<<"objectID">> => UserID},
-              maps:with([handle, last_name, first_name, email], MapData)).
+              maps:with(indexed_fields(), MapData)).
+
+update_index(Index, Object) ->
+    case maps:size(Object) < 1 of
+        true ->
+            {ok, no_changes};
+        false ->
+            algolia_index:update_object(Index, Object)
+    end.
