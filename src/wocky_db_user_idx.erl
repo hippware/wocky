@@ -134,7 +134,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+indexed_fields() ->
+    [handle, last_name, first_name, email, avatar].
+
 map_to_object(UserID, MapData) ->
     maps:fold(fun (K, V, Acc) -> Acc#{atom_to_binary(K, utf8) => V} end,
               #{<<"objectID">> => UserID},
-              maps:with([handle, last_name, first_name, email], MapData)).
+              maps:with(indexed_fields(), MapData)).
