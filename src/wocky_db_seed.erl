@@ -563,15 +563,23 @@ seed_data(media, Server) ->
        metadata => #{<<"purpose">> => <<"message_media:",
                                         MediaTypeData/binary>>,
                      <<"content-type">> => <<"image/png">>,
+                     <<"name">> => ?FILENAME}},
+     #{id => ?GC_MEDIA_FILE, user => ?ALICE, size => byte_size(?MEDIA_DATA),
+       chunks => [?MEDIA_CHUNK],
+       metadata => #{<<"purpose">> => <<"group_chat_media:",
+                                        ?GROUP_CHAT/binary>>,
+                     <<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}}];
 seed_data(media_data, _Server) ->
-    [#{chunk_id => ?AVATAR_CHUNK,  file_id => ?AVATAR_FILE,
+    [#{chunk_id => ?AVATAR_CHUNK,   file_id => ?AVATAR_FILE,
        data => ?AVATAR_DATA},
-     #{chunk_id => ?AVATAR_CHUNK2, file_id => ?AVATAR_FILE2,
+     #{chunk_id => ?AVATAR_CHUNK2,  file_id => ?AVATAR_FILE2,
        data => ?AVATAR_DATA2},
-     #{chunk_id => ?AVATAR_CHUNK3, file_id => ?AVATAR_FILE3,
+     #{chunk_id => ?AVATAR_CHUNK3,  file_id => ?AVATAR_FILE3,
        data => ?AVATAR_DATA3},
-     #{chunk_id => ?MEDIA_CHUNK,   file_id => ?MEDIA_FILE,
+     #{chunk_id => ?MEDIA_CHUNK,    file_id => ?MEDIA_FILE,
+       data => ?MEDIA_DATA},
+     #{chunk_id => ?GC_MEDIA_CHUNK, file_id => ?GC_MEDIA_FILE,
        data => ?MEDIA_DATA}];
 seed_data(privacy, Server) ->
     [#{user => ?CAROL, server => Server, default => ?PRIVACY_LIST1,
@@ -597,6 +605,12 @@ seed_data(privacy_item, Server) ->
        action => false, item_order => 1, match_all => false,
        match_iq => false, match_message => true,
        match_presence_in => false, match_presence_out => true}];
+seed_data(group_chat, _Server) ->
+    [#{id => ?GROUP_CHAT, owner => ?ALICE,
+       participants =>
+       [jid:to_binary(?ALICE_JID),
+        jid:to_binary(?BOB_JID)],
+       title => ?CHAT_TITLE}];
 seed_data(_, _) ->
     [].
 

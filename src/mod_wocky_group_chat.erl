@@ -19,6 +19,9 @@
 -export([filter_packet/1, handle_iq/3]).
 -ignore_xref([{filter_packet, 1}, {handle_iq, 3}]).
 
+%% Other group chat API functions
+-export([is_participant/2]).
+
 -ifdef(TEST).
 -export([new_chat/3,
          add_participant/2,
@@ -54,6 +57,16 @@ filter_packet(In = {From,
 filter_packet(AnythingElse) ->
     AnythingElse.
 
+-spec is_participant(jid(), binary()) -> boolean().
+is_participant(User, Group) ->
+    R = do([error_m ||
+            check_group(Group),
+            GroupRec <- get_group(Group),
+            check_existing_participant(
+              jid:to_binary(jid:to_bare(User)), GroupRec)
+           ]),
+    R =:= ok.
+
 %%%===================================================================
 %%% Message packet handling
 %%%===================================================================
@@ -86,6 +99,7 @@ process_packet(From, LServer, Node, Packet) ->
         GroupID <- check_node(Node),
         check_group(GroupID),
         GroupRec <- get_group(LServer, GroupID),
+        check_existing_participant(jid:to_binary(jid:to_bare(From)), GroupRec),
         forward_packet(From, GroupRec, Packet),
         archive_packet(LServer, GroupID, Packet),
         {ok, wocky_metrics:inc(mod_group_chat_messages)}

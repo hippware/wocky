@@ -12,9 +12,11 @@ mod_tros_test_() -> {
     [
      test_avatar_upload_request(Backend),
      test_message_media_upload_request(Backend),
+     test_group_chat_media_upload_request(Backend),
      test_oversized_upload_request(Backend),
      test_avatar_download_request(Backend),
      test_message_media_download_request(Backend),
+     test_group_chat_media_download_request(Backend),
      test_bad_download_ids(Backend),
      test_meck_validate()
     ]}
@@ -28,8 +30,10 @@ mecks() -> [ejabberd_config, ejabberd_sm, httpd_util, ossp_uuid,
 before_all(Backend) ->
     ok = wocky_app:start(),
 
-    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request]),
+    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
+                                                  group_chat]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
+                                               group_chat]),
 
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
     meck:expect(ejabberd_config, add_local_option, 2, {atomic, ok}),
@@ -135,6 +139,30 @@ test_message_media_upload_request(Backend) ->
                                     )))
     ]}]}.
 
+test_group_chat_media_upload_request(Backend) ->
+    { "Group chat media upload request", [
+        {"Successful request when we're a group member", [
+          ?_assertEqual(
+             expected_upload_packet(Backend),
+             handle_iq(test_user_jid(?ALICE),
+                       test_server_jid(),
+                       upload_packet(10000,
+                                     "group_chat_media",
+                                     ?GROUP_CHAT)
+                                    ))
+        ]},
+        {"Failed request when we're not a group member", [
+          ?_assertEqual(
+             expected_ul_error_packet("Permission denied", "group_chat_media",
+                                      ?GROUP_CHAT, 10000),
+             handle_iq(test_user_jid(?CAROL),
+                       test_server_jid(),
+                       upload_packet(10000,
+                                     "group_chat_media",
+                                     ?GROUP_CHAT)
+                                    ))
+    ]}]}.
+
 test_oversized_upload_request(_Backend) ->
     Size = 1024*1024*10 + 1,
     {"Big upload request", [
@@ -198,6 +226,30 @@ test_message_media_download_request(Backend) ->
              handle_iq(test_user_jid(?CAROL),
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
+    ]}]}.
+
+test_group_chat_media_download_request(Backend) ->
+    {"Group chat media download request", [
+        {"Successful request on own media", [
+          ?_assertEqual(
+             expected_download_packet(Backend, ?GC_MEDIA_FILE),
+             handle_iq(test_user_jid(?ALICE),
+                       test_server_jid(),
+                       download_packet(?GC_MEDIA_FILE)))
+    ]},
+        {"Successful request on media in the same group chat as us", [
+          ?_assertEqual(
+             expected_download_packet(Backend, ?GC_MEDIA_FILE),
+             handle_iq(test_user_jid(?BOB),
+                       test_server_jid(),
+                       download_packet(?GC_MEDIA_FILE)))
+    ]},
+        {"Failed request on media for a group chat we're not in", [
+          ?_assertEqual(
+             expected_dl_auth_error_packet(?GC_MEDIA_FILE),
+             handle_iq(test_user_jid(?CAROL),
+                       test_server_jid(),
+                       download_packet(?GC_MEDIA_FILE)))
     ]}]}.
 
 test_bad_download_ids(_Backend) ->
