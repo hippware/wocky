@@ -19,5 +19,5 @@ node {
 
   stage 'Build Release'
   sh "make tar"
-  archive '_build/default/_rel/wocky/wocky-*.tar.gz'
+  archive '_build/default/rel/wocky/wocky-*.tar.gz'
 }
