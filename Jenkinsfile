@@ -1,4 +1,3 @@
-
 node {
   stage 'Prepare'
   sh "epmd -daemon"
@@ -17,4 +16,8 @@ node {
 
   stage 'Integration Tests'
   sh "make ct"
+
+  stage 'Build Release'
+  sh "make tar"
+  archive '_build/default/_rel/wocky/wocky-*.tar.gz'
 }
