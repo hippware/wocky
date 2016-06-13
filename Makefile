@@ -7,6 +7,7 @@ all: compile
 cleanall:
 	@$(REBAR) clean --all
 	@rm -rf _build/default/lib/ejabberd
+        @rm -rf _build/default/rel
 	@rm -rf _build/test
 	@rm -rf log
 
