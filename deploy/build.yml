@@ -1,0 +1,64 @@
+---
+- name: Build Wocky
+  hosts: build
+  vars:
+    branch: master
+  tasks:
+    - name: Make sure pip is installed
+      apt: name=python-pip state=present
+
+    - name: Make sure boto is installed
+      pip: name=boto state=installed
+
+    - name: Capture the build directory name
+      shell: echo $HOME/wocky
+      register: dir_result
+      tags:
+        - build
+
+    - name: Set build directory
+      set_fact:
+        build_dir: "{{ dir_result.stdout }}"
+      tags:
+        - build
+
+    - name: Checkout source on build machine
+      git:
+        repo: git@github.com:hippware/wocky.git
+        dest: "{{ build_dir }}"
+        key_file: "$HOME/.ssh/id_aws"
+        version: "{{ branch }}"
+        accept_hostkey: true
+        force: true
+      tags:
+        - build
+
+    - name: Clean the source tree
+      make: chdir={{ build_dir }} target=cleanall
+      tags:
+        - build
+
+    - name: Build the source
+      make: chdir={{ build_dir }} target=compile
+      tags:
+        - build
+
+    - name: Generate a release
+      make: chdir={{ build_dir }} target=tar
+      tags:
+        - build
+
+    - name: Capture the build version
+      command: "{{ build_dir }}/version"
+      register: ver_result
+      tags:
+        - build
+
+    - name: Copy release file to release store
+      s3:
+        mode: put
+        bucket: wocky-releases
+        object: "/{{ branch }}/wocky-{{ ver_result.stdout }}.tar.gz"
+        src: "{{ build_dir }}/_build/default/rel/wocky.tar.gz"
+      tags:
+        - build

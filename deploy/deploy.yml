@@ -1,0 +1,47 @@
+---
+- name: Deploy Wocky
+  hosts: app
+  var:
+    release_path: _build/default/rel/wocky.tar.gz
+  tasks:
+    - name: Capture the build directory name
+      shell: echo $HOME/wocky
+      register: dir_result
+      tags:
+        - deploy
+
+    - name: Set build directory
+      set_fact:
+        build_dir: "{{ dir_result.stdout }}"
+      tags:
+        - deploy
+
+    - name: Copy the file to the app servers
+      copy:
+        dest: /tmp/wocky.tar.gz
+        src: "{{ build_dir }}/{{ release_path }}"
+      tags:
+        - deploy
+
+    - name: Unpack the release
+      unarchive:
+        owner: wocky
+        group: wocky
+        src: /tmp/wocky.tar.gz
+        dest: /opt/wocky
+      tags:
+        - deploy
+
+    - name: Remove the release file
+      file:
+        path: /tmp/wocky.tar.gz
+        state: absent
+      tags:
+        - deploy
+
+    - name: Restart Wocky
+      shell: bin/wocky restart
+      args:
+        chdir: /opt/wocky
+      tags:
+        - deploy
