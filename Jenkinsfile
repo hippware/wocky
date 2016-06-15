@@ -23,4 +23,7 @@ node {
 
   archive 'RELEASE'
   archive '_build/default/rel/wocky.tar.gz'
+
+  stage 'Deploy to staging'
+  sh 'ansible deploy/deploy.yml -e "erlang_deploy_archive_location=../_build/default/rel"'
 }
