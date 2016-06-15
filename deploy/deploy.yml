@@ -1,47 +1,22 @@
 ---
 - name: Deploy Wocky
-  hosts: app
-  var:
-    release_path: _build/default/rel/wocky.tar.gz
-  tasks:
-    - name: Capture the build directory name
-      shell: echo $HOME/wocky
-      register: dir_result
-      tags:
-        - deploy
+  hosts: app1.dev.tinyrobot.com
+  become: True
+  become_user: wocky
+  vars:
+    erlang_deploy_name: wocky
+    erlang_deploy_shared_folders:
+      - { src: 'log', path: 'log' }
+      - { src: 'mnesia', path: 'mnesia' }
+  pre_tasks:
+    - name: Capture the build version
+      become: False
+      local_action: shell ./version
+      register: ver_result
 
-    - name: Set build directory
+    - name: Set release version
       set_fact:
-        build_dir: "{{ dir_result.stdout }}"
-      tags:
-        - deploy
+        erlang_deploy_release_version: "{{ ver_result.stdout }}"
 
-    - name: Copy the file to the app servers
-      copy:
-        dest: /tmp/wocky.tar.gz
-        src: "{{ build_dir }}/{{ release_path }}"
-      tags:
-        - deploy
-
-    - name: Unpack the release
-      unarchive:
-        owner: wocky
-        group: wocky
-        src: /tmp/wocky.tar.gz
-        dest: /opt/wocky
-      tags:
-        - deploy
-
-    - name: Remove the release file
-      file:
-        path: /tmp/wocky.tar.gz
-        state: absent
-      tags:
-        - deploy
-
-    - name: Restart Wocky
-      shell: bin/wocky restart
-      args:
-        chdir: /opt/wocky
-      tags:
-        - deploy
+  roles:
+    - erlang-deploy

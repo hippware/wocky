@@ -1,0 +1,23 @@
+---
+# This variable must be set, it has no default:
+# erlang_deploy_app_name: "myapp"
+
+erlang_deploy_release_version: "{{ deploy_helper.new_release }}"
+
+# erlang_deploy_strategy: "http", "local" or "s3"
+erlang_deploy_copy_strategy: "local"
+erlang_deploy_archive_location: "."
+erlang_deploy_archive_name: "{{ erlang_deploy_name }}.tar.gz"
+erlang_deploy_archive_file: "{{ erlang_deploy_archive_location }}/{{ erlang_deploy_archive_name }}"
+
+erlang_deploy_s3_region: 'eu-west-1' # - region of your bucket
+erlang_deploy_s3_bucket: 'my-bucket' # - your bucket
+
+erlang_deploy_dir: "/opt"
+erlang_deploy_root: "{{ erlang_deploy_dir }}/{{ erlang_deploy_name }}"
+
+erlang_deploy_shared_path: "{{ erlang_deploy_root }}/shared"
+erlang_deploy_shared_folders: []
+
+# Number of old versions to keep
+erlang_deploy_keep_releases: 5
