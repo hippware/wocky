@@ -367,7 +367,7 @@ view_conditions([First|Rest]) ->
 -spec query(context(), query(), values(), consistency_level())
            -> {ok, void} | {ok, result()} | {error, error()}.
 query(Context, Query, Values, Consistency) ->
-    run_query(Context, make_query(Query, Values, Consistency)).
+    run_query(make_query(Context, Query, Values, Consistency)).
 
 %% @doc Executes a batch query.
 %%
@@ -398,7 +398,7 @@ batch_query(_Context, [], _Consistency) ->
     %% Early-out here.
     {ok, void};
 batch_query(Context, QueryList, Consistency) ->
-    run_query(Context, make_batch_query(QueryList, Consistency, logged)).
+    run_query(make_batch_query(Context, QueryList, Consistency)).
 
 %% @doc Executes a query multiple times with different datasets.
 %%
@@ -415,8 +415,8 @@ batch_query(Context, QueryList, Consistency) ->
 -spec multi_query(context(), query(), [values()], consistency_level()) -> ok.
 multi_query(Context, Query, ValuesList, Consistency) ->
     lists:foreach(fun (Values) ->
-                          {ok, void} = run_query(Context,
-                               make_query(Query, Values, Consistency))
+                          {ok, void} = run_query(
+                               make_query(Context, Query, Values, Consistency))
                   end, ValuesList),
     ok.
 
@@ -441,8 +441,8 @@ multi_query(Context, Query, ValuesList, Consistency) ->
 -spec multi_query(context(), [{query(), values()}], consistency_level()) -> ok.
 multi_query(Context, QueryVals, Consistency) ->
     lists:foreach(fun ({Query, Values}) ->
-                          {ok, void} = run_query(Context,
-                               make_query(Query, Values, Consistency))
+                          {ok, void} = run_query(
+                               make_query(Context, Query, Values, Consistency))
                   end, QueryVals),
     ok.
 
@@ -457,10 +457,10 @@ rows(Result) ->
 
 %% @doc Fetch more results from a multi-page query
 %%
-%% Returns the next result object, or `no_more_result' if the end of the
+%% Returns the next result object, or `no_more_results' if the end of the
 %% result set has been reached.
 %%
--spec fetch_more(result()) -> {ok, result()} | no_more_result.
+-spec fetch_more(result()) -> {ok, result()} | no_more_results.
 fetch_more(Result) ->
     cqerl:fetch_more(Result).
 
@@ -557,22 +557,26 @@ table_columns(Table) ->
 %% Internal functions
 %%====================================================================
 
-run_query(Context, Query) ->
-    Nodes = wocky_app:get_config(cassandra_nodes),
-    Opts = wocky_app:get_config(cassandra_opts),
-    case get_client(Context, hd(Nodes), Opts) of
-        {ok, Client} ->
-            Return = cqerl:run_query(Client, Query),
-            cqerl:close_client(Client),
-            Return;
-        {error, Error} ->
-            {error, Error}
+default_db_config() ->
+    application:get_env(wocky, cqerl_node, {}).
+
+get_db_config() ->
+    %% Try pulling the config from ejabberd
+    try
+        [Host] = ejabberd_config:get_global_option(hosts),
+        case ejabberd_config:get_local_option(cqerl_node, Host) of
+            undefined -> default_db_config();
+            Value -> Value
+        end
+    catch
+        _:_ ->
+            default_db_config()
     end.
 
-get_client(none, Node, Opts) ->
-    cqerl:get_client(Node, Opts);
-get_client(Context, Node, Opts) ->
-    cqerl:get_client(Node, [{keyspace, keyspace_name(Context)}|Opts]).
+run_query(Query) ->
+    Spec = get_db_config(),
+    ok = lager:debug("DB connection spec: ~p~n", [Spec]),
+    cqerl:run_query(Query).
 
 %% Return the keyspace name for the given context.
 -spec keyspace_name(context()) -> binary().
@@ -598,17 +602,18 @@ to_keyspace(String) ->
             Space
     end.
 
-make_query(Query, Values, Consistency) ->
+make_query(Keyspace, Query, Values, Consistency) ->
     log_query(Query, Values),
     #cql_query{statement = Query,
+               keyspace = Keyspace,
                values = Values,
                reusable = true,
                consistency = Consistency}.
 
-make_batch_query(QueryList, Consistency, Mode) ->
+make_batch_query(Keyspace, QueryList, Consistency) ->
     #cql_query_batch{queries = batch_query_list(QueryList),
-                     consistency = Consistency,
-                     mode = Mode}.
+                     keyspace = Keyspace,
+                     consistency = Consistency}.
 
 batch_query_list(QueryList) ->
     lists:map(fun ({Query, Values}) ->

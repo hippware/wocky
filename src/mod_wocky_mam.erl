@@ -573,7 +573,7 @@ run_paging_query(Host, Query, Values) ->
     Result = wocky_db:query(Host, Query, Values, quorum),
     continue_paging_query(Result, []).
 
-continue_paging_query(no_more_result, Acc) -> Acc;
+continue_paging_query(no_more_results, Acc) -> Acc;
 continue_paging_query({ok, Result}, Acc) ->
     Rows = wocky_db:rows(Result),
     NextResult = wocky_db:fetch_more(Result),

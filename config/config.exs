@@ -9,10 +9,35 @@ config :ejabberd,
   keep_lager_intact: true
 
 config :cqerl,
-  maps: :true,
-  mode: :hash,
   text_uuids: true,
-  auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
+  client_groups: [
+    client_group: [
+      name: :no_ks,
+      hosts: ['localhost'],
+      opts: [
+        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]},
+      ],
+      clients_per_server: 1
+    ],
+    client_group: [
+      name: :shared_ks,
+      hosts: ['localhost'],
+      opts: [
+        keyspace: :wocky_shared,
+        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
+      ],
+      clients_per_server: 10
+    ],
+    client_group: [
+      name: :local_ks,
+      hosts: ['localhost'],
+      opts: [
+        keyspace: :wocky_localhost,
+        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
+      ],
+      clients_per_server: 10
+    ]
+  ]
 
 config :schemata,
   cassandra_hosts: [{'127.0.0.1', 9042}],

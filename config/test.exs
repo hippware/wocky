@@ -5,6 +5,37 @@ config :wocky,
   keyspace_prefix: 'wocky_test_',
   config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
 
+config :cqerl,
+  text_uuids: true,
+  client_groups: [
+    client_group: [
+      name: :no_ks,
+      hosts: ['localhost'],
+      opts: [
+        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]},
+      ],
+      clients_per_server: 1
+    ],
+    client_group: [
+      name: :shared_ks,
+      hosts: ['localhost'],
+      opts: [
+        keyspace: :wocky_test_shared,
+        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
+      ],
+      clients_per_server: 10
+    ],
+    client_group: [
+      name: :local_ks,
+      hosts: ['localhost'],
+      opts: [
+        keyspace: :wocky_test_localhost,
+        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
+      ],
+      clients_per_server: 10
+    ]
+  ]
+
 config :kernel,
   error_logger: :silent
 
