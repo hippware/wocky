@@ -238,7 +238,7 @@ test_delete() ->
           ?_test(
              begin
                  Q = "SELECT " ++ Key ++ " FROM " ++ Table,
-                 {ok, R} = wocky_db:query(?LOCAL_CONTEXT, Q, [], quorum),
+                 {ok, R} = wocky_db:query(?LOCAL_CONTEXT, Q, #{}, quorum),
                  ?assertEqual([], wocky_db:rows(R))
              end) || {Key, Table} <-
                      [{"id", "media"}, {"chunk_id", "media_data"}]

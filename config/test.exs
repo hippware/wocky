@@ -9,7 +9,6 @@ config :cqerl,
   text_uuids: true,
   client_groups: [
     client_group: [
-      name: :no_ks,
       hosts: ['localhost'],
       opts: [
         auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]},
@@ -17,7 +16,6 @@ config :cqerl,
       clients_per_server: 1
     ],
     client_group: [
-      name: :shared_ks,
       hosts: ['localhost'],
       opts: [
         keyspace: :wocky_test_shared,
@@ -26,7 +24,6 @@ config :cqerl,
       clients_per_server: 10
     ],
     client_group: [
-      name: :local_ks,
       hosts: ['localhost'],
       opts: [
         keyspace: :wocky_test_localhost,

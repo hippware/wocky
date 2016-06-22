@@ -579,7 +579,9 @@ run_query(Query) ->
     cqerl:run_query(Query).
 
 %% Return the keyspace name for the given context.
--spec keyspace_name(context()) -> binary().
+-spec keyspace_name(context()) -> binary() | undefined.
+keyspace_name(none) ->
+    undefined;
 keyspace_name(Context) when is_atom(Context) ->
     keyspace_name(atom_to_binary(Context, utf8));
 keyspace_name(Context) ->
@@ -602,7 +604,8 @@ to_keyspace(String) ->
             Space
     end.
 
-make_query(Keyspace, Query, Values, Consistency) ->
+make_query(Context, Query, Values, Consistency) ->
+    Keyspace = keyspace_name(Context),
     log_query(Query, Values),
     #cql_query{statement = Query,
                keyspace = Keyspace,
@@ -610,7 +613,8 @@ make_query(Keyspace, Query, Values, Consistency) ->
                reusable = true,
                consistency = Consistency}.
 
-make_batch_query(Keyspace, QueryList, Consistency) ->
+make_batch_query(Context, QueryList, Consistency) ->
+    Keyspace = keyspace_name(Context),
     #cql_query_batch{queries = batch_query_list(QueryList),
                      keyspace = Keyspace,
                      consistency = Consistency}.
