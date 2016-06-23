@@ -366,7 +366,7 @@ standard_counts(CountType, RSMMax, Host, UserJID, OtherJID,
         TaggedStart :: undefined | mam_time(),
         TaggedEnd   :: undefined | mam_time(),
         Borders     :: undefined | mod_mam:borders(),
-        Rows        :: [#{}]
+        Rows        :: [map()]
        ) -> {undefined | non_neg_integer(), undefined | non_neg_integer()}.
 standard_counts(false, _, _, _, _, _, _, _) -> {undefined, undefined};
 standard_counts(true, Host, UserJID, OtherJID, TaggedStart,
@@ -387,7 +387,7 @@ standard_counts(true, Host, UserJID, OtherJID, TaggedStart,
         End       :: mam_time(),
         Max       :: undefined | non_neg_integer(),
         Direction :: undefined | before | aft) ->
-    [#{}].
+    [map()].
 
 do_lookup(_Host, _UserJID, _OtherJID, _Start, _End, 0, _Direction) ->
     [];
