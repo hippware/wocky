@@ -489,10 +489,12 @@ add_limit(undefined, {Q, V}) -> {Q, V};
 add_limit(Limit, {Q, V}) ->
     {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
 
-maybe_add_ttl(Row = #{with_jid := ?GROUP_CHAT_WITH_JID}) ->
-    TTL = gen_mod:get_module_opt(global, ?MODULE,
-                                 group_chat_archive_ttl, infinity),
-    maybe_add_ttl(Row, TTL);
+%% TODO Dialyzer says this function clause never gets called.
+%% Is it supposed to?
+%% maybe_add_ttl(Row = #{with_jid := ?GROUP_CHAT_WITH_JID}) ->
+%%     TTL = gen_mod:get_module_opt(global, ?MODULE,
+%%                                  group_chat_archive_ttl, infinity),
+%%     maybe_add_ttl(Row, TTL);
 maybe_add_ttl(Row) ->
     TTL = gen_mod:get_module_opt(global, ?MODULE,
                                  message_archive_ttl, infinity),
