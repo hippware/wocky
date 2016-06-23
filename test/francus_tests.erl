@@ -49,7 +49,7 @@ after_all(_) ->
 
 make_file(Size) ->
     ID = mod_tros:make_file_id(),
-    Data = crypto:rand_bytes(Size),
+    Data = crypto:strong_rand_bytes(Size),
     {ID, Data}.
 
 metadata() ->
@@ -126,7 +126,7 @@ test_read() ->
       ]} end}.
 
 read_random_chunks(F, Acc) ->
-    ReadSize = random:uniform(2*francus:default_chunk_size()),
+    ReadSize = rand:uniform(2*francus:default_chunk_size()),
     case francus:read(F, ReadSize) of
         {F2, Data} when byte_size(Data) =:= ReadSize ->
             read_random_chunks(F2, <<Acc/binary, Data/binary>>);
@@ -154,7 +154,7 @@ test_write() ->
                  {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
                                               wocky_db:create_id(),
                                               metadata()),
-                 Data = crypto:rand_bytes(Size),
+                 Data = crypto:strong_rand_bytes(Size),
                  F2 = francus:write(F, Data),
                  ok = francus:close(F2),
                  verify_contents(ID, Data)

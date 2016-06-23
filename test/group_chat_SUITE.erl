@@ -341,7 +341,7 @@ malformed_node_stanza(GroupID) ->
                               children = [#xmlcdata{content = <<"asdf">>}]}]}.
 
 make_id() ->
-    base64:encode(crypto:rand_bytes(8)).
+    base64:encode(crypto:strong_rand_bytes(8)).
 
 assert_no_stanzas(User) ->
     dump_stanzas(User),

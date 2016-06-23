@@ -1027,7 +1027,7 @@ generate_msg_for_date_user(OwnerJID, RemoteJID, DateTime) ->
     MsgIdRemote = rpc_apply(mod_mam_utils, encode_compact_uuid,
                             [Microsec+1, rand:uniform(20)]),
     Packet = escalus_stanza:chat_to(RemoteJID,
-                                    base16:encode(crypto:rand_bytes(4))),
+                                    base16:encode(crypto:strong_rand_bytes(4))),
     {{MsgIdOwner, MsgIdRemote}, OwnerJID, RemoteJID, Packet}.
 
 random_time() ->
