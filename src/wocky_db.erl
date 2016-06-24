@@ -25,7 +25,6 @@
 -export_type([server/0, context/0, table/0, explicit_columns/0, columns/0,
               conditions/0, ks_class/0, ks_factor/0, table_def/0]).
 
--type query()     :: iodata().
 -type value()     :: parameter_val().
 -type values()    :: map().
 -type row()       :: map().
@@ -34,7 +33,7 @@
 -type ttl()       :: pos_integer() | infinity.
 -type id()        :: binary().
 -opaque result()  :: #cql_result{}.
--export_type([query/0, value/0, values/0, row/0, result/0, error/0,
+-export_type([value/0, values/0, row/0, result/0, error/0,
               ttl/0, id/0]).
 
 
@@ -364,7 +363,7 @@ view_conditions([First|Rest]) ->
 %% abstract datatype that can be passed to {@link rows/1} or
 %% {@link single_result/1}.
 %%
--spec query(context(), query(), values(), consistency_level())
+-spec query(context(), query_statement(), values(), consistency_level())
            -> {ok, void} | {ok, result()} | {error, error()}.
 query(Context, Query, Values, Consistency) ->
     run_query(make_query(Context, Query, Values, Consistency)).
@@ -391,7 +390,7 @@ query(Context, Query, Values, Consistency) ->
 %%
 %% On successful completion, the function returns `{ok, void}'.
 %%
--spec batch_query(context(), [{query(), values()}], consistency_level())
+-spec batch_query(context(), [{query_statement(), values()}], consistency_level())
                  -> {ok, void} | {error, error()}.
 batch_query(_Context, [], _Consistency) ->
     %% Cassandra throws an exception if you try to batch zero queries.
@@ -412,7 +411,7 @@ batch_query(Context, QueryList, Consistency) ->
 %% listed in `Query'.
 %%
 %% Returns `ok'.
--spec multi_query(context(), query(), [values()], consistency_level()) -> ok.
+-spec multi_query(context(), query_statement(), [values()], consistency_level()) -> ok.
 multi_query(Context, Query, ValuesList, Consistency) ->
     lists:foreach(fun (Values) ->
                           {ok, void} = run_query(
@@ -438,7 +437,7 @@ multi_query(Context, Query, ValuesList, Consistency) ->
 %% are as for {@link query/4}.
 %%
 %% Returns `ok'.
--spec multi_query(context(), [{query(), values()}], consistency_level()) -> ok.
+-spec multi_query(context(), [{query_statement(), values()}], consistency_level()) -> ok.
 multi_query(Context, QueryVals, Consistency) ->
     lists:foreach(fun ({Query, Values}) ->
                           {ok, void} = run_query(
@@ -557,25 +556,7 @@ table_columns(Table) ->
 %% Internal functions
 %%====================================================================
 
-default_db_config() ->
-    application:get_env(wocky, cqerl_node, {}).
-
-get_db_config() ->
-    %% Try pulling the config from ejabberd
-    try
-        [Host] = ejabberd_config:get_global_option(hosts),
-        case ejabberd_config:get_local_option(cqerl_node, Host) of
-            undefined -> default_db_config();
-            Value -> Value
-        end
-    catch
-        _:_ ->
-            default_db_config()
-    end.
-
 run_query(Query) ->
-    Spec = get_db_config(),
-    ok = lager:debug("DB connection spec: ~p~n", [Spec]),
     cqerl:run_query(Query).
 
 %% Return the keyspace name for the given context.
