@@ -366,7 +366,7 @@ standard_counts(CountType, RSMMax, Host, UserJID, OtherJID,
         TaggedStart :: undefined | mam_time(),
         TaggedEnd   :: undefined | mam_time(),
         Borders     :: undefined | mod_mam:borders(),
-        Rows        :: [#{}]
+        Rows        :: [map()]
        ) -> {undefined | non_neg_integer(), undefined | non_neg_integer()}.
 standard_counts(false, _, _, _, _, _, _, _) -> {undefined, undefined};
 standard_counts(true, Host, UserJID, OtherJID, TaggedStart,
@@ -387,7 +387,7 @@ standard_counts(true, Host, UserJID, OtherJID, TaggedStart,
         End       :: mam_time(),
         Max       :: undefined | non_neg_integer(),
         Direction :: undefined | before | aft) ->
-    [#{}].
+    [map()].
 
 do_lookup(_Host, _UserJID, _OtherJID, _Start, _End, 0, _Direction) ->
     [];
@@ -489,7 +489,7 @@ add_limit(undefined, {Q, V}) -> {Q, V};
 add_limit(Limit, {Q, V}) ->
     {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
 
-maybe_add_ttl(Row = #{with_jid := ?GROUP_CHAT_WITH_JID}) ->
+maybe_add_ttl(Row = #{other_jid := ?GROUP_CHAT_WITH_JID}) ->
     TTL = gen_mod:get_module_opt(global, ?MODULE,
                                  group_chat_archive_ttl, infinity),
     maybe_add_ttl(Row, TTL);

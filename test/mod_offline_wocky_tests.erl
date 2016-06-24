@@ -169,4 +169,4 @@ test_remove_user() ->
 
 % Little helper function to pseudo-randomly shuffle a list of elements
 shuffle_list(L) ->
-    [X || {_, X} <- lists:sort([{random:uniform(), E} || E <- L])].
+    [X || {_, X} <- lists:sort([{rand:uniform(), E} || E <- L])].

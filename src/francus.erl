@@ -42,7 +42,7 @@
           user_id            :: user_id(),
           metadata           :: metadata(),
           context            :: wocky_db:context(),
-          ttl                :: wocky_db:ttl(),
+          ttl = infinity     :: wocky_db:ttl(),
           pending = <<>>     :: content(),
           size = 0           :: non_neg_integer(),
           committed_size = 0 :: non_neg_integer(),
