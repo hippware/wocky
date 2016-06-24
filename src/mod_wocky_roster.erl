@@ -251,30 +251,21 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
     #roster{subscription = Subscription, ask = Ask} = Item,
 
-    Push = case state_change(Direction, Subscription, Ask, Type) of
-               none ->
-                   none;
+    StateChange = state_change(Direction, Subscription, Ask, Type),
+    Action = process_state_change(StateChange, Reason, Item),
 
-               {none, none} when Subscription =:= none, Ask =:= in ->
-                   wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
-                   none;
+    Push = case Action of
+        none ->
+            none;
 
-               {NewSubscription, Pending} ->
-                   AskMsg = case Pending of
-                                both -> Reason;
-                                in -> Reason;
-                                _ -> <<"">>
-                            end,
+        delete ->
+            wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
+            none;
 
-                   NewItem = Item#roster{
-                               subscription = NewSubscription,
-                               ask = Pending,
-                               ask_message = iolist_to_binary(AskMsg)
-                              },
-                   wocky_db_roster:update_roster_item(LUser, LServer,
-                                                      LJID, NewItem),
-                   {push, NewItem}
-           end,
+        {insert, NewItem} ->
+            wocky_db_roster:update_roster_item(LUser, LServer, LJID, NewItem),
+            {push, NewItem}
+    end,
 
     ToJID = jid:make(User, Server, <<"">>),
     case auto_reply(Direction, Subscription, Ask, Type) of
@@ -305,13 +296,36 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
             false
     end.
 
+process_state_change(none, _, _) ->
+    none;
+
+process_state_change(delete, _, _) ->
+    delete;
+
+process_state_change({add_new, NewSubscription}, Reason, Item) ->
+    NewItem = Item#roster{groups = [<<"__new__">>]},
+    process_state_change({NewSubscription, none}, Reason, NewItem);
+
+process_state_change({NewSubscription, Pending}, Reason, Item) ->
+    AskMsg = ask_msg(Pending, Reason),
+    NewItem = Item#roster{
+                subscription = NewSubscription,
+                ask = Pending,
+                ask_message = iolist_to_binary(AskMsg)
+               },
+    {insert, NewItem}.
+
+ask_msg(both, Reason) -> Reason;
+ask_msg(in, Reason) -> Reason;
+ask_msg(_, _) -> <<"">>.
+
 state_change(in, S, A, T) -> in_state_change(S, A, T);
 state_change(out, S, A, T) -> out_state_change(S, A, T).
 
 %% in_state_change(Subscription, Pending, Type) -> NewState
 %% NewState = none | {NewSubscription, NewPending}
 in_state_change(none, none, subscribe)    -> {none, in};
-in_state_change(none, none, subscribed)   -> none;
+in_state_change(none, none, subscribed)   -> {add_new, none};
 in_state_change(none, none, unsubscribe)  -> none;
 in_state_change(none, none, unsubscribed) -> none;
 in_state_change(none, out,  subscribe)    -> {none, both};
@@ -320,7 +334,7 @@ in_state_change(none, out,  unsubscribe)  -> none;
 in_state_change(none, out,  unsubscribed) -> {none, none};
 in_state_change(none, in,   subscribe)    -> none;
 in_state_change(none, in,   subscribed)   -> none;
-in_state_change(none, in,   unsubscribe)  -> {none, none};
+in_state_change(none, in,   unsubscribe)  -> delete;
 in_state_change(none, in,   unsubscribed) -> none;
 in_state_change(none, both, subscribe)    -> none;
 in_state_change(none, both, subscribed)   -> {to, in};
