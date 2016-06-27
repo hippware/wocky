@@ -119,10 +119,11 @@ send_file(File, Req) ->
     cowboy_req:reply(200, [{<<"content-type">>, ContentType}], Data, Req).
 
 open_and_write(Request = #tros_request{user = User, file = FileID,
+                                       purpose = Purpose, access = Access,
                                        metadata = Metadata},
                ChunkFun, Req) ->
     {ok, F} = francus:open_write(wocky_app:server(),
-                                 FileID, User, Metadata),
+                                 FileID, User, Purpose, Access, Metadata),
     write_data(F, Request, ChunkFun, Req).
 
 write_data(F, Request = #tros_request{size = SizeRemaining}, ChunkFun, Req) ->
