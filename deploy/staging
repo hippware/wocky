@@ -1,0 +1,5 @@
+#inventory file
+[app]
+app1.staging.dev.tinyrobot.com
+app2.staging.dev.tinyrobot.com
+app3.staging.dev.tinyrobot.com

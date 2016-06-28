@@ -1,6 +1,6 @@
 ---
 - name: Deploy Wocky
-  hosts: app1.dev.tinyrobot.com
+  hosts: app
   become: True
   become_user: wocky
   vars:
