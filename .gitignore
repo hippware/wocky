@@ -16,3 +16,5 @@ doc/*.html
 doc/*.css
 doc/*.png
 doc/edoc-info
+/RELEASE
+*.retry

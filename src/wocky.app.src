@@ -2,7 +2,7 @@
 %% ex: ts=4 sw=4 ft=erlang et
 {application, wocky,
  [{description, "JabberWocky"},
-  {vsn, {cmd, "echo `date -u +%y.%m.%d`+`git rev-list HEAD|wc -l|tr -d ' '`"}},
+  {vsn, {cmd, "./version"}},
   {modules, []},
   {registered, []},
   {applications, [kernel,
