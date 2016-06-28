@@ -7,7 +7,7 @@ all: compile
 cleanall:
 	@$(REBAR) clean --all
 	@rm -rf _build/default/lib/ejabberd
-        @rm -rf _build/default/rel
+	@rm -rf _build/default/rel
 	@rm -rf _build/test
 	@rm -rf log
 
@@ -32,7 +32,7 @@ ci: cleanall compile lint xref dialyzer eunit ct cover
 	@echo "Build complete."
 
 tar: release
-        @cd _build/default/rel/wocky; tar zcf ../wocky.tar.gz *
+	@cd _build/default/rel/wocky; tar zcf ../wocky.tar.gz *
 
 %:
 	@$(REBAR) $@
