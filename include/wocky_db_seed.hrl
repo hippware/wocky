@@ -42,15 +42,17 @@
 -define(KAREN_JID, jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)).
 -define(SERVER_JID,jid:make(<<>>,   ?LOCAL_CONTEXT, <<>>)).
 
--define(AVATAR_FILE,  <<"ee880476-e712-11e5-990d-08002719e96e">>).
--define(AVATAR_FILE2, <<"5620c844-e98d-11e5-b97b-08002719e96e">>).
--define(AVATAR_FILE3, <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).
--define(MEDIA_FILE,   <<"ff9451f2-e712-11e5-9ab0-08002719e96e">>).
+-define(AVATAR_FILE,   <<"ee880476-e712-11e5-990d-08002719e96e">>).
+-define(AVATAR_FILE2,  <<"5620c844-e98d-11e5-b97b-08002719e96e">>).
+-define(AVATAR_FILE3,  <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).
+-define(MEDIA_FILE,    <<"ff9451f2-e712-11e5-9ab0-08002719e96e">>).
+-define(GC_MEDIA_FILE, <<"5f4dab84-2d18-11e6-b1e2-73907483f182">>).
 
--define(AVATAR_CHUNK,  <<"24634ec0-e96b-11e5-8f6e-08002719e96e">>).
--define(AVATAR_CHUNK2, <<"54559742-e98d-11e5-bc3d-08002719e96e">>).
--define(AVATAR_CHUNK3, <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).
--define(MEDIA_CHUNK,   <<"24f99f56-e96b-11e5-8e11-08002719e96e">>).
+-define(AVATAR_CHUNK,   <<"24634ec0-e96b-11e5-8f6e-08002719e96e">>).
+-define(AVATAR_CHUNK2,  <<"54559742-e98d-11e5-bc3d-08002719e96e">>).
+-define(AVATAR_CHUNK3,  <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).
+-define(MEDIA_CHUNK,    <<"24f99f56-e96b-11e5-8e11-08002719e96e">>).
+-define(GC_MEDIA_CHUNK, <<"5fd2b928-2d18-11e6-bcb5-e777f9044f41">>).
 
 -define(AVATAR_DATA,  <<"avatar file contents">>).
 -define(AVATAR_DATA2, <<"alternative avatar file contents">>).
@@ -67,5 +69,6 @@
 -define(PRIVACY_ITEM2, <<"3fa76372-ecba-11e5-a383-08002719e96e">>).
 -define(PRIVACY_ITEM3, <<"3fd96ee4-ecba-11e5-83d6-08002719e96e">>).
 
+-define(GROUP_CHAT, <<"e2570260-2c7c-11e6-8bbd-1364d78a5dd4">>).
 -define(CHAT_TITLE, <<"Chatty McChatface">>).
 -endif.
