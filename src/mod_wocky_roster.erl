@@ -251,50 +251,14 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
     Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
     #roster{subscription = Subscription, ask = Ask} = Item,
 
-    Push = case state_change(Direction, Subscription, Ask, Type) of
-               none ->
-                   none;
-
-               {none, none} when Subscription =:= none, Ask =:= in ->
-                   wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
-                   none;
-
-               {NewSubscription, Pending} ->
-                   AskMsg = case Pending of
-                                both -> Reason;
-                                in -> Reason;
-                                _ -> <<"">>
-                            end,
-
-                   NewItem = Item#roster{
-                               subscription = NewSubscription,
-                               ask = Pending,
-                               ask_message = iolist_to_binary(AskMsg)
-                              },
-                   wocky_db_roster:update_roster_item(LUser, LServer,
-                                                      LJID, NewItem),
-                   {push, NewItem}
-           end,
+    StateChange = state_change(Direction, Subscription, Ask, Type),
+    Action = process_state_change(StateChange, Reason, Item),
+    Push = do_action(LUser, LServer, LJID, Action),
 
     ToJID = jid:make(User, Server, <<"">>),
-    case auto_reply(Direction, Subscription, Ask, Type) of
-        none -> ok;
-        unsubscribed ->
-            Attrs = [{<<"type">>, <<"unsubscribed">>}],
-            ejabberd_router:route(ToJID, JID1, #xmlel{name = <<"presence">>,
-                                                      attrs = Attrs,
-                                                      children = []});
-        subscribed ->
-            Attrs = lists:flatten(
-                     [{<<"type">>, <<"subscribed">>},
-                      item_name_to_xml(handle, Item#roster.contact_handle),
-                      item_name_to_xml(first_name, Item#roster.first_name),
-                      item_name_to_xml(last_name, Item#roster.last_name),
-                      item_name_to_xml(avatar, Item#roster.avatar)]),
-            ejabberd_router:route(ToJID, JID1, #xmlel{name = <<"presence">>,
-                                                      attrs = Attrs,
-                                                      children = []})
-    end,
+    AutoReply = get_auto_reply(Direction, Subscription, Ask, Type),
+    do_auto_reply(ToJID, JID1, Item, AutoReply),
+
     case Push of
         {push, #roster{subscription = none, ask = in}} ->
             true;
@@ -308,10 +272,9 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 state_change(in, S, A, T) -> in_state_change(S, A, T);
 state_change(out, S, A, T) -> out_state_change(S, A, T).
 
-%% in_state_change(Subscription, Pending, Type) -> NewState
-%% NewState = none | {NewSubscription, NewPending}
+%% X_state_change(Subscription, Pending, Type) -> Action
 in_state_change(none, none, subscribe)    -> {none, in};
-in_state_change(none, none, subscribed)   -> none;
+in_state_change(none, none, subscribed)   -> {add_new, none};
 in_state_change(none, none, unsubscribe)  -> none;
 in_state_change(none, none, unsubscribed) -> none;
 in_state_change(none, out,  subscribe)    -> {none, both};
@@ -320,7 +283,7 @@ in_state_change(none, out,  unsubscribe)  -> none;
 in_state_change(none, out,  unsubscribed) -> {none, none};
 in_state_change(none, in,   subscribe)    -> none;
 in_state_change(none, in,   subscribed)   -> none;
-in_state_change(none, in,   unsubscribe)  -> {none, none};
+in_state_change(none, in,   unsubscribe)  -> delete;
 in_state_change(none, in,   unsubscribed) -> none;
 in_state_change(none, both, subscribe)    -> none;
 in_state_change(none, both, subscribed)   -> {to, in};
@@ -384,8 +347,40 @@ out_state_change(both, none, subscribed)   -> none;
 out_state_change(both, none, unsubscribe)  -> {from, none};
 out_state_change(both, none, unsubscribed) -> {to, none}.
 
-auto_reply(out, _, _, _) -> none;
-auto_reply(in, S, A, T) -> in_auto_reply(S, A, T).
+process_state_change(none, _, _) ->
+    none;
+
+process_state_change(delete, _, _) ->
+    delete;
+
+process_state_change({add_new, NewSubscription}, Reason, Item) ->
+    NewItem = Item#roster{groups = [<<"__new__">>]},
+    process_state_change({NewSubscription, none}, Reason, NewItem);
+
+process_state_change({NewSubscription, Pending}, Reason, Item) ->
+    AskMsg = ask_msg(Pending, Reason),
+    NewItem = Item#roster{
+                subscription = NewSubscription,
+                ask = Pending,
+                ask_message = iolist_to_binary(AskMsg)
+               },
+    {insert, NewItem}.
+
+ask_msg(both, Reason) -> Reason;
+ask_msg(in, Reason) -> Reason;
+ask_msg(_, _) -> <<"">>.
+
+do_action(_, _, _, none) ->
+    none;
+do_action(LUser, LServer, LJID, delete) ->
+    wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
+    none;
+do_action(LUser, LServer, LJID, {insert, NewItem}) ->
+    wocky_db_roster:update_roster_item(LUser, LServer, LJID, NewItem),
+    {push, NewItem}.
+
+get_auto_reply(out, _, _, _) -> none;
+get_auto_reply(in, S, A, T) -> in_auto_reply(S, A, T).
 
 in_auto_reply(from, none, subscribe)   -> subscribed;
 in_auto_reply(from, out,  subscribe)   -> subscribed;
@@ -398,6 +393,23 @@ in_auto_reply(from, out,  unsubscribe) -> unsubscribed;
 in_auto_reply(both, none, unsubscribe) -> unsubscribed;
 in_auto_reply(_,    _,    _)           -> none.
 
+do_auto_reply(_, _, _, none) -> ok;
+do_auto_reply(ToJID, JID1, _Item, unsubscribed) ->
+    Attrs = [{<<"type">>, <<"unsubscribed">>}],
+    send_auto_reply(ToJID, JID1, Attrs);
+do_auto_reply(ToJID, JID1, Item, subscribed) ->
+    Attrs = lists:flatten(
+              [{<<"type">>, <<"subscribed">>},
+               item_name_to_xml(handle, Item#roster.contact_handle),
+               item_name_to_xml(first_name, Item#roster.first_name),
+               item_name_to_xml(last_name, Item#roster.last_name),
+               item_name_to_xml(avatar, Item#roster.avatar)]),
+    send_auto_reply(ToJID, JID1, Attrs).
+
+send_auto_reply(ToJID, JID1, Attrs) ->
+    ejabberd_router:route(ToJID, JID1, #xmlel{name = <<"presence">>,
+                                              attrs = Attrs,
+                                              children = []}).
 
 %% roster_get_subscription_lists -------------------------------------
 

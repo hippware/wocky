@@ -20,6 +20,8 @@
 
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("common_test/include/ct.hrl").
+-include_lib("exml/include/exml.hrl").
+-include_lib("stdlib/include/assert.hrl").
 
 -include("wocky_db_seed.hrl").
 
@@ -42,7 +44,9 @@ groups() ->
                           subscribe_decline,
                           subscribe_relog,
                           unsubscribe,
-                          remove_unsubscribe]}].
+                          remove_unsubscribe,
+                          subscribed_follow
+                         ]}].
 
 suite() ->
     escalus:suite().
@@ -357,6 +361,23 @@ remove_unsubscribe(Config) ->
                             escalus:wait_for_stanzas(Alice, 3)),
         test_helper:check_subscription_stanzas(escalus:wait_for_stanzas(Bob, 2),
                                    <<"unsubscribe">>)
+    end).
+
+subscribed_follow(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+        %% Bob sends subscribed presence - this indicates that Bob
+        %% has become a follower of Alice. Bob is automatically added to
+        %% Alice's roster under the __new__ group.
+        escalus:send(Bob, escalus_stanza:presence_direct(Alice,
+                                                         <<"subscribed">>)),
+        Stanzas = escalus:wait_for_stanzas(Alice, 2),
+        test_helper:check_subscription_stanzas(Stanzas, <<"subscribed">>),
+        IQ = lists:keyfind(<<"iq">>, #xmlel.name, Stanzas),
+        Group = xml:get_path_s(
+                  IQ, [{elem, <<"query">>},
+                       {elem, <<"item">>}, {elem, <<"group">>},
+                       cdata]),
+        ?assertEqual(Group, <<"__new__">>)
     end).
 
 
