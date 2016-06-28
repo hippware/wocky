@@ -76,18 +76,6 @@ get_item(Item, Name, Default) ->
 get_item(Item, Name) ->
     case xml:get_path_s(Item, [{elem, Name}, cdata]) of
         <<>> -> {error, not_found};
-        Data -> safe_bin_to_float(Data)
+        Data -> wocky_util:safe_bin_to_float(Data)
     end.
 
-safe_bin_to_float(Bin) ->
-    try
-        Float = binary_to_float(Bin),
-        {ok, Float}
-    catch _:_ ->
-        try
-            Float2 = float(binary_to_integer(Bin)),
-            {ok, Float2}
-        catch _:_ ->
-            {error, bad_float}
-        end
-    end.

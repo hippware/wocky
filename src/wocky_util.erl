@@ -5,9 +5,20 @@
 %%% their own module but are used from multiple places.
 -module(wocky_util).
 
+-include_lib("ejabberd/include/jlib.hrl").
+
 -export([
    add_hooks/4,
-   delete_hooks/4
+   delete_hooks/4,
+   safe_bin_to_integer/1,
+   default_bin_to_integer/2,
+   safe_bin_to_float/1,
+
+   set_config_from_opt/4,
+
+   archive_jid/1,
+
+   make_error_iq_response/2
         ]).
 
 -export_type([hook/0]).
@@ -37,3 +48,48 @@ delete_hooks(Hooks, Host, Module, Sequence) ->
       fun ({Hook, Callback}) ->
               ejabberd_hooks:delete(Hook, Host, Module, Callback, Sequence)
       end, Hooks).
+
+-spec safe_bin_to_float(binary()) -> {ok, float()} | {error, bad_float}.
+safe_bin_to_float(Bin) ->
+    try
+        Float = binary_to_float(Bin),
+        {ok, Float}
+    catch _:_ ->
+        try
+            Float2 = float(binary_to_integer(Bin)),
+            {ok, Float2}
+        catch _:_ ->
+            {error, bad_float}
+        end
+    end.
+
+-spec safe_bin_to_integer(binary()) -> {ok, integer()} | {error, bad_integer}.
+safe_bin_to_integer(Bin) ->
+    try
+        Int = binary_to_integer(Bin),
+        {ok, Int}
+    catch _:_ ->
+        {error, bad_integer}
+    end.
+
+-spec default_bin_to_integer(binary(), integer()) -> integer().
+default_bin_to_integer(Bin, Default) ->
+    case safe_bin_to_integer(Bin) of
+        {ok, Int} -> Int;
+        {error, bad_integer} -> Default
+    end.
+
+-spec set_config_from_opt(atom(), atom(), term(), proplists:proplist()) -> ok.
+set_config_from_opt(OptTag, Config, Default, Opts) ->
+    Val = proplists:get_value(OptTag, Opts, Default),
+    {atomic, _} = ejabberd_config:add_local_option(Config, Val),
+    ok.
+
+-spec archive_jid(#jid{}) -> binary().
+archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
+
+-spec make_error_iq_response(iq(), jlib:xmlel() | [jlib:xmlel()]) -> iq().
+make_error_iq_response(IQ, ErrStanza) ->
+    ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
+    IQ#iq{type = error, sub_el = ErrStanza}.
+

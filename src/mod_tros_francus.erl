@@ -33,8 +33,10 @@ configs() ->
     ].
 
 start(Opts) ->
-    lists:foreach(fun(C) -> mod_tros:set_config_from_opt(C, Opts) end,
-                  configs()),
+    lists:foreach(fun({Tag, Config, Default}) ->
+                          wocky_util:set_config_from_opt(
+                            Tag, Config, Default, Opts)
+                  end, configs()),
     tros_req_tracker:start(),
     Dispatch = cowboy_router:compile([{'_', [{'_', tros_francus_http, []}]}]),
     {ok, _} = cowboy:start_http(tros_francus_listener, 100,

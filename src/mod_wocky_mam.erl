@@ -155,13 +155,18 @@ remove_archive_hook(Host, _ArcID, UserJID) ->
 archive_message_hook(_Result, Host, MessID, _UserID,
                 LocJID, RemJID, _SrcJID, Direction, Packet) ->
     PacketBin = exml:to_binary(Packet),
+    UserJID = wocky_util:archive_jid(LocJID),
+    OtherJID = wocky_util:archive_jid(RemJID),
     Row = #{id => MessID,
-            user_jid => archive_jid(LocJID),
-            other_jid => archive_jid(RemJID),
+            user_jid => UserJID,
+            other_jid => OtherJID,
             time => now,
             message => PacketBin,
             outgoing => Direction =:= outgoing},
-    ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row)).
+    ok = wocky_db:insert(Host, message_archive, maybe_add_ttl(Row)),
+    ok = wocky_db:insert(Host, conversation, maybe_add_ttl(Row)).
+
+
 
 %%%===================================================================
 %%% mam_lookup_messages callback
@@ -423,7 +428,8 @@ get_time_from_id(Host, UserJID, undefined, Inclusive) ->
 
 get_time_from_id(Host, UserJID, ID) ->
     wocky_db:select_one(Host, archive_id, time,
-                        #{user_jid => archive_jid(UserJID), id => ID}).
+                        #{user_jid => wocky_util:archive_jid(UserJID),
+                          id => ID}).
 
 find_nth_query_val(UserJID, OtherJID, Index, Max, Direction) ->
     InitialQuery = "SELECT * FROM message_archive WHERE ",
@@ -442,12 +448,12 @@ find_nth_query_val(UserJID, OtherJID, Index, Max, Direction) ->
 
 add_user_jid(UserJID, {Q, V}) ->
     {[Q, " user_jid = ? "],
-     V#{user_jid => archive_jid(UserJID)}}.
+     V#{user_jid => wocky_util:archive_jid(UserJID)}}.
 
 add_other_jid(undefined, {Q, V}) -> {Q, V};
 add_other_jid(OtherJID, {Q, V}) ->
     {[Q, " AND other_jid = ? "],
-     V#{other_jid => archive_jid(OtherJID)}}.
+     V#{other_jid => wocky_util:archive_jid(OtherJID)}}.
 
 add_borders(#mam_borders{after_id = AfterID, before_id = BeforeID,
                          from_id = FromID, to_id = ToID}, {Q, V}) ->
@@ -535,8 +541,6 @@ uuid_fun(">", Time) ->
 uuid_fun("<", Time) ->
     {"minTimeuuid", Time+1}.
 
-archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
-
 index_id(Rows) ->
     #{id := FirstID} = hd(Rows),
     #{id := LastID} = lists:last(Rows),
@@ -580,8 +584,8 @@ continue_paging_query({ok, Result}, Acc) ->
 archive_test_message(Host, MessID, LocJID, RemJID, Dir, Packet, Timestamp) ->
     Q = "INSERT INTO message_archive (id, user_jid, other_jid, time,
          outgoing, message) VALUES (?, ?, ?, minTimeuuid(:time), ?, ?)",
-    V = #{user_jid => archive_jid(LocJID),
-          other_jid => archive_jid(RemJID),
+    V = #{user_jid => wocky_util:archive_jid(LocJID),
+          other_jid => wocky_util:archive_jid(RemJID),
           id => MessID, message => exml:to_binary(Packet),
           time => Timestamp, outgoing => Dir =:= outgoing},
     {ok, void} = wocky_db:query(Host, Q, V, quorum),
