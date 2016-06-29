@@ -21,6 +21,8 @@
 -define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 -define(DEFAULT_PORT, 1025).
 
+-ignore_xref([{get_purpose_access, 2}]).
+
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
     [

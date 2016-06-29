@@ -17,6 +17,8 @@
          get_purpose_access/2
         ]).
 
+-ignore_xref([{get_purpose_access, 2}]).
+
 start(Opts) ->
     Configs = [s3_bucket, s3_access_key_id, s3_secret_key],
     lists:foreach(fun(C) -> extract_config(Opts, C) end, Configs),
