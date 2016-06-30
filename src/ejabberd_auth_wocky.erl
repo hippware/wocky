@@ -36,8 +36,6 @@
          stop/1,
          store_type/1,
          set_password/3,
-         check_password/3,
-         check_password/5,
          authorize/1,
          try_register/3,
          dirty_get_registered_users/0,
@@ -99,13 +97,13 @@ authorize(Creds) ->
     Password  = mongoose_credentials:get(Creds, password),
     Digest    = mongoose_credentials:get(Creds, digest, undefined),
     DigestGen = mongoose_credentials:get(Creds, digest_gen, undefined),
-    Args = if
-               Digest /= undefined andalso DigestGen /= undefined ->
-                   [LUser, LServer, Password, Digest, DigestGen];
-               Digest == undefined orelse DigestGen == undefined ->
-                   [LUser, LServer, Password]
-           end,
-    case erlang:apply(?MODULE, check_password, Args) of
+    R = if
+            Digest /= undefined andalso DigestGen /= undefined ->
+                check_password(LUser, LServer, Password, Digest, DigestGen);
+            Digest == undefined orelse DigestGen == undefined ->
+                check_password(LUser, LServer, Password)
+        end,
+    case R of
         true -> {ok, mongoose_credentials:set(Creds, auth_module, ?MODULE)};
         false -> {error, not_authorized}
     end.
