@@ -10,15 +10,18 @@
 -export([start/1,
          stop/0,
          make_download_response/5,
-         make_upload_response/5,
+         make_upload_response/7,
          make_auth/0,
          get_owner/2,
-         get_metadata/2
+         get_metadata/2,
+         get_purpose_access/2
         ]).
 
 -define(DEFAULT_SCHEME, "https://").
 -define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 -define(DEFAULT_PORT, 1025).
+
+-ignore_xref([{get_purpose_access, 2}]).
 
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
@@ -48,7 +51,7 @@ make_download_response(FromJID, ToJID, OwnerID, FileID,
                        #{<<"name">> := Name}) ->
     {Auth, _User, URL} =
         common_response_data(FromJID, ToJID, OwnerID, FileID),
-    add_request(get, OwnerID, FileID, Auth, 0, #{}),
+    add_request(get, OwnerID, FileID, Auth, 0, <<>>, <<>>, #{}),
     Headers = [{<<"authorization">>, Auth}],
     EncodedFile = http_uri:encode(binary_to_list(Name)),
     RespFields = [
@@ -57,11 +60,12 @@ make_download_response(FromJID, ToJID, OwnerID, FileID,
                  ],
     {Headers, RespFields}.
 
-make_upload_response(FromJID, ToJID, FileID, Size, Metadata =
+make_upload_response(FromJID, ToJID, FileID, Size,
+                     Purpose, Access, Metadata =
                      #{<<"content-type">> := ContentType}) ->
     {Auth, User, URL} =
         common_response_data(FromJID, ToJID, FromJID#jid.luser, FileID),
-    add_request(post, User, FileID, Auth, Size, Metadata),
+    add_request(post, User, FileID, Auth, Size, Purpose, Access, Metadata),
     Headers = [
                {<<"content-type">>, ContentType},
                {<<"authorization">>, Auth}
@@ -86,9 +90,10 @@ common_response_data(FromJID, ToJID, Owner, FileID) ->
 make_auth() ->
     base64:encode(crypto:strong_rand_bytes(48)).
 
-add_request(Method, User, FileID, Auth, Size, Metadata) ->
+add_request(Method, User, FileID, Auth, Size, Purpose, Access, Metadata) ->
     Req = #tros_request{method = Method, user = User, file = FileID,
-                        auth = Auth, size = Size, metadata = Metadata
+                        auth = Auth, size = Size, purpose = Purpose,
+                        access = Access, metadata = Metadata
                        },
     tros_req_tracker:add(Req).
 
@@ -102,23 +107,27 @@ url(Server, User, FileID) ->
        "/users/", User, "/files/", FileID]).
 
 get_owner(Server, FileID) ->
-    case francus:open_read(Server, FileID) of
-        {error, E} ->
-            {error, E};
-        {ok, File} ->
-            OwnerID = francus:owner(File),
-            francus:close(File),
-            {ok, OwnerID}
-    end.
+    get_file_info(Server, FileID, fun francus:owner/1).
 
 get_metadata(Server, FileID) ->
+    get_file_info(Server, FileID, fun francus:metadata/1).
+
+get_purpose_access(Server, FileID) ->
+    get_file_info(Server, FileID,
+                  fun(File) ->
+                          Purpose = francus:purpose(File),
+                          Access = francus:access(File),
+                          {Purpose, Access}
+                  end).
+
+get_file_info(Server, FileID, Function) ->
     case francus:open_read(Server, FileID) of
         {error, E} ->
             {error, E};
         {ok, File} ->
-            Metadata = francus:metadata(File),
+            Info = Function(File),
             francus:close(File),
-            {ok, Metadata}
+            {ok, Info}
     end.
 
 setup_metrics() ->

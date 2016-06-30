@@ -219,7 +219,7 @@ prepare_avatar(UserID, LServer, #{avatar := NewAvatar}) ->
         check_file_location(LServer, FileServer),
         File <- francus:open_read(LServer, FileID),
         check_avatar_owner(UserID, File),
-        check_avatar_purpose(UserID, LServer, File),
+        check_avatar_purpose(File),
         francus:keep(LServer, francus:id(File))
        ]);
 prepare_avatar(_, _, _) -> ok.
@@ -236,10 +236,9 @@ check_avatar_owner(UserID, File) ->
     end.
 
 %% @private
-check_avatar_purpose(UserID, LServer, File) ->
-    UserJID = jid:to_binary(jid:make(UserID, LServer, <<>>)),
-    case francus:metadata(File) of
-        #{<<"purpose">> := <<"avatar:", UserJID/binary>>} ->
+check_avatar_purpose(File) ->
+    case francus:purpose(File) of
+        <<"avatar">> ->
             ok;
         _ ->
             {error, not_avatar_file}

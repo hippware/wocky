@@ -302,5 +302,4 @@ get_element(ParentElement, Name) ->
     exml_query:path(ParentElement, [{element, Name}]).
 
 avatar_purpose() ->
-    <<"avatar:",
-      (jid:to_binary(jid:make(?ALICE, ?LOCAL_CONTEXT, <<>>)))/binary>>.
+    <<"avatar">>.

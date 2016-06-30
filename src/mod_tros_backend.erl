@@ -19,6 +19,8 @@
                                ejabberd:jid(),
                                binary(),
                                integer(),
+                               binary(),
+                               binary(),
                                map()) ->
     {list(), list()}.
 

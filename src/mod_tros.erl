@@ -77,11 +77,12 @@ handle_request(_, _, _) ->
 handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     LServer = FromJID#jid.lserver,
     do([error_m ||
-        Fields <- extract_fields(DR, [<<"id">>], []),
+        Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
         OwnerID <- get_owner(LServer, FileID),
         Metadata <- get_metadata(LServer, FileID),
-        check_download_permissions(FromJID, OwnerID, Metadata),
+        {Purpose, Access} <- get_purpose_access(LServer, FileID),
+        check_download_permissions(FromJID, OwnerID, Purpose, Access),
         {ok, wocky_metrics:inc(mod_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
@@ -89,9 +90,10 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
 handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
     RequiredFields = [<<"filename">>, <<"size">>,
                       <<"mime-type">>, <<"purpose">>],
-    OptionalFields = [<<"width">>, <<"height">>],
+    OptionalFields = [<<"access">>, <<"width">>, <<"height">>],
+    Defaults = #{<<"access">> => <<>>},
     do([error_m ||
-        Fields <- extract_fields(UR, RequiredFields, OptionalFields),
+        Fields <- extract_fields(UR, RequiredFields, OptionalFields, Defaults),
         Size <- check_upload_size(Fields),
         check_upload_type(Fields),
         check_upload_permissions(FromJID, Fields),
@@ -99,8 +101,9 @@ handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
         upload_response(Req, Fields, Size)
        ]).
 
-extract_fields(Req, RequiredFields, OptionalFields) ->
-    Fields = lists:foldl(fun(F, Acc) -> add_field(Req, F, Acc) end, #{},
+extract_fields(Req, RequiredFields, OptionalFields, Defaults) ->
+    Fields = lists:foldl(fun(F, Acc) -> add_field(Req, F, Acc) end,
+                         Defaults,
                          RequiredFields ++ OptionalFields),
     check_fields(Fields, RequiredFields).
 
@@ -149,13 +152,16 @@ check_file_id(ID) when is_binary(ID) ->
     {ok, ID}.
 
 get_owner(LServer, FileID) ->
-   case (backend()):get_owner(LServer, FileID) of
-      {ok, _} = Success -> Success;
-      {error, Error} -> file_retrieval_error(Error)
-   end.
+   get_file_info(LServer, FileID, get_owner).
 
 get_metadata(LServer, FileID) ->
-   case (backend()):get_metadata(LServer, FileID) of
+   get_file_info(LServer, FileID, get_metadata).
+
+get_purpose_access(LServer, FileID) ->
+    get_file_info(LServer, FileID, get_purpose_access).
+
+get_file_info(LServer, FileID, Function) ->
+   case (backend()):Function(LServer, FileID) of
       {ok, _} = Success -> Success;
       {error, Error} -> file_retrieval_error(Error)
    end.
@@ -184,8 +190,8 @@ check_upload_permissions(FromJID, #{<<"purpose">> := Purpose}) ->
         false -> upload_validation_error("Permission denied")
     end.
 
-check_download_permissions(FromJID, OwnerID, Metadata) ->
-    case tros_permissions:can_download(FromJID, OwnerID, Metadata) of
+check_download_permissions(FromJID, OwnerID, Purpose, Access) ->
+    case tros_permissions:can_download(FromJID, OwnerID, Purpose, Access) of
         true ->
             ok;
         {false, Reason} ->
@@ -197,16 +203,16 @@ check_download_permissions(FromJID, OwnerID, Metadata) ->
 
 upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
                 #{<<"mime-type">> := MimeType,
-                  <<"filename">> := Filename,
-                  <<"purpose">> := Purpose},
+                  <<"purpose">> := Purpose,
+                  <<"access">> := Access,
+                  <<"filename">> := Filename},
                 Size) ->
     Metadata = #{<<"content-type">> => MimeType,
-                 <<"name">> => Filename,
-                 <<"purpose">> => Purpose},
+                 <<"name">> => Filename},
     FileID = make_file_id(),
     {Headers, RespFields} =
         (backend()):make_upload_response(FromJID, ToJID, FileID,
-                                         Size, Metadata),
+                                         Size, Purpose, Access, Metadata),
 
 
     FullFields = common_fields(FromJID, FileID) ++ RespFields,

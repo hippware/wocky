@@ -106,18 +106,7 @@ test_avatar_upload_request(Backend) ->
                        test_server_jid(),
                        upload_packet(10000,
                                      "avatar",
-                                     avatar_data(?ALICE)
-                                    )))
-    ]},
-        {"Rejected request when uploading an avatar for someone else", [
-          ?_assertEqual(
-             expected_ul_error_packet("Permission denied", "avatar",
-                                      avatar_data(?BOB), 10000),
-             handle_iq(test_user_jid(?ALICE),
-                       test_server_jid(),
-                       upload_packet(10000,
-                                     "avatar",
-                                     avatar_data(?BOB)
+                                     <<>>
                                     )))
     ]}]}.
 
@@ -141,12 +130,12 @@ test_oversized_upload_request(_Backend) ->
         {"Oversize request", [
           ?_assertEqual(
              expected_ul_error_packet("Invalid size: 10485761", "avatar",
-                                      avatar_data(?ALICE), Size),
+                                      <<>>, Size),
              handle_iq(test_user_jid(?ALICE),
                        test_server_jid(),
                        upload_packet(Size,
                                      "avatar",
-                                     avatar_data(?ALICE)
+                                     <<>>
                                     )))
     ]}]}.
 
@@ -259,15 +248,15 @@ common_packet(Type, Request) ->
         sub_el = Request
        }.
 
-upload_packet(Size, Type, TypeData) ->
-    common_packet(set, upload_request(Size, Type, TypeData)).
+upload_packet(Size, Type, Access) ->
+    common_packet(set, upload_request(Size, Type, Access)).
 
-upload_request(Size, Type, TypeData) ->
+upload_request(Size, Type, Access) ->
     Elements = [{<<"filename">>, ?FILENAME},
                 {<<"size">>, integer_to_binary(Size)},
                 {<<"mime-type">>, <<"image/jpeg">>},
-                {<<"purpose">>, <<(list_to_binary(Type))/binary, ":",
-                                  TypeData/binary>>}
+                {<<"purpose">>, <<(list_to_binary(Type))/binary>>},
+                {<<"access">>, <<Access/binary>>}
                ],
     #xmlel{name = <<"upload-request">>,
            attrs = [{<<"xmlns">>, <<"hippware.com/hxep/http-file">>}],
@@ -284,8 +273,6 @@ download_request(FileID) ->
            attrs = [{<<"xmlns">>, <<"hippware.com/hxep/http-file">>}],
            children = [#xmlel{name = <<"id">>,
                               children = [#xmlcdata{content = FileID}]}]}.
-
-avatar_data(User) -> jid:to_binary(jid:to_bare(test_user_jid(User))).
 
 expected_upload_packet(s3) ->
     <<"<iq id='123456' type='result'><upload><headers>"
@@ -337,13 +324,14 @@ expected_download_packet(francus, FileID) ->
       "/files/", FileID/binary, "/", ?URL_FILENAME/binary, "</url>"
       "<method>GET</method></download></iq>">>.
 
-expected_ul_error_packet(Reason, Type, TypeData, Size) ->
+expected_ul_error_packet(Reason, Type, Access, Size) ->
     <<"<iq id='123456' type='error'><upload-request xmlns='hippware.com/"
       "hxep/http-file'><filename>", ?FILENAME/binary, "</filename><size>",
       (integer_to_binary(Size))/binary, "</size>"
       "<mime-type>image/jpeg</mime-type>"
-      "<purpose>", (list_to_binary(Type))/binary, ":",
-      TypeData/binary, "</purpose></upload-request>"
+      "<purpose>", (list_to_binary(Type))/binary, "</purpose>",
+      "<access>", Access/binary, "</access>",
+      "</upload-request>"
       "<error code='406' type='modify'><not-acceptable "
       "xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
       "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>",

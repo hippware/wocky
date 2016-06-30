@@ -3,17 +3,21 @@
 -module(mod_tros_s3).
 
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky_db_seed.hrl").
 
 -behaviour(mod_tros_backend).
 
 -export([start/1,
          stop/0,
          make_download_response/5,
-         make_upload_response/5,
+         make_upload_response/7,
          make_auth/5,
          get_owner/2,
-         get_metadata/2
+         get_metadata/2,
+         get_purpose_access/2
         ]).
+
+-ignore_xref([{get_purpose_access, 2}]).
 
 start(Opts) ->
     Configs = [s3_bucket, s3_access_key_id, s3_secret_key],
@@ -44,6 +48,7 @@ make_download_response(_FromJID, _ToJID, OwnerID, FileID, _Metadata) ->
     {Headers, RespFields}.
 
 make_upload_response(FromJID, _ToJID, FileID, _Size,
+                     _Purpose, _Access,
                      #{<<"content-type">> := ContentType}) ->
     User = FromJID#jid.luser,
 
@@ -103,3 +108,7 @@ get_owner(_LServer, _FileID) ->
 get_metadata(_LServer, _FileID) ->
     % TODO
     {ok, #{}}.
+
+get_purpose_access(_LServer, _FileID) ->
+    % TODO - placeholder data for testing only.
+    {ok, {<<"message_media">>, <<?BOB/binary, $@, ?LOCAL_CONTEXT/binary>>}}.

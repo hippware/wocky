@@ -305,9 +305,14 @@ table_definition(media) ->
     #table_def{
        name = media,
        columns = [
-           {id, text},         % ID of the file
-           {user, text},       % User ID of the file owner
-           {size, int},            % File size in bytes
+           {id, text},       % ID of the file
+           {user, text},     % User ID of the file owner
+           {size, int},      % File size in bytes
+           {purpose, text},  % Purpose of this file
+           {access, text},   % Comma-separated list of JIDs with access to this
+                             % file. The exact meaning of the field depends on
+                             % the value in the purpose field. See
+                             % tros_permissions.erl
            {metadata, {map, text, text}}, % General purpose metadata field
            {chunks, {list, timeuuid}} % Ordered list of media_data table
                                       % chunks comprising the file
@@ -540,29 +545,29 @@ seed_data(auth_token, Server) ->
     [#{user => ?ALICE, server => Server, resource => ?RESOURCE,
        auth_token => ?TOKEN}];
 seed_data(media, Server) ->
-    AvatarTypeData = jid:to_binary(jid:make(?ALICE, Server, <<>>)),
-    BobAvatarTypeData = jid:to_binary(jid:make(?ALICE, Server, <<>>)),
-    MediaTypeData = jid:to_binary(jid:make(?BOB, Server, <<>>)),
     [#{id => ?AVATAR_FILE, user => ?ALICE, size => byte_size(?AVATAR_DATA),
        chunks => [?AVATAR_CHUNK],
-       metadata => #{<<"purpose">> => <<"avatar:", AvatarTypeData/binary>>,
-                     <<"content-type">> => <<"image/png">>,
+       purpose => <<"avatar">>,
+       access => <<>>,
+       metadata => #{<<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}},
      #{id => ?AVATAR_FILE2, user => ?ALICE, size => byte_size(?AVATAR_DATA2),
        chunks => [?AVATAR_CHUNK2],
-       metadata => #{<<"purpose">> => <<"avatar:", AvatarTypeData/binary>>,
-                     <<"content-type">> => <<"image/png">>,
+       purpose => <<"avatar">>,
+       access => <<>>,
+       metadata => #{<<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}},
      #{id => ?AVATAR_FILE3, user => ?BOB,   size => byte_size(?AVATAR_DATA3),
        chunks => [?AVATAR_CHUNK3],
-       metadata => #{<<"purpose">> => <<"avatar:", BobAvatarTypeData/binary>>,
-                     <<"content-type">> => <<"image/png">>,
+       purpose => <<"avatar">>,
+       access => <<>>,
+       metadata => #{<<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}},
      #{id => ?MEDIA_FILE, user => ?ALICE, size => byte_size(?MEDIA_DATA),
        chunks => [?MEDIA_CHUNK],
-       metadata => #{<<"purpose">> => <<"message_media:",
-                                        MediaTypeData/binary>>,
-                     <<"content-type">> => <<"image/png">>,
+       purpose => <<"message_media">>,
+       access => jid:to_binary(jid:make(?BOB, Server, <<>>)),
+       metadata => #{<<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}}];
 seed_data(media_data, _Server) ->
     [#{chunk_id => ?AVATAR_CHUNK,  file_id => ?AVATAR_FILE,
