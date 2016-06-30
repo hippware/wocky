@@ -177,7 +177,6 @@ check_children([I = #xmlel{name = <<"item">>} | Rest], Count, Index,
     OtherJID = get_other_jid(I),
     ?assertNot(lists:member(OtherJID, SeenOthers)),
     ID = binary_to_integer(get_id(I)),
-    ct:log("BJD ~p ~p", [ID, LastID]),
     ?assert(ID < LastID),
     check_children(Rest, Count, Index, ID, [OtherJID | SeenOthers], [I | Acc]);
 check_children([Set = #xmlel{name = <<"set">>,
