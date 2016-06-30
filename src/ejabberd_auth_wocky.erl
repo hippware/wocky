@@ -88,8 +88,9 @@ set_password(LUser, LServer, Password) ->
             {error, invalid_jid}
     end.
 
+% Taken from ejabberd_auth_internal.erl:
 -spec authorize(mongoose_credentials:t()) -> {ok, mongoose_credentials:t()}
-                                           | {error, any()}.
+                                             | {error, any()}.
 authorize(Creds) ->
     User      = mongoose_credentials:get(Creds, username),
     LUser     = jid:nodeprep(User),
