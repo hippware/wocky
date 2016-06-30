@@ -19,14 +19,14 @@
 
 -export([handle_iq/3]).
 
--define(DEFAULT_COUNT, 20).
+-define(DEFAULT_MAX, 50).
 
 -define(EX_TO_UNDEFINED(F), try F catch _:_ -> undefined end).
 
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(default_max,
-                                   conv_default_max,
-                                   ?DEFAULT_COUNT,
+                                   conv_max,
+                                   ?DEFAULT_MAX,
                                    Opts),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CONVERSATIONS,
                                   ?MODULE, handle_iq, parallel).
@@ -95,7 +95,7 @@ id_to_int(RSM = #rsm_in{id = ID}) ->
     RSM#rsm_in{id = wocky_util:default_bin_to_integer(ID, 0)}.
 
 max_results() ->
-    ejabberd_config:get_local_option(conv_default_max).
+    ejabberd_config:get_local_option(conv_max).
 
 filter_with_rsm(Conversations, #rsm_in{id = undefined, index = undefined,
                                        direction = before, max = C}) ->
