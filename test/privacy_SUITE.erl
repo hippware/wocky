@@ -112,17 +112,21 @@ end_per_testcase(CaseName, Config) ->
 %% Tests
 %%--------------------------------------------------------------------
 
-%% In terms of server response to blocked communication, we strive to implement the following
-%% as defined in XEP-0016:
-%% If someone I block tries to communicate with me, then the following rules apply:
-%%  * For presence stanzas (including notifications, subscriptions, and probes), the server MUST NOT respond and MUST NOT
-%%    return an error.
-%%  * For message stanzas, the server SHOULD return an error, which SHOULD be <service-unavailable/>.
-%%  * For IQ stanzas of type "get" or "set", the server MUST return an error, which SHOULD be <service-unavailable/>. IQ
-%%    stanzas of other types MUST be silently dropped by the server.
+%% In terms of server response to blocked communication, we strive to implement
+%% the following as defined in XEP-0016:
+%% If someone I block tries to communicate with me, then the following rules
+%% apply:
+%%  * For presence stanzas (including notifications, subscriptions, and probes),
+%%  the server MUST NOT respond and MUST NOT return an error.
+%%  * For message stanzas, the server SHOULD return an error, which SHOULD be
+%%  <service-unavailable/>.
+%%  * For IQ stanzas of type "get" or "set", the server MUST return an error,
+%%  which SHOULD be <service-unavailable/>. IQ stanzas of other types MUST be
+%%  silently dropped by the server.
 %% If I want to communicate with someone I block, then:
-%%  * If the user attempts to send an outbound stanza to a contact and that stanza type is blocked, the user's server MUST
-%%    NOT route the stanza to the contact but instead MUST return a <not-acceptable/> error:
+%%  * If the user attempts to send an outbound stanza to a contact and that
+%%  stanza type is blocked, the user's server MUST NOT route the stanza to the
+%%  contact but instead MUST return a <not-acceptable/> error:
 
 
 %% TODO:
@@ -205,7 +209,8 @@ get_nonexistent_list(Config) ->
 get_many_lists(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
 
-        Request = escalus_stanza:privacy_get_lists([<<"public">>, <<"private">>]),
+        Request = escalus_stanza:privacy_get_lists([<<"public">>,
+                                                    <<"private">>]),
         escalus_client:send(Alice, Request),
         Response = escalus_client:wait_for_stanza(Alice),
         escalus_assert:is_error(Response, <<"modify">>, <<"bad-request">>)
@@ -325,7 +330,8 @@ no_default(Config) ->
         end).
 
 set_list(Config) ->
-    escalus:story(Config, [{alice, 3}, {bob, 1}], fun(Alice, Alice2, Alice3, _Bob) ->
+    escalus:story(Config, [{alice, 3}, {bob, 1}],
+                  fun(Alice, Alice2, Alice3, _Bob) ->
 
         privacy_helper:send_set_list(Alice, <<"deny_bob">>),
 
@@ -391,14 +397,16 @@ block_jid_message(Config) ->
         privacy_helper:set_and_activate(Alice, <<"deny_bob_message">>),
 
         %% Alice should NOT receive message, while Bob gets error message
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice,
+                                                        <<"Hi, Alice!">>)),
         privacy_helper:gets_error(Bob, <<"service-unavailable">>),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Alice),
 
-        %% now Alice try to send a msg to Bob, whom she had blocked, and gets error
-        %% and Bob gets nothing
-        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi, Bobbb!">>)),
+        %% now Alice try to send a msg to Bob, whom she had blocked,
+        %% and gets error and Bob gets nothing
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob,
+                                                          <<"Hi, Bobbb!">>)),
         privacy_helper:gets_error(Alice, <<"not-acceptable">>),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Bob)
@@ -420,7 +428,9 @@ block_group_message(Config) ->
         privacy_helper:set_and_activate(Alice, <<"deny_group_message">>),
 
         %% Alice should NOT receive message
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, blocked group!">>)),
+        escalus_client:send(Bob,
+                            escalus_stanza:chat_to(Alice,
+                                                   <<"Hi, blocked group!">>)),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Alice),
         privacy_helper:gets_error(Bob, <<"service-unavailable">>)
@@ -440,7 +450,8 @@ block_subscription_message(Config) ->
             escalus_stanza:presence_direct(bob, <<"unsubscribe">>)),
 
         %% set the list on server and make it active
-        privacy_helper:set_and_activate(Alice, <<"deny_unsubscribed_message">>),
+        privacy_helper:set_and_activate(Alice,
+                                        <<"deny_unsubscribed_message">>),
 
         %% Alice should NOT receive message
         escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi!">>)),
@@ -453,14 +464,18 @@ block_subscription_message(Config) ->
 allow_subscription_to_from_message(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
         %% deny all message but not from subscribed "to"
-        privacy_helper:set_and_activate(Alice, <<"deny_all_message_but_subscription_to">>),
+        privacy_helper:set_and_activate(
+          Alice, <<"deny_all_message_but_subscription_to">>),
 
         %% deny all message but not from subscribed "from"
-        privacy_helper:set_and_activate(Bob, <<"deny_all_message_but_subscription_from">>),
+        privacy_helper:set_and_activate(
+          Bob, <<"deny_all_message_but_subscription_from">>),
 
         %% Bob and Alice cannot sent to each other now
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice XYZ!">>)),
-        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi, Bob XYZ!">>)),
+        escalus_client:send(
+          Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice XYZ!">>)),
+        escalus_client:send(
+          Alice, escalus_stanza:chat_to(Bob, <<"Hi, Bob XYZ!">>)),
 
         ct:sleep(?SLEEP_TIME),
         %% they received just rejection msgs
@@ -471,23 +486,27 @@ allow_subscription_to_from_message(Config) ->
 
         %% Alice subscribes to Bob
         escalus_client:send(Alice,
-                            escalus_stanza:presence_direct(bob, <<"subscribe">>)),
+                            escalus_stanza:presence_direct(
+                              bob, <<"subscribe">>)),
         escalus_client:wait_for_stanza(Alice),
         escalus_client:wait_for_stanza(Bob),
 
         %% Bob accepts Alice
-        escalus_client:send(Bob, escalus_stanza:presence_direct(alice, <<"subscribed">>)),
+        escalus_client:send(Bob, escalus_stanza:presence_direct(
+                                   alice, <<"subscribed">>)),
         escalus_client:wait_for_stanza(Bob),
         escalus_client:wait_for_stanzas(Alice, 3),
 
         %% Now Alice is subscirbed "to" Bob
         %% And Bob is subscribed "from" Alice
 
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice XYZ!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(
+                                   Alice, <<"Hi, Alice XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Alice XYZ!">>,
             escalus_client:wait_for_stanza(Alice)),
 
-        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi, Bob XYZ!">>)),
+        escalus_client:send(Alice, escalus_stanza:chat_to(
+                                     Bob, <<"Hi, Bob XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Bob XYZ!">>,
             escalus_client:wait_for_stanza(Bob))
 
@@ -504,15 +523,19 @@ allow_subscription_both_message(Config) ->
         escalus_client:wait_for_stanza(Alice),
         escalus_client:wait_for_stanza(Bob),
         %% deny all message but not from subscribed "to"
-        privacy_helper:set_and_activate(Alice, <<"deny_all_message_but_subscription_both">>),
+        privacy_helper:set_and_activate(
+          Alice, <<"deny_all_message_but_subscription_both">>),
 
         %% deny all message but not from subscribed "from"
-        privacy_helper:set_and_activate(Bob, <<"deny_all_message_but_subscription_both">>),
+        privacy_helper:set_and_activate(
+          Bob, <<"deny_all_message_but_subscription_both">>),
 
         %% Bob and Alice cannot sent to each other now
         %% Even though they are in subscription "to" and "from" respectively
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice XYZ!">>)),
-        escalus_client:send(Alice, escalus_stanza:chat_to(bob, <<"Hi, Bob XYZ!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(
+                                   Alice, <<"Hi, Alice XYZ!">>)),
+        escalus_client:send(Alice, escalus_stanza:chat_to(
+                                     bob, <<"Hi, Bob XYZ!">>)),
 
         ct:sleep(?SLEEP_TIME),
         privacy_helper:gets_error(Alice, <<"not-acceptable">>),
@@ -522,21 +545,25 @@ allow_subscription_both_message(Config) ->
 
         %% Alice subscribes to Bob
         escalus_client:send(Bob,
-                            escalus_stanza:presence_direct(alice, <<"subscribe">>)),
+                            escalus_stanza:presence_direct(
+                              alice, <<"subscribe">>)),
         escalus_client:wait_for_stanza(Alice),
         escalus_client:wait_for_stanza(Bob),
 
         %% Bob accepts Alice
-        escalus_client:send(Alice, escalus_stanza:presence_direct(bob, <<"subscribed">>)),
+        escalus_client:send(Alice, escalus_stanza:presence_direct(
+                                     bob, <<"subscribed">>)),
         escalus_client:wait_for_stanzas(Alice, 2),
         escalus_client:wait_for_stanzas(Bob, 3),
 
         %% Now their subscription is in state "both"
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice XYZ!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(
+                                   Alice, <<"Hi, Alice XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Alice XYZ!">>,
             escalus_client:wait_for_stanza(Alice)),
 
-        escalus_client:send(Alice, escalus_stanza:chat_to(bob, <<"Hi, Bob XYZ!">>)),
+        escalus_client:send(Alice, escalus_stanza:chat_to(
+                                     bob, <<"Hi, Bob XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Bob XYZ!">>,
             escalus_client:wait_for_stanza(Bob))
 
@@ -610,7 +637,8 @@ block_jid_presence_out(Config) ->
         end).
 
 version_iq(Type, From, To) ->
-    Req = escalus_stanza:iq(Type, [escalus_stanza:query_el(<<"jabber:iq:version">>, [])]),
+    Req = escalus_stanza:iq(
+            Type, [escalus_stanza:query_el(<<"jabber:iq:version">>, [])]),
     Req1 = escalus_stanza:to(Req, To),
     Req2= escalus_stanza:from(Req1, From),
     Req2.
@@ -623,12 +651,14 @@ block_jid_iq(Config) ->
         escalus_client:send(Alice,
             escalus_stanza:privacy_activate(<<"deny_localhost_iq">>)),
         timer:sleep(500), %% we must let it sink in
-        %% bob queries for version and gets an error, Alice doesn't receive the query
+        %% bob queries for version and gets an error, Alice doesn't receive
+        %% the query
         escalus_client:send(Bob, version_iq(<<"get">>, Bob, Alice)),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Alice),
         privacy_helper:gets_error(Bob, <<"service-unavailable">>),
-        %% this stanza does not make much sense, but is routed and rejected correctly
+        %% this stanza does not make much sense, but is routed and rejected
+        %% correctly
         escalus_client:send(Bob, version_iq(<<"set">>, Bob, Alice)),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Alice),
@@ -700,7 +730,8 @@ block_jid_message_but_not_presence(Config) ->
         privacy_helper:set_and_activate(Alice, <<"deny_bob_message">>),
 
         %% Alice should NOT receive message
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi, Alice!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(
+                                   Alice, <<"Hi, Alice!">>)),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Alice),
         privacy_helper:gets_error(Bob, <<"service-unavailable">>),
