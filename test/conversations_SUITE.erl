@@ -128,10 +128,10 @@ all_no_set(Config) ->
 %% Helpers
 %%--------------------------------------------------------------------
 
-query_stanza(Set) ->
+query_stanza(Children) ->
     Query = #xmlel{name = <<"query">>,
                    attrs = [{<<"xmlns">>, ?NS_CONVERSATIONS}],
-                   children = Set},
+                   children = Children},
     #xmlel{name = <<"iq">>,
            attrs = [{<<"type">>, <<"set">>},
                     {<<"id">>, integer_to_binary(rand:uniform(10000))}],
@@ -142,7 +142,7 @@ query_stanza(MaxCount, StartIndex, StartID, Direction) ->
                  attrs = [{<<"xmlns">>, ?NS_RSM}],
                  children = defined([max(MaxCount), index(StartIndex),
                                      id(StartID, Direction)])},
-    query_stanza(Set).
+    query_stanza([Set]).
 
 defined(L) ->
     [E || E <- L, E =/= undefined].
