@@ -36,7 +36,8 @@ before_all() ->
     ets:new(config, [named_table, set, public, {keypos, 2}]),
     ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
     ok = wocky_app:start(),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [message_archive]),
+    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [message_archive,
+                                                       conversation]),
     ok.
 
 after_all(_) ->
@@ -45,7 +46,10 @@ after_all(_) ->
     ok = wocky_app:stop().
 
 before_each() ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive]),
+    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive,
+                                                     conversation
+                                                    ]),
+    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, conversation),
     {ok, Rows} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, message_archive),
     Rows.
 

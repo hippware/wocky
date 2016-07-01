@@ -4,8 +4,15 @@
 
 -export([ensure_wocky_is_running/0]).
 
--export([expect_iq_success/2, expect_iq_error/2, expect_friendship_presence/2,
-         subscribe/2, check_subscription_stanzas/2, add_sample_contact/2,
+-export([expect_iq_success/2,
+         expect_iq_error/2,
+         expect_iq_success_u/2,
+         expect_iq_error_u/2,
+
+         expect_friendship_presence/2,
+         subscribe/2,
+         check_subscription_stanzas/2,
+         add_sample_contact/2,
          meck_metrics/0]).
 
 ensure_wocky_is_running() ->
@@ -30,24 +37,33 @@ app_is_running(Applications, Name) ->
         false -> false
     end.
 
+expect_iq_success_u(Stanza, User) ->
+    expect_something(add_to_u(Stanza, User), User, is_iq_result).
+
+expect_iq_error_u(Stanza, User) ->
+    expect_something(add_to_s(Stanza, User), User, is_iq_error).
+
+add_to_u(Stanza, User) ->
+    escalus_stanza:to(Stanza,
+      escalus_client:short_jid(User)).
 
 expect_iq_success(Stanza, User) ->
-    expect_something(Stanza, User, is_iq_result).
+    expect_something(add_to_s(Stanza, User), User, is_iq_result).
 
 expect_iq_error(Stanza, User) ->
-    expect_something(Stanza, User, is_iq_error).
+    expect_something(add_to_s(Stanza, User), User, is_iq_error).
 
 expect_something(Stanza, User, Expect) ->
-    FinalStanza = add_to(Stanza, User),
-    ct:log("Sending stanza: ~p", [FinalStanza]),
-    ResultStanza = escalus:send_and_wait(User, FinalStanza),
+    ct:log("Sending stanza: ~p", [Stanza]),
+    ResultStanza = escalus:send_and_wait(User, Stanza),
     ct:log("Result stanza: ~p", [ResultStanza]),
     escalus:assert(Expect, ResultStanza),
     ResultStanza.
 
-add_to(Stanza, User) ->
+add_to_s(Stanza, User) ->
     escalus_stanza:to(Stanza,
       escalus_client:server(User)).
+
 
 expect_friendship_presence(User1, User2) ->
     lists:foreach(fun(U) ->

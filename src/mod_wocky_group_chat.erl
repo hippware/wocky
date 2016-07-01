@@ -138,7 +138,7 @@ msg_error_response(From, E, Orig) ->
 handle_iq(From, To, IQ) ->
     case handle_iq_type(From, To, IQ) of
         {ok, ResponseIQ} -> ResponseIQ;
-        {error, Error} -> make_error_iq_response(IQ, Error)
+        {error, Error} -> wocky_util:make_error_iq_response(IQ, Error)
     end.
 
 handle_iq_type(From, To, IQ = #iq{type = get,
@@ -455,10 +455,6 @@ find_group_node_val(Binding, Attrs) ->
 
 check_node(<<?GROUP_CHAT_RESOURCE_PREFIX, Group/binary>>) -> {ok, Group};
 check_node(_) -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid node">>)}.
-
-make_error_iq_response(IQ, ErrStanza) ->
-    ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
-    IQ#iq{type = error, sub_el = ErrStanza}.
 
 setup_metrics() ->
     Metrics = [mod_group_chat_messages,

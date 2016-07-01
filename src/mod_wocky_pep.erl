@@ -67,7 +67,7 @@ unregister_handler(Namespace, Module) ->
 handle_iq(From, _To, IQ) ->
     case handle_iq_type(From, IQ) of
         {ok, ResponseIQ} -> ResponseIQ;
-        {error, Error} -> make_error_iq_response(IQ, Error)
+        {error, Error} -> wocky_util:make_error_iq_response(IQ, Error)
     end.
 
 handle_iq_type(From, IQ = #iq{type = Type,
@@ -179,11 +179,3 @@ publish_response(IQ, Node) ->
                                 children = [#xmlel{name = <<"publish">>,
                                                    attrs = [{<<"node">>, Node}]
                                                   }]}]}}.
-
-%%%===================================================================
-%%% Common helpers
-%%%===================================================================
-
-make_error_iq_response(IQ, ErrStanza) ->
-    ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
-    IQ#iq{type = error, sub_el = ErrStanza}.

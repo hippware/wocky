@@ -162,6 +162,7 @@ keyspace_tables(_) -> [
     media,
     media_data,
     message_archive,
+    conversation,
     auth_token,
     privacy,
     privacy_item,
@@ -335,16 +336,16 @@ table_definition(media_data) ->
 table_definition(message_archive) ->
     #table_def{
        name = message_archive,
-       columns = [
-           {id, varint}, % IDs are 64-bit unsigned
-           {user_jid, text},
-           {other_jid, text},
-           {time, timeuuid},
-           {outgoing, boolean},
-           {message, blob}
-       ],
+       columns = message_archive_columns(),
        primary_key = [user_jid, time],
        order_by = [{time, asc}]
+    };
+
+table_definition(conversation) ->
+    #table_def{
+       name = conversation,
+       columns = message_archive_columns(),
+       primary_key = [user_jid, other_jid]
     };
 
 %% Tokens for authenticating individual resources
@@ -459,11 +460,22 @@ table_views(session) -> [
     {user_sessions, all, [jid_user, jid_resource, sid], []}
 ];
 table_views(message_archive) -> [
+    % Lookup message by ID
     {archive_id, [id, user_jid, other_jid, time],
      [user_jid, id, time], []}
 ];
 
 table_views(_) -> [].
+
+message_archive_columns() ->
+    [
+     {id, varint}, % IDs are 64-bit unsigned
+     {user_jid, text},
+     {other_jid, text},
+     {time, timeuuid},
+     {outgoing, boolean},
+     {message, blob}
+    ].
 
 
 %%====================================================================
@@ -537,8 +549,13 @@ seed_data(roster, Server) ->
     [I#{user => ?ALICE, server => Server, groups => [<<"friends">>]}
      || I <- Items];
 seed_data(message_archive, _Server) ->
-    Rows = [random_message(ID, archive_users()) || ID <- lists:seq(1, 300)],
+    Rows = random_message_history(),
     Q = "INSERT INTO message_archive (id, time, user_jid, other_jid,
+         outgoing, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
+    {Q, Rows};
+seed_data(conversation, _Server) ->
+    Rows = random_conversation_list(),
+    Q = "INSERT INTO conversation (id, time, user_jid, other_jid,
          outgoing, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
     {Q, Rows};
 seed_data(auth_token, Server) ->
@@ -705,10 +722,30 @@ ts_to_ttl(TS) ->
     wocky_db:expire_to_ttl(wocky_db:timestamp_to_now(TS * 1000)).
 
 archive_users() ->
-    [<<"bob@localhost">>,
-     <<"alice@localhost">>,
-     <<"karen@localhost">>
-    ].
+    [jid:to_binary(J) ||
+     J <- [
+           ?ALICE_JID,
+           ?BOB_JID,
+           ?CAROL_JID,
+           ?KAREN_JID,
+           ?ROBERT_JID
+          ]].
+
+random_conversation_list() ->
+    Messages = sort_by_time(random_message_history()),
+    unique_pairs(Messages, [], []).
+
+unique_pairs([], _, Acc) -> Acc;
+unique_pairs([M = #{user_jid := U, other_jid := O} | Rest], Pairs, Acc) ->
+    Pair = {U, O},
+    case lists:member(Pair, Pairs) of
+        true -> unique_pairs(Rest, Pairs, Acc);
+        false -> unique_pairs(Rest, [Pair | Pairs], [M | Acc])
+    end.
+
+random_message_history() ->
+    _ = rand:seed(exsplus, {1, 2, 3}),
+    [random_message(ID, archive_users()) || ID <- lists:seq(1, 300)].
 
 random_message(ID, Users) ->
     From = lists:nth(rand:uniform(length(Users)), Users),
@@ -725,3 +762,10 @@ archive_row(ID, From, To) ->
       message => msg_xml_packet(<<To/binary,
                                   (integer_to_binary(ID))/binary>>)
      }.
+
+sort_by_time(ArchiveRows) ->
+    lists:sort(fun sort_by_time/2, ArchiveRows).
+
+% Sorts newest first
+sort_by_time(#{time := T1}, #{time := T2}) ->
+    T1 > T2.

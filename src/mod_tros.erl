@@ -10,8 +10,7 @@
 -export([
    start/2,
    stop/1,
-   handle_iq/3,
-   set_config_from_opt/2
+   handle_iq/3
         ]).
 
 -ifdef(TEST).
@@ -44,7 +43,10 @@ configs() ->
     ].
 
 start(Host, Opts) ->
-    lists:foreach(fun(C) -> set_config_from_opt(C, Opts) end, configs()),
+    lists:foreach(fun({Tag, Config, Default}) ->
+                          wocky_util:set_config_from_opt(
+                            Tag, Config, Default, Opts)
+                  end, configs()),
     (backend()):start(Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?TROS_NS,
                                   ?MODULE, handle_iq, parallel),
@@ -251,11 +253,6 @@ to_header_element({Name, Value}) ->
 
 to_xmlel({Name, Content}) ->
     #xmlel{name = Name, children = [#xmlcdata{content = Content}]}.
-
-set_config_from_opt({CfgName, EJDName, Default}, Opts) ->
-    Val = proplists:get_value(CfgName, Opts, Default),
-    {atomic, _} = ejabberd_config:add_local_option(EJDName, Val),
-    ok.
 
 backend() ->
     list_to_atom("mod_tros_" ++

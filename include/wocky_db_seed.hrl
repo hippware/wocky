@@ -40,6 +40,7 @@
 -define(BOB_JID,   jid:make(?BOB,   ?LOCAL_CONTEXT, <<>>)).
 -define(CAROL_JID, jid:make(?CAROL, ?LOCAL_CONTEXT, <<>>)).
 -define(KAREN_JID, jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)).
+-define(ROBERT_JID,jid:make(?ROBERT,?LOCAL_CONTEXT, <<>>)).
 -define(SERVER_JID,jid:make(<<>>,   ?LOCAL_CONTEXT, <<>>)).
 
 -define(AVATAR_FILE,  <<"ee880476-e712-11e5-990d-08002719e96e">>).
