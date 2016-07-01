@@ -23,6 +23,9 @@
 
 -export_type([hook/0]).
 
+% Not used externally right now, but we want it available:
+-ignore_xref([{safe_bin_to_integer, 1}]).
+
 -type hook() :: {Hook :: atom(), Callback :: atom()}.
 
 %% @doc Register a set of hooks with ejabberd's hook system
