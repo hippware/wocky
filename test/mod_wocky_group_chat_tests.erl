@@ -11,7 +11,8 @@
                                add_participant/2,
                                remove_participant/2,
                                get_info/2,
-                               handle_packet/4
+                               handle_packet/4,
+                               is_participant/2
                               ]).
 
 -define(ID, <<"123456">>).
@@ -32,6 +33,7 @@ mod_wocky_group_chat_test_() -> {
     test_remove_participant(),
     test_get_info(),
     test_handle_packet(),
+    test_is_participant(),
     test_meck_validate()
   ]
  }.
@@ -68,11 +70,14 @@ after_all(_) ->
 
 test_new_chat() ->
     { "new_chat", [
-      { "creates a new chat", [
+      { "creates a new chat",
+        setup,
+        fun() -> wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [group_chat]) end,
+        fun(_) -> wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [group_chat]) end,
+        [
         ?_assertMatch({ok, ?SUCCESS_IQ},
                       new_chat(?ALICE_JID, ?SERVER_JID, create_iq())),
-        ?_assertMatch([#{owner := ?ALICE,
-                         title := ?CHAT_TITLE}],
+        ?_assertMatch([#{owner := ?ALICE, title := ?CHAT_TITLE}],
                       wocky_db:select(?LOCAL_CONTEXT, group_chat, all, #{})),
         ?_assertEqual(lists:sort([jid:to_binary(M)
                                   || M <- [?ALICE_JID, ?BOB_JID, ?CAROL_JID]]),
@@ -127,12 +132,12 @@ test_add_participant() ->
         ?_assertMatch({ok, ?SUCCESS_IQ},
                       add_participant(?ALICE_JID,
                                       add_iq(jid:to_binary(?KAREN_JID),
-                                             get_group_id()))),
+                                             ?GROUP_CHAT))),
         ?_assert(lists:member(jid:to_binary(?KAREN_JID),
                               wocky_db:select_one(?LOCAL_CONTEXT,
                                                   group_chat,
                                                   participants, #{}))),
-        ?_assertEqual(4, length(
+        ?_assertEqual(3, length(
                               wocky_db:select_one(?LOCAL_CONTEXT,
                                                   group_chat,
                                                   participants, #{})))
@@ -159,19 +164,19 @@ test_add_participant() ->
         ?_assertMatch({error, ?ERR_STANZA},
                       add_participant(?BOB_JID,
                                       add_iq(jid:to_binary(?KAREN_JID),
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]},
       { "fails on invalid participant", [
         ?_assertMatch({error, ?ERR_STANZA},
                       add_participant(?ALICE_JID,
                                       add_iq(<<"@@#@@##@">>,
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]},
       { "fails on empty participant", [
         ?_assertMatch({error, ?ERR_STANZA},
                       add_participant(?ALICE_JID,
                                       add_iq(missing,
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]}
     ]}.
 
@@ -181,12 +186,12 @@ test_remove_participant() ->
         ?_assertMatch({ok, ?SUCCESS_IQ},
                       remove_participant(?ALICE_JID,
                                       remove_iq(jid:to_binary(?BOB_JID),
-                                                get_group_id()))),
+                                                ?GROUP_CHAT))),
         ?_assertNot(lists:member(jid:to_binary(?BOB_JID),
                               wocky_db:select_one(?LOCAL_CONTEXT,
                                                   group_chat,
                                                   participants, #{}))),
-        ?_assertEqual(3, length(
+        ?_assertEqual(2, length(
                               wocky_db:select_one(?LOCAL_CONTEXT,
                                                   group_chat,
                                                   participants, #{})))
@@ -213,25 +218,25 @@ test_remove_participant() ->
         ?_assertMatch({error, ?ERR_STANZA},
                       remove_participant(?BOB_JID,
                                       remove_iq(jid:to_binary(?KAREN_JID),
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]},
       { "fails on invalid participant", [
         ?_assertMatch({error, ?ERR_STANZA},
                       remove_participant(?ALICE_JID,
                                       remove_iq(<<"@@#@@##@">>,
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]},
       { "fails on non-participant", [
         ?_assertMatch({error, ?ERR_STANZA},
                       remove_participant(?ALICE_JID,
                                       remove_iq(jid:to_binary(?BOB_JID),
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]},
       { "fails on empty participant", [
         ?_assertMatch({error, ?ERR_STANZA},
                       remove_participant(?ALICE_JID,
                                       remove_iq(missing,
-                                             get_group_id())))
+                                             ?GROUP_CHAT)))
       ]}
     ]}.
 
@@ -239,13 +244,13 @@ test_get_info() ->
     { "get_info", [
       { "gets info on a chat", [
         ?_assertMatch({ok, ?SUCCESS_IQ},
-                      get_info(?ALICE_JID, get_info_iq(get_group_id()))),
+                      get_info(?ALICE_JID, get_info_iq(?GROUP_CHAT))),
         ?_assertMatch({ok, ?SUCCESS_IQ},
-                      get_info(?CAROL_JID, get_info_iq(get_group_id())))
+                      get_info(?KAREN_JID, get_info_iq(?GROUP_CHAT)))
       ]},
       { "fails for non-participant", [
         ?_assertMatch({error, ?ERR_STANZA},
-                      get_info(?BOB_JID, get_info_iq(get_group_id())))
+                      get_info(?BOB_JID, get_info_iq(?GROUP_CHAT)))
       ]},
       { "fails for invalid group", [
         ?_assertMatch({error, ?ERR_STANZA},
@@ -264,13 +269,30 @@ test_handle_packet() ->
       { "accepts a valid group message", [
         ?_assertEqual(ok,
                       handle_packet(?ALICE_JID, ?LOCAL_CONTEXT,
-                                    get_group_id(),
+                                    ?GROUP_CHAT,
                                     msg_packet(jid:to_binary(?ALICE_JID),
-                                               get_group_id()))),
+                                               ?GROUP_CHAT))),
         ?_assertEqual(ok, handle_packet(?BOB_JID, ?LOCAL_CONTEXT,
-                                        get_group_id(),
+                                        ?GROUP_CHAT,
                                         msg_packet(jid:to_binary(?BOB_JID),
-                                                   get_group_id())))
+                                                   ?GROUP_CHAT)))
+      ]}
+    ]}.
+
+test_is_participant() ->
+    { "is_participant", [
+      { "Returns true when a member of the specified chat is supplied", [
+        ?_assert(is_participant(?ALICE_JID, ?GROUP_CHAT_JID)),
+        ?_assert(is_participant(?KAREN_JID, ?GROUP_CHAT_JID))
+      ]},
+      { "Returns false for non- and removed members", [
+        ?_assertNot(is_participant(?BOB_JID, ?GROUP_CHAT_JID)),
+        ?_assertNot(is_participant(?CAROL_JID, ?GROUP_CHAT_JID))
+      ]},
+      { "Returns false for non-existant groups", [
+        ?_assertNot(is_participant(?ALICE_JID, jid:make(
+                                                 wocky_db:create_id(),
+                                                 ?LOCAL_CONTEXT, <<>>)))
       ]}
     ]}.
 
@@ -315,9 +337,6 @@ participant(garbage) ->
 participant(P) ->
     #xmlel{name = <<"participant">>,
            children = [#xmlcdata{content = P}]}.
-
-get_group_id() ->
-    wocky_db:select_one(?LOCAL_CONTEXT, group_chat, id, #{}).
 
 remove_iq(User, GroupID) ->
     change_iq(<<"remove">>, User, GroupID).

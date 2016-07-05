@@ -32,6 +32,7 @@
 
 all() ->
     [send_messages,
+     block_messages,
      add_user,
      remove_user,
      get_info,
@@ -85,6 +86,25 @@ send_messages(Config) ->
         escalus:send(Bob, MsgStanza2),
         lists:foreach(fun(U) -> wait_for_msg(U, ?BOB_B_JID, Msg2) end,
                       [Alice, Carol]),
+        timer:sleep(500),
+        lists:foreach(fun(U) -> assert_no_stanzas(U) end,
+                      [Alice, Bob, Carol])
+      end).
+
+block_messages(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        GroupID = start_chat(Alice, [Bob]),
+        Msg = <<"It's goodnight from me">>,
+        MsgStanza = chat_stanza(?CAROL_B_JID, GroupID, Msg),
+        escalus:send(Carol, MsgStanza),
+
+        ResponseStanza = escalus:wait_for_stanza(Carol),
+        ct:log("BJD ~p", [ResponseStanza]),
+        escalus:assert(is_error, [<<"modify">>, <<"bad-request">>],
+                       ResponseStanza),
+
+        % Message sent by non-participant should never be seen by participants
         timer:sleep(500),
         lists:foreach(fun(U) -> assert_no_stanzas(U) end,
                       [Alice, Bob, Carol])

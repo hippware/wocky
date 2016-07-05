@@ -186,8 +186,9 @@ check_upload_size(#{<<"size">> := SizeBin}) ->
 % TODO: configure a list of valid upload types
 check_upload_type(_Fields) -> ok.
 
-check_upload_permissions(FromJID, #{<<"purpose">> := Purpose}) ->
-    case tros_permissions:can_upload(FromJID, Purpose) of
+check_upload_permissions(FromJID, #{<<"purpose">> := Purpose,
+                                    <<"access">> := Access}) ->
+    case tros_permissions:can_upload(FromJID, Purpose, Access) of
         true -> ok;
         false -> upload_validation_error("Permission denied")
     end.
