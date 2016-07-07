@@ -5,14 +5,11 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky_db_seed.hrl").
 
--compile({parse_transform, fun_chain}).
-
 -import(ejabberd_auth_wocky, [
     dirty_get_registered_users/0,
     get_vh_registered_users/1, get_vh_registered_users/2,
     get_vh_registered_users_number/1, get_vh_registered_users_number/2,
-    store_type/1, authorize/1,
-    check_password/5, check_password/3, set_password/3,
+    store_type/1, check_password/5, check_password/3, set_password/3,
     get_password/2, get_password_s/2, does_user_exist/2,
     remove_user/2, remove_user/3, try_register/3
 ]).
@@ -34,19 +31,6 @@ do_mk_digest(U, _P, true) ->
     {ok, {scram, Key, _, _, _}} = scram:deserialize(SerializedScram),
     base64:decode(Key).
 
-mk_creds(User, LServer, Password) ->
-    fun_chain:first(
-      mongoose_credentials:new(LServer),
-      mongoose_credentials:set(username, User),
-      mongoose_credentials:set(password, Password)
-    ).
-
-mk_creds(User, LServer, Password, Digest, DigestGen) ->
-    fun_chain:first(
-      mk_creds(User, LServer, Password),
-      mongoose_credentials:set(digest, Digest),
-      mongoose_credentials:set(digest_gen, DigestGen)
-    ).
 
 ejabberd_auth_wocky_with_scram_test_() -> {
   "ejabberd_auth_wocky with scram",
@@ -54,7 +38,6 @@ ejabberd_auth_wocky_with_scram_test_() -> {
   {foreach, fun before_each/0, fun after_each/1, [
     {inparallel, [
       test_store_type_with_scram(),
-      test_authorize(),
       test_check_password_with_digest(),
       test_check_password(),
       test_get_password_with_scram(),
@@ -75,7 +58,6 @@ ejabberd_auth_wocky_without_scram_test_() -> {
   {foreach, fun before_each/0, fun after_each/1, [
     {inparallel, [
       test_store_type_without_scram(),
-      test_authorize(),
       test_check_password_with_digest(),
       test_check_password(),
       test_get_password_without_scram(),
@@ -149,27 +131,6 @@ test_store_type_with_scram() ->
 test_store_type_without_scram() ->
   { "store_type/1 without scram returns 'plain'", [
     ?_assertEqual(plain, store_type(?SERVER))
-  ]}.
-
-test_authorize() ->
-  DigestGen = fun(X) -> X end,
-  { "authorize/1", [
-    {
-      "calls check_password/3 when digest and digest_gen are not supplied", [
-      ?_assertMatch({ok, _}, authorize(mk_creds(?USER, ?SERVER, ?PASS))),
-      ?_assertEqual({error, not_authorized},
-                    authorize(mk_creds(?USER, ?SERVER, <<"fff">>)))
-    ]},
-    {
-      "calls check_password/5 when digest and digest_gen are supplied", [
-      ?_assertMatch({ok, _}, authorize(mk_creds(?USER, ?SERVER, ?PASS,
-                                               mk_digest(?USER, ?PASS),
-                                               DigestGen))),
-      ?_assertEqual({error, not_authorized},
-                    authorize(mk_creds(?USER, ?SERVER, <<"abc">>,
-                                       <<"fff">>,
-                                       DigestGen)))
-    ]}
   ]}.
 
 test_check_password_with_digest() ->
