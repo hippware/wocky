@@ -1,4 +1,0 @@
-[submodule "ext/MongooseIM"]
-	path = ext/MongooseIM
-        url = https://github.com/esl/MongooseIM.git
-	ignore = dirty
