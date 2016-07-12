@@ -39,7 +39,9 @@
 -export([start/2, stop/1]).
 
 %% cyrsasl handlers
--export([mech_new/2, mech_step/2]).
+-export([mech_new/4, mech_step/2]).
+
+-record(state, {check_password}).
 
 start(_Host, Opts) ->
     Providers = proplists:get_value(auth_providers, Opts),
@@ -58,31 +60,29 @@ stop(_Host) ->
     ok.
 
 -spec mech_new(Host :: ejabberd:server(),
-               Creds :: mongoose_credentials:t()
-              ) -> {ok, tuple()}.
-mech_new(_Host, Creds) ->
-    {ok, Creds}.
+               GetPassword :: cyrsasl:get_password_fun(),
+               CheckPassword :: cyrsasl:check_password_fun(),
+               CheckPasswordDigest :: cyrsasl:check_pass_digest_fun()
+               ) -> {ok, tuple()}.
+mech_new(_Host, _GetPassword, CheckPassword, _CheckPasswordDigest) ->
+    {ok, #state{check_password = CheckPassword}}.
 
 -spec mech_step(State :: tuple(),
                 ClientIn :: binary()
-               ) -> {ok, mongoose_credentials:t()} | {error, binary()}.
-mech_step(Creds, ClientIn) ->
+               ) -> {ok, proplists:proplist()} | {error, binary()}.
+mech_step(State, ClientIn) ->
     case prepare(ClientIn) of
         [_AuthzId, <<"register">>, <<"$J$", JSON/binary>>] ->
             do_registration(JSON);
         [AuthzId, User, Password] ->
-            Request = mongoose_credentials:extend(Creds,
-                                                  [{username, User},
-                                                   {password, Password},
-                                                   {authzid, AuthzId}]),
-            case ejabberd_auth:authorize(Request) of
-                {ok, Result} ->
-                    {ok, Result};
-                {error, not_authorized} ->
-                    {error, <<"not-authorized">>, User};
-                {error, R} ->
-                    ok = lager:debug("authorize error: ~p", [R]),
-                    {error, <<"internal-error">>}
+            case (State#state.check_password)(User,
+                                              Password
+                                             ) of
+                {true, AuthModule} ->
+                    {ok, [{username, User}, {authzid, AuthzId},
+                          {auth_module, AuthModule}]};
+                _ ->
+                    {error, <<"not-authorized">>, User}
             end;
         _ ->
             {error, <<"bad-protocol">>}
