@@ -12,6 +12,10 @@ config :cqerl,
   text_uuids: true,
   auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
 
+config :schemata,
+  cassandra_hosts: [{'127.0.0.1', 9042}],
+  cassandra_opts: []
+
 config :kernel,
   start_pg2: :true
 

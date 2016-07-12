@@ -68,7 +68,8 @@ defmodule Wocky.Mixfile do
       {:setup,         "1.7.0", override: true},
       {:jiffy,         "0.14.7", override: true},
       {:lager,         "3.2.1", override: true},
-      {:cqerl,         github: "hippware/cqerl",          branch: "working"},
+      {:cqerl,         github: "hippware/cqerl",          branch: "working", override: true},
+      {:schemata,      github: "toland/schemata",         branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:qdate,         github: "choptastic/qdate",        ref: "10d56c2"},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
@@ -113,6 +114,8 @@ defmodule Wocky.Mixfile do
       ## testing dependencies (not included in release)
       {:meck,          "0.8.4", override: true},
       {:espec,         "~> 0.8.22", only: :test},
+      # {:mixunit,       "~> 0.9.2", only: :test},
+      {:mix_eunit,     "~> 0.1.2", only: :test},
       {:pavlov,        github: "sproutapp/pavlov",        branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
