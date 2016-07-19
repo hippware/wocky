@@ -14,11 +14,17 @@ defmodule Wocky.Mixfile do
        :warn_obsolete_guard,
        :warn_unused_import,
        {:warn_format, 1},
-       {:parse_transform, :lager_transform}
-     ],
+       {:parse_transform, :lager_transform},
+       {:i, "deps"}
+      ],
+     eunit_opts: [
+       :no_tty,
+       {:report, {:eunit_progress, [:colored]}}
+      ],
      test_coverage: [output: "_build/#{Mix.env}/cover"],
+     aliases: aliases,
      deps: deps,
-     aliases: aliases]
+     preferred_cli_env: [eunit: :test]]
   end
 
   defp version do
@@ -114,8 +120,8 @@ defmodule Wocky.Mixfile do
       ## testing dependencies (not included in release)
       {:meck,          "0.8.4", override: true},
       {:espec,         "~> 0.8.22", only: :test},
-      # {:mixunit,       "~> 0.9.2", only: :test},
-      {:mix_eunit,     "~> 0.1.2", only: :test},
+      {:mix_eunit,     github: "hippware/mix_eunit", branch: "master", only: :test},
+      {:eunit_formatters, github: "seancribbs/eunit_formatters", tag: "v0.3.1", only: :test},
       {:pavlov,        github: "sproutapp/pavlov",        branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},

@@ -48,8 +48,8 @@ start_ejabberd(CfgDir) ->
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
+    ok = application:set_env(ejabberd, keep_lager_intact, true),
     {ok, _} = ejabberd:start(),
-    ok = reset_log_levels(),
     ok.
 
 -spec version() -> binary().
@@ -132,13 +132,6 @@ maybe_start_ejabberd(false) -> ok.
 is_testing_server(<<"localhost">>) -> true;
 is_testing_server(<<"testing.", _/binary>>) -> true;
 is_testing_server(_) -> false.
-
-%% ejabberd_app forces the level for ALL Lager backends to 'info'.
-%% Reset any backends that need to be running at a different level.
-reset_log_levels() ->
-    ok = lager:set_loglevel(lager_file_backend, "debug.log", debug),
-    ok = lager:set_loglevel(lager_file_backend, "wocky.log", warning),
-    ok.
 
 default_config(Key) ->
     {ok, Value} = application:get_env(wocky, Key),

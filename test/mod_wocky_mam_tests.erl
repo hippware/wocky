@@ -33,15 +33,12 @@ before_all() ->
                 fun(global, mod_wocky_mam, message_archive_ttl, infinity) ->
                         infinity
                 end),
-    ets:new(config, [named_table, set, public, {keypos, 2}]),
-    ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [message_archive,
                                                        conversation]),
     ok.
 
 after_all(_) ->
-    ets:delete(config),
     meck:unload(gen_mod),
     ok = wocky_app:stop().
 

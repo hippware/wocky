@@ -53,4 +53,7 @@ config :lager,
     ]}
   ]
 
+config :hut,
+  level: :critical
+
 import_config "#{Mix.env}.exs"

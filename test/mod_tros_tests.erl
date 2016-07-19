@@ -24,19 +24,11 @@ mod_tros_test_() -> {
   ]
 }.
 
-mecks() -> [ejabberd_config, ejabberd_sm, httpd_util, ossp_uuid,
-            cowboy, mod_tros_francus, mod_tros_s3].
+mecks() -> [ejabberd_config, httpd_util, ossp_uuid,
+            mod_tros_francus, mod_tros_s3].
 
 before_all(Backend) ->
-    ok = wocky_app:start(),
-
-    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
-                                                  group_chat]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
-                                               group_chat]),
-
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
-    meck:expect(ejabberd_config, add_local_option, 2, {atomic, ok}),
     meck:expect(ejabberd_config, get_local_option,
                 fun(tros_backend) -> Backend;
                    (s3_bucket) -> "tros-test";
@@ -47,22 +39,9 @@ before_all(Backend) ->
                    (tros_scheme) -> "http://";
                    (tros_auth_validity) -> 3600;
                    (tros_port) -> 1025;
-                   (tros_public_port) -> 1025
+                   (tros_public_port) -> 1025;
+                   (X) -> meck:passthrough([X])
                 end),
-    meck:expect(ejabberd_config, get_local_option,
-                %% Let these options fall through to the test config
-                fun(cassandra_nodes, _) -> undefined;
-                   (cassandra_opts, _) -> undefined;
-                   (keyspace_prefix, _) -> undefined;
-                   (keyspace_replication, _) -> undefined
-                end),
-    meck:expect(ejabberd_config, get_global_option,
-                fun(language) -> <<"en">>;
-                   (hosts) -> [?LOCAL_CONTEXT]
-                end),
-
-    meck:expect(gen_iq_handler, add_iq_handler, 6, ok),
-    meck:expect(gen_iq_handler, remove_iq_handler, 3, ok),
 
     meck:expect(httpd_util, rfc1123_date, 1,
                 "Fri, 29 Jan 2016 02:54:44 GMT"),
@@ -77,8 +56,6 @@ before_all(Backend) ->
                                              uuid:string_to_uuid(UUID)
                                    end),
 
-    meck:expect(cowboy, start_http, 4, {ok, unused}),
-
     meck:expect(mod_tros_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 48)) end),
 
@@ -87,12 +64,15 @@ before_all(Backend) ->
     meck:expect(mod_tros_s3, get_owner, 2, {ok, ?ALICE}),
     meck:expect(mod_tros_s3, get_metadata,
                 fun(A, B) -> mod_tros_francus:get_metadata(A, B) end),
-    test_helper:meck_metrics(),
 
-    mod_tros:start(?LOCAL_CONTEXT, []).
+    ok = wocky_app:start(),
+    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
+                                                  group_chat]),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
+                                               group_chat]).
+
 
 after_all(_) ->
-    mod_tros:stop(?LOCAL_CONTEXT),
     ok = wocky_app:stop(),
     meck:unload().
 

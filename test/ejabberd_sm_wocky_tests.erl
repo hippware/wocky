@@ -30,14 +30,11 @@ ejabberd_sm_wocky_test_() -> {
 }.
 
 before_all() ->
-    ets:new(config, [named_table, set, public, {keypos, 2}]),
-    ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [session]),
     ok.
 
 after_all(_) ->
-    ets:delete(config),
     ok = wocky_app:stop().
 
 before_each() ->

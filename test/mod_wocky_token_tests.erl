@@ -25,8 +25,6 @@ mod_wocky_token_test_() -> {
 }.
 
 before_all() ->
-    ets:new(config, [named_table, set, public, {keypos, 2}]),
-    ets:insert(config, #config{key = hosts, value = [?SERVER]}),
     ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [user, handle_to_user]),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token]),
@@ -36,7 +34,6 @@ before_all() ->
     ok.
 
 after_all(_) ->
-    ets:delete(config),
     ok = wocky_app:stop(),
     ok = wocky_db_seed:clear_tables(shared, [user, handle_to_user]),
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
