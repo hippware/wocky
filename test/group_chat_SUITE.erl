@@ -100,7 +100,6 @@ block_messages(Config) ->
         escalus:send(Carol, MsgStanza),
 
         ResponseStanza = escalus:wait_for_stanza(Carol),
-        ct:log("BJD ~p", [ResponseStanza]),
         escalus:assert(is_error, [<<"modify">>, <<"bad-request">>],
                        ResponseStanza),
 
