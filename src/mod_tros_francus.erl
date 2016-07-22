@@ -47,7 +47,7 @@ start(Opts) ->
     setup_metrics().
 
 stop() ->
-    cowboy:stop_listener(tros_francus_listener),
+    _ = cowboy:stop_listener(tros_francus_listener),
     tros_req_tracker:stop().
 
 make_download_response(FromJID, ToJID, OwnerID, FileID,
