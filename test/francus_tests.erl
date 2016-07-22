@@ -153,18 +153,21 @@ test_write() ->
        %% standard files. Still do cleanup though.
        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
          {inparallel,
-          [?_test(
-             begin
-                 ID = mod_tros:make_file_id(),
-                 {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
-                                              wocky_db:create_id(),
-                                              purpose(), access(),
-                                              metadata()),
-                 Data = crypto:strong_rand_bytes(Size),
-                 F2 = francus:write(F, Data),
-                 ok = francus:close(F2),
-                 verify_contents(ID, Data)
-             end) || Size <- test_sizes(), Size =/= 0]}
+          {timeout, 10,
+            [
+             ?_test(
+               begin
+                   ID = mod_tros:make_file_id(),
+                   {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
+                                                wocky_db:create_id(),
+                                                purpose(), access(),
+                                                metadata()),
+                   Data = crypto:strong_rand_bytes(Size),
+                   F2 = francus:write(F, Data),
+                   ok = francus:close(F2),
+                   verify_contents(ID, Data)
+               end) || Size <- test_sizes(), Size =/= 0]}
+         }
        }
       ]
     }.
