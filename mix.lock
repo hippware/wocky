@@ -9,6 +9,7 @@
   "cowlib": {:hex, :cowlib, "1.0.2", "9d769a1d062c9c3ac753096f868ca121e2730b9a377de23dec0f7e08b1df84ee", [:make], []},
   "cqerl": {:git, "https://github.com/hippware/cqerl.git", "ea8a02f37b5226e92624234fed85e7e6bdeba192", [branch: "working"]},
   "cuesport": {:git, "https://github.com/esl/cuesport.git", "d82ff25baf393eb11712721fb1b881b4b9f80176", [branch: "master"]},
+  "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
   "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "759936831a6033a9c8a9e15b8e6877156931e37b", [branch: "master"]},
   "eper": {:hex, :eper, "0.94.0", "f5fb2daa0df8878748e1c598428eda942a173e5121ff35c1d632129b84593a3a", [:rebar, :rebar], []},

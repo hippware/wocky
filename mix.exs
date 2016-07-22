@@ -24,7 +24,17 @@ defmodule Wocky.Mixfile do
      aliases: aliases,
      deps: deps,
      preferred_cli_env: [eunit: :test,
-                         ct:    :test]
+                         ct:    :test],
+     dialyzer: [
+       plt_apps: [
+         :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl,
+         :ssh, :xmerl, :public_key, :tools, :sasl, :hipe, :edoc,
+         :syntax_tools, :runtime_tools, :inets, :asn1],
+       plt_add_deps: true,
+       flags: [
+         "-Wunmatched_returns", "-Werror_handling", "-Wrace_conditions",
+         "-Wunderspecs", "-Wunknown"]
+     ]
     ]
   end
 
@@ -127,7 +137,8 @@ defmodule Wocky.Mixfile do
       {:pavlov,        github: "sproutapp/pavlov",        branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
-      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test}
+      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
+      {:dialyxir,      "~> 0.3.5", only: :dev}
     ]
   end
 
