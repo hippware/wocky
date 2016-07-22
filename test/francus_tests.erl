@@ -99,13 +99,14 @@ test_read() ->
     { "francus:read", setup, fun before_each/0, fun after_each/1, fun(Config) ->
      {inparallel, [
        { "Read entire files from the DB", {inparallel,
-         [?_test(
+         [{timeout, 10,
+           ?_test(
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  {F2, ReadData} = francus:read(F),
                  ?assertEqual(Data, ReadData),
                  ?assertEqual(eof, francus:read(F2))
-             end) || {ID, Data} <- Config#config.files, Data =/= <<>>] ++
+             end)} || {ID, Data} <- Config#config.files, Data =/= <<>>] ++
          [?_test(
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
