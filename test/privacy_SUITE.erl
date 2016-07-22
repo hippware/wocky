@@ -447,7 +447,7 @@ block_subscription_message(Config) ->
 
         %% Alice sends unsubscribe
         escalus_client:send(Alice,
-            escalus_stanza:presence_direct(bob, <<"unsubscribe">>)),
+            escalus_stanza:presence_direct(?BOB_B_JID, <<"unsubscribe">>)),
 
         %% set the list on server and make it active
         privacy_helper:set_and_activate(Alice,
@@ -487,13 +487,13 @@ allow_subscription_to_from_message(Config) ->
         %% Alice subscribes to Bob
         escalus_client:send(Alice,
                             escalus_stanza:presence_direct(
-                              bob, <<"subscribe">>)),
+                              ?BOB_B_JID, <<"subscribe">>)),
         escalus_client:wait_for_stanza(Alice),
         escalus_client:wait_for_stanza(Bob),
 
         %% Bob accepts Alice
         escalus_client:send(Bob, escalus_stanza:presence_direct(
-                                   alice, <<"subscribed">>)),
+                                   ?ALICE_B_JID, <<"subscribed">>)),
         escalus_client:wait_for_stanza(Bob),
         escalus_client:wait_for_stanzas(Alice, 3),
 
@@ -535,7 +535,7 @@ allow_subscription_both_message(Config) ->
         escalus_client:send(Bob, escalus_stanza:chat_to(
                                    Alice, <<"Hi, Alice XYZ!">>)),
         escalus_client:send(Alice, escalus_stanza:chat_to(
-                                     bob, <<"Hi, Bob XYZ!">>)),
+                                     ?BOB_B_JID, <<"Hi, Bob XYZ!">>)),
 
         ct:sleep(?SLEEP_TIME),
         privacy_helper:gets_error(Alice, <<"not-acceptable">>),
@@ -546,13 +546,13 @@ allow_subscription_both_message(Config) ->
         %% Alice subscribes to Bob
         escalus_client:send(Bob,
                             escalus_stanza:presence_direct(
-                              alice, <<"subscribe">>)),
+                              ?ALICE_B_JID, <<"subscribe">>)),
         escalus_client:wait_for_stanza(Alice),
         escalus_client:wait_for_stanza(Bob),
 
         %% Bob accepts Alice
         escalus_client:send(Alice, escalus_stanza:presence_direct(
-                                     bob, <<"subscribed">>)),
+                                     ?BOB_B_JID, <<"subscribed">>)),
         escalus_client:wait_for_stanzas(Alice, 2),
         escalus_client:wait_for_stanzas(Bob, 3),
 
@@ -563,7 +563,7 @@ allow_subscription_both_message(Config) ->
             escalus_client:wait_for_stanza(Alice)),
 
         escalus_client:send(Alice, escalus_stanza:chat_to(
-                                     bob, <<"Hi, Bob XYZ!">>)),
+                                     ?BOB_B_JID, <<"Hi, Bob XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Bob XYZ!">>,
             escalus_client:wait_for_stanza(Bob))
 
@@ -593,7 +593,7 @@ block_jid_presence_in(Config) ->
 
         %% Alice should receive presence in
         escalus_client:send(Bob,
-            escalus_stanza:presence_direct(alice, <<"available">>)),
+            escalus_stanza:presence_direct(?ALICE_B_JID, <<"available">>)),
         Received = escalus_client:wait_for_stanza(Alice),
         escalus:assert(is_presence, Received),
         escalus_assert:is_stanza_from(Bob, Received),
@@ -602,7 +602,7 @@ block_jid_presence_in(Config) ->
 
         %% Alice should NOT receive presence in
         escalus_client:send(Bob,
-            escalus_stanza:presence_direct(alice, <<"available">>)),
+            escalus_stanza:presence_direct(?ALICE_B_JID, <<"available">>)),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Alice),
         %% and Bob should NOT receive any response
@@ -616,7 +616,7 @@ block_jid_presence_out(Config) ->
 
         %% Bob should receive presence in
         escalus_client:send(Alice,
-            escalus_stanza:presence_direct(bob, <<"available">>)),
+            escalus_stanza:presence_direct(?BOB_B_JID, <<"available">>)),
         Received = escalus_client:wait_for_stanza(Bob),
         escalus:assert(is_presence, Received),
         escalus_assert:is_stanza_from(Alice, Received),
@@ -625,7 +625,7 @@ block_jid_presence_out(Config) ->
 
         %% Bob should NOT receive presence in
         escalus_client:send(Alice,
-            escalus_stanza:presence_direct(bob, <<"available">>)),
+            escalus_stanza:presence_direct(?BOB_B_JID, <<"available">>)),
 
         %% Alice gets an error back from mod_privacy
         Presence = escalus_client:wait_for_stanza(Alice),
@@ -691,13 +691,13 @@ block_jid_all(Config) ->
 
         %% Alice should NOT receive presence-in from Bob, no err msg
         escalus_client:send(Bob,
-            escalus_stanza:presence_direct(alice, <<"available">>)),
+            escalus_stanza:presence_direct(?ALICE_B_JID, <<"available">>)),
         timer:sleep(?SLEEP_TIME),
         escalus_assert:has_no_stanzas(Bob),
 
         %% Bob should NOT receive presence-in from Alice, Alice receives err msg
         escalus_client:send(Alice,
-            escalus_stanza:presence_direct(bob, <<"available">>)),
+            escalus_stanza:presence_direct(?BOB_B_JID, <<"available">>)),
         timer:sleep(?SLEEP_TIME),
         privacy_helper:gets_error(Alice, <<"not-acceptable">>),
 
@@ -738,7 +738,7 @@ block_jid_message_but_not_presence(Config) ->
 
         %% ...but should receive presence in
         escalus_client:send(Bob,
-            escalus_stanza:presence_direct(Alice, <<"available">>)),
+            escalus_stanza:presence_direct(?ALICE_B_JID, <<"available">>)),
         Received = escalus_client:wait_for_stanza(Alice),
         escalus:assert(is_presence, Received),
         escalus_assert:is_stanza_from(Bob, Received)

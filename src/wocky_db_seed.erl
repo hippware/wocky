@@ -141,7 +141,7 @@ clear_user_tables(Context) ->
     wocky_db_seed:clear_tables(Context, [session, roster,
                                          auth_token, last_activity,
                                          privacy, privacy_item,
-                                         location]).
+                                         location, conversation]).
 
 
 %%====================================================================

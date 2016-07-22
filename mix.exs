@@ -14,8 +14,7 @@ defmodule Wocky.Mixfile do
        :warn_obsolete_guard,
        :warn_unused_import,
        {:warn_format, 1},
-       {:parse_transform, :lager_transform},
-       {:i, "deps"}
+       {:parse_transform, :lager_transform}
       ],
      eunit_opts: [
        :no_tty,
@@ -24,7 +23,9 @@ defmodule Wocky.Mixfile do
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [eunit: :test]]
+     preferred_cli_env: [eunit: :test,
+                         ct:    :test]
+    ]
   end
 
   defp version do
@@ -122,6 +123,7 @@ defmodule Wocky.Mixfile do
       {:espec,         "~> 0.8.22", only: :test},
       {:mix_eunit,     github: "hippware/mix_eunit", branch: "master", only: :test},
       {:eunit_formatters, github: "seancribbs/eunit_formatters", tag: "v0.3.1", only: :test},
+      {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
       {:pavlov,        github: "sproutapp/pavlov",        branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},

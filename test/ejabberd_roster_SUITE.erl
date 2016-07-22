@@ -118,7 +118,7 @@ add_contact(Config) ->
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
-        escalus:assert(roster_contains, [bob], Received2)
+        escalus:assert(roster_contains, [?BOB_B_JID], Received2)
     end).
 
 roster_push(Config) ->
@@ -188,7 +188,7 @@ versioning(Config) ->
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
-        escalus:assert(roster_contains, [bob], Received2),
+        escalus:assert(roster_contains, [?BOB_B_JID], Received2),
 
         %% check version
         Ver2 = get_ver(Received2),
@@ -253,7 +253,7 @@ subscribe_decline(Config) ->
         test_helper:add_sample_contact(Alice, Bob),
 
         %% subscribe
-        escalus:send(Alice, escalus_stanza:presence_direct(bob,
+        escalus:send(Alice, escalus_stanza:presence_direct(?BOB_B_JID,
                                                            <<"subscribe">>)),
         PushReq = escalus:wait_for_stanza(Alice),
         escalus_assert:is_roster_set(PushReq),
@@ -264,7 +264,7 @@ subscribe_decline(Config) ->
         escalus:assert(is_presence_with_type, [<<"subscribe">>], Received),
 
         %% Bob refuses subscription
-        escalus:send(Bob, escalus_stanza:presence_direct(alice,
+        escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
                                                          <<"unsubscribed">>)),
 
         %% Alice receives subscribed
@@ -281,7 +281,8 @@ subscribe_relog(Config) ->
 
         %% She subscribes to his presences
         escalus:send(Alice,
-                     escalus_stanza:presence_direct(bob, <<"subscribe">>)),
+                     escalus_stanza:presence_direct(?BOB_B_JID,
+                                                    <<"subscribe">>)),
 
         PushReq = escalus:wait_for_stanza(Alice),
         escalus:assert(is_roster_set, PushReq),
@@ -313,14 +314,15 @@ subscribe_relog(Config) ->
                 end,
                 fun (S) ->
                     escalus_pred:is_presence_with_type(<<"subscribe">>, S)
-                    andalso escalus_pred:is_stanza_from(alice, S)
+                    andalso escalus_pred:is_stanza_from(?ALICE_B_JID, S)
                 end
             ], Stanzas),
 
         escalus_client:stop(NewBob),
 
         escalus:send(Bob,
-                     escalus_stanza:presence_direct(alice, <<"unsubscribed">>))
+                     escalus_stanza:presence_direct(?ALICE_B_JID,
+                                                    <<"unsubscribed">>))
     end).
 
 unsubscribe(Config) ->
@@ -329,7 +331,8 @@ unsubscribe(Config) ->
 
         %% Alice sends unsubscribe
         escalus:send(Alice,
-                     escalus_stanza:presence_direct(bob, <<"unsubscribe">>)),
+                     escalus_stanza:presence_direct(?BOB_B_JID,
+                                                    <<"unsubscribe">>)),
 
         PushReqA2 = escalus:wait_for_stanza(Alice),
         escalus_assert:is_roster_set(PushReqA2),
@@ -368,7 +371,7 @@ subscribed_follow(Config) ->
         %% Bob sends subscribed presence - this indicates that Bob
         %% has become a follower of Alice. Bob is automatically added to
         %% Alice's roster under the __new__ group.
-        escalus:send(Bob, escalus_stanza:presence_direct(Alice,
+        escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
                                                          <<"subscribed">>)),
         Stanzas = escalus:wait_for_stanzas(Alice, 2),
         test_helper:check_subscription_stanzas(Stanzas, <<"subscribed">>),

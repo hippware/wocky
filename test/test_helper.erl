@@ -2,6 +2,8 @@
 %%% @doc Helper functions for Wocky integration test suites
 -module(test_helper).
 
+-include("wocky_db_seed.hrl").
+
 -export([ensure_wocky_is_running/0]).
 
 -export([expect_iq_success/2,
@@ -27,7 +29,7 @@ ensure_wocky_is_running() ->
     end,
     case app_is_running(Applications, ejabberd) of
         true -> ok;
-        false -> wocky_app:start_ejabberd("../../../../etc")
+        false -> wocky_app:start_ejabberd("etc")
     end.
 
 app_is_running(Applications, Name) ->
@@ -77,7 +79,7 @@ subscribe(Alice, Bob) ->
     add_sample_contact(Alice, Bob),
 
     %% She subscribes to his presences
-    escalus:send(Alice, escalus_stanza:presence_direct(Bob,
+    escalus:send(Alice, escalus_stanza:presence_direct(?BOB_B_JID,
                                                        <<"subscribe">>)),
     PushReq = escalus:wait_for_stanza(Alice),
     escalus:assert(is_roster_set, PushReq),
@@ -97,7 +99,7 @@ subscribe(Alice, Bob) ->
     escalus:assert(is_iq_result, escalus:wait_for_stanza(Bob)),
 
     %% Bob sends subscribed presence
-    escalus:send(Bob, escalus_stanza:presence_direct( Alice,
+    escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
                                                      <<"subscribed">>)),
 
     %% Alice receives subscribed

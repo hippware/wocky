@@ -47,7 +47,7 @@ end_per_testcase(CaseName, Config) ->
 extended_fields(Config) ->
     %% Alice sends a message to Bob, who is offline
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        Stanza = escalus_stanza:chat_to(bob, <<"Check out my LOLCAT">>),
+        Stanza = escalus_stanza:chat_to(?BOB_B_JID, <<"Check out my LOLCAT">>),
         ImageURL = #xmlel{name = <<"url">>,
                           children =
                           [#xmlcdata{content =

@@ -11,11 +11,6 @@
 
 -include("wocky_db_seed.hrl").
 
--define(ALICE_B_JID, jid:to_binary(?ALICE_JID)).
--define(BOB_B_JID, jid:to_binary(?BOB_JID)).
--define(CAROL_B_JID, jid:to_binary(?CAROL_JID)).
--define(KAREN_B_JID, jid:to_binary(?KAREN_JID)).
-
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 
 % There's some overlap here where we want to test the MAM operation

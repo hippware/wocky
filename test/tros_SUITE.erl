@@ -68,7 +68,6 @@ file_updown_story(Config) ->
         ImageData = load_test_file(Config),
         FileSize = byte_size(ImageData),
 
-
         %%% Upload
         {QueryStanza, ResultStanza} =
         common_upload_request(FileSize, Config, Alice, avatar_purpose()),
@@ -200,7 +199,7 @@ load_test_file(Config) ->
 
 add_to_from(Config, Stanza, User) ->
     escalus_stanza:to(
-      escalus_stanza:from(Stanza, User),
+      escalus_stanza:from(Stanza, escalus_users:get_jid(Config, User)),
       escalus_users:get_server(Config, User)).
 
 do_upload(ResultStanza, ImageData, ExpectedCode, Multipart) ->

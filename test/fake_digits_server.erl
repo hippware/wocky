@@ -20,7 +20,11 @@ stop() ->
     ok = cowboy:stop_listener(fake_digits_listener).
 
 set_allow(AllowAuth) ->
-    cowboy:set_env(fake_digits_listener, dispatch, make_dispatch(AllowAuth)).
+    % We need to stop and restart rather than using cowboy:set_env because
+    % set_env only affects new connections, and wocky_digits_auth holds the
+    % connection open.
+    ok = cowboy:stop_listener(fake_digits_listener),
+    start(AllowAuth).
 
 make_dispatch(AllowAuth) ->
     cowboy_router:compile([{'_', [{'_', ?MODULE, AllowAuth}]}]).
@@ -29,7 +33,7 @@ init({_TransportName, http}, Req, AllowAuth) ->
     {ok, Req, AllowAuth}.
 
 handle(Req, AllowAuth) ->
-    Req2 = case AllowAuth of
+    {ok, Req2} = case AllowAuth of
         true -> cowboy_req:reply(200, headers(), body(), Req);
         false -> cowboy_req:reply(401, Req)
     end,

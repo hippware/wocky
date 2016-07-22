@@ -61,7 +61,8 @@ activity_story(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
         fun(Alice, _Bob) ->
             %% Alice asks about Bob's last activity
-            escalus_client:send(Alice, escalus_stanza:last_activity(bob)),
+            escalus_client:send(Alice,
+                                escalus_stanza:last_activity(?BOB_B_JID)),
 
             %% server replies on Bob's behalf
             Stanza = escalus_client:wait_for_stanza(Alice),
@@ -84,7 +85,8 @@ update_activity_story(Config) ->
             timer:sleep(1024), % more than a second
 
             %% Alice asks for Bob's last availability
-            escalus_client:send(Alice, escalus_stanza:last_activity(bob)),
+            escalus_client:send(Alice,
+                                escalus_stanza:last_activity(?BOB_B_JID)),
 
             %% Alice receives Bob's status and last online time > 0
             Stanza = escalus_client:wait_for_stanza(Alice),
@@ -134,7 +136,8 @@ get_last_status(Stanza) ->
 offline_message_story(Config) ->
     %% Alice sends a message to Bob, who is offline
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        escalus:send(Alice, escalus_stanza:chat_to(bob, <<"Hi, Offline!">>))
+        escalus:send(Alice, escalus_stanza:chat_to(?BOB_B_JID,
+                                                   <<"Hi, Offline!">>))
     end),
 
     %% Bob logs in

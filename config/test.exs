@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :wocky,
+  config_dir: '../../../etc'
+
 config :kernel,
   error_logger: :silent
 
