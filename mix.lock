@@ -35,7 +35,7 @@
   "lz4": {:git, "https://github.com/szktty/erlang-lz4.git", "30878eafeff35939052c2cafe17d21c95029d3a1", [tag: "0.2.2"]},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:rebar, :make], []},
   "mix_ct": {:git, "https://github.com/hippware/mix_ct.git", "594c6486a6b72b3bc28f2f08a5e3ef3bb6cbbb03", [branch: "master"]},
-  "mix_eunit": {:git, "https://github.com/hippware/mix_eunit.git", "be7551fd421ad603f11c8047f0b40fadfd778196", [branch: "master"]},
+  "mix_eunit": {:git, "https://github.com/hippware/mix_eunit.git", "d5e79b1a96f9211872ee3d5c98087b28806799a2", [branch: "master"]},
   "mixunit": {:hex, :mixunit, "0.9.2", "4ace17bd1998c8853db5df4e081ec9bcf2b7b5ab04683a18b7ee2aad4c6320d0", [:mix], []},
   "mochijson2": {:git, "https://github.com/bjnortier/mochijson2.git", "e162b7f5be57b8a1fcf5cc99aa4948864af42bba", [branch: "master"]},
   "mustache": {:git, "https://github.com/mojombo/mustache.erl.git", "d0246fe143058b6404f66cf99fece3ff6e87b7ed", [ref: "d0246fe"]},
