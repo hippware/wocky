@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :wocky,
-  config_dir: String.to_char_list(Path.join(elem(File.cwd, 1), "etc"))
+  config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
 
 config :kernel,
   error_logger: :silent
