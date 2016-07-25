@@ -1,4 +1,4 @@
-%{"alarms": {:git, "https://github.com/hippware/alarms.git", "8c21f357d8ea6fe2dbd0beb20bde131b355612de", [tag: "0.1.2"]},
+%{"alarms": {:git, "https://github.com/hippware/alarms.git", "87ba12b4f50340215d9250db3c8ef45333f2ee2e", [branch: "master"]},
   "algolia": {:git, "https://github.com/k3nn7/algoliasearch-client-erlang.git", "640f3da5161975a77f45f563ebab22edbf1fb021", [branch: "master"]},
   "base16": {:hex, :base16, "1.0.0", "283644e2b21bd5915acb7178bed7851fb07c6e5749b8fad68a53c501092176d9", [:rebar3], []},
   "bear": {:hex, :bear, "0.8.3", "866002127a97932720a0d475d8582c98ec5fb78db3a18dfe7eaf91594d9024b8", [:rebar3], []},

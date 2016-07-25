@@ -109,7 +109,7 @@ defmodule Wocky.Mixfile do
       {:exometer_core, github: "Feuerlabs/exometer_core", branch: "master", override: true},
       {:exometer,      github: "Feuerlabs/exometer",      branch: "master", manager: :rebar3, override: true},
       {:mochijson2,    github: "bjnortier/mochijson2",    branch: "master", override: true},
-      {:alarms,        github: "hippware/alarms",         tag: "0.1.2", override: true},
+      {:alarms,        github: "hippware/alarms",         branch: "master", override: true},
       {:fusco,         github: "esl/fusco",               branch: "master", override: true},
       {:pa,            github: "lavrin/pa",               branch: "master", manager: :rebar3, override: true},
       {:usec,          github: "esl/usec",                branch: "master", override: true},
