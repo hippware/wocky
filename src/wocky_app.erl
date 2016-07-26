@@ -48,7 +48,6 @@ start_ejabberd(CfgDir) ->
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
-    ok = application:set_env(ejabberd, keep_lager_intact, true),
     {ok, _} = ejabberd:start(),
     ok.
 

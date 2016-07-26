@@ -6,6 +6,9 @@ config :wocky,
   start_ejabberd: :true,
   keyspace_prefix: 'wocky_'
 
+config :ejabberd,
+  keep_lager_intact: true
+
 config :cqerl,
   maps: :true,
   mode: :hash,
