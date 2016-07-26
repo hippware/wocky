@@ -27,13 +27,16 @@ defmodule Wocky.Mixfile do
                          ct:    :test],
      dialyzer: [
        plt_apps: [
-         :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl,
-         :ssh, :xmerl, :public_key, :tools, :sasl, :hipe, :edoc,
-         :syntax_tools, :runtime_tools, :inets, :asn1],
+         :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
+         :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
+         :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
+         :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid
+       ],
        plt_add_deps: true,
        flags: [
-         "-Wunmatched_returns", "-Werror_handling", "-Wrace_conditions",
-         "-Wunderspecs", "-Wunknown"]
+         "--fullpath", "-Wunmatched_returns", "-Werror_handling",
+         "-Wrace_conditions", "-Wunderspecs", "-Wunknown"
+       ]
      ]
     ]
   end
