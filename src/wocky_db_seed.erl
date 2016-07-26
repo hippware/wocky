@@ -411,7 +411,10 @@ table_definition(tros_request) ->
            {auth, blob},     % Authorization key for the request
            {method, text},   % HTTP method for the request (get/post)
            {size, int},      % Size of the requested file (upload only)
-           {metadata, {map, text, text}} % File metadata (key => value)
+           {metadata, {map, text, text}}, % File metadata (key => value)
+           % See media table for a full description of these:
+           {purpose, text},  % Purpose of the file (upload only)
+           {access, text}    % Access field for the file (upload only)
        ],
        primary_key = [user, file, auth, method]
     };
