@@ -47,7 +47,6 @@
   "p1_utils": {:hex, :p1_utils, "1.0.4", "7face65db102b5d1ebe7ad3c7517c5ee8cfbe174c6658e3affbb00eb66e06787", [:rebar3], []},
   "pa": {:git, "https://github.com/lavrin/pa.git", "070bf37fc8591de2cb8d975ab4935656f4110cb9", [branch: "master"]},
   "parse_trans": {:git, "git://github.com/uwiger/parse_trans.git", "a210adafdfbb904d156d8f22abd5fb58fc17de1e", [tag: "2.9.2"]},
-  "pavlov": {:git, "https://github.com/sproutapp/pavlov.git", "7f3c0d7c75c8c2875e21b495511a291194bfc85a", [branch: "master"]},
   "pooler": {:hex, :pooler, "1.5.0", "0fd4be5d2976e6a2e9a1617623031758c26f200c1fca89e4a3c542747bec6371", [:rebar, :make], []},
   "pretty_errors": {:git, "https://github.com/eproxus/pretty_errors.git", "697be63f66159af49f542a1f53d1e3fd987838e1", [branch: "master"]},
   "proper": {:git, "https://github.com/manopapad/proper.git", "5f0d69c831b6c9f52535c3d1846efca480f6190d", [tag: "v1.2"]},

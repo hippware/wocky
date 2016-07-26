@@ -138,7 +138,6 @@ defmodule Wocky.Mixfile do
       {:mix_eunit,     github: "hippware/mix_eunit", branch: "master", only: :test},
       {:eunit_formatters, github: "seancribbs/eunit_formatters", tag: "v0.3.1", only: :test},
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
-      {:pavlov,        github: "sproutapp/pavlov",        branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
       {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
