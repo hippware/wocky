@@ -23,12 +23,11 @@ mod_last_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [last_activity]),
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop().
+    ok.
 
 before_each() ->
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, last_activity),

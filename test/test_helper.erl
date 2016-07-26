@@ -22,21 +22,7 @@ ensure_wocky_is_running() ->
         {error, {already_started, _Pid}} -> ok
     end,
 
-    Applications = application:which_applications(),
-    case app_is_running(Applications, wocky) of
-        true -> ok;
-        false -> ok = wocky_app:start("test")
-    end,
-    case app_is_running(Applications, ejabberd) of
-        true -> ok;
-        false -> wocky_app:start_ejabberd("etc")
-    end.
-
-app_is_running(Applications, Name) ->
-    case lists:keysearch(Name, 1, Applications) of
-        {value, _} -> true;
-        false -> false
-    end.
+    ok = wocky_app:start("ct").
 
 expect_iq_success_u(Stanza, User) ->
     expect_something(add_to_u(Stanza, User), User, is_iq_result).

@@ -25,7 +25,6 @@ mod_wocky_token_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [user, handle_to_user]),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token]),
     {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
@@ -34,7 +33,6 @@ before_all() ->
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     ok = wocky_db_seed:clear_tables(shared, [user, handle_to_user]),
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [auth_token]),
     ok.

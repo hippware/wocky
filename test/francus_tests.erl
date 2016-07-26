@@ -41,11 +41,10 @@ test_sizes() ->
     ].
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 after_all(_) ->
-    ok = wocky_app:stop().
+    ok.
 
 make_file(Size) ->
     ID = mod_tros:make_file_id(),

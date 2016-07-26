@@ -16,10 +16,6 @@ defmodule Wocky.Mixfile do
        {:warn_format, 1},
        {:parse_transform, :lager_transform}
      ],
-     eunit_opts: [
-       :no_tty,
-       {:report, {:eunit_progress, [:colored]}}
-     ],
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
@@ -70,7 +66,6 @@ defmodule Wocky.Mixfile do
      env: [
        {:wocky_env, 'dev'},
        {:config_dir, 'etc'},
-       {:start_ejabberd, false},
        {:francus_chunk_size, 1048576}, # 1MB
        {:cassandra_nodes, [{'127.0.0.1', 9042}]},
        {:cassandra_opts, []},
@@ -135,14 +130,13 @@ defmodule Wocky.Mixfile do
       ## testing dependencies (not included in release)
       {:meck,          "0.8.4", override: true},
       {:espec,         "~> 0.8.22", only: :test},
-      {:mix_eunit,     github: "hippware/mix_eunit", branch: "master", only: :test},
-      {:eunit_formatters, github: "seancribbs/eunit_formatters", tag: "v0.3.1", only: :test},
+      {:dialyxir,      "~> 0.3.5", only: :dev},
+      {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
+      {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
-      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
-      {:dialyxir,      "~> 0.3.5", only: :dev},
-      {:mix_elvis,     github: "hippware/mix_elvis", branch: "master", only: :dev}
+      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test}
     ]
   end
 

@@ -14,7 +14,6 @@
          generate_token/0, get_tokens/2]).
 
 wocky_db_user_test_() ->
-    {ok, _} = application:ensure_all_started(stringprep),
     {"wocky_db_user",
      setup, fun before_all/0, fun after_all/1, [
      {foreach, fun before_each/0, fun after_each/1, [
@@ -42,7 +41,6 @@ wocky_db_user_test_() ->
     ]}.
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [user,
                                                handle_to_user,
                                                phone_number_to_user]),
@@ -53,7 +51,6 @@ before_all() ->
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     ok.
 
 before_each() ->

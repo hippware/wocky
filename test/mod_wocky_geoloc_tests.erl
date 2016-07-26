@@ -21,12 +21,11 @@ mod_wocky_mam_test_() ->
  }.
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [location]),
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop().
+    ok.
 
 test_pep_hook() ->
     Item = #xmlel{name = <<"geoloc">>,

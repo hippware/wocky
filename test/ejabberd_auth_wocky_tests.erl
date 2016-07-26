@@ -96,7 +96,6 @@ before_all(PasswordFormat) ->
                      meck:passthrough([X, Y])
                 end),
 
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [user,
                                                phone_number_to_user,
                                                handle_to_user
@@ -104,13 +103,9 @@ before_all(PasswordFormat) ->
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token,
                                                        location
                                                       ]),
-    ok = ejabberd_auth_wocky:start(?SERVER),
     ok.
 
 after_all(_) ->
-    ok = ejabberd_auth_wocky:stop(?SERVER),
-    ok = wocky_app:stop(),
-
     meck:unload(),
     ok.
 

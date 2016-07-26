@@ -3,7 +3,6 @@
 use Mix.Config
 
 config :wocky,
-  start_ejabberd: :true,
   keyspace_prefix: 'wocky_'
 
 config :ejabberd,

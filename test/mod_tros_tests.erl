@@ -65,7 +65,6 @@ before_all(Backend) ->
     meck:expect(mod_tros_s3, get_metadata,
                 fun(A, B) -> mod_tros_francus:get_metadata(A, B) end),
 
-    ok = wocky_app:start(),
     wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
                                                   group_chat]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
@@ -73,7 +72,6 @@ before_all(Backend) ->
 
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     meck:unload().
 
 

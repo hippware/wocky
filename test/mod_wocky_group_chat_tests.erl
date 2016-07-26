@@ -43,7 +43,6 @@ group_chat_tables() -> [group_chat].
 shared_group_chat_tables() -> [user].
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db_seed:prepare_tables(shared, shared_group_chat_tables()),
@@ -62,7 +61,6 @@ before_all() ->
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     meck:unload(),
     ok.
 
