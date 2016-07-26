@@ -1,6 +1,9 @@
 use Mix.Config
 
 config :wocky,
+  wocky_env: 'test',
+  start_ejabberd: false,
+  keyspace_prefix: 'wocky_test_',
   config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
 
 config :kernel,
@@ -26,4 +29,4 @@ config :lager,
       {:date, '$D0'},
       {:count, 5}
     ]}
-]
+  ]
