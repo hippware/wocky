@@ -15,11 +15,11 @@ defmodule Wocky.Mixfile do
        :warn_unused_import,
        {:warn_format, 1},
        {:parse_transform, :lager_transform}
-      ],
+     ],
      eunit_opts: [
        :no_tty,
        {:report, {:eunit_progress, [:colored]}}
-      ],
+     ],
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
@@ -37,8 +37,9 @@ defmodule Wocky.Mixfile do
          "--fullpath", "-Wunmatched_returns", "-Werror_handling",
          "-Wrace_conditions", "-Wunderspecs", "-Wunknown"
        ]
-     ]
-    ]
+     ],
+     elvis_config: elvis_config
+   ]
   end
 
   defp version do
@@ -141,11 +142,45 @@ defmodule Wocky.Mixfile do
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
       {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
-      {:dialyxir,      "~> 0.3.5", only: :dev}
+      {:dialyxir,      "~> 0.3.5", only: :dev},
+      {:mix_elvis,     github: "hippware/mix_elvis", branch: "master", only: :dev}
     ]
   end
 
   defp aliases do
     [deps: ["deps.get", "deps.compile goldrush lager", "compile"]]
+  end
+
+  defp elvis_config do
+    [
+      %{dirs: ['src', 'test'],
+        filter: '*.erl',
+        rules: [
+          {:elvis_style, :line_length,
+           %{ignore: [], limit: 80, skip_comments: false}},
+          {:elvis_style, :no_tabs},
+          {:elvis_style, :no_trailing_whitespace},
+          {:elvis_style, :macro_names, %{ignore: []}},
+          {:elvis_style, :macro_module_names},
+          {:elvis_style, :operator_spaces,
+           %{rules: [right: ",", right: "++", left: "++"]}},
+          {:elvis_style, :nesting_level, %{level: 3}},
+          {:elvis_style, :god_modules, %{limit: 25, ignore: []}},
+          {:elvis_style, :no_if_expression},
+          {:elvis_style, :invalid_dynamic_call, %{ignore: [:mod_wocky_roster]}},
+          {:elvis_style, :used_ignored_variable},
+          {:elvis_style, :no_behavior_info},
+          {:elvis_style, :module_naming_convention,
+           %{regex: "^[a-z]([a-z0-9]*_?)*(_SUITE)?$", ignore: []}},
+          {:elvis_style, :function_naming_convention,
+           %{regex: "^([a-z][a-z0-9]*_?)*|'>>='$"}},
+          {:elvis_style, :state_record_and_type},
+          {:elvis_style, :no_spec_with_records},
+          {:elvis_style, :dont_repeat_yourself, %{min_complexity: 15}},
+          {:elvis_style, :no_debug_call, %{ignore: [:mam_SUITE]}},
+          {:elvis_style, :variable_naming_convention,
+           %{regex: "^(_?[A-Z][0-9a-zA-Z]*)$"}}
+        ]}
+    ]
   end
 end

@@ -1,4 +1,5 @@
 %{"alarms": {:git, "https://github.com/hippware/alarms.git", "87ba12b4f50340215d9250db3c8ef45333f2ee2e", [branch: "master"]},
+  "aleppo": {:hex, :inaka_aleppo, "1.0.0", "8db14cf16bb8c263c14ff4c3f69f64d7c849d40888944f4204d2ca74f1114ceb", [:rebar3], []},
   "algolia": {:git, "https://github.com/k3nn7/algoliasearch-client-erlang.git", "640f3da5161975a77f45f563ebab22edbf1fb021", [branch: "master"]},
   "base16": {:hex, :base16, "1.0.0", "283644e2b21bd5915acb7178bed7851fb07c6e5749b8fad68a53c501092176d9", [:rebar3], []},
   "bear": {:hex, :bear, "0.8.3", "866002127a97932720a0d475d8582c98ec5fb78db3a18dfe7eaf91594d9024b8", [:rebar3], []},
@@ -12,6 +13,7 @@
   "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
   "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "759936831a6033a9c8a9e15b8e6877156931e37b", [branch: "master"]},
+  "elvis": {:hex, :elvis_core, "0.3.0", "5e69b6cec6638ff2302f159d390560b6e07b595f50949558e28e90f822e95454", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, optional: false]}, {:lager, "3.0.2", [hex: :lager, optional: false]}, {:zipper, "1.0.0", [hex: :zipper, optional: false]}]},
   "eper": {:hex, :eper, "0.94.0", "f5fb2daa0df8878748e1c598428eda942a173e5121ff35c1d632129b84593a3a", [:rebar, :rebar], []},
   "erlando": {:git, "https://github.com/rabbitmq/erlando.git", "1c1ef25a9bc228671b32b4a6ee30c7525314b1fd", [branch: "master"]},
   "erlang_localtime": {:git, "git://github.com/choptastic/erlang_localtime.git", "553e3587284c5a671026cb554e613e2895a81720", [branch: "master"]},
@@ -31,10 +33,12 @@
   "ibrowse": {:git, "git://github.com/cmullaparthi/ibrowse.git", "fd81d44182507c23445ed720df8c30e2e8da9d9b", [tag: "v4.2"]},
   "idna": {:hex, :idna, "2.0.0", "13dc2c407f16ff24648af98f529cec5b957e2fafa849df11d52d82e11529c4c1", [:rebar3], []},
   "jiffy": {:hex, :jiffy, "0.14.7", "9f33b893edd6041ceae03bc1e50b412e858cc80b46f3d7535a7a9940a79a1c37", [:rebar, :make], []},
+  "katana_code": {:hex, :katana_code, "0.1.0", "c34f3926a258d6beacd8d21f140f3d47d175501936431c460b144339d5271a0b", [:rebar3], [{:aleppo, "1.0.0", [hex: :inaka_aleppo, optional: false]}]},
   "lager": {:hex, :lager, "3.2.1", "eef4e18b39e4195d37606d9088ea05bf1b745986cf8ec84f01d332456fe88d17", [:rebar3], [{:goldrush, "0.1.8", [hex: :goldrush, optional: false]}]},
   "lz4": {:git, "https://github.com/szktty/erlang-lz4.git", "30878eafeff35939052c2cafe17d21c95029d3a1", [tag: "0.2.2"]},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:rebar, :make], []},
   "mix_ct": {:git, "https://github.com/hippware/mix_ct.git", "594c6486a6b72b3bc28f2f08a5e3ef3bb6cbbb03", [branch: "master"]},
+  "mix_elvis": {:git, "https://github.com/hippware/mix_elvis.git", "f4c9383a3f34cd518aa5474f52dd03f606551e40", [branch: "master"]},
   "mix_eunit": {:git, "https://github.com/hippware/mix_eunit.git", "d5e79b1a96f9211872ee3d5c98087b28806799a2", [branch: "master"]},
   "mixunit": {:hex, :mixunit, "0.9.2", "4ace17bd1998c8853db5df4e081ec9bcf2b7b5ab04683a18b7ee2aad4c6320d0", [:mix], []},
   "mochijson2": {:git, "https://github.com/bjnortier/mochijson2.git", "e162b7f5be57b8a1fcf5cc99aa4948864af42bba", [branch: "master"]},
@@ -66,4 +70,5 @@
   "uuid": {:git, "https://github.com/okeuday/uuid.git", "41e4e0edc4fe6291227b3fe74f7c2362f2525b21", [tag: "v1.4.1"]},
   "wsecli": {:git, "git://github.com/esl/wsecli.git", "f1c3facf82e4cd310decb036ed557b7679c0c7e0", [ref: "f1c3facf82e4cd310decb036ed557b7679c0c7e0"]},
   "wsock": {:git, "https://github.com/esl/wsock", "251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383", [ref: "251e18b"]},
-  "z_stdlib": {:git, "https://github.com/zotonic/z_stdlib.git", "b9f19b95e12c53b0287abab74f1dbaf84c0ef2f6", [ref: "b9f19b9"]}}
+  "z_stdlib": {:git, "https://github.com/zotonic/z_stdlib.git", "b9f19b95e12c53b0287abab74f1dbaf84c0ef2f6", [ref: "b9f19b9"]},
+  "zipper": {:git, "https://github.com/inaka/zipper.git", "05347c91219143f6dd2fbd6d95273b596a239fb8", [branch: "master"]}}
