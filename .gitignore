@@ -2,13 +2,11 @@
 # You can add personal rules in your file .git/info/exclude
 deps
 ebin
-test/nodes
 _build
 _checkouts
-_rel/*
+rel/wocky
 .eunit
 .rebar
-.deliver/releases
 *.nonode@nohost
 log/*
 .vagrant

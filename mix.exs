@@ -19,8 +19,9 @@ defmodule Wocky.Mixfile do
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [eunit: :test,
-                         ct:    :test],
+     preferred_cli_env: [eunit:   :test,
+                         ct:      :test,
+                         release: :prod],
      dialyzer: [
        plt_apps: [
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
@@ -46,22 +47,19 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :kernel,
-       :stdlib,
-       :crypto,
-       :lager,
-       :ossp_uuid,
-       :cqerl,
-       :stringprep,
-       :z_stdlib,
-       :mochijson2,
-       :qdate,
-       :ssl,
-       :ibrowse,
-       :jiffy,
-       :algolia
+       :kernel, :stdlib, :crypto, :ssl, :lager, :cqerl, :ibrowse,
+       :runtime_tools, :cache_tab, :alarms, :setup
      ],
-     included_applications: [:ejabberd],
+     included_applications: [
+       :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate, :jiffy, :algolia,
+       :fun_chain, :erlando,
+
+       # ejabberd dependencies that aren't listed in ejabberd.app
+       :fusco, :p1_utils, :pa, :cuesport, :base16, :idna, :xmerl, :usec, :redo,
+
+       # Runtime tools
+       :recon, :eper, :binpp, :pretty_errors
+     ],
      mod: {:wocky_app, []},
      env: [
        {:wocky_env, 'dev'},
@@ -123,6 +121,7 @@ defmodule Wocky.Mixfile do
       {:pretty_errors, github: "eproxus/pretty_errors",   branch: "master", manager: :rebar},
 
       ## build dependencies (not included in release)
+      {:exrm,          "~> 1.0"},
       {:edown,         "0.8.1", override: true},
       {:erlando,       github: "rabbitmq/erlando",        branch: "master"},
       {:fun_chain,     github: "sasa1977/fun_chain",      branch: "master", manager: :rebar3},
