@@ -2,7 +2,7 @@ node {
   stage 'Prepare'
   sh "epmd -daemon"
   checkout scm
-  sh "mix clean"
+  sh "mix local.hex --force"
   sh "mix deps"
 
   stage 'Basic Checks'
