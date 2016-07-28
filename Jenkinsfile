@@ -2,25 +2,25 @@ node {
   stage 'Prepare'
   sh "epmd -daemon"
   checkout scm
-  sh "git submodule update --init"
-  sh "make cleanall"
-  sh "make compile"
+  sh "mix clean"
+  sh "mix deps"
 
   stage 'Basic Checks'
-  sh "make lint"
-  sh "make xref"
-  sh "make dialyzer"
+  sh "mix lint"
+  sh "mix xref warnings"
+  sh "mix dialyzer"
 
   stage 'Unit Tests'
-  sh "make eunit"
+  sh "mix eunit"
 
   stage 'Integration Tests'
-  sh "make ct"
+  sh "mix ct"
 
   stage 'Build Release'
-  sh "make tar"
+  sh "rm -rf rel/wocky"
+  sh "mix release"
   sh "echo `./version` > RELEASE"
 
   archive 'RELEASE'
-  archive '_build/default/rel/wocky.tar.gz'
+  archive 'rel/wocky/releases/**/wocky.tar.gz'
 }
