@@ -3,6 +3,7 @@ node {
   sh "epmd -daemon"
   checkout scm
   sh "mix local.hex --force"
+  sh "mix local.rebar --force"
   sh "mix deps"
 
   stage 'Basic Checks'
