@@ -7,6 +7,9 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/mod_offline.hrl").
 
+-type offline_msg() :: #offline_msg{}.
+-export_type([offline_msg/0]).
+
 %% API
 -behaviour(mod_offline).
 -export([init/2,
@@ -26,14 +29,14 @@ init(_Host, _Opts) ->
     ok.
 
 -spec pop_messages(ejabberd:luser(), ejabberd:lserver()) ->
-    {ok, [#offline_msg{}]}.
+    {ok, [offline_msg()]}.
 pop_messages(LUser, LServer) ->
     Rows = get_user_messages(LUser, LServer),
     purge_messages(LServer, Rows),
     Recs = [ row_to_rec(LUser, LServer, Row) || Row <- Rows ],
     {ok, Recs}.
 
--spec write_messages(ejabberd:luser(), ejabberd:lserver(), [#offline_msg{}])
+-spec write_messages(ejabberd:luser(), ejabberd:lserver(), [offline_msg()])
                     -> ok.
 write_messages(LUser, LServer, Msgs) ->
     Q = "INSERT INTO offline_msg
