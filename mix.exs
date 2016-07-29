@@ -52,10 +52,10 @@ defmodule Wocky.Mixfile do
      ],
      included_applications: [
        :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate, :jiffy, :algolia,
-       :fun_chain, :erlando,
+       :erlando,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
-       :fusco, :p1_utils, :pa, :cuesport, :base16, :idna, :xmerl, :usec, :redo,
+       :fusco, :p1_utils, :cuesport, :base16, :idna, :xmerl, :usec, :redo,
 
        # Runtime tools
        :recon, :eper, :binpp, :pretty_errors
