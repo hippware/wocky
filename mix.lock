@@ -46,6 +46,7 @@
   "katana_code": {:hex, :katana_code, "0.1.0", "c34f3926a258d6beacd8d21f140f3d47d175501936431c460b144339d5271a0b", [:rebar3], [{:aleppo, "1.0.0", [hex: :inaka_aleppo, optional: false]}]},
   "lager": {:hex, :lager, "3.2.1", "eef4e18b39e4195d37606d9088ea05bf1b745986cf8ec84f01d332456fe88d17", [:rebar3], [{:goldrush, "0.1.8", [hex: :goldrush, optional: false]}]},
   "lager_syslog": {:git, "https://github.com/basho/lager_syslog", "126dd0284fcac9b01613189a82facf8d803411a2", [tag: "3.0.1"]},
+  "logger_lager_backend": {:hex, :logger_lager_backend, "0.0.2", "b957da78205c0bf946c2b5fefc68fc95a4b42955413e69acf4702d01658aa6ca", [:mix], []},
   "lz4": {:git, "https://github.com/szktty/erlang-lz4.git", "30878eafeff35939052c2cafe17d21c95029d3a1", [tag: "0.2.2"]},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:rebar, :make], []},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},

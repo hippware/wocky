@@ -52,7 +52,7 @@ defmodule Wocky.Mixfile do
      ],
      included_applications: [
        :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate, :jiffy, :algolia,
-       :erlando,
+       :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :idna, :xmerl, :usec, :redo,
@@ -89,6 +89,7 @@ defmodule Wocky.Mixfile do
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
       {:algolia,       github: "k3nn7/algoliasearch-client-erlang", branch: "master"},
       {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
+      {:logger_lager_backend, "~> 0.0.2"},
 
       ## ejabberd dependencies
       {:redo,          "2.0.1", override: true},

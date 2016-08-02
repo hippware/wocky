@@ -36,9 +36,6 @@ config :cqerl,
 config :kernel,
   error_logger: :silent
 
-config :logger,
-  level: :error
-
 config :lager,
   handlers: [
     {:lager_console_backend, [

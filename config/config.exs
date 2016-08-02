@@ -52,6 +52,10 @@ config :mnesia,
 config :setup,
   verify_directories: :false
 
+config :logger,
+  backends: [LoggerLagerBackend],
+  level: :debug
+
 config :lager,
   colored: :true,
   log_root: 'log',
