@@ -2,6 +2,8 @@
 %%% @doc Helper functions for Wocky integration test suites
 -module(test_helper).
 
+-include("wocky_db_seed.hrl").
+
 -export([ensure_wocky_is_running/0]).
 
 -export([expect_iq_success/2,
@@ -12,8 +14,7 @@
          expect_friendship_presence/2,
          subscribe/2,
          check_subscription_stanzas/2,
-         add_sample_contact/2,
-         meck_metrics/0]).
+         add_sample_contact/2]).
 
 ensure_wocky_is_running() ->
     case net_kernel:start(['mongooseim@localhost', longnames]) of
@@ -21,21 +22,7 @@ ensure_wocky_is_running() ->
         {error, {already_started, _Pid}} -> ok
     end,
 
-    Applications = application:which_applications(),
-    case app_is_running(Applications, wocky) of
-        true -> ok;
-        false -> ok = wocky_app:start("test")
-    end,
-    case app_is_running(Applications, ejabberd) of
-        true -> ok;
-        false -> wocky_app:start_ejabberd("../../../../etc")
-    end.
-
-app_is_running(Applications, Name) ->
-    case lists:keysearch(Name, 1, Applications) of
-        {value, _} -> true;
-        false -> false
-    end.
+    ok = wocky_app:start("ct").
 
 expect_iq_success_u(Stanza, User) ->
     expect_something(add_to_u(Stanza, User), User, is_iq_result).
@@ -78,7 +65,7 @@ subscribe(Alice, Bob) ->
     add_sample_contact(Alice, Bob),
 
     %% She subscribes to his presences
-    escalus:send(Alice, escalus_stanza:presence_direct(Bob,
+    escalus:send(Alice, escalus_stanza:presence_direct(?BOB_B_JID,
                                                        <<"subscribe">>)),
     PushReq = escalus:wait_for_stanza(Alice),
     escalus:assert(is_roster_set, PushReq),
@@ -98,7 +85,7 @@ subscribe(Alice, Bob) ->
     escalus:assert(is_iq_result, escalus:wait_for_stanza(Bob)),
 
     %% Bob sends subscribed presence
-    escalus:send(Bob, escalus_stanza:presence_direct( Alice,
+    escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
                                                      <<"subscribed">>)),
 
     %% Alice receives subscribed
@@ -128,8 +115,3 @@ add_sample_contact(Alice, Bob) ->
     Result = hd([R || R <- Received, escalus_pred:is_roster_set(R)]),
     escalus:assert(count_roster_items, [1], Result),
     escalus:send(Alice, escalus_stanza:iq_result(Result)).
-
-meck_metrics() ->
-    meck:new(mongoose_metrics),
-    meck:expect(mongoose_metrics, create, 2, ok),
-    meck:expect(mongoose_metrics, update, 2, ok).

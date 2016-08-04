@@ -64,7 +64,7 @@ handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     Req = #request{from_jid = FromJID, to_jid = ToJID, iq = IQ},
     case handle_request(Req, Type, ReqEl) of
         {error, E} ->
-            wocky_metrics:inc(mod_tros_failed_requests),
+            _ = wocky_metrics:inc(mod_tros_failed_requests),
             error_response(IQ, E);
         {ok, R} -> R
     end.

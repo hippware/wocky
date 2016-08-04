@@ -114,8 +114,9 @@ send_file(File, Req) ->
                     end,
     #{<<"content-type">> := ContentType} = francus:metadata(File2),
     francus:close(File2),
-    mongoose_metrics:update({wocky_app:server(), tros_francus_bytes_sent},
-                            byte_size(Data)),
+    _ = mongoose_metrics:update({wocky_app:server(),
+                                 tros_francus_bytes_sent},
+                                byte_size(Data)),
     cowboy_req:reply(200, [{<<"content-type">>, ContentType}], Data, Req).
 
 open_and_write(Request = #tros_request{user = User, file = FileID,
@@ -130,8 +131,9 @@ write_data(F, Request = #tros_request{size = SizeRemaining}, ChunkFun, Req) ->
     {Result, Data, NewSizeRemaining, Req2} =
     get_data(SizeRemaining, ChunkFun, Req),
     Request2 = Request#tros_request{size = NewSizeRemaining},
-    mongoose_metrics:update({wocky_app:server(), tros_francus_bytes_received},
-                            byte_size(Data)),
+    _ = mongoose_metrics:update({wocky_app:server(),
+                                 tros_francus_bytes_received},
+                                byte_size(Data)),
     case Result of
         more ->
             F2 = francus:write(F, Data),

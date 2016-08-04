@@ -16,7 +16,6 @@
 -define(FIRST_ID(N), nth_id(U1, U2, N, Rows)).
 
 mod_wocky_mam_test_() ->
- {ok, _} = application:ensure_all_started(stringprep),
  {
   "mod_wocky_mam",
   setup, fun before_all/0, fun after_all/1,
@@ -33,17 +32,12 @@ before_all() ->
                 fun(global, mod_wocky_mam, message_archive_ttl, infinity) ->
                         infinity
                 end),
-    ets:new(config, [named_table, set, public, {keypos, 2}]),
-    ets:insert(config, #config{key = hosts, value = [<<"localhost">>]}),
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [message_archive,
                                                        conversation]),
     ok.
 
 after_all(_) ->
-    ets:delete(config),
-    meck:unload(gen_mod),
-    ok = wocky_app:stop().
+    meck:unload().
 
 before_each() ->
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive,

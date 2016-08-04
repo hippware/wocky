@@ -14,11 +14,9 @@ mod_roster_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_app:start(),
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     ok.
 
 before_each() ->

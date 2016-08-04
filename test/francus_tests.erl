@@ -41,11 +41,10 @@ test_sizes() ->
     ].
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 after_all(_) ->
-    ok = wocky_app:stop().
+    ok.
 
 make_file(Size) ->
     ID = mod_tros:make_file_id(),
@@ -99,13 +98,14 @@ test_read() ->
     { "francus:read", setup, fun before_each/0, fun after_each/1, fun(Config) ->
      {inparallel, [
        { "Read entire files from the DB", {inparallel,
-         [?_test(
+         [{timeout, 10,
+           ?_test(
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
                  {F2, ReadData} = francus:read(F),
                  ?assertEqual(Data, ReadData),
                  ?assertEqual(eof, francus:read(F2))
-             end) || {ID, Data} <- Config#config.files, Data =/= <<>>] ++
+             end)} || {ID, Data} <- Config#config.files, Data =/= <<>>] ++
          [?_test(
              begin
                  {ok, F} = francus:open_read(?LOCAL_CONTEXT, ID),
@@ -152,18 +152,21 @@ test_write() ->
        %% standard files. Still do cleanup though.
        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
          {inparallel,
-          [?_test(
-             begin
-                 ID = mod_tros:make_file_id(),
-                 {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
-                                              wocky_db:create_id(),
-                                              purpose(), access(),
-                                              metadata()),
-                 Data = crypto:strong_rand_bytes(Size),
-                 F2 = francus:write(F, Data),
-                 ok = francus:close(F2),
-                 verify_contents(ID, Data)
-             end) || Size <- test_sizes(), Size =/= 0]}
+          {timeout, 10,
+            [
+             ?_test(
+               begin
+                   ID = mod_tros:make_file_id(),
+                   {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
+                                                wocky_db:create_id(),
+                                                purpose(), access(),
+                                                metadata()),
+                   Data = crypto:strong_rand_bytes(Size),
+                   F2 = francus:write(F, Data),
+                   ok = francus:close(F2),
+                   verify_contents(ID, Data)
+               end) || Size <- test_sizes(), Size =/= 0]}
+         }
        }
       ]
     }.

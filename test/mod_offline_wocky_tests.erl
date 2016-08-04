@@ -32,12 +32,11 @@ sanity_test_() -> [
 ].
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [offline_msg]),
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop().
+    ok.
 
 before_each() ->
     {ok, Data} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, offline_msg),

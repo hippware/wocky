@@ -43,6 +43,13 @@
 -define(ROBERT_JID,jid:make(?ROBERT,?LOCAL_CONTEXT, <<>>)).
 -define(SERVER_JID,jid:make(<<>>,   ?LOCAL_CONTEXT, <<>>)).
 
+-define(ALICE_B_JID,  jid:to_binary(?ALICE_JID)).
+-define(BOB_B_JID,    jid:to_binary(?BOB_JID)).
+-define(CAROL_B_JID,  jid:to_binary(?CAROL_JID)).
+-define(KAREN_B_JID,  jid:to_binary(?KAREN_JID)).
+-define(ROBERT_B_JID, jid:to_binary(?ROBERT_JID)).
+-define(SERVER_B_JID, jid:to_binary(?SERVER_JID)).
+
 -define(AVATAR_FILE,   <<"ee880476-e712-11e5-990d-08002719e96e">>).
 -define(AVATAR_FILE2,  <<"5620c844-e98d-11e5-b97b-08002719e96e">>).
 -define(AVATAR_FILE3,  <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).

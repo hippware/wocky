@@ -86,15 +86,16 @@ ejabberd_auth_wocky_sanity_test_() -> {
 }.
 
 before_all(PasswordFormat) ->
-    meck:new(ejabberd_config),
+    meck:new(ejabberd_config, [passthrough]),
     meck:expect(ejabberd_config, get_vh_by_auth_method,
                 fun(_) -> [?SERVER] end),
     meck:expect(ejabberd_config, get_local_option,
                 fun(auth_opts, _Host) ->
-                    [{password_format, PasswordFormat}]
+                     [{password_format, PasswordFormat}];
+                   (X, Y) ->
+                     meck:passthrough([X, Y])
                 end),
 
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [user,
                                                phone_number_to_user,
                                                handle_to_user
@@ -102,13 +103,9 @@ before_all(PasswordFormat) ->
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [auth_token,
                                                        location
                                                       ]),
-    ok = ejabberd_auth_wocky:start(?SERVER),
     ok.
 
 after_all(_) ->
-    ok = ejabberd_auth_wocky:stop(?SERVER),
-    ok = wocky_app:stop(),
-
     meck:unload(),
     ok.
 

@@ -107,7 +107,7 @@ start ()
 # attach to server
 debug ()
 {
-    $SCRIPT_DIR/wocky debug
+    $SCRIPT_DIR/wocky remote_console
 }
 
 # start interactive server

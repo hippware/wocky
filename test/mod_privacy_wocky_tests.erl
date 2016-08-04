@@ -31,13 +31,11 @@ mod_privacy_wocky_test_() -> {
 privacy_tables() -> [privacy, privacy_item].
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, privacy_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, privacy_tables()),
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     ok.
 
 test_get_default_list() -> {

@@ -31,7 +31,6 @@ mod_wocky_lookup_handle_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(shared, [user,
                                                phone_number_to_user,
                                                handle_to_user]),
@@ -46,7 +45,7 @@ after_all(_) ->
                                              phone_number_to_user,
                                              handle_to_user]),
     ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
-    ok = wocky_app:stop().
+    ok.
 
 -define(FROM, #jid{luser = ?ALICE, lserver = ?SERVER}).
 -define(TO, #jid{lserver = ?SERVER}).

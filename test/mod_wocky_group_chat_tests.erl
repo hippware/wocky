@@ -7,6 +7,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
+-compile(export_all).
+
 -import(mod_wocky_group_chat, [new_chat/3,
                                add_participant/2,
                                remove_participant/2,
@@ -33,8 +35,7 @@ mod_wocky_group_chat_test_() -> {
     test_remove_participant(),
     test_get_info(),
     test_handle_packet(),
-    test_is_participant(),
-    test_meck_validate()
+    test_is_participant()
   ]
  }.
 
@@ -42,13 +43,10 @@ group_chat_tables() -> [group_chat].
 shared_group_chat_tables() -> [user].
 
 before_all() ->
-    ok = wocky_app:start(),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db_seed:prepare_tables(shared, shared_group_chat_tables()),
     ok = wocky_db_seed:seed_tables(shared, shared_group_chat_tables()),
-    meck:new(ejabberd_config, [passthrough]),
-    meck:expect(ejabberd_config, get_global_option, 1, <<"en">>),
 
     %% This is, generally speaking, a terrible idea. We are mocking a modue
     %% that is normally dynamically compiled by ejabberd at startup. This
@@ -60,11 +58,9 @@ before_all() ->
                  mongoose_router_external_localnode,
                  mongoose_router_external,
                  ejabberd_s2s]),
-    test_helper:meck_metrics(),
     ok.
 
 after_all(_) ->
-    ok = wocky_app:stop(),
     meck:unload(),
     ok.
 
@@ -73,7 +69,10 @@ test_new_chat() ->
       { "creates a new chat",
         setup,
         fun() -> wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [group_chat]) end,
-        fun(_) -> wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [group_chat]) end,
+        fun(_) ->
+                wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [group_chat]),
+                wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [group_chat])
+        end,
         [
         ?_assertMatch({ok, ?SUCCESS_IQ},
                       new_chat(?ALICE_JID, ?SERVER_JID, create_iq())),
@@ -294,11 +293,6 @@ test_is_participant() ->
                                                  wocky_db:create_id(),
                                                  ?LOCAL_CONTEXT, <<>>)))
       ]}
-    ]}.
-
-test_meck_validate() ->
-    {"Check that all mecks were called", [
-        ?_assert(meck:validate(ejabberd_config))
     ]}.
 
 %% Helpers
