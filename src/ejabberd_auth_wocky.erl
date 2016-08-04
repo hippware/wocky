@@ -35,6 +35,7 @@
 -export([start/1,
          stop/1,
          store_type/1,
+         authorize/1,
          set_password/3,
          check_password/3,
          check_password/5,
@@ -86,6 +87,11 @@ set_password(LUser, LServer, Password) ->
         not_found ->
             {error, invalid_jid}
     end.
+
+-spec authorize(mongoose_credentials:t()) -> {ok, mongoose_credentials:t()}
+                                             | {error, any()}.
+authorize(Creds) ->
+    ejabberd_auth:authorize_with_check_password(?MODULE, Creds).
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary())
                     -> boolean().

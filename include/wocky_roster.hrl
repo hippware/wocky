@@ -2,7 +2,7 @@
 -ifndef(WOCKY_ROSTER_HRL).
 -define(WOCKY_ROSTER_HRL, 1).
 
--record(roster, {
+-record(wocky_roster, {
           user                  :: binary(),
           server                :: binary(),
           contact_jid           :: ejabberd:simple_jid(),
@@ -14,7 +14,6 @@
           subscription = none   :: both | from | to | none | remove,
           ask = none            :: in | out | both | none,
           groups = []           :: [binary()],
-          ask_message = <<>>    :: binary(),
           xs = []               :: [term()]
          }).
 

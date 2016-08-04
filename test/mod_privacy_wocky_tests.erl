@@ -7,10 +7,13 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_db_seed.hrl").
 
+-define(DEFAULT_LIST, <<"default">>).
+
 -import(mod_privacy_wocky, [get_default_list/2, get_list_names/2,
                             get_privacy_list/3, forget_default_list/2,
                             set_default_list/3, remove_privacy_list/3,
-                            replace_privacy_list/4, remove_user/2
+                            replace_privacy_list/4, remove_user/2,
+                            default_list_items/2
                            ]).
 
 mod_privacy_wocky_test_() -> {
@@ -38,38 +41,26 @@ before_all() ->
 after_all(_) ->
     ok.
 
-test_get_default_list() -> {
+test_get_default_list() ->
+  DefaultListItems = default_list_items(?CAROL, ?LOCAL_CONTEXT),
+  {
   "get_default_list", [
     { "gets a user's default list", [
-      ?_assertMatch({ok, {?PRIVACY_LIST1,
-                          [#listitem{value = {?KAREN, ?LOCAL_CONTEXT, <<>>}},
-                           #listitem{value = {?KAREN, ?LOCAL_CONTEXT, <<>>}}]}},
+      ?_assertMatch({ok, {?DEFAULT_LIST, DefaultListItems}},
                     get_default_list(?CAROL, ?LOCAL_CONTEXT))
-    ]},
-    { "gets an error if no default list is set", [
-      ?_assertEqual({error, not_found},
-                    get_default_list(?KAREN, ?LOCAL_CONTEXT))
-    ]},
-    { "gets an error if there is no privacy table entry for the user", [
-      ?_assertEqual({error, not_found},
-                    get_default_list(?ALICE, ?LOCAL_CONTEXT))
     ]}
   ]}.
 
 test_get_list_names() -> {
   "get_list_names", [
     { "gets a user's lists and default list", [
-      ?_assertEqual({ok, {?PRIVACY_LIST1,
-                          [?PRIVACY_LIST1, ?PRIVACY_LIST2]}},
+      ?_assertEqual({ok, {?DEFAULT_LIST,
+                          [?DEFAULT_LIST, ?PRIVACY_LIST1, ?PRIVACY_LIST2]}},
                     get_list_names(?CAROL, ?LOCAL_CONTEXT))
     ]},
-    { "gets nothing if no list exist", [
-      ?_assertEqual({ok, {<<"">>, []}},
+    { "gets only default if no other lists exist", [
+      ?_assertEqual({ok, {?DEFAULT_LIST, [?DEFAULT_LIST]}},
                     get_list_names(?KAREN, ?LOCAL_CONTEXT))
-    ]},
-    { "gets an error if there is no privacy table entry for the user", [
-      ?_assertEqual({error, not_found},
-                    get_list_names(?ALICE, ?LOCAL_CONTEXT))
     ]}
   ]}.
 
@@ -100,34 +91,18 @@ test_get_privacy_list() -> {
 
 test_forget_default_list() -> {
   "forget_default_list", [
-    { "Clear's a user's default list", [
-      ?_assertEqual(ok, forget_default_list(?CAROL, ?LOCAL_CONTEXT)),
+    { "Should always return an error", [
       ?_assertEqual({error, not_found},
-                    get_default_list(?CAROL, ?LOCAL_CONTEXT))
-    ]},
-    { "Does not fail when a user doesn't have a default list", [
-      ?_assertEqual(ok, forget_default_list(?KAREN, ?LOCAL_CONTEXT)),
-      ?_assertEqual(ok, forget_default_list(?CAROL, ?LOCAL_CONTEXT))
+                    forget_default_list(?CAROL, ?LOCAL_CONTEXT))
     ]}
   ]}.
 
 test_set_default_list() -> {
   "set_default_list", [
-    { "sets a default on a user with no default list", [
+    { "Should always return an error", [
       ?_assertEqual({error, not_found},
-                    get_default_list(?CAROL, ?LOCAL_CONTEXT)),
-      ?_assertEqual(ok, set_default_list(?CAROL, ?LOCAL_CONTEXT,
-                                         ?PRIVACY_LIST1)),
-      ?_assertMatch({ok, {?PRIVACY_LIST1,
-                          [#listitem{value = {?KAREN, ?LOCAL_CONTEXT, <<>>}},
-                           #listitem{value = {?KAREN, ?LOCAL_CONTEXT, <<>>}}]}},
-                    get_default_list(?CAROL, ?LOCAL_CONTEXT))
-    ]},
-    { "fails for non-existant lists", [
-      ?_assertEqual({error, not_found},
-                    set_default_list(?KAREN, ?LOCAL_CONTEXT, ?PRIVACY_LIST1)),
-      ?_assertEqual({error, not_found},
-                     set_default_list(?ALICE, ?LOCAL_CONTEXT, ?PRIVACY_LIST1))
+                    set_default_list(?CAROL, ?LOCAL_CONTEXT,
+                                     ?PRIVACY_LIST1))
     ]}
   ]}.
 
@@ -136,15 +111,15 @@ test_remove_privacy_list() -> {
     { "removes a list by name", [
       ?_assertEqual(ok, remove_privacy_list(?CAROL, ?LOCAL_CONTEXT,
                                             ?PRIVACY_LIST2)),
-      ?_assertEqual({ok, {?PRIVACY_LIST1, [?PRIVACY_LIST1]}},
+      ?_assertEqual({ok, {?DEFAULT_LIST, [?DEFAULT_LIST, ?PRIVACY_LIST1]}},
                     get_list_names(?CAROL, ?LOCAL_CONTEXT))
     ]},
     { "refuses to remove a default list", [
       ?_assertEqual({error, conflict},
-                    remove_privacy_list(?CAROL, ?LOCAL_CONTEXT,
-                                        ?PRIVACY_LIST1)),
-      ?_assertEqual({ok, {?PRIVACY_LIST1, [?PRIVACY_LIST1]}},
-                    get_list_names(?CAROL, ?LOCAL_CONTEXT))
+                    remove_privacy_list(?KAREN, ?LOCAL_CONTEXT,
+                                        ?DEFAULT_LIST)),
+      ?_assertEqual({ok, {?DEFAULT_LIST, [?DEFAULT_LIST]}},
+                    get_list_names(?KAREN, ?LOCAL_CONTEXT))
     ]},
     { "succeeds even if the list alredy doesn't exist for that user", [
       ?_assertEqual(ok,
@@ -152,9 +127,9 @@ test_remove_privacy_list() -> {
                                         ?PRIVACY_LIST2)),
       ?_assertEqual(ok,
                     remove_privacy_list(?KAREN, ?LOCAL_CONTEXT,
-                                        ?PRIVACY_LIST2)),
+                                        ?PRIVACY_LIST1)),
       ?_assertEqual(ok,
-                    remove_privacy_list(?CAROL, ?LOCAL_CONTEXT,
+                    remove_privacy_list(?KAREN, ?LOCAL_CONTEXT,
                                         ?PRIVACY_LIST2))
     ]}
   ]}.
@@ -185,9 +160,7 @@ test_remove_user() -> {
       ?_assertEqual(ok, remove_user(?CAROL, ?LOCAL_CONTEXT)),
       ?_assertEqual({error, not_found},
                     get_privacy_list(?CAROL, ?LOCAL_CONTEXT,
-                                     ?PRIVACY_LIST1)),
-      ?_assertEqual({error, not_found},
-                    get_default_list(?CAROL, ?LOCAL_CONTEXT))
+                                     ?PRIVACY_LIST1))
     ]},
     { "does not fail on repeated calls with non-existant users", [
       ?_assertEqual(ok, remove_user(?CAROL, ?LOCAL_CONTEXT)),

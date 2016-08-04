@@ -41,11 +41,8 @@ groups() ->
                  remove_contact]},
    {roster_versioning, [], [versioning]},
    {subscribe_group, [], [subscribe,
-                          subscribe_decline,
-                          subscribe_relog,
                           unsubscribe,
-                          remove_unsubscribe,
-                          subscribed_follow
+                          remove_unsubscribe
                          ]}].
 
 suite() ->
@@ -79,7 +76,7 @@ end_per_testcase(CaseName, Config)
     remove_roster(Config, UserSpec),
     escalus:end_per_testcase(CaseName, Config);
 end_per_testcase(CaseName, Config)
-  when CaseName =:= subscribe; CaseName =:= subscribe_decline;
+  when CaseName =:= subscribe;
        CaseName =:= unsubscribe; CaseName =:= versioning ->
     [{_, UserSpec1}, {_, UserSpec2} | _] =
         escalus_config:get_config(escalus_users, Config),
@@ -138,7 +135,7 @@ roster_push(Config) ->
 remove_contact(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
         %% add contact
-        test_helper:add_sample_contact(Alice, Bob),
+        test_helper:add_contact(Alice, Bob, [<<"friends">>], <<"Bobsicle">>),
 
         %% check roster
         escalus:send(Alice, escalus_stanza:roster_get()),
@@ -235,7 +232,9 @@ versioning(Config) ->
 
 subscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        test_helper:subscribe(Alice, Bob),
+        %% Only bi-directional subscriptions send presence data by default in
+        %% wocky
+        test_helper:subscribe_pair(Alice, Bob),
 
         %% Bob sends presence
         escalus:send(Bob, escalus_stanza:presence(<<"available">>)),
@@ -247,87 +246,11 @@ subscribe(Config) ->
                        escalus:wait_for_stanza(Alice))
     end).
 
-subscribe_decline(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        %% add contact
-        test_helper:add_sample_contact(Alice, Bob),
-
-        %% subscribe
-        escalus:send(Alice, escalus_stanza:presence_direct(?BOB_B_JID,
-                                                           <<"subscribe">>)),
-        PushReq = escalus:wait_for_stanza(Alice),
-        escalus_assert:is_roster_set(PushReq),
-        escalus:send(Alice, escalus_stanza:iq_result(PushReq)),
-
-        %% Bob receives subscription reqest
-        Received = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_presence_with_type, [<<"subscribe">>], Received),
-
-        %% Bob refuses subscription
-        escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
-                                                         <<"unsubscribed">>)),
-
-        %% Alice receives subscribed
-        Stanzas = escalus:wait_for_stanzas(Alice, 2),
-
-        test_helper:check_subscription_stanzas(Stanzas, <<"unsubscribed">>)
-    end).
-
-
-subscribe_relog(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        %% Alice adds Bob as a contact
-        test_helper:add_sample_contact(Alice, Bob),
-
-        %% She subscribes to his presences
-        escalus:send(Alice,
-                     escalus_stanza:presence_direct(?BOB_B_JID,
-                                                    <<"subscribe">>)),
-
-        PushReq = escalus:wait_for_stanza(Alice),
-        escalus:assert(is_roster_set, PushReq),
-        escalus:send(Alice, escalus_stanza:iq_result(PushReq)),
-
-        %% Bob receives subscription reqest
-        Received = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_presence_with_type, [<<"subscribe">>], Received),
-
-        %% New Bob resource connects, should receive subscription request again
-        {ok, NewBob} = escalus_client:start_for(Config, bob, <<"newbob">>),
-        escalus:send(NewBob,
-                     escalus_stanza:presence(<<"available">>)),
-
-        escalus:assert(is_presence_with_type, [<<"available">>],
-                       escalus:wait_for_stanza(Bob)),
-
-        Stanzas = escalus:wait_for_stanzas(NewBob, 3),
-        3 = length(Stanzas),
-
-        escalus_new_assert:mix_match([
-                fun (S) ->
-                    escalus_pred:is_presence_with_type(<<"available">>, S)
-                    andalso escalus_pred:is_stanza_from(Bob, S)
-                end,
-                fun (S) ->
-                    escalus_pred:is_presence_with_type(<<"available">>, S)
-                    andalso escalus_pred:is_stanza_from(NewBob, S)
-                end,
-                fun (S) ->
-                    escalus_pred:is_presence_with_type(<<"subscribe">>, S)
-                    andalso escalus_pred:is_stanza_from(?ALICE_B_JID, S)
-                end
-            ], Stanzas),
-
-        escalus_client:stop(NewBob),
-
-        escalus:send(Bob,
-                     escalus_stanza:presence_direct(?ALICE_B_JID,
-                                                    <<"unsubscribed">>))
-    end).
-
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        test_helper:subscribe(Alice, Bob),
+        test_helper:subscribe_pair(Alice, Bob),
+
+        ct:log("XXXXX Initial subscription done"),
 
         %% Alice sends unsubscribe
         escalus:send(Alice,
@@ -339,31 +262,33 @@ unsubscribe(Config) ->
         escalus:send(Alice, escalus_stanza:iq_result(PushReqA2)),
 
         %% Bob receives unsubscribe
+        test_helper:expect_subscription_stanzas(Bob, <<"unsubscribe">>),
 
-        StanzasB = escalus:wait_for_stanzas(Bob, 2),
-
-        test_helper:check_subscription_stanzas(StanzasB, <<"unsubscribe">>),
-
-        %% Alice receives unsubscribed
+        %% Bob receives 'unavailable' because the subscription is no
+        %% longer two-way, triggering wocky's default privacy list presence
+        %% blocking
         escalus:assert(is_presence_with_type, [<<"unavailable">>],
-                       escalus:wait_for_stanza(Alice))
+                       escalus:wait_for_stanza(Bob))
     end).
 
 remove_unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        test_helper:subscribe(Alice, Bob),
+        test_helper:subscribe_pair(Alice, Bob),
 
         %% remove contact
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
-
         IsPresUnavailable =
-                fun (S) ->
+                fun(S) ->
                     escalus_pred:is_presence_with_type(<<"unavailable">>, S)
                 end,
         escalus:assert_many([is_roster_set, is_iq_result, IsPresUnavailable],
                             escalus:wait_for_stanzas(Alice, 3)),
-        test_helper:check_subscription_stanzas(escalus:wait_for_stanzas(Bob, 2),
-                                   <<"unsubscribe">>)
+
+        %% Bob gets an unavaialble triggered by Alice changing subscription
+        %% which triggers wocky's default privacy list presence blocking
+        test_helper:expect_subscription_stanzas(Bob, <<"unsubscribe">>),
+        escalus:assert(is_presence_with_type, [<<"unavailable">>],
+                       escalus:wait_for_stanza(Bob))
     end).
 
 subscribed_follow(Config) ->
@@ -373,8 +298,8 @@ subscribed_follow(Config) ->
         %% Alice's roster under the __new__ group.
         escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
                                                          <<"subscribed">>)),
-        Stanzas = escalus:wait_for_stanzas(Alice, 2),
-        test_helper:check_subscription_stanzas(Stanzas, <<"subscribed">>),
+        Stanzas = test_helper:expect_subscription_stanzas(
+                    Alice, <<"subscribed">>),
         IQ = lists:keyfind(<<"iq">>, #xmlel.name, Stanzas),
         Group = xml:get_path_s(
                   IQ, [{elem, <<"query">>},
