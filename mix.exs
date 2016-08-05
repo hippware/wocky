@@ -124,7 +124,8 @@ defmodule Wocky.Mixfile do
       ## build dependencies (not included in release)
       {:exrm,          "~> 1.0"},
       {:edown,         "0.8.1", override: true},
-      {:erlando,       github: "rabbitmq/erlando",        branch: "master"},
+      # erlando's app file is b0rked so we need to override the dep here.
+      {:erlando, ~r//, github: "rabbitmq/erlando",        branch: "master", override: true},
       {:fun_chain,     github: "sasa1977/fun_chain",      branch: "master", manager: :rebar3},
 
       ## testing dependencies (not included in release)
