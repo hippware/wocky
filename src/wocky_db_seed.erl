@@ -9,13 +9,16 @@
 -include("wocky_roster.hrl").
 -include("wocky_bot.hrl").
 
+-define(schemata, 'Elixir.Schemata').
+-define(query, 'Elixir.Schemata.Query').
+-define(result, 'Elixir.Schemata.Result').
+-define(schema, 'Elixir.Schemata.Schema').
+
 -export([bootstrap_all/0, bootstrap_all/1, bootstrap/2,
          create_schema/0, create_schema/1, create_schema_for/1,
          foreach_table/3, recreate_table/2,
-         create_table_indexes/2, create_table_views/2, drop_table_views/2,
          seed_table/2, seed_tables/2, seed_keyspace/2,
-         prepare_tables/2, clear_tables/2, clear_user_tables/1,
-         table_definition/1, seed_data/2]).
+         prepare_tables/2, clear_tables/2, clear_user_tables/1, seed_data/2]).
 
 -ignore_xref([{bootstrap, 2},
               {bootstrap_all, 0},
@@ -65,39 +68,17 @@ create_schema(Context) ->
     create_schema_for(Context).
 
 create_schema_for(Context) ->
-    prepare_tables(Context, keyspace_tables(Context)).
+    Keyspace = wocky_db:keyspace_name(Context),
+    {ok, applied} = ?schema:apply_schema(Keyspace),
+    ok.
 
 foreach_table(Context, Fun, Tables) ->
     lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
 
 recreate_table(Context, Name) ->
-    ok = drop_table_views(Context, Name),
-    ok = wocky_db:drop(Context, table, Name),
-    ok = wocky_db:create_table(Context, table_definition(Name)),
-    ok = create_table_indexes(Context, Name),
-    ok = create_table_views(Context, Name),
+    Keyspace = wocky_db:keyspace_name(Context),
+    ok = ?schema:'create_table!'(Keyspace, Name),
     ok.
-
-create_table_indexes(Context, Table) ->
-    lists:foreach(
-      fun (IdxKeys) -> ok = wocky_db:create_index(Context, Table, IdxKeys) end,
-      table_indexes(Table)).
-
-create_table_views(Context, Table) ->
-    lists:foreach(
-      fun ({_, none, _, _}) -> ok;
-          ({Name, Columns, Keys, OrderBy}) ->
-          ok = wocky_db:create_view(Context, Name, Table,
-                                    Columns, Keys, OrderBy)
-      end,
-      table_views(Table)).
-
-drop_table_views(Context, Table) ->
-    lists:foreach(
-      fun ({Name, _, _, _}) ->
-          ok = wocky_db:drop(Context, 'materialized view', Name)
-      end,
-      table_views(Table)).
 
 seed_tables(Context, Tables) ->
     lists:foreach(fun(T) -> {ok, _} = seed_table(Context, T) end, Tables).
@@ -128,8 +109,6 @@ seed_keyspace(Context, Server) ->
       keyspace_tables(Context)).
 
 prepare_tables(Context, Tables) ->
-    {Strategy, Factor} = wocky_app:get_config(keyspace_replication),
-    ok = wocky_db:create_keyspace(Context, Strategy, Factor),
     ok = foreach_table(Context, fun recreate_table/2, Tables).
 
 clear_tables(Context, Tables) ->
@@ -146,379 +125,10 @@ clear_user_tables(Context) ->
 
 
 %%====================================================================
-%% Schema definitions
-%%====================================================================
-
-keyspace_tables(shared) -> [
-    handle_to_user,
-    phone_number_to_user,
-    user
-];
-keyspace_tables(_) -> [
-    location,
-    last_activity,
-    offline_msg,
-    roster,
-    session,
-    media,
-    media_data,
-    message_archive,
-    conversation,
-    auth_token,
-    privacy,
-    privacy_item,
-    tros_request,
-    phone_lookup_count,
-    group_chat,
-    bot
-].
-
-%% A lookup table that maps globally unique handle to user account id
-table_definition(handle_to_user) ->
-    #table_def{
-       name = handle_to_user,
-       columns = [
-           {user, text},
-           {server, text},
-           {handle, text}
-       ],
-       primary_key = handle
-    };
-
-%% A lookup table that maps globally unique phone number to user account id
-table_definition(phone_number_to_user) ->
-    #table_def{
-       name = phone_number_to_user,
-       columns = [
-           {user, text},
-           {server, text},
-           {phone_number, text}
-       ],
-       primary_key = phone_number
-    };
-
-%% Table for storing the details of a user's account
-table_definition(user) ->
-    #table_def{
-       name = user,
-       columns = [
-           {user, text},           % User ID (userpart of JID)
-           {server, text},         % User Server (domainpart of JID)
-           {handle, text},         % User handle (as seen by other users)
-           {password, text},       % Password hash
-           {avatar, text},         % ID of file containing user's avatar
-           {first_name, text},     % User's first name
-           {last_name, text},      % User's last name
-           {email, text},          % User's email address
-           {external_id, text}     % The user ID received from Twitter Digits
-       ],
-       primary_key = [server, user]
-    };
-
-%% Table for storing the location history of users
-table_definition(location) ->
-    #table_def{
-       name = location,
-       columns = [
-           {user, text},        % User ID (userpart of JID)
-           {server, text},      % User Server (domainpart of JID)
-           {resource, text},    % Resource that reported this location
-           {time, timestamp},   % Time of location report
-           {lat, double},       % Latitude (degrees North)
-           {lon, double},       % Longditude (degrees East)
-           {accuracy, double}   % Accuracy reported by device (meters)
-       ],
-       primary_key = [[user, server], time],
-       order_by = [{time, desc}]
-    };
-
-%% Table for storing details of users' last activty on the server. This is
-%% updated only when a user logs out or disconnects
-table_definition(last_activity) ->
-    #table_def{
-       name = last_activity,
-       columns = [
-           {user, text},           % User ID (userpart of JID)
-           {server, text},         % User Server (domainpart of JID)
-           {timestamp, timestamp}, % Timestamp of last user logoff
-           {status, text}          % Text set in last user presence
-                                   % with type of "unavailable"
-       ],
-       primary_key = user
-    };
-
-%% Table for storing messages sent to a user while they're offline
-table_definition(offline_msg) ->
-    #table_def{
-       name = offline_msg,
-       columns = [
-           {user, text},           % User ID (userpart of JID)
-           {server, text},         % User Server (domainpart of JID)
-           {msg_id, timeuuid},     % Unique message ID
-           {timestamp, timestamp}, % Message timestamp
-           {expire, timestamp},    % Message expiry (as timestamp)
-           {from_id, text},        % Sending user JID
-           {to_id, text},          % Receiving user JID
-           {packet, text}          % Full XML of <message> element
-       ],
-       primary_key = [user, timestamp, msg_id],
-       order_by = [{timestamp, asc}]
-    };
-
-%% Table for storing a user's roster
-table_definition(roster) ->
-    #table_def{
-       name = roster,
-       columns = [
-           {user, text},           % User ID (userpart of JID)
-           {server, text},         % User Server (domainpart of JID)
-           {contact_jid, text},    % Bare JID for contact
-           {active, boolean},      % True if the roster item is not deleted
-           {nick, text},           % Display name for contact chosen by the user
-           {groups, {set, text}},  % List of groups the contact belongs to
-           {ask, text},            % Status if the item is pending approval
-           {subscription, text},   % Subscription state of the roster item
-           {version, timestamp}    % Timestamp indicating when the roster item
-                                   % was last updated
-       ],
-       primary_key = [user, contact_jid]
-    };
-
-%% Table for storing transient data for active user sessions
-table_definition(session) ->
-    #table_def{
-       name = session,
-       columns = [
-           {sid, blob},            % Session ID
-           {node, text},           % Node handling the active session
-           {user, text},           % User ID (userpart of JID)
-           {server, text},         % User Server (domainpart of JID)
-           {jid_user, text},       % Provided JID userpart
-           {jid_server, text},     % Provided JID domainpart
-           {jid_resource, blob},   % Provided JID resourcepart
-           {priority, int},        % Session priority
-           {info, blob}            % Session info
-       ],
-       primary_key = [sid, jid_user]
-    };
-
-%% Francus file-store metadata table
-table_definition(media) ->
-    #table_def{
-       name = media,
-       columns = [
-           {id, text},       % ID of the file
-           {user, text},     % User ID of the file owner
-           {size, int},      % File size in bytes
-           {purpose, text},  % Purpose of this file
-           {access, text},   % Comma-separated list of JIDs with access to this
-                             % file. The exact meaning of the field depends on
-                             % the value in the purpose field. See
-                             % tros_permissions.erl
-           {metadata, {map, text, text}}, % General purpose metadata field
-           {chunks, {list, timeuuid}} % Ordered list of media_data table
-                                      % chunks comprising the file
-       ],
-       primary_key = id
-    };
-
-%% Franks file-store data table
-table_definition(media_data) ->
-    #table_def{
-       name = media_data,
-       columns = [
-           {chunk_id, timeuuid},   % ID of chunk
-           {file_id, text},        % ID of the file
-           {data, blob}            % Data in this chunk
-       ],
-       primary_key = chunk_id
-    };
-
-table_definition(message_archive) ->
-    #table_def{
-       name = message_archive,
-       columns = message_archive_columns(),
-       primary_key = [user_jid, time],
-       order_by = [{time, asc}]
-    };
-
-table_definition(conversation) ->
-    #table_def{
-       name = conversation,
-       columns = message_archive_columns(),
-       primary_key = [user_jid, other_jid]
-    };
-
-%% Tokens for authenticating individual resources
-table_definition(auth_token) ->
-    #table_def{
-       name = auth_token,
-       columns = [
-           {user, text},            % User ID (userpart of JID)
-           {server, text},          % Server (domainpart of JID)
-           {resource, text},        % Resource (resourcepart of JID)
-           {auth_token, text},      % Token
-           {created_at, timestamp}, % When the token was created
-           {expires_at, timestamp}  % When the token expires
-       ],
-       primary_key = [user, server, resource]
-    };
-
-% mod_privacy settings for users
-table_definition(privacy) ->
-    #table_def{
-       name = privacy,
-       columns = [
-           {user, text},         % User ID (userpart of JID)
-           {server, text},       % Server (domainpart of JID)
-           {lists, {set, text}}  % Set of configured privacy lists
-       ],
-       primary_key = [user, server]
-    };
-
-% mod_privacy privacy list items
-table_definition(privacy_item) ->
-    #table_def{
-       name = privacy_item,
-       columns = [
-           {user, text},      % User ID (userpart of JID)
-           {server, text},    % Server (domainpart of JID)
-           {list, text},      % List name for this item
-           {id, timeuuid},    % ID of this item
-           {type, text},      % Type of this item: jid | subscription | group
-           {value, text},     % For subscriptions: none | from | to | both
-                              % For JID: String representation
-                              % For group: Name of the group
-           {action, boolean}, % true = allow | false = deny
-           {item_order, int}, % Sequence in which to apply this item
-           % Events to which to apply this item:
-           {match_all, boolean},
-           {match_iq, boolean},
-           {match_message, boolean},
-           {match_presence_in, boolean},
-           {match_presence_out, boolean}
-       ],
-       primary_key = [user, server, list, id]
-    };
-
-% Table of pending TROS/Francus requests
-table_definition(tros_request) ->
-    #table_def{
-       name = tros_request,
-       columns = [
-           {user, text},     % User making the request
-           {file, text},     % File name of the request
-           {auth, blob},     % Authorization key for the request
-           {method, text},   % HTTP method for the request (get/post)
-           {size, int},      % Size of the requested file (upload only)
-           {metadata, {map, text, text}}, % File metadata (key => value)
-           % See media table for a full description of these:
-           {purpose, text},  % Purpose of the file (upload only)
-           {access, text}    % Access field for the file (upload only)
-       ],
-       primary_key = [user, file, auth, method]
-    };
-
-table_definition(phone_lookup_count) ->
-    #table_def{
-       name = phone_lookup_count,
-       columns = [
-           {user, text},      % User ID (userpart of JID)
-           {server, text},    % Server (domainpart of JID)
-           {date, timestamp}, % Date of the last request
-           {count, int}       % Number of requests during the day
-       ],
-       primary_key = [user, server, date]
-    };
-
-table_definition(group_chat) ->
-    #table_def{
-       name = group_chat,
-       columns = [
-           {id, timeuuid},
-           {owner, timeuuid},
-           {participants, {set, text}},
-           {title, text}
-       ],
-       primary_key = [id]
-    };
-
-table_definition(bot) ->
-    #table_def{
-       name = bot,
-       columns = [
-           {id,         timeuuid},
-           {server,     text},
-           {title,      text},
-           {shortname,  text},
-           {owner,      text},
-           {description, text},
-           {lat,        double},
-           {lon,        double},
-           {radius,     int},
-           {visibility, int},
-           {affiliates, {set, text}},
-           {followers,  {set, text}},
-           {alerts,     int}
-       ],
-       primary_key = [id]
-    };
-
-table_definition(bot_name) ->
-    #table_def{
-       name = bot_name,
-       columns = [
-           {shortname, text},
-           {id, timeuuid}
-       ],
-       primary_key = [shortname]
-    }.
-
-table_indexes(session) -> [
-    [node]
-];
-table_indexes(_) -> [].
-
-table_views(user) -> [
-    {auth_user, none, [], []},
-    {external_id, none, [], []},
-    {external_id_to_user, all, [external_id, server, user], []}
-];
-table_views(phone_number_to_user) -> [
-    {user_to_phone_number, all, [user, phone_number], []}
-];
-table_views(roster) -> [
-    {roster_version, all, [user, version, contact_jid], [{version, asc}]}
-];
-table_views(session) -> [
-    {user_sessions, all, [jid_user, jid_resource, sid], []}
-];
-table_views(message_archive) -> [
-    % Lookup message by ID
-    {archive_id, [id, user_jid, other_jid, time],
-     [user_jid, id, time], []}
-];
-table_views(bot) -> [
-    % Lookup bots by user
-    {user_bot, [owner, id], [owner, id], []}
-];
-
-table_views(_) -> [].
-
-message_archive_columns() ->
-    [
-     {id, varint}, % IDs are 64-bit unsigned
-     {user_jid, text},
-     {other_jid, text},
-     {time, timeuuid},
-     {outgoing, boolean},
-     {message, blob}
-    ].
-
-
-%%====================================================================
 %% Seed data
 %%====================================================================
+
+keyspace_tables(_) -> [].
 
 user_data(Server) ->
     [

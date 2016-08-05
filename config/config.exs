@@ -5,40 +5,11 @@ use Mix.Config
 config :wocky,
   keyspace_prefix: 'wocky_'
 
+config :schemata,
+  drop_nulls: false
+
 config :ejabberd,
   keep_lager_intact: true
-
-config :cqerl,
-  text_uuids: true,
-  client_groups: [
-    client_group: [
-      hosts: ['localhost'],
-      opts: [
-        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]},
-      ],
-      clients_per_server: 1
-    ],
-    client_group: [
-      hosts: ['localhost'],
-      opts: [
-        keyspace: :wocky_shared,
-        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
-      ],
-      clients_per_server: 10
-    ],
-    client_group: [
-      hosts: ['localhost'],
-      opts: [
-        keyspace: :wocky_localhost,
-        auth: {:cqerl_auth_plain_handler, [{'cassandra', 'cassandra'}]}
-      ],
-      clients_per_server: 10
-    ]
-  ]
-
-config :schemata,
-  cassandra_hosts: [{'127.0.0.1', 9042}],
-  cassandra_opts: []
 
 config :kernel,
   start_pg2: :true
