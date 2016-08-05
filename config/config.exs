@@ -53,6 +53,7 @@ config :setup,
   verify_directories: :false
 
 config :logger,
+  handle_otp_reports: false,
   backends: [LoggerLagerBackend],
   level: :debug
 
