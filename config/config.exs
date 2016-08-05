@@ -47,7 +47,7 @@ config :sasl,
   sasl_error_logger: :false
 
 config :mnesia,
-  dir: 'data/mnesia'
+  dir: '_build/#{Mix.env}/mnesia'
 
 config :setup,
   verify_directories: :false
@@ -58,7 +58,7 @@ config :logger,
 
 config :lager,
   colored: :true,
-  log_root: 'log',
+  log_root: '_build/#{Mix.env}/log',
   crash_log: 'crash.log',
   handlers: [
     {:lager_console_backend, [

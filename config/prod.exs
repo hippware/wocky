@@ -1,5 +1,11 @@
 use Mix.Config
 
+config :mnesia,
+  dir: 'data/mnesia'
+
+config :lager,
+  log_root: 'log',
+
 config :exometer,
   wocky_report_interval: 60000, ## 60 seconds
   report: [
