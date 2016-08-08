@@ -9,76 +9,19 @@
 -include("wocky_roster.hrl").
 -include("wocky_bot.hrl").
 
--define(schemata, 'Elixir.Schemata').
--define(query, 'Elixir.Schemata.Query').
--define(result, 'Elixir.Schemata.Result').
--define(schema, 'Elixir.Schemata.Schema').
+-export([seed_table/2, seed_tables/2, seed_keyspace/2]).
 
--export([bootstrap_all/0, bootstrap_all/1, bootstrap/2,
-         create_schema/0, create_schema/1, create_schema_for/1,
-         foreach_table/3, recreate_table/2,
-         seed_table/2, seed_tables/2, seed_keyspace/2,
-         prepare_tables/2, clear_tables/2, clear_user_tables/1, seed_data/2]).
-
--ignore_xref([{bootstrap, 2},
-              {bootstrap_all, 0},
-              {bootstrap_all, 1},
-              {clear_user_tables, 1},
-              {create_schema, 0},
-              {create_schema, 1},
-              {create_schema_for, 1},
-              {create_table_indexes, 2},
-              {create_table_views, 2},
-              {drop_table_views, 2},
-              {foreach_table, 3},
-              {prepare_tables, 2},
-              {recreate_table, 2},
-              {seed_keyspace, 2},
-              {seed_table, 2},
-              {seed_tables, 2}]).
+-ignore_xref([{seed_table, 2}, {seed_tables, 2}]).
 
 -ifdef(TEST).
--export([make_session/3, fake_resource/0, random_priority/0,
-         session_info/0, sjid/2, jid/3, make_offline_msgs/5,
-         make_offline_msg/5, get_nowsecs/0, archive_users/0,
-         msg_xml_packet/1]).
+-export([make_session/3, sjid/2, jid/3, make_offline_msgs/5, get_nowsecs/0,
+         archive_users/0, msg_xml_packet/1]).
 -endif.
 
 
 %%====================================================================
-%% Helpers
+%% API
 %%====================================================================
-
-bootstrap_all() ->
-    bootstrap_all(wocky_app:server()).
-
-bootstrap_all(Context) ->
-    bootstrap(shared, Context),
-    bootstrap(Context, Context).
-
-bootstrap(Keyspace, Server) ->
-    create_schema_for(Keyspace),
-    seed_keyspace(Keyspace, Server).
-
-create_schema() ->
-    create_schema(wocky_app:server()).
-
-create_schema(Context) ->
-    create_schema_for(shared),
-    create_schema_for(Context).
-
-create_schema_for(Context) ->
-    Keyspace = wocky_db:keyspace_name(Context),
-    {ok, applied} = ?schema:apply_schema(Keyspace),
-    ok.
-
-foreach_table(Context, Fun, Tables) ->
-    lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
-
-recreate_table(Context, Name) ->
-    Keyspace = wocky_db:keyspace_name(Context),
-    ok = ?schema:'create_table!'(Keyspace, Name),
-    ok.
 
 seed_tables(Context, Tables) ->
     lists:foreach(fun(T) -> {ok, _} = seed_table(Context, T) end, Tables).
@@ -103,32 +46,14 @@ seed_with_data(Context, Name, Rows) when is_list(Rows)->
     {ok, Rows}.
 
 seed_keyspace(Context, Server) ->
-    foreach_table(
-      Context,
-      fun (_, Table) -> {ok, _} = seed_table(Context, Table, Server), ok end,
-      keyspace_tables(Context)).
-
-prepare_tables(Context, Tables) ->
-    ok = foreach_table(Context, fun recreate_table/2, Tables).
-
-clear_tables(Context, Tables) ->
-    foreach_table(Context, fun wocky_db:truncate/2, Tables).
-
-clear_user_tables(Context) ->
-    wocky_db_seed:clear_tables(shared, [user,
-                                        handle_to_user,
-                                        phone_number_to_user]),
-    wocky_db_seed:clear_tables(Context, [session, roster,
-                                         auth_token, last_activity,
-                                         privacy, privacy_item,
-                                         location, conversation]).
+    lists:foreach(
+      fun (Table) -> {ok, _} = seed_table(Context, Table, Server), ok end,
+      wocky_db:keyspace_tables(Context)).
 
 
 %%====================================================================
 %% Seed data
 %%====================================================================
-
-keyspace_tables(_) -> [].
 
 user_data(Server) ->
     [

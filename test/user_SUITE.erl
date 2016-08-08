@@ -77,12 +77,12 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     escalus:end_per_suite(Config).
 
 %% init_per_group(friend, Config) ->

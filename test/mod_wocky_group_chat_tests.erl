@@ -43,9 +43,9 @@ group_chat_tables() -> [group_chat].
 shared_group_chat_tables() -> [user].
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, group_chat_tables()),
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, group_chat_tables()),
-    ok = wocky_db_seed:prepare_tables(shared, shared_group_chat_tables()),
+    ok = wocky_db:prepare_tables(shared, shared_group_chat_tables()),
     ok = wocky_db_seed:seed_tables(shared, shared_group_chat_tables()),
 
     %% This is, generally speaking, a terrible idea. We are mocking a modue
@@ -68,9 +68,9 @@ test_new_chat() ->
     { "new_chat", [
       { "creates a new chat",
         setup,
-        fun() -> wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [group_chat]) end,
+        fun() -> wocky_db:clear_tables(?LOCAL_CONTEXT, [group_chat]) end,
         fun(_) ->
-                wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [group_chat]),
+                wocky_db:clear_tables(?LOCAL_CONTEXT, [group_chat]),
                 wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [group_chat])
         end,
         [

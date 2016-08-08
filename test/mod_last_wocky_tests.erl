@@ -23,7 +23,7 @@ mod_last_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [last_activity]),
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [last_activity]),
     ok.
 
 after_all(_) ->
@@ -34,7 +34,7 @@ before_each() ->
     ok.
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [last_activity]).
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [last_activity]).
 
 test_set_last_info() ->
     { "set_last_info", [

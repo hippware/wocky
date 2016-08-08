@@ -15,6 +15,7 @@
 -define(schemata, 'Elixir.Schemata').
 -define(query, 'Elixir.Schemata.Query').
 -define(result, 'Elixir.Schemata.Result').
+-define(schema, 'Elixir.Schemata.Schema').
 
 -type server()     :: binary().
 -type context()    :: none | shared | server().
@@ -43,7 +44,9 @@
 -type consistency_level() :: ?query:consistency_level().
 
 %% High Level API
--export([select_one/4, select_row/4, select/4, insert/3, insert_new/3,
+-export([bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
+         prepare_tables/2, clear_tables/2, clear_user_tables/1,
+         select_one/4, select_row/4, select/4, insert/3, insert_new/3,
          update/4, delete/4, count/3, truncate/2]).
 
 %% Query API
@@ -56,6 +59,13 @@
          timestamp_to_now/1, now_to_timestamp/1,
          expire_to_ttl/1, drop_nulls/1, keyspace_name/1]).
 
+-ignore_xref([{bootstrap, 0},
+              {bootstrap, 1},
+              {create_schema, 0},
+              {prepare_tables, 2},
+              {clear_tables, 2},
+              {clear_user_tables, 1}]).
+
 -ifdef(TEST).
 -export([to_keyspace/1]).
 -endif.
@@ -64,6 +74,72 @@
 %%====================================================================
 %% High Level API
 %%====================================================================
+
+%% @doc Create the schema for both the shared and local keyspaces then
+%% load seed data into the tables.
+-spec bootstrap() -> ok.
+bootstrap() ->
+    bootstrap(shared),
+    bootstrap(wocky_app:server()).
+
+%% @doc Create the schema for both the specified keyspace then
+%% load seed data into the tables.
+-spec bootstrap(context()) -> ok.
+bootstrap(Context) ->
+    create_schema_for(Context),
+    wocky_db_seed:seed_keyspace(Context, wocky_app:server()).
+
+
+%% @doc Create the schema for both the shared and local keyspaces.
+-spec create_schema() -> ok.
+create_schema() ->
+    create_schema(wocky_app:server()).
+
+%% @private
+create_schema(Context) ->
+    create_schema_for(shared),
+    create_schema_for(Context).
+
+%% @private
+create_schema_for(Context) ->
+    {ok, applied} = ?schema:apply_schema(keyspace_name(Context)),
+    ok.
+
+
+%% @doc List the tables defined for the specified keyspace.
+-spec keyspace_tables(context()) -> [table()].
+keyspace_tables(Context) ->
+    ?schema:list_tables(keyspace_name(Context)).
+
+
+%% @doc Drop and recreate the specified tables.
+-spec prepare_tables(context(), [table()]) -> ok.
+prepare_tables(Context, Tables) ->
+    ok = foreach_table(Context, fun recreate_table/2, Tables).
+
+%% @private
+recreate_table(Context, Name) ->
+    Keyspace = wocky_db:keyspace_name(Context),
+    ok = ?schema:'create_table!'(Keyspace, Name),
+    ok.
+
+%% @private
+foreach_table(Context, Fun, Tables) ->
+    lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
+
+
+%% @doc Truncate the specified tables.
+-spec clear_tables(context(), [table()]) -> ok.
+clear_tables(Context, Tables) ->
+    foreach_table(Context, fun wocky_db:truncate/2, Tables).
+
+%% @doc Truncate the tables related to user data.
+-spec clear_user_tables(context()) -> ok.
+clear_user_tables(Context) ->
+    clear_tables(shared, [user, handle_to_user, phone_number_to_user]),
+    clear_tables(Context, [session, roster, auth_token, last_activity,
+                           privacy, privacy_item, location, conversation]).
+
 
 %% @doc Retrieves a single value from a table based on the parameters.
 %% Returns the first value of the first row.

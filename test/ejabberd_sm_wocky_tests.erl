@@ -30,7 +30,7 @@ ejabberd_sm_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [session]),
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [session]),
     ok.
 
 after_all(_) ->
@@ -41,7 +41,7 @@ before_each() ->
     [data_to_rec(Sess) || Sess <- SessData].
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [session]).
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [session]).
 
 make_session(User, Server) ->
     wocky_db_seed:make_session(User, Server, fake_sid()).
