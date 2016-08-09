@@ -66,6 +66,9 @@ start(_StartType, _StartArgs) ->
     {ok, CfgDir} = application:get_env(wocky, config_dir),
     CfgPath = filename:join(CfgDir, Env ++ ".cfg"),
 
+    Clusters = extract_db_config(CfgPath),
+    ok = wocky_db:configure_db(Clusters),
+
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
     {ok, _} = ejabberd:start(),
@@ -108,3 +111,7 @@ is_testing_server(_) -> false.
 default_config(Key) ->
     {ok, Value} = application:get_env(wocky, Key),
     Value.
+
+extract_db_config(CfgPath) ->
+    {ok, Terms} = file:consult(CfgPath),
+    application:get_env(schemata_clusters, Terms, []).

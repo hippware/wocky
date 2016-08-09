@@ -65,10 +65,7 @@ defmodule Wocky.Mixfile do
        {:wocky_env, 'dev'},
        {:config_dir, 'etc'},
        {:francus_chunk_size, 1048576}, # 1MB
-       {:cassandra_nodes, [{'127.0.0.1', 9042}]},
-       {:cassandra_opts, []},
        {:keyspace_prefix, 'wocky_test_'},
-       {:keyspace_replication, {:simple, 1}},
        {:indexing_enabled_envs, ['staging']},
        {:algolia_app_id, 'HIE75ZR7Q7'},
        {:algolia_app_key, '79602842342e137c97ce188013131a89'},

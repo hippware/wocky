@@ -7,7 +7,7 @@ config :wocky,
 
 config :schemata,
   clusters: [
-    [
+    default: [
       username: 'cassandra',
       password: 'cassandra',
       seed_hosts: ['127.0.0.1'],
@@ -21,11 +21,6 @@ config :schemata,
           strategy: :simple,
           factor: 1,
           clients: 10
-        ],
-        schemata: [
-          strategy: :simple,
-          factor: 1,
-          clients: 1
         ]
       ]
     ]
