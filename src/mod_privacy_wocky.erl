@@ -134,6 +134,8 @@ default_list_items(LUser, LServer) ->
                          action = allow, order = 5},
      BaseRecord#listitem{type = group, value = <<"__no_presence__">>,
                          action = deny, order = 10},
+     BaseRecord#listitem{type = group, value = <<"__blocked__">>,
+                         action = deny, order = 15},
      BaseRecord#listitem{type = subscription, value = both,
                          action = allow, order = 20},
      BaseRecord#listitem{action = deny, order = 100}
