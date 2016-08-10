@@ -202,21 +202,12 @@ check_user(LUser) ->
     end.
 
 check_title(SubEl) ->
-    case xml:get_subtag(SubEl, <<"title">>) of
-        TitleEl = #xmlel{} ->
-            {ok, xml:get_tag_cdata(TitleEl)};
-        false ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"<title> element required">>)}
-    end.
+    wocky_xml:get_subel_cdata(<<"title">>, SubEl).
 
 check_participants(SubEl) ->
-    case xml:get_subtag(SubEl, <<"participants">>) of
-        #xmlel{children = Children} ->
-            extract_participants(Children, []);
-        false ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG,
-                                      <<"<participants> element required">>)}
-    end.
+    wocky_xml:act_on_subel(<<"participants">>, SubEl,
+                           fun(#xmlel{children = Children}) ->
+                                   extract_participants(Children, []) end).
 
 extract_participants([], []) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG,

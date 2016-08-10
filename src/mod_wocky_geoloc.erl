@@ -46,7 +46,7 @@ handle_pep(_From, Item = #xmlel{name = <<"geoloc">>, children = []}) ->
     Item;
 handle_pep(From, Item = #xmlel{name = <<"geoloc">>}) ->
     case handle_geoloc(Item) of
-        {ok, Lat, Lon, Accuracy} ->
+        {ok, {Lat, Lon, Accuracy}} ->
             #jid{luser = LUser,
                  lserver = LServer,
                  lresource = LResource} = From,
@@ -64,7 +64,7 @@ handle_geoloc(Item) ->
         Lat <- get_item(Item, <<"lat">>),
         Lon <- get_item(Item, <<"lon">>),
         Accuracy <- get_item(Item, <<"accuracy">>, 0),
-        {ok, Lat, Lon, Accuracy}
+        {ok, {Lat, Lon, Accuracy}}
        ]).
 
 get_item(Item, Name, Default) ->

@@ -13,7 +13,8 @@
 -include_lib("cqerl/include/cqerl.hrl").
 -include("wocky.hrl").
 
--type context()    :: none | shared | binary().
+-type server()     :: binary().
+-type context()    :: none | shared | server().
 -type table()      :: atom().
 -type explicit_columns() :: [atom()].
 -type columns()    :: all | explicit_columns().
@@ -21,8 +22,8 @@
 -type ks_class()   :: simple | topology.
 -type ks_factor()  :: non_neg_integer() | [{binary(), non_neg_integer}].
 -type table_def()  :: #table_def{}.
--export_type([context/0, table/0, explicit_columns/0, columns/0, conditions/0,
-              ks_class/0, ks_factor/0, table_def/0]).
+-export_type([server/0, context/0, table/0, explicit_columns/0, columns/0,
+              conditions/0, ks_class/0, ks_factor/0, table_def/0]).
 
 -type query()     :: iodata().
 -type value()     :: parameter_val().

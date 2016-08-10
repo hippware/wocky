@@ -23,6 +23,7 @@ mod_last_wocky_test_() -> {
 }.
 
 before_all() ->
+    file:write_file("/tmp/test.bin", <<"abcd">>),
     ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [last_activity]),
     ok.
 
