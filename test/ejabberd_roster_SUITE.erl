@@ -250,8 +250,6 @@ unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
         test_helper:subscribe_pair(Alice, Bob),
 
-        ct:log("XXXXX Initial subscription done"),
-
         %% Alice sends unsubscribe
         escalus:send(Alice,
                      escalus_stanza:presence_direct(?BOB_B_JID,
