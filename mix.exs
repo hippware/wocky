@@ -47,7 +47,7 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :kernel, :stdlib, :crypto, :ssl, :lager, :schemata, :ibrowse,
+       :crypto, :ssl, :lager, :logger, :schemata, :ibrowse, :idna,
        :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
@@ -55,7 +55,7 @@ defmodule Wocky.Mixfile do
        :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
-       :fusco, :p1_utils, :cuesport, :base16, :idna, :xmerl, :usec, :redo,
+       :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
 
        # Runtime tools
        :recon, :eper, :binpp, :pretty_errors
