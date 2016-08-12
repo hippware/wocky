@@ -1,7 +1,7 @@
 defmodule Schemata.Schemas.Wocky do
   use Schemata.Schema
 
-  keyspace :wocky_shared do
+  keyspace ~r/^wocky_(test_)?shared$/ do
     # Table for storing the details of a user's account
     table :user, [
       columns: [
@@ -51,7 +51,7 @@ defmodule Schemata.Schemas.Wocky do
     ]
   end
 
-  keyspace ~r/^wocky_.*_tinyrobot_com$/ do
+  keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
     # Table for storing the location history of users
     table :location, [
       columns: [
