@@ -385,10 +385,9 @@ check_bot_exists(Server, ID) ->
     end.
 
 check_owner(Server, ID, User) ->
-    UserBin = jid:to_binary(User),
-    case wocky_db_bot:owner(Server, ID) of
-        UserBin -> ok;
-        _ -> {error, ?ERR_ITEM_NOT_FOUND}
+    case jid:are_bare_equal(wocky_db_bot:owner(Server, ID), User) of
+        true -> ok;
+        false -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
 get_fields(Children) ->

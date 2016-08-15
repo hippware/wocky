@@ -20,10 +20,9 @@
 -include("wocky_bot.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
--type user()        :: binary().
 -type shortname()   :: binary().
 -type affiliation() :: none | spectator | owner.
--type affiliate()   :: {user(), affiliation()}.
+-type affiliate()   :: {jid(), affiliation()}.
 
 %%%===================================================================
 %%% API
@@ -57,9 +56,9 @@ insert_new_name(ID, Name) ->
         false -> {error, exists}
     end.
 
--spec owner(wocky_db:server(), wocky_db:id()) -> user() | not_found.
+-spec owner(wocky_db:server(), wocky_db:id()) -> jid() | not_found.
 owner(Server, ID) ->
-    wocky_db:select_one(Server, bot, owner, #{id => ID}).
+    maybe_to_jid(wocky_db:select_one(Server, bot, owner, #{id => ID})).
 
 -spec affiliations(wocky_db:server(), wocky_db:id()) ->
     [affiliate()].
@@ -70,7 +69,8 @@ affiliations(Server, ID) ->
 -spec affiliations_from_map(map() | not_found) -> [affiliate()] | not_found.
 affiliations_from_map(not_found) -> not_found;
 affiliations_from_map(#{owner := Owner, affiliates := Affiliations}) ->
-    [{Owner, owner} | [{A, spectator} || A <- Affiliations]].
+    [{jid:from_binary(Owner), owner} |
+     [{jid:from_binary(A), spectator} || A <- Affiliations]].
 
 -spec update_affiliations(wocky_db:server(), wocky_db:id(), [affiliate()]) ->
     ok.
@@ -90,9 +90,9 @@ update_affiliations(Server, ID, Affiliations) ->
         ({ok, _} = wocky_db:query(Server, RemoveQ, RemoveV, quorum)),
     ok.
 
--spec followers(wocky_db:server(), wocky_db:id()) -> [user()].
+-spec followers(wocky_db:server(), wocky_db:id()) -> [jid()] | not_found.
 followers(Server, ID) ->
-    wocky_db:select_one(Server, bot, followers, #{id => ID}).
+    maybe_to_jid(wocky_db:select_one(Server, bot, followers, #{id => ID})).
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
 delete(Server, ID) ->
@@ -127,7 +127,7 @@ unfollow(Server, ID, User) ->
 %%%===================================================================
 
 user_parts(Affiliates) ->
-    [User || {User, _Role} <- Affiliates].
+    [jid:to_binary(User) || {User, _Role} <- Affiliates].
 
 has_access(_, not_found) ->
     not_found;
@@ -154,3 +154,10 @@ change_follow(Server, ID, User, Op) ->
          },
     {ok, _} = wocky_db:query(Server, Q, V, quorum),
     ok.
+
+maybe_to_jid(not_found) ->
+    not_found;
+maybe_to_jid(JIDList) when is_list(JIDList) ->
+    [jid:from_binary(J) || J <- JIDList];
+maybe_to_jid(JIDBin) ->
+    jid:from_binary(JIDBin).
