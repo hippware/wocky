@@ -12,7 +12,9 @@
 -spec get_subel_cdata(binary(), exml:element()) -> {ok, binary()} |
                                                    {error, exml:element()}.
 get_subel_cdata(TagName, Element) ->
-    act_on_subel_cdata(TagName, Element, fun(X) -> {ok, X} end).
+    act_on_subel_cdata(TagName, Element, fun({error, E}) -> {error, E};
+                                            (X)          -> {ok, X}
+                                         end).
 
 -spec act_on_subel_cdata(binary(), exml:element(), fun((binary()) -> X))
     -> X | {error, exml:element()}.

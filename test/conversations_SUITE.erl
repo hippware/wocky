@@ -129,13 +129,9 @@ all_no_set(Config) ->
 %%--------------------------------------------------------------------
 
 query_stanza(Children) ->
-    Query = #xmlel{name = <<"query">>,
-                   attrs = [{<<"xmlns">>, ?NS_CONVERSATIONS}],
-                   children = Children},
-    #xmlel{name = <<"iq">>,
-           attrs = [{<<"type">>, <<"set">>},
-                    {<<"id">>, integer_to_binary(rand:uniform(10000))}],
-           children = [Query]}.
+    test_helper:iq_set(?NS_CONVERSATIONS,
+                       #xmlel{name = <<"query">>,
+                              children = Children}).
 
 query_stanza(MaxCount, StartIndex, StartID, Direction) ->
     Set = #xmlel{name = <<"set">>,

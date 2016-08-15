@@ -11,7 +11,7 @@
 
 -include("wocky_db_seed.hrl").
 
--import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
+-import(test_helper, [expect_iq_success/2, expect_iq_error/2, make_id/0]).
 
 % There's some overlap here where we want to test the MAM operation
 % on group messages, so it's handy to use a couple of functions from the
@@ -241,15 +241,10 @@ start_chat(Owner, Participants) ->
     GroupID.
 
 chat_request(Participants, Title) ->
-    #xmlel{name = <<"iq">>,
-           attrs = [{<<"id">>, make_id()},
-                    {<<"type">>, <<"get">>}],
-           children = [#xmlel{name = <<"new-chat">>,
-                              attrs = [{<<"xmlns">>,
-                                        ?NS_GROUP_CHAT}],
+    test_helper:iq_get(?NS_GROUP_CHAT,
+                       #xmlel{name = <<"new-chat">>,
                               children = [title_field(Title),
-                                          participants_field(Participants)]
-                             }]}.
+                                          participants_field(Participants)]}).
 
 participants_field(Participants) ->
     #xmlel{name = <<"participants">>,
@@ -354,9 +349,6 @@ malformed_node_stanza(GroupID) ->
            children = [#xmlel{name = <<"body">>,
                               children = [#xmlcdata{content = <<"asdf">>}]}]}.
 
-make_id() ->
-    base64:encode(crypto:strong_rand_bytes(8)).
-
 assert_no_stanzas(User) ->
     dump_stanzas(User),
     ?assertNot(escalus_client:has_stanzas(User)).
@@ -376,15 +368,11 @@ change_participant_stanza(_From, Participant, GroupID, Op) ->
                   add -> <<"add-participant">>;
                   remove -> <<"remove-participant">>
               end,
-    #xmlel{name = <<"iq">>,
-           attrs = [{<<"id">>, make_id()},
-                    {<<"type">>, <<"set">>}],
-           children = [#xmlel{name = OpField,
-                              attrs = [{<<"xmlns">>,
-                                        ?NS_GROUP_CHAT},
-                                       {<<"node">>,
-                                        make_node(GroupID)}],
-                              children = [#xmlcdata{content = Participant}]}]}.
+    test_helper:iq_set(
+      ?NS_GROUP_CHAT,
+      #xmlel{name = OpField,
+             attrs = [{<<"node">>, make_node(GroupID)}],
+             children = [#xmlcdata{content = Participant}]}).
 
 assert_participant_changed(SubjectJID, GroupID, [Child], Op) ->
     OpField = case Op of
@@ -401,14 +389,9 @@ make_node(ChatID) ->
     <<?GROUP_CHAT_RESOURCE_PREFIX, ChatID/binary>>.
 
 get_info_stanza(GroupID) ->
-    #xmlel{name = <<"iq">>,
-           attrs = [{<<"id">>, make_id()},
-                    {<<"type">>, <<"get">>}],
-           children = [#xmlel{name = <<"group-info">>,
-                              attrs = [{<<"xmlns">>,
-                                        ?NS_GROUP_CHAT},
-                                       {<<"node">>,
-                                        make_node(GroupID)}]}]}.
+    test_helper:iq_get(?NS_GROUP_CHAT,
+                       #xmlel{name = <<"group-info">>,
+                              attrs = [{<<"node">>, make_node(GroupID)}]}).
 
 check_info_result(#xmlel{children = [Child]}, GroupID) ->
     ?assertEqual(<<"group-info">>, Child#xmlel.name),
@@ -436,12 +419,7 @@ expect_n_messages(User, N) ->
                   lists:seq(1, N)).
 
 invalid_iq_stanza() ->
-    #xmlel{name = <<"iq">>,
-           attrs = [{<<"id">>, make_id()},
-                    {<<"type">>, <<"set">>}],
-           children = [#xmlel{name = <<"new-chat">>,
-                              attrs = [{<<"xmlns">>,
-                                        ?NS_GROUP_CHAT}]}]}.
+    test_helper:iq_set(?NS_GROUP_CHAT, #xmlel{name = <<"new-chat">>}).
 
 xep_0313_gc_query(GroupID) ->
     {ok, XML} = exml:parse(iolist_to_binary(

@@ -5,8 +5,6 @@
 
 -module(mod_tros).
 
--define(TROS_NS, <<"hippware.com/hxep/http-file">>).
-
 -export([
    start/2,
    stop/1,
@@ -21,6 +19,7 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky.hrl").
 
 -behaviour(gen_mod).
 
@@ -48,13 +47,13 @@ start(Host, Opts) ->
                             Tag, Config, Default, Opts)
                   end, configs()),
     (backend()):start(Opts),
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?TROS_NS,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_TROS,
                                   ?MODULE, handle_iq, parallel),
     setup_metrics(),
     ok.
 
 stop(Host) ->
-    _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?TROS_NS),
+    _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_TROS),
     (backend()):stop().
 
 -spec handle_iq(From :: ejabberd:jid(),
