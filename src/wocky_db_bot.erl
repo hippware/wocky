@@ -68,9 +68,14 @@ affiliations(Server, ID) ->
 
 -spec affiliations_from_map(map() | not_found) -> [affiliate()] | not_found.
 affiliations_from_map(not_found) -> not_found;
+affiliations_from_map(#{owner := Owner, affiliates := null}) ->
+    [owner_affiliation(Owner)];
 affiliations_from_map(#{owner := Owner, affiliates := Affiliations}) ->
-    [{jid:from_binary(Owner), owner} |
+    [owner_affiliation(Owner) |
      [{jid:from_binary(A), spectator} || A <- Affiliations]].
+
+owner_affiliation(Owner) ->
+    {jid:from_binary(Owner), owner}.
 
 -spec update_affiliations(wocky_db:server(), wocky_db:id(), [affiliate()]) ->
     ok.
@@ -157,6 +162,8 @@ change_follow(Server, ID, User, Op) ->
 
 maybe_to_jid(not_found) ->
     not_found;
+maybe_to_jid(null) ->
+    [];
 maybe_to_jid(JIDList) when is_list(JIDList) ->
     [jid:from_binary(J) || J <- JIDList];
 maybe_to_jid(JIDBin) ->

@@ -18,7 +18,7 @@ wocky_db_bot_test_() -> {
   "wocky_db_bot",
   setup, fun before_all/0, fun after_all/1,
   [ {inorder, [
-      {parallel, [
+      {inparallel, [
         test_get(),
         test_get_id_by_name(),
         test_exists(),
@@ -86,7 +86,7 @@ test_exists() ->
 test_insert() ->
     NewBot = #{id := ID} = new_bot(),
     { "insert", [
-      { "inserts a new bot with the supplied parameters", [
+      { "inserts a new bot with the supplied parameters", inorder, [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBot)),
         ?_assertEqual(NewBot, get(?LOCAL_CONTEXT, ID))
       ]}
@@ -95,11 +95,11 @@ test_insert() ->
 test_insert_new_name() ->
     ID = wocky_db:create_id(),
     { "insert_new_name", [
-      { "inserts a new name if that name is not already taken", [
+      { "inserts a new name if that name is not already taken", inorder, [
         ?_assertEqual(ok, insert_new_name(ID, <<"brandnewname">>)),
         ?_assertEqual(ID, get_id_by_name(?LOCAL_CONTEXT, <<"brandnewname">>))
       ]},
-      { "refuses to insert a new name if that name is already taken", [
+      { "refuses to insert a new name if that name is already taken", inorder, [
         ?_assertEqual({error, exists},
                       insert_new_name(?BOT, ?BOT_NAME)),
         ?_assertEqual(?BOT, get_id_by_name(?LOCAL_CONTEXT, ?BOT_NAME))

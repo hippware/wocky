@@ -13,6 +13,7 @@
    safe_bin_to_integer/1,
    default_bin_to_integer/2,
    safe_bin_to_float/1,
+   coord_to_binary/1,
 
    set_config_from_opt/4,
 
@@ -96,3 +97,9 @@ make_error_iq_response(IQ, ErrStanza) ->
     ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
 
+-spec coord_to_binary(float()) -> binary().
+coord_to_binary(Coordinate) ->
+    % 6 places after the decimal gives us a resolution at the equator of
+    % roughly 11cm, while still staying well away from nasty floating point
+    % rouding errors on 64 bit floats
+    float_to_binary(Coordinate, [{decimals, 6}]).
