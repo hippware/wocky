@@ -113,7 +113,7 @@ defmodule Wocky.Mixfile do
       ## runtime dependencies (included in release, not needed to build)
       {:recon,         "2.3.1", override: true},
       {:eper,          "0.94.0"},
-      {:binpp,         github: "jtendo/binpp",            branch: "master"},
+      {:binpp,         "~> 1.1"},
       {:pretty_errors, github: "eproxus/pretty_errors",   branch: "master", manager: :rebar},
 
       ## build dependencies (not included in release)
