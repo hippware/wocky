@@ -44,8 +44,7 @@
 -type consistency_level() :: ?query:consistency_level().
 
 %% High Level API
--export([configure_db/1,
-         bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
+-export([bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
          prepare_tables/2, clear_tables/2, clear_user_tables/1,
          select_one/4, select_row/4, select/4, insert/3, insert_new/3,
          update/4, delete/4, count/3, truncate/2]).
@@ -75,9 +74,6 @@
 %%====================================================================
 %% High Level API
 %%====================================================================
-
-configure_db(Config) ->
-    'Elixir.SchemataApp':configure_db(Config).
 
 %% @doc Create the schema for both the shared and local keyspaces then
 %% load seed data into the tables.

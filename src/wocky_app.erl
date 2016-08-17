@@ -66,8 +66,8 @@ start(_StartType, _StartArgs) ->
     {ok, CfgDir} = application:get_env(wocky, config_dir),
     CfgPath = filename:join(CfgDir, Env ++ ".cfg"),
 
-    Clusters = extract_db_config(CfgPath),
-    ok = wocky_db:configure_db(Clusters),
+    ok = configure_db(CfgPath),
+    {ok, _} = application:ensure_all_started(schemata),
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
@@ -112,6 +112,11 @@ default_config(Key) ->
     {ok, Value} = application:get_env(wocky, Key),
     Value.
 
-extract_db_config(CfgPath) ->
+configure_db(CfgPath) ->
+    ok = ensure_loaded(schemata),
     {ok, Terms} = file:consult(CfgPath),
-    application:get_env(schemata_clusters, Terms, []).
+    Cluster = proplists:get_value(schemata_cluster, Terms),
+    apply_db_config(Cluster).
+
+apply_db_config(undefined) -> ok;
+apply_db_config(Cluster) -> application:set_env(schemata, cluster, Cluster).

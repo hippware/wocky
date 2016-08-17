@@ -47,12 +47,12 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :crypto, :ssl, :lager, :logger, :schemata, :ibrowse, :idna,
+       :crypto, :ssl, :lager, :logger, :ibrowse, :idna,
        :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
-       :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate, :jiffy, :algolia,
-       :erlando, :logger_lager_backend,
+       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate,
+       :jiffy, :algolia, :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
