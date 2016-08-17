@@ -106,7 +106,7 @@ create_schema(Context) ->
 
 %% @private
 create_schema_for(Context) ->
-    {ok, applied} = ?schema:apply_schema(keyspace_name(Context)),
+    {ok, applied} = ?schema:create_keyspace(keyspace_name(Context)),
     ok.
 
 
@@ -124,7 +124,7 @@ prepare_tables(Context, Tables) ->
 %% @private
 recreate_table(Context, Name) ->
     Keyspace = wocky_db:keyspace_name(Context),
-    ok = ?schema:'create_table!'(Keyspace, Name),
+    ok = ?schema:create_table(Keyspace, Name),
     ok.
 
 %% @private
