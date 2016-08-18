@@ -76,65 +76,65 @@ handle_iq(From, To, IQ) ->
 handle_iq_type(From, _To, IQ = #iq{type = set,
                                    sub_el = #xmlel{name = <<"create">>,
                                                    children = Children}
-                             }) ->
+                                  }) ->
     handle_create(From, IQ, Children);
 
 % Delete
 handle_iq_type(From, To, IQ = #iq{type = set,
-                                   sub_el = #xmlel{name = <<"delete">>,
-                                                   attrs = Attrs}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"delete">>,
+                                                  attrs = Attrs}
+                                 }) ->
     handle_delete(From, To, IQ, Attrs);
 
 % Retrieve
 handle_iq_type(From, To, IQ = #iq{type = get,
-                                   sub_el = #xmlel{name = <<"bot">>,
-                                                   attrs = Attrs}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"bot">>,
+                                                  attrs = Attrs}
+                                 }) ->
     handle_get(From, To, IQ, Attrs);
 
 % Update
 handle_iq_type(From, To, IQ = #iq{type = set,
-                                   sub_el = #xmlel{name = <<"fields">>,
-                                                   attrs = Attrs,
-                                                   children = Children}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"fields">>,
+                                                  attrs = Attrs,
+                                                  children = Children}
+                                 }) ->
     handle_update(From, To, IQ, Attrs, Children);
 
 % Retrieve affiliations
 handle_iq_type(From, To, IQ = #iq{type = get,
-                                   sub_el = #xmlel{name = <<"affiliations">>,
-                                                   attrs = Attrs}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"affiliations">>,
+                                                  attrs = Attrs}
+                                 }) ->
     handle_retrieve_affiliations(From, To, IQ, Attrs);
 
 % Update affiliations
 handle_iq_type(From, To, IQ = #iq{type = set,
-                                   sub_el = #xmlel{name = <<"affiliations">>,
-                                                   attrs = Attrs,
-                                                   children = Children}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"affiliations">>,
+                                                  attrs = Attrs,
+                                                  children = Children}
+                                 }) ->
     handle_update_affiliations(From, To, IQ, Attrs, Children);
 
 % Follow
 handle_iq_type(From, To, IQ = #iq{type = set,
-                                   sub_el = #xmlel{name = <<"follow">>,
-                                                   attrs = Attrs}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"follow">>,
+                                                  attrs = Attrs}
+                                 }) ->
     handle_follow(From, To, IQ, Attrs);
 
 % Unfollow
 handle_iq_type(From, To, IQ = #iq{type = set,
-                                   sub_el = #xmlel{name = <<"unfollow">>,
-                                                   attrs = Attrs}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"unfollow">>,
+                                                  attrs = Attrs}
+                                 }) ->
     handle_unfollow(From, To, IQ, Attrs);
 
-% Retrive followers
+% Retrieve followers
 handle_iq_type(From, To, IQ = #iq{type = get,
-                                   sub_el = #xmlel{name = <<"followers">>,
-                                                   attrs = Attrs}
-                                  }) ->
+                                  sub_el = #xmlel{name = <<"followers">>,
+                                                  attrs = Attrs}
+                                 }) ->
     handle_retrieve_followers(From, To, IQ, Attrs);
 
 handle_iq_type(_From, _To, _IQ) ->
@@ -164,8 +164,7 @@ add_server(Fields) ->
 
 handle_delete(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_owner(Server, ID, From),
         delete_bot(Server, ID),
         {ok, IQ#iq{type = result, sub_el = []}}
@@ -180,19 +179,11 @@ delete_bot(Server, ID) ->
 
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_access(Server, ID, From),
         BotEl <- make_bot_el(Server, ID),
         {ok, IQ#iq{type = result, sub_el = BotEl}}
        ]).
-
-check_access(Server, ID, From) ->
-    case wocky_db_bot:has_access(Server, ID, From) of
-        true -> ok;
-        false -> {error, ?ERR_FORBIDDEN};
-        not_found -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
 
 %%%===================================================================
 %%% Action - update
@@ -200,8 +191,7 @@ check_access(Server, ID, From) ->
 
 handle_update(From, #jid{lserver = Server}, IQ, Attrs, Children) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_owner(Server, ID, From),
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
@@ -214,8 +204,7 @@ handle_update(From, #jid{lserver = Server}, IQ, Attrs, Children) ->
 
 handle_retrieve_affiliations(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_owner(Server, ID, From),
         AffiliationsEl <- make_affiliations_element(Server, ID),
         {ok, IQ#iq{type = result, sub_el = AffiliationsEl}}
@@ -237,8 +226,7 @@ make_affiliate_elements(Affiliates) ->
 handle_update_affiliations(From, To = #jid{lserver = Server},
                            IQ, Attrs, Children) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_owner(Server, ID, From),
         DirtyAffiliations <- get_affiliations(Children),
         Affiliations <- check_affiliations(From, DirtyAffiliations, []),
@@ -312,8 +300,7 @@ make_affiliations_update_element(Server, ID) ->
 
 handle_follow(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_access(Server, ID, From),
         follow_bot(Server, ID, From),
         {ok, IQ#iq{type = result, sub_el = []}}
@@ -328,8 +315,7 @@ follow_bot(Server, ID, From) ->
 
 handle_unfollow(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_bot_exists(Server, ID),
         unfollow_bot(Server, ID, From),
         {ok, IQ#iq{type = result, sub_el = []}}
@@ -344,8 +330,7 @@ unfollow_bot(Server, ID, From) ->
 
 handle_retrieve_followers(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        BotNode <- get_attr(<<"node">>, Attrs),
-        ID <- get_id_from_node(BotNode),
+        ID <- get_id_from_node(Attrs),
         check_owner(Server, ID, From),
         AffiliationsEl <- make_followers_element(Server, ID),
         {ok, IQ#iq{type = result, sub_el = AffiliationsEl}}
@@ -355,9 +340,9 @@ make_followers_element(Server, ID) ->
     Followers = wocky_db_bot:followers(Server, ID),
     {ok, #xmlel{name = <<"followers">>,
                 attrs = list_attrs(ID, Followers),
-                children = make_followers_element(Followers)}}.
+                children = make_follower_elements(Followers)}}.
 
-make_followers_element(Followers) ->
+make_follower_elements(Followers) ->
     lists:map(fun make_follower_element/1, Followers).
 
 make_follower_element(JID) ->
@@ -369,7 +354,13 @@ make_follower_element(JID) ->
 %%% Common helpers
 %%%===================================================================
 
-get_id_from_node(Node) ->
+get_id_from_node(Attrs) ->
+    case get_attr(<<"node">>, Attrs) of
+        {error, E} -> {error, E};
+        {ok, NodeValue} -> get_id_from_node_value(NodeValue)
+    end.
+
+get_id_from_node_value(Node) ->
     case binary:split(Node, <<$/>>, [global]) of
         [<<"bot">>, ID] -> {ok, ID};
         _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)}
@@ -385,6 +376,13 @@ check_owner(Server, ID, User) ->
     case jid:are_bare_equal(wocky_db_bot:owner(Server, ID), User) of
         true -> ok;
         false -> {error, ?ERR_ITEM_NOT_FOUND}
+    end.
+
+check_access(Server, ID, From) ->
+    case wocky_db_bot:has_access(Server, ID, From) of
+        true -> ok;
+        false -> {error, ?ERR_FORBIDDEN};
+        not_found -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
 get_fields(Children) ->
@@ -655,10 +653,10 @@ geoloc_field(Name, Val) ->
 geoloc_element({Lat, Lon}) ->
     #xmlel{name = <<"geoloc">>,
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = [float_el(N, V) || {N, V} <- [{<<"lat">>, Lat},
-                                                    {<<"lon">>, Lon}]]}.
+           children = [float_element(N, V) || {N, V} <- [{<<"lat">>, Lat},
+                                                         {<<"lon">>, Lon}]]}.
 
-float_el(Name, Val) ->
+float_element(Name, Val) ->
     #xmlel{name = Name,
            children = [#xmlcdata{content=wocky_util:coord_to_binary(Val)}]}.
 
