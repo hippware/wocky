@@ -11,7 +11,9 @@
          get_handle/2, get_phone_number/2,
          get_password/2, set_password/3, set_location/6,
          assign_token/3, release_token/3, check_token/3,
-         generate_token/0, get_tokens/2]).
+         generate_token/0, get_tokens/2,
+         get_subscribers/2, subscribe/3, unsubscribe/3
+        ]).
 
 wocky_db_user_test_() ->
     {"wocky_db_user",
@@ -28,8 +30,11 @@ wocky_db_user_test_() ->
          test_get_tokens(),
          test_assign_token(),
          test_release_token(),
-         test_check_token()
+         test_check_token(),
+         test_get_subscribers()
        ],
+       test_subscribe(),
+       test_unsubscribe(),
        test_register_user_with_id(),
        test_register_user_with_external_id(),
        test_update_user(),
@@ -304,6 +309,57 @@ test_register_user_with_external_id() ->
     { "updates an existing user when one exists", [
       ?_assertMatch({ok, {?ALICE, ?SERVER, false}},
                     register_user(?EXTERNAL_ID, ?PHONE_NUMBER))
+    ]}
+  ]}.
+
+test_subscribe() ->
+  { "subscribe", [
+    { "Adds a subscriber to a user", [
+      ?_assertEqual(ok, subscribe(?ALICE, ?LOCAL_CONTEXT, ?CAROL_JID)),
+      ?_assertEqual(lists:sort([?CAROL_B_JID | ?ROSTER_SUBS]),
+                    lists:sort(get_subscribers(?ALICE, ?LOCAL_CONTEXT)))
+    ]},
+    { "Succeeds but makes no change for an existing subscriber", [
+      ?_assertEqual(lists:sort([?CAROL_B_JID | ?ROSTER_SUBS]),
+                    lists:sort(get_subscribers(?ALICE, ?LOCAL_CONTEXT))),
+      ?_assertEqual(ok, subscribe(?ALICE, ?LOCAL_CONTEXT, ?CAROL_JID)),
+      ?_assertEqual(lists:sort([?CAROL_B_JID | ?ROSTER_SUBS]),
+                    lists:sort(get_subscribers(?ALICE, ?LOCAL_CONTEXT)))
+    ]},
+    { "Returns not_found for a non-existant user", [
+      ?_assertEqual(not_found, subscribe(wocky_db:create_id(),
+                                         ?LOCAL_CONTEXT, ?CAROL_JID))
+    ]}
+  ]}.
+
+test_unsubscribe() ->
+  { "unsubscribe", [
+    { "Removes a subscriber from a user", [
+      ?_assertEqual(ok, unsubscribe(?ALICE, ?LOCAL_CONTEXT, ?BOB_JID)),
+      ?_assertEqual([?BOT_B_JID], get_subscribers(?ALICE, ?LOCAL_CONTEXT))
+    ]},
+    { "Succeeds but makes no change for a non-subscriber", [
+      ?_assertEqual(ok, unsubscribe(?ALICE, ?LOCAL_CONTEXT, ?KAREN_JID)),
+      ?_assertEqual([?BOT_B_JID], get_subscribers(?ALICE, ?LOCAL_CONTEXT))
+    ]},
+    { "Returns not_found for a non-existant user", [
+      ?_assertEqual(not_found, unsubscribe(wocky_db:create_id(),
+                                           ?LOCAL_CONTEXT, ?CAROL_JID))
+    ]}
+  ]}.
+
+test_get_subscribers() ->
+  { "get_subscribers", [
+    { "Get the list of subscribers", [
+      ?_assertEqual(lists:sort(?ROSTER_SUBS),
+                    lists:sort(get_subscribers(?ALICE, ?LOCAL_CONTEXT)))
+    ]},
+    { "Returns not_found for non-existant users", [
+      ?_assertEqual(not_found, get_subscribers(wocky_db:create_id(),
+                                               ?LOCAL_CONTEXT))
+    ]},
+    { "Returns empty list for users with no subscribers", [
+      ?_assertEqual([], get_subscribers(?BOB, ?LOCAL_CONTEXT))
     ]}
   ]}.
 

@@ -210,7 +210,9 @@ table_definition(user) ->
            {first_name, text},     % User's first name
            {last_name, text},      % User's last name
            {email, text},          % User's email address
-           {external_id, text}     % The user ID received from Twitter Digits
+           {external_id, text},    % The user ID received from Twitter Digits
+           {subscribers, {set, text}} % Entities subscribed to this user's
+                                   % roster
        ],
        primary_key = [server, user]
     };
@@ -524,7 +526,8 @@ user_data(Server) ->
     [
      #{user => ?ALICE,  server => Server,  handle => ?HANDLE,
        phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
-       avatar => tros:make_url(Server, ?AVATAR_FILE)},
+       avatar => tros:make_url(Server, ?AVATAR_FILE),
+       subscribers => ?ROSTER_SUBS},
      #{user => ?CAROL,  server => Server,  handle => <<"carol">>,
        first_name => <<"Carol">>,
        phone_number => <<"+4567">>, external_id => <<"123456">>},

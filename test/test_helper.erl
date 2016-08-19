@@ -13,6 +13,8 @@
          expect_iq_error/2,
          expect_iq_success_u/2,
          expect_iq_error_u/2,
+         expect_iq_success_u/3,
+         expect_iq_error_u/3,
 
          ensure_all_clean/1,
 
@@ -25,8 +27,7 @@
 
          iq_set/2,
          iq_get/2,
-         iq_with_type/3,
-         make_id/0
+         iq_with_type/3
         ]).
 
 ensure_wocky_is_running() ->
@@ -42,32 +43,38 @@ ensure_all_clean(Clients) ->
         escalus_assert:has_no_stanzas(Client)
     end, Clients).
 
-expect_iq_success_u(Stanza, User) ->
-    expect_something(add_to_u(Stanza, User), User, is_iq_result).
+expect_iq_success_u(Stanza, Client) ->
+    expect_iq_success_u(Stanza, Client, Client).
 
-expect_iq_error_u(Stanza, User) ->
-    expect_something(add_to_u(Stanza, User), User, is_iq_error).
+expect_iq_error_u(Stanza, Client) ->
+    expect_iq_error_u(Stanza, Client, Client).
 
-add_to_u(Stanza, User) ->
+expect_iq_success_u(Stanza, FromClient, ToClient) ->
+    expect_something(add_to_u(Stanza, ToClient), FromClient, is_iq_result).
+
+expect_iq_error_u(Stanza, FromClient, ToClient) ->
+    expect_something(add_to_u(Stanza, ToClient), FromClient, is_iq_error).
+
+add_to_u(Stanza, Client) ->
     escalus_stanza:to(Stanza,
-      escalus_client:short_jid(User)).
+      escalus_client:short_jid(Client)).
 
-expect_iq_success(Stanza, User) ->
-    expect_something(add_to_s(Stanza, User), User, is_iq_result).
+expect_iq_success(Stanza, Client) ->
+    expect_something(add_to_s(Stanza, Client), Client, is_iq_result).
 
-expect_iq_error(Stanza, User) ->
-    expect_something(add_to_s(Stanza, User), User, is_iq_error).
+expect_iq_error(Stanza, Client) ->
+    expect_something(add_to_s(Stanza, Client), Client, is_iq_error).
 
-expect_something(Stanza, User, Expect) ->
+expect_something(Stanza, Client, Expect) ->
     ct:log("Sending stanza: ~p", [Stanza]),
-    ResultStanza = escalus:send_and_wait(User, Stanza),
+    ResultStanza = escalus:send_and_wait(Client, Stanza),
     ct:log("Result stanza: ~p", [ResultStanza]),
     escalus:assert(Expect, ResultStanza),
     ResultStanza.
 
-add_to_s(Stanza, User) ->
+add_to_s(Stanza, Client) ->
     escalus_stanza:to(Stanza,
-      escalus_client:server(User)).
+      escalus_client:server(Client)).
 
 
 expect_friendship_presence(User1, User2) ->
@@ -175,8 +182,5 @@ iq_set(NS, Payload) ->
 iq_with_type(Type, NS, Payload = #xmlel{attrs = Attrs}) ->
     #xmlel{name = <<"iq">>,
            attrs = [{<<"type">>, Type},
-                    {<<"id">>, make_id()}],
+                    {<<"id">>, wocky_util:iq_id()}],
            children = [Payload#xmlel{attrs = [{<<"xmlns">>, NS} | Attrs]}]}.
-
-make_id() ->
-    base64:encode(crypto:strong_rand_bytes(8)).

@@ -1,5 +1,5 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Integration test suite for mod_wocky_user
+%%% @doc Integration test suite for mod_bot
 -module(bot_SUITE).
 -compile(export_all).
 
