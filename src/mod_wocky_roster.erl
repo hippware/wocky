@@ -24,6 +24,7 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include_lib("ejabberd/include/mod_roster.hrl").
 -include("wocky_roster.hrl").
 
 %% gen_mod behaviour
@@ -163,9 +164,9 @@ do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
 
     OldItem = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
     Item1 = process_item_attrs(OldItem, Attrs),
-    Item2 = process_item_els(Item1#roster{groups = []}, Els),
+    Item2 = process_item_els(Item1#wocky_roster{groups = []}, Els),
 
-    case Item2#roster.subscription of
+    case Item2#wocky_roster.subscription of
         remove ->
             wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
             send_unsubscribing_presence(From, OldItem);
@@ -177,7 +178,7 @@ do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
     Item3 = ejabberd_hooks:run_fold(roster_process_item, LServer,
                                     Item2, [LServer]),
 
-    push_item(User, LServer, To, Item3).
+    push_item(User, LServer, To, OldItem, Item3).
 
 process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
     case jid:from_binary(Val) of
@@ -185,36 +186,36 @@ process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
             process_item_attrs(Item, Attrs);
         JID1 ->
             JID = {JID1#jid.luser, JID1#jid.lserver, JID1#jid.lresource},
-            process_item_attrs(Item#roster{contact_jid = JID}, Attrs)
+            process_item_attrs(Item#wocky_roster{contact_jid = JID}, Attrs)
     end;
 process_item_attrs(Item, [{<<"handle">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{contact_handle = Val}, Attrs);
+    process_item_attrs(Item#wocky_roster{contact_handle = Val}, Attrs);
 process_item_attrs(Item, [{<<"first_name">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{first_name = Val}, Attrs);
+    process_item_attrs(Item#wocky_roster{first_name = Val}, Attrs);
 process_item_attrs(Item, [{<<"last_name">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{last_name = Val}, Attrs);
+    process_item_attrs(Item#wocky_roster{last_name = Val}, Attrs);
 process_item_attrs(Item, [{<<"name">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{name = Val}, Attrs);
+    process_item_attrs(Item#wocky_roster{name = Val}, Attrs);
 process_item_attrs(Item, [{<<"avatar">>, Val} | Attrs]) ->
-    process_item_attrs(Item#roster{avatar = Val}, Attrs);
+    process_item_attrs(Item#wocky_roster{avatar = Val}, Attrs);
 process_item_attrs(Item, [{<<"subscription">>, <<"remove">>} | Attrs]) ->
-    process_item_attrs(Item#roster{subscription = remove}, Attrs);
+    process_item_attrs(Item#wocky_roster{subscription = remove}, Attrs);
 process_item_attrs(Item, [_ | Attrs]) ->
     process_item_attrs(Item, Attrs);
 process_item_attrs(Item, []) ->
     Item.
 
 process_item_els(Item, [#xmlel{name = <<"group">>} = El | Els]) ->
-    Groups = [xml:get_cdata(El#xmlel.children) | Item#roster.groups],
-    process_item_els(Item#roster{groups = Groups}, Els);
+    Groups = [xml:get_cdata(El#xmlel.children) | Item#wocky_roster.groups],
+    process_item_els(Item#wocky_roster{groups = Groups}, Els);
 process_item_els(Item, [#xmlel{} = El | Els]) ->
     #xmlel{name = Name, attrs = Attrs, children = SEls} = El,
     case xml:get_attr_s(<<"xmlns">>, Attrs) of
         <<"">> -> process_item_els(Item, Els);
         _ ->
             XEls = [#xmlel{name = Name, attrs = Attrs, children = SEls}
-                    | Item#roster.xs],
-            process_item_els(Item#roster{xs = XEls}, Els)
+                    | Item#wocky_roster.xs],
+            process_item_els(Item#wocky_roster{xs = XEls}, Els)
     end;
 process_item_els(Item, [{xmlcdata, _} | Els]) ->
     process_item_els(Item, Els);
@@ -228,7 +229,7 @@ process_item_els(Item, []) -> Item.
 %% roster_get --------------------------------------------------------
 
 roster_get_hook(Acc, {LUser, LServer}) ->
-    lists:filter(fun (#roster{subscription = none, ask = in}) ->
+    lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
                      (_) ->
                          true
@@ -243,27 +244,25 @@ roster_in_subscription_hook(_, User, Server, JID, Type, Reason) ->
 roster_out_subscription_hook(User, Server, JID, Type) ->
     process_subscription(out, User, Server, JID, Type, <<"">>).
 
-process_subscription(Direction, User, Server, JID1, Type, Reason) ->
+process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     LJID = jid:to_binary(jid:to_lower(JID1)),
 
     Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
-    #roster{subscription = Subscription, ask = Ask} = Item,
+    #wocky_roster{subscription = Subscription, ask = Ask} = Item,
 
     StateChange = state_change(Direction, Subscription, Ask, Type),
-    Action = process_state_change(StateChange, Reason, Item),
-    Push = do_action(LUser, LServer, LJID, Action),
+    Action = process_state_change(StateChange, Item),
+    Push = do_roster_action(LUser, LServer, LJID, Action),
 
     ToJID = jid:make(User, Server, <<"">>),
     AutoReply = get_auto_reply(Direction, Subscription, Ask, Type),
     do_auto_reply(ToJID, JID1, Item, AutoReply),
 
     case Push of
-        {push, #roster{subscription = none, ask = in}} ->
-            true;
-        {push, PushItem} ->
-            push_item(User, Server, ToJID, PushItem),
+        {push, OldItem, NewItem} ->
+            push_item(User, Server, ToJID, OldItem, NewItem),
             true;
         none ->
             false
@@ -272,39 +271,38 @@ process_subscription(Direction, User, Server, JID1, Type, Reason) ->
 state_change(in, S, A, T) -> in_state_change(S, A, T);
 state_change(out, S, A, T) -> out_state_change(S, A, T).
 
-%% X_state_change(Subscription, Pending, Type) -> Action
-in_state_change(none, none, subscribe)    -> {none, in};
-in_state_change(none, none, subscribed)   -> {add_new, none};
+%% X_state_change(CurrentSubscription, CurrentPending, RequestType) -> Action
+
+% These cases should never be hit in wocky - auto subscription success means
+% we'll never have a pending value of `in` or `both`
+in_state_change(_,    in,   _)            -> erlang:error(invalid_roster_state);
+in_state_change(_,    both, _)            -> erlang:error(invalid_roster_state);
+
+in_state_change(none, none, subscribe)    -> {add_new, {from, none}};
+in_state_change(none, none, subscribed)   -> none;
 in_state_change(none, none, unsubscribe)  -> none;
 in_state_change(none, none, unsubscribed) -> none;
-in_state_change(none, out,  subscribe)    -> {none, both};
+
+in_state_change(none, out,  subscribe)    -> {add_new, {from, none}};
 in_state_change(none, out,  subscribed)   -> {to, none};
 in_state_change(none, out,  unsubscribe)  -> none;
 in_state_change(none, out,  unsubscribed) -> {none, none};
-in_state_change(none, in,   subscribe)    -> none;
-in_state_change(none, in,   subscribed)   -> none;
-in_state_change(none, in,   unsubscribe)  -> delete;
-in_state_change(none, in,   unsubscribed) -> none;
-in_state_change(none, both, subscribe)    -> none;
-in_state_change(none, both, subscribed)   -> {to, in};
-in_state_change(none, both, unsubscribe)  -> {none, out};
-in_state_change(none, both, unsubscribed) -> {none, in};
-in_state_change(to,   none, subscribe)    -> {to, in};
+
+in_state_change(to,   none, subscribe)    -> {both, none};
 in_state_change(to,   none, subscribed)   -> none;
 in_state_change(to,   none, unsubscribe)  -> none;
 in_state_change(to,   none, unsubscribed) -> {none, none};
-in_state_change(to,   in,   subscribe)    -> none;
-in_state_change(to,   in,   subscribed)   -> none;
-in_state_change(to,   in,   unsubscribe)  -> {to, none};
-in_state_change(to,   in,   unsubscribed) -> {none, in};
+
 in_state_change(from, none, subscribe)    -> none;
 in_state_change(from, none, subscribed)   -> {both, none};
 in_state_change(from, none, unsubscribe)  -> {none, none};
 in_state_change(from, none, unsubscribed) -> none;
+
 in_state_change(from, out,  subscribe)    -> none;
 in_state_change(from, out,  subscribed)   -> {both, none};
 in_state_change(from, out,  unsubscribe)  -> {none, out};
 in_state_change(from, out,  unsubscribed) -> {from, none};
+
 in_state_change(both, none, subscribe)    -> none;
 in_state_change(both, none, subscribed)   -> none;
 in_state_change(both, none, unsubscribe)  -> {to, none};
@@ -314,80 +312,58 @@ out_state_change(none, none, subscribe)    -> {none, out};
 out_state_change(none, none, subscribed)   -> none;
 out_state_change(none, none, unsubscribe)  -> none;
 out_state_change(none, none, unsubscribed) -> none;
+
 out_state_change(none, out,  subscribe)    -> {none, out};
 out_state_change(none, out,  subscribed)   -> none;
 out_state_change(none, out,  unsubscribe)  -> {none, none};
 out_state_change(none, out,  unsubscribed) -> none;
-out_state_change(none, in,   subscribe)    -> {none, both};
-out_state_change(none, in,   subscribed)   -> {from, none};
-out_state_change(none, in,   unsubscribe)  -> none;
-out_state_change(none, in,   unsubscribed) -> {none, none};
-out_state_change(none, both, subscribe)    -> none;
-out_state_change(none, both, subscribed)   -> {from, out};
-out_state_change(none, both, unsubscribe)  -> {none, in};
-out_state_change(none, both, unsubscribed) -> {none, out};
+
 out_state_change(to,   none, subscribe)    -> none;
 out_state_change(to,   none, subscribed)   -> {both, none};
 out_state_change(to,   none, unsubscribe)  -> {none, none};
 out_state_change(to,   none, unsubscribed) -> none;
-out_state_change(to,   in,   subscribe)    -> none;
-out_state_change(to,   in,   subscribed)   -> {both, none};
-out_state_change(to,   in,   unsubscribe)  -> {none, in};
-out_state_change(to,   in,   unsubscribed) -> {to, none};
+
 out_state_change(from, none, subscribe)    -> {from, out};
 out_state_change(from, none, subscribed)   -> none;
 out_state_change(from, none, unsubscribe)  -> none;
 out_state_change(from, none, unsubscribed) -> {none, none};
+
 out_state_change(from, out,  subscribe)    -> none;
 out_state_change(from, out,  subscribed)   -> none;
 out_state_change(from, out,  unsubscribe)  -> {from, none};
 out_state_change(from, out,  unsubscribed) -> {none, out};
+
 out_state_change(both, none, subscribe)    -> none;
 out_state_change(both, none, subscribed)   -> none;
 out_state_change(both, none, unsubscribe)  -> {from, none};
 out_state_change(both, none, unsubscribed) -> {to, none}.
 
-process_state_change(none, _, _) ->
+process_state_change(none, _) ->
     none;
 
-process_state_change(delete, _, _) ->
-    delete;
+process_state_change({add_new, {NewSubscription, NewPending}}, Item) ->
+    NewItem = Item#wocky_roster{groups = [<<"__new__">>]},
+    process_state_change({NewSubscription, NewPending}, NewItem);
 
-process_state_change({add_new, NewSubscription}, Reason, Item) ->
-    NewItem = Item#roster{groups = [<<"__new__">>]},
-    process_state_change({NewSubscription, none}, Reason, NewItem);
-
-process_state_change({NewSubscription, Pending}, Reason, Item) ->
-    AskMsg = ask_msg(Pending, Reason),
-    NewItem = Item#roster{
+process_state_change({NewSubscription, Pending}, Item) ->
+    NewItem = Item#wocky_roster{
                 subscription = NewSubscription,
-                ask = Pending,
-                ask_message = iolist_to_binary(AskMsg)
+                ask = Pending
                },
-    {insert, NewItem}.
+    {insert, Item, NewItem}.
 
-ask_msg(both, Reason) -> Reason;
-ask_msg(in, Reason) -> Reason;
-ask_msg(_, _) -> <<"">>.
-
-do_action(_, _, _, none) ->
+do_roster_action(_, _, _, none) ->
     none;
-do_action(LUser, LServer, LJID, delete) ->
-    wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
-    none;
-do_action(LUser, LServer, LJID, {insert, NewItem}) ->
+do_roster_action(LUser, LServer, LJID, {insert, OldItem, NewItem}) ->
     wocky_db_roster:update_roster_item(LUser, LServer, LJID, NewItem),
-    {push, NewItem}.
+    {push, OldItem, NewItem}.
 
 get_auto_reply(out, _, _, _) -> none;
 get_auto_reply(in, S, A, T) -> in_auto_reply(S, A, T).
 
-in_auto_reply(from, none, subscribe)   -> subscribed;
-in_auto_reply(from, out,  subscribe)   -> subscribed;
-in_auto_reply(both, none, subscribe)   -> subscribed;
-in_auto_reply(none, in,   unsubscribe) -> unsubscribed;
-in_auto_reply(none, both, unsubscribe) -> unsubscribed;
-in_auto_reply(to,   in,   unsubscribe) -> unsubscribed;
+% in_auto_reply(CurrentSubscription, CurrentPending, Request) -> Action
+% Subscription requests always succeed automatically in wocky:
+in_auto_reply(_,    _,    subscribe)   -> subscribed;
 in_auto_reply(from, none, unsubscribe) -> unsubscribed;
 in_auto_reply(from, out,  unsubscribe) -> unsubscribed;
 in_auto_reply(both, none, unsubscribe) -> unsubscribed;
@@ -400,10 +376,10 @@ do_auto_reply(ToJID, JID1, _Item, unsubscribed) ->
 do_auto_reply(ToJID, JID1, Item, subscribed) ->
     Attrs = lists:flatten(
               [{<<"type">>, <<"subscribed">>},
-               item_name_to_xml(handle, Item#roster.contact_handle),
-               item_name_to_xml(first_name, Item#roster.first_name),
-               item_name_to_xml(last_name, Item#roster.last_name),
-               item_name_to_xml(avatar, Item#roster.avatar)]),
+               item_name_to_xml(handle, Item#wocky_roster.contact_handle),
+               item_name_to_xml(first_name, Item#wocky_roster.first_name),
+               item_name_to_xml(last_name, Item#wocky_roster.last_name),
+               item_name_to_xml(avatar, Item#wocky_roster.avatar)]),
     send_auto_reply(ToJID, JID1, Attrs).
 
 send_auto_reply(ToJID, JID1, Attrs) ->
@@ -418,40 +394,25 @@ roster_get_subscription_lists_hook(_Acc, User, Server) ->
     LServer = jid:nameprep(Server),
     Items = wocky_db_roster:get_roster(LUser, LServer),
     JID = jid:make(User, Server, <<>>),
-    fill_subscription_lists(JID, LServer, Items, [], [], []).
+    fill_subscription_lists(JID, LServer, Items, [], []).
 
-fill_subscription_lists(JID, LServer, [#roster{} = I | Is], F, T, P) ->
-    J = I#roster.contact_jid,
+fill_subscription_lists(JID, LServer, [#wocky_roster{} = I | Is], F, T) ->
+    J = I#wocky_roster.contact_jid,
 
-    NewP = build_pending(I, JID, P),
-
-    case I#roster.subscription of
+    case I#wocky_roster.subscription of
         both ->
-            fill_subscription_lists(JID, LServer, Is, [J | F], [J | T], NewP);
+            fill_subscription_lists(JID, LServer, Is, [J | F], [J | T]);
         from ->
-            fill_subscription_lists(JID, LServer, Is, [J | F], T, NewP);
+            fill_subscription_lists(JID, LServer, Is, [J | F], T);
         to ->
-            fill_subscription_lists(JID, LServer, Is, F, [J | T], NewP);
+            fill_subscription_lists(JID, LServer, Is, F, [J | T]);
         _ ->
-            fill_subscription_lists(JID, LServer, Is, F, T, NewP)
+            fill_subscription_lists(JID, LServer, Is, F, T)
     end;
-fill_subscription_lists(_, _, [], F, T, P) ->
-    {F, T, P}.
-
-build_pending(#roster{ask = Ask} = I, JID, P)
-  when Ask =:= in; Ask =:= both ->
-    StatusEl = #xmlel{name = <<"status">>,
-                      children = [#xmlcdata{content = I#roster.ask_message}]},
-
-    El = #xmlel{name = <<"presence">>,
-                attrs = [{<<"from">>, jid:to_binary(I#roster.contact_jid)},
-                         {<<"to">>, jid:to_binary(JID)},
-                         {<<"type">>, <<"subscribe">>}],
-                children = [StatusEl]},
-    [El | P];
-build_pending(_, _, P) ->
-    P.
-
+fill_subscription_lists(_, _, [], F, T) ->
+    % Wocky auto-accepts subscriptions, so the 'pending' field is always
+    % emtpy:
+    {F, T, []}.
 
 %% roster_get_jid_info -----------------------------------------------
 
@@ -460,7 +421,7 @@ roster_get_jid_info_hook(_Acc, User, Server, JID) ->
     LServer = jid:nameprep(Server),
     LJID = jid:to_binary(jid:to_lower(jid:to_bare(JID))),
     Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
-    {Item#roster.subscription, Item#roster.groups}.
+    {Item#wocky_roster.subscription, Item#wocky_roster.groups}.
 
 
 %% remove_user -------------------------------------------------------
@@ -498,14 +459,14 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
 %% @spec (From::jid(), Item::roster()) -> ok
 send_unsubscribing_presence(From, Item) ->
     LFrom = jid:to_bare(From),
-    JID = jid:make(Item#roster.contact_jid),
+    JID = jid:make(Item#wocky_roster.contact_jid),
 
-    IsTo = case Item#roster.subscription of
+    IsTo = case Item#wocky_roster.subscription of
                both -> true;
                to -> true;
                _ -> false
            end,
-    IsFrom = case Item#roster.subscription of
+    IsFrom = case Item#wocky_roster.subscription of
                  both -> true;
                  from -> true;
                  _ -> false
@@ -527,18 +488,19 @@ item_to_xml(Item) ->
     #xmlel{
        name = <<"item">>,
        attrs = lists:flatten(
-                 [item_jid_to_xml(Item#roster.contact_jid),
-                  item_name_to_xml(name, Item#roster.name),
-                  item_name_to_xml(handle, Item#roster.contact_handle),
-                  item_name_to_xml(first_name, Item#roster.first_name),
-                  item_name_to_xml(last_name, Item#roster.last_name),
-                  item_name_to_xml(avatar, Item#roster.avatar),
-                  item_sub_to_xml(Item#roster.subscription),
-                  item_ask_to_xml(Item#roster.ask)]),
+                 [item_jid_to_xml(Item#wocky_roster.contact_jid),
+                  item_name_to_xml(name, Item#wocky_roster.name),
+                  item_name_to_xml(handle, Item#wocky_roster.contact_handle),
+                  item_name_to_xml(first_name, Item#wocky_roster.first_name),
+                  item_name_to_xml(last_name, Item#wocky_roster.last_name),
+                  item_name_to_xml(avatar, Item#wocky_roster.avatar),
+                  item_sub_to_xml(Item#wocky_roster.subscription),
+                  item_ask_to_xml(Item#wocky_roster.ask)]),
        children = [#xmlel{
                       name = <<"group">>, attrs = [],
                       children = [{xmlcdata, G}]
-                     } || G <- Item#roster.groups] ++ Item#roster.xs
+                     } || G <- Item#wocky_roster.groups]
+                  ++ Item#wocky_roster.xs
       }.
 
 item_jid_to_xml(JID) ->
@@ -557,13 +519,18 @@ item_ask_to_xml(Ask)
 item_ask_to_xml(_) ->
     [].
 
-push_item(User, Server, From, Item) ->
+push_item(User, Server, From,
+          OldItem = #wocky_roster{},
+          NewItem = #wocky_roster{}) ->
     ok = ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
                            jid:make(User, Server, <<"">>),
-                           {broadcast, {item, Item#roster.contact_jid,
-                                        Item#roster.subscription}}),
-    push_item(User, Server, From, Item,
-              wocky_db_roster:get_roster_version(jid:nodeprep(User), Server)).
+                           {broadcast, {item,
+                                        NewItem#wocky_roster.contact_jid,
+                                        NewItem#wocky_roster.subscription,
+                                        to_mim_roster(OldItem),
+                                        to_mim_roster(NewItem)}}),
+    push_item(User, Server, From, NewItem,
+              wocky_db_roster:get_roster_version(jid:nodeprep(User), Server));
 
 push_item(User, Server, From, Item, RosterVersion) ->
     lists:foreach(fun (Resource) ->
@@ -580,3 +547,21 @@ push_item(User, Server, Resource, From, Item, RosterVersion) ->
                 sub_el = create_sub_el([item_to_xml(Item)], RosterVersion)},
     ejabberd_router:route(From, jid:make(User, Server, Resource),
                           jlib:iq_to_xml(ResIQ)).
+
+to_mim_roster(#wocky_roster{
+                 user = User,
+                 server = Server,
+                 contact_jid = ContactJID,
+                 contact_handle = ContactHandle,
+                 subscription = Subscription,
+                 ask = Ask,
+                 groups = Groups,
+                 xs = XS}) ->
+    #roster{
+       usj = {User, Server, ContactJID},
+       us = {User, Server, ContactJID},
+       name = ContactHandle,
+       subscription = Subscription,
+       ask = Ask,
+       groups = Groups,
+       xs = XS}.

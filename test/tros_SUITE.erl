@@ -47,8 +47,7 @@ init_per_suite(Config) ->
     Users = escalus:get_users([alice, bob, carol, karen]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users),
-        escalus_story:make_everyone_friends(Users)
+        escalus:create_users(Users)
     ).
 
 end_per_suite(Config) ->

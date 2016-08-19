@@ -153,9 +153,10 @@ forward_items(From = #jid{luser = LUser, lserver = LServer}, Node, Items) ->
                   [jid:to_bare(From) | PresenceSubs]).
 
 get_presence_subs(Roster) ->
-    [jid:make(R#roster.contact_jid) || R <- Roster,
-                                       R#roster.subscription =:= both orelse
-                                       R#roster.subscription =:= to].
+    [jid:make(R#wocky_roster.contact_jid)
+     || R <- Roster,
+        R#wocky_roster.subscription =:= both orelse
+        R#wocky_roster.subscription =:= to].
 
 make_forward_message(Items, Node) ->
     #xmlel{name = <<"message">>,

@@ -38,7 +38,7 @@ init_per_suite(Config) ->
     fun_chain:first(Config,
         escalus:init_per_suite(),
         escalus:create_users(Users),
-        escalus_story:make_everyone_friends(Users)
+        test_helper:make_everyone_friends(Users)
     ).
 
 end_per_suite(Config) ->
@@ -158,5 +158,3 @@ login_send_presence(Config, User) ->
     {ok, Client} = escalus_client:start(Config, Spec, <<"dummy">>),
     escalus:send(Client, escalus_stanza:presence(<<"available">>)),
     Client.
-
-
