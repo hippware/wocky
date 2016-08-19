@@ -16,6 +16,7 @@
 
 -module(privacy_SUITE).
 -compile(export_all).
+-compile({parse_transform, fun_chain}).
 
 -include_lib("exml/include/exml.hrl").
 -include_lib("escalus/include/escalus.hrl").
@@ -89,11 +90,13 @@ init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [privacy, privacy_item]),
-    Config1 = escalus:create_users(Config, escalus:get_users([alice, bob])),
     [{escalus_no_stanzas_after_story, true} |
-     escalus:init_per_suite(Config1)].
+     fun_chain:first(Config,
+         escalus:create_users(escalus:get_users([alice, bob])),
+         escalus:init_per_suite())].
 
 end_per_suite(Config) ->
+    escalus_fresh:clean(),
     escalus:end_per_suite(Config).
 
 init_per_group(_GroupName, Config) ->
@@ -188,10 +191,9 @@ get_all_lists_with_default(Config) ->
 
         privacy_helper:set_list(Alice, <<"deny_bob">>),
         privacy_helper:set_list(Alice, <<"allow_bob">>),
-        privacy_helper:set_default_list(Alice, <<"allow_bob">>),
 
         escalus:send(Alice, escalus_stanza:privacy_get_all()),
-        escalus:assert(is_privacy_result_with_default,
+        escalus:assert(is_privacy_result_with_default, [<<"default">>],
                        escalus:wait_for_stanza(Alice))
 
         end).
@@ -275,7 +277,9 @@ default(Config) ->
         escalus_client:send(Alice, Request),
 
         Response = escalus_client:wait_for_stanza(Alice),
-        escalus:assert(is_iq_result, Response)
+
+        %% Setting the default is not allowed by wocky
+        escalus:assert(is_iq_error, Response)
 
         end).
 
@@ -325,7 +329,8 @@ no_default(Config) ->
         escalus_client:send(Alice, Request),
 
         Response = escalus_client:wait_for_stanza(Alice),
-        escalus:assert(is_iq_result, Response)
+        %% Setting the default is not allowed by wocky
+        escalus:assert(is_iq_error, Response)
 
         end).
 
@@ -422,7 +427,8 @@ block_group_message(Config) ->
             escalus_client:wait_for_stanza(Alice)),
 
         %% add Bob to Alices' group 'ignored'
-        add_sample_contact(Alice, Bob, [<<"ignored">>], <<"Ugly Bastard">>),
+        test_helper:add_contact(Alice, Bob, [<<"ignored">>],
+                                <<"Ugly Bastard">>),
 
         %% set the list on server and make it active
         privacy_helper:set_and_activate(Alice, <<"deny_group_message">>),
@@ -514,19 +520,12 @@ allow_subscription_to_from_message(Config) ->
 
 
 allow_subscription_both_message(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
-
-        [{_, Spec}] = escalus_users:get_users([bob]),
-        {ok, Bob, _Spec2, _Features} = escalus_connection:start(Spec),
-        %escalus_story:send_initial_presence(Alice),
-        escalus_story:send_initial_presence(Bob),
-        escalus_client:wait_for_stanza(Alice),
-        escalus_client:wait_for_stanza(Bob),
-        %% deny all message but not from subscribed "to"
+    escalus:fresh_story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+        %% deny all message but not from subscribed "both"
         privacy_helper:set_and_activate(
           Alice, <<"deny_all_message_but_subscription_both">>),
 
-        %% deny all message but not from subscribed "from"
+        %% deny all message but not from subscribed "both"
         privacy_helper:set_and_activate(
           Bob, <<"deny_all_message_but_subscription_both">>),
 
@@ -535,7 +534,8 @@ allow_subscription_both_message(Config) ->
         escalus_client:send(Bob, escalus_stanza:chat_to(
                                    Alice, <<"Hi, Alice XYZ!">>)),
         escalus_client:send(Alice, escalus_stanza:chat_to(
-                                     ?BOB_B_JID, <<"Hi, Bob XYZ!">>)),
+                                     escalus_client:short_jid(Bob),
+                                     <<"Hi, Bob XYZ!">>)),
 
         ct:sleep(?SLEEP_TIME),
         privacy_helper:gets_error(Alice, <<"not-acceptable">>),
@@ -543,27 +543,25 @@ allow_subscription_both_message(Config) ->
         escalus_assert:has_no_stanzas(Alice),
         escalus_assert:has_no_stanzas(Bob),
 
-        %% Alice subscribes to Bob
-        escalus_client:send(Bob,
-                            escalus_stanza:presence_direct(
-                              ?ALICE_B_JID, <<"subscribe">>)),
-        escalus_client:wait_for_stanza(Alice),
-        escalus_client:wait_for_stanza(Bob),
-
-        %% Bob accepts Alice
-        escalus_client:send(Alice, escalus_stanza:presence_direct(
-                                     ?BOB_B_JID, <<"subscribed">>)),
-        escalus_client:wait_for_stanzas(Alice, 2),
-        escalus_client:wait_for_stanzas(Bob, 3),
+        %% Alice and Bob subscribe to eachother
+        test_helper:subscribe(Alice, Bob),
+        %% Because we're not on the default wocky privacy lists, Alice *will*
+        %% get a presence stanza here (so we can't use
+        %% test_helper:subscribe_pair)
+        escalus:assert(is_presence, escalus_client:wait_for_stanza(Alice)),
+        test_helper:subscribe(Bob, Alice),
+        escalus:assert(is_presence, escalus_client:wait_for_stanza(Bob)),
 
         %% Now their subscription is in state "both"
         escalus_client:send(Bob, escalus_stanza:chat_to(
-                                   Alice, <<"Hi, Alice XYZ!">>)),
+                                   escalus_client:short_jid(Alice),
+                                   <<"Hi, Alice XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Alice XYZ!">>,
             escalus_client:wait_for_stanza(Alice)),
 
         escalus_client:send(Alice, escalus_stanza:chat_to(
-                                     ?BOB_B_JID, <<"Hi, Bob XYZ!">>)),
+                                     escalus_client:short_jid(Bob),
+                                     <<"Hi, Bob XYZ!">>)),
         escalus_assert:is_chat_message(<<"Hi, Bob XYZ!">>,
             escalus_client:wait_for_stanza(Bob))
 
@@ -591,6 +589,9 @@ block_all_message(Config) ->
 block_jid_presence_in(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
 
+        %% Override wocky's default blocking
+        privacy_helper:set_and_activate(Bob, <<"allow_alice">>),
+
         %% Alice should receive presence in
         escalus_client:send(Bob,
             escalus_stanza:presence_direct(?ALICE_B_JID, <<"available">>)),
@@ -614,14 +615,18 @@ block_jid_presence_in(Config) ->
 block_jid_presence_out(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
 
+        %% Override wocky's default blocking
+        privacy_helper:set_and_activate(Alice, <<"allow_bob">>),
+
         %% Bob should receive presence in
+        privacy_helper:set_and_activate(Bob, <<"allow_alice">>),
         escalus_client:send(Alice,
             escalus_stanza:presence_direct(?BOB_B_JID, <<"available">>)),
         Received = escalus_client:wait_for_stanza(Bob),
         escalus:assert(is_presence, Received),
         escalus_assert:is_stanza_from(Alice, Received),
 
-        privacy_helper:set_and_activate(Alice, <<"deny_bob_presence_out">>),
+        privacy_helper:activate_list(Alice, <<"default">>),
 
         %% Bob should NOT receive presence in
         escalus_client:send(Alice,
@@ -674,6 +679,9 @@ block_jid_iq(Config) ->
 block_jid_all(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
 
+        %% Override wocky's default blocking
+        privacy_helper:set_and_activate(Bob, <<"allow_alice">>),
+
         privacy_helper:set_list(Alice, <<"deny_jid_all">>),
 
         %% Alice blocks Bob
@@ -719,6 +727,8 @@ block_jid_all(Config) ->
 
 block_jid_message_but_not_presence(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+        %% Override wocky's default blocking
+        privacy_helper:set_and_activate(Bob, <<"allow_alice">>),
 
         %% Alice should receive message
         escalus_client:send(Bob,
@@ -748,13 +758,3 @@ block_jid_message_but_not_presence(Config) ->
 %%-----------------------------------------------------------------
 %% Helpers
 %%-----------------------------------------------------------------
-
-add_sample_contact(Who, Whom, Groups, Nick) ->
-    escalus_client:send(Who,
-                        escalus_stanza:roster_add_contact(Whom,
-                                                          Groups,
-                                                          Nick)),
-    Received = escalus_client:wait_for_stanza(Who),
-    escalus_assert:is_roster_set(Received),
-    escalus_client:send(Who, escalus_stanza:iq_result(Received)),
-    escalus:assert(is_iq_result, escalus:wait_for_stanza(Who)).

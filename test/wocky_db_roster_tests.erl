@@ -56,7 +56,7 @@ make_jid(U) ->
 test_get_roster() ->
   { "get_roster/2", [
     { "returns the roster for a known user", [
-      ?_assertMatch([#roster{}|_], get_roster(?USER, ?SERVER)),
+      ?_assertMatch([#wocky_roster{}|_], get_roster(?USER, ?SERVER)),
       ?_assertEqual(4, length(get_roster(?USER, ?SERVER)))
     ]},
     { "returns an empty list for an unknown user", [
@@ -88,29 +88,29 @@ test_delete_roster() ->
 test_get_roster_item() ->
   { "get_roster_item/3", [
       { "returns the roster item for a known user and contact", [
-        ?_assertMatch(#roster{name = <<"bobby">>},
+        ?_assertMatch(#wocky_roster{name = <<"bobby">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?BOB)))
       ]},
       { "returns a roster item with avatar pulled from the user record", [
-        ?_assertMatch(#roster{avatar = ?AVATAR_ID},
+        ?_assertMatch(#wocky_roster{avatar = ?AVATAR_ID},
                       get_roster_item(?USER, ?SERVER, make_jid(?KAREN)))
       ]},
       { "returns a roster item with name pulled from the user record", [
-        ?_assertMatch(#roster{first_name = <<"Carol">>, last_name = <<>>},
+        ?_assertMatch(#wocky_roster{first_name = <<"Carol">>, last_name = <<>>},
                       get_roster_item(?USER, ?SERVER, make_jid(?CAROL))),
-        ?_assertMatch(#roster{first_name = <<"Karen">>,
+        ?_assertMatch(#wocky_roster{first_name = <<"Karen">>,
                               last_name = <<"Kismet">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?KAREN))),
-        ?_assertMatch(#roster{first_name = <<>>,
+        ?_assertMatch(#wocky_roster{first_name = <<>>,
                               last_name = <<"Robert The Bruce">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?ROBERT)))
       ]},
       { "returns an empty roster item for a known user and unknown contact", [
-        ?_assertMatch(#roster{name = <<>>},
+        ?_assertMatch(#wocky_roster{name = <<>>},
                       get_roster_item(?USER, ?SERVER, make_jid(?BADUSER)))
       ]},
       { "returns an empty roster item for an unknown user", [
-        ?_assertMatch(#roster{name = <<>>},
+        ?_assertMatch(#wocky_roster{name = <<>>},
                       get_roster_item(?BADUSER, ?SERVER, make_jid(?BOB)))
       ]}
   ]}.
@@ -119,14 +119,14 @@ test_update_roster_item() ->
   { "update_roster_item/4", [
       { "inserts a new roster item if one does not exist", [
         ?_assertEqual(ok, update_roster_item(?USER, ?SERVER, make_jid(?TIM),
-                                             #roster{name = <<"tim">>})),
-        ?_assertMatch(#roster{name = <<"tim">>},
+                                             #wocky_roster{name = <<"tim">>})),
+        ?_assertMatch(#wocky_roster{name = <<"tim">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?TIM)))
       ]},
       { "updates an existing roster item", [
         ?_assertEqual(ok, update_roster_item(?USER, ?SERVER, make_jid(?TIM),
-                                             #roster{name = <<"dan">>})),
-        ?_assertMatch(#roster{name = <<"dan">>},
+                                             #wocky_roster{name = <<"dan">>})),
+        ?_assertMatch(#wocky_roster{name = <<"dan">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?TIM)))
       ]}
   ]}.
@@ -135,7 +135,7 @@ test_delete_roster_item() ->
   { "delete_roster_item/3", [
       { "deletes an existing roster item", [
         ?_assertEqual(ok, delete_roster_item(?USER, ?SERVER, make_jid(?BOB))),
-        ?_assertMatch(#roster{name = <<>>},
+        ?_assertMatch(#wocky_roster{name = <<>>},
                       get_roster_item(?USER, ?SERVER, make_jid(?BOB)))
       ]},
       { "returns ok if the roster item doesn't exist", [

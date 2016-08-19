@@ -6,7 +6,6 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
--include("wocky_roster.hrl").
 
 -export([bootstrap_all/0, bootstrap_all/1, bootstrap/2,
          create_schema/0, create_schema/1, create_schema_for/1,
@@ -275,7 +274,6 @@ table_definition(roster) ->
            {nick, text},           % Display name for contact chosen by the user
            {groups, {set, text}},  % List of groups the contact belongs to
            {ask, text},            % Status if the item is pending approval
-           {ask_message, text},    % Message to be used when getting approval
            {subscription, text},   % Subscription state of the roster item
            {version, timestamp}    % Timestamp indicating when the roster item
                                    % was last updated
@@ -370,7 +368,6 @@ table_definition(privacy) ->
        columns = [
            {user, text},         % User ID (userpart of JID)
            {server, text},       % Server (domainpart of JID)
-           {default, text},      % Default privacy list
            {lists, {set, text}}  % Set of configured privacy lists
        ],
        primary_key = [user, server]
@@ -607,9 +604,9 @@ seed_data(media_data, _Server) ->
      #{chunk_id => ?GC_MEDIA_CHUNK, file_id => ?GC_MEDIA_FILE,
        data => ?MEDIA_DATA}];
 seed_data(privacy, Server) ->
-    [#{user => ?CAROL, server => Server, default => ?PRIVACY_LIST1,
+    [#{user => ?CAROL, server => Server,
        lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
-     #{user => ?KAREN, server => Server, default => null,
+     #{user => ?KAREN, server => Server,
        lists => []}];
 seed_data(privacy_item, Server) ->
     [#{user => ?CAROL, server => Server, list => ?PRIVACY_LIST1,

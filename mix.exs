@@ -88,7 +88,7 @@ defmodule Wocky.Mixfile do
       {:qdate,         github: "choptastic/qdate",        ref: "10d56c2"},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
       {:algolia,       github: "k3nn7/algoliasearch-client-erlang", branch: "master"},
-      {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "master"},
+      {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
 
       ## ejabberd dependencies
       {:redo,          "2.0.1", override: true},
