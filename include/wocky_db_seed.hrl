@@ -41,6 +41,7 @@
 -define(CAROL_JID, jid:make(?CAROL, ?LOCAL_CONTEXT, <<>>)).
 -define(KAREN_JID, jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)).
 -define(ROBERT_JID,jid:make(?ROBERT,?LOCAL_CONTEXT, <<>>)).
+-define(TIM_JID,   jid:make(?TIM,   ?LOCAL_CONTEXT, <<>>)).
 -define(SERVER_JID,jid:make(<<>>,   ?LOCAL_CONTEXT, <<>>)).
 
 -define(ALICE_B_JID,  jid:to_binary(?ALICE_JID)).
@@ -48,6 +49,7 @@
 -define(CAROL_B_JID,  jid:to_binary(?CAROL_JID)).
 -define(KAREN_B_JID,  jid:to_binary(?KAREN_JID)).
 -define(ROBERT_B_JID, jid:to_binary(?ROBERT_JID)).
+-define(TIM_B_JID,    jid:to_binary(?TIM_JID)).
 -define(SERVER_B_JID, jid:to_binary(?SERVER_JID)).
 
 -define(AVATAR_FILE,   <<"ee880476-e712-11e5-990d-08002719e96e">>).
@@ -81,4 +83,13 @@
 -define(GROUP_CHAT_JID, jid:make(?GROUP_CHAT, ?LOCAL_CONTEXT, <<>>)).
 
 -define(CHAT_TITLE, <<"Chatty McChatface">>).
+
+-define(BOT, <<"e2570262-1c7c-10e6-8bbd-1362d78a5dd4">>).
+-define(BOT_TITLE, <<"Alice's Bot">>).
+-define(BOT_NAME, <<"AliceBot">>).
+-define(BOT_DESC, <<"A test bot owned by Alice">>).
+-define(BOT_LAT, 55.0).
+-define(BOT_LON, 60.1).
+-define(BOT_RADIUS, 10).
+
 -endif.

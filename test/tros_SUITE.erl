@@ -8,6 +8,7 @@
 -include_lib("common_test/include/ct.hrl").
 
 -include("wocky_db_seed.hrl").
+-include("wocky.hrl").
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -203,7 +204,7 @@ common_upload_request(Size, Client, Purpose) ->
     common_upload_request(Size, Client, Purpose, <<>>).
 
 common_upload_request(Size, Client, Purpose, Access) ->
-    QueryStanza = upload_stanza(<<"123">>, <<"image.png">>,
+    QueryStanza = upload_stanza(<<"image.png">>,
                                 Size, <<"image/png">>,
                                 Purpose, Access),
     FinalQueryStanza = add_to_from(QueryStanza, Client),
@@ -281,17 +282,11 @@ do_download(ResultStanza) ->
     true = lists:member({"content-type", "image/png"}, RespHeaders),
     RespBin.
 
-request_wrapper(ID, Type, Name, DataFields) ->
-    #xmlel{name = <<"iq">>,
-           attrs = [{<<"id">>, ID},
-                    {<<"type">>, Type}],
-           children = [#xmlel{name = Name,
-                              attrs = [{<<"xmlns">>,
-                                        <<"hippware.com/hxep/http-file">>}],
-                              children = DataFields
-                             }]}.
+request_wrapper(Type, Name, DataFields) ->
+    test_helper:iq_with_type(Type, ?NS_TROS,
+                             #xmlel{name = Name, children = DataFields}).
 
-upload_stanza(ID, FileName, Size, Type, Purpose, Access) ->
+upload_stanza(FileName, Size, Type, Purpose, Access) ->
     FieldData = [{<<"filename">>, FileName},
                  {<<"size">>, integer_to_list(Size)},
                  {<<"mime-type">>, Type},
@@ -300,11 +295,11 @@ upload_stanza(ID, FileName, Size, Type, Purpose, Access) ->
                 ],
     UploadFields = [#xmlel{name = N, children = [#xmlcdata{content = V}]}
                     || {N, V} <- FieldData],
-    request_wrapper(ID, <<"set">>, <<"upload-request">>, UploadFields).
+    request_wrapper(<<"set">>, <<"upload-request">>, UploadFields).
 
-download_stanza(ID, FileID) ->
+download_stanza(FileID) ->
     Field = #xmlel{name = <<"id">>, children = [#xmlcdata{content = FileID}]},
-    request_wrapper(ID, <<"get">>, <<"download-request">>, [Field]).
+    request_wrapper(<<"get">>, <<"download-request">>, [Field]).
 
 get_headers(HeadersEl) ->
     [get_header(HeaderEl)
@@ -332,17 +327,14 @@ access_list(Clients) ->
                 hd(Jids), tl(Jids)).
 
 download_success(Client, FileID, Data) ->
-    DLQueryStanza = download_stanza(random_id(), FileID),
+    DLQueryStanza = download_stanza(FileID),
     FinalDLStanza = add_to_from(DLQueryStanza, Client),
     DLResultStanza = escalus:send_and_wait(Client, FinalDLStanza),
     escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
     Data = do_download(DLResultStanza).
 
 download_failure(Client, FileID) ->
-    DLQueryStanza = download_stanza(random_id(), FileID),
+    DLQueryStanza = download_stanza(FileID),
     FinalDLStanza = add_to_from(DLQueryStanza, Client),
     DLResultStanza = escalus:send_and_wait(Client, FinalDLStanza),
     escalus:assert(is_iq_error, DLResultStanza).
-
-random_id() ->
-    integer_to_binary(rand:uniform(1000)).

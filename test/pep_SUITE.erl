@@ -115,11 +115,8 @@ bad_requests(Config) ->
         %% Non pubsub request
         Stanza =
         escalus_stanza:to(
-          #xmlel{name = <<"iq">>,
-                 attrs = [{<<"type">>, <<"set">>}],
-                 children = [#xmlel{name = <<"blah">>,
-                                    attrs = [{<<"xmlns">>,
-                                              ?NS_PUBSUB}]}]},
+          test_helper:iq_set(?NS_PUBSUB,
+                             #xmlel{name = <<"blah">>}),
           escalus_client:short_jid(Alice)),
         Result = escalus:send_and_wait(Alice, Stanza),
         escalus:assert(is_iq_error, Result),
@@ -127,12 +124,9 @@ bad_requests(Config) ->
         %% Non publish request
         Stanza2 =
         escalus_stanza:to(
-          #xmlel{name = <<"iq">>,
-                 attrs = [{<<"type">>, <<"set">>}],
-                 children = [#xmlel{name = <<"pubsub">>,
-                                    attrs = [{<<"xmlns">>,
-                                              ?NS_PUBSUB}],
-                                    children = [#xmlel{name = <<"blah">>}]}]},
+          test_helper:iq_set(?NS_PUBSUB,
+                             #xmlel{name = <<"pubsub">>,
+                                    children = [#xmlel{name = <<"blah">>}]}),
           escalus_client:short_jid(Alice)),
         Result2 = escalus:send_and_wait(Alice, Stanza2),
         escalus:assert(is_iq_error, Result2),
@@ -140,13 +134,10 @@ bad_requests(Config) ->
         %% No node
         Stanza3 =
         escalus_stanza:to(
-          #xmlel{name = <<"iq">>,
-                 attrs = [{<<"type">>, <<"set">>}],
-                 children = [#xmlel{name = <<"pubsub">>,
-                                    attrs = [{<<"xmlns">>,
-                                              ?NS_PUBSUB}],
+          test_helper:iq_set(?NS_PUBSUB,
+                             #xmlel{name = <<"pubsub">>,
                                     children = [#xmlel{name =
-                                                       <<"publish">>}]}]},
+                                                       <<"publish">>}]}),
           escalus_client:short_jid(Alice)),
         Result3 = escalus:send_and_wait(Alice, Stanza3),
         escalus:assert(is_iq_error, Result3)

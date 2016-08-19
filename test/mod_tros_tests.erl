@@ -5,6 +5,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_db_seed.hrl").
+-include("wocky.hrl").
 
 mod_tros_test_() -> {
   "mod_tros",
@@ -290,7 +291,7 @@ upload_request(Size, Type, Access) ->
                 {<<"access">>, <<Access/binary>>}
                ],
     #xmlel{name = <<"upload-request">>,
-           attrs = [{<<"xmlns">>, <<"hippware.com/hxep/http-file">>}],
+           attrs = [{<<"xmlns">>, ?NS_TROS}],
            children = [
                        #xmlel{name = N,
                               children = [#xmlcdata{content = C}]}
@@ -301,7 +302,7 @@ download_packet(FileID) ->
 
 download_request(FileID) ->
     #xmlel{name = <<"download-request">>,
-           attrs = [{<<"xmlns">>, <<"hippware.com/hxep/http-file">>}],
+           attrs = [{<<"xmlns">>, ?NS_TROS}],
            children = [#xmlel{name = <<"id">>,
                               children = [#xmlcdata{content = FileID}]}]}.
 
@@ -356,8 +357,8 @@ expected_download_packet(francus, FileID) ->
       "<method>GET</method></download></iq>">>.
 
 expected_ul_error_packet(Reason, Type, Access, Size) ->
-    <<"<iq id='123456' type='error'><upload-request xmlns='hippware.com/"
-      "hxep/http-file'><filename>", ?FILENAME/binary, "</filename><size>",
+    <<"<iq id='123456' type='error'><upload-request xmlns='", ?NS_TROS/binary,
+      "'><filename>", ?FILENAME/binary, "</filename><size>",
       (integer_to_binary(Size))/binary, "</size>"
       "<mime-type>image/jpeg</mime-type>"
       "<purpose>", (list_to_binary(Type))/binary, "</purpose>",
@@ -371,7 +372,7 @@ expected_ul_error_packet(Reason, Type, Access, Size) ->
 
 expected_dl_error_packet(Reason, FileID) ->
     <<"<iq id='123456' type='error'><download-request "
-      "xmlns='hippware.com/hxep/http-file'>"
+      "xmlns='", ?NS_TROS/binary, "'>"
       "<id>", FileID/binary, "</id></download-request>"
       "<error code='406' type='modify'><not-acceptable "
       "xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
@@ -381,7 +382,7 @@ expected_dl_error_packet(Reason, FileID) ->
 
 expected_dl_missing_error_packet(FileID) ->
     <<"<iq id='123456' type='error'>"
-        "<download-request xmlns='hippware.com/hxep/http-file'>"
+        "<download-request xmlns='", ?NS_TROS/binary, "'>"
           "<id>", FileID/binary, "</id>"
         "</download-request>"
         "<error code='404' type='cancel'>"
@@ -394,7 +395,7 @@ expected_dl_missing_error_packet(FileID) ->
 
 expected_dl_auth_error_packet(FileID) ->
     <<"<iq id='123456' type='error'><download-request "
-      "xmlns='hippware.com/hxep/http-file'>"
+      "xmlns='", ?NS_TROS/binary, "'>"
       "<id>", FileID/binary, "</id></download-request>"
       "<error code='403' type='auth'><forbidden "
       "xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"

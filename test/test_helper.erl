@@ -3,6 +3,7 @@
 -module(test_helper).
 
 -include("wocky_db_seed.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 
 -export([ensure_wocky_is_running/0,
          make_everyone_friends/2
@@ -18,8 +19,14 @@
          expect_friendship_presence/2,
          subscribe/2,
          expect_subscription_stanzas/2,
+         add_sample_contact/2,
          subscribe_pair/2,
-         add_contact/4
+         add_contact/4,
+
+         iq_set/2,
+         iq_get/2,
+         iq_with_type/3,
+         make_id/0
         ]).
 
 ensure_wocky_is_running() ->
@@ -39,7 +46,7 @@ expect_iq_success_u(Stanza, User) ->
     expect_something(add_to_u(Stanza, User), User, is_iq_result).
 
 expect_iq_error_u(Stanza, User) ->
-    expect_something(add_to_s(Stanza, User), User, is_iq_error).
+    expect_something(add_to_u(Stanza, User), User, is_iq_error).
 
 add_to_u(Stanza, User) ->
     escalus_stanza:to(Stanza,
@@ -105,6 +112,18 @@ expect_subscription_stanzas(Who, Type) ->
     escalus:assert_many([is_roster_set, IsPresWithType], Stanzas),
     Stanzas.
 
+add_sample_contact(Alice, Bob) ->
+    escalus:send(Alice,
+                 escalus_stanza:roster_add_contact(Bob, [<<"friends">>],
+                                                   <<"Bobby">>)),
+
+    Received = escalus:wait_for_stanzas(Alice, 2),
+    escalus:assert_many([is_roster_set, is_iq_result], Received),
+
+    Result = hd([R || R <- Received, escalus_pred:is_roster_set(R)]),
+    escalus:assert(count_roster_items, [1], Result),
+    escalus:send(Alice, escalus_stanza:iq_result(Result)).
+
 reply_to_roster_set(Client, Stanzas) when is_list(Stanzas) ->
     RosterSet = hd([R || R <- Stanzas, escalus_pred:is_roster_set(R)]),
     reply_to_roster_set(Client, RosterSet);
@@ -146,3 +165,18 @@ start_clients_before_all_friends(Config, ClientDescs) ->
 call_start_ready_clients(Config, UserCDs) ->
     escalus_overridables:do(Config, start_ready_clients, [Config, UserCDs],
                             {escalus_story, start_ready_clients}).
+
+iq_get(NS, Payload) ->
+    iq_with_type(<<"get">>, NS, Payload).
+
+iq_set(NS, Payload) ->
+    iq_with_type(<<"set">>, NS, Payload).
+
+iq_with_type(Type, NS, Payload = #xmlel{attrs = Attrs}) ->
+    #xmlel{name = <<"iq">>,
+           attrs = [{<<"type">>, Type},
+                    {<<"id">>, make_id()}],
+           children = [Payload#xmlel{attrs = [{<<"xmlns">>, NS} | Attrs]}]}.
+
+make_id() ->
+    base64:encode(crypto:strong_rand_bytes(8)).

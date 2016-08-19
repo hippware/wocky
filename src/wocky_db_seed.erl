@@ -6,6 +6,8 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
+-include("wocky_roster.hrl").
+-include("wocky_bot.hrl").
 
 -export([bootstrap_all/0, bootstrap_all/1, bootstrap/2,
          create_schema/0, create_schema/1, create_schema_for/1,
@@ -13,7 +15,7 @@
          create_table_indexes/2, create_table_views/2, drop_table_views/2,
          seed_table/2, seed_tables/2, seed_keyspace/2,
          prepare_tables/2, clear_tables/2, clear_user_tables/1,
-         table_definition/1]).
+         table_definition/1, seed_data/2]).
 
 -ignore_xref([{bootstrap, 2},
               {bootstrap_all, 0},
@@ -167,7 +169,8 @@ keyspace_tables(_) -> [
     privacy_item,
     tros_request,
     phone_lookup_count,
-    group_chat
+    group_chat,
+    bot
 ].
 
 %% A lookup table that maps globally unique handle to user account id
@@ -438,6 +441,37 @@ table_definition(group_chat) ->
            {title, text}
        ],
        primary_key = [id]
+    };
+
+table_definition(bot) ->
+    #table_def{
+       name = bot,
+       columns = [
+           {id,         timeuuid},
+           {server,     text},
+           {title,      text},
+           {shortname,  text},
+           {owner,      text},
+           {description, text},
+           {lat,        double},
+           {lon,        double},
+           {radius,     int},
+           {visibility, int},
+           {affiliates, {set, text}},
+           {followers,  {set, text}},
+           {alerts,     int}
+       ],
+       primary_key = [id]
+    };
+
+table_definition(bot_name) ->
+    #table_def{
+       name = bot_name,
+       columns = [
+           {shortname, text},
+           {id, timeuuid}
+       ],
+       primary_key = [shortname]
     }.
 
 table_indexes(session) -> [
@@ -463,6 +497,10 @@ table_views(message_archive) -> [
     % Lookup message by ID
     {archive_id, [id, user_jid, other_jid, time],
      [user_jid, id, time], []}
+];
+table_views(bot) -> [
+    % Lookup bots by user
+    {user_bot, [owner, id], [owner, id], []}
 ];
 
 table_views(_) -> [].
@@ -633,6 +671,15 @@ seed_data(group_chat, _Server) ->
        [jid:to_binary(?ALICE_JID),
         jid:to_binary(?BOB_JID)],
        title => ?CHAT_TITLE}];
+seed_data(bot, Server) ->
+    [#{id => ?BOT, server => Server, title => ?BOT_TITLE,
+       shortname => ?BOT_NAME, owner => ?ALICE_B_JID, description => ?BOT_DESC,
+       lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
+       visibility => ?WOCKY_BOT_VIS_WHITELIST,
+       affiliates => [?BOB_B_JID], followers => [?CAROL_B_JID],
+       alerts => ?WOCKY_BOT_ALERT_DISABLED}];
+seed_data(bot_name, _Server) ->
+    [#{shortname => ?BOT_NAME, id => ?BOT}];
 seed_data(_, _) ->
     [].
 
