@@ -9,7 +9,7 @@
 -include("wocky_roster.hrl").
 -include("wocky_bot.hrl").
 
--export([seed_table/2, seed_tables/2, seed_keyspace/2]).
+-export([seed_table/2, seed_tables/2, seed_keyspace/2, seed_data/2]).
 
 -ignore_xref([{seed_table, 2}, {seed_tables, 2}]).
 
