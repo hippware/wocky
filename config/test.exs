@@ -5,8 +5,24 @@ config :wocky,
   keyspace_prefix: 'wocky_test_',
   config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
 
-config :kernel,
-  error_logger: :silent
+config :schemata,
+  cluster: [
+    username: 'cassandra',
+    password: 'cassandra',
+    seed_hosts: ['127.0.0.1'],
+    keyspaces: [
+      wocky_test_shared: [
+        strategy: :simple,
+        factor: 1,
+        clients: 10
+      ],
+      wocky_test_localhost: [
+        strategy: :simple,
+        factor: 1,
+        clients: 10
+      ]
+    ]
+  ]
 
 config :logger,
   level: :error

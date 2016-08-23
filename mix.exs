@@ -47,15 +47,15 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :kernel, :stdlib, :crypto, :ssl, :lager, :cqerl, :ibrowse,
+       :crypto, :ssl, :lager, :logger, :ibrowse, :idna,
        :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
-       :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate, :jiffy, :algolia,
-       :erlando,
+       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate,
+       :jiffy, :algolia, :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
-       :fusco, :p1_utils, :cuesport, :base16, :idna, :xmerl, :usec, :redo,
+       :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
 
        # Runtime tools
        :recon, :eper, :binpp, :pretty_errors
@@ -65,10 +65,7 @@ defmodule Wocky.Mixfile do
        {:wocky_env, 'dev'},
        {:config_dir, 'etc'},
        {:francus_chunk_size, 1048576}, # 1MB
-       {:cassandra_nodes, [{'127.0.0.1', 9042}]},
-       {:cassandra_opts, []},
        {:keyspace_prefix, 'wocky_test_'},
-       {:keyspace_replication, {:simple, 1}},
        {:indexing_enabled_envs, ['staging']},
        {:algolia_app_id, 'HIE75ZR7Q7'},
        {:algolia_app_key, '79602842342e137c97ce188013131a89'},
@@ -78,17 +75,16 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
-      {:pooler,        "1.5.0", override: true},
       {:setup,         "1.7.0", override: true},
       {:jiffy,         "0.14.7", override: true},
       {:lager,         "3.2.1", override: true},
-      {:cqerl,         github: "hippware/cqerl",          branch: "working", override: true},
       {:schemata,      github: "toland/schemata",         branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:qdate,         github: "choptastic/qdate",        ref: "10d56c2"},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
       {:algolia,       github: "k3nn7/algoliasearch-client-erlang", branch: "master"},
       {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
+      {:logger_lager_backend, "~> 0.0.2"},
 
       ## ejabberd dependencies
       {:redo,          "2.0.1", override: true},
@@ -117,13 +113,14 @@ defmodule Wocky.Mixfile do
       ## runtime dependencies (included in release, not needed to build)
       {:recon,         "2.3.1", override: true},
       {:eper,          "0.94.0"},
-      {:binpp,         github: "jtendo/binpp",            branch: "master"},
+      {:binpp,         "~> 1.1"},
       {:pretty_errors, github: "eproxus/pretty_errors",   branch: "master", manager: :rebar},
 
       ## build dependencies (not included in release)
       {:exrm,          "~> 1.0"},
       {:edown,         "0.8.1", override: true},
-      {:erlando,       github: "rabbitmq/erlando",        branch: "master"},
+      # erlando's app file is b0rked so we need to override the dep here.
+      {:erlando, ~r//, github: "rabbitmq/erlando",        branch: "master", override: true},
       {:fun_chain,     github: "sasa1977/fun_chain",      branch: "master", manager: :rebar3},
 
       ## testing dependencies (not included in release)
@@ -140,8 +137,24 @@ defmodule Wocky.Mixfile do
   end
 
   defp aliases do
-    [deps: ["deps.get", "deps.compile goldrush lager", "compile"],
-     lint: "elvis"]
+    [
+      deps: ["deps.get", "deps.compile goldrush lager", "compile"],
+      lint: "elvis",
+      migrate: &migrate/1,
+      rollback: &rollback/1
+    ]
+  end
+
+  defp migrate(_) do
+    System.put_env("WOCKY_MINIMAL", "1")
+    Mix.Task.run "app.start"
+    Schemata.Migrator.migrate(:up)
+  end
+
+  defp rollback(_) do
+    System.put_env("WOCKY_MINIMAL", "1")
+    Mix.Task.run "app.start"
+    Schemata.Migrator.migrate(:down, 1)
   end
 
   defp elvis_config do
@@ -153,8 +166,8 @@ defmodule Wocky.Mixfile do
            %{limit: 80, skip_comments: false}},
           {:elvis_style, :no_tabs},
           {:elvis_style, :no_trailing_whitespace},
-          {:elvis_style, :macro_names},
-          {:elvis_style, :macro_module_names},
+          # {:elvis_style, :macro_names},
+          # {:elvis_style, :macro_module_names},
           {:elvis_style, :operator_spaces,
            %{rules: [right: ",", right: "++", left: "++"]}},
           {:elvis_style, :nesting_level, %{level: 3}},

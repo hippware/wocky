@@ -32,7 +32,7 @@ sanity_test_() -> [
 ].
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [offline_msg]),
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [offline_msg]),
     ok.
 
 after_all(_) ->
@@ -58,7 +58,7 @@ make_msg_recs(User, Handle, N) ->
     [data_to_rec(D) || D <- Data].
 
 after_each(_) ->
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [offline_msg]).
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [offline_msg]).
 
 test_pop_messages(Config) ->
     { "pop_messages", [

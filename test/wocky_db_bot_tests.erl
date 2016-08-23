@@ -41,9 +41,9 @@ wocky_db_bot_test_() -> {
   ]}.
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [roster,
-                                                       bot,
-                                                       bot_name]),
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [roster,
+                                                  bot,
+                                                  bot_name]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [roster,
                                                     bot,
                                                     bot_name]).

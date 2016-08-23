@@ -167,8 +167,8 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [message_archive]),
+    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [message_archive]),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->

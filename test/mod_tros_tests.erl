@@ -43,6 +43,18 @@ before_all(Backend) ->
                    (tros_public_port) -> 1025;
                    (X) -> meck:passthrough([X])
                 end),
+    meck:expect(ejabberd_config, get_local_option,
+                %% Let these options fall through to the test config
+                fun(cassandra_nodes, _) -> undefined;
+                   (cassandra_opts, _) -> undefined;
+                   (keyspace_prefix, _) -> undefined;
+                   (keyspace_replication, _) -> undefined;
+                   (cqerl_node, _) -> undefined
+                end),
+    meck:expect(ejabberd_config, get_global_option,
+                fun(language) -> <<"en">>;
+                   (hosts) -> [?LOCAL_CONTEXT]
+                end),
 
     meck:expect(httpd_util, rfc1123_date, 1,
                 "Fri, 29 Jan 2016 02:54:44 GMT"),
@@ -66,7 +78,7 @@ before_all(Backend) ->
     meck:expect(mod_tros_s3, get_metadata,
                 fun(A, B) -> mod_tros_francus:get_metadata(A, B) end),
 
-    wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
+    wocky_db:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
                                                   group_chat]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
                                                group_chat]).

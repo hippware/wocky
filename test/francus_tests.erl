@@ -41,7 +41,7 @@ test_sizes() ->
     ].
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [media, media_data]).
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 after_all(_) ->
     ok.
@@ -91,7 +91,7 @@ before_each() ->
     #config{user = User, files = Files}.
 
 after_each(_) ->
-    wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     ok.
 
 test_read() ->
@@ -238,7 +238,7 @@ test_delete() ->
           ?_test(
              begin
                  Q = "SELECT " ++ Key ++ " FROM " ++ Table,
-                 {ok, R} = wocky_db:query(?LOCAL_CONTEXT, Q, [], quorum),
+                 {ok, R} = wocky_db:query(?LOCAL_CONTEXT, Q, #{}, quorum),
                  ?assertEqual([], wocky_db:rows(R))
              end) || {Key, Table} <-
                      [{"id", "media"}, {"chunk_id", "media_data"}]

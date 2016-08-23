@@ -31,20 +31,20 @@ mod_wocky_lookup_handle_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db_seed:prepare_tables(shared, [user,
-                                               phone_number_to_user,
-                                               handle_to_user]),
-    ok = wocky_db_seed:prepare_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
+    ok = wocky_db:prepare_tables(shared, [user,
+                                          phone_number_to_user,
+                                          handle_to_user]),
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
     {ok, _} = wocky_db_seed:seed_table(shared, phone_number_to_user),
     {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
     {ok, _} = wocky_db_seed:seed_table(shared, user),
     ok.
 
 after_all(_) ->
-    ok = wocky_db_seed:clear_tables(shared, [user,
-                                             phone_number_to_user,
-                                             handle_to_user]),
-    ok = wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
+    ok = wocky_db:clear_tables(shared, [user,
+                                        phone_number_to_user,
+                                        handle_to_user]),
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
     ok.
 
 -define(FROM, #jid{luser = ?ALICE, lserver = ?SERVER}).

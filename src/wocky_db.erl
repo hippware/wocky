@@ -10,8 +10,12 @@
 %%% keyspace name is deduced from the context.
 %%%
 -module(wocky_db).
--include_lib("cqerl/include/cqerl.hrl").
 -include("wocky.hrl").
+
+-define(schemata, 'Elixir.Schemata').
+-define(query, 'Elixir.Schemata.Query').
+-define(result, 'Elixir.Schemata.Result').
+-define(schema, 'Elixir.Schemata.Schema').
 
 -type server()     :: binary().
 -type context()    :: none | shared | server().
@@ -21,27 +25,29 @@
 -type conditions() :: map().
 -type ks_class()   :: simple | topology.
 -type ks_factor()  :: non_neg_integer() | [{binary(), non_neg_integer}].
--type table_def()  :: #table_def{}.
 -export_type([server/0, context/0, table/0, explicit_columns/0, columns/0,
-              conditions/0, ks_class/0, ks_factor/0, table_def/0]).
+              conditions/0, ks_class/0, ks_factor/0]).
 
--type query()     :: iodata().
--type value()     :: parameter_val().
+-type statement() :: ?query:statement().
+-type value()     :: ?query:parameter_val().
 -type values()    :: map().
 -type row()       :: map().
 -type rows()      :: [row()].
 -type error()     :: term().
 -type ttl()       :: pos_integer() | infinity.
 -type id()        :: binary().
--opaque result()  :: #cql_result{}.
--export_type([query/0, value/0, values/0, row/0, result/0, error/0,
+-opaque result()  :: ?result:t().
+-export_type([statement/0, value/0, values/0, row/0, result/0, error/0,
               ttl/0, id/0]).
 
+-type consistency_level() :: ?query:consistency_level().
 
 %% High Level API
--export([select_one/4, select_row/4, select/4, insert/3, insert_new/3, update/4,
-         delete/4, count/3, truncate/2, drop/3, create_keyspace/3,
-         create_table/2, create_index/3, create_view/6]).
+-export([shared_keyspace/0, local_keyspace/0,
+         bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
+         prepare_tables/2, clear_tables/2, clear_user_tables/1,
+         select_one/4, select_row/4, select/4, insert/3, insert_new/3,
+         update/4, delete/4, count/3, truncate/2]).
 
 %% Query API
 -export([query/4, batch_query/3, multi_query/3, multi_query/4, rows/1,
@@ -51,16 +57,17 @@
 -export([create_id/0, is_valid_id/1, timestamp_to_string/1,
          seconds_to_timestamp/1, timestamp_to_seconds/1,
          timestamp_to_now/1, now_to_timestamp/1,
-         expire_to_ttl/1, drop_nulls/1, table_columns/1]).
+         expire_to_ttl/1, drop_nulls/1, keyspace_name/1]).
+
+-ignore_xref([{bootstrap, 0},
+              {bootstrap, 1},
+              {create_schema, 0},
+              {prepare_tables, 2},
+              {clear_tables, 2},
+              {clear_user_tables, 1}]).
 
 -ifdef(TEST).
-%% Query building functions exported for unit tests
 -export([to_keyspace/1]).
--export([build_select_query/4, build_insert_query/3, build_delete_query/3,
-         build_update_query/3, build_truncate_query/1, build_drop_query/2,
-         build_create_keyspace_query/3, build_create_table_query/1,
-         build_create_index_query/2, build_create_view_query/5,
-         build_count_query/2]).
 -endif.
 
 
@@ -68,12 +75,86 @@
 %% High Level API
 %%====================================================================
 
+-spec shared_keyspace() -> binary().
+shared_keyspace() ->
+    keyspace_name(<<"shared">>).
+
+-spec local_keyspace() -> binary().
+local_keyspace() ->
+    keyspace_name(wocky_app:server()).
+
+%% @doc Create the schema for both the shared and local keyspaces then
+%% load seed data into the tables.
+-spec bootstrap() -> ok.
+bootstrap() ->
+    bootstrap(shared),
+    bootstrap(wocky_app:server()).
+
+%% @doc Create the schema for both the specified keyspace then
+%% load seed data into the tables.
+-spec bootstrap(context()) -> ok.
+bootstrap(Context) ->
+    create_schema_for(Context),
+    wocky_db_seed:seed_keyspace(Context, wocky_app:server()).
+
+
+%% @doc Create the schema for both the shared and local keyspaces.
+-spec create_schema() -> ok.
+create_schema() ->
+    create_schema(wocky_app:server()).
+
+%% @private
+create_schema(Context) ->
+    create_schema_for(shared),
+    create_schema_for(Context).
+
+%% @private
+create_schema_for(Context) ->
+    ok = ?schema:create_keyspace(keyspace_name(Context)),
+    ok.
+
+
+%% @doc List the tables defined for the specified keyspace.
+-spec keyspace_tables(context()) -> [table()].
+keyspace_tables(Context) ->
+    ?schema:list_tables(keyspace_name(Context)).
+
+
+%% @doc Drop and recreate the specified tables.
+-spec prepare_tables(context(), [table()]) -> ok.
+prepare_tables(Context, Tables) ->
+    ok = foreach_table(Context, fun recreate_table/2, Tables).
+
+%% @private
+recreate_table(Context, Name) ->
+    Keyspace = wocky_db:keyspace_name(Context),
+    ok = ?schema:create_table(Keyspace, Name),
+    ok.
+
+%% @private
+foreach_table(Context, Fun, Tables) ->
+    lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
+
+
+%% @doc Truncate the specified tables.
+-spec clear_tables(context(), [table()]) -> ok.
+clear_tables(Context, Tables) ->
+    foreach_table(Context, fun wocky_db:truncate/2, Tables).
+
+%% @doc Truncate the tables related to user data.
+-spec clear_user_tables(context()) -> ok.
+clear_user_tables(Context) ->
+    clear_tables(shared, [user, handle_to_user, phone_number_to_user]),
+    clear_tables(Context, [session, roster, auth_token, last_activity,
+                           privacy, privacy_item, location, conversation]).
+
+
 %% @doc Retrieves a single value from a table based on the parameters.
 %% Returns the first value of the first row.
 -spec select_one(context(), table(), atom(), conditions())
                 -> term() | not_found.
 select_one(Context, Table, Column, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, [Column], Conditions, 1),
+    R = run_select_query(Context, Table, [Column], Conditions, 1),
     single_result(R).
 
 %% @doc Retrieves a single row from a table based on the parameters.
@@ -81,268 +162,95 @@ select_one(Context, Table, Column, Conditions) ->
 -spec select_row(context(), table(), columns(), conditions())
                 -> row() | not_found.
 select_row(Context, Table, Columns, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, Columns, Conditions, 1),
+    R = run_select_query(Context, Table, Columns, Conditions, 1),
     single_row(R).
 
 %% @doc Retrieves data from a table based on the parameters and
 %% returns all rows of the result set.
 -spec select(context(), table(), columns(), conditions()) -> rows().
 select(Context, Table, Columns, Conditions) ->
-    {ok, R} = run_select_query(Context, Table, Columns, Conditions),
+    R = run_select_query(Context, Table, Columns, Conditions),
     rows(R).
 
 run_select_query(Context, Table, Columns, Conditions) ->
-    run_select_query(Context, Table, Columns, Conditions, none).
+    run_select_query(Context, Table, Columns, Conditions, nil).
 
 run_select_query(Context, Table, Columns, Conditions, Limit) ->
-    Query = build_select_query(Table, Columns, keys(Conditions), Limit),
-    query(Context, Query, Conditions, quorum).
+    Opts = [{from, Table}, {in, keyspace_name(Context)},
+            {values, Columns},
+            {where, Conditions},
+            {limit, Limit},
+            {with, quorum}],
 
-keys(Map) -> maps:keys(Map).
-
-build_select_query(Table, Columns, Keys, Limit) ->
-    ["SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
-     conditions(Keys), limit(Limit)].
-
-columns(all, Default) -> Default;
-columns([], Default) -> Default;
-columns([First|Rest], _) ->
-    [lists:foldl(
-       fun (Column, Str) -> [Str, ", ", atom_to_list(Column)] end,
-       [" ", atom_to_list(First)],
-       Rest), " "].
-
-conditions([]) -> "";
-conditions([First|Rest]) ->
-    lists:foldl(
-      fun (Name, Str) -> [Str, " AND ", atom_to_list(Name), " = ?"] end,
-      [" WHERE ", atom_to_list(First), " = ?"],
-      Rest).
-
-limit(N) when is_integer(N) andalso N > 0 ->
-    [" LIMIT ", integer_to_list(N)];
-limit(_) ->
-    "".
+    Query = 'Elixir.Schemata.Query.Select':from_opts(Opts),
+    ?query:'run!'(Query).
 
 
 %% @doc Inserts the provided row into the table.
 -spec insert(context(), table(), values()) -> ok.
 insert(Context, Table, Values) ->
-    {ok, void} = run_insert_query(Context, Table, Values, false),
+    void = run_insert_query(Context, Table, Values, false),
     ok.
 
 %% @doc Inserts the provided row into the table using a Lightweight Transaction.
 -spec insert_new(context(), table(), values()) -> boolean().
 insert_new(Context, Table, Values) ->
-    {ok, R} = run_insert_query(Context, Table, Values, true),
+    R = run_insert_query(Context, Table, Values, true),
     single_result(R).
 
-run_insert_query(Context, Table, Values, UseLWT) ->
-    FilteredValues = strip_infinite_ttl(Values),
-    Query = build_insert_query(Table, keys(FilteredValues), UseLWT),
-    query(Context, Query, FilteredValues, quorum).
+run_insert_query(Context, Table, AllValues, UseLWT) ->
+    {TTL, Values} = take_ttl(AllValues),
+    Opts = [{into, Table}, {in, keyspace_name(Context)},
+            {values, Values}, {ttl, TTL},
+            {unique, UseLWT},
+            {with, quorum}],
 
-build_insert_query(Table, AllKeys, UseLWT) ->
-    {TTL, Keys} = lists:partition(fun (K) -> K =:= '[ttl]' end, AllKeys),
-    ["INSERT INTO ", atom_to_list(Table), " ", names(Keys),
-     " VALUES ", placeholders(length(Keys)), use_lwt(UseLWT),
-     ttl_option(TTL)].
+    Query = 'Elixir.Schemata.Query.Insert':from_opts(Opts),
+    ?query:'run!'(Query).
 
-strip_infinite_ttl(Values = #{'[ttl]' := infinity}) ->
-    maps:remove('[ttl]', Values);
-strip_infinite_ttl(Values) -> Values.
-
-placeholders(1) -> "(?)";
-placeholders(N) -> ["(", lists:duplicate(N - 1, "?, "), "?)"].
-
-names(Keys) ->
-    names(lists:reverse(Keys), []).
-
-names([Key], Acc) ->
-    ["(", [atom_to_list(Key) | Acc], ")"];
-names([Key | Keys], Acc) ->
-    names(Keys, [[", ", atom_to_list(Key)] | Acc]).
-
-use_lwt(false) -> "";
-use_lwt(true) -> " IF NOT EXISTS".
-
-ttl_option([]) -> "";
-ttl_option(['[ttl]']) -> " USING TTL ?".
+take_ttl(Values = #{'[ttl]' := infinity}) ->
+    {nil, maps:remove('[ttl]', Values)};
+take_ttl(Values = #{'[ttl]' := TTL}) ->
+    {TTL, maps:remove('[ttl]', Values)};
+take_ttl(Values) ->
+    {nil, Values}.
 
 
 %% @doc Updates rows in the table based on the parameters.
 -spec update(context(), table(), conditions(), conditions()) -> ok.
 update(Context, Table, Updates, Conditions) ->
-    Values = maps:merge(Updates, Conditions),
-    Query = build_update_query(Table, keys(Updates), keys(Conditions)),
-    {ok, _} = query(Context, Query, Values, quorum),
+    Keyspace = keyspace_name(Context),
+    ?schemata:update(Table, [{in, Keyspace},
+                             {set, Updates},
+                             {where, Conditions},
+                             {with, quorum}]),
     ok.
-
-build_update_query(Table, Columns, Keys) ->
-    ["UPDATE ", atom_to_list(Table), " SET ", update_columns(Columns),
-     conditions(Keys)].
-
-update_columns([First|Rest]) ->
-    lists:foldl(
-      fun (Name, Str) -> [Str, ", ", atom_to_list(Name), " = ?"] end,
-      [atom_to_list(First), " = ?"],
-      Rest).
 
 
 %% @doc Deletes rows from a table.
 -spec delete(context(), table(), columns(), conditions()) -> ok.
 delete(Context, Table, Columns, Conditions) ->
-    Query = build_delete_query(Table, Columns, keys(Conditions)),
-    {ok, void} = query(Context, Query, Conditions, quorum),
+    Keyspace = keyspace_name(Context),
+    ?schemata:delete([{from, Table}, {in, Keyspace},
+                      {values, Columns},
+                      {where, Conditions},
+                      {with, quorum}]),
     ok.
 
-build_delete_query(Table, Columns, Keys) ->
-    ["DELETE", columns(Columns, " "), "FROM ", atom_to_list(Table),
-     conditions(Keys)].
 
 %% @doc Counts the rows in a table matching the conditions
 -spec count(context(), table(), conditions()) -> non_neg_integer().
 count(Context, Table, Conditions) ->
-    Query = build_count_query(Table, keys(Conditions)),
-    {ok, Result} = query(Context, Query, Conditions, quorum),
-    single_result(Result).
-
-build_count_query(Table, Keys) ->
-    ["SELECT COUNT(*) FROM ", atom_to_list(Table), conditions(Keys)].
+    Keyspace = keyspace_name(Context),
+    ?schemata:count(Table, [{in, Keyspace}, {where, Conditions}]).
 
 
 %% @doc Deletes all data in a table.
 -spec truncate(context(), table()) -> ok.
 truncate(Context, Name) ->
-    Query = build_truncate_query(Name),
-    {ok, void} = query(Context, Query, #{}, all),
+    Keyspace = keyspace_name(Context),
+    ?schemata:truncate([{table, Name}, {in, Keyspace}]),
     ok.
-
-build_truncate_query(Name) ->
-    ["TRUNCATE TABLE ", atom_to_list(Name)].
-
-
-%% @doc Drops the specified database artifact if it exists.
--spec drop(context(), atom(), atom()) -> ok.
-drop(Context, Type, Name) ->
-    Query = build_drop_query(Type, Name),
-    {ok, _} = query(Context, Query, #{}, all),
-    ok.
-
-build_drop_query(Type, Name) ->
-    ["DROP ", string:to_upper(atom_to_list(Type)), " IF EXISTS ",
-     atom_to_list(Name)].
-
-
-%% @doc Creates a keyspace if it does not already exist.
--spec create_keyspace(context(), ks_class(), ks_factor()) -> ok.
-create_keyspace(Context, Class, Factor) ->
-    Query = build_create_keyspace_query(keyspace_name(Context), Class, Factor),
-    {ok, _} = query(none, Query, #{}, all),
-    ok.
-
-build_create_keyspace_query(Name, Class, Factor) ->
-    ["CREATE KEYSPACE IF NOT EXISTS ", binary_to_list(Name),
-     " WITH REPLICATION = ", replication_strategy(Class, Factor)].
-
-replication_strategy(simple, Factor) ->
-    ["{'class': 'SimpleStrategy',"
-     " 'replication_factor': ", integer_to_list(Factor), "}"];
-replication_strategy(topology, DCs) ->
-    ["{'class': 'NetworkTopologyStrategy'", dc_factors(DCs, []), "}"].
-
-dc_factors([], Factors) ->
-    Factors;
-dc_factors([{DC, Factor} | Rest], Factors) ->
-    FactorString = [", '", atom_to_list(DC), "': ", integer_to_list(Factor)],
-    dc_factors(Rest, [Factors | FactorString]).
-
-
-%% @doc Creates a table if it does not already exist.
--spec create_table(context(), table_def()) -> ok.
-create_table(Context, TableDef) ->
-    Query = build_create_table_query(TableDef),
-    {ok, _} = query(Context, Query, #{}, all),
-    ok.
-
-build_create_table_query(TD) ->
-    ["CREATE TABLE IF NOT EXISTS ", atom_to_list(TD#table_def.name), " (",
-     column_strings(TD#table_def.columns),
-     primary_key_string(TD#table_def.primary_key),
-     ")", sorting_option_string(TD#table_def.order_by)].
-
-column_strings(Cols) ->
-    [[atom_to_list(CName), " ", column_type(CType), ", "]
-     || {CName, CType} <- Cols].
-
-column_type({map, Type1, Type2}) ->
-    ["map<", atom_to_list(Type1), ",", atom_to_list(Type2), ">"];
-column_type({Coll, Type}) when Coll =:= set; Coll =:= list ->
-    [atom_to_list(Coll), "<", atom_to_list(Type), ">"];
-column_type(Type) when is_atom(Type) ->
-    atom_to_list(Type).
-
-primary_key_string(PK) when is_atom(PK) ->
-    primary_key_string([PK]);
-primary_key_string(PK) ->
-    primary_key_string(lists:reverse(PK), []).
-
-primary_key_string([PK], Acc) ->
-    ["PRIMARY KEY (", primary_key_element(PK), Acc, ")"];
-primary_key_string([First | Rest], Acc) ->
-    primary_key_string(Rest, [", ", primary_key_element(First)|Acc]).
-
-primary_key_element(Columns) when is_list(Columns) ->
-    names(Columns);
-primary_key_element(Col) when is_atom(Col) ->
-    atom_to_list(Col).
-
-sorting_option_string([]) -> "";
-sorting_option_string(Field) when is_atom(Field) ->
-    sorting_option_string([{Field, asc}]);
-sorting_option_string([{Field, Dir}]) ->
-    [" WITH CLUSTERING ORDER BY (", atom_to_list(Field), " ",
-     string:to_upper(atom_to_list(Dir)), ")"].
-
-
-%% @doc Creates an index if it does not already exist.
--spec create_index(context(), table(), [atom()]) -> ok.
-create_index(Context, Table, Keys) ->
-    Query = build_create_index_query(Table, Keys),
-    {ok, _} = query(Context, Query, #{}, all),
-    ok.
-
-build_create_index_query(Table, Keys) ->
-    ["CREATE INDEX IF NOT EXISTS ON ", atom_to_list(Table), index_keys(Keys)].
-
-index_keys(Keys) ->
-    index_keys(lists:reverse(Keys), []).
-
-index_keys([K], Acc) ->
-    [" (", atom_to_list(K), Acc, ")"];
-index_keys([First | Rest], Acc) ->
-    index_keys(Rest, [", ", atom_to_list(First)|Acc]).
-
-
-%% @doc Creates a materialized view if it does not already exist.
--spec create_view(context(), atom(), table(), [atom() | all], [atom()],
-                  [{atom, asc | desc}]) -> ok.
-create_view(Context, Name, Table, Columns, Keys, OrderBy) ->
-    Query = build_create_view_query(Name, Table, Columns, Keys, OrderBy),
-    {ok, _} = query(Context, Query, #{}, all),
-    ok.
-
-build_create_view_query(Name, Table, Columns, Keys, OrderBy) ->
-    ["CREATE MATERIALIZED VIEW IF NOT EXISTS ", atom_to_list(Name), " AS ",
-     "SELECT", columns(Columns, " * "), "FROM ", atom_to_list(Table),
-     view_conditions(Keys), " ", primary_key_string(Keys),
-     sorting_option_string(OrderBy)].
-
-view_conditions([First|Rest]) ->
-    lists:foldl(
-      fun (Name, Str) -> [Str, " AND ", atom_to_list(Name), " IS NOT NULL"] end,
-      [" WHERE ", atom_to_list(First), " IS NOT NULL"],
-      Rest).
 
 
 %%====================================================================
@@ -364,10 +272,10 @@ view_conditions([First|Rest]) ->
 %% abstract datatype that can be passed to {@link rows/1} or
 %% {@link single_result/1}.
 %%
--spec query(context(), query(), values(), consistency_level())
+-spec query(context(), statement(), values(), consistency_level())
            -> {ok, void} | {ok, result()} | {error, error()}.
 query(Context, Query, Values, Consistency) ->
-    run_query(Context, make_query(Query, Values, Consistency)).
+    ?query:run(keyspace_name(Context), Query, Values, Consistency).
 
 %% @doc Executes a batch query.
 %%
@@ -391,14 +299,10 @@ query(Context, Query, Values, Consistency) ->
 %%
 %% On successful completion, the function returns `{ok, void}'.
 %%
--spec batch_query(context(), [{query(), values()}], consistency_level())
+-spec batch_query(context(), [{statement(), values()}], consistency_level())
                  -> {ok, void} | {error, error()}.
-batch_query(_Context, [], _Consistency) ->
-    %% Cassandra throws an exception if you try to batch zero queries.
-    %% Early-out here.
-    {ok, void};
 batch_query(Context, QueryList, Consistency) ->
-    run_query(Context, make_batch_query(QueryList, Consistency, logged)).
+    ?query:run_batch(keyspace_name(Context), QueryList, Consistency).
 
 %% @doc Executes a query multiple times with different datasets.
 %%
@@ -412,12 +316,10 @@ batch_query(Context, QueryList, Consistency) ->
 %% listed in `Query'.
 %%
 %% Returns `ok'.
--spec multi_query(context(), query(), [values()], consistency_level()) -> ok.
+-spec multi_query(context(), statement(), [values()], consistency_level()) ->
+    ok.
 multi_query(Context, Query, ValuesList, Consistency) ->
-    lists:foreach(fun (Values) ->
-                          {ok, void} = run_query(Context,
-                               make_query(Query, Values, Consistency))
-                  end, ValuesList),
+    ?query:run_multi(keyspace_name(Context), Query, ValuesList, Consistency),
     ok.
 
 %% @doc Executes multipe queries with different datasets.
@@ -438,12 +340,10 @@ multi_query(Context, Query, ValuesList, Consistency) ->
 %% are as for {@link query/4}.
 %%
 %% Returns `ok'.
--spec multi_query(context(), [{query(), values()}], consistency_level()) -> ok.
+-spec multi_query(context(), [{statement(), values()}], consistency_level()) ->
+    ok.
 multi_query(Context, QueryVals, Consistency) ->
-    lists:foreach(fun ({Query, Values}) ->
-                          {ok, void} = run_query(Context,
-                               make_query(Query, Values, Consistency))
-                  end, QueryVals),
+    ?query:run_multi(keyspace_name(Context), QueryVals, Consistency),
     ok.
 
 %% @doc Extracts rows from a query result
@@ -453,16 +353,30 @@ multi_query(Context, QueryVals, Consistency) ->
 %%
 -spec rows(result()) -> rows().
 rows(Result) ->
-    cqerl:all_rows(Result).
+    ?result:all_rows(Result).
+
+%% Extracts the value of the first column of the first row from a query result
+-spec single_result(result()) -> term() | not_found.
+single_result(Result) ->
+    ?result:single_value(Result).
+
+%% Extracts the first row from a query result
+%% The row is a property list of column name, value pairs.
+-spec single_row(result()) -> row() | not_found.
+single_row(Result) ->
+    case ?result:head(Result) of
+        empty_dataset -> not_found;
+        R -> R
+    end.
 
 %% @doc Fetch more results from a multi-page query
 %%
-%% Returns the next result object, or `no_more_result' if the end of the
+%% Returns the next result object, or `no_more_results' if the end of the
 %% result set has been reached.
 %%
--spec fetch_more(result()) -> {ok, result()} | no_more_result.
+-spec fetch_more(result()) -> {ok, result()} | no_more_results.
 fetch_more(Result) ->
-    cqerl:fetch_more(Result).
+    ?result:fetch_more(Result).
 
 
 %%====================================================================
@@ -545,44 +459,17 @@ drop_nulls(Row) ->
     maps:filter(fun (_, null) -> false;
                     (_, _) -> true end, Row).
 
-%% @doc Return a list of all columns defined for the specified table
--spec table_columns(table()) -> explicit_columns().
-table_columns(Table) ->
-    {Cols, _} = lists:unzip(
-                    (wocky_db_seed:table_definition(Table))#table_def.columns),
-    Cols.
-
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
-
-run_query(Context, Query) ->
-    Nodes = wocky_app:get_config(cassandra_nodes),
-    Opts = wocky_app:get_config(cassandra_opts),
-    case get_client(Context, hd(Nodes), Opts) of
-        {ok, Client} ->
-            Return = cqerl:run_query(Client, Query),
-            cqerl:close_client(Client),
-            Return;
-        {error, Error} ->
-            {error, Error}
-    end.
-
-get_client(none, Node, Opts) ->
-    cqerl:get_client(Node, Opts);
-get_client(Context, Node, Opts) ->
-    cqerl:get_client(Node, [{keyspace, keyspace_name(Context)}|Opts]).
-
 %% Return the keyspace name for the given context.
--spec keyspace_name(context()) -> binary().
+-spec keyspace_name(context()) -> binary() | undefined.
+keyspace_name(none) ->
+    undefined;
 keyspace_name(Context) when is_atom(Context) ->
     keyspace_name(atom_to_binary(Context, utf8));
 keyspace_name(Context) ->
     to_keyspace([keyspace_prefix(), Context]).
 
 keyspace_prefix() ->
-    wocky_app:get_config(keyspace_prefix).
+    wocky_app:get_config(keyspace_prefix, <<"wocky_">>).
 
 %% Modify a string so it is a valid keyspace
 %% All invalid characters are replaced with underscore and then
@@ -596,46 +483,4 @@ to_keyspace(String) ->
             Head;
         _ ->
             Space
-    end.
-
-make_query(Query, Values, Consistency) ->
-    log_query(Query, Values),
-    #cql_query{statement = Query,
-               values = Values,
-               reusable = true,
-               consistency = Consistency}.
-
-make_batch_query(QueryList, Consistency, Mode) ->
-    #cql_query_batch{queries = batch_query_list(QueryList),
-                     consistency = Consistency,
-                     mode = Mode}.
-
-batch_query_list(QueryList) ->
-    lists:map(fun ({Query, Values}) ->
-                      log_query(Query, Values),
-                      #cql_query{statement = Query, values = Values}
-              end, QueryList).
-
-log_query(Query, Values) ->
-    ok = lager:debug("Creating CQL query with statement '~s' and values ~p",
-                     [Query, Values]).
-
-%% Extracts the value of the first column of the first row from a query result
--spec single_result(result()) -> term() | not_found.
-single_result(Result) ->
-    case cqerl:head(Result) of
-        empty_dataset ->
-            not_found;
-        Map ->
-            [{_, Value}|_] = maps:to_list(Map),
-            Value
-    end.
-
-%% Extracts the first row from a query result
-%% The row is a property list of column name, value pairs.
--spec single_row(result()) -> row() | not_found.
-single_row(Result) ->
-    case cqerl:head(Result) of
-        empty_dataset -> not_found;
-        R -> R
     end.

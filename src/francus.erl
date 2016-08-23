@@ -253,10 +253,8 @@ close(#state{file_id = FileID, committed_size = CS,
     ok.
 
 read_keep_file(Context, FileID) ->
-    Columns = wocky_db:table_columns(media),
-    Row = wocky_db:select_row(Context, media,
-                              ['ttl(user)' | Columns],
-                              #{id => FileID}),
+    Columns = [id, user, size, purpose, access, metadata, chunks, 'ttl(user)'],
+    Row = wocky_db:select_row(Context, media, Columns, #{id => FileID}),
     case Row of
         not_found ->
             not_found;
