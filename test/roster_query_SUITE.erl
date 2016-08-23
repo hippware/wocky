@@ -35,14 +35,14 @@ init_per_suite(Config) ->
     wocky_db_seed:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:clear_tables(?LOCAL_CONTEXT, [roster]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [roster]),
-    Users = escalus:get_users([alice, bob, carol, karen]),
+    Users = escalus:get_users([alice, bob]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         escalus:create_users(Users)
     ).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
+    escalus:delete_users(Config, escalus:get_users([alice, bob])),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
