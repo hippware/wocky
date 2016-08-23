@@ -59,7 +59,8 @@ user_data(Server) ->
     [
      #{user => ?ALICE,  server => Server,  handle => ?HANDLE,
        phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
-       avatar => tros:make_url(Server, ?AVATAR_FILE)},
+       avatar => tros:make_url(Server, ?AVATAR_FILE),
+       roster_viewers => ?ROSTER_VIEWERS},
      #{user => ?CAROL,  server => Server,  handle => <<"carol">>,
        first_name => <<"Carol">>,
        phone_number => <<"+4567">>, external_id => <<"123456">>},
