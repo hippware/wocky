@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Integration test suite for mod_roster_subscription
--module(roster_subscription_SUITE).
+%%% @doc Integration test suite for mod_roster_query
+-module(roster_query_SUITE).
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 
@@ -17,10 +17,8 @@
 %%--------------------------------------------------------------------
 
 all() ->
-    [subscribe,
-     unsubscribe,
-     get_roster,
-     push_notifications
+    [
+     get_roster
     ].
 
 suite() ->
@@ -56,85 +54,46 @@ end_per_testcase(CaseName, Config) ->
 %% mod_roster_subscription tests
 %%--------------------------------------------------------------------
 
-subscribe(Config) ->
-    escalus:story(Config, [{alice, 1}, {carol, 1}],
-      fun(Alice, Carol) ->
-        % Successfully subscribe to a user's roster
-        expect_iq_success_u(subscribe_stanza(), Carol, Alice),
-
-        % Multiple subscriptions should still succeed
-        expect_iq_success_u(subscribe_stanza(), Carol, Alice)
-      end).
-
-unsubscribe(Config) ->
-    escalus:story(Config, [{alice, 1}, {carol, 1}, {karen, 1}],
-      fun(Alice, Carol, Karen) ->
-        % Successfully unsubscribe from a user's roster
-        expect_iq_success_u(unsubscribe_stanza(), Carol, Alice),
-
-        % Multiple unsubscriptions should still succeed
-        expect_iq_success_u(unsubscribe_stanza(), Carol, Alice),
-
-        % Unsubscriptions from non-subscribers should still succeed
-        expect_iq_success_u(unsubscribe_stanza(), Karen, Alice)
-      end).
-
 get_roster(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        Stanza = expect_iq_success_u(get_roster_stanza(), Bob, Alice),
-        check_returned_roster(
-          Stanza, length(wocky_db_seed:seed_data(roster, ?LOCAL_CONTEXT)))
-      end).
 
-push_notifications(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-      fun(Alice, Bob, Carol) ->
-        %% Bob subscribers to Alice's roster
-        expect_iq_success_u(subscribe_stanza(), Bob, Alice),
+        %% No specified version returns the full roster
+        Stanza = expect_iq_success_u(get_roster_stanza(undefined), Bob, Alice),
+        Version = check_returned_roster(
+          Stanza, length(wocky_db_seed:seed_data(roster, ?LOCAL_CONTEXT))),
 
-        %% Alice removes a contact
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Carol)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
+        %% Specifying the current version returns no items
+        Stanza2 = expect_iq_success_u(get_roster_stanza(Version), Bob, Alice),
+        Version = check_returned_roster(Stanza2, 0),
 
-        %% Bob gets an update
-        Stanza = escalus:wait_for_stanza(Bob),
-        check_deleted_roster_update(Stanza),
+        %% Specifying a non-current version returns all items
+        Stanza3 = expect_iq_success_u(get_roster_stanza(<<"wrong_ver">>),
+                                      Bob, Alice),
+        Version = check_returned_roster(
+          Stanza3, length(wocky_db_seed:seed_data(roster, ?LOCAL_CONTEXT)))
 
-        %% Alice adds a contact
-        escalus:send(Alice, escalus_stanza:roster_add_contact(
-                              Carol, [<<"friends">>], <<"Cazza">>)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        %% Bob gets an update
-        Stanza2 = escalus:wait_for_stanza(Bob),
-        check_returned_roster(Stanza2, 1)
       end).
 
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
 
-subscribe_stanza() ->
-    subscription_management_stanza(set, <<"subscribe">>).
-
-unsubscribe_stanza() ->
-    subscription_management_stanza(set, <<"unsubscribe">>).
-
-get_roster_stanza() ->
-    subscription_management_stanza(get, <<"query">>).
-
-subscription_management_stanza(Type, Name) ->
-    IQ = #iq{type = Type, id = wocky_util:iq_id(),
-             sub_el = #xmlel{name = Name,
-                             attrs = [{<<"xmlns">>, ?NS_WOCKY_ROSTER}]}},
+get_roster_stanza(Version) ->
+    IQ = #iq{type = get, id = wocky_util:iq_id(),
+             sub_el = #xmlel{name = <<"query">>,
+                             attrs = [{<<"xmlns">>, ?NS_WOCKY_ROSTER} |
+                                      maybe_ver_attr(Version)]}},
     jlib:iq_to_xml(IQ).
+
+maybe_ver_attr(undefined) -> [];
+maybe_ver_attr(Version) -> [{<<"version">>, Version}].
 
 check_returned_roster(Stanza, ExpectedCount) ->
     Query = exml_query:subelement(Stanza, <<"query">>),
-    check_roster_items(Query#xmlel.children, ExpectedCount).
+    check_roster_items(Query#xmlel.children, ExpectedCount),
+    {value, Version} = xml:get_attr(<<"version">>, Query#xmlel.attrs),
+    Version.
 
 check_roster_items(Items, ExpectedCount) ->
     lists:foreach(fun check_roster_item/1, Items),

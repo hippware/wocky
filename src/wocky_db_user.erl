@@ -85,11 +85,7 @@
          set_location/6,
          assign_token/3,
          release_token/3,
-         check_token/3,
-         subscribe/3,
-         unsubscribe/3,
-         get_subscribers/2
-        ]).
+         check_token/3]).
 
 -ifdef(TEST).
 -export([generate_token/0, get_tokens/2]).
@@ -566,61 +562,3 @@ get_tokens(LUser, LServer) ->
 -spec check_token(ejabberd:lserver(), ejabberd:luser(), token()) -> boolean().
 check_token(LUser, LServer, Token) ->
     lists:member(Token, get_tokens(LUser, LServer)).
-
-%% @doc Adds a roster subscriber to a user.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `SubJID': The JID of the entity subscribing to the user's roster
-%%
--spec subscribe(ejabberd:luser(), ejabberd:lserver(), ejabberd:jid()) ->
-    ok | not_found.
-subscribe(LUser, LServer, SubJID) ->
-    update_roster_subscriber("+", LUser, LServer, SubJID).
-
-%% @doc Adds a roster subscriber to a user.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `SubJID': The JID of the entity unsubscribing from the user's roster
-%%
--spec unsubscribe(ejabberd:luser(), ejabberd:lserver(), ejabberd:jid()) ->
-    ok | not_found.
-unsubscribe(LUser, LServer, SubJID) ->
-    update_roster_subscriber("-", LUser, LServer, SubJID).
-
-%% @private
-update_roster_subscriber(Op, LUser, LServer, SubJID) ->
-    Q = ["UPDATE user SET subscribers = subscribers ", Op, " ? WHERE user = ?",
-         " AND server = ? IF EXISTS"],
-    V = #{user => LUser, server => LServer,
-          subscribers => [jid:to_binary(SubJID)]},
-    parse_subscription_result(wocky_db:query(shared, Q, V, quorum)).
-
-%% @private
-parse_subscription_result({ok, Result}) ->
-    case wocky_db:single_result(Result) of
-        true -> ok;
-        false -> not_found
-    end.
-
-%% @doc Gets the list of entities subscribed to a user's roster.
-%% Returns a list of subscribers, or `not_found' if the user does not exist.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_subscribers(ejabberd:luser(), ejabberd:lserver()) ->
-    [binary()] | not_found.
-get_subscribers(LUser, LServer) ->
-    V = #{user => LUser, server => LServer},
-    case wocky_db:select_one(shared, user, subscribers, V) of
-        null -> [];
-        not_found -> not_found;
-        List -> List
-    end.

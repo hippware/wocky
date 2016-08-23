@@ -85,14 +85,11 @@
 -define(CHAT_TITLE, <<"Chatty McChatface">>).
 
 -define(BOT, <<"e2570262-1c7c-10e6-8bbd-1362d78a5dd4">>).
--define(BOT_B_JID, <<?LOCAL_CONTEXT/binary, "/bot/", ?BOT/binary>>).
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
 -define(BOT_DESC, <<"A test bot owned by Alice">>).
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
 -define(BOT_RADIUS, 10).
-
--define(ROSTER_SUBS, [?BOT_B_JID, ?BOB_B_JID]).
 
 -endif.
