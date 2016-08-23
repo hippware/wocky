@@ -10,7 +10,7 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
 
--import(test_helper, [expect_iq_success_u/3]).
+-import(test_helper, [expect_iq_success_u/3, expect_iq_error_u/3]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -18,7 +18,8 @@
 
 all() ->
     [
-     get_roster
+     get_roster,
+     invalid_query
     ].
 
 suite() ->
@@ -75,13 +76,23 @@ get_roster(Config) ->
 
       end).
 
+invalid_query(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        %% Invalid query type returns an error
+        expect_iq_error_u(roster_stanza(undefined, <<"blah">>), Bob, Alice)
+      end).
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
 
 get_roster_stanza(Version) ->
+    roster_stanza(Version, <<"query">>).
+
+roster_stanza(Version, Name) ->
     IQ = #iq{type = get, id = wocky_util:iq_id(),
-             sub_el = #xmlel{name = <<"query">>,
+             sub_el = #xmlel{name = Name,
                              attrs = [{<<"xmlns">>, ?NS_WOCKY_ROSTER} |
                                       maybe_ver_attr(Version)]}},
     jlib:iq_to_xml(IQ).

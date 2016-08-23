@@ -8,7 +8,6 @@
 -behaviour(gen_mod).
 
 -compile({parse_transform, do}).
--compile({parse_transform, cut}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
@@ -91,11 +90,9 @@ get_roster_version(LUser, LServer) ->
 
 maybe_get_roster(Ver, Ver, _, _) ->
     {ok, unchanged};
+
 maybe_get_roster(_, _, LUser, LServer) ->
-    case wocky_db_user:does_user_exist(LUser, LServer) of
-        false -> {error, ?ERR_ITEM_NOT_FOUND};
-        true -> {ok, wocky_db_roster:get_roster(LUser, LServer)}
-    end.
+    {ok, wocky_db_roster:get_roster(LUser, LServer)}.
 
 make_roster_el(Roster, Version) ->
     {ok, #xmlel{name = <<"query">>,
@@ -112,14 +109,9 @@ make_item_el(#wocky_roster{contact_jid = JID, contact_handle = Name,
                            subscription = Subscription, groups = Groups}) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"jid">>, jid:to_binary(JID)},
-                    {<<"name">>, Name} |
-                    maybe_subscription_attr(Subscription)],
+                    {<<"name">>, Name},
+                    {<<"subscription">>, atom_to_binary(Subscription, utf8)}],
            children = group_els(Groups)}.
-
-maybe_subscription_attr(remove) ->
-    [];
-maybe_subscription_attr(Subscription) ->
-    [{<<"subscription">>, atom_to_binary(Subscription, utf8)}].
 
 group_els(Groups) ->
     [group_el(G) || G <- Groups].
