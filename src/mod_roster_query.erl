@@ -1,7 +1,7 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%%
 %%% @doc Module implementing roster query
-%%% See https://github.com/hippware/tr-wiki/wiki/Roster-subscription
+%%% See https://github.com/hippware/tr-wiki/wiki/Roster-query
 %%%
 -module(mod_roster_query).
 
