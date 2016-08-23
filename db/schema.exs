@@ -13,7 +13,9 @@ defmodule Schemata.Schemas.Wocky do
         first_name:   :text, # User's first name
         last_name:    :text, # User's last name
         email:        :text, # User's email address
-        external_id:  :text  # The user ID received from Twitter Digits
+        external_id:  :text, # The user ID received from Twitter Digits
+        roster_viewers: {:set, :text} # Set of entities allowed to view
+                                      # this user's roster
       ],
       primary_key: [:server, :user]
     ]

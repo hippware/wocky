@@ -19,7 +19,8 @@
 all() ->
     [
      get_roster,
-     invalid_query
+     invalid_query,
+     roster_change_notify
     ].
 
 suite() ->
@@ -35,14 +36,14 @@ init_per_suite(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db:clear_tables(?LOCAL_CONTEXT, [roster]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [roster]),
-    Users = escalus:get_users([alice, bob]),
+    Users = escalus:get_users([alice, bob, carol]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         escalus:create_users(Users)
     ).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob])),
+    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
@@ -82,6 +83,36 @@ invalid_query(Config) ->
         %% Invalid query type returns an error
         expect_iq_error_u(roster_stanza(undefined, <<"blah">>), Bob, Alice)
       end).
+
+roster_change_notify(Config) ->
+    ok = wocky_db:update(shared, user,
+                         #{roster_viewers => [?BOB_B_JID]},
+                         #{user => ?ALICE, server => ?LOCAL_CONTEXT}),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+         %% Alice removes a contact
+         escalus:send(Alice, escalus_stanza:roster_remove_contact(Carol)),
+         escalus:assert_many([is_roster_set, is_iq_result],
+                             escalus:wait_for_stanzas(Alice, 2)),
+
+         %% Bob gets an update
+         Stanza = escalus:wait_for_stanza(Bob),
+         check_roster_update(Stanza),
+
+         %% Alice adds a contact
+         escalus:send(Alice, escalus_stanza:roster_add_contact(
+                               Carol, [<<"friends">>], <<"Cazza">>)),
+         escalus:assert_many([is_roster_set, is_iq_result],
+                             escalus:wait_for_stanzas(Alice, 2)),
+
+         %% Bob gets an update
+         Stanza2 = escalus:wait_for_stanza(Bob),
+         check_roster_update(Stanza2),
+
+         %% Carol should not have received anything, not being a viewer
+         test_helper:ensure_all_clean([Alice, Bob, Carol])
+      end).
+
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -129,3 +160,8 @@ check_deleted_roster_item(#xmlel{name = <<"item">>, attrs = Attrs}) ->
 check_roster_item_common(Attrs) ->
     ?assertMatch({value, _}, xml:get_attr(<<"jid">>, Attrs)),
     ?assertMatch({value, _}, xml:get_attr(<<"name">>, Attrs)).
+
+check_roster_update(Stanza = #xmlel{attrs = Attrs, children = [Child]}) ->
+    escalus:assert(is_message, Stanza),
+    ?assertEqual({value, <<"headline">>}, xml:get_attr(<<"type">>, Attrs)),
+    ?assertMatch(#xmlel{name = <<"roster-changed">>}, Child).

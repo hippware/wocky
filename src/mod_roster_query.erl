@@ -8,6 +8,7 @@
 -behaviour(gen_mod).
 
 -compile({parse_transform, do}).
+-compile({parse_transform, cut}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
@@ -20,6 +21,9 @@
 %% IQ hook
 -export([handle_iq/3]).
 
+%% Roster hook
+-export([roster_item_change/2]).
+
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
@@ -27,11 +31,15 @@
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_WOCKY_ROSTER,
                                   ?MODULE, handle_iq, parallel),
-    mod_disco:register_feature(Host, ?NS_WOCKY_ROSTER).
+    mod_disco:register_feature(Host, ?NS_WOCKY_ROSTER),
+    ejabberd_hooks:add(roster_process_item, Host,
+                       fun roster_item_change/2, 50).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_WOCKY_ROSTER),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_WOCKY_ROSTER).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_WOCKY_ROSTER),
+    ejabberd_hooks:delete(roster_process_item, Host,
+                          fun roster_item_change/2, 50).
 
 %%%===================================================================
 %%% Event handler
@@ -118,3 +126,25 @@ group_els(Groups) ->
 
 group_el(Group) ->
     #xmlel{name = <<"group">>, children = [#xmlcdata{content = Group}]}.
+
+%%%===================================================================
+%%% Roster update hook handler
+%%%===================================================================
+
+-spec roster_item_change(wocky_db_roster:roster_item(), ejabberd:lserver()) ->
+    wocky_db_roster:roster_item().
+roster_item_change(Item = #wocky_roster{user = LUser, server = LServer}, _) ->
+    Viewers = wocky_db_user:get_roster_viewers(LUser, LServer),
+    ct:log("BJD Item ~p ~p", [Item, Viewers]),
+    lists:foreach(notify_roster_update(LUser, LServer, _), Viewers),
+    Item.
+
+notify_roster_update(LUser, LServer, Viewer) ->
+    ejabberd_router:route(jid:make(LUser, LServer, <<>>),
+                          jid:from_binary(Viewer),
+                          roster_change_packet()).
+
+roster_change_packet() ->
+    #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
+           children = [#xmlel{name = <<"roster-changed">>}]}.

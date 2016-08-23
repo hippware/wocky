@@ -145,18 +145,18 @@ handle_iq_type(_From, _To, _IQ) ->
 %%%===================================================================
 
 handle_create(From, IQ, Children) ->
+    Server = wocky_app:server(),
     do([error_m ||
         Fields <- get_fields(Children),
-        Fields2 <- add_server(Fields),
+        Fields2 <- add_server(Fields, Server),
         check_required_fields(Fields2, required_fields()),
-        BotEl <- create_bot(From, Fields2),
+        BotEl <- create_bot(From, Server, Fields2),
         {ok, IQ#iq{type = result, sub_el = BotEl}}
        ]).
 
-add_server(Fields) ->
+add_server(Fields, Server) ->
     {ok,
-     [#field{name = <<"server">>, type = string, value = wocky_app:server()} |
-      Fields]}.
+     [#field{name = <<"server">>, type = string, value = Server} | Fields]}.
 
 %%%===================================================================
 %%% Action - delete
@@ -171,7 +171,10 @@ handle_delete(From, #jid{lserver = Server}, IQ, Attrs) ->
        ]).
 
 delete_bot(Server, ID) ->
-    {ok, wocky_db_bot:delete(Server, ID)}.
+    #jid{luser= LUser, lserver = LServer} = wocky_db_bot:owner(Server, ID),
+    wocky_db_user:remove_roster_viewer(LUser, LServer, bot_jid(Server, ID)),
+    wocky_db_bot:delete(Server, ID),
+    ok.
 
 %%%===================================================================
 %%% Action - get
@@ -509,14 +512,15 @@ field(Name, Type, Value) ->
     #field{name = Name, type = Type, value = Value}.
 
 
-create_bot(Owner, Fields) ->
+create_bot(Owner, Server, Fields) ->
     ID = wocky_db:create_id(),
     do([error_m ||
         maybe_insert_name(ID, Fields),
         Fields2 <- add_defaults(Fields),
         Fields3 <- add_owner(Owner, Fields2),
-        update_bot(wocky_app:server(), ID, Fields3),
-        make_bot_el(wocky_app:server(), ID)
+        update_bot(Server, ID, Fields3),
+        add_bot_as_roster_viewer(Owner, Server, ID),
+        make_bot_el(Server, ID)
        ]).
 
 maybe_insert_name(ID, Fields) when is_list(Fields) ->
@@ -563,6 +567,10 @@ normalise_field(#field{name = N, type = jid, value = JID = #jid{}}, Acc) ->
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
+add_bot_as_roster_viewer(#jid{luser = LUser, lserver = LServer}, Server, ID) ->
+    wocky_db_user:add_roster_viewer(LUser, LServer, bot_jid(Server, ID)),
+    ok.
+
 make_bot_el(Server, ID) ->
     case wocky_db_bot:get(Server, ID) of
         not_found ->
@@ -579,11 +587,11 @@ make_ret_elements(Map) ->
 
 meta_fields(Map = #{id := ID, server := Server, followers := Followers}) ->
     Affiliates = wocky_db_bot:affiliations_from_map(Map),
-    [#field{name = <<"jid">>, type = jid, value = bot_jid(ID, Server)} |
+    [#field{name = <<"jid">>, type = jid, value = bot_jid(Server, ID)} |
      size_and_hash(<<"affiliates">>, Affiliates) ++
      size_and_hash(<<"followers">>, Followers)].
 
-bot_jid(ID, Server) ->
+bot_jid(Server, ID) ->
     jid:make(<<>>, Server, <<"bot/", ID/binary>>).
 
 size_and_hash(Name, null) -> size_and_hash(Name, []);

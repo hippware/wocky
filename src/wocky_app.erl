@@ -43,11 +43,11 @@ ensure_loaded(App) ->
 version() ->
     element(2, application:get_key(wocky, vsn)).
 
--spec server() -> binary().
+-spec server() -> ejabberd:server().
 server() ->
     hd(servers()).
 
--spec servers() -> [binary()].
+-spec servers() -> [ejabberd:server()].
 servers() ->
     application:get_env(wocky, server_names, [<<"localhost">>]).
 
