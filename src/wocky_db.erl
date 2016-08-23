@@ -25,9 +25,8 @@
 -type conditions() :: map().
 -type ks_class()   :: simple | topology.
 -type ks_factor()  :: non_neg_integer() | [{binary(), non_neg_integer}].
--type table_def()  :: #table_def{}.
 -export_type([server/0, context/0, table/0, explicit_columns/0, columns/0,
-              conditions/0, ks_class/0, ks_factor/0, table_def/0]).
+              conditions/0, ks_class/0, ks_factor/0]).
 
 -type statement() :: ?query:statement().
 -type value()     :: ?query:parameter_val().
@@ -44,7 +43,8 @@
 -type consistency_level() :: ?query:consistency_level().
 
 %% High Level API
--export([bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
+-export([shared_keyspace/0, local_keyspace/0,
+         bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
          prepare_tables/2, clear_tables/2, clear_user_tables/1,
          select_one/4, select_row/4, select/4, insert/3, insert_new/3,
          update/4, delete/4, count/3, truncate/2]).
@@ -75,6 +75,14 @@
 %% High Level API
 %%====================================================================
 
+-spec shared_keyspace() -> binary().
+shared_keyspace() ->
+    keyspace_name(<<"shared">>).
+
+-spec local_keyspace() -> binary().
+local_keyspace() ->
+    keyspace_name(wocky_app:server()).
+
 %% @doc Create the schema for both the shared and local keyspaces then
 %% load seed data into the tables.
 -spec bootstrap() -> ok.
@@ -102,7 +110,7 @@ create_schema(Context) ->
 
 %% @private
 create_schema_for(Context) ->
-    {ok, applied} = ?schema:create_keyspace(keyspace_name(Context)),
+    ok = ?schema:create_keyspace(keyspace_name(Context)),
     ok.
 
 
@@ -461,7 +469,7 @@ keyspace_name(Context) ->
     to_keyspace([keyspace_prefix(), Context]).
 
 keyspace_prefix() ->
-    wocky_app:get_config(keyspace_prefix).
+    wocky_app:get_config(keyspace_prefix, <<"wocky_">>).
 
 %% Modify a string so it is a valid keyspace
 %% All invalid characters are replaced with underscore and then

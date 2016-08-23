@@ -8,8 +8,9 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start/1, start/0, stop/0,
-         version/0, server/0, servers/0, is_testing/0, get_config/1]).
+-export([start/1, start/0, stop/0, ensure_loaded/1,
+         version/0, server/0, servers/0, is_testing/0,
+         get_config/1, get_config/2]).
 
 -ignore_xref([{start, 0}, {start, 1}, {stop, 0}]).
 
@@ -30,6 +31,14 @@ stop() ->
     _ = ejabberd:stop(),
     application:stop(wocky).
 
+-spec ensure_loaded(atom()) -> ok | {error, term()}.
+ensure_loaded(App) ->
+    case application:load(App) of
+        ok -> ok;
+        {error, {already_loaded, _}} -> ok;
+        {error, _} = Error -> Error
+    end.
+
 -spec version() -> binary().
 version() ->
     element(2, application:get_key(wocky, vsn)).
@@ -40,7 +49,7 @@ server() ->
 
 -spec servers() -> [binary()].
 servers() ->
-    ejabberd_config:get_global_option(hosts).
+    application:get_env(wocky, server_names, [<<"localhost">>]).
 
 -spec is_testing() -> boolean().
 is_testing() ->
@@ -48,11 +57,19 @@ is_testing() ->
 
 -spec get_config(atom()) -> term().
 get_config(Key) ->
-    %% Try pulling the config from ejabberd
-    Host = hd(ejabberd_config:get_global_option(hosts)),
-    case ejabberd_config:get_local_option(Key, Host) of
-        undefined -> default_config(Key);
-        Value -> Value
+    get_config(Key, undefined).
+
+-spec get_config(atom(), term()) -> term().
+get_config(Key, Default) ->
+    try
+        %% Try pulling the config from ejabberd
+        Host = hd(ejabberd_config:get_global_option(hosts)),
+        case ejabberd_config:get_local_option(Key, Host) of
+            undefined -> default_config(Key, Default);
+            Value -> Value
+        end
+    catch
+        _:_ -> default_config(Key, Default)
     end.
 
 
@@ -65,9 +82,12 @@ start(_StartType, _StartArgs) ->
 
     {ok, CfgDir} = application:get_env(wocky, config_dir),
     CfgPath = filename:join(CfgDir, Env ++ ".cfg"),
+    {ok, CfgTerms} = file:consult(CfgPath),
 
-    ok = configure_db(CfgPath),
+    ok = configure_db(CfgTerms),
     {ok, _} = application:ensure_all_started(schemata),
+
+    ok = cache_server_names(CfgTerms),
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
@@ -82,13 +102,6 @@ stop(_State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-ensure_loaded(App) ->
-    case application:load(App) of
-        ok -> ok;
-        {error, {already_loaded, _}} -> ok;
-        {error, _} = Error -> Error
-    end.
 
 set_wocky_env() ->
     Env = case os:getenv("WOCKY_ENV") of
@@ -108,15 +121,18 @@ is_testing_server(<<"localhost">>) -> true;
 is_testing_server(<<"testing.", _/binary>>) -> true;
 is_testing_server(_) -> false.
 
-default_config(Key) ->
-    {ok, Value} = application:get_env(wocky, Key),
-    Value.
+default_config(Key, Default) ->
+    application:get_env(wocky, Key, Default).
 
-configure_db(CfgPath) ->
+configure_db(CfgTerms) ->
     ok = ensure_loaded(schemata),
-    {ok, Terms} = file:consult(CfgPath),
-    Cluster = proplists:get_value(schemata_cluster, Terms),
+    Cluster = proplists:get_value(schemata_cluster, CfgTerms),
     apply_db_config(Cluster).
 
 apply_db_config(undefined) -> ok;
 apply_db_config(Cluster) -> application:set_env(schemata, cluster, Cluster).
+
+cache_server_names(CfgTerms) ->
+    Servers = proplists:get_value(hosts, CfgTerms),
+    BinServers = lists:map(fun (S) -> iolist_to_binary(S) end, Servers),
+    application:set_env(wocky, server_names, BinServers).
