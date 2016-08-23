@@ -137,8 +137,24 @@ defmodule Wocky.Mixfile do
   end
 
   defp aliases do
-    [deps: ["deps.get", "deps.compile goldrush lager", "compile"],
-     lint: "elvis"]
+    [
+      deps: ["deps.get", "deps.compile goldrush lager", "compile"],
+      lint: "elvis",
+      migrate: &migrate/1,
+      rollback: &rollback/1
+    ]
+  end
+
+  defp migrate(_) do
+    System.put_env("WOCKY_MINIMAL", "1")
+    Mix.Task.run "app.start"
+    Schemata.Migrator.migrate(:up)
+  end
+
+  defp rollback(_) do
+    System.put_env("WOCKY_MINIMAL", "1")
+    Mix.Task.run "app.start"
+    Schemata.Migrator.migrate(:down, 1)
   end
 
   defp elvis_config do
