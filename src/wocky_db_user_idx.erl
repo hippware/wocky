@@ -152,5 +152,5 @@ update_index(Index, Object) ->
         true ->
             {ok, no_changes};
         false ->
-            algolia_index:update_object(Index, Object)
+            algolia_index:partial_update_object(Index, Object)
     end.
