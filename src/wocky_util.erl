@@ -19,6 +19,7 @@
 
    archive_jid/1,
 
+   iq_id/0,
    make_error_iq_response/2
         ]).
 
@@ -91,6 +92,11 @@ set_config_from_opt(OptTag, Config, Default, Opts) ->
 
 -spec archive_jid(jid()) -> binary().
 archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
+
+-spec iq_id() -> binary().
+iq_id() ->
+    Int = erlang:unique_integer([positive]),
+    integer_to_binary(Int, 36).
 
 -spec make_error_iq_response(iq(), jlib:xmlel() | [jlib:xmlel()]) -> iq().
 make_error_iq_response(IQ, ErrStanza) ->

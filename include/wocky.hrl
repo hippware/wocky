@@ -28,6 +28,7 @@
 -define(NS_GEOLOC, <<"http://jabber.org/protocol/geoloc">>).
 -define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
 -define(NS_TROS, <<"hippware.com/hxep/http-file">>).
+-define(NS_WOCKY_ROSTER, <<"hippware.com/hxep/roster">>).
 
 
 -define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
