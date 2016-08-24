@@ -11,7 +11,7 @@
 
 -include("wocky_db_seed.hrl").
 
--import(test_helper, [expect_iq_success/2, expect_iq_error/2, make_id/0]).
+-import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 
 % There's some overlap here where we want to test the MAM operation
 % on group messages, so it's handy to use a couple of functions from the
@@ -308,7 +308,7 @@ chat_stanza(From, GroupID, Msg) ->
            attrs = [{<<"type">>, <<"chat">>},
                     {<<"to">>, ?LOCAL_CONTEXT},
                     {<<"from">>, From},
-                    {<<"id">>, make_id()},
+                    {<<"id">>, wocky_util:iq_id()},
                     {<<"xmlns:groupchat">>, ?NS_GROUP_CHAT},
                     {<<"groupchat:node">>, make_node(GroupID)}
                    ],
@@ -320,7 +320,7 @@ missing_node_stanza(GroupID) ->
            attrs = [{<<"type">>, <<"chat">>},
                     {<<"to">>, ?LOCAL_CONTEXT},
                     {<<"from">>, ?ALICE_B_JID},
-                    {<<"id">>, make_id()},
+                    {<<"id">>, wocky_util:iq_id()},
                     {<<"xmlns:groupchat">>, ?NS_GROUP_CHAT},
                     {<<"groupchat:XXXXXX">>, make_node(GroupID)}
                    ],
@@ -332,7 +332,7 @@ missing_ns_stanza() ->
            attrs = [{<<"type">>, <<"chat">>},
                     {<<"to">>, ?LOCAL_CONTEXT},
                     {<<"from">>, ?ALICE_B_JID},
-                    {<<"id">>, make_id()}
+                    {<<"id">>, wocky_util:iq_id()}
                    ],
            children = [#xmlel{name = <<"body">>,
                               children = [#xmlcdata{content = <<"asdf">>}]}]}.
@@ -342,7 +342,7 @@ malformed_node_stanza(GroupID) ->
            attrs = [{<<"type">>, <<"chat">>},
                     {<<"to">>, ?LOCAL_CONTEXT},
                     {<<"from">>, ?ALICE_B_JID},
-                    {<<"id">>, make_id()},
+                    {<<"id">>, wocky_util:iq_id()},
                     {<<"xmlns:groupchat">>, ?NS_GROUP_CHAT},
                     {<<"groupchat:node">>, GroupID}
                    ],
