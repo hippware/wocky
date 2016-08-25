@@ -36,7 +36,7 @@
 -type error()     :: term().
 -type ttl()       :: pos_integer() | infinity.
 -type id()        :: binary().
--opaque result()  :: ?result:t().
+-type result()    :: ?result:t().
 -export_type([statement/0, value/0, values/0, row/0, result/0, error/0,
               ttl/0, id/0]).
 
@@ -356,7 +356,7 @@ rows(Result) ->
     ?result:all_rows(Result).
 
 %% Extracts the value of the first column of the first row from a query result
--spec single_result(result()) -> term() | not_found.
+-spec single_result(result()) -> ?result:value() | not_found.
 single_result(Result) ->
     ?result:single_value(Result).
 

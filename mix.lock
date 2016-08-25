@@ -79,7 +79,7 @@
   "relx": {:hex, :relx, "3.20.0", "b515b8317d25b3a1508699294c3d1fa6dc0527851dffc87446661bce21a36710", [:rebar3], [{:bbmustache, "1.0.4", [hex: :bbmustache, optional: false]}, {:cf, "0.2.1", [hex: :cf, optional: false]}, {:erlware_commons, "0.21.0", [hex: :erlware_commons, optional: false]}, {:getopt, "0.8.2", [hex: :getopt, optional: false]}, {:providers, "1.6.0", [hex: :providers, optional: false]}]},
   "riak_pb": {:git, "https://github.com/basho/riak_pb.git", "33e4d4dded18c42bb8d8a821d49f998453060760", [tag: "2.1.4.0"]},
   "riakc": {:git, "https://github.com/basho/riak-erlang-client.git", "8c3256eba4468d7c56215d3f6b8af48634c1d4b1", [tag: "2.1.2"]},
-  "schemata": {:git, "https://github.com/toland/schemata.git", "ee04160523e500e5a548cfaf8d5dbf308a497bd5", [branch: "master"]},
+  "schemata": {:git, "https://github.com/hippware/schemata.git", "fb57dffad844a1f1c971a8afabfeed256a21bc39", [branch: "master"]},
   "semver": {:git, "https://github.com/nebularis/semver.git", "c7d509f38298ec6594be4efdcd8a8f2322760039", [branch: "master"]},
   "setup": {:hex, :setup, "1.7.0", "15df8e57c6df9755e22bfb1aef0c640bd97e9889396fdfb2a85a5536a9043674", [:rebar3], []},
   "snappy": {:git, "https://github.com/fdmanana/snappy-erlang-nif.git", "c4cd1bb35f3a3a399737d64bd03b479817b90e75", [branch: "master"]},

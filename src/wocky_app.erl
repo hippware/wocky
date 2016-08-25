@@ -91,9 +91,12 @@ start(_StartType, _StartArgs) ->
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
-    case os:getenv("WOCKY_MINIMAL", undefined) of
-        undefined -> {ok, _} = ejabberd:start();
-        _ -> ok
+    case os:getenv("WOCKY_MINIMAL") of
+        false ->
+            {ok, _} = ejabberd:start(),
+            ok;
+        _ ->
+            ok
     end,
 
     wocky_sup:start_link().

@@ -27,7 +27,8 @@ defmodule Wocky.Mixfile do
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
          :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
-         :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid
+         :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
+         :cqerl
        ],
        plt_add_deps: true,
        flags: [
@@ -78,7 +79,7 @@ defmodule Wocky.Mixfile do
       {:setup,         "1.7.0", override: true},
       {:jiffy,         "0.14.7", override: true},
       {:lager,         "3.2.1", override: true},
-      {:schemata,      github: "toland/schemata",         branch: "master"},
+      {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:qdate,         github: "choptastic/qdate",        ref: "10d56c2"},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
