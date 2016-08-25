@@ -35,6 +35,7 @@ wocky_db_bot_test_() -> {
         test_update_affiliations(),
         test_follow(),
         test_unfollow(),
+        test_update_owner_roster(),
         test_delete()
       ]}
     ]}
@@ -233,6 +234,11 @@ test_unfollow() ->
         ?_assertEqual([?CAROL_JID], followers(?LOCAL_CONTEXT, ?BOT))
       ]}
     ]}.
+
+test_update_owner_roster() ->
+    { "update_owner_roster", [
+      { "entirely replaces the roster and roster version data", [
+
 
 test_delete() ->
     NewBot = #{id := ID} = new_bot(),

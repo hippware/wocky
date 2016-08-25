@@ -293,19 +293,21 @@ defmodule Schemata.Schemas.Wocky do
 
     table :bot, [
       columns: [
-        id:           :timeuuid,
-        server:       :text,
-        title:        :text,
-        shortname:    :text,
-        owner:        :text,
-        description:  :text,
-        lat:          :double,
-        lon:          :double,
-        radius:       :int,
-        visibility:   :int,
-        affiliates:   {:set, :text},
-        followers:    {:set, :text},
-        alerts:       :int
+        id:               :timeuuid,
+        server:           :text,
+        title:            :text,
+        shortname:        :text,
+        owner:            :text,
+        description:      :text,
+        lat:              :double,
+        lon:              :double,
+        radius:           :int,
+        visibility:       :int,
+        affiliates:       {:set, :text},
+        followers:        {:set, :text},
+        owner_roster:     {:set, :text},
+        owner_roster_ver: :text,
+        alerts:           :int
       ],
       primary_key: :id
     ]

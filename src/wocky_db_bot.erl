@@ -13,7 +13,9 @@
          delete/2,
          has_access/3,
          follow/3,
-         unfollow/3
+         unfollow/3,
+         owner_roster/2,
+         update_owner_roster/4
         ]).
 
 -include("wocky.hrl").
@@ -126,6 +128,17 @@ follow(Server, ID, User) ->
 unfollow(Server, ID, User) ->
     change_follow(Server, ID, User, $-).
 
+-spec owner_roster(wocky_db:server(), wocky_db:id()) -> [jid()] | not_found.
+owner_roster(Server, ID) ->
+    maybe_to_jid(wocky_db:select_one(Server, bot, owner_roster, #{id => ID})).
+
+-spec update_owner_roster(wocky_db:server(), wocky_db:id(),
+                          [jid()], binary()) -> ok.
+update_owner_roster(Server, ID, Items, Version) ->
+    wocky_db:update(Server, bot,
+                    #{owner_roster_items => [jid:to_binary(I) || I <-Items],
+                      owner_roster_version => Version},
+                    #{id => ID}).
 
 %%%===================================================================
 %%% Private helpers

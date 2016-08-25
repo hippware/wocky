@@ -52,11 +52,13 @@
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BOT,
                                   ?MODULE, handle_iq, parallel),
-    mod_disco:register_feature(Host, ?NS_BOT).
+    mod_disco:register_feature(Host, ?NS_BOT),
+    ejabberd_hooks:add(filter_local_packet, Host, fun filter_packet/1, 80).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BOT),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT),
+    ejabberd_hooks:delete(filter_local_packet, Host, fun filter_packet/1, 80).
 
 
 %%%===================================================================
@@ -352,6 +354,92 @@ make_follower_element(JID) ->
     #xmlel{name = <<"follower">>,
            attrs = [{<<"jid">>, jid:to_binary(JID)}]}.
 
+%%%===================================================================
+%%% Incoming packet handler
+%%%===================================================================
+
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-spec filter_packet(filter_packet() | drop) -> filter_packet() | drop.
+filter_packet(P = {From,
+                   #jid{user = <<>>, lserver = LServer,
+                        resource= <<"bot/", BotID/binary>>},
+                   Packet}) ->
+    handle_packet(From, LServer, BotID, Packet),
+    P;
+filter_packet(Other) ->
+    Other.
+
+handle_packet(From, LServer, BotID,
+              Msg = #xmlel{name = <<"message">>, attrs = Attrs}) ->
+    case xml:get_attr(<<"type">>, Attrs) of
+        {value, <<"headline">>} ->
+            handle_headline_msg(From, LServer, BotID, Msg);
+        false ->
+            ok
+    end.
+
+handle_headline_msg(From, LServer, BotID, Msg) ->
+    case xml:get_path_s(Msg, [{elem, <<"roster-changed">>}]) of
+        #xmlel{} -> maybe_refresh_roster(From, LServer, BotID);
+        _ -> ok
+    end.
+
+maybe_refresh_roster(From, LServer, BotID) ->
+    Owner = wocky_db_bot:owner(LServer, BotID),
+    case jid:are_bare_equal(From, Owner) of
+        true -> maybe_refresh_roster(LServer, BotID);
+        false -> ok
+    end.
+
+maybe_refresh_roster(LServer, BotID) ->
+    Bot = #{visibility := Visibility} = wocky_db_bot:get(LServer, BotID),
+    case Visibility of
+        ?WOCKY_BOT_VIS_FRIENDS -> refresh_roster(Bot);
+        _ -> ok
+    end.
+
+refresh_roster(#{id := ID, server := Server,
+                 owner := Owner, owner_roster_ver := RosterVer}) ->
+    ejabberd_local:route_iq(bot_jid(ID, Server),
+                            jid:from_binary(Owner),
+                            roster_request_iq(RosterVer),
+                            roster_iq_response(_, ID, Server, RosterVer)).
+
+roster_request_iq(RosterVer) ->
+    #iq{type = get, sub_el = query_el(RosterVer)}.
+
+query_el(RosterVer) ->
+    #xmlel{name = <<"query">>,
+           attrs = [{<<"xmlns">>, ?NS_WOCKY_ROSTER} |
+                    maybe_ver_attr(RosterVer)]}.
+
+maybe_ver_attr(Ver) when is_binary(Ver) -> [{<<"version">>, Ver}];
+maybe_ver_attr(_) -> [].
+
+-spec roster_iq_response(iq() | timeout, binary(),
+                         ejabberd:lserver(), binary()) -> any().
+roster_iq_response(#iq{type = result,
+                       sub_el = #xmlel{name = <<"query">>,
+                                       attrs = Attrs,
+                                       children = Children}},
+                   BotID, Server, RosterVer) ->
+    case xml:get_attr(<<"version">>, Attrs) of
+        {value, RosterVer} -> ok; % Versions match
+        {value, NewVer} -> update_roster(BotID, Server, NewVer, Children)
+    end;
+roster_iq_response(_, _, _, _) -> ok.
+
+update_roster(BotID, Server, NewVer, ItemEls) ->
+    Items = els_to_items(ItemEls),
+    wocky_db_bot:update_owner_roster(Server, BotID, Items, NewVer).
+
+els_to_items(ItemEls) ->
+    lists:foldl(fun el_to_item/2, [], ItemEls).
+
+el_to_item(#xmlel{name = <<"item">>, attrs = Attrs}, Acc) ->
+    {value, JID} = xml:get_attr(<<"jid">>, Attrs),
+    [jid:from_binary(JID) | Acc];
+el_to_item(_, Acc) -> Acc.
 
 %%%===================================================================
 %%% Common helpers

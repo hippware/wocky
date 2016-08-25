@@ -67,10 +67,10 @@ test_get_roster() ->
 test_get_roster_version() ->
   { "get_roster_version/2", [
     { "returns the roster version for a known user", [
-      ?_assertEqual(<<"999">>, get_roster_version(?USER, ?SERVER))
+      ?_assertEqual(<<"999-4">>, get_roster_version(?USER, ?SERVER))
     ]},
     { "returns a null version for an unknown user", [
-      ?_assertEqual(<<"0">>, get_roster_version(?BADUSER, ?SERVER))
+      ?_assertEqual(<<"0-0">>, get_roster_version(?BADUSER, ?SERVER))
     ]}
   ]}.
 
