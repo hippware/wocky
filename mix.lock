@@ -69,8 +69,6 @@
   "proper": {:git, "https://github.com/manopapad/proper.git", "5f0d69c831b6c9f52535c3d1846efca480f6190d", [tag: "v1.2"]},
   "protobuffs": {:hex, :protobuffs, "0.8.2", "5346c28ccc1637e5ff03270b039b7e87c66b21c666f91ba22635c1fd1002c822", [:rebar, :make], [{:meck, "~> 0.8.3", [hex: :meck, optional: false]}]},
   "providers": {:hex, :providers, "1.6.0", "db0e2f9043ae60c0155205fcd238d68516331d0e5146155e33d1e79dc452964a", [:rebar3], [{:getopt, "0.8.2", [hex: :getopt, optional: false]}]},
-  "qdate": {:git, "https://github.com/choptastic/qdate.git", "10d56c2e045440dac69f1b29a90afe6705cff82f", [ref: "10d56c2"]},
-  "qdate_localtime": {:git, "git://github.com/choptastic/qdate_localtime", "92b0438db5fcc44e47f1510236ba5cd0b14428b1", [tag: "1.1.0"]},
   "quickrand": {:git, "https://github.com/okeuday/quickrand.git", "8b6810b73427745bb6d4f10ae9bfc66983b3b2a1", [branch: "master"]},
   "ranch": {:hex, :ranch, "1.2.1", "a6fb992c10f2187b46ffd17ce398ddf8a54f691b81768f9ef5f461ea7e28c762", [:make], []},
   "re2": {:git, "https://github.com/tuncer/re2.git", "0afa670c007fbfe2f155d04995362f5fb6f27a11", [tag: "v1.4.0"]},

@@ -52,7 +52,7 @@ defmodule Wocky.Mixfile do
        :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
-       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate,
+       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
        :jiffy, :algolia, :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
@@ -81,7 +81,6 @@ defmodule Wocky.Mixfile do
       {:lager,         "3.2.1", override: true},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
-      {:qdate,         github: "choptastic/qdate",        ref: "10d56c2"},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
       {:algolia,       github: "k3nn7/algoliasearch-client-erlang", branch: "master"},
       {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
