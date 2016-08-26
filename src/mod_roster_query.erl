@@ -82,10 +82,16 @@ handle_retrieve(From, To = #jid{luser = LUser, lserver = LServer}, IQ) ->
         {ok, IQ#iq{type = result, sub_el = RosterEl}}
        ]).
 
-check_permissions(_From, _To) ->
-    %% TODO: Check permissions once a permissions checking
-    %% system exists
-    ok.
+check_permissions(From, #jid{luser = LUser, lserver = LServer}) ->
+    Viewers = wocky_db_user:get_roster_viewers(LUser, LServer),
+    case is_viewer(From, Viewers) of
+        false -> {error, ?ERR_FORBIDDEN};
+        true -> ok
+    end.
+
+is_viewer(_, not_found) -> false;
+is_viewer(From, List) ->
+    lists:member(jid:to_binary(jid:to_bare(From)), List).
 
 get_query_version(#iq{sub_el = #xmlel{attrs = Attrs}}) ->
     case xml:get_attr(<<"version">>, Attrs) of
@@ -135,7 +141,6 @@ group_el(Group) ->
     wocky_db_roster:roster_item().
 roster_item_change(Item = #wocky_roster{user = LUser, server = LServer}, _) ->
     Viewers = wocky_db_user:get_roster_viewers(LUser, LServer),
-    ct:log("BJD Item ~p ~p", [Item, Viewers]),
     lists:foreach(notify_roster_update(LUser, LServer, _), Viewers),
     Item.
 
