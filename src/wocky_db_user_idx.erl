@@ -21,9 +21,9 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(algolia, 'Elixir.Algolia').
 
 -record(state, {enabled = false :: boolean(),
-                client :: term(),
                 index :: term()}).
 -type state() :: #state{}.
 
@@ -62,21 +62,15 @@ reindex() ->
 %% @doc Initializes the server
 -spec init([]) -> {ok, state()}.
 init([]) ->
-    {ok, ID} = application:get_env(wocky, algolia_app_id),
-    {ok, Key} = application:get_env(wocky, algolia_app_key),
-    {ok, IdxName} = application:get_env(wocky, algolia_index_name),
+    {ok, Index} = application:get_env(wocky, algolia_index_name),
     {ok, IndexingEnvs} = application:get_env(wocky, indexing_enabled_envs),
     {ok, CurrentEnv} = application:get_env(wocky, wocky_env),
 
     Enabled = lists:member(CurrentEnv, IndexingEnvs),
-    Client = algolia:make_client(ID, Key),
-    Index = algolia:init_index(Client, IdxName),
 
     ok = lager:info("Indexing enabled: ~p", [Enabled]),
 
-    {ok, #state{enabled = Enabled,
-                client = Client,
-                index = Index}}.
+    {ok, #state{enabled = Enabled, index = Index}}.
 
 %% @private
 %% @doc Handling call messages
@@ -87,7 +81,7 @@ handle_call(reindex, _From, #state{index = Index} = State) ->
     lists:foreach(
       fun (#{user := UserID} = User) ->
               Object = map_to_object(UserID, User),
-              update_index(Index, Object)
+              update_index(Index, UserID, Object)
       end, Users),
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
@@ -103,11 +97,11 @@ handle_cast(_Msg, #state{enabled = false} = State) ->
 handle_cast({user_updated, UserID, Data}, #state{index = Index} = State) ->
     Object = map_to_object(UserID, Data),
     ok = lager:debug("Updating user index with object ~p", [Object]),
-    {ok, _} = update_index(Index, Object),
+    {ok, _} = update_index(Index, UserID, Object),
     {noreply, State};
 handle_cast({user_removed, UserID}, #state{index = Index} = State) ->
     ok = lager:debug("Removing user ~s from index", [UserID]),
-    {ok, _} = algolia_index:delete_object(Index, UserID),
+    {ok, _} = ?algolia:delete_object(Index, UserID),
     {noreply, State};
 handle_cast(Msg, State) ->
     ok = lager:warning("Unhandled cast: ~p", [Msg]),
@@ -147,10 +141,10 @@ map_to_object(UserID, MapData) ->
               #{<<"objectID">> => UserID},
               maps:with(indexed_fields(), MapData)).
 
-update_index(Index, Object) ->
+update_index(Index, ObjectID, Object) ->
     case maps:size(Object) < 1 of
         true ->
             {ok, no_changes};
         false ->
-            algolia_index:partial_update_object(Index, Object)
+            ?algolia:partial_update_object(Index, Object, ObjectID)
     end.

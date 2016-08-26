@@ -48,12 +48,12 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :crypto, :ssl, :lager, :logger, :ibrowse, :idna,
+       :crypto, :ssl, :lager, :logger, :idna, :algolia,
        :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
-       :jiffy, :algolia, :erlando, :logger_lager_backend,
+       :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
@@ -68,8 +68,6 @@ defmodule Wocky.Mixfile do
        {:francus_chunk_size, 1048576}, # 1MB
        {:keyspace_prefix, 'wocky_test_'},
        {:indexing_enabled_envs, ['staging']},
-       {:algolia_app_id, 'HIE75ZR7Q7'},
-       {:algolia_app_key, '79602842342e137c97ce188013131a89'},
        {:algolia_index_name, 'dev_wocky_users'}
      ]]
   end
@@ -77,12 +75,11 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:setup,         "1.7.0", override: true},
-      {:jiffy,         "0.14.7", override: true},
       {:lager,         "3.2.1", override: true},
+      {:algolia,       "~> 0.3.2"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
-      {:algolia,       github: "k3nn7/algoliasearch-client-erlang", branch: "master"},
       {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
       {:logger_lager_backend, "~> 0.0.2"},
 
