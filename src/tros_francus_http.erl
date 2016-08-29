@@ -67,7 +67,9 @@ user_file(<<$/, Path/binary>>) ->
         % Uploads don't bother:
         [<<"users">>, User, <<"files">>, File] -> {User, File};
         _ -> {<<>>, <<>>}
-    end.
+    end;
+user_file(_) ->
+    {<<>>, <<>>}.
 
 do_op(get, #tros_request{file = FileID}, Req) ->
     case francus:open_read(wocky_app:server(), FileID) of
