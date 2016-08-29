@@ -112,12 +112,16 @@ seed_data(offline_msg, Server) ->
 seed_data(roster, Server) ->
     Items = [
         #{contact_jid => sjid(?BOB, Server), nick => <<"bobby">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 666},
         #{contact_jid => sjid(?CAROL, Server), nick => <<"carrie">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 777},
         #{contact_jid => sjid(?ROBERT, Server), nick => <<"bob2">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 888},
         #{contact_jid => sjid(?KAREN, Server), nick => <<"kk">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 999}
     ],
     [I#{user => ?ALICE, server => Server, groups => [<<"friends">>]}
@@ -212,10 +216,16 @@ seed_data(bot, Server) ->
        shortname => ?BOT_NAME, owner => ?ALICE_B_JID, description => ?BOT_DESC,
        lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
-       affiliates => [?BOB_B_JID], followers => [?CAROL_B_JID],
-       alerts => ?WOCKY_BOT_ALERT_DISABLED}];
+       affiliates => [?BOB_B_JID],
+       alerts => ?WOCKY_BOT_ALERT_DISABLED,
+       owner_roster => ?BOT_OWNER_ROSTER,
+       owner_roster_ver => ?BOT_OWNER_ROSTER_VERSION
+      }];
 seed_data(bot_name, _Server) ->
     [#{shortname => ?BOT_NAME, id => ?BOT}];
+seed_data(bot_subscriber, _Server) ->
+    [#{bot => ?BOT, user => ?CAROL_B_JID, follower => false},
+     #{bot => ?BOT, user => ?KAREN_B_JID, follower => true}];
 seed_data(_, _) ->
     [].
 

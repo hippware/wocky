@@ -21,9 +21,6 @@
 %% IQ hook
 -export([handle_iq/3]).
 
-%% Roster hook
--export([roster_item_change/2]).
-
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
@@ -32,14 +29,14 @@ start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_WOCKY_ROSTER,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_WOCKY_ROSTER),
-    ejabberd_hooks:add(roster_process_item, Host,
-                       fun roster_item_change/2, 50).
+    ejabberd_hooks:add(roster_updated, Host,
+                       fun roster_updated/2, 50).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_WOCKY_ROSTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_WOCKY_ROSTER),
-    ejabberd_hooks:delete(roster_process_item, Host,
-                          fun roster_item_change/2, 50).
+    ejabberd_hooks:delete(roster_updated, Host,
+                          fun roster_updated/2, 50).
 
 %%%===================================================================
 %%% Event handler
@@ -91,7 +88,10 @@ check_permissions(From, #jid{luser = LUser, lserver = LServer}) ->
 
 is_viewer(_, not_found) -> false;
 is_viewer(From, List) ->
-    lists:member(jid:to_binary(jid:to_bare(From)), List).
+    lists:member(jid:to_binary(viewer_jid(From)), List).
+
+viewer_jid(JID = #jid{luser = <<>>}) -> JID;
+viewer_jid(JID) -> jid:to_bare(JID).
 
 get_query_version(#iq{sub_el = #xmlel{attrs = Attrs}}) ->
     case xml:get_attr(<<"version">>, Attrs) of
@@ -137,12 +137,10 @@ group_el(Group) ->
 %%% Roster update hook handler
 %%%===================================================================
 
--spec roster_item_change(wocky_db_roster:roster_item(), ejabberd:lserver()) ->
-    wocky_db_roster:roster_item().
-roster_item_change(Item = #wocky_roster{user = LUser, server = LServer}, _) ->
+-spec roster_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
+roster_updated(LUser, LServer) ->
     Viewers = wocky_db_user:get_roster_viewers(LUser, LServer),
-    lists:foreach(notify_roster_update(LUser, LServer, _), Viewers),
-    Item.
+    lists:foreach(notify_roster_update(LUser, LServer, _), Viewers).
 
 notify_roster_update(LUser, LServer, Viewer) ->
     ejabberd_router:route(jid:make(LUser, LServer, <<>>),

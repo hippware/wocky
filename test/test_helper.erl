@@ -85,7 +85,9 @@ expect_friendship_presence(User1, User2) ->
                   end,
                   [User1, User2]).
 
-add_contact(Who, Whom, Groups, Nick) ->
+add_contact(Who, Whom, Group, Nick) when is_binary(Group) ->
+    add_contact(Who, Whom, [Group], Nick);
+add_contact(Who, Whom, Groups, Nick) when is_list(Groups) ->
     escalus_client:send(Who,
                         escalus_stanza:roster_add_contact(Whom,
                                                           Groups,

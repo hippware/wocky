@@ -304,12 +304,26 @@ defmodule Schemata.Schemas.Wocky do
         radius:           :int,
         visibility:       :int,
         affiliates:       {:set, :text},
-        followers:        {:set, :text},
         owner_roster:     {:set, :text},
         owner_roster_ver: :text,
         alerts:           :int
       ],
       primary_key: :id
+    ]
+
+    view :user_bot, [
+      from: :bot,
+      columns: [:owner, :id],
+      primary_key: [:owner, :id]
+    ]
+
+    table :bot_subscriber, [
+      columns: [
+        bot:      :timeuuid,
+        user:     :text,
+        follower: :boolean
+      ],
+      primary_key: [:bot, :user]
     ]
 
     table :bot_name, [
@@ -318,12 +332,6 @@ defmodule Schemata.Schemas.Wocky do
         id:           :timeuuid
       ],
       primary_key: :shortname
-    ]
-
-    view :user_bot, [
-      from: :bot,
-      columns: [:owner, :id],
-      primary_key: [:owner, :id]
     ]
   end
 end

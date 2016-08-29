@@ -9,12 +9,14 @@
          affiliations/2,
          affiliations_from_map/1,
          update_affiliations/3,
+         subscribers/2,
          followers/2,
          delete/2,
          has_access/3,
-         follow/3,
-         unfollow/3,
+         subscribe/4,
+         unsubscribe/3,
          owner_roster/2,
+         owner_roster_ver/2,
          update_owner_roster/4
         ]).
 
@@ -70,8 +72,8 @@ affiliations(Server, ID) ->
 
 -spec affiliations_from_map(map() | not_found) -> [affiliate()] | not_found.
 affiliations_from_map(not_found) -> not_found;
-affiliations_from_map(#{owner := Owner, affiliates := null}) ->
-    [owner_affiliation(Owner)];
+affiliations_from_map(Map = #{affiliates := null}) ->
+    affiliations_from_map(Map#{affiliates => []});
 affiliations_from_map(#{owner := Owner, affiliates := Affiliations}) ->
     [owner_affiliation(Owner) |
      [{jid:from_binary(A), spectator} || A <- Affiliations]].
@@ -97,9 +99,15 @@ update_affiliations(Server, ID, Affiliations) ->
         ({ok, _} = wocky_db:query(Server, RemoveQ, RemoveV, quorum)),
     ok.
 
--spec followers(wocky_db:server(), wocky_db:id()) -> [jid()] | not_found.
+-spec followers(wocky_db:server(), wocky_db:id()) -> [jid()].
 followers(Server, ID) ->
-    maybe_to_jid(wocky_db:select_one(Server, bot, followers, #{id => ID})).
+    [J || {J, F} <- subscribers(Server, ID), F =:= true].
+
+-spec subscribers(wocky_db:server(), wocky_db:id()) -> [{jid(), boolean()}].
+subscribers(Server, ID) ->
+    Result = wocky_db:select(Server, bot_subscriber,
+                             [user, follower], #{bot => ID}),
+    [{jid:from_binary(J), F} || #{user := J, follower := F} <- Result].
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
 delete(Server, ID) ->
@@ -116,28 +124,39 @@ has_access(Server, ID, User) ->
     BareUser = jid:to_binary(jid:to_bare(User)),
     Bot =
     wocky_db:select_row(Server, bot,
-                        [visibility, owner, affiliates, followers],
+                        [visibility, affiliates, owner, owner_roster],
                         #{id => ID}),
     has_access(BareUser, Bot).
 
--spec follow(wocky_db:server(), wocky_db:id(), jid()) -> ok.
-follow(Server, ID, User) ->
-    change_follow(Server, ID, User, $+).
+-spec subscribe(wocky_db:server(), wocky_db:id(), jid(), boolean()) -> ok.
+subscribe(Server, ID, User, Follow) ->
+    ok = wocky_db:insert(
+           Server, bot_subscriber,
+           #{bot => ID,
+             user => jid:to_binary(jid:to_bare(User)),
+             follower => Follow}).
 
--spec unfollow(wocky_db:server(), wocky_db:id(), jid()) -> ok.
-unfollow(Server, ID, User) ->
-    change_follow(Server, ID, User, $-).
+-spec unsubscribe(wocky_db:server(), wocky_db:id(), jid()) -> ok.
+unsubscribe(Server, ID, User) ->
+    ok = wocky_db:delete(Server, bot_subscriber, all,
+                         #{bot => ID,
+                           user => jid:to_binary(jid:to_bare(User))}).
 
 -spec owner_roster(wocky_db:server(), wocky_db:id()) -> [jid()] | not_found.
 owner_roster(Server, ID) ->
     maybe_to_jid(wocky_db:select_one(Server, bot, owner_roster, #{id => ID})).
 
+-spec owner_roster_ver(wocky_db:server(), wocky_db:id()) ->
+    binary() | not_found.
+owner_roster_ver(Server, ID) ->
+    wocky_db:select_one(Server, bot, owner_roster_ver, #{id => ID}).
+
 -spec update_owner_roster(wocky_db:server(), wocky_db:id(),
                           [jid()], binary()) -> ok.
 update_owner_roster(Server, ID, Items, Version) ->
     wocky_db:update(Server, bot,
-                    #{owner_roster_items => [jid:to_binary(I) || I <-Items],
-                      owner_roster_version => Version},
+                    #{owner_roster => [jid:to_binary(I) || I <-Items],
+                      owner_roster_ver => Version},
                     #{id => ID}).
 
 %%%===================================================================
@@ -155,28 +174,15 @@ has_access(User, #{visibility := ?WOCKY_BOT_VIS_WHITELIST,
                    affiliates := Affiliates}) ->
     lists:member(User, Affiliates);
 has_access(User, #{visibility := ?WOCKY_BOT_VIS_FRIENDS,
-                   owner := Owner}) ->
-    UserJID = jid:from_binary(User),
-    OwnerJID = jid:from_binary(Owner),
-    wocky_db_roster:has_contact(OwnerJID, UserJID);
+                   owner_roster := RosterMembers}) ->
+    lists:member(User, RosterMembers);
 has_access(_User, #{visibility := ?WOCKY_BOT_VIS_PUBLIC}) ->
     true;
 has_access(_, _) ->
     false.
 
-change_follow(Server, ID, User, Op) ->
-    UserBin = jid:to_binary(jid:to_bare(User)),
-    Q = ["UPDATE bot SET followers = followers ", Op, " ? WHERE id = ?"],
-    V = #{id => ID,
-          followers => [UserBin]
-         },
-    {ok, _} = wocky_db:query(Server, Q, V, quorum),
-    ok.
-
 maybe_to_jid(not_found) ->
     not_found;
-maybe_to_jid(null) ->
-    [];
 maybe_to_jid(JIDList) when is_list(JIDList) ->
     [jid:from_binary(J) || J <- JIDList];
 maybe_to_jid(JIDBin) ->
