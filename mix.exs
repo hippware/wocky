@@ -48,12 +48,12 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :crypto, :ssl, :lager, :logger, :ibrowse, :idna,
+       :crypto, :ssl, :lager, :logger, :idna, :algolia,
        :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
-       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :qdate,
-       :jiffy, :algolia, :erlando, :logger_lager_backend,
+       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
+       :erlando, :logger_lager_backend,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
@@ -68,8 +68,6 @@ defmodule Wocky.Mixfile do
        {:francus_chunk_size, 1048576}, # 1MB
        {:keyspace_prefix, 'wocky_test_'},
        {:indexing_enabled_envs, ['staging']},
-       {:algolia_app_id, 'HIE75ZR7Q7'},
-       {:algolia_app_key, '79602842342e137c97ce188013131a89'},
        {:algolia_index_name, 'dev_wocky_users'}
      ]]
   end
@@ -77,27 +75,25 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:setup,         "1.7.0", override: true},
-      {:jiffy,         "0.14.7", override: true},
-      {:lager,         "3.2.1", override: true},
+      {:lager,         "~> 3.2", override: true},
+      {:algolia,       "~> 0.3.2"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
-      {:qdate,         github: "choptastic/qdate",        ref: "10d56c2"},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
-      {:algolia,       github: "k3nn7/algoliasearch-client-erlang", branch: "master"},
       {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
       {:logger_lager_backend, "~> 0.0.2"},
 
       ## ejabberd dependencies
-      {:redo,          "2.0.1", override: true},
-      {:cowboy,        "1.0.4", override: true},
-      {:folsom,        "0.8.3", override: true},
-      {:idna,          "2.0.0", override: true},
-      {:p1_utils,      "1.0.4", override: true},
-      {:cache_tab,     "1.0.2", override: true},
-      {:stringprep,    "1.0.3", override: true, manager: :rebar},
-      {:base16,        "1.0.0", override: true},
-      {:protobuffs,    "0.8.2", override: true},
-      {:erlware_commons, "0.21.0", override: true},
+      {:redo,          "~> 2.0", override: true},
+      {:cowboy,        "~> 1.0", override: true},
+      {:folsom,        "~> 0.8.3", override: true},
+      {:idna,          "~> 2.0", override: true},
+      {:p1_utils,      "~> 1.0", override: true},
+      {:cache_tab,     "~> 1.0", override: true},
+      {:stringprep,    "~> 1.0", override: true, manager: :rebar},
+      {:base16,        "~> 1.0", override: true},
+      {:protobuffs,    "~> 0.8.2", override: true},
+      {:erlware_commons, "~> 0.21.0", override: true},
       {:cuesport,      github: "esl/cuesport",            branch: "master", override: true},
       {:exml,          github: "esl/exml",                tag: "2.2.0", override: true},
       {:exometer_core, github: "Feuerlabs/exometer_core", branch: "master", override: true},
@@ -112,21 +108,21 @@ defmodule Wocky.Mixfile do
       {:mustache,      github: "mojombo/mustache.erl",    ref: "d0246fe", override: true},
 
       ## runtime dependencies (included in release, not needed to build)
-      {:recon,         "2.3.1", override: true},
-      {:eper,          "0.94.0"},
+      {:recon,         "~> 2.3", override: true},
+      {:eper,          "~> 0.94.0"},
       {:binpp,         "~> 1.1"},
       {:pretty_errors, github: "eproxus/pretty_errors",   branch: "master", manager: :rebar},
 
       ## build dependencies (not included in release)
       {:exrm,          "~> 1.0"},
-      {:edown,         "0.8.1", override: true},
+      {:edown,         "~> 0.8.1", override: true},
       # erlando's app file is b0rked so we need to override the dep here.
       {:erlando, ~r//, github: "rabbitmq/erlando",        branch: "master", override: true},
       {:fun_chain,     github: "sasa1977/fun_chain",      branch: "master", manager: :rebar3},
 
       ## testing dependencies (not included in release)
-      {:meck,          "0.8.4", override: true},
-      {:espec,         "~> 0.8.22", only: :test},
+      {:meck,          "~> 0.8.4", override: true},
+      {:espec,         "~> 1.0", only: :test},
       {:dialyxir,      "~> 0.3.5", only: :dev},
       {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
       {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},

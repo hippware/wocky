@@ -5,6 +5,10 @@ use Mix.Config
 config :wocky,
   keyspace_prefix: 'wocky_'
 
+config :algolia,
+  application_id: "HIE75ZR7Q7",
+  api_key: "79602842342e137c97ce188013131a89"
+
 config :schemata,
   drop_nulls: false
 

@@ -16,6 +16,7 @@
 -define(query, 'Elixir.Schemata.Query').
 -define(result, 'Elixir.Schemata.Result').
 -define(schema, 'Elixir.Schemata.Schema').
+-define(timex, 'Elixir.Timex').
 
 -type server()     :: binary().
 -type context()    :: none | shared | server().
@@ -402,7 +403,9 @@ is_valid_id(ID) ->
 %% @doc Convert a Cassandra timestamp to an ISO-8601 string
 -spec timestamp_to_string(non_neg_integer()) -> binary().
 timestamp_to_string(TS) ->
-    list_to_binary(qdate:to_string("c", timestamp_to_seconds(TS))).
+    Time = ?timex:from_unix(timestamp_to_seconds(TS)),
+    {ok, Binary} = ?timex:format(Time, <<"{ISO:Extended}">>),
+    Binary.
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp
 %%
