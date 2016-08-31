@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :wocky,
+  notification_handler: Wocky.Notification.AWSHandler
+
 config :mnesia,
   dir: 'data/mnesia'
 

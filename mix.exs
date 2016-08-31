@@ -4,8 +4,9 @@ defmodule Wocky.Mixfile do
   def project do
     [app: :wocky,
      version: version,
-     compilers: [:erlang, :app],
-     language: :erlang,
+     elixir: "~> 1.3",
+     build_embedded: Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
      erlc_options: [
        :debug_info,
        :warnings_as_errors,
@@ -63,12 +64,13 @@ defmodule Wocky.Mixfile do
      ],
      mod: {:wocky_app, []},
      env: [
-       {:wocky_env, 'dev'},
-       {:config_dir, 'etc'},
-       {:francus_chunk_size, 1048576}, # 1MB
-       {:keyspace_prefix, 'wocky_test_'},
-       {:indexing_enabled_envs, ['staging']},
-       {:algolia_index_name, 'dev_wocky_users'}
+       wocky_env: 'dev',
+       config_dir: 'etc',
+       francus_chunk_size: 1048576, # 1MB
+       keyspace_prefix: 'wocky_test_',
+       indexing_enabled_envs: ['staging'],
+       algolia_index_name: 'dev_wocky_users',
+       notification_handler: Wocky.Notification.NullHandler
      ]]
   end
 

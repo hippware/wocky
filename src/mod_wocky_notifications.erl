@@ -6,8 +6,6 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 
--define(TOPIC_ARN, <<"arn:aws:sns:us-east-1:773488857071:wocky">>).
-
 %% gen_mod behaviour
 -behaviour(gen_mod).
 -export([start/2, stop/1]).
@@ -65,9 +63,5 @@ get_body(Packet) ->
         BodyTag -> xml:get_tag_cdata(BodyTag)
     end.
 
-notify_message(_From, _To, Body) ->
-    Subject = <<"Received message">>,
-    Req = 'Elixir.ExAws.SNS':publish(Body, #{subject => Subject,
-                                             topic_arn => ?TOPIC_ARN}),
-    {ok, _Resp} = 'Elixir.ExAws':request(Req),
-    ok.
+notify_message(From, To, Body) ->
+    wocky_notification_handler:notify(From, To, Body).
