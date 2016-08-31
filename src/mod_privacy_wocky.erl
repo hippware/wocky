@@ -45,7 +45,8 @@ get_list_names(LUser, LServer) ->
         not_found ->
             {ok, {?DEFAULT_LIST, [?DEFAULT_LIST]}};
         #{lists := Lists} ->
-            {ok, {?DEFAULT_LIST, [?DEFAULT_LIST | null_to_list(Lists)]}}
+            {ok, {?DEFAULT_LIST, [?DEFAULT_LIST |
+                                  wocky_util:null_to_list(Lists)]}}
     end.
 
 -spec get_privacy_list(ejabberd:luser(),
@@ -88,7 +89,8 @@ remove_privacy_list(LUser, LServer, Name) ->
         not_found ->
             ok;
         #{lists := Lists} ->
-            maybe_delete_list(LUser, LServer, Name, null_to_list(Lists)),
+            maybe_delete_list(LUser, LServer, Name,
+                              wocky_util:null_to_list(Lists)),
             ok
     end.
 
@@ -142,7 +144,7 @@ default_list_items(LUser, LServer) ->
     ].
 
 get_user_lists(LUser, LServer) ->
-    null_to_list(
+    wocky_util:null_to_list(
       wocky_db:select_one(LServer, privacy, lists,
                           #{user => LUser, server => LServer})).
 
@@ -248,6 +250,3 @@ value_to_binary(_, Value) -> Value.
 binary_to_value(<<"jid">>, Value) -> jid:to_lower(jid:from_binary(Value));
 binary_to_value(<<"subscription">>, Value) -> binary_to_atom(Value, utf8);
 binary_to_value(_, Value) -> Value.
-
-null_to_list(null) -> [];
-null_to_list(X) -> X.

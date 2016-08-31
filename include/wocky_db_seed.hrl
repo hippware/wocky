@@ -92,7 +92,7 @@
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
 -define(BOT_RADIUS, 10).
--define(BOT_OWNER_ROSTER, [?KAREN_B_JID]).
+-define(BOT_OWNER_ROSTER, [?BOB_B_JID, ?KAREN_B_JID]).
 -define(BOT_OWNER_ROSTER_VERSION, <<"999-4">>).
 
 -define(ROSTER_VIEWERS, [?BOT_B_JID, ?BOB_B_JID]).

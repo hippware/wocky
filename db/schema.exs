@@ -321,7 +321,7 @@ defmodule Schemata.Schemas.Wocky do
       columns: [
         bot:      :timeuuid,
         user:     :text,
-        follower: :boolean
+        follow:   :boolean
       ],
       primary_key: [:bot, :user]
     ]

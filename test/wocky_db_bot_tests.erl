@@ -229,7 +229,7 @@ test_has_access() ->
                                                    visibility =>
                                                    ?WOCKY_BOT_VIS_FRIENDS})),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
-        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
         ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?CAROL_JID)),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?KAREN_JID))
       ]},

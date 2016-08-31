@@ -51,7 +51,7 @@ after_each(_) ->
     ok.
 
 make_jid(U) ->
-    wocky_db_seed:sjid(U, ?SERVER).
+    jid:make(U, ?SERVER, <<>>).
 
 test_get_roster() ->
   { "get_roster/2", [
