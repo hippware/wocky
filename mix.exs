@@ -48,8 +48,8 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :crypto, :ssl, :lager, :logger, :idna, :algolia,
-       :runtime_tools, :cache_tab, :alarms, :setup
+       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
+       :idna, :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -77,6 +77,7 @@ defmodule Wocky.Mixfile do
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
       {:algolia,       "~> 0.3.2"},
+      {:ex_aws,        github: "CargoSense/ex_aws",       branch: "master"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
