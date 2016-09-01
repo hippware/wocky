@@ -39,7 +39,7 @@ after_all(_) ->
 
 
 jid() ->
-    wocky_db_seed:jid(?USER, ?SERVER, ?RESOURCE).
+    jid:make(?USER, ?SERVER, ?RESOURCE).
 
 -define(RESULT_IQ(Content),
         #iq{type = result,
