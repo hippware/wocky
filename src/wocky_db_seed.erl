@@ -14,7 +14,7 @@
 -ignore_xref([{seed_table, 2}, {seed_tables, 2}]).
 
 -ifdef(TEST).
--export([make_session/3, jid/3, make_offline_msgs/5, get_nowsecs/0,
+-export([make_session/3, make_offline_msgs/5, get_nowsecs/0,
          archive_users/0, msg_xml_packet/1]).
 -endif.
 
@@ -300,8 +300,8 @@ make_offline_msgs(User, Server, Handle, NowSecs, N) ->
 
 make_offline_msg(User, Server, Handle, NowSecs, I) ->
     ExpireSecs = NowSecs + 1000,
-    FromJID = jid(<<"from_user">>, <<"from_server">>, <<"res1">>),
-    ToJID = jid(<<"to_user">>, <<"to_server">>, <<"res2">>),
+    FromJID = jid:make(<<"from_user">>, <<"from_server">>, <<"res1">>),
+    ToJID = jid:make(<<"to_user">>, <<"to_server">>, <<"res2">>),
     #{user => User,
       server => Server,
       msg_id => wocky_db:create_id(),
@@ -311,10 +311,6 @@ make_offline_msg(User, Server, Handle, NowSecs, I) ->
       to_id => jid:to_binary(ToJID),
       packet => msg_xml_packet(Handle),
       '[ttl]' => ts_to_ttl(ExpireSecs)}.
-
-jid(User, Server, Resource) ->
-    #jid{user = User, server = Server, resource = Resource,
-         luser = User, lserver = Server, lresource = Resource}.
 
 msg_xml_packet(Handle) ->
     <<"<message xml:lang=\"en\" type=\"chat\"

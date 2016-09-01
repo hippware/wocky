@@ -168,6 +168,8 @@ select_row(Context, Table, Columns, Conditions) ->
     R = run_select_query(Context, Table, Columns, Conditions, 1),
     single_row(R).
 
+%% @doc Retrives all values from a single column of the table for rows matching
+%% the conditions.
 -spec select_column(context(), table(), column(), conditions())
                 -> [term()].
 select_column(Context, Table, Column, Conditions) ->

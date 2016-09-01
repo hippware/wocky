@@ -51,7 +51,7 @@ after_each(_) ->
     ok.
 
 make_jid(U) ->
-    jid:make(U, ?SERVER, <<>>).
+    jid:to_binary(jid:make(U, ?SERVER, <<>>)).
 
 test_get_roster() ->
   { "get_roster/2", [
