@@ -38,7 +38,9 @@ all() ->
      errors,
      update_affiliations,
      friends_only_permissions,
-     roster_change_triggers].
+     roster_change_triggers,
+     blocked_group
+    ].
 
 suite() ->
     escalus:suite().
@@ -271,7 +273,7 @@ friends_only_permissions(Config) ->
         expect_iq_success(
           change_visibility_stanza(?WOCKY_BOT_VIS_FRIENDS), Alice),
 
-        test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Robbie">>),
+        test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
 
         %% Give the bot a moment to be notified and update its copy of
         %% Alice's roster
@@ -298,7 +300,7 @@ friends_only_permissions(Config) ->
         expect_iq_error(retrieve_stanza(), Bob),
 
         %% Alice adds Bob back as a contact
-        test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Robbie">>),
+        test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
         test_helper:subscribe_pair(Alice, Bob),
 
         timer:sleep(500),
@@ -380,6 +382,34 @@ roster_change_triggers(Config) ->
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen, Robert])
       end).
+
+blocked_group(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        expect_iq_success(
+          change_visibility_stanza(?WOCKY_BOT_VIS_FRIENDS), Alice),
+
+        % Alice adds Tim as a normal friend
+        test_helper:add_contact(Alice, Tim, <<"blah">>,
+                                <<"He's okay">>),
+        test_helper:subscribe_pair(Alice, Tim),
+        timer:sleep(500),
+
+        % Tim can view the bot
+        expect_iq_success(retrieve_stanza(), Tim),
+
+        % Alice moves Tim to the magic __blocked__ group
+        test_helper:add_contact(Alice, Tim, <<"__blocked__">>,
+                                <<"MyMortalEnemy">>),
+        escalus:assert(is_presence_with_type, [<<"unavailable">>],
+                       escalus:wait_for_stanza(Tim)),
+        timer:sleep(500),
+
+        % Tim can no longer view the bot
+        expect_iq_error(retrieve_stanza(), Tim)
+      end).
+
 
 %%--------------------------------------------------------------------
 %% Helpers

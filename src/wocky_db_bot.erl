@@ -192,6 +192,8 @@ has_access(_, _) ->
 
 maybe_to_jid(not_found) ->
     not_found;
+maybe_to_jid(null) ->
+    [];
 maybe_to_jid(JIDList) when is_list(JIDList) ->
     [jid:from_binary(J) || J <- JIDList];
 maybe_to_jid(JIDBin) ->

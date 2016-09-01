@@ -444,9 +444,23 @@ el_to_item(El = #xmlel{name = <<"item">>, attrs = Attrs}, Acc) ->
     end;
 el_to_item(_, Acc) -> Acc.
 
-is_friend(#xmlel{attrs = Attrs}) ->
+is_friend(#xmlel{attrs = Attrs, children = Children}) ->
+    has_two_way_subscription(Attrs) andalso not is_blocked(Children).
+
+has_two_way_subscription(Attrs) ->
     {value, <<"both">>} =:= xml:get_attr(<<"subscription">>, Attrs).
-    %% TODO: Potentially check for membership of __blocked__ group etc
+
+is_blocked(Elements) ->
+    Groups = get_groups(Elements),
+    lists:member(<<"__blocked__">>, Groups).
+
+get_groups(Elements) ->
+    lists:foldl(fun get_group/2, [], Elements).
+
+get_group(#xmlel{name = <<"group">>,
+                 children = [#xmlcdata{content = Group}]}, Acc) ->
+    [Group | Acc];
+get_group(_, Acc) -> Acc.
 
 remove_invalidated_associations(LServer, ID,
                                 #{visibility := Visibility,
