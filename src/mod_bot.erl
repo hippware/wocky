@@ -21,7 +21,7 @@
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
-%% IQ hook
+%% IQ handler
 -export([handle_iq/3]).
 
 -type loc() :: {float(), float()}.
@@ -43,12 +43,14 @@ start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BOT,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
-    ejabberd_hooks:add(filter_local_packet, Host, fun filter_packet/1, 80).
+    ejabberd_hooks:add(filter_local_packet, Host,
+                       fun filter_local_packet_hook/1, 80).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BOT),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT),
-    ejabberd_hooks:delete(filter_local_packet, Host, fun filter_packet/1, 80).
+    ejabberd_hooks:delete(filter_local_packet, Host,
+                          fun filter_local_packet_hook/1, 80).
 
 
 %%%===================================================================
@@ -358,16 +360,17 @@ follow_data(false) -> <<"0">>.
 %%%===================================================================
 
 -type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
--spec filter_packet(filter_packet() | drop) -> filter_packet() | drop.
-filter_packet(P = {From,
-                   #jid{user = <<>>, lserver = LServer,
-                        resource= <<"bot/", BotID/binary>>},
-                   Packet}) ->
+-spec filter_local_packet_hook(filter_packet() | drop) ->
+    filter_packet() | drop.
+filter_local_packet_hook(P = {From,
+                              #jid{user = <<>>, lserver = LServer,
+                                   resource= <<"bot/", BotID/binary>>},
+                              Packet}) ->
     case handle_bot_packet(From, LServer, BotID, Packet) of
         ok -> drop;
         ignored -> P
     end;
-filter_packet(Other) ->
+filter_local_packet_hook(Other) ->
     Other.
 
 handle_bot_packet(From, LServer, BotID,
