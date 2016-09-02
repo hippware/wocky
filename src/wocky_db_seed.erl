@@ -14,7 +14,7 @@
 -ignore_xref([{seed_table, 2}, {seed_tables, 2}]).
 
 -ifdef(TEST).
--export([make_session/3, sjid/2, jid/3, make_offline_msgs/5, get_nowsecs/0,
+-export([make_session/3, make_offline_msgs/5, get_nowsecs/0,
          archive_users/0, msg_xml_packet/1]).
 -endif.
 
@@ -59,7 +59,8 @@ user_data(Server) ->
     [
      #{user => ?ALICE,  server => Server,  handle => ?HANDLE,
        phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
-       avatar => tros:make_url(Server, ?AVATAR_FILE)},
+       avatar => tros:make_url(Server, ?AVATAR_FILE),
+       roster_viewers => ?ROSTER_VIEWERS},
      #{user => ?CAROL,  server => Server,  handle => <<"carol">>,
        first_name => <<"Carol">>,
        phone_number => <<"+4567">>, external_id => <<"123456">>},
@@ -110,13 +111,17 @@ seed_data(offline_msg, Server) ->
       seed_data(user, Server));
 seed_data(roster, Server) ->
     Items = [
-        #{contact_jid => sjid(?BOB, Server), nick => <<"bobby">>,
+        #{contact_jid => ?BOB_B_JID, nick => <<"bobby">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 666},
-        #{contact_jid => sjid(?CAROL, Server), nick => <<"carrie">>,
+        #{contact_jid => ?CAROL_B_JID, nick => <<"carrie">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 777},
-        #{contact_jid => sjid(?ROBERT, Server), nick => <<"bob2">>,
+        #{contact_jid => ?ROBERT_B_JID, nick => <<"bob2">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 888},
-        #{contact_jid => sjid(?KAREN, Server), nick => <<"kk">>,
+        #{contact_jid => ?KAREN_B_JID, nick => <<"kk">>,
+          subscription => <<"both">>,
           ask => <<"none">>, version => 999}
     ],
     [I#{user => ?ALICE, server => Server, groups => [<<"friends">>]}
@@ -211,10 +216,16 @@ seed_data(bot, Server) ->
        shortname => ?BOT_NAME, owner => ?ALICE_B_JID, description => ?BOT_DESC,
        lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
-       affiliates => [?BOB_B_JID], followers => [?CAROL_B_JID],
-       alerts => ?WOCKY_BOT_ALERT_DISABLED}];
+       affiliates => [?BOB_B_JID],
+       alerts => ?WOCKY_BOT_ALERT_DISABLED,
+       owner_roster => ?BOT_OWNER_ROSTER,
+       owner_roster_ver => ?BOT_OWNER_ROSTER_VERSION
+      }];
 seed_data(bot_name, _Server) ->
     [#{shortname => ?BOT_NAME, id => ?BOT}];
+seed_data(bot_subscriber, _Server) ->
+    [#{bot => ?BOT, user => ?CAROL_B_JID, follow => false},
+     #{bot => ?BOT, user => ?KAREN_B_JID, follow => true}];
 seed_data(_, _) ->
     [].
 
@@ -289,8 +300,8 @@ make_offline_msgs(User, Server, Handle, NowSecs, N) ->
 
 make_offline_msg(User, Server, Handle, NowSecs, I) ->
     ExpireSecs = NowSecs + 1000,
-    FromJID = jid(<<"from_user">>, <<"from_server">>, <<"res1">>),
-    ToJID = jid(<<"to_user">>, <<"to_server">>, <<"res2">>),
+    FromJID = jid:make(<<"from_user">>, <<"from_server">>, <<"res1">>),
+    ToJID = jid:make(<<"to_user">>, <<"to_server">>, <<"res2">>),
     #{user => User,
       server => Server,
       msg_id => wocky_db:create_id(),
@@ -300,13 +311,6 @@ make_offline_msg(User, Server, Handle, NowSecs, I) ->
       to_id => jid:to_binary(ToJID),
       packet => msg_xml_packet(Handle),
       '[ttl]' => ts_to_ttl(ExpireSecs)}.
-
-sjid(User, Server) ->
-    jid:to_binary({User, Server, <<>>}).
-
-jid(User, Server, Resource) ->
-    #jid{user = User, server = Server, resource = Resource,
-         luser = User, lserver = Server, lresource = Resource}.
 
 msg_xml_packet(Handle) ->
     <<"<message xml:lang=\"en\" type=\"chat\"

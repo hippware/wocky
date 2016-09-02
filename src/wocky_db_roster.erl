@@ -39,13 +39,19 @@ get_roster(LUser, LServer) ->
 -spec get_roster_version(ejabberd:luser(), ejabberd:lserver())
                         -> version().
 get_roster_version(LUser, LServer) ->
-    Value = wocky_db:select_one(LServer, roster, 'max(version)',
-                                #{user => LUser}),
-    case Value of
-        null -> <<"0">>;
-        Version -> integer_to_binary(Version)
+    Result = wocky_db:select_row(LServer, roster,
+                                 ['max(version)', 'count(version)'],
+                                 #{user => LUser}),
+    case Result of
+        #{'system.max(version)' := null} ->
+            make_version(0, 0);
+        #{'system.max(version)' := V, 'system.count(version)' := C} ->
+            make_version(V, C)
     end.
 
+make_version(Version, Count) ->
+    <<(integer_to_binary(Version))/binary, $-,
+      (integer_to_binary(Count))/binary>>.
 
 %% @doc Deletes all roster items for the specified user.
 -spec delete_roster(ejabberd:luser(), ejabberd:lserver()) -> ok.

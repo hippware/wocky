@@ -21,7 +21,8 @@
 -type server()     :: binary().
 -type context()    :: none | shared | server().
 -type table()      :: atom().
--type explicit_columns() :: [atom()].
+-type column()     :: atom().
+-type explicit_columns() :: [column()].
 -type columns()    :: all | explicit_columns().
 -type conditions() :: map().
 -type ks_class()   :: simple | topology.
@@ -47,7 +48,8 @@
 -export([shared_keyspace/0, local_keyspace/0,
          bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
          prepare_tables/2, clear_tables/2, clear_user_tables/1,
-         select_one/4, select_row/4, select/4, insert/3, insert_new/3,
+         select_one/4, select_row/4, select_column/4,
+         select/4, insert/3, insert_new/3,
          update/4, delete/4, count/3, truncate/2]).
 
 %% Query API
@@ -165,6 +167,14 @@ select_one(Context, Table, Column, Conditions) ->
 select_row(Context, Table, Columns, Conditions) ->
     R = run_select_query(Context, Table, Columns, Conditions, 1),
     single_row(R).
+
+%% @doc Retrives all values from a single column of the table for rows matching
+%% the conditions.
+-spec select_column(context(), table(), column(), conditions())
+                -> [term()].
+select_column(Context, Table, Column, Conditions) ->
+    R = run_select_query(Context, Table, [Column], Conditions),
+    [V || #{Column := V} <- ?result:all_rows(R)].
 
 %% @doc Retrieves data from a table based on the parameters and
 %% returns all rows of the result set.

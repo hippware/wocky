@@ -14,6 +14,8 @@
    default_bin_to_integer/2,
    safe_bin_to_float/1,
    coord_to_binary/1,
+   null_to_list/1,
+   intersection/2,
 
    set_config_from_opt/4,
 
@@ -24,6 +26,8 @@
         ]).
 
 -export_type([hook/0]).
+
+-compile({parse_transform, cut}).
 
 % Not used externally right now, but we want it available:
 -ignore_xref([{safe_bin_to_integer, 1}]).
@@ -109,3 +113,11 @@ coord_to_binary(Coordinate) ->
     % roughly 11cm, while still staying well away from nasty floating point
     % rouding errors on 64 bit floats
     float_to_binary(Coordinate, [{decimals, 6}]).
+
+-spec null_to_list(not_found | null | list()) -> list() | not_found.
+null_to_list(null) -> [];
+null_to_list(L) -> L.
+
+-spec intersection(list(), list()) -> list().
+intersection(A, B) ->
+    lists:filter(lists:member(_, B), A).

@@ -537,7 +537,10 @@ push_item(User, Server, From, Item, RosterVersion) ->
                           push_item(User, Server, Resource, From, Item,
                                     RosterVersion)
                   end,
-                  ejabberd_sm:get_user_resources(User, Server)).
+                  ejabberd_sm:get_user_resources(User, Server)),
+
+    ejabberd_hooks:run(roster_updated, Server, [User, Server]).
+
 
 push_item(User, Server, Resource, From, Item, RosterVersion) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,

@@ -13,7 +13,9 @@ defmodule Schemata.Schemas.Wocky do
         first_name:   :text, # User's first name
         last_name:    :text, # User's last name
         email:        :text, # User's email address
-        external_id:  :text  # The user ID received from Twitter Digits
+        external_id:  :text, # The user ID received from Twitter Digits
+        roster_viewers: {:set, :text} # Set of entities allowed to view
+                                      # this user's roster
       ],
       primary_key: [:server, :user]
     ]
@@ -291,35 +293,50 @@ defmodule Schemata.Schemas.Wocky do
 
     table :bot, [
       columns: [
-        id:           :timeuuid,
-        server:       :text,
-        title:        :text,
-        shortname:    :text,
-        owner:        :text,
-        description:  :text,
-        lat:          :double,
-        lon:          :double,
-        radius:       :int,
-        visibility:   :int,
-        affiliates:   {:set, :text},
-        followers:    {:set, :text},
-        alerts:       :int
+        id:               :timeuuid, # Bot ID
+        server:           :text,     # Bot server
+        title:            :text,     # Bot title
+        shortname:        :text,     # Bot shortname for URL representation
+        owner:            :text,     # Bot owner
+        description:      :text,     # User-supplied description
+        lat:              :double,   # Latitude
+        lon:              :double,   # Longditude
+        radius:           :int,      # Radius of bot circle
+        visibility:       :int,      # Visibility of bot
+        affiliates:       {:set, :text}, # Bot's affiliates
+                                         #(required for WHITELIST visibility)
+        owner_roster:     {:set, :text}, # Bot's copy of it's owner's roster.
+                                         # This currently *excludes* non-friends
+                                         # (anyone without a two-way
+                                         # subscription or who is in the
+                                         # __blocked__ group
+        owner_roster_ver: :text,     # Version of roster that bot has
+        alerts:           :int       # Whether alerts are enabled (0/1)
       ],
       primary_key: :id
     ]
 
-    table :bot_name, [
+    view :user_bot, [ # MV for looking up bots by owner
+      from: :bot,
+      columns: [:owner, :id],
+      primary_key: [:owner, :id]
+    ]
+
+    table :bot_subscriber, [
+      columns: [
+        bot:      :timeuuid, # Bot ID
+        user:     :text,     # User ID
+        follow:   :boolean   # Whether user is a follower
+      ],
+      primary_key: [:bot, :user]
+    ]
+
+    table :bot_name, [ # Table for looking up bots by shortname (URL)
       columns: [
         shortname:    :text,
         id:           :timeuuid
       ],
       primary_key: :shortname
-    ]
-
-    view :user_bot, [
-      from: :bot,
-      columns: [:owner, :id],
-      primary_key: [:owner, :id]
     ]
   end
 end

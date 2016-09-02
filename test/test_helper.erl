@@ -24,6 +24,7 @@
          add_sample_contact/2,
          subscribe_pair/2,
          add_contact/4,
+         remove_friend/2,
 
          iq_set/2,
          iq_get/2,
@@ -85,7 +86,9 @@ expect_friendship_presence(User1, User2) ->
                   end,
                   [User1, User2]).
 
-add_contact(Who, Whom, Groups, Nick) ->
+add_contact(Who, Whom, Group, Nick) when is_binary(Group) ->
+    add_contact(Who, Whom, [Group], Nick);
+add_contact(Who, Whom, Groups, Nick) when is_list(Groups) ->
     escalus_client:send(Who,
                         escalus_stanza:roster_add_contact(Whom,
                                                           Groups,
@@ -162,6 +165,16 @@ subscribe_pair(Alice, Bob) ->
     subscribe(Bob, Alice),
     Presence = escalus:wait_for_stanza(Bob),
     escalus:assert(is_presence, Presence).
+
+remove_friend(Who, Whom) ->
+    escalus:send(Who, escalus_stanza:roster_remove_contact(Whom)),
+    IsPresUnavailable =
+    fun(S) ->
+            escalus_pred:is_presence_with_type(<<"unavailable">>, S)
+    end,
+    escalus:assert_many([is_roster_set, is_iq_result, IsPresUnavailable],
+                        escalus:wait_for_stanzas(Who, 3)),
+    escalus:assert(IsPresUnavailable, escalus:wait_for_stanza(Whom)).
 
 start_clients_before_all_friends(Config, ClientDescs) ->
     ct:log("start_clients_all_friends ~p", [ClientDescs]),
