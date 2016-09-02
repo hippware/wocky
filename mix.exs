@@ -5,8 +5,8 @@ defmodule Wocky.Mixfile do
     [app: :wocky,
      version: version,
      elixir: "~> 1.3",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
+     # build_embedded: Mix.env == :prod,
+     # start_permanent: Mix.env == :prod,
      erlc_options: [
        :debug_info,
        :warnings_as_errors,
