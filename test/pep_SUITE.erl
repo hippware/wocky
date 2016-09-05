@@ -10,12 +10,15 @@
 
 -include("wocky_db_seed.hrl").
 
+-define(NS_TEST, <<"test-item-ns">>).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
 
 all() ->
-    [publish,
+    [publish_presence,
+     publish_roster,
      geoloc,
      bad_geoloc,
      end_geoloc,
@@ -38,12 +41,12 @@ end_per_suite(Config) ->
 
 init_per_testcase(CaseName, Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    Users = escalus:get_users([alice, bob, carol]),
+    Users = escalus:get_users([alice, bob, carol, karen]),
     Config1 = escalus:create_users(Config, Users),
     escalus:init_per_testcase(CaseName, Config1).
 
 end_per_testcase(CaseName, Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])),
+    escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
     escalus:end_per_testcase(CaseName, Config).
 
 
@@ -51,7 +54,8 @@ end_per_testcase(CaseName, Config) ->
 %% mod_wocky_pep tests
 %%--------------------------------------------------------------------
 
-publish(Config) ->
+publish_presence(Config) ->
+    mod_wocky_pep:register_handler(?NS_TEST, presence, ?MODULE),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
                   fun (Alice, Bob, Carol) ->
         test_helper:subscribe(Alice, Bob),
@@ -63,10 +67,35 @@ publish(Config) ->
         escalus:assert_many([is_message, is_iq_result], Received),
         Recieved2 = escalus:wait_for_stanza(Bob),
         escalus:assert(is_message, Recieved2),
-        assert_no_stanzas(Carol)
-    end).
+        test_helper:ensure_all_clean([Carol])
+    end),
+    mod_wocky_pep:unregister_handler(?NS_TEST, presence, ?MODULE).
+
+publish_roster(Config) ->
+    mod_wocky_pep:register_handler(?NS_TEST, roster, ?MODULE),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+                  fun (Alice, Bob, Carol, Karen) ->
+        test_helper:add_contact(Alice, Bob, [], <<"Bobbie">>),
+        test_helper:add_contact(Alice, Carol, [], <<"Car">>),
+        test_helper:add_contact(Alice, Karen, <<"__blocked__">>, <<"Kaz">>),
+        Stanza = escalus_pubsub_stanza:publish(Alice, <<"test_item_id">>,
+                                               pub_item(), <<"123">>,
+                                               {pep, pub_node()}),
+        escalus:send(Alice, Stanza),
+        Received = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_message, is_iq_result], Received),
+        Recieved2 = escalus:wait_for_stanza(Bob),
+        escalus:assert(is_message, Recieved2),
+        Recieved3 = escalus:wait_for_stanza(Carol),
+        escalus:assert(is_message, Recieved3),
+
+        test_helper:ensure_all_clean([Karen])
+    end),
+    mod_wocky_pep:unregister_handler(?NS_TEST, roster, ?MODULE).
+
 
 geoloc(Config) ->
+    %% Geoloc is whitelist, which currently means owner-only.
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
                   fun (Alice, Bob, Carol) ->
         test_helper:subscribe(Alice, Bob),
@@ -76,9 +105,7 @@ geoloc(Config) ->
         escalus:send(Alice, Stanza),
         Received = escalus:wait_for_stanzas(Alice, 2),
         escalus:assert_many([is_message, is_iq_result], Received),
-        Recieved2 = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_message, Recieved2),
-        assert_no_stanzas(Carol)
+        test_helper:ensure_all_clean([Bob, Carol])
     end).
 
 bad_geoloc(Config) ->
@@ -91,8 +118,7 @@ bad_geoloc(Config) ->
         escalus:send(Alice, Stanza),
         Received = escalus:wait_for_stanza(Alice),
         escalus:assert(is_iq_result, Received),
-        assert_no_stanzas(Bob),
-        assert_no_stanzas(Carol)
+        test_helper:ensure_all_clean([Bob, Carol])
     end).
 
 end_geoloc(Config) ->
@@ -105,9 +131,7 @@ end_geoloc(Config) ->
         escalus:send(Alice, Stanza),
         Received = escalus:wait_for_stanzas(Alice, 2),
         escalus:assert_many([is_message, is_iq_result], Received),
-        Recieved2 = escalus:wait_for_stanza(Bob),
-        escalus:assert(is_message, Recieved2),
-        assert_no_stanzas(Carol)
+        test_helper:ensure_all_clean([Bob, Carol])
     end).
 
 bad_requests(Config) ->
@@ -150,12 +174,9 @@ bad_requests(Config) ->
 
 pub_item() ->
     #xmlel{name = <<"test-item">>,
-           attrs = [{<<"xmlns">>, <<"test-item-ns">>}]}.
+           attrs = [{<<"xmlns">>, ?NS_TEST}]}.
 
-pub_node() -> <<"test_node">>.
-
-assert_no_stanzas(User) ->
-    ?assertNot(escalus_client:has_stanzas(User)).
+pub_node() -> ?NS_TEST.
 
 geoloc_item() ->
     #xmlel{name = <<"geoloc">>,
@@ -180,3 +201,9 @@ geoloc_data() ->
 cdata_item(Name, Val) ->
     #xmlel{name = Name,
            children = [#xmlcdata{content = Val}]}.
+
+%%--------------------------------------------------------------------
+%% Identity PEP hook
+%%--------------------------------------------------------------------
+
+handle_pep(_From, Element) -> Element.

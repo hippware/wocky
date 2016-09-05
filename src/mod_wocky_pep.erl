@@ -8,12 +8,13 @@
 -behaviour(gen_mod).
 
 -compile({parse_transform, do}).
+-compile({parse_transform, cut}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky_roster.hrl").
 
--define(HOOK_TABLE, mod_wocky_pep_hooks).
+-define(HANDLER_TABLE, mod_wocky_pep_handlers).
 
 -ignore_xref([{handle_iq, 3}]).
 
@@ -24,15 +25,19 @@
 -export([handle_iq/3]).
 
 %% Event type processing
--export([register_handler/2, unregister_handler/2]).
+-export([register_handler/3, unregister_handler/3]).
 
+-type pep_model() :: open | presence | roster | whitelist.
+
+-export_type([pep_model/0]).
 
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
 
 start(Host, _Opts) ->
-    _ = ets:new(?HOOK_TABLE, [named_table, public, {read_concurrency, true}]),
+    _ = ets:new(?HANDLER_TABLE,
+                [named_table, public, {read_concurrency, true}]),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUBSUB,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_PUBSUB).
@@ -46,14 +51,14 @@ stop(Host) ->
 %%% Hook registration
 %%%===================================================================
 
--spec register_handler(binary(), module()) -> ok.
-register_handler(Namespace, Module) ->
-    ets:insert(?HOOK_TABLE, {Namespace, Module}),
+-spec register_handler(binary(), pep_model(), module()) -> ok.
+register_handler(Namespace, Model, Module) ->
+    ets:insert(?HANDLER_TABLE, {Namespace, Model, Module}),
     ok.
 
--spec unregister_handler(binary(), module()) -> ok.
-unregister_handler(Namespace, Module) ->
-    ets:delete_object(?HOOK_TABLE, {Namespace, Module}),
+-spec unregister_handler(binary(), pep_model(), module()) -> ok.
+unregister_handler(Namespace, Model, Module) ->
+    ets:delete_object(?HANDLER_TABLE, {Namespace, Model, Module}),
     ok.
 
 
@@ -96,8 +101,9 @@ publish(From, IQ, Attrs, Children) ->
     do([error_m ||
         Node <- check_node(Attrs),
         Items <- extract_items(Children),
-        Items2 <- maybe_mutate_items(From, Items),
-        forward_items(From, Node, Items2),
+        {Model, Mutator} <- get_model_mutator(Node),
+        Items2 <- maybe_mutate_items(From, Mutator, Items),
+        forward_items(From, Model, Node, Items2),
         publish_response(IQ, Node)
        ]).
 
@@ -113,44 +119,60 @@ extract_items(Children) ->
                       end,
                       Children)}.
 
-maybe_mutate_items(From, Items) ->
-    MutatedItems = lists:map(fun(I) -> maybe_mutate_item(From, I) end, Items),
-    {ok, lists:filter(fun(I) -> I =/= undefined end, MutatedItems)}.
+get_model_mutator(Node) ->
+    R = case ets:lookup(?HANDLER_TABLE, Node) of
+        [] ->
+            {presence, fun(_From, I) -> I end};
+        [{Node, Model, HandlerMod}] ->
+            {Model, fun HandlerMod:handle_pep/2}
+    end,
+    {ok, R}.
 
-maybe_mutate_item(From, Item = #xmlel{children = Elements}) ->
-    Elements2 = maybe_mutate_elements(From, Elements),
-    case Elements2 of
-        [] -> undefined;
-        _ -> Item#xmlel{children = Elements2}
+maybe_mutate_items(From, Mutator, Items) ->
+    MutatedItems = lists:foldl(mutate_item(From, Mutator, _, _), [], Items),
+    {ok, lists:reverse(MutatedItems)}.
+
+mutate_item(From, Mutator, Item = #xmlel{children = Elements}, Acc) ->
+    case mutate_elements(From, Mutator, Elements) of
+        [] -> Acc;
+        Elements -> [Item#xmlel{children = Elements} | Acc]
     end.
 
-maybe_mutate_elements(From, Elements) ->
-    MutatedElements = lists:map(fun(E) ->
-                                        maybe_mutate_element(From, E)
-                                end,
-                                Elements),
-    lists:filter(fun(I) -> I =/= undefined end, MutatedElements).
+mutate_elements(From, Mutator, Elements) ->
+    lists:reverse(
+      lists:foldl(mutate_element(From, Mutator, _, _), [], Elements)).
 
-maybe_mutate_element(From, Element = #xmlel{attrs = Attrs}) ->
-    case xml:get_attr(<<"xmlns">>, Attrs) of
-        false -> Element;
-        {value, NS} -> maybe_mutate_element(From, Element, NS)
+mutate_element(From, Mutator, Element, Acc) ->
+    case Mutator(From, Element) of
+        drop -> Acc;
+        Mutated -> [Mutated | Acc]
     end.
 
-maybe_mutate_element(From, Element, NS) ->
-    case ets:lookup(?HOOK_TABLE, NS) of
-        [] -> Element;
-        [{NS, Module}] -> Module:handle_pep(From, Element)
-    end.
+forward_items(From, Model, Node, Items) ->
+    lists:foreach(forward_item(Model, From, Node, _), Items).
 
-forward_items(_From, _Node, []) ->
-    ok;
-forward_items(From = #jid{luser = LUser, lserver = LServer}, Node, Items) ->
+forward_item(open, _From, _Node, _Item) ->
+    erlang:error(unimplemented);
+forward_item(presence, From = #jid{luser = LUser, lserver = LServer},
+             Node, Item) ->
     Roster = wocky_db_roster:get_roster(LUser, LServer),
     PresenceSubs = get_presence_subs(Roster),
-    Packet = make_forward_message(Items, Node),
-    lists:foreach(fun(S) -> forward_to_user(From, Packet, S) end,
-                  [jid:to_bare(From) | PresenceSubs]).
+    lists:foreach(forward_to_user(From, _, Node, Item),
+                  add_self(From, PresenceSubs));
+forward_item(roster, From = #jid{luser = LUser, lserver = LServer},
+             Node, Item) ->
+    Roster = wocky_db_roster:get_roster(LUser, LServer),
+    Contacts = get_non_blocked(Roster),
+    lists:foreach(forward_to_user(From, _, Node, Item),
+                  add_self(From, Contacts));
+forward_item(whitelist, From, Node, Item) ->
+    % TODO Implement whitelist subscription system if/when required
+    WhitelistedSubs = [],
+    lists:foreach(forward_to_user(From, _, Node, Item),
+                  add_self(From, WhitelistedSubs)).
+
+add_self(Self, Others) ->
+    [jid:to_bare(Self) | Others].
 
 get_presence_subs(Roster) ->
     [jid:make(R#wocky_roster.contact_jid)
@@ -158,19 +180,25 @@ get_presence_subs(Roster) ->
         R#wocky_roster.subscription =:= both orelse
         R#wocky_roster.subscription =:= to].
 
-make_forward_message(Items, Node) ->
+get_non_blocked(Roster) ->
+    [jid:make(R#wocky_roster.contact_jid)
+     || R <- Roster,
+        not lists:member(<<"__blocked__">>, R#wocky_roster.groups)].
+
+make_forward_message(Item, Node) ->
     #xmlel{name = <<"message">>,
            attrs = [{<<"type">>, <<"headline">>}],
-           children = [make_event(Items, Node)]}.
+           children = [make_event(Item, Node)]}.
 
-make_event(Items, Node) ->
+make_event(Item, Node) ->
     #xmlel{name = <<"event">>,
            attrs = [{<<"xmlns">>, ?NS_PUBSUB_EVENT}],
            children = [#xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, Node}],
-                              children = Items}]}.
+                              children = [Item]}]}.
 
-forward_to_user(From, Packet, User) ->
+forward_to_user(From, User, Node, Item) ->
+    Packet = make_forward_message(Item, Node),
     ejabberd_router:route(From, User, Packet).
 
 publish_response(IQ, Node) ->
