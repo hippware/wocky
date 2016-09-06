@@ -16,7 +16,7 @@
 % There's some overlap here where we want to test the MAM operation
 % on group messages, so it's handy to use a couple of functions from the
 % MAM suite.
--import(mam_SUITE, [stanza_archive_request/2,
+-import(mam_SUITE, [stanza_archive_request/3,
                     assert_respond_size/2,
                     wait_archive_respond_iq_first/1
                    ]).
@@ -188,7 +188,7 @@ archive(Config) ->
         escalus:send(Alice, MsgStanza),
         wait_for_msg(Bob, ?ALICE_B_JID, Msg),
         GroupJIDBin = jid:to_binary(jid:make(GroupID, ?LOCAL_CONTEXT, <<>>)),
-        ArchReq = stanza_archive_request(<<"q1">>, GroupJIDBin),
+        ArchReq = stanza_archive_request([], <<"q1">>, GroupJIDBin),
         escalus:send(Alice, ArchReq),
         assert_respond_size(1, wait_archive_respond_iq_first(Alice)),
         escalus:send(Bob, ArchReq),

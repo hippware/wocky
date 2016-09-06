@@ -14,47 +14,7 @@
 %% limitations under the License.
 %%==============================================================================
 -module(mam_SUITE).
-%% CT callbacks
--export([all/0,
-         groups/0,
-         suite/0,
-         init_per_suite/1,
-         end_per_suite/1,
-         init_per_group/2,
-         end_per_group/2,
-         init_per_testcase/2,
-         end_per_testcase/2]).
-
-%% Tests
--export([mam_service_discovery/1,
-         simple_archive_request/1,
-         range_archive_request/1,
-         range_archive_request_not_empty/1,
-         limit_archive_request/1,
-         pagination_first5/1,
-         pagination_last5/1,
-         pagination_before10/1,
-         pagination_after10/1,
-         pagination_simple_before10/1,
-         pagination_last_after_id5/1,
-         pagination_last_after_id5_before_id11/1,
-         pagination_empty_rset/1,
-         pagination_first5_opt_count/1,
-         pagination_first25_opt_count_all/1,
-         pagination_last5_opt_count/1,
-         pagination_last25_opt_count_all/1,
-         pagination_offset5_opt_count/1,
-         pagination_offset5_opt_count_all/1,
-         querying_for_all_messages_with_jid/1,
-         querying_for_all_messages_with_no_jid/1,
-         iq_spoofing/1
-        ]).
-
-% Exports used by group_chat_SUITE to test group chat MAM functionality
--export([stanza_archive_request/2,
-         assert_respond_size/2,
-         wait_archive_respond_iq_first/1
-        ]).
+-compile(export_all).
 
 -include_lib("escalus/include/escalus.hrl").
 -include_lib("escalus/include/escalus_xmlns.hrl").
@@ -117,14 +77,18 @@ host() ->
 all() ->
     [
      {group, mam},
+     {group, mam_04},
      {group, bootstrapped},
-     {group, rsm}
+     {group, rsm},
+     {group, rsm_04}
     ].
 
 groups() ->
     [{mam, [], mam_cases()},
+     {mam_04, [], mam_cases()},
      {bootstrapped, [], bootstrapped_cases()},
-     {rsm, [], rsm_cases()}
+     {rsm, [], rsm_cases()},
+     {rsm_04, [], rsm_cases()}
     ].
 
 bootstrapped_cases() ->
@@ -160,7 +124,10 @@ rsm_cases() ->
        %% opt_count cases with all messages on the page
        pagination_first25_opt_count_all,
        pagination_last25_opt_count_all,
-       pagination_offset5_opt_count_all].
+       pagination_offset5_opt_count_all,
+       %% Reversed result list
+       reverse
+      ].
 
 suite() ->
     escalus:suite().
@@ -208,12 +175,21 @@ mam_modules() ->
 
 init_state(rsm, Config) ->
     send_rsm_messages(clean_archives(Config));
-init_state(with_rsm, Config) ->
-    Config1 = [{with_rsm, true}|Config],
+init_state(rsm_04, Config) ->
+    Config1 = [{props, mam04_props()} | Config],
     send_rsm_messages(clean_archives(Config1));
+init_state(mam_04, Config) ->
+    Config1 = [{props, mam04_props()} | Config],
+    clean_archives(Config1);
 init_state(_, Config) ->
     clean_archives(Config).
 
+mam04_props() ->
+    [{data_form, true},                 %% send data forms
+     {result_format, iq_fin},           %% RSM is inside iq with <fin/> inside
+     {mam_ns, mam_ns_binary_v04()}].
+
+mam_ns_binary_v04() -> <<"urn:xmpp:mam:1">>.
 
 init_per_testcase(C=querying_for_all_messages_with_jid, Config) ->
     escalus:init_per_testcase(C,
@@ -270,6 +246,7 @@ rpc_call(M, F, A) ->
 %%--------------------------------------------------------------------
 
 simple_archive_request(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice, Bob) ->
         %% Alice sends "OH, HAI!" to Bob
         %% {xmlel,<<"message">>,
@@ -279,7 +256,7 @@ simple_archive_request(Config) ->
         %%   {<<"type">>,<<"chat">>}],
         %%   [{xmlel,<<"body">>,[],[{xmlcdata,<<"OH, HAI!">>}]}]}
         escalus:send(Alice, escalus_stanza:chat_to(Bob, <<"OH, HAI!">>)),
-        escalus:send(Alice, stanza_archive_request(<<"q1">>, ?BBOB)),
+        escalus:send(Alice, stanza_archive_request(P, <<"q1">>, ?BBOB)),
         assert_respond_size(1, wait_archive_respond_iq_first(Alice)),
         ok
         end,
@@ -290,24 +267,26 @@ simple_archive_request(Config) ->
     escalus:story(Config1, [{alice, 1}, {bob, 1}], F).
 
 querying_for_all_messages_with_jid(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         Pregenerated = ?config(pre_generated_msgs, Config),
 
         WithBob = [true || {_, _, JID, _} <- Pregenerated, JID =:= ?BBOB],
 
         CountWithBob = length(WithBob),
-        escalus:send(Alice, stanza_filtered_by_jid_request(?BBOB)),
+        escalus:send(Alice, stanza_filtered_by_jid_request(P, ?BBOB)),
         assert_respond_size(CountWithBob, wait_archive_respond_iq_first(Alice)),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 querying_for_all_messages_with_no_jid(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         Pregenerated = ?config(pre_generated_msgs, Config),
 
         Count = length(Pregenerated),
-        escalus:send(Alice, stanza_filtered_by_jid_request(<<"">>)),
+        escalus:send(Alice, stanza_filtered_by_jid_request(P, <<"">>)),
         assert_respond_size(Count, wait_archive_respond_iq_first(Alice)),
         ok
         end,
@@ -341,6 +320,7 @@ assert_respond_size(ExpectedSize, Respond) ->
 
 %% @doc Querying the archive for all messages in a certain timespan.
 range_archive_request(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Send
         %% <iq type='get'>
@@ -350,7 +330,7 @@ range_archive_request(Config) ->
         %%   </query>
         %% </iq>
         escalus:send(Alice,
-                     stanza_date_range_archive_request(?BBOB)),
+                     stanza_date_range_archive_request(P, ?BBOB)),
         IQ = escalus:wait_for_stanza(Alice, 5000),
         escalus:assert(is_iq_result, IQ),
         ok
@@ -358,6 +338,7 @@ range_archive_request(Config) ->
     escalus:story(Config, [{alice, 1}], F).
 
 range_archive_request_not_empty(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         Msgs = msgs_with_user(?BBOB, Config),
         [_, _, StartMsg, StopMsg | _] = Msgs,
@@ -377,7 +358,7 @@ range_archive_request_not_empty(Config) ->
         %%   </query>
         %% </iq>
         escalus:send(Alice,
-                     stanza_date_range_archive_request_not_empty(StartTime,
+                     stanza_date_range_archive_request_not_empty(P, StartTime,
                                                                  StopTime,
                                                                  ?BBOB)),
         %% Receive two messages and IQ
@@ -410,6 +391,7 @@ usec_to_now(Usecs) ->
 %% @doc A query using Result Set Management.
 %% See also `#rsm_in.max'.
 limit_archive_request(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Send
         %% <iq type='get' id='q29302'>
@@ -420,7 +402,7 @@ limit_archive_request(Config) ->
         %%       </set>
         %%   </query>
         %% </iq>
-        escalus:send(Alice, stanza_limit_archive_request(?BBOB)),
+        escalus:send(Alice, stanza_limit_archive_request(P, ?BBOB)),
         [IQ | Msgs] = wait_archive_respond_iq_first(Alice),
         escalus:assert(is_iq_result, IQ),
         10 = length(Msgs),
@@ -429,137 +411,149 @@ limit_archive_request(Config) ->
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_empty_rset(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Test the empty result set - should just return the total number of
         %% archived messages
         RSM = #rsm_in{max=0},
 
         escalus:send(Alice,
-            stanza_page_archive_request(<<"empty_rset">>, RSM, ?BBOB)),
-        wait_empty_rset(Alice, 15)
+            stanza_page_archive_request(P, <<"empty_rset">>, RSM, ?BBOB)),
+        wait_empty_rset(P, Alice, 15)
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_first5(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the first page of size 5.
         RSM = #rsm_in{max=5},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"first5">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 1, 5),
+            stanza_page_archive_request(P, <<"first5">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 1, 5),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_first5_opt_count(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the first page of size 5.
         RSM = #rsm_in{max=5},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"first5_opt">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 1, 5),
+            stanza_page_archive_request(P, <<"first5_opt">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 1, 5),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_first25_opt_count_all(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the first page of size 25.
         RSM = #rsm_in{max=25},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"first25_opt_all">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 1, 15),
+            stanza_page_archive_request(P, <<"first25_opt_all">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 1, 15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_last5(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 5.
         RSM = #rsm_in{max=5, direction=before},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last5">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 11, 15),
+            stanza_page_archive_request(P, <<"last5">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 11, 15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_last5_opt_count(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 5.
         RSM = #rsm_in{max=5, direction=before, opt_count=true},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last5_opt">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 11, 15),
+            stanza_page_archive_request(P, <<"last5_opt">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 11, 15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_last25_opt_count_all(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 25.
         RSM = #rsm_in{max=25, direction=before, opt_count=true},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last25_opt_all">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 1, 15),
+            stanza_page_archive_request(P, <<"last25_opt_all">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 1, 15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_offset5_opt_count(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Skip 5 messages, get 5 messages.
         RSM = #rsm_in{max=5, index=5, opt_count=true},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last5_opt">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 6, 10),
+            stanza_page_archive_request(P, <<"last5_opt">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 6, 10),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_offset5_opt_count_all(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Skip 5 messages, get 25 messages (only 10 are available).
         RSM = #rsm_in{max=25, index=5, opt_count=true},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last5_opt_all">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 6, 15),
+            stanza_page_archive_request(P, <<"last5_opt_all">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 6, 15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 
 pagination_before10(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 5.
         RSM = #rsm_in{max=5, direction=before, id=message_id(10, Config)},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"before10">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 5, 9),
+            stanza_page_archive_request(P, <<"before10">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 5, 9),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_simple_before10(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 5.
         RSM = #rsm_in{max=5, direction=before,
                       id=message_id(10, Config), simple=true},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"before10">>, RSM, ?BBOB)),
-     %% wait_message_range(Client, TotalCount,    Offset, FromN, ToN),
-        wait_message_range(Alice,   undefined, undefined,     5,   9),
+            stanza_page_archive_request(P, <<"before10">>, RSM, ?BBOB)),
+     %% wait_message_range(P, Client, TotalCount,    Offset, FromN, ToN),
+        wait_message_range(P, Alice,   undefined, undefined,     5,   9),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 pagination_after10(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 5.
         RSM = #rsm_in{max=5, direction='after', id=message_id(10, Config)},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"after10">>, RSM, ?BBOB)),
-        wait_message_range(Alice, 11, 15),
+            stanza_page_archive_request(P, <<"after10">>, RSM, ?BBOB)),
+        wait_message_range(P, Alice, 11, 15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
@@ -567,29 +561,31 @@ pagination_after10(Config) ->
 %% Select first page of recent messages after last known id.
 %% Paginating from newest messages to oldest ones.
 pagination_last_after_id5(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         %% Get the last page of size 5 after 5-th message.
         RSM = #rsm_in{max=5, direction='before',
                 after_id=message_id(5, Config)},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last_after_id5">>, RSM, ?BBOB)),
-     %% wait_message_range(Client, TotalCount, Offset, FromN, ToN),
-        wait_message_range(Alice,          10,      5,    11,  15),
+            stanza_page_archive_request(P, <<"last_after_id5">>, RSM, ?BBOB)),
+     %% wait_message_range(P, Client, TotalCount, Offset, FromN, ToN),
+        wait_message_range(P, Alice,          10,      5,    11,  15),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
 
 %% Select second page of recent messages after last known id.
 pagination_last_after_id5_before_id11(Config) ->
+    P = ?config(props, Config),
     F = fun(Alice) ->
         RSM = #rsm_in{max=5, direction='before',
                 after_id=message_id(5, Config),
                 before_id=message_id(11, Config)},
         escalus:send(Alice,
-            stanza_page_archive_request(<<"last_after_id5_before_id11">>,
+            stanza_page_archive_request(P, <<"last_after_id5_before_id11">>,
                                         RSM, ?BBOB)),
-     %% wait_message_range(Client, TotalCount, Offset, FromN, ToN),
-        wait_message_range(Alice,           5,      0,     6,  10),
+     %% wait_message_range(P, Client, TotalCount, Offset, FromN, ToN),
+        wait_message_range(P, Alice,           5,      0,     6,  10),
         ok
         end,
     escalus:story(Config, [{alice, 1}], F).
@@ -631,6 +627,18 @@ iq_spoofing(Config) ->
         end,
     escalus:story(Config, [{alice, 1}, {bob, 1}], F).
 
+reverse(Config) ->
+    P = ?config(props, Config),
+    F = fun(Alice) ->
+        %% Get the first page of size 5.
+        RSM = #rsm_in{max=5},
+        escalus:send(Alice,
+            stanza_reverse_page_request(P, <<"first5">>, RSM)),
+        wait_message_range(P, Alice, 15, 0, 5, 1),
+        ok
+        end,
+    escalus:story(Config, [{alice, 1}], F).
+
 result_iq() ->
     #xmlel{
         name = <<"iq">>,
@@ -642,6 +650,9 @@ result_iq() ->
 %%--------------------------------------------------------------------
 
 mam_ns_binary() -> <<"urn:xmpp:mam:tmp">>.
+
+mam_ns_attr(P) ->
+    [{<<"xmlns">>,get_prop(mam_ns, P)}].
 
 skip_undefined(Xs) ->
     [X || X <- Xs, X =/= undefined].
@@ -677,33 +688,64 @@ maybe_with_elem(BWithJID) ->
 
 %% An optional 'queryid' attribute allows the client to match results to
 %% a certain query.
-stanza_archive_request(QueryId, BWithJID) ->
-    stanza_lookup_messages_iq(QueryId,
+stanza_archive_request(P, QueryId, BWithJID) ->
+    stanza_lookup_messages_iq(P, QueryId,
                               undefined, undefined,
-                              BWithJID, undefined).
+                              BWithJID, undefined,
+                              false).
 
-stanza_date_range_archive_request(BWithJID) ->
-    stanza_lookup_messages_iq(undefined,
+stanza_date_range_archive_request(P, BWithJID) ->
+    stanza_lookup_messages_iq(P, undefined,
                               "2010-06-07T00:00:00Z", "2010-07-07T13:23:54Z",
-                              BWithJID, undefined).
+                              BWithJID, undefined,
+                              false).
 
-stanza_date_range_archive_request_not_empty(Start, Stop, BWithJID) ->
-    stanza_lookup_messages_iq(undefined,
+stanza_date_range_archive_request_not_empty(P, Start, Stop, BWithJID) ->
+    stanza_lookup_messages_iq(P, undefined,
                               Start, Stop,
-                              BWithJID, undefined).
+                              BWithJID, undefined,
+                              false).
 
-stanza_limit_archive_request(BWithJID) ->
-    stanza_lookup_messages_iq(undefined, "2010-08-07T00:00:00Z",
-                              undefined, BWithJID, #rsm_in{max=10}).
+stanza_limit_archive_request(P, BWithJID) ->
+    stanza_lookup_messages_iq(P, undefined, "2010-08-07T00:00:00Z",
+                              undefined, BWithJID, #rsm_in{max=10},
+                              false).
 
-stanza_page_archive_request(QueryId, RSM, BWithJID) ->
-    stanza_lookup_messages_iq(QueryId, undefined, undefined, BWithJID, RSM).
+stanza_page_archive_request(P, QueryId, RSM, BWithJID) ->
+    stanza_lookup_messages_iq(P, QueryId, undefined, undefined, BWithJID, RSM,
+                              false).
 
-stanza_filtered_by_jid_request(BWithJID) ->
-    stanza_lookup_messages_iq(undefined, undefined,
-                              undefined, BWithJID, undefined).
+stanza_filtered_by_jid_request(P, BWithJID) ->
+    stanza_lookup_messages_iq(P, undefined, undefined,
+                              undefined, BWithJID, undefined,
+                              false).
 
-stanza_lookup_messages_iq(QueryId, BStart, BEnd, BWithJID, RSM) ->
+stanza_reverse_page_request(P, QueryId, RSM) ->
+    stanza_lookup_messages_iq(P, QueryId, undefined, undefined, undefined, RSM,
+                              true).
+
+stanza_lookup_messages_iq(P, QueryId, BStart, BEnd, BWithJID, RSM, Reverse) ->
+    case get_prop(data_form, P) of
+        false ->
+            stanza_lookup_messages_iq_v02(P, QueryId, BStart, BEnd,
+                                          BWithJID, RSM, Reverse);
+        true ->
+            stanza_lookup_messages_iq_v03(P, QueryId, BStart, BEnd,
+                                          BWithJID, RSM, Reverse)
+    end.
+
+get_prop(Key, undefined) ->
+    get_prop(Key, []);
+get_prop(mam_ns, P) ->
+    proplists:get_value(mam_ns, P, mam_ns_binary());
+get_prop(result_format, P) ->
+    proplists:get_value(result_format, P, iq_query);
+get_prop(data_form, P) ->
+    proplists:get_bool(data_form, P).
+
+stanza_lookup_messages_iq_v02(_P, QueryId, BStart, BEnd,
+                              BWithJID, RSM, Reverse) ->
+    ct:log("Using v02"),
     escalus_stanza:iq(<<"get">>, [#xmlel{
        name = <<"query">>,
        attrs = mam_ns_attr()
@@ -715,7 +757,8 @@ stanza_lookup_messages_iq(QueryId, BStart, BEnd, BWithJID, RSM) ->
            maybe_start_elem(BStart),
            maybe_end_elem(BEnd),
            maybe_with_elem(BWithJID),
-           maybe_rsm_elem(RSM)])
+           maybe_rsm_elem(RSM),
+           maybe_reverse_elem(Reverse)])
     }]).
 
 maybe_simple_elem(#rsm_in{simple=true}) ->
@@ -769,6 +812,69 @@ maybe_rsm_max(Max) when is_integer(Max) ->
     #xmlel{
         name = <<"max">>,
         children = #xmlcdata{content = integer_to_list(Max)}}.
+
+maybe_reverse_elem(false) ->
+    undefined;
+maybe_reverse_elem(true) ->
+    #xmlel{
+       name = <<"reverse">>,
+       children = #xmlcdata{content = <<"true">>}}.
+
+stanza_lookup_messages_iq_v03(P, QueryId, BStart, BEnd,
+                              BWithJID, RSM, Reverse) ->
+    ct:log("Using v03"),
+    escalus_stanza:iq(<<"set">>, [#xmlel{
+       name = <<"query">>,
+       attrs = mam_ns_attr(P)
+            ++ maybe_attr(<<"queryid">>, QueryId),
+       children = skip_undefined([
+           form_x(BStart, BEnd, BWithJID, RSM, Reverse),
+           maybe_rsm_elem(RSM)])
+    }]).
+
+
+form_x(BStart, BEnd, BWithJID, RSM, Reverse) ->
+    #xmlel{name = <<"x">>,
+           attrs = [{<<"xmlns">>, <<"jabber:x:data">>}],
+           children = skip_undefined([
+                form_field(<<"start">>, BStart),
+                form_field(<<"end">>, BEnd),
+                form_field(<<"with">>, BWithJID),
+                form_reverse_field(Reverse)]
+                ++ form_extra_fields(RSM)
+                ++ form_border_fields(RSM))}.
+
+form_reverse_field(false) -> undefined;
+form_reverse_field(true) -> form_field(<<"reverse">>, <<"true">>).
+
+form_extra_fields(undefined) ->
+    [];
+form_extra_fields(#rsm_in{simple=Simple, opt_count=OptCount}) ->
+    [form_bool_field(<<"simple">>, Simple),
+     form_bool_field(<<"opt_count">>, OptCount)].
+
+form_border_fields(undefined) ->
+    [];
+form_border_fields(#rsm_in{
+        before_id=BeforeId, after_id=AfterId, from_id=FromId, to_id=ToId}) ->
+    [form_field(<<"before_id">>, BeforeId),
+     form_field(<<"after_id">>, AfterId),
+     form_field(<<"from_id">>, FromId),
+     form_field(<<"to_id">>, ToId)].
+
+form_field(_VarName, undefined) ->
+    undefined;
+form_field(VarName, VarValue) ->
+    #xmlel{name = <<"field">>, attrs = [{<<"var">>, VarName}],
+           children = [#xmlel{name = <<"value">>,
+                              children = [#xmlcdata{content = VarValue}]}]}.
+
+form_bool_field(Name, true) ->
+    form_field(Name, <<"true">>);
+form_bool_field(_Name, _) ->
+    undefined.
+
+
 
 %% ----------------------------------------------------------------------
 %% PARSING RESPONDS
@@ -845,45 +951,48 @@ message_id(Num, Config) ->
 %%                      [{xmlcdata,<<"103439">>}]},
 %%                  {xmlel,<<"last">>,[],[{xmlcdata,<<"103447">>}]},
 %%                  {xmlel,<<"count">>,[],[{xmlcdata,<<"15">>}]}]}]}]}]
-parse_result_iq(#xmlel{name = <<"iq">>,
-                       attrs = Attrs, children = Children}) ->
-    IQ = #result_iq{
-        from = proplists:get_value(<<"from">>, Attrs),
-        to   = proplists:get_value(<<"to">>, Attrs),
-        id   = proplists:get_value(<<"id">>, Attrs)},
-    lists:foldl(fun parse_children_iq/2, IQ, Children).
 
-parse_children_iq(#xmlel{name = <<"query">>, children = Children},
-                     IQ) ->
-    lists:foldl(fun parse_children_iq_query/2, IQ, Children).
+parse_result_iq(P, Result) ->
+    case get_prop(result_format, P) of
+        iq_query ->
+            parse_legacy_iq(Result);
+        iq_fin ->
+            parse_fin_iq(Result)
+    end.
 
+%% MAM v0.4
+parse_fin_iq(IQ) ->
+    Fin = exml_query:subelement(IQ, <<"fin">>),
+    Set = exml_query:subelement(Fin, <<"set">>),
+    parse_set_and_iq(IQ, Set).
 
-parse_children_iq_query(#xmlel{name = <<"set">>,
-                                  children = Children},
-                           IQ) ->
-    lists:foldl(fun parse_children_iq_query_set/2, IQ, Children).
+%% MAM v0.2
+parse_legacy_iq(IQ) ->
+    Fin = exml_query:subelement(IQ, <<"query">>),
+    Set = exml_query:subelement(Fin, <<"set">>),
+    parse_set_and_iq(IQ, Set).
 
-parse_children_iq_query_set(#xmlel{name = <<"first">>,
-                                      attrs = Attrs,
-                                      children = [{xmlcdata, First}]},
-                               IQ) ->
-    Index = case proplists:get_value(<<"index">>, Attrs) of
-                undefined -> undefined;
-                X -> list_to_integer(binary_to_list(X))
-            end,
-    IQ#result_iq{first_index = Index, first = First};
-parse_children_iq_query_set(#xmlel{name = <<"last">>,
-                                      children = [{xmlcdata, Last}]},
-                               IQ) ->
-    IQ#result_iq{last = Last};
-parse_children_iq_query_set(#xmlel{name = <<"count">>,
-                                      children = [{xmlcdata, Count}]},
-                               IQ) ->
-    IQ#result_iq{count = list_to_integer(binary_to_list(Count))};
-parse_children_iq_query_set(_, IQ) -> IQ.
+parse_set_and_iq(IQ, Set) ->
+    #result_iq{
+        from        = exml_query:attr(IQ, <<"from">>),
+        to          = exml_query:attr(IQ, <<"to">>),
+        id          = exml_query:attr(IQ, <<"id">>),
+        first       = exml_query:path(Set, [{element, <<"first">>}, cdata]),
+        first_index = maybe_binary_to_integer(
+                        exml_query:path(Set, [{element, <<"first">>},
+                                              {attr, <<"index">>}])),
+        last        = exml_query:path(Set, [{element, <<"last">>}, cdata]),
+        count       = maybe_binary_to_integer(
+                        exml_query:path(Set, [{element, <<"count">>}, cdata]))}.
+
+maybe_binary_to_integer(B) when is_binary(B) ->
+    list_to_integer(binary_to_list(B));
+maybe_binary_to_integer(undefined) ->
+    undefined.
 
 send_rsm_messages(Config) ->
     Pid = self(),
+    P = ?config(props, Config),
     F = fun(Alice, Bob) ->
         %% Alice sends messages to Bob.
         [escalus:send(Alice,
@@ -893,7 +1002,8 @@ send_rsm_messages(Config) ->
         R = escalus:wait_for_stanzas(Bob, 15, 5000),
         15 = length(R),
         %% Get whole history.
-        escalus:send(Alice, stanza_archive_request(<<"all_messages">>, ?BBOB)),
+        escalus:send(Alice,
+                     stanza_archive_request(P, <<"all_messages">>, ?BBOB)),
         [_ArcIQ|AllMessages] =
             assert_respond_size(15, wait_archive_respond_iq_first(Alice)),
         ParsedMessages = [parse_forwarded_message(M) || M <- AllMessages],
@@ -943,16 +1053,17 @@ delete_offline_messages(Server, Username) ->
     catch rpc_apply(mod_offline, remove_user, [Username, Server]),
     ok.
 
-wait_message_range(Client, FromN, ToN) ->
-    wait_message_range(Client, 15, FromN-1, FromN, ToN).
+wait_message_range(P, Client, FromN, ToN) ->
+    wait_message_range(P, Client, 15, FromN-1, FromN, ToN).
 
-wait_message_range(Client, TotalCount, Offset, FromN, ToN) ->
+wait_message_range(P, Client, TotalCount, Offset, FromN, ToN) ->
     [IQ|Messages] = wait_archive_respond_iq_first(Client),
     ParsedMessages = parse_messages(Messages),
-    ParsedIQ = parse_result_iq(IQ),
+    ParsedIQ = parse_result_iq(P, IQ),
     try
+        ct:log("BJD ParsedIQ: ~p", [ParsedIQ]),
         %% Compare body of the messages.
-        ?ASSERT_EQUAL([generate_message_text(N) || N <- lists:seq(FromN, ToN)],
+        ?ASSERT_EQUAL([generate_message_text(N) || N <- make_seq(FromN, ToN)],
                       [B || #forwarded_message{message_body=B}
                             <- ParsedMessages]),
         ?ASSERT_EQUAL(TotalCount, ParsedIQ#result_iq.count),
@@ -967,10 +1078,14 @@ wait_message_range(Client, TotalCount, Offset, FromN, ToN) ->
         erlang:raise(Class, Reason, Stacktrace)
     end.
 
+make_seq(FromN, ToN) when ToN < FromN ->
+    lists:reverse(make_seq(ToN, FromN));
+make_seq(FromN, ToN) ->
+    lists:seq(FromN, ToN).
 
-wait_empty_rset(Alice, TotalCount) ->
+wait_empty_rset(P, Alice, TotalCount) ->
     [IQ] = wait_archive_respond_iq_first(Alice),
-    ParsedIQ = parse_result_iq(IQ),
+    ParsedIQ = parse_result_iq(P, IQ),
     try
         ?ASSERT_EQUAL(TotalCount, ParsedIQ#result_iq.count),
         ok

@@ -17,7 +17,7 @@
   "cuesport": {:git, "https://github.com/esl/cuesport.git", "d82ff25baf393eb11712721fb1b881b4b9f80176", [branch: "master"]},
   "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
-  "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "45ac2183ebbb0dfe2d8328eaed018bcc4d14e511", [branch: "working"]},
+  "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "ce7159e00efbaec1864e893991fa695f50dd25cf", [branch: "working"]},
   "elvis": {:hex, :elvis_core, "0.3.2", "5424dbd17bec4265a6808f49064cc1a8d2d1b593b5c4e94e747edb157abde6de", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, optional: false]}, {:lager, "3.0.2", [hex: :lager, optional: false]}, {:zipper, "1.0.0", [hex: :zipper, optional: false]}]},
   "eper": {:hex, :eper, "0.94.0", "f5fb2daa0df8878748e1c598428eda942a173e5121ff35c1d632129b84593a3a", [:rebar, :rebar], []},
   "erlando": {:git, "https://github.com/rabbitmq/erlando.git", "1c1ef25a9bc228671b32b4a6ee30c7525314b1fd", [branch: "master"]},
