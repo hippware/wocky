@@ -15,8 +15,6 @@
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
 
--define(HOOK_TABLE, mod_wocky_pep_hooks).
-
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
@@ -28,10 +26,10 @@
 %%%===================================================================
 
 start(_Host, _Opts) ->
-    mod_wocky_pep:register_handler(?NS_GEOLOC, ?MODULE).
+    mod_wocky_pep:register_handler(?NS_GEOLOC, whitelist, ?MODULE).
 
 stop(_Host) ->
-    mod_wocky_pep:unregister_handler(?NS_GEOLOC, ?MODULE).
+    mod_wocky_pep:unregister_handler(?NS_GEOLOC, whitelist, ?MODULE).
 
 
 %%%===================================================================
@@ -54,7 +52,7 @@ handle_pep(From, Item = #xmlel{name = <<"geoloc">>}) ->
                                        Lat, Lon, Accuracy),
             Item;
         {error, _} ->
-            undefined
+            drop
     end;
 handle_pep(_From, Item) ->
     Item.

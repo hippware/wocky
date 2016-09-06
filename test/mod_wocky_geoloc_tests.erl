@@ -47,7 +47,7 @@ test_pep_hook() ->
           ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
        ]},
        { "should not add an incomplete entry", [
-          ?_assertEqual(undefined,
+          ?_assertEqual(drop,
                         handle_pep(?ALICE_JID,
                                    Item#xmlel{children =
                                               tl(Item#xmlel.children)})),
