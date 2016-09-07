@@ -34,7 +34,6 @@
           value :: binary() | integer() | loc() | jid()
          }).
 
-
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
@@ -100,7 +99,7 @@ handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"affiliations">>,
                                                   attrs = Attrs}
                                  }) ->
-    handle_retrieve_affiliations(From, To, IQ, Attrs);
+    bot_users:handle_retrieve_affiliations(From, To, IQ, Attrs);
 
 % Update affiliations
 handle_iq_type(From, To, IQ = #iq{type = set,
@@ -108,7 +107,7 @@ handle_iq_type(From, To, IQ = #iq{type = set,
                                                   attrs = Attrs,
                                                   children = Children}
                                  }) ->
-    handle_update_affiliations(From, To, IQ, Attrs, Children);
+    bot_users:handle_update_affiliations(From, To, IQ, Attrs, Children);
 
 % Subscribe
 handle_iq_type(From, To, IQ = #iq{type = set,
@@ -116,21 +115,21 @@ handle_iq_type(From, To, IQ = #iq{type = set,
                                                   attrs = Attrs,
                                                   children = Children}
                                  }) ->
-    handle_subscribe(From, To, IQ, Attrs, Children);
+    bot_users:handle_subscribe(From, To, IQ, Attrs, Children);
 
 % Unsubscribe
 handle_iq_type(From, To, IQ = #iq{type = set,
                                   sub_el = #xmlel{name = <<"unsubscribe">>,
                                                   attrs = Attrs}
                                  }) ->
-    handle_unsubscribe(From, To, IQ, Attrs);
+    bot_users:handle_unsubscribe(From, To, IQ, Attrs);
 
 % Retrieve subscribers
 handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"subscribers">>,
                                                   attrs = Attrs}
                                  }) ->
-    handle_retrieve_subscribers(From, To, IQ, Attrs);
+    bot_users:handle_retrieve_subscribers(From, To, IQ, Attrs);
 
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -159,8 +158,8 @@ add_server(Fields, Server) ->
 
 handle_delete(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_owner(Server, ID, From),
+        ID <- bot_utils:get_id_from_node(Attrs),
+        bot_utils:check_owner(Server, ID, From),
         delete_bot(Server, ID),
         {ok, IQ#iq{type = result, sub_el = []}}
        ]).
@@ -177,8 +176,8 @@ delete_bot(Server, ID) ->
 
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_access(Server, ID, From),
+        ID <- bot_utils:get_id_from_node(Attrs),
+        bot_utils:check_access(Server, ID, From),
         BotEl <- make_bot_el(Server, ID),
         {ok, IQ#iq{type = result, sub_el = BotEl}}
        ]).
@@ -189,171 +188,13 @@ handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
 
 handle_update(From, #jid{lserver = Server}, IQ, Attrs, Children) ->
     do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_owner(Server, ID, From),
+        ID <- bot_utils:get_id_from_node(Attrs),
+        bot_utils:check_owner(Server, ID, From),
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
         refresh_roster(Server, ID),
         {ok, IQ#iq{type = result, sub_el = []}}
        ]).
-
-%%%===================================================================
-%%% Action - retrieve affiliations
-%%%===================================================================
-
-handle_retrieve_affiliations(From, #jid{lserver = Server}, IQ, Attrs) ->
-    do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_owner(Server, ID, From),
-        AffiliationsEl <- make_affiliations_element(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = AffiliationsEl}}
-       ]).
-
-make_affiliations_element(Server, ID) ->
-    Affiliates = wocky_db_bot:affiliations(Server, ID),
-    {ok, #xmlel{name = <<"affiliations">>,
-                attrs = list_attrs(ID, Affiliates),
-                children = make_affiliate_elements(Affiliates)}}.
-
-make_affiliate_elements(Affiliates) ->
-    lists:map(fun make_affiliate_element/1, Affiliates).
-
-%%%===================================================================
-%%% Action - update affiliations
-%%%===================================================================
-
-handle_update_affiliations(From, To = #jid{lserver = Server},
-                           IQ, Attrs, Children) ->
-    do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_owner(Server, ID, From),
-        DirtyAffiliations <- get_affiliations(Children),
-        OwnerRoster <- {ok, wocky_db_bot:owner_roster(Server, ID)},
-        Affiliations <- check_affiliations(DirtyAffiliations, OwnerRoster, []),
-        update_affiliations(Server, ID, Affiliations),
-        notify_affiliates(To, ID, Affiliations),
-        {ok, IQ#iq{type = result,
-                   sub_el = make_affiliations_update_element(Server, ID)}}
-       ]).
-
-get_affiliations(Elements) ->
-    {ok, lists:foldl(fun get_affiliation/2, [], Elements)}.
-
-get_affiliation(El = #xmlel{name = <<"affiliation">>}, Acc) ->
-    [element_to_affiliation(El) | Acc];
-get_affiliation(_, Acc) -> Acc.
-
-element_to_affiliation(#xmlel{attrs = Attrs}) ->
-    JID = xml:get_attr_s(<<"jid">>, Attrs),
-    Affiliation = xml:get_attr_s(<<"affiliation">>, Attrs),
-    {jid:from_binary(JID), Affiliation}.
-
-check_affiliations([], _OwnerRoster, Acc) -> {ok, Acc};
-check_affiliations([Affiliation | Rest], OwnerRoster, Acc) ->
-    case check_affiliation(Affiliation, OwnerRoster) of
-        {error, E} ->
-            {error, E};
-        CleanAffiliation ->
-            check_affiliations(Rest, OwnerRoster,
-                               [CleanAffiliation | Acc])
-    end.
-
-check_affiliation({User, <<"none">>}, _OwnerRoster) ->
-    {User, none};
-check_affiliation({User, <<"spectator">>}, OwnerRoster) ->
-    case lists:any(jid:are_equal(User, _), OwnerRoster) of
-        true ->
-            {User, spectator};
-        false ->
-            {error, ?ERRT_BAD_REQUEST(
-                       ?MYLANG, <<(jid:to_binary(User))/binary,
-                                  " is not a friend">>)}
-    end;
-check_affiliation({_User, Role}, _OwnerRoster) ->
-    {error, ?ERRT_BAD_REQUEST(
-               ?MYLANG, <<"Invalid affiliate role: ", Role/binary>>)}.
-
-update_affiliations(Server, ID, Affiliations) ->
-    wocky_db_bot:update_affiliations(Server, ID, Affiliations).
-
-notify_affiliates(Sender, ID, Affiliates) ->
-    lists:foreach(notify_affiliate(Sender, ID, _), Affiliates).
-
-notify_affiliate(Sender, ID, {User, Role}) ->
-    ejabberd_router:route(Sender, User, make_update_packet(ID, User, Role)).
-
-make_update_packet(ID, User, Role) ->
-    AffiliateEl = make_affiliate_element({User, Role}),
-    #xmlel{name = <<"message">>,
-           children = [#xmlel{name = <<"affiliations">>,
-                              attrs = [{<<"xmlns">>, ?NS_BOT},
-                                       {<<"node">>, make_node(ID)}],
-                              children = [AffiliateEl]}]}.
-
-make_affiliations_update_element(Server, ID) ->
-    Affiliations = wocky_db_bot:affiliations(Server, ID),
-    #xmlel{name = <<"affiliations">>,
-           attrs = list_attrs(ID, Affiliations)}.
-
-%%%===================================================================
-%%% Action - subscribe
-%%%===================================================================
-
-handle_subscribe(From, #jid{lserver = Server}, IQ, Attrs, Children) ->
-    do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_access(Server, ID, From),
-        Follow <- get_follow(Children),
-        subscribe_bot(Server, ID, From, Follow),
-        {ok, IQ#iq{type = result, sub_el = []}}
-       ]).
-
-subscribe_bot(Server, ID, From, Follow) ->
-    {ok, wocky_db_bot:subscribe(Server, ID, From, Follow)}.
-
-%%%===================================================================
-%%% Action - unsubscribe
-%%%===================================================================
-
-handle_unsubscribe(From, #jid{lserver = Server}, IQ, Attrs) ->
-    do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_bot_exists(Server, ID),
-        unsubscribe_bot(Server, ID, From),
-        {ok, IQ#iq{type = result, sub_el = []}}
-       ]).
-
-unsubscribe_bot(Server, ID, From) ->
-    {ok, wocky_db_bot:unsubscribe(Server, ID, From)}.
-
-%%%===================================================================
-%%% Action - retrieve subscribers
-%%%===================================================================
-
-handle_retrieve_subscribers(From, #jid{lserver = Server}, IQ, Attrs) ->
-    do([error_m ||
-        ID <- get_id_from_node(Attrs),
-        check_owner(Server, ID, From),
-        SubscribersEl <- make_subscribers_element(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = SubscribersEl}}
-       ]).
-
-make_subscribers_element(Server, ID) ->
-    Subscribers = wocky_db_bot:subscribers(Server, ID),
-    {ok, #xmlel{name = <<"subscribers">>,
-                attrs = list_attrs(ID, Subscribers),
-                children = make_subscriber_elements(Subscribers)}}.
-
-make_subscriber_elements(Subscribers) ->
-    lists:map(fun make_subscriber_element/1, Subscribers).
-
-make_subscriber_element({JID, Follow}) ->
-    #xmlel{name = <<"subscriber">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)}],
-           children = [make_follow_element(Follow)]}.
-
-follow_data(true) -> <<"1">>;
-follow_data(false) -> <<"0">>.
 
 %%%===================================================================
 %%% Incoming packet handler
@@ -403,7 +244,7 @@ handle_roster_update(From, LServer, BotID,
                              attrs = Attrs,
                              children = Children}]) ->
     _ = do([error_m ||
-            check_owner(LServer, BotID, From),
+            bot_utils:check_owner(LServer, BotID, From),
             NewVersion <- get_version(Attrs),
             check_version(LServer, BotID, NewVersion),
             OldBot <- {ok, wocky_db_bot:get(LServer, BotID)},
@@ -480,7 +321,8 @@ remove_invalidated_affiliates(LServer, ID, RemovedItems) ->
     RemovedAffiliates = wocky_util:intersection(RemovedItems, OldAffiliates),
     RemovedAffiliations = [{I, none} || I <- RemovedAffiliates],
     wocky_db_bot:update_affiliations(LServer, ID, RemovedAffiliations),
-    notify_affiliates(jid:make(<<>>, LServer, <<>>), ID, RemovedAffiliations).
+    bot_utils:notify_affiliates(
+      jid:make(<<>>, LServer, <<>>), ID, RemovedAffiliations).
 
 remove_invalidated_subscribers(LServer, ID, Vis, RemovedItems)
   when Vis =:= ?WOCKY_BOT_VIS_FRIENDS;
@@ -504,8 +346,8 @@ notify_unsubscribe(LServer, ID, Item, Follow) ->
     #xmlel{name = <<"message">>,
            children = [#xmlel{name = <<"unsubscribed">>,
                               attrs = [{<<"xmlns">>, ?NS_BOT},
-                                       {<<"node">>, make_node(ID)}],
-                              children = [make_follow_element(Follow)]}]},
+                                       {<<"node">>, bot_utils:make_node(ID)}],
+                              children = [bot_utils:make_follow_element(Follow)]}]},
     ejabberd_router:route(jid:make(<<>>, LServer, <<>>), Item, Stanza).
 
 %%%===================================================================
@@ -549,45 +391,6 @@ maybe_ver_attr(_) -> [].
 %%% Common helpers
 %%%===================================================================
 
-get_id_from_node(Attrs) ->
-    case get_attr(<<"node">>, Attrs) of
-        {error, E} -> {error, E};
-        {ok, NodeValue} -> get_id_from_node_value(NodeValue)
-    end.
-
-get_id_from_node_value(Node) ->
-    case binary:split(Node, <<$/>>, [global]) of
-        [<<"bot">>, ID] -> {ok, ID};
-        _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)}
-    end.
-
-get_follow([]) -> {ok, false};
-get_follow([Child | Rest]) ->
-    case Child of
-        #xmlel{name = <<"follow">>,
-               children = [#xmlcdata{content = <<"1">>}]} -> {ok, true};
-        _ -> get_follow(Rest)
-    end.
-
-check_bot_exists(Server, ID) ->
-    case wocky_db_bot:exists(Server, ID) of
-        true -> ok;
-        false -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
-
-check_owner(Server, ID, User) ->
-    case jid:are_bare_equal(wocky_db_bot:owner(Server, ID), User) of
-        true -> ok;
-        false -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
-
-check_access(Server, ID, From) ->
-    case wocky_db_bot:has_access(Server, ID, From) of
-        true -> ok;
-        false -> {error, ?ERR_FORBIDDEN};
-        not_found -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
-
 get_fields(Children) ->
     get_fields(Children, []).
 
@@ -597,23 +400,13 @@ get_fields([El = #xmlel{name = <<"field">>,
                         attrs = Attrs}
             | Rest] , Acc) ->
     F = do([error_m ||
-            Name <- get_attr(<<"var">>, Attrs),
-            TypeBin <- get_attr(<<"type">>, Attrs),
+            Name <- bot_utils:get_attr(<<"var">>, Attrs),
+            TypeBin <- bot_utils:get_attr(<<"type">>, Attrs),
             Type <- check_field(Name, TypeBin),
             Value <- get_field_value(Type, El),
             #field{name = Name, type = Type, value = Value}
            ]),
     get_fields(Rest, [F | Acc]).
-
-get_attr(AttrName, Attrs) ->
-    case xml:get_attr(AttrName, Attrs) of
-        {value, Val} ->
-            {ok, Val};
-        false ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG,
-                                      <<"Missing ", AttrName/binary,
-                                        " attribute">>)}
-    end.
 
 get_field_value(string, FieldEl) ->
     wocky_xml:get_subel_cdata(<<"value">>, FieldEl);
@@ -805,17 +598,8 @@ size_and_hash(Name, List) ->
     [#field{name = <<Name/binary, "+size">>, type = int,
             value = length(List)},
      #field{name = <<Name/binary, "+hash">>, type = string,
-            value = list_hash(List)}
+            value = bot_utils:list_hash(List)}
     ].
-
-list_hash(List) ->
-    fun_chain:first(
-      List,
-      lists:sort(),
-      term_to_binary(),
-      erlang_murmurhash:murmurhash3_x64_128(),
-      integer_to_binary(36)
-     ).
 
 map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
     [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} |
@@ -878,22 +662,3 @@ make_ret_stanza(Fields) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Fields}.
-
-make_affiliate_element({JID, Affiliation}) ->
-    #xmlel{name = <<"affiliation">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)},
-                    {<<"affiliation">>, atom_to_binary(Affiliation, utf8)}]}.
-
-list_attrs(ID, List) ->
-    [{<<"xmlns">>, ?NS_BOT},
-     {<<"node">>, make_node(ID)},
-     {<<"size">>, integer_to_binary(length(List))},
-     {<<"hash">>, list_hash(List)}].
-
-make_node(ID) ->
-    <<"bot/", ID/binary>>.
-
-make_follow_element(Follow) ->
-    #xmlel{name = <<"follow">>,
-           children = [#xmlcdata{content = follow_data(Follow)}]}.
-
