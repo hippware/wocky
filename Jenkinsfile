@@ -12,7 +12,7 @@ node {
   sh "mix dialyzer"
 
   stage 'Unit Tests'
-  sh "mix eunit --nocolor"
+  sh "mix eunit --no-color"
 
   stage 'Integration Tests'
   sh "mix ct"
