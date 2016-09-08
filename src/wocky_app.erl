@@ -84,7 +84,9 @@ start(_StartType, _StartArgs) ->
     CfgPath = filename:join(CfgDir, Env ++ ".cfg"),
     {ok, CfgTerms} = file:consult(CfgPath),
 
+    ok = ensure_loaded(schemata),
     ok = configure_db(CfgTerms),
+    ok = configure_migrations(CfgTerms),
     {ok, _} = application:ensure_all_started(schemata),
 
     ok = cache_server_names(CfgTerms),
@@ -131,12 +133,19 @@ default_config(Key, Default) ->
     application:get_env(wocky, Key, Default).
 
 configure_db(CfgTerms) ->
-    ok = ensure_loaded(schemata),
     Cluster = proplists:get_value(schemata_cluster, CfgTerms),
     apply_db_config(Cluster).
 
 apply_db_config(undefined) -> ok;
 apply_db_config(Cluster) -> application:set_env(schemata, cluster, Cluster).
+
+configure_migrations(CfgTerms) ->
+    Table = proplists:get_value(migrations_table, CfgTerms),
+    apply_migrations_table(Table).
+
+apply_migrations_table(undefined) -> ok;
+apply_migrations_table(Table) ->
+    application:set_env(schemata, migrations_table, Table).
 
 cache_server_names(CfgTerms) ->
     Servers = proplists:get_value(hosts, CfgTerms),
