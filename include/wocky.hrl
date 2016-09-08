@@ -19,18 +19,19 @@
           order_by = [] :: atom() | [{atom(), asc | desc}]
          }).
 
--define(NS_TOKEN, <<"hippware.com/token">>).
--define(NS_PHONE, <<"hippware.com/hxep/phone">>).
--define(NS_HANDLE, <<"hippware.com/hxep/handle">>).
--define(NS_BOT, <<"hippware.com/hxep/bot">>).
--define(NS_GROUP_CHAT, <<"hippware.com/hxep/groupchat">>).
--define(NS_ERRORS, <<"hippware.com/hxep/errors">>).
--define(NS_GEOLOC, <<"http://jabber.org/protocol/geoloc">>).
+-define(NS_ERRORS,        <<"hippware.com/hxep/errors">>).
+-define(NS_TOKEN,         <<"hippware.com/hxep/token">>).
+-define(NS_PHONE,         <<"hippware.com/hxep/phone">>).
+-define(NS_HANDLE,        <<"hippware.com/hxep/handle">>).
+-define(NS_BOT,           <<"hippware.com/hxep/bot">>).
+-define(NS_GROUP_CHAT,    <<"hippware.com/hxep/groupchat">>).
 -define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
--define(NS_TROS, <<"hippware.com/hxep/http-file">>).
--define(NS_WOCKY_ROSTER, <<"hippware.com/hxep/roster">>).
--define(NS_ACCESS, <<"hippware.com/hxep/access">>).
--define(NS_ATOM, <<"http://www.w3.org/2005/Atom">>).
+-define(NS_TROS,          <<"hippware.com/hxep/http-file">>).
+-define(NS_WOCKY_ROSTER,  <<"hippware.com/hxep/roster">>).
+-define(NS_USER,          <<"hippware.com/hxep/user">>).
+-define(NS_ACCESS,        <<"hippware.com/hxep/access">>).
+-define(NS_GEOLOC,        <<"http://jabber.org/protocol/geoloc">>).
+-define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
 
 -define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
 -define(GROUP_CHAT_WITH_JID, <<"$$GROUP_CHAT$$">>).
