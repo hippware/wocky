@@ -30,6 +30,7 @@
 -define(NS_WOCKY_ROSTER,  <<"hippware.com/hxep/roster">>).
 -define(NS_USER,          <<"hippware.com/hxep/user">>).
 -define(NS_ACCESS,        <<"hippware.com/hxep/access">>).
+-define(NS_NOTIFICATIONS, <<"hippware.com/hxep/notifications">>).
 -define(NS_GEOLOC,        <<"http://jabber.org/protocol/geoloc">>).
 -define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
 

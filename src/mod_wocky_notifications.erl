@@ -13,20 +13,58 @@
 %% Hook callbacks
 -export([user_receive_packet_hook/4, offline_message_hook/3]).
 
+%% IQ handler
+-export([handle_iq/3]).
+
 
 %%%===================================================================
 %%% gen_mod implementation
 %%%===================================================================
 
+-spec start(ejabberd:server(), list()) -> any().
 start(Host, _Opts) ->
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS,
+                                  ?MODULE, handle_iq, parallel),
     wocky_util:add_hooks(hooks(), Host, ?MODULE, 30).
 
+-spec stop(ejabberd:server()) -> any().
 stop(Host) ->
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS),
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 30).
 
 hooks() ->
     [{user_receive_packet, user_receive_packet_hook},
      {offline_message_hook, offline_message_hook}].
+
+
+%%%===================================================================
+%%% IQ handler
+%%%===================================================================
+
+-spec handle_iq(ejabberd:jid(), ejabberd:jid(), iq()) -> iq().
+handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
+    #jid{luser = LUser, lserver = LServer, lresource = LResource} = From,
+    ok = handle_request(LUser, LServer, LResource, ReqEl),
+    IQ#iq{type = result};
+handle_iq(_From, _To, IQ) ->
+    make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
+
+handle_request(LUser, LServer, LResource, El = #xmlel{name = <<"enable">>}) ->
+    DeviceId = proplists:get_value(<<"device">>, El#xmlel.attrs),
+    CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
+    wocky_db:insert(LServer, device, #{user => LUser,
+                                       server => LServer,
+                                       resource => LResource,
+                                       device_id => DeviceId,
+                                       created_at => CreatedAt});
+handle_request(LUser, LServer, LResource, #xmlel{name = <<"disable">>}) ->
+    wocky_db:delete(LServer, device, all, #{user => LUser,
+                                            server => LServer,
+                                            resource => LResource}).
+
+make_error_response(IQ, ErrStanza) ->
+    ok = lager:warning("Error on notification IQ request: ~p", [ErrStanza]),
+    IQ#iq{type = error, sub_el = ErrStanza}.
 
 
 %%%===================================================================
