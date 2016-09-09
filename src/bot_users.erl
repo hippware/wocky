@@ -13,36 +13,35 @@
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--export([handle_retrieve_affiliations/4,
-         handle_update_affiliations/5,
-         handle_subscribe/5,
-         handle_unsubscribe/4,
-         handle_retrieve_subscribers/4]).
+-export([handle_retrieve_affiliations/3,
+         handle_update_affiliations/4,
+         handle_subscribe/4,
+         handle_unsubscribe/3,
+         handle_retrieve_subscribers/3]).
 
 %%%===================================================================
 %%% Action - retrieve affiliations
 %%%===================================================================
 
-handle_retrieve_affiliations(From, #jid{lserver = Server}, IQ, Attrs) ->
+handle_retrieve_affiliations(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_owner(Server, ID, From),
-        AffiliationsEl <- make_affiliations_element(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = AffiliationsEl}}
+        {ok, make_affiliations_element(Server, ID)}
        ]).
 
 make_affiliations_element(Server, ID) ->
     Affiliates = wocky_db_bot:affiliations(Server, ID),
-    {ok, #xmlel{name = <<"affiliations">>,
-                attrs = list_attrs(ID, Affiliates),
-                children = bot_utils:make_affiliate_elements(Affiliates)}}.
+    #xmlel{name = <<"affiliations">>,
+           attrs = list_attrs(ID, Affiliates),
+           children = bot_utils:make_affiliate_elements(Affiliates)}.
 
 %%%===================================================================
 %%% Action - update affiliations
 %%%===================================================================
 
 handle_update_affiliations(From, To = #jid{lserver = Server},
-                           IQ, Attrs, Children) ->
+                           Attrs, Children) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_owner(Server, ID, From),
@@ -51,8 +50,7 @@ handle_update_affiliations(From, To = #jid{lserver = Server},
         Affiliations <- check_affiliations(DirtyAffiliations, OwnerRoster, []),
         update_affiliations(Server, ID, Affiliations),
         bot_utils:notify_affiliates(To, ID, Affiliations),
-        {ok, IQ#iq{type = result,
-                   sub_el = make_affiliations_update_element(Server, ID)}}
+        {ok, make_affiliations_update_element(Server, ID)}
        ]).
 
 get_affiliations(Elements) ->
@@ -104,13 +102,13 @@ make_affiliations_update_element(Server, ID) ->
 %%% Action - subscribe
 %%%===================================================================
 
-handle_subscribe(From, #jid{lserver = Server}, IQ, Attrs, Children) ->
+handle_subscribe(From, #jid{lserver = Server}, Attrs, Children) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_access(Server, ID, From),
         Follow <- get_follow(Children),
         subscribe_bot(Server, ID, From, Follow),
-        {ok, IQ#iq{type = result, sub_el = []}}
+        {ok, []}
        ]).
 
 subscribe_bot(Server, ID, From, Follow) ->
@@ -128,40 +126,33 @@ get_follow([Child | Rest]) ->
 %%% Action - unsubscribe
 %%%===================================================================
 
-handle_unsubscribe(From, #jid{lserver = Server}, IQ, Attrs) ->
+handle_unsubscribe(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
-        check_bot_exists(Server, ID),
+        bot_utils:check_bot_exists(Server, ID),
         unsubscribe_bot(Server, ID, From),
-        {ok, IQ#iq{type = result, sub_el = []}}
+        {ok, []}
        ]).
 
 unsubscribe_bot(Server, ID, From) ->
     {ok, wocky_db_bot:unsubscribe(Server, ID, From)}.
 
-check_bot_exists(Server, ID) ->
-    case wocky_db_bot:exists(Server, ID) of
-        true -> ok;
-        false -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
-
 %%%===================================================================
 %%% Action - retrieve subscribers
 %%%===================================================================
 
-handle_retrieve_subscribers(From, #jid{lserver = Server}, IQ, Attrs) ->
+handle_retrieve_subscribers(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_owner(Server, ID, From),
-        SubscribersEl <- make_subscribers_element(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = SubscribersEl}}
+        {ok, make_subscribers_element(Server, ID)}
        ]).
 
 make_subscribers_element(Server, ID) ->
     Subscribers = wocky_db_bot:subscribers(Server, ID),
-    {ok, #xmlel{name = <<"subscribers">>,
-                attrs = list_attrs(ID, Subscribers),
-                children = make_subscriber_elements(Subscribers)}}.
+    #xmlel{name = <<"subscribers">>,
+           attrs = list_attrs(ID, Subscribers),
+           children = make_subscriber_elements(Subscribers)}.
 
 make_subscriber_elements(Subscribers) ->
     lists:map(fun make_subscriber_element/1, Subscribers).

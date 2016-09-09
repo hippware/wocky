@@ -6,7 +6,9 @@
 -export([
          get_subel_cdata/2,
          act_on_subel_cdata/3,
-         act_on_subel/3
+         act_on_subel/3,
+         check_namespace/2,
+         get_attr/2
         ]).
 
 -spec get_subel_cdata(binary(), exml:element()) -> {ok, binary()} |
@@ -31,4 +33,27 @@ act_on_subel(TagName, Element, Fun) ->
             {error,
              ?ERRT_BAD_REQUEST(?MYLANG,
                                <<"<", TagName/binary, "> element required">>)}
+    end.
+
+check_namespace(NS, El = #xmlel{name = Name, attrs = Attrs}) ->
+    case xml:get_attr_s(<<"xmlns">>, Attrs) of
+        NS ->
+            {ok, El};
+        <<>> ->
+            {error, ?ERRT_BAD_REQUEST(?MYLANG,
+                                      <<"Missing namespace on element",
+                                        Name/binary>>)};
+        X ->
+            {error, ?ERRT_BAD_REQUEST(?MYLANG,
+                                      <<"Invlid namespace: ", X/binary>>)}
+    end.
+
+get_attr(AttrName, Attrs) ->
+    case xml:get_attr(AttrName, Attrs) of
+        {value, Val} ->
+            {ok, Val};
+        false ->
+            {error, ?ERRT_BAD_REQUEST(?MYLANG,
+                                      <<"Missing ", AttrName/binary,
+                                        " attribute">>)}
     end.

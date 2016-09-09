@@ -61,75 +61,98 @@ stop(Host) ->
                 IQ :: iq()) -> iq().
 handle_iq(From, To, IQ) ->
     case handle_iq_type(From, To, IQ) of
-        {ok, ResponseIQ} -> ResponseIQ;
+        {ok, SubEl} -> IQ#iq{type = result, sub_el = SubEl};
         {error, Error} -> wocky_util:make_error_iq_response(IQ, Error)
     end.
 
 % Create
-handle_iq_type(From, _To, IQ = #iq{type = set,
-                                   sub_el = #xmlel{name = <<"create">>,
-                                                   children = Children}
-                                  }) ->
-    handle_create(From, IQ, Children);
+handle_iq_type(From, _To, #iq{type = set,
+                              sub_el = #xmlel{name = <<"create">>,
+                                              children = Children}
+                             }) ->
+    handle_create(From, Children);
 
 % Delete
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"delete">>,
-                                                  attrs = Attrs}
-                                 }) ->
-    handle_delete(From, To, IQ, Attrs);
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"delete">>,
+                                             attrs = Attrs}
+                            }) ->
+    handle_delete(From, To, Attrs);
 
 % Retrieve
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"bot">>,
-                                                  attrs = Attrs}
-                                 }) ->
-    handle_get(From, To, IQ, Attrs);
+handle_iq_type(From, To, #iq{type = get,
+                             sub_el = #xmlel{name = <<"bot">>,
+                                             attrs = Attrs}
+                            }) ->
+    handle_get(From, To, Attrs);
 
 % Update
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"fields">>,
-                                                  attrs = Attrs,
-                                                  children = Children}
-                                 }) ->
-    handle_update(From, To, IQ, Attrs, Children);
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"fields">>,
+                                             attrs = Attrs,
+                                             children = Children}
+                            }) ->
+    handle_update(From, To, Attrs, Children);
 
 % Retrieve affiliations
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"affiliations">>,
-                                                  attrs = Attrs}
-                                 }) ->
-    bot_users:handle_retrieve_affiliations(From, To, IQ, Attrs);
+handle_iq_type(From, To, #iq{type = get,
+                             sub_el = #xmlel{name = <<"affiliations">>,
+                                             attrs = Attrs}
+                            }) ->
+    bot_users:handle_retrieve_affiliations(From, To, Attrs);
 
 % Update affiliations
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"affiliations">>,
-                                                  attrs = Attrs,
-                                                  children = Children}
-                                 }) ->
-    bot_users:handle_update_affiliations(From, To, IQ, Attrs, Children);
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"affiliations">>,
+                                             attrs = Attrs,
+                                             children = Children}
+                            }) ->
+    bot_users:handle_update_affiliations(From, To, Attrs, Children);
 
 % Subscribe
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"subscribe">>,
-                                                  attrs = Attrs,
-                                                  children = Children}
-                                 }) ->
-    bot_users:handle_subscribe(From, To, IQ, Attrs, Children);
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"subscribe">>,
+                                             attrs = Attrs,
+                                             children = Children}
+                            }) ->
+    bot_users:handle_subscribe(From, To, Attrs, Children);
 
 % Unsubscribe
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"unsubscribe">>,
-                                                  attrs = Attrs}
-                                 }) ->
-    bot_users:handle_unsubscribe(From, To, IQ, Attrs);
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"unsubscribe">>,
+                                             attrs = Attrs}
+                            }) ->
+    bot_users:handle_unsubscribe(From, To, Attrs);
 
 % Retrieve subscribers
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"subscribers">>,
-                                                  attrs = Attrs}
-                                 }) ->
-    bot_users:handle_retrieve_subscribers(From, To, IQ, Attrs);
+handle_iq_type(From, To, #iq{type = get,
+                             sub_el = #xmlel{name = <<"subscribers">>,
+                                             attrs = Attrs}
+                            }) ->
+    bot_users:handle_retrieve_subscribers(From, To, Attrs);
+
+% Publish a note
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"publish">>,
+                                             attrs = Attrs,
+                                             children = Children}}) ->
+    bot_notes:handle_publish(From, To, Attrs, Children);
+
+% Retrieve a note
+handle_iq_type(From, To, #iq{type = get,
+                             sub_el = #xmlel{name = <<"notes">>,
+                                             attrs = Attrs,
+                                             children = Children}
+                            }) ->
+    bot_users:handle_retrieve_notes(From, To, Attrs, Children);
+
+% Delete a note
+handle_iq_type(From, To, #iq{type = set,
+                             sub_el = #xmlel{name = <<"retract">>,
+                                             attrs = Attrs,
+                                             children = Children}
+                            }) ->
+    bot_users:handle_retrieve_notes(From, To, Attrs, Children);
 
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -138,14 +161,14 @@ handle_iq_type(_From, _To, _IQ) ->
 %%% Action - create
 %%%===================================================================
 
-handle_create(From, IQ, Children) ->
+handle_create(From, Children) ->
     Server = wocky_app:server(),
     do([error_m ||
         Fields <- get_fields(Children),
         Fields2 <- add_server(Fields, Server),
         check_required_fields(Fields2, required_fields()),
         BotEl <- create_bot(From, Server, Fields2),
-        {ok, IQ#iq{type = result, sub_el = BotEl}}
+        {ok, BotEl}
        ]).
 
 add_server(Fields, Server) ->
@@ -156,12 +179,12 @@ add_server(Fields, Server) ->
 %%% Action - delete
 %%%===================================================================
 
-handle_delete(From, #jid{lserver = Server}, IQ, Attrs) ->
+handle_delete(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_owner(Server, ID, From),
         delete_bot(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = []}}
+        {ok, []}
        ]).
 
 delete_bot(Server, ID) ->
@@ -174,26 +197,26 @@ delete_bot(Server, ID) ->
 %%% Action - get
 %%%===================================================================
 
-handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
+handle_get(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_access(Server, ID, From),
         BotEl <- make_bot_el(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = BotEl}}
+        {ok, BotEl}
        ]).
 
 %%%===================================================================
 %%% Action - update
 %%%===================================================================
 
-handle_update(From, #jid{lserver = Server}, IQ, Attrs, Children) ->
+handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
     do([error_m ||
         ID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_owner(Server, ID, From),
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
         refresh_roster(Server, ID),
-        {ok, IQ#iq{type = result, sub_el = []}}
+        {ok, []}
        ]).
 
 %%%===================================================================
@@ -400,8 +423,8 @@ get_fields([El = #xmlel{name = <<"field">>,
                         attrs = Attrs}
             | Rest] , Acc) ->
     F = do([error_m ||
-            Name <- bot_utils:get_attr(<<"var">>, Attrs),
-            TypeBin <- bot_utils:get_attr(<<"type">>, Attrs),
+            Name <- wocky_xml:get_attr(<<"var">>, Attrs),
+            TypeBin <- wocky_xml:get_attr(<<"type">>, Attrs),
             Type <- check_field(Name, TypeBin),
             Value <- get_field_value(Type, El),
             #field{name = Name, type = Type, value = Value}
@@ -431,7 +454,7 @@ read_float(Binary) ->
 
 read_geoloc(GeolocEl) ->
     do([error_m ||
-        check_namespace(?NS_GEOLOC, GeolocEl),
+        wocky_xml:check_namespace(?NS_GEOLOC, GeolocEl),
         Lat <- wocky_xml:act_on_subel_cdata(
                  <<"lat">>, GeolocEl, fun read_float/1),
         Lon <- wocky_xml:act_on_subel_cdata(
@@ -442,15 +465,6 @@ read_geoloc(GeolocEl) ->
 add_owner(Owner, Fields) ->
     {ok, [#field{name = <<"owner">>, type = jid, value = jid:to_bare(Owner)} |
           Fields]}.
-
-check_namespace(NS, #xmlel{attrs = Attrs}) ->
-    case xml:get_attr_s(<<"xmlns">>, Attrs) of
-        NS ->
-            ok;
-        X ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG,
-                                      <<"Invlid namespace: ", X/binary>>)}
-    end.
 
 check_required_fields(_Fields, []) -> ok;
 check_required_fields(Fields, [#field{name = Name} | Rest]) ->

@@ -15,8 +15,8 @@
 
 -export([check_owner/3,
          check_access/3,
+         check_bot_exists/2,
          get_id_from_node/1,
-         get_attr/2,
          notify_affiliates/3,
          make_follow_element/1,
          make_affiliate_elements/1,
@@ -38,8 +38,14 @@ check_access(Server, ID, From) ->
         not_found -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
+check_bot_exists(Server, ID) ->
+    case wocky_db_bot:exists(Server, ID) of
+        true -> ok;
+        false -> {error, ?ERR_ITEM_NOT_FOUND}
+    end.
+
 get_id_from_node(Attrs) ->
-    case get_attr(<<"node">>, Attrs) of
+    case wocky_xml:get_attr(<<"node">>, Attrs) of
         {error, E} -> {error, E};
         {ok, NodeValue} -> get_id_from_node_value(NodeValue)
     end.
@@ -48,16 +54,6 @@ get_id_from_node_value(Node) ->
     case binary:split(Node, <<$/>>, [global]) of
         [<<"bot">>, ID] -> {ok, ID};
         _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)}
-    end.
-
-get_attr(AttrName, Attrs) ->
-    case xml:get_attr(AttrName, Attrs) of
-        {value, Val} ->
-            {ok, Val};
-        false ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG,
-                                      <<"Missing ", AttrName/binary,
-                                        " attribute">>)}
     end.
 
 notify_affiliates(Sender, ID, Affiliates) ->
