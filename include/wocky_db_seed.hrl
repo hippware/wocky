@@ -97,4 +97,11 @@
 
 -define(ROSTER_VIEWERS, [?BOT_B_JID, ?BOB_B_JID]).
 
+-define(NOTE, <<"test-note-id">>).
+-define(NOTE_PUB_TIME, 8888).
+-define(NOTE_UPDATE_TIME, 9999).
+-define(NOTE_TITLE, <<"Note Title">>).
+-define(NOTE_CONTENT, <<"This is a note I wrote on a boat in a moat">>).
+-define(NOTE_MEDIA, <<"<image><url>tros:server/image/blahblah</url></image>">>).
+
 -endif.

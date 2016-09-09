@@ -12,8 +12,8 @@
          insert_new_name/2, owner/2, affiliations/2,
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
-         owner_roster/2, owner_roster_ver/2, update_owner_roster/4
-
+         owner_roster/2, owner_roster_ver/2, update_owner_roster/4,
+         get_note/3, publish_note/6, delete_note/3
         ]).
 
 wocky_db_bot_test_() -> {
@@ -36,6 +36,12 @@ wocky_db_bot_test_() -> {
       ]},
 
       {inorder, [
+        test_get_note(),
+        test_publish_note(),
+        test_delete_note()
+      ]},
+
+      {inorder, [
         test_has_access(),
         test_update_affiliations(),
         test_subscribe(),
@@ -46,17 +52,16 @@ wocky_db_bot_test_() -> {
     ]}
   ]}.
 
+local_tables() -> [roster,
+                   bot,
+                   bot_name,
+                   bot_subscriber,
+                   note
+                  ].
+
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [roster,
-                                                  bot,
-                                                  bot_name,
-                                                  bot_subscriber
-                                                 ]),
-    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [roster,
-                                                    bot,
-                                                    bot_name,
-                                                    bot_subscriber
-                                                   ]).
+    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, local_tables()),
+    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()).
 
 after_all(_) ->
     ok.
@@ -205,6 +210,50 @@ test_subscribers() ->
       ]}
     ]}.
 
+test_get_note() ->
+    { "get_note", [
+      { "gets all fields on the note", [
+        ?_assertEqual(expected_note(), get_note(?LOCAL_CONTEXT, ?BOT, ?NOTE))
+      ]},
+      { "gets note_found on non-existant notes", [
+        ?_assertEqual(not_found, get_note(?LOCAL_CONTEXT, wocky_db:create_id(),
+                                          ?NOTE)),
+        ?_assertEqual(not_found, get_note(?LOCAL_CONTEXT, ?BOT,
+                                          wocky_db:create_id()))
+      ]}
+    ]}.
+
+test_publish_note() ->
+    ID = <<"newID">>,
+    Title = <<"New Title">>,
+    Content = <<"New Content">>,
+    Media = <<"New Media">>,
+    { "publish_note", [
+      { "publishes a new note when one doesn't exist", [
+        ?_assertEqual(ok, publish_note(?LOCAL_CONTEXT, ?BOT, ID,
+                                       Title, Content, Media)),
+        ?_assertMatch(#{id := ID, title := Title, content := Content,
+                        media := Media}, get_note(?LOCAL_CONTEXT, ?BOT, ID))
+      ]},
+      { "updates an existing note", [
+        ?_assertEqual(ok, publish_note(?LOCAL_CONTEXT, ?BOT, ID,
+                                       <<"Updated Title">>, Content, Media)),
+        ?_assertMatch(#{id := ID, title := <<"Updated Title">>, content := Content,
+                        media := Media}, get_note(?LOCAL_CONTEXT, ?BOT, ID))
+      ]}
+    ]}.
+
+test_delete_note() ->
+    { "delete_note", [
+      { "deletes an existing note", [
+        ?_assertEqual(ok, delete_note(?LOCAL_CONTEXT, ?BOT, ?NOTE)),
+        ?_assertEqual(not_found, get_note(?LOCAL_CONTEXT, ?BOT, ?NOTE))
+      ]},
+      { "does not fail on a non-existant note", [
+        ?_assertEqual(ok, delete_note(?LOCAL_CONTEXT, ?BOT, <<"NotANoteID">>))
+      ]}
+    ]}.
+
 test_has_access() ->
     { "has_access", [
       { "returns true for owners only with VIS_OWNER", [
@@ -340,3 +389,6 @@ new_bot() ->
       alerts => ?WOCKY_BOT_ALERT_ENABLED,
       owner_roster => null, owner_roster_ver => null
      }.
+
+expected_note() ->
+    hd(wocky_db_seed:seed_data(note, none)).

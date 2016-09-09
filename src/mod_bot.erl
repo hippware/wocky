@@ -138,7 +138,7 @@ handle_iq_type(From, To, #iq{type = set,
                                              children = Children}}) ->
     bot_notes:handle_publish(From, To, Attrs, Children);
 
-% Retrieve a note
+% Retrieve note(s)
 handle_iq_type(From, To, #iq{type = get,
                              sub_el = #xmlel{name = <<"notes">>,
                                              attrs = Attrs,

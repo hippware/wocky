@@ -8,7 +8,8 @@
          act_on_subel_cdata/3,
          act_on_subel/3,
          check_namespace/2,
-         get_attr/2
+         get_attr/2,
+         get_sub_el/2
         ]).
 
 -spec get_subel_cdata(binary(), exml:element()) -> {ok, binary()} |
@@ -56,4 +57,11 @@ get_attr(AttrName, Attrs) ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG,
                                       <<"Missing ", AttrName/binary,
                                         " attribute">>)}
+    end.
+
+get_sub_el(Name, El) ->
+    case xml:get_path_s(El, [{elem, Name}]) of
+        <<>> -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Missing '", Name/binary,
+                                                     "' element">>)};
+        SubEl -> {ok, SubEl}
     end.

@@ -18,7 +18,10 @@
          unsubscribe/3,
          owner_roster/2,
          owner_roster_ver/2,
-         update_owner_roster/4
+         update_owner_roster/4,
+         publish_note/6,
+         get_note/3,
+         delete_note/3
         ]).
 
 -include("wocky.hrl").
@@ -167,6 +170,30 @@ update_owner_roster(Server, ID, Items, Version) ->
                     #{owner_roster => [jid:to_binary(I) || I <-Items],
                       owner_roster_ver => Version},
                     #{id => ID}).
+
+-spec publish_note(wocky_db:server(), wocky_db:id(),
+                   binary(), binary(), binary(), binary()) -> ok.
+publish_note(Server, BotID, NoteID, Title, Content, Media) ->
+    Existing = wocky_db:select_one(Server, note, id,
+                                   #{id => NoteID, bot => BotID}),
+    MaybePublished = case Existing of
+                         not_found -> #{published => now};
+                         _ -> #{}
+                     end,
+    Note = MaybePublished#{id => NoteID,
+                           bot => BotID,
+                           updated => now,
+                           title => Title,
+                           content => Content,
+                           media => Media},
+    wocky_db:insert(Server, note, Note).
+
+get_note(Server, BotID, NoteID) ->
+    wocky_db:select_row(Server, note, all, #{id => NoteID, bot => BotID}).
+
+-spec delete_note(wocky_db:server(), wocky_db:id(), binary()) -> ok.
+delete_note(Server, BotID, NoteID) ->
+    wocky_db:delete(Server, note, all, #{id => NoteID, bot => BotID}).
 
 %%%===================================================================
 %%% Private helpers

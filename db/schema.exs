@@ -338,5 +338,25 @@ defmodule Schemata.Schemas.Wocky do
       ],
       primary_key: :shortname
     ]
+
+    table :note, [
+      columns: [
+        id:               :text,
+        bot:              :timeuuid,
+        published:        :timestamp,
+        updated:          :timestamp,
+        title:            :text,
+        content:          :text,
+        media:            :text
+      ],
+      primary_key: [:id, :bot]
+    ]
+
+    view :bot_note, [
+      from: :note,
+      columns: [:bot, :id],
+      primary_key: [:bot, :id]
+    ]
+
   end
 end
