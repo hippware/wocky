@@ -18,14 +18,13 @@ register(UserJID, DeviceId) ->
     User = jid:to_binary(UserJID),
     (handler()):register(User, DeviceId).
 
--spec notify(ejabberd:jid(), ejabberd:jid(), binary()) -> ok.
-notify(FromJID, ToJID, Message) ->
+-spec notify(binary(), ejabberd:jid(), binary()) -> ok.
+notify(Endpoint, FromJID, Message) ->
     From = jid:to_binary(FromJID),
-    To = jid:to_binary(ToJID),
     ok = lager:debug(
-           "Sending notification for message from ~s to ~s with body '~s'",
-           [From, To, Message]),
-    (handler()):notify(From, To, Message).
+           "Sending notification for message from ~s with body '~s'",
+           [From, Message]),
+    (handler()):notify(Endpoint, From, Message).
 
 handler() ->
     {ok, Handler} = application:get_env(wocky, notification_handler),

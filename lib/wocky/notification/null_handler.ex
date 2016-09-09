@@ -5,7 +5,7 @@ defmodule Wocky.Notification.NullHandler do
     {:ok, device}
   end
 
-  def notify(_from, _to, _body) do
+  def notify(_endpoint, _from, _body) do
     :ok
   end
 end

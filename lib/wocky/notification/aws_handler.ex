@@ -4,8 +4,6 @@ defmodule Wocky.Notification.AWSHandler do
   @behaviour :wocky_notification_handler
 
   @application_arn "arn:aws:sns:us-east-1:773488857071:app/APNS_SANDBOX/tinyrobot_dev"
-  @topic_arn "arn:aws:sns:us-east-1:773488857071:wocky"
-  @subject "Message Received"
 
   def register(user, device_id) do
     {:ok, %{body: body}} =
@@ -23,10 +21,11 @@ defmodule Wocky.Notification.AWSHandler do
     {:ok, arn}
   end
 
-  def notify(_from, _to, body) do
+  def notify(endpoint, from, body) do
+    subject = "Message Received from #{from}"
     {:ok, _response} =
       body
-      |> SNS.publish(%{subject: @subject, topic_arn: @topic_arn})
+      |> SNS.publish(%{subject: subject, target_arn: endpoint})
       |> ExAws.request
 
     :ok

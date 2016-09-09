@@ -85,7 +85,10 @@ user_receive_packet_hook(_JID, From, To, Packet) ->
 handle_incoming_message(From, To, Packet) ->
     case should_notify(Packet) of
         false -> ok;
-        Body -> notify_message(From, To, Body)
+        Body ->
+            Endpoints = lookup_endpoints(To),
+            [notify_message(Endpoint, From, Body) || Endpoint <- Endpoints],
+            ok
     end.
 
 should_notify(Packet) ->
@@ -104,5 +107,9 @@ get_body(Packet) ->
         BodyTag -> xml:get_tag_cdata(BodyTag)
     end.
 
-notify_message(From, To, Body) ->
-    wocky_notification_handler:notify(From, To, Body).
+lookup_endpoints(#jid{luser = LUser, lserver = LServer}) ->
+    wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
+                                                        server => LServer}).
+
+notify_message(Endpoint, From, Body) ->
+    wocky_notification_handler:notify(Endpoint, From, Body).
