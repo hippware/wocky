@@ -11,6 +11,7 @@ defmodule Schemata.DeviceIdTableMigration do
         server:     :text,      # Server (domainpart of JID)
         resource:   :text,      # Resource (resourcepart of JID)
         device_id:  :text,      # Device ID
+        endpoint:   :text,      # SNS application endpoint ARN
         created_at: :timestamp  # When the device was registered
       ],
       primary_key: [:user, :server, :resource]

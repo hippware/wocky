@@ -44,20 +44,23 @@ hooks() ->
 -spec handle_iq(ejabberd:jid(), ejabberd:jid(), iq()) -> iq().
 handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
     #jid{luser = LUser, lserver = LServer, lresource = LResource} = From,
-    ok = handle_request(LUser, LServer, LResource, ReqEl),
+    ok = handle_request(From, LUser, LServer, LResource, ReqEl),
     IQ#iq{type = result};
 handle_iq(_From, _To, IQ) ->
     make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
 
-handle_request(LUser, LServer, LResource, El = #xmlel{name = <<"enable">>}) ->
-    DeviceId = proplists:get_value(<<"device">>, El#xmlel.attrs),
+handle_request(JID, LUser, LServer, LResource,
+               #xmlel{name = <<"enable">>, attrs = Attrs}) ->
+    DeviceId = proplists:get_value(<<"device">>, Attrs),
+    Endpoint = wocky_notification_handler:register(JID, DeviceId),
     CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
     wocky_db:insert(LServer, device, #{user => LUser,
                                        server => LServer,
                                        resource => LResource,
                                        device_id => DeviceId,
+                                       endpoint => Endpoint,
                                        created_at => CreatedAt});
-handle_request(LUser, LServer, LResource, #xmlel{name = <<"disable">>}) ->
+handle_request(_, LUser, LServer, LResource, #xmlel{name = <<"disable">>}) ->
     wocky_db:delete(LServer, device, all, #{user => LUser,
                                             server => LServer,
                                             resource => LResource}).
