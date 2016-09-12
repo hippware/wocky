@@ -39,7 +39,11 @@ all() ->
      update_affiliations,
      friends_only_permissions,
      roster_change_triggers,
-     blocked_group
+     blocked_group,
+     publish_note,
+     retract_note,
+     edit_note,
+     get_notes
     ].
 
 suite() ->

@@ -16,7 +16,7 @@
 %% be used for ID-based lookups.
 -spec filter_with_rsm([map()], jlib:rsm_in()) -> {[map()], jlib:rsm_out()}.
 filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
-                               direction = before, max = undefined}) ->
+                               max = undefined}) ->
     get_result_list(Items, Items, 0);
 
 filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
