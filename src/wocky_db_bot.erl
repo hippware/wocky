@@ -21,6 +21,7 @@
          update_owner_roster/4,
          publish_note/6,
          get_note/3,
+         get_notes/2,
          delete_note/3
         ]).
 
@@ -190,6 +191,9 @@ publish_note(Server, BotID, NoteID, Title, Content, Media) ->
 
 get_note(Server, BotID, NoteID) ->
     wocky_db:select_row(Server, note, all, #{id => NoteID, bot => BotID}).
+
+get_notes(Server, BotID) ->
+    wocky_db:select(Server, note, all, #{bot => BotID}).
 
 -spec delete_note(wocky_db:server(), wocky_db:id(), binary()) -> ok.
 delete_note(Server, BotID, NoteID) ->
