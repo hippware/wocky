@@ -11,7 +11,9 @@
 
 -export([filter_with_rsm/2]).
 
-%% This function takes a list of records and an RSM 
+%% This function takes a list of records and an RSM selection structure.
+%% The records must be maps and must contain an `id' field which is to
+%% be used for ID-based lookups.
 -spec filter_with_rsm([map()], jlib:rsm_in()) -> {[map()], jlib:rsm_out()}.
 filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
                                direction = before, max = undefined}) ->
@@ -30,8 +32,9 @@ filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
 filter_with_rsm(Items, #rsm_in{id = RSMID, max = C,
                                direction = before})
   when RSMID =/= undefined ->
-    BeforeResult =
-    lists:takewhile(fun(#{id := ID}) -> ID =/= RSMID end, Items),
+    {_AfterRev, BeforeResultRev} =
+    split_include(fun(#{id := ID}) -> ID =/= RSMID end, lists:reverse(Items)),
+    BeforeResult = lists:reverse(BeforeResultRev),
     {Before, Result} = safesplit(length(BeforeResult) - C, BeforeResult),
     get_result_list(Items, Result, length(Before));
 
