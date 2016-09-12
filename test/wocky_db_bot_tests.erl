@@ -238,8 +238,10 @@ test_publish_note() ->
       { "updates an existing note", [
         ?_assertEqual(ok, publish_note(?LOCAL_CONTEXT, ?BOT, ID,
                                        <<"Updated Title">>, Content, Media)),
-        ?_assertMatch(#{id := ID, title := <<"Updated Title">>, content := Content,
-                        media := Media}, get_note(?LOCAL_CONTEXT, ?BOT, ID))
+        ?_assertMatch(#{id := ID, title := <<"Updated Title">>,
+                        content := Content,
+                        media := Media},
+                      get_note(?LOCAL_CONTEXT, ?BOT, ID))
       ]}
     ]}.
 

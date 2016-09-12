@@ -365,11 +365,14 @@ remove_invalidated_subscriber(LServer, ID, Item) ->
 notify_unsubscribe(LServer, ID, Item, Follow) ->
     Stanza =
     #xmlel{name = <<"message">>,
-           children = [#xmlel{name = <<"unsubscribed">>,
-                              attrs = [{<<"xmlns">>, ?NS_BOT},
-                                       {<<"node">>, bot_utils:make_node(ID)}],
-                              children = [bot_utils:make_follow_element(Follow)]}]},
+           children = [make_unsubscribed(ID, Follow)]},
     ejabberd_router:route(jid:make(<<>>, LServer, <<>>), Item, Stanza).
+
+make_unsubscribed(ID, Follow) ->
+    #xmlel{name = <<"unsubscribed">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT},
+                    {<<"node">>, bot_utils:make_node(ID)}],
+           children = [bot_utils:make_follow_element(Follow)]}.
 
 %%%===================================================================
 %%% Roster changed packet handler

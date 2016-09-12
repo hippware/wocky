@@ -65,7 +65,7 @@ test_get_by_id() ->
                      filter_with_rsm(unordered_data(),
                                      rsm_in(10, aft,
                                             unordered_id(50), undefined)))
- 
+
      ]},
      { "gets an empty result set for an invalid ID", [
        ?_assertEqual({[], rsm_out(undefined, undefined, undefined)},
