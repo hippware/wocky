@@ -44,7 +44,7 @@ check_namespace(NS, El = #xmlel{name = Name, attrs = Attrs}) ->
             {ok, El};
         <<>> ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG,
-                                      <<"Missing namespace on element",
+                                      <<"Missing namespace on element ",
                                         Name/binary>>)};
         X ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG,

@@ -351,14 +351,5 @@ defmodule Schemata.Schemas.Wocky do
       ],
       primary_key: [:bot, :id]
     ]
-
-    # Look up notes by most recently updated
-    view :bot_note, [
-      from: :note,
-      columns: [:bot, :id],
-      primary_key: [:bot, :id, :updated],
-      order_by: [updated: :desc]
-    ]
-
   end
 end

@@ -143,7 +143,7 @@ handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"query">>,
                                                   attrs = Attrs}
                                  }) ->
-    bot_notes:handle_retrieve(From, To, IQ, Attrs);
+    bot_notes:handle_query(From, To, IQ, Attrs);
 
 % Delete a note
 handle_iq_type(From, To, #iq{type = set,

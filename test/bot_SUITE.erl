@@ -12,6 +12,7 @@
 
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
+-compile({parse_transform, do}).
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 
@@ -22,12 +23,16 @@
 -define(CREATE_RADIUS,      10).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
+-define(CREATED_NOTES,      50).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
 
 all() ->
-    [create,
+    [
+     get_notes,
+     create,
      retrieve,
      update,
      affiliations,
@@ -42,8 +47,7 @@ all() ->
      blocked_group,
      publish_note,
      retract_note,
-     edit_note,
-     get_notes
+     edit_note
     ].
 
 suite() ->
@@ -69,12 +73,13 @@ init_per_testcase(CaseName, Config) ->
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
+local_tables() ->
+    [bot, bot_name, roster, bot_subscriber, note].
+
 reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot, bot_name, roster,
-                                           bot_subscriber]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [bot, bot_name, roster,
-                                               bot_subscriber]),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
     Users = escalus:get_users([alice, bob, carol, karen, robert, tim]),
     Config1 = fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -414,6 +419,99 @@ blocked_group(Config) ->
         expect_iq_error(retrieve_stanza(), Tim)
       end).
 
+publish_note(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        NoteID = <<"note1">>,
+        Content = <<"content ZZZ">>,
+        Title = <<"title ZZZ">>,
+        % Alice publishes a note to her bot
+        expect_iq_success(
+          publish_note_stanza(?BOT, NoteID, Title, Content),
+          Alice),
+
+        % Carol and Karen are subscribers, and so receive a notification
+        % Bob is an affiliate but not subscribed, so does not receive anything
+        expect_note_publication(Carol, ?BOT, NoteID, Title, Content),
+        expect_note_publication(Karen, ?BOT, NoteID, Title, Content),
+
+        % Nobody else can publish a note to the bot besides the owner
+        expect_iq_error(
+          publish_note_stanza(?BOT, NoteID, Title, Content),
+          Bob),
+        expect_iq_error(
+          publish_note_stanza(?BOT, NoteID, Title, Content),
+          Carol),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
+
+
+retract_note(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        % Nobody else can publish a note to the bot besides the owner
+        expect_iq_error(
+          retract_note_stanza(?BOT, ?NOTE),
+          Bob),
+        expect_iq_error(
+          retract_note_stanza(?BOT, ?NOTE),
+          Carol),
+
+        % Alice can retract the note as its owner
+        expect_iq_success(
+          retract_note_stanza(?BOT, ?NOTE),
+          Alice),
+
+        % Carol and Karen are subscribers, and so receive a notification
+        % Bob is an affiliate but not subscribed, so does not receive anything
+        expect_note_retraction(Carol, ?BOT, ?NOTE),
+        expect_note_retraction(Karen, ?BOT, ?NOTE),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
+
+edit_note(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        NoteID = ?NOTE,
+        Content = <<"updated content">>,
+        Title = <<"updated title">>,
+        % Alice updates a note on her bot
+        expect_iq_success(
+          publish_note_stanza(?BOT, NoteID, Title, Content),
+          Alice),
+
+        % Carol and Karen are subscribers, and so receive a notification
+        % Bob is an affiliate but not subscribed, so does not receive anything
+        expect_note_publication(Carol, ?BOT, NoteID, Title, Content),
+        expect_note_publication(Karen, ?BOT, NoteID, Title, Content),
+
+        % Nobody else can edit a note to the bot besides the owner
+        expect_iq_error(
+          publish_note_stanza(?BOT, NoteID, Title, Content),
+          Bob),
+        expect_iq_error(
+          publish_note_stanza(?BOT, NoteID, Title, Content),
+          Carol),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
+
+get_notes(Config) ->
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [note]),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        % Alice publishes a bunch of notes on her bot
+        lists:foreach(
+          add_note(Alice, [Carol, Karen], _), lists:seq(1, ?CREATED_NOTES)),
+
+        get_notes(Bob, #rsm_in{max = 10}, 1, 10),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -709,4 +807,249 @@ follow_cdata(true) -> <<"1">>.
 
 delete_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(<<"delete">>)).
+
+publish_note_stanza(BotID, NoteID, Title, Content) ->
+    test_helper:iq_set(?NS_BOT, publish_el(BotID, NoteID, Title, Content)).
+
+publish_el(BotID, NoteID, Title, Content) ->
+    #xmlel{name = <<"publish">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = item_el(NoteID, Title, Content)}.
+
+item_el(NoteID) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}]}.
+item_el(NoteID, Title, Content) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}],
+           children = entry_el(Title, Content)}.
+
+entry_el(Title, Content) ->
+    #xmlel{name = <<"entry">>,
+           attrs = [{<<"xmlns">>, ?NS_ATOM}],
+           children = note_fields(Title, Content)}.
+
+note_fields(Title, Content) ->
+    [#xmlel{name = <<"title">>,
+            children = [#xmlcdata{content = Title}]},
+     #xmlel{name = <<"content">>,
+            children = [#xmlcdata{content = Content}]}].
+
+retract_note_stanza(BotID, NoteID) ->
+    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
+
+retract_el(BotID, NoteID) ->
+    #xmlel{name = <<"retract">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = [item_el(NoteID)]}.
+
+expect_note_publication(Client, BotID, NoteID, Title, Content) ->
+    Stanza = escalus:wait_for_stanza(Client),
+    escalus:assert(
+      is_publication_update(BotID, NoteID, Title, Content, _), Stanza).
+
+is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
+    R = do([error_m ||
+            [Event] <- check_get_children(Stanza, <<"message">>),
+            [Items] <- check_get_children(Event, <<"event">>,
+                                          [{<<"xmlns">>, ?NS_BOT}]),
+            [Item] <- check_get_children(Items, <<"items">>,
+                                         [{<<"node">>, bot_node(BotID)}]),
+            [Entry] <- check_get_children(Item, <<"item">>,
+                                          [{<<"id">>, NoteID}]),
+            check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
+            check_children_cdata(Entry, [{<<"title">>, Title},
+                                         {<<"content">>, Content}]),
+            ok
+           ]),
+    ct:log("is_publication_update result: ~p", [R]),
+    R =:= ok.
+
+
+check_get_children([], Name) -> {error, {el_not_found, Name}};
+check_get_children([El | Rest], Name) ->
+    case check_get_children(El, Name) of
+        {ok, Children} -> {ok, Children};
+        {error, _} -> check_get_children(Rest, Name)
+    end;
+
+check_get_children(#xmlel{name = Name, children = Children}, Name) ->
+    {ok, Children};
+check_get_children(_, Name) -> {error, {no_element, Name}}.
+
+check_get_children(El = #xmlel{name = Name, attrs = Attrs, children = Children},
+                   Name, CheckAttrs) ->
+    ct:log("Getting children for ~p ~p", [Name, El]),
+    case lists:all(has_attr(Attrs, _), CheckAttrs) of
+        true -> {ok, Children};
+        false -> {error, {missing_attr, CheckAttrs}}
+    end;
+check_get_children(_, Name, Attr) ->
+    {error, {no_or_incorrect_element, Name, Attr}}.
+
+check_children_cdata(_Element, []) -> ok;
+check_children_cdata(Element, [{Name, Value} | Rest]) ->
+    case xml:get_path_s(Element, [{elem, Name}, cdata]) of
+        Value -> check_children_cdata(Element, Rest);
+        E -> {error, {no_or_incorrect_element, Name, Value, Element, E}}
+    end.
+
+has_attr(Attrs, {Name, Val}) ->
+    {value, Val} =:= xml:get_attr(Name, Attrs).
+
+expect_note_retraction(Client, BotID, NoteID) ->
+    Stanza = escalus:wait_for_stanza(Client),
+    escalus:assert(
+      is_retraction_update(BotID, NoteID, _), Stanza).
+
+is_retraction_update(BotID, NoteID, Stanza) ->
+    R = do([error_m ||
+            [Event] <- check_get_children(Stanza, <<"message">>),
+            [Items] <- check_get_children(Event, <<"event">>,
+                                          [{<<"xmlns">>, ?NS_BOT}]),
+            [Retract] <- check_get_children(Items, <<"items">>,
+                                            [{<<"node">>, bot_node(BotID)}]),
+            [] <- check_get_children(Retract, <<"retract">>,
+                                     [{<<"id">>, NoteID}]),
+            ok
+           ]),
+    ct:log("is_retraction_update result: ~p", [R]),
+    R =:= ok.
+
+add_note(Client, Subs, N) ->
+    NoteID = note_id(N),
+    Title = note_title(N),
+    Content = note_content(N),
+    expect_iq_success(
+      publish_note_stanza(?BOT, NoteID, Title, Content), Client),
+
+    lists:foreach(
+        expect_note_publication(_, ?BOT, NoteID, Title, Content),
+        Subs).
+
+get_notes(Client, RSM, First, Last) ->
+    Result = expect_iq_success(
+               test_helper:iq_get(?NS_BOT, query_el(RSM)), Client),
+
+    escalus:assert(is_result(_, First, Last), Result).
+
+query_el(RSM) ->
+    #xmlel{name = <<"query">>,
+           attrs = [{<<"node">>, bot_node(?BOT)}],
+           children = [rsm_elem(RSM)]}.
+
+is_result(Stanza, First, Last) ->
+    R = do([error_m ||
+            [Query] <- check_get_children(Stanza, <<"iq">>),
+            Children <- check_get_children(Query, <<"query">>,
+                                           [{<<"xmlns">>, ?NS_BOT}]),
+            RSM <- check_get_children(Children, <<"set">>,
+                                      [{<<"xmlns">>, ?NS_RSM}]),
+            RSMOut <- decode_rsm(RSM, #rsm_out{}),
+            check_rsm(RSMOut, First, Last),
+            check_notes(Children, First, Last),
+            ok
+           ]),
+    ct:log("is_result: ~p", [R]),
+    R =:= ok.
+
+%% RSM encoding
+rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id, index=Index}) ->
+    #xmlel{name = <<"set">>,
+           children = skip_undefined([
+                maybe_rsm_max(Max),
+                maybe_rsm_index(Index),
+                maybe_rsm_direction(Direction, Id)])}.
+
+rsm_id_children(undefined) -> [];
+rsm_id_children(Id) -> [#xmlcdata{content = Id}].
+
+maybe_rsm_direction(undefined, undefined) ->
+    undefined;
+maybe_rsm_direction(Direction, Id) ->
+    #xmlel{
+        name = atom_to_binary(Direction, latin1),
+        children = rsm_id_children(Id)}.
+
+maybe_rsm_index(undefined) ->
+    undefined;
+maybe_rsm_index(Index) when is_integer(Index) ->
+    #xmlel{
+        name = <<"index">>,
+        children = [#xmlcdata{content = integer_to_list(Index)}]}.
+
+maybe_rsm_max(undefined) ->
+    undefined;
+maybe_rsm_max(Max) when is_integer(Max) ->
+    #xmlel{
+        name = <<"max">>,
+        children = [#xmlcdata{content = integer_to_list(Max)}]}.
+
+skip_undefined(Xs) ->
+    [X || X <- Xs, X =/= undefined].
+
+%% RSM decoding
+decode_rsm([], Acc) -> {ok, Acc};
+decode_rsm([#xmlel{name = <<"first">>,
+                  attrs = [{<<"index">>, Index}],
+                  children = [#xmlcdata{content = First}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{index = binary_to_integer(Index),
+                                 first = First});
+decode_rsm([#xmlel{name = <<"last">>,
+                  children = [#xmlcdata{content = Last}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{last = Last});
+decode_rsm([#xmlel{name = <<"count">>,
+                  children = [#xmlcdata{content = Count}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{count = binary_to_integer(Count)});
+decode_rsm([El | _], _) ->
+    {error, {unknown_rsm_el, El}}.
+
+check_rsm(#rsm_out{count = Count, index = Index, first = First, last = Last},
+          ExpectFirst, ExpectLast) ->
+    FirstID = note_id(ExpectFirst),
+    LastID = note_id(ExpectLast),
+    case {Count, Index+1, First, Last} of
+        {?CREATED_NOTES, ExpectFirst, FirstID, LastID} ->
+            ok;
+        _ ->
+            {error, bad_rsm}
+    end.
+
+check_notes(Children, First, Last) ->
+    Expected = lists:seq(First, Last),
+    check_notes(Children, Expected).
+
+% Should be exactly one element left - the RSM set (which we already checked)
+check_notes([_RSM], []) -> ok;
+check_notes(Children, []) -> {error, {extra_notes, Children}};
+check_notes(Children, [I | Rest]) ->
+    ExpectedLen = length(Children) - 1,
+    Remaining = lists:filter(
+                  is_note(I, _), Children),
+    case length(Remaining) of
+        ExpectedLen -> check_notes(Remaining, Rest);
+        _ -> {error, {not_found, I}}
+    end.
+
+is_note(I, #xmlel{name = <<"item">>,
+                  attrs = Attrs,
+                  children = [Entry]}) ->
+    {value, note_id(I)} =:= xml:get_attr(<<"id">>, Attrs)
+    andalso
+    is_note_entry(I, Entry);
+is_note(_, _) -> false.
+
+is_note_entry(I, El = #xmlel{name = <<"entry">>,
+                             attrs = [{<<"xmlns">>, ?NS_ATOM}]}) ->
+    note_title(I) =:= xml:get_path_s(El, [{elem, <<"title">>}, cdata])
+    andalso
+    note_content(I) =:= xml:get_path_s(El, [{elem, <<"content">>}, cdata]);
+is_note_entry(_, _) -> false.
+
+note_id(I) ->
+    <<"ID_", (integer_to_binary(I))/binary>>.
+note_title(I) ->
+    <<"Title_", (integer_to_binary(I))/binary>>.
+note_content(I) ->
+    <<"Content_", (integer_to_binary(I))/binary>>.
 

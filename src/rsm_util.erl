@@ -51,16 +51,17 @@ filter_with_rsm(Items, #rsm_in{index = Index, max = C}) ->
     get_result_list(Items, Result, length(Before)).
 
 get_result_list(Items, Result, FirstIndex) ->
-    First = ?EX_TO_UNDEFINED(
-               integer_to_binary(maps:get(id, hd(Result)))),
+    First = ?EX_TO_UNDEFINED(get_id(hd(Result))),
     Index = case First of
                 undefined -> undefined;
                 _ -> FirstIndex
             end,
-    Last = ?EX_TO_UNDEFINED(
-              integer_to_binary(maps:get(id, lists:last(Result)))),
+    Last = ?EX_TO_UNDEFINED(get_id(lists:last(Result))),
     {Result, #rsm_out{count = length(Items), index = Index,
                       first = First, last = Last}}.
+
+get_id(#{id := ID}) when is_integer(ID) -> integer_to_binary(ID);
+get_id(#{id := ID}) when is_binary(ID) -> ID.
 
 safesplit(N, List) when N < 0 ->
     {[], List};

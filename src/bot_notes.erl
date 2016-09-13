@@ -12,11 +12,11 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 
--export([handle_retrieve/4,
+-export([handle_query/4,
          handle_publish/4,
          handle_retract/4]).
 
-handle_retrieve(From, #jid{lserver = LServer}, IQ, Attrs) ->
+handle_query(From, #jid{lserver = LServer}, IQ, Attrs) ->
     do([error_m ||
         BotID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_access(LServer, BotID, From),
@@ -30,7 +30,7 @@ handle_retract(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
         BotID <- bot_utils:get_id_from_node(Attrs),
         bot_utils:check_owner(LServer, BotID, From),
         Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
-        NoteID <- wocky_xml:get_attr(<<"id">>, Item),
+        NoteID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
         retract_note(To, BotID, NoteID),
         {ok, []}
        ]).
@@ -79,8 +79,9 @@ notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
     {SubscriberJIDs, _FollowStatuses} = lists:unzip(Subscribers),
     lists:foreach(notify_subscriber(From, _, Message), SubscriberJIDs).
 
-make_note_item(Note) ->
+make_note_item(Note = #{id := ID}) ->
     #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, ID}],
            children = [make_entry_element(Note)]}.
 
 make_entry_element(Note) ->
@@ -90,7 +91,7 @@ make_entry_element(Note) ->
 
 make_note_fields(Note) ->
     SimpleFields = [make_simple_element(Name, maps:get(Name, Note)) ||
-                    Name <- [content, title, id]],
+                    Name <- [content, title]],
     TimeFields = [make_time_element(Name, maps:get(Name, Note)) ||
                   Name <- [published, updated]],
     MediaFields = get_media_fields(maps:get(media, Note)),
@@ -134,14 +135,19 @@ notification_event(BotID, ItemEls) ->
 
 notification_items(BotID, ItemEls) ->
     #xmlel{name = <<"items">>,
-           attrs = [{<<"node">>, BotID}],
+           attrs = [{<<"node">>, bot_utils:make_node(BotID)}],
            children = ItemEls}.
 
 get_notes(LServer, BotID, RSM) ->
     Notes = wocky_db_bot:get_notes(LServer, BotID),
-    {ok, rsm_util:filter_with_rsm(Notes, RSM)}.
+    SortedNotes = lists:sort(updated_order(_, _), Notes),
+    {ok, rsm_util:filter_with_rsm(SortedNotes, RSM)}.
+
+updated_order(#{updated := U1}, #{updated := U2}) ->
+    U1 =< U2.
 
 make_results(Notes, RSMOut) ->
+    ct:log("RSMOut: ~p", [RSMOut]),
     #xmlel{name = <<"query">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children =
