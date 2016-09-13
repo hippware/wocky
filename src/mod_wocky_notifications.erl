@@ -52,7 +52,7 @@ handle_iq(_From, _To, IQ) ->
 handle_request(JID, LUser, LServer, LResource,
                #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     DeviceId = proplists:get_value(<<"device">>, Attrs),
-    Endpoint = wocky_notification_handler:register(JID, DeviceId),
+    {ok, Endpoint} = wocky_notification_handler:register(JID, DeviceId),
     CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
     wocky_db:insert(LServer, device, #{user => LUser,
                                        server => LServer,

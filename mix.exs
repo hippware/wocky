@@ -20,7 +20,8 @@ defmodule Wocky.Mixfile do
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [eunit:   :test,
+     preferred_cli_env: [espec:   :test,
+                         eunit:   :test,
                          ct:      :test,
                          release: :prod],
      dialyzer: [

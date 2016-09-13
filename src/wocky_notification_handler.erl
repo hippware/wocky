@@ -16,14 +16,15 @@
 -spec register(ejabberd:jid(), binary()) -> {ok, binary()}.
 register(UserJID, DeviceId) ->
     User = jid:to_binary(UserJID),
+    ok = lager:debug("Registering device '~s' for user '~s'",
+                     [DeviceId, User]),
     (handler()):register(User, DeviceId).
 
 -spec notify(binary(), ejabberd:jid(), binary()) -> ok.
 notify(Endpoint, FromJID, Message) ->
     From = jid:to_binary(FromJID),
-    ok = lager:debug(
-           "Sending notification for message from ~s with body '~s'",
-           [From, Message]),
+    ok = lager:debug("Sending notification for message from ~s with body '~s'",
+                     [From, Message]),
     (handler()):notify(Endpoint, From, Message).
 
 handler() ->
