@@ -87,7 +87,7 @@ make_items(Items) ->
 
 retract_item(From = #jid{lserver = LServer}, BotID, ItemID) ->
     wocky_db_bot:delete_item(LServer, BotID, ItemID),
-    Message = notification_message(BotID, [retract_item(ItemID)]),
+    Message = notification_message(BotID, retract_item(ItemID)),
     notify_subscribers(From, BotID, Message).
 
 retract_item(ItemID) ->
@@ -102,7 +102,7 @@ publish_item(From = #jid{lserver = LServer}, BotID, ItemID, Entry) ->
     EntryBin = exml:to_binary(Entry),
     wocky_db_bot:publish_item(LServer, BotID, ItemID, EntryBin),
     Item = wocky_db_bot:get_item(LServer, BotID, ItemID),
-    Message = notification_message(BotID, [make_item_element(Item)]),
+    Message = notification_message(BotID, make_item_element(Item)),
     notify_subscribers(From, BotID, Message).
 
 notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
@@ -116,7 +116,6 @@ notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
 
 make_item_element(#{id := ID, published := Published,
                     updated := Updated, stanza := Stanza}) ->
-    ct:log("Parsing: ~p", [Stanza]),
     {ok, Entry} = exml:parse(Stanza),
     FullEntry = add_time_fields(Published, Updated, Entry),
     #xmlel{name = <<"item">>,
@@ -142,17 +141,12 @@ time_field(Name, Value) ->
 notify_subscriber(From, To, Message) ->
     ejabberd_router:route(From, To, Message).
 
-notification_message(BotID, ItemEls) ->
+notification_message(BotID, ItemEl) ->
     #xmlel{name = <<"message">>,
-           children = [notification_event(BotID, ItemEls)]}.
+           children = [notification_event(BotID, ItemEl)]}.
 
-notification_event(BotID, ItemEls) ->
+notification_event(BotID, ItemEl) ->
     #xmlel{name = <<"event">>,
            attrs = [{<<"xmlns">>, ?NS_BOT},
                     {<<"node">>, bot_utils:make_node(BotID)}],
-           children = [notification_items(ItemEls)]}.
-
-notification_items(ItemEls) ->
-    #xmlel{name = <<"items">>,
-           children = ItemEls}.
-
+           children = [ItemEl]}.

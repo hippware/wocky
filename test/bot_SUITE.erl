@@ -859,10 +859,9 @@ expect_item_publication(Client, BotID, NoteID, Title, Content) ->
 is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
     R = do([error_m ||
             [Event] <- check_get_children(Stanza, <<"message">>),
-            [Items] <- check_get_children(Event, <<"event">>,
-                                          [{<<"xmlns">>, ?NS_BOT},
-                                           {<<"node">>, bot_node(BotID)}]),
-            [Item] <- check_get_children(Items, <<"items">>),
+            [Item] <- check_get_children(Event, <<"event">>,
+                                         [{<<"xmlns">>, ?NS_BOT},
+                                          {<<"node">>, bot_node(BotID)}]),
             [Entry] <- check_get_children(Item, <<"item">>,
                                           [{<<"id">>, NoteID}]),
             check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
@@ -909,11 +908,10 @@ expect_item_retraction(Client, BotID, NoteID) ->
 is_retraction_update(BotID, NoteID, Stanza) ->
     R = do([error_m ||
             [Event] <- check_get_children(Stanza, <<"message">>),
-            [Items] <- check_get_children(Event, <<"event">>,
-                                          [{<<"xmlns">>, ?NS_BOT},
-                                           {<<"node">>, bot_node(BotID)}]),
-            [Retract] <- check_get_children(Items, <<"items">>),
-            [] <- check_get_children(Retract, <<"retract">>,
+            [Item] <- check_get_children(Event, <<"event">>,
+                                         [{<<"xmlns">>, ?NS_BOT},
+                                          {<<"node">>, bot_node(BotID)}]),
+            [] <- check_get_children(Item, <<"retract">>,
                                      [{<<"id">>, NoteID}]),
             ok
            ]),
