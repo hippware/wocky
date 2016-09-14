@@ -1,6 +1,7 @@
 -module(wocky_db_bot).
 
 -export([get/2,
+         get_by_user/2,
          get_id_by_name/2,
          exists/2,
          insert/2,
@@ -41,6 +42,10 @@
 -spec get(wocky_db:server(), wocky_db:id()) -> map() | not_found.
 get(Server, ID) ->
     wocky_db:select_row(Server, bot, all, #{id => ID}).
+
+-spec get_by_user(wocky_db:server(), binary()) -> [binary()].
+get_by_user(Server, User) ->
+    wocky_db:select_column(Server, user_bot, id, #{owner => User}).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.

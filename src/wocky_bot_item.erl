@@ -24,7 +24,7 @@ handle_query(From, #jid{lserver = LServer}, IQ, Attrs) ->
     do([error_m ||
         BotID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_access(LServer, BotID, From),
-        RSMIn <- get_rsm(IQ),
+        RSMIn <- wocky_bot_utils:get_rsm(IQ),
         {Items, RSMOut} <- get_items(LServer, BotID, RSMIn),
         {ok, make_results(Items, RSMOut)}
        ]).
@@ -54,13 +54,6 @@ handle_publish(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
 %%%===================================================================
 %%% Helpers - query
 %%%===================================================================
-
-get_rsm(IQ) ->
-    case jlib:rsm_decode(IQ) of
-        none -> {error, ?ERRT_BAD_REQUEST(
-                           ?MYLANG, <<"Missing or invalid RSM values">>)};
-        RSM = #rsm_in{} -> {ok, RSM}
-    end.
 
 get_items(LServer, BotID, RSM) ->
     Items = wocky_db_bot:get_items(LServer, BotID),
