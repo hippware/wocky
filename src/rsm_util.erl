@@ -8,6 +8,7 @@
 -include_lib("ejabberd/include/jlib.hrl").
 
 -define(EX_TO_UNDEFINED(F), try F catch _:_ -> undefined end).
+-define(RSM_MAX, 1000).
 
 -export([filter_with_rsm/2]).
 
@@ -15,9 +16,8 @@
 %% The records must be maps and must contain an `id' field which is to
 %% be used for ID-based lookups.
 -spec filter_with_rsm([map()], jlib:rsm_in()) -> {[map()], jlib:rsm_out()}.
-filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
-                               max = undefined}) ->
-    get_result_list(Items, Items, 0);
+filter_with_rsm(Items, RSM = #rsm_in{max = undefined}) ->
+    filter_with_rsm(Items, RSM#rsm_in{max = max_results()});
 
 filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
                                direction = before, max = C}) ->
@@ -82,3 +82,6 @@ split_include(Pred, [H|T], Acc) ->
         true -> split_include(Pred, T, [H|Acc]);
         false -> {lists:reverse([H|Acc]), T}
     end.
+
+max_results() ->
+    ejabberd_config:get_local_option_or_default(rsm_max, ?RSM_MAX).

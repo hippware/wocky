@@ -19,10 +19,10 @@
          owner_roster/2,
          owner_roster_ver/2,
          update_owner_roster/4,
-         publish_note/6,
-         get_note/3,
-         get_notes/2,
-         delete_note/3
+         publish_item/4,
+         get_item/3,
+         get_items/2,
+         delete_item/3
         ]).
 
 -include("wocky.hrl").
@@ -172,10 +172,9 @@ update_owner_roster(Server, ID, Items, Version) ->
                       owner_roster_ver => Version},
                     #{id => ID}).
 
--spec publish_note(wocky_db:server(), wocky_db:id(),
-                   binary(), binary(), binary(), binary()) -> ok.
-publish_note(Server, BotID, NoteID, Title, Content, Media) ->
-    Existing = wocky_db:select_one(Server, note, id,
+-spec publish_item(wocky_db:server(), wocky_db:id(), binary(), binary()) -> ok.
+publish_item(Server, BotID, NoteID, Stanza) ->
+    Existing = wocky_db:select_one(Server, bot_item, id,
                                    #{id => NoteID, bot => BotID}),
     MaybePublished = case Existing of
                          not_found -> #{published => now};
@@ -184,20 +183,18 @@ publish_note(Server, BotID, NoteID, Title, Content, Media) ->
     Note = MaybePublished#{id => NoteID,
                            bot => BotID,
                            updated => now,
-                           title => Title,
-                           content => Content,
-                           media => Media},
-    wocky_db:insert(Server, note, Note).
+                           stanza => Stanza},
+    wocky_db:insert(Server, bot_item, Note).
 
-get_note(Server, BotID, NoteID) ->
-    wocky_db:select_row(Server, note, all, #{id => NoteID, bot => BotID}).
+get_item(Server, BotID, NoteID) ->
+    wocky_db:select_row(Server, bot_item, all, #{id => NoteID, bot => BotID}).
 
-get_notes(Server, BotID) ->
-    wocky_db:select(Server, note, all, #{bot => BotID}).
+get_items(Server, BotID) ->
+    wocky_db:select(Server, bot_item, all, #{bot => BotID}).
 
--spec delete_note(wocky_db:server(), wocky_db:id(), binary()) -> ok.
-delete_note(Server, BotID, NoteID) ->
-    wocky_db:delete(Server, note, all, #{id => NoteID, bot => BotID}).
+-spec delete_item(wocky_db:server(), wocky_db:id(), binary()) -> ok.
+delete_item(Server, BotID, NoteID) ->
+    wocky_db:delete(Server, bot_item, all, #{id => NoteID, bot => BotID}).
 
 %%%===================================================================
 %%% Private helpers

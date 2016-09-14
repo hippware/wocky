@@ -131,26 +131,26 @@ handle_iq_type(From, To, #iq{type = get,
                             }) ->
     bot_users:handle_retrieve_subscribers(From, To, Attrs);
 
-% Publish a note
+% Publish an item
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = SubEl = #xmlel{name = <<"publish">>,
                                                      attrs = Attrs}
                             }) ->
-    bot_notes:handle_publish(From, To, SubEl, Attrs);
+    bot_item:handle_publish(From, To, SubEl, Attrs);
 
-% Retrieve note(s)
+% Retrieve item(s)
 handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"query">>,
                                                   attrs = Attrs}
                                  }) ->
-    bot_notes:handle_query(From, To, IQ, Attrs);
+    bot_item:handle_query(From, To, IQ, Attrs);
 
-% Delete a note
+% Delete an item
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = SubEl = #xmlel{name = <<"retract">>,
                                                      attrs = Attrs}
                             }) ->
-    bot_notes:handle_retract(From, To, SubEl, Attrs);
+    bot_item:handle_retract(From, To, SubEl, Attrs);
 
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.

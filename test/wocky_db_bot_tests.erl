@@ -13,7 +13,7 @@
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
          owner_roster/2, owner_roster_ver/2, update_owner_roster/4,
-         get_note/3, publish_note/6, delete_note/3
+         get_item/3, publish_item/4, delete_item/3
         ]).
 
 wocky_db_bot_test_() -> {
@@ -36,9 +36,9 @@ wocky_db_bot_test_() -> {
       ]},
 
       {inorder, [
-        test_get_note(),
-        test_publish_note(),
-        test_delete_note()
+        test_get_item(),
+        test_publish_item(),
+        test_delete_item()
       ]},
 
       {inorder, [
@@ -56,7 +56,7 @@ local_tables() -> [roster,
                    bot,
                    bot_name,
                    bot_subscriber,
-                   note
+                   bot_item
                   ].
 
 before_all() ->
@@ -210,49 +210,44 @@ test_subscribers() ->
       ]}
     ]}.
 
-test_get_note() ->
-    { "get_note", [
-      { "gets all fields on the note", [
-        ?_assertEqual(expected_note(), get_note(?LOCAL_CONTEXT, ?BOT, ?NOTE))
+test_get_item() ->
+    { "get_item", [
+      { "gets all fields on the item", [
+        ?_assertEqual(expected_item(), get_item(?LOCAL_CONTEXT, ?BOT, ?ITEM))
       ]},
-      { "gets note_found on non-existant notes", [
-        ?_assertEqual(not_found, get_note(?LOCAL_CONTEXT, wocky_db:create_id(),
-                                          ?NOTE)),
-        ?_assertEqual(not_found, get_note(?LOCAL_CONTEXT, ?BOT,
+      { "gets item_found on non-existant items", [
+        ?_assertEqual(not_found, get_item(?LOCAL_CONTEXT, wocky_db:create_id(),
+                                          ?ITEM)),
+        ?_assertEqual(not_found, get_item(?LOCAL_CONTEXT, ?BOT,
                                           wocky_db:create_id()))
       ]}
     ]}.
 
-test_publish_note() ->
+test_publish_item() ->
     ID = <<"newID">>,
-    Title = <<"New Title">>,
     Content = <<"New Content">>,
-    Media = <<"New Media">>,
-    { "publish_note", [
-      { "publishes a new note when one doesn't exist", [
-        ?_assertEqual(ok, publish_note(?LOCAL_CONTEXT, ?BOT, ID,
-                                       Title, Content, Media)),
-        ?_assertMatch(#{id := ID, title := Title, content := Content,
-                        media := Media}, get_note(?LOCAL_CONTEXT, ?BOT, ID))
+    { "publish_item", [
+      { "publishes a new item when one doesn't exist", [
+        ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID, Content)),
+        ?_assertMatch(#{id := ID, stanza := Content},
+                      get_item(?LOCAL_CONTEXT, ?BOT, ID))
       ]},
-      { "updates an existing note", [
-        ?_assertEqual(ok, publish_note(?LOCAL_CONTEXT, ?BOT, ID,
-                                       <<"Updated Title">>, Content, Media)),
-        ?_assertMatch(#{id := ID, title := <<"Updated Title">>,
-                        content := Content,
-                        media := Media},
-                      get_note(?LOCAL_CONTEXT, ?BOT, ID))
+      { "updates an existing item", [
+        ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
+                                       <<"Updated content">>)),
+        ?_assertMatch(#{id := ID, stanza := <<"Updated content">>},
+                      get_item(?LOCAL_CONTEXT, ?BOT, ID))
       ]}
     ]}.
 
-test_delete_note() ->
-    { "delete_note", [
-      { "deletes an existing note", [
-        ?_assertEqual(ok, delete_note(?LOCAL_CONTEXT, ?BOT, ?NOTE)),
-        ?_assertEqual(not_found, get_note(?LOCAL_CONTEXT, ?BOT, ?NOTE))
+test_delete_item() ->
+    { "delete_item", [
+      { "deletes an existing item", [
+        ?_assertEqual(ok, delete_item(?LOCAL_CONTEXT, ?BOT, ?ITEM)),
+        ?_assertEqual(not_found, get_item(?LOCAL_CONTEXT, ?BOT, ?ITEM))
       ]},
-      { "does not fail on a non-existant note", [
-        ?_assertEqual(ok, delete_note(?LOCAL_CONTEXT, ?BOT, <<"NotANoteID">>))
+      { "does not fail on a non-existant item", [
+        ?_assertEqual(ok, delete_item(?LOCAL_CONTEXT, ?BOT, <<"NotANoteID">>))
       ]}
     ]}.
 
@@ -392,5 +387,5 @@ new_bot() ->
       owner_roster => null, owner_roster_ver => null
      }.
 
-expected_note() ->
-    hd(wocky_db_seed:seed_data(note, none)).
+expected_item() ->
+    hd(wocky_db_seed:seed_data(bot_item, none)).

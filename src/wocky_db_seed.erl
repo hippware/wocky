@@ -226,10 +226,9 @@ seed_data(bot_name, _Server) ->
 seed_data(bot_subscriber, _Server) ->
     [#{bot => ?BOT, user => ?CAROL_B_JID, follow => false},
      #{bot => ?BOT, user => ?KAREN_B_JID, follow => true}];
-seed_data(note, _Server) ->
-    [#{id => ?NOTE, bot => ?BOT, published => ?NOTE_PUB_TIME,
-       updated => ?NOTE_UPDATE_TIME, title => ?NOTE_TITLE,
-       content => ?NOTE_CONTENT, media => ?NOTE_MEDIA}];
+seed_data(bot_item, _Server) ->
+    [#{id => ?ITEM, bot => ?BOT, published => ?ITEM_PUB_TIME,
+       updated => ?ITEM_UPDATE_TIME, stanza => ?ITEM_STANZA}];
 seed_data(_, _) ->
     [].
 
