@@ -240,11 +240,9 @@ retrieve_for_user(Config) ->
     reset_tables(Config),
     wocky_db:clear_tables(?LOCAL_CONTEXT, [bot]),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
-      fun(Alice, _Bob, _Tim) ->
+      fun(Alice, Bob, Tim) ->
         IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
         {_OwnerBots, FriendsBots} = distribute(IDs),
-
-        ct:log("IDs: ~p\n\n~p\n\n~p", [IDs, _OwnerBots, FriendsBots]),
 
         lists:foreach(
           fun(B) ->
@@ -253,17 +251,29 @@ retrieve_for_user(Config) ->
           end,
           FriendsBots),
 
+        %% Alice can see all her bots
         Stanza = expect_iq_success(
                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
-        check_returned_bots(Stanza, IDs, ?CREATED_BOTS)
+        check_returned_bots(Stanza, IDs, ?CREATED_BOTS),
 
+        %% Bob can only see the subset of bots set to be visible by friends
         Stanza2 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
-        check_returned_bots(Stanza2, FriendsBots, ?CREATED_BOTS div 2)
+        check_returned_bots(Stanza2, FriendsBots, ?CREATED_BOTS div 2),
 
+        %% Tim cannot see any of Alice's bots since he is neither
+        %% the owner nor a friend
         Stanza3 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
-        check_returned_bots(Stanza3, [], 0)
+        check_returned_bots(Stanza3, [], 0),
+
+        %% Test some basic RSM functionality
+        %% Bob can only see the subset of bots set to be visible by friends
+        Stanza4 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID,
+                                    #rsm_in{index = 3, max = 2}), Bob),
+        ExpectedBots = lists:sublist(FriendsBots, 4, 2),
+        check_returned_bots(Stanza4, ExpectedBots, 2)
       end).
 
 update_affiliations(Config) ->
@@ -653,11 +663,15 @@ check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
     #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Children} = BotsStanza,
     SortedIDs = lists:sort(ExpectedIDs),
+    {First, Last} = case ExpectedIDs of
+                        [] -> {undefined, undefined};
+                        _ -> {hd(SortedIDs), lists:last(SortedIDs)}
+                    end,
     do([error_m ||
         RSM <- check_get_children(Children, <<"set">>,
                                   [{<<"xmlns">>, ?NS_RSM}]),
         RSMOut <- decode_rsm(RSM, #rsm_out{}),
-        check_rsm(RSMOut, Total, hd(SortedIDs), lists:last(SortedIDs)),
+        check_rsm(RSMOut, Total, First, Last),
         check_ids(ExpectedIDs, Children)
        ]).
 
@@ -668,9 +682,12 @@ check_ids(ExpectedIDs, Children) ->
         _ -> {error, {incorrect_ids, IDs, ExpectedIDs}}
     end.
 
+get_ids([], Acc) ->
+    Acc;
 get_ids([#xmlel{name = <<"bot">>, children = Fields} | Rest], Acc) ->
     get_ids(Rest, [get_id(Fields) | Acc]);
-get_ids([_|Rest], Acc) -> get_ids(Rest, Acc).
+get_ids([_|Rest], Acc) ->
+    get_ids(Rest, Acc).
 
 get_id([El = #xmlel{name = <<"field">>, attrs = Attrs} | Rest]) ->
     case xml:get_attr(<<"var">>, Attrs) of
@@ -1084,12 +1101,15 @@ check_rsm(#rsm_out{count = Count, index = Index, first = First, last = Last},
           ExpectedCount, ExpectFirst, ExpectLast) ->
     FirstID = item_id(ExpectFirst),
     LastID = item_id(ExpectLast),
-    case {Count, Index+1, First, Last} of
+    case {Count, expected_first(Index), First, Last} of
         {ExpectedCount, ExpectFirst, FirstID, LastID} ->
             ok;
         _ ->
             {error, bad_rsm}
     end.
+
+expected_first(undefined) -> undefined;
+expected_first(I) -> I+1.
 
 check_items(Children, First, Last) ->
     Expected = lists:seq(First, Last),
@@ -1123,6 +1143,7 @@ is_item_entry(I, El = #xmlel{name = <<"entry">>,
     item_content(I) =:= xml:get_path_s(El, [{elem, <<"content">>}, cdata]);
 is_item_entry(_, _) -> false.
 
+item_id(undefined) -> undefined;
 item_id(I) when is_binary(I) -> I;
 item_id(I) ->
     <<"ID_", (integer_to_binary(I))/binary>>.
