@@ -1,13 +1,9 @@
-ESpec.configure fn(config) ->
-  config.before fn(tags) ->
-    # System.put_env("WOCKY_MINIMAL", "1")
-    # Application.ensure_started(:stringprep)
-    # :wocky_app.start
-    {:shared, hello: :world, tags: tags}
+ESpec.configure fn (config) ->
+  config.before fn (tags) ->
+    {:ok, tags: tags}
   end
 
-  config.finally fn(_shared) ->
-    # :wocky_app.stop
+  config.finally fn (_shared) ->
     :ok
   end
 end
