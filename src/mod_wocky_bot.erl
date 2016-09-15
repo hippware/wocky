@@ -3,7 +3,7 @@
 %%% @doc Module implementing Wocky bots
 %%% See https://github.com/hippware/tr-wiki/wiki/Bot
 %%%
--module(mod_bot).
+-module(mod_wocky_bot).
 
 -behaviour(gen_mod).
 
@@ -99,7 +99,7 @@ handle_iq_type(From, To, #iq{type = get,
                              sub_el = #xmlel{name = <<"affiliations">>,
                                              attrs = Attrs}
                             }) ->
-    bot_users:handle_retrieve_affiliations(From, To, Attrs);
+    wocky_bot_users:handle_retrieve_affiliations(From, To, Attrs);
 
 % Update affiliations
 handle_iq_type(From, To, #iq{type = set,
@@ -107,7 +107,7 @@ handle_iq_type(From, To, #iq{type = set,
                                              attrs = Attrs,
                                              children = Children}
                             }) ->
-    bot_users:handle_update_affiliations(From, To, Attrs, Children);
+    wocky_bot_users:handle_update_affiliations(From, To, Attrs, Children);
 
 % Subscribe
 handle_iq_type(From, To, #iq{type = set,
@@ -115,42 +115,42 @@ handle_iq_type(From, To, #iq{type = set,
                                              attrs = Attrs,
                                              children = Children}
                             }) ->
-    bot_users:handle_subscribe(From, To, Attrs, Children);
+    wocky_bot_users:handle_subscribe(From, To, Attrs, Children);
 
 % Unsubscribe
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = #xmlel{name = <<"unsubscribe">>,
                                              attrs = Attrs}
                             }) ->
-    bot_users:handle_unsubscribe(From, To, Attrs);
+    wocky_bot_users:handle_unsubscribe(From, To, Attrs);
 
 % Retrieve subscribers
 handle_iq_type(From, To, #iq{type = get,
                              sub_el = #xmlel{name = <<"subscribers">>,
                                              attrs = Attrs}
                             }) ->
-    bot_users:handle_retrieve_subscribers(From, To, Attrs);
+    wocky_bot_users:handle_retrieve_subscribers(From, To, Attrs);
 
 % Publish an item
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = SubEl = #xmlel{name = <<"publish">>,
                                                      attrs = Attrs}
                             }) ->
-    bot_item:handle_publish(From, To, SubEl, Attrs);
+    wocky_bot_item:handle_publish(From, To, SubEl, Attrs);
 
 % Retrieve item(s)
 handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"query">>,
                                                   attrs = Attrs}
                                  }) ->
-    bot_item:handle_query(From, To, IQ, Attrs);
+    wocky_bot_item:handle_query(From, To, IQ, Attrs);
 
 % Delete an item
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = SubEl = #xmlel{name = <<"retract">>,
                                                      attrs = Attrs}
                             }) ->
-    bot_item:handle_retract(From, To, SubEl, Attrs);
+    wocky_bot_item:handle_retract(From, To, SubEl, Attrs);
 
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -179,8 +179,8 @@ add_server(Fields, Server) ->
 
 handle_delete(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
         delete_bot(Server, ID),
         {ok, []}
        ]).
@@ -197,8 +197,8 @@ delete_bot(Server, ID) ->
 
 handle_get(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_access(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_access(Server, ID, From),
         BotEl <- make_bot_el(Server, ID),
         {ok, BotEl}
        ]).
@@ -209,8 +209,8 @@ handle_get(From, #jid{lserver = Server}, Attrs) ->
 
 handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
         refresh_roster(Server, ID),
@@ -265,7 +265,7 @@ handle_roster_update(From, LServer, BotID,
                              attrs = Attrs,
                              children = Children}]) ->
     _ = do([error_m ||
-            bot_utils:check_owner(LServer, BotID, From),
+            wocky_bot_util:check_owner(LServer, BotID, From),
             NewVersion <- get_version(Attrs),
             check_version(LServer, BotID, NewVersion),
             OldBot <- {ok, wocky_db_bot:get(LServer, BotID)},
@@ -342,7 +342,7 @@ remove_invalidated_affiliates(LServer, ID, RemovedItems) ->
     RemovedAffiliates = wocky_util:intersection(RemovedItems, OldAffiliates),
     RemovedAffiliations = [{I, none} || I <- RemovedAffiliates],
     wocky_db_bot:update_affiliations(LServer, ID, RemovedAffiliations),
-    bot_utils:notify_affiliates(
+    wocky_bot_util:notify_affiliates(
       jid:make(<<>>, LServer, <<>>), ID, RemovedAffiliations).
 
 remove_invalidated_subscribers(LServer, ID, Vis, RemovedItems)
@@ -371,8 +371,8 @@ notify_unsubscribe(LServer, ID, Item, Follow) ->
 make_unsubscribed(ID, Follow) ->
     #xmlel{name = <<"unsubscribed">>,
            attrs = [{<<"xmlns">>, ?NS_BOT},
-                    {<<"node">>, bot_utils:make_node(ID)}],
-           children = [bot_utils:make_follow_element(Follow)]}.
+                    {<<"node">>, wocky_bot_util:make_node(ID)}],
+           children = [wocky_bot_util:make_follow_element(Follow)]}.
 
 %%%===================================================================
 %%% Roster changed packet handler
@@ -613,7 +613,7 @@ size_and_hash(Name, List) ->
     [#field{name = <<Name/binary, "+size">>, type = int,
             value = length(List)},
      #field{name = <<Name/binary, "+hash">>, type = string,
-            value = bot_utils:list_hash(List)}
+            value = wocky_bot_util:list_hash(List)}
     ].
 
 map_to_fields(Map = #{lat := Lat, lon := Lon}) ->

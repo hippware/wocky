@@ -3,7 +3,7 @@
 %%% @doc Module implementing Wocky bot items
 %%% See https://github.com/hippware/tr-wiki/wiki/Publishing-format
 %%%
--module(bot_item).
+-module(wocky_bot_item).
 
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
@@ -22,8 +22,8 @@
 
 handle_query(From, #jid{lserver = LServer}, IQ, Attrs) ->
     do([error_m ||
-        BotID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_access(LServer, BotID, From),
+        BotID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_access(LServer, BotID, From),
         RSMIn <- get_rsm(IQ),
         {Items, RSMOut} <- get_items(LServer, BotID, RSMIn),
         {ok, make_results(Items, RSMOut)}
@@ -31,8 +31,8 @@ handle_query(From, #jid{lserver = LServer}, IQ, Attrs) ->
 
 handle_retract(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
     do([error_m ||
-        BotID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(LServer, BotID, From),
+        BotID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(LServer, BotID, From),
         Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
         ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
         retract_item(To, BotID, ItemID),
@@ -41,8 +41,8 @@ handle_retract(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
 
 handle_publish(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
     do([error_m ||
-        BotID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(LServer, BotID, From),
+        BotID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(LServer, BotID, From),
         Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
         ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
         Entry <- wocky_xml:get_sub_el(<<"entry">>, Item),
@@ -148,5 +148,5 @@ notification_message(BotID, ItemEl) ->
 notification_event(BotID, ItemEl) ->
     #xmlel{name = <<"event">>,
            attrs = [{<<"xmlns">>, ?NS_BOT},
-                    {<<"node">>, bot_utils:make_node(BotID)}],
+                    {<<"node">>, wocky_bot_util:make_node(BotID)}],
            children = [ItemEl]}.

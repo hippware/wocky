@@ -3,7 +3,7 @@
 %%% @doc Module implementing Wocky bots - user management operations
 %%% See https://github.com/hippware/tr-wiki/wiki/Bot
 %%%
--module(bot_users).
+-module(wocky_bot_users).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
@@ -25,8 +25,8 @@
 
 handle_retrieve_affiliations(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
         {ok, make_affiliations_element(Server, ID)}
        ]).
 
@@ -34,7 +34,7 @@ make_affiliations_element(Server, ID) ->
     Affiliates = wocky_db_bot:affiliations(Server, ID),
     #xmlel{name = <<"affiliations">>,
            attrs = list_attrs(ID, Affiliates),
-           children = bot_utils:make_affiliate_elements(Affiliates)}.
+           children = wocky_bot_util:make_affiliate_elements(Affiliates)}.
 
 %%%===================================================================
 %%% Action - update affiliations
@@ -43,13 +43,13 @@ make_affiliations_element(Server, ID) ->
 handle_update_affiliations(From, To = #jid{lserver = Server},
                            Attrs, Children) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
         DirtyAffiliations <- get_affiliations(Children),
         OwnerRoster <- {ok, wocky_db_bot:owner_roster(Server, ID)},
         Affiliations <- check_affiliations(DirtyAffiliations, OwnerRoster, []),
         update_affiliations(Server, ID, Affiliations),
-        bot_utils:notify_affiliates(To, ID, Affiliations),
+        wocky_bot_util:notify_affiliates(To, ID, Affiliations),
         {ok, make_affiliations_update_element(Server, ID)}
        ]).
 
@@ -104,8 +104,8 @@ make_affiliations_update_element(Server, ID) ->
 
 handle_subscribe(From, #jid{lserver = Server}, Attrs, Children) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_access(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_access(Server, ID, From),
         Follow <- get_follow(Children),
         subscribe_bot(Server, ID, From, Follow),
         {ok, []}
@@ -128,8 +128,8 @@ get_follow([Child | Rest]) ->
 
 handle_unsubscribe(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_bot_exists(Server, ID),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_bot_exists(Server, ID),
         unsubscribe_bot(Server, ID, From),
         {ok, []}
        ]).
@@ -143,8 +143,8 @@ unsubscribe_bot(Server, ID, From) ->
 
 handle_retrieve_subscribers(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
-        ID <- bot_utils:get_id_from_node(Attrs),
-        bot_utils:check_owner(Server, ID, From),
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
         {ok, make_subscribers_element(Server, ID)}
        ]).
 
@@ -160,7 +160,7 @@ make_subscriber_elements(Subscribers) ->
 make_subscriber_element({JID, Follow}) ->
     #xmlel{name = <<"subscriber">>,
            attrs = [{<<"jid">>, jid:to_binary(JID)}],
-           children = [bot_utils:make_follow_element(Follow)]}.
+           children = [wocky_bot_util:make_follow_element(Follow)]}.
 
 %%%===================================================================
 %%% Action - common helpers
@@ -168,6 +168,6 @@ make_subscriber_element({JID, Follow}) ->
 
 list_attrs(ID, List) ->
     [{<<"xmlns">>, ?NS_BOT},
-     {<<"node">>, bot_utils:make_node(ID)},
+     {<<"node">>, wocky_bot_util:make_node(ID)},
      {<<"size">>, integer_to_binary(length(List))},
-     {<<"hash">>, bot_utils:list_hash(List)}].
+     {<<"hash">>, wocky_bot_util:list_hash(List)}].

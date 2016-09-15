@@ -3,7 +3,7 @@
 %%% @doc Utility module for wocky bots. Contains functions used by
 %%% multiple bot implementation modules
 %%%
--module(bot_utils).
+-module(wocky_bot_util).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
