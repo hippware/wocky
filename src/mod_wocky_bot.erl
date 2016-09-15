@@ -237,13 +237,11 @@ users_bots_result(Bots, RSMOut) ->
 
 make_bot_els(BotIDs) ->
     lists:reverse(
-      lists:foldl(make_good_bot_els(_, _), [], BotIDs)).
+      lists:foldl(make_bot_els(_, _), [], BotIDs)).
 
-make_good_bot_els(ID, Acc) ->
-    case make_bot_el(ID) of
-        {ok, El} -> [El|Acc];
-        {error, _} -> Acc
-    end.
+make_bot_els(ID, Acc) ->
+    {ok, El} = make_bot_el(ID),
+    [El|Acc].
 
 %%%===================================================================
 %%% Action - update
