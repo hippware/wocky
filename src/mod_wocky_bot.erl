@@ -80,11 +80,11 @@ handle_iq_type(From, To, #iq{type = set,
     handle_delete(From, To, Attrs);
 
 % Retrieve
-handle_iq_type(From, To, #iq{type = get,
-                             sub_el = #xmlel{name = <<"bot">>,
-                                             attrs = Attrs}
-                            }) ->
-    handle_get(From, To, Attrs);
+handle_iq_type(From, To, IQ = #iq{type = get,
+                                  sub_el = #xmlel{name = <<"bot">>,
+                                                  attrs = Attrs}
+                                 }) ->
+    handle_get(From, To, IQ, Attrs);
 
 % Update
 handle_iq_type(From, To, #iq{type = set,
@@ -195,13 +195,53 @@ delete_bot(Server, ID) ->
 %%% Action - get
 %%%===================================================================
 
-handle_get(From, #jid{lserver = Server}, Attrs) ->
+handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
+    case wocky_bot_util:get_id_from_node(Attrs) of
+        {ok, ID} -> get_bot_by_id(From, Server, ID);
+        {error, _} -> get_bots_for_user(From, Server, IQ, Attrs)
+    end.
+
+get_bot_by_id(From, Server, ID) ->
     do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_access(Server, ID, From),
         BotEl <- make_bot_el(Server, ID),
         {ok, BotEl}
        ]).
+
+get_bots_for_user(From, Server, IQ, Attrs) ->
+    do([error_m ||
+        User <- wocky_xml:get_attr(<<"user">>, Attrs),
+        RSMIn <- wocky_bot_util:get_rsm(IQ),
+        {Bots, RSMOut} <- users_bots(Server, From, User, RSMIn),
+        {ok, users_bots_result(Bots, RSMOut)}
+       ]).
+
+users_bots(Server, From, User, RSMIn) ->
+    BotIDs = wocky_db_bot:get_by_user(Server, User),
+    VisibleIDs = lists:filter(access_filter(Server, From, _), BotIDs),
+    % We don't have any particular order we want the bots in, it just
+    % needs to be consistant
+    SortedIDs = lists:sort(VisibleIDs),
+    {FilteredIDs, RSMOut} = rsm_util:filter_with_rsm(SortedIDs, RSMIn),
+    Bots = [wocky_db_bot:get(Server, ID) || ID <- FilteredIDs],
+    {ok, {Bots, RSMOut}}.
+
+access_filter(Server, From, ID) ->
+    ok =:= wocky_bot_util:check_access(Server, ID, From).
+
+users_bots_result(Bots, RSMOut) ->
+    BotEls = make_bot_els(Bots),
+    #xmlel{name = <<"bots">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = BotEls ++ jlib:rsm_encode(RSMOut)}.
+
+make_bot_els(BotIDs) ->
+    lists:reverse(
+      lists:foldl(make_bot_els(_, _), [], BotIDs)).
+
+make_bot_els(ID, Acc) ->
+    {ok, El} = make_bot_el(ID),
+    [El|Acc].
 
 %%%===================================================================
 %%% Action - update
@@ -474,7 +514,7 @@ check_required_fields(Fields, [#field{name = Name} | Rest]) ->
             check_required_fields(Fields, Rest);
         false ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG,
-                                      <<"Missing ", Name/binary, "field">>)}
+                                      <<"Missing ", Name/binary, " field">>)}
     end.
 
 check_field(Name, TypeBin) ->
@@ -502,12 +542,12 @@ check_field_type(Name, TypeBin, ExpectedType) ->
 required_fields() ->
     %% Name,                    Type,   Default
     [field(<<"title">>,         string, <<>>),
-     field(<<"shortname">>,     string, <<>>),
      field(<<"location">>,      geoloc, <<>>),
      field(<<"radius">>,        int,    0)].
 
 optional_fields() ->
     [field(<<"description">>,   string, <<>>),
+     field(<<"shortname">>,     string, <<>>),
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
      field(<<"alerts">>,        int,    ?WOCKY_BOT_ALERT_DISABLED)].
 
@@ -589,9 +629,12 @@ make_bot_el(Server, ID) ->
         not_found ->
             {error, ?ERR_ITEM_NOT_FOUND};
         Map ->
-            RetFields = make_ret_elements(Map),
-            {ok, make_ret_stanza(RetFields)}
+            make_bot_el(Map)
     end.
+
+make_bot_el(Bot) ->
+    RetFields = make_ret_elements(Bot),
+    {ok, make_ret_stanza(RetFields)}.
 
 make_ret_elements(Map) ->
     MetaFields = meta_fields(Map),

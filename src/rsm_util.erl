@@ -7,6 +7,8 @@
 
 -include_lib("ejabberd/include/jlib.hrl").
 
+-compile({parse_transform, cut}).
+
 -define(EX_TO_UNDEFINED(F), try F catch _:_ -> undefined end).
 -define(RSM_MAX, 1000).
 
@@ -15,7 +17,8 @@
 %% This function takes a list of records and an RSM selection structure.
 %% The records must be maps and must contain an `id' field which is to
 %% be used for ID-based lookups.
--spec filter_with_rsm([map()], jlib:rsm_in()) -> {[map()], jlib:rsm_out()}.
+-spec filter_with_rsm([map() | binary()], jlib:rsm_in()) ->
+    {[map() | binary()], jlib:rsm_out()}.
 filter_with_rsm(Items, RSM = #rsm_in{max = undefined}) ->
     filter_with_rsm(Items, RSM#rsm_in{max = max_results()});
 
@@ -33,7 +36,7 @@ filter_with_rsm(Items, #rsm_in{id = RSMID, max = C,
                                direction = before})
   when RSMID =/= undefined ->
     {_AfterRev, BeforeResultRev} =
-    split_include(fun(#{id := ID}) -> ID =/= RSMID end, lists:reverse(Items)),
+    split_include(id_not_equal(_, RSMID), lists:reverse(Items)),
     BeforeResult = lists:reverse(BeforeResultRev),
     {Before, Result} = safesplit(length(BeforeResult) - C, BeforeResult),
     get_result_list(Items, Result, length(Before));
@@ -41,7 +44,7 @@ filter_with_rsm(Items, #rsm_in{id = RSMID, max = C,
 filter_with_rsm(Items, #rsm_in{id = RSMID, max = C})
   when RSMID =/= undefined ->
     {Before, ResultAfter} =
-    split_include(fun(#{id := ID}) -> ID =/= RSMID end, Items),
+    split_include(id_not_equal(_, RSMID), Items),
     {Result, _After} = safesplit(C, ResultAfter),
     get_result_list(Items, Result, length(Before));
 
@@ -60,8 +63,9 @@ get_result_list(Items, Result, FirstIndex) ->
     {Result, #rsm_out{count = length(Items), index = Index,
                       first = First, last = Last}}.
 
-get_id(#{id := ID}) when is_integer(ID) -> integer_to_binary(ID);
-get_id(#{id := ID}) when is_binary(ID) -> ID.
+get_id(#{id := ID}) -> get_id(ID);
+get_id(ID) when is_integer(ID) -> integer_to_binary(ID);
+get_id(ID) when is_binary(ID) -> (ID).
 
 safesplit(N, List) when N < 0 ->
     {[], List};
@@ -85,3 +89,8 @@ split_include(Pred, [H|T], Acc) ->
 
 max_results() ->
     ejabberd_config:get_local_option_or_default(rsm_max, ?RSM_MAX).
+
+id_not_equal(#{id := ID}, RSMID) ->
+    id_not_equal(ID, RSMID);
+id_not_equal(ID, RSMID) when is_binary(ID) ->
+    ID =/= RSMID.

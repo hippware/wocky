@@ -23,6 +23,7 @@
 -define(CREATE_RADIUS,      10).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
+-define(CREATED_BOTS,       20).
 -define(CREATED_ITEMS,      50).
 
 %%--------------------------------------------------------------------
@@ -40,6 +41,7 @@ all() ->
      subscribe,
      delete,
      errors,
+     retrieve_for_user,
      update_affiliations,
      friends_only_permissions,
      roster_change_triggers,
@@ -234,6 +236,46 @@ errors(Config) ->
         expect_iq_error(create_stanza(WrongType), Alice)
       end).
 
+retrieve_for_user(Config) ->
+    reset_tables(Config),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot]),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
+      fun(Alice, Bob, Tim) ->
+        IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
+        {_OwnerBots, FriendsBots} = distribute(IDs),
+
+        lists:foreach(
+          fun(B) ->
+                  expect_iq_success(
+                    change_visibility_stanza(B, ?WOCKY_BOT_VIS_FRIENDS), Alice)
+          end,
+          FriendsBots),
+
+        %% Alice can see all her bots
+        Stanza = expect_iq_success(
+                   retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
+        check_returned_bots(Stanza, IDs, ?CREATED_BOTS),
+
+        %% Bob can only see the subset of bots set to be visible by friends
+        Stanza2 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
+        check_returned_bots(Stanza2, FriendsBots, ?CREATED_BOTS div 2),
+
+        %% Tim cannot see any of Alice's bots since he is neither
+        %% the owner nor a friend
+        Stanza3 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
+        check_returned_bots(Stanza3, [], 0),
+
+        %% Test some basic RSM functionality
+        %% Bob can only see the subset of bots set to be visible by friends
+        Stanza4 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID,
+                                    #rsm_in{index = 3, max = 2}), Bob),
+        ExpectedBots = lists:sublist(FriendsBots, 4, 2),
+        check_returned_bots(Stanza4, ExpectedBots, 2)
+      end).
+
 update_affiliations(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
@@ -280,7 +322,7 @@ friends_only_permissions(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         expect_iq_success(
-          change_visibility_stanza(?WOCKY_BOT_VIS_FRIENDS), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
 
         test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
 
@@ -319,7 +361,7 @@ friends_only_permissions(Config) ->
 
         %% Set the bot back to WHITELIST
         expect_iq_success(
-          change_visibility_stanza(?WOCKY_BOT_VIS_WHITELIST), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_WHITELIST), Alice),
 
         %% Alice removes Bob as a contact so that subsequent tests don't fail
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
@@ -397,7 +439,7 @@ blocked_group(Config) ->
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         expect_iq_success(
-          change_visibility_stanza(?WOCKY_BOT_VIS_FRIENDS), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
 
         % Alice adds Tim as a normal friend
         test_helper:add_contact(Alice, Tim, <<"blah">>,
@@ -612,7 +654,46 @@ check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
                    ExpectedFields) ->
     #xmlel{name = <<"bot">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Children} = BotStanza,
-    check_return_fields(Children, ExpectedFields).
+    check_return_fields(Children, ExpectedFields),
+    % Return the bot ID
+    get_id(Children).
+
+check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
+                    ExpectedIDs, Total) ->
+    #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = Children} = BotsStanza,
+    SortedIDs = lists:sort(ExpectedIDs),
+    {First, Last} = case ExpectedIDs of
+                        [] -> {undefined, undefined};
+                        _ -> {hd(SortedIDs), lists:last(SortedIDs)}
+                    end,
+    do([error_m ||
+        RSM <- check_get_children(Children, <<"set">>,
+                                  [{<<"xmlns">>, ?NS_RSM}]),
+        RSMOut <- decode_rsm(RSM, #rsm_out{}),
+        check_rsm(RSMOut, Total, First, Last),
+        check_ids(ExpectedIDs, Children)
+       ]).
+
+check_ids(ExpectedIDs, Children) ->
+    IDs = lists:sort(get_ids(Children, [])),
+    case ExpectedIDs of
+        IDs -> ok;
+        _ -> {error, {incorrect_ids, IDs, ExpectedIDs}}
+    end.
+
+get_ids([], Acc) ->
+    Acc;
+get_ids([#xmlel{name = <<"bot">>, children = Fields} | Rest], Acc) ->
+    get_ids(Rest, [get_id(Fields) | Acc]);
+get_ids([_|Rest], Acc) ->
+    get_ids(Rest, Acc).
+
+get_id([El = #xmlel{name = <<"field">>, attrs = Attrs} | Rest]) ->
+    case xml:get_attr(<<"var">>, Attrs) of
+        {value, <<"id">>} -> xml:get_path_s(El, [{elem, <<"value">>}, cdata]);
+        _ -> get_id(Rest)
+    end.
 
 check_return_fields(Elements, ExpectedFields) ->
     lists:foreach(check_field(_, Elements), ExpectedFields).
@@ -651,7 +732,7 @@ check_value_el(Value, Type, Element) ->
     ct:fail("check_value_el failed: ~p ~p ~p", [Value, Type, Element]).
 
 check_geoloc_val({Lat, Lon}, #xmlel{name = <<"geoloc">>,
-                                    attrs = Attrs,
+                                    attrs = Attrs,
                                     children = Children}) ->
     ?assertEqual({value, ?NS_GEOLOC}, xml:get_attr(<<"xmlns">>, Attrs)),
     check_child(<<"lat">>, Lat, Children),
@@ -677,12 +758,18 @@ is_field(Name, Type, #xmlel{attrs = Attrs}) ->
     xml:get_attr(<<"var">>, Attrs) =:= {value, Name} andalso
     xml:get_attr(<<"type">>, Attrs) =:= {value, Type}.
 
-retrieve_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(<<"bot">>)).
+retrieve_stanza(User, RSM) ->
+    test_helper:iq_get(?NS_BOT,
+                       #xmlel{name = <<"bot">>,
+                              attrs = [{<<"user">>, User}],
+                              children = [rsm_elem(RSM)]}).
 
-node_el(Name) -> node_el(Name, []).
-node_el(Name, Children) ->
-    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(?BOT)}],
+retrieve_stanza() ->
+    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"bot">>)).
+
+node_el(ID, Name) -> node_el(ID, Name, []).
+node_el(ID, Name, Children) ->
+    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
            children = Children}.
 
 bot_node(ID) ->
@@ -691,21 +778,22 @@ bot_node(ID) ->
 bot_jid(ID) ->
     jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, bot_node(ID))).
 
-change_visibility_stanza(Visibility) ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"fields">>,
+change_visibility_stanza(Bot, Visibility) ->
+    ct:log("making change_visibility_stanza: ~p ~p", [Bot, Visibility]),
+    test_helper:iq_set(?NS_BOT, node_el(Bot, <<"fields">>,
                                         visibility_field(Visibility))).
 
 visibility_field(Visibility) ->
     create_field({"visibility", "int", Visibility}).
 
 update_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"fields">>, modify_field())).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"fields">>, modify_field())).
 
 modify_field() ->
     create_field({"description", "string", ?NEW_DESCRIPTION}).
 
 affiliations_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(<<"affiliations">>)).
+    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"affiliations">>)).
 
 check_affiliations(#xmlel{name = <<"iq">>, children = [AffiliationsEl]},
                    Affiliates) ->
@@ -727,7 +815,7 @@ is_affiliate({Name, Type}, #xmlel{name = <<"affiliation">>, attrs = Attrs}) ->
      {value, atom_to_binary(Type, utf8)}.
 
 subscribers_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(<<"subscribers">>)).
+    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"subscribers">>)).
 
 check_subscribers(#xmlel{name = <<"iq">>, children = [SubscribersEl]},
                    Subscribers) ->
@@ -756,7 +844,7 @@ check_follow(El, Follow) ->
 
 modify_affiliations_stanza(NewAffiliations) ->
     test_helper:iq_set(?NS_BOT,
-                       node_el(<<"affiliations">>,
+                       node_el(?BOT, <<"affiliations">>,
                                affiliation_els(NewAffiliations))).
 
 affiliation_els(Affiliations) ->
@@ -799,10 +887,10 @@ has_standard_attrs(Attrs) ->
     {value, ?NS_BOT} =:= xml:get_attr(<<"xmlns">>, Attrs).
 
 unsubscribe_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"unsubscribe">>)).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).
 
 subscribe_stanza(Follow) ->
-    SubEl = node_el(<<"subscribe">>),
+    SubEl = node_el(?BOT, <<"subscribe">>),
     FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
     test_helper:iq_set(?NS_BOT, FullSubEl).
 
@@ -814,7 +902,7 @@ follow_cdata(false) -> <<"0">>;
 follow_cdata(true) -> <<"1">>.
 
 delete_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"delete">>)).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"delete">>)).
 
 publish_item_stanza(BotID, NoteID, Title, Content) ->
     test_helper:iq_set(?NS_BOT, publish_el(BotID, NoteID, Title, Content)).
@@ -948,7 +1036,7 @@ is_result(Stanza, First, Last) ->
             RSM <- check_get_children(Children, <<"set">>,
                                       [{<<"xmlns">>, ?NS_RSM}]),
             RSMOut <- decode_rsm(RSM, #rsm_out{}),
-            check_rsm(RSMOut, First, Last),
+            check_rsm(RSMOut, ?CREATED_ITEMS, First, Last),
             check_items(Children, First, Last),
             ok
            ]),
@@ -1010,15 +1098,18 @@ decode_rsm([El | _], _) ->
     {error, {unknown_rsm_el, El}}.
 
 check_rsm(#rsm_out{count = Count, index = Index, first = First, last = Last},
-          ExpectFirst, ExpectLast) ->
+          ExpectedCount, ExpectFirst, ExpectLast) ->
     FirstID = item_id(ExpectFirst),
     LastID = item_id(ExpectLast),
-    case {Count, Index+1, First, Last} of
-        {?CREATED_ITEMS, ExpectFirst, FirstID, LastID} ->
+    case {Count, expected_first(Index), First, Last} of
+        {ExpectedCount, ExpectFirst, FirstID, LastID} ->
             ok;
         _ ->
             {error, bad_rsm}
     end.
+
+expected_first(undefined) -> undefined;
+expected_first(I) -> I+1.
 
 check_items(Children, First, Last) ->
     Expected = lists:seq(First, Last),
@@ -1052,6 +1143,8 @@ is_item_entry(I, El = #xmlel{name = <<"entry">>,
     item_content(I) =:= xml:get_path_s(El, [{elem, <<"content">>}, cdata]);
 is_item_entry(_, _) -> false.
 
+item_id(undefined) -> undefined;
+item_id(I) when is_binary(I) -> I;
 item_id(I) ->
     <<"ID_", (integer_to_binary(I))/binary>>.
 item_title(I) ->
@@ -1059,3 +1152,19 @@ item_title(I) ->
 item_content(I) ->
     <<"Content_", (integer_to_binary(I))/binary>>.
 
+create_simple_bot(Client) ->
+    Fields = lists:keydelete("shortname", 1, default_fields()),
+    Stanza = expect_iq_success(create_stanza(Fields), Client),
+    ExpectedFields = lists:keydelete("shortname", 1, expected_create_fields()),
+    check_returned_bot(Stanza, ExpectedFields).
+
+distribute(L) ->
+    {A, B} = distribute(L, [], []),
+    {lists:reverse(A), lists:reverse(B)}.
+
+distribute([], A, B) ->
+    {A, B};
+distribute([H], A, B) ->
+    {[H|A], B};
+distribute([H,H2|T], A, B) ->
+    distribute(T, [H|A], [H2|B]).
