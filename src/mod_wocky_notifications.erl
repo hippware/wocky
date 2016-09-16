@@ -44,11 +44,12 @@ hooks() ->
 -spec handle_iq(ejabberd:jid(), ejabberd:jid(), iq()) -> iq().
 handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
     #jid{luser = LUser, lserver = LServer, lresource = LResource} = From,
-    handle_request(From, LUser, LServer, LResource, IQ, ReqEl);
+    {ok, State} = handle_request(From, LUser, LServer, LResource, ReqEl),
+    make_response(IQ, State);
 handle_iq(_From, _To, IQ) ->
     make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
 
-handle_request(JID, LUser, LServer, LResource, IQ,
+handle_request(JID, LUser, LServer, LResource,
                #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     DeviceId = proplists:get_value(<<"device">>, Attrs),
     Platform = proplists:get_value(<<"platform">>, Attrs),
@@ -62,17 +63,22 @@ handle_request(JID, LUser, LServer, LResource, IQ,
                                             device_id => DeviceId,
                                             endpoint => Endpoint,
                                             created_at => CreatedAt}),
-    IQ#iq{type = result, sub_el = #xmlel{name = <<"enabled">>}};
-handle_request(_, LUser, LServer, LResource, IQ,
+    {ok, <<"enabled">>};
+handle_request(_, LUser, LServer, LResource,
                #xmlel{name = <<"disable">>}) ->
     ok = wocky_db:delete(LServer, device, all, #{user => LUser,
                                                  server => LServer,
                                                  resource => LResource}),
-    IQ#iq{type = result, sub_el = #xmlel{name = <<"disabled">>}}.
+    {ok, <<"disabled">>}.
 
 make_error_response(IQ, ErrStanza) ->
     ok = lager:warning("Error on notification IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
+
+make_response(IQ, State) ->
+    IQ#iq{type = result,
+          sub_el = #xmlel{name = State,
+                          attrs = [{<<"xmlns">>, ?NS_NOTIFICATIONS}]}}.
 
 
 %%%===================================================================
