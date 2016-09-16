@@ -4,7 +4,7 @@
 -module(pep_elem_handler).
 -include_lib("ejabberd/include/jlib.hrl").
 
--ignore_xref([{behaviour_info, 1}]).
+-ignore_xref([behaviour_info/1]).
 
 %% @doc Callback that is called for each item passed through mod_wocky_pep.
 %% The function should return either the item, an optionally modified version

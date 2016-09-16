@@ -62,12 +62,16 @@
          timestamp_to_now/1, now_to_timestamp/1,
          expire_to_ttl/1, drop_nulls/1, keyspace_name/1]).
 
--ignore_xref([{bootstrap, 0},
-              {bootstrap, 1},
-              {create_schema, 0},
-              {prepare_tables, 2},
-              {clear_tables, 2},
-              {clear_user_tables, 1}]).
+-ignore_xref([bootstrap/0,
+              bootstrap/1,
+              create_schema/0,
+              prepare_tables/2,
+              clear_tables/2,
+              clear_user_tables/1,
+              local_keyspace/0,
+              shared_keyspace/0,
+              select_column/4
+             ]).
 
 -ifdef(TEST).
 -export([to_keyspace/1]).

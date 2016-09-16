@@ -11,7 +11,7 @@
 
 -export([seed_table/2, seed_tables/2, seed_keyspace/2, seed_data/2]).
 
--ignore_xref([{seed_table, 2}, {seed_tables, 2}]).
+-ignore_xref([seed_table/2, seed_tables/2, seed_data/2]).
 
 -ifdef(TEST).
 -export([make_session/3, make_offline_msgs/5, get_nowsecs/0,

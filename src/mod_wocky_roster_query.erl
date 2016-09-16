@@ -15,6 +15,8 @@
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
 
+-ignore_xref([handle_iq/3]).
+
 %% gen_mod handlers
 -export([start/2, stop/1]).
 

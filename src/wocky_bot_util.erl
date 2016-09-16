@@ -20,7 +20,6 @@
          notify_affiliates/3,
          make_follow_element/1,
          make_affiliate_elements/1,
-         make_affiliate_element/1,
          make_node/1,
          list_hash/1,
          get_rsm/1

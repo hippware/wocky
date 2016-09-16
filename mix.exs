@@ -129,7 +129,8 @@ defmodule Wocky.Mixfile do
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
-      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test}
+      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
+      {:exref,         github: "hippware/exref",          branch: "master", only: :dev}
     ]
   end
 

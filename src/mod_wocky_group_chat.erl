@@ -17,7 +17,7 @@
 
 %% IQ and message filter hooks
 -export([filter_packet/1, handle_iq/3]).
--ignore_xref([{filter_packet, 1}, {handle_iq, 3}]).
+-ignore_xref([filter_packet/1, handle_iq/3]).
 
 %% Other group chat API functions
 -export([is_participant/2]).
