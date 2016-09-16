@@ -10,7 +10,7 @@
          handle/2,
          terminate/3]).
 
--ignore_xref([{init, 3}, {terminate, 3}, {handle, 2}]).
+-ignore_xref([init/3, terminate/3, handle/2]).
 
 
 -spec init({atom(), http}, cowboy_req:req(), any())

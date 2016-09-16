@@ -22,7 +22,7 @@
          id/1
         ]).
 
--ignore_xref([{read, 2}, {size, 1}]).
+-ignore_xref([read/2, size/1]).
 
 -ifdef(TEST).
 -export([open_write/7,

@@ -10,7 +10,7 @@
          user_removed/1,
          reindex/0]).
 
--ignore_xref([{start_link, 0}, {reindex, 0}]).
+-ignore_xref([start_link/0, reindex/0]).
 
 %% gen_server callbacks
 -export([init/1,
