@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Behaviour definition for mod_tros backends
--module(mod_tros_backend).
+%%% @doc Behaviour definition for mod_wocky_tros backends
+-module(mod_wocky_tros_backend).
 
 %% I die a little inside when I have to do this.
 -ignore_xref([{behaviour_info, 1}]).

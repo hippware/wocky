@@ -62,7 +62,7 @@ end_per_testcase(CaseName, Config) ->
 
 
 %%--------------------------------------------------------------------
-%% mod_tros tests
+%% mod_wocky_tros tests
 %%--------------------------------------------------------------------
 
 file_updown_story(Config) ->

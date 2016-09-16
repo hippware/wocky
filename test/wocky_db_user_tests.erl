@@ -377,8 +377,9 @@ test_update_user() ->
 test_update_user_with_avatar() ->
   AvatarURL = tros:make_url(?SERVER, ?AVATAR_FILE2),
   Fields = #{avatar => AvatarURL},
-  NonExistantURL = tros:make_url(?SERVER, mod_tros:make_file_id()),
-  NonLocalURL = tros:make_url(<<"nonlocal.com">>, mod_tros:make_file_id()),
+  NonExistantURL = tros:make_url(?SERVER, mod_wocky_tros:make_file_id()),
+  NonLocalURL = tros:make_url(<<"nonlocal.com">>,
+                              mod_wocky_tros:make_file_id()),
   MediaURL = tros:make_url(?SERVER, ?MEDIA_FILE),
 
   { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
