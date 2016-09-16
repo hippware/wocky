@@ -196,7 +196,7 @@ delete_bot(Server, ID) ->
 %%%===================================================================
 
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
-    case bot_utils:get_id_from_node(Attrs) of
+    case wocky_bot_util:get_id_from_node(Attrs) of
         {ok, ID} -> get_bot_by_id(From, Server, ID);
         {error, _} -> get_bots_for_user(From, Server, IQ, Attrs)
     end.
@@ -211,7 +211,7 @@ get_bot_by_id(From, Server, ID) ->
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
         User <- wocky_xml:get_attr(<<"user">>, Attrs),
-        RSMIn <- bot_utils:get_rsm(IQ),
+        RSMIn <- wocky_bot_util:get_rsm(IQ),
         {Bots, RSMOut} <- users_bots(Server, From, User, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
@@ -227,7 +227,7 @@ users_bots(Server, From, User, RSMIn) ->
     {ok, {Bots, RSMOut}}.
 
 access_filter(Server, From, ID) ->
-    ok =:= bot_utils:check_access(Server, ID, From).
+    ok =:= wocky_bot_util:check_access(Server, ID, From).
 
 users_bots_result(Bots, RSMOut) ->
     BotEls = make_bot_els(Bots),
