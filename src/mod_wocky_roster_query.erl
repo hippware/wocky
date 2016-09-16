@@ -3,7 +3,7 @@
 %%% @doc Module implementing roster query
 %%% See https://github.com/hippware/tr-wiki/wiki/Roster-query
 %%%
--module(mod_roster_query).
+-module(mod_wocky_roster_query).
 
 -behaviour(gen_mod).
 
