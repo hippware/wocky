@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
--ifndef(MOD_TROS_FRANCUS_HRL).
--define(MOD_TROS_FRANCUS_HRL, 1).
+-ifndef(MOD_WOCKY_TROS_FRANCUS_HRL).
+-define(MOD_WOCKY_TROS_FRANCUS_HRL, 1).
 
 -record(tros_request, {
           method        :: get | post,
@@ -13,4 +13,4 @@
           metadata      :: francus:metadata()
          }).
 
--endif. % ifdef MOD_TROS_FRANCUS_HRL
+-endif. % ifdef MOD_WOCKY_TROS_FRANCUS_HRL

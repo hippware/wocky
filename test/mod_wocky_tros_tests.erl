@@ -1,14 +1,14 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Test suite for mod_tros.erl
--module(mod_tros_tests).
+%%% @doc Test suite for mod_wocky_tros.erl
+-module(mod_wocky_tros_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_db_seed.hrl").
 -include("wocky.hrl").
 
-mod_tros_test_() -> {
-  "mod_tros",
+mod_wocky_tros_test_() -> {
+  "mod_wocky_tros",
   [{setup, fun() -> before_all(Backend) end, fun after_all/1,
     [
      test_avatar_upload_request(Backend),
@@ -26,7 +26,7 @@ mod_tros_test_() -> {
 }.
 
 mecks() -> [ejabberd_config, httpd_util, ossp_uuid,
-            mod_tros_francus, mod_tros_s3].
+            mod_wocky_tros_francus, mod_wocky_tros_s3].
 
 before_all(Backend) ->
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
@@ -69,14 +69,14 @@ before_all(Backend) ->
                                              uuid:string_to_uuid(UUID)
                                    end),
 
-    meck:expect(mod_tros_francus, make_auth,
+    meck:expect(mod_wocky_tros_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 48)) end),
 
-    meck:expect(mod_tros_s3, make_auth, 5,
+    meck:expect(mod_wocky_tros_s3, make_auth, 5,
                 base64:encode(binary:copy(<<6:8>>, 48))),
-    meck:expect(mod_tros_s3, get_owner, 2, {ok, ?ALICE}),
-    meck:expect(mod_tros_s3, get_metadata,
-                fun(A, B) -> mod_tros_francus:get_metadata(A, B) end),
+    meck:expect(mod_wocky_tros_s3, get_owner, 2, {ok, ?ALICE}),
+    meck:expect(mod_wocky_tros_s3, get_metadata,
+                fun(A, B) -> mod_wocky_tros_francus:get_metadata(A, B) end),
 
     wocky_db:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
                                                   group_chat]),
@@ -277,7 +277,7 @@ test_meck_validate() ->
 handle_iq(FromJID, ServerJID, Packet) ->
     exml:to_binary(
       jlib:iq_to_xml(
-        mod_tros:handle_iq(FromJID, ServerJID, Packet))).
+        mod_wocky_tros:handle_iq(FromJID, ServerJID, Packet))).
 
 new_file_uuid() ->
     <<"a65ecb4e-c633-11e5-9fdc-080027f70e96">>.

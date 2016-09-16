@@ -3,7 +3,7 @@
 %%% (https://github.com/hippware/tr-wiki/wiki/HXEP%3A-Files-over-http).
 %%%
 
--module(mod_tros).
+-module(mod_wocky_tros).
 
 -export([
    start/2,
@@ -63,7 +63,7 @@ handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     Req = #request{from_jid = FromJID, to_jid = ToJID, iq = IQ},
     case handle_request(Req, Type, ReqEl) of
         {error, E} ->
-            _ = wocky_metrics:inc(mod_tros_failed_requests),
+            _ = wocky_metrics:inc(mod_wocky_tros_failed_requests),
             error_response(IQ, E);
         {ok, R} -> R
     end.
@@ -84,7 +84,7 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         Metadata <- get_metadata(LServer, FileID),
         {Purpose, Access} <- get_purpose_access(LServer, FileID),
         check_download_permissions(FromJID, OwnerID, Purpose, Access),
-        {ok, wocky_metrics:inc(mod_tros_download_requests)},
+        {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
 
@@ -98,7 +98,7 @@ handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
         Size <- check_upload_size(Fields),
         check_upload_type(Fields),
         check_upload_permissions(FromJID, Fields),
-        {ok, wocky_metrics:inc(mod_tros_upload_requests)},
+        {ok, wocky_metrics:inc(mod_wocky_tros_upload_requests)},
         upload_response(Req, Fields, Size)
        ]).
 
@@ -255,7 +255,7 @@ to_xmlel({Name, Content}) ->
     #xmlel{name = Name, children = [#xmlcdata{content = Content}]}.
 
 backend() ->
-    list_to_atom("mod_tros_" ++
+    list_to_atom("mod_wocky_tros_" ++
       atom_to_list(
         ejabberd_config:get_local_option(tros_backend))).
 
@@ -270,7 +270,7 @@ binary_to_integer_def(Binary, Default) ->
     end.
 
 setup_metrics() ->
-    Metrics = [mod_tros_download_requests,
-               mod_tros_upload_requests,
-               mod_tros_failed_requests],
+    Metrics = [mod_wocky_tros_download_requests,
+               mod_wocky_tros_upload_requests,
+               mod_wocky_tros_failed_requests],
     wocky_metrics:setup_spiral(Metrics).
