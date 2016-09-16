@@ -23,8 +23,6 @@
 
 -define(DEFAULT_MAX, 50).
 
--define(EX_TO_UNDEFINED(F), try F catch _:_ -> undefined end).
-
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(default_max,
                                    conv_max,
@@ -71,8 +69,7 @@ get_conversations(From, RSMIn) ->
                                          uuid:string_to_uuid(T))} ||
                        R = #{time := T} <- Rows],
     SortedResult = sort_result(ResultWithTimes),
-    {Conversations, RSMOut} = filter_with_rsm(SortedResult, RSMIn),
-    {Conversations, RSMOut#rsm_out{count = length(SortedResult)}}.
+    rsm_util:filter_with_rsm(SortedResult, RSMIn).
 
 %%%===================================================================
 %%% Helpers
@@ -99,46 +96,6 @@ id_to_int(RSM = #rsm_in{id = ID}) ->
 max_results() ->
     ejabberd_config:get_local_option(conv_max).
 
-filter_with_rsm(Conversations, #rsm_in{id = undefined, index = undefined,
-                                       direction = before, max = C}) ->
-    {Before, Result} = safesplit(length(Conversations) - C, Conversations),
-    get_result_list(Result, length(Before));
-
-filter_with_rsm(Conversations, #rsm_in{id = undefined, index = undefined,
-                                       max = C}) ->
-    {Result, _After} = safesplit(C, Conversations),
-    get_result_list(Result, 0);
-
-filter_with_rsm(Conversations, #rsm_in{id = RSMID, max = C,
-                                       direction = before})
-  when RSMID =/= undefined ->
-    {BeforeResult, _After} =
-    lists:splitwith(fun(#{id := ID}) -> ID > RSMID end, Conversations),
-    {Before, Result} = safesplit(length(BeforeResult) - C, BeforeResult),
-    get_result_list(Result, length(Before));
-
-filter_with_rsm(Conversations, #rsm_in{id = RSMID, max = C})
-  when RSMID =/= undefined ->
-    {Before, ResultAfter} =
-    lists:splitwith(fun(#{id := ID}) -> ID >= RSMID end, Conversations),
-    {Result, _After} = safesplit(C, ResultAfter),
-    get_result_list(Result, length(Before));
-
-filter_with_rsm(Conversations, #rsm_in{index = Index, max = C}) ->
-    {Before, ResultAfter} = safesplit(Index, Conversations),
-    {Result, _After} = safesplit(C, ResultAfter),
-    get_result_list(Result, length(Before)).
-
-get_result_list(Result, FirstIndex) ->
-    First = ?EX_TO_UNDEFINED(
-               integer_to_binary(maps:get(id, hd(Result)))),
-    Index = case First of
-                undefined -> undefined;
-                _ -> FirstIndex
-            end,
-    Last = ?EX_TO_UNDEFINED(
-              integer_to_binary(maps:get(id, lists:last(Result)))),
-    {Result, #rsm_out{index = Index, first = First, last = Last}}.
 
 create_response(IQ, Conversations, RSMOut) ->
     IQ#iq{type = result,
@@ -179,10 +136,3 @@ conversation_element_data(timestamp, V) ->
     #xmlcdata{content = integer_to_binary(V div 1000)};
 conversation_element_data(_, V) ->
     #xmlcdata{content = V}.
-
-safesplit(N, List) when N < 0 ->
-    {[], List};
-safesplit(N, List) when N >= length(List) ->
-    {List, []};
-safesplit(N, List) ->
-    lists:split(N, List).

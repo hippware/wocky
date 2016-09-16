@@ -29,7 +29,7 @@
 -define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
 -define(NS_TROS, <<"hippware.com/hxep/http-file">>).
 -define(NS_WOCKY_ROSTER, <<"hippware.com/hxep/roster">>).
-
+-define(NS_ATOM, <<"http://www.w3.org/2005/Atom">>).
 
 -define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
 -define(GROUP_CHAT_WITH_JID, <<"$$GROUP_CHAT$$">>).

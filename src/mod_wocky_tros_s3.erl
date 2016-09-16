@@ -1,11 +1,11 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Amazon AWS S3 backend for `mod_tros'
--module(mod_tros_s3).
+%%% @doc Amazon AWS S3 backend for `mod_wocky_tros'
+-module(mod_wocky_tros_s3).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_db_seed.hrl").
 
--behaviour(mod_tros_backend).
+-behaviour(mod_wocky_tros_backend).
 
 -export([start/1,
          stop/0,

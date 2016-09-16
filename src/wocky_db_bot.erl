@@ -1,6 +1,7 @@
 -module(wocky_db_bot).
 
 -export([get/2,
+         get_by_user/2,
          get_id_by_name/2,
          exists/2,
          insert/2,
@@ -18,7 +19,11 @@
          unsubscribe/3,
          owner_roster/2,
          owner_roster_ver/2,
-         update_owner_roster/4
+         update_owner_roster/4,
+         publish_item/4,
+         get_item/3,
+         get_items/2,
+         delete_item/3
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -40,6 +45,10 @@
 -spec get(wocky_db:server(), wocky_db:id()) -> map() | not_found.
 get(Server, ID) ->
     wocky_db:select_row(Server, bot, all, #{id => ID}).
+
+-spec get_by_user(wocky_db:server(), binary()) -> [binary()].
+get_by_user(Server, User) ->
+    wocky_db:select_column(Server, user_bot, id, #{owner => User}).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -170,6 +179,30 @@ update_owner_roster(Server, ID, Items, Version) ->
                     #{owner_roster => [jid:to_binary(I) || I <-Items],
                       owner_roster_ver => Version},
                     #{id => ID}).
+
+-spec publish_item(wocky_db:server(), wocky_db:id(), binary(), binary()) -> ok.
+publish_item(Server, BotID, NoteID, Stanza) ->
+    Existing = wocky_db:select_one(Server, bot_item, id,
+                                   #{id => NoteID, bot => BotID}),
+    MaybePublished = case Existing of
+                         not_found -> #{published => now};
+                         _ -> #{}
+                     end,
+    Note = MaybePublished#{id => NoteID,
+                           bot => BotID,
+                           updated => now,
+                           stanza => Stanza},
+    wocky_db:insert(Server, bot_item, Note).
+
+get_item(Server, BotID, NoteID) ->
+    wocky_db:select_row(Server, bot_item, all, #{id => NoteID, bot => BotID}).
+
+get_items(Server, BotID) ->
+    wocky_db:select(Server, bot_item, all, #{bot => BotID}).
+
+-spec delete_item(wocky_db:server(), wocky_db:id(), binary()) -> ok.
+delete_item(Server, BotID, NoteID) ->
+    wocky_db:delete(Server, bot_item, all, #{id => NoteID, bot => BotID}).
 
 %%%===================================================================
 %%% Private helpers

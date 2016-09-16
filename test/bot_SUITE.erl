@@ -1,5 +1,5 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Integration test suite for mod_bot
+%%% @doc Integration test suite for mod_wocky_bot
 -module(bot_SUITE).
 -compile(export_all).
 
@@ -12,6 +12,7 @@
 
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
+-compile({parse_transform, do}).
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 
@@ -22,12 +23,16 @@
 -define(CREATE_RADIUS,      10).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
+-define(CREATED_BOTS,       20).
+-define(CREATED_ITEMS,      50).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
 
 all() ->
-    [create,
+    [
+     create,
      retrieve,
      update,
      affiliations,
@@ -36,10 +41,15 @@ all() ->
      subscribe,
      delete,
      errors,
+     retrieve_for_user,
      update_affiliations,
      friends_only_permissions,
      roster_change_triggers,
-     blocked_group
+     blocked_group,
+     publish_item,
+     retract_item,
+     edit_item,
+     get_items
     ].
 
 suite() ->
@@ -65,12 +75,13 @@ init_per_testcase(CaseName, Config) ->
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
+local_tables() ->
+    [bot, bot_name, roster, bot_subscriber, bot_item].
+
 reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot, bot_name, roster,
-                                           bot_subscriber]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [bot, bot_name, roster,
-                                               bot_subscriber]),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
     Users = escalus:get_users([alice, bob, carol, karen, robert, tim]),
     Config1 = fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -87,7 +98,7 @@ reset_tables(Config) ->
 
 
 %%--------------------------------------------------------------------
-%% mod_bot tests
+%% mod_wocky_bot tests
 %%--------------------------------------------------------------------
 
 create(Config) ->
@@ -225,6 +236,46 @@ errors(Config) ->
         expect_iq_error(create_stanza(WrongType), Alice)
       end).
 
+retrieve_for_user(Config) ->
+    reset_tables(Config),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot]),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
+      fun(Alice, Bob, Tim) ->
+        IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
+        {_OwnerBots, FriendsBots} = distribute(IDs),
+
+        lists:foreach(
+          fun(B) ->
+                  expect_iq_success(
+                    change_visibility_stanza(B, ?WOCKY_BOT_VIS_FRIENDS), Alice)
+          end,
+          FriendsBots),
+
+        %% Alice can see all her bots
+        Stanza = expect_iq_success(
+                   retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
+        check_returned_bots(Stanza, IDs, ?CREATED_BOTS),
+
+        %% Bob can only see the subset of bots set to be visible by friends
+        Stanza2 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
+        check_returned_bots(Stanza2, FriendsBots, ?CREATED_BOTS div 2),
+
+        %% Tim cannot see any of Alice's bots since he is neither
+        %% the owner nor a friend
+        Stanza3 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
+        check_returned_bots(Stanza3, [], 0),
+
+        %% Test some basic RSM functionality
+        %% Bob can only see the subset of bots set to be visible by friends
+        Stanza4 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID,
+                                    #rsm_in{index = 3, max = 2}), Bob),
+        ExpectedBots = lists:sublist(FriendsBots, 4, 2),
+        check_returned_bots(Stanza4, ExpectedBots, 2)
+      end).
+
 update_affiliations(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
@@ -271,7 +322,7 @@ friends_only_permissions(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         expect_iq_success(
-          change_visibility_stanza(?WOCKY_BOT_VIS_FRIENDS), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
 
         test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
 
@@ -310,7 +361,7 @@ friends_only_permissions(Config) ->
 
         %% Set the bot back to WHITELIST
         expect_iq_success(
-          change_visibility_stanza(?WOCKY_BOT_VIS_WHITELIST), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_WHITELIST), Alice),
 
         %% Alice removes Bob as a contact so that subsequent tests don't fail
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
@@ -388,7 +439,7 @@ blocked_group(Config) ->
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         expect_iq_success(
-          change_visibility_stanza(?WOCKY_BOT_VIS_FRIENDS), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
 
         % Alice adds Tim as a normal friend
         test_helper:add_contact(Alice, Tim, <<"blah">>,
@@ -410,6 +461,110 @@ blocked_group(Config) ->
         expect_iq_error(retrieve_stanza(), Tim)
       end).
 
+publish_item(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        NoteID = <<"item1">>,
+        Content = <<"content ZZZ">>,
+        Title = <<"title ZZZ">>,
+        % Alice publishes an item to her bot
+        expect_iq_success(
+          publish_item_stanza(?BOT, NoteID, Title, Content),
+          Alice),
+
+        % Carol and Karen are subscribers, and so receive a notification
+        % Bob is an affiliate but not subscribed, so does not receive anything
+        expect_item_publication(Carol, ?BOT, NoteID, Title, Content),
+        expect_item_publication(Karen, ?BOT, NoteID, Title, Content),
+
+        % Nobody else can publish an item to the bot besides the owner
+        expect_iq_error(
+          publish_item_stanza(?BOT, NoteID, Title, Content),
+          Bob),
+        expect_iq_error(
+          publish_item_stanza(?BOT, NoteID, Title, Content),
+          Carol),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
+
+
+retract_item(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        % Nobody else can publish an item to the bot besides the owner
+        expect_iq_error(
+          retract_item_stanza(?BOT, ?ITEM),
+          Bob),
+        expect_iq_error(
+          retract_item_stanza(?BOT, ?ITEM),
+          Carol),
+
+        % Alice can retract the item as its owner
+        expect_iq_success(
+          retract_item_stanza(?BOT, ?ITEM),
+          Alice),
+
+        % Carol and Karen are subscribers, and so receive a notification
+        % Bob is an affiliate but not subscribed, so does not receive anything
+        expect_item_retraction(Carol, ?BOT, ?ITEM),
+        expect_item_retraction(Karen, ?BOT, ?ITEM),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
+
+edit_item(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        NoteID = ?ITEM,
+        Content = <<"updated content">>,
+        Title = <<"updated title">>,
+        % Alice updates an item on her bot
+        expect_iq_success(
+          publish_item_stanza(?BOT, NoteID, Title, Content),
+          Alice),
+
+        % Carol and Karen are subscribers, and so receive a notification
+        % Bob is an affiliate but not subscribed, so does not receive anything
+        expect_item_publication(Carol, ?BOT, NoteID, Title, Content),
+        expect_item_publication(Karen, ?BOT, NoteID, Title, Content),
+
+        % Nobody else can edit an item to the bot besides the owner
+        expect_iq_error(
+          publish_item_stanza(?BOT, NoteID, Title, Content),
+          Bob),
+        expect_iq_error(
+          publish_item_stanza(?BOT, NoteID, Title, Content),
+          Carol),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
+
+get_items(Config) ->
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot_item]),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        % Alice publishes a bunch of items on her bot
+        lists:foreach(
+          add_item(Alice, [Carol, Karen], _), lists:seq(1, ?CREATED_ITEMS)),
+
+        % Bob can get items because he's an affiliate
+        get_items(Bob, #rsm_in{max = 10}, 1, 10),
+        get_items(Bob, #rsm_in{index = 5},
+                  6, ?CREATED_ITEMS),
+        get_items(Bob, #rsm_in{max = 2, direction = before, id = item_id(5)},
+                  3, 4),
+        get_items(Bob, #rsm_in{max = 3, direction = aft, id = item_id(48)},
+                  49, min(?CREATED_ITEMS, 51)),
+
+        % Carol can't because she's not
+        expect_iq_error(
+               test_helper:iq_get(?NS_BOT, query_el(#rsm_in{max = 10})), Carol),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+      end).
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -499,7 +654,46 @@ check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
                    ExpectedFields) ->
     #xmlel{name = <<"bot">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Children} = BotStanza,
-    check_return_fields(Children, ExpectedFields).
+    check_return_fields(Children, ExpectedFields),
+    % Return the bot ID
+    get_id(Children).
+
+check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
+                    ExpectedIDs, Total) ->
+    #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = Children} = BotsStanza,
+    SortedIDs = lists:sort(ExpectedIDs),
+    {First, Last} = case ExpectedIDs of
+                        [] -> {undefined, undefined};
+                        _ -> {hd(SortedIDs), lists:last(SortedIDs)}
+                    end,
+    do([error_m ||
+        RSM <- check_get_children(Children, <<"set">>,
+                                  [{<<"xmlns">>, ?NS_RSM}]),
+        RSMOut <- decode_rsm(RSM, #rsm_out{}),
+        check_rsm(RSMOut, Total, First, Last),
+        check_ids(ExpectedIDs, Children)
+       ]).
+
+check_ids(ExpectedIDs, Children) ->
+    IDs = lists:sort(get_ids(Children, [])),
+    case ExpectedIDs of
+        IDs -> ok;
+        _ -> {error, {incorrect_ids, IDs, ExpectedIDs}}
+    end.
+
+get_ids([], Acc) ->
+    Acc;
+get_ids([#xmlel{name = <<"bot">>, children = Fields} | Rest], Acc) ->
+    get_ids(Rest, [get_id(Fields) | Acc]);
+get_ids([_|Rest], Acc) ->
+    get_ids(Rest, Acc).
+
+get_id([El = #xmlel{name = <<"field">>, attrs = Attrs} | Rest]) ->
+    case xml:get_attr(<<"var">>, Attrs) of
+        {value, <<"id">>} -> xml:get_path_s(El, [{elem, <<"value">>}, cdata]);
+        _ -> get_id(Rest)
+    end.
 
 check_return_fields(Elements, ExpectedFields) ->
     lists:foreach(check_field(_, Elements), ExpectedFields).
@@ -512,11 +706,9 @@ check_field({Name, Type, Value}, Elements) ->
                           Value, Elements)).
 
 has_field(Name, Type, Elements) ->
-    ct:log("Checking field: ~p ~p", [Name, Type]),
     find_field(Name, Type, Elements) =/= false.
 
 has_field_val(Name, Type, Value, Elements) ->
-    ct:log("Checking field: ~p ~p ~p", [Name, Type, Value]),
     case find_field(Name, Type, Elements) of
         #xmlel{name = <<"field">>, children = [ValueEl]} ->
             check_value_el(Value, Type, ValueEl);
@@ -540,7 +732,7 @@ check_value_el(Value, Type, Element) ->
     ct:fail("check_value_el failed: ~p ~p ~p", [Value, Type, Element]).
 
 check_geoloc_val({Lat, Lon}, #xmlel{name = <<"geoloc">>,
-                                    attrs = Attrs,
+                                    attrs = Attrs,
                                     children = Children}) ->
     ?assertEqual({value, ?NS_GEOLOC}, xml:get_attr(<<"xmlns">>, Attrs)),
     check_child(<<"lat">>, Lat, Children),
@@ -566,12 +758,18 @@ is_field(Name, Type, #xmlel{attrs = Attrs}) ->
     xml:get_attr(<<"var">>, Attrs) =:= {value, Name} andalso
     xml:get_attr(<<"type">>, Attrs) =:= {value, Type}.
 
-retrieve_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(<<"bot">>)).
+retrieve_stanza(User, RSM) ->
+    test_helper:iq_get(?NS_BOT,
+                       #xmlel{name = <<"bot">>,
+                              attrs = [{<<"user">>, User}],
+                              children = [rsm_elem(RSM)]}).
 
-node_el(Name) -> node_el(Name, []).
-node_el(Name, Children) ->
-    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(?BOT)}],
+retrieve_stanza() ->
+    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"bot">>)).
+
+node_el(ID, Name) -> node_el(ID, Name, []).
+node_el(ID, Name, Children) ->
+    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
            children = Children}.
 
 bot_node(ID) ->
@@ -580,21 +778,22 @@ bot_node(ID) ->
 bot_jid(ID) ->
     jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, bot_node(ID))).
 
-change_visibility_stanza(Visibility) ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"fields">>,
+change_visibility_stanza(Bot, Visibility) ->
+    ct:log("making change_visibility_stanza: ~p ~p", [Bot, Visibility]),
+    test_helper:iq_set(?NS_BOT, node_el(Bot, <<"fields">>,
                                         visibility_field(Visibility))).
 
 visibility_field(Visibility) ->
     create_field({"visibility", "int", Visibility}).
 
 update_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"fields">>, modify_field())).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"fields">>, modify_field())).
 
 modify_field() ->
     create_field({"description", "string", ?NEW_DESCRIPTION}).
 
 affiliations_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(<<"affiliations">>)).
+    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"affiliations">>)).
 
 check_affiliations(#xmlel{name = <<"iq">>, children = [AffiliationsEl]},
                    Affiliates) ->
@@ -616,7 +815,7 @@ is_affiliate({Name, Type}, #xmlel{name = <<"affiliation">>, attrs = Attrs}) ->
      {value, atom_to_binary(Type, utf8)}.
 
 subscribers_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(<<"subscribers">>)).
+    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"subscribers">>)).
 
 check_subscribers(#xmlel{name = <<"iq">>, children = [SubscribersEl]},
                    Subscribers) ->
@@ -637,7 +836,6 @@ is_subscriber(Name, #xmlel{name = <<"subscriber">>, attrs = Attrs}) ->
     xml:get_attr(<<"jid">>, Attrs) =:= {value, Name}.
 
 check_follow(El, Follow) ->
-    ct:log("Checking follow ~p ~p", [El, Follow]),
     case xml:get_path_s(El, [{elem, <<"follow">>}, cdata]) of
         <<"0">> -> ?assertNot(Follow);
         <<"1">> -> ?assert(Follow);
@@ -646,7 +844,7 @@ check_follow(El, Follow) ->
 
 modify_affiliations_stanza(NewAffiliations) ->
     test_helper:iq_set(?NS_BOT,
-                       node_el(<<"affiliations">>,
+                       node_el(?BOT, <<"affiliations">>,
                                affiliation_els(NewAffiliations))).
 
 affiliation_els(Affiliations) ->
@@ -689,10 +887,10 @@ has_standard_attrs(Attrs) ->
     {value, ?NS_BOT} =:= xml:get_attr(<<"xmlns">>, Attrs).
 
 unsubscribe_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"unsubscribe">>)).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).
 
 subscribe_stanza(Follow) ->
-    SubEl = node_el(<<"subscribe">>),
+    SubEl = node_el(?BOT, <<"subscribe">>),
     FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
     test_helper:iq_set(?NS_BOT, FullSubEl).
 
@@ -704,5 +902,269 @@ follow_cdata(false) -> <<"0">>;
 follow_cdata(true) -> <<"1">>.
 
 delete_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(<<"delete">>)).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"delete">>)).
 
+publish_item_stanza(BotID, NoteID, Title, Content) ->
+    test_helper:iq_set(?NS_BOT, publish_el(BotID, NoteID, Title, Content)).
+
+publish_el(BotID, NoteID, Title, Content) ->
+    #xmlel{name = <<"publish">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = item_el(NoteID, Title, Content)}.
+
+item_el(NoteID) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}]}.
+item_el(NoteID, Title, Content) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}],
+           children = entry_el(Title, Content)}.
+
+entry_el(Title, Content) ->
+    #xmlel{name = <<"entry">>,
+           attrs = [{<<"xmlns">>, ?NS_ATOM}],
+           children = item_fields(Title, Content)}.
+
+item_fields(Title, Content) ->
+    [#xmlel{name = <<"title">>,
+            children = [#xmlcdata{content = Title}]},
+     #xmlel{name = <<"content">>,
+            children = [#xmlcdata{content = Content}]}].
+
+retract_item_stanza(BotID, NoteID) ->
+    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
+
+retract_el(BotID, NoteID) ->
+    #xmlel{name = <<"retract">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = [item_el(NoteID)]}.
+
+expect_item_publication(Client, BotID, NoteID, Title, Content) ->
+    Stanza = escalus:wait_for_stanza(Client),
+    escalus:assert(
+      is_publication_update(BotID, NoteID, Title, Content, _), Stanza).
+
+is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
+    R = do([error_m ||
+            [Event] <- check_get_children(Stanza, <<"message">>),
+            [Item] <- check_get_children(Event, <<"event">>,
+                                         [{<<"xmlns">>, ?NS_BOT},
+                                          {<<"node">>, bot_node(BotID)}]),
+            [Entry] <- check_get_children(Item, <<"item">>,
+                                          [{<<"id">>, NoteID}]),
+            check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
+            check_children_cdata(Entry, [{<<"title">>, Title},
+                                         {<<"content">>, Content}]),
+            ok
+           ]),
+    ct:log("is_publication_update result: ~p", [R]),
+    R =:= ok.
+
+check_get_children(Els, Name) -> check_get_children(Els, Name, []).
+
+check_get_children([], Name, _CheckAttrs) -> {error, {el_not_found, Name}};
+check_get_children([El | Rest], Name, CheckAttrs) ->
+    case check_get_children(El, Name, CheckAttrs) of
+        {ok, Children} -> {ok, Children};
+        {error, _} -> check_get_children(Rest, Name, CheckAttrs)
+    end;
+
+check_get_children(#xmlel{name = Name, attrs = Attrs, children = Children},
+                   Name, CheckAttrs) ->
+    case lists:all(has_attr(Attrs, _), CheckAttrs) of
+        true -> {ok, Children};
+        false -> {error, {missing_attr, CheckAttrs}}
+    end;
+check_get_children(_, Name, Attr) ->
+    {error, {no_or_incorrect_element, Name, Attr}}.
+
+check_children_cdata(_Element, []) -> ok;
+check_children_cdata(Element, [{Name, Value} | Rest]) ->
+    case xml:get_path_s(Element, [{elem, Name}, cdata]) of
+        Value -> check_children_cdata(Element, Rest);
+        E -> {error, {no_or_incorrect_element, Name, Value, Element, E}}
+    end.
+
+has_attr(Attrs, {Name, Val}) ->
+    {value, Val} =:= xml:get_attr(Name, Attrs).
+
+expect_item_retraction(Client, BotID, NoteID) ->
+    Stanza = escalus:wait_for_stanza(Client),
+    escalus:assert(
+      is_retraction_update(BotID, NoteID, _), Stanza).
+
+is_retraction_update(BotID, NoteID, Stanza) ->
+    R = do([error_m ||
+            [Event] <- check_get_children(Stanza, <<"message">>),
+            [Item] <- check_get_children(Event, <<"event">>,
+                                         [{<<"xmlns">>, ?NS_BOT},
+                                          {<<"node">>, bot_node(BotID)}]),
+            [] <- check_get_children(Item, <<"retract">>,
+                                     [{<<"id">>, NoteID}]),
+            ok
+           ]),
+    ct:log("is_retraction_update result: ~p", [R]),
+    R =:= ok.
+
+add_item(Client, Subs, N) ->
+    NoteID = item_id(N),
+    Title = item_title(N),
+    Content = item_content(N),
+    expect_iq_success(
+      publish_item_stanza(?BOT, NoteID, Title, Content), Client),
+
+    lists:foreach(
+        expect_item_publication(_, ?BOT, NoteID, Title, Content),
+        Subs).
+
+get_items(Client, RSM, First, Last) ->
+    Result = expect_iq_success(
+               test_helper:iq_get(?NS_BOT, query_el(RSM)), Client),
+
+    escalus:assert(is_result(_, First, Last), Result).
+
+query_el(RSM) ->
+    #xmlel{name = <<"query">>,
+           attrs = [{<<"node">>, bot_node(?BOT)}],
+           children = [rsm_elem(RSM)]}.
+
+is_result(Stanza, First, Last) ->
+    R = do([error_m ||
+            [Query] <- check_get_children(Stanza, <<"iq">>),
+            Children <- check_get_children(Query, <<"query">>,
+                                           [{<<"xmlns">>, ?NS_BOT}]),
+            RSM <- check_get_children(Children, <<"set">>,
+                                      [{<<"xmlns">>, ?NS_RSM}]),
+            RSMOut <- decode_rsm(RSM, #rsm_out{}),
+            check_rsm(RSMOut, ?CREATED_ITEMS, First, Last),
+            check_items(Children, First, Last),
+            ok
+           ]),
+    ct:log("is_result: ~p", [R]),
+    R =:= ok.
+
+%% RSM encoding
+rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id, index=Index}) ->
+    #xmlel{name = <<"set">>,
+           children = skip_undefined([
+                maybe_rsm_max(Max),
+                maybe_rsm_index(Index),
+                maybe_rsm_direction(Direction, Id)])}.
+
+rsm_id_children(undefined) -> [];
+rsm_id_children(Id) -> [#xmlcdata{content = Id}].
+
+maybe_rsm_direction(undefined, undefined) ->
+    undefined;
+maybe_rsm_direction(Direction, Id) ->
+    #xmlel{
+        name = atom_to_dir(Direction),
+        children = rsm_id_children(Id)}.
+
+atom_to_dir(aft) -> <<"after">>;
+atom_to_dir(before) -> <<"before">>.
+
+maybe_rsm_index(undefined) ->
+    undefined;
+maybe_rsm_index(Index) when is_integer(Index) ->
+    #xmlel{
+        name = <<"index">>,
+        children = [#xmlcdata{content = integer_to_list(Index)}]}.
+
+maybe_rsm_max(undefined) ->
+    undefined;
+maybe_rsm_max(Max) when is_integer(Max) ->
+    #xmlel{
+        name = <<"max">>,
+        children = [#xmlcdata{content = integer_to_list(Max)}]}.
+
+skip_undefined(Xs) ->
+    [X || X <- Xs, X =/= undefined].
+
+%% RSM decoding
+decode_rsm([], Acc) -> {ok, Acc};
+decode_rsm([#xmlel{name = <<"first">>,
+                  attrs = [{<<"index">>, Index}],
+                  children = [#xmlcdata{content = First}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{index = binary_to_integer(Index),
+                                 first = First});
+decode_rsm([#xmlel{name = <<"last">>,
+                  children = [#xmlcdata{content = Last}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{last = Last});
+decode_rsm([#xmlel{name = <<"count">>,
+                  children = [#xmlcdata{content = Count}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{count = binary_to_integer(Count)});
+decode_rsm([El | _], _) ->
+    {error, {unknown_rsm_el, El}}.
+
+check_rsm(#rsm_out{count = Count, index = Index, first = First, last = Last},
+          ExpectedCount, ExpectFirst, ExpectLast) ->
+    FirstID = item_id(ExpectFirst),
+    LastID = item_id(ExpectLast),
+    case {Count, expected_first(Index), First, Last} of
+        {ExpectedCount, ExpectFirst, FirstID, LastID} ->
+            ok;
+        _ ->
+            {error, bad_rsm}
+    end.
+
+expected_first(undefined) -> undefined;
+expected_first(I) -> I+1.
+
+check_items(Children, First, Last) ->
+    Expected = lists:seq(First, Last),
+    check_items(Children, Expected).
+
+% Should be exactly one element left - the RSM set (which we already checked)
+check_items([_RSM], []) -> ok;
+check_items(Children, []) -> {error, {extra_items, Children}};
+check_items(Children, [I | Rest]) ->
+    ExpectedLen = length(Children) - 1,
+    Remaining = lists:filter(
+                  fun(C) -> not is_item(I, C) end,
+                  Children),
+    case length(Remaining) of
+        ExpectedLen -> check_items(Remaining, Rest);
+        _ -> {error, {not_found, I}}
+    end.
+
+is_item(I, #xmlel{name = <<"item">>,
+                  attrs = Attrs,
+                  children = [Entry]}) ->
+    {value, item_id(I)} =:= xml:get_attr(<<"id">>, Attrs)
+    andalso
+    is_item_entry(I, Entry);
+is_item(_, _) -> false.
+
+is_item_entry(I, El = #xmlel{name = <<"entry">>,
+                             attrs = [{<<"xmlns">>, ?NS_ATOM}]}) ->
+    item_title(I) =:= xml:get_path_s(El, [{elem, <<"title">>}, cdata])
+    andalso
+    item_content(I) =:= xml:get_path_s(El, [{elem, <<"content">>}, cdata]);
+is_item_entry(_, _) -> false.
+
+item_id(undefined) -> undefined;
+item_id(I) when is_binary(I) -> I;
+item_id(I) ->
+    <<"ID_", (integer_to_binary(I))/binary>>.
+item_title(I) ->
+    <<"Title_", (integer_to_binary(I))/binary>>.
+item_content(I) ->
+    <<"Content_", (integer_to_binary(I))/binary>>.
+
+create_simple_bot(Client) ->
+    Fields = lists:keydelete("shortname", 1, default_fields()),
+    Stanza = expect_iq_success(create_stanza(Fields), Client),
+    ExpectedFields = lists:keydelete("shortname", 1, expected_create_fields()),
+    check_returned_bot(Stanza, ExpectedFields).
+
+distribute(L) ->
+    {A, B} = distribute(L, [], []),
+    {lists:reverse(A), lists:reverse(B)}.
+
+distribute([], A, B) ->
+    {A, B};
+distribute([H], A, B) ->
+    {[H|A], B};
+distribute([H,H2|T], A, B) ->
+    distribute(T, [H|A], [H2|B]).

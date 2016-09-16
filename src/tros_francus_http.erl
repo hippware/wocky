@@ -2,7 +2,7 @@
 %%% @doc Cowboy HTTP server listener for TROS-Francus interface
 -module(tros_francus_http).
 
--include("mod_tros_francus.hrl").
+-include("mod_wocky_tros_francus.hrl").
 
 -compile({parse_transform, do}).
 

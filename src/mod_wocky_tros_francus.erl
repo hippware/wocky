@@ -1,11 +1,11 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Francus backend for `mod_tros'
--module(mod_tros_francus).
+%%% @doc Francus backend for `mod_wocky_tros'
+-module(mod_wocky_tros_francus).
 
 -include_lib("ejabberd/include/jlib.hrl").
--include("mod_tros_francus.hrl").
+-include("mod_wocky_tros_francus.hrl").
 
--behaviour(mod_tros_backend).
+-behaviour(mod_wocky_tros_backend).
 
 -export([start/1,
          stop/0,

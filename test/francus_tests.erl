@@ -47,7 +47,7 @@ after_all(_) ->
     ok.
 
 make_file(Size) ->
-    ID = mod_tros:make_file_id(),
+    ID = mod_wocky_tros:make_file_id(),
     Data = crypto:strong_rand_bytes(Size),
     {ID, Data}.
 
@@ -77,7 +77,7 @@ write_file(ID, Data, User, ChunkSize, Size, ChunkList) ->
                [write_chunk(ID, ToWrite) | ChunkList]).
 
 write_chunk(FileID, Data) ->
-    ChunkID = mod_tros:make_file_id(),
+    ChunkID = mod_wocky_tros:make_file_id(),
     V = #{chunk_id => ChunkID, file_id => FileID, data => Data},
     ok = wocky_db:insert(?LOCAL_CONTEXT, media_data, V),
     ChunkID.
@@ -116,7 +116,7 @@ test_read() ->
          [
           ?_assertEqual({error, not_found},
                         francus:open_read(?LOCAL_CONTEXT,
-                                          mod_tros:make_file_id()))
+                                          mod_wocky_tros:make_file_id()))
          ]
        },
        { "Read in smaller chunks", {inparallel,
@@ -156,7 +156,7 @@ test_write() ->
             [
              ?_test(
                begin
-                   ID = mod_tros:make_file_id(),
+                   ID = mod_wocky_tros:make_file_id(),
                    {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
                                                 wocky_db:create_id(),
                                                 purpose(), access(),
@@ -230,7 +230,7 @@ test_delete() ->
        { "Non-existant files should still return ok on delete",
          [
           ?_assertEqual(ok, francus:delete(?LOCAL_CONTEXT,
-                                           mod_tros:make_file_id()))
+                                           mod_wocky_tros:make_file_id()))
          ]
        },
        { "Check that the DB is properly empty after we deleted everything",
@@ -271,7 +271,8 @@ test_accessors() ->
              begin
                  User = wocky_db:create_id(),
                  {ok, F} = francus:open_write(?LOCAL_CONTEXT,
-                                              mod_tros:make_file_id(), User,
+                                              mod_wocky_tros:make_file_id(),
+                                              User,
                                               purpose(), access(), metadata()),
                  #{<<"content-type">> := CT, <<"name">> := Name}
                  = francus:metadata(F),
@@ -287,7 +288,7 @@ test_accessors() ->
 
 
 create_small_file(TTL) ->
-    ID = mod_tros:make_file_id(),
+    ID = mod_wocky_tros:make_file_id(),
     {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
                                  wocky_db:create_id(),
                                  purpose(), access(),

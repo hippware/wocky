@@ -9,7 +9,7 @@
          check/4
         ]).
 
--include("mod_tros_francus.hrl").
+-include("mod_wocky_tros_francus.hrl").
 
 start() -> ok.
 
