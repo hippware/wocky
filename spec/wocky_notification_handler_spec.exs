@@ -8,8 +8,9 @@ defmodule Wocky.NotificationHandlerSpec do
 
   describe "Registering a device" do
     before do
-      allow Handler |> to(accept :register, fn (_, _) -> {:ok, @test_id} end)
-      {:ok, _return} = :wocky_notification_handler.register(@test_jid, @test_id)
+      allow Handler |> to(accept :register, fn (_, _, _) -> {:ok, @test_id} end)
+      {:ok, _return} =
+          :wocky_notification_handler.register(@test_jid, "apple", @test_id)
     end
 
     it "should call the register function on the handler" do

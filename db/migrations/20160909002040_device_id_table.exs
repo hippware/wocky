@@ -10,6 +10,7 @@ defmodule Schemata.DeviceIdTableMigration do
         user:       :text,      # User ID (userpart of JID)
         server:     :text,      # Server (domainpart of JID)
         resource:   :text,      # Resource (resourcepart of JID)
+        platform:   :text,      # Client OS platform (apple or google)
         device_id:  :text,      # Device ID
         endpoint:   :text,      # SNS application endpoint ARN
         created_at: :timestamp  # When the device was registered

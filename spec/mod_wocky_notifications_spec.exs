@@ -58,7 +58,9 @@ defmodule Wocky.ModWockyNotificationsSpec do
     describe "handling an IQ 'set'" do
       context "with an 'enable' element" do
         before do
-          allow Handler |> to(accept :register, fn (_, _) -> {:ok, @test_id} end)
+          allow Handler
+          |> to(accept :register, fn (_, _, _) -> {:ok, @test_id} end)
+
           result = enable_notifications
           {:ok, result: result}
         end

@@ -3,11 +3,15 @@ defmodule Wocky.Notification.AWSHandler do
 
   @behaviour :wocky_notification_handler
 
-  @application_arn "arn:aws:sns:us-east-1:773488857071:app/APNS_SANDBOX/tinyrobot_dev"
+  @application_arn [
+    apple: "arn:aws:sns:us-east-1:773488857071:app/APNS_SANDBOX/tinyrobot_dev",
+    google: ""
+  ]
 
-  def register(user, device_id) do
+  def register(user, platform, device_id) do
     {:ok, %{body: body}} =
       @application_arn
+      |> Keyword.fetch!(String.to_atom(platform))
       |> SNS.create_platform_endpoint(device_id, user)
       |> ExAws.request
 

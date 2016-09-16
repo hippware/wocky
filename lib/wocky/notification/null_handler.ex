@@ -1,7 +1,7 @@
 defmodule Wocky.Notification.NullHandler do
   @behaviour :wocky_notification_handler
 
-  def register(_user, device) do
+  def register(_user, _platform, device) do
     {:ok, device}
   end
 

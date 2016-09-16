@@ -5,20 +5,20 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
--callback register(User :: binary(), DeviceId :: binary()) ->
-    {ok, Endpoint :: binary()}.
+-callback register(User :: binary(), Platform :: binary(),
+                   DeviceId :: binary()) -> {ok, Endpoint :: binary()}.
 
 -callback notify(From :: binary(), To :: binary(), Message :: binary()) ->
     ok.
 
--export([register/2, notify/3]).
+-export([register/3, notify/3]).
 
--spec register(ejabberd:jid(), binary()) -> {ok, binary()}.
-register(UserJID, DeviceId) ->
+-spec register(ejabberd:jid(), binary(), binary()) -> {ok, binary()}.
+register(UserJID, Platform, DeviceId) ->
     User = jid:to_binary(UserJID),
     ok = lager:debug("Registering device '~s' for user '~s'",
                      [DeviceId, User]),
-    (handler()):register(User, DeviceId).
+    (handler()):register(User, Platform, DeviceId).
 
 -spec notify(binary(), ejabberd:jid(), binary()) -> ok.
 notify(Endpoint, FromJID, Message) ->
