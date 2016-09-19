@@ -83,7 +83,7 @@ handle_iq_type(_From, _To, #iq{type = get,
         Actor <- wocky_xml:get_attr(<<"actor">>, Attrs),
         OpBin <- wocky_xml:get_attr(<<"op">>, Attrs),
         Op <- check_op(OpBin),
-        check_access(Node, Actor, Op)
+        {ok, check_access(Node, Actor, Op)}
        ]).
 
 check_access(Node, Actor, Op) ->

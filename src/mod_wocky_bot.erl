@@ -473,7 +473,7 @@ check_access(<<"bot/", ID/binary>>, Actor, _) ->
     end.
 
 allow_to_result(true) -> allow;
-allow_to_result(false) -> deny.
+allow_to_result(_) -> deny.
 
 %%%===================================================================
 %%% Common helpers
