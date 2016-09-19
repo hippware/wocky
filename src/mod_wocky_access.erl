@@ -36,8 +36,8 @@
 
 -record(access_manager, {
           node_prefix :: binary(),
-          module :: atom(),
-          function :: atom()}).
+          module :: atom()
+         }).
 
 -type op() :: view | modify | delete.
 -type access_result() :: allow | deny | {redirect, binary()}.
