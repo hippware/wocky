@@ -92,5 +92,5 @@ max_results() ->
 
 id_not_equal(#{id := ID}, RSMID) ->
     id_not_equal(ID, RSMID);
-id_not_equal(ID, RSMID) when is_binary(ID) ->
+id_not_equal(ID, RSMID) when is_binary(ID) orelse is_integer(ID) ->
     ID =/= RSMID.
