@@ -16,6 +16,8 @@
 %% IQ handler
 -export([handle_iq/3]).
 
+-ignore_xref([user_receive_packet_hook/4, offline_message_hook/3, handle_iq/3]).
+
 
 %%%===================================================================
 %%% gen_mod implementation
