@@ -6,6 +6,7 @@
 -module(mod_wocky_bot).
 
 -behaviour(gen_mod).
+-behaviour(wocky_access_manager).
 
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
@@ -16,13 +17,16 @@
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
 
--ignore_xref([handle_iq/3]).
+-ignore_xref([handle_iq/3, check_access/3]).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
 %% IQ handler
 -export([handle_iq/3]).
+
+%% Access manager callback
+-export([check_access/3]).
 
 -type loc() :: {float(), float()}.
 
@@ -43,13 +47,15 @@ start(Host, _Opts) ->
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
     ejabberd_hooks:add(filter_local_packet, Host,
-                       fun filter_local_packet_hook/1, 80).
+                       fun filter_local_packet_hook/1, 80),
+    mod_wocky_access:register(<<"bot">>, ?MODULE).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BOT),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT),
     ejabberd_hooks:delete(filter_local_packet, Host,
-                          fun filter_local_packet_hook/1, 80).
+                          fun filter_local_packet_hook/1, 80),
+    mod_wocky_access:unregister(<<"bot">>, ?MODULE).
 
 
 %%%===================================================================
@@ -450,6 +456,24 @@ query_el(RosterVer) ->
 maybe_ver_attr(Ver) when is_binary(Ver) -> [{<<"version">>, Ver}];
 maybe_ver_attr(_) -> [].
 
+%%%===================================================================
+%%% Access manager callback
+%%%===================================================================
+
+-spec check_access(binary(), ejabberd:jid(), mod_wocky_access:op()) ->
+    mod_wocky_access:access_result().
+check_access(<<"bot/", ID/binary>>, Actor, view) ->
+    allow_to_result(
+      wocky_db_bot:has_access(wocky_app:server(), ID, Actor));
+
+check_access(<<"bot/", ID/binary>>, Actor, _) ->
+    case wocky_db_bot:owner(wocky_app:server(), ID) of
+        not_found -> deny;
+        Owner -> allow_to_result(jid:are_bare_equal(Owner, Actor))
+    end.
+
+allow_to_result(true) -> allow;
+allow_to_result(_) -> deny.
 
 %%%===================================================================
 %%% Common helpers
