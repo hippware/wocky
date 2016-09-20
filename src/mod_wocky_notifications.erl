@@ -2,6 +2,8 @@
 %%% @doc Module to handle message push notifications
 -module(mod_wocky_notifications).
 
+-compile({parse_transform, cut}).
+
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
@@ -53,8 +55,8 @@ handle_iq(_From, _To, IQ) ->
 
 handle_request(JID, LUser, LServer, LResource,
                #xmlel{name = <<"enable">>, attrs = Attrs}) ->
-    DeviceId = proplists:get_value(<<"device">>, Attrs),
-    Platform = proplists:get_value(<<"platform">>, Attrs),
+    DeviceId = xml:get_attr(<<"device">>, Attrs),
+    Platform = xml:get_attr(<<"platform">>, Attrs),
     {ok, Endpoint} =
         wocky_notification_handler:register(JID, Platform, DeviceId),
     CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
@@ -99,9 +101,7 @@ handle_incoming_message(From, To, Packet) ->
     case should_notify(Packet) of
         false -> ok;
         Body ->
-            Endpoints = lookup_endpoints(To),
-            [notify_message(Endpoint, From, Body) || Endpoint <- Endpoints],
-            ok
+            lists:foreach(notify_message(_, From, Body), lookup_endpoints(To))
     end.
 
 should_notify(Packet) ->
