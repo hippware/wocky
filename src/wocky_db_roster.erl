@@ -12,7 +12,8 @@
          get_roster_item/3,
          update_roster_item/4,
          delete_roster_item/3,
-         has_contact/2]).
+         has_contact/2,
+         is_friend/2]).
 
 -type roster_item() :: #wocky_roster{}.
 -type roster()      :: [roster_item()].
@@ -98,6 +99,19 @@ has_contact(#jid{luser = LUser, lserver = LServer}, OtherJID) ->
                          #{user => LUser,
                            contact_jid => ContactJID}) of
         [#{ask := <<"none">>}] -> true;
+        _ -> false
+    end.
+
+%% @doc Checks whether a user has another user as a friend
+-spec is_friend(ejabberd:jid(), ejabberd:jid()) -> boolean().
+is_friend(#jid{luser = LUser, lserver = LServer}, OtherJID) ->
+    ContactJID = jid:to_binary(jid:to_bare(OtherJID)),
+    case wocky_db:select(LServer, roster, [subscription, groups],
+                         #{user => LUser,
+                           contact_jid => ContactJID}) of
+        [#{subscription := <<"both">>,
+           groups := Groups}] ->
+            not lists:member(<<"__blocked__">>, Groups);
         _ -> false
     end.
 
