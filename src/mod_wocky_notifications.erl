@@ -13,7 +13,9 @@
 -export([start/2, stop/1]).
 
 %% Hook callbacks
--export([user_receive_packet_hook/4, offline_message_hook/3]).
+-export([user_receive_packet_hook/4,
+         offline_message_hook/3,
+         remove_user_hook/2]).
 
 %% IQ handler
 -export([handle_iq/3]).
@@ -37,8 +39,9 @@ stop(Host) ->
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 30).
 
 hooks() ->
-    [{user_receive_packet, user_receive_packet_hook},
-     {offline_message_hook, offline_message_hook}].
+    [{user_receive_packet,  user_receive_packet_hook},
+     {offline_message_hook, offline_message_hook},
+     {remove_user,          remove_user_hook}].
 
 
 %%%===================================================================
@@ -126,3 +129,10 @@ lookup_endpoints(#jid{luser = LUser, lserver = LServer}) ->
 
 notify_message(Endpoint, From, Body) ->
     wocky_notification_handler:notify(Endpoint, From, Body).
+
+%% remove_user -------------------------------------------------------
+
+remove_user_hook(User, Server) ->
+    LUser = jid:nodeprep(User),
+    LServer = jid:nameprep(Server),
+    wocky_db:delete(LServer, device, all, #{user => LUser, server => LServer}).
