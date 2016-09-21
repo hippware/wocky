@@ -57,7 +57,6 @@
 -define(AVATAR_FILE3,  <<"d19434ee-ea5e-11e5-b413-08002719e96e">>).
 -define(MEDIA_FILE,    <<"ff9451f2-e712-11e5-9ab0-08002719e96e">>).
 -define(GC_MEDIA_FILE, <<"5f4dab84-2d18-11e6-b1e2-73907483f182">>).
--define(ACCESS_FILE,   <<"9f4dab88-2d18-11e6-b1e2-73907483f182">>).
 
 -define(AVATAR_CHUNK,   <<"24634ec0-e96b-11e5-8f6e-08002719e96e">>).
 -define(AVATAR_CHUNK2,  <<"54559742-e98d-11e5-bc3d-08002719e96e">>).
@@ -89,6 +88,7 @@
 
 -define(BOT, <<"e2570262-1c7c-10e6-8bbd-1362d78a5dd4">>).
 -define(BOT_B_JID, <<?LOCAL_CONTEXT/binary, "/bot/", ?BOT/binary>>).
+-define(BOT_JID, jid:from_binary(?BOT_B_JID)).
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
 -define(BOT_DESC, <<"A test bot owned by Alice">>).

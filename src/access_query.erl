@@ -30,8 +30,9 @@ do_query(LServer, LResource, Actor, Op, Redirects)
     deny;
 do_query(LServer, LRescource, Actor, Op, Redirects) ->
     IQ = make_access_query(LRescource, Actor, Op),
+    Waiter = self(),
     ejabberd_local:route_iq(aq_jid(), jlib:make_jid(<<>>, LServer, <<>>),
-                            IQ, handle_reply(self(), _), ?IQ_TIMEOUT),
+                            IQ, handle_reply(Waiter, _), ?IQ_TIMEOUT),
     Result = await_result(),
     handle_result(Result, LServer, LRescource, Actor, Op, Redirects).
 
@@ -50,13 +51,13 @@ handle_result({redirect, Target}, LServer, LResource, Actor, Op, Redirects) ->
                             [LServer, LResource, Actor, Op]),
             deny;
         false ->
-            #jid{lserver = LServer, lresource = LResource} =
+            #jid{lserver = NewLServer, lresource = NewLResource} =
             jid:from_binary(Target),
-            do_query(LServer, LResource, Actor, Op, [Target | Redirects])
+            do_query(NewLServer, NewLResource, Actor, Op, [Target | Redirects])
     end.
 
 aq_jid() ->
-    jid:make(<<"access_query">>, wocky_app:server(), <<>>).
+    jid:make(<<>>, wocky_app:server(), <<>>).
 
 make_access_query(Resource, Actor, Op) ->
     #iq{type = get,
@@ -68,9 +69,8 @@ make_access_query(Resource, Actor, Op) ->
 
 handle_reply(Pid, timeout) ->
     Pid ! {response, deny};
-handle_reply(Pid, #iq{type = result,
-                      sub_el = [#xmlel{children = Children}]}) ->
-    Result = find_result(Children),
+handle_reply(Pid, #iq{type = result, sub_el = SubEls}) ->
+    Result = find_result(SubEls),
     Pid ! {response, Result}.
 
 find_result([#xmlel{name = <<"allow">>} | _]) -> allow;
