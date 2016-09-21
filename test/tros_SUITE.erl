@@ -201,7 +201,7 @@ wrong_type_story(Config) ->
 %%--------------------------------------------------------------------
 
 common_upload_request(Size, Client, Purpose) ->
-    common_upload_request(Size, Client, Purpose, <<>>).
+    common_upload_request(Size, Client, Purpose, <<"all">>).
 
 common_upload_request(Size, Client, Purpose, Access) ->
     QueryStanza = upload_stanza(<<"image.png">>,
@@ -322,9 +322,13 @@ message_purpose() ->
     <<"message_media">>.
 
 access_list(Clients) ->
-    Jids = [escalus_client:short_jid(C) || C <- Clients],
-    lists:foldl(fun(Jid, Acc) -> <<Acc/binary, ",", Jid/binary>> end,
-                hd(Jids), tl(Jids)).
+    JIDs = [escalus_client:short_jid(C) || C <- Clients],
+    lists:foldl(fun(JID, Acc) ->
+                        <<Acc/binary, ",", (user_access(JID))/binary>>
+                end, user_access(hd(JIDs)), tl(JIDs)).
+
+user_access(JID) ->
+    <<"user:", JID/binary>>.
 
 download_success(Client, FileID, Data) ->
     DLQueryStanza = download_stanza(FileID),
