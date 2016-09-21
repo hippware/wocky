@@ -222,6 +222,20 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:user, :server, :resource]
     ]
 
+    # Stores the device IDs necessary to send notifications
+    table :device, [
+      columns: [
+        user:       :text,      # User ID (userpart of JID)
+        server:     :text,      # Server (domainpart of JID)
+        resource:   :text,      # Resource (resourcepart of JID)
+        platform:   :text,      # Client OS platform (apple or google)
+        device_id:  :text,      # Device ID
+        endpoint:   :text,      # SNS application endpoint ARN
+        created_at: :timestamp  # When the device was registered
+      ],
+      primary_key: [:user, :server, :resource]
+    ]
+
     # mod_privacy settings for users
     table :privacy, [
       columns: [

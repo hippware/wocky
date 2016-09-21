@@ -12,10 +12,6 @@
 
 -ignore_xref([handle_iq/3]).
 
--define(USER_NS, <<"hippware.com/hxep/user">>).
--define(ERROR_NS, <<"hippware.com/hxep/errors">>).
-
-
 -include("wocky.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
@@ -30,13 +26,13 @@
 
 -spec start(ejabberd:server(), list()) -> any().
 start(Host, _Opts) ->
-    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?USER_NS,
+    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_USER,
                                   ?MODULE, handle_iq, parallel).
 
 
 -spec stop(ejabberd:server()) -> any().
 stop(Host) ->
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?USER_NS).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_USER).
 
 
 -spec handle_iq(From :: ejabberd:jid(),
@@ -242,7 +238,7 @@ make_delete_response_iq(IQ) ->
     IQ#iq{type = result, sub_el = []}.
 
 response_attrs(User) ->
-    [{<<"xmlns">>, ?USER_NS},
+    [{<<"xmlns">>, ?NS_USER},
      {<<"node">>, <<"user/", User/binary>>}].
 
 
@@ -409,7 +405,7 @@ not_valid(Message) ->
     jlib:stanza_errort(<<"500">>, <<"modify">>, <<"undefined-condition">>,
                        ?MYLANG, iolist_to_binary(Message)),
     Stanza = El#xmlel{children = [#xmlel{name = <<"not-valid">>,
-                                         attrs = [{<<"xmlns">>, ?ERROR_NS}]}
+                                         attrs = [{<<"xmlns">>, ?NS_ERRORS}]}
                                   | Children]},
     {error, Stanza}.
 

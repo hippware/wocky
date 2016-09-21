@@ -4,8 +4,9 @@ defmodule Wocky.Mixfile do
   def project do
     [app: :wocky,
      version: version,
-     compilers: [:erlang, :app],
-     language: :erlang,
+     elixir: "~> 1.3",
+     # build_embedded: Mix.env == :prod,
+     # start_permanent: Mix.env == :prod,
      erlc_options: [
        :debug_info,
        :warnings_as_errors,
@@ -19,7 +20,8 @@ defmodule Wocky.Mixfile do
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [eunit:   :test,
+     preferred_cli_env: [espec:   :test,
+                         eunit:   :test,
                          ct:      :test,
                          release: :prod],
      dialyzer: [
@@ -48,8 +50,8 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      applications: [
-       :crypto, :ssl, :lager, :logger, :idna, :algolia,
-       :runtime_tools, :cache_tab, :alarms, :setup
+       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
+       :idna, :runtime_tools, :cache_tab, :alarms, :setup
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -63,12 +65,13 @@ defmodule Wocky.Mixfile do
      ],
      mod: {:wocky_app, []},
      env: [
-       {:wocky_env, 'dev'},
-       {:config_dir, 'etc'},
-       {:francus_chunk_size, 1048576}, # 1MB
-       {:keyspace_prefix, 'wocky_test_'},
-       {:indexing_enabled_envs, ['staging']},
-       {:algolia_index_name, 'dev_wocky_users'}
+       wocky_env: 'dev',
+       config_dir: 'etc',
+       francus_chunk_size: 1048576, # 1MB
+       keyspace_prefix: 'wocky_test_',
+       indexing_enabled_envs: ['staging'],
+       algolia_index_name: 'dev_wocky_users',
+       notification_handler: Wocky.Notification.NullHandler
      ]]
   end
 
@@ -77,6 +80,7 @@ defmodule Wocky.Mixfile do
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
       {:algolia,       "~> 0.3.2"},
+      {:ex_aws,        github: "hippware/ex_aws",         branch: "working"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
@@ -130,7 +134,7 @@ defmodule Wocky.Mixfile do
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
       {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
       {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
-      {:exref,         github: "hippware/exref",          branch: "master", only: :dev}
+      {:exref,         github: "hippware/exref",          branch: "master"}
     ]
   end
 
