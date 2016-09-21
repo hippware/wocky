@@ -89,7 +89,7 @@ after_all(_) ->
 
 
 %%==============================================================================
-%% HXEP tests
+%% TROS tests
 %%==============================================================================
 
 test_avatar_upload_request(Backend) ->
@@ -97,11 +97,11 @@ test_avatar_upload_request(Backend) ->
         {"Successful request", [
           ?_assertEqual(
              expected_upload_packet(Backend),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(10000,
                                      "avatar",
-                                     <<>>
+                                     <<"all">>
                                     )))
     ]}]}.
 
@@ -110,38 +110,39 @@ test_message_media_upload_request(Backend) ->
         {"Successful request", [
           ?_assertEqual(
              expected_upload_packet(Backend),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(10000,
                                      "message_media",
-                                     jid:to_binary(
-                                       test_user_jid(?BOB))
+                                     <<"user:",
+                                     (?BOB_B_JID)/binary>>
                                     )))
     ]}]}.
 
 test_group_chat_media_upload_request(Backend) ->
+    GCAccess = <<"members:", (jid:to_binary(?GROUP_CHAT_JID))/binary>>,
     { "Group chat media upload request", [
         {"Successful request when we're a group member", [
           ?_assertEqual(
              expected_upload_packet(Backend),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(10000,
                                      "group_chat_media",
-                                     jid:to_binary(
-                                       ?GROUP_CHAT_JID)
+                                     <<"members:",
+                                       (jid:to_binary(?GROUP_CHAT_JID))/binary>>
                                     )))
         ]},
         {"Failed request when we're not a group member", [
           ?_assertEqual(
              expected_ul_error_packet("Permission denied", "group_chat_media",
-                                      ?GROUP_CHAT, 10000),
-             handle_iq(test_user_jid(?CAROL),
+                                      GCAccess, 10000),
+             handle_iq(?CAROL_JID,
                        test_server_jid(),
                        upload_packet(10000,
                                      "group_chat_media",
-                                     ?GROUP_CHAT)
-                                    ))
+                                     GCAccess
+                                    )))
     ]}]}.
 
 test_oversized_upload_request(_Backend) ->
@@ -150,12 +151,12 @@ test_oversized_upload_request(_Backend) ->
         {"Oversize request", [
           ?_assertEqual(
              expected_ul_error_packet("Invalid size: 10485761", "avatar",
-                                      <<>>, Size),
-             handle_iq(test_user_jid(?ALICE),
+                                      <<"all">>, Size),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(Size,
                                      "avatar",
-                                     <<>>
+                                     <<"all">>
                                     )))
     ]}]}.
 
@@ -164,14 +165,14 @@ test_avatar_download_request(Backend) ->
         {"Successful request on own avatar using an ID", [
           ?_assertEqual(
              expected_download_packet(Backend, ?AVATAR_FILE),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        download_packet(?AVATAR_FILE)))
     ]},
         {"Successful request on own avatar using a URL", [
           ?_assertEqual(
              expected_download_packet(Backend, ?AVATAR_FILE),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        download_packet(
                          <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
@@ -180,7 +181,7 @@ test_avatar_download_request(Backend) ->
         {"Successful request on someone else's avatar", [
           ?_assertEqual(
              expected_download_packet(Backend, ?AVATAR_FILE),
-             handle_iq(test_user_jid(?BOB),
+             handle_iq(?BOB_JID,
                        test_server_jid(),
                        download_packet(?AVATAR_FILE)))
     ]}]}.
@@ -190,21 +191,21 @@ test_message_media_download_request(Backend) ->
         {"Successful request on own media", [
           ?_assertEqual(
              expected_download_packet(Backend, ?MEDIA_FILE),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
     ]},
         {"Successful request on someone else's media that was sent to us", [
           ?_assertEqual(
              expected_download_packet(Backend, ?MEDIA_FILE),
-             handle_iq(test_user_jid(?BOB),
+             handle_iq(?BOB_JID,
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
     ]},
         {"Failed request on someone else's media that was NOT sent to us", [
           ?_assertEqual(
              expected_dl_auth_error_packet(?MEDIA_FILE),
-             handle_iq(test_user_jid(?CAROL),
+             handle_iq(?CAROL_JID,
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
     ]}]}.
@@ -214,21 +215,21 @@ test_group_chat_media_download_request(Backend) ->
         {"Successful request on own media", [
           ?_assertEqual(
              expected_download_packet(Backend, ?GC_MEDIA_FILE),
-             handle_iq(test_user_jid(?ALICE),
+             handle_iq(?ALICE_JID,
                        test_server_jid(),
                        download_packet(?GC_MEDIA_FILE)))
     ]},
         {"Successful request on media in the same group chat as us", [
           ?_assertEqual(
              expected_download_packet(Backend, ?GC_MEDIA_FILE),
-             handle_iq(test_user_jid(?BOB),
+             handle_iq(?BOB_JID,
                        test_server_jid(),
                        download_packet(?GC_MEDIA_FILE)))
     ]},
         {"Failed request on media for a group chat we're not in", [
           ?_assertEqual(
              expected_dl_auth_error_packet(?GC_MEDIA_FILE),
-             handle_iq(test_user_jid(?CAROL),
+             handle_iq(?CAROL_JID,
                        test_server_jid(),
                        download_packet(?GC_MEDIA_FILE)))
     ]}]}.
@@ -241,21 +242,21 @@ test_bad_download_ids(_Backend) ->
         {"Failed due to malformed UUID", [
             ?_assertEqual(
                expected_dl_missing_error_packet(BadUUID),
-                 handle_iq(test_user_jid(?CAROL),
+                 handle_iq(?CAROL_JID,
                            test_server_jid(),
                            download_packet(BadUUID)))
         ]},
         {"Failed due to malformed URL", [
             ?_assertEqual(
                expected_dl_error_packet("Invalid file URL", BadURL),
-                 handle_iq(test_user_jid(?CAROL),
+                 handle_iq(?CAROL_JID,
                            test_server_jid(),
                            download_packet(BadURL)))
         ]},
         {"Failed due to missing file metadata", [
             ?_assertEqual(
                expected_dl_missing_error_packet(MissingID),
-                 handle_iq(test_user_jid(?CAROL),
+                 handle_iq(?CAROL_JID,
                            test_server_jid(),
                            download_packet(MissingID)))
         ]}
@@ -281,8 +282,6 @@ handle_iq(FromJID, ServerJID, Packet) ->
 
 new_file_uuid() ->
     <<"a65ecb4e-c633-11e5-9fdc-080027f70e96">>.
-
-test_user_jid(User) -> jid:make(User, ?LOCAL_CONTEXT, ?RESOURCE).
 
 test_server_jid() -> jid:make(<<>>, ?LOCAL_CONTEXT, <<>>).
 

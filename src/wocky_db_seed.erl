@@ -125,7 +125,16 @@ seed_data(roster, Server) ->
           ask => <<"none">>, version => 999}
     ],
     [I#{user => ?ALICE, server => Server, groups => [<<"friends">>]}
-     || I <- Items];
+     || I <- Items] ++
+    [#{user => ?KAREN, server => Server, groups => [<<"__blocked__">>],
+       contact_jid => ?TIM_B_JID, nick => <<"timbo">>,
+          subscription => <<"both">>,
+          ask => <<"none">>, version => 999},
+     #{user => ?CAROL, server => Server, groups => [],
+       contact_jid => ?TIM_B_JID, nick => <<"timbo">>,
+          subscription => <<"none">>,
+          ask => <<"none">>, version => 999}
+    ];
 seed_data(message_archive, _Server) ->
     Rows = random_message_history(),
     Q = "INSERT INTO message_archive (id, time, user_jid, other_jid,
@@ -168,7 +177,7 @@ seed_data(media, Server) ->
      #{id => ?GC_MEDIA_FILE, user => ?ALICE, size => byte_size(?MEDIA_DATA),
        chunks => [?MEDIA_CHUNK],
        purpose => <<"group_chat_media">>,
-       access => <<"group:", (jid:to_binary(?GROUP_CHAT_JID))/binary>>,
+       access => <<"members:", (jid:to_binary(?GROUP_CHAT_JID))/binary>>,
        metadata => #{<<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}}];
 seed_data(media_data, _Server) ->

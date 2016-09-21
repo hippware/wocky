@@ -13,7 +13,8 @@
                           get_roster_item/3,
                           update_roster_item/4,
                           delete_roster_item/3,
-                          has_contact/2
+                          has_contact/2,
+                          is_friend/2
                          ]).
 
 mod_roster_wocky_test_() -> {
@@ -24,7 +25,8 @@ mod_roster_wocky_test_() -> {
       test_get_roster(),
       test_get_roster_version(),
       test_get_roster_item(),
-      test_has_contact()
+      test_has_contact(),
+      test_is_friend()
     ]},
     test_update_roster_item(),
     test_delete_roster_item(),
@@ -150,8 +152,26 @@ test_has_contact() ->
       ?_assert(has_contact(?ALICE_JID, ?BOB_JID)),
       ?_assert(has_contact(?ALICE_JID, ?CAROL_JID))
     ]},
-    { "returns false when users are not friends", [
+    { "returns false when A does not have B in their roster", [
       ?_assertNot(has_contact(?CAROL_JID, ?ALICE_JID)),
       ?_assertNot(has_contact(?KAREN_JID, ?CAROL_JID))
+    ]}
+  ]}.
+
+test_is_friend() ->
+  { "is_friend/2", [
+    { "returns true when user A has user B as a friend", [
+      ?_assert(is_friend(?ALICE_JID, ?BOB_JID)),
+      ?_assert(is_friend(?ALICE_JID, ?CAROL_JID))
+    ]},
+    { "returns false when B is not a bi-directional subscriber of A", [
+      ?_assertNot(is_friend(?CAROL_JID, ?TIM_JID))
+    ]},
+    { "returns false when B is in A's __blocked__ group", [
+      ?_assertNot(is_friend(?KAREN_JID, ?TIM_JID))
+    ]},
+    { "returns false when B is not in A's roster", [
+      ?_assertNot(is_friend(?CAROL_JID, ?ALICE_JID)),
+      ?_assertNot(is_friend(?KAREN_JID, ?CAROL_JID))
     ]}
   ]}.
