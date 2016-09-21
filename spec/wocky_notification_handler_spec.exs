@@ -1,4 +1,4 @@
-defmodule Wocky.NotificationHandlerSpec do
+defmodule NotificationHandlerSpec do
   use ESpec
 
   alias Wocky.Notification.NullHandler, as: Handler

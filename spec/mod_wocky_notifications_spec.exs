@@ -1,4 +1,4 @@
-defmodule Wocky.ModWockyNotificationsSpec do
+defmodule ModWockyNotificationsSpec do
   use ESpec
 
   import Wocky.Ejabberd
@@ -18,7 +18,7 @@ defmodule Wocky.ModWockyNotificationsSpec do
       type: :set,
       sub_el: xmlel(
         name: "enable",
-        attrs: [{"device", @test_id}]
+        attrs: [{"device", @test_id}, {"platform", "apple"}]
       )
     )
     ModWockyNotifications.handle_iq(@jid, @jid, iq_set)
