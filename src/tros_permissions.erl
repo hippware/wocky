@@ -17,10 +17,11 @@ can_upload(_, <<"message_media">>, _) ->
     true;
 
 %% Group chat media can be uploaded by any member of (all) the specified chat(s)
-can_upload(From, <<"group_chat_media">>, ChatIDs) ->
-    Chats = split_access_list(ChatIDs),
+can_upload(From, <<"group_chat_media">>, Access) ->
+    Rules = access_rules_from_list(Access),
     lists:all(fun(X) -> X end,
-              [mod_wocky_group_chat:is_participant(From, C) || C <- Chats]);
+              [mod_wocky_group_chat:is_participant(From, C) ||
+               {members, C} <- Rules]);
 
 %% TODO: Other types?
 can_upload(_, _, _) ->
@@ -38,7 +39,6 @@ can_download(User = #jid{luser = UserID}, OwnerID, Access) ->
 can_download_access(User, Access) ->
     Result = fun_chain:last(
                Access,
-               split_access_list(),
                access_rules_from_list(),
                matches_any_rule(User)),
     case Result of
@@ -46,13 +46,15 @@ can_download_access(User, Access) ->
         false -> {false, permission_denied}
     end.
 
+access_rules_from_list(Access) ->
+    List = split_access_list(Access),
+    lists:filter(fun(R) -> R =/= invalid end,
+                 lists:map(to_rule(_), List)).
+
 split_access_list(Access) ->
     binary:split(Access, <<$,>>, [global, trim_all]).
 
-access_rules_from_list(Access) ->
-    lists:filter(fun(R) -> R =/= invalid end,
-                 lists:map(to_rule(_), Access)).
-
+to_rule(<<"all">>) -> all;
 to_rule(<<"user:", User/binary>>) -> {user, jid:from_binary(User)};
 to_rule(<<"friends:", User/binary>>) -> {friends, jid:from_binary(User)};
 to_rule(<<"members:", Group/binary>>) -> {members, jid:from_binary(Group)};
@@ -67,11 +69,15 @@ matches_any_rule(User, Rules) ->
 
 % Sort the fastest to evalue rules first and the slowest last
 rule_sort({Type, V1}, {Type, V2}) -> V1 =< V2;
+rule_sort(all, all) -> true;
+rule_sort(all, _) -> true;
+rule_sort(_, all) -> false;
 rule_sort({user, _}, _) -> true;
 rule_sort({friends, _}, {Type, _}) -> Type =/= user;
 rule_sort({members, _}, {Type, _}) -> Type =/= user andalso Type =/= friends;
 rule_sort({redirect, _}, _) -> false.
 
+matches_rule(_, all) -> true;
 matches_rule(User, {user, RuleUser}) ->
     jid:are_bare_equal(User, RuleUser);
 matches_rule(User, {friends, RuleUser}) ->
