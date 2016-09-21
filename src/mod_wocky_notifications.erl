@@ -55,8 +55,8 @@ handle_iq(_From, _To, IQ) ->
 
 handle_request(JID, LUser, LServer, LResource,
                #xmlel{name = <<"enable">>, attrs = Attrs}) ->
-    DeviceId = xml:get_attr(<<"device">>, Attrs),
-    Platform = xml:get_attr(<<"platform">>, Attrs),
+    {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
+    {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
     {ok, Endpoint} =
         wocky_notification_handler:register(JID, Platform, DeviceId),
     CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
