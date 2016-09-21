@@ -301,8 +301,7 @@ remove_shared_user_data(LUser, LServer) ->
 %% @private
 remove_local_user_data(LUser, LServer) ->
     Queries = [remove_tokens_query(LUser, LServer),
-               remove_locations_query(LUser, LServer),
-               remove_devices_query(LUser, LServer)],
+               remove_locations_query(LUser, LServer)],
     {ok, void} = wocky_db:batch_query(LServer, Queries, quorum),
     ok.
 
@@ -331,11 +330,6 @@ remove_tokens_query(LUser, LServer) ->
 %% @private
 remove_locations_query(LUser, LServer) ->
     {"DELETE FROM location WHERE user = ? AND server = ?",
-     #{user => LUser, server => LServer}}.
-
-%% @private
-remove_devices_query(LUser, LServer) ->
-    {"DELETE FROM device WHERE user = ? AND server = ?",
      #{user => LUser, server => LServer}}.
 
 
