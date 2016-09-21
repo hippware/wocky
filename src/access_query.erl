@@ -31,7 +31,7 @@ do_query(LServer, LResource, Actor, Op, Redirects)
 do_query(LServer, LRescource, Actor, Op, Redirects) ->
     IQ = make_access_query(LRescource, Actor, Op),
     Waiter = self(),
-    ejabberd_local:route_iq(aq_jid(), jlib:make_jid(<<>>, LServer, <<>>),
+    ejabberd_local:route_iq(aq_jid(), jid:make(<<>>, LServer, <<>>),
                             IQ, handle_reply(Waiter, _), ?IQ_TIMEOUT),
     Result = await_result(),
     handle_result(Result, LServer, LRescource, Actor, Op, Redirects).
