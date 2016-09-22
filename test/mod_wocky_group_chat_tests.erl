@@ -47,21 +47,9 @@ before_all() ->
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db:prepare_tables(shared, shared_group_chat_tables()),
     ok = wocky_db_seed:seed_tables(shared, shared_group_chat_tables()),
-
-    %% This is, generally speaking, a terrible idea. We are mocking a modue
-    %% that is normally dynamically compiled by ejabberd at startup. This
-    %% should be considered a hack to be replaced with something better soon.
-    meck:new(mod_routing_machine, [non_strict, stub_all]),
-    meck:expect(mod_routing_machine, get_routing_module_list, 0,
-                [mongoose_router_global,
-                 mongoose_router_localdomain,
-                 mongoose_router_external_localnode,
-                 mongoose_router_external,
-                 ejabberd_s2s]),
     ok.
 
 after_all(_) ->
-    meck:unload(),
     ok.
 
 test_new_chat() ->

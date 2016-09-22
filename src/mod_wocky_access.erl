@@ -40,7 +40,7 @@
          }).
 
 -type op() :: view | modify | delete.
--type access_result() :: allow | deny | {redirect, binary()}.
+-type access_result() :: allow | deny | {redirect, ejabberd:jid()}.
 
 -export_type([op/0, access_result/0]).
 
@@ -110,7 +110,7 @@ access_result(deny) ->
     #xmlel{name = <<"deny">>};
 access_result({redirect, Target}) ->
     #xmlel{name = <<"redirect">>,
-           children = [#xmlcdata{content = Target}]}.
+           children = [#xmlcdata{content = jid:to_binary(Target)}]}.
 
 %%%===================================================================
 %%% Access manager registration

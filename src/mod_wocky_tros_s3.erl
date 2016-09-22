@@ -111,4 +111,4 @@ get_metadata(_LServer, _FileID) ->
 
 get_purpose_access(_LServer, _FileID) ->
     % TODO - placeholder data for testing only.
-    {ok, {<<"message_media">>, <<?BOB/binary, $@, ?LOCAL_CONTEXT/binary>>}}.
+    {ok, {<<"message_media">>, <<"user:", (?BOB_B_JID)/binary>>}}.

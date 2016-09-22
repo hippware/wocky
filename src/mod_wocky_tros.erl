@@ -82,8 +82,8 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         FileID <- check_file_id(Fields),
         OwnerID <- get_owner(LServer, FileID),
         Metadata <- get_metadata(LServer, FileID),
-        {Purpose, Access} <- get_purpose_access(LServer, FileID),
-        check_download_permissions(FromJID, OwnerID, Purpose, Access),
+        {_Purpose, Access} <- get_purpose_access(LServer, FileID),
+        check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
@@ -192,8 +192,8 @@ check_upload_permissions(FromJID, #{<<"purpose">> := Purpose,
         false -> upload_validation_error("Permission denied")
     end.
 
-check_download_permissions(FromJID, OwnerID, Purpose, Access) ->
-    case tros_permissions:can_download(FromJID, OwnerID, Purpose, Access) of
+check_download_permissions(FromJID, OwnerID, Access) ->
+    case tros_permissions:can_download(FromJID, OwnerID, Access) of
         true ->
             ok;
         {false, Reason} ->

@@ -79,13 +79,16 @@
 -define(PRIVACY_ITEM2, <<"3fa76372-ecba-11e5-a383-08002719e96e">>).
 -define(PRIVACY_ITEM3, <<"3fd96ee4-ecba-11e5-83d6-08002719e96e">>).
 
--define(GROUP_CHAT, <<"e2570260-2c7c-11e6-8bbd-1364d78a5dd4">>).
+-define(GROUP_CHAT,  <<"e2570260-2c7c-11e6-8bbd-1364d78a5dd4">>).
+-define(GROUP_CHAT2, <<"832a611e-7f9d-11e6-aa1a-0800278fd327">>).
 -define(GROUP_CHAT_JID, jid:make(?GROUP_CHAT, ?LOCAL_CONTEXT, <<>>)).
+-define(GROUP_CHAT2_JID, jid:make(?GROUP_CHAT2, ?LOCAL_CONTEXT, <<>>)).
 
 -define(CHAT_TITLE, <<"Chatty McChatface">>).
 
 -define(BOT, <<"e2570262-1c7c-10e6-8bbd-1362d78a5dd4">>).
 -define(BOT_B_JID, <<?LOCAL_CONTEXT/binary, "/bot/", ?BOT/binary>>).
+-define(BOT_JID, jid:from_binary(?BOT_B_JID)).
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
 -define(BOT_DESC, <<"A test bot owned by Alice">>).

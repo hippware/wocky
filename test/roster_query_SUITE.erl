@@ -66,8 +66,7 @@ get_roster(Config) ->
 
         %% No specified version returns the full roster
         Stanza = expect_iq_success_u(get_roster_stanza(undefined), Bob, Alice),
-        Version = check_returned_roster(
-          Stanza, length(wocky_db_seed:seed_data(roster, ?LOCAL_CONTEXT))),
+        Version = check_returned_roster(Stanza, 4),
 
         %% Specifying the current version returns no items
         Stanza2 = expect_iq_success_u(get_roster_stanza(Version), Bob, Alice),
@@ -76,9 +75,7 @@ get_roster(Config) ->
         %% Specifying a non-current version returns all items
         Stanza3 = expect_iq_success_u(get_roster_stanza(<<"wrong_ver">>),
                                       Bob, Alice),
-        Version = check_returned_roster(
-          Stanza3, length(wocky_db_seed:seed_data(roster, ?LOCAL_CONTEXT)))
-
+        Version = check_returned_roster(Stanza3, 4)
       end).
 
 invalid_query(Config) ->
