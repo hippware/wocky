@@ -36,26 +36,9 @@ before_all(Backend) ->
                    (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
                    (s3_secret_key) ->
                         "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";
-                   (tros_max_upload_size) -> 1024 * 1024 * 10;
-                   (tros_scheme) -> "http://";
-                   (tros_auth_validity) -> 3600;
-                   (tros_port) -> 1025;
                    (tros_public_port) -> 1025;
                    (X) -> meck:passthrough([X])
                 end),
-    meck:expect(ejabberd_config, get_local_option,
-                %% Let these options fall through to the test config
-                fun(cassandra_nodes, _) -> undefined;
-                   (cassandra_opts, _) -> undefined;
-                   (keyspace_prefix, _) -> undefined;
-                   (keyspace_replication, _) -> undefined;
-                   (cqerl_node, _) -> undefined
-                end),
-    meck:expect(ejabberd_config, get_global_option,
-                fun(language) -> <<"en">>;
-                   (hosts) -> [?LOCAL_CONTEXT]
-                end),
-
     meck:expect(httpd_util, rfc1123_date, 1,
                 "Fri, 29 Jan 2016 02:54:44 GMT"),
 
