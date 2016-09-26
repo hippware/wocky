@@ -52,7 +52,7 @@ wocky_db_bot_test_() -> {
     ]}
   ]}.
 
-local_tables() -> [roster,
+local_tables() -> [
                    bot,
                    bot_name,
                    bot_subscriber,
@@ -60,7 +60,9 @@ local_tables() -> [roster,
                   ].
 
 before_all() ->
+    ok = wocky_db:prepare_tables(shared, [roster]),
     ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, local_tables()),
+    ok = wocky_db_seed:seed_tables(shared, [roster]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()).
 
 after_all(_) ->

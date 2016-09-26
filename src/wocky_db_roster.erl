@@ -30,7 +30,7 @@
 %% roster entries, or an empty list if no entries were found for the user.
 -spec get_roster(ejabberd:luser(), ejabberd:lserver()) -> roster().
 get_roster(LUser, LServer) ->
-    Rows = wocky_db:select(LServer, roster, all, #{user => LUser}),
+    Rows = wocky_db:select(shared, roster, all, #{user => LUser}),
     Items = pack_roster(LUser, LServer, Rows),
     fill_extra_fields(Items).
 
@@ -39,8 +39,8 @@ get_roster(LUser, LServer) ->
 %% entries for the user, returns the null version of `0'.
 -spec get_roster_version(ejabberd:luser(), ejabberd:lserver())
                         -> version().
-get_roster_version(LUser, LServer) ->
-    Result = wocky_db:select_row(LServer, roster,
+get_roster_version(LUser, _LServer) ->
+    Result = wocky_db:select_row(shared, roster,
                                  ['max(version)', 'count(version)'],
                                  #{user => LUser}),
     case Result of
@@ -56,8 +56,8 @@ make_version(Version, Count) ->
 
 %% @doc Deletes all roster items for the specified user.
 -spec delete_roster(ejabberd:luser(), ejabberd:lserver()) -> ok.
-delete_roster(LUser, LServer) ->
-    wocky_db:delete(LServer, roster, all, #{user => LUser}).
+delete_roster(LUser, _LServer) ->
+    wocky_db:delete(shared, roster, all, #{user => LUser}).
 
 
 %% @doc Returns the roster item for the specified user and contact. If the user
@@ -67,7 +67,7 @@ delete_roster(LUser, LServer) ->
                      -> roster_item().
 get_roster_item(LUser, LServer, ContactJID) ->
     Conditions = #{user => LUser, contact_jid => ContactJID},
-    Row = wocky_db:select_row(LServer, roster, all, Conditions),
+    Row = wocky_db:select_row(shared, roster, all, Conditions),
     Item = pack_roster_item(LUser, LServer, ContactJID, Row),
     fill_extra_fields(Item).
 
@@ -81,21 +81,21 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
             " subscription, version"
             ") VALUES (?, ?, ?, ?, ?, ?, ?, toTimestamp(now()))",
     Values = unpack_roster_item(LUser, LServer, ContactJID, Item),
-    {ok, void} = wocky_db:query(LServer, Query, Values, quorum),
+    {ok, void} = wocky_db:query(shared, Query, Values, quorum),
     ok.
 
 
 %% @doc Deletes the roster item from the database.
 -spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), contact()) -> ok.
-delete_roster_item(LUser, LServer, ContactJID) ->
+delete_roster_item(LUser, _LServer, ContactJID) ->
     Conditions = #{user => LUser, contact_jid => ContactJID},
-    wocky_db:delete(LServer, roster, all, Conditions).
+    wocky_db:delete(shared, roster, all, Conditions).
 
 %% @doc Checks whether a user has another user as an authorized contact
 -spec has_contact(ejabberd:jid(), ejabberd:jid()) -> boolean().
-has_contact(#jid{luser = LUser, lserver = LServer}, OtherJID) ->
+has_contact(#jid{luser = LUser}, OtherJID) ->
     ContactJID = jid:to_binary(jid:to_bare(OtherJID)),
-    case wocky_db:select(LServer, roster, [ask],
+    case wocky_db:select(shared, roster, [ask],
                          #{user => LUser,
                            contact_jid => ContactJID}) of
         [#{ask := <<"none">>}] -> true;

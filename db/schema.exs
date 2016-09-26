@@ -42,6 +42,7 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:user, :phone_number]
     ]
 
+
     # A lookup table that maps globally unique handle to user account id
     table :handle_to_user, [
       columns: [
@@ -51,6 +52,31 @@ defmodule Schemata.Schemas.Wocky do
       ],
       primary_key: :handle
     ]
+
+    # Table for storing a user's roster
+    table :roster, [
+      columns: [
+        user:         :text,     # User ID (userpart of JID)
+        server:       :text,     # User Server (domainpart of JID)
+        contact_jid:  :text,     # Bare JID for contact
+        active:       :boolean,  # True if the roster item is not deleted
+        nick:         :text,     # Display name for contact chosen by the user
+        groups:       {:set, :text}, # List of groups the contact belongs to
+        ask:          :text,     # Status if the item is pending approval
+        subscription: :text,     # Subscription state of the roster item
+        version:      :timestamp # Timestamp indicating when the roster item
+                                 # was last updated
+      ],
+      primary_key: [:user, :contact_jid]
+    ]
+
+    view :roster_version, [
+      from: :roster,
+      columns: :all,
+      primary_key: [:user, :version, :contact_jid],
+      order_by: [version: :asc]
+    ]
+
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
@@ -96,30 +122,6 @@ defmodule Schemata.Schemas.Wocky do
       ],
       primary_key: [:user, :timestamp, :msg_id],
       order_by: [timestamp: :asc]
-    ]
-
-    # Table for storing a user's roster
-    table :roster, [
-      columns: [
-        user:         :text,     # User ID (userpart of JID)
-        server:       :text,     # User Server (domainpart of JID)
-        contact_jid:  :text,     # Bare JID for contact
-        active:       :boolean,  # True if the roster item is not deleted
-        nick:         :text,     # Display name for contact chosen by the user
-        groups:       {:set, :text}, # List of groups the contact belongs to
-        ask:          :text,     # Status if the item is pending approval
-        subscription: :text,     # Subscription state of the roster item
-        version:      :timestamp # Timestamp indicating when the roster item
-                                 # was last updated
-      ],
-      primary_key: [:user, :contact_jid]
-    ]
-
-    view :roster_version, [
-      from: :roster,
-      columns: :all,
-      primary_key: [:user, :version, :contact_jid],
-      order_by: [version: :asc]
     ]
 
     # Table for storing transient data for active user sessions

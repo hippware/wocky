@@ -151,8 +151,8 @@ clear_tables(Context, Tables) ->
 %% @doc Truncate the tables related to user data.
 -spec clear_user_tables(context()) -> ok.
 clear_user_tables(Context) ->
-    clear_tables(shared, [user, handle_to_user, phone_number_to_user]),
-    clear_tables(Context, [session, roster, auth_token, last_activity,
+    clear_tables(shared, [user, handle_to_user, phone_number_to_user, roster]),
+    clear_tables(Context, [session, auth_token, last_activity,
                            privacy, privacy_item, location, conversation]).
 
 
