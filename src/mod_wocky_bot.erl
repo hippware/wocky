@@ -282,9 +282,8 @@ filter_local_packet_hook(Other) ->
     Other.
 
 handle_bot_packet(From, LServer, BotID,
-                  El = #xmlel{name = <<"message">>,
+                  #xmlel{name = <<"message">>,
                          attrs = Attrs, children = Children}) ->
-    ct:log("Got message: ~p", [El]),
     case xml:get_attr(<<"type">>, Attrs) of
         {value, <<"headline">>} ->
             handle_roster_changed(From, LServer, BotID, Children);
