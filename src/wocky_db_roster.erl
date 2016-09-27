@@ -15,11 +15,10 @@
          has_contact/2,
          is_friend/2]).
 
--type roster_item() :: #wocky_roster{}.
--type roster()      :: [roster_item()].
+-type roster()      :: [wocky_roster()].
 -type version()     :: binary().
 -type contact()     :: binary().
--export_type([roster_item/0, roster/0, version/0]).
+-export_type([roster/0, version/0]).
 
 
 %%%===================================================================
@@ -64,7 +63,7 @@ delete_roster(LUser, _LServer) ->
 %% does not have a roster item for the specified contact, returns a fresh
 %% roster item that has not been stored in the database.
 -spec get_roster_item(ejabberd:luser(), ejabberd:lserver(), contact())
-                     -> roster_item().
+                     -> wocky_roster().
 get_roster_item(LUser, LServer, ContactJID) ->
     Conditions = #{user => LUser, contact_jid => ContactJID},
     Row = wocky_db:select_row(shared, roster, all, Conditions),
@@ -74,7 +73,7 @@ get_roster_item(LUser, LServer, ContactJID) ->
 
 %% @doc Stores the roster item in the database.
 -spec update_roster_item(ejabberd:luser(), ejabberd:lserver(),
-                         contact(), roster_item()) -> ok.
+                         contact(), wocky_roster()) -> ok.
 update_roster_item(LUser, LServer, ContactJID, Item) ->
     Query = "INSERT INTO roster ("
             " user, server, contact_jid, nick, groups, ask,"
@@ -104,15 +103,15 @@ has_contact(#jid{luser = LUser}, OtherJID) ->
 
 %% @doc Checks whether a user has another user as a friend
 -spec is_friend(ejabberd:jid(), ejabberd:jid()) -> boolean().
-is_friend(#jid{luser = LUser, lserver = LServer}, OtherJID) ->
+is_friend(#jid{luser = LUser}, OtherJID) ->
     ContactJID = jid:to_binary(jid:to_bare(OtherJID)),
-    case wocky_db:select(LServer, roster, [subscription, groups],
+    case wocky_db:select(shared, roster, [subscription, groups],
                          #{user => LUser,
                            contact_jid => ContactJID}) of
-        [#{subscription := <<"both">>,
-           groups := Groups}] ->
-            not lists:member(<<"__blocked__">>, Groups);
-        _ -> false
+        [#{subscription := Sub, groups := Groups}] ->
+            wocky_util:is_friend(binary_to_atom(Sub, utf8), Groups);
+        _ ->
+            false
     end.
 
 %%%===================================================================

@@ -16,6 +16,7 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
+-include("wocky_roster.hrl").
 
 -ignore_xref([handle_iq/3, check_access/3]).
 
@@ -259,7 +260,6 @@ handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
         wocky_bot_util:check_owner(Server, ID, From),
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
-        refresh_roster(Server, ID),
         {ok, []}
        ]).
 
@@ -282,20 +282,13 @@ filter_local_packet_hook(Other) ->
     Other.
 
 handle_bot_packet(From, LServer, BotID,
-                  Msg = #xmlel{name = <<"message">>, attrs = Attrs}) ->
+                  El = #xmlel{name = <<"message">>,
+                         attrs = Attrs, children = Children}) ->
+    ct:log("Got message: ~p", [El]),
     case xml:get_attr(<<"type">>, Attrs) of
         {value, <<"headline">>} ->
-            handle_headline_msg(From, LServer, BotID, Msg);
+            handle_roster_changed(From, LServer, BotID, Children);
         false ->
-            ignored
-    end;
-
-handle_bot_packet(From, LServer, BotID,
-                  Packet = #xmlel{name = <<"iq">>}) ->
-    case jlib:iq_query_or_response_info(Packet) of
-        #iq{xmlns = ?NS_WOCKY_ROSTER, sub_el = SubEl, type = result} ->
-            handle_roster_update(From, LServer, BotID, SubEl);
-        _ ->
             ignored
     end;
 
@@ -306,64 +299,47 @@ handle_bot_packet(_, _, _, _) ->
 %%% Roster update packet handler
 %%%===================================================================
 
-handle_roster_update(From, LServer, BotID,
-                     [#xmlel{name = <<"query">>,
-                             attrs = Attrs,
+-record(roster_item, {
+          jid :: ejabberd:jid(),
+          subscription :: subscription_type(),
+          groups :: [binary()]
+         }).
+
+handle_roster_changed(From, LServer, BotID,
+                     [#xmlel{name = <<"roster-changed">>,
                              children = Children}]) ->
     _ = do([error_m ||
             wocky_bot_util:check_owner(LServer, BotID, From),
-            NewVersion <- get_version(Attrs),
-            check_version(LServer, BotID, NewVersion),
-            OldBot <- {ok, wocky_db_bot:get(LServer, BotID)},
-            NewRoster <- update_roster(LServer, BotID, NewVersion, Children),
-            remove_invalidated_associations(LServer, BotID, OldBot, NewRoster)
+            RemovedJIDs <- get_removed_jids(Children),
+            Bot <- {ok, wocky_db_bot:get(LServer, BotID)},
+            remove_invalidated_associations(LServer, BotID, Bot, RemovedJIDs)
            ]),
     ok;
-handle_roster_update(_, _, _, _) ->
+handle_roster_changed(_, _, _, _) ->
     ignored.
 
-get_version(Attrs) ->
-    case xml:get_attr(<<"version">>, Attrs) of
-        {value, Ver} -> {ok, Ver};
-        _ -> {error, no_version}
-    end.
-
-check_version(LServer, BotID, NewVersion) ->
-    CurrentVer = wocky_db_bot:owner_roster_ver(LServer, BotID),
-    case CurrentVer of
-        NewVersion -> {error, same_version};
-        _ -> ok
-    end.
-
-update_roster(Server, BotID, NewVer, ItemEls) ->
+get_removed_jids(ItemEls) ->
     Items = els_to_items(ItemEls),
-    wocky_db_bot:update_owner_roster(Server, BotID, Items, NewVer),
-    {ok, Items}.
+    UnFriended = lists:filter(fun(I) -> not is_friend(I) end, Items),
+    {ok, [JID || #roster_item{jid = JID} <- UnFriended]}.
+
+is_friend(#roster_item{subscription = Sub, groups = Groups}) ->
+    wocky_util:is_friend(Sub, Groups).
 
 els_to_items(ItemEls) ->
     lists:foldl(fun el_to_item/2, [], ItemEls).
 
-%% Currently we drop everyone who isn't a friend (bi-directional
-%% subscription), since friends are all we care about.
-el_to_item(El = #xmlel{name = <<"item">>, attrs = Attrs}, Acc) ->
-    case is_friend(El) of
-        true ->
-            {value, JID} = xml:get_attr(<<"jid">>, Attrs),
-            [jid:from_binary(JID) | Acc];
-        false ->
-            Acc
-    end;
+el_to_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children},
+           Acc) ->
+    Subscription = binary_to_existing_atom(
+                     xml:get_attr_s(<<"subscription">>, Attrs), utf8),
+    Groups = get_groups(Children),
+    {value, JID} = xml:get_attr(<<"jid">>, Attrs),
+    [#roster_item{jid = jid:from_binary(JID),
+                  groups = Groups,
+                  subscription = Subscription}
+     | Acc];
 el_to_item(_, Acc) -> Acc.
-
-is_friend(#xmlel{attrs = Attrs, children = Children}) ->
-    has_two_way_subscription(Attrs) andalso not is_blocked(Children).
-
-has_two_way_subscription(Attrs) ->
-    {value, <<"both">>} =:= xml:get_attr(<<"subscription">>, Attrs).
-
-is_blocked(Elements) ->
-    Groups = get_groups(Elements),
-    lists:member(<<"__blocked__">>, Groups).
 
 get_groups(Elements) ->
     lists:foldl(fun get_group/2, [], Elements).
@@ -374,87 +350,47 @@ get_group(#xmlel{name = <<"group">>,
 get_group(_, Acc) -> Acc.
 
 remove_invalidated_associations(LServer, ID,
-                                #{visibility := Visibility,
-                                  owner_roster := OldRosterBin},
-                                NewRoster) ->
-    OldRoster = [jid:from_binary(J) ||
-                 J <- wocky_util:null_to_list(OldRosterBin)],
-    RemovedItems = OldRoster -- NewRoster,
-    remove_invalidated_affiliates(LServer, ID, RemovedItems),
-    remove_invalidated_subscribers(LServer, ID, Visibility, RemovedItems).
+                                #{visibility := Visibility},
+                                RemovedJIDs) ->
+    remove_invalidated_affiliates(LServer, ID, RemovedJIDs),
+    remove_invalidated_subscribers(LServer, ID, Visibility, RemovedJIDs).
 
-remove_invalidated_affiliates(LServer, ID, RemovedItems) ->
+remove_invalidated_affiliates(LServer, ID, RemovedJIDs) ->
     OldAffiliates = [A || {A, _} <- wocky_db_bot:affiliations(LServer, ID)],
-    RemovedAffiliates = wocky_util:intersection(RemovedItems, OldAffiliates),
+    RemovedAffiliates = wocky_util:intersection(RemovedJIDs, OldAffiliates),
     RemovedAffiliations = [{I, none} || I <- RemovedAffiliates],
     wocky_db_bot:update_affiliations(LServer, ID, RemovedAffiliations),
     wocky_bot_util:notify_affiliates(
       jid:make(<<>>, LServer, <<>>), ID, RemovedAffiliations).
 
-remove_invalidated_subscribers(LServer, ID, Vis, RemovedItems)
+remove_invalidated_subscribers(LServer, ID, Vis, RemovedJIDs)
   when Vis =:= ?WOCKY_BOT_VIS_FRIENDS;
        Vis =:= ?WOCKY_BOT_VIS_WHITELIST ->
     lists:foreach(remove_invalidated_subscriber(LServer, ID, _),
-                  RemovedItems);
+                  RemovedJIDs);
 remove_invalidated_subscribers(_, _, _, _) ->
     ok.
 
-remove_invalidated_subscriber(LServer, ID, Item) ->
-    case wocky_db_bot:follow_state(LServer, ID, Item) of
+remove_invalidated_subscriber(LServer, ID, JID) ->
+    case wocky_db_bot:follow_state(LServer, ID, JID) of
         not_found ->
             ok;
         Follow ->
-            wocky_db_bot:unsubscribe(LServer, ID, Item),
-            notify_unsubscribe(LServer, ID, Item, Follow)
+            wocky_db_bot:unsubscribe(LServer, ID, JID),
+            notify_unsubscribe(LServer, ID, JID, Follow)
     end.
 
-notify_unsubscribe(LServer, ID, Item, Follow) ->
+notify_unsubscribe(LServer, ID, JID, Follow) ->
     Stanza =
     #xmlel{name = <<"message">>,
            children = [make_unsubscribed(ID, Follow)]},
-    ejabberd_router:route(jid:make(<<>>, LServer, <<>>), Item, Stanza).
+    ejabberd_router:route(jid:make(<<>>, LServer, <<>>), JID, Stanza).
 
 make_unsubscribed(ID, Follow) ->
     #xmlel{name = <<"unsubscribed">>,
            attrs = [{<<"xmlns">>, ?NS_BOT},
                     {<<"node">>, wocky_bot_util:make_node(ID)}],
            children = [wocky_bot_util:make_follow_element(Follow)]}.
-
-%%%===================================================================
-%%% Roster changed packet handler
-%%%===================================================================
-
-handle_headline_msg(From, LServer, BotID, Msg) ->
-    case xml:get_path_s(Msg, [{elem, <<"roster-changed">>}]) of
-        #xmlel{} -> maybe_refresh_roster(From, LServer, BotID);
-        _ -> ignored
-    end.
-
-maybe_refresh_roster(From, LServer, BotID) ->
-    Owner = wocky_db_bot:owner(LServer, BotID),
-    case jid:are_bare_equal(From, Owner) of
-        true ->
-            refresh_roster(LServer, BotID);
-        false -> ignored
-    end.
-
-refresh_roster(LServer, ID) ->
-    #{owner := Owner, owner_roster_ver := RosterVer}
-    = wocky_db_bot:get(LServer, ID),
-    ok = ejabberd_local:route(bot_jid(LServer, ID),
-                              jid:from_binary(Owner),
-                              jlib:iq_to_xml(roster_request_iq(RosterVer))).
-
-roster_request_iq(RosterVer) ->
-    #iq{type = get, id = wocky_util:iq_id(), sub_el = query_el(RosterVer)}.
-
-query_el(RosterVer) ->
-    #xmlel{name = <<"query">>,
-           attrs = [{<<"xmlns">>, ?NS_WOCKY_ROSTER} |
-                    maybe_ver_attr(RosterVer)]}.
-
-maybe_ver_attr(Ver) when is_binary(Ver) -> [{<<"version">>, Ver}];
-maybe_ver_attr(_) -> [].
 
 %%%===================================================================
 %%% Access manager callback
@@ -596,7 +532,6 @@ create_bot(Owner, Server, Fields) ->
         Fields3 <- add_owner(Owner, Fields2),
         update_bot(Server, ID, Fields3),
         add_bot_as_roster_viewer(Owner, Server, ID),
-        refresh_roster(Server, ID),
         make_bot_el(Server, ID)
        ]).
 

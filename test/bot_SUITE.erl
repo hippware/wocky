@@ -342,8 +342,6 @@ friends_only_permissions(Config) ->
         escalus:assert(is_presence_with_type, [<<"unavailable">>],
                        escalus:wait_for_stanza(Bob)),
 
-        timer:sleep(500),
-
         % Bob was an affiliate at this point, so gets a notification that
         % he has been de-affiliated
         expect_affiliation_update(Bob, none),

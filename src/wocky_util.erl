@@ -6,6 +6,7 @@
 -module(wocky_util).
 
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky_roster.hrl").
 
 -export([
    add_hooks/4,
@@ -22,7 +23,9 @@
    archive_jid/1,
 
    iq_id/0,
-   make_error_iq_response/2
+   make_error_iq_response/2,
+
+   is_friend/2
         ]).
 
 -export_type([hook/0]).
@@ -121,3 +124,9 @@ null_to_list(L) -> L.
 -spec intersection(list(), list()) -> list().
 intersection(A, B) ->
     lists:filter(lists:member(_, B), A).
+
+-spec is_friend(subscription_type(), [binary()]) -> boolean().
+is_friend(Subscription, Groups) ->
+    Subscription =:= both
+    andalso
+    not lists:member(<<"__blocked__">>, Groups).

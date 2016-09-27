@@ -12,7 +12,6 @@
          insert_new_name/2, owner/2, affiliations/2,
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
-         owner_roster/2, owner_roster_ver/2, update_owner_roster/4,
          get_item/3, publish_item/4, delete_item/3
         ]).
 
@@ -30,9 +29,7 @@ wocky_db_bot_test_() -> {
         test_affiliations(),
         test_affiliations_from_map(),
         test_followers(),
-        test_subscribers(),
-        test_owner_roster(),
-        test_owner_roster_ver()
+        test_subscribers()
       ]},
 
       {inorder, [
@@ -46,7 +43,6 @@ wocky_db_bot_test_() -> {
         test_update_affiliations(),
         test_subscribe(),
         test_unsubscribe(),
-        test_update_owner_roster(),
         test_delete()
       ]}
     ]}
@@ -278,8 +274,8 @@ test_has_access() ->
                                                    ?WOCKY_BOT_VIS_FRIENDS})),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
-        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?CAROL_JID)),
-        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?KAREN_JID))
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?KAREN_JID)),
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
       ]},
       { "returns true for everyone with VIS_PUBLIC", [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
@@ -315,42 +311,6 @@ test_unsubscribe() ->
         ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
         ?_assertEqual(lists:sort([{?CAROL_JID, false}, {?KAREN_JID, true}]),
                       subscribers(?LOCAL_CONTEXT, ?BOT))
-      ]}
-    ]}.
-
-test_owner_roster() ->
-    { "owner_roster", [
-      { "gets the roster of the current owner, as recorded by the bot", [
-        ?_assertEqual(
-           lists:sort([jid:from_binary(I) || I <- ?BOT_OWNER_ROSTER]),
-           lists:sort(owner_roster(?LOCAL_CONTEXT, ?BOT)))
-      ]},
-      { "returns not_found for non-existant bot", [
-        ?_assertEqual(not_found,
-                      owner_roster(?LOCAL_CONTEXT, wocky_db:create_id()))
-      ]}
-    ]}.
-
-test_owner_roster_ver() ->
-    { "owner_roster_ver", [
-      { "gets the roster version of the owner, as recorded by the bot", [
-        ?_assertEqual(<<"999-4">>, owner_roster_ver(?LOCAL_CONTEXT, ?BOT))
-      ]},
-      { "returns not_found for non-existant bot", [
-        ?_assertEqual(not_found,
-                      owner_roster_ver(?LOCAL_CONTEXT, wocky_db:create_id()))
-      ]}
-    ]}.
-
-
-test_update_owner_roster() ->
-    NewRoster = lists:sort([?BOB_JID, ?KAREN_JID]),
-    { "update_owner_roster", [
-      { "entirely replaces the roster and roster version data", [
-        ?_assertEqual(ok, update_owner_roster(
-                            ?LOCAL_CONTEXT, ?BOT,
-                            NewRoster, <<"999">>)),
-        ?_assertEqual(NewRoster, lists:sort(owner_roster(?LOCAL_CONTEXT, ?BOT)))
       ]}
     ]}.
 

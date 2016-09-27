@@ -45,9 +45,8 @@ handle_update_affiliations(From, To = #jid{lserver = Server},
     do([error_m ||
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_owner(Server, ID, From),
-        DirtyAffiliations <- get_affiliations(Children),
-        OwnerRoster <- {ok, wocky_db_bot:owner_roster(Server, ID)},
-        Affiliations <- check_affiliations(DirtyAffiliations, OwnerRoster, []),
+        NewAffiliations <- get_affiliations(Children),
+        Affiliations <- check_affiliations(From, NewAffiliations, []),
         update_affiliations(Server, ID, Affiliations),
         wocky_bot_util:notify_affiliates(To, ID, Affiliations),
         {ok, make_affiliations_update_element(Server, ID)}
@@ -65,20 +64,19 @@ element_to_affiliation(#xmlel{attrs = Attrs}) ->
     Affiliation = xml:get_attr_s(<<"affiliation">>, Attrs),
     {jid:from_binary(JID), Affiliation}.
 
-check_affiliations([], _OwnerRoster, Acc) -> {ok, Acc};
-check_affiliations([Affiliation | Rest], OwnerRoster, Acc) ->
-    case check_affiliation(Affiliation, OwnerRoster) of
+check_affiliations(_From, [], Acc) -> {ok, Acc};
+check_affiliations(From, [Affiliation | Rest], Acc) ->
+    case check_affiliation(From, Affiliation) of
         {error, E} ->
             {error, E};
         CleanAffiliation ->
-            check_affiliations(Rest, OwnerRoster,
-                               [CleanAffiliation | Acc])
+            check_affiliations(From, Rest, [CleanAffiliation | Acc])
     end.
 
-check_affiliation({User, <<"none">>}, _OwnerRoster) ->
+check_affiliation(_From, {User, <<"none">>}) ->
     {User, none};
-check_affiliation({User, <<"spectator">>}, OwnerRoster) ->
-    case lists:any(jid:are_equal(User, _), OwnerRoster) of
+check_affiliation(From, {User, <<"spectator">>}) ->
+    case wocky_db_roster:is_friend(From, User) of
         true ->
             {User, spectator};
         false ->
@@ -86,7 +84,7 @@ check_affiliation({User, <<"spectator">>}, OwnerRoster) ->
                        ?MYLANG, <<(jid:to_binary(User))/binary,
                                   " is not a friend">>)}
     end;
-check_affiliation({_User, Role}, _OwnerRoster) ->
+check_affiliation(_From, {_User, Role}) ->
     {error, ?ERRT_BAD_REQUEST(
                ?MYLANG, <<"Invalid affiliate role: ", Role/binary>>)}.
 
