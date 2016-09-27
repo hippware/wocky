@@ -38,7 +38,6 @@ stop(Host) ->
                      wocky_roster()) -> ok.
 roster_updated(LUser, LServer, Item) ->
     Viewers = wocky_db_user:get_roster_viewers(LUser, LServer),
-    ct:log("Viewers: ~p\nItem: ~p", [Viewers, Item]),
     lists:foreach(notify_roster_update(LUser, LServer, Item, _), Viewers).
 
 notify_roster_update(LUser, LServer, Item, Viewer) ->
