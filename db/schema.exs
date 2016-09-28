@@ -77,6 +77,31 @@ defmodule Schemata.Schemas.Wocky do
       order_by: [version: :asc]
     ]
 
+    table :bot, [
+      columns: [
+        id:               :timeuuid, # Bot ID
+        server:           :text,     # Bot server
+        title:            :text,     # Bot title
+        shortname:        :text,     # Bot shortname for URL representation
+        owner:            :text,     # Bot owner
+        description:      :text,     # User-supplied description
+        lat:              :double,   # Latitude
+        lon:              :double,   # Longditude
+        radius:           :int,      # Radius of bot circle
+        visibility:       :int,      # Visibility of bot
+        affiliates:       {:set, :text}, # Bot's affiliates
+                                         # (required for WHITELIST visibility)
+        alerts:           :int       # Whether alerts are enabled (0/1)
+      ],
+      primary_key: :id
+    ]
+
+    view :user_bot, [ # MV for looking up bots by owner
+      from: :bot,
+      columns: [:owner, :id],
+      primary_key: [:owner, :id]
+    ]
+
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
@@ -305,31 +330,6 @@ defmodule Schemata.Schemas.Wocky do
         title:        :text
       ],
       primary_key: [:id]
-    ]
-
-    table :bot, [
-      columns: [
-        id:               :timeuuid, # Bot ID
-        server:           :text,     # Bot server
-        title:            :text,     # Bot title
-        shortname:        :text,     # Bot shortname for URL representation
-        owner:            :text,     # Bot owner
-        description:      :text,     # User-supplied description
-        lat:              :double,   # Latitude
-        lon:              :double,   # Longditude
-        radius:           :int,      # Radius of bot circle
-        visibility:       :int,      # Visibility of bot
-        affiliates:       {:set, :text}, # Bot's affiliates
-                                         #(required for WHITELIST visibility)
-        alerts:           :int       # Whether alerts are enabled (0/1)
-      ],
-      primary_key: :id
-    ]
-
-    view :user_bot, [ # MV for looking up bots by owner
-      from: :bot,
-      columns: [:owner, :id],
-      primary_key: [:owner, :id]
     ]
 
     table :bot_subscriber, [

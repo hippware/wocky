@@ -76,12 +76,13 @@ end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
 local_tables() ->
-    [bot, bot_name, bot_subscriber, bot_item].
+    [bot_name, bot_subscriber, bot_item].
 
 reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db:clear_tables(shared, [bot]),
     wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
-    wocky_db_seed:seed_tables(shared, [roster]),
+    wocky_db_seed:seed_tables(shared, [bot, roster]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
     Users = escalus:get_users([alice, bob, carol, karen, robert, tim]),
     Config1 = fun_chain:first(Config,
@@ -239,7 +240,7 @@ errors(Config) ->
 
 retrieve_for_user(Config) ->
     reset_tables(Config),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot]),
+    wocky_db:clear_tables(shared, [bot]),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
         IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
