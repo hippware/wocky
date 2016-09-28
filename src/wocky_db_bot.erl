@@ -40,12 +40,12 @@
 %%%===================================================================
 
 -spec get(wocky_db:server(), wocky_db:id()) -> map() | not_found.
-get(Server, ID) ->
-    wocky_db:select_row(Server, bot, all, #{id => ID}).
+get(_Server, ID) ->
+    wocky_db:select_row(shared, bot, all, #{id => ID}).
 
 -spec get_by_user(wocky_db:server(), binary()) -> [binary()].
-get_by_user(Server, User) ->
-    wocky_db:select_column(Server, user_bot, id, #{owner => User}).
+get_by_user(_Server, User) ->
+    wocky_db:select_column(shared, user_bot, id, #{owner => User}).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -53,15 +53,15 @@ get_id_by_name(Server, Name) ->
     wocky_db:select_one(Server, bot_name, id, #{shortname => Name}).
 
 -spec exists(wocky_db:server(), wocky_db:id()) -> boolean().
-exists(Server, ID) ->
-    case wocky_db:select_one(Server, bot, id, #{id => ID}) of
+exists(_Server, ID) ->
+    case wocky_db:select_one(shared, bot, id, #{id => ID}) of
         not_found -> false;
         _ -> true
     end.
 
 -spec insert(wocky_db:server(), map()) -> ok.
-insert(Server, Fields) ->
-    wocky_db:insert(Server, bot, Fields).
+insert(_Server, Fields) ->
+    wocky_db:insert(shared, bot, Fields).
 
 -spec insert_new_name(wocky_db:id(), shortname()) -> ok | {error, exists}.
 insert_new_name(ID, Name) ->
@@ -72,13 +72,13 @@ insert_new_name(ID, Name) ->
     end.
 
 -spec owner(wocky_db:server(), wocky_db:id()) -> jid() | not_found.
-owner(Server, ID) ->
-    maybe_to_jid(wocky_db:select_one(Server, bot, owner, #{id => ID})).
+owner(_Server, ID) ->
+    maybe_to_jid(wocky_db:select_one(shared, bot, owner, #{id => ID})).
 
 -spec affiliations(wocky_db:server(), wocky_db:id()) ->
     [affiliation()].
-affiliations(Server, ID) ->
-    Map = wocky_db:select_row(Server, bot, [affiliates, owner], #{id => ID}),
+affiliations(_Server, ID) ->
+    Map = wocky_db:select_row(shared, bot, [affiliates, owner], #{id => ID}),
     affiliations_from_map(Map).
 
 -spec affiliations_from_map(map() | not_found) -> [affiliation()] | not_found.
@@ -94,7 +94,7 @@ owner_affiliation(Owner) ->
 
 -spec update_affiliations(wocky_db:server(), wocky_db:id(), [affiliation()]) ->
     ok.
-update_affiliations(Server, ID, Affiliations) ->
+update_affiliations(_Server, ID, Affiliations) ->
     {Add, Remove} = lists:partition(fun({_, Type}) -> Type =:= spectator end,
                                     Affiliations),
     AddQ = "UPDATE bot SET affiliates = affiliates + ? "
@@ -105,9 +105,9 @@ update_affiliations(Server, ID, Affiliations) ->
     RemoveV = #{affiliates => user_parts(Remove), id => ID},
 
     Add =/= [] andalso
-        ({ok, _} = wocky_db:query(Server, AddQ, AddV, quorum)),
+        ({ok, _} = wocky_db:query(shared, AddQ, AddV, quorum)),
     Remove =/= [] andalso
-        ({ok, _} = wocky_db:query(Server, RemoveQ, RemoveV, quorum)),
+        ({ok, _} = wocky_db:query(shared, RemoveQ, RemoveV, quorum)),
     ok.
 
 -spec followers(wocky_db:server(), wocky_db:id()) -> [jid()].
@@ -129,19 +129,19 @@ follow_state(Server, ID, User) ->
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
 delete(Server, ID) ->
-    Shortname = wocky_db:select_one(Server, bot, shortname, #{id => ID}),
+    Shortname = wocky_db:select_one(shared, bot, shortname, #{id => ID}),
     Shortname =/= not_found andalso
     Shortname =/= null andalso
         (ok = wocky_db:delete(Server, bot_name, all,
                               #{shortname => Shortname})),
-    ok = wocky_db:delete(Server, bot, all, #{id => ID}).
+    ok = wocky_db:delete(shared, bot, all, #{id => ID}).
 
 -spec has_access(wocky_db:server(), wocky_db:id(), jid()) ->
     boolean() | not_found.
-has_access(Server, ID, User) ->
+has_access(_Server, ID, User) ->
     BareUserBin = jid:to_binary(jid:to_bare(User)),
     Bot =
-    wocky_db:select_row(Server, bot,
+    wocky_db:select_row(shared, bot,
                         [visibility, affiliates, owner],
                         #{id => ID}),
     has_access(BareUserBin, Bot).
