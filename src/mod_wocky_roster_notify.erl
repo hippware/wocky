@@ -1,7 +1,7 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%%
-%%% @doc Module implementing roster query
-%%% See https://github.com/hippware/tr-wiki/wiki/Roster-query
+%%% @doc Module implementing roster notifications
+%%% See https://github.com/hippware/tr-wiki/wiki/Roster-notifications
 %%%
 -module(mod_wocky_roster_notify).
 
