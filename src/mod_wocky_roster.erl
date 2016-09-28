@@ -41,7 +41,8 @@
          roster_get_subscription_lists_hook/3,
          roster_get_jid_info_hook/4,
          remove_user_hook/2,
-         roster_get_versioning_feature_hook/2]).
+         roster_get_versioning_feature_hook/2,
+         filter_local_packet_hook/1]).
 
 -ignore_xref([process_iq/3,
               roster_get_hook/2,
@@ -50,7 +51,8 @@
               roster_get_subscription_lists_hook/3,
               roster_get_jid_info_hook/4,
               remove_user_hook/2,
-              roster_get_versioning_feature_hook/2]).
+              roster_get_versioning_feature_hook/2,
+              filter_local_packet_hook/1]).
 
 -define(NULL_VERSION, <<"0">>).
 
@@ -77,7 +79,8 @@ hooks() ->
      {roster_get_jid_info,           roster_get_jid_info_hook},
      {remove_user,                   remove_user_hook},
      {anonymous_purge_hook,          remove_user_hook},
-     {roster_get_versioning_feature, roster_get_versioning_feature_hook}].
+     {roster_get_versioning_feature, roster_get_versioning_feature_hook},
+     {filter_local_packet,           filter_local_packet_hook}].
 
 %%%===================================================================
 %%% IQ handler callback
@@ -450,6 +453,17 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
     Feature = #xmlel{name = <<"ver">>,
                      attrs = [{<<"xmlns">>, ?NS_ROSTER_VER}]},
     [Feature | Acc].
+
+%% local packet filter hook for user update messages
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-spec filter_local_packet_hook(filter_packet() | drop) ->
+    filter_packet() | drop.
+filter_local_packet_hook(P = {From, To, Packet}) ->
+    case handle_user_packet(From, To, Packet) of
+        ok -> drop;
+        ignored -> P
+    end.
+
 
 
 %%%===================================================================

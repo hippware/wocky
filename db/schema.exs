@@ -70,6 +70,16 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:user, :contact_jid]
     ]
 
+    view :reverse_roster, [
+      from: :roster,
+      columns: [
+        :user,
+        :server,
+        :contact_jid
+      ],
+      primary_key: [:contact_jid, :user]
+    ]
+
     view :roster_version, [
       from: :roster,
       columns: :all,

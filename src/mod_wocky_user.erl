@@ -387,6 +387,7 @@ valid_user_fields() ->
 update_user(LUser, LServer, Row) ->
    case wocky_db_user:update_user(LUser, LServer, Row) of
        ok ->
+         ejabberd_hooks:run(wocky_user_updated, LServer, Row),
          ok;
 
       {error, duplicate_handle} ->

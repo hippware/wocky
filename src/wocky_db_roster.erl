@@ -13,7 +13,9 @@
          update_roster_item/4,
          delete_roster_item/3,
          has_contact/2,
-         is_friend/2]).
+         is_friend/2,
+         users_with_contact/1
+        ]).
 
 -type roster()      :: [wocky_roster()].
 -type version()     :: binary().
@@ -113,6 +115,13 @@ is_friend(#jid{luser = LUser}, OtherJID) ->
         _ ->
             false
     end.
+
+-spec users_with_contact(ejabberd:jid()) -> [ejabberd:jid()].
+users_with_contact(ContactJID) ->
+    ContactJID = jid:to_binary(jid:to_bare(ContactJID)),
+    Rows = wocky_db:select(shared, reverse_roster, [user, server],
+                           #{contact_jid => ContactJID}),
+    [jid:make(U, S, <<>>) || #{user := U, server := S} <- Rows].
 
 %%%===================================================================
 %%% Internal functions
