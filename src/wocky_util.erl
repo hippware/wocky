@@ -34,6 +34,8 @@
 
 % Not used externally right now, but we want it available:
 -ignore_xref([safe_bin_to_integer/1]).
+% Currently only used by tests:
+-ignore_xref([iq_id/0]).
 
 -type hook() :: {Hook :: atom(), Callback :: atom()}.
 
