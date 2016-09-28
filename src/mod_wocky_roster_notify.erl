@@ -52,7 +52,7 @@ roster_change_packet(Item) ->
 
 make_roster_changed_el(Item) ->
     #xmlel{name = <<"roster-changed">>,
-           attrs = [{<<"xmlns">>, ?NS_ROSTER}],
+           attrs = [{<<"xmlns">>, ?NS_WOCKY_ROSTER}],
            children = [make_item_el(Item)]}.
 
 make_item_el(#wocky_roster{contact_jid = JID, contact_handle = Name,
