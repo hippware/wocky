@@ -1,12 +1,10 @@
 defmodule Schemata.RosterToSharedMigration do
   use Schemata.Migration, [
     authored_at: "2016-09-27T02:30:45Z",
-    description: "<roster-to-shared-keyspace>"
+    description: "Move roster to shared keyspace"
   ]
 
   def up do
-    drop :view, named: :roster_version, in: :wocky_db.local_keyspace
-    drop :table, named: :roster, in: :wocky_db.local_keyspace
     create_table :roster, in: :wocky_db.shared_keyspace,
       columns: [
         user:         :text,     # user id (userpart of jid)
@@ -28,13 +26,23 @@ defmodule Schemata.RosterToSharedMigration do
       primary_key: [:user, :version, :contact_jid],
       order_by: [version: :asc]
 
+    select(:all,
+      from: :roster, in: :wocky_db.local_keyspace)
+    |>
+    Enum.each(
+     fn(v) ->
+       insert into: :roster, in: :wocky_db.shared_keyspace,
+       values: v
+     end)
+
+    drop :view, named: :roster_version, in: :wocky_db.local_keyspace
+    drop :table, named: :roster, in: :wocky_db.local_keyspace
+
     alter_table :bot, in: :wocky_db.local_keyspace, drop: :owner_roster
     alter_table :bot, in: :wocky_db.local_keyspace, drop: :owner_roster_ver
   end
 
   def down do
-    drop :view, named: :roster_version, in: :wocky_db.shared_keyspace
-    drop :table, named: :roster, in: :wocky_db.shared_keyspace
     create_table :roster, in: :wocky_db.local_keyspace,
       columns: [
         user:         :text,     # user id (userpart of jid)
@@ -49,11 +57,24 @@ defmodule Schemata.RosterToSharedMigration do
                                  # was last updated
       ],
       primary_key: [:user, :contact_jid]
+
     create_view :roster_version,
       from: :roster, in: :wocky_db.local_keyspace,
       columns: :all,
       primary_key: [:user, :version, :contact_jid],
       order_by: [version: :asc]
+
+    select(:all,
+      from: :roster, in: :wocky_db.shared_keyspace)
+    |>
+    Enum.each(
+     fn(v) ->
+       insert into: :roster, in: :wocky_db.local_keyspace,
+       values: v
+     end)
+
+    drop :view, named: :roster_version, in: :wocky_db.shared_keyspace
+    drop :table, named: :roster, in: :wocky_db.shared_keyspace
 
     alter_table :bot, in: :wocky_db.local_keyspace,
       add: :owner_roster, type: {:set, :text}
