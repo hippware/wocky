@@ -27,6 +27,9 @@ defmodule Schemata.RosterToSharedMigration do
       columns: :all,
       primary_key: [:user, :version, :contact_jid],
       order_by: [version: :asc]
+
+    alter_table :bot, in: :wocky_db.local_keyspace, drop: :owner_roster
+    alter_table :bot, in: :wocky_db.local_keyspace, drop: :owner_roster_ver
   end
 
   def down do
@@ -51,5 +54,10 @@ defmodule Schemata.RosterToSharedMigration do
       columns: :all,
       primary_key: [:user, :version, :contact_jid],
       order_by: [version: :asc]
+
+    alter_table :bot, in: :wocky_db.local_keyspace,
+      add: :owner_roster, type: {:set, :text}
+    alter_table :bot, in: :wocky_db.local_keyspace,
+      add: :owner_roster_ver, type: :text
   end
 end

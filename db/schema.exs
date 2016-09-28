@@ -321,12 +321,6 @@ defmodule Schemata.Schemas.Wocky do
         visibility:       :int,      # Visibility of bot
         affiliates:       {:set, :text}, # Bot's affiliates
                                          #(required for WHITELIST visibility)
-        owner_roster:     {:set, :text}, # Bot's copy of it's owner's roster.
-                                         # This currently *excludes* non-friends
-                                         # (anyone without a two-way
-                                         # subscription or who is in the
-                                         # __blocked__ group
-        owner_roster_ver: :text,     # Version of roster that bot has
         alerts:           :int       # Whether alerts are enabled (0/1)
       ],
       primary_key: :id

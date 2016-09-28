@@ -232,9 +232,7 @@ seed_data(bot, Server) ->
        lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
        affiliates => [?BOB_B_JID],
-       alerts => ?WOCKY_BOT_ALERT_DISABLED,
-       owner_roster => ?BOT_OWNER_ROSTER,
-       owner_roster_ver => ?BOT_OWNER_ROSTER_VERSION
+       alerts => ?WOCKY_BOT_ALERT_DISABLED
       }];
 seed_data(bot_name, _Server) ->
     [#{shortname => ?BOT_NAME, id => ?BOT}];
