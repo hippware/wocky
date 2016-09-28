@@ -36,7 +36,7 @@ start(Host, _Opts) ->
                                   ?MODULE, handle_iq, parallel),
     wocky_util:add_hooks(hooks(), Host, ?MODULE, 30).
 
--spec stop(ejabberd:server()) -> any().
+-spec stop(ejabberd:server()) -> ok.
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS),
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 30).

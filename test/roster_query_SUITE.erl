@@ -35,8 +35,7 @@ suite() ->
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [roster]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [roster]),
+    wocky_db_seed:seed_tables(shared, [roster]),
     Users = escalus:get_users([alice, bob, carol, karen]),
     fun_chain:first(Config,
         escalus:init_per_suite(),

@@ -76,11 +76,12 @@ end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
 local_tables() ->
-    [bot, bot_name, roster, bot_subscriber, bot_item].
+    [bot, bot_name, bot_subscriber, bot_item].
 
 reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
+    wocky_db_seed:seed_tables(shared, [roster]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
     Users = escalus:get_users([alice, bob, carol, karen, robert, tim]),
     Config1 = fun_chain:first(Config,
@@ -340,8 +341,6 @@ friends_only_permissions(Config) ->
 
         escalus:assert(is_presence_with_type, [<<"unavailable">>],
                        escalus:wait_for_stanza(Bob)),
-
-        timer:sleep(500),
 
         % Bob was an affiliate at this point, so gets a notification that
         % he has been de-affiliated

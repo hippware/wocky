@@ -539,7 +539,7 @@ push_item(User, Server, From, Item, RosterVersion) ->
                   end,
                   ejabberd_sm:get_user_resources(User, Server)),
 
-    ejabberd_hooks:run(roster_updated, Server, [User, Server]).
+    ejabberd_hooks:run(roster_updated, Server, [User, Server, Item]).
 
 
 push_item(User, Server, Resource, From, Item, RosterVersion) ->
