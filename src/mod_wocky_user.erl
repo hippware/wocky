@@ -4,6 +4,8 @@
 %%%
 -module(mod_wocky_user).
 
+-compile({parse_transform, cut}).
+
 -export([
    start/2,
    stop/1,
@@ -387,7 +389,8 @@ valid_user_fields() ->
 update_user(LUser, LServer, Row) ->
    case wocky_db_user:update_user(LUser, LServer, Row) of
        ok ->
-         ejabberd_hooks:run(wocky_user_updated, LServer, Row),
+         update_roster_contacts(LUser, LServer),
+         ejabberd_hooks:run(wocky_user_updated, LServer, [LUser, LServer]),
          ok;
 
       {error, duplicate_handle} ->
@@ -412,3 +415,12 @@ not_valid(Message) ->
 
 error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
     {error, Stanza#xmlel{children = [ExtraChild | Children]}}.
+
+update_roster_contacts(LUser, LServer) ->
+    ContactJID = jid:make(LUser, LServer, <<>>),
+    Users = wocky_db_roster:users_with_contact(ContactJID),
+    ContactJIDBin = jid:to_binary(ContactJID),
+    lists:foreach(bump_roster_version(_, ContactJIDBin), Users).
+
+bump_roster_version(#jid{luser = User, lserver = Server}, ContactJIDBin) ->
+    wocky_db_roster:bump_roster_version(User, Server, ContactJIDBin).

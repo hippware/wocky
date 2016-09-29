@@ -22,9 +22,12 @@
 %%%----------------------------------------------------------------------
 -module(mod_wocky_roster).
 
+-compile({parse_transform, do}).
+
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/mod_roster.hrl").
+-include("wocky.hrl").
 -include("wocky_roster.hrl").
 
 %% gen_mod behaviour
@@ -459,12 +462,32 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
 filter_local_packet_hook(P = {From, To, Packet}) ->
-    case handle_user_packet(From, To, Packet) of
+    case handle_local_packet(From, To, Packet) of
         ok -> drop;
-        ignored -> P
+        {error, _} -> P
     end.
 
+handle_local_packet(_From, To, Packet) ->
+    do([error_m ||
+        check_headline(Packet),
+        UserChanged <- wocky_xml:get_sub_el(<<"user-changed">>, Packet),
+        wocky_xml:check_namespace(?NS_USER, UserChanged),
+        #xmlel{attrs = Attrs} <- wocky_xml:get_sub_el(<<"item">>, UserChanged),
+        JID <- wocky_xml:get_attr(<<"jid">>, Attrs),
+        send_update(To, JID)
+       ]).
 
+check_headline(#xmlel{name = <<"message">>, attrs = Attrs}) ->
+    case xml:get_attr(<<"type">>, Attrs) of
+        {value, <<"headline">>} -> ok;
+        _ -> {error, not_headline}
+    end;
+check_headline(_) -> {error, not_headline}.
+
+send_update(#jid{user = User, server = Server}, JID) ->
+    Version = wocky_db_roster:get_roster_version(User, Server),
+    Item = wocky_db_roster:get_roster_item(User, Server, JID),
+    push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Version).
 
 %%%===================================================================
 %%% Helper functions

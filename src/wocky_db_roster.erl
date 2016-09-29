@@ -11,6 +11,7 @@
          delete_roster/2,
          get_roster_item/3,
          update_roster_item/4,
+         bump_roster_version/3,
          delete_roster_item/3,
          has_contact/2,
          is_friend/2,
@@ -85,6 +86,19 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
     {ok, void} = wocky_db:query(shared, Query, Values, quorum),
     ok.
 
+%% @doc Updates the roster version on the specified entry without
+%% changing any other data.
+-spec bump_roster_version(ejabberd:luser(), ejabberd:lserver(),
+                          contact()) -> ok.
+bump_roster_version(LUser, LServer, ContactJID) ->
+    Query = "UPDATE roster SET version = toTimestamp(now())"
+            " WHERE user = ? AND server = ? and contact_jid = ?",
+    Values = #{user => LUser,
+               server => LServer,
+               contact_jid => ContactJID},
+    {ok, void} = wocky_db:query(shared, Query, Values, quorum),
+    ok.
+
 
 %% @doc Deletes the roster item from the database.
 -spec delete_roster_item(ejabberd:luser(), ejabberd:lserver(), contact()) -> ok.
@@ -118,9 +132,9 @@ is_friend(#jid{luser = LUser}, OtherJID) ->
 
 -spec users_with_contact(ejabberd:jid()) -> [ejabberd:jid()].
 users_with_contact(ContactJID) ->
-    ContactJID = jid:to_binary(jid:to_bare(ContactJID)),
+    ContactJIDBin = jid:to_binary(jid:to_bare(ContactJID)),
     Rows = wocky_db:select(shared, reverse_roster, [user, server],
-                           #{contact_jid => ContactJID}),
+                           #{contact_jid => ContactJIDBin}),
     [jid:make(U, S, <<>>) || #{user := U, server := S} <- Rows].
 
 %%%===================================================================
