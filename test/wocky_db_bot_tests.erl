@@ -344,7 +344,8 @@ new_bot() ->
       owner => ?BOB_B_JID, description => <<"Test insert bot">>,
       lat => 1.0, lon => -2.0, radius => 10,
       visibility => ?WOCKY_BOT_VIS_OWNER, affiliates => [?CAROL_B_JID],
-      alerts => ?WOCKY_BOT_ALERT_ENABLED
+      alerts => ?WOCKY_BOT_ALERT_ENABLED,
+      image => <<>>, type => <<"killbot">>
      }.
 
 expected_item() ->

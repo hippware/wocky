@@ -85,6 +85,9 @@ defmodule Schemata.Schemas.Wocky do
         shortname:        :text,     # Bot shortname for URL representation
         owner:            :text,     # Bot owner
         description:      :text,     # User-supplied description
+        image:            :text,     # Bot graphical image
+        type:             :text,     # Bot type (freeform string from
+                                     #           server's perspective)
         lat:              :double,   # Latitude
         lon:              :double,   # Longditude
         radius:           :int,      # Radius of bot circle

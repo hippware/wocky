@@ -230,6 +230,7 @@ seed_data(bot, Server) ->
     [#{id => ?BOT, server => Server, title => ?BOT_TITLE,
        shortname => ?BOT_NAME, owner => ?ALICE_B_JID, description => ?BOT_DESC,
        lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
+       image => ?AVATAR_FILE, type => ?BOT_TYPE,
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
        affiliates => [?BOB_B_JID],
        alerts => ?WOCKY_BOT_ALERT_DISABLED

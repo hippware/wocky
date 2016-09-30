@@ -21,6 +21,8 @@
 -define(CREATE_DESCRIPTION, <<"Test bot for creation operation">>).
 -define(CREATE_LOCATION,    {2.5, 1.6}).
 -define(CREATE_RADIUS,      10).
+-define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
+-define(CREATE_TYPE,        <<"floatbot">>).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
 -define(CREATED_BOTS,       20).
@@ -582,7 +584,9 @@ default_fields() ->
      {"shortname",     "string", ?CREATE_SHORTNAME},
      {"description",   "string", ?CREATE_DESCRIPTION},
      {"location",      "geoloc", ?CREATE_LOCATION},
-     {"radius",        "int",    ?CREATE_RADIUS}
+     {"radius",        "int",    ?CREATE_RADIUS},
+     {"image",         "string", ?CREATE_IMAGE},
+     {"type",          "string", ?CREATE_TYPE}
     ].
 
 create_fields(Fields) ->
@@ -623,6 +627,8 @@ expected_create_fields() ->
      {"shortname", string, ?CREATE_SHORTNAME},
      {"owner", jid, ?ALICE_B_JID},
      {"description", string, ?CREATE_DESCRIPTION},
+     {"image", string, ?CREATE_IMAGE},
+     {"type", string, ?CREATE_TYPE},
      {"location", geoloc, ?CREATE_LOCATION},
      {"radius", int, ?CREATE_RADIUS},
      {"visibility", int, ?WOCKY_BOT_VIS_OWNER},
@@ -640,6 +646,8 @@ expected_retrieve_fields() ->
      {"shortname", string, ?BOT_NAME},
      {"owner", jid, ?ALICE_B_JID},
      {"description", string, ?BOT_DESC},
+     {"image", string, ?AVATAR_FILE},
+     {"type", string, ?BOT_TYPE},
      {"location", geoloc, {?BOT_LAT, ?BOT_LON}},
      {"radius", int, ?BOT_RADIUS},
      {"visibility", int, ?WOCKY_BOT_VIS_WHITELIST},
