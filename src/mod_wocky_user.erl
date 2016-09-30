@@ -422,5 +422,5 @@ update_roster_contacts(LUser, LServer) ->
     ContactJIDBin = jid:to_binary(ContactJID),
     lists:foreach(bump_roster_version(_, ContactJIDBin), Users).
 
-bump_roster_version(#jid{luser = User, lserver = Server}, ContactJIDBin) ->
-    wocky_db_roster:bump_roster_version(User, Server, ContactJIDBin).
+bump_roster_version(#jid{luser = User}, ContactJIDBin) ->
+    wocky_db_roster:bump_roster_version(User, ContactJIDBin).

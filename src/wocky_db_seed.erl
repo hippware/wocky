@@ -133,6 +133,10 @@ seed_data(roster, Server) ->
      #{user => ?CAROL, server => Server, groups => [],
        contact_jid => ?TIM_B_JID, nick => <<"timbo">>,
           subscription => <<"none">>,
+          ask => <<"none">>, version => 999},
+     #{user => ?ROBERT, server => Server, groups => [],
+       contact_jid => ?ALICE_B_JID, nick => <<"alice">>,
+          subscription => <<"none">>,
           ask => <<"none">>, version => 999}
     ];
 seed_data(message_archive, _Server) ->

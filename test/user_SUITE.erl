@@ -82,6 +82,7 @@ init_per_suite(Config) ->
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
+    wocky_db:clear_tables(shared, [roster]),
     wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     escalus:end_per_suite(Config).
 
@@ -92,10 +93,11 @@ end_per_suite(Config) ->
 %%         escalus_story:make_everyone_friends(Users)
 %%     );
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, escalus:get_users([alice, bob])).
+    escalus:create_users(Config, escalus:get_users([alice, bob, robert])),
+    wocky_db_seed:seed_tables(shared, [roster]).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob])).
+    escalus:delete_users(Config, escalus:get_users([alice, bob, robert])).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -275,13 +277,21 @@ garbage_get(Config) ->
 %%--------------------------------------------------------------------
 
 set_fields(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+    escalus:story(Config, [{alice, 1}, {robert, 1}], fun(Alice, Robert) ->
         QueryStanza =
         set_request(<<"571">>, ?ALICE, set_fields()),
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
-        wocky_db_user:find_user(?ALICE, ?LOCAL_CONTEXT)
+        wocky_db_user:find_user(?ALICE, ?LOCAL_CONTEXT),
+
+        % Robert should get an update for his roster record of Alice
+        Received = escalus:wait_for_stanza(Robert),
+        escalus:assert(is_roster_set, Received),
+        ?assertEqual(<<"Alieee">>,
+                     xml:get_path_s(Received, [{elem, <<"query">>},
+                                               {elem, <<"item">>},
+                                               {attr, <<"handle">>}]))
     end).
 
 set_other_user(Config) ->

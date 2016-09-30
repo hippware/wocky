@@ -11,7 +11,7 @@
          delete_roster/2,
          get_roster_item/3,
          update_roster_item/4,
-         bump_roster_version/3,
+         bump_roster_version/2,
          delete_roster_item/3,
          has_contact/2,
          is_friend/2,
@@ -88,13 +88,11 @@ update_roster_item(LUser, LServer, ContactJID, Item) ->
 
 %% @doc Updates the roster version on the specified entry without
 %% changing any other data.
--spec bump_roster_version(ejabberd:luser(), ejabberd:lserver(),
-                          contact()) -> ok.
-bump_roster_version(LUser, LServer, ContactJID) ->
+-spec bump_roster_version(ejabberd:luser(), contact()) -> ok.
+bump_roster_version(LUser, ContactJID) ->
     Query = "UPDATE roster SET version = toTimestamp(now())"
-            " WHERE user = ? AND server = ? and contact_jid = ?",
+            " WHERE user = ? AND contact_jid = ?",
     Values = #{user => LUser,
-               server => LServer,
                contact_jid => ContactJID},
     {ok, void} = wocky_db:query(shared, Query, Values, quorum),
     ok.
