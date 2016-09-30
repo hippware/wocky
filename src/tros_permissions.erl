@@ -3,30 +3,12 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--export([can_upload/3,
+-export([can_upload/2,
          can_download/3]).
 
 -include_lib("ejabberd/include/jlib.hrl").
 
-%% Avatars - only upload for yourself
-can_upload(_, <<"avatar">>, _) ->
-    true;
-
-%% Message media (inline images, videos etc) - upload any
-can_upload(_, <<"message_media">>, _) ->
-    true;
-
-%% Group chat media can be uploaded by any member of (all) the specified chat(s)
-can_upload(From, <<"group_chat_media">>, Access) ->
-    Rules = access_rules_from_list(Access),
-    lists:all(fun(X) -> X end,
-              [mod_wocky_group_chat:is_participant(From, C) ||
-               {members, C} <- Rules]);
-
-%% TODO: Other types?
-can_upload(_, _, _) ->
-    false.
-
+can_upload(_From, _Access) -> true.
 
 can_download(User = #jid{luser = UserID}, OwnerID, Access) ->
     case OwnerID of

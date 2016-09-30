@@ -82,15 +82,14 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         FileID <- check_file_id(Fields),
         OwnerID <- get_owner(LServer, FileID),
         Metadata <- get_metadata(LServer, FileID),
-        {_Purpose, Access} <- get_purpose_access(LServer, FileID),
+        Access <- get_access(LServer, FileID),
         check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
 
 handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
-    RequiredFields = [<<"filename">>, <<"size">>,
-                      <<"mime-type">>, <<"purpose">>],
+    RequiredFields = [<<"filename">>, <<"size">>, <<"mime-type">>],
     OptionalFields = [<<"access">>, <<"width">>, <<"height">>],
     Defaults = #{<<"access">> => <<>>},
     do([error_m ||
@@ -153,13 +152,13 @@ check_file_id(ID) when is_binary(ID) ->
     {ok, ID}.
 
 get_owner(LServer, FileID) ->
-   get_file_info(LServer, FileID, get_owner).
+    get_file_info(LServer, FileID, get_owner).
 
 get_metadata(LServer, FileID) ->
-   get_file_info(LServer, FileID, get_metadata).
+    get_file_info(LServer, FileID, get_metadata).
 
-get_purpose_access(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_purpose_access).
+get_access(LServer, FileID) ->
+    get_file_info(LServer, FileID, get_access).
 
 get_file_info(LServer, FileID, Function) ->
    case (backend()):Function(LServer, FileID) of
@@ -185,9 +184,8 @@ check_upload_size(#{<<"size">> := SizeBin}) ->
 % TODO: configure a list of valid upload types
 check_upload_type(_Fields) -> ok.
 
-check_upload_permissions(FromJID, #{<<"purpose">> := Purpose,
-                                    <<"access">> := Access}) ->
-    case tros_permissions:can_upload(FromJID, Purpose, Access) of
+check_upload_permissions(FromJID, #{<<"access">> := Access}) ->
+    case tros_permissions:can_upload(FromJID, Access) of
         true -> ok;
         false -> upload_validation_error("Permission denied")
     end.
@@ -205,7 +203,6 @@ check_download_permissions(FromJID, OwnerID, Access) ->
 
 upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
                 #{<<"mime-type">> := MimeType,
-                  <<"purpose">> := Purpose,
                   <<"access">> := Access,
                   <<"filename">> := Filename},
                 Size) ->
@@ -214,7 +211,7 @@ upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
     FileID = make_file_id(),
     {Headers, RespFields} =
         (backend()):make_upload_response(FromJID, ToJID, FileID,
-                                         Size, Purpose, Access, Metadata),
+                                         Size, Access, Metadata),
 
 
     FullFields = common_fields(FromJID, FileID) ++ RespFields,

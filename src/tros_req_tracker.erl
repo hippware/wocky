@@ -22,19 +22,17 @@ add(#tros_request{
        method   = Method,
        size     = Size,
        metadata = Metadata,
-       purpose  = Purpose,
        access   = Access}) ->
 
     Q = "INSERT INTO tros_request "
-        "(user, file, auth, method, size, metadata, purpose, access)"
-        " VALUES(?, ?, ?, ?, ?, ?, ?, ?) USING TTL ?",
+        "(user, file, auth, method, size, metadata, access)"
+        " VALUES(?, ?, ?, ?, ?, ?, ?) USING TTL ?",
     V = #{user     => User,
           file     => File,
           auth     => Auth,
           method   => atom_to_binary(Method, utf8),
           size     => Size,
           metadata => Metadata,
-          purpose  => Purpose,
           access   => Access,
           '[ttl]'  => timeout()},
     {ok, void} = wocky_db:query(wocky_app:server(), Q, V, quorum),
@@ -58,7 +56,6 @@ row_to_rec(#{
   method   := Method,
   size     := Size,
   metadata := Metadata,
-  purpose  := Purpose,
   access   := Access
  }) ->
 
@@ -68,7 +65,6 @@ row_to_rec(#{
                   method   = binary_to_existing_atom(Method, utf8),
                   size     = Size,
                   metadata = Metadata,
-                  purpose  = Purpose,
                   access   = Access}.
 
 timeout() -> ejabberd_config:get_local_option(tros_auth_validity).

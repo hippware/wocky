@@ -380,7 +380,6 @@ test_update_user_with_avatar() ->
   NonExistantURL = tros:make_url(?SERVER, mod_wocky_tros:make_file_id()),
   NonLocalURL = tros:make_url(<<"nonlocal.com">>,
                               mod_wocky_tros:make_file_id()),
-  MediaURL = tros:make_url(?SERVER, ?MEDIA_FILE),
 
   { "set user's avatar", setup, fun before_avatar/0, fun after_avatar/1, [
     { "succesfully set avatar and delete the old one", [
@@ -420,13 +419,6 @@ test_update_user_with_avatar() ->
       ?_assertEqual({error, not_local_file},
                         update_user(?ALICE, ?SERVER,
                                     #{avatar => NonLocalURL})),
-      ?_assertEqual(AvatarURL,
-                    maps:get(avatar,
-                             wocky_db_user:find_user(?ALICE, ?SERVER)))
-    ]},
-    { "fail to set avatar due to non-avatar type file", [
-      ?_assertEqual({error, not_avatar_file},
-                        update_user(?ALICE, ?SERVER, #{avatar => MediaURL})),
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:find_user(?ALICE, ?SERVER)))

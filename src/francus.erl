@@ -6,7 +6,7 @@
 -module(francus).
 
 -export([
-         open_write/6,
+         open_write/5,
          open_read/2,
          read/1,
          read/2,
@@ -15,7 +15,6 @@
          keep/2,
          delete/2,
          owner/1,
-         purpose/1,
          access/1,
          metadata/1,
          size/1,
@@ -25,7 +24,7 @@
 -ignore_xref([read/2, size/1]).
 
 -ifdef(TEST).
--export([open_write/7,
+-export([open_write/6,
          default_chunk_size/0]).
 -endif.
 
@@ -37,14 +36,12 @@
 -type file_id() :: binary().
 -type user_id() :: binary().
 -type content() :: binary().
--type purpose() :: binary().
 -type access()  :: binary().
 -type metadata() :: #{binary() => binary()}.
 
 -record(state, {
           file_id            :: file_id(),
           user_id            :: user_id(),
-          purpose            :: purpose(),
           access             :: access(),
           metadata           :: metadata(),
           context            :: wocky_db:context(),
@@ -70,11 +67,11 @@
 %%
 %% @see open_write/7
 -spec open_write(wocky_db:context(), file_id(), user_id(),
-                 purpose(), access(), metadata()) ->
+                 access(), metadata()) ->
     {ok, francus_file()}.
-open_write(Context, FileID, UserID, Purpose, Access, Metadata) ->
+open_write(Context, FileID, UserID, Access, Metadata) ->
     TTL = application:get_env(wocky, francus_file_ttl, ?DEFAULT_TTL),
-    open_write(Context, FileID, UserID, Purpose, Access, Metadata, TTL).
+    open_write(Context, FileID, UserID, Access, Metadata, TTL).
 
 %% @doc Open a file for writing
 %%
@@ -91,21 +88,19 @@ open_write(Context, FileID, UserID, Purpose, Access, Metadata) ->
 %%
 %% `TTL' is the time the file will persist for before being cleaned up. May
 %% be `infinity'.
--spec open_write(wocky_db:context(), file_id(), user_id(), purpose(),
+-spec open_write(wocky_db:context(), file_id(), user_id(),
                  access(), metadata(), wocky_db:ttl()) ->
     {ok, francus_file()}.
-open_write(Context, FileID, UserID, Purpose, Access, Metadata, TTL) ->
+open_write(Context, FileID, UserID, Access, Metadata, TTL) ->
     Values = #{id => FileID,
                user => UserID,
                size => 0,
-               purpose => Purpose,
                access => Access,
                metadata => Metadata,
                '[ttl]' => TTL},
     ok = wocky_db:insert(Context, media, Values),
     {ok, #state{file_id = FileID,
                 user_id = UserID,
-                purpose = Purpose,
                 access = Access,
                 metadata = Metadata,
                 context = Context,
@@ -253,7 +248,7 @@ close(#state{file_id = FileID, committed_size = CS,
     ok.
 
 read_keep_file(Context, FileID) ->
-    Columns = [id, user, size, purpose, access, metadata, chunks, 'ttl(user)'],
+    Columns = [id, user, size, access, metadata, chunks, 'ttl(user)'],
     Row = wocky_db:select_row(Context, media, Columns, #{id => FileID}),
     case Row of
         not_found ->
@@ -287,13 +282,12 @@ keep_chunk(Context, ChunkID) ->
 
 open_result(Context, FileID,
             Row = #{user := UserID, size := Size,
-                    purpose := Purpose, access := Access,
+                    access := Access,
                     metadata := Metadata}) ->
     maybe_add_chunks(#state{file_id = FileID,
                             user_id = UserID,
                             context = Context,
                             size = Size,
-                            purpose = Purpose,
                             access = Access,
                             metadata = Metadata}, Row).
 
@@ -321,9 +315,6 @@ delete_metadata(Context, FileID) ->
 
 -spec owner(francus_file()) -> user_id().
 owner(#state{user_id = Owner}) -> Owner.
-
--spec purpose(francus_file()) -> purpose().
-purpose(#state{purpose = Purpose}) -> Purpose.
 
 -spec access(francus_file()) -> access().
 access(#state{access = Access}) -> Access.

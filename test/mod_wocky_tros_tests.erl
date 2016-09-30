@@ -83,7 +83,6 @@ test_avatar_upload_request(Backend) ->
              handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(10000,
-                                     "avatar",
                                      <<"all">>
                                     )))
     ]}]}.
@@ -96,14 +95,12 @@ test_message_media_upload_request(Backend) ->
              handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(10000,
-                                     "message_media",
                                      <<"user:",
                                      (?BOB_B_JID)/binary>>
                                     )))
     ]}]}.
 
 test_group_chat_media_upload_request(Backend) ->
-    GCAccess = <<"members:", (jid:to_binary(?GROUP_CHAT_JID))/binary>>,
     { "Group chat media upload request", [
         {"Successful request when we're a group member", [
           ?_assertEqual(
@@ -111,36 +108,22 @@ test_group_chat_media_upload_request(Backend) ->
              handle_iq(?ALICE_JID,
                        test_server_jid(),
                        upload_packet(10000,
-                                     "group_chat_media",
                                      <<"members:",
                                        (jid:to_binary(?GROUP_CHAT_JID))/binary>>
                                     )))
-        ]},
-        {"Failed request when we're not a group member", [
-          ?_assertEqual(
-             expected_ul_error_packet("Permission denied", "group_chat_media",
-                                      GCAccess, 10000),
-             handle_iq(?CAROL_JID,
-                       test_server_jid(),
-                       upload_packet(10000,
-                                     "group_chat_media",
-                                     GCAccess
-                                    )))
-    ]}]}.
+        ]}
+    ]}.
 
 test_oversized_upload_request(_Backend) ->
     Size = 1024*1024*10 + 1,
     {"Big upload request", [
         {"Oversize request", [
           ?_assertEqual(
-             expected_ul_error_packet("Invalid size: 10485761", "avatar",
+             expected_ul_error_packet("Invalid size: 10485761",
                                       <<"all">>, Size),
              handle_iq(?ALICE_JID,
                        test_server_jid(),
-                       upload_packet(Size,
-                                     "avatar",
-                                     <<"all">>
-                                    )))
+                       upload_packet(Size, <<"all">>)))
     ]}]}.
 
 test_avatar_download_request(Backend) ->
@@ -274,14 +257,13 @@ common_packet(Type, Request) ->
         sub_el = Request
        }.
 
-upload_packet(Size, Type, Access) ->
-    common_packet(set, upload_request(Size, Type, Access)).
+upload_packet(Size, Access) ->
+    common_packet(set, upload_request(Size, Access)).
 
-upload_request(Size, Type, Access) ->
+upload_request(Size, Access) ->
     Elements = [{<<"filename">>, ?FILENAME},
                 {<<"size">>, integer_to_binary(Size)},
                 {<<"mime-type">>, <<"image/jpeg">>},
-                {<<"purpose">>, <<(list_to_binary(Type))/binary>>},
                 {<<"access">>, <<Access/binary>>}
                ],
     #xmlel{name = <<"upload-request">>,
@@ -350,12 +332,11 @@ expected_download_packet(francus, FileID) ->
       "/files/", FileID/binary, "/", ?URL_FILENAME/binary, "</url>"
       "<method>GET</method></download></iq>">>.
 
-expected_ul_error_packet(Reason, Type, Access, Size) ->
+expected_ul_error_packet(Reason, Access, Size) ->
     <<"<iq id='123456' type='error'><upload-request xmlns='", ?NS_TROS/binary,
       "'><filename>", ?FILENAME/binary, "</filename><size>",
       (integer_to_binary(Size))/binary, "</size>"
       "<mime-type>image/jpeg</mime-type>"
-      "<purpose>", (list_to_binary(Type))/binary, "</purpose>",
       "<access>", Access/binary, "</access>",
       "</upload-request>"
       "<error code='406' type='modify'><not-acceptable "
