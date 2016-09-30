@@ -182,10 +182,8 @@ defmodule Schemata.Schemas.Wocky do
         id:        :text,      # ID of the file
         user:      :text,      # User ID of the file owner
         size:      :int,       # File size in bytes
-        purpose:   :text,      # Purpose of this file
         access:    :text,      # Comma-separated list of JIDs with access to
-                               # this file. The exact meaning of the field
-                               # depends on the value in the purpose field.
+                               # this file.
                                # See tros_permissions.erl
         metadata:  {:map, :text, :text}, # General purpose metadata field
         chunks:    {:list, :timeuuid} # Ordered list of media_data table
@@ -305,9 +303,8 @@ defmodule Schemata.Schemas.Wocky do
         method:    :text,      # HTTP method for the request (get/post)
         size:      :int,       # Size of the requested file (upload only)
         metadata:  {:map, :text, :text}, # File metadata (key => value)
-        # See media table for a full description of these:
-        purpose:   :text,      # Purpose of the file (upload only)
         access:    :text       # Access field for the file (upload only)
+                               # (See media table)
       ],
       primary_key: [:user, :file, :auth, :method]
     ]

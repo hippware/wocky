@@ -222,7 +222,6 @@ prepare_avatar(UserID, LServer, #{avatar := NewAvatar}) ->
         check_file_location(LServer, FileServer),
         File <- francus:open_read(LServer, FileID),
         check_avatar_owner(UserID, File),
-        check_avatar_purpose(File),
         francus:keep(LServer, francus:id(File))
        ]);
 prepare_avatar(_, _, _) -> ok.
@@ -236,15 +235,6 @@ check_avatar_owner(UserID, File) ->
     case francus:owner(File) of
         UserID -> ok;
         _ -> {error, not_file_owner}
-    end.
-
-%% @private
-check_avatar_purpose(File) ->
-    case francus:purpose(File) of
-        <<"avatar">> ->
-            ok;
-        _ ->
-            {error, not_avatar_file}
     end.
 
 %% @private

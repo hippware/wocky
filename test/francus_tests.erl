@@ -51,8 +51,6 @@ make_file(Size) ->
     Data = crypto:strong_rand_bytes(Size),
     {ID, Data}.
 
-purpose() -> <<>>.
-
 access() -> <<>>.
 
 metadata() ->
@@ -159,8 +157,7 @@ test_write() ->
                    ID = mod_wocky_tros:make_file_id(),
                    {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
                                                 wocky_db:create_id(),
-                                                purpose(), access(),
-                                                metadata()),
+                                                access(), metadata()),
                    Data = crypto:strong_rand_bytes(Size),
                    F2 = francus:write(F, Data),
                    ok = francus:close(F2),
@@ -272,8 +269,7 @@ test_accessors() ->
                  User = wocky_db:create_id(),
                  {ok, F} = francus:open_write(?LOCAL_CONTEXT,
                                               mod_wocky_tros:make_file_id(),
-                                              User,
-                                              purpose(), access(), metadata()),
+                                              User, access(), metadata()),
                  #{<<"content-type">> := CT, <<"name">> := Name}
                  = francus:metadata(F),
                  ?assertEqual(?CONTENT_TYPE, CT),
@@ -291,8 +287,7 @@ create_small_file(TTL) ->
     ID = mod_wocky_tros:make_file_id(),
     {ok, F} = francus:open_write(?LOCAL_CONTEXT, ID,
                                  wocky_db:create_id(),
-                                 purpose(), access(),
-                                 metadata(), TTL),
+                                 access(), metadata(), TTL),
     F1 = francus:write(F, <<"abc">>),
     francus:close(F1),
     ID.

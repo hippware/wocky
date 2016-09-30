@@ -6,7 +6,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky_db_seed.hrl").
 
--import(tros_permissions, [can_upload/3, can_download/3]).
+-import(tros_permissions, [can_upload/2, can_download/3]).
 
 tros_permissions_test_() -> {
   "tros_permissions",
@@ -28,26 +28,11 @@ after_all(_) ->
     ok.
 
 test_can_upload() ->
-    Access = <<"members:", (jid:to_binary(?GROUP_CHAT_JID))/binary>>,
     { "can_upload", [
-      { "avatars are always able to be uploaded", [
-        ?_assert(can_upload(?ALICE_JID, <<"avatar">>, <<>>)),
-        ?_assert(can_upload(?BOB_JID, <<"avatar">>, <<>>)),
-        ?_assert(can_upload(?TIM_JID, <<"avatar">>, <<>>))
-      ]},
-      { "message media can always be uploaded", [
-        ?_assert(can_upload(?ALICE_JID, <<"message_media">>, <<>>)),
-        ?_assert(can_upload(?BOB_JID, <<"message_media">>, <<>>)),
-        ?_assert(can_upload(?TIM_JID, <<"message_media">>, <<>>))
-      ]},
-      { "group chat media can only be uploaded by chat participants", [
-        ?_assert(can_upload(?ALICE_JID, <<"group_chat_media">>, Access)),
-        ?_assert(can_upload(?BOB_JID, <<"group_chat_media">>, Access)),
-        ?_assertNot(can_upload(?TIM_JID, <<"group_chat_media">>, Access))
-      ]},
-      { "no other types can be uploaded", [
-        ?_assertNot(can_upload(?ALICE_JID, <<"fnord">>, <<>>)),
-        ?_assertNot(can_upload(?ALICE_JID, <<"blah">>, <<>>))
+      { "users can always upload", [
+        ?_assert(can_upload(?ALICE_JID, <<>>)),
+        ?_assert(can_upload(?BOB_JID, <<>>)),
+        ?_assert(can_upload(?TIM_JID, <<>>))
       ]}
     ]}.
 
