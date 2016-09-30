@@ -15,7 +15,8 @@
                           delete_roster_item/3,
                           has_contact/2,
                           is_friend/2,
-                          users_with_contact/1
+                          users_with_contact/1,
+                          bump_roster_version/2
                          ]).
 
 mod_roster_wocky_test_() -> {
@@ -30,6 +31,7 @@ mod_roster_wocky_test_() -> {
       test_is_friend(),
       test_users_with_contact()
     ]},
+    test_bump_roster_version(),
     test_update_roster_item(),
     test_delete_roster_item(),
     test_delete_roster()
@@ -128,6 +130,15 @@ test_update_roster_item() ->
                                              #wocky_roster{name = <<"dan">>})),
         ?_assertMatch(#wocky_roster{name = <<"dan">>},
                       get_roster_item(?USER, ?SERVER, make_jid(?TIM)))
+      ]}
+  ]}.
+
+test_bump_roster_version() ->
+  { "bump_roster_version/2", [
+      { "sets the roster version for a contact to a new value", [
+        ?_assertEqual(<<"999-4">>, get_roster_version(?USER, ?LOCAL_CONTEXT)),
+        ?_assertEqual(ok, bump_roster_version(?USER, ?BOB_B_JID)),
+        ?_assertNotEqual(<<"999-1">>, get_roster_version(?USER, ?LOCAL_CONTEXT))
       ]}
   ]}.
 
