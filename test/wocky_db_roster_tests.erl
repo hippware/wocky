@@ -14,7 +14,9 @@
                           update_roster_item/4,
                           delete_roster_item/3,
                           has_contact/2,
-                          is_friend/2
+                          is_friend/2,
+                          users_with_contact/1,
+                          bump_roster_version/2
                          ]).
 
 mod_roster_wocky_test_() -> {
@@ -26,8 +28,10 @@ mod_roster_wocky_test_() -> {
       test_get_roster_version(),
       test_get_roster_item(),
       test_has_contact(),
-      test_is_friend()
+      test_is_friend(),
+      test_users_with_contact()
     ]},
+    test_bump_roster_version(),
     test_update_roster_item(),
     test_delete_roster_item(),
     test_delete_roster()
@@ -129,6 +133,15 @@ test_update_roster_item() ->
       ]}
   ]}.
 
+test_bump_roster_version() ->
+  { "bump_roster_version/2", [
+      { "sets the roster version for a contact to a new value", [
+        ?_assertEqual(<<"999-4">>, get_roster_version(?USER, ?LOCAL_CONTEXT)),
+        ?_assertEqual(ok, bump_roster_version(?USER, ?BOB_B_JID)),
+        ?_assertNotEqual(<<"999-1">>, get_roster_version(?USER, ?LOCAL_CONTEXT))
+      ]}
+  ]}.
+
 test_delete_roster_item() ->
   { "delete_roster_item/3", [
       { "deletes an existing roster item", [
@@ -169,5 +182,19 @@ test_is_friend() ->
     { "returns false when B is not in A's roster", [
       ?_assertNot(is_friend(?CAROL_JID, ?ALICE_JID)),
       ?_assertNot(is_friend(?KAREN_JID, ?CAROL_JID))
+    ]}
+  ]}.
+
+test_users_with_contact() ->
+  { "users_with_contact/1", [
+    { "returns a list of users who have the specified user as a contact", [
+      ?_assertEqual(lists:sort([?CAROL_JID, ?KAREN_JID]),
+                    lists:sort(users_with_contact(?TIM_JID))),
+      ?_assertEqual([?ALICE_JID], users_with_contact(?BOB_JID))
+    ]},
+    { "returns an empty list for users who nobody has as a contact", [
+      ?_assertEqual([], users_with_contact(
+                          jid:make(
+                            wocky_db:create_id(), ?LOCAL_CONTEXT, <<>>)))
     ]}
   ]}.

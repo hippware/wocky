@@ -305,11 +305,10 @@ handle_bot_packet(_, _, _, _) ->
          }).
 
 handle_roster_changed(From, LServer, BotID,
-                     [#xmlel{name = <<"roster-changed">>,
-                             attrs = Attrs,
-                             children = Children}]) ->
+                     [El = #xmlel{name = <<"roster-changed">>,
+                                  children = Children}]) ->
     _ = do([error_m ||
-            check_roster_ns(Attrs),
+            wocky_xml:check_namespace(?NS_WOCKY_ROSTER, El),
             wocky_bot_util:check_owner(LServer, BotID, From),
             RemovedJIDs <- get_removed_jids(Children),
             Bot <- {ok, wocky_db_bot:get(LServer, BotID)},
@@ -318,12 +317,6 @@ handle_roster_changed(From, LServer, BotID,
     ok;
 handle_roster_changed(_, _, _, _) ->
     ignored.
-
-check_roster_ns(Attrs) ->
-    case xml:get_attr(<<"xmlns">>, Attrs) of
-        {value, ?NS_WOCKY_ROSTER} -> ok;
-        _ -> {error, ?ERR_FEATURE_NOT_IMPLEMENTED}
-    end.
 
 get_removed_jids(ItemEls) ->
     Items = els_to_items(ItemEls),
