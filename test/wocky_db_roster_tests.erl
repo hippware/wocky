@@ -138,7 +138,7 @@ test_bump_roster_version() ->
       { "sets the roster version for a contact to a new value", [
         ?_assertEqual(<<"999-4">>, get_roster_version(?USER, ?LOCAL_CONTEXT)),
         ?_assertEqual(ok, bump_roster_version(?USER, ?BOB_B_JID)),
-        ?_assertNotEqual(<<"999-1">>, get_roster_version(?USER, ?LOCAL_CONTEXT))
+        ?_assertNotEqual(<<"999-4">>, get_roster_version(?USER, ?LOCAL_CONTEXT))
       ]}
   ]}.
 
