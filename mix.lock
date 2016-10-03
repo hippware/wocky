@@ -25,7 +25,7 @@
   "escalus": {:git, "https://github.com/hippware/escalus.git", "0c5010996fe9af7b22b88054f72ea3262f37ea23", [branch: "working"]},
   "espec": {:hex, :espec, "1.0.1", "0f6a4f6be512f078a0528082d43196bcd687701dfa68a0865baf1d186430eb85", [:mix], [{:meck, "~> 0.8.4", [hex: :meck, optional: false]}]},
   "eunit_formatters": {:hex, :eunit_formatters, "0.3.1", "7a6fc351eb5b873e2356b8852eb751e20c13a72fbca03393cf682b8483509573", [:rebar3], []},
-  "ex_aws": {:git, "https://github.com/hippware/ex_aws.git", "ab2403f605d96b391b7bbbfa181546c8bb9d7aa5", [branch: "working"]},
+  "ex_aws": {:git, "https://github.com/hippware/ex_aws.git", "0da63b6319f8177ab3673a5082d3b68994c729e7", [branch: "working"]},
   "exml": {:git, "https://github.com/esl/exml.git", "d7b745fa89389b53706a07f33775f1f814c66cb4", [tag: "2.2.0"]},
   "exometer": {:git, "https://github.com/Feuerlabs/exometer.git", "7a7bd8d2b52de4d90f65aa3f6044b0e988319b9e", [branch: "master"]},
   "exometer_core": {:git, "https://github.com/Feuerlabs/exometer_core.git", "9d41a0a0320f5483de75d9ef5c8e8b8592e29c11", [branch: "master"]},
