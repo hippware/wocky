@@ -640,16 +640,22 @@ to_field(Key, Val, Acc) ->
 make_field(Name, Type, Val) when Type =:= string orelse Type =:= int ->
     #field{name = Name, type = Type, value = Val};
 make_field(Name, jid, Val) ->
-    #field{name = Name, type = jid, value = jid:from_binary(Val)}.
+    #field{name = Name, type = jid, value = safe_jid_from_binary(Val)}.
 
 encode_field(#field{name = N, type = string, value = V}, Acc) ->
     [field_element(N, string, V) | Acc];
 encode_field(#field{name = N, type = jid, value = V}, Acc) ->
-    [field_element(N, jid, jid:to_binary(V)) | Acc];
+    [field_element(N, jid, safe_jid_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [geoloc_field(N, V) | Acc].
+
+safe_jid_from_binary(<<>>) -> not_found;
+safe_jid_from_binary(JID) -> jid:from_binary(JID).
+
+safe_jid_to_binary(not_found) -> <<>>;
+safe_jid_to_binary(JID) -> jid:to_binary(JID).
 
 field_element(Name, Type, Val) ->
     #xmlel{name = <<"field">>,

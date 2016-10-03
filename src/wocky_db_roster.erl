@@ -15,6 +15,7 @@
          delete_roster_item/3,
          has_contact/2,
          is_friend/2,
+         is_friend/1,
          users_with_contact/1
         ]).
 
@@ -127,6 +128,10 @@ is_friend(#jid{luser = LUser}, OtherJID) ->
         _ ->
             false
     end.
+
+-spec is_friend(wocky_roster()) -> boolean().
+is_friend(#wocky_roster{subscription = Sub, groups = Groups}) ->
+    wocky_util:is_friend(Sub, Groups).
 
 -spec users_with_contact(ejabberd:jid()) -> [ejabberd:jid()].
 users_with_contact(ContactJID) ->

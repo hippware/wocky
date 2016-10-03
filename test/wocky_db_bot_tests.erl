@@ -12,7 +12,7 @@
          insert_new_name/2, owner/2, affiliations/2,
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
-         get_item/3, publish_item/4, delete_item/3
+         get_item/3, publish_item/4, delete_item/3, dissociate_user/2
         ]).
 
 wocky_db_bot_test_() -> {
@@ -43,7 +43,8 @@ wocky_db_bot_test_() -> {
         test_update_affiliations(),
         test_subscribe(),
         test_unsubscribe(),
-        test_delete()
+        test_delete(),
+        test_dissociate_user()
       ]}
     ]}
   ]}.
@@ -331,6 +332,31 @@ test_delete() ->
         ?_assertEqual(ok, delete(?LOCAL_CONTEXT, wocky_db:create_id()))
       ]}
     ]}.
+
+test_dissociate_user() ->
+    NewBotFriends = #{id := IDFriends} =
+        (new_bot())#{visibility => ?WOCKY_BOT_VIS_FRIENDS, affiliates => [],
+                     owner => ?ALICE_B_JID},
+    NewBotPub = #{id := IDPub} =
+        (new_bot())#{visibility => ?WOCKY_BOT_VIS_PUBLIC, affiliates => [],
+                     owner => ?ALICE_B_JID},
+    { "dissociate_user", [
+      {"FRIENDS bots should become WHITELIST with owners' roster as affiliates",
+        inorder, [
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBotFriends)),
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBotPub)),
+        ?_assertEqual(ok, dissociate_user(?ALICE, ?LOCAL_CONTEXT)),
+        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDFriends)),
+        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDPub)),
+        ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_WHITELIST},
+                      get(?LOCAL_CONTEXT, IDFriends)),
+        ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_PUBLIC},
+                      get(?LOCAL_CONTEXT, IDPub)),
+        ?_assertEqual(4, length(affiliations(?LOCAL_CONTEXT, IDFriends))),
+        ?_assertEqual(0, length(affiliations(?LOCAL_CONTEXT, IDPub)))
+      ]}
+    ]}.
+
 
 expected_affiliations() ->
     [{?ALICE_JID, owner}, {?BOB_JID, spectator}].
