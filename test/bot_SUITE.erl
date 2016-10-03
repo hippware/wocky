@@ -48,6 +48,7 @@ all() ->
      friends_only_permissions,
      roster_change_triggers,
      blocked_group,
+     delete_owner,
      publish_item,
      retract_item,
      edit_item,
@@ -463,6 +464,60 @@ blocked_group(Config) ->
         expect_iq_error(retrieve_stanza(), Tim)
       end).
 
+delete_owner(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
+      fun(Alice, Bob, Tim) ->
+        ID1 = create_simple_bot(Alice),
+        ID2 = create_simple_bot(Alice),
+
+        expect_iq_success(
+          change_visibility_stanza(ID1, ?WOCKY_BOT_VIS_FRIENDS), Alice),
+        expect_iq_success(
+          change_visibility_stanza(ID2, ?WOCKY_BOT_VIS_PUBLIC), Alice),
+
+        ReturnedBot = expect_iq_success(retrieve_stanza(ID1), Bob),
+        ExpectedFieldsFriends =
+        lists:keyreplace("visibility", 1, expected_simple_bot_fields(),
+                         {"visibility", int, ?WOCKY_BOT_VIS_FRIENDS}),
+        check_returned_bot(ReturnedBot, ExpectedFieldsFriends),
+        expect_iq_error(retrieve_stanza(ID1), Tim),
+
+        ExpectedFieldsPub =
+        lists:keyreplace("visibility", 1, expected_simple_bot_fields(),
+                         {"visibility", int, ?WOCKY_BOT_VIS_PUBLIC}),
+        ReturnedBot2 = expect_iq_success(retrieve_stanza(ID2), Bob),
+        check_returned_bot(ReturnedBot2, ExpectedFieldsPub),
+        expect_iq_success(retrieve_stanza(ID2), Tim),
+
+        %% Delete Alice
+        expect_iq_success(
+          user_SUITE:delete_request(wocky_util:iq_id()), Alice),
+        R = escalus:wait_for_stanza(Alice, 3000),
+        escalus:assert(is_stream_error,
+                       [<<"conflict">>, <<"User removed">>], R),
+        timer:sleep(500),
+        ?assertNot(escalus_connection:is_connected(Alice)),
+
+        %% Access to the bot should be unchanged, in spite of Alice (and by
+        %% extension her roster) having been deleted. The FRIENDS bot should,
+        %% however, have been changed to WHITELIST visibility.
+        WhitelistFields =
+        lists:keyreplace("visibility", 1, expected_simple_bot_fields(),
+                         {"visibility", int, ?WOCKY_BOT_VIS_WHITELIST}),
+        WhitelistFields2 =
+        lists:keyreplace("owner", 1, WhitelistFields,
+                         {"owner", jid, <<>>}),
+        ExpectedFields =
+        lists:keyreplace("affiliates+size", 1, WhitelistFields2,
+                         {"affiliates+size", int, 4}),
+        ReturnedBot3 = expect_iq_success(retrieve_stanza(ID1), Bob),
+        check_returned_bot(ReturnedBot3, ExpectedFields),
+        expect_iq_error(retrieve_stanza(ID1), Tim),
+        expect_iq_success(retrieve_stanza(ID2), Bob),
+        expect_iq_success(retrieve_stanza(ID2), Tim)
+      end).
+
 publish_item(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
@@ -710,6 +765,7 @@ check_field({Name, Type, any}, Elements) ->
     ?assert(has_field(list_to_binary(Name), atom_to_binary(Type, utf8),
             Elements));
 check_field({Name, Type, Value}, Elements) ->
+    ct:log("checking... ~p ~p", [{Name, Type, Value}, Elements]),
     ?assert(has_field_val(list_to_binary(Name), atom_to_binary(Type, utf8),
                           Value, Elements)).
 
@@ -727,6 +783,11 @@ has_field_val(Name, Type, Value, Elements) ->
 
 check_value_el(Value, <<"geoloc">>, El = #xmlel{name = <<"geoloc">>}) ->
     check_geoloc_val(Value, El);
+check_value_el(<<>>, Type,
+               #xmlel{name = <<"value">>,
+                      children = []})
+    when Type =:= <<"string">> orelse Type =:= <<"jid">> ->
+    true;
 check_value_el(Value, Type,
                #xmlel{name = <<"value">>,
                       children = [#xmlcdata{content = Value}]})
@@ -773,7 +834,10 @@ retrieve_stanza(User, RSM) ->
                               children = [rsm_elem(RSM)]}).
 
 retrieve_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"bot">>)).
+    retrieve_stanza(?BOT).
+
+retrieve_stanza(BotID) ->
+    test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
 
 node_el(ID, Name) -> node_el(ID, Name, []).
 node_el(ID, Name, Children) ->
@@ -1163,8 +1227,10 @@ item_content(I) ->
 create_simple_bot(Client) ->
     Fields = lists:keydelete("shortname", 1, default_fields()),
     Stanza = expect_iq_success(create_stanza(Fields), Client),
-    ExpectedFields = lists:keydelete("shortname", 1, expected_create_fields()),
-    check_returned_bot(Stanza, ExpectedFields).
+    check_returned_bot(Stanza, expected_simple_bot_fields()).
+
+expected_simple_bot_fields() ->
+    lists:keydelete("shortname", 1, expected_create_fields()).
 
 distribute(L) ->
     {A, B} = distribute(L, [], []),

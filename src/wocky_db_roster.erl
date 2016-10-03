@@ -124,8 +124,9 @@ is_friend(#jid{luser = LUser}, OtherJID) ->
                          #{user => LUser,
                            contact_jid => ContactJID}) of
         [#{subscription := Sub, groups := Groups}] ->
-           wocky_util:is_friend(binary_to_atom(Sub, utf8), Groups);
-        _ -> false
+            wocky_util:is_friend(binary_to_atom(Sub, utf8), Groups);
+        _ ->
+            false
     end.
 
 -spec is_friend(wocky_roster()) -> boolean().
