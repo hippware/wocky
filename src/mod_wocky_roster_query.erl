@@ -32,13 +32,13 @@ start(Host, _Opts) ->
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_WOCKY_ROSTER),
     ejabberd_hooks:add(roster_updated, Host,
-                       fun roster_updated/2, 50).
+                       fun roster_updated/3, 50).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_WOCKY_ROSTER),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_WOCKY_ROSTER),
     ejabberd_hooks:delete(roster_updated, Host,
-                          fun roster_updated/2, 50).
+                          fun roster_updated/3, 50).
 
 %%%===================================================================
 %%% Event handler
@@ -139,8 +139,9 @@ group_el(Group) ->
 %%% Roster update hook handler
 %%%===================================================================
 
--spec roster_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
-roster_updated(LUser, LServer) ->
+-spec roster_updated(ejabberd:luser(), ejabberd:lserver(),
+                     wocky_roster()) -> ok.
+roster_updated(LUser, LServer, _Item) ->
     Viewers = wocky_db_user:get_roster_viewers(LUser, LServer),
     lists:foreach(notify_roster_update(LUser, LServer, _), Viewers).
 
