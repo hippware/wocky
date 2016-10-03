@@ -3,12 +3,9 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--export([can_upload/2,
-         can_download/3]).
+-export([can_download/3]).
 
 -include_lib("ejabberd/include/jlib.hrl").
-
-can_upload(_From, _Access) -> true.
 
 can_download(User = #jid{luser = UserID}, OwnerID, Access) ->
     case OwnerID of

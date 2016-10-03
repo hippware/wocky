@@ -88,15 +88,13 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         download_response(Req, OwnerID, FileID, Metadata)
        ]).
 
-handle_upload_request(Req = #request{from_jid = FromJID}, UR) ->
+handle_upload_request(Req, UR) ->
     RequiredFields = [<<"filename">>, <<"size">>, <<"mime-type">>],
     OptionalFields = [<<"access">>, <<"width">>, <<"height">>],
     Defaults = #{<<"access">> => <<>>},
     do([error_m ||
         Fields <- extract_fields(UR, RequiredFields, OptionalFields, Defaults),
         Size <- check_upload_size(Fields),
-        check_upload_type(Fields),
-        check_upload_permissions(FromJID, Fields),
         {ok, wocky_metrics:inc(mod_wocky_tros_upload_requests)},
         upload_response(Req, Fields, Size)
        ]).
@@ -179,15 +177,6 @@ check_upload_size(#{<<"size">> := SizeBin}) ->
     case Size =< MaxSize andalso Size > 0 of
         true -> {ok, Size};
         false -> upload_validation_error(["Invalid size: ", SizeBin])
-    end.
-
-% TODO: configure a list of valid upload types
-check_upload_type(_Fields) -> ok.
-
-check_upload_permissions(FromJID, #{<<"access">> := Access}) ->
-    case tros_permissions:can_upload(FromJID, Access) of
-        true -> ok;
-        false -> upload_validation_error("Permission denied")
     end.
 
 check_download_permissions(FromJID, OwnerID, Access) ->
