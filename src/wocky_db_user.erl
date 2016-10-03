@@ -273,6 +273,7 @@ delete_existing_avatar(_) -> ok.
 %%
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
+    ok = wocky_db_bot:dissociate_user(LUser, LServer),
     ok = remove_shared_user_data(LUser, LServer),
     ok = remove_local_user_data(LUser, LServer),
     ok = wocky_db_user_idx:user_removed(LUser),

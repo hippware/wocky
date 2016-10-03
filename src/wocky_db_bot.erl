@@ -1,5 +1,7 @@
 -module(wocky_db_bot).
 
+-compile({parse_transform, cut}).
+
 -export([get/2,
          get_by_user/2,
          get_id_by_name/2,
@@ -20,7 +22,8 @@
          publish_item/4,
          get_item/3,
          get_items/2,
-         delete_item/3
+         delete_item/3,
+         dissociate_user/2
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -28,6 +31,7 @@
 
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
+-include("wocky_roster.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
 -type shortname()           :: binary().
@@ -44,8 +48,8 @@ get(_Server, ID) ->
     wocky_db:select_row(shared, bot, all, #{id => ID}).
 
 -spec get_by_user(wocky_db:server(), binary()) -> [binary()].
-get_by_user(_Server, User) ->
-    wocky_db:select_column(shared, user_bot, id, #{owner => User}).
+get_by_user(_Server, UserJID) ->
+    wocky_db:select_column(shared, user_bot, id, #{owner => UserJID}).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -86,11 +90,12 @@ affiliations_from_map(not_found) -> not_found;
 affiliations_from_map(Map = #{affiliates := null}) ->
     affiliations_from_map(Map#{affiliates => []});
 affiliations_from_map(#{owner := Owner, affiliates := Affiliations}) ->
-    [owner_affiliation(Owner) |
-     [{jid:from_binary(A), spectator} || A <- Affiliations]].
+    owner_affiliation(Owner) ++
+     [{jid:from_binary(A), spectator} || A <- Affiliations].
 
+owner_affiliation(<<>>) -> [];
 owner_affiliation(Owner) ->
-    {jid:from_binary(Owner), owner}.
+    [{jid:from_binary(Owner), owner}].
 
 -spec update_affiliations(wocky_db:server(), wocky_db:id(), [affiliation()]) ->
     ok.
@@ -184,6 +189,15 @@ get_items(Server, BotID) ->
 delete_item(Server, BotID, NoteID) ->
     wocky_db:delete(Server, bot_item, all, #{id => NoteID, bot => BotID}).
 
+-spec dissociate_user(ejabberd:luser(), wocky_db:server()) -> ok.
+dissociate_user(LUser, LServer) ->
+    OwnedBots = get_by_user(LServer,
+                            jid:to_binary(jid:make(LUser, LServer, <<>>))),
+    Roster = wocky_db_roster:get_roster(LUser, LServer),
+    Friends = lists:filter(wocky_db_roster:is_friend(_), Roster),
+    FriendJIDs = [jid:make(J) || #wocky_roster{contact_jid = J} <- Friends],
+    lists:foreach(remove_owner(LServer, _, FriendJIDs), OwnedBots).
+
 %%%===================================================================
 %%% Private helpers
 %%%===================================================================
@@ -211,7 +225,17 @@ maybe_to_jid(not_found) ->
     not_found;
 maybe_to_jid(null) ->
     [];
-maybe_to_jid(JIDList) when is_list(JIDList) ->
-    [jid:from_binary(J) || J <- JIDList];
+maybe_to_jid(<<>>) ->
+    not_found;
 maybe_to_jid(JIDBin) ->
     jid:from_binary(JIDBin).
+
+remove_owner(Server, BotID, FriendJIDs) ->
+    Bot = get(Server, BotID),
+    NewBot = maybe_freeze_roster(Bot, FriendJIDs),
+    wocky_db:insert(shared, bot, NewBot#{owner => <<>>}).
+
+maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FRIENDS}, FriendJIDs) ->
+    Bot#{visibility => ?WOCKY_BOT_VIS_WHITELIST,
+         affiliates => [jid:to_binary(J) || J <- FriendJIDs]};
+maybe_freeze_roster(Bot, _) -> Bot.
