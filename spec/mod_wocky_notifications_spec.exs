@@ -204,5 +204,20 @@ defmodule ModWockyNotificationsSpec do
         end
       end
     end
+
+    describe "handling the remove_user hook" do
+      before do
+        _ = enable_notifications
+        :ok = ModWockyNotifications.remove_user_hook(@user, @server)
+        :ok
+      end
+
+      it "should remove all user records" do
+        row = WockyDb.select_row(@local_context, :device, :all,
+          %{user: @user, server: @server, resource: @resource})
+
+        expect row |> to(eq :not_found)
+      end
+    end
   end
 end
