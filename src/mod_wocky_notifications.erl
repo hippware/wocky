@@ -54,8 +54,16 @@ hooks() ->
 -spec handle_iq(ejabberd:jid(), ejabberd:jid(), iq()) -> iq().
 handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
     #jid{luser = LUser, lserver = LServer, lresource = LResource} = From,
-    {ok, State} = handle_request(From, LUser, LServer, LResource, ReqEl),
-    make_response(IQ, State);
+    case handle_request(From, LUser, LServer, LResource, ReqEl) of
+        {ok, State} ->
+            make_response(IQ, State);
+
+        {error, _} ->
+            Error =
+                ?ERRT_SERVICE_UNAVAILABLE(?MYLANG,
+                                          <<"service unavailable">>),
+            make_error_response(IQ, Error)
+    end;
 handle_iq(_From, _To, IQ) ->
     make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
 
@@ -63,17 +71,21 @@ handle_request(JID, LUser, LServer, LResource,
                #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
     {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
-    {ok, Endpoint} =
-        wocky_notification_handler:register(JID, Platform, DeviceId),
-    CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
-    ok = wocky_db:insert(LServer, device, #{user => LUser,
-                                            server => LServer,
-                                            resource => LResource,
-                                            platform => Platform,
-                                            device_id => DeviceId,
-                                            endpoint => Endpoint,
-                                            created_at => CreatedAt}),
-    {ok, <<"enabled">>};
+    case wocky_notification_handler:register(JID, Platform, DeviceId) of
+        {ok, Endpoint} ->
+            CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
+            ok = wocky_db:insert(LServer, device, #{user => LUser,
+                                                    server => LServer,
+                                                    resource => LResource,
+                                                    platform => Platform,
+                                                    device_id => DeviceId,
+                                                    endpoint => Endpoint,
+                                                    created_at => CreatedAt}),
+            {ok, <<"enabled">>};
+
+        {error, _} = Error ->
+            Error
+    end;
 handle_request(_, LUser, LServer, LResource,
                #xmlel{name = <<"disable">>}) ->
     ok = wocky_db:delete(LServer, device, all, #{user => LUser,
@@ -134,7 +146,6 @@ notify_message(Endpoint, From, Body) ->
     wocky_notification_handler:notify(Endpoint, From, Body).
 
 %% remove_user -------------------------------------------------------
-
 remove_user_hook(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
