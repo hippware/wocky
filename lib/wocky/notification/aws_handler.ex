@@ -36,11 +36,16 @@ defmodule Wocky.Notification.AWSHandler do
     {:ok, arn}
   end
 
-  def notify(endpoint, _from, body) do
+  def notify(endpoint, from, body) do
     body
+    |> format_message(from)
     |> SNS.publish([target_arn: endpoint])
     |> ExAws.request
     |> handle_notify_result
+  end
+
+  defp format_message(body, from) do
+    "From #{from}:\n#{body}"
   end
 
   defp handle_notify_result({:error, error}), do: handle_aws_error(error)

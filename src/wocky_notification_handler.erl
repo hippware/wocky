@@ -28,8 +28,9 @@ register(UserJID, Platform, DeviceId) ->
     (handler()):register(User, Platform, DeviceId).
 
 -spec notify(binary(), ejabberd:jid(), binary()) -> ok | {error, any()}.
-notify(Endpoint, FromJID, Message) ->
-    From = jid:to_binary(FromJID),
+notify(Endpoint, #jid{user = User, server = Server}, Message) ->
+    From = wocky_db:select_one(shared, user, handle,
+                               #{user => User, server => Server}),
     ok = lager:debug("Sending notification for message from ~s with body '~s'",
                      [From, Message]),
     (handler()):notify(Endpoint, From, Message).
