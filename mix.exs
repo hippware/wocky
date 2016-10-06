@@ -80,7 +80,7 @@ defmodule Wocky.Mixfile do
     [
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
-      {:algolia,       "~> 0.3.2"},
+      {:algolia,       "~> 0.4.0"},
       {:ex_aws,        github: "hippware/ex_aws",         branch: "working"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},

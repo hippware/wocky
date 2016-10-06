@@ -1,6 +1,6 @@
 %{"alarms": {:git, "https://github.com/hippware/alarms.git", "e578a1916583486fa20d83d63b77233a56fbc782", [branch: "master"]},
   "aleppo": {:hex, :inaka_aleppo, "1.0.0", "8db14cf16bb8c263c14ff4c3f69f64d7c849d40888944f4204d2ca74f1114ceb", [:rebar3], []},
-  "algolia": {:hex, :algolia, "0.3.2", "5b68e640cceb7c8a687f45c1d9ce6422008aa363c819768a06d60be9df5e4c4f", [:mix], [{:hackney, "~> 1.6.0", [hex: :hackney, optional: false]}, {:poison, "~> 1.5 or ~> 2.0", [hex: :poison, optional: false]}]},
+  "algolia": {:hex, :algolia, "0.4.0", "012753a694e82f6d4fd955ad8432ed455bf7a5f1380c63fcd98673dc29cb5f48", [:mix], [{:hackney, "~> 1.6.0", [hex: :hackney, optional: false]}, {:poison, "~> 1.5 or ~> 2.0", [hex: :poison, optional: false]}]},
   "base16": {:hex, :base16, "1.0.0", "283644e2b21bd5915acb7178bed7851fb07c6e5749b8fad68a53c501092176d9", [:rebar3], []},
   "bbmustache": {:hex, :bbmustache, "1.0.4", "7ba94f971c5afd7b6617918a4bb74705e36cab36eb84b19b6a1b7ee06427aa38", [:rebar], []},
   "bear": {:hex, :bear, "0.8.3", "866002127a97932720a0d475d8582c98ec5fb78db3a18dfe7eaf91594d9024b8", [:rebar3], []},
