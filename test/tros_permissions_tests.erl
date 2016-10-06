@@ -6,13 +6,12 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("wocky_db_seed.hrl").
 
--import(tros_permissions, [can_upload/2, can_download/3]).
+-import(tros_permissions, [can_download/3]).
 
 tros_permissions_test_() -> {
   "tros_permissions",
   setup, fun before_all/0, fun after_all/1,
   [ {inparallel, [
-      test_can_upload(),
       test_can_download()
   ]}]
 }.
@@ -26,15 +25,6 @@ before_all() ->
 
 after_all(_) ->
     ok.
-
-test_can_upload() ->
-    { "can_upload", [
-      { "users can always upload", [
-        ?_assert(can_upload(?ALICE_JID, <<>>)),
-        ?_assert(can_upload(?BOB_JID, <<>>)),
-        ?_assert(can_upload(?TIM_JID, <<>>))
-      ]}
-    ]}.
 
 test_can_download() ->
     Owner = ?ALICE,
