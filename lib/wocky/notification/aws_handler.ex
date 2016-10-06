@@ -14,6 +14,8 @@ defmodule Wocky.Notification.AWSHandler do
     google: ""
   ]
 
+  @message_limit 512
+
   def register(user, platform, device_id) do
     @application_arn
     |> Keyword.fetch!(String.to_atom(platform))
@@ -45,7 +47,13 @@ defmodule Wocky.Notification.AWSHandler do
   end
 
   defp format_message(body, from) do
-    "From #{from}:\n#{body}"
+    message = "From #{from}:\n#{body}"
+
+    if byte_size(message) > @message_limit do
+      String.slice(message, 0, @message_limit - 3) <> "..."
+    else
+      message
+    end
   end
 
   defp handle_notify_result({:error, error}), do: handle_aws_error(error)
