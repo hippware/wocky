@@ -235,7 +235,8 @@ remove_owner(Server, BotID, FriendJIDs) ->
     NewBot = maybe_freeze_roster(Bot, FriendJIDs),
     wocky_db:insert(shared, bot, NewBot#{owner => <<>>}).
 
-maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FRIENDS}, FriendJIDs) ->
+maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FRIENDS},
+                    FriendJIDs) ->
     Bot#{visibility => ?WOCKY_BOT_VIS_WHITELIST,
          affiliates => [jid:to_binary(J) || J <- FriendJIDs]};
 maybe_freeze_roster(Bot, _) -> Bot.
