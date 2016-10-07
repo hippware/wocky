@@ -57,28 +57,56 @@ defmodule ModWockyNotificationsSpec do
 
     describe "handling an IQ 'set'" do
       context "with an 'enable' element" do
-        before do
-          allow Handler
-          |> to(accept :register, fn (_, _, _) -> {:ok, @test_id} end)
+        context "on success" do
+          before do
+            allow Handler
+            |> to(accept :register, fn (_, _, _) -> {:ok, @test_id} end)
 
-          result = enable_notifications
-          {:ok, result: result}
+            result = enable_notifications
+            {:ok, result: result}
+          end
+
+          it "should return an IQ result" do
+            expect iq(shared.result, :type) |> to(eq :result)
+          end
+
+          it "should register the device" do
+            expect Handler |> to(accepted :register)
+          end
+
+          it "should insert the device_id and endpoint into the database" do
+            row = WockyDb.select_row(@local_context, :device, :all,
+              %{user: @user, server: @server, resource: @resource})
+
+            expect row.device_id |> to(eq @test_id)
+            expect row.endpoint |> to(eq @test_id)
+          end
         end
 
-        it "should return an IQ result" do
-          expect iq(shared.result, :type) |> to(eq :result)
-        end
+        context "on failure" do
+          before do
+            allow Handler
+            |> to(accept :register, fn (_, _, _) -> {:error, :foo} end)
+            WockyDb.clear_tables(@local_context, [:device])
 
-        it "should register the device" do
-          expect Handler |> to(accepted :register)
-        end
+            result = enable_notifications
+            {:ok, result: result}
+          end
 
-        it "should insert the device_id and endpoint into the database" do
-          row = WockyDb.select_row(@local_context, :device, :all,
-            %{user: @user, server: @server, resource: @resource})
+          it "should return an IQ error" do
+            expect iq(shared.result, :type) |> to(eq :error)
+          end
 
-          expect row.device_id |> to(eq @test_id)
-          expect row.endpoint |> to(eq @test_id)
+          it "should call the register handler" do
+            expect Handler |> to(accepted :register)
+          end
+
+          it "should not insert anything into the database" do
+            row = WockyDb.select_row(@local_context, :device, :all,
+              %{user: @user, server: @server, resource: @resource})
+
+            expect row |> to(eq :not_found)
+          end
         end
       end
 
@@ -174,6 +202,21 @@ defmodule ModWockyNotificationsSpec do
         it "should not send a notification" do
           expect Handler |> to_not(accepted :notify)
         end
+      end
+    end
+
+    describe "handling the remove_user hook" do
+      before do
+        _ = enable_notifications
+        :ok = ModWockyNotifications.remove_user_hook(@user, @server)
+        :ok
+      end
+
+      it "should remove all user records" do
+        row = WockyDb.select_row(@local_context, :device, :all,
+          %{user: @user, server: @server, resource: @resource})
+
+        expect row |> to(eq :not_found)
       end
     end
   end

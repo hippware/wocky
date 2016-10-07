@@ -48,8 +48,9 @@ defmodule Wocky.Mixfile do
   end
 
   def application do
+    dev_apps = Mix.env == :dev && [:reprise] || []
     [description: 'JabberWocky XMPP Server',
-     applications: [
+     applications: dev_apps ++ [
        :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
        :idna, :runtime_tools, :cache_tab, :alarms, :setup
      ],
@@ -79,7 +80,7 @@ defmodule Wocky.Mixfile do
     [
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
-      {:algolia,       "~> 0.3.2"},
+      {:algolia,       "~> 0.4.0"},
       {:ex_aws,        github: "hippware/ex_aws",         branch: "working"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
@@ -128,6 +129,10 @@ defmodule Wocky.Mixfile do
       {:meck,          "~> 0.8.4", override: true},
       {:espec,         "~> 1.0", only: :test},
       {:dialyxir,      "~> 0.3.5", only: :dev},
+      {:dogma,         "~> 0.1.7", only: :dev},
+      {:credo,         "~> 0.4.11", only: :dev},
+      {:ex_guard,      "~> 1.1", only: :dev},
+      {:reprise,       "~> 0.5.0", only: :dev},
       {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
       {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
