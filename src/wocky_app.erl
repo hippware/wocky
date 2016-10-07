@@ -92,6 +92,8 @@ start(_StartType, _StartArgs) ->
 
     ok = cache_server_names(CfgTerms),
 
+    ok = maybe_enable_notifications(Env),
+
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
     case os:getenv("WOCKY_MINIMAL") of
@@ -152,3 +154,15 @@ cache_server_names(CfgTerms) ->
     Servers = proplists:get_value(hosts, CfgTerms),
     BinServers = lists:map(fun (S) -> iolist_to_binary(S) end, Servers),
     application:set_env(wocky, server_names, BinServers).
+
+maybe_enable_notifications(Env) ->
+    {ok, Envs} = application:get_env(wocky, notification_enabled_envs),
+    case lists:member(Env, Envs) of
+        true ->
+            ok = lager:info("Notifications enabled"),
+            application:set_env(wocky, notification_handler,
+                                'Elixir.Wocky.Notification.AWSHandler');
+        false ->
+            ok = lager:info("Notifications disabled"),
+            ok
+    end.
