@@ -134,12 +134,15 @@ follow_state(Server, ID, User) ->
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
 delete(Server, ID) ->
-    Shortname = wocky_db:select_one(shared, bot, shortname, #{id => ID}),
-    Shortname =/= not_found andalso
-    Shortname =/= null andalso
-        (ok = wocky_db:delete(Server, bot_name, all,
-                              #{shortname => Shortname})),
+    ShortName = wocky_db:select_one(shared, bot, shortname, #{id => ID}),
+    ok = delete_bot_name_lookup(Server, ShortName),
     ok = wocky_db:delete(shared, bot, all, #{id => ID}).
+
+delete_bot_name_lookup(Server, Name)
+  when is_binary(Name) andalso size(Name) > 0 ->
+    wocky_db:delete(Server, bot_name, all, #{shortname => Name});
+delete_bot_name_lookup(_, _) ->
+    ok.
 
 -spec has_access(wocky_db:server(), wocky_db:id(), jid()) ->
     boolean() | not_found.
