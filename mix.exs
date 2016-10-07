@@ -72,6 +72,7 @@ defmodule Wocky.Mixfile do
        keyspace_prefix: 'wocky_test_',
        indexing_enabled_envs: ['staging'],
        algolia_index_name: 'dev_wocky_users',
+       notification_enabled_envs: ['staging'],
        notification_handler: Wocky.Notification.NullHandler
      ]]
   end
