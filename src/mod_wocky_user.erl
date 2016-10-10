@@ -92,7 +92,8 @@ get_user(ReqEl) ->
 get_user_jid(User, Server) ->
     case jid:make(User, Server, <<>>) of
         error -> {error, ?ERRT_BAD_REQUEST(
-                            ?MYLANG, <<"Invalid user: ", User/binary>>)};
+                            ?MYLANG, <<"Invalid user (", User/binary,
+                                       ") or server (", Server/binary, ")">>)};
         JID -> {ok, JID}
     end.
 
