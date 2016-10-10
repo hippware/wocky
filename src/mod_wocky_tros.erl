@@ -80,9 +80,9 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
-        OwnerID <- get_owner(LServer, FileID),
         Metadata <- get_metadata(LServer, FileID),
-        Access <- get_access(LServer, FileID),
+        OwnerID <- get_owner(Metadata),
+        Access <- get_access(Metadata),
         check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
@@ -149,17 +149,17 @@ check_file_id(#{<<"id">> := ID}) ->
 check_file_id(ID) when is_binary(ID) ->
     {ok, ID}.
 
-get_owner(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_owner).
+get_owner(Metadata) ->
+    get_file_info(get_owner, [Metadata]).
+
+get_access(Metadata) ->
+    get_file_info(get_access, [Metadata]).
 
 get_metadata(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_metadata).
+    get_file_info(get_metadata, [LServer, FileID]).
 
-get_access(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_access).
-
-get_file_info(LServer, FileID, Function) ->
-   case (backend()):Function(LServer, FileID) of
+get_file_info(Function, Args) ->
+   case apply(backend(), Function, Args) of
       {ok, _} = Success -> Success;
       {error, Error} -> file_retrieval_error(Error)
    end.

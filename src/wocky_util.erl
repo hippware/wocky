@@ -18,6 +18,8 @@
    null_to_list/1,
    intersection/2,
 
+   binary_as_hex/1,
+
    set_config_from_opt/4,
 
    archive_jid/1,
@@ -127,6 +129,10 @@ null_to_list(L) -> L.
 -spec intersection(list(), list()) -> list().
 intersection(A, B) ->
     lists:filter(lists:member(_, B), A).
+
+-spec binary_as_hex(binary()) -> binary().
+binary_as_hex(Input) ->
+    << <<Y>> || <<X:4>> <= Input, Y <- integer_to_list(X, 16)>>.
 
 -spec is_friend(subscription_type(), [binary()]) -> boolean().
 is_friend(Subscription, Groups) ->

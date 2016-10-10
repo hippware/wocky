@@ -7,8 +7,11 @@
 -include("wocky_db_seed.hrl").
 -include("wocky.hrl").
 
+-compile({parse_transform, cut}).
+
 mod_wocky_tros_test_() -> {
   "mod_wocky_tros",
+  inorder,
   [{setup, fun() -> before_all(Backend) end, fun after_all/1,
     [
      test_avatar_upload_request(Backend),
@@ -32,6 +35,8 @@ before_all(Backend) ->
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
     meck:expect(ejabberd_config, get_local_option,
                 fun(tros_backend) -> Backend;
+                   (tros_scheme) -> "http://";
+                   (tros_auth_validity) -> 3600;
                    (s3_bucket) -> "tros-test";
                    (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
                    (s3_secret_key) ->
@@ -55,11 +60,13 @@ before_all(Backend) ->
     meck:expect(mod_wocky_tros_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 48)) end),
 
-    meck:expect(mod_wocky_tros_s3, make_auth, 5,
-                base64:encode(binary:copy(<<6:8>>, 48))),
-    meck:expect(mod_wocky_tros_s3, get_owner, 2, {ok, ?ALICE}),
-    meck:expect(mod_wocky_tros_s3, get_metadata,
-                fun(A, B) -> mod_wocky_tros_francus:get_metadata(A, B) end),
+    meck:expect(mod_wocky_tros_s3, get_access, 1, {ok, <<"all">>}),
+    meck:expect(mod_wocky_tros_s3, get_metadata, 2,
+                {ok,
+                 #{<<"content-type">> => <<"image/png">>,
+                   <<"x-amz-meta-name">> => <<"photo of cat.jpg">>,
+                   <<"x-amz-meta-owner">> =>
+                     <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>}}),
 
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
                                                group_chat]).
@@ -76,41 +83,44 @@ after_all(_) ->
 test_avatar_upload_request(Backend) ->
     {"Upload request", [
         {"Successful request", [
-          ?_assertEqual(
-             expected_upload_packet(Backend),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       upload_packet(10000,
-                                     <<"all">>
-                                    )))
+          ?_assert(
+             is_expected_upload_packet(
+               Backend,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         upload_packet(10000,
+                                       <<"all">>
+                                      ))))
     ]}]}.
 
 test_message_media_upload_request(Backend) ->
     { "Message media upload request", [
         {"Successful request", [
-          ?_assertEqual(
-             expected_upload_packet(Backend),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       upload_packet(10000,
-                                     <<"user:",
-                                     (?BOB_B_JID)/binary>>
-                                    )))
+          ?_assert(
+             is_expected_upload_packet(
+               Backend,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         upload_packet(10000,
+                                       <<"user:",
+                                         (?BOB_B_JID)/binary>>
+                                      ))))
     ]}]}.
 
 test_group_chat_media_upload_request(Backend) ->
     { "Group chat media upload request", [
         {"Successful request when we're a group member", [
-          ?_assertEqual(
-             expected_upload_packet(Backend),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       upload_packet(10000,
-                                     <<"members:",
-                                       (jid:to_binary(?GROUP_CHAT_JID))/binary>>
-                                    )))
-        ]}
-    ]}.
+          ?_assert(
+             is_expected_upload_packet(
+               Backend,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         upload_packet(10000,
+                                       <<"members:",
+                                         (jid:to_binary(
+                                            ?GROUP_CHAT_JID))/binary>>
+                                      ))))
+    ]}]}.
 
 test_oversized_upload_request(_Backend) ->
     Size = 1024*1024*10 + 1,
@@ -127,68 +137,79 @@ test_oversized_upload_request(_Backend) ->
 test_avatar_download_request(Backend) ->
     {"Avatar download request", [
         {"Successful request on own avatar using an ID", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?AVATAR_FILE),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       download_packet(?AVATAR_FILE)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?AVATAR_FILE,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         download_packet(?AVATAR_FILE))))
     ]},
         {"Successful request on own avatar using a URL", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?AVATAR_FILE),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       download_packet(
-                         <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
-                           "/file/", ?AVATAR_FILE/binary>>)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?AVATAR_FILE,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         download_packet(
+                           <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+                             "/file/", ?AVATAR_FILE/binary>>))))
     ]},
         {"Successful request on someone else's avatar", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?AVATAR_FILE),
-             handle_iq(?BOB_JID,
-                       test_server_jid(),
-                       download_packet(?AVATAR_FILE)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?AVATAR_FILE,
+               handle_iq(?BOB_JID,
+                         test_server_jid(),
+                         download_packet(?AVATAR_FILE))))
     ]}]}.
 
 test_message_media_download_request(Backend) ->
     {"Message media download request", [
         {"Successful request on own media", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?MEDIA_FILE),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       download_packet(?MEDIA_FILE)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?MEDIA_FILE,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         download_packet(?MEDIA_FILE))))
     ]},
         {"Successful request on someone else's media that was sent to us", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?MEDIA_FILE),
-             handle_iq(?BOB_JID,
-                       test_server_jid(),
-                       download_packet(?MEDIA_FILE)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?MEDIA_FILE,
+               handle_iq(?BOB_JID,
+                         test_server_jid(),
+                         download_packet(?MEDIA_FILE))))
     ]},
         {"Failed request on someone else's media that was NOT sent to us", [
-          ?_assertEqual(
+          ?_test(begin
+             meck:expect(mod_wocky_tros_s3, get_access, 1,
+                         {ok, <<"user:",(?BOB_B_JID)/binary>>}),
+             ?assertEqual(
              expected_dl_auth_error_packet(?MEDIA_FILE),
              handle_iq(?CAROL_JID,
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
+          end)
     ]}]}.
 
 test_group_chat_media_download_request(Backend) ->
     {"Group chat media download request", [
         {"Successful request on own media", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?GC_MEDIA_FILE),
-             handle_iq(?ALICE_JID,
-                       test_server_jid(),
-                       download_packet(?GC_MEDIA_FILE)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?GC_MEDIA_FILE,
+               handle_iq(?ALICE_JID,
+                         test_server_jid(),
+                         download_packet(?GC_MEDIA_FILE))))
     ]},
         {"Successful request on media in the same group chat as us", [
-          ?_assertEqual(
-             expected_download_packet(Backend, ?GC_MEDIA_FILE),
-             handle_iq(?BOB_JID,
-                       test_server_jid(),
-                       download_packet(?GC_MEDIA_FILE)))
+          ?_assert(
+             is_expected_download_packet(
+               Backend, ?GC_MEDIA_FILE,
+               handle_iq(?BOB_JID,
+                         test_server_jid(),
+                         download_packet(?GC_MEDIA_FILE))))
     ]},
         {"Failed request on media for a group chat we're not in", [
           ?_assertEqual(
@@ -198,14 +219,18 @@ test_group_chat_media_download_request(Backend) ->
                        download_packet(?GC_MEDIA_FILE)))
     ]}]}.
 
-test_bad_download_ids(_Backend) ->
+test_bad_download_ids(Backend) ->
     BadUUID = binary:part(?MEDIA_FILE, 0, byte_size(?MEDIA_FILE) - 1),
     BadURL = <<"tros:">>,
     MissingID = wocky_db:create_id(),
+    NotFound = case Backend of
+                   s3 -> expected_dl_auth_error_packet(_);
+                   francus -> expected_dl_missing_error_packet(_)
+               end,
     {"Bad file ID on download request", [
         {"Failed due to malformed UUID", [
             ?_assertEqual(
-               expected_dl_missing_error_packet(BadUUID),
+               NotFound(BadUUID),
                  handle_iq(?CAROL_JID,
                            test_server_jid(),
                            download_packet(BadUUID)))
@@ -219,7 +244,7 @@ test_bad_download_ids(_Backend) ->
         ]},
         {"Failed due to missing file metadata", [
             ?_assertEqual(
-               expected_dl_missing_error_packet(MissingID),
+               NotFound(MissingID),
                  handle_iq(?CAROL_JID,
                            test_server_jid(),
                            download_packet(MissingID)))
@@ -280,21 +305,41 @@ download_request(FileID) ->
            children = [#xmlel{name = <<"id">>,
                               children = [#xmlcdata{content = FileID}]}]}.
 
-expected_upload_packet(s3) ->
-    <<"<iq id='123456' type='result'><upload><headers>"
-      "<header name='host' value='tros-test.s3.amazonaws.com'/>"
-      "<header name='content-type' value='image/jpeg'/>"
-      "<header name='date' value='Fri, 29 Jan 2016 02:54:44 GMT'/>"
-      "<header name='authorization' value="
-      "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
-      "/></headers>"
-      "<id>", (new_file_uuid())/binary, "</id>"
-      "<jid>", ?LOCAL_CONTEXT/binary, "/file/", (new_file_uuid())/binary,
-      "</jid><url>https://tros-test.s3.amazonaws.com/", ?ALICE/binary, "/",
-      (new_file_uuid())/binary, "</url><method>PUT</method>"
-      "</upload></iq>">>;
+is_expected_upload_packet(s3, P) ->
+    {ok, XML} = exml:parse(P),
+    UUID = new_file_uuid(),
+    JID = <<(?LOCAL_CONTEXT)/binary, "/file/", UUID/binary>>,
+    #xmlel{name = <<"iq">>,
+           attrs = [{<<"id">>, <<"123456">>},
+                    {<<"type">>, <<"result">>}],
+           children =[
+             #xmlel{name = <<"upload">>,
+                    children =
+                    [
+                     #xmlel{name = <<"headers">>,
+                            attrs = [],
+                            children = [#xmlel{name = <<"header">>,
+                                               attrs = [{<<"name">>,
+                                                         <<"content-type">>},
+                                                        {<<"value">>,
+                                                         <<"image/jpeg">>}]}]},
+                     #xmlel{name = <<"id">>,
+                            attrs = [],
+                            children = [#xmlcdata{content = UUID}]},
+                     #xmlel{name = <<"jid">>,
+                            attrs = [],
+                            children = [#xmlcdata{content = JID}]},
+                     #xmlel{name = <<"method">>,
+                            attrs = [],
+                            children = [#xmlcdata{content = <<"PUT">>}]},
+                     #xmlel{name = <<"url">>,
+                            attrs = []}
+                    ]}]}
+    = XML,
+    true;
 
-expected_upload_packet(francus) ->
+is_expected_upload_packet(francus, P) ->
+    P =:=
     <<"<iq id='123456' type='result'><upload><headers>"
       "<header name='content-type' value='image/jpeg'/>"
       "<header name='authorization' value="
@@ -311,17 +356,26 @@ expected_upload_packet(francus) ->
       "/file/", (new_file_uuid())/binary, "</reference_url>"
       "</upload></iq>">>.
 
-expected_download_packet(s3, FileID) ->
-    <<"<iq id='123456' type='result'><download><headers>"
-      "<header name='host' value='tros-test.s3.amazonaws.com'/>"
-      "<header name='date' value='Fri, 29 Jan 2016 02:54:44 GMT'/>"
-      "<header name='authorization' value="
-      "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"
-      "/></headers>"
-      "<url>https://tros-test.s3.amazonaws.com/", ?ALICE/binary, "/",
-      FileID/binary, "</url></download></iq>">>;
+is_expected_download_packet(s3, _FileID, P) ->
+    {ok, XML} = exml:parse(P),
+    #xmlel{name = <<"iq">>,
+           attrs = [{<<"id">>, <<"123456">>},
+                    {<<"type">>, <<"result">>}],
+           children =[
+             #xmlel{name = <<"download">>,
+                    children =
+                    [
+                     #xmlel{name = <<"headers">>,
+                            attrs = [],
+                            children = []},
+                     #xmlel{name = <<"url">>,
+                            attrs = []}
+                    ]}]}
+    = XML,
+    true;
 
-expected_download_packet(francus, FileID) ->
+is_expected_download_packet(francus, FileID, P) ->
+    P =:=
     <<"<iq id='123456' type='result'><download><headers>"
       "<header name='authorization' value="
       "'BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYG'"

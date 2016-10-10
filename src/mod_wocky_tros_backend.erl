@@ -5,15 +5,20 @@
 %% I die a little inside when I have to do this.
 -ignore_xref([behaviour_info/1]).
 
+-type metadata() :: #{binary() => binary()}.
+
 -callback start(list()) -> any().
 
 -callback stop() -> any().
 
--callback get_owner(ejabberd:lserver(), binary()) ->
-    {ok, any()} | {error, any()}.
+-callback get_owner(metadata()) ->
+    {ok, ejabberd:luser()} | {error, any()}.
+
+-callback get_access(metadata()) ->
+    {ok, binary()} | {error, any()}.
 
 -callback get_metadata(ejabberd:lserver(), binary()) ->
-    {ok, any()} | {error, any()}.
+    {ok, metadata()} | {error, any()}.
 
 -callback make_upload_response(ejabberd:jid(),
                                ejabberd:jid(),

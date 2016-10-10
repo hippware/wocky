@@ -12,16 +12,16 @@
          make_download_response/5,
          make_upload_response/6,
          make_auth/0,
-         get_owner/2,
-         get_metadata/2,
-         get_access/2
+         get_owner/1,
+         get_access/1,
+         get_metadata/2
         ]).
 
 -define(DEFAULT_SCHEME, "https://").
 -define(DEFAULT_AUTH_VALIDITY, 3600). % C* TTL in seconds
 -define(DEFAULT_PORT, 1025).
 
--ignore_xref([get_access/2]).
+-ignore_xref([get_access/1]).
 
 configs() ->
     %% Name in .cfg   |Name in ejabberd_config|Default value
@@ -108,24 +108,22 @@ url(Server, User, FileID) ->
       [Scheme, Server, ":", integer_to_list(public_port()),
        "/users/", User, "/files/", FileID]).
 
-get_owner(Server, FileID) ->
-    get_file_info(Server, FileID, fun francus:owner/1).
-
 get_metadata(Server, FileID) ->
-    get_file_info(Server, FileID, fun francus:metadata/1).
-
-get_access(Server, FileID) ->
-    get_file_info(Server, FileID, fun francus:access/1).
-
-get_file_info(Server, FileID, Function) ->
     case francus:open_read(Server, FileID) of
         {error, E} ->
             {error, E};
         {ok, File} ->
-            Info = Function(File),
+            Info = francus:metadata(File),
+            Owner = francus:owner(File),
+            Access = francus:access(File),
             francus:close(File),
-            {ok, Info}
+            {ok, Info#{<<"owner">> => Owner,
+                       <<"access">> => Access}}
     end.
+
+get_owner(#{<<"owner">> := Owner}) -> {ok, Owner}.
+
+get_access(#{<<"access">> := Access}) -> {ok, Access}.
 
 setup_metrics() ->
     Metrics = [tros_francus_bytes_sent,
