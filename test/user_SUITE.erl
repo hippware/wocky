@@ -43,6 +43,8 @@ groups() ->
 %%                   friend_mixed_fields]},
      {error, [], [missing_node,
                   malformed_user,
+                  missing_user,
+                  oversize_user,
                   wrong_type,
                   wrong_type2,
                   missing_var,
@@ -223,6 +225,35 @@ malformed_user(Config) ->
                                   [<<"user">>, <<"email">>, <<"external_id">>]),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = [{<<"node">>, <<"baduserbad">>} |
+                       proplists:delete(<<"node">>, Attrs)],
+        BrokenStanza =
+        QueryStanza#xmlel{children =
+                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}},
+        expect_iq_error(BrokenStanza, Alice)
+    end).
+
+missing_user(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza = get_request(<<"468">>, ?ALICE,
+                                  [<<"user">>, <<"email">>, <<"external_id">>]),
+        Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
+        BrokenAttrs = [{<<"node">>, <<"user/">>} |
+                       proplists:delete(<<"node">>, Attrs)],
+        BrokenStanza =
+        QueryStanza#xmlel{children =
+                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}},
+        expect_iq_error(BrokenStanza, Alice)
+    end).
+
+oversize_user(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza = get_request(<<"468">>, ?ALICE,
+                                  [<<"user">>, <<"email">>, <<"external_id">>]),
+        Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
+        BigUser = binary:copy(<<"a">>, 2048),
+        BrokenAttrs = [{<<"node">>, <<"user/", BigUser/binary>>} |
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
         QueryStanza#xmlel{children =

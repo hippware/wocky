@@ -51,21 +51,23 @@ handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
 %% Common helpers
 %%--------------------------------------------------------------------
 
-handle_request(IQ, FromJID, ToJID, get,
+handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, get,
                ReqEl = #xmlel{name = <<"get">>, children = Children}) ->
     do([error_m ||
         User <- get_user(ReqEl),
-        Relationship <- {ok, relationship(FromJID, User, ToJID)},
+        UserJID <- get_user_jid(User, LServer),
+        Relationship <- {ok, relationship(FromJID, UserJID)},
         Fields <- get_get_req_fields(Children, []),
         check_field_permissions(Relationship, Fields),
         XMLFields <- get_resp_fields(ToJID, User, Fields),
         {ok, make_get_response_iq(IQ, User, XMLFields)}]);
 
-handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, set,
+handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
                ReqEl = #xmlel{name = <<"set">>, children = Children}) ->
     do([error_m ||
         User <- get_user(ReqEl),
-        validate_same_user(FromJID, User, ToJID),
+        UserJID <- get_user_jid(User, LServer),
+        validate_same_user(FromJID, UserJID),
         Fields <- get_set_req_fields(Children, []),
         set_user_fields(User, LServer, Fields),
         {ok, make_set_response_iq(IQ, User)}]);
@@ -79,7 +81,7 @@ handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
 
 get_user(ReqEl) ->
     case exml_query:attr(ReqEl, <<"node">>) of
-        <<"user/", User/binary>> ->
+        <<"user/", User/binary>> when byte_size(User) > 0 ->
             {ok, User};
         undefined ->
             not_valid("Missing node attribute");
@@ -87,23 +89,28 @@ get_user(ReqEl) ->
             not_valid("Malformed node attribute")
     end.
 
+get_user_jid(User, Server) ->
+    case jid:make(User, Server, <<>>) of
+        error -> {error, ?ERRT_BAD_REQUEST(
+                            ?MYLANG, <<"Invalid user (", User/binary,
+                                       ") or server (", Server/binary, ")">>)};
+        JID -> {ok, JID}
+    end.
 
-validate_same_user(FromJID, User, ToJID) ->
-    case relationship(FromJID, User, ToJID) of
+validate_same_user(FromJID, UserJID) ->
+    case relationship(FromJID, UserJID) of
         self -> ok;
         _ -> {error, ?ERRT_FORBIDDEN(?MYLANG, <<"Can only modify yourself">>)}
     end.
 
-
-relationship(FromJID, User, ToJID) ->
-    TargetJID = jid:make(User, ToJID#jid.lserver, <<>>),
-    case jid:are_bare_equal(FromJID, TargetJID) of
+relationship(FromJID, UserJID) ->
+    case jid:are_bare_equal(FromJID, UserJID) of
         true -> self;
-        false -> relationship(FromJID, TargetJID)
+        false -> relationship_not_self(FromJID, UserJID)
     end.
 
-relationship(FromJID, TargetJID) ->
-    case wocky_db_roster:has_contact(TargetJID, FromJID) of
+relationship_not_self(FromJID, UserJID) ->
+    case wocky_db_roster:has_contact(UserJID, FromJID) of
         true -> friend;
         false -> stranger
     end.
