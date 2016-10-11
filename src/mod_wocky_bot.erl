@@ -36,7 +36,7 @@
 -record(field, {
           name :: binary(),
           type :: field_type(),
-          value :: binary() | integer() | loc() | jid()
+          value :: not_found | binary() | integer() | loc() | jid()
          }).
 
 %%%===================================================================
