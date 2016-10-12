@@ -9,6 +9,9 @@
          decrypt/3
         ]).
 
+% Curently unused
+-ignore_xref([encrypt/2, decrypt/2]).
+
 encrypt(Key, Data) -> encrypt(Key, Data, 0).
 encrypt(Key, Data, PadTo) ->
     PaddedData = pad_to(Data, PadTo),
