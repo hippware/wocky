@@ -16,7 +16,7 @@
   "credo": {:hex, :credo, "0.4.12", "f5e1973405ea25c6e64959fb0b6bf92950147a0278cc2a002a491b45f78f7b87", [:mix], [{:bunt, "~> 0.1.6", [hex: :bunt, optional: false]}]},
   "cth_readable": {:hex, :cth_readable, "1.2.3", "293120673dff82f0768612c5282e35c40cacc1b6f94fe99077438fd3749d0e27", [:rebar3], [{:cf, "0.2.1", [hex: :cf, optional: false]}]},
   "cuesport": {:git, "https://github.com/esl/cuesport.git", "d82ff25baf393eb11712721fb1b881b4b9f80176", [branch: "master"]},
-  "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []},
+  "dialyxir": {:git, "https://github.com/jeremyjh/dialyxir.git", "10b6993a41ee70788eb32e4a65ab430acdad38df", [branch: "develop"]},
   "dogma": {:hex, :dogma, "0.1.8", "1ee856ed64f3ad635a4b2127beea427ea1b9bc271b8731679a97938e1827730f", [:mix], [{:poison, ">= 1.0.0", [hex: :poison, optional: false]}]},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
   "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "d3adae81ec6112d30181ae683330ff5cf412a27b", [branch: "working"]},

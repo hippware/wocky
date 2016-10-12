@@ -129,11 +129,11 @@ defmodule Wocky.Mixfile do
       ## testing dependencies (not included in release)
       {:meck,          "~> 0.8.4", override: true},
       {:espec,         "~> 1.0", only: :test},
-      {:dialyxir,      "~> 0.3.5", only: :dev},
       {:dogma,         "~> 0.1.7", only: :dev},
       {:credo,         "~> 0.4.11", only: :dev},
       {:ex_guard,      "~> 1.1", only: :dev},
       {:reprise,       "~> 0.5.0", only: :dev},
+      {:dialyxir,      github: "jeremyjh/dialyxir",       branch: "develop", only: :dev},
       {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
       {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
