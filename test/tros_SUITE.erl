@@ -275,7 +275,6 @@ do_upload(ResultStanza, ImageData, ExpectedCode, ContentType, Multipart) ->
             {"multipart/form-data; boundary=" ++ ?MP_BOUNDARY,
             make_multipart_body(ReqContentType, ImageData)}
     end,
-    ct:log("BJD ~p\n~p\n~p\n~p", [URL, FinalHeaders, OuterContentType, Body]),
     {ok, Result} = httpc:request(list_to_atom(
                                    string:to_lower(
                                      binary_to_list(Method))),
@@ -305,7 +304,6 @@ do_download(ResultStanza) ->
     {_, 200, "OK"} = Response,
     RespBin = list_to_binary(RespContent),
     NormHeaders = normalise_headers(RespHeaders),
-    ct:log("BJD RespHeaders: ~p", [RespHeaders]),
     true = lists:member({"content-length",
                          integer_to_list(byte_size(RespBin))},
                         NormHeaders),
