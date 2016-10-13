@@ -241,7 +241,11 @@ seed_data(bot_subscriber, _Server) ->
      #{bot => ?BOT, user => ?KAREN_B_JID, follow => true}];
 seed_data(bot_item, _Server) ->
     [#{id => ?ITEM, bot => ?BOT, published => ?ITEM_PUB_TIME,
-       updated => ?ITEM_UPDATE_TIME, stanza => ?ITEM_STANZA}];
+       updated => ?ITEM_UPDATE_TIME, stanza => ?ITEM_STANZA,
+       image => true},
+     #{id => ?ITEM2, bot => ?BOT, published => ?ITEM_PUB_TIME+1,
+       updated => ?ITEM_UPDATE_TIME+1, stanza => ?ITEM_STANZA2,
+       image => false}];
 seed_data(_, _) ->
     [].
 
