@@ -30,6 +30,7 @@ seed_table(Context, Name) ->
     seed_table(Context, Name, ?SERVER).
 
 seed_table(Context, Name, Server) ->
+    ok = wocky_db:clear_tables(Context, [Name]),
     Data = seed_data(Name, Server),
     seed_with_data(Context, Name, Data).
 

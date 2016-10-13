@@ -47,7 +47,7 @@
 %% High Level API
 -export([shared_keyspace/0, local_keyspace/0,
          bootstrap/0, bootstrap/1, create_schema/0, keyspace_tables/1,
-         prepare_tables/2, clear_tables/2, clear_user_tables/1,
+         clear_tables/2, clear_user_tables/1,
          select_one/4, select_row/4, select_column/4,
          select/4, insert/3, insert_new/3,
          update/4, delete/4, count/3, truncate/2]).
@@ -65,7 +65,6 @@
 -ignore_xref([bootstrap/0,
               bootstrap/1,
               create_schema/0,
-              prepare_tables/2,
               clear_tables/2,
               clear_user_tables/1,
               local_keyspace/0,
@@ -127,17 +126,6 @@ keyspace_tables(Context) ->
     ?schema:list_tables(keyspace_name(Context)).
 
 
-%% @doc Drop and recreate the specified tables.
--spec prepare_tables(context(), [table()]) -> ok.
-prepare_tables(Context, Tables) ->
-    ok = foreach_table(Context, fun recreate_table/2, Tables).
-
-%% @private
-recreate_table(Context, Name) ->
-    Keyspace = wocky_db:keyspace_name(Context),
-    ok = ?schema:create_table(Keyspace, Name),
-    ok.
-
 %% @private
 foreach_table(Context, Fun, Tables) ->
     lists:foreach(fun (Table) -> ok = Fun(Context, Table) end, Tables).
@@ -146,7 +134,7 @@ foreach_table(Context, Fun, Tables) ->
 %% @doc Truncate the specified tables.
 -spec clear_tables(context(), [table()]) -> ok.
 clear_tables(Context, Tables) ->
-    foreach_table(Context, fun wocky_db:truncate/2, Tables).
+    foreach_table(Context, fun truncate/2, Tables).
 
 %% @doc Truncate the tables related to user data.
 -spec clear_user_tables(context()) -> ok.

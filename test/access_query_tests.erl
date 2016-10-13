@@ -23,7 +23,6 @@ access_query_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db:prepare_tables(shared, [bot]),
     {ok, _} = wocky_db_seed:seed_table(shared, bot),
     setup_errors(),
     ok.

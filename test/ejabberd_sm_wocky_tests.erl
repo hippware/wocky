@@ -30,7 +30,6 @@ ejabberd_sm_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [session]),
     ok.
 
 after_all(_) ->

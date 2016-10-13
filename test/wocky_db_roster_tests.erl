@@ -39,7 +39,6 @@ mod_roster_wocky_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db:prepare_tables(shared, [user, roster]),
     ok.
 
 after_all(_) ->
@@ -49,7 +48,6 @@ before_each() ->
     wocky_db_seed:seed_tables(shared, [user, roster]).
 
 after_each(_) ->
-    ok = wocky_db:clear_tables(shared, [user, roster]),
     ok.
 
 make_jid(U) ->

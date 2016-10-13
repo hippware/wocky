@@ -34,7 +34,6 @@ mod_privacy_wocky_test_() -> {
 privacy_tables() -> [privacy, privacy_item].
 
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, privacy_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, privacy_tables()),
     ok.
 

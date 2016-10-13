@@ -43,9 +43,7 @@ group_chat_tables() -> [group_chat].
 shared_group_chat_tables() -> [user].
 
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, group_chat_tables()),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, group_chat_tables()),
-    ok = wocky_db:prepare_tables(shared, shared_group_chat_tables()),
     ok = wocky_db_seed:seed_tables(shared, shared_group_chat_tables()),
     ok.
 

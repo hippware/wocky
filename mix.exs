@@ -176,7 +176,8 @@ defmodule Wocky.Mixfile do
   defp load(_) do
     System.put_env("WOCKY_MINIMAL", "1")
     Mix.Task.run "app.start"
-    Schemata.Schema.load_schema
+    Schemata.Schema.create_keyspace(:wocky_db.shared_keyspace)
+    Schemata.Schema.create_keyspace(:wocky_db.local_keyspace)
   end
 
   defp elvis_config do
