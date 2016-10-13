@@ -22,13 +22,17 @@
 filter_with_rsm(Items, RSM = #rsm_in{max = undefined}) ->
     filter_with_rsm(Items, RSM#rsm_in{max = max_results()});
 
+%% jlib:rsm_decode helpfully sets the id to <<>> rather than `undefined' if
+%% it's not present but `before' or `after' is.
+filter_with_rsm(Items, RSM = #rsm_in{id = <<>>}) ->
+    filter_with_rsm(Items, RSM#rsm_in{id = undefined});
+
 filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
                                direction = before, max = C}) ->
     {Before, Result} = safesplit(length(Items) - C, Items),
     get_result_list(Items, Result, length(Before));
 
-filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined,
-                               max = C}) ->
+filter_with_rsm(Items, #rsm_in{id = undefined, index = undefined, max = C}) ->
     {Result, _After} = safesplit(C, Items),
     get_result_list(Items, Result, 0);
 

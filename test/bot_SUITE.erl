@@ -261,24 +261,29 @@ retrieve_for_user(Config) ->
                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
         check_returned_bots(Stanza, IDs, ?CREATED_BOTS),
 
-        %% Bob can only see the subset of bots set to be visible by friends
         Stanza2 = expect_iq_success(
+                   retrieve_stanza(?ALICE_B_JID,
+                                   #rsm_in{direction = before}), Alice),
+        check_returned_bots(Stanza2, IDs, ?CREATED_BOTS),
+
+        %% Bob can only see the subset of bots set to be visible by friends
+        Stanza3 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
-        check_returned_bots(Stanza2, FriendsBots, ?CREATED_BOTS div 2),
+        check_returned_bots(Stanza3, FriendsBots, ?CREATED_BOTS div 2),
 
         %% Tim cannot see any of Alice's bots since he is neither
         %% the owner nor a friend
-        Stanza3 = expect_iq_success(
+        Stanza4 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
-        check_returned_bots(Stanza3, [], 0),
+        check_returned_bots(Stanza4, [], 0),
 
         %% Test some basic RSM functionality
         %% Bob can only see the subset of bots set to be visible by friends
-        Stanza4 = expect_iq_success(
+        Stanza5 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID,
                                     #rsm_in{index = 3, max = 2}), Bob),
         ExpectedBots = lists:sublist(FriendsBots, 4, 2),
-        check_returned_bots(Stanza4, ExpectedBots, 2)
+        check_returned_bots(Stanza5, ExpectedBots, 2)
       end).
 
 update_affiliations(Config) ->
@@ -615,6 +620,8 @@ get_items(Config) ->
                   3, 4),
         get_items(Bob, #rsm_in{max = 3, direction = aft, id = item_id(48)},
                   49, min(?CREATED_ITEMS, 51)),
+        get_items(Bob, #rsm_in{max = 3, direction = before},
+                  ?CREATED_ITEMS-2, ?CREATED_ITEMS),
 
         % Carol can't because she's not
         expect_iq_error(
