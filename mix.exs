@@ -11,10 +11,11 @@ defmodule Wocky.Mixfile do
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [espec:   :test,
-                         eunit:   :test,
-                         ct:      :test,
-                         release: :prod],
+     preferred_cli_env: [espec:     :test,
+                         eunit:     :test,
+                         ct:        :test,
+                         test_load: :test,
+                         release:   :prod],
      dialyzer: [
        plt_apps: [
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
@@ -154,7 +155,9 @@ defmodule Wocky.Mixfile do
       deps: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: "elvis",
       migrate: &migrate/1,
-      rollback: &rollback/1
+      rollback: &rollback/1,
+      test_load: &load/1,
+      load: &load/1
     ]
   end
 
@@ -168,6 +171,12 @@ defmodule Wocky.Mixfile do
     System.put_env("WOCKY_MINIMAL", "1")
     Mix.Task.run "app.start"
     Schemata.Migrator.migrate(:down, 1)
+  end
+
+  defp load(_) do
+    System.put_env("WOCKY_MINIMAL", "1")
+    Mix.Task.run "app.start"
+    Schemata.Schema.load_schema
   end
 
   defp elvis_config do
