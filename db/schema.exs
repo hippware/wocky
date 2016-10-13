@@ -361,13 +361,20 @@ defmodule Schemata.Schemas.Wocky do
 
     table :bot_item, [
       columns: [
-        id:               :text,
-        bot:              :timeuuid,
-        published:        :timestamp,
-        updated:          :timestamp,
-        stanza:           :text
+        id:               :text,      # Item ID
+        bot:              :timeuuid,  # Containing bot ID
+        published:        :timestamp, # Timestamp of initial publication
+        updated:          :timestamp, # Timestamp of last update
+        stanza:           :text,      # Item stanza (<entry> and all subels)
+        image:            :boolean    # True if stanza contains an <image> tag
       ],
       primary_key: [:bot, :id]
+    ]
+
+    view :bot_item_images, [
+      from: :bot_item,
+      columns: [:bot, :id, :image],
+      primary_key: [:bot, :image, :id]
     ]
   end
 end

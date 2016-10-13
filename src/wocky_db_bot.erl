@@ -19,11 +19,12 @@
          has_access/3,
          subscribe/4,
          unsubscribe/3,
-         publish_item/4,
+         publish_item/5,
          get_item/3,
          get_items/2,
          delete_item/3,
-         dissociate_user/2
+         dissociate_user/2,
+         image_items_count/2
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -168,8 +169,9 @@ unsubscribe(Server, ID, User) ->
                          #{bot => ID,
                            user => jid:to_binary(jid:to_bare(User))}).
 
--spec publish_item(wocky_db:server(), wocky_db:id(), binary(), binary()) -> ok.
-publish_item(Server, BotID, NoteID, Stanza) ->
+-spec publish_item(wocky_db:server(), wocky_db:id(), binary(),
+                   binary(), boolean()) -> ok.
+publish_item(Server, BotID, NoteID, Stanza, Image) ->
     Existing = wocky_db:select_one(Server, bot_item, id,
                                    #{id => NoteID, bot => BotID}),
     MaybePublished = case Existing of
@@ -179,7 +181,9 @@ publish_item(Server, BotID, NoteID, Stanza) ->
     Note = MaybePublished#{id => NoteID,
                            bot => BotID,
                            updated => now,
-                           stanza => Stanza},
+                           stanza => Stanza,
+                           image => Image
+                          },
     wocky_db:insert(Server, bot_item, Note).
 
 get_item(Server, BotID, NoteID) ->
@@ -200,6 +204,10 @@ dissociate_user(LUser, LServer) ->
     Friends = lists:filter(wocky_db_roster:is_friend(_), Roster),
     FriendJIDs = [jid:make(J) || #wocky_roster{contact_jid = J} <- Friends],
     lists:foreach(remove_owner(LServer, _, FriendJIDs), OwnedBots).
+
+-spec image_items_count(wocky_db:server(), wocky_db:id()) -> non_neg_integer().
+image_items_count(Server, BotID) ->
+    wocky_db:count(Server, bot_item_images, #{bot => BotID, image => true}).
 
 %%%===================================================================
 %%% Private helpers

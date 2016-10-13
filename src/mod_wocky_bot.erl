@@ -604,8 +604,12 @@ make_ret_elements(Map) ->
 
 meta_fields(Map = #{id := ID, server := Server}) ->
     Subscribers = wocky_db_bot:subscribers(Server, ID),
+    Followers = lists:filter(fun({_JID, Follow}) -> Follow end, Subscribers),
     Affiliates = wocky_db_bot:affiliations_from_map(Map),
-    [#field{name = <<"jid">>, type = jid, value = bot_jid(Server, ID)} |
+    ImageItems = wocky_db_bot:image_items_count(Server, ID),
+    [make_field(<<"jid">>, jid, bot_jid(Server, ID)),
+     make_field(<<"image_items">>, int, ImageItems) |
+     size_and_hash(<<"followers">>, Followers) ++
      size_and_hash(<<"affiliates">>, Affiliates) ++
      size_and_hash(<<"subscribers">>, Subscribers)].
 
@@ -614,10 +618,9 @@ bot_jid(Server, ID) ->
 
 size_and_hash(Name, not_found) -> size_and_hash(Name, []);
 size_and_hash(Name, List) ->
-    [#field{name = <<Name/binary, "+size">>, type = int,
-            value = length(List)},
-     #field{name = <<Name/binary, "+hash">>, type = string,
-            value = wocky_bot_util:list_hash(List)}
+    [make_field(<<Name/binary, "+size">>, int, length(List)),
+     make_field(<<Name/binary, "+hash">>, string,
+                wocky_bot_util:list_hash(List))
     ].
 
 map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
@@ -639,8 +642,10 @@ to_field(Key, Val, Acc) ->
 
 make_field(Name, Type, Val) when Type =:= string orelse Type =:= int ->
     #field{name = Name, type = Type, value = Val};
-make_field(Name, jid, Val) ->
-    #field{name = Name, type = jid, value = safe_jid_from_binary(Val)}.
+make_field(Name, jid, Val) when is_binary(Val) ->
+    #field{name = Name, type = jid, value = safe_jid_from_binary(Val)};
+make_field(Name, jid, Val = #jid{}) ->
+    #field{name = Name, type = jid, value = Val}.
 
 encode_field(#field{name = N, type = string, value = V}, Acc) ->
     [field_element(N, string, V) | Acc];

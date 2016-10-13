@@ -52,7 +52,8 @@ all() ->
      publish_item,
      retract_item,
      edit_item,
-     get_items
+     get_items,
+     publish_image_item
     ].
 
 suite() ->
@@ -348,12 +349,12 @@ friends_only_permissions(Config) ->
         escalus:assert_many([is_roster_set, is_iq_result],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        escalus:assert(is_presence_with_type, [<<"unavailable">>],
-                       escalus:wait_for_stanza(Bob)),
-
         % Bob was an affiliate at this point, so gets a notification that
         % he has been de-affiliated
-        expect_affiliation_update(Bob, none),
+        escalus:assert_many([is_pres_unavailable(),
+                             is_affiliation_update(
+                               escalus_client:short_jid(Bob), none, _)],
+                            escalus:wait_for_stanzas(Bob, 2)),
 
         % Bob can't get the bot because he's no longer a contact
         expect_iq_error(retrieve_stanza(), Bob),
@@ -389,24 +390,19 @@ roster_change_triggers(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
                            {karen, 1}, {robert, 1}],
       fun(Alice, Bob, Carol, Karen, Robert) ->
-        IsPresUnavailable =
-        fun(S) ->
-                escalus_pred:is_presence_with_type(<<"unavailable">>, S)
-        end,
-
         % Robert is nothin', so gets no bot notifications
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Robert)),
         escalus:assert_many([is_roster_set, is_iq_result],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        escalus:assert(IsPresUnavailable, escalus:wait_for_stanza(Robert)),
+        escalus:assert(is_pres_unavailable(), escalus:wait_for_stanza(Robert)),
 
         % Bob is an affiliate but not subscriber
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
         escalus:assert_many([is_roster_set, is_iq_result],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        escalus:assert_many([IsPresUnavailable,
+        escalus:assert_many([is_pres_unavailable(),
                              is_affiliation_update(
                                escalus_client:short_jid(Bob), none, _)],
                             escalus:wait_for_stanzas(Bob, 2)),
@@ -416,7 +412,7 @@ roster_change_triggers(Config) ->
         escalus:assert_many([is_roster_set, is_iq_result],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        escalus:assert_many([IsPresUnavailable,
+        escalus:assert_many([is_pres_unavailable(),
                              is_bot_unsubscribe(false, _)],
                             escalus:wait_for_stanzas(Carol, 2)),
 
@@ -433,7 +429,7 @@ roster_change_triggers(Config) ->
         escalus:assert_many([is_roster_set, is_iq_result],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        escalus:assert_many([IsPresUnavailable,
+        escalus:assert_many([is_pres_unavailable(),
                              is_affiliation_update(
                                escalus_client:short_jid(Karen), none, _),
                              is_bot_unsubscribe(true, _)],
@@ -551,7 +547,6 @@ publish_item(Config) ->
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
 
-
 retract_item(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
@@ -630,6 +625,29 @@ get_items(Config) ->
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
 
+publish_image_item(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        NoteID = <<"new-item1">>,
+        Content = <<"Some content">>,
+        Image = <<"MyImage.jpg">>,
+        Title = <<"title ZZZ">>,
+        % Alice publishes an item to her bot
+        expect_iq_success(
+          publish_item_stanza(?BOT, NoteID, Title, Content, Image),
+          Alice),
+
+        Expected =
+        lists:keyreplace("image_items", 1, expected_retrieve_fields(),
+                         {"image_items", int, 2}),
+        Stanza = expect_iq_success(retrieve_stanza(), Alice),
+        check_returned_bot(Stanza, Expected),
+
+        test_helper:ensure_all_clean([Alice])
+      end).
+
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -696,6 +714,9 @@ expected_create_fields() ->
      {"visibility", int, ?WOCKY_BOT_VIS_OWNER},
      {"alerts", int, ?WOCKY_BOT_ALERT_DISABLED},
      {"jid", jid, any},
+     {"image_items", int, 0},
+     {"followers+size", int, 0},
+     {"followers+hash", string, any},
      {"affiliates+size", int, 1}, % Owner is always an affiliate
      {"affiliates+hash", string, any},
      {"subscribers+size", int, 0},
@@ -715,6 +736,9 @@ expected_retrieve_fields() ->
      {"visibility", int, ?WOCKY_BOT_VIS_WHITELIST},
      {"alerts", int, ?WOCKY_BOT_ALERT_DISABLED},
      {"jid", jid, bot_jid(?BOT)},
+     {"image_items", int, 1},
+     {"followers+size", int, 1},
+     {"followers+hash", string, any},
      {"affiliates+size", int, 2}, % Owner is always an affiliate
      {"affiliates+hash", string, any},
      {"subscribers+size", int, 2},
@@ -984,31 +1008,40 @@ delete_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"delete">>)).
 
 publish_item_stanza(BotID, NoteID, Title, Content) ->
-    test_helper:iq_set(?NS_BOT, publish_el(BotID, NoteID, Title, Content)).
+    publish_item_stanza(BotID, NoteID, Title, Content, undefined).
+publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
+    test_helper:iq_set(?NS_BOT,
+                       publish_el(BotID, NoteID, Title, Content, Image)).
 
-publish_el(BotID, NoteID, Title, Content) ->
+publish_el(BotID, NoteID, Title, Content, Image) ->
     #xmlel{name = <<"publish">>,
            attrs = [{<<"node">>, bot_node(BotID)}],
-           children = item_el(NoteID, Title, Content)}.
+           children = item_el(NoteID, Title, Content, Image)}.
 
 item_el(NoteID) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, NoteID}]}.
-item_el(NoteID, Title, Content) ->
+item_el(NoteID, Title, Content, Image) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, NoteID}],
-           children = entry_el(Title, Content)}.
+           children = entry_el(Title, Content, Image)}.
 
-entry_el(Title, Content) ->
+entry_el(Title, Content, Image) ->
     #xmlel{name = <<"entry">>,
            attrs = [{<<"xmlns">>, ?NS_ATOM}],
-           children = item_fields(Title, Content)}.
+           children = item_fields(Title, Content, Image)}.
 
-item_fields(Title, Content) ->
+item_fields(Title, Content, Image) ->
     [#xmlel{name = <<"title">>,
             children = [#xmlcdata{content = Title}]},
      #xmlel{name = <<"content">>,
-            children = [#xmlcdata{content = Content}]}].
+            children = [#xmlcdata{content = Content}]}] ++
+    maybe_image_el(Image).
+
+maybe_image_el(undefined) -> [];
+maybe_image_el(Image) ->
+    [#xmlel{name = <<"image">>,
+            children = [#xmlcdata{content = Image}]}].
 
 retract_item_stanza(BotID, NoteID) ->
     test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
@@ -1249,3 +1282,8 @@ distribute([H], A, B) ->
     {[H|A], B};
 distribute([H,H2|T], A, B) ->
     distribute(T, [H|A], [H2|B]).
+
+is_pres_unavailable() ->
+    fun(S) ->
+            escalus_pred:is_presence_with_type(<<"unavailable">>, S)
+    end.

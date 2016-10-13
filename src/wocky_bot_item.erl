@@ -92,8 +92,9 @@ retract_item(ItemID) ->
 %%%===================================================================
 
 publish_item(From = #jid{lserver = LServer}, BotID, ItemID, Entry) ->
+    Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
-    wocky_db_bot:publish_item(LServer, BotID, ItemID, EntryBin),
+    wocky_db_bot:publish_item(LServer, BotID, ItemID, EntryBin, Image),
     Item = wocky_db_bot:get_item(LServer, BotID, ItemID),
     Message = notification_message(BotID, make_item_element(Item)),
     notify_subscribers(From, BotID, Message).
@@ -102,6 +103,12 @@ notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
     Subscribers = wocky_db_bot:subscribers(LServer, BotID),
     {SubscriberJIDs, _FollowStatuses} = lists:unzip(Subscribers),
     lists:foreach(notify_subscriber(From, _, Message), SubscriberJIDs).
+
+has_image(Item) ->
+    case xml:get_subtag(Item, <<"image">>) of
+        false -> false;
+        #xmlel{} -> true
+    end.
 
 %%%===================================================================
 %%% Helpers - common

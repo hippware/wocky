@@ -12,7 +12,8 @@
          insert_new_name/2, owner/2, affiliations/2,
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
-         get_item/3, publish_item/4, delete_item/3, dissociate_user/2
+         get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
+         image_items_count/2
         ]).
 
 wocky_db_bot_test_() -> {
@@ -29,7 +30,8 @@ wocky_db_bot_test_() -> {
         test_affiliations(),
         test_affiliations_from_map(),
         test_followers(),
-        test_subscribers()
+        test_subscribers(),
+        test_image_items_count()
       ]},
 
       {inorder, [
@@ -208,6 +210,17 @@ test_subscribers() ->
       ]}
     ]}.
 
+test_image_items_count() ->
+    { "image_items_count", [
+      { "returns the count of items on a bot with a <image> tag", [
+        ?_assertEqual(1, image_items_count(?LOCAL_CONTEXT, ?BOT))
+      ]},
+      { "returns 0 for non existant bot", [
+        ?_assertEqual(0, image_items_count(?LOCAL_CONTEXT,
+                                           wocky_db:create_id()))
+      ]}
+    ]}.
+
 test_get_item() ->
     { "get_item", [
       { "gets all fields on the item", [
@@ -226,13 +239,14 @@ test_publish_item() ->
     Content = <<"New Content">>,
     { "publish_item", [
       { "publishes a new item when one doesn't exist", [
-        ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID, Content)),
+        ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
+                                       Content, false)),
         ?_assertMatch(#{id := ID, stanza := Content},
                       get_item(?LOCAL_CONTEXT, ?BOT, ID))
       ]},
       { "updates an existing item", [
         ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
-                                       <<"Updated content">>)),
+                                       <<"Updated content">>, false)),
         ?_assertMatch(#{id := ID, stanza := <<"Updated content">>},
                       get_item(?LOCAL_CONTEXT, ?BOT, ID))
       ]}
@@ -291,7 +305,6 @@ test_has_access() ->
                                             ?BOB_JID))
       ]}
     ]}.
-
 
 test_subscribe() ->
     { "subscribe", [
