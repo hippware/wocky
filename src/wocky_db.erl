@@ -69,6 +69,8 @@
               clear_user_tables/1,
               local_keyspace/0,
               shared_keyspace/0,
+              keyspace_name/1,
+              truncate/2,
               select_column/4
              ]).
 
