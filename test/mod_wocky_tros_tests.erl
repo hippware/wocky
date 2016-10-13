@@ -61,8 +61,6 @@ before_all(Backend) ->
     meck:expect(mod_wocky_tros_s3, get_metadata,
                 fun(A, B) -> mod_wocky_tros_francus:get_metadata(A, B) end),
 
-    wocky_db:prepare_tables(?LOCAL_CONTEXT, [media, tros_request,
-                                                  group_chat]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
                                                group_chat]).
 

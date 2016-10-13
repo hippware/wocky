@@ -32,17 +32,13 @@ before_all() ->
                 fun(global, mod_wocky_mam, message_archive_ttl, infinity) ->
                         infinity
                 end),
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [message_archive,
-                                                       conversation]),
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [conversation, message_archive]),
     ok.
 
 after_all(_) ->
     meck:unload().
 
 before_each() ->
-    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [message_archive,
-                                                     conversation
-                                                    ]),
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, conversation),
     {ok, Rows} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, message_archive),
     Rows.

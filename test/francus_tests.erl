@@ -41,7 +41,7 @@ test_sizes() ->
     ].
 
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [media, media_data]).
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]).
 
 after_all(_) ->
     ok.

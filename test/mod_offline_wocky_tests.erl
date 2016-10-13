@@ -32,7 +32,6 @@ sanity_test_() -> [
 ].
 
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [offline_msg]),
     ok.
 
 after_all(_) ->

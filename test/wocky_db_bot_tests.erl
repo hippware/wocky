@@ -58,8 +58,6 @@ local_tables() -> [
                   ].
 
 before_all() ->
-    ok = wocky_db:prepare_tables(shared, [roster, bot]),
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, local_tables()),
     ok = wocky_db_seed:seed_tables(shared, [roster, bot]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()).
 

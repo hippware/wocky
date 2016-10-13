@@ -96,13 +96,8 @@ before_all(PasswordFormat) ->
                      meck:passthrough([X, Y])
                 end),
 
-    ok = wocky_db:prepare_tables(shared, [user,
-                                               phone_number_to_user,
-                                               handle_to_user
-                                              ]),
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [auth_token,
-                                                       location
-                                                      ]),
+    ok = wocky_db:clear_tables(shared, [phone_number_to_user]),
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [location]),
     ok.
 
 after_all(_) ->
@@ -110,13 +105,12 @@ after_all(_) ->
     ok.
 
 before_each() ->
+    ok = wocky_db:clear_tables(shared, [user, handle_to_user]),
     ok = wocky_db_user:register_user(?USER, ?SERVER, encode_password(?PASS)),
     {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, auth_token),
     ok.
 
 after_each(_) ->
-    ok = wocky_db:clear_tables(shared, [user, handle_to_user]),
-    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [auth_token]),
     ok.
 
 

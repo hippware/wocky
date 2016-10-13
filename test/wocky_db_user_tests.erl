@@ -45,13 +45,7 @@ wocky_db_user_test_() ->
     ]}.
 
 before_all() ->
-    ok = wocky_db:prepare_tables(shared, [user,
-                                          handle_to_user,
-                                          phone_number_to_user]),
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [auth_token,
-                                                  media,
-                                                  media_data,
-                                                  location]),
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [auth_token, location]),
     ok.
 
 after_all(_) ->
@@ -64,9 +58,6 @@ before_each() ->
     ok.
 
 after_each(_) ->
-    ok = wocky_db:clear_tables(shared, [user,
-                                             handle_to_user,
-                                             phone_number_to_user]),
     ok.
 
 before_avatar() ->
@@ -74,7 +65,7 @@ before_avatar() ->
     ok.
 
 after_avatar(_) ->
-    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]).
+    ok.
 
 test_does_user_exist() ->
   { "does_user_exist", [

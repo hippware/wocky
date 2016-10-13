@@ -7,23 +7,15 @@ defmodule Wocky.Mixfile do
      elixir: "~> 1.3",
      # build_embedded: Mix.env == :prod,
      # start_permanent: Mix.env == :prod,
-     erlc_options: [
-       :debug_info,
-       :warnings_as_errors,
-       # :warn_export_all,
-       :warn_export_vars,
-       :warn_obsolete_guard,
-       :warn_unused_import,
-       {:warn_format, 1},
-       {:parse_transform, :lager_transform}
-     ],
+     erlc_options: erlc_options(Mix.env),
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [espec:   :test,
-                         eunit:   :test,
-                         ct:      :test,
-                         release: :prod],
+     preferred_cli_env: [espec:        :test,
+                         eunit:        :test,
+                         ct:           :test,
+                         test_db_load: :test,
+                         release:      :prod],
      dialyzer: [
        plt_apps: [
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
@@ -45,6 +37,20 @@ defmodule Wocky.Mixfile do
   defp version do
     {version, _} = System.cmd "bash", ["./version"]
     version
+  end
+
+  defp erlc_options(:test), do: [{:d, :TEST} | erlc_options(:dev)]
+  defp erlc_options(_) do
+    [
+      :debug_info,
+      :warnings_as_errors,
+      # :warn_export_all,
+      :warn_export_vars,
+      :warn_obsolete_guard,
+      :warn_unused_import,
+      {:warn_format, 1},
+      {:parse_transform, :lager_transform}
+    ]
   end
 
   def application do
@@ -82,7 +88,7 @@ defmodule Wocky.Mixfile do
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
       {:algolia,       "~> 0.4.0"},
-      {:ex_aws,        github: "hippware/ex_aws",         branch: "working"},
+      {:ex_aws,        "~> 1.0.0-rc.3"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
@@ -129,11 +135,11 @@ defmodule Wocky.Mixfile do
       ## testing dependencies (not included in release)
       {:meck,          "~> 0.8.4", override: true},
       {:espec,         "~> 1.0", only: :test},
-      {:dialyxir,      "~> 0.3.5", only: :dev},
       {:dogma,         "~> 0.1.7", only: :dev},
       {:credo,         "~> 0.4.11", only: :dev},
       {:ex_guard,      "~> 1.1", only: :dev},
       {:reprise,       "~> 0.5.0", only: :dev},
+      {:dialyxir,      github: "jeremyjh/dialyxir",       branch: "develop", only: :dev},
       {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
       {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
@@ -149,7 +155,9 @@ defmodule Wocky.Mixfile do
       deps: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: "elvis",
       migrate: &migrate/1,
-      rollback: &rollback/1
+      rollback: &rollback/1,
+      test_db_load: &db_load/1,
+      dev_db_load: &db_load/1
     ]
   end
 
@@ -163,6 +171,13 @@ defmodule Wocky.Mixfile do
     System.put_env("WOCKY_MINIMAL", "1")
     Mix.Task.run "app.start"
     Schemata.Migrator.migrate(:down, 1)
+  end
+
+  defp db_load(_) do
+    System.put_env("WOCKY_MINIMAL", "1")
+    Mix.Task.run "app.start"
+    Schemata.Schema.create_keyspace(:wocky_db.shared_keyspace)
+    Schemata.Schema.create_keyspace(:wocky_db.local_keyspace)
   end
 
   defp elvis_config do

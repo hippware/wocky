@@ -17,8 +17,6 @@ tros_permissions_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db:prepare_tables(shared, [roster, user]),
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [group_chat]),
     ok = wocky_db_seed:seed_tables(shared, [roster, user]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [group_chat]),
     ok.

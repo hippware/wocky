@@ -21,7 +21,7 @@ mod_wocky_mam_test_() ->
  }.
 
 before_all() ->
-    ok = wocky_db:prepare_tables(?LOCAL_CONTEXT, [location]),
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [location]),
     ok.
 
 after_all(_) ->
