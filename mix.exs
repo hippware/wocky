@@ -7,16 +7,7 @@ defmodule Wocky.Mixfile do
      elixir: "~> 1.3",
      # build_embedded: Mix.env == :prod,
      # start_permanent: Mix.env == :prod,
-     erlc_options: [
-       :debug_info,
-       :warnings_as_errors,
-       # :warn_export_all,
-       :warn_export_vars,
-       :warn_obsolete_guard,
-       :warn_unused_import,
-       {:warn_format, 1},
-       {:parse_transform, :lager_transform}
-     ],
+     erlc_options: erlc_options(Mix.env),
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
@@ -45,6 +36,20 @@ defmodule Wocky.Mixfile do
   defp version do
     {version, _} = System.cmd "bash", ["./version"]
     version
+  end
+
+  defp erlc_options(:test), do: [{:d, :TEST} | erlc_options(:dev)]
+  defp erlc_options(_) do
+    [
+      :debug_info,
+      :warnings_as_errors,
+      # :warn_export_all,
+      :warn_export_vars,
+      :warn_obsolete_guard,
+      :warn_unused_import,
+      {:warn_format, 1},
+      {:parse_transform, :lager_transform}
+    ]
   end
 
   def application do
