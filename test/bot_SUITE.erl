@@ -19,6 +19,7 @@
 -define(CREATE_TITLE,       <<"Created Bot">>).
 -define(CREATE_SHORTNAME,   <<"NewBot">>).
 -define(CREATE_DESCRIPTION, <<"Test bot for creation operation">>).
+-define(CREATE_ADDRESS,     <<"5 Adelaide Avenue, Deakin, ACT">>).
 -define(CREATE_LOCATION,    {2.5, 1.6}).
 -define(CREATE_RADIUS,      10).
 -define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
@@ -663,6 +664,7 @@ default_fields() ->
     [{"title",         "string", ?CREATE_TITLE},
      {"shortname",     "string", ?CREATE_SHORTNAME},
      {"description",   "string", ?CREATE_DESCRIPTION},
+     {"address",       "string", ?CREATE_ADDRESS},
      {"location",      "geoloc", ?CREATE_LOCATION},
      {"radius",        "int",    ?CREATE_RADIUS},
      {"image",         "string", ?CREATE_IMAGE},
@@ -701,48 +703,50 @@ create_field(Name, Type, Child) ->
            children = [Child]}.
 
 expected_create_fields() ->
-    [{"id", string, any},
-     {"server", string, ?LOCAL_CONTEXT},
-     {"title", string, ?CREATE_TITLE},
-     {"shortname", string, ?CREATE_SHORTNAME},
-     {"owner", jid, ?ALICE_B_JID},
-     {"description", string, ?CREATE_DESCRIPTION},
-     {"image", string, ?CREATE_IMAGE},
-     {"type", string, ?CREATE_TYPE},
-     {"location", geoloc, ?CREATE_LOCATION},
-     {"radius", int, ?CREATE_RADIUS},
-     {"visibility", int, ?WOCKY_BOT_VIS_OWNER},
-     {"alerts", int, ?WOCKY_BOT_ALERT_DISABLED},
-     {"jid", jid, any},
-     {"image_items", int, 0},
-     {"followers+size", int, 0},
-     {"followers+hash", string, any},
-     {"affiliates+size", int, 1}, % Owner is always an affiliate
-     {"affiliates+hash", string, any},
-     {"subscribers+size", int, 0},
-     {"subscribers+hash", string, any}].
+    [{"id",                 string, any},
+     {"server",             string, ?LOCAL_CONTEXT},
+     {"title",              string, ?CREATE_TITLE},
+     {"shortname",          string, ?CREATE_SHORTNAME},
+     {"owner",              jid,    ?ALICE_B_JID},
+     {"description",        string, ?CREATE_DESCRIPTION},
+     {"address",            string, ?CREATE_ADDRESS},
+     {"image",              string, ?CREATE_IMAGE},
+     {"type",               string, ?CREATE_TYPE},
+     {"location",           geoloc, ?CREATE_LOCATION},
+     {"radius",             int,    ?CREATE_RADIUS},
+     {"visibility",         int,    ?WOCKY_BOT_VIS_OWNER},
+     {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
+     {"jid",                jid,    any},
+     {"image_items",        int,    0},
+     {"followers+size",     int,    0},
+     {"followers+hash",     string, any},
+     {"affiliates+size",    int,    1}, % Owner is always an affiliate
+     {"affiliates+hash",    string, any},
+     {"subscribers+size",   int,    0},
+     {"subscribers+hash",   string, any}].
 
 expected_retrieve_fields() ->
-    [{"id", string, ?BOT},
-     {"server", string, ?LOCAL_CONTEXT},
-     {"title", string, ?BOT_TITLE},
-     {"shortname", string, ?BOT_NAME},
-     {"owner", jid, ?ALICE_B_JID},
-     {"description", string, ?BOT_DESC},
-     {"image", string, ?AVATAR_FILE},
-     {"type", string, ?BOT_TYPE},
-     {"location", geoloc, {?BOT_LAT, ?BOT_LON}},
-     {"radius", int, ?BOT_RADIUS},
-     {"visibility", int, ?WOCKY_BOT_VIS_WHITELIST},
-     {"alerts", int, ?WOCKY_BOT_ALERT_DISABLED},
-     {"jid", jid, bot_jid(?BOT)},
-     {"image_items", int, 1},
-     {"followers+size", int, 1},
-     {"followers+hash", string, any},
-     {"affiliates+size", int, 2}, % Owner is always an affiliate
-     {"affiliates+hash", string, any},
-     {"subscribers+size", int, 2},
-     {"subscribers+hash", string, any}].
+    [{"id",                 string, ?BOT},
+     {"server",             string, ?LOCAL_CONTEXT},
+     {"title",              string, ?BOT_TITLE},
+     {"shortname",          string, ?BOT_NAME},
+     {"owner",              jid,    ?ALICE_B_JID},
+     {"description",        string, ?BOT_DESC},
+     {"address",            string, ?BOT_ADDRESS},
+     {"image",              string, ?AVATAR_FILE},
+     {"type",               string, ?BOT_TYPE},
+     {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
+     {"radius",             int,    ?BOT_RADIUS},
+     {"visibility",         int,    ?WOCKY_BOT_VIS_WHITELIST},
+     {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
+     {"jid",                jid,    bot_jid(?BOT)},
+     {"image_items",        int,    1},
+     {"followers+size",     int,    1},
+     {"followers+hash",     string, any},
+     {"affiliates+size",    int,    2}, % Owner is always an affiliate
+     {"affiliates+hash",    string, any},
+     {"subscribers+size",   int,    2},
+     {"subscribers+hash",   string, any}].
 
 check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
                    ExpectedFields) ->

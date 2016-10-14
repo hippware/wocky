@@ -92,6 +92,7 @@
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
 -define(BOT_DESC, <<"A test bot owned by Alice">>).
+-define(BOT_ADDRESS, <<"260 Tinakori Road, Thorndon, Wellington">>).
 -define(BOT_TYPE, <<"LucyLiuBot">>).
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
