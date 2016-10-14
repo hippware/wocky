@@ -19,6 +19,14 @@
           order_by = [] :: atom() | [{atom(), asc | desc}]
          }).
 
+-record(wocky_rsm_in, {max             :: non_neg_integer() | undefined | error,
+                       direction       :: before | aft | undefined,
+                       id              :: binary() | integer() | undefined,
+                       index           :: non_neg_integer() | undefined | error,
+                       reverse = false :: boolean()
+                      }).
+
+
 -define(NS_ERRORS,        <<"hippware.com/hxep/errors">>).
 -define(NS_TOKEN,         <<"hippware.com/hxep/token">>).
 -define(NS_PHONE,         <<"hippware.com/hxep/phone">>).

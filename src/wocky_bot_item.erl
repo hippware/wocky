@@ -24,7 +24,7 @@ handle_query(From, #jid{lserver = LServer}, IQ, Attrs) ->
     do([error_m ||
         BotID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_access(LServer, BotID, From),
-        RSMIn <- wocky_bot_util:get_rsm(IQ),
+        RSMIn <- rsm_util:get_rsm(IQ),
         {Items, RSMOut} <- get_items(LServer, BotID, RSMIn),
         {ok, make_results(Items, RSMOut)}
        ]).

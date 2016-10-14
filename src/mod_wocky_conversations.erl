@@ -12,7 +12,7 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
--compile({parse_transform, do}).
+-compile({parse_transform, cut}).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -56,7 +56,7 @@ handle_iq_type(_From, _To, _IQ) ->
 %%%===================================================================
 
 get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
-    RSM = jlib:rsm_decode(SubEl),
+    RSM = rsm_util:rsm_decode(SubEl),
     RSM2 = id_to_int(cap_max(RSM)),
     {Conversations, RSMOut} = get_conversations(From, RSM2),
     create_response(IQ, Conversations, RSMOut).
@@ -83,15 +83,15 @@ sort_by_id(#{id := ID1}, #{id := ID2}) ->
     ID1 > ID2.
 
 cap_max(none) ->
-    #rsm_in{max = max_results()};
-cap_max(RSM = #rsm_in{max = Max}) ->
-    RSM#rsm_in{max = min(Max, max_results())}.
+    #wocky_rsm_in{max = max_results()};
+cap_max(RSM = #wocky_rsm_in{max = Max}) ->
+    RSM#wocky_rsm_in{max = min(Max, max_results())}.
 
-id_to_int(RSM = #rsm_in{id = ID})
+id_to_int(RSM = #wocky_rsm_in{id = ID})
   when ID =:= undefined orelse ID =:= <<>> ->
-    RSM#rsm_in{id = undefined};
-id_to_int(RSM = #rsm_in{id = ID}) ->
-    RSM#rsm_in{id = wocky_util:default_bin_to_integer(ID, 0)}.
+    RSM#wocky_rsm_in{id = undefined};
+id_to_int(RSM = #wocky_rsm_in{id = ID}) ->
+    RSM#wocky_rsm_in{id = wocky_util:default_bin_to_integer(ID, 0)}.
 
 max_results() ->
     ejabberd_config:get_local_option(conv_max).
