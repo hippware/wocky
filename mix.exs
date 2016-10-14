@@ -22,7 +22,8 @@ defmodule Wocky.Mixfile do
          :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
-         :cqerl, :erlang_murmurhash, :timex
+         :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
+         :algolia, :logger, :schemata
        ],
        plt_add_deps: true,
        flags: [
