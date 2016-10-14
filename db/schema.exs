@@ -98,6 +98,8 @@ defmodule Schemata.Schemas.Wocky do
         image:            :text,     # Bot graphical image
         type:             :text,     # Bot type (freeform string from
                                      #           server's perspective)
+        address:          :text,     # Free-form string field describing bot's
+                                     # location
         lat:              :double,   # Latitude
         lon:              :double,   # Longditude
         radius:           :int,      # Radius of bot circle
