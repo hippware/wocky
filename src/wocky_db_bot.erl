@@ -3,7 +3,8 @@
 -compile({parse_transform, cut}).
 
 -export([get/2,
-         get_by_user/2,
+         owned_bots/2,
+         followed_bots/2,
          get_id_by_name/2,
          exists/2,
          insert/2,
@@ -48,9 +49,15 @@
 get(_Server, ID) ->
     wocky_db:select_row(shared, bot, all, #{id => ID}).
 
--spec get_by_user(wocky_db:server(), binary()) -> [binary()].
-get_by_user(_Server, UserJID) ->
+-spec owned_bots(wocky_db:server(), binary()) -> [binary()].
+owned_bots(_Server, UserJID) ->
     wocky_db:select_column(shared, user_bot, id, #{owner => UserJID}).
+
+-spec followed_bots(wocky_db:server(), binary()) -> [binary()].
+followed_bots(Server, UserJID) ->
+    Result = wocky_db:select(Server, subscribed_bots,
+                             [bot, follow], #{user => UserJID}),
+    [Bot || #{bot := Bot, follow := true} <- Result].
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -210,8 +217,8 @@ delete_item(Server, BotID, NoteID) ->
 
 -spec dissociate_user(ejabberd:luser(), wocky_db:server()) -> ok.
 dissociate_user(LUser, LServer) ->
-    OwnedBots = get_by_user(LServer,
-                            jid:to_binary(jid:make(LUser, LServer, <<>>))),
+    OwnedBots = owned_bots(LServer,
+                           jid:to_binary(jid:make(LUser, LServer, <<>>))),
     Roster = wocky_db_roster:get_roster(LUser, LServer),
     Friends = lists:filter(wocky_db_roster:is_friend(_), Roster),
     FriendJIDs = [jid:make(J) || #wocky_roster{contact_jid = J} <- Friends],

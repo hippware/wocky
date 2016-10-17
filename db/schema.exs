@@ -353,6 +353,12 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:bot, :user]
     ]
 
+    view :subscribed_bots, [
+      from: :bot_subscriber,
+      columns: :all,
+      primary_key: [:user, :bot]
+    ]
+
     table :bot_name, [ # Table for looking up bots by shortname (URL)
       columns: [
         shortname:    :text,

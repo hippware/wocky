@@ -45,6 +45,7 @@ all() ->
      delete,
      errors,
      retrieve_for_user,
+     get_followed,
      update_affiliations,
      friends_only_permissions,
      roster_change_triggers,
@@ -290,6 +291,25 @@ retrieve_for_user(Config) ->
                                     #rsm_in{index = 3, max = 2}), Bob),
         ExpectedBots = lists:sublist(FriendsBots, 4, 2),
         check_returned_bots(Stanza5, ExpectedBots, 2)
+      end).
+
+get_followed(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
+      fun(Alice, Bob, Carol, Karen) ->
+        % Alice is the owner (and therefore a follower) so should get the bot
+        Stanza = expect_iq_success(following_stanza(#rsm_in{}), Alice),
+        check_returned_bots(Stanza, [?BOT], 1),
+
+        % Karen is a follower so should get the bot
+        Stanza2 = expect_iq_success(following_stanza(#rsm_in{}), Karen),
+        check_returned_bots(Stanza2, [?BOT], 1),
+
+        Stanza3 = expect_iq_success(following_stanza(#rsm_in{}), Carol),
+        check_returned_bots(Stanza3, [], 0),
+
+        Stanza4 = expect_iq_success(following_stanza(#rsm_in{}), Bob),
+        check_returned_bots(Stanza4, [], 0)
       end).
 
 update_affiliations(Config) ->
@@ -882,6 +902,10 @@ retrieve_stanza() ->
 
 retrieve_stanza(BotID) ->
     test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
+
+following_stanza(RSM) ->
+    test_helper:iq_get(?NS_BOT, #xmlel{name = <<"following">>,
+                                       children = [rsm_elem(RSM)]}).
 
 node_el(ID, Name) -> node_el(ID, Name, []).
 node_el(ID, Name, Children) ->

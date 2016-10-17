@@ -86,12 +86,18 @@ handle_iq_type(From, To, #iq{type = set,
                             }) ->
     handle_delete(From, To, Attrs);
 
-% Retrieve
+% Retrieve owned bots
 handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"bot">>,
                                                   attrs = Attrs}
                                  }) ->
     handle_get(From, To, IQ, Attrs);
+
+% Retrieve followed bots
+handle_iq_type(From, To, IQ = #iq{type = get,
+                                  sub_el = #xmlel{name = <<"following">>}
+                                 }) ->
+    handle_following(From, To, IQ);
 
 % Update
 handle_iq_type(From, To, #iq{type = set,
@@ -199,7 +205,7 @@ delete_bot(Server, ID) ->
     ok.
 
 %%%===================================================================
-%%% Action - get
+%%% Actions - get/following
 %%%===================================================================
 
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
@@ -207,6 +213,15 @@ handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
         {ok, ID} -> get_bot_by_id(From, Server, ID);
         {error, _} -> get_bots_for_user(From, Server, IQ, Attrs)
     end.
+
+handle_following(From, #jid{lserver = Server}, IQ) ->
+    do([error_m ||
+        RSMIn <- wocky_bot_util:get_rsm(IQ),
+        BotIDs <- {ok, wocky_db_bot:followed_bots(Server,
+                                                  jid:to_binary(From))},
+        {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
+        {ok, users_bots_result(Bots, RSMOut)}
+       ]).
 
 get_bot_by_id(From, Server, ID) ->
     do([error_m ||
@@ -219,12 +234,12 @@ get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
         User <- wocky_xml:get_attr(<<"user">>, Attrs),
         RSMIn <- rsm_util:get_rsm(IQ),
-        {Bots, RSMOut} <- users_bots(Server, From, User, RSMIn),
+        BotIDs <- {ok, wocky_db_bot:owned_bots(Server, User)},
+        {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
-users_bots(Server, From, User, RSMIn) ->
-    BotIDs = wocky_db_bot:get_by_user(Server, User),
+filter_bots_for_user(BotIDs, Server, From, RSMIn) ->
     VisibleIDs = lists:filter(access_filter(Server, From, _), BotIDs),
     % We don't have any particular order we want the bots in, it just
     % needs to be consistant
