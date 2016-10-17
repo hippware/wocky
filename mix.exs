@@ -97,6 +97,7 @@ defmodule Wocky.Mixfile do
       {:porcelain,     "~> 2.0"},
       {:algolia,       "~> 0.4.0"},
       {:ex_aws,        "~> 1.0.0-rc.3"},
+      {:geocalc,       "~> 0.5"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},

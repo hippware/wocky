@@ -44,12 +44,8 @@ handle_pep(_From, Item = #xmlel{name = <<"geoloc">>, children = []}) ->
     Item;
 handle_pep(From, Item = #xmlel{name = <<"geoloc">>}) ->
     case handle_geoloc(Item) of
-        {ok, {Lat, Lon, Accuracy}} ->
-            #jid{luser = LUser,
-                 lserver = LServer,
-                 lresource = LResource} = From,
-            wocky_db_user:set_location(LUser, LServer, LResource,
-                                       Lat, Lon, Accuracy),
+        {ok, {_Lat, _Lon, _Accuracy} = Loc} ->
+            'Elixir.Wocky.Location':user_location_changed(From, Loc),
             Item;
         {error, _} ->
             drop

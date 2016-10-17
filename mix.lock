@@ -40,6 +40,7 @@
   "fun_chain": {:git, "https://github.com/sasa1977/fun_chain.git", "e6eede57b74e7588f7aadcf21602023a21c18910", [branch: "master"]},
   "fusco": {:git, "https://github.com/esl/fusco.git", "0a428471aefb3a38207c2141249181e6c018e565", [branch: "master"]},
   "gen_stage": {:hex, :gen_stage, "0.6.1", "1e05e3faf9e505dcdb1e6d2da501fc5d1724e7ea6176bf72853ea78c8a600d1c", [:mix], []},
+  "geocalc": {:hex, :geocalc, "0.5.1", "c0e3fb8d5552575b615f3021bb0551677db753f80a44967546e6ea8b22772905", [:mix], []},
   "getopt": {:hex, :getopt, "0.8.2", "b17556db683000ba50370b16c0619df1337e7af7ecbf7d64fbf8d1d6bce3109b", [:rebar], []},
   "gettext": {:hex, :gettext, "0.12.1", "c0624f52763469ef7a3674919ae28b8286d88195b90fa1516180f31bbbd26d14", [:mix], []},
   "goldrush": {:hex, :goldrush, "0.1.8", "2024ba375ceea47e27ea70e14d2c483b2d8610101b4e852ef7f89163cdb6e649", [:rebar3], []},
