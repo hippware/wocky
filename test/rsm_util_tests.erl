@@ -24,7 +24,7 @@ rsm_util_test_() -> {
   ]}.
 
 test_get_rsm() ->
-    { "decodes wocky_rsm_in record from IQ", [
+    { "decodes rsm_in record from IQ", [
       { "decodes standard RSM", [
         ?_assertEqual({ok, rsm_in(0, undefined, undefined, undefined)},
                       get_rsm(
@@ -169,8 +169,8 @@ test_reverse() ->
 rsm_in(Max, Dir, ID, Index) ->
     rsm_in(Max, Dir, ID, Index, false).
 rsm_in(Max, Dir, ID, Index, Reverse) ->
-    #wocky_rsm_in{max = Max, direction = Dir, id = ID,
-                  index = Index, reverse = Reverse}.
+    #rsm_in{max = Max, direction = Dir, id = ID,
+            index = Index, reverse = Reverse}.
 
 rsm_out(Index, First, Last) ->
     rsm_out(?COUNT, Index, First, Last).

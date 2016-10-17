@@ -83,15 +83,15 @@ sort_by_id(#{id := ID1}, #{id := ID2}) ->
     ID1 > ID2.
 
 cap_max(none) ->
-    #wocky_rsm_in{max = max_results()};
-cap_max(RSM = #wocky_rsm_in{max = Max}) ->
-    RSM#wocky_rsm_in{max = min(Max, max_results())}.
+    #rsm_in{max = max_results()};
+cap_max(RSM = #rsm_in{max = Max}) ->
+    RSM#rsm_in{max = min(Max, max_results())}.
 
-id_to_int(RSM = #wocky_rsm_in{id = ID})
+id_to_int(RSM = #rsm_in{id = ID})
   when ID =:= undefined orelse ID =:= <<>> ->
-    RSM#wocky_rsm_in{id = undefined};
-id_to_int(RSM = #wocky_rsm_in{id = ID}) ->
-    RSM#wocky_rsm_in{id = wocky_util:default_bin_to_integer(ID, 0)}.
+    RSM#rsm_in{id = undefined};
+id_to_int(RSM = #rsm_in{id = ID}) ->
+    RSM#rsm_in{id = wocky_util:default_bin_to_integer(ID, 0)}.
 
 max_results() ->
     ejabberd_config:get_local_option(conv_max).
