@@ -124,7 +124,9 @@ followers(Server, ID) ->
 subscribers(Server, ID) ->
     Result = wocky_db:select(Server, bot_subscriber,
                              [user, follow], #{bot => ID}),
-    [{jid:from_binary(J), F} || #{user := J, follow := F} <- Result].
+    Subscribers = [{jid:from_binary(J), F} ||
+                   #{user := J, follow := F} <- Result],
+    maybe_add_owner_as_follower(owner(Server, ID), Subscribers).
 
 -spec follow_state(wocky_db:server(), wocky_db:id(), jid()) ->
     boolean() | not_found.
@@ -157,17 +159,27 @@ has_access(_Server, ID, User) ->
 
 -spec subscribe(wocky_db:server(), wocky_db:id(), jid(), boolean()) -> ok.
 subscribe(Server, ID, User, Follow) ->
-    ok = wocky_db:insert(
-           Server, bot_subscriber,
-           #{bot => ID,
-             user => jid:to_binary(jid:to_bare(User)),
-             follow => Follow}).
+    case owner(Server, ID) of
+        User ->
+            ok;
+        _ ->
+            ok = wocky_db:insert(
+                   Server, bot_subscriber,
+                   #{bot => ID,
+                     user => jid:to_binary(jid:to_bare(User)),
+                     follow => Follow})
+    end.
 
 -spec unsubscribe(wocky_db:server(), wocky_db:id(), jid()) -> ok.
 unsubscribe(Server, ID, User) ->
-    ok = wocky_db:delete(Server, bot_subscriber, all,
-                         #{bot => ID,
-                           user => jid:to_binary(jid:to_bare(User))}).
+    case owner(Server, ID) of
+        User ->
+            ok;
+        _ ->
+            ok = wocky_db:delete(Server, bot_subscriber, all,
+                                 #{bot => ID,
+                                   user => jid:to_binary(jid:to_bare(User))})
+    end.
 
 -spec publish_item(wocky_db:server(), wocky_db:id(), binary(),
                    binary(), boolean()) -> ok.
@@ -251,3 +263,6 @@ maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FRIENDS},
     Bot#{visibility => ?WOCKY_BOT_VIS_WHITELIST,
          affiliates => [jid:to_binary(J) || J <- FriendJIDs]};
 maybe_freeze_roster(Bot, _) -> Bot.
+
+maybe_add_owner_as_follower(not_found, Subs) -> Subs;
+maybe_add_owner_as_follower(Owner, Subs) -> [{Owner, true} | Subs].

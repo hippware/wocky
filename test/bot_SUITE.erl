@@ -169,7 +169,8 @@ subscribers(Config) ->
       fun(Alice, Bob) ->
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [{?CAROL_B_JID, false},
+        check_subscribers(Stanza, [{?ALICE_B_JID, true},
+                                   {?CAROL_B_JID, false},
                                    {?KAREN_B_JID, true}]),
 
         % Bob can't because he's not the owner
@@ -183,7 +184,8 @@ unsubscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [{?KAREN_B_JID, true}])
+        check_subscribers(Stanza, [{?ALICE_B_JID, true},
+                                   {?KAREN_B_JID, true}])
       end).
 
 subscribe(Config) ->
@@ -207,14 +209,16 @@ subscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [{?KAREN_B_JID, true},
+        check_subscribers(Stanza, [{?ALICE_B_JID, true},
+                                   {?KAREN_B_JID, true},
                                    {?CAROL_B_JID, true},
                                    {?BOB_B_JID, false}]),
 
         % Update Carol's follow status
         expect_iq_success(subscribe_stanza(false), Carol),
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [{?KAREN_B_JID, true},
+        check_subscribers(Stanza2, [{?ALICE_B_JID, true},
+                                    {?KAREN_B_JID, true},
                                     {?CAROL_B_JID, false},
                                     {?BOB_B_JID, false}])
       end).
@@ -513,8 +517,14 @@ delete_owner(Config) ->
         ExpectedFields =
         lists:keyreplace("affiliates+size", 1, WhitelistFields2,
                          {"affiliates+size", int, 4}),
+        ExpectedFields2 =
+        lists:keyreplace("followers+size", 1, ExpectedFields,
+                         {"followers+size", int, 0}),
+        ExpectedFields3 =
+        lists:keyreplace("subscribers+size", 1, ExpectedFields2,
+                         {"subscribers+size", int, 0}),
         ReturnedBot3 = expect_iq_success(retrieve_stanza(ID1), Bob),
-        check_returned_bot(ReturnedBot3, ExpectedFields),
+        check_returned_bot(ReturnedBot3, ExpectedFields3),
         expect_iq_error(retrieve_stanza(ID1), Tim),
         expect_iq_success(retrieve_stanza(ID2), Bob),
         expect_iq_success(retrieve_stanza(ID2), Tim)
@@ -528,9 +538,7 @@ publish_item(Config) ->
         Content = <<"content ZZZ">>,
         Title = <<"title ZZZ">>,
         % Alice publishes an item to her bot
-        expect_iq_success(
-          publish_item_stanza(?BOT, NoteID, Title, Content),
-          Alice),
+        publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
         % Carol and Karen are subscribers, and so receive a notification
         % Bob is an affiliate but not subscribed, so does not receive anything
@@ -560,9 +568,14 @@ retract_item(Config) ->
           Carol),
 
         % Alice can retract the item as its owner
-        expect_iq_success(
-          retract_item_stanza(?BOT, ?ITEM),
-          Alice),
+        RetractStanza = test_helper:add_to_s(
+                          retract_item_stanza(?BOT, ?ITEM), Alice),
+        escalus:send(Alice, RetractStanza),
+
+        Stanzas = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_iq_result,
+                             is_retraction_update(?BOT, ?ITEM, _)],
+                            Stanzas),
 
         % Carol and Karen are subscribers, and so receive a notification
         % Bob is an affiliate but not subscribed, so does not receive anything
@@ -580,9 +593,7 @@ edit_item(Config) ->
         Content = <<"updated content">>,
         Title = <<"updated title">>,
         % Alice updates an item on her bot
-        expect_iq_success(
-          publish_item_stanza(?BOT, NoteID, Title, Content),
-          Alice),
+        publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
         % Carol and Karen are subscribers, and so receive a notification
         % Bob is an affiliate but not subscribed, so does not receive anything
@@ -635,9 +646,7 @@ publish_image_item(Config) ->
         Image = <<"MyImage.jpg">>,
         Title = <<"title ZZZ">>,
         % Alice publishes an item to her bot
-        expect_iq_success(
-          publish_item_stanza(?BOT, NoteID, Title, Content, Image),
-          Alice),
+        publish_item(?BOT, NoteID, Title, Content, Image, Alice),
 
         Expected =
         lists:keyreplace("image_items", 1, expected_retrieve_fields(),
@@ -718,11 +727,11 @@ expected_create_fields() ->
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    any},
      {"image_items",        int,    0},
-     {"followers+size",     int,    0},
+     {"followers+size",     int,    1}, % Owner is always a follower
      {"followers+hash",     string, any},
      {"affiliates+size",    int,    1}, % Owner is always an affiliate
      {"affiliates+hash",    string, any},
-     {"subscribers+size",   int,    0},
+     {"subscribers+size",   int,    1}, % Owner is always a subscriber
      {"subscribers+hash",   string, any}].
 
 expected_retrieve_fields() ->
@@ -741,11 +750,11 @@ expected_retrieve_fields() ->
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
-     {"followers+size",     int,    1},
+     {"followers+size",     int,    2}, % Owner is always an follower
      {"followers+hash",     string, any},
      {"affiliates+size",    int,    2}, % Owner is always an affiliate
      {"affiliates+hash",    string, any},
-     {"subscribers+size",   int,    2},
+     {"subscribers+size",   int,    3}, % Owner is always an subscriber
      {"subscribers+hash",   string, any}].
 
 check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
@@ -1126,8 +1135,7 @@ add_item(Client, Subs, N) ->
     NoteID = item_id(N),
     Title = item_title(N),
     Content = item_content(N),
-    expect_iq_success(
-      publish_item_stanza(?BOT, NoteID, Title, Content), Client),
+    publish_item(?BOT, NoteID, Title, Content, undefined, Client),
 
     lists:foreach(
         expect_item_publication(_, ?BOT, NoteID, Title, Content),
@@ -1291,3 +1299,15 @@ is_pres_unavailable() ->
     fun(S) ->
             escalus_pred:is_presence_with_type(<<"unavailable">>, S)
     end.
+
+publish_item(BotID, NoteID, Title, Content, Image, Client) ->
+  PubStanza = test_helper:add_to_s(
+                publish_item_stanza(BotID, NoteID, Title, Content, Image),
+                Client),
+  escalus:send(Client, PubStanza),
+
+  Stanzas = escalus:wait_for_stanzas(Client, 2),
+  escalus:assert_many([is_iq_result,
+                       is_publication_update(BotID, NoteID,
+                                             Title, Content, _)],
+                      Stanzas).
