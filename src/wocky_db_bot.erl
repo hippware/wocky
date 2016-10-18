@@ -55,7 +55,7 @@ owned_bots(_Server, UserJID) ->
 
 -spec followed_bots(wocky_db:server(), binary()) -> [binary()].
 followed_bots(Server, UserJID) ->
-    Result = wocky_db:select(Server, subscribed_bots,
+    Result = wocky_db:select(Server, subscribed_bot,
                              [bot, follow], #{user => UserJID}),
     [Bot || #{bot := Bot, follow := true} <- Result].
 

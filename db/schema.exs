@@ -353,7 +353,7 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:bot, :user]
     ]
 
-    view :subscribed_bots, [
+    view :subscribed_bot, [
       from: :bot_subscriber,
       columns: :all,
       primary_key: [:user, :bot]
