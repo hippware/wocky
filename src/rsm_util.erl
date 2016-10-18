@@ -53,7 +53,7 @@ filter_with_rsm_impl(Items, #rsm_in{id = undefined,
     get_result_list(Items, Result, 0);
 
 filter_with_rsm_impl(Items, #rsm_in{id = RSMID, max = C,
-                                     direction = before})
+                                    direction = before})
   when RSMID =/= undefined ->
     {_AfterRev, BeforeResultRev} =
     split_include(id_not_equal(_, RSMID), lists:reverse(Items)),

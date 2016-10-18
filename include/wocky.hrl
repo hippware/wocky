@@ -19,7 +19,6 @@
           order_by = [] :: atom() | [{atom(), asc | desc}]
          }).
 
-
 -define(NS_ERRORS,        <<"hippware.com/hxep/errors">>).
 -define(NS_TOKEN,         <<"hippware.com/hxep/token">>).
 -define(NS_PHONE,         <<"hippware.com/hxep/phone">>).
