@@ -193,17 +193,23 @@ unsubscribe(Server, ID, User) ->
 publish_item(Server, BotID, NoteID, Stanza, Image) ->
     Existing = wocky_db:select_one(Server, bot_item, id,
                                    #{id => NoteID, bot => BotID}),
-    MaybePublished = case Existing of
-                         not_found -> #{published => now};
-                         _ -> #{}
-                     end,
+    {NewItem, MaybePublished} = case Existing of
+                                    not_found -> {true, #{published => now}};
+                                    _ -> {false, #{}}
+                                end,
     Note = MaybePublished#{id => NoteID,
                            bot => BotID,
                            updated => now,
                            stanza => Stanza,
                            image => Image
                           },
-    wocky_db:insert(Server, bot_item, Note).
+    wocky_db:insert(Server, bot_item, Note),
+    maybe_bump_updated(Server, BotID, NewItem).
+
+maybe_bump_updated(_Server, BotID, true) ->
+    ok = wocky_db:insert(shared, bot, #{id => BotID, updated => now});
+maybe_bump_updated(_, _, false) ->
+    ok.
 
 get_item(Server, BotID, NoteID) ->
     wocky_db:select_row(Server, bot_item, all, #{id => NoteID, bot => BotID}).

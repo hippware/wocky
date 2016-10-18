@@ -178,7 +178,7 @@ handle_create(From, Children) ->
         Fields <- get_fields(Children),
         Fields2 <- add_server(Fields, Server),
         check_required_fields(Fields2, required_fields()),
-        BotEl <- create_bot(From, Server, Fields2),
+        BotEl <- create(From, Server, Fields2),
         {ok, BotEl}
        ]).
 
@@ -542,13 +542,13 @@ field(Name, Type, Value) ->
     #field{name = Name, type = Type, value = Value}.
 
 
-create_bot(Owner, Server, Fields) ->
+create(Owner, Server, Fields) ->
     ID = wocky_db:create_id(),
     do([error_m ||
         maybe_insert_name(ID, Fields),
         Fields2 <- add_defaults(Fields),
         Fields3 <- add_owner(Owner, Fields2),
-        update_bot(Server, ID, Fields3),
+        create_bot(Server, ID, Fields3),
         add_bot_as_roster_viewer(Owner, Server, ID),
         make_bot_el(Server, ID)
        ]).
@@ -585,6 +585,9 @@ maybe_add_default(#field{name = Name, type = Type, value = Default}, Fields) ->
         _ ->
             Fields
     end.
+
+create_bot(Server, ID, Fields) ->
+    update_bot(Server, ID, Fields#{updated => now}).
 
 update_bot(Server, ID, Fields) ->
     NormalisedFields = lists:foldl(fun normalise_field/2, #{}, Fields),
