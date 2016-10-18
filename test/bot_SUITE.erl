@@ -297,17 +297,19 @@ get_followed(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
-        % Alice is the owner (and therefore a follower) so should get the bot
+        %% Alice is the owner (and therefore a follower) so should get the bot
         Stanza = expect_iq_success(following_stanza(#rsm_in{}), Alice),
         check_returned_bots(Stanza, [?BOT], 1),
 
-        % Karen is a follower so should get the bot
+        %% Karen is a follower so should get the bot
         Stanza2 = expect_iq_success(following_stanza(#rsm_in{}), Karen),
         check_returned_bots(Stanza2, [?BOT], 1),
 
+        %% Carol is a subscriber but not follower, so should get nothing
         Stanza3 = expect_iq_success(following_stanza(#rsm_in{}), Carol),
         check_returned_bots(Stanza3, [], 0),
 
+        %% Bob is not subscribed to the bot at all so gets nothing
         Stanza4 = expect_iq_success(following_stanza(#rsm_in{}), Bob),
         check_returned_bots(Stanza4, [], 0)
       end).
