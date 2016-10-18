@@ -56,7 +56,7 @@ handle_iq_type(_From, _To, _IQ) ->
 %%%===================================================================
 
 get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
-    RSM = rsm_util:rsm_decode(SubEl),
+    RSM = jlib:rsm_decode(SubEl),
     RSM2 = id_to_int(cap_max(RSM)),
     {Conversations, RSMOut} = get_conversations(From, RSM2),
     create_response(IQ, Conversations, RSMOut).
