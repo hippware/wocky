@@ -31,6 +31,11 @@ get_rsm(IQ) ->
 -spec filter_with_rsm([map() | binary()], jlib:rsm_in()) ->
     {[map() | binary()], jlib:rsm_out()}.
 
+%% jlib:rsm_decode helpfully sets the id to <<>> rather than `undefined' if
+%% it's not present but `before' or `after' is.
+filter_with_rsm(Items, RSM = #rsm_in{id = <<>>}) ->
+    filter_with_rsm(Items, RSM#rsm_in{id = undefined});
+
 filter_with_rsm(Items, RSM = #rsm_in{reverse = Reverse}) ->
     maybe_reverse(filter_with_rsm_impl(Items, RSM), Reverse).
 
