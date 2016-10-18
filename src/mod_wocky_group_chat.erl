@@ -103,7 +103,7 @@ process_packet(From, LServer, Node, Packet) ->
         check_existing_participant(jid:to_binary(jid:to_bare(From)), GroupRec),
         forward_packet(From, GroupRec, Packet),
         archive_packet(LServer, GroupID, Packet),
-        {ok, wocky_metrics:inc(mod_group_chat_messages)}
+        wocky_metrics:inc(mod_group_chat_messages)
        ]).
 
 check_group(Group) ->
