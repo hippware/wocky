@@ -218,9 +218,7 @@ handle_following(From, #jid{lserver = Server}, IQ) ->
     do([error_m ||
         RSMIn <- rsm_util:get_rsm(IQ),
         BotIDs <- {ok, wocky_db_bot:followed_bots(Server, From)},
-        {ok, ct:log("RSMIn: ~p\nBotIDs: ~p", [RSMIn, BotIDs])},
         {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
-        {ok, ct:log("Bots: ~p", [Bots])},
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
