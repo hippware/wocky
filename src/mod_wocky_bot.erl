@@ -216,10 +216,11 @@ handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
 
 handle_following(From, #jid{lserver = Server}, IQ) ->
     do([error_m ||
-        RSMIn <- wocky_bot_util:get_rsm(IQ),
-        BotIDs <- {ok, wocky_db_bot:followed_bots(Server,
-                                                  jid:to_binary(From))},
+        RSMIn <- rsm_util:get_rsm(IQ),
+        BotIDs <- {ok, wocky_db_bot:followed_bots(Server, From)},
+        {ok, ct:log("RSMIn: ~p\nBotIDs: ~p", [RSMIn, BotIDs])},
         {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
+        {ok, ct:log("Bots: ~p", [Bots])},
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
@@ -233,20 +234,23 @@ get_bot_by_id(From, Server, ID) ->
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
         User <- wocky_xml:get_attr(<<"user">>, Attrs),
+        UserJID <- make_jid(User),
         RSMIn <- rsm_util:get_rsm(IQ),
-        BotIDs <- {ok, wocky_db_bot:owned_bots(Server, User)},
-        {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
+        BotIDs <- {ok, wocky_db_bot:owned_bots(Server, UserJID)},
+        {Bots, RSMOut} <- filter_bots_for_user(BotIDs, Server, From, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
 filter_bots_for_user(BotIDs, Server, From, RSMIn) ->
     VisibleIDs = lists:filter(access_filter(Server, From, _), BotIDs),
-    % We don't have any particular order we want the bots in, it just
-    % needs to be consistant
-    SortedIDs = lists:sort(VisibleIDs),
-    {FilteredIDs, RSMOut} = rsm_util:filter_with_rsm(SortedIDs, RSMIn),
-    Bots = [wocky_db_bot:get(Server, ID) || ID <- FilteredIDs],
-    {ok, {Bots, RSMOut}}.
+    % Sort bots with most recently updated last
+    Bots = [wocky_db_bot:get(Server, ID) || ID <- VisibleIDs],
+    SortedBots = lists:sort(update_order(_, _), Bots),
+    {FilteredBots, RSMOut} = rsm_util:filter_with_rsm(SortedBots, RSMIn),
+    {ok, {FilteredBots, RSMOut}}.
+
+update_order(#{updated := U1}, #{updated := U2}) ->
+    U1 =< U2.
 
 access_filter(Server, From, ID) ->
     ok =:= wocky_bot_util:check_access(Server, ID, From).
@@ -587,11 +591,18 @@ maybe_add_default(#field{name = Name, type = Type, value = Default}, Fields) ->
     end.
 
 create_bot(Server, ID, Fields) ->
-    update_bot(Server, ID, Fields#{updated => now}).
+    FieldsMap = normalise_fields(Fields),
+    insert_bot(Server, ID, FieldsMap#{updated => now}).
 
 update_bot(Server, ID, Fields) ->
-    NormalisedFields = lists:foldl(fun normalise_field/2, #{}, Fields),
-    wocky_db_bot:insert(Server, NormalisedFields#{id => ID}).
+    FieldsMap = normalise_fields(Fields),
+    insert_bot(Server, ID, FieldsMap).
+
+insert_bot(Server, ID, FieldsMap) ->
+    wocky_db_bot:insert(Server, FieldsMap#{id => ID}).
+
+normalise_fields(Fields) ->
+    lists:foldl(fun normalise_field/2, #{}, Fields).
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
     Acc#{lat => Lat, lon => Lon};
@@ -674,6 +685,12 @@ encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [geoloc_field(N, V) | Acc].
+
+make_jid(User) ->
+    case jid:from_binary(User) of
+        error -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user">>)};
+        JID -> {ok, JID}
+    end.
 
 safe_jid_from_binary(<<>>) -> not_found;
 safe_jid_from_binary(JID) -> jid:from_binary(JID).

@@ -266,23 +266,23 @@ retrieve_for_user(Config) ->
         %% Alice can see all her bots
         Stanza = expect_iq_success(
                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
-        check_returned_bots(Stanza, IDs, ?CREATED_BOTS),
+        check_returned_bots(Stanza, IDs, 0, ?CREATED_BOTS),
 
         Stanza2 = expect_iq_success(
                    retrieve_stanza(?ALICE_B_JID,
                                    #rsm_in{direction = before}), Alice),
-        check_returned_bots(Stanza2, IDs, ?CREATED_BOTS),
+        check_returned_bots(Stanza2, IDs, 0, ?CREATED_BOTS),
 
         %% Bob can only see the subset of bots set to be visible by friends
         Stanza3 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
-        check_returned_bots(Stanza3, FriendsBots, ?CREATED_BOTS div 2),
+        check_returned_bots(Stanza3, FriendsBots, 0, ?CREATED_BOTS div 2),
 
         %% Tim cannot see any of Alice's bots since he is neither
         %% the owner nor a friend
         Stanza4 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
-        check_returned_bots(Stanza4, [], 0),
+        check_returned_bots(Stanza4, [], undefined, 0),
 
         %% Test some basic RSM functionality
         %% Bob can only see the subset of bots set to be visible by friends
@@ -290,28 +290,50 @@ retrieve_for_user(Config) ->
                     retrieve_stanza(?ALICE_B_JID,
                                     #rsm_in{index = 3, max = 2}), Bob),
         ExpectedBots = lists:sublist(FriendsBots, 4, 2),
-        check_returned_bots(Stanza5, ExpectedBots, 2)
+        check_returned_bots(Stanza5, ExpectedBots, 3, length(FriendsBots)),
+
+        %% When alice publishes to a bot, that bot should become the most
+        %% recently updated, moving it to the end of the list:
+        PublishBot = lists:nth(10, IDs),
+        NoteID = <<"Note">>,
+        Title = <<"Title">>,
+        Content = <<"Content">>,
+        expect_iq_success(
+          publish_item_stanza(PublishBot, NoteID, Title, Content),
+          Alice),
+
+        %% Alice can see all her bots with the updated one now at the end
+        Stanza6 = expect_iq_success(
+                   retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
+        check_returned_bots(Stanza6, (IDs -- [PublishBot]) ++ [PublishBot],
+                            0, ?CREATED_BOTS)
+
       end).
 
 get_followed(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
+        %% Make the bot public, otherwise even followers won't be able
+        %% to see it if they're not affiliates
+        expect_iq_success(
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_PUBLIC), Alice),
+
         %% Alice is the owner (and therefore a follower) so should get the bot
         Stanza = expect_iq_success(following_stanza(#rsm_in{}), Alice),
-        check_returned_bots(Stanza, [?BOT], 1),
+        check_returned_bots(Stanza, [?BOT], 0, 1),
 
         %% Karen is a follower so should get the bot
         Stanza2 = expect_iq_success(following_stanza(#rsm_in{}), Karen),
-        check_returned_bots(Stanza2, [?BOT], 1),
+        check_returned_bots(Stanza2, [?BOT], 0, 1),
 
         %% Carol is a subscriber but not follower, so should get nothing
         Stanza3 = expect_iq_success(following_stanza(#rsm_in{}), Carol),
-        check_returned_bots(Stanza3, [], 0),
+        check_returned_bots(Stanza3, [], undefined, 0),
 
         %% Bob is not subscribed to the bot at all so gets nothing
         Stanza4 = expect_iq_success(following_stanza(#rsm_in{}), Bob),
-        check_returned_bots(Stanza4, [], 0)
+        check_returned_bots(Stanza4, [], undefined, 0)
       end).
 
 update_affiliations(Config) ->
@@ -639,18 +661,18 @@ get_items(Config) ->
       fun(Alice, Bob, Carol, Karen) ->
         % Alice publishes a bunch of items on her bot
         lists:foreach(
-          add_item(Alice, [Carol, Karen], _), lists:seq(1, ?CREATED_ITEMS)),
+          add_item(Alice, [Carol, Karen], _), lists:seq(0, ?CREATED_ITEMS-1)),
 
         % Bob can get items because he's an affiliate
-        get_items(Bob, #rsm_in{max = 10}, 1, 10),
+        get_items(Bob, #rsm_in{max = 10}, 0, 9),
         get_items(Bob, #rsm_in{index = 5},
-                  6, ?CREATED_ITEMS),
+                  5, ?CREATED_ITEMS-1),
         get_items(Bob, #rsm_in{max = 2, direction = before, id = item_id(5)},
                   3, 4),
         get_items(Bob, #rsm_in{max = 3, direction = aft, id = item_id(48)},
-                  49, min(?CREATED_ITEMS, 51)),
+                  49, min(?CREATED_ITEMS-1, 51)),
         get_items(Bob, #rsm_in{max = 3, direction = before},
-                  ?CREATED_ITEMS-2, ?CREATED_ITEMS),
+                  ?CREATED_ITEMS-3, ?CREATED_ITEMS-1),
 
         % Carol can't because she's not
         expect_iq_error(
@@ -788,31 +810,32 @@ check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
     get_id(Children).
 
 check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
-                    ExpectedIDs, Total) ->
+                    ExpectedIDs, Index, Total) ->
     #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Children} = BotsStanza,
-    SortedIDs = lists:sort(ExpectedIDs),
     {First, Last} = case ExpectedIDs of
                         [] -> {undefined, undefined};
-                        _ -> {hd(SortedIDs), lists:last(SortedIDs)}
+                        _ -> {hd(ExpectedIDs), lists:last(ExpectedIDs)}
                     end,
-    do([error_m ||
-        RSM <- check_get_children(Children, <<"set">>,
-                                  [{<<"xmlns">>, ?NS_RSM}]),
-        RSMOut <- decode_rsm(RSM, #rsm_out{}),
-        check_rsm(RSMOut, Total, First, Last),
-        check_ids(ExpectedIDs, Children)
-       ]).
+    ?assertEqual(ok,
+       do([error_m ||
+           RSM <- check_get_children(Children, <<"set">>,
+                                     [{<<"xmlns">>, ?NS_RSM}]),
+           RSMOut <- decode_rsm(RSM, #rsm_out{}),
+           check_rsm(RSMOut, Total, Index, First, Last),
+           check_ids(ExpectedIDs, Children)
+          ])
+      ).
 
 check_ids(ExpectedIDs, Children) ->
-    IDs = lists:sort(get_ids(Children, [])),
+    IDs = get_ids(Children, []),
     case ExpectedIDs of
         IDs -> ok;
         _ -> {error, {incorrect_ids, IDs, ExpectedIDs}}
     end.
 
 get_ids([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 get_ids([#xmlel{name = <<"bot">>, children = Fields} | Rest], Acc) ->
     get_ids(Rest, [get_id(Fields) | Acc]);
 get_ids([_|Rest], Acc) ->
@@ -831,7 +854,6 @@ check_field({Name, Type, any}, Elements) ->
     ?assert(has_field(list_to_binary(Name), atom_to_binary(Type, utf8),
             Elements));
 check_field({Name, Type, Value}, Elements) ->
-    ct:log("checking... ~p ~p", [{Name, Type, Value}, Elements]),
     ?assert(has_field_val(list_to_binary(Name), atom_to_binary(Type, utf8),
                           Value, Elements)).
 
@@ -921,7 +943,6 @@ bot_jid(ID) ->
     jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, bot_node(ID))).
 
 change_visibility_stanza(Bot, Visibility) ->
-    ct:log("making change_visibility_stanza: ~p ~p", [Bot, Visibility]),
     test_helper:iq_set(?NS_BOT, node_el(Bot, <<"fields">>,
                                         visibility_field(Visibility))).
 
@@ -1092,24 +1113,22 @@ retract_el(BotID, NoteID) ->
 
 expect_item_publication(Client, BotID, NoteID, Title, Content) ->
     Stanza = escalus:wait_for_stanza(Client),
-    escalus:assert(
-      is_publication_update(BotID, NoteID, Title, Content, _), Stanza).
+    ?assertEqual(ok,
+      is_publication_update(BotID, NoteID, Title, Content, Stanza)).
 
 is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
-    R = do([error_m ||
-            [Event] <- check_get_children(Stanza, <<"message">>),
-            [Item] <- check_get_children(Event, <<"event">>,
-                                         [{<<"xmlns">>, ?NS_BOT},
-                                          {<<"node">>, bot_node(BotID)}]),
-            [Entry] <- check_get_children(Item, <<"item">>,
-                                          [{<<"id">>, NoteID}]),
-            check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
-            check_children_cdata(Entry, [{<<"title">>, Title},
-                                         {<<"content">>, Content}]),
-            ok
-           ]),
-    ct:log("is_publication_update result: ~p", [R]),
-    R =:= ok.
+    do([error_m ||
+        [Event] <- check_get_children(Stanza, <<"message">>),
+        [Item] <- check_get_children(Event, <<"event">>,
+                                     [{<<"xmlns">>, ?NS_BOT},
+                                      {<<"node">>, bot_node(BotID)}]),
+        [Entry] <- check_get_children(Item, <<"item">>,
+                                      [{<<"id">>, NoteID}]),
+        check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
+        check_children_cdata(Entry, [{<<"title">>, Title},
+                                     {<<"content">>, Content}]),
+        ok
+       ]).
 
 check_get_children(Els, Name) -> check_get_children(Els, Name, []).
 
@@ -1171,27 +1190,25 @@ get_items(Client, RSM, First, Last) ->
     Result = expect_iq_success(
                test_helper:iq_get(?NS_BOT, query_el(RSM)), Client),
 
-    escalus:assert(is_result(_, First, Last), Result).
+    ?assertEqual(ok, check_result(Result, First, Last)).
 
 query_el(RSM) ->
     #xmlel{name = <<"query">>,
            attrs = [{<<"node">>, bot_node(?BOT)}],
            children = [rsm_elem(RSM)]}.
 
-is_result(Stanza, First, Last) ->
-    R = do([error_m ||
-            [Query] <- check_get_children(Stanza, <<"iq">>),
-            Children <- check_get_children(Query, <<"query">>,
-                                           [{<<"xmlns">>, ?NS_BOT}]),
-            RSM <- check_get_children(Children, <<"set">>,
-                                      [{<<"xmlns">>, ?NS_RSM}]),
-            RSMOut <- decode_rsm(RSM, #rsm_out{}),
-            check_rsm(RSMOut, ?CREATED_ITEMS, First, Last),
-            check_items(Children, First, Last),
-            ok
-           ]),
-    ct:log("is_result: ~p", [R]),
-    R =:= ok.
+check_result(Stanza, First, Last) ->
+    do([error_m ||
+        [Query] <- check_get_children(Stanza, <<"iq">>),
+        Children <- check_get_children(Query, <<"query">>,
+                                       [{<<"xmlns">>, ?NS_BOT}]),
+        RSM <- check_get_children(Children, <<"set">>,
+                                  [{<<"xmlns">>, ?NS_RSM}]),
+        RSMOut <- decode_rsm(RSM, #rsm_out{}),
+        check_rsm(RSMOut, ?CREATED_ITEMS, First, item_id(First), item_id(Last)),
+        check_items(Children, First, Last),
+        ok
+       ]).
 
 %% RSM encoding
 rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id, index=Index}) ->
@@ -1248,18 +1265,15 @@ decode_rsm([El | _], _) ->
     {error, {unknown_rsm_el, El}}.
 
 check_rsm(#rsm_out{count = Count, index = Index, first = First, last = Last},
-          ExpectedCount, ExpectFirst, ExpectLast) ->
-    FirstID = item_id(ExpectFirst),
-    LastID = item_id(ExpectLast),
-    case {Count, expected_first(Index), First, Last} of
-        {ExpectedCount, ExpectFirst, FirstID, LastID} ->
+          ExpectedCount, ExpectedIndex, ExpectedFirst, ExpectedLast) ->
+    case {Count, Index, First, Last} of
+        {ExpectedCount, ExpectedIndex, ExpectedFirst, ExpectedLast} ->
             ok;
-        _ ->
-            {error, bad_rsm}
+        E ->
+            {error,
+             {bad_rsm, E,
+              {ExpectedCount, ExpectedIndex, ExpectedFirst, ExpectedLast}}}
     end.
-
-expected_first(undefined) -> undefined;
-expected_first(I) -> I+1.
 
 check_items(Children, First, Last) ->
     Expected = lists:seq(First, Last),
