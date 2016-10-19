@@ -190,7 +190,8 @@ test_update_affiliations() ->
 test_followers() ->
     { "followers", [
       { "returns the list of followers", [
-        ?_assertEqual([?KAREN_JID], followers(?LOCAL_CONTEXT, ?BOT))
+        ?_assertEqual(lists:sort([?ALICE_JID, ?KAREN_JID]),
+                      lists:sort(followers(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns empty list for non existant bot", [
         ?_assertEqual([], followers(?LOCAL_CONTEXT, wocky_db:create_id()))
@@ -200,7 +201,9 @@ test_followers() ->
 test_subscribers() ->
     { "subscribers", [
       { "returns the list of subscribers and their follower status", [
-        ?_assertEqual(lists:sort([{?CAROL_JID, false}, {?KAREN_JID, true}]),
+        ?_assertEqual(lists:sort([{?ALICE_JID, true},
+                                  {?CAROL_JID, false},
+                                  {?KAREN_JID, true}]),
                       lists:sort(subscribers(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns empty list for non existant bot", [
@@ -305,25 +308,39 @@ test_has_access() ->
     ]}.
 
 test_subscribe() ->
-    { "subscribe", [
-      { "adds user to list of subscribers", [
+    Subscribers = [{?TIM_JID, false}, {?CAROL_JID, false},
+                   {?BOB_JID, true}, {?KAREN_JID, true},
+                   {?ALICE_JID, true}],
+    { "subscribe", inorder, [
+      { "adds user to list of subscribers", inorder, [
         ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID, false)),
         ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?BOB_JID, true)),
-        ?_assertEqual(lists:sort([{?TIM_JID, false}, {?CAROL_JID, false},
-                                  {?BOB_JID, true}, {?KAREN_JID, true}]),
-                      lists:sort(subscribers(?LOCAL_CONTEXT, ?BOT)))
+        check_subscribers(Subscribers)
+      ]},
+      { "does not alter the result if the owner is subscribed", inorder, [
+        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID, false)),
+        check_subscribers(Subscribers)
       ]}
     ]}.
 
 test_unsubscribe() ->
+    Subscribers = [{?CAROL_JID, false}, {?KAREN_JID, true},
+                   {?ALICE_JID, true}],
     { "unsubscribe", [
-      { "removes user from the list of subscribers", [
+      { "removes user from the list of subscribers", inorder, [
         ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
         ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
-        ?_assertEqual(lists:sort([{?CAROL_JID, false}, {?KAREN_JID, true}]),
-                      subscribers(?LOCAL_CONTEXT, ?BOT))
+        check_subscribers(Subscribers)
+      ]},
+      { "does not alter the result if the owner is unsubscribed", inorder, [
+        ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
+        check_subscribers(Subscribers)
       ]}
     ]}.
+
+check_subscribers(Subs) ->
+    ?_assertEqual(lists:sort(Subs),
+                  lists:sort(subscribers(?LOCAL_CONTEXT, ?BOT))).
 
 test_delete() ->
     NewBot = #{id := ID} = new_bot(),

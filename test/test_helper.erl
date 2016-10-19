@@ -24,6 +24,7 @@
          add_sample_contact/2,
          subscribe_pair/2,
          add_contact/4,
+         add_to_s/2,
          remove_friend/2,
 
          iq_set/2,
