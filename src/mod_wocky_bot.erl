@@ -536,7 +536,9 @@ optional_fields() ->
 output_only_fields() ->
     [field(<<"id">>,            string, <<>>),
      field(<<"server">>,        string, <<>>),
-     field(<<"owner">>,         jid,    <<>>)].
+     field(<<"owner">>,         jid,    <<>>),
+     field(<<"updated">>,       timestamp, <<>>)
+    ].
 
 create_fields() -> required_fields() ++ optional_fields().
 output_fields() -> required_fields() ++ optional_fields()
@@ -670,7 +672,10 @@ to_field(Key, Val, Acc) ->
         #field{type = Type} -> [make_field(KeyBin, Type, Val) | Acc]
     end.
 
-make_field(Name, Type, Val) when Type =:= string orelse Type =:= int ->
+make_field(Name, Type, Val)
+  when Type =:= string orelse
+       Type =:= int orelse
+       Type =:= timestamp ->
     #field{name = Name, type = Type, value = Val};
 make_field(Name, jid, Val) when is_binary(Val) ->
     #field{name = Name, type = jid, value = safe_jid_from_binary(Val)};
@@ -684,7 +689,9 @@ encode_field(#field{name = N, type = jid, value = V}, Acc) ->
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
-    [geoloc_field(N, V) | Acc].
+    [geoloc_field(N, V) | Acc];
+encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
+    [field_element(N, timestamp, wocky_db:timestamp_to_string(V)) | Acc].
 
 make_jid(User) ->
     case jid:from_binary(User) of

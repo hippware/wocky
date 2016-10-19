@@ -298,9 +298,7 @@ retrieve_for_user(Config) ->
         NoteID = <<"Note">>,
         Title = <<"Title">>,
         Content = <<"Content">>,
-        expect_iq_success(
-          publish_item_stanza(PublishBot, NoteID, Title, Content),
-          Alice),
+        publish_item(PublishBot, NoteID, Title, Content, undefined, Alice),
 
         %% Alice can see all her bots with the updated one now at the end
         Stanza6 = expect_iq_success(
@@ -771,6 +769,7 @@ expected_create_fields() ->
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    any},
      {"image_items",        int,    0},
+     {"updated",            timestamp, any},
      {"followers+size",     int,    1}, % Owner is always a follower
      {"followers+hash",     string, any},
      {"affiliates+size",    int,    1}, % Owner is always an affiliate
@@ -794,6 +793,7 @@ expected_retrieve_fields() ->
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
+     {"updated",            timestamp, any},
      {"followers+size",     int,    2}, % Owner is always an follower
      {"followers+hash",     string, any},
      {"affiliates+size",    int,    2}, % Owner is always an affiliate
@@ -1113,8 +1113,7 @@ retract_el(BotID, NoteID) ->
 
 expect_item_publication(Client, BotID, NoteID, Title, Content) ->
     Stanza = escalus:wait_for_stanza(Client),
-    ?assertEqual(ok,
-      is_publication_update(BotID, NoteID, Title, Content, Stanza)).
+    ?assert(is_publication_update(BotID, NoteID, Title, Content, Stanza)).
 
 is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
     do([error_m ||
@@ -1128,7 +1127,8 @@ is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
         check_children_cdata(Entry, [{<<"title">>, Title},
                                      {<<"content">>, Content}]),
         ok
-       ]).
+       ]),
+    true.
 
 check_get_children(Els, Name) -> check_get_children(Els, Name, []).
 
