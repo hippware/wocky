@@ -41,6 +41,7 @@
         before_id   :: binary() | undefined,
         from_id     :: binary() | undefined,
         to_id       :: binary() | undefined,
+        reverse = false :: boolean(),
         simple = false :: boolean(),
         opt_count = false :: boolean()
         }).
@@ -691,47 +692,41 @@ maybe_with_elem(BWithJID) ->
 stanza_archive_request(P, QueryId, BWithJID) ->
     stanza_lookup_messages_iq(P, QueryId,
                               undefined, undefined,
-                              BWithJID, undefined,
-                              false).
+                              BWithJID, undefined).
 
 stanza_date_range_archive_request(P, BWithJID) ->
     stanza_lookup_messages_iq(P, undefined,
                               "2010-06-07T00:00:00Z", "2010-07-07T13:23:54Z",
-                              BWithJID, undefined,
-                              false).
+                              BWithJID, undefined).
 
 stanza_date_range_archive_request_not_empty(P, Start, Stop, BWithJID) ->
     stanza_lookup_messages_iq(P, undefined,
                               Start, Stop,
-                              BWithJID, undefined,
-                              false).
+                              BWithJID, undefined).
 
 stanza_limit_archive_request(P, BWithJID) ->
     stanza_lookup_messages_iq(P, undefined, "2010-08-07T00:00:00Z",
-                              undefined, BWithJID, #rsm_in{max=10},
-                              false).
+                              undefined, BWithJID, #rsm_in{max=10}).
 
 stanza_page_archive_request(P, QueryId, RSM, BWithJID) ->
-    stanza_lookup_messages_iq(P, QueryId, undefined, undefined, BWithJID, RSM,
-                              false).
+    stanza_lookup_messages_iq(P, QueryId, undefined, undefined, BWithJID, RSM).
 
 stanza_filtered_by_jid_request(P, BWithJID) ->
     stanza_lookup_messages_iq(P, undefined, undefined,
-                              undefined, BWithJID, undefined,
-                              false).
+                              undefined, BWithJID, undefined).
 
 stanza_reverse_page_request(P, QueryId, RSM) ->
-    stanza_lookup_messages_iq(P, QueryId, undefined, undefined, undefined, RSM,
-                              true).
+    stanza_lookup_messages_iq(P, QueryId, undefined, undefined, undefined,
+                              RSM#rsm_in{reverse = true}).
 
-stanza_lookup_messages_iq(P, QueryId, BStart, BEnd, BWithJID, RSM, Reverse) ->
+stanza_lookup_messages_iq(P, QueryId, BStart, BEnd, BWithJID, RSM) ->
     case get_prop(data_form, P) of
         false ->
             stanza_lookup_messages_iq_v02(P, QueryId, BStart, BEnd,
-                                          BWithJID, RSM, Reverse);
+                                          BWithJID, RSM);
         true ->
             stanza_lookup_messages_iq_v03(P, QueryId, BStart, BEnd,
-                                          BWithJID, RSM, Reverse)
+                                          BWithJID, RSM)
     end.
 
 get_prop(Key, undefined) ->
@@ -744,7 +739,7 @@ get_prop(data_form, P) ->
     proplists:get_bool(data_form, P).
 
 stanza_lookup_messages_iq_v02(_P, QueryId, BStart, BEnd,
-                              BWithJID, RSM, Reverse) ->
+                              BWithJID, RSM) ->
     ct:log("Using v02"),
     escalus_stanza:iq(<<"get">>, [#xmlel{
        name = <<"query">>,
@@ -757,8 +752,7 @@ stanza_lookup_messages_iq_v02(_P, QueryId, BStart, BEnd,
            maybe_start_elem(BStart),
            maybe_end_elem(BEnd),
            maybe_with_elem(BWithJID),
-           maybe_rsm_elem(RSM),
-           maybe_reverse_elem(Reverse)])
+           maybe_rsm_elem(RSM)])
     }]).
 
 maybe_simple_elem(#rsm_in{simple=true}) ->
@@ -782,12 +776,14 @@ border_attributes(#rsm_in{
 
 maybe_rsm_elem(undefined) ->
     undefined;
-maybe_rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id, index=Index}) ->
+maybe_rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id,
+                       index=Index, reverse=Reverse}) ->
     #xmlel{name = <<"set">>,
            children = skip_undefined([
                 maybe_rsm_max(Max),
                 maybe_rsm_index(Index),
-                maybe_rsm_direction(Direction, Id)])}.
+                maybe_rsm_direction(Direction, Id),
+                maybe_rsm_reverse(Reverse)])}.
 
 maybe_rsm_id(undefined) -> [];
 maybe_rsm_id(Id) -> #xmlcdata{content = Id}.
@@ -813,34 +809,31 @@ maybe_rsm_max(Max) when is_integer(Max) ->
         name = <<"max">>,
         children = #xmlcdata{content = integer_to_list(Max)}}.
 
-maybe_reverse_elem(false) ->
+maybe_rsm_reverse(false) ->
     undefined;
-maybe_reverse_elem(true) ->
-    #xmlel{
-       name = <<"reverse">>,
-       children = #xmlcdata{content = <<"true">>}}.
+maybe_rsm_reverse(true) ->
+    #xmlel{name = <<"reverse">>}.
 
 stanza_lookup_messages_iq_v03(P, QueryId, BStart, BEnd,
-                              BWithJID, RSM, Reverse) ->
+                              BWithJID, RSM) ->
     ct:log("Using v03"),
     escalus_stanza:iq(<<"set">>, [#xmlel{
        name = <<"query">>,
        attrs = mam_ns_attr(P)
             ++ maybe_attr(<<"queryid">>, QueryId),
        children = skip_undefined([
-           form_x(BStart, BEnd, BWithJID, RSM, Reverse),
+           form_x(BStart, BEnd, BWithJID, RSM),
            maybe_rsm_elem(RSM)])
     }]).
 
 
-form_x(BStart, BEnd, BWithJID, RSM, Reverse) ->
+form_x(BStart, BEnd, BWithJID, RSM) ->
     #xmlel{name = <<"x">>,
            attrs = [{<<"xmlns">>, <<"jabber:x:data">>}],
            children = skip_undefined([
                 form_field(<<"start">>, BStart),
                 form_field(<<"end">>, BEnd),
-                form_field(<<"with">>, BWithJID),
-                form_reverse_field(Reverse)]
+                form_field(<<"with">>, BWithJID)]
                 ++ form_extra_fields(RSM)
                 ++ form_border_fields(RSM))}.
 

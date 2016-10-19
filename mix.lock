@@ -19,7 +19,7 @@
   "dialyxir": {:git, "https://github.com/jeremyjh/dialyxir.git", "10b6993a41ee70788eb32e4a65ab430acdad38df", [branch: "develop"]},
   "dogma": {:hex, :dogma, "0.1.8", "1ee856ed64f3ad635a4b2127beea427ea1b9bc271b8731679a97938e1827730f", [:mix], [{:poison, ">= 1.0.0", [hex: :poison, optional: false]}]},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
-  "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "d3adae81ec6112d30181ae683330ff5cf412a27b", [branch: "working"]},
+  "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "d17cd12e92ceae718481dff6711fcc449374496a", [branch: "working"]},
   "elvis": {:hex, :elvis_core, "0.3.2", "5424dbd17bec4265a6808f49064cc1a8d2d1b593b5c4e94e747edb157abde6de", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, optional: false]}, {:lager, "3.0.2", [hex: :lager, optional: false]}, {:zipper, "1.0.0", [hex: :zipper, optional: false]}]},
   "eper": {:hex, :eper, "0.94.0", "f5fb2daa0df8878748e1c598428eda942a173e5121ff35c1d632129b84593a3a", [:rebar, :rebar], []},
   "erlando": {:git, "https://github.com/rabbitmq/erlando.git", "1c1ef25a9bc228671b32b4a6ee30c7525314b1fd", [branch: "master"]},

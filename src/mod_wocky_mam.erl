@@ -215,8 +215,8 @@ lookup_messages(Result, Host, UserID, UserJID,
                     WithJID, PageSize, LimitPassed, MaxResultLimit, Simple);
 
 lookup_messages(_Result, Host, _UserID, UserJID,
-                #rsm_in{id = undefined, index = undefined,
-                        max = RSMMax, direction = Direction},
+                RSM = #rsm_in{id = undefined, index = undefined,
+                              max = RSMMax, direction = Direction},
                 undefined, Start, End, _Now, WithJID,
                 RSMMax, _LimitPassed, _MaxResultLimit, Simple) ->
     TaggedStart = {time, Start},
@@ -225,7 +225,7 @@ lookup_messages(_Result, Host, _UserID, UserJID,
                      RSMMax, Direction),
     Counts = standard_counts(Simple, RSMMax, Host, UserJID, WithJID,
                              TaggedStart, TaggedEnd, undefined, Rows),
-    return_result(Counts, Rows);
+    return_result(RSM, Counts, Rows);
 
 %% No RSM data, borders present. Generate RSM based off the pagesize and use
 %% the function below:
@@ -239,6 +239,7 @@ lookup_messages(Result, Host, UserID, UserJID,
 
 %% RSM direction/limit data and borders present.
 lookup_messages(_Result, Host, _UserID, UserJID,
+                RSM =
                 #rsm_in{
                    max = RSMMax,
                    direction = Direction,
@@ -246,11 +247,12 @@ lookup_messages(_Result, Host, _UserID, UserJID,
                    id = undefined
                   },
                 Borders =
-                #mam_borders{after_id = AfterID,
-                             before_id = BeforeID,
-                             from_id = FromID,
-                             to_id = ToID
-                            },
+                #mam_borders{
+                   after_id = AfterID,
+                   before_id = BeforeID,
+                   from_id = FromID,
+                   to_id = ToID
+                  },
                 undefined, undefined, _Now, WithJID,
                 RSMMax, _LimitPassed, _MaxResultLimit, Simple) ->
     TaggedStart = get_time_from_id(Host, UserJID, AfterID, FromID),
@@ -259,12 +261,12 @@ lookup_messages(_Result, Host, _UserID, UserJID,
                      RSMMax, Direction),
     Counts = standard_counts(Simple, RSMMax, Host, UserJID, WithJID,
                              TaggedStart, TaggedEnd, Borders, Rows),
-    return_result(Counts, Rows);
+    return_result(RSM, Counts, Rows);
 
 %% RSM data present with index only (out-of-order retrieval):
 lookup_messages(_Result, Host, _UserID, UserJID,
-                #rsm_in{id = undefined, index = Index,
-                        max = RSMMax, direction = Direction},
+                RSM = #rsm_in{id = undefined, index = Index,
+                              max = RSMMax, direction = Direction},
                 undefined, undefined, undefined, _Now, WithJID,
                 RSMMax, _LimitPassed, _MaxResultLimit, Simple) ->
     {Q, V} = find_nth_query_val(UserJID, WithJID, Index, RSMMax, Direction),
@@ -273,13 +275,13 @@ lookup_messages(_Result, Host, _UserID, UserJID,
     {_, RequestedRows} = lists:split(SplitPoint, Rows),
     Counts = index_only_counts(Simple, RSMMax, Host, UserJID, WithJID,
                                SplitPoint),
-    return_result(Counts, RequestedRows);
+    return_result(RSM, Counts, RequestedRows);
 
 %% RSM data present with ID - find the timestamp for that ID and do a timestamp
 %% based lookup:
 lookup_messages(_Result, Host, _UserID, UserJID,
-                #rsm_in{direction = Direction, id = ID,
-                        index = undefined, max = RSMMax},
+                RSM = #rsm_in{direction = Direction, id = ID,
+                              index = undefined, max = RSMMax},
                 undefined, undefined, undefined, _Now, WithJID,
                 RSMMax, _LimitPassed, _MaxResultLimit, Simple) ->
     StartPoint = get_time_from_id(Host, UserJID, ID, undefined),
@@ -289,7 +291,7 @@ lookup_messages(_Result, Host, _UserID, UserJID,
                      RSMMax, Direction),
     Counts = standard_counts(Simple, RSMMax, Host, UserJID, WithJID,
                              undefined, undefined, undefined, Rows),
-    return_result(Counts, Rows);
+    return_result(RSM, Counts, Rows);
 
 lookup_messages(_, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
     error(unhandled_lookup_parameters).
@@ -411,8 +413,10 @@ do_lookup(Host, UserJID, OtherJID, Start, End, Max, Direction) ->
      ),
     run_paging_query(Host, Q, V).
 
-return_result({Total, OffsetCount}, Rows) ->
-    {ok, {Total, OffsetCount, lists:sort([row_to_msg(R) || R <- Rows])}}.
+return_result(RSM, {Total, OffsetCount}, Rows) ->
+    {ok, {Total, OffsetCount, maybe_reverse(
+                                RSM,
+                                lists:sort([row_to_msg(R) || R <- Rows]))}}.
 
 make_start(before, _) -> undefined;
 make_start(aft, Time) -> Time.
@@ -441,6 +445,11 @@ find_nth_query_val(UserJID, OtherJID, Index, Max, Direction) ->
       add_ordering(Direction),
       add_filtering(OtherJID)
     ).
+
+maybe_reverse(#rsm_in{reverse = true}, Rows) ->
+    lists:reverse(Rows);
+maybe_reverse(_, Rows) ->
+    Rows.
 
 %%%===================================================================
 %%% Query element constructors

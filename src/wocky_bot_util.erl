@@ -21,8 +21,7 @@
          make_follow_element/1,
          make_affiliate_elements/1,
          make_node/1,
-         list_hash/1,
-         get_rsm/1
+         list_hash/1
         ]).
 
 check_owner(Server, ID, User) ->
@@ -96,10 +95,3 @@ list_hash(List) ->
 
 make_node(ID) ->
     <<"bot/", ID/binary>>.
-
-get_rsm(IQ) ->
-    case jlib:rsm_decode(IQ) of
-        none -> {error, ?ERRT_BAD_REQUEST(
-                           ?MYLANG, <<"Missing or invalid RSM values">>)};
-        RSM = #rsm_in{} -> {ok, RSM}
-    end.

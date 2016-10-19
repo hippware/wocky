@@ -12,7 +12,7 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
--compile({parse_transform, do}).
+-compile({parse_transform, cut}).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).

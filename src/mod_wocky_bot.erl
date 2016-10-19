@@ -218,7 +218,7 @@ get_bot_by_id(From, Server, ID) ->
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
         User <- wocky_xml:get_attr(<<"user">>, Attrs),
-        RSMIn <- wocky_bot_util:get_rsm(IQ),
+        RSMIn <- rsm_util:get_rsm(IQ),
         {Bots, RSMOut} <- users_bots(Server, From, User, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
