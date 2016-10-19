@@ -3,7 +3,8 @@
 -compile({parse_transform, cut}).
 
 -export([get/2,
-         get_by_user/2,
+         owned_bots/2,
+         followed_bots/2,
          get_id_by_name/2,
          exists/2,
          insert/2,
@@ -48,9 +49,18 @@
 get(_Server, ID) ->
     wocky_db:select_row(shared, bot, all, #{id => ID}).
 
--spec get_by_user(wocky_db:server(), binary()) -> [binary()].
-get_by_user(_Server, UserJID) ->
-    wocky_db:select_column(shared, user_bot, id, #{owner => UserJID}).
+-spec owned_bots(wocky_db:server(), jid()) -> [binary()].
+owned_bots(_Server, UserJID) ->
+    User = jid:to_binary(jid:to_bare(UserJID)),
+    wocky_db:select_column(shared, user_bot, id, #{owner => User}).
+
+-spec followed_bots(wocky_db:server(), jid()) -> [binary()].
+followed_bots(Server, UserJID) ->
+    User = jid:to_binary(jid:to_bare(UserJID)),
+    Result = wocky_db:select(Server, subscribed_bot,
+                             [bot, follow], #{user => User}),
+    [Bot || #{bot := Bot, follow := true} <- Result] ++
+    owned_bots(Server, UserJID).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -186,17 +196,23 @@ unsubscribe(Server, ID, User) ->
 publish_item(Server, BotID, NoteID, Stanza, Image) ->
     Existing = wocky_db:select_one(Server, bot_item, id,
                                    #{id => NoteID, bot => BotID}),
-    MaybePublished = case Existing of
-                         not_found -> #{published => now};
-                         _ -> #{}
-                     end,
+    {NewItem, MaybePublished} = case Existing of
+                                    not_found -> {true, #{published => now}};
+                                    _ -> {false, #{}}
+                                end,
     Note = MaybePublished#{id => NoteID,
                            bot => BotID,
                            updated => now,
                            stanza => Stanza,
                            image => Image
                           },
-    wocky_db:insert(Server, bot_item, Note).
+    wocky_db:insert(Server, bot_item, Note),
+    maybe_bump_updated(Server, BotID, NewItem).
+
+maybe_bump_updated(_Server, BotID, true) ->
+    ok = wocky_db:insert(shared, bot, #{id => BotID, updated => now});
+maybe_bump_updated(_, _, false) ->
+    ok.
 
 get_item(Server, BotID, NoteID) ->
     wocky_db:select_row(Server, bot_item, all, #{id => NoteID, bot => BotID}).
@@ -210,8 +226,7 @@ delete_item(Server, BotID, NoteID) ->
 
 -spec dissociate_user(ejabberd:luser(), wocky_db:server()) -> ok.
 dissociate_user(LUser, LServer) ->
-    OwnedBots = get_by_user(LServer,
-                            jid:to_binary(jid:make(LUser, LServer, <<>>))),
+    OwnedBots = owned_bots(LServer, jid:make(LUser, LServer, <<>>)),
     Roster = wocky_db_roster:get_roster(LUser, LServer),
     Friends = lists:filter(wocky_db_roster:is_friend(_), Roster),
     FriendJIDs = [jid:make(J) || #wocky_roster{contact_jid = J} <- Friends],

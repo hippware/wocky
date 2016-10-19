@@ -106,7 +106,9 @@ defmodule Schemata.Schemas.Wocky do
         visibility:       :int,      # Visibility of bot
         affiliates:       {:set, :text}, # Bot's affiliates
                                          # (required for WHITELIST visibility)
-        alerts:           :int       # Whether alerts are enabled (0/1)
+        alerts:           :int,      # Whether alerts are enabled (0/1)
+        updated:          :timestamp # Timestamp of most recent item creation
+                                     # (or creation time of bot if no items)
       ],
       primary_key: :id
     ]
@@ -351,6 +353,12 @@ defmodule Schemata.Schemas.Wocky do
         follow:   :boolean   # Whether user is a follower
       ],
       primary_key: [:bot, :user]
+    ]
+
+    view :subscribed_bot, [
+      from: :bot_subscriber,
+      columns: :all,
+      primary_key: [:user, :bot]
     ]
 
     table :bot_name, [ # Table for looking up bots by shortname (URL)

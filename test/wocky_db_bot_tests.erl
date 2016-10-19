@@ -67,8 +67,12 @@ after_all(_) ->
 test_get() ->
     { "get", [
       { "returns bot data if it exists", [
-        ?_assertEqual(hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT)),
-                      get(?LOCAL_CONTEXT, ?BOT))
+        ?_assertEqual(maps:without(
+                        [updated],
+                        hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT))),
+                      maps:without(
+                        [updated],
+                        get(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns not_found if no bot exists", [
         ?_assertEqual(not_found, get(?LOCAL_CONTEXT, wocky_db:create_id()))
@@ -101,7 +105,7 @@ test_insert() ->
     { "insert", [
       { "inserts a new bot with the supplied parameters", inorder, [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBot)),
-        ?_assertEqual(NewBot, get(?LOCAL_CONTEXT, ID))
+        ?_assertEqual(NewBot, maps:without([updated], get(?LOCAL_CONTEXT, ID)))
       ]}
     ]}.
 
@@ -238,18 +242,28 @@ test_get_item() ->
 test_publish_item() ->
     ID = <<"newID">>,
     Content = <<"New Content">>,
-    { "publish_item", [
-      { "publishes a new item when one doesn't exist", [
-        ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
-                                       Content, false)),
-        ?_assertMatch(#{id := ID, stanza := Content},
-                      get_item(?LOCAL_CONTEXT, ?BOT, ID))
+    { "publish_item", inorder, [
+      { "publishes a new item when one doesn't exist", inorder, [
+        ?_test(begin
+                   #{updated := U} = get(?LOCAL_CONTEXT, ?BOT),
+                   ?assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
+                                                 Content, false)),
+                   ?assertMatch(#{id := ID, stanza := Content},
+                                get_item(?LOCAL_CONTEXT, ?BOT, ID)),
+                   #{updated := U2} = get(?LOCAL_CONTEXT, ?BOT),
+                   ?assert(U < U2)
+               end)
       ]},
-      { "updates an existing item", [
-        ?_assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
-                                       <<"Updated content">>, false)),
-        ?_assertMatch(#{id := ID, stanza := <<"Updated content">>},
-                      get_item(?LOCAL_CONTEXT, ?BOT, ID))
+      { "updates an existing item", inorder, [
+        ?_test(begin
+                   #{updated := U} = get(?LOCAL_CONTEXT, ?BOT),
+                   ?assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
+                                                 <<"Updated content">>, false)),
+                   ?assertMatch(#{id := ID, stanza := <<"Updated content">>},
+                                get_item(?LOCAL_CONTEXT, ?BOT, ID)),
+                   #{updated := U2} = get(?LOCAL_CONTEXT, ?BOT),
+                   ?assertEqual(U, U2)
+               end)
       ]}
     ]}.
 

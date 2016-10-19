@@ -86,12 +86,18 @@ handle_iq_type(From, To, #iq{type = set,
                             }) ->
     handle_delete(From, To, Attrs);
 
-% Retrieve
+% Retrieve owned bots
 handle_iq_type(From, To, IQ = #iq{type = get,
                                   sub_el = #xmlel{name = <<"bot">>,
                                                   attrs = Attrs}
                                  }) ->
     handle_get(From, To, IQ, Attrs);
+
+% Retrieve followed bots
+handle_iq_type(From, To, IQ = #iq{type = get,
+                                  sub_el = #xmlel{name = <<"following">>}
+                                 }) ->
+    handle_following(From, To, IQ);
 
 % Update
 handle_iq_type(From, To, #iq{type = set,
@@ -172,7 +178,7 @@ handle_create(From, Children) ->
         Fields <- get_fields(Children),
         Fields2 <- add_server(Fields, Server),
         check_required_fields(Fields2, required_fields()),
-        BotEl <- create_bot(From, Server, Fields2),
+        BotEl <- create(From, Server, Fields2),
         {ok, BotEl}
        ]).
 
@@ -199,7 +205,7 @@ delete_bot(Server, ID) ->
     ok.
 
 %%%===================================================================
-%%% Action - get
+%%% Actions - get/following
 %%%===================================================================
 
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
@@ -207,6 +213,14 @@ handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
         {ok, ID} -> get_bot_by_id(From, Server, ID);
         {error, _} -> get_bots_for_user(From, Server, IQ, Attrs)
     end.
+
+handle_following(From, #jid{lserver = Server}, IQ) ->
+    do([error_m ||
+        RSMIn <- rsm_util:get_rsm(IQ),
+        BotIDs <- {ok, wocky_db_bot:followed_bots(Server, From)},
+        {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
+        {ok, users_bots_result(Bots, RSMOut)}
+       ]).
 
 get_bot_by_id(From, Server, ID) ->
     do([error_m ||
@@ -218,20 +232,23 @@ get_bot_by_id(From, Server, ID) ->
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
         User <- wocky_xml:get_attr(<<"user">>, Attrs),
+        UserJID <- make_jid(User),
         RSMIn <- rsm_util:get_rsm(IQ),
-        {Bots, RSMOut} <- users_bots(Server, From, User, RSMIn),
+        BotIDs <- {ok, wocky_db_bot:owned_bots(Server, UserJID)},
+        {Bots, RSMOut} <- filter_bots_for_user(BotIDs, Server, From, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
-users_bots(Server, From, User, RSMIn) ->
-    BotIDs = wocky_db_bot:get_by_user(Server, User),
+filter_bots_for_user(BotIDs, Server, From, RSMIn) ->
     VisibleIDs = lists:filter(access_filter(Server, From, _), BotIDs),
-    % We don't have any particular order we want the bots in, it just
-    % needs to be consistant
-    SortedIDs = lists:sort(VisibleIDs),
-    {FilteredIDs, RSMOut} = rsm_util:filter_with_rsm(SortedIDs, RSMIn),
-    Bots = [wocky_db_bot:get(Server, ID) || ID <- FilteredIDs],
-    {ok, {Bots, RSMOut}}.
+    % Sort bots with most recently updated last
+    Bots = [wocky_db_bot:get(Server, ID) || ID <- VisibleIDs],
+    SortedBots = lists:sort(update_order(_, _), Bots),
+    {FilteredBots, RSMOut} = rsm_util:filter_with_rsm(SortedBots, RSMIn),
+    {ok, {FilteredBots, RSMOut}}.
+
+update_order(#{updated := U1}, #{updated := U2}) ->
+    U1 =< U2.
 
 access_filter(Server, From, ID) ->
     ok =:= wocky_bot_util:check_access(Server, ID, From).
@@ -517,7 +534,9 @@ optional_fields() ->
 output_only_fields() ->
     [field(<<"id">>,            string, <<>>),
      field(<<"server">>,        string, <<>>),
-     field(<<"owner">>,         jid,    <<>>)].
+     field(<<"owner">>,         jid,    <<>>),
+     field(<<"updated">>,       timestamp, <<>>)
+    ].
 
 create_fields() -> required_fields() ++ optional_fields().
 output_fields() -> required_fields() ++ optional_fields()
@@ -527,13 +546,13 @@ field(Name, Type, Value) ->
     #field{name = Name, type = Type, value = Value}.
 
 
-create_bot(Owner, Server, Fields) ->
+create(Owner, Server, Fields) ->
     ID = wocky_db:create_id(),
     do([error_m ||
         maybe_insert_name(ID, Fields),
         Fields2 <- add_defaults(Fields),
         Fields3 <- add_owner(Owner, Fields2),
-        update_bot(Server, ID, Fields3),
+        create_bot(Server, ID, Fields3),
         add_bot_as_roster_viewer(Owner, Server, ID),
         make_bot_el(Server, ID)
        ]).
@@ -571,9 +590,19 @@ maybe_add_default(#field{name = Name, type = Type, value = Default}, Fields) ->
             Fields
     end.
 
+create_bot(Server, ID, Fields) ->
+    FieldsMap = normalise_fields(Fields),
+    insert_bot(Server, ID, FieldsMap#{updated => now}).
+
 update_bot(Server, ID, Fields) ->
-    NormalisedFields = lists:foldl(fun normalise_field/2, #{}, Fields),
-    wocky_db_bot:insert(Server, NormalisedFields#{id => ID}).
+    FieldsMap = normalise_fields(Fields),
+    insert_bot(Server, ID, FieldsMap).
+
+insert_bot(Server, ID, FieldsMap) ->
+    wocky_db_bot:insert(Server, FieldsMap#{id => ID}).
+
+normalise_fields(Fields) ->
+    lists:foldl(fun normalise_field/2, #{}, Fields).
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
     Acc#{lat => Lat, lon => Lon};
@@ -641,7 +670,10 @@ to_field(Key, Val, Acc) ->
         #field{type = Type} -> [make_field(KeyBin, Type, Val) | Acc]
     end.
 
-make_field(Name, Type, Val) when Type =:= string orelse Type =:= int ->
+make_field(Name, Type, Val)
+  when Type =:= string orelse
+       Type =:= int orelse
+       Type =:= timestamp ->
     #field{name = Name, type = Type, value = Val};
 make_field(Name, jid, Val) when is_binary(Val) ->
     #field{name = Name, type = jid, value = safe_jid_from_binary(Val)};
@@ -655,7 +687,15 @@ encode_field(#field{name = N, type = jid, value = V}, Acc) ->
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
-    [geoloc_field(N, V) | Acc].
+    [geoloc_field(N, V) | Acc];
+encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
+    [field_element(N, timestamp, wocky_db:timestamp_to_string(V)) | Acc].
+
+make_jid(User) ->
+    case jid:from_binary(User) of
+        error -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user">>)};
+        JID -> {ok, JID}
+    end.
 
 safe_jid_from_binary(<<>>) -> not_found;
 safe_jid_from_binary(JID) -> jid:from_binary(JID).
