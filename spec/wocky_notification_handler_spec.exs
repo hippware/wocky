@@ -3,7 +3,7 @@ defmodule NotificationHandlerSpec do
 
   alias Wocky.Notification.NullHandler, as: Handler
 
-  @test_jid {"user", "server", "resource"}
+  @test_jid :jid.make("user", "server", "resource")
   @test_id "123456789"
 
   describe "Registering a device" do
