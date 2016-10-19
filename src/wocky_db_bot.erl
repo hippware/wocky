@@ -25,7 +25,8 @@
          get_items/2,
          delete_item/3,
          dissociate_user/2,
-         image_items_count/2
+         image_items_count/2,
+         item_images/2
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -236,6 +237,13 @@ dissociate_user(LUser, LServer) ->
 image_items_count(Server, BotID) ->
     wocky_db:count(Server, bot_item_images, #{bot => BotID, image => true}).
 
+-spec item_images(wocky_db:server(), wocky_db:id()) ->
+    [{wocky_db:id(), binary()}].
+item_images(Server, BotID) ->
+    R = wocky_db:select(Server, bot_item, [id, updated, stanza, image],
+                        #{bot => BotID}),
+    extract_images(R).
+
 %%%===================================================================
 %%% Private helpers
 %%%===================================================================
@@ -281,3 +289,14 @@ maybe_freeze_roster(Bot, _) -> Bot.
 
 maybe_add_owner_as_follower(not_found, Subs) -> Subs;
 maybe_add_owner_as_follower(Owner, Subs) -> [{Owner, true} | Subs].
+
+extract_images(Items) ->
+    lists:foldl(extract_image(_, _), [], Items).
+
+extract_image(#{image := true, id := ID, updated := Updated, stanza := S},
+              Acc) ->
+    case wocky_bot_util:get_image(S) of
+        none -> Acc;
+        I -> [#{id => ID, updated => Updated, image => I} | Acc]
+    end;
+extract_image(_, Acc) -> Acc.

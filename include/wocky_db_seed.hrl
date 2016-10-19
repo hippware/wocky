@@ -106,10 +106,11 @@
 -define(ITEM2, <<"test-item-id2">>).
 -define(ITEM_PUB_TIME, 8888).
 -define(ITEM_UPDATE_TIME, 9999).
+-define(ITEM_IMAGE, <<"Some image or other">>).
 -define(ITEM_STANZA,
         <<"<entry xmlns='", ?NS_ATOM/binary, "'>",
           "<content>This is a note I wrote on a boat in a moat</content>",
-          "<image>Some image or other</image>",
+          "<image>", ?ITEM_IMAGE/binary, "</image>",
           "</entry>">>).
 -define(ITEM_STANZA2,
         <<"<entry xmlns='", ?NS_ATOM/binary, "'>",

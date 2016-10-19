@@ -104,11 +104,8 @@ notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
     {SubscriberJIDs, _FollowStatuses} = lists:unzip(Subscribers),
     lists:foreach(notify_subscriber(From, _, Message), SubscriberJIDs).
 
-has_image(Item) ->
-    case xml:get_subtag(Item, <<"image">>) of
-        false -> false;
-        #xmlel{} -> true
-    end.
+has_image(Entry) ->
+    wocky_bot_util:get_image(Entry) =/= none.
 
 %%%===================================================================
 %%% Helpers - common

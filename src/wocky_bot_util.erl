@@ -21,7 +21,8 @@
          make_follow_element/1,
          make_affiliate_elements/1,
          make_node/1,
-         list_hash/1
+         list_hash/1,
+         get_image/1
         ]).
 
 check_owner(Server, ID, User) ->
@@ -95,3 +96,14 @@ list_hash(List) ->
 
 make_node(ID) ->
     <<"bot/", ID/binary>>.
+
+get_image(Entry) when is_binary(Entry) ->
+    case exml:parse(Entry) of
+        {ok, EntryXML} -> get_image(EntryXML);
+        _ -> none
+    end;
+get_image(Entry = #xmlel{}) ->
+    case xml:get_subtag(Entry, <<"image">>) of
+        #xmlel{children = [#xmlcdata{content = C}]} -> C;
+        false -> none
+    end.
