@@ -13,7 +13,7 @@
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
          get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
-         image_items_count/2
+         image_items_count/2, item_images/2
         ]).
 
 wocky_db_bot_test_() -> {
@@ -31,7 +31,8 @@ wocky_db_bot_test_() -> {
         test_affiliations_from_map(),
         test_followers(),
         test_subscribers(),
-        test_image_items_count()
+        test_image_items_count(),
+        test_item_images()
       ]},
 
       {inorder, [
@@ -223,6 +224,19 @@ test_image_items_count() ->
       { "returns 0 for non existant bot", [
         ?_assertEqual(0, image_items_count(?LOCAL_CONTEXT,
                                            wocky_db:create_id()))
+      ]}
+    ]}.
+
+test_item_images() ->
+    { "item_images", [
+      { "retrieves all images in items on a bot", [
+        ?_assertMatch([#{id := ?ITEM,
+                         updated := ?ITEM_UPDATE_TIME,
+                         image := ?ITEM_IMAGE}],
+                      item_images(?LOCAL_CONTEXT, ?BOT))
+      ]},
+      { "retrieves an emtpy list for a nonexistant bot", [
+        ?_assertEqual([], item_images(?LOCAL_CONTEXT, wocky_db:create_id()))
       ]}
     ]}.
 
