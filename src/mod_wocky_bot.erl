@@ -31,7 +31,7 @@
 
 -type loc() :: {float(), float()}.
 
--type field_type() :: string | int | geoloc | jid.
+-type field_type() :: string | int | geoloc | jid | timestamp.
 
 -record(field, {
           name :: binary(),
@@ -165,6 +165,13 @@ handle_iq_type(From, To, #iq{type = set,
                             }) ->
     wocky_bot_item:handle_retract(From, To, SubEl, Attrs);
 
+% Get a list of images from items on the bot
+handle_iq_type(From, To, IQ = #iq{type = get,
+                                  sub_el = #xmlel{name = <<"item_images">>,
+                                                  attrs = Attrs}}) ->
+    handle_item_images(From, To, IQ, Attrs);
+
+
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
 
@@ -279,6 +286,39 @@ handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
         update_bot(Server, ID, Fields),
         {ok, []}
        ]).
+
+%%%===================================================================
+%%% Action - item_images
+%%%===================================================================
+
+handle_item_images(From, #jid{lserver = Server}, IQ, Attrs) ->
+    do([error_m ||
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        RSMIn <- rsm_util:get_rsm(IQ),
+        wocky_bot_util:check_owner(Server, ID, From),
+        Images <- get_bot_item_images(Server, ID),
+        {FilteredImages, RSMOut} <-
+        {ok, rsm_util:filter_with_rsm(Images, RSMIn)},
+        {ok, images_result(FilteredImages, RSMOut)}
+       ]).
+
+get_bot_item_images(Server, ID) ->
+    Images = wocky_db_bot:item_images(Server, ID),
+    {ok, lists:sort(update_order(_, _), Images)}.
+
+images_result(Images, RSMOut) ->
+    ImageEls = image_els(Images),
+    #xmlel{name = <<"item_images">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = ImageEls ++ jlib:rsm_encode(RSMOut)}.
+
+image_els(Images) ->
+    lists:map(image_el(_), Images).
+
+image_el(#{id := ID, image := Image}) ->
+    #xmlel{name = <<"image">>,
+           attrs = [{<<"item">>, ID},
+                    {<<"url">>, Image}]}.
 
 %%%===================================================================
 %%% Incoming packet handler

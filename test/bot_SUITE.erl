@@ -55,7 +55,8 @@ all() ->
      retract_item,
      edit_item,
      get_items,
-     publish_image_item
+     publish_image_item,
+     item_images
     ].
 
 suite() ->
@@ -699,6 +700,20 @@ publish_image_item(Config) ->
         test_helper:ensure_all_clean([Alice])
       end).
 
+item_images(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        lists:foreach(publish_item_with_image(_, Alice), lists:seq(0, 9)),
+
+        %% Alice can see all the images
+        Stanza = expect_iq_success(item_image_stanza(), Alice),
+        check_returned_images(Stanza, 0, 9),
+
+        %% Bob cannot since he has no visibility of the bot
+        expect_iq_error(item_image_stanza(), Bob)
+      end).
+
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -821,7 +836,7 @@ check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
        do([error_m ||
            RSM <- check_get_children(Children, <<"set">>,
                                      [{<<"xmlns">>, ?NS_RSM}]),
-           RSMOut <- decode_rsm(RSM, #rsm_out{}),
+           RSMOut <- decode_rsm(RSM),
            check_rsm(RSMOut, Total, Index, First, Last),
            check_ids(ExpectedIDs, Children)
           ])
@@ -1173,7 +1188,6 @@ is_retraction_update(BotID, NoteID, Stanza) ->
                                      [{<<"id">>, NoteID}]),
             ok
            ]),
-    ct:log("is_retraction_update result: ~p", [R]),
     R =:= ok.
 
 add_item(Client, Subs, N) ->
@@ -1204,11 +1218,15 @@ check_result(Stanza, First, Last) ->
                                        [{<<"xmlns">>, ?NS_BOT}]),
         RSM <- check_get_children(Children, <<"set">>,
                                   [{<<"xmlns">>, ?NS_RSM}]),
-        RSMOut <- decode_rsm(RSM, #rsm_out{}),
+        RSMOut <- decode_rsm(RSM),
         check_rsm(RSMOut, ?CREATED_ITEMS, First, item_id(First), item_id(Last)),
         check_items(Children, First, Last),
         ok
        ]).
+
+item_image_stanza() ->
+    QueryEl = node_el(?BOT, <<"item_images">>, [rsm_elem(#rsm_in{})]),
+    test_helper:iq_get(?NS_BOT, QueryEl).
 
 %% RSM encoding
 rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id, index=Index}) ->
@@ -1249,6 +1267,7 @@ skip_undefined(Xs) ->
     [X || X <- Xs, X =/= undefined].
 
 %% RSM decoding
+decode_rsm(XML) -> decode_rsm(XML, #rsm_out{}).
 decode_rsm([], Acc) -> {ok, Acc};
 decode_rsm([#xmlel{name = <<"first">>,
                   attrs = [{<<"index">>, Index}],
@@ -1315,6 +1334,8 @@ item_title(I) ->
     <<"Title_", (integer_to_binary(I))/binary>>.
 item_content(I) ->
     <<"Content_", (integer_to_binary(I))/binary>>.
+item_image_url(I) ->
+    <<"tros:server/Image_", (integer_to_binary(I))/binary>>.
 
 create_simple_bot(Client) ->
     Fields = lists:keydelete("shortname", 1, default_fields()),
@@ -1341,13 +1362,36 @@ is_pres_unavailable() ->
     end.
 
 publish_item(BotID, NoteID, Title, Content, Image, Client) ->
-  PubStanza = test_helper:add_to_s(
-                publish_item_stanza(BotID, NoteID, Title, Content, Image),
-                Client),
-  escalus:send(Client, PubStanza),
+    PubStanza = test_helper:add_to_s(
+                  publish_item_stanza(BotID, NoteID, Title, Content, Image),
+                  Client),
+    escalus:send(Client, PubStanza),
 
-  Stanzas = escalus:wait_for_stanzas(Client, 2),
-  escalus:assert_many([is_iq_result,
-                       is_publication_update(BotID, NoteID,
-                                             Title, Content, _)],
-                      Stanzas).
+    Stanzas = escalus:wait_for_stanzas(Client, 2),
+    escalus:assert_many([is_iq_result,
+                         is_publication_update(BotID, NoteID,
+                                               Title, Content, _)],
+                        Stanzas).
+
+publish_item_with_image(I, Client) ->
+    publish_item(?BOT, item_id(I), <<"Title">>, <<"Content">>,
+                 item_image_url(I), Client).
+
+check_returned_images(#xmlel{name = <<"iq">>, children = Children},
+                      First, Last) ->
+    [#xmlel{name = <<"item_images">>, children = ImageList}] = Children,
+    Remaining = check_image(?ITEM, ?ITEM_IMAGE, ImageList),
+    RSMXML = lists:foldl(
+               fun(I, S) ->
+                       check_image(item_id(I), item_image_url(I), S)
+               end, Remaining, lists:seq(First, Last)),
+    {ok, RSMEls} = check_get_children(hd(RSMXML), <<"set">>,
+                                      [{<<"xmlns">>, ?NS_RSM}]),
+    {ok, RSM} = decode_rsm(RSMEls),
+    ok = check_rsm(RSM, (Last - First) + 2, 0, ?ITEM, item_id(Last)).
+
+check_image(Item, URL, [#xmlel{name = <<"image">>, attrs = Attrs} | Rest]) ->
+    ?assertEqual({value, Item}, xml:get_attr(<<"item">>, Attrs)),
+    ?assertEqual({value, URL}, xml:get_attr(<<"url">>, Attrs)),
+    Rest.
+
