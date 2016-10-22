@@ -11,11 +11,14 @@ defmodule Wocky.Mixfile do
      test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases,
      deps: deps,
-     preferred_cli_env: [espec:        :test,
-                         eunit:        :test,
-                         ct:           :test,
-                         test_db_load: :test,
-                         release:      :prod],
+     preferred_cli_env: [release: :prod,
+                         espec:   :test,
+                         eunit:   :test,
+                         ct:      :test,
+                         'db.load.test':     :test,
+                         'db.migrate.test':  :test,
+                         'db.rollback.test': :test
+                       ],
      dialyzer: [
        plt_apps: [
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
@@ -155,30 +158,10 @@ defmodule Wocky.Mixfile do
     [
       deps: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: "elvis",
-      migrate: &migrate/1,
-      rollback: &rollback/1,
-      test_db_load: &db_load/1,
-      dev_db_load: &db_load/1
+      'db.migrate.test': "db.migrate",
+      'db.rollback.test': "db.rollback",
+      'db.load.test': "db.load"
     ]
-  end
-
-  defp migrate(_) do
-    System.put_env("WOCKY_MINIMAL", "1")
-    Mix.Task.run "app.start"
-    Schemata.Migrator.migrate(:up)
-  end
-
-  defp rollback(_) do
-    System.put_env("WOCKY_MINIMAL", "1")
-    Mix.Task.run "app.start"
-    Schemata.Migrator.migrate(:down, 1)
-  end
-
-  defp db_load(_) do
-    System.put_env("WOCKY_MINIMAL", "1")
-    Mix.Task.run "app.start"
-    Schemata.Schema.create_keyspace(:wocky_db.shared_keyspace)
-    Schemata.Schema.create_keyspace(:wocky_db.local_keyspace)
   end
 
   defp elvis_config do
