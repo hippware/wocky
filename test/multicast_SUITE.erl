@@ -24,7 +24,6 @@ all() -> [friends,
 suite() ->
     escalus:suite().
 
-
 %%--------------------------------------------------------------------
 %% Init & teardown
 %%--------------------------------------------------------------------
@@ -109,7 +108,6 @@ error(Config) ->
         test_helper:ensure_all_clean([Alice, Bob, Tim])
       end).
 
-
 multicast_stanza(Type) ->
     multicast_stanza([{<<"type">>, Type}], ?NS_ADDRESS).
 
@@ -123,8 +121,6 @@ multicast_stanza(AddressAttrs, NS) ->
                        children = [Address]},
     Stanza#xmlel{children =
                  [Addresses | Stanza#xmlel.children]}.
-
-
 
 expect_multicast_msg(Recipients) ->
     lists:foreach(
