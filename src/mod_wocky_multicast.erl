@@ -26,7 +26,6 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(filter_local_packet, Host,
                        fun filter_local_packet_hook/1, 80).
 
-
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_ADDRESS),
     ejabberd_hooks:delete(filter_local_packet, Host,
