@@ -1,7 +1,7 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%%
 %%% @doc Module implementing multicast addressing
-%%% See https://github.com/hippware/tr-wiki/wiki/Bot
+%%% See https://github.com/hippware/tr-wiki/wiki/Multicast-Addressing
 %%%
 -module(mod_wocky_multicast).
 
