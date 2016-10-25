@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%%
-%%% @doc Module implementing Wocky bots
+%%% @doc Module implementing multicast addressing
 %%% See https://github.com/hippware/tr-wiki/wiki/Bot
 %%%
 -module(mod_wocky_multicast).
