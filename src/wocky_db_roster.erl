@@ -16,6 +16,7 @@
          has_contact/2,
          is_friend/2,
          is_friend/1,
+         is_follower/1,
          users_with_contact/1
         ]).
 
@@ -132,6 +133,10 @@ is_friend(#jid{luser = LUser}, OtherJID) ->
 -spec is_friend(wocky_roster()) -> boolean().
 is_friend(#wocky_roster{subscription = Sub, groups = Groups}) ->
     wocky_util:is_friend(Sub, Groups).
+
+-spec is_follower(wocky_roster()) -> boolean().
+is_follower(#wocky_roster{subscription = Sub, groups = Groups}) ->
+    wocky_util:is_follower(Sub, Groups).
 
 -spec users_with_contact(ejabberd:jid()) -> [ejabberd:jid()].
 users_with_contact(ContactJID) ->

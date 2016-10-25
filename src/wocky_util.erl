@@ -25,7 +25,8 @@
    iq_id/0,
    make_error_iq_response/2,
 
-   is_friend/2
+   is_friend/2,
+   is_follower/2
         ]).
 
 -export_type([hook/0]).
@@ -130,5 +131,11 @@ intersection(A, B) ->
 -spec is_friend(subscription_type(), [binary()]) -> boolean().
 is_friend(Subscription, Groups) ->
     Subscription =:= both
+    andalso
+    not lists:member(<<"__blocked__">>, Groups).
+
+-spec is_follower(subscription_type(), [binary()]) -> boolean().
+is_follower(Subscription, Groups) ->
+    (Subscription =:= both orelse Subscription =:= from)
     andalso
     not lists:member(<<"__blocked__">>, Groups).
