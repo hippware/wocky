@@ -99,6 +99,7 @@
 -define(BOT_RADIUS, 10).
 -define(BOT_OWNER_ROSTER, [?BOB_B_JID, ?KAREN_B_JID]).
 -define(BOT_OWNER_ROSTER_VERSION, <<"999-4">>).
+-define(BOT_UPDATE_STANZA, <<"<bot_update>A thing happened</bot_update>">>).
 
 -define(ROSTER_VIEWERS, [?BOT_B_JID, ?BOB_B_JID]).
 
@@ -116,5 +117,9 @@
         <<"<entry xmlns='", ?NS_ATOM/binary, "'>",
           "<content>'Does it float?' he wrote, 'I hope not(e)'.</content>",
           "</entry>">>).
+
+-define(HS_V_1, <<"683b9208-a09d-11e6-adaa-583a00000762">>).
+-define(HS_V_2, <<"6a39d1be-a09d-11e6-adaa-583a00000762">>).
+-define(HS_V_3, <<"7099d8c4-a09d-11e6-adaa-583a00000762">>).
 
 -endif.

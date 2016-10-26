@@ -118,7 +118,6 @@ defmodule Schemata.Schemas.Wocky do
       columns: [:owner, :id],
       primary_key: [:owner, :id]
     ]
-
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
@@ -386,5 +385,28 @@ defmodule Schemata.Schemas.Wocky do
       columns: [:bot, :id, :image],
       primary_key: [:bot, :image, :id]
     ]
+
+    # mod_wocky_home_stream data stream
+    table :home_stream, [
+      columns: [
+        user:       :text,      # Stream owner
+        server:     :text,
+        id:         :text,      # Stream item ID
+        version:    :timeuuid,  # Version of this update (globally
+                                # unique, time ordered)
+        from_id:    :text,      # Stanza origin
+        stanza:     :text,      # Stanza of the stream item
+        deleted:    :boolean    # true only if this is a tombstone entry
+      ],
+      primary_key: [[:user, :server], :version],
+      order_by: [version: :asc]
+    ]
+
+    view :home_stream_item, [
+      from: :home_stream,
+      columns: [:user, :server, :id, :version],
+      primary_key: [:user, :server, :id, :version]
+    ]
   end
+
 end

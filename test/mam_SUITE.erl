@@ -776,43 +776,8 @@ border_attributes(#rsm_in{
 
 maybe_rsm_elem(undefined) ->
     undefined;
-maybe_rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id,
-                       index=Index, reverse=Reverse}) ->
-    #xmlel{name = <<"set">>,
-           children = skip_undefined([
-                maybe_rsm_max(Max),
-                maybe_rsm_index(Index),
-                maybe_rsm_direction(Direction, Id),
-                maybe_rsm_reverse(Reverse)])}.
-
-maybe_rsm_id(undefined) -> [];
-maybe_rsm_id(Id) -> #xmlcdata{content = Id}.
-
-maybe_rsm_direction(undefined, undefined) ->
-    undefined;
-maybe_rsm_direction(Direction, Id) ->
-    #xmlel{
-        name = atom_to_binary(Direction, latin1),
-        children = maybe_rsm_id(Id)}.
-
-maybe_rsm_index(undefined) ->
-    undefined;
-maybe_rsm_index(Index) when is_integer(Index) ->
-    #xmlel{
-        name = <<"index">>,
-        children = #xmlcdata{content = integer_to_list(Index)}}.
-
-maybe_rsm_max(undefined) ->
-    undefined;
-maybe_rsm_max(Max) when is_integer(Max) ->
-    #xmlel{
-        name = <<"max">>,
-        children = #xmlcdata{content = integer_to_list(Max)}}.
-
-maybe_rsm_reverse(false) ->
-    undefined;
-maybe_rsm_reverse(true) ->
-    #xmlel{name = <<"reverse">>}.
+maybe_rsm_elem(RSM) ->
+    test_helper:rsm_elem(RSM).
 
 stanza_lookup_messages_iq_v03(P, QueryId, BStart, BEnd,
                               BWithJID, RSM) ->
