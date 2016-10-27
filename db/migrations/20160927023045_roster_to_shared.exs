@@ -20,8 +20,8 @@ defmodule Schemata.RosterToSharedMigration do
       ],
       primary_key: [:user, :contact_jid]
 
-    create_view :roster_version,
-      from: :roster, in: :wocky_db.shared_keyspace,
+    create_view :roster_version, in: :wocky_db.shared_keyspace,
+      from: "#{:wocky_db.shared_keyspace}.roster",
       columns: :all,
       primary_key: [:user, :version, :contact_jid],
       order_by: [version: :asc]
@@ -58,8 +58,8 @@ defmodule Schemata.RosterToSharedMigration do
       ],
       primary_key: [:user, :contact_jid]
 
-    create_view :roster_version,
-      from: :roster, in: :wocky_db.local_keyspace,
+    create_view :roster_version, in: :wocky_db.local_keyspace,
+      from: "#{:wocky_db.local_keyspace}.roster",
       columns: :all,
       primary_key: [:user, :version, :contact_jid],
       order_by: [version: :asc]
