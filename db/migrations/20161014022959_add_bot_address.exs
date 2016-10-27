@@ -5,11 +5,11 @@ defmodule Schemata.AddBotAddressMigration do
   ]
 
   def up do
-    alter_table :bot_item, in: :wocky_db.local_keyspace,
+    alter_table :bot, in: :wocky_db.shared_keyspace,
       add: :address, type: :text
   end
 
   def down do
-    alter_table :bot_item, in: :wocky_db.local_keyspace, drop: :address
+    alter_table :bot, in: :wocky_db.shared_keyspace, drop: :address
   end
 end

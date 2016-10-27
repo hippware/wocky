@@ -23,8 +23,8 @@ defmodule Schemata.BotToSharedMigration do
       ],
       primary_key: :id
 
-    create_view :user_bot,
-      from: :bot, in: :wocky_db.shared_keyspace,
+    create_view :user_bot, in: :wocky_db.shared_keyspace,
+      from: "#{:wocky_db.shared_keyspace}.bot",
       columns: [:owner, :id],
       primary_key: [:owner, :id]
 
@@ -60,13 +60,13 @@ defmodule Schemata.BotToSharedMigration do
       ],
       primary_key: :id
 
-    create_view :user_bot,
-      from: :bot, in: :wocky_db.shared_keyspace,
+    create_view :user_bot, in: :wocky_db.local_keyspace,
+      from: "#{:wocky_db.local_keyspace}.bot",
       columns: [:owner, :id],
       primary_key: [:owner, :id]
 
     select(:all,
-      from: :bot, in: :wocky_db.local_keyspace)
+      from: :bot, in: :wocky_db.shared_keyspace)
     |>
     Enum.each(
      fn(v) ->
