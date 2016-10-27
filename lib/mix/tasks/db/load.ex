@@ -9,6 +9,9 @@ defmodule Mix.Tasks.Db.Load do
   def run(args) do
     Wocky.start_app(args)
 
+    {opts, _, _} = OptionParser.parse args, switches: [reset: :boolean]
+    if opts[:reset], do: Mix.Task.run "db.reset", args
+
     success =
       case Schema.create_keyspace(:wocky_db.shared_keyspace) do
         :ok ->
