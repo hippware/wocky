@@ -13,7 +13,7 @@ node {
   sh "mix dialyzer"
 
   stage 'Unit Tests'
-  sh "mix test_db_load"
+  sh "mix db.load.test"
   sh "mix espec"
   sh "mix eunit --no-color"
 
