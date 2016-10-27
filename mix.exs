@@ -16,6 +16,7 @@ defmodule Wocky.Mixfile do
                          eunit:   :test,
                          ct:      :test,
                          'db.load.test':     :test,
+                         'db.reset.test':    :test,
                          'db.migrate.test':  :test,
                          'db.rollback.test': :test
                        ],
@@ -158,9 +159,10 @@ defmodule Wocky.Mixfile do
     [
       deps: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: "elvis",
+      'db.load.test': "db.load",
+      'db.reset.test': "db.reset",
       'db.migrate.test': "db.migrate",
-      'db.rollback.test': "db.rollback",
-      'db.load.test': "db.load"
+      'db.rollback.test': "db.rollback"
     ]
   end
 
