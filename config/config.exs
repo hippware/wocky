@@ -27,6 +27,10 @@ config :mnesia,
 config :setup,
   verify_directories: :false
 
+config :porcelain,
+  driver: Porcelain.Driver.Basic,
+  goon_warn_if_missing: false
+
 config :logger,
   handle_otp_reports: false,
   backends: [LoggerLagerBackend],

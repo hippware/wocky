@@ -63,7 +63,7 @@ defmodule Wocky.Mixfile do
     [description: 'JabberWocky XMPP Server',
      applications: dev_apps ++ [
        :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
-       :idna, :runtime_tools, :cache_tab, :alarms, :setup
+       :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -92,6 +92,7 @@ defmodule Wocky.Mixfile do
     [
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
+      {:porcelain,     "~> 2.0"},
       {:algolia,       "~> 0.4.0"},
       {:ex_aws,        "~> 1.0.0-rc.3"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
