@@ -6,8 +6,9 @@ defmodule Mix.Tasks.Db.Migrate do
   @moduledoc "Runs the database migrations"
   @shortdoc "Runs the database migrations"
 
-  def run(_) do
-    Wocky.start_app
+  def run(args) do
+    Wocky.start_app(args)
+
     success =
       case Migrator.migrate(:up) do
         {:ok, _} -> true

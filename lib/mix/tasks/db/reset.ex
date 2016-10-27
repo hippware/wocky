@@ -7,8 +7,8 @@ defmodule Mix.Tasks.Db.Reset do
   @moduledoc "Resets the database schema."
   @shortdoc "Resets the database schema."
 
-  def run(_) do
-    Wocky.start_app
+  def run(args) do
+    Wocky.start_app(args)
     :ok = Schema.reset_keyspace(:wocky_db.shared_keyspace)
     :ok = Schema.reset_keyspace(:wocky_db.local_keyspace)
     :ok = Migrator.reset

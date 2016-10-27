@@ -6,8 +6,9 @@ defmodule Mix.Tasks.Db.Load do
   @moduledoc "Loads the database schema from a file"
   @shortdoc "Loads the database schema from a file"
 
-  def run(_) do
-    Wocky.start_app
+  def run(args) do
+    Wocky.start_app(args)
+
     success =
       case Schema.create_keyspace(:wocky_db.shared_keyspace) do
         :ok ->
