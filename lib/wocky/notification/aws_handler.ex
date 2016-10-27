@@ -62,8 +62,13 @@ defmodule Wocky.Notification.AWSHandler do
     :ok
   end
 
-  defp handle_aws_error({:http_error, code, body} = error) do
+  defp handle_aws_error({:http_error, code, %{body: body}} = error) do
     :ok = Logger.error("SNS API error (#{code}): #{body}")
+    {:error, error}
+  end
+
+  defp handle_aws_error({:http_error, code, body} = error) do
+    :ok = Logger.error("SNS API error (#{code}): #{inspect(body)}")
     {:error, error}
   end
 
