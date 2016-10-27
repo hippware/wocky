@@ -10,7 +10,7 @@ defmodule Mix.Wocky do
     Mix.Task.run "app.start", args
   end
 
-  def set_error_exit(set?) do
+  def set_error_exit(set? \\ true) do
     System.at_exit(fn _ -> if set?, do: exit({:shutdown, 1}) end)
   end
 end
