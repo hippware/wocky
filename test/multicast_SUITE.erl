@@ -18,6 +18,8 @@
 
 all() -> [friends,
           followers,
+          to,
+          mix,
           error
          ].
 
@@ -51,7 +53,6 @@ end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
 friends(Config) ->
-    %% Alice sends a message to Bob, who is offline
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
                            {robert, 1}, {karen, 1}, {tim, 1}],
       fun(Alice, Bob, Carol, Robert, Karen, Tim) ->
@@ -75,7 +76,6 @@ friends(Config) ->
 
 followers(Config) ->
     ok = wocky_db:clear_tables(shared, [roster]),
-    %% Alice sends a message to Bob, who is offline
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Tim, Robert) ->
         test_helper:subscribe_pair(Bob, Alice),
@@ -86,6 +86,39 @@ followers(Config) ->
 
         expect_multicast_msg([Bob, Tim]),
         test_helper:ensure_all_clean([Robert])
+      end).
+
+to(Config) ->
+    ok = wocky_db:clear_tables(shared, [roster]),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
+      fun(Alice, Bob, Tim, Robert) ->
+        SendStanza = multicast_stanza([[{<<"type">>, <<"to">>},
+                                        {<<"jid">>, ?BOB_B_JID}]],
+                                      ?NS_ADDRESS),
+
+        escalus:send(Alice, SendStanza),
+
+        expect_multicast_msg([Bob]),
+        test_helper:ensure_all_clean([Tim, Robert])
+      end).
+
+mix(Config) ->
+    ok = wocky_db:clear_tables(shared, [roster]),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
+                           {tim, 1}, {robert, 1}],
+      fun(Alice, Bob, Carol, Tim, Robert) ->
+        test_helper:subscribe_pair(Bob, Alice),
+        test_helper:subscribe(Tim, Alice),
+        SendStanza = multicast_stanza([[{<<"type">>, <<"followers">>}],
+                                       [{<<"type">>, <<"friends">>}],
+                                       [{<<"type">>, <<"to">>},
+                                        {<<"jid">>,  ?ROBERT_B_JID}]],
+                                      ?NS_ADDRESS),
+
+        escalus:send(Alice, SendStanza),
+
+        expect_multicast_msg([Bob, Tim, Robert]),
+        test_helper:ensure_all_clean([Carol])
       end).
 
 error(Config) ->
@@ -99,28 +132,41 @@ error(Config) ->
         escalus:send(Alice, multicast_stanza(<<"fnord">>)),
 
         %% Wrong NS
-        escalus:send(Alice, multicast_stanza([{<<"type">>, <<"friends">>}],
+        escalus:send(Alice, multicast_stanza([[{<<"type">>, <<"friends">>}]],
                                              <<"wrongNS">>)),
 
+        %% Invalid jid
+        escalus:send(Alice, multicast_stanza([[{<<"type">>, <<"to">>},
+                                               {<<"jid">>, <<"@/@/">>}]],
+                                             ?NS_ADDRESS)),
+
+        %% Missing jid
+        escalus:send(Alice, multicast_stanza([[{<<"type">>, <<"to">>}]],
+                                             ?NS_ADDRESS)),
+
         %% Missing type
-        escalus:send(Alice, multicast_stanza([], ?NS_ADDRESS)),
+        escalus:send(Alice, multicast_stanza([[]], ?NS_ADDRESS)),
 
         test_helper:ensure_all_clean([Alice, Bob, Tim])
       end).
 
 multicast_stanza(Type) ->
-    multicast_stanza([{<<"type">>, Type}], ?NS_ADDRESS).
+    multicast_stanza([[{<<"type">>, Type}]], ?NS_ADDRESS).
 
 multicast_stanza(AddressAttrs, NS) ->
     Stanza = escalus_stanza:chat_to(
                ?LOCAL_CONTEXT, <<"Check out my LOLCAT">>),
-    Address = #xmlel{name = <<"address">>,
-                     attrs = AddressAttrs},
+    AddressEls = make_address_els(AddressAttrs),
     Addresses = #xmlel{name = <<"addresses">>,
                        attrs = [{<<"xmlns">>, NS}],
-                       children = [Address]},
+                       children = AddressEls},
     Stanza#xmlel{children =
                  [Addresses | Stanza#xmlel.children]}.
+
+make_address_els(AddressAttrsList) ->
+    lists:map(
+      fun(AA) -> #xmlel{name = <<"address">>, attrs = AA} end,
+      AddressAttrsList).
 
 expect_multicast_msg(Recipients) ->
     lists:foreach(

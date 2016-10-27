@@ -91,6 +91,8 @@ get_address(From, #xmlel{name = <<"address">>, attrs = Attrs}, Acc) ->
         {value, <<"followers">>} ->
             get_contact_addresses(
               wocky_db_roster:is_follower(_), From) ++ Acc;
+        {value, <<"to">>} ->
+            add_target(Attrs, Acc);
         {value, Type} ->
             ok = lager:warning("Unsupported address type received: ~p",
                                [Type]),
@@ -104,6 +106,18 @@ get_contact_addresses(FilterFun, #jid{luser = LUser, lserver = LServer}) ->
     Roster = wocky_db_roster:get_roster(LUser, LServer),
     Filtered = lists:filter(FilterFun, Roster),
     [jid:make(CJ) || #wocky_roster{contact_jid = CJ} <- Filtered].
+
+add_target(Attrs, Acc) ->
+    case xml:get_attr(<<"jid">>, Attrs) of
+        {value, JID} ->
+            maybe_add_jid(jid:from_binary(JID), Acc);
+        false ->
+            ok = lager:warning("Missing 'jid' attribute on 'to' element"),
+            Acc
+    end.
+
+maybe_add_jid(error, Acc) -> Acc;
+maybe_add_jid(JID = #jid{}, Acc) -> [JID | Acc].
 
 strip_addresses(Packet = #xmlel{children = Children}, AddressesEl) ->
     {ok, Packet#xmlel{children = lists:delete(AddressesEl, Children)}}.
