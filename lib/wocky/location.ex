@@ -38,7 +38,7 @@ defmodule Wocky.Location do
   defp check_for_bot_event(location, jid) do
     jid
     |> get_followed_bots
-    |> bots_with_events(location)
+    |> bots_with_events(jid, location)
     |> Enum.each(&trigger_bot_notification(jid, &1))
     :ok
   end
@@ -48,12 +48,24 @@ defmodule Wocky.Location do
     Bot.followed_bots(server, jid)
   end
 
-  defp bots_with_events(bots, location) do
-    bots |> Enum.filter(&check_for_event(&1, location))
+  defp bots_with_events(bots, jid, location) do
+    bots |> Enum.reduce([], &check_for_event(&1, jid, location, &2))
   end
 
-  defp check_for_event(bot_id, location) do
-    bot_id |> get_bot |> intersects?(location)
+  defp check_for_event(bot_id, jid, location, acc) do
+    if bot_id |> get_bot |> intersects?(location) do
+      if check_for_enter_event(jid, bot_id) do
+        [{bot_id, :enter} | acc]
+      else
+        acc
+      end
+    else
+      if check_for_exit_event(jid, bot_id) do
+        [{bot_id, :exit} | acc]
+      else
+        acc
+      end
+    end
   end
 
   defp get_bot(bot_id) do
@@ -68,8 +80,31 @@ defmodule Wocky.Location do
     Geocalc.distance_between(bot, location) <= bot.radius
   end
 
-  defp trigger_bot_notification(jid, bot) do
+  defp check_for_enter_event(jid, bot_id) do
+    case lookup_bot_events(jid, bot_id) do
+      [] -> true
+      [%{event: "exit"}] -> true
+      _ -> false
+    end
+  end
+
+  defp check_for_exit_event(jid, bot_id) do
+    case lookup_bot_events(jid, bot_id) do
+      [] -> false
+      [%{event: "enter"}] -> true
+      _ -> false
+    end
+  end
+
+  defp lookup_bot_events(jid, bot_id) do
+    Schemata.select :all,
+      from: :bot_event, in: :wocky_db.local_keyspace,
+      where: %{jid: jid, bot: bot_id},
+      limit: 1
+  end
+
+  defp trigger_bot_notification(jid, {bot, event}) do
     jid = Jid.to_binary(jid)
-    Logger.info("User #{jid} is within the radius of bot #{bot.shortname}")
+    Logger.info("User #{jid} #{event}ed the radius of bot #{bot.title}")
   end
 end

@@ -345,6 +345,17 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:id]
     ]
 
+    table :bot_event, [
+      columns: [
+        bot:        :timeuuid,  # Bot ID
+        jid:        :text,      # User JID
+        event:      :text,      # "enter" or "exit"
+        created_at: :timestamp  # when the event occurred
+      ],
+      primary_key: [[:bot, :jid], :event, :created_at],
+      order_by: [event: :asc, created_at: :desc]
+    ]
+
     table :bot_subscriber, [
       columns: [
         bot:      :timeuuid, # Bot ID
