@@ -79,6 +79,9 @@ get_config(Key, Default) ->
 %%%===================================================================
 
 start(_StartType, _StartArgs) ->
+    Minimal = get_minimal_mode(),
+    ok = maybe_change_loglevel(Minimal),
+
     {ok, Env} = set_wocky_env(),
 
     {ok, CfgDir} = application:get_env(wocky, config_dir),
@@ -96,13 +99,7 @@ start(_StartType, _StartArgs) ->
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
-    case os:getenv("WOCKY_MINIMAL") of
-        false ->
-            {ok, _} = ejabberd:start(),
-            ok;
-        _ ->
-            ok
-    end,
+    ok = maybe_start_ejabberd(not Minimal),
 
     wocky_sup:start_link().
 
@@ -127,6 +124,17 @@ set_wocky_env() ->
                     [version(), Env]),
     ok = application:set_env(wocky, wocky_env, Env),
     {ok, Env}.
+
+get_minimal_mode() ->
+    case os:getenv("WOCKY_MINIMAL") of
+        false -> false;
+        _ -> true
+    end.
+
+maybe_change_loglevel(true) ->
+    lager:set_loglevel(lager_console_backend, warning);
+maybe_change_loglevel(_) ->
+    ok.
 
 is_testing_server(<<"localhost">>) -> true;
 is_testing_server(<<"testing.", _/binary>>) -> true;
@@ -166,3 +174,9 @@ maybe_enable_notifications(Env) ->
             ok = lager:info("Notifications disabled"),
             ok
     end.
+
+maybe_start_ejabberd(true) ->
+    {ok, _} = ejabberd:start(),
+    ok;
+maybe_start_ejabberd(_) ->
+    ok.
