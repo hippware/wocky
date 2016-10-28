@@ -12,15 +12,15 @@ defmodule Mix.Tasks.Db.Dump do
 
     output = case args do
       [file] ->
-        File.rm_rf!(file)
+        _ = File.rm_rf!(file)
         {:append, file}
 
       _else ->
         IO.binstream(:standard_io, :line)
     end
 
-    dump_keyspace(:wocky_db.shared_keyspace, output)
-    dump_keyspace(:wocky_db.local_keyspace, output)
+    _ = dump_keyspace(:wocky_db.shared_keyspace, output)
+    _ = dump_keyspace(:wocky_db.local_keyspace, output)
   end
 
   defp dump_keyspace(ks, output) do

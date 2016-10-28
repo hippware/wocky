@@ -28,7 +28,7 @@ defmodule Mix.Tasks.Db.TestMigrations do
     shell.cmd("mix db.dump #{@mig_out_file}")
 
     # Compare the schema dumps
-    Application.ensure_started(:porcelain)
+    :ok = Application.ensure_started(:porcelain)
     %Result{out: output, status: status} =
       Porcelain.exec("diff", [@schema_out_file, @mig_out_file])
 

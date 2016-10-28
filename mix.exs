@@ -29,7 +29,7 @@ defmodule Wocky.Mixfile do
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
          :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
-         :algolia, :logger, :schemata
+         :algolia, :logger, :schemata, :porcelain, :mix
        ],
        plt_add_deps: true,
        flags: [
