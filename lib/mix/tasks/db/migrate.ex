@@ -9,6 +9,9 @@ defmodule Mix.Tasks.Db.Migrate do
   def run(args) do
     Wocky.start_app(args)
 
+    # Turn up the loglevel so we can see migration output
+    Wocky.set_loglevel(:info)
+
     {opts, _, _} = OptionParser.parse args, switches: [reset: :boolean]
     if opts[:reset], do: Mix.Task.run "db.reset", args
 

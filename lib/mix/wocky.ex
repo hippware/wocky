@@ -13,4 +13,9 @@ defmodule Mix.Wocky do
   def set_error_exit(set? \\ true) do
     System.at_exit(fn _ -> if set?, do: exit({:shutdown, 1}) end)
   end
+
+  def set_loglevel(level) do
+    :lager.set_loglevel(:lager_console_backend, level)
+    Logger.configure(level: level)
+  end
 end
