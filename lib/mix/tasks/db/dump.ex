@@ -24,6 +24,7 @@ defmodule Mix.Tasks.Db.Dump do
   end
 
   defp dump_keyspace(ks, output) do
+    Wocky.info "Dumping keyspace #{ks}..."
     Porcelain.exec("cqlsh", ["-e", "DESCRIBE KEYSPACE #{ks}"], out: output)
   end
 end

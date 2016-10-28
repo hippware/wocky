@@ -15,6 +15,7 @@ defmodule Mix.Tasks.Db.Migrate do
     {opts, _, _} = OptionParser.parse args, switches: [reset: :boolean]
     if opts[:reset], do: Mix.Task.run "db.reset", args
 
+    Wocky.info "Migrating the database..."
     success =
       case Migrator.migrate(:up) do
         {:ok, _} -> true

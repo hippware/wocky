@@ -18,4 +18,7 @@ defmodule Mix.Wocky do
     :lager.set_loglevel(:lager_console_backend, level)
     Logger.configure(level: level)
   end
+
+  def info(msg), do: Mix.shell.info("==> #{msg}")
+  def error(msg), do: Mix.shell.error("==> #{msg}")
 end

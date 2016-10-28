@@ -12,6 +12,7 @@ defmodule Mix.Tasks.Db.TestMigrations do
   @schema_out_file "schema_dump.cql"
 
   def run(_) do
+    Wocky.info "Comparing schemas..."
     shell = Mix.shell
 
     # Load the database from schema.exs
@@ -32,10 +33,10 @@ defmodule Mix.Tasks.Db.TestMigrations do
       Porcelain.exec("diff", [@schema_out_file, @mig_out_file])
 
     if status == 0 do
-      shell.info "Schemas match."
+      Wocky.info "Schemas match."
     else
-      shell.error "Schemas differ!"
-      shell.error output
+      Wocky.error "Schemas differ!"
+      Wocky.error output
       Wocky.set_error_exit
     end
   end

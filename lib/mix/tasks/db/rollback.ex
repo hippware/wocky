@@ -8,6 +8,8 @@ defmodule Mix.Tasks.Db.Rollback do
 
   def run(args) do
     Wocky.start_app(args)
+
+    Wocky.info "Rolling back the database..."
     success =
       case Migrator.migrate(:down, 1) do
         {:ok, _} -> true

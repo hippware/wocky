@@ -12,9 +12,11 @@ defmodule Mix.Tasks.Db.Load do
     {opts, _, _} = OptionParser.parse args, switches: [reset: :boolean]
     if opts[:reset], do: Mix.Task.run "db.reset", args
 
+    Wocky.info "Loading keyspace #{:wocky_db.shared_keyspace}..."
     success =
       case Schema.create_keyspace(:wocky_db.shared_keyspace) do
         :ok ->
+          Wocky.info "Loading keyspace #{:wocky_db.local_keyspace}..."
           case Schema.create_keyspace(:wocky_db.local_keyspace) do
             :ok -> true
             {:error, _} -> false
