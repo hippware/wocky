@@ -67,6 +67,7 @@
   "pa": {:git, "https://github.com/lavrin/pa.git", "070bf37fc8591de2cb8d975ab4935656f4110cb9", [branch: "master"]},
   "parse_trans": {:git, "git://github.com/uwiger/parse_trans.git", "a210adafdfbb904d156d8f22abd5fb58fc17de1e", [tag: "2.9.2"]},
   "poison": {:hex, :poison, "2.2.0", "4763b69a8a77bd77d26f477d196428b741261a761257ff1cf92753a0d4d24a63", [:mix], []},
+  "porcelain": {:hex, :porcelain, "2.0.2", "c1d4863de3e391195e36457bb3d7e17ee1bca5a44f1d708bc037c313342f58e9", [:mix], []},
   "pretty_errors": {:git, "https://github.com/eproxus/pretty_errors.git", "697be63f66159af49f542a1f53d1e3fd987838e1", [branch: "master"]},
   "proper": {:git, "https://github.com/manopapad/proper.git", "5f0d69c831b6c9f52535c3d1846efca480f6190d", [tag: "v1.2"]},
   "protobuffs": {:hex, :protobuffs, "0.8.4", "d38ca5f7380d8477c274680273372011890f8d0037c0d7e7db5c0207b89a4e0b", [:rebar, :make], [{:meck, "~> 0.8.4", [hex: :meck, optional: false]}]},

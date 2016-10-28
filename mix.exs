@@ -15,10 +15,12 @@ defmodule Wocky.Mixfile do
                          espec:   :test,
                          eunit:   :test,
                          ct:      :test,
+                         'db.dump.test':     :test,
                          'db.load.test':     :test,
                          'db.reset.test':    :test,
                          'db.migrate.test':  :test,
-                         'db.rollback.test': :test
+                         'db.rollback.test': :test,
+                         'db.test_migrations': :test
                        ],
      dialyzer: [
        plt_apps: [
@@ -27,7 +29,7 @@ defmodule Wocky.Mixfile do
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
          :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
-         :algolia, :logger, :schemata
+         :algolia, :logger, :schemata, :porcelain, :mix
        ],
        plt_add_deps: true,
        flags: [
@@ -63,7 +65,7 @@ defmodule Wocky.Mixfile do
     [description: 'JabberWocky XMPP Server',
      applications: dev_apps ++ [
        :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
-       :idna, :runtime_tools, :cache_tab, :alarms, :setup
+       :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -92,6 +94,7 @@ defmodule Wocky.Mixfile do
     [
       {:setup,         "1.7.0", override: true},
       {:lager,         "~> 3.2", override: true},
+      {:porcelain,     "~> 2.0"},
       {:algolia,       "~> 0.4.0"},
       {:ex_aws,        "~> 1.0.0-rc.3"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
@@ -159,6 +162,7 @@ defmodule Wocky.Mixfile do
     [
       deps: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: "elvis",
+      'db.dump.test': "db.dump",
       'db.load.test': "db.load",
       'db.reset.test': "db.reset",
       'db.migrate.test': "db.migrate",

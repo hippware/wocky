@@ -6,8 +6,16 @@ defmodule Mix.Tasks.Db.Migrate do
   @moduledoc "Runs the database migrations"
   @shortdoc "Runs the database migrations"
 
-  def run(_) do
-    Wocky.start_app
+  def run(args) do
+    Wocky.start_app(args)
+
+    # Turn up the loglevel so we can see migration output
+    Wocky.set_loglevel(:info)
+
+    {opts, _, _} = OptionParser.parse args, switches: [reset: :boolean]
+    if opts[:reset], do: Mix.Task.run "db.reset", args
+
+    Wocky.info "Migrating the database..."
     success =
       case Migrator.migrate(:up) do
         {:ok, _} -> true
