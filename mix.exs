@@ -19,7 +19,8 @@ defmodule Wocky.Mixfile do
                          'db.load.test':     :test,
                          'db.reset.test':    :test,
                          'db.migrate.test':  :test,
-                         'db.rollback.test': :test
+                         'db.rollback.test': :test,
+                         'db.test_migrations': :test
                        ],
      dialyzer: [
        plt_apps: [
