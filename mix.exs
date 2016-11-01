@@ -65,8 +65,8 @@ defmodule Wocky.Mixfile do
     dev_apps = Mix.env == :dev && [:reprise] || []
     [description: 'JabberWocky XMPP Server',
      applications: dev_apps ++ [
-       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
-       :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
+       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
+       :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
        :ex_machina, :faker
      ],
      included_applications: [

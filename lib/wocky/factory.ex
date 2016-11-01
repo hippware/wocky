@@ -32,7 +32,7 @@ defmodule Wocky.Factory do
       server: :wocky_app.server,
       title: Faker.Company.name,
       shortname: Faker.Company.buzzword,
-      owner: User.make_id,
+      owner: :jid.make(User.make_id, :wocky_app.server, <<>>),
       description: Faker.Lorem.paragraph(%Range{first: 1, last: 2}),
       image: :tros.make_url(:wocky_app.server, :wocky_db.create_id),
       type: "test",
@@ -47,7 +47,7 @@ defmodule Wocky.Factory do
   end
 
   def with_bots(user, num) do
-    [user | build_list(num, :bot, %{owner: user[:user]})]
+    [user | build_list(num, :bot, %{owner: User.to_jid(user)})]
   end
 
   def location_factory do

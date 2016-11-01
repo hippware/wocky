@@ -46,6 +46,13 @@ defmodule Wocky.Bot do
     :ossp_uuid.make(:v1, :binary)
   end
 
+  def get(id) do
+    case :wocky_db_bot.get(<<>>, id) do
+      :not_found -> nil
+      bot -> bot
+    end
+  end
+
   def insert(%__MODULE__{} = struct) do
     bot = struct |> Map.from_struct
 
