@@ -200,6 +200,8 @@ published_child(ID, Version) ->
 
 result_stanza(not_found, _Node) ->
     {error, ?ERR_ITEM_NOT_FOUND};
+result_stanza({#published_item{deleted = true}, _Version}, _Node) ->
+    {error, ?ERR_ITEM_NOT_FOUND};
 result_stanza({Item = #published_item{}, Version}, Node) ->
     items_stanza([item_stanza(Item)], Version, Node);
 result_stanza({Items, Version, RSMOut}, Node) ->

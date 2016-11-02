@@ -30,7 +30,8 @@ all() -> [
           auto_publish,
           subscribe,
           subscribe_version,
-          unsubscribe
+          unsubscribe,
+          get_item
          ].
 
 suite() ->
@@ -176,7 +177,6 @@ subscribe_version(Config) ->
         ensure_all_clean([Alice, Bob])
       end).
 
-
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
@@ -194,6 +194,17 @@ unsubscribe(Config) ->
         ensure_all_clean([Alice])
       end).
 
+get_item(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, _Bob) ->
+        Stanza = expect_iq_success_u(get_stanza(?ITEM), Alice, Alice),
+        check_single_result(Stanza, ?ITEM),
+
+        % Deleted and never-existed items should both return not-found
+        expect_iq_error_u(get_stanza(<<"some_id">>), Alice, Alice),
+        expect_iq_error_u(get_stanza(wocky_db:create_id()), Alice, Alice)
+      end).
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -203,6 +214,13 @@ get_stanza() ->
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [rsm_elem(#rsm_in{max = 200})]}).
+
+get_stanza(ID) ->
+    test_helper:iq_get(?NS_PUBLISHING,
+                       #xmlel{name = <<"items">>,
+                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
+                              children = [#xmlel{name = <<"item">>,
+                                                 attrs = [{<<"id">>, ID}]}]}).
 
 pub_stanza(ID) ->
     test_helper:iq_set(?NS_PUBLISHING,
@@ -238,8 +256,20 @@ check_result(Stanza, NumItems, NumDeletes, CheckVersion) ->
                   check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
                   maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
                   ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, NumItems, NumDeletes),
+                  check_elements(ItemsEl, NumItems, NumDeletes, 1),
                   {ok, ItemList}
+                 ]),
+    L.
+
+check_single_result(Stanza, ID) ->
+    {ok, L} = do([error_m ||
+                  ItemsEl <- get_items_el(Stanza),
+                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
+                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
+                  ItemList <- get_items(ItemsEl),
+                  check_elements(ItemsEl, 1, 0, 0),
+                  {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
+                  {ok, hd(ItemList)}
                  ]),
     L.
 
@@ -267,10 +297,10 @@ get_item(#xmlel{name = <<"delete">>, attrs = Attrs, children = []}, Acc) ->
 get_item(_, Acc) ->
     Acc.
 
-check_elements(Items, NumItems, NumDeletes) ->
+check_elements(Items, NumItems, NumDeletes, NumRSM) ->
     ?assertEqual(NumItems, count_elements(Items, <<"item">>)),
     ?assertEqual(NumDeletes, count_elements(Items, <<"delete">>)),
-    ?assertEqual(1, count_elements(Items, <<"set">>)),
+    ?assertEqual(NumRSM, count_elements(Items, <<"set">>)),
     ok.
 
 count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
