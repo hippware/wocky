@@ -109,10 +109,10 @@ test_delete() ->
 
 test_get_catchup() ->
     { "get_catchup", [
-      { "gets items added or changed since the specified version (inclusive)", [
+      { "gets items added or changed since the specified version", [
         ?_assertMatch(
            [#{id := ?ITEM}, #{id := ?ITEM2}],
-           get_catchup(?ALICE, ?LOCAL_CONTEXT, ?HS_V_2))
+           get_catchup(?ALICE, ?LOCAL_CONTEXT, ?HS_V_1))
       ]}
     ]}.
 

@@ -154,7 +154,7 @@ subscribe_version(Config) ->
         lists:foreach(
           fun(_) ->
                   escalus:assert(is_message, escalus:wait_for_stanza(Alice))
-          end, lists:seq(1, 5)),
+          end, lists:seq(1, 4)),
 
         %% Bob should get nothing from his own HS (since it's empty) nor from
         %% Alice's (since it's not his)
