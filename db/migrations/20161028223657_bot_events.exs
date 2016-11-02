@@ -9,11 +9,11 @@ defmodule Schemata.BotEventsMigration do
       columns: [
         bot:        :timeuuid,  # Bot ID
         jid:        :text,      # User JID
-        event:      :text,      # "enter" or "exit"
-        created_at: :timestamp  # when the event occurred
+        created_at: :timestamp, # when the event occurred
+        event:      :text       # "enter" or "exit"
       ],
-      primary_key: [[:bot, :jid], :event, :created_at],
-      order_by: [event: :asc, created_at: :desc]
+      primary_key: [[:bot, :jid], :created_at, :event],
+      order_by: [created_at: :desc, event: :desc]
   end
 
   def down do
