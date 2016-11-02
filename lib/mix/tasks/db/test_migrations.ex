@@ -16,16 +16,16 @@ defmodule Mix.Tasks.Db.TestMigrations do
     shell = Mix.shell
 
     # Load the database from schema.exs
-    shell.cmd("mix db.load --reset")
+    shell.cmd("#{mix_cmd} db.load --reset")
 
     # Dump the schema
-    shell.cmd("mix db.dump #{@schema_out_file}")
+    shell.cmd("#{mix_cmd} db.dump #{@schema_out_file}")
 
     # Load the database from migrations
-    shell.cmd("mix db.migrate --reset")
+    shell.cmd("#{mix_cmd} db.migrate --reset")
 
     # Dump the schema
-    shell.cmd("mix db.dump #{@mig_out_file}")
+    shell.cmd("#{mix_cmd} db.dump #{@mig_out_file}")
 
     # Compare the schema dumps
     :ok = Application.ensure_started(:porcelain)
@@ -40,4 +40,6 @@ defmodule Mix.Tasks.Db.TestMigrations do
       Wocky.set_error_exit
     end
   end
+
+  defp mix_cmd, do: "MIX_ENV=#{Mix.env} mix"
 end
