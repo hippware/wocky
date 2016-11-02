@@ -72,7 +72,7 @@ test_publish() ->
       { "adds a new item to the end of the user's home stream", [
         ?_assertMatch(#{id := ID,
                         from := AliceJID,
-                        stanza := Stanza,
+                        stanza := [Stanza],
                         deleted := false
                        },
                       publish(?ALICE, ?LOCAL_CONTEXT, ID,
@@ -83,12 +83,12 @@ test_publish() ->
       { "replaces an existing item and moves it to the end of the stream", [
         ?_assertMatch(#{id := ?BOT,
                         from := BotJID,
-                        stanza := Stanza2,
+                        stanza := [Stanza2],
                         deleted := false
                        },
                       publish(?ALICE, ?LOCAL_CONTEXT, ?BOT,
                               Stanza2, ?BOT_JID)),
-        ?_assertMatch(#{id := ?BOT, stanza := #xmlel{name = <<"new">>}},
+        ?_assertMatch(#{id := ?BOT, stanza := [Stanza2]},
                       lists:last(get(?ALICE, ?LOCAL_CONTEXT))),
         ?_assertEqual(4, length(get(?ALICE, ?LOCAL_CONTEXT)))
       ]}
