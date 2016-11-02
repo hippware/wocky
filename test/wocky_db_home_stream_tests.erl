@@ -17,7 +17,7 @@
         ]).
 
 wocky_db_home_stream_test_() -> {
-  "wocky_db_bot",
+  "wocky_db_home_stream",
   setup, fun before_all/0, fun after_all/1,
   [ {inorder, [
       {inparallel, [
