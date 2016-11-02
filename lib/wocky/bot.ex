@@ -42,10 +42,12 @@ defmodule Wocky.Bot do
     updated:          nil
   ]
 
+  @spec make_id :: binary
   def make_id do
     :ossp_uuid.make(:v1, :binary)
   end
 
+  @spec get(binary) :: nil | map
   def get(id) do
     case :wocky_db_bot.get(<<>>, id) do
       :not_found -> nil
@@ -53,6 +55,7 @@ defmodule Wocky.Bot do
     end
   end
 
+  @spec insert(Wocky.Bot.t) :: :ok
   def insert(%__MODULE__{} = struct) do
     bot = struct |> Map.from_struct
 

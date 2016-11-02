@@ -35,27 +35,33 @@ defmodule Wocky.User do
     roster_viewers: []
   ]
 
+  @spec make_id :: binary
   def make_id do
     Db.create_id
   end
 
-  def to_jid(user, resource \\ <<>>) do
-    :jid.make(user.user, user.server, resource)
+  @spec to_jid(Wocky.User.t, binary) :: Ejabberd.jid
+  def to_jid(%__MODULE__{user: user, server: server}, resource \\ <<>>) do
+    :jid.make(user, server, resource)
   end
 
-  def to_jid_string(user, resource \\ <<>>) do
+  @spec to_jid_string(Wocky.User.t, binary) :: binary
+  def to_jid_string(%__MODULE__{} = user, resource \\ <<>>) do
     :jid.to_binary(to_jid(user, resource))
   end
 
+  @spec from_jid(binary, binary, binary) :: Wocky.User.t
   def from_jid(user, server, resource) do
     %__MODULE__{user: user, server: server, resource: resource}
   end
 
+  @spec from_jid(Ejabberd.jid) :: Wocky.User.t
   def from_jid(jid) do
     jid(user: user, server: server, resource: resource) = jid
     from_jid(user, server, resource)
   end
 
+  @spec set_location(Wocky.User.t, Wocky.Location.t) :: Wocky.User.t
   def set_location(user, location) do
     :ok = :wocky_db_user.set_location(user.user, user.server, user.resource,
                                       location.lat, location.lon,
@@ -63,10 +69,12 @@ defmodule Wocky.User do
     user
   end
 
+  @spec get_followed_bots(Wocky.User.t) :: [binary]
   def get_followed_bots(user) do
     :wocky_db_bot.followed_bots(user.server, to_jid(user))
   end
 
+  @spec get_last_bot_event(Wocky.User.t, binary) :: [map]
   def get_last_bot_event(user, bot_id) do
     Schemata.select :all,
       from: :bot_event, in: :wocky_db.local_keyspace,
@@ -74,6 +82,7 @@ defmodule Wocky.User do
       limit: 1
   end
 
+  @spec add_bot_event(Wocky.User.t, binary, binary) :: boolean
   def add_bot_event(user, bot_id, event) do
     Schemata.insert into: :bot_event, in: :wocky_db.local_keyspace,
       values: %{
@@ -84,6 +93,7 @@ defmodule Wocky.User do
       }
   end
 
+  @spec insert(Wocky.User.t) :: :ok
   def insert(%__MODULE__{} = struct) do
     {phone_number, user} =
       struct

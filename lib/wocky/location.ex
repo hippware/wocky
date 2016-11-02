@@ -8,10 +8,17 @@ defmodule Wocky.Location do
   alias Wocky.Bot
   require Logger
 
+  @type t :: %__MODULE__{
+    lat: float,
+    lon: float,
+    accuracy: float
+  }
+
+  @enforce_keys [:lat, :lon]
   defstruct [
-    lat: :float,
-    lon: :float,
-    accuracy: :float
+    lat: nil,
+    lon: nil,
+    accuracy: 0.0
   ]
 
   @type location_tuple :: {float, float, float}
@@ -39,9 +46,10 @@ defmodule Wocky.Location do
   end
 
   defp check_for_event(bot_id, user, location, acc) do
-    Logger.info("Checking #{bot_id} for collision at #{inspect(location)}")
+    :ok = Logger.debug(
+      "Checking #{bot_id} for collision at #{inspect(location)}...")
     if bot_id |> Bot.get |> intersects?(location) do
-      Logger.info("User is within the perimiter of #{bot_id}")
+      :ok = Logger.debug("User is within the perimiter of #{bot_id}")
       if check_for_enter_event(user, bot_id) do
         User.add_bot_event(user, bot_id, "enter")
         [{bot_id, :enter} | acc]
@@ -49,7 +57,7 @@ defmodule Wocky.Location do
         acc
       end
     else
-      Logger.info("User is outside of the perimiter of #{bot_id}")
+      :ok = Logger.debug("User is outside of the perimiter of #{bot_id}")
       if check_for_exit_event(user, bot_id) do
         User.add_bot_event(user, bot_id, "exit")
         [{bot_id, :exit} | acc]
