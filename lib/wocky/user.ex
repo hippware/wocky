@@ -41,12 +41,12 @@ defmodule Wocky.User do
   end
 
   @spec to_jid(Wocky.User.t, binary) :: Ejabberd.jid
-  def to_jid(%__MODULE__{user: user, server: server}, resource \\ <<>>) do
-    :jid.make(user, server, resource)
+  def to_jid(%__MODULE__{user: user, server: server} = u, resource \\ nil) do
+    :jid.make(user, server, resource || (u.resource || ""))
   end
 
   @spec to_jid_string(Wocky.User.t, binary) :: binary
-  def to_jid_string(%__MODULE__{} = user, resource \\ <<>>) do
+  def to_jid_string(%__MODULE__{} = user, resource \\ nil) do
     :jid.to_binary(to_jid(user, resource))
   end
 
