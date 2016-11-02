@@ -221,7 +221,9 @@ new_item(ID) ->
            attrs = [{<<"id">>, ID}],
            children = [#xmlel{name = <<"new-published-element">>,
                               children = [#xmlcdata{content =
-                                                    <<"hello there!">>}]}]}.
+                                                    <<"hello there!">>}]},
+                       #xmlel{name = <<"second-element">>,
+                              attrs = [{<<"test_attr">>, <<"abc">>}]}]}.
 
 delete_item() ->
     #xmlel{name = <<"delete">>,

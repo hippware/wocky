@@ -126,7 +126,7 @@ normalise_item(not_found) -> not_found;
 normalise_item(Item = #{deleted := true}) ->
     normalise_item2(Item, #xmlel{});
 normalise_item(Item = #{stanza := StanzaBin}) ->
-    {ok, Stanza} = exml:parse(StanzaBin),
+    {ok, Stanza} = wocky_xml:parse_multiple(StanzaBin),
     normalise_item2(Item, Stanza).
 
 normalise_item2(#{id := ID, version := Version, from_id := From,
