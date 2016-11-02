@@ -25,17 +25,13 @@
 -include("wocky.hrl").
 -include("wocky_publishing.hrl").
 
--define(DEFAULT_MAX_ITEMS, 100).
-
 -define(SUBSCRIPTION_TABLE, home_stream_subscriptions).
 
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
 
-start(Host, Opts) ->
-    wocky_util:set_config_from_opt(max_items, wocky_home_stream_max_items,
-                                   ?DEFAULT_MAX_ITEMS, Opts),
+start(Host, _Opts) ->
     _ = ets:new(?SUBSCRIPTION_TABLE,
                 [named_table, public, {read_concurrency, true}]),
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
@@ -87,7 +83,6 @@ get(#jid{luser = User, lserver = Server}, ID) ->
 
 -spec available(ejabberd:jid(), pub_version()) -> ok.
 available(User, Version) ->
-   ct:log("available gotten! ~p ~p", [User, Version]),
     SimpleJID = jid:to_lower(User),
     ets:insert(?SUBSCRIPTION_TABLE, SimpleJID),
     maybe_send_catchup(User, Version),
@@ -141,7 +136,6 @@ maybe_send_catchup(_, undefined) -> ok;
 maybe_send_catchup(UserJID = #jid{luser = User, lserver = Server}, Version) ->
     CatchupRows = wocky_db_home_stream:get_catchup(User, Server, Version),
     Items = [map_to_item(R) || R <- CatchupRows],
-    ct:log("Catchup items: ~p", [Items]),
     lists:foreach(
       wocky_publishing_handler:send_notification(UserJID, ?HOME_STREAM_NODE, _),
       Items).

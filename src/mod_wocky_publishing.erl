@@ -112,7 +112,6 @@ handle_items(From, To, Attrs, Children) ->
         Node    <- get_node(Attrs),
         Param   <- get_item_id_or_rsm(Children),
         Result  <- wocky_publishing_handler:get(Node, From, Param),
-        {ok, ct:log("Result: ~p", [Result])},
         result_stanza(Result, Node)
        ]).
 

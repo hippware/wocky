@@ -266,20 +266,17 @@ get_item(_, Acc) ->
     Acc.
 
 check_elements(Items, NumItems, NumDeletes) ->
-    ct:log("Items: ~p", [Items]),
     ?assertEqual(NumItems, count_elements(Items, <<"item">>)),
     ?assertEqual(NumDeletes, count_elements(Items, <<"delete">>)),
     ?assertEqual(1, count_elements(Items, <<"set">>)),
     ok.
 
 count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
-    L = length(
+    length(
       lists:filter(fun(#xmlel{name = T}) when T =:= Type -> true;
                       (_) -> false
                    end,
-                   Children)),
-    ct:log("L = ~p\nType = ~p\nChildren = ~p", [L, Type, Children]),
-    L.
+                   Children)).
 
 query_el(Version) ->
     #xmlel{name = <<"query">>,
