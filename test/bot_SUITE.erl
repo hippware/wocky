@@ -1315,18 +1315,22 @@ publish_item_with_image(I, Client) ->
 check_returned_images(#xmlel{name = <<"iq">>, children = Children},
                       First, Last) ->
     [#xmlel{name = <<"item_images">>, children = ImageList}] = Children,
-    Remaining = check_image(?ITEM, ?ITEM_IMAGE, ImageList),
+    Remaining = check_image(?ALICE_B_JID, ?ITEM, ?ITEM_IMAGE, ImageList),
     RSMXML = lists:foldl(
                fun(I, S) ->
-                       check_image(item_id(I), item_image_url(I), S)
+                       check_image(?ALICE_B_JID, item_id(I),
+                                   item_image_url(I), S)
                end, Remaining, lists:seq(First, Last)),
     {ok, RSMEls} = check_get_children(hd(RSMXML), <<"set">>,
                                       [{<<"xmlns">>, ?NS_RSM}]),
     {ok, RSM} = decode_rsm(RSMEls),
     ok = check_rsm(RSM, (Last - First) + 2, 0, ?ITEM, item_id(Last)).
 
-check_image(Item, URL, [#xmlel{name = <<"image">>, attrs = Attrs} | Rest]) ->
+check_image(Owner, Item, URL,
+            [#xmlel{name = <<"image">>, attrs = Attrs} | Rest]) ->
+    ?assertEqual({value, Owner}, xml:get_attr(<<"owner">>, Attrs)),
     ?assertEqual({value, Item}, xml:get_attr(<<"item">>, Attrs)),
     ?assertEqual({value, URL}, xml:get_attr(<<"url">>, Attrs)),
+    ?assertMatch({value, _}, xml:get_attr(<<"updated">>, Attrs)),
     Rest.
 
