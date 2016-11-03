@@ -32,6 +32,7 @@
 -define(NS_ACCESS,        <<"hippware.com/hxep/access">>).
 -define(NS_NOTIFICATIONS, <<"hippware.com/hxep/notifications">>).
 -define(NS_CRASH_TEST,    <<"hippware.com/hxep/crash-test">>).
+-define(NS_PUBLISHING,    <<"hippware.com/hxep/publishing">>).
 -define(NS_GEOLOC,        <<"http://jabber.org/protocol/geoloc">>).
 -define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
 
@@ -47,5 +48,7 @@
 % ensure that the deleting user receives the IQ response before
 % the connection is dropped.
 -define(USER_DELETE_DELAY, 2000).
+
+-define(HOME_STREAM_NODE, <<"home_stream">>).
 
 -endif. % ifdef WOCKY_HRL
