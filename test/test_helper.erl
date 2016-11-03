@@ -25,11 +25,18 @@
          subscribe_pair/2,
          add_contact/4,
          add_to_s/2,
+         add_to_u/2,
          remove_friend/2,
 
          iq_set/2,
          iq_get/2,
-         iq_with_type/3
+         iq_with_type/3,
+
+         rsm_elem/1,
+         decode_rsm/1,
+         check_rsm/5,
+
+         check_attr/3
         ]).
 
 ensure_wocky_is_running() ->
@@ -198,3 +205,76 @@ iq_with_type(Type, NS, Payload = #xmlel{attrs = Attrs}) ->
            attrs = [{<<"type">>, Type},
                     {<<"id">>, wocky_util:iq_id()}],
            children = [Payload#xmlel{attrs = [{<<"xmlns">>, NS} | Attrs]}]}.
+
+%% RSM encoding
+rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id, index=Index}) ->
+    #xmlel{name = <<"set">>,
+           children = skip_undefined([
+                maybe_rsm_max(Max),
+                maybe_rsm_index(Index),
+                maybe_rsm_direction(Direction, Id)])}.
+
+rsm_id_children(undefined) -> [];
+rsm_id_children(Id) -> [#xmlcdata{content = Id}].
+
+maybe_rsm_direction(undefined, undefined) ->
+    undefined;
+maybe_rsm_direction(Direction, Id) ->
+    #xmlel{
+        name = atom_to_dir(Direction),
+        children = rsm_id_children(Id)}.
+
+maybe_rsm_index(undefined) ->
+    undefined;
+maybe_rsm_index(Index) when is_integer(Index) ->
+    #xmlel{
+        name = <<"index">>,
+        children = [#xmlcdata{content = integer_to_list(Index)}]}.
+
+maybe_rsm_max(undefined) ->
+    undefined;
+maybe_rsm_max(Max) when is_integer(Max) ->
+    #xmlel{
+        name = <<"max">>,
+        children = [#xmlcdata{content = integer_to_list(Max)}]}.
+
+skip_undefined(Xs) ->
+    [X || X <- Xs, X =/= undefined].
+
+atom_to_dir(aft) -> <<"after">>;
+atom_to_dir(before) -> <<"before">>.
+
+%% RSM decoding
+decode_rsm(XML) -> decode_rsm(XML, #rsm_out{}).
+decode_rsm([], Acc) -> {ok, Acc};
+decode_rsm([#xmlel{name = <<"first">>,
+                  attrs = [{<<"index">>, Index}],
+                  children = [#xmlcdata{content = First}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{index = binary_to_integer(Index),
+                                 first = First});
+decode_rsm([#xmlel{name = <<"last">>,
+                  children = [#xmlcdata{content = Last}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{last = Last});
+decode_rsm([#xmlel{name = <<"count">>,
+                  children = [#xmlcdata{content = Count}]} | Rest], Acc) ->
+    decode_rsm(Rest, Acc#rsm_out{count = binary_to_integer(Count)});
+decode_rsm([El | _], _) ->
+    {error, {unknown_rsm_el, El}}.
+
+check_rsm(#rsm_out{count = Count, index = Index, first = First, last = Last},
+          ExpectedCount, ExpectedIndex, ExpectedFirst, ExpectedLast) ->
+    case {Count, Index, First, Last} of
+        {ExpectedCount, ExpectedIndex, ExpectedFirst, ExpectedLast} ->
+            ok;
+        E ->
+            {error,
+             {bad_rsm, E,
+              {ExpectedCount, ExpectedIndex, ExpectedFirst, ExpectedLast}}}
+    end.
+
+check_attr(Name, Value, #xmlel{attrs = Attrs}) ->
+    case wocky_xml:get_attr(Name, Attrs) of
+        {ok, Value} -> ok;
+        {ok, _} when Value =:= any -> ok;
+        X -> {error, {invalid_attr, Name, Value, X}}
+    end.

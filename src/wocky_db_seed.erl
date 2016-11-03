@@ -248,6 +248,14 @@ seed_data(bot_item, _Server) ->
      #{id => ?ITEM2, bot => ?BOT, published => ?ITEM_PUB_TIME+1,
        updated => ?ITEM_UPDATE_TIME+1, stanza => ?ITEM_STANZA2,
        image => false}];
+seed_data(home_stream, Server) ->
+    UserBase = #{user => ?ALICE, server => Server},
+    [UserBase#{id => ?BOT, version => ?HS_V_1, from_id => ?BOT_B_JID,
+               stanza => ?BOT_UPDATE_STANZA, deleted => false},
+     UserBase#{id => ?ITEM, version => ?HS_V_2, from_id => ?BOT_B_JID,
+               stanza => ?ITEM_STANZA, deleted => false},
+     UserBase#{id => ?ITEM2, version => ?HS_V_3, from_id => ?BOT_B_JID,
+               stanza => ?ITEM_STANZA2, deleted => false}];
 seed_data(_, _) ->
     [].
 
