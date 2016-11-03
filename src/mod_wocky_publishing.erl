@@ -100,7 +100,7 @@ handle_publish(From, To, Attrs, Children) ->
         check_same_user(From, To),
         Node    <- get_node(Attrs),
         Item    <- get_item_or_delete(Children),
-        ID      <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
+        ID      <- get_id(Item#xmlel.attrs),
         Stanza  <- get_stanza(Item),
         wocky_publishing_handler:set(Node, From, To, ID, Stanza),
         {_, Version} <- wocky_publishing_handler:get(Node, From, ID),
@@ -165,6 +165,12 @@ get_item_or_delete(Children) ->
             get_delete(Children);
         Item ->
             {ok, Item}
+    end.
+
+get_id(Attrs) ->
+    case xml:get_attr(<<"id">>, Attrs) of
+        false -> {ok, wocky_db:create_id()};
+        {value, V} -> {ok, V}
     end.
 
 get_delete(Children) ->

@@ -85,20 +85,23 @@ get(Config) ->
 publish(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
+        % Server can also auto-generate IDs if none is defined:
+        expect_iq_success_u(pub_stanza(undefined), Alice, Alice),
+
         expect_iq_success_u(pub_stanza(<<"some_id">>), Alice, Alice),
 
         % Bob can't publish to Alice's home stream
         expect_iq_error_u(pub_stanza(<<"other_id">>), Bob, Alice),
 
         Stanza = expect_iq_success_u(get_stanza(), Alice, Alice),
-        check_result(Stanza, 4)
+        check_result(Stanza, 5)
       end).
 
 delete(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         Stanza = expect_iq_success_u(get_stanza(), Alice, Alice),
-        check_result(Stanza, 4),
+        check_result(Stanza, 5),
 
         expect_iq_success_u(delete_stanza(), Alice, Alice),
 
@@ -106,7 +109,7 @@ delete(Config) ->
         expect_iq_error_u(delete_stanza(), Bob, Alice),
 
         Stanza2 = expect_iq_success_u(get_stanza(), Alice, Alice),
-        Items = check_result(Stanza2, 3, 1, true),
+        Items = check_result(Stanza2, 4, 1, true),
         ?assertEqual({delete, <<"some_id">>}, lists:last(Items))
       end).
 
@@ -118,7 +121,7 @@ auto_publish(Config) ->
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
         Stanza2 = expect_iq_success_u(get_stanza(), Alice, Alice),
-        Items = check_result(Stanza2, 4, 1, true),
+        Items = check_result(Stanza2, 5, 1, true),
         escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanza))
       end).
 
@@ -154,7 +157,7 @@ subscribe_version(Config) ->
         lists:foreach(
           fun(_) ->
                   escalus:assert(is_message, escalus:wait_for_stanza(Alice))
-          end, lists:seq(1, 4)),
+          end, lists:seq(1, 5)),
 
         %% Bob should get nothing from his own HS (since it's empty) nor from
         %% Alice's (since it's not his)
@@ -236,12 +239,15 @@ delete_stanza() ->
 
 new_item(ID) ->
     #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, ID}],
+           attrs = maybe_id(ID),
            children = [#xmlel{name = <<"new-published-element">>,
                               children = [#xmlcdata{content =
                                                     <<"hello there!">>}]},
                        #xmlel{name = <<"second-element">>,
                               attrs = [{<<"test_attr">>, <<"abc">>}]}]}.
+
+maybe_id(undefined) -> [];
+maybe_id(ID) -> [{<<"id">>, ID}].
 
 delete_item() ->
     #xmlel{name = <<"delete">>,
