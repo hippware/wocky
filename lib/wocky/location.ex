@@ -49,7 +49,7 @@ defmodule Wocky.Location do
     :ok = Logger.debug(
       "Checking #{bot_id} for collision at #{inspect(location)}...")
     if bot_id |> Bot.get |> intersects?(location) do
-      :ok = Logger.debug("User is within the perimiter of #{bot_id}")
+      :ok = Logger.debug("User is within the perimeter of #{bot_id}")
       if check_for_enter_event(user, bot_id) do
         User.add_bot_event(user, bot_id, "enter")
         [{bot_id, :enter} | acc]
@@ -57,7 +57,7 @@ defmodule Wocky.Location do
         acc
       end
     else
-      :ok = Logger.debug("User is outside of the perimiter of #{bot_id}")
+      :ok = Logger.debug("User is outside of the perimeter of #{bot_id}")
       if check_for_exit_event(user, bot_id) do
         User.add_bot_event(user, bot_id, "exit")
         [{bot_id, :exit} | acc]
@@ -90,6 +90,6 @@ defmodule Wocky.Location do
 
   defp trigger_bot_notification(user, {bot_id, event}) do
     jid = User.to_jid_string(user)
-    Logger.info("User #{jid} #{event}ed the radius of bot #{bot_id}")
+    Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot_id}")
   end
 end
