@@ -134,7 +134,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 indexed_fields() ->
-    [handle, last_name, first_name, email, avatar].
+    [handle, last_name, first_name, avatar].
 
 map_to_object(UserID, MapData) ->
     maps:fold(fun (K, V, Acc) -> Acc#{atom_to_binary(K, utf8) => V} end,
