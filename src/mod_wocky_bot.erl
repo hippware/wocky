@@ -299,26 +299,29 @@ handle_item_images(From, #jid{lserver = Server}, IQ, Attrs) ->
         Images <- get_bot_item_images(Server, ID),
         {FilteredImages, RSMOut} <-
         {ok, rsm_util:filter_with_rsm(Images, RSMIn)},
-        {ok, images_result(FilteredImages, RSMOut)}
+        Owner <- {ok, wocky_db_bot:owner(Server, ID)},
+        {ok, images_result(Owner, FilteredImages, RSMOut)}
        ]).
 
 get_bot_item_images(Server, ID) ->
     Images = wocky_db_bot:item_images(Server, ID),
     {ok, lists:sort(update_order(_, _), Images)}.
 
-images_result(Images, RSMOut) ->
-    ImageEls = image_els(Images),
+images_result(Owner, Images, RSMOut) ->
+    ImageEls = image_els(Owner, Images),
     #xmlel{name = <<"item_images">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = ImageEls ++ jlib:rsm_encode(RSMOut)}.
 
-image_els(Images) ->
-    lists:map(image_el(_), Images).
+image_els(Owner, Images) ->
+    lists:map(image_el(Owner, _), Images).
 
-image_el(#{id := ID, image := Image}) ->
+image_el(Owner, #{id := ID, image := Image, updated := Updated}) ->
     #xmlel{name = <<"image">>,
-           attrs = [{<<"item">>, ID},
-                    {<<"url">>, Image}]}.
+           attrs = [{<<"owner">>, jid:to_binary(Owner)},
+                    {<<"item">>, ID},
+                    {<<"url">>, Image},
+                    {<<"updated">>, wocky_db:timestamp_to_string(Updated)}]}.
 
 %%%===================================================================
 %%% Incoming packet handler

@@ -238,7 +238,7 @@ image_items_count(Server, BotID) ->
     wocky_db:count(Server, bot_item_images, #{bot => BotID, image => true}).
 
 -spec item_images(wocky_db:server(), wocky_db:id()) ->
-    [{wocky_db:id(), binary()}].
+    [map()].
 item_images(Server, BotID) ->
     R = wocky_db:select(Server, bot_item, [id, updated, stanza, image],
                         #{bot => BotID}),
