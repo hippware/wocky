@@ -40,12 +40,12 @@ defmodule Wocky.User do
     Db.create_id
   end
 
-  @spec to_jid(Wocky.User.t, binary) :: Ejabberd.jid
+  @spec to_jid(Wocky.User.t, binary | nil) :: Ejabberd.jid
   def to_jid(%__MODULE__{user: user, server: server} = u, resource \\ nil) do
     :jid.make(user, server, resource || (u.resource || ""))
   end
 
-  @spec to_jid_string(Wocky.User.t, binary) :: binary
+  @spec to_jid_string(Wocky.User.t, binary | nil) :: binary
   def to_jid_string(%__MODULE__{} = user, resource \\ nil) do
     :jid.to_binary(to_jid(user, resource))
   end
@@ -82,7 +82,7 @@ defmodule Wocky.User do
       limit: 1
   end
 
-  @spec add_bot_event(Wocky.User.t, binary, binary) :: boolean
+  @spec add_bot_event(Wocky.User.t, binary, :enter | :exit) :: boolean
   def add_bot_event(user, bot_id, event) do
     Schemata.insert into: :bot_event, in: :wocky_db.local_keyspace,
       values: %{

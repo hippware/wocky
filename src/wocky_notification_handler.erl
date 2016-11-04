@@ -71,7 +71,7 @@ delete(LUser, LServer) ->
 -spec notify_message(ejabberd:jid(), ejabberd:jid(), binary()) ->
     ok | {error, any()}.
 notify_message(To, From, Body) ->
-    lists:foreach(do_notify_message(_, From, Body), lookup_all_endpoints(To)).
+    do_notify_all(lookup_all_endpoints(To), From, Body).
 
 -spec notify_bot_event(ejabberd:jid(), binary(), binary()) ->
     ok | {error, any()}.
@@ -111,6 +111,14 @@ lookup_endpoint(#jid{luser = LUser, lserver = LServer,
     wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
                                                         server => LServer,
                                                         resource => LResource}).
+
+do_notify_all([], _JID, _Message) ->
+    ok;
+do_notify_all([Endpoint | Rest], JID, Message) ->
+    case do_notify_message(Endpoint, JID, Message) of
+        {error, _} = E -> E;
+        ok -> do_notify_all(Rest, JID, Message)
+    end.
 
 do_notify_message(Endpoint, #jid{user = User, server = Server}, Message) ->
     From = wocky_db:select_one(shared, user, handle,
