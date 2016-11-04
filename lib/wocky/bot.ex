@@ -44,7 +44,7 @@ defmodule Wocky.Bot do
 
   @spec make_id :: binary
   def make_id do
-    :ossp_uuid.make(:v1, :binary)
+    :wocky_db.create_id
   end
 
   @spec get(binary) :: nil | map

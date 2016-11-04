@@ -91,5 +91,8 @@ defmodule Wocky.Location do
   defp trigger_bot_notification(user, {bot_id, event}) do
     jid = User.to_jid_string(user)
     Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot_id}")
+
+    jid = User.to_jid(user)
+    :wocky_notification_handler.notify_bot_event(jid, bot_id, event)
   end
 end

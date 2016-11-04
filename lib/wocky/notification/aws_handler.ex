@@ -38,17 +38,28 @@ defmodule Wocky.Notification.AWSHandler do
     {:ok, arn}
   end
 
-  def notify(endpoint, from, body) do
+  def notify(endpoint, message) do
+    message
+    |> maybe_truncate_message
+    |> SNS.publish([target_arn: endpoint])
+    |> ExAws.request
+    |> handle_notify_result
+  end
+
+  def notify_message(endpoint, from, body) do
     body
     |> format_message(from)
+    |> maybe_truncate_message
     |> SNS.publish([target_arn: endpoint])
     |> ExAws.request
     |> handle_notify_result
   end
 
   defp format_message(body, from) do
-    message = "From #{from}:\n#{body}"
+    "From #{from}:\n#{body}"
+  end
 
+  defp maybe_truncate_message(message) do
     if byte_size(message) > @message_limit do
       String.slice(message, 0, @message_limit - 3) <> "..."
     else
