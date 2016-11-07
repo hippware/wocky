@@ -15,4 +15,19 @@ defmodule Wocky.Ejabberd do
   defrecord :xmlcdata, extract(:xmlcdata, from_lib: "exml/include/exml.hrl")
   defrecord :iq, extract(:iq, from_lib: "ejabberd/include/jlib.hrl")
   defrecord :jid, extract(:jid, from_lib: "ejabberd/include/jlib.hrl")
+
+  @type jid :: record(:jid, user: :ejabberd.user,
+                            server: :ejabberd.server,
+                            resource: :ejabberd.resource,
+                            luser: :ejabberd.luser,
+                            lserver: :ejabberd.lserver,
+                            lresource: :ejabberd.lresource)
+
+  defmacro __using__(_) do
+    quote do
+      import Wocky.Ejabberd
+      alias Wocky.Ejabberd
+      alias :jid, as: Jid
+    end
+  end
 end

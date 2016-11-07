@@ -29,7 +29,8 @@ defmodule Wocky.Mixfile do
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
          :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
-         :algolia, :logger, :schemata, :porcelain, :mix
+         :algolia, :logger, :schemata, :porcelain, :geocalc, :mix, :faker,
+         :ex_machina
        ],
        plt_add_deps: true,
        flags: [
@@ -64,8 +65,9 @@ defmodule Wocky.Mixfile do
     dev_apps = Mix.env == :dev && [:reprise] || []
     [description: 'JabberWocky XMPP Server',
      applications: dev_apps ++ [
-       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :hackney, :poison,
-       :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain
+       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
+       :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
+       :ex_machina, :faker
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -97,6 +99,9 @@ defmodule Wocky.Mixfile do
       {:porcelain,     "~> 2.0"},
       {:algolia,       "~> 0.4.0"},
       {:ex_aws,        "~> 1.0.0-rc.3"},
+      {:geocalc,       "~> 0.5"},
+      {:ex_machina,    "~> 1.0"},
+      {:faker,         "~> 0.7"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},

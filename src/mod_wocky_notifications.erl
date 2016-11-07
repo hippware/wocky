@@ -53,8 +53,7 @@ hooks() ->
 
 -spec handle_iq(ejabberd:jid(), ejabberd:jid(), iq()) -> iq().
 handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
-    #jid{luser = LUser, lserver = LServer, lresource = LResource} = From,
-    case handle_request(From, LUser, LServer, LResource, ReqEl) of
+    case handle_request(From, ReqEl) of
         {ok, State} ->
             make_response(IQ, State);
 
@@ -67,30 +66,15 @@ handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
 handle_iq(_From, _To, IQ) ->
     make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
 
-handle_request(JID, LUser, LServer, LResource,
-               #xmlel{name = <<"enable">>, attrs = Attrs}) ->
+handle_request(JID, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
     {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
-    case wocky_notification_handler:register(JID, Platform, DeviceId) of
-        {ok, Endpoint} ->
-            CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
-            ok = wocky_db:insert(LServer, device, #{user => LUser,
-                                                    server => LServer,
-                                                    resource => LResource,
-                                                    platform => Platform,
-                                                    device_id => DeviceId,
-                                                    endpoint => Endpoint,
-                                                    created_at => CreatedAt}),
-            {ok, <<"enabled">>};
-
-        {error, _} = Error ->
-            Error
+    case wocky_notification_handler:enable(JID, Platform, DeviceId) of
+        ok -> {ok, <<"enabled">>};
+        {error, _} = Error -> Error
     end;
-handle_request(_, LUser, LServer, LResource,
-               #xmlel{name = <<"disable">>}) ->
-    ok = wocky_db:delete(LServer, device, all, #{user => LUser,
-                                                 server => LServer,
-                                                 resource => LResource}),
+handle_request(JID, #xmlel{name = <<"disable">>}) ->
+    ok = wocky_notification_handler:disable(JID),
     {ok, <<"disabled">>}.
 
 make_error_response(IQ, ErrStanza) ->
@@ -118,8 +102,7 @@ user_receive_packet_hook(_JID, From, To, Packet) ->
 handle_incoming_message(From, To, Packet) ->
     case should_notify(Packet) of
         false -> ok;
-        Body ->
-            lists:foreach(notify_message(_, From, Body), lookup_endpoints(To))
+        Body -> wocky_notification_handler:notify_message(To, From, Body)
     end.
 
 should_notify(Packet) ->
@@ -138,15 +121,8 @@ get_body(Packet) ->
         BodyTag -> xml:get_tag_cdata(BodyTag)
     end.
 
-lookup_endpoints(#jid{luser = LUser, lserver = LServer}) ->
-    wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
-                                                        server => LServer}).
-
-notify_message(Endpoint, From, Body) ->
-    wocky_notification_handler:notify(Endpoint, From, Body).
-
 %% remove_user -------------------------------------------------------
 remove_user_hook(User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    wocky_db:delete(LServer, device, all, #{user => LUser, server => LServer}).
+    wocky_notification_handler:delete(LUser, LServer).

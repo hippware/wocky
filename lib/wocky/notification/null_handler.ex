@@ -16,9 +16,16 @@ defmodule Wocky.Notification.NullHandler do
     {:ok, device}
   end
 
-  def notify(endpoint, from, body) do
+  def notify_message(endpoint, from, body) do
     :ok = Logger.info("""
-      Notification request to '#{endpoint}' from #{from} with body: #{body}
+      Message notification to '#{endpoint}' from #{from} with body: #{body}
+      """)
+    :ok
+  end
+
+  def notify(endpoint, message) do
+    :ok = Logger.info("""
+      Generic notification to '#{endpoint}' with message: #{message}
       """)
     :ok
   end
