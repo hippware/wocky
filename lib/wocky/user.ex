@@ -1,6 +1,7 @@
 defmodule Wocky.User do
   @moduledoc ""
 
+  use Exref, ignore: [insert: 1, from_jid: 3, to_jid: 2, to_jid_string: 2]
   use Wocky.Ejabberd
   alias :wocky_db, as: Db
 

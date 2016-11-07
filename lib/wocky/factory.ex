@@ -3,11 +3,18 @@ defmodule Wocky.Factory do
 
   use ExMachina
   use Wocky.InsertStrategy
+  use Exref, ignore: [
+    build: 1, build: 2, build_list: 2, build_list: 3, build_pair: 1,
+    build_pair: 2, create: 1, create: 2, create_pair: 2, create_list: 3,
+    factory: 1, insert: 1, insert: 2, insert_list: 2, insert_list: 3,
+    insert_pair: 1, insert_pair: 2, bot_factory: 0, location_factory: 0,
+    user_factory: 0
+  ]
   alias Wocky.Bot
   alias Wocky.User
   alias Wocky.Location
 
-  def phone_number do
+  defp phone_number do
     "+1555#{Faker.Phone.EnUs.area_code}#{Faker.Phone.EnUs.extension}"
   end
 
@@ -44,10 +51,6 @@ defmodule Wocky.Factory do
       alerts: 1,
       updated: :wocky_db.now_to_timestamp(:erlang.timestamp)
     }
-  end
-
-  def with_bots(user, num) do
-    [user | build_list(num, :bot, %{owner: User.to_jid(user)})]
   end
 
   def location_factory do

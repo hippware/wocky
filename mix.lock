@@ -34,7 +34,7 @@
   "exml": {:git, "https://github.com/esl/exml.git", "d7b745fa89389b53706a07f33775f1f814c66cb4", [tag: "2.2.0"]},
   "exometer": {:git, "https://github.com/Feuerlabs/exometer.git", "7a7bd8d2b52de4d90f65aa3f6044b0e988319b9e", [branch: "master"]},
   "exometer_core": {:git, "https://github.com/Feuerlabs/exometer_core.git", "9d41a0a0320f5483de75d9ef5c8e8b8592e29c11", [branch: "master"]},
-  "exref": {:git, "https://github.com/hippware/exref.git", "0d0bb51ca794ada8732a39567bdf4ef966dbd4dd", [branch: "master"]},
+  "exref": {:git, "https://github.com/hippware/exref.git", "f2a621079a6ed1f772b5de7055d0c9d2cab7e191", [branch: "master"]},
   "exrm": {:hex, :exrm, "1.0.8", "5aa8990cdfe300282828b02cefdc339e235f7916388ce99f9a1f926a9271a45d", [:mix], [{:relx, "~> 3.5", [hex: :relx, optional: false]}]},
   "faker": {:hex, :faker, "0.7.0", "2c42deeac7be717173c78c77fb3edc749fb5d5e460e33d01fe592ae99acc2f0d", [:mix], []},
   "folsom": {:hex, :folsom, "0.8.3", "71cff146152fa95e6092e62119f9dc96888660111e7b61853c8fdcf80598a4e0", [:rebar3], [{:bear, "0.8.3", [hex: :bear, optional: false]}]},
