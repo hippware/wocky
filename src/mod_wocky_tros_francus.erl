@@ -14,7 +14,9 @@
          make_auth/0,
          get_owner/1,
          get_access/1,
-         get_metadata/2
+         get_metadata/2,
+         delete/2,
+         keep/2
         ]).
 
 -define(DEFAULT_SCHEME, "https://").
@@ -124,6 +126,12 @@ get_metadata(Server, FileID) ->
 get_owner(#{<<"owner">> := Owner}) -> {ok, Owner}.
 
 get_access(#{<<"access">> := Access}) -> {ok, Access}.
+
+delete(Server, FileID) ->
+    francus:delete(Server, FileID).
+
+keep(LServer, FileID) ->
+    francus:keep(LServer, FileID).
 
 setup_metrics() ->
     Metrics = [tros_francus_bytes_sent,

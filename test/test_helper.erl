@@ -76,7 +76,8 @@ expect_iq_error(Stanza, Client) ->
 
 expect_something(Stanza, Client, Expect) ->
     ct:log("Sending stanza: ~p", [Stanza]),
-    ResultStanza = escalus:send_and_wait(Client, Stanza),
+    escalus:send(Client, Stanza),
+    ResultStanza = escalus:wait_for_stanza(Client, timeout()),
     ct:log("Result stanza: ~p", [ResultStanza]),
     escalus:assert(Expect, ResultStanza),
     ResultStanza.
@@ -277,4 +278,10 @@ check_attr(Name, Value, #xmlel{attrs = Attrs}) ->
         {ok, Value} -> ok;
         {ok, _} when Value =:= any -> ok;
         X -> {error, {invalid_attr, Name, Value, X}}
+    end.
+
+timeout() ->
+    case ejabberd_config:get_local_option(tros_backend) of
+        s3 -> 10000; % Extra time for S3 latency
+        _ -> 1000 % Default in escalus
     end.

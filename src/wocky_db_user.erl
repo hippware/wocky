@@ -219,22 +219,22 @@ maybe_lookup_user(true, User, Server) ->
 prepare_avatar(UserID, LServer, #{avatar := NewAvatar}) ->
     do([error_m ||
         {FileServer, FileID} <- tros:parse_url(NewAvatar),
-        check_file_location(LServer, FileServer),
-        File <- francus:open_read(LServer, FileID),
-        check_avatar_owner(UserID, File),
-        francus:keep(LServer, francus:id(File))
+        check_file_is_local(LServer, FileServer),
+        Metadata <- tros:get_metadata(LServer, FileID),
+        check_avatar_owner(UserID, Metadata),
+        tros:keep(LServer, FileID)
        ]);
 prepare_avatar(_, _, _) -> ok.
 
 %% @private
-check_file_location(Server, Server) -> ok;
-check_file_location(_, _) -> {error, not_local_file}.
+check_file_is_local(Server, Server) -> ok;
+check_file_is_local(_, _) -> {error, not_local_file}.
 
 %% @private
-check_avatar_owner(UserID, File) ->
-    case francus:owner(File) of
-        UserID -> ok;
-        _ -> {error, not_file_owner}
+check_avatar_owner(UserID, Metadata) ->
+    case tros:get_owner(Metadata) of
+        {ok, UserID} -> ok;
+        X -> ct:log("Owner: ~p / ~p", [X, UserID]), {error, not_file_owner}
     end.
 
 %% @private
@@ -259,7 +259,7 @@ delete_old_handle(OldHandle) ->
 %% @private
 delete_existing_avatar(#{avatar := OldAvatar}) ->
     case tros:parse_url(OldAvatar) of
-        {ok, {Server, FileID}} -> francus:delete(Server, FileID);
+        {ok, {Server, FileID}} -> tros:delete(Server, FileID);
         {error, _} -> ok
     end;
 delete_existing_avatar(_) -> ok.

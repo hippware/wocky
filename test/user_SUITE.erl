@@ -20,7 +20,7 @@ all() ->
     [
      {group, self},
      {group, other},
-%%    {group, friend},
+%    {group, friend},
      {group, error},
      {group, set},
      {group, error_set}
@@ -81,6 +81,7 @@ init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
+    maybe_seed_s3_file(),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
@@ -107,6 +108,23 @@ init_per_testcase(CaseName, Config) ->
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
+maybe_seed_s3_file() ->
+    case ejabberd_config:get_local_option(tros_backend) of
+        s3 -> seed_s3_file();
+        _ -> ok
+    end.
+
+seed_s3_file() ->
+    {Headers, Fields} = mod_wocky_tros_s3:make_upload_response(
+                          ?ALICE_JID, #jid{lserver = ?LOCAL_CONTEXT},
+                          ?AVATAR_FILE, 1000,
+                          <<"all">>, #{<<"content-type">> => <<"image/png">>}),
+    HeadersStr = [{binary_to_list(K), binary_to_list(V)} || {K, V} <- Headers],
+    {ok, _} =
+    httpc:request(put,
+                  {binary_to_list(proplists:get_value(<<"url">>, Fields)),
+                   HeadersStr, "image/png", crypto:rand_bytes(1000)},
+                  [], []).
 
 %%--------------------------------------------------------------------
 %% mod_wocky_user 'get' tests
@@ -539,7 +557,7 @@ set_fields() ->
      {<<"first_name">>, <<"string">>, <<"Bob">>},
      {<<"email">>, <<"string">>, <<"bob@alice.com">>},
      {<<"avatar">>, <<"file">>,
-      <<"tros:043e8c96-ba30-11e5-9912-ba0be0483c18@",
+      <<"tros:", ?ALICE/binary, "@",
         ?LOCAL_CONTEXT/binary, "/file/", ?AVATAR_FILE/binary>>}].
 
 delete_request(ID) ->

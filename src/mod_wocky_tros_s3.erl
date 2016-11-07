@@ -20,7 +20,9 @@
          make_upload_response/6,
          get_owner/1,
          get_access/1,
-         get_metadata/2
+         get_metadata/2,
+         delete/2,
+         keep/2
         ]).
 
 -define(ACCESS_KEY, <<65,127,89,223,29,138,212,158,163,0,171,96,6,190,
@@ -120,37 +122,49 @@ get_access(Metadata) ->
 get_metadata_item(Metadata, Item) ->
     case maps:get(Item, Metadata, undefined) of
         undefined ->
-            ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, <<"Could not find header: ",
-                                                   Item/binary>>);
+            {error, metadata_not_found};
         Value ->
             {ok, Value}
     end.
 
 get_metadata(LServer, FileID) ->
     do([error_m ||
-        Result <- do_head_request(LServer, FileID),
-        Headers <- check_result_get_headers(Result),
+        Result <- do_request(LServer, FileID, head),
+        Headers <- check_result_get_headers(Result, 200),
         get_metadata_items(Headers)
        ]).
 
-do_head_request(LServer, FileID) ->
-    R = httpc:request(head,
-                      {binary_to_list(s3_url(LServer, FileID, head, [])), []},
+delete(LServer, FileID) ->
+    do([error_m ||
+        Result <- do_request(LServer, FileID, delete),
+        check_result_get_headers(Result, 204),
+        ok
+       ]).
+
+keep(_LServer, _FileID) ->
+    %% S3 files don't currently expire, so keep() is a no-op.
+    ok.
+
+do_request(LServer, FileID, Type) ->
+    R = httpc:request(Type,
+                      {binary_to_list(s3_url(LServer, FileID, Type, [])), []},
                       [], []),
     case R of
         {ok, _} -> R;
         {error, E} ->
             Text = list_to_binary(io_lib:fwrite("Error: ~p", [E])),
-            {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Text)}
+            {error, {retrieve_error, Text}}
     end.
 
-check_result_get_headers({{_, 200, _}, Headers, _Body}) -> {ok, Headers};
-check_result_get_headers({{_, 404, _}, _Headers, _Body}) ->
-    {error, ?ERR_ITEM_NOT_FOUND};
-check_result_get_headers({Error, Headers, Body}) ->
-    Text = iolist_to_binary(io_lib:fwrite("Error retrieving HEAD: ~p ~p ~p",
-                                          [Error, Headers, Body])),
-    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Text)}.
+check_result_get_headers({{_, Expected, _}, Headers, _Body}, Expected) ->
+    {ok, Headers};
+check_result_get_headers({{_, 404, _}, _Headers, _Body}, _Expected) ->
+    {error, not_found};
+check_result_get_headers({Error, Headers, Body}, Expected) ->
+    Text = iolist_to_binary(
+             io_lib:fwrite("Error performing operation (expected ~p): ~p ~p ~p",
+                           [Expected, Error, Headers, Body])),
+    {error, {retrieve_error, Text}}.
 
 get_metadata_items(Headers) ->
     List = [{list_to_binary(K), list_to_binary(http_uri:decode(V))}

@@ -406,8 +406,8 @@ update_user(LUser, LServer, Row) ->
            #xmlel{name = <<"field">>, attrs = [{<<"var">>, <<"handle">>}]});
 
       {error, Reason} ->
-         Message = iolist_to_binary(["Unexpected error: ",
-                                     atom_to_list(Reason)]),
+         Message = iolist_to_binary(
+                     io_lib:format("Unexpected error: ~p", [Reason])),
          {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Message)}
    end.
 
