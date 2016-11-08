@@ -46,8 +46,8 @@ wocky_db_user_test_() ->
 
 before_all() ->
     ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [auth_token, location]),
-    test_helper:maybe_seed_s3_file(?AVATAR_FILE),
-    test_helper:maybe_seed_s3_file(?AVATAR_FILE2),
+    wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE),
+    wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE2),
     ok.
 
 after_all(_) ->

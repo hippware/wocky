@@ -36,9 +36,7 @@
          decode_rsm/1,
          check_rsm/5,
 
-         check_attr/3,
-
-         maybe_seed_s3_file/1
+         check_attr/3
         ]).
 
 ensure_wocky_is_running() ->
@@ -287,21 +285,3 @@ timeout() ->
         s3 -> 10000; % Extra time for S3 latency
         _ -> 1000 % Default in escalus
     end.
-
-maybe_seed_s3_file(FileID) ->
-    case ejabberd_config:get_local_option(tros_backend) of
-        s3 -> seed_s3_file(FileID);
-        _ -> ok
-    end.
-
-seed_s3_file(FileID) ->
-    {Headers, Fields} = mod_wocky_tros_s3:make_upload_response(
-                          ?ALICE_JID, #jid{lserver = ?LOCAL_CONTEXT},
-                          FileID, 1000,
-                          <<"all">>, #{<<"content-type">> => <<"image/png">>}),
-    HeadersStr = [{binary_to_list(K), binary_to_list(V)} || {K, V} <- Headers],
-    {ok, _} =
-    httpc:request(put,
-                  {binary_to_list(proplists:get_value(<<"url">>, Fields)),
-                   HeadersStr, "image/png", crypto:rand_bytes(1000)},
-                  [], []).

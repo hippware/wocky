@@ -82,7 +82,7 @@ init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
-    test_helper:maybe_seed_s3_file(?AVATAR_FILE),
+    wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->

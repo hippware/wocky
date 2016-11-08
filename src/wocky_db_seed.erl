@@ -9,7 +9,8 @@
 -include("wocky_roster.hrl").
 -include("wocky_bot.hrl").
 
--export([seed_table/2, seed_tables/2, seed_keyspace/2, seed_data/2]).
+-export([seed_table/2, seed_tables/2, seed_keyspace/2,
+         seed_data/2, maybe_seed_s3_file/2]).
 
 -ignore_xref([seed_table/2, seed_tables/2, seed_data/2]).
 
@@ -399,3 +400,22 @@ sort_by_time(ArchiveRows) ->
 % Sorts newest first
 sort_by_time(#{time := T1}, #{time := T2}) ->
     T1 > T2.
+
+% Set up a file on S3 with random data if S3 is enabled
+maybe_seed_s3_file(UserJID, FileID) ->
+    case ejabberd_config:get_local_option(tros_backend) of
+        s3 -> seed_s3_file(UserJID, FileID);
+        _ -> ok
+    end.
+
+seed_s3_file(UserJID, FileID) ->
+    {Headers, Fields} = mod_wocky_tros_s3:make_upload_response(
+                          UserJID, #jid{lserver = ?LOCAL_CONTEXT},
+                          FileID, 1000,
+                          <<"all">>, #{<<"content-type">> => <<"image/png">>}),
+    HeadersStr = [{binary_to_list(K), binary_to_list(V)} || {K, V} <- Headers],
+    {ok, _} =
+    httpc:request(put,
+                  {binary_to_list(proplists:get_value(<<"url">>, Fields)),
+                   HeadersStr, "image/png", crypto:rand_bytes(1000)},
+                  [], []).
