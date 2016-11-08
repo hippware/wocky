@@ -107,8 +107,10 @@ defmodule Schemata.Schemas.Wocky do
         affiliates:       {:set, :text}, # Bot's affiliates
                                          # (required for WHITELIST visibility)
         alerts:           :int,      # Whether alerts are enabled (0/1)
-        updated:          :timestamp # Timestamp of most recent item creation
+        updated:          :timestamp,# Timestamp of most recent item creation
                                      # (or creation time of bot if no items)
+        follow_me:        :boolean,  # Does bot follow owner
+        follow_me_expiry: :timestamp # When follow me expires
       ],
       primary_key: :id
     ]
