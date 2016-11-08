@@ -171,6 +171,17 @@ handle_iq_type(From, To, IQ = #iq{type = get,
                                                   attrs = Attrs}}) ->
     handle_item_images(From, To, IQ, Attrs);
 
+% Follow me
+handle_iq_type(From, To, IQ = #iq{type = set,
+                                  sub_el = #xmlel{name = <<"follow-me">>,
+                                                  attrs = Attrs}}) ->
+    handle_follow_me(From, To, IQ, Attrs);
+
+% Un-follow me
+handle_iq_type(From, To, IQ = #iq{type = set,
+                                  sub_el = #xmlel{name = <<"un-follow-me">>,
+                                                  attrs = Attrs}}) ->
+    handle_unfollow_me(From, To, IQ, Attrs);
 
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -327,6 +338,36 @@ image_el(Owner, #{id := ID, image := Image, updated := Updated}) ->
                     {<<"item">>, ID},
                     {<<"url">>, Image},
                     {<<"updated">>, wocky_db:timestamp_to_string(Updated)}]}.
+
+%%%===================================================================
+%%% Action - follow-me
+%%%===================================================================
+
+handle_follow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
+    do([error_m ||
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
+        Expiry <- get_follow_me_expiry(Attrs),
+        wocky_db_bot:set_follow_me(ID, Expiry),
+        {ok, follow_me_result(IQ)}
+       ]).
+
+handle_unfollow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
+    do([error_m ||
+        ID <- wocky_bot_util:get_id_from_node(Attrs),
+        wocky_bot_util:check_owner(Server, ID, From),
+        wocky_db_bot:set_unfollow_me(ID),
+        {ok, follow_me_result(IQ)}
+       ]).
+
+get_follow_me_expiry(Attrs) ->
+    case wocky_xml:get_attr(<<"expiry">>, Attrs) of
+        {error, _} = E -> E;
+        {ok, ExpiryValue} -> list_to_integer(ExpiryValue)
+    end.
+
+follow_me_result(#iq{sub_el = SubEl}) ->
+    SubEl.
 
 %%%===================================================================
 %%% Incoming packet handler
