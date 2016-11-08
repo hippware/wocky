@@ -235,7 +235,7 @@ binary_to_integer_def(Binary, Default) ->
         error:badarg -> Default
     end.
 
-expand_err({error, not_found}) -> 
+expand_err({error, not_found}) ->
     Text = <<"File metadata not found">>,
     {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
 expand_err({error, Error}) ->
