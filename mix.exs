@@ -67,7 +67,7 @@ defmodule Wocky.Mixfile do
      applications: dev_apps ++ [
        :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
        :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
-       :ex_machina, :faker
+       :ex_machina, :faker, :cowboy
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,

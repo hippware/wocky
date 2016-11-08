@@ -33,6 +33,11 @@ defmodule Wocky.Location do
     location = %Location{lat: lat, lon: lon, accuracy: accuracy}
     user = User.from_jid(jid)
 
+    user_location_changed(user, location)
+  end
+
+  @spec user_location_changed(User.t, Location.t) :: :ok
+  def user_location_changed(user, location) do
     user
     |> User.set_location(location)
     |> User.get_followed_bots
