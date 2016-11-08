@@ -158,7 +158,10 @@ do_request(LServer, FileID, Type) ->
 
 check_result_get_headers({{_, Expected, _}, Headers, _Body}, Expected) ->
     {ok, Headers};
-check_result_get_headers({{_, 404, _}, _Headers, _Body}, _Expected) ->
+check_result_get_headers({{_, Code, _}, _Headers, _Body}, _Expected)
+    when Code =:= 404 orelse
+         Code =:= 403        %% S3 Likes to return 403 for non-existant files
+         ->
     {error, not_found};
 check_result_get_headers({Error, Headers, Body}, Expected) ->
     Text = iolist_to_binary(

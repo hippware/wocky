@@ -46,6 +46,8 @@ wocky_db_user_test_() ->
 
 before_all() ->
     ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [auth_token, location]),
+    test_helper:maybe_seed_s3_file(?AVATAR_FILE),
+    test_helper:maybe_seed_s3_file(?AVATAR_FILE2),
     ok.
 
 after_all(_) ->
@@ -378,9 +380,8 @@ test_update_user_with_avatar() ->
       ?_assertEqual(AvatarURL,
                     maps:get(avatar,
                              wocky_db_user:find_user(?ALICE, ?SERVER))),
-      ?_assertEqual(not_found,
-                    wocky_db:select_one(?LOCAL_CONTEXT, media,
-                                        id, #{id => ?AVATAR_FILE}))
+      ?_assertEqual({error, not_found},
+                    tros:get_metadata(?LOCAL_CONTEXT, ?AVATAR_FILE))
     ]},
     { "succesfully set avatar when the existing avatar is bogus", [
       ?_assertEqual(ok, wocky_db:update(shared, user,
