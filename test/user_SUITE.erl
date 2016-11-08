@@ -389,7 +389,7 @@ set_malformed_user(Config) ->
         QueryStanza =
         set_request(?ALICE, set_fields()),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
-        BrokenAttrs = [{<<"node">>, <<"ack-fnord">>} | 
+        BrokenAttrs = [{<<"node">>, <<"ack-fnord">>} |
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
         QueryStanza#xmlel{children =
