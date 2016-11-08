@@ -542,7 +542,7 @@ delete_owner(Config) ->
 
         %% Delete Alice
         expect_iq_success(
-          user_SUITE:delete_request(wocky_util:iq_id()), Alice),
+          user_SUITE:delete_request(), Alice),
         R = escalus:wait_for_stanza(Alice, 3000),
         escalus:assert(is_stream_error,
                        [<<"conflict">>, <<"User removed">>], R),

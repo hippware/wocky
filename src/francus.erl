@@ -17,8 +17,7 @@
          owner/1,
          access/1,
          metadata/1,
-         size/1,
-         id/1
+         size/1
         ]).
 
 -ignore_xref([read/2, size/1]).
@@ -324,9 +323,6 @@ metadata(#state{metadata = Metadata}) -> Metadata.
 
 -spec size(francus_file()) -> non_neg_integer().
 size(#state{size = Size}) -> Size.
-
--spec id(francus_file()) -> file_id().
-id(#state{file_id = ID}) -> ID.
 
 default_chunk_size() -> ?DEFAULT_CHUNK_SIZE.
 
