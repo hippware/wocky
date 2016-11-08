@@ -27,10 +27,6 @@ defmodule Wocky.LocationApi do
     {:ok, req, %State{}}
   end
 
-  def known_methods(req, state) do
-    {["POST"], req, state}
-  end
-
   def allowed_methods(req, state) do
     {["POST"], req, state}
   end
@@ -82,7 +78,7 @@ defmodule Wocky.LocationApi do
     if check_token(auth_user, auth_token) && auth_user === user_id do
       {true, req, state}
     else
-      {false, req, state}
+      {{false, "API Token"}, req, state}
     end
   end
 
