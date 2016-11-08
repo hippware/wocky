@@ -236,7 +236,7 @@ binary_to_integer_def(Binary, Default) ->
     end.
 
 expand_err({error, not_found}) ->
-    Text = <<"File metadata not found">>,
+    Text = <<"File not found">>,
     {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
 expand_err({error, Error}) ->
     Text = list_to_binary(io_lib:format("Error retrieving file: ~p", [Error])),
