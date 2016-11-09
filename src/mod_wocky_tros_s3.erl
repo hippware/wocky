@@ -103,7 +103,7 @@ path(Server, FileID) ->
     iolist_to_binary([Server, "-", hash_prefix(FileID), "/", FileID]).
 
 hash_prefix(FileID) ->
-    wocky_util:binary_as_hex(
+    base16:encode(
       binary:part(crypto:hash(md5, FileID), 0, 2)).
 
 get_owner(Metadata) ->

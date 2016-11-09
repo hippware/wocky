@@ -30,7 +30,7 @@ defmodule Wocky.Mixfile do
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
          :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
          :algolia, :logger, :schemata, :porcelain, :geocalc, :mix, :faker,
-         :ex_machina
+         :ex_machina, :base16
        ],
        plt_add_deps: true,
        flags: [
