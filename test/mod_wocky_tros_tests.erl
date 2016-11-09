@@ -415,7 +415,7 @@ expected_dl_missing_error_packet(FileID) ->
         "<error code='404' type='cancel'>"
           "<item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
           "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
-            "File metadata not found"
+            "File not found"
           "</text>"
         "</error>"
       "</iq>">>.
