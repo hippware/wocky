@@ -69,11 +69,6 @@ defmodule Wocky.User do
     user
   end
 
-  @spec valid_token?(Wocky.User.t, binary) :: boolean
-  def valid_token?(user, token) do
-    :wocky_db_user.check_token(user.user, user.server, token)
-  end
-
   @spec get(binary) :: Wocky.User.t | nil
   def get(user_id) do
     Schemata.select(:all, from: :user, in: :wocky_db.shared_keyspace,
