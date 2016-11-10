@@ -108,7 +108,7 @@ filter_local_packet_hook(P = {From,
             wocky_xml:check_attr(<<"type">>, <<"chat">>, Stanza),
             check_server(LServer),
             publish(jid:to_bare(To), From,
-                    jid:to_binary(jid:to_bare(From)), Stanza)]),
+                    chat_home_stream_id(From, Stanza), Stanza)]),
     P;
 
 %% Other types of packets we want to go to the home stream should be
@@ -154,4 +154,17 @@ check_server(Server) ->
     case wocky_app:server() of
         Server -> ok;
         _ -> {error, not_local_server}
+    end.
+
+%% We don't want bot sharing messages to overwrite other messsage from the user
+%% in the home stream, so give them a special ID including the bot as the
+%% resource part.
+%% All others chats from a user are given the same ID so that the newest
+%% overwrites older ones.
+chat_home_stream_id(From, Stanza) ->
+    case xml:get_subtag(Stanza, <<"bot">>) of
+        #xmlel{children = [#xmlcdata{content = Content}]} ->
+            jid:to_binary(jid:replace_resource(From, Content));
+        false ->
+            jid:to_binary(jid:to_bare(From))
     end.
