@@ -162,9 +162,9 @@ check_server(Server) ->
 %% All others chats from a user are given the same ID so that the newest
 %% overwrites older ones.
 chat_home_stream_id(From, Stanza) ->
-    case xml:get_subtag(Stanza, <<"bot">>) of
-        #xmlel{children = [#xmlcdata{content = Content}]} ->
-            jid:to_binary(jid:replace_resource(From, Content));
-        false ->
-            jid:to_binary(jid:to_bare(From))
+    case xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata]) of
+        <<>> ->
+            jid:to_binary(jid:to_bare(From));
+        JID ->
+            jid:to_binary(jid:replace_resource(From, JID))
     end.

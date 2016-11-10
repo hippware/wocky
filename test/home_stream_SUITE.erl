@@ -363,5 +363,9 @@ maybe(true, X) -> X.
 bot_share_msg(Recipient, Msg, BotID) ->
     BaseMsg = escalus_stanza:chat_to(Recipient, Msg),
     BaseMsg#xmlel{children = [#xmlel{name = <<"bot">>,
-                                     children = [#xmlcdata{content = BotID}]} |
-                              BaseMsg#xmlel.children]}.
+                                     children = [jid_el(BotID) |
+                                                 BaseMsg#xmlel.children]}]}.
+
+jid_el(BotID) ->
+    #xmlel{name = <<"jid">>,
+           children = [#xmlcdata{content = BotID}]}.
