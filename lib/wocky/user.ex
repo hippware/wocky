@@ -20,7 +20,6 @@ defmodule Wocky.User do
     roster_viewers: [binary]
   }
 
-  @enforce_keys [:user, :server]
   defstruct [
     user:           nil,
     server:         nil,
@@ -68,6 +67,24 @@ defmodule Wocky.User do
                                       location.lat, location.lon,
                                       location.accuracy)
     user
+  end
+
+  @spec get(binary) :: Wocky.User.t | nil
+  def get(user_id) do
+    Schemata.select(:all, from: :user, in: :wocky_db.shared_keyspace,
+      where: %{user: user_id, server: :wocky_app.server})
+    |> handle_user_return
+  end
+
+  defp handle_user_return([]), do: nil
+  defp handle_user_return([user]) do
+    # TODO I need to extract this pattern into a helper
+    {struct, defaults} = Map.pop(%__MODULE__{}, :__struct__)
+
+    user
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> Enum.into(defaults)
+    |> Map.put(:__struct__, struct)
   end
 
   @spec get_followed_bots(Wocky.User.t) :: [binary]

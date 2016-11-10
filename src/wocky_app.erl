@@ -96,6 +96,7 @@ start(_StartType, _StartArgs) ->
     ok = cache_server_names(CfgTerms),
 
     ok = maybe_enable_notifications(Env),
+    ok = 'Elixir.Wocky.LocationApi':start(),
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),

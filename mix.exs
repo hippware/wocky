@@ -67,7 +67,7 @@ defmodule Wocky.Mixfile do
      applications: dev_apps ++ [
        :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
        :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
-       :ex_machina, :faker
+       :ex_machina, :faker, :cowboy
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -85,6 +85,7 @@ defmodule Wocky.Mixfile do
        config_dir: 'etc',
        francus_chunk_size: 1048576, # 1MB
        keyspace_prefix: 'wocky_test_',
+       location_api_port: 8080,
        indexing_enabled_envs: ['staging'],
        algolia_index_name: 'dev_wocky_users',
        notification_enabled_envs: ['staging'],
