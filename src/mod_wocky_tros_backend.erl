@@ -5,15 +5,26 @@
 %% I die a little inside when I have to do this.
 -ignore_xref([behaviour_info/1]).
 
+-type metadata() :: #{binary() => binary()}.
+-type error() :: not_found | metadata_not_found | {retrieve_error, binary()}.
+-type result(ResultType) :: {ok, ResultType} | {error, error()}.
+
+-export_type([metadata/0]).
+
 -callback start(list()) -> any().
 
 -callback stop() -> any().
 
--callback get_owner(ejabberd:lserver(), binary()) ->
-    {ok, any()} | {error, any()}.
+-callback get_owner(metadata()) -> result(ejabberd:luser()).
 
--callback get_metadata(ejabberd:lserver(), binary()) ->
-    {ok, any()} | {error, any()}.
+-callback get_access(metadata()) -> result(binary()).
+
+-callback get_metadata(ejabberd:lserver(), tros:file_id()) ->
+    result(metadata()).
+
+-callback delete(ejabberd:lserver(), tros:file_id()) -> ok.
+
+-callback keep(ejabberd:lserver(), tros:file_id()) -> ok | {error, not_found}.
 
 -callback make_upload_response(ejabberd:jid(),
                                ejabberd:jid(),

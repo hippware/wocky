@@ -3,6 +3,7 @@
 -module(tros_SUITE).
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
+-compile({parse_transform, cut}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -10,16 +11,38 @@
 -include("wocky_db_seed.hrl").
 -include("wocky.hrl").
 
+-define(S3_TIMEOUT, 5000).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
 
 all() ->
     [
+     %% Uncomment this to enable tests against real-world S3:
+%     {group, s3},
+     {group, francus}
+    ].
+
+groups() ->
+    [
+     {francus, all_cases()},
+     {s3, s3_cases()}
+    ].
+
+all_cases() ->
+    s3_cases() ++ other_cases().
+
+s3_cases() ->
+    [
      file_updown_story,
-     multipart_story,
      avatar_updown_story,
-     message_media_updown_story,
+     message_media_updown_story
+    ].
+
+other_cases() ->
+    [
+     multipart_story,
      file_down_bob_story,
      file_down_carol_story,
      file_up_too_big_story,
@@ -52,6 +75,22 @@ init_per_suite(Config) ->
 end_per_suite(Config) ->
     escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
     escalus:end_per_suite(Config).
+
+init_per_group(s3, Config) ->
+    restart_with_backend(s3),
+    Config;
+
+init_per_group(francus, Config) ->
+    restart_with_backend(francus),
+    Config.
+
+end_per_group(_Group, Config) ->
+    Config.
+
+restart_with_backend(Backend) ->
+    mod_wocky_tros:stop(?LOCAL_CONTEXT),
+    mod_wocky_tros:start(?LOCAL_CONTEXT, [{backend, Backend},
+                                          {scheme, "http://"}]).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -264,11 +303,15 @@ do_download(ResultStanza) ->
     {Response, RespHeaders, RespContent} = Result,
     {_, 200, "OK"} = Response,
     RespBin = list_to_binary(RespContent),
+    NormHeaders = normalise_headers(RespHeaders),
     true = lists:member({"content-length",
                          integer_to_list(byte_size(RespBin))},
-                        RespHeaders),
-    true = lists:member({"content-type", "image/png"}, RespHeaders),
+                        NormHeaders),
+    true = lists:member({"content-type", "image/png"}, NormHeaders),
     RespBin.
+
+normalise_headers(Headers) ->
+    lists:map(fun({K, V}) -> {string:to_lower(K), V} end, Headers).
 
 request_wrapper(Type, Name, DataFields) ->
     test_helper:iq_with_type(Type, ?NS_TROS,
@@ -315,7 +358,8 @@ user_access(JID) ->
 download_success(Client, FileID, Data) ->
     DLQueryStanza = download_stanza(FileID),
     FinalDLStanza = add_to_from(DLQueryStanza, Client),
-    DLResultStanza = escalus:send_and_wait(Client, FinalDLStanza),
+    escalus:send(Client, FinalDLStanza),
+    DLResultStanza = escalus:wait_for_stanza(Client, ?S3_TIMEOUT),
     escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
     Data = do_download(DLResultStanza).
 

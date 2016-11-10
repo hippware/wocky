@@ -8,11 +8,13 @@
 -export([
    start/2,
    stop/1,
-   handle_iq/3
+   handle_iq/3,
+
+   backend/0
         ]).
 
 -ifdef(TEST).
--export([make_file_id/0, backend/0]).
+-export([make_file_id/0]).
 -endif.
 
 -ignore_xref([handle_iq/3]).
@@ -80,9 +82,9 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
-        OwnerID <- get_owner(LServer, FileID),
-        Metadata <- get_metadata(LServer, FileID),
-        Access <- get_access(LServer, FileID),
+        Metadata <- expand_err(tros:get_metadata(LServer, FileID)),
+        OwnerID <- expand_err(tros:get_owner(Metadata)),
+        Access <- expand_err(tros:get_access(Metadata)),
         check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID, Metadata)
@@ -148,28 +150,6 @@ check_file_id(#{<<"id">> := ID}) ->
 
 check_file_id(ID) when is_binary(ID) ->
     {ok, ID}.
-
-get_owner(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_owner).
-
-get_metadata(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_metadata).
-
-get_access(LServer, FileID) ->
-    get_file_info(LServer, FileID, get_access).
-
-get_file_info(LServer, FileID, Function) ->
-   case (backend()):Function(LServer, FileID) of
-      {ok, _} = Success -> Success;
-      {error, Error} -> file_retrieval_error(Error)
-   end.
-
-file_retrieval_error(not_found) ->
-   Text = <<"File metadata not found">>,
-   {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
-file_retrieval_error(Error) ->
-   Text = list_to_binary(io_lib:format("Error retrieving file: ~p", [Error])),
-   {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Text)}.
 
 check_upload_size(#{<<"size">> := SizeBin}) ->
     Size = binary_to_integer_def(SizeBin, 0),
@@ -254,6 +234,14 @@ binary_to_integer_def(Binary, Default) ->
     catch
         error:badarg -> Default
     end.
+
+expand_err({error, not_found}) ->
+    Text = <<"File not found">>,
+    {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
+expand_err({error, Error}) ->
+    Text = list_to_binary(io_lib:format("Error retrieving file: ~p", [Error])),
+    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Text)};
+expand_err(NonError) -> NonError.
 
 setup_metrics() ->
     Metrics = [mod_wocky_tros_download_requests,
