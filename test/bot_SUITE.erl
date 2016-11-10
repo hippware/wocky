@@ -27,7 +27,7 @@
 -define(CREATE_TYPE,        <<"floatbot">>).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
--define(CREATED_BOTS,       20).
+-define(CREATED_BOTS,       30).
 -define(CREATED_ITEMS,      50).
 
 %%--------------------------------------------------------------------
@@ -256,14 +256,12 @@ retrieve_for_user(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
         IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
-        {_OwnerBots, FriendsBots} = distribute(IDs),
+        {_OwnerBots, FriendsOnlyBots, FollowersBots} = distribute(IDs),
 
-        lists:foreach(
-          fun(B) ->
-                  expect_iq_success(
-                    change_visibility_stanza(B, ?WOCKY_BOT_VIS_FRIENDS), Alice)
-          end,
-          FriendsBots),
+        FriendsBots = lists:sort(FriendsOnlyBots ++ FollowersBots),
+
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, FriendsBots),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FOLLOWERS, FollowersBots),
 
         %% Alice can see all her bots
         Stanza = expect_iq_success(
@@ -276,23 +274,34 @@ retrieve_for_user(Config) ->
         check_returned_bots(Stanza2, IDs, 0, ?CREATED_BOTS),
 
         %% Bob can only see the subset of bots set to be visible by friends
+        %% and followers
         Stanza3 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
-        check_returned_bots(Stanza3, FriendsBots, 0, ?CREATED_BOTS div 2),
+        check_returned_bots(Stanza3, FriendsBots,
+                            0, length(FriendsBots)),
 
         %% Tim cannot see any of Alice's bots since he is neither
-        %% the owner nor a friend
+        %% the owner nor a friend nor follower
         Stanza4 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
         check_returned_bots(Stanza4, [], undefined, 0),
 
+        %% Make Tim a follower of Alice
+        test_helper:subscribe(Tim, Alice),
+
+        %% Tim can now see the follower bots:
+        Stanza5 = expect_iq_success(
+                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
+        check_returned_bots(Stanza5, FollowersBots, 0, length(FollowersBots)),
+
         %% Test some basic RSM functionality
         %% Bob can only see the subset of bots set to be visible by friends
-        Stanza5 = expect_iq_success(
+        Stanza6 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID,
                                     #rsm_in{index = 3, max = 2}), Bob),
         ExpectedBots = lists:sublist(FriendsBots, 4, 2),
-        check_returned_bots(Stanza5, ExpectedBots, 3, length(FriendsBots)),
+        check_returned_bots(Stanza6, ExpectedBots, 3,
+                            length(FriendsBots)),
 
         %% When alice publishes to a bot, that bot should become the most
         %% recently updated, moving it to the end of the list:
@@ -303,9 +312,9 @@ retrieve_for_user(Config) ->
         publish_item(PublishBot, NoteID, Title, Content, undefined, Alice),
 
         %% Alice can see all her bots with the updated one now at the end
-        Stanza6 = expect_iq_success(
+        Stanza7 = expect_iq_success(
                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
-        check_returned_bots(Stanza6, (IDs -- [PublishBot]) ++ [PublishBot],
+        check_returned_bots(Stanza7, (IDs -- [PublishBot]) ++ [PublishBot],
                             0, ?CREATED_BOTS)
 
       end).
@@ -437,8 +446,8 @@ friends_only_permissions(Config) ->
 roster_change_triggers(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
-                           {karen, 1}, {robert, 1}],
-      fun(Alice, Bob, Carol, Karen, Robert) ->
+                           {karen, 1}, {robert, 1}, {tim, 1}],
+      fun(Alice, Bob, Carol, Karen, Robert, Tim) ->
         % Robert is nothin', so gets no bot notifications
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Robert)),
         escalus:assert_many([is_roster_set, is_iq_result],
@@ -484,7 +493,28 @@ roster_change_triggers(Config) ->
                              is_bot_unsubscribe(true, _)],
                             escalus:wait_for_stanzas(Karen, 3)),
 
-        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen, Robert])
+        %% Now, set the bot to followers visibility
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FOLLOWERS, [?BOT]),
+
+        %% Make Tim a follower of Alice and of the bot
+        test_helper:subscribe(Tim, Alice),
+        expect_iq_success(subscribe_stanza(true), Tim),
+
+        %% Boot Tim off as a follower of Alice
+        escalus:send(Alice, escalus_stanza:roster_remove_contact(Tim)),
+        escalus:assert_many([is_roster_set, is_iq_result],
+                            escalus:wait_for_stanzas(Alice, 2)),
+
+        %% Tim should get alerted of his loss of access to the bot
+        escalus:assert_many([escalus_pred:is_presence_with_type(
+                               <<"unsubscribed">>, _),
+                             is_roster_set,
+                             is_bot_unsubscribe(true, _)],
+                            escalus:wait_for_stanzas(Tim, 3)),
+
+        timer:sleep(500),
+
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen, Robert, Tim])
       end).
 
 blocked_group(Config) ->
@@ -1281,15 +1311,17 @@ expected_simple_bot_fields() ->
     lists:keydelete("shortname", 1, expected_create_fields()).
 
 distribute(L) ->
-    {A, B} = distribute(L, [], []),
-    {lists:reverse(A), lists:reverse(B)}.
+    {A, B, C} = distribute(L, [], [], []),
+    {lists:reverse(A), lists:reverse(B), lists:reverse(C)}.
 
-distribute([], A, B) ->
-    {A, B};
-distribute([H], A, B) ->
-    {[H|A], B};
-distribute([H,H2|T], A, B) ->
-    distribute(T, [H|A], [H2|B]).
+distribute([], A, B, C) ->
+    {A, B, C};
+distribute([H], A, B, C) ->
+    {[H|A], B, C};
+distribute([H,H2], A, B, C) ->
+    {[H|A], [H2|B], C};
+distribute([H,H2,H3|T], A, B, C) ->
+    distribute(T, [H|A], [H2|B], [H3|C]).
 
 is_pres_unavailable() ->
     fun(S) ->
@@ -1334,3 +1366,10 @@ check_image(Owner, Item, URL,
     ?assertMatch({value, _}, xml:get_attr(<<"updated">>, Attrs)),
     Rest.
 
+set_visibility(Client, Visibility, BotList) ->
+    lists:foreach(
+      fun(B) ->
+              expect_iq_success(
+                change_visibility_stanza(B, Visibility), Client)
+      end,
+      BotList).

@@ -370,24 +370,37 @@ handle_roster_changed(From, LServer, BotID,
     _ = do([error_m ||
             wocky_xml:check_namespace(?NS_WOCKY_ROSTER, El),
             wocky_bot_util:check_owner(LServer, BotID, From),
-            RemovedJIDs <- get_removed_jids(Children),
-            Bot <- {ok, wocky_db_bot:get(LServer, BotID)},
-            remove_invalidated_associations(LServer, BotID, Bot, RemovedJIDs)
+            #{visibility := Visibility}
+                <- {ok, wocky_db_bot:get(LServer, BotID)},
+            Items <- els_to_items(Children),
+            UnfriendedJIDs <- get_unfriended_jids(Items),
+            UnfollowedJIDs <- get_unfollowed_jids(Items),
+            remove_invalidated_affiliates(LServer, BotID, UnfriendedJIDs),
+            remove_invalidated_subscribers(
+              LServer, BotID, Visibility, UnfriendedJIDs, UnfollowedJIDs)
            ]),
     ok;
 handle_roster_changed(_, _, _, _) ->
     ignored.
 
-get_removed_jids(ItemEls) ->
-    Items = els_to_items(ItemEls),
-    UnFriended = lists:filter(fun(I) -> not is_friend(I) end, Items),
-    {ok, [JID || #roster_item{jid = JID} <- UnFriended]}.
+get_unfriended_jids(Items) ->
+    get_demoted_jids(Items, fun(X) -> not is_friend(X) end).
+
+get_unfollowed_jids(Items) ->
+    get_demoted_jids(Items, fun(X) -> not is_follower(X) end).
+
+get_demoted_jids(Items, FilterFun) ->
+    Demoted = lists:filter(FilterFun, Items),
+    {ok, [JID || #roster_item{jid = JID} <- Demoted]}.
 
 is_friend(#roster_item{subscription = Sub, groups = Groups}) ->
     wocky_util:is_friend(Sub, Groups).
 
+is_follower(#roster_item{subscription = Sub, groups = Groups}) ->
+    wocky_util:is_follower(Sub, Groups).
+
 els_to_items(ItemEls) ->
-    lists:foldl(fun el_to_item/2, [], ItemEls).
+    {ok, lists:foldl(fun el_to_item/2, [], ItemEls)}.
 
 el_to_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children},
            Acc) ->
@@ -409,26 +422,25 @@ get_group(#xmlel{name = <<"group">>,
     [Group | Acc];
 get_group(_, Acc) -> Acc.
 
-remove_invalidated_associations(LServer, ID,
-                                #{visibility := Visibility},
-                                RemovedJIDs) ->
-    remove_invalidated_affiliates(LServer, ID, RemovedJIDs),
-    remove_invalidated_subscribers(LServer, ID, Visibility, RemovedJIDs).
-
-remove_invalidated_affiliates(LServer, ID, RemovedJIDs) ->
+remove_invalidated_affiliates(LServer, ID, UnfriendedJIDs) ->
     OldAffiliates = [A || {A, _} <- wocky_db_bot:affiliations(LServer, ID)],
-    RemovedAffiliates = wocky_util:intersection(RemovedJIDs, OldAffiliates),
+    RemovedAffiliates = wocky_util:intersection(UnfriendedJIDs, OldAffiliates),
     RemovedAffiliations = [{I, none} || I <- RemovedAffiliates],
     wocky_db_bot:update_affiliations(LServer, ID, RemovedAffiliations),
     wocky_bot_util:notify_affiliates(
       jid:make(<<>>, LServer, <<>>), ID, RemovedAffiliations).
 
-remove_invalidated_subscribers(LServer, ID, Vis, RemovedJIDs)
+remove_invalidated_subscribers(LServer, ID, Vis,
+                               UnfriendedJIDs, _UnfollowedJIDs)
   when Vis =:= ?WOCKY_BOT_VIS_FRIENDS;
        Vis =:= ?WOCKY_BOT_VIS_WHITELIST ->
     lists:foreach(remove_invalidated_subscriber(LServer, ID, _),
-                  RemovedJIDs);
-remove_invalidated_subscribers(_, _, _, _) ->
+                  UnfriendedJIDs);
+remove_invalidated_subscribers(LServer, ID, ?WOCKY_BOT_VIS_FOLLOWERS,
+                               _UnfriendedJIDs, UnfollowedJIDs) ->
+    lists:foreach(remove_invalidated_subscriber(LServer, ID, _),
+                  UnfollowedJIDs);
+remove_invalidated_subscribers(_, _, _, _, _) ->
     ok.
 
 remove_invalidated_subscriber(LServer, ID, JID) ->
