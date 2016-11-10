@@ -1,5 +1,10 @@
 defmodule Wocky.LocationApi do
 
+  use Exref, ignore: [
+    init: 3, rest_init: 2, allow_missing_post: 2, allowed_methods: 2,
+    content_types_accepted: 2, from_json: 2, is_authorized: 2,
+    malformed_request: 2, resource_exists: 2
+  ]
   alias Wocky.User
   alias Wocky.Location
 
