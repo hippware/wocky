@@ -64,7 +64,9 @@ all() ->
      edit_item,
      get_items,
      publish_image_item,
-     item_images
+     item_images,
+     follow_me,
+     unfollow_me
     ].
 
 suite() ->
@@ -752,6 +754,32 @@ item_images(Config) ->
         expect_iq_error(item_image_stanza(), Bob)
       end).
 
+follow_me(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        %% Alice can set a bot to follow her
+        expect_iq_success(follow_me_stanza(), Alice),
+
+        %% Bob cannot since he is not the bot owner
+        expect_iq_error(follow_me_stanza(), Bob)
+      end).
+
+unfollow_me(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        %% Alice can unfollow-me a bot that is following her
+        expect_iq_success(follow_me_stanza(), Alice),
+        expect_iq_success(unfollow_me_stanza(), Alice),
+
+        %% Alice can unfollow-me a bot that is not following her
+        expect_iq_success(unfollow_me_stanza(), Alice),
+
+        %% Bob cannot unfollow-me a bot that he doesn't own
+        expect_iq_error(unfollow_me_stanza(), Bob)
+      end).
+
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -1313,3 +1341,16 @@ set_visibility(Client, Visibility, BotList) ->
                 change_visibility_stanza(B, Visibility), Client)
       end,
       BotList).
+
+follow_me_stanza() ->
+    Expiry = wocky_db:now_to_timestamp(os:timestamp()) + 86400,
+    QueryEl = #xmlel{name = <<"follow-me">>,
+                     attrs = [
+                       {<<"node">>, bot_node(?BOT)},
+                       {<<"expiry">>, integer_to_binary(Expiry)}
+                     ]},
+    test_helper:iq_set(?NS_BOT, QueryEl).
+
+unfollow_me_stanza() ->
+    QueryEl = node_el(?BOT, <<"un-follow-me">>, []),
+    test_helper:iq_set(?NS_BOT, QueryEl).

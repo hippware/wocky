@@ -363,7 +363,7 @@ handle_unfollow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
 get_follow_me_expiry(Attrs) ->
     case wocky_xml:get_attr(<<"expiry">>, Attrs) of
         {error, _} = E -> E;
-        {ok, ExpiryValue} -> list_to_integer(ExpiryValue)
+        {ok, Expiry} -> {ok, binary_to_integer(Expiry)}
     end.
 
 follow_me_result(#iq{sub_el = SubEl}) ->

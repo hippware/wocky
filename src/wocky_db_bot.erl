@@ -263,14 +263,14 @@ set_follow_me(BotID, Expiry) ->
     wocky_db:update(shared, bot,
                     #{follow_me => true,
                       follow_me_expiry => ExpiryTS},
-                    #{bot => BotID}).
+                    #{id => BotID}).
 
 -spec set_unfollow_me(wocky_db:id()) -> ok.
 set_unfollow_me(BotID) ->
     wocky_db:update(shared, bot,
                     #{follow_me => false,
                       follow_me_expiry => undefined},
-                    #{bot => BotID}).
+                    #{id => BotID}).
 
 %%%===================================================================
 %%% Private helpers
