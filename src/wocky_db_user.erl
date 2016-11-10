@@ -234,7 +234,7 @@ check_file_is_local(_, _) -> {error, not_local_file}.
 check_avatar_owner(UserID, Metadata) ->
     case tros:get_owner(Metadata) of
         {ok, UserID} -> ok;
-        X -> ct:log("Owner: ~p / ~p", [X, UserID]), {error, not_file_owner}
+        _ -> {error, not_file_owner}
     end.
 
 %% @private
