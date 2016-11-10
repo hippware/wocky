@@ -120,9 +120,33 @@ auto_publish(Config) ->
         escalus:send(Bob, Stanza),
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
-        Stanza2 = expect_iq_success_u(get_stanza(), Alice, Alice),
-        Items = check_result(Stanza2, 5, 1, true),
-        escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanza))
+        Stanza2 = escalus_stanza:chat_to(?ALICE_B_JID, <<"All your base2">>),
+        escalus:send(Bob, Stanza2),
+        escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
+
+        %% There should only be 5 items because the latter chat overwrites the
+        %% former
+        Stanza3 = expect_iq_success_u(get_stanza(), Alice, Alice),
+        Items = check_result(Stanza3, 5, 1, true),
+        escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanza)),
+
+        Stanza4 = bot_share_msg(?ALICE_B_JID, <<"msg">>, wocky_db:create_id()),
+        escalus:send(Bob, Stanza4),
+        escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
+
+        %% There should now be 6 items because the bot share messaege won't
+        %% overwrite any others
+        Stanza5 = expect_iq_success_u(get_stanza(), Alice, Alice),
+        Items2 = check_result(Stanza5, 6, 1, true),
+        escalus:assert(is_chat_message, hd((lists:last(Items2))#item.stanza)),
+
+        Stanza6 = bot_share_msg(?ALICE_B_JID, <<"msg">>, wocky_db:create_id()),
+        escalus:send(Bob, Stanza6),
+        escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
+
+        Stanza7 = expect_iq_success_u(get_stanza(), Alice, Alice),
+        Items3 = check_result(Stanza7, 7, 1, true),
+        escalus:assert(is_chat_message, hd((lists:last(Items3))#item.stanza))
       end).
 
 subscribe(Config) ->
@@ -157,7 +181,7 @@ subscribe_version(Config) ->
         lists:foreach(
           fun(_) ->
                   escalus:assert(is_message, escalus:wait_for_stanza(Alice))
-          end, lists:seq(1, 5)),
+          end, lists:seq(1, 7)),
 
         %% Bob should get nothing from his own HS (since it's empty) nor from
         %% Alice's (since it's not his)
@@ -335,3 +359,13 @@ is_presence_error(Stanza) ->
 
 maybe(false, _) -> ok;
 maybe(true, X) -> X.
+
+bot_share_msg(Recipient, Msg, BotID) ->
+    BaseMsg = escalus_stanza:chat_to(Recipient, Msg),
+    BaseMsg#xmlel{children = [#xmlel{name = <<"bot">>,
+                                     children = [jid_el(BotID) |
+                                                 BaseMsg#xmlel.children]}]}.
+
+jid_el(BotID) ->
+    #xmlel{name = <<"jid">>,
+           children = [#xmlcdata{content = BotID}]}.
