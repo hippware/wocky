@@ -19,7 +19,8 @@ defmodule Wocky.LocationApi do
         ]}
     ])
 
-    {:ok, _} = :cowboy.start_http(:location_api, 100, [port: 8080],
+    port = Application.get_env(:wocky, :location_api_port)
+    {:ok, _} = :cowboy.start_http(:location_api, 100, [port: port],
                                   [env: [dispatch: dispatch]])
     :ok
   end

@@ -3,6 +3,7 @@ use Mix.Config
 config :wocky,
   wocky_env: 'test',
   keyspace_prefix: 'wocky_test_',
+  location_api_port: 3000,
   config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
 
 config :schemata,

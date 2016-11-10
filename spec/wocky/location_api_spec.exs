@@ -1,12 +1,11 @@
 defmodule Wocky.LocationApiSpec do
   use ESpec
 
-  @url_base "http://localhost:8080/api/v1/users/"
-
-  defp url(user_id) do
-    @url_base <> user_id <> "/location"
+  defp url(port, user_id) do
+    "http://localhost:#{port}/api/v1/users/#{user_id}/location"
   end
 
+  let :port, do: Application.get_env(:wocky, :location_api_port)
   let :user, do: Wocky.Factory.insert(:user, resource: "testing")
   let :token do
     {:ok, return, _} = :wocky_db_user.assign_token(user.user,
@@ -19,7 +18,7 @@ defmodule Wocky.LocationApiSpec do
     {"X-Auth-User", user.user},
     {"X-Auth-Token", token}
   ]
-  let :url, do: url(user.user)
+  let :url, do: url(port, user.user)
   let :payload do
     """
     {
@@ -84,7 +83,7 @@ defmodule Wocky.LocationApiSpec do
 
       it "should return 401 when the auth header and user don't match" do
         {:ok, code, _, _} =
-          :hackney.request(:POST, url("foo"), headers, payload)
+          :hackney.request(:POST, url(port, "foo"), headers, payload)
 
         expect code |> to(eq 401)
       end

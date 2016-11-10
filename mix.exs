@@ -85,6 +85,7 @@ defmodule Wocky.Mixfile do
        config_dir: 'etc',
        francus_chunk_size: 1048576, # 1MB
        keyspace_prefix: 'wocky_test_',
+       location_api_port: 8080,
        indexing_enabled_envs: ['staging'],
        algolia_index_name: 'dev_wocky_users',
        notification_enabled_envs: ['staging'],
