@@ -4,7 +4,7 @@ defmodule Wocky.LocationApi do
   alias Wocky.Location
 
   defmodule State do
-    defstruct [user: nil, body: nil, coords: nil]
+    defstruct [user: nil, resource: nil, coords: nil]
   end
 
   def start do
@@ -51,8 +51,11 @@ defmodule Wocky.LocationApi do
     {:ok, body, _req2} = :cowboy_req.body(req)
     case Poison.Parser.parse(body, keys: :atoms) do
       {:ok, data} ->
-        if has_required_keys?(data) do
-          {false, req, %State{state | body: data, coords: data.location.coords}}
+        location = extract_location_object(data[:location])
+        if has_required_keys?(location, data[:resource]) do
+          {false, req, %State{state |
+            resource: data.resource,
+            coords: location.coords}}
         else
           {true, req, state}
         end
@@ -62,13 +65,18 @@ defmodule Wocky.LocationApi do
     end
   end
 
-  defp has_required_keys?(%{location: %{coords: coords}, resource: res}) do
+  defp extract_location_object([location]),               do: location
+  defp extract_location_object(list) when is_list(list),  do: nil
+  defp extract_location_object(nil),                      do: nil
+  defp extract_location_object(location),                 do: location
+
+  defp has_required_keys?(%{coords: coords}, resource) do
     Map.get(coords, :latitude) &&
     Map.get(coords, :longitude) &&
     Map.get(coords, :accuracy) &&
-    res
+    resource
   end
-  defp has_required_keys?(_), do: false
+  defp has_required_keys?(_, _), do: false
 
   def is_authorized(req, state) do
     {auth_user, _} = :cowboy_req.header("x-auth-user", req, nil)
@@ -87,13 +95,13 @@ defmodule Wocky.LocationApi do
   defp check_token(user, token),
     do: :wocky_db_user.check_token(user, :wocky_app.server, token)
 
-  def from_json(req, %State{user: user, body: body, coords: coords} = state) do
+  def from_json(req, %State{user: user, coords: coords} = state) do
     location = %Location{
       lat: coords.latitude,
       lon: coords.longitude,
       accuracy: coords.accuracy
     }
-    user = %User{user | resource: body.resource}
+    user = %User{user | resource: state.resource}
     :ok = Location.user_location_changed(user, location)
     {true, req, state}
   end

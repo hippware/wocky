@@ -23,7 +23,7 @@ defmodule Wocky.LocationApiSpec do
   let :payload do
     """
     {
-        "location":{
+        "location":[{
             "coords":{
                 "speed":-1,
                 "longitude":-85.7935821931526,
@@ -46,7 +46,7 @@ defmodule Wocky.LocationApiSpec do
                 "is_charging":false
             },
             "timestamp":"2016-10-24T09:45:05.621Z"
-        },
+        }],
         "resource": "testing"
     }
     """
@@ -92,6 +92,34 @@ defmodule Wocky.LocationApiSpec do
       it "should return 400 when the payload is not json" do
         {:ok, code, _, _} =
           :hackney.request(:POST, url, headers, "bad data")
+
+        expect code |> to(eq 400)
+      end
+
+      it "should return 400 when the location array has more than one entry" do
+        # This packet has more than one location
+        data =
+          """
+          {
+              "location":[{
+                  "coords":{
+                      "longitude":-85.7935821931526,
+                      "latitude":35.17448497921099,
+                      "accuracy":3000,
+                  }
+              },
+              {
+                  "coords":{
+                      "longitude":-85.7935821931526,
+                      "latitude":35.17448497921099,
+                      "accuracy":3000,
+                  }
+              }],
+              "resource": "testing"
+          }
+          """
+        {:ok, code, _, _} =
+          :hackney.request(:POST, url, headers, data)
 
         expect code |> to(eq 400)
       end
