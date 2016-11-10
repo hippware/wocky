@@ -229,9 +229,14 @@ delete_item(Server, BotID, NoteID) ->
 dissociate_user(LUser, LServer) ->
     OwnedBots = owned_bots(LServer, jid:make(LUser, LServer, <<>>)),
     Roster = wocky_db_roster:get_roster(LUser, LServer),
-    Friends = lists:filter(wocky_db_roster:is_friend(_), Roster),
-    FriendJIDs = [jid:make(J) || #wocky_roster{contact_jid = J} <- Friends],
-    lists:foreach(remove_owner(LServer, _, FriendJIDs), OwnedBots).
+    FriendJIDs = jid_list(Roster, wocky_db_roster:is_friend(_)),
+    FollowerJIDs = jid_list(Roster, wocky_db_roster:is_follower(_)),
+    lists:foreach(
+      remove_owner(LServer, _, FriendJIDs, FollowerJIDs), OwnedBots).
+
+jid_list(Roster, FilterFun) ->
+    Filtered = lists:filter(FilterFun(_), Roster),
+    [jid:make(J) || #wocky_roster{contact_jid = J} <- Filtered].
 
 -spec image_items_count(wocky_db:server(), wocky_db:id()) -> non_neg_integer().
 image_items_count(Server, BotID) ->
@@ -262,6 +267,10 @@ has_access(User, #{visibility := ?WOCKY_BOT_VIS_FRIENDS,
                    owner:= Owner}) ->
     wocky_db_roster:is_friend(jid:from_binary(Owner),
                               jid:from_binary(User));
+has_access(User, #{visibility := ?WOCKY_BOT_VIS_FOLLOWERS,
+                   owner:= Owner}) ->
+    wocky_db_roster:is_follower(jid:from_binary(Owner),
+                                jid:from_binary(User));
 has_access(_User, #{visibility := ?WOCKY_BOT_VIS_PUBLIC}) ->
     true;
 has_access(_, _) ->
@@ -276,16 +285,20 @@ maybe_to_jid(<<>>) ->
 maybe_to_jid(JIDBin) ->
     jid:from_binary(JIDBin).
 
-remove_owner(Server, BotID, FriendJIDs) ->
+remove_owner(Server, BotID, FriendJIDs, FollowerJIDs) ->
     Bot = get(Server, BotID),
-    NewBot = maybe_freeze_roster(Bot, FriendJIDs),
+    NewBot = maybe_freeze_roster(Bot, FriendJIDs, FollowerJIDs),
     wocky_db:insert(shared, bot, NewBot#{owner => <<>>}).
 
 maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FRIENDS},
-                    FriendJIDs) ->
+                    FriendJIDs, _FollowerJIDs) ->
     Bot#{visibility => ?WOCKY_BOT_VIS_WHITELIST,
          affiliates => [jid:to_binary(J) || J <- FriendJIDs]};
-maybe_freeze_roster(Bot, _) -> Bot.
+maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FOLLOWERS},
+                    _FriendJIDs, FollowerJIDs) ->
+    Bot#{visibility => ?WOCKY_BOT_VIS_WHITELIST,
+         affiliates => [jid:to_binary(J) || J <- FollowerJIDs]};
+maybe_freeze_roster(Bot, _, _) -> Bot.
 
 maybe_add_owner_as_follower(not_found, Subs) -> Subs;
 maybe_add_owner_as_follower(Owner, Subs) -> [{Owner, true} | Subs].

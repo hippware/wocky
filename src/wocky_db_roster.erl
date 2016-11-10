@@ -16,6 +16,7 @@
          has_contact/2,
          is_friend/2,
          is_friend/1,
+         is_follower/2,
          is_follower/1,
          users_with_contact/1
         ]).
@@ -119,13 +120,20 @@ has_contact(#jid{luser = LUser}, OtherJID) ->
 
 %% @doc Checks whether a user has another user as a friend
 -spec is_friend(ejabberd:jid(), ejabberd:jid()) -> boolean().
-is_friend(#jid{luser = LUser}, OtherJID) ->
+is_friend(JID, OtherJID) ->
+    is_x(JID, OtherJID, fun wocky_util:is_friend/2).
+
+-spec is_follower(ejabberd:jid(), ejabberd:jid()) -> boolean().
+is_follower(JID, OtherJID) ->
+    is_x(JID, OtherJID, fun wocky_util:is_follower/2).
+
+is_x(#jid{luser = LUser}, OtherJID, IsFun) ->
     ContactJID = jid:to_binary(jid:to_bare(OtherJID)),
     case wocky_db:select(shared, roster, [subscription, groups],
                          #{user => LUser,
                            contact_jid => ContactJID}) of
         [#{subscription := Sub, groups := Groups}] ->
-            wocky_util:is_friend(binary_to_atom(Sub, utf8), Groups);
+            IsFun(binary_to_atom(Sub, utf8), Groups);
         _ ->
             false
     end.
