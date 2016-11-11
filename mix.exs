@@ -101,7 +101,7 @@ defmodule Wocky.Mixfile do
       {:algolia,       "~> 0.4.0"},
       {:ex_aws,        "~> 1.0.0-rc.3"},
       {:geocalc,       "~> 0.5"},
-      {:ex_machina,    "~> 1.0"},
+      {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
       {:faker,         "~> 0.7"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
