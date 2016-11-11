@@ -145,12 +145,11 @@ read_eof(F, Acc) ->
 
 test_write() ->
     { "francus:write",
-      [
-       %% Don't do setup here - it takes time and we're not going to use the
-       %% standard files. Still do cleanup though.
-       { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
-         {inparallel,
-          {timeout, 10,
+      {timeout, 20,
+        %% Don't do setup here - it takes time and we're not going to use the
+        %% standard files. Still do cleanup though.
+        { "Write an entire file", setup, fun() -> ok end , fun after_each/1,
+          {inparallel,
             [
              ?_test(
                begin
@@ -163,9 +162,8 @@ test_write() ->
                    ok = francus:close(F2),
                    verify_contents(ID, Data)
                end) || Size <- test_sizes(), Size =/= 0]}
-         }
-       }
-      ]
+        }
+      }
     }.
 
 test_expire() ->
