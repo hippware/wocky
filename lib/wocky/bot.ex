@@ -56,6 +56,13 @@ defmodule Wocky.Bot do
     end
   end
 
+  @spec set_location(Wocky.Bot.t, Wocky.Location.t) :: :ok
+  def set_location(bot, location) do
+    Schemata.update :bot, in: :wocky_db.shared_keyspace,
+      set: %{lat: location.lat, lon: location.lon},
+      where: %{id: bot.id}
+  end
+
   @spec insert(Wocky.Bot.t) :: :ok
   def insert(%__MODULE__{} = struct) do
     bot = struct |> Map.from_struct

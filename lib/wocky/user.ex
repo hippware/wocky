@@ -92,6 +92,19 @@ defmodule Wocky.User do
     :wocky_db_bot.followed_bots(user.server, to_jid(user))
   end
 
+  @spec get_owned_bots(Wocky.User.t) :: [map]
+  def get_owned_bots(user) do
+    user_jid =
+      user
+      |> to_jid
+      |> :jid.to_bare
+      |> :jid.to_binary
+
+    Schemata.select :all,
+      from: :user_bot, in: :wocky_db.shared_keyspace,
+      where: %{owner: user_jid}
+  end
+
   @spec get_last_bot_event(Wocky.User.t, binary) :: [map]
   def get_last_bot_event(user, bot_id) do
     Schemata.select :all,

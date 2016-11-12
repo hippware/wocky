@@ -43,6 +43,11 @@ defmodule Wocky.Location do
     |> User.get_followed_bots
     |> bots_with_events(user, location)
     |> Enum.each(&trigger_bot_notification(user, &1))
+
+    user
+    |> owned_bots_with_follow_me
+    |> Enum.each(&Bot.set_location(&1, location))
+
     :ok
   end
 
@@ -99,5 +104,11 @@ defmodule Wocky.Location do
 
     jid = User.to_jid(user)
     :wocky_notification_handler.notify_bot_event(jid, bot_id, event)
+  end
+
+  defp owned_bots_with_follow_me(user) do
+    user
+    |> User.get_owned_bots
+    |> Enum.filter(&Map.get(&1, :follow_me))
   end
 end
