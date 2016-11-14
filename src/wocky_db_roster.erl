@@ -14,6 +14,8 @@
          bump_roster_version/2,
          delete_roster_item/3,
          has_contact/2,
+         friends/2,
+         followers/2,
          is_friend/2,
          is_friend/1,
          is_follower/2,
@@ -26,6 +28,7 @@
 -type contact()     :: binary().
 -export_type([roster/0, version/0]).
 
+-compile({parse_transform, cut}).
 
 %%%===================================================================
 %%% API
@@ -117,6 +120,18 @@ has_contact(#jid{luser = LUser}, OtherJID) ->
         [#{ask := <<"none">>}] -> true;
         _ -> false
     end.
+
+%% @doc Returns a list of the user's friends
+-spec friends(ejabberd:luser(), ejabberd:lserver()) -> roster().
+friends(LUser, LServer) ->
+    Roster = get_roster(LUser, LServer),
+    lists:filter(is_friend(_), Roster).
+
+%% @doc Returns a list of the user's followers (including friends)
+-spec followers(ejabberd:luser(), ejabberd:lserver()) -> roster().
+followers(LUser, LServer) ->
+    Roster = get_roster(LUser, LServer),
+    lists:filter(is_follower(_), Roster).
 
 %% @doc Checks whether a user has another user as a friend
 -spec is_friend(ejabberd:jid(), ejabberd:jid()) -> boolean().
