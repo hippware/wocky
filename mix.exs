@@ -193,7 +193,7 @@ defmodule Wocky.Mixfile do
           {:elvis_style, :god_modules, %{limit: 25, ignore: [:wocky_db,
                                                              :wocky_db_bot]}},
           {:elvis_style, :no_if_expression},
-          {:elvis_style, :invalid_dynamic_call, %{ignore: [:mod_wocky_pep]}},
+          {:elvis_style, :invalid_dynamic_call},
           {:elvis_style, :used_ignored_variable},
           {:elvis_style, :no_behavior_info},
           {:elvis_style, :module_naming_convention,
