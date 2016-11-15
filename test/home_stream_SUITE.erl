@@ -5,6 +5,7 @@
 -compile({parse_transform, fun_chain}).
 
 -include("wocky.hrl").
+-include("wocky_bot.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
@@ -15,9 +16,10 @@
 -compile({parse_transform, do}).
 
 -import(test_helper, [check_attr/3, expect_iq_success_u/3, expect_iq_error_u/3,
-                      rsm_elem/1, add_to_u/2, ensure_all_clean/1]).
+                      expect_iq_success/2, rsm_elem/1, add_to_u/2,
+                      ensure_all_clean/1]).
 
--record(item, {id, version, from, stanza}).
+-record(item, {id, version, from, stanzas}).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -27,11 +29,12 @@ all() -> [
           get,
           publish,
           delete,
-          auto_publish,
+          auto_publish_chat,
           subscribe,
           subscribe_version,
           unsubscribe,
-          get_item
+          get_item,
+          auto_publish_bot
          ].
 
 suite() ->
@@ -42,12 +45,15 @@ suite() ->
 %%--------------------------------------------------------------------
 
 users() ->
-    [alice, bob].
+    [alice, bob, carol].
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
+    wocky_db:clear_tables(?LOCAL_CONTEXT, [home_stream]),
+    wocky_db:clear_tables(shared, [bot]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [home_stream]),
+    wocky_db_seed:seed_tables(shared, [bot, roster]),
     Users = escalus:get_users(users()),
     fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -113,7 +119,7 @@ delete(Config) ->
         ?assertEqual({delete, <<"some_id">>}, lists:last(Items))
       end).
 
-auto_publish(Config) ->
+auto_publish_chat(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         Stanza = escalus_stanza:chat_to(?ALICE_B_JID, <<"All your base">>),
@@ -122,7 +128,7 @@ auto_publish(Config) ->
 
         Stanza2 = expect_iq_success_u(get_stanza(), Alice, Alice),
         Items = check_result(Stanza2, 5, 1, true),
-        escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanza))
+        escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanzas))
       end).
 
 subscribe(Config) ->
@@ -207,6 +213,36 @@ get_item(Config) ->
         expect_iq_error_u(get_stanza(<<"some_id">>), Alice, Alice),
         expect_iq_error_u(get_stanza(wocky_db:create_id()), Alice, Alice)
       end).
+
+auto_publish_bot(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        set_bot_vis(?WOCKY_BOT_VIS_PUBLIC, Alice),
+
+        Stanza = expect_iq_success_u(get_stanza(), Carol, Carol),
+        Items = check_result(Stanza, 1, 0, true),
+        escalus:assert(is_bot_show(?BOT, _), hd((hd(Items))#item.stanzas)),
+
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
+
+        Stanza2 = expect_iq_success_u(get_stanza(), Bob, Bob),
+        Items2 = check_result(Stanza2, 1, 0, true),
+        escalus:assert(is_bot_show(?BOT, _), hd((hd(Items2))#item.stanzas)),
+
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_FOLLOWERS, Alice),
+
+        lists:foreach(
+            fun(Client) ->
+                    S = expect_iq_success_u(get_stanza(), Client, Client),
+                    I = check_result(S, 1, 0, true),
+                    escalus:assert(is_bot_show(?BOT, _),
+                                   hd((hd(I))#item.stanzas))
+            end, [Bob, Carol])
+      end).
+
+
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -295,7 +331,7 @@ get_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children}, Acc) ->
     [#item{id = ID,
            version = Version,
            from = From,
-           stanza = Children}
+           stanzas = Children}
      | Acc];
 get_item(#xmlel{name = <<"delete">>, attrs = Attrs, children = []}, Acc) ->
     {value, ID} = xml:get_attr(<<"id">>, Attrs),
@@ -335,3 +371,21 @@ is_presence_error(Stanza) ->
 
 maybe(false, _) -> ok;
 maybe(true, X) -> X.
+
+set_bot_vis(Vis, Client) ->
+    expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
+
+is_bot_show(ID, Stanza) ->
+    Stanza#xmlel.name =:= <<"message">> andalso
+    xml:get_tag_attr(<<"type">>, Stanza) =:= {value, <<"headline">>} andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {attr, <<"xmlns">>}])
+        =:= ?NS_BOT andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"action">>}, cdata])
+        =:= <<"show">> andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"id">>}, cdata])
+        =:= ID andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata])
+        =:= jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, <<"bot/", ID/binary>>))
+        andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"server">>}, cdata])
+        =:= ?LOCAL_CONTEXT.

@@ -27,6 +27,8 @@
 
 -define(SUBSCRIPTION_TABLE, home_stream_subscriptions).
 
+-define(PACKET_FILTER_PRIORITY, 40).
+
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
@@ -36,12 +38,12 @@ start(Host, _Opts) ->
                 [named_table, public, {read_concurrency, true}]),
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
     ejabberd_hooks:add(filter_local_packet, Host,
-                       fun filter_local_packet_hook/1, 40),
+                       filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
     ok.
 
 stop(Host) ->
     ejabberd_hooks:delete(filter_local_packet, Host,
-                          fun filter_local_packet_hook/1, 40),
+                          filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
     wocky_publishing_handler:unregister(?HOME_STREAM_NODE, ?MODULE),
     ets:delete(?SUBSCRIPTION_TABLE),
     ok.
@@ -104,17 +106,50 @@ unavailable(User) ->
 filter_local_packet_hook(P = {From,
                               To = #jid{lserver = LServer},
                               Stanza = #xmlel{name = <<"message">>}}) ->
-    _ = do([error_m ||
-            wocky_xml:check_attr(<<"type">>, <<"chat">>, Stanza),
-            check_server(LServer),
-            publish(jid:to_bare(To), From,
-                    jid:to_binary(jid:to_bare(From)), Stanza)]),
-    P;
+    Result = do([error_m ||
+                 check_server(LServer),
+                 check_user_present(To),
+                 Action <- check_publish(Stanza),
+                 publish(jid:to_bare(To), From,
+                         jid:to_binary(jid:to_bare(From)), Stanza),
+                 {ok, Action}
+                ]),
+    maybe_drop(Result, P);
 
 %% Other types of packets we want to go to the home stream should be
 %% matched and inserted here
 
 filter_local_packet_hook(Other) -> Other.
+
+%%%===================================================================
+%%% Packet filtering functions
+%%%===================================================================
+
+check_user_present(#jid{luser = <<>>}) -> {error, no_user};
+check_user_present(#jid{luser = _}) -> ok.
+
+check_publish(Stanza) ->
+    case xml:get_tag_attr(<<"type">>, Stanza) of
+        {value, <<"chat">>} -> {ok, keep};
+        {value, <<"headline">>} -> check_publish_headline(Stanza);
+        _ -> {error, dont_publish}
+    end.
+
+check_publish_headline(Stanza) ->
+    case xml:get_subtag(Stanza, <<"bot">>) of
+        false -> {ok, keep};
+        BotEl -> check_publish_bot(BotEl)
+    end.
+
+check_publish_bot(BotEl) ->
+    case xml:get_path_s(BotEl, [{elem, <<"action">>}, cdata]) of
+        <<"show">> -> {ok, drop};
+        <<"share">> -> {ok, drop};
+        _ -> {ok, keep}
+    end.
+
+maybe_drop({ok, drop}, _) -> drop;
+maybe_drop(_, P) -> P.
 
 %%%===================================================================
 %%% Helpers

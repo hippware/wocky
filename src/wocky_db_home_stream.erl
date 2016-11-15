@@ -104,6 +104,7 @@ delete_existing_item(User, Server, ID) ->
     %% both deleting the same "old" item then writing their own new one, leaving
     %% two entries for one ID. That's not a disaster, but to prevent it
     %% getting out of hand we just make sure we delete all old versions.
+    ct:log("delete_existing_item ~p ~p ~p", [User, Server, ID]),
     Versions = wocky_db:select_column(
                  Server, home_stream_item, version,
                  #{user => User, server => Server, id => ID}),

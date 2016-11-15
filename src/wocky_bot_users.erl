@@ -198,6 +198,7 @@ notify_new_viewers(Server, ID, OldVisibility, NewVisibility) ->
     OldViewers = get_viewers(Server, ID, Owner, OldVisibility),
     CurrentViewers = get_viewers(Server, ID, Owner, NewVisibility),
     AddedViewers = CurrentViewers -- OldViewers,
+    ct:log("BJD ~p ~p\n old:~p\n new: ~p", [OldVisibility, NewVisibility, OldViewers, CurrentViewers]),
     notify_new_viewers(Server, ID, AddedViewers).
 
 notify_new_viewers(Server, ID, NewViewers) ->
