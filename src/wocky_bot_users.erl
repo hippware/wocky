@@ -187,9 +187,6 @@ make_subscriber_element({JID, Follow}) ->
 % Unchanged visibility
 notify_new_viewers(_, _, Vis, Vis) -> ok;
 
-% New visibility is public - do not notify
-notify_new_viewers(_, _, _, ?WOCKY_BOT_VIS_PUBLIC) -> ok;
-
 % Old visibility was followers or public - there will
 % never be additional viewers to notify
 notify_new_viewers(_, _, ?WOCKY_BOT_VIS_PUBLIC, _) -> ok;
@@ -236,8 +233,8 @@ get_viewers(Server, ID, Owner, ?WOCKY_BOT_VIS_WHITELIST) ->
 get_viewers(_, _, #jid{luser = LUser, lserver = LServer},
             ?WOCKY_BOT_VIS_FRIENDS) ->
     [roster_to_jid(R) || R <- wocky_db_roster:friends(LUser, LServer)];
-get_viewers(_, _, #jid{luser = LUser, lserver = LServer},
-            ?WOCKY_BOT_VIS_FOLLOWERS) ->
+%% Notifiy followers for both 'public' and 'followers' bots:
+get_viewers(_, _, #jid{luser = LUser, lserver = LServer}, _) ->
     [roster_to_jid(R) || R <- wocky_db_roster:followers(LUser, LServer)].
 
 roster_to_jid(#wocky_roster{contact_jid = SimpleJID}) ->

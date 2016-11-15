@@ -339,6 +339,12 @@ get_followed(Config) ->
         expect_iq_success(
           change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_PUBLIC), Alice),
 
+        lists:foreach(fun(U) ->
+                        S = escalus:wait_for_stanza(U),
+                        escalus:assert(is_bot_show(?BOT, _), S)
+                      end,
+                      [Carol, Karen]),
+
         %% Alice is the owner (and therefore a follower) so should get the bot
         Stanza = expect_iq_success(following_stanza(#rsm_in{}), Alice),
         check_returned_bots(Stanza, [?BOT], 0, 1),
@@ -571,6 +577,7 @@ delete_owner(Config) ->
 
         expect_iq_success(
           change_visibility_stanza(ID2, ?WOCKY_BOT_VIS_PUBLIC), Alice),
+        escalus:assert(is_bot_show(ID2, _), escalus:wait_for_stanza(Bob)),
 
         ReturnedBot = expect_iq_success(retrieve_stanza(ID1), Bob),
         ExpectedFieldsFriends =
