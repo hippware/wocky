@@ -117,7 +117,7 @@ defmodule Schemata.Schemas.Wocky do
 
     view :user_bot, [ # MV for looking up bots by owner
       from: :bot,
-      columns: [:owner, :id],
+      columns: [:owner, :id, :follow_me, :follow_me_expiry],
       primary_key: [:owner, :id]
     ]
   end

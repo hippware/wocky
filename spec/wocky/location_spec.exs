@@ -14,7 +14,7 @@ defmodule Wocky.LocationSpec do
     bot = hd(bot_list)
 
     bots = Enum.into(bot_list, %{},
-                     fn (%Bot{id: id} = b) -> {id, Map.from_struct(b)} end)
+                     fn (%Bot{id: id} = b) -> {id, b} end)
 
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
     allow User |> to(accept :get_followed_bots, fn (_) -> Map.keys(bots) end)
@@ -130,6 +130,31 @@ defmodule Wocky.LocationSpec do
       it "should not generate a notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
+    end
+  end
+
+  describe "user with a bot set to 'follow me'" do
+    before do
+      bot = Factory.build(:bot,
+                          owner: User.to_jid_string(shared.user),
+                          follow_me: true)
+
+      allow User |> to(accept :get_owned_bots,
+                       fn (_) ->
+                         [Map.take(bot, [:__struct__, :id, :owner,
+                                         :follow_me, :follow_me_expiry])]
+                       end)
+      allow Bot |> to(accept :get, fn (_) -> bot end)
+      allow Bot |> to(accept :set_location, fn (_, _) -> :ok end)
+
+      loc = Factory.build(:location)
+
+      :ok = Location.user_location_changed(shared.jid,
+                                           {loc.lat, loc.lon, loc.accuracy})
+    end
+
+    it "should update the bot location" do
+      expect Bot |> to(accepted :set_location)
     end
   end
 end

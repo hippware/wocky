@@ -79,7 +79,8 @@ defmodule Wocky.Location do
 
   defp intersects?(nil, _location), do: false
   defp intersects?(bot, location) do
-    Geocalc.distance_between(bot, Map.from_struct(location)) <= bot.radius
+    Geocalc.distance_between(Map.from_struct(bot),
+                             Map.from_struct(location)) <= bot.radius
   end
 
   defp check_for_enter_event(user, bot_id) do
