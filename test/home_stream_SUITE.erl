@@ -45,7 +45,7 @@ suite() ->
 %%--------------------------------------------------------------------
 
 users() ->
-    [alice, bob, carol].
+    [alice, bob, carol, tim].
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
@@ -53,7 +53,7 @@ init_per_suite(Config) ->
     wocky_db:clear_tables(?LOCAL_CONTEXT, [home_stream]),
     wocky_db:clear_tables(shared, [bot]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [home_stream]),
-    wocky_db_seed:seed_tables(shared, [bot, roster]),
+    wocky_db_seed:seed_tables(shared, [bot]),
     Users = escalus:get_users(users()),
     fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -215,31 +215,35 @@ get_item(Config) ->
       end).
 
 auto_publish_bot(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-      fun(Alice, Bob, Carol) ->
-        set_bot_vis(?WOCKY_BOT_VIS_PUBLIC, Alice),
-
-        Stanza = expect_iq_success_u(get_stanza(), Carol, Carol),
-        Items = check_result(Stanza, 1, 0, true),
-        escalus:assert(is_bot_show(?BOT, _), hd((hd(Items))#item.stanzas)),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
+      fun(Alice, Bob, Carol, Tim) ->
+        test_helper:subscribe_pair(Bob, Alice),
+        test_helper:subscribe_pair(Carol, Alice),
+        test_helper:subscribe(Tim, Alice),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
+        check_home_stream_sizes(1, [Bob]),
+        check_home_stream_sizes(0, [Carol, Tim]),
+        clear_home_streams(),
 
-        Stanza2 = expect_iq_success_u(get_stanza(), Bob, Bob),
-        Items2 = check_result(Stanza2, 1, 0, true),
-        escalus:assert(is_bot_show(?BOT, _), hd((hd(Items2))#item.stanzas)),
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_FRIENDS, Alice),
+        check_home_stream_sizes(1, [Bob, Carol]),
+        check_home_stream_sizes(0, [Tim]),
+        clear_home_streams(),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_FOLLOWERS, Alice),
+        check_home_stream_sizes(1, [Bob, Carol, Tim]),
+        clear_home_streams(),
 
-        lists:foreach(
-            fun(Client) ->
-                    S = expect_iq_success_u(get_stanza(), Client, Client),
-                    I = check_result(S, 1, 0, true),
-                    escalus:assert(is_bot_show(?BOT, _),
-                                   hd((hd(I))#item.stanzas))
-            end, [Bob, Carol])
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_PUBLIC, Alice),
+        check_home_stream_sizes(1, [Bob, Carol, Tim]),
+        clear_home_streams(),
+
+        ensure_all_clean([Alice, Bob, Carol, Tim])
       end).
 
 
@@ -389,3 +393,16 @@ is_bot_show(ID, Stanza) ->
         andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"server">>}, cdata])
         =:= ?LOCAL_CONTEXT.
+
+check_home_stream_sizes(ExpectedSize, Clients) ->
+    lists:foreach(
+      fun(Client) ->
+              S = expect_iq_success_u(get_stanza(), Client, Client),
+              I = check_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
+              ExpectedSize =:= 0 orelse
+              escalus:assert(is_bot_show(?BOT, _),
+                             hd((hd(I))#item.stanzas))
+      end, Clients).
+
+clear_home_streams() ->
+    wocky_db:truncate(?LOCAL_CONTEXT, home_stream).
