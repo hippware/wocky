@@ -109,9 +109,8 @@ filter_local_packet_hook(P = {From,
     Result = do([error_m ||
                  check_server(LServer),
                  check_user_present(To),
-                 Action <- check_publish(Stanza),
-                 publish(jid:to_bare(To), From,
-                         jid:to_binary(jid:to_bare(From)), Stanza),
+                 {Action, ID} <- check_publish(From, Stanza),
+                 publish(jid:to_bare(To), From, ID, Stanza),
                  {ok, Action}
                 ]),
     maybe_drop(Result, P);
@@ -128,24 +127,28 @@ filter_local_packet_hook(Other) -> Other.
 check_user_present(#jid{luser = <<>>}) -> {error, no_user};
 check_user_present(#jid{luser = _}) -> ok.
 
-check_publish(Stanza) ->
+check_publish(From, Stanza) ->
     case xml:get_tag_attr(<<"type">>, Stanza) of
-        {value, <<"chat">>} -> {ok, keep};
-        {value, <<"headline">>} -> check_publish_headline(Stanza);
+        {value, <<"chat">>} -> {ok, {keep, chat_id(From)}};
+        {value, <<"headline">>} -> check_publish_headline(From, Stanza);
         _ -> {error, dont_publish}
     end.
 
-check_publish_headline(Stanza) ->
+check_publish_headline(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
-        false -> {ok, keep};
-        BotEl -> check_publish_bot(BotEl)
+        false -> {ok, {keep, chat_id(From)}};
+        BotEl -> check_publish_bot(From, BotEl)
     end.
 
-check_publish_bot(BotEl) ->
-    case xml:get_path_s(BotEl, [{elem, <<"action">>}, cdata]) of
-        <<"show">> -> {ok, drop};
-        <<"share">> -> {ok, drop};
-        _ -> {ok, keep}
+check_publish_bot(From, BotEl) ->
+    Action = xml:get_path_s(BotEl, [{elem, <<"action">>}, cdata]),
+    JIDBin = xml:get_path_s(BotEl, [{elem, <<"jid">>}, cdata]),
+
+    case {JIDBin, Action} of
+        {<<>>, _} -> {ok, {keep, chat_id(From)}};
+        {JIDBin, <<"show">>} -> {ok, {drop, bot_id(JIDBin)}};
+        {JIDBin, <<"share">>} -> {ok, {drop, bot_id(JIDBin)}};
+        _ -> {ok, {keep, chat_id(From)}}
     end.
 
 maybe_drop({ok, drop}, _) -> drop;
@@ -190,3 +193,9 @@ check_server(Server) ->
         Server -> ok;
         _ -> {error, not_local_server}
     end.
+
+bot_id(JIDBin) ->
+    JIDBin.
+
+chat_id(From) ->
+    jid:to_binary(jid:to_bare(From)).

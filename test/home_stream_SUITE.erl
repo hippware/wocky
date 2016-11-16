@@ -220,6 +220,13 @@ auto_publish_bot(Config) ->
         test_helper:subscribe_pair(Bob, Alice),
         test_helper:subscribe_pair(Carol, Alice),
         test_helper:subscribe(Tim, Alice),
+        check_home_stream_sizes(0, [Bob]),
+
+        Stanza = escalus_stanza:to(share_bot_stanza(), ?BOB_B_JID),
+        escalus_client:send(Alice, Stanza),
+        timer:sleep(400),
+        check_home_stream_sizes(1, [Bob]),
+        clear_home_streams(),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
@@ -277,14 +284,29 @@ delete_stanza() ->
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [delete_item()]}).
 
+share_bot_stanza() ->
+    #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
+           children = [#xmlel{name = <<"bot">>,
+                              attrs = [{<<"xmlns">>, ?NS_BOT}],
+                              children = share_children()}]}.
+
+share_children() ->
+    [cdata_el(<<"jid">>, ?BOT_B_JID),
+     cdata_el(<<"id">>, ?BOT),
+     cdata_el(<<"server">>, ?LOCAL_CONTEXT),
+     cdata_el(<<"action">>, <<"share">>)].
+
 new_item(ID) ->
     #xmlel{name = <<"item">>,
            attrs = maybe_id(ID),
-           children = [#xmlel{name = <<"new-published-element">>,
-                              children = [#xmlcdata{content =
-                                                    <<"hello there!">>}]},
+           children = [cdata_el(<<"new-published-element">>,
+                                <<"hello there!">>),
                        #xmlel{name = <<"second-element">>,
                               attrs = [{<<"test_attr">>, <<"abc">>}]}]}.
+
+cdata_el(Name, CData) ->
+    #xmlel{name = Name, children = [#xmlcdata{content = CData}]}.
 
 maybe_id(undefined) -> [];
 maybe_id(ID) -> [{<<"id">>, ID}].
@@ -379,13 +401,13 @@ maybe(true, X) -> X.
 set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
 
-is_bot_show(ID, Stanza) ->
+is_bot_action(ID, Stanza) ->
     Stanza#xmlel.name =:= <<"message">> andalso
     xml:get_tag_attr(<<"type">>, Stanza) =:= {value, <<"headline">>} andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {attr, <<"xmlns">>}])
         =:= ?NS_BOT andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"action">>}, cdata])
-        =:= <<"show">> andalso
+        =/= <<>> andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"id">>}, cdata])
         =:= ID andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata])
@@ -400,7 +422,7 @@ check_home_stream_sizes(ExpectedSize, Clients) ->
               S = expect_iq_success_u(get_stanza(), Client, Client),
               I = check_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
               ExpectedSize =:= 0 orelse
-              escalus:assert(is_bot_show(?BOT, _),
+              escalus:assert(is_bot_action(?BOT, _),
                              hd((hd(I))#item.stanzas))
       end, Clients).
 
