@@ -110,6 +110,11 @@ defmodule Wocky.Location do
   defp owned_bots_with_follow_me(user) do
     user
     |> User.get_owned_bots
-    |> Enum.filter(&Map.get(&1, :follow_me))
+    |> Enum.filter(&following_me?(&1))
   end
+
+  defp following_me?(%Bot{follow_me: true, follow_me_expiry: expiry}) do
+    expiry > :wocky_db.now_to_timestamp(:os.timestamp)
+  end
+  defp following_me?(_), do: false
 end

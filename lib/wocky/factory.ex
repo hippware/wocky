@@ -49,7 +49,8 @@ defmodule Wocky.Factory do
       radius: :rand.uniform(100),
       visibility: 1,
       alerts: 1,
-      updated: :wocky_db.now_to_timestamp(:erlang.timestamp)
+      updated: :wocky_db.now_to_timestamp(:erlang.timestamp),
+      follow_me: false
     }
   end
 
