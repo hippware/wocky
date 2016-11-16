@@ -197,11 +197,15 @@ subscribe(Config) ->
         test_helper:add_contact(Alice, Tim, [], <<"Timbo">>),
         test_helper:subscribe_pair(Alice, Tim),
 
-        timer:sleep(2000),
+        timer:sleep(1000),
 
         NewAffiliations = [{?CAROL_B_JID, spectator}],
         expect_iq_success(modify_affiliations_stanza(NewAffiliations), Alice),
-        expect_affiliation_update(Carol, spectator),
+
+        escalus:assert_many(
+          [is_affiliation_update(escalus_client:short_jid(Carol), spectator, _),
+           is_bot_show(?BOT, _)],
+          escalus:wait_for_stanzas(Carol, 2)),
 
         expect_iq_success(subscribe_stanza(true), Carol),
         expect_iq_success(subscribe_stanza(false), Bob),
@@ -260,8 +264,15 @@ retrieve_for_user(Config) ->
 
         FriendsBots = lists:sort(FriendsOnlyBots ++ FollowersBots),
 
-        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, FriendsBots),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, FriendsOnlyBots),
+        escalus:assert_many([is_bot_show(ID, _) || ID <- FriendsOnlyBots],
+                            escalus:wait_for_stanzas(
+                              Bob, length(FriendsOnlyBots))),
+
         set_visibility(Alice, ?WOCKY_BOT_VIS_FOLLOWERS, FollowersBots),
+        escalus:assert_many([is_bot_show(ID, _) || ID <- FollowersBots],
+                            escalus:wait_for_stanzas(
+                              Bob, length(FollowersBots))),
 
         %% Alice can see all her bots
         Stanza = expect_iq_success(
@@ -328,6 +339,12 @@ get_followed(Config) ->
         expect_iq_success(
           change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_PUBLIC), Alice),
 
+        lists:foreach(fun(U) ->
+                        S = escalus:wait_for_stanza(U),
+                        escalus:assert(is_bot_show(?BOT, _), S)
+                      end,
+                      [Carol, Karen]),
+
         %% Alice is the owner (and therefore a follower) so should get the bot
         Stanza = expect_iq_success(following_stanza(#rsm_in{}), Alice),
         check_returned_bots(Stanza, [?BOT], 0, 1),
@@ -392,6 +409,8 @@ friends_only_permissions(Config) ->
       fun(Alice, Bob) ->
         expect_iq_success(
           change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
+        %% Bob does not receive a visibility change because he's already an
+        %% affiliate
 
         test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
 
@@ -478,9 +497,10 @@ roster_change_triggers(Config) ->
         % subscribe her)
         expect_iq_success(modify_affiliations_stanza(
                             [{?KAREN_B_JID, spectator}]), Alice),
-        escalus:assert(is_affiliation_update(escalus_client:short_jid(Karen),
-                                             spectator, _),
-                       escalus:wait_for_stanza(Karen)),
+        escalus:assert_many(
+          [is_affiliation_update(escalus_client:short_jid(Karen), spectator, _),
+           is_bot_show(?BOT, _)],
+          escalus:wait_for_stanzas(Karen, 2)),
         expect_iq_success(subscribe_stanza(true), Karen),
 
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Karen)),
@@ -553,8 +573,11 @@ delete_owner(Config) ->
 
         expect_iq_success(
           change_visibility_stanza(ID1, ?WOCKY_BOT_VIS_FRIENDS), Alice),
+        escalus:assert(is_bot_show(ID1, _), escalus:wait_for_stanza(Bob)),
+
         expect_iq_success(
           change_visibility_stanza(ID2, ?WOCKY_BOT_VIS_PUBLIC), Alice),
+        escalus:assert(is_bot_show(ID2, _), escalus:wait_for_stanza(Bob)),
 
         ReturnedBot = expect_iq_success(retrieve_stanza(ID1), Bob),
         ExpectedFieldsFriends =
@@ -1373,3 +1396,18 @@ set_visibility(Client, Visibility, BotList) ->
                 change_visibility_stanza(B, Visibility), Client)
       end,
       BotList).
+
+is_bot_show(ID, Stanza) ->
+    Stanza#xmlel.name =:= <<"message">> andalso
+    xml:get_tag_attr(<<"type">>, Stanza) =:= {value, <<"headline">>} andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {attr, <<"xmlns">>}])
+        =:= ?NS_BOT andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"action">>}, cdata])
+        =:= <<"show">> andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"id">>}, cdata])
+        =:= ID andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata])
+        =:= jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, <<"bot/", ID/binary>>))
+        andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"server">>}, cdata])
+        =:= ?LOCAL_CONTEXT.

@@ -185,7 +185,9 @@ handle_create(From, Children) ->
         Fields <- get_fields(Children),
         Fields2 <- add_server(Fields, Server),
         check_required_fields(Fields2, required_fields()),
-        BotEl <- create(From, Server, Fields2),
+        {ID, BotEl} <- create(From, Server, Fields2),
+        wocky_bot_users:notify_new_viewers(Server, ID, none,
+                                           wocky_db_bot:visibility(Server, ID)),
         {ok, BotEl}
        ]).
 
@@ -282,8 +284,11 @@ handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
     do([error_m ||
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_owner(Server, ID, From),
+        OldVisibility <- {ok, wocky_db_bot:visibility(Server, ID)},
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
+        wocky_bot_users:notify_new_viewers(Server, ID, OldVisibility,
+                                           wocky_db_bot:visibility(Server, ID)),
         {ok, []}
        ]).
 
@@ -609,7 +614,8 @@ create(Owner, Server, Fields) ->
         Fields3 <- add_owner(Owner, Fields2),
         create_bot(Server, ID, Fields3),
         add_bot_as_roster_viewer(Owner, Server, ID),
-        make_bot_el(Server, ID)
+        BotEl <- make_bot_el(Server, ID),
+        {ok, {ID, BotEl}}
        ]).
 
 maybe_insert_name(ID, Fields) when is_list(Fields) ->

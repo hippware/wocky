@@ -10,6 +10,7 @@
          insert/2,
          insert_new_name/2,
          owner/2,
+         visibility/2,
          affiliations/2,
          affiliations_from_map/1,
          update_affiliations/3,
@@ -90,6 +91,11 @@ insert_new_name(ID, Name) ->
 -spec owner(wocky_db:server(), wocky_db:id()) -> jid() | not_found.
 owner(_Server, ID) ->
     maybe_to_jid(wocky_db:select_one(shared, bot, owner, #{id => ID})).
+
+-spec visibility(wocky_db:server(), wocky_db:id()) ->
+    bot_visibility() | not_found.
+visibility(_Server, ID) ->
+    wocky_db:select_one(shared, bot, visibility, #{id => ID}).
 
 -spec affiliations(wocky_db:server(), wocky_db:id()) ->
     [affiliation()].

@@ -20,6 +20,7 @@
          notify_affiliates/3,
          make_follow_element/1,
          make_affiliate_elements/1,
+         make_jid/2,
          make_node/1,
          list_hash/1,
          get_image/1
@@ -93,6 +94,9 @@ list_hash(List) ->
       erlang_murmurhash:murmurhash3_x64_128(),
       integer_to_binary(36)
      ).
+
+make_jid(Server, ID) ->
+    jid:make(<<>>, Server, make_node(ID)).
 
 make_node(ID) ->
     <<"bot/", ID/binary>>.
