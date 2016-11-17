@@ -140,10 +140,11 @@ notify_subscriber(From, To, Message) ->
 
 notification_message(BotID, ItemEl) ->
     #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
            children = [notification_event(BotID, ItemEl)]}.
 
 notification_event(BotID, ItemEl) ->
     #xmlel{name = <<"event">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT},
+           attrs = [{<<"xmlns">>, ?NS_BOT_EVENT},
                     {<<"node">>, wocky_bot_util:make_node(BotID)}],
            children = [ItemEl]}.

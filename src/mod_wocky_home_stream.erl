@@ -106,6 +106,7 @@ unavailable(User) ->
 filter_local_packet_hook(P = {From,
                               To = #jid{lserver = LServer},
                               Stanza = #xmlel{name = <<"message">>}}) ->
+    ct:log("Filtering ~p", [P]),
     Result = do([error_m ||
                  check_server(LServer),
                  check_user_present(To),
@@ -113,6 +114,7 @@ filter_local_packet_hook(P = {From,
                  publish(jid:to_bare(To), From, ID, Stanza),
                  {ok, Action}
                 ]),
+    ct:log("Filtered ~p", [Result]),
     maybe_drop(Result, P);
 
 %% Other types of packets we want to go to the home stream should be
@@ -136,8 +138,20 @@ check_publish(From, Stanza) ->
 
 check_publish_headline(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
-        false -> {ok, {keep, chat_id(From)}};
+        false -> check_publish_non_bot(From, Stanza);
         BotEl -> check_publish_bot(From, BotEl)
+    end.
+
+check_publish_non_bot(From, Stanza) ->
+    EventNS = xml:get_path_s(Stanza, [{elem, <<"event">>},
+                                      {attr, <<"xmlns">>}]),
+    BotNode = xml:get_path_s(Stanza, [{elem, <<"event">>},
+                                      {attr, <<"node">>}]),
+    case {EventNS, BotNode} of
+        {?NS_BOT_EVENT, _} when BotNode =/= <<>> ->
+            {ok, {drop, bot_event_id(From, BotNode)}};
+        _ ->
+            {ok, {keep, chat_id(From)}}
     end.
 
 check_publish_bot(From, BotEl) ->
@@ -196,6 +210,9 @@ check_server(Server) ->
 
 bot_id(JIDBin) ->
     JIDBin.
+
+bot_event_id(#jid{lserver = Server}, BotNode) ->
+    jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
 
 chat_id(From) ->
     jid:to_binary(jid:to_bare(From)).

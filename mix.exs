@@ -221,7 +221,8 @@ defmodule Wocky.Mixfile do
           {:elvis_style, :operator_spaces,
            %{rules: [right: ",", right: "++", left: "++"]}},
           {:elvis_style, :nesting_level, %{level: 3}},
-          {:elvis_style, :god_modules, %{limit: 25, ignore: [:mam_SUITE]}},
+          {:elvis_style, :god_modules, %{limit: 25, ignore: [:mam_SUITE,
+                                                             :test_helper]}},
           {:elvis_style, :no_if_expression},
           {:elvis_style, :invalid_dynamic_call},
           # Binary patterns in Eunit tests sometimes trip this warning
