@@ -1,7 +1,7 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Exref, ignore: [insert: 1]
+  use Exref, ignore: [insert: 1, new: 1, new: 2]
   alias :wocky_db, as: Db
 
   @type t :: %__MODULE__{
