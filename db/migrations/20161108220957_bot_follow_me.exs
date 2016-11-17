@@ -5,7 +5,7 @@ defmodule Schemata.BotFollowMeMigration do
   ]
 
   def up do
-    drop :view, named: :user_bot, in: :wocky_db.shared_keyspace
+    drop :materialized_view, named: "#{:wocky_db.shared_keyspace}.user_bot"
 
     alter_table :bot, in: :wocky_db.shared_keyspace,
       add: :follow_me, type: :boolean
@@ -20,7 +20,7 @@ defmodule Schemata.BotFollowMeMigration do
   end
 
   def down do
-    drop :view, named: :user_bot, in: :wocky_db.shared_keyspace
+    drop :materialized_view, named: "#{:wocky_db.shared_keyspace}.user_bot"
 
     alter_table :bot, in: :wocky_db.shared_keyspace, drop: :follow_me
     alter_table :bot, in: :wocky_db.shared_keyspace, drop: :follow_me_expiry
