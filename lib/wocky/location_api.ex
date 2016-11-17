@@ -45,11 +45,19 @@ defmodule Wocky.LocationApi do
     {[{"application/json", :from_json}], req, state}
   end
 
+  defp set_response_text(req, error_text) do
+    req = :cowboy_req.set_resp_header("content-type", "text/plain", req)
+    :cowboy_req.set_resp_body(error_text, req)
+  end
+
   def resource_exists(req, state) do
     {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
     case User.get(user_id) do
-      nil -> {false, req, state}
-      user -> {true, req, %State{state | user: user}}
+      nil ->
+        {false, set_response_text(req, "User #{user_id} not found."), state}
+
+      user ->
+        {true, req, %State{state | user: user}}
     end
   end
 
@@ -63,11 +71,11 @@ defmodule Wocky.LocationApi do
             resource: data.resource,
             coords: location.coords}}
         else
-          {true, req, state}
+          {true, set_response_text(req, "JSON missing required keys."), state}
         end
 
       {:error, _} ->
-        {true, req, state}
+        {true, set_response_text(req, "JSON payload can not be parsed."), state}
     end
   end
 
@@ -92,7 +100,8 @@ defmodule Wocky.LocationApi do
     if check_token(auth_user, auth_token) && auth_user === user_id do
       {true, req, state}
     else
-      {{false, "API Token"}, req, state}
+      msg = "Authorization headers missing or authorization failed."
+      {{false, "API Token"}, set_response_text(req, msg), state}
     end
   end
 
