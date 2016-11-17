@@ -24,6 +24,7 @@
 -define(NS_PHONE,         <<"hippware.com/hxep/phone">>).
 -define(NS_HANDLE,        <<"hippware.com/hxep/handle">>).
 -define(NS_BOT,           <<"hippware.com/hxep/bot">>).
+-define(NS_BOT_EVENT,     <<"hippware.com/hxep/bot#event">>).
 -define(NS_GROUP_CHAT,    <<"hippware.com/hxep/groupchat">>).
 -define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
 -define(NS_TROS,          <<"hippware.com/hxep/http-file">>).

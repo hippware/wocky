@@ -136,8 +136,20 @@ check_publish(From, Stanza) ->
 
 check_publish_headline(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
-        false -> {ok, {keep, chat_id(From)}};
+        false -> check_publish_non_bot(From, Stanza);
         BotEl -> check_publish_bot(From, BotEl)
+    end.
+
+check_publish_non_bot(From, Stanza) ->
+    EventNS = xml:get_path_s(Stanza, [{elem, <<"event">>},
+                                      {attr, <<"xmlns">>}]),
+    BotNode = xml:get_path_s(Stanza, [{elem, <<"event">>},
+                                      {attr, <<"node">>}]),
+    case {EventNS, BotNode} of
+        {?NS_BOT_EVENT, _} when BotNode =/= <<>> ->
+            {ok, {drop, bot_event_id(From, BotNode)}};
+        _ ->
+            {ok, {keep, chat_id(From)}}
     end.
 
 check_publish_bot(From, BotEl) ->
@@ -196,6 +208,9 @@ check_server(Server) ->
 
 bot_id(JIDBin) ->
     JIDBin.
+
+bot_event_id(#jid{lserver = Server}, BotNode) ->
+    jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
 
 chat_id(From) ->
     jid:to_binary(jid:to_bare(From)).

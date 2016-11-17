@@ -2,8 +2,14 @@
 %%% @doc Helper functions for Wocky integration test suites
 -module(test_helper).
 
+-include("wocky.hrl").
 -include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include_lib("stdlib/include/assert.hrl").
+
+-compile({parse_transform, cut}).
+-compile({parse_transform, do}).
 
 -export([ensure_wocky_is_running/0,
          make_everyone_friends/2
@@ -36,7 +42,24 @@
          decode_rsm/1,
          check_rsm/5,
 
-         check_attr/3
+         check_attr/3,
+
+         check_hs_result/2,
+         check_hs_result/4,
+         check_single_hs_result/2,
+         get_items_el/1,
+
+         get_hs_stanza/0,
+         get_hs_stanza/1,
+         publish_item_stanza/4,
+         publish_item_stanza/5,
+         retract_item_stanza/2,
+         subscribe_stanza/1,
+
+         bot_node/1,
+         follow_cdata/1,
+         node_el/2,
+         node_el/3
         ]).
 
 ensure_wocky_is_running() ->
@@ -285,3 +308,149 @@ timeout() ->
         s3 -> 10000; % Extra time for S3 latency
         _ -> 1000 % Default in escalus
     end.
+
+check_hs_result(Stanza, NumItems) ->
+    check_hs_result(Stanza, NumItems, 0, true).
+check_hs_result(Stanza, NumItems, NumDeletes, CheckVersion) ->
+    {ok, L} = do([error_m ||
+                  ItemsEl <- get_items_el(Stanza),
+                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
+                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
+                  maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
+                  ItemList <- get_items(ItemsEl),
+                  check_elements(ItemsEl, NumItems, NumDeletes, 1),
+                  {ok, ItemList}
+                 ]),
+    L.
+
+maybe(false, _) -> ok;
+maybe(true, X) -> X.
+
+get_items_el(Stanza) ->
+    case xml:get_subtag(Stanza, <<"items">>) of
+        false -> {error, no_items};
+        El -> {ok, El}
+    end.
+
+check_single_hs_result(Stanza, ID) ->
+    {ok, L} = do([error_m ||
+                  ItemsEl <- test_helper:get_items_el(Stanza),
+                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
+                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
+                  ItemList <- get_items(ItemsEl),
+                  check_elements(ItemsEl, 1, 0, 0),
+                  {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
+                  {ok, hd(ItemList)}
+                 ]),
+    L.
+
+get_items(Stanza) ->
+    {ok, lists:reverse(lists:foldl(get_item(_, _), [], Stanza#xmlel.children))}.
+
+get_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children}, Acc) ->
+    {value, ID} = xml:get_attr(<<"id">>, Attrs),
+    {value, Version} = xml:get_attr(<<"version">>, Attrs),
+    {value, From} = xml:get_attr(<<"from">>, Attrs),
+    [#item{id = ID,
+           version = Version,
+           from = From,
+           stanzas = Children}
+     | Acc];
+get_item(#xmlel{name = <<"delete">>, attrs = Attrs, children = []}, Acc) ->
+    {value, ID} = xml:get_attr(<<"id">>, Attrs),
+    [{delete, ID} | Acc];
+get_item(_, Acc) ->
+    Acc.
+
+check_elements(Items, NumItems, NumDeletes, NumRSM) ->
+    ?assert(NumItems =:= any orelse
+            NumItems =:= count_elements(Items, <<"item">>)),
+    ?assert(NumDeletes =:= any orelse
+            NumDeletes =:= count_elements(Items, <<"delete">>)),
+    ?assertEqual(NumRSM, count_elements(Items, <<"set">>)),
+    ok.
+
+count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
+    length(
+      lists:filter(fun(#xmlel{name = T}) when T =:= Type -> true;
+                      (_) -> false
+                   end,
+                   Children)).
+
+get_hs_stanza() ->
+    test_helper:iq_get(?NS_PUBLISHING,
+                       #xmlel{name = <<"items">>,
+                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
+                              children = [rsm_elem(#rsm_in{max = 200})]}).
+
+get_hs_stanza(ID) ->
+    test_helper:iq_get(?NS_PUBLISHING,
+                       #xmlel{name = <<"items">>,
+                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
+                              children = [#xmlel{name = <<"item">>,
+                                                 attrs = [{<<"id">>, ID}]}]}).
+
+publish_item_stanza(BotID, NoteID, Title, Content) ->
+    publish_item_stanza(BotID, NoteID, Title, Content, undefined).
+publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
+    test_helper:iq_set(?NS_BOT,
+                       publish_el(BotID, NoteID, Title, Content, Image)).
+
+publish_el(BotID, NoteID, Title, Content, Image) ->
+    #xmlel{name = <<"publish">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = item_el(NoteID, Title, Content, Image)}.
+
+item_el(NoteID) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}]}.
+item_el(NoteID, Title, Content, Image) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}],
+           children = entry_el(Title, Content, Image)}.
+
+entry_el(Title, Content, Image) ->
+    #xmlel{name = <<"entry">>,
+           attrs = [{<<"xmlns">>, ?NS_ATOM}],
+           children = item_fields(Title, Content, Image)}.
+
+item_fields(Title, Content, Image) ->
+    [#xmlel{name = <<"title">>,
+            children = [#xmlcdata{content = Title}]},
+     #xmlel{name = <<"content">>,
+            children = [#xmlcdata{content = Content}]}] ++
+    maybe_image_el(Image).
+
+maybe_image_el(undefined) -> [];
+maybe_image_el(Image) ->
+    [#xmlel{name = <<"image">>,
+            children = [#xmlcdata{content = Image}]}].
+
+retract_item_stanza(BotID, NoteID) ->
+    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
+
+retract_el(BotID, NoteID) ->
+    #xmlel{name = <<"retract">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = [item_el(NoteID)]}.
+
+bot_node(ID) ->
+    <<"bot/", ID/binary>>.
+
+subscribe_stanza(Follow) ->
+    SubEl = node_el(?BOT, <<"subscribe">>),
+    FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
+    test_helper:iq_set(?NS_BOT, FullSubEl).
+
+follow_el(Follow) ->
+    #xmlel{name = <<"follow">>,
+           children = [#xmlcdata{content = follow_cdata(Follow)}]}.
+
+follow_cdata(false) -> <<"0">>;
+follow_cdata(true) -> <<"1">>.
+
+node_el(ID, Name) -> node_el(ID, Name, []).
+node_el(ID, Name, Children) ->
+    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
+           children = Children}.
+

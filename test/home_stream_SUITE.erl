@@ -6,6 +6,7 @@
 
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
+-include("test_helper.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
@@ -15,11 +16,11 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
 
--import(test_helper, [check_attr/3, expect_iq_success_u/3, expect_iq_error_u/3,
-                      expect_iq_success/2, rsm_elem/1, add_to_u/2,
-                      ensure_all_clean/1]).
-
--record(item, {id, version, from, stanzas}).
+-import(test_helper, [expect_iq_success_u/3, expect_iq_error_u/3,
+                      expect_iq_success/2, add_to_u/2,
+                      ensure_all_clean/1, publish_item_stanza/4,
+                      get_hs_stanza/0, get_hs_stanza/1,
+                      check_hs_result/2, check_hs_result/4]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -34,7 +35,8 @@ all() -> [
           subscribe_version,
           unsubscribe,
           get_item,
-          auto_publish_bot
+          auto_publish_bot,
+          auto_publish_bot_item
          ].
 
 suite() ->
@@ -77,15 +79,15 @@ end_per_testcase(CaseName, Config) ->
 get(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        Stanza = expect_iq_success_u(get_stanza(), Alice, Alice),
-        check_result(Stanza, 3),
+        Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        check_hs_result(Stanza, 3),
 
         % Bob can't see Alice's home stream
-        expect_iq_error_u(get_stanza(), Bob, Alice),
+        expect_iq_error_u(get_hs_stanza(), Bob, Alice),
 
         % Bob's own stream is empty
-        Stanza2 = expect_iq_success_u(get_stanza(), Bob, Bob),
-        check_result(Stanza2, 0, 0, false)
+        Stanza2 = expect_iq_success_u(get_hs_stanza(), Bob, Bob),
+        check_hs_result(Stanza2, 0, 0, false)
       end).
 
 publish(Config) ->
@@ -99,23 +101,23 @@ publish(Config) ->
         % Bob can't publish to Alice's home stream
         expect_iq_error_u(pub_stanza(<<"other_id">>), Bob, Alice),
 
-        Stanza = expect_iq_success_u(get_stanza(), Alice, Alice),
-        check_result(Stanza, 5)
+        Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        check_hs_result(Stanza, 5)
       end).
 
 delete(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        Stanza = expect_iq_success_u(get_stanza(), Alice, Alice),
-        check_result(Stanza, 5),
+        Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        check_hs_result(Stanza, 5),
 
         expect_iq_success_u(delete_stanza(), Alice, Alice),
 
         % Bob can't delete from Alice's home stream
         expect_iq_error_u(delete_stanza(), Bob, Alice),
 
-        Stanza2 = expect_iq_success_u(get_stanza(), Alice, Alice),
-        Items = check_result(Stanza2, 4, 1, true),
+        Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        Items = check_hs_result(Stanza2, 4, 1, true),
         ?assertEqual({delete, <<"some_id">>}, lists:last(Items))
       end).
 
@@ -126,8 +128,8 @@ auto_publish_chat(Config) ->
         escalus:send(Bob, Stanza),
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
-        Stanza2 = expect_iq_success_u(get_stanza(), Alice, Alice),
-        Items = check_result(Stanza2, 5, 1, true),
+        Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        Items = check_hs_result(Stanza2, 5, 1, true),
         escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanzas))
       end).
 
@@ -206,12 +208,12 @@ unsubscribe(Config) ->
 get_item(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, _Bob) ->
-        Stanza = expect_iq_success_u(get_stanza(?ITEM), Alice, Alice),
-        check_single_result(Stanza, ?ITEM),
+        Stanza = expect_iq_success_u(get_hs_stanza(?ITEM), Alice, Alice),
+        test_helper:check_single_hs_result(Stanza, ?ITEM),
 
         % Deleted and never-existed items should both return not-found
-        expect_iq_error_u(get_stanza(<<"some_id">>), Alice, Alice),
-        expect_iq_error_u(get_stanza(wocky_db:create_id()), Alice, Alice)
+        expect_iq_error_u(get_hs_stanza(<<"some_id">>), Alice, Alice),
+        expect_iq_error_u(get_hs_stanza(wocky_db:create_id()), Alice, Alice)
       end).
 
 auto_publish_bot(Config) ->
@@ -220,18 +222,23 @@ auto_publish_bot(Config) ->
         test_helper:subscribe_pair(Bob, Alice),
         test_helper:subscribe_pair(Carol, Alice),
         test_helper:subscribe(Tim, Alice),
+
         check_home_stream_sizes(0, [Bob]),
 
         Stanza = escalus_stanza:to(share_bot_stanza(), ?BOB_B_JID),
         escalus_client:send(Alice, Stanza),
         timer:sleep(400),
         check_home_stream_sizes(1, [Bob]),
-        clear_home_streams(),
+
+        escalus_client:send(Alice, Stanza),
+        timer:sleep(400),
+        check_home_stream_sizes(1, [Bob]),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
         check_home_stream_sizes(1, [Bob]),
         check_home_stream_sizes(0, [Carol, Tim]),
+
         clear_home_streams(),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
@@ -248,29 +255,28 @@ auto_publish_bot(Config) ->
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_PUBLIC, Alice),
         check_home_stream_sizes(1, [Bob, Carol, Tim]),
-        clear_home_streams(),
 
         ensure_all_clean([Alice, Bob, Carol, Tim])
       end).
 
+auto_publish_bot_item(Config) ->
+    wocky_db:truncate(shared, roster),
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        check_home_stream_sizes(1, [Bob]),
 
+        expect_iq_success(test_helper:subscribe_stanza(true), Bob),
 
+        expect_iq_success(
+          publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
+          Alice),
+
+        check_home_stream_sizes(2, [Bob])
+
+      end).
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
-
-get_stanza() ->
-    test_helper:iq_get(?NS_PUBLISHING,
-                       #xmlel{name = <<"items">>,
-                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [rsm_elem(#rsm_in{max = 200})]}).
-
-get_stanza(ID) ->
-    test_helper:iq_get(?NS_PUBLISHING,
-                       #xmlel{name = <<"items">>,
-                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [#xmlel{name = <<"item">>,
-                                                 attrs = [{<<"id">>, ID}]}]}).
 
 pub_stanza(ID) ->
     test_helper:iq_set(?NS_PUBLISHING,
@@ -315,69 +321,6 @@ delete_item() ->
     #xmlel{name = <<"delete">>,
            attrs = [{<<"id">>, <<"some_id">>}]}.
 
-check_result(Stanza, NumItems) ->
-    check_result(Stanza, NumItems, 0, true).
-check_result(Stanza, NumItems, NumDeletes, CheckVersion) ->
-    {ok, L} = do([error_m ||
-                  ItemsEl <- get_items_el(Stanza),
-                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
-                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
-                  maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
-                  ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, NumItems, NumDeletes, 1),
-                  {ok, ItemList}
-                 ]),
-    L.
-
-check_single_result(Stanza, ID) ->
-    {ok, L} = do([error_m ||
-                  ItemsEl <- get_items_el(Stanza),
-                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
-                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
-                  ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, 1, 0, 0),
-                  {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
-                  {ok, hd(ItemList)}
-                 ]),
-    L.
-
-get_items_el(Stanza) ->
-    case xml:get_subtag(Stanza, <<"items">>) of
-        false -> {error, no_items};
-        El -> {ok, El}
-    end.
-
-get_items(Stanza) ->
-    {ok, lists:reverse(lists:foldl(get_item(_, _), [], Stanza#xmlel.children))}.
-
-get_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children}, Acc) ->
-    {value, ID} = xml:get_attr(<<"id">>, Attrs),
-    {value, Version} = xml:get_attr(<<"version">>, Attrs),
-    {value, From} = xml:get_attr(<<"from">>, Attrs),
-    [#item{id = ID,
-           version = Version,
-           from = From,
-           stanzas = Children}
-     | Acc];
-get_item(#xmlel{name = <<"delete">>, attrs = Attrs, children = []}, Acc) ->
-    {value, ID} = xml:get_attr(<<"id">>, Attrs),
-    [{delete, ID} | Acc];
-get_item(_, Acc) ->
-    Acc.
-
-check_elements(Items, NumItems, NumDeletes, NumRSM) ->
-    ?assertEqual(NumItems, count_elements(Items, <<"item">>)),
-    ?assertEqual(NumDeletes, count_elements(Items, <<"delete">>)),
-    ?assertEqual(NumRSM, count_elements(Items, <<"set">>)),
-    ok.
-
-count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
-    length(
-      lists:filter(fun(#xmlel{name = T}) when T =:= Type -> true;
-                      (_) -> false
-                   end,
-                   Children)).
-
 query_el(Version) ->
     #xmlel{name = <<"query">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING} |
@@ -394,9 +337,6 @@ is_presence_error(Stanza) ->
     escalus_pred:is_presence(Stanza)
     andalso
     escalus_pred:is_error(<<"cancel">>, <<"not-acceptable">>, Stanza).
-
-maybe(false, _) -> ok;
-maybe(true, X) -> X.
 
 set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
@@ -419,8 +359,8 @@ is_bot_action(ID, Stanza) ->
 check_home_stream_sizes(ExpectedSize, Clients) ->
     lists:foreach(
       fun(Client) ->
-              S = expect_iq_success_u(get_stanza(), Client, Client),
-              I = check_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
+              S = expect_iq_success_u(get_hs_stanza(), Client, Client),
+              I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
               ExpectedSize =:= 0 orelse
               escalus:assert(is_bot_action(?BOT, _),
                              hd((hd(I))#item.stanzas))

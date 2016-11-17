@@ -6,6 +6,7 @@
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
 -include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
@@ -15,7 +16,13 @@
 -compile({parse_transform, do}).
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
-                      rsm_elem/1, decode_rsm/1, check_rsm/5]).
+                      rsm_elem/1, decode_rsm/1, check_rsm/5,
+                      get_hs_stanza/0, bot_node/1,
+                      check_hs_result/4, expect_iq_success_u/3,
+                      publish_item_stanza/4, publish_item_stanza/5,
+                      retract_item_stanza/2, subscribe_stanza/1,
+                      follow_cdata/1, node_el/2, node_el/3
+                     ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
 -define(CREATE_SHORTNAME,   <<"NewBot">>).
@@ -84,7 +91,7 @@ end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
 local_tables() ->
-    [bot_name, bot_subscriber, bot_item].
+    [bot_name, bot_subscriber, bot_item, home_stream].
 
 reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
@@ -649,14 +656,7 @@ retract_item(Config) ->
           Carol),
 
         % Alice can retract the item as its owner
-        RetractStanza = test_helper:add_to_s(
-                          retract_item_stanza(?BOT, ?ITEM), Alice),
-        escalus:send(Alice, RetractStanza),
-
-        Stanzas = escalus:wait_for_stanzas(Alice, 2),
-        escalus:assert_many([is_iq_result,
-                             is_retraction_update(?BOT, ?ITEM, _)],
-                            Stanzas),
+        expect_iq_success(retract_item_stanza(?BOT, ?ITEM), Alice),
 
         % Carol and Karen are subscribers, and so receive a notification
         % Bob is an affiliate but not subscribed, so does not receive anything
@@ -984,14 +984,6 @@ following_stanza(RSM) ->
     test_helper:iq_get(?NS_BOT, #xmlel{name = <<"following">>,
                                        children = [rsm_elem(RSM)]}).
 
-node_el(ID, Name) -> node_el(ID, Name, []).
-node_el(ID, Name, Children) ->
-    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
-           children = Children}.
-
-bot_node(ID) ->
-    <<"bot/", ID/binary>>.
-
 bot_jid(ID) ->
     jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, bot_node(ID))).
 
@@ -1105,83 +1097,30 @@ has_standard_attrs(Attrs) ->
 unsubscribe_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).
 
-subscribe_stanza(Follow) ->
-    SubEl = node_el(?BOT, <<"subscribe">>),
-    FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
-    test_helper:iq_set(?NS_BOT, FullSubEl).
-
-follow_el(Follow) ->
-    #xmlel{name = <<"follow">>,
-           children = [#xmlcdata{content = follow_cdata(Follow)}]}.
-
-follow_cdata(false) -> <<"0">>;
-follow_cdata(true) -> <<"1">>.
-
 delete_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"delete">>)).
 
-publish_item_stanza(BotID, NoteID, Title, Content) ->
-    publish_item_stanza(BotID, NoteID, Title, Content, undefined).
-publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
-    test_helper:iq_set(?NS_BOT,
-                       publish_el(BotID, NoteID, Title, Content, Image)).
-
-publish_el(BotID, NoteID, Title, Content, Image) ->
-    #xmlel{name = <<"publish">>,
-           attrs = [{<<"node">>, bot_node(BotID)}],
-           children = item_el(NoteID, Title, Content, Image)}.
-
-item_el(NoteID) ->
-    #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, NoteID}]}.
-item_el(NoteID, Title, Content, Image) ->
-    #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, NoteID}],
-           children = entry_el(Title, Content, Image)}.
-
-entry_el(Title, Content, Image) ->
-    #xmlel{name = <<"entry">>,
-           attrs = [{<<"xmlns">>, ?NS_ATOM}],
-           children = item_fields(Title, Content, Image)}.
-
-item_fields(Title, Content, Image) ->
-    [#xmlel{name = <<"title">>,
-            children = [#xmlcdata{content = Title}]},
-     #xmlel{name = <<"content">>,
-            children = [#xmlcdata{content = Content}]}] ++
-    maybe_image_el(Image).
-
-maybe_image_el(undefined) -> [];
-maybe_image_el(Image) ->
-    [#xmlel{name = <<"image">>,
-            children = [#xmlcdata{content = Image}]}].
-
-retract_item_stanza(BotID, NoteID) ->
-    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
-
-retract_el(BotID, NoteID) ->
-    #xmlel{name = <<"retract">>,
-           attrs = [{<<"node">>, bot_node(BotID)}],
-           children = [item_el(NoteID)]}.
-
 expect_item_publication(Client, BotID, NoteID, Title, Content) ->
-    Stanza = escalus:wait_for_stanza(Client),
-    ?assert(is_publication_update(BotID, NoteID, Title, Content, Stanza)).
+    S = expect_iq_success_u(get_hs_stanza(), Client, Client),
+    I = check_hs_result(S, any, any, false),
+    escalus:assert(
+      is_publication_update(BotID, NoteID, Title, Content, _),
+      hd((lists:last(I))#item.stanzas)).
 
 is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
-    do([error_m ||
-        [Event] <- check_get_children(Stanza, <<"message">>),
-        [Item] <- check_get_children(Event, <<"event">>,
-                                     [{<<"xmlns">>, ?NS_BOT},
-                                      {<<"node">>, bot_node(BotID)}]),
-        [Entry] <- check_get_children(Item, <<"item">>,
-                                      [{<<"id">>, NoteID}]),
-        check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
-        check_children_cdata(Entry, [{<<"title">>, Title},
-                                     {<<"content">>, Content}]),
-        ok
-       ]),
-    true.
+    R = do([error_m ||
+            [Event] <- check_get_children(Stanza, <<"message">>),
+            [Item] <- check_get_children(Event, <<"event">>,
+                                         [{<<"xmlns">>, ?NS_BOT_EVENT},
+                                          {<<"node">>, bot_node(BotID)}]),
+            [Entry] <- check_get_children(Item, <<"item">>,
+                                          [{<<"id">>, NoteID}]),
+            check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
+            check_children_cdata(Entry, [{<<"title">>, Title},
+                                         {<<"content">>, Content}]),
+            ok
+           ]),
+    R =:= ok.
 
 check_get_children(Els, Name) -> check_get_children(Els, Name, []).
 
@@ -1212,15 +1151,17 @@ has_attr(Attrs, {Name, Val}) ->
     {value, Val} =:= xml:get_attr(Name, Attrs).
 
 expect_item_retraction(Client, BotID, NoteID) ->
-    Stanza = escalus:wait_for_stanza(Client),
+    S = expect_iq_success_u(get_hs_stanza(), Client, Client),
+    I = check_hs_result(S, any, any, false),
     escalus:assert(
-      is_retraction_update(BotID, NoteID, _), Stanza).
+      is_retraction_update(BotID, NoteID, _),
+      hd((lists:last(I))#item.stanzas)).
 
 is_retraction_update(BotID, NoteID, Stanza) ->
     R = do([error_m ||
             [Event] <- check_get_children(Stanza, <<"message">>),
             [Item] <- check_get_children(Event, <<"event">>,
-                                         [{<<"xmlns">>, ?NS_BOT},
+                                         [{<<"xmlns">>, ?NS_BOT_EVENT},
                                           {<<"node">>, bot_node(BotID)}]),
             [] <- check_get_children(Item, <<"retract">>,
                                      [{<<"id">>, NoteID}]),
@@ -1336,16 +1277,8 @@ is_pres_unavailable() ->
     end.
 
 publish_item(BotID, NoteID, Title, Content, Image, Client) ->
-    PubStanza = test_helper:add_to_s(
-                  publish_item_stanza(BotID, NoteID, Title, Content, Image),
-                  Client),
-    escalus:send(Client, PubStanza),
-
-    Stanzas = escalus:wait_for_stanzas(Client, 2),
-    escalus:assert_many([is_iq_result,
-                         is_publication_update(BotID, NoteID,
-                                               Title, Content, _)],
-                        Stanzas).
+    expect_iq_success(publish_item_stanza(BotID, NoteID, Title, Content, Image),
+                      Client).
 
 publish_item_with_image(I, Client) ->
     publish_item(?BOT, item_id(I), <<"Title">>, <<"Content">>,
