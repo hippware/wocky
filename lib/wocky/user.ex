@@ -60,7 +60,6 @@ defmodule Wocky.User do
 
   @spec to_bare_jid_string(Wocky.User.t) :: binary
   def to_bare_jid_string(%__MODULE__{} = user) do
-    :jid.to_binary(to_bare_jid(user))
     user |> to_bare_jid |> :jid.to_binary
   end
 
@@ -85,8 +84,10 @@ defmodule Wocky.User do
 
   @spec get(binary) :: Wocky.User.t | nil
   def get(user_id) do
-    Schemata.select(:all, from: :user, in: :wocky_db.shared_keyspace,
-      where: %{user: user_id, server: :wocky_app.server})
+    :all
+    |> Schemata.select(
+        from: :user, in: :wocky_db.shared_keyspace,
+        where: %{user: user_id, server: :wocky_app.server})
     |> handle_user_return
   end
 
@@ -104,9 +105,10 @@ defmodule Wocky.User do
 
   @spec get_owned_bots(Wocky.User.t) :: [Wocky.Bot.t]
   def get_owned_bots(user) do
-    Schemata.select(:all,
-      from: :user_bot, in: :wocky_db.shared_keyspace,
-      where: %{owner: to_bare_jid_string(user)})
+    :all
+    |> Schemata.select(
+        from: :user_bot, in: :wocky_db.shared_keyspace,
+        where: %{owner: to_bare_jid_string(user)})
     |> Enum.map(&Wocky.Bot.new(&1))
   end
 

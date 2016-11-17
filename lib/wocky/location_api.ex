@@ -1,4 +1,5 @@
 defmodule Wocky.LocationApi do
+  @moduledoc "HTTP API implementation for sending user location updates"
 
   use Exref, ignore: [
     init: 3, rest_init: 2, allow_missing_post: 2, allowed_methods: 2,
@@ -9,6 +10,7 @@ defmodule Wocky.LocationApi do
   alias Wocky.Location
 
   defmodule State do
+    @moduledoc false
     defstruct [user: nil, resource: nil, coords: nil]
   end
 
@@ -66,7 +68,7 @@ defmodule Wocky.LocationApi do
     case Poison.Parser.parse(body, keys: :atoms) do
       {:ok, data} ->
         location = extract_location_object(data[:location])
-        if has_required_keys?(location, data[:resource]) do
+        if has_required_keys(location, data[:resource]) do
           {false, req, %State{state |
             resource: data.resource,
             coords: location.coords}}
@@ -84,13 +86,13 @@ defmodule Wocky.LocationApi do
   defp extract_location_object(nil),                      do: nil
   defp extract_location_object(location),                 do: location
 
-  defp has_required_keys?(%{coords: coords}, resource) do
+  defp has_required_keys(%{coords: coords}, resource) do
     Map.get(coords, :latitude) &&
     Map.get(coords, :longitude) &&
     Map.get(coords, :accuracy) &&
     resource
   end
-  defp has_required_keys?(_, _), do: false
+  defp has_required_keys(_, _), do: false
 
   def is_authorized(req, state) do
     {auth_user, _} = :cowboy_req.header("x-auth-user", req, nil)
