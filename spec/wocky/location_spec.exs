@@ -16,6 +16,7 @@ defmodule Wocky.LocationSpec do
     bots = Enum.into(bot_list, %{},
                      fn (%Bot{id: id} = b) -> {id, b} end)
 
+    allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
     allow User |> to(accept :get_followed_bots, fn (_) -> Map.keys(bots) end)
     allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
@@ -43,6 +44,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should generate a notification" do
+        expect :ejabberd_router |> to(accepted :route)
+      end
+
+      it "should generate a push notification" do
         expect Handler
         |> to(accepted :notify_bot_event, [shared.jid, shared.bot.id, :enter])
       end
@@ -67,6 +72,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a notification" do
+        expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
@@ -98,6 +107,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should generate a notification" do
+        expect :ejabberd_router |> to(accepted :route)
+      end
+
+      it "should generate a push notification" do
         expect Handler
         |> to(accepted :notify_bot_event, [shared.jid, shared.bot.id, :exit])
       end
@@ -122,6 +135,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a notification" do
+        expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
@@ -138,6 +155,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a notification" do
+        expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
