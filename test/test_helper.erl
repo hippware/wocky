@@ -50,7 +50,16 @@
          get_items_el/1,
 
          get_hs_stanza/0,
-         get_hs_stanza/1
+         get_hs_stanza/1,
+         publish_item_stanza/4,
+         publish_item_stanza/5,
+         retract_item_stanza/2,
+         subscribe_stanza/1,
+
+         bot_node/1,
+         follow_cdata/1,
+         node_el/2,
+         node_el/3
         ]).
 
 ensure_wocky_is_running() ->
@@ -380,4 +389,68 @@ get_hs_stanza(ID) ->
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [#xmlel{name = <<"item">>,
                                                  attrs = [{<<"id">>, ID}]}]}).
+
+publish_item_stanza(BotID, NoteID, Title, Content) ->
+    publish_item_stanza(BotID, NoteID, Title, Content, undefined).
+publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
+    test_helper:iq_set(?NS_BOT,
+                       publish_el(BotID, NoteID, Title, Content, Image)).
+
+publish_el(BotID, NoteID, Title, Content, Image) ->
+    #xmlel{name = <<"publish">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = item_el(NoteID, Title, Content, Image)}.
+
+item_el(NoteID) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}]}.
+item_el(NoteID, Title, Content, Image) ->
+    #xmlel{name = <<"item">>,
+           attrs = [{<<"id">>, NoteID}],
+           children = entry_el(Title, Content, Image)}.
+
+entry_el(Title, Content, Image) ->
+    #xmlel{name = <<"entry">>,
+           attrs = [{<<"xmlns">>, ?NS_ATOM}],
+           children = item_fields(Title, Content, Image)}.
+
+item_fields(Title, Content, Image) ->
+    [#xmlel{name = <<"title">>,
+            children = [#xmlcdata{content = Title}]},
+     #xmlel{name = <<"content">>,
+            children = [#xmlcdata{content = Content}]}] ++
+    maybe_image_el(Image).
+
+maybe_image_el(undefined) -> [];
+maybe_image_el(Image) ->
+    [#xmlel{name = <<"image">>,
+            children = [#xmlcdata{content = Image}]}].
+
+retract_item_stanza(BotID, NoteID) ->
+    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
+
+retract_el(BotID, NoteID) ->
+    #xmlel{name = <<"retract">>,
+           attrs = [{<<"node">>, bot_node(BotID)}],
+           children = [item_el(NoteID)]}.
+
+bot_node(ID) ->
+    <<"bot/", ID/binary>>.
+
+subscribe_stanza(Follow) ->
+    SubEl = node_el(?BOT, <<"subscribe">>),
+    FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
+    test_helper:iq_set(?NS_BOT, FullSubEl).
+
+follow_el(Follow) ->
+    #xmlel{name = <<"follow">>,
+           children = [#xmlcdata{content = follow_cdata(Follow)}]}.
+
+follow_cdata(false) -> <<"0">>;
+follow_cdata(true) -> <<"1">>.
+
+node_el(ID, Name) -> node_el(ID, Name, []).
+node_el(ID, Name, Children) ->
+    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
+           children = Children}.
 

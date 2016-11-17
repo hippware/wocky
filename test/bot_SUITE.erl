@@ -17,8 +17,12 @@
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
-                      get_hs_stanza/0,
-                      check_hs_result/4, expect_iq_success_u/3]).
+                      get_hs_stanza/0, bot_node/1,
+                      check_hs_result/4, expect_iq_success_u/3,
+                      publish_item_stanza/4, publish_item_stanza/5,
+                      retract_item_stanza/2, subscribe_stanza/1,
+                      follow_cdata/1, node_el/2, node_el/3
+                     ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
 -define(CREATE_SHORTNAME,   <<"NewBot">>).
@@ -980,14 +984,6 @@ following_stanza(RSM) ->
     test_helper:iq_get(?NS_BOT, #xmlel{name = <<"following">>,
                                        children = [rsm_elem(RSM)]}).
 
-node_el(ID, Name) -> node_el(ID, Name, []).
-node_el(ID, Name, Children) ->
-    #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
-           children = Children}.
-
-bot_node(ID) ->
-    <<"bot/", ID/binary>>.
-
 bot_jid(ID) ->
     jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, bot_node(ID))).
 
@@ -1101,64 +1097,8 @@ has_standard_attrs(Attrs) ->
 unsubscribe_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).
 
-subscribe_stanza(Follow) ->
-    SubEl = node_el(?BOT, <<"subscribe">>),
-    FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
-    test_helper:iq_set(?NS_BOT, FullSubEl).
-
-follow_el(Follow) ->
-    #xmlel{name = <<"follow">>,
-           children = [#xmlcdata{content = follow_cdata(Follow)}]}.
-
-follow_cdata(false) -> <<"0">>;
-follow_cdata(true) -> <<"1">>.
-
 delete_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"delete">>)).
-
-publish_item_stanza(BotID, NoteID, Title, Content) ->
-    publish_item_stanza(BotID, NoteID, Title, Content, undefined).
-publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
-    test_helper:iq_set(?NS_BOT,
-                       publish_el(BotID, NoteID, Title, Content, Image)).
-
-publish_el(BotID, NoteID, Title, Content, Image) ->
-    #xmlel{name = <<"publish">>,
-           attrs = [{<<"node">>, bot_node(BotID)}],
-           children = item_el(NoteID, Title, Content, Image)}.
-
-item_el(NoteID) ->
-    #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, NoteID}]}.
-item_el(NoteID, Title, Content, Image) ->
-    #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, NoteID}],
-           children = entry_el(Title, Content, Image)}.
-
-entry_el(Title, Content, Image) ->
-    #xmlel{name = <<"entry">>,
-           attrs = [{<<"xmlns">>, ?NS_ATOM}],
-           children = item_fields(Title, Content, Image)}.
-
-item_fields(Title, Content, Image) ->
-    [#xmlel{name = <<"title">>,
-            children = [#xmlcdata{content = Title}]},
-     #xmlel{name = <<"content">>,
-            children = [#xmlcdata{content = Content}]}] ++
-    maybe_image_el(Image).
-
-maybe_image_el(undefined) -> [];
-maybe_image_el(Image) ->
-    [#xmlel{name = <<"image">>,
-            children = [#xmlcdata{content = Image}]}].
-
-retract_item_stanza(BotID, NoteID) ->
-    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
-
-retract_el(BotID, NoteID) ->
-    #xmlel{name = <<"retract">>,
-           attrs = [{<<"node">>, bot_node(BotID)}],
-           children = [item_el(NoteID)]}.
 
 expect_item_publication(Client, BotID, NoteID, Title, Content) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),

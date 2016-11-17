@@ -18,7 +18,7 @@
 
 -import(test_helper, [expect_iq_success_u/3, expect_iq_error_u/3,
                       expect_iq_success/2, add_to_u/2,
-                      ensure_all_clean/1,
+                      ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
                       check_hs_result/2, check_hs_result/4]).
 
@@ -222,6 +222,7 @@ auto_publish_bot(Config) ->
         test_helper:subscribe_pair(Bob, Alice),
         test_helper:subscribe_pair(Carol, Alice),
         test_helper:subscribe(Tim, Alice),
+
         check_home_stream_sizes(0, [Bob]),
 
         Stanza = escalus_stanza:to(share_bot_stanza(), ?BOB_B_JID),
@@ -235,7 +236,7 @@ auto_publish_bot(Config) ->
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
-        check_home_stream_sizes(2, [Bob]),
+        check_home_stream_sizes(1, [Bob]),
         check_home_stream_sizes(0, [Carol, Tim]),
 
         clear_home_streams(),
@@ -254,15 +255,25 @@ auto_publish_bot(Config) ->
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_PUBLIC, Alice),
         check_home_stream_sizes(1, [Bob, Carol, Tim]),
-        clear_home_streams(),
 
         ensure_all_clean([Alice, Bob, Carol, Tim])
       end).
 
-%auto_publish_bot_item(Config) ->
-%    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
-%      fun(Alice, Bob, Carol, Tim) ->
+auto_publish_bot_item(Config) ->
+    wocky_db:truncate(shared, roster),
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        check_home_stream_sizes(1, [Bob]),
 
+        expect_iq_success(test_helper:subscribe_stanza(true), Bob),
+
+        expect_iq_success(
+          publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
+          Alice),
+
+        check_home_stream_sizes(2, [Bob])
+
+      end).
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------

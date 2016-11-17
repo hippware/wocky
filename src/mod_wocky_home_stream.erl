@@ -106,7 +106,6 @@ unavailable(User) ->
 filter_local_packet_hook(P = {From,
                               To = #jid{lserver = LServer},
                               Stanza = #xmlel{name = <<"message">>}}) ->
-    ct:log("Filtering ~p", [P]),
     Result = do([error_m ||
                  check_server(LServer),
                  check_user_present(To),
@@ -114,7 +113,6 @@ filter_local_packet_hook(P = {From,
                  publish(jid:to_bare(To), From, ID, Stanza),
                  {ok, Action}
                 ]),
-    ct:log("Filtered ~p", [Result]),
     maybe_drop(Result, P);
 
 %% Other types of packets we want to go to the home stream should be
