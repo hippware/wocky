@@ -43,6 +43,11 @@ defmodule Wocky.Location do
     |> User.get_followed_bots
     |> bots_with_events(user, location)
     |> Enum.each(&trigger_bot_notification(user, &1))
+
+    user
+    |> owned_bots_with_follow_me
+    |> Enum.each(&Bot.set_location(&1, location))
+
     :ok
   end
 
@@ -74,7 +79,8 @@ defmodule Wocky.Location do
 
   defp intersects?(nil, _location), do: false
   defp intersects?(bot, location) do
-    Geocalc.distance_between(bot, Map.from_struct(location)) <= bot.radius
+    Geocalc.distance_between(Map.from_struct(bot),
+                             Map.from_struct(location)) <= bot.radius
   end
 
   defp check_for_enter_event(user, bot_id) do
@@ -100,4 +106,15 @@ defmodule Wocky.Location do
     jid = User.to_jid(user)
     :wocky_notification_handler.notify_bot_event(jid, bot_id, event)
   end
+
+  defp owned_bots_with_follow_me(user) do
+    user
+    |> User.get_owned_bots
+    |> Enum.filter(&following_me?(&1))
+  end
+
+  defp following_me?(%Bot{follow_me: true, follow_me_expiry: expiry}) do
+    expiry > :wocky_db.now_to_timestamp(:os.timestamp)
+  end
+  defp following_me?(_), do: false
 end

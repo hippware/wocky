@@ -27,7 +27,9 @@
          delete_item/3,
          dissociate_user/2,
          image_items_count/2,
-         item_images/2
+         item_images/2,
+         set_follow_me/2,
+         set_unfollow_me/1
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -254,6 +256,21 @@ item_images(Server, BotID) ->
     R = wocky_db:select(Server, bot_item, [id, updated, stanza, image],
                         #{bot => BotID}),
     extract_images(R).
+
+-spec set_follow_me(wocky_db:id(), integer()) -> ok.
+set_follow_me(BotID, Expiry) ->
+    ExpiryTS = wocky_db:seconds_to_timestamp(Expiry),
+    wocky_db:update(shared, bot,
+                    #{follow_me => true,
+                      follow_me_expiry => ExpiryTS},
+                    #{id => BotID}).
+
+-spec set_unfollow_me(wocky_db:id()) -> ok.
+set_unfollow_me(BotID) ->
+    wocky_db:update(shared, bot,
+                    #{follow_me => false,
+                      follow_me_expiry => undefined},
+                    #{id => BotID}).
 
 %%%===================================================================
 %%% Private helpers

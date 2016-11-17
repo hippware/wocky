@@ -1,7 +1,8 @@
 defmodule Wocky.User do
   @moduledoc ""
 
-  use Exref, ignore: [insert: 1, from_jid: 3, to_jid: 2, to_jid_string: 2]
+  use Exref, ignore: [insert: 1, new: 2, from_jid: 3, to_jid: 2,
+                      to_jid_string: 2, to_bare_jid: 1, to_bare_jid_string: 1]
   use Wocky.Ejabberd
   alias :wocky_db, as: Db
 
@@ -35,6 +36,8 @@ defmodule Wocky.User do
     roster_viewers: []
   ]
 
+  use ExConstructor
+
   @spec make_id :: binary
   def make_id do
     Db.create_id
@@ -47,7 +50,17 @@ defmodule Wocky.User do
 
   @spec to_jid_string(Wocky.User.t, binary | nil) :: binary
   def to_jid_string(%__MODULE__{} = user, resource \\ nil) do
-    :jid.to_binary(to_jid(user, resource))
+    user |> to_jid(resource) |> :jid.to_binary
+  end
+
+  @spec to_bare_jid(Wocky.User.t) :: Ejabberd.jid
+  def to_bare_jid(%__MODULE__{} = user) do
+    user |> to_jid |> :jid.to_bare
+  end
+
+  @spec to_bare_jid_string(Wocky.User.t) :: binary
+  def to_bare_jid_string(%__MODULE__{} = user) do
+    user |> to_bare_jid |> :jid.to_binary
   end
 
   @spec from_jid(binary, binary, binary) :: Wocky.User.t
@@ -71,25 +84,32 @@ defmodule Wocky.User do
 
   @spec get(binary) :: Wocky.User.t | nil
   def get(user_id) do
-    Schemata.select(:all, from: :user, in: :wocky_db.shared_keyspace,
-      where: %{user: user_id, server: :wocky_app.server})
+    :all
+    |> Schemata.select(
+        from: :user, in: :wocky_db.shared_keyspace,
+        where: %{user: user_id, server: :wocky_app.server})
     |> handle_user_return
   end
 
   defp handle_user_return([]), do: nil
   defp handle_user_return([user]) do
-    # TODO I need to extract this pattern into a helper
-    {struct, defaults} = Map.pop(%__MODULE__{}, :__struct__)
-
     user
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
-    |> Enum.into(defaults)
-    |> Map.put(:__struct__, struct)
+    |> Wocky.User.new
   end
 
   @spec get_followed_bots(Wocky.User.t) :: [binary]
   def get_followed_bots(user) do
     :wocky_db_bot.followed_bots(user.server, to_jid(user))
+  end
+
+  @spec get_owned_bots(Wocky.User.t) :: [Wocky.Bot.t]
+  def get_owned_bots(user) do
+    :all
+    |> Schemata.select(
+        from: :user_bot, in: :wocky_db.shared_keyspace,
+        where: %{owner: to_bare_jid_string(user)})
+    |> Enum.map(&Wocky.Bot.new(&1))
   end
 
   @spec get_last_bot_event(Wocky.User.t, binary) :: [map]

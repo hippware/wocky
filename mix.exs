@@ -30,7 +30,7 @@ defmodule Wocky.Mixfile do
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
          :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
          :algolia, :logger, :schemata, :porcelain, :geocalc, :mix, :faker,
-         :ex_machina, :base16, :poison, :ex_aws
+         :ex_machina, :base16, :poison, :ex_aws, :exconstructor
        ],
        plt_add_deps: true,
        flags: [
@@ -101,6 +101,7 @@ defmodule Wocky.Mixfile do
       {:algolia,       "~> 0.4.0"},
       {:ex_aws,        "~> 1.0.0-rc.3"},
       {:geocalc,       "~> 0.5"},
+      {:exconstructor, "~> 1.0"},
       {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
       {:faker,         "~> 0.7"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},

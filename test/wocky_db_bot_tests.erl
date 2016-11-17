@@ -427,7 +427,8 @@ new_bot() ->
       address => <<"test address">>, lat => 1.0, lon => -2.0, radius => 10,
       visibility => ?WOCKY_BOT_VIS_OWNER, affiliates => [?CAROL_B_JID],
       alerts => ?WOCKY_BOT_ALERT_ENABLED,
-      image => <<>>, type => <<"killbot">>
+      image => <<>>, type => <<"killbot">>,
+      follow_me => false, follow_me_expiry => 0
      }.
 
 expected_item() ->

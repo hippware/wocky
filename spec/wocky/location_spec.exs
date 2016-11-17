@@ -14,7 +14,7 @@ defmodule Wocky.LocationSpec do
     bot = hd(bot_list)
 
     bots = Enum.into(bot_list, %{},
-                     fn (%Bot{id: id} = b) -> {id, Map.from_struct(b)} end)
+                     fn (%Bot{id: id} = b) -> {id, b} end)
 
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
     allow User |> to(accept :get_followed_bots, fn (_) -> Map.keys(bots) end)
@@ -129,6 +129,46 @@ defmodule Wocky.LocationSpec do
 
       it "should not generate a notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
+      end
+    end
+  end
+
+  describe "user with a bot set to 'follow me'" do
+    before do
+      allow Bot |> to(accept :set_location, fn (_, _) -> :ok end)
+      loc = Factory.build(:location)
+      {:shared, loc: {loc.lat, loc.lon, loc.accuracy}}
+    end
+
+    context "and an expiry in the future" do
+      before do
+        expiry = :wocky_db.now_to_timestamp(:os.timestamp()) + 86400
+        Factory.insert(:bot,
+                       owner: User.to_bare_jid_string(shared.user),
+                       follow_me: true,
+                       follow_me_expiry: expiry)
+
+        :ok = Location.user_location_changed(shared.jid, shared.loc)
+      end
+
+      it "should update the bot location" do
+        expect Bot |> to(accepted :set_location)
+      end
+    end
+
+    context "and an expiry in the past" do
+      before do
+        expiry = :wocky_db.now_to_timestamp(:os.timestamp()) - 86400
+        Factory.insert(:bot,
+                       owner: User.to_bare_jid_string(shared.user),
+                       follow_me: true,
+                       follow_me_expiry: expiry)
+
+        :ok = Location.user_location_changed(shared.jid, shared.loc)
+      end
+
+      it "should not update the bot location" do
+        expect Bot |> to_not(accepted :set_location)
       end
     end
   end

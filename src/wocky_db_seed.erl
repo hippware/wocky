@@ -235,7 +235,7 @@ seed_data(bot, Server) ->
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
        affiliates => [?BOB_B_JID],
        alerts => ?WOCKY_BOT_ALERT_DISABLED,
-       updated => now
+       updated => now, follow_me => false, follow_me_expiry => 0
       }];
 seed_data(bot_name, _Server) ->
     [#{shortname => ?BOT_NAME, id => ?BOT}];

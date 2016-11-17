@@ -1,7 +1,7 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Exref, ignore: [insert: 1]
+  use Exref, ignore: [insert: 1, new: 1, new: 2]
   alias :wocky_db, as: Db
 
   @type t :: %__MODULE__{
@@ -20,10 +20,11 @@ defmodule Wocky.Bot do
     visibility:       integer,
     affiliates:       [binary],
     alerts:           integer,
-    updated:          integer
+    updated:          integer,
+    follow_me:        boolean,
+    follow_me_expiry: integer
   }
 
-  @enforce_keys [:id, :server, :owner]
   defstruct [
     id:               nil,
     server:           nil,
@@ -40,8 +41,12 @@ defmodule Wocky.Bot do
     visibility:       nil,
     affiliates:       [],
     alerts:           nil,
-    updated:          nil
+    updated:          nil,
+    follow_me:        nil,
+    follow_me_expiry: nil
   ]
+
+  use ExConstructor
 
   @spec make_id :: binary
   def make_id do
@@ -52,8 +57,15 @@ defmodule Wocky.Bot do
   def get(id) do
     case :wocky_db_bot.get(<<>>, id) do
       :not_found -> nil
-      bot -> bot
+      bot -> new(bot)
     end
+  end
+
+  @spec set_location(Wocky.Bot.t, Wocky.Location.t) :: :ok
+  def set_location(bot, location) do
+    Schemata.update :bot, in: :wocky_db.shared_keyspace,
+      set: %{lat: location.lat, lon: location.lon},
+      where: %{id: bot.id}
   end
 
   @spec insert(Wocky.Bot.t) :: :ok
