@@ -1,7 +1,7 @@
 defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
-  use Exref, ignore: [__struct__: 0, __struct__: 1]
+  use Exref, ignore: [__struct__: 0, __struct__: 1, user_location_changed: 3]
   use Wocky.Ejabberd
   alias Wocky.Location
   alias Wocky.User
@@ -28,27 +28,41 @@ defmodule Wocky.Location do
   Process a location change event for a user. The processing happens
   asynchronously and the function always returns `:ok`.
   """
-  @spec user_location_changed(Ejabberd.jid, location_tuple) :: :ok
-  def user_location_changed(jid, {lat, lon, accuracy}) do
+  def user_location_changed(user, location, async \\ true)
+
+  @spec user_location_changed(Ejabberd.jid, location_tuple, boolean) :: :ok
+  def user_location_changed(jid, {lat, lon, accuracy}, async) do
     location = %Location{lat: lat, lon: lon, accuracy: accuracy}
     user = User.from_jid(jid)
 
-    user_location_changed(user, location)
+    user_location_changed(user, location, async)
   end
 
-  @spec user_location_changed(User.t, Location.t) :: :ok
-  def user_location_changed(user, location) do
+  @spec user_location_changed(User.t, Location.t, boolean) :: :ok
+  def user_location_changed(user, location, true) do
+    {:ok, _} = Task.start(__MODULE__, :check_for_bot_events, [user, location])
+    {:ok, _} = Task.start(__MODULE__, :update_bots_with_follow_me,
+                          [user, location])
+    :ok
+  end
+  def user_location_changed(user, location, false) do
+    check_for_bot_events(user, location)
+    update_bots_with_follow_me(user, location)
+    :ok
+  end
+
+  defp check_for_bot_events(user, location) do
     user
     |> User.set_location(location)
     |> User.get_followed_bots
     |> bots_with_events(user, location)
     |> Enum.each(&trigger_bot_notification(user, &1))
+  end
 
+  defp update_bots_with_follow_me(user, location) do
     user
     |> owned_bots_with_follow_me
     |> Enum.each(&Bot.set_location(&1, location))
-
-    :ok
   end
 
   defp bots_with_events(bots, user, location) do
