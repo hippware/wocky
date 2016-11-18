@@ -40,7 +40,7 @@ defmodule Wocky.Factory do
       server: :wocky_app.server,
       title: Faker.Company.name,
       shortname: Faker.Company.buzzword,
-      owner: Ejabberd.make_jid!(User.make_id, :wocky_app.server, <<>>),
+      owner: :jid.to_binary(:jid.make(User.make_id, :wocky_app.server, <<>>)),
       description: Faker.Lorem.paragraph(%Range{first: 1, last: 2}),
       image: :tros.make_url(:wocky_app.server, :wocky_db.create_id),
       type: "test",

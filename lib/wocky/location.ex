@@ -40,14 +40,14 @@ defmodule Wocky.Location do
 
   @spec user_location_changed(User.t, Location.t, boolean) :: :ok
   def user_location_changed(user, location, true) do
-    {:ok, _} = Task.start(__MODULE__, :check_for_bot_events, [user, location])
-    {:ok, _} = Task.start(__MODULE__, :update_bots_with_follow_me,
-                          [user, location])
+    {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
+    {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
+
     :ok
   end
   def user_location_changed(user, location, false) do
     check_for_bot_events(user, location)
-    update_bots_with_follow_me(user, location)
+    update_bot_locations(user, location)
     :ok
   end
 
@@ -59,7 +59,7 @@ defmodule Wocky.Location do
     |> Enum.each(&trigger_bot_notification(user, &1))
   end
 
-  defp update_bots_with_follow_me(user, location) do
+  defp update_bot_locations(user, location) do
     user
     |> owned_bots_with_follow_me
     |> Enum.each(&Bot.set_location(&1, location))
