@@ -8,6 +8,12 @@
 
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
+
+-import(test_helper, [expect_iq_success_u/3,
+                      get_hs_stanza/0,
+                      check_hs_result/2,
+                      check_hs_result/4]).
 
 
 %%--------------------------------------------------------------------
@@ -91,27 +97,28 @@ end_geoloc(Config) ->
 
 xmpp_notification(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        wocky_db:truncate(?LOCAL_CONTEXT, home_stream),
         insert_bot(Alice),
         enable_push_notifications(Alice),
 
+        %% Alice's home stream is empty to start
+        Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        check_hs_result(Stanza, 0, 0, false),
+
         %% Alice sends an XMPP location update...
-        Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                               geoloc_item(), <<"123">>,
-                                               {pep, ?NS_GEOLOC}),
-        escalus:send(Alice, Stanza),
+        Stanza2 = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
+                                                geoloc_item(), <<"123">>,
+                                                {pep, ?NS_GEOLOC}),
+        escalus:send(Alice, Stanza2),
         Received = escalus:wait_for_stanzas(Alice, 2),
         escalus:assert_many([is_message, is_iq_result], Received),
 
-        %% ...and receives an XMPP notification message...
-        Notification = escalus:wait_for_stanza(Alice),
-        escalus:assert(is_message, Notification),
+        %% ...and two new items show up in the home stream...
+        Stanza3 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        Items = check_hs_result(Stanza3, 2),
 
-        %% ...with a type of "headline"...
-        <<"headline">> =
-            proplists:get_value(<<"type">>, Notification#xmlel.attrs),
-
-        %% ...and a child element called "bot".
-        #xmlel{children = [#xmlel{name = <<"bot">>}]} = Notification
+        %% ...with the last item being a message.
+        escalus:assert(is_message, hd((lists:last(Items))#item.stanzas))
     end).
 
 

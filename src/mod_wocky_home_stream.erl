@@ -160,6 +160,8 @@ check_publish_bot(From, BotEl) ->
         {<<>>, _} -> {ok, {keep, chat_id(From)}};
         {JIDBin, <<"show">>} -> {ok, {drop, bot_id(JIDBin)}};
         {JIDBin, <<"share">>} -> {ok, {drop, bot_id(JIDBin)}};
+        {JIDBin, <<"enter">>} -> {ok, {drop, bot_id(JIDBin)}};
+        {JIDBin, <<"exit">>} -> {ok, {drop, bot_id(JIDBin)}};
         _ -> {ok, {keep, chat_id(From)}}
     end.
 
