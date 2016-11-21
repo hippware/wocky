@@ -167,33 +167,6 @@ defmodule Schemata.Schemas.Wocky do
       order_by: [timestamp: :asc]
     ]
 
-    # Table for storing transient data for active user sessions
-    table :session, [
-      columns: [
-        sid:          :blob,     # Session ID
-        node:         :text,     # Node handling the active session
-        user:         :text,     # User ID (userpart of JID)
-        server:       :text,     # User Server (domainpart of JID)
-        jid_user:     :text,     # Provided JID userpart
-        jid_server:   :text,     # Provided JID domainpart
-        jid_resource: :blob,     # Provided JID resourcepart
-        priority:     :int,      # Session priority
-        info:         :blob      # Session info
-      ],
-      primary_key: [:sid, :jid_user]
-    ]
-
-    index [
-      on: :session,
-      keys: [:node]
-    ]
-
-    view :user_sessions, [
-      from: :session,
-      columns: :all,
-      primary_key: [:jid_user, :jid_resource, :sid]
-    ]
-
     # Francus file-store metadata table
     table :media, [
       columns: [
