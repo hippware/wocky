@@ -108,6 +108,11 @@ is_presence_error(Stanza) ->
 privacy_list(Name) ->
     escalus_stanza:privacy_list(Name, list_content(Name)).
 
+list_content(<<"allow_all">>) -> [
+        escalus_stanza:privacy_list_item(<<"1">>, <<"allow">>,
+                                         [<<"message">>, <<"presence-in">>,
+                                          <<"presence-out">>, <<"iq">>])
+    ];
 list_content(<<"allow_alice">>) -> [
         escalus_stanza:privacy_list_jid_item(<<"1">>, <<"allow">>, alice, [])
     ];

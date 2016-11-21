@@ -129,17 +129,31 @@ remove_user(LUser, LServer) ->
 
 % See github.com/hippware/tr-wiki/wiki/Roster%2C-presence%2C-follow-and-friends
 default_list_items(LUser, LServer) ->
-    BaseRecord = #listitem{match_presence_out = true},
+    BaseRecord = #listitem{match_presence_out = true,
+                           match_message = true
+                          },
     [
+     %% Always allow messages and presences from yourself
      BaseRecord#listitem{type = jid,
                          value = jid:to_lower({LUser, LServer, <<"">>}),
                          action = allow, order = 5},
+
+     %% Block the __no_presence__ and __blocked groups
      BaseRecord#listitem{type = group, value = <<"__no_presence__">>,
                          action = deny, order = 10},
      BaseRecord#listitem{type = group, value = <<"__blocked__">>,
                          action = deny, order = 15},
+
+     %% Allow messages and presences between friends
      BaseRecord#listitem{type = subscription, value = both,
                          action = allow, order = 20},
+
+     %% Allow messages from followee to follower
+     #listitem{type = subscription, value = to,
+               action = allow, order = 30,
+               match_message = true},
+
+     %% Deny everything else
      BaseRecord#listitem{action = deny, order = 100}
     ].
 

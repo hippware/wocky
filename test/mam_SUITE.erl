@@ -23,6 +23,8 @@
 
 -include("wocky_db_seed.hrl").
 
+-compile({parse_transform, fun_chain}).
+
 -define(ASSERT_EQUAL(E, V), (
     [ct:fail("ASSERT EQUAL~n\tExpected ~p~n\tValue ~p~n", [(E), (V)])
      || (E) =/= (V)]
@@ -152,9 +154,12 @@ delete_users(Config) ->
     escalus:delete_users(Config, escalus:get_users(user_names())).
 
 init_per_group(Group, ConfigIn) ->
-    Config0 = init_modules(ConfigIn),
-    Config1 = create_users(Config0),
-    init_state(Group, Config1).
+    ConfigOut = fun_chain:first(ConfigIn,
+        init_modules(),
+        create_users(),
+        test_helper:make_everyone_friends(escalus:get_users(user_names()))
+    ),
+    init_state(Group, ConfigOut).
 
 end_per_group(Group, Config) ->
     delete_users(Config),
@@ -1054,7 +1059,6 @@ wait_message_range(P, Client, TotalCount, Offset, FromN, ToN) ->
     ParsedMessages = parse_messages(Messages),
     ParsedIQ = parse_result_iq(P, IQ),
     try
-        ct:log("BJD ParsedIQ: ~p", [ParsedIQ]),
         %% Compare body of the messages.
         ?ASSERT_EQUAL([generate_message_text(N) || N <- make_seq(FromN, ToN)],
                       [B || #forwarded_message{message_body=B}

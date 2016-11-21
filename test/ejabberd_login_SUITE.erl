@@ -182,6 +182,8 @@ login_with_token(Config) ->
 
 messages_story(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
+        test_helper:subscribe(Bob, Alice),
+
         % Alice sends a message to Bob
         escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi!">>)),
 
