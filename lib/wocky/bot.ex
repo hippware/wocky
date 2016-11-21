@@ -66,7 +66,7 @@ defmodule Wocky.Bot do
 
   @spec get(binary) :: nil | map
   def get(id) do
-    case :wocky_db_bot.get(<<>>, id) do
+    case :wocky_db_bot.get_bot(<<>>, id) do
       :not_found -> nil
       bot -> new(bot)
     end

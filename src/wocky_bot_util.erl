@@ -17,6 +17,7 @@
          check_access/3,
          check_bot_exists/2,
          get_id_from_node/1,
+         get_id_from_jid/1,
          notify_affiliates/3,
          make_follow_element/1,
          make_affiliate_elements/1,
@@ -56,6 +57,11 @@ get_id_from_node_value(Node) ->
         [<<"bot">>, ID] -> {ok, ID};
         _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)}
     end.
+
+get_id_from_jid(#jid{lresource = <<"bot/", ID/binary>>}) ->
+    ID;
+get_id_from_jid(_) ->
+    <<>>.
 
 notify_affiliates(Sender, ID, Affiliates) ->
     lists:foreach(notify_affiliate(Sender, ID, _), Affiliates).

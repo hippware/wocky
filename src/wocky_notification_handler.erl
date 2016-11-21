@@ -73,7 +73,7 @@ delete(LUser, LServer) ->
 notify_message(To, From, Body) ->
     do_notify_all(lookup_all_endpoints(To), From, Body).
 
--spec notify_bot_event(ejabberd:jid(), binary(), binary()) ->
+-spec notify_bot_event(ejabberd:jid(), wocky_db:id(), binary()) ->
     ok | {error, any()}.
 notify_bot_event(To, Bot, Event) ->
     ok = lager:debug("Sending notification for ~s ~sing bot ~s",
@@ -85,7 +85,8 @@ notify_bot_event(To, Bot, Event) ->
                               msg("You are near the bot ~s", [Bot]);
 
                           exit ->
-                              msg("You are leaving the area for bot ~s", [Bot])
+                              msg("You are leaving the area for bot ~s",
+                                  [Bot])
                       end,
             (handler()):notify(Endpoint, Message);
 

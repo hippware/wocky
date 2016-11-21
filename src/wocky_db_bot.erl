@@ -2,9 +2,10 @@
 
 -compile({parse_transform, cut}).
 
--export([get/2,
-         owned_bots/2,
-         followed_bots/2,
+-export([get_bot/1,
+         get_bot/2,
+         owned_bots/1,
+         followed_bots/1,
          get_id_by_name/2,
          exists/2,
          insert/2,
@@ -49,22 +50,29 @@
 %%% API
 %%%===================================================================
 
--spec get(wocky_db:server(), wocky_db:id()) -> map() | not_found.
-get(_Server, ID) ->
+-spec get_bot(jid()) -> map() | not_found.
+get_bot(BotJID = #jid{lserver = Server}) ->
+    get_bot(Server, wocky_bot_util:get_id_from_jid(BotJID)).
+
+-spec get_bot(ejabberd:lserver(), wocky_db:id()) -> map() | not_found.
+get_bot(_Server, ID) when is_binary(ID) ->
     wocky_db:select_row(shared, bot, all, #{id => ID}).
 
--spec owned_bots(wocky_db:server(), jid()) -> [binary()].
-owned_bots(_Server, UserJID) ->
+-spec owned_bots(jid()) -> [jid()].
+owned_bots(UserJID) ->
     User = jid:to_binary(jid:to_bare(UserJID)),
-    wocky_db:select_column(shared, user_bot, id, #{owner => User}).
+    Bots = wocky_db:select(shared, user_bot, [id, server], #{owner => User}),
+    [wocky_bot_util:make_jid(Server, ID) ||
+     #{server := Server, id := ID} <- Bots].
 
--spec followed_bots(wocky_db:server(), jid()) -> [binary()].
-followed_bots(Server, UserJID) ->
+-spec followed_bots(jid()) -> [jid()].
+followed_bots(UserJID) ->
     User = jid:to_binary(jid:to_bare(UserJID)),
     Result = wocky_db:select(shared, subscribed_bot,
-                             [bot, follow], #{user => User}),
-    [Bot || #{bot := Bot, follow := true} <- Result] ++
-    owned_bots(Server, UserJID).
+                             [bot, server, follow], #{user => User}),
+    [wocky_bot_util:make_jid(Server, Bot)
+     || #{bot := Bot, server := Server, follow := true} <- Result] ++
+    owned_bots(UserJID).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -185,6 +193,7 @@ subscribe(Server, ID, User, Follow) ->
             ok = wocky_db:insert(
                    shared, bot_subscriber,
                    #{bot => ID,
+                     server => Server,
                      user => jid:to_binary(jid:to_bare(User)),
                      follow => Follow})
     end.
@@ -235,12 +244,12 @@ delete_item(Server, BotID, NoteID) ->
 
 -spec dissociate_user(ejabberd:luser(), wocky_db:server()) -> ok.
 dissociate_user(LUser, LServer) ->
-    OwnedBots = owned_bots(LServer, jid:make(LUser, LServer, <<>>)),
+    OwnedBots = owned_bots(jid:make(LUser, LServer, <<>>)),
     Roster = wocky_db_roster:get_roster(LUser, LServer),
     FriendJIDs = jid_list(Roster, wocky_db_roster:is_friend(_)),
     FollowerJIDs = jid_list(Roster, wocky_db_roster:is_follower(_)),
     lists:foreach(
-      remove_owner(LServer, _, FriendJIDs, FollowerJIDs), OwnedBots).
+      remove_owner(_, FriendJIDs, FollowerJIDs), OwnedBots).
 
 jid_list(Roster, FilterFun) ->
     Filtered = lists:filter(FilterFun(_), Roster),
@@ -308,8 +317,8 @@ maybe_to_jid(<<>>) ->
 maybe_to_jid(JIDBin) ->
     jid:from_binary(JIDBin).
 
-remove_owner(Server, BotID, FriendJIDs, FollowerJIDs) ->
-    Bot = get(Server, BotID),
+remove_owner(BotJID, FriendJIDs, FollowerJIDs) ->
+    Bot = get_bot(BotJID),
     NewBot = maybe_freeze_roster(Bot, FriendJIDs, FollowerJIDs),
     wocky_db:insert(shared, bot, NewBot#{owner => <<>>}).
 

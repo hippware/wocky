@@ -117,14 +117,15 @@ defmodule Schemata.Schemas.Wocky do
 
     view :user_bot, [ # MV for looking up bots by owner
       from: :bot,
-      columns: [:owner, :id, :follow_me, :follow_me_expiry],
+      columns: [:owner, :id, :server, :follow_me, :follow_me_expiry],
       primary_key: [:owner, :id]
     ]
 
     table :bot_subscriber, [
       columns: [
         bot:      :timeuuid, # Bot ID
-        user:     :text,     # User ID
+        server:   :text,     # Bot server
+        user:     :text,     # User JID
         follow:   :boolean   # Whether user is a follower
       ],
       primary_key: [:bot, :user]
