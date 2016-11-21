@@ -61,7 +61,7 @@ owned_bots(_Server, UserJID) ->
 -spec followed_bots(wocky_db:server(), jid()) -> [binary()].
 followed_bots(Server, UserJID) ->
     User = jid:to_binary(jid:to_bare(UserJID)),
-    Result = wocky_db:select(Server, subscribed_bot,
+    Result = wocky_db:select(shared, subscribed_bot,
                              [bot, follow], #{user => User}),
     [Bot || #{bot := Bot, follow := true} <- Result] ++
     owned_bots(Server, UserJID).
@@ -141,7 +141,7 @@ followers(Server, ID) ->
 
 -spec subscribers(wocky_db:server(), wocky_db:id()) -> [{jid(), boolean()}].
 subscribers(Server, ID) ->
-    Result = wocky_db:select(Server, bot_subscriber,
+    Result = wocky_db:select(shared, bot_subscriber,
                              [user, follow], #{bot => ID}),
     Subscribers = [{jid:from_binary(J), F} ||
                    #{user := J, follow := F} <- Result],
@@ -149,9 +149,9 @@ subscribers(Server, ID) ->
 
 -spec follow_state(wocky_db:server(), wocky_db:id(), jid()) ->
     boolean() | not_found.
-follow_state(Server, ID, User) ->
+follow_state(_Server, ID, User) ->
     UserBin = jid:to_binary(jid:to_bare(User)),
-    wocky_db:select_one(Server, bot_subscriber, follow,
+    wocky_db:select_one(shared, bot_subscriber, follow,
                         #{bot => ID, user => UserBin}).
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
@@ -183,7 +183,7 @@ subscribe(Server, ID, User, Follow) ->
             ok;
         _ ->
             ok = wocky_db:insert(
-                   Server, bot_subscriber,
+                   shared, bot_subscriber,
                    #{bot => ID,
                      user => jid:to_binary(jid:to_bare(User)),
                      follow => Follow})
@@ -195,7 +195,7 @@ unsubscribe(Server, ID, User) ->
         User ->
             ok;
         _ ->
-            ok = wocky_db:delete(Server, bot_subscriber, all,
+            ok = wocky_db:delete(shared, bot_subscriber, all,
                                  #{bot => ID,
                                    user => jid:to_binary(jid:to_bare(User))})
     end.

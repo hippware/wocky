@@ -54,12 +54,11 @@ wocky_db_bot_test_() -> {
 
 local_tables() -> [
                    bot_name,
-                   bot_subscriber,
                    bot_item
                   ].
 
 before_all() ->
-    ok = wocky_db_seed:seed_tables(shared, [roster, bot]),
+    ok = wocky_db_seed:seed_tables(shared, [roster, bot, bot_subscriber]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()).
 
 after_all(_) ->

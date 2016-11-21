@@ -120,6 +120,22 @@ defmodule Schemata.Schemas.Wocky do
       columns: [:owner, :id, :follow_me, :follow_me_expiry],
       primary_key: [:owner, :id]
     ]
+
+    table :bot_subscriber, [
+      columns: [
+        bot:      :timeuuid, # Bot ID
+        user:     :text,     # User ID
+        follow:   :boolean   # Whether user is a follower
+      ],
+      primary_key: [:bot, :user]
+    ]
+
+    view :subscribed_bot, [
+      from: :bot_subscriber,
+      columns: :all,
+      primary_key: [:user, :bot]
+    ]
+
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
@@ -329,21 +345,6 @@ defmodule Schemata.Schemas.Wocky do
       ],
       primary_key: [[:bot, :jid], :created_at, :event],
       order_by: [created_at: :desc, event: :desc]
-    ]
-
-    table :bot_subscriber, [
-      columns: [
-        bot:      :timeuuid, # Bot ID
-        user:     :text,     # User ID
-        follow:   :boolean   # Whether user is a follower
-      ],
-      primary_key: [:bot, :user]
-    ]
-
-    view :subscribed_bot, [
-      from: :bot_subscriber,
-      columns: :all,
-      primary_key: [:user, :bot]
     ]
 
     table :bot_name, [ # Table for looking up bots by shortname (URL)
