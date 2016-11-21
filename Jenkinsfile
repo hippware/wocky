@@ -28,7 +28,7 @@ node {
 
   stage('Build Release') {
     sh "rm -rf rel/wocky"
-    sh "mix release --no-confirm-missing --verbosity=verbose"
+    sh "MIX_ENV=prod mix release --warnings-as-errors"
     sh "echo `./version` > RELEASE"
 
     archive 'RELEASE'
