@@ -160,8 +160,8 @@ check_publish_bot(From, BotEl) ->
         {<<>>, _} -> {ok, {keep, chat_id(From)}};
         {JIDBin, <<"show">>} -> {ok, {drop, bot_id(JIDBin)}};
         {JIDBin, <<"share">>} -> {ok, {drop, bot_id(JIDBin)}};
-        {JIDBin, <<"enter">>} -> {ok, {drop, bot_id(JIDBin)}};
-        {JIDBin, <<"exit">>} -> {ok, {drop, bot_id(JIDBin)}};
+        {_JIDBin, <<"enter">>} -> {ok, {drop, new_id()}};
+        {_JIDBin, <<"exit">>} -> {ok, {drop, new_id()}};
         _ -> {ok, {keep, chat_id(From)}}
     end.
 
@@ -171,6 +171,9 @@ maybe_drop(_, P) -> P.
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
+
+new_id() ->
+    wocky_db:create_id().
 
 map_to_item(#{id := ID, version := Version,
               from := From, stanza := Stanza,
