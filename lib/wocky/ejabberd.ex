@@ -30,4 +30,11 @@ defmodule Wocky.Ejabberd do
       alias :jid, as: Jid
     end
   end
+
+  def make_jid!(user, server, resource \\ "") do
+    case :jid.make(user, server, resource) do
+      :error -> raise ArgumentError
+      jid -> jid
+    end
+  end
 end

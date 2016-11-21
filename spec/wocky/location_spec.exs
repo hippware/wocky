@@ -16,6 +16,7 @@ defmodule Wocky.LocationSpec do
     bots = Enum.into(bot_list, %{},
                      fn (%Bot{id: id} = b) -> {id, b} end)
 
+    allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
     allow User |> to(accept :get_followed_bots, fn (_) -> Map.keys(bots) end)
     allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
@@ -32,7 +33,9 @@ defmodule Wocky.LocationSpec do
 
     context "when there are no existing enter events" do
       before do
-        :ok = Location.user_location_changed(shared.jid, shared.inside_loc)
+        :ok = Location.user_location_changed(shared.jid,
+                                             shared.inside_loc,
+                                             false)
       end
 
       it "should generate an enter event" do
@@ -41,6 +44,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should generate a notification" do
+        expect :ejabberd_router |> to(accepted :route)
+      end
+
+      it "should generate a push notification" do
         expect Handler
         |> to(accepted :notify_bot_event, [shared.jid, shared.bot.id, :enter])
       end
@@ -55,7 +62,9 @@ defmodule Wocky.LocationSpec do
                         (_, _) -> []
                      end)
 
-        :ok = Location.user_location_changed(shared.jid, shared.inside_loc)
+        :ok = Location.user_location_changed(shared.jid,
+                                             shared.inside_loc,
+                                             false)
       end
 
       it "should not generate an enter event" do
@@ -63,6 +72,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a notification" do
+        expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
@@ -83,7 +96,9 @@ defmodule Wocky.LocationSpec do
                         (_, _) -> []
                      end)
 
-        :ok = Location.user_location_changed(shared.jid, shared.outside_loc)
+        :ok = Location.user_location_changed(shared.jid,
+                                             shared.outside_loc,
+                                             false)
       end
 
       it "should generate an exit event" do
@@ -92,6 +107,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should generate a notification" do
+        expect :ejabberd_router |> to(accepted :route)
+      end
+
+      it "should generate a push notification" do
         expect Handler
         |> to(accepted :notify_bot_event, [shared.jid, shared.bot.id, :exit])
       end
@@ -106,7 +125,9 @@ defmodule Wocky.LocationSpec do
                         (_, _) -> []
                      end)
 
-        :ok = Location.user_location_changed(shared.jid, shared.outside_loc)
+        :ok = Location.user_location_changed(shared.jid,
+                                             shared.outside_loc,
+                                             false)
       end
 
       it "should not generate an exit event" do
@@ -114,13 +135,19 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a notification" do
+        expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
 
     context "when there are no events" do
       before do
-        :ok = Location.user_location_changed(shared.jid, shared.outside_loc)
+        :ok = Location.user_location_changed(shared.jid,
+                                             shared.outside_loc,
+                                             false)
       end
 
       it "should not generate an exit event" do
@@ -128,6 +155,10 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a notification" do
+        expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
         expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
@@ -148,7 +179,7 @@ defmodule Wocky.LocationSpec do
                        follow_me: true,
                        follow_me_expiry: expiry)
 
-        :ok = Location.user_location_changed(shared.jid, shared.loc)
+        :ok = Location.user_location_changed(shared.jid, shared.loc, false)
       end
 
       it "should update the bot location" do
@@ -164,7 +195,7 @@ defmodule Wocky.LocationSpec do
                        follow_me: true,
                        follow_me_expiry: expiry)
 
-        :ok = Location.user_location_changed(shared.jid, shared.loc)
+        :ok = Location.user_location_changed(shared.jid, shared.loc, false)
       end
 
       it "should not update the bot location" do

@@ -1,7 +1,8 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Exref, ignore: [insert: 1, new: 1, new: 2]
+  use Exref, ignore: [insert: 1, new: 1, new: 2, to_jid: 1]
+  use Wocky.Ejabberd
   alias :wocky_db, as: Db
 
   @type t :: %__MODULE__{
@@ -51,6 +52,16 @@ defmodule Wocky.Bot do
   @spec make_id :: binary
   def make_id do
     :wocky_db.create_id
+  end
+
+  @spec to_jid(Wocky.Bot.t) :: Ejabberd.jid
+  def to_jid(bot) do
+    :wocky_bot_util.make_jid(bot.server, bot.id)
+  end
+
+  @spec to_jid_string(Wocky.Bot.t) :: binary
+  def to_jid_string(bot) do
+    bot |> to_jid |> :jid.to_binary
   end
 
   @spec get(binary) :: nil | map

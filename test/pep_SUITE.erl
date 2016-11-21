@@ -19,11 +19,7 @@
 all() ->
     [publish_presence,
      publish_roster,
-     geoloc,
-     bad_geoloc,
-     end_geoloc,
-     bad_requests
-    ].
+     bad_requests].
 
 suite() ->
     escalus:suite().
@@ -94,46 +90,6 @@ publish_roster(Config) ->
     mod_wocky_pep:unregister_handler(?NS_TEST, roster, ?MODULE).
 
 
-geoloc(Config) ->
-    %% Geoloc is whitelist, which currently means owner-only.
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-                  fun (Alice, Bob, Carol) ->
-        test_helper:subscribe(Alice, Bob),
-        Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                               geoloc_item(), <<"123">>,
-                                               {pep, ?NS_GEOLOC}),
-        escalus:send(Alice, Stanza),
-        Received = escalus:wait_for_stanzas(Alice, 2),
-        escalus:assert_many([is_message, is_iq_result], Received),
-        test_helper:ensure_all_clean([Bob, Carol])
-    end).
-
-bad_geoloc(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-                  fun (Alice, Bob, Carol) ->
-        test_helper:subscribe(Alice, Bob),
-        Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                               bad_geoloc_item(), <<"123">>,
-                                               {pep, ?NS_GEOLOC}),
-        escalus:send(Alice, Stanza),
-        Received = escalus:wait_for_stanza(Alice),
-        escalus:assert(is_iq_result, Received),
-        test_helper:ensure_all_clean([Bob, Carol])
-    end).
-
-end_geoloc(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-                  fun (Alice, Bob, Carol) ->
-        test_helper:subscribe(Alice, Bob),
-        Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                               end_geoloc_item(), <<"123">>,
-                                               {pep, ?NS_GEOLOC}),
-        escalus:send(Alice, Stanza),
-        Received = escalus:wait_for_stanzas(Alice, 2),
-        escalus:assert_many([is_message, is_iq_result], Received),
-        test_helper:ensure_all_clean([Bob, Carol])
-    end).
-
 bad_requests(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         %% Non pubsub request
@@ -177,30 +133,6 @@ pub_item() ->
            attrs = [{<<"xmlns">>, ?NS_TEST}]}.
 
 pub_node() -> ?NS_TEST.
-
-geoloc_item() ->
-    #xmlel{name = <<"geoloc">>,
-           attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = geoloc_data()}.
-
-bad_geoloc_item() ->
-    #xmlel{name = <<"geoloc">>,
-           attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = tl(geoloc_data())}.
-
-end_geoloc_item() ->
-    #xmlel{name = <<"geoloc">>,
-           attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = []}.
-
-geoloc_data() ->
-    [cdata_item(<<"lat">>, <<"6.789">>),
-     cdata_item(<<"lon">>, <<"-77">>),
-     cdata_item(<<"accuracy">>, <<"1.23">>)].
-
-cdata_item(Name, Val) ->
-    #xmlel{name = Name,
-           children = [#xmlcdata{content = Val}]}.
 
 %%--------------------------------------------------------------------
 %% Identity PEP hook

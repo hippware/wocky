@@ -1,7 +1,7 @@
 defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
-  use Exref, ignore: [__struct__: 0, __struct__: 1]
+  use Exref, ignore: [__struct__: 0, __struct__: 1, user_location_changed: 3]
   use Wocky.Ejabberd
   alias Wocky.Location
   alias Wocky.User
@@ -28,27 +28,41 @@ defmodule Wocky.Location do
   Process a location change event for a user. The processing happens
   asynchronously and the function always returns `:ok`.
   """
-  @spec user_location_changed(Ejabberd.jid, location_tuple) :: :ok
-  def user_location_changed(jid, {lat, lon, accuracy}) do
+  def user_location_changed(user, location, async \\ true)
+
+  @spec user_location_changed(Ejabberd.jid, location_tuple, boolean) :: :ok
+  def user_location_changed(jid, {lat, lon, accuracy}, async) do
     location = %Location{lat: lat, lon: lon, accuracy: accuracy}
     user = User.from_jid(jid)
 
-    user_location_changed(user, location)
+    user_location_changed(user, location, async)
   end
 
-  @spec user_location_changed(User.t, Location.t) :: :ok
-  def user_location_changed(user, location) do
+  @spec user_location_changed(User.t, Location.t, boolean) :: :ok
+  def user_location_changed(user, location, true) do
+    {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
+    {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
+
+    :ok
+  end
+  def user_location_changed(user, location, false) do
+    check_for_bot_events(user, location)
+    update_bot_locations(user, location)
+    :ok
+  end
+
+  defp check_for_bot_events(user, location) do
     user
     |> User.set_location(location)
     |> User.get_followed_bots
     |> bots_with_events(user, location)
     |> Enum.each(&trigger_bot_notification(user, &1))
+  end
 
+  defp update_bot_locations(user, location) do
     user
     |> owned_bots_with_follow_me
     |> Enum.each(&Bot.set_location(&1, location))
-
-    :ok
   end
 
   defp bots_with_events(bots, user, location) do
@@ -58,11 +72,12 @@ defmodule Wocky.Location do
   defp check_for_event(bot_id, user, location, acc) do
     :ok = Logger.debug(
       "Checking #{bot_id} for collision at #{inspect(location)}...")
-    if bot_id |> Bot.get |> intersects?(location) do
+    bot = Bot.get(bot_id)
+    if intersects?(bot, location) do
       :ok = Logger.debug("User is within the perimeter of #{bot_id}")
       if check_for_enter_event(user, bot_id) do
         User.add_bot_event(user, bot_id, :enter)
-        [{bot_id, :enter} | acc]
+        [{bot, :enter} | acc]
       else
         acc
       end
@@ -70,7 +85,7 @@ defmodule Wocky.Location do
       :ok = Logger.debug("User is outside of the perimeter of #{bot_id}")
       if check_for_exit_event(user, bot_id) do
         User.add_bot_event(user, bot_id, :exit)
-        [{bot_id, :exit} | acc]
+        [{bot, :exit} | acc]
       else
         acc
       end
@@ -99,12 +114,50 @@ defmodule Wocky.Location do
     end
   end
 
-  defp trigger_bot_notification(user, {bot_id, event}) do
+  defp trigger_bot_notification(user, {bot, event}) do
     jid = User.to_jid_string(user)
-    :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot_id}")
+    :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
+    :ok = send_push_notification(user, bot, event)
+    :ok = send_notification(user, bot, event)
+  end
+
+  defp send_push_notification(user, bot, event) do
     jid = User.to_jid(user)
-    :wocky_notification_handler.notify_bot_event(jid, bot_id, event)
+    :wocky_notification_handler.notify_bot_event(jid, bot.id, event)
+  end
+
+  defp send_notification(user, bot, event) do
+    :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
+                           User.to_bare_jid(user),
+                           bot_notification_stanza(user, bot, event))
+  end
+
+  defp bot_notification_stanza(user, bot, event) do
+    user_jid = User.to_bare_jid_string(user)
+    bot_jid = Bot.to_jid_string(bot)
+    xmlel(name: "message",
+          attrs: [
+            {"from", :wocky_app.server},
+            {"to", user_jid},
+            {"type", "headline"}
+          ],
+          children: [
+            xmlel(name: "bot", attrs: [{"xmlns", "hippware.com/hxep/bot"}],
+                  children: [
+                    xmlel(name: "jid", children: [xmlcdata(content: bot_jid)]),
+                    xmlel(name: "id", children: [xmlcdata(content: bot.id)]),
+                    xmlel(name: "server", children: [
+                            xmlcdata(content: bot.server)
+                          ]),
+                    xmlel(name: "action", children: [
+                            xmlcdata(content: to_string(event))
+                          ]),
+                    xmlel(name: "user-jid", children: [
+                            xmlcdata(content: user_jid)
+                          ])
+                  ])
+          ])
   end
 
   defp owned_bots_with_follow_me(user) do
