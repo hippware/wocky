@@ -2,6 +2,28 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+config :distillery,
+  no_warn_missing: [
+    :distillery,
+    :dialyxir,
+    :edown,
+    :escalus,
+    :exref,
+    :fun_chain,
+    :hamcrest,
+    :meck,
+    :mix_ct,
+    :mix_elvis,
+    :mix_eunit,
+    :mustache,
+    :pa,
+    :parse_trans,
+    :proper,
+    :protobuffs,
+    :riak_pb,
+    :riakc
+  ]
+
 config :wocky,
   keyspace_prefix: 'wocky_'
 

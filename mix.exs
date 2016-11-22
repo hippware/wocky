@@ -71,7 +71,8 @@ defmodule Wocky.Mixfile do
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
-       :erlando, :logger_lager_backend,
+       :erlando, :logger_lager_backend, :lager_syslog, :syslog,
+       :exconstructor, :erlware_commons,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
@@ -141,7 +142,7 @@ defmodule Wocky.Mixfile do
       {:pretty_errors, github: "eproxus/pretty_errors",   branch: "master", manager: :rebar},
 
       ## build dependencies (not included in release)
-      {:exrm,          "~> 1.0"},
+      {:distillery,    "~> 0.10.1"},
       {:edown,         "~> 0.8.1", override: true},
       # erlando's app file is b0rked so we need to override the dep here.
       {:erlando, ~r//, github: "rabbitmq/erlando",        branch: "master", override: true},
