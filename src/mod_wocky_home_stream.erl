@@ -25,27 +25,39 @@
 -include("wocky.hrl").
 -include("wocky_publishing.hrl").
 
--define(SUBSCRIPTION_TABLE, home_stream_subscriptions).
-
 -define(PACKET_FILTER_PRIORITY, 40).
+-define(NODE_CLEANUP_PRIORITY, 80).
+
+-record(hs_subscription,
+        {user     :: ejabberd:luser() | '_',
+         server   :: ejabberd:lserver() | '_',
+         resource :: ejabberd:lresource() | '_',
+         node     :: node() | '_'
+        }).
 
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
 
 start(Host, _Opts) ->
-    _ = ets:new(?SUBSCRIPTION_TABLE,
-                [named_table, public, {read_concurrency, true}]),
+    mnesia:create_table(
+      hs_subscription, [{ram_copies, [node()]}, {type, bag},
+                        {attributes, record_info(fields, hs_subscription)}]),
+    mnesia:add_table_copy(hs_subscription, node(), ram_copies),
+
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
     ejabberd_hooks:add(filter_local_packet, Host,
                        filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
+    ejabberd_hooks:add(node_cleanup, global,
+                       node_cleanup(_), ?NODE_CLEANUP_PRIORITY),
     ok.
 
 stop(Host) ->
+    ejabberd_hooks:delete(node_cleanup, global,
+                          node_cleanup(_), ?NODE_CLEANUP_PRIORITY),
     ejabberd_hooks:delete(filter_local_packet, Host,
                           filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
     wocky_publishing_handler:unregister(?HOME_STREAM_NODE, ?MODULE),
-    ets:delete(?SUBSCRIPTION_TABLE),
     ok.
 
 %%%===================================================================
@@ -85,16 +97,21 @@ get(#jid{luser = User, lserver = Server}, ID) ->
 
 -spec available(ejabberd:jid(), pub_version()) -> ok.
 available(User, Version) ->
-    SimpleJID = jid:to_lower(User),
-    ets:insert(?SUBSCRIPTION_TABLE, SimpleJID),
+    mnesia:dirty_write(make_record(User)),
     maybe_send_catchup(User, Version),
     ok.
 
 -spec unavailable(ejabberd:jid()) -> ok.
 unavailable(User) ->
-    SimpleJID = jid:to_lower(User),
-    ets:delete_object(?SUBSCRIPTION_TABLE, SimpleJID),
+    mnesia:dirty_delete_object(make_record(User)),
     ok.
+
+make_record(User) ->
+    {U, S, R} = jid:to_lower(User),
+    #hs_subscription{user = U,
+                     server = S,
+                     resource = R,
+                     node = node()}.
 
 %%%===================================================================
 %%% Packet filtering API
@@ -169,6 +186,14 @@ maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
 
 %%%===================================================================
+%%% Cleanup hook
+%%%===================================================================
+
+node_cleanup(Node) ->
+    ToClean = mnesia:dirty_match_object(#hs_subscription{node = Node, _ = '_'}),
+    lists:foreach(mnesia:dirty_delete_object(_), ToClean).
+
+%%%===================================================================
 %%% Helpers
 %%%===================================================================
 
@@ -197,11 +222,13 @@ maybe_send_catchup(UserJID = #jid{luser = User, lserver = Server}, Version) ->
 
 send_notifications(User, Item) ->
     {U, S} = jid:to_lus(User),
-    Subscriptions = ets:match_object(?SUBSCRIPTION_TABLE, {U, S, '_'}),
+    Subscriptions = mnesia:dirty_match_object(#hs_subscription{user = U,
+                                                               server = S,
+                                                               _ = '_'}),
     lists:foreach(send_notification(_, Item), Subscriptions).
 
-send_notification(UserSimpleJID, Item) ->
-    wocky_publishing_handler:send_notification(jid:make(UserSimpleJID),
+send_notification(#hs_subscription{user = U, server = S, resource = R}, Item) ->
+    wocky_publishing_handler:send_notification(jid:make(U, S, R),
                                                ?HOME_STREAM_NODE,
                                                Item).
 
