@@ -37,6 +37,12 @@ defmodule Schemata.BotSubscriberToSharedMigration do
 
     drop :view, named: :subscribed_bot, in: :wocky_db.local_keyspace
     drop :table, named: :bot_subscriber, in: :wocky_db.local_keyspace
+
+    drop :view, named: :user_bot, in: :wocky_db.shared_keyspace
+    create_view :user_bot, in: :wocky_db.shared_keyspace,
+      from: :bot,
+      columns: [:owner, :id, :server, :follow_me, :follow_me_expiry],
+      primary_key: [:owner, :id]
   end
 
   def down do
@@ -64,5 +70,11 @@ defmodule Schemata.BotSubscriberToSharedMigration do
 
     drop :view, named: :subscribed_bot, in: :wocky_db.shared_keyspace
     drop :table, named: :bot_subscriber, in: :wocky_db.shared_keyspace
+
+    drop :view, named: :user_bot, in: :wocky_db.shared_keyspace
+    create_view :user_bot, in: :wocky_db.shared_keyspace,
+      from: :bot,
+      columns: [:owner, :id, :follow_me, :follow_me_expiry],
+      primary_key: [:owner, :id]
   end
 end
