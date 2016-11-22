@@ -29,7 +29,7 @@
 check_owner(Server, ID, User) ->
     case jid:are_bare_equal(wocky_db_bot:owner(Server, ID), User) of
         true -> ok;
-        false -> {error, ?ERR_ITEM_NOT_FOUND}
+        false -> {error, ?ERR_FORBIDDEN}
     end.
 
 check_access(Server, ID, From) ->
