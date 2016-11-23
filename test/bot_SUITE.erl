@@ -270,7 +270,8 @@ retrieve_for_user(Config) ->
         IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
         {_OwnerBots, FriendsOnlyBots, FollowersBots} = distribute(IDs),
 
-        FriendsBots = lists:sort(FriendsOnlyBots ++ FollowersBots),
+        FriendsBots = lists:sort(wocky_util:v1_uuid_order(_, _),
+                                 FriendsOnlyBots ++ FollowersBots),
 
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, FriendsOnlyBots),
 

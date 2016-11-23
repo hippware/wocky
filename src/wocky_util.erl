@@ -26,7 +26,9 @@
    make_error_iq_response/2,
 
    is_friend/2,
-   is_follower/2
+   is_follower/2,
+
+   v1_uuid_order/2
         ]).
 
 -export_type([hook/0]).
@@ -139,3 +141,10 @@ is_follower(Subscription, Groups) ->
     (Subscription =:= both orelse Subscription =:= from)
     andalso
     not lists:member(<<"__blocked__">>, Groups).
+
+%% Sorting function to sort v1 UUIDs by time (as is done by C*)
+-spec v1_uuid_order(binary(), binary()) -> boolean().
+v1_uuid_order(UUID1, UUID2) ->
+    uuid:get_v1_time(uuid:string_to_uuid(UUID1))
+    =<
+    uuid:get_v1_time(uuid:string_to_uuid(UUID2)).
