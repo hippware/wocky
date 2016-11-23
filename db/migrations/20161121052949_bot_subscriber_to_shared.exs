@@ -14,7 +14,7 @@ defmodule Schemata.BotSubscriberToSharedMigration do
       ],
       primary_key: [:bot, :user]
 
-    create_view :subscribed_bot, in: :wocky_db.local_keyspace,
+    create_view :subscribed_bot, in: :wocky_db.shared_keyspace,
       from: :bot_subscriber,
       columns: :all,
       primary_key: [:user, :bot]
