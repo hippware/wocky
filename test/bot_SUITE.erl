@@ -743,16 +743,20 @@ publish_image_item(Config) ->
 
 item_images(Config) ->
     reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
+      fun(Alice, Bob, Tim) ->
         lists:foreach(publish_item_with_image(_, Alice), lists:seq(0, 9)),
 
         %% Alice can see all the images
         Stanza = expect_iq_success(item_image_stanza(), Alice),
         check_returned_images(Stanza, 0, 9),
 
-        %% Bob cannot since he has no visibility of the bot
-        expect_iq_error(item_image_stanza(), Bob)
+        %% So can bob who can access the bot
+        Stanza2 = expect_iq_success(item_image_stanza(), Bob),
+        check_returned_images(Stanza2, 0, 9),
+
+        %% Tim cannot since he can't see the bot
+        expect_iq_error(item_image_stanza(), Tim)
       end).
 
 follow_me(Config) ->

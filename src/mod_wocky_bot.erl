@@ -311,7 +311,7 @@ handle_item_images(From, #jid{lserver = Server}, IQ, Attrs) ->
     do([error_m ||
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         RSMIn <- rsm_util:get_rsm(IQ),
-        wocky_bot_util:check_owner(Server, ID, From),
+        wocky_bot_util:check_access(Server, ID, From),
         Images <- get_bot_item_images(Server, ID),
         {FilteredImages, RSMOut} <-
         {ok, rsm_util:filter_with_rsm(Images, RSMIn)},
