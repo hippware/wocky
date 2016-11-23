@@ -2,7 +2,6 @@
 %%% @doc Integration test suite for home stream
 -module(home_stream_SUITE).
 -compile(export_all).
--compile({parse_transform, fun_chain}).
 
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
@@ -13,6 +12,7 @@
 
 -include("wocky_db_seed.hrl").
 
+-compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
 
@@ -59,7 +59,8 @@ init_per_suite(Config) ->
     Users = escalus:get_users(users()),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users)
+        escalus:create_users(Users),
+        test_helper:make_everyone_friends(Users)
     ).
 
 end_per_suite(Config) ->
@@ -176,9 +177,6 @@ subscribe_version(Config) ->
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
                                            query_el(?HS_V_2))),
 
-        %% The presence we send to alice's home stream will be rejected
-        escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Bob)),
-
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
         escalus:assert_many([is_iq_result, is_message],
@@ -219,8 +217,14 @@ get_item(Config) ->
 auto_publish_bot(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
       fun(Alice, Bob, Carol, Tim) ->
-        test_helper:subscribe_pair(Bob, Alice),
-        test_helper:subscribe_pair(Carol, Alice),
+        %% This is not a good way to drop the Alice/Tim friendship, however
+        %% I think our de-friend system is a bit broken at the moment -
+        %% test_helper:remove_contact/2 results in an asymmetric pair of rosters
+        %% whcih should never happpen. This workaround will suffice until
+        %% that gets fixed.
+        wocky_db_roster:delete_roster_item(?ALICE, ?LOCAL_CONTEXT, ?TIM_B_JID),
+        wocky_db_roster:delete_roster_item(?TIM, ?LOCAL_CONTEXT, ?ALICE_B_JID),
+
         test_helper:subscribe(Tim, Alice),
 
         check_home_stream_sizes(0, [Bob]),
@@ -260,7 +264,6 @@ auto_publish_bot(Config) ->
       end).
 
 auto_publish_bot_item(Config) ->
-    wocky_db:truncate(shared, roster),
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         check_home_stream_sizes(1, [Bob]),

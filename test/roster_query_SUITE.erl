@@ -2,7 +2,9 @@
 %%% @doc Integration test suite for mod_roster_query
 -module(roster_query_SUITE).
 -compile(export_all).
+
 -compile({parse_transform, fun_chain}).
+-compile({parse_transform, cut}).
 
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
@@ -32,18 +34,21 @@ suite() ->
 %% Init & teardown
 %%--------------------------------------------------------------------
 
+users() ->
+    [alice, bob, carol, karen].
+
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:seed_tables(shared, [roster]),
-    Users = escalus:get_users([alice, bob, carol, karen]),
+    Users = escalus:get_users(users()),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         escalus:create_users(Users)
     ).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
+    escalus:delete_users(Config, escalus:get_users(users())),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
@@ -62,6 +67,7 @@ end_per_testcase(CaseName, Config) ->
 get_roster(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
+        privacy_helper:set_and_activate(Bob, <<"allow_all">>),
 
         %% No specified version returns the full roster
         Stanza = expect_iq_success_u(get_roster_stanza(undefined), Bob, Alice),
@@ -87,6 +93,10 @@ invalid_query(Config) ->
 roster_change_notify(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
+         lists:foreach(
+           privacy_helper:set_and_activate(_, <<"allow_all">>),
+           [Bob, Carol, Karen]),
+
          %% Alice removes a contact
          escalus:send(Alice, escalus_stanza:roster_remove_contact(Karen)),
          escalus:assert_many([is_roster_set, is_iq_result],

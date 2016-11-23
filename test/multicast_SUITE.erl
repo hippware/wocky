@@ -92,6 +92,7 @@ to(Config) ->
     ok = wocky_db:clear_tables(shared, [roster]),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Tim, Robert) ->
+        test_helper:subscribe_pair(Bob, Alice),
         SendStanza = multicast_stanza([[{<<"type">>, <<"to">>},
                                         {<<"jid">>, ?BOB_B_JID}]],
                                       ?NS_ADDRESS),
@@ -107,6 +108,7 @@ mix(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
                            {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Carol, Tim, Robert) ->
+        test_helper:subscribe_pair(Robert, Alice),
         test_helper:subscribe_pair(Bob, Alice),
         test_helper:subscribe(Tim, Alice),
         SendStanza = multicast_stanza([[{<<"type">>, <<"followers">>}],

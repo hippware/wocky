@@ -200,13 +200,16 @@ subscribe_pair(Alice, Bob) ->
 
 remove_friend(Who, Whom) ->
     escalus:send(Who, escalus_stanza:roster_remove_contact(Whom)),
-    IsPresUnavailable =
-    fun(S) ->
-            escalus_pred:is_presence_with_type(<<"unavailable">>, S)
-    end,
-    escalus:assert_many([is_roster_set, is_iq_result, IsPresUnavailable],
-                        escalus:wait_for_stanzas(Who, 3)),
-    escalus:assert(IsPresUnavailable, escalus:wait_for_stanza(Whom)).
+    escalus:assert_many(
+      [is_roster_set, is_iq_result,
+       escalus_pred:is_presence_with_type(<<"unavailable">>, _)],
+      escalus:wait_for_stanzas(Who, 3)),
+    escalus:assert_many(
+      [is_roster_set,
+       escalus_pred:is_presence_with_type(<<"unsubscribe">>, _),
+       escalus_pred:is_presence_with_type(<<"unavailable">>, _)
+      ],
+      escalus:wait_for_stanzas(Whom, 3)).
 
 start_clients_before_all_friends(Config, ClientDescs) ->
     ct:log("start_clients_all_friends ~p", [ClientDescs]),
