@@ -15,7 +15,7 @@
 -ignore_xref([seed_table/2, seed_tables/2, seed_data/2, maybe_seed_s3_file/2]).
 
 -ifdef(TEST).
--export([make_session/3, make_offline_msgs/5, get_nowsecs/0,
+-export([make_offline_msgs/5, get_nowsecs/0,
          archive_users/0, msg_xml_packet/1]).
 -endif.
 
@@ -98,12 +98,6 @@ seed_data(last_activity, Server) ->
           A#{timestamp := wocky_db:seconds_to_timestamp(TS), server => Server}
       end,
       Activity);
-seed_data(session, Server) ->
-    lists:flatmap(
-      fun (#{user := User, sids := SIDs}) ->
-          [make_session(User, Server, SID) || SID <- SIDs]
-      end,
-      session_sids());
 seed_data(offline_msg, Server) ->
     NowSecs = get_nowsecs(),
     lists:flatmap(
@@ -260,66 +254,9 @@ seed_data(home_stream, Server) ->
 seed_data(_, _) ->
     [].
 
-%% Static SID data that can be used to populate the session
-%% table. We are using static SIDs rather than radomly generated values so that
-%% we can populate both tables without having to memoize the random data.
-session_sids() -> [
-    #{user => ?ALICE,  sids => [{{1, 2, 3},    list_to_pid("<0.2319.0>")},
-                                {{4, 5, 6},    list_to_pid("<0.2321.0>")},
-                                {{7, 8, 9},    list_to_pid("<0.2323.0>")},
-                                {{10, 11, 12}, list_to_pid("<0.2325.0>")},
-                                {{13, 14, 15}, list_to_pid("<0.2327.0>")}]},
-    #{user => ?CAROL,  sids => [{{16, 17, 18}, list_to_pid("<0.2456.0>")},
-                                {{19, 20, 21}, list_to_pid("<0.2457.0>")},
-                                {{22, 23, 24}, list_to_pid("<0.2458.0>")},
-                                {{25, 26, 27}, list_to_pid("<0.2459.0>")},
-                                {{28, 29, 30}, list_to_pid("<0.2460.0>")}]},
-    #{user => ?BOB,    sids => [{{31, 32, 33}, list_to_pid("<0.2466.0>")},
-                                {{34, 35, 36}, list_to_pid("<0.2467.0>")},
-                                {{37, 38, 39}, list_to_pid("<0.2468.0>")},
-                                {{40, 41, 42}, list_to_pid("<0.2469.0>")},
-                                {{43, 44, 45}, list_to_pid("<0.2470.0>")}]},
-    #{user => ?KAREN,  sids => [{{46, 47, 48}, list_to_pid("<0.2472.0>")},
-                                {{49, 50, 51}, list_to_pid("<0.2473.0>")},
-                                {{52, 53, 54}, list_to_pid("<0.2474.0>")},
-                                {{55, 56, 57}, list_to_pid("<0.2475.0>")},
-                                {{58, 59, 60}, list_to_pid("<0.2476.0>")}]},
-    #{user => ?ROBERT, sids => [{{61, 62, 63}, list_to_pid("<0.2478.0>")},
-                                {{64, 65, 66}, list_to_pid("<0.2479.0>")},
-                                {{67, 68, 69}, list_to_pid("<0.2480.0>")},
-                                {{70, 71, 72}, list_to_pid("<0.2481.0>")},
-                                {{73, 74, 75}, list_to_pid("<0.2482.0>")}]}
-].
-
-
 %%====================================================================
 %% Data generation helpers
 %%====================================================================
-
-make_session(User, Server, SID) ->
-    #{user => User,
-      sid => term_to_binary(SID),
-      server => Server,
-      node => node(),
-      jid_user => User,
-      jid_server => Server,
-      jid_resource => fake_resource(),
-      priority => random_priority(),
-      info => term_to_binary(session_info())}.
-
-fake_resource() ->
-    integer_to_binary(erlang:unique_integer()).
-
-random_priority() ->
-    case rand:uniform(11) of
-        11 -> -1;
-        N -> N
-    end.
-
-session_info() ->
-    [{ip, {{127, 0, 0, 1}, rand:uniform(65536)}},
-     {conn, c2s_tls},
-     {auth_module, ejabberd_auth_wocky}].
 
 get_nowsecs() ->
     {Mega, Sec, _} = os:timestamp(),

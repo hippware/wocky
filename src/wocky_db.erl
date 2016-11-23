@@ -142,7 +142,7 @@ clear_tables(Context, Tables) ->
 -spec clear_user_tables(context()) -> ok.
 clear_user_tables(Context) ->
     clear_tables(shared, [user, handle_to_user, phone_number_to_user, roster]),
-    clear_tables(Context, [session, auth_token, last_activity, offline_msg,
+    clear_tables(Context, [auth_token, last_activity, offline_msg,
                            privacy, privacy_item, location, conversation]).
 
 
