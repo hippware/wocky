@@ -237,8 +237,8 @@ handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
 handle_following(From, #jid{lserver = Server}, IQ) ->
     do([error_m ||
         RSMIn <- rsm_util:get_rsm(IQ),
-        BotIDs <- {ok, wocky_db_bot:followed_bots(Server, From)},
-        {Bots, RSMOut} <- filter_bots_for_user( BotIDs, Server, From, RSMIn),
+        BotJIDs <- {ok, wocky_db_bot:followed_bots(From)},
+        {Bots, RSMOut} <- filter_bots_for_user(BotJIDs, Server, From, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
@@ -254,15 +254,15 @@ get_bots_for_user(From, Server, IQ, Attrs) ->
         User <- wocky_xml:get_attr(<<"user">>, Attrs),
         UserJID <- make_jid(User),
         RSMIn <- rsm_util:get_rsm(IQ),
-        BotIDs <- {ok, wocky_db_bot:owned_bots(Server, UserJID)},
-        {Bots, RSMOut} <- filter_bots_for_user(BotIDs, Server, From, RSMIn),
+        BotJIDs <- {ok, wocky_db_bot:owned_bots(UserJID)},
+        {Bots, RSMOut} <- filter_bots_for_user(BotJIDs, Server, From, RSMIn),
         {ok, users_bots_result(Bots, RSMOut)}
        ]).
 
-filter_bots_for_user(BotIDs, Server, From, RSMIn) ->
-    VisibleIDs = lists:filter(access_filter(Server, From, _), BotIDs),
+filter_bots_for_user(BotJIDs, Server, From, RSMIn) ->
+    VisibleJIDs = lists:filter(access_filter(Server, From, _), BotJIDs),
     % Sort bots with most recently updated last
-    Bots = [wocky_db_bot:get(Server, ID) || ID <- VisibleIDs],
+    Bots = [wocky_db_bot:get_bot(JID) || JID <- VisibleJIDs],
     SortedBots = lists:sort(update_order(_, _), Bots),
     {FilteredBots, RSMOut} = rsm_util:filter_with_rsm(SortedBots, RSMIn),
     {ok, {FilteredBots, RSMOut}}.
@@ -270,7 +270,8 @@ filter_bots_for_user(BotIDs, Server, From, RSMIn) ->
 update_order(#{updated := U1}, #{updated := U2}) ->
     U1 =< U2.
 
-access_filter(Server, From, ID) ->
+access_filter(Server, From, JID) ->
+    ID = wocky_bot_util:get_id_from_jid(JID),
     ok =:= wocky_bot_util:check_access(Server, ID, From).
 
 users_bots_result(Bots, RSMOut) ->
@@ -417,7 +418,7 @@ handle_roster_changed(From, LServer, BotID,
             wocky_xml:check_namespace(?NS_WOCKY_ROSTER, El),
             wocky_bot_util:check_owner(LServer, BotID, From),
             #{visibility := Visibility}
-                <- {ok, wocky_db_bot:get(LServer, BotID)},
+                <- {ok, wocky_db_bot:get_bot(LServer, BotID)},
             Items <- els_to_items(Children),
             UnfriendedJIDs <- get_unfriended_jids(Items),
             UnfollowedJIDs <- get_unfollowed_jids(Items),
@@ -718,7 +719,7 @@ add_bot_as_roster_viewer(#jid{luser = LUser, lserver = LServer}, Server, ID) ->
     ok.
 
 make_bot_el(Server, ID) ->
-    case wocky_db_bot:get(Server, ID) of
+    case wocky_db_bot:get_bot(Server, ID) of
         not_found ->
             {error, ?ERR_ITEM_NOT_FOUND};
         Map ->

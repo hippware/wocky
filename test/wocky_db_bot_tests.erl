@@ -8,8 +8,9 @@
 -include("wocky_bot.hrl").
 
 -import(wocky_db_bot,
-        [get/2, get_id_by_name/2, exists/2, insert/2,
+        [get_bot/1, get_bot/2, get_id_by_name/2, exists/2, insert/2,
          insert_new_name/2, owner/2, affiliations/2,
+         owned_bots/1, followed_bots/1,
          affiliations_from_map/1, update_affiliations/3, followers/2,
          subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
          get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
@@ -27,6 +28,8 @@ wocky_db_bot_test_() -> {
         test_insert(),
         test_insert_new_name(),
         test_owner(),
+        test_owned(),
+        test_followed(),
         test_affiliations(),
         test_affiliations_from_map(),
         test_followers(),
@@ -54,29 +57,38 @@ wocky_db_bot_test_() -> {
 
 local_tables() -> [
                    bot_name,
-                   bot_subscriber,
                    bot_item
                   ].
 
 before_all() ->
-    ok = wocky_db_seed:seed_tables(shared, [roster, bot]),
+    ok = wocky_db_seed:seed_tables(shared, [roster, bot, bot_subscriber]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()).
 
 after_all(_) ->
     ok.
 
 test_get() ->
-    { "get", [
+    { "get_bot", [
       { "returns bot data if it exists", [
         ?_assertEqual(maps:without(
                         [updated],
                         hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT))),
                       maps:without(
                         [updated],
-                        get(?LOCAL_CONTEXT, ?BOT)))
+                        get_bot(?LOCAL_CONTEXT, ?BOT))),
+        ?_assertEqual(maps:without(
+                        [updated],
+                        hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT))),
+                      maps:without(
+                        [updated],
+                        get_bot(?BOT_JID)))
       ]},
       { "returns not_found if no bot exists", [
-        ?_assertEqual(not_found, get(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, wocky_db:create_id())),
+        ?_assertEqual(not_found,
+                      get_bot(jid:make(
+                                <<>>, ?LOCAL_CONTEXT,
+                                <<"bot/", (wocky_db:create_id())/binary>>)))
       ]}
     ]}.
 
@@ -106,7 +118,8 @@ test_insert() ->
     { "insert", [
       { "inserts a new bot with the supplied parameters", inorder, [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBot)),
-        ?_assertEqual(NewBot, maps:without([updated], get(?LOCAL_CONTEXT, ID)))
+        ?_assertEqual(NewBot, maps:without([updated],
+                                           get_bot(?LOCAL_CONTEXT, ID)))
       ]}
     ]}.
 
@@ -131,6 +144,26 @@ test_owner() ->
       ]},
       { "returns not_found if the bot doesn't exist", [
         ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, wocky_db:create_id()))
+      ]}
+    ]}.
+
+test_owned() ->
+    { "owned_bots", [
+      { "gets the list of bots owned by the user", [
+        ?_assertEqual([?BOT_JID], owned_bots(?ALICE_JID))
+      ]},
+      { "returns an empty list if the user owns no bots", [
+        ?_assertEqual([], owned_bots(?TIM_JID))
+      ]}
+    ]}.
+
+test_followed() ->
+    { "followed_bots", [
+      { "gets the followed and owned bots for a user", inorder, [
+        ?_assertEqual([?BOT_JID], followed_bots(?ALICE_JID)),
+        ?_assertEqual([], followed_bots(?TIM_JID)),
+        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID, true)),
+        ?_assertEqual([?BOT_JID], followed_bots(?TIM_JID))
       ]}
     ]}.
 
@@ -161,7 +194,7 @@ test_affiliations_from_map() ->
        inorder, [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBot)),
         ?_assertEqual([{?BOB_JID, owner}],
-                      affiliations_from_map(get(?LOCAL_CONTEXT, ID)))
+                      affiliations_from_map(get_bot(?LOCAL_CONTEXT, ID)))
       ]}
     ]}.
 
@@ -188,7 +221,7 @@ test_update_affiliations() ->
                                               [{?KAREN_JID, none},
                                                {?ALICE_JID, spectator}
                                               ])),
-        ?_assertEqual(not_found, get(?LOCAL_CONTEXT, ID))
+        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, ID))
       ]}
     ]}.
 
@@ -259,23 +292,23 @@ test_publish_item() ->
     { "publish_item", inorder, [
       { "publishes a new item when one doesn't exist", inorder, [
         ?_test(begin
-                   #{updated := U} = get(?LOCAL_CONTEXT, ?BOT),
+                   #{updated := U} = get_bot(?LOCAL_CONTEXT, ?BOT),
                    ?assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
                                                  Content, false)),
                    ?assertMatch(#{id := ID, stanza := Content},
                                 get_item(?LOCAL_CONTEXT, ?BOT, ID)),
-                   #{updated := U2} = get(?LOCAL_CONTEXT, ?BOT),
+                   #{updated := U2} = get_bot(?LOCAL_CONTEXT, ?BOT),
                    ?assert(U < U2)
                end)
       ]},
       { "updates an existing item", inorder, [
         ?_test(begin
-                   #{updated := U} = get(?LOCAL_CONTEXT, ?BOT),
+                   #{updated := U} = get_bot(?LOCAL_CONTEXT, ?BOT),
                    ?assertEqual(ok, publish_item(?LOCAL_CONTEXT, ?BOT, ID,
                                                  <<"Updated content">>, false)),
                    ?assertMatch(#{id := ID, stanza := <<"Updated content">>},
                                 get_item(?LOCAL_CONTEXT, ?BOT, ID)),
-                   #{updated := U2} = get(?LOCAL_CONTEXT, ?BOT),
+                   #{updated := U2} = get_bot(?LOCAL_CONTEXT, ?BOT),
                    ?assertEqual(U, U2)
                end)
       ]}
@@ -375,14 +408,14 @@ test_delete() ->
     { "delete", [
       { "deletes the specified bot and its shortname lookup, if present", [
         ?_assertEqual(ok, delete(?LOCAL_CONTEXT, ?BOT)),
-        ?_assertEqual(not_found, get(?LOCAL_CONTEXT, ?BOT)),
+        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, ?BOT)),
         ?_assertEqual(not_found, get_id_by_name(?LOCAL_CONTEXT, ?BOT))
       ]},
       { "deletes cleanly when no shortname exists", [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT,
                                  maps:without([shortname], NewBot))),
         ?_assertEqual(ok, delete(?LOCAL_CONTEXT, ID)),
-        ?_assertEqual(not_found, get(?LOCAL_CONTEXT, ID))
+        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, ID))
       ]},
       { "does not fail on invalid ID", [
         ?_assertEqual(ok, delete(?LOCAL_CONTEXT, wocky_db:create_id()))
@@ -405,9 +438,9 @@ test_dissociate_user() ->
         ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDFriends)),
         ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDPub)),
         ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_WHITELIST},
-                      get(?LOCAL_CONTEXT, IDFriends)),
+                      get_bot(?LOCAL_CONTEXT, IDFriends)),
         ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_PUBLIC},
-                      get(?LOCAL_CONTEXT, IDPub)),
+                      get_bot(?LOCAL_CONTEXT, IDPub)),
         ?_assertEqual(4, length(affiliations(?LOCAL_CONTEXT, IDFriends))),
         ?_assertEqual(0, length(affiliations(?LOCAL_CONTEXT, IDPub)))
       ]}

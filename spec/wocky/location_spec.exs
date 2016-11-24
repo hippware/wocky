@@ -15,10 +15,11 @@ defmodule Wocky.LocationSpec do
 
     bots = Enum.into(bot_list, %{},
                      fn (%Bot{id: id} = b) -> {id, b} end)
+    bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
 
     allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
-    allow User |> to(accept :get_followed_bots, fn (_) -> Map.keys(bots) end)
+    allow User |> to(accept :get_followed_bots, fn (_) -> bot_jids end)
     allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
     allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
     allow Bot |> to(accept :get, fn (key) -> bots[key] end)

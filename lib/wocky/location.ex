@@ -55,6 +55,7 @@ defmodule Wocky.Location do
     user
     |> User.set_location(location)
     |> User.get_followed_bots
+    |> Enum.map(&:wocky_bot_util.get_id_from_jid(&1))
     |> bots_with_events(user, location)
     |> Enum.each(&trigger_bot_notification(user, &1))
   end

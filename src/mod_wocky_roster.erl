@@ -465,7 +465,8 @@ filter_local_packet_hook(P = {From, To, Packet}) ->
     case handle_local_packet(From, To, Packet) of
         ok -> drop;
         {error, _} -> P
-    end.
+    end;
+filter_local_packet_hook(Other) -> Other.
 
 handle_local_packet(_From, To, Packet) ->
     do([error_m ||
