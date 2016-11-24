@@ -20,8 +20,8 @@
                       get_hs_stanza/0, bot_node/1,
                       check_hs_result/4, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
-                      retract_item_stanza/2, subscribe_stanza/1,
-                      follow_cdata/1, node_el/2, node_el/3
+                      retract_item_stanza/2, subscribe_stanza/0,
+                      node_el/2, node_el/3
                      ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
@@ -53,7 +53,7 @@ all() ->
      delete,
      errors,
      retrieve_for_user,
-     get_followed,
+     get_subscribed,
      update_affiliations,
      friends_only_permissions,
      roster_change_triggers,
@@ -181,9 +181,9 @@ subscribers(Config) ->
       fun(Alice, Bob) ->
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [{?ALICE_B_JID, true},
-                                   {?CAROL_B_JID, false},
-                                   {?KAREN_B_JID, true}]),
+        check_subscribers(Stanza, [?ALICE_B_JID,
+                                   ?CAROL_B_JID,
+                                   ?KAREN_B_JID]),
 
         % Bob can't because he's not the owner
         expect_iq_error(affiliations_stanza(), Bob)
@@ -196,8 +196,8 @@ unsubscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [{?ALICE_B_JID, true},
-                                   {?KAREN_B_JID, true}])
+        check_subscribers(Stanza, [?ALICE_B_JID,
+                                   ?KAREN_B_JID])
       end).
 
 subscribe(Config) ->
@@ -215,27 +215,27 @@ subscribe(Config) ->
           is_affiliation_update(escalus_client:short_jid(Carol), spectator, _),
           escalus:wait_for_stanza(Carol)),
 
-        expect_iq_success(subscribe_stanza(true), Carol),
-        expect_iq_success(subscribe_stanza(false), Bob),
+        expect_iq_success(subscribe_stanza(), Carol),
+        expect_iq_success(subscribe_stanza(), Bob),
 
         % Tim can't be subscribed because he is not an affiliate and the
         % permission is WHITELIST
-        expect_iq_error(subscribe_stanza(true), Tim),
+        expect_iq_error(subscribe_stanza(), Tim),
 
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [{?ALICE_B_JID, true},
-                                   {?KAREN_B_JID, true},
-                                   {?CAROL_B_JID, true},
-                                   {?BOB_B_JID, false}]),
+        check_subscribers(Stanza, [?ALICE_B_JID,
+                                   ?KAREN_B_JID,
+                                   ?CAROL_B_JID,
+                                   ?BOB_B_JID]),
 
         % Update Carol's follow status
-        expect_iq_success(subscribe_stanza(false), Carol),
+        expect_iq_success(subscribe_stanza(), Carol),
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [{?ALICE_B_JID, true},
-                                    {?KAREN_B_JID, true},
-                                    {?CAROL_B_JID, false},
-                                    {?BOB_B_JID, false}])
+        check_subscribers(Stanza2, [?ALICE_B_JID,
+                                    ?KAREN_B_JID,
+                                    ?CAROL_B_JID,
+                                    ?BOB_B_JID])
       end).
 
 delete(Config) ->
@@ -333,30 +333,26 @@ retrieve_for_user(Config) ->
 
       end).
 
-get_followed(Config) ->
+get_subscribed(Config) ->
     reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
-      fun(Alice, Bob, Carol, Karen) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {karen, 1}],
+      fun(Alice, Bob, Karen) ->
         %% Make the bot public, otherwise even followers won't be able
         %% to see it if they're not affiliates
         expect_iq_success(
           change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_PUBLIC), Alice),
 
         %% Alice is the owner (and therefore a follower) so should get the bot
-        Stanza = expect_iq_success(following_stanza(#rsm_in{}), Alice),
+        Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),
         check_returned_bots(Stanza, [?BOT], 0, 1),
 
-        %% Karen is a follower so should get the bot
-        Stanza2 = expect_iq_success(following_stanza(#rsm_in{}), Karen),
+        %% Karen is a subscriber so should get the bot
+        Stanza2 = expect_iq_success(subscribed_stanza(#rsm_in{}), Karen),
         check_returned_bots(Stanza2, [?BOT], 0, 1),
 
-        %% Carol is a subscriber but not follower, so should get nothing
-        Stanza3 = expect_iq_success(following_stanza(#rsm_in{}), Carol),
-        check_returned_bots(Stanza3, [], undefined, 0),
-
         %% Bob is not subscribed to the bot at all so gets nothing
-        Stanza4 = expect_iq_success(following_stanza(#rsm_in{}), Bob),
-        check_returned_bots(Stanza4, [], undefined, 0)
+        Stanza3 = expect_iq_success(subscribed_stanza(#rsm_in{}), Bob),
+        check_returned_bots(Stanza3, [], undefined, 0)
       end).
 
 update_affiliations(Config) ->
@@ -487,7 +483,7 @@ roster_change_triggers(Config) ->
                             escalus:wait_for_stanzas(Alice, 2)),
 
         escalus:assert_many([is_pres_unavailable(),
-                             is_bot_unsubscribe(false, _)],
+                             is_bot_unsubscribe(_)],
                             escalus:wait_for_stanzas(Carol, 2)),
 
         % Carol is both a subscriber and affiliate (after we affiliate and
@@ -497,7 +493,7 @@ roster_change_triggers(Config) ->
         escalus:assert(
           is_affiliation_update(escalus_client:short_jid(Karen), spectator, _),
           escalus:wait_for_stanza(Karen)),
-        expect_iq_success(subscribe_stanza(true), Karen),
+        expect_iq_success(subscribe_stanza(), Karen),
 
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Karen)),
         escalus:assert_many([is_roster_set, is_iq_result],
@@ -506,7 +502,7 @@ roster_change_triggers(Config) ->
         escalus:assert_many([is_pres_unavailable(),
                              is_affiliation_update(
                                escalus_client:short_jid(Karen), none, _),
-                             is_bot_unsubscribe(true, _)],
+                             is_bot_unsubscribe(_)],
                             escalus:wait_for_stanzas(Karen, 3)),
 
         %% Now, set the bot to followers visibility
@@ -514,7 +510,7 @@ roster_change_triggers(Config) ->
 
         %% Make Tim a follower of Alice and of the bot
         test_helper:subscribe(Tim, Alice),
-        expect_iq_success(subscribe_stanza(true), Tim),
+        expect_iq_success(subscribe_stanza(), Tim),
 
         %% Boot Tim off as a follower of Alice
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Tim)),
@@ -525,7 +521,7 @@ roster_change_triggers(Config) ->
         escalus:assert_many([escalus_pred:is_presence_with_type(
                                <<"unsubscribed">>, _),
                              is_roster_set,
-                             is_bot_unsubscribe(true, _)],
+                             is_bot_unsubscribe(_)],
                             escalus:wait_for_stanzas(Tim, 3)),
 
         timer:sleep(500),
@@ -609,13 +605,10 @@ delete_owner(Config) ->
         lists:keyreplace("affiliates+size", 1, WhitelistFields2,
                          {"affiliates+size", int, 4}),
         ExpectedFields2 =
-        lists:keyreplace("followers+size", 1, ExpectedFields,
-                         {"followers+size", int, 0}),
-        ExpectedFields3 =
-        lists:keyreplace("subscribers+size", 1, ExpectedFields2,
+        lists:keyreplace("subscribers+size", 1, ExpectedFields,
                          {"subscribers+size", int, 0}),
         ReturnedBot3 = expect_iq_success(retrieve_stanza(ID1), Bob),
-        check_returned_bot(ReturnedBot3, ExpectedFields3),
+        check_returned_bot(ReturnedBot3, ExpectedFields2),
         expect_iq_error(retrieve_stanza(ID1), Tim),
         expect_iq_success(retrieve_stanza(ID2), Bob),
         expect_iq_success(retrieve_stanza(ID2), Tim)
@@ -856,8 +849,6 @@ expected_create_fields() ->
      {"jid",                jid,    any},
      {"image_items",        int,    0},
      {"updated",            timestamp, any},
-     {"followers+size",     int,    1}, % Owner is always a follower
-     {"followers+hash",     string, any},
      {"affiliates+size",    int,    1}, % Owner is always an affiliate
      {"affiliates+hash",    string, any},
      {"subscribers+size",   int,    1}, % Owner is always a subscriber
@@ -880,8 +871,6 @@ expected_retrieve_fields() ->
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
      {"updated",            timestamp, any},
-     {"followers+size",     int,    2}, % Owner is always an follower
-     {"followers+hash",     string, any},
      {"affiliates+size",    int,    2}, % Owner is always an affiliate
      {"affiliates+hash",    string, any},
      {"subscribers+size",   int,    3}, % Owner is always an subscriber
@@ -1013,8 +1002,8 @@ retrieve_stanza() ->
 retrieve_stanza(BotID) ->
     test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
 
-following_stanza(RSM) ->
-    test_helper:iq_get(?NS_BOT, #xmlel{name = <<"following">>,
+subscribed_stanza(RSM) ->
+    test_helper:iq_get(?NS_BOT, #xmlel{name = <<"subscribed">>,
                                        children = [rsm_elem(RSM)]}).
 
 bot_jid(ID) ->
@@ -1066,22 +1055,15 @@ check_subscribers(#xmlel{name = <<"iq">>, children = [SubscribersEl]},
     ?assertEqual(length(Subscribers), length(ReceivedSubscribers)),
     lists:foreach(check_subscriber(ReceivedSubscribers, _), Subscribers).
 
-check_subscriber(SubscriberEls, {Name, Follow}) ->
+check_subscriber(SubscriberEls, Name) ->
     case lists:dropwhile(fun(El) -> not is_subscriber(Name, El) end,
                          SubscriberEls) of
         [] -> ct:fail("Missing subscriber ~p", [Name]);
-        L -> check_follow(hd(L), Follow)
+        _ -> ok
     end.
 
 is_subscriber(Name, #xmlel{name = <<"subscriber">>, attrs = Attrs}) ->
     xml:get_attr(<<"jid">>, Attrs) =:= {value, Name}.
-
-check_follow(El, Follow) ->
-    case xml:get_path_s(El, [{elem, <<"follow">>}, cdata]) of
-        <<"0">> -> ?assertNot(Follow);
-        <<"1">> -> ?assert(Follow);
-        X -> ct:fail("Invalid or missing <follow> element: ~p", [X])
-    end.
 
 modify_affiliations_stanza(NewAffiliations) ->
     test_helper:iq_set(?NS_BOT,
@@ -1114,14 +1096,11 @@ is_affiliation_element(Name, Type,
     is_affiliate({Name, Type}, AffiliateEl);
 is_affiliation_element(_, _, _) ->false.
 
-is_bot_unsubscribe(OldFollow,
-                   #xmlel{name = <<"message">>, children = [Unsubscribed]}) ->
+is_bot_unsubscribe(#xmlel{name = <<"message">>, children = [Unsubscribed]}) ->
     Attrs = Unsubscribed#xmlel.attrs,
     <<"unsubscribed">> =:= Unsubscribed#xmlel.name andalso
-    has_standard_attrs(Attrs) andalso
-    follow_cdata(OldFollow) =:= xml:get_path_s(Unsubscribed,
-                                               [{elem, <<"follow">>}, cdata]);
-is_bot_unsubscribe(_, _) -> false.
+    has_standard_attrs(Attrs);
+is_bot_unsubscribe(_) -> false.
 
 has_standard_attrs(Attrs) ->
     {value, bot_node(?BOT)} =:= xml:get_attr(<<"node">>, Attrs)  andalso

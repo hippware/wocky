@@ -17,6 +17,7 @@
    coord_to_binary/1,
    null_to_list/1,
    intersection/2,
+   intersection/3,
 
    set_config_from_opt/4,
 
@@ -128,7 +129,11 @@ null_to_list(L) -> L.
 
 -spec intersection(list(), list()) -> list().
 intersection(A, B) ->
-    lists:filter(lists:member(_, B), A).
+    intersection(A, B, fun erlang:'=:='/2).
+
+-spec intersection(list(T), list(T), fun((T, T) -> boolean())) -> list(T).
+intersection(A, B, EqualityFun) ->
+    lists:filter(fun(E) -> lists:any(EqualityFun(E, _), B) end, A).
 
 -spec is_friend(subscription_type(), [binary()]) -> boolean().
 is_friend(Subscription, Groups) ->

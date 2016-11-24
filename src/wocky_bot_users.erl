@@ -16,7 +16,7 @@
 
 -export([handle_retrieve_affiliations/3,
          handle_update_affiliations/4,
-         handle_subscribe/4,
+         handle_subscribe/3,
          handle_unsubscribe/3,
          handle_retrieve_subscribers/3,
          notify_new_viewers/4]).
@@ -115,25 +115,16 @@ notify_affiliates_visibility(_, _, _, _, _) -> ok.
 %%% Action - subscribe
 %%%===================================================================
 
-handle_subscribe(From, #jid{lserver = Server}, Attrs, Children) ->
+handle_subscribe(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_access(Server, ID, From),
-        Follow <- get_follow(Children),
-        subscribe_bot(Server, ID, From, Follow),
+        subscribe_bot(Server, ID, From),
         {ok, []}
        ]).
 
-subscribe_bot(Server, ID, From, Follow) ->
-    {ok, wocky_db_bot:subscribe(Server, ID, From, Follow)}.
-
-get_follow([]) -> {ok, false};
-get_follow([Child | Rest]) ->
-    case Child of
-        #xmlel{name = <<"follow">>,
-               children = [#xmlcdata{content = <<"1">>}]} -> {ok, true};
-        _ -> get_follow(Rest)
-    end.
+subscribe_bot(Server, ID, From) ->
+    {ok, wocky_db_bot:subscribe(Server, ID, From)}.
 
 %%%===================================================================
 %%% Action - unsubscribe
@@ -170,10 +161,9 @@ make_subscribers_element(Server, ID) ->
 make_subscriber_elements(Subscribers) ->
     lists:map(fun make_subscriber_element/1, Subscribers).
 
-make_subscriber_element({JID, Follow}) ->
+make_subscriber_element(JID) ->
     #xmlel{name = <<"subscriber">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)}],
-           children = [wocky_bot_util:make_follow_element(Follow)]}.
+           attrs = [{<<"jid">>, jid:to_binary(JID)}]}.
 
 %%%===================================================================
 %%% Access change notifications

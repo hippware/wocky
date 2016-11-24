@@ -123,10 +123,10 @@ defmodule Schemata.Schemas.Wocky do
 
     table :bot_subscriber, [
       columns: [
-        bot:      :timeuuid, # Bot ID
-        server:   :text,     # Bot server
-        user:     :text,     # User JID
-        follow:   :boolean   # Whether user is a follower
+        bot:       :timeuuid, # Bot ID
+        server:    :text,     # Bot server
+        user:      :text,     # User JID
+        temporary: :boolean   # Whether the subscription is temporary
       ],
       primary_key: [:bot, :user]
     ]

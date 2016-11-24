@@ -98,9 +98,9 @@ defmodule Wocky.User do
     |> Wocky.User.new
   end
 
-  @spec get_followed_bots(Wocky.User.t) :: [Ejabberd.jid]
-  def get_followed_bots(user) do
-    :wocky_db_bot.followed_bots(to_jid(user))
+  @spec get_subscribed_bots(Wocky.User.t) :: [Ejabberd.jid]
+  def get_subscribed_bots(user) do
+    :wocky_db_bot.subscribed_bots(to_jid(user))
   end
 
   @spec get_owned_bots(Wocky.User.t) :: [Wocky.Bot.t]
