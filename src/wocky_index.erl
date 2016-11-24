@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Wocky interface to Algolia for full text search of users
--module(wocky_db_user_idx).
+-module(wocky_index).
 
 -behaviour(gen_server).
 
@@ -8,6 +8,8 @@
 -export([start_link/0,
          user_updated/2,
          user_removed/1,
+         bot_updated/2,
+         bot_removed/1,
          reindex/0]).
 
 -ignore_xref([start_link/0, reindex/0]).
@@ -24,7 +26,8 @@
 -define(algolia, 'Elixir.Algolia').
 
 -record(state, {enabled = false :: boolean(),
-                index :: term()}).
+                user_index :: term(),
+                bot_index :: term()}).
 -type state() :: #state{}.
 
 
@@ -47,6 +50,16 @@ user_updated(UserID, Data) ->
 user_removed(UserID) ->
     gen_server:cast(?SERVER, {user_removed, UserID}).
 
+%% @doc Called after a bot is updated to update the index.
+-spec bot_updated(binary(), map()) -> ok.
+bot_updated(UserID, Data) ->
+    gen_server:cast(?SERVER, {bot_updated, UserID, Data}).
+
+%% @doc Called after a user is removed to update the index.
+-spec bot_removed(binary()) -> ok.
+bot_removed(UserID) ->
+    gen_server:cast(?SERVER, {bot_removed, UserID}).
+
 %% @doc Update the index for all of the users in the databse.
 %% NOTE: This is meant for dev and test. It is probably not appropriate
 %% for production environments.
@@ -62,7 +75,8 @@ reindex() ->
 %% @doc Initializes the server
 -spec init([]) -> {ok, state()}.
 init([]) ->
-    {ok, Index} = application:get_env(wocky, algolia_index_name),
+    {ok, UserIndex} = application:get_env(wocky, algolia_user_index_name),
+    {ok, BotIndex} = application:get_env(wocky, algolia_bot_index_name),
     {ok, IndexingEnvs} = application:get_env(wocky, indexing_enabled_envs),
     {ok, CurrentEnv} = application:get_env(wocky, wocky_env),
 
@@ -70,17 +84,19 @@ init([]) ->
 
     ok = lager:info("Indexing enabled: ~p", [Enabled]),
 
-    {ok, #state{enabled = Enabled, index = Index}}.
+    {ok, #state{enabled = Enabled,
+                user_index = UserIndex,
+                bot_index = BotIndex}}.
 
 %% @private
 %% @doc Handling call messages
 -spec handle_call(any(), {pid(), any()}, state()) ->
     {reply, ok | {error, term()}, state()}.
-handle_call(reindex, _From, #state{index = Index} = State) ->
+handle_call(reindex, _From, #state{user_index = Index} = State) ->
     Users = wocky_db:select(shared, user, all, #{}),
     lists:foreach(
       fun (#{user := UserID} = User) ->
-              Object = map_to_object(UserID, User),
+              Object = map_to_object(UserID, User, user_fields()),
               update_index(Index, UserID, Object)
       end, Users),
     {reply, ok, State};
@@ -94,14 +110,23 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, #state{enabled = false} = State) ->
     %% do nothing
     {noreply, State};
-handle_cast({user_updated, UserID, Data}, #state{index = Index} = State) ->
-    Object = map_to_object(UserID, Data),
+handle_cast({user_updated, UserID, Data}, #state{user_index = Index} = State) ->
+    Object = map_to_object(UserID, Data, user_fields()),
     ok = lager:debug("Updating user index with object ~p", [Object]),
     {ok, _} = update_index(Index, UserID, Object),
     {noreply, State};
-handle_cast({user_removed, UserID}, #state{index = Index} = State) ->
+handle_cast({user_removed, UserID}, #state{user_index = Index} = State) ->
     ok = lager:debug("Removing user ~s from index", [UserID]),
     {ok, _} = ?algolia:delete_object(Index, UserID),
+    {noreply, State};
+handle_cast({bot_updated, BotID, Data}, #state{bot_index = Index} = State) ->
+    Object = map_to_object(BotID, Data, bot_fields()),
+    ok = lager:debug("Updating bot index with object ~p", [Object]),
+    {ok, _} = update_index(Index, BotID, Object),
+    {noreply, State};
+handle_cast({bot_removed, BotID}, #state{bot_index = Index} = State) ->
+    ok = lager:debug("Removing bot ~s from index", [BotID]),
+    {ok, _} = ?algolia:delete_object(Index, BotID),
     {noreply, State};
 handle_cast(Msg, State) ->
     ok = lager:warning("Unhandled cast: ~p", [Msg]),
@@ -133,13 +158,16 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-indexed_fields() ->
+user_fields() ->
     [handle, last_name, first_name, avatar].
 
-map_to_object(UserID, MapData) ->
+bot_fields() ->
+    [].
+
+map_to_object(UserID, MapData, Fields) ->
     maps:fold(fun (K, V, Acc) -> Acc#{atom_to_binary(K, utf8) => V} end,
               #{<<"objectID">> => UserID},
-              maps:with(indexed_fields(), MapData)).
+              maps:with(Fields, MapData)).
 
 update_index(Index, ObjectID, Object) ->
     case maps:size(Object) < 1 of
