@@ -15,9 +15,7 @@ defmodule Wocky.LocationSpec do
 
     bots = Enum.into(bot_list, %{},
                      fn (%Bot{id: id} = b) -> {id, b} end)
-    bot_jids = Enum.map(bot_list,
-                        fn (%Bot{id: id, server: server}) ->
-                          :wocky_bot_util.make_jid(server, id) end)
+    bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
 
     allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
