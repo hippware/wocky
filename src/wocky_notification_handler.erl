@@ -85,8 +85,7 @@ notify_bot_event(To, Bot, Event) ->
                               msg("You are near the bot ~s", [Bot]);
 
                           exit ->
-                              msg("You are leaving the area for bot ~s",
-                                  [Bot])
+                              msg("You are leaving the area for bot ~s", [Bot])
                       end,
             (handler()):notify(Endpoint, Message);
 
