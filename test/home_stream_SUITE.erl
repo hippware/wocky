@@ -268,7 +268,7 @@ auto_publish_bot_item(Config) ->
       fun(Alice, Bob) ->
         check_home_stream_sizes(1, [Bob]),
 
-        expect_iq_success(test_helper:subscribe_stanza(true), Bob),
+        expect_iq_success(test_helper:subscribe_stanza(), Bob),
 
         expect_iq_success(
           publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
