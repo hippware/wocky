@@ -28,7 +28,10 @@
          image_items_count/2,
          item_images/2,
          set_follow_me/2,
-         set_unfollow_me/1
+         set_unfollow_me/1,
+         subscribe_temporary/4,
+         unsubscribe_temporary/3,
+         clear_temporary_subscriptions/1
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -68,9 +71,15 @@ subscribed_bots(UserJID) ->
     User = jid:to_binary(jid:to_bare(UserJID)),
     Result = wocky_db:select(shared, subscribed_bot,
                              [bot, server], #{user => User}),
-    [wocky_bot_util:make_jid(Server, Bot)
-     || #{bot := Bot, server := Server} <- Result] ++
-    owned_bots(UserJID).
+
+    Device = jid:to_binary(UserJID),
+    TempResult = wocky_db:select(shared, temp_subscriptions,
+                                 [bot, server], #{device => Device}),
+
+    Bots = [wocky_bot_util:make_jid(Server, Bot)
+            || #{bot := Bot, server := Server} <- Result ++ TempResult] ++
+           owned_bots(UserJID),
+    lists:usort(Bots).
 
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
@@ -145,8 +154,12 @@ update_affiliations(_Server, ID, Affiliations) ->
 subscribers(Server, ID) ->
     Result = wocky_db:select_column(shared, bot_subscriber,
                                     user, #{bot => ID}),
-    Subscribers = [jid:from_binary(J) || J <- Result],
-    maybe_add_owner_as_subscriber(owner(Server, ID), Subscribers).
+    TempResult = wocky_db:select_column(shared, bot_temp_subscription,
+                                        device, #{bot => ID}),
+    Subscribers = [jid:from_binary(J) || J <- Result ++ TempResult],
+    AllSubscribers = maybe_add_owner_as_subscriber(owner(Server, ID),
+                                                   Subscribers),
+    wocky_util:remove_redundant_jids(AllSubscribers).
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
 delete(Server, ID) ->
@@ -265,6 +278,38 @@ set_unfollow_me(BotID) ->
                     #{follow_me => false,
                       follow_me_expiry => undefined},
                     #{id => BotID}).
+
+-spec subscribe_temporary(ejabberd:jid(), wocky_db:id(),
+                          ejabberd:lserver(), node()) -> ok.
+subscribe_temporary(Device, BotID, LServer, Node) ->
+    ok = wocky_db:insert(shared, temp_subscription,
+                         #{device => jid:to_binary(Device),
+                           bot    => BotID,
+                           server => LServer,
+                           node   => atom_to_binary(Node, utf8)}).
+
+-spec unsubscribe_temporary(ejabberd:jid(), wocky_db:id(),
+                            ejabberd:lserver()) -> ok.
+unsubscribe_temporary(Device, BotID, _LServer) ->
+    ok = wocky_db:delete(shared, temp_subscription, all,
+                         #{device => jid:to_binary(Device),
+                           bot    => BotID}).
+
+-spec clear_temporary_subscriptions(node() | ejabberd:jid()) -> ok.
+clear_temporary_subscriptions(Device = #jid{}) ->
+    ok = wocky_db:delete(shared, temp_subscription, all,
+                         #{device => jid:to_binary(Device)});
+
+clear_temporary_subscriptions(Node) when is_atom(Node) ->
+    Subscriptions = wocky_db:select(shared, node_temp_subscription,
+                                    [device, bot],
+                                    #{node => atom_to_binary(Node, utf8)}),
+    lists:foreach(clear_temporary_subscription(_), Subscriptions).
+
+clear_temporary_subscription(#{device := Device, bot := Bot}) ->
+    ok = wocky_db:delete(shared, temp_subscription, all,
+                         #{device => Device,
+                           bot => Bot}).
 
 %%%===================================================================
 %%% Private helpers

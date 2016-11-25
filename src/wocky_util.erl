@@ -29,11 +29,14 @@
    is_friend/2,
    is_follower/2,
 
-   v1_uuid_order/2
+   v1_uuid_order/2,
+
+   remove_redundant_jids/1
         ]).
 
 -export_type([hook/0]).
 
+-compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 
 % Not used externally right now, but we want it available:
@@ -153,3 +156,15 @@ v1_uuid_order(UUID1, UUID2) ->
     uuid:get_v1_time(uuid:string_to_uuid(UUID1))
     =<
     uuid:get_v1_time(uuid:string_to_uuid(UUID2)).
+
+% Remove non-bare jids where there is also a bare version in the list
+-spec remove_redundant_jids([jid()]) -> [jid()].
+remove_redundant_jids(JIDs) ->
+    lists:filter(fun(JID) -> not redundant(JID, JIDs) end, JIDs).
+
+redundant(#jid{lresource = <<>>}, _) -> false;
+redundant(JID, JIDs) ->
+    fun_chain:first(JID,
+                    jid:to_bare(),
+                    jid:are_equal(_),
+                    lists:any(JIDs)).

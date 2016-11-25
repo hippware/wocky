@@ -125,8 +125,7 @@ defmodule Schemata.Schemas.Wocky do
       columns: [
         bot:       :timeuuid, # Bot ID
         server:    :text,     # Bot server
-        user:      :text,     # User JID
-        temporary: :boolean   # Whether the subscription is temporary
+        user:      :text      # User bare JID
       ],
       primary_key: [:bot, :user]
     ]
@@ -135,6 +134,28 @@ defmodule Schemata.Schemas.Wocky do
       from: :bot_subscriber,
       columns: :all,
       primary_key: [:user, :bot]
+    ]
+
+    table :temp_subscription, [
+      columns: [
+        device:    :text,     # User device full JID
+        bot:       :timeuuid, # Bot ID
+        server:    :text,     # Bot server
+        node:      :text      # Erlang node to which device is connected
+      ],
+      primary_key: [:device, :bot]
+    ]
+
+    view :bot_temp_subscription, [
+      from: :temp_subscription,
+      columns: :all,
+      primary_key: [:bot, :device]
+    ]
+
+    view :node_temp_subscription, [
+      from: :temp_subscription,
+      columns: [:device, :bot, :node],
+      primary_key: [:node, :device, :bot]
     ]
 
   end

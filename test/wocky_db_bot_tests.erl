@@ -14,6 +14,8 @@
          affiliations_from_map/1, update_affiliations/3, subscribers/2,
          subscribers/2, delete/2, has_access/3, subscribe/3, unsubscribe/3,
          get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
+         subscribe_temporary/4, unsubscribe_temporary/3,
+         clear_temporary_subscriptions/1,
          image_items_count/2, item_images/2
         ]).
 
@@ -41,6 +43,12 @@ wocky_db_bot_test_() -> {
         test_get_item(),
         test_publish_item(),
         test_delete_item()
+      ]},
+
+      {inorder, [
+        test_subscribe_temporary(),
+        test_unsubscribe_temporary(),
+        test_clear_temporary_subscriptions()
       ]},
 
       {inorder, [
@@ -227,9 +235,7 @@ test_update_affiliations() ->
 test_subscribers() ->
     { "subscribers", [
       { "returns the list of subscribers", [
-        ?_assertEqual(lists:sort([?ALICE_JID,
-                                  ?CAROL_JID,
-                                  ?KAREN_JID]),
+        ?_assertEqual(lists:sort(base_subscribers()),
                       lists:sort(subscribers(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns empty list for non existant bot", [
@@ -310,6 +316,61 @@ test_delete_item() ->
       ]},
       { "does not fail on a non-existant item", [
         ?_assertEqual(ok, delete_item(?LOCAL_CONTEXT, ?BOT, <<"NotANoteID">>))
+      ]}
+    ]}.
+
+test_subscribe_temporary() ->
+    { "subscribe_temporary", [
+      { "adds a temporary subscription", [
+        ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
+        check_subscribers(base_subscribers()),
+        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), ?BOT,
+                                              ?LOCAL_CONTEXT, node())),
+        check_subscribers([bobs_phone() | base_subscribers()])
+      ]},
+      { "does not add a device subscription if the user is alredy subscribed", [
+        ?_assertEqual(ok, subscribe_temporary(device(?ALICE, <<"iphone">>),
+                                              ?BOT, ?LOCAL_CONTEXT, node())),
+        check_subscribers([bobs_phone() | base_subscribers()])
+      ]}
+    ]}.
+
+test_unsubscribe_temporary() ->
+    { "unsubscribe_temporary", [
+      { "has no effect on a device with no temporary subscription", [
+        ?_assertEqual(ok, unsubscribe_temporary(device(?ALICE, <<"iphone">>), ?BOT,
+                                                ?LOCAL_CONTEXT)),
+        check_subscribers([bobs_phone() | base_subscribers()])
+      ]},
+      { "removes a temporary subscription", [
+        ?_assertEqual(ok, unsubscribe_temporary(bobs_phone(), ?BOT,
+                                                ?LOCAL_CONTEXT)),
+        check_subscribers(base_subscribers())
+      ]}
+    ]}.
+
+test_clear_temporary_subscriptions() ->
+    TimsPhone = device(?TIM, <<"abc">>),
+    Bot2 = wocky_db:create_id(),
+    { "clear_temporary_subscriptions", [
+      { "clears all items temporarally subscribed from a node", [
+        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), ?BOT,
+                                              ?LOCAL_CONTEXT, node())),
+        ?_assertEqual(ok, subscribe_temporary(TimsPhone, ?BOT,
+                                              ?LOCAL_CONTEXT, node())),
+        check_subscribers([TimsPhone, bobs_phone() | base_subscribers()]),
+        ?_assertEqual(ok, clear_temporary_subscriptions(node())),
+        check_subscribers(base_subscribers())
+      ]},
+      { "clears all temporary subscriptions from a device", [
+        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), ?BOT,
+                                              ?LOCAL_CONTEXT, node())),
+        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), Bot2,
+                                              ?LOCAL_CONTEXT, node())),
+        ?_assertEqual([bobs_phone()], subscribers(?LOCAL_CONTEXT, Bot2)),
+        ?_assertEqual(ok, clear_temporary_subscriptions(bobs_phone())),
+        check_subscribers(base_subscribers()),
+        ?_assertEqual([], subscribers(?LOCAL_CONTEXT, Bot2))
       ]}
     ]}.
 
@@ -451,3 +512,9 @@ new_bot() ->
 
 expected_item() ->
     hd(wocky_db_seed:seed_data(bot_item, none)).
+
+device(User, Resource) -> jid:make(User, ?LOCAL_CONTEXT, Resource).
+
+base_subscribers() -> [?ALICE_JID, ?CAROL_JID, ?KAREN_JID].
+
+bobs_phone() -> device(?BOB, <<"phone">>).
