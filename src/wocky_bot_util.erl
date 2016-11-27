@@ -19,6 +19,7 @@
          get_id_from_node/1,
          get_id_from_jid/1,
          notify_affiliates/3,
+         make_follow_element/0,
          make_affiliate_elements/1,
          make_jid/2,
          make_node/1,
@@ -76,6 +77,12 @@ make_update_packet(ID, User, Role) ->
                               attrs = [{<<"xmlns">>, ?NS_BOT},
                                        {<<"node">>, make_node(ID)}],
                               children = [AffiliateEl]}]}.
+
+%% DEPRECATED - remove in a future release once the client doesn't look for
+%% this element any more.
+make_follow_element() ->
+    #xmlel{name = <<"follow">>,
+           children = [#xmlcdata{content = <<"1">>}]}.
 
 make_affiliate_elements(Affiliates) ->
     lists:map(fun make_affiliate_element/1, Affiliates).

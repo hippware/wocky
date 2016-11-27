@@ -522,7 +522,8 @@ notify_unsubscribe(LServer, ID, JID) ->
 make_unsubscribed(ID) ->
     #xmlel{name = <<"unsubscribed">>,
            attrs = [{<<"xmlns">>, ?NS_BOT},
-                    {<<"node">>, wocky_bot_util:make_node(ID)}]}.
+                    {<<"node">>, wocky_bot_util:make_node(ID)}],
+           children = [wocky_bot_util:make_follow_element()]}.
 
 %%%===================================================================
 %%% Access manager callback
