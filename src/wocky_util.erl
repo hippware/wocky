@@ -40,7 +40,7 @@
 -compile({parse_transform, cut}).
 
 % Not used externally right now, but we want it available:
--ignore_xref([safe_bin_to_integer/1, default_bin_to_integer/2]).
+-ignore_xref([safe_bin_to_integer/1, default_bin_to_integer/2, intersection/2]).
 % Currently only used by tests:
 -ignore_xref([iq_id/0, v1_uuid_order/2]).
 
@@ -134,6 +134,8 @@ null_to_list(L) -> L.
 intersection(A, B) ->
     intersection(A, B, fun erlang:'=:='/2).
 
+%% Returns all elements EA from A where there is an element EB in B for which
+%% EqualityFun(EA, EB) returns true.
 -spec intersection(list(T), list(T), fun((T, T) -> boolean())) -> list(T).
 intersection(A, B, EqualityFun) ->
     lists:filter(fun(E) -> lists:any(EqualityFun(E, _), B) end, A).

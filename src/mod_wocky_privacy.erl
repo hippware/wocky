@@ -35,12 +35,25 @@ stop(Host) ->
 
 % Allow messages sent by bare servers, possibly with resources.
 % We trust our own servers, so this should be fine.
+% This is used by messages from bots and chat rooms.
 -spec check_packet(allow | deny, ejabberd:luser(), ejabberd:lserver(),
                    mod_privacy:userlist(),
                    {ejabberd:jid(), ejabberd:jid(), binary()},
                    in | out) -> allow | deny.
-check_packet(deny, _User, _Server, _UserList, {#jid{luser = <<>>},
-                                               _To,
-                                               _Packet}, in) ->
+check_packet(deny, _User, _Server, _UserList,
+             {#jid{luser = <<>>},
+              _To,
+              _Packet},
+             in) ->
     allow;
+
+% Allow outgoing presences to bots (overriding the default denial of
+% presence_out). These are used for temporary subscriptions.
+check_packet(deny, _User, _Server, _UserList,
+             {_From,
+              #jid{luser = <<>>, lresource = <<"bot/", _/binary>>},
+              #xmlel{name = <<"presence">>}},
+             out) ->
+    allow;
+
 check_packet(Acc, _, _, _, _, _) -> Acc.

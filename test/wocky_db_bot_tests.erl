@@ -324,13 +324,14 @@ test_subscribe_temporary() ->
       { "adds a temporary subscription", [
         ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
         check_subscribers(base_subscribers()),
-        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), ?BOT,
-                                              ?LOCAL_CONTEXT, node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              bobs_phone(), node())),
         check_subscribers([bobs_phone() | base_subscribers()])
       ]},
       { "does not add a device subscription if the user is alredy subscribed", [
-        ?_assertEqual(ok, subscribe_temporary(device(?ALICE, <<"iphone">>),
-                                              ?BOT, ?LOCAL_CONTEXT, node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              device(?ALICE, <<"iphone">>),
+                                              node())),
         check_subscribers([bobs_phone() | base_subscribers()])
       ]}
     ]}.
@@ -338,13 +339,13 @@ test_subscribe_temporary() ->
 test_unsubscribe_temporary() ->
     { "unsubscribe_temporary", [
       { "has no effect on a device with no temporary subscription", [
-        ?_assertEqual(ok, unsubscribe_temporary(device(?ALICE, <<"iphone">>), ?BOT,
-                                                ?LOCAL_CONTEXT)),
+        ?_assertEqual(ok, unsubscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                                device(?ALICE, <<"iphone">>))),
         check_subscribers([bobs_phone() | base_subscribers()])
       ]},
       { "removes a temporary subscription", [
-        ?_assertEqual(ok, unsubscribe_temporary(bobs_phone(), ?BOT,
-                                                ?LOCAL_CONTEXT)),
+        ?_assertEqual(ok, unsubscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                                bobs_phone())),
         check_subscribers(base_subscribers())
       ]}
     ]}.
@@ -354,19 +355,19 @@ test_clear_temporary_subscriptions() ->
     Bot2 = wocky_db:create_id(),
     { "clear_temporary_subscriptions", [
       { "clears all items temporarally subscribed from a node", [
-        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), ?BOT,
-                                              ?LOCAL_CONTEXT, node())),
-        ?_assertEqual(ok, subscribe_temporary(TimsPhone, ?BOT,
-                                              ?LOCAL_CONTEXT, node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              bobs_phone(), node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              TimsPhone, node())),
         check_subscribers([TimsPhone, bobs_phone() | base_subscribers()]),
         ?_assertEqual(ok, clear_temporary_subscriptions(node())),
         check_subscribers(base_subscribers())
       ]},
       { "clears all temporary subscriptions from a device", [
-        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), ?BOT,
-                                              ?LOCAL_CONTEXT, node())),
-        ?_assertEqual(ok, subscribe_temporary(bobs_phone(), Bot2,
-                                              ?LOCAL_CONTEXT, node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              bobs_phone(), node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, Bot2,
+                                              bobs_phone(), node())),
         ?_assertEqual([bobs_phone()], subscribers(?LOCAL_CONTEXT, Bot2)),
         ?_assertEqual(ok, clear_temporary_subscriptions(bobs_phone())),
         check_subscribers(base_subscribers()),

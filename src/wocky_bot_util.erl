@@ -23,7 +23,8 @@
          make_jid/2,
          make_node/1,
          list_hash/1,
-         get_image/1
+         get_image/1,
+         list_attrs/2
         ]).
 
 check_owner(Server, ID, User) ->
@@ -109,3 +110,9 @@ get_image(Entry = #xmlel{}) ->
         #xmlel{children = [#xmlcdata{content = C}]} -> C;
         false -> none
     end.
+
+list_attrs(ID, List) ->
+    [{<<"xmlns">>, ?NS_BOT},
+     {<<"node">>, wocky_bot_util:make_node(ID)},
+     {<<"size">>, integer_to_binary(length(List))},
+     {<<"hash">>, wocky_bot_util:list_hash(List)}].

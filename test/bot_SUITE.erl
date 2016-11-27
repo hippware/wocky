@@ -21,7 +21,7 @@
                       check_hs_result/4, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
-                      node_el/2, node_el/3
+                      node_el/2, node_el/3, ensure_all_clean/1
                      ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
@@ -50,6 +50,9 @@ all() ->
      subscribers,
      unsubscribe,
      subscribe,
+     subscribe_temporary,
+     unsubscribe_temporary,
+     temporary_unsubscribe_roster_change,
      delete,
      errors,
      retrieve_for_user,
@@ -236,6 +239,89 @@ subscribe(Config) ->
                                     ?KAREN_B_JID,
                                     ?CAROL_B_JID,
                                     ?BOB_B_JID])
+      end).
+
+subscribe_temporary(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, ?BOT),
+
+        %% Tim currently can't subscribe because he's in Alice's
+        %% __blocked__ group (and therefore is not a friend):
+        subscribe_temporary(?BOT_B_JID, Tim),
+
+        Stanza = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+
+        test_helper:subscribe_pair(Alice, Tim),
+        test_helper:add_contact(Alice, Tim, <<"unblocked">>, <<"Timmy">>),
+
+        %% But now he can:
+        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+
+        subscribe_temporary(?BOT_B_JID, Tim),
+
+        Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza3, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
+                                   escalus_client:full_jid(Tim)
+                                  ]),
+        ensure_all_clean([Alice, Tim])
+      end).
+
+unsubscribe_temporary(Config) ->
+    escalus:story([everyone_is_friends | Config], [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        %% Tim's previous temp subscription should have been cleared
+        %% by his disconnection
+        Stanza = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+
+        subscribe_temporary(?BOT_B_JID, Tim),
+
+        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
+                                   escalus_client:full_jid(Tim)
+                                  ]),
+
+        unsubscribe_temporary(?BOT_B_JID, Tim),
+
+        Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza3, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+        ensure_all_clean([Alice, Tim])
+      end).
+
+temporary_unsubscribe_roster_change(Config) ->
+    escalus:story([everyone_is_friends | Config], [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        subscribe_temporary(?BOT_B_JID, Tim),
+
+        Stanza = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
+                                   escalus_client:full_jid(Tim)
+                                  ]),
+
+        escalus:send(Alice, escalus_stanza:roster_remove_contact(Tim)),
+        escalus:assert_many([is_presence, is_roster_set, is_iq_result],
+                            escalus:wait_for_stanzas(Alice, 3)),
+
+        %% Tim should get alerted of his loss of access to the bot
+        escalus:assert_many([escalus_pred:is_presence_with_type(
+                               <<"unsubscribe">>, _),
+                             escalus_pred:is_presence_with_type(
+                               <<"unavailable">>, _),
+                             is_roster_set,
+                             is_bot_unsubscribe(_)],
+                            escalus:wait_for_stanzas(Tim, 4)),
+
+        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+
+        timer:sleep(500),
+
+        %% All done - set it back as it was
+        set_visibility(Alice, ?WOCKY_BOT_VIS_WHITELIST, ?BOT)
       end).
 
 delete(Config) ->
@@ -1318,13 +1404,15 @@ check_image(Owner, Item, URL,
     ?assertMatch({value, _}, xml:get_attr(<<"updated">>, Attrs)),
     Rest.
 
-set_visibility(Client, Visibility, BotList) ->
+set_visibility(Client, Visibility, BotList) when is_list(BotList) ->
     lists:foreach(
       fun(B) ->
               expect_iq_success(
                 change_visibility_stanza(B, Visibility), Client)
       end,
-      BotList).
+      BotList);
+set_visibility(Client, Visibility, Bot) ->
+    set_visibility(Client, Visibility, [Bot]).
 
 follow_me_stanza() ->
     Expiry = wocky_db:now_to_timestamp(os:timestamp()) + 86400,
@@ -1338,3 +1426,14 @@ follow_me_stanza() ->
 unfollow_me_stanza() ->
     QueryEl = node_el(?BOT, <<"un-follow-me">>, []),
     test_helper:iq_set(?NS_BOT, QueryEl).
+
+subscribe_temporary(Bot, Client) ->
+    Stanza = escalus_stanza:presence_direct(
+               Bot, <<>>,
+               #xmlel{name = <<"query">>,
+                      attrs = [{<<"xmlns">>, ?NS_BOT}]}),
+    escalus:send(Client, Stanza).
+
+unsubscribe_temporary(Bot, Client) ->
+    Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
+    escalus:send(Client, Stanza).

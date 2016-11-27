@@ -44,6 +44,7 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
+    wocky_bot_subscription:start(Host),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BOT,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
@@ -56,7 +57,8 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT),
     ejabberd_hooks:delete(filter_local_packet, Host,
                           fun filter_local_packet_hook/1, 80),
-    mod_wocky_access:unregister(<<"bot">>, ?MODULE).
+    mod_wocky_access:unregister(<<"bot">>, ?MODULE),
+    wocky_bot_subscription:stop(Host).
 
 
 %%%===================================================================
@@ -129,21 +131,21 @@ handle_iq_type(From, To, #iq{type = set,
                              sub_el = #xmlel{name = <<"subscribe">>,
                                              attrs = Attrs}
                             }) ->
-    wocky_bot_users:handle_subscribe(From, To, Attrs);
+    wocky_bot_subscription:handle_subscribe(From, To, Attrs);
 
 % Unsubscribe
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = #xmlel{name = <<"unsubscribe">>,
                                              attrs = Attrs}
                             }) ->
-    wocky_bot_users:handle_unsubscribe(From, To, Attrs);
+    wocky_bot_subscription:handle_unsubscribe(From, To, Attrs);
 
 % Retrieve subscribers
 handle_iq_type(From, To, #iq{type = get,
                              sub_el = #xmlel{name = <<"subscribers">>,
                                              attrs = Attrs}
                             }) ->
-    wocky_bot_users:handle_retrieve_subscribers(From, To, Attrs);
+    wocky_bot_subscription:handle_retrieve_subscribers(From, To, Attrs);
 
 % Publish an item
 handle_iq_type(From, To, #iq{type = set,
@@ -399,6 +401,13 @@ handle_bot_packet(From, LServer, BotID,
             ignored
     end;
 
+% Presence packets are handled in the user_send_packet hook in wocky_bot_user,
+% however that hook can't drop them (and as a result they return errors back
+% to the sender). So we cause them to be dropped here.
+handle_bot_packet(_From, _LServer, _BotID,
+                  #xmlel{name = <<"presence">>}) ->
+    ok;
+
 handle_bot_packet(_, _, _, _) ->
     ignored.
 
@@ -472,7 +481,7 @@ get_group(_, Acc) -> Acc.
 
 remove_invalidated_affiliates(LServer, ID, UnfriendedJIDs) ->
     OldAffiliates = [A || {A, _} <- wocky_db_bot:affiliations(LServer, ID)],
-    RemovedAffiliates = wocky_util:intersection(UnfriendedJIDs, OldAffiliates,
+    RemovedAffiliates = wocky_util:intersection(OldAffiliates, UnfriendedJIDs,
                                                 fun jid:are_bare_equal/2),
     RemovedAffiliations = [{I, none} || I <- RemovedAffiliates],
     wocky_db_bot:update_affiliations(LServer, ID, RemovedAffiliations),
@@ -492,13 +501,16 @@ remove_invalidated_subscribers(_, _, _, _, _) ->
 
 remove_invalidated_subscribers(LServer, ID, InvalidatedJIDs) ->
     Subscribers = wocky_db_bot:subscribers(LServer, ID),
-    RemovedSubscribers = wocky_util:intersection(InvalidatedJIDs, Subscribers,
+    RemovedSubscribers = wocky_util:intersection(Subscribers, InvalidatedJIDs,
                                                  fun jid:are_bare_equal/2),
     lists:foreach(remove_invalidated_subscriber(LServer, ID, _),
                   RemovedSubscribers).
 
-remove_invalidated_subscriber(LServer, ID, JID) ->
+remove_invalidated_subscriber(LServer, ID, JID = #jid{lresource = <<>>}) ->
     wocky_db_bot:unsubscribe(LServer, ID, JID),
+    notify_unsubscribe(LServer, ID, JID);
+remove_invalidated_subscriber(LServer, ID, JID) ->
+    wocky_db_bot:unsubscribe_temporary(LServer, ID, JID),
     notify_unsubscribe(LServer, ID, JID).
 
 notify_unsubscribe(LServer, ID, JID) ->

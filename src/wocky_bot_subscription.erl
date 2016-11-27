@@ -11,13 +11,35 @@
 -include("wocky_bot.hrl").
 
 -compile({parse_transform, do}).
+-compile({parse_transform, cut}).
+
+-export([start/1,
+         stop/1]).
 
 -export([handle_subscribe/3,
          handle_unsubscribe/3,
-         handle_retrieve_subscribers/3]).
-%    ejabberd_hooks:add(node_cleanup, global, ?MODULE, node_cleanup, 50),
-%    ejabberd_hooks:run(sm_remove_connection_hook, JID#jid.lserver,
-%                       [SID, JID, Info, Reason]).
+         handle_retrieve_subscribers/3
+        ]).
+
+%%%===================================================================
+%%% Setup
+%%%===================================================================
+
+start(Host) ->
+    wocky_db_bot:clear_temporary_subscriptions(node()),
+    ejabberd_hooks:add(node_cleanup, global, fun node_cleanup_hook/1, 90),
+    ejabberd_hooks:add(sm_remove_connection_hook, Host,
+                       fun remove_connection_hook/4, 90),
+    ejabberd_hooks:add(user_send_packet, Host,
+                       fun user_send_packet_hook/3, 90).
+
+stop(Host) ->
+    ejabberd_hooks:delete(user_send_packet, Host,
+                          fun user_send_packet_hook/3, 90),
+    ejabberd_hooks:delete(node_cleanup, global, fun node_cleanup_hook/1, 90),
+    ejabberd_hooks:delete(sm_remove_connection_hook, Host,
+                          fun remove_connection_hook/4, 90),
+    wocky_db_bot:clear_temporary_subscriptions(node()).
 
 %%%===================================================================
 %%% Action - subscribe
@@ -73,3 +95,59 @@ make_subscriber_element(JID) ->
     #xmlel{name = <<"subscriber">>,
            attrs = [{<<"jid">>, jid:to_binary(JID)}]}.
 
+%%%===================================================================
+%%% Action - subscribe temporary
+%%%===================================================================
+
+handle_subscribe_temporary(From, Server, BotID) ->
+    case wocky_bot_util:check_access(Server, BotID, From) of
+        ok ->
+            wocky_db_bot:subscribe_temporary(Server, BotID, From, node());
+        _ ->
+            ok
+    end.
+
+%%%===================================================================
+%%% Action - unsubscribe temporary
+%%%===================================================================
+
+handle_unsubscribe_temporary(From, Server, BotID) ->
+    wocky_db_bot:unsubscribe_temporary(Server, BotID, From).
+
+%%%===================================================================
+%%% Hook - node down
+%%%===================================================================
+
+node_cleanup_hook(Node) ->
+    wocky_db_bot:clear_temporary_subscriptions(Node).
+
+%%%===================================================================
+%%% Hook - client connection down
+%%%===================================================================
+
+remove_connection_hook(_SID, JID, _Info, _Reason) ->
+    wocky_db_bot:clear_temporary_subscriptions(JID).
+
+%%%===================================================================
+%%% Hook - client connection down
+%%%===================================================================
+
+user_send_packet_hook(From,
+                      #jid{user = <<>>, lserver = LServer,
+                           resource= <<"bot/", BotID/binary>>},
+                      Stanza = #xmlel{name = <<"presence">>, attrs = Attrs}) ->
+    case xml:get_attr(<<"type">>, Attrs) of
+        {value, <<"unavailable">>} ->
+            handle_unsubscribe_temporary(From, LServer, BotID);
+        _ ->
+            handle_untyped_presence(From, LServer, BotID, Stanza)
+    end;
+user_send_packet_hook(_, _, _) -> ok.
+
+handle_untyped_presence(From, LServer, BotID, Stanza) ->
+    case xml:get_path_s(Stanza, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) of
+        ?NS_BOT ->
+            handle_subscribe_temporary(From, LServer, BotID);
+        _ ->
+            ok
+    end.

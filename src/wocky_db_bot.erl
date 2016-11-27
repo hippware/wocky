@@ -73,7 +73,7 @@ subscribed_bots(UserJID) ->
                              [bot, server], #{user => User}),
 
     Device = jid:to_binary(UserJID),
-    TempResult = wocky_db:select(shared, temp_subscriptions,
+    TempResult = wocky_db:select(shared, temp_subscription,
                                  [bot, server], #{device => Device}),
 
     Bots = [wocky_bot_util:make_jid(Server, Bot)
@@ -279,18 +279,18 @@ set_unfollow_me(BotID) ->
                       follow_me_expiry => undefined},
                     #{id => BotID}).
 
--spec subscribe_temporary(ejabberd:jid(), wocky_db:id(),
-                          ejabberd:lserver(), node()) -> ok.
-subscribe_temporary(Device, BotID, LServer, Node) ->
+-spec subscribe_temporary(ejabberd:lserver(), wocky_db:id(),
+                          ejabberd:jid(), node()) -> ok.
+subscribe_temporary(LServer, BotID, Device, Node) ->
     ok = wocky_db:insert(shared, temp_subscription,
                          #{device => jid:to_binary(Device),
                            bot    => BotID,
                            server => LServer,
                            node   => atom_to_binary(Node, utf8)}).
 
--spec unsubscribe_temporary(ejabberd:jid(), wocky_db:id(),
-                            ejabberd:lserver()) -> ok.
-unsubscribe_temporary(Device, BotID, _LServer) ->
+-spec unsubscribe_temporary(ejabberd:lserver(), wocky_db:id(),
+                            ejabberd:jid()) -> ok.
+unsubscribe_temporary(_LServer, BotID, Device) ->
     ok = wocky_db:delete(shared, temp_subscription, all,
                          #{device => jid:to_binary(Device),
                            bot    => BotID}).
