@@ -123,9 +123,9 @@ defmodule Schemata.Schemas.Wocky do
 
     table :bot_subscriber, [
       columns: [
-        bot:       :timeuuid, # Bot ID
-        server:    :text,     # Bot server
-        user:      :text      # User bare JID
+        bot:      :timeuuid, # Bot ID
+        server:   :text,     # Bot server
+        user:     :text      # User bare JID
       ],
       primary_key: [:bot, :user]
     ]

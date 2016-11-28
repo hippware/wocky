@@ -401,9 +401,9 @@ handle_bot_packet(From, LServer, BotID,
             ignored
     end;
 
-% Presence packets are handled in the user_send_packet hook in wocky_bot_user,
-% however that hook can't drop them (and as a result they return errors back
-% to the sender). So we cause them to be dropped here.
+% Presence packets are handled in the user_send_packet hook in
+% wocky_bot_subscriber however that hook can't drop them (and as a result
+% they return errors back to the sender). So we cause them to be dropped here.
 handle_bot_packet(_From, _LServer, _BotID,
                   #xmlel{name = <<"presence">>}) ->
     ok;
@@ -755,6 +755,7 @@ meta_fields(Map = #{id := ID, server := Server}) ->
     ImageItems = wocky_db_bot:image_items_count(Server, ID),
     [make_field(<<"jid">>, jid, bot_jid(Server, ID)),
      make_field(<<"image_items">>, int, ImageItems) |
+     size_and_hash(<<"followers">>, Subscribers) ++ %% DEPRECATED - remove later
      size_and_hash(<<"affiliates">>, Affiliates) ++
      size_and_hash(<<"subscribers">>, Subscribers)].
 
