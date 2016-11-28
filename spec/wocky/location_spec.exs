@@ -19,7 +19,7 @@ defmodule Wocky.LocationSpec do
 
     allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
     allow Handler |> to(accept :notify_bot_event, fn (_, _, _) -> :ok end)
-    allow User |> to(accept :get_followed_bots, fn (_) -> bot_jids end)
+    allow User |> to(accept :get_subscribed_bots, fn (_) -> bot_jids end)
     allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
     allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
     allow Bot |> to(accept :get, fn (key) -> bots[key] end)

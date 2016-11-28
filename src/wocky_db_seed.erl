@@ -235,9 +235,9 @@ seed_data(bot_name, _Server) ->
     [#{shortname => ?BOT_NAME, id => ?BOT}];
 seed_data(bot_subscriber, _Server) ->
     [#{bot => ?BOT, user => ?CAROL_B_JID,
-       server => ?LOCAL_CONTEXT, follow => false},
+       server => ?LOCAL_CONTEXT},
      #{bot => ?BOT, user => ?KAREN_B_JID,
-       server => ?LOCAL_CONTEXT, follow => true}];
+       server => ?LOCAL_CONTEXT}];
 seed_data(bot_item, _Server) ->
     [#{id => ?ITEM, bot => ?BOT, published => ?ITEM_PUB_TIME,
        updated => ?ITEM_UPDATE_TIME, stanza => ?ITEM_STANZA,

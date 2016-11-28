@@ -54,10 +54,9 @@
          publish_item_stanza/4,
          publish_item_stanza/5,
          retract_item_stanza/2,
-         subscribe_stanza/1,
+         subscribe_stanza/0,
 
          bot_node/1,
-         follow_cdata/1,
          node_el/2,
          node_el/3
         ]).
@@ -440,17 +439,9 @@ retract_el(BotID, NoteID) ->
 bot_node(ID) ->
     <<"bot/", ID/binary>>.
 
-subscribe_stanza(Follow) ->
+subscribe_stanza() ->
     SubEl = node_el(?BOT, <<"subscribe">>),
-    FullSubEl = SubEl#xmlel{children = [follow_el(Follow)]},
-    test_helper:iq_set(?NS_BOT, FullSubEl).
-
-follow_el(Follow) ->
-    #xmlel{name = <<"follow">>,
-           children = [#xmlcdata{content = follow_cdata(Follow)}]}.
-
-follow_cdata(false) -> <<"0">>;
-follow_cdata(true) -> <<"1">>.
+    test_helper:iq_set(?NS_BOT, SubEl).
 
 node_el(ID, Name) -> node_el(ID, Name, []).
 node_el(ID, Name, Children) ->

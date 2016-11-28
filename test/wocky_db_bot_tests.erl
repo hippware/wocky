@@ -10,10 +10,12 @@
 -import(wocky_db_bot,
         [get_bot/1, get_bot/2, get_id_by_name/2, exists/2, insert/2,
          insert_new_name/2, owner/2, affiliations/2,
-         owned_bots/1, followed_bots/1,
-         affiliations_from_map/1, update_affiliations/3, followers/2,
-         subscribers/2, delete/2, has_access/3, subscribe/4, unsubscribe/3,
+         owned_bots/1, subscribed_bots/1,
+         affiliations_from_map/1, update_affiliations/3, subscribers/2,
+         subscribers/2, delete/2, has_access/3, subscribe/3, unsubscribe/3,
          get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
+         subscribe_temporary/4, unsubscribe_temporary/3,
+         clear_temporary_subscriptions/1,
          image_items_count/2, item_images/2
         ]).
 
@@ -29,10 +31,9 @@ wocky_db_bot_test_() -> {
         test_insert_new_name(),
         test_owner(),
         test_owned(),
-        test_followed(),
+        test_subscribed(),
         test_affiliations(),
         test_affiliations_from_map(),
-        test_followers(),
         test_subscribers(),
         test_image_items_count(),
         test_item_images()
@@ -42,6 +43,12 @@ wocky_db_bot_test_() -> {
         test_get_item(),
         test_publish_item(),
         test_delete_item()
+      ]},
+
+      {inorder, [
+        test_subscribe_temporary(),
+        test_unsubscribe_temporary(),
+        test_clear_temporary_subscriptions()
       ]},
 
       {inorder, [
@@ -157,13 +164,13 @@ test_owned() ->
       ]}
     ]}.
 
-test_followed() ->
-    { "followed_bots", [
-      { "gets the followed and owned bots for a user", inorder, [
-        ?_assertEqual([?BOT_JID], followed_bots(?ALICE_JID)),
-        ?_assertEqual([], followed_bots(?TIM_JID)),
-        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID, true)),
-        ?_assertEqual([?BOT_JID], followed_bots(?TIM_JID))
+test_subscribed() ->
+    { "subscribed_bots", [
+      { "gets the subscribed and owned bots for a user", inorder, [
+        ?_assertEqual([?BOT_JID], subscribed_bots(?ALICE_JID)),
+        ?_assertEqual([], subscribed_bots(?TIM_JID)),
+        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
+        ?_assertEqual([?BOT_JID], subscribed_bots(?TIM_JID))
       ]}
     ]}.
 
@@ -225,27 +232,14 @@ test_update_affiliations() ->
       ]}
     ]}.
 
-test_followers() ->
-    { "followers", [
-      { "returns the list of followers", [
-        ?_assertEqual(lists:sort([?ALICE_JID, ?KAREN_JID]),
-                      lists:sort(followers(?LOCAL_CONTEXT, ?BOT)))
-      ]},
-      { "returns empty list for non existant bot", [
-        ?_assertEqual([], followers(?LOCAL_CONTEXT, wocky_db:create_id()))
-      ]}
-    ]}.
-
 test_subscribers() ->
     { "subscribers", [
-      { "returns the list of subscribers and their follower status", [
-        ?_assertEqual(lists:sort([{?ALICE_JID, true},
-                                  {?CAROL_JID, false},
-                                  {?KAREN_JID, true}]),
+      { "returns the list of subscribers", [
+        ?_assertEqual(lists:sort(base_subscribers()),
                       lists:sort(subscribers(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns empty list for non existant bot", [
-        ?_assertEqual([], followers(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual([], subscribers(?LOCAL_CONTEXT, wocky_db:create_id()))
       ]}
     ]}.
 
@@ -325,6 +319,62 @@ test_delete_item() ->
       ]}
     ]}.
 
+test_subscribe_temporary() ->
+    { "subscribe_temporary", [
+      { "adds a temporary subscription", [
+        ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
+        check_subscribers(base_subscribers()),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              bobs_phone(), node())),
+        check_subscribers([bobs_phone() | base_subscribers()])
+      ]},
+      { "does not add a device subscription if the user is alredy subscribed", [
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              device(?ALICE, <<"iphone">>),
+                                              node())),
+        check_subscribers([bobs_phone() | base_subscribers()])
+      ]}
+    ]}.
+
+test_unsubscribe_temporary() ->
+    { "unsubscribe_temporary", [
+      { "has no effect on a device with no temporary subscription", [
+        ?_assertEqual(ok, unsubscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                                device(?ALICE, <<"iphone">>))),
+        check_subscribers([bobs_phone() | base_subscribers()])
+      ]},
+      { "removes a temporary subscription", [
+        ?_assertEqual(ok, unsubscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                                bobs_phone())),
+        check_subscribers(base_subscribers())
+      ]}
+    ]}.
+
+test_clear_temporary_subscriptions() ->
+    TimsPhone = device(?TIM, <<"abc">>),
+    Bot2 = wocky_db:create_id(),
+    { "clear_temporary_subscriptions", [
+      { "clears all items temporarally subscribed from a node", [
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              bobs_phone(), node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              TimsPhone, node())),
+        check_subscribers([TimsPhone, bobs_phone() | base_subscribers()]),
+        ?_assertEqual(ok, clear_temporary_subscriptions(node())),
+        check_subscribers(base_subscribers())
+      ]},
+      { "clears all temporary subscriptions from a device", [
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
+                                              bobs_phone(), node())),
+        ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, Bot2,
+                                              bobs_phone(), node())),
+        ?_assertEqual([bobs_phone()], subscribers(?LOCAL_CONTEXT, Bot2)),
+        ?_assertEqual(ok, clear_temporary_subscriptions(bobs_phone())),
+        check_subscribers(base_subscribers()),
+        ?_assertEqual([], subscribers(?LOCAL_CONTEXT, Bot2))
+      ]}
+    ]}.
+
 test_has_access() ->
     { "has_access", [
       { "returns true for owners only with VIS_OWNER", [
@@ -369,24 +419,21 @@ test_has_access() ->
     ]}.
 
 test_subscribe() ->
-    Subscribers = [{?TIM_JID, false}, {?CAROL_JID, false},
-                   {?BOB_JID, true}, {?KAREN_JID, true},
-                   {?ALICE_JID, true}],
+    Subscribers = [?TIM_JID, ?CAROL_JID, ?BOB_JID, ?KAREN_JID, ?ALICE_JID],
     { "subscribe", inorder, [
       { "adds user to list of subscribers", inorder, [
-        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID, false)),
-        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?BOB_JID, true)),
+        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
+        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
         check_subscribers(Subscribers)
       ]},
       { "does not alter the result if the owner is subscribed", inorder, [
-        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID, false)),
+        ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
         check_subscribers(Subscribers)
       ]}
     ]}.
 
 test_unsubscribe() ->
-    Subscribers = [{?CAROL_JID, false}, {?KAREN_JID, true},
-                   {?ALICE_JID, true}],
+    Subscribers = [?CAROL_JID, ?KAREN_JID, ?ALICE_JID],
     { "unsubscribe", [
       { "removes user from the list of subscribers", inorder, [
         ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
@@ -466,3 +513,9 @@ new_bot() ->
 
 expected_item() ->
     hd(wocky_db_seed:seed_data(bot_item, none)).
+
+device(User, Resource) -> jid:make(User, ?LOCAL_CONTEXT, Resource).
+
+base_subscribers() -> [?ALICE_JID, ?CAROL_JID, ?KAREN_JID].
+
+bobs_phone() -> device(?BOB, <<"phone">>).

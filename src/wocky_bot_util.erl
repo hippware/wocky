@@ -19,12 +19,13 @@
          get_id_from_node/1,
          get_id_from_jid/1,
          notify_affiliates/3,
-         make_follow_element/1,
+         make_follow_element/0,
          make_affiliate_elements/1,
          make_jid/2,
          make_node/1,
          list_hash/1,
-         get_image/1
+         get_image/1,
+         list_attrs/2
         ]).
 
 check_owner(Server, ID, User) ->
@@ -77,12 +78,11 @@ make_update_packet(ID, User, Role) ->
                                        {<<"node">>, make_node(ID)}],
                               children = [AffiliateEl]}]}.
 
-make_follow_element(Follow) ->
+%% DEPRECATED - remove in a future release once the client doesn't look for
+%% this element any more.
+make_follow_element() ->
     #xmlel{name = <<"follow">>,
-           children = [#xmlcdata{content = follow_data(Follow)}]}.
-
-follow_data(true) -> <<"1">>;
-follow_data(false) -> <<"0">>.
+           children = [#xmlcdata{content = <<"1">>}]}.
 
 make_affiliate_elements(Affiliates) ->
     lists:map(fun make_affiliate_element/1, Affiliates).
@@ -117,3 +117,9 @@ get_image(Entry = #xmlel{}) ->
         #xmlel{children = [#xmlcdata{content = C}]} -> C;
         false -> none
     end.
+
+list_attrs(ID, List) ->
+    [{<<"xmlns">>, ?NS_BOT},
+     {<<"node">>, wocky_bot_util:make_node(ID)},
+     {<<"size">>, integer_to_binary(length(List))},
+     {<<"hash">>, wocky_bot_util:list_hash(List)}].

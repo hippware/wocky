@@ -16,9 +16,6 @@
 
 -export([handle_retrieve_affiliations/3,
          handle_update_affiliations/4,
-         handle_subscribe/4,
-         handle_unsubscribe/3,
-         handle_retrieve_subscribers/3,
          notify_new_viewers/4]).
 
 %%%===================================================================
@@ -35,7 +32,7 @@ handle_retrieve_affiliations(From, #jid{lserver = Server}, Attrs) ->
 make_affiliations_element(Server, ID) ->
     Affiliates = wocky_db_bot:affiliations(Server, ID),
     #xmlel{name = <<"affiliations">>,
-           attrs = list_attrs(ID, Affiliates),
+           attrs = wocky_bot_util:list_attrs(ID, Affiliates),
            children = wocky_bot_util:make_affiliate_elements(Affiliates)}.
 
 %%%===================================================================
@@ -101,7 +98,7 @@ update_affiliations(Server, ID, Affiliations) ->
 make_affiliations_update_element(Server, ID) ->
     Affiliations = wocky_db_bot:affiliations(Server, ID),
     #xmlel{name = <<"affiliations">>,
-           attrs = list_attrs(ID, Affiliations)}.
+           attrs = wocky_bot_util:list_attrs(ID, Affiliations)}.
 
 notify_affiliates_visibility(Server, ID, ?WOCKY_BOT_VIS_WHITELIST,
                              OldAffiliations, NewAffiliations) ->
@@ -110,70 +107,6 @@ notify_affiliates_visibility(Server, ID, ?WOCKY_BOT_VIS_WHITELIST,
     AddedAffiliationsJIDs = [A || {A, _} <- AddedAffiliations],
     notify_new_viewers(Server, ID, AddedAffiliationsJIDs);
 notify_affiliates_visibility(_, _, _, _, _) -> ok.
-
-%%%===================================================================
-%%% Action - subscribe
-%%%===================================================================
-
-handle_subscribe(From, #jid{lserver = Server}, Attrs, Children) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_access(Server, ID, From),
-        Follow <- get_follow(Children),
-        subscribe_bot(Server, ID, From, Follow),
-        {ok, []}
-       ]).
-
-subscribe_bot(Server, ID, From, Follow) ->
-    {ok, wocky_db_bot:subscribe(Server, ID, From, Follow)}.
-
-get_follow([]) -> {ok, false};
-get_follow([Child | Rest]) ->
-    case Child of
-        #xmlel{name = <<"follow">>,
-               children = [#xmlcdata{content = <<"1">>}]} -> {ok, true};
-        _ -> get_follow(Rest)
-    end.
-
-%%%===================================================================
-%%% Action - unsubscribe
-%%%===================================================================
-
-handle_unsubscribe(From, #jid{lserver = Server}, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_bot_exists(Server, ID),
-        unsubscribe_bot(Server, ID, From),
-        {ok, []}
-       ]).
-
-unsubscribe_bot(Server, ID, From) ->
-    {ok, wocky_db_bot:unsubscribe(Server, ID, From)}.
-
-%%%===================================================================
-%%% Action - retrieve subscribers
-%%%===================================================================
-
-handle_retrieve_subscribers(From, #jid{lserver = Server}, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(Server, ID, From),
-        {ok, make_subscribers_element(Server, ID)}
-       ]).
-
-make_subscribers_element(Server, ID) ->
-    Subscribers = wocky_db_bot:subscribers(Server, ID),
-    #xmlel{name = <<"subscribers">>,
-           attrs = list_attrs(ID, Subscribers),
-           children = make_subscriber_elements(Subscribers)}.
-
-make_subscriber_elements(Subscribers) ->
-    lists:map(fun make_subscriber_element/1, Subscribers).
-
-make_subscriber_element({JID, Follow}) ->
-    #xmlel{name = <<"subscriber">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)}],
-           children = [wocky_bot_util:make_follow_element(Follow)]}.
 
 %%%===================================================================
 %%% Access change notifications
@@ -239,13 +172,3 @@ get_viewers(_, _, #jid{luser = LUser, lserver = LServer}, _) ->
 
 roster_to_jid(#wocky_roster{contact_jid = SimpleJID}) ->
     jid:make(SimpleJID).
-
-%%%===================================================================
-%%% Common helpers
-%%%===================================================================
-
-list_attrs(ID, List) ->
-    [{<<"xmlns">>, ?NS_BOT},
-     {<<"node">>, wocky_bot_util:make_node(ID)},
-     {<<"size">>, integer_to_binary(length(List))},
-     {<<"hash">>, wocky_bot_util:list_hash(List)}].
