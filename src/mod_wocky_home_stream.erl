@@ -25,7 +25,7 @@
 -include("wocky.hrl").
 -include("wocky_publishing.hrl").
 
--define(PACKET_FILTER_PRIORITY, 40).
+-define(PACKET_FILTER_PRIORITY, 50).
 -define(NODE_CLEANUP_PRIORITY, 80).
 
 -record(hs_subscription,
@@ -170,16 +170,12 @@ check_publish_non_bot(From, Stanza) ->
     end.
 
 check_publish_bot(From, BotEl) ->
-    Action = xml:get_path_s(BotEl, [{elem, <<"action">>}, cdata]),
-    JIDBin = xml:get_path_s(BotEl, [{elem, <<"jid">>}, cdata]),
-
-    case {JIDBin, Action} of
-        {<<>>, _} -> {ok, {keep, chat_id(From)}};
-        {JIDBin, <<"show">>} -> {ok, {drop, bot_id(JIDBin)}};
-        {JIDBin, <<"share">>} -> {ok, {drop, bot_id(JIDBin)}};
-        {_JIDBin, <<"enter">>} -> {ok, {drop, new_id()}};
-        {_JIDBin, <<"exit">>} -> {ok, {drop, new_id()}};
-        _ -> {ok, {keep, chat_id(From)}}
+    case wocky_bot_util:bot_packet_action(BotEl) of
+        {none, none} ->     {ok, {keep, chat_id(From)}};
+        {JIDBin, show} ->   {ok, {drop, bot_id(JIDBin)}};
+        {JIDBin, share} ->  {ok, {drop, bot_id(JIDBin)}};
+        {_JIDBin, enter} -> {ok, {drop, new_id()}};
+        {_JIDBin, exit} ->  {ok, {drop, new_id()}}
     end.
 
 maybe_drop({ok, drop}, _) -> drop;

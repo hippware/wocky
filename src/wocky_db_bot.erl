@@ -31,7 +31,8 @@
          set_unfollow_me/1,
          subscribe_temporary/4,
          unsubscribe_temporary/3,
-         clear_temporary_subscriptions/1
+         clear_temporary_subscriptions/1,
+         add_share/3
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -310,6 +311,14 @@ clear_temporary_subscription(#{device := Device, bot := Bot}) ->
     ok = wocky_db:delete(shared, temp_subscription, all,
                          #{device => Device,
                            bot => Bot}).
+
+-spec add_share(ejabberd:jid(), ejabberd:jid(), ejabberd:jid()) -> ok.
+add_share(From, To, BotJID) ->
+    ok = wocky_db:insert(shared, bot_share,
+                         #{from_jid => jid:to_binary(jid:to_bare(From)),
+                           to_jid   => jid:to_binary(jid:to_bare(To)),
+                           bot      => jid:to_binary(BotJID),
+                           time     => now}).
 
 %%%===================================================================
 %%% Private helpers

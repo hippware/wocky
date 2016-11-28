@@ -39,6 +39,8 @@
           value :: not_found | binary() | integer() | loc() | jid()
          }).
 
+-define(PACKET_FILTER_PRIORITY, 40).
+
 %%%===================================================================
 %%% gen_mod handlers
 %%%===================================================================
@@ -49,17 +51,18 @@ start(Host, _Opts) ->
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
     ejabberd_hooks:add(filter_local_packet, Host,
-                       fun filter_local_packet_hook/1, 80),
+                       fun filter_local_packet_hook/1,
+                       ?PACKET_FILTER_PRIORITY),
     mod_wocky_access:register(<<"bot">>, ?MODULE).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BOT),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT),
     ejabberd_hooks:delete(filter_local_packet, Host,
-                          fun filter_local_packet_hook/1, 80),
+                          fun filter_local_packet_hook/1,
+                          ?PACKET_FILTER_PRIORITY),
     mod_wocky_access:unregister(<<"bot">>, ?MODULE),
     wocky_bot_subscription:stop(Host).
-
 
 %%%===================================================================
 %%% Event handler
@@ -380,6 +383,8 @@ follow_me_result(#iq{sub_el = SubEl}) ->
 -type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
+
+%% Packets to the bot - dropped if they were processed here.
 filter_local_packet_hook(P = {From,
                               #jid{user = <<>>, lserver = LServer,
                                    resource= <<"bot/", BotID/binary>>},
@@ -388,6 +393,24 @@ filter_local_packet_hook(P = {From,
         ok -> drop;
         ignored -> P
     end;
+
+%% Packets to another entity which reference a bot. Passed through unless
+%% they hit a condition to block them.
+filter_local_packet_hook(P = {From, To,
+                              Stanza = #xmlel{name = <<"message">>,
+                                              attrs = Attrs}}) ->
+    Result = case xml:get_attr(<<"type">>, Attrs) of
+        {value, <<"headline">>} -> handle_headline_packet(From, To, Stanza);
+        _ -> ok
+    end,
+    case Result of
+        drop ->
+            reply_not_allowed(From, Stanza),
+            drop;
+        ok -> P
+    end;
+
+%% Ignore all other packets
 filter_local_packet_hook(Other) ->
     Other.
 
@@ -410,6 +433,20 @@ handle_bot_packet(_From, _LServer, _BotID,
 
 handle_bot_packet(_, _, _, _) ->
     ignored.
+
+handle_headline_packet(From, To, Stanza) ->
+    case xml:get_subtag(Stanza, <<"bot">>) of
+        false -> ok;
+        BotStanza -> handle_bot_stanza(From, To, BotStanza)
+    end.
+
+handle_bot_stanza(From, To, BotStanza) ->
+    case wocky_bot_util:bot_packet_action(BotStanza) of
+        {JIDBin, share} ->
+            wocky_bot_users:handle_share(From, To, jid:from_binary(JIDBin));
+        _ ->
+            ok
+    end.
 
 %%%===================================================================
 %%% Roster update packet handler
@@ -849,3 +886,10 @@ make_ret_stanza(Fields) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Fields}.
+
+reply_not_allowed(Sender, Stanza) ->
+    Err = jlib:make_error_reply(
+            Stanza,
+            ?ERRT_NOT_ALLOWED(
+               ?MYLANG, <<"Bot action not allowed to this user">>)),
+    ejabberd_router:route(#jid{lserver = wocky_app:server()}, Sender, Err).

@@ -25,7 +25,8 @@
          make_node/1,
          list_hash/1,
          get_image/1,
-         list_attrs/2
+         list_attrs/2,
+         bot_packet_action/1
         ]).
 
 check_owner(Server, ID, User) ->
@@ -123,3 +124,16 @@ list_attrs(ID, List) ->
      {<<"node">>, wocky_bot_util:make_node(ID)},
      {<<"size">>, integer_to_binary(length(List))},
      {<<"hash">>, wocky_bot_util:list_hash(List)}].
+
+bot_packet_action(BotStanza) ->
+    Action = xml:get_path_s(BotStanza, [{elem, <<"action">>}, cdata]),
+    JIDBin = xml:get_path_s(BotStanza, [{elem, <<"jid">>}, cdata]),
+
+    case {JIDBin, Action} of
+        {<<>>, _}             -> {none, none};
+        {JIDBin, <<"show">>}  -> {JIDBin, show};
+        {JIDBin, <<"share">>} -> {JIDBin, share};
+        {JIDBin, <<"enter">>} -> {JIDBin, enter};
+        {JIDBin, <<"exit">>}  -> {JIDBin, exit};
+        _                     -> {none, none}
+    end.

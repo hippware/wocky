@@ -21,7 +21,8 @@
                       check_hs_result/4, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
-                      node_el/2, node_el/3, ensure_all_clean/1
+                      follow_cdata/1, node_el/2, node_el/3, cdata_el/2,
+                      ensure_all_clean/1
                      ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
@@ -69,7 +70,8 @@ all() ->
      publish_image_item,
      item_images,
      follow_me,
-     unfollow_me
+     unfollow_me,
+     share
     ].
 
 suite() ->
@@ -100,7 +102,7 @@ local_tables() ->
 
 reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db:clear_tables(shared, [bot, bot_subscriber]),
+    wocky_db:clear_tables(shared, [bot, bot_subscriber, bot_share]),
     wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
     wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
@@ -864,6 +866,38 @@ unfollow_me(Config) ->
         expect_iq_error(unfollow_me_stanza(), Bob)
       end).
 
+share(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        [] = wocky_db:select(shared, bot_share, all, #{bot => ?BOT_B_JID}),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
+
+        %% Alice can't share to Tim because he's not a friend
+        escalus:send(Alice, share_stanza(Tim)),
+        escalus:assert(is_error, [<<"cancel">>, <<"not-allowed">>],
+                       escalus:wait_for_stanza(Alice)),
+
+        [] = wocky_db:select(shared, bot_share, all, #{bot => ?BOT_B_JID}),
+
+        %% Make Tim a friend
+        test_helper:add_contact(Alice, Tim, <<"blah">>, <<"He's okay">>),
+        test_helper:subscribe_pair(Alice, Tim),
+
+        %% Alice can now share to him
+        escalus:send(Alice, share_stanza(Tim)),
+        timer:sleep(500),
+
+        ExpectedTo = ?TIM_B_JID,
+        ExpectedFrom = ?ALICE_B_JID,
+        [#{to_jid   := ExpectedTo,
+           from_jid := ExpectedFrom}] = wocky_db:select(shared, bot_share, all,
+                                                        #{bot => ?BOT_B_JID}),
+
+        test_helper:ensure_all_clean([Alice, Tim])
+      end).
+
+
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -1437,3 +1471,21 @@ subscribe_temporary(Bot, Client) ->
 unsubscribe_temporary(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
     escalus:send(Client, Stanza).
+
+share_stanza(Target) ->
+    fun_chain:first(
+      #xmlel{name = <<"message">>,
+             attrs = [{<<"type">>, <<"headline">>}],
+             children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
+                         bot_el()]},
+      escalus_stanza:to(Target),
+      escalus_stanza:from(?ALICE_B_JID)
+     ).
+
+bot_el() ->
+    #xmlel{name = <<"bot">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = [cdata_el(<<"jid">>, ?BOT_B_JID),
+                       cdata_el(<<"id">>, ?BOT),
+                       cdata_el(<<"server">>, ?LOCAL_CONTEXT),
+                       cdata_el(<<"action">>, <<"share">>)]}.

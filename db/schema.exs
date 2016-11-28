@@ -158,6 +158,15 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:node, :device, :bot]
     ]
 
+    table :bot_share, [
+      columns: [
+        bot:      :text,  # Full bot JID
+        to_jid:   :text, # Bare JID of user to whom the bot was shared
+        from_jid: :text, # Bare JID of user who shared the bot
+        time:   :timestamp # Time at which the bot was shared
+      ],
+      primary_key: [:bot, :to_jid]
+    ]
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
