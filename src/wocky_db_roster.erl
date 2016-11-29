@@ -148,7 +148,8 @@ is_x(#jid{luser = LUser}, OtherJID, IsFun) ->
                          #{user => LUser,
                            contact_jid => ContactJID}) of
         [#{subscription := Sub, groups := Groups}] ->
-            IsFun(binary_to_atom(Sub, utf8), Groups);
+            CleanGroups = wocky_util:null_to_list(Groups),
+            IsFun(binary_to_atom(Sub, utf8), CleanGroups);
         _ ->
             false
     end.

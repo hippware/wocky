@@ -16,7 +16,8 @@
          get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
          subscribe_temporary/4, unsubscribe_temporary/3,
          clear_temporary_subscriptions/1,
-         image_items_count/2, item_images/2
+         image_items_count/2, item_images/2,
+         add_share/3, is_shared_to/2
         ]).
 
 wocky_db_bot_test_() -> {
@@ -36,7 +37,8 @@ wocky_db_bot_test_() -> {
         test_affiliations_from_map(),
         test_subscribers(),
         test_image_items_count(),
-        test_item_images()
+        test_item_images(),
+        test_share()
       ]},
 
       {inorder, [
@@ -68,7 +70,8 @@ local_tables() -> [
                   ].
 
 before_all() ->
-    ok = wocky_db_seed:seed_tables(shared, [roster, bot, bot_subscriber]),
+    ok = wocky_db_seed:seed_tables(shared, [roster, bot, bot_subscriber,
+                                            bot_share]),
     ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()).
 
 after_all(_) ->
@@ -267,6 +270,17 @@ test_item_images() ->
       ]}
     ]}.
 
+test_share() ->
+    ID = <<"new_ID">>,
+    JID = wocky_bot_util:make_jid(?LOCAL_CONTEXT, ID),
+    { "add_share / is_shared_to", inorder, [
+      { "Should not be marked as shared to other user until it's been shared", [
+        ?_assertNot(is_shared_to(?BOB_JID, JID)),
+        ?_assertEqual(ok, add_share(?ALICE_JID, ?BOB_JID, JID)),
+        ?_assert(is_shared_to(?BOB_JID, JID))
+      ]}
+    ]}.
+
 test_get_item() ->
     { "get_item", [
       { "gets all fields on the item", [
@@ -403,13 +417,14 @@ test_has_access() ->
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?KAREN_JID)),
         ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
       ]},
-      { "returns true for everyone with VIS_PUBLIC", [
+      { "returns true for everyone to whom the bot is shared with VIS_OPEN", [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
                                                    visibility =>
-                                                   ?WOCKY_BOT_VIS_PUBLIC})),
+                                                   ?WOCKY_BOT_VIS_OPEN})),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
+        ?_assertEqual(ok, add_share(?ALICE_JID, ?BOB_JID, ?BOT_JID)),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
-        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
       ]},
       { "returns not_found for non-existant bot", [
         ?_assertEqual(not_found, has_access(?LOCAL_CONTEXT,
@@ -474,7 +489,7 @@ test_dissociate_user() ->
         (new_bot())#{visibility => ?WOCKY_BOT_VIS_FRIENDS, affiliates => [],
                      owner => ?ALICE_B_JID},
     NewBotPub = #{id := IDPub} =
-        (new_bot())#{visibility => ?WOCKY_BOT_VIS_PUBLIC, affiliates => [],
+        (new_bot())#{visibility => ?WOCKY_BOT_VIS_OPEN, affiliates => [],
                      owner => ?ALICE_B_JID},
     { "dissociate_user", [
       {"FRIENDS bots should become WHITELIST with owners' roster as affiliates",
@@ -486,7 +501,7 @@ test_dissociate_user() ->
         ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDPub)),
         ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_WHITELIST},
                       get_bot(?LOCAL_CONTEXT, IDFriends)),
-        ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_PUBLIC},
+        ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_OPEN},
                       get_bot(?LOCAL_CONTEXT, IDPub)),
         ?_assertEqual(4, length(affiliations(?LOCAL_CONTEXT, IDFriends))),
         ?_assertEqual(0, length(affiliations(?LOCAL_CONTEXT, IDPub)))

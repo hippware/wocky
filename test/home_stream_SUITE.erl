@@ -257,7 +257,7 @@ auto_publish_bot(Config) ->
         clear_home_streams(),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_PUBLIC, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
         check_home_stream_sizes(1, [Bob, Carol, Tim]),
 
         ensure_all_clean([Alice, Bob, Carol, Tim])

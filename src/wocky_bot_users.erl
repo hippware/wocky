@@ -127,9 +127,14 @@ handle_share(From, To, BotJID = #jid{lserver = Server}) ->
     end.
 
 check_can_share_to(Server, ID, To) ->
-    case wocky_db_bot:has_access(Server, ID, To) of
-        true -> ok;
-        false -> {error, cant_share}
+    case wocky_db_bot:visibility(Server, ID) of
+        ?WOCKY_BOT_VIS_OPEN ->
+            ok;
+        _ ->
+            case wocky_db_bot:has_access(Server, ID, To) of
+                true -> ok;
+                false -> {error, cant_share}
+            end
     end.
 
 %%%===================================================================
@@ -144,9 +149,9 @@ check_can_share_to(Server, ID, To) ->
 % Unchanged visibility
 notify_new_viewers(_, _, Vis, Vis) -> ok;
 
-% Old visibility was followers or public - there will
+% Old visibility was Followers or Open - there will
 % never be additional viewers to notify
-notify_new_viewers(_, _, ?WOCKY_BOT_VIS_PUBLIC, _) -> ok;
+notify_new_viewers(_, _, ?WOCKY_BOT_VIS_OPEN, _) -> ok;
 notify_new_viewers(_, _, ?WOCKY_BOT_VIS_FOLLOWERS, _) -> ok;
 
 % General case of changed visibility
@@ -190,7 +195,7 @@ get_viewers(Server, ID, Owner, ?WOCKY_BOT_VIS_WHITELIST) ->
 get_viewers(_, _, #jid{luser = LUser, lserver = LServer},
             ?WOCKY_BOT_VIS_FRIENDS) ->
     [roster_to_jid(R) || R <- wocky_db_roster:friends(LUser, LServer)];
-%% Notifiy followers for both 'public' and 'followers' bots:
+%% Notifiy followers for both 'open' and 'followers' bots:
 get_viewers(_, _, #jid{luser = LUser, lserver = LServer}, _) ->
     [roster_to_jid(R) || R <- wocky_db_roster:followers(LUser, LServer)].
 
