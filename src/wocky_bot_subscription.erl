@@ -26,7 +26,9 @@
 %%%===================================================================
 
 start(Host) ->
-    wocky_db_bot:clear_temporary_subscriptions(node()),
+    %% This call may fail if the database hasn't been updated yet. Isolate
+    %% it in a temporary process so that the application can start.
+    spawn(fun () -> wocky_db_bot:clear_temporary_subscriptions(node()) end),
     ejabberd_hooks:add(node_cleanup, global, fun node_cleanup_hook/1, 90),
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
                        fun remove_connection_hook/4, 90),
