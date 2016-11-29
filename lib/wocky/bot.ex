@@ -3,7 +3,6 @@ defmodule Wocky.Bot do
 
   use Exref, ignore: [insert: 1, new: 1, new: 2, to_jid: 1]
   use Wocky.Ejabberd
-  alias :wocky_db, as: Db
 
   @type t :: %__MODULE__{
     id:               binary,
@@ -73,16 +72,17 @@ defmodule Wocky.Bot do
   end
 
   @spec set_location(Wocky.Bot.t, Wocky.Location.t) :: :ok
-  def set_location(bot, location) do
+  def set_location(%{id: id} = _bot, %{lat: lat, lon: lon} = _location) do
     Schemata.update :bot, in: :wocky_db.shared_keyspace,
-      set: %{lat: location.lat, lon: location.lon},
-      where: %{id: bot.id}
+      set: %{lat: lat, lon: lon},
+      where: %{id: id}
+
+    :wocky_index.bot_updated(%{id: id, lat: lat, lon: lon})
   end
 
   @spec insert(Wocky.Bot.t) :: :ok
   def insert(%__MODULE__{} = struct) do
     bot = struct |> Map.from_struct
-
-    :ok = Db.insert(:shared, :bot, bot)
+    :wocky_db_bot.insert("", bot)
   end
 end

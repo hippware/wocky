@@ -8,11 +8,12 @@
 -export([start_link/0,
          user_updated/2,
          user_removed/1,
-         bot_updated/2,
+         bot_updated/1,
          bot_removed/1,
-         reindex/0]).
+         reindex/0,
+         reindex/1]).
 
--ignore_xref([start_link/0, reindex/0]).
+-ignore_xref([start_link/0, reindex/0, reindex/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -51,20 +52,25 @@ user_removed(UserID) ->
     gen_server:cast(?SERVER, {user_removed, UserID}).
 
 %% @doc Called after a bot is updated to update the index.
--spec bot_updated(binary(), map()) -> ok.
-bot_updated(UserID, Data) ->
-    gen_server:cast(?SERVER, {bot_updated, UserID, Data}).
+-spec bot_updated(map()) -> ok.
+bot_updated(#{id := BotID} = Data) ->
+    gen_server:cast(?SERVER, {bot_updated, BotID, Data}).
 
-%% @doc Called after a user is removed to update the index.
+%% @doc Called after a bot is removed to update the index.
 -spec bot_removed(binary()) -> ok.
-bot_removed(UserID) ->
-    gen_server:cast(?SERVER, {bot_removed, UserID}).
+bot_removed(BotID) ->
+    gen_server:cast(?SERVER, {bot_removed, BotID}).
 
-%% @doc Update the index for all of the users in the databse.
+%% @doc Update the index for all of the users and bots in the databse.
 %% NOTE: This is meant for dev and test. It is probably not appropriate
 %% for production environments.
 reindex() ->
-    gen_server:call(?SERVER, reindex).
+    reindex(users),
+    reindex(bots).
+
+%% @doc Update the index for all records in a specific collection.
+reindex(Collection) ->
+    gen_server:call(?SERVER, {reindex, Collection}, 60000).
 
 
 %%%===================================================================
@@ -92,13 +98,22 @@ init([]) ->
 %% @doc Handling call messages
 -spec handle_call(any(), {pid(), any()}, state()) ->
     {reply, ok | {error, term()}, state()}.
-handle_call(reindex, _From, #state{user_index = Index} = State) ->
+handle_call({reindex, users}, _From, #state{user_index = Index} = State) ->
     Users = wocky_db:select(shared, user, all, #{}),
     lists:foreach(
       fun (#{user := UserID} = User) ->
               Object = map_to_object(UserID, User, user_fields()),
               update_index(Index, UserID, Object)
       end, Users),
+    {reply, ok, State};
+handle_call({reindex, bots}, _From, #state{bot_index = Index} = State) ->
+    Bots = wocky_db:select(shared, bot, all, #{}),
+    lists:foreach(
+      fun (#{id := BotID} = Bot) ->
+              lager:info("Found bot ~s", [BotID]),
+              Object = map_to_object(BotID, Bot, bot_fields()),
+              update_index(Index, BotID, Object)
+      end, Bots),
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
     {reply, {error, bad_call}, State}.
@@ -162,12 +177,17 @@ user_fields() ->
     [handle, last_name, first_name, avatar].
 
 bot_fields() ->
-    [].
+    [server, title, image, lat, lon, radius].
 
-map_to_object(UserID, MapData, Fields) ->
+map_to_object(ID, MapData, Fields) ->
     maps:fold(fun (K, V, Acc) -> Acc#{atom_to_binary(K, utf8) => V} end,
-              #{<<"objectID">> => UserID},
-              maps:with(Fields, MapData)).
+              #{<<"objectID">> => ID},
+              maps:with(Fields, with_geoloc(MapData))).
+
+with_geoloc(#{lat := Lat, lon := Lon} = Data) ->
+    Data#{'_geoloc' => #{lat => Lat, lng => Lon}};
+with_geoloc(Data) ->
+    Data.
 
 update_index(Index, ObjectID, Object) ->
     case maps:size(Object) < 1 of
