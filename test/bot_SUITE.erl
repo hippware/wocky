@@ -21,7 +21,7 @@
                       check_hs_result/4, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
-                      follow_cdata/1, node_el/2, node_el/3, cdata_el/2,
+                      node_el/2, node_el/3, cdata_el/2,
                       ensure_all_clean/1
                      ]).
 

@@ -121,7 +121,6 @@ handle_share(From, To, BotJID = #jid{lserver = Server}) ->
                  check_can_share_to(Server, ID, To),
                  wocky_db_bot:add_share(From, To, BotJID)
                 ]),
-    ct:log("Share Result: ~p", [Result]),
     case Result of
         ok -> ok;
         _ -> drop
