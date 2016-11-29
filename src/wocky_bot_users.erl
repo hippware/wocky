@@ -16,6 +16,7 @@
 
 -export([handle_retrieve_affiliations/3,
          handle_update_affiliations/4,
+         handle_share/3,
          notify_new_viewers/4]).
 
 %%%===================================================================
@@ -107,6 +108,29 @@ notify_affiliates_visibility(Server, ID, ?WOCKY_BOT_VIS_WHITELIST,
     AddedAffiliationsJIDs = [A || {A, _} <- AddedAffiliations],
     notify_new_viewers(Server, ID, AddedAffiliationsJIDs);
 notify_affiliates_visibility(_, _, _, _, _) -> ok.
+
+%%%===================================================================
+%%% Action - bot shared
+%%%===================================================================
+
+handle_share(_From, _To, error) -> drop;
+handle_share(From, To, BotJID = #jid{lserver = Server}) ->
+    ID = wocky_bot_util:get_id_from_jid(BotJID),
+    Result = do([error_m ||
+                 wocky_bot_util:check_access(Server, ID, From),
+                 check_can_share_to(Server, ID, To),
+                 wocky_db_bot:add_share(From, To, BotJID)
+                ]),
+    case Result of
+        ok -> ok;
+        _ -> drop
+    end.
+
+check_can_share_to(Server, ID, To) ->
+    case wocky_db_bot:has_access(Server, ID, To) of
+        true -> ok;
+        false -> {error, cant_share}
+    end.
 
 %%%===================================================================
 %%% Access change notifications

@@ -58,7 +58,8 @@
 
          bot_node/1,
          node_el/2,
-         node_el/3
+         node_el/3,
+         cdata_el/2
         ]).
 
 ensure_wocky_is_running() ->
@@ -448,3 +449,5 @@ node_el(ID, Name, Children) ->
     #xmlel{name = Name, attrs = [{<<"node">>, bot_node(ID)}],
            children = Children}.
 
+cdata_el(Name, Value) ->
+    #xmlel{name = Name, children = [#xmlcdata{content = Value}]}.
