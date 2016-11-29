@@ -71,7 +71,8 @@ all() ->
      item_images,
      follow_me,
      unfollow_me,
-     share
+     share,
+     share_open
     ].
 
 suite() ->
@@ -87,8 +88,6 @@ init_per_suite(Config) ->
     reset_tables(Config).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol,
-                                                    karen, robert, tim])),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
@@ -425,10 +424,10 @@ get_subscribed(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {karen, 1}],
       fun(Alice, Bob, Karen) ->
-        %% Make the bot public, otherwise even followers won't be able
+        %% Make the bot open, otherwise even followers won't be able
         %% to see it if they're not affiliates
         expect_iq_success(
-          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_PUBLIC), Alice),
+          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_OPEN), Alice),
 
         %% Alice is the owner (and therefore a follower) so should get the bot
         Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),
@@ -649,13 +648,9 @@ delete_owner(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
         ID1 = create_simple_bot(Alice),
-        ID2 = create_simple_bot(Alice),
 
         expect_iq_success(
           change_visibility_stanza(ID1, ?WOCKY_BOT_VIS_FRIENDS), Alice),
-
-        expect_iq_success(
-          change_visibility_stanza(ID2, ?WOCKY_BOT_VIS_PUBLIC), Alice),
 
         ReturnedBot = expect_iq_success(retrieve_stanza(ID1), Bob),
         ExpectedFieldsFriends =
@@ -663,13 +658,6 @@ delete_owner(Config) ->
                          {"visibility", int, ?WOCKY_BOT_VIS_FRIENDS}),
         check_returned_bot(ReturnedBot, ExpectedFieldsFriends),
         expect_iq_error(retrieve_stanza(ID1), Tim),
-
-        ExpectedFieldsPub =
-        lists:keyreplace("visibility", 1, expected_simple_bot_fields(),
-                         {"visibility", int, ?WOCKY_BOT_VIS_PUBLIC}),
-        ReturnedBot2 = expect_iq_success(retrieve_stanza(ID2), Bob),
-        check_returned_bot(ReturnedBot2, ExpectedFieldsPub),
-        expect_iq_success(retrieve_stanza(ID2), Tim),
 
         %% Delete Alice
         expect_iq_success(
@@ -697,9 +685,7 @@ delete_owner(Config) ->
                          {"subscribers+size", int, 0}),
         ReturnedBot3 = expect_iq_success(retrieve_stanza(ID1), Bob),
         check_returned_bot(ReturnedBot3, ExpectedFields2),
-        expect_iq_error(retrieve_stanza(ID1), Tim),
-        expect_iq_success(retrieve_stanza(ID2), Bob),
-        expect_iq_success(retrieve_stanza(ID2), Tim)
+        expect_iq_error(retrieve_stanza(ID1), Tim)
       end).
 
 publish_item(Config) ->
@@ -874,7 +860,7 @@ share(Config) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
 
         %% Alice can't share to Tim because he's not a friend
-        escalus:send(Alice, share_stanza(Tim)),
+        escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
         escalus:assert(is_error, [<<"cancel">>, <<"not-allowed">>],
                        escalus:wait_for_stanza(Alice)),
 
@@ -885,7 +871,7 @@ share(Config) ->
         test_helper:subscribe_pair(Alice, Tim),
 
         %% Alice can now share to him
-        escalus:send(Alice, share_stanza(Tim)),
+        escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
         timer:sleep(500),
 
         ExpectedTo = ?TIM_B_JID,
@@ -897,7 +883,45 @@ share(Config) ->
         test_helper:ensure_all_clean([Alice, Tim])
       end).
 
+share_open(Config) ->
+    reset_tables(Config),
+    wocky_db:truncate(shared, roster),
+    escalus:story(Config, [{alice, 1}, {carol, 1}, {tim, 1}],
+      fun(Alice, Carol, Tim) ->
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, [?BOT]),
 
+        % Tim can't see the bot because it hasn't been shared to him
+        expect_iq_error(retrieve_stanza(), Tim),
+
+        %% Make Tim a friend of Alice
+        test_helper:add_contact(Alice, Tim, <<"blah">>, <<"He's okay">>),
+        test_helper:subscribe_pair(Alice, Tim),
+
+        %% Alice can now share to him
+        escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
+        timer:sleep(500),
+
+        %% Tim can now see the bot
+        expect_iq_success(retrieve_stanza(), Tim),
+
+        %% Carol can't see the bot because it hasn't been shared to her
+        expect_iq_error(retrieve_stanza(), Carol),
+
+        %% Make Carol a friend of Tim
+        test_helper:subscribe_pair(Carol, Tim),
+
+        %% Tim shares the bot to Carol
+        escalus:send(Tim, share_stanza(?BOT, Tim, Carol)),
+        timer:sleep(500),
+
+        %% Carol can now see the bot
+        expect_iq_success(retrieve_stanza(), Carol),
+
+        2 = length(wocky_db:select(shared, bot_share, all,
+                                   #{bot => ?BOT_B_JID})),
+
+        test_helper:ensure_all_clean([Alice, Carol, Tim])
+      end).
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -1472,20 +1496,23 @@ unsubscribe_temporary(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
     escalus:send(Client, Stanza).
 
-share_stanza(Target) ->
+share_stanza(BotID, From, Target) ->
     fun_chain:first(
       #xmlel{name = <<"message">>,
              attrs = [{<<"type">>, <<"headline">>}],
              children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
-                         bot_el()]},
+                         bot_el(BotID)]},
       escalus_stanza:to(Target),
-      escalus_stanza:from(?ALICE_B_JID)
+      escalus_stanza:from(From)
      ).
 
-bot_el() ->
+bot_el(BotID) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = [cdata_el(<<"jid">>, ?BOT_B_JID),
-                       cdata_el(<<"id">>, ?BOT),
+           children = [cdata_el(<<"jid">>,
+                                jid:to_binary(
+                                  wocky_bot_util:make_jid(
+                                    ?LOCAL_CONTEXT, BotID))),
+                       cdata_el(<<"id">>, BotID),
                        cdata_el(<<"server">>, ?LOCAL_CONTEXT),
                        cdata_el(<<"action">>, <<"share">>)]}.

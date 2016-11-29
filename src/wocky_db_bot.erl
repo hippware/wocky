@@ -32,7 +32,8 @@
          subscribe_temporary/4,
          unsubscribe_temporary/3,
          clear_temporary_subscriptions/1,
-         add_share/3
+         add_share/3,
+         is_shared_to/2
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -180,7 +181,7 @@ has_access(_Server, ID, User) ->
     BareUserBin = jid:to_binary(jid:to_bare(User)),
     Bot =
     wocky_db:select_row(shared, bot,
-                        [visibility, affiliates, owner],
+                        [id, server, visibility, affiliates, owner],
                         #{id => ID}),
     has_access(BareUserBin, Bot).
 
@@ -320,6 +321,13 @@ add_share(From, To, BotJID) ->
                            bot      => jid:to_binary(BotJID),
                            time     => now}).
 
+-spec is_shared_to(ejabberd:jid(), ejabberd:jid()) -> boolean().
+is_shared_to(User, BotJID) ->
+    not_found =/= wocky_db:select_one(
+                    shared, bot_share, bot,
+                    #{bot    => jid:to_binary(BotJID),
+                      to_jid => jid:to_binary(jid:to_bare(User))}).
+
 %%%===================================================================
 %%% Private helpers
 %%%===================================================================
@@ -342,8 +350,14 @@ has_access(User, #{visibility := ?WOCKY_BOT_VIS_FOLLOWERS,
                    owner:= Owner}) ->
     wocky_db_roster:is_follower(jid:from_binary(Owner),
                                 jid:from_binary(User));
-has_access(_User, #{visibility := ?WOCKY_BOT_VIS_PUBLIC}) ->
-    true;
+has_access(User, #{id := ID,
+                   server := Server,
+                   owner := Owner,
+                   visibility := ?WOCKY_BOT_VIS_OPEN}) ->
+    UserJID = jid:from_binary(User),
+    wocky_db_roster:is_follower(jid:from_binary(Owner), UserJID)
+    orelse
+    wocky_db_bot:is_shared_to(UserJID, wocky_bot_util:make_jid(Server, ID));
 has_access(_, _) ->
     false.
 
