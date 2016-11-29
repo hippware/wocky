@@ -1,0 +1,119 @@
+defmodule Wocky.Index do
+  @moduledoc "Wocky interface to Algolia for full text search of users and bots"
+
+  use ExActor.GenServer, export: :wocky_index
+  require Logger
+
+  defmodule State do
+    @moduledoc false
+    defstruct [
+      enabled:    false,
+      user_index: nil,
+      bot_index:  nil
+    ]
+  end
+
+  @user_fields [:handle, :last_name, :first_name, :avatar]
+  @bot_fields [:server, :title, :image, :lat, :lon, :radius]
+
+  defstart start_link do
+    user_index    = Application.fetch_env!(:wocky, :algolia_user_index_name)
+    bot_index     = Application.fetch_env!(:wocky, :algolia_bot_index_name)
+    indexing_envs = Application.fetch_env!(:wocky, :indexing_enabled_envs)
+    current_env   = Application.fetch_env!(:wocky, :wocky_env)
+
+    enabled = Enum.member?(indexing_envs, current_env)
+
+    :ok = Logger.info("Indexing enabled: #{inspect(enabled)}")
+    initial_state(
+      %State{
+        enabled: enabled,
+        user_index: user_index,
+        bot_index: bot_index
+      }
+    )
+  end
+
+  defcall geosearch(lat, lon), state: %State{bot_index: index} do
+    index |> Algolia.search(<<>>, %{aroundLatLng: "#{lat},#{lon}"})
+    reply(:ok)
+  end
+
+  defcall reindex(:users), state: %State{user_index: index} do
+    :shared
+    |> :wocky_db.select(:user, :all, %{})
+    |> Enum.each(
+        fn (%{user: user_id} = user) ->
+          update_index(index, user_id, user, @user_fields)
+        end)
+
+    reply(:ok)
+  end
+
+  defcall reindex(:bots), state: %State{bot_index: index} do
+    :shared
+    |> :wocky_db.select(:bot, :all, %{})
+    |> Enum.each(
+        fn (%{id: bot_id} = bot) ->
+          update_index(index, bot_id, bot, @bot_fields)
+        end)
+
+    reply(:ok)
+  end
+
+  defcast _, state: %State{enabled: false}, do: noreply
+
+  defcast user_updated(user_id, user), state: %State{user_index: index} do
+    update_index(index, user_id, user, @user_fields)
+    noreply
+  end
+
+  defcast user_removed(user_id), state: %State{user_index: index} do
+    delete_object(index, user_id)
+    noreply
+  end
+
+  defcast bot_updated(bot_id, bot), state: %State{bot_index: index} do
+    update_index(index, bot_id, bot, @bot_fields)
+    noreply
+  end
+
+  defcast bot_removed(bot_id), state: %State{bot_index: index} do
+    delete_object(index, bot_id)
+    noreply
+  end
+
+  defp update_index(index, id, data, fields) do
+    {:ok, _} =
+      data
+      |> map_to_object(id, fields)
+      |> do_update_index(index)
+  end
+
+  defp map_to_object(map, id, fields) do
+    map
+    |> with_geoloc
+    |> Map.take(fields)
+    |> Map.put(:objectID, id)
+    |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
+  end
+
+  defp with_geoloc(%{lat: lat, lon: lon} = data) do
+    Map.put(data, :_geoloc, %{lat: lat, lon: lon})
+  end
+  defp with_geoloc(data), do: data
+
+  defp do_update_index(object, index) do
+    :ok = Logger.debug("Updating #{index} index with object #{inspect(object)}")
+    if map_size(object) < 1 do
+      {:ok, :no_changes}
+    else
+      index |> Algolia.partial_update_objects([object])
+    end
+  end
+
+  defp delete_object(index, id) do
+    :ok = Logger.debug("Removing object #{id} from #{index}")
+    {:ok, _} = index |> Algolia.delete_object(id)
+  end
+end

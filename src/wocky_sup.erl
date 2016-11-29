@@ -30,11 +30,11 @@ init([]) ->
                  period    => 5},
 
     UserIdx = #{id       => wocky_index,
-                start    => {wocky_index, start_link, []},
+                start    => {'Elixir.Wocky.Index', start_link, []},
                 restart  => permanent,
                 shutdown => 5000,
                 type     => worker,
-                modules  => [wocky_index]},
+                modules  => ['Elixir.Wocky.Index']},
 
     BotExpiryMon = #{id       => wocky_bot_expiry_mon,
                      start    => {wocky_bot_expiry_mon, start_link, []},

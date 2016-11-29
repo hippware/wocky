@@ -77,7 +77,7 @@ defmodule Wocky.Bot do
       set: %{lat: lat, lon: lon},
       where: %{id: id}
 
-    :wocky_index.bot_updated(%{id: id, lat: lat, lon: lon})
+    Wocky.Index.bot_updated(id, %{lat: lat, lon: lon})
   end
 
   @spec insert(Wocky.Bot.t) :: :ok
