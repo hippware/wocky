@@ -356,6 +356,9 @@ handle_follow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
         wocky_bot_util:check_owner(Server, ID, From),
         Expiry <- get_follow_me_expiry(Attrs),
         wocky_db_bot:set_follow_me(ID, Expiry),
+        publish_follow_me(From, ID, Server),
+        wocky_bot_expiry_mon:follow_started(
+          wocky_bot_util:make_jid(Server, ID), Expiry),
         {ok, follow_me_result(IQ)}
        ]).
 
@@ -364,6 +367,9 @@ handle_unfollow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_owner(Server, ID, From),
         wocky_db_bot:set_unfollow_me(ID),
+        publish_unfollow_me(From, ID, Server),
+        wocky_bot_expiry_mon:follow_stopped(
+          wocky_bot_util:make_jid(Server, ID)),
         {ok, follow_me_result(IQ)}
        ]).
 
@@ -375,6 +381,17 @@ get_follow_me_expiry(Attrs) ->
 
 follow_me_result(#iq{sub_el = SubEl}) ->
     SubEl.
+
+publish_follow_me(Owner, ID, Server) ->
+    Stanza = wocky_bot_util:follow_stanza(Server, ID, <<"follow on">>),
+    send_hs_notification(Owner, ID, Server, Stanza).
+
+publish_unfollow_me(Owner, ID, Server) ->
+    Stanza = wocky_bot_util:follow_stanza(Server, ID, <<"follow off">>),
+    send_hs_notification(Owner, ID, Server, Stanza).
+
+send_hs_notification(From, ID, Server, Stanza) ->
+    ejabberd_router:route(wocky_bot_util:make_jid(Server, ID), From, Stanza).
 
 %%%===================================================================
 %%% Incoming packet handler

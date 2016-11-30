@@ -15,7 +15,8 @@
          check_attr/3,
          get_attr/2,
          get_sub_el/2,
-         parse_multiple/1
+         parse_multiple/1,
+         cdata_el/2
         ]).
 
 -ignore_xref([check_attr/3]).
@@ -117,3 +118,6 @@ get_tree(Tree) ->
 
 id_pass_error({error, E}) -> {error, E};
 id_pass_error(X)          -> {ok, X}.
+
+cdata_el(Name, Value) ->
+    #xmlel{name = Name, children = [#xmlcdata{content = Value}]}.

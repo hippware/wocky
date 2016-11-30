@@ -20,7 +20,8 @@
                       expect_iq_success/2, add_to_u/2,
                       ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
-                      check_hs_result/2, check_hs_result/4]).
+                      check_hs_result/2, check_hs_result/4,
+                      hs_query_el/1, hs_node/1]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -139,7 +140,7 @@ subscribe(Config) ->
       fun(Alice, Bob) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           query_el(undefined))),
+                                           hs_query_el(undefined))),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item">>), Alice)),
@@ -161,7 +162,7 @@ subscribe_version(Config) ->
       fun(Alice, Bob) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           query_el(?HS_V_2))),
+                                           hs_query_el(?HS_V_2))),
 
         lists:foreach(
           fun(_) ->
@@ -172,10 +173,10 @@ subscribe_version(Config) ->
         %% Alice's (since it's not his)
         escalus:send(Bob,
             escalus_stanza:presence_direct(hs_node(?BOB), <<"available">>,
-                                           query_el(?HS_V_2))),
+                                           hs_query_el(?HS_V_2))),
         escalus:send(Bob,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           query_el(?HS_V_2))),
+                                           hs_query_el(?HS_V_2))),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
@@ -191,11 +192,11 @@ unsubscribe(Config) ->
       fun(Alice) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           query_el(undefined))),
+                                           hs_query_el(undefined))),
 
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"unavailable">>,
-                                           query_el(undefined))),
+                                           hs_query_el(undefined))),
 
         expect_iq_success_u(pub_stanza(<<"new_item3">>), Alice, Alice),
         timer:sleep(500),
@@ -324,18 +325,6 @@ delete_item() ->
     #xmlel{name = <<"delete">>,
            attrs = [{<<"id">>, <<"some_id">>}]}.
 
-query_el(Version) ->
-    #xmlel{name = <<"query">>,
-           attrs = [{<<"xmlns">>, ?NS_PUBLISHING} |
-                    maybe_version_attr(Version)]}.
-
-maybe_version_attr(undefined) -> [];
-maybe_version_attr(Version) -> [{<<"version">>, Version}].
-
-hs_node(User) ->
-    jid:to_binary(
-      jid:make(User, ?LOCAL_CONTEXT, <<"home_stream">>)).
-
 is_presence_error(Stanza) ->
     escalus_pred:is_presence(Stanza)
     andalso
@@ -344,28 +333,13 @@ is_presence_error(Stanza) ->
 set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
 
-is_bot_action(ID, Stanza) ->
-    Stanza#xmlel.name =:= <<"message">> andalso
-    xml:get_tag_attr(<<"type">>, Stanza) =:= {value, <<"headline">>} andalso
-    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {attr, <<"xmlns">>}])
-        =:= ?NS_BOT andalso
-    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"action">>}, cdata])
-        =/= <<>> andalso
-    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"id">>}, cdata])
-        =:= ID andalso
-    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata])
-        =:= jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, <<"bot/", ID/binary>>))
-        andalso
-    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"server">>}, cdata])
-        =:= ?LOCAL_CONTEXT.
-
 check_home_stream_sizes(ExpectedSize, Clients) ->
     lists:foreach(
       fun(Client) ->
               S = expect_iq_success_u(get_hs_stanza(), Client, Client),
               I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
               ExpectedSize =:= 0 orelse
-              escalus:assert(is_bot_action(?BOT, _),
+              escalus:assert(test_helper:is_bot_action(?BOT, _),
                              hd((hd(I))#item.stanzas))
       end, Clients).
 

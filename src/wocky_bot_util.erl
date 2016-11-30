@@ -26,7 +26,8 @@
          list_hash/1,
          get_image/1,
          list_attrs/2,
-         bot_packet_action/1
+         bot_packet_action/1,
+         follow_stanza/3
         ]).
 
 check_owner(Server, ID, User) ->
@@ -130,10 +131,34 @@ bot_packet_action(BotStanza) ->
     JIDBin = xml:get_path_s(BotStanza, [{elem, <<"jid">>}, cdata]),
 
     case {JIDBin, Action} of
-        {<<>>, _}             -> {none, none};
-        {JIDBin, <<"show">>}  -> {JIDBin, show};
-        {JIDBin, <<"share">>} -> {JIDBin, share};
-        {JIDBin, <<"enter">>} -> {JIDBin, enter};
-        {JIDBin, <<"exit">>}  -> {JIDBin, exit};
-        _                     -> {none, none}
+        {<<>>, _}                     -> {none, none};
+        {JIDBin, <<"show">>}          -> {JIDBin, show};
+        {JIDBin, <<"share">>}         -> {JIDBin, share};
+        {JIDBin, <<"enter">>}         -> {JIDBin, enter};
+        {JIDBin, <<"exit">>}          -> {JIDBin, exit};
+        {JIDBin, <<"follow on">>}     -> {JIDBin, follow_on};
+        {JIDBin, <<"follow off">>}    -> {JIDBin, follow_off};
+        {JIDBin, <<"follow expire">>} -> {JIDBin, follow_expire};
+        _                             -> {none, none}
     end.
+
+follow_stanza(Server, ID, Action) ->
+    #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
+           children = [bot_el(Server, ID, Action)]}.
+
+bot_el(Server, ID, Action) ->
+    #xmlel{name = <<"bot">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = [wocky_xml:cdata_el(
+                         <<"jid">>, jid:to_binary(
+                                      wocky_bot_util:make_jid(Server, ID))),
+                       wocky_xml:cdata_el(<<"id">>, ID),
+                       wocky_xml:cdata_el(<<"server">>, Server) |
+                       action_els(Action)]}.
+
+action_els({Action = <<"follow expire">>, Expiry}) ->
+    [wocky_xml:cdata_el(<<"action">>, Action),
+     wocky_xml:cdata_el(<<"expiry">>, Expiry)];
+action_els(Action) when is_binary(Action) ->
+    [wocky_xml:cdata_el(<<"action">>, Action)].

@@ -44,22 +44,26 @@
 
          check_attr/3,
 
+         get_hs_stanza/0,
+         get_hs_stanza/1,
          check_hs_result/2,
          check_hs_result/4,
          check_single_hs_result/2,
          get_items_el/1,
 
-         get_hs_stanza/0,
-         get_hs_stanza/1,
          publish_item_stanza/4,
          publish_item_stanza/5,
          retract_item_stanza/2,
          subscribe_stanza/0,
+         is_bot_action/2,
+         is_bot_action/3,
 
+         hs_node/1,
          bot_node/1,
          node_el/2,
          node_el/3,
-         cdata_el/2
+         cdata_el/2,
+         hs_query_el/1
         ]).
 
 ensure_wocky_is_running() ->
@@ -380,19 +384,6 @@ count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
                    end,
                    Children)).
 
-get_hs_stanza() ->
-    test_helper:iq_get(?NS_PUBLISHING,
-                       #xmlel{name = <<"items">>,
-                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [rsm_elem(#rsm_in{max = 200})]}).
-
-get_hs_stanza(ID) ->
-    test_helper:iq_get(?NS_PUBLISHING,
-                       #xmlel{name = <<"items">>,
-                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [#xmlel{name = <<"item">>,
-                                                 attrs = [{<<"id">>, ID}]}]}).
-
 publish_item_stanza(BotID, NoteID, Title, Content) ->
     publish_item_stanza(BotID, NoteID, Title, Content, undefined).
 publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
@@ -451,3 +442,50 @@ node_el(ID, Name, Children) ->
 
 cdata_el(Name, Value) ->
     #xmlel{name = Name, children = [#xmlcdata{content = Value}]}.
+
+is_bot_action(ID, Stanza) ->
+    is_bot_action(ID, any, Stanza).
+is_bot_action(ID, Action, Stanza) ->
+    Stanza#xmlel.name =:= <<"message">> andalso
+    xml:get_tag_attr(<<"type">>, Stanza) =:= {value, <<"headline">>} andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {attr, <<"xmlns">>}])
+        =:= ?NS_BOT andalso
+    matches(
+      xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"action">>}, cdata]),
+      Action) andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"id">>}, cdata])
+        =:= ID andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata])
+        =:= jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, <<"bot/", ID/binary>>))
+        andalso
+    xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"server">>}, cdata])
+        =:= ?LOCAL_CONTEXT.
+
+matches(Value, any) -> Value =/= <<>>;
+matches(Value, Match) -> Value =:= Match.
+
+hs_query_el(Version) ->
+    #xmlel{name = <<"query">>,
+           attrs = [{<<"xmlns">>, ?NS_PUBLISHING} |
+                    maybe_version_attr(Version)]}.
+
+maybe_version_attr(undefined) -> [];
+maybe_version_attr(Version) -> [{<<"version">>, Version}].
+
+hs_node(User) ->
+    jid:to_binary(
+      jid:make(User, ?LOCAL_CONTEXT, <<"home_stream">>)).
+
+get_hs_stanza() ->
+    test_helper:iq_get(?NS_PUBLISHING,
+                       #xmlel{name = <<"items">>,
+                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
+                              children = [rsm_elem(#rsm_in{max = 200})]}).
+
+get_hs_stanza(ID) ->
+    test_helper:iq_get(?NS_PUBLISHING,
+                       #xmlel{name = <<"items">>,
+                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
+                              children = [#xmlel{name = <<"item">>,
+                                                 attrs = [{<<"id">>, ID}]}]}).
+

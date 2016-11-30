@@ -36,4 +36,11 @@ init([]) ->
                 type     => worker,
                 modules  => [wocky_db_user_idx]},
 
-    {ok, {SupFlags, [UserIdx]}}.
+    BotExpiryMon = #{id       => wocky_bot_expiry_mon,
+                     start    => {wocky_bot_expiry_mon, start_link, []},
+                     restart  => permanent,
+                     shutdown => 5000,
+                     type     => worker,
+                     modules  => [wocky_bot_expiry_mon]},
+
+    {ok, {SupFlags, [UserIdx, BotExpiryMon]}}.
