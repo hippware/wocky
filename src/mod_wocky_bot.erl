@@ -269,9 +269,13 @@ get_location_from_attrs(Attrs) ->
         {ok, {Lat, Lon}}
        ]).
 
-get_bots_near_location(_From, _Server, _IQ, Lat, Lon) ->
-    {ok, Bots} = 'Elixir.Wocky.Index':geosearch(Lat, Lon),
-    {ok, make_geosearch_result(Bots)}.
+get_bots_near_location(From, _Server, _IQ, Lat, Lon) ->
+    {ok, AllBots} = 'Elixir.Wocky.Index':geosearch(Lat, Lon),
+    VisibleBots = lists:filter(geosearch_access_filter(From, _), AllBots),
+    {ok, make_geosearch_result(VisibleBots)}.
+
+geosearch_access_filter(From, #{server := Server, id := ID}) ->
+    ok =:= wocky_bot_util:check_access(Server, ID, From).
 
 make_geosearch_result(Bots) ->
     #xmlel{name = <<"bots">>,
