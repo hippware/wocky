@@ -71,23 +71,27 @@ defmodule Wocky.Location do
   end
 
   defp check_for_event(bot_id, user, location, acc) do
-    :ok = Logger.debug(
-      "Checking #{bot_id} for collision at #{inspect(location)}...")
+    :ok = Logger.debug("""
+    Checking user #{user.user} for collision with bot #{bot_id}
+    at location (#{location.lat},#{location.lon})...
+    """)
     bot = Bot.get(bot_id)
     if intersects?(bot, location) do
-      :ok = Logger.debug("User is within the perimeter of #{bot_id}")
       if check_for_enter_event(user, bot_id) do
+        :ok = Logger.debug("User has entered the perimeter of #{bot_id}")
         User.add_bot_event(user, bot_id, :enter)
         [{bot, :enter} | acc]
       else
+        :ok = Logger.debug("User is within the perimeter of #{bot_id}")
         acc
       end
     else
-      :ok = Logger.debug("User is outside of the perimeter of #{bot_id}")
       if check_for_exit_event(user, bot_id) do
+        :ok = Logger.debug("User has left the perimeter of #{bot_id}")
         User.add_bot_event(user, bot_id, :exit)
         [{bot, :exit} | acc]
       else
+        :ok = Logger.debug("User is outside of the perimeter of #{bot_id}")
         acc
       end
     end
