@@ -271,7 +271,24 @@ get_location_from_attrs(Attrs) ->
 
 get_bots_near_location(_From, _Server, _IQ, Lat, Lon) ->
     {ok, Bots} = 'Elixir.Wocky.Index':geosearch(Lat, Lon),
-    {ok, Bots}.
+    {ok, make_geosearch_result(Bots)}.
+
+make_geosearch_result(Bots) ->
+    #xmlel{name = <<"bots">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = make_geosearch_els(Bots)}.
+
+make_geosearch_els(Bots) ->
+    [make_geosearch_el(Bot) || Bot <- Bots].
+
+geosearch_el_fields() ->
+    [id, server, title, image, lat, lon, radius, distance].
+
+make_geosearch_el(#{server :=  Server, id := ID} = Bot) ->
+    JidField = make_field(<<"jid">>, jid, bot_jid(Server, ID)),
+    MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
+    RetFields = encode_fields([JidField | MapFields]),
+    {ok, make_ret_stanza(RetFields)}.
 
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
