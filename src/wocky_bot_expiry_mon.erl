@@ -25,6 +25,9 @@
          terminate/2,
          code_change/3]).
 
+%% Test use only:
+-ignore_xref([set_warning_time/1]).
+
 -define(SERVER, ?MODULE).
 
 -define(WARNING_TIME, timer:minutes(10)).
