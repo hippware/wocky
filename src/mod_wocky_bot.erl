@@ -237,7 +237,14 @@ delete_bot(Server, ID) ->
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
     case wocky_bot_util:get_id_from_node(Attrs) of
         {ok, ID} -> get_bot_by_id(From, Server, ID);
-        {error, _} -> get_bots_for_user(From, Server, IQ, Attrs)
+        {error, _} ->
+            case get_location_from_attrs(Attrs) of
+                {ok, {Lat, Lon}} ->
+                    get_bots_near_location(From, Server, IQ, Lat, Lon);
+
+                {error, _} ->
+                    get_bots_for_user(From, Server, IQ, Attrs)
+            end
     end.
 
 handle_subscribed(From, #jid{lserver = Server}, IQ) ->
@@ -254,6 +261,17 @@ get_bot_by_id(From, Server, ID) ->
         BotEl <- make_bot_el(Server, ID),
         {ok, BotEl}
        ]).
+
+get_location_from_attrs(Attrs) ->
+    do([error_m ||
+        Lat <- wocky_xml:get_attr(<<"lat">>, Attrs),
+        Lon <- wocky_xml:get_attr(<<"lon">>, Attrs),
+        {ok, {Lat, Lon}}
+       ]).
+
+get_bots_near_location(_From, _Server, _IQ, Lat, Lon) ->
+    {ok, Bots} = 'Elixir.Wocky.Index':geosearch(Lat, Lon),
+    {ok, Bots}.
 
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||

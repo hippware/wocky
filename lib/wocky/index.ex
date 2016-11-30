@@ -14,7 +14,7 @@ defmodule Wocky.Index do
   end
 
   @user_fields [:handle, :last_name, :first_name, :avatar]
-  @bot_fields [:server, :title, :image, :lat, :lon, :radius]
+  @bot_fields [:server, :title, :image, :lat, :lon, :radius, :_geoloc]
 
   defstart start_link do
     user_index    = Application.fetch_env!(:wocky, :algolia_user_index_name)
@@ -35,11 +35,27 @@ defmodule Wocky.Index do
   end
 
   defcall geosearch(lat, lon), state: %State{bot_index: index} do
-    index |> Algolia.search(<<>>, %{aroundLatLng: "#{lat},#{lon}"})
-    reply(:ok)
+    {:ok, result} =
+      index |> Algolia.search(<<>>, %{aroundLatLng: "#{lat},#{lon}",
+                                      getRankingInfo: true})
+    bots = result["hits"] |> Enum.map(&object_to_bot/1)
+    reply({:ok, bots})
   end
 
-  defcall reindex(:users), state: %State{user_index: index} do
+  defp object_to_bot(obj) do
+    %{
+      id: obj["objectID"],
+      server: obj["server"],
+      title: obj["title"],
+      image: obj["image"],
+      lat: obj["lat"],
+      lon: obj["lon"],
+      radius: obj["radius"],
+      distance: obj["_rankingInfo"]["geoDistance"]
+     }
+  end
+
+  defcall reindex(:users), state: %State{enabled: true, user_index: index} do
     :shared
     |> :wocky_db.select(:user, :all, %{})
     |> Enum.each(
@@ -50,7 +66,7 @@ defmodule Wocky.Index do
     reply(:ok)
   end
 
-  defcall reindex(:bots), state: %State{bot_index: index} do
+  defcall reindex(:bots), state: %State{enabled: true, bot_index: index} do
     :shared
     |> :wocky_db.select(:bot, :all, %{})
     |> Enum.each(
@@ -61,24 +77,34 @@ defmodule Wocky.Index do
     reply(:ok)
   end
 
-  defcast _, state: %State{enabled: false}, do: noreply
+  defcall reindex(_), state: %State{enabled: false} do
+    reply(:ok)
+  end
 
-  defcast user_updated(user_id, user), state: %State{user_index: index} do
+  defcast user_updated(user_id, user),
+    state: %State{enabled: true, user_index: index}
+  do
     update_index(index, user_id, user, @user_fields)
     noreply
   end
 
-  defcast user_removed(user_id), state: %State{user_index: index} do
+  defcast user_removed(user_id),
+    state: %State{enabled: true, user_index: index}
+  do
     delete_object(index, user_id)
     noreply
   end
 
-  defcast bot_updated(bot_id, bot), state: %State{bot_index: index} do
+  defcast bot_updated(bot_id, bot),
+    state: %State{enabled: true, bot_index: index}
+  do
     update_index(index, bot_id, bot, @bot_fields)
     noreply
   end
 
-  defcast bot_removed(bot_id), state: %State{bot_index: index} do
+  defcast bot_removed(bot_id),
+    state: %State{enabled: true, bot_index: index}
+  do
     delete_object(index, bot_id)
     noreply
   end
@@ -99,7 +125,7 @@ defmodule Wocky.Index do
   end
 
   defp with_geoloc(%{lat: lat, lon: lon} = data) do
-    Map.put(data, :_geoloc, %{lat: lat, lon: lon})
+    Map.put(data, :_geoloc, %{lat: lat, lng: lon})
   end
   defp with_geoloc(data), do: data
 
