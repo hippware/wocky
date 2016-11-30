@@ -97,7 +97,6 @@ handle_cast(Msg, State) ->
 %% @doc Handling all non call/cast messages
 -spec handle_info(any(), state()) -> {noreply, state()}.
 handle_info({timeout, Ref, JID}, State = #state{bots = Bots}) ->
-    ct:log("Timeout! ~p", [JID]),
     NewBots = remove_timer_ref(JID, Ref, Bots),
     send_expiry_warning(JID),
     {noreply, State#state{bots = NewBots}};
@@ -128,7 +127,6 @@ start_timers(JID, ExpiryS, WarningTime, Bots) ->
     Now = wocky_db:now_to_timestamp(os:timestamp()),
     ExpiryMS = timer:seconds(ExpiryS) - Now,
     WarningMS = ExpiryMS - WarningTime,
-    ct:log("Now: ~p\nExpiryS: ~p\nExpiryMS: ~p\nWarningMS ~p", [Now, ExpiryS, ExpiryMS, WarningMS]),
     References = maybe_set_timers(JID, [ExpiryMS, WarningMS]),
     maybe_store_references(JID, References, CleanBots).
 
@@ -149,7 +147,6 @@ maybe_set_timer(JID, Period, Acc) when Period > 0 ->
     %% big enough to make start_timer choke. If it's that big, just ignore it
     %% and leave the timer unset.
     try
-        ct:log("Starting timer with timeout ~p", [Period]),
         [erlang:start_timer(Period, self(), JID) | Acc]
     catch
         _:_ -> Acc
