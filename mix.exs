@@ -243,7 +243,7 @@ defmodule Wocky.Mixfile do
           {:elvis_style, :dont_repeat_yourself, %{min_complexity: 20}},
           {:elvis_style, :no_debug_call, %{ignore: [:mam_SUITE]}},
           {:elvis_style, :variable_naming_convention,
-           %{regex: "^(_?[A-Z][0-9a-zA-Z]*)$"}}
+           %{regex: "^(_?_?[A-Z][0-9a-zA-Z]*)$"}}
         ]}
     ]
   end
