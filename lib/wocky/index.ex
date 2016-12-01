@@ -85,28 +85,28 @@ defmodule Wocky.Index do
   defcast user_updated(user_id, user),
     state: %State{enabled: true, user_index: index}
   do
-    update_index(index, user_id, user, @user_fields)
+    {:ok, _} = update_index(index, user_id, user, @user_fields)
     noreply
   end
 
   defcast user_removed(user_id),
     state: %State{enabled: true, user_index: index}
   do
-    delete_object(index, user_id)
+    {:ok, _} = delete_object(index, user_id)
     noreply
   end
 
   defcast bot_updated(bot_id, bot),
     state: %State{enabled: true, bot_index: index}
   do
-    update_index(index, bot_id, bot, @bot_fields)
+    {:ok, _} = update_index(index, bot_id, bot, @bot_fields)
     noreply
   end
 
   defcast bot_removed(bot_id),
     state: %State{enabled: true, bot_index: index}
   do
-    delete_object(index, bot_id)
+    {:ok, _} = delete_object(index, bot_id)
     noreply
   end
 
