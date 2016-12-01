@@ -704,6 +704,11 @@ publish_item(Config) ->
         expect_item_publication(Carol, ?BOT, NoteID, Title, Content),
         expect_item_publication(Karen, ?BOT, NoteID, Title, Content),
 
+        % As the owner, Alice should *not* get a notification,
+        % so should just have her 3 seeded HS items
+        Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
+        check_hs_result(Stanza, 3, 0, false),
+
         % Nobody else can publish an item to the bot besides the owner
         expect_iq_error(
           publish_item_stanza(?BOT, NoteID, Title, Content),
