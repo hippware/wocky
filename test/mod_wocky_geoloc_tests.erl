@@ -37,13 +37,17 @@ test_pep_hook() ->
                      attrs = [{<<"xmlns">>, ?NS_GEOLOC}]},
     NonGLEntry = Item#xmlel{name = <<"somethingelse">>},
     CountMatch = #{user => ?ALICE, server => ?LOCAL_CONTEXT},
-    { "handle_pep", [
+    { "handle_pep", inorder, [
        { "should add an entry to the location table", [
           ?_assertEqual(Item, handle_pep(?ALICE_JID, Item)),
+          %% We need waits in here because handle_pep can return before
+          %% the data is actually written
+          ?_assertEqual(ok, timer:sleep(250)),
           ?_assertEqual(1, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
        ]},
        { "should continue to add more items even if data is unchanged", [
           ?_assertEqual(Item, handle_pep(?ALICE_JID, Item)),
+          ?_assertEqual(ok, timer:sleep(250)),
           ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
        ]},
        { "should not add an incomplete entry", [
@@ -51,14 +55,17 @@ test_pep_hook() ->
                         handle_pep(?ALICE_JID,
                                    Item#xmlel{children =
                                               tl(Item#xmlel.children)})),
+          ?_assertEqual(ok, timer:sleep(250)),
           ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
        ]},
        { "should not add, but not drop a geoloc-end entry", [
           ?_assertEqual(EndItem, handle_pep(?ALICE_JID, EndItem)),
+          ?_assertEqual(ok, timer:sleep(250)),
           ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
        ]},
        { "should ignore a non-geoloc entry", [
           ?_assertEqual(NonGLEntry, handle_pep(?ALICE_JID, NonGLEntry)),
+          ?_assertEqual(ok, timer:sleep(250)),
           ?_assertEqual(2, wocky_db:count(?LOCAL_CONTEXT, location, CountMatch))
        ]}
     ]}.

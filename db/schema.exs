@@ -93,7 +93,7 @@ defmodule Schemata.Schemas.Wocky do
         server:           :text,     # Bot server
         title:            :text,     # Bot title
         shortname:        :text,     # Bot shortname for URL representation
-        owner:            :text,     # Bot owner
+        owner:            :text,     # Bot owner bare JID
         description:      :text,     # User-supplied description
         image:            :text,     # Bot graphical image
         type:             :text,     # Bot type (freeform string from

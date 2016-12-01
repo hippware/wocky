@@ -22,7 +22,7 @@
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
-                      ensure_all_clean/1
+                      ensure_all_clean/1, hs_query_el/1, hs_node/1
                      ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
@@ -72,7 +72,8 @@ all() ->
      follow_me,
      unfollow_me,
      share,
-     share_open
+     share_open,
+     follow_notifications
     ].
 
 suite() ->
@@ -852,6 +853,75 @@ unfollow_me(Config) ->
         expect_iq_error(unfollow_me_stanza(), Bob)
       end).
 
+follow_notifications(Config) ->
+    reset_tables(Config),
+    wocky_db:truncate(?LOCAL_CONTEXT, home_stream),
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        %% Subscribe to HS notifications
+        escalus:send(Alice,
+            escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
+                                           hs_query_el(undefined))),
+
+        %% Simple follow on and off tests
+        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(), Alice)),
+        escalus:assert_many(
+          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
+           is_iq_result],
+          escalus:wait_for_stanzas(Alice, 2)),
+
+        escalus:send(Alice, test_helper:add_to_s(unfollow_me_stanza(), Alice)),
+        escalus:assert_many(
+          [is_bot_action_hs_notification(?BOT, <<"follow off">>, _),
+           is_iq_result],
+          escalus:wait_for_stanzas(Alice, 2)),
+
+        wocky_bot_expiry_mon:set_warning_time(2),
+
+        %% Test the expiry notifications
+        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(5), Alice)),
+        escalus:assert_many(
+          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
+           is_iq_result],
+          escalus:wait_for_stanzas(Alice, 2)),
+
+        escalus:assert(
+          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
+          escalus:wait_for_stanza(Alice, 4000)),
+
+        escalus:assert(
+          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
+          escalus:wait_for_stanza(Alice, 2500)),
+
+        %% Test reset of expiry
+        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(5), Alice)),
+        escalus:assert_many(
+          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
+           is_iq_result],
+          escalus:wait_for_stanzas(Alice, 2)),
+
+        escalus:assert(
+          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
+          escalus:wait_for_stanza(Alice, 4000)),
+
+        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(5), Alice)),
+        escalus:assert_many(
+          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
+           is_iq_result],
+          escalus:wait_for_stanzas(Alice, 2)),
+
+        escalus:assert(
+          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
+          escalus:wait_for_stanza(Alice, 4000)),
+
+        escalus:assert(
+          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
+          escalus:wait_for_stanza(Alice, 2500)),
+
+        Stanza = expect_iq_success_u(test_helper:get_hs_stanza(), Alice, Alice),
+        test_helper:check_hs_result(Stanza, 3)
+      end).
+
 share(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
@@ -1473,7 +1543,9 @@ set_visibility(Client, Visibility, Bot) ->
     set_visibility(Client, Visibility, [Bot]).
 
 follow_me_stanza() ->
-    Expiry = wocky_db:now_to_timestamp(os:timestamp()) + 86400,
+    follow_me_stanza(86400). % 1 Day
+follow_me_stanza(ExpiryPeriod) ->
+    Expiry = wocky_db:now_to_timestamp(os:timestamp()) div 1000 + ExpiryPeriod,
     QueryEl = #xmlel{name = <<"follow-me">>,
                      attrs = [
                        {<<"node">>, bot_node(?BOT)},
@@ -1516,3 +1588,13 @@ bot_el(BotID) ->
                        cdata_el(<<"id">>, BotID),
                        cdata_el(<<"server">>, ?LOCAL_CONTEXT),
                        cdata_el(<<"action">>, <<"share">>)]}.
+
+is_bot_action_hs_notification(JID, Action,
+                              Stanza = #xmlel{name = <<"message">>}) ->
+    case xml:get_path_s(Stanza,
+                        [{elem, <<"notification">>},
+                         {elem, <<"item">>}, {elem, <<"message">>}]) of
+        <<>> -> false;
+        SubStanza -> test_helper:is_bot_action(JID, Action, SubStanza)
+    end;
+is_bot_action_hs_notification(_, _, _) -> false.

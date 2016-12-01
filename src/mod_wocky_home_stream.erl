@@ -171,11 +171,17 @@ check_publish_non_bot(From, Stanza) ->
 
 check_publish_bot(From, BotEl) ->
     case wocky_bot_util:bot_packet_action(BotEl) of
-        {none, none} ->     {ok, {keep, chat_id(From)}};
-        {JIDBin, show} ->   {ok, {drop, bot_id(JIDBin)}};
-        {JIDBin, share} ->  {ok, {drop, bot_id(JIDBin)}};
-        {_JIDBin, enter} -> {ok, {drop, new_id()}};
-        {_JIDBin, exit} ->  {ok, {drop, new_id()}}
+        {none, none}            -> {ok, {keep, chat_id(From)}};
+        {JIDBin, show}          -> {ok, {drop, bot_id(JIDBin)}};
+        {JIDBin, share}         -> {ok, {drop, bot_id(JIDBin)}};
+        {_JIDBin, enter}        -> {ok, {drop, new_id()}};
+        {_JIDBin, exit}         -> {ok, {drop, new_id()}};
+        {JIDBin, follow_on}     -> {ok, {drop, jid_event_id(
+                                                  JIDBin, <<"follow_on">>)}};
+        {JIDBin, follow_off}    -> {ok, {drop, jid_event_id(
+                                                  JIDBin, <<"follow_off">>)}};
+        {JIDBin, follow_expire} -> {ok, {drop, jid_event_id(
+                                                 JIDBin, <<"follow_expiry">>)}}
     end.
 
 maybe_drop({ok, drop}, _) -> drop;
@@ -236,6 +242,9 @@ check_server(Server) ->
 
 bot_id(JIDBin) ->
     JIDBin.
+
+jid_event_id(JIDBin, Event) ->
+    <<JIDBin/binary, "/", Event/binary>>.
 
 bot_event_id(#jid{lserver = Server}, BotNode) ->
     jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
