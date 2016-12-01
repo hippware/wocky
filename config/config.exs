@@ -5,6 +5,7 @@ use Mix.Config
 config :distillery,
   no_warn_missing: [
     :distillery,
+    :exactor,
     :dialyxir,
     :edown,
     :escalus,

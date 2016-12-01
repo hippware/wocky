@@ -105,7 +105,7 @@ defmodule Wocky.Mixfile do
       {:geocalc,       "~> 0.5"},
       {:exconstructor, "~> 1.0"},
       {:ok,            "~> 1.0"},
-      {:exactor,       "~> 2.2", warn_missing: false},
+      {:exactor,       "~> 2.2"},
       {:faker,         "~> 0.7"},
       {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
