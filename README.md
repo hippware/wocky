@@ -1,4 +1,4 @@
-Wocky blah blah
+Wocky blah blahsdfasdfasdf
 ========
 This is the main server-side software. At the moment, it incorporates an XMPP
 server which will be extended with custom functionality.
