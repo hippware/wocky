@@ -17,9 +17,11 @@ defmodule Wocky.Notification.AWSHandler do
   @message_limit 512
 
   def register(user, platform, device_id) do
+    user_data = user |> :jid.from_binary |> :jid.to_bare |> :jid.to_binary
+
     @application_arn
     |> Keyword.fetch!(String.to_atom(platform))
-    |> SNS.create_platform_endpoint(device_id, user)
+    |> SNS.create_platform_endpoint(device_id, user_data)
     |> ExAws.request
     |> handle_register_result
   end
