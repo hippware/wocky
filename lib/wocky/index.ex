@@ -113,7 +113,7 @@ defmodule Wocky.Index do
   end
 
   def handle_cast(msg, state) do
-    :ok = Logger.warning("Unknown cast '#{inspect(msg)}'")
+    :ok = Logger.warn("Unknown cast '#{inspect(msg)}'")
     {:noreply, state}
   end
 
