@@ -103,6 +103,7 @@ defmodule Wocky.Mixfile do
       {:ex_aws,        "~> 1.0.0-rc.3"},
       {:geocalc,       "~> 0.5"},
       {:exconstructor, "~> 1.0"},
+      {:ok,            "~> 1.0"},
       {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
       {:faker,         "~> 0.7"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
