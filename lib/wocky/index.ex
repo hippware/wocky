@@ -35,6 +35,7 @@ defmodule Wocky.Index do
     )
   end
 
+
   defcall geosearch(lat, lon), state: %State{bot_index: index} do
     {:ok, result} =
       index |> Algolia.search(<<>>, %{aroundLatLng: "#{lat},#{lon}",
@@ -56,7 +57,7 @@ defmodule Wocky.Index do
      }
   end
 
-  defcall reindex(:users), state: %State{enabled: true, user_index: index} do
+  defcall reindex(:users), state: %State{user_index: index} do
     :shared
     |> :wocky_db.select(:user, :all, %{})
     |> Enum.each(
@@ -67,7 +68,7 @@ defmodule Wocky.Index do
     reply(:ok)
   end
 
-  defcall reindex(:bots), state: %State{enabled: true, bot_index: index} do
+  defcall reindex(:bots), state: %State{bot_index: index} do
     :shared
     |> :wocky_db.select(:bot, :all, %{})
     |> Enum.each(
@@ -82,33 +83,40 @@ defmodule Wocky.Index do
     reply(:ok)
   end
 
-  defcast user_updated(user_id, user),
-    state: %State{enabled: true, user_index: index}
-  do
+  def handle_call(_, _, state) do
+    {:reply, {:error, :bad_call}, state}
+  end
+
+
+  def handle_cast(_msg, %State{enabled: false} = state) do
+    {:noreply, state}
+  end
+
+  defcast user_updated(user_id, user), state: %State{user_index: index} do
     {:ok, _} = update_index(index, user_id, user, @user_fields)
     noreply
   end
 
-  defcast user_removed(user_id),
-    state: %State{enabled: true, user_index: index}
-  do
+  defcast user_removed(user_id), state: %State{user_index: index} do
     {:ok, _} = delete_object(index, user_id)
     noreply
   end
 
-  defcast bot_updated(bot_id, bot),
-    state: %State{enabled: true, bot_index: index}
-  do
+  defcast bot_updated(bot_id, bot), state: %State{bot_index: index} do
     {:ok, _} = update_index(index, bot_id, bot, @bot_fields)
     noreply
   end
 
-  defcast bot_removed(bot_id),
-    state: %State{enabled: true, bot_index: index}
-  do
+  defcast bot_removed(bot_id), state: %State{bot_index: index} do
     {:ok, _} = delete_object(index, bot_id)
     noreply
   end
+
+  def handle_cast(msg, state) do
+    :ok = Logger.warning("Unknown cast '#{inspect(msg)}'")
+    {:noreply, state}
+  end
+
 
   defp update_index(index, id, data, fields) do
     {:ok, _} =
