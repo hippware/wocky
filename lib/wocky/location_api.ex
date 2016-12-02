@@ -6,6 +6,7 @@ defmodule Wocky.LocationApi do
     content_types_accepted: 2, from_json: 2, is_authorized: 2,
     malformed_request: 2, resource_exists: 2
   ]
+  import OK, only: :macros
   alias Wocky.User
   alias Wocky.Location
 
@@ -64,27 +65,48 @@ defmodule Wocky.LocationApi do
   end
 
   def malformed_request(req, state) do
-    {:ok, body, _req2} = :cowboy_req.body(req)
-    case Poison.Parser.parse(body, keys: :atoms) do
-      {:ok, data} ->
-        location = extract_location_object(data[:location])
-        if has_required_keys(location, data[:resource]) do
-          {false, req, %State{state |
-            resource: data.resource,
-            coords: location.coords}}
-        else
-          {true, set_response_text(req, "JSON missing required keys."), state}
-        end
+    case req |> read_and_parse_body |> handle_parse_result do
+      {:ok, coords, resource} ->
+        {false, req, %State{state | resource: resource, coords: coords}}
 
-      {:error, _} ->
-        {true, set_response_text(req, "JSON payload can not be parsed."), state}
+      {:error, message} ->
+        {true, set_response_text(req, message), state}
     end
   end
 
-  defp extract_location_object([location]),               do: location
-  defp extract_location_object(list) when is_list(list),  do: nil
-  defp extract_location_object(nil),                      do: nil
-  defp extract_location_object(location),                 do: location
+  defp read_and_parse_body(request) do
+    request
+    |> read_body
+    ~>> parse_body
+    ~>> extract_values
+  end
+
+  defp read_body(req) do
+    case :cowboy_req.body(req) do
+      {:ok, body, _} -> {:ok, body}
+      {:error, _} = error -> error
+    end
+  end
+
+  defp parse_body(body), do: body |> Poison.Parser.parse(keys: :atoms)
+
+  defp extract_values(data) when is_map(data),
+    do: {:ok, extract_values(data[:location], data[:resource])}
+
+  defp extract_values([location | _], resource), do: {location, resource}
+  defp extract_values(location, resource),       do: {location, resource}
+
+  defp handle_parse_result({:ok, {location, resource}}) do
+    if has_required_keys(location, resource) do
+      {:ok, location.coords, resource}
+    else
+      {:error, "JSON missing required keys."}
+    end
+  end
+  defp handle_parse_result({:error, :timeout}),
+    do: {:error, "Timeout reading request body."}
+  defp handle_parse_result({:error, _}),
+    do: {:error, "JSON payload can not be parsed."}
 
   defp has_required_keys(%{coords: coords}, resource) do
     Map.get(coords, :latitude) &&
