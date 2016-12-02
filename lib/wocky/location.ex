@@ -72,8 +72,8 @@ defmodule Wocky.Location do
 
   defp check_for_event(bot_id, user, location, acc) do
     :ok = Logger.debug("""
-    Checking user #{user.user} for collision with bot #{bot_id}
-    at location (#{location.lat},#{location.lon})...
+    Checking user #{user.user} for collision with bot #{bot_id} \
+    at location (#{location.lat},#{location.lon})...\
     """)
     bot = Bot.get(bot_id)
     if intersects?(bot, location) do
@@ -124,13 +124,19 @@ defmodule Wocky.Location do
     jid = User.to_jid_string(user)
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
-    :ok = send_push_notification(user, bot, event)
     :ok = send_notification(user, bot, event)
+    :ok = send_push_notification(user, bot, event)
   end
 
   defp send_push_notification(user, bot, event) do
     jid = User.to_jid(user)
-    :wocky_notification_handler.notify_bot_event(jid, bot.id, event)
+    case :wocky_notification_handler.notify_bot_event(jid, bot.id, event) do
+      :ok -> :ok
+      {:error, reason} ->
+        Logger.error("""
+        Failed to send push notification to #{jid}: #{inspect(reason)}\
+        """)
+    end
   end
 
   defp send_notification(user, bot, event) do
