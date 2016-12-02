@@ -49,3 +49,6 @@ config :lager,
       {:count, 5}
     ]}
   ]
+
+config :honeybadger,
+  environment_name: "Testing"
