@@ -134,7 +134,8 @@ defmodule Wocky.Location do
       :ok -> :ok
       {:error, reason} ->
         Logger.error("""
-        Failed to send push notification to #{jid}: #{inspect(reason)}\
+        Failed to send push notification to #{User.to_jid_string(user)}: \
+        #{inspect(reason)}\
         """)
     end
   end
