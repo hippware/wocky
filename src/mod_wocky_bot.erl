@@ -292,7 +292,7 @@ make_geosearch_el(#{server :=  Server, id := ID} = Bot) ->
     JidField = make_field(<<"jid">>, jid, bot_jid(Server, ID)),
     MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
     RetFields = encode_fields([JidField | MapFields]),
-    {ok, make_ret_stanza(RetFields)}.
+    make_ret_stanza(RetFields).
 
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||

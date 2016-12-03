@@ -73,7 +73,8 @@ all() ->
      unfollow_me,
      share,
      share_open,
-     follow_notifications
+     follow_notifications,
+     geosearch
     ].
 
 suite() ->
@@ -91,9 +92,22 @@ init_per_suite(Config) ->
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
+init_per_testcase(geosearch, Config) ->
+    meck:new('Elixir.Wocky.Index', [passthrough]),
+    meck:expect('Elixir.Wocky.Index', geosearch,
+                fun (_Lat, _Lon) ->
+                        {ok, [#{id => ?BOT, server => ?SERVER,
+                                title => ?BOT_TITLE,
+                                lat => ?BOT_LAT, lon => ?BOT_LON,
+                                radius => ?BOT_RADIUS, distance => 10}]}
+                end),
+    escalus:init_per_testcase(geosearch, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
+end_per_testcase(geosearch, Config) ->
+    meck:unload(),
+    escalus:end_per_testcase(geosearch, Config);
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
 
@@ -998,6 +1012,15 @@ share_open(Config) ->
         test_helper:ensure_all_clean([Alice, Carol, Tim])
       end).
 
+geosearch(Config) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        escalus:send(Alice, test_helper:add_to_s(geosearch_stanza(), Alice)),
+        Result = escalus:wait_for_stanza(Alice),
+        escalus:assert(is_iq_result, Result)
+      end).
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -1603,3 +1626,11 @@ is_bot_action_hs_notification(JID, Action,
         SubStanza -> test_helper:is_bot_action(JID, Action, SubStanza)
     end;
 is_bot_action_hs_notification(_, _, _) -> false.
+
+geosearch_stanza() ->
+    QueryEl = #xmlel{name = <<"bot">>,
+                     attrs = [
+                       {<<"lat">>, float_to_binary(?BOT_LAT)},
+                       {<<"lon">>, float_to_binary(?BOT_LON)}
+                     ]},
+    test_helper:iq_get(?NS_BOT, QueryEl).
