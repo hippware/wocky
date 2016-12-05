@@ -8,8 +8,6 @@
 
 -behaviour(gen_mod).
 
--compile(export_all).
-
 -include_lib("ejabberd/include/jlib.hrl").
 
 %% gen_mod handlers
@@ -63,14 +61,15 @@ sm_register_connection_hook(SID, JID, Info) ->
 
 -type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
-    filter_packet() | drop.
+    filter_packet().
 
 %% Packets to the bot - dropped if they were processed here.
 filter_local_packet_hook(P = {From, To, Packet}) ->
     ?honeybadger:context(#{'last_packet.from'   => jid:to_binary(From),
                            'last_packet.to'     => jid:to_binary(To),
                            'last_packet.packet' => to_string(Packet)}),
-    P.
+    P;
+filter_local_packet_hook(drop) -> drop.
 
 %%%===================================================================
 %%% IQ handler crash
@@ -79,16 +78,16 @@ filter_local_packet_hook(P = {From, To, Packet}) ->
 -spec iq_handler_crash_hook(ejabberd:jid(), ejabberd:jid(), ejabberd:iq(),
                             any()) -> ok.
 iq_handler_crash_hook(From, To, IQ, _Exception) ->
-    ?honeybadger:notify(
-       <<"IQ handler crash">>,
-       #{'iq_crash.from'       => jid:to_binary(From),
-         'iq_crash.to'         => jid:to_binary(To),
-         'iq_crash.iq.id'      => IQ#iq.id,
-         'iq_crash.iq.type'    => atom_to_binary(IQ#iq.type, utf8),
-         'iq_crash.iq.ns'      => IQ#iq.xmlns,
-         'iq_crash.iq.payload' => exml:to_binary(IQ#iq.sub_el)
-        },
-       erlang:get_stacktrace()),
+    _ = ?honeybadger:notify(
+           <<"IQ handler crash">>,
+           #{'iq_crash.from'       => jid:to_binary(From),
+             'iq_crash.to'         => jid:to_binary(To),
+             'iq_crash.iq.id'      => IQ#iq.id,
+             'iq_crash.iq.type'    => atom_to_binary(IQ#iq.type, utf8),
+             'iq_crash.iq.ns'      => IQ#iq.xmlns,
+             'iq_crash.iq.payload' => exml:to_binary(IQ#iq.sub_el)
+            },
+           erlang:get_stacktrace()),
     ok.
 
 %%%===================================================================
