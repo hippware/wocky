@@ -19,3 +19,6 @@ config :exometer,
       ]}
     ]}
   ]
+
+config :honeybadger,
+  environment_name: "Production"

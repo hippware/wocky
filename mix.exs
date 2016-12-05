@@ -30,7 +30,7 @@ defmodule Wocky.Mixfile do
          :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
          :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
          :algolia, :logger, :schemata, :porcelain, :geocalc, :mix, :faker,
-         :ex_machina, :base16, :poison, :ex_aws, :exconstructor
+         :ex_machina, :base16, :poison, :ex_aws, :exconstructor, :honeybadger
        ],
        plt_add_deps: true,
        flags: [
@@ -67,7 +67,7 @@ defmodule Wocky.Mixfile do
      applications: dev_apps ++ [
        :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
        :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
-       :ex_machina, :faker, :cowboy
+       :ex_machina, :faker, :cowboy, :honeybadger, :plug
      ],
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
@@ -111,6 +111,7 @@ defmodule Wocky.Mixfile do
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
       {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
       {:logger_lager_backend, "~> 0.0.2"},
+      {:honeybadger,   "~> 0.1"},
 
       ## ejabberd dependencies
       {:redo,          "~> 2.0", override: true},

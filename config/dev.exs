@@ -29,3 +29,6 @@ config :lager,
       ]
     ]
   ]
+
+config :honeybadger,
+  environment_name: "Development"

@@ -87,4 +87,8 @@ config :lager,
 config :hut,
   level: :critical
 
+config :honeybadger,
+  exclude_envs: [:dev, :test],
+  api_key: "HONEYBADGER_KEY"
+
 import_config "#{Mix.env}.exs"
