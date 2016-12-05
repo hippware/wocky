@@ -99,9 +99,9 @@ defmodule Wocky.Location do
 
   defp intersects?(nil, _location), do: false
   defp intersects?(bot, location) do
-    # Bot radius is stored as hundredths of meters
+    # Bot radius is stored as millimeters
     Geocalc.distance_between(Map.from_struct(bot),
-                             Map.from_struct(location)) <= (bot.radius / 100.0)
+                             Map.from_struct(location)) <= (bot.radius / 1000.0)
   end
 
   defp check_for_enter_event(user, bot_id) do

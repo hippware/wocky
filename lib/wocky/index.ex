@@ -53,7 +53,7 @@ defmodule Wocky.Index do
       lat: obj["lat"],
       lon: obj["lon"],
       radius: obj["radius"],
-      distance: obj["_rankingInfo"]["geoDistance"] * 100 # millimeters
+      distance: obj["_rankingInfo"]["geoDistance"] * 1000 # millimeters
      }
   end
 
