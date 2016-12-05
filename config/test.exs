@@ -50,5 +50,7 @@ config :lager,
     ]}
   ]
 
-config :honeybadger,
-  environment_name: "Testing"
+# Uncomment this and set the key in config.exs to enable
+# honeybadger for development testing:
+#config :honeybadger,
+#  environment_name: "Testing"
