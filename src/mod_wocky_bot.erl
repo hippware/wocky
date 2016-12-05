@@ -93,9 +93,13 @@ handle_iq_type(From, To, #iq{type = set,
 
 % Retrieve owned bots
 handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"bot">>,
+                                  sub_el = #xmlel{name = Name,
                                                   attrs = Attrs}
-                                 }) ->
+                                 })
+  %% We want 'bot' for retrieving a single bot and 'bots' for a list of bots.
+  %% The documentation is inconsistent, so to avoid breaking anything, we will
+  %% accept either.
+  when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
     handle_get(From, To, IQ, Attrs);
 
 % Retrieve subscribed bots

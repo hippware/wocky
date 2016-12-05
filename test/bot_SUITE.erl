@@ -1628,7 +1628,7 @@ is_bot_action_hs_notification(JID, Action,
 is_bot_action_hs_notification(_, _, _) -> false.
 
 geosearch_stanza() ->
-    QueryEl = #xmlel{name = <<"bot">>,
+    QueryEl = #xmlel{name = <<"bots">>,
                      attrs = [
                        {<<"lat">>, float_to_binary(?BOT_LAT)},
                        {<<"lon">>, float_to_binary(?BOT_LON)}
