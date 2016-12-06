@@ -18,10 +18,12 @@
 
 %% commands
 -export([befriend/2,
-         tros_migrate/0]).
+         tros_migrate/0,
+         tros_cleanup/0]).
 
 -ignore_xref([befriend/2,
-              tros_migrate/0]).
+              tros_migrate/0,
+              tros_cleanup/0]).
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -44,6 +46,12 @@ commands() ->
                         desc     = "Migrate TROS data from francus to S3",
                         module   = ?MODULE,
                         function = tros_migrate,
+                        args     = [],
+                        result   = {result, rescode}},
+     #ejabberd_commands{name     = tros_cleanup,
+                        desc     = "Delete TROS data from Francus",
+                        module   = ?MODULE,
+                        function = tros_cleanup,
                         args     = [],
                         result   = {result, rescode}}
     ].
@@ -90,7 +98,10 @@ tros_migrate() ->
     Files = get_files(),
     migrate_files(Files),
     verify_files(Files),
-    cleanup_files(Files),
+    ok.
+
+tros_cleanup() ->
+    cleanup_files(get_files()),
     ok.
 
 get_files() ->
