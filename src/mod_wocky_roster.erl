@@ -45,7 +45,9 @@
          roster_get_jid_info_hook/4,
          remove_user_hook/2,
          roster_get_versioning_feature_hook/2,
-         filter_local_packet_hook/1]).
+         filter_local_packet_hook/1,
+         roster_modified_hook/3
+        ]).
 
 -ignore_xref([process_iq/3,
               roster_get_hook/2,
@@ -55,7 +57,9 @@
               roster_get_jid_info_hook/4,
               remove_user_hook/2,
               roster_get_versioning_feature_hook/2,
-              filter_local_packet_hook/1]).
+              filter_local_packet_hook/1,
+              roster_modified_hook/3
+             ]).
 
 -define(NULL_VERSION, <<"0">>).
 
@@ -83,7 +87,9 @@ hooks() ->
      {remove_user,                   remove_user_hook},
      {anonymous_purge_hook,          remove_user_hook},
      {roster_get_versioning_feature, roster_get_versioning_feature_hook},
-     {filter_local_packet,           filter_local_packet_hook}].
+     {filter_local_packet,           filter_local_packet_hook},
+     {roster_modified,               roster_modified_hook}
+    ].
 
 %%%===================================================================
 %%% IQ handler callback
@@ -489,6 +495,11 @@ send_update(#jid{user = User, server = Server}, JID) ->
     Version = wocky_db_roster:get_roster_version(User, Server),
     Item = wocky_db_roster:get_roster_item(User, Server, JID),
     push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Version).
+
+
+%% hook for out-of-band roster modification --------------------------
+roster_modified_hook(User, Server, JID) ->
+    send_update(jid:make(User, Server, <<>>), JID).
 
 %%%===================================================================
 %%% Helper functions
