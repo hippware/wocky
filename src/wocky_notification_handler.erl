@@ -46,9 +46,9 @@ enable(JID, Platform, DeviceId) ->
             CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
             ok = wocky_db:insert(LServer, device, #{user => LUser,
                                                     server => LServer,
+                                                    device_id => DeviceId,
                                                     resource => LResource,
                                                     platform => Platform,
-                                                    device_id => DeviceId,
                                                     endpoint => Endpoint,
                                                     created_at => CreatedAt}),
             ok;
@@ -58,11 +58,17 @@ enable(JID, Platform, DeviceId) ->
     end.
 
 -spec disable(ejabberd:jid()) -> ok.
-disable(JID) ->
-    #jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
-    ok = wocky_db:delete(LServer, device, all, #{user => LUser,
-                                                 server => LServer,
-                                                 resource => LResource}).
+disable(#jid{luser = LUser, lserver = LServer} = JID) ->
+    case lookup_resource(JID, device_id) of
+        [DeviceId] ->
+            ok = wocky_db:delete(LServer, device, all,
+                                 #{user => LUser,
+                                   server => LServer,
+                                   device_id => DeviceId});
+
+        _Else ->
+            ok
+    end.
 
 -spec delete(binary(), binary()) -> ok.
 delete(LUser, LServer) ->
@@ -78,7 +84,7 @@ notify_message(To, From, Body) ->
 notify_bot_event(To, Bot, Event) ->
     ok = lager:debug("Sending notification for ~s ~sing bot ~s",
                      [jid:to_binary(To), Bot, Event]),
-    case lookup_endpoint(To) of
+    case lookup_resource(To, endpoint) of
         [Endpoint] ->
             Message = case Event of
                           enter ->
@@ -106,11 +112,12 @@ lookup_all_endpoints(#jid{luser = LUser, lserver = LServer}) ->
     wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
                                                         server => LServer}).
 
-lookup_endpoint(#jid{luser = LUser, lserver = LServer,
-                     lresource = LResource}) ->
-    wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
-                                                        server => LServer,
-                                                        resource => LResource}).
+lookup_resource(#jid{luser = LUser, lserver = LServer,
+                     lresource = LResource}, Field) ->
+    wocky_db:select_column(LServer, device_resource, Field,
+                           #{user => LUser,
+                             server => LServer,
+                             resource => LResource}).
 
 do_notify_all([], _JID, _Message) ->
     ok;
