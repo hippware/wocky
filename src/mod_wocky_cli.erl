@@ -51,8 +51,10 @@ befriend(Handle1, Handle2) ->
 
 get_user(Handle) ->
     case wocky_db_user:find_user_by(handle, Handle) of
-        not_found -> {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
-        User -> {ok, User}
+        not_found ->
+            {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
+        User ->
+            {ok, User}
     end.
 
 make_friends(User1, User2) ->
@@ -65,4 +67,6 @@ make_friend({#{user := User1, server := Server1},
     RosterItem = wocky_db_roster:get_roster_item(User1, Server1, JID2),
     RosterItem2 = RosterItem#wocky_roster{subscription = both,
                                           ask = none},
-    wocky_db_roster:update_roster_item(User1, Server1, JID2, RosterItem2).
+    wocky_db_roster:update_roster_item(User1, Server1, JID2, RosterItem2),
+    ejabberd_hooks:run(roster_modified, wocky_app:server(),
+                       [User1, Server1, JID2]).
