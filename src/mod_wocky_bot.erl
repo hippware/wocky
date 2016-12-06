@@ -748,8 +748,8 @@ output_only_fields() ->
     [field(<<"id">>,            string, <<>>),
      field(<<"server">>,        string, <<>>),
      field(<<"owner">>,         jid,    <<>>),
-     field(<<"updated">>,       timestamp, <<>>)
-    ].
+     field(<<"updated">>,       timestamp, <<>>),
+     field(<<"distance">>,      int,    0)].
 
 create_fields() -> required_fields() ++ optional_fields().
 output_fields() -> required_fields() ++ optional_fields()

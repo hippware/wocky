@@ -22,7 +22,8 @@
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
-                      ensure_all_clean/1, hs_query_el/1, hs_node/1
+                      ensure_all_clean/1, hs_query_el/1, hs_node/1,
+                      add_to_s/2
                      ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
@@ -97,9 +98,9 @@ init_per_testcase(geosearch, Config) ->
     meck:expect('Elixir.Wocky.Index', geosearch,
                 fun (_Lat, _Lon) ->
                         {ok, [#{id => ?BOT, server => ?SERVER,
-                                title => ?BOT_TITLE,
+                                title => ?BOT_TITLE, image => ?CREATE_IMAGE,
                                 lat => ?BOT_LAT, lon => ?BOT_LON,
-                                radius => ?BOT_RADIUS, distance => 10}]}
+                                radius => ?BOT_RADIUS, distance => 8000}]}
                 end),
     escalus:init_per_testcase(geosearch, Config);
 init_per_testcase(CaseName, Config) ->
@@ -1016,9 +1017,8 @@ geosearch(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
-        escalus:send(Alice, test_helper:add_to_s(geosearch_stanza(), Alice)),
-        Result = escalus:wait_for_stanza(Alice),
-        escalus:assert(is_iq_result, Result)
+        Stanza = expect_iq_success(add_to_s(geosearch_stanza(), Alice), Alice),
+        check_geosearch_return(Stanza)
       end).
 
 %%--------------------------------------------------------------------
@@ -1118,6 +1118,16 @@ expected_retrieve_fields() ->
      {"subscribers+size",   int,    3}, % Owner is always an subscriber
      {"subscribers+hash",   string, any}].
 
+expected_geosearch_fields() ->
+    [{"jid",                jid,    any},
+     {"id",                 string, any},
+     {"server",             string, any},
+     {"title",              string, any},
+     {"image",              string, any},
+     {"location",           geoloc, any},
+     {"radius",             int,    any},
+     {"distance",           int,    any}].
+
 check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
                    ExpectedFields) ->
     #xmlel{name = <<"bot">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
@@ -1143,6 +1153,15 @@ check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
            check_ids(ExpectedIDs, Children)
           ])
       ).
+
+check_geosearch_return(#xmlel{name = <<"iq">>, children = [BotsStanza]}) ->
+    #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = Children} = BotsStanza,
+    lists:foreach(
+      fun (#xmlel{name = <<"bot">>, children = Fields}) ->
+              check_return_fields(Fields, expected_geosearch_fields())
+      end,
+      Children).
 
 check_ids(ExpectedIDs, Children) ->
     IDs = get_ids(Children, []),
