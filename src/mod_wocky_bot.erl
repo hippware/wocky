@@ -93,9 +93,13 @@ handle_iq_type(From, To, #iq{type = set,
 
 % Retrieve owned bots
 handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"bot">>,
+                                  sub_el = #xmlel{name = Name,
                                                   attrs = Attrs}
-                                 }) ->
+                                 })
+  %% We want 'bot' for retrieving a single bot and 'bots' for a list of bots.
+  %% The documentation is inconsistent, so to avoid breaking anything, we will
+  %% accept either.
+  when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
     handle_get(From, To, IQ, Attrs);
 
 % Retrieve subscribed bots
@@ -237,7 +241,14 @@ delete_bot(Server, ID) ->
 handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
     case wocky_bot_util:get_id_from_node(Attrs) of
         {ok, ID} -> get_bot_by_id(From, Server, ID);
-        {error, _} -> get_bots_for_user(From, Server, IQ, Attrs)
+        {error, _} ->
+            case get_location_from_attrs(Attrs) of
+                {ok, {Lat, Lon}} ->
+                    get_bots_near_location(From, Server, IQ, Lat, Lon);
+
+                {error, _} ->
+                    get_bots_for_user(From, Server, IQ, Attrs)
+            end
     end.
 
 handle_subscribed(From, #jid{lserver = Server}, IQ) ->
@@ -254,6 +265,38 @@ get_bot_by_id(From, Server, ID) ->
         BotEl <- make_bot_el(Server, ID),
         {ok, BotEl}
        ]).
+
+get_location_from_attrs(Attrs) ->
+    do([error_m ||
+        Lat <- wocky_xml:get_attr(<<"lat">>, Attrs),
+        Lon <- wocky_xml:get_attr(<<"lon">>, Attrs),
+        {ok, {Lat, Lon}}
+       ]).
+
+get_bots_near_location(From, _Server, _IQ, Lat, Lon) ->
+    {ok, AllBots} = 'Elixir.Wocky.Index':geosearch(Lat, Lon),
+    VisibleBots = lists:filter(geosearch_access_filter(From, _), AllBots),
+    {ok, make_geosearch_result(VisibleBots)}.
+
+geosearch_access_filter(From, #{server := Server, id := ID}) ->
+    ok =:= wocky_bot_util:check_access(Server, ID, From).
+
+make_geosearch_result(Bots) ->
+    #xmlel{name = <<"bots">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = make_geosearch_els(Bots)}.
+
+make_geosearch_els(Bots) ->
+    [make_geosearch_el(Bot) || Bot <- Bots].
+
+geosearch_el_fields() ->
+    [id, server, title, image, lat, lon, radius, distance].
+
+make_geosearch_el(#{server :=  Server, id := ID} = Bot) ->
+    JidField = make_field(<<"jid">>, jid, bot_jid(Server, ID)),
+    MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
+    RetFields = encode_fields([JidField | MapFields]),
+    make_ret_stanza(RetFields).
 
 get_bots_for_user(From, Server, IQ, Attrs) ->
     do([error_m ||
@@ -705,8 +748,8 @@ output_only_fields() ->
     [field(<<"id">>,            string, <<>>),
      field(<<"server">>,        string, <<>>),
      field(<<"owner">>,         jid,    <<>>),
-     field(<<"updated">>,       timestamp, <<>>)
-    ].
+     field(<<"updated">>,       timestamp, <<>>),
+     field(<<"distance">>,      int,    0)].
 
 create_fields() -> required_fields() ++ optional_fields().
 output_fields() -> required_fields() ++ optional_fields()

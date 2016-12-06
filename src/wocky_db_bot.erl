@@ -97,7 +97,8 @@ exists(_Server, ID) ->
 
 -spec insert(wocky_db:server(), map()) -> ok.
 insert(_Server, Fields) ->
-    wocky_db:insert(shared, bot, Fields).
+    ok = wocky_db:insert(shared, bot, Fields),
+    'Elixir.Wocky.Index':bot_updated(maps:get(id, Fields), Fields).
 
 -spec insert_new_name(wocky_db:id(), shortname()) -> ok | {error, exists}.
 insert_new_name(ID, Name) ->
@@ -167,7 +168,8 @@ subscribers(Server, ID) ->
 delete(Server, ID) ->
     ShortName = wocky_db:select_one(shared, bot, shortname, #{id => ID}),
     ok = delete_bot_name_lookup(Server, ShortName),
-    ok = wocky_db:delete(shared, bot, all, #{id => ID}).
+    ok = wocky_db:delete(shared, bot, all, #{id => ID}),
+    'Elixir.Wocky.Index':bot_removed(ID).
 
 delete_bot_name_lookup(Server, Name)
   when is_binary(Name) andalso size(Name) > 0 ->

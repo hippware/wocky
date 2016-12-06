@@ -88,7 +88,8 @@ defmodule Wocky.Mixfile do
        keyspace_prefix: 'wocky_test_',
        location_api_port: 8080,
        indexing_enabled_envs: ['staging'],
-       algolia_index_name: 'dev_wocky_users',
+       algolia_user_index_name: 'dev_wocky_users',
+       algolia_bot_index_name: 'dev_wocky_bots',
        notification_enabled_envs: ['staging'],
        notification_handler: Wocky.Notification.NullHandler
      ]]
@@ -100,12 +101,13 @@ defmodule Wocky.Mixfile do
       {:lager,         "~> 3.2", override: true},
       {:porcelain,     "~> 2.0"},
       {:algolia,       "~> 0.4.0"},
-      {:ex_aws,        "~> 1.0.0-rc.3"},
+      {:ex_aws,        "~> 1.0.0-rc.4"},
       {:geocalc,       "~> 0.5"},
       {:exconstructor, "~> 1.0"},
       {:ok,            "~> 1.0"},
-      {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
+      {:exactor,       "~> 2.2"},
       {:faker,         "~> 0.7"},
+      {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
@@ -241,7 +243,7 @@ defmodule Wocky.Mixfile do
           {:elvis_style, :dont_repeat_yourself, %{min_complexity: 20}},
           {:elvis_style, :no_debug_call, %{ignore: [:mam_SUITE]}},
           {:elvis_style, :variable_naming_convention,
-           %{regex: "^(_?[A-Z][0-9a-zA-Z]*)$"}}
+           %{regex: "^(_?_?[A-Z][0-9a-zA-Z]*)$"}}
         ]}
     ]
   end

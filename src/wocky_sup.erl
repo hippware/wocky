@@ -29,12 +29,12 @@ init([]) ->
                  intensity => 1,
                  period    => 5},
 
-    UserIdx = #{id       => wocky_db_user_idx,
-                start    => {wocky_db_user_idx, start_link, []},
+    UserIdx = #{id       => wocky_index,
+                start    => {'Elixir.Wocky.Index', start_link, []},
                 restart  => permanent,
                 shutdown => 5000,
                 type     => worker,
-                modules  => [wocky_db_user_idx]},
+                modules  => ['Elixir.Wocky.Index']},
 
     BotExpiryMon = #{id       => wocky_bot_expiry_mon,
                      start    => {wocky_bot_expiry_mon, start_link, []},
