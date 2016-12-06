@@ -107,7 +107,7 @@ defmodule Schemata.Schemas.Wocky do
         affiliates:       {:set, :text}, # Bot's affiliates
                                          # (required for WHITELIST visibility)
         alerts:           :int,      # Whether alerts are enabled (0/1)
-        updated:          :timestamp,# Timestamp of most recent item creation
+        updated:          :timestamp, # Timestamp of most recent item creation
                                      # (or creation time of bot if no items)
         follow_me:        :boolean,  # Does bot follow owner
         follow_me_expiry: :timestamp # When follow me expires
@@ -290,13 +290,19 @@ defmodule Schemata.Schemas.Wocky do
       columns: [
         user:       :text,      # User ID (userpart of JID)
         server:     :text,      # Server (domainpart of JID)
+        device_id:  :text,      # Device ID
         resource:   :text,      # Resource (resourcepart of JID)
         platform:   :text,      # Client OS platform (apple or google)
-        device_id:  :text,      # Device ID
         endpoint:   :text,      # SNS application endpoint ARN
         created_at: :timestamp  # When the device was registered
       ],
-      primary_key: [:user, :server, :resource]
+      primary_key: [:user, :server, :device_id]
+    ]
+
+    view :device_resource, [
+      from: :device,
+      columns: :all,
+      primary_key: [:user, :server, :resource, :device_id]
     ]
 
     # mod_privacy settings for users
