@@ -121,10 +121,21 @@ lookup_resource(#jid{luser = LUser, lserver = LServer,
 
 do_notify_all([], _JID, _Message) ->
     ok;
-do_notify_all([Endpoint | Rest], JID, Message) ->
+do_notify_all([Endpoint | Rest], #jid{luser = User} = JID, Message) ->
+    %% TODO: This is an ugly kludge to handle the problem of users receiving
+    %% multiple push notifications for a single event. The code will stop
+    %% sending notifications once one is delivered, but this isn't really what
+    %% we want for the final product. It works for now since we expect users
+    %% to have a single device in the beta.
     case do_notify_message(Endpoint, JID, Message) of
-        {error, _} = E -> E;
-        ok -> do_notify_all(Rest, JID, Message)
+        ok -> ok;
+        {error, Reason} ->
+            ok = lager:debug("Failed to send push notification to ~s: ~p",
+                             [User, Reason]),
+            case Rest of
+                [] -> {error, Reason};
+                _ -> do_notify_all(Rest, JID, Message)
+            end
     end.
 
 do_notify_message(Endpoint, #jid{user = User, server = Server}, Message) ->
