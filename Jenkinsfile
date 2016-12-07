@@ -3,7 +3,7 @@ node {
 
     mail (
         bcc: '',
-        body: "Build ID failed for ${JOB_NAME}. See output at ",
+        body: "Build ID failed for ${JOB_NAME}. See output at ${JOB_URL}",
         cc: '',
         from: 'noreply@jenkins.dev.tinyrobot.com',
         replyTo: '',
