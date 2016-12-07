@@ -1,5 +1,12 @@
 node {
   try {
+    mail (
+      subject: 'Jenkins starting',
+      from: 'noreply@jenkins.dev.tinyrobot.com',
+      to: '$CHANGE_AUTHOR_EMAIL',
+      body: 'Build ID $BUILD_ID started. See output at $JOB_URL'
+    )
+
     wrap([$class: 'AnsiColorBuildWrapper']) {
       stage('Prepare') {
         sh "epmd -daemon"
