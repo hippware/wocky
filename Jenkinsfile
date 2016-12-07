@@ -1,11 +1,13 @@
 node {
   try {
-    mail (
-      subject: 'Jenkins starting',
-      from: 'noreply@jenkins.dev.tinyrobot.com',
-      to: '$CHANGE_AUTHOR_EMAIL',
-      body: 'Build ID $BUILD_ID started. See output at $JOB_URL'
-    )
+
+    mail bcc: '',
+         body: 'Build ID $BUILD_ID failed. See output at $JOB_URL',
+         cc: '',
+         from: 'noreply@jenkins.dev.tinyrobot.com',
+         replyTo: '',
+         to: '$CHANGE_AUTHOR_EMAIL',
+         subject: 'Jenkins build FAILED for $JOB_NAME on $BRANCH_NAME'
 
     wrap([$class: 'AnsiColorBuildWrapper']) {
       stage('Prepare') {
