@@ -1,6 +1,7 @@
 node {
   try {
 
+    sh "env | sort"
     mail (
         bcc: '',
         body: "Build ID failed for ${JOB_NAME}. See output at ${JOB_URL} - ${CHANGE_TITLE} - ${CHANGE_AUTHOR_EMAIL}",
