@@ -1,5 +1,5 @@
 defmodule Wocky.Mixfile do
-  use Mix.Project
+  use Mix.Projectxx
 
   def project do
     [app: :wocky,
