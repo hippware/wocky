@@ -1,8 +1,15 @@
 node {
   try {
 
-    mail bcc: '',
-         body: "Build ID failed for ${JOB_NAME}. See output at ", cc: '', from: 'noreply@jenkins.dev.tinyrobot.com', replyTo: '', to: 'bernard@hippware.com', subject: 'Jenkins build FAILED for '
+    mail (
+        bcc: '',
+        body: "Build ID failed for ${JOB_NAME}. See output at ",
+        cc: '',
+        from: 'noreply@jenkins.dev.tinyrobot.com',
+        replyTo: '',
+        to: 'bernard@hippware.com',
+        subject: 'Jenkins build FAILED for '
+    )
 
     wrap([$class: 'AnsiColorBuildWrapper']) {
       stage('Prepare') {
