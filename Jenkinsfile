@@ -7,7 +7,7 @@ node {
         cc: '',
         from: 'noreply@jenkins.dev.tinyrobot.com',
         replyTo: '',
-        to: "${CHANGE_AUTHOR_EMAIL}",
+        to: "bernard@hippware.com",
         subject: "Jenkins build FAILED for ${JOB_NAME} on ${BRANCH_NAME}"
     )
 
