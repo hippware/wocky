@@ -15,7 +15,7 @@ config :exometer,
         {:connect_timeout, 5000},
         {:host, 'metrics1.staging.dev.tinyrobot.com'},
         {:port, 2003},
-        {:api_key, ''}
+        {:api_key, 'GRAPHITE_KEY'}
       ]}
     ]}
   ]

@@ -31,7 +31,7 @@ config :wocky,
 
 config :algolia,
   application_id: "HIE75ZR7Q7",
-  api_key: "79602842342e137c97ce188013131a89"
+  api_key: "ALGOLIA_KEY"
 
 config :schemata,
   drop_nulls: false
