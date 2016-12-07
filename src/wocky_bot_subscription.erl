@@ -52,7 +52,7 @@ handle_subscribe(From, #jid{lserver = Server}, Attrs) ->
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_access(Server, ID, From),
         subscribe_bot(Server, ID, From),
-        {ok, []}
+        {ok, make_subscriber_count_element(Server, ID)}
        ]).
 
 subscribe_bot(Server, ID, From) ->
@@ -67,7 +67,7 @@ handle_unsubscribe(From, #jid{lserver = Server}, Attrs) ->
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_bot_exists(Server, ID),
         unsubscribe_bot(Server, ID, From),
-        {ok, []}
+        {ok, make_subscriber_count_element(Server, ID)}
        ]).
 
 unsubscribe_bot(Server, ID, From) ->
@@ -154,3 +154,11 @@ handle_untyped_presence(From, LServer, BotID, Stanza) ->
         _ ->
             ok
     end.
+
+%%%===================================================================
+%%% Common helpers
+%%%===================================================================
+
+make_subscriber_count_element(Server, ID) ->
+    Count = wocky_db_bot:subscriber_count(Server, ID),
+    wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).
