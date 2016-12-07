@@ -65,12 +65,18 @@ defmodule Wocky.LocationApi do
   end
 
   def malformed_request(req, state) do
-    case req |> read_and_parse_body |> handle_parse_result do
+    case req |> read_and_parse_body do
       {:ok, coords, resource} ->
         {false, req, %State{state | resource: resource, coords: coords}}
 
-      {:error, message} ->
-        {true, set_response_text(req, message), state}
+      {:error, :timeout} ->
+        {true, set_response_text(req, "Timeout reading request body."), state}
+
+      {:error, :missing_keys} ->
+        {true, set_response_text(req, "JSON missing required keys."), state}
+
+      {:error, _} ->
+        {true, set_response_text(req, "JSON payload can not be parsed."), state}
     end
   end
 
@@ -79,6 +85,7 @@ defmodule Wocky.LocationApi do
     |> read_body
     ~>> parse_body
     ~>> extract_values
+    ~>> handle_parse_result
   end
 
   defp read_body(req) do
@@ -90,23 +97,19 @@ defmodule Wocky.LocationApi do
 
   defp parse_body(body), do: body |> Poison.Parser.parse(keys: :atoms)
 
-  defp extract_values(data) when is_map(data),
+  defp extract_values(data),
     do: {:ok, extract_values(data[:location], data[:resource])}
 
   defp extract_values([location | _], resource), do: {location, resource}
   defp extract_values(location, resource),       do: {location, resource}
 
-  defp handle_parse_result({:ok, {location, resource}}) do
+  defp handle_parse_result({location, resource}) do
     if has_required_keys(location, resource) do
       {:ok, location.coords, resource}
     else
-      {:error, "JSON missing required keys."}
+      {:error, :missing_keys}
     end
   end
-  defp handle_parse_result({:error, :timeout}),
-    do: {:error, "Timeout reading request body."}
-  defp handle_parse_result({:error, _}),
-    do: {:error, "JSON payload can not be parsed."}
 
   defp has_required_keys(%{coords: coords}, resource) do
     Map.get(coords, :latitude) &&
