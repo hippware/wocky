@@ -41,7 +41,7 @@ node {
     mail (
       subject: 'Jenkins build FAILED for $JOB_NAME on $BRANCH_NAME',
       from: 'noreply@jenkins.dev.tinyrobot.com',
-      to: '$CHANGE_AUTHOR_EMAIL'
+      to: '$CHANGE_AUTHOR_EMAIL',
       body: 'Build ID $BUILD_ID failed. See output at $JOB_URL'
     )
     throw e
