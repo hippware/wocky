@@ -7,8 +7,8 @@ node {
         cc: '',
         from: 'noreply@jenkins.dev.tinyrobot.com',
         replyTo: '',
-        to: 'bernard@hippware.com',
-        subject: 'Jenkins build FAILED for '
+        to: "${CHANGE_AUTHOR_EMAIL}",
+        subject: "Jenkins build FAILED for ${JOB_NAME} on ${BRANCH_NAME}"
     )
 
     wrap([$class: 'AnsiColorBuildWrapper']) {
