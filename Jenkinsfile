@@ -3,11 +3,11 @@ node {
 
     mail (
         bcc: '',
-        body: "Build ID failed for ${JOB_NAME}. See output at ${JOB_URL}",
+        body: "Build ID failed for ${JOB_NAME}. See output at ${JOB_URL} - ${CHANGE_TITLE}",
         cc: '',
         from: 'noreply@jenkins.dev.tinyrobot.com',
         replyTo: '',
-        to: "bernard@hippware.com",
+        to: "${CHANGE_AUTHOR_EMAIL}",
         subject: "Jenkins build FAILED for ${JOB_NAME} on ${BRANCH_NAME}"
     )
 
