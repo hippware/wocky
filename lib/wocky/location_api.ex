@@ -9,6 +9,7 @@ defmodule Wocky.LocationApi do
   import OK, only: :macros
   alias Wocky.User
   alias Wocky.Location
+  require Logger
 
   defmodule State do
     @moduledoc false
@@ -49,6 +50,7 @@ defmodule Wocky.LocationApi do
   end
 
   defp set_response_text(req, error_text) do
+    :ok = Logger.info("Error processing Location API request: #{error_text}")
     req = :cowboy_req.set_resp_header("content-type", "text/plain", req)
     :cowboy_req.set_resp_body(error_text, req)
   end
