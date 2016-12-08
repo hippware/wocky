@@ -70,28 +70,37 @@ defmodule Wocky.Location do
     bots |> Enum.reduce([], &check_for_event(&1, user, location, &2))
   end
 
+  defmacrop log_check_result(user, bot_id, result) do
+    quote do
+      :ok = Logger.debug("""
+      User #{unquote(user).user} #{unquote(result)} the perimeter \
+      of #{unquote(bot_id)}\
+      """)
+    end
+  end
+
   defp check_for_event(bot_id, user, location, acc) do
     :ok = Logger.debug("""
     Checking user #{user.user} for collision with bot #{bot_id} \
     at location (#{location.lat},#{location.lon})...\
     """)
     bot = Bot.get(bot_id)
-    if intersects?(bot, location) do
+    if bot |> intersects?(location) do
       if check_for_enter_event(user, bot_id) do
-        :ok = Logger.debug("User has entered the perimeter of #{bot_id}")
+        log_check_result(user, bot_id, "has entered")
         User.add_bot_event(user, bot_id, :enter)
         [{bot, :enter} | acc]
       else
-        :ok = Logger.debug("User is within the perimeter of #{bot_id}")
+        log_check_result(user, bot_id, "is within")
         acc
       end
     else
       if check_for_exit_event(user, bot_id) do
-        :ok = Logger.debug("User has left the perimeter of #{bot_id}")
+        log_check_result(user, bot_id, "has left")
         User.add_bot_event(user, bot_id, :exit)
         [{bot, :exit} | acc]
       else
-        :ok = Logger.debug("User is outside of the perimeter of #{bot_id}")
+        log_check_result(user, bot_id, "is outside of")
         acc
       end
     end
@@ -99,9 +108,16 @@ defmodule Wocky.Location do
 
   defp intersects?(nil, _location), do: false
   defp intersects?(bot, location) do
-    # Bot radius is stored as millimeters
-    Geocalc.distance_between(Map.from_struct(bot),
-                             Map.from_struct(location)) <= (bot.radius / 1000.0)
+    radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
+    distance = Geocalc.distance_between(Map.from_struct(bot),
+                                        Map.from_struct(location))
+    intersects = distance <= radius
+    :ok = Logger.debug("""
+    The distance of #{distance} meters is \
+    #{if intersects, do: "within", else: "outside"} the radius of bot \
+    #{bot.id} (#{radius} meters)\
+    """)
+    intersects
   end
 
   defp check_for_enter_event(user, bot_id) do

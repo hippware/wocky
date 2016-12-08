@@ -47,7 +47,8 @@ handle_pep(From, Item = #xmlel{name = <<"geoloc">>}) ->
         {ok, {_Lat, _Lon, _Accuracy} = Loc} ->
             'Elixir.Wocky.Location':user_location_changed(From, Loc),
             Item;
-        {error, _} ->
+        {error, Reason} ->
+            ok = lager:info("Error processing geoloc IQ: ~p", [Reason]),
             drop
     end;
 handle_pep(_From, Item) ->
@@ -63,13 +64,13 @@ handle_geoloc(Item) ->
 
 get_item(Item, Name, Default) ->
     case get_item(Item, Name) of
-        {error, not_found} -> {ok, Default};
+        {error, {not_found, _}} -> {ok, Default};
         {ok, Val} -> {ok, Val}
     end.
 
 get_item(Item, Name) ->
     case xml:get_path_s(Item, [{elem, Name}, cdata]) of
-        <<>> -> {error, not_found};
+        <<>> -> {error, {not_found, Name}};
         Data -> wocky_util:safe_bin_to_float(Data)
     end.
 

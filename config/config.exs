@@ -83,6 +83,23 @@ config :lager,
       date: '$D0',
       count: 5
     ]
+  ],
+  traces: [
+    {{:lager_file_backend, 'location.log'}, [module: Wocky.Location]},
+    {{:lager_file_backend, 'location.log'}, [module: Wocky.LocationAPI]},
+    {{:lager_file_backend, 'location.log'}, [module: :mod_wocky_geoloc]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.Notification.AWSHandler
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.Notification.NullHandler
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: :mod_wocky_notifications
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: :wocky_notification_handler
+    ]}
   ]
 
 config :hut,

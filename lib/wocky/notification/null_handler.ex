@@ -10,22 +10,22 @@ defmodule Wocky.Notification.NullHandler do
 
   def register(user, platform, device) do
     :ok = Logger.info("""
-      Notification registration request for #{user}'s device '#{device}'
-      on the '#{platform}' platform
+      Notification registration request for #{user}'s device '#{device}' \
+      on the '#{platform}' platform\
       """)
     {:ok, device}
   end
 
   def notify_message(endpoint, from, body) do
     :ok = Logger.info("""
-      Message notification to '#{endpoint}' from #{from} with body: #{body}
+      Message notification to '#{endpoint}' from #{from} with body: #{body}\
       """)
     :ok
   end
 
   def notify(endpoint, message) do
     :ok = Logger.info("""
-      Generic notification to '#{endpoint}' with message: #{message}
+      Generic notification to '#{endpoint}' with message: #{message}\
       """)
     :ok
   end

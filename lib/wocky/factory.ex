@@ -47,7 +47,7 @@ defmodule Wocky.Factory do
       address: Faker.Address.street_address,
       lat: Faker.Address.latitude,
       lon: Faker.Address.longitude,
-      radius: :rand.uniform(100),
+      radius: :rand.uniform(100) * 1000,
       visibility: 1,
       alerts: 1,
       updated: :wocky_db.now_to_timestamp(:erlang.timestamp),
