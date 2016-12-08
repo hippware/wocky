@@ -85,24 +85,13 @@ defmodule Wocky.Location do
     at location (#{location.lat},#{location.lon})...\
     """)
     bot = Bot.get(bot_id)
-    if bot |> intersects?(location) do
-      if check_for_enter_event(user, bot_id) do
-        log_check_result(user, bot_id, "has entered")
-        User.add_bot_event(user, bot_id, :enter)
-        [{bot, :enter} | acc]
-      else
-        log_check_result(user, bot_id, "is within")
-        acc
-      end
+    if bot |> is_nil do
+      :ok = Logger.warn("Could not find bot for ID #{bot_id}")
+      acc
     else
-      if check_for_exit_event(user, bot_id) do
-        log_check_result(user, bot_id, "has left")
-        User.add_bot_event(user, bot_id, :exit)
-        [{bot, :exit} | acc]
-      else
-        log_check_result(user, bot_id, "is outside of")
-        acc
-      end
+      bot
+      |> intersects?(location)
+      |> handle_intersection(user, bot, acc)
     end
   end
 
@@ -118,6 +107,27 @@ defmodule Wocky.Location do
     #{bot.id} (#{radius} meters)\
     """)
     intersects
+  end
+
+  defp handle_intersection(true, user, %Bot{id: bot_id} = bot, acc) do
+    if check_for_enter_event(user, bot_id) do
+      log_check_result(user, bot_id, "has entered")
+      User.add_bot_event(user, bot_id, :enter)
+      [{bot, :enter} | acc]
+    else
+      log_check_result(user, bot_id, "is within")
+      acc
+    end
+  end
+  defp handle_intersection(false, user, %Bot{id: bot_id} = bot, acc) do
+    if check_for_exit_event(user, bot_id) do
+      log_check_result(user, bot_id, "has left")
+      User.add_bot_event(user, bot_id, :exit)
+      [{bot, :exit} | acc]
+    else
+      log_check_result(user, bot_id, "is outside of")
+      acc
+    end
   end
 
   defp check_for_enter_event(user, bot_id) do
