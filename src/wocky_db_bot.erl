@@ -16,6 +16,7 @@
          affiliations_from_map/1,
          update_affiliations/3,
          subscribers/2,
+         subscriber_count/2,
          delete/2,
          has_access/3,
          subscribe/3,
@@ -163,6 +164,14 @@ subscribers(Server, ID) ->
     AllSubscribers = maybe_add_owner_as_subscriber(owner(Server, ID),
                                                    Subscribers),
     wocky_util:remove_redundant_jids(AllSubscribers).
+
+-spec subscriber_count(wocky_db:server(), wocky_db:id()) -> non_neg_integer().
+subscriber_count(Server, ID) ->
+    Count = wocky_db:count(shared, bot_subscriber, #{bot => ID}),
+    case owner(Server, ID) of
+        not_found -> Count;
+        _ -> Count + 1
+    end.
 
 -spec delete(wocky_db:server(), wocky_db:id()) -> ok.
 delete(Server, ID) ->

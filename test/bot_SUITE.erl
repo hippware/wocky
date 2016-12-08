@@ -212,12 +212,13 @@ subscribers(Config) ->
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
-        expect_iq_success(unsubscribe_stanza(), Carol),
+        Stanza1 = expect_iq_success(unsubscribe_stanza(), Carol),
+        check_subscriber_count(Stanza1, 2),
 
         % Alice can get the correct subscribers
-        Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?ALICE_B_JID,
-                                   ?KAREN_B_JID])
+        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza2, [?ALICE_B_JID,
+                                    ?KAREN_B_JID])
       end).
 
 subscribe(Config) ->
@@ -235,24 +236,26 @@ subscribe(Config) ->
           is_affiliation_update(escalus_client:short_jid(Carol), spectator, _),
           escalus:wait_for_stanza(Carol)),
 
-        expect_iq_success(subscribe_stanza(), Carol),
-        expect_iq_success(subscribe_stanza(), Bob),
+        Stanza1 = expect_iq_success(subscribe_stanza(), Carol),
+        check_subscriber_count(Stanza1, 3),
+        Stanza2 = expect_iq_success(subscribe_stanza(), Bob),
+        check_subscriber_count(Stanza2, 4),
 
         % Tim can't be subscribed because he is not an affiliate and the
         % permission is WHITELIST
         expect_iq_error(subscribe_stanza(), Tim),
 
         % Alice can get the correct subscribers
-        Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?ALICE_B_JID,
+        Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza3, [?ALICE_B_JID,
                                    ?KAREN_B_JID,
                                    ?CAROL_B_JID,
                                    ?BOB_B_JID]),
 
         % Update Carol's follow status
         expect_iq_success(subscribe_stanza(), Carol),
-        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?ALICE_B_JID,
+        Stanza4 = expect_iq_success(subscribers_stanza(), Alice),
+        check_subscribers(Stanza4, [?ALICE_B_JID,
                                     ?KAREN_B_JID,
                                     ?CAROL_B_JID,
                                     ?BOB_B_JID])
@@ -1325,6 +1328,10 @@ check_subscriber(SubscriberEls, Name) ->
 
 is_subscriber(Name, #xmlel{name = <<"subscriber">>, attrs = Attrs}) ->
     xml:get_attr(<<"jid">>, Attrs) =:= {value, Name}.
+
+check_subscriber_count(Stanza = #xmlel{name = <<"iq">>}, ExpectedCount) ->
+    Count = xml:get_path_s(Stanza, [{elem, <<"subscriber_count">>}, cdata]),
+    ?assertEqual(binary_to_integer(Count), ExpectedCount).
 
 modify_affiliations_stanza(NewAffiliations) ->
     test_helper:iq_set(?NS_BOT,
