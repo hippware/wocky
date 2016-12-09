@@ -37,4 +37,12 @@ defmodule Wocky.Ejabberd do
       jid -> jid
     end
   end
+
+  def make_jid!(jidstring) do
+    case :jid.from_binary(jidstring) do
+      :error -> raise ArgumentError
+      jid -> jid
+    end
+  end
+
 end

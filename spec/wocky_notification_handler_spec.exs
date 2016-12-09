@@ -29,17 +29,4 @@ defmodule NotificationHandlerSpec do
       expect Handler |> to(accepted :notify_message)
     end
   end
-
-  describe "Sending a bot event notification" do
-    before do
-      allow Handler |> to(accept :notify, fn (_, _) -> :ok end)
-      :ok = :wocky_notification_handler.enable(@test_jid, "apple", @test_id)
-      :ok = :wocky_notification_handler.notify_bot_event(@test_jid, @test_id,
-                                                         :enter)
-    end
-
-    it "should call the notify function on the handler" do
-      expect Handler |> to(accepted :notify)
-    end
-  end
 end

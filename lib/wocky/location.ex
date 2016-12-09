@@ -151,41 +151,39 @@ defmodule Wocky.Location do
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     :ok = send_notification(user, bot, event)
-    :ok = send_push_notification(user, bot, event)
-  end
-
-  defp send_push_notification(user, bot, event) do
-    jid = User.to_jid(user)
-    case :wocky_notification_handler.notify_bot_event(jid, bot.id, event) do
-      :ok -> :ok
-      {:error, reason} ->
-        Logger.error("""
-        Failed to send push notification to #{User.to_jid_string(user)}: \
-        #{inspect(reason)}\
-        """)
-    end
   end
 
   defp send_notification(user, bot, event) do
-    :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
-                           User.to_bare_jid(user),
-                           bot_notification_stanza(user, bot, event))
+    owner_jid = Ejabberd.make_jid!(bot.owner)
+    # Don't send bot entry/exit notifications about the owner to themselves
+    if not :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
+      :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
+                             owner_jid,
+                             bot_notification_stanza(owner_jid, user,
+                                                     bot, event))
+    else
+      :ok
+    end
   end
 
-  defp bot_notification_stanza(user, bot, event) do
-    user_jid = User.to_bare_jid_string(user)
-    bot_jid = Bot.to_jid_string(bot)
+  defp bot_notification_stanza(owner_jid, user, bot, event) do
+    user_jid_str = User.to_bare_jid_string(user)
+    bot_jid_str = Bot.to_jid_string(bot)
     xmlel(name: "message",
           attrs: [
             {"from", :wocky_app.server},
-            {"to", user_jid},
+            {"to", :jid.to_binary(owner_jid)},
             {"type", "headline"}
           ],
           children: [
             xmlel(name: "bot", attrs: [{"xmlns", "hippware.com/hxep/bot"}],
                   children: [
-                    xmlel(name: "jid", children: [xmlcdata(content: bot_jid)]),
-                    xmlel(name: "id", children: [xmlcdata(content: bot.id)]),
+                    xmlel(name: "jid", children: [
+                            xmlcdata(content: bot_jid_str)
+                          ]),
+                    xmlel(name: "id", children: [
+                            xmlcdata(content: bot.id)
+                          ]),
                     xmlel(name: "server", children: [
                             xmlcdata(content: bot.server)
                           ]),
@@ -193,7 +191,7 @@ defmodule Wocky.Location do
                             xmlcdata(content: to_string(event))
                           ]),
                     xmlel(name: "user-jid", children: [
-                            xmlcdata(content: user_jid)
+                            xmlcdata(content: user_jid_str)
                           ])
                   ])
           ])

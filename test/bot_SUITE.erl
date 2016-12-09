@@ -15,6 +15,8 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
 
+-export([set_visibility/3]).
+
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
                       get_hs_stanza/0, bot_node/1,
