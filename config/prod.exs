@@ -21,4 +21,4 @@ config :exometer,
   ]
 
 config :honeybadger,
-  environment_name: "Production"
+  environment_name: "HONEYBADGER_ENV"
