@@ -497,7 +497,7 @@ assign_token(LUser, LServer, LResource) ->
         true ->
             Token = generate_token(),
             CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
-            ExpiresAt = CreatedAt + ?TOKEN_EXPIRE,
+            ExpiresAt = CreatedAt + timer:seconds(?TOKEN_EXPIRE),
             ok = wocky_db:insert(LServer, auth_token,
                                  #{user => LUser,
                                    server => LServer,
