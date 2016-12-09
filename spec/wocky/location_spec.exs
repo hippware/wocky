@@ -7,10 +7,11 @@ defmodule Wocky.LocationSpec do
   alias :wocky_notification_handler, as: Handler
 
   before do
+    owner = Factory.build(:user)
     user = Factory.build(:user)
     jid = User.to_jid(user, "testing")
 
-    bot_list = Factory.build_list(3, :bot, owner: User.to_jid_string(user))
+    bot_list = Factory.build_list(3, :bot, owner: User.to_jid_string(owner))
     bot = hd(bot_list)
 
     bots = Enum.into(bot_list, %{},
