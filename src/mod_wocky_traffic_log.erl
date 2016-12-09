@@ -55,11 +55,12 @@ stanza_received_hook(JID, {IP, Port}, Element) ->
 log_packet(JID, IP, Port, Element, Incoming) ->
     {ok, Hostname} = inet:gethostname(),
     Query = "INSERT INTO traffic_log "
-            "(user, timestamp, ip, server, packet, incoming) "
-            "VALUES (?, ?, ?, ?, ?, ?) USING TTL ?",
-    Values = #{user => jid:to_binary(JID),
+            "(user, resource, timestamp, ip, server, packet, incoming) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?) USING TTL ?",
+    Values = #{user => jid:to_binary(jid:to_bare(JID)),
+               resource => JID#jid.lresource,
                timestamp => now,
-               ip => inet:ntoa(IP) ++ ":" ++ integer_to_list(Port),
+               ip => ip_port_str(IP, Port),
                server => Hostname,
                packet => exml:to_binary(Element),
                incoming => Incoming,
@@ -68,5 +69,7 @@ log_packet(JID, IP, Port, Element, Incoming) ->
     % it's not the end of the world.
     {ok, _} = wocky_db:query(shared, Query, Values, one),
     ok.
+
+ip_port_str(IP, Port) -> inet:ntoa(IP) ++ ":" ++ integer_to_list(Port).
 
 expiry() -> ejabberd_config:get_local_option(traffic_log_expire).

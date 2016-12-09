@@ -170,7 +170,8 @@ defmodule Schemata.Schemas.Wocky do
 
     table :traffic_log, [
       columns: [
-        user:      :text,  # full user JID
+        user:      :text,     # bare user JID
+        resource:  :text,
         timestamp: :timestamp,
         ip:        :text,
         incoming:  :boolean,  # True if the packet was going to the client,
