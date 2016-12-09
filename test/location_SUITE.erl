@@ -9,6 +9,7 @@
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 -include("test_helper.hrl").
+-include("wocky_bot.hrl").
 
 -import(test_helper, [expect_iq_success_u/3,
                       get_hs_stanza/0,
@@ -23,7 +24,9 @@
 all() -> [geoloc,
           bad_geoloc,
           end_geoloc,
-          xmpp_notification].
+          xmpp_notification,
+          bot_follower_notification
+         ].
 
 suite() ->
     escalus:suite().
@@ -61,7 +64,7 @@ geoloc(Config) ->
                   fun (Alice, Bob, Carol) ->
         test_helper:subscribe(Alice, Bob),
         Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                               geoloc_item(), <<"123">>,
+                                               geoloc_item(loc_test), <<"123">>,
                                                {pep, ?NS_GEOLOC}),
         escalus:send(Alice, Stanza),
         Received = escalus:wait_for_stanzas(Alice, 2),
@@ -74,7 +77,8 @@ bad_geoloc(Config) ->
                   fun (Alice, Bob, Carol) ->
         test_helper:subscribe(Alice, Bob),
         Stanza = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                               bad_geoloc_item(), <<"123">>,
+                                               bad_geoloc_item(loc_test),
+                                               <<"123">>,
                                                {pep, ?NS_GEOLOC}),
         escalus:send(Alice, Stanza),
         Received = escalus:wait_for_stanza(Alice),
@@ -99,7 +103,6 @@ xmpp_notification(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         wocky_db:truncate(?LOCAL_CONTEXT, home_stream),
         insert_bot(Alice),
-        enable_push_notifications(Alice),
 
         %% Alice's home stream is empty to start
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
@@ -107,44 +110,82 @@ xmpp_notification(Config) ->
 
         %% Alice sends an XMPP location update...
         Stanza2 = escalus_pubsub_stanza:publish(Alice, <<"abcedfg">>,
-                                                geoloc_item(), <<"123">>,
+                                                geoloc_item(loc_test),
+                                                <<"123">>,
                                                 {pep, ?NS_GEOLOC}),
         escalus:send(Alice, Stanza2),
         Received = escalus:wait_for_stanzas(Alice, 2),
         escalus:assert_many([is_message, is_iq_result], Received),
 
-        %% ...and two new items show up in the home stream...
+        %% ...and one new item shows up in the home stream. This is the
+        %% location update. There is no bot entry notification because
+        %% Alice is both the owner of the bot and the user entering it.
         Stanza3 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        Items = check_hs_result(Stanza3, 2),
+        Items = check_hs_result(Stanza3, 1),
 
         %% ...with the last item being a message.
         escalus:assert(is_message, hd((lists:last(Items))#item.stanzas))
     end).
 
+bot_follower_notification(Config) ->
+    wocky_db_seed:seed_tables(shared, [bot, bot_subscriber]),
+    escalus:story(Config, [{alice, 1}, {carol, 1}], fun(Alice, Carol) ->
+        test_helper:subscribe_pair(Alice, Carol),
+
+        bot_SUITE:set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
+
+        wocky_db:truncate(?LOCAL_CONTEXT, home_stream),
+        wocky_db:truncate(?LOCAL_CONTEXT, bot_event),
+
+        %% Carol sends an XMPP location update...
+        Stanza2 = escalus_pubsub_stanza:publish(Carol, <<"abcedfg">>,
+                                                geoloc_item(bot_test),
+                                                <<"123">>,
+                                                {pep, ?NS_GEOLOC}),
+        escalus:send(Carol, Stanza2),
+        Received = escalus:wait_for_stanzas(Carol, 2),
+        escalus:assert_many([is_message, is_iq_result], Received),
+        timer:sleep(500),
+
+        %% ...and one new items show up in each user's home stream:
+        %% Alice gets the bot entry notification; Carol gets the location
+        %% notification.
+        lists:foreach(
+          fun (Client) ->
+              Stanza = expect_iq_success_u(get_hs_stanza(), Client, Client),
+              Items = check_hs_result(Stanza, 1),
+              escalus:assert(is_message, hd((lists:last(Items))#item.stanzas))
+          end, [Alice, Carol])
+    end).
 
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
 
-geoloc_item() ->
+geoloc_item(Data) ->
     #xmlel{name = <<"geoloc">>,
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = geoloc_data()}.
+           children = geoloc_data(Data)}.
 
-bad_geoloc_item() ->
+bad_geoloc_item(Data) ->
     #xmlel{name = <<"geoloc">>,
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = tl(geoloc_data())}.
+           children = tl(geoloc_data(Data))}.
 
 end_geoloc_item() ->
     #xmlel{name = <<"geoloc">>,
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
            children = []}.
 
-geoloc_data() ->
+geoloc_data(loc_test) ->
     [cdata_item(<<"lat">>, <<"6.789">>),
      cdata_item(<<"lon">>, <<"-77">>),
-     cdata_item(<<"accuracy">>, <<"1.23">>)].
+     cdata_item(<<"accuracy">>, <<"1.23">>)];
+
+geoloc_data(bot_test) ->
+    [cdata_item(<<"lat">>, float_to_binary(?BOT_LAT)),
+     cdata_item(<<"lon">>, float_to_binary(?BOT_LON)),
+     cdata_item(<<"accuracy">>, <<"1.00">>)].
 
 cdata_item(Name, Val) ->
     #xmlel{name = Name,
@@ -155,9 +196,3 @@ insert_bot(Client) ->
     'Elixir.Wocky.Factory':insert(bot, [{owner, Jid},
                                         {lat, 6.789},
                                         {lon, -77}]).
-
-enable_push_notifications(Client) ->
-    Jid = jid:make(escalus_client:username(Client),
-                   escalus_client:server(Client),
-                   escalus_client:resource(Client)),
-    wocky_notification_handler:enable(Jid, <<"apple">>, <<"123456789">>).

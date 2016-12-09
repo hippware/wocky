@@ -8,7 +8,7 @@
 -include_lib("ejabberd/include/jlib.hrl").
 
 -export([enable/3, disable/1, delete/2,
-         notify_message/3, notify_bot_event/3]).
+         notify_message/3]).
 
 
 %%%===================================================================
@@ -79,27 +79,6 @@ delete(LUser, LServer) ->
 notify_message(To, From, Body) ->
     do_notify_all(lookup_all_endpoints(To), From, Body).
 
--spec notify_bot_event(ejabberd:jid(), wocky_db:id(), binary()) ->
-    ok | {error, any()}.
-notify_bot_event(To, Bot, Event) ->
-    ok = lager:debug("Sending notification for ~s ~sing bot ~s",
-                     [jid:to_binary(To), Bot, Event]),
-    case lookup_resource(To, endpoint) of
-        [Endpoint] ->
-            Message = case Event of
-                          enter ->
-                              msg("You are near the bot ~s", [Bot]);
-
-                          exit ->
-                              msg("You are leaving the area for bot ~s", [Bot])
-                      end,
-            (handler()):notify(Endpoint, Message);
-
-        _ ->
-            {error, no_endpoint}
-    end.
-
-
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
@@ -144,6 +123,3 @@ do_notify_message(Endpoint, #jid{user = User, server = Server}, Message) ->
     ok = lager:debug("Sending notification for message from ~s with body '~s'",
                      [From, Message]),
     (handler()):notify_message(Endpoint, From, Message).
-
-msg(Template, Args) ->
-    list_to_binary(io_lib:format(Template, Args)).
