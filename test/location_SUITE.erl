@@ -103,6 +103,7 @@ xmpp_notification(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         wocky_db:truncate(?LOCAL_CONTEXT, home_stream),
         insert_bot(Alice),
+        enable_push_notifications(Alice),
 
         %% Alice's home stream is empty to start
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
@@ -130,6 +131,7 @@ xmpp_notification(Config) ->
 bot_follower_notification(Config) ->
     wocky_db_seed:seed_tables(shared, [bot, bot_subscriber]),
     escalus:story(Config, [{alice, 1}, {carol, 1}], fun(Alice, Carol) ->
+        enable_push_notifications(Alice),
         test_helper:subscribe_pair(Alice, Carol),
 
         bot_SUITE:set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
@@ -196,3 +198,9 @@ insert_bot(Client) ->
     'Elixir.Wocky.Factory':insert(bot, [{owner, Jid},
                                         {lat, 6.789},
                                         {lon, -77}]).
+
+enable_push_notifications(Client) ->
+    Jid = jid:make(escalus_client:username(Client),
+                   escalus_client:server(Client),
+                   escalus_client:resource(Client)),
+    wocky_notification_handler:enable(Jid, <<"apple">>, <<"123456789">>).
