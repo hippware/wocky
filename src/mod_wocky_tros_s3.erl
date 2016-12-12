@@ -53,9 +53,11 @@ make_download_response(_FromJID, #jid{lserver = LServer},
 
     {[], RespFields}.
 
-make_upload_response(#jid{luser = Owner}, #jid{lserver = LServer},
+make_upload_response(FromJID = #jid{luser = Owner}, #jid{lserver = LServer},
                      FileID, _Size, Access,
                      Metadata = #{<<"content-type">> := CT}) ->
+    FileJID = jid:replace_resource(FromJID, <<"file/", FileID/binary>>),
+    ReferenceURL = <<"tros:", (jid:to_binary(FileJID))/binary>>,
     EncryptedAccess = wocky_crypto:encrypt(?ACCESS_KEY, Access, ?PAD_TO),
     AmzMetadata =
     Metadata#{<<?AMZ_META_PREFIX, "access">>
@@ -64,15 +66,16 @@ make_upload_response(#jid{luser = Owner}, #jid{lserver = LServer},
                  => Owner
              },
     URLParams = maps:to_list(AmzMetadata),
-    RespFields = resp_fields(LServer, FileID, put, URLParams),
+    RespFields = resp_fields(LServer, FileID, put, URLParams, ReferenceURL),
 
     Headers = [{<<"content-type">>, CT}],
     {Headers, RespFields}.
 
-resp_fields(LServer, FileID, Method, URLParams) ->
+resp_fields(LServer, FileID, Method, URLParams, ReferenceURL) ->
     [
      {<<"method">>, list_to_binary(string:to_upper(atom_to_list(Method)))},
-     {<<"url">>, s3_url(LServer, FileID, Method, URLParams)}
+     {<<"url">>, s3_url(LServer, FileID, Method, URLParams)},
+     {<<"reference_url">>, ReferenceURL}
     ].
 
 s3_url(Server, FileID, Method, URLParams) ->
