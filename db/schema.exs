@@ -167,6 +167,22 @@ defmodule Schemata.Schemas.Wocky do
       ],
       primary_key: [:bot, :to_jid]
     ]
+
+    table :traffic_log, [
+      columns: [
+        user:      :text,     # bare user JID
+        resource:  :text,
+        timestamp: :timestamp,
+        ip:        :text,
+        incoming:  :boolean,  # True if the packet was going to the client,
+                              # false otherwise
+        server:    :text,
+        packet:    :text
+      ],
+      primary_key: [:user, :timestamp],
+      order_by: [timestamp: :asc]
+    ]
+
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do
