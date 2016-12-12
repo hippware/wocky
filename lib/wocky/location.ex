@@ -150,20 +150,33 @@ defmodule Wocky.Location do
     jid = User.to_jid_string(user)
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
-    :ok = send_notification(user, bot, event)
-  end
-
-  defp send_notification(user, bot, event) do
     owner_jid = Ejabberd.make_jid!(bot.owner)
     # Don't send bot entry/exit notifications about the owner to themselves
     if not :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
-      :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
-                             owner_jid,
-                             bot_notification_stanza(owner_jid, user,
-                                                     bot, event))
+      :ok = send_notification(owner_jid, user, bot, event)
+      :ok = send_push_notification(owner_jid, user, bot, event)
     else
       :ok
     end
+  end
+
+  defp send_push_notification(owner_jid, user, bot, event) do
+    result = :wocky_notification_handler.notify_bot_event(
+                  owner_jid, User.to_jid(user), bot.title, event)
+    case result do
+      :ok -> :ok
+      {:error, reason} ->
+        Logger.error("""
+        Failed to send push notification to #{:jid.to_binary(owner_jid)}: \
+        #{inspect(reason)}\
+        """)
+    end
+  end
+
+  defp send_notification(owner_jid, user, bot, event) do
+    :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
+                           :jid.to_bare(owner_jid),
+                           bot_notification_stanza(owner_jid, user, bot, event))
   end
 
   defp bot_notification_stanza(owner_jid, user, bot, event) do

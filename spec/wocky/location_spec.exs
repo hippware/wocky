@@ -19,6 +19,7 @@ defmodule Wocky.LocationSpec do
     bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
 
     allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
+    allow Handler |> to(accept :notify_bot_event, fn (_, _, _, _) -> :ok end)
     allow User |> to(accept :get_subscribed_bots, fn (_) -> bot_jids end)
     allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
     allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
@@ -47,6 +48,14 @@ defmodule Wocky.LocationSpec do
       it "should generate a notification" do
         expect :ejabberd_router |> to(accepted :route)
       end
+
+      it "should generate a push notification" do
+        expect Handler
+        |> to(accepted :notify_bot_event, [:jid.from_binary(shared.bot.owner),
+                                           shared.jid,
+                                           shared.bot.title,
+                                           :enter])
+      end
     end
 
     context "when there is already an existing enter event" do
@@ -69,6 +78,10 @@ defmodule Wocky.LocationSpec do
 
       it "should not generate a notification" do
         expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
+        expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
   end
@@ -101,6 +114,14 @@ defmodule Wocky.LocationSpec do
       it "should generate a notification" do
         expect :ejabberd_router |> to(accepted :route)
       end
+
+      it "should generate a push notification" do
+        expect Handler
+        |> to(accepted :notify_bot_event, [:jid.from_binary(shared.bot.owner),
+                                           shared.jid,
+                                           shared.bot.title,
+                                           :exit])
+      end
     end
 
     context "when there is already an existing exit event" do
@@ -124,6 +145,10 @@ defmodule Wocky.LocationSpec do
       it "should not generate a notification" do
         expect :ejabberd_router |> to_not(accepted :route)
       end
+
+      it "should not generate a push notification" do
+        expect Handler |> to_not(accepted :notify_bot_event)
+      end
     end
 
     context "when there are no events" do
@@ -139,6 +164,10 @@ defmodule Wocky.LocationSpec do
 
       it "should not generate a notification" do
         expect :ejabberd_router |> to_not(accepted :route)
+      end
+
+      it "should not generate a push notification" do
+        expect Handler |> to_not(accepted :notify_bot_event)
       end
     end
   end

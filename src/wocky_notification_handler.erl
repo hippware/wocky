@@ -8,7 +8,7 @@
 -include_lib("ejabberd/include/jlib.hrl").
 
 -export([enable/3, disable/1, delete/2,
-         notify_message/3]).
+         notify_message/3, notify_bot_event/4]).
 
 
 %%%===================================================================
@@ -79,6 +79,41 @@ delete(LUser, LServer) ->
 notify_message(To, From, Body) ->
     do_notify_all(lookup_all_endpoints(To), From, Body).
 
+-spec notify_bot_event(ejabberd:jid(), ejabberd:jid(),
+                       binary(), enter | exit) -> ok | {error, any()}.
+notify_bot_event(To = #jid{luser = ToUser, lserver = ToServer},
+                 #jid{luser = User, lserver = Server},
+                 BotTitle, Event) ->
+    ok = lager:debug("Sending notification for ~s ~sing bot ~s to ~s",
+                     [User, BotTitle, Event, jid:to_binary(To)]),
+    Resources = ejabberd_sm:get_user_resources(ToUser, ToServer),
+    UserHandle = wocky_db_user:get_handle(User, Server),
+    lists:foldl(
+      notify_resource_bot_event(To, _, UserHandle, BotTitle, Event, _),
+      ok,
+      Resources).
+
+notify_resource_bot_event(To, Resource, UserHandle,
+                          BotTitle, Event, Result) ->
+    FullTo = jid:replace_resource(To, Resource),
+    case lookup_resource(FullTo, endpoint) of
+        [Endpoint] ->
+            Message = case Event of
+                          enter ->
+                              msg("@~s is near the bot ~s",
+                                  [UserHandle, BotTitle]);
+
+                          exit ->
+                              msg("@~s is leaving the area for bot ~s",
+                                  [UserHandle, BotTitle])
+                      end,
+            (handler()):notify(Endpoint, Message),
+            Result;
+        _ ->
+            {error, no_endpoint}
+    end.
+
+
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
@@ -123,3 +158,6 @@ do_notify_message(Endpoint, #jid{user = User, server = Server}, Message) ->
     ok = lager:debug("Sending notification for message from ~s with body '~s'",
                      [From, Message]),
     (handler()):notify_message(Endpoint, From, Message).
+
+msg(Template, Args) ->
+    list_to_binary(io_lib:format(Template, Args)).

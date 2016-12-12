@@ -5,6 +5,12 @@ defmodule NotificationHandlerSpec do
 
   @test_jid :jid.make("user", "localhost", "resource")
   @test_id "123456789"
+  @user_jid :jid.make("follower", "localhost", "iphone")
+
+  before do
+    allow :ejabberd_sm |> to(accept :get_user_resources,
+                             fn (_, _) -> ["resource"] end)
+  end
 
   describe "Enabling a device" do
     before do
@@ -27,6 +33,21 @@ defmodule NotificationHandlerSpec do
 
     it "should call the notify function on the handler" do
       expect Handler |> to(accepted :notify_message)
+    end
+  end
+
+  describe "Sending a bot event notification" do
+    before do
+      allow Handler |> to(accept :notify, fn (_, _) -> :ok end)
+      :ok = :wocky_notification_handler.enable(@test_jid, "apple", @test_id)
+      :ok = :wocky_notification_handler.notify_bot_event(@test_jid,
+                                                         @user_jid,
+                                                         @test_id,
+                                                         :enter)
+    end
+
+    it "should call the notify function on the handler" do
+      expect Handler |> to(accepted :notify)
     end
   end
 end
