@@ -309,6 +309,9 @@ is_expected_upload_packet(s3, P) ->
     {ok, XML} = exml:parse(P),
     UUID = new_file_uuid(),
     JID = <<(?LOCAL_CONTEXT)/binary, "/file/", UUID/binary>>,
+    ID = new_file_uuid(),
+    RefURL = <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+               "/file/", ID/binary>>,
     #xmlel{name = <<"iq">>,
            attrs = [{<<"id">>, <<"123456">>},
                     {<<"type">>, <<"result">>}],
@@ -333,7 +336,10 @@ is_expected_upload_packet(s3, P) ->
                             attrs = [],
                             children = [#xmlcdata{content = <<"PUT">>}]},
                      #xmlel{name = <<"url">>,
-                            attrs = []}
+                            attrs = []},
+                     #xmlel{name = <<"reference_url">>,
+                            attrs = [],
+                            children = [#xmlcdata{content = RefURL}]}
                     ]}]}
     = XML,
     true;
