@@ -42,6 +42,7 @@ commands() ->
                         function = befriend,
                         args     = [{user1, binary}, {user2, binary}],
                         result   = {result, restuple}},
+
      #ejabberd_commands{name     = tros_migrate,
                         desc     = "Migrate TROS data from francus to S3",
                         module   = ?MODULE,
@@ -53,6 +54,15 @@ commands() ->
                         module   = ?MODULE,
                         function = tros_cleanup,
                         args     = [],
+                        result   = {result, rescode}},
+
+     #ejabberd_commands{name     = dump_traffic,
+                        desc     = "Dump traffic for a specified user",
+                        module   = traffic_dumper,
+                        function = dump,
+                        args     = [{user, binary},
+                                    {start, binary},
+                                    {duration, binary}],
                         result   = {result, rescode}}
     ].
 
