@@ -58,6 +58,11 @@ commands() ->
 
      #ejabberd_commands{name     = dump_traffic,
                         desc     = "Dump traffic for a specified user",
+                        longdesc = "Parameters: <user> <start> <duration>\n"
+                                   "<user> The handle for the user\n"
+                                   "<start> Start time for dump (ISO format) "
+                                   "eg 2016-05-20T23:45:00Z\n"
+                                   "<duration> [Period][h|m|s|ms] eg: 50s",
                         module   = traffic_dumper,
                         function = dump,
                         args     = [{user, binary},
