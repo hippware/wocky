@@ -15,6 +15,8 @@
 
 -export([dump/3]).
 
+-ignore_xref([dump/3]).
+
 dump(Handle, StartBin, DurationBin) ->
     do([error_m ||
         User <- get_user(Handle),
