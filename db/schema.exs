@@ -438,14 +438,14 @@ defmodule Schemata.Schemas.Wocky do
         stanza:     :text,      # Stanza of the stream item
         deleted:    :boolean    # true only if this is a tombstone entry
       ],
-      primary_key: [[:user, :server], :version],
-      order_by: [version: :asc]
+      primary_key: [[:user, :server], :id]
     ]
 
-    view :home_stream_item, [
+    view :home_stream_chronology, [
       from: :home_stream,
-      columns: [:user, :server, :id, :version],
-      primary_key: [:user, :server, :id, :version]
+      columns: :all,
+      primary_key: [[:user, :server], :version, :id],
+      order_by: [version: :asc]
     ]
   end
 

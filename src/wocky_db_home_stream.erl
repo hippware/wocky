@@ -51,7 +51,7 @@ delete(User, Server, ID) ->
 %% Get all items
 -spec get(ejabberd:luser(), ejabberd:lserver()) -> [map()].
 get(User, Server) ->
-    Results = wocky_db:select(Server, home_stream,
+    Results = wocky_db:select(Server, home_stream_chronology,
                               [id, version, from_id, stanza, deleted],
                               #{user => User, server => Server}),
     [normalise_item(I) || I <- Results].
@@ -60,17 +60,13 @@ get(User, Server) ->
 -spec get(ejabberd:luser(), ejabberd:lserver(), wocky_db:id()) ->
     map() | not_found.
 get(User, Server, ID) ->
-    Version = wocky_db:select_one(
-                Server, home_stream_item, version,
-                #{user => User, server => Server, id => ID}),
-    case Version of
-        not_found -> not_found;
-        _ -> get_item(User, Server, Version)
-    end.
+    normalise_item(
+      wocky_db:select_row(Server, home_stream, all,
+                          #{user => User, server => Server, id => ID})).
 
 get_catchup(User, Server, Version) ->
     Statement = <<"SELECT id, version, from_id, stanza, deleted FROM "
-                  "home_stream WHERE user = ? AND server = ? "
+                  "home_stream_chronology WHERE user = ? AND server = ? "
                   "AND version > ?">>,
     {ok, R} = wocky_db:query(Server,
                              Statement,
@@ -82,7 +78,7 @@ get_catchup(User, Server, Version) ->
 
 -spec current_version(ejabberd:luser(), ejabberd:lserver()) -> pub_version().
 current_version(User, Server) ->
-    Statement = <<"SELECT MAX(version) FROM home_stream WHERE "
+    Statement = <<"SELECT MAX(version) FROM home_stream_chronology WHERE "
                   "USER = ? AND server = ?">>,
     {ok, R} = wocky_db:query(Server,
                              Statement,
@@ -99,28 +95,10 @@ current_version(User, Server) ->
 %%%===================================================================
 
 delete_existing_item(User, Server, ID) ->
-    %% While there *should* only be one entry here, it's open to a race
-    %% condition where by two updates close together could result in them
-    %% both deleting the same "old" item then writing their own new one, leaving
-    %% two entries for one ID. That's not a disaster, but to prevent it
-    %% getting out of hand we just make sure we delete all old versions.
-    Versions = wocky_db:select_column(
-                 Server, home_stream_item, version,
-                 #{user => User, server => Server, id => ID}),
-    lists:foreach(
-      fun(V) ->
-              ok = wocky_db:delete(Server, home_stream, all,
-                                   #{user     => User,
-                                     server   => Server,
-                                     version  => V})
-      end,
-      Versions).
-
-get_item(User, Server, Version) ->
-    Item = wocky_db:select_row(
-             Server, home_stream, [id, version, from_id, stanza, deleted],
-             #{user => User, server => Server, version => Version}),
-    normalise_item(Item).
+    ok = wocky_db:delete(Server, home_stream, all,
+                         #{user   => User,
+                           server => Server,
+                           id     => ID}).
 
 normalise_item(not_found) -> not_found;
 normalise_item(Item = #{deleted := true}) ->
