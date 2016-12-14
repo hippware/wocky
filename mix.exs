@@ -92,6 +92,7 @@ defmodule Wocky.Mixfile do
        algolia_user_index_name: 'dev_wocky_users',
        algolia_bot_index_name: 'dev_wocky_bots',
        notification_enabled_envs: ['staging'],
+       notification_enabled_envs: ['staging', 'us1'],
        notification_handler: Wocky.Notification.NullHandler
      ]]
   end
