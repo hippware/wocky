@@ -18,12 +18,15 @@ defmodule Wocky.Index do
   @bot_fields [:server, :title, :image, :lat, :lon, :radius, :_geoloc]
 
   defstart start_link do
-    user_index    = Application.fetch_env!(:wocky, :algolia_user_index_name)
-    bot_index     = Application.fetch_env!(:wocky, :algolia_bot_index_name)
-    indexing_envs = Application.fetch_env!(:wocky, :indexing_enabled_envs)
+    user_indexes  = Application.fetch_env!(:wocky, :algolia_user_index_name)
+    bot_indexes   = Application.fetch_env!(:wocky, :algolia_bot_index_name)
     current_env   = Application.fetch_env!(:wocky, :wocky_env)
 
-    enabled = Enum.member?(indexing_envs, current_env)
+    current_env = :erlang.list_to_atom(current_env)
+    user_index = Keyword.get(user_indexes, current_env)
+    bot_index = Keyword.get(bot_indexes, current_env)
+
+    enabled = !is_nil(user_index) && !is_nil(bot_index)
 
     :ok = Logger.info("Indexing enabled: #{inspect(enabled)}")
     initial_state(

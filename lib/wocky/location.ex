@@ -42,7 +42,6 @@ defmodule Wocky.Location do
   def user_location_changed(user, location, true) do
     {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
     {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
-
     :ok
   end
   def user_location_changed(user, location, false) do
@@ -61,9 +60,11 @@ defmodule Wocky.Location do
   end
 
   defp update_bot_locations(user, location) do
-    user
-    |> owned_bots_with_follow_me
-    |> Enum.each(&Bot.set_location(&1, location))
+    if Application.fetch_env!(:wocky, :enable_follow_me) do
+      user
+      |> owned_bots_with_follow_me
+      |> Enum.each(&Bot.set_location(&1, location))
+    end
   end
 
   defp bots_with_events(bots, user, location) do
@@ -90,23 +91,46 @@ defmodule Wocky.Location do
       acc
     else
       bot
+      |> unless_owner(user)
       |> intersects?(location)
       |> handle_intersection(user, bot, acc)
+    end
+  end
+
+  defp unless_owner(bot, user) do
+    owner_jid = Ejabberd.make_jid!(bot.owner)
+
+    # Don't check bots that are owned by the user
+    if :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
+      :ok = Logger.debug(
+        "Skipping bot #{bot.id} since it is owned by #{user.user}"
+      )
+      nil
+    else
+      bot
     end
   end
 
   defp intersects?(nil, _location), do: false
   defp intersects?(bot, location) do
     radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
-    distance = Geocalc.distance_between(Map.from_struct(bot),
-                                        Map.from_struct(location))
-    intersects = distance <= radius
-    :ok = Logger.debug("""
-    The distance of #{distance} meters is \
-    #{if intersects, do: "within", else: "outside"} the radius of bot \
-    #{bot.id} (#{radius} meters)\
-    """)
-    intersects
+
+    if radius < 0 do
+      :ok = Logger.warn(
+        "Bot #{bot.id} has a negative radius (#{radius} meters); skipping."
+      )
+      false
+    else
+      distance = Geocalc.distance_between(Map.from_struct(bot),
+                                          Map.from_struct(location))
+      intersects = distance <= radius
+      :ok = Logger.debug("""
+      The distance of #{distance} meters is \
+      #{if intersects, do: "within", else: "outside"} the radius of bot \
+      #{bot.id} (#{radius} meters)\
+      """)
+      intersects
+    end
   end
 
   defp handle_intersection(true, user, %Bot{id: bot_id} = bot, acc) do
@@ -151,13 +175,8 @@ defmodule Wocky.Location do
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     owner_jid = Ejabberd.make_jid!(bot.owner)
-    # Don't send bot entry/exit notifications about the owner to themselves
-    if not :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
-      :ok = send_notification(owner_jid, user, bot, event)
-      :ok = send_push_notification(owner_jid, user, bot, event)
-    else
-      :ok
-    end
+    :ok = send_notification(owner_jid, user, bot, event)
+    :ok = send_push_notification(owner_jid, user, bot, event)
   end
 
   defp send_push_notification(owner_jid, user, bot, event) do
