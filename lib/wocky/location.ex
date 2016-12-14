@@ -42,7 +42,6 @@ defmodule Wocky.Location do
   def user_location_changed(user, location, true) do
     {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
     {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
-
     :ok
   end
   def user_location_changed(user, location, false) do
@@ -61,9 +60,11 @@ defmodule Wocky.Location do
   end
 
   defp update_bot_locations(user, location) do
-    user
-    |> owned_bots_with_follow_me
-    |> Enum.each(&Bot.set_location(&1, location))
+    if Application.fetch_env!(:wocky, :enable_follow_me) do
+      user
+      |> owned_bots_with_follow_me
+      |> Enum.each(&Bot.set_location(&1, location))
+    end
   end
 
   defp bots_with_events(bots, user, location) do
