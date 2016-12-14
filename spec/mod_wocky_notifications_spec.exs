@@ -130,19 +130,7 @@ defmodule ModWockyNotificationsSpec do
       end
     end
 
-    describe "handling the offline_message hook" do
-      before do
-        allow Handler |> to(accept :notify_message, fn (_, _, _) -> :ok end)
-        _ = enable_notifications
-        :ok = ModWockyNotifications.offline_message_hook(@jid, @jid, packet)
-      end
-
-      it "should send a notification" do
-        expect Handler |> to(accepted :notify_message)
-      end
-    end
-
-    describe "handling the user_received_packet hook" do
+    describe "handling the filter_local_packet hook" do
       before do
         allow Handler |> to(accept :notify_message, fn (_, _, _) -> :ok end)
         _ = enable_notifications
@@ -150,8 +138,8 @@ defmodule ModWockyNotificationsSpec do
 
       context "with a message packet" do
         before do
-          :ok = ModWockyNotifications.user_receive_packet_hook(
-            @jid, @jid, @jid, packet)
+          _ = ModWockyNotifications.filter_local_packet_hook(
+            {@jid, @jid, packet})
         end
 
         it "should send a notification" do
@@ -161,8 +149,8 @@ defmodule ModWockyNotificationsSpec do
 
       context "with a non-message packet" do
         before do
-          :ok = ModWockyNotifications.user_receive_packet_hook(
-            @jid, @jid, @jid, packet("parlay"))
+          _ = ModWockyNotifications.filter_local_packet_hook(
+            {@jid, @jid, packet("parlay")})
         end
 
         it "should not send a notification" do
@@ -172,8 +160,8 @@ defmodule ModWockyNotificationsSpec do
 
       context "with a non-chat message packet" do
         before do
-          :ok = ModWockyNotifications.user_receive_packet_hook(
-            @jid, @jid, @jid, packet("message", "parlay"))
+          _ = ModWockyNotifications.filter_local_packet_hook(
+            {@jid, @jid, packet("message", "parlay")})
         end
 
         it "should not send a notification" do
@@ -194,8 +182,8 @@ defmodule ModWockyNotificationsSpec do
             ]
           )
 
-          result = ModWockyNotifications.user_receive_packet_hook(
-            @jid, @jid, @jid, no_body)
+          result = ModWockyNotifications.filter_local_packet_hook(
+            {@jid, @jid, no_body})
           {:ok, result: result}
         end
 

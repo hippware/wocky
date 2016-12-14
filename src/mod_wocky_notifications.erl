@@ -13,15 +13,13 @@
 -export([start/2, stop/1]).
 
 %% Hook callbacks
--export([user_receive_packet_hook/4,
-         offline_message_hook/3,
+-export([filter_local_packet_hook/1,
          remove_user_hook/2]).
 
 %% IQ handler
 -export([handle_iq/3]).
 
--ignore_xref([user_receive_packet_hook/4,
-              offline_message_hook/3,
+-ignore_xref([filter_local_packet_hook/1,
               remove_user_hook/2,
               handle_iq/3]).
 
@@ -34,16 +32,15 @@
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS,
                                   ?MODULE, handle_iq, parallel),
-    wocky_util:add_hooks(hooks(), Host, ?MODULE, 30).
+    wocky_util:add_hooks(hooks(), Host, ?MODULE, 60).
 
 -spec stop(ejabberd:server()) -> ok.
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS),
-    wocky_util:delete_hooks(hooks(), Host, ?MODULE, 30).
+    wocky_util:delete_hooks(hooks(), Host, ?MODULE, 60).
 
 hooks() ->
-    [{user_receive_packet,  user_receive_packet_hook},
-     {offline_message_hook, offline_message_hook},
+    [{filter_local_packet,  filter_local_packet_hook},
      {remove_user,          remove_user_hook}].
 
 
@@ -91,13 +88,14 @@ make_response(IQ, State) ->
 %%% Hook callbacks
 %%%===================================================================
 
-%% offline_message_hook ----------------------------------------------
-offline_message_hook(From, To, Packet) ->
-    handle_incoming_message(From, To, Packet).
-
-%% user_receive_packet -----------------------------------------------
-user_receive_packet_hook(_JID, From, To, Packet) ->
-    handle_incoming_message(From, To, Packet).
+%% filter_local_packet_hook ------------------------------------------
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-spec filter_local_packet_hook(filter_packet() | drop) ->
+    filter_packet() | drop.
+filter_local_packet_hook(Packet = {From, To, Stanza}) ->
+    _ = handle_incoming_message(From, To, Stanza),
+    Packet;
+filter_local_packet_hook(Other) -> Other.
 
 handle_incoming_message(From, To, Packet) ->
     case should_notify(Packet) of
