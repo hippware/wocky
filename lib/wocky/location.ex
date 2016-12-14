@@ -91,8 +91,23 @@ defmodule Wocky.Location do
       acc
     else
       bot
+      |> unless_owner(user)
       |> intersects?(location)
       |> handle_intersection(user, bot, acc)
+    end
+  end
+
+  defp unless_owner(bot, user) do
+    owner_jid = Ejabberd.make_jid!(bot.owner)
+
+    # Don't check bots that are owned by the user
+    if :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
+      :ok = Logger.debug(
+        "Skipping bot #{bot.id} since it is owned by #{user.user}"
+      )
+      nil
+    else
+      bot
     end
   end
 
@@ -152,13 +167,8 @@ defmodule Wocky.Location do
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     owner_jid = Ejabberd.make_jid!(bot.owner)
-    # Don't send bot entry/exit notifications about the owner to themselves
-    if not :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
-      :ok = send_notification(owner_jid, user, bot, event)
-      :ok = send_push_notification(owner_jid, user, bot, event)
-    else
-      :ok
-    end
+    :ok = send_notification(owner_jid, user, bot, event)
+    :ok = send_push_notification(owner_jid, user, bot, event)
   end
 
   defp send_push_notification(owner_jid, user, bot, event) do
