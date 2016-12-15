@@ -67,7 +67,7 @@ get(User, Server, ID) ->
 get_catchup(User, Server, Version) ->
     Statement = <<"SELECT id, version, from_id, stanza, deleted FROM "
                   "home_stream_chronology WHERE user = ? AND server = ? "
-                  "AND version > ?">>,
+                  "AND version > ? LIMIT 100">>,
     {ok, R} = wocky_db:query(Server,
                              Statement,
                              #{user => User,
