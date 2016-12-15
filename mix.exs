@@ -90,11 +90,11 @@ defmodule Wocky.Mixfile do
        enable_follow_me: false,
        algolia_user_index_name: [
          staging: 'dev_wocky_users',
-         us1:     'dev_wocky_users'
+         us1:     'prod_wocky_users'
        ],
        algolia_bot_index_name: [
          staging: 'dev_wocky_bots',
-         us1:     'dev_wocky_bots'
+         us1:     'prod_wocky_bots'
        ],
        notification_enabled_envs: ['staging', 'us1'],
        notification_handler: Wocky.Notification.NullHandler
