@@ -43,7 +43,8 @@ defmodule Wocky.Notification.AWSHandler do
   def notify(endpoint, message) do
     message
     |> maybe_truncate_message
-    |> SNS.publish([target_arn: endpoint])
+    |> make_payload
+    |> SNS.publish([target_arn: endpoint, message_structure: :json])
     |> ExAws.request
     |> handle_notify_result
   end
@@ -52,7 +53,8 @@ defmodule Wocky.Notification.AWSHandler do
     body
     |> format_message(from)
     |> maybe_truncate_message
-    |> SNS.publish([target_arn: endpoint])
+    |> make_payload
+    |> SNS.publish([target_arn: endpoint, message_structure: :json])
     |> ExAws.request
     |> handle_notify_result
   end
@@ -67,6 +69,18 @@ defmodule Wocky.Notification.AWSHandler do
     else
       message
     end
+  end
+
+  defp make_payload(message) do
+    Poison.encode!(%{
+      default: message,
+      'APNS': Poison.encode!(%{
+        aps: %{
+          alert: message,
+          badge: 1
+        }
+      })
+    })
   end
 
   defp handle_notify_result({:error, error}), do: handle_aws_error(error)
