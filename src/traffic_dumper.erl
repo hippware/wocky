@@ -63,7 +63,7 @@ get_traffic(User, Start, Duration) ->
 display_result(no_more_results) ->
     ok;
 display_result({ok, Result}) ->
-    lists:map(format_row(_), wocky_db:rows(Result)),
+    lists:foreach(format_row(_), wocky_db:rows(Result)),
     display_result(wocky_db:fetch_more(Result)).
 
 format_row(#{user := User, resource := Resource, timestamp := Timestamp,
