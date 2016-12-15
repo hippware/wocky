@@ -52,18 +52,19 @@ get_traffic(User, Start, Duration) ->
     StartTS = timer:seconds(Start),
     DurationTS = timer:seconds(Duration),
     Q = <<"SELECT * FROM traffic_log WHERE user = ? AND timestamp >= :start "
-          "AND timestamp < :stop LIMIT ?">>,
+          "AND timestamp < :stop">>,
     V = #{user => jid:to_binary(User),
           start => StartTS,
-          stop => StartTS + DurationTS,
-          '[limit]' => 1000},
+          stop => StartTS + DurationTS},
     io:fwrite("V: ~p\n", [V]),
-    {ok, Result} = wocky_db:query(shared, Q, V, one),
-    io:fwrite("Got ~p results\n", [length(wocky_db:rows(Result))]),
-    format_output(wocky_db:rows(Result)).
+    Result = wocky_db:query(shared, Q, V, one),
+    display_result(Result).
 
-format_output(Rows) ->
-    lists:map(format_row(_), Rows).
+display_result(no_more_results) ->
+    ok;
+display_result({ok, Result}) ->
+    lists:map(format_row(_), wocky_db:rows(Result)),
+    display_result(wocky_db:fetch_more(Result)).
 
 format_row(#{user := User, resource := Resource, timestamp := Timestamp,
              ip := IP, incoming := Incoming, server := Server,
