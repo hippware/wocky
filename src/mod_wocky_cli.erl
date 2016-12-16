@@ -36,13 +36,16 @@ stop(_Host) ->
     ejabberd_commands:unregister_commands(commands()).
 
 commands() ->
-    [#ejabberd_commands{name     = befriend,
+    [
+     %% Mandatory friendship happy fun times
+     #ejabberd_commands{name     = befriend,
                         desc     = "Make two users friends",
                         module   = ?MODULE,
                         function = befriend,
                         args     = [{user1, binary}, {user2, binary}],
                         result   = {result, restuple}},
 
+     %% TROS migration
      #ejabberd_commands{name     = tros_migrate,
                         desc     = "Migrate TROS data from francus to S3",
                         module   = ?MODULE,
@@ -56,6 +59,7 @@ commands() ->
                         args     = [],
                         result   = {result, rescode}},
 
+     %% Traffic dumping
      #ejabberd_commands{name     = dump_traffic,
                         desc     = "Dump traffic for a specified user",
                         longdesc = "Parameters: <user> <start> <duration>\n"
@@ -66,6 +70,22 @@ commands() ->
                         module   = traffic_dumper,
                         function = dump,
                         args     = [{user, binary},
+                                    {start, binary},
+                                    {duration, binary}],
+                        result   = {result, rescode}},
+     #ejabberd_commands{name     = dump_traffic_r,
+                        desc     = "Dump traffic for a specified user/resource",
+                        longdesc = "Parameters: <user> <resource> "
+                                   "<start> <duration>\n"
+                                   "<user> The handle for the user\n"
+                                   "<resource> The user's resource\n"
+                                   "<start> Start time for dump (ISO format) "
+                                   "eg 2016-05-20T23:45:00Z\n"
+                                   "<duration> [Period][h|m|s|ms] eg: 50s",
+                        module   = traffic_dumper,
+                        function = dump,
+                        args     = [{user, binary},
+                                    {resource, binary},
                                     {start, binary},
                                     {duration, binary}],
                         result   = {result, rescode}}
