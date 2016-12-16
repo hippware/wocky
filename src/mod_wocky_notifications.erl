@@ -13,13 +13,13 @@
 -export([start/2, stop/1]).
 
 %% Hook callbacks
--export([filter_local_packet_hook/1,
+-export([user_send_packet_hook/3,
          remove_user_hook/2]).
 
 %% IQ handler
 -export([handle_iq/3]).
 
--ignore_xref([filter_local_packet_hook/1,
+-ignore_xref([user_send_packet_hook/3,
               remove_user_hook/2,
               handle_iq/3]).
 
@@ -32,15 +32,15 @@
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS,
                                   ?MODULE, handle_iq, parallel),
-    wocky_util:add_hooks(hooks(), Host, ?MODULE, 60).
+    wocky_util:add_hooks(hooks(), Host, ?MODULE, 100).
 
 -spec stop(ejabberd:server()) -> ok.
 stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS),
-    wocky_util:delete_hooks(hooks(), Host, ?MODULE, 60).
+    wocky_util:delete_hooks(hooks(), Host, ?MODULE, 100).
 
 hooks() ->
-    [{filter_local_packet,  filter_local_packet_hook},
+    [{user_send_packet,     user_send_packet_hook},
      {remove_user,          remove_user_hook}].
 
 
@@ -88,36 +88,31 @@ make_response(IQ, State) ->
 %%% Hook callbacks
 %%%===================================================================
 
-%% filter_local_packet_hook ------------------------------------------
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
--spec filter_local_packet_hook(filter_packet() | drop) ->
-    filter_packet() | drop.
-filter_local_packet_hook(Packet = {From, To, Stanza}) ->
-    _ = handle_incoming_message(From, To, Stanza),
-    Packet;
-filter_local_packet_hook(Other) -> Other.
+%% user_send_packet --------------------------------------------------
+user_send_packet_hook(From, To, Packet) ->
+    case should_notify(From, To, Packet) of
+        true ->
+            Body = get_body(Packet),
+            wocky_notification_handler:notify_message(To, From, Body);
 
-handle_incoming_message(From, To, Packet) ->
-    case should_notify(Packet) of
-        false -> ok;
-        Body -> wocky_notification_handler:notify_message(To, From, Body)
+        _Else ->
+            ok
     end.
 
-should_notify(Packet) ->
-    is_chat(Packet) andalso get_body(Packet).
+should_notify(_From, _To, Packet) ->
+    is_chat_message(Packet) andalso has_body(Packet).
 
-is_chat(#xmlel{name = <<"message">>, attrs = Attrs}) ->
-    case xml:get_attr_s(<<"type">>, Attrs) of
-        <<"chat">> -> true;
-        _ -> false
-    end;
-is_chat(_Packet) -> false.
+is_chat_message(#xmlel{name = <<"message">>, attrs = Attrs}) ->
+    xml:get_attr_s(<<"type">>, Attrs) =:= <<"chat">>;
+is_chat_message(_) ->
+    false.
+
+has_body(Packet) ->
+    get_body(Packet) =/= <<"">>.
 
 get_body(Packet) ->
-    case xml:get_subtag(Packet, <<"body">>) of
-        false -> false;
-        BodyTag -> xml:get_tag_cdata(BodyTag)
-    end.
+    exml_query:path(Packet, [{element, <<"body">>}, cdata], <<"">>).
+
 
 %% remove_user -------------------------------------------------------
 remove_user_hook(User, Server) ->
