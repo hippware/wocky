@@ -13,16 +13,23 @@
 -define(timex, 'Elixir.Timex').
 -define(ansi, 'Elixir.IO.ANSI').
 
--export([dump/3]).
+-export([dump/3,
+         dump/4]).
 
--ignore_xref([dump/3]).
+-ignore_xref([dump/3,
+              dump/4]).
 
+% All user's traffic
 dump(Handle, StartBin, DurationBin) ->
+    dump(Handle, any, StartBin, DurationBin).
+
+% With resource filter
+dump(Handle, Resource, StartBin, DurationBin) ->
     do([error_m ||
         User <- get_user(Handle),
         Start <- get_time(StartBin),
         Duration <- get_duration(DurationBin),
-        get_traffic(User, Start, Duration)
+        get_traffic(User, Resource, Start, Duration)
        ]).
 
 get_user(Handle) ->
@@ -48,7 +55,7 @@ apply_unit(N, "s") -> N * 1000;
 apply_unit(N, "m") -> N * 1000 * 60;
 apply_unit(N, "h") -> N * 1000 * 60 * 60.
 
-get_traffic(User, Start, Duration) ->
+get_traffic(User, Resource, Start, Duration) ->
     StartTS = timer:seconds(Start),
     DurationTS = timer:seconds(Duration),
     Q = <<"SELECT * FROM traffic_log WHERE user = ? AND timestamp >= :start "
@@ -56,15 +63,16 @@ get_traffic(User, Start, Duration) ->
     V = #{user => jid:to_binary(User),
           start => StartTS,
           stop => StartTS + DurationTS},
-    io:fwrite("V: ~p\n", [V]),
     Result = wocky_db:query(shared, Q, V, one),
-    display_result(Result).
+    display_result(Result, Resource).
 
-display_result(no_more_results) ->
+display_result(no_more_results, _) ->
     ok;
-display_result({ok, Result}) ->
-    lists:foreach(format_row(_), wocky_db:rows(Result)),
-    display_result(wocky_db:fetch_more(Result)).
+display_result({ok, Result}, Resource) ->
+    Rows = wocky_db:rows(Result),
+    Filtered = lists:filter(show_row(_, Resource), Rows),
+    lists:foreach(format_row(_), Filtered),
+    display_result(wocky_db:fetch_more(Result), Resource).
 
 format_row(#{user := User, resource := Resource, timestamp := Timestamp,
              ip := IP, incoming := Incoming, server := Server,
@@ -73,6 +81,11 @@ format_row(#{user := User, resource := Resource, timestamp := Timestamp,
               [User, Resource, IP, direction_arrow(Incoming), Server,
                format_timestamp(Timestamp), colour_direction(Incoming),
                format_packet(Packet), clear_colour()]).
+
+show_row(_, any) -> true;
+show_row(#{resource := Resource}, Resource) -> true;
+show_row(_, _) -> false.
+
 
 direction_arrow(true) ->
     "<===";
