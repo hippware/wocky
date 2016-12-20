@@ -186,6 +186,7 @@ update_user(User, Server, Fields) ->
     do([error_m ||
         UserData <- maybe_lookup_user(should_lookup_user(Fields), User, Server),
         prepare_avatar(User, Server, Fields),
+        check_reserved_handle(UserData, Fields),
         update_handle_lookup(User, Server, UserData, Fields),
         delete_existing_avatar(UserData),
         do_update_user(User, Server, UpdateFields, maps:size(UpdateFields))
@@ -236,6 +237,16 @@ check_avatar_owner(UserID, Metadata) ->
         {ok, UserID} -> ok;
         _ -> {error, not_file_owner}
     end.
+
+%% @private
+check_reserved_handle(#{handle := OldHandle},
+                      #{handle := NewHandle}) when OldHandle =/= NewHandle ->
+    Reserved = ejabberd_config:get_local_option(wocky_reserved_handles),
+    case lists:member(wocky_util:bin_to_lower(NewHandle), Reserved) of
+        false -> ok;
+        true -> {error, duplicate_handle}
+    end;
+check_reserved_handle(_, _) -> ok.
 
 %% @private
 update_handle_lookup(User, Server, #{handle := OldHandle},
