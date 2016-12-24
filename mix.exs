@@ -72,7 +72,7 @@ defmodule Wocky.Mixfile do
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
        :erlando, :logger_lager_backend, :lager_syslog, :syslog,
-       :exconstructor, :erlware_commons,
+       :exconstructor, :erlware_commons, :exometer_cloudwatch,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
