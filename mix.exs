@@ -72,7 +72,7 @@ defmodule Wocky.Mixfile do
      included_applications: [
        :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
        :erlando, :logger_lager_backend, :lager_syslog, :syslog,
-       :exconstructor, :erlware_commons,
+       :exconstructor, :erlware_commons, :exometer_cloudwatch,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
        :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
@@ -107,12 +107,13 @@ defmodule Wocky.Mixfile do
       {:lager,         "~> 3.2", override: true},
       {:porcelain,     "~> 2.0"},
       {:algolia,       "~> 0.4.0"},
-      {:ex_aws,        "~> 1.0.0-rc.4"},
+      {:ex_aws,        "~> 1.0.0"},
       {:geocalc,       "~> 0.5"},
       {:exconstructor, "~> 1.0"},
       {:ok,            "~> 1.0"},
       {:exactor,       "~> 2.2"},
       {:faker,         "~> 0.7"},
+      {:hackney,       "~> 1.6.3", override: true},
       {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
@@ -135,6 +136,7 @@ defmodule Wocky.Mixfile do
       {:cuesport,      github: "esl/cuesport",            branch: "master", override: true},
       {:exml,          github: "esl/exml",                tag: "2.2.0", override: true},
       {:exometer_core, github: "Feuerlabs/exometer_core", branch: "master", override: true},
+      {:exometer_cloudwatch, github: "hippware/exometer_cloudwatch", branch: "master"},
       {:exometer,      github: "Feuerlabs/exometer",      branch: "master", manager: :rebar3, override: true},
       {:mochijson2,    github: "bjnortier/mochijson2",    branch: "master", override: true},
       {:alarms,        github: "hippware/alarms",         branch: "master", override: true},

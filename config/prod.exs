@@ -7,15 +7,15 @@ config :lager,
   log_root: 'log'
 
 config :exometer,
-  wocky_report_interval: 60000, ## 60 seconds
+  mongooseim_report_interval: 300000, ## 5 minutes
   report: [
     {:reporters, [
-      {:exometer_report_graphite, [
-        {:prefix, 'wocky'},
-        {:connect_timeout, 5000},
-        {:host, 'metrics1.staging.dev.tinyrobot.com'},
-        {:port, 2003},
-        {:api_key, 'GRAPHITE_KEY'}
+      {:exometer_report_cloudwatch, [
+        {:access_key_id, 'CLOUDWATCH_KEY_ID'},
+        {:secret_access_key, 'CLOUDWATCH_SECRET_KEY'},
+        {:region, 'CLOUDWATCH_REGION'},
+        {:namespace, 'App/Wocky'},
+        {:dimensions, [{'InstanceId', 'CLOUDWATCH_ID'}]}
       ]}
     ]}
   ]
