@@ -97,7 +97,18 @@ defmodule Wocky.Mixfile do
          us1:     'prod_wocky_bots'
        ],
        notification_enabled_envs: ['staging', 'us1'],
-       notification_handler: Wocky.Notification.NullHandler
+       notification_handler: Wocky.Notification.NullHandler,
+       reserved_handles: [
+         "root",
+         "admin",
+         "super",
+         "superuser",
+         "tinyrobot",
+         "hippware",
+         "www",
+         "support",
+         "null"
+       ]
      ]]
   end
 

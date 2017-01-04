@@ -28,7 +28,6 @@
 
 -spec start(ejabberd:server(), list()) -> any().
 start(Host, _Opts) ->
-    load_reserved_handles(),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_USER,
                                   ?MODULE, handle_iq, parallel).
 
@@ -432,20 +431,3 @@ update_roster_contacts(LUser, LServer) ->
 
 bump_roster_version(#jid{luser = User}, ContactJIDBin) ->
     wocky_db_roster:bump_roster_version(User, ContactJIDBin).
-
-%%--------------------------------------------------------------------
-%% Reserved handle loading
-%%--------------------------------------------------------------------
-
-load_reserved_handles() ->
-    {ok, CfgDir} = application:get_env(wocky, config_dir),
-    RHPath = filename:join(CfgDir, "reserved_handles.txt"),
-    {ok, Data} = file:read_file(RHPath),
-    Names = lower_bins(
-              binary:split(Data, [<<$\n>>, <<$\r>>], [global, trim_all])),
-    {atomic, _} = ejabberd_config:add_local_option(
-                    wocky_reserved_handles, Names),
-    ok.
-
-lower_bins(BinList) ->
-    lists:map(wocky_util:bin_to_lower(_), BinList).

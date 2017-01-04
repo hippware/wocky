@@ -241,7 +241,7 @@ check_avatar_owner(UserID, Metadata) ->
 %% @private
 check_reserved_handle(#{handle := OldHandle},
                       #{handle := NewHandle}) when OldHandle =/= NewHandle ->
-    Reserved = ejabberd_config:get_local_option(wocky_reserved_handles),
+    Reserved = application:get_env(wocky, reserved_handles, []),
     case lists:member(wocky_util:bin_to_lower(NewHandle), Reserved) of
         false -> ok;
         true -> {error, duplicate_handle}

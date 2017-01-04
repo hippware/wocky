@@ -1,9 +1,0 @@
-root
-admin
-super
-superuser
-tinyrobot
-hippware
-www
-support
-null
