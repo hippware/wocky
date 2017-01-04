@@ -133,6 +133,7 @@ defmodule Wocky.Index do
     |> with_geoloc
     |> Map.take(fields)
     |> Map.put(:objectID, id)
+    |> Enum.reject(fn {_k, v} -> v == :null end)
     |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
   end
 
