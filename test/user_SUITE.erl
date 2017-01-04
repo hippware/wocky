@@ -63,6 +63,7 @@ groups() ->
                       set_missing_var,
                       set_missing_value,
                       handle_clash,
+                      reserved_handle,
                       same_handle,
                       invalid_email,
                       invalid_avatar,
@@ -440,6 +441,21 @@ handle_clash(Config) ->
 
         #{user := ?BOB, first_name := null} =
         wocky_db_user:find_user(?BOB, ?SERVER)
+    end).
+
+reserved_handle(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        %% Reserved names should be rejected
+        QueryStanza =
+        set_request(?ALICE,
+                    [{<<"handle">>, <<"string">>, <<"root">>}]),
+        expect_iq_error(QueryStanza, Alice),
+
+        %% Check with alternative capitalisation
+        QueryStanza2 =
+        set_request(?ALICE,
+                    [{<<"handle">>, <<"string">>, <<"rOOt">>}]),
+        expect_iq_error(QueryStanza2, Alice)
     end).
 
 same_handle(Config) ->
