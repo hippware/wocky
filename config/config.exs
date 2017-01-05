@@ -45,6 +45,9 @@ config :kernel,
 config :sasl,
   sasl_error_logger: :false
 
+config :ssl,
+  session_lifetime: 600 # 10 minutes
+
 config :mnesia,
   dir: '_build/#{Mix.env}/mnesia'
 
