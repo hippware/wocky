@@ -20,7 +20,7 @@
   "distillery": {:hex, :distillery, "0.10.1", "14fccade4b8ab849b99e21c4bdfaa1092dbacdce8afd33f5c369c6e114385b0e", [:mix], []},
   "dogma": {:hex, :dogma, "0.1.13", "7b6c6ad2b3ee6501eda3bd39e197dd5198be8d520d1c175c7f713803683cf27a", [:mix], [{:poison, ">= 2.0.0", [hex: :poison, optional: false]}]},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
-  "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "bee7166de933208440745455b4a68ea1718fe390", [branch: "working"]},
+  "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "f401d215172da1346b1f2749923c9e46a0915349", [branch: "working-2.0"]},
   "elvis": {:hex, :elvis_core, "0.3.4", "35a0d27bb41f6bbd34b64bcd1a483482330436de05abbc638eb51058d42306e0", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, optional: false]}, {:lager, "3.0.2", [hex: :lager, optional: false]}, {:zipper, "1.0.1", [hex: :zipper, optional: false]}]},
   "eper": {:hex, :eper, "0.94.0", "f5fb2daa0df8878748e1c598428eda942a173e5121ff35c1d632129b84593a3a", [:rebar], []},
   "erlando": {:git, "https://github.com/rabbitmq/erlando.git", "1c1ef25a9bc228671b32b4a6ee30c7525314b1fd", [branch: "master"]},

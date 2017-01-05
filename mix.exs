@@ -129,7 +129,7 @@ defmodule Wocky.Mixfile do
       {:schemata,      github: "hippware/schemata",       branch: "master"},
       {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
-      {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working"},
+      {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working-2.0"},
       {:logger_lager_backend, "~> 0.0.2"},
       {:honeybadger,   "~> 0.1"},
 
