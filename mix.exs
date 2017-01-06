@@ -140,12 +140,11 @@ defmodule Wocky.Mixfile do
       {:idna,          "~> 2.0", override: true},
       {:p1_utils,      "~> 1.0", override: true},
       {:cache_tab,     "~> 1.0", override: true},
-      {:stringprep,    "~> 1.0", override: true, manager: :rebar},
+      {:stringprep,    "1.0.6", override: true, manager: :rebar},
       {:base16,        "~> 1.0", override: true},
-      {:protobuffs,    "~> 0.8.2", override: true},
       {:erlware_commons, "~> 0.21.0", override: true},
       {:cuesport,      github: "esl/cuesport",            branch: "master", override: true},
-      {:exml,          github: "esl/exml",                tag: "2.2.0", override: true},
+      {:exml,          github: "esl/exml",                tag: "2.4.0", override: true},
       {:exometer_core, github: "Feuerlabs/exometer_core", branch: "master", override: true},
       {:exometer_cloudwatch, github: "hippware/exometer_cloudwatch", branch: "master"},
       {:exometer,      github: "Feuerlabs/exometer",      branch: "master", manager: :rebar3, override: true},
@@ -154,8 +153,9 @@ defmodule Wocky.Mixfile do
       {:fusco,         github: "esl/fusco",               branch: "master", override: true},
       {:pa,            github: "lavrin/pa",               branch: "master", manager: :rebar3, override: true},
       {:usec,          github: "esl/usec",                branch: "master", override: true},
-      {:riak_pb,       github: "basho/riak_pb",           tag: "2.1.4.0", override: true},
-      {:riakc,         github: "basho/riak-erlang-client", tag: "2.1.2", manager: :rebar3, override: true},
+      {:protobuffs,    github: "basho/erlang_protobuffs", tag: "0.9.0", override: true},
+      {:riak_pb,       github: "basho/riak_pb",           tag: "2.1.4.2", override: true, manager: :rebar},
+      {:riakc,         github: "basho/riak-erlang-client", tag: "2.4.2", override: true},
       {:mustache,      github: "mojombo/mustache.erl",    ref: "d0246fe", override: true},
 
       ## runtime dependencies (included in release, not needed to build)
@@ -182,10 +182,10 @@ defmodule Wocky.Mixfile do
       {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
       {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},
       {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
+      {:exref,         github: "hippware/exref",          branch: "master"},
       {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
-      {:hamcrest,      github: "hyperthunk/hamcrest-erlang", branch: "master", override: true},
-      {:escalus,       github: "hippware/escalus",        branch: "working", override: true, only: :test},
-      {:exref,         github: "hippware/exref",          branch: "master"}
+      {:hamcrest,      github: "basho/hamcrest-erlang",   tag: "0.3.0-basho", override: true},
+      {:escalus,       github: "esl/escalus",             tag: "3.0.0", override: true, only: :test}
     ]
   end
 
