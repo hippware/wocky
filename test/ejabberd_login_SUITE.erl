@@ -232,4 +232,4 @@ do_verify_format(_, Password, SPassword) ->
     Password = SPassword.
 
 token_stanza(Type) ->
-    escalus_stanza:iq(Type, escalus_stanza:query_el(?NS_TOKEN, [])).
+    escalus_stanza:iq(Type, [escalus_stanza:query_el(?NS_TOKEN, [])]).

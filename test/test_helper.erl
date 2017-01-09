@@ -387,13 +387,12 @@ count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
 publish_item_stanza(BotID, NoteID, Title, Content) ->
     publish_item_stanza(BotID, NoteID, Title, Content, undefined).
 publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
-    test_helper:iq_set(?NS_BOT,
-                       publish_el(BotID, NoteID, Title, Content, Image)).
+    iq_set(?NS_BOT, publish_el(BotID, NoteID, Title, Content, Image)).
 
 publish_el(BotID, NoteID, Title, Content, Image) ->
     #xmlel{name = <<"publish">>,
            attrs = [{<<"node">>, bot_node(BotID)}],
-           children = item_el(NoteID, Title, Content, Image)}.
+           children = [item_el(NoteID, Title, Content, Image)]}.
 
 item_el(NoteID) ->
     #xmlel{name = <<"item">>,
@@ -401,7 +400,7 @@ item_el(NoteID) ->
 item_el(NoteID, Title, Content, Image) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, NoteID}],
-           children = entry_el(Title, Content, Image)}.
+           children = [entry_el(Title, Content, Image)]}.
 
 entry_el(Title, Content, Image) ->
     #xmlel{name = <<"entry">>,
@@ -421,7 +420,7 @@ maybe_image_el(Image) ->
             children = [#xmlcdata{content = Image}]}].
 
 retract_item_stanza(BotID, NoteID) ->
-    test_helper:iq_set(?NS_BOT, retract_el(BotID, NoteID)).
+    iq_set(?NS_BOT, retract_el(BotID, NoteID)).
 
 retract_el(BotID, NoteID) ->
     #xmlel{name = <<"retract">>,
@@ -433,7 +432,7 @@ bot_node(ID) ->
 
 subscribe_stanza() ->
     SubEl = node_el(?BOT, <<"subscribe">>),
-    test_helper:iq_set(?NS_BOT, SubEl).
+    iq_set(?NS_BOT, SubEl).
 
 node_el(ID, Name) -> node_el(ID, Name, []).
 node_el(ID, Name, Children) ->
@@ -463,6 +462,7 @@ is_bot_action(ID, Action, Stanza) ->
 
 matches(Value, any) -> Value =/= <<>>;
 matches(Value, Match) -> Value =:= Match.
+
 
 hs_query_el(Version) ->
     #xmlel{name = <<"query">>,

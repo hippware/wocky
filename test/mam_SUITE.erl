@@ -676,21 +676,21 @@ maybe_start_elem(undefined) ->
 maybe_start_elem(BStart) ->
     #xmlel{
         name = <<"start">>,
-        children = #xmlcdata{content = BStart}}.
+        children = [#xmlcdata{content = BStart}]}.
 
 maybe_end_elem(undefined) ->
     undefined;
 maybe_end_elem(BEnd) ->
     #xmlel{
         name = <<"end">>,
-        children = #xmlcdata{content = BEnd}}.
+        children = [#xmlcdata{content = BEnd}]}.
 
 maybe_with_elem(undefined) ->
     undefined;
 maybe_with_elem(BWithJID) ->
     #xmlel{
         name = <<"with">>,
-        children = #xmlcdata{content = BWithJID}}.
+        children = [#xmlcdata{content = BWithJID}]}.
 
 %% An optional 'queryid' attribute allows the client to match results to
 %% a certain query.
@@ -761,14 +761,14 @@ stanza_lookup_messages_iq_v02(_P, QueryId, BStart, BEnd,
     }]).
 
 maybe_simple_elem(#rsm_in{simple=true}) ->
-    [#xmlel{name = <<"simple">>}];
+    #xmlel{name = <<"simple">>};
 maybe_simple_elem(_) ->
-    [].
+    undefined.
 
 maybe_opt_count_elem(#rsm_in{opt_count=true}) ->
-    [#xmlel{name = <<"opt_count">>}];
+    #xmlel{name = <<"opt_count">>};
 maybe_opt_count_elem(_) ->
-    [].
+    undefined.
 
 border_attributes(undefined) ->
     [];
@@ -790,7 +790,7 @@ maybe_rsm_elem(#rsm_in{max=Max, direction=Direction, id=Id,
                 maybe_rsm_direction(Direction, Id),
                 maybe_rsm_reverse(Reverse)])}.
 
-maybe_rsm_id(undefined) -> [];
+maybe_rsm_id(undefined) -> undefined;
 maybe_rsm_id(Id) -> #xmlcdata{content = Id}.
 
 maybe_rsm_direction(undefined, undefined) ->
@@ -798,21 +798,21 @@ maybe_rsm_direction(undefined, undefined) ->
 maybe_rsm_direction(Direction, Id) ->
     #xmlel{
         name = atom_to_binary(Direction, latin1),
-        children = maybe_rsm_id(Id)}.
+        children = skip_undefined([maybe_rsm_id(Id)])}.
 
 maybe_rsm_index(undefined) ->
     undefined;
 maybe_rsm_index(Index) when is_integer(Index) ->
     #xmlel{
         name = <<"index">>,
-        children = #xmlcdata{content = integer_to_list(Index)}}.
+        children = [#xmlcdata{content = integer_to_list(Index)}]}.
 
 maybe_rsm_max(undefined) ->
     undefined;
 maybe_rsm_max(Max) when is_integer(Max) ->
     #xmlel{
         name = <<"max">>,
-        children = #xmlcdata{content = integer_to_list(Max)}}.
+        children = [#xmlcdata{content = integer_to_list(Max)}]}.
 
 maybe_rsm_reverse(false) ->
     undefined;

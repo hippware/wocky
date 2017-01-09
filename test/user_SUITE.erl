@@ -215,8 +215,8 @@ missing_node(Config) ->
         BrokenAttrs = proplists:delete(<<"node">>, Attrs),
         BrokenStanza =
         QueryStanza#xmlel{children =
-                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}},
+                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
@@ -229,8 +229,8 @@ malformed_user(Config) ->
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
         QueryStanza#xmlel{children =
-                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}},
+                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
@@ -243,8 +243,8 @@ missing_user(Config) ->
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
         QueryStanza#xmlel{children =
-                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}},
+                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
@@ -258,8 +258,8 @@ oversize_user(Config) ->
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
         QueryStanza#xmlel{children =
-                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}},
+                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
@@ -340,8 +340,8 @@ set_missing_node(Config) ->
         BrokenAttrs = proplists:delete(<<"node">>, Attrs),
         BrokenStanza =
         QueryStanza#xmlel{children =
-                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}},
+                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
@@ -394,8 +394,8 @@ set_malformed_user(Config) ->
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
         QueryStanza#xmlel{children =
-                          (hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}},
+                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                             BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 

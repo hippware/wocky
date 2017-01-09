@@ -886,7 +886,7 @@ follow_notifications(Config) ->
         %% Subscribe to HS notifications
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           hs_query_el(undefined))),
+                                           [hs_query_el(undefined)])),
 
         %% Simple follow on and off tests
         escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(), Alice)),
@@ -1277,13 +1277,13 @@ bot_jid(ID) ->
 
 change_visibility_stanza(Bot, Visibility) ->
     test_helper:iq_set(?NS_BOT, node_el(Bot, <<"fields">>,
-                                        visibility_field(Visibility))).
+                                        [visibility_field(Visibility)])).
 
 visibility_field(Visibility) ->
     create_field({"visibility", "int", Visibility}).
 
 update_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"fields">>, modify_field())).
+    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field()])).
 
 modify_field() ->
     create_field({"description", "string", ?NEW_DESCRIPTION}).
@@ -1616,8 +1616,8 @@ unfollow_me_stanza() ->
 subscribe_temporary(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(
                Bot, <<>>,
-               #xmlel{name = <<"query">>,
-                      attrs = [{<<"xmlns">>, ?NS_BOT}]}),
+               [#xmlel{name = <<"query">>,
+                       attrs = [{<<"xmlns">>, ?NS_BOT}]}]),
     escalus:send(Client, Stanza).
 
 unsubscribe_temporary(Bot, Client) ->

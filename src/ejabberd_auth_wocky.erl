@@ -35,6 +35,7 @@
 -export([start/1,
          stop/1,
          store_type/1,
+         authorize/1,
          set_password/3,
          check_password/3,
          check_password/5,
@@ -49,6 +50,8 @@
          does_user_exist/2,
          remove_user/2,
          remove_user/3]).
+
+-ignore_xref([check_password/3, check_password/5]).
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 
@@ -75,6 +78,12 @@ store_type(LServer) ->
     end.
 
 
+-spec authorize(mongoose_credentials:t()) -> {ok, mongoose_credentials:t()}
+                                           | {error, any()}.
+authorize(Creds) ->
+    ejabberd_auth:authorize_with_check_password(?MODULE, Creds).
+
+
 -spec set_password(ejabberd:luser(), ejabberd:lserver(), binary())
                   -> ok | {error, not_allowed | invalid_jid}.
 set_password(LUser, LServer, Password) ->
@@ -86,6 +95,7 @@ set_password(LUser, LServer, Password) ->
         not_found ->
             {error, invalid_jid}
     end.
+
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary())
                     -> boolean().

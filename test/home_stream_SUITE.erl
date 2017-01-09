@@ -140,7 +140,7 @@ subscribe(Config) ->
       fun(Alice, Bob) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           hs_query_el(undefined))),
+                                           [hs_query_el(undefined)])),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item">>), Alice)),
@@ -162,7 +162,7 @@ subscribe_version(Config) ->
       fun(Alice, Bob) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           hs_query_el(?HS_V_2))),
+                                           [hs_query_el(?HS_V_2)])),
 
         lists:foreach(
           fun(_) ->
@@ -173,10 +173,10 @@ subscribe_version(Config) ->
         %% Alice's (since it's not his)
         escalus:send(Bob,
             escalus_stanza:presence_direct(hs_node(?BOB), <<"available">>,
-                                           hs_query_el(?HS_V_2))),
+                                           [hs_query_el(?HS_V_2)])),
         escalus:send(Bob,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           hs_query_el(?HS_V_2))),
+                                           [hs_query_el(?HS_V_2)])),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
@@ -192,11 +192,11 @@ unsubscribe(Config) ->
       fun(Alice) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           hs_query_el(undefined))),
+                                           [hs_query_el(undefined)])),
 
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"unavailable">>,
-                                           hs_query_el(undefined))),
+                                           [hs_query_el(undefined)])),
 
         expect_iq_success_u(pub_stanza(<<"new_item3">>), Alice, Alice),
         timer:sleep(500),
