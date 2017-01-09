@@ -97,22 +97,22 @@ defmodule Wocky.Index do
 
   defcast user_updated(user_id, user), state: %State{user_index: index} do
     {:ok, _} = update_index(index, user_id, user, @user_fields)
-    noreply
+    noreply()
   end
 
   defcast user_removed(user_id), state: %State{user_index: index} do
     {:ok, _} = delete_object(index, user_id)
-    noreply
+    noreply()
   end
 
   defcast bot_updated(bot_id, bot), state: %State{bot_index: index} do
     {:ok, _} = update_index(index, bot_id, bot, @bot_fields)
-    noreply
+    noreply()
   end
 
   defcast bot_removed(bot_id), state: %State{bot_index: index} do
     {:ok, _} = delete_object(index, bot_id)
-    noreply
+    noreply()
   end
 
   def handle_cast(msg, state) do

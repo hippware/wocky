@@ -10,7 +10,7 @@ defmodule Schemata.AddTempSubscriptionsMigration do
     alter_table "#{:wocky_db.shared_keyspace}.bot_subscriber",
       drop: :follow
 
-    create_subscribed_bot
+    create_subscribed_bot()
 
     create_table :temp_subscription, in: :wocky_db.shared_keyspace,
       columns: [
@@ -48,7 +48,7 @@ defmodule Schemata.AddTempSubscriptionsMigration do
       columns: :all,
       primary_key: [:user, :bot]
 
-    create_subscribed_bot
+    create_subscribed_bot()
   end
 
   defp create_subscribed_bot do

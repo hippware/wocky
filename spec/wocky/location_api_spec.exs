@@ -8,17 +8,17 @@ defmodule Wocky.LocationApiSpec do
   let :port, do: Application.get_env(:wocky, :location_api_port)
   let :user, do: Wocky.Factory.insert(:user, resource: "testing")
   let :token do
-    {:ok, return, _} = :wocky_db_user.assign_token(user.user,
-                                                   user.server,
-                                                   user.resource)
+    {:ok, return, _} = :wocky_db_user.assign_token(user().user,
+                                                   user().server,
+                                                   user().resource)
     return
   end
   let :headers, do: [
     {"Content-Type", "application/json"},
-    {"X-Auth-User", user.user},
-    {"X-Auth-Token", token}
+    {"X-Auth-User", user().user},
+    {"X-Auth-Token", token()}
   ]
-  let :url, do: url(port, user.user)
+  let :url, do: url(port(), user().user)
   let :payload do
     """
     {
@@ -55,7 +55,7 @@ defmodule Wocky.LocationApiSpec do
     context "on success" do
       before do
         {:ok, code, _resp_headers, ref} =
-          :hackney.request(:POST, url, headers, payload)
+          :hackney.request(:POST, url(), headers(), payload())
 
         {:ok, body} = :hackney.body(ref)
         {:shared, code: code, body: body}
@@ -66,31 +66,31 @@ defmodule Wocky.LocationApiSpec do
       end
 
       it "should have an empty body" do
-        expect shared.body |> to(be_empty)
+        expect shared.body |> to(be_empty())
       end
     end
 
     context "on failure" do
       it "should return 405 when sent an unknown method" do
-        {:ok, code, _, _} = :hackney.request(:GET, url)
+        {:ok, code, _, _} = :hackney.request(:GET, url())
         expect code |> to(eq 405)
       end
 
       it "should return 401 when the auth header is missing" do
-        {:ok, code, _, _} = :hackney.request(:POST, url, [], payload)
+        {:ok, code, _, _} = :hackney.request(:POST, url(), [], payload())
         expect code |> to(eq 401)
       end
 
       it "should return 401 when the auth header and user don't match" do
         {:ok, code, _, _} =
-          :hackney.request(:POST, url(port, "foo"), headers, payload)
+          :hackney.request(:POST, url(port(), "foo"), headers(), payload())
 
         expect code |> to(eq 401)
       end
 
       it "should return 400 when the payload is not json" do
         {:ok, code, _, _} =
-          :hackney.request(:POST, url, headers, "bad data")
+          :hackney.request(:POST, url(), headers(), "bad data")
 
         expect code |> to(eq 400)
       end
@@ -118,7 +118,7 @@ defmodule Wocky.LocationApiSpec do
           }
           """
         {:ok, code, _, _} =
-          :hackney.request(:POST, url, headers, data)
+          :hackney.request(:POST, url(), headers(), data)
 
         expect code |> to(eq 400)
       end
@@ -138,7 +138,7 @@ defmodule Wocky.LocationApiSpec do
           }
           """
         {:ok, code, _, _} =
-          :hackney.request(:POST, url, headers, data)
+          :hackney.request(:POST, url(), headers(), data)
 
         expect code |> to(eq 400)
       end

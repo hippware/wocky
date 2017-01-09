@@ -62,7 +62,7 @@ defmodule ModWockyNotificationsSpec do
             allow Handler
             |> to(accept :register, fn (_, _, _) -> {:ok, @test_id} end)
 
-            result = enable_notifications
+            result = enable_notifications()
             {:ok, result: result}
           end
 
@@ -89,7 +89,7 @@ defmodule ModWockyNotificationsSpec do
             |> to(accept :register, fn (_, _, _) -> {:error, :foo} end)
             WockyDb.clear_tables(@local_context, [:device])
 
-            result = enable_notifications
+            result = enable_notifications()
             {:ok, result: result}
           end
 
@@ -112,8 +112,8 @@ defmodule ModWockyNotificationsSpec do
 
       context "with a 'disable' element" do
         before do
-          _ = enable_notifications
-          result = disable_notifications
+          _ = enable_notifications()
+          result = disable_notifications()
           {:ok, result: result}
         end
 
@@ -133,13 +133,13 @@ defmodule ModWockyNotificationsSpec do
     describe "handling the user_send_packet hook" do
       before do
         allow Handler |> to(accept :notify_message, fn (_, _, _) -> :ok end)
-        _ = enable_notifications
+        _ = enable_notifications()
       end
 
       context "with a message packet" do
         before do
           :ok = ModWockyNotifications.user_send_packet_hook(
-            @jid, @jid, packet)
+            @jid, @jid, packet())
         end
 
         it "should send a notification" do
@@ -195,7 +195,7 @@ defmodule ModWockyNotificationsSpec do
 
     describe "handling the remove_user hook" do
       before do
-        _ = enable_notifications
+        _ = enable_notifications()
         :ok = ModWockyNotifications.remove_user_hook(@user, @server)
         :ok
       end
