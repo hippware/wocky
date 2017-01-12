@@ -6,7 +6,7 @@ node {
       sh "mix local.hex --force"
       sh "mix local.rebar --force"
       sh "mix clean"
-      sh "mix deps"
+      sh "mix prepare"
     }
 
     stage('Basic Checks') {
