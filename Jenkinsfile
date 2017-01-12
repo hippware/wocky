@@ -12,7 +12,6 @@ node {
     stage('Basic Checks') {
       sh "mix lint"
       sh "mix exref"
-      sh "mix dialyzer"
     }
 
     stage('Unit Tests') {
