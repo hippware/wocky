@@ -27,7 +27,7 @@ defmodule Wocky.Mixfile do
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
          :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
-         :binpp, :mochijson2, :erlando, :z_stdlib, :uuid, :cqerl,
+         :binpp, :mochijson2, :erlando, :z_stdlib, :uuid, :cqerl, :riakc,
          :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid, :algolia,
          :logger, :schemata, :porcelain, :geocalc, :mix, :faker, :ex_machina,
          :base16, :poison, :ex_aws, :exconstructor, :honeybadger

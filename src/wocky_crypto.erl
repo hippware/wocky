@@ -1,6 +1,6 @@
 -module(wocky_crypto).
 
--define(CIPHER, aes_cbc128).
+-define(CIPHER, aes_cbc).
 -define(IV_LENGTH, 16).
 
 -export([encrypt/2,

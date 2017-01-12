@@ -182,7 +182,7 @@ get_delete(Children) ->
     end.
 
 get_item_id_or_rsm(Children) ->
-    Elem = #xmlel{children = Children},
+    Elem = #xmlel{name = <<>>, children = Children},
     case xml:get_path_s(Elem, [{elem, <<"item">>}, {attr, <<"id">>}]) of
         <<>> -> rsm_util:get_rsm(Elem);
         ID -> {ok, ID}

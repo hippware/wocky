@@ -356,5 +356,5 @@ seed_s3_file(UserJID, FileID) ->
     {ok, _} =
     httpc:request(put,
                   {binary_to_list(proplists:get_value(<<"url">>, Fields)),
-                   HeadersStr, "image/png", crypto:rand_bytes(1000)},
+                   HeadersStr, "image/png", crypto:strong_rand_bytes(1000)},
                   [], []).

@@ -10,14 +10,14 @@ defmodule Wocky.User do
     user:           binary,
     server:         binary,
     resource:       binary,
-    handle:         binary,
-    password:       binary,
-    avatar:         binary,
-    first_name:     binary,
-    last_name:      binary,
-    email:          binary,
-    external_id:    binary,
-    phone_number:   binary,
+    handle:         nil | binary,
+    password:       nil | binary,
+    avatar:         nil | binary,
+    first_name:     nil | binary,
+    last_name:      nil | binary,
+    email:          nil | binary,
+    external_id:    nil | binary,
+    phone_number:   nil | binary,
     roster_viewers: [binary]
   }
 
