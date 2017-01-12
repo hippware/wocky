@@ -36,12 +36,12 @@ defmodule Wocky.Location do
     do_user_location_changed(user, location, async)
   end
 
-  def do_user_location_changed(user, location, true) do
+  defp do_user_location_changed(user, location, true) do
     {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
     {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
     :ok
   end
-  def do_user_location_changed(user, location, false) do
+  defp do_user_location_changed(user, location, false) do
     check_for_bot_events(user, location)
     update_bot_locations(user, location)
     :ok
