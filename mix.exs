@@ -5,7 +5,9 @@ defmodule Wocky.Mixfile do
     [app: :wocky,
      version: version(),
      elixir: "~> 1.4",
-     build_embedded: Mix.env == :prod,
+     # If this is set to true, then our ejabberd dependency won't build
+     # properly in the prod environment.
+     build_embedded: false, # Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      erlc_options: erlc_options(Mix.env),
      test_coverage: [output: "_build/#{Mix.env}/cover"],
