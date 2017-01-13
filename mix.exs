@@ -68,20 +68,21 @@ defmodule Wocky.Mixfile do
   end
 
   def application do
-    dev_apps = Mix.env == :dev && [:reprise] || []
     [description: 'JabberWocky XMPP Server',
-     applications: dev_apps ++ [
-       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
-       :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
-       :ex_machina, :faker, :cowboy, :honeybadger, :plug
+     extra_applications: [
+       :crypto, :ssl, :logger, :plug, :runtime_tools, :cowboy, :poison
      ],
      included_applications: [
-       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2, :erlando,
-       :logger_lager_backend, :lager_syslog, :syslog, :exconstructor,
-       :exometer_cloudwatch, :recon, :eper, :binpp, :jiffy, :poolboy,
+       # These are here because we start them manually and do not want them
+       # starting automatically when Wocky starts.
+       :schemata, :ejabberd,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
-       :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo
+       # Some of these aren't used with our configuration, so we don't want
+       # them to automatically start. We assume that ejabberd will start them
+       # if necessary.
+       :alarms, :cache_tab, :cuesport, :fusco, :jiffy, :lager_syslog,
+       :p1_utils, :poolboy, :recon, :redo, :riakc, :usec, :xmerl
      ],
      mod: {:wocky_app, []},
      env: [
@@ -118,7 +119,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:lager,                "~> 3.2",   override: true},
-      {:meck,                 "~> 0.8.4", override: true},
+      {:meck,                 "~> 0.8.4", override: true, runtime: false},
       {:hackney,              "~> 1.6",   override: true},
       {:base16,               "~> 1.0",   override: true},
       {:porcelain,            "~> 2.0"},
@@ -126,18 +127,18 @@ defmodule Wocky.Mixfile do
       {:ex_aws,               "~> 1.0"},
       {:geocalc,              "~> 0.5.3"},
       {:exconstructor,        "~> 1.0"},
-      {:ok,                   "~> 1.2"},
-      {:exactor,              "~> 2.2"},
+      {:ok,                   "~> 1.2",    runtime: false},
+      {:exactor,              "~> 2.2",    runtime: false},
       {:faker,                "~> 0.7.0"},
       {:honeybadger,          "~> 0.6"},
       {:logger_lager_backend, "~> 0.0.2"},
-      {:distillery,           "~> 1.1"},
+      {:distillery,           "~> 1.1",    runtime: false},
       {:eper,                 "~> 0.94.0"},
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
-      {:dogma,                "~> 0.1.13", only: :dev},
-      {:credo,                "~> 0.5.3",  only: :dev},
-      {:ex_guard,             "~> 1.1",    only: :dev},
+      {:dogma,                "~> 0.1.13", only: :dev, runtime: false},
+      {:credo,                "~> 0.5.3",  only: :dev, runtime: false},
+      {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5.0",  only: :dev},
 
       {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},
@@ -167,14 +168,17 @@ defmodule Wocky.Mixfile do
       {:fun_chain,
         github: "sasa1977/fun_chain",
         branch: "master",
+        runtime: false,
         manager: :rebar3},
       {:dialyxir,
         github: "jeremyjh/dialyxir",
         branch: "develop",
+        runtime: false,
         only: :dev},
       {:mix_elvis,
         github: "hippware/mix_elvis",
         branch: "master",
+        runtime: false,
         only: :dev},
       {:mix_eunit,
         github: "hippware/mix_eunit",
@@ -196,7 +200,7 @@ defmodule Wocky.Mixfile do
       # These are transitive dependencies that need to be overriden to build
       # correctly. They are not used directly by Wocky.
       {:uuid,   "~> 1.6.0", override: true, hex: :uuid_erl},
-      {:edown,  "~> 0.8.1", override: true},
+      {:edown,  "~> 0.8.1", override: true, runtime: false},
       {:folsom, "~> 0.8.3", override: true},
       {:syslog,
         github: "Vagabond/erlang-syslog",
@@ -207,6 +211,7 @@ defmodule Wocky.Mixfile do
         github: "basho/riak_pb",
         tag: "2.2.0.2",
         override: true,
+        runtime: false,
         manager: :rebar},
       {:mochijson2, ~r//,
         github: "bjnortier/mochijson2",
@@ -223,10 +228,12 @@ defmodule Wocky.Mixfile do
       {:proper,
         github: "manopapad/proper",
         tag: "v1.2",
+        runtime: false,
         override: true},
       {:hamcrest,
         github: "basho/hamcrest-erlang",
         tag: "0.3.0-basho",
+        runtime: false,
         override: true},
       {:wsecli, ~r//,
         github: "esl/wsecli",
