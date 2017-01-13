@@ -118,6 +118,7 @@ defmodule Wocky.Mixfile do
       {:lager,                "~> 3.2",   override: true},
       {:meck,                 "~> 0.8.4", override: true},
       {:hackney,              "~> 1.6",   override: true},
+      {:base16,               "~> 1.0",   override: true},
       {:porcelain,            "~> 2.0"},
       {:algolia,              "~> 0.4.0"},
       {:ex_aws,               "~> 1.0"},
