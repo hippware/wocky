@@ -29,7 +29,7 @@ defmodule Wocky.Factory do
       first_name: Faker.Name.first_name,
       last_name: Faker.Name.last_name,
       email: Faker.Internet.email,
-      phone_number: phone_number,
+      phone_number: phone_number(),
       external_id: Faker.Code.isbn13
     }
   end

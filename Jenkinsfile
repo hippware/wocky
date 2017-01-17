@@ -6,19 +6,19 @@ node {
       sh "mix local.hex --force"
       sh "mix local.rebar --force"
       sh "mix clean"
-      sh "mix deps"
+      sh "mix prepare"
     }
 
     stage('Basic Checks') {
       sh "mix lint"
       sh "mix exref"
-      sh "mix dialyzer"
     }
 
     stage('Unit Tests') {
       env.CQLSH_NO_BUNDLED = "true"
       sh "mix db.test_migrations"
       sh "mix db.load.test"
+      sh "MIX_ENV=test mix prepare"
       sh "mix espec"
       sh "mix eunit"
     }
@@ -29,11 +29,12 @@ node {
 
     stage('Build Release') {
       sh "rm -rf rel/wocky"
+      sh "MIX_ENV=prod mix prepare"
       sh "MIX_ENV=prod mix release --warnings-as-errors"
       sh "echo `./version` > RELEASE"
 
       archive 'RELEASE'
-      archive 'rel/wocky/releases/**/wocky.tar.gz'
+      archive '_build/prod/rel/wocky/releases/**/wocky.tar.gz'
     }
   }
 }

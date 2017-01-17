@@ -8,7 +8,7 @@
           file          :: binary(),
           auth          :: binary(),
           size          :: integer(),
-          purpose       :: binary(),
+          purpose       :: binary() | undefined,
           access        :: binary(),
           metadata      :: francus:metadata()
          }).

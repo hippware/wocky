@@ -20,10 +20,7 @@ config :distillery,
     :mustache,
     :pa,
     :parse_trans,
-    :proper,
-    :protobuffs,
-    :riak_pb,
-    :riakc
+    :proper
   ]
 
 config :wocky,

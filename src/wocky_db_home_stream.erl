@@ -102,7 +102,7 @@ delete_existing_item(User, Server, ID) ->
 
 normalise_item(not_found) -> not_found;
 normalise_item(Item = #{deleted := true}) ->
-    normalise_item2(Item, #xmlel{});
+    normalise_item2(Item, #xmlel{name = <<>>});
 normalise_item(Item = #{stanza := StanzaBin}) ->
     {ok, Stanza} = wocky_xml:parse_multiple(StanzaBin),
     normalise_item2(Item, Stanza).

@@ -140,12 +140,9 @@ defmodule Wocky.LocationApi do
     do: :wocky_db_user.check_token(user, :wocky_app.server, token)
 
   def from_json(req, %State{user: user, coords: coords} = state) do
-    location = %Location{
-      lat: coords.latitude,
-      lon: coords.longitude,
-      accuracy: coords.accuracy
-    }
-    user = %User{user | resource: state.resource}
+    location = {coords.latitude, coords.longitude, coords.accuracy}
+    user = User.to_jid(%User{user | resource: state.resource})
+
     :ok = Location.user_location_changed(user, location)
     {true, req, state}
   end

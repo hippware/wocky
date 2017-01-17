@@ -39,18 +39,18 @@ defmodule Schemata.HomeStreamTableReworkMigration do
 
   defp create_old_table(name) do
     create_table name, in: :wocky_db.local_keyspace,
-      columns: columns,
+      columns: columns(),
       primary_key: [[:user, :server], :version],
       order_by: [version: :asc]
   end
 
   defp create_new_table(name) do
     create_table name, in: :wocky_db.local_keyspace,
-      columns: columns,
+      columns: columns(),
       primary_key: [[:user, :server], :id]
   end
 
-  defp columns() do
+  defp columns do
     [
       user:     :text,
       server:   :text,

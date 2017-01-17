@@ -3,14 +3,16 @@ defmodule Wocky.Mixfile do
 
   def project do
     [app: :wocky,
-     version: version,
-     elixir: "~> 1.3",
-     # build_embedded: Mix.env == :prod,
-     # start_permanent: Mix.env == :prod,
+     version: version(),
+     elixir: "~> 1.4",
+     # If this is set to true, then our ejabberd dependency won't build
+     # properly in the prod environment.
+     build_embedded: false, # Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
      erlc_options: erlc_options(Mix.env),
      test_coverage: [output: "_build/#{Mix.env}/cover"],
-     aliases: aliases,
-     deps: deps,
+     aliases: aliases(),
+     deps: deps(),
      preferred_cli_env: [release: :prod,
                          espec:   :test,
                          eunit:   :test,
@@ -27,10 +29,10 @@ defmodule Wocky.Mixfile do
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
          :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
          :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
-         :binpp, :pretty_errors, :mochijson2, :erlando, :z_stdlib, :uuid,
-         :cqerl, :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid,
-         :algolia, :logger, :schemata, :porcelain, :geocalc, :mix, :faker,
-         :ex_machina, :base16, :poison, :ex_aws, :exconstructor, :honeybadger
+         :binpp, :mochijson2, :erlando, :z_stdlib, :uuid, :cqerl, :riakc,
+         :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid, :algolia,
+         :logger, :schemata, :porcelain, :geocalc, :mix, :faker, :ex_machina,
+         :base16, :poison, :ex_aws, :exconstructor, :honeybadger
        ],
        plt_add_deps: true,
        flags: [
@@ -38,13 +40,17 @@ defmodule Wocky.Mixfile do
          "-Wrace_conditions", "-Wunderspecs", "-Wunknown"
        ]
      ],
-     elvis_config: elvis_config
+     elvis_config: elvis_config(),
+     # set switches that affect every invocation of the eunit task
+     eunit: [
+       start: true
+     ]
    ]
   end
 
   defp version do
-    {version, _} = System.cmd "bash", ["./version"]
-    version
+    {ver_result, _} = System.cmd("bash", ["./version"])
+    ver_result
   end
 
   defp erlc_options(:test), do: [{:d, :TEST} | erlc_options(:dev)]
@@ -62,23 +68,21 @@ defmodule Wocky.Mixfile do
   end
 
   def application do
-    dev_apps = Mix.env == :dev && [:reprise] || []
     [description: 'JabberWocky XMPP Server',
-     applications: dev_apps ++ [
-       :crypto, :ssl, :lager, :logger, :algolia, :ex_aws, :geocalc, :hackney,
-       :poison, :idna, :runtime_tools, :cache_tab, :alarms, :setup, :porcelain,
-       :ex_machina, :faker, :cowboy, :honeybadger, :plug
+     extra_applications: [
+       :crypto, :ssl, :logger, :plug, :runtime_tools, :cowboy, :poison
      ],
      included_applications: [
-       :schemata, :ejabberd, :ossp_uuid, :z_stdlib, :mochijson2,
-       :erlando, :logger_lager_backend, :lager_syslog, :syslog,
-       :exconstructor, :erlware_commons, :exometer_cloudwatch,
+       # These are here because we start them manually and do not want them
+       # starting automatically when Wocky starts.
+       :schemata, :ejabberd,
 
        # ejabberd dependencies that aren't listed in ejabberd.app
-       :fusco, :p1_utils, :cuesport, :base16, :xmerl, :usec, :redo,
-
-       # Runtime tools
-       :recon, :eper, :binpp, :pretty_errors
+       # Some of these aren't used with our configuration, so we don't want
+       # them to automatically start. We assume that ejabberd will start them
+       # if necessary.
+       :alarms, :cache_tab, :cuesport, :fusco, :jiffy, :lager_syslog,
+       :p1_utils, :poolboy, :recon, :redo, :riakc, :usec, :xmerl
      ],
      mod: {:wocky_app, []},
      env: [
@@ -114,84 +118,134 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
-      {:setup,         "1.7.0", override: true},
-      {:lager,         "~> 3.2", override: true},
-      {:porcelain,     "~> 2.0"},
-      {:algolia,       "~> 0.4.0"},
-      {:ex_aws,        "~> 1.0.0"},
-      {:geocalc,       "~> 0.5"},
-      {:exconstructor, "~> 1.0"},
-      {:ok,            "~> 1.0"},
-      {:exactor,       "~> 2.2"},
-      {:faker,         "~> 0.7"},
-      {:hackney,       "~> 1.6.3", override: true},
-      {:ex_machina,    github: "hippware/ex_machina",     branch: "working"},
-      {:schemata,      github: "hippware/schemata",       branch: "master"},
-      {:ossp_uuid,     github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
-      {:z_stdlib,      github: "zotonic/z_stdlib",        ref: "b9f19b9"},
-      {:ejabberd,      github: "hippware/mim-ejabberd",   branch: "working-2.0"},
+      {:lager,                "~> 3.2",   override: true},
+      {:meck,                 "~> 0.8.4", override: true, runtime: false},
+      {:hackney,              "~> 1.6",   override: true},
+      {:base16,               "~> 1.0",   override: true},
+      {:porcelain,            "~> 2.0"},
+      {:algolia,              "~> 0.4.0"},
+      {:ex_aws,               "~> 1.0"},
+      {:geocalc,              "~> 0.5.3"},
+      {:exconstructor,        "~> 1.0"},
+      {:ok,                   "~> 1.2",    runtime: false},
+      {:exactor,              "~> 2.2",    runtime: false},
+      {:faker,                "~> 0.7.0"},
+      {:honeybadger,          "~> 0.6"},
       {:logger_lager_backend, "~> 0.0.2"},
-      {:honeybadger,   "~> 0.1"},
+      {:distillery,           "~> 1.1",    runtime: false},
+      {:eper,                 "~> 0.94.0"},
+      {:binpp,                "~> 1.1"},
+      {:espec,                "~> 1.2",    only: :test},
+      {:dogma,                "~> 0.1.13", only: :dev, runtime: false},
+      {:credo,                "~> 0.5.3",  only: :dev, runtime: false},
+      {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
+      {:reprise,              "~> 0.5.0",  only: :dev},
 
-      ## ejabberd dependencies
-      {:redo,          "~> 2.0", override: true},
-      {:cowboy,        "~> 1.0", override: true},
-      {:folsom,        "~> 0.8.3", override: true},
-      {:idna,          "~> 2.0", override: true},
-      {:p1_utils,      "~> 1.0", override: true},
-      {:cache_tab,     "~> 1.0", override: true},
-      {:stringprep,    "1.0.6", override: true, manager: :rebar},
-      {:base16,        "~> 1.0", override: true},
-      {:erlware_commons, "~> 0.21.0", override: true},
-      {:cuesport,      github: "esl/cuesport",            branch: "master", override: true},
-      {:exml,          github: "esl/exml",                tag: "2.4.0", override: true},
-      {:exometer_core, github: "Feuerlabs/exometer_core", branch: "master", override: true},
-      {:exometer_cloudwatch, github: "hippware/exometer_cloudwatch", branch: "master"},
-      {:exometer,      github: "Feuerlabs/exometer",      branch: "master", manager: :rebar3, override: true},
-      {:mochijson2,    github: "bjnortier/mochijson2",    branch: "master", override: true},
-      {:alarms,        github: "hippware/alarms",         branch: "master", override: true},
-      {:fusco,         github: "esl/fusco",               branch: "master", override: true},
-      {:pa,            github: "lavrin/pa",               branch: "master", manager: :rebar3, override: true},
-      {:usec,          github: "esl/usec",                branch: "master", override: true},
-      {:protobuffs,    github: "basho/erlang_protobuffs", tag: "0.9.0", override: true},
-      {:riak_pb,       github: "basho/riak_pb",           tag: "2.1.4.2", override: true, manager: :rebar},
-      {:riakc,         github: "basho/riak-erlang-client", tag: "2.4.2", override: true},
-      {:mustache,      github: "mojombo/mustache.erl",    ref: "d0246fe", override: true},
+      {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},
+      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-test"},
+      {:schemata,   github: "hippware/schemata",     branch: "master"},
+      {:ex_machina, github: "thoughtbot/ex_machina", branch: "master"},
+      {:ossp_uuid,
+        github: "hippware/erlang-ossp-uuid",
+        tag: "v1.0.1",
+        manager: :rebar3},
+      {:exometer_core,
+        github: "Feuerlabs/exometer_core",
+        branch: "master",
+        override: true},
+      {:exometer,
+        github: "Feuerlabs/exometer",
+        branch: "master",
+        manager: :rebar3,
+        override: true},
+      {:exometer_cloudwatch,
+        github: "hippware/exometer_cloudwatch",
+        branch: "master"},
+      {:erlando, ~r//,
+        github: "rabbitmq/erlando",
+        branch: "master",
+        override: true},
+      {:fun_chain,
+        github: "sasa1977/fun_chain",
+        branch: "master",
+        runtime: false,
+        manager: :rebar3},
+      {:dialyxir,
+        github: "jeremyjh/dialyxir",
+        branch: "develop",
+        runtime: false,
+        only: :dev},
+      {:mix_elvis,
+        github: "hippware/mix_elvis",
+        branch: "master",
+        runtime: false,
+        only: :dev},
+      {:mix_eunit,
+        github: "hippware/mix_eunit",
+        branch: "working",
+        only: :test},
+      {:mix_ct,
+        github: "hippware/mix_ct",
+        branch: "master",
+        only: :test},
+      {:exref,
+        github: "hippware/exref",
+        branch: "master"},
+      {:escalus,
+        github: "hippware/escalus",
+        branch: "working",
+        only: :test},
 
-      ## runtime dependencies (included in release, not needed to build)
-      {:recon,         "~> 2.3", override: true},
-      {:eper,          "~> 0.94.0"},
-      {:binpp,         "~> 1.1"},
-      {:pretty_errors, github: "eproxus/pretty_errors",   branch: "master", manager: :rebar},
-
-      ## build dependencies (not included in release)
-      {:distillery,    "~> 0.10.1"},
-      {:edown,         "~> 0.8.1", override: true},
-      # erlando's app file is b0rked so we need to override the dep here.
-      {:erlando, ~r//, github: "rabbitmq/erlando",        branch: "master", override: true},
-      {:fun_chain,     github: "sasa1977/fun_chain",      branch: "master", manager: :rebar3},
-
-      ## testing dependencies (not included in release)
-      {:meck,          "~> 0.8.4", override: true},
-      {:espec,         "~> 1.0", only: :test},
-      {:dogma,         "~> 0.1.7", only: :dev},
-      {:credo,         "~> 0.4.11", only: :dev},
-      {:ex_guard,      "~> 1.1", only: :dev},
-      {:reprise,       "~> 0.5.0", only: :dev},
-      {:dialyxir,      github: "jeremyjh/dialyxir",       branch: "develop", only: :dev},
-      {:mix_elvis,     github: "hippware/mix_elvis",      branch: "master", only: :dev},
-      {:mix_eunit,     github: "hippware/mix_eunit",      branch: "working", only: :test},
-      {:mix_ct,        github: "hippware/mix_ct",         branch: "master", only: :test},
-      {:exref,         github: "hippware/exref",          branch: "master"},
-      {:proper,        github: "manopapad/proper",        tag: "v1.2", override: true},
-      {:hamcrest,      github: "basho/hamcrest-erlang",   tag: "0.3.0-basho", override: true},
-      {:escalus,       github: "esl/escalus",             tag: "3.0.0", override: true, only: :test}
+      # Overrides
+      # These are transitive dependencies that need to be overriden to build
+      # correctly. They are not used directly by Wocky.
+      {:uuid,   "~> 1.6.0", override: true, hex: :uuid_erl},
+      {:edown,  "~> 0.8.1", override: true, runtime: false},
+      {:folsom, "~> 0.8.3", override: true},
+      {:syslog,
+        github: "Vagabond/erlang-syslog",
+        branch: "master",
+        override: true,
+        manager: :rebar3},
+      {:riak_pb,
+        github: "basho/riak_pb",
+        tag: "2.2.0.2",
+        override: true,
+        runtime: false,
+        manager: :rebar},
+      {:mochijson2, ~r//,
+        github: "bjnortier/mochijson2",
+        branch: "master",
+        override: true},
+      {:usec, ~r//,
+        github: "esl/usec",
+        branch: "master",
+        override: true},
+      {:cuesport, ~r//,
+        github: "esl/cuesport",
+        branch: "master",
+        override: true},
+      {:proper,
+        github: "manopapad/proper",
+        tag: "v1.2",
+        runtime: false,
+        override: true},
+      {:hamcrest,
+        github: "basho/hamcrest-erlang",
+        tag: "0.3.0-basho",
+        runtime: false,
+        override: true},
+      {:wsecli, ~r//,
+        github: "esl/wsecli",
+        branch: "master",
+        override: true,
+        only: :test}
     ]
   end
 
   defp aliases do
     [
-      deps: ["deps.get", "deps.compile goldrush lager", "compile"],
+      prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: "elvis",
       'db.dump.test': "db.dump",
       'db.load.test': "db.load",

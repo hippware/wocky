@@ -26,25 +26,22 @@ defmodule Wocky.Location do
 
   @doc """
   Process a location change event for a user. The processing happens
-  asynchronously and the function always returns `:ok`.
+  asynchronously by default and the function always returns `:ok`.
   """
-  def user_location_changed(user, location, async \\ true)
-
   @spec user_location_changed(Ejabberd.jid, location_tuple, boolean) :: :ok
-  def user_location_changed(jid, {lat, lon, accuracy}, async) do
+  def user_location_changed(jid, {lat, lon, accuracy}, async \\ true) do
     location = %Location{lat: lat, lon: lon, accuracy: accuracy}
     user = User.from_jid(jid)
 
-    user_location_changed(user, location, async)
+    do_user_location_changed(user, location, async)
   end
 
-  @spec user_location_changed(User.t, Location.t, boolean) :: :ok
-  def user_location_changed(user, location, true) do
+  defp do_user_location_changed(user, location, true) do
     {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
     {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
     :ok
   end
-  def user_location_changed(user, location, false) do
+  defp do_user_location_changed(user, location, false) do
     check_for_bot_events(user, location)
     update_bot_locations(user, location)
     :ok
