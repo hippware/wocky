@@ -82,7 +82,7 @@ defmodule Wocky.Mixfile do
        # them to automatically start. We assume that ejabberd will start them
        # if necessary.
        :alarms, :cache_tab, :cuesport, :fusco, :jiffy, :lager_syslog,
-       :p1_utils, :poolboy, :recon, :redo, :riakc, :usec, :xmerl
+       :p1_utils, :pa, :poolboy, :recon, :redo, :riakc, :usec, :xmerl
      ],
      mod: {:wocky_app, []},
      env: [
