@@ -70,19 +70,13 @@ defmodule Wocky.Mixfile do
   def application do
     [description: 'JabberWocky XMPP Server',
      extra_applications: [
-       :crypto, :ssl, :logger, :plug, :runtime_tools, :cowboy, :poison
+       :crypto, :ssl, :logger, :plug, :runtime_tools, :cowboy, :poison,
+       :partial
      ],
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :schemata, :ejabberd,
-
-       # ejabberd dependencies that aren't listed in ejabberd.app
-       # Some of these aren't used with our configuration, so we don't want
-       # them to automatically start. We assume that ejabberd will start them
-       # if necessary.
-       :alarms, :cache_tab, :cuesport, :fusco, :jiffy, :lager_syslog,
-       :p1_utils, :pa, :poolboy, :recon, :redo, :riakc, :usec, :xmerl
+       :schemata, :ejabberd
      ],
      mod: {:wocky_app, []},
      env: [
@@ -142,7 +136,7 @@ defmodule Wocky.Mixfile do
       {:reprise,              "~> 0.5.0",  only: :dev},
 
       {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},
-      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-test"},
+      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working"},
       {:schemata,   github: "hippware/schemata",     branch: "master"},
       {:ex_machina, github: "thoughtbot/ex_machina", branch: "master"},
       {:ossp_uuid,

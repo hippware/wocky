@@ -18,7 +18,6 @@ config :distillery,
     :mix_elvis,
     :mix_eunit,
     :mustache,
-    :pa,
     :parse_trans,
     :proper
   ]
