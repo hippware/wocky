@@ -59,6 +59,9 @@ test_get() ->
       ]},
       { "gets not_found for non-existent items", [
         ?_assertEqual(not_found, get(?ALICE, ?LOCAL_CONTEXT, <<"non-item">>))
+      ]},
+      { "gets all items in a very large set", [
+        ?_assertEqual(250, length(get(?BOB, ?LOCAL_CONTEXT)))
       ]}
     ]}.
 
@@ -120,6 +123,6 @@ test_current_version() ->
     { "current_version", [
       { "gets the newest version timestamp", [
         ?_assertEqual(?HS_V_3, current_version(?ALICE, ?LOCAL_CONTEXT)),
-        ?_assertEqual(not_found, current_version(?BOB, ?LOCAL_CONTEXT))
+        ?_assertEqual(not_found, current_version(?CAROL, ?LOCAL_CONTEXT))
       ]}
     ]}.

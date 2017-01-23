@@ -122,4 +122,6 @@
 -define(HS_V_2, <<"6a39d1be-a09d-11e6-adaa-583a00000762">>).
 -define(HS_V_3, <<"7099d8c4-a09d-11e6-adaa-583a00000762">>).
 
+-define(BOB_HS_ITEM_COUNT, 250).
+
 -endif.

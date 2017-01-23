@@ -29,6 +29,7 @@
 
 all() -> [
           get,
+          get_first,
           publish,
           delete,
           auto_publish_chat,
@@ -90,6 +91,17 @@ get(Config) ->
         % Bob's own stream is empty
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Bob, Bob),
         check_hs_result(Stanza2, 0, 0, false)
+      end).
+
+get_first(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        Stanza = expect_iq_success_u(
+                   get_hs_stanza(#rsm_in{direction = before, max = 1}),
+                   Alice, Alice),
+        [Item] = check_hs_result(Stanza, 1),
+        ?assertEqual(?HS_V_3, Item#item.version),
+        test_helper:check_attr(<<"version">>, ?HS_V_3, Stanza)
       end).
 
 publish(Config) ->

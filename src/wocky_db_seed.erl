@@ -246,13 +246,22 @@ seed_data(bot_item, _Server) ->
        updated => ?ITEM_UPDATE_TIME+1, stanza => ?ITEM_STANZA2,
        image => false}];
 seed_data(home_stream, Server) ->
-    UserBase = #{user => ?ALICE, server => Server},
-    [UserBase#{id => ?BOT, version => ?HS_V_1, from_id => ?BOT_B_JID,
-               stanza => ?BOT_UPDATE_STANZA, deleted => false},
-     UserBase#{id => ?ITEM, version => ?HS_V_2, from_id => ?BOT_B_JID,
-               stanza => ?ITEM_STANZA, deleted => false},
-     UserBase#{id => ?ITEM2, version => ?HS_V_3, from_id => ?BOT_B_JID,
-               stanza => ?ITEM_STANZA2, deleted => false}];
+    Alice = #{user => ?ALICE, server => Server},
+    [Alice#{id => ?BOT, version => ?HS_V_1, from_id => ?BOT_B_JID,
+            stanza => ?BOT_UPDATE_STANZA, deleted => false},
+     Alice#{id => ?ITEM, version => ?HS_V_2, from_id => ?BOT_B_JID,
+            stanza => ?ITEM_STANZA, deleted => false},
+     Alice#{id => ?ITEM2, version => ?HS_V_3, from_id => ?BOT_B_JID,
+            stanza => ?ITEM_STANZA2, deleted => false} |
+     [#{user => ?BOB, server => Server,
+        id => ossp_uuid:make(v1, text),
+        version => ossp_uuid:make(v1, text),
+        from_id => ?BOT_B_JID,
+        deleted => false,
+        stanza => ?BOT_UPDATE_STANZA
+       } ||
+      _ <- lists:seq(1, ?BOB_HS_ITEM_COUNT)]
+    ];
 seed_data(_, _) ->
     [].
 
