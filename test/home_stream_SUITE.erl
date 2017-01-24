@@ -80,16 +80,16 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 
 get(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
         check_hs_result(Stanza, 3),
 
-        % Bob can't see Alice's home stream
-        expect_iq_error_u(get_hs_stanza(), Bob, Alice),
+        % Carol can't see Alice's home stream
+        expect_iq_error_u(get_hs_stanza(), Carol, Alice),
 
-        % Bob's own stream is empty
-        Stanza2 = expect_iq_success_u(get_hs_stanza(), Bob, Bob),
+        % Carol's own stream is empty
+        Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
         check_hs_result(Stanza2, 0, 0, false)
       end).
 
@@ -170,8 +170,8 @@ subscribe(Config) ->
       end).
 
 subscribe_version(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
                                            [hs_query_el(?HS_V_2)])),
@@ -181,12 +181,12 @@ subscribe_version(Config) ->
                   escalus:assert(is_message, escalus:wait_for_stanza(Alice))
           end, lists:seq(1, 5)),
 
-        %% Bob should get nothing from his own HS (since it's empty) nor from
+        %% Carol should get nothing from her own HS (since it's empty) nor from
         %% Alice's (since it's not his)
-        escalus:send(Bob,
-            escalus_stanza:presence_direct(hs_node(?BOB), <<"available">>,
+        escalus:send(Carol,
+            escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
                                            [hs_query_el(?HS_V_2)])),
-        escalus:send(Bob,
+        escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
                                            [hs_query_el(?HS_V_2)])),
 
@@ -196,7 +196,7 @@ subscribe_version(Config) ->
                             escalus:wait_for_stanzas(Alice, 2)),
         timer:sleep(500),
 
-        ensure_all_clean([Alice, Bob])
+        ensure_all_clean([Alice, Carol])
       end).
 
 unsubscribe(Config) ->
@@ -240,20 +240,20 @@ auto_publish_bot(Config) ->
 
         test_helper:subscribe(Tim, Alice),
 
-        check_home_stream_sizes(0, [Bob]),
+        check_home_stream_sizes(?BOB_HS_ITEM_COUNT, [Bob], false),
 
         Stanza = escalus_stanza:to(share_bot_stanza(), ?BOB_B_JID),
         escalus_client:send(Alice, Stanza),
         timer:sleep(400),
-        check_home_stream_sizes(1, [Bob]),
+        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
 
         escalus_client:send(Alice, Stanza),
         timer:sleep(400),
-        check_home_stream_sizes(1, [Bob]),
+        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
-        check_home_stream_sizes(1, [Bob]),
+        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
         check_home_stream_sizes(0, [Carol, Tim]),
 
         clear_home_streams(),
@@ -287,7 +287,7 @@ auto_publish_bot_item(Config) ->
           publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
           Alice),
 
-        check_home_stream_sizes(2, [Bob])
+        check_home_stream_sizes(2, [Bob], false)
 
       end).
 %%--------------------------------------------------------------------
@@ -346,13 +346,15 @@ set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
 
 check_home_stream_sizes(ExpectedSize, Clients) ->
+    check_home_stream_sizes(ExpectedSize, Clients, true).
+check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
     lists:foreach(
       fun(Client) ->
               S = expect_iq_success_u(get_hs_stanza(), Client, Client),
               I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
-              ExpectedSize =:= 0 orelse
+              ExpectedSize =:= 0 orelse not CheckLastContent orelse
               escalus:assert(test_helper:is_bot_action(?BOT, _),
-                             hd((hd(I))#item.stanzas))
+                             hd((lists:last(I))#item.stanzas))
       end, Clients).
 
 clear_home_streams() ->

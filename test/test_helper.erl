@@ -477,7 +477,7 @@ hs_node(User) ->
       jid:make(User, ?LOCAL_CONTEXT, <<"home_stream">>)).
 
 get_hs_stanza() ->
-    get_hs_stanza(#rsm_in{max = 200}).
+    get_hs_stanza(#rsm_in{max = 500}).
 
 get_hs_stanza(RSM = #rsm_in{}) ->
     test_helper:iq_get(?NS_PUBLISHING,
