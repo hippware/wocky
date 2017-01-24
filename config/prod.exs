@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :wocky,
+  wocky_env: 'prod'
+
 config :mnesia,
   dir: 'data/mnesia'
 
@@ -7,7 +10,7 @@ config :lager,
   log_root: 'log'
 
 config :exometer,
-  mongooseim_report_interval: 300000, ## 5 minutes
+  mongooseim_report_interval: 300000, # 5 minutes
   report: [
     {:reporters, [
       {:exometer_report_cloudwatch, [

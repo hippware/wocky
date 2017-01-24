@@ -17,8 +17,10 @@
 
 
 -spec start(string()) -> ok.
-start(Env) ->
+start(InstName) ->
     ok = ensure_loaded(wocky),
+    [Inst, Env] = sting:tokens(InstName, "."),
+    ok = application:set_env(wocky, wocky_inst, Inst),
     ok = application:set_env(wocky, wocky_env, Env),
     start().
 
@@ -82,10 +84,10 @@ start(_StartType, _StartArgs) ->
     Minimal = get_minimal_mode(),
     ok = maybe_change_loglevel(Minimal),
 
-    {ok, Env} = set_wocky_env(),
+    {ok, Inst} = set_wocky_inst(),
 
     {ok, CfgDir} = application:get_env(wocky, config_dir),
-    CfgPath = filename:join(CfgDir, Env ++ ".cfg"),
+    CfgPath = filename:join(CfgDir, Inst ++ ".cfg"),
     {ok, CfgTerms} = file:consult(CfgPath),
 
     ok = ensure_loaded(schemata),
@@ -95,7 +97,7 @@ start(_StartType, _StartArgs) ->
 
     ok = cache_server_names(CfgTerms),
 
-    ok = maybe_enable_notifications(Env),
+    ok = maybe_enable_notifications(Inst),
     ok = 'Elixir.Wocky.LocationApi':start(),
 
     ok = ensure_loaded(ejabberd),
@@ -112,19 +114,44 @@ stop(_State) ->
 %%% Internal functions
 %%%===================================================================
 
-set_wocky_env() ->
-    Env = case os:getenv("WOCKY_ENV") of
-              false ->
-                  {ok, Value} = application:get_env(wocky, wocky_env),
-                  Value;
+set_wocky_inst() ->
+    Env = get_wocky_env(),
+    Inst = get_wocky_inst(),
+    InstName = lists:flatten([Inst, ".", Env]),
 
-              Value ->
-                  Value
-          end,
-    ok = lager:info("Wocky ~s starting in the '~s' environment.",
-                    [version(), Env]),
+    ok = lager:info("Wocky instance ~s starting with version ~s.",
+                    [InstName, version()]),
+
     ok = application:set_env(wocky, wocky_env, Env),
-    {ok, Env}.
+    ok = application:set_env(wocky, wocky_inst, Inst),
+    ok = application:set_env(wocky, instance_name, InstName),
+    {ok, InstName}.
+
+get_wocky_env() ->
+    case os:getenv("WOCKY_ENV") of
+        false ->
+            case os:getenv("MIX_ENV") of
+                false ->
+                    {ok, Value} = application:get_env(wocky, wocky_env),
+                    Value;
+
+                Value ->
+                    Value
+            end;
+
+        Value ->
+            Value
+    end.
+
+get_wocky_inst() ->
+    case os:getenv("WOCKY_INST") of
+        false ->
+            {ok, Value} = application:get_env(wocky, wocky_inst),
+            Value;
+
+        Value ->
+            Value
+    end.
 
 get_minimal_mode() ->
     case os:getenv("WOCKY_MINIMAL") of
@@ -164,9 +191,9 @@ cache_server_names(CfgTerms) ->
     BinServers = lists:map(fun (S) -> iolist_to_binary(S) end, Servers),
     application:set_env(wocky, server_names, BinServers).
 
-maybe_enable_notifications(Env) ->
-    {ok, Envs} = application:get_env(wocky, notification_enabled_envs),
-    case lists:member(Env, Envs) of
+maybe_enable_notifications(InstName) ->
+    {ok, Insts} = application:get_env(wocky, notification_enabled_instances),
+    case lists:member(InstName, Insts) of
         true ->
             ok = lager:info("Notifications enabled"),
             application:set_env(wocky, notification_handler,
