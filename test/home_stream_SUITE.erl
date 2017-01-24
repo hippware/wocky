@@ -23,6 +23,8 @@
                       check_hs_result/2, check_hs_result/4,
                       hs_query_el/1, hs_node/1]).
 
+-define(NS_TEST, <<"test-item-ns">>).
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -38,7 +40,8 @@ all() -> [
           unsubscribe,
           get_item,
           auto_publish_bot,
-          auto_publish_bot_item
+          auto_publish_bot_item,
+          no_auto_publish_pep_item
          ].
 
 suite() ->
@@ -290,6 +293,27 @@ auto_publish_bot_item(Config) ->
         check_home_stream_sizes(2, [Bob], false)
 
       end).
+
+no_auto_publish_pep_item(Config) ->
+    mod_wocky_pep:register_handler(?NS_TEST, whitelist, ?MODULE),
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        clear_home_streams(),
+        check_home_stream_sizes(0, [Alice]),
+
+        Stanza = escalus_pubsub_stanza:publish(Alice, <<"test_item_id">>,
+                                               pub_item(), <<"123">>,
+                                               {pep, pub_node()}),
+        escalus:send(Alice, Stanza),
+
+        Received = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_message, is_iq_result], Received),
+
+        check_home_stream_sizes(0, [Alice])
+
+      end),
+    mod_wocky_pep:unregister_handler(?NS_TEST, whitelist, ?MODULE).
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -359,3 +383,16 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
 
 clear_home_streams() ->
     wocky_db:truncate(?LOCAL_CONTEXT, home_stream).
+
+pub_item() ->
+    #xmlel{name = <<"pep-test-item">>,
+           attrs = [{<<"xmlns">>, ?NS_TEST}]}.
+
+pub_node() -> ?NS_TEST.
+
+%%--------------------------------------------------------------------
+%% Identity PEP hook
+%%--------------------------------------------------------------------
+
+handle_pep(_From, Element) ->
+    Element.

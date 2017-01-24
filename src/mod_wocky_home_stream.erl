@@ -165,6 +165,8 @@ check_publish_non_bot(From, Stanza) ->
     case {EventNS, BotNode} of
         {?NS_BOT_EVENT, _} when BotNode =/= <<>> ->
             {ok, {drop, bot_event_id(From, BotNode)}};
+        {?NS_PUBSUB_EVENT, _} ->
+            {error, dont_publish};
         _ ->
             {ok, {keep, chat_id(From)}}
     end.
