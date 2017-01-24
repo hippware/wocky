@@ -80,7 +80,7 @@ defmodule Wocky.Mixfile do
      ],
      mod: {:wocky_app, []},
      env: [
-       wocky_env: 'dev',
+       wocky_inst: 'local',
        config_dir: 'etc',
        francus_chunk_size: 1048576, # 1MB
        keyspace_prefix: 'wocky_test_',
@@ -94,7 +94,7 @@ defmodule Wocky.Mixfile do
          staging: 'dev_wocky_bots',
          us1:     'prod_wocky_bots'
        ],
-       notification_enabled_envs: ['staging', 'us1'],
+       notification_enabled_instances: ['staging.prod', 'us1.prod'],
        notification_handler: Wocky.Notification.NullHandler,
        reserved_handles: [
          "root",

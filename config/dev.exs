@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :wocky,
+  wocky_env: 'dev'
+
 config :schemata,
   cluster: [
     username: 'cassandra',
