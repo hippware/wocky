@@ -19,7 +19,7 @@
 -spec start(string()) -> ok.
 start(InstName) ->
     ok = ensure_loaded(wocky),
-    [Inst, Env] = sting:tokens(InstName, "."),
+    [Inst, Env] = string:tokens(InstName, "."),
     ok = application:set_env(wocky, wocky_inst, Inst),
     ok = application:set_env(wocky, wocky_env, Env),
     start().
