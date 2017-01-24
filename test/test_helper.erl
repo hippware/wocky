@@ -477,12 +477,15 @@ hs_node(User) ->
       jid:make(User, ?LOCAL_CONTEXT, <<"home_stream">>)).
 
 get_hs_stanza() ->
+    get_hs_stanza(#rsm_in{max = 500}).
+
+get_hs_stanza(RSM = #rsm_in{}) ->
     test_helper:iq_get(?NS_PUBLISHING,
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [rsm_elem(#rsm_in{max = 200})]}).
+                              children = [rsm_elem(RSM)]});
 
-get_hs_stanza(ID) ->
+get_hs_stanza(ID) when is_binary(ID) ->
     test_helper:iq_get(?NS_PUBLISHING,
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],

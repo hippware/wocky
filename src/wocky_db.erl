@@ -54,7 +54,7 @@
 
 %% Query API
 -export([query/4, batch_query/3, multi_query/3, multi_query/4, rows/1,
-         single_result/1, fetch_more/1]).
+         all_rows/1, single_result/1, fetch_more/1]).
 
 %% Utility API
 -export([create_id/0, is_valid_id/1, timestamp_to_string/1,
@@ -353,12 +353,32 @@ multi_query(Context, QueryVals, Consistency) ->
 
 %% @doc Extracts rows from a query result
 %%
-%% Returns a list of rows. Each row is a property list of column name, value
+%% Returns a list of rows. Each row is a map list of column name, value
 %% pairs.
+%%
+%% NOTE: the number of rows returned may be limited by cqerl's internal
+%% per-retrieval limit of 100. To get all rows you can use all_rows/1.
 %%
 -spec rows(result()) -> rows().
 rows(Result) ->
     ?result:all_rows(Result).
+
+%% @doc Fetch all rows from a mult-row query
+%%
+%% Returns the full set of rows from a query, fetching multiple pages if
+%% required.
+%%
+%% USE WITH CARE: This function has no upper bound on the number of results
+%% it attempts to fetch.
+%%
+-spec all_rows(result()) -> rows().
+all_rows(Result) ->
+    all_rows({ok, Result}, []).
+
+all_rows(no_more_results, Acc) -> Acc;
+all_rows({ok, ResultData}, Acc) ->
+    all_rows(fetch_more(ResultData),
+             Acc ++ rows(ResultData)).
 
 %% Extracts the value of the first column of the first row from a query result
 -spec single_result(result()) -> ?result:value() | not_found.
@@ -382,7 +402,6 @@ single_row(Result) ->
 -spec fetch_more(result()) -> {ok, result()} | no_more_results.
 fetch_more(Result) ->
     ?result:fetch_more(Result).
-
 
 %%====================================================================
 %% Utility API

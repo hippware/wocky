@@ -579,14 +579,8 @@ maybe_add(_, undefined) -> undefined;
 maybe_add(A, B) -> A + B.
 
 run_paging_query(Host, Query, Values) ->
-    Result = wocky_db:query(Host, Query, Values, quorum),
-    continue_paging_query(Result, []).
-
-continue_paging_query(no_more_results, Acc) -> Acc;
-continue_paging_query({ok, Result}, Acc) ->
-    Rows = wocky_db:rows(Result),
-    NextResult = wocky_db:fetch_more(Result),
-    continue_paging_query(NextResult, Acc ++ Rows).
+    {ok, Result} = wocky_db:query(Host, Query, Values, quorum),
+    wocky_db:all_rows(Result).
 
 
 -ifdef(TEST).

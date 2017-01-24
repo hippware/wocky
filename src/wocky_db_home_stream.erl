@@ -51,10 +51,12 @@ delete(User, Server, ID) ->
 %% Get all items
 -spec get(ejabberd:luser(), ejabberd:lserver()) -> [map()].
 get(User, Server) ->
-    Results = wocky_db:select(Server, home_stream_chronology,
-                              [id, version, from_id, stanza, deleted],
-                              #{user => User, server => Server}),
-    [normalise_item(I) || I <- Results].
+    Statement = <<"SELECT id, version, from_id, stanza, deleted FROM "
+                  "home_stream_chronology WHERE user = ? AND server = ?">>,
+    {ok, R} = wocky_db:query(Server, Statement,
+                             #{user => User, server => Server},
+                             quorum),
+    [normalise_item(I) || I <- wocky_db:all_rows(R)].
 
 %% Get a single item by ID
 -spec get(ejabberd:luser(), ejabberd:lserver(), wocky_db:id()) ->
@@ -67,7 +69,7 @@ get(User, Server, ID) ->
 get_catchup(User, Server, Version) ->
     Statement = <<"SELECT id, version, from_id, stanza, deleted FROM "
                   "home_stream_chronology WHERE user = ? AND server = ? "
-                  "AND version > ? LIMIT 100">>,
+                  "AND version > ?">>,
     {ok, R} = wocky_db:query(Server,
                              Statement,
                              #{user => User,
