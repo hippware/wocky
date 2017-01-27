@@ -94,7 +94,6 @@ defmodule Wocky.Mixfile do
          staging: 'dev_wocky_bots',
          us1:     'prod_wocky_bots'
        ],
-       notification_enabled_instances: ['staging.prod', 'us1.prod'],
        notification_handler: Wocky.Notification.NullHandler,
        reserved_handles: [
          "root",
