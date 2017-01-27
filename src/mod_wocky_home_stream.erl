@@ -29,10 +29,8 @@
 -define(NODE_CLEANUP_PRIORITY, 80).
 
 -record(hs_subscription,
-        {user     :: ejabberd:luser() | '_',
-         server   :: ejabberd:lserver() | '_',
-         resource :: ejabberd:lresource() | '_',
-         node     :: node() | '_'
+        {jid  :: ejabberd:simple_jid() | {binary(), binary(), '_'} | '_',
+         node :: node() | '_'
         }).
 
 %%%===================================================================
@@ -41,7 +39,7 @@
 
 start(Host, _Opts) ->
     mnesia:create_table(
-      hs_subscription, [{ram_copies, [node()]}, {type, bag},
+      hs_subscription, [{ram_copies, [node()]}, {type, set},
                         {attributes, record_info(fields, hs_subscription)}]),
     mnesia:add_table_copy(hs_subscription, node(), ram_copies),
 
@@ -107,10 +105,7 @@ unavailable(User) ->
     ok.
 
 make_record(User) ->
-    {U, S, R} = jid:to_lower(User),
-    #hs_subscription{user = U,
-                     server = S,
-                     resource = R,
+    #hs_subscription{jid = jid:to_lower(User),
                      node = node()}.
 
 %%%===================================================================
@@ -226,13 +221,12 @@ maybe_send_catchup(UserJID = #jid{luser = User, lserver = Server}, Version) ->
 
 send_notifications(User, Item) ->
     {U, S} = jid:to_lus(User),
-    Subscriptions = mnesia:dirty_match_object(#hs_subscription{user = U,
-                                                               server = S,
-                                                               _ = '_'}),
+    Subscriptions = mnesia:dirty_match_object(
+                      #hs_subscription{jid = {U, S, '_'}, _ = '_'}),
     lists:foreach(send_notification(_, Item), Subscriptions).
 
-send_notification(#hs_subscription{user = U, server = S, resource = R}, Item) ->
-    wocky_publishing_handler:send_notification(jid:make(U, S, R),
+send_notification(#hs_subscription{jid = BareJID}, Item) ->
+    wocky_publishing_handler:send_notification(jid:make(BareJID),
                                                ?HOME_STREAM_NODE,
                                                Item).
 
