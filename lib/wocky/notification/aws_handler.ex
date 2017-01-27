@@ -9,18 +9,13 @@ defmodule Wocky.Notification.AWSHandler do
 
   @behaviour :wocky_notification_handler
 
-  @application_arn [
-    apple: "arn:aws:sns:us-east-1:773488857071:app/APNS/tinyrobot_prod",
-    google: ""
-  ]
-
   @message_limit 512
 
-  def register(user, platform, device_id) do
+  def register(user, _platform, device_id) do
     user_data = user |> :jid.from_binary |> :jid.to_bare |> :jid.to_binary
 
-    @application_arn
-    |> Keyword.fetch!(String.to_atom(platform))
+    :application_arn
+    |> :wocky_app.get_config("")
     |> SNS.create_platform_endpoint(device_id, user_data)
     |> ExAws.request
     |> handle_register_result
