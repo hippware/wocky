@@ -254,6 +254,7 @@ presence_type(#xmlel{attrs = Attrs}) ->
 
 notification_stanza(Node, ItemStanza) ->
     #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
            children = [#xmlel{name = <<"notification">>,
                               attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
                                        {<<"node">>, Node}],
