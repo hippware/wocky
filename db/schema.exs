@@ -306,19 +306,13 @@ defmodule Schemata.Schemas.Wocky do
       columns: [
         user:       :text,      # User ID (userpart of JID)
         server:     :text,      # Server (domainpart of JID)
-        device_id:  :text,      # Device ID
         resource:   :text,      # Resource (resourcepart of JID)
         platform:   :text,      # Client OS platform (apple or google)
+        device_id:  :text,      # Device ID
         endpoint:   :text,      # SNS application endpoint ARN
         created_at: :timestamp  # When the device was registered
       ],
-      primary_key: [:user, :server, :device_id]
-    ]
-
-    view :device_resource, [
-      from: :device,
-      columns: :all,
-      primary_key: [:user, :server, :resource, :device_id]
+      primary_key: [:user, :server, :resource]
     ]
 
     # mod_privacy settings for users

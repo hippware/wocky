@@ -46,9 +46,9 @@ enable(JID, Platform, DeviceId) ->
             CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
             ok = wocky_db:insert(LServer, device, #{user => LUser,
                                                     server => LServer,
-                                                    device_id => DeviceId,
                                                     resource => LResource,
                                                     platform => Platform,
+                                                    device_id => DeviceId,
                                                     endpoint => Endpoint,
                                                     created_at => CreatedAt}),
             ok;
@@ -58,17 +58,11 @@ enable(JID, Platform, DeviceId) ->
     end.
 
 -spec disable(ejabberd:jid()) -> ok.
-disable(#jid{luser = LUser, lserver = LServer} = JID) ->
-    case lookup_resource(JID, device_id) of
-        [DeviceId] ->
-            ok = wocky_db:delete(LServer, device, all,
-                                 #{user => LUser,
-                                   server => LServer,
-                                   device_id => DeviceId});
-
-        _Else ->
-            ok
-    end.
+disable(JID) ->
+    #jid{luser = LUser, lserver = LServer, lresource = LResource} = JID,
+    ok = wocky_db:delete(LServer, device, all, #{user => LUser,
+                                                 server => LServer,
+                                                 resource => LResource}).
 
 -spec delete(binary(), binary()) -> ok.
 delete(LUser, LServer) ->
@@ -96,7 +90,7 @@ notify_bot_event(To = #jid{luser = ToUser, lserver = ToServer},
 notify_resource_bot_event(To, Resource, UserHandle,
                           BotTitle, Event, Result) ->
     FullTo = jid:replace_resource(To, Resource),
-    case lookup_resource(FullTo, endpoint) of
+    case lookup_endpoint(FullTo) of
         [Endpoint] ->
             Message = case Event of
                           enter ->
@@ -126,30 +120,18 @@ lookup_all_endpoints(#jid{luser = LUser, lserver = LServer}) ->
     wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
                                                         server => LServer}).
 
-lookup_resource(#jid{luser = LUser, lserver = LServer,
-                     lresource = LResource}, Field) ->
-    wocky_db:select_column(LServer, device_resource, Field,
-                           #{user => LUser,
-                             server => LServer,
-                             resource => LResource}).
+lookup_endpoint(#jid{luser = LUser, lserver = LServer,
+                     lresource = LResource}) ->
+    wocky_db:select_column(LServer, device, endpoint, #{user => LUser,
+                                                        server => LServer,
+                                                        resource => LResource}).
 
 do_notify_all([], _JID, _Message) ->
     ok;
-do_notify_all([Endpoint | Rest], #jid{luser = User} = JID, Message) ->
-    %% TODO: This is an ugly kludge to handle the problem of users receiving
-    %% multiple push notifications for a single event. The code will stop
-    %% sending notifications once one is delivered, but this isn't really what
-    %% we want for the final product. It works for now since we expect users
-    %% to have a single device in the beta.
+do_notify_all([Endpoint | Rest], JID, Message) ->
     case do_notify_message(Endpoint, JID, Message) of
-        ok -> ok;
-        {error, Reason} ->
-            ok = lager:debug("Failed to send push notification to ~s: ~p",
-                             [User, Reason]),
-            case Rest of
-                [] -> {error, Reason};
-                _ -> do_notify_all(Rest, JID, Message)
-            end
+        {error, _} = E -> E;
+        ok -> do_notify_all(Rest, JID, Message)
     end.
 
 do_notify_message(Endpoint, #jid{user = User, server = Server}, Message) ->
