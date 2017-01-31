@@ -76,9 +76,9 @@ defmodule ModWockyNotificationsSpec do
 
           it "should insert the device_id and endpoint into the database" do
             row = WockyDb.select_row(@local_context, :device, :all,
-              %{user: @user, server: @server, device_id: @test_id})
+              %{user: @user, server: @server, resource: @resource})
 
-            expect row.resource |> to(eq @resource)
+            expect row.device_id |> to(eq @test_id)
             expect row.endpoint |> to(eq @test_id)
           end
         end
@@ -103,7 +103,7 @@ defmodule ModWockyNotificationsSpec do
 
           it "should not insert anything into the database" do
             row = WockyDb.select_row(@local_context, :device, :all,
-              %{user: @user, server: @server, device_id: @test_id})
+              %{user: @user, server: @server, resource: @resource})
 
             expect row |> to(eq :not_found)
           end
@@ -123,7 +123,7 @@ defmodule ModWockyNotificationsSpec do
 
         it "should remove the device_id and endpoint from the database" do
           row = WockyDb.select_row(@local_context, :device, :all,
-            %{user: @user, server: @server, device_id: @test_id})
+            %{user: @user, server: @server, resource: @resource})
 
           expect row |> to(eq :not_found)
         end
@@ -202,7 +202,7 @@ defmodule ModWockyNotificationsSpec do
 
       it "should remove all user records" do
         row = WockyDb.select_row(@local_context, :device, :all,
-          %{user: @user, server: @server, device_id: @test_id})
+          %{user: @user, server: @server, resource: @resource})
 
         expect row |> to(eq :not_found)
       end
