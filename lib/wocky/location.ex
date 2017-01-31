@@ -57,7 +57,7 @@ defmodule Wocky.Location do
   end
 
   defp update_bot_locations(user, location) do
-    if Application.fetch_env!(:wocky, :enable_follow_me) do
+    if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
       user
       |> owned_bots_with_follow_me
       |> Enum.each(&Bot.set_location(&1, location))
@@ -171,9 +171,11 @@ defmodule Wocky.Location do
     jid = User.to_jid_string(user)
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
-    owner_jid = Ejabberd.make_jid!(bot.owner)
-    :ok = send_notification(owner_jid, user, bot, event)
-    :ok = send_push_notification(owner_jid, user, bot, event)
+    if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do
+      owner_jid = Ejabberd.make_jid!(bot.owner)
+      :ok = send_notification(owner_jid, user, bot, event)
+      :ok = send_push_notification(owner_jid, user, bot, event)
+    end
   end
 
   defp send_push_notification(owner_jid, user, bot, event) do
