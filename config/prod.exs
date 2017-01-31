@@ -18,7 +18,7 @@ config :exometer,
         {:secret_access_key, 'CLOUDWATCH_SECRET_KEY'},
         {:region, 'CLOUDWATCH_REGION'},
         {:namespace, 'App/Wocky'},
-        {:dimensions, [{'InstanceId', 'CLOUDWATCH_ID'}]}
+        {:dimensions, [{'InstanceId', 'CLOUDWATCH_INSTANCE'}]}
       ]}
     ]}
   ]
