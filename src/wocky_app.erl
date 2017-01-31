@@ -97,7 +97,7 @@ start(_StartType, _StartArgs) ->
 
     ok = cache_server_names(CfgTerms),
 
-    ok = maybe_enable_notifications(),
+    ok = maybe_enable_notifications(CfgTerms),
     ok = 'Elixir.Wocky.LocationApi':start(),
 
     ok = ensure_loaded(ejabberd),
@@ -191,8 +191,8 @@ cache_server_names(CfgTerms) ->
     BinServers = lists:map(fun (S) -> iolist_to_binary(S) end, Servers),
     application:set_env(wocky, server_names, BinServers).
 
-maybe_enable_notifications() ->
-    case get_config(notifications_enabled, false) of
+maybe_enable_notifications(CfgTerms) ->
+    case proplists:get_value(notifications_enabled, CfgTerms, false) of
         true ->
             ok = lager:info("Notifications enabled"),
             application:set_env(wocky, notification_handler,
