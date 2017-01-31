@@ -272,6 +272,7 @@ subscribe_temporary(Config) ->
         %% Tim currently can't subscribe because he's in Alice's
         %% __blocked__ group (and therefore is not a friend):
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(400),
 
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
@@ -284,6 +285,7 @@ subscribe_temporary(Config) ->
         check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(400),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
@@ -301,6 +303,7 @@ unsubscribe_temporary(Config) ->
         check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(400),
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
@@ -318,6 +321,7 @@ temporary_unsubscribe_roster_change(Config) ->
     escalus:story([everyone_is_friends | Config], [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(400),
 
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
