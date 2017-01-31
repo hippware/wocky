@@ -122,7 +122,7 @@ defmodule Wocky.Mixfile do
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
       {:dogma,                "~> 0.1.13", only: :dev, runtime: false},
-      {:credo,                "~> 0.5.3",  only: :dev, runtime: false},
+      {:credo,                "~> 0.6.0",  only: :dev, runtime: false},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5.0",  only: :dev},
 
