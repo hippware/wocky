@@ -52,8 +52,7 @@ stop(Host) ->
 sm_register_connection_hook(SID, JID, Info) ->
     ?honeybadger:context(#{'connection.JID'  => jid:to_binary(JID),
                            'connection.SID'  => to_string(SID),
-                           'connection.info' => to_string(Info)}),
-    ok.
+                           'connection.info' => to_string(Info)}).
 
 %%%===================================================================
 %%% Incoming packet handler
@@ -65,9 +64,9 @@ sm_register_connection_hook(SID, JID, Info) ->
 
 %% Packets to the bot - dropped if they were processed here.
 filter_local_packet_hook(P = {From, To, Packet}) ->
-    ?honeybadger:context(#{'last_packet.from'   => jid:to_binary(From),
-                           'last_packet.to'     => jid:to_binary(To),
-                           'last_packet.packet' => to_string(Packet)}),
+    ok = ?honeybadger:context(#{'last_packet.from'   => jid:to_binary(From),
+                                'last_packet.to'     => jid:to_binary(To),
+                                'last_packet.packet' => to_string(Packet)}),
     P;
 filter_local_packet_hook(drop) -> drop.
 
@@ -78,17 +77,16 @@ filter_local_packet_hook(drop) -> drop.
 -spec iq_handler_crash_hook(ejabberd:jid(), ejabberd:jid(), ejabberd:iq(),
                             any()) -> ok.
 iq_handler_crash_hook(From, To, IQ, _Exception) ->
-    _ = ?honeybadger:notify(
-           <<"IQ handler crash">>,
-           #{'iq_crash.from'       => jid:to_binary(From),
-             'iq_crash.to'         => jid:to_binary(To),
-             'iq_crash.iq.id'      => IQ#iq.id,
-             'iq_crash.iq.type'    => atom_to_binary(IQ#iq.type, utf8),
-             'iq_crash.iq.ns'      => IQ#iq.xmlns,
-             'iq_crash.iq.payload' => exml:to_binary(IQ#iq.sub_el)
-            },
-           erlang:get_stacktrace()),
-    ok.
+    ?honeybadger:notify(
+       <<"IQ handler crash">>,
+       #{'iq_crash.from'       => jid:to_binary(From),
+         'iq_crash.to'         => jid:to_binary(To),
+         'iq_crash.iq.id'      => IQ#iq.id,
+         'iq_crash.iq.type'    => atom_to_binary(IQ#iq.type, utf8),
+         'iq_crash.iq.ns'      => IQ#iq.xmlns,
+         'iq_crash.iq.payload' => exml:to_binary(IQ#iq.sub_el)
+        },
+       erlang:get_stacktrace()).
 
 %%%===================================================================
 %%% Private helpers

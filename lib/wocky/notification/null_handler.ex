@@ -8,6 +8,7 @@ defmodule Wocky.Notification.NullHandler do
 
   @behaviour :wocky_notification_handler
 
+  @spec register(binary, binary, binary) :: {:ok, binary}
   def register(user, platform, device) do
     :ok = Logger.info("""
       Notification registration request for #{user}'s device '#{device}' \
@@ -16,6 +17,7 @@ defmodule Wocky.Notification.NullHandler do
     {:ok, device}
   end
 
+  @spec notify_message(binary, binary, binary) :: :ok
   def notify_message(endpoint, from, body) do
     :ok = Logger.info("""
       Message notification to '#{endpoint}' from #{from} with body: #{body}\
@@ -23,6 +25,7 @@ defmodule Wocky.Notification.NullHandler do
     :ok
   end
 
+  @spec notify(binary, binary) :: :ok
   def notify(endpoint, message) do
     :ok = Logger.info("""
       Generic notification to '#{endpoint}' with message: #{message}\

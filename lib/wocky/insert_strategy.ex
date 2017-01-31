@@ -4,6 +4,9 @@ defmodule Wocky.InsertStrategy do
   use Exref, ignore: [function_name: 0]
   use ExMachina.Strategy, function_name: :insert
 
+  @typep record :: %{__struct__: atom}
+
+  @spec handle_insert(record, any) :: record | none
   def handle_insert(%{__struct__: module} = record, opts) do
     exports = module.__info__(:functions)
     case Keyword.get(exports, :insert) do

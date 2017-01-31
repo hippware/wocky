@@ -9,19 +9,27 @@ defmodule Wocky.Honeybadger do
 
   use Exref, ignore: [notify: 1, notify: 2, notify: 3, context: 1]
 
+  @spec notify(binary) :: :ok
   def notify(exception) do
-    Honeybadger.notify(exception)
+    {:ok, _} = Honeybadger.notify(exception)
+    :ok
   end
 
+  @spec notify(binary, map) :: :ok
   def notify(exception, metadata) do
-    Honeybadger.notify(exception, metadata)
+    {:ok, _} = Honeybadger.notify(exception, metadata)
+    :ok
   end
 
+  @spec notify(binary, map, list) :: :ok
   def notify(exception, metadata, stacktrace) do
-    Honeybadger.notify(exception, metadata, stacktrace)
+    {:ok, _} = Honeybadger.notify(exception, metadata, stacktrace)
+    :ok
   end
 
+  @spec context(map) :: :ok
   def context(dict) do
-    Honeybadger.context(dict)
+    _ = Honeybadger.context(dict)
+    :ok
   end
 end

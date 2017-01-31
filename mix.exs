@@ -122,7 +122,7 @@ defmodule Wocky.Mixfile do
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
       {:dogma,                "~> 0.1.13", only: :dev, runtime: false},
-      {:credo,                "~> 0.5.3",  only: :dev, runtime: false},
+      {:credo,                "~> 0.6.0",  only: :dev, runtime: false},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5.0",  only: :dev},
 
@@ -231,7 +231,7 @@ defmodule Wocky.Mixfile do
   defp aliases do
     [
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
-      lint: "elvis",
+      lint: ["elvis", "credo", "dogma"],
       'db.dump.test': "db.dump",
       'db.load.test': "db.load",
       'db.reset.test': "db.reset",
