@@ -20,9 +20,9 @@ defmodule Wocky.Index do
   defstart start_link do
     user_indexes  = Application.fetch_env!(:wocky, :algolia_user_index_name)
     bot_indexes   = Application.fetch_env!(:wocky, :algolia_bot_index_name)
-    current_env   = Application.fetch_env!(:wocky, :wocky_env)
+    env_string    = Application.fetch_env!(:wocky, :wocky_env)
 
-    current_env = :erlang.list_to_atom(current_env)
+    current_env = :erlang.list_to_atom(env_string)
     user_index = Keyword.get(user_indexes, current_env)
     bot_index = Keyword.get(bot_indexes, current_env)
 
