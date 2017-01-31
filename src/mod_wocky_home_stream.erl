@@ -157,13 +157,23 @@ check_publish_non_bot(From, Stanza) ->
                                       {attr, <<"xmlns">>}]),
     BotNode = xml:get_path_s(Stanza, [{elem, <<"event">>},
                                       {attr, <<"node">>}]),
-    case {EventNS, BotNode} of
-        {?NS_BOT_EVENT, _} when BotNode =/= <<>> ->
+    case EventNS of
+        ?NS_BOT_EVENT when BotNode =/= <<>> ->
             {ok, {drop, bot_event_id(From, BotNode)}};
-        {?NS_PUBSUB_EVENT, _} ->
+        ?NS_PUBSUB_EVENT ->
             {error, dont_publish};
         _ ->
-            {ok, {keep, chat_id(From)}}
+            check_publish_non_event(From, Stanza)
+    end.
+
+%% Very important: Filter out publishing notification events -
+%% the home stream generates these and we don't want to get caught in a loop.
+check_publish_non_event(From, Stanza) ->
+    NotificationNS = xml:get_path_s(Stanza, [{elem, <<"notification">>},
+                                             {attr, <<"xmlns">>}]),
+    case NotificationNS of
+        ?NS_PUBLISHING -> {error, dont_publish};
+        _  -> {ok, {keep, chat_id(From)}}
     end.
 
 check_publish_bot(From, BotEl) ->
