@@ -81,11 +81,13 @@ defmodule Wocky.Index do
     reply(:ok)
   end
 
+  @lint {Credo.Check.Readability.Specs, false}
   def handle_call(_, _, state) do
     {:reply, {:error, :bad_call}, state}
   end
 
 
+  @lint {Credo.Check.Readability.Specs, false}
   def handle_cast(_msg, %State{enabled: false} = state) do
     {:noreply, state}
   end
@@ -110,7 +112,12 @@ defmodule Wocky.Index do
     noreply()
   end
 
+  @lint {Credo.Check.Readability.Specs, false}
   def handle_cast(msg, state) do
+    # This is a little bit of hackery to stop the Elixir compiler from
+    # complaining about the @lint attributes.
+    _ = @lint
+
     :ok = Logger.warn("Unknown cast '#{inspect(msg)}'")
     {:noreply, state}
   end

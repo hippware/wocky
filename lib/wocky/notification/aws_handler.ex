@@ -11,6 +11,7 @@ defmodule Wocky.Notification.AWSHandler do
 
   @message_limit 512
 
+  @spec register(binary, binary, binary) :: {:ok, binary} | {:error, any}
   def register(user, _platform, device_id) do
     user_data = user |> :jid.from_binary |> :jid.to_bare |> :jid.to_binary
 
@@ -35,6 +36,7 @@ defmodule Wocky.Notification.AWSHandler do
     {:ok, arn}
   end
 
+  @spec notify(binary, binary) :: :ok | {:error, any}
   def notify(endpoint, message) do
     message
     |> maybe_truncate_message
@@ -44,6 +46,7 @@ defmodule Wocky.Notification.AWSHandler do
     |> handle_notify_result
   end
 
+  @spec notify_message(binary, binary, binary) :: :ok | {:error, any}
   def notify_message(endpoint, from, body) do
     body
     |> format_message(from)

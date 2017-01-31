@@ -29,22 +29,31 @@ defmodule Wocky.LocationApi do
     :ok
   end
 
+  @spec init({atom, atom}, :cowboy_req.req, any) ::
+    {:upgrade, :protocol, :cowboy_rest}
   def init(_transport, _req, []) do
     {:upgrade, :protocol, :cowboy_rest}
   end
 
+  @spec rest_init(:cowboy_req.req, any) :: {:ok, :cowboy_req.req, any}
   def rest_init(req, _opts) do
     {:ok, req, %State{}}
   end
 
+  @spec allowed_methods(:cowboy_req.req, any) ::
+    {[binary], :cowboy_req.req, any}
   def allowed_methods(req, state) do
     {["POST"], req, state}
   end
 
+  @spec allow_missing_post(:cowboy_req.req, any) ::
+    {boolean, :cowboy_req.req, any}
   def allow_missing_post(req, state) do
     {true, req, state}
   end
 
+  @spec content_types_accepted(:cowboy_req.req, any) ::
+    {[{binary, atom}], :cowboy_req.req, any}
   def content_types_accepted(req, state) do
     {[{"application/json", :from_json}], req, state}
   end
@@ -55,6 +64,8 @@ defmodule Wocky.LocationApi do
     :cowboy_req.set_resp_body(error_text, req)
   end
 
+  @spec resource_exists(:cowboy_req.req, any) ::
+    {boolean, :cowboy_req.req, any}
   def resource_exists(req, state) do
     {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
     case User.get(user_id) do
@@ -66,6 +77,8 @@ defmodule Wocky.LocationApi do
     end
   end
 
+  @spec malformed_request(:cowboy_req.req, any) ::
+    {boolean, :cowboy_req.req, any}
   def malformed_request(req, state) do
     case req |> read_and_parse_body do
       {:ok, coords, resource} ->
@@ -121,6 +134,8 @@ defmodule Wocky.LocationApi do
   end
   defp has_required_keys(_, _), do: false
 
+  @spec is_authorized(:cowboy_req.req, any) ::
+    {true | {false, binary}, :cowboy_req.req, any}
   def is_authorized(req, state) do
     {auth_user, _} = :cowboy_req.header("x-auth-user", req, nil)
     {auth_token, _} = :cowboy_req.header("x-auth-token", req, nil)
@@ -139,6 +154,8 @@ defmodule Wocky.LocationApi do
   defp check_token(user, token),
     do: :wocky_db_user.check_token(user, :wocky_app.server, token)
 
+  @spec from_json(:cowboy_req.req, any) ::
+    {boolean, :cowboy_req.req, any}
   def from_json(req, %State{user: user, coords: coords} = state) do
     location = {coords.latitude, coords.longitude, coords.accuracy}
     user = User.to_jid(%User{user | resource: state.resource})

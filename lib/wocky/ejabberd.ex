@@ -31,6 +31,8 @@ defmodule Wocky.Ejabberd do
     end
   end
 
+  @spec make_jid!(:ejabberd.luser, :ejabberd.lserver, :ejabberd.lresource) ::
+    jid
   def make_jid!(user, server, resource \\ "") do
     case :jid.make(user, server, resource) do
       :error -> raise ArgumentError
@@ -38,6 +40,7 @@ defmodule Wocky.Ejabberd do
     end
   end
 
+  @spec make_jid!(binary) :: jid
   def make_jid!(jidstring) do
     case :jid.from_binary(jidstring) do
       :error -> raise ArgumentError
