@@ -86,6 +86,14 @@ defmodule Wocky.Mixfile do
        keyspace_prefix: 'wocky_test_',
        location_api_port: 8080,
        enable_follow_me: false,
+       algolia_user_index_name: [
+         staging: 'dev_wocky_users',
+         us1:     'prod_wocky_users'
+       ],
+       algolia_bot_index_name: [
+         staging: 'dev_wocky_bots',
+         us1:     'prod_wocky_bots'
+       ],
        notification_handler: Wocky.Notification.NullHandler,
        reserved_handles: [
          "root",
