@@ -26,21 +26,24 @@ all() ->
 
 groups() ->
     [
-     {francus, all_cases()},
-     {s3, s3_cases()}
+     {francus, common_cases() ++ francus_cases()},
+     {s3, common_cases() ++ s3_cases()}
     ].
 
-all_cases() ->
-    s3_cases() ++ other_cases().
-
-s3_cases() ->
+common_cases() ->
     [
      file_updown_story,
      avatar_updown_story,
      message_media_updown_story
     ].
 
-other_cases() ->
+s3_cases() ->
+    [
+     update_metadata
+    ].
+
+
+francus_cases() ->
     [
      multipart_story,
      file_down_bob_story,
@@ -77,20 +80,15 @@ end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
 init_per_group(s3, Config) ->
-    restart_with_backend(s3),
+    test_helper:set_tros_backend(s3),
     Config;
 
 init_per_group(francus, Config) ->
-    restart_with_backend(francus),
+    test_helper:set_tros_backend(francus),
     Config.
 
 end_per_group(_Group, Config) ->
     Config.
-
-restart_with_backend(Backend) ->
-    mod_wocky_tros:stop(?LOCAL_CONTEXT),
-    mod_wocky_tros:start(?LOCAL_CONTEXT, [{backend, Backend},
-                                          {scheme, "http://"}]).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -220,6 +218,29 @@ wrong_type_story(Config) ->
         {QueryStanza, ResultStanza} = common_upload_request(1204, Alice),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         do_upload(ResultStanza, <<"datadata">>, 415, "image/jpeg", false)
+    end).
+
+update_metadata(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+        ImageData = crypto:strong_rand_bytes(100),
+        FileSize = byte_size(ImageData),
+
+        %%% Upload
+        {QueryStanza, ResultStanza} =
+        common_upload_request(FileSize, Alice, <<"">>),
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+        FileID = do_upload(ResultStanza, ImageData, 200, false),
+
+        download_success(Alice, FileID, ImageData),
+        %%% Bob's download should fail because he lacks access
+        download_failure(Bob, FileID),
+
+        %%% Now let's modify the metadata
+        mod_wocky_tros_s3:update_access(?LOCAL_CONTEXT, FileID, <<"all">>),
+
+        %%% Now both Alice and Bob should have access
+        download_success(Alice, FileID, ImageData),
+        download_success(Bob, FileID, ImageData)
     end).
 
 
@@ -368,3 +389,6 @@ download_failure(Client, FileID) ->
     FinalDLStanza = add_to_from(DLQueryStanza, Client),
     DLResultStanza = escalus:send_and_wait(Client, FinalDLStanza),
     escalus:assert(is_iq_error, DLResultStanza).
+
+get_opt(Opt) ->
+    list_to_binary(ejabberd_config:get_local_option(Opt)).

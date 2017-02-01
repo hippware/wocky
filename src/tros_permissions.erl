@@ -3,7 +3,10 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--export([can_download/3]).
+-export([
+         can_download/3,
+         access_rules_from_list/1
+        ]).
 
 -include_lib("ejabberd/include/jlib.hrl").
 
