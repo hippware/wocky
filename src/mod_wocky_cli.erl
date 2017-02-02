@@ -19,11 +19,15 @@
 %% commands
 -export([befriend/2,
          tros_migrate/0,
-         tros_cleanup/0]).
+         tros_cleanup/0,
+         fix_bot_images/0
+        ]).
 
 -ignore_xref([befriend/2,
               tros_migrate/0,
-              tros_cleanup/0]).
+              tros_cleanup/0,
+              fix_bot_images/0
+             ]).
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -88,7 +92,17 @@ commands() ->
                                     {resource, binary},
                                     {start, binary},
                                     {duration, binary}],
+                        result   = {result, rescode}},
+
+     %% Fix bot image permissions
+     #ejabberd_commands{name     = fix_bot_images,
+                        desc     = "Fix invalid permissions on bot images",
+                        longdesc = "Parameters: none\n",
+                        module   = ?MODULE,
+                        function = fix_bot_images,
+                        args     = [],
                         result   = {result, rescode}}
+
     ].
 
 %%%===================================================================
@@ -223,3 +237,66 @@ cleanup_file(File, Count, Total) ->
     francus:delete(wocky_app:server(), File),
     print_progress(Count, Total),
     Count+1.
+
+
+%%%===================================================================
+%%% Command implementation - fix_bot_images
+%%%===================================================================
+
+fix_bot_images() ->
+    Q = "SELECT * FROM bot",
+    Result = wocky_db:query(shared, Q, #{}, one),
+    fix_bot_images(Result).
+
+fix_bot_images(no_more_results) -> ok;
+fix_bot_images({ok, Result}) ->
+    lists:foreach(fix_images_on_bot(_), wocky_db:rows(Result)),
+    fix_bot_images(wocky_db:fetch_more(Result)).
+
+fix_images_on_bot(Bot = #{id          := ID,
+                          description := Description,
+                          server      := Server,
+                          image       := BotImage}) ->
+    io:fwrite("Bot: ~p - ~s\n", [binary_to_list(ID), Description]),
+    Images = wocky_db_bot:item_images(Server, ID),
+    ImageURLs = [I || #{image := I} <- Images],
+    ValidImages = [I || I <- [BotImage | ImageURLs], I =/= <<>>],
+    fix_images(Bot, ValidImages).
+
+fix_images(Bot, Images) ->
+    io:fwrite("~B images found...\n", [length(Images)]),
+    Fixed = lists:foldl(maybe_fix_image(Bot, _, _), 0, Images),
+    io:fwrite("~B needed fixing.\n", [Fixed]).
+
+maybe_fix_image(#{id := BotID, server := BotServer}, Image, Acc) ->
+    BotJID = wocky_bot_util:make_jid(BotServer, BotID),
+    R = do([error_m ||
+            {Server, FileID} <- tros:parse_url(Image),
+            Metadata         <- tros:get_metadata(Server, FileID),
+            Access           <- tros:get_access(Metadata),
+            check_access(BotJID, Access),
+            fix_access(BotJID, Server, FileID)
+           ]),
+    case R of
+        ok ->
+            io:fwrite("Fixed: ~p\n", [Image]),
+            Acc + 1;
+        {error, _} ->
+            Acc
+    end.
+
+check_access(BotJID, Access) ->
+    Rules = tros_permissions:access_rules_from_list(Access),
+    case lists:any(is_bot_redirect(BotJID, _), Rules) of
+        true -> {error, no_change_needed};
+        false -> ok
+    end.
+
+is_bot_redirect(BotJID, {redirect, JID}) ->
+    jid:are_equal(BotJID, JID);
+is_bot_redirect(_BotJID, _) ->
+    false.
+
+fix_access(BotJID, Server, FileID) ->
+    NewAccess = <<"redirect:", (jid:to_binary(BotJID))/binary>>,
+    mod_wocky_tros_s3:update_access(Server, FileID, NewAccess).

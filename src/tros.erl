@@ -9,6 +9,7 @@
          get_metadata/2,
          get_access/1,
          get_owner/1,
+         get_content_type/1,
 
          delete/2,
          keep/2
@@ -50,6 +51,10 @@ get_owner(Metadata) ->
 -spec get_access(metadata()) -> result(binary()).
 get_access(Metadata) ->
     get_file_info(get_access, [Metadata]).
+
+-spec get_content_type(metadata()) -> result(binary()).
+get_content_type(Metadata) ->
+    get_file_info(get_content_type, [Metadata]).
 
 -spec get_metadata(ejabberd:lserver(), file_id()) -> result(metadata()).
 get_metadata(Server, FileID) ->

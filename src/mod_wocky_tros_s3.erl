@@ -9,6 +9,7 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky_db_seed.hrl").
 
+-define(ex_aws, 'Elixir.ExAws').
 -define(s3, 'Elixir.ExAws.S3').
 -define(AWSConfig, 'Elixir.ExAws.Config').
 
@@ -20,16 +21,26 @@
          make_upload_response/6,
          get_owner/1,
          get_access/1,
+         get_content_type/1,
          get_metadata/2,
          delete/2,
-         keep/2
+         keep/2,
+         update_access/3
         ]).
+
+-ifdef(TEST).
+-export([
+         path/2,
+         encrypt_access/1
+        ]).
+-endif.
 
 -define(ACCESS_KEY, <<65,127,89,223,29,138,212,158,163,0,171,96,6,190,
                       214,139,12,88,145,144,119,205,102,224,217,243,192,
                       85,164,247,57,127>>).
 -define(PAD_TO, 128).
 -define(AMZ_META_PREFIX, "x-amz-meta-").
+-define(AMZ_CONTENT_TYPE, <<"content-type">>).
 -define(LINK_EXPIRY, 60 * 10). % 10 minute expiry on upload/download links.
 
 -ignore_xref([get_access/2]).
@@ -55,20 +66,20 @@ make_download_response(_FromJID, #jid{lserver = LServer},
 
 make_upload_response(FromJID = #jid{luser = Owner}, #jid{lserver = LServer},
                      FileID, _Size, Access,
-                     Metadata = #{<<"content-type">> := CT}) ->
+                     Metadata = #{?AMZ_CONTENT_TYPE := CT}) ->
     FileJID = jid:replace_resource(FromJID, <<"file/", FileID/binary>>),
     ReferenceURL = <<"tros:", (jid:to_binary(FileJID))/binary>>,
-    EncryptedAccess = wocky_crypto:encrypt(?ACCESS_KEY, Access, ?PAD_TO),
+    EncryptedAccess = encrypt_access(Access),
     AmzMetadata =
     Metadata#{<<?AMZ_META_PREFIX, "access">>
-                 => base64:encode(EncryptedAccess),
+                 => EncryptedAccess,
               <<?AMZ_META_PREFIX, "owner">>
                  => Owner
              },
     URLParams = maps:to_list(AmzMetadata),
     RespFields = resp_fields(LServer, FileID, put, URLParams, ReferenceURL),
 
-    Headers = [{<<"content-type">>, CT}],
+    Headers = [{?AMZ_CONTENT_TYPE, CT}],
     {Headers, RespFields}.
 
 resp_fields(LServer, FileID, Method, URLParams, ReferenceURL) ->
@@ -121,6 +132,9 @@ get_access(Metadata) ->
         Error ->
             Error
     end.
+
+get_content_type(Metadata) ->
+    get_metadata_item(Metadata, ?AMZ_CONTENT_TYPE).
 
 get_metadata_item(Metadata, Item) ->
     case maps:get(Item, Metadata, undefined) of
@@ -176,3 +190,31 @@ get_metadata_items(Headers) ->
     List = [{list_to_binary(K), list_to_binary(http_uri:decode(V))}
             || {K, V} <- Headers],
     {ok, maps:from_list(List)}.
+
+encrypt_access(Access) ->
+    base64:encode(wocky_crypto:encrypt(?ACCESS_KEY, Access, ?PAD_TO)).
+
+update_access(Server, FileID, NewAccess) ->
+    do([error_m ||
+        Metadata    <- tros:get_metadata(Server, FileID),
+        Owner       <- tros:get_owner(Metadata),
+        ContentType <- tros:get_content_type(Metadata),
+        NewMetadata <- new_metadata(NewAccess, Owner),
+        Request <- {ok, ?s3:put_object_copy(
+                           bucket(),
+                           path(Server, FileID),
+                           bucket(),
+                           path(Server, FileID),
+                           [{metadata_directive, 'REPLACE'},
+                            {content_type, ContentType},
+                            {meta, NewMetadata}])},
+        ?ex_aws:request(Request,
+                        [{access_key_id, access_key_id()},
+                         {secret_access_key, secret_key()}]),
+        ok
+       ]).
+
+new_metadata(NewAccess, Owner) ->
+    {ok,
+     [{<<"access">>, encrypt_access(NewAccess)},
+      {<<"owner">>, Owner}]}.

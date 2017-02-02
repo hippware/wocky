@@ -19,6 +19,8 @@
 
 -callback get_access(metadata()) -> result(binary()).
 
+-callback get_content_type(metadata()) -> result(binary()).
+
 -callback get_metadata(ejabberd:lserver(), tros:file_id()) ->
     result(metadata()).
 
