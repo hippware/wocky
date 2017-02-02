@@ -80,11 +80,8 @@ mech_step(Creds, ClientIn) ->
             case ejabberd_auth:authorize(Request) of
                 {ok, Result} ->
                     {ok, Result};
-                {error, not_authorized} ->
-                    {error, <<"not-authorized">>, User};
-                {error, R} ->
-                    ok = ?DEBUG("authorize error: ~p", [R]),
-                    {error, <<"internal-error">>}
+                {error, _} ->
+                    {error, <<"not-authorized">>, User}
             end;
         _ ->
             {error, <<"bad-protocol">>}
