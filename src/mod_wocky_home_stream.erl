@@ -38,10 +38,10 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
-    mnesia:create_table(
-      hs_subscription, [{ram_copies, [node()]}, {type, set},
-                        {attributes, record_info(fields, hs_subscription)}]),
-    mnesia:add_table_copy(hs_subscription, node(), ram_copies),
+    wocky_mnesia:initialise_shared_ram_table(
+      hs_subscription,
+      [{type, set}],
+      record_info(fields, hs_subscription)),
 
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
     ejabberd_hooks:add(filter_local_packet, Host,
