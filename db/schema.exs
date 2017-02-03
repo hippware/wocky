@@ -115,6 +115,14 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: :id
     ]
 
+    table :pending_bot, [
+      columns: [
+        id:     :timeuuid,
+        owner:  :text
+      ],
+      primary_key: [:id, :owner]
+    ]
+
     view :user_bot, [ # MV for looking up bots by owner
       from: :bot,
       columns: [:owner, :id, :server, :follow_me, :follow_me_expiry],

@@ -77,6 +77,11 @@ handle_iq(From, To, IQ) ->
         {error, Error} -> wocky_util:make_error_iq_response(IQ, Error)
     end.
 
+% New ID
+handle_iq_type(From, _To, #iq{type = set,
+                              sub_el = #xmlel{name = <<"new-id">>}}) ->
+    handle_new_id(From);
+
 % Create
 handle_iq_type(From, _To, #iq{type = set,
                               sub_el = #xmlel{name = <<"create">>,
@@ -195,6 +200,14 @@ handle_iq_type(From, To, IQ = #iq{type = set,
 
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
+
+%%%===================================================================
+%%% Action - new-id
+%%%===================================================================
+
+handle_new_id(From) ->
+    ID = wocky_db_bot:new_id(From),
+    {ok, make_new_id_stanza(ID)}.
 
 %%%===================================================================
 %%% Action - create
@@ -736,7 +749,8 @@ required_fields() ->
      field(<<"radius">>,        int,    0)].
 
 optional_fields() ->
-    [field(<<"description">>,   string, <<>>),
+    [field(<<"id">>,            string, <<>>),
+     field(<<"description">>,   string, <<>>),
      field(<<"shortname">>,     string, <<>>),
      field(<<"image">>,         string, <<>>),
      field(<<"type">>,          string, <<>>),
@@ -745,7 +759,7 @@ optional_fields() ->
      field(<<"alerts">>,        int,    ?WOCKY_BOT_ALERT_DISABLED)].
 
 output_only_fields() ->
-    [field(<<"id">>,            string, <<>>),
+    [
      field(<<"server">>,        string, <<>>),
      field(<<"owner">>,         jid,    <<>>),
      field(<<"updated">>,       timestamp, <<>>),
@@ -760,8 +774,8 @@ field(Name, Type, Value) ->
 
 
 create(Owner, Server, Fields) ->
-    ID = wocky_db:create_id(),
     do([error_m ||
+        ID <- get_id(Owner, Fields),
         maybe_insert_name(ID, Fields),
         Fields2 <- add_defaults(Fields),
         Fields3 <- add_owner(Owner, Fields2),
@@ -770,6 +784,18 @@ create(Owner, Server, Fields) ->
         BotEl <- make_bot_el(Server, ID),
         {ok, {ID, BotEl}}
        ]).
+
+get_id(Owner, Fields) ->
+    case lists:keyfind(<<"id">>, #field.name, Fields) of
+        false -> {ok, wocky_db:create_id()};
+        #field{value = ID} -> check_id(Owner, ID)
+    end.
+
+check_id(Owner, ID) ->
+    case wocky_db_bot:is_preallocated_id(Owner, ID) of
+        true -> {ok, ID};
+        false -> {error, ?ERR_ITEM_NOT_FOUND}
+    end.
 
 maybe_insert_name(ID, Fields) when is_list(Fields) ->
     case lists:keyfind(<<"shortname">>, #field.name, Fields) of
@@ -946,6 +972,11 @@ make_ret_stanza(Fields) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Fields}.
+
+make_new_id_stanza(NewID) ->
+    #xmlel{name = <<"new-id">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = [#xmlcdata{content = NewID}]}.
 
 reply_not_allowed(Sender, Stanza) ->
     Err = jlib:make_error_reply(
