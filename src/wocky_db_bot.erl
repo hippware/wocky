@@ -8,7 +8,6 @@
          subscribed_bots/1,
          get_id_by_name/2,
          exists/2,
-         new_id/1,
          insert/2,
          insert_new_name/2,
          owner/2,
@@ -35,8 +34,7 @@
          unsubscribe_temporary/3,
          clear_temporary_subscriptions/1,
          add_share/3,
-         is_shared_to/2,
-         is_preallocated_id/2
+         is_shared_to/2
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
@@ -46,8 +44,6 @@
 -include("wocky_bot.hrl").
 -include("wocky_roster.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
-
--define(NEW_ID_TTL, 3600 * 24). % IDs expire after one day if unused
 
 -type shortname()           :: binary().
 -type affiliation_type()    :: none | spectator | owner.
@@ -99,13 +95,6 @@ exists(_Server, ID) ->
         not_found -> false;
         _ -> true
     end.
-
--spec new_id(ejabberd:jid()) -> wocky_db:id().
-new_id(#jid{luser = LUser}) ->
-    ID = wocky_db:create_id(),
-    wocky_db:insert(shared, pending_bot, #{id => ID, owner => LUser,
-                                           '[ttl]' => ?NEW_ID_TTL}),
-    ID.
 
 -spec insert(wocky_db:server(), map()) -> ok.
 insert(_Server, Fields) ->
@@ -349,12 +338,6 @@ is_shared_to(User, BotJID) ->
                     shared, bot_share, bot,
                     #{bot    => jid:to_binary(BotJID),
                       to_jid => jid:to_binary(jid:to_bare(User))}).
-
--spec is_preallocated_id(ejabberd:jid(), wocky_db:id()) -> boolean().
-is_preallocated_id(#jid{luser = LUser}, ID) ->
-    not_found =/= wocky_db:select_one(
-                    shared, pending_bot, id,
-                    #{owner => LUser, id => ID}).
 
 %%%===================================================================
 %%% Private helpers
