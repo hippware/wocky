@@ -117,7 +117,7 @@ defmodule Schemata.Schemas.Wocky do
 
     table :pending_bot, [
       columns: [
-        id:     :timeuuid,
+        id:     :text,
         owner:  :text
       ],
       primary_key: [:id, :owner]
