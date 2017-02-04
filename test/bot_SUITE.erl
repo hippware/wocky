@@ -161,8 +161,6 @@ new_id(Config) ->
         Result = expect_iq_success(new_id_stanza(), Alice),
         ID = xml:get_path_s(Result, [{elem, <<"new-id">>}, cdata]),
 
-        ct:log("ID: ~p\nResult: ~p", [ID, Result]),
-
         CreateFields = [{"id", "string", ID} |
                         lists:keydelete("shortname", 1, default_fields())],
         expect_iq_success(create_stanza(CreateFields), Alice),
