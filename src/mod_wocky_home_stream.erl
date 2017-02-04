@@ -141,7 +141,6 @@ check_user_present(#jid{luser = _}) -> ok.
 
 check_publish(From, Stanza) ->
     case xml:get_tag_attr(<<"type">>, Stanza) of
-        {value, <<"chat">>} -> {ok, {keep, chat_id(From)}};
         {value, <<"headline">>} -> check_publish_headline(From, Stanza);
         _ -> {error, dont_publish}
     end.
@@ -173,12 +172,12 @@ check_publish_non_event(From, Stanza) ->
                                              {attr, <<"xmlns">>}]),
     case NotificationNS of
         ?NS_PUBLISHING -> {error, dont_publish};
-        _  -> {ok, {keep, chat_id(From)}}
+        _  -> {ok, {keep, jid_message_id(From)}}
     end.
 
 check_publish_bot(From, BotEl) ->
     case wocky_bot_util:bot_packet_action(BotEl) of
-        {none, none}            -> {ok, {keep, chat_id(From)}};
+        {none, none}            -> {ok, {keep, jid_message_id(From)}};
         {JIDBin, show}          -> {ok, {drop, bot_id(JIDBin)}};
         {JIDBin, share}         -> {ok, {drop, bot_id(JIDBin)}};
         {_JIDBin, enter}        -> {ok, {drop, new_id()}};
@@ -255,5 +254,5 @@ jid_event_id(JIDBin, Event) ->
 bot_event_id(#jid{lserver = Server}, BotNode) ->
     jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
 
-chat_id(From) ->
+jid_message_id(From) ->
     jid:to_binary(jid:to_bare(From)).

@@ -34,7 +34,7 @@ all() -> [
           get_first,
           publish,
           delete,
-          auto_publish_chat,
+          no_auto_publish_chat,
           subscribe,
           subscribe_version,
           unsubscribe,
@@ -138,7 +138,7 @@ delete(Config) ->
         ?assertEqual({delete, <<"some_id">>}, lists:last(Items))
       end).
 
-auto_publish_chat(Config) ->
+no_auto_publish_chat(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         Stanza = escalus_stanza:chat_to(?ALICE_B_JID, <<"All your base">>),
@@ -146,8 +146,7 @@ auto_publish_chat(Config) ->
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        Items = check_hs_result(Stanza2, 5, 1, true),
-        escalus:assert(is_chat_message, hd((lists:last(Items))#item.stanzas))
+        check_hs_result(Stanza2, 4, 1, true)
       end).
 
 subscribe(Config) ->
@@ -160,12 +159,6 @@ subscribe(Config) ->
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item">>), Alice)),
         escalus:assert_many([is_iq_result, is_message],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        Stanza = escalus_stanza:chat_to(?ALICE_B_JID, <<"All your base">>),
-        escalus:send(Bob, Stanza),
-
-        escalus:assert_many([is_message, is_message],
                             escalus:wait_for_stanzas(Alice, 2)),
 
         timer:sleep(500),
@@ -182,7 +175,7 @@ subscribe_version(Config) ->
         lists:foreach(
           fun(_) ->
                   escalus:assert(is_message, escalus:wait_for_stanza(Alice))
-          end, lists:seq(1, 5)),
+          end, lists:seq(1, 4)),
 
         %% Carol should get nothing from her own HS (since it's empty) nor from
         %% Alice's (since it's not his)
