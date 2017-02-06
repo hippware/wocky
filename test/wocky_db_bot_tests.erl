@@ -523,6 +523,7 @@ new_bot() ->
       visibility => ?WOCKY_BOT_VIS_OWNER, affiliates => [?CAROL_B_JID],
       alerts => ?WOCKY_BOT_ALERT_ENABLED,
       image => <<>>, type => <<"killbot">>,
+      tags => ?BOT_TAGS,
       follow_me => false, follow_me_expiry => 0
      }.
 

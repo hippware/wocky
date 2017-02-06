@@ -96,6 +96,7 @@
 -define(BOT_TYPE, <<"LucyLiuBot">>).
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
+-define(BOT_TAGS, [<<"bot_tag_1">>, <<"bot_tag_2">>]).
 -define(BOT_RADIUS, 10000).
 -define(BOT_OWNER_ROSTER, [?BOB_B_JID, ?KAREN_B_JID]).
 -define(BOT_OWNER_ROSTER_VERSION, <<"999-4">>).

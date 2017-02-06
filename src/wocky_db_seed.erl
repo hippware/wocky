@@ -227,7 +227,7 @@ seed_data(bot, Server) ->
        lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
        address => ?BOT_ADDRESS, image => ?AVATAR_FILE, type => ?BOT_TYPE,
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
-       affiliates => [?BOB_B_JID],
+       affiliates => [?BOB_B_JID], tags => ?BOT_TAGS,
        alerts => ?WOCKY_BOT_ALERT_DISABLED,
        updated => now, follow_me => false, follow_me_expiry => 0
       }];

@@ -36,6 +36,7 @@
 -define(CREATE_RADIUS,      10).
 -define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
 -define(CREATE_TYPE,        <<"floatbot">>).
+-define(CREATE_TAGS,        [<<"tag1">>, <<"tag2">>]).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
 -define(CREATED_BOTS,       30).
@@ -1069,7 +1070,8 @@ default_fields() ->
      {"location",      "geoloc", ?CREATE_LOCATION},
      {"radius",        "int",    ?CREATE_RADIUS},
      {"image",         "string", ?CREATE_IMAGE},
-     {"type",          "string", ?CREATE_TYPE}
+     {"type",          "string", ?CREATE_TYPE},
+     {"tags",          "tags",   ?CREATE_TAGS}
     ].
 
 create_fields(Fields) ->
@@ -1082,10 +1084,13 @@ create_field({Name, "int", Value}) ->
 create_field({Name, "jid", Value}) ->
     create_field(Name, "jid", value_element(jid:to_binary(Value)));
 create_field({Name, "geoloc", Value}) ->
-    create_field(Name, "geoloc", geoloc_element(Value)).
+    create_field(Name, "geoloc", geoloc_element(Value));
+create_field({Name, "tags", Values}) ->
+    create_field(Name, "tags",
+                 [wocky_xml:cdata_el(<<"tag">>, V) || V <- Values]).
 
 value_element(Value) ->
-    #xmlel{name = <<"value">>, children = [#xmlcdata{content = Value}]}.
+    wocky_xml:cdata_el(<<"value">>, Value).
 
 geoloc_element({Lat, Lon}) ->
     #xmlel{name = <<"geoloc">>,
@@ -1097,11 +1102,13 @@ coordinate_element(Name, Val) ->
     #xmlel{name = Name,
            children = [#xmlcdata{content = float_to_binary(Val)}]}.
 
-create_field(Name, Type, Child) ->
+create_field(Name, Type, Children) when is_list(Children) ->
     #xmlel{name = <<"field">>,
            attrs = [{<<"var">>, list_to_binary(Name)},
                     {<<"type">>, list_to_binary(Type)}],
-           children = [Child]}.
+           children = Children};
+create_field(Name, Type, Child) ->
+    create_field(Name, Type, [Child]).
 
 expected_create_fields() ->
     [{"id",                 string, any},
@@ -1227,31 +1234,34 @@ has_field(Name, Type, Elements) ->
 
 has_field_val(Name, Type, Value, Elements) ->
     case find_field(Name, Type, Elements) of
-        #xmlel{name = <<"field">>, children = [ValueEl]} ->
-            check_value_el(Value, Type, ValueEl);
+        #xmlel{name = <<"field">>, children = ValueEls} ->
+            check_value_el(Value, Type, ValueEls);
         X ->
             ct:fail("find_field ~p ~p ~p returned ~p",
                     [Name, Type, Elements, X])
     end.
 
-check_value_el(Value, <<"geoloc">>, El = #xmlel{name = <<"geoloc">>}) ->
+check_value_el(Value, <<"geoloc">>, [El] = [#xmlel{name = <<"geoloc">>}]) ->
     check_geoloc_val(Value, El);
+check_value_el(Values, <<"tags">>, Els) ->
+    ExpectedEls = [wocky_xml:cdata_el(<<"tag">>, V) || V <- Values],
+    lists:sort(ExpectedEls) =:= liss:sort(Els);
 check_value_el(<<>>, Type,
-               #xmlel{name = <<"value">>,
-                      children = []})
+               [#xmlel{name = <<"value">>,
+                       children = []}])
     when Type =:= <<"string">> orelse Type =:= <<"jid">> ->
     true;
 check_value_el(Value, Type,
-               #xmlel{name = <<"value">>,
-                      children = [#xmlcdata{content = Value}]})
+               [#xmlel{name = <<"value">>,
+                       children = [#xmlcdata{content = Value}]}])
     when Type =:= <<"string">> orelse Type =:= <<"jid">> ->
     true;
 check_value_el(Value, <<"int">>,
-               #xmlel{name = <<"value">>,
-                      children = [#xmlcdata{content = InValue}]}) ->
+               [#xmlel{name = <<"value">>,
+                       children = [#xmlcdata{content = InValue}]}]) ->
     Value =:= binary_to_integer(InValue);
-check_value_el(Value, Type, Element) ->
-    ct:fail("check_value_el failed: ~p ~p ~p", [Value, Type, Element]).
+check_value_el(Value, Type, Elements) ->
+    ct:fail("check_value_el failed: ~p ~p ~p", [Value, Type, Elements]).
 
 check_geoloc_val({Lat, Lon}, #xmlel{name = <<"geoloc">>,
                                     attrs = Attrs,
