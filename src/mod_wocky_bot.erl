@@ -739,6 +739,7 @@ optional_fields() ->
     [field(<<"description">>,   string, <<>>),
      field(<<"shortname">>,     string, <<>>),
      field(<<"image">>,         string, <<>>),
+     field(<<"cover_image">>,   string, <<>>),
      field(<<"type">>,          string, <<>>),
      field(<<"address">>,       string, <<>>),
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
