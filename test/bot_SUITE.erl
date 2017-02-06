@@ -49,6 +49,7 @@
 all() ->
     [
      create,
+     new_id,
      retrieve,
      update,
      affiliations,
@@ -152,6 +153,22 @@ create(Config) ->
 
         % Fail due to shortname conflict if we try to create the same bot
         expect_iq_error(create_stanza(), Alice)
+      end).
+
+new_id(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        %% Get a new ID
+        Result = expect_iq_success(new_id_stanza(), Alice),
+        ID = xml:get_path_s(Result, [{elem, <<"new-id">>}, cdata]),
+
+        CreateFields = [{"id", "string", ID} |
+                        lists:keydelete("shortname", 1, default_fields())],
+        expect_iq_success(create_stanza(CreateFields), Alice),
+
+        FailedCreateFields = [{"id", "string", wocky_db:create_id()}
+                              | default_fields()],
+        expect_iq_error(create_stanza(FailedCreateFields), Alice)
       end).
 
 retrieve(Config) ->
@@ -1034,6 +1051,9 @@ geosearch(Config) ->
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
+
+new_id_stanza() ->
+    test_helper:iq_set(?NS_BOT, #xmlel{name = <<"new-id">>}).
 
 create_stanza() ->
     create_stanza(default_fields()).
