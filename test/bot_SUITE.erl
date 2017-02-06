@@ -35,6 +35,7 @@
 -define(CREATE_LOCATION,    {2.5, 1.6}).
 -define(CREATE_RADIUS,      10).
 -define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
+-define(CREATE_COVER_IMAGE, <<"tros:localhost/file/678999">>).
 -define(CREATE_TYPE,        <<"floatbot">>).
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
@@ -101,6 +102,7 @@ init_per_testcase(geosearch, Config) ->
                 fun (_Lat, _Lon) ->
                         {ok, [#{id => ?BOT, server => ?SERVER,
                                 title => ?BOT_TITLE, image => ?CREATE_IMAGE,
+                                cover_image => ?CREATE_COVER_IMAGE,
                                 lat => ?BOT_LAT, lon => ?BOT_LON,
                                 radius => ?BOT_RADIUS, distance => 8000}]}
                 end),
@@ -1049,6 +1051,7 @@ default_fields() ->
      {"location",      "geoloc", ?CREATE_LOCATION},
      {"radius",        "int",    ?CREATE_RADIUS},
      {"image",         "string", ?CREATE_IMAGE},
+     {"cover_image",   "string", ?CREATE_COVER_IMAGE},
      {"type",          "string", ?CREATE_TYPE}
     ].
 
@@ -1092,6 +1095,7 @@ expected_create_fields() ->
      {"description",        string, ?CREATE_DESCRIPTION},
      {"address",            string, ?CREATE_ADDRESS},
      {"image",              string, ?CREATE_IMAGE},
+     {"cover_image",        string, ?CREATE_COVER_IMAGE},
      {"type",               string, ?CREATE_TYPE},
      {"location",           geoloc, ?CREATE_LOCATION},
      {"radius",             int,    ?CREATE_RADIUS},
@@ -1114,6 +1118,7 @@ expected_retrieve_fields() ->
      {"description",        string, ?BOT_DESC},
      {"address",            string, ?BOT_ADDRESS},
      {"image",              string, ?AVATAR_FILE},
+     {"cover_image",        string, ?AVATAR_FILE2},
      {"type",               string, ?BOT_TYPE},
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
      {"radius",             int,    ?BOT_RADIUS},

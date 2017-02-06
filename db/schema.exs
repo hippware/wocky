@@ -96,6 +96,7 @@ defmodule Schemata.Schemas.Wocky do
         owner:            :text,     # Bot owner bare JID
         description:      :text,     # User-supplied description
         image:            :text,     # Bot graphical image
+        cover_image:      :text,     # Bot cover image
         type:             :text,     # Bot type (freeform string from
                                      #           server's perspective)
         address:          :text,     # Free-form string field describing bot's
