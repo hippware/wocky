@@ -31,12 +31,14 @@
 
 -type loc() :: {float(), float()}.
 
--type field_type() :: string | int | geoloc | jid | timestamp.
+-type field_type() :: string | int | geoloc | jid | timestamp | tags.
+
+-type tags() :: [binary()].
 
 -record(field, {
           name :: binary(),
           type :: field_type(),
-          value :: not_found | binary() | integer() | loc() | jid()
+          value :: not_found | binary() | integer() | loc() | jid() | tags()
          }).
 
 -define(PACKET_FILTER_PRIORITY, 40).
@@ -669,7 +671,10 @@ get_field_value(int, FieldEl) ->
     wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_integer/1);
 
 get_field_value(geoloc, FieldEl) ->
-    wocky_xml:act_on_subel(<<"geoloc">>, FieldEl, fun read_geoloc/1).
+    wocky_xml:act_on_subel(<<"geoloc">>, FieldEl, fun read_geoloc/1);
+
+get_field_value(tags, FieldEl) ->
+    wocky_xml:foldl_subels(FieldEl, [], fun read_tag/2).
 
 read_integer(Binary) ->
     case wocky_util:safe_bin_to_integer(Binary) of
@@ -692,6 +697,12 @@ read_geoloc(GeolocEl) ->
                  <<"lon">>, GeolocEl, fun read_float/1),
         {ok, {Lat, Lon}}
        ]).
+
+read_tag(#xmlel{name = <<"tag">>,
+                children = [#xmlcdata{content = Val}]}, Acc) ->
+    {ok, [Val | Acc]};
+read_tag(_Element, _Acc) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid tag">>)}.
 
 add_owner(Owner, Fields) ->
     {ok, [#field{name = <<"owner">>, type = jid, value = jid:to_bare(Owner)} |
@@ -742,11 +753,11 @@ optional_fields() ->
      field(<<"type">>,          string, <<>>),
      field(<<"address">>,       string, <<>>),
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
-     field(<<"alerts">>,        int,    ?WOCKY_BOT_ALERT_DISABLED)].
+     field(<<"alerts">>,        int,    ?WOCKY_BOT_ALERT_DISABLED),
+     field(<<"tags">>,          tags,   [])].
 
 output_only_fields() ->
-    [field(<<"id">>,            string, <<>>),
-     field(<<"server">>,        string, <<>>),
+    [field(<<"server">>,        string, <<>>),
      field(<<"owner">>,         jid,    <<>>),
      field(<<"updated">>,       timestamp, <<>>),
      field(<<"distance">>,      int,    0)].
@@ -886,7 +897,8 @@ to_field(Key, Val, Acc) ->
 make_field(Name, Type, Val)
   when Type =:= string orelse
        Type =:= int orelse
-       Type =:= timestamp ->
+       Type =:= timestamp orelse
+       Type =:= tags ->
     #field{name = Name, type = Type, value = Val};
 make_field(Name, jid, Val) when is_binary(Val) ->
     #field{name = Name, type = jid, value = safe_jid_from_binary(Val)};
@@ -902,7 +914,9 @@ encode_field(#field{name = N, type = int, value = V}, Acc) ->
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [geoloc_field(N, V) | Acc];
 encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
-    [field_element(N, timestamp, wocky_db:timestamp_to_string(V)) | Acc].
+    [field_element(N, timestamp, wocky_db:timestamp_to_string(V)) | Acc];
+encode_field(#field{name = N, type = tags, value = V}, Acc) ->
+    [tags_element(N, V) | Acc].
 
 make_jid(User) ->
     case jid:from_binary(User) of
@@ -923,8 +937,7 @@ field_element(Name, Type, Val) ->
            children = [value_element(Val)]}.
 
 value_element(Val) ->
-    #xmlel{name = <<"value">>,
-           children = [#xmlcdata{content = Val}]}.
+    wocky_xml:cdata_el(<<"value">>, Val).
 
 geoloc_field(Name, Val) ->
     #xmlel{name = <<"field">>,
@@ -935,12 +948,13 @@ geoloc_field(Name, Val) ->
 geoloc_element({Lat, Lon}) ->
     #xmlel{name = <<"geoloc">>,
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
-           children = [float_element(N, V) || {N, V} <- [{<<"lat">>, Lat},
-                                                         {<<"lon">>, Lon}]]}.
-
-float_element(Name, Val) ->
-    #xmlel{name = Name,
-           children = [#xmlcdata{content=wocky_util:coord_to_binary(Val)}]}.
+           children = [wocky_xml:cdata_el(N, wocky_util:coord_to_binary(V))
+                       || {N, V} <- [{<<"lat">>, Lat}, {<<"lon">>, Lon}]]}.
+tags_element(Name, Tags) ->
+    #xmlel{name = <<"tags">>,
+           attrs = [{<<"var">>, Name},
+                    {<<"type">>, <<"tags">>}],
+           children = [wocky_xml:cdata_el(<<"tag">>, T) || T <- Tags]}.
 
 make_ret_stanza(Fields) ->
     #xmlel{name = <<"bot">>,

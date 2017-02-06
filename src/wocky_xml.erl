@@ -11,6 +11,7 @@
          act_on_subel_cdata/3,
          get_subel/2,
          act_on_subel/3,
+         foldl_subels/3,
          check_namespace/2,
          check_attr/3,
          get_attr/2,
@@ -46,6 +47,19 @@ act_on_subel(TagName, Element, Fun) ->
             {error,
              ?ERRT_BAD_REQUEST(?MYLANG,
                                <<"<", TagName/binary, "> element required">>)}
+    end.
+
+-spec foldl_subels(jlib:xmlel(), A, fun((jlib:xmlel(), A) -> {ok, A} | error()))
+-> {ok, A} | error().
+foldl_subels(#xmlel{children = Children}, Acc, Fun) ->
+    foldl_subels1(Fun, Acc, Children).
+
+foldl_subels1(_Fun, Acc, []) ->
+    {ok, lists:reverse(Acc)};
+foldl_subels1(Fun, Acc, [H|T]) ->
+    case Fun(H, Acc) of
+        {error, E} -> {error, E};
+        {ok, Acc2} -> foldl_subels1(Fun, Acc2, T)
     end.
 
 -spec check_namespace(binary(), jlib:xmlel()) -> {ok, jlib:xmlel()} | error().
