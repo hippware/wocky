@@ -20,13 +20,15 @@
 -export([befriend/2,
          tros_migrate/0,
          tros_cleanup/0,
-         fix_bot_images/0
+         fix_bot_images/0,
+         make_token/1
         ]).
 
 -ignore_xref([befriend/2,
               tros_migrate/0,
               tros_cleanup/0,
-              fix_bot_images/0
+              fix_bot_images/0,
+              make_token/1
              ]).
 
 %%%===================================================================
@@ -101,8 +103,16 @@ commands() ->
                         module   = ?MODULE,
                         function = fix_bot_images,
                         args     = [],
-                        result   = {result, rescode}}
+                        result   = {result, rescode}},
 
+     %% Manual token generation
+     #ejabberd_commands{name     = make_token,
+                        desc     = "Generate an auth token",
+                        longdesc = "Parameters: <user>\n",
+                        module   = ?MODULE,
+                        function = make_token,
+                        args     = [{user, binary}],
+                        result   = {result, rescode}}
     ].
 
 %%%===================================================================
@@ -116,14 +126,6 @@ befriend(Handle1, Handle2) ->
         make_friends(User1, User2),
         {ok, "Success"}
        ]).
-
-get_user(Handle) ->
-    case wocky_db_user:find_user_by(handle, Handle) of
-        not_found ->
-            {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
-        User ->
-            {ok, User}
-    end.
 
 make_friends(User1, User2) ->
     lists:foreach(
@@ -300,3 +302,37 @@ is_bot_redirect(_BotJID, _) ->
 fix_access(BotJID, Server, FileID) ->
     NewAccess = <<"redirect:", (jid:to_binary(BotJID))/binary>>,
     mod_wocky_tros_s3:update_access(Server, FileID, NewAccess).
+
+
+%%%===================================================================
+%%% Command implementation - make_token
+%%%===================================================================
+
+make_token(Handle) ->
+    do([error_m ||
+        #{user := User, server := Server} <- get_user(Handle),
+        Resource <- make_resource(),
+        Token <- get_token(User, Server, Resource),
+        io:fwrite("User:     ~s\nResource: ~s\nToken:    ~s\n",
+                  [User, Resource, Token])
+       ]).
+
+make_resource() ->
+    Suffix = base16:encode(crypto:strong_rand_bytes(4)),
+    {ok, <<"cli-resource-", Suffix/binary>>}.
+
+get_token(User, Server, Resource) ->
+    {ok, Token, _Expiry} = wocky_db_user:assign_token( User, Server, Resource),
+    {ok, Token}.
+
+%%%===================================================================
+%%% Common helpers
+%%%===================================================================
+
+get_user(Handle) ->
+    case wocky_db_user:find_user_by(handle, Handle) of
+        not_found ->
+            {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
+        User ->
+            {ok, User}
+    end.
