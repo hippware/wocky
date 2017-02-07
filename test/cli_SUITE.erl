@@ -14,8 +14,10 @@
 %%--------------------------------------------------------------------
 
 all() -> [
-          befriend
-%          fix_bot_images
+          befriend,
+          % Requires S3:
+%          fix_bot_images,
+          make_token
          ].
 
 suite() ->
@@ -92,6 +94,11 @@ fix_bot_images(Config) ->
         tros_SUITE:download_failure(Bob, NonBotFile)
       end).
 
+make_token(_Config) ->
+    %% Just some very basic sanity tests. There's really not much
+    %% to this operation that isn't tested elsewhere.
+    ok = mod_wocky_cli:make_token(<<"alice">>),
+    {error, _} = mod_wocky_cli:make_token(<<"non-user">>).
 
 %%--------------------------------------------------------------------
 %% Helpers
