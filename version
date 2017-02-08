@@ -1,2 +1,2 @@
 #!/bin/bash
-echo -n `date -u +%y.%m.%d`+`git rev-list HEAD|wc -l|tr -d ' '`
+echo -n `date -u +%y.%m.%d`+`git rev-list HEAD|wc -l|tr -d ' '`.`git rev-parse --short HEAD`
