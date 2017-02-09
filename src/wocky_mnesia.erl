@@ -6,10 +6,13 @@
 
 -export([initialise_shared_ram_table/3]).
 
+-define(WFT_TIMEOUT, timer:seconds(30)).
+
 initialise_shared_ram_table(Name, Opts, Attributes) ->
     case create_shared_ram_table(Name, Opts, Attributes) of
         {aborted, {already_exists, Name}} ->
             mnesia:add_table_copy(Name, node(), ram_copies),
+            ok = mnesia:wait_for_tables([Name], ?WFT_TIMEOUT),
             transform_table(Name, Attributes);
         {atomic, ok} ->
             ok
