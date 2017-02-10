@@ -45,7 +45,7 @@ get_time(StartBin) ->
     end.
 
 get_duration(DurationBin) ->
-    case re:split(DurationBin, "([0-9]+)(ms|s|m|h)", [{return, list}]) of
+    case re:split(DurationBin, "([0-9]+)(ms|s|m|h|d|w)", [{return, list}]) of
         [[], Num, Unit, []] -> {ok, apply_unit(list_to_integer(Num), Unit)};
         _ -> {error, "Invalid duration"}
     end.
@@ -53,7 +53,9 @@ get_duration(DurationBin) ->
 apply_unit(N, "ms") -> N;
 apply_unit(N, "s") -> N * 1000;
 apply_unit(N, "m") -> N * 1000 * 60;
-apply_unit(N, "h") -> N * 1000 * 60 * 60.
+apply_unit(N, "h") -> N * 1000 * 60 * 60;
+apply_unit(N, "d") -> N * 1000 * 60 * 60 * 24;
+apply_unit(N, "w") -> N * 1000 * 60 * 60 * 24 * 7.
 
 get_traffic(User, Resource, Start, Duration) ->
     StartTS = timer:seconds(Start),
@@ -93,7 +95,7 @@ direction_arrow(false) ->
     "===>".
 
 format_timestamp(Timestamp) ->
-    {ok, T} = ?timex:format(?timex:from_unix(Timestamp div 1000),
+    {ok, T} = ?timex:format(?timex:from_unix(Timestamp, milli_seconds),
                             <<"{ISO:Extended:Z}">>),
     T.
 
