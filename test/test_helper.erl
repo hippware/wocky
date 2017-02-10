@@ -63,9 +63,7 @@
          node_el/2,
          node_el/3,
          cdata_el/2,
-         hs_query_el/1,
-
-         set_tros_backend/1
+         hs_query_el/1
         ]).
 
 ensure_wocky_is_running() ->
@@ -493,8 +491,3 @@ get_hs_stanza(ID) when is_binary(ID) ->
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [#xmlel{name = <<"item">>,
                                                  attrs = [{<<"id">>, ID}]}]}).
-
-set_tros_backend(Backend) ->
-    mod_wocky_tros:stop(?LOCAL_CONTEXT),
-    mod_wocky_tros:start(?LOCAL_CONTEXT, [{backend, Backend},
-                                          {scheme, "http://"}]).

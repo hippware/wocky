@@ -59,7 +59,6 @@ befriend(Config) ->
 
 fix_bot_images(Config) ->
     wocky_db:truncate(shared, roster),
-    test_helper:set_tros_backend(s3),
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         BotFile = create_file(Alice, <<"invalid_access">>),
