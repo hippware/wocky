@@ -64,7 +64,5 @@ matches_rule(User, {user, RuleUser}) ->
     jid:are_bare_equal(User, RuleUser);
 matches_rule(User, {friends, RuleUser}) ->
     wocky_db_roster:is_friend(RuleUser, User);
-matches_rule(User, {members, Group}) ->
-    mod_wocky_group_chat:is_participant(User, Group);
 matches_rule(User, {redirect, Target}) ->
     access_query:run(Target, User, view) =:= allow.

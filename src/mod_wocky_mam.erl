@@ -195,13 +195,8 @@ archive_message_hook(_Result, Host, MessID, _UserID,
 lookup_messages_hook(Result, Host, UserID, UserJID, RSM, Borders, Start, End,
                      Now, WithJID, PageSize, LimitPassed, MaxResultLimit,
                      Simple) ->
-    {UserJID1, WithJID1} =
-    case is_local_group_chat_member(UserJID, WithJID, Host) of
-        true -> {WithJID, undefined};
-        false -> {UserJID, WithJID}
-    end,
-    lookup_messages(Result, Host, UserID, UserJID1, RSM, Borders, Start, End,
-                    Now, WithJID1, PageSize, LimitPassed, MaxResultLimit,
+    lookup_messages(Result, Host, UserID, UserJID, RSM, Borders, Start, End,
+                    Now, WithJID, PageSize, LimitPassed, MaxResultLimit,
                     Simple).
 
 %% No RSM data, no borders; time may be present - generate some RSM data
@@ -504,10 +499,6 @@ add_limit(undefined, {Q, V}) -> {Q, V};
 add_limit(Limit, {Q, V}) ->
     {[Q, " LIMIT ?"], V#{'[limit]' => Limit}}.
 
-maybe_add_ttl(Row = #{other_jid := ?GROUP_CHAT_WITH_JID}) ->
-    TTL = gen_mod:get_module_opt(global, ?MODULE,
-                                 group_chat_archive_ttl, infinity),
-    maybe_add_ttl(Row, TTL);
 maybe_add_ttl(Row) ->
     TTL = gen_mod:get_module_opt(global, ?MODULE,
                                  message_archive_ttl, infinity),
@@ -526,17 +517,6 @@ add_filtering(_, {Q, V}) ->
 %%%===================================================================
 %%% Other utility functions
 %%%===================================================================
-
-is_local_group_chat_member(User, #jid{luser = LUser, lserver = Host}, Host) ->
-    case wocky_db:select_one(Host, group_chat, participants, #{id => LUser}) of
-        not_found -> false;
-        Participants -> is_participant(User, Participants)
-    end;
-is_local_group_chat_member(_, _, _) ->
-    false.
-
-is_participant(User, Participants) ->
-    lists:member(jid:to_binary(jid:to_bare(User)), Participants).
 
 maybe_inclusive(inclusive) -> "=";
 maybe_inclusive(exclusive) -> "".
