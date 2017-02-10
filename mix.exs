@@ -119,7 +119,7 @@ defmodule Wocky.Mixfile do
       {:base16,               "~> 1.0",   override: true},
       {:porcelain,            "~> 2.0"},
       {:algolia,              "~> 0.4.0"},
-      {:ex_aws,               "~> 1.0"},
+      {:ex_aws,               github: "hippware/ex_aws", override: true, branch: "working"},
       {:geocalc,              "~> 0.5.3"},
       {:exconstructor,        "~> 1.0"},
       {:ok,                   "~> 1.2",    runtime: false},

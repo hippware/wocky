@@ -27,7 +27,7 @@
   "escalus": {:git, "https://github.com/hippware/escalus.git", "f470f65ba6615c1e21c0c944568e765e3596b937", [branch: "working"]},
   "espec": {:hex, :espec, "1.2.1", "faf0b54502688401097d8cb36da3f9ba75f894a39bccc65e5ae7bffb1256f03e", [:mix], [{:meck, "~> 0.8.4", [hex: :meck, optional: false]}]},
   "eunit_formatters": {:hex, :eunit_formatters, "0.3.1", "7a6fc351eb5b873e2356b8852eb751e20c13a72fbca03393cf682b8483509573", [:rebar3], []},
-  "ex_aws": {:hex, :ex_aws, "1.0.0", "509368ffbd38b405faefda95eb30012fc7b791fad6574ef427cc4ad0f4f5b533", [:mix], [{:configparser_ex, "~> 0.2.1", [hex: :configparser_ex, optional: true]}, {:gen_stage, "~> 0.8.0", [hex: :gen_stage, optional: false]}, {:hackney, "1.6.1", [hex: :hackney, optional: true]}, {:jsx, "~> 2.8", [hex: :jsx, optional: true]}, {:poison, ">= 1.2.0", [hex: :poison, optional: true]}, {:sweet_xml, "~> 0.5", [hex: :sweet_xml, optional: true]}]},
+  "ex_aws": {:git, "https://github.com/hippware/ex_aws.git", "04d7853a9a84ea918b6fcd8bab041c1f2eb8dfb9", [branch: "working"]},
   "ex_guard": {:hex, :ex_guard, "1.1.1", "bd260c9aa1a5b8c438adab4cf4131e775af637723c241296cf1a100b402ade52", [:mix], [{:fs, "~> 0.9", [hex: :fs, optional: false]}]},
   "ex_machina": {:git, "https://github.com/thoughtbot/ex_machina.git", "d2d901e1210ea9a7a5d32fb44f078da5a4830ae5", [branch: "master"]},
   "exactor": {:hex, :exactor, "2.2.3", "a6972f43bb6160afeb73e1d8ab45ba604cd0ac8b5244c557093f6e92ce582786", [:mix], []},

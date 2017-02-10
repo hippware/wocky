@@ -301,7 +301,7 @@ is_bot_redirect(_BotJID, _) ->
 
 fix_access(BotJID, Server, FileID) ->
     NewAccess = <<"redirect:", (jid:to_binary(BotJID))/binary>>,
-    mod_wocky_tros_s3:update_access(Server, FileID, NewAccess).
+    mod_wocky_tros_s3_legacy:update_access(Server, FileID, NewAccess).
 
 
 %%%===================================================================
