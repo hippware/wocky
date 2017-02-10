@@ -71,7 +71,7 @@ defmodule Wocky.Mixfile do
     [description: 'JabberWocky XMPP Server',
      extra_applications: [
        :crypto, :ssl, :logger, :plug, :runtime_tools, :cowboy, :poison,
-       :partial
+       :partial, :linguist
      ],
      included_applications: [
        # These are here because we start them manually and do not want them
