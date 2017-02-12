@@ -82,7 +82,6 @@ defmodule Wocky.Mixfile do
      env: [
        wocky_inst: 'local',
        config_dir: 'etc',
-       francus_chunk_size: 1048576, # 1MB
        keyspace_prefix: 'wocky_test_',
        location_api_port: 8080,
        enable_follow_me: false,
