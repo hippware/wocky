@@ -33,7 +33,7 @@
           iq :: iq()
          }).
 
--define(DEFAULT_BACKEND, francus).
+-define(DEFAULT_BACKEND, s3).
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
 
 configs() ->
