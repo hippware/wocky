@@ -33,6 +33,7 @@
 -ignore_xref([befriend/2,
               tros_migrate/0,
               tros_cleanup/0,
+              tros_migrate_access/0,
               fix_bot_images/0,
               make_token/1
              ]).

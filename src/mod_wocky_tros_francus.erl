@@ -14,7 +14,6 @@
          make_auth/0,
          get_owner/1,
          get_access/1,
-         get_content_type/1,
          get_metadata/2,
          delete/2,
          keep/2
@@ -127,8 +126,6 @@ get_metadata(Server, FileID) ->
 get_owner(#{<<"owner">> := Owner}) -> {ok, Owner}.
 
 get_access(#{<<"access">> := Access}) -> {ok, Access}.
-
-get_content_type(#{<<"content-type">> := ContentType}) -> {ok, ContentType}.
 
 delete(Server, FileID) ->
     francus:delete(Server, FileID).

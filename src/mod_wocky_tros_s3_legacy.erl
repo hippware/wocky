@@ -9,15 +9,20 @@
 
 -export([get_metadata/2,
          get_owner/1,
-         get_access/1,
-         get_content_type/1,
-         update_access/3,
-         make_upload_response/6
+         get_access/1
         ]).
 
+-ifdef(TEST).
+-export([update_access/3,
+         make_upload_response/6,
+         get_content_type/1
+        ]).
+
+-import(mod_wocky_tros_s3, [bucket/0, path/2, access_key_id/0, secret_key/0]).
+-endif.
+
 -import(mod_wocky_tros_s3, [do_request/3, check_result_get_headers/2,
-                            get_metadata_item/2, bucket/0, path/2,
-                            access_key_id/0, secret_key/0]).
+                            get_metadata_item/2]).
 
 -define(s3, 'Elixir.ExAws.S3').
 -define(AWSConfig, 'Elixir.ExAws.Config').
@@ -51,14 +56,12 @@ get_access(Metadata) ->
             Error
     end.
 
-get_content_type(Metadata) ->
-    get_metadata_item(Metadata, ?AMZ_CONTENT_TYPE).
-
 get_metadata_items(Headers) ->
     List = [{list_to_binary(K), list_to_binary(http_uri:decode(V))}
             || {K, V} <- Headers],
     {ok, maps:from_list(List)}.
 
+-ifdef(TEST).
 encrypt_access(Access) ->
     base64:encode(wocky_crypto:encrypt(?ACCESS_KEY, Access, ?PAD_TO)).
 
@@ -81,6 +84,9 @@ update_access(Server, FileID, NewAccess) ->
                          {secret_access_key, secret_key()}]),
         ok
        ]).
+
+get_content_type(Metadata) ->
+    get_metadata_item(Metadata, ?AMZ_CONTENT_TYPE).
 
 new_metadata(NewAccess, Owner) ->
     {ok,
@@ -123,3 +129,4 @@ s3_url(Server, FileID, Method, URLParams) ->
     {ok, URL} =
     ?s3:presigned_url(Config, Method, bucket(), path(Server, FileID), Options),
     URL.
+-endif.

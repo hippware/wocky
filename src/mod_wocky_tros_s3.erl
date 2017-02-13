@@ -30,8 +30,12 @@
 
 %% Temporary exports while mod_wocky_tros_s3_legacy still exists:
 -export([do_request/3, check_result_get_headers/2,
-         get_metadata_item/2, bucket/0, path/2,
+         get_metadata_item/2, bucket/0,
          access_key_id/0, secret_key/0]).
+
+-ifdef(TEST).
+-export([path/2]).
+-endif.
 
 -define(LINK_EXPIRY, 60 * 10). % 10 minute expiry on upload/download links.
 
