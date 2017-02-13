@@ -17,10 +17,10 @@
 
 all() -> [
           befriend,
-          make_token,
+          make_token
 % Requires S3:
-          fix_bot_images,
-          migrate_metadata_story
+%          fix_bot_images,
+%          migrate_metadata_story
          ].
 
 suite() ->
