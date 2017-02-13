@@ -17,10 +17,10 @@
 
 all() -> [
           befriend,
-          % Requires S3:
-%          fix_bot_images,
-          migrate_metadata_story,
-          make_token
+          make_token,
+% Requires S3:
+          fix_bot_images,
+          migrate_metadata_story
          ].
 
 suite() ->
@@ -65,9 +65,9 @@ fix_bot_images(Config) ->
     test_helper:set_tros_backend(s3),
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        BotFile = create_file(Alice, <<"invalid_access">>),
-        ItemFile = create_file(Alice, <<"user:bob">>),
-        NonBotFile = create_file(Alice, <<"invalid_access">>),
+        BotFile = create_file(Config, Alice, <<"invalid_access">>),
+        ItemFile = create_file(Config, Alice, <<"user:bob">>),
+        NonBotFile = create_file(Config, Alice, <<"invalid_access">>),
 
         UpdateStanza = test_helper:iq_set(
                          ?NS_BOT,
@@ -92,8 +92,8 @@ fix_bot_images(Config) ->
 
         %% Bob should now have access to the bot images but not the
         %% unattached one
-        tros_SUITE:download_success(Bob, BotFile, file_data()),
-        tros_SUITE:download_success(Bob, ItemFile, file_data()),
+        tros_SUITE:download_success(Bob, BotFile, out_file_data(Config)),
+        tros_SUITE:download_success(Bob, ItemFile, out_file_data(Config)),
         tros_SUITE:download_failure(Bob, NonBotFile)
       end).
 
@@ -151,8 +151,8 @@ seed_s3_file(UserJID, FileID) ->
 %% Helpers
 %%--------------------------------------------------------------------
 
-create_file(Client, Access) ->
-        ImageData = file_data(),
+create_file(Config, Client, Access) ->
+        ImageData = load_file(Config, "in.png"),
         FileSize = byte_size(ImageData),
 
         {QueryStanza, ResultStanza} =
@@ -160,8 +160,14 @@ create_file(Client, Access) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         tros_SUITE:do_upload(ResultStanza, ImageData, 200, false).
 
-file_data() -> binary:copy(<<55>>, 100).
+out_file_data(Config) -> load_file(Config, "out.jpg").
 
 set_image_field(ID) ->
     bot_SUITE:create_field({"image", "string",
                             tros:make_url(?LOCAL_CONTEXT, ID)}).
+
+load_file(Config, FileName) ->
+    DataDir = proplists:get_value(data_dir, Config),
+    ImageFile = filename:join(DataDir, FileName),
+    {ok, ImageData} = file:read_file(ImageFile),
+    ImageData.
