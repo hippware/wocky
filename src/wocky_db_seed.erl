@@ -186,6 +186,11 @@ seed_data(media_data, _Server) ->
        data => ?MEDIA_DATA},
      #{chunk_id => ?GC_MEDIA_CHUNK, file_id => ?GC_MEDIA_FILE,
        data => ?MEDIA_DATA}];
+seed_data(file_metadata, Server) ->
+    [#{owner => ?ALICE, server => Server,
+       id => ?AVATAR_FILE, access => <<"all">>},
+     #{owner => ?ALICE, server => Server,
+       id => ?MEDIA_FILE, access => <<"user:", (?BOB_B_JID)/binary>>}];
 seed_data(privacy, Server) ->
     [#{user => ?CAROL, server => Server,
        lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
