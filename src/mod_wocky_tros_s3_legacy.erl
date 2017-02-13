@@ -1,3 +1,6 @@
+%%% @copyright 2017+ Hippware, Inc.
+%%% @doc Legacy functions for S3 to support migration to storing of metadata
+%%% in local DB. Once metadata has been migrated, this module can be removed.
 -module(mod_wocky_tros_s3_legacy).
 
 -compile({parse_transform, do}).

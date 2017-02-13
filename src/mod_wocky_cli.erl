@@ -18,7 +18,6 @@
 -define(ex_aws, 'Elixir.ExAws').
 -define(enum, 'Elixir.Enum').
 
-
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
