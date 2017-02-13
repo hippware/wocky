@@ -129,13 +129,12 @@ get_metadata_item(Metadata, Item) ->
     end.
 
 get_metadata(LServer, FileID) ->
-    Row = wocky_db:select_row(shared, file_metadata, [owner, access],
-                              #{id => FileID, server => LServer}),
-    case Row of
+    MD = wocky_db_tros:get_metadata(LServer, FileID),
+    case MD of
         not_found ->
             {error, not_found};
         _ ->
-            {ok, Row}
+            {ok, MD}
     end.
 
 delete(LServer, FileID) ->
