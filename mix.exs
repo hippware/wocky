@@ -131,6 +131,7 @@ defmodule Wocky.Mixfile do
       {:distillery,           "~> 1.1",    runtime: false},
       {:eper,                 "~> 0.94.0"},
       {:binpp,                "~> 1.1"},
+      {:sweet_xml,            "~> 0.6.5"},
       {:espec,                "~> 1.2",    only: :test},
       {:dogma,                "~> 0.1.13", only: :dev, runtime: false},
       {:credo,                "~> 0.6.0",  only: :dev, runtime: false},

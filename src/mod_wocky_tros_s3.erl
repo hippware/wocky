@@ -67,11 +67,7 @@ make_upload_response(FromJID = #jid{luser = Owner}, #jid{lserver = LServer},
 
     Headers = [{?AMZ_CONTENT_TYPE, CT}],
 
-    ok = wocky_db:insert(shared, file_metadata,
-                         #{id => FileID,
-                           server => LServer,
-                           access => Access,
-                           owner => Owner}),
+    wocky_db_tros:set_metadata(LServer, FileID, Owner, Access),
     {Headers, RespFields}.
 
 resp_fields(LServer, Bucket, FileID, Method, URLParams, ReferenceURL) ->
@@ -94,9 +90,7 @@ s3_url(Server, Bucket, FileID, Method, URLParams) ->
     URL.
 
 update_access(Server, FileID, NewAccess) ->
-    ok = wocky_db:insert(shared, file_metadata, #{id => FileID,
-                                                  server => Server,
-                                                  access => NewAccess}).
+    wocky_db_tros:set_access(Server, FileID, NewAccess).
 
 upload_bucket() ->
     <<(bucket())/binary, "-quarantine">>.
@@ -127,7 +121,6 @@ get_access(Metadata) ->
     get_metadata_item(Metadata, access).
 
 get_metadata_item(Metadata, Item) ->
-    ct:log("Metadata: ~p\nItem: ~p", [Metadata, Item]),
     case maps:get(Item, Metadata, undefined) of
         undefined ->
             {error, metadata_not_found};
