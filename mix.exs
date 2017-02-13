@@ -71,7 +71,7 @@ defmodule Wocky.Mixfile do
     [description: 'JabberWocky XMPP Server',
      extra_applications: [
        :crypto, :ssl, :logger, :plug, :runtime_tools, :cowboy, :poison,
-       :partial
+       :partial, :linguist
      ],
      included_applications: [
        # These are here because we start them manually and do not want them
@@ -116,6 +116,7 @@ defmodule Wocky.Mixfile do
       {:meck,                 "~> 0.8.4", override: true, runtime: false},
       {:hackney,              "~> 1.6",   override: true},
       {:base16,               "~> 1.0",   override: true},
+      {:riak,                 "~> 1.1"},
       {:porcelain,            "~> 2.0"},
       {:algolia,              "~> 0.4.0"},
       {:ex_aws,               "~> 1.0"},
@@ -203,9 +204,13 @@ defmodule Wocky.Mixfile do
         manager: :rebar3},
       {:riak_pb,
         github: "basho/riak_pb",
-        tag: "2.2.0.2",
+        tag: "2.3.0.0",
         override: true,
-        runtime: false,
+        manager: :rebar},
+      {:riakc,
+        github: "basho/riak-erlang-client",
+        tag: "2.5.2",
+        override: true,
         manager: :rebar},
       {:mochijson2, ~r//,
         github: "bjnortier/mochijson2",
