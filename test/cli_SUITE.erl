@@ -110,7 +110,8 @@ migrate_metadata_story(_Config) ->
     % migrated
     wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, File3),
 
-    ok = mod_wocky_tros_s3_legacy:update_access(?LOCAL_CONTEXT, File1, <<"test_access">>),
+    ok = mod_wocky_tros_s3_legacy:update_access(?LOCAL_CONTEXT,
+                                                File1, <<"test_access">>),
 
     ?assertEqual(not_found, wocky_db_tros:get_access(?LOCAL_CONTEXT, File1)),
     ?assertEqual(not_found, wocky_db_tros:get_access(?LOCAL_CONTEXT, File2)),
