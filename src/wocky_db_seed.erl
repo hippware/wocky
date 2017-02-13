@@ -169,11 +169,6 @@ seed_data(media, Server) ->
        access =>
            <<"user:", (jid:to_binary(jid:make(?BOB, Server, <<>>)))/binary>>,
        metadata => #{<<"content-type">> => <<"image/png">>,
-                     <<"name">> => ?FILENAME}},
-     #{id => ?GC_MEDIA_FILE, user => ?ALICE, size => byte_size(?MEDIA_DATA),
-       chunks => [?MEDIA_CHUNK],
-       access => <<"members:", (jid:to_binary(?GROUP_CHAT_JID))/binary>>,
-       metadata => #{<<"content-type">> => <<"image/png">>,
                      <<"name">> => ?FILENAME}}];
 seed_data(media_data, _Server) ->
     [#{chunk_id => ?AVATAR_CHUNK,   file_id => ?AVATAR_FILE,
@@ -210,17 +205,6 @@ seed_data(privacy_item, Server) ->
        action => false, item_order => 1, match_all => false,
        match_iq => false, match_message => true,
        match_presence_in => false, match_presence_out => true}];
-seed_data(group_chat, _Server) ->
-    [#{id => ?GROUP_CHAT, owner => ?ALICE,
-       participants =>
-       [jid:to_binary(?ALICE_JID),
-        jid:to_binary(?BOB_JID)],
-       title => ?CHAT_TITLE},
-     #{id => ?GROUP_CHAT2, owner => ?TIM,
-       participants =>
-       [jid:to_binary(?TIM_JID),
-        jid:to_binary(?KAREN_JID)],
-       title => ?CHAT_TITLE}];
 seed_data(bot, Server) ->
     [#{id => ?BOT, server => Server, title => ?BOT_TITLE,
        shortname => ?BOT_NAME, owner => ?ALICE_B_JID, description => ?BOT_DESC,

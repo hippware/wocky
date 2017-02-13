@@ -18,7 +18,6 @@ tros_permissions_test_() -> {
 
 before_all() ->
     ok = wocky_db_seed:seed_tables(shared, [roster, user]),
-    ok = wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [group_chat]),
     ok.
 
 after_all(_) ->
@@ -26,8 +25,7 @@ after_all(_) ->
 
 test_can_download() ->
     Owner = ?ALICE,
-    Access = <<"user:", (?BOB_B_JID)/binary,
-               ",members:", (jid:to_binary(?GROUP_CHAT2_JID))/binary>>,
+    Access = <<"user:", (?BOB_B_JID)/binary>>,
     FriendsAccess = <<"friends:", (?ALICE_B_JID)/binary>>,
     AllAccess = <<"all">>,
     { "can_download", [
@@ -36,10 +34,6 @@ test_can_download() ->
       ]},
       { "specified user can download", [
         ?_assert(can_download(?BOB_JID, Owner, Access))
-      ]},
-      { "specified group chat members can download", [
-        ?_assert(can_download(?TIM_JID, Owner, Access)),
-        ?_assert(can_download(?KAREN_JID, Owner, Access))
       ]},
       { "nobody else can download", [
         ?_assertEqual({false, permission_denied},

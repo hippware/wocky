@@ -16,11 +16,9 @@ mod_wocky_tros_test_() -> {
     [
      test_avatar_upload_request(),
      test_message_media_upload_request(),
-     test_group_chat_media_upload_request(),
      test_oversized_upload_request(),
      test_avatar_download_request(),
      test_message_media_download_request(),
-     test_group_chat_media_download_request(),
      test_bad_download_ids(),
      test_meck_validate()
     ]}
@@ -63,8 +61,7 @@ before_all() ->
                    <<"x-amz-meta-owner">> =>
                      <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>}}),
 
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
-                                               group_chat]).
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request]).
 
 
 after_all(_) ->
@@ -97,20 +94,6 @@ test_message_media_upload_request() ->
                          upload_packet(10000,
                                        <<"user:",
                                          (?BOB_B_JID)/binary>>
-                                      ))))
-    ]}]}.
-
-test_group_chat_media_upload_request() ->
-    { "Group chat media upload request", [
-        {"Successful request when we're a group member", [
-          ?_assert(
-             is_expected_upload_packet(
-               handle_iq(?ALICE_JID,
-                         test_server_jid(),
-                         upload_packet(10000,
-                                       <<"members:",
-                                         (jid:to_binary(
-                                            ?GROUP_CHAT_JID))/binary>>
                                       ))))
     ]}]}.
 
@@ -183,32 +166,6 @@ test_message_media_download_request() ->
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
           end)
-    ]}]}.
-
-test_group_chat_media_download_request() ->
-    {"Group chat media download request", [
-        {"Successful request on own media", [
-          ?_assert(
-             is_expected_download_packet(
-               ?GC_MEDIA_FILE,
-               handle_iq(?ALICE_JID,
-                         test_server_jid(),
-                         download_packet(?GC_MEDIA_FILE))))
-    ]},
-        {"Successful request on media in the same group chat as us", [
-          ?_assert(
-             is_expected_download_packet(
-               ?GC_MEDIA_FILE,
-               handle_iq(?BOB_JID,
-                         test_server_jid(),
-                         download_packet(?GC_MEDIA_FILE))))
-    ]},
-        {"Failed request on media for a group chat we're not in", [
-          ?_assertEqual(
-             expected_dl_auth_error_packet(?GC_MEDIA_FILE),
-             handle_iq(?CAROL_JID,
-                       test_server_jid(),
-                       download_packet(?GC_MEDIA_FILE)))
     ]}]}.
 
 test_bad_download_ids() ->

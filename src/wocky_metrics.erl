@@ -5,6 +5,7 @@
 -module(wocky_metrics).
 
 -export([setup_spiral/1, inc/1, inc/2]).
+-ignore_xref([inc/2]).
 
 setup_spiral(Metrics) ->
     lists:foreach(fun(M) ->

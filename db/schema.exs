@@ -382,16 +382,6 @@ defmodule Schemata.Schemas.Wocky do
       primary_key: [:user, :server, :date]
     ]
 
-    table :group_chat, [
-      columns: [
-        id:           :timeuuid,
-        owner:        :timeuuid,
-        participants: {:set, :text},
-        title:        :text
-      ],
-      primary_key: [:id]
-    ]
-
     table :bot_event, [
       columns: [
         bot:        :timeuuid,  # Bot ID
