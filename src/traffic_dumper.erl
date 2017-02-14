@@ -95,7 +95,7 @@ direction_arrow(false) ->
     "===>".
 
 format_timestamp(Timestamp) ->
-    {ok, T} = ?timex:format(?timex:from_unix(Timestamp, milli_seconds),
+    {ok, T} = ?timex:format(?timex:from_unix(Timestamp, milliseconds),
                             <<"{ISO:Extended:Z}">>),
     T.
 
