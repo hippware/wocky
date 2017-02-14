@@ -12,6 +12,7 @@ node {
     stage('Basic Checks') {
       sh "mix lint"
       sh "mix exref"
+      sh "mix dialyzer --halt-exit-status"
     }
 
     stage('Unit Tests') {
@@ -20,7 +21,6 @@ node {
       sh "MIX_ENV=test mix prepare"
       sh "mix espec"
       sh "mix eunit"
-      sh "mix dialyzer --halt-exit-status"
     }
 
     stage('Integration Tests') {
