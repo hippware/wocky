@@ -71,7 +71,10 @@
               shared_keyspace/0,
               keyspace_name/1,
               truncate/2,
-              select_column/4
+              select_column/4,
+              multi_query/3,
+              multi_query/4,
+              timestamp_to_seconds/1
              ]).
 
 -ifdef(TEST).
