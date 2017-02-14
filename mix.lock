@@ -11,7 +11,7 @@
   "combine": {:hex, :combine, "0.9.6", "8d1034a127d4cbf6924c8a5010d3534d958085575fa4d9b878f200d79ac78335", [:mix], []},
   "cowboy": {:hex, :cowboy, "1.0.4", "a324a8df9f2316c833a470d918aaf73ae894278b8aa6226ce7a9bf699388f878", [:make, :rebar], [{:cowlib, "~> 1.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.0", [hex: :ranch, optional: false]}]},
   "cowlib": {:hex, :cowlib, "1.0.2", "9d769a1d062c9c3ac753096f868ca121e2730b9a377de23dec0f7e08b1df84ee", [:make], []},
-  "cqerl": {:git, "https://github.com/hippware/cqerl.git", "11c46056b3d6fd65acb9642311e4ad679ba9fa6d", [branch: "working-2.0"]},
+  "cqerl": {:git, "https://github.com/hippware/cqerl.git", "b1dfeebbdce41f4a9bec717cb39168976d8a2f52", [branch: "working-2.0"]},
   "credo": {:hex, :credo, "0.6.0", "44a82f82b94eeb4ba6092c89b8a6730ca1a3291c7940739d5acc8806d25ac991", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, optional: false]}]},
   "cth_readable": {:hex, :cth_readable, "1.2.3", "293120673dff82f0768612c5282e35c40cacc1b6f94fe99077438fd3749d0e27", [:rebar3], [{:cf, "0.2.1", [hex: :cf, optional: false]}]},
   "cuesport": {:git, "https://github.com/esl/cuesport.git", "d82ff25baf393eb11712721fb1b881b4b9f80176", [branch: "master"]},
