@@ -16,7 +16,6 @@ node {
 
     stage('Unit Tests') {
       env.CQLSH_NO_BUNDLED = "true"
-      sh "mix db.test_migrations"
       sh "mix db.load.test"
       sh "MIX_ENV=test mix prepare"
       sh "mix espec"
