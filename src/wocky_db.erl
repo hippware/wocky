@@ -71,7 +71,12 @@
               shared_keyspace/0,
               keyspace_name/1,
               truncate/2,
-              select_column/4
+              select_column/4,
+              multi_query/3,
+              multi_query/4,
+              timestamp_to_seconds/1,
+              expire_to_ttl/1,
+              timestamp_to_now/1
              ]).
 
 -ifdef(TEST).
@@ -142,8 +147,8 @@ clear_tables(Context, Tables) ->
 -spec clear_user_tables(context()) -> ok.
 clear_user_tables(Context) ->
     clear_tables(shared, [user, handle_to_user, phone_number_to_user, roster]),
-    clear_tables(Context, [auth_token, last_activity, offline_msg,
-                           privacy, privacy_item, location, conversation]).
+    clear_tables(Context, [auth_token, privacy, privacy_item, location,
+                           conversation]).
 
 
 %% @doc Retrieves a single value from a table based on the parameters.

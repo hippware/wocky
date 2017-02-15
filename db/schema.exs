@@ -210,35 +210,6 @@ defmodule Schemata.Schemas.Wocky do
       order_by: [time: :desc]
     ]
 
-    # Table for storing details of users' last activty on the server. This is
-    # updated only when a user logs out or disconnects
-    table :last_activity, [
-      columns: [
-        user:      :text,      # User ID (userpart of JID)
-        server:    :text,      # User Server (domainpart of JID)
-        timestamp: :timestamp, # Timestamp of last user logoff
-        status:    :text       # Text set in last user presence
-                               # with type of "unavailable"
-      ],
-      primary_key: :user
-    ]
-
-    # Table for storing messages sent to a user while they're offline
-    table :offline_msg, [
-      columns: [
-        user:      :text,      # User ID (userpart of JID)
-        server:    :text,      # User Server (domainpart of JID)
-        msg_id:    :timeuuid,  # Unique message ID
-        timestamp: :timestamp, # Message timestamp
-        expire:    :timestamp, # Message expiry (as timestamp)
-        from_id:   :text,      # Sending user JID
-        to_id:     :text,      # Receiving user JID
-        packet:    :text       # Full XML of <message> element
-      ],
-      primary_key: [:user, :timestamp, :msg_id],
-      order_by: [timestamp: :asc]
-    ]
-
     # Francus file-store metadata table
     table :media, [
       columns: [

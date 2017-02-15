@@ -15,8 +15,7 @@
 -ignore_xref([seed_table/2, seed_tables/2, seed_data/2, maybe_seed_s3_file/2]).
 
 -ifdef(TEST).
--export([make_offline_msgs/5, get_nowsecs/0,
-         archive_users/0, msg_xml_packet/1]).
+-export([archive_users/0, msg_xml_packet/1]).
 -endif.
 
 
@@ -85,26 +84,6 @@ seed_data(phone_number_to_user, Server) ->
 seed_data(user, Server) ->
     [maps:without([phone_number], U#{password => ?SCRAM}) ||
      U <- user_data(Server)];
-seed_data(last_activity, Server) ->
-    Activity = [
-        #{user => ?ALICE,  timestamp => 1000, status => <<"Not here">>},
-        #{user => ?CAROL,  timestamp => 777,  status => <<"Ennui">>},
-        #{user => ?BOB,    timestamp => 666,  status => <<"">>},
-        #{user => ?KAREN,  timestamp => 999,  status => <<"Excited">>},
-        #{user => ?ROBERT, timestamp => 888,  status => <<"Bored">>}
-    ],
-    lists:map(
-      fun (#{timestamp := TS} = A) ->
-          A#{timestamp := wocky_db:seconds_to_timestamp(TS), server => Server}
-      end,
-      Activity);
-seed_data(offline_msg, Server) ->
-    NowSecs = get_nowsecs(),
-    lists:flatmap(
-      fun (#{user := User, handle := Handle}) ->
-          make_offline_msgs(User, Server, Handle, NowSecs, 10)
-      end,
-      seed_data(user, Server));
 seed_data(roster, Server) ->
     Items = [
         #{contact_jid => ?BOB_B_JID, nick => <<"bobby">>,
@@ -253,36 +232,11 @@ seed_data(_, _) ->
 %% Data generation helpers
 %%====================================================================
 
-get_nowsecs() ->
-    {Mega, Sec, _} = os:timestamp(),
-    (Mega * 1000000) + Sec.
-
-make_offline_msgs(User, Server, Handle, NowSecs, N) ->
-    [make_offline_msg(User, Server, Handle, NowSecs, I) ||
-     I <- lists:seq(1, N)].
-
-make_offline_msg(User, Server, Handle, NowSecs, I) ->
-    ExpireSecs = NowSecs + 1000,
-    FromJID = jid:make(<<"from_user">>, <<"from_server">>, <<"res1">>),
-    ToJID = jid:make(<<"to_user">>, <<"to_server">>, <<"res2">>),
-    #{user => User,
-      server => Server,
-      msg_id => wocky_db:create_id(),
-      timestamp => wocky_db:seconds_to_timestamp(NowSecs + I),
-      expire => wocky_db:seconds_to_timestamp(ExpireSecs),
-      from_id => jid:to_binary(FromJID),
-      to_id => jid:to_binary(ToJID),
-      packet => msg_xml_packet(Handle),
-      '[ttl]' => ts_to_ttl(ExpireSecs)}.
-
 msg_xml_packet(Handle) ->
     <<"<message xml:lang=\"en\" type=\"chat\"
                 to=\"278e4ba0-b9ae-11e5-a436-080027f70e96@localhost\">
            <body>Hi, ", Handle/binary, "</body>
        </message>">>.
-
-ts_to_ttl(TS) ->
-    wocky_db:expire_to_ttl(wocky_db:timestamp_to_now(TS * 1000)).
 
 archive_users() ->
     [jid:to_binary(J) ||
