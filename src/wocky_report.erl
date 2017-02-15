@@ -1,3 +1,7 @@
+%%% @copyright 2017+ Hippware, Inc.
+%%%
+%%% @doc Module implementing reports on wocky data
+%%%
 -module(wocky_report).
 
 -include("wocky_bot.hrl").
@@ -11,10 +15,11 @@
 -define(timex, 'Elixir.Timex').
 
 % Duration is in days
+-spec generate_bot_report(non_neg_integer()) -> iolist().
 generate_bot_report(Duration) ->
     Bots = wocky_db:select_column(shared, bot, id, #{}),
-    Output = lists:map(maybe_report_bot(_, Duration), Bots),
-    io:fwrite("~s~s", [header(), Output]).
+    Report = lists:map(maybe_report_bot(_, Duration), Bots),
+    [header(), Report].
 
 header() ->
     "ID,Title,Created,Updated,Address,Latitude,Longditude,"
