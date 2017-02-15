@@ -74,7 +74,9 @@
               select_column/4,
               multi_query/3,
               multi_query/4,
-              timestamp_to_seconds/1
+              timestamp_to_seconds/1,
+              expire_to_ttl/1,
+              timestamp_to_now/1
              ]).
 
 -ifdef(TEST).
