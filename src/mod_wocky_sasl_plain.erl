@@ -50,7 +50,7 @@ start(_Host, Opts) ->
                                                    Providers),
     BypassPrefixes = get_auth_bypass_prefixes(Opts),
     {atomic, _} = ejabberd_config:add_local_option(wocky_sasl_bypass_prefixes,
-                                      BypassPrefixes),
+                                                   BypassPrefixes),
 
     % This *replaces* cyrsasl_plain's registration, since modules are
     % loaded/started after cyrsasl has registered its built-in modules.
@@ -60,86 +60,20 @@ start(_Host, Opts) ->
 stop(_Host) ->
     ok.
 
--spec mech_new(Host :: ejabberd:server(),
-               Creds :: mongoose_credentials:t()) -> {ok, tuple()}.
-mech_new(_Host, Creds) ->
-    {ok, Creds}.
+-spec mech_new(Host :: ejabberd:server(), Creds :: mongoose_credentials:t()) ->
+    {ok, tuple()}.
+mech_new(Host, Creds) ->
+    cyrsasl_plain:mech_new(Host, Creds).
 
--spec mech_step(Creds :: mongoose_credentials:t(),
-                ClientIn :: binary()) -> {ok, mongoose_credentials:t()}
-                                       | {error, binary()}.
+-spec mech_step(Creds :: mongoose_credentials:t(), ClientIn :: binary()) ->
+    {ok, mongoose_credentials:t()} | {error, binary()}.
 mech_step(Creds, ClientIn) ->
-    case prepare(ClientIn) of
-        [_AuthzId, <<"register">>, <<"$J$", JSON/binary>>] ->
+    case cyrsasl_plain:parse(ClientIn) of
+        [_, <<"register">>, <<"$J$", JSON/binary>>] ->
             do_registration(JSON);
-        [AuthzId, User, Password] ->
-            Request = mongoose_credentials:extend(Creds,
-                                                  [{username, User},
-                                                   {password, Password},
-                                                   {authzid, AuthzId}]),
-            case ejabberd_auth:authorize(Request) of
-                {ok, Result} ->
-                    {ok, Result};
-                {error, _} ->
-                    {error, <<"not-authorized">>, User}
-            end;
         _ ->
-            {error, <<"bad-protocol">>}
+            cyrsasl_plain:mech_step(Creds, ClientIn)
     end.
-
--spec prepare(binary()) -> 'error' | [binary(), ...].
-prepare(ClientIn) ->
-    case parse(ClientIn) of
-        [<<>>, UserMaybeDomain, Password] ->
-            case parse_domain(UserMaybeDomain) of
-                %% <NUL>login@domain<NUL>pwd
-                [User, _Domain] ->
-                    [UserMaybeDomain,
-                     User,
-                     Password];
-                %% <NUL>login<NUL>pwd
-                [User] ->
-                    [<<>>, User, Password]
-            end;
-        %% login@domain<NUL>login<NUL>pwd
-        [AuthzId, User, Password] ->
-            [AuthzId, User, Password];
-        _ ->
-            error
-    end.
-
-
--spec parse(binary()) -> [binary(), ...].
-parse(S) ->
-    parse1(S, <<>>, []).
-
--spec parse1(binary(), binary(), [binary()]) -> [binary(), ...].
-parse1(<<0, Cs/binary>>, S, T) ->
-    parse1(Cs, <<>>, [binary_reverse(S)| T]);
-parse1(<<C, Cs/binary>>, S, T) ->
-    parse1(Cs, <<C, S/binary>>, T);
-parse1(<<>>, S, T) ->
-    lists:reverse([binary_reverse(S)| T]).
-
-
--spec parse_domain(binary()) -> [binary(), ...].
-parse_domain(S) ->
-    parse_domain1(S, <<>>, []).
-
--spec parse_domain1(binary(), binary(), [binary()]) -> [binary(), ...].
-parse_domain1(<<$@, Cs/binary>>, S, T) ->
-    parse_domain1(Cs, <<>>, [binary_reverse(S) | T]);
-parse_domain1(<<C, Cs/binary>>, S, T) ->
-    parse_domain1(Cs, <<C, S/binary>>, T);
-parse_domain1(<<>>, S, T) ->
-    lists:reverse([binary_reverse(S) | T]).
-
-
--spec binary_reverse(binary()) -> binary().
-binary_reverse(<<>>) ->
-    <<>>;
-binary_reverse(<<H, T/binary>>) ->
-    <<(binary_reverse(T))/binary, H>>.
 
 get_auth_bypass_prefixes(Opts) ->
   case wocky_app:is_testing() of
