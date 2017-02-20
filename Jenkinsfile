@@ -31,6 +31,7 @@ node {
     stage('Build Release') {
       sh "rm -rf _build/prod/rel/wocky"
       sh "MIX_ENV=prod mix prepare"
+      sh "MIX_ENV=prod mix lambda"
       sh "MIX_ENV=prod mix release --warnings-as-errors"
       sh "echo `./version` > RELEASE"
 
