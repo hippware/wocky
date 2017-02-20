@@ -49,7 +49,7 @@ defmodule Wocky.Mixfile do
 
      lambda: [
        packages:
-         [{"image-sanitise/sanitise.py", "sanitise.zip"}]
+         [{"image-processor/image-processor.py", "image-processor.zip"}]
      ]
 
    ]
