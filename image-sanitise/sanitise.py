@@ -25,8 +25,8 @@ def lambda_handler(event, context):
                     'jpeg:-' # Write output with to StdOut
                   ]
 
+        # Make full size clean image
         cmd = cmdHead + maybe_limit_size(len(body)) + cmdTail
-
         p = Popen(cmd, stdout=PIPE, stdin=PIPE)
         cleanImage = p.communicate(input=body)[0]
 
@@ -35,6 +35,19 @@ def lambda_handler(event, context):
                       Body = cleanImage,
                       Metadata = response['Metadata'],
                       ContentType = "image/jpeg")
+
+        # Make thumbnail
+        cmd = cmdHead + thumbnail_size() + cmdTail
+        p = Popen(cmd, stdout=PIPE, stdin=PIPE)
+        thumbnailImage = p.communicate(input=body)[0]
+
+        s3.put_object(Bucket = targetBucket,
+                      Key = key + "-thumbnail",
+                      Body = thumbnailImage,
+                      Metadata = response['Metadata'],
+                      ContentType = "image/jpeg")
+
+        # Clean up source object
         s3.delete_object(Bucket = bucket,
                          Key = key)
 
@@ -56,3 +69,6 @@ def maybe_limit_size(size):
         return ['-define', 'jpeg:extent=1024KB']
     else:
         return []
+
+def thumbnail_size():
+    return ['-size', '384x256']

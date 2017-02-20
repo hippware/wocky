@@ -45,7 +45,13 @@ defmodule Wocky.Mixfile do
      # set switches that affect every invocation of the eunit task
      eunit: [
        start: true
+     ],
+
+     lambda: [
+       packages:
+         [{"image-sanitise/sanitise.py", "sanitise.zip"}]
      ]
+
    ]
   end
 

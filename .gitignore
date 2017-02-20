@@ -17,3 +17,4 @@ doc/edoc-info
 /RELEASE
 *.retry
 *_dump.cql
+*.pyc
