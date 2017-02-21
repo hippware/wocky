@@ -29,6 +29,7 @@ If there are not many items, just list them sequentially.
 * Add CLI to generate a new authentication token for a user (#478)
 * Add commit SHA hash to version. 
   * Due to: Add git tag for each deployed release (#463)
+* Support SSL for HTTP APIs (playbooks#19)
 
 
 # 17.02.02+1521
