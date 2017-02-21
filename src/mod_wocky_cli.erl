@@ -96,7 +96,17 @@ commands() ->
                         module   = ?MODULE,
                         function = make_token,
                         args     = [{user, binary}],
+                        result   = {result, rescode}},
+
+     %% Bot report generator
+     #ejabberd_commands{name     = bot_report,
+                        desc     = "Generate report on bots",
+                        longdesc = "Parameters: <days>\n",
+                        module   = wocky_report,
+                        function = generate_bot_report,
+                        args     = [{duration, integer}],
                         result   = {result, rescode}}
+
     ].
 
 %%%===================================================================

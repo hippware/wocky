@@ -32,7 +32,8 @@ defmodule Wocky.Mixfile do
          :binpp, :mochijson2, :erlando, :z_stdlib, :uuid, :cqerl, :riakc,
          :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid, :algolia,
          :logger, :schemata, :porcelain, :geocalc, :mix, :faker, :ex_machina,
-         :base16, :poison, :ex_aws, :exconstructor, :honeybadger
+         :base16, :poison, :ex_aws, :exconstructor, :honeybadger, :slackex,
+         :crone
        ],
        plt_add_deps: true,
        flags: [
@@ -76,7 +77,7 @@ defmodule Wocky.Mixfile do
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :schemata, :ejabberd
+       :schemata, :ejabberd, :crone
      ],
      mod: {:wocky_app, []},
      env: [
@@ -186,6 +187,12 @@ defmodule Wocky.Mixfile do
         github: "hippware/escalus",
         branch: "working",
         only: :test},
+      {:crone,
+        github: "blt/crone",
+        branch: "master"},
+      {:slackex,
+        github: "davidstump/slackex",
+        branch: "master"},
 
       # Overrides
       # These are transitive dependencies that need to be overriden to build
