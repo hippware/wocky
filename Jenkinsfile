@@ -37,6 +37,7 @@ node {
 
       archive 'RELEASE'
       archive '_build/prod/rel/wocky/releases/**/wocky.tar.gz'
+      archive '_build/prod/rel/wocky/releases/**/lambda/*'
     }
   }
 }
