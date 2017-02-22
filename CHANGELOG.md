@@ -8,6 +8,11 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Added: bot CLI command (#490)
+
+
+# 17.02.14+1549.1b6c728
+
 * Changed: Update cqerl
 * Re-enable dialyzer on Jenkins build
 
