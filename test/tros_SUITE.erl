@@ -306,9 +306,7 @@ download_success(Client, FileID, Data) ->
     DLQueryStanza = download_stanza(FileID),
     FinalDLStanza = add_to_from(DLQueryStanza, Client),
     escalus:send(Client, FinalDLStanza),
-    ct:log("Sent download request: ~p", [FinalDLStanza]),
     DLResultStanza = escalus:wait_for_stanza(Client, ?S3_TIMEOUT),
-    ct:log("Got download resposne: ~p", [DLResultStanza]),
     escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
     Data = do_download(DLResultStanza).
 
