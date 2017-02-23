@@ -161,7 +161,7 @@ create_file(Config, Client, Access) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         tros_SUITE:do_upload(ResultStanza, ImageData, 200, false).
 
-out_file_data(Config) -> load_file(Config, "out.jpg").
+out_file_data(Config) -> load_file(Config, "out.png").
 
 set_image_field(ID) ->
     bot_SUITE:create_field({"image", "string",
