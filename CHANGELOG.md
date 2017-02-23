@@ -8,7 +8,18 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Disable mnesia migration for now (work-around for #488).
+
+
+# 17.02.22+1560.6fce18b
+
+* Fixed typo in configuration.
+
+
+# 17.02.22+1558.29f3688
+
 * Added: bot CLI command (#490)
+  * Introduced a typo in configuration.
 
 
 # 17.02.14+1549.1b6c728
@@ -19,7 +30,7 @@ If there are not many items, just list them sequentially.
 
 # 17.02.14+1545.001dfdc
 
-* Fixed: Startup can fail due to mnesia transform error (#488)
+* Not fixed: Startup can fail due to mnesia transform error (#488)
 * Fixed: Add day and week durations, milisecond resolution to traffic dumps (#498)
 * Fixed: Fix a typo when getting the current search index name (#512)
   * Fixes: MatchError: no match of right hand side value (#510)
