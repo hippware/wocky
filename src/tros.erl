@@ -55,7 +55,7 @@ get_access(Metadata) ->
 
 -spec get_metadata(ejabberd:lserver(), file_id()) -> result(metadata()).
 get_metadata(Server, FileID) ->
-    get_file_info(get_metadata, [Server, FileID]).
+    get_file_info(get_metadata, [Server, get_base_id(FileID)]).
 
 get_file_info(Function, Args) ->
     apply(mod_wocky_tros:backend(), Function, Args).
@@ -68,9 +68,9 @@ keep(Server, FileID) ->
 delete(Server, FileID) ->
     apply(mod_wocky_tros:backend(), delete, [Server, FileID]).
 
--spec get_base_id(file_id()) -> {ok, file_id()}.
+-spec get_base_id(file_id()) -> file_id().
 get_base_id(FileID) ->
     case binary:split(FileID, [<<"-thumbnail">>, <<"-original">>]) of
-        [BaseID, <<>>] -> {ok, BaseID};
-        _ -> {ok, FileID}
+        [BaseID, <<>>] -> BaseID;
+        _ -> FileID
     end.
