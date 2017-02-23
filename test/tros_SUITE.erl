@@ -93,10 +93,13 @@ file_updown_story(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200, false),
 
-        timer:sleep(2000),
+        timer:sleep(4000),
 
         %% Download
         download_success(Alice, FileID, load_test_out_file(Config)),
+        download_success(Alice, <<FileID/binary, "-thumbnail">>,
+                         load_test_thumb_file(Config)),
+        download_success(Alice, <<FileID/binary, "-original">>, ImageData),
         download_success(Bob, FileID, load_test_out_file(Config))
     end).
 
@@ -112,7 +115,7 @@ message_media_updown_story(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200, false),
 
-        timer:sleep(2000),
+        timer:sleep(4000),
 
         %% Download - Successes
         lists:foreach(fun(C) ->
@@ -141,7 +144,7 @@ update_metadata(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200, false),
 
-        timer:sleep(2000),
+        timer:sleep(4000),
 
         OutData = load_test_out_file(Config),
         download_success(Alice, FileID, OutData),
@@ -177,7 +180,10 @@ load_test_in_file(Config) ->
     load_file(Config, "test_image.png").
 
 load_test_out_file(Config) ->
-    load_file(Config, "test_image_out.jpg").
+    load_file(Config, "test_image_out.png").
+
+load_test_thumb_file(Config) ->
+    load_file(Config, "test_image_thumb.png").
 
 load_file(Config, FileName) ->
     DataDir = proplists:get_value(data_dir, Config),
@@ -248,7 +254,7 @@ do_download(ResultStanza) ->
     true = lists:member({"content-length",
                          integer_to_list(byte_size(RespBin))},
                         NormHeaders),
-    true = lists:member({"content-type", "image/jpeg"}, NormHeaders),
+    true = lists:member({"content-type", "image/png"}, NormHeaders),
     RespBin.
 
 normalise_headers(Headers) ->
@@ -300,7 +306,9 @@ download_success(Client, FileID, Data) ->
     DLQueryStanza = download_stanza(FileID),
     FinalDLStanza = add_to_from(DLQueryStanza, Client),
     escalus:send(Client, FinalDLStanza),
+    ct:log("Sent download request: ~p", [FinalDLStanza]),
     DLResultStanza = escalus:wait_for_stanza(Client, ?S3_TIMEOUT),
+    ct:log("Got download resposne: ~p", [DLResultStanza]),
     escalus:assert(is_iq_result, [DLQueryStanza], DLResultStanza),
     Data = do_download(DLResultStanza).
 

@@ -82,7 +82,8 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
-        Metadata <- expand_err(tros:get_metadata(LServer, FileID)),
+        BaseID <- tros:get_base_id(FileID),
+        Metadata <- expand_err(tros:get_metadata(LServer, BaseID)),
         OwnerID <- expand_err(tros:get_owner(Metadata)),
         Access <- expand_err(tros:get_access(Metadata)),
         check_download_permissions(FromJID, OwnerID, Access),

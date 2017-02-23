@@ -115,8 +115,9 @@ path(Server, FileID) ->
     iolist_to_binary([Server, "-", hash_prefix(FileID), "/", FileID]).
 
 hash_prefix(FileID) ->
+    {ok, BaseID} = tros:get_base_id(FileID),
     base16:encode(
-      binary:part(crypto:hash(md5, FileID), 0, 2)).
+      binary:part(crypto:hash(md5, BaseID), 0, 2)).
 
 get_owner(Metadata) ->
     get_metadata_item(Metadata, owner).

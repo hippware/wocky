@@ -11,7 +11,9 @@
          get_owner/1,
 
          delete/2,
-         keep/2
+         keep/2,
+
+         get_base_id/1
         ]).
 
 -type file_id() :: ejabberd:lresource().
@@ -65,3 +67,10 @@ keep(Server, FileID) ->
 -spec delete(ejabberd:lserver(), file_id()) -> ok.
 delete(Server, FileID) ->
     apply(mod_wocky_tros:backend(), delete, [Server, FileID]).
+
+-spec get_base_id(file_id()) -> {ok, file_id()}.
+get_base_id(FileID) ->
+    case binary:split(FileID, [<<"-thumbnail">>, <<"-original">>]) of
+        [BaseID, <<>>] -> {ok, BaseID};
+        _ -> {ok, FileID}
+    end.
