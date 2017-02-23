@@ -344,7 +344,7 @@ test_subscribe_temporary() ->
       ]},
       { "does not add a device subscription if the user is alredy subscribed", [
         ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
-                                              device(?ALICE, <<"iphone">>),
+                                              device(?CAROL, <<"iphone">>),
                                               node())),
         check_subscribers([bobs_phone() | base_subscribers()])
       ]}
@@ -354,7 +354,7 @@ test_unsubscribe_temporary() ->
     { "unsubscribe_temporary", [
       { "has no effect on a device with no temporary subscription", [
         ?_assertEqual(ok, unsubscribe_temporary(?LOCAL_CONTEXT, ?BOT,
-                                                device(?ALICE, <<"iphone">>))),
+                                                device(?CAROL, <<"iphone">>))),
         check_subscribers([bobs_phone() | base_subscribers()])
       ]},
       { "removes a temporary subscription", [
@@ -434,7 +434,7 @@ test_has_access() ->
     ]}.
 
 test_subscribe() ->
-    Subscribers = [?TIM_JID, ?CAROL_JID, ?BOB_JID, ?KAREN_JID, ?ALICE_JID],
+    Subscribers = [?TIM_JID, ?CAROL_JID, ?BOB_JID, ?KAREN_JID],
     { "subscribe", inorder, [
       { "adds user to list of subscribers", inorder, [
         ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
@@ -448,7 +448,7 @@ test_subscribe() ->
     ]}.
 
 test_unsubscribe() ->
-    Subscribers = [?CAROL_JID, ?KAREN_JID, ?ALICE_JID],
+    Subscribers = [?CAROL_JID, ?KAREN_JID],
     { "unsubscribe", [
       { "removes user from the list of subscribers", inorder, [
         ?_assertEqual(ok, unsubscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
@@ -532,6 +532,6 @@ expected_item() ->
 
 device(User, Resource) -> jid:make(User, ?LOCAL_CONTEXT, Resource).
 
-base_subscribers() -> [?ALICE_JID, ?CAROL_JID, ?KAREN_JID].
+base_subscribers() -> [?CAROL_JID, ?KAREN_JID].
 
 bobs_phone() -> device(?BOB, <<"phone">>).
