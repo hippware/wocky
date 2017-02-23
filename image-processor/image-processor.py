@@ -14,7 +14,6 @@ def lambda_handler(event, context):
         targetBucket = string.replace(bucket, "-quarantine", "")
         body = response['Body'].read()
         contentType = response['ContentType']
-        outputFormat = output_format(contentType)
 
         cmdHead = [
                     'convert',  # ImageMagick Convert
@@ -22,11 +21,11 @@ def lambda_handler(event, context):
                     '-strip'    # Remove metadata
                   ]
         cmdTail = [
-                    'jpeg:-' # Write output with to StdOut
+                    output_format(contentType) + ':-' # Write output with to StdOut
                   ]
 
         # Make full size clean image
-        cmd = cmdHead + maybe_limit_size(len(body)) + cmdTail
+        cmd = cmdHead + limit_size() + cmdTail
         p = Popen(cmd, stdout=PIPE, stdin=PIPE)
         cleanImage = p.communicate(input=body)[0]
 
@@ -34,10 +33,10 @@ def lambda_handler(event, context):
                       Key = key,
                       Body = cleanImage,
                       Metadata = response['Metadata'],
-                      ContentType = "image/jpeg")
+                      ContentType = contentType)
 
         # Make thumbnail
-        cmd = cmdHead + thumbnail_size() + cmdTail
+        cmd = cmdHead + thumbnail_params() + cmdTail
         p = Popen(cmd, stdout=PIPE, stdin=PIPE)
         thumbnailImage = p.communicate(input=body)[0]
 
@@ -45,7 +44,15 @@ def lambda_handler(event, context):
                       Key = key + "-thumbnail",
                       Body = thumbnailImage,
                       Metadata = response['Metadata'],
-                      ContentType = "image/jpeg")
+                      ContentType = contentType)
+
+        # Copy over the original image (in case we want to reprocess it in the
+        # future)
+        s3.put_object(Bucket = targetBucket,
+                      Key = key + "-original",
+                      Body = body,
+                      Metadata = response['Metadata'],
+                      ContentType = contentType)
 
         # Clean up source object
         s3.delete_object(Bucket = bucket,
@@ -64,11 +71,13 @@ def output_format(contentType):
     else:
         raise Exception('Unhandled content type: {}'.contentType)
 
-def maybe_limit_size(size):
-    if size > (1024 * 1024):  # 1MB limit
-        return ['-define', 'jpeg:extent=1024KB']
-    else:
-        return []
+def limit_size():
+    # Max size of an iPhone 7+'s largest axis - do not grow
+    return ['-resize', '1920x1920>']
 
-def thumbnail_size():
-    return ['-size', '384x256']
+def thumbnail_params():
+    # 1/3 the width of iPhone7+, in a square, cropped
+    thumb_size = '360x360'
+    return ['-thumbnail', thumb_size + "^",
+            '-gravity', 'center',
+            '-extent', thumb_size]
