@@ -9,6 +9,7 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * Fixed/Rework: Startup can fail due to mnesia transform error (#488)
+* Remove owner from subscribers list (#524)
 
 
 # 17.02.22+1560.6fce18b

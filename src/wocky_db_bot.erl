@@ -166,15 +166,13 @@ update_affiliations(_Server, ID, Affiliations) ->
     ok.
 
 -spec subscribers(wocky_db:server(), wocky_db:id()) -> [jid()].
-subscribers(Server, ID) ->
+subscribers(_Server, ID) ->
     Result = wocky_db:select_column(shared, bot_subscriber,
                                     user, #{bot => ID}),
     TempResult = wocky_db:select_column(shared, bot_temp_subscription,
                                         device, #{bot => ID}),
     Subscribers = [jid:from_binary(J) || J <- Result ++ TempResult],
-    AllSubscribers = maybe_add_owner_as_subscriber(owner(Server, ID),
-                                                   Subscribers),
-    wocky_util:remove_redundant_jids(AllSubscribers).
+    wocky_util:remove_redundant_jids(Subscribers).
 
 -spec subscriber_count(wocky_db:server(), wocky_db:id()) -> non_neg_integer().
 subscriber_count(Server, ID) ->
@@ -412,9 +410,6 @@ maybe_freeze_roster(Bot = #{visibility := ?WOCKY_BOT_VIS_FOLLOWERS},
     Bot#{visibility => ?WOCKY_BOT_VIS_WHITELIST,
          affiliates => [jid:to_binary(J) || J <- FollowerJIDs]};
 maybe_freeze_roster(Bot, _, _) -> Bot.
-
-maybe_add_owner_as_subscriber(not_found, Subs) -> Subs;
-maybe_add_owner_as_subscriber(Owner, Subs) -> [Owner | Subs].
 
 extract_images(Items) ->
     lists:foldl(extract_image(_, _), [], Items).
