@@ -9,6 +9,7 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * Disable mnesia migration for now (work-around for #488).
+* Remove owner from subscribers list (#524)
 
 
 # 17.02.22+1560.6fce18b
