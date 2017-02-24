@@ -13,18 +13,23 @@
          delete/2,
          keep/2,
 
-         get_base_id/1
+         get_base_id/1,
+         get_type/1
         ]).
 
 -type file_id() :: ejabberd:lresource().
 -type url() :: <<_:40,_:_*8>>.
 -type metadata() :: mod_wocky_tros_backend:metadata().
 -type result(ResultType) :: {ok, ResultType} | {error, atom()}.
+-type file_type() :: full | original | thumbnail.
 
 -export_type([file_id/0, url/0, metadata/0, result/1]).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
+
+-define(THUMBNAIL_SUFFIX, <<"-thumbnail">>).
+-define(ORIGINAL_SUFFIX, <<"-original">>).
 
 -spec parse_url(url()) -> {ok, {ejabberd:lserver(), ejabberd:lresource()}} |
                           {error, invalid_url}.
@@ -70,7 +75,20 @@ delete(Server, FileID) ->
 
 -spec get_base_id(file_id()) -> file_id().
 get_base_id(FileID) ->
-    case binary:split(FileID, [<<"-thumbnail">>, <<"-original">>]) of
+    case binary:split(FileID, [?THUMBNAIL_SUFFIX, ?ORIGINAL_SUFFIX]) of
         [BaseID, <<>>] -> BaseID;
         _ -> FileID
+    end.
+
+-spec get_type(file_id()) -> file_type().
+get_type(FileID) ->
+    OrigLen = byte_size(?ORIGINAL_SUFFIX),
+    ThumbLen = byte_size(?THUMBNAIL_SUFFIX),
+    case binary:longest_common_suffix([FileID, ?ORIGINAL_SUFFIX]) of
+        OrigLen -> original;
+        _ ->
+            case binary:longest_common_suffix([FileID, ?THUMBNAIL_SUFFIX]) of
+                ThumbLen -> thumbnail;
+                _ -> full
+            end
     end.
