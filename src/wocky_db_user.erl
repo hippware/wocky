@@ -117,7 +117,7 @@ register_user(ExternalId, PhoneNumber) ->
 assign_server_and_id(ExternalId, PhoneNumber) ->
     case lookup_userid(external_id_to_user, external_id, ExternalId) of
         not_found ->
-            {wocky_db:create_id(),
+            {?wocky_id:create(),
              assign_server(PhoneNumber),
              true};
 

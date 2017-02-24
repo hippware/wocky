@@ -4,6 +4,8 @@
 -ifndef(WOCKY_DB_SEED_HRL).
 -define(WOCKY_DB_SEED_HRL, 1).
 
+-include("wocky.hrl").
+
 -define(LOCAL_CONTEXT, <<"localhost">>).
 
 -define(USER,        <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>).

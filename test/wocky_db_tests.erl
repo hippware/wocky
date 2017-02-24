@@ -35,19 +35,3 @@ empty_batch_test_() -> {
                     wocky_db:batch_query(shared, [], quorum))
     ]}
 ]}.
-
-is_valid_id_test_() ->
-  { "is_valid_id", [
-    { "returns true if the user ID is a valid UUID", [
-      ?_assert(wocky_db:is_valid_id(?USER)),
-      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v1, text))),
-      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v1, binary))),
-      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v4, text))),
-      ?_assert(wocky_db:is_valid_id(ossp_uuid:make(v4, binary)))
-    ]},
-    { "returns false if the user ID is not a valid UUID", [
-      ?_assertNot(wocky_db:is_valid_id(<<"alice">>))
-    ]}
-  ]}.
-
-

@@ -166,7 +166,7 @@ new_id(Config) ->
                         lists:keydelete("shortname", 1, default_fields())],
         expect_iq_success(create_stanza(CreateFields), Alice),
 
-        FailedCreateFields = [{"id", "string", wocky_db:create_id()}
+        FailedCreateFields = [{"id", "string", ?wocky_id:create()}
                               | default_fields()],
         expect_iq_error(create_stanza(FailedCreateFields), Alice)
       end).

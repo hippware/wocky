@@ -94,11 +94,11 @@ test_get() ->
                         get_bot(?BOT_JID)))
       ]},
       { "returns not_found if no bot exists", [
-        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, wocky_db:create_id())),
+        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, ?wocky_id:create())),
         ?_assertEqual(not_found,
                       get_bot(jid:make(
                                 <<>>, ?LOCAL_CONTEXT,
-                                <<"bot/", (wocky_db:create_id())/binary>>)))
+                                <<"bot/", (?wocky_id:create())/binary>>)))
       ]}
     ]}.
 
@@ -119,7 +119,7 @@ test_exists() ->
         ?_assert(exists(?LOCAL_CONTEXT, ?BOT))
       ]},
       { "returns false if a bot does not exist", [
-        ?_assertNot(exists(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertNot(exists(?LOCAL_CONTEXT, ?wocky_id:create()))
       ]}
     ]}.
 
@@ -134,7 +134,7 @@ test_insert() ->
     ]}.
 
 test_insert_new_name() ->
-    ID = wocky_db:create_id(),
+    ID = ?wocky_id:create(),
     { "insert_new_name", [
       { "inserts a new name if that name is not already taken", inorder, [
         ?_assertEqual(ok, insert_new_name(ID, <<"brandnewname">>)),
@@ -153,7 +153,7 @@ test_owner() ->
         ?_assert(jid:are_bare_equal(?ALICE_JID, owner(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns not_found if the bot doesn't exist", [
-        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, ?wocky_id:create()))
       ]}
     ]}.
 
@@ -185,7 +185,7 @@ test_affiliations() ->
       ]},
       { "returns not_found for non-existant bot", [
         ?_assertEqual(not_found, affiliations(?LOCAL_CONTEXT,
-                                              wocky_db:create_id()))
+                                              ?wocky_id:create()))
       ]}
     ]}.
 
@@ -209,7 +209,7 @@ test_affiliations_from_map() ->
     ]}.
 
 test_update_affiliations() ->
-    ID = wocky_db:create_id(),
+    ID = ?wocky_id:create(),
     { "update_affiliations", [
       { "updates the affiliations", inorder, [
         ?_assertEqual(ok, update_affiliations(?LOCAL_CONTEXT, ?BOT,
@@ -242,7 +242,7 @@ test_subscribers() ->
                       lists:sort(subscribers(?LOCAL_CONTEXT, ?BOT)))
       ]},
       { "returns empty list for non existant bot", [
-        ?_assertEqual([], subscribers(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual([], subscribers(?LOCAL_CONTEXT, ?wocky_id:create()))
       ]}
     ]}.
 
@@ -253,7 +253,7 @@ test_image_items_count() ->
       ]},
       { "returns 0 for non existant bot", [
         ?_assertEqual(0, image_items_count(?LOCAL_CONTEXT,
-                                           wocky_db:create_id()))
+                                           ?wocky_id:create()))
       ]}
     ]}.
 
@@ -266,7 +266,7 @@ test_item_images() ->
                       item_images(?LOCAL_CONTEXT, ?BOT))
       ]},
       { "retrieves an emtpy list for a nonexistant bot", [
-        ?_assertEqual([], item_images(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual([], item_images(?LOCAL_CONTEXT, ?wocky_id:create()))
       ]}
     ]}.
 
@@ -287,10 +287,10 @@ test_get_item() ->
         ?_assertEqual(expected_item(), get_item(?LOCAL_CONTEXT, ?BOT, ?ITEM))
       ]},
       { "gets item_found on non-existant items", [
-        ?_assertEqual(not_found, get_item(?LOCAL_CONTEXT, wocky_db:create_id(),
+        ?_assertEqual(not_found, get_item(?LOCAL_CONTEXT, ?wocky_id:create(),
                                           ?ITEM)),
         ?_assertEqual(not_found, get_item(?LOCAL_CONTEXT, ?BOT,
-                                          wocky_db:create_id()))
+                                          ?wocky_id:create()))
       ]}
     ]}.
 
@@ -366,7 +366,7 @@ test_unsubscribe_temporary() ->
 
 test_clear_temporary_subscriptions() ->
     TimsPhone = device(?TIM, <<"abc">>),
-    Bot2 = wocky_db:create_id(),
+    Bot2 = ?wocky_id:create(),
     { "clear_temporary_subscriptions", [
       { "clears all items temporarally subscribed from a node", [
         ?_assertEqual(ok, subscribe_temporary(?LOCAL_CONTEXT, ?BOT,
@@ -428,7 +428,7 @@ test_has_access() ->
       ]},
       { "returns not_found for non-existant bot", [
         ?_assertEqual(not_found, has_access(?LOCAL_CONTEXT,
-                                            wocky_db:create_id(),
+                                            ?wocky_id:create(),
                                             ?BOB_JID))
       ]}
     ]}.
@@ -480,7 +480,7 @@ test_delete() ->
         ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, ID))
       ]},
       { "does not fail on invalid ID", [
-        ?_assertEqual(ok, delete(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual(ok, delete(?LOCAL_CONTEXT, ?wocky_id:create()))
       ]}
     ]}.
 
@@ -516,7 +516,7 @@ expected_affiliations_after_change() ->
     [{?ALICE_JID, owner}, {?CAROL_JID, spectator}].
 
 new_bot() ->
-    #{id => wocky_db:create_id(), server => ?LOCAL_CONTEXT,
+    #{id => ?wocky_id:create(), server => ?LOCAL_CONTEXT,
       title => <<"Test bot X">>, shortname => <<"ShortName">>,
       owner => ?BOB_B_JID, description => <<"Test insert bot">>,
       address => <<"test address">>, lat => 1.0, lon => -2.0, radius => 10,

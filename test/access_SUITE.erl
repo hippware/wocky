@@ -89,7 +89,7 @@ bot_access(Config) ->
       %% Nobody has permissions on a non-existant bot
       expect_deny(
         expect_iq_success(
-          access_query(bot_node(wocky_db:create_id()),
+          access_query(bot_node(?wocky_id:create()),
                        ?ALICE_B_JID, <<"view">>), Alice))
     end).
 

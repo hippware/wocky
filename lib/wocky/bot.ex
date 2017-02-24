@@ -48,11 +48,6 @@ defmodule Wocky.Bot do
 
   use ExConstructor
 
-  @spec make_id :: binary
-  def make_id do
-    :wocky_db.create_id
-  end
-
   @spec to_jid(Wocky.Bot.t) :: Ejabberd.jid
   def to_jid(bot) do
     :wocky_bot_util.make_jid(bot.server, bot.id)

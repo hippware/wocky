@@ -52,4 +52,8 @@
 
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
+% Elixir module names
+-define(wocky_id, 'Elixir.Wocky.ID').
+
+
 -endif. % ifdef WOCKY_HRL

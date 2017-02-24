@@ -199,7 +199,7 @@ test_check_token() ->
         ?_assertNot(check_token(?USER, ?SERVER, <<"badtoken">>))
       ]},
       { "denies tokens with a bad user", [
-        ?_assertNot(check_token(wocky_db:create_id(), ?SERVER, Token))
+        ?_assertNot(check_token(?wocky_id:create(), ?SERVER, Token))
       ]}
    ] end}.
 
@@ -213,7 +213,7 @@ test_find_user() ->
     ]},
     { "returns not_found for non-existant users", [
         ?_assertEqual(not_found,
-                      find_user(wocky_db:create_id(), ?LOCAL_CONTEXT))
+                      find_user(?wocky_id:create(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 
@@ -255,7 +255,7 @@ test_register_user_with_external_id() ->
   ]}.
 
 test_update_user() ->
-  NullHandleUser = wocky_db:create_id(),
+  NullHandleUser = ?wocky_id:create(),
   { "update_user", [
     { "updates a user's handle if it is unique", [
       ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
@@ -403,7 +403,7 @@ test_add_roster_viewer() ->
                     lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
     ]},
     { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, get_roster_viewers(wocky_db:create_id(),
+      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:create(),
                                                   ?LOCAL_CONTEXT))
     ]}
   ]}.
@@ -420,7 +420,7 @@ test_remove_roster_viewer() ->
       ?_assertEqual([?BOT_B_JID], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, remove_roster_viewer(wocky_db:create_id(),
+      ?_assertEqual(not_found, remove_roster_viewer(?wocky_id:create(),
                                            ?LOCAL_CONTEXT, ?CAROL_JID))
     ]}
   ]}.
@@ -432,7 +432,7 @@ test_get_roster_viewers() ->
                     lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
     ]},
     { "Returns not_found for non-existant users", [
-      ?_assertEqual(not_found, get_roster_viewers(wocky_db:create_id(),
+      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:create(),
                                                ?LOCAL_CONTEXT))
     ]},
     { "Returns empty list for users with no viewers", [
