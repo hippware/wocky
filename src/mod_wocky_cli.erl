@@ -454,19 +454,19 @@ reprocess_image(Files = [ImageFile, MaybeOriginal, MaybeThumbnail]) ->
     Types = [tros:get_type(s3_key(F)) || F <- Files],
     case {OrigAndThumb, Types} of
         {{BaseID, BaseID}, [full, original, thumbnail]} ->
-            reprocess_image(s3_key(MaybeOriginal)),
+            do_reprocess_image(s3_key(MaybeOriginal)),
             3; % Use the original image, skip over the
                % full and thumbnail entries
         _ ->
-            reprocess_image(BaseID),
+            do_reprocess_image(BaseID),
             1
     end;
 
 reprocess_image([ImageFile | _]) ->
-    reprocess_image(s3_key(ImageFile)),
-    1;
+    do_reprocess_image(s3_key(ImageFile)),
+    1.
 
-reprocess_image(ImageName) when is_binary(ImageName) ->
+do_reprocess_image(ImageName) ->
     case tros:get_type(ImageName) of
         thumbnail ->
             io:fwrite("ERROR: Refusing to reprocess "
