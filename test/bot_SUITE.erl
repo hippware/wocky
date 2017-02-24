@@ -221,8 +221,7 @@ subscribers(Config) ->
       fun(Alice, Bob) ->
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?ALICE_B_JID,
-                                   ?CAROL_B_JID,
+        check_subscribers(Stanza, [?CAROL_B_JID,
                                    ?KAREN_B_JID]),
 
         % Bob can't because he's not the owner
@@ -237,8 +236,7 @@ unsubscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?ALICE_B_JID,
-                                    ?KAREN_B_JID])
+        check_subscribers(Stanza2, [?KAREN_B_JID])
       end).
 
 subscribe(Config) ->
@@ -267,16 +265,14 @@ subscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?ALICE_B_JID,
-                                   ?KAREN_B_JID,
+        check_subscribers(Stanza3, [?KAREN_B_JID,
                                    ?CAROL_B_JID,
                                    ?BOB_B_JID]),
 
         % Update Carol's follow status
         expect_iq_success(subscribe_stanza(), Carol),
         Stanza4 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza4, [?ALICE_B_JID,
-                                    ?KAREN_B_JID,
+        check_subscribers(Stanza4, [?KAREN_B_JID,
                                     ?CAROL_B_JID,
                                     ?BOB_B_JID])
       end).
@@ -293,20 +289,20 @@ subscribe_temporary(Config) ->
         timer:sleep(400),
 
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID]),
 
         test_helper:subscribe_pair(Alice, Tim),
         test_helper:add_contact(Alice, Tim, <<"unblocked">>, <<"Timmy">>),
 
         %% But now he can:
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
         timer:sleep(400),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
+        check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID,
                                    escalus_client:full_jid(Tim)
                                   ]),
         ensure_all_clean([Alice, Tim])
@@ -318,20 +314,20 @@ unsubscribe_temporary(Config) ->
         %% Tim's previous temp subscription should have been cleared
         %% by his disconnection
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
         timer:sleep(400),
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
+        check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID,
                                    escalus_client:full_jid(Tim)
                                   ]),
 
         unsubscribe_temporary(?BOT_B_JID, Tim),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID]),
         ensure_all_clean([Alice, Tim])
       end).
 
@@ -342,7 +338,7 @@ temporary_unsubscribe_roster_change(Config) ->
         timer:sleep(400),
 
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID,
+        check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID,
                                    escalus_client:full_jid(Tim)
                                   ]),
 
@@ -360,7 +356,7 @@ temporary_unsubscribe_roster_change(Config) ->
                             escalus:wait_for_stanzas(Tim, 4)),
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?ALICE_B_JID, ?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID]),
 
         timer:sleep(500),
 
@@ -1129,7 +1125,7 @@ expected_create_fields() ->
      {"updated",            timestamp, any},
      {"affiliates+size",    int,    1}, % Owner is always an affiliate
      {"affiliates+hash",    string, any},
-     {"subscribers+size",   int,    1}, % Owner is always a subscriber
+     {"subscribers+size",   int,    0}, % Owner is always a subscriber
      {"subscribers+hash",   string, any}].
 
 expected_retrieve_fields() ->
@@ -1151,7 +1147,7 @@ expected_retrieve_fields() ->
      {"updated",            timestamp, any},
      {"affiliates+size",    int,    2}, % Owner is always an affiliate
      {"affiliates+hash",    string, any},
-     {"subscribers+size",   int,    3}, % Owner is always an subscriber
+     {"subscribers+size",   int,    2}, % Owner is always an subscriber
      {"subscribers+hash",   string, any}].
 
 expected_geosearch_fields() ->

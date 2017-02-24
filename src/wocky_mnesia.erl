@@ -12,9 +12,8 @@ initialise_shared_ram_table(Name, Opts, Attributes) ->
     case create_shared_ram_table(Name, Opts, Attributes) of
         {aborted, {already_exists, Name}} ->
             mnesia:add_table_copy(Name, node(), ram_copies),
-%            ok = mnesia:wait_for_tables([Name], ?WFT_TIMEOUT),
-%            transform_table(Name, Attributes);
-            ok;
+            ok = mnesia:wait_for_tables([Name], ?WFT_TIMEOUT),
+            transform_table(Name, Attributes);
         {atomic, ok} ->
             ok
     end.
@@ -25,9 +24,17 @@ create_shared_ram_table(Name, Opts, Attributes) ->
                          {attributes, Attributes}
                          | Opts]).
 
-%transform_table(Name, Attributes) ->
+transform_table(Name, Attributes) ->
     %% We can skip the transformation function because no nodes should
     %% be running with the old record structure, which for ram tables means
     %% there should be no old records remaining
-%    {atomic, ok} = mnesia:transform_table(Name, ignore, Attributes),
-%    ok.
+    Result = mnesia:transform_table(Name, ignore, Attributes),
+
+    % The not_active case occurs when not all mnesia nodes have started yet.
+    % That's fine - when a later one starts it will also run the transform
+    % eventually one or more will get the ok.
+    case Result of
+        {atomic, ok} -> ok;
+        {aborted, {not_active, _, _, _}} -> ok;
+        E -> error(E)
+    end.

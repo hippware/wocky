@@ -101,9 +101,7 @@ publish_item(From = #jid{lserver = LServer}, BotID, ItemID, Entry) ->
 
 notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
     Subscribers = wocky_db_bot:subscribers(LServer, BotID),
-    Owner = wocky_db_bot:owner(LServer, BotID),
-    lists:foreach(notify_subscriber(From, _, Message),
-                  Subscribers -- [Owner]).
+    lists:foreach(notify_subscriber(From, _, Message), Subscribers).
 
 has_image(Entry) ->
     wocky_bot_util:get_image(Entry) =/= none.
