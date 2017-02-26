@@ -60,10 +60,6 @@ get_items(LServer, BotID, RSM) ->
     SortedItems = lists:sort(updated_order(_, _), Items),
     {ok, rsm_util:filter_with_rsm(SortedItems, RSM)}.
 
-% Update time only has one-second resolution. Break ties using `id` to
-% ensure consistent ordering.
-updated_order(#{updated := U, id := ID1}, #{updated := U, id := ID2}) ->
-    ID1 =< ID2;
 updated_order(#{updated := U1}, #{updated := U2}) ->
     U1 =< U2.
 
