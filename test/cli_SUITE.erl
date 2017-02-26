@@ -153,13 +153,13 @@ seed_s3_file(UserJID, FileID) ->
 %%--------------------------------------------------------------------
 
 create_file(Config, Client, Access) ->
-        ImageData = load_file(Config, "in.png"),
-        FileSize = byte_size(ImageData),
+    ImageData = load_file(Config, "in.png"),
+    FileSize = byte_size(ImageData),
 
-        {QueryStanza, ResultStanza} =
-        tros_SUITE:common_upload_request(FileSize, Client, Access),
-        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        tros_SUITE:do_upload(ResultStanza, ImageData, 200, false).
+    {QueryStanza, ResultStanza} =
+    tros_SUITE:common_upload_request(FileSize, Client, Access),
+    escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+    tros_SUITE:do_upload(ResultStanza, ImageData, 200, false).
 
 out_file_data(Config) -> load_file(Config, "out.png").
 
