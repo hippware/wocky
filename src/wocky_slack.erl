@@ -10,6 +10,7 @@
 
 -define(slack_files, 'Elixir.Slackex.Files').
 
+-spec post_weekly_bot_report(binary()) -> map().
 post_weekly_bot_report(Channel) ->
     Token = wocky_app:get_config(slack_token),
     Report = wocky_report:generate_bot_report(7),
@@ -21,4 +22,4 @@ post_weekly_bot_report(Channel) ->
                                title    => <<"Weekly Bot Report for ",
                                              Server/binary>>,
                                filetype => <<"csv">>,
-                               channels => list_to_binary(Channel)}).
+                               channels => Channel}).

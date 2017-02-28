@@ -5,6 +5,7 @@
 -module(wocky_report).
 
 -include("wocky_bot.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 
 -export([generate_bot_report/1]).
 
@@ -22,7 +23,7 @@ generate_bot_report(Duration) ->
     [header(), Report].
 
 header() ->
-    "ID,Title,Created,Updated,Address,Latitude,Longditude,"
+    "ID,Title,Owner,Created,Updated,Address,Latitude,Longditude,"
     "Visibility,Subscribers,ImageItems,Description\n".
 
 maybe_report_bot(BotID, Duration) ->
@@ -44,6 +45,7 @@ report_bot(BotID, CreatedAt) when is_binary(BotID) ->
 report_bot(#{id := ID,
              server := Server,
              title := Title,
+             owner := Owner,
              address := Address,
              lat := Lat,
              lon := Lon,
@@ -53,9 +55,12 @@ report_bot(#{id := ID,
             },
            CreatedAt) ->
 
-    io_lib:fwrite("~s,\"~s\",~s,~s,\"~s\",~f,~f,~s,~B,~B,\"~s\"\n",
+    #jid{luser = OUser, lserver = OServer} = jid:from_binary(Owner),
+
+    io_lib:fwrite("~s,\"~s\",\"~s\",~s,~s,\"~s\",~f,~f,~s,~B,~B,\"~s\"\n",
                   [ID,
                    csv_escape(Title),
+                   csv_escape(wocky_db_user:get_handle(OUser, OServer)),
                    time_string(CreatedAt),
                    time_string(wocky_db:timestamp_to_seconds(Updated)),
                    csv_escape(Address),
@@ -65,6 +70,8 @@ report_bot(#{id := ID,
                    wocky_db_bot:image_items_count(Server, ID),
                    csv_escape(Description)]).
 
+csv_escape(not_found) ->
+    <<"<not_found>">>;
 csv_escape(String) ->
     binary:replace(String, <<"\"">>, <<"\"\"">>, [global]).
 
