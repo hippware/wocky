@@ -55,7 +55,7 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    ok = wocky_db_seed:seed_tables(shared, [handle_to_user,
+    ok = wocky_db_seed:seed_tables(shared, [user, handle_to_user,
                                             phone_number_to_user]),
     ok.
 
