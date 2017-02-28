@@ -32,6 +32,17 @@ config :algolia,
 config :schemata,
   drop_nulls: false
 
+config :pooler,
+  pools: [
+    [
+      name: :riaklocal1,
+      group: :riak,
+      max_count: 10,
+      init_count: 5,
+      start_mfa: { Riak.Connection, :start_link, [] }
+    ]
+  ]
+
 config :ejabberd,
   keep_lager_intact: true
 
