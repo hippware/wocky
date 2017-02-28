@@ -5,6 +5,16 @@ defmodule Wocky.User do
                       to_jid_string: 2, to_bare_jid: 1, to_bare_jid_string: 1]
   use Wocky.Ejabberd
   alias :wocky_db, as: Db
+  alias Wocky.ID
+  alias Wocky.Repo
+
+  @type id           :: binary
+  @type server       :: binary
+  @type handle       :: binary
+  @type external_id  :: binary
+  @type phone_number :: binary
+  @type password     :: binary
+  @type token        :: binary
 
   @type t :: %__MODULE__{
     user:           binary,
@@ -38,6 +48,65 @@ defmodule Wocky.User do
 
   use ExConstructor
 
+  # ====================================================================
+  # API
+  # ====================================================================
+
+  @doc """
+  Creates or updates a user based on the external authentication ID and
+  phone number.
+  """
+  @spec register(server, external_id, phone_number) ::
+    {:ok, {id, server, boolean}}
+  def register(server, external_id, phone_number) do
+    case find_by_external_id(external_id) do
+      nil ->
+        id = ID.create
+        :ok = insert(id, server, %{
+                       external_id: external_id,
+                       phone_number: phone_number
+                     })
+        {:ok, {id, server, true}}
+
+      obj ->
+        {:ok, {obj[:id_register], obj[:server_register], false}}
+    end
+  end
+
+  def find_by_external_id(external_id) do
+    Repo.search("users", "external_id_register:#{external_id}")
+  end
+
+  def insert(id, server, fields, wait \\ false) do
+    :ok =
+      fields
+      |> Map.merge(%{id: id, server: server})
+      |> Repo.update("users", server, id)
+
+    maybe_wait_for_user(wait, id)
+  end
+
+  defp maybe_wait_for_user(wait, id, sleep_time \\ 250, retries \\ 10)
+  defp maybe_wait_for_user(false, _, _, _), do: :ok
+  defp maybe_wait_for_user(_, _, _, 0),     do: {:error, :user_not_found}
+  defp maybe_wait_for_user(_, id, sleep_time, retries) do
+    case Repo.search("users", "id_register:#{id}") do
+      nil ->
+        Process.sleep(sleep_time)
+        maybe_wait_for_user(true, id, sleep_time, retries - 1)
+
+      _ojb ->
+        :ok
+    end
+  end
+
+  @doc "Removes the user from the database"
+  @spec delete(server, id) :: :ok
+  def delete(server, id) do
+    Repo.delete("users", server, id)
+  end
+
+  # =========================================================================
 
   @spec to_jid(Wocky.User.t, binary | nil) :: Ejabberd.jid
   def to_jid(%__MODULE__{user: user, server: server} = u, resource \\ nil) do

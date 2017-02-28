@@ -71,8 +71,7 @@
 -export_type([handle/0, phone_number/0, password/0, token/0]).
 
 %% API
--export([register_user/2,
-         update_user/3,
+-export([update_user/3,
          remove_user/2,
          find_user/2,
          find_user_by/2,
@@ -97,54 +96,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-%% @doc Creates or updates a user based on the external authentication ID and
-%% phone number.
-%%
-%% `ExternalId': the external authentication id.
-%%
-%% `PhoneNumber': the phone number for the user.
-%%
--spec register_user(binary(), binary())
-        -> {ok, {binary(), binary(), boolean()}}.
-register_user(ExternalId, PhoneNumber) ->
-    {User, Server, _} = Ret = assign_server_and_id(ExternalId, PhoneNumber),
-    Queries = [update_user_record_query(User, Server, ExternalId) |
-               maybe_update_phone_number_query(PhoneNumber, User, Server)],
-    {ok, void} = wocky_db:batch_query(shared, Queries, quorum),
-    {ok, Ret}.
-
-%% @private
-assign_server_and_id(ExternalId, PhoneNumber) ->
-    case lookup_userid(external_id_to_user, external_id, ExternalId) of
-        not_found ->
-            {?wocky_id:create(),
-             assign_server(PhoneNumber),
-             true};
-
-        {User, Server} ->
-            {User, Server, false}
-    end.
-
-%% @private
-assign_server(_PhoneNumber) ->
-    %% TODO: This is where the code to assign a user to a particular server
-    %% will go:
-    wocky_app:server().
-
-%% @private
-update_user_record_query(User, Server, ExternalId) ->
-    {"INSERT INTO user (user, server, external_id) VALUES (?, ?, ?)",
-     #{user => User, server => Server, external_id => ExternalId}}.
-
-%% @private
-maybe_update_phone_number_query(<<>>, _User, _Server) ->
-    [];
-maybe_update_phone_number_query(PhoneNumber, User, Server) ->
-    [{"INSERT INTO phone_number_to_user (phone_number, user, server)"
-      " VALUES (?, ?, ?)",
-      #{phone_number => PhoneNumber, user => User, server => Server}}].
-
 
 %% @doc Update the data on an existing user.
 %%

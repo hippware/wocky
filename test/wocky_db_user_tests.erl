@@ -6,7 +6,7 @@
 -include("wocky_db_seed.hrl").
 
 -import(wocky_db_user,
-        [register_user/2, update_user/3, remove_user/2,
+        [update_user/3, remove_user/2,
          find_user/2, find_user_by/2, get_handle/2, get_phone_number/2,
          set_location/6, assign_token/3, release_token/3, check_token/3,
          generate_token/0, get_tokens/2,
@@ -37,7 +37,6 @@ wocky_db_user_test_() ->
        ],
        test_add_roster_viewer(),
        test_remove_roster_viewer(),
-       test_register_user_with_external_id(),
        test_update_user(),
        test_update_user_with_avatar(),
        test_remove_user()
@@ -239,18 +238,6 @@ test_find_user_by() ->
     ]},
     { "gets not_found for non-existant phone number", [
         ?_assertEqual(not_found, find_user_by(phone_number, <<"+1555bogus">>))
-    ]}
-  ]}.
-
-test_register_user_with_external_id() ->
-  { "create_user", [
-    { "creates a user when none exists", [
-      ?_assertMatch({ok, {_, ?SERVER, true}},
-                    register_user(<<"987654321">>, <<"+15559876543">>))
-    ]},
-    { "updates an existing user when one exists", [
-      ?_assertMatch({ok, {?ALICE, ?SERVER, false}},
-                    register_user(?EXTERNAL_ID, ?PHONE_NUMBER))
     ]}
   ]}.
 

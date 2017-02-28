@@ -19,8 +19,8 @@ curl -XPUT $RIAK_HOST/search/index/mam \
     -H 'Content-Type: application/json' \
     -d '{"schema":"mam"}'
 
-# user base
-riak-admin bucket-type create users '{"props":{"datatype":"map"}}'
+# users
+riak-admin bucket-type create users '{"props":{"datatype":"map", "search_index":"_yz_default"}}'
 riak-admin bucket-type activate users
 
 # rosters
@@ -45,12 +45,10 @@ riak-admin bucket-type create last '{"props":{"last_write_wins":true, "dvv_enabl
 riak-admin bucket-type activate last
 
 # Offline messages
-
 riak-admin bucket-type create offline '{"props":{"last_write_wins":true, "dvv_enabled":false}}'
 riak-admin bucket-type activate offline
 
 # Privacy/blocking lists
-
 riak-admin bucket-type create privacy_defaults '{"props":{"last_write_wins":true, "dvv_enabled":false}}'
 riak-admin bucket-type activate privacy_defaults
 

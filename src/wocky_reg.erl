@@ -67,7 +67,7 @@ check_provider_auth(P, _) -> {error, {"not-authorized",
                                       ["Unsupported provider: ", P]}}.
 
 create_or_update_user(ExternalId, PhoneNumber) ->
-    wocky_db_user:register_user(ExternalId, PhoneNumber).
+    ?wocky_user:register(wocky_app:server(), ExternalId, PhoneNumber).
 
 maybe_get_token(false, _, _, _) ->
     {ok, {undefined, undefined}};
