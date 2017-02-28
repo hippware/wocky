@@ -195,7 +195,7 @@ defmodule Wocky.Mixfile do
         github: "blt/crone",
         branch: "master"},
       {:slackex,
-        github: "davidstump/slackex",
+        github: "hippware/slackex",
         branch: "master"},
 
       # Overrides
