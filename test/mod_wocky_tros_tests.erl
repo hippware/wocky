@@ -286,12 +286,7 @@ is_expected_upload_packet(s3, P) ->
                     children =
                     [
                      #xmlel{name = <<"headers">>,
-                            attrs = [],
-                            children = [#xmlel{name = <<"header">>,
-                                               attrs = [{<<"name">>,
-                                                         <<"content-type">>},
-                                                        {<<"value">>,
-                                                         <<"image/jpeg">>}]}]},
+                            attrs = []},
                      #xmlel{name = <<"id">>,
                             attrs = [],
                             children = [#xmlcdata{content = UUID}]},
