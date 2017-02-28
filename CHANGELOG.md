@@ -2,14 +2,16 @@
 
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
-If there are many items, please split them into subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
+Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
 
 If there are not many items, just list them sequentially. 
 
 # Unreleased
 
 * Fixed/Rework: Startup can fail due to mnesia transform error (#488)
-* Remove owner from subscribers list (#524)
+* Changed: Remove owner from subscribers list (#524)
+* Add owner column to bot report CLI command. Minor fixes. (Rework #490)
+* Add lexicographic ordering on id as tie-breaker for bot item ordering (#531)
 
 
 # 17.02.22+1560.6fce18b
