@@ -102,7 +102,7 @@ exists(_Server, ID) ->
 
 -spec new_id(ejabberd:jid()) -> wocky_db:id().
 new_id(#jid{luser = LUser}) ->
-    ID = wocky_db:create_id(),
+    ID = ?wocky_id:create(),
     wocky_db:insert(shared, pending_bot, #{id => ID, owner => LUser,
                                            '[ttl]' => ?NEW_ID_TTL}),
     ID.

@@ -171,7 +171,7 @@ test_message_media_download_request() ->
 test_bad_download_ids() ->
     BadUUID = binary:part(?MEDIA_FILE, 0, byte_size(?MEDIA_FILE) - 1),
     BadURL = <<"tros:">>,
-    MissingID = wocky_db:create_id(),
+    MissingID = ?wocky_id:create(),
     NotFound = expected_dl_auth_error_packet(_),
     {"Bad file ID on download request", [
         {"Failed due to malformed UUID", [

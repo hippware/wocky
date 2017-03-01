@@ -11,6 +11,7 @@ defmodule Wocky.Factory do
     insert_pair: 1, insert_pair: 2, bot_factory: 0, location_factory: 0,
     user_factory: 0
   ]
+  alias Wocky.ID
   alias Wocky.Bot
   alias Wocky.User
   alias Wocky.Location
@@ -21,11 +22,11 @@ defmodule Wocky.Factory do
 
   def user_factory do
     %User{
-      user: User.make_id,
+      user: ID.create,
       server: :wocky_app.server,
       handle: Faker.Internet.user_name,
       password: "password",
-      avatar: :tros.make_url(:wocky_app.server, :wocky_db.create_id),
+      avatar: :tros.make_url(:wocky_app.server, ID.create),
       first_name: Faker.Name.first_name,
       last_name: Faker.Name.last_name,
       email: Faker.Internet.email,
@@ -36,13 +37,13 @@ defmodule Wocky.Factory do
 
   def bot_factory do
     %Bot{
-      id: Bot.make_id,
+      id: ID.create,
       server: :wocky_app.server,
       title: Faker.Company.name,
       shortname: Faker.Company.buzzword,
-      owner: :jid.to_binary(:jid.make(User.make_id, :wocky_app.server, <<>>)),
+      owner: :jid.to_binary(:jid.make(ID.create, :wocky_app.server, <<>>)),
       description: Faker.Lorem.paragraph(%Range{first: 1, last: 2}),
-      image: :tros.make_url(:wocky_app.server, :wocky_db.create_id),
+      image: :tros.make_url(:wocky_app.server, ID.create),
       type: "test",
       address: Faker.Address.street_address,
       lat: Faker.Address.latitude,

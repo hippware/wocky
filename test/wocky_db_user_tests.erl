@@ -6,21 +6,24 @@
 -include("wocky_db_seed.hrl").
 
 -import(wocky_db_user,
-        [register_user/3, register_user/2, update_user/3, remove_user/2,
-         does_user_exist/2, find_user/2, find_user_by/2,
-         get_handle/2, get_phone_number/2,
-         get_password/2, set_password/3, set_location/6,
-         assign_token/3, release_token/3, check_token/3,
+        [register_user/2, update_user/3, remove_user/2,
+         find_user/2, find_user_by/2, get_handle/2, get_phone_number/2,
+         set_location/6, assign_token/3, release_token/3, check_token/3,
          generate_token/0, get_tokens/2,
          add_roster_viewer/3, remove_roster_viewer/3, get_roster_viewers/2]).
+
+register_user(User, Server, Pass) ->
+    case ejabberd_auth_wocky:try_register(User, Server, Pass) of
+        ok -> ok;
+        {error, exists} -> ok;
+        Error -> Error
+    end.
 
 wocky_db_user_test_() ->
     {"wocky_db_user",
      setup, fun before_all/0, fun after_all/1, [
      {foreach, fun before_each/0, fun after_each/1, [
        [
-         test_does_user_exist(),
-         test_get_password(),
          test_get_handle(),
          test_get_phone_number(),
          test_find_user(),
@@ -34,11 +37,9 @@ wocky_db_user_test_() ->
        ],
        test_add_roster_viewer(),
        test_remove_roster_viewer(),
-       test_register_user_with_id(),
        test_register_user_with_external_id(),
        test_update_user(),
        test_update_user_with_avatar(),
-       test_set_password(),
        test_remove_user()
      ]},
      test_set_location()
@@ -54,8 +55,7 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    ok = wocky_db_seed:seed_tables(shared, [user,
-                                            handle_to_user,
+    ok = wocky_db_seed:seed_tables(shared, [user, handle_to_user,
                                             phone_number_to_user]),
     ok.
 
@@ -68,18 +68,6 @@ before_avatar() ->
 
 after_avatar(_) ->
     ok.
-
-test_does_user_exist() ->
-  { "does_user_exist", [
-    { "returns true if the user exists", [
-      ?_assert(does_user_exist(?USER, ?SERVER))
-    ]},
-    { "returns false if the user does not exist", [
-      ?_assertNot(does_user_exist(?BADUSER, ?SERVER)),
-      ?_assertNot(does_user_exist(<<"alice">>, ?SERVER)),
-      ?_assertNot(does_user_exist(<<>>, ?SERVER))
-    ]}
-  ]}.
 
 test_get_handle() ->
   { "get_handle", [
@@ -109,55 +97,17 @@ test_get_phone_number() ->
     ]}
   ]}.
 
-test_register_user_with_id() ->
-  { "register_user/3", [
-    { "creates a user if none exists", [
-      ?_assertMatch(ok, register_user(?NEWUSER, ?SERVER, ?PASS)),
-      ?_assert(does_user_exist(?NEWUSER, ?SERVER))
-    ]},
-    { "updates the user if it already exists", [
-      ?_assertMatch(ok, register_user(?USER, ?SERVER, ?PASS))
-    ]}
-  ]}.
-
-test_get_password() ->
-  { "get_password", [
-    { "returns password if user exists", [
-      ?_assertMatch(?SCRAM, get_password(?USER, ?SERVER))
-    ]},
-    { "returns not_found if user does not exist", [
-      ?_assertMatch(not_found, get_password(?BADUSER, ?SERVER))
-    ]},
-    { "returns not_found if user ID is not a valid UUID", [
-      ?_assertMatch(not_found, get_password(<<"alice">>, ?SERVER))
-    ]}
-  ]}.
-
-test_set_password() ->
-  { "set_password", [
-    { "sets password if user exists", [
-      ?_assertMatch(ok, set_password(?USER, ?SERVER, <<"newpass">>)),
-      ?_assertMatch(<<"newpass">>, get_password(?USER, ?SERVER))
-    ]},
-    { "returns not_found if user does not exist", [
-      ?_assertMatch(not_found, set_password(?BADUSER, ?SERVER, ?PASS))
-    ]},
-    { "returns not_found if user ID is not a valid UUID", [
-      ?_assertMatch(not_found, set_password(<<"alice">>, ?SERVER, ?PASS))
-    ]}
-  ]}.
-
 test_remove_user() ->
   { "remove_user", [
     { "removes user if user exists", [
-      ?_assertMatch(ok, remove_user(?USER, ?SERVER)),
-      ?_assertNot(does_user_exist(?USER, ?SERVER))
+      ?_assertEqual(ok, remove_user(?USER, ?SERVER)),
+      ?_assertEqual(not_found, find_user(?USER, ?SERVER))
     ]},
     { "succeeds if user does not exist", [
-      ?_assertMatch(ok, remove_user(?BADUSER, ?SERVER))
+      ?_assertEqual(ok, remove_user(?BADUSER, ?SERVER))
     ]},
     { "returns ok if user ID is not a valid UUID", [
-      ?_assertMatch(ok, remove_user(<<"alice">>, ?SERVER))
+      ?_assertEqual(ok, remove_user(<<"alice">>, ?SERVER))
     ]}
   ]}.
 
@@ -249,7 +199,7 @@ test_check_token() ->
         ?_assertNot(check_token(?USER, ?SERVER, <<"badtoken">>))
       ]},
       { "denies tokens with a bad user", [
-        ?_assertNot(check_token(wocky_db:create_id(), ?SERVER, Token))
+        ?_assertNot(check_token(?wocky_id:create(), ?SERVER, Token))
       ]}
    ] end}.
 
@@ -263,7 +213,7 @@ test_find_user() ->
     ]},
     { "returns not_found for non-existant users", [
         ?_assertEqual(not_found,
-                      find_user(wocky_db:create_id(), ?LOCAL_CONTEXT))
+                      find_user(?wocky_id:create(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 
@@ -305,7 +255,7 @@ test_register_user_with_external_id() ->
   ]}.
 
 test_update_user() ->
-  NullHandleUser = wocky_db:create_id(),
+  NullHandleUser = ?wocky_id:create(),
   { "update_user", [
     { "updates a user's handle if it is unique", [
       ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
@@ -320,7 +270,7 @@ test_update_user() ->
                     wocky_db_user:find_user(?ALICE, ?SERVER))
     ]},
     { "updates a user's handle when the old handle is null", [
-      ?_assertNot(does_user_exist(NullHandleUser, ?SERVER)),
+      ?_assertEqual(not_found, find_user(NullHandleUser, ?SERVER)),
       ?_assertEqual(ok, register_user(NullHandleUser, ?SERVER, ?PASS)),
       ?_assertEqual(ok, update_user(NullHandleUser, ?SERVER,
                                     #{handle => <<"NewHandle">>})),
@@ -359,7 +309,7 @@ test_update_user() ->
                     wocky_db_user:find_user(?ALICE, ?SERVER))
     ]},
     { "will 'upsert' a user that doesn't already exist", [
-      ?_assertNot(does_user_exist(?NEWUSER, ?SERVER)),
+      ?_assertEqual(not_found, find_user(?NEWUSER, ?SERVER)),
       ?_assertEqual(ok, update_user(?NEWUSER, ?SERVER,
                                     #{handle => <<"auniquehandle">>})),
       ?_assertMatch(#{user := ?NEWUSER, handle := <<"auniquehandle">>},
@@ -453,7 +403,7 @@ test_add_roster_viewer() ->
                     lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
     ]},
     { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, get_roster_viewers(wocky_db:create_id(),
+      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:create(),
                                                   ?LOCAL_CONTEXT))
     ]}
   ]}.
@@ -470,7 +420,7 @@ test_remove_roster_viewer() ->
       ?_assertEqual([?BOT_B_JID], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, remove_roster_viewer(wocky_db:create_id(),
+      ?_assertEqual(not_found, remove_roster_viewer(?wocky_id:create(),
                                            ?LOCAL_CONTEXT, ?CAROL_JID))
     ]}
   ]}.
@@ -482,7 +432,7 @@ test_get_roster_viewers() ->
                     lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
     ]},
     { "Returns not_found for non-existant users", [
-      ?_assertEqual(not_found, get_roster_viewers(wocky_db:create_id(),
+      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:create(),
                                                ?LOCAL_CONTEXT))
     ]},
     { "Returns empty list for users with no viewers", [

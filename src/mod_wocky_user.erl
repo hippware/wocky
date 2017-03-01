@@ -363,7 +363,7 @@ check_valid_value(_, _, _) ->
 
 
 check_file(File) ->
-    case wocky_db:is_valid_id(File) of
+    case 'Elixir.Wocky.ID':'valid?'(File) of
         true -> ok;
         false -> not_valid("Invalid file name (must be UUID)")
     end.

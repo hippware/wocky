@@ -71,17 +71,13 @@
 -export_type([handle/0, phone_number/0, password/0, token/0]).
 
 %% API
--export([register_user/3,
-         register_user/2,
+-export([register_user/2,
          update_user/3,
          remove_user/2,
-         does_user_exist/2,
          find_user/2,
          find_user_by/2,
          get_handle/2,
          get_phone_number/2,
-         get_password/2,
-         set_password/3,
          set_location/6,
          assign_token/3,
          release_token/3,
@@ -100,29 +96,6 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-%% @doc Creates or updates a new user record in the database. This is meant
-%% to be called by internal code when using the in-band registration and
-%% admin user management modules. Therefore, we assume that the username is
-%% correct and update the user record if it already exists.
-%%
-%% `LUser': the "localpart" of the user's JID. Must be a unique timeuuid
-%% generated for this user and in canonical string format.
-%%
-%% `LServer': the "domainpart" of the user's JID. Used to determine which
-%% keyspace to store the user's data in.
-%%
-%% `Password': the processed password for the user. No encryption or obfuscation
-%% is performed on the password at this level; it is stored as-is in the
-%% database.
-%%
--spec register_user(ejabberd:luser(), ejabberd:lserver(), password()) -> ok.
-register_user(LUser, LServer, Password) ->
-    wocky_db:insert(shared, user,
-                    #{user => LUser,
-                      server => LServer,
-                      password => Password}).
-
 
 %% @doc Creates or updates a user based on the external authentication ID and
 %% phone number.
@@ -144,7 +117,7 @@ register_user(ExternalId, PhoneNumber) ->
 assign_server_and_id(ExternalId, PhoneNumber) ->
     case lookup_userid(external_id_to_user, external_id, ExternalId) of
         not_found ->
-            {wocky_db:create_id(),
+            {?wocky_id:create(),
              assign_server(PhoneNumber),
              true};
 
@@ -335,22 +308,6 @@ remove_locations_query(LUser, LServer) ->
      #{user => LUser, server => LServer}}.
 
 
-%% @doc Returns `true' if the user exists in the database.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
-does_user_exist(<<>>, _LServer) ->
-    false;
-does_user_exist(LUser, LServer) ->
-    case find_user(LUser, LServer) of
-        not_found -> false;
-        _UserData -> true
-    end.
-
-
 %% @doc Returns a map of all fields for a given user or `not_found' if no such
 %% user exists.
 %%
@@ -425,40 +382,6 @@ get_phone_number(LUser, _LServer) ->
                         #{user => LUser}).
 
 
-%% @doc Returns the user's password.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_password(ejabberd:luser(), ejabberd:lserver())
-                  -> password() | not_found.
-get_password(LUser, LServer) ->
-    Conditions = #{user => LUser, server => LServer},
-    wocky_db:select_one(shared, user, password, Conditions).
-
-
-%% @doc Updates the user's password.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `Password': the processed password for the user. No encryption or obfuscation
-%% is performed on the password at this level; it is stored as-is in the
-%% database.
-%%
--spec set_password(ejabberd:luser(), ejabberd:lserver(), password())
-                  -> ok | not_found.
-set_password(LUser, LServer, Password) ->
-    case does_user_exist(LUser, LServer) of
-        false -> not_found;
-        true -> wocky_db:update(shared, user,
-                                #{password => Password},
-                                #{user => LUser, server => LServer})
-    end.
-
-
 %% @doc Updates the user's location.
 %%
 %% `LUser': the "localpart" of the user's JID.
@@ -504,8 +427,10 @@ generate_token() ->
 -spec assign_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
                   -> {ok, token(), pos_integer()} | not_found.
 assign_token(LUser, LServer, LResource) ->
-    case does_user_exist(LUser, LServer) of
-        true ->
+    case find_user(LUser, LServer) of
+        not_found ->
+            not_found;
+        _ ->
             Token = generate_token(),
             CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
             ExpiresAt = CreatedAt + timer:seconds(?TOKEN_EXPIRE),
@@ -517,10 +442,7 @@ assign_token(LUser, LServer, LResource) ->
                                    created_at => CreatedAt,
                                    expires_at => ExpiresAt,
                                    '[ttl]' => ?TOKEN_EXPIRE}),
-            {ok, Token, ExpiresAt};
-
-        false ->
-            not_found
+            {ok, Token, ExpiresAt}
     end.
 
 

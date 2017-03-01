@@ -164,7 +164,7 @@ test_remove_user() -> {
     { "does not fail on repeated calls with non-existant users", [
       ?_assertEqual(ok, remove_user(?CAROL, ?LOCAL_CONTEXT)),
       ?_assertEqual(ok, remove_user(?CAROL, ?LOCAL_CONTEXT)),
-      ?_assertEqual(ok, remove_user(wocky_db:create_id(), ?LOCAL_CONTEXT))
+      ?_assertEqual(ok, remove_user(?wocky_id:create(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 

@@ -38,10 +38,6 @@ defmodule Wocky.User do
 
   use ExConstructor
 
-  @spec make_id :: binary
-  def make_id do
-    Db.create_id
-  end
 
   @spec to_jid(Wocky.User.t, binary | nil) :: Ejabberd.jid
   def to_jid(%__MODULE__{user: user, server: server} = u, resource \\ nil) do
