@@ -20,7 +20,6 @@ mod_wocky_tros_test_() -> {
      test_oversized_upload_request(Backend),
      test_avatar_download_request(Backend),
      test_message_media_download_request(Backend),
-     test_group_chat_media_download_request(Backend),
      test_bad_download_ids(Backend),
      test_meck_validate()
     ]}
@@ -60,16 +59,9 @@ before_all(Backend) ->
     meck:expect(mod_wocky_tros_francus, make_auth,
                 fun() -> base64:encode(binary:copy(<<6:8>>, 48)) end),
 
-    meck:expect(mod_wocky_tros_s3, get_access, 1, {ok, <<"all">>}),
-    meck:expect(mod_wocky_tros_s3, get_metadata, 2,
-                {ok,
-                 #{<<"content-type">> => <<"image/png">>,
-                   <<"x-amz-meta-name">> => <<"photo of cat.jpg">>,
-                   <<"x-amz-meta-owner">> =>
-                     <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>}}),
-
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request,
-                                               group_chat]).
+                                               group_chat]),
+    wocky_db_seed:seed_tables(shared, [file_metadata]).
 
 
 after_all(_) ->
@@ -193,38 +185,12 @@ test_message_media_download_request(Backend) ->
           end)
     ]}]}.
 
-test_group_chat_media_download_request(Backend) ->
-    {"Group chat media download request", [
-        {"Successful request on own media", [
-          ?_assert(
-             is_expected_download_packet(
-               Backend, ?GC_MEDIA_FILE,
-               handle_iq(?ALICE_JID,
-                         test_server_jid(),
-                         download_packet(?GC_MEDIA_FILE))))
-    ]},
-        {"Successful request on media in the same group chat as us", [
-          ?_assert(
-             is_expected_download_packet(
-               Backend, ?GC_MEDIA_FILE,
-               handle_iq(?BOB_JID,
-                         test_server_jid(),
-                         download_packet(?GC_MEDIA_FILE))))
-    ]},
-        {"Failed request on media for a group chat we're not in", [
-          ?_assertEqual(
-             expected_dl_auth_error_packet(?GC_MEDIA_FILE),
-             handle_iq(?CAROL_JID,
-                       test_server_jid(),
-                       download_packet(?GC_MEDIA_FILE)))
-    ]}]}.
-
 test_bad_download_ids(Backend) ->
     BadUUID = binary:part(?MEDIA_FILE, 0, byte_size(?MEDIA_FILE) - 1),
     BadURL = <<"tros:">>,
     MissingID = wocky_db:create_id(),
     NotFound = case Backend of
-                   s3 -> expected_dl_auth_error_packet(_);
+                   s3 -> expected_dl_missing_error_packet(_);
                    francus -> expected_dl_missing_error_packet(_)
                end,
     {"Bad file ID on download request", [

@@ -192,6 +192,16 @@ defmodule Schemata.Schemas.Wocky do
       order_by: [timestamp: :asc]
     ]
 
+    table :file_metadata, [
+      columns: [
+        id:       :text,
+        server:   :text,
+        access:   :text,
+        owner:    :text
+      ],
+      primary_key: [:id, :server],
+    ]
+
   end
 
   keyspace ~r/^wocky_((test_)?localhost|.*_tinyrobot_com)$/ do

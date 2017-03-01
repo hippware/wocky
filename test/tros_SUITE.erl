@@ -20,38 +20,19 @@
 all() ->
     [
      %% Uncomment this to enable tests against real-world S3:
-%     {group, s3},
-     {group, francus}
+%     {group, s3}
     ].
 
 groups() ->
     [
-     {francus, common_cases() ++ francus_cases()},
-     {s3, common_cases() ++ s3_cases()}
-    ].
-
-common_cases() ->
-    [
-     file_updown_story,
-     avatar_updown_story,
-     message_media_updown_story
-    ].
-
-s3_cases() ->
-    [
-     update_metadata
-    ].
-
-
-francus_cases() ->
-    [
-     multipart_story,
-     file_down_bob_story,
-     file_down_carol_story,
-     file_up_too_big_story,
-     file_up_too_small_story,
-     request_too_big_story,
-     wrong_type_story
+     {s3,
+      [
+       file_updown_story,
+       message_media_updown_story,
+       update_metadata,
+       request_too_big_story
+      ]
+     }
     ].
 
 suite() ->
@@ -102,38 +83,8 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 
 file_updown_story(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        ImageData = load_test_file(Config),
-        FileSize = byte_size(ImageData),
-
-        %%% Upload
-        {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize, Alice),
-        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData, 200, false),
-
-        %% Download
-        download_success(Alice, FileID, ImageData)
-    end).
-
-multipart_story(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        ImageData = load_test_file(Config),
-        FileSize = byte_size(ImageData),
-
-        %%% Upload
-        {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize, Alice),
-        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData, 200, true),
-
-        %% Download
-        download_success(Alice, FileID, ImageData)
-    end).
-
-avatar_updown_story(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        ImageData = crypto:strong_rand_bytes(5000),
+        ImageData = load_test_in_file(Config),
         FileSize = byte_size(ImageData),
 
         %%% Upload
@@ -142,14 +93,17 @@ avatar_updown_story(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200, false),
 
+        timer:sleep(2000),
+
         %% Download
-        download_success(Bob, FileID, ImageData)
+        download_success(Alice, FileID, load_test_out_file(Config)),
+        download_success(Bob, FileID, load_test_out_file(Config))
     end).
 
 message_media_updown_story(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
                   fun(Alice, Bob, Carol, Karen) ->
-        ImageData = crypto:strong_rand_bytes(5000),
+        ImageData = load_test_in_file(Config),
         FileSize = byte_size(ImageData),
 
         %%% Upload
@@ -158,53 +112,16 @@ message_media_updown_story(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200, false),
 
+        timer:sleep(2000),
+
         %% Download - Successes
         lists:foreach(fun(C) ->
-                              download_success(C, FileID, ImageData)
+                              download_success(C, FileID,
+                                               load_test_out_file(Config))
                       end,
                       [Alice, Bob, Carol]),
 
         download_failure(Karen, FileID)
-    end).
-
-file_down_bob_story(Config) ->
-    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        %% Download avatar
-        download_success(Bob, ?AVATAR_FILE, ?AVATAR_DATA),
-
-        %% Download media file
-        download_success(Bob, ?MEDIA_FILE, ?MEDIA_DATA)
-    end).
-
-file_down_carol_story(Config) ->
-    escalus:story(Config, [{carol, 1}], fun(Carol) ->
-        %% Fail to download media file since we are neither the owner
-        %% nor the participant
-        download_failure(Carol, ?MEDIA_DATA)
-    end).
-
-
-file_up_too_big_story(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        ImageData = load_test_file(Config),
-        FileSize = byte_size(ImageData),
-
-        {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize div 2, Alice),
-        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        do_upload(ResultStanza, ImageData, 413, false)
-    end).
-
-file_up_too_small_story(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        ImageData = load_test_file(Config),
-        FileSize = byte_size(ImageData),
-
-        {QueryStanza, ResultStanza} =
-        common_upload_request(FileSize * 2, Alice),
-
-        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        do_upload(ResultStanza, ImageData, 400, false)
     end).
 
 request_too_big_story(Config) ->
@@ -213,16 +130,9 @@ request_too_big_story(Config) ->
         escalus:assert(is_iq_error, ResultStanza)
     end).
 
-wrong_type_story(Config) ->
-    escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        {QueryStanza, ResultStanza} = common_upload_request(1204, Alice),
-        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        do_upload(ResultStanza, <<"datadata">>, 415, "image/jpeg", false)
-    end).
-
 update_metadata(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        ImageData = crypto:strong_rand_bytes(100),
+        ImageData = load_test_in_file(Config),
         FileSize = byte_size(ImageData),
 
         %%% Upload
@@ -231,16 +141,20 @@ update_metadata(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200, false),
 
-        download_success(Alice, FileID, ImageData),
+        timer:sleep(2000),
+
+        OutData = load_test_out_file(Config),
+        download_success(Alice, FileID, OutData),
         %%% Bob's download should fail because he lacks access
         download_failure(Bob, FileID),
 
         %%% Now let's modify the metadata
-        mod_wocky_tros_s3:update_access(?LOCAL_CONTEXT, FileID, <<"all">>),
+        mod_wocky_tros_s3:update_access(?LOCAL_CONTEXT,
+                                        FileID, <<"all">>),
 
         %%% Now both Alice and Bob should have access
-        download_success(Alice, FileID, ImageData),
-        download_success(Bob, FileID, ImageData)
+        download_success(Alice, FileID, OutData),
+        download_success(Bob, FileID, OutData)
     end).
 
 
@@ -259,9 +173,15 @@ common_upload_request(Size, Client, Access) ->
     ResultStanza = escalus:send_and_wait(Client, FinalQueryStanza),
     {QueryStanza, ResultStanza}.
 
-load_test_file(Config) ->
+load_test_in_file(Config) ->
+    load_file(Config, "test_image.png").
+
+load_test_out_file(Config) ->
+    load_file(Config, "test_image_out.jpg").
+
+load_file(Config, FileName) ->
     DataDir = proplists:get_value(data_dir, Config),
-    ImageFile = filename:join(DataDir, "test_image.png"),
+    ImageFile = filename:join(DataDir, FileName),
     {ok, ImageData} = file:read_file(ImageFile),
     ImageData.
 
@@ -328,7 +248,7 @@ do_download(ResultStanza) ->
     true = lists:member({"content-length",
                          integer_to_list(byte_size(RespBin))},
                         NormHeaders),
-    true = lists:member({"content-type", "image/png"}, NormHeaders),
+    true = lists:member({"content-type", "image/jpeg"}, NormHeaders),
     RespBin.
 
 normalise_headers(Headers) ->
