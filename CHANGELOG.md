@@ -8,6 +8,9 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+
+# 17.02.28+1578.5066239
+
 * Fixed/Rework: Startup can fail due to mnesia transform error (#488)
 * Changed: Remove owner from subscribers list (#524)
 * Add owner column to bot report CLI command. Minor fixes. (Rework #490)
