@@ -20,7 +20,7 @@
 all() ->
     [
      %% Uncomment this to enable tests against real-world S3:
-     {group, s3}
+%     {group, s3}
     ].
 
 groups() ->
