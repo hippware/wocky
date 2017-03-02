@@ -31,13 +31,11 @@ node {
     stage('Build Release') {
       sh "rm -rf _build/prod/rel/wocky"
       sh "MIX_ENV=prod mix prepare"
-      sh "MIX_ENV=prod mix lambda"
       sh "MIX_ENV=prod mix release --warnings-as-errors"
       sh "echo `./version` > RELEASE"
 
       archive 'RELEASE'
       archive '_build/prod/rel/wocky/releases/**/wocky.tar.gz'
-      archive '_build/prod/rel/wocky/releases/**/lambda/*'
     }
   }
 }

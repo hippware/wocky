@@ -46,12 +46,6 @@ defmodule Wocky.Mixfile do
      eunit: [
        start: true
      ],
-
-     lambda: [
-       packages:
-         [{"image-processor/image-processor.py", "image-processor.zip"}]
-     ]
-
    ]
   end
 
