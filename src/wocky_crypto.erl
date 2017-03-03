@@ -10,7 +10,7 @@
         ]).
 
 % Curently unused
--ignore_xref([encrypt/2, decrypt/2]).
+-ignore_xref([encrypt/3, encrypt/2, decrypt/2]).
 
 encrypt(Key, Data) -> encrypt(Key, Data, 0).
 encrypt(Key, Data, PadTo) ->
