@@ -27,7 +27,8 @@
          tros_cleanup/0,
          tros_migrate_access/0,
          fix_bot_images/0,
-         make_token/1
+         make_token/1,
+         reprocess_images/0
         ]).
 
 -ignore_xref([befriend/2,
@@ -35,7 +36,8 @@
               tros_cleanup/0,
               tros_migrate_access/0,
               fix_bot_images/0,
-              make_token/1
+              make_token/1,
+              reprocess_images/0
              ]).
 
 %%%===================================================================
@@ -142,6 +144,15 @@ commands() ->
                         module   = wocky_report,
                         function = generate_bot_report,
                         args     = [{duration, integer}],
+                        result   = {result, rescode}},
+
+     %% TROS image reprocessor
+     #ejabberd_commands{name     = reprocess_images,
+                        desc     = "Reprocess all image thumbnails and full "
+                                   "versions from source image",
+                        module   = ?MODULE,
+                        function = reprocess_images,
+                        args     = [],
                         result   = {result, rescode}}
 
     ].
@@ -285,10 +296,6 @@ tros_migrate_access() ->
      ),
     ok.
 
-s3_auth() ->
-    [{access_key_id, mod_wocky_tros_s3:access_key_id()},
-     {secret_access_key, mod_wocky_tros_s3:secret_key()}].
-
 migrate_access(Items) ->
     io:fwrite("Found ~p files\n", [length(Items)]),
     lists:foreach(migrate_item_access(_), Items).
@@ -417,6 +424,67 @@ get_token(User, Server, Resource) ->
     {ok, Token}.
 
 %%%===================================================================
+%%% Command implementation - reprocess_images
+%%%===================================================================
+
+
+reprocess_images() ->
+    fun_chain:first(
+      mod_wocky_tros_s3:bucket(),
+      ?s3:list_objects(),
+      ?ex_aws:'stream!'(s3_auth()),
+      reprocess_images()
+     ),
+    ok.
+
+reprocess_images(Stream) ->
+    case ?enum:'empty?'(Stream) of
+        true ->
+            ok;
+        false ->
+            Head = ?enum:take(Stream, 3),
+            Used = reprocess_image(Head),
+            reprocess_images(?enum:drop(Stream, Used))
+    end.
+
+reprocess_image(Files = [ImageFile, MaybeOriginal, MaybeThumbnail]) ->
+    BaseID = s3_key(ImageFile),
+    OrigAndThumb = {tros:get_base_id(s3_key(MaybeOriginal)),
+                    tros:get_base_id(s3_key(MaybeThumbnail))},
+    Types = [tros:get_type(s3_key(F)) || F <- Files],
+    case {OrigAndThumb, Types} of
+        {{BaseID, BaseID}, [full, original, thumbnail]} ->
+            do_reprocess_image(s3_key(MaybeOriginal)),
+            3; % Use the original image, skip over the
+               % full and thumbnail entries
+        _ ->
+            do_reprocess_image(BaseID),
+            1
+    end;
+
+reprocess_image([ImageFile | _]) ->
+    do_reprocess_image(s3_key(ImageFile)),
+    1.
+
+do_reprocess_image(ImageName) ->
+    case tros:get_type(ImageName) of
+        thumbnail ->
+            io:fwrite("ERROR: Refusing to reprocess "
+                      "orphaned thumbnail ~p\n", [ImageName]);
+        _ ->
+            % Copy the image back to the quarantine bucket to allow
+            % the Lambda function to reprocess it.
+            BaseID = tros:get_base_id(ImageName),
+            Req = ?s3:put_object_copy(
+                     <<(mod_wocky_tros_s3:bucket())/binary, "-quarantine">>,
+                     BaseID,
+                     mod_wocky_tros_s3:bucket(),
+                     ImageName),
+            ?ex_aws:'request!'(Req, s3_auth()),
+            io:fwrite("Reprocessing ~p from ~p\n", [BaseID, ImageName])
+    end.
+
+%%%===================================================================
 %%% Common helpers
 %%%===================================================================
 
@@ -427,3 +495,9 @@ get_user(Handle) ->
         User ->
             {ok, User}
     end.
+
+s3_auth() ->
+    [{access_key_id, mod_wocky_tros_s3:access_key_id()},
+     {secret_access_key, mod_wocky_tros_s3:secret_key()}].
+
+s3_key(#{key := Key}) -> Key.
