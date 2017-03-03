@@ -45,7 +45,7 @@ defmodule Wocky.Mixfile do
      # set switches that affect every invocation of the eunit task
      eunit: [
        start: true
-     ],
+     ]
    ]
   end
 
@@ -120,7 +120,6 @@ defmodule Wocky.Mixfile do
       {:base16,               "~> 1.0",   override: true},
       {:porcelain,            "~> 2.0"},
       {:algolia,              "~> 0.4.0"},
-      {:ex_aws,               github: "hippware/ex_aws", override: true, branch: "working"},
       {:geocalc,              "~> 0.5.3"},
       {:exconstructor,        "~> 1.0"},
       {:ok,                   "~> 1.2",    runtime: false},
@@ -142,6 +141,11 @@ defmodule Wocky.Mixfile do
       {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working"},
       {:schemata,   github: "hippware/schemata",     branch: "master"},
       {:ex_machina, github: "thoughtbot/ex_machina", branch: "master"},
+      {:ex_aws,
+        github: "CargoSense/ex_aws",
+        branch: "master",
+        override: true
+      },
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",
