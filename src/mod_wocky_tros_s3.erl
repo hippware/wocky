@@ -8,6 +8,7 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky_db_seed.hrl").
+-include("tros.hrl").
 
 -define(s3, 'Elixir.ExAws.S3').
 -define(AWSConfig, 'Elixir.ExAws.Config').
@@ -142,6 +143,11 @@ get_metadata(LServer, FileID) ->
     end.
 
 delete(LServer, FileID) ->
+    Files = [<<FileID/binary, Suffix/binary>> ||
+             Suffix <- [<<>>, ?TROS_THUMBNAIL_SUFFIX, ?TROS_ORIGINAL_SUFFIX]],
+    lists:foreach(do_delete(LServer, _), Files).
+
+do_delete(LServer, FileID) ->
     do([error_m ||
         Result <- do_request(LServer, FileID, delete),
         check_result_get_headers(Result, 204),

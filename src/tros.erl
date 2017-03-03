@@ -25,11 +25,9 @@
 
 -export_type([file_id/0, url/0, metadata/0, result/1]).
 
+-include("tros.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
-
--define(THUMBNAIL_SUFFIX, <<"-thumbnail">>).
--define(ORIGINAL_SUFFIX, <<"-original">>).
 
 -spec parse_url(url()) -> {ok, {ejabberd:lserver(), ejabberd:lresource()}} |
                           {error, invalid_url}.
@@ -75,19 +73,25 @@ delete(Server, FileID) ->
 
 -spec get_base_id(file_id()) -> file_id().
 get_base_id(FileID) ->
-    case binary:split(FileID, [?THUMBNAIL_SUFFIX, ?ORIGINAL_SUFFIX]) of
+    Split = binary:split(FileID, [?TROS_THUMBNAIL_SUFFIX,
+                                  ?TROS_ORIGINAL_SUFFIX]),
+    case Split of
         [BaseID, <<>>] -> BaseID;
         _ -> FileID
     end.
 
 -spec get_type(file_id()) -> file_type().
 get_type(FileID) ->
-    OrigLen = byte_size(?ORIGINAL_SUFFIX),
-    ThumbLen = byte_size(?THUMBNAIL_SUFFIX),
-    case binary:longest_common_suffix([FileID, ?ORIGINAL_SUFFIX]) of
-        OrigLen -> original;
+    OrigLen = byte_size(?TROS_ORIGINAL_SUFFIX),
+    ThumbLen = byte_size(?TROS_THUMBNAIL_SUFFIX),
+    OrigSuffix = binary:longest_common_suffix([FileID, ?TROS_ORIGINAL_SUFFIX]),
+    case OrigSuffix of
+        OrigLen ->
+            original;
         _ ->
-            case binary:longest_common_suffix([FileID, ?THUMBNAIL_SUFFIX]) of
+            ThumbSuffix = binary:longest_common_suffix(
+                            [FileID, ?TROS_THUMBNAIL_SUFFIX]),
+            case ThumbSuffix of
                 ThumbLen -> thumbnail;
                 _ -> full
             end
