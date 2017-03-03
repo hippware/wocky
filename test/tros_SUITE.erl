@@ -30,7 +30,9 @@ groups() ->
        file_updown_story,
        message_media_updown_story,
        update_metadata,
-       request_too_big_story
+       file_up_too_big_story,
+       request_too_big_story,
+       update_metadata
       ]
      }
     ].
@@ -91,7 +93,7 @@ file_updown_story(Config) ->
         {QueryStanza, ResultStanza} =
         common_upload_request(FileSize, Alice),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData, 200, false),
+        FileID = do_upload(ResultStanza, ImageData, 200),
 
         timer:sleep(4000),
 
@@ -113,7 +115,7 @@ message_media_updown_story(Config) ->
         {QueryStanza, ResultStanza} =
         common_upload_request(FileSize, Alice, access_list([Bob, Carol])),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData, 200, false),
+        FileID = do_upload(ResultStanza, ImageData, 200),
 
         timer:sleep(4000),
 
@@ -125,6 +127,17 @@ message_media_updown_story(Config) ->
                       [Alice, Bob, Carol]),
 
         download_failure(Karen, FileID)
+    end).
+
+file_up_too_big_story(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ImageData = load_test_in_file(Config),
+        FileSize = byte_size(ImageData),
+
+        {QueryStanza, ResultStanza} =
+        common_upload_request(FileSize div 2, Alice),
+        escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
+        do_upload(ResultStanza, ImageData, 403)
     end).
 
 request_too_big_story(Config) ->
@@ -142,7 +155,7 @@ update_metadata(Config) ->
         {QueryStanza, ResultStanza} =
         common_upload_request(FileSize, Alice, <<"">>),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
-        FileID = do_upload(ResultStanza, ImageData, 200, false),
+        FileID = do_upload(ResultStanza, ImageData, 200),
 
         timer:sleep(4000),
 
@@ -196,12 +209,10 @@ add_to_from(Stanza, Client) ->
       escalus_stanza:from(Stanza, Client),
       escalus_client:server(Client)).
 
-do_upload(ResultStanza, ImageData, ExpectedCode, Multipart) ->
-    do_upload(ResultStanza, ImageData, ExpectedCode, undefined, Multipart).
+do_upload(ResultStanza, ImageData, ExpectedCode) ->
+    do_upload(ResultStanza, ImageData, ExpectedCode, undefined).
 
--define(MP_BOUNDARY, "------").
-
-do_upload(ResultStanza, ImageData, ExpectedCode, ContentType, Multipart) ->
+do_upload(ResultStanza, ImageData, ExpectedCode, ContentType) ->
     UploadEl = get_element(ResultStanza, <<"upload">>),
     URL = get_cdata(UploadEl, <<"url">>),
     Method = get_cdata(UploadEl, <<"method">>),
@@ -214,29 +225,18 @@ do_upload(ResultStanza, ImageData, ExpectedCode, ContentType, Multipart) ->
         _ -> ContentType
     end,
     FinalHeaders = Headers -- [ContentType],
-    {OuterContentType, Body} =
-    case Multipart of
-        false ->
-            {ReqContentType, ImageData};
-        true ->
-            {"multipart/form-data; boundary=" ++ ?MP_BOUNDARY,
-            make_multipart_body(ReqContentType, ImageData)}
-    end,
+
     {ok, Result} = httpc:request(list_to_atom(
                                    string:to_lower(
                                      binary_to_list(Method))),
                                  {binary_to_list(URL),
                                   FinalHeaders,
-                                  OuterContentType,
-                                  Body},
+                                  ReqContentType,
+                                  ImageData},
                                  [], []),
     {Response, _RespHeaders, _RespContent} = Result,
     {_, ExpectedCode, _} = Response,
     FileID.
-
-make_multipart_body(ContentType, ImageData) ->
-    Prefix = cow_multipart:part(?MP_BOUNDARY, [{"content-type", ContentType}]),
-    iolist_to_binary([Prefix, ImageData, cow_multipart:close(?MP_BOUNDARY)]).
 
 do_download(ResultStanza) ->
     DownloadEl = get_element(ResultStanza, <<"download">>),

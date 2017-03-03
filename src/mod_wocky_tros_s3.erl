@@ -11,6 +11,7 @@
 -include("tros.hrl").
 
 -define(s3, 'Elixir.ExAws.S3').
+-define(auth, 'Elixir.ExAws.Auth').
 -define(AWSConfig, 'Elixir.ExAws.Config').
 
 -define(AMZ_CONTENT_TYPE, <<"content-type">>).
@@ -62,23 +63,36 @@ make_download_response(_FromJID, #jid{lserver = LServer},
     {[], RespFields}.
 
 make_upload_response(FromJID = #jid{luser = Owner}, #jid{lserver = LServer},
-                     FileID, _Size, Access,
+                     FileID, Size, Access,
                      #{?AMZ_CONTENT_TYPE := CT}) ->
     FileJID = jid:replace_resource(FromJID, <<"file/", FileID/binary>>),
     ReferenceURL = <<"tros:", (jid:to_binary(FileJID))/binary>>,
 
-    RespFields = resp_fields(LServer, upload_bucket(), FileID,
-                             put, [{?AMZ_CONTENT_TYPE, CT}], ReferenceURL),
+    Headers =
+    [
+     {<<"x-amz-content-sha256">>, <<"UNSIGNED-PAYLOAD">>},
+     {<<"content-length">>, integer_to_binary(Size)},
+     {?AMZ_CONTENT_TYPE, CT}
+    ],
 
-    Headers = [{?AMZ_CONTENT_TYPE, CT}],
+    Config = ?AWSConfig:new(s3, [{access_key_id, access_key_id()},
+                                 {secret_access_key, secret_key()}]),
+
+    URL = <<"https://", (upload_bucket())/binary, ".s3.amazonaws.com/",
+            (path(LServer, FileID))/binary>>,
+
+    RetHeaders = ?auth:headers(put, URL, s3, Config, Headers, nil),
+
+    RespFields = resp_fields(put, URL, ReferenceURL),
 
     wocky_db_tros:set_metadata(LServer, FileID, Owner, Access),
-    {Headers, RespFields}.
 
-resp_fields(LServer, Bucket, FileID, Method, URLParams, ReferenceURL) ->
+    {RetHeaders, RespFields}.
+
+resp_fields(Method, URL, ReferenceURL) ->
     [
      {<<"method">>, list_to_binary(string:to_upper(atom_to_list(Method)))},
-     {<<"url">>, s3_url(LServer, Bucket, FileID, Method, URLParams)},
+     {<<"url">>, URL},
      {<<"reference_url">>, ReferenceURL}
     ].
 
