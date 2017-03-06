@@ -75,12 +75,8 @@ csv_escape(not_found) ->
 csv_escape(String) ->
     binary:replace(String, <<"\"">>, <<"\"\"">>, [global]).
 
-vis_string(?WOCKY_BOT_VIS_OWNER) -> "owner";
-vis_string(?WOCKY_BOT_VIS_WHITELIST) -> "whitelist";
-vis_string(?WOCKY_BOT_VIS_FRIENDS) -> "friends";
-vis_string(?WOCKY_BOT_VIS_FOLLOWERS) -> "followers";
-vis_string(?WOCKY_BOT_VIS_OPEN) -> "open";
-vis_string(_) -> "<unknown>".
+vis_string(?WOCKY_BOT_VIS_OPEN) -> "public";
+vis_string(_) -> "private".
 
 time_string(Seconds) ->
     {ok, S} = ?timex:format(?timex:from_unix(Seconds), <<"{ISO:Extended:Z}">>),

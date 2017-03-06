@@ -125,21 +125,6 @@ handle_iq_type(From, To, #iq{type = set,
                             }) ->
     handle_update(From, To, Attrs, Children);
 
-% Retrieve affiliations
-handle_iq_type(From, To, #iq{type = get,
-                             sub_el = #xmlel{name = <<"affiliations">>,
-                                             attrs = Attrs}
-                            }) ->
-    wocky_bot_users:handle_retrieve_affiliations(From, To, Attrs);
-
-% Update affiliations
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = #xmlel{name = <<"affiliations">>,
-                                             attrs = Attrs,
-                                             children = Children}
-                            }) ->
-    wocky_bot_users:handle_update_affiliations(From, To, Attrs, Children);
-
 % Subscribe
 handle_iq_type(From, To, #iq{type = set,
                              sub_el = #xmlel{name = <<"subscribe">>,
@@ -223,7 +208,7 @@ handle_create(From, Children) ->
         check_required_fields(Fields2, required_fields()),
         {ID, BotEl} <- create(From, Server, Fields2),
         wocky_bot_users:notify_new_viewers(Server, ID, none,
-                                           wocky_db_bot:visibility(Server, ID)),
+                                           wocky_db_bot:is_public(Server, ID)),
         {ok, BotEl}
        ]).
 
@@ -239,15 +224,9 @@ handle_delete(From, #jid{lserver = Server}, Attrs) ->
     do([error_m ||
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_owner(Server, ID, From),
-        delete_bot(Server, ID),
+        wocky_db_bot:delete(Server, ID),
         {ok, []}
        ]).
-
-delete_bot(Server, ID) ->
-    #jid{luser= LUser, lserver = LServer} = wocky_db_bot:owner(Server, ID),
-    wocky_db_user:remove_roster_viewer(LUser, LServer, bot_jid(Server, ID)),
-    wocky_db_bot:delete(Server, ID),
-    ok.
 
 %%%===================================================================
 %%% Actions - get/subscribed
@@ -367,11 +346,11 @@ handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
     do([error_m ||
         ID <- wocky_bot_util:get_id_from_node(Attrs),
         wocky_bot_util:check_owner(Server, ID, From),
-        OldVisibility <- {ok, wocky_db_bot:visibility(Server, ID)},
+        OldPublic <- {ok, wocky_db_bot:is_public(Server, ID)},
         Fields <- get_fields(Children),
         update_bot(Server, ID, Fields),
-        wocky_bot_users:notify_new_viewers(Server, ID, OldVisibility,
-                                           wocky_db_bot:visibility(Server, ID)),
+        wocky_bot_users:notify_new_viewers(Server, ID, OldPublic,
+                                           wocky_db_bot:is_public(Server, ID)),
         {ok, []}
        ]).
 
@@ -496,23 +475,12 @@ filter_local_packet_hook(P = {From, To,
 filter_local_packet_hook(Other) ->
     Other.
 
-handle_bot_packet(From, LServer, BotID,
-                  #xmlel{name = <<"message">>,
-                         attrs = Attrs, children = Children}) ->
-    case xml:get_attr(<<"type">>, Attrs) of
-        {value, <<"headline">>} ->
-            handle_roster_changed(From, LServer, BotID, Children);
-        false ->
-            ignored
-    end;
-
 % Presence packets are handled in the user_send_packet hook in
 % wocky_bot_subscriber however that hook can't drop them (and as a result
 % they return errors back to the sender). So we cause them to be dropped here.
 handle_bot_packet(_From, _LServer, _BotID,
                   #xmlel{name = <<"presence">>}) ->
     ok;
-
 handle_bot_packet(_, _, _, _) ->
     ignored.
 
@@ -529,120 +497,6 @@ handle_bot_stanza(From, To, BotStanza) ->
         _ ->
             ok
     end.
-
-%%%===================================================================
-%%% Roster update packet handler
-%%%===================================================================
-
--record(roster_item, {
-          jid :: ejabberd:jid(),
-          subscription :: subscription_type(),
-          groups :: [binary()]
-         }).
-
-handle_roster_changed(From, LServer, BotID,
-                     [El = #xmlel{name = <<"roster-changed">>,
-                                  children = Children}]) ->
-    _ = do([error_m ||
-            wocky_xml:check_namespace(?NS_WOCKY_ROSTER, El),
-            wocky_bot_util:check_owner(LServer, BotID, From),
-            #{visibility := Visibility}
-                <- {ok, wocky_db_bot:get_bot(LServer, BotID)},
-            Items <- els_to_items(Children),
-            UnfriendedJIDs <- get_unfriended_jids(Items),
-            UnfollowedJIDs <- get_unfollowed_jids(Items),
-            remove_invalidated_affiliates(LServer, BotID, UnfriendedJIDs),
-            remove_invalidated_subscribers(
-              LServer, BotID, Visibility, UnfriendedJIDs, UnfollowedJIDs)
-           ]),
-    ok;
-handle_roster_changed(_, _, _, _) ->
-    ignored.
-
-get_unfriended_jids(Items) ->
-    get_demoted_jids(Items, fun(X) -> not is_friend(X) end).
-
-get_unfollowed_jids(Items) ->
-    get_demoted_jids(Items, fun(X) -> not is_follower(X) end).
-
-get_demoted_jids(Items, FilterFun) ->
-    Demoted = lists:filter(FilterFun, Items),
-    {ok, [JID || #roster_item{jid = JID} <- Demoted]}.
-
-is_friend(#roster_item{subscription = Sub, groups = Groups}) ->
-    wocky_util:is_friend(Sub, Groups).
-
-is_follower(#roster_item{subscription = Sub, groups = Groups}) ->
-    wocky_util:is_follower(Sub, Groups).
-
-els_to_items(ItemEls) ->
-    {ok, lists:foldl(fun el_to_item/2, [], ItemEls)}.
-
-el_to_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children},
-           Acc) ->
-    Subscription = binary_to_existing_atom(
-                     xml:get_attr_s(<<"subscription">>, Attrs), utf8),
-    Groups = get_groups(Children),
-    {value, JID} = xml:get_attr(<<"jid">>, Attrs),
-    [#roster_item{jid = jid:from_binary(JID),
-                  groups = Groups,
-                  subscription = Subscription}
-     | Acc];
-el_to_item(_, Acc) -> Acc.
-
-get_groups(Elements) ->
-    lists:foldl(fun get_group/2, [], Elements).
-
-get_group(#xmlel{name = <<"group">>,
-                 children = [#xmlcdata{content = Group}]}, Acc) ->
-    [Group | Acc];
-get_group(_, Acc) -> Acc.
-
-remove_invalidated_affiliates(LServer, ID, UnfriendedJIDs) ->
-    OldAffiliates = [A || {A, _} <- wocky_db_bot:affiliations(LServer, ID)],
-    RemovedAffiliates = wocky_util:intersection(OldAffiliates, UnfriendedJIDs,
-                                                fun jid:are_bare_equal/2),
-    RemovedAffiliations = [{I, none} || I <- RemovedAffiliates],
-    wocky_db_bot:update_affiliations(LServer, ID, RemovedAffiliations),
-    wocky_bot_util:notify_affiliates(
-      jid:make(<<>>, LServer, <<>>), ID, RemovedAffiliations).
-
-remove_invalidated_subscribers(LServer, ID, Vis,
-                               UnfriendedJIDs, _UnfollowedJIDs)
-  when Vis =:= ?WOCKY_BOT_VIS_FRIENDS;
-       Vis =:= ?WOCKY_BOT_VIS_WHITELIST ->
-    remove_invalidated_subscribers(LServer, ID, UnfriendedJIDs);
-remove_invalidated_subscribers(LServer, ID, ?WOCKY_BOT_VIS_FOLLOWERS,
-                               _UnfriendedJIDs, UnfollowedJIDs) ->
-    remove_invalidated_subscribers(LServer, ID, UnfollowedJIDs);
-remove_invalidated_subscribers(_, _, _, _, _) ->
-    ok.
-
-remove_invalidated_subscribers(LServer, ID, InvalidatedJIDs) ->
-    Subscribers = wocky_db_bot:subscribers(LServer, ID),
-    RemovedSubscribers = wocky_util:intersection(Subscribers, InvalidatedJIDs,
-                                                 fun jid:are_bare_equal/2),
-    lists:foreach(remove_invalidated_subscriber(LServer, ID, _),
-                  RemovedSubscribers).
-
-remove_invalidated_subscriber(LServer, ID, JID = #jid{lresource = <<>>}) ->
-    wocky_db_bot:unsubscribe(LServer, ID, JID),
-    notify_unsubscribe(LServer, ID, JID);
-remove_invalidated_subscriber(LServer, ID, JID) ->
-    wocky_db_bot:unsubscribe_temporary(LServer, ID, JID),
-    notify_unsubscribe(LServer, ID, JID).
-
-notify_unsubscribe(LServer, ID, JID) ->
-    Stanza =
-    #xmlel{name = <<"message">>,
-           children = [make_unsubscribed(ID)]},
-    ejabberd_router:route(jid:make(<<>>, LServer, <<>>), JID, Stanza).
-
-make_unsubscribed(ID) ->
-    #xmlel{name = <<"unsubscribed">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT},
-                    {<<"node">>, wocky_bot_util:make_node(ID)}],
-           children = [wocky_bot_util:make_follow_element()]}.
 
 %%%===================================================================
 %%% Access manager callback
@@ -798,7 +652,6 @@ create(Owner, Server, Fields) ->
         Fields2 <- add_defaults(Fields),
         Fields3 <- add_owner(Owner, Fields2),
         create_bot(Server, ID, Fields3),
-        add_bot_as_roster_viewer(Owner, Server, ID),
         BotEl <- make_bot_el(Server, ID),
         {ok, {ID, BotEl}}
        ]).
@@ -869,10 +722,6 @@ normalise_field(#field{name = N, type = jid, value = JID = #jid{}}, Acc) ->
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
-add_bot_as_roster_viewer(#jid{luser = LUser, lserver = LServer}, Server, ID) ->
-    wocky_db_user:add_roster_viewer(LUser, LServer, bot_jid(Server, ID)),
-    ok.
-
 make_bot_el(Server, ID) ->
     case wocky_db_bot:get_bot(Server, ID) of
         not_found ->
@@ -890,20 +739,16 @@ make_ret_elements(Map) ->
     Fields = map_to_fields(Map),
     encode_fields(Fields ++ MetaFields).
 
-meta_fields(Map = #{id := ID, server := Server}) ->
+meta_fields(#{id := ID, server := Server}) ->
     Subscribers = wocky_db_bot:subscribers(Server, ID),
-    Affiliates = wocky_db_bot:affiliations_from_map(Map),
     ImageItems = wocky_db_bot:image_items_count(Server, ID),
     [make_field(<<"jid">>, jid, bot_jid(Server, ID)),
      make_field(<<"image_items">>, int, ImageItems) |
-     size_and_hash(<<"followers">>, Subscribers) ++ %% DEPRECATED - remove later
-     size_and_hash(<<"affiliates">>, Affiliates) ++
      size_and_hash(<<"subscribers">>, Subscribers)].
 
 bot_jid(Server, ID) ->
     jid:make(<<>>, Server, <<"bot/", ID/binary>>).
 
-size_and_hash(Name, not_found) -> size_and_hash(Name, []);
 size_and_hash(Name, List) ->
     [make_field(<<Name/binary, "+size">>, int, length(List)),
      make_field(<<Name/binary, "+hash">>, string,
