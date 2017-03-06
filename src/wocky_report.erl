@@ -23,7 +23,7 @@ generate_bot_report(Duration) ->
     [header(), Report].
 
 header() ->
-    "ID,Title,Owner,Created,Updated,Address,Latitude,Longditude,"
+    "ID,Title,Owner,Created,Updated,Address,Latitude,Longitude,"
     "Visibility,Subscribers,ImageItems,Description\n".
 
 maybe_report_bot(BotID, Duration) ->
