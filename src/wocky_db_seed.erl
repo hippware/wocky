@@ -232,10 +232,12 @@ seed_data(bot, Server) ->
        lat => ?BOT_LAT, lon => ?BOT_LON, radius => ?BOT_RADIUS,
        address => ?BOT_ADDRESS, image => ?AVATAR_FILE, type => ?BOT_TYPE,
        visibility => ?WOCKY_BOT_VIS_WHITELIST,
-       affiliates => [?BOB_B_JID], tags => ?BOT_TAGS,
-       alerts => ?WOCKY_BOT_ALERT_DISABLED,
+       tags => ?BOT_TAGS, alerts => ?WOCKY_BOT_ALERT_DISABLED,
        updated => now, follow_me => false, follow_me_expiry => 0
       }];
+seed_data(bot_share, _Server) ->
+    [#{bot => <<?LOCAL_CONTEXT/binary, "/bot/", ?BOT/binary>>,
+       to_jid => ?BOB_B_JID, from_jid => ?ALICE_B_JID, time => now}];
 seed_data(bot_name, _Server) ->
     [#{shortname => ?BOT_NAME, id => ?BOT}];
 seed_data(bot_subscriber, _Server) ->
