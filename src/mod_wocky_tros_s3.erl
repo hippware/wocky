@@ -81,7 +81,7 @@ make_upload_response(FromJID = #jid{luser = Owner}, #jid{lserver = LServer},
     URL = <<"https://", (upload_bucket())/binary, ".s3.amazonaws.com/",
             (path(LServer, FileID))/binary>>,
 
-    RetHeaders = ?auth:headers(put, URL, s3, Config, Headers, nil),
+    {ok, RetHeaders} = ?auth:headers(put, URL, s3, Config, Headers, nil),
 
     RespFields = resp_fields(put, URL, ReferenceURL),
 
