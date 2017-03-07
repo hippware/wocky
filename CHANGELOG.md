@@ -10,6 +10,8 @@ If there are not many items, just list them sequentially.
 
 * Add `reprocess_images` CLI operation to (re)generate thumbnails and sanitised
   images.
+* Add missing cron module. 
+  * Was preventing weekly bot report from running. 
 
 # 17.02.28+1578.5066239
 
