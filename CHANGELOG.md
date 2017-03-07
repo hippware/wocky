@@ -15,6 +15,8 @@ If there are not many items, just list them sequentially.
 * File upload content length header is now enforced (#528)
 * Add `reprocess_images` CLI operation to (re)generate thumbnails and sanitised
   images.
+* Add missing cron module. 
+  * Was preventing weekly bot report from running. 
 * Fix spelling in bot CLI command.
 
 
