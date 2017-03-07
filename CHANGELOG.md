@@ -8,10 +8,17 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Images are processed and sanitised after upload (#452)
+  * Images are downsized to Nx1920 (landscape) or 1920xN (portrait) pixels. 
+* Image thumbnail generation (#517)
+* File metadata moved from S3 to database (#495)
+* File upload content length header is now enforced (#528)
 * Add `reprocess_images` CLI operation to (re)generate thumbnails and sanitised
   images.
 * Add missing cron module. 
   * Was preventing weekly bot report from running. 
+* Fix spelling in bot CLI command.
+
 
 # 17.02.28+1578.5066239
 
@@ -19,6 +26,7 @@ If there are not many items, just list them sequentially.
 * Changed: Remove owner from subscribers list (#524)
 * Add owner column to bot report CLI command. Minor fixes. (Rework #490)
 * Add lexicographic ordering on id as tie-breaker for bot item ordering (#531)
+
 
 # 17.02.22+1560.6fce18b
 
