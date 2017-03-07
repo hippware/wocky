@@ -1,8 +1,7 @@
 -module(privacy_helper).
 
 -include_lib("exml/include/exml.hrl").
--include_lib("escalus/include/escalus.hrl").
--include_lib("escalus/include/escalus_xmlns.hrl").
+-include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include("wocky_db_seed.hrl").
 

@@ -160,30 +160,6 @@ seed_data(media_data, _Server) ->
        data => ?MEDIA_DATA},
      #{chunk_id => ?GC_MEDIA_CHUNK, file_id => ?GC_MEDIA_FILE,
        data => ?MEDIA_DATA}];
-seed_data(privacy, Server) ->
-    [#{user => ?CAROL, server => Server,
-       lists => [?PRIVACY_LIST1, ?PRIVACY_LIST2]},
-     #{user => ?KAREN, server => Server,
-       lists => []}];
-seed_data(privacy_item, Server) ->
-    [#{user => ?CAROL, server => Server, list => ?PRIVACY_LIST1,
-       id => ?PRIVACY_ITEM1, type => <<"jid">>,
-       value => jid:to_binary(jid:make(?KAREN, Server, <<>>)),
-       action => false, item_order => 1, match_all => true,
-       match_iq => false, match_message => false,
-       match_presence_in => false, match_presence_out => false},
-     #{user => ?CAROL, server => Server, list => ?PRIVACY_LIST1,
-       id => ?PRIVACY_ITEM2, type => <<"jid">>,
-       value => jid:to_binary(jid:make(?KAREN, Server, <<>>)),
-       action => false, item_order => 2, match_all => false,
-       match_iq => true, match_message => false,
-       match_presence_in => false, match_presence_out => false},
-     #{user => ?CAROL, server => Server, list => ?PRIVACY_LIST2,
-       id => ?PRIVACY_ITEM3, type => <<"subscription">>,
-       value => <<"both">>,
-       action => false, item_order => 1, match_all => false,
-       match_iq => false, match_message => true,
-       match_presence_in => false, match_presence_out => true}];
 seed_data(bot, Server) ->
     [#{id => ?BOT, server => Server, title => ?BOT_TITLE,
        shortname => ?BOT_NAME, owner => ?ALICE_B_JID, description => ?BOT_DESC,

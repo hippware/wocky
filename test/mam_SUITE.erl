@@ -17,7 +17,6 @@
 -compile(export_all).
 
 -include_lib("escalus/include/escalus.hrl").
--include_lib("escalus/include/escalus_xmlns.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 
