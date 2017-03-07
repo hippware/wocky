@@ -9,6 +9,7 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * Images are processed and sanitised after upload (#452)
+  * Images are downsized to Nx1920 (landscape) or 1920xN (portrait) pixels. 
 * Image thumbnail generation (#517)
 * File metadata moved from S3 to database (#495)
 * File upload content length header is now enforced (#528)
