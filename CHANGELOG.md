@@ -8,10 +8,10 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
-* Images are processed and sanitised after upload
-* Image thumbnail generation
-* File metadata moved from S3 to database
-* File upload content length header is now enforced
+* Images are processed and sanitised after upload (#452)
+* Image thumbnail generation (#517)
+* File metadata moved from S3 to database (#495)
+* File upload content length header is now enforced (#528)
 * Add `reprocess_images` CLI operation to (re)generate thumbnails and sanitised
   images.
 
