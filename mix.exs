@@ -266,6 +266,7 @@ defmodule Wocky.Mixfile do
            %{limit: 80, skip_comments: false}},
           {:elvis_style, :no_tabs},
           {:elvis_style, :no_trailing_whitespace},
+          # We use macros for Elixir module names
           # {:elvis_style, :macro_names},
           # {:elvis_style, :macro_module_names},
           {:elvis_style, :operator_spaces,
@@ -297,8 +298,9 @@ defmodule Wocky.Mixfile do
            %{limit: 80, skip_comments: false}},
           {:elvis_style, :no_tabs},
           {:elvis_style, :no_trailing_whitespace},
-          {:elvis_style, :macro_names},
-          {:elvis_style, :macro_module_names},
+          # We use macros for Elixir module names
+          # {:elvis_style, :macro_names},
+          # {:elvis_style, :macro_module_names},
           {:elvis_style, :operator_spaces,
            %{rules: [right: ",", right: "++", left: "++"]}},
           {:elvis_style, :nesting_level, %{level: 3}},
