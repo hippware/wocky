@@ -10,6 +10,7 @@ If there are not many items, just list them sequentially.
 
 * Add `reprocess_images` CLI operation to (re)generate thumbnails and sanitised
   images.
+* Fix spelling in bot CLI command.
 
 # 17.02.28+1578.5066239
 
