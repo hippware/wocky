@@ -87,7 +87,7 @@ mech_step(Creds, ClientIn) ->
                 {error, {no_auth_modules, _}} ->
                     {error, <<"not-authorized">>, User};
                 {error, R} ->
-                    ?DEBUG("authorize error: ~p", [R]),
+                    ok = lager:debug("authorize error: ~p", [R]),
                     {error, <<"internal-error">>}
             end;
         _ ->

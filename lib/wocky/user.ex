@@ -73,29 +73,24 @@ defmodule Wocky.User do
     end
   end
 
-  def find_by_external_id(external_id) do
-    Repo.search("users", "external_id_register:#{external_id}")
-  end
-
   def insert(id, server, fields, wait \\ false) do
     :ok =
       fields
       |> Map.merge(%{id: id, server: server})
       |> Repo.update("users", server, id)
 
-    maybe_wait_for_user(wait, id)
+    maybe_wait_for_user(wait, id, 250, 10)
   end
 
-  defp maybe_wait_for_user(wait, id, sleep_time \\ 250, retries \\ 10)
   defp maybe_wait_for_user(false, _, _, _), do: :ok
   defp maybe_wait_for_user(_, _, _, 0),     do: {:error, :user_not_found}
   defp maybe_wait_for_user(_, id, sleep_time, retries) do
     case Repo.search("users", "id_register:#{id}") do
-      nil ->
+      [] ->
         Process.sleep(sleep_time)
         maybe_wait_for_user(true, id, sleep_time, retries - 1)
 
-      _ojb ->
+      [_obj | _] ->
         :ok
     end
   end
@@ -104,6 +99,15 @@ defmodule Wocky.User do
   @spec delete(server, id) :: :ok
   def delete(server, id) do
     Repo.delete("users", server, id)
+  end
+
+  @doc ""
+  @spec find_by_external_id(external_id) :: nil | map
+  def find_by_external_id(external_id) do
+    case Repo.search("users", "external_id_register:#{external_id}") do
+      [] -> nil
+      [obj] -> obj
+    end
   end
 
   # =========================================================================

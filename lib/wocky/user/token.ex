@@ -38,9 +38,10 @@ defmodule Wocky.User.Token do
       expires_at: expiry
     }
 
-    Map.new
-    |> Map.put(resource, token_map)
-    |> Repo.update("tokens", server, id)
+    :ok =
+      Map.new
+      |> Map.put(resource, token_map)
+      |> Repo.update("tokens", server, id)
 
     {:ok, {token, expiry}}
   end
@@ -96,11 +97,10 @@ defmodule Wocky.User.Token do
   """
   @spec release(User.id, User.server, User.resource) :: :ok
   def release(id, server, resource) do
-    "tokens"
-    |> Repo.find(server, id)
-    |> Riak.CRDT.Map.delete({resource, :map})
-    |> Repo.update("tokens", server, id)
-
-    :ok
+    :ok =
+      "tokens"
+      |> Repo.find(server, id)
+      |> Riak.CRDT.Map.delete({resource, :map})
+      |> Repo.update("tokens", server, id)
   end
 end

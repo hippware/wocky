@@ -7,6 +7,12 @@ defmodule Wocky.Repo do
   alias Riak.Search
   alias Wocky.Repo.Object
 
+  require Record
+  import Record, only: [defrecordp: 2, extract: 2]
+
+  defrecordp :search_results,
+    extract(:search_results, from_lib: "riakc/include/riakc.hrl")
+
   @type type   :: binary
   @type bucket :: binary
   @type key    :: binary
@@ -16,16 +22,18 @@ defmodule Wocky.Repo do
   def find(type, bucket, key), do: Riak.find(type, bucket, key)
 
   @doc "Find an object in Riak using a Solr query"
-  @spec search(binary, binary) :: nil | map
+  @spec search(binary, binary) :: [map]
   def search(index, conditions) do
-    {:ok, {:search_results, results, _, _}} =
-      Search.query(index, conditions)
+    {:ok, results} = Search.query(index, conditions)
 
-    case results do
-      [] -> nil
-      [{^index, values}] ->
-        values |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
-    end
+    results
+    |> search_results(:docs)
+    |> List.flatten
+    |> Enum.map(&unwrap_search_results/1)
+  end
+
+  defp unwrap_search_results({_index, values}) do
+    values |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
   end
 
   @doc "Update the type/bucket/key in Riak with the provided object"
