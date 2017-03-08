@@ -36,7 +36,7 @@
   "exjsx": {:hex, :exjsx, "3.2.1", "1bc5bf1e4fd249104178f0885030bcd75a4526f4d2a1e976f4b428d347614f0f", [:mix], [{:jsx, "~> 2.8.0", [hex: :jsx, optional: false]}]},
   "exml": {:git, "https://github.com/esl/exml", "75ad4e8fcdf4b6180172ccf9c55b534e7cf17f6a", [tag: "2.4.0"]},
   "exometer": {:git, "https://github.com/Feuerlabs/exometer.git", "7a7bd8d2b52de4d90f65aa3f6044b0e988319b9e", [branch: "master"]},
-  "exometer_cloudwatch": {:git, "https://github.com/hippware/exometer_cloudwatch.git", "65c7c79258fab19f7910757a1260b1f644b0e653", [branch: "master"]},
+  "exometer_cloudwatch": {:git, "https://github.com/hippware/exometer_cloudwatch.git", "e7cca91619e0eb145207105ca4a032258c6f207b", [branch: "master"]},
   "exometer_core": {:git, "https://github.com/Feuerlabs/exometer_core.git", "9206b28d045b395abd1b86cc794223ec9aeeb0ea", [branch: "master"]},
   "exref": {:git, "https://github.com/hippware/exref.git", "aae767d73bfc0beb30654e1a06cc168d752920fa", [branch: "master"]},
   "faker": {:hex, :faker, "0.7.0", "2c42deeac7be717173c78c77fb3edc749fb5d5e460e33d01fe592ae99acc2f0d", [:mix], []},
