@@ -45,6 +45,7 @@ riak-admin bucket-type activate private
 riak-admin bucket-type create vcard '{"props":{"last_write_wins":true, "search_index":"vcard", "dvv_enabled":false}}'
 riak-admin bucket-type activate vcard
 
+# MAM
 riak-admin bucket-type create mam_yz '{"props":{"datatype":"map", "search_index":"mam"}}'
 riak-admin bucket-type activate mam_yz
 
