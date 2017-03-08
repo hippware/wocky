@@ -168,7 +168,7 @@ other_user_mixed_fields(Config) ->
 
 non_existant_user(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = get_request(?wocky_id:create(),
+        QueryStanza = get_request(?wocky_id:new(),
                                   [<<"handle">>]),
         expect_iq_error(QueryStanza, Bob)
     end).
@@ -372,7 +372,7 @@ non_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
         set_request(?ALICE,
-                    [{<<"user">>, <<"uuid">>, ?wocky_id:create()}]),
+                    [{<<"user">>, <<"uuid">>, ?wocky_id:new()}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 

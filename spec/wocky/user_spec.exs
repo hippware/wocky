@@ -6,8 +6,8 @@ defmodule Wocky.UserSpec do
   alias Wocky.User
 
   before do
-    id = ID.create
-    external_id = ID.create
+    id = ID.new
+    external_id = ID.new
     :ok = User.insert(id, shared.server, %{external_id: external_id}, true)
     {:ok, id: id, external_id: external_id}
   end
@@ -45,7 +45,7 @@ defmodule Wocky.UserSpec do
     context "when the user does not exist" do
       before do
         {:ok, result} =
-          User.register(shared.server, ID.create, "+15551234567")
+          User.register(shared.server, ID.new, "+15551234567")
 
         {:shared, result: result}
       end

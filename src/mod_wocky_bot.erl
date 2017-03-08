@@ -651,7 +651,7 @@ create(Owner, Server, Fields) ->
 
 get_id(Owner, Fields) ->
     case lists:keyfind(<<"id">>, #field.name, Fields) of
-        false -> {ok, ?wocky_id:create()};
+        false -> {ok, ?wocky_id:new()};
         #field{value = ID} -> check_id(Owner, ID)
     end.
 

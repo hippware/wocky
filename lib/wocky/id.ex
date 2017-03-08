@@ -6,8 +6,8 @@ defmodule Wocky.ID do
   @type t :: binary
 
   @doc "Generates a timeuuid in canonical text format for use as an id."
-  @spec create :: t
-  def create do
+  @spec new :: t
+  def new do
     :ossp_uuid.make(:v1, :text)
   end
 

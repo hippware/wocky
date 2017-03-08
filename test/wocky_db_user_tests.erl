@@ -113,7 +113,7 @@ test_find_user() ->
     ]},
     { "returns not_found for non-existant users", [
         ?_assertEqual(not_found,
-                      find_user(?wocky_id:create(), ?LOCAL_CONTEXT))
+                      find_user(?wocky_id:new(), ?LOCAL_CONTEXT))
     ]}
   ]}.
 
@@ -143,7 +143,7 @@ test_find_user_by() ->
   ]}.
 
 test_update_user() ->
-  NullHandleUser = ?wocky_id:create(),
+  NullHandleUser = ?wocky_id:new(),
   { "update_user", [
     { "updates a user's handle if it is unique", [
       ?_assertEqual(ok, update_user(?ALICE, ?SERVER,
@@ -291,7 +291,7 @@ test_add_roster_viewer() ->
                     lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
     ]},
     { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:create(),
+      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:new(),
                                                   ?LOCAL_CONTEXT))
     ]}
   ]}.
@@ -308,7 +308,7 @@ test_remove_roster_viewer() ->
       ?_assertEqual([], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, remove_roster_viewer(?wocky_id:create(),
+      ?_assertEqual(not_found, remove_roster_viewer(?wocky_id:new(),
                                            ?LOCAL_CONTEXT, ?CAROL_JID))
     ]}
   ]}.
@@ -320,7 +320,7 @@ test_get_roster_viewers() ->
                     lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
     ]},
     { "Returns not_found for non-existant users", [
-      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:create(),
+      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:new(),
                                                ?LOCAL_CONTEXT))
     ]},
     { "Returns empty list for users with no viewers", [

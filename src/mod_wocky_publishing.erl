@@ -169,7 +169,7 @@ get_item_or_delete(Children) ->
 
 get_id(Attrs) ->
     case xml:get_attr(<<"id">>, Attrs) of
-        false -> {ok, ?wocky_id:create()};
+        false -> {ok, ?wocky_id:new()};
         {value, V} -> {ok, V}
     end.
 

@@ -3,8 +3,8 @@ defmodule Wocky.IDSpec do
 
   alias Wocky.ID
 
-  describe "create/0" do
-    subject do: ID.create
+  describe "new/0" do
+    subject do: ID.new
     it do: should be_binary()
     it do: should be_valid_string()
     it do: should be_printable()

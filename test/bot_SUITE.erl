@@ -160,7 +160,7 @@ new_id(Config) ->
         expect_iq_success(create_stanza(CreateFields), Alice),
 
         %% We can't specify an un-allocated ID for creation
-        FailedCreateFields = [{"id", "string", ?wocky_id:create()}
+        FailedCreateFields = [{"id", "string", ?wocky_id:new()}
                               | default_fields()],
         expect_iq_error(create_stanza(FailedCreateFields), Alice)
       end).

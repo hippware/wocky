@@ -61,7 +61,7 @@ defmodule Wocky.User do
   def register(server, external_id, phone_number) do
     case find_by_external_id(external_id) do
       nil ->
-        id = ID.create
+        id = ID.new
         :ok = insert(id, server, %{
                        external_id: external_id,
                        phone_number: phone_number

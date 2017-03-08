@@ -55,7 +55,7 @@ test_get() ->
                        get(?ALICE, ?LOCAL_CONTEXT, ?BOT))
       ]},
       { "gets an empty list for non-existent users", [
-        ?_assertEqual([], get(?wocky_id:create(), ?LOCAL_CONTEXT))
+        ?_assertEqual([], get(?wocky_id:new(), ?LOCAL_CONTEXT))
       ]},
       { "gets not_found for non-existent items", [
         ?_assertEqual(not_found, get(?ALICE, ?LOCAL_CONTEXT, <<"non-item">>))
@@ -66,7 +66,7 @@ test_get() ->
     ]}.
 
 test_publish() ->
-    ID = ?wocky_id:create(),
+    ID = ?wocky_id:new(),
     AliceJID = ?ALICE_JID,
     BotJID = ?BOT_JID,
     Stanza = #xmlel{name = <<"item">>},

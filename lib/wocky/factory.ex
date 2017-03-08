@@ -22,11 +22,11 @@ defmodule Wocky.Factory do
 
   def user_factory do
     %User{
-      user: ID.create,
+      user: ID.new,
       server: :wocky_app.server,
       handle: Faker.Internet.user_name,
       password: "password",
-      avatar: :tros.make_url(:wocky_app.server, ID.create),
+      avatar: :tros.make_url(:wocky_app.server, ID.new),
       first_name: Faker.Name.first_name,
       last_name: Faker.Name.last_name,
       email: Faker.Internet.email,
@@ -37,13 +37,13 @@ defmodule Wocky.Factory do
 
   def bot_factory do
     %Bot{
-      id: ID.create,
+      id: ID.new,
       server: :wocky_app.server,
       title: Faker.Company.name,
       shortname: Faker.Company.buzzword,
-      owner: :jid.to_binary(:jid.make(ID.create, :wocky_app.server, <<>>)),
+      owner: :jid.to_binary(:jid.make(ID.new, :wocky_app.server, <<>>)),
       description: Faker.Lorem.paragraph(%Range{first: 1, last: 2}),
-      image: :tros.make_url(:wocky_app.server, ID.create),
+      image: :tros.make_url(:wocky_app.server, ID.new),
       type: "test",
       address: Faker.Address.street_address,
       lat: Faker.Address.latitude,

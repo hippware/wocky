@@ -7,8 +7,8 @@ defmodule EjabberdAuthWockySpec do
 
   describe "check_password/3 with token" do
     before do
-      user = ID.create
-      resource = ID.create
+      user = ID.new
+      resource = ID.new
       :ok = Auth.try_register(user, shared.server, "password")
       {:ok, {token, _}} = Token.assign(user, shared.server, resource)
       {:ok, user: user, resource: resource, token: token}
@@ -32,7 +32,7 @@ defmodule EjabberdAuthWockySpec do
     end
 
     it "should return false when the user does not exist" do
-      ID.create
+      ID.new
       |> Auth.check_password(shared.server, shared.token)
       |> should(be_false())
     end

@@ -193,6 +193,6 @@ test_users_with_contact() ->
     { "returns an empty list for users who nobody has as a contact", [
       ?_assertEqual([], users_with_contact(
                           jid:make(
-                            ?wocky_id:create(), ?LOCAL_CONTEXT, <<>>)))
+                            ?wocky_id:new(), ?LOCAL_CONTEXT, <<>>)))
     ]}
   ]}.

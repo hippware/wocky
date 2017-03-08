@@ -7,7 +7,7 @@ defmodule Wocky.User.TokenSpec do
   alias Wocky.User.Token
 
   before do
-    id = ID.create
+    id = ID.new
     resource = Faker.Code.issn
     result = Token.assign(id, shared.server, resource)
     {:ok, result: result, id: id, resource: resource}
@@ -84,7 +84,7 @@ defmodule Wocky.User.TokenSpec do
     end
 
     it "should return nil if the resource is not assigned a token" do
-      ID.create
+      ID.new
       |> Token.get_token(shared.server, shared.resource)
       |> should(be_nil())
 
@@ -108,7 +108,7 @@ defmodule Wocky.User.TokenSpec do
     end
 
     it "should return an empty list if the user has no assign tokens" do
-      ID.create
+      ID.new
       |> Token.get_tokens(shared.server)
       |> should(be_empty())
 
@@ -148,7 +148,7 @@ defmodule Wocky.User.TokenSpec do
     end
 
     it "should return false for a nonexistent user" do
-      ID.create
+      ID.new
       |> Token.valid?(shared.server, shared.token)
       |> should(be_false())
     end
