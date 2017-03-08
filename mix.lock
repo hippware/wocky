@@ -101,7 +101,7 @@
   "sweet_xml": {:hex, :sweet_xml, "0.6.5", "dd9cde443212b505d1b5f9758feb2000e66a14d3c449f04c572f3048c66e6697", [:mix], []},
   "syslog": {:git, "https://github.com/Vagabond/erlang-syslog.git", "0e4f0e95c361af298c5d1d17ceccfa831efc036d", [branch: "master"]},
   "timex": {:hex, :timex, "3.1.7", "71f9c32e13ff4860e86a314303757cc02b3ead5db6e977579a2935225ce9a666", [:mix], [{:combine, "~> 0.7", [hex: :combine, optional: false]}, {:gettext, "~> 0.10", [hex: :gettext, optional: false]}, {:tzdata, "~> 0.1.8 or ~> 0.5", [hex: :tzdata, optional: false]}]},
-  "tzdata": {:hex, :tzdata, "0.5.10", "087e8dfe8c0283473115ad8ca6974b898ecb55ca5c725427a142a79593391e90", [:mix], [{:hackney, "~> 1.0", [hex: :hackney, optional: false]}]},
+  "tzdata": {:hex, :tzdata, "0.5.11", "3d5469a9f46bdf4a8760333dbdabdcc4751325035c454b10521f71e7c611ae50", [:mix], [{:hackney, "~> 1.0", [hex: :hackney, optional: false]}]},
   "usec": {:git, "https://github.com/esl/usec.git", "f85ffd8350d7000c26392c18bdfcdbb30f3b5ee8", [branch: "master"]},
   "uuid": {:hex, :uuid_erl, "1.6.0", "1ba81515eeb37eeb7f1563b658e30cdf18bcaf1fd6a390bbf3838461753e69d8", [:rebar3], [{:quickrand, "~> 1.6.0", [hex: :quickrand, optional: false]}]},
   "wsecli": {:git, "https://github.com/esl/wsecli.git", "a89054cf71c5ee9e780998e5acb2a78fd3419dd9", [branch: "master"]},
