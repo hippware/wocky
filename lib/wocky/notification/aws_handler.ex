@@ -23,7 +23,7 @@ defmodule Wocky.Notification.AWSHandler do
   end
 
   defp handle_register_result({:error, error}), do: handle_aws_error(error)
-  defp handle_register_result({:ok, %{body: %{enpoint_arn: arn} = body}}) do
+  defp handle_register_result({:ok, %{body: %{endpoint_arn: arn} = body}}) do
     :ok = Logger.debug("SNS register response:\n#{inspect(body)}")
     {:ok, arn}
   end
