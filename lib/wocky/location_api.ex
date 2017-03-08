@@ -8,6 +8,7 @@ defmodule Wocky.LocationApi do
   ]
   import OK, only: :macros
   alias Wocky.User
+  alias Wocky.User.Token
   alias Wocky.Location
   require Logger
 
@@ -152,7 +153,7 @@ defmodule Wocky.LocationApi do
   defp check_token(nil, _), do: false
   defp check_token(_, nil), do: false
   defp check_token(user, token),
-    do: :wocky_db_user.check_token(user, :wocky_app.server, token)
+    do: Token.valid?(user, :wocky_app.server, token)
 
   @spec from_json(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}

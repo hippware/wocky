@@ -60,6 +60,7 @@
 % Elixir module names
 -define(wocky_id, 'Elixir.Wocky.ID').
 -define(wocky_user, 'Elixir.Wocky.User').
+-define(wocky_user_token, 'Elixir.Wocky.User.Token').
 
 
 -endif. % ifdef WOCKY_HRL

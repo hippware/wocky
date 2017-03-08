@@ -78,16 +78,10 @@
          get_handle/2,
          get_phone_number/2,
          set_location/6,
-         assign_token/3,
-         release_token/3,
-         check_token/3,
          add_roster_viewer/3,
          remove_roster_viewer/3,
          get_roster_viewers/2]).
 
--ifdef(TEST).
--export([generate_token/0, get_tokens/2]).
--endif.
 
 -compile({parse_transform, do}).
 
@@ -359,89 +353,6 @@ set_location(LUser, LServer, LResource, Lat, Lon, Accuracy) ->
                                          lat =>      Lat,
                                          lon =>      Lon,
                                          accuracy => Accuracy}).
-
-
-%% @doc Generates a token.
--spec generate_token() -> token().
-generate_token() ->
-    RandomBytes = crypto:strong_rand_bytes(?TOKEN_BYTES),
-    String = base64:encode_to_string(RandomBytes),
-    iolist_to_binary([?TOKEN_MARKER, String]).
-
-
-%% @doc Generates a token and assigns it to the specified user and resource.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `LResource': the "resourcepart" of the user's JID.
-%%
--spec assign_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
-                  -> {ok, token(), pos_integer()} | not_found.
-assign_token(LUser, LServer, LResource) ->
-    case find_user(LUser, LServer) of
-        not_found ->
-            not_found;
-        _ ->
-            Token = generate_token(),
-            CreatedAt = wocky_db:now_to_timestamp(os:timestamp()),
-            ExpiresAt = CreatedAt + timer:seconds(?TOKEN_EXPIRE),
-            ok = wocky_db:insert(LServer, auth_token,
-                                 #{user => LUser,
-                                   server => LServer,
-                                   resource => LResource,
-                                   auth_token => Token,
-                                   created_at => CreatedAt,
-                                   expires_at => ExpiresAt,
-                                   '[ttl]' => ?TOKEN_EXPIRE}),
-            {ok, Token, ExpiresAt}
-    end.
-
-
-%% @doc Releases any token currently assigned to the specified user and
-%% resource.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `LResource': the "resourcepart" of the user's JID.
-%%
--spec release_token(ejabberd:luser(), ejabberd:lserver(), ejabberd:lresource())
-                   -> ok.
-release_token(LUser, LServer, LResource) ->
-    wocky_db:delete(LServer, auth_token, all, #{user => LUser,
-                                                server => LServer,
-                                                resource => LResource}).
-
-
-%% @doc Returns all tokens currently assigned to resources belonging to the
-%% specified user.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_tokens(ejabberd:luser(), ejabberd:lserver()) -> [token()].
-get_tokens(LUser, LServer) ->
-    Rows = wocky_db:select(LServer, auth_token, [auth_token],
-                           #{user => LUser, server => LServer}),
-    [Token || #{auth_token := Token} <- Rows].
-
-
-%% @doc Returns `true' if a token is valid for the supplied
-%% user or `false' otherwise.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `Token': the token to test
-%%
--spec check_token(ejabberd:lserver(), ejabberd:luser(), token()) -> boolean().
-check_token(LUser, LServer, Token) ->
-    lists:member(Token, get_tokens(LUser, LServer)).
 
 %% @doc Adds a roster viewer to a user.
 %%

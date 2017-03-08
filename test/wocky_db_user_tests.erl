@@ -6,10 +6,8 @@
 -include("wocky_db_seed.hrl").
 
 -import(wocky_db_user,
-        [update_user/3, remove_user/2,
-         find_user/2, find_user_by/2, get_handle/2, get_phone_number/2,
-         set_location/6, assign_token/3, release_token/3, check_token/3,
-         generate_token/0, get_tokens/2,
+        [update_user/3, remove_user/2, find_user/2, find_user_by/2,
+         get_handle/2, get_phone_number/2, set_location/6,
          add_roster_viewer/3, remove_roster_viewer/3, get_roster_viewers/2]).
 
 register_user(User, Server, Pass) ->
@@ -28,11 +26,6 @@ wocky_db_user_test_() ->
          test_get_phone_number(),
          test_find_user(),
          test_find_user_by(),
-         test_generate_token(),
-         test_get_tokens(),
-         test_assign_token(),
-         test_release_token(),
-         test_check_token(),
          test_get_roster_viewers()
        ],
        test_add_roster_viewer(),
@@ -45,7 +38,7 @@ wocky_db_user_test_() ->
     ]}.
 
 before_all() ->
-    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [auth_token, location]),
+    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [location]),
     wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE),
     wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE2),
     ok.
@@ -109,98 +102,6 @@ test_remove_user() ->
       ?_assertEqual(ok, remove_user(<<"alice">>, ?SERVER))
     ]}
   ]}.
-
-test_generate_token() ->
-  { "generate_token", [
-    { "creates a token that starts with '$T$'", [
-      ?_assertMatch(<<"$T$", _/binary>>, generate_token())
-    ]}
-  ]}.
-
-token_setup() ->
-    {ok, Token, Expiry} = assign_token(?USER, ?SERVER, ?RESOURCE),
-    {Token, Expiry}.
-
-token_cleanup(_) ->
-    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [auth_token]).
-
-test_assign_token() ->
-  { "assign_token", [
-    { "generates and stores a token for the user",
-      setup, fun token_setup/0, fun token_cleanup/1, fun ({Token, Expiry}) ->
-      {inorder, [
-        ?_assertMatch(<<"$T$", _/binary>>, Token),
-        ?_assertEqual([Token], get_tokens(?USER, ?SERVER)),
-        ?_assert(is_integer(Expiry))
-      ]} end},
-    { "overwrites tokens when there are multiple requests", {inorder, [
-      ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
-      ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
-      ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, ?RESOURCE)),
-      ?_assertEqual(1, length(get_tokens(?USER, ?SERVER)))
-    ]}},
-    { "returns not_found if user does not exist", [
-      ?_assertEqual(not_found, assign_token(?BADUSER, ?SERVER, ?RESOURCE))
-    ]},
-    { "returns not_found if user ID is not a valid UUID", [
-      ?_assertEqual(not_found, assign_token(<<"alice">>, ?SERVER, ?RESOURCE))
-    ]}
-  ]}.
-
-test_release_token() ->
-  { "release_token", [
-    { "destroys a stored token",
-      setup, fun token_setup/0, fun token_cleanup/1, [
-        ?_assertEqual(ok, release_token(?USER, ?SERVER, ?RESOURCE)),
-        ?_assertEqual([], get_tokens(?USER, ?SERVER))
-    ]},
-    { "returns ok if there is no token associated with the user or resource",
-      setup, fun token_setup/0, fun token_cleanup/1, [
-        ?_assertEqual(ok, release_token(?BOB, ?SERVER, ?RESOURCE)),
-        ?_assertEqual(ok, release_token(?USER, ?SERVER, <<"nosuchresource">>))
-    ]},
-    { "returns ok if user does not exist", [
-      ?_assertEqual(ok, release_token(?BADUSER, ?SERVER, ?RESOURCE))
-    ]},
-    { "returns ok if user ID is not a valid UUID", [
-      ?_assertEqual(ok, release_token(<<"alice">>, ?SERVER, ?RESOURCE))
-    ]}
-  ]}.
-
-test_get_tokens() ->
-  { "get_tokens", [
-    { "returns all tokens for a user",
-      setup, fun token_setup/0, fun token_cleanup/1, fun ({Token, _Expiry}) ->
-      {inorder, [
-        ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, <<"test1">>)),
-        ?_assertMatch({ok, _, _}, assign_token(?USER, ?SERVER, <<"test2">>)),
-        ?_assertEqual(3, length(get_tokens(?USER, ?SERVER))),
-        ?_assert(lists:member(Token, get_tokens(?USER, ?SERVER)))
-    ]} end},
-    { "returns [] if there are no tokens associated with the user", [
-        ?_assertEqual([], get_tokens(?BOB, ?SERVER))
-    ]},
-    { "returns [] if user does not exist", [
-      ?_assertEqual([], get_tokens(?BADUSER, ?SERVER))
-    ]},
-    { "returns [] if user ID is not a valid UUID", [
-      ?_assertEqual([], get_tokens(<<"alice">>, ?SERVER))
-    ]}
-  ]}.
-
-test_check_token() ->
-  { "check_token", setup, fun token_setup/0, fun token_cleanup/1,
-    fun ({Token, _Expiry}) -> [
-      { "accepts a valid token", [
-        ?_assert(check_token(?USER, ?SERVER, Token))
-      ]},
-      { "denies any other token", [
-        ?_assertNot(check_token(?USER, ?SERVER, <<"badtoken">>))
-      ]},
-      { "denies tokens with a bad user", [
-        ?_assertNot(check_token(?wocky_id:create(), ?SERVER, Token))
-      ]}
-   ] end}.
 
 test_find_user() ->
   { "find_user", [

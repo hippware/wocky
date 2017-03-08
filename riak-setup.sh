@@ -23,6 +23,10 @@ curl -XPUT $RIAK_HOST/search/index/mam \
 riak-admin bucket-type create users '{"props":{"datatype":"map", "search_index":"_yz_default"}}'
 riak-admin bucket-type activate users
 
+# tokens
+riak-admin bucket-type create tokens '{"props":{"datatype":"map"}}'
+riak-admin bucket-type activate tokens
+
 # rosters
 riak-admin bucket-type create rosters '{"props":{"datatype":"map"}}'
 riak-admin bucket-type activate rosters

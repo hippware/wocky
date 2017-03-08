@@ -13,6 +13,7 @@
 -include_lib("ejabberd/include/ejabberd_commands.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_roster.hrl").
+-include("wocky.hrl").
 
 -define(s3, 'Elixir.ExAws.S3').
 -define(ex_aws, 'Elixir.ExAws').
@@ -420,7 +421,7 @@ make_resource() ->
     {ok, <<"cli-resource-", Suffix/binary>>}.
 
 get_token(User, Server, Resource) ->
-    {ok, Token, _Expiry} = wocky_db_user:assign_token( User, Server, Resource),
+    {ok, {Token, _Expiry}} = ?wocky_user_token:assign(User, Server, Resource),
     {ok, Token}.
 
 %%%===================================================================
