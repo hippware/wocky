@@ -79,13 +79,13 @@ test_get() ->
                         [updated],
                         hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT))),
                       maps:without(
-                        [updated],
+                        [affiliates, updated],
                         get_bot(?LOCAL_CONTEXT, ?BOT))),
         ?_assertEqual(maps:without(
                         [updated],
                         hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT))),
                       maps:without(
-                        [updated],
+                        [affiliates, updated],
                         get_bot(?BOT_JID)))
       ]},
       { "returns not_found if no bot exists", [
@@ -123,7 +123,7 @@ test_insert() ->
     { "insert", [
       { "inserts a new bot with the supplied parameters", inorder, [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBot)),
-        ?_assertEqual(NewBot, maps:without([updated],
+        ?_assertEqual(NewBot, maps:without([affiliates, updated],
                                            get_bot(?LOCAL_CONTEXT, ID)))
       ]}
     ]}.
