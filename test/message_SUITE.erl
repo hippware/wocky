@@ -14,7 +14,7 @@
 %% Suite configuration
 %%--------------------------------------------------------------------
 
-all() -> [extended_fields].
+all() -> [messages_story, extended_fields].
 
 suite() ->
     escalus:suite().
@@ -43,6 +43,23 @@ init_per_testcase(CaseName, Config) ->
 
 end_per_testcase(CaseName, Config) ->
     escalus:end_per_testcase(CaseName, Config).
+
+
+%%--------------------------------------------------------------------
+%% Test cases
+%%--------------------------------------------------------------------
+
+messages_story(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
+        test_helper:subscribe(Bob, Alice),
+
+        % Alice sends a message to Bob
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi!">>)),
+
+        % Bob gets the message
+        escalus_assert:is_chat_message(
+          <<"Hi!">>, escalus_client:wait_for_stanza(Bob))
+    end).
 
 %% Verify that our extended fields survive the trip through wocky
 extended_fields(Config) ->
