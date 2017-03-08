@@ -34,7 +34,12 @@
 -define(NS_NOTIFICATIONS, <<"hippware.com/hxep/notifications">>).
 -define(NS_CRASH_TEST,    <<"hippware.com/hxep/crash-test">>).
 -define(NS_PUBLISHING,    <<"hippware.com/hxep/publishing">>).
+
+%% Escalus defines NS_GEOLOC which causes problems when running tests
+-ifndef(NS_GEOLOC).
 -define(NS_GEOLOC,        <<"http://jabber.org/protocol/geoloc">>).
+-endif.
+
 -define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
 
 -define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
