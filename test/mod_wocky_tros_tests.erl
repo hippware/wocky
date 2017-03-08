@@ -53,15 +53,8 @@ before_all() ->
                                              uuid:string_to_uuid(UUID)
                                    end),
 
-    meck:expect(mod_wocky_tros_s3, get_access, 1, {ok, <<"all">>}),
-    meck:expect(mod_wocky_tros_s3, get_metadata, 2,
-                {ok,
-                 #{<<"content-type">> => <<"image/png">>,
-                   <<"x-amz-meta-name">> => <<"photo of cat.jpg">>,
-                   <<"x-amz-meta-owner">> =>
-                     <<"043e8c96-ba30-11e5-9912-ba0be0483c18">>}}),
-
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request]).
+    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request]),
+    wocky_db_seed:seed_tables(shared, [file_metadata]).
 
 
 after_all(_) ->
@@ -172,7 +165,7 @@ test_bad_download_ids() ->
     BadUUID = binary:part(?MEDIA_FILE, 0, byte_size(?MEDIA_FILE) - 1),
     BadURL = <<"tros:">>,
     MissingID = ?wocky_id:create(),
-    NotFound = expected_dl_auth_error_packet(_),
+    NotFound = expected_dl_missing_error_packet(_),
     {"Bad file ID on download request", [
         {"Failed due to malformed UUID", [
             ?_assertEqual(
@@ -266,12 +259,7 @@ is_expected_upload_packet(P) ->
                     children =
                     [
                      #xmlel{name = <<"headers">>,
-                            attrs = [],
-                            children = [#xmlel{name = <<"header">>,
-                                               attrs = [{<<"name">>,
-                                                         <<"content-type">>},
-                                                        {<<"value">>,
-                                                         <<"image/jpeg">>}]}]},
+                            attrs = []},
                      #xmlel{name = <<"id">>,
                             attrs = [],
                             children = [#xmlcdata{content = UUID}]},
@@ -330,6 +318,19 @@ expected_dl_error_packet(Reason, FileID) ->
       "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
       "Download request denied: ",
       (iolist_to_binary(Reason))/binary, "</text></error></iq>">>.
+
+expected_dl_missing_error_packet(FileID) ->
+    <<"<iq id='123456' type='error'>"
+        "<download-request xmlns='", ?NS_TROS/binary, "'>"
+          "<id>", FileID/binary, "</id>"
+        "</download-request>"
+        "<error code='404' type='cancel'>"
+          "<item-not-found xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>"
+          "<text xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'>"
+            "File not found"
+          "</text>"
+        "</error>"
+      "</iq>">>.
 
 expected_dl_auth_error_packet(FileID) ->
     <<"<iq id='123456' type='error'><download-request "

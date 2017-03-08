@@ -9,19 +9,23 @@
          get_metadata/2,
          get_access/1,
          get_owner/1,
-         get_content_type/1,
 
          delete/2,
-         keep/2
+         keep/2,
+
+         get_base_id/1,
+         get_type/1
         ]).
 
 -type file_id() :: ejabberd:lresource().
 -type url() :: <<_:40,_:_*8>>.
 -type metadata() :: mod_wocky_tros_backend:metadata().
 -type result(ResultType) :: {ok, ResultType} | {error, atom()}.
+-type file_type() :: full | original | thumbnail.
 
 -export_type([file_id/0, url/0, metadata/0, result/1]).
 
+-include("tros.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 
@@ -52,13 +56,9 @@ get_owner(Metadata) ->
 get_access(Metadata) ->
     get_file_info(get_access, [Metadata]).
 
--spec get_content_type(metadata()) -> result(binary()).
-get_content_type(Metadata) ->
-    get_file_info(get_content_type, [Metadata]).
-
 -spec get_metadata(ejabberd:lserver(), file_id()) -> result(metadata()).
 get_metadata(Server, FileID) ->
-    get_file_info(get_metadata, [Server, FileID]).
+    get_file_info(get_metadata, [Server, get_base_id(FileID)]).
 
 get_file_info(Function, Args) ->
     apply(mod_wocky_tros:backend(), Function, Args).
@@ -70,3 +70,29 @@ keep(Server, FileID) ->
 -spec delete(ejabberd:lserver(), file_id()) -> ok.
 delete(Server, FileID) ->
     apply(mod_wocky_tros:backend(), delete, [Server, FileID]).
+
+-spec get_base_id(file_id()) -> file_id().
+get_base_id(FileID) ->
+    Split = binary:split(FileID, [?TROS_THUMBNAIL_SUFFIX,
+                                  ?TROS_ORIGINAL_SUFFIX]),
+    case Split of
+        [BaseID, <<>>] -> BaseID;
+        _ -> FileID
+    end.
+
+-spec get_type(file_id()) -> file_type().
+get_type(FileID) ->
+    OrigLen = byte_size(?TROS_ORIGINAL_SUFFIX),
+    ThumbLen = byte_size(?TROS_THUMBNAIL_SUFFIX),
+    OrigSuffix = binary:longest_common_suffix([FileID, ?TROS_ORIGINAL_SUFFIX]),
+    case OrigSuffix of
+        OrigLen ->
+            original;
+        _ ->
+            ThumbSuffix = binary:longest_common_suffix(
+                            [FileID, ?TROS_THUMBNAIL_SUFFIX]),
+            case ThumbSuffix of
+                ThumbLen -> thumbnail;
+                _ -> full
+            end
+    end.

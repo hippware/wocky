@@ -8,25 +8,36 @@
 
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
+-compile({parse_transform, fun_chain}).
 
 -include_lib("ejabberd/include/ejabberd_commands.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_roster.hrl").
+
+-define(s3, 'Elixir.ExAws.S3').
+-define(ex_aws, 'Elixir.ExAws').
+-define(enum, 'Elixir.Enum').
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
 %% commands
 -export([befriend/2,
+         tros_migrate/0,
+         tros_cleanup/0,
+         tros_migrate_access/0,
          fix_bot_images/0,
-         make_token/1
+         make_token/1,
+         reprocess_images/0
         ]).
 
 -ignore_xref([befriend/2,
               tros_migrate/0,
               tros_cleanup/0,
+              tros_migrate_access/0,
               fix_bot_images/0,
-              make_token/1
+              make_token/1,
+              reprocess_images/0
              ]).
 
 %%%===================================================================
@@ -48,6 +59,34 @@ commands() ->
                         function = befriend,
                         args     = [{user1, binary}, {user2, binary}],
                         result   = {result, restuple}},
+
+     %% TROS migration
+     #ejabberd_commands{name     = tros_migrate,
+                        desc     = "Migrate TROS data from francus to S3",
+                        module   = ?MODULE,
+                        function = tros_migrate,
+                        args     = [],
+                        result   = {result, rescode}},
+     #ejabberd_commands{name     = tros_cleanup,
+                        desc     = "Delete TROS data from Francus",
+                        module   = ?MODULE,
+                        function = tros_cleanup,
+                        args     = [],
+                        result   = {result, rescode}},
+
+     #ejabberd_commands{name     = tros_migrate_access,
+                        desc     = "Migrate TROS access data "
+                                   "from S3 back to the local DB",
+                        longdesc = "Output:\n"
+                                   ". : Metadata successfully migrated\n"
+                                   "- : Metadata already in DB;"
+                                   " no action taken\n"
+                                   "N : No metadata found in S3 - probably a"
+                                   " newly created file",
+                        module   = ?MODULE,
+                        function = tros_migrate_access,
+                        args     = [],
+                        result   = {result, rescode}},
 
      %% Traffic dumping
      #ejabberd_commands{name     = dump_traffic,
@@ -105,6 +144,15 @@ commands() ->
                         module   = wocky_report,
                         function = generate_bot_report,
                         args     = [{duration, integer}],
+                        result   = {result, rescode}},
+
+     %% TROS image reprocessor
+     #ejabberd_commands{name     = reprocess_images,
+                        desc     = "Reprocess all image thumbnails and full "
+                                   "versions from source image",
+                        module   = ?MODULE,
+                        function = reprocess_images,
+                        args     = [],
                         result   = {result, rescode}}
 
     ].
@@ -135,6 +183,161 @@ make_friend({#{user := User1, server := Server1},
     ejabberd_hooks:run(roster_modified, wocky_app:server(),
                        [User1, Server1, JID2]).
 
+%%%===================================================================
+%%% Command implementation - tros_migrate
+%%%===================================================================
+
+tros_migrate() ->
+    Files = get_files(),
+    migrate_files(Files),
+    verify_files(Files),
+    ok.
+
+tros_cleanup() ->
+    cleanup_files(get_files()),
+    ok.
+
+get_files() ->
+    Files = wocky_db:select_column(wocky_app:server(), media, id, #{}),
+    io:fwrite("Found ~p files to migrate\n", [length(Files)]),
+    Files.
+
+migrate_files(Files) ->
+    io:fwrite("Migrating:\n"),
+    lists:foldl(migrate_file(_, _, length(Files)), 1, Files),
+    io:fwrite("\n").
+
+migrate_file(File, Count, Total) ->
+    {Data, Owner, Access, Metadata, Size} = read_file(File),
+
+    {Headers, RespFields} =
+    mod_wocky_tros_s3:make_upload_response(
+      #jid{luser = Owner}, #jid{lserver = wocky_app:server()},
+      File, Size, Access, Metadata),
+    Method = list_to_atom(
+               string:to_lower(
+                 binary_to_list(
+                   proplists:get_value(<<"method">>, RespFields)))),
+    URL = binary_to_list(proplists:get_value(<<"url">>, RespFields)),
+    HeadersStr = [{binary_to_list(K), binary_to_list(V)} || {K, V} <- Headers],
+    ContentType = proplists:get_value("content-type", HeadersStr),
+    {ok, _} = httpc:request(Method,
+                            {URL, HeadersStr, ContentType, Data},
+                            [], []),
+
+    print_progress(Count, Total),
+    Count+1.
+
+read_file(File) ->
+    {ok, F1} = francus:open_read(wocky_app:server(), File),
+    {F2, Data} = francus:read(F1),
+    Owner = francus:owner(F2),
+    Access = francus:access(F2),
+    Metadata = francus:metadata(F2),
+    Size = francus:size(F2),
+    francus:close(F2),
+    {Data, Owner, Access, Metadata, Size}.
+
+
+print_progress(Count, _Total) when Count rem 10 =:= 0 ->
+    io:fwrite("~p", [Count]);
+print_progress(_Count, _Total) ->
+    io:fwrite(".").
+
+verify_files(Files) ->
+    io:fwrite("Verifying:\n"),
+    lists:foldl(verify_file(_, _, length(Files)), 1, Files),
+    io:fwrite("\n").
+
+verify_file(File, Count, Total) ->
+    {Data, Owner, Access, _Metadata, _Size} = read_file(File),
+    {_, RespFields} = mod_wocky_tros_s3:make_download_response(
+                        unused, #jid{lserver = wocky_app:server()},
+                        unused, File, unused),
+
+    URL = binary_to_list(proplists:get_value(<<"url">>, RespFields)),
+    {ok, {_, _, Body}} = httpc:request(get, {URL, []}, [],
+                                       [{body_format, binary}]),
+    check_equal(Data, Body),
+
+    {ok, S3Metadata} = mod_wocky_tros_s3:get_metadata(wocky_app:server(), File),
+    check_equal({ok, Owner}, mod_wocky_tros_s3:get_owner(S3Metadata)),
+    check_equal({ok, Access}, mod_wocky_tros_s3:get_access(S3Metadata)),
+
+    print_progress(Count, Total),
+    Count+1.
+
+check_equal(A, A) -> ok;
+check_equal(A, B) ->
+    io:fwrite("Mismatch. Expected:\n~p\nGot:\n~p\n", [A, B]),
+    erlang:error("Data mismatch - aborting").
+
+cleanup_files(Files) ->
+    io:fwrite("Cleaning up francus files:\n"),
+    lists:foldl(cleanup_file(_, _, length(Files)), 1, Files),
+    io:fwrite("\n").
+
+cleanup_file(File, Count, Total) ->
+    francus:delete(wocky_app:server(), File),
+    print_progress(Count, Total),
+    Count+1.
+
+%%%===================================================================
+%%% Command implementation - tros_migrate_access
+%%%===================================================================
+
+tros_migrate_access() ->
+    fun_chain:first(
+      mod_wocky_tros_s3:bucket(),
+      ?s3:list_objects(),
+      ?ex_aws:'stream!'(s3_auth()),
+      ?enum:to_list(),
+      migrate_access()
+     ),
+    ok.
+
+migrate_access(Items) ->
+    io:fwrite("Found ~p files\n", [length(Items)]),
+    lists:foreach(migrate_item_access(_), Items).
+
+migrate_item_access(#{key := Key}) ->
+    R = do([error_m ||
+            {Server, FileID} <- extract_file_info(Key),
+            check_for_local_metadata(Server, FileID),
+            {Owner, Access} <- get_metadata(Server, FileID),
+            wocky_db_tros:set_metadata(Server, FileID, Owner, Access)
+           ]),
+    case R of
+        ok ->
+            io:fwrite(".");
+        {error, already_migrated} ->
+            io:fwrite("-");
+        {error, metadata_not_found} ->
+            io:fwrite("N");
+        {error, not_tros_file} ->
+            io:fwrite("\nSkipping non-tros file: ~p", [Key]);
+        {error, E} ->
+            io:fwrite("\nError ~p on ~p\n", [E, Key])
+    end.
+
+extract_file_info(Key) ->
+    case re:split(Key, "(.*)-[0-9a-f]{4}/(.*)") of
+        [_, Server, FileID, _] -> {ok, {Server, FileID}};
+        _ -> {error, not_tros_file}
+    end.
+
+check_for_local_metadata(Server, FileID) ->
+    case wocky_db_tros:get_owner(Server, FileID) of
+        not_found -> ok;
+        _ -> {error, already_migrated}
+    end.
+
+get_metadata(Server, FileID) ->
+    do([error_m ||
+        Metadata <- mod_wocky_tros_s3_legacy:get_metadata(Server, FileID),
+        Owner <- mod_wocky_tros_s3_legacy:get_owner(Metadata),
+        Access <- mod_wocky_tros_s3_legacy:get_access(Metadata),
+        {ok, {Owner, Access}}]).
 
 %%%===================================================================
 %%% Command implementation - fix_bot_images
@@ -221,6 +424,67 @@ get_token(User, Server, Resource) ->
     {ok, Token}.
 
 %%%===================================================================
+%%% Command implementation - reprocess_images
+%%%===================================================================
+
+
+reprocess_images() ->
+    fun_chain:first(
+      mod_wocky_tros_s3:bucket(),
+      ?s3:list_objects(),
+      ?ex_aws:'stream!'(s3_auth()),
+      reprocess_images()
+     ),
+    ok.
+
+reprocess_images(Stream) ->
+    case ?enum:'empty?'(Stream) of
+        true ->
+            ok;
+        false ->
+            Head = ?enum:take(Stream, 3),
+            Used = reprocess_image(Head),
+            reprocess_images(?enum:drop(Stream, Used))
+    end.
+
+reprocess_image(Files = [ImageFile, MaybeOriginal, MaybeThumbnail]) ->
+    BaseID = s3_key(ImageFile),
+    OrigAndThumb = {tros:get_base_id(s3_key(MaybeOriginal)),
+                    tros:get_base_id(s3_key(MaybeThumbnail))},
+    Types = [tros:get_type(s3_key(F)) || F <- Files],
+    case {OrigAndThumb, Types} of
+        {{BaseID, BaseID}, [full, original, thumbnail]} ->
+            do_reprocess_image(s3_key(MaybeOriginal)),
+            3; % Use the original image, skip over the
+               % full and thumbnail entries
+        _ ->
+            do_reprocess_image(BaseID),
+            1
+    end;
+
+reprocess_image([ImageFile | _]) ->
+    do_reprocess_image(s3_key(ImageFile)),
+    1.
+
+do_reprocess_image(ImageName) ->
+    case tros:get_type(ImageName) of
+        thumbnail ->
+            io:fwrite("ERROR: Refusing to reprocess "
+                      "orphaned thumbnail ~p\n", [ImageName]);
+        _ ->
+            % Copy the image back to the quarantine bucket to allow
+            % the Lambda function to reprocess it.
+            BaseID = tros:get_base_id(ImageName),
+            Req = ?s3:put_object_copy(
+                     <<(mod_wocky_tros_s3:bucket())/binary, "-quarantine">>,
+                     BaseID,
+                     mod_wocky_tros_s3:bucket(),
+                     ImageName),
+            ?ex_aws:'request!'(Req, s3_auth()),
+            io:fwrite("Reprocessing ~p from ~p\n", [BaseID, ImageName])
+    end.
+
+%%%===================================================================
 %%% Common helpers
 %%%===================================================================
 
@@ -231,3 +495,9 @@ get_user(Handle) ->
         User ->
             {ok, User}
     end.
+
+s3_auth() ->
+    [{access_key_id, mod_wocky_tros_s3:access_key_id()},
+     {secret_access_key, mod_wocky_tros_s3:secret_key()}].
+
+s3_key(#{key := Key}) -> Key.
