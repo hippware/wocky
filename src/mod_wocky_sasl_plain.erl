@@ -68,11 +68,30 @@ mech_new(Host, Creds) ->
 -spec mech_step(Creds :: mongoose_credentials:t(), ClientIn :: binary()) ->
     {ok, mongoose_credentials:t()} | {error, binary()}.
 mech_step(Creds, ClientIn) ->
+    %% There is a regression in ejabberd_auth that causes authentication
+    %% failures to return internal-error instead of not-authorized. We are
+    %% working around that regression here.
     case cyrsasl_plain:parse(ClientIn) of
         [_, <<"register">>, <<"$J$", JSON/binary>>] ->
             do_registration(JSON);
+        [AuthzId, User, Password] ->
+            Request = mongoose_credentials:extend(Creds,
+                                                  [{username, User},
+                                                   {password, Password},
+                                                   {authzid, AuthzId}]),
+            case ejabberd_auth:authorize(Request) of
+                {ok, Result} ->
+                    {ok, Result};
+                {error, not_authorized} ->
+                    {error, <<"not-authorized">>, User};
+                {error, {no_auth_modules, _}} ->
+                    {error, <<"not-authorized">>, User};
+                {error, R} ->
+                    ?DEBUG("authorize error: ~p", [R]),
+                    {error, <<"internal-error">>}
+            end;
         _ ->
-            cyrsasl_plain:mech_step(Creds, ClientIn)
+            {error, <<"bad-protocol">>}
     end.
 
 get_auth_bypass_prefixes(Opts) ->
