@@ -25,7 +25,6 @@ handle_share(_From, _To, error) -> drop;
 handle_share(From, To, BotJID = #jid{lserver = Server}) ->
     ID = wocky_bot_util:get_id_from_jid(BotJID),
     Result = do([error_m ||
-                 wocky_bot_util:check_access(Server, ID, From),
                  check_can_share(Server, ID, From),
                  wocky_db_bot:add_share(From, To, BotJID)
                 ]),
