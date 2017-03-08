@@ -23,7 +23,11 @@ defmodule Wocky.Notification.AWSHandler do
   end
 
   defp handle_register_result({:error, error}), do: handle_aws_error(error)
-  defp handle_register_result({:ok, %{body: body}}) do
+  defp handle_register_result({:ok, %{body: %{enpoint_arn: arn} = body}}) do
+    :ok = Logger.debug("SNS register response:\n#{inspect(body)}")
+    {:ok, arn}
+  end
+  defp handle_register_result({:ok, %{body: body}}) when is_binary(body) do
     :ok = Logger.debug("SNS register response:\n#{body}")
 
     {:ok, xml} = :exml.parse(body)
@@ -83,12 +87,12 @@ defmodule Wocky.Notification.AWSHandler do
 
   defp handle_notify_result({:error, error}), do: handle_aws_error(error)
   defp handle_notify_result({:ok, %{body: body}}) do
-    :ok = Logger.debug("SNS notification response:\n#{body}")
+    :ok = Logger.debug("SNS notification response:\n#{inspect(body)}")
     :ok
   end
 
   defp handle_aws_error({:http_error, code, %{body: body}} = error) do
-    :ok = Logger.error("SNS API error (#{code}): #{body}")
+    :ok = Logger.error("SNS API error (#{code}): #{inspect(body)}")
     {:error, error}
   end
 
