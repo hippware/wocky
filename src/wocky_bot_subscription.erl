@@ -95,8 +95,7 @@ make_subscriber_elements(Subscribers) ->
 
 make_subscriber_element(JID) ->
     #xmlel{name = <<"subscriber">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)}],
-           children = [wocky_bot_util:make_follow_element()]}.
+           attrs = [{<<"jid">>, jid:to_binary(JID)}]}.
 
 %%%===================================================================
 %%% Action - subscribe temporary

@@ -15,8 +15,6 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
 
--export([set_visibility/3]).
-
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
                       get_hs_stanza/0, bot_node/1,
@@ -52,22 +50,15 @@ all() ->
      new_id,
      retrieve,
      update,
-     affiliations,
      subscribers,
      unsubscribe,
      subscribe,
      subscribe_temporary,
      unsubscribe_temporary,
-     temporary_unsubscribe_roster_change,
      delete,
      errors,
      retrieve_for_user,
      get_subscribed,
-     update_affiliations,
-     friends_only_permissions,
-     roster_change_triggers,
-     blocked_group,
-     delete_owner,
      publish_item,
      retract_item,
      edit_item,
@@ -77,7 +68,7 @@ all() ->
      follow_me,
      unfollow_me,
      share,
-     share_open,
+     open_visibility,
      follow_notifications,
      geosearch
     ].
@@ -123,20 +114,13 @@ reset_tables(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db:clear_tables(shared, [bot, bot_subscriber, bot_share]),
     wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
-    wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber]),
+    wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber, bot_share]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
     Users = escalus:get_users([alice, bob, carol, karen, robert, tim]),
     Config1 = fun_chain:first(Config,
         escalus:init_per_suite(),
         escalus:create_users(Users)
     ),
-    {ok, _} = wocky_db:query(shared,
-                             "UPDATE user SET roster_viewers = roster_viewers "
-                             "+ ? WHERE user = ? AND server = ?",
-                             #{roster_viewers => [?BOT_B_JID],
-                               user => ?ALICE,
-                               server => ?LOCAL_CONTEXT},
-                             quorum),
     Config1.
 
 
@@ -178,12 +162,11 @@ retrieve(Config) ->
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
         check_returned_bot(Stanza, expected_retrieve_fields()),
 
-        % Bob can retrive since he is a spectator
+        % Bob can retrieve the bot since it's shared to him
         Stanza2 = expect_iq_success(retrieve_stanza(), Bob),
         check_returned_bot(Stanza2, expected_retrieve_fields()),
 
-        % Carol cannot retrive since the bot's visibiliy is WHITELIST
-        % and she is neither an owner nor a spectator
+        % Carol cannot retrive since the bot is not public
         expect_iq_error(retrieve_stanza(), Carol)
       end).
 
@@ -204,18 +187,6 @@ update(Config) ->
         expect_iq_error(update_stanza(), Bob)
       end).
 
-affiliations(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        % Alice can get the correct affiliations
-        Stanza = expect_iq_success(affiliations_stanza(), Alice),
-        check_affiliations(Stanza, [{?ALICE_B_JID, owner},
-                                    {?BOB_B_JID, spectator}]),
-
-        % Bob can't because he's not the owner
-        expect_iq_error(affiliations_stanza(), Bob)
-      end).
-
 subscribers(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
@@ -225,7 +196,7 @@ subscribers(Config) ->
                                    ?KAREN_B_JID]),
 
         % Bob can't because he's not the owner
-        expect_iq_error(affiliations_stanza(), Bob)
+        expect_iq_error(subscribers_stanza(), Bob)
       end).
 
 unsubscribe(Config) ->
@@ -240,39 +211,18 @@ unsubscribe(Config) ->
       end).
 
 subscribe(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
-      fun(Alice, Bob, Carol, Tim) ->
-        test_helper:add_contact(Alice, Tim, [], <<"Timbo">>),
-        test_helper:subscribe_pair(Alice, Tim),
-
-        timer:sleep(1000),
-
-        NewAffiliations = [{?CAROL_B_JID, spectator}],
-        expect_iq_success(modify_affiliations_stanza(NewAffiliations), Alice),
-
-        escalus:assert(
-          is_affiliation_update(escalus_client:short_jid(Carol), spectator, _),
-          escalus:wait_for_stanza(Carol)),
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
         Stanza1 = expect_iq_success(subscribe_stanza(), Carol),
         check_subscriber_count(Stanza1, 3),
         Stanza2 = expect_iq_success(subscribe_stanza(), Bob),
         check_subscriber_count(Stanza2, 4),
 
-        % Tim can't be subscribed because he is not an affiliate and the
-        % permission is WHITELIST
-        expect_iq_error(subscribe_stanza(), Tim),
-
         % Alice can get the correct subscribers
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?KAREN_B_JID,
-                                   ?CAROL_B_JID,
-                                   ?BOB_B_JID]),
-
-        % Update Carol's follow status
-        expect_iq_success(subscribe_stanza(), Carol),
-        Stanza4 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza4, [?KAREN_B_JID,
                                     ?CAROL_B_JID,
                                     ?BOB_B_JID])
       end).
@@ -281,35 +231,20 @@ subscribe_temporary(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
-        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, ?BOT),
-
-        %% Tim currently can't subscribe because he's in Alice's
-        %% __blocked__ group (and therefore is not a friend):
-        subscribe_temporary(?BOT_B_JID, Tim),
-        timer:sleep(400),
-
-        Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID]),
-
-        test_helper:subscribe_pair(Alice, Tim),
-        test_helper:add_contact(Alice, Tim, <<"unblocked">>, <<"Timmy">>),
-
-        %% But now he can:
-        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID]),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
         subscribe_temporary(?BOT_B_JID, Tim),
-        timer:sleep(400),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID,
-                                   escalus_client:full_jid(Tim)
-                                  ]),
+                                    escalus_client:full_jid(Tim)
+                                   ]),
+
         ensure_all_clean([Alice, Tim])
       end).
 
 unsubscribe_temporary(Config) ->
-    escalus:story([everyone_is_friends | Config], [{alice, 1}, {tim, 1}],
+    escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         %% Tim's previous temp subscription should have been cleared
         %% by his disconnection
@@ -317,51 +252,17 @@ unsubscribe_temporary(Config) ->
         check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
-        timer:sleep(400),
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID,
-                                   escalus_client:full_jid(Tim)
-                                  ]),
+                                    escalus_client:full_jid(Tim)
+                                   ]),
 
         unsubscribe_temporary(?BOT_B_JID, Tim),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID]),
         ensure_all_clean([Alice, Tim])
-      end).
-
-temporary_unsubscribe_roster_change(Config) ->
-    escalus:story([everyone_is_friends | Config], [{alice, 1}, {tim, 1}],
-      fun(Alice, Tim) ->
-        subscribe_temporary(?BOT_B_JID, Tim),
-        timer:sleep(400),
-
-        Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID,
-                                   escalus_client:full_jid(Tim)
-                                  ]),
-
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Tim)),
-        escalus:assert_many([is_presence, is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 3)),
-
-        %% Tim should get alerted of his loss of access to the bot
-        escalus:assert_many([escalus_pred:is_presence_with_type(
-                               <<"unsubscribe">>, _),
-                             escalus_pred:is_presence_with_type(
-                               <<"unavailable">>, _),
-                             is_roster_set,
-                             is_bot_unsubscribe(_)],
-                            escalus:wait_for_stanzas(Tim, 4)),
-
-        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID]),
-
-        timer:sleep(500),
-
-        %% All done - set it back as it was
-        set_visibility(Alice, ?WOCKY_BOT_VIS_WHITELIST, ?BOT)
       end).
 
 delete(Config) ->
@@ -391,17 +292,12 @@ errors(Config) ->
 retrieve_for_user(Config) ->
     reset_tables(Config),
     wocky_db:clear_tables(shared, [bot]),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
-      fun(Alice, Bob, Tim) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
         IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
-        {_OwnerBots, FriendsOnlyBots, FollowersBots} = distribute(IDs),
+        {_PrivateBots, PublicBots} = distribute(IDs),
 
-        FriendsBots = lists:sort(wocky_util:v1_uuid_order(_, _),
-                                 FriendsOnlyBots ++ FollowersBots),
-
-        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, FriendsOnlyBots),
-
-        set_visibility(Alice, ?WOCKY_BOT_VIS_FOLLOWERS, FollowersBots),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, PublicBots),
 
         %% Alice can see all her bots
         Stanza = expect_iq_success(
@@ -413,35 +309,20 @@ retrieve_for_user(Config) ->
                                    #rsm_in{direction = before}), Alice),
         check_returned_bots(Stanza2, IDs, 0, ?CREATED_BOTS),
 
-        %% Bob can only see the subset of bots set to be visible by friends
-        %% and followers
+        %% Bob can only see the public bots
         Stanza3 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
-        check_returned_bots(Stanza3, FriendsBots,
-                            0, length(FriendsBots)),
-
-        %% Tim cannot see any of Alice's bots since he is neither
-        %% the owner nor a friend nor follower
-        Stanza4 = expect_iq_success(
-                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
-        check_returned_bots(Stanza4, [], undefined, 0),
-
-        %% Make Tim a follower of Alice
-        test_helper:subscribe(Tim, Alice),
-
-        %% Tim can now see the follower bots:
-        Stanza5 = expect_iq_success(
-                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Tim),
-        check_returned_bots(Stanza5, FollowersBots, 0, length(FollowersBots)),
+        check_returned_bots(Stanza3, PublicBots,
+                            0, length(PublicBots)),
 
         %% Test some basic RSM functionality
-        %% Bob can only see the subset of bots set to be visible by friends
+        %% Bob can only see the subset of bots set to be visible by everyone
         Stanza6 = expect_iq_success(
                     retrieve_stanza(?ALICE_B_JID,
                                     #rsm_in{index = 3, max = 2}), Bob),
-        ExpectedBots = lists:sublist(FriendsBots, 4, 2),
+        ExpectedBots = lists:sublist(PublicBots, 4, 2),
         check_returned_bots(Stanza6, ExpectedBots, 3,
-                            length(FriendsBots)),
+                            length(PublicBots)),
 
         %% When alice publishes to a bot, that bot should become the most
         %% recently updated, moving it to the end of the list:
@@ -463,10 +344,7 @@ get_subscribed(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {karen, 1}],
       fun(Alice, Bob, Karen) ->
-        %% Make the bot open, otherwise even followers won't be able
-        %% to see it if they're not affiliates
-        expect_iq_success(
-          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_OPEN), Alice),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
         %% Alice is the owner (and therefore a follower) so should get the bot
         Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),
@@ -479,252 +357,6 @@ get_subscribed(Config) ->
         %% Bob is not subscribed to the bot at all so gets nothing
         Stanza3 = expect_iq_success(subscribed_stanza(#rsm_in{}), Bob),
         check_returned_bots(Stanza3, [], undefined, 0)
-      end).
-
-update_affiliations(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-      fun(Alice, Bob, Carol) ->
-        NewAffiliations = [{?BOB_B_JID, none},
-                           {?CAROL_B_JID, spectator}],
-
-        test_helper:add_contact(Alice, Bob, <<"affiliates">>, <<"BMan">>),
-        test_helper:add_contact(Alice, Carol, <<"affiliates">>, <<"Caz">>),
-
-        % Let the bot's roster catch up
-        timer:sleep(500),
-
-        % Alice can modify affiliations on her contacts
-        expect_iq_success(modify_affiliations_stanza(NewAffiliations), Alice),
-
-        Stanza = expect_iq_success(affiliations_stanza(), Alice),
-        check_affiliations(Stanza, [{?CAROL_B_JID, spectator},
-                                    {?ALICE_B_JID, owner}]),
-
-        % Carol and Bob get notified of their changed status
-        expect_affiliation_update(Carol, spectator),
-        expect_affiliation_update(Bob, none),
-
-        %% Alice removes Bob as a contact
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-        escalus:assert(is_presence_with_type, [<<"unavailable">>],
-                       escalus:wait_for_stanza(Bob)),
-
-        timer:sleep(500),
-
-        % Alice can't add a non-roster affiliate
-        expect_iq_error(
-          modify_affiliations_stanza([{?BOB_B_JID, spectator}]), Alice),
-
-        % Bob can't because he's not the owner
-        expect_iq_error(modify_affiliations_stanza(NewAffiliations), Bob)
-      end).
-
-friends_only_permissions(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        expect_iq_success(
-          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
-        %% Bob does not receive a visibility change because he's already an
-        %% affiliate
-
-        test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
-
-        %% Give the bot a moment to be notified and update its copy of
-        %% Alice's roster
-        timer:sleep(500),
-
-        %% Bob is a member of Alice's roster, so should be able to get the bot
-        expect_iq_success(retrieve_stanza(), Bob),
-
-        %% Alice removes Bob as a contact
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        % Bob was an affiliate at this point, so gets a notification that
-        % he has been de-affiliated
-        escalus:assert_many([is_pres_unavailable(),
-                             is_affiliation_update(
-                               escalus_client:short_jid(Bob), none, _)],
-                            escalus:wait_for_stanzas(Bob, 2)),
-
-        % Bob can't get the bot because he's no longer a contact
-        expect_iq_error(retrieve_stanza(), Bob),
-
-        %% Alice adds Bob back as a contact
-        test_helper:add_contact(Alice, Bob, <<"friends">>, <<"Bobbie">>),
-        test_helper:subscribe_pair(Alice, Bob),
-
-        timer:sleep(500),
-
-        %% Bob is a member of Alice's roster, so should be able to get the bot
-        expect_iq_success(retrieve_stanza(), Bob),
-
-        %% Set the bot back to WHITELIST
-        expect_iq_success(
-          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_WHITELIST), Alice),
-
-        %% Alice removes Bob as a contact so that subsequent tests don't fail
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
-        escalus:assert_many([is_roster_set, is_iq_result,
-                            escalus_pred:is_presence_with_type(
-                              <<"unavailable">>, _)],
-                            escalus:wait_for_stanzas(Alice, 3)),
-
-        escalus:assert_many([is_roster_set,
-                             escalus_pred:is_presence_with_type(
-                               <<"unsubscribe">>, _)],
-                       escalus:wait_for_stanzas(Bob, 2))
-      end).
-
-roster_change_triggers(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
-                           {karen, 1}, {robert, 1}, {tim, 1}],
-      fun(Alice, Bob, Carol, Karen, Robert, Tim) ->
-        % Robert is nothin', so gets no bot notifications
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Robert)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert(is_pres_unavailable(), escalus:wait_for_stanza(Robert)),
-
-        % Bob is an affiliate but not subscriber
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert_many([is_pres_unavailable(),
-                             is_affiliation_update(
-                               escalus_client:short_jid(Bob), none, _)],
-                            escalus:wait_for_stanzas(Bob, 2)),
-
-        % Carol is a subscriber but not affiliate
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Carol)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert_many([is_pres_unavailable(),
-                             is_bot_unsubscribe(_)],
-                            escalus:wait_for_stanzas(Carol, 2)),
-
-        % Carol is both a subscriber and affiliate (after we affiliate and
-        % subscribe her)
-        expect_iq_success(modify_affiliations_stanza(
-                            [{?KAREN_B_JID, spectator}]), Alice),
-        escalus:assert(
-          is_affiliation_update(escalus_client:short_jid(Karen), spectator, _),
-          escalus:wait_for_stanza(Karen)),
-        expect_iq_success(subscribe_stanza(), Karen),
-
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Karen)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert_many([is_pres_unavailable(),
-                             is_affiliation_update(
-                               escalus_client:short_jid(Karen), none, _),
-                             is_bot_unsubscribe(_)],
-                            escalus:wait_for_stanzas(Karen, 3)),
-
-        %% Now, set the bot to followers visibility
-        set_visibility(Alice, ?WOCKY_BOT_VIS_FOLLOWERS, [?BOT]),
-
-        %% Make Tim a follower of Alice and of the bot
-        test_helper:subscribe(Tim, Alice),
-        expect_iq_success(subscribe_stanza(), Tim),
-
-        %% Boot Tim off as a follower of Alice
-        escalus:send(Alice, escalus_stanza:roster_remove_contact(Tim)),
-        escalus:assert_many([is_roster_set, is_iq_result],
-                            escalus:wait_for_stanzas(Alice, 2)),
-
-        %% Tim should get alerted of his loss of access to the bot
-        escalus:assert_many([escalus_pred:is_presence_with_type(
-                               <<"unsubscribed">>, _),
-                             is_roster_set,
-                             is_bot_unsubscribe(_)],
-                            escalus:wait_for_stanzas(Tim, 3)),
-
-        timer:sleep(500),
-
-        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen, Robert, Tim])
-      end).
-
-blocked_group(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {tim, 1}],
-      fun(Alice, Tim) ->
-        expect_iq_success(
-          change_visibility_stanza(?BOT, ?WOCKY_BOT_VIS_FRIENDS), Alice),
-
-        % Alice adds Tim as a normal friend
-        test_helper:add_contact(Alice, Tim, <<"blah">>,
-                                <<"He's okay">>),
-        test_helper:subscribe_pair(Alice, Tim),
-        timer:sleep(500),
-
-        % Tim can view the bot
-        expect_iq_success(retrieve_stanza(), Tim),
-
-        % Alice moves Tim to the magic __blocked__ group
-        test_helper:add_contact(Alice, Tim, <<"__blocked__">>,
-                                <<"MyMortalEnemy">>),
-        escalus:assert(is_presence_with_type, [<<"unavailable">>],
-                       escalus:wait_for_stanza(Tim)),
-        timer:sleep(500),
-
-        % Tim can no longer view the bot
-        expect_iq_error(retrieve_stanza(), Tim)
-      end).
-
-delete_owner(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
-      fun(Alice, Bob, Tim) ->
-        ID1 = create_simple_bot(Alice),
-
-        expect_iq_success(
-          change_visibility_stanza(ID1, ?WOCKY_BOT_VIS_FRIENDS), Alice),
-
-        ReturnedBot = expect_iq_success(retrieve_stanza(ID1), Bob),
-        ExpectedFieldsFriends =
-        lists:keyreplace("visibility", 1, expected_simple_bot_fields(),
-                         {"visibility", int, ?WOCKY_BOT_VIS_FRIENDS}),
-        check_returned_bot(ReturnedBot, ExpectedFieldsFriends),
-        expect_iq_error(retrieve_stanza(ID1), Tim),
-
-        %% Delete Alice
-        expect_iq_success(
-          user_SUITE:delete_request(), Alice),
-        R = escalus:wait_for_stanza(Alice, 3000),
-        escalus:assert(is_stream_error,
-                       [<<"conflict">>, <<"User removed">>], R),
-        timer:sleep(500),
-        ?assertNot(escalus_connection:is_connected(Alice)),
-
-        %% Access to the bot should be unchanged, in spite of Alice (and by
-        %% extension her roster) having been deleted. The FRIENDS bot should,
-        %% however, have been changed to WHITELIST visibility.
-        WhitelistFields =
-        lists:keyreplace("visibility", 1, expected_simple_bot_fields(),
-                         {"visibility", int, ?WOCKY_BOT_VIS_WHITELIST}),
-        WhitelistFields2 =
-        lists:keyreplace("owner", 1, WhitelistFields,
-                         {"owner", jid, <<>>}),
-        ExpectedFields =
-        lists:keyreplace("affiliates+size", 1, WhitelistFields2,
-                         {"affiliates+size", int, 4}),
-        ExpectedFields2 =
-        lists:keyreplace("subscribers+size", 1, ExpectedFields,
-                         {"subscribers+size", int, 0}),
-        ReturnedBot3 = expect_iq_success(retrieve_stanza(ID1), Bob),
-        check_returned_bot(ReturnedBot3, ExpectedFields2),
-        expect_iq_error(retrieve_stanza(ID1), Tim)
       end).
 
 publish_item(Config) ->
@@ -814,7 +446,7 @@ get_items(Config) ->
         lists:foreach(
           add_item(Alice, [Carol, Karen], _), lists:seq(0, ?CREATED_ITEMS-1)),
 
-        % Bob can get items because he's an affiliate
+        % Bob can get items because he has the bot shared to him
         get_items(Bob, #rsm_in{max = 10}, 0, 9),
         get_items(Bob, #rsm_in{index = 5},
                   5, ?CREATED_ITEMS-1),
@@ -825,7 +457,7 @@ get_items(Config) ->
         get_items(Bob, #rsm_in{max = 3, direction = before},
                   ?CREATED_ITEMS-3, ?CREATED_ITEMS-1),
 
-        % Carol can't because she's not
+        % Carol can't because she hasn't
         expect_iq_error(
                test_helper:iq_get(?NS_BOT, query_el(#rsm_in{max = 10})), Carol),
 
@@ -969,71 +601,34 @@ share(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
-        [] = wocky_db:select(shared, bot_share, all, #{bot => ?BOT_B_JID}),
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
 
-        %% Alice can't share to Tim because he's not a friend
-        escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
-        escalus:assert(is_error, [<<"cancel">>, <<"not-allowed">>],
-                       escalus:wait_for_stanza(Alice)),
+        % Tim can't see the private bot because it's not shared to him
+        expect_iq_error(retrieve_stanza(), Tim),
 
-        [] = wocky_db:select(shared, bot_share, all, #{bot => ?BOT_B_JID}),
-
-        %% Make Tim a friend
-        test_helper:add_contact(Alice, Tim, <<"blah">>, <<"He's okay">>),
-        test_helper:subscribe_pair(Alice, Tim),
-
-        %% Alice can now share to him
+        % Alice shares the bot to him
         escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
         timer:sleep(500),
 
-        ExpectedTo = ?TIM_B_JID,
-        ExpectedFrom = ?ALICE_B_JID,
-        [#{to_jid   := ExpectedTo,
-           from_jid := ExpectedFrom}] = wocky_db:select(shared, bot_share, all,
-                                                        #{bot => ?BOT_B_JID}),
+        % Tim can now see the bot
+        expect_iq_success(retrieve_stanza(), Tim),
 
         test_helper:ensure_all_clean([Alice, Tim])
       end).
 
-share_open(Config) ->
+open_visibility(Config) ->
     reset_tables(Config),
     wocky_db:truncate(shared, roster),
-    escalus:story(Config, [{alice, 1}, {carol, 1}, {tim, 1}],
-      fun(Alice, Carol, Tim) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
+      fun(Alice, Bob, Carol, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, [?BOT]),
 
-        % Tim can't see the bot because it hasn't been shared to him
-        expect_iq_error(retrieve_stanza(), Tim),
-
-        %% Make Tim a friend of Alice
-        test_helper:add_contact(Alice, Tim, <<"blah">>, <<"He's okay">>),
-        test_helper:subscribe_pair(Alice, Tim),
-
-        %% Alice can now share to him
-        escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
-        timer:sleep(500),
-
-        %% Tim can now see the bot
+        % Everyone can see the bot because it's public
+        expect_iq_success(retrieve_stanza(), Bob),
+        expect_iq_success(retrieve_stanza(), Carol),
         expect_iq_success(retrieve_stanza(), Tim),
 
-        %% Carol can't see the bot because it hasn't been shared to her
-        expect_iq_error(retrieve_stanza(), Carol),
-
-        %% Make Carol a friend of Tim
-        test_helper:subscribe_pair(Carol, Tim),
-
-        %% Tim shares the bot to Carol
-        escalus:send(Tim, share_stanza(?BOT, Tim, Carol)),
-        timer:sleep(500),
-
-        %% Carol can now see the bot
-        expect_iq_success(retrieve_stanza(), Carol),
-
-        2 = length(wocky_db:select(shared, bot_share, all,
-                                   #{bot => ?BOT_B_JID})),
-
-        test_helper:ensure_all_clean([Alice, Carol, Tim])
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Tim])
       end).
 
 geosearch(Config) ->
@@ -1123,8 +718,6 @@ expected_create_fields() ->
      {"jid",                jid,    any},
      {"image_items",        int,    0},
      {"updated",            timestamp, any},
-     {"affiliates+size",    int,    1}, % Owner is always an affiliate
-     {"affiliates+hash",    string, any},
      {"subscribers+size",   int,    0}, % Owner is always a subscriber
      {"subscribers+hash",   string, any}].
 
@@ -1145,8 +738,6 @@ expected_retrieve_fields() ->
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
      {"updated",            timestamp, any},
-     {"affiliates+size",    int,    2}, % Owner is always an affiliate
-     {"affiliates+hash",    string, any},
      {"subscribers+size",   int,    2}, % Owner is always an subscriber
      {"subscribers+hash",   string, any}].
 
@@ -1318,28 +909,6 @@ update_stanza() ->
 modify_field() ->
     create_field({"description", "string", ?NEW_DESCRIPTION}).
 
-affiliations_stanza() ->
-    test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"affiliations">>)).
-
-check_affiliations(#xmlel{name = <<"iq">>, children = [AffiliationsEl]},
-                   Affiliates) ->
-    Affiliations = AffiliationsEl#xmlel.children,
-    ?assertEqual({value, integer_to_binary(length(Affiliates))},
-                 xml:get_attr(<<"size">>, AffiliationsEl#xmlel.attrs)),
-    ?assertEqual(length(Affiliates), length(Affiliations)),
-    lists:foreach(check_affiliation(Affiliations, _), Affiliates).
-
-check_affiliation(AffiliationEls, Affiliate) ->
-    case lists:any(is_affiliate(Affiliate, _), AffiliationEls) of
-        true -> true;
-        false -> ct:fail("Missing affiliate ~p", [Affiliate])
-    end.
-
-is_affiliate({Name, Type}, #xmlel{name = <<"affiliation">>, attrs = Attrs}) ->
-    xml:get_attr(<<"jid">>, Attrs) =:= {value, Name} andalso
-    xml:get_attr(<<"affiliation">>, Attrs) =:=
-     {value, atom_to_binary(Type, utf8)}.
-
 subscribers_stanza() ->
     test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"subscribers">>)).
 
@@ -1364,37 +933,6 @@ is_subscriber(Name, #xmlel{name = <<"subscriber">>, attrs = Attrs}) ->
 check_subscriber_count(Stanza = #xmlel{name = <<"iq">>}, ExpectedCount) ->
     Count = xml:get_path_s(Stanza, [{elem, <<"subscriber_count">>}, cdata]),
     ?assertEqual(binary_to_integer(Count), ExpectedCount).
-
-modify_affiliations_stanza(NewAffiliations) ->
-    test_helper:iq_set(?NS_BOT,
-                       node_el(?BOT, <<"affiliations">>,
-                               affiliation_els(NewAffiliations))).
-
-affiliation_els(Affiliations) ->
-    [affiliation_el(JID, Role) || {JID, Role} <- Affiliations].
-
-affiliation_el(JID, Role) ->
-    #xmlel{name = <<"affiliation">>,
-           attrs = [{<<"jid">>, JID},
-                    {<<"affiliation">>, atom_to_binary(Role, utf8)}]}.
-
-expect_affiliation_update(Client, Type) ->
-    Stanza = escalus:wait_for_stanza(Client),
-    escalus:assert(
-      is_affiliation_update(escalus_client:short_jid(Client), Type, _), Stanza).
-
-is_affiliation_update(Name, Type,
-                      #xmlel{name = <<"message">>,
-                                children = [AffiliationsEl]}) ->
-    is_affiliation_element(Name, Type, AffiliationsEl);
-is_affiliation_update(_, _, _) ->false.
-
-is_affiliation_element(Name, Type,
-                       #xmlel{name = <<"affiliations">>, attrs = Attrs,
-                              children = [AffiliateEl]}) ->
-    has_standard_attrs(Attrs) andalso
-    is_affiliate({Name, Type}, AffiliateEl);
-is_affiliation_element(_, _, _) ->false.
 
 is_bot_unsubscribe(#xmlel{name = <<"message">>, children = [Unsubscribed]}) ->
     Attrs = Unsubscribed#xmlel.attrs,
@@ -1571,17 +1109,15 @@ expected_simple_bot_fields() ->
     lists:keydelete("shortname", 1, expected_create_fields()).
 
 distribute(L) ->
-    {A, B, C} = distribute(L, [], [], []),
-    {lists:reverse(A), lists:reverse(B), lists:reverse(C)}.
+    {A, B} = distribute(L, [], []),
+    {lists:reverse(A), lists:reverse(B)}.
 
-distribute([], A, B, C) ->
-    {A, B, C};
-distribute([H], A, B, C) ->
-    {[H|A], B, C};
-distribute([H,H2], A, B, C) ->
-    {[H|A], [H2|B], C};
-distribute([H,H2,H3|T], A, B, C) ->
-    distribute(T, [H|A], [H2|B], [H3|C]).
+distribute([], A, B) ->
+    {A, B};
+distribute([H], A, B) ->
+    {[H|A], B};
+distribute([H,H2|T], A, B) ->
+    distribute(T, [H|A], [H2|B]).
 
 is_pres_unavailable() ->
     fun(S) ->

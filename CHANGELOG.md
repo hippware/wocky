@@ -18,6 +18,7 @@ If there are not many items, just list them sequentially.
 * Add missing cron module. 
   * Was preventing weekly bot report from running. 
 * Fix spelling in bot CLI command.
+* Update component `tzdata` from 0.5.10 to 0.5.11 to fix a crash (#547). 
 
 
 # 17.02.28+1578.5066239

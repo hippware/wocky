@@ -412,12 +412,12 @@ test_remove_roster_viewer() ->
   { "remove_roster_viewer", [
     { "Removes a roster viewer from a user", [
       ?_assertEqual(ok, remove_roster_viewer(?ALICE, ?LOCAL_CONTEXT, ?BOB_JID)),
-      ?_assertEqual([?BOT_B_JID], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
+      ?_assertEqual([], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "Succeeds but makes no change for a non-viewer", [
       ?_assertEqual(ok, remove_roster_viewer(
                           ?ALICE, ?LOCAL_CONTEXT, ?KAREN_JID)),
-      ?_assertEqual([?BOT_B_JID], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
+      ?_assertEqual([], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
     ]},
     { "Returns not_found for a non-existant user", [
       ?_assertEqual(not_found, remove_roster_viewer(?wocky_id:create(),

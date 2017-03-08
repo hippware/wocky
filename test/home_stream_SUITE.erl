@@ -52,7 +52,7 @@ suite() ->
 %%--------------------------------------------------------------------
 
 users() ->
-    [alice, bob, carol, tim].
+    [alice, bob, carol, karen, tim].
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
@@ -224,15 +224,22 @@ get_item(Config) ->
       end).
 
 auto_publish_bot(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
-      fun(Alice, Bob, Carol, Tim) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
+                           {karen, 1}, {tim, 1}],
+      fun(Alice, Bob, Carol, Karen, Tim) ->
         %% This is not a good way to drop the Alice/Tim friendship, however
         %% I think our de-friend system is a bit broken at the moment -
         %% test_helper:remove_contact/2 results in an asymmetric pair of rosters
         %% whcih should never happpen. This workaround will suffice until
         %% that gets fixed.
-        wocky_db_roster:delete_roster_item(?ALICE, ?LOCAL_CONTEXT, ?TIM_B_JID),
-        wocky_db_roster:delete_roster_item(?TIM, ?LOCAL_CONTEXT, ?ALICE_B_JID),
+        wocky_db_roster:delete_roster_item(
+          ?ALICE, ?LOCAL_CONTEXT, ?TIM_B_JID),
+        wocky_db_roster:delete_roster_item(
+          ?TIM, ?LOCAL_CONTEXT, ?ALICE_B_JID),
+        wocky_db_roster:delete_roster_item(
+          ?ALICE, ?LOCAL_CONTEXT, ?KAREN_B_JID),
+        wocky_db_roster:delete_roster_item(
+          ?KAREN, ?LOCAL_CONTEXT, ?ALICE_B_JID),
 
         test_helper:subscribe(Tim, Alice),
 
@@ -247,43 +254,31 @@ auto_publish_bot(Config) ->
         timer:sleep(400),
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
 
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
-        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
-        check_home_stream_sizes(0, [Carol, Tim]),
-
-        clear_home_streams(),
-
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_FRIENDS, Alice),
-        check_home_stream_sizes(1, [Bob, Carol]),
-        check_home_stream_sizes(0, [Tim]),
-        clear_home_streams(),
-
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_FOLLOWERS, Alice),
-        check_home_stream_sizes(1, [Bob, Carol, Tim]),
-        clear_home_streams(),
-
+        % Bob and Carol are friends and Tim is a subscriber so they all get
+        % notified of the bot's new publicness:
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
-        check_home_stream_sizes(1, [Bob, Carol, Tim]),
+        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
+        check_home_stream_sizes(1, [Carol, Tim]),
 
-        ensure_all_clean([Alice, Bob, Carol, Tim])
+        % Karen is neither a friend nor subscriber, so gets nothing.
+        check_home_stream_sizes(0, [Karen]),
+
+        ensure_all_clean([Alice, Bob, Carol, Karen, Tim])
       end).
 
 auto_publish_bot_item(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        check_home_stream_sizes(1, [Bob]),
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
+        check_home_stream_sizes(1, [Carol]),
 
-        expect_iq_success(test_helper:subscribe_stanza(), Bob),
+        expect_iq_success(test_helper:subscribe_stanza(), Carol),
 
         expect_iq_success(
           publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
           Alice),
 
-        check_home_stream_sizes(2, [Bob], false)
+        check_home_stream_sizes(2, [Carol], false)
 
       end).
 
