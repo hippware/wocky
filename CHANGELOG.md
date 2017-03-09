@@ -8,6 +8,18 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Consolidate bot visibility (only Public and Private) and sharing (#442)
+
+
+# 17.03.08+1639.1ad8af1
+
+* Update exometer_cloudwatch to get a crucial bugfix (#553)
+* Disable mod_wocky_cron until the bugs can be fixed (#555)
+* Fix SNS result handler (#559, #561)
+
+
+# 17.03.08+1630.d3c1e18
+
 * Images are processed and sanitised after upload (#452)
   * Images are downsized to Nx1920 (landscape) or 1920xN (portrait) pixels. 
 * Image thumbnail generation (#517)
