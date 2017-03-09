@@ -16,6 +16,7 @@ If there are not many items, just list them sequentially.
 * Update exometer_cloudwatch to get a crucial bugfix (#553)
 * Disable mod_wocky_cron until the bugs can be fixed (#555)
 * Fix SNS result handler (#559, #561)
+* Minor fixes for server-side image processing (playbooks#66, playbooks#67)
 
 
 # 17.03.08+1630.d3c1e18
