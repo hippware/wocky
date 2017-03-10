@@ -2,7 +2,7 @@ defmodule Wocky.User.Token do
   @moduledoc "Handles generation and validation of use authentication tokens."
 
   alias Wocky.Repo
-  alias Wocky.Repo.Object
+  alias Wocky.Repo.Doc
   alias Wocky.User
 
   @type t :: binary
@@ -10,7 +10,7 @@ defmodule Wocky.User.Token do
 
   @token_bytes 32
   @token_marker "$T$"
-  @token_expire 1209600 # 2 weeks
+  @token_expire 1_209_600 # 2 weeks
 
   @doc "Generates a token"
   @spec new :: t
@@ -58,7 +58,10 @@ defmodule Wocky.User.Token do
   end
 
   defp get_token_map(id, server) do
-    "tokens" |> Repo.find(server, id) |> Object.to_map
+    case "tokens" |> Repo.find(server, id) do
+      nil -> %{}
+      map -> map
+    end
   end
 
   defp token_from_map(nil), do: nil
@@ -99,8 +102,8 @@ defmodule Wocky.User.Token do
   def release(id, server, resource) do
     :ok =
       "tokens"
-      |> Repo.find(server, id)
-      |> Riak.CRDT.Map.delete({resource, :map})
-      |> Repo.update("tokens", server, id)
+      |> Repo.get(server, id)
+      |> Doc.delete_doc(resource)
+      |> Repo.put("tokens", server, id)
   end
 end

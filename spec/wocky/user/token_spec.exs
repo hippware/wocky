@@ -3,7 +3,6 @@ defmodule Wocky.User.TokenSpec do
 
   alias Wocky.ID
   alias Wocky.Repo
-  alias Wocky.Repo.Object
   alias Wocky.User.Token
 
   before do
@@ -43,7 +42,6 @@ defmodule Wocky.User.TokenSpec do
       map =
         "tokens"
         |> Repo.find(shared.server, shared.id)
-        |> Object.to_map
         |> Map.get(String.to_atom(shared.resource))
 
       map[:user_id]    |> should(eq shared.id)
@@ -67,7 +65,6 @@ defmodule Wocky.User.TokenSpec do
       keys =
         "tokens"
         |> Repo.find(shared.server, shared.id)
-        |> Object.to_map
         |> Map.keys
 
       keys |> should(eq [String.to_atom(shared.resource)])
@@ -107,7 +104,7 @@ defmodule Wocky.User.TokenSpec do
       |> should(eq [token])
     end
 
-    it "should return an empty list if the user has no assign tokens" do
+    it "should return an empty list if the user has no assigned tokens" do
       ID.new
       |> Token.get_tokens(shared.server)
       |> should(be_empty())
@@ -167,7 +164,6 @@ defmodule Wocky.User.TokenSpec do
     it "should remove the token from the database" do
       "tokens"
       |> Repo.find(shared.server, shared.id)
-      |> Object.to_map
       |> Map.get(String.to_atom(shared.resource))
       |> should(be_nil())
     end

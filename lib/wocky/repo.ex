@@ -5,7 +5,7 @@ defmodule Wocky.Repo do
   """
 
   alias Riak.Search
-  alias Wocky.Repo.Object
+  alias Wocky.Repo.Doc
 
   require Record
   import Record, only: [defrecordp: 2, extract: 2]
@@ -17,9 +17,38 @@ defmodule Wocky.Repo do
   @type bucket :: binary
   @type key    :: binary
 
+  # =========================================================================
+  # Document API
+
+  @doc "Fetch an object from Riak using the type/bucket/key"
+  @spec get(type, bucket, key) :: Doc.t | nil
+  def get(type, bucket, key) do
+    Riak.find(type, bucket, key)
+  end
+
+  @doc "Update the type/bucket/key in Riak with the provided object"
+  @spec put(Doc.t, type, bucket, key) :: :ok | {:error, term}
+  def put(data, type, bucket, key) do
+    Riak.update(data, type, bucket, key)
+  end
+
+  @doc "Delete the object from Riak that is identified by the type/bucket/key"
+  @spec delete(type, bucket, key) :: :ok | {:error, term}
+  def delete(type, bucket, key) do
+    Riak.delete(type, bucket, key)
+  end
+
+  # =========================================================================
+  # Map API
+
   @doc "Find an object in Riak using the type/bucket/key"
-  @spec find(type, bucket, key) :: term
-  def find(type, bucket, key), do: Riak.find(type, bucket, key)
+  @spec find(type, bucket, key) :: map | nil
+  def find(type, bucket, key) do
+    case type |> get(bucket, key) do
+      nil -> nil
+      doc -> doc |> Doc.to_map
+    end
+  end
 
   @doc "Find an object in Riak using a Solr query"
   @spec search(binary, binary) :: [map]
@@ -33,18 +62,22 @@ defmodule Wocky.Repo do
   end
 
   defp unwrap_search_results({_index, values}) do
-    values |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
+    Enum.reduce(values, %{},
+                fn {"_yz_" <> _, _}, acc -> acc
+                   {"score", _}, acc -> acc
+                   {name, v}, acc ->
+                     k =
+                       name
+                       |> String.replace("_register", "")
+                       |> String.to_atom
+
+                     Map.put(acc, k, v)
+                end)
   end
 
   @doc "Update the type/bucket/key in Riak with the provided object"
-  @spec update(map | Object.t, type, bucket, key) :: :ok | {:error, term}
-  def update(map, type, bucket, key) when is_map(map),
-    do: map |> Object.new |> update(type, bucket, key)
-
-  def update(object, type, bucket, key),
-    do: Riak.update(object, type, bucket, key)
-
-  @doc "Delete the object from Riak that is identified by the type/bucket/key"
-  @spec delete(type, bucket, key) :: :ok | {:error, term}
-  def delete(type, bucket, key), do: Riak.delete(type, bucket, key)
+  @spec update(map, type, bucket, key) :: :ok | {:error, term}
+  def update(data, type, bucket, key) do
+    data |> Doc.new |> put(type, bucket, key)
+  end
 end
