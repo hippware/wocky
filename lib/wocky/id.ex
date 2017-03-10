@@ -14,11 +14,9 @@ defmodule Wocky.ID do
   @doc "Returns true if the ID is a valid UUID."
   @spec valid?(t) :: boolean
   def valid?(id) do
-    try do
-      :ossp_uuid.import(id, :binary)
-      true
-    rescue
-      _ -> false
-    end
+    :ossp_uuid.import(id, :binary)
+    true
+  rescue
+    _ -> false
   end
 end
