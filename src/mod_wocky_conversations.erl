@@ -19,9 +19,17 @@
 
 -export([handle_iq/3]).
 
+-export([archive_message_hook/9]).
+
 -ignore_xref([handle_iq/3]).
 
 -define(DEFAULT_MAX, 50).
+
+-define(INDEX, <<"conversation">>).
+
+-define(timex, 'Elixir.Timex').
+-define(datetime, 'Elixir.DateTime').
+-define(conversation, 'Elixir.Wocky.Conversation').
 
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(default_max,
@@ -29,9 +37,13 @@ start(Host, Opts) ->
                                    ?DEFAULT_MAX,
                                    Opts),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CONVERSATIONS,
-                                  ?MODULE, handle_iq, parallel).
+                                  ?MODULE, handle_iq, parallel),
+    ejabberd_hooks:add(mam_archive_message, Host, ?MODULE,
+                       archive_message_hook, 50).
 
 stop(Host) ->
+    ejabberd_hooks:delete(mam_archive_message, Host, ?MODULE,
+                          archive_message_hook, 50),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CONVERSATIONS).
 
 %%%===================================================================
@@ -52,6 +64,32 @@ handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
 
 %%%===================================================================
+%%% mam_archive_message callback
+%%%===================================================================
+
+-spec archive_message_hook(Result :: any(),
+                           Host   :: ejabberd:server(),
+                           MessID :: mod_mam:message_id(),
+                           ArcID  :: mod_mam:archive_id(),
+                           LocJID :: ejabberd:jid(),
+                           RemJID :: ejabberd:jid(),
+                           SrcJID :: ejabberd:jid(),
+                           Dir    :: incoming | outgoing,
+                           Packet :: exml:element()
+                          ) -> ok.
+archive_message_hook(_Result, Host, MessID, _ArcID,
+                LocJID, RemJID, _SrcJID, Dir, Packet) ->
+    Conv = ?conversation:new(
+              MessID,
+              Host,
+              wocky_util:archive_jid(LocJID),
+              wocky_util:archive_jid(RemJID),
+              ossp_uuid:make(v1, text),
+              exml:to_binary(Packet),
+              Dir =:= outgoing),
+    ok = ?conversation:write(Conv).
+
+%%%===================================================================
 %%% Conversation retrieval
 %%%===================================================================
 
@@ -63,10 +101,10 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
 
 get_conversations(From, RSMIn) ->
     UserJID = wocky_util:archive_jid(From),
-    Rows = wocky_db:select(wocky_app:server(),
-                           conversation, all, #{user_jid => UserJID}),
-    ResultWithTimes = [R#{timestamp => uuid:get_v1_time(
-                                         uuid:string_to_uuid(T))} ||
+    Rows = ?conversation:find(UserJID),
+    ResultWithTimes = [R#{timestamp => integer_to_binary(
+                                         uuid:get_v1_time(
+                                           uuid:string_to_uuid(T)))} ||
                        R = #{time := T} <- Rows],
     SortedResult = sort_result(ResultWithTimes),
     rsm_util:filter_with_rsm(SortedResult, RSMIn).
@@ -96,7 +134,6 @@ id_to_int(RSM = #rsm_in{id = ID}) ->
 max_results() ->
     ejabberd_config:get_local_option(conv_max).
 
-
 create_response(IQ, Conversations, RSMOut) ->
     IQ#iq{type = result,
           sub_el = [#xmlel{name = <<"query">>,
@@ -109,9 +146,9 @@ create_response(IQ, Conversations, RSMOut) ->
 conversations_xml(Conversations) ->
     [conversation_xml(C) || C <- Conversations].
 
-conversation_xml(Conversation) ->
+conversation_xml(Conversation = #{id := ID}) ->
     #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, integer_to_binary(maps:get(id, Conversation))}],
+           attrs = [{<<"id">>, integer_to_binary(ID)}],
            children = conversation_data_xml(Conversation)}.
 
 conversation_data_xml(Conversation) ->
@@ -127,12 +164,4 @@ message_element(C) ->
     end.
 
 conversation_element(E, C) ->
-    #xmlel{name = atom_to_binary(E, utf8),
-           children = [conversation_element_data(E, maps:get(E, C))]}.
-
-conversation_element_data(outgoing, V) ->
-    #xmlcdata{content = atom_to_binary(V, utf8)};
-conversation_element_data(timestamp, V) ->
-    #xmlcdata{content = integer_to_binary(V div 1000)};
-conversation_element_data(_, V) ->
-    #xmlcdata{content = V}.
+    wocky_xml:cdata_el(atom_to_binary(E, utf8), maps:get(E, C)).

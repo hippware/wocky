@@ -109,7 +109,7 @@ set_config_from_opt(OptTag, Config, Default, Opts) ->
     {atomic, _} = ejabberd_config:add_local_option(Config, Val),
     ok.
 
--spec archive_jid(jid()) -> binary().
+-spec archive_jid(jid()) -> jid().
 archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
 
 -spec iq_id() -> binary().

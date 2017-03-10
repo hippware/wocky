@@ -19,6 +19,7 @@ curl -XPUT $RIAK_HOST/search/index/mam \
     -H 'Content-Type: application/json' \
     -d '{"schema":"mam"}'
 
+
 # users
 curl -XPUT $RIAK_HOST/search/index/users \
     -H 'Content-Type: application/json' \
@@ -26,6 +27,11 @@ curl -XPUT $RIAK_HOST/search/index/users \
 
 riak-admin bucket-type create users '{"props":{"datatype":"map", "search_index":"users"}}'
 riak-admin bucket-type activate users
+
+#Conversation
+curl -XPUT $RIAK_HOST/search/index/conversation \
+    -H 'Content-Type: application/json' \
+    -d '{"schema":"_yz_default"}'
 
 # tokens
 riak-admin bucket-type create tokens '{"props":{"datatype":"map"}}'
@@ -48,6 +54,10 @@ riak-admin bucket-type activate vcard
 # MAM
 riak-admin bucket-type create mam_yz '{"props":{"datatype":"map", "search_index":"mam"}}'
 riak-admin bucket-type activate mam_yz
+
+# Conversations
+riak-admin bucket-type create conversation '{"props":{"datatype":"map", "search_index":"conversation"}}'
+riak-admin bucket-type activate conversation
 
 # Last activity
 riak-admin bucket-type create last '{"props":{"last_write_wins":true, "dvv_enabled":false}}'
