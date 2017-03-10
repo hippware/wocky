@@ -78,14 +78,12 @@
          get_handle/2,
          get_phone_number/2,
          set_location/6,
-         add_roster_viewer/3,
-         remove_roster_viewer/3,
-         get_roster_viewers/2]).
+         set_location/6
+        ]).
 
 
 -compile({parse_transform, do}).
 
--ignore_xref([add_roster_viewer/3, remove_roster_viewer/3]).
 
 %%%===================================================================
 %%% API
@@ -353,63 +351,3 @@ set_location(LUser, LServer, LResource, Lat, Lon, Accuracy) ->
                                          lat =>      Lat,
                                          lon =>      Lon,
                                          accuracy => Accuracy}).
-
-%% @doc Adds a roster viewer to a user.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `ViewerJID': The JID of the entity able to view the user's roster
-%%
--spec add_roster_viewer(ejabberd:luser(), ejabberd:lserver(),
-                        ejabberd:jid()) ->
-    ok | not_found.
-add_roster_viewer(LUser, LServer, ViewerJID) ->
-    update_roster_viewer("+", LUser, LServer, ViewerJID).
-
-%% @doc Removes a roster viewer from a user.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
-%% `ViewerJID': The JID of the entity to remove from permitted viewers
-%%
--spec remove_roster_viewer(ejabberd:luser(), ejabberd:lserver(),
-                           ejabberd:jid()) ->
-    ok | not_found.
-remove_roster_viewer(LUser, LServer, ViewerJID) ->
-    update_roster_viewer("-", LUser, LServer, ViewerJID).
-
-%% @private
-update_roster_viewer(Op, LUser, LServer, ViewerJID) ->
-    Q = ["UPDATE user SET roster_viewers = roster_viewers ", Op,
-         " ? WHERE user = ? AND server = ? IF EXISTS"],
-    V = #{user => LUser, server => LServer,
-          roster_viewers => [jid:to_binary(ViewerJID)]},
-    parse_viewer_result(wocky_db:query(shared, Q, V, quorum)).
-
-%% @private
-parse_viewer_result({ok, Result}) ->
-    case wocky_db:single_result(Result) of
-        true -> ok;
-        false -> not_found
-    end.
-
-%% @doc Gets the list of entities allowed to view a user's roster.
-%% Returns a list of viewers, or `not_found' if the user does not exist.
-%%
-%% `LUser': the "localpart" of the user's JID.
-%%
-%% `LServer': the "domainpart" of the user's JID.
-%%
--spec get_roster_viewers(ejabberd:luser(), ejabberd:lserver()) ->
-    [binary()] | not_found.
-get_roster_viewers(LUser, LServer) ->
-    V = #{user => LUser, server => LServer},
-    case wocky_db:select_one(shared, user, roster_viewers, V) of
-        null -> [];
-        not_found -> not_found;
-        List -> List
-    end.

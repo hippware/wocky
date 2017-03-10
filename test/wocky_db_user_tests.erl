@@ -28,8 +28,6 @@ wocky_db_user_test_() ->
          test_find_user_by(),
          test_get_roster_viewers()
        ],
-       test_add_roster_viewer(),
-       test_remove_roster_viewer(),
        test_update_user(),
        test_update_user_with_avatar(),
        test_remove_user()
@@ -275,55 +273,3 @@ test_set_location() ->
                                           CountMatch))
       ]}
     ]}.
-
-test_add_roster_viewer() ->
-  { "add_roster_viewer", [
-    { "Adds a roster viewer to a user", [
-      ?_assertEqual(ok, add_roster_viewer(?ALICE, ?LOCAL_CONTEXT, ?CAROL_JID)),
-      ?_assertEqual(lists:sort([?CAROL_B_JID | ?ROSTER_VIEWERS]),
-                    lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
-    ]},
-    { "Succeeds but makes no change for an existing viewer", [
-      ?_assertEqual(lists:sort([?CAROL_B_JID | ?ROSTER_VIEWERS]),
-                    lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))),
-      ?_assertEqual(ok, add_roster_viewer(?ALICE, ?LOCAL_CONTEXT, ?CAROL_JID)),
-      ?_assertEqual(lists:sort([?CAROL_B_JID | ?ROSTER_VIEWERS]),
-                    lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
-    ]},
-    { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:new(),
-                                                  ?LOCAL_CONTEXT))
-    ]}
-  ]}.
-
-test_remove_roster_viewer() ->
-  { "remove_roster_viewer", [
-    { "Removes a roster viewer from a user", [
-      ?_assertEqual(ok, remove_roster_viewer(?ALICE, ?LOCAL_CONTEXT, ?BOB_JID)),
-      ?_assertEqual([], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
-    ]},
-    { "Succeeds but makes no change for a non-viewer", [
-      ?_assertEqual(ok, remove_roster_viewer(
-                          ?ALICE, ?LOCAL_CONTEXT, ?KAREN_JID)),
-      ?_assertEqual([], get_roster_viewers(?ALICE, ?LOCAL_CONTEXT))
-    ]},
-    { "Returns not_found for a non-existant user", [
-      ?_assertEqual(not_found, remove_roster_viewer(?wocky_id:new(),
-                                           ?LOCAL_CONTEXT, ?CAROL_JID))
-    ]}
-  ]}.
-
-test_get_roster_viewers() ->
-  { "get_roster_viewers", [
-    { "Get the list of roster viewers", [
-      ?_assertEqual(lists:sort(?ROSTER_VIEWERS),
-                    lists:sort(get_roster_viewers(?ALICE, ?LOCAL_CONTEXT)))
-    ]},
-    { "Returns not_found for non-existant users", [
-      ?_assertEqual(not_found, get_roster_viewers(?wocky_id:new(),
-                                               ?LOCAL_CONTEXT))
-    ]},
-    { "Returns empty list for users with no viewers", [
-      ?_assertEqual([], get_roster_viewers(?BOB, ?LOCAL_CONTEXT))
-    ]}
-  ]}.
