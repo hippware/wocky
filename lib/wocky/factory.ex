@@ -22,11 +22,10 @@ defmodule Wocky.Factory do
 
   def user_factory do
     %User{
-      user: ID.new,
+      id: ID.new,
       server: :wocky_app.server,
       handle: Faker.Internet.user_name,
-      password: "password",
-      avatar: :tros.make_url(:wocky_app.server, ID.new),
+      # avatar: :tros.make_url(:wocky_app.server, ID.new),
       first_name: Faker.Name.first_name,
       last_name: Faker.Name.last_name,
       email: Faker.Internet.email,

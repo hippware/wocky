@@ -8,7 +8,10 @@ defmodule Wocky.UserSpec do
   before do
     id = ID.new
     external_id = ID.new
-    :ok = User.insert(id, shared.server, %{external_id: external_id}, true)
+    :ok =
+      %User{id: id, server: shared.server, external_id: external_id}
+      |> User.update
+    :ok = User.wait_for_user(id)
     {:ok, id: id, external_id: external_id}
   end
 
@@ -70,6 +73,35 @@ defmodule Wocky.UserSpec do
         {_, _, result_is_new} = shared.result
         result_is_new |> should(be_true())
       end
+    end
+  end
+
+  describe "delete/2" do
+    before do
+      result = User.delete(shared.server, shared.id)
+      {:ok, result: result}
+    end
+
+    it "should return :ok" do
+      shared.result |> should(eq :ok)
+    end
+
+    it "should remove the user from the database" do
+      shared.server |> User.find(shared.id) |> should(be_nil())
+    end
+
+    it "should remove any tokens associated with the user"
+
+    it "should remove any location data associated with the user"
+
+    it "should succeed if the user does not exist" do
+      shared.server
+      |> User.delete(ID.new)
+      |> should(eq :ok)
+
+      "nosuchserver"
+      |> User.delete(shared.id)
+      |> should(eq :ok)
     end
   end
 end

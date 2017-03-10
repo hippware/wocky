@@ -32,12 +32,19 @@ mod_wocky_lookup_handle_test_() -> {
 
 before_all() ->
     ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
-    {ok, _} = wocky_db_seed:seed_table(shared, phone_number_to_user),
-    {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
-    {ok, _} = wocky_db_seed:seed_table(shared, user),
+    ok = ?wocky_repo:update(#{id => ?ALICE,
+                              server => ?SERVER,
+                              phone_number => ?PHONE_NUMBER,
+                              handle => <<"alice">>,
+                              first_name => <<"Alice">>,
+                              last_name => <<"Wonderland">>,
+                              avatar => ?AVATAR_ID},
+                            <<"users">>, ?SERVER, ?ALICE),
+    ok = ?wocky_user:wait_for_user(?ALICE),
     ok.
 
 after_all(_) ->
+    ok = ?wocky_user:delete(?SERVER, ?ALICE),
     ok.
 
 -define(FROM, #jid{luser = ?ALICE, lserver = ?SERVER}).
@@ -86,6 +93,7 @@ setup_phone_request() ->
     ResultIQ = handle_phone_iq(?FROM, ?TO, make_iq(Numbers)),
     #iq{type = result,
         sub_el = [#xmlel{children = Els}]} = ResultIQ,
+    lager:warning("~p~n", [Els]),
     Els.
 
 after_each(_) ->

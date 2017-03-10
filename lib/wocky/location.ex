@@ -71,7 +71,7 @@ defmodule Wocky.Location do
   defmacrop log_check_result(user, bot_id, result) do
     quote do
       :ok = Logger.debug("""
-      User #{unquote(user).user} #{unquote(result)} the perimeter \
+      User #{unquote(user).id} #{unquote(result)} the perimeter \
       of #{unquote(bot_id)}\
       """)
     end
@@ -79,7 +79,7 @@ defmodule Wocky.Location do
 
   defp check_for_event(bot_id, user, location, acc) do
     :ok = Logger.debug("""
-    Checking user #{user.user} for collision with bot #{bot_id} \
+    Checking user #{user.id} for collision with bot #{bot_id} \
     at location (#{location.lat},#{location.lon})...\
     """)
     bot = Bot.get(bot_id)
@@ -100,7 +100,7 @@ defmodule Wocky.Location do
     # Don't check bots that are owned by the user
     if :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
       :ok = Logger.debug(
-        "Skipping bot #{bot.id} since it is owned by #{user.user}"
+        "Skipping bot #{bot.id} since it is owned by #{user.id}"
       )
       nil
     else

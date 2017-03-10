@@ -69,12 +69,12 @@ defmodule Wocky.LocationApi do
     {boolean, :cowboy_req.req, any}
   def resource_exists(req, state) do
     {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
-    case User.get(user_id) do
+    case User.find(user_id, :wocky_app.server) do
+      %User{} = user ->
+        {true, req, %State{state | user: user}}
+
       nil ->
         {false, set_response_text(req, "User #{user_id} not found."), state}
-
-      user ->
-        {true, req, %State{state | user: user}}
     end
   end
 

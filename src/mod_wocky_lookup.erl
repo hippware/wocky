@@ -91,7 +91,7 @@ lookup_number(Number, Reductions) ->
     {lookup_number(Number), Reductions - 1}.
 
 lookup_number(Number) ->
-    wocky_db_user:find_user_by(phone_number, maybe_add_plus(Number)).
+    ?wocky_user:search(phone_number, maybe_add_plus(Number)).
 
 maybe_add_plus(<<"+", _/binary>> = String) -> String;
 maybe_add_plus(String) -> <<"+", String/binary>>.
@@ -116,7 +116,7 @@ lookup_handles(Handles) ->
                 end, [], Handles).
 
 lookup_handle(Handle) ->
-    wocky_db_user:find_user_by(handle, Handle).
+    ?wocky_user:search(handle, Handle).
 
 
 %%%===================================================================
@@ -133,26 +133,24 @@ attr_value({value, Value}) -> Value;
 attr_value(Value) -> Value.
 
 users_to_xml(Users) ->
-    [user_to_xml(User) || User <- Users].
+    [user_to_xml(User) || User <- lists:flatten(Users)].
 
 user_to_xml({Number, UserData}) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, Number} | xml_user_attrs(UserData)]}.
 
-xml_user_attrs(#{user := User, server := Server, handle := Handle,
-                 first_name := FirstName, last_name := LastName,
-                 avatar := Avatar}) ->
-    [{<<"jid">>, jid:to_binary({User, Server, <<>>})},
-     {<<"handle">>, safe_string(Handle)},
-     {<<"first_name">>, safe_string(FirstName)},
-     {<<"last_name">>, safe_string(LastName)},
-     {<<"avatar">>, safe_string(Avatar)}];
+xml_user_attrs([#{id := ID, server := Server} = User | _]) ->
+    [{<<"jid">>, jid:to_binary({ID, Server, <<>>})},
+     {<<"handle">>, safe_string(maps:get(handle, User, nil))},
+     {<<"first_name">>, safe_string(maps:get(first_name, User, nil))},
+     {<<"last_name">>, safe_string(maps:get(last_name, User, nil))},
+     {<<"avatar">>, safe_string(maps:get(avatar, User, nil))}];
 xml_user_attrs(not_acceptable) ->
     [{<<"error">>, <<"not-acceptable">>}];
-xml_user_attrs(not_found) ->
+xml_user_attrs([]) ->
     [{<<"error">>, <<"item-not-found">>}].
 
-safe_string(null) -> <<>>;
+safe_string(nil) -> <<>>;
 safe_string(Str) when is_binary(Str) -> Str.
 
 iq_result(IQ, Content) ->

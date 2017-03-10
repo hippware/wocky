@@ -74,7 +74,7 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
 
 handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
                #xmlel{name = <<"delete">>}) ->
-    ok = wocky_db_user:remove_user(LUser, LServer),
+    ok = ?wocky_user:delete(LUser, LServer),
     {ok, _Ref} = timer:apply_after(?USER_DELETE_DELAY, ejabberd_hooks, run,
                                    [remove_user, LServer, [LUser, LServer]]),
     {ok, make_delete_response_iq(IQ)}.
@@ -124,21 +124,16 @@ get_field(Var) ->
             {ok, Field}
     end.
 
-get_phone_number(#{user := LUser, server := LServer}) ->
-   case wocky_db_user:get_phone_number(LUser, LServer) of
-      not_found -> <<>>;
-      PhoneNumber -> PhoneNumber
-   end.
-
 fields() ->
      % Field name     % Type    % Visibility % Access   % Accessor
     [{"jid",          "jid",    public,      read_only,
-      fun(#{user := LUser, server := LServer}) ->
+      fun(#{id := LUser, server := LServer}) ->
               jid:to_binary(jid:make(LUser, LServer, <<>>)) end},
-     {"user",         "uuid",   public,      read_only, default},
+     {"user",         "uuid",   public,      read_only,
+      fun (#{id := User}) -> User end},
      {"server",       "string", public,      read_only, default},
      {"handle",       "string", public,      write,     default},
-     {"phone_number", "string", private,     read_only, fun get_phone_number/1},
+     {"phone_number", "string", private,     read_only, default},
      {"avatar",       "file",   public,      write,     default},
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
@@ -198,8 +193,8 @@ is_visible(stranger, _)      -> false.
 
 get_resp_fields(ToJID, LUser, Fields) ->
     LServer = ToJID#jid.lserver,
-    case wocky_db_user:find_user(LUser, LServer) of
-        not_found ->
+    case ?wocky_user:find(LUser, LServer) of
+        nil ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->
             {ok, build_resp_fields(Row, Fields)}
@@ -256,7 +251,7 @@ make_error_response(IQ, ErrStanza) ->
     IQ#iq{type = error, sub_el = ErrStanza}.
 
 
-null_to_bin(null) -> <<"">>;
+null_to_bin(nil) -> <<"">>;
 null_to_bin(X) -> X.
 
 
@@ -363,7 +358,7 @@ check_valid_value(_, _, _) ->
 
 
 check_file(File) ->
-    case 'Elixir.Wocky.ID':'valid?'(File) of
+    case ?wocky_id:'valid?'(File) of
         true -> ok;
         false -> not_valid("Invalid file name (must be UUID)")
     end.
@@ -394,7 +389,7 @@ valid_user_fields() ->
      <<"last_name">>, <<"email">>].
 
 update_user(LUser, LServer, Row) ->
-   case wocky_db_user:update_user(LUser, LServer, Row) of
+   case ?wocky_user:update(LUser, LServer, Row) of
        ok ->
          update_roster_contacts(LUser, LServer),
          ejabberd_hooks:run(wocky_user_updated, LServer, [LUser, LServer]),

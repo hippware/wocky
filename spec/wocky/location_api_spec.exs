@@ -10,17 +10,17 @@ defmodule Wocky.LocationApiSpec do
   let :port, do: Application.get_env(:wocky, :location_api_port)
   let :user, do: Wocky.Factory.insert(:user, resource: "testing")
   let :token do
-    {:ok, {return, _}} = Token.assign(user().user,
+    {:ok, {return, _}} = Token.assign(user().id,
                                       user().server,
                                       user().resource)
     return
   end
   let :headers, do: [
     {"Content-Type", "application/json"},
-    {"X-Auth-User", user().user},
+    {"X-Auth-User", user().id},
     {"X-Auth-Token", token()}
   ]
-  let :url, do: url(port(), user().user)
+  let :url, do: url(port(), user().id)
   let :payload do
     """
     {

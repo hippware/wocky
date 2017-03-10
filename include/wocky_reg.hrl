@@ -7,7 +7,7 @@
           server        :: ejabberd:lserver(),
           provider      :: binary(),
           is_new        :: boolean(),
-          token         :: wocky_db_user:token() | undefined,
+          token         :: 'Elixir.Wocky.User.Token':t() | undefined,
           token_expiry  :: binary(),
           external_id   :: binary()
          }).

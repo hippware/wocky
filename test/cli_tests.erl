@@ -16,11 +16,15 @@ cli_test_() -> {
   ]}.
 
 before_all() ->
-    ok = wocky_db_seed:seed_tables(shared, [user, handle_to_user]),
+    ok = ?wocky_user:update(?ALICE, ?SERVER, #{handle => <<"alice">>}),
+    ok = ?wocky_user:update(?BOB, ?SERVER, #{handle => <<"bob">>}),
+    ok = ?wocky_user:wait_for_user(?BOB),
     ok = wocky_db:truncate(shared, roster),
     ok.
 
 after_all(_) ->
+    ok = ?wocky_user:delete(?ALICE, ?SERVER),
+    ok = ?wocky_user:delete(?BOB, ?SERVER),
     ok.
 
 test_befriend() ->

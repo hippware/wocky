@@ -2,6 +2,7 @@
 %%% @doc Wocky roster model
 -module(wocky_db_roster).
 
+-include("wocky.hrl").
 -include("wocky_roster.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
@@ -202,21 +203,20 @@ fill_extra_fields(Items) when is_list(Items) ->
     [fill_extra_fields(Item) || Item <- Items];
 
 fill_extra_fields(#wocky_roster{contact_jid = {LUser, LServer, _}} = I) ->
-    case wocky_db_user:find_user(LUser, LServer) of
-        not_found ->
+    case ?wocky_user:find(LUser, LServer) of
+        nil ->
             I;
 
-        #{handle := Handle, avatar := Avatar,
-          first_name := First, last_name := Last} ->
+        User ->
             I#wocky_roster{
-              avatar = safe_value(Avatar),
-              contact_handle = safe_value(Handle),
-              first_name = safe_value(First),
-              last_name = safe_value(Last)
+              avatar = safe_value(maps:get(avatar, User, nil)),
+              contact_handle = safe_value(maps:get(handle, User, nil)),
+              first_name = safe_value(maps:get(first_name, User, nil)),
+              last_name = safe_value(maps:get(last_name, User, nil))
              }
     end.
 
-safe_value(null) -> <<>>;
+safe_value(nil) -> <<>>;
 safe_value(Value) -> Value.
 
 unpack_roster_item(LUser, LServer, ContactJID, Item) ->

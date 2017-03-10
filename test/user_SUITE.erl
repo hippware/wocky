@@ -116,8 +116,7 @@ end_per_testcase(CaseName, Config) ->
 
 all_fields(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza = get_request(?ALICE,
-                                  []),
+        QueryStanza = get_request(?ALICE, []),
         ResultStanza = expect_iq_success(QueryStanza, Alice),
         FieldsXML = exml_query:path(ResultStanza, [{element, <<"fields">>}]),
         10 = length(FieldsXML#xmlel.children)
@@ -309,12 +308,11 @@ garbage_get(Config) ->
 
 set_fields(Config) ->
     escalus:story(Config, [{alice, 1}, {robert, 1}], fun(Alice, Robert) ->
-        QueryStanza =
-        set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields()),
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
-        wocky_db_user:find_user(?ALICE, ?LOCAL_CONTEXT),
+            ?wocky_user:find(?ALICE, ?LOCAL_CONTEXT),
 
         % Robert should get an update for his roster record of Alice
         Received = escalus:wait_for_stanza(Robert),
@@ -327,21 +325,19 @@ set_fields(Config) ->
 
 set_other_user(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza =
-        set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields()),
         expect_iq_error(QueryStanza, Bob)
     end).
 
 set_missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza =
-        set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields()),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = proplists:delete(<<"node">>, Attrs),
         BrokenStanza =
-        QueryStanza#xmlel{children =
-                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}]},
+            QueryStanza#xmlel{children =
+                              [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                                 BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
@@ -363,112 +359,106 @@ delete_user(Config) ->
 rest_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"phone_number">>, <<"string">>, <<"+1444">>}]),
+            set_request(?ALICE,
+                        [{<<"phone_number">>, <<"string">>, <<"+1444">>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 non_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"user">>, <<"uuid">>, ?wocky_id:new()}]),
+            set_request(?ALICE,
+                        [{<<"user">>, <<"uuid">>, ?wocky_id:new()}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 blank_handle(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"handle">>, <<"string">>, <<"">>}]),
+            set_request(?ALICE,
+                        [{<<"handle">>, <<"string">>, <<"">>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 
 set_malformed_user(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza =
-        set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields()),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = [{<<"node">>, <<"ack-fnord">>} |
                        proplists:delete(<<"node">>, Attrs)],
         BrokenStanza =
-        QueryStanza#xmlel{children =
-                          [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
-                                                             BrokenAttrs}]},
+            QueryStanza#xmlel{children =
+                              [(hd(QueryStanza#xmlel.children))#xmlel{attrs =
+                                                                 BrokenAttrs}]},
         expect_iq_error(BrokenStanza, Alice)
     end).
 
 set_wrong_type(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        request_wrapper(<<"set">>, ?ALICE,
-                        [#xmlel{name = <<"field">>,
-                                attrs = [{<<"var">>, <<"first_name">>},
-                                         {<<"type">>, <<"strOng">>}]
-                               }]),
+            request_wrapper(<<"set">>, ?ALICE,
+                            [#xmlel{name = <<"field">>,
+                                    attrs = [{<<"var">>, <<"first_name">>},
+                                             {<<"type">>, <<"strOng">>}]
+                                   }]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 set_missing_var(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         BrokenStanza =
-        request_wrapper(<<"set">>, ?ALICE,
-                        [#xmlel{name = <<"field">>}]),
+            request_wrapper(<<"set">>, ?ALICE,
+                            [#xmlel{name = <<"field">>}]),
         expect_iq_error(BrokenStanza, Alice)
     end).
 
 set_missing_value(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         BrokenStanza =
-        request_wrapper(<<"set">>, ?ALICE,
-                        [#xmlel{name = <<"field">>,
-                                attrs = [{<<"var">>, <<"first_name">>},
-                                         {<<"type">>, <<"string">>}],
-                                children = [#xmlel{name = <<"other">>}]
-                               }]),
+            request_wrapper(<<"set">>, ?ALICE,
+                            [#xmlel{name = <<"field">>,
+                                    attrs = [{<<"var">>, <<"first_name">>},
+                                             {<<"type">>, <<"string">>}],
+                                    children = [#xmlel{name = <<"other">>}]
+                                   }]),
         expect_iq_error(BrokenStanza, Alice)
     end).
 
 handle_clash(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        QueryStanza =
-        set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields()),
         expect_iq_success(QueryStanza, Alice),
-        BobQueryStanza =
-        set_request(?BOB, set_fields()),
+        BobQueryStanza = set_request(?BOB, set_fields()),
         expect_iq_error(BobQueryStanza, Bob),
 
-        #{user := ?BOB, first_name := null} =
-        wocky_db_user:find_user(?BOB, ?SERVER)
+        #{id := ?BOB, first_name := nil} = ?wocky_user:find(?BOB, ?SERVER)
     end).
 
 reserved_handle(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         %% Reserved names should be rejected
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"handle">>, <<"string">>, <<"root">>}]),
+            set_request(?ALICE,
+                        [{<<"handle">>, <<"string">>, <<"root">>}]),
         expect_iq_error(QueryStanza, Alice),
 
         %% Check with alternative capitalisation
         QueryStanza2 =
-        set_request(?ALICE,
-                    [{<<"handle">>, <<"string">>, <<"rOOt">>}]),
+            set_request(?ALICE,
+                        [{<<"handle">>, <<"string">>, <<"rOOt">>}]),
         expect_iq_error(QueryStanza2, Alice)
     end).
 
 same_handle(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza =
-        set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields()),
         expect_iq_success(QueryStanza, Alice)
     end).
 
 garbage_set(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza =
-        garbage_request(?ALICE, <<"set">>),
+        QueryStanza = garbage_request(?ALICE, <<"set">>),
         % Successfully set nothing:
         expect_iq_success(QueryStanza, Alice)
     end).
@@ -476,36 +466,36 @@ garbage_set(Config) ->
 invalid_email(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"email">>, <<"string">>, <<"notanemail">>}]),
+            set_request(?ALICE,
+                        [{<<"email">>, <<"string">>, <<"notanemail">>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 invalid_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"avatar">>, <<"file">>, <<"notaURL">>}]),
+            set_request(?ALICE,
+                        [{<<"avatar">>, <<"file">>, <<"notaURL">>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 non_local_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"avatar">>, <<"file">>,
-                      <<"tros:user@otherserver.com/file/",
-                        ?AVATAR_FILE/binary>>}]),
+            set_request(?ALICE,
+                        [{<<"avatar">>, <<"file">>,
+                          <<"tros:user@otherserver.com/file/",
+                            ?AVATAR_FILE/binary>>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 non_uuid_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
-        set_request(?ALICE,
-                    [{<<"avatar">>, <<"file">>,
-                      <<"tros:", (?ALICE)/binary, "@",
-                        ?LOCAL_CONTEXT/binary, "/file/blahblah">>}]),
+            set_request(?ALICE,
+                        [{<<"avatar">>, <<"file">>,
+                          <<"tros:", (?ALICE)/binary, "@",
+                            ?LOCAL_CONTEXT/binary, "/file/blahblah">>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 

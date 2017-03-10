@@ -157,8 +157,8 @@ make_friends(User1, User2) ->
     lists:foreach(
       make_friend(_), [{User1, User2}, {User2, User1}]).
 
-make_friend({#{user := User1, server := Server1},
-             #{user := User2, server := Server2}}) ->
+make_friend({#{id := User1, server := Server1},
+             #{id := User2, server := Server2}}) ->
     JID2 = jid:to_binary(jid:make(User2, Server2, <<>>)),
     RosterItem = wocky_db_roster:get_roster_item(User1, Server1, JID2),
     RosterItem2 = RosterItem#wocky_roster{subscription = both,
@@ -293,7 +293,7 @@ fix_access(BotJID, Server, FileID) ->
 
 make_token(Handle) ->
     do([error_m ||
-        #{user := User, server := Server} <- get_user(Handle),
+        #{id := User, server := Server} <- get_user(Handle),
         Resource <- make_resource(),
         Token <- get_token(User, Server, Resource),
         io:fwrite("User:     ~s\nResource: ~s\nToken:    ~s\n",
@@ -374,10 +374,10 @@ do_reprocess_image(ImageName) ->
 %%%===================================================================
 
 get_user(Handle) ->
-    case wocky_db_user:find_user_by(handle, Handle) of
-        not_found ->
+    case ?wocky_user:search(handle, Handle) of
+        [] ->
             {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
-        User ->
+        [User] ->
             {ok, User}
     end.
 

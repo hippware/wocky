@@ -7,6 +7,10 @@ defmodule Wocky.InsertStrategy do
   @typep record :: %{__struct__: atom}
 
   @spec handle_insert(record, any) :: record | none
+  def handle_insert(%Wocky.User{} = record, _opts) do
+    :ok = Wocky.User.update(record)
+    record
+  end
   def handle_insert(%{__struct__: module} = record, opts) do
     exports = module.__info__(:functions)
     case Keyword.get(exports, :insert) do
