@@ -72,6 +72,7 @@ defmodule Wocky.User do
                        external_id: external_id,
                        phone_number: phone_number
                      })
+        :ok = wait_for_user(id)
         {:ok, {id, server, true}}
 
       [user] ->
