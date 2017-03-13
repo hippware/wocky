@@ -38,6 +38,19 @@ defmodule Wocky.Repo do
     Riak.delete(type, bucket, key)
   end
 
+  @doc """
+  Delete all keys from a bucket.
+
+  This is a very expensive operation. DO NOT USE IN PRODUCTION!
+  """
+  @spec delete_all(type, bucket) :: :ok
+  def delete_all(type, bucket) do
+    for key <- Riak.Bucket.keys!(type, bucket) do
+      _ = Riak.delete(type, bucket, key)
+    end
+    :ok
+  end
+
   # =========================================================================
   # Map API
 

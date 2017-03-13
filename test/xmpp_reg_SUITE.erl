@@ -8,6 +8,7 @@
 -include_lib("stdlib/include/assert.hrl").
 
 -include("wocky_db_seed.hrl").
+-include("wocky.hrl").
 
 %TODO: Remove me
 -define(ALICE_UUID, escalus_users:get_username(Config, alice)).
@@ -67,7 +68,8 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
+    ?wocky_repo:delete_all(<<"users">>, ?SERVER),
+    ?wocky_repo:delete_all(<<"tokens">>, ?SERVER),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
