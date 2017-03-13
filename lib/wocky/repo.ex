@@ -51,13 +51,33 @@ defmodule Wocky.Repo do
   end
 
   @doc "Find an object in Riak using a Solr query"
-  @spec search(binary, binary) :: [map]
+  @spec search(binary, binary) :: [Doc.t]
   def search(index, conditions) do
-    {:ok, results} = Search.query(index, conditions)
+    index
+    |> do_search(conditions)
+    |> Enum.reduce([], &lookup_search_result/2)
+  end
 
-    results
-    |> search_results(:docs)
-    |> List.flatten
+  defp do_search(index, conditions) do
+    {:ok, results} = Search.query(index, conditions)
+    results |> search_results(:docs) |> List.flatten
+  end
+
+  defp lookup_search_result({_index, values}, acc) do
+    btype  = :proplists.get_value("_yz_rt", values)
+    bucket = :proplists.get_value("_yz_rb", values)
+    key    = :proplists.get_value("_yz_rk", values)
+    case Riak.find(btype, bucket, key) do
+      nil -> acc
+      obj -> [obj | acc]
+    end
+  end
+
+  @doc "Find and object in Riak using a Solr query"
+  @spec unsafe_search(binary, binary) :: [map]
+  def unsafe_search(index, conditions) do
+    index
+    |> do_search(conditions)
     |> Enum.map(&unwrap_search_results/1)
   end
 

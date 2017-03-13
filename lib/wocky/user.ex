@@ -203,6 +203,7 @@ defmodule Wocky.User do
   def search(field, value) do
     "users"
     |> Repo.search("#{field}_register:\"#{value}\"")
+    |> Enum.map(&Wocky.Repo.Doc.to_map/1)
     |> Enum.map(fn data -> new(data[:id], data[:server], data) end)
   end
 
