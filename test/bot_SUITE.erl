@@ -397,7 +397,7 @@ publish_item(Config) ->
           publish_item_stanza(?BOT, NoteID, Title, Content),
           Carol),
 
-        % Alice annot publish to a non-existant bot
+        % Alice cannot publish to a non-existant bot
         expect_iq_error(
           publish_item_stanza(wocky_db:create_id(), NoteID, Title, Content),
           Alice),
