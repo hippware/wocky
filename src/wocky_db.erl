@@ -168,14 +168,14 @@ select_row(Context, Table, Columns, Conditions) ->
                 -> [term()].
 select_column(Context, Table, Column, Conditions) ->
     R = run_select_query(Context, Table, [Column], Conditions),
-    [V || #{Column := V} <- ?result:all_rows(R)].
+    [V || #{Column := V} <- all_rows(R)].
 
 %% @doc Retrieves data from a table based on the parameters and
 %% returns all rows of the result set.
 -spec select(context(), table(), columns(), conditions()) -> rows().
 select(Context, Table, Columns, Conditions) ->
     R = run_select_query(Context, Table, Columns, Conditions),
-    rows(R).
+    all_rows(R).
 
 run_select_query(Context, Table, Columns, Conditions) ->
     run_select_query(Context, Table, Columns, Conditions, nil).
