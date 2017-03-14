@@ -48,7 +48,8 @@ existing_cases() ->
      update,
      update_no_changes,
      no_token,
-     unauthorized_update
+     unauthorized_update,
+     empty_phone_number
     ].
 
 no_digits_cases() ->
@@ -75,7 +76,7 @@ end_per_suite(Config) ->
 init_per_group(no_digits, Config) ->
     Config;
 init_per_group(_GroupName, Config) ->
-    fake_digits_server:start(true),
+    fake_digits_server:start(true, ?PHONE_NUMBER),
     Config.
 
 end_per_group(no_digits, Config) ->
@@ -116,7 +117,8 @@ missing_field(Config) ->
     assert_is_malformed_error(Result).
 
 unauthorized_new(Config) ->
-    fake_digits_server:set_allow(false),
+    fake_digits_server:stop(),
+    fake_digits_server:start(false, ?PHONE_NUMBER),
     Client = start_client(Config),
     Stanza = request_stanza(request_data(provider_data())),
     Result = escalus:send_and_wait(Client, Stanza),
@@ -139,7 +141,6 @@ invalid_provider_data(Config) ->
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
     assert_is_malformed_error(Result).
-
 
 %%--------------------------------------------------------------------
 %% mod_wocky_reg existing user tests
@@ -177,6 +178,14 @@ no_token(Config) ->
 unauthorized_update(Config) ->
     % Same test as new once the user exists
     unauthorized_new(Config).
+
+empty_phone_number(Config) ->
+    fake_digits_server:stop(),
+    fake_digits_server:start(true, <<>>),
+    Client = start_client(Config),
+    Stanza = request_stanza(request_data(provider_data())),
+    Result = escalus:send_and_wait(Client, Stanza),
+    assert_is_redirect(Result, false, true).
 
 digits_unavailable(Config) ->
     Client = start_client(Config),
