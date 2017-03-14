@@ -5,39 +5,35 @@
 
 -behaviour(cowboy_http_handler).
 
--export([start/1, stop/0, set_allow/1, url/0, init/3, handle/2, terminate/3]).
+-export([start/2, stop/0, url/0, init/3, handle/2, terminate/3]).
 
 -include("wocky_db_seed.hrl").
 
 %% Start the server. `AllowAuth' specifies whether requests to this server
 %% should succeed or fail.
-start(AllowAuth) ->
+start(AllowAuth, PhoneNumber) ->
     cowboy:start_http(fake_digits_listener, 1,
                       [{port, port()}],
-                      [{env, [{dispatch, make_dispatch(AllowAuth)}]}]).
+                      [{env, [{dispatch,
+                               make_dispatch(#{allow_auth => AllowAuth,
+                                               phone_number => PhoneNumber})
+                      }]}]).
 
 stop() ->
     ok = cowboy:stop_listener(fake_digits_listener).
 
-set_allow(AllowAuth) ->
-    % We need to stop and restart rather than using cowboy:set_env because
-    % set_env only affects new connections, and wocky_digits_auth holds the
-    % connection open.
-    ok = cowboy:stop_listener(fake_digits_listener),
-    start(AllowAuth).
-
-make_dispatch(AllowAuth) ->
-    cowboy_router:compile([{'_', [{'_', ?MODULE, AllowAuth}]}]).
+make_dispatch(Env) ->
+    cowboy_router:compile([{'_', [{'_', ?MODULE, Env}]}]).
 
 init({_TransportName, http}, Req, AllowAuth) ->
     {ok, Req, AllowAuth}.
 
-handle(Req, AllowAuth) ->
+handle(Req, Env = #{allow_auth := AllowAuth, phone_number := PhoneNumber}) ->
     {ok, Req2} = case AllowAuth of
-        true -> cowboy_req:reply(200, headers(), body(), Req);
+        true -> cowboy_req:reply(200, headers(), body(PhoneNumber), Req);
         false -> cowboy_req:reply(401, Req)
     end,
-    {ok, Req2, AllowAuth}.
+    {ok, Req2, Env}.
 
 terminate(_Reason, _Req, _State) -> ok.
 
@@ -45,8 +41,8 @@ url() -> "http://localhost:" ++ integer_to_list(port()).
 port() -> 9999.
 
 headers() -> [{"content-type", "application/json"}].
-body() ->
-    JSON = [{phone_number, ?PHONE_NUMBER},
+body(PhoneNumber) ->
+    JSON = [{phone_number, PhoneNumber},
             {access_token, {struct,
                             %% Obviously these aren't valid, but we don't
                             %% check them so just jam anything in for now
