@@ -140,16 +140,26 @@ create(Config) ->
       end).
 
 new_id(Config) ->
-    escalus:story(Config, [{alice, 1}],
-      fun(Alice) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
         %% Get a new ID
         Result = expect_iq_success(new_id_stanza(), Alice),
         ID = xml:get_path_s(Result, [{elem, <<"new-id">>}, cdata]),
 
+        %% Alice can publish to the bot ID
+        publish_item(ID, <<"ID">>,
+                     <<"title">>, <<"content">>, undefined, Alice),
+
+        %% Bob can't since he's not the owner
+        expect_iq_error(
+          publish_item_stanza(ID, <<"ID">>, <<"title">>, <<"content">>), Bob),
+
+        % Now create the bot
         CreateFields = [{"id", "string", ID} |
                         lists:keydelete("shortname", 1, default_fields())],
         expect_iq_success(create_stanza(CreateFields), Alice),
 
+        %% We can't specify an un-allocated ID for creation
         FailedCreateFields = [{"id", "string", ?wocky_id:create()}
                               | default_fields()],
         expect_iq_error(create_stanza(FailedCreateFields), Alice)
@@ -386,6 +396,11 @@ publish_item(Config) ->
         expect_iq_error(
           publish_item_stanza(?BOT, NoteID, Title, Content),
           Carol),
+
+        % Alice cannot publish to a non-existant bot
+        expect_iq_error(
+          publish_item_stanza(wocky_db:create_id(), NoteID, Title, Content),
+          Alice),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).

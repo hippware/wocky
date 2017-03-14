@@ -29,8 +29,13 @@
 
 check_owner(Server, ID, User) ->
     case jid:are_bare_equal(wocky_db_bot:owner(Server, ID), User) of
-        true -> ok;
-        false -> {error, ?ERR_FORBIDDEN}
+        true ->
+            ok;
+        false ->
+            case wocky_db_bot:is_preallocated_id(User, ID) of
+                true -> ok;
+                false -> {error, ?ERR_FORBIDDEN}
+            end
     end.
 
 check_access(Server, ID, From) ->
