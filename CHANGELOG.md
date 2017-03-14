@@ -9,6 +9,7 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * Consolidate bot visibility (only Public and Private) and sharing (#442)
+* Allow publishing to preallocated bot ID (#564)
 
 
 # 17.03.08+1639.1ad8af1

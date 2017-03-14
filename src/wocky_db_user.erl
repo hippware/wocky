@@ -109,8 +109,8 @@
         -> {ok, {binary(), binary(), boolean()}}.
 register_user(ExternalId, PhoneNumber) ->
     {User, Server, _} = Ret = assign_server_and_id(ExternalId, PhoneNumber),
-    Queries = [update_user_record_query(User, Server, ExternalId),
-               update_phone_number_query(PhoneNumber, User, Server)],
+    Queries = [update_user_record_query(User, Server, ExternalId) |
+               maybe_update_phone_number_query(PhoneNumber, User, Server)],
     {ok, void} = wocky_db:batch_query(shared, Queries, quorum),
     {ok, Ret}.
 
@@ -138,10 +138,12 @@ update_user_record_query(User, Server, ExternalId) ->
      #{user => User, server => Server, external_id => ExternalId}}.
 
 %% @private
-update_phone_number_query(PhoneNumber, User, Server) ->
-    {"INSERT INTO phone_number_to_user (phone_number, user, server)"
-     " VALUES (?, ?, ?)",
-     #{phone_number => PhoneNumber, user => User, server => Server}}.
+maybe_update_phone_number_query(<<>>, _User, _Server) ->
+    [];
+maybe_update_phone_number_query(PhoneNumber, User, Server) ->
+    [{"INSERT INTO phone_number_to_user (phone_number, user, server)"
+      " VALUES (?, ?, ?)",
+      #{phone_number => PhoneNumber, user => User, server => Server}}].
 
 
 %% @doc Update the data on an existing user.

@@ -76,7 +76,7 @@ get_catchup(User, Server, Version) ->
                                server => Server,
                                version => Version},
                              quorum),
-    [normalise_item(I) || I <- wocky_db:rows(R)].
+    [normalise_item(I) || I <- wocky_db:all_rows(R)].
 
 -spec current_version(ejabberd:luser(), ejabberd:lserver()) -> pub_version().
 current_version(User, Server) ->
