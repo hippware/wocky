@@ -141,14 +141,17 @@ user_to_xml({Number, UserData}) ->
 
 xml_user_attrs([#{id := ID, server := Server} = User | _]) ->
     [{<<"jid">>, jid:to_binary({ID, Server, <<>>})},
-     {<<"handle">>, safe_string(maps:get(handle, User, nil))},
-     {<<"first_name">>, safe_string(maps:get(first_name, User, nil))},
-     {<<"last_name">>, safe_string(maps:get(last_name, User, nil))},
-     {<<"avatar">>, safe_string(maps:get(avatar, User, nil))}];
+     {<<"handle">>, get_safe(handle, User)},
+     {<<"first_name">>, get_safe(first_name, User)},
+     {<<"last_name">>, get_safe(last_name, User)},
+     {<<"avatar">>, get_safe(avatar, User)}];
 xml_user_attrs(not_acceptable) ->
     [{<<"error">>, <<"not-acceptable">>}];
 xml_user_attrs([]) ->
     [{<<"error">>, <<"item-not-found">>}].
+
+get_safe(Key, Map) ->
+    safe_string(maps:get(Key, Map, nil)).
 
 safe_string(nil) -> <<>>;
 safe_string(Str) when is_binary(Str) -> Str.
