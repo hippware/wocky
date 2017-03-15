@@ -93,7 +93,6 @@ setup_phone_request() ->
     ResultIQ = handle_phone_iq(?FROM, ?TO, make_iq(Numbers)),
     #iq{type = result,
         sub_el = [#xmlel{children = Els}]} = ResultIQ,
-    lager:warning("~p~n", [Els]),
     Els.
 
 after_each(_) ->

@@ -82,7 +82,11 @@ notify_bot_event(To = #jid{luser = ToUser, lserver = ToServer},
     ok = lager:debug("Sending notification for ~s ~sing bot ~s to ~s",
                      [User, BotTitle, Event, jid:to_binary(To)]),
     Resources = ejabberd_sm:get_user_resources(ToUser, ToServer),
-    #{handle := UserHandle} = ?wocky_user:find(Server, User),
+    UserHandle = case ?wocky_user:find(Server, User) of
+                     #{handle := nil} -> User;
+                     #{handle := Handle} -> Handle;
+                     nil -> User
+                 end,
     lists:foldl(
       notify_resource_bot_event(To, _, UserHandle, BotTitle, Event, _),
       ok,
