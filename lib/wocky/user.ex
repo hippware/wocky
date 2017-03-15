@@ -131,7 +131,6 @@ defmodule Wocky.User do
       :tros.parse_url(avatar)
       ~>> check_file_is_local(fields.server)
       ~>> check_avatar_owner(fields.id)
-      ~>> preserve_avatar()
 
     case result do
       :ok -> {:ok, fields}
@@ -149,8 +148,6 @@ defmodule Wocky.User do
       _else -> {:error, :not_file_owner}
     end
   end
-
-  defp preserve_avatar({server, id}), do: :tros.keep(server, id)
 
   defp delete_existing_avatar(%{avatar: new_avatar} = fields)
   when not is_nil(new_avatar)
