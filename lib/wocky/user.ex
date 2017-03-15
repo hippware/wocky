@@ -4,21 +4,32 @@ defmodule Wocky.User do
   use Exref, ignore: [insert: 1, new: 2, from_jid: 3, to_jid: 2,
                       to_jid_string: 2, to_bare_jid: 1, to_bare_jid_string: 1]
   use Wocky.Ejabberd
+
   import OK, only: ["~>>": 2]
+
+  alias Wocky.Bot
   alias Wocky.ID
+  alias Wocky.Index
+  alias Wocky.Location
   alias Wocky.Repo
-  alias Wocky.User
+  alias Wocky.Repo.Doc
+  alias __MODULE__, as: User
 
-  @type id           :: binary
-  @type server       :: binary
-  @type resource     :: binary
-  @type handle       :: binary
-  @type external_id  :: binary
-  @type phone_number :: binary
-  @type password     :: binary
-  @type search_key   :: :external_id | :phone_number | :handle
+  @enforce_keys [:id, :server]
+  defstruct [
+    :id,
+    :server,
+    :resource,
+    :handle,
+    :avatar,
+    :first_name,
+    :last_name,
+    :email,
+    :external_id,
+    :phone_number
+  ]
 
-  @type t :: %__MODULE__{
+  @type t :: %User{
     id:             binary,
     server:         binary,
     resource:       nil | binary,
@@ -31,22 +42,16 @@ defmodule Wocky.User do
     phone_number:   nil | binary
   }
 
-  @enforce_keys [:id, :server]
-  defstruct [
-    id:             nil,
-    server:         nil,
-    resource:       nil,
-    handle:         nil,
-    avatar:         nil,
-    first_name:     nil,
-    last_name:      nil,
-    email:          nil,
-    external_id:    nil,
-    phone_number:   nil
-  ]
+  @type id           :: binary
+  @type server       :: binary
+  @type resource     :: binary
+  @type handle       :: binary
+  @type external_id  :: binary
+  @type phone_number :: binary
+  @type password     :: binary
+  @type search_key   :: :external_id | :phone_number | :handle
 
-  # use ExConstructor, name: :from_map
-
+  @bucket_type "users"
 
   # ====================================================================
   # API
@@ -55,7 +60,7 @@ defmodule Wocky.User do
   @doc "Create a user object"
   @spec new(id, server, map | list) :: t
   def new(id, server, data \\ %{}) do
-    %User{id: id, server: server} |> struct(data)
+    struct(%User{id: id, server: server}, data)
   end
 
   @doc """
@@ -83,13 +88,13 @@ defmodule Wocky.User do
   @doc "Wait for a new user to be indexed for searching"
   @spec wait_for_user(id, pos_integer, pos_integer) :: :ok | {:error, :timeout}
   def wait_for_user(id, sleep_time \\ 250, retries \\ 10) do
-    Repo.wait_for_search_result("users", "id_register:#{id}",
+    Repo.wait_for_search_result(@bucket_type, "id_register:#{id}",
                                 sleep_time, retries)
   end
 
   @spec update(t) :: :ok | {:error, term}
   def update(%User{id: id, server: server} = user) do
-    update(id, server, user |> Map.from_struct)
+    update(id, server, Map.from_struct(user))
   end
 
   @doc """
@@ -111,7 +116,7 @@ defmodule Wocky.User do
   when not is_nil(handle)
   do
     reserved = Application.get_env(:wocky, :reserved_handles, [])
-    if reserved |> Enum.member?(handle |> String.downcase) do
+    if Enum.member?(reserved, String.downcase(handle)) do
       {:error, :duplicate_handle}
     else
       {:ok, fields}
@@ -123,8 +128,7 @@ defmodule Wocky.User do
   when not is_nil(avatar)
   do
     result =
-      avatar
-      |>  :tros.parse_url
+      :tros.parse_url(avatar)
       ~>> check_file_is_local(fields.server)
       ~>> check_avatar_owner(fields.id)
       ~>> preserve_avatar()
@@ -140,9 +144,9 @@ defmodule Wocky.User do
   defp check_file_is_local(_, _), do: {:error, :not_local_file}
 
   defp check_avatar_owner({server, id}, user_id) do
-    case server |> :tros.get_metadata(id) ~>> :tros.get_owner do
+    case :tros.get_metadata(server, id) ~>> :tros.get_owner do
       {:ok, ^user_id} -> {:ok, {server, id}}
-      _ -> {:error, :not_file_owner}
+      _else -> {:error, :not_file_owner}
     end
   end
 
@@ -155,37 +159,40 @@ defmodule Wocky.User do
       %User{avatar: old_avatar} ->
         case :tros.parse_url(old_avatar) do
           {:ok, {file_server, file_id}} ->
-              :tros.delete(file_server, file_id)
+            :tros.delete(file_server, file_id)
 
-          {:error, _} -> :ok
+          {:error, _} ->
+            :ok
         end
-      _else -> :ok
+
+      _else ->
+        :ok
     end
     {:ok, fields}
   end
   defp delete_existing_avatar(data), do: {:ok, data}
 
   defp do_update_user(%{id: id, server: server} = fields) do
-    :ok = Repo.update(fields, "users", server, id)
-    :ok = Wocky.Index.user_updated(id, fields)
+    :ok = Repo.update(fields, @bucket_type, server, id)
+    :ok = Index.user_updated(id, fields)
     :ok
   end
 
   @doc "Removes the user from the database"
   @spec delete(server, id) :: :ok
   def delete(server, id) do
-    :ok = Repo.delete("users", server, id)
-    :ok = Wocky.Index.user_removed(id)
+    :ok = Repo.delete(@bucket_type, server, id)
+    :ok = Index.user_removed(id)
     :ok
   end
 
   @doc """
-  Returns a map of all fields for a given user or `not_found' if no such
+  Returns a map of all fields for a given user or `nil' if no such
   user exists.
   """
   @spec find(binary, binary) :: t | nil
   def find(id, server) do
-    case Repo.find("users", server, id) do
+    case Repo.find(@bucket_type, server, id) do
       nil -> nil
       data -> new(id, server, data)
     end
@@ -194,9 +201,9 @@ defmodule Wocky.User do
   @doc "Search for a user based on the value of a property."
   @spec search(search_key, binary) :: [t]
   def search(field, value) do
-    "users"
+    @bucket_type
     |> Repo.search("#{field}_register:\"#{value}\"")
-    |> Enum.map(&Wocky.Repo.Doc.to_map/1)
+    |> Enum.map(&Doc.to_map/1)
     |> Enum.map(fn data -> new(data[:id], data[:server], data) end)
   end
 
@@ -224,7 +231,7 @@ defmodule Wocky.User do
 
   @spec from_jid(binary, binary, binary) :: t
   def from_jid(user, server, resource) do
-    %__MODULE__{id: user, server: server, resource: resource}
+    %User{id: user, server: server, resource: resource}
   end
 
   @spec from_jid(Ejabberd.jid) :: t
@@ -233,7 +240,7 @@ defmodule Wocky.User do
     from_jid(user, server, resource)
   end
 
-  @spec set_location(t, Wocky.Location.t) :: t
+  @spec set_location(t, Location.t) :: t
   def set_location(user, location) do
     :ok = :wocky_db_user.set_location(user.id, user.server, user.resource,
                                       location.lat, location.lon,
@@ -246,13 +253,13 @@ defmodule Wocky.User do
     :wocky_db_bot.subscribed_bots(to_jid(user))
   end
 
-  @spec get_owned_bots(t) :: [Wocky.Bot.t]
+  @spec get_owned_bots(t) :: [Bot.t]
   def get_owned_bots(user) do
     :all
     |> Schemata.select(
         from: :user_bot, in: :wocky_db.shared_keyspace,
         where: %{owner: to_bare_jid_string(user)})
-    |> Enum.map(&Wocky.Bot.new(&1))
+    |> Enum.map(&Bot.new(&1))
   end
 
   @spec get_last_bot_event(t, binary) :: [map]
@@ -273,5 +280,4 @@ defmodule Wocky.User do
         created_at: :now
       }
   end
-
 end

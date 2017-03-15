@@ -5,9 +5,9 @@ defmodule Wocky.Honeybadger do
     Honeybadger implements it as a macro.
   """
 
-  require Honeybadger
-
   use Exref, ignore: [notify: 1, notify: 2, notify: 3, context: 1]
+
+  require Honeybadger
 
   @spec notify(binary) :: :ok
   def notify(exception) do

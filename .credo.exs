@@ -64,7 +64,7 @@
         # If you don't want the `setup` and `test` macro calls in ExUnit tests
         # or the `schema` macro in Ecto schemas to trigger DuplicatedCode, just
         # set the `excluded_macros` parameter to `[:schema, :setup, :test]`.
-        {Credo.Check.Design.DuplicatedCode, excluded_macros: [:setup, :test]},
+        {Credo.Check.Design.DuplicatedCode, excluded_macros: []},
 
         # You can also customize the exit_status of each check.
         # If you don't want TODO comments to cause `mix credo` to fail, just
@@ -82,18 +82,20 @@
         {Credo.Check.Readability.ParenthesesInCondition},
         {Credo.Check.Readability.PredicateFunctionNames},
         {Credo.Check.Readability.PreferImplicitTry},
-        {Credo.Check.Readability.RedundantBlankLines},
+        {Credo.Check.Readability.RedundantBlankLines, max_blank_lines: 2},
+        # {Credo.Check.Readability.Semicolons},
+        {Credo.Check.Readability.SinglePipe},
         {Credo.Check.Readability.Specs},
         {Credo.Check.Readability.StringSigils},
         {Credo.Check.Readability.TrailingBlankLine},
         {Credo.Check.Readability.TrailingWhiteSpace},
         {Credo.Check.Readability.VariableNames},
-        {Credo.Check.Refactor.DoubleBooleanNegation},
 
-        # {Credo.Check.Refactor.CaseTrivialMatches}, # deprecated in 0.4.0
         {Credo.Check.Refactor.ABCSize},
+        # {Credo.Check.Refactor.AppendSingleItem},
         {Credo.Check.Refactor.CondStatements},
         {Credo.Check.Refactor.CyclomaticComplexity},
+        {Credo.Check.Refactor.DoubleBooleanNegation},
         {Credo.Check.Refactor.FunctionArity},
         {Credo.Check.Refactor.MatchInCondition},
         {Credo.Check.Refactor.NegatedConditionsInUnless},

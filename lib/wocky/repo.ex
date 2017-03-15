@@ -4,18 +4,20 @@ defmodule Wocky.Repo do
   instead of calling Riak directly.
   """
 
+  import Record, only: [defrecordp: 2, extract: 2]
+
+  alias Riak.Bucket
   alias Riak.Search
   alias Wocky.Repo.Doc
 
   require Record
-  import Record, only: [defrecordp: 2, extract: 2]
-
-  defrecordp :search_results,
-    extract(:search_results, from_lib: "riakc/include/riakc.hrl")
 
   @type type   :: binary
   @type bucket :: binary
   @type key    :: binary
+
+  defrecordp :search_results,
+    extract(:search_results, from_lib: "riakc/include/riakc.hrl")
 
   # =========================================================================
   # Document API
@@ -45,7 +47,7 @@ defmodule Wocky.Repo do
   """
   @spec delete_all(type, bucket) :: :ok
   def delete_all(type, bucket) do
-    for key <- Riak.Bucket.keys!(type, bucket) do
+    for key <- Bucket.keys!(type, bucket) do
       _ = Riak.delete(type, bucket, key)
     end
     :ok
@@ -96,9 +98,9 @@ defmodule Wocky.Repo do
   @doc "Find an object in Riak using the type/bucket/key"
   @spec find(type, bucket, key) :: map | nil
   def find(type, bucket, key) do
-    case type |> get(bucket, key) do
+    case get(type, bucket, key) do
       nil -> nil
-      doc -> doc |> Doc.to_map
+      doc -> Doc.to_map(doc)
     end
   end
 
@@ -117,16 +119,17 @@ defmodule Wocky.Repo do
   end
 
   defp unwrap_search_results({_index, values}) do
-    Enum.reduce(values, %{},
-                fn {"_yz_" <> _, _}, acc -> acc
-                   {"score", _}, acc -> acc
-                   {name, v}, acc ->
-                     k =
-                       name
-                       |> String.replace("_register", "")
-                       |> String.to_atom
+    Enum.reduce(values, %{}, &unwrap_result/2)
+  end
 
-                     Map.put(acc, k, v)
-                end)
+  defp unwrap_result({"_yz_" <> _, _}, acc), do: acc
+  defp unwrap_result({"score", _}, acc), do: acc
+  defp unwrap_result({name, value}, acc) do
+    key =
+      name
+      |> String.replace("_register", "")
+      |> String.to_atom
+
+    Map.put(acc, key, value)
   end
 end

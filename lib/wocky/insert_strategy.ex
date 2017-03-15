@@ -4,11 +4,13 @@ defmodule Wocky.InsertStrategy do
   use Exref, ignore: [function_name: 0]
   use ExMachina.Strategy, function_name: :insert
 
+  alias Wocky.User
+
   @typep record :: %{__struct__: atom}
 
   @spec handle_insert(record, any) :: record | none
-  def handle_insert(%Wocky.User{} = record, _opts) do
-    :ok = Wocky.User.update(record)
+  def handle_insert(%User{} = record, _opts) do
+    :ok = User.update(record)
     record
   end
   def handle_insert(%{__struct__: module} = record, opts) do

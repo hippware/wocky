@@ -3,6 +3,7 @@ defmodule Wocky.Index do
 
   use Exref, ignore: [start_link: 0, reindex: 1]
   use ExActor.GenServer, export: :wocky_index
+
   require Logger
 
   defmodule State do
@@ -41,9 +42,10 @@ defmodule Wocky.Index do
 
   defcall geosearch(lat, lon), state: %State{bot_index: index} do
     {:ok, result} =
-      index |> Algolia.search(<<>>, %{aroundLatLng: "#{lat},#{lon}",
-                                      getRankingInfo: true})
-    bots = result["hits"] |> Enum.map(&object_to_bot/1)
+      Algolia.search(index, <<>>,
+                     %{aroundLatLng: "#{lat},#{lon}", getRankingInfo: true})
+
+    bots = Enum.map(result["hits"], &object_to_bot/1)
     reply({:ok, bots})
   end
 
@@ -154,12 +156,12 @@ defmodule Wocky.Index do
     if map_size(object) < 1 do
       {:ok, :no_changes}
     else
-      index |> Algolia.partial_update_objects([object])
+      Algolia.partial_update_objects(index, [object])
     end
   end
 
   defp delete_object(index, id) do
     :ok = Logger.debug("Removing object #{id} from #{index}")
-    {:ok, _} = index |> Algolia.delete_object(id)
+    {:ok, _} = Algolia.delete_object(index, id)
   end
 end
