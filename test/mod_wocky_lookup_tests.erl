@@ -41,6 +41,9 @@ before_all() ->
                               avatar => ?AVATAR_ID},
                             <<"users">>, ?SERVER, ?ALICE),
     ok = ?wocky_user:wait_for_user(?ALICE),
+    %% TODO For some reason, tests fail without this sleep. This needs to be
+    %% fixed.
+    timer:sleep(2000),
     ok.
 
 after_all(_) ->
