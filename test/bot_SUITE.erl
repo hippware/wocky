@@ -399,8 +399,7 @@ publish_item(Config) ->
 
         % Alice cannot publish to a non-existant bot
         expect_iq_error(
-          publish_item_stanza(wocky_db:create_id(), NoteID, Title, Content),
-          Alice),
+          publish_item_stanza(?wocky_id:new(), NoteID, Title, Content), Alice),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
