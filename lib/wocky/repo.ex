@@ -51,18 +51,6 @@ defmodule Wocky.Repo do
     :ok
   end
 
-  # =========================================================================
-  # Map API
-
-  @doc "Find an object in Riak using the type/bucket/key"
-  @spec find(type, bucket, key) :: map | nil
-  def find(type, bucket, key) do
-    case type |> get(bucket, key) do
-      nil -> nil
-      doc -> doc |> Doc.to_map
-    end
-  end
-
   @doc "Find an object in Riak using a Solr query"
   @spec search(binary, binary) :: [Doc.t]
   def search(index, conditions) do
@@ -86,6 +74,40 @@ defmodule Wocky.Repo do
     end
   end
 
+  @doc "Wait for a new user to be indexed for searching"
+  @spec wait_for_search_result(binary, binary, pos_integer, pos_integer) ::
+    :ok | {:error, :timeout}
+  def wait_for_search_result(index, query, sleep_time \\ 250, retries \\ 10)
+  def wait_for_search_result(_, _, _, 0), do: {:error, :timeout}
+  def wait_for_search_result(index, query, sleep_time, retries) do
+    case search(index, query) do
+      [] ->
+        Process.sleep(sleep_time)
+        wait_for_search_result(index, query, sleep_time, retries - 1)
+
+      [_data | _] ->
+        :ok
+    end
+  end
+
+  # =========================================================================
+  # Map API
+
+  @doc "Find an object in Riak using the type/bucket/key"
+  @spec find(type, bucket, key) :: map | nil
+  def find(type, bucket, key) do
+    case type |> get(bucket, key) do
+      nil -> nil
+      doc -> doc |> Doc.to_map
+    end
+  end
+
+  @doc "Update the type/bucket/key in Riak with the provided object"
+  @spec update(map, type, bucket, key) :: :ok | {:error, term}
+  def update(data, type, bucket, key) do
+    data |> Doc.new |> put(type, bucket, key)
+  end
+
   @doc "Find and object in Riak using a Solr query"
   @spec unsafe_search(binary, binary) :: [map]
   def unsafe_search(index, conditions) do
@@ -106,11 +128,5 @@ defmodule Wocky.Repo do
 
                      Map.put(acc, k, v)
                 end)
-  end
-
-  @doc "Update the type/bucket/key in Riak with the provided object"
-  @spec update(map, type, bucket, key) :: :ok | {:error, term}
-  def update(data, type, bucket, key) do
-    data |> Doc.new |> put(type, bucket, key)
   end
 end

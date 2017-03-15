@@ -82,17 +82,9 @@ defmodule Wocky.User do
 
   @doc "Wait for a new user to be indexed for searching"
   @spec wait_for_user(id, pos_integer, pos_integer) :: :ok | {:error, :timeout}
-  def wait_for_user(id, sleep_time \\ 250, retries \\ 10)
-  def wait_for_user(_, _, 0), do: {:error, :timeout}
-  def wait_for_user(id, sleep_time, retries) do
-    case Repo.search("users", "id_register:#{id}") do
-      [] ->
-        Process.sleep(sleep_time)
-        wait_for_user(id, sleep_time, retries - 1)
-
-      [_data | _] ->
-        :ok
-    end
+  def wait_for_user(id, sleep_time \\ 250, retries \\ 10) do
+    Repo.wait_for_search_result("users", "id_register:#{id}",
+                                sleep_time, retries)
   end
 
   @spec update(t) :: :ok | {:error, term}
