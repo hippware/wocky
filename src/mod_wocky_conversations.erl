@@ -164,4 +164,8 @@ message_element(C) ->
     end.
 
 conversation_element(E, C) ->
-    wocky_xml:cdata_el(atom_to_binary(E, utf8), maps:get(E, C)).
+    wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(maps:get(E, C))).
+
+to_binary(B) when is_binary(B) -> B;
+to_binary(I) when is_integer(I) -> integer_to_binary(I);
+to_binary(A) when is_atom(A) -> atom_to_binary(A, utf8).
