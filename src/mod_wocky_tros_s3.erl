@@ -26,7 +26,6 @@
          get_access/1,
          get_metadata/2,
          delete/2,
-         keep/2,
          update_access/3
         ]).
 
@@ -167,10 +166,6 @@ do_delete(LServer, FileID) ->
         check_result_get_headers(Result, 204),
         ok
        ]).
-
-keep(_LServer, _FileID) ->
-    %% S3 files don't currently expire, so keep() is a no-op.
-    ok.
 
 do_request(LServer, FileID, Type) ->
     R = httpc:request(Type,

@@ -33,9 +33,7 @@
 
    v1_uuid_order/2,
 
-   remove_redundant_jids/1,
-
-   bin_to_lower/1
+   remove_redundant_jids/1
         ]).
 
 -export_type([hook/0]).
@@ -175,13 +173,3 @@ redundant(JID, JIDs) ->
                     jid:to_bare(),
                     jid:are_equal(_),
                     lists:any(JIDs)).
-
-% Change a binary string to lowercase
--spec bin_to_lower(binary()) -> binary().
-bin_to_lower(Bin) ->
-    fun_chain:first(
-      Bin,
-      binary_to_list(),
-      string:to_lower(),
-      list_to_binary()
-     ).
