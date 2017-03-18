@@ -103,14 +103,30 @@ defmodule Wocky.User do
   """
   @spec update(id, server, map) :: :ok | {:error, term}
   def update(id, server, fields) do
+    old_user = maybe_lookup_user(id, server, fields)
+
     fields
-    |>  Map.merge(%{id: id, server: server})
-    |>  Map.drop([:resource])
+    |>  Enum.filter(&filter_map/1)
+    |>  Enum.into(%{id: id, server: server})
     |>  check_reserved_handle()
+    ~>> check_duplicate_handle(old_user.handle)
     ~>> prepare_avatar()
-    ~>> delete_existing_avatar()
+    ~>> delete_existing_avatar(old_user.avatar)
     ~>> do_update_user()
   end
+
+  defp maybe_lookup_user(id, server, fields)
+  do
+    if fields[:avatar] || fields[:handle] do
+      find(id, server) || new(id, server)
+    else
+      new(id, server)
+    end
+  end
+
+  defp filter_map({:resource, _}), do: false
+  defp filter_map({_, nil}), do: false
+  defp filter_map(_), do: true
 
   defp check_reserved_handle(%{handle: handle} = fields)
   when not is_nil(handle)
@@ -123,6 +139,18 @@ defmodule Wocky.User do
     end
   end
   defp check_reserved_handle(fields), do: {:ok, fields}
+
+  # WARNING: There is plenty of room for a race condition here
+  # FIXME: We need a better/more reliable way to detect multiple handles
+  defp check_duplicate_handle(%{handle: handle} = fields, old_handle)
+  when not is_nil(handle) and handle != old_handle
+  do
+    case search(:handle, handle) do
+      [] -> {:ok, fields}
+      _ -> {:error, :duplicate_handle}
+    end
+  end
+  defp check_duplicate_handle(fields, _), do: {:ok, fields}
 
   defp prepare_avatar(%{avatar: avatar} = fields)
   when not is_nil(avatar)
@@ -144,30 +172,27 @@ defmodule Wocky.User do
 
   defp check_avatar_owner({server, id}, user_id) do
     case :tros.get_metadata(server, id) ~>> :tros.get_owner do
-      {:ok, ^user_id} -> {:ok, {server, id}}
-      _else -> {:error, :not_file_owner}
+      {:ok, ^user_id} -> :ok
+      {:ok, _} -> {:error, :not_file_owner}
+      error -> error
     end
   end
 
-  defp delete_existing_avatar(%{avatar: new_avatar} = fields)
+  defp delete_existing_avatar(%{avatar: new_avatar} = fields, old_avatar)
   when not is_nil(new_avatar)
+    and not is_nil(old_avatar)
+    and new_avatar != old_avatar
   do
-    case find(fields.id, fields.server) do
-      %User{avatar: old_avatar} ->
-        case :tros.parse_url(old_avatar) do
-          {:ok, {file_server, file_id}} ->
-            :tros.delete(file_server, file_id)
+    case :tros.parse_url(old_avatar) do
+      {:ok, {file_server, file_id}} ->
+        :tros.delete(file_server, file_id)
 
-          {:error, _} ->
-            :ok
-        end
-
-      _else ->
-        :ok
+      {:error, _} -> :ok
     end
+
     {:ok, fields}
   end
-  defp delete_existing_avatar(data), do: {:ok, data}
+  defp delete_existing_avatar(data, _), do: {:ok, data}
 
   defp do_update_user(%{id: id, server: server} = fields) do
     :ok = Repo.update(fields, @bucket_type, server, id)
