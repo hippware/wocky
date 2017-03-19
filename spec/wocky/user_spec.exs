@@ -53,18 +53,18 @@ defmodule Wocky.UserSpec do
         {:shared, result: result}
       end
 
-      it "returns the ID of the existing user" do
+      it "should return the ID of the existing user" do
         {result_id, _, _} = shared.result
         result_id |> should(eq shared.id)
       end
 
-      it "returns the server of the existing user" do
+      it "should return the server of the existing user" do
         {_, result_server, _} = shared.result
         result_server |> should(eq shared.server)
         result_server |> should_not(eq "another_server")
       end
 
-      it "returns 'false' in the last slot" do
+      it "should return 'false' in the last slot" do
         {_, _, result_is_new} = shared.result
         result_is_new |> should_not(be_true())
       end
@@ -83,18 +83,18 @@ defmodule Wocky.UserSpec do
         User.delete(shared.server, id)
       end
 
-      it "creates the user and returns its ID" do
+      it "should create the user and return its ID" do
         {result_id, _, _} = shared.result
         obj = Repo.find("users", shared.server, result_id)
         obj |> should_not(be_nil())
       end
 
-      it "returns the server that was passed in" do
+      it "should return the server that was passed in" do
         {_, result_server, _} = shared.result
         result_server |> should(eq shared.server)
       end
 
-      it "returns 'true' in the last slot" do
+      it "should return 'true' in the last slot" do
         {_, _, result_is_new} = shared.result
         result_is_new |> should(be_true())
       end
@@ -127,11 +127,11 @@ defmodule Wocky.UserSpec do
       {:ok, user: user, result: result}
     end
 
-    it "returns :ok" do
+    it "should return :ok" do
       shared.result |> should(eq :ok)
     end
 
-    it "updates the user's attributes" do
+    it "should update the user's attributes" do
       new_user = User.find(shared.id, shared.server)
       new_user.handle |> should(eq shared.user.handle)
       new_user.first_name |> should(eq shared.user.first_name)
@@ -139,7 +139,7 @@ defmodule Wocky.UserSpec do
       new_user.email |> should(eq shared.user.email)
     end
 
-    it "does not update the user's resource" do
+    it "should not update the user's resource" do
       new_user = User.find(shared.id, shared.server)
       new_user.resource |> should(be_nil())
     end
@@ -153,11 +153,11 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns :ok" do
+      it "should return :ok" do
         shared.result |> should(eq :ok)
       end
 
-      it "does not change the user's handle" do
+      it "should not change the user's handle" do
         new_user = User.find(shared.id, shared.server)
         new_user.handle |> should(eq shared.user.handle)
       end
@@ -178,12 +178,12 @@ defmodule Wocky.UserSpec do
         {:ok, new_id: new_id, result: result}
       end
 
-      it "returns an error" do
+      it "should return a `duplicate_handle` error" do
         shared.result |> should(be_error_result())
         shared.result |> should(eq {:error, :duplicate_handle})
       end
 
-      it "does not update the user's attributes" do
+      it "should not update the user's attributes" do
         shared.new_id |> User.find(shared.server) |> should(be_nil())
       end
     end
@@ -195,12 +195,12 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns an error" do
+      it "should return a `duplicate_handle` error" do
         shared.result |> should(be_error_result())
         shared.result |> should(eq {:error, :duplicate_handle})
       end
 
-      it "does not update the user's attributes" do
+      it "should not update the user's attributes" do
         new_user = User.find(shared.id, shared.server)
         new_user.handle |> should(eq shared.user.handle)
       end
@@ -212,11 +212,11 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns :ok" do
+      it "should return :ok" do
         shared.result |> should(eq :ok)
       end
 
-      it "does not update the user's attributes" do
+      it "should not update the user's attributes" do
         new_user = User.find(shared.id, shared.server)
         new_user.handle |> should(eq shared.user.handle)
         new_user.first_name |> should(eq shared.user.first_name)
@@ -249,16 +249,16 @@ defmodule Wocky.UserSpec do
           {:ok, result: result}
         end
 
-        it "returns :ok" do
+        it "should return :ok" do
           shared.result |> should(eq :ok)
         end
 
-        it "updates the user's avatar" do
+        it "should update the user's avatar" do
           new_user = User.find(shared.id, shared.server)
           new_user.avatar |> should(eq shared.avatar_url)
         end
 
-        it "does not try to delete the old avatar" do
+        it "should not try to delete the old avatar" do
           :tros |> should_not(accepted :delete)
         end
       end
@@ -274,16 +274,16 @@ defmodule Wocky.UserSpec do
           {:ok, result: result}
         end
 
-        it "returns :ok" do
+        it "should return :ok" do
           shared.result |> should(eq :ok)
         end
 
-        it "updates the user's avatar" do
+        it "should update the user's avatar" do
           new_user = User.find(shared.id, shared.server)
           new_user.avatar |> should(eq shared.avatar_url)
         end
 
-        it "does not try to delete the old avatar" do
+        it "should not try to delete the old avatar" do
           :tros |> should_not(accepted :delete)
         end
       end
@@ -299,16 +299,16 @@ defmodule Wocky.UserSpec do
           {:ok, result: result}
         end
 
-        it "returns :ok" do
+        it "should return :ok" do
           shared.result |> should(eq :ok)
         end
 
-        it "does not change the user's avatar" do
+        it "should not change the user's avatar" do
           new_user = User.find(shared.id, shared.server)
           new_user.avatar |> should(eq shared.avatar_url)
         end
 
-        it "does not try to delete the avatar" do
+        it "should not try to delete the avatar" do
           :tros |> should_not(accepted :delete)
         end
       end
@@ -325,16 +325,16 @@ defmodule Wocky.UserSpec do
           {:ok, result: result}
         end
 
-        it "returns :ok" do
+        it "should return :ok" do
           shared.result |> should(eq :ok)
         end
 
-        it "updates the user's avatar" do
+        it "should update the user's avatar" do
           new_user = User.find(shared.id, shared.server)
           new_user.avatar |> should(eq shared.avatar_url)
         end
 
-        it "deletes the old avatar" do
+        it "should delete the old avatar" do
           :tros |> should(accepted :delete)
         end
       end
@@ -356,12 +356,12 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns an error" do
+      it "should return a `not_file_owner` error" do
         shared.result |> should(be_error_result())
         shared.result |> should(eq {:error, :not_file_owner})
       end
 
-      it "does not update the user's avatar" do
+      it "should not update the user's avatar" do
         new_user = User.find(shared.id, shared.server)
         new_user.avatar |> should(be_nil())
       end
@@ -376,12 +376,12 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns an error" do
+      it "should return a `not_local_file` error" do
         shared.result |> should(be_error_result())
         shared.result |> should(eq {:error, :not_local_file})
       end
 
-      it "does not update the user's avatar" do
+      it "should not update the user's avatar" do
         new_user = User.find(shared.id, shared.server)
         new_user.avatar |> should(be_nil())
       end
@@ -403,12 +403,12 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns an error" do
+      it "should return a `not_found` error" do
         shared.result |> should(be_error_result())
         shared.result |> should(eq {:error, :not_found})
       end
 
-      it "does not update the user's avatar" do
+      it "should not update the user's avatar" do
         new_user = User.find(shared.id, shared.server)
         new_user.avatar |> should(be_nil())
       end
@@ -458,11 +458,11 @@ defmodule Wocky.UserSpec do
         {:ok, result: result}
       end
 
-      it "returns a User struct" do
+      it "should return a User struct" do
         shared.result |> should(be_struct User)
       end
 
-      it "returns the right user" do
+      it "should return the right user" do
         shared.result.id |> should(eq shared.id)
         shared.result.server |> should(eq shared.server)
         shared.result.external_id |> should(eq shared.external_id)
@@ -470,7 +470,7 @@ defmodule Wocky.UserSpec do
     end
 
     context "when the user does not exist" do
-      it "returns nil" do
+      it "should return `nil`" do
         ID.new
         |> User.find(shared.server)
         |> should(be_nil())
