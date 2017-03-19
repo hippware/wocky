@@ -47,7 +47,7 @@ before_all() ->
     ok.
 
 after_all(_) ->
-    ok = ?wocky_user:delete(?SERVER, ?ALICE),
+    ok = ?wocky_user:delete(?ALICE, ?SERVER),
     ok.
 
 -define(FROM, #jid{luser = ?ALICE, lserver = ?SERVER}).

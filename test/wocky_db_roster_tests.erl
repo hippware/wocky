@@ -56,7 +56,7 @@ before_each() ->
     wocky_db_seed:seed_tables(shared, [roster]).
 
 after_each(_) ->
-    ok = ?wocky_user:delete(?SERVER, ?BOB),
+    ok = ?wocky_user:delete(?BOB, ?SERVER),
     ok.
 
 make_jid(U) ->

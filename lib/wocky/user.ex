@@ -201,8 +201,8 @@ defmodule Wocky.User do
   end
 
   @doc "Removes the user from the database"
-  @spec delete(server, id) :: :ok
-  def delete(server, id) do
+  @spec delete(id, server) :: :ok
+  def delete(id, server) do
     :ok = Repo.delete(@bucket_type, server, id)
     :ok = Index.user_removed(id)
     :ok

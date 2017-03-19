@@ -414,7 +414,7 @@ defmodule Wocky.UserSpec do
 
   describe "delete/2" do
     before do
-      result = User.delete(shared.server, shared.id)
+      result = User.delete(shared.id, shared.server)
       {:ok, result: result}
     end
 
