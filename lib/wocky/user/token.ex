@@ -108,4 +108,10 @@ defmodule Wocky.User.Token do
       |> Doc.delete_doc(resource)
       |> Repo.put(@bucket_type, server, id)
   end
+
+  @doc "Release all tokens currently assigned to the specified user"
+  @spec release_all(User.id, User.server) :: :ok
+  def release_all(id, server) do
+    :ok = Repo.delete(@bucket_type, server, id)
+  end
 end

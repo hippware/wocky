@@ -5,6 +5,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.ID
   alias Wocky.Repo
   alias Wocky.User
+  alias Wocky.User.Token
 
   before do
     id = ID.new
@@ -414,6 +415,7 @@ defmodule Wocky.UserSpec do
 
   describe "delete/2" do
     before do
+      {:ok, _} = Token.assign(shared.id, shared.server, ID.new)
       result = User.delete(shared.id, shared.server)
       {:ok, result: result}
     end
@@ -426,7 +428,11 @@ defmodule Wocky.UserSpec do
       shared.server |> User.find(shared.id) |> should(be_nil())
     end
 
-    it "should remove any tokens associated with the user"
+    it "should remove any tokens associated with the user" do
+      shared.id
+      |> Token.get_tokens(shared.server)
+      |> should(be_empty())
+    end
 
     it "should remove any location data associated with the user"
 

@@ -13,6 +13,7 @@ defmodule Wocky.User do
   alias Wocky.Location
   alias Wocky.Repo
   alias Wocky.Repo.Doc
+  alias Wocky.User.Token
   alias __MODULE__, as: User
 
   @enforce_keys [:id, :server]
@@ -203,6 +204,7 @@ defmodule Wocky.User do
   @doc "Removes the user from the database"
   @spec delete(id, server) :: :ok
   def delete(id, server) do
+    :ok = Token.release_all(id, server)
     :ok = Repo.delete(@bucket_type, server, id)
     :ok = Index.user_removed(id)
     :ok

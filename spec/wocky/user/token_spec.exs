@@ -180,4 +180,27 @@ defmodule Wocky.User.TokenSpec do
       |> should(eq :ok)
     end
   end
+
+  describe "release_all/2" do
+    before do
+      result = Token.release_all(shared.id, shared.server)
+      {:ok, result: result}
+    end
+
+    it "should return :ok" do
+      shared.result |> should(eq :ok)
+    end
+
+    it "should remove all tokens from the database" do
+      "tokens"
+      |> Repo.find(shared.server, shared.id)
+      |> should(be_nil())
+    end
+
+    it "should return :ok if the user doesn't have any tokens" do
+      ID.new
+      |> Token.release_all(shared.server)
+      |> should(eq :ok)
+    end
+  end
 end
