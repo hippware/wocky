@@ -144,6 +144,8 @@ defmodule Wocky.UserSpec do
       new_user.resource |> should(be_nil())
     end
 
+    it "should update the user's entry in the full text search index"
+
     context "when passed a handle the same as the old" do
       before do
         result = User.update(shared.id, shared.server,
@@ -435,6 +437,8 @@ defmodule Wocky.UserSpec do
     end
 
     it "should remove any location data associated with the user"
+
+    it "should remove the user from the full text search index"
 
     it "should succeed if the user does not exist" do
       shared.server
