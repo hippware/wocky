@@ -87,7 +87,7 @@ archive_message_hook(_Result, Host, MessID, _ArcID,
               ossp_uuid:make(v1, text),
               exml:to_binary(Packet),
               Dir =:= outgoing),
-    ok = ?conversation:write(Conv).
+    ok = ?conversation:put(Conv).
 
 %%%===================================================================
 %%% Conversation retrieval

@@ -37,7 +37,7 @@ defmodule Wocky.Conversation do
                   time: time,
                   message: message,
                   outgoing: outgoing}
-                |> struct()
+    |> struct()
   end
 
   defp new(data) do
@@ -48,24 +48,24 @@ defmodule Wocky.Conversation do
   end
 
   @doc "Read a conversation record from the database"
-  @spec read(id, binary) :: t | nil
-  def read(id, server) do
-    case Repo.find("conversation", server, id) do
+  @spec get(id, binary) :: t | nil
+  def get(id, server) do
+    case Repo.find("conversations", server, id) do
       nil -> nil
       data -> new(data)
     end
   end
 
   @doc "Write a conversation record to the database"
-  @spec write(t) :: :ok | {:error, term}
-  def write(%Conversation{server: server} = conv) do
+  @spec put(t) :: :ok | {:error, term}
+  def put(%Conversation{server: server} = conv) do
     conv |>
     Map.from_struct |>
-    Repo.update("conversation", server, key(conv))
+    Repo.update("conversations", server, key(conv))
   end
 
   def find(user) do
-    "conversation"
+    "conversations"
     |> Repo.search("user_register:\"#{user}\"")
     |> Enum.map(&Wocky.Repo.Doc.to_map/1)
     |> Enum.map(fn data -> new(data) end)
