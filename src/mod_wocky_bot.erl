@@ -268,9 +268,16 @@ get_location_from_attrs(Attrs) ->
        ]).
 
 get_bots_near_location(From, _Server, _IQ, Lat, Lon) ->
-    {ok, AllBots} = 'Elixir.Wocky.Index':geosearch(Lat, Lon),
-    VisibleBots = lists:filter(geosearch_access_filter(From, _), AllBots),
-    {ok, make_geosearch_result(VisibleBots)}.
+    case 'Elixir.Wocky.Index':geosearch(Lat, Lon) of
+        {ok, AllBots} ->
+            VisibleBots = lists:filter(
+                            geosearch_access_filter(From, _), AllBots),
+            {ok, make_geosearch_result(VisibleBots)};
+        {error, no_index_configured} ->
+            {error,
+             ?ERRT_FEATURE_NOT_IMPLEMENTED(
+                ?MYLANG, <<"Index search is not configured on this server">>)}
+    end.
 
 geosearch_access_filter(From, #{server := Server, id := ID}) ->
     ok =:= wocky_bot_util:check_access(Server, ID, From).
