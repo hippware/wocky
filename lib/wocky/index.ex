@@ -40,6 +40,10 @@ defmodule Wocky.Index do
   end
 
 
+  defcall geosearch(_, _), state: %State{enabled: false} do
+    reply({:error, :no_index_configured})
+  end
+
   defcall geosearch(lat, lon), state: %State{bot_index: index} do
     {:ok, result} =
       Algolia.search(index, <<>>,
