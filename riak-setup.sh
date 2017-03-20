@@ -20,7 +20,11 @@ curl -XPUT $RIAK_HOST/search/index/mam \
     -d '{"schema":"mam"}'
 
 # users
-riak-admin bucket-type create users '{"props":{"datatype":"map", "search_index":"_yz_default"}}'
+curl -XPUT $RIAK_HOST/search/index/users \
+    -H 'Content-Type: application/json' \
+    -d '{"schema":"_yz_default"}'
+
+riak-admin bucket-type create users '{"props":{"datatype":"map", "search_index":"users"}}'
 riak-admin bucket-type activate users
 
 # tokens
