@@ -3,6 +3,7 @@ defmodule Wocky.User.Token do
 
   alias Wocky.Repo
   alias Wocky.Repo.Doc
+  alias Wocky.Timestamp
   alias Wocky.User
 
   @type t :: binary
@@ -28,14 +29,14 @@ defmodule Wocky.User.Token do
   @spec assign(User.id, User.server, User.resource) :: {:ok, {t, expiry}}
   def assign(id, server, resource) do
     token = new()
-    expiry = now() + @token_expire
+    expiry = Timestamp.now + @token_expire
 
     token_map = %{
       user_id: id,
       server: server,
       resource: resource,
       token: token,
-      created_at: now(),
+      created_at: Timestamp.now,
       expires_at: expiry
     }
 
@@ -46,8 +47,6 @@ defmodule Wocky.User.Token do
 
     {:ok, {token, expiry}}
   end
-
-  defp now, do: DateTime.to_unix(DateTime.utc_now)
 
   @doc "Return the token assigned to the specified user and resource."
   @spec get_token(User.id, User.server, User.resource) :: t | nil
@@ -95,7 +94,7 @@ defmodule Wocky.User.Token do
   defp check_token(_, _, _),
     do: {:cont, false}
 
-  defp expired?(expiry), do: String.to_integer(expiry) < now()
+  defp expired?(expiry), do: String.to_integer(expiry) < Timestamp.now
 
   @doc """
   Releases any token currently assigned to the specified user and resource.
