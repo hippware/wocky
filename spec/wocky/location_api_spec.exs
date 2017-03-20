@@ -1,24 +1,27 @@
 defmodule Wocky.LocationApiSpec do
   use ESpec
 
+  alias Wocky.Factory
+  alias Wocky.User.Token
+
   defp url(port, user_id) do
     "http://localhost:#{port}/api/v1/users/#{user_id}/location"
   end
 
   let :port, do: Application.get_env(:wocky, :location_api_port)
-  let :user, do: Wocky.Factory.insert(:user, resource: "testing")
+  let :user, do: Factory.insert(:user, resource: "testing")
   let :token do
-    {:ok, return, _} = :wocky_db_user.assign_token(user().user,
-                                                   user().server,
-                                                   user().resource)
+    {:ok, {return, _}} = Token.assign(user().id,
+                                      user().server,
+                                      user().resource)
     return
   end
   let :headers, do: [
     {"Content-Type", "application/json"},
-    {"X-Auth-User", user().user},
+    {"X-Auth-User", user().id},
     {"X-Auth-Token", token()}
   ]
-  let :url, do: url(port(), user().user)
+  let :url, do: url(port(), user().id)
   let :payload do
     """
     {

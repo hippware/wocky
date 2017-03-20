@@ -34,6 +34,7 @@
 -behaviour(gen_mod).
 -behaviour(cyrsasl).
 
+-include("wocky.hrl").
 -include("wocky_reg.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 
@@ -87,7 +88,7 @@ mech_step(Creds, ClientIn) ->
                 {error, {no_auth_modules, _}} ->
                     {error, <<"not-authorized">>, User};
                 {error, R} ->
-                    ?DEBUG("authorize error: ~p", [R]),
+                    ok = lager:debug("authorize error: ~p", [R]),
                     {error, <<"internal-error">>}
             end;
         _ ->
@@ -115,9 +116,10 @@ make_register_response(#reg_result{user = User,
                                    token = Token,
                                    token_expiry = TokenExpiry,
                                    external_id = ExternalID}) ->
-   Handle = case wocky_db_user:get_handle(User, Server) of
-                not_found -> <<>>;
-                H -> H
+   Handle = case ?wocky_user:find(User, Server) of
+                nil -> <<>>;
+                #{handle := nil} -> <<>>;
+                #{handle := H} -> H
             end,
    JSONFields = [{user, User},
                  {server, Server},

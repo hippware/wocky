@@ -220,7 +220,7 @@ get_item(Config) ->
 
         % Deleted and never-existed items should both return not-found
         expect_iq_error_u(get_hs_stanza(<<"some_id">>), Alice, Alice),
-        expect_iq_error_u(get_hs_stanza(?wocky_id:create()), Alice, Alice)
+        expect_iq_error_u(get_hs_stanza(?wocky_id:new()), Alice, Alice)
       end).
 
 auto_publish_bot(Config) ->

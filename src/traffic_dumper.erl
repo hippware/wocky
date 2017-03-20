@@ -7,6 +7,7 @@
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
+-include("wocky.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 
@@ -33,9 +34,9 @@ dump(Handle, Resource, StartBin, DurationBin) ->
        ]).
 
 get_user(Handle) ->
-    case wocky_db_user:find_user_by(handle, Handle) of
-        not_found -> {error, "User not found"};
-        #{user := ID, server := Server} -> {ok, jid:make(ID, Server, <<>>)}
+    case ?wocky_user:search(handle, Handle) of
+        [] -> {error, "User not found"};
+        [#{id := ID, server := Server}] -> {ok, jid:make(ID, Server, <<>>)}
     end.
 
 get_time(StartBin) ->

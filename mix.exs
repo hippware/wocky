@@ -33,7 +33,7 @@ defmodule Wocky.Mixfile do
          :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid, :algolia,
          :logger, :schemata, :porcelain, :geocalc, :mix, :faker, :ex_machina,
          :base16, :poison, :ex_aws, :exconstructor, :honeybadger, :slackex,
-         :crone
+         :crone, :riak
        ],
        plt_add_deps: true,
        flags: [

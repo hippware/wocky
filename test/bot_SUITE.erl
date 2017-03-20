@@ -160,7 +160,7 @@ new_id(Config) ->
         expect_iq_success(create_stanza(CreateFields), Alice),
 
         %% We can't specify an un-allocated ID for creation
-        FailedCreateFields = [{"id", "string", ?wocky_id:create()}
+        FailedCreateFields = [{"id", "string", ?wocky_id:new()}
                               | default_fields()],
         expect_iq_error(create_stanza(FailedCreateFields), Alice)
       end).
@@ -399,8 +399,7 @@ publish_item(Config) ->
 
         % Alice cannot publish to a non-existant bot
         expect_iq_error(
-          publish_item_stanza(wocky_db:create_id(), NoteID, Title, Content),
-          Alice),
+          publish_item_stanza(?wocky_id:new(), NoteID, Title, Content), Alice),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).

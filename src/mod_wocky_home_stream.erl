@@ -206,7 +206,7 @@ node_cleanup(Node) ->
 %%%===================================================================
 
 new_id() ->
-    ?wocky_id:create().
+    ?wocky_id:new().
 
 map_to_item(#{id := ID, version := Version,
               from := From, stanza := Stanza,

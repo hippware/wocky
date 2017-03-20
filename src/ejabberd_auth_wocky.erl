@@ -54,6 +54,7 @@
 -ignore_xref([check_password/3, check_password/5]).
 
 -include_lib("ejabberd/include/ejabberd.hrl").
+-include("wocky.hrl").
 
 
 %%%----------------------------------------------------------------------
@@ -85,7 +86,7 @@ set_password(LUser, LServer, Password) ->
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     boolean().
 check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
-    wocky_db_user:check_token(LUser, LServer, Token);
+    ?wocky_user_token:'valid?'(LUser, LServer, Token);
 check_password(LUser, LServer, Password) ->
     ejabberd_auth_riak:check_password(LUser, LServer, Password).
 

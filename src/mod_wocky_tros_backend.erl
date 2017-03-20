@@ -24,8 +24,6 @@
 
 -callback delete(ejabberd:lserver(), tros:file_id()) -> ok.
 
--callback keep(ejabberd:lserver(), tros:file_id()) -> ok | {error, not_found}.
-
 -callback make_upload_response(ejabberd:jid(),
                                ejabberd:jid(),
                                binary(),

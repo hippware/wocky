@@ -14,6 +14,7 @@
 -include_lib("stdlib/include/assert.hrl").
 
 -include("wocky_db_seed.hrl").
+-include("wocky.hrl").
 
 
 %%--------------------------------------------------------------------
@@ -77,8 +78,8 @@ release_token(Config) ->
 
 login_with_token(Config) ->
     Domain = ct:get_config(ejabberd_domain),
-    {ok, Token, _} = escalus_ejabberd:rpc(wocky_db_user, assign_token,
-                                          [?ALICE, Domain, <<"res1">>]),
+    {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_user_token, assign,
+                                            [?ALICE, Domain, <<"res1">>]),
     Config2 = escalus_users:update_userspec(Config, alice, password, Token),
     escalus:story(Config2, [{alice, 1}], fun (Alice) ->
         escalus_client:send(Alice, escalus_stanza:chat_to(Alice, <<"Hi!">>)),

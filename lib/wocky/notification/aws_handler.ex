@@ -5,6 +5,7 @@ defmodule Wocky.Notification.AWSHandler do
   """
 
   alias ExAws.SNS
+
   require Logger
 
   @behaviour :wocky_notification_handler

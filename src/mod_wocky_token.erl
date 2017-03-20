@@ -43,12 +43,12 @@ handle_iq(From, _To, #iq{sub_el = SubEl} = IQ) ->
     end.
 
 handle_local_iq(LUser, LServer, LResource, #iq{type = get} = IQ) ->
-    {ok, Token, Expiry} = wocky_db_user:assign_token(LUser, LServer, LResource),
+    {ok, {Token, Expiry}} = ?wocky_user_token:assign(LUser, LServer, LResource),
     iq_result(IQ,
               [{<<"expiry">>, expiry_string(Expiry)}],
               [#xmlcdata{content = Token}]);
 handle_local_iq(LUser, LServer, LResource, #iq{type = set} = IQ) ->
-    ok = wocky_db_user:release_token(LUser, LServer, LResource),
+    ok = ?wocky_user_token:release(LUser, LServer, LResource),
     iq_result(IQ, [], []).
 
 iq_result(IQ, Attrs, Content) ->

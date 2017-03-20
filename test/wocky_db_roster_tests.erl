@@ -45,9 +45,18 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    wocky_db_seed:seed_tables(shared, [user, roster]).
+    ok = ?wocky_repo:update(#{id => ?BOB,
+                              server => ?SERVER,
+                              handle => <<"bobby">>,
+                              first_name => <<"Bob">>,
+                              last_name => <<"Thebuilder">>,
+                              avatar => ?AVATAR_ID},
+                            <<"users">>, ?SERVER, ?BOB),
+    ok = ?wocky_user:wait_for_user(?BOB),
+    wocky_db_seed:seed_tables(shared, [roster]).
 
 after_each(_) ->
+    ok = ?wocky_user:delete(?BOB, ?SERVER),
     ok.
 
 make_jid(U) ->
@@ -93,17 +102,12 @@ test_get_roster_item() ->
       ]},
       { "returns a roster item with avatar pulled from the user record", [
         ?_assertMatch(#wocky_roster{avatar = ?AVATAR_ID},
-                      get_roster_item(?USER, ?SERVER, make_jid(?KAREN)))
+                      get_roster_item(?USER, ?SERVER, make_jid(?BOB)))
       ]},
       { "returns a roster item with name pulled from the user record", [
-        ?_assertMatch(#wocky_roster{first_name = <<"Carol">>, last_name = <<>>},
-                      get_roster_item(?USER, ?SERVER, make_jid(?CAROL))),
-        ?_assertMatch(#wocky_roster{first_name = <<"Karen">>,
-                              last_name = <<"Kismet">>},
-                      get_roster_item(?USER, ?SERVER, make_jid(?KAREN))),
-        ?_assertMatch(#wocky_roster{first_name = <<>>,
-                              last_name = <<"Robert The Bruce">>},
-                      get_roster_item(?USER, ?SERVER, make_jid(?ROBERT)))
+        ?_assertMatch(#wocky_roster{first_name = <<"Bob">>,
+                                    last_name = <<"Thebuilder">>},
+                      get_roster_item(?USER, ?SERVER, make_jid(?BOB)))
       ]},
       { "returns an empty roster item for a known user and unknown contact", [
         ?_assertMatch(#wocky_roster{name = <<>>},
@@ -193,6 +197,6 @@ test_users_with_contact() ->
     { "returns an empty list for users who nobody has as a contact", [
       ?_assertEqual([], users_with_contact(
                           jid:make(
-                            ?wocky_id:create(), ?LOCAL_CONTEXT, <<>>)))
+                            ?wocky_id:new(), ?LOCAL_CONTEXT, <<>>)))
     ]}
   ]}.

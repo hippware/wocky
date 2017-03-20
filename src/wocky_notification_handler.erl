@@ -6,6 +6,7 @@
 
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky.hrl").
 
 -export([enable/3, disable/1, delete/2,
          notify_message/3, notify_bot_event/4]).
@@ -81,7 +82,11 @@ notify_bot_event(To = #jid{luser = ToUser, lserver = ToServer},
     ok = lager:debug("Sending notification for ~s ~sing bot ~s to ~s",
                      [User, BotTitle, Event, jid:to_binary(To)]),
     Resources = ejabberd_sm:get_user_resources(ToUser, ToServer),
-    UserHandle = wocky_db_user:get_handle(User, Server),
+    UserHandle = case ?wocky_user:find(Server, User) of
+                     #{handle := nil} -> User;
+                     #{handle := Handle} -> Handle;
+                     nil -> User
+                 end,
     lists:foldl(
       notify_resource_bot_event(To, _, UserHandle, BotTitle, Event, _),
       ok,

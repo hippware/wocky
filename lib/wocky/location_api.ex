@@ -6,9 +6,14 @@ defmodule Wocky.LocationApi do
     content_types_accepted: 2, from_json: 2, is_authorized: 2,
     malformed_request: 2, resource_exists: 2
   ]
-  import OK, only: :macros
+
+  import OK, only: ["~>>": 2]
+
+  alias Poison.Parser
   alias Wocky.User
+  alias Wocky.User.Token
   alias Wocky.Location
+
   require Logger
 
   defmodule State do
@@ -68,19 +73,19 @@ defmodule Wocky.LocationApi do
     {boolean, :cowboy_req.req, any}
   def resource_exists(req, state) do
     {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
-    case User.get(user_id) do
+    case User.find(user_id, :wocky_app.server) do
+      %User{} = user ->
+        {true, req, %State{state | user: user}}
+
       nil ->
         {false, set_response_text(req, "User #{user_id} not found."), state}
-
-      user ->
-        {true, req, %State{state | user: user}}
     end
   end
 
   @spec malformed_request(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}
   def malformed_request(req, state) do
-    case req |> read_and_parse_body do
+    case read_and_parse_body(req) do
       {:ok, coords, resource} ->
         {false, req, %State{state | resource: resource, coords: coords}}
 
@@ -96,8 +101,7 @@ defmodule Wocky.LocationApi do
   end
 
   defp read_and_parse_body(request) do
-    request
-    |> read_body
+    read_body(request)
     ~>> parse_body
     ~>> extract_values
     ~>> handle_parse_result
@@ -110,7 +114,7 @@ defmodule Wocky.LocationApi do
     end
   end
 
-  defp parse_body(body), do: body |> Poison.Parser.parse(keys: :atoms)
+  defp parse_body(body), do: Parser.parse(body, keys: :atoms)
 
   defp extract_values(data),
     do: {:ok, extract_values(data[:location], data[:resource])}
@@ -152,7 +156,7 @@ defmodule Wocky.LocationApi do
   defp check_token(nil, _), do: false
   defp check_token(_, nil), do: false
   defp check_token(user, token),
-    do: :wocky_db_user.check_token(user, :wocky_app.server, token)
+    do: Token.valid?(user, :wocky_app.server, token)
 
   @spec from_json(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}

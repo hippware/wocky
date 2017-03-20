@@ -11,7 +11,6 @@
          get_owner/1,
 
          delete/2,
-         keep/2,
 
          get_base_id/1,
          get_type/1
@@ -62,10 +61,6 @@ get_metadata(Server, FileID) ->
 
 get_file_info(Function, Args) ->
     apply(mod_wocky_tros:backend(), Function, Args).
-
--spec keep(ejabberd:lserver(), file_id()) -> ok | {error, not_found}.
-keep(Server, FileID) ->
-    apply(mod_wocky_tros:backend(), keep, [Server, FileID]).
 
 -spec delete(ejabberd:lserver(), file_id()) -> ok.
 delete(Server, FileID) ->

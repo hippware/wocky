@@ -6,19 +6,17 @@ defmodule Wocky.ID do
   @type t :: binary
 
   @doc "Generates a timeuuid in canonical text format for use as an id."
-  @spec create :: t
-  def create do
+  @spec new :: t
+  def new do
     :ossp_uuid.make(:v1, :text)
   end
 
   @doc "Returns true if the ID is a valid UUID."
   @spec valid?(t) :: boolean
   def valid?(id) do
-    try do
-      :ossp_uuid.import(id, :binary)
-      true
-    rescue
-      _ -> false
-    end
+    :ossp_uuid.import(id, :binary)
+    true
+  rescue
+    _ -> false
   end
 end

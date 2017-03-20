@@ -35,13 +35,13 @@ stop(Host) ->
 
 -spec user_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
 user_updated(LUser, LServer) ->
-    User = wocky_db_user:find_user(LUser, LServer),
+    User = ?wocky_user:find(LUser, LServer),
     WithContact = wocky_db_roster:users_with_contact(
                     jid:make(LUser, LServer, <<>>)),
     lists:foreach(notify_user_update(User, _), WithContact).
 
-notify_user_update(not_found, _) -> ok;
-notify_user_update(Item = #{user := User, server := Server}, WithContact) ->
+notify_user_update(nil, _) -> ok;
+notify_user_update(Item = #{id := User, server := Server}, WithContact) ->
     ejabberd_router:route(jid:make(User, Server, <<>>),
                           WithContact,
                           user_change_packet(Item)).
@@ -56,6 +56,6 @@ make_user_changed_el(Item) ->
            attrs = [{<<"xmlns">>, ?NS_USER}],
            children = [make_item_el(Item)]}.
 
-make_item_el(#{user := User, server := Server}) ->
+make_item_el(#{id := User, server := Server}) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"jid">>, jid:to_binary(jid:make(User, Server, <<>>))}]}.

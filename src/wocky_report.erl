@@ -4,6 +4,7 @@
 %%%
 -module(wocky_report).
 
+-include("wocky.hrl").
 -include("wocky_bot.hrl").
 -include_lib("ejabberd/include/jlib.hrl").
 
@@ -56,11 +57,12 @@ report_bot(#{id := ID,
            CreatedAt) ->
 
     #jid{luser = OUser, lserver = OServer} = jid:from_binary(Owner),
+    #{handle := Handle} = ?wocky_user:find(OUser, OServer),
 
     io_lib:fwrite("~s,\"~s\",\"~s\",~s,~s,\"~s\",~f,~f,~s,~B,~B,\"~s\"\n",
                   [ID,
                    csv_escape(Title),
-                   csv_escape(wocky_db_user:get_handle(OUser, OServer)),
+                   csv_escape(Handle),
                    time_string(CreatedAt),
                    time_string(wocky_db:timestamp_to_seconds(Updated)),
                    csv_escape(Address),
