@@ -39,7 +39,7 @@ defmodule Wocky.Index do
   end
 
 
-  defcall geosearch(_, _), state: %State{bot_index: nil} do
+  defcall geosearch(_, _), state: %State{enabled: false} do
     reply({:error, :no_index_configured})
   end
 
