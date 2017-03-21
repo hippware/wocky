@@ -4,7 +4,7 @@ defmodule Wocky.Bot do
   use Wocky.Ejabberd
 
   alias Wocky.Index
-  alias Wocky.Location
+  alias Wocky.User.Location
   alias __MODULE__, as: Bot
 
   defstruct [

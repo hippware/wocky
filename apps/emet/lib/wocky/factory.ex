@@ -14,8 +14,8 @@ defmodule Wocky.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Bot
   alias Wocky.ID
-  alias Wocky.Location
   alias Wocky.User
+  alias Wocky.User.Location
 
   defp phone_number do
     "+1555#{Phone.area_code}#{Phone.extension}"

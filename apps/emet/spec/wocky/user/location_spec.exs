@@ -1,9 +1,10 @@
-defmodule Wocky.LocationSpec do
+defmodule Wocky.User.LocationSpec do
   use ESpec
-  alias Wocky.Factory
-  alias Wocky.Location
-  alias Wocky.User
+
   alias Wocky.Bot
+  alias Wocky.Factory
+  alias Wocky.User
+  alias Wocky.User.Location
   alias :wocky_notification_handler, as: Handler
 
   before do

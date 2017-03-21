@@ -8,9 +8,9 @@ defmodule Wocky.User do
   alias Wocky.Bot
   alias Wocky.ID
   alias Wocky.Index
-  alias Wocky.Location
   alias Wocky.Repo
   alias Wocky.Repo.Doc
+  alias Wocky.User.Location
   alias Wocky.User.Token
   alias __MODULE__, as: User
 

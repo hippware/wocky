@@ -1,11 +1,11 @@
-defmodule Wocky.Location do
+defmodule Wocky.User.Location do
   @moduledoc "Interface for user location processing."
 
   use Wocky.Ejabberd
 
   alias Wocky.Bot
-  alias Wocky.Location
   alias Wocky.User
+  alias __MODULE__, as: Location
 
   require Logger
 
@@ -16,14 +16,13 @@ defmodule Wocky.Location do
     accuracy: 0.0
   ]
 
-  @type t :: %__MODULE__{
+  @type t :: %Location{
     lat: float,
     lon: float,
     accuracy: float
   }
 
   @type location_tuple :: {float, float, float}
-
 
   @doc """
   Process a location change event for a user. The processing happens

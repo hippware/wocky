@@ -5,8 +5,8 @@ defmodule Wocky.LocationApi do
 
   alias Poison.Parser
   alias Wocky.User
+  alias Wocky.User.Location
   alias Wocky.User.Token
-  alias Wocky.Location
 
   require Logger
 
