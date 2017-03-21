@@ -252,6 +252,7 @@ defmodule Wocky.Mixfile do
 
   defp aliases do
     [
+      recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: ["elvis", "credo", "dogma"],
       'db.dump.test': "db.dump",
