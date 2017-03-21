@@ -8,14 +8,12 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
-* Consolidate bot visibility (only Public and Private) and sharing (#442)
 * Allow publishing to preallocated bot ID (#564)
 * Fix crash when digits gives us an empty number (#563)
 * Remove 100 row limit on standard selects.
   * Fixes: Staging: Bot disappears after kill/reload (#567)
 * Add error handling for unconfigured Algolia indices (#570)
 * Add owner field to 'geosearch for bots' API (#573)
-
 
 # 17.03.08+1639.1ad8af1
 
