@@ -6,7 +6,7 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
-# Unreleased
+# 17.03.21+1676.6dfc479
 
 * Consolidate bot visibility (only Public and Private) and sharing (#442)
 * Allow publishing to preallocated bot ID (#564)
