@@ -105,6 +105,8 @@ defmodule Schemata.Schemas.Wocky do
         radius:           :int,      # Radius of bot circle
         visibility:       :int,      # Visibility of bot
         tags:             {:set, :text}, # Bot's tags
+        affiliates:       {:set, :text}, # Bot's affiliates
+                                         # (required for WHITELIST visibility)
         alerts:           :int,      # Whether alerts are enabled (0/1)
         updated:          :timestamp, # Timestamp of most recent item creation
                                      # (or creation time of bot if no items)

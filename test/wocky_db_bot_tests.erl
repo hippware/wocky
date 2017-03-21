@@ -9,10 +9,11 @@
 
 -import(wocky_db_bot,
         [get_bot/1, get_bot/2, get_id_by_name/2, exists/2, insert/2,
-         insert_new_name/2, owner/2,
-         owned_bots/1, subscribed_bots/1, subscribers/2,
+         insert_new_name/2, owner/2, affiliations/2,
+         owned_bots/1, subscribed_bots/1,
+         affiliations_from_map/1, update_affiliations/3, subscribers/2,
          subscribers/2, delete/2, has_access/3, subscribe/3, unsubscribe/3,
-         get_item/3, publish_item/5, delete_item/3,
+         get_item/3, publish_item/5, delete_item/3, dissociate_user/2,
          subscribe_temporary/4, unsubscribe_temporary/3,
          clear_temporary_subscriptions/1,
          image_items_count/2, item_images/2,
@@ -32,6 +33,8 @@ wocky_db_bot_test_() -> {
         test_owner(),
         test_owned(),
         test_subscribed(),
+        test_affiliations(),
+        test_affiliations_from_map(),
         test_subscribers(),
         test_image_items_count(),
         test_item_images(),
@@ -52,9 +55,11 @@ wocky_db_bot_test_() -> {
 
       {inorder, [
         test_has_access(),
+        test_update_affiliations(),
         test_subscribe(),
         test_unsubscribe(),
-        test_delete()
+        test_delete(),
+        test_dissociate_user()
       ]}
     ]}
   ]}.
@@ -169,6 +174,64 @@ test_subscribed() ->
         ?_assertEqual([], subscribed_bots(?TIM_JID)),
         ?_assertEqual(ok, subscribe(?LOCAL_CONTEXT, ?BOT, ?TIM_JID)),
         ?_assertEqual([?BOT_JID], subscribed_bots(?TIM_JID))
+      ]}
+    ]}.
+
+test_affiliations() ->
+    { "affiliations", [
+      { "gets the bots affiliation list", [
+        ?_assertEqual(expected_affiliations(),
+                      affiliations(?LOCAL_CONTEXT, ?BOT))
+      ]},
+      { "returns not_found for non-existant bot", [
+        ?_assertEqual(not_found, affiliations(?LOCAL_CONTEXT,
+                                              wocky_db:create_id()))
+      ]}
+    ]}.
+
+test_affiliations_from_map() ->
+    NewBot = #{id := ID} = maps:without([affiliates], new_bot()),
+    { "affiliations_from_map", [
+      { "generates a normalised affiliate list", [
+        ?_assertEqual(expected_affiliations(),
+                      affiliations_from_map(
+                        hd(wocky_db_seed:seed_data(bot, ?LOCAL_CONTEXT))))
+      ]},
+      { "returns not_found for input of not_found", [
+        ?_assertEqual(not_found, affiliations_from_map(not_found))
+      ]},
+      { "returns only the owner list for a bot with an unset affiliates field",
+       inorder, [
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBot)),
+        ?_assertEqual([{?BOB_JID, owner}],
+                      affiliations_from_map(get_bot(?LOCAL_CONTEXT, ID)))
+      ]}
+    ]}.
+
+test_update_affiliations() ->
+    ID = wocky_db:create_id(),
+    { "update_affiliations", [
+      { "updates the affiliations", inorder, [
+        ?_assertEqual(ok, update_affiliations(?LOCAL_CONTEXT, ?BOT,
+                                              [{?BOB_JID, none},
+                                               {?CAROL_JID, spectator}])),
+        ?_assertEqual(expected_affiliations_after_change(),
+                      affiliations(?LOCAL_CONTEXT, ?BOT))
+      ]},
+      { "removing non-affiliate or owner has no effect", inorder, [
+        ?_assertEqual(ok, update_affiliations(?LOCAL_CONTEXT, ?BOT,
+                                              [{?KAREN_JID, none}])),
+        ?_assertEqual(ok, update_affiliations(?LOCAL_CONTEXT, ?BOT,
+                                              [{?ALICE_JID, none}])),
+        ?_assertEqual(expected_affiliations_after_change(),
+                      affiliations(?LOCAL_CONTEXT, ?BOT))
+      ]},
+      { "changing a non-existant bot does not create it", inorder, [
+        ?_assertEqual(ok, update_affiliations(?LOCAL_CONTEXT, ID,
+                                              [{?KAREN_JID, none},
+                                               {?ALICE_JID, spectator}
+                                              ])),
+        ?_assertEqual(not_found, get_bot(?LOCAL_CONTEXT, ID))
       ]}
     ]}.
 
@@ -328,30 +391,40 @@ test_clear_temporary_subscriptions() ->
 
 test_has_access() ->
     { "has_access", [
-      { "returns true for everyone on public bots", [
+      { "returns true for owners only with VIS_OWNER", [
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
+                                                   visibility =>
+                                                   ?WOCKY_BOT_VIS_OWNER})),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?CAROL_JID))
+      ]},
+      { "returns true for owners and affiliates with VIS_WHITELIST", [
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
+                                                   visibility =>
+                                                   ?WOCKY_BOT_VIS_WHITELIST})),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?CAROL_JID)),
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
+      ]},
+      { "returns true for owners and members of the bot's owner_roster set", [
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
+                                                   visibility =>
+                                                   ?WOCKY_BOT_VIS_FRIENDS})),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
+        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?KAREN_JID)),
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
+      ]},
+      { "returns true for everyone to whom the bot is shared with VIS_OPEN", [
         ?_assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
                                                    visibility =>
                                                    ?WOCKY_BOT_VIS_OPEN})),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
+        ?_assertEqual(ok, add_share(?ALICE_JID, ?BOB_JID, ?BOT_JID)),
         ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
-        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?KAREN_JID)),
-        ?_assert(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
-      ]},
-      { "returns true for everyone to whom the bot is shared on private bots",
-       [
-        ?_test(
-           begin
-               ?assertEqual(ok, insert(?LOCAL_CONTEXT, #{id => ?BOT,
-                                                         visibility => V})),
-               ?assert(has_access(?LOCAL_CONTEXT, ?BOT, ?ALICE_JID)),
-               ?assertEqual(ok, add_share(?ALICE_JID, ?BOB_JID, ?BOT_JID)),
-               ?assert(has_access(?LOCAL_CONTEXT, ?BOT, ?BOB_JID)),
-               ?assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
-           end
-              )
-        || V <- [?WOCKY_BOT_VIS_OWNER,
-                 ?WOCKY_BOT_VIS_WHITELIST,
-                 ?WOCKY_BOT_VIS_FRIENDS]
+        ?_assertNot(has_access(?LOCAL_CONTEXT, ?BOT, ?TIM_JID))
       ]},
       { "returns not_found for non-existant bot", [
         ?_assertEqual(not_found, has_access(?LOCAL_CONTEXT,
@@ -411,12 +484,43 @@ test_delete() ->
       ]}
     ]}.
 
+test_dissociate_user() ->
+    NewBotFriends = #{id := IDFriends} =
+        (new_bot())#{visibility => ?WOCKY_BOT_VIS_FRIENDS, affiliates => [],
+                     owner => ?ALICE_B_JID},
+    NewBotPub = #{id := IDPub} =
+        (new_bot())#{visibility => ?WOCKY_BOT_VIS_OPEN, affiliates => [],
+                     owner => ?ALICE_B_JID},
+    { "dissociate_user", [
+      {"FRIENDS bots should become WHITELIST with owners' roster as affiliates",
+        inorder, [
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBotFriends)),
+        ?_assertEqual(ok, insert(?LOCAL_CONTEXT, NewBotPub)),
+        ?_assertEqual(ok, dissociate_user(?ALICE, ?LOCAL_CONTEXT)),
+        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDFriends)),
+        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, IDPub)),
+        ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_WHITELIST},
+                      get_bot(?LOCAL_CONTEXT, IDFriends)),
+        ?_assertMatch(#{visibility := ?WOCKY_BOT_VIS_OPEN},
+                      get_bot(?LOCAL_CONTEXT, IDPub)),
+        ?_assertEqual(4, length(affiliations(?LOCAL_CONTEXT, IDFriends))),
+        ?_assertEqual(0, length(affiliations(?LOCAL_CONTEXT, IDPub)))
+      ]}
+    ]}.
+
+
+expected_affiliations() ->
+    [{?ALICE_JID, owner}, {?BOB_JID, spectator}].
+
+expected_affiliations_after_change() ->
+    [{?ALICE_JID, owner}, {?CAROL_JID, spectator}].
+
 new_bot() ->
     #{id => wocky_db:create_id(), server => ?LOCAL_CONTEXT,
       title => <<"Test bot X">>, shortname => <<"ShortName">>,
       owner => ?BOB_B_JID, description => <<"Test insert bot">>,
       address => <<"test address">>, lat => 1.0, lon => -2.0, radius => 10,
-      visibility => ?WOCKY_BOT_VIS_OWNER,
+      visibility => ?WOCKY_BOT_VIS_OWNER, affiliates => [?CAROL_B_JID],
       alerts => ?WOCKY_BOT_ALERT_ENABLED,
       image => <<>>, type => <<"killbot">>,
       tags => ?BOT_TAGS,

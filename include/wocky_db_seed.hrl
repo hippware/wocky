@@ -102,7 +102,7 @@
 -define(BOT_OWNER_ROSTER_VERSION, <<"999-4">>).
 -define(BOT_UPDATE_STANZA, <<"<bot_update>A thing happened</bot_update>">>).
 
--define(ROSTER_VIEWERS, [?BOB_B_JID]).
+-define(ROSTER_VIEWERS, [?BOT_B_JID, ?BOB_B_JID]).
 
 -define(ITEM, <<"test-item-id">>).
 -define(ITEM2, <<"test-item-id2">>).

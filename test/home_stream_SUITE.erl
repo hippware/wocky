@@ -248,9 +248,26 @@ auto_publish_bot(Config) ->
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
 
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_WHITELIST, Alice),
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
         check_home_stream_sizes(0, [Carol, Tim]),
+
+        clear_home_streams(),
+
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_FRIENDS, Alice),
+        check_home_stream_sizes(1, [Bob, Carol]),
+        check_home_stream_sizes(0, [Tim]),
+        clear_home_streams(),
+
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_FOLLOWERS, Alice),
+        check_home_stream_sizes(1, [Bob, Carol, Tim]),
+        clear_home_streams(),
+
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
+        check_home_stream_sizes(1, [Bob, Carol, Tim]),
 
         ensure_all_clean([Alice, Bob, Carol, Tim])
       end).
