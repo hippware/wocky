@@ -12,6 +12,7 @@
          insert/2,
          insert_new_name/2,
          owner/2,
+         visibility/2,
          is_public/2,
          subscribers/2,
          subscriber_count/2,
@@ -36,7 +37,7 @@
         ]).
 
 % We're going to need these sooner or later, but for now stop xref complaining
--ignore_xref([followers/2, get_id_by_name/2, is_shared_to/2]).
+-ignore_xref([followers/2, get_id_by_name/2]).
 
 -include("wocky.hrl").
 -include("wocky_bot.hrl").

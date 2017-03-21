@@ -96,7 +96,6 @@
 
 -compile({parse_transform, do}).
 
--ignore_xref([add_roster_viewer/3, remove_roster_viewer/3]).
 
 %%%===================================================================
 %%% API
