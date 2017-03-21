@@ -16,7 +16,7 @@ defmodule Wocky.Index do
   end
 
   @user_fields [:handle, :last_name, :first_name, :avatar]
-  @bot_fields [:server, :title, :image, :lat, :lon, :radius, :_geoloc]
+  @bot_fields [:server, :owner, :title, :image, :lat, :lon, :radius, :_geoloc]
 
   defstart start_link do
     user_indexes  = Application.fetch_env!(:wocky, :algolia_user_index_name)
@@ -57,6 +57,7 @@ defmodule Wocky.Index do
     %{
       id: obj["objectID"],
       server: obj["server"],
+      owner: obj["owner"],
       title: obj["title"],
       image: obj["image"],
       lat: obj["lat"],
