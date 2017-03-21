@@ -67,6 +67,7 @@ notify_new_viewers(Server, ID, _, true) ->
 notify_new_viewers(_, _, _, _) -> ok.
 
 notify_new_viewers(Server, ID, NewViewers) ->
+    ct:log("New Viewers: ~p", [NewViewers]),
     lists:foreach(notify_new_viewer(Server, ID, _), NewViewers).
 
 notify_new_viewer(Server, ID, Viewer) ->
