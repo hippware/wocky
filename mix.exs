@@ -37,8 +37,8 @@ defmodule Wocky.Mixfile do
        ],
        plt_add_deps: true,
        flags: [
-         "--fullpath", "-Wunmatched_returns", "-Werror_handling",
-         "-Wrace_conditions", "-Wunderspecs", "-Wunknown"
+         "-Wunmatched_returns", "-Werror_handling", "-Wrace_conditions",
+         "-Wunderspecs", "-Wunknown"
        ]
      ],
      elvis_config: elvis_config(),
