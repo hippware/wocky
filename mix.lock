@@ -12,7 +12,7 @@
   "cowboy": {:hex, :cowboy, "1.0.4", "a324a8df9f2316c833a470d918aaf73ae894278b8aa6226ce7a9bf699388f878", [:make, :rebar], [{:cowlib, "~> 1.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.0", [hex: :ranch, optional: false]}]},
   "cowlib": {:hex, :cowlib, "1.0.2", "9d769a1d062c9c3ac753096f868ca121e2730b9a377de23dec0f7e08b1df84ee", [:make], []},
   "cqerl": {:git, "https://github.com/hippware/cqerl.git", "b1dfeebbdce41f4a9bec717cb39168976d8a2f52", [branch: "working-2.0"]},
-  "credo": {:hex, :credo, "0.6.1", "a941e2591bd2bd2055dc92b810c174650b40b8290459c89a835af9d59ac4a5f8", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, optional: false]}]},
+  "credo": {:hex, :credo, "0.7.1", "bd09fe5bc33357aed187a405a695b586d36b4a836d4377ce496651aa483a7c18", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, optional: false]}]},
   "crone": {:git, "https://github.com/blt/crone.git", "84855c4fa4852e13b201368cccf2c6dc77f1c482", [branch: "master"]},
   "cth_readable": {:hex, :cth_readable, "1.2.3", "293120673dff82f0768612c5282e35c40cacc1b6f94fe99077438fd3749d0e27", [:rebar3], [{:cf, "0.2.1", [hex: :cf, optional: false]}]},
   "cuesport": {:git, "https://github.com/esl/cuesport.git", "d82ff25baf393eb11712721fb1b881b4b9f80176", [branch: "master"]},
