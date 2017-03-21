@@ -15,8 +15,6 @@
          set_warning_time/1
         ]).
 
--ignore_xref([start_link/0]).
-
 %% gen_server callbacks
 -export([init/1,
          handle_call/3,
@@ -24,9 +22,6 @@
          handle_info/2,
          terminate/2,
          code_change/3]).
-
-%% Test use only:
--ignore_xref([set_warning_time/1]).
 
 -define(SERVER, ?MODULE).
 

@@ -37,8 +37,8 @@ defmodule Wocky.Mixfile do
        ],
        plt_add_deps: true,
        flags: [
-         "--fullpath", "-Wunmatched_returns", "-Werror_handling",
-         "-Wrace_conditions", "-Wunderspecs", "-Wunknown"
+         "-Wunmatched_returns", "-Werror_handling", "-Wrace_conditions",
+         "-Wunderspecs", "-Wunknown"
        ]
      ],
      elvis_config: elvis_config(),
@@ -252,6 +252,7 @@ defmodule Wocky.Mixfile do
 
   defp aliases do
     [
+      recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: ["elvis", "credo", "dogma"],
       'db.dump.test': "db.dump",

@@ -18,8 +18,6 @@
 -include("wocky_bot.hrl").
 -include("wocky_roster.hrl").
 
--ignore_xref([handle_iq/3, check_access/3]).
-
 %% gen_mod handlers
 -export([start/2, stop/1]).
 

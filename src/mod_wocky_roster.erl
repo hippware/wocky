@@ -49,18 +49,6 @@
          roster_modified_hook/3
         ]).
 
--ignore_xref([process_iq/3,
-              roster_get_hook/2,
-              roster_in_subscription_hook/6,
-              roster_out_subscription_hook/4,
-              roster_get_subscription_lists_hook/3,
-              roster_get_jid_info_hook/4,
-              remove_user_hook/2,
-              roster_get_versioning_feature_hook/2,
-              filter_local_packet_hook/1,
-              roster_modified_hook/3
-             ]).
-
 -define(NULL_VERSION, <<"0">>).
 
 

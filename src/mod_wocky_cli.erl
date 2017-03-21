@@ -30,12 +30,6 @@
          reprocess_images/0
         ]).
 
--ignore_xref([befriend/2,
-              tros_migrate_access/0,
-              fix_bot_images/0,
-              make_token/1,
-              reprocess_images/0
-             ]).
 
 %%%===================================================================
 %%% gen_mod handlers

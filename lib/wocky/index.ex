@@ -1,7 +1,6 @@
 defmodule Wocky.Index do
   @moduledoc "Wocky interface to Algolia for full text search of users and bots"
 
-  use Exref, ignore: [start_link: 0, reindex: 1]
   use ExActor.GenServer, export: :wocky_index
 
   require Logger

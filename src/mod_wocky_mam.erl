@@ -83,11 +83,6 @@
          lookup_messages_hook/14
         ]).
 
--ignore_xref([archive_size_hook/4,
-              remove_archive_hook/3,
-              archive_message_hook/9,
-              lookup_messages_hook/14]).
-
 -ifdef(TEST).
 -export([
          archive_test_message/7,

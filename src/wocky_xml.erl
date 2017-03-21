@@ -20,8 +20,6 @@
          cdata_el/2
         ]).
 
--ignore_xref([check_attr/3]).
-
 -type error() :: {error, jlib:xmlel()}.
 
 -spec get_subel_cdata(binary(), jlib:xmlel()) -> {ok, binary()} | error().
