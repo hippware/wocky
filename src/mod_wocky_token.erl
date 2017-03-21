@@ -12,8 +12,6 @@
 
 %% IQ handler callback
 -export([handle_iq/3]).
--ignore_xref([handle_iq/3]).
-
 
 %%%===================================================================
 %%% gen_mod implementation

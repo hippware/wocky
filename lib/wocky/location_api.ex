@@ -1,12 +1,6 @@
 defmodule Wocky.LocationApi do
   @moduledoc "HTTP API implementation for sending user location updates"
 
-  use Exref, ignore: [
-    init: 3, rest_init: 2, allow_missing_post: 2, allowed_methods: 2,
-    content_types_accepted: 2, from_json: 2, is_authorized: 2,
-    malformed_request: 2, resource_exists: 2
-  ]
-
   import OK, only: ["~>>": 2]
 
   alias Poison.Parser

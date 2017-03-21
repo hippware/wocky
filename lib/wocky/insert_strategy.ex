@@ -1,7 +1,6 @@
 defmodule Wocky.InsertStrategy do
   @moduledoc false
 
-  use Exref, ignore: [function_name: 0]
   use ExMachina.Strategy, function_name: :insert
 
   alias Wocky.User

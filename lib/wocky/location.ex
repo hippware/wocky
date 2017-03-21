@@ -1,7 +1,6 @@
 defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
-  use Exref, ignore: [__struct__: 0, __struct__: 1, user_location_changed: 3]
   use Wocky.Ejabberd
 
   alias Wocky.Bot

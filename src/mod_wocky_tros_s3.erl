@@ -40,8 +40,6 @@
 
 -define(LINK_EXPIRY, 60 * 10). % 10 minute expiry on upload/download links.
 
--ignore_xref([get_access/2]).
-
 start(_Opts) ->
     Configs = [s3_bucket, s3_access_key_id, s3_secret_key],
     lists:foreach(fun(C) -> extract_config(C) end, Configs),

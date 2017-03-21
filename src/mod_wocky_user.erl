@@ -12,8 +12,6 @@
    handle_iq/3
         ]).
 
--ignore_xref([handle_iq/3]).
-
 -include("wocky.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include_lib("ejabberd/include/jlib.hrl").

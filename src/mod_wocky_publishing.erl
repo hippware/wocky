@@ -20,7 +20,6 @@
 
 %% IQ hook
 -export([handle_iq/3]).
--ignore_xref([handle_iq/3]).
 
 %% Notification callback
 -export([send_notification/3]).

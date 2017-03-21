@@ -1,8 +1,6 @@
 defmodule Wocky.User do
   @moduledoc ""
 
-  use Exref, ignore: [insert: 1, new: 2, from_jid: 3, to_jid: 2,
-                      to_jid_string: 2, to_bare_jid: 1, to_bare_jid_string: 1]
   use Wocky.Ejabberd
 
   import OK, only: ["~>>": 2]

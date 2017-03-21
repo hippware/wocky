@@ -35,9 +35,6 @@
          is_preallocated_id/2
         ]).
 
-% We're going to need these sooner or later, but for now stop xref complaining
--ignore_xref([followers/2, get_id_by_name/2, is_shared_to/2]).
-
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
 -include_lib("ejabberd/include/jlib.hrl").

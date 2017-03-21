@@ -13,7 +13,6 @@
 
 %% Privacy filter callback
 -export([check_packet/6]).
--ignore_xref([check_packet/6]).
 
 -define(CHECK_PACKET_PRIORITY, 90).
 

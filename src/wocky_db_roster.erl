@@ -31,7 +31,6 @@
 
 -compile({parse_transform, cut}).
 
--ignore_xref([friends/2, is_follower/2]).
 
 %%%===================================================================
 %%% API

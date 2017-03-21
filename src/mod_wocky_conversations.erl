@@ -19,8 +19,6 @@
 
 -export([handle_iq/3]).
 
--ignore_xref([handle_iq/3]).
-
 -define(DEFAULT_MAX, 50).
 
 start(Host, Opts) ->

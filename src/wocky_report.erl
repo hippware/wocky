@@ -12,8 +12,6 @@
 
 -compile({parse_transform, cut}).
 
--ignore_xref([generate_bot_report/1]).
-
 -define(timex, 'Elixir.Timex').
 
 % Duration is in days
