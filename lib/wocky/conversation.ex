@@ -12,7 +12,7 @@ defmodule Wocky.Conversation do
     server:    nil | binary,
     user:      nil | binary,
     other_jid: nil | binary,
-    time:      nil | binary,
+    time:      nil | non_neg_integer,
     message:   nil | binary,
     outgoing:  nil | boolean
   }
@@ -44,16 +44,8 @@ defmodule Wocky.Conversation do
     %Conversation{}
     |> struct(data)
     |> Map.update!(:id, &String.to_integer/1)
+    |> Map.update!(:time, &String.to_integer/1)
     |> Map.update!(:outgoing, &String.to_existing_atom/1)
-  end
-
-  @doc "Read a conversation record from the database"
-  @spec get(id, binary) :: t | nil
-  def get(id, server) do
-    case Repo.find("conversations", server, id) do
-      nil -> nil
-      data -> new(data)
-    end
   end
 
   @doc "Write a conversation record to the database"
