@@ -6,6 +6,11 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+# Unreleased
+
+* Normalise latitude, longitude values before passing to Algolia. (#589)
+
+
 # 17.03.21+1676.6dfc479
 
 * Allow publishing to preallocated bot ID (#564)
