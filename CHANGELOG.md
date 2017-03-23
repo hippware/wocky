@@ -1,5 +1,7 @@
 # Change Log
 
+Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deployment-history)
+
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
