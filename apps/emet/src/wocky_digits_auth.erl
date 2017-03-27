@@ -93,4 +93,3 @@ has_bypass_prefix(PhoneNumber) ->
 
 has_prefix(Subject, Prefix) ->
     binary:longest_common_prefix([Subject, Prefix]) =:= byte_size(Prefix).
-

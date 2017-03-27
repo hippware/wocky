@@ -73,4 +73,3 @@ get_item(Item, Name) ->
         <<>> -> {error, {not_found, Name}};
         Data -> wocky_util:safe_bin_to_float(Data)
     end.
-

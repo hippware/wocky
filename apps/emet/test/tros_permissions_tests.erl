@@ -59,4 +59,3 @@ test_can_download() ->
         ?_assert(can_download(?TIM_JID, Owner, AllAccess))
       ]}
     ]}.
-

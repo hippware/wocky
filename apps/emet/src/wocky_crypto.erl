@@ -31,4 +31,3 @@ pad_to(Bin, Size) ->
 
 unpad(Bin) ->
     hd(binary:split(Bin, <<0>>)).
-

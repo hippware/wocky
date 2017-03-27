@@ -36,4 +36,3 @@ stop(Host) ->
 handle_iq(_From, _To, _IQ) ->
     %% Simple way to generate a crash without tipping off the comiler:
     lists:last([]).
-
