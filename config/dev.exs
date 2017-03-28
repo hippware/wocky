@@ -43,6 +43,6 @@ config :crone,
   tasks: [
     {"localhost", {
        {:weekly, :sun, {12, :am}},
-       {:wocky_slack, :post_bot_report, ["wocky-reports", 7]}
+       {:wocky_slack, :post_bot_report, ["report-testing", 7]}
      }}
    ]
