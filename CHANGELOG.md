@@ -1,5 +1,7 @@
 # Change Log
 
+Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deployment-history)
+
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
@@ -9,6 +11,7 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * Add reindex CLI command
+* Normalise latitude, longitude values before passing to Algolia. (#589)
 
 
 # 17.03.21+1676.6dfc479
