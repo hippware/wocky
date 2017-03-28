@@ -10,6 +10,7 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Add reindex CLI command
 * Normalise latitude, longitude values before passing to Algolia. (#589)
 
 

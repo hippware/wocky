@@ -28,7 +28,8 @@
          tros_migrate_access/0,
          fix_bot_images/0,
          make_token/1,
-         reprocess_images/0
+         reprocess_images/0,
+         reindex/1
         ]).
 
 -ignore_xref([befriend/2,
@@ -37,7 +38,8 @@
               tros_migrate_access/0,
               fix_bot_images/0,
               make_token/1,
-              reprocess_images/0
+              reprocess_images/0,
+              reindex/1
              ]).
 
 %%%===================================================================
@@ -153,6 +155,16 @@ commands() ->
                         module   = ?MODULE,
                         function = reprocess_images,
                         args     = [],
+                        result   = {result, rescode}}
+
+     %% Regenerate Algolia indices
+     #ejabberd_commands{name     = reindex,
+                        desc     = "Regenerate Algolia indices",
+                        longdesc = "Parameter: index to regenerate. eg: "
+                                   "\"bots\" or \"users\"\n",
+                        module   = ?MODULE,
+                        function = reindex,
+                        args     = [{index, binary}],
                         result   = {result, rescode}}
 
     ].
@@ -482,6 +494,22 @@ do_reprocess_image(ImageName) ->
                      ImageName),
             ?ex_aws:'request!'(Req, s3_auth()),
             io:fwrite("Reprocessing ~p from ~p\n", [BaseID, ImageName])
+    end.
+
+%%%===================================================================
+%%% Reindex
+%%%===================================================================
+
+reindex(Index) ->
+    try binary_to_existing_atom(Index, utf8) of
+        IdxAtom ->
+            case 'Elixir.Wocky.Index':reindex(IdxAtom) of
+                {error, bad_call} -> io:fwrite("Unknown index\n");
+                ok -> ok
+            end
+    catch
+        error:badarg ->
+            io:fwrite("Unknown index\n")
     end.
 
 %%%===================================================================
