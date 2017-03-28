@@ -36,9 +36,8 @@ config :lager,
 config :honeybadger,
   environment_name: "Development"
 
-# We don't actually want this to do anything (and it will fail if it tries due
-# to not having a Slack token), but having it here verifies that crone will
-# start up correctly:
+# We don't actually want this to do anything, but having it here verifies that
+# crone will start up correctly
 config :crone,
   tasks: [
     {"localhost", {
