@@ -10,7 +10,7 @@
 -include("wocky_bot.hrl").
 
 -export([seed_table/2, seed_tables/2, seed_keyspace/2,
-         seed_data/2, maybe_seed_s3_file/2]).
+         seed_data/2, maybe_seed_s3_file/2, random_conversation_list/0]).
 
 -ifdef(TEST).
 -export([archive_users/0, msg_xml_packet/1]).
@@ -115,11 +115,6 @@ seed_data(roster, Server) ->
 seed_data(message_archive, _Server) ->
     Rows = random_message_history(),
     Q = "INSERT INTO message_archive (id, time, user_jid, other_jid,
-         outgoing, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
-    {Q, Rows};
-seed_data(conversation, _Server) ->
-    Rows = random_conversation_list(),
-    Q = "INSERT INTO conversation (id, time, user_jid, other_jid,
          outgoing, message) VALUES (?, minTimeuuid(:time), ?, ?, ?, ?)",
     {Q, Rows};
 seed_data(auth_token, Server) ->

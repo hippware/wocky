@@ -3,6 +3,7 @@
 -module(conversations_SUITE).
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
+-compile({parse_transform, cut}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
@@ -10,6 +11,9 @@
 
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
+
+-define(conversation, 'Elixir.Wocky.Conversation').
+-define(repo, 'Elixir.Wocky.Repo').
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -36,7 +40,9 @@ suite() ->
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db_seed:seed_table(?LOCAL_CONTEXT, conversation),
+    ?repo:delete_all(<<"conversation">>, ?LOCAL_CONTEXT),
+    seed_conversations(),
+    timer:sleep(1000),
     Users = escalus:get_users([alice]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -200,3 +206,34 @@ get_other_jid(Item) ->
 
 get_id(Item) ->
     xml:get_path_s(Item, [{attr, <<"id">>}]).
+
+%%--------------------------------------------------------------------
+%% Data seeding
+%%--------------------------------------------------------------------
+
+seed_conversations() ->
+    Bucket = {<<"conversation">>, ?LOCAL_CONTEXT},
+    {ok, Keys} = mongoose_riak:list_keys(Bucket),
+    lists:foreach(mongoose_riak:delete(Bucket, _), Keys),
+
+    Convos = wocky_db_seed:random_conversation_list(),
+    lists:foreach(archive_message(_), Convos).
+
+archive_message(#{id := ID,
+                  user_jid := UserJID,
+                  other_jid := OtherJID,
+                  outgoing := Outgoing,
+                  message := XML}) ->
+    mod_wocky_conversations:archive_message_hook(
+      ok,
+      ?LOCAL_CONTEXT,
+      ID,
+      unused,
+      jid:from_binary(UserJID),
+      jid:from_binary(OtherJID),
+      unused,
+      direction(Outgoing),
+      element(2, exml:parse(XML))).
+
+direction(true) -> outgoing;
+direction(false) -> incoming.
