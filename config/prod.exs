@@ -25,3 +25,11 @@ config :exometer,
 
 config :honeybadger,
   environment_name: "HONEYBADGER_ENV"
+
+config :crone,
+  tasks: [
+    {"CRON_HOST", {
+      {:weekly, :sun, {12, :am}},
+      {:wocky_slack, :post_bot_report, ["wocky-reports", 7]}
+    }}
+   ]

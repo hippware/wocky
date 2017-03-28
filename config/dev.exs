@@ -35,3 +35,14 @@ config :lager,
 
 config :honeybadger,
   environment_name: "Development"
+
+# We don't actually want this to do anything (and it will fail if it tries due
+# to not having a Slack token), but having it here verifies that crone will
+# start up correctly:
+config :crone,
+  tasks: [
+    {"localhost", {
+       {:weekly, :sun, {12, :am}},
+       {:wocky_slack, :post_bot_report, ["wocky-reports", 7]}
+     }}
+   ]
