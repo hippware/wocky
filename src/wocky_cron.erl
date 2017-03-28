@@ -47,7 +47,7 @@ init([]) ->
 %%%===================================================================
 
 make_tasks() ->
-    {ok, Tasks} = application:get_env(crone, tasks),
+    Tasks = application:get_env(crone, tasks, []),
     lists:foldl(add_task(wocky_app:get_host(), _, _), [], Tasks).
 
 add_task(Host, {Host, Task}, Acc) ->
