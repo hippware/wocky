@@ -51,8 +51,6 @@
          remove_user/2,
          remove_user/3]).
 
--ignore_xref([check_password/3, check_password/5]).
-
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 

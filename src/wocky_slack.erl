@@ -6,8 +6,6 @@
 
 -export([post_weekly_bot_report/1]).
 
--ignore_xref([post_weekly_bot_report/1]).
-
 -define(slack_files, 'Elixir.Slackex.Files').
 
 -spec post_weekly_bot_report(binary()) -> map().

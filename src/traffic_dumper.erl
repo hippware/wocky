@@ -17,9 +17,6 @@
 -export([dump/3,
          dump/4]).
 
--ignore_xref([dump/3,
-              dump/4]).
-
 % All user's traffic
 dump(Handle, StartBin, DurationBin) ->
     dump(Handle, any, StartBin, DurationBin).

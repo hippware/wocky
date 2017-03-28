@@ -1,16 +1,7 @@
 defmodule Wocky.Ejabberd do
   @moduledoc false
 
-  use Exref, ignore: [
-    'MACRO-iq': 1, 'MACRO-iq': 2, 'MACRO-iq': 3,
-    'MACRO-jid': 1, 'MACRO-jid': 2, 'MACRO-jid': 3,
-    'MACRO-xmlel': 1, 'MACRO-xmlel': 2, 'MACRO-xmlel': 3,
-    'MACRO-xmlcdata': 1, 'MACRO-xmlcdata': 2, 'MACRO-xmlcdata': 3
-  ]
-
   import Record, only: [defrecord: 2, extract: 2]
-
-  require Record
 
   @type jid :: record(:jid, user: :ejabberd.user,
                             server: :ejabberd.server,

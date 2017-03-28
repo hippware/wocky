@@ -12,8 +12,6 @@
 -export([seed_table/2, seed_tables/2, seed_keyspace/2,
          seed_data/2, maybe_seed_s3_file/2, random_conversation_list/0]).
 
--ignore_xref([seed_table/2, seed_tables/2, seed_data/2, maybe_seed_s3_file/2]).
-
 -ifdef(TEST).
 -export([archive_users/0, msg_xml_packet/1]).
 -endif.

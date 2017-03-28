@@ -1,7 +1,6 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Exref, ignore: [insert: 1, new: 1, new: 2, to_jid: 1]
   use Wocky.Ejabberd
 
   alias Wocky.Index

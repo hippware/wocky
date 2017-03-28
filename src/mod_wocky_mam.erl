@@ -84,8 +84,6 @@
          lookup_messages_hook/14
         ]).
 
--ignore_xref([lookup_messages_hook/14]).
-
 -type result_row() :: {non_neg_integer(), ejabberd:jid(), exml:element()}.
 
 %%%===================================================================

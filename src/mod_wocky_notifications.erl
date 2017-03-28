@@ -19,10 +19,6 @@
 %% IQ handler
 -export([handle_iq/3]).
 
--ignore_xref([user_send_packet_hook/3,
-              remove_user_hook/2,
-              handle_iq/3]).
-
 
 %%%===================================================================
 %%% gen_mod implementation

@@ -21,8 +21,6 @@
 
 -export([archive_message_hook/9]).
 
--ignore_xref([handle_iq/3]).
-
 -define(DEFAULT_MAX, 50).
 
 -define(INDEX, <<"conversation">>).

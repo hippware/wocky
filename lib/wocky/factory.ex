@@ -2,13 +2,6 @@ defmodule Wocky.Factory do
   @moduledoc false
 
   use ExMachina
-  use Exref, ignore: [
-    build: 1, build: 2, build_list: 2, build_list: 3, build_pair: 1,
-    build_pair: 2, create: 1, create: 2, create_pair: 2, create_list: 3,
-    factory: 1, insert: 1, insert: 2, insert_list: 2, insert_list: 3,
-    insert_pair: 1, insert_pair: 2, bot_factory: 0, location_factory: 0,
-    user_factory: 0
-  ]
   use Wocky.InsertStrategy
   use Wocky.Ejabberd
 

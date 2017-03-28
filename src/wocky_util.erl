@@ -41,12 +41,6 @@
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 
-% Not used externally right now, but we want it available:
--ignore_xref([safe_bin_to_integer/1, default_bin_to_integer/2,
-              intersection/2, intersection/3]).
-% Currently only used by tests:
--ignore_xref([iq_id/0, v1_uuid_order/2]).
-
 -type hook() :: {Hook :: atom(), Callback :: atom()}.
 
 %% @doc Register a set of hooks with ejabberd's hook system

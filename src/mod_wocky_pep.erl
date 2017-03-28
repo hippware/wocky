@@ -16,8 +16,6 @@
 
 -define(HANDLER_TABLE, mod_wocky_pep_handlers).
 
--ignore_xref([handle_iq/3]).
-
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
