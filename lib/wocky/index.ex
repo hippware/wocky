@@ -4,6 +4,7 @@ defmodule Wocky.Index do
   use ExActor.GenServer, export: :wocky_index
 
   require Logger
+  alias Wocky.GeoUtils
 
   defmodule State do
     @moduledoc false
@@ -44,9 +45,11 @@ defmodule Wocky.Index do
   end
 
   defcall geosearch(lat, lon), state: %State{bot_index: index} do
+    nlat = GeoUtils.normalize_degrees(lat)
+    nlon = GeoUtils.normalize_degrees(lon)
     {:ok, result} =
       Algolia.search(index, <<>>,
-                     %{aroundLatLng: "#{lat},#{lon}", getRankingInfo: true})
+                     %{aroundLatLng: "#{nlat},#{nlon}", getRankingInfo: true})
 
     bots = Enum.map(result["hits"], &object_to_bot/1)
     reply({:ok, bots})
