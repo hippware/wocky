@@ -119,7 +119,8 @@ handle_share(From, To, BotJID = #jid{lserver = Server}) ->
     Result = do([error_m ||
                  wocky_bot_util:check_access(Server, ID, From),
                  check_can_share_to(Server, ID, To),
-                 wocky_db_bot:add_share(From, To, BotJID)
+                 wocky_db_bot:add_share(From, To, BotJID),
+                 send_notification(From, To, BotJID)
                 ]),
     case Result of
         ok -> ok;
@@ -136,6 +137,10 @@ check_can_share_to(Server, ID, To) ->
                 false -> {error, cant_share}
             end
     end.
+
+send_notification(From, To, BotJID) ->
+    Body = <<"Bot share: <", (jid:to_binary(BotJID))/binary, ">">>,
+    wocky_notification_handler:notify_message(To, From, Body).
 
 %%%===================================================================
 %%% Access change notifications
