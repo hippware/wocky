@@ -120,7 +120,7 @@ handle_share(From, To, BotJID = #jid{lserver = Server}) ->
                  wocky_bot_util:check_access(Server, ID, From),
                  check_can_share_to(Server, ID, To),
                  wocky_db_bot:add_share(From, To, BotJID),
-                 send_notification(From, To, BotJID)
+                 send_notification(From, To)
                 ]),
     case Result of
         ok -> ok;
@@ -138,8 +138,12 @@ check_can_share_to(Server, ID, To) ->
             end
     end.
 
-send_notification(From, To, BotJID) ->
-    Body = <<"Bot share: <", (jid:to_binary(BotJID))/binary, ">">>,
+send_notification(#jid{luser = User, lserver = Server} = From, To) ->
+    Handle = case wocky_db_user:get_handle(User, Server) of
+                 not_found -> <<"Someone">>;
+                 H -> H
+             end,
+    Body = <<Handle/binary, " shared a bot with you!">>,
     wocky_notification_handler:notify_message(To, From, Body).
 
 %%%===================================================================
