@@ -193,7 +193,7 @@ defmodule Wocky.Mixfile do
         branch: "working",
         only: :test},
       {:crone,
-        github: "blt/crone",
+        github: "hippware/crone",
         branch: "master"},
       {:slackex,
         github: "hippware/slackex",

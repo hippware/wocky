@@ -35,3 +35,13 @@ config :lager,
 
 config :honeybadger,
   environment_name: "Development"
+
+# We don't actually want this to do anything, but having it here verifies that
+# crone will start up correctly
+config :crone,
+  tasks: [
+    {"localhost", {
+       {:weekly, :sun, {12, :am}},
+       {:wocky_slack, :post_bot_report, ["report-testing", 7]}
+     }}
+   ]
