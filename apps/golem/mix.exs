@@ -33,9 +33,24 @@ defmodule Golem.Mixfile do
   end
 
   def application do
-    # Specify extra applications you'll use from Erlang/Elixir
-    [extra_applications: [:logger],
-     mod: {Golem.Application, []}]
+    [
+      # Specify extra applications you'll use from Erlang/Elixir
+      extra_applications: [:logger],
+      mod: {Golem.Application, []},
+      env: [
+        reserved_handles: [
+          "root",
+          "admin",
+          "super",
+          "superuser",
+          "tinyrobot",
+          "hippware",
+          "www",
+          "support",
+          "null"
+        ]
+      ]
+    ]
   end
 
   defp deps do
@@ -43,6 +58,8 @@ defmodule Golem.Mixfile do
       {:ecto,       "~> 2.0"},
       {:mariaex,    "~> 0.8.1"},
       {:poolboy,    "~> 1.5"},
+      {:faker,      "~> 0.7.0"},
+      {:ex_machina, "~> 2.0"},
 
       {:lager,                "~> 3.2"},
       {:logger_lager_backend, "~> 0.0.2"},

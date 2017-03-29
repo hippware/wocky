@@ -103,18 +103,7 @@ defmodule Emet.Mixfile do
          us1:     'prod_wocky_bots'
        ],
        enable_bot_event_notifications: false,
-       enable_follow_me_updates: false,
-       reserved_handles: [
-         "root",
-         "admin",
-         "super",
-         "superuser",
-         "tinyrobot",
-         "hippware",
-         "www",
-         "support",
-         "null"
-       ]
+       enable_follow_me_updates: false
      ]]
   end
 
