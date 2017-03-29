@@ -12,8 +12,8 @@ defmodule Wocky.Factory do
   alias Faker.Lorem
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
+  alias Golem.ID
   alias Wocky.Bot
-  alias Wocky.ID
   alias Wocky.User
   alias Wocky.User.Location
 

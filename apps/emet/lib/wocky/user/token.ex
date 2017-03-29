@@ -1,9 +1,9 @@
 defmodule Wocky.User.Token do
   @moduledoc "Handles generation and validation of use authentication tokens."
 
+  alias Golem.Timestamp
   alias Wocky.Repo
   alias Wocky.Repo.Doc
-  alias Wocky.Timestamp
   alias Wocky.User
 
   @type t :: binary

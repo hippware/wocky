@@ -5,8 +5,8 @@ defmodule Wocky.User do
 
   import OK, only: ["~>>": 2]
 
+  alias Golem.ID
   alias Wocky.Bot
-  alias Wocky.ID
   alias Wocky.Index
   alias Wocky.Repo
   alias Wocky.Repo.Doc

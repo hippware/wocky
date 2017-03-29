@@ -1,7 +1,7 @@
 defmodule EjabberdAuthWockySpec do
   use ESpec, async: true
 
-  alias Wocky.ID
+  alias Golem.ID
   alias Wocky.User.Token
   alias :ejabberd_auth_wocky, as: Auth
 

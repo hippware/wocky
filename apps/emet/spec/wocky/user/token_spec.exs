@@ -1,7 +1,7 @@
 defmodule Wocky.User.TokenSpec do
   use ESpec, async: true
 
-  alias Wocky.ID
+  alias Golem.ID
   alias Wocky.Repo
   alias Wocky.User.Token
 

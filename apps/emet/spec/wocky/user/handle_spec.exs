@@ -2,7 +2,7 @@ defmodule Wocky.User.HandleSpec do
   use ESpec, async: true
 
   alias Faker.Internet
-  alias Wocky.ID
+  alias Golem.ID
   alias Wocky.User
   alias Wocky.User.Handle
 

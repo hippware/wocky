@@ -2,7 +2,7 @@ defmodule Wocky.ConversationSpec do
   use ESpec, async: true
   use Wocky.Ejabberd
 
-  alias Wocky.ID
+  alias Golem.ID
   alias Wocky.Conversation
 
   before do
