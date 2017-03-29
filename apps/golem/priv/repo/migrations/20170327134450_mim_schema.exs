@@ -20,7 +20,7 @@ defmodule Golem.Repo.Migrations.MIMSchema do
     CREATE TABLE last (\
     username varchar(250) PRIMARY KEY, \
     seconds int NOT NULL, \
-    state text NOT NULl\
+    state text NOT NULL\
     ) CHARACTER SET utf8;\
     """
     execute "CREATE INDEX i_last_seconds ON last(seconds);"
@@ -182,6 +182,7 @@ defmodule Golem.Repo.Migrations.MIMSchema do
     drop table(:roster_version)
     drop table(:offline_message)
     drop table(:privacy_default_list)
+    drop table(:privacy_list_data)
     drop table(:privacy_list)
     drop table(:private_storage)
     drop table(:mam_message)
