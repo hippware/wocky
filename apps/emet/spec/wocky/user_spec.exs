@@ -10,7 +10,7 @@ defmodule Wocky.UserSpec do
   before do
     id = ID.new
     external_id = ID.new
-    :ok = User.update(id, shared.server, %{external_id: external_id})
+    :ok = User.insert(id, shared.server, %{external_id: external_id})
     {:ok, id: id, external_id: external_id}
   end
 

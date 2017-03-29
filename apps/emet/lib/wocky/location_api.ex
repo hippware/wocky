@@ -155,10 +155,18 @@ defmodule Wocky.LocationApi do
   @spec from_json(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}
   def from_json(req, %State{user: user, coords: coords} = state) do
-    location = {coords.latitude, coords.longitude, coords.accuracy}
-    user = User.to_jid(%User{user | resource: state.resource})
+    location = %Location{
+      lat: coords.latitude,
+      lon: coords.longitude,
+      accuracy: coords.accuracy
+    }
+    user = %User{user | resource: state.resource}
 
-    :ok = Location.user_location_changed(user, location)
+    :ok =
+      user
+      |> User.set_location(location)
+      |> User.update
+
     {true, req, state}
   end
 end

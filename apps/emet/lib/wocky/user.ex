@@ -10,6 +10,8 @@ defmodule Wocky.User do
   alias Wocky.Index
   alias Wocky.Repo
   alias Wocky.Repo.Doc
+  alias Wocky.User.Avatar
+  alias Wocky.User.Handle
   alias Wocky.User.Location
   alias Wocky.User.Token
   alias __MODULE__, as: User
@@ -25,42 +27,41 @@ defmodule Wocky.User do
     :last_name,
     :email,
     :external_id,
-    :phone_number
+    :phone_number,
+    :location
   ]
-
-  @type t :: %User{
-    id:             binary,
-    server:         binary,
-    resource:       nil | binary,
-    handle:         nil | binary,
-    avatar:         nil | binary,
-    first_name:     nil | binary,
-    last_name:      nil | binary,
-    email:          nil | binary,
-    external_id:    nil | binary,
-    phone_number:   nil | binary
-  }
 
   @type id           :: binary
   @type server       :: binary
   @type resource     :: binary
-  @type handle       :: binary
   @type external_id  :: binary
   @type phone_number :: binary
-  @type password     :: binary
   @type search_key   :: :external_id | :phone_number | :handle
 
-  @bucket_type "users"
+  @type t :: %User{
+    id:             id,
+    server:         server,
+    resource:       nil | resource,
+    handle:         nil | Handle.t,
+    avatar:         nil | Avatar.url,
+    first_name:     nil | binary,
+    last_name:      nil | binary,
+    email:          nil | binary,
+    external_id:    nil | external_id,
+    phone_number:   nil | phone_number,
+    location:       nil | map
+  }
 
-  # ====================================================================
-  # API
-  # ====================================================================
+  @bucket_type "users"
 
   @doc "Create a user object"
   @spec new(id, server, map | list) :: t
   def new(id, server, data \\ %{}) do
     struct(%User{id: id, server: server}, data)
   end
+
+  # ====================================================================
+  # Persistence API
 
   @doc """
   Creates or updates a user based on the external authentication ID and
@@ -91,6 +92,33 @@ defmodule Wocky.User do
                                 sleep_time, retries)
   end
 
+  @spec insert(t) :: :ok
+  def insert(%User{id: id, server: server} = user) do
+    insert(id, server, Map.from_struct(user))
+  end
+
+  @spec insert(id, server, map) :: :ok
+  def insert(id, server, fields) do
+    fields
+    |> Enum.filter(&filter_map/1)
+    |> Enum.into(%{id: id, server: server})
+    |> do_insert_user()
+    |> do_update_index()
+  end
+
+  defp filter_map({:resource, _}), do: false
+  defp filter_map({_, nil}), do: false
+  defp filter_map(_), do: true
+
+  defp do_insert_user(%{id: id, server: server} = fields) do
+    :ok = Repo.update(fields, @bucket_type, server, id)
+    fields
+  end
+
+  defp do_update_index(%{id: id} = fields) do
+    :ok = Index.user_updated(id, fields)
+  end
+
   @spec update(t) :: :ok | {:error, term}
   def update(%User{id: id, server: server} = user) do
     update(id, server, Map.from_struct(user))
@@ -102,101 +130,27 @@ defmodule Wocky.User do
   """
   @spec update(id, server, map) :: :ok | {:error, term}
   def update(id, server, fields) do
-    old_user = maybe_lookup_user(id, server, fields)
+    new_handle = fields[:handle]
+    new_avatar = fields[:avatar]
 
     fields
-    |>  Enum.filter(&filter_map/1)
-    |>  Enum.into(%{id: id, server: server})
-    |>  check_reserved_handle()
-    ~>> check_duplicate_handle(old_user.handle)
-    ~>> prepare_avatar()
-    ~>> delete_existing_avatar(old_user.avatar)
-    ~>> do_update_user()
+    |>  prepare_user(id, server)
+    |>  set_handle(new_handle)
+    ~>> set_avatar(new_avatar)
+    ~>> insert
   end
 
-  defp maybe_lookup_user(id, server, fields)
-  do
-    if fields[:avatar] || fields[:handle] do
-      find(id, server) || new(id, server)
+  defp prepare_user(fields, id, server) do
+    old_user = if fields[:avatar] || fields[:handle] do
+      find(id, server)
+    end
+
+    new_user = new(id, server, fields)
+    if old_user do
+      %User{new_user | avatar: old_user.avatar, handle: old_user.handle}
     else
-      new(id, server)
+      new_user
     end
-  end
-
-  defp filter_map({:resource, _}), do: false
-  defp filter_map({_, nil}), do: false
-  defp filter_map(_), do: true
-
-  defp check_reserved_handle(%{handle: handle} = fields)
-  when not is_nil(handle)
-  do
-    reserved = Application.get_env(:wocky, :reserved_handles, [])
-    if Enum.member?(reserved, String.downcase(handle)) do
-      {:error, :duplicate_handle}
-    else
-      {:ok, fields}
-    end
-  end
-  defp check_reserved_handle(fields), do: {:ok, fields}
-
-  # WARNING: There is plenty of room for a race condition here
-  # FIXME: We need a better/more reliable way to detect multiple handles
-  defp check_duplicate_handle(%{handle: handle} = fields, old_handle)
-  when not is_nil(handle) and handle != old_handle
-  do
-    case search(:handle, handle) do
-      [] -> {:ok, fields}
-      _ -> {:error, :duplicate_handle}
-    end
-  end
-  defp check_duplicate_handle(fields, _), do: {:ok, fields}
-
-  defp prepare_avatar(%{avatar: avatar} = fields)
-  when not is_nil(avatar)
-  do
-    result =
-      :tros.parse_url(avatar)
-      ~>> check_file_is_local(fields.server)
-      ~>> check_avatar_owner(fields.id)
-
-    case result do
-      :ok -> {:ok, fields}
-      error -> error
-    end
-  end
-  defp prepare_avatar(fields), do: {:ok, fields}
-
-  defp check_file_is_local({server, _} = data, server), do: {:ok, data}
-  defp check_file_is_local(_, _), do: {:error, :not_local_file}
-
-  defp check_avatar_owner({server, id}, user_id) do
-    case :tros.get_metadata(server, id) ~>> :tros.get_owner do
-      {:ok, ^user_id} -> :ok
-      {:ok, _} -> {:error, :not_file_owner}
-      error -> error
-    end
-  end
-
-  defp delete_existing_avatar(%{avatar: new_avatar} = fields, old_avatar)
-  when not is_nil(new_avatar)
-    and not is_nil(old_avatar)
-    and new_avatar != old_avatar
-  do
-    case :tros.parse_url(old_avatar) do
-      {:ok, {file_server, file_id}} ->
-        :tros.delete(file_server, file_id)
-
-      {:error, _} -> :ok
-    end
-
-    {:ok, fields}
-  end
-  defp delete_existing_avatar(data, _), do: {:ok, data}
-
-  defp do_update_user(%{id: id, server: server} = fields) do
-    :ok = Repo.update(fields, @bucket_type, server, id)
-    :ok = Index.user_updated(id, fields)
-    :ok
   end
 
   @doc "Removes the user from the database"
@@ -227,6 +181,72 @@ defmodule Wocky.User do
     |> Repo.search("#{field}_register:\"#{value}\"")
     |> Enum.map(&Doc.to_map/1)
     |> Enum.map(fn data -> new(data[:id], data[:server], data) end)
+  end
+
+  # ====================================================================
+  # Convenience API
+
+  @spec get_handle(t | nil) :: Handle.t
+  def get_handle(user) do
+    case user && user.handle do
+      nil -> ""
+      handle -> handle
+    end
+  end
+
+  @doc """
+  Sets the handle member on the passed in user struct if the handle passes
+  all validations. The new handle must be unique and not one of the reserved
+  handles.
+  """
+  @spec set_handle(t, Handle.t) :: {:ok, t} | {:error, :duplicate_handle}
+  def set_handle(%User{handle: handle} = user, handle), do: {:ok, user}
+  def set_handle(user, nil), do: {:ok, user}
+  def set_handle(user, handle) do
+    Handle.check_reserved(handle)
+    ~>> Handle.check_duplicate
+    ~>> do_set_handle(user)
+  end
+
+  defp do_set_handle(handle, user) do
+    {:ok, %User{user | handle: handle}}
+  end
+
+  @spec get_avatar(t | nil) :: binary | nil
+  def get_avatar(user) do
+    user && user.avatar
+  end
+
+  @spec set_avatar(t, binary) :: {:ok, t} | {:error, any}
+  def set_avatar(%User{avatar: avatar} = user, avatar), do: {:ok, user}
+  def set_avatar(user, nil), do: {:ok, user}
+  def set_avatar(user, avatar) do
+    Avatar.prepare(avatar)
+    ~>> Avatar.check_is_local(user.server)
+    ~>> Avatar.check_owner(user.id)
+    ~>> Avatar.delete_existing(user.avatar)
+    ~>> Avatar.to_url
+    ~>> do_set_avatar(user)
+  end
+
+  defp do_set_avatar(avatar, user) do
+    {:ok, %User{user | avatar: avatar}}
+  end
+
+  @spec get_location(t | nil) :: Location.t | nil
+  def get_location(user) do
+    user && user.location
+  end
+
+  @spec set_location(t, Location.t) :: {:ok, t}
+  def set_location(user, location) do
+    do_set_location(user, location)
+    ~>> Location.check_for_bot_events(location)
+    ~>> Location.update_bot_locations(location)
+  end
+
+  defp do_set_location(user, location) do
+    %User{user | location: Map.from_struct(location)}
   end
 
   # =========================================================================
@@ -260,14 +280,6 @@ defmodule Wocky.User do
   def from_jid(jid) do
     jid(user: user, server: server, resource: resource) = jid
     from_jid(user, server, resource)
-  end
-
-  @spec set_location(t, Location.t) :: t
-  def set_location(user, location) do
-    :ok = :wocky_db_user.set_location(user.id, user.server, user.resource,
-                                      location.lat, location.lon,
-                                      location.accuracy)
-    user
   end
 
   @spec get_subscribed_bots(t) :: [Ejabberd.jid]

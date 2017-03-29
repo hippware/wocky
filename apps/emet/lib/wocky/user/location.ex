@@ -24,43 +24,34 @@ defmodule Wocky.User.Location do
 
   @type location_tuple :: {float, float, float}
 
-  @doc """
-  Process a location change event for a user. The processing happens
-  asynchronously by default and the function always returns `:ok`.
-  """
-  @spec user_location_changed(Ejabberd.jid, location_tuple, boolean) :: :ok
-  def user_location_changed(jid, {lat, lon, accuracy}, async \\ true) do
-    location = %Location{lat: lat, lon: lon, accuracy: accuracy}
-    user = User.from_jid(jid)
-
-    do_user_location_changed(user, location, async)
-  end
-
-  defp do_user_location_changed(user, location, true) do
-    {:ok, _} = Task.start(fn () -> check_for_bot_events(user, location) end)
-    {:ok, _} = Task.start(fn () -> update_bot_locations(user, location) end)
-    :ok
-  end
-  defp do_user_location_changed(user, location, false) do
-    check_for_bot_events(user, location)
-    update_bot_locations(user, location)
-    :ok
-  end
-
-  defp check_for_bot_events(user, location) do
-    user
-    |> User.set_location(location)
-    |> User.get_subscribed_bots
-    |> Enum.map(&:wocky_bot_util.get_id_from_jid(&1))
-    |> bots_with_events(user, location)
-    |> Enum.each(&trigger_bot_notification(user, &1))
-  end
-
-  defp update_bot_locations(user, location) do
-    if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
+  @doc ""
+  @spec check_for_bot_events(User.t, t) :: {:ok, User.t}
+  def check_for_bot_events(user, location) do
+    maybe_do_async fn ->
       user
-      |> owned_bots_with_follow_me
-      |> Enum.each(&Bot.set_location(&1, location))
+      |> User.get_subscribed_bots
+      |> Enum.map(&:wocky_bot_util.get_id_from_jid(&1))
+      |> bots_with_events(user, location)
+      |> Enum.each(&trigger_bot_notification(user, &1))
+    end
+  end
+
+  @doc ""
+  @spec update_bot_locations(User.t, t) :: {:ok, User.t}
+  def update_bot_locations(user, location) do
+    if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
+      maybe_do_async fn ->
+        user
+        |> owned_bots_with_follow_me
+        |> Enum.each(&Bot.set_location(&1, location))
+      end
+    end
+  end
+
+  defp maybe_do_async(fun) do
+    {:ok, pid} = Task.start(fun)
+    unless Application.fetch_env!(:wocky, :async_location_processing) do
+      Task.await(pid)
     end
   end
 

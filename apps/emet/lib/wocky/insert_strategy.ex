@@ -3,15 +3,9 @@ defmodule Wocky.InsertStrategy do
 
   use ExMachina.Strategy, function_name: :insert
 
-  alias Wocky.User
-
   @typep record :: %{__struct__: atom}
 
   @spec handle_insert(record, any) :: record | none
-  def handle_insert(%User{} = record, _opts) do
-    :ok = User.update(record)
-    record
-  end
   def handle_insert(%{__struct__: module} = record, opts) do
     exports = module.__info__(:functions)
     case Keyword.get(exports, :insert) do
@@ -21,7 +15,6 @@ defmodule Wocky.InsertStrategy do
     end
     record
   end
-
   def handle_insert(_record, _opts) do
     raise ArgumentError
   end
