@@ -43,4 +43,11 @@ init([]) ->
                      type     => worker,
                      modules  => [wocky_bot_expiry_mon]},
 
-    {ok, {SupFlags, [UserIdx, BotExpiryMon]}}.
+    Cron = #{id       => wocky_cron,
+             start    => {wocky_cron, start_link, []},
+             restart  => permanent,
+             shutdown => 5000,
+             type     => supervisor
+            },
+
+    {ok, {SupFlags, [UserIdx, BotExpiryMon, Cron]}}.

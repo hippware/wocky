@@ -4,22 +4,22 @@
 %%%
 -module(wocky_slack).
 
--export([post_weekly_bot_report/1]).
+-export([post_bot_report/2]).
 
--ignore_xref([post_weekly_bot_report/1]).
+-ignore_xref([post_bot_report/2]).
 
 -define(slack_files, 'Elixir.Slackex.Files').
 
--spec post_weekly_bot_report(binary()) -> map().
-post_weekly_bot_report(Channel) ->
+-spec post_bot_report(binary(), non_neg_integer()) -> map().
+post_bot_report(Channel, Days) ->
     Token = wocky_app:get_config(slack_token),
-    Report = wocky_report:generate_bot_report(7),
+    Report = wocky_report:generate_bot_report(Days),
     Server = wocky_app:server(),
-    ?slack_files:upload(nil, #{content  => iolist_to_binary(Report),
-                               token    => list_to_binary(Token),
-                               filename => <<"weekly_bot_report",
-                                             Server/binary, ".csv">>,
-                               title    => <<"Weekly Bot Report for ",
-                                             Server/binary>>,
-                               filetype => <<"csv">>,
-                               channels => Channel}).
+    ?slack_files:upload(#{content  => iolist_to_binary(Report),
+                          token    => list_to_binary(Token),
+                          filename => <<"weekly_bot_report",
+                                        Server/binary, ".csv">>,
+                          title    => <<"Weekly Bot Report for ",
+                                        Server/binary>>,
+                          filetype => <<"csv">>,
+                          channels => Channel}).

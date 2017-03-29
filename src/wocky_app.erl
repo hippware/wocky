@@ -10,7 +10,8 @@
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0, ensure_loaded/1,
          server/0, is_testing/0,
-         get_config/1, get_config/2]).
+         get_config/1, get_config/2,
+         get_host/0]).
 
 -ignore_xref([start/0, start/1, stop/0,
               ensure_loaded/1, get_config/1]).
@@ -66,8 +67,7 @@ get_config(Key) ->
 get_config(Key, Default) ->
     try
         %% Try pulling the config from ejabberd
-        Host = hd(ejabberd_config:get_global_option(hosts)),
-        case ejabberd_config:get_local_option(Key, Host) of
+        case ejabberd_config:get_local_option(Key, get_host()) of
             undefined -> default_config(Key, Default);
             Value -> Value
         end
@@ -75,6 +75,8 @@ get_config(Key, Default) ->
         _:_ -> default_config(Key, Default)
     end.
 
+get_host() ->
+    hd(ejabberd_config:get_global_option(hosts)).
 
 %%%===================================================================
 %%% Application callbacks
