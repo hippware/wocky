@@ -63,7 +63,9 @@
          node_el/2,
          node_el/3,
          cdata_el/2,
-         hs_query_el/1
+         hs_query_el/1,
+
+         set_notifications/2
         ]).
 
 ensure_wocky_is_running() ->
@@ -491,3 +493,17 @@ get_hs_stanza(ID) when is_binary(ID) ->
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [#xmlel{name = <<"item">>,
                                                  attrs = [{<<"id">>, ID}]}]}).
+
+set_notifications(Enabled, Client) ->
+    Stanza = notifications_stanza(Enabled, Client),
+    expect_iq_success(Stanza, Client).
+
+notifications_stanza(true, Client) ->
+    #jid{lresource = Resource} = jid:from_binary(
+                                   escalus_client:full_jid(Client)),
+    iq_set(?NS_NOTIFICATIONS,
+           #xmlel{name = <<"enable">>,
+                  attrs = [{<<"device">>, Resource},
+                           {<<"platform">>, <<"escalus">>}]});
+notifications_stanza(false, _Client) ->
+    iq_set(?NS_NOTIFICATIONS, #xmlel{name = <<"disable">>}).

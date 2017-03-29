@@ -8,13 +8,15 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 
--export([enable/3, disable/1, delete/2,
+-export([set_handler/1, enable/3, disable/1, delete/2,
          notify_message/3, notify_bot_event/4]).
 
 
 %%%===================================================================
 %%% Behaviour definition
 %%%===================================================================
+
+-callback init() -> ok.
 
 -callback register(User :: binary(),
                    Platform :: binary(),
@@ -34,6 +36,11 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+-spec set_handler(module()) -> ok.
+set_handler(Module) ->
+    application:set_env(wocky, notification_handler, Module),
+    (handler()):init().
 
 -spec enable(ejabberd:jid(), binary(), binary()) ->
     ok | {error, any()}.
@@ -139,7 +146,7 @@ do_notify_all([Endpoint | Rest], JID, Message) ->
         ok -> do_notify_all(Rest, JID, Message)
     end.
 
-do_notify_message(Endpoint, #jid{user = User, server = Server}, Message) ->
+do_notify_message(Endpoint, #jid{luser = User, lserver = Server}, Message) ->
     From = wocky_db:select_one(shared, user, handle,
                                #{user => User, server => Server}),
     ok = lager:debug("Sending notification for message from ~s with body '~s'",

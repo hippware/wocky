@@ -8,6 +8,14 @@ defmodule Wocky.Notification.NullHandler do
 
   @behaviour :wocky_notification_handler
 
+  @spec init() :: :ok
+  def init() do
+    :ok = Logger.info("""
+      Initialising null Wocky notification handler
+      """)
+    :ok
+  end
+
   @spec register(binary, binary, binary) :: {:ok, binary}
   def register(user, platform, device) do
     :ok = Logger.info("""
