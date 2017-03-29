@@ -97,7 +97,6 @@ defmodule Wocky.Mixfile do
        ],
        enable_bot_event_notifications: false,
        enable_follow_me_updates: false,
-       notification_handler: Wocky.Notification.NullHandler,
        reserved_handles: [
          "root",
          "admin",

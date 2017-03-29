@@ -17,6 +17,8 @@
 
 -export([set_visibility/3]).
 
+-define(notification_handler, 'Elixir.Wocky.Notification.TestHandler').
+
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
                       get_hs_stanza/0, bot_node/1,
@@ -25,7 +27,7 @@
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
                       ensure_all_clean/1, hs_query_el/1, hs_node/1,
-                      add_to_s/2
+                      add_to_s/2, set_notifications/2
                      ]).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
@@ -987,12 +989,16 @@ share(Config) ->
         [] = wocky_db:select(shared, bot_share, all, #{bot => ?BOT_B_JID}),
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
 
+        set_notifications(true, Tim),
+
         %% Alice can't share to Tim because he's not a friend
         escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
         escalus:assert(is_error, [<<"cancel">>, <<"not-allowed">>],
                        escalus:wait_for_stanza(Alice)),
 
         [] = wocky_db:select(shared, bot_share, all, #{bot => ?BOT_B_JID}),
+
+        [] = ?notification_handler:get_notifications(),
 
         %% Make Tim a friend
         test_helper:add_contact(Alice, Tim, <<"blah">>, <<"He's okay">>),
@@ -1007,6 +1013,8 @@ share(Config) ->
         [#{to_jid   := ExpectedTo,
            from_jid := ExpectedFrom}] = wocky_db:select(shared, bot_share, all,
                                                         #{bot => ?BOT_B_JID}),
+
+        1 = length(?notification_handler:get_notifications()),
 
         test_helper:ensure_all_clean([Alice, Tim])
       end).
