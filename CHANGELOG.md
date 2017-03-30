@@ -16,6 +16,7 @@ If there are not many items, just list them sequentially.
   * Upgrade: slackex (Change file upload to use POST)
   * Upgrade: crone
   * Fixes: mod_wocky_cron startup error prevents ejabberd from starting (#555)
+* Bot share notifications to generate push notifications (#590)
 
 
 # 17.03.21+1676.6dfc479
