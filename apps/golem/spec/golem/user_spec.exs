@@ -8,7 +8,7 @@ defmodule Golem.UserSpec do
   alias Golem.ID
   alias Golem.Repo
   alias Golem.User
-  # alias Golem.User.Token
+  alias Golem.User.Token
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
@@ -377,7 +377,7 @@ defmodule Golem.UserSpec do
 
   describe "delete/1" do
     before do
-      # {:ok, _} = Token.assign(shared.id, ID.new)
+      {:ok, _} = Token.assign(shared.id, ID.new)
       result = User.delete(shared.id)
       {:ok, result: result}
     end
@@ -390,10 +390,10 @@ defmodule Golem.UserSpec do
       User |> Repo.get(shared.id) |> should(be_nil())
     end
 
-    xit "should remove any tokens associated with the user" do
-      # shared.id
-      # |> Token.get_tokens(shared.server)
-      # |> should(be_empty())
+    it "should remove any tokens associated with the user" do
+      shared.id
+      |> Token.get_tokens
+      |> should(be_empty())
     end
 
     it "should remove any location data associated with the user"

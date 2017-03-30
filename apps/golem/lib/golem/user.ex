@@ -9,10 +9,10 @@ defmodule Golem.User do
   alias Golem.ID
   # alias Golem.Index
   alias Golem.Repo
-  # alias Golem.User.Token
+  alias Golem.User.Token
   alias __MODULE__, as: User
 
-  @primary_key {:id, :binary_id, autogenerate: true}
+  @primary_key {:id, :binary_id, autogenerate: false}
   schema "users" do
     field :username,     :string # User ID (userpart of JID)
     field :server,       :string # User Server (domainpart of JID)
@@ -29,7 +29,7 @@ defmodule Golem.User do
 
     timestamps()
 
-    # has_many :tokens, Token
+    has_many :tokens, Token
   end
 
   @type id           :: binary
@@ -131,8 +131,6 @@ defmodule Golem.User do
   @spec delete(username) :: :ok | no_return
   def delete(username) do
     Repo.delete_all(username_query(username))
-    # TODO: Migrate Token to Golem
-    # :ok = Token.release_all(username)
     # TODO: Migrate Index to Golem
     # :ok = Index.user_removed(username)
     :ok
