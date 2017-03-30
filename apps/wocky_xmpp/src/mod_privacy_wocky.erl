@@ -30,7 +30,7 @@
 
 -spec init(ejabberd:lserver(), [term()]) -> ok.
 init(Host, Opts) ->
-    mod_privacy_riak:init(Host, Opts).
+    mod_privacy_odbc:init(Host, Opts).
 
 -spec get_default_list(ejabberd:luser(), ejabberd:lserver()) ->
     {ok, {mod_privacy:list_name(), [mod_privacy:list_item()]}}.
@@ -40,7 +40,7 @@ get_default_list(LUser, LServer) ->
 -spec get_list_names(ejabberd:luser(), ejabberd:lserver()) ->
     {ok, {mod_privacy:list_name(), [mod_privacy:list_name()]}}.
 get_list_names(LUser, LServer) ->
-    {ok, {_Default, List}} = mod_privacy_riak:get_list_names(LUser, LServer),
+    {ok, {_Default, List}} = mod_privacy_odbc:get_list_names(LUser, LServer),
     {ok, {?DEFAULT_LIST, [?DEFAULT_LIST | List]}}.
 
 -spec get_privacy_list(ejabberd:luser(),
@@ -50,7 +50,7 @@ get_list_names(LUser, LServer) ->
 get_privacy_list(LUser, LServer, ?DEFAULT_LIST) ->
     {ok, default_list_items(LUser, LServer)};
 get_privacy_list(LUser, LServer, Name) ->
-    mod_privacy_riak:get_privacy_list(LUser, LServer, Name).
+    mod_privacy_odbc:get_privacy_list(LUser, LServer, Name).
 
 -spec forget_default_list(ejabberd:luser(), ejabberd:lserver()) ->
     {error, not_found}.
@@ -73,7 +73,7 @@ set_default_list(_LUser, _LServer, _Name) ->
 remove_privacy_list(_LUser, _LServer, ?DEFAULT_LIST) ->
     {error, conflict};
 remove_privacy_list(LUser, LServer, Name) ->
-    mod_privacy_riak:remove_privacy_list(LUser, LServer, Name).
+    mod_privacy_odbc:remove_privacy_list(LUser, LServer, Name).
 
 -spec replace_privacy_list(ejabberd:luser(),
                            ejabberd:lserver(),
@@ -83,11 +83,11 @@ remove_privacy_list(LUser, LServer, Name) ->
 replace_privacy_list(_LUser, _LServer, ?DEFAULT_LIST, _Items) ->
     {error, not_allowed};
 replace_privacy_list(LUser, LServer, Name, Items) ->
-    mod_privacy_riak:replace_privacy_list(LUser, LServer, Name, Items).
+    mod_privacy_odbc:replace_privacy_list(LUser, LServer, Name, Items).
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    mod_privacy_riak:remove_user(LUser, LServer).
+    mod_privacy_odbc:remove_user(LUser, LServer).
 
 %%====================================================================
 %% Helpers
