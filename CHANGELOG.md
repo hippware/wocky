@@ -10,6 +10,10 @@ If there are not many items, just list them sequentially.
 
 * Add reindex CLI command
 * Normalise latitude, longitude values before passing to Algolia. (#589)
+* Fix up weekly bot reports
+  * Upgrade: slackex (Change file upload to use POST)
+  * Upgrade: crone
+  * Fixes: mod_wocky_cron startup error prevents ejabberd from starting (#555)
 
 
 # 17.03.21+1676.6dfc479
