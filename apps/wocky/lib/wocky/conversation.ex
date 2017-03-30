@@ -1,69 +1,56 @@
 defmodule Wocky.Conversation do
   @moduledoc ""
 
+  use Wocky.Repo.Model
+
+  import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
+
   alias Wocky.Repo
+
   alias __MODULE__, as: Conversation
+
+  @primary_key false
+  schema "conversations" do
+    field :server,    :string
+    field :user,      :string, primary_key: true
+    field :other_jid, :string, primary_key: true
+    field :message,   :binary
+    field :outgoing,  :boolean
+
+    timestamps()
+  end
 
   @type id :: :mod_mam.message_id()
 
   @type t :: %Conversation{
-    id:        id,
-    server:    nil | binary,
-    user:      nil | binary,
-    other_jid: nil | binary,
-    time:      nil | non_neg_integer,
-    message:   nil | binary,
-    outgoing:  nil | boolean
+    server:     binary,
+    user:       binary,
+    other_jid:  binary,
+    message:    binary,
+    outgoing:   boolean,
+    created_at: DateTime::t,
+    updated_at: DateTime::t
   }
 
-  defstruct [
-    :id,
-    :server,
-    :user,
-    :other_jid,
-    :time,
-    :message,
-    :outgoing
-  ]
+  @change_fields [:server, :user, :other_jid, :message, :outgoing]
 
-  @doc "Create a conversation object"
-  @spec new(id, binary, binary, binary, integer, binary, boolean) :: t
-  def new(id, server, user, other_jid, time, message, outgoing) do
-    %Conversation{id: id,
-                  server: server,
-                  user: user,
-                  other_jid: other_jid,
-                  time: time,
-                  message: message,
-                  outgoing: outgoing}
-    |> struct()
-  end
-
-  defp new(data) do
-    %Conversation{}
-    |> struct(data)
-    |> Map.update!(:id, &String.to_integer/1)
-    |> Map.update!(:time, &String.to_integer/1)
-    |> Map.update!(:outgoing, &String.to_existing_atom/1)
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, @change_fields)
   end
 
   @doc "Write a conversation record to the database"
-  @spec put(t) :: :ok | {:error, term}
-  def put(%Conversation{server: server} = conv) do
-    conv |>
-    Map.from_struct |>
-    Repo.update("conversations", server, key(conv))
+  @spec put(t) :: :ok
+  def put(conversation) do
+    conversation
+    |> changeset
+    |> Repo.insert(on_conflict: :replace_all)
+    :ok
   end
 
+  @spec find(binary) :: [t]
   def find(user) do
-    "conversations"
-    |> Repo.search("user_register:\"#{user}\"")
-    |> Enum.map(&Wocky.Repo.Doc.to_map/1)
-    |> Enum.map(fn data -> new(data) end)
+    Repo.all(from c in Conversation, where: c.user == ^user)
   end
-
-  defp key(%Conversation{user: user, other_jid: other_jid}) do
-    user <> "/" <> other_jid
-  end
-
 end

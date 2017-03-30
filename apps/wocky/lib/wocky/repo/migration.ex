@@ -13,6 +13,6 @@ defmodule Wocky.Repo.Migration do
   end
 
   def timestamps do
-    Migration.timestamps(inserted_at: :created_at, type: :utc_datetime)
+    Migration.timestamps(inserted_at: :created_at, type: :utc_datetime, size: 6)
   end
 end
