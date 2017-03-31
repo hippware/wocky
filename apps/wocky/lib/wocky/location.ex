@@ -2,6 +2,7 @@ defmodule Wocky.User.Location do
   @moduledoc "Interface for user location processing."
 
   alias Wocky.Bot
+  alias Wocky.Repo.Timestamp
   alias Wocky.User
   alias __MODULE__, as: Location
 
@@ -224,7 +225,7 @@ defmodule Wocky.User.Location do
   end
 
   defp following_me?(%Bot{follow_me: true, follow_me_expiry: expiry}) do
-    expiry > :wocky_db.now_to_timestamp(:os.timestamp)
+    !Timestamp.expired?(expiry)
   end
   defp following_me?(_), do: false
 end

@@ -117,10 +117,9 @@ defmodule Wocky.Token do
     |> Enum.any?(&check_token(token, &1))
   end
 
-  defp check_token(token, %Token{token: token} = t), do: !expired?(t.expires_at)
+  defp check_token(token, %Token{token: token} = t),
+    do: !Timestamp.expired?(t.expires_at)
   defp check_token(_, _), do: false
-
-  defp expired?(expiry), do: expiry < Timestamp.now
 
   @doc """
   Releases any token currently assigned to the specified user and resource.
