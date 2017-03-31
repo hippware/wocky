@@ -5,6 +5,7 @@ defmodule Wocky.Mixfile do
     [apps_path: "apps",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     preferred_cli_env: [release: :prod],
      deps: deps()]
   end
 

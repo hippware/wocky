@@ -2,30 +2,10 @@ use Mix.Config
 
 config :wocky,
   wocky_env: 'test',
-  keyspace_prefix: 'wocky_test_',
   location_api_port: 3000,
   enable_bot_event_notifications: true,
   enable_follow_me_updates: true,
   config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
-
-config :schemata,
-  cluster: [
-    username: 'cassandra',
-    password: 'cassandra',
-    seed_hosts: ['127.0.0.1'],
-    keyspaces: [
-      wocky_test_shared: [
-        strategy: :simple,
-        factor: 1,
-        clients: 10
-      ],
-      wocky_test_localhost: [
-        strategy: :simple,
-        factor: 1,
-        clients: 10
-      ]
-    ]
-  ]
 
 config :logger,
   level: :error

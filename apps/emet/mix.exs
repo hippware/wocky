@@ -14,20 +14,9 @@ defmodule Emet.Mixfile do
      build_embedded: false, # Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      erlc_options: erlc_options(Mix.env),
-     test_coverage: [output: "_build/#{Mix.env}/cover"],
      aliases: aliases(),
      deps: deps(),
-     preferred_cli_env: [release: :prod,
-                         espec:   :test,
-                         eunit:   :test,
-                         ct:      :test,
-                         'db.dump.test':     :test,
-                         'db.load.test':     :test,
-                         'db.reset.test':    :test,
-                         'db.migrate.test':  :test,
-                         'db.rollback.test': :test,
-                         'db.test_migrations': :test
-                       ],
+     preferred_cli_env: [eunit: :test, ct: :test],
      dialyzer: [
        plt_apps: [
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
@@ -42,7 +31,7 @@ defmodule Emet.Mixfile do
        plt_add_deps: true,
        flags: [
          "-Wunmatched_returns", "-Werror_handling", "-Wrace_conditions",
-         "-Wunderspecs", "-Wunknown"
+         "-Wunderspecs"
        ]
      ],
      elvis_config: elvis_config(),
@@ -85,13 +74,12 @@ defmodule Emet.Mixfile do
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :schemata, :ejabberd, :crone
+       :ejabberd, :crone
      ],
      mod: {:wocky_app, []},
      env: [
        wocky_inst: 'local',
        config_dir: 'etc',
-       keyspace_prefix: 'wocky_test_',
        location_api_port: 8080,
        enable_follow_me: false,
        algolia_user_index_name: [
@@ -114,7 +102,6 @@ defmodule Emet.Mixfile do
       {:meck,                 "~> 0.8.4", override: true, runtime: false},
       {:hackney,              "~> 1.6",   override: true},
       {:base16,               "~> 1.0",   override: true},
-      {:riak,                 "~> 1.1"},
       {:porcelain,            "~> 2.0"},
       {:algolia,              "~> 0.4.0"},
       {:geocalc,              "~> 0.5.3"},
@@ -128,7 +115,6 @@ defmodule Emet.Mixfile do
       {:binpp,                "~> 1.1"},
       {:sweet_xml,            "~> 0.6.5"},
       {:espec,                "~> 1.2",    only: :test},
-      {:dogma,                "~> 0.1",    only: :dev, runtime: false},
       {:credo,                "~> 0.6",    only: :dev, runtime: false},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:dialyxir,             "~> 0.4",    only: :dev, runtime: false},
@@ -136,7 +122,6 @@ defmodule Emet.Mixfile do
 
       {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},
       {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working"},
-      {:schemata,   github: "hippware/schemata",     branch: "master"},
       {:ex_machina, github: "thoughtbot/ex_machina", branch: "master"},
       {:ex_aws,
         github: "CargoSense/ex_aws",
@@ -250,12 +235,7 @@ defmodule Emet.Mixfile do
     [
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
-      lint: ["elvis", "credo", "dogma"],
-      'db.dump.test': "db.dump",
-      'db.load.test': "db.load",
-      'db.reset.test': "db.reset",
-      'db.migrate.test': "db.migrate",
-      'db.rollback.test': "db.rollback"
+      lint: ["elvis"]
     ]
   end
 

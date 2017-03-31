@@ -2,26 +2,9 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :wocky,
-  keyspace_prefix: 'wocky_'
-
 config :algolia,
   application_id: "HIE75ZR7Q7",
   api_key: "ALGOLIA_KEY"
-
-config :schemata,
-  drop_nulls: false
-
-config :pooler,
-  pools: [
-    [
-      name: :riaklocal1,
-      group: :riak,
-      max_count: 10,
-      init_count: 5,
-      start_mfa: { Riak.Connection, :start_link, [] }
-    ]
-  ]
 
 config :ejabberd,
   keep_lager_intact: true
@@ -40,10 +23,6 @@ config :mnesia,
 
 config :setup,
   verify_directories: :false
-
-config :porcelain,
-  driver: Porcelain.Driver.Basic,
-  goon_warn_if_missing: false
 
 config :logger,
   handle_otp_reports: false,
