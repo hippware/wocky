@@ -5,6 +5,7 @@ defmodule Wocky.Index do
 
   require Logger
   alias Wocky.GeoUtils
+  alias Wocky.User
 
   defmodule State do
     @moduledoc false
@@ -70,23 +71,23 @@ defmodule Wocky.Index do
   end
 
   defcall reindex(:users), state: %State{user_index: index} do
-    :shared
-    |> :wocky_db.select(:user, :all, %{})
+    User
+    |> Repo.all
     |> Enum.each(
-        fn (%{user: user_id} = user) ->
+        fn (%User{username: user_id} = user) ->
           update_index(index, user_id, user, @user_fields)
         end)
 
     reply(:ok)
   end
 
-  defcall reindex(:bots), state: %State{bot_index: index} do
-    :shared
-    |> :wocky_db.select(:bot, :all, %{})
-    |> Enum.each(
-        fn (%{id: bot_id} = bot) ->
-          update_index(index, bot_id, bot, @bot_fields)
-        end)
+  defcall reindex(:bots), state: %State{bot_index: _index} do
+    # Bot
+    # |> Repo.all
+    # |> Enum.each(
+    #     fn (%Bot{id: bot_id} = bot) ->
+    #       update_index(index, bot_id, bot, @bot_fields)
+    #     end)
 
     reply(:ok)
   end
@@ -149,7 +150,7 @@ defmodule Wocky.Index do
     |> with_geoloc
     |> Map.take(fields)
     |> Map.put(:objectID, id)
-    |> Enum.reject(fn {_k, v} -> v == :null end)
+    |> Enum.reject(fn {_k, v} -> v == nil end)
     |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
   end
 
