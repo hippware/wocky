@@ -12,10 +12,6 @@ defmodule Golem.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      test_coverage: [tool: Coverex.Task],
-     aliases: [
-       recompile: ["clean", "compile"],
-       reset: ["ecto.drop", "ecto.create", "ecto.migrate"]
-     ],
      preferred_cli_env: [
        espec: :test
      ],
@@ -29,6 +25,7 @@ defmodule Golem.Mixfile do
          :race_conditions
        ]
      ],
+     aliases: aliases(),
      deps: deps()]
   end
 
@@ -74,6 +71,15 @@ defmodule Golem.Mixfile do
       {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
       {:dialyxir,   "~> 0.4", only: :dev, runtime: false},
       {:reprise,    "~> 0.5", only: :dev}
+    ]
+  end
+
+  defp aliases do
+    [
+      "recompile": ["clean", "compile"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"]
     ]
   end
 end
