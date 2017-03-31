@@ -12,8 +12,8 @@ defmodule Wocky.Notification.AWSHandler do
 
   @message_limit 512
 
-  @spec init() :: :ok
-  def init(), do: :ok
+  @spec init :: :ok
+  def init, do: :ok
 
   @spec register(binary, binary, binary) :: {:ok, binary} | {:error, any}
   def register(user, _platform, device_id) do
