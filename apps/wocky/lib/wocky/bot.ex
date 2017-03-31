@@ -1,6 +1,8 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
+  use Wocky.JID
+
   alias Wocky.Index
   alias Wocky.User.Location
   alias __MODULE__, as: Bot
@@ -56,7 +58,7 @@ defmodule Wocky.Bot do
 
   @spec to_jid_string(Bot.t) :: binary
   def to_jid_string(bot) do
-    bot |> to_jid |> :jid.to_binary
+    bot |> to_jid |> JID.encode
   end
 
   @spec get(binary) :: nil | Bot.t

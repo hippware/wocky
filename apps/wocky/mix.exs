@@ -69,6 +69,7 @@ defmodule Wocky.Mixfile do
       {:poolboy,        "~> 1.5"},
       {:faker,          "~> 0.7.0"},
       {:ex_machina,     "~> 2.0"},
+      {:xmpp,           "~> 1.1"},
       {:ex_aws,         "~> 1.1"},
       {:sweet_xml,      "~> 0.6.5"},
       {:hackney,        "~> 1.7", override: true},
