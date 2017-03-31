@@ -1,0 +1,32 @@
+use Mix.Config
+
+config :wocky_xmpp,
+  wocky_env: 'prod'
+
+config :mnesia,
+  dir: 'data/mnesia'
+
+config :lager,
+  log_root: 'log'
+
+config :exometer,
+  mongooseim_report_interval: 300000, # 5 minutes
+  report: [
+    {:reporters, [
+      {:exometer_report_cloudwatch, [
+        {:access_key_id, 'CLOUDWATCH_KEY_ID'},
+        {:secret_access_key, 'CLOUDWATCH_SECRET_KEY'},
+        {:region, 'CLOUDWATCH_REGION'},
+        {:namespace, 'App/Wocky'},
+        {:dimensions, [{'InstanceId', 'CLOUDWATCH_INSTANCE'}]}
+      ]}
+    ]}
+  ]
+
+config :crone,
+  tasks: [
+    {"CRON_HOST", {
+      {:weekly, :sun, {12, :am}},
+      {:wocky_slack, :post_bot_report, ["wocky-reports", 7]}
+    }}
+   ]

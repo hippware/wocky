@@ -1,4 +1,4 @@
-defmodule Wocky.Mixfile do
+defmodule Wocky.Release.Mixfile do
   use Mix.Project
 
   def project do
