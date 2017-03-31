@@ -7,6 +7,8 @@ defmodule Wocky.Notification.TestHandler do
 
   @behaviour :wocky_notification_handler
 
+  use Exref, ignore: [get_notifications: 0]
+
   @spec init :: :ok
   def init do
     _ = if :ets.info(:test_handler_table) == :undefined do
