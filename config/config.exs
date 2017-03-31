@@ -9,6 +9,11 @@ use Mix.Config
 # back to each application for organization purposes.
 import_config "../apps/*/config/config.exs"
 
+# Configures Elixir's Logger
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
+
 config :distillery,
   no_warn_missing: [
     :distillery,
@@ -28,3 +33,7 @@ config :distillery,
     :parse_trans,
     :proper
   ]
+
+# Import environment specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "#{Mix.env}.exs"
