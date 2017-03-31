@@ -5,6 +5,7 @@ defmodule Wocky.User do
 
   import OK, only: ["~>>": 2]
 
+  alias Wocky.Device
   alias Wocky.Index
   alias Wocky.Repo.ID
   alias Wocky.Token
@@ -28,6 +29,7 @@ defmodule Wocky.User do
     timestamps()
 
     has_many :tokens, Token
+    has_many :devices, Device
   end
 
   @type id           :: binary

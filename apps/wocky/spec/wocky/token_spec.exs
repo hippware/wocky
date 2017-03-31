@@ -1,4 +1,4 @@
-defmodule Wocky.User.TokenSpec do
+defmodule Wocky.TokenSpec do
   use ESpec, async: true
 
   import Ecto.Query, only: [from: 2]
