@@ -3,7 +3,6 @@ defmodule Wocky.Device do
 
   use Wocky.Repo.Model
 
-  alias Wocky.Repo.Timestamp
   alias Wocky.User
   alias __MODULE__, as: Device
 
