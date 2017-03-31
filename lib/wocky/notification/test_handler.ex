@@ -7,8 +7,8 @@ defmodule Wocky.Notification.TestHandler do
 
   @behaviour :wocky_notification_handler
 
-  @spec init() :: :ok
-  def init() do
+  @spec init :: :ok
+  def init do
     _ = if :ets.info(:test_handler_table) == :undefined do
       :ets.new(:test_handler_table, [:public, :named_table, :duplicate_bag])
     end
@@ -33,7 +33,8 @@ defmodule Wocky.Notification.TestHandler do
     :ok
   end
 
-  def get_notifications() do
+  @spec get_notifications :: [{binary, binary} | {binary, binary, binary}]
+  def get_notifications do
     list = :ets.tab2list(:test_handler_table)
     :ets.delete_all_objects(:test_handler_table)
     list
