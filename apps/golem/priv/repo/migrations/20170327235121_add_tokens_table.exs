@@ -1,8 +1,8 @@
 defmodule Golem.Repo.Migrations.AddTokensTable do
-  use Golem.Migration
+  use Golem.Repo.Migration
 
   def change do
-    create table(:user_tokens, primary_key: false) do
+    create table(:tokens, primary_key: false) do
       add :user_id,    references(:users, type: :uuid, on_delete: :delete_all), primary_key: true
       add :resource,   :string, null: false, primary_key: true
       add :token,      :string, null: false

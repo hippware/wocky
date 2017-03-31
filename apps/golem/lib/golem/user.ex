@@ -1,15 +1,12 @@
 defmodule Golem.User do
   @moduledoc ""
 
-  use Golem.Schema
+  use Golem.Repo.Model
 
-  import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
 
-  alias Golem.ID
   # alias Golem.Index
-  alias Golem.Repo
-  alias Golem.User.Token
+  alias Golem.Repo.ID
+  alias Golem.Token
   alias __MODULE__, as: User
 
   @primary_key {:id, :binary_id, autogenerate: false}

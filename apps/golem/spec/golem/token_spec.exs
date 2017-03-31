@@ -3,10 +3,10 @@ defmodule Golem.User.TokenSpec do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Golem.Factory
-  alias Golem.ID
   alias Golem.Repo
-  alias Golem.User.Token
+  alias Golem.Repo.Factory
+  alias Golem.Repo.ID
+  alias Golem.Token
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
@@ -84,38 +84,38 @@ defmodule Golem.User.TokenSpec do
     end
   end
 
-  describe "get_token/2" do
+  describe "get/2" do
     it "should return the token assigned to a resource" do
       {:ok, {token, _}} = shared.result
 
       shared.id
-      |> Token.get_token(shared.resource)
+      |> Token.get(shared.resource)
       |> should(eq token)
     end
 
     it "should return nil if the resource is not assigned a token" do
       ID.new
-      |> Token.get_token(shared.resource)
+      |> Token.get(shared.resource)
       |> should(be_nil())
 
       shared.id
-      |> Token.get_token("nosuchresource")
+      |> Token.get("nosuchresource")
       |> should(be_nil())
     end
   end
 
-  describe "get_tokens/1" do
+  describe "get_all/1" do
     it "should return a list of tokens for the specified user" do
       {:ok, {token, _}} = shared.result
 
       shared.id
-      |> Token.get_tokens
+      |> Token.get_all
       |> should(eq [token])
     end
 
     it "should return an empty list if the user has no assigned tokens" do
       ID.new
-      |> Token.get_tokens
+      |> Token.get_all
       |> should(be_empty())
     end
   end

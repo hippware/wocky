@@ -1,4 +1,4 @@
-defmodule Golem.Migration do
+defmodule Wocky.Repo.Migration do
   @moduledoc "Helper module to make migrations easier"
 
   alias Ecto.Migration
@@ -6,7 +6,7 @@ defmodule Golem.Migration do
   defmacro __using__(_) do
     quote do
       import Ecto.Migration, except: [timestamps: 0]
-      import Golem.Migration
+      import Wocky.Repo.Migration
       @disable_ddl_transaction false
       @before_compile Ecto.Migration
     end

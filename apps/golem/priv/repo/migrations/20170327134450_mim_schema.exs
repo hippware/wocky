@@ -1,5 +1,5 @@
 defmodule Golem.Repo.Migrations.MIMSchema do
-  use Ecto.Migration
+  use Golem.Repo.Migration
 
   # This migration creates the default MongooseIM schema. The MIM schema is
   # a little weird from Ecto's perspective, so I have used `execute/1` with

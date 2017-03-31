@@ -1,5 +1,5 @@
 defmodule Golem.Repo.Migrations.AddUserFields do
-  use Golem.Migration
+  use Golem.Repo.Migration
 
   def up do
     drop table(:users)

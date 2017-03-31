@@ -1,4 +1,4 @@
-defmodule Golem.ID do
+defmodule Wocky.Repo.ID do
   @moduledoc """
   Responsible for generating unique IDs for records stored in a database.
   """

@@ -1,14 +1,14 @@
-defmodule Golem.Factory do
+defmodule Wocky.Repo.Factory do
   @moduledoc false
 
-  use ExMachina.Ecto, repo: Golem.Repo
+  use ExMachina.Ecto, repo: Wocky.Repo
 
   alias Faker.Code
   alias Faker.Internet
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
-  alias Golem.ID
-  alias Golem.User
+  alias Wocky.Repo.ID
+  alias Wocky.User
 
   def phone_number do
     "+1555#{Phone.area_code}#{Phone.extension}"

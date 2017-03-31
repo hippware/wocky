@@ -1,7 +1,7 @@
-defmodule Golem.IDSpec do
+defmodule Golem.Repo.IDSpec do
   use ESpec, async: true
 
-  alias Golem.ID
+  alias Golem.Repo.ID
 
   @uuid_str "fee55106-14a3-11e7-8166-4706bac47168"
   @uuid_bin <<254,229,81,6,20,163,17,231,129,102,71,6,186,196,113,104>>
