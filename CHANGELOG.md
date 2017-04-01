@@ -11,6 +11,13 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 
+# 17.03.31+1707.7751e35
+
+* Fix a badarith error during bot search
+  * Fixes: ArithmeticError: bad argument in arithmetic expression (#599)
+  * Fixes: Staging: Can't Sign In (rn-chat #507)
+
+
 # 17.03.31+1704.491f1d9
 
 * Add reindex CLI command
