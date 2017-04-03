@@ -62,6 +62,7 @@
 -define(wocky_repo, 'Elixir.Wocky.Repo').
 -define(wocky_user, 'Elixir.Wocky.User').
 -define(wocky_user_token, 'Elixir.Wocky.Token').
+-define(wocky_conversation, 'Elixir.Wocky.Conversation').
 
 
 -endif. % ifdef WOCKY_HRL
