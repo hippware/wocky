@@ -58,11 +58,12 @@
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
 % Elixir module names
+-define(wocky_conversation, 'Elixir.Wocky.Conversation').
 -define(wocky_id, 'Elixir.Wocky.Repo.ID').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
+-define(wocky_tros, 'Elixir.Wocky.TROSFile').
 -define(wocky_user, 'Elixir.Wocky.User').
 -define(wocky_user_token, 'Elixir.Wocky.Token').
--define(wocky_conversation, 'Elixir.Wocky.Conversation').
 
 % Standard time format to use unless there's a good reason to do otherwise
 -define(DEFAULT_TIME_FORMAT, <<"ISO:Extended:Z">>).
