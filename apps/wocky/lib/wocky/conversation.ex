@@ -33,18 +33,10 @@ defmodule Wocky.Conversation do
     updated_at: DateTime::t
   }
 
-  @change_fields [:server, :user, :other_jid, :message, :outgoing]
-
-  def changeset(struct, params \\ %{}) do
-    struct
-    |> cast(params, @change_fields)
-  end
-
   @doc "Write a conversation record to the database"
   @spec put(t) :: :ok
   def put(conversation) do
     conversation
-    |> changeset
     |> Repo.insert(on_conflict: :replace_all)
     :ok
   end
