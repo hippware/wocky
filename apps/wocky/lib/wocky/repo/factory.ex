@@ -36,8 +36,8 @@ defmodule Wocky.Repo.Factory do
     message = "<message>" <> Lorem.sentence() <> "</message>"
     %Conversation{
       server: "localhost",
-      user: ID.new,
-      other_jid: ID.new,
+      user: new_jid(),
+      other_jid: new_jid(),
       message: message,
       outgoing: true
     }
@@ -71,4 +71,8 @@ defmodule Wocky.Repo.Factory do
   #     accuracy: 10
   #   }
   # end
+
+  defp new_jid() do
+    :jid.make(ID.new, Lorem.word(), Lorem.word()) |> :jid.encode()
+  end
 end
