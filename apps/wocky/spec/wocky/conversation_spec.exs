@@ -13,9 +13,8 @@ defmodule Wocky.ConversationSpec do
   describe "find/1" do
     it "should return all conversation entries for a user" do
       conversations = Conversation.find(shared.conversation.user)
-      length(conversations) |> should(eq 1)
-      conversation = hd(conversations)
-      should_match(conversation, shared.conversation)
+      conversations |> length |> should(eq 1)
+      conversations |> hd |> should_match(shared.conversation)
     end
 
     it "should return an empty list if a user has no conversations" do
@@ -35,13 +34,13 @@ defmodule Wocky.ConversationSpec do
          result: result}
       end
 
-      it "should return a conversation" do
+      it "should return :ok" do
         shared.result |> should(eq :ok)
       end
 
       it "should create a new conversation entry" do
         conversations = Conversation.find(shared.user)
-        length(conversations) |> should(eq 1)
+        conversations |> length |> should(eq 1)
         conversation = hd(conversations)
         should_match(conversation, shared.conversation)
       end

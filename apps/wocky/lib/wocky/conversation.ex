@@ -3,11 +3,6 @@ defmodule Wocky.Conversation do
 
   use Wocky.Repo.Model
 
-  import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-
-  alias Wocky.Repo
-
   alias __MODULE__, as: Conversation
 
   @primary_key false
@@ -35,7 +30,7 @@ defmodule Wocky.Conversation do
   @spec put(t) :: :ok
   def put(conversation) do
     conversation
-    |> Repo.insert(on_conflict: :replace_all)
+    |> Repo.insert!(on_conflict: :replace_all)
     :ok
   end
 
