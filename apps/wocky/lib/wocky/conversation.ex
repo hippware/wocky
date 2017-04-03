@@ -12,7 +12,6 @@ defmodule Wocky.Conversation do
 
   @primary_key false
   schema "conversations" do
-    field :server,    :string
     field :user,      :string, primary_key: true
     field :other_jid, :string, primary_key: true
     field :message,   :binary
@@ -24,7 +23,6 @@ defmodule Wocky.Conversation do
   @type id :: :mod_mam.message_id()
 
   @type t :: %Conversation{
-    server:     binary,
     user:       binary,
     other_jid:  binary,
     message:    binary,

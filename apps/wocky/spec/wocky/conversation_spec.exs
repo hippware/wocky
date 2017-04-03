@@ -76,7 +76,6 @@ defmodule Wocky.ConversationSpec do
   end
 
   defp should_match(a, b) do
-    a.server    |> should(eq b.server)
     a.user      |> should(eq b.user)
     a.other_jid |> should(eq b.other_jid)
     a.message   |> should(eq b.message)

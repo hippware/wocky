@@ -35,7 +35,6 @@ defmodule Wocky.Repo.Factory do
   def conversation_factory do
     message = "<message>" <> Lorem.sentence() <> "</message>"
     %Conversation{
-      server: "localhost",
       user: new_jid(),
       other_jid: new_jid(),
       message: message,
