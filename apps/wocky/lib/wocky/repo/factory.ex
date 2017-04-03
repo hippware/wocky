@@ -5,8 +5,8 @@ defmodule Wocky.Repo.Factory do
 
   alias Faker.Code
   alias Faker.Internet
-  alias Faker.Name
   alias Faker.Lorem
+  alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Repo.ID
   alias Wocky.User

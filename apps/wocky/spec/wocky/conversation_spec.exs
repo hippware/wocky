@@ -1,9 +1,9 @@
 defmodule Wocky.ConversationSpec do
   use ESpec, async: true
 
-  alias Wocky.Repo.ID
   alias Wocky.Conversation
   alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
   before do
     conversation = Factory.insert(:conversation)
