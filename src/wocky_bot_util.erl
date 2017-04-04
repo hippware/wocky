@@ -18,9 +18,6 @@
          check_bot_exists/2,
          get_id_from_node/1,
          get_id_from_jid/1,
-         notify_affiliates/3,
-         make_follow_element/0,
-         make_affiliate_elements/1,
          make_jid/2,
          make_node/1,
          list_hash/1,
@@ -70,34 +67,6 @@ get_id_from_jid(#jid{lresource = <<"bot/", ID/binary>>}) ->
     ID;
 get_id_from_jid(_) ->
     <<>>.
-
-notify_affiliates(Sender, ID, Affiliates) ->
-    lists:foreach(notify_affiliate(Sender, ID, _), Affiliates).
-
-notify_affiliate(Sender, ID, {User, Role}) ->
-    ejabberd_router:route(Sender, User, make_update_packet(ID, User, Role)).
-
-make_update_packet(ID, User, Role) ->
-    AffiliateEl = make_affiliate_element({User, Role}),
-    #xmlel{name = <<"message">>,
-           children = [#xmlel{name = <<"affiliations">>,
-                              attrs = [{<<"xmlns">>, ?NS_BOT},
-                                       {<<"node">>, make_node(ID)}],
-                              children = [AffiliateEl]}]}.
-
-%% DEPRECATED - remove in a future release once the client doesn't look for
-%% this element any more.
-make_follow_element() ->
-    #xmlel{name = <<"follow">>,
-           children = [#xmlcdata{content = <<"1">>}]}.
-
-make_affiliate_elements(Affiliates) ->
-    lists:map(fun make_affiliate_element/1, Affiliates).
-
-make_affiliate_element({JID, Affiliation}) ->
-    #xmlel{name = <<"affiliation">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)},
-                    {<<"affiliation">>, atom_to_binary(Affiliation, utf8)}]}.
 
 list_hash(List) ->
     fun_chain:first(
