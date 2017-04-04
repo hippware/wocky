@@ -75,17 +75,13 @@ handle_iq_type(_From, _To, _IQ) ->
                            Dir    :: incoming | outgoing,
                            Packet :: exml:element()
                           ) -> ok.
-archive_message_hook(_Result, Host, MessID, _ArcID,
+archive_message_hook(_Result, _Host, _MessID, _ArcID,
                 LocJID, RemJID, _SrcJID, Dir, Packet) ->
-    Conv = ?conversation:new(
-              MessID,
-              Host,
-              wocky_util:archive_jid(LocJID),
-              wocky_util:archive_jid(RemJID),
-              ossp_uuid:make(v1, text),
-              exml:to_binary(Packet),
-              Dir =:= outgoing),
-    ok = ?conversation:put(Conv).
+    ok = ?conversation:put(LocJID#jid.luser,
+                           wocky_util:archive_jid(RemJID),
+                           exml:to_binary(Packet),
+                           Dir =:= outgoing
+                          ).
 
 %%%===================================================================
 %%% Conversation retrieval
@@ -99,24 +95,12 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
 
 get_conversations(From, RSMIn) ->
     UserJID = wocky_util:archive_jid(From),
-    Rows = ?conversation:find(UserJID),
-    ResultWithTimes = [R#{timestamp => integer_to_binary(
-                                         uuid:get_v1_time(
-                                           uuid:string_to_uuid(T)))} ||
-                       R = #{time := T} <- Rows],
-    SortedResult = sort_result(ResultWithTimes),
-    rsm_util:filter_with_rsm(SortedResult, RSMIn).
+    Conversations = ?conversation:find(UserJID),
+    rsm_util:filter_with_rsm(Conversations, RSMIn).
 
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
-
-sort_result(Rows) ->
-    lists:sort(fun sort_by_id/2, Rows).
-
-% Sort the most recent to the front
-sort_by_id(#{id := ID1}, #{id := ID2}) ->
-    ID1 > ID2.
 
 cap_max(none) ->
     #rsm_in{max = max_results()};

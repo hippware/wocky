@@ -3,6 +3,7 @@ defmodule Wocky.Conversation do
 
   use Wocky.Repo.Model
 
+  alias Wocky.User
   alias __MODULE__, as: Conversation
 
   schema "conversations" do
@@ -14,10 +15,8 @@ defmodule Wocky.Conversation do
     timestamps()
   end
 
-  @type id :: :mod_mam.message_id()
-
   @type t :: %Conversation{
-    user_id:    binary,
+    user_id:    User.id,
     other_jid:  binary,
     message:    binary,
     outgoing:   boolean,
@@ -26,15 +25,20 @@ defmodule Wocky.Conversation do
   }
 
   @doc "Write a conversation record to the database"
-  @spec put(t) :: :ok
-  def put(conversation) do
-    conversation
+  @spec put(User.id, binary, binary, boolean) :: :ok
+  def put(user_id, other_jid, message, outgoing) do
+    %Conversation{
+      user_id: user_id,
+      other_jid: other_jid,
+      message: message,
+      outgoing: outgoing}
     |> Repo.insert!(on_conflict: :replace_all)
     :ok
   end
 
   @spec find(binary) :: [t]
   def find(user_id) do
-    Repo.all(from c in Conversation, where: c.user_id == ^user_id)
+    Repo.all(from c in Conversation, where: c.user_id == ^user_id,
+                                     order_by: [asc: :updated_at])
   end
 end
