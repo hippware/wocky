@@ -38,7 +38,7 @@ init([]) ->
               shutdown => 5000,
               type     => worker,
               modules  => [crone]}
-            || T <- make_tasks()],
+            || T <- tasks()],
 
     {ok, {SupFlags, Jobs}}.
 
@@ -46,11 +46,5 @@ init([]) ->
 %%% Helpers
 %%%===================================================================
 
-make_tasks() ->
-    Tasks = application:get_env(crone, tasks, []),
-    lists:foldl(add_task(wocky_app:get_host(), _, _), [], Tasks).
-
-add_task(Host, {Host, Task}, Acc) ->
-    [Task | Acc];
-add_task(_, _, Acc) ->
-    Acc.
+tasks() ->
+    application:get_env(crone, tasks, []).
