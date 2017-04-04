@@ -10,8 +10,7 @@
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0, ensure_loaded/1,
          server/0, is_testing/0,
-         get_config/1, get_config/2,
-         get_host/0]).
+         get_config/1, get_config/2]).
 
 -ignore_xref([start/0, start/1, stop/0,
               ensure_loaded/1, get_config/1]).
