@@ -62,6 +62,10 @@
 -define(wocky_repo, 'Elixir.Wocky.Repo').
 -define(wocky_user, 'Elixir.Wocky.User').
 -define(wocky_user_token, 'Elixir.Wocky.Token').
+-define(wocky_conversation, 'Elixir.Wocky.Conversation').
+
+% Standard time format to use unless there's a good reason to do otherwise
+-define(DEFAULT_TIME_FORMAT, <<"ISO:Extended:Z">>).
 
 
 -endif. % ifdef WOCKY_HRL

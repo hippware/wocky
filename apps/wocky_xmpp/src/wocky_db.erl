@@ -398,7 +398,7 @@ fetch_more(Result) ->
 -spec timestamp_to_string(non_neg_integer()) -> binary().
 timestamp_to_string(TS) ->
     Time = ?timex:from_unix(timestamp_to_seconds(TS)),
-    {ok, Binary} = ?timex:format(Time, <<"{ISO:Extended}">>),
+    {ok, Binary} = ?timex:format(Time, ?DEFAULT_TIME_FORMAT),
     Binary.
 
 %% @doc Convert a seconds-since-epoch timestamp to a Cassandra timestamp

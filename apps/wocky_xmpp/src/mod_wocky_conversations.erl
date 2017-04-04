@@ -75,17 +75,13 @@ handle_iq_type(_From, _To, _IQ) ->
                            Dir    :: incoming | outgoing,
                            Packet :: exml:element()
                           ) -> ok.
-archive_message_hook(_Result, Host, MessID, _ArcID,
+archive_message_hook(_Result, _Host, _MessID, _ArcID,
                 LocJID, RemJID, _SrcJID, Dir, Packet) ->
-    Conv = ?conversation:new(
-              MessID,
-              Host,
-              wocky_util:archive_jid(LocJID),
-              wocky_util:archive_jid(RemJID),
-              ossp_uuid:make(v1, text),
-              exml:to_binary(Packet),
-              Dir =:= outgoing),
-    ok = ?conversation:put(Conv).
+    ok = ?conversation:put(LocJID#jid.luser,
+                           wocky_util:archive_jid(RemJID),
+                           exml:to_binary(Packet),
+                           Dir =:= outgoing
+                          ).
 
 %%%===================================================================
 %%% Conversation retrieval
@@ -99,24 +95,12 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
 
 get_conversations(From, RSMIn) ->
     UserJID = wocky_util:archive_jid(From),
-    Rows = ?conversation:find(UserJID),
-    ResultWithTimes = [R#{timestamp => integer_to_binary(
-                                         uuid:get_v1_time(
-                                           uuid:string_to_uuid(T)))} ||
-                       R = #{time := T} <- Rows],
-    SortedResult = sort_result(ResultWithTimes),
-    rsm_util:filter_with_rsm(SortedResult, RSMIn).
+    Conversations = ?conversation:find(UserJID),
+    rsm_util:filter_with_rsm(Conversations, RSMIn).
 
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
-
-sort_result(Rows) ->
-    lists:sort(fun sort_by_id/2, Rows).
-
-% Sort the most recent to the front
-sort_by_id(#{id := ID1}, #{id := ID2}) ->
-    ID1 > ID2.
 
 cap_max(none) ->
     #rsm_in{max = max_results()};
@@ -150,19 +134,22 @@ conversation_xml(Conversation = #{id := ID}) ->
            children = conversation_data_xml(Conversation)}.
 
 conversation_data_xml(Conversation) ->
-    Elements = [other_jid, timestamp, outgoing],
-    [message_element(Conversation) |
-    [conversation_element(E, Conversation) || E <- Elements]].
+    Elements = [message, other_jid, updated_at, outgoing],
+    [conversation_element(E, maps:get(E, Conversation)) || E <- Elements].
 
-message_element(C) ->
-    case exml:parse(maps:get(message, C)) of
+conversation_element(message, Message) ->
+    case exml:parse(Message) of
         {ok, XML} -> XML;
         {error, _} -> #xmlel{name = <<"message">>,
                              children = [#xmlcdata{content = <<"error">>}]}
-    end.
+    end;
 
-conversation_element(E, C) ->
-    wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(maps:get(E, C))).
+conversation_element(updated_at, Time) ->
+    wocky_xml:cdata_el(<<"timestamp">>,
+                       ?timex:format(Time, ?DEFAULT_TIME_FORMAT));
+
+conversation_element(E, V) ->
+    wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(V)).
 
 to_binary(B) when is_binary(B) -> B;
 to_binary(I) when is_integer(I) -> integer_to_binary(I);

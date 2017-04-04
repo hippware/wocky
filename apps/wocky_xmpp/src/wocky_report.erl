@@ -79,5 +79,5 @@ vis_string(?WOCKY_BOT_VIS_OPEN) -> "public";
 vis_string(_) -> "private".
 
 time_string(Seconds) ->
-    {ok, S} = ?timex:format(?timex:from_unix(Seconds), <<"{ISO:Extended:Z}">>),
+    {ok, S} = ?timex:format(?timex:from_unix(Seconds), ?DEFAULT_TIME_FORMAT),
     S.

@@ -5,12 +5,14 @@ defmodule Wocky.Repo.Factory do
 
   alias Faker.Code
   alias Faker.Internet
+  alias Faker.Lorem
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.Conversation
 
-  def phone_number do
+  defp phone_number do
     "+1555#{Phone.area_code}#{Phone.extension}"
   end
 
@@ -27,6 +29,16 @@ defmodule Wocky.Repo.Factory do
       last_name: Name.last_name,
       phone_number: phone_number(),
       email: Internet.email
+    }
+  end
+
+  def conversation_factory do
+    message = "<message>" <> Lorem.sentence() <> "</message>"
+    %Conversation{
+      user_id: ID.new(),
+      other_jid: new_jid(),
+      message: message,
+      outgoing: true
     }
   end
 
@@ -58,4 +70,8 @@ defmodule Wocky.Repo.Factory do
   #     accuracy: 10
   #   }
   # end
+
+  defp new_jid() do
+    :jid.make(ID.new, Lorem.word(), Lorem.word()) |> :jid.encode()
+  end
 end

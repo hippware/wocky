@@ -1,36 +1,37 @@
 defmodule Wocky.ConversationSpec do
   use ESpec, async: true
 
-  alias Wocky.Repo.ID
   alias Wocky.Conversation
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
   before do
-    add_entry(shared)
-  end
+    # A simple user with one conversation
+    user = Factory.insert(:user, %{server: shared.server})
+    conversation = Factory.insert(:conversation, %{user_id: user.id})
 
-  describe "new/7" do
-    it "should return a Conversation struct" do
-      shared.conversation |> should(be_struct Conversation)
+    # A user with 10 conversations
+    user2 = Factory.insert(:user, %{server: shared.server})
+    conversations = for _ <- 1..10 do
+      Factory.insert(:conversation, %{user_id: user2.id})
     end
 
-    it "should include the passed id" do
-      shared.conversation.id |> should(eq shared.id)
-    end
-
-    it "should include the passed server" do
-      shared.conversation.server |> should(eq shared.server)
-    end
-
-    it "should include passed data in struct" do
-      shared.conversation.message |> should(eq shared.message)
-    end
+    {:ok, conversation: conversation,
+     conversations: conversations, user2: user2.id}
   end
 
   describe "find/1" do
     it "should return all conversation entries for a user" do
-      conversations = Conversation.find(shared.user)
-      length(conversations) |> should(eq 1)
-      hd(conversations) |> should(eq shared.conversation)
+      conversations = Conversation.find(shared.conversation.user_id)
+      conversations |> should(have_length 1)
+      conversations |> hd |> should_match(shared.conversation)
+    end
+
+    it "should return conversations sorted by timestamp" do
+      conversations = Conversation.find(shared.user2)
+      conversations |> should(have_length 10)
+      Enum.zip(conversations, shared.conversations)
+      |> should(have_all fn({a, b}) -> should_match(a, b) end)
     end
 
     it "should return an empty list if a user has no conversations" do
@@ -38,10 +39,20 @@ defmodule Wocky.ConversationSpec do
     end
   end
 
-  describe "put/1" do
+  describe "put/4" do
     context "when there is no existing entry for the other user" do
       before do
-        add_entry(shared)
+        user = Factory.insert(:user, %{server: shared.server})
+        conversation = Factory.build(:conversation, %{user_id: user.id})
+        result = Conversation.put(user.id,
+                                  conversation.other_jid,
+                                  conversation.message,
+                                  conversation.outgoing)
+        {:ok,
+         conversation: conversation,
+         user_id: user.id,
+         other: conversation.other_jid,
+         result: result}
       end
 
       it "should return :ok" do
@@ -49,15 +60,26 @@ defmodule Wocky.ConversationSpec do
       end
 
       it "should create a new conversation entry" do
-        conversations = Conversation.find(shared.user)
-        length(conversations) |> should(eq 1)
-        hd(conversations) |> should(eq shared.conversation)
+        conversations = Conversation.find(shared.user_id)
+        conversations |> should(have_length 1)
+        conversations |> hd |> should_match(shared.conversation)
       end
     end
 
     context "when there is an existing entry for the other user" do
       before do
-        add_entry(shared.user, shared.other, shared)
+        conversation = Factory.build(
+                         :conversation,
+                         %{user_id: shared.conversation.user_id,
+                          other_jid: shared.conversation.other_jid})
+        result = Conversation.put(conversation.user_id,
+                                  conversation.other_jid,
+                                  conversation.message,
+                                  conversation.outgoing)
+        {:ok,
+         result: result,
+         conversation: conversation,
+         user_id: shared.conversation.user_id}
       end
 
       it "should return :ok" do
@@ -65,40 +87,17 @@ defmodule Wocky.ConversationSpec do
       end
 
       it "should replace the existing conversation entry" do
-        conversations = Conversation.find(shared.user)
-        length(conversations) |> should(eq 1)
-        hd(conversations) |> should(eq shared.conversation)
+        conversations = Conversation.find(shared.user_id)
+        conversations |> should(have_length 1)
+        conversations |> hd |> should_match(shared.conversation)
       end
 
     end
 
   end
 
-  defp add_entry(shared) do
-    user = ID.new
-    other = ID.new
-    add_entry(user, other, shared)
+  defp should_match(a, b) do
+    fields = [:user_id, :other_jid, :message, :outgoing]
+    a |> Map.take(fields) |> should(eq b |> Map.take(fields))
   end
-
-  defp add_entry(user, other, shared) do
-    message_obj = xmlel(name: "message",
-                        children: [
-                          xmlcdata(content: Faker.Lorem.sentence())])
-    message = :exml.to_binary(message_obj)
-    id = :rand.uniform(100000000)
-    conversation = Conversation.new(id,
-                                    shared.server,
-                                    user,
-                                    other,
-                                    :rand.uniform(100000000),
-                                    message,
-                                    true
-                                   )
-    result = Conversation.put(conversation)
-    # Let solr catch up
-    :timer.sleep(1000)
-    {:ok, user: user, id: id, result: result, user: user,
-     other: other, message: message, conversation: conversation}
-  end
-
 end
