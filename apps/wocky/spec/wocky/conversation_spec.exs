@@ -16,11 +16,6 @@ defmodule Wocky.ConversationSpec do
       Factory.insert(:conversation, %{user_id: user2.id})
     end
 
-    # A user with 1000 conversations
-    user2 = Factory.insert(:user, %{server: shared.server})
-    conversations = for _ <- 1..10 do
-      Factory.insert(:conversation, %{user_id: user2.id})
-
     {:ok, conversation: conversation,
      conversations: conversations, user2: user2.id}
   end
