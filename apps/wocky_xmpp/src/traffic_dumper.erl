@@ -37,7 +37,7 @@ get_user(Handle) ->
     end.
 
 get_time(StartBin) ->
-    case ?timex:parse(StartBin, <<"{ISO:Extended:Z}">>) of
+    case ?timex:parse(StartBin, ?DEFAULT_TIME_FORMAT) of
         {error, Term} -> {error, Term};
         {ok, Result} -> {ok, ?timex:to_unix(Result)}
     end.
@@ -94,7 +94,7 @@ direction_arrow(false) ->
 
 format_timestamp(Timestamp) ->
     {ok, T} = ?timex:format(?timex:from_unix(Timestamp, milliseconds),
-                            <<"{ISO:Extended:Z}">>),
+                            ?DEFAULT_TIME_FORMAT),
     T.
 
 colour_direction(true) -> ?ansi:red();

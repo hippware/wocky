@@ -134,19 +134,22 @@ conversation_xml(Conversation = #{id := ID}) ->
            children = conversation_data_xml(Conversation)}.
 
 conversation_data_xml(Conversation) ->
-    Elements = [other_jid, timestamp, outgoing],
-    [message_element(Conversation) |
-    [conversation_element(E, Conversation) || E <- Elements]].
+    Elements = [message, other_jid, updated_at, outgoing],
+    [conversation_element(E, maps:get(E, Conversation)) || E <- Elements].
 
-message_element(C) ->
-    case exml:parse(maps:get(message, C)) of
+conversation_element(message, Message) ->
+    case exml:parse(Message) of
         {ok, XML} -> XML;
         {error, _} -> #xmlel{name = <<"message">>,
                              children = [#xmlcdata{content = <<"error">>}]}
-    end.
+    end;
 
-conversation_element(E, C) ->
-    wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(maps:get(E, C))).
+conversation_element(updated_at, Time) ->
+    wocky_xml:cdata_el(<<"timestamp">>,
+                       ?timex:format(Time, ?DEFAULT_TIME_FORMAT));
+
+conversation_element(E, V) ->
+    wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(V)).
 
 to_binary(B) when is_binary(B) -> B;
 to_binary(I) when is_integer(I) -> integer_to_binary(I);

@@ -16,6 +16,7 @@ defmodule Wocky.Conversation do
   end
 
   @type t :: %Conversation{
+    id:         integer,
     user_id:    User.id,
     other_jid:  binary,
     message:    binary,
