@@ -24,9 +24,5 @@ config :exometer,
   ]
 
 config :crone,
-  tasks: [
-    {"CRON_HOST", {
-      {:weekly, :sun, {12, :am}},
-      {:wocky_slack, :post_bot_report, ["wocky-reports", 7]}
-    }}
-   ]
+  tasks:
+  CRON_TASKS

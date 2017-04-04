@@ -16,8 +16,8 @@ config :lager,
 # crone will start up correctly
 config :crone,
   tasks: [
-    {"localhost", {
+    {
        {:weekly, :sun, {12, :am}},
        {:wocky_slack, :post_bot_report, ["report-testing", 7]}
-     }}
+    }
    ]
