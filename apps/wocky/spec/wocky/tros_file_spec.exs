@@ -22,11 +22,11 @@ defmodule Wocky.TROSFileSpec do
         result = TROSFile.put(metadata.id,
                               metadata.user_id,
                               metadata.access)
-       {:ok,
-        result: result,
-        id: metadata.id,
-        user_id: metadata.user_id,
-        access: metadata.access}
+        {:ok,
+         result: result,
+         id: metadata.id,
+         user_id: metadata.user_id,
+         access: metadata.access}
       end
 
       it "should return :ok" do

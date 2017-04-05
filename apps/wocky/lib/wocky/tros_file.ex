@@ -27,11 +27,10 @@ defmodule Wocky.TROSFile do
 
   @type t :: %TROSFile{
     id:      id,
-    user_id: binary,
+    user_id: User.id,
     access:  access
   }
 
-  @doc ""
   @spec put(id, User.id, access) :: :ok
   def put(id, user_id, access) do
     Repo.insert!(%TROSFile{id: id, user_id: user_id, access: access})
@@ -46,7 +45,7 @@ defmodule Wocky.TROSFile do
     :ok
   end
 
-  @spec get_user_id(id) :: binary | nil
+  @spec get_user_id(id) :: User.id | nil
   def get_user_id(id) do
     case Repo.one(from f in get_by_id(id), select: f.user_id) do
       nil ->

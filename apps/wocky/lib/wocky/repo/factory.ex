@@ -7,7 +7,6 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Internet
   alias Faker.Lorem
   alias Faker.Name
-  alias Faker.Lorem
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Conversation
   alias Wocky.Repo.ID
@@ -37,7 +36,7 @@ defmodule Wocky.Repo.Factory do
   def conversation_factory do
     message = "<message>" <> Lorem.sentence() <> "</message>"
     %Conversation{
-      user_id: ID.new(),
+      user_id: ID.new,
       other_jid: new_jid(),
       message: message,
       outgoing: true
@@ -48,7 +47,7 @@ defmodule Wocky.Repo.Factory do
     %TROSFile{
       id: ID.new,
       user_id: ID.new,
-      access: Lorem.sentence()
+      access: Lorem.sentence
     }
   end
 
@@ -83,6 +82,6 @@ defmodule Wocky.Repo.Factory do
   # end
 
   defp new_jid() do
-    :jid.make(ID.new, Lorem.word(), Lorem.word()) |> :jid.encode()
+    :jid.make(ID.new, Lorem.word, Lorem.word) |> :jid.encode()
   end
 end
