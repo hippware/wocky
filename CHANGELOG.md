@@ -8,6 +8,9 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+
+# 17.04.05+1724.8a6709a
+
 * Consolidate bot visibility (only Public and Private) and sharing (#442)
 * Remove HTTP REST support. No longer needed. 
   * Close port 80
