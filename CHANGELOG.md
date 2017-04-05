@@ -10,6 +10,11 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Consolidate bot visibility (only Public and Private) and sharing (#442)
+* Remove HTTP REST support. No longer needed. 
+  * Close port 80
+* More cron related fixes.
+
 
 # 17.03.31+1707.7751e35
 
