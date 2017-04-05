@@ -6,8 +6,6 @@ defmodule Wocky.TROSFile do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  alias Ecto.Multi
-  alias Ecto.UUID
   alias Wocky.Repo
   alias Wocky.User
 
@@ -47,18 +45,18 @@ defmodule Wocky.TROSFile do
 
   @spec get_user_id(id) :: User.id | nil
   def get_user_id(id) do
-    case Repo.one(from f in get_by_id(id), select: f.user_id) do
-      nil ->
-        nil
-      uuid ->
-        {:ok, uuid} = UUID.load(uuid)
-        uuid
-    end
+    TROSFile
+    |> with_file(id)
+    |> select_user_id
+    |> Repo.one
   end
 
   @spec get_access(id) :: access | nil
   def get_access(id) do
-    Repo.one(from f in get_by_id(id), select: f.access)
+    TROSFile
+    |> with_file(id)
+    |> select_access
+    |> Repo.one
   end
 
   @change_fields [:access]
@@ -68,8 +66,16 @@ defmodule Wocky.TROSFile do
     |> cast(params, @change_fields)
   end
 
-  defp get_by_id(id) do
-    from f in "tros_metadata", where: f.id == type(^id, :binary_id)
+  defp with_file(query, id) do
+    from f in query, where: f.id == ^id
+  end
+
+  defp select_user_id(query) do
+    from f in query, select: f.user_id
+  end
+
+  defp select_access(query) do
+    from f in query, select: f.access
   end
 
 end
