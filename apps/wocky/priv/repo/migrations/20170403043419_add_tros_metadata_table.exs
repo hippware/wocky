@@ -1,4 +1,4 @@
-defmodule Wocky.Repo.Migrations.AddFileMetadataTable do
+defmodule Wocky.Repo.Migrations.AddTROSMetadataTable do
   use Wocky.Repo.Migration
 
   def change do

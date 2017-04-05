@@ -1,4 +1,4 @@
-defmodule Wocky.TROSFile do
+defmodule Wocky.TROSMetadata do
   @moduledoc ""
 
   use Wocky.Repo.Model
@@ -9,7 +9,7 @@ defmodule Wocky.TROSFile do
   alias Wocky.Repo
   alias Wocky.User
 
-  alias __MODULE__, as: TROSFile
+  alias __MODULE__, as: TROSMetadata
 
   @primary_key false
   schema "tros_metadata" do
@@ -23,7 +23,7 @@ defmodule Wocky.TROSFile do
   @type id :: binary
   @type access :: binary
 
-  @type t :: %TROSFile{
+  @type t :: %TROSMetadata{
     id:      id,
     user_id: User.id,
     access:  access
@@ -31,13 +31,13 @@ defmodule Wocky.TROSFile do
 
   @spec put(id, User.id, access) :: :ok
   def put(id, user_id, access) do
-    Repo.insert!(%TROSFile{id: id, user_id: user_id, access: access})
+    Repo.insert!(%TROSMetadata{id: id, user_id: user_id, access: access})
     :ok
   end
 
   @spec set_access(id, access) :: :ok
   def set_access(id, access) do
-    Repo.get!(TROSFile, id)
+    Repo.get!(TROSMetadata, id)
     |> changeset(%{access: access})
     |> Repo.update!
     :ok
@@ -45,7 +45,7 @@ defmodule Wocky.TROSFile do
 
   @spec get_user_id(id) :: User.id | nil
   def get_user_id(id) do
-    TROSFile
+    TROSMetadata
     |> with_file(id)
     |> select_user_id
     |> Repo.one
@@ -53,7 +53,7 @@ defmodule Wocky.TROSFile do
 
   @spec get_access(id) :: access | nil
   def get_access(id) do
-    TROSFile
+    TROSMetadata
     |> with_file(id)
     |> select_access
     |> Repo.one

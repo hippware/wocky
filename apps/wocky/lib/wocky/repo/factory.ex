@@ -10,7 +10,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Conversation
   alias Wocky.Repo.ID
-  alias Wocky.TROSFile
+  alias Wocky.TROSMetadata
   alias Wocky.User
 
   defp phone_number do
@@ -44,7 +44,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def tros_metadata_factory do
-    %TROSFile{
+    %TROSMetadata{
       id: ID.new,
       user_id: ID.new,
       access: Lorem.sentence
