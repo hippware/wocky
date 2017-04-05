@@ -6,7 +6,6 @@
          make_jid/2,
          make_url/2,
 
-         get_metadata/2,
          get_access/1,
          get_owner/1,
 
@@ -47,17 +46,13 @@ make_jid(Server, FileID) ->
 make_url(Server, FileID) ->
     <<"tros:", (jid:to_binary(make_jid(Server, FileID)))/binary>>.
 
--spec get_owner(metadata()) -> result(ejabberd:luser()).
-get_owner(Metadata) ->
-    get_file_info(get_owner, [Metadata]).
+-spec get_owner(file_id()) -> result(ejabberd:luser()).
+get_owner(ID) ->
+    get_file_info(get_owner, [ID]).
 
--spec get_access(metadata()) -> result(binary()).
-get_access(Metadata) ->
-    get_file_info(get_access, [Metadata]).
-
--spec get_metadata(ejabberd:lserver(), file_id()) -> result(metadata()).
-get_metadata(Server, FileID) ->
-    get_file_info(get_metadata, [Server, get_base_id(FileID)]).
+-spec get_access(file_id()) -> result(binary()).
+get_access(ID) ->
+    get_file_info(get_access, [ID]).
 
 get_file_info(Function, Args) ->
     apply(mod_wocky_tros:backend(), Function, Args).
