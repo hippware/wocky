@@ -20,7 +20,6 @@ all() -> [
           make_token
 % Requires S3:
 %          fix_bot_images,
-%          migrate_metadata_story
          ].
 
 suite() ->
@@ -99,39 +98,6 @@ fix_bot_images(Config) ->
         tros_SUITE:download_success(Bob, ItemFile, out_file_data(Config)),
         tros_SUITE:download_failure(Bob, NonBotFile)
       end).
-
-migrate_metadata_story(_Config) ->
-    wocky_db:truncate(shared, file_metadata),
-    test_helper:set_tros_backend(s3),
-    File1 = wocky_db:create_id(),
-    File2 = wocky_db:create_id(),
-    File3 = wocky_db:create_id(),
-
-    seed_s3_file(?ALICE_JID, File1),
-    seed_s3_file(?ALICE_JID, File2),
-    % Upload File3 with the new system to simulate a file that's already been
-    % migrated
-    wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, File3),
-
-    ok = mod_wocky_tros_s3_legacy:update_access(?LOCAL_CONTEXT,
-                                                File1, <<"test_access">>),
-
-    ?assertEqual(not_found, wocky_db_tros:get_access(?LOCAL_CONTEXT, File1)),
-    ?assertEqual(not_found, wocky_db_tros:get_access(?LOCAL_CONTEXT, File2)),
-    ?assertEqual(<<"all">>, wocky_db_tros:get_access(?LOCAL_CONTEXT, File3)),
-    ?assertEqual(?ALICE, wocky_db_tros:get_owner(?LOCAL_CONTEXT, File3)),
-
-    mod_wocky_cli:tros_migrate_access(),
-
-    ?assertEqual(?ALICE, wocky_db_tros:get_owner(?LOCAL_CONTEXT, File1)),
-    ?assertEqual(?ALICE, wocky_db_tros:get_owner(?LOCAL_CONTEXT, File2)),
-    ?assertEqual(<<"test_access">>,
-                 wocky_db_tros:get_access(?LOCAL_CONTEXT, File1)),
-    ?assertEqual(<<"all">>, wocky_db_tros:get_access(?LOCAL_CONTEXT, File2)),
-    % File3 should be unchanged
-    ?assertEqual(<<"all">>, wocky_db_tros:get_access(?LOCAL_CONTEXT, File3)),
-    ?assertEqual(?ALICE, wocky_db_tros:get_owner(?LOCAL_CONTEXT, File3)).
-
 
 make_token(_Config) ->
     %% Just some very basic sanity tests. There's really not much

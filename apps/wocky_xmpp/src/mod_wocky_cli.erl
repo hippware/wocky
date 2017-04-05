@@ -24,7 +24,6 @@
 
 %% commands
 -export([befriend/2,
-         tros_migrate_access/0,
          fix_bot_images/0,
          make_token/1,
          reprocess_images/0,
@@ -51,21 +50,6 @@ commands() ->
                         function = befriend,
                         args     = [{user1, binary}, {user2, binary}],
                         result   = {result, restuple}},
-
-     %% TROS migration
-     #ejabberd_commands{name     = tros_migrate_access,
-                        desc     = "Migrate TROS access data "
-                                   "from S3 back to the local DB",
-                        longdesc = "Output:\n"
-                                   ". : Metadata successfully migrated\n"
-                                   "- : Metadata already in DB;"
-                                   " no action taken\n"
-                                   "N : No metadata found in S3 - probably a"
-                                   " newly created file",
-                        module   = ?MODULE,
-                        function = tros_migrate_access,
-                        args     = [],
-                        result   = {result, rescode}},
 
      %% Traffic dumping
      #ejabberd_commands{name     = dump_traffic,
@@ -171,63 +155,6 @@ make_friend({#{id := User1, server := Server1},
     wocky_db_roster:update_roster_item(User1, Server1, JID2, RosterItem2),
     ejabberd_hooks:run(roster_modified, wocky_app:server(),
                        [User1, Server1, JID2]).
-
-%%%===================================================================
-%%% Command implementation - tros_migrate_access
-%%%===================================================================
-
-tros_migrate_access() ->
-    fun_chain:first(
-      mod_wocky_tros_s3:bucket(),
-      ?s3:list_objects(),
-      ?ex_aws:'stream!'(s3_auth()),
-      ?enum:to_list(),
-      migrate_access()
-     ),
-    ok.
-
-migrate_access(Items) ->
-    io:fwrite("Found ~p files\n", [length(Items)]),
-    lists:foreach(migrate_item_access(_), Items).
-
-migrate_item_access(#{key := Key}) ->
-    R = do([error_m ||
-            {Server, FileID} <- extract_file_info(Key),
-            check_for_local_metadata(Server, FileID),
-            {Owner, Access} <- get_metadata(Server, FileID),
-            wocky_db_tros:set_metadata(Server, FileID, Owner, Access)
-           ]),
-    case R of
-        ok ->
-            io:fwrite(".");
-        {error, already_migrated} ->
-            io:fwrite("-");
-        {error, metadata_not_found} ->
-            io:fwrite("N");
-        {error, not_tros_file} ->
-            io:fwrite("\nSkipping non-tros file: ~p", [Key]);
-        {error, E} ->
-            io:fwrite("\nError ~p on ~p\n", [E, Key])
-    end.
-
-extract_file_info(Key) ->
-    case re:split(Key, "(.*)-[0-9a-f]{4}/(.*)") of
-        [_, Server, FileID, _] -> {ok, {Server, FileID}};
-        _ -> {error, not_tros_file}
-    end.
-
-check_for_local_metadata(Server, FileID) ->
-    case wocky_db_tros:get_owner(Server, FileID) of
-        not_found -> ok;
-        _ -> {error, already_migrated}
-    end.
-
-get_metadata(Server, FileID) ->
-    do([error_m ||
-        Metadata <- mod_wocky_tros_s3_legacy:get_metadata(Server, FileID),
-        Owner <- mod_wocky_tros_s3_legacy:get_owner(Metadata),
-        Access <- mod_wocky_tros_s3_legacy:get_access(Metadata),
-        {ok, {Owner, Access}}]).
 
 %%%===================================================================
 %%% Command implementation - fix_bot_images
