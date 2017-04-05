@@ -27,5 +27,4 @@ config :honeybadger,
   environment_name: "HONEYBADGER_ENV"
 
 config :crone,
-  tasks:
-  CRON_TASKS
+  tasks: :CRON_TASKS
