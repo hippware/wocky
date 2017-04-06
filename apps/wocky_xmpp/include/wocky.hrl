@@ -61,7 +61,7 @@
 -define(wocky_conversation, 'Elixir.Wocky.Conversation').
 -define(wocky_id, 'Elixir.Wocky.Repo.ID').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
--define(wocky_tros_metadata, 'Elixir.Wocky.TROSFile').
+-define(wocky_tros_metadata, 'Elixir.Wocky.TROSMetadata').
 -define(wocky_user, 'Elixir.Wocky.User').
 -define(wocky_user_token, 'Elixir.Wocky.Token').
 

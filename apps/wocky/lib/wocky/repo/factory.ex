@@ -36,7 +36,6 @@ defmodule Wocky.Repo.Factory do
   def conversation_factory do
     message = "<message>" <> Lorem.sentence() <> "</message>"
     %Conversation{
-      user_id: ID.new,
       other_jid: new_jid(),
       message: message,
       outgoing: true
@@ -46,7 +45,6 @@ defmodule Wocky.Repo.Factory do
   def tros_metadata_factory do
     %TROSMetadata{
       id: ID.new,
-      user_id: ID.new,
       access: Lorem.sentence
     }
   end

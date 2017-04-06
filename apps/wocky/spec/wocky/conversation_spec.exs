@@ -8,16 +8,16 @@ defmodule Wocky.ConversationSpec do
   before do
     # A simple user with one conversation
     user = Factory.insert(:user, %{server: shared.server})
-    conversation = Factory.insert(:conversation, %{user_id: user.id})
+    conversation = Factory.insert(:conversation, user: user)
 
     # A user with 10 conversations
     user2 = Factory.insert(:user, %{server: shared.server})
     conversations = for _ <- 1..10 do
-      Factory.insert(:conversation, %{user_id: user2.id})
+      Factory.insert(:conversation, user: user2)
     end
 
     {:ok, conversation: conversation,
-     conversations: conversations, user2: user2.id}
+     conversations: conversations, user2: user2}
   end
 
   describe "find/1" do
@@ -28,7 +28,7 @@ defmodule Wocky.ConversationSpec do
     end
 
     it "should return conversations sorted by timestamp" do
-      conversations = Conversation.find(shared.user2)
+      conversations = Conversation.find(shared.user2.id)
       conversations |> should(have_length 10)
       Enum.zip(conversations, shared.conversations)
       |> should(have_all fn({a, b}) -> should_match(a, b) end)
@@ -43,14 +43,14 @@ defmodule Wocky.ConversationSpec do
     context "when there is no existing entry for the other user" do
       before do
         user = Factory.insert(:user, %{server: shared.server})
-        conversation = Factory.build(:conversation, %{user_id: user.id})
+        conversation = Factory.build(:conversation, user_id: user.id)
         result = Conversation.put(user.id,
                                   conversation.other_jid,
                                   conversation.message,
                                   conversation.outgoing)
         {:ok,
          conversation: conversation,
-         user_id: user.id,
+         user: user,
          other: conversation.other_jid,
          result: result}
       end
@@ -60,7 +60,7 @@ defmodule Wocky.ConversationSpec do
       end
 
       it "should create a new conversation entry" do
-        conversations = Conversation.find(shared.user_id)
+        conversations = Conversation.find(shared.user.id)
         conversations |> should(have_length 1)
         conversations |> hd |> should_match(shared.conversation)
       end

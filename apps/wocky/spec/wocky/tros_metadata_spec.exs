@@ -8,24 +8,23 @@ defmodule Wocky.TROSMetadataSpec do
 
   before do
     user = Factory.insert(:user)
-    metadata = Factory.insert(:tros_metadata, %{user_id: user.id})
+    metadata = Factory.insert(:tros_metadata, user: user)
     {:ok,
      id: metadata.id,
-     user_id: user.id,
+     user: user,
      access: metadata.access}
   end
 
   describe "put/3" do
     context "when there is no existing metadata entry" do
       before do
-        metadata = Factory.build(:tros_metadata, %{user_id: shared.user_id})
+        metadata = Factory.build(:tros_metadata, user: shared.user)
         result = TROSMetadata.put(metadata.id,
-                                  metadata.user_id,
+                                  metadata.user.id,
                                   metadata.access)
         {:ok,
          result: result,
          id: metadata.id,
-         user_id: metadata.user_id,
          access: metadata.access}
       end
 
@@ -35,19 +34,19 @@ defmodule Wocky.TROSMetadataSpec do
 
       it "should set the user_id and access values" do
         TROSMetadata.get_access(shared.id) |> should(eq shared.access)
-        TROSMetadata.get_user_id(shared.id) |> should(eq shared.user_id)
+        TROSMetadata.get_user_id(shared.id) |> should(eq shared.user.id)
       end
     end
 
     context "when there is an existing metadata entry" do
       before do
-        metadata = Factory.build(:tros_metadata, %{user_id: shared.user_id})
+        metadata = Factory.build(:tros_metadata, user: shared.user)
         {:ok, metadata: metadata}
       end
 
       it "should return an error" do
         fn() -> TROSMetadata.put(shared.id,
-                                 shared.user_id,
+                                 shared.user.id,
                                  shared.metadata.access)
         end
         |> should(raise_exception Ecto.ConstraintError)
@@ -82,7 +81,7 @@ defmodule Wocky.TROSMetadataSpec do
 
   describe "get_user_id/2" do
     it "should get the user_id of an existing file" do
-      TROSMetadata.get_user_id(shared.id) |> should(eq shared.user_id)
+      TROSMetadata.get_user_id(shared.id) |> should(eq shared.user.id)
     end
 
     it "should return `nil` for a non-existant file" do

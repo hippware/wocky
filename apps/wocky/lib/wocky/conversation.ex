@@ -1,16 +1,20 @@
 defmodule Wocky.Conversation do
-  @moduledoc ""
+  @moduledoc """
+  DB interface module for conversations
+  """
 
   use Wocky.Repo.Model
 
   alias Wocky.User
   alias __MODULE__, as: Conversation
 
+  @foreign_key_type :binary_id
   schema "conversations" do
-    field :user_id,   :binary_id
     field :other_jid, :string
     field :message,   :binary
     field :outgoing,  :boolean
+
+    belongs_to :user, User
 
     timestamps()
   end

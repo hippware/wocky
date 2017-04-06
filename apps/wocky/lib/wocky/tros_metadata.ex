@@ -1,21 +1,21 @@
 defmodule Wocky.TROSMetadata do
-  @moduledoc ""
+  @moduledoc """
+  DB interface module for TROS metadata (access and ownership info)
+  """
 
   use Wocky.Repo.Model
 
-  import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-
-  alias Wocky.Repo
   alias Wocky.User
 
   alias __MODULE__, as: TROSMetadata
 
   @primary_key false
-  schema "tros_metadata" do
-    field :id,        :binary_id, primary_key: true
-    field :user_id,   :binary_id
-    field :access,    :binary
+  @foreign_key_type :binary_id
+  schema "tros_metadatas" do
+    field :id,     :binary_id, primary_key: true
+    field :access, :binary
+
+    belongs_to :user, User
 
     timestamps()
   end
@@ -31,15 +31,18 @@ defmodule Wocky.TROSMetadata do
 
   @spec put(id, User.id, access) :: :ok
   def put(id, user_id, access) do
-    Repo.insert!(%TROSMetadata{id: id, user_id: user_id, access: access})
+    %TROSMetadata{id: id, user_id: user_id, access: access}
+    |> changeset
+    |> Repo.insert!
     :ok
   end
 
   @spec set_access(id, access) :: :ok
   def set_access(id, access) do
-    Repo.get!(TROSMetadata, id)
+    TROSMetadata
+    |> Repo.get!(id)
     |> changeset(%{access: access})
-    |> Repo.update!
+    |> Repo.update
     :ok
   end
 
