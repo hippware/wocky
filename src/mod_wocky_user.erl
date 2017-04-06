@@ -5,6 +5,7 @@
 -module(mod_wocky_user).
 
 -compile({parse_transform, cut}).
+-compile({parse_transform, fun_chain}).
 
 -export([
    start/2,
@@ -51,21 +52,34 @@ handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
 %% Common helpers
 %%--------------------------------------------------------------------
 
-handle_request(IQ, FromJID, ToJID = #jid{lserver = LServer}, get,
+handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
                ReqEl = #xmlel{name = <<"get">>, children = Children}) ->
     do([error_m ||
-        User <- get_user(ReqEl),
+        User <- get_user_node(ReqEl),
         UserJID <- get_user_jid(User, LServer),
         Relationship <- {ok, relationship(FromJID, UserJID)},
         Fields <- get_get_req_fields(Children, []),
         check_field_permissions(Relationship, Fields),
-        XMLFields <- get_resp_fields(ToJID, User, Fields),
-        {ok, make_get_response_iq(IQ, User, XMLFields)}]);
+        XMLFields <- get_resp_fields(Fields, LServer, User),
+
+        {ok, make_get_response_iq(XMLFields, IQ, User)}
+       ]);
+
+handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
+               #xmlel{name = <<"users">>, children = Children}) ->
+    {ok,
+     fun_chain:first(
+       Children,
+       get_users(),
+       make_jids(),
+       get_users_fields(FromJID, LServer),
+       make_users_response_iq(IQ)
+      )};
 
 handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
                ReqEl = #xmlel{name = <<"set">>, children = Children}) ->
     do([error_m ||
-        User <- get_user(ReqEl),
+        User <- get_user_node(ReqEl),
         UserJID <- get_user_jid(User, LServer),
         validate_same_user(FromJID, UserJID),
         Fields <- get_set_req_fields(Children, []),
@@ -79,7 +93,30 @@ handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
                                    [remove_user, LServer, [LUser, LServer]]),
     {ok, make_delete_response_iq(IQ)}.
 
-get_user(ReqEl) ->
+make_jids(BJIDs) ->
+    [{jid:from_binary(B), B} || B <- BJIDs].
+
+get_users_fields(JIDs, FromJID, LServer) ->
+    lists:map(get_user_fields(FromJID, LServer, _), JIDs).
+
+get_user_fields(_FromJID, _LServer, {error, BinaryJID}) ->
+    fun_chain:first(
+      {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user JID">>)},
+      handle_fields_error(),
+      wrap_user_result(BinaryJID)
+     );
+
+get_user_fields(FromJID, LServer, {JID, BinaryJID}) ->
+    fun_chain:first(
+      FromJID,
+      relationship(JID),
+      get_visible_fields(),
+      get_resp_fields(LServer, JID#jid.luser),
+      handle_fields_error(),
+      wrap_user_result(BinaryJID)
+     ).
+
+get_user_node(ReqEl) ->
     case exml_query:attr(ReqEl, <<"node">>) of
         <<"user/", User/binary>> when byte_size(User) > 0 ->
             {ok, User};
@@ -88,6 +125,16 @@ get_user(ReqEl) ->
         _ ->
             not_valid("Malformed node attribute")
     end.
+
+get_users(Children) ->
+    lists:foldl(get_user(_, _), [], Children).
+
+get_user(UserEl = #xmlel{name = <<"user">>}, Acc) ->
+    case exml_query:attr(UserEl, <<"jid">>) of
+        undefined -> Acc;
+        X -> [X | Acc]
+    end;
+get_user(_, Acc) -> Acc.
 
 get_user_jid(User, Server) ->
     case jid:make(User, Server, <<>>) of
@@ -189,6 +236,11 @@ check_field_permissions(Relationship, Fields) ->
     end.
 
 
+get_visible_fields(Relationship) ->
+    lists:filter(fun(F) -> is_visible(Relationship, field_visibility(F)) end,
+                 fields()).
+
+
 is_visible(self,     _)      -> true;
 is_visible(friend,   private)-> false;
 is_visible(friend,   _)      -> true;
@@ -196,8 +248,7 @@ is_visible(stranger, public) -> true;
 is_visible(stranger, _)      -> false.
 
 
-get_resp_fields(ToJID, LUser, Fields) ->
-    LServer = ToJID#jid.lserver,
+get_resp_fields(Fields, LServer, LUser) ->
     case wocky_db_user:find_user(LUser, LServer) of
         not_found ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
@@ -231,10 +282,16 @@ value_element(Value) ->
            children = [#xmlcdata{content = null_to_bin(Value)}]}.
 
 
-make_get_response_iq(IQ, User, Fields) ->
+make_get_response_iq(Fields, IQ, User) ->
     IQ#iq{type = result,
           sub_el = #xmlel{name = <<"fields">>,
                           attrs = response_attrs(User),
+                          children = Fields}}.
+
+
+make_users_response_iq(Fields, IQ) ->
+    IQ#iq{type = result,
+          sub_el = #xmlel{name = <<"users">>,
                           children = Fields}}.
 
 
@@ -255,6 +312,15 @@ make_error_response(IQ, ErrStanza) ->
     ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
 
+wrap_user_result(Result, BJID) ->
+    #xmlel{name = <<"user">>,
+           attrs = [{<<"jid">>, BJID}],
+           children = Result}.
+
+handle_fields_error({ok, XML}) ->
+    XML;
+handle_fields_error({error, Stanza}) ->
+    [Stanza].
 
 null_to_bin(null) -> <<"">>;
 null_to_bin(X) -> X.

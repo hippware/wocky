@@ -8,6 +8,7 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
 
+-include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
@@ -21,6 +22,7 @@ all() ->
     [
      {group, self},
      {group, other},
+     {group, bulk},
 %    {group, friend},
      {group, error},
      {group, set},
@@ -38,6 +40,7 @@ groups() ->
                   other_user_mixed_fields,
                   non_existant_user,
                   invalid_user]},
+     {bulk, [], [bulk_get]},
 %%     {friend, [], [friend_all_fields,
 %%                   friend_allowed_fields,
 %%                   friend_denied_field,
@@ -304,6 +307,16 @@ garbage_get(Config) ->
     end).
 
 %%--------------------------------------------------------------------
+%% mod_wocky_user 'users' (bulk) tests
+%%--------------------------------------------------------------------
+
+bulk_get(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+      expect_iq_success(
+        users_request([?ALICE_B_JID, ?BOB_B_JID, ?TIM_B_JID]), Alice)
+    end).
+
+%%--------------------------------------------------------------------
 %% mod_wocky_user 'set' tests
 %%--------------------------------------------------------------------
 
@@ -520,7 +533,7 @@ request_wrapper(Type, User, DataFields) ->
                     {<<"type">>, Type}],
            children = [#xmlel{name = Type,
                               attrs = [{<<"xmlns">>,
-                                        <<"hippware.com/hxep/user">>},
+                                        ?NS_USER},
                                        {<<"node">>,
                                         <<"user/", User/binary>>}],
                               children = DataFields
@@ -563,6 +576,9 @@ delete_request() ->
            attrs = [{<<"id">>, iq_id()},
                     {<<"type">>, <<"set">>}],
            children = [#xmlel{name = <<"delete">>,
-                              attrs = [{<<"xmlns">>,
-                                        <<"hippware.com/hxep/user">>}]
+                              attrs = [{<<"xmlns">>, ?NS_USER}]
                              }]}.
+
+users_request(BJIDs) ->
+    Users = [#xmlel{name = <<"user">>, attrs = [{<<"jid">>, B}]} || B <- BJIDs],
+    test_helper:iq_get(?NS_USER, #xmlel{name = <<"users">>, children = Users}).
