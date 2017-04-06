@@ -91,7 +91,6 @@ start(_StartType, _StartArgs) ->
     ok = cache_server_names(CfgTerms),
 
     ok = maybe_enable_notifications(CfgTerms),
-    ok = 'Elixir.Wocky.LocationApi':start(),
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
@@ -174,13 +173,13 @@ maybe_enable_notifications(CfgTerms) ->
     case proplists:get_value(notification_system, CfgTerms, none) of
         aws ->
             ok = lager:info("AWS Notifications enabled"),
-            'Elixir.Wocky.Notification.AWSHandler';
+            'Elixir.Wocky.PushNotifier.SNS';
         test ->
             ok = lager:info("Notification testing system enabled"),
-            'Elixir.Wocky.Notification.TestHandler';
+            'Elixir.Wocky.PushNotifier.Test';
         none ->
             ok = lager:info("Notifications disabled"),
-            'Elixir.Wocky.Notification.NullHandler'
+            'Elixir.Wocky.PushNotifier.Null'
     end,
     wocky_notification_handler:set_handler(NotificationHandlerModule).
 
