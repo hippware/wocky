@@ -2,7 +2,30 @@ use Mix.Config
 
 config :wocky_xmpp,
   wocky_env: 'test',
+  keyspace_prefix: 'wocky_test_',
   config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
+
+config :schemata,
+  cluster: [
+    username: 'cassandra',
+    password: 'cassandra',
+    seed_hosts: ['127.0.0.1'],
+    keyspaces: [
+      wocky_test_shared: [
+        strategy: :simple,
+        factor: 1,
+        clients: 10
+      ],
+      wocky_test_localhost: [
+        strategy: :simple,
+        factor: 1,
+        clients: 10
+      ]
+    ]
+  ]
+
+config :logger,
+  level: :error
 
 config :lager,
   handlers: [
