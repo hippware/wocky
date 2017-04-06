@@ -11,7 +11,6 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
 
--define(timex, 'Elixir.Timex').
 -define(ansi, 'Elixir.IO.ANSI').
 
 -export([dump/3,
@@ -31,7 +30,7 @@ dump(Handle, Resource, StartBin, DurationBin) ->
        ]).
 
 get_user(Handle) ->
-    case ?wocky_user:search(handle, Handle) of
+    case ?wocky_user:find_by(handle, Handle) of
         [] -> {error, "User not found"};
         [#{id := ID, server := Server}] -> {ok, jid:make(ID, Server, <<>>)}
     end.

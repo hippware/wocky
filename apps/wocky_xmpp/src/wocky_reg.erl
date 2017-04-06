@@ -72,5 +72,5 @@ create_or_update_user(ExternalId, PhoneNumber) ->
 maybe_get_token(false, _, _, _) ->
     {ok, {undefined, undefined}};
 maybe_get_token(true, User, Server, Resource) ->
-    {ok, {Token, Expiry}} = ?wocky_user_token:assign(User, Server, Resource),
+    {ok, {Token, Expiry}} = ?wocky_token:assign(User, Server, Resource),
     {ok, {Token, wocky_db:timestamp_to_string(Expiry)}}.

@@ -116,10 +116,9 @@ make_register_response(#reg_result{user = User,
                                    token = Token,
                                    token_expiry = TokenExpiry,
                                    external_id = ExternalID}) ->
-   Handle = case ?wocky_user:find(User, Server) of
+   Handle = case ?wocky_user:get_handle(User) of
                 nil -> <<>>;
-                #{handle := nil} -> <<>>;
-                #{handle := H} -> H
+                H -> H
             end,
    JSONFields = [{user, User},
                  {server, Server},

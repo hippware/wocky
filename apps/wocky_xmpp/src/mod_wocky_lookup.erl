@@ -90,7 +90,7 @@ lookup_number(Number, Reductions) ->
     {lookup_number(Number), Reductions - 1}.
 
 lookup_number(Number) ->
-    ?wocky_user:search(phone_number, maybe_add_plus(Number)).
+    ?wocky_user:find_by(phone_number, maybe_add_plus(Number)).
 
 maybe_add_plus(<<"+", _/binary>> = String) -> String;
 maybe_add_plus(String) -> <<"+", String/binary>>.
@@ -115,7 +115,7 @@ lookup_handles(Handles) ->
                 end, [], Handles).
 
 lookup_handle(Handle) ->
-    ?wocky_user:search(handle, Handle).
+    ?wocky_user:find_by(handle, Handle).
 
 
 %%%===================================================================
@@ -138,7 +138,7 @@ user_to_xml({Number, UserData}) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, Number} | xml_user_attrs(UserData)]}.
 
-xml_user_attrs([#{id := ID, server := Server} = User | _]) ->
+xml_user_attrs(#{id := ID, server := Server} = User) ->
     [{<<"jid">>, jid:to_binary({ID, Server, <<>>})},
      {<<"handle">>, get_safe(handle, User)},
      {<<"first_name">>, get_safe(first_name, User)},
@@ -146,7 +146,7 @@ xml_user_attrs([#{id := ID, server := Server} = User | _]) ->
      {<<"avatar">>, get_safe(avatar, User)}];
 xml_user_attrs(not_acceptable) ->
     [{<<"error">>, <<"not-acceptable">>}];
-xml_user_attrs([]) ->
+xml_user_attrs(nil) ->
     [{<<"error">>, <<"item-not-found">>}].
 
 get_safe(Key, Map) ->

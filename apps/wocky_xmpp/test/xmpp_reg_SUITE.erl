@@ -68,8 +68,8 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    ?wocky_repo:delete_all(<<"users">>, ?SERVER),
-    ?wocky_repo:delete_all(<<"tokens">>, ?SERVER),
+    ?wocky_repo:delete_all(?wocky_user),
+    ?wocky_repo:delete_all(?wocky_token),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->

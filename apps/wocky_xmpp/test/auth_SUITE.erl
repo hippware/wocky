@@ -78,7 +78,7 @@ release_token(Config) ->
 
 login_with_token(Config) ->
     Domain = ct:get_config(ejabberd_domain),
-    {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_user_token, assign,
+    {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_token, assign,
                                             [?ALICE, Domain, <<"res1">>]),
     Config2 = escalus_users:update_userspec(Config, alice, password, Token),
     escalus:story(Config2, [{alice, 1}], fun (Alice) ->

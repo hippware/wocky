@@ -86,7 +86,7 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
 
 handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
                #xmlel{name = <<"delete">>}) ->
-    ok = ?wocky_user:delete(LUser, LServer),
+    ok = ?wocky_user:delete(LUser),
     {ok, _Ref} = timer:apply_after(?USER_DELETE_DELAY, ejabberd_hooks, run,
                                    [remove_user, LServer, [LUser, LServer]]),
     {ok, make_delete_response_iq(IQ)}.
@@ -242,8 +242,8 @@ is_visible(self, _)        -> true;
 is_visible(_,    private)  -> false;
 is_visible(_,    public)   -> true.
 
-get_resp_fields(Fields, LServer, LUser) ->
-    case ?wocky_user:find(LUser, LServer) of
+get_resp_fields(Fields, _LServer, LUser) ->
+    case ?wocky_user:find(LUser) of
         nil ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->
@@ -454,7 +454,7 @@ valid_user_fields() ->
      <<"last_name">>, <<"email">>].
 
 update_user(LUser, LServer, Row) ->
-   case ?wocky_user:update(LUser, LServer, Row) of
+   case ?wocky_user:update(LUser, Row) of
        ok ->
          update_roster_contacts(LUser, LServer),
          ejabberd_hooks:run(wocky_user_updated, LServer, [LUser, LServer]),

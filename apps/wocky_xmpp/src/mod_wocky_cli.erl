@@ -225,9 +225,9 @@ fix_access(BotJID, Server, FileID) ->
 
 make_token(Handle) ->
     do([error_m ||
-        #{id := User, server := Server} <- get_user(Handle),
+        #{id := User} <- get_user(Handle),
         Resource <- make_resource(),
-        Token <- get_token(User, Server, Resource),
+        Token <- get_token(User, Resource),
         io:fwrite("User:     ~s\nResource: ~s\nToken:    ~s\n",
                   [User, Resource, Token])
        ]).
@@ -236,8 +236,8 @@ make_resource() ->
     Suffix = base16:encode(crypto:strong_rand_bytes(4)),
     {ok, <<"cli-resource-", Suffix/binary>>}.
 
-get_token(User, Server, Resource) ->
-    {ok, {Token, _Expiry}} = ?wocky_user_token:assign(User, Server, Resource),
+get_token(User, Resource) ->
+    {ok, {Token, _Expiry}} = ?wocky_token:assign(User, Resource),
     {ok, Token}.
 
 %%%===================================================================
@@ -322,10 +322,10 @@ reindex(Index) ->
 %%%===================================================================
 
 get_user(Handle) ->
-    case ?wocky_user:search(handle, Handle) of
-        [] ->
+    case ?wocky_user:find_by(handle, Handle) of
+        nil ->
             {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
-        [User] ->
+        User ->
             {ok, User}
     end.
 

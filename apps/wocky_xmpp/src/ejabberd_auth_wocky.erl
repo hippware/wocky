@@ -84,7 +84,7 @@ set_password(LUser, LServer, Password) ->
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     boolean().
 check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
-    ?wocky_user_token:'valid?'(LUser, LServer, Token);
+    ?wocky_token:'valid?'(LUser, LServer, Token);
 check_password(LUser, LServer, Password) ->
     ejabberd_auth_odbc:check_password(LUser, LServer, Password).
 

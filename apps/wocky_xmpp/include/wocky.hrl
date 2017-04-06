@@ -61,9 +61,12 @@
 -define(wocky_conversation, 'Elixir.Wocky.Conversation').
 -define(wocky_id, 'Elixir.Wocky.Repo.ID').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
+-define(wocky_factory, 'Elixir.Wocky.Repo.Factory').
 -define(wocky_tros_metadata, 'Elixir.Wocky.TROSMetadata').
 -define(wocky_user, 'Elixir.Wocky.User').
--define(wocky_user_token, 'Elixir.Wocky.Token').
+-define(wocky_token, 'Elixir.Wocky.Token').
+
+-define(timex, 'Elixir.Timex').
 
 % Standard time format to use unless there's a good reason to do otherwise
 -define(DEFAULT_TIME_FORMAT, <<"ISO:Extended:Z">>).

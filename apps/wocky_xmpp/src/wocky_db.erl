@@ -16,7 +16,6 @@
 -define(query, 'Elixir.Schemata.Query').
 -define(result, 'Elixir.Schemata.Result').
 -define(schema, 'Elixir.Schemata.Schema').
--define(timex, 'Elixir.Timex').
 
 -type server()     :: binary().
 -type context()    :: none | shared | server().

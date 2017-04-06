@@ -87,7 +87,8 @@ replace_privacy_list(LUser, LServer, Name, Items) ->
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    mod_privacy_odbc:remove_user(LUser, LServer).
+    {updated, _} = mod_privacy_odbc:remove_user(LUser, LServer),
+    ok.
 
 %%====================================================================
 %% Helpers

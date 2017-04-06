@@ -45,18 +45,17 @@ after_all(_) ->
     ok.
 
 before_each() ->
-    ok = ?wocky_repo:update(#{id => ?BOB,
-                              server => ?SERVER,
-                              handle => <<"bobby">>,
-                              first_name => <<"Bob">>,
-                              last_name => <<"Thebuilder">>,
-                              avatar => ?AVATAR_ID},
-                            <<"users">>, ?SERVER, ?BOB),
-    ok = ?wocky_user:wait_for_user(?BOB),
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    _User = ?wocky_factory:insert(user, #{id => ?BOB,
+                                          username => ?BOB,
+                                          server => ?SERVER,
+                                          handle => <<"bobby">>,
+                                          first_name => <<"Bob">>,
+                                          last_name => <<"Thebuilder">>,
+                                          avatar => ?AVATAR_ID}),
     wocky_db_seed:seed_tables(shared, [roster]).
 
 after_each(_) ->
-    ok = ?wocky_user:delete(?BOB, ?SERVER),
     ok.
 
 make_jid(U) ->

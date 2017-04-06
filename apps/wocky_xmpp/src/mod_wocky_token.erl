@@ -40,13 +40,13 @@ handle_iq(From, _To, #iq{sub_el = SubEl} = IQ) ->
             IQ#iq{type = error, sub_el = [SubEl, ?ERR_ITEM_NOT_FOUND]}
     end.
 
-handle_local_iq(LUser, LServer, LResource, #iq{type = get} = IQ) ->
-    {ok, {Token, Expiry}} = ?wocky_user_token:assign(LUser, LServer, LResource),
+handle_local_iq(LUser, _LServer, LResource, #iq{type = get} = IQ) ->
+    {ok, {Token, Expiry}} = ?wocky_token:assign(LUser, LResource),
     iq_result(IQ,
               [{<<"expiry">>, expiry_string(Expiry)}],
               [#xmlcdata{content = Token}]);
-handle_local_iq(LUser, LServer, LResource, #iq{type = set} = IQ) ->
-    ok = ?wocky_user_token:release(LUser, LServer, LResource),
+handle_local_iq(LUser, _LServer, LResource, #iq{type = set} = IQ) ->
+    ok = ?wocky_token:release(LUser, LResource),
     iq_result(IQ, [], []).
 
 iq_result(IQ, Attrs, Content) ->
