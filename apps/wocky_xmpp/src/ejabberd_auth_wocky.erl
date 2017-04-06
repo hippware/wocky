@@ -61,15 +61,15 @@
 
 -spec start(ejabberd:server()) -> ok.
 start(Host) ->
-    ejabberd_auth_riak:start(Host).
+    ejabberd_auth_odbc:start(Host).
 
 -spec stop(ejabberd:server()) -> ok.
 stop(Host) ->
-    ejabberd_auth_riak:stop(Host).
+    ejabberd_auth_odbc:stop(Host).
 
 -spec store_type(ejabberd:lserver()) -> scram | plain.
 store_type(LServer) ->
-    ejabberd_auth_riak:store_type(LServer).
+    ejabberd_auth_odbc:store_type(LServer).
 
 -spec authorize(mongoose_credentials:t()) ->
     {ok, mongoose_credentials:t()} | {error, any()}.
@@ -79,19 +79,19 @@ authorize(Creds) ->
 -spec set_password(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     ok | {error, not_allowed | invalid_jid}.
 set_password(LUser, LServer, Password) ->
-    ejabberd_auth_riak:set_password(LUser, LServer, Password).
+    ejabberd_auth_odbc:set_password(LUser, LServer, Password).
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     boolean().
 check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
     ?wocky_user_token:'valid?'(LUser, LServer, Token);
 check_password(LUser, LServer, Password) ->
-    ejabberd_auth_riak:check_password(LUser, LServer, Password).
+    ejabberd_auth_odbc:check_password(LUser, LServer, Password).
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary(), binary(),
                      fun()) -> boolean().
 check_password(LUser, LServer, Password, Digest, DigestGen) ->
-    ejabberd_auth_riak:check_password(LUser, LServer, Password,
+    ejabberd_auth_odbc:check_password(LUser, LServer, Password,
                                       Digest, DigestGen).
 
 %% Not really suitable for use since it does not pass in extra profile
@@ -99,49 +99,49 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 %% here to enable Escalus to create users in integration tests.
 -spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok.
 try_register(LUser, LServer, Password) ->
-    ejabberd_auth_riak:try_register(LUser, LServer, Password).
+    ejabberd_auth_odbc:try_register(LUser, LServer, Password).
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
 dirty_get_registered_users() ->
-    ejabberd_auth_riak:dirty_get_registered_users().
+    ejabberd_auth_odbc:dirty_get_registered_users().
 
 -spec get_vh_registered_users(ejabberd:lserver()) ->
     [ejabberd:simple_bare_jid()].
 get_vh_registered_users(LServer) ->
-    ejabberd_auth_riak:get_vh_registered_users(LServer).
+    ejabberd_auth_odbc:get_vh_registered_users(LServer).
 
 -spec get_vh_registered_users(ejabberd:lserver(), list()) ->
     [ejabberd:simple_bare_jid()].
 get_vh_registered_users(LServer, Opts) ->
-    ejabberd_auth_riak:get_vh_registered_users(LServer, Opts).
+    ejabberd_auth_odbc:get_vh_registered_users(LServer, Opts).
 
 -spec get_vh_registered_users_number(ejabberd:lserver()) -> non_neg_integer().
 get_vh_registered_users_number(LServer) ->
-    ejabberd_auth_riak:get_vh_registered_users_number(LServer).
+    ejabberd_auth_odbc:get_vh_registered_users_number(LServer).
 
 -spec get_vh_registered_users_number(ejabberd:lserver(), list()) ->
     non_neg_integer().
 get_vh_registered_users_number(LServer, Opts) ->
-    ejabberd_auth_riak:get_vh_registered_users_number(LServer, Opts).
+    ejabberd_auth_odbc:get_vh_registered_users_number(LServer, Opts).
 
 -spec get_password(ejabberd:luser(), ejabberd:lserver()) ->
     scram:scram_tuple() | binary() | false.
 get_password(LUser, LServer) ->
-    ejabberd_auth_riak:get_password(LUser, LServer).
+    ejabberd_auth_odbc:get_password(LUser, LServer).
 
 -spec get_password_s(ejabberd:luser(), ejabberd:lserver()) -> binary().
 get_password_s(LUser, LServer) ->
-    ejabberd_auth_riak:get_password_s(LUser, LServer).
+    ejabberd_auth_odbc:get_password_s(LUser, LServer).
 
 -spec does_user_exist(ejabberd:luser(), ejabberd:lserver()) -> boolean().
 does_user_exist(LUser, LServer) ->
-    ejabberd_auth_riak:does_user_exist(LUser, LServer).
+    ejabberd_auth_odbc:does_user_exist(LUser, LServer).
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver()) -> ok.
 remove_user(LUser, LServer) ->
-    ejabberd_auth_riak:remove_user(LUser, LServer).
+    ejabberd_auth_odbc:remove_user(LUser, LServer).
 
 -spec remove_user(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     no_return().
 remove_user(LUser, LServer, Password) ->
-    ejabberd_auth_riak:remove_user(LUser, LServer, Password).
+    ejabberd_auth_odbc:remove_user(LUser, LServer, Password).
