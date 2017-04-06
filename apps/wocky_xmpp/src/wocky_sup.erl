@@ -29,12 +29,13 @@ init([]) ->
                  intensity => 1,
                  period    => 5},
 
-    UserIdx = #{id       => wocky_index,
-                start    => {'Elixir.Wocky.Index', start_link, []},
-                restart  => permanent,
-                shutdown => 5000,
-                type     => worker,
-                modules  => ['Elixir.Wocky.Index']},
+    %% FIXME
+    % UserIdx = #{id       => wocky_index,
+    %             start    => {'Elixir.Wocky.Index', start_link, []},
+    %             restart  => permanent,
+    %             shutdown => 5000,
+    %             type     => worker,
+    %             modules  => ['Elixir.Wocky.Index']},
 
     BotExpiryMon = #{id       => wocky_bot_expiry_mon,
                      start    => {wocky_bot_expiry_mon, start_link, []},
@@ -50,4 +51,4 @@ init([]) ->
              type     => supervisor
             },
 
-    {ok, {SupFlags, [UserIdx, BotExpiryMon, Cron]}}.
+    {ok, {SupFlags, [BotExpiryMon, Cron]}}.
