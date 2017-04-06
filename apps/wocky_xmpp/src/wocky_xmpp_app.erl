@@ -97,6 +97,9 @@ start(_StartType, _StartArgs) ->
 
     ok = maybe_enable_notifications(CfgTerms),
 
+    ok = mod_wocky_access:init(),
+    ok = mod_wocky_publishing:init(),
+
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
     ok = maybe_start_ejabberd(not Minimal),
