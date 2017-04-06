@@ -7,6 +7,7 @@
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
+-include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 -include("tros.hrl").
 
@@ -24,9 +25,8 @@
          make_upload_response/6,
          get_owner/1,
          get_access/1,
-         get_metadata/2,
          delete/2,
-         update_access/3
+         update_access/2
         ]).
 
 -ifdef(TEST).
@@ -77,7 +77,7 @@ make_upload_response(FromJID = #jid{luser = Owner}, #jid{lserver = LServer},
 
     RespFields = resp_fields(put, URL, ReferenceURL),
 
-    wocky_db_tros:set_metadata(LServer, FileID, Owner, Access),
+    ?wocky_tros_metadata:put(FileID, Owner, Access),
 
     {RetHeaders, RespFields}.
 
@@ -100,8 +100,8 @@ s3_url(Server, Bucket, FileID, Method, URLParams) ->
     ?s3:presigned_url(Config, Method, Bucket, path(Server, FileID), Options),
     URL.
 
-update_access(Server, FileID, NewAccess) ->
-    wocky_db_tros:set_access(Server, FileID, NewAccess).
+update_access(FileID, NewAccess) ->
+    ?wocky_tros_metadata:set_access(FileID, NewAccess).
 
 upload_bucket() ->
     <<(bucket())/binary, "-quarantine">>.
@@ -125,27 +125,16 @@ hash_prefix(FileID) ->
     base16:encode(
       binary:part(crypto:hash(md5, tros:get_base_id(FileID)), 0, 2)).
 
-get_owner(Metadata) ->
-    get_metadata_item(Metadata, owner).
-
-get_access(Metadata) ->
-    get_metadata_item(Metadata, access).
-
-get_metadata_item(Metadata, Item) ->
-    case maps:get(Item, Metadata, undefined) of
-        undefined ->
-            {error, metadata_not_found};
-        Value ->
-            {ok, Value}
+get_owner(ID) ->
+    case ?wocky_tros_metadata:get_user_id(ID) of
+        nil -> {error, not_found};
+        Owner -> {ok, Owner}
     end.
 
-get_metadata(LServer, FileID) ->
-    MD = wocky_db_tros:get_metadata(LServer, FileID),
-    case MD of
-        not_found ->
-            {error, not_found};
-        _ ->
-            {ok, MD}
+get_access(ID) ->
+    case ?wocky_tros_metadata:get_access(ID) of
+        nil -> {error, not_found};
+        Owner -> {ok, Owner}
     end.
 
 delete(LServer, FileID) ->

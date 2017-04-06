@@ -80,12 +80,11 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
-        Metadata <- expand_err(tros:get_metadata(LServer, FileID)),
-        OwnerID <- expand_err(tros:get_owner(Metadata)),
-        Access <- expand_err(tros:get_access(Metadata)),
+        OwnerID <- expand_err(tros:get_owner(FileID)),
+        Access <- expand_err(tros:get_access(FileID)),
         check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
-        download_response(Req, OwnerID, FileID, Metadata)
+        download_response(Req, OwnerID, FileID)
        ]).
 
 handle_upload_request(Req, UR) ->
@@ -185,10 +184,10 @@ upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
     response(Req, Headers, FullFields, <<"upload">>).
 
 download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                          OwnerID, FileID, Metadata) ->
+                          OwnerID, FileID) ->
     {Headers, RespFields} =
     (backend()):make_download_response(FromJID, ToJID, OwnerID,
-                                       FileID, Metadata),
+                                       FileID, #{}),
 
     response(Req, Headers, RespFields, <<"download">>).
 

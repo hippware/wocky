@@ -9,6 +9,8 @@ defmodule Wocky.User do
   alias Wocky.Index
   alias Wocky.Repo.ID
   alias Wocky.Token
+  alias Wocky.Conversation
+  alias Wocky.TROSMetadata
   alias __MODULE__, as: User
 
   @primary_key {:id, :binary_id, autogenerate: false}
@@ -30,6 +32,8 @@ defmodule Wocky.User do
 
     has_many :tokens, Token
     has_many :devices, Device
+    has_many :conversations, Conversation
+    has_many :tros_metadatas, TROSMetadata
   end
 
   @type id           :: binary
