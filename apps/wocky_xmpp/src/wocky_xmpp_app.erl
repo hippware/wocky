@@ -1,6 +1,6 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Wocky application module
--module(wocky_app).
+-module(wocky_xmpp_app).
 
 -include("wocky.hrl").
 

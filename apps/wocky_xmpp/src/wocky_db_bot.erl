@@ -104,7 +104,7 @@ insert(_Server, Fields) ->
 -spec insert_new_name(wocky_db:id(), shortname()) -> ok | {error, exists}.
 insert_new_name(ID, Name) ->
     Vals = #{shortname => Name, id => ID},
-    case wocky_db:insert_new(wocky_app:server(), bot_name, Vals) of
+    case wocky_db:insert_new(wocky_xmpp_app:server(), bot_name, Vals) of
         true -> ok;
         false -> {error, exists}
     end.

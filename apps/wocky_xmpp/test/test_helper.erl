@@ -74,7 +74,7 @@ ensure_wocky_is_running() ->
         {error, {already_started, _Pid}} -> ok
     end,
 
-    ok = wocky_app:start("ct.test").
+    ok = wocky_xmpp_app:start("ct.test").
 
 ensure_all_clean(Clients) ->
     lists:foreach(fun(Client) ->

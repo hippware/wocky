@@ -9,7 +9,7 @@
 setup_spiral(Metrics) ->
     lists:foreach(fun(M) ->
                           mongoose_metrics:ensure_metric(
-                            wocky_app:server(), M, spiral)
+                            wocky_xmpp_app:server(), M, spiral)
                   end,
                   Metrics).
 
@@ -17,4 +17,4 @@ inc(Metric) ->
     inc(Metric, 1).
 
 inc(Metric, Count) ->
-    mongoose_metrics:update(wocky_app:server(), Metric, Count).
+    mongoose_metrics:update(wocky_xmpp_app:server(), Metric, Count).

@@ -96,7 +96,7 @@ mech_step(Creds, ClientIn) ->
     end.
 
 get_auth_bypass_prefixes(Opts) ->
-  case wocky_app:is_testing() of
+  case wocky_xmpp_app:is_testing() of
     true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
     false -> []
   end.

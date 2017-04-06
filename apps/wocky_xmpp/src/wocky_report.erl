@@ -36,7 +36,7 @@ maybe_report_bot(BotID, Duration) ->
     end.
 
 report_bot(BotID, CreatedAt) when is_binary(BotID) ->
-    case wocky_db_bot:get_bot(wocky_app:server(), BotID) of
+    case wocky_db_bot:get_bot(wocky_xmpp_app:server(), BotID) of
         not_found -> [];
         Bot -> report_bot(Bot, CreatedAt)
     end;

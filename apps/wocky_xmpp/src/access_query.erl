@@ -57,7 +57,7 @@ handle_result({redirect, Target}, LServer, LResource, Actor, Op, Redirects) ->
     end.
 
 aq_jid() ->
-    jid:make(<<>>, wocky_app:server(), <<>>).
+    jid:make(<<>>, wocky_xmpp_app:server(), <<>>).
 
 make_access_query(Resource, Actor, Op) ->
     #iq{type = get,

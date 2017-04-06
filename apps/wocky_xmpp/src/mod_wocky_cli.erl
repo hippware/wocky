@@ -153,7 +153,7 @@ make_friend({#{id := User1, server := Server1},
     RosterItem2 = RosterItem#wocky_roster{subscription = both,
                                           ask = none},
     wocky_db_roster:update_roster_item(User1, Server1, JID2, RosterItem2),
-    ejabberd_hooks:run(roster_modified, wocky_app:server(),
+    ejabberd_hooks:run(roster_modified, wocky_xmpp_app:server(),
                        [User1, Server1, JID2]).
 
 %%%===================================================================
