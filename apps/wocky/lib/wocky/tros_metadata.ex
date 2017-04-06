@@ -29,21 +29,23 @@ defmodule Wocky.TROSMetadata do
     access:  access
   }
 
-  @spec put(id, User.id, access) :: :ok
+  @spec put(id, User.id, access) :: {:ok, TROSMetadata}
   def put(id, user_id, access) do
     %TROSMetadata{id: id, user_id: user_id, access: access}
     |> changeset
-    |> Repo.insert!
-    :ok
+    |> Repo.insert
   end
 
-  @spec set_access(id, access) :: :ok
+  @spec set_access(id, access) :: {:ok, TROSMetadata}
   def set_access(id, access) do
-    TROSMetadata
-    |> Repo.get!(id)
-    |> changeset(%{access: access})
-    |> Repo.update
-    :ok
+    case Repo.get(TROSMetadata, id) do
+      nil ->
+        {:error, :no_existing_item}
+      md ->
+        md
+        |> changeset(%{access: access})
+        |> Repo.update
+    end
   end
 
   @spec get_user_id(id) :: User.id | nil
@@ -62,11 +64,14 @@ defmodule Wocky.TROSMetadata do
     |> Repo.one
   end
 
-  @change_fields [:access]
+  @change_fields [:id, :user_id, :access]
 
   defp changeset(struct, params \\ %{}) do
     struct
     |> cast(params, @change_fields)
+    |> validate_required(:access)
+    |> unique_constraint(:id, name: :PRIMARY)
+    |> foreign_key_constraint(:user_id)
   end
 
   defp with_file(query, id) do

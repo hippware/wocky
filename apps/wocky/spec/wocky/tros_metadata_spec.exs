@@ -28,8 +28,8 @@ defmodule Wocky.TROSMetadataSpec do
          access: metadata.access}
       end
 
-      it "should return :ok" do
-        shared.result |> should(eq :ok)
+      it "should return {:ok, TROSMetadata}" do
+        should_be_result(shared.result)
       end
 
       it "should set the user_id and access values" do
@@ -45,20 +45,17 @@ defmodule Wocky.TROSMetadataSpec do
       end
 
       it "should return an error" do
-        fn() -> TROSMetadata.put(shared.id,
-                                 shared.user.id,
-                                 shared.metadata.access)
-        end
-        |> should(raise_exception Ecto.ConstraintError)
+        TROSMetadata.put(shared.id, shared.user.id, shared.metadata.access)
+        |> should(be_error_result)
       end
     end
   end
 
-  describe "set_access/1" do
+  describe "set_access/2" do
     context "when there is no existing entry for the file" do
-      it "should raise an error" do
-        fn() -> TROSMetadata.set_access(ID.new, Lorem.sentence()) end
-        |> should(raise_exception Ecto.NoResultsError)
+      it "should return an error" do
+        TROSMetadata.set_access(ID.new, Lorem.sentence())
+        |> should(be_error_result)
       end
     end
 
@@ -69,8 +66,8 @@ defmodule Wocky.TROSMetadataSpec do
         {:ok, access: new_access, result: result}
       end
 
-      it "should return :ok" do
-        shared.result |> should(eq :ok)
+      it "should return {:ok, TROSMetadata}" do
+        should_be_result(shared.result)
       end
 
       it "should update the access value" do
@@ -79,7 +76,7 @@ defmodule Wocky.TROSMetadataSpec do
     end
   end
 
-  describe "get_user_id/2" do
+  describe "get_user_id/1" do
     it "should get the user_id of an existing file" do
       TROSMetadata.get_user_id(shared.id) |> should(eq shared.user.id)
     end
@@ -89,7 +86,7 @@ defmodule Wocky.TROSMetadataSpec do
     end
   end
 
-  describe "get_access/2" do
+  describe "get_access/1" do
     it "should get the access data for an existing file" do
       TROSMetadata.get_access(shared.id) |> should(eq shared.access)
     end
@@ -97,5 +94,10 @@ defmodule Wocky.TROSMetadataSpec do
     it "should return `nil` for a non-existant file" do
       TROSMetadata.get_access(ID.new) |> should(eq nil)
     end
+  end
+
+  defp should_be_result(result) do
+    result |> should(be_ok_result)
+    result |> elem(1) |> should(be_struct TROSMetadata)
   end
 end
