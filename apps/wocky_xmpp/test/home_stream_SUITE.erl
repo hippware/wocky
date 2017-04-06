@@ -40,6 +40,7 @@ all() -> [
           unsubscribe,
           get_item,
           auto_publish_bot,
+          auto_publish_private_bot,
           auto_publish_bot_item,
           no_auto_publish_pep_item
          ].
@@ -267,9 +268,22 @@ auto_publish_bot(Config) ->
         ensure_all_clean([Alice, Bob, Carol, Karen, Tim])
       end).
 
+auto_publish_private_bot(Config) ->
+    escalus:story(Config -- [{everyone_is_friends, true}],
+                  [{alice, 1}, {karen, 1}],
+      fun(Alice, Karen) ->
+        check_home_stream_sizes(0, [Karen]),
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        Stanza = escalus_stanza:to(share_bot_stanza(), ?KAREN_B_JID),
+        escalus_client:send(Alice, Stanza),
+        timer:sleep(400),
+        check_home_stream_sizes(1, [Karen])
+      end).
+
 auto_publish_bot_item(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
+        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
         check_home_stream_sizes(1, [Carol]),
 
         expect_iq_success(test_helper:subscribe_stanza(), Carol),
