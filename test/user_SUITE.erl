@@ -2,12 +2,14 @@
 %%% @doc Integration test suite for mod_wocky_user
 -module(user_SUITE).
 -compile(export_all).
+-compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
 
+-include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
@@ -21,6 +23,7 @@ all() ->
     [
      {group, self},
      {group, other},
+     {group, bulk},
 %    {group, friend},
      {group, error},
      {group, set},
@@ -38,6 +41,8 @@ groups() ->
                   other_user_mixed_fields,
                   non_existant_user,
                   invalid_user]},
+     {bulk, [], [bulk_get,
+                 bulk_get_empty]},
 %%     {friend, [], [friend_all_fields,
 %%                   friend_allowed_fields,
 %%                   friend_denied_field,
@@ -304,6 +309,36 @@ garbage_get(Config) ->
     end).
 
 %%--------------------------------------------------------------------
+%% mod_wocky_user 'users' (bulk) tests
+%%--------------------------------------------------------------------
+
+bulk_get(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+      #xmlel{name = <<"iq">>,
+             children = [Result]}
+      = expect_iq_success(
+                 users_request(
+                   [?ALICE_B_JID, ?BOB_B_JID, ?TIM_B_JID,
+                    <<"xxx">>, <<"xxx@123">>, <<>>]),
+                 Alice),
+      expect_bulk_results(Result,
+                          [{?ALICE_B_JID, all_fields()},
+                           {?BOB_B_JID, public_fields()},
+                           {?TIM_B_JID, error},
+                           {<<"xxx@123">>, error},
+                           {<<>>, error},
+                           {<<"xxx">>, error}
+                          ])
+    end).
+
+bulk_get_empty(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+      #xmlel{name = <<"iq">>, children = [Result]}
+      = expect_iq_success(users_request([]), Alice),
+      expect_bulk_results(Result, [])
+    end).
+
+%%--------------------------------------------------------------------
 %% mod_wocky_user 'set' tests
 %%--------------------------------------------------------------------
 
@@ -520,7 +555,7 @@ request_wrapper(Type, User, DataFields) ->
                     {<<"type">>, Type}],
            children = [#xmlel{name = Type,
                               attrs = [{<<"xmlns">>,
-                                        <<"hippware.com/hxep/user">>},
+                                        ?NS_USER},
                                        {<<"node">>,
                                         <<"user/", User/binary>>}],
                               children = DataFields
@@ -563,6 +598,38 @@ delete_request() ->
            attrs = [{<<"id">>, iq_id()},
                     {<<"type">>, <<"set">>}],
            children = [#xmlel{name = <<"delete">>,
-                              attrs = [{<<"xmlns">>,
-                                        <<"hippware.com/hxep/user">>}]
+                              attrs = [{<<"xmlns">>, ?NS_USER}]
                              }]}.
+
+users_request(BJIDs) ->
+    Users = [#xmlel{name = <<"user">>, attrs = [{<<"jid">>, B}]} || B <- BJIDs],
+    test_helper:iq_get(?NS_USER, #xmlel{name = <<"users">>, children = Users}).
+
+public_fields() ->
+    [jid, user, server, handle, avatar, first_name, last_name].
+private_fields() -> [phone_number, email, external_id].
+all_fields() -> public_fields() ++ private_fields().
+
+expect_bulk_results(#xmlel{name = <<"users">>, children = Children}, Results) ->
+    ?assertEqual([], lists:foldl(expect_bulk_result(_, _), Results, Children)).
+
+expect_bulk_result(
+  #xmlel{name = <<"user">>, attrs = [{<<"jid">>, JID}], children = Children},
+  UnmatchedResults) ->
+    {value, {JID, ExpectedResult}, UnmatchedResults2} =
+    lists:keytake(JID, 1, UnmatchedResults),
+    expect_results(ExpectedResult, Children),
+    UnmatchedResults2.
+
+expect_results(error, [#xmlel{name = <<"error">>}]) -> ok;
+expect_results(ExpectedFields, Fields)
+  when length(ExpectedFields) =:= length(Fields) ->
+    lists:foreach(fun(F) ->
+                          ?assert(has_field(Fields, F))
+                  end, ExpectedFields).
+
+has_field(Fields, Field) ->
+    FieldBin = atom_to_binary(Field, utf8),
+    lists:any(fun(El = #xmlel{name = <<"field">>}) ->
+                      exml_query:path(El, [{attr, <<"var">>}]) =:= FieldBin
+              end, Fields).
