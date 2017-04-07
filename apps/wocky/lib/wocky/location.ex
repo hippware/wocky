@@ -1,9 +1,8 @@
 defmodule Wocky.User.Location do
   @moduledoc "Interface for user location processing."
 
-  use Wocky.JID
-
   alias Wocky.Bot
+  alias Wocky.JID
   alias Wocky.Repo.Timestamp
   alias Wocky.User
   alias __MODULE__, as: Location
@@ -87,10 +86,11 @@ defmodule Wocky.User.Location do
   end
 
   defp unless_owner(bot, user) do
-    owner_jid = JID.decode(bot.owner)
+    owner_jid = JID.from_binary(bot.owner)
+    user_jid = JID.make(user.username, user.server)
 
     # Don't check bots that are owned by the user
-    if jid(owner_jid, :luser) == user.username do
+    if JID.bare_equal?(owner_jid, user_jid) do
       :ok = Logger.debug(
         "Skipping bot #{bot.id} since it is owned by #{user.id}"
       )
@@ -160,11 +160,11 @@ defmodule Wocky.User.Location do
   end
 
   defp trigger_bot_notification(user, {bot, event}) do
-    jid = JID.encode(JID.make(user.username, user.server))
+    jid = JID.to_binary(JID.make(user.username, user.server))
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do
-      owner_jid = JID.decode(bot.owner)
+      owner_jid = JID.from_binary(bot.owner)
       :ok = send_notification(owner_jid, user, bot, event)
       :ok = send_push_notification(owner_jid, user, bot, event)
     end
@@ -178,7 +178,7 @@ defmodule Wocky.User.Location do
       :ok -> :ok
       {:error, reason} ->
         Logger.error("""
-        Failed to send push notification to #{JID.encode(owner_jid)}: \
+        Failed to send push notification to #{JID.to_binary(owner_jid)}: \
         #{inspect(reason)}\
         """)
     end

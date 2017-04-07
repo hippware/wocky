@@ -2,6 +2,7 @@ defmodule Wocky.User.LocationSpec do
   use ESpec
 
   alias Wocky.Bot
+  alias Wocky.JID
   alias Wocky.Repo.Factory
   alias Wocky.User
   alias Wocky.User.Location
@@ -52,7 +53,7 @@ defmodule Wocky.User.LocationSpec do
 
       it "should generate a push notification" do
         expect Handler
-        |> to(accepted :notify_bot_event, [:jid.from_binary(shared.bot.owner),
+        |> to(accepted :notify_bot_event, [JID.from_binary(shared.bot.owner),
                                            shared.jid,
                                            shared.bot.title,
                                            :enter])
@@ -118,7 +119,7 @@ defmodule Wocky.User.LocationSpec do
 
       it "should generate a push notification" do
         expect Handler
-        |> to(accepted :notify_bot_event, [:jid.from_binary(shared.bot.owner),
+        |> to(accepted :notify_bot_event, [JID.from_binary(shared.bot.owner),
                                            shared.jid,
                                            shared.bot.title,
                                            :exit])

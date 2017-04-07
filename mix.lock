@@ -111,6 +111,5 @@
   "uuid": {:hex, :uuid_erl, "1.6.0", "1ba81515eeb37eeb7f1563b658e30cdf18bcaf1fd6a390bbf3838461753e69d8", [:rebar3], [{:quickrand, "~> 1.6.0", [hex: :quickrand, optional: false]}]},
   "wsecli": {:git, "https://github.com/esl/wsecli.git", "a89054cf71c5ee9e780998e5acb2a78fd3419dd9", [branch: "master"]},
   "wsock": {:git, "https://github.com/esl/wsock", "251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383", [ref: "251e18b"]},
-  "xmpp": {:hex, :xmpp, "1.1.9", "3548dc09faa414ee437c5db53a24af691724cb984b73af832d547c83f50313b9", [:rebar3], [{:fast_xml, "1.1.22", [hex: :fast_xml, optional: false]}, {:stringprep, "1.0.8", [hex: :stringprep, optional: false]}]},
   "z_stdlib": {:git, "https://github.com/zotonic/z_stdlib.git", "b9f19b95e12c53b0287abab74f1dbaf84c0ef2f6", [ref: "b9f19b9"]},
   "zipper": {:git, "https://github.com/inaka/zipper.git", "f06f2c77d79f20571c589a31b138214cf0e4428f", [branch: "master"]}}

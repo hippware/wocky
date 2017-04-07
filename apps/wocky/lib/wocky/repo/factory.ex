@@ -9,6 +9,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Conversation
+  alias Wocky.JID
   alias Wocky.Repo.ID
   alias Wocky.TROSMetadata
   alias Wocky.User
@@ -80,6 +81,6 @@ defmodule Wocky.Repo.Factory do
   # end
 
   defp new_jid() do
-    :jid.make(ID.new, Lorem.word, Lorem.word) |> :jid.encode()
+    JID.make(ID.new, Lorem.word, Lorem.word) |> JID.to_binary
   end
 end
