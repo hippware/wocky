@@ -65,11 +65,12 @@
 -define(wocky_tros_metadata, 'Elixir.Wocky.TROSMetadata').
 -define(wocky_user, 'Elixir.Wocky.User').
 -define(wocky_token, 'Elixir.Wocky.Token').
+-define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
 
 -define(timex, 'Elixir.Timex').
 
 % Standard time format to use unless there's a good reason to do otherwise
--define(DEFAULT_TIME_FORMAT, <<"ISO:Extended:Z">>).
+-define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended}">>).
 
 
 -endif. % ifdef WOCKY_HRL

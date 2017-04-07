@@ -56,4 +56,4 @@ iq_result(IQ, Attrs, Content) ->
                            children = Content}]}.
 
 expiry_string(Expiry) ->
-    wocky_db:timestamp_to_string(Expiry).
+    ?wocky_timestamp:to_string(Expiry).
