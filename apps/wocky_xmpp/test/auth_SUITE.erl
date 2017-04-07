@@ -77,9 +77,8 @@ release_token(Config) ->
     end).
 
 login_with_token(Config) ->
-    Domain = ct:get_config(ejabberd_domain),
     {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_token, assign,
-                                            [?ALICE, Domain, <<"res1">>]),
+                                            [?ALICE, <<"res1">>]),
     Config2 = escalus_users:update_userspec(Config, alice, password, Token),
     escalus:story(Config2, [{alice, 1}], fun (Alice) ->
         escalus_client:send(Alice, escalus_stanza:chat_to(Alice, <<"Hi!">>)),

@@ -83,8 +83,8 @@ set_password(LUser, LServer, Password) ->
 
 -spec check_password(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     boolean().
-check_password(LUser, LServer, <<"$T$", _/binary>> = Token) ->
-    ?wocky_token:'valid?'(LUser, LServer, Token);
+check_password(LUser, _LServer, <<"$T$", _/binary>> = Token) ->
+    ?wocky_token:'valid?'(LUser, Token);
 check_password(LUser, LServer, Password) ->
     ejabberd_auth_odbc:check_password(LUser, LServer, Password).
 
@@ -99,7 +99,12 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 %% here to enable Escalus to create users in integration tests.
 -spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok.
 try_register(LUser, LServer, Password) ->
-    ejabberd_auth_odbc:try_register(LUser, LServer, Password).
+    Username = ejabberd_odbc:escape(LUser),
+    {Pwd, Details} = prepare_password(LServer, Password),
+    case ?wocky_user:register(Username, LServer, Pwd, Details) of
+        {ok, _} -> ok;
+        {error, _} = Error -> Error
+    end.
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
 dirty_get_registered_users() ->
@@ -145,3 +150,25 @@ remove_user(LUser, LServer) ->
     no_return().
 remove_user(LUser, LServer, Password) ->
     ejabberd_auth_odbc:remove_user(LUser, LServer, Password).
+
+%%%------------------------------------------------------------------
+%%% SCRAM
+%%%------------------------------------------------------------------
+
+-spec prepare_scrammed_password(Iterations :: pos_integer(), Password :: binary()) ->
+    {PreparedPassword :: binary(), ExtendedPassword :: binary()}.
+prepare_scrammed_password(Iterations, Password) when is_integer(Iterations) ->
+    Scram = scram:password_to_scram(Password, Iterations),
+    PassDetails = scram:serialize(Scram),
+    PassDetailsEscaped = ejabberd_odbc:escape(PassDetails),
+    {<<>>, PassDetailsEscaped}.
+
+-spec prepare_password(Server :: ejabberd:server(), Password :: binary()) ->
+    PreparedPassword :: {binary(), binary()}.
+prepare_password(Server, Password) ->
+    case scram:enabled(Server) of
+        true ->
+            prepare_scrammed_password(scram:iterations(Server), Password);
+        _ ->
+            {ejabberd_odbc:escape(Password), <<>>}
+    end.
