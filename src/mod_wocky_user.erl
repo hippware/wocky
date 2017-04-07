@@ -94,19 +94,19 @@ handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
     {ok, make_delete_response_iq(IQ)}.
 
 make_jids(BJIDs) ->
-    [{jid:from_binary(B), B} || B <- BJIDs].
+    [{get_user_jid(B), B} || B <- BJIDs].
 
 get_users_fields(JIDs, FromJID, LServer) ->
     lists:map(get_user_fields(FromJID, LServer, _), JIDs).
 
-get_user_fields(_FromJID, _LServer, {error, BinaryJID}) ->
+get_user_fields(_FromJID, _LServer, {Error = {error, _}, BinaryJID}) ->
     fun_chain:first(
-      {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user JID">>)},
+      Error,
       handle_fields_error(),
       wrap_user_result(BinaryJID)
      );
 
-get_user_fields(FromJID, LServer, {JID, BinaryJID}) ->
+get_user_fields(FromJID, LServer, {{ok, JID}, BinaryJID}) ->
     fun_chain:first(
       FromJID,
       relationship(JID),
@@ -136,13 +136,18 @@ get_user(UserEl = #xmlel{name = <<"user">>}, Acc) ->
     end;
 get_user(_, Acc) -> Acc.
 
+get_user_jid(BJID) ->
+    jid_result(jid:from_binary(BJID)).
+
 get_user_jid(User, Server) ->
-    case jid:make(User, Server, <<>>) of
-        error -> {error, ?ERRT_BAD_REQUEST(
-                            ?MYLANG, <<"Invalid user (", User/binary,
-                                       ") or server (", Server/binary, ")">>)};
-        JID -> {ok, JID}
-    end.
+    jid_result(jid:make(User, Server, <<>>)).
+
+jid_result(error) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid JID">>)};
+jid_result(#jid{luser = <<>>}) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Missing user">>)};
+jid_result(JID) ->
+    {ok, JID}.
 
 validate_same_user(FromJID, UserJID) ->
     case relationship(FromJID, UserJID) of
@@ -240,12 +245,9 @@ get_visible_fields(Relationship) ->
     lists:filter(fun(F) -> is_visible(Relationship, field_visibility(F)) end,
                  fields()).
 
-
-is_visible(self,     _)      -> true;
-is_visible(friend,   private)-> false;
-is_visible(friend,   _)      -> true;
-is_visible(stranger, public) -> true;
-is_visible(stranger, _)      -> false.
+is_visible(self, _)        -> true;
+is_visible(_,    private)  -> false;
+is_visible(_,    public)   -> true.
 
 
 get_resp_fields(Fields, LServer, LUser) ->
