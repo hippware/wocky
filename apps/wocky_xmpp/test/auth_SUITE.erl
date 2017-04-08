@@ -40,14 +40,11 @@ init_per_suite(Config) ->
     wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(escalus:get_users([alice]))
+        test_helper:setup_users([alice])
     ).
 
 end_per_suite(Config) ->
-    fun_chain:first(Config,
-        escalus:delete_users(escalus:get_users([alice, bob])),
-        escalus:end_per_suite()
-    ).
+    escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).

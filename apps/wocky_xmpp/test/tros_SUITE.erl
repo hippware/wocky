@@ -50,17 +50,14 @@ init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     ejabberd_config:del_local_option(tros_public_port),
     ejabberd_config:add_local_option(tros_public_port, 1025),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
-    Users = escalus:get_users([alice, bob, carol, karen]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users)
+        test_helper:setup_users([alice, bob, carol, karen])
     ).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->

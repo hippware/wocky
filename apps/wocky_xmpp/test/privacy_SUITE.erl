@@ -92,22 +92,21 @@ users() -> [alice, bob, carol, tim].
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [privacy, privacy_item]),
     [{escalus_no_stanzas_after_story, true} |
      fun_chain:first(Config,
-         escalus:create_users(escalus:get_users(users())),
-         escalus:init_per_suite())].
+         escalus:init_per_suite(),
+         test_helper:setup_users(users())
+     )].
 
 end_per_suite(Config) ->
     escalus_fresh:clean(),
     escalus:end_per_suite(Config).
 
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, escalus:get_users(users())).
+    test_helper:setup_users(Config, users()).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, escalus:get_users(users())).
+    Config.
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).

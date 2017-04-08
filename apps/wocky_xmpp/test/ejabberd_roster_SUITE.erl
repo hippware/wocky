@@ -55,16 +55,13 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db:clear_tables(?LOCAL_CONTEXT, [roster]),
-    Users = escalus:get_users([alice, bob, carol]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users)
+        test_helper:setup_users([alice, bob, carol])
     ).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol])),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->

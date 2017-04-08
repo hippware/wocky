@@ -12,6 +12,7 @@
 -compile({parse_transform, do}).
 
 -export([ensure_wocky_is_running/0,
+         setup_users/2,
          make_everyone_friends/2
         ]).
 
@@ -75,6 +76,10 @@ ensure_wocky_is_running() ->
     end,
 
     ok = wocky_xmpp_app:start("ct.test").
+
+setup_users(Config, Users) ->
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    escalus:create_users(Config, escalus:get_users(Users)).
 
 ensure_all_clean(Clients) ->
     lists:foreach(fun(Client) ->

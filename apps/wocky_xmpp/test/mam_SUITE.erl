@@ -104,21 +104,15 @@ end_per_suite(Config) ->
 user_names() ->
     [alice, bob, carol].
 
-create_users(Config) ->
-    escalus:create_users(Config, escalus:get_users(user_names())).
-
-delete_users(Config) ->
-    escalus:delete_users(Config, escalus:get_users(user_names())).
-
 init_per_group(Group, ConfigIn) ->
     ConfigOut = fun_chain:first(ConfigIn,
-        create_users(),
+        test_helper:setup_users(user_names()),
         test_helper:make_everyone_friends(escalus:get_users(user_names()))
     ),
     init_state(Group, ConfigOut).
 
 end_per_group(_Group, Config) ->
-    delete_users(Config).
+    Config.
 
 init_state(rsm, Config) ->
     send_rsm_messages(clean_archives(Config));
