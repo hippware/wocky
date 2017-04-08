@@ -80,6 +80,8 @@ defmodule Wocky.Mixfile do
       {:exconstructor,  "~> 1.0"},
       {:ok,             "~> 1.2", runtime: false},
       {:exactor,        "~> 2.2", runtime: false},
+      {:lager,          "~> 3.2", override: true},
+      {:logger_lager_backend, "~> 0.0.2"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
