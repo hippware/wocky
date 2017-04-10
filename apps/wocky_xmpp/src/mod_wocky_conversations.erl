@@ -144,7 +144,7 @@ conversation_element(message, Message) ->
 
 conversation_element(updated_at, Time) ->
     wocky_xml:cdata_el(<<"timestamp">>,
-                       ?timex:format(Time, ?DEFAULT_TIME_FORMAT));
+                       ?timex:'format!'(Time, ?DEFAULT_TIME_FORMAT));
 
 conversation_element(E, V) ->
     wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(V)).

@@ -46,9 +46,9 @@ check_can_share(Server, ID, Sharer) ->
             end
     end.
 
-send_notification(#jid{luser = User, lserver = Server} = From, To) ->
-    Handle = case wocky_db_user:get_handle(User, Server) of
-                 not_found -> <<"Someone">>;
+send_notification(#jid{luser = User} = From, To) ->
+    Handle = case ?wocky_user:get_handle(User) of
+                 nil -> <<"Someone">>;
                  H -> H
              end,
     Body = <<Handle/binary, " shared a bot with you!">>,

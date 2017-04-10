@@ -4,6 +4,7 @@ defmodule Wocky.PushNotifier.SNS do
   """
 
   alias ExAws.SNS
+  alias Wocky.Device
 
   require Logger
 
@@ -14,7 +15,7 @@ defmodule Wocky.PushNotifier.SNS do
   @spec init :: :ok
   def init, do: :ok
 
-  @spec register(binary, binary, binary, binary) ::
+  @spec register(binary, binary, Device.platform, binary) ::
     {:ok, binary} | {:error, any}
   def register(user_id, resource, _platform, device_id) do
     :wocky

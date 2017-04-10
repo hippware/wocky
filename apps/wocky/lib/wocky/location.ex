@@ -1,4 +1,4 @@
-defmodule Wocky.User.Location do
+defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
   alias Wocky.Bot

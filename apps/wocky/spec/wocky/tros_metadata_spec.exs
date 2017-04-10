@@ -46,7 +46,7 @@ defmodule Wocky.TROSMetadataSpec do
 
       it "should return an error" do
         TROSMetadata.put(shared.id, shared.user.id, shared.metadata.access)
-        |> should(be_error_result)
+        |> should(be_error_result())
       end
     end
   end
@@ -55,7 +55,7 @@ defmodule Wocky.TROSMetadataSpec do
     context "when there is no existing entry for the file" do
       it "should return an error" do
         TROSMetadata.set_access(ID.new, Lorem.sentence())
-        |> should(be_error_result)
+        |> should(be_error_result())
       end
     end
 
@@ -97,7 +97,7 @@ defmodule Wocky.TROSMetadataSpec do
   end
 
   defp should_be_result(result) do
-    result |> should(be_ok_result)
+    result |> should(be_ok_result())
     result |> elem(1) |> should(be_struct TROSMetadata)
   end
 end
