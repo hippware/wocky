@@ -93,7 +93,7 @@ bot_visible_children(Server, ID) ->
     [cdata_el(<<"jid">>, jid:to_binary(
                            wocky_bot_util:make_jid(Server, ID))),
      cdata_el(<<"id">>, ID),
-     cdata_el(<<"server">>, wocky_app:server()),
+     cdata_el(<<"server">>, wocky_xmpp_app:server()),
      cdata_el(<<"action">>, <<"show">>)].
 
 cdata_el(Name, Value) ->

@@ -60,6 +60,27 @@ defmodule Wocky.User do
   @change_fields [:handle, :avatar, :first_name, :last_name, :email]
 
   @doc """
+  Creates a new user with a password.
+  Used for testing only.
+  """
+  @spec register(username, server, binary, binary) :: :ok | {:error, any}
+  def register(username, server, password, pass_details) do
+    if ID.valid?(username) do
+      user = %User{
+        id: username,
+        username: username,
+        external_id: username,
+        server: server,
+        password: password,
+        pass_details: pass_details
+      }
+      Repo.insert(user)
+    else
+      {:error, :invalid_id}
+    end
+  end
+
+  @doc """
   Creates or updates a user based on the external authentication ID and
   phone number.
   """
@@ -69,14 +90,15 @@ defmodule Wocky.User do
     case Repo.get_by(User, external_id: external_id) do
       nil ->
         username = ID.new
-        %User{
+        user = %User{
           id: username,
           username: username,
           server: server,
           external_id: external_id,
           phone_number: phone_number
         }
-        |> Repo.insert!
+
+        Repo.insert!(user)
 
         {:ok, {username, server, true}}
 

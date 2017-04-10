@@ -240,7 +240,7 @@ send_notification(#hs_subscription{jid = BareJID}, Item) ->
                                                Item).
 
 check_server(Server) ->
-    case wocky_app:server() of
+    case wocky_xmpp_app:server() of
         Server -> ok;
         _ -> {error, not_local_server}
     end.

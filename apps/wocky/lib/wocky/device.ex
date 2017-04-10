@@ -26,14 +26,15 @@ defmodule Wocky.Device do
 
   @spec update(User.id, User.resource, platform, device, endpoint) :: :ok
   def update(user_id, resource, platform, device, endpoint) do
-    %Device{
+    device = %Device{
       user_id: user_id,
       resource: resource,
       platform: to_string(platform),
       device: device,
       endpoint: endpoint
     }
-    |> Repo.insert!(on_conflict: :replace_all)
+
+    Repo.insert!(device, on_conflict: :replace_all)
 
     :ok
   end

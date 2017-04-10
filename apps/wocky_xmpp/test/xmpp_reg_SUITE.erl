@@ -68,8 +68,6 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    ?wocky_repo:delete_all(<<"users">>, ?SERVER),
-    ?wocky_repo:delete_all(<<"tokens">>, ?SERVER),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
@@ -78,6 +76,7 @@ end_per_suite(Config) ->
 init_per_group(no_digits, Config) ->
     Config;
 init_per_group(_GroupName, Config) ->
+    ?wocky_repo:delete_all(?wocky_user),
     fake_digits_server:start(true, ?PHONE_NUMBER),
     Config.
 
@@ -85,7 +84,7 @@ end_per_group(no_digits, Config) ->
     Config;
 end_per_group(_GroupName, Config) ->
     fake_digits_server:stop(),
-    escalus:delete_users(Config).
+    Config.
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).

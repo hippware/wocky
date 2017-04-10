@@ -115,17 +115,14 @@ local_tables() ->
     [bot_name, bot_item, home_stream].
 
 reset_tables(Config) ->
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db:clear_tables(shared, [bot, bot_subscriber, bot_share]),
     wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
     wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber, bot_share]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
-    Users = escalus:get_users([alice, bob, carol, karen, robert, tim]),
-    Config1 = fun_chain:first(Config,
+    fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users)
-    ),
-    Config1.
+        test_helper:setup_users([alice, bob, carol, karen, robert, tim])
+    ).
 
 
 %%--------------------------------------------------------------------

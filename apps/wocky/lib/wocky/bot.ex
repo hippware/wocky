@@ -1,9 +1,8 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Wocky.JID
-
   alias Wocky.Index
+  alias Wocky.JID
   alias Wocky.User.Location
   alias __MODULE__, as: Bot
 
@@ -51,14 +50,14 @@ defmodule Wocky.Bot do
 
   use ExConstructor
 
-  @spec to_jid(Bot.t) :: Ejabberd.jid
+  @spec to_jid(Bot.t) :: JID.t
   def to_jid(bot) do
     :wocky_bot_util.make_jid(bot.server, bot.id)
   end
 
   @spec to_jid_string(Bot.t) :: binary
   def to_jid_string(bot) do
-    bot |> to_jid |> JID.encode
+    bot |> to_jid |> JID.to_binary
   end
 
   @spec get(binary) :: nil | Bot.t

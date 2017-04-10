@@ -43,7 +43,7 @@ start(_Opts) ->
 stop() -> ok.
 
 extract_config(Config) ->
-    Value = wocky_app:get_config(Config),
+    Value = wocky_xmpp_app:get_config(Config),
     ejabberd_config:add_local_option(Config, Value).
 
 make_download_response(_FromJID, #jid{lserver = LServer},

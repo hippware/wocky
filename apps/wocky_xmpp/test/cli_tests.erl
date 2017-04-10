@@ -16,15 +16,17 @@ cli_test_() -> {
   ]}.
 
 before_all() ->
-    ok = ?wocky_user:update(?ALICE, ?SERVER, #{handle => <<"alice">>}),
-    ok = ?wocky_user:update(?BOB, ?SERVER, #{handle => <<"bob">>}),
-    ok = ?wocky_user:wait_for_user(?BOB),
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    _ = ?wocky_factory:insert(user, #{id => ?ALICE,
+                                      username => ?ALICE,
+                                      handle => <<"alice">>}),
+    _ = ?wocky_factory:insert(user, #{id => ?BOB,
+                                      username => ?BOB,
+                                      handle => <<"bob">>}),
     ok = wocky_db:truncate(shared, roster),
     ok.
 
 after_all(_) ->
-    ok = ?wocky_user:delete(?ALICE, ?SERVER),
-    ok = ?wocky_user:delete(?BOB, ?SERVER),
     ok.
 
 test_befriend() ->

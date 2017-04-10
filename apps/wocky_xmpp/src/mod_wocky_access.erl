@@ -23,6 +23,8 @@
 
 -define(MANAGER_TABLE, mod_wocky_access_managers).
 
+-export([init/0]).
+
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
@@ -46,9 +48,12 @@
 %%% gen_mod handlers
 %%%===================================================================
 
-start(Host, _Opts) ->
+init() ->
     _ = ets:new(?MANAGER_TABLE, [named_table, public,
                                  {keypos, #access_manager.node_prefix}]),
+    ok.
+
+start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_ACCESS,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_ACCESS).

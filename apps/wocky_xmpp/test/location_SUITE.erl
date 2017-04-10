@@ -37,13 +37,10 @@ end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    Users = escalus:get_users([alice, bob, carol, karen]),
-    Config1 = escalus:create_users(Config, Users),
+    Config1 = test_helper:setup_users(Config, [alice, bob, carol, karen]),
     escalus:init_per_testcase(CaseName, Config1).
 
 end_per_testcase(CaseName, Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, carol, karen])),
     escalus:end_per_testcase(CaseName, Config).
 
 

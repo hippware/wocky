@@ -86,7 +86,6 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
     wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE),
     escalus:init_per_suite(Config).
@@ -103,11 +102,11 @@ end_per_suite(Config) ->
 %%         escalus_story:make_everyone_friends(Users)
 %%     );
 init_per_group(_GroupName, Config) ->
-    escalus:create_users(Config, escalus:get_users([alice, bob, robert])),
-    wocky_db_seed:seed_tables(shared, [roster]).
+    wocky_db_seed:seed_tables(shared, [roster]),
+    test_helper:setup_users(Config, [alice, bob, robert]).
 
 end_per_group(_GroupName, Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice, bob, robert])).
+    Config.
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -347,7 +346,7 @@ set_fields(Config) ->
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
-            ?wocky_user:find(?ALICE, ?LOCAL_CONTEXT),
+            ?wocky_user:find(?ALICE),
 
         % Robert should get an update for his roster record of Alice
         Received = escalus:wait_for_stanza(Robert),
@@ -467,7 +466,7 @@ handle_clash(Config) ->
         BobQueryStanza = set_request(?BOB, set_fields()),
         expect_iq_error(BobQueryStanza, Bob),
 
-        #{id := ?BOB, first_name := nil} = ?wocky_user:find(?BOB, ?SERVER)
+        #{id := ?BOB, first_name := nil} = ?wocky_user:find(?BOB)
     end).
 
 reserved_handle(Config) ->

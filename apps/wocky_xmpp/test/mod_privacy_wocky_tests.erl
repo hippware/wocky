@@ -8,7 +8,7 @@
 -include("wocky_db_seed.hrl").
 
 -define(DEFAULT_LIST, <<"default">>).
--define(BACKEND, mod_privacy_riak).
+-define(BACKEND, mod_privacy_odbc).
 
 -import(mod_privacy_wocky, [get_default_list/2, get_list_names/2,
                             get_privacy_list/3, forget_default_list/2,
@@ -46,13 +46,13 @@ seed_data() ->
        [#listitem{
            type = jid,
            value = jid:to_lower(jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)),
-           action = false,
+           action = block,
            order = 1,
            match_all = true},
         #listitem{
            type = jid,
            value = jid:to_lower(jid:make(?KAREN, ?LOCAL_CONTEXT, <<>>)),
-           action = false,
+           action = block,
            order = 2,
            match_iq = true}]),
     ?BACKEND:replace_privacy_list(
@@ -60,7 +60,7 @@ seed_data() ->
        [#listitem{
            type = subscription,
            value = both,
-           action = false,
+           action = block,
            order = 1,
            match_message = true}]),
     ?BACKEND:remove_user(?KAREN, ?LOCAL_CONTEXT).

@@ -12,8 +12,6 @@
 
 -compile({parse_transform, cut}).
 
--define(timex, 'Elixir.Timex').
-
 % Duration is in days
 -spec generate_bot_report(non_neg_integer()) -> iolist().
 generate_bot_report(Duration) ->
@@ -36,7 +34,7 @@ maybe_report_bot(BotID, Duration) ->
     end.
 
 report_bot(BotID, CreatedAt) when is_binary(BotID) ->
-    case wocky_db_bot:get_bot(wocky_app:server(), BotID) of
+    case wocky_db_bot:get_bot(wocky_xmpp_app:server(), BotID) of
         not_found -> [];
         Bot -> report_bot(Bot, CreatedAt)
     end;
@@ -54,8 +52,8 @@ report_bot(#{id := ID,
             },
            CreatedAt) ->
 
-    #jid{luser = OUser, lserver = OServer} = jid:from_binary(Owner),
-    #{handle := Handle} = ?wocky_user:find(OUser, OServer),
+    #jid{luser = OUser, lserver = _OServer} = jid:from_binary(Owner),
+    Handle = ?wocky_user:get_handle(OUser),
 
     io_lib:fwrite("~s,\"~s\",\"~s\",~s,~s,\"~s\",~f,~f,~s,~B,~B,\"~s\"\n",
                   [ID,

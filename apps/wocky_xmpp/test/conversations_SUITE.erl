@@ -12,9 +12,6 @@
 -include("wocky.hrl").
 -include("wocky_db_seed.hrl").
 
--define(conversation, 'Elixir.Wocky.Conversation').
--define(repo, 'Elixir.Wocky.Repo').
-
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -39,18 +36,14 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
-    ?repo:delete_all(<<"conversation">>, ?LOCAL_CONTEXT),
+    ?wocky_repo:delete_all(?wocky_conversation),
     seed_conversations(),
-    timer:sleep(1000),
-    Users = escalus:get_users([alice]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users)
+        test_helper:setup_users([alice])
     ).
 
 end_per_suite(Config) ->
-    escalus:delete_users(Config, escalus:get_users([alice])),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
@@ -212,10 +205,6 @@ get_id(Item) ->
 %%--------------------------------------------------------------------
 
 seed_conversations() ->
-    Bucket = {<<"conversation">>, ?LOCAL_CONTEXT},
-    {ok, Keys} = mongoose_riak:list_keys(Bucket),
-    lists:foreach(mongoose_riak:delete(Bucket, _), Keys),
-
     Convos = wocky_db_seed:random_conversation_list(),
     lists:foreach(archive_message(_), Convos).
 

@@ -25,9 +25,7 @@
 
 -define(INDEX, <<"conversation">>).
 
--define(timex, 'Elixir.Timex').
 -define(datetime, 'Elixir.DateTime').
--define(conversation, 'Elixir.Wocky.Conversation').
 
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(default_max,
@@ -77,11 +75,11 @@ handle_iq_type(_From, _To, _IQ) ->
                           ) -> ok.
 archive_message_hook(_Result, _Host, _MessID, _ArcID,
                 LocJID, RemJID, _SrcJID, Dir, Packet) ->
-    ok = ?conversation:put(LocJID#jid.luser,
-                           wocky_util:archive_jid(RemJID),
-                           exml:to_binary(Packet),
-                           Dir =:= outgoing
-                          ).
+  ok = ?wocky_conversation:put(LocJID#jid.luser,
+                               wocky_util:archive_jid(RemJID),
+                               exml:to_binary(Packet),
+                               Dir =:= outgoing
+                              ).
 
 %%%===================================================================
 %%% Conversation retrieval
@@ -95,7 +93,7 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
 
 get_conversations(From, RSMIn) ->
     UserJID = wocky_util:archive_jid(From),
-    Conversations = ?conversation:find(UserJID),
+    Conversations = ?wocky_conversation:find(UserJID),
     rsm_util:filter_with_rsm(Conversations, RSMIn).
 
 %%%===================================================================

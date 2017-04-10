@@ -32,12 +32,13 @@ defmodule Wocky.Conversation do
   @doc "Write a conversation record to the database"
   @spec put(User.id, binary, binary, boolean) :: :ok
   def put(user_id, other_jid, message, outgoing) do
-    %Conversation{
+    conversation = %Conversation{
       user_id: user_id,
       other_jid: other_jid,
       message: message,
-      outgoing: outgoing}
-    |> Repo.insert!(on_conflict: :replace_all)
+      outgoing: outgoing
+    }
+    Repo.insert!(conversation, on_conflict: :replace_all)
     :ok
   end
 

@@ -22,7 +22,7 @@ register_user(JSON) ->
                                                          ProviderData),
         {User, Server, IsNew} <- create_or_update_user(ExternalID,
                                                        PhoneNumber),
-        {Token, Expiry} <- maybe_get_token(GetToken, User, Server, Resource),
+        {Token, Expiry} <- maybe_get_token(GetToken, User, Resource),
         {ok, #reg_result{
                 user = User,
                 server = Server,
@@ -67,10 +67,10 @@ check_provider_auth(P, _) -> {error, {"not-authorized",
                                       ["Unsupported provider: ", P]}}.
 
 create_or_update_user(ExternalId, PhoneNumber) ->
-    ?wocky_user:register(wocky_app:server(), ExternalId, PhoneNumber).
+    ?wocky_user:register(wocky_xmpp_app:server(), ExternalId, PhoneNumber).
 
-maybe_get_token(false, _, _, _) ->
+maybe_get_token(false, _, _) ->
     {ok, {undefined, undefined}};
-maybe_get_token(true, User, Server, Resource) ->
-    {ok, {Token, Expiry}} = ?wocky_user_token:assign(User, Server, Resource),
-    {ok, {Token, wocky_db:timestamp_to_string(Expiry)}}.
+maybe_get_token(true, User, Resource) ->
+    {ok, {Token, Expiry}} = ?wocky_token:assign(User, Resource),
+    {ok, {Token, ?wocky_timestamp:to_string(Expiry)}}.

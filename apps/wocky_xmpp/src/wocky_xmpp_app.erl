@@ -1,6 +1,6 @@
 %%% @copyright 2015+ Hippware, Inc.
 %%% @doc Wocky application module
--module(wocky_app).
+-module(wocky_xmpp_app).
 
 -include("wocky.hrl").
 
@@ -88,10 +88,17 @@ start(_StartType, _StartArgs) ->
     CfgPath = filename:join(CfgDir, Inst ++ ".cfg"),
     {ok, CfgTerms} = file:consult(CfgPath),
 
+    ok = ensure_loaded(schemata),
+    ok = configure_db(CfgTerms),
+    ok = configure_migrations(CfgTerms),
+    {ok, _} = application:ensure_all_started(schemata),
+
     ok = cache_server_names(CfgTerms),
 
     ok = maybe_enable_notifications(CfgTerms),
-    ok = 'Elixir.Wocky.LocationApi':start(),
+
+    ok = mod_wocky_access:init(),
+    ok = mod_wocky_publishing:init(),
 
     ok = ensure_loaded(ejabberd),
     ok = application:set_env(ejabberd, config, CfgPath),
@@ -164,6 +171,21 @@ is_testing_server(_) -> false.
 default_config(Key, Default) ->
     application:get_env(wocky_xmpp, Key, Default).
 
+configure_db(CfgTerms) ->
+    Cluster = proplists:get_value(schemata_cluster, CfgTerms),
+    apply_db_config(Cluster).
+
+apply_db_config(undefined) -> ok;
+apply_db_config(Cluster) -> application:set_env(schemata, cluster, Cluster).
+
+configure_migrations(CfgTerms) ->
+    Table = proplists:get_value(migrations_table, CfgTerms),
+    apply_migrations_table(Table).
+
+apply_migrations_table(undefined) -> ok;
+apply_migrations_table(Table) ->
+    application:set_env(schemata, migrations_table, Table).
+
 cache_server_names(CfgTerms) ->
     Servers = proplists:get_value(hosts, CfgTerms),
     BinServers = lists:map(fun (S) -> iolist_to_binary(S) end, Servers),
@@ -174,13 +196,13 @@ maybe_enable_notifications(CfgTerms) ->
     case proplists:get_value(notification_system, CfgTerms, none) of
         aws ->
             ok = lager:info("AWS Notifications enabled"),
-            'Elixir.Wocky.Notification.AWSHandler';
+            'Elixir.Wocky.PushNotifier.SNS';
         test ->
             ok = lager:info("Notification testing system enabled"),
-            'Elixir.Wocky.Notification.TestHandler';
+            'Elixir.Wocky.PushNotifier.Test';
         none ->
             ok = lager:info("Notifications disabled"),
-            'Elixir.Wocky.Notification.NullHandler'
+            'Elixir.Wocky.PushNotifier.Null'
     end,
     wocky_notification_handler:set_handler(NotificationHandlerModule).
 

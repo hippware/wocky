@@ -31,17 +31,13 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    ?wocky_repo:delete_all(<<"users">>, ?SERVER),
-    ?wocky_repo:delete_all(<<"tokens">>, ?SERVER),
-    Users = escalus:get_users([alice, bob, carol]),
     wocky_db_seed:seed_tables(shared, [bot, bot_subscriber]),
     Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
-        escalus:create_users(Users)
+        test_helper:setup_users([alice, bob, carol])
     ),
-    ?wocky_user:update(?ALICE, ?SERVER, #{handle => <<"alice">>}),
-    ?wocky_user:update(?BOB, ?SERVER, #{handle => <<"bob">>}),
-    ?wocky_user:wait_for_user(?BOB),
+    _ = ?wocky_user:update(?ALICE, #{handle => <<"alice">>}),
+    _ = ?wocky_user:update(?BOB, #{handle => <<"bob">>}),
     Config2.
 
 end_per_suite(Config) ->

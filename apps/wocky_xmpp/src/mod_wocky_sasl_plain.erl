@@ -96,7 +96,7 @@ mech_step(Creds, ClientIn) ->
     end.
 
 get_auth_bypass_prefixes(Opts) ->
-  case wocky_app:is_testing() of
+  case wocky_xmpp_app:is_testing() of
     true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
     false -> []
   end.
@@ -116,10 +116,9 @@ make_register_response(#reg_result{user = User,
                                    token = Token,
                                    token_expiry = TokenExpiry,
                                    external_id = ExternalID}) ->
-   Handle = case ?wocky_user:find(User, Server) of
+   Handle = case ?wocky_user:get_handle(User) of
                 nil -> <<>>;
-                #{handle := nil} -> <<>>;
-                #{handle := H} -> H
+                H -> H
             end,
    JSONFields = [{user, User},
                  {server, Server},

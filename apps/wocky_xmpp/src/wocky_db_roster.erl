@@ -201,8 +201,8 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
 fill_extra_fields(Items) when is_list(Items) ->
     [fill_extra_fields(Item) || Item <- Items];
 
-fill_extra_fields(#wocky_roster{contact_jid = {LUser, LServer, _}} = I) ->
-    case ?wocky_user:find(LUser, LServer) of
+fill_extra_fields(#wocky_roster{contact_jid = {LUser, _, _}} = I) ->
+    case ?wocky_user:find(LUser) of
         nil ->
             I;
 

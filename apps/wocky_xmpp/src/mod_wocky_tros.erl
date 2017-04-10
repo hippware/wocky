@@ -76,7 +76,6 @@ handle_request(_, _, _) ->
     {ok, ignore}.
 
 handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
-    LServer = FromJID#jid.lserver,
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),

@@ -25,9 +25,15 @@ mod_wocky_token_test_() -> {
 }.
 
 before_all() ->
-    {ok, _} = wocky_db_seed:seed_table(shared, handle_to_user),
-    {ok, _} = wocky_db_seed:seed_table(shared, user),
-    {ok, _} = wocky_db_seed:seed_table(?LOCAL_CONTEXT, auth_token),
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    _User = ?wocky_factory:insert(user, #{id => ?ALICE,
+                                          username => ?ALICE,
+                                          server => ?SERVER,
+                                          phone_number => ?PHONE_NUMBER,
+                                          handle => <<"alice">>,
+                                          first_name => <<"Alice">>,
+                                          last_name => <<"Wonderland">>,
+                                          avatar => ?AVATAR_ID}),
     ok.
 
 after_all(_) ->

@@ -16,7 +16,15 @@ defmodule Wocky.XMPP.Mixfile do
      erlc_options: erlc_options(Mix.env),
      aliases: aliases(),
      deps: deps(),
-     preferred_cli_env: [eunit: :test, ct: :test],
+     preferred_cli_env: [eunit:   :test,
+                         ct:      :test,
+                         'db.dump.test':     :test,
+                         'db.load.test':     :test,
+                         'db.reset.test':    :test,
+                         'db.migrate.test':  :test,
+                         'db.rollback.test': :test,
+                         'db.test_migrations': :test
+                       ],
      dialyzer: [
        plt_apps: [
          :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
@@ -70,12 +78,13 @@ defmodule Wocky.XMPP.Mixfile do
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :ejabberd, :crone
+       :schemata, :ejabberd, :crone
      ],
      mod: {:wocky_xmpp_app, []},
      env: [
        wocky_inst: 'local',
-       config_dir: 'etc'
+       config_dir: 'etc',
+       keyspace_prefix: 'wocky_test_'
      ]]
   end
 
@@ -84,15 +93,24 @@ defmodule Wocky.XMPP.Mixfile do
       {:wocky,                in_umbrella: true},
       {:lager,                "~> 3.2",   override: true},
       {:meck,                 "~> 0.8.4", override: true, runtime: false},
+      {:hackney,              "~> 1.7",   override: true},
       {:base16,               "~> 1.0",   override: true},
+      {:timex,                "~> 3.1"},
+      {:porcelain,            "~> 2.0"},
       {:logger_lager_backend, "~> 0.0.2"},
-      {:eper,                 "~> 0.94.0"},
+      {:binpp,                "~> 1.1"},
+      {:espec,                "~> 1.2",    only: :test},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:dialyxir,             "~> 0.4",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
       {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},
-      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working"},
+      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-2.0.1"},
+      {:schemata,   github: "hippware/schemata",     branch: "master"},
+      {:ossp_uuid,
+        github: "hippware/erlang-ossp-uuid",
+        tag: "v1.0.1",
+        manager: :rebar3},
       {:exometer_core,
         github: "Feuerlabs/exometer_core",
         branch: "master",
@@ -158,16 +176,6 @@ defmodule Wocky.XMPP.Mixfile do
         branch: "master",
         override: true,
         manager: :rebar3},
-      {:riak_pb,
-        github: "basho/riak_pb",
-        tag: "2.3.0.0",
-        override: true,
-        manager: :rebar},
-      {:riakc,
-        github: "basho/riak-erlang-client",
-        tag: "2.5.2",
-        override: true,
-        manager: :rebar},
       {:mochijson2, ~r//,
         github: "bjnortier/mochijson2",
         branch: "master",
@@ -202,7 +210,12 @@ defmodule Wocky.XMPP.Mixfile do
     [
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
-      lint: ["elvis"]
+      lint: ["elvis"],
+      'db.dump.test': "db.dump",
+      'db.load.test': "db.load",
+      'db.reset.test': "db.reset",
+      'db.migrate.test': "db.migrate",
+      'db.rollback.test': "db.rollback"
     ]
   end
 

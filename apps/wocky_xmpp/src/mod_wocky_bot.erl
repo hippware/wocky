@@ -199,7 +199,7 @@ handle_new_id(From) ->
 %%%===================================================================
 
 handle_create(From, Children) ->
-    Server = wocky_app:server(),
+    Server = wocky_xmpp_app:server(),
     do([error_m ||
         Fields <- get_fields(Children),
         Fields2 <- add_server(Fields, Server),
@@ -504,10 +504,10 @@ handle_bot_stanza(From, To, BotStanza) ->
     mod_wocky_access:access_result().
 check_access(<<"bot/", ID/binary>>, Actor, view) ->
     allow_to_result(
-      wocky_db_bot:has_access(wocky_app:server(), ID, Actor));
+      wocky_db_bot:has_access(wocky_xmpp_app:server(), ID, Actor));
 
 check_access(<<"bot/", ID/binary>>, Actor, _) ->
-    case wocky_db_bot:owner(wocky_app:server(), ID) of
+    case wocky_db_bot:owner(wocky_xmpp_app:server(), ID) of
         not_found -> deny;
         Owner -> allow_to_result(jid:are_bare_equal(Owner, Actor))
     end.
@@ -847,4 +847,4 @@ reply_not_allowed(Sender, Stanza) ->
             Stanza,
             ?ERRT_NOT_ALLOWED(
                ?MYLANG, <<"Bot action not allowed to this user">>)),
-    ejabberd_router:route(#jid{lserver = wocky_app:server()}, Sender, Err).
+    ejabberd_router:route(#jid{lserver = wocky_xmpp_app:server()}, Sender, Err).

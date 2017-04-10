@@ -16,7 +16,6 @@
 -define(query, 'Elixir.Schemata.Query').
 -define(result, 'Elixir.Schemata.Result').
 -define(schema, 'Elixir.Schemata.Schema').
--define(timex, 'Elixir.Timex').
 
 -type server()     :: binary().
 -type context()    :: none | shared | server().
@@ -76,27 +75,27 @@ shared_keyspace() ->
 
 -spec local_keyspace() -> binary().
 local_keyspace() ->
-    keyspace_name(wocky_app:server()).
+    keyspace_name(wocky_xmpp_app:server()).
 
 %% @doc Create the schema for both the shared and local keyspaces then
 %% load seed data into the tables.
 -spec bootstrap() -> ok.
 bootstrap() ->
     bootstrap(shared),
-    bootstrap(wocky_app:server()).
+    bootstrap(wocky_xmpp_app:server()).
 
 %% @doc Create the schema for both the specified keyspace then
 %% load seed data into the tables.
 -spec bootstrap(context()) -> ok.
 bootstrap(Context) ->
     create_schema_for(Context),
-    wocky_db_seed:seed_keyspace(Context, wocky_app:server()).
+    wocky_db_seed:seed_keyspace(Context, wocky_xmpp_app:server()).
 
 
 %% @doc Create the schema for both the shared and local keyspaces.
 -spec create_schema() -> ok.
 create_schema() ->
-    create_schema(wocky_app:server()).
+    create_schema(wocky_xmpp_app:server()).
 
 %% @private
 create_schema(Context) ->
@@ -466,7 +465,7 @@ keyspace_name(Context) ->
     to_keyspace([keyspace_prefix(), Context]).
 
 keyspace_prefix() ->
-    wocky_app:get_config(keyspace_prefix, <<"wocky_">>).
+    wocky_xmpp_app:get_config(keyspace_prefix, <<"wocky_">>).
 
 %% Modify a string so it is a valid keyspace
 %% All invalid characters are replaced with underscore and then

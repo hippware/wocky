@@ -9,13 +9,10 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Conversation
+  alias Wocky.JID
   alias Wocky.Repo.ID
   alias Wocky.TROSMetadata
   alias Wocky.User
-
-  defp phone_number do
-    "+1555#{Phone.area_code}#{Phone.extension}"
-  end
 
   def user_factory do
     user_id = ID.new
@@ -79,7 +76,11 @@ defmodule Wocky.Repo.Factory do
   #   }
   # end
 
-  defp new_jid() do
-    :jid.make(ID.new, Lorem.word, Lorem.word) |> :jid.encode()
+  defp phone_number do
+    "+1555#{Phone.area_code}#{Phone.extension}"
+  end
+
+  defp new_jid do
+    ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
   end
 end

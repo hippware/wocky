@@ -104,21 +104,15 @@ end_per_suite(Config) ->
 user_names() ->
     [alice, bob, carol].
 
-create_users(Config) ->
-    escalus:create_users(Config, escalus:get_users(user_names())).
-
-delete_users(Config) ->
-    escalus:delete_users(Config, escalus:get_users(user_names())).
-
 init_per_group(Group, ConfigIn) ->
     ConfigOut = fun_chain:first(ConfigIn,
-        create_users(),
+        test_helper:setup_users(user_names()),
         test_helper:make_everyone_friends(escalus:get_users(user_names()))
     ),
     init_state(Group, ConfigOut).
 
 end_per_group(_Group, Config) ->
-    delete_users(Config).
+    Config.
 
 init_state(rsm, Config) ->
     send_rsm_messages(clean_archives(Config));
@@ -571,7 +565,8 @@ serv_user(Config, UserSpec) ->
     {Server, Username}.
 
 %% @doc Check, that the archive is empty.
-assert_empty_archive(Server, Username, RetryTimes) when is_integer(RetryTimes) ->
+assert_empty_archive(Server, Username, RetryTimes)
+  when is_integer(RetryTimes) ->
     %% Wait for zero messages in archive
     case wait_for_archive_size(Server, Username, RetryTimes, 0) of
        0 -> ok;
@@ -580,7 +575,8 @@ assert_empty_archive(Server, Username, RetryTimes) when is_integer(RetryTimes) -
 
 wait_for_archive_size(Server, Username, _RetryTimes=0, _ExpectedSize) ->
     archive_size(Server, Username);
-wait_for_archive_size(Server, Username, RetryTimes, ExpectedSize) when RetryTimes > 0 ->
+wait_for_archive_size(Server, Username, RetryTimes, ExpectedSize)
+  when RetryTimes > 0 ->
     case archive_size(Server, Username) of
         ExpectedSize ->
             ExpectedSize;
