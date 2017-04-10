@@ -12,6 +12,9 @@
 
 -define(SERVER, ?MODULE).
 
+-define(notification_broker, 'Elixir.Wocky.PushNotificationBroker').
+-define(notification_handler, 'Elixir.Wocky.PushNotificationHandler').
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
@@ -50,4 +53,24 @@ init([]) ->
              type     => supervisor
             },
 
-    {ok, {SupFlags, [UserIdx, BotExpiryMon, Cron]}}.
+    NotificationBroker = #{id => notification_broker,
+                           start => {?notification_broker, start_link, []},
+                           restart => permanent,
+                           shutdown => 5000,
+                           type => worker,
+                           modules => [?notification_broker]},
+
+    NotificationHandler = #{id => notification_handler,
+                            start => {?notification_handler, start_link, []},
+                            restart => permanent,
+                            shutdown => 5000,
+                            type => worker,
+                            modules => [?notification_handler]},
+
+
+    {ok, {SupFlags, [UserIdx,
+                     BotExpiryMon,
+                     Cron,
+                     NotificationBroker,
+                     NotificationHandler
+                    ]}}.
