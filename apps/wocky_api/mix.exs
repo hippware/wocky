@@ -23,14 +23,19 @@ defmodule WockyAPI.Mixfile do
     [
       # Specify extra applications you'll use from Erlang/Elixir
       extra_applications: [:logger],
-      # mod: {WockyAPI.Application, []},
-      env: []
+      mod: {WockyAPI.Application, []},
+      env: [
+        location_api_port: 8080
+      ]
     ]
   end
 
   defp deps do
     [
       {:wocky,      in_umbrella: true},
+      {:cowboy,     "~> 1.0"},
+      {:poison,     "~> 2.2"},
+      {:hackney,    "~> 1.7", override: true},
       {:ok,         "~> 1.2", runtime: false},
       {:lager,      "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
@@ -39,7 +44,6 @@ defmodule WockyAPI.Mixfile do
       {:coverex,    "~> 1.4", only: :test},
       {:credo,      "~> 0.6", only: :dev, runtime: false},
       {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
-      {:dialyxir,   "~> 0.4", only: :dev, runtime: false},
       {:reprise,    "~> 0.5", only: :dev}
     ]
   end

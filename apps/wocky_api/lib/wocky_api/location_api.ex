@@ -1,12 +1,12 @@
-defmodule Wocky.LocationApi do
+defmodule WockyAPI.LocationApi do
   @moduledoc "HTTP API implementation for sending user location updates"
 
   import OK, only: ["~>>": 2]
 
   alias Poison.Parser
+  # alias Wocky.Location
+  alias Wocky.Token
   alias Wocky.User
-  alias Wocky.User.Location
-  alias Wocky.User.Token
 
   require Logger
 
@@ -22,7 +22,7 @@ defmodule Wocky.LocationApi do
         ]}
     ])
 
-    port = Application.get_env(:wocky, :location_api_port)
+    port = Application.get_env(:wocky_api, :location_api_port)
     {:ok, _} = :cowboy.start_http(:location_api, 100, [port: port],
                                   [env: [dispatch: dispatch]])
     :ok
@@ -67,7 +67,7 @@ defmodule Wocky.LocationApi do
     {boolean, :cowboy_req.req, any}
   def resource_exists(req, state) do
     {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
-    case User.find(user_id, :wocky_app.server) do
+    case User.find(user_id) do
       %User{} = user ->
         {true, req, %State{state | user: user}}
 
@@ -150,22 +150,23 @@ defmodule Wocky.LocationApi do
   defp check_token(nil, _), do: false
   defp check_token(_, nil), do: false
   defp check_token(user, token),
-    do: Token.valid?(user, :wocky_app.server, token)
+    do: Token.valid?(user, token)
 
   @spec from_json(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}
-  def from_json(req, %State{user: user, coords: coords} = state) do
-    location = %Location{
-      lat: coords.latitude,
-      lon: coords.longitude,
-      accuracy: coords.accuracy
-    }
-    user = %User{user | resource: state.resource}
+  def from_json(req, %State{user: _user, coords: _coords} = state) do
+    # FIXME
+    # location = %Location{
+    #   lat: coords.latitude,
+    #   lon: coords.longitude,
+    #   accuracy: coords.accuracy
+    # }
+    # user = %User{user | resource: state.resource}
 
-    :ok =
-      user
-      |> User.set_location(location)
-      |> User.update
+    # :ok =
+    #   user
+    #   |> User.set_location(location)
+    #   |> User.update
 
     {true, req, state}
   end

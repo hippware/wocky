@@ -35,7 +35,6 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
-        location_api_port: 8080,
         enable_follow_me: false,
         algolia_user_index_name: [
           staging: 'dev_wocky_users',
