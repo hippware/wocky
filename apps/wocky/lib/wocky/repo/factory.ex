@@ -14,10 +14,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.TROSMetadata
   alias Wocky.User
 
-  defp phone_number do
-    "+1555#{Phone.area_code}#{Phone.extension}"
-  end
-
   def user_factory do
     user_id = ID.new
     %User{
@@ -80,7 +76,11 @@ defmodule Wocky.Repo.Factory do
   #   }
   # end
 
-  defp new_jid() do
-    JID.make(ID.new, Lorem.word, Lorem.word) |> JID.to_binary
+  defp phone_number do
+    "+1555#{Phone.area_code}#{Phone.extension}"
+  end
+
+  defp new_jid do
+    ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
   end
 end

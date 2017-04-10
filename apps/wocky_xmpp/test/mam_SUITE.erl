@@ -565,7 +565,8 @@ serv_user(Config, UserSpec) ->
     {Server, Username}.
 
 %% @doc Check, that the archive is empty.
-assert_empty_archive(Server, Username, RetryTimes) when is_integer(RetryTimes) ->
+assert_empty_archive(Server, Username, RetryTimes)
+  when is_integer(RetryTimes) ->
     %% Wait for zero messages in archive
     case wait_for_archive_size(Server, Username, RetryTimes, 0) of
        0 -> ok;
@@ -574,7 +575,8 @@ assert_empty_archive(Server, Username, RetryTimes) when is_integer(RetryTimes) -
 
 wait_for_archive_size(Server, Username, _RetryTimes=0, _ExpectedSize) ->
     archive_size(Server, Username);
-wait_for_archive_size(Server, Username, RetryTimes, ExpectedSize) when RetryTimes > 0 ->
+wait_for_archive_size(Server, Username, RetryTimes, ExpectedSize)
+  when RetryTimes > 0 ->
     case archive_size(Server, Username) of
         ExpectedSize ->
             ExpectedSize;

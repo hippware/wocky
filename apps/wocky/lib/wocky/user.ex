@@ -90,14 +90,15 @@ defmodule Wocky.User do
     case Repo.get_by(User, external_id: external_id) do
       nil ->
         username = ID.new
-        %User{
+        user = %User{
           id: username,
           username: username,
           server: server,
           external_id: external_id,
           phone_number: phone_number
         }
-        |> Repo.insert!
+
+        Repo.insert!(user)
 
         {:ok, {username, server, true}}
 

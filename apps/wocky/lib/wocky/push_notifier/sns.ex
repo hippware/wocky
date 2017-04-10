@@ -14,7 +14,8 @@ defmodule Wocky.PushNotifier.SNS do
   @spec init :: :ok
   def init, do: :ok
 
-  @spec register(binary, binary, binary, binary) :: {:ok, binary} | {:error, any}
+  @spec register(binary, binary, binary, binary) ::
+    {:ok, binary} | {:error, any}
   def register(user_id, resource, _platform, device_id) do
     :wocky
     |> Application.fetch_env!(:application_arn)

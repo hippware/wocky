@@ -31,6 +31,8 @@
 
 -module(ejabberd_auth_wocky).
 
+-compile({parse_transform, fun_chain}).
+
 -behaviour(ejabberd_gen_auth).
 -export([start/1,
          stop/1,
@@ -155,16 +157,18 @@ remove_user(LUser, LServer, Password) ->
 %%% SCRAM
 %%%------------------------------------------------------------------
 
--spec prepare_scrammed_password(Iterations :: pos_integer(), Password :: binary()) ->
-    {PreparedPassword :: binary(), ExtendedPassword :: binary()}.
+-spec prepare_scrammed_password(pos_integer(), binary()) ->
+    {binary(), binary()}.
 prepare_scrammed_password(Iterations, Password) when is_integer(Iterations) ->
-    Scram = scram:password_to_scram(Password, Iterations),
-    PassDetails = scram:serialize(Scram),
-    PassDetailsEscaped = ejabberd_odbc:escape(PassDetails),
+    PassDetailsEscaped = fun_chain:first(
+        Password,
+        scram:password_to_scram(Iterations),
+        scram:serialize(),
+        ejabberd_odbc:escape()
+     ),
     {<<>>, PassDetailsEscaped}.
 
--spec prepare_password(Server :: ejabberd:server(), Password :: binary()) ->
-    PreparedPassword :: {binary(), binary()}.
+-spec prepare_password(ejabberd:server(), binary()) -> {binary(), binary()}.
 prepare_password(Server, Password) ->
     case scram:enabled(Server) of
         true ->

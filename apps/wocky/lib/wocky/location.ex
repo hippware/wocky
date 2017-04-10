@@ -187,7 +187,8 @@ defmodule Wocky.User.Location do
   defp send_notification(_owner_jid, _user, _bot, _event) do
     # :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
     #                        :jid.to_bare(owner_jid),
-    #                        bot_notification_stanza(owner_jid, user, bot, event))
+    #                        bot_notification_stanza(owner_jid, user,
+    #                                                bot, event))
   end
 
   # defp bot_notification_stanza(owner_jid, user, bot, event) do

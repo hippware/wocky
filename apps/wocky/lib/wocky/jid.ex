@@ -98,7 +98,7 @@ defmodule Wocky.JID do
     binary_to_jid3(j, [], Enum.reverse(n), [])
   end
   defp binary_to_jid1(<<c, j :: binary>>, n) do
-    binary_to_jid1(j, [c | n]);
+    binary_to_jid1(j, [c | n])
   end
   defp binary_to_jid1(<<>>, n) do
     make("", to_string(Enum.reverse(n)), "")
@@ -135,15 +135,15 @@ defmodule Wocky.JID do
     to_binary({user, server, ""})
   end
   def to_binary({node, server, resource}) do
-    node = case node do
+    prefix = case node do
       "" -> ""
       _ -> node <> "@"
     end
-    resource = case resource do
+    suffix = case resource do
       "" -> ""
       _ -> "/" <> resource
     end
-    node <> server <> resource
+    prefix <> server <> suffix
   end
 
   @spec nodename?(<<>> | binary) :: boolean
