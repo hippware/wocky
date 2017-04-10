@@ -90,7 +90,8 @@ defmodule Wocky.Mixfile do
       "recompile": ["clean", "compile"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"]
+      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"],
+      "test": ["espec"]
     ]
   end
 end
