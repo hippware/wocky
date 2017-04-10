@@ -25,20 +25,6 @@ defmodule Wocky.XMPP.Mixfile do
                          'db.rollback.test': :test,
                          'db.test_migrations': :test
                        ],
-     dialyzer: [
-       plt_apps: [
-         :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
-         :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
-         :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
-         :mochijson2, :erlando, :z_stdlib, :uuid, :ejabberd, :lager,
-         :base16, :slackex, :crone
-       ],
-       plt_add_deps: true,
-       flags: [
-         "-Wunmatched_returns", "-Werror_handling", "-Wrace_conditions",
-         "-Wunderspecs"
-       ]
-     ],
      elvis_config: elvis_config(),
      # set switches that affect every invocation of the eunit task
      eunit: [
@@ -101,7 +87,6 @@ defmodule Wocky.XMPP.Mixfile do
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
-      {:dialyxir,             "~> 0.4",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
       {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},

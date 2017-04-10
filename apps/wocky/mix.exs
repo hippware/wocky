@@ -15,16 +15,6 @@ defmodule Wocky.Mixfile do
      preferred_cli_env: [
        espec: :test
      ],
-     dialyzer: [
-       plt_apps: [:ecto],
-       plt_add_deps: :transitive,
-       flags: [
-         # :unmatched_returns,
-         # :underspecs,
-         :error_handling,
-         :race_conditions
-       ]
-     ],
      aliases: aliases(),
      deps: deps()]
   end
@@ -91,7 +81,6 @@ defmodule Wocky.Mixfile do
       {:coverex,    "~> 1.4", only: :test},
       {:credo,      "~> 0.6", only: :dev, runtime: false},
       {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
-      {:dialyxir,   "~> 0.4", only: :dev, runtime: false},
       {:reprise,    "~> 0.5", only: :dev}
     ]
   end
