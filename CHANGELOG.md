@@ -10,6 +10,8 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* New API: User Bulk Query (#614)
+
 
 # 17.04.05+1724.8a6709a
 
