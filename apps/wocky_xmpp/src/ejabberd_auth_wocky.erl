@@ -99,14 +99,12 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 %% Not really suitable for use since it does not pass in extra profile
 %% information and we expect LUser to be a timeuuid. It is implemented
 %% here to enable Escalus to create users in integration tests.
--spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) -> ok.
+-spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) ->
+    ok | {error, term()}.
 try_register(LUser, LServer, Password) ->
     Username = ejabberd_odbc:escape(LUser),
     {Pwd, Details} = prepare_password(LServer, Password),
-    case ?wocky_user:register(Username, LServer, Pwd, Details) of
-        {ok, _} -> ok;
-        {error, _} = Error -> Error
-    end.
+    ?wocky_user:register(Username, LServer, Pwd, Details).
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
 dirty_get_registered_users() ->

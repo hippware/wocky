@@ -5,6 +5,8 @@ defmodule Wocky.PushNotifier.Test do
   testing system.
   """
 
+  alias Wocky.Device
+
   @behaviour Wocky.PushNotifier
 
   @spec init :: :ok
@@ -16,7 +18,7 @@ defmodule Wocky.PushNotifier.Test do
     :ok
   end
 
-  @spec register(binary, binary, binary, binary) :: {:ok, binary}
+  @spec register(binary, binary, Device.platform, binary) :: {:ok, binary}
   def register(_user, _resource, _platform, device) do
     {:ok, device}
   end

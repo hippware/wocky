@@ -31,8 +31,8 @@ dump(Handle, Resource, StartBin, DurationBin) ->
 
 get_user(Handle) ->
     case ?wocky_user:find_by(handle, Handle) of
-        [] -> {error, "User not found"};
-        [#{id := ID, server := Server}] -> {ok, jid:make(ID, Server, <<>>)}
+        nil -> {error, "User not found"};
+        #{id := ID, server := Server} -> {ok, jid:make(ID, Server, <<>>)}
     end.
 
 get_time(StartBin) ->

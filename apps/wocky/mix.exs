@@ -15,16 +15,6 @@ defmodule Wocky.Mixfile do
      preferred_cli_env: [
        espec: :test
      ],
-     dialyzer: [
-       plt_apps: [:ecto],
-       plt_add_deps: :transitive,
-       flags: [
-         # :unmatched_returns,
-         # :underspecs,
-         :error_handling,
-         :race_conditions
-       ]
-     ],
      aliases: aliases(),
      deps: deps()]
   end
@@ -35,7 +25,6 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
-        location_api_port: 8080,
         enable_follow_me: false,
         algolia_user_index_name: [
           staging: 'dev_wocky_users',
@@ -92,7 +81,6 @@ defmodule Wocky.Mixfile do
       {:coverex,    "~> 1.4", only: :test},
       {:credo,      "~> 0.6", only: :dev, runtime: false},
       {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
-      {:dialyxir,   "~> 0.4", only: :dev, runtime: false},
       {:reprise,    "~> 0.5", only: :dev}
     ]
   end
@@ -102,7 +90,8 @@ defmodule Wocky.Mixfile do
       "recompile": ["clean", "compile"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"]
+      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"],
+      "test": ["espec"]
     ]
   end
 end

@@ -4,6 +4,8 @@ defmodule Wocky.PushNotifier.Null do
   their inputs. This handler effectively disables push notifications.
   """
 
+  alias Wocky.Device
+
   require Logger
 
   @behaviour Wocky.PushNotifier
@@ -13,7 +15,7 @@ defmodule Wocky.PushNotifier.Null do
     Logger.info("Initialising null Wocky push notifier")
   end
 
-  @spec register(binary, binary, binary, binary) :: {:ok, binary}
+  @spec register(binary, binary, Device.platform, binary) :: {:ok, binary}
   def register(user, resource, platform, device) do
     :ok = Logger.info("""
       Push notification registration request for #{user}'s device '#{device}' \

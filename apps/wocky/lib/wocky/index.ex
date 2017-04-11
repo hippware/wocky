@@ -5,6 +5,7 @@ defmodule Wocky.Index do
 
   require Logger
   alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.User
 
   defmodule State do

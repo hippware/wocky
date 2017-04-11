@@ -74,7 +74,10 @@ defmodule Wocky.User do
         password: password,
         pass_details: pass_details
       }
-      Repo.insert(user)
+
+      Repo.insert!(user)
+
+      :ok
     else
       {:error, :invalid_id}
     end

@@ -29,6 +29,9 @@
          update_access/2
         ]).
 
+%% used by mod_wocky_cli
+-export([bucket/0, access_key_id/0, secret_key/0]).
+
 -ifdef(TEST).
 -export([path/2]).
 -endif.

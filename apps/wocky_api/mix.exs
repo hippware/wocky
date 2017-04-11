@@ -1,34 +1,60 @@
-defmodule WockyApi.Mixfile do
+defmodule WockyAPI.Mixfile do
   use Mix.Project
 
   def project do
     [app: :wocky_api,
      version: "0.1.0",
+     build_path: "../../_build",
+     config_path: "../../config/config.exs",
+     deps_path: "../../deps",
+     lockfile: "../../mix.lock",
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     test_coverage: [tool: Coverex.Task],
+     preferred_cli_env: [
+       espec: :test
+     ],
+     aliases: aliases(),
      deps: deps()]
   end
 
-  # Configuration for the OTP application
-  #
-  # Type "mix help compile.app" for more information
   def application do
-    # Specify extra applications you'll use from Erlang/Elixir
-    [extra_applications: [:logger],
-     mod: {WockyApi.Application, []}]
+    [
+      # Specify extra applications you'll use from Erlang/Elixir
+      extra_applications: [:logger],
+      mod: {WockyAPI.Application, []},
+      env: [
+        location_api_port: 8080
+      ]
+    ]
   end
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:my_dep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:my_dep, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-  #
-  # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      {:wocky,      in_umbrella: true},
+      {:cowboy,     "~> 1.0"},
+      {:poison,     "~> 2.2"},
+      {:hackney,    "~> 1.7", override: true},
+      {:ok,         "~> 1.2", runtime: false},
+      {:lager,      "~> 3.2", override: true},
+      {:logger_lager_backend, "~> 0.0.2"},
+
+      {:espec,      "~> 1.2", only: :test},
+      {:coverex,    "~> 1.4", only: :test},
+      {:credo,      "~> 0.6", only: :dev, runtime: false},
+      {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
+      {:reprise,    "~> 0.5", only: :dev}
+    ]
+  end
+
+  defp aliases do
+    [
+      "recompile": ["clean", "compile"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"],
+      "test": ["espec"]
+    ]
   end
 end
