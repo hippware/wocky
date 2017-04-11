@@ -1,4 +1,4 @@
-defmodule Wocky.TROSMetadata do
+defmodule Wocky.TROS.Metadata do
   @moduledoc """
   DB interface module for TROS metadata (access and ownership info)
   """

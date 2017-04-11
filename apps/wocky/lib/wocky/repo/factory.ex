@@ -11,7 +11,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Conversation
   alias Wocky.JID
   alias Wocky.Repo.ID
-  alias Wocky.TROSMetadata
+  alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
 
   def user_factory do
