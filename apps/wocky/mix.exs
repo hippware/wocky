@@ -25,7 +25,10 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
-        enable_follow_me: false,
+        tros_backend: Wocky.TROS.S3,
+        tros_s3_bucket: "wocky-tros",
+        tros_s3_access_key_id: nil,
+        tros_s3_secret_key: nil,
         algolia_user_index_name: [
           staging: 'dev_wocky_users',
           us1:     'prod_wocky_users'
@@ -36,6 +39,7 @@ defmodule Wocky.Mixfile do
         ],
         enable_bot_event_notifications: false,
         enable_follow_me_updates: false,
+        enable_follow_me: false,
         reserved_handles: [
           "root",
           "admin",

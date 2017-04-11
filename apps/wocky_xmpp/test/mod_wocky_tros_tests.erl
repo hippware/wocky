@@ -25,37 +25,26 @@ mod_wocky_tros_test_() -> {
   ]
 }.
 
-mecks() -> [ejabberd_config, httpd_util, ossp_uuid, mod_wocky_tros_s3].
+mecks() -> [?wocky_id, ?tros].
 
 before_all() ->
     lists:foreach(fun(M) -> meck:new(M, [passthrough]) end, mecks()),
-    meck:expect(ejabberd_config, get_local_option,
-                fun(tros_backend) -> s3;
-                   (tros_scheme) -> "http://";
-                   (tros_auth_validity) -> 3600;
-                   (s3_bucket) -> "tros-test";
-                   (s3_access_key_id) -> "AKIAI4OZWBAA4SP6Y3WA";
-                   (s3_secret_key) ->
-                        "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";
-                   (tros_public_port) -> 1025;
-                   (X) -> meck:passthrough([X])
-                end),
-    meck:expect(httpd_util, rfc1123_date, 1,
-                "Fri, 29 Jan 2016 02:54:44 GMT"),
 
-    meck:expect(ossp_uuid, make, 2, new_file_uuid()),
-    % Don't seem to be able to do meck passthrough to NIFs :(
-    % So we reimplement it here by calling a non-NIF version:
-    meck:expect(ossp_uuid, import, fun(UUID, text) ->
-                                           list_to_binary(
-                                             uuid:uuid_to_string(UUID));
-                                      (UUID, binary) ->
-                                             uuid:string_to_uuid(UUID)
-                                   end),
+    meck:expect(?wocky_id, new, 0, new_file_uuid()),
 
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, tros_request]),
-    wocky_db_seed:seed_tables(shared, [file_metadata]).
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    _ = ?wocky_factory:insert(user, #{id => ?ALICE,
+                                      username => ?ALICE,
+                                      handle => <<"alice">>}),
+    _ = ?wocky_factory:insert(user, #{id => ?BOB,
+                                      username => ?BOB,
+                                      handle => <<"bob">>}),
 
+    _ = ?wocky_repo:delete_all(?tros_metadata),
+    {ok, _} = ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
+    {ok, _} = ?tros_metadata:put(?MEDIA_FILE, ?ALICE,
+                                 <<"user:", (?BOB_B_JID)/binary>>),
+    ok.
 
 after_all(_) ->
     meck:unload().
@@ -151,7 +140,7 @@ test_message_media_download_request() ->
     ]},
         {"Failed request on someone else's media that was NOT sent to us", [
           ?_test(begin
-             meck:expect(mod_wocky_tros_s3, get_access, 1,
+             meck:expect(?tros, get_access, 1,
                          {ok, <<"user:",(?BOB_B_JID)/binary>>}),
              ?assertEqual(
              expected_dl_auth_error_packet(?MEDIA_FILE),

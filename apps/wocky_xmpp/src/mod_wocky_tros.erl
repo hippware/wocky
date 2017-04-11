@@ -8,9 +8,7 @@
 -export([
    start/2,
    stop/1,
-   handle_iq/3,
-
-   backend/0
+   handle_iq/3
         ]).
 
 -ifdef(TEST).
@@ -31,22 +29,11 @@
           iq :: iq()
          }).
 
--define(DEFAULT_BACKEND, s3).
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
 
-configs() ->
-    %% Name in .cfg   |Name in ejabberd_config|Default value
-    [
-     {backend,         tros_backend,          ?DEFAULT_BACKEND},
-     {max_upload_size, tros_max_upload_size,  ?DEFAULT_MAX_UPLOAD_SIZE}
-    ].
-
 start(Host, Opts) ->
-    lists:foreach(fun({Tag, Config, Default}) ->
-                          wocky_util:set_config_from_opt(
-                            Tag, Config, Default, Opts)
-                  end, configs()),
-    (backend()):start(Opts),
+    wocky_util:set_config_from_opt(max_upload_size, tros_max_upload_size,
+                                   ?DEFAULT_MAX_UPLOAD_SIZE, Opts),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_TROS,
                                   ?MODULE, handle_iq, parallel),
     setup_metrics(),
@@ -54,7 +41,7 @@ start(Host, Opts) ->
 
 stop(Host) ->
     _ = gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_TROS),
-    (backend()):stop().
+    ok.
 
 -spec handle_iq(From :: ejabberd:jid(),
                 To :: ejabberd:jid(),
@@ -79,8 +66,8 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
-        OwnerID <- expand_err(tros:get_owner(FileID)),
-        Access <- expand_err(tros:get_access(FileID)),
+        OwnerID <- expand_err(?tros:get_owner(FileID)),
+        Access <- expand_err(?tros:get_access(FileID)),
         check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID)
@@ -166,27 +153,22 @@ check_download_permissions(FromJID, OwnerID, Access) ->
                                        atom_to_list(Reason)]))}
     end.
 
-upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
+upload_response(Req = #request{from_jid = FromJID},
                 #{<<"mime-type">> := MimeType,
                   <<"access">> := Access,
                   <<"filename">> := Filename},
                 Size) ->
-    Metadata = #{<<"content-type">> => MimeType,
-                 <<"name">> => Filename},
+    Metadata = #{<<"content-type">> => MimeType, <<"name">> => Filename},
     FileID = make_file_id(),
     {Headers, RespFields} =
-        (backend()):make_upload_response(FromJID, ToJID, FileID,
-                                         Size, Access, Metadata),
-
+        ?tros:make_upload_response(FromJID, FileID, Size, Access, Metadata),
 
     FullFields = common_fields(FromJID, FileID) ++ RespFields,
     response(Req, Headers, FullFields, <<"upload">>).
 
-download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                          OwnerID, FileID) ->
+download_response(Req = #request{from_jid = FromJID}, _OwnerID, FileID) ->
     {Headers, RespFields} =
-    (backend()):make_download_response(FromJID, ToJID, OwnerID,
-                                       FileID, #{}),
+      ?tros:make_download_response(FromJID#jid.lserver, FileID),
 
     response(Req, Headers, RespFields, <<"download">>).
 
@@ -207,7 +189,7 @@ error_response(IQ = #iq{sub_el = SubEl}, Error) ->
 
 common_fields(#jid{lserver = Server}, FileID) ->
     [{<<"id">>, FileID},
-     {<<"jid">>, jid:to_binary(tros:make_jid(Server, FileID))}].
+     {<<"jid">>, jid:to_binary(?tros:make_jid(Server, FileID))}].
 
 to_header_element({Name, Value}) ->
     #xmlel{name = <<"header">>,
@@ -216,13 +198,8 @@ to_header_element({Name, Value}) ->
 to_xmlel({Name, Content}) ->
     #xmlel{name = Name, children = [#xmlcdata{content = Content}]}.
 
-backend() ->
-    list_to_atom("mod_wocky_tros_" ++
-      atom_to_list(
-        ejabberd_config:get_local_option(tros_backend))).
-
 make_file_id() ->
-    ossp_uuid:make(v1, text).
+    ?wocky_id:new().
 
 binary_to_integer_def(Binary, Default) ->
     try

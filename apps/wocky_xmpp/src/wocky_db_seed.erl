@@ -58,7 +58,7 @@ user_data(Server) ->
     [
      #{user => ?ALICE,  server => Server,  handle => ?HANDLE,
        phone_number => ?PHONE_NUMBER, external_id => ?EXTERNAL_ID,
-       avatar => tros:make_url(Server, ?AVATAR_FILE),
+       avatar => ?tros:make_url(Server, ?AVATAR_FILE),
        roster_viewers => ?ROSTER_VIEWERS},
      #{user => ?CAROL,  server => Server,  handle => <<"carol">>,
        first_name => <<"Carol">>,
@@ -265,16 +265,15 @@ sort_by_time(#{time := T1}, #{time := T2}) ->
 
 % Set up a file on S3 with random data if S3 is enabled
 maybe_seed_s3_file(UserJID, FileID) ->
-    case ejabberd_config:get_local_option(tros_backend) of
-        s3 -> seed_s3_file(UserJID, FileID);
+    case application:get_env(wocky, tros_backend, undefined) of
+        ?tros_s3 -> seed_s3_file(UserJID, FileID);
         _ -> ok
     end.
 
 seed_s3_file(UserJID, FileID) ->
-    {Headers, Fields} = mod_wocky_tros_s3:make_upload_response(
-                          UserJID, #jid{lserver = ?LOCAL_CONTEXT},
-                          FileID, 1000,
-                          <<"all">>, #{<<"content-type">> => <<"image/png">>}),
+    {Headers, Fields} = ?tros:make_upload_response(
+                          UserJID, FileID, 1000, <<"all">>,
+                          #{<<"content-type">> => <<"image/png">>}),
     HeadersStr = [{binary_to_list(K), binary_to_list(V)} || {K, V} <- Headers],
     {ok, _} =
     httpc:request(put,

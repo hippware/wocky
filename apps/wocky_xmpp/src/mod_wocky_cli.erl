@@ -188,8 +188,8 @@ fix_images(Bot, Images) ->
 maybe_fix_image(#{id := BotID, server := BotServer}, Image, Acc) ->
     BotJID = wocky_bot_util:make_jid(BotServer, BotID),
     R = do([error_m ||
-            {_Server, FileID} <- tros:parse_url(Image),
-            Access           <- tros:get_access(FileID),
+            {_Server, FileID} <- ?tros:parse_url(Image),
+            Access           <- ?tros:get_access(FileID),
             check_access(BotJID, Access),
             fix_access(BotJID, FileID)
            ]),
@@ -215,7 +215,7 @@ is_bot_redirect(_BotJID, _) ->
 
 fix_access(BotJID, FileID) ->
     NewAccess = <<"redirect:", (jid:to_binary(BotJID))/binary>>,
-    mod_wocky_tros_s3:update_access(FileID, NewAccess).
+    ?tros:update_access(FileID, NewAccess).
 
 
 %%%===================================================================
@@ -246,7 +246,7 @@ get_token(User, Resource) ->
 
 reprocess_images() ->
     fun_chain:first(
-      mod_wocky_tros_s3:bucket(),
+      ?tros_s3:bucket(),
       ?s3:list_objects(),
       ?ex_aws:'stream!'(s3_auth()),
       reprocess_images()
@@ -265,9 +265,9 @@ reprocess_images(Stream) ->
 
 reprocess_image(Files = [ImageFile, MaybeOriginal, MaybeThumbnail]) ->
     BaseID = s3_key(ImageFile),
-    OrigAndThumb = {tros:get_base_id(s3_key(MaybeOriginal)),
-                    tros:get_base_id(s3_key(MaybeThumbnail))},
-    Types = [tros:get_type(s3_key(F)) || F <- Files],
+    OrigAndThumb = {?tros:get_base_id(s3_key(MaybeOriginal)),
+                    ?tros:get_base_id(s3_key(MaybeThumbnail))},
+    Types = [?tros:get_type(s3_key(F)) || F <- Files],
     case {OrigAndThumb, Types} of
         {{BaseID, BaseID}, [full, original, thumbnail]} ->
             do_reprocess_image(s3_key(MaybeOriginal)),
@@ -283,18 +283,18 @@ reprocess_image([ImageFile | _]) ->
     1.
 
 do_reprocess_image(ImageName) ->
-    case tros:get_type(ImageName) of
+    case ?tros:get_type(ImageName) of
         thumbnail ->
             io:fwrite("ERROR: Refusing to reprocess "
                       "orphaned thumbnail ~p\n", [ImageName]);
         _ ->
             % Copy the image back to the quarantine bucket to allow
             % the Lambda function to reprocess it.
-            BaseID = tros:get_base_id(ImageName),
+            BaseID = ?tros:get_base_id(ImageName),
             Req = ?s3:put_object_copy(
-                     <<(mod_wocky_tros_s3:bucket())/binary, "-quarantine">>,
+                     ?tros_s3:upload_bucket(),
                      BaseID,
-                     mod_wocky_tros_s3:bucket(),
+                     ?tros_s3:bucket(),
                      ImageName),
             ?ex_aws:'request!'(Req, s3_auth()),
             io:fwrite("Reprocessing ~p from ~p\n", [BaseID, ImageName])
@@ -329,7 +329,7 @@ get_user(Handle) ->
     end.
 
 s3_auth() ->
-    [{access_key_id, mod_wocky_tros_s3:access_key_id()},
-     {secret_access_key, mod_wocky_tros_s3:secret_key()}].
+    [{access_key_id, ?tros_s3:access_key_id()},
+     {secret_access_key, ?tros_s3:secret_key()}].
 
 s3_key(#{key := Key}) -> Key.

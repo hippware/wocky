@@ -1,4 +1,4 @@
-defmodule Wocky.TROSMetadata do
+defmodule Wocky.TROS.Metadata do
   @moduledoc """
   DB interface module for TROS metadata (access and ownership info)
   """
@@ -29,18 +29,20 @@ defmodule Wocky.TROSMetadata do
     access:  access
   }
 
-  @spec put(id, User.id, access) :: {:ok, TROSMetadata}
+  @change_fields [:id, :user_id, :access]
+
+  @spec put(id, User.id, access) :: {:ok, t}
   def put(id, user_id, access) do
     %TROSMetadata{id: id, user_id: user_id, access: access}
     |> changeset
     |> Repo.insert
   end
 
-  @spec set_access(id, access) :: {:ok, TROSMetadata}
+  @spec set_access(id, access) :: {:ok, t} | {:error, :not_found}
   def set_access(id, access) do
     case Repo.get(TROSMetadata, id) do
       nil ->
-        {:error, :no_existing_item}
+        {:error, :not_found}
       md ->
         md
         |> changeset(%{access: access})
@@ -64,7 +66,14 @@ defmodule Wocky.TROSMetadata do
     |> Repo.one
   end
 
-  @change_fields [:id, :user_id, :access]
+  @spec delete(id) :: :ok
+  def delete(id) do
+    TROSMetadata
+    |> with_file(id)
+    |> Repo.delete_all
+
+    :ok
+  end
 
   defp changeset(struct, params \\ %{}) do
     struct
@@ -85,5 +94,4 @@ defmodule Wocky.TROSMetadata do
   defp select_access(query) do
     from f in query, select: f.access
   end
-
 end

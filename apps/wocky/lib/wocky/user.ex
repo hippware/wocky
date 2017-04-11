@@ -10,7 +10,7 @@ defmodule Wocky.User do
   alias Wocky.Repo.ID
   alias Wocky.Token
   alias Wocky.Conversation
-  alias Wocky.TROSMetadata
+  alias Wocky.TROS.Metadata, as: TROSMetadata
   alias __MODULE__, as: User
 
   @primary_key {:id, :binary_id, autogenerate: false}

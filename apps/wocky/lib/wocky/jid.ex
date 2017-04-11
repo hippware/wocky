@@ -40,6 +40,13 @@ defmodule Wocky.JID do
 
   @sane_limit 1024
 
+  defmacro __using__(_) do
+    quote do
+      alias unquote(__MODULE__)
+      import unquote(__MODULE__), only: :macros
+    end
+  end
+
   @spec make(user, server, resource) :: t | :error
   def make(user, server, resource \\ "") do
     with {:ok, luser} <- nodeprep(user),
@@ -70,7 +77,7 @@ defmodule Wocky.JID do
         lresource: lresource)
   end
 
-  @spec make_noprep(simple_jid) :: t | :error
+  @spec make_noprep(simple_jid) :: t
   def make_noprep({luser, lserver, lresource}),
     do: make_noprep(luser, lserver, lresource)
 
@@ -150,19 +157,19 @@ defmodule Wocky.JID do
   def nodename?(""), do: false
   def nodename?(j), do: nodeprep(j) != :error
 
-  @spec nodeprep(server) :: lserver | :error
+  @spec nodeprep(server) :: {:ok, lserver} | :error
   defp nodeprep(s) when is_binary(s) and byte_size(s) < @sane_limit do
     s |> :stringprep.nodeprep |> prep_check()
   end
   defp nodeprep(_), do: :error
 
-  @spec nameprep(server) :: luser | :error
+  @spec nameprep(server) :: {:ok, luser} | :error
   defp nameprep(s) when is_binary(s) and byte_size(s) < @sane_limit do
     s |> :stringprep.nameprep |> prep_check()
   end
   defp nameprep(_), do: :error
 
-  @spec resourceprep(resource) :: lresource | :error
+  @spec resourceprep(resource) :: {:ok, lresource} | :error
   defp resourceprep(s) when is_binary(s) and byte_size(s) < @sane_limit do
     s |> :stringprep.resourceprep |> prep_check()
   end
@@ -184,7 +191,7 @@ defmodule Wocky.JID do
     end
   end
 
-  @spec to_lus(jid) :: simple_bare_jid | :error
+  @spec to_lus(jid) :: simple_bare_jid
   def to_lus(jid(luser: u, lserver: s)), do: {u, s}
 
   @spec to_bare(simple_jid | jid) :: simple_jid | jid

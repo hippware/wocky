@@ -3,7 +3,7 @@ defmodule Wocky.Bot do
 
   alias Wocky.Index
   alias Wocky.JID
-  alias Wocky.User.Location
+  alias Wocky.Location
   alias __MODULE__, as: Bot
 
   defstruct [
