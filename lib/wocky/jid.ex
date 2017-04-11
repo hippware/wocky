@@ -80,6 +80,7 @@ defmodule Wocky.JID do
   def equal?(_, _), do: false
 
   @doc "Returns true if `are_equal(to_bare(A), to_bare(B))`"
+  @spec bare_equal?(t, t) :: boolean
   def bare_equal?(jid(luser: luser, lserver: lserver),
                   jid(luser: luser, lserver: lserver)), do: true
   def bare_equal?(_, _), do: false
@@ -134,16 +135,16 @@ defmodule Wocky.JID do
   def to_binary({user, server}) do
     to_binary({user, server, ""})
   end
-  def to_binary({node, server, resource}) do
-    node = case node do
+  def to_binary({user, server, resource}) do
+    user = case user do
       "" -> ""
-      _ -> node <> "@"
+      _ -> user <> "@"
     end
     resource = case resource do
       "" -> ""
       _ -> "/" <> resource
     end
-    node <> server <> resource
+    user <> server <> resource
   end
 
   @spec nodename?(<<>> | binary) :: boolean

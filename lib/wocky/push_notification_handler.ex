@@ -9,6 +9,7 @@ defmodule Wocky.PushNotificationHandler do
   alias Wocky.JID
   alias Wocky.PushNotification
 
+  @spec start_link(Keyword.t) :: {:ok, pid}
   def start_link(cfg_terms) do
     handler_type = Keyword.get(cfg_terms, :notification_system, :none)
     handler = case handler_type do
@@ -28,6 +29,7 @@ defmodule Wocky.PushNotificationHandler do
 
   ## Callbacks
 
+  @spec init(module) :: {:consumer, module, Keyword.t}
   def init(handler) do
     :ok = handler.init()
     # Starts a permanent subscription to the broadcaster
@@ -35,6 +37,7 @@ defmodule Wocky.PushNotificationHandler do
     {:consumer, handler, subscribe_to: [PushNotifications]}
   end
 
+  @spec handle_events(list, term, module) :: {:noreply, [], module}
   def handle_events(events, _from, handler) do
     _ = events
     |> Task.async_stream(fn(e) -> handle_event(e, handler) end)
