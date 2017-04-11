@@ -43,18 +43,8 @@ defmodule Wocky.Notification.AWSHandler do
     {:ok, arn}
   end
 
-  @spec notify(binary, binary) :: :ok | {:error, any}
-  def notify(endpoint, message) do
-    message
-    |> maybe_truncate_message
-    |> make_payload
-    |> SNS.publish([target_arn: endpoint, message_structure: :json])
-    |> ExAws.request
-    |> handle_notify_result
-  end
-
-  @spec notify_message(binary, binary, binary) :: :ok | {:error, any}
-  def notify_message(endpoint, from, body) do
+  @spec notify(binary, binary, binary) :: :ok | {:error, any}
+  def notify(endpoint, from, body) do
     body
     |> format_message(from)
     |> maybe_truncate_message
@@ -62,6 +52,10 @@ defmodule Wocky.Notification.AWSHandler do
     |> SNS.publish([target_arn: endpoint, message_structure: :json])
     |> ExAws.request
     |> handle_notify_result
+  end
+
+  defp format_message(body, nil) do
+    body
   end
 
   defp format_message(body, from) do

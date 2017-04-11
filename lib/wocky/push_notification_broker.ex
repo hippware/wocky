@@ -25,7 +25,7 @@ defmodule Wocky.PushNotificationBroker do
   """
   @spec send(PushNotificaiton.t) :: :ok
   def send(notification) do
-    GenStage.call(__MODULE__, {:notify, notification}, @timeout)
+    GenStage.call(PushNotifications, {:notify, notification}, @timeout)
   end
 
   ## Callbacks

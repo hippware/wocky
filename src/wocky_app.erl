@@ -104,7 +104,7 @@ start(_StartType, _StartArgs) ->
     ok = application:set_env(ejabberd, config, CfgPath),
     ok = maybe_start_ejabberd(not Minimal),
 
-    wocky_sup:start_link().
+    wocky_sup:start_link(CfgTerms).
 
 stop(_State) ->
     ok.
