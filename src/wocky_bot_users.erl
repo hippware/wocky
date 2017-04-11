@@ -52,7 +52,7 @@ send_notification(#jid{luser = User, lserver = Server} = From, To) ->
                  H -> H
              end,
     Body = <<Handle/binary, " shared a bot with you!">>,
-    wocky_notification_handler:notify_message(To, From, Body).
+    ?wocky_push_notification:send(To, From, Body).
 
 %%%===================================================================
 %%% Access change notifications

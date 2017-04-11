@@ -31,7 +31,7 @@ defmodule Wocky.PushNotification do
   @spec enable(jid, platform, device_id) :: :ok | {:error, term}
   def enable(jid, platform, device_id) do
     bjid = JID.to_binary(jid)
-    Logger.debug("Registering device '#{device_id}' for user '#{bjid}'")
+    _ = Logger.debug("Registering device '#{device_id}' for user '#{bjid}'")
     case handler().register(bjid, platform, device_id) do
       {:ok, endpoint} ->
         {user, server, resource} = JID.to_lower(jid)
