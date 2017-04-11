@@ -29,14 +29,8 @@ defmodule Wocky.Mixfile do
         tros_s3_bucket: "wocky-tros",
         tros_s3_access_key_id: nil,
         tros_s3_secret_key: nil,
-        algolia_user_index_name: [
-          staging: 'dev_wocky_users',
-          us1:     'prod_wocky_users'
-        ],
-        algolia_bot_index_name: [
-          staging: 'dev_wocky_bots',
-          us1:     'prod_wocky_bots'
-        ],
+        algolia_user_index_name: nil,
+        algolia_bot_index_name: nil,
         enable_bot_event_notifications: false,
         enable_follow_me_updates: false,
         enable_follow_me: false,

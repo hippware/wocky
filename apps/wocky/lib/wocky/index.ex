@@ -3,10 +3,11 @@ defmodule Wocky.Index do
 
   use ExActor.GenServer, export: :wocky_index
 
-  require Logger
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.User
+
+  require Logger
 
   defmodule State do
     @moduledoc false
@@ -21,13 +22,8 @@ defmodule Wocky.Index do
   @bot_fields [:server, :owner, :title, :image, :lat, :lon, :radius, :_geoloc]
 
   defstart start_link do
-    user_indexes  = Application.fetch_env!(:wocky, :algolia_user_index_name)
-    bot_indexes   = Application.fetch_env!(:wocky, :algolia_bot_index_name)
-    inst_string   = Application.fetch_env!(:wocky, :wocky_inst)
-
-    current_inst = :erlang.list_to_atom(inst_string)
-    user_index = Keyword.get(user_indexes, current_inst)
-    bot_index = Keyword.get(bot_indexes, current_inst)
+    user_index = Application.fetch_env!(:wocky, :algolia_user_index_name)
+    bot_index  = Application.fetch_env!(:wocky, :algolia_bot_index_name)
 
     enabled = !is_nil(user_index) && !is_nil(bot_index)
 
