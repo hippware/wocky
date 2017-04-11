@@ -25,6 +25,7 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
+        tros_backend: Wocky.TROS.S3,
         enable_follow_me: false,
         algolia_user_index_name: [
           staging: 'dev_wocky_users',

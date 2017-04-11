@@ -67,6 +67,8 @@
 -define(wocky_token, 'Elixir.Wocky.Token').
 -define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
 
+-define(tros, 'Elixir.Wocky.TROS').
+
 -define(timex, 'Elixir.Timex').
 
 % Standard time format to use unless there's a good reason to do otherwise
