@@ -40,6 +40,13 @@ defmodule Wocky.JID do
 
   @sane_limit 1024
 
+  defmacro __using__(_) do
+    quote do
+      alias unquote(__MODULE__)
+      import unquote(__MODULE__), only: :macros
+    end
+  end
+
   @spec make(user, server, resource) :: t | :error
   def make(user, server, resource \\ "") do
     with {:ok, luser} <- nodeprep(user),
