@@ -62,12 +62,13 @@
 -define(wocky_id, 'Elixir.Wocky.Repo.ID').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
 -define(wocky_factory, 'Elixir.Wocky.Repo.Factory').
--define(wocky_tros_metadata, 'Elixir.Wocky.TROSMetadata').
 -define(wocky_user, 'Elixir.Wocky.User').
 -define(wocky_token, 'Elixir.Wocky.Token').
 -define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
 
 -define(tros, 'Elixir.Wocky.TROS').
+-define(tros_s3, 'Elixir.Wocky.TROS.S3').
+-define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
 
 -define(timex, 'Elixir.Timex').
 

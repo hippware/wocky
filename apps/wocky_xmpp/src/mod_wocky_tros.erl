@@ -153,7 +153,7 @@ check_download_permissions(FromJID, OwnerID, Access) ->
                                        atom_to_list(Reason)]))}
     end.
 
-upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
+upload_response(Req = #request{from_jid = FromJID},
                 #{<<"mime-type">> := MimeType,
                   <<"access">> := Access,
                   <<"filename">> := Filename},
@@ -161,16 +161,14 @@ upload_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
     Metadata = #{<<"content-type">> => MimeType, <<"name">> => Filename},
     FileID = make_file_id(),
     {Headers, RespFields} =
-        ?tros:make_upload_response(FromJID, ToJID, FileID,
-                                   Size, Access, Metadata),
+        ?tros:make_upload_response(FromJID, FileID, Size, Access, Metadata),
 
     FullFields = common_fields(FromJID, FileID) ++ RespFields,
     response(Req, Headers, FullFields, <<"upload">>).
 
-download_response(Req = #request{from_jid = FromJID, to_jid = ToJID},
-                          OwnerID, FileID) ->
+download_response(Req = #request{from_jid = FromJID}, _OwnerID, FileID) ->
     {Headers, RespFields} =
-        ?tros:make_download_response(FromJID, ToJID, OwnerID, FileID, #{}),
+      ?tros:make_download_response(FromJID#jid.lserver, FileID),
 
     response(Req, Headers, RespFields, <<"download">>).
 

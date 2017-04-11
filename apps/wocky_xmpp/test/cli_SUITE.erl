@@ -76,7 +76,7 @@ fix_bot_images(Config) ->
         %% Add bot image item
         NoteID = <<"new-item1">>,
         Content = <<"Some content">>,
-        Image = tros:make_url(?LOCAL_CONTEXT, ItemFile),
+        Image = ?tros:make_url(?LOCAL_CONTEXT, ItemFile),
         Title = <<"title ZZZ">>,
         % Alice publishes an item to her bot
         bot_SUITE:publish_item(?BOT, NoteID, Title, Content, Image, Alice),
@@ -102,10 +102,9 @@ make_token(_Config) ->
     {error, _} = mod_wocky_cli:make_token(<<"non-user">>).
 
 seed_s3_file(UserJID, FileID) ->
-    {Headers, Fields} = mod_wocky_tros_s3_legacy:make_upload_response(
-                          UserJID, #jid{lserver = ?LOCAL_CONTEXT},
-                          FileID, 1000,
-                          <<"all">>, #{<<"content-type">> => <<"image/png">>}),
+    {Headers, Fields} = ?tros:make_upload_response(
+                          UserJID, FileID, 1000, <<"all">>,
+                          #{<<"content-type">> => <<"image/png">>}),
     HeadersStr = [{binary_to_list(K), binary_to_list(V)} || {K, V} <- Headers],
     {ok, _} =
     httpc:request(put,
@@ -130,7 +129,7 @@ out_file_data(Config) -> load_file(Config, "out.png").
 
 set_image_field(ID) ->
     bot_SUITE:create_field({"image", "string",
-                            tros:make_url(?LOCAL_CONTEXT, ID)}).
+                            ?tros:make_url(?LOCAL_CONTEXT, ID)}).
 
 load_file(Config, FileName) ->
     DataDir = proplists:get_value(data_dir, Config),

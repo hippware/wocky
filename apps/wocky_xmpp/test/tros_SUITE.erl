@@ -48,10 +48,6 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    ejabberd_config:del_local_option(tros_public_port),
-    ejabberd_config:add_local_option(tros_public_port, 1025),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol, karen])
@@ -152,8 +148,7 @@ update_metadata(Config) ->
         download_failure(Bob, FileID),
 
         %%% Now let's modify the metadata
-        mod_wocky_tros_s3:update_access(?LOCAL_CONTEXT,
-                                        FileID, <<"all">>),
+        ?tros:update_access(FileID, <<"all">>),
 
         %%% Now both Alice and Bob should have access
         download_success(Alice, FileID, OutData),

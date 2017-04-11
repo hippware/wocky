@@ -411,7 +411,7 @@ check_valid_value("email", "string", Value) ->
 
 check_valid_value(_, "file", Value) ->
     Server = wocky_xmpp_app:server(),
-    case (tros:parse_url(Value)) of
+    case (?tros:parse_url(Value)) of
         {ok, {Server, File}} -> check_file(File);
         {ok, {OtherServer, _}} -> not_valid(["Server ", OtherServer,
                                              " is not local"]);
