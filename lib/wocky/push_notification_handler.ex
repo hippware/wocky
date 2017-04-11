@@ -9,42 +9,37 @@ defmodule Wocky.PushNotificationHandler do
   alias Wocky.JID
   alias Wocky.PushNotification
 
-  def start_link() do
-    {:ok, handler_type} =
-      :application.get_env(:wocky, :notification_handler, :none)
+  def start_link(cfg_terms) do
+    handler_type = Keyword.get(cfg_terms, :notification_system, :none)
     handler = case handler_type do
-        :aws ->
-            :ok = Logger.info("AWS Notifications enabled")
-            Wocky.Notification.AWSHandler;
-        :test ->
-            :ok = Logger.info("Notification testing system enabled")
-            Wocky.Notification.TestHandler;
-        :none ->
-            :ok = Logger.info("Notifications disabled")
-            Wocky.Notification.NullHandler
+      :aws ->
+        :ok = Logger.info("AWS Notifications enabled")
+        Wocky.Notification.AWSHandler;
+      :test ->
+        :ok = Logger.info("Notification testing system enabled")
+        Wocky.Notification.TestHandler;
+      :none ->
+        :ok = Logger.info("Notifications disabled")
+        Wocky.Notification.NullHandler
     end
+    :application.set_env(:wocky, :push_notification_handler, handler)
     GenStage.start_link(__MODULE__, handler)
   end
 
   ## Callbacks
 
   def init(handler) do
-    handler.init()
+    :ok = handler.init()
     # Starts a permanent subscription to the broadcaster
     # which will automatically start requesting items.
-    {:consumer, handler, subscribe_to: [PushNotification]}
+    {:consumer, handler, subscribe_to: [PushNotifications]}
   end
 
   def handle_events(events, _from, handler) do
-    _ = Task.async_stream(events, fn(e) -> handle_event(e, handler) end)
+    _ = events
+    |> Task.async_stream(fn(e) -> handle_event(e, handler) end)
+    |> Enum.to_list
     {:noreply, [], handler}
-  end
-
-  defp handle_event(
-    %PushNotification{to: to, from: nil, body: body}, handler) do
-    to
-    |> all_endpoints
-    |> Enum.each(fn(ep) -> do_notify(ep, nil, body, handler) end)
   end
 
   defp handle_event(
@@ -56,8 +51,8 @@ defmodule Wocky.PushNotificationHandler do
 
   defp all_endpoints(jid) do
     {user, server} = JID.to_lus(jid)
-    :wocky_db.select_column(server, :device, :endpoint, %{user => user,
-                                                          server => server})
+    :wocky_db.select_column(server, :device, :endpoint, %{user: user,
+                                                          server: server})
   end
 
   defp do_notify(endpoint, from, body, handler) do
@@ -66,14 +61,20 @@ defmodule Wocky.PushNotificationHandler do
     |> log_result(endpoint, from, body)
   end
 
-  defp log_result({:error, e}, to, from, message) do
-    Logger.warn("Notification error '#{inspect(e)}' while sending "
-                <> "#{from} => #{to} with body '#{message}'")
+  defp log_result({:error, e}, endpoint, from, message) do
+    Logger.warn("""
+                Notification error '#{inspect(e)}' while sending
+                #{JID.to_binary(from)} => #{endpoint}
+                with body '#{message}'
+                """)
   end
 
-  defp log_result(:ok, to, from, message) do
-    Logger.debug("Notification sent: "
-                 <> "#{from} => #{to} with body '#{message}'")
+  defp log_result(:ok, endpoint, from, message) do
+    Logger.debug("""
+                 Notification sent:
+                 #{JID.to_binary(from)} => #{endpoint}
+                 with body '#{message}'
+                 """)
   end
 end
 

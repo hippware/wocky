@@ -23,15 +23,9 @@ defmodule Wocky.Notification.TestHandler do
     {:ok, device}
   end
 
-  @spec notify_message(binary, binary, binary) :: :ok
-  def notify_message(endpoint, from, body) do
+  @spec notify(binary, binary, binary) :: :ok
+  def notify(endpoint, from, body) do
     :ets.insert(:test_handler_table, {endpoint, from, body})
-    :ok
-  end
-
-  @spec notify(binary, binary) :: :ok
-  def notify(endpoint, message) do
-    :ets.insert(:test_handler_table, {endpoint, message})
     :ok
   end
 

@@ -13,11 +13,7 @@
                    DeviceId :: binary()) ->
     {ok, Endpoint :: binary()} | {error, Error :: any()}.
 
--callback notify_message(From :: binary(),
-                         To :: binary(),
-                         Body :: binary()) ->
-    ok | {error, Error :: any()}.
-
--callback notify(To :: binary(),
-                 Message :: binary()) ->
+-callback notify(From :: binary(),
+                 To :: binary(),
+                 Body :: binary()) ->
     ok | {error, Error :: any()}.
