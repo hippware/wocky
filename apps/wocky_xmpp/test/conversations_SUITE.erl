@@ -36,11 +36,10 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    ?wocky_repo:delete_all(?wocky_conversation),
-    seed_conversations(),
     fun_chain:first(Config,
         escalus:init_per_suite(),
-        test_helper:setup_users([alice])
+        test_helper:setup_users([alice, bob, carol, karen, robert]),
+        seed_conversations()
     ).
 
 end_per_suite(Config) ->
@@ -204,9 +203,11 @@ get_id(Item) ->
 %% Data seeding
 %%--------------------------------------------------------------------
 
-seed_conversations() ->
+seed_conversations(Config) ->
+    ?wocky_repo:delete_all(?wocky_conversation),
     Convos = wocky_db_seed:random_conversation_list(),
-    lists:foreach(archive_message(_), Convos).
+    lists:foreach(archive_message(_), Convos),
+    Config.
 
 archive_message(#{id := ID,
                   user_jid := UserJID,
