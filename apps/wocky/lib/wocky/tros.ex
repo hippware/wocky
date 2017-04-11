@@ -4,6 +4,9 @@ defmodule Wocky.TROS do
 
   use Wocky.JID
 
+  alias Wocky.Repo.ID
+  alias Wocky.TROS.Metadata
+
   @type owner     :: JID.luser
   @type server    :: JID.lserver
   @type file_id   :: JID.lresource
@@ -14,10 +17,8 @@ defmodule Wocky.TROS do
   @type error :: :not_found | :metadata_not_found | {:retrieve_error, binary}
   @type result(type) :: {:ok, type} | {:error, error}
 
-  @callback get_owner(file_id) :: result(owner)
-  @callback get_access(file_id) :: result(binary)
   @callback delete(server, file_id) :: :ok
-  @callback make_upload_response(JID.t, file_id, integer, binary, metadata) ::
+  @callback make_upload_response(JID.t, file_id, integer, metadata) ::
     {list, list}
   @callback make_download_response(server, file_id) :: {list, list}
 
@@ -78,21 +79,41 @@ defmodule Wocky.TROS do
   end
 
   @spec get_owner(file_id) :: result(owner)
-  def get_owner(id),
-    do: (backend()).get_owner(id)
+  def get_owner(id), do: get_info(id, &Metadata.get_user_id/1)
 
   @spec get_access(file_id) :: result(binary)
-  def get_access(id),
-    do: (backend()).get_access(id)
+  def get_access(id), do: get_info(id, &Metadata.get_access/1)
+
+  defp get_info(id, fun) do
+    if ID.valid?(id) do
+      case fun.(id) do
+        nil -> {:error, :not_found}
+        value -> {:ok, value}
+      end
+    else
+      {:error, :not_found}
+    end
+  end
+
+  @spec update_access(file_id, binary) :: result(Metadata.t)
+  def update_access(file_id, new_access) do
+    Metadata.set_access(file_id, new_access)
+  end
 
   @spec delete(server, file_id) :: :ok
-  def delete(server, file_id),
-    do: (backend()).delete(server, file_id)
+  def delete(server, file_id) do
+    Metadata.delete(file_id)
+    (backend()).delete(server, file_id)
+  end
 
   @spec make_upload_response(JID.t, file_id, integer, binary, metadata) ::
     {list, list}
-  def make_upload_response(owner_jid, file_id, size, access, meta),
-    do: (backend()).make_upload_response(owner_jid, file_id, size, access, meta)
+  def make_upload_response(owner_jid, file_id, size, access, meta) do
+    jid(luser: owner) = owner_jid
+    Metadata.put(file_id, owner, access)
+
+    (backend()).make_upload_response(owner_jid, file_id, size, meta)
+  end
 
   @spec make_download_response(server, file_id) :: {list, list}
   def make_download_response(server, file_id),

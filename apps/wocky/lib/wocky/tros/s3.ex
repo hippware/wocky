@@ -7,26 +7,11 @@ defmodule Wocky.TROS.S3 do
   alias ExAws.Config
   alias ExAws.S3
   alias Wocky.TROS
-  alias Wocky.TROS.Metadata
 
   @behaviour TROS
 
   @amz_content_type "content-type"
   @link_expiry 60 * 10 # 10 minute expiry on upload/download links.
-
-  def get_owner(id) do
-    case Metadata.get_user_id(id) do
-      nil -> {:error, :not_found}
-      owner -> {:ok, owner}
-    end
-  end
-
-  def get_access(id) do
-    case Metadata.get_access(id) do
-      nil -> {:error, :not_found}
-      owner -> {:ok, owner}
-    end
-  end
 
   def delete(lserver, file_id) do
     for file <- TROS.variants(file_id) do
@@ -78,7 +63,7 @@ defmodule Wocky.TROS.S3 do
     {[], resp_fields}
   end
 
-  def make_upload_response(owner_jid, file_id, size, access, metadata) do
+  def make_upload_response(owner_jid, file_id, size, metadata) do
     jid(luser: owner, lserver: lserver) = owner_jid
     file_jid = TROS.make_jid(owner, lserver, file_id)
     reference_url = TROS.make_url(file_jid)
@@ -98,8 +83,6 @@ defmodule Wocky.TROS.S3 do
     {:ok, ret_headers} = Auth.headers(:put, url, :s3, config, headers, nil)
 
     resp_fields = resp_fields(:put, url, reference_url)
-
-    Metadata.put(file_id, owner, access)
 
     {ret_headers, resp_fields}
   end
@@ -128,17 +111,13 @@ defmodule Wocky.TROS.S3 do
     url
   end
 
-  # defp update_access(file_id, new_access) do
-  #   Metadata.set_access(file_id, new_access)
-  # end
+  def upload_bucket, do: "#{bucket()}-quarantine"
 
-  defp upload_bucket, do: "#{bucket()}-quarantine"
+  def bucket, do: get_opt(:tros_s3_bucket)
 
-  defp bucket, do: get_opt(:s3_bucket)
+  def access_key_id, do: get_opt(:tros_s3_access_key_id)
 
-  defp access_key_id, do: get_opt(:s3_access_key_id)
-
-  defp secret_key, do: get_opt(:s3_secret_key)
+  def secret_key, do: get_opt(:tros_s3_secret_key)
 
   defp get_opt(opt), do: Application.fetch_env!(:wocky, opt)
 
