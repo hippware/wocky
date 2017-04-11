@@ -17,6 +17,7 @@ defmodule Wocky.TROS.S3 do
     for file <- TROS.variants(file_id) do
       do_delete(lserver, file)
     end
+    :ok
   end
 
   def do_delete(lserver, file_id) do
