@@ -10,7 +10,19 @@ defmodule Wocky.PushNotificationHandler do
   alias Wocky.PushNotification
 
   def start_link() do
-    {:ok, handler} = :application.get_env(:wocky, :notification_handler)
+    {:ok, handler_type} =
+      :application.get_env(:wocky, :notification_handler, :none)
+    handler = case handler_type do
+        :aws ->
+            :ok = Logger.info("AWS Notifications enabled")
+            Wocky.Notification.AWSHandler;
+        :test ->
+            :ok = Logger.info("Notification testing system enabled")
+            Wocky.Notification.TestHandler;
+        :none ->
+            :ok = Logger.info("Notifications disabled")
+            Wocky.Notification.NullHandler
+    end
     GenStage.start_link(__MODULE__, handler)
   end
 
@@ -24,7 +36,7 @@ defmodule Wocky.PushNotificationHandler do
   end
 
   def handle_events(events, _from, handler) do
-    Task.async_stream(events, fn(e) -> handle_event(e, handler) end)
+    _ = Task.async_stream(events, fn(e) -> handle_event(e, handler) end)
     {:noreply, [], handler}
   end
 
