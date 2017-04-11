@@ -1,4 +1,6 @@
 defmodule Wocky.PushNotification do
+  @moduledoc """
+  """
 
   require Logger
 
@@ -64,8 +66,8 @@ defmodule Wocky.PushNotification do
   end
 
   defp handler() do
-    {:ok, handler} = :application.get_env(:wocky, :push_notification_handler)
-    handler
+    {:ok, h} = :application.get_env(:wocky, :push_notification_handler)
+    h
   end
 
 end

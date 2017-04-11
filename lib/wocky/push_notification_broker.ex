@@ -12,10 +12,12 @@ defmodule Wocky.PushNotificationBroker do
   @timeout 5000
 
   @type jid :: :ejabberd.jid
+  @type state :: {:queue.queue, non_neg_integer}
 
   @doc """
   Starts the broadcaster.
   """
+  @spec start_link() :: {:ok, pid}
   def start_link() do
     GenStage.start_link(__MODULE__, :ok, name: PushNotifications)
   end
@@ -30,14 +32,17 @@ defmodule Wocky.PushNotificationBroker do
 
   ## Callbacks
 
+  @spec init(:ok) :: {:producer, state, Keyword.t}
   def init(:ok) do
     {:producer, {:queue.new, 0}, dispatcher: GenStage.BroadcastDispatcher}
   end
 
+  @spec handle_call({:notify, term}, term, state) :: {:noreply, list, state}
   def handle_call({:notify, event}, from, {queue, demand}) do
     dispatch_events(:queue.in({from, event}, queue), demand, [])
   end
 
+  @spec handle_demand(non_neg_integer, state) :: {:noreply, list, state}
   def handle_demand(incoming_demand, {queue, demand}) do
     dispatch_events(queue, incoming_demand + demand, [])
   end
