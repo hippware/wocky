@@ -34,7 +34,7 @@ defmodule Wocky.Location do
     maybe_do_async fn ->
       user
       |> User.get_subscribed_bots
-      |> Enum.map(&:wocky_bot_util.get_id_from_jid(&1))
+      |> Enum.map(&Bot.get_id_from_jid(&1))
       |> bots_with_events(user, location)
       |> Enum.each(&trigger_bot_notification(user, &1))
     end
@@ -42,12 +42,12 @@ defmodule Wocky.Location do
 
   @doc ""
   @spec update_bot_locations(User.t, t) :: {:ok, User.t}
-  def update_bot_locations(user, location) do
+  def update_bot_locations(user, %Location{lat: lat, lon: lon}) do
     if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
       maybe_do_async fn ->
         user
         |> owned_bots_with_follow_me
-        |> Enum.each(&Bot.set_location(&1, location))
+        |> Enum.each(&Bot.set_location(&1, lat, lon))
       end
     end
   end
@@ -164,7 +164,7 @@ defmodule Wocky.Location do
   end
 
   defp trigger_bot_notification(user, {bot, event}) do
-    jid = JID.to_binary(JID.make(user.username, user.server))
+    jid = user.username |> JID.make(user.server) |> JID.to_binary
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do
