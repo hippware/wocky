@@ -1,6 +1,7 @@
 defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
+  use Wocky.Repo.Model
   use Wocky.JID
 
   alias Wocky.Bot
@@ -13,36 +14,44 @@ defmodule Wocky.Location do
 
   require Logger
 
-  @enforce_keys [:lat, :lon]
-  defstruct [
-    lat: nil,
-    lon: nil,
-    accuracy: 0.0
-  ]
+  @foreign_key_type :binary_id
+  @primary_key false
+  schema "locations" do
+    field :user_id,   :binary_id, null: false, primary_key: true
+    field :resource,  :string, null: false, primary_key: true
+    field :lat,       :float, null: false
+    field :lon,       :float, null: false
+    field :accuracy,  :float
 
+    timestamps()
+
+    belongs_to :user, User, define_field: false
+  end
+
+  @type location_tuple :: {float, float, float}
   @type t :: %Location{
+    user_id: User.id,
+    resource: User.resource,
     lat: float,
     lon: float,
     accuracy: float
   }
 
-  @type location_tuple :: {float, float, float}
-
   @doc ""
-  @spec check_for_bot_events(User.t, t) :: {:ok, User.t}
-  def check_for_bot_events(user, location) do
+  @spec check_for_bot_events(User.t, float, float) :: :ok
+  def check_for_bot_events(user, lat, lon) do
     maybe_do_async fn ->
       user
       |> User.get_subscribed_bots
       |> Enum.map(&Bot.get_id_from_jid(&1))
-      |> bots_with_events(user, location)
+      |> bots_with_events(user, lat, lon)
       |> Enum.each(&trigger_bot_notification(user, &1))
     end
   end
 
   @doc ""
-  @spec update_bot_locations(User.t, t) :: {:ok, User.t}
-  def update_bot_locations(user, %Location{lat: lat, lon: lon}) do
+  @spec update_bot_locations(User.t, float, float) :: :ok
+  def update_bot_locations(user, lat, lon) do
     if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
       maybe_do_async fn ->
         user
@@ -53,14 +62,14 @@ defmodule Wocky.Location do
   end
 
   defp maybe_do_async(fun) do
-    {:ok, pid} = Task.start(fun)
+    task = Task.async(fun)
     unless Application.fetch_env!(:wocky, :async_location_processing) do
-      Task.await(pid)
+      Task.await(task)
     end
   end
 
-  defp bots_with_events(bots, user, location) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, location, &2))
+  defp bots_with_events(bots, user, lat, lon) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, lat, lon, &2))
   end
 
   defmacrop log_check_result(user, bot_id, result) do
@@ -72,10 +81,10 @@ defmodule Wocky.Location do
     end
   end
 
-  defp check_for_event(bot_id, user, location, acc) do
+  defp check_for_event(bot_id, user, lat, lon, acc) do
     :ok = Logger.debug("""
     Checking user #{user.id} for collision with bot #{bot_id} \
-    at location (#{location.lat},#{location.lon})...\
+    at location (#{lat},#{lon})...\
     """)
     bot = Bot.get(bot_id)
     if is_nil(bot) do
@@ -84,7 +93,7 @@ defmodule Wocky.Location do
     else
       bot
       |> unless_owner(user)
-      |> intersects?(location)
+      |> intersects?(lat, lon)
       |> handle_intersection(user, bot, acc)
     end
   end
@@ -104,8 +113,8 @@ defmodule Wocky.Location do
     end
   end
 
-  defp intersects?(nil, _location), do: false
-  defp intersects?(bot, location) do
+  defp intersects?(nil, _lat, _lon), do: false
+  defp intersects?(bot, lat, lon) do
     radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
 
     if radius < 0 do
@@ -115,7 +124,7 @@ defmodule Wocky.Location do
       false
     else
       distance = Geocalc.distance_between(Map.from_struct(bot),
-                                          Map.from_struct(location))
+                                          %{lat: lat, lon: lon})
       intersects = distance <= radius
       :ok = Logger.debug("""
       The distance of #{distance} meters is \
@@ -149,16 +158,16 @@ defmodule Wocky.Location do
 
   defp check_for_enter_event(user, bot_id) do
     case BotEvent.get_last_event(user.id, bot_id) do
-      [] -> true
-      [%{event: "exit"}] -> true
+      nil -> true
+      %BotEvent{event: "exit"} -> true
       _ -> false
     end
   end
 
   defp check_for_exit_event(user, bot_id) do
     case BotEvent.get_last_event(user.id, bot_id) do
-      [] -> false
-      [%{event: "enter"}] -> true
+      nil -> false
+      %BotEvent{event: "enter"} -> true
       _ -> false
     end
   end
