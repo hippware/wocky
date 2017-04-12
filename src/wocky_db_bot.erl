@@ -6,12 +6,13 @@
          get_bot/2,
          owned_bots/1,
          subscribed_bots/1,
+         is_subscribed/2,
          get_id_by_name/2,
          exists/2,
          new_id/1,
          insert/2,
          insert_new_name/2,
-         owner/2,
+         owner/1,
          is_public/2,
          subscribers/2,
          subscriber_count/2,
@@ -80,6 +81,12 @@ subscribed_bots(UserJID) ->
            owned_bots(UserJID),
     lists:usort(Bots).
 
+-spec is_subscribed(ejabberd:jid(), wocky_db:id()) -> boolean().
+is_subscribed(UserJID, BotID) ->
+    is_perm_subscribed(UserJID, BotID) orelse
+    is_temp_subscribed(UserJID, BotID) orelse
+    is_owner(UserJID, BotID).
+
 -spec get_id_by_name(wocky_db:server(), shortname()) ->
     wocky_db:id() | not_found.
 get_id_by_name(Server, Name) ->
@@ -112,8 +119,8 @@ insert_new_name(ID, Name) ->
         false -> {error, exists}
     end.
 
--spec owner(wocky_db:server(), wocky_db:id()) -> jid() | not_found.
-owner(_Server, ID) ->
+-spec owner(wocky_db:id()) -> jid() | not_found.
+owner(ID) ->
     maybe_to_jid(wocky_db:select_one(shared, bot, owner, #{id => ID})).
 
 -spec visibility(wocky_db:server(), wocky_db:id()) ->
@@ -139,9 +146,9 @@ subscribers(_Server, ID) ->
     wocky_util:remove_redundant_jids(Subscribers).
 
 -spec subscriber_count(wocky_db:server(), wocky_db:id()) -> non_neg_integer().
-subscriber_count(Server, ID) ->
+subscriber_count(_Server, ID) ->
     Count = wocky_db:count(shared, bot_subscriber, #{bot => ID}),
-    case owner(Server, ID) of
+    case owner(ID) of
         not_found -> Count;
         _ -> Count + 1
     end.
@@ -171,7 +178,7 @@ has_access(_Server, ID, User) ->
 
 -spec subscribe(wocky_db:server(), wocky_db:id(), jid()) -> ok.
 subscribe(Server, ID, User) ->
-    case owner(Server, ID) of
+    case owner(ID) of
         User ->
             ok;
         _ ->
@@ -183,8 +190,8 @@ subscribe(Server, ID, User) ->
     end.
 
 -spec unsubscribe(wocky_db:server(), wocky_db:id(), jid()) -> ok.
-unsubscribe(Server, ID, User) ->
-    case owner(Server, ID) of
+unsubscribe(_Server, ID, User) ->
+    case owner(ID) of
         User ->
             ok;
         _ ->
@@ -338,3 +345,18 @@ extract_image(#{image := true, id := ID, updated := Updated, stanza := S},
         I -> [#{id => ID, updated => Updated, image => I} | Acc]
     end;
 extract_image(_, Acc) -> Acc.
+
+is_perm_subscribed(UserJID, BotID) ->
+    User = jid:to_binary(jid:to_bare(UserJID)),
+    wocky_db:select_one(shared, subscribed_bot, bot,
+                        #{user => User, bot => BotID})
+    =/= not_found.
+
+is_temp_subscribed(UserJID, BotID) ->
+    Device = jid:to_binary(UserJID),
+    wocky_db:select_one(shared, temp_subscription, bot,
+                        #{device => Device, bot => BotID})
+    =/= not_found.
+
+is_owner(UserJID, BotID) ->
+    jid:are_bare_equal(owner(BotID), UserJID).

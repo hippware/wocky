@@ -30,15 +30,17 @@
 -export([check_access/3]).
 
 -type loc() :: {float(), float()}.
-
--type field_type() :: string | int | geoloc | jid | timestamp | tags.
-
 -type tags() :: [binary()].
+
+-type field_type() :: string | int | bool | geoloc | jid | timestamp | tags.
+-type value_type() :: not_found | binary() | integer() | boolean()
+                      | loc() | jid() | tags().
+
 
 -record(field, {
           name :: binary(),
           type :: field_type(),
-          value :: not_found | binary() | integer() | loc() | jid() | tags()
+          value :: value_type()
          }).
 
 -define(PACKET_FILTER_PRIORITY, 40).
@@ -250,13 +252,13 @@ handle_subscribed(From, #jid{lserver = Server}, IQ) ->
         RSMIn <- rsm_util:get_rsm(IQ),
         BotJIDs <- {ok, wocky_db_bot:subscribed_bots(From)},
         {Bots, RSMOut} <- filter_bots_for_user(BotJIDs, Server, From, RSMIn),
-        {ok, users_bots_result(Bots, RSMOut)}
+        {ok, users_bots_result(Bots, From, RSMOut)}
        ]).
 
 get_bot_by_id(From, Server, ID) ->
     do([error_m ||
         wocky_bot_util:check_access(Server, ID, From),
-        BotEl <- make_bot_el(Server, ID),
+        BotEl <- make_bot_el(Server, ID, From),
         {ok, BotEl}
        ]).
 
@@ -306,7 +308,7 @@ get_bots_for_user(From, Server, IQ, Attrs) ->
         RSMIn <- rsm_util:get_rsm(IQ),
         BotJIDs <- {ok, wocky_db_bot:owned_bots(UserJID)},
         {Bots, RSMOut} <- filter_bots_for_user(BotJIDs, Server, From, RSMIn),
-        {ok, users_bots_result(Bots, RSMOut)}
+        {ok, users_bots_result(Bots, From, RSMOut)}
        ]).
 
 filter_bots_for_user(BotJIDs, Server, From, RSMIn) ->
@@ -324,18 +326,18 @@ access_filter(Server, From, JID) ->
     ID = wocky_bot_util:get_id_from_jid(JID),
     ok =:= wocky_bot_util:check_access(Server, ID, From).
 
-users_bots_result(Bots, RSMOut) ->
-    BotEls = make_bot_els(Bots),
+users_bots_result(Bots, UserJID, RSMOut) ->
+    BotEls = make_bot_els(Bots, UserJID),
     #xmlel{name = <<"bots">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = BotEls ++ jlib:rsm_encode(RSMOut)}.
 
-make_bot_els(BotIDs) ->
+make_bot_els(BotIDs, UserJID) ->
     lists:reverse(
-      lists:foldl(make_bot_els(_, _), [], BotIDs)).
+      lists:foldl(make_bot_els(_, UserJID, _), [], BotIDs)).
 
-make_bot_els(ID, Acc) ->
-    {ok, El} = make_bot_el(ID),
+make_bot_els(ID, UserJID, Acc) ->
+    {ok, El} = make_bot_el(ID, UserJID),
     [El|Acc].
 
 %%%===================================================================
@@ -366,7 +368,7 @@ handle_item_images(From, #jid{lserver = Server}, IQ, Attrs) ->
         Images <- get_bot_item_images(Server, ID),
         {FilteredImages, RSMOut} <-
         {ok, rsm_util:filter_with_rsm(Images, RSMIn)},
-        Owner <- {ok, wocky_db_bot:owner(Server, ID)},
+        Owner <- {ok, wocky_db_bot:owner(ID)},
         {ok, images_result(Owner, FilteredImages, RSMOut)}
        ]).
 
@@ -509,7 +511,7 @@ check_access(<<"bot/", ID/binary>>, Actor, view) ->
       wocky_db_bot:has_access(wocky_app:server(), ID, Actor));
 
 check_access(<<"bot/", ID/binary>>, Actor, _) ->
-    case wocky_db_bot:owner(wocky_app:server(), ID) of
+    case wocky_db_bot:owner(ID) of
         not_found -> deny;
         Owner -> allow_to_result(jid:are_bare_equal(Owner, Actor))
     end.
@@ -635,6 +637,7 @@ output_only_fields() ->
     [field(<<"server">>,        string, <<>>),
      field(<<"owner">>,         jid,    <<>>),
      field(<<"updated">>,       timestamp, <<>>),
+     field(<<"subscribed">>,    bool,   false),
      field(<<"distance">>,      int,    0)].
 
 create_fields() -> required_fields() ++ optional_fields().
@@ -652,7 +655,7 @@ create(Owner, Server, Fields) ->
         Fields2 <- add_defaults(Fields),
         Fields3 <- add_owner(Owner, Fields2),
         create_bot(Server, ID, Fields3),
-        BotEl <- make_bot_el(Server, ID),
+        BotEl <- make_bot_el(Server, ID, Owner),
         {ok, {ID, BotEl}}
        ]).
 
@@ -722,29 +725,31 @@ normalise_field(#field{name = N, type = jid, value = JID = #jid{}}, Acc) ->
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
-make_bot_el(Server, ID) ->
+make_bot_el(Server, ID, UserJID) ->
     case wocky_db_bot:get_bot(Server, ID) of
         not_found ->
             {error, ?ERR_ITEM_NOT_FOUND};
         Map ->
-            make_bot_el(Map)
+            make_bot_el(Map, UserJID)
     end.
 
-make_bot_el(Bot) ->
-    RetFields = make_ret_elements(Bot),
+make_bot_el(Bot, UserJID) ->
+    RetFields = make_ret_elements(Bot, UserJID),
     {ok, make_ret_stanza(RetFields)}.
 
-make_ret_elements(Map) ->
-    MetaFields = meta_fields(Map),
+make_ret_elements(Map, UserJID) ->
+    MetaFields = meta_fields(Map, UserJID),
     Fields = map_to_fields(Map),
     encode_fields(Fields ++ MetaFields).
 
-meta_fields(#{id := ID, server := Server}) ->
+meta_fields(#{id := ID, server := Server}, UserJID) ->
     Subscribers = wocky_db_bot:subscribers(Server, ID),
     ImageItems = wocky_db_bot:image_items_count(Server, ID),
+    Subscribed = wocky_db_bot:is_subscribed(UserJID, ID),
     [make_field(<<"jid">>, jid, bot_jid(Server, ID)),
-     make_field(<<"image_items">>, int, ImageItems) |
-     size_and_hash(<<"subscribers">>, Subscribers)].
+     make_field(<<"image_items">>, int, ImageItems),
+     make_field(<<"subscribed">>, bool, Subscribed)
+     | size_and_hash(<<"subscribers">>, Subscribers)].
 
 bot_jid(Server, ID) ->
     jid:make(<<>>, Server, <<"bot/", ID/binary>>).
@@ -775,6 +780,7 @@ to_field(Key, Val, Acc) ->
 make_field(Name, Type, Val)
   when Type =:= string orelse
        Type =:= int orelse
+       Type =:= bool orelse
        Type =:= timestamp orelse
        Type =:= tags ->
     #field{name = Name, type = Type, value = Val};
@@ -789,6 +795,8 @@ encode_field(#field{name = N, type = jid, value = V}, Acc) ->
     [field_element(N, jid, safe_jid_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
+encode_field(#field{name = N, type = bool, value = V}, Acc) ->
+    [field_element(N, bool, atom_to_binary(V, utf8)) | Acc];
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [geoloc_field(N, V) | Acc];
 encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->

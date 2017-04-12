@@ -27,8 +27,8 @@
          follow_stanza/3
         ]).
 
-check_owner(Server, ID, User) ->
-    case jid:are_bare_equal(wocky_db_bot:owner(Server, ID), User) of
+check_owner(_Server, ID, User) ->
+    case jid:are_bare_equal(wocky_db_bot:owner(ID), User) of
         true ->
             ok;
         false ->
