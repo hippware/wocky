@@ -32,6 +32,7 @@ defmodule Wocky.User do
 
     timestamps()
 
+    has_many :bots, Bot
     has_many :tokens, Token
     has_many :devices, Device
     has_many :conversations, Conversation
