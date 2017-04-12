@@ -66,7 +66,6 @@ defmodule Wocky.Mixfile do
       {:stringprep,     "~> 1.0"},
       {:exconstructor,  "~> 1.0"},
       {:ok,             "~> 1.2", runtime: false},
-      {:exactor,        "~> 2.2", runtime: false},
       {:lager,          "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
 

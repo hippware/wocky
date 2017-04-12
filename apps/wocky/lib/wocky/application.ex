@@ -14,6 +14,7 @@ defmodule Wocky.Application do
 
     Supervisor.start_link([
       worker(Wocky.Repo, []),
+      worker(Wocky.Index, [])
     ], strategy: :one_for_one, name: Wocky.Supervisor)
   end
 end

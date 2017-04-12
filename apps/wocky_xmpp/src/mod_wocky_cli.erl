@@ -308,7 +308,7 @@ reindex(Index) ->
     try binary_to_existing_atom(Index, utf8) of
         IdxAtom ->
             case 'Elixir.Wocky.Index':reindex(IdxAtom) of
-                {error, bad_call} -> io:fwrite("Unknown index\n");
+                {error, unknown_index} -> io:fwrite("Unknown index\n");
                 ok -> ok
             end
     catch
