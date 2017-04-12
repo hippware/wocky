@@ -20,7 +20,8 @@ start(AllowAuth, PhoneNumber) ->
                       }]}]).
 
 stop() ->
-    ok = cowboy:stop_listener(fake_digits_listener).
+    ok = cowboy:stop_listener(fake_digits_listener),
+    timer:sleep(500).
 
 make_dispatch(Env) ->
     cowboy_router:compile([{'_', [{'_', ?MODULE, Env}]}]).

@@ -245,6 +245,7 @@ subscribe_temporary(Config) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(500),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID,

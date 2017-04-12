@@ -92,11 +92,7 @@ users() -> [alice, bob, carol, tim].
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    [{escalus_no_stanzas_after_story, true} |
-     fun_chain:first(Config,
-         escalus:init_per_suite(),
-         test_helper:setup_users(users())
-     )].
+    escalus:init_per_suite([{escalus_no_stanzas_after_story, true} | Config]).
 
 end_per_suite(Config) ->
     escalus_fresh:clean(),
@@ -457,7 +453,8 @@ allow_subscription_to_from_message(Config) ->
 
 
 allow_subscription_both_message(Config) ->
-    escalus:fresh_story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+    Config2 = test_helper:setup_users(Config, users()),
+    escalus:story(Config2, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
         %% deny all message but not from subscribed "both"
         privacy_helper:set_and_activate(
           Alice, <<"deny_all_message_but_subscription_both">>),

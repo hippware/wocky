@@ -68,6 +68,7 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
+    ?wocky_repo:delete_all(?wocky_user),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
@@ -76,7 +77,6 @@ end_per_suite(Config) ->
 init_per_group(no_digits, Config) ->
     Config;
 init_per_group(_GroupName, Config) ->
-    ?wocky_repo:delete_all(?wocky_user),
     fake_digits_server:start(true, ?PHONE_NUMBER),
     Config.
 

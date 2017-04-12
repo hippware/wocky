@@ -1,6 +1,6 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite mod_conversations.erl
--module(conversations_SUITE).
+-module(conversation_SUITE).
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
@@ -160,7 +160,7 @@ check_ret(#xmlel{name = <<"iq">>,
                                     attrs = [{<<"xmlns">>, ?NS_CONVERSATIONS}],
                                     children = Children}]},
           ItemCount, Count, Index) ->
-    Items = check_children(Children, Count, Index, 1 bsl 64, [], []),
+    Items = check_children(Children, Count, Index, 0, [], []),
     ?assertEqual(ItemCount, length(Items)),
     lists:reverse(Items).
 
@@ -171,7 +171,7 @@ check_children([I = #xmlel{name = <<"item">>} | Rest], Count, Index,
     OtherJID = get_other_jid(I),
     ?assertNot(lists:member(OtherJID, SeenOthers)),
     ID = binary_to_integer(get_id(I)),
-    ?assert(ID < LastID),
+    ?assert(ID > LastID),
     check_children(Rest, Count, Index, ID, [OtherJID | SeenOthers], [I | Acc]);
 check_children([Set = #xmlel{name = <<"set">>,
                              attrs = [{<<"xmlns">>, ?NS_RSM}]

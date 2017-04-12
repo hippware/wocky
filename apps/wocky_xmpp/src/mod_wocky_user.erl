@@ -135,17 +135,20 @@ get_user(UserEl = #xmlel{name = <<"user">>}, Acc) ->
 get_user(_, Acc) -> Acc.
 
 get_user_jid(BJID) ->
-    jid_result(jid:from_binary(BJID)).
+    check_jid_result(jid:from_binary(BJID)).
 
 get_user_jid(User, Server) ->
-    jid_result(jid:make(User, Server, <<>>)).
+    check_jid_result(jid:make(User, Server, <<>>)).
 
-jid_result(error) ->
+check_jid_result(error) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid JID">>)};
-jid_result(#jid{luser = <<>>}) ->
+check_jid_result(#jid{luser = <<>>}) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Missing user">>)};
-jid_result(JID) ->
-    {ok, JID}.
+check_jid_result(JID = #jid{luser = LUser}) ->
+    case ?wocky_id:'valid?'(LUser) of
+       true -> {ok, JID};
+       false -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user">>)}
+    end.
 
 validate_same_user(FromJID, UserJID) ->
     case relationship(FromJID, UserJID) of

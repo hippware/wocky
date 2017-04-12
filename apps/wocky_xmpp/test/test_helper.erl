@@ -79,6 +79,11 @@ ensure_wocky_is_running() ->
 
 setup_users(Config, Users) ->
     _ = ?wocky_repo:delete_all(?wocky_user),
+
+    %FIXME: Remove once fully ectoized:
+    wocky_db:truncate(shared, roster),
+    %FIXME
+
     escalus:create_users(Config, escalus:get_users(Users)).
 
 ensure_all_clean(Clients) ->

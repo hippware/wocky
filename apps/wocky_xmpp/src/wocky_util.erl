@@ -23,8 +23,6 @@
 
    set_config_from_opt/4,
 
-   archive_jid/1,
-
    iq_id/0,
    make_error_iq_response/2,
 
@@ -102,9 +100,6 @@ set_config_from_opt(OptTag, Config, Default, Opts) ->
     Val = proplists:get_value(OptTag, Opts, Default),
     {atomic, _} = ejabberd_config:add_local_option(Config, Val),
     ok.
-
--spec archive_jid(jid()) -> binary().
-archive_jid(JID) -> jid:to_binary(jid:to_bare(JID)).
 
 -spec iq_id() -> binary().
 iq_id() ->
