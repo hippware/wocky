@@ -208,6 +208,7 @@ defmodule Wocky.Mixfile do
       {:uuid,   "~> 1.6.0", override: true, hex: :uuid_erl},
       {:edown,  "~> 0.8.1", override: true, runtime: false},
       {:folsom, "~> 0.8.3", override: true},
+      {:exml,   github: "esl/exml", tag: "2.4.1", override: true},
       {:syslog,
         github: "Vagabond/erlang-syslog",
         branch: "master",

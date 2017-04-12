@@ -39,7 +39,7 @@ check_can_share(Server, ID, Sharer) ->
         true ->
             ok;
         false ->
-            Owner = wocky_db_bot:owner(Server, ID),
+            Owner = wocky_db_bot:owner(ID),
             case jid:are_bare_equal(Owner, Sharer) of
                 true -> ok;
                 false -> {error, cant_share}
@@ -68,7 +68,7 @@ notify_new_viewers(_, _, Vis, Vis) -> ok;
 
 % New visibility is public - notify friends and followers
 notify_new_viewers(Server, ID, _, true) ->
-    Owner = wocky_db_bot:owner(Server, ID),
+    Owner = wocky_db_bot:owner(ID),
     notify_new_viewers(Server, ID, get_friends_and_followers(Owner));
 
 % Any other case does not generate notification
