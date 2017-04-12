@@ -145,11 +145,9 @@ check_jid_result(error) ->
 check_jid_result(#jid{luser = <<>>}) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Missing user">>)};
 check_jid_result(JID = #jid{luser = LUser}) ->
-    try ossp_uuid:import(LUser, binary) of
-        _ -> {ok, JID}
-    catch
-        error:badarg ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user">>)}
+    case ?wocky_id:'valid?'(LUser) of
+       true -> {ok, JID};
+       false -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user">>)}
     end.
 
 validate_same_user(FromJID, UserJID) ->
