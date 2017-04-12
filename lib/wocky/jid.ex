@@ -40,6 +40,13 @@ defmodule Wocky.JID do
 
   @sane_limit 1024
 
+  defmacro __using__(_) do
+    quote do
+      alias unquote(__MODULE__)
+      import unquote(__MODULE__), only: :macros
+    end
+  end
+
   @spec make(user, server, resource) :: t | :error
   def make(user, server, resource \\ "") do
     with {:ok, luser} <- nodeprep(user),
@@ -99,7 +106,7 @@ defmodule Wocky.JID do
     binary_to_jid3(j, [], Enum.reverse(n), [])
   end
   defp binary_to_jid1(<<c, j :: binary>>, n) do
-    binary_to_jid1(j, [c | n]);
+    binary_to_jid1(j, [c | n])
   end
   defp binary_to_jid1(<<>>, n) do
     make("", to_string(Enum.reverse(n)), "")
@@ -136,15 +143,15 @@ defmodule Wocky.JID do
     to_binary({user, server, ""})
   end
   def to_binary({user, server, resource}) do
-    user = case user do
+    prefix = case user do
       "" -> ""
       _ -> user <> "@"
     end
-    resource = case resource do
+    suffix = case resource do
       "" -> ""
       _ -> "/" <> resource
     end
-    user <> server <> resource
+    prefix <> server <> suffix
   end
 
   @spec nodename?(<<>> | binary) :: boolean
