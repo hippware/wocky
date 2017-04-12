@@ -181,10 +181,8 @@ test_bad_download_ids() ->
 
 
 test_meck_validate() ->
-    {"Check that all mecks were called", [
-        % Exclude ossp_uuid since we *expect* some of the calls to it to
-        % throw exceptions, since that's how we detect invalid UUIDs
-        ?_assert(meck:validate(M)) || M <- mecks() -- [ossp_uuid]]
+    {"Check that all mecks were called",
+      [?_assert(meck:validate(M)) || M <- mecks()]
     }.
 
 
