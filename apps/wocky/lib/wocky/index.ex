@@ -1,12 +1,14 @@
 defmodule Wocky.Index do
   @moduledoc "Wocky interface to Algolia for full text search of users and bots"
 
-  use ExActor.GenServer, export: :wocky_index
+  use GenServer
 
-  require Logger
+  alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.User
+
+  require Logger
 
   defmodule State do
     @moduledoc false
@@ -20,124 +22,143 @@ defmodule Wocky.Index do
   @user_fields [:handle, :last_name, :first_name, :avatar]
   @bot_fields [:server, :owner, :title, :image, :lat, :lon, :radius, :_geoloc]
 
-  defstart start_link do
-    user_indexes  = Application.fetch_env!(:wocky, :algolia_user_index_name)
-    bot_indexes   = Application.fetch_env!(:wocky, :algolia_bot_index_name)
-    inst_string   = Application.fetch_env!(:wocky, :wocky_inst)
+  # API
 
-    current_inst = :erlang.list_to_atom(inst_string)
-    user_index = Keyword.get(user_indexes, current_inst)
-    bot_index = Keyword.get(bot_indexes, current_inst)
+  @spec start_link() :: {:ok, pid} | {:error, any}
+  def start_link() do
+    GenServer.start_link(__MODULE__, [], name: :wocky_index)
+  end
+
+  @spec geosearch(float, float) :: {:ok, list} | {:error, any}
+  def geosearch(lat, lon) do
+    GenServer.call(:wocky_index, {:geosearch, lat, lon})
+  end
+
+  @spec reindex(:users | :bots) :: :ok | {:error, :unknown_index}
+  def reindex(idx) do
+    GenServer.call(:wocky_index, {:reindex, idx})
+  end
+
+  @spec user_updated(User.id, map) :: :ok
+  def user_updated(user_id, fields) do
+    GenServer.cast(:wocky_index, {:user_updated, user_id, fields})
+  end
+
+  @spec user_removed(User.id) :: :ok
+  def user_removed(user_id) do
+    GenServer.cast(:wocky_index, {:user_removed, user_id})
+  end
+
+  @spec bot_updated(Bot.id, map) :: :ok
+  def bot_updated(bot_id, fields) do
+    GenServer.cast(:wocky_index, {:bot_updated, bot_id, fields})
+  end
+
+  @spec bot_removed(Bot.id) :: :ok
+  def bot_removed(bot_id) do
+    GenServer.cast(:wocky_index, {:bot_removed, bot_id})
+  end
+
+  # Callbacks
+
+  def init(_) do
+    user_index = Application.fetch_env!(:wocky, :algolia_user_index_name)
+    bot_index  = Application.fetch_env!(:wocky, :algolia_bot_index_name)
 
     enabled = !is_nil(user_index) && !is_nil(bot_index)
 
     :ok = Logger.info("Indexing enabled: #{inspect(enabled)}")
-    initial_state(
+    {:ok,
       %State{
         enabled: enabled,
         user_index: user_index,
         bot_index: bot_index
       }
-    )
+    }
   end
 
 
-  defcall geosearch(_, _), state: %State{enabled: false} do
-    reply({:error, :no_index_configured})
+  def handle_call({:geosearch, _, _}, _, %State{enabled: false} = state) do
+    {:reply, {:error, :no_index_configured}, state}
   end
 
-  defcall geosearch(lat, lon), state: %State{bot_index: index} do
+  def handle_call({:geosearch, lat, lon}, _, state) do
     nlat = GeoUtils.normalize_degrees(lat)
     nlon = GeoUtils.normalize_degrees(lon)
-    {:ok, result} =
-      Algolia.search(index, <<>>,
-                     %{aroundLatLng: "#{nlat},#{nlon}", getRankingInfo: true})
+    {:ok, result} = Algolia.search(state.bot_index, <<>>, %{
+                                     aroundLatLng: "#{nlat},#{nlon}",
+                                     getRankingInfo: true
+                                   })
 
     bots = Enum.map(result["hits"], &object_to_bot/1)
-    reply({:ok, bots})
+    {:reply, {:ok, bots}, state}
   end
 
-  defp object_to_bot(obj) do
-    %{
-      id: obj["objectID"],
-      server: obj["server"],
-      owner: obj["owner"],
-      title: obj["title"],
-      image: obj["image"],
-      lat: obj["lat"],
-      lon: obj["lon"],
-      radius: obj["radius"],
-      distance: obj["_rankingInfo"]["geoDistance"] * 1000 # millimeters
-     }
+  def handle_call({:reindex, _}, _, %State{enabled: false} = state) do
+    {:reply, :ok, state}
   end
 
-  defcall reindex(:users), state: %State{user_index: index} do
+  def handle_call({:reindex, :users}, _, state) do
     User
     |> Repo.all
     |> Enum.each(
         fn (%User{username: user_id} = user) ->
-          update_index(index, user_id, user, @user_fields)
+          update_index(state.user_index, user_id, user, @user_fields)
         end)
 
-    reply(:ok)
+    {:reply, :ok, state}
   end
 
-  defcall reindex(:bots), state: %State{bot_index: _index} do
+  def handle_call({:reindex, :bots}, _, state) do
     # Bot
     # |> Repo.all
     # |> Enum.each(
     #     fn (%Bot{id: bot_id} = bot) ->
-    #       update_index(index, bot_id, bot, @bot_fields)
+    #       update_index(state.bot_index, bot_id, bot, @bot_fields)
     #     end)
 
-    reply(:ok)
+    {:reply, :ok, state}
   end
 
-  defcall reindex(_), state: %State{enabled: false} do
-    reply(:ok)
+  def handle_call({:reindex, _}, _, state) do
+    {:reply, {:error, :unknown_index}, state}
   end
 
-  @lint {Credo.Check.Readability.Specs, false}
   def handle_call(_, _, state) do
     {:reply, {:error, :bad_call}, state}
   end
 
 
-  @lint {Credo.Check.Readability.Specs, false}
   def handle_cast(_msg, %State{enabled: false} = state) do
     {:noreply, state}
   end
 
-  defcast user_updated(user_id, user), state: %State{user_index: index} do
-    {:ok, _} = update_index(index, user_id, user, @user_fields)
-    noreply()
+  def handle_cast({:user_updated, user_id, user}, state) do
+    {:ok, _} = update_index(state.user_index, user_id, user, @user_fields)
+    {:noreply, state}
   end
 
-  defcast user_removed(user_id), state: %State{user_index: index} do
-    {:ok, _} = delete_object(index, user_id)
-    noreply()
+  def handle_cast({:user_removed, user_id}, state) do
+    {:ok, _} = delete_object(state.user_index, user_id)
+    {:noreply, state}
   end
 
-  defcast bot_updated(bot_id, bot), state: %State{bot_index: index} do
-    {:ok, _} = update_index(index, bot_id, bot, @bot_fields)
-    noreply()
+  def handle_cast({:bot_updated, bot_id, bot}, state) do
+    {:ok, _} = update_index(state.bot_index, bot_id, bot, @bot_fields)
+    {:noreply, state}
   end
 
-  defcast bot_removed(bot_id), state: %State{bot_index: index} do
-    {:ok, _} = delete_object(index, bot_id)
-    noreply()
+  def handle_cast({:bot_removed, bot_id}, state) do
+    {:ok, _} = delete_object(state.bot_index, bot_id)
+    {:noreply, state}
   end
 
-  @lint {Credo.Check.Readability.Specs, false}
   def handle_cast(msg, state) do
-    # This is a little bit of hackery to stop the Elixir compiler from
-    # complaining about the @lint attributes.
-    _ = @lint
-
     :ok = Logger.warn("Unknown cast '#{inspect(msg)}'")
     {:noreply, state}
   end
 
+  # Helpers
 
   defp update_index(index, id, data, fields) do
     {:ok, _} =
@@ -159,6 +180,20 @@ defmodule Wocky.Index do
     Map.put(data, :_geoloc, %{lat: lat, lng: lon})
   end
   defp with_geoloc(data), do: data
+
+  defp object_to_bot(obj) do
+    %{
+      id: obj["objectID"],
+      server: obj["server"],
+      owner: obj["owner"],
+      title: obj["title"],
+      image: obj["image"],
+      lat: obj["lat"],
+      lon: obj["lon"],
+      radius: obj["radius"],
+      distance: obj["_rankingInfo"]["geoDistance"] * 1000 # millimeters
+     }
+  end
 
   defp do_update_index(object, index) do
     :ok = Logger.debug("Updating #{index} index with object #{inspect(object)}")

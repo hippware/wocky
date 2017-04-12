@@ -29,14 +29,8 @@ defmodule Wocky.Mixfile do
         tros_s3_bucket: "wocky-tros",
         tros_s3_access_key_id: nil,
         tros_s3_secret_key: nil,
-        algolia_user_index_name: [
-          staging: 'dev_wocky_users',
-          us1:     'prod_wocky_users'
-        ],
-        algolia_bot_index_name: [
-          staging: 'dev_wocky_bots',
-          us1:     'prod_wocky_bots'
-        ],
+        algolia_user_index_name: nil,
+        algolia_bot_index_name: nil,
         enable_bot_event_notifications: false,
         enable_follow_me_updates: false,
         enable_follow_me: false,
@@ -72,7 +66,6 @@ defmodule Wocky.Mixfile do
       {:stringprep,     "~> 1.0"},
       {:exconstructor,  "~> 1.0"},
       {:ok,             "~> 1.2", runtime: false},
-      {:exactor,        "~> 2.2", runtime: false},
       {:lager,          "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
 

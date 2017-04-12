@@ -193,8 +193,8 @@ seed_data(home_stream, Server) ->
      Alice#{id => ?ITEM2, version => ?HS_V_3, from_id => ?BOT_B_JID,
             stanza => ?ITEM_STANZA2, deleted => false} |
      [#{user => ?BOB, server => Server,
-        id => ossp_uuid:make(v1, text),
-        version => ossp_uuid:make(v1, text),
+        id => ?wocky_id:new(),
+        version => ?wocky_id:new(),
         from_id => ?BOT_B_JID,
         deleted => false,
         stanza => ?BOT_UPDATE_STANZA
