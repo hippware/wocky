@@ -7,6 +7,7 @@ defmodule Wocky.User do
   import OK, only: ["~>>": 2]
 
   alias Wocky.Bot
+  alias Wocky.BotEvent
   alias Wocky.Device
   alias Wocky.Index
   alias Wocky.Repo.ID
@@ -37,6 +38,7 @@ defmodule Wocky.User do
     has_many :devices, Device
     has_many :conversations, Conversation
     has_many :tros_metadatas, TROSMetadata
+    has_many :bot_events, BotEvent
   end
 
   @type id           :: binary
@@ -265,26 +267,5 @@ defmodule Wocky.User do
     #     where: %{owner: to_bare_jid_string(user)})
     # |> Enum.map(&Bot.new(&1))
     []
-  end
-
-  @spec get_last_bot_event(t, binary) :: [map]
-  def get_last_bot_event(_user, _bot_id) do
-    # Schemata.select :all,
-    #   from: :bot_event, in: :wocky_db.local_keyspace,
-    #   where: %{jid: to_jid_string(user), bot: bot_id},
-    #   limit: 1
-    []
-  end
-
-  @spec add_bot_event(t, binary, :enter | :exit) :: boolean
-  def add_bot_event(_user, _bot_id, _event) do
-    # Schemata.insert into: :bot_event, in: :wocky_db.local_keyspace,
-    #   values: %{
-    #     jid: to_jid_string(user),
-    #     bot: bot_id,
-    #     event: event,
-    #     created_at: :now
-    #   }
-    true
   end
 end

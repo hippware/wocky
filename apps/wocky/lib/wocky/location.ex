@@ -4,9 +4,9 @@ defmodule Wocky.Location do
   use Wocky.JID
 
   alias Wocky.Bot
+  alias Wocky.BotEvent
   alias Wocky.EventHandler
   alias Wocky.Events.BotPerimeterEvent
-  alias Wocky.JID
   alias Wocky.Repo.Timestamp
   alias Wocky.User
   alias __MODULE__, as: Location
@@ -129,7 +129,7 @@ defmodule Wocky.Location do
   defp handle_intersection(true, user, %Bot{id: bot_id} = bot, acc) do
     if check_for_enter_event(user, bot_id) do
       log_check_result(user, bot_id, "has entered")
-      User.add_bot_event(user, bot_id, :enter)
+      BotEvent.add_event(user.id, bot_id, :enter)
       [{bot, :enter} | acc]
     else
       log_check_result(user, bot_id, "is within")
@@ -139,7 +139,7 @@ defmodule Wocky.Location do
   defp handle_intersection(false, user, %Bot{id: bot_id} = bot, acc) do
     if check_for_exit_event(user, bot_id) do
       log_check_result(user, bot_id, "has left")
-      User.add_bot_event(user, bot_id, :exit)
+      BotEvent.add_event(user.id, bot_id, :exit)
       [{bot, :exit} | acc]
     else
       log_check_result(user, bot_id, "is outside of")
@@ -148,7 +148,7 @@ defmodule Wocky.Location do
   end
 
   defp check_for_enter_event(user, bot_id) do
-    case User.get_last_bot_event(user, bot_id) do
+    case BotEvent.get_last_event(user.id, bot_id) do
       [] -> true
       [%{event: "exit"}] -> true
       _ -> false
@@ -156,7 +156,7 @@ defmodule Wocky.Location do
   end
 
   defp check_for_exit_event(user, bot_id) do
-    case User.get_last_bot_event(user, bot_id) do
+    case BotEvent.get_last_event(user.id, bot_id) do
       [] -> false
       [%{event: "enter"}] -> true
       _ -> false
