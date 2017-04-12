@@ -145,10 +145,10 @@ test_insert_new_name() ->
 test_owner() ->
     { "owner", [
       { "gets the owner of the bot", [
-        ?_assert(jid:are_bare_equal(?ALICE_JID, owner(?LOCAL_CONTEXT, ?BOT)))
+        ?_assert(jid:are_bare_equal(?ALICE_JID, owner(?BOT)))
       ]},
       { "returns not_found if the bot doesn't exist", [
-        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual(not_found, owner(wocky_db:create_id()))
       ]}
     ]}.
 
