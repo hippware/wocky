@@ -172,9 +172,17 @@ defmodule Wocky.User do
     struct
     |> cast(params, @change_fields)
     |> validate_format(:email, ~r/@/)
-    |> validate_exclusion(:handle, reserved_handles())
+    |> validate_change(:handle, :none, &validate_handle/2)
     |> unique_constraint(:handle)
     |> unique_constraint(:external_id)
+  end
+
+  defp validate_handle(:handle, handle) do
+    if Enum.member?(reserved_handles(), String.downcase(handle)) do
+      [handle: "unavailable"]
+    else
+      []
+    end
   end
 
   defp reserved_handles,

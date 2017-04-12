@@ -342,6 +342,7 @@ bulk_get_empty(Config) ->
 
 set_fields(Config) ->
     escalus:story(Config, [{alice, 1}, {robert, 1}], fun(Alice, Robert) ->
+        test_helper:subscribe_pair(Alice, Robert),
         QueryStanza = set_request(?ALICE, set_fields()),
         expect_iq_success(QueryStanza, Alice),
 

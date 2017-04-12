@@ -201,6 +201,10 @@ pack_roster_item(LUser, LServer, ContactJID, Row0) ->
 fill_extra_fields(Items) when is_list(Items) ->
     [fill_extra_fields(Item) || Item <- Items];
 
+% For some reason the roster_get_jid_info hook often arrives with empty
+% users in the jid. Filter them out here.
+fill_extra_fields(#wocky_roster{contact_jid = {<<>>, _, _}} = I) ->
+    I;
 fill_extra_fields(#wocky_roster{contact_jid = {LUser, _, _}} = I) ->
     case ?wocky_user:find(LUser) of
         nil ->
