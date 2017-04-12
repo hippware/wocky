@@ -76,7 +76,7 @@ handle_iq_type(_From, _To, _IQ) ->
 archive_message_hook(_Result, _Host, _MessID, _ArcID,
                 LocJID, RemJID, _SrcJID, Dir, Packet) ->
   ok = ?wocky_conversation:put(LocJID#jid.luser,
-                               wocky_util:archive_jid(RemJID),
+                               RemJID#jid.luser,
                                exml:to_binary(Packet),
                                Dir =:= outgoing
                               ).
@@ -92,8 +92,7 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
     create_response(IQ, Conversations, RSMOut).
 
 get_conversations(From, RSMIn) ->
-    UserJID = wocky_util:archive_jid(From),
-    Conversations = ?wocky_conversation:find(UserJID),
+    Conversations = ?wocky_conversation:find(From#jid.luser),
     rsm_util:filter_with_rsm(Conversations, RSMIn).
 
 %%%===================================================================
