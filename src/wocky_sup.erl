@@ -4,6 +4,8 @@
 
 -behaviour(supervisor).
 
+-include("wocky.hrl").
+
 %% API
 -export([start_link/1]).
 
@@ -12,8 +14,6 @@
 
 -define(SERVER, ?MODULE).
 
--define(notification_broker, 'Elixir.Wocky.PushNotificationBroker').
--define(notification_handler, 'Elixir.Wocky.PushNotificationHandler').
 
 %%%===================================================================
 %%% API functions
@@ -50,28 +50,33 @@ init(CfgTerms) ->
              start    => {wocky_cron, start_link, []},
              restart  => permanent,
              shutdown => 5000,
-             type     => supervisor
-            },
+             type     => supervisor},
 
-    NotificationBroker = #{id => notification_broker,
-                           start => {?notification_broker, start_link, []},
+    EventHandler = #{id => event_handler,
+                           start => {?wocky_event_handler, start_link, []},
                            restart => permanent,
                            shutdown => 5000,
                            type => worker,
-                           modules => [?notification_broker]},
+                           modules => [?wocky_event_handler]},
 
-    NotificationHandler = #{id => notification_handler,
-                            start => {?notification_handler,
-                                      start_link, [CfgTerms]},
-                            restart => permanent,
-                            shutdown => 5000,
-                            type => worker,
-                            modules => [?notification_handler]},
+    PushNotificationHandler = #{id => push_notification_handler,
+                                start => {?push_notification_handler,
+                                          start_link, [CfgTerms]},
+                                restart => permanent,
+                                shutdown => 5000,
+                                type => worker,
+                                modules => [?push_notification_handler]},
 
+    HomeStreamHandler = #{id => home_stream_handler,
+                          start => {?home_stream_handler, start_link, []},
+                          restart => permanent,
+                          shutdown => 5000,
+                          type => worker,
+                          modules => [?home_stream_handler]},
 
     {ok, {SupFlags, [UserIdx,
                      BotExpiryMon,
                      Cron,
-                     NotificationBroker,
-                     NotificationHandler
-                    ]}}.
+                     EventHandler,
+                     PushNotificationHandler,
+                     HomeStreamHandler]}}.

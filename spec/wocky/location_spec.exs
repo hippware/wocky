@@ -2,11 +2,11 @@ defmodule Wocky.LocationSpec do
   use ESpec
   use Wocky.JID
 
+  alias Wocky.Bot
   alias Wocky.Factory
   alias Wocky.Location
+  alias Wocky.PushNotifier
   alias Wocky.User
-  alias Wocky.Bot
-  alias :wocky_notification_handler, as: Handler
 
   before do
     owner = Factory.build(:user)
@@ -21,7 +21,7 @@ defmodule Wocky.LocationSpec do
     bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
 
     allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
-    allow Handler |> to(accept :notify_bot_event, fn (_, _, _, _) -> :ok end)
+    allow PushNotifier |> to(accept :push, fn (_, _) -> :ok end)
     allow User |> to(accept :get_subscribed_bots, fn (_) -> bot_jids end)
     allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
     allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
@@ -52,11 +52,7 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should generate a push notification" do
-        expect Handler
-        |> to(accepted :notify_bot_event, [JID.from_binary(shared.bot.owner),
-                                           shared.jid,
-                                           shared.bot.title,
-                                           :enter])
+        expect PushNotifier |> to(accepted :push)
       end
     end
 
@@ -83,7 +79,7 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a push notification" do
-        expect Handler |> to_not(accepted :notify_bot_event)
+        expect PushNotifier |> to_not(accepted :push)
       end
     end
   end
@@ -118,11 +114,7 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should generate a push notification" do
-        expect Handler
-        |> to(accepted :notify_bot_event, [JID.from_binary(shared.bot.owner),
-                                           shared.jid,
-                                           shared.bot.title,
-                                           :exit])
+        expect PushNotifier |> to(accepted :push)
       end
     end
 
@@ -149,7 +141,7 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a push notification" do
-        expect Handler |> to_not(accepted :notify_bot_event)
+        expect PushNotifier |> to_not(accepted :push)
       end
     end
 
@@ -169,7 +161,7 @@ defmodule Wocky.LocationSpec do
       end
 
       it "should not generate a push notification" do
-        expect Handler |> to_not(accepted :notify_bot_event)
+        expect PushNotifier |> to_not(accepted :push)
       end
     end
   end

@@ -6,7 +6,7 @@ defmodule ModWockyNotificationsSpec do
 
   alias :wocky_db, as: WockyDb
   alias :mod_wocky_notifications, as: ModWockyNotifications
-  alias Wocky.Notification.NullHandler, as: Handler
+  alias Wocky.PushNotifier.NullBackend, as: Backend
 
   require Record
 
@@ -67,8 +67,8 @@ defmodule ModWockyNotificationsSpec do
       context "with an 'enable' element" do
         context "on success" do
           before do
-            allow Handler
-            |> to(accept :register, fn (_, _, _) -> {:ok, @test_id} end)
+            allow Backend
+            |> to(accept :enable, fn (_, _, _, _, _) -> {:ok, @test_id} end)
 
             result = enable_notifications()
             {:ok, result: result}
@@ -79,7 +79,7 @@ defmodule ModWockyNotificationsSpec do
           end
 
           it "should register the device" do
-            expect Handler |> to(accepted :register)
+            expect Backend |> to(accepted :enable)
           end
 
           it "should insert the device_id and endpoint into the database" do
@@ -93,8 +93,8 @@ defmodule ModWockyNotificationsSpec do
 
         context "on failure" do
           before do
-            allow Handler
-            |> to(accept :register, fn (_, _, _) -> {:error, :foo} end)
+            allow Backend
+            |> to(accept :enable, fn (_, _, _, _, _) -> {:error, :foo} end)
             WockyDb.clear_tables(@local_context, [:device])
 
             result = enable_notifications()
@@ -106,7 +106,7 @@ defmodule ModWockyNotificationsSpec do
           end
 
           it "should call the register handler" do
-            expect Handler |> to(accepted :register)
+            expect Backend |> to(accepted :enable)
           end
 
           it "should not insert anything into the database" do
@@ -140,7 +140,7 @@ defmodule ModWockyNotificationsSpec do
 
     describe "handling the user_send_packet hook" do
       before do
-        allow Handler |> to(accept :notify_message, fn (_, _, _) -> :ok end)
+        allow Backend |> to(accept :push, fn (_, _) -> :ok end)
         _ = enable_notifications()
       end
 
@@ -151,7 +151,7 @@ defmodule ModWockyNotificationsSpec do
         end
 
         it "should send a notification" do
-          expect Handler |> to(accepted :notify_message)
+          expect Backend |> to(accepted :push)
         end
       end
 
@@ -162,7 +162,7 @@ defmodule ModWockyNotificationsSpec do
         end
 
         it "should not send a notification" do
-          expect Handler |> to_not(accepted :notify_message)
+          expect Backend |> to_not(accepted :push)
         end
       end
 
@@ -173,7 +173,7 @@ defmodule ModWockyNotificationsSpec do
         end
 
         it "should not send a notification" do
-          expect Handler |> to_not(accepted :notify_message)
+          expect Backend |> to_not(accepted :push)
         end
       end
 
@@ -196,7 +196,7 @@ defmodule ModWockyNotificationsSpec do
         end
 
         it "should not send a notification" do
-          expect Handler |> to_not(accepted :notify_message)
+          expect Backend |> to_not(accepted :push)
         end
       end
     end

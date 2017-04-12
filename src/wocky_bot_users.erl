@@ -46,13 +46,15 @@ check_can_share(Server, ID, Sharer) ->
             end
     end.
 
-send_notification(#jid{luser = User, lserver = Server} = From, To) ->
-    Handle = case wocky_db_user:get_handle(User, Server) of
-                 not_found -> <<"Someone">>;
-                 H -> H
-             end,
-    Body = <<Handle/binary, " shared a bot with you!">>,
-    ?wocky_push_notification:send(To, From, Body).
+send_notification(_From, _To) ->
+    % FIXME
+    % Handle = case wocky_db_user:get_handle(User, Server) of
+    %              not_found -> <<"Someone">>;
+    %              H -> H
+    %          end,
+    % Body = <<Handle/binary, " shared a bot with you!">>,
+    % ?wocky_push_notification:send(To, From, Body).
+    ok.
 
 %%%===================================================================
 %%% Access change notifications

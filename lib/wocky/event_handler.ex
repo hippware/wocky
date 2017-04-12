@@ -1,4 +1,4 @@
-defmodule Wocky.PushNotificationBroker do
+defmodule Wocky.EventHandler do
   @moduledoc """
   Using a GenStage for implementing a GenEvent manager
   replacement where each handler runs as a separate process.
@@ -11,7 +11,6 @@ defmodule Wocky.PushNotificationBroker do
 
   @timeout 5000
 
-  @type jid :: :ejabberd.jid
   @type state :: {:queue.queue, non_neg_integer}
 
   @doc """
@@ -19,15 +18,15 @@ defmodule Wocky.PushNotificationBroker do
   """
   @spec start_link :: {:ok, pid}
   def start_link do
-    GenStage.start_link(__MODULE__, :ok, name: PushNotifications)
+    GenStage.start_link(__MODULE__, :ok, name: EventHandler)
   end
 
   @doc """
-  Sends an event and returns only after the event is dispatched.
+  Broadcasts an event and returns only after the event is dispatched.
   """
-  @spec send(PushNotificaiton.t) :: :ok
-  def send(notification) do
-    GenStage.call(PushNotifications, {:notify, notification}, @timeout)
+  @spec broadcast(map) :: :ok
+  def broadcast(event) do
+    GenStage.call(EventHandler, {:broadcast, event}, @timeout)
   end
 
   ## Callbacks
@@ -37,8 +36,8 @@ defmodule Wocky.PushNotificationBroker do
     {:producer, {:queue.new, 0}, dispatcher: GenStage.BroadcastDispatcher}
   end
 
-  @spec handle_call({:notify, term}, term, state) :: {:noreply, list, state}
-  def handle_call({:notify, event}, from, {queue, demand}) do
+  @spec handle_call({:broadcast, term}, term, state) :: {:noreply, list, state}
+  def handle_call({:broadcast, event}, from, {queue, demand}) do
     dispatch_events(:queue.in({from, event}, queue), demand, [])
   end
 

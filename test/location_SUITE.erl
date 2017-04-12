@@ -135,4 +135,4 @@ enable_push_notifications(Client) ->
     Jid = jid:make(escalus_client:username(Client),
                    escalus_client:server(Client),
                    escalus_client:resource(Client)),
-    wocky_notification_handler:enable(Jid, <<"apple">>, <<"123456789">>).
+    ?wocky_push_notifier:enable(Jid, <<"apple">>, <<"123456789">>).

@@ -17,7 +17,7 @@
 
 -export([set_visibility/3]).
 
--define(notification_handler, 'Elixir.Wocky.Notification.TestHandler').
+-define(notification_handler, 'Elixir.Wocky.PushNotifier.TestBackend').
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,

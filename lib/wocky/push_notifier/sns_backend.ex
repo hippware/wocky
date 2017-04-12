@@ -1,7 +1,6 @@
-defmodule Wocky.Notification.AWSHandler do
+defmodule Wocky.PushNotifier.SNSBackend do
   @moduledoc """
-  Implementes the `wocky_notification_handler` behavior for AWS. All
-  notifications will be sent through SNS.
+  Implementes the `PushNotifier` behavior for Amazon SNS.
   """
 
   use Wocky.JID
@@ -10,16 +9,14 @@ defmodule Wocky.Notification.AWSHandler do
 
   require Logger
 
-  @behaviour :wocky_notification_handler
+  @behaviour Wocky.PushNotifier
 
   @message_limit 512
 
-  @spec init :: :ok
   def init, do: :ok
 
-  @spec register(binary, binary, binary) :: {:ok, binary} | {:error, any}
-  def register(user, _platform, device_id) do
-    user_data = user |> JID.from_binary! |> JID.to_bare |> JID.to_binary
+  def enable(user, server, resource, _platform, device_id) do
+    user_data = user |> JID.make(server, resource) |> JID.to_binary
 
     :application_arn
     |> :wocky_app.get_config("")
@@ -33,36 +30,19 @@ defmodule Wocky.Notification.AWSHandler do
     :ok = Logger.debug("SNS register response:\n#{inspect(body)}")
     {:ok, arn}
   end
-  defp handle_register_result({:ok, %{body: body}}) when is_binary(body) do
-    :ok = Logger.debug("SNS register response:\n#{body}")
 
-    {:ok, xml} = :exml.parse(body)
-    arn = :exml_query.path(xml, [
-            {:element, "CreatePlatformEndpointResult"},
-            {:element, "EndpointArn"},
-            :cdata
-          ])
-
-    {:ok, arn}
+  def disable(_endpoint) do
+    # TODO delete the endpoint when disable is called.
+    :ok
   end
 
-  @spec notify(binary, binary, binary) :: :ok | {:error, any}
-  def notify(endpoint, from, body) do
+  def push(body, endpoint) do
     body
-    |> format_message(from)
     |> maybe_truncate_message
     |> make_payload
     |> SNS.publish([target_arn: endpoint, message_structure: :json])
     |> ExAws.request
     |> handle_notify_result
-  end
-
-  defp format_message(body, nil) do
-    body
-  end
-
-  defp format_message(body, from) do
-    "From #{from}:\n#{body}"
   end
 
   defp maybe_truncate_message(message) do
