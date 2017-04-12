@@ -1,10 +1,12 @@
 defmodule Wocky.User do
   @moduledoc ""
 
+  use Wocky.JID
   use Wocky.Repo.Model
 
   import OK, only: ["~>>": 2]
 
+  alias Wocky.Bot
   alias Wocky.Device
   alias Wocky.Index
   alias Wocky.Repo.ID
@@ -228,67 +230,60 @@ defmodule Wocky.User do
   #   %User{user | location: Map.from_struct(location)}
   # end
 
-  # @spec to_jid(t, binary | nil) :: Ejabberd.jid
-  # def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
-  #   Ejabberd.make_jid!(user, server, resource || (u.resource || ""))
-  # end
+  @spec to_jid(t, binary | nil) :: JID.t
+  def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
+    JID.make!(user, server, resource || (u.resource || ""))
+  end
 
-  # @spec to_jid_string(t, binary | nil) :: binary
-  # def to_jid_string(%User{} = user, resource \\ nil) do
-  #   user |> to_jid(resource) |> :jid.to_binary
-  # end
+  @spec to_jid_string(t, binary | nil) :: binary
+  def to_jid_string(%User{} = user, resource \\ nil) do
+    user |> to_jid(resource) |> JID.to_binary
+  end
 
-  # @spec to_bare_jid(t) :: Ejabberd.jid
-  # def to_bare_jid(%User{} = user) do
-  #   user |> to_jid |> :jid.to_bare
-  # end
+  @spec to_bare_jid(t) :: JID.t
+  def to_bare_jid(%User{} = user) do
+    user |> to_jid |> JID.to_bare
+  end
 
-  # @spec to_bare_jid_string(t) :: binary
-  # def to_bare_jid_string(%User{} = user) do
-  #   user |> to_bare_jid |> :jid.to_binary
-  # end
+  @spec to_bare_jid_string(t) :: binary
+  def to_bare_jid_string(%User{} = user) do
+    user |> to_bare_jid |> JID.to_binary
+  end
 
-  # @spec from_jid(binary, binary, binary) :: t
-  # def from_jid(user, server, resource) do
-  #   %User{id: user, server: server, resource: resource}
-  # end
+  @spec get_subscribed_bots(t) :: [JID.t]
+  def get_subscribed_bots(_user) do
+    # :wocky_db_bot.subscribed_bots(to_jid(user))
+    []
+  end
 
-  # @spec from_jid(Ejabberd.jid) :: t
-  # def from_jid(jid) do
-  #   jid(user: user, server: server, resource: resource) = jid
-  #   from_jid(user, server, resource)
-  # end
+  @spec get_owned_bots(t) :: [Bot.t]
+  def get_owned_bots(_user) do
+    # :all
+    # |> Schemata.select(
+    #     from: :user_bot, in: :wocky_db.shared_keyspace,
+    #     where: %{owner: to_bare_jid_string(user)})
+    # |> Enum.map(&Bot.new(&1))
+    []
+  end
 
-  # @spec get_subscribed_bots(t) :: [Ejabberd.jid]
-  # def get_subscribed_bots(user) do
-  #   :wocky_db_bot.subscribed_bots(to_jid(user))
-  # end
+  @spec get_last_bot_event(t, binary) :: [map]
+  def get_last_bot_event(_user, _bot_id) do
+    # Schemata.select :all,
+    #   from: :bot_event, in: :wocky_db.local_keyspace,
+    #   where: %{jid: to_jid_string(user), bot: bot_id},
+    #   limit: 1
+    []
+  end
 
-  # @spec get_owned_bots(t) :: [Bot.t]
-  # def get_owned_bots(user) do
-  #   :all
-  #   |> Schemata.select(
-  #       from: :user_bot, in: :wocky_db.shared_keyspace,
-  #       where: %{owner: to_bare_jid_string(user)})
-  #   |> Enum.map(&Bot.new(&1))
-  # end
-
-  # @spec get_last_bot_event(t, binary) :: [map]
-  # def get_last_bot_event(user, bot_id) do
-  #   Schemata.select :all,
-  #     from: :bot_event, in: :wocky_db.local_keyspace,
-  #     where: %{jid: to_jid_string(user), bot: bot_id},
-  #     limit: 1
-  # end
-
-  # @spec add_bot_event(t, binary, :enter | :exit) :: boolean
-  # def add_bot_event(user, bot_id, event) do
-  #   Schemata.insert into: :bot_event, in: :wocky_db.local_keyspace,
-  #     values: %{
-  #       jid: to_jid_string(user),
-  #       bot: bot_id,
-  #       event: event,
-  #       created_at: :now
-  #     }
-  # end
+  @spec add_bot_event(t, binary, :enter | :exit) :: boolean
+  def add_bot_event(_user, _bot_id, _event) do
+    # Schemata.insert into: :bot_event, in: :wocky_db.local_keyspace,
+    #   values: %{
+    #     jid: to_jid_string(user),
+    #     bot: bot_id,
+    #     event: event,
+    #     created_at: :now
+    #   }
+    true
+  end
 end
