@@ -9,7 +9,7 @@
 
 -import(wocky_db_bot,
         [get_bot/1, get_bot/2, get_id_by_name/2, exists/2, insert/2,
-         insert_new_name/2, owner/2,
+         insert_new_name/2, owner/1,
          owned_bots/1, subscribed_bots/1, subscribers/2,
          subscribers/2, delete/2, has_access/3, subscribe/3, unsubscribe/3,
          get_item/3, publish_item/5, delete_item/3,
@@ -145,10 +145,10 @@ test_insert_new_name() ->
 test_owner() ->
     { "owner", [
       { "gets the owner of the bot", [
-        ?_assert(jid:are_bare_equal(?ALICE_JID, owner(?LOCAL_CONTEXT, ?BOT)))
+        ?_assert(jid:are_bare_equal(?ALICE_JID, owner(?BOT)))
       ]},
       { "returns not_found if the bot doesn't exist", [
-        ?_assertEqual(not_found, owner(?LOCAL_CONTEXT, wocky_db:create_id()))
+        ?_assertEqual(not_found, owner(wocky_db:create_id()))
       ]}
     ]}.
 
