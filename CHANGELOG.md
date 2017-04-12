@@ -1,5 +1,7 @@
 # Change Log
 
+Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deployment-history)
+
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
@@ -9,6 +11,8 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * New API: User Bulk Query (#614)
+* Upgrade: escalus, exml (2.4.0 to 2.4.1)
+* Add 'subscribed' field to bot (#620)
 
 
 # 17.04.05+1724.8a6709a
@@ -17,6 +21,13 @@ If there are not many items, just list them sequentially.
 * Remove HTTP REST support. No longer needed. 
   * Close port 80
 * More cron related fixes.
+
+
+# 17.03.31+1707.7751e35
+
+* Fix a badarith error during bot search
+  * Fixes: ArithmeticError: bad argument in arithmetic expression (#599)
+  * Fixes: Staging: Can't Sign In (rn-chat #507)
 
 
 # 17.03.31+1704.491f1d9
@@ -32,7 +43,6 @@ If there are not many items, just list them sequentially.
 
 # 17.03.21+1676.6dfc479
 
-* Consolidate bot visibility (only Public and Private) and sharing (#442)
 * Allow publishing to preallocated bot ID (#564)
 * Fix crash when digits gives us an empty number (#563)
 * Remove 100 row limit on standard selects.

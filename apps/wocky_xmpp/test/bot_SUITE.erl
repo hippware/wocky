@@ -17,7 +17,7 @@
 
 -export([set_visibility/3]).
 
--define(notification_handler, 'Elixir.Wocky.Notification.TestHandler').
+-define(notification_handler, 'Elixir.Wocky.PushNotifier.Test').
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
@@ -117,7 +117,8 @@ local_tables() ->
 reset_tables(Config) ->
     wocky_db:clear_tables(shared, [bot, bot_subscriber, bot_share]),
     wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
-    wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber, bot_share]),
+    wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber,
+                                       temp_subscription, bot_share]),
     wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
     fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -171,11 +172,11 @@ retrieve(Config) ->
       fun(Alice, Bob, Carol) ->
         % Alice can retrieve her own bot
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
-        check_returned_bot(Stanza, expected_retrieve_fields()),
+        check_returned_bot(Stanza, expected_retrieve_fields(true)),
 
         % Bob can retrieve the bot since it's shared to him
         Stanza2 = expect_iq_success(retrieve_stanza(), Bob),
-        check_returned_bot(Stanza2, expected_retrieve_fields()),
+        check_returned_bot(Stanza2, expected_retrieve_fields(false)),
 
         % Carol cannot retrive since the bot is not public
         expect_iq_error(retrieve_stanza(), Carol)
@@ -190,7 +191,7 @@ update(Config) ->
         % And the new bot should have the change
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
         NewFields =
-        lists:keyreplace("description", 1, expected_retrieve_fields(),
+        lists:keyreplace("description", 1, expected_retrieve_fields(true),
                          {"description", string, ?NEW_DESCRIPTION}),
         check_returned_bot(Stanza, NewFields),
 
@@ -226,8 +227,15 @@ subscribe(Config) ->
       fun(Alice, Bob, Carol) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
+        check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                           expected_retrieve_fields(false, ?NEW_DESCRIPTION,
+                                                    ?WOCKY_BOT_VIS_OPEN, 1)),
         Stanza1 = expect_iq_success(subscribe_stanza(), Carol),
+        check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                           expected_retrieve_fields(true, ?NEW_DESCRIPTION,
+                                                    ?WOCKY_BOT_VIS_OPEN, 2)),
         check_subscriber_count(Stanza1, 3),
+
         Stanza2 = expect_iq_success(subscribe_stanza(), Bob),
         check_subscriber_count(Stanza2, 4),
 
@@ -244,8 +252,15 @@ subscribe_temporary(Config) ->
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
+        check_returned_bot(expect_iq_success(retrieve_stanza(), Tim),
+                           expected_retrieve_fields(false, ?BOT_DESC,
+                                                    ?WOCKY_BOT_VIS_OPEN, 2)),
         subscribe_temporary(?BOT_B_JID, Tim),
         timer:sleep(500),
+
+        check_returned_bot(expect_iq_success(retrieve_stanza(), Tim),
+                           expected_retrieve_fields(true, ?BOT_DESC,
+                                                    ?WOCKY_BOT_VIS_OPEN, 3)),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID,
@@ -492,7 +507,7 @@ publish_image_item(Config) ->
         publish_item(?BOT, NoteID, Title, Content, Image, Alice),
 
         Expected =
-        lists:keyreplace("image_items", 1, expected_retrieve_fields(),
+        lists:keyreplace("image_items", 1, expected_retrieve_fields(true),
                          {"image_items", int, 2}),
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
         check_returned_bot(Stanza, Expected),
@@ -743,25 +758,30 @@ expected_create_fields() ->
      {"subscribers+size",   int,    0}, % Owner is always a subscriber
      {"subscribers+hash",   string, any}].
 
-expected_retrieve_fields() ->
+expected_retrieve_fields(Subscribed) ->
+    expected_retrieve_fields(Subscribed, ?BOT_DESC,
+                             ?WOCKY_BOT_VIS_WHITELIST, 2).
+expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
     [{"id",                 string, ?BOT},
      {"server",             string, ?LOCAL_CONTEXT},
      {"title",              string, ?BOT_TITLE},
      {"shortname",          string, ?BOT_NAME},
      {"owner",              jid,    ?ALICE_B_JID},
-     {"description",        string, ?BOT_DESC},
+     {"description",        string, Description},
      {"address",            string, ?BOT_ADDRESS},
      {"image",              string, ?AVATAR_FILE},
      {"type",               string, ?BOT_TYPE},
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
      {"radius",             int,    ?BOT_RADIUS},
-     {"visibility",         int,    ?WOCKY_BOT_VIS_WHITELIST},
+     {"visibility",         int,    Visibility},
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
      {"updated",            timestamp, any},
-     {"subscribers+size",   int,    2}, % Owner is always an subscriber
-     {"subscribers+hash",   string, any}].
+     {"subscribed",         bool,   Subscribed},
+     {"subscribers+size",   int,    Subscribers},
+     {"subscribers+hash",   string, any}
+    ].
 
 expected_geosearch_fields() ->
     [{"jid",                jid,    any},
@@ -869,6 +889,10 @@ check_value_el(Value, <<"int">>,
                [#xmlel{name = <<"value">>,
                        children = [#xmlcdata{content = InValue}]}]) ->
     Value =:= binary_to_integer(InValue);
+check_value_el(Value, <<"bool">>,
+               [#xmlel{name = <<"value">>,
+                       children = [#xmlcdata{content = InValue}]}]) ->
+    Value =:= binary_to_atom(InValue, utf8);
 check_value_el(Value, Type, Elements) ->
     ct:fail("check_value_el failed: ~p ~p ~p", [Value, Type, Elements]).
 
