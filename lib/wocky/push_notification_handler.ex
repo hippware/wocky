@@ -15,10 +15,10 @@ defmodule Wocky.PushNotificationHandler do
     handler = case handler_type do
       :aws ->
         :ok = Logger.info("AWS Notifications enabled")
-        Wocky.Notification.AWSHandler;
+        Wocky.Notification.AWSHandler
       :test ->
         :ok = Logger.info("Notification testing system enabled")
-        Wocky.Notification.TestHandler;
+        Wocky.Notification.TestHandler
       :none ->
         :ok = Logger.info("Notifications disabled")
         Wocky.Notification.NullHandler

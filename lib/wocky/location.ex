@@ -74,7 +74,7 @@ defmodule Wocky.Location do
   end
 
   defp bots_with_events(bots, user, location) do
-    bots |> Enum.reduce([], &check_for_event(&1, user, location, &2))
+    Enum.reduce(bots, [], &check_for_event(&1, user, location, &2))
   end
 
   defmacrop log_check_result(user, bot_id, result) do
@@ -92,7 +92,7 @@ defmodule Wocky.Location do
     at location (#{location.lat},#{location.lon})...\
     """)
     bot = Bot.get(bot_id)
-    if bot |> is_nil do
+    if is_nil(bot) do
       :ok = Logger.warn("Could not find bot for ID #{bot_id}")
       acc
     else

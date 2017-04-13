@@ -48,9 +48,9 @@ defmodule Wocky.Index do
     nlat = GeoUtils.normalize_degrees(lat)
     nlon = GeoUtils.normalize_degrees(lon)
     {:ok, result} =
-      index |> Algolia.search(<<>>, %{aroundLatLng: "#{nlat},#{nlon}",
-                                      getRankingInfo: true})
-    bots = result["hits"] |> Enum.map(&object_to_bot/1)
+      Algolia.search(index, <<>>, %{aroundLatLng: "#{nlat},#{nlon}",
+                                    getRankingInfo: true})
+    bots = Enum.map(result["hits"], &object_to_bot/1)
     reply({:ok, bots})
   end
 
@@ -162,12 +162,12 @@ defmodule Wocky.Index do
     if map_size(object) < 1 do
       {:ok, :no_changes}
     else
-      index |> Algolia.partial_update_objects([object])
+      Algolia.partial_update_objects(index, [object])
     end
   end
 
   defp delete_object(index, id) do
     :ok = Logger.debug("Removing object #{id} from #{index}")
-    {:ok, _} = index |> Algolia.delete_object(id)
+    {:ok, _} = Algolia.delete_object(index, id)
   end
 end

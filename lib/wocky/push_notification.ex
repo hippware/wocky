@@ -45,7 +45,7 @@ defmodule Wocky.PushNotification do
                                                   device_id: device_id,
                                                   endpoint: endpoint,
                                                   created_at: created_at})
-        :ok;
+        :ok
       {:error, _} = error ->
         error
     end
@@ -65,7 +65,7 @@ defmodule Wocky.PushNotification do
     :wocky_db.delete(server, :device, :all, %{user: user, server: server})
   end
 
-  defp handler() do
+  defp handler do
     {:ok, h} = :application.get_env(:wocky, :push_notification_handler)
     h
   end

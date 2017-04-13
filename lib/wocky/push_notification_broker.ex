@@ -17,8 +17,8 @@ defmodule Wocky.PushNotificationBroker do
   @doc """
   Starts the broadcaster.
   """
-  @spec start_link() :: {:ok, pid}
-  def start_link() do
+  @spec start_link :: {:ok, pid}
+  def start_link do
     GenStage.start_link(__MODULE__, :ok, name: PushNotifications)
   end
 
