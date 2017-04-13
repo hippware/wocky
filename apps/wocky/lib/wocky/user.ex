@@ -7,11 +7,12 @@ defmodule Wocky.User do
   import OK, only: ["~>>": 2]
 
   alias Wocky.Bot
+  alias Wocky.Conversation
   alias Wocky.Device
   alias Wocky.Index
   alias Wocky.Repo.ID
+  alias Wocky.RosterItem
   alias Wocky.Token
-  alias Wocky.Conversation
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias __MODULE__, as: User
 
@@ -36,6 +37,7 @@ defmodule Wocky.User do
     has_many :devices, Device
     has_many :conversations, Conversation
     has_many :tros_metadatas, TROSMetadata
+    has_many :roster_items, RosterItem
   end
 
   @type id           :: binary

@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddRosterTables do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def up do
     drop table(:roster_version)
@@ -8,24 +8,19 @@ defmodule Wocky.Repo.Migrations.AddRosterTables do
 
     create table(:roster_items) do
       add :user_id,      references(:users, type: :uuid, on_delete: :delete_all)
-      add :contact,      references(:users, type: :uuid, on_delete: :delete_all)
-      add :nick,         :string, null: false
-      add :ask,          :string, null: false
-      add :subscription, :string, null: false
+      add :contact_id,   references(:users, type: :uuid, on_delete: :delete_all)
+      add :nick,         :string,  null: false
+      add :ask,          :integer, size: 1, null: false
+      add :subscription, :integer, size: 1, null: false
+      add :groups,       :string,  size: 1024, null: false
 
       timestamps()
     end
 
-    create unique_index(:roster_items, [:user_id, :contact])
-
-    create table(:roster_groups) do
-      add :roster_item_id, references(:roster_items, on_delete: :delete_all)
-      add :name,           :string, null: false
-    end
+    create unique_index(:roster_items, [:user_id, :contact_id])
   end
 
   def down do
-    drop table(:roster_groups)
     drop table(:roster_items)
 
     execute """

@@ -53,6 +53,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:ecto,           "~> 2.0"},
+      {:ecto_enum,      "~> 1.0"},
       {:mariaex,        "~> 0.8.1"},
       {:poolboy,        "~> 1.5"},
       {:faker,          "~> 0.7.0"},
