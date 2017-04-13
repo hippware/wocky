@@ -8,7 +8,7 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
-# Unreleased
+# 17.04.12+1736.ec69c83
 
 * New API: User Bulk Query (#614)
 * Upgrade: escalus, exml (2.4.0 to 2.4.1)
