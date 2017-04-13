@@ -4,12 +4,18 @@ defmodule Wocky.Location do
   use Exref, ignore: [__struct__: 0, __struct__: 1, user_location_changed: 3]
   use Wocky.JID
 
+  import Record, only: [defrecordp: 2, extract: 2]
+
   alias Wocky.Bot
   alias Wocky.Location
   alias Wocky.PushNotification
   alias Wocky.User
 
   require Logger
+  require Record
+
+  defrecordp :xmlel, extract(:xmlel, from_lib: "exml/include/exml.hrl")
+  defrecordp :xmlcdata, extract(:xmlcdata, from_lib: "exml/include/exml.hrl")
 
   @type t :: %__MODULE__{
     lat: float,

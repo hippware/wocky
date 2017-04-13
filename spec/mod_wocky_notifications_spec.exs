@@ -2,9 +2,17 @@ defmodule ModWockyNotificationsSpec do
   use ESpec
   use Wocky.JID
 
+  import Record, only: [defrecordp: 2, extract: 2]
+
   alias :wocky_db, as: WockyDb
   alias :mod_wocky_notifications, as: ModWockyNotifications
   alias Wocky.Notification.NullHandler, as: Handler
+
+  require Record
+
+  defrecordp :xmlel, extract(:xmlel, from_lib: "exml/include/exml.hrl")
+  defrecordp :xmlcdata, extract(:xmlcdata, from_lib: "exml/include/exml.hrl")
+  defrecordp :iq, extract(:iq, from_lib: "ejabberd/include/jlib.hrl")
 
   @user          "043e8c96-ba30-11e5-9912-ba0be0483c18"
   @server        "localhost"
