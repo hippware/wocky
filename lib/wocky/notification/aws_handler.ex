@@ -4,7 +4,10 @@ defmodule Wocky.Notification.AWSHandler do
   notifications will be sent through SNS.
   """
 
+  use Wocky.JID
+
   alias ExAws.SNS
+
   require Logger
 
   @behaviour :wocky_notification_handler
@@ -16,7 +19,7 @@ defmodule Wocky.Notification.AWSHandler do
 
   @spec register(binary, binary, binary) :: {:ok, binary} | {:error, any}
   def register(user, _platform, device_id) do
-    user_data = user |> :jid.from_binary |> :jid.to_bare |> :jid.to_binary
+    user_data = user |> JID.from_binary! |> JID.to_bare |> JID.to_binary
 
     :application_arn
     |> :wocky_app.get_config("")

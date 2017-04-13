@@ -64,8 +64,19 @@ defmodule Wocky.JID do
     end
   end
 
+  @spec make!(user, server, resource) :: t | no_return
+  def make!(user, server, resource \\ "") do
+    case make(user, server, resource) do
+      :error -> raise ArgumentError
+      jid -> jid
+    end
+  end
+
   @spec make(simple_jid) :: t | :error
   def make({user, server, resource}), do: make(user, server, resource)
+
+  @spec make!(simple_jid) :: t | no_return
+  def make!({user, server, resource}), do: make!(user, server, resource)
 
   @spec make_noprep(luser, lserver, lresource) :: t
   def make_noprep(luser, lserver, lresource) do
@@ -94,6 +105,14 @@ defmodule Wocky.JID do
 
   @spec from_binary(binary) :: t | :error
   def from_binary(j), do: binary_to_jid1(j, [])
+
+  @spec from_binary!(binary) :: t | no_return
+  def from_binary!(j) do
+    case from_binary(j) do
+      :error -> raise ArgumentError
+      jid -> jid
+    end
+  end
 
   @spec binary_to_jid1(binary, [byte]) :: t | :error
   defp binary_to_jid1("@" <> _j, []), do: :error

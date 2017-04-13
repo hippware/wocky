@@ -3,7 +3,8 @@ defmodule Wocky.User do
 
   use Exref, ignore: [insert: 1, new: 2, from_jid: 3, to_jid: 2,
                       to_jid_string: 2, to_bare_jid: 1, to_bare_jid_string: 1]
-  use Wocky.Ejabberd
+  use Wocky.JID
+
   alias :wocky_db, as: Db
 
   @type t :: %__MODULE__{
@@ -43,24 +44,24 @@ defmodule Wocky.User do
     Db.create_id
   end
 
-  @spec to_jid(Wocky.User.t, binary | nil) :: Ejabberd.jid
+  @spec to_jid(Wocky.User.t, binary | nil) :: JID.t
   def to_jid(%__MODULE__{user: user, server: server} = u, resource \\ nil) do
-    Ejabberd.make_jid!(user, server, resource || (u.resource || ""))
+    JID.make!(user, server, resource || (u.resource || ""))
   end
 
   @spec to_jid_string(Wocky.User.t, binary | nil) :: binary
   def to_jid_string(%__MODULE__{} = user, resource \\ nil) do
-    user |> to_jid(resource) |> :jid.to_binary
+    user |> to_jid(resource) |> JID.to_binary
   end
 
-  @spec to_bare_jid(Wocky.User.t) :: Ejabberd.jid
+  @spec to_bare_jid(Wocky.User.t) :: JID.t
   def to_bare_jid(%__MODULE__{} = user) do
-    user |> to_jid |> :jid.to_bare
+    user |> to_jid |> JID.to_bare
   end
 
   @spec to_bare_jid_string(Wocky.User.t) :: binary
   def to_bare_jid_string(%__MODULE__{} = user) do
-    user |> to_bare_jid |> :jid.to_binary
+    user |> to_bare_jid |> JID.to_binary
   end
 
   @spec from_jid(binary, binary, binary) :: Wocky.User.t
@@ -68,7 +69,7 @@ defmodule Wocky.User do
     %__MODULE__{user: user, server: server, resource: resource}
   end
 
-  @spec from_jid(Ejabberd.jid) :: Wocky.User.t
+  @spec from_jid(JID.t) :: Wocky.User.t
   def from_jid(jid) do
     jid(user: user, server: server, resource: resource) = jid
     from_jid(user, server, resource)
@@ -98,7 +99,7 @@ defmodule Wocky.User do
     |> Wocky.User.new
   end
 
-  @spec get_subscribed_bots(Wocky.User.t) :: [Ejabberd.jid]
+  @spec get_subscribed_bots(Wocky.User.t) :: [JID.t]
   def get_subscribed_bots(user) do
     :wocky_db_bot.subscribed_bots(to_jid(user))
   end

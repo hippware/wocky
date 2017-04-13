@@ -1,7 +1,7 @@
 defmodule ModWockyNotificationsSpec do
   use ESpec
+  use Wocky.JID
 
-  import Wocky.Ejabberd
   alias :wocky_db, as: WockyDb
   alias :mod_wocky_notifications, as: ModWockyNotifications
   alias Wocky.Notification.NullHandler, as: Handler
@@ -10,7 +10,7 @@ defmodule ModWockyNotificationsSpec do
   @server        "localhost"
   @resource      "testing"
   @local_context "localhost"
-  @jid           :jid.make(@user, @server, @resource)
+  @jid           JID.make(@user, @server, @resource)
   @test_id       "123456789"
 
   def enable_notifications do

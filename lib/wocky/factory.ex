@@ -3,7 +3,7 @@ defmodule Wocky.Factory do
 
   use ExMachina
   use Wocky.InsertStrategy
-  use Wocky.Ejabberd
+  use Wocky.JID
   use Exref, ignore: [
     build: 1, build: 2, build_list: 2, build_list: 3, build_pair: 1,
     build_pair: 2, create: 1, create: 2, create_pair: 2, create_list: 3,
@@ -40,7 +40,7 @@ defmodule Wocky.Factory do
       server: :wocky_app.server,
       title: Faker.Company.name,
       shortname: Faker.Company.buzzword,
-      owner: :jid.to_binary(:jid.make(User.make_id, :wocky_app.server, <<>>)),
+      owner: JID.to_binary(JID.make!(User.make_id, :wocky_app.server, <<>>)),
       description: Faker.Lorem.paragraph(%Range{first: 1, last: 2}),
       image: :tros.make_url(:wocky_app.server, :wocky_db.create_id),
       type: "test",

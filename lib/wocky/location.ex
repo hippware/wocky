@@ -2,11 +2,13 @@ defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
   use Exref, ignore: [__struct__: 0, __struct__: 1, user_location_changed: 3]
-  use Wocky.Ejabberd
+  use Wocky.JID
+
   alias Wocky.Bot
   alias Wocky.Location
   alias Wocky.PushNotification
   alias Wocky.User
+
   require Logger
 
   @type t :: %__MODULE__{
@@ -29,7 +31,7 @@ defmodule Wocky.Location do
   Process a location change event for a user. The processing happens
   asynchronously by default and the function always returns `:ok`.
   """
-  @spec user_location_changed(Ejabberd.jid, location_tuple, boolean) :: :ok
+  @spec user_location_changed(JID.t, location_tuple, boolean) :: :ok
   def user_location_changed(jid, {lat, lon, accuracy}, async \\ true) do
     location = %Location{lat: lat, lon: lon, accuracy: accuracy}
     user = User.from_jid(jid)
@@ -96,10 +98,10 @@ defmodule Wocky.Location do
   end
 
   defp unless_owner(bot, user) do
-    owner_jid = Ejabberd.make_jid!(bot.owner)
+    owner_jid = JID.from_binary!(bot.owner)
 
     # Don't check bots that are owned by the user
-    if :jid.are_bare_equal(owner_jid, User.to_jid(user)) do
+    if JID.bare_equal?(owner_jid, User.to_jid(user)) do
       :ok = Logger.debug(
         "Skipping bot #{bot.id} since it is owned by #{user.user}"
       )
@@ -173,7 +175,7 @@ defmodule Wocky.Location do
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do
-      owner_jid = Ejabberd.make_jid!(bot.owner)
+      owner_jid = JID.from_binary!(bot.owner)
       :ok = send_notification(owner_jid, user, bot, event)
       :ok = send_push_notification(owner_jid, user, bot, event)
     end
@@ -188,8 +190,8 @@ defmodule Wocky.Location do
   end
 
   defp send_notification(owner_jid, user, bot, event) do
-    :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
-                           :jid.to_bare(owner_jid),
+    :ejabberd_router.route(JID.make!("", :wocky_app.server),
+                           JID.to_bare(owner_jid),
                            bot_notification_stanza(owner_jid, user, bot, event))
   end
 
@@ -199,7 +201,7 @@ defmodule Wocky.Location do
     xmlel(name: "message",
           attrs: [
             {"from", :wocky_app.server},
-            {"to", :jid.to_binary(owner_jid)},
+            {"to", JID.to_binary(owner_jid)},
             {"type", "headline"}
           ],
           children: [

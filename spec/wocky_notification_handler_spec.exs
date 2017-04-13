@@ -1,11 +1,12 @@
 defmodule NotificationHandlerSpec do
   use ESpec
+  use Wocky.JID
 
   alias Wocky.Notification.NullHandler, as: Handler
 
-  @test_jid :jid.make("user", "localhost", "resource")
+  @test_jid JID.make("user", "localhost", "resource")
   @test_id "123456789"
-  @user_jid :jid.make("follower", "localhost", "iphone")
+  @user_jid JID.make("follower", "localhost", "iphone")
 
   before do
     allow :ejabberd_sm |> to(accept :get_user_resources,
