@@ -24,8 +24,8 @@ defmodule Wocky.Index do
 
   # API
 
-  @spec start_link() :: {:ok, pid} | {:error, any}
-  def start_link() do
+  @spec start_link :: {:ok, pid} | {:error, any}
+  def start_link do
     GenServer.start_link(__MODULE__, [], name: :wocky_index)
   end
 
