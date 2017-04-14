@@ -48,14 +48,13 @@ defmodule Wocky.PushNotifier do
     backend_module.init()
   end
 
-  @spec enable(JID.t, Device.platform, Device.device) :: :ok | {:error, any}
+  @spec enable(JID.t, Device.platform, Device.device) :: {:ok, endpoint}
+                                                       | {:error, any}
   def enable(jid, platform, device_id) do
     jid(luser: user, lserver: server, lresource: resource) = jid
-    bjid = JID.to_binary(jid)
-    Logger.debug("Registering device '#{device_id}' for user '#{bjid}'")
 
     case backend().enable(user, server, resource, platform, device_id) do
-      {:ok, endpoint} ->
+      {:ok, endpoint} = result ->
         Device.update(
           %Device{
             user: user,
@@ -66,6 +65,7 @@ defmodule Wocky.PushNotifier do
             endpoint: endpoint
           }
         )
+        result
 
       {:error, _} = error ->
         error

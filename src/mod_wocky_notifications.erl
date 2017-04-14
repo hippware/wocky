@@ -67,7 +67,7 @@ handle_request(JID, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
     {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
     case ?wocky_push_notifier:enable(JID, Platform, DeviceId) of
-        ok -> {ok, <<"enabled">>};
+        {ok, _} -> {ok, <<"enabled">>};
         {error, _} = Error -> Error
     end;
 handle_request(JID, #xmlel{name = <<"disable">>}) ->

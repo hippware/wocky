@@ -4,33 +4,21 @@ defmodule Wocky.PushNotifier.NullBackend do
   their inputs. This handler effectively disables notifications.
   """
 
-  require Logger
-
   @behaviour Wocky.PushNotifier
 
   def init do
-    Logger.info("""
-    Initialising null Wocky push notification handler
-    """)
+    :ok
   end
 
-  def enable(user, _server, _resource, platform, device) do
-    :ok = Logger.info("""
-      Notification registration request for #{user}'s device '#{device}' \
-      on the '#{platform}' platform\
-      """)
-    {:ok, device}
+  def enable(_user, _server, _resource, _platform, device) do
+    {:ok, Base.encode16(device)}
   end
 
-  def disable(endpoint) do
-    Logger.info("""
-    Disabling endpoint '#{endpoint}'\
-    """)
+  def disable(_endpoint) do
+    :ok
   end
 
-  def push(body, endpoint) do
-    Logger.info("""
-    Notification to '#{endpoint}' with body: #{body}\
-    """)
+  def push(_body, _endpoint) do
+    :ok
   end
 end
