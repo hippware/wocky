@@ -30,7 +30,7 @@ defmodule Wocky.PushNotifier.TestBackend do
     Logger.info("""
     Notification registration request for #{jid} with device '#{device}'\
     """)
-    endpoint = Base.encode16(jid)
+    endpoint = Base.encode64(jid)
     :ets.insert(:test_registrations_table, {endpoint, jid, platform, device})
     {:ok, endpoint}
   end

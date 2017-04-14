@@ -11,7 +11,7 @@ defmodule Wocky.PushNotifier.NullBackend do
   end
 
   def enable(_user, _server, _resource, _platform, device) do
-    {:ok, Base.encode16(device)}
+    {:ok, Base.encode64(device)}
   end
 
   def disable(_endpoint) do
