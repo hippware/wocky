@@ -29,12 +29,17 @@ defmodule Wocky.Device do
   end
 
   @doc "Return the endpoint assigned to the specified user and resource."
-  @spec get_endpoint(User.id, User.server, User.resource) ::
-    :not_found | endpoint
+  @spec get_endpoint(User.id, User.server, User.resource) :: endpoint | nil
   def get_endpoint(user, server, resource) do
-    :wocky_db.select_one(server, :device, :endpoint, %{user: user,
-                                                       server: server,
-                                                       resource: resource})
+    if blank?(user) or blank?(server) do
+      nil
+    else
+      conditions = %{user: user, server: server, resource: resource}
+      case :wocky_db.select_one(server, :device, :endpoint, conditions) do
+        :not_found -> nil
+        endpoint -> endpoint
+      end
+    end
   end
 
   @doc """
@@ -43,9 +48,15 @@ defmodule Wocky.Device do
   """
   @spec get_all_endpoints(User.id, User.server) :: [endpoint]
   def get_all_endpoints(user, server) do
-    :wocky_db.select_column(server, :device, :endpoint, %{user: user,
-                                                          server: server})
+    if blank?(user) or blank?(server) do
+      []
+    else
+      :wocky_db.select_column(server, :device, :endpoint,
+                              %{user: user, server: server})
+    end
   end
+
+  defp blank?(str), do: is_nil(str) or str == ""
 
   @doc """
   Deletes any device currently assigned to the specified user and resource.
