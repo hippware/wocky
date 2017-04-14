@@ -25,20 +25,14 @@ defmodule Wocky.Mixfile do
                          'db.test_migrations': :test
                        ],
      dialyzer: [
-       plt_apps: [
-         :compiler, :crypto, :erts, :kernel, :stdlib, :mnesia, :ssl, :ssh,
-         :xmerl, :public_key, :tools, :sasl, :hipe, :edoc, :syntax_tools,
-         :runtime_tools, :inets, :asn1, :cowboy, :cowlib, :exml, :p1_utils,
-         :binpp, :mochijson2, :erlando, :z_stdlib, :uuid, :cqerl, :riakc,
-         :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid, :algolia,
-         :logger, :schemata, :porcelain, :geocalc, :mix, :faker, :ex_machina,
-         :base16, :poison, :ex_aws, :exconstructor, :honeybadger, :slackex,
-         :crone, :gen_stage, :stringprep
-       ],
-       plt_add_deps: true,
+       plt_add_apps: [:mix, :mnesia, :inets],
+       plt_add_deps: :transitive,
+       ignore_warnings: "dialyzer.ignore-warnings",
        flags: [
-         "--fullpath", "-Wunmatched_returns", "-Werror_handling",
-         "-Wrace_conditions", "-Wunderspecs", "-Wunknown"
+         # :unmatched_returns,
+         # :underspecs,
+         :error_handling,
+         :race_conditions
        ]
      ],
      elvis_config: elvis_config(),
@@ -133,6 +127,7 @@ defmodule Wocky.Mixfile do
       {:gen_stage,            "~> 0.11"},
       {:espec,                "~> 1.2",    only: :test},
       {:credo,                "~> 0.7.0",  only: :dev, runtime: false},
+      {:dialyxir,             "~> 0.5",    only: :dev, runtime: false},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5.0",  only: :dev},
 
@@ -143,8 +138,7 @@ defmodule Wocky.Mixfile do
       {:ex_aws,
         github: "CargoSense/ex_aws",
         branch: "master",
-        override: true
-      },
+        override: true},
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",
@@ -170,11 +164,6 @@ defmodule Wocky.Mixfile do
         branch: "master",
         runtime: false,
         manager: :rebar3},
-      {:dialyxir,
-        github: "jeremyjh/dialyxir",
-        branch: "develop",
-        runtime: false,
-        only: :dev},
       {:mix_elvis,
         github: "hippware/mix_elvis",
         branch: "master",
