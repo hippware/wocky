@@ -27,7 +27,7 @@ handle_share(From, To, BotJID = #jid{lserver = Server}) ->
     Result = do([error_m ||
                  check_can_share(Server, ID, From),
                  wocky_db_bot:add_share(From, To, BotJID),
-                 send_notification(From, To)
+                 send_notification(From, To, BotJID)
                 ]),
     case Result of
         ok -> ok;
@@ -46,15 +46,9 @@ check_can_share(Server, ID, Sharer) ->
             end
     end.
 
-send_notification(_From, _To) ->
-    % FIXME
-    % Handle = case wocky_db_user:get_handle(User, Server) of
-    %              not_found -> <<"Someone">>;
-    %              H -> H
-    %          end,
-    % Body = <<Handle/binary, " shared a bot with you!">>,
-    % ?wocky_push_notification:send(To, From, Body).
-    ok.
+send_notification(From, To, BotJID) ->
+    Event = ?bot_share_event:new(#{from => From, to => To, bot => BotJID}),
+    ?wocky_event_handler:broadcast(Event).
 
 %%%===================================================================
 %%% Access change notifications

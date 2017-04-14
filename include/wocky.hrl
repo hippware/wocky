@@ -56,6 +56,8 @@
 -define(home_stream_handler, 'Elixir.Wocky.EventHandler.HomeStream').
 -define(push_notification_handler,
          'Elixir.Wocky.EventHandler.PushNotification').
+-define(new_message_event, 'Elixir.Wocky.Events.NewMessageEvent').
+-define(bot_share_event, 'Elixir.Wocky.Events.BotShareEvent').
 
 -define(wocky_push_notifier, 'Elixir.Wocky.PushNotifier').
 

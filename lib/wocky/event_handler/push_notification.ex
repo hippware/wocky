@@ -3,9 +3,11 @@ defmodule Wocky.EventHandler.PushNotification do
   """
 
   use GenStage
+  use Wocky.JID
 
   alias Wocky.Events.BotPerimeterEvent
-  alias Wocky.JID
+  alias Wocky.Events.BotShareEvent
+  alias Wocky.Events.NewMessageEvent
   alias Wocky.PushNotifier
 
   @spec start_link(Keyword.t) :: {:ok, pid}
@@ -40,6 +42,14 @@ defmodule Wocky.EventHandler.PushNotification do
     |> JID.from_binary
     |> PushNotifier.push(body)
   end
+  defp handle_event(%BotShareEvent{to: to} = event, _state) do
+    body = format(event)
+    PushNotifier.push_all(to, body)
+  end
+  defp handle_event(%NewMessageEvent{to: to} = event, _state) do
+    body = format(event)
+    PushNotifier.push_all(to, body)
+  end
   defp handle_event(_, _) do
     :ok
   end
@@ -50,7 +60,25 @@ defmodule Wocky.EventHandler.PushNotification do
       :exit -> "#{user.handle} is leaving the area for #{bot.title}"
     end
   end
+  defp format(%BotShareEvent{from: from}) do
+    get_handle(from) <> " shared a bot with you!"
+  end
+  defp format(%NewMessageEvent{from: from, body: body}) do
+    if is_nil(from) do
+      body
+    else
+      "From: #{get_handle(from)}\n#{body}"
+    end
+  end
   defp format(event) do
     inspect(event)
+  end
+
+  defp get_handle(from) do
+    jid(luser: user, lserver: server) = from
+    case :wocky_db_user.get_handle(user, server) do
+      :not_found -> "Someone"
+      h -> h
+    end
   end
 end

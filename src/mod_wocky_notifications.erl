@@ -92,10 +92,11 @@ make_response(IQ, State) ->
 user_send_packet_hook(From, To, Packet) ->
     case should_notify(From, To, Packet) of
         true ->
-            % FIXME
-            % Body = get_body(Packet),
-            % ?wocky_push_notifier:send(To, From, Body);
-            ok;
+            Body = get_body(Packet),
+            Event = ?new_message_event:new(#{to => To,
+                                             from => From,
+                                             body => Body}),
+            ?wocky_event_handler:broadcast(Event);
 
         _Else ->
             ok

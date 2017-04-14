@@ -2,6 +2,7 @@ defmodule Wocky.PushNotifierSpec do
   use ESpec
   use Wocky.JID
 
+  alias Wocky.PushNotifier
   alias Wocky.PushNotifier.NullBackend, as: Backend
 
   @test_jid JID.make("user", "localhost", "resource")
