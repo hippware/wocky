@@ -224,7 +224,7 @@ defmodule Wocky.JID do
   def replace_resource(jid, resource) do
     case resourceprep(resource) do
       :error -> :error
-      lresource -> jid(jid, resource: resource, lresource: lresource)
+      {:ok, lresource} -> jid(jid, resource: resource, lresource: lresource)
     end
   end
 
