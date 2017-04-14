@@ -62,6 +62,7 @@ defmodule Wocky.Mixfile do
       {:algolia,        "~> 0.4.0"},
       {:honeybadger,    "~> 0.6"},
       {:geocalc,        "~> 0.5.3"},
+      {:gen_stage,      "~> 0.11"},
       {:timex,          "~> 3.1"},
       {:stringprep,     "~> 1.0"},
       {:exconstructor,  "~> 1.0"},

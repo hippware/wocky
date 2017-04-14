@@ -1,8 +1,9 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
+  use Wocky.JID
+
   alias Wocky.Index
-  alias Wocky.JID
   alias Wocky.Location
   alias __MODULE__, as: Bot
 

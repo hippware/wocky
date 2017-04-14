@@ -1,7 +1,11 @@
 defmodule Wocky.Location do
   @moduledoc "Interface for user location processing."
 
+  use Wocky.JID
+
   alias Wocky.Bot
+  alias Wocky.EventHandler
+  alias Wocky.Events.BotPerimeterEvent
   alias Wocky.JID
   alias Wocky.Repo.Timestamp
   alias Wocky.User
@@ -164,63 +168,15 @@ defmodule Wocky.Location do
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do
-      owner_jid = JID.from_binary(bot.owner)
-      :ok = send_notification(owner_jid, user, bot, event)
-      :ok = send_push_notification(owner_jid, user, bot, event)
+      event = %BotPerimeterEvent{
+        user: user,
+        bot: bot,
+        event: event
+      }
+
+      EventHandler.broadcast(event)
     end
   end
-
-  defp send_push_notification(owner_jid, user, bot, event) do
-    user_jid = JID.make(user.username, user.server)
-    result = :wocky_notification_handler.notify_bot_event(
-                  owner_jid, user_jid, bot.title, event)
-    case result do
-      :ok -> :ok
-      {:error, reason} ->
-        Logger.error("""
-        Failed to send push notification to #{JID.to_binary(owner_jid)}: \
-        #{inspect(reason)}\
-        """)
-    end
-  end
-
-  defp send_notification(_owner_jid, _user, _bot, _event) do
-    # :ejabberd_router.route(Ejabberd.make_jid!("", :wocky_app.server),
-    #                        :jid.to_bare(owner_jid),
-    #                        bot_notification_stanza(owner_jid, user,
-    #                                                bot, event))
-  end
-
-  # defp bot_notification_stanza(owner_jid, user, bot, event) do
-  #   user_jid_str = User.to_bare_jid_string(user)
-  #   bot_jid_str = Bot.to_jid_string(bot)
-  #   xmlel(name: "message",
-  #         attrs: [
-  #           {"from", :wocky_app.server},
-  #           {"to", :jid.to_binary(owner_jid)},
-  #           {"type", "headline"}
-  #         ],
-  #         children: [
-  #           xmlel(name: "bot", attrs: [{"xmlns", "hippware.com/hxep/bot"}],
-  #                 children: [
-  #                   xmlel(name: "jid", children: [
-  #                           xmlcdata(content: bot_jid_str)
-  #                         ]),
-  #                   xmlel(name: "id", children: [
-  #                           xmlcdata(content: bot.id)
-  #                         ]),
-  #                   xmlel(name: "server", children: [
-  #                           xmlcdata(content: bot.server)
-  #                         ]),
-  #                   xmlel(name: "action", children: [
-  #                           xmlcdata(content: to_string(event))
-  #                         ]),
-  #                   xmlel(name: "user-jid", children: [
-  #                           xmlcdata(content: user_jid_str)
-  #                         ])
-  #                 ])
-  #         ])
-  # end
 
   defp owned_bots_with_follow_me(user) do
     user
