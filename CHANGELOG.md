@@ -13,6 +13,8 @@ If there are not many items, just list them sequentially.
 * New API: User Bulk Query (#614)
 * Upgrade: escalus, exml (2.4.0 to 2.4.1)
 * Add 'subscribed' field to bot (#620)
+* Push notifications restructure
+  * Indirectly resolves: Generalise push notification generation (#592)
 
 
 # 17.04.05+1724.8a6709a
