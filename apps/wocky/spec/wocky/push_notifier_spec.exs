@@ -15,10 +15,6 @@ defmodule Wocky.PushNotifierSpec do
   @platform "apple"
   @message  "Message content"
 
-  before_all do
-    TestBackend.init
-  end
-
   before do
     Repo.delete_all(Device)
     TestBackend.reset

@@ -13,7 +13,9 @@ defmodule Wocky.PushNotifier.SNSBackend do
 
   @message_limit 512
 
-  def init, do: :ok
+  def init do
+    Logger.info("SNS notifications enabled")
+  end
 
   def enable(user, server, resource, _platform, device_id) do
     user_data = user |> JID.make(server, resource) |> JID.to_binary

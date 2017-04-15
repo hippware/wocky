@@ -29,7 +29,7 @@ defmodule Wocky.Mixfile do
         tros_s3_bucket: "wocky-tros",
         tros_s3_access_key_id: nil,
         tros_s3_secret_key: nil,
-        push_notification_backend: Wocky.PushNotifier.TestBackend,
+        notification_system: "test",
         algolia_user_index_name: nil,
         algolia_bot_index_name: nil,
         enable_bot_event_notifications: false,

@@ -4,10 +4,12 @@ defmodule Wocky.PushNotifier.NullBackend do
   their inputs. This handler effectively disables notifications.
   """
 
+  require Logger
+
   @behaviour Wocky.PushNotifier
 
   def init do
-    :ok
+    Logger.info("Notifications disabled")
   end
 
   def enable(_user, _server, _resource, _platform, device) do

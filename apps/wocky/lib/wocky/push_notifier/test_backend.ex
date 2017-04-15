@@ -12,7 +12,7 @@ defmodule Wocky.PushNotifier.TestBackend do
   @behaviour Wocky.PushNotifier
 
   def init do
-    Logger.info("Initialising Wocky test push notification handler")
+    Logger.info("Notification testing system enabled")
     if :ets.info(:test_registrations_table) == :undefined do
       _ = :ets.new(:test_registrations_table, [:public, :named_table, :set])
     end

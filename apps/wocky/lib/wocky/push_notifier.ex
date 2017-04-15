@@ -30,19 +30,13 @@ defmodule Wocky.PushNotifier do
   # ===================================================================
   # API
 
-  @spec init(list) :: :ok
-  def init(args) do
-    backend_type = Keyword.get(args, :notification_system, :none)
+  @spec init :: :ok
+  def init do
+    backend_type = Application.get_env(:wocky, :notification_system, "none")
     backend_module = case backend_type do
-      :aws ->
-        :ok = Logger.info("SNS notifications enabled")
-        Wocky.PushNotifier.SNSBackend
-      :test ->
-        :ok = Logger.info("Notification testing system enabled")
-        Wocky.PushNotifier.TestBackend
-      :none ->
-        :ok = Logger.info("Notifications disabled")
-        Wocky.PushNotifier.NullBackend
+      "aws" -> Wocky.PushNotifier.SNSBackend
+      "test" -> Wocky.PushNotifier.TestBackend
+      "none" -> Wocky.PushNotifier.NullBackend
     end
     Application.put_env(:wocky, :push_notification_backend, backend_module)
     backend_module.init()

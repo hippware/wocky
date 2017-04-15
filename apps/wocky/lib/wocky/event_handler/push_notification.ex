@@ -11,9 +11,9 @@ defmodule Wocky.EventHandler.PushNotification do
   alias Wocky.PushNotifier
   alias Wocky.User
 
-  @spec start_link(Keyword.t) :: {:ok, pid}
-  def start_link(cfg_terms) do
-    :ok = PushNotifier.init(cfg_terms)
+  @spec start_link :: {:ok, pid}
+  def start_link do
+    :ok = PushNotifier.init
     GenStage.start_link(__MODULE__, [])
   end
 
