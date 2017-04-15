@@ -9,28 +9,28 @@ defmodule Wocky.LocationSpec do
   alias Wocky.User
 
   before do
-    owner = Factory.build(:user)
-    user = Factory.build(:user)
-    jid = User.to_jid(user, "testing")
+    # owner = Factory.build(:user)
+    # user = Factory.build(:user)
+    # jid = User.to_jid(user, "testing")
 
-    bot_list = Factory.build_list(3, :bot, owner: User.to_jid_string(owner))
-    bot = hd(bot_list)
+    # bot_list = Factory.build_list(3, :bot, owner: User.to_jid_string(owner))
+    # bot = hd(bot_list)
 
-    bots = Enum.into(bot_list, %{},
-                     fn (%Bot{id: id} = b) -> {id, b} end)
-    bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
+    # bots = Enum.into(bot_list, %{},
+    #                  fn (%Bot{id: id} = b) -> {id, b} end)
+    # bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
 
-    allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
-    allow PushNotifier |> to(accept :push, fn (_, _) -> :ok end)
-    allow User |> to(accept :get_subscribed_bots, fn (_) -> bot_jids end)
-    allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
-    allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
-    allow Bot |> to(accept :get, fn (key) -> bots[key] end)
+    # allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
+    # allow PushNotifier |> to(accept :push, fn (_, _) -> :ok end)
+    # allow User |> to(accept :get_subscribed_bots, fn (_) -> bot_jids end)
+    # allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
+    # allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
+    # allow Bot |> to(accept :get, fn (key) -> bots[key] end)
 
-    {:shared, user: User.from_jid(jid), jid: jid, bot: bot}
+    # {:shared, user: User.from_jid(jid), jid: jid, bot: bot}
   end
 
-  describe "user location that is inside a bot perimeter" do
+  xdescribe "user location that is inside a bot perimeter" do
     before do
       {:shared, inside_loc: {shared.bot.lat, shared.bot.lon, 10}}
     end
@@ -84,7 +84,7 @@ defmodule Wocky.LocationSpec do
     end
   end
 
-  describe "user location that is outside a bot perimeter" do
+  xdescribe "user location that is outside a bot perimeter" do
     before do
       loc = Factory.build(:location)
       {:shared, outside_loc: {loc.lat, loc.lon, loc.accuracy}}
@@ -166,7 +166,7 @@ defmodule Wocky.LocationSpec do
     end
   end
 
-  describe "user with a bot set to 'follow me'" do
+  xdescribe "user with a bot set to 'follow me'" do
     before do
       allow Bot |> to(accept :set_location, fn (_, _) -> :ok end)
       loc = Factory.build(:location)
