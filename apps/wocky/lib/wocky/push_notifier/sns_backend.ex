@@ -1,10 +1,11 @@
-defmodule Wocky.PushNotifier.SNS do
+defmodule Wocky.PushNotifier.SNSBackend do
   @moduledoc """
   Implementes the `PushNotifier` behavior for Amazon SNS.
   """
 
+  use Wocky.JID
+
   alias ExAws.SNS
-  alias Wocky.Device
 
   require Logger
 
@@ -12,15 +13,16 @@ defmodule Wocky.PushNotifier.SNS do
 
   @message_limit 512
 
-  @spec init :: :ok
-  def init, do: :ok
+  def init do
+    Logger.info("SNS notifications enabled")
+  end
 
-  @spec register(binary, binary, Device.platform, binary) ::
-    {:ok, binary} | {:error, any}
-  def register(user_id, resource, _platform, device_id) do
+  def enable(user, server, resource, _platform, device_id) do
+    user_data = user |> JID.make(server, resource) |> JID.to_binary
+
     :wocky
     |> Application.fetch_env!(:application_arn)
-    |> SNS.create_platform_endpoint(device_id, "#{user_id}/#{resource}")
+    |> SNS.create_platform_endpoint(device_id, user_data)
     |> ExAws.request
     |> handle_register_result
   end
@@ -31,14 +33,18 @@ defmodule Wocky.PushNotifier.SNS do
     {:ok, arn}
   end
 
-  @spec push(binary, binary) :: :ok | {:error, any}
-  def push(endpoint, message) do
-    message
+  def disable(_endpoint) do
+    # TODO delete the endpoint when disable is called.
+    :ok
+  end
+
+  def push(body, endpoint) do
+    body
     |> maybe_truncate_message
     |> make_payload
     |> SNS.publish([target_arn: endpoint, message_structure: :json])
     |> ExAws.request
-    |> handle_push_result
+    |> handle_notify_result
   end
 
   defp maybe_truncate_message(message) do
@@ -61,8 +67,8 @@ defmodule Wocky.PushNotifier.SNS do
     })
   end
 
-  defp handle_push_result({:error, error}), do: handle_aws_error(error)
-  defp handle_push_result({:ok, %{body: body}}) do
+  defp handle_notify_result({:error, error}), do: handle_aws_error(error)
+  defp handle_notify_result({:ok, %{body: body}}) do
     :ok = Logger.debug("SNS notification response:\n#{inspect(body)}")
     :ok
   end

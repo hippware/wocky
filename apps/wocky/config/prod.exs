@@ -12,6 +12,8 @@ config :wocky,
   tros_s3_bucket: "wocky-tros-WOCKY_INST",
   tros_s3_access_key_id: "TROS_S3_ACCESS_KEY_ID",
   tros_s3_secret_key: "TROS_S3_SECRET_KEY",
+  application_arn: "APPLICATION_ARN",
+  notification_system: "NOTIFICATION_SYSTEM",
   algolia_user_index_name: "ALGOLIA_USER_INDEX_NAME",
   algolia_bot_index_name: "ALGOLIA_BOT_INDEX_NAME"
 

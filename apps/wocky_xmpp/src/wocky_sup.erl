@@ -4,6 +4,8 @@
 
 -behaviour(supervisor).
 
+-include("wocky.hrl").
+
 %% API
 -export([start_link/0]).
 
@@ -11,6 +13,7 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
+
 
 %%%===================================================================
 %%% API functions
@@ -29,14 +32,6 @@ init([]) ->
                  intensity => 1,
                  period    => 5},
 
-    %% FIXME
-    % UserIdx = #{id       => wocky_index,
-    %             start    => {'Elixir.Wocky.Index', start_link, []},
-    %             restart  => permanent,
-    %             shutdown => 5000,
-    %             type     => worker,
-    %             modules  => ['Elixir.Wocky.Index']},
-
     BotExpiryMon = #{id       => wocky_bot_expiry_mon,
                      start    => {wocky_bot_expiry_mon, start_link, []},
                      restart  => permanent,
@@ -48,7 +43,6 @@ init([]) ->
              start    => {wocky_cron, start_link, []},
              restart  => permanent,
              shutdown => 5000,
-             type     => supervisor
-            },
+             type     => supervisor},
 
     {ok, {SupFlags, [BotExpiryMon, Cron]}}.
