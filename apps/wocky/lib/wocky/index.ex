@@ -83,8 +83,8 @@ defmodule Wocky.Index do
   end
 
   def handle_call({:geosearch, lat, lon}, _, state) do
-    nlat = GeoUtils.normalize_degrees(lat)
-    nlon = GeoUtils.normalize_degrees(lon)
+    nlat = GeoUtils.normalize_latitude(lat)
+    nlon = GeoUtils.normalize_longitude(lon)
     {:ok, result} = Algolia.search(state.bot_index, <<>>, %{
                                      aroundLatLng: "#{nlat},#{nlon}",
                                      getRankingInfo: true
