@@ -21,7 +21,7 @@ defmodule Wocky.Device do
   end
 
   @type device :: binary
-  @type platform :: :apple | :google
+  @type platform :: binary # :apple | :google
   @type endpoint :: binary
 
   @spec update(User.id, User.resource, platform, device, endpoint) :: :ok

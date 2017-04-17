@@ -28,14 +28,21 @@ defmodule Wocky.BotEvent do
     event: event
   }
 
-  @spec get_last_event(User.id, Bot.id) :: t | nil
-  def get_last_event(user_id, bot_id) do
-    Repo.one(
+  @spec get_last_event_type(User.id, Bot.id) :: :enter | :exit | nil
+  def get_last_event_type(user_id, bot_id) do
+    event = Repo.one(
       from e in BotEvent,
         where: e.user_id == ^user_id and e.bot_id == ^bot_id,
+        select: e.event,
         order_by: [desc: :created_at],
         limit: 1
     )
+
+    case event do
+      nil -> nil
+      "enter" -> :enter
+      "exit" -> :exit
+    end
   end
 
   @spec add_event(User.id, Bot.id, event) :: :ok

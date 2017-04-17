@@ -99,11 +99,8 @@ defmodule Wocky.Location do
   end
 
   defp unless_owner(bot, user) do
-    owner_jid = JID.from_binary(bot.owner)
-    user_jid = JID.make(user.username, user.server)
-
     # Don't check bots that are owned by the user
-    if JID.bare_equal?(owner_jid, user_jid) do
+    if bot.user_id == user.id do
       :ok = Logger.debug(
         "Skipping bot #{bot.id} since it is owned by #{user.id}"
       )
@@ -157,18 +154,18 @@ defmodule Wocky.Location do
   end
 
   defp check_for_enter_event(user, bot_id) do
-    case BotEvent.get_last_event(user.id, bot_id) do
+    case BotEvent.get_last_event_type(user.id, bot_id) do
       nil -> true
-      %BotEvent{event: "exit"} -> true
-      _ -> false
+      :exit -> true
+      :enter -> false
     end
   end
 
   defp check_for_exit_event(user, bot_id) do
-    case BotEvent.get_last_event(user.id, bot_id) do
+    case BotEvent.get_last_event_type(user.id, bot_id) do
       nil -> false
-      %BotEvent{event: "enter"} -> true
-      _ -> false
+      :exit -> false
+      :enter -> true
     end
   end
 
