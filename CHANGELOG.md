@@ -8,6 +8,11 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+# Unreleased
+
+* Fix handling of empty bot shortname field (#629)
+
+
 # 17.04.12+1736.ec69c83
 
 * New API: User Bulk Query (#614)
