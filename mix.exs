@@ -8,6 +8,7 @@ defmodule Wocky.Release.Mixfile do
       start_permanent: Mix.env == :prod,
       preferred_cli_env: [release: :prod],
       deps: deps(),
+      aliases: aliases(),
       dialyzer: [
         plt_add_apps: [:mix, :mnesia, :inets],
         plt_add_deps: :transitive,
@@ -28,6 +29,13 @@ defmodule Wocky.Release.Mixfile do
     [
       {:distillery, "~> 1.1"},
       {:dialyxir,   "~> 0.5"}
+    ]
+  end
+
+  defp aliases do
+    [
+      recompile: ["clean", "compile"],
+      prepare: ["deps.get", "deps.compile goldrush lager", "compile"]
     ]
   end
 end
