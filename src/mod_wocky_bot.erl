@@ -671,9 +671,10 @@ check_id(Owner, ID) ->
         false -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
-maybe_insert_name(ID, Fields) when is_list(Fields) ->
+maybe_insert_name(ID, Fields) ->
     case lists:keyfind(<<"shortname">>, #field.name, Fields) of
         false -> ok;
+        #field{value = <<>>} -> ok;
         #field{value = Val} -> insert_name(ID, Val)
     end.
 
