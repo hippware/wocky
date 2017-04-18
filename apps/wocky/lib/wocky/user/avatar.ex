@@ -25,9 +25,10 @@ defmodule Wocky.User.Avatar do
     end
   end
 
-  @spec delete_existing(t, url) :: {:ok, t} | {:error, any}
-  def delete_existing(new_avatar, nil), do: {:ok, new_avatar}
-  def delete_existing(new_avatar, old_avatar) do
+  @spec maybe_delete_existing(t, url) :: :ok
+  def maybe_delete_existing(_new_avatar, nil), do: :ok
+  def maybe_delete_existing(avatar, avatar), do: :ok
+  def maybe_delete_existing(_new_avatar, old_avatar) do
     case TROS.parse_url(old_avatar) do
       {:ok, {file_server, file_id}} ->
         TROS.delete(file_server, file_id)
@@ -35,9 +36,6 @@ defmodule Wocky.User.Avatar do
       {:error, _} -> :ok
     end
 
-    {:ok, new_avatar}
+    :ok
   end
-
-  @spec to_url(t) :: url
-  def to_url({server, file_id}), do: {:ok, TROS.make_url(server, file_id)}
 end

@@ -100,4 +100,20 @@ defmodule Wocky.TROS.MetadataSpec do
     result |> should(be_ok_result())
     result |> elem(1) |> should(be_struct Metadata)
   end
+
+  describe "delete/1" do
+    before do
+      result = Metadata.delete(shared.id)
+      {:ok, result: result}
+    end
+
+    it "should return :ok" do
+      shared.result |> should(eq :ok)
+    end
+
+    it "should delete the file" do
+      Metadata.get_access(shared.id) |> should(be_nil())
+      Metadata.get_user_id(shared.id) |> should(be_nil())
+    end
+  end
 end

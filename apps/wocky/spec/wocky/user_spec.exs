@@ -1,13 +1,18 @@
 defmodule Wocky.UserSpec do
   use ESpec, async: true
+  use Wocky.JID
 
+  import ChangesetAssertions
   import Ecto.Query, only: [from: 2]
 
+  alias Ecto.Changeset
   alias Faker.Internet
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Token
+  alias Wocky.TROS
+  alias Wocky.TROS.Metadata
   alias Wocky.User
 
   before do
@@ -17,6 +22,51 @@ defmodule Wocky.UserSpec do
 
   finally do
     Repo.delete_all(from u in User, where: u.id == ^shared.id)
+  end
+
+  describe "register_changeset/1 validations" do
+    it "should pass with valid attributes" do
+      %{username: ID.new, server: "foo", external_id: "bar"}
+      |> User.register_changeset
+      |> should(be_valid())
+    end
+
+    it "should fail if the username is missing" do
+      %{server: "foo", eternal_id: "bar"}
+      |> User.register_changeset
+      |> should(have_errors([:username]))
+    end
+
+    it "should fail with an invalid username" do
+      %{username: "alice", server: "foo", external_id: "bar"}
+      |> User.register_changeset
+      |> should(have_errors([:username]))
+    end
+
+    it "should fail if the server is missing" do
+      %{username: ID.new, eternal_id: "bar"}
+      |> User.register_changeset
+      |> should(have_errors([:server]))
+    end
+
+    it "should fail if the external ID is missing" do
+      %{username: ID.new, server: "foo"}
+      |> User.register_changeset
+      |> should(have_errors([:external_id]))
+    end
+
+    it "should set the ID to the username" do
+      id = ID.new
+
+      changeset = User.register_changeset(%{
+            username: id,
+            server: "foo",
+            eternal_id: "bar"
+      })
+
+      changeset.changes.id |> should(eq changeset.changes.username)
+      changeset.changes.id |> should(eq id)
+    end
   end
 
   describe "register/3" do
@@ -77,12 +127,101 @@ defmodule Wocky.UserSpec do
   end
 
   describe "register/4" do
-    context "with an invalid ID" do
-
+    before do
+      id = ID.new
+      result = User.register(id, shared.server, "password", "password")
+      {:ok, id: id, result: result}
     end
 
-    context "with a valid ID" do
+    it "should return a success result" do
+      shared.result |> should(be_ok_result())
+    end
 
+    it "should create a user" do
+      new_user = User.find(shared.id)
+
+      new_user |> should_not(be_nil())
+      new_user.server |> should(eq shared.server)
+      new_user.password |> should(eq "password")
+      new_user.pass_details |> should(eq "password")
+    end
+  end
+
+  describe "changeset/1 validations" do
+    it "should pass with valid attributes" do
+      shared.user
+      |> User.changeset(%{handle: "new_handle", email: "foo@bar.com"})
+      |> should(be_valid())
+    end
+
+    it "should fail if the email is malformed" do
+      shared.user
+      |> User.changeset(%{email: "foo"})
+      |> should(have_errors([:email]))
+    end
+
+    it "should fail with a reserved handle" do
+      shared.user
+      |> User.changeset(%{handle: "Root"})
+      |> should(have_errors([:handle]))
+    end
+
+    context "avatar validations" do
+      context "with invalid data" do
+        before do
+          file_id = ID.new
+          url = TROS.make_url(shared.server, file_id)
+          Metadata.put(file_id, ID.new, "public")
+          {:ok, file_id: file_id, url: url}
+        end
+
+        finally do
+          Metadata.delete(shared.file_id)
+        end
+
+        it "should fail with an invalid avatar URL" do
+          shared.user
+          |> User.changeset(%{avatar: "not a valid URL"})
+          |> should(have_errors([:avatar]))
+        end
+
+        it "should fail with a non-existing avatar URL" do
+          shared.user
+          |> User.changeset(%{avatar: TROS.make_url(shared.server, ID.new)})
+          |> should(have_errors([:avatar]))
+        end
+
+        it "should fail with a non-local avatar URL" do
+          shared.user
+          |> User.changeset(%{avatar: TROS.make_url("otherhost", ID.new)})
+          |> should(have_errors([:avatar]))
+        end
+
+        it "should fail with a file owned by another user" do
+          shared.user
+          |> User.changeset(%{avatar: shared.url})
+          |> should(have_errors([:avatar]))
+        end
+      end
+    end
+
+    context "with valid data" do
+      before do
+        file_id = ID.new
+        url = TROS.make_url(shared.server, file_id)
+        Metadata.put(file_id, shared.user.id, "public")
+        {:ok, file_id: file_id, url: url}
+      end
+
+      finally do
+        Metadata.delete(shared.file_id)
+      end
+
+      it "should be valid" do
+        shared.user
+        |> User.changeset(%{avatar: shared.url})
+        |> should(be_valid())
+      end
     end
   end
 
@@ -119,274 +258,88 @@ defmodule Wocky.UserSpec do
 
     it "should update the user's entry in the full text search index"
 
-    context "when passed a handle the same as the old" do
+    context "when a valid avatar is passed" do
       before do
-        result = User.update(shared.id, %{handle: shared.fields.handle})
-        {:ok, result: result}
+        avatar_id = ID.new
+        avatar_url = TROS.make_url(shared.server, avatar_id)
+
+        Metadata.put(avatar_id, shared.user.id, "public")
+
+        {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
       end
 
-      it "should return :ok" do
-        shared.result |> should(eq :ok)
+      finally do
+        Metadata.delete(shared.avatar_id)
       end
 
-      it "should not change the user's handle" do
-        new_user = Repo.get(User, shared.id)
-        new_user.handle |> should(eq shared.fields.handle)
+      context "and the user does not have an existing avatar" do
+        before do
+          result = User.update(shared.id, %{avatar: shared.avatar_url})
+          {:ok, result: result}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should update the user's avatar" do
+          new_user = User.find(shared.id)
+          new_user.avatar |> should(eq shared.avatar_url)
+        end
+      end
+
+      context "and the user already has that avatar" do
+        before do
+          shared.user
+          |> Changeset.cast(%{avatar: shared.avatar_url}, [:avatar])
+          |> Repo.update!
+
+          result = User.update(shared.id, %{avatar: shared.avatar_url})
+          {:ok, result: result}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should not change the user's avatar" do
+          new_user = User.find(shared.id)
+          new_user.avatar |> should(eq shared.avatar_url)
+        end
+
+        it "should not try to delete the avatar" do
+          Metadata.get(shared.avatar_id) |> should_not(be_nil())
+        end
+      end
+
+      context "and the user has a valid avatar" do
+        before do
+          avatar_id = ID.new
+          avatar_url = TROS.make_url(shared.server, avatar_id)
+          Metadata.put(avatar_id, shared.user.id, "public")
+
+          shared.user
+          |> Changeset.cast(%{avatar: avatar_url}, [:avatar])
+          |> Repo.update!
+
+          result = User.update(shared.id, %{avatar: shared.avatar_url})
+          {:ok, result: result, old_avatar_id: avatar_id}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should update the user's avatar" do
+          new_user = User.find(shared.id)
+          new_user.avatar |> should(eq shared.avatar_url)
+        end
+
+        it "should delete the old avatar" do
+          Metadata.get(shared.old_avatar_id) |> should(be_nil())
+        end
       end
     end
-
-    context "when passed a handle that already exists" do
-      before do
-        new_handle = Internet.user_name
-        Factory.insert(:user, %{
-                         server: shared.server,
-                         handle: new_handle
-                       })
-
-        result = User.update(shared.id, %{handle: new_handle})
-        {:ok, new_handle: new_handle, result: result}
-      end
-
-      it "should return a `duplicate_handle` error" do
-        shared.result |> should(be_error_result())
-        # shared.result |> should(eq {:error, :duplicate_handle})
-      end
-
-      it "should not update the user's attributes" do
-        new_user = Repo.get(User, shared.id)
-        new_user.handle |> should(eq shared.fields.handle)
-      end
-    end
-
-    context "when passed a reserved handle" do
-      before do
-        result = User.update(shared.id, %{handle: "root"})
-        {:ok, result: result}
-      end
-
-      it "should return a `duplicate_handle` error" do
-        shared.result |> should(be_error_result())
-        # shared.result |> should(eq {:error, :duplicate_handle})
-      end
-
-      it "should not update the user's attributes" do
-        new_user = Repo.get(User, shared.id)
-        new_user.handle |> should_not(eq "root")
-      end
-    end
-
-    context "when passed an empty list of fields" do
-      before do
-        result = User.update(shared.id, %{})
-        {:ok, result: result}
-      end
-
-      it "should return :ok" do
-        shared.result |> should(eq :ok)
-      end
-
-      it "should not update the user's attributes" do
-        new_user = Repo.get(User, shared.id)
-        new_user.handle |> should(eq shared.fields.handle)
-        new_user.first_name |> should(eq shared.fields.first_name)
-        new_user.last_name |> should(eq shared.fields.last_name)
-        new_user.email |> should(eq shared.fields.email)
-      end
-    end
-
-    # TODO: Port avatar code to Wocky
-  #   context "when a valid avatar is passed", async: false do
-  #     before do
-  #       server = shared.server
-  #       avatar_id = ID.new
-  #       avatar_url = :tros.make_url(shared.server, avatar_id)
-
-  #       allow :tros |> to(accept get_metadata: fn ^server, ^avatar_id ->
-  #                                  {:ok, %{owner: shared.id}}
-  #                                end,
-  #                                delete: fn _, _ ->
-  #                                  :ok
-  #                                end)
-
-  #       {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
-  #     end
-
-  #     context "and the user does not have an existing avatar" do
-  #       before do
-  #         result = User.update(shared.id, shared.server,
-  #                              %{avatar: shared.avatar_url})
-
-  #         {:ok, result: result}
-  #       end
-
-  #       it "should return :ok" do
-  #         shared.result |> should(eq :ok)
-  #       end
-
-  #       it "should update the user's avatar" do
-  #         new_user = User.find(shared.id, shared.server)
-  #         new_user.avatar |> should(eq shared.avatar_url)
-  #       end
-
-  #       it "should not try to delete the old avatar" do
-  #         :tros |> should_not(accepted :delete)
-  #       end
-  #     end
-
-  #     context "and the user has an invalid avatar" do
-  #       before do
-  #         :ok = Repo.update(%{avatar: "bogus"}, "users",
-  #                           shared.server, shared.id)
-
-  #         result = User.update(shared.id, shared.server,
-  #                              %{avatar: shared.avatar_url})
-
-  #         {:ok, result: result}
-  #       end
-
-  #       it "should return :ok" do
-  #         shared.result |> should(eq :ok)
-  #       end
-
-  #       it "should update the user's avatar" do
-  #         new_user = User.find(shared.id, shared.server)
-  #         new_user.avatar |> should(eq shared.avatar_url)
-  #       end
-
-  #       it "should not try to delete the old avatar" do
-  #         :tros |> should_not(accepted :delete)
-  #       end
-  #     end
-
-  #     context "and the user already has that avatar" do
-  #       before do
-  #         :ok = Repo.update(%{avatar: shared.avatar_url}, "users",
-  #                           shared.server, shared.id)
-
-  #         result = User.update(shared.id, shared.server,
-  #                              %{avatar: shared.avatar_url})
-
-  #         {:ok, result: result}
-  #       end
-
-  #       it "should return :ok" do
-  #         shared.result |> should(eq :ok)
-  #       end
-
-  #       it "should not change the user's avatar" do
-  #         new_user = User.find(shared.id, shared.server)
-  #         new_user.avatar |> should(eq shared.avatar_url)
-  #       end
-
-  #       it "should not try to delete the avatar" do
-  #         :tros |> should_not(accepted :delete)
-  #       end
-  #     end
-
-  #     context "and the user has a valid avatar" do
-  #       before do
-  #         avatar_url = :tros.make_url(shared.server, ID.new)
-  #         :ok = Repo.update(%{avatar: avatar_url}, "users",
-  #                           shared.server, shared.id)
-
-  #         result = User.update(shared.id, shared.server,
-  #                              %{avatar: shared.avatar_url})
-
-  #         {:ok, result: result}
-  #       end
-
-  #       it "should return :ok" do
-  #         shared.result |> should(eq :ok)
-  #       end
-
-  #       it "should update the user's avatar" do
-  #         new_user = User.find(shared.id, shared.server)
-  #         new_user.avatar |> should(eq shared.avatar_url)
-  #       end
-
-  #       it "should delete the old avatar" do
-  #         :tros |> should(accepted :delete)
-  #       end
-  #     end
-  #   end
-
-  #   context "when an avatar with a different owner is passed", async: false do
-  #     before do
-  #       server = shared.server
-  #       avatar_id = ID.new
-
-  #       allow :tros |> to(accept get_metadata: fn ^server, ^avatar_id ->
-  #                                  {:ok, %{owner: ID.new}}
-  #                                end)
-
-  #       avatar_url = :tros.make_url(shared.server, avatar_id)
-  #       result = User.update(shared.id, shared.server,
-  #                            %{avatar: avatar_url})
-
-  #       {:ok, result: result}
-  #     end
-
-  #     it "should return a `not_file_owner` error" do
-  #       shared.result |> should(be_error_result())
-  #       shared.result |> should(eq {:error, :not_file_owner})
-  #     end
-
-  #     it "should not update the user's avatar" do
-  #       new_user = User.find(shared.id, shared.server)
-  #       new_user.avatar |> should(be_nil())
-  #     end
-  #   end
-
-  #   context "when a non-local avatar is passed" do
-  #     before do
-  #       avatar_url = :tros.make_url("nonlocal.com", ID.new)
-  #       result = User.update(shared.id, shared.server,
-  #                            %{avatar: avatar_url})
-
-  #       {:ok, result: result}
-  #     end
-
-  #     it "should return a `not_local_file` error" do
-  #       shared.result |> should(be_error_result())
-  #       shared.result |> should(eq {:error, :not_local_file})
-  #     end
-
-  #     it "should not update the user's avatar" do
-  #       new_user = User.find(shared.id, shared.server)
-  #       new_user.avatar |> should(be_nil())
-  #     end
-  #   end
-
-  #   context "when a non-existing avatar is passed", async: false do
-  #     before do
-  #       server = shared.server
-  #       avatar_id = ID.new
-
-  #       allow :tros |> to(accept get_metadata: fn ^server, ^avatar_id ->
-  #                                  {:error, :not_found}
-  #                                end)
-
-  #       avatar_url = :tros.make_url(shared.server, avatar_id)
-  #       result = User.update(shared.id, shared.server,
-  #                            %{avatar: avatar_url})
-
-  #       {:ok, result: result}
-  #     end
-
-  #     it "should return a `not_found` error" do
-  #       shared.result |> should(be_error_result())
-  #       shared.result |> should(eq {:error, :not_found})
-  #     end
-
-  #     it "should not update the user's avatar" do
-  #       new_user = User.find(shared.id, shared.server)
-  #       new_user.avatar |> should(be_nil())
-  #     end
-  #   end
-  end
-
-  describe "set_avatar/2" do
-
   end
 
   describe "set_location/5" do
@@ -513,18 +466,10 @@ defmodule Wocky.UserSpec do
   end
 
   describe "to_jid/1" do
-
-  end
-
-  describe "to_jid_string/1" do
-
-  end
-
-  describe "to_bare_jid/1" do
-
-  end
-
-  describe "to_bare_jid_string/1" do
-
+    it "should return the user's JID" do
+      jid1 = User.to_jid(shared.user)
+      jid2 = JID.make(shared.user.id, shared.user.server)
+      jid1 |> JID.equal?(jid2) |> should(be_true())
+    end
   end
 end

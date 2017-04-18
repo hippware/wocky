@@ -51,7 +51,7 @@ defmodule Wocky.EventHandler.HomeStream do
   end
 
   # defp format(%BotPerimeterEvent{user: user, bot: bot, event: event}) do
-  #   user_jid_str = User.to_bare_jid_string(user)
+  #   user_jid_str = user |> User.to_jid |> JID.to_bare |> JID.to_binary
   #   bot_jid_str = Bot.to_jid_string(bot)
   #   xmlel(name: "message",
   #         attrs: [

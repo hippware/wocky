@@ -68,30 +68,23 @@ defmodule Wocky.User do
     phone_number:   nil | phone_number,
   }
 
-  @change_fields [:handle, :avatar, :first_name, :last_name, :email]
+  @register_fields [:username, :server, :external_id, :phone_number,
+                    :password, :pass_details]
+  @update_fields [:handle, :avatar, :first_name, :last_name, :email]
 
   @doc """
   Creates a new user with a password.
   Used for testing only.
   """
-  @spec register(username, server, binary, binary) :: :ok | {:error, any}
+  @spec register(username, server, binary, binary) :: {:ok, t} | {:error, any}
   def register(username, server, password, pass_details) do
-    if ID.valid?(username) do
-      user = %User{
-        id: username,
-        username: username,
-        external_id: username,
-        server: server,
-        password: password,
-        pass_details: pass_details
-      }
-
-      Repo.insert!(user)
-
-      :ok
-    else
-      {:error, :invalid_id}
-    end
+    %{username: username,
+      server: server,
+      external_id: username,
+      password: password,
+      pass_details: pass_details}
+    |> register_changeset()
+    |> Repo.insert
   end
 
   @doc """
@@ -103,21 +96,36 @@ defmodule Wocky.User do
   def register(server, external_id, phone_number) do
     case Repo.get_by(User, external_id: external_id) do
       nil ->
-        username = ID.new
-        user = %User{
-          id: username,
-          username: username,
-          server: server,
-          external_id: external_id,
-          phone_number: phone_number
-        }
+        user =
+          %{username: ID.new,
+            server: server,
+            external_id: external_id,
+            phone_number: phone_number}
+          |> register_changeset()
+          |> Repo.insert!
 
-        Repo.insert!(user)
-
-        {:ok, {username, server, true}}
+        {:ok, {user.username, user.server, true}}
 
       user ->
         {:ok, {user.username, user.server, false}}
+    end
+  end
+
+  def register_changeset(params) do
+    %User{}
+    |> cast(params, @register_fields)
+    |> validate_required([:username, :server, :external_id])
+    |> validate_format(:phone_number, ~r//) # TODO
+    |> validate_change(:username, &validate_username/2)
+    |> put_change(:id, params[:username])
+    |> unique_constraint(:external_id)
+  end
+
+  defp validate_username(:username, username) do
+    if ID.valid?(username) do
+      []
+    else
+      [username: "not a valid UUID"]
     end
   end
 
@@ -209,13 +217,17 @@ defmodule Wocky.User do
     ~>> do_update_index(fields)
   end
 
-  defp changeset(struct, params) do
+  def changeset(struct, params) do
     struct
-    |> cast(params, @change_fields)
+    |> cast(params, @update_fields)
     |> validate_format(:email, ~r/@/)
-    |> validate_change(:handle, :none, &validate_handle/2)
+    |> validate_change(:handle, &validate_handle/2)
+    |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
     |> unique_constraint(:handle)
-    |> unique_constraint(:external_id)
+    |> prepare_changes(fn changeset ->
+      maybe_cleanup_avatar(changeset.changes[:avatar], struct.avatar)
+      changeset
+    end)
   end
 
   defp validate_handle(:handle, handle) do
@@ -229,23 +241,32 @@ defmodule Wocky.User do
   defp reserved_handles,
     do: Application.get_env(:wocky, :reserved_handles, [])
 
-  defp do_update_index(%User{username: username}, fields) do
+  defp validate_avatar(:avatar, user, avatar) do
+    case do_validate_avatar(user, avatar) do
+      {:ok, _} -> []
+      {:error, :not_found} ->
+        [avatar: "does not exist"]
+      {:error, :invalid_url} ->
+        [avatar: "not a valid TROS URL"]
+      {:error, :not_local_file} ->
+        [avatar: "not a local file"]
+      {:error, :not_file_owner} ->
+        [avatar: "not owned by the user"]
+    end
+  end
+
+ defp do_validate_avatar(user, avatar) do
+   Avatar.prepare(avatar)
+   ~>> Avatar.check_is_local(user.server)
+   ~>> Avatar.check_owner(user.id)
+ end
+
+ defp do_update_index(%User{username: username}, fields) do
     :ok = Index.user_updated(username, fields)
   end
 
-  def set_avatar(user, avatar) do
-    Avatar.prepare(avatar)
-    ~>> Avatar.check_is_local(user.server)
-    ~>> Avatar.check_owner(user.id)
-    ~>> Avatar.delete_existing(user.avatar)
-    ~>> Avatar.to_url
-    ~>> do_set_avatar(user)
-  end
-
-  defp do_set_avatar(avatar, user) do
-    user
-    |> changeset(%{avatar: avatar})
-    |> Repo.update
+  defp maybe_cleanup_avatar(new_avatar, old_avatar) do
+    Avatar.maybe_delete_existing(new_avatar, old_avatar)
   end
 
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
@@ -276,20 +297,5 @@ defmodule Wocky.User do
   @spec to_jid(t, binary | nil) :: JID.t
   def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
     JID.make!(user, server, resource || (u.resource || ""))
-  end
-
-  @spec to_jid_string(t, binary | nil) :: binary
-  def to_jid_string(%User{} = user, resource \\ nil) do
-    user |> to_jid(resource) |> JID.to_binary
-  end
-
-  @spec to_bare_jid(t) :: JID.t
-  def to_bare_jid(%User{} = user) do
-    user |> to_jid |> JID.to_bare
-  end
-
-  @spec to_bare_jid_string(t) :: binary
-  def to_bare_jid_string(%User{} = user) do
-    user |> to_bare_jid |> JID.to_binary
   end
 end
