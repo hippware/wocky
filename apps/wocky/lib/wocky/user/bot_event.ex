@@ -1,4 +1,4 @@
-defmodule Wocky.BotEvent do
+defmodule Wocky.User.BotEvent do
   @moduledoc """
   Represents a user event.
   """
@@ -11,7 +11,7 @@ defmodule Wocky.BotEvent do
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
-  schema "bot_events" do
+  schema "user_bot_events" do
     field :event,  :string, null: false
 
     timestamps()

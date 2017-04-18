@@ -7,13 +7,16 @@ defmodule Wocky.User do
   import OK, only: ["~>>": 2]
 
   alias Wocky.Bot
-  alias Wocky.BotEvent
   alias Wocky.Device
   alias Wocky.Index
   alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.Conversation
   alias Wocky.TROS.Metadata, as: TROSMetadata
+  alias Wocky.User.Avatar
+  alias Wocky.User.BotEvent
+  alias Wocky.User.Location
   alias __MODULE__, as: User
 
   @primary_key {:id, :binary_id, autogenerate: false}
@@ -36,9 +39,12 @@ defmodule Wocky.User do
     has_many :bots, Bot
     has_many :tokens, Token
     has_many :devices, Device
+    has_many :locations, Location
+    has_many :bot_events, BotEvent
     has_many :conversations, Conversation
     has_many :tros_metadatas, TROSMetadata
-    has_many :bot_events, BotEvent
+
+    many_to_many :subscriptions, Bot, join_through: "bot_subscribers"
   end
 
   @type id           :: binary
@@ -160,6 +166,36 @@ defmodule Wocky.User do
     |> Repo.one
   end
 
+  @doc "Returns all bots that the user subscribes to"
+  @spec get_subscribed_bots(t) :: [Bot.t]
+  def get_subscribed_bots(user) do
+    user
+    |> Ecto.assoc(:subscriptions)
+    |> Repo.all
+  end
+
+  @doc "Returns all bots that the user owns"
+  @spec get_owned_bots(t) :: [Bot.t]
+  def get_owned_bots(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> Repo.all
+  end
+
+  @doc "Returns all bots that the user owns as has set to 'follow me'"
+  @spec get_owned_bots_with_follow_me(t) :: [Bot.t]
+  def get_owned_bots_with_follow_me(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> with_follow_me()
+    |> Repo.all
+  end
+
+  defp with_follow_me(query) do
+    from b in query,
+      where: b.follow_me == ^true and b.follow_me_expiry < ^Timestamp.now
+  end
+
   @doc """
   Update the data on an existing user.
   Fields is a map containing fields to update.
@@ -197,6 +233,36 @@ defmodule Wocky.User do
     :ok = Index.user_updated(username, fields)
   end
 
+  def set_avatar(user, avatar) do
+    Avatar.prepare(avatar)
+    ~>> Avatar.check_is_local(user.server)
+    ~>> Avatar.check_owner(user.id)
+    ~>> Avatar.delete_existing(user.avatar)
+    ~>> Avatar.to_url
+    ~>> do_set_avatar(user)
+  end
+
+  defp do_set_avatar(avatar, user) do
+    user
+    |> changeset(%{avatar: avatar})
+    |> Repo.update
+  end
+
+  @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
+  def set_location(user, resource, lat, lon, accuracy) do
+    case Location.store(user, resource, lat, lon, accuracy) do
+      {:ok, loc} ->
+        loc
+        |> Location.check_for_bot_events
+        |> Location.update_bot_locations
+
+        :ok
+
+      {:error, _} = error->
+        error
+    end
+  end
+
   @doc "Removes the user from the database"
   @spec delete(id) :: :ok | no_return
   def delete(id) do
@@ -206,32 +272,6 @@ defmodule Wocky.User do
 
     :ok = Index.user_removed(id)
   end
-
-  # =========================================================================
-
-  # def set_avatar(user, avatar) do
-  #   Avatar.prepare(avatar)
-  #   ~>> Avatar.check_is_local(user.server)
-  #   ~>> Avatar.check_owner(user.id)
-  #   ~>> Avatar.delete_existing(user.avatar)
-  #   ~>> Avatar.to_url
-  #   ~>> do_set_avatar(user)
-  # end
-
-  # defp do_set_avatar(avatar, user) do
-  #   {:ok, %User{user | avatar: avatar}}
-  # end
-
-  # @spec set_location(t, Location.t) :: {:ok, t}
-  # def set_location(user, location) do
-  #   do_set_location(user, location)
-  #   ~>> Location.check_for_bot_events(location)
-  #   ~>> Location.update_bot_locations(location)
-  # end
-
-  # defp do_set_location(user, location) do
-  #   %User{user | location: Map.from_struct(location)}
-  # end
 
   @spec to_jid(t, binary | nil) :: JID.t
   def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
@@ -251,21 +291,5 @@ defmodule Wocky.User do
   @spec to_bare_jid_string(t) :: binary
   def to_bare_jid_string(%User{} = user) do
     user |> to_bare_jid |> JID.to_binary
-  end
-
-  @spec get_subscribed_bots(t) :: [JID.t]
-  def get_subscribed_bots(_user) do
-    # :wocky_db_bot.subscribed_bots(to_jid(user))
-    []
-  end
-
-  @spec get_owned_bots(t) :: [Bot.t]
-  def get_owned_bots(_user) do
-    # :all
-    # |> Schemata.select(
-    #     from: :user_bot, in: :wocky_db.shared_keyspace,
-    #     where: %{owner: to_bare_jid_string(user)})
-    # |> Enum.map(&Bot.new(&1))
-    []
   end
 end

@@ -1,22 +1,22 @@
-defmodule Wocky.Location do
+defmodule Wocky.User.Location do
   @moduledoc "Interface for user location processing."
 
   use Wocky.Repo.Model
   use Wocky.JID
 
   alias Wocky.Bot
-  alias Wocky.BotEvent
   alias Wocky.EventHandler
   alias Wocky.Events.BotPerimeterEvent
-  alias Wocky.Repo.Timestamp
+  alias Wocky.GeoUtils
   alias Wocky.User
+  alias Wocky.User.BotEvent
   alias __MODULE__, as: Location
 
   require Logger
 
   @foreign_key_type :binary_id
   @primary_key false
-  schema "locations" do
+  schema "user_locations" do
     field :user_id,   :binary_id, null: false, primary_key: true
     field :resource,  :string, null: false, primary_key: true
     field :lat,       :float, null: false
@@ -37,28 +37,57 @@ defmodule Wocky.Location do
     accuracy: float
   }
 
-  @doc ""
-  @spec check_for_bot_events(User.t, float, float) :: :ok
-  def check_for_bot_events(user, lat, lon) do
-    maybe_do_async fn ->
-      user
-      |> User.get_subscribed_bots
-      |> Enum.map(&Bot.get_id_from_jid(&1))
-      |> bots_with_events(user, lat, lon)
-      |> Enum.each(&trigger_bot_notification(user, &1))
-    end
+  @doc "Store a user location datapoint"
+  @spec store(User.t, User.resource, float, float, float)
+    :: {:ok, t} | {:error, any}
+  def store(user, resource, lat, lon, accuracy) do
+    data = %{
+      resource: resource,
+      lat: GeoUtils.normalize_latitude(lat),
+      lon: GeoUtils.normalize_longitude(lon),
+      accuracy: accuracy
+    }
+
+    user
+    |> build_assoc(:locations)
+    |> changeset(data)
+    |> Repo.insert
+  end
+
+  defp changeset(struct, params) do
+    struct
+    |> cast(params, [:resource, :lat, :lon, :accuracy])
+    |> validate_required([:resource, :lat, :lon, :accuracy])
+    |> validate_number(:lat, greater_than: -90, less_than: 90)
+    |> validate_number(:lon, greater_than: -180, less_than: 180)
+    |> validate_number(:accuracy, greater_than: 0)
   end
 
   @doc ""
-  @spec update_bot_locations(User.t, float, float) :: :ok
-  def update_bot_locations(user, lat, lon) do
+  @spec check_for_bot_events(t) :: t
+  def check_for_bot_events(%Location{user: user} = loc) do
+    maybe_do_async fn ->
+      user
+      |> User.get_subscribed_bots
+      |> bots_with_events(user, loc)
+      |> Enum.each(&trigger_bot_notification(user, &1))
+    end
+
+    loc
+  end
+
+  @doc ""
+  @spec update_bot_locations(t) :: t
+  def update_bot_locations(%Location{user: user} = loc) do
     if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
       maybe_do_async fn ->
         user
-        |> owned_bots_with_follow_me
-        |> Enum.each(&Bot.set_location(&1, lat, lon))
+        |> User.get_owned_bots_with_follow_me
+        |> Enum.each(&Bot.set_location(&1, loc.lat, loc.lon, loc.accuracy))
       end
     end
+
+    loc
   end
 
   defp maybe_do_async(fun) do
@@ -68,50 +97,38 @@ defmodule Wocky.Location do
     end
   end
 
-  defp bots_with_events(bots, user, lat, lon) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, lat, lon, &2))
+  defp bots_with_events(bots, user, loc) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, loc, &2))
   end
 
-  defmacrop log_check_result(user, bot_id, result) do
+  defmacrop log_check_result(user, bot, result) do
     quote do
       :ok = Logger.debug("""
       User #{unquote(user).id} #{unquote(result)} the perimeter \
-      of #{unquote(bot_id)}\
+      of #{unquote(bot).id}\
       """)
     end
   end
 
-  defp check_for_event(bot_id, user, lat, lon, acc) do
+  defp check_for_event(bot, user, loc, acc) do
     :ok = Logger.debug("""
-    Checking user #{user.id} for collision with bot #{bot_id} \
-    at location (#{lat},#{lon})...\
+    Checking user #{user.id} for collision with bot #{bot.id} \
+    at location (#{loc.lat},#{loc.lon})...\
     """)
-    bot = Bot.get(bot_id)
-    if is_nil(bot) do
-      :ok = Logger.warn("Could not find bot for ID #{bot_id}")
-      acc
-    else
-      bot
-      |> unless_owner(user)
-      |> intersects?(lat, lon)
-      |> handle_intersection(user, bot, acc)
-    end
-  end
-
-  defp unless_owner(bot, user) do
     # Don't check bots that are owned by the user
     if bot.user_id == user.id do
       :ok = Logger.debug(
         "Skipping bot #{bot.id} since it is owned by #{user.id}"
       )
-      nil
+      acc
     else
       bot
+      |> intersects?(loc)
+      |> handle_intersection(user, bot, acc)
     end
   end
 
-  defp intersects?(nil, _lat, _lon), do: false
-  defp intersects?(bot, lat, lon) do
+  defp intersects?(bot, loc) do
     radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
 
     if radius < 0 do
@@ -121,7 +138,7 @@ defmodule Wocky.Location do
       false
     else
       distance = Geocalc.distance_between(Map.from_struct(bot),
-                                          %{lat: lat, lon: lon})
+                                          Map.from_struct(loc))
       intersects = distance <= radius
       :ok = Logger.debug("""
       The distance of #{distance} meters is \
@@ -132,37 +149,37 @@ defmodule Wocky.Location do
     end
   end
 
-  defp handle_intersection(true, user, %Bot{id: bot_id} = bot, acc) do
-    if check_for_enter_event(user, bot_id) do
-      log_check_result(user, bot_id, "has entered")
-      BotEvent.add_event(user.id, bot_id, :enter)
+  defp handle_intersection(true, user, bot, acc) do
+    if check_for_enter_event(user, bot) do
+      log_check_result(user, bot, "has entered")
+      BotEvent.add_event(user.id, bot.id, :enter)
       [{bot, :enter} | acc]
     else
-      log_check_result(user, bot_id, "is within")
+      log_check_result(user, bot, "is within")
       acc
     end
   end
-  defp handle_intersection(false, user, %Bot{id: bot_id} = bot, acc) do
-    if check_for_exit_event(user, bot_id) do
-      log_check_result(user, bot_id, "has left")
-      BotEvent.add_event(user.id, bot_id, :exit)
+  defp handle_intersection(false, user, bot, acc) do
+    if check_for_exit_event(user, bot) do
+      log_check_result(user, bot, "has left")
+      BotEvent.add_event(user.id, bot.id, :exit)
       [{bot, :exit} | acc]
     else
-      log_check_result(user, bot_id, "is outside of")
+      log_check_result(user, bot, "is outside of")
       acc
     end
   end
 
-  defp check_for_enter_event(user, bot_id) do
-    case BotEvent.get_last_event_type(user.id, bot_id) do
+  defp check_for_enter_event(user, bot) do
+    case BotEvent.get_last_event_type(user.id, bot.id) do
       nil -> true
       :exit -> true
       :enter -> false
     end
   end
 
-  defp check_for_exit_event(user, bot_id) do
-    case BotEvent.get_last_event_type(user.id, bot_id) do
+  defp check_for_exit_event(user, bot) do
+    case BotEvent.get_last_event_type(user.id, bot.id) do
       nil -> false
       :exit -> false
       :enter -> true
@@ -183,15 +200,4 @@ defmodule Wocky.Location do
       EventHandler.broadcast(event)
     end
   end
-
-  defp owned_bots_with_follow_me(user) do
-    user
-    |> User.get_owned_bots
-    |> Enum.filter(&following_me?(&1))
-  end
-
-  defp following_me?(%Bot{follow_me: true, follow_me_expiry: expiry}) do
-    !Timestamp.expired?(expiry)
-  end
-  defp following_me?(_), do: false
 end

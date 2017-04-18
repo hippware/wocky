@@ -1,5 +1,5 @@
-defmodule Wocky.Repo.Migrations.AddBotTable do
-  use Ecto.Migration
+defmodule Wocky.Repo.Migrations.AddBotTables do
+  use Wocky.Repo.Migration
 
   def change do
     create table(:bots, primary_key: false) do
@@ -19,6 +19,13 @@ defmodule Wocky.Repo.Migrations.AddBotTable do
       add :alerts,           :boolean, null: false, default: true
       add :follow_me,        :boolean, null: false, default: false
       add :follow_me_expiry, :integer
+
+      timestamps()
+    end
+
+    create table(:bot_subscribers, primary_key: false) do
+      add :user_id, references(:users, type: :uuid), null: false
+      add :bot_id,  references(:bots, type: :uuid), null: false
 
       timestamps()
     end

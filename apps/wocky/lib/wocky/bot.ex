@@ -32,6 +32,8 @@ defmodule Wocky.Bot do
     timestamps()
 
     belongs_to :user, User
+
+    many_to_many :subscribers, User, join_through: "bot_subscribers"
   end
 
   @type id           :: binary
@@ -74,8 +76,8 @@ defmodule Wocky.Bot do
     Repo.get(Bot, id)
   end
 
-  @spec set_location(t, float, float) :: :ok
-  def set_location(%Bot{id: id} = bot, lat, lon) do
+  @spec set_location(t, float, float, float) :: :ok
+  def set_location(%Bot{id: id} = bot, lat, lon, _accuracy) do
     bot
     |> location_changeset(%{lat: lat, lon: lon})
     |> Repo.update!

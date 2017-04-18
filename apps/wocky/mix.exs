@@ -32,6 +32,7 @@ defmodule Wocky.Mixfile do
         notification_system: "test",
         algolia_user_index_name: nil,
         algolia_bot_index_name: nil,
+        async_location_processing: false,
         enable_bot_event_notifications: false,
         enable_follow_me_updates: false,
         enable_follow_me: false,
