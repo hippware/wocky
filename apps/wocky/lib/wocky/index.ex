@@ -110,12 +110,12 @@ defmodule Wocky.Index do
   end
 
   def handle_call({:reindex, :bots}, _, state) do
-    # Bot
-    # |> Repo.all
-    # |> Enum.each(
-    #     fn (%Bot{id: bot_id} = bot) ->
-    #       update_index(state.bot_index, bot_id, bot, @bot_fields)
-    #     end)
+    Bot
+    |> Repo.all
+    |> Enum.each(
+        fn (%Bot{id: bot_id} = bot) ->
+          update_index(state.bot_index, bot_id, bot, @bot_fields)
+        end)
 
     {:reply, :ok, state}
   end
