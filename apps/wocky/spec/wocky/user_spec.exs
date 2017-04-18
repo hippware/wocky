@@ -76,6 +76,16 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "register/4" do
+    context "with an invalid ID" do
+
+    end
+
+    context "with a valid ID" do
+
+    end
+  end
+
   describe "update/2" do
     before do
       fields = %{
@@ -375,6 +385,14 @@ defmodule Wocky.UserSpec do
   #   end
   end
 
+  describe "set_avatar/2" do
+
+  end
+
+  describe "set_location/5" do
+
+  end
+
   describe "delete/1" do
     before do
       {:ok, _} = Token.assign(shared.id, ID.new)
@@ -480,5 +498,33 @@ defmodule Wocky.UserSpec do
     it "should return nil if the user does not exist" do
       ID.new |> User.get_phone_number |> should(eq nil)
     end
+  end
+
+  describe "get_subscribed_bots/1" do
+
+  end
+
+  describe "get_owned_bots/1" do
+
+  end
+
+  describe "get_owned_bots_with_follow_me/1" do
+
+  end
+
+  describe "to_jid/1" do
+
+  end
+
+  describe "to_jid_string/1" do
+
+  end
+
+  describe "to_bare_jid/1" do
+
+  end
+
+  describe "to_bare_jid_string/1" do
+
   end
 end
