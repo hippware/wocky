@@ -34,16 +34,15 @@ stop(Host) ->
 %%%===================================================================
 
 -spec user_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
-user_updated(LUser, LServer) ->
+user_updated(LUser, _LServer) ->
     User = ?wocky_user:find(LUser),
-    WithContact = wocky_db_roster:users_with_contact(
-                    jid:make(LUser, LServer, <<>>)),
+    WithContact = ?wocky_roster_item:users_with_contact(LUser),
     lists:foreach(notify_user_update(User, _), WithContact).
 
 notify_user_update(nil, _) -> ok;
 notify_user_update(Item = #{id := User, server := Server}, WithContact) ->
     ejabberd_router:route(jid:make(User, Server, <<>>),
-                          WithContact,
+                          jid:make(WithContact, Server, <<>>),
                           user_change_packet(Item)).
 
 user_change_packet(Item) ->

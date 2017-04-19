@@ -12,7 +12,7 @@ defmodule Wocky.RosterItem do
 
   @foreign_key_type :binary_id
   schema "roster_items" do
-    field :nick,         :binary
+    field :name,         :binary
     field :ask,          AskEnum
     field :subscription, SubscriptionEnum
     field :groups,       :binary
@@ -23,7 +23,7 @@ defmodule Wocky.RosterItem do
     timestamps()
   end
 
-  @type nick :: binary
+  @type name :: binary
   @type ask  :: :in | :out | :both | :none
   @type subscription :: :both | :from | :to | :none | :remove
   @type version :: integer
@@ -32,7 +32,7 @@ defmodule Wocky.RosterItem do
   @type t :: %RosterItem{
     user_id:       User.id,
     contact:       User::t,
-    nick:          nick,
+    name:          name,
     ask:           ask,
     subscription:  subscription,
     groups:        [group],
@@ -41,12 +41,12 @@ defmodule Wocky.RosterItem do
   }
 
   @doc "Write a conversation record to the database"
-  @spec put(User.id, User.id, nick, [group], ask, subscription) :: :ok
-  def put(user_id, contact_id, nick, groups, ask, subscription) do
+  @spec put(User.id, User.id, name, [group], ask, subscription) :: :ok
+  def put(user_id, contact_id, name, groups, ask, subscription) do
     item = %RosterItem{
       user_id: user_id,
       contact_id: contact_id,
-      nick: nick,
+      name: name,
       ask: ask,
       subscription: subscription,
       groups: serialise_groups(groups),
@@ -122,16 +122,12 @@ defmodule Wocky.RosterItem do
   defp normalise_version(nil), do: 0
   defp normalise_version(ver), do: Timex.to_gregorian_microseconds(ver)
 
-  defp serialise_groups(groups) do
-    Enum.join(groups, <<0>>)
-  end
+  defp serialise_groups(groups), do: Enum.join(groups, <<0>>)
 
   defp deserialise(nil), do: nil
   defp deserialise(item) do
     Map.put(item, :groups, deserialise_groups(item.groups))
   end
 
-  defp deserialise_groups(groups) do
-    String.split(groups, <<0>>)
-  end
+  defp deserialise_groups(groups), do: String.split(groups, <<0>>)
 end

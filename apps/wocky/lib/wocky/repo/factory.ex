@@ -49,7 +49,7 @@ defmodule Wocky.Repo.Factory do
 
   def roster_item_factory do
     %RosterItem{
-      nick: Name.first_name,
+      name: Name.first_name,
       ask: :none,
       subscription: :both,
       groups: ""

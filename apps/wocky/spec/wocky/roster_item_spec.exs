@@ -64,7 +64,7 @@ defmodule Wocky.RosterItemSpec do
 
         item = RosterItem.find(shared.user.id, contact.id)
         item.contact |> should(eq contact)
-        item.nick |> should(eq name)
+        item.name |> should(eq name)
         item.ask |> should(eq :out)
         item.subscription |> should(eq :both)
         item.groups |> should(have_count length(groups))
@@ -84,7 +84,7 @@ defmodule Wocky.RosterItemSpec do
 
         item = RosterItem.find(shared.user.id, shared.contact.id)
         item.contact |> should(eq shared.contact)
-        item.nick |> should(eq new_name)
+        item.name |> should(eq new_name)
         item.ask |> should(eq :out)
         item.subscription |> should(eq :both)
         item.groups |> hd |> should(eq shared.group)

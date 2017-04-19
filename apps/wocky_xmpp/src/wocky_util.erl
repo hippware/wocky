@@ -132,13 +132,15 @@ intersection(A, B) ->
 intersection(A, B, EqualityFun) ->
     lists:filter(fun(E) -> lists:any(EqualityFun(E, _), B) end, A).
 
--spec is_friend(subscription_type(), [binary()]) -> boolean().
+-spec is_friend(?wocky_roster_item:subscription_type(), [binary()])
+-> boolean().
 is_friend(Subscription, Groups) ->
     Subscription =:= both
     andalso
     not lists:member(<<"__blocked__">>, Groups).
 
--spec is_follower(subscription_type(), [binary()]) -> boolean().
+-spec is_follower(?wocky_roster_item:subscription_type(), [binary()])
+-> boolean().
 is_follower(Subscription, Groups) ->
     (Subscription =:= both orelse Subscription =:= from)
     andalso

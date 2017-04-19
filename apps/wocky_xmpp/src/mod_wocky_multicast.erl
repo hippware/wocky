@@ -102,9 +102,10 @@ get_address(From, #xmlel{name = <<"address">>, attrs = Attrs}, Acc) ->
             Acc
     end.
 
-get_contact_addresses(FilterFun, #jid{luser = LUser, lserver = LServer}) ->
-    Roster = wocky_db_roster:get_roster(LUser, LServer),
-    Filtered = lists:filter(FilterFun, Roster),
+get_contact_addresses(FilterFun, #jid{luser = LUser}) ->
+    Roster = ?wocky_roster_item:find(LUser),
+    RosterItems = [wocky_roster:to_wocky_roster(R) || R <- Roster],
+    Filtered = lists:filter(FilterFun, RosterItems),
     [jid:make(CJ) || #wocky_roster{contact_jid = CJ} <- Filtered].
 
 add_target(Attrs, Acc) ->

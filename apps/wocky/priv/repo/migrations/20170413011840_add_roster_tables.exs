@@ -9,7 +9,7 @@ defmodule Wocky.Repo.Migrations.AddRosterTables do
     create table(:roster_items) do
       add :user_id,      references(:users, type: :uuid, on_delete: :delete_all)
       add :contact_id,   references(:users, type: :uuid, on_delete: :delete_all)
-      add :nick,         :string,  null: false
+      add :name,         :string,  null: false
       add :ask,          :integer, size: 1, null: false
       add :subscription, :integer, size: 1, null: false
       add :groups,       :string,  size: 1024, null: false

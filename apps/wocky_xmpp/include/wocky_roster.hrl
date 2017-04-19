@@ -2,8 +2,7 @@
 -ifndef(WOCKY_ROSTER_HRL).
 -define(WOCKY_ROSTER_HRL, 1).
 
--type subscription_type() :: both | from | to | none | remove.
--type ask_type() :: in | out | both | none.
+-include("wocky.hrl").
 
 -record(wocky_roster, {
           user                  :: binary(),
@@ -14,8 +13,8 @@
           last_name = <<>>      :: binary(),
           name = <<>>           :: binary(),
           avatar = <<>>         :: binary(),
-          subscription = none   :: subscription_type(),
-          ask = none            :: ask_type(),
+          subscription = none   :: ?wocky_roster_item:subscription(),
+          ask = none            :: ?wocky_roster_item:ask(),
           groups = []           :: [binary()],
           xs = []               :: [term()]
          }).
