@@ -25,6 +25,10 @@ to_wocky_roster(#{user_id := UserID,
                   groups := Groups
                  }) ->
     ContactJID = jid:to_lower(jid:make(ContactID, wocky_app:server(), <<>>)),
+    #{avatar := Avatar,
+      handle := Handle,
+      first_name := FirstName,
+      last_name := LastName} = Contact,
     #wocky_roster{
        user = UserID,
        server = wocky_app:server(),
@@ -33,10 +37,10 @@ to_wocky_roster(#{user_id := UserID,
        subscription = Subscription,
        ask = Ask,
        groups = Groups,
-       avatar = safe_value(maps:get(avatar, Contact, nil)),
-       contact_handle = safe_value(maps:get(handle, Contact, nil)),
-       first_name = safe_value(maps:get(first_name, Contact, nil)),
-       last_name = safe_value(maps:get(last_name, Contact, nil))}.
+       avatar = safe_value(Avatar),
+       contact_handle = safe_value(Handle),
+       first_name = safe_value(FirstName),
+       last_name = safe_value(LastName)}.
 
 safe_value(nil) -> <<>>;
 safe_value(Value) -> Value.
