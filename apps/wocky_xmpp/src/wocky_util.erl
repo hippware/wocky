@@ -26,9 +26,6 @@
    iq_id/0,
    make_error_iq_response/2,
 
-   is_friend/2,
-   is_follower/2,
-
    v1_uuid_order/2,
 
    remove_redundant_jids/1
@@ -131,20 +128,6 @@ intersection(A, B) ->
 -spec intersection(list(T), list(T), fun((T, T) -> boolean())) -> list(T).
 intersection(A, B, EqualityFun) ->
     lists:filter(fun(E) -> lists:any(EqualityFun(E, _), B) end, A).
-
--spec is_friend(?wocky_roster_item:subscription_type(), [binary()])
--> boolean().
-is_friend(Subscription, Groups) ->
-    Subscription =:= both
-    andalso
-    not lists:member(<<"__blocked__">>, Groups).
-
--spec is_follower(?wocky_roster_item:subscription_type(), [binary()])
--> boolean().
-is_follower(Subscription, Groups) ->
-    (Subscription =:= both orelse Subscription =:= from)
-    andalso
-    not lists:member(<<"__blocked__">>, Groups).
 
 %% Sorting function to sort v1 UUIDs by time (as is done by C*)
 -spec v1_uuid_order(binary(), binary()) -> boolean().

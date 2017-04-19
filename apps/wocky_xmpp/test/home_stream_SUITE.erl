@@ -230,14 +230,10 @@ auto_publish_bot(Config) ->
         %% test_helper:remove_contact/2 results in an asymmetric pair of rosters
         %% whcih should never happpen. This workaround will suffice until
         %% that gets fixed.
-        wocky_db_roster:delete_roster_item(
-          ?ALICE, ?LOCAL_CONTEXT, ?TIM_B_JID),
-        wocky_db_roster:delete_roster_item(
-          ?TIM, ?LOCAL_CONTEXT, ?ALICE_B_JID),
-        wocky_db_roster:delete_roster_item(
-          ?ALICE, ?LOCAL_CONTEXT, ?KAREN_B_JID),
-        wocky_db_roster:delete_roster_item(
-          ?KAREN, ?LOCAL_CONTEXT, ?ALICE_B_JID),
+        ?wocky_roster_item:delete(?ALICE, ?TIM),
+        ?wocky_roster_item:delete(?TIM, ?ALICE),
+        ?wocky_roster_item:delete(?ALICE, ?KAREN),
+        ?wocky_roster_item:delete(?KAREN, ?ALICE),
 
         test_helper:subscribe(Tim, Alice),
 

@@ -86,11 +86,11 @@ get_addresses(From, AddressesEl) ->
 get_address(From, #xmlel{name = <<"address">>, attrs = Attrs}, Acc) ->
     case xml:get_attr(<<"type">>, Attrs) of
         {value, <<"friends">>} ->
-            get_contact_addresses(
-              wocky_db_roster:is_friend(_), From) ++ Acc;
+            Friends = ?wocky_roster_item:friends(From#jid.luser),
+            get_contact_addresses(Friends) ++ Acc;
         {value, <<"followers">>} ->
-            get_contact_addresses(
-              wocky_db_roster:is_follower(_), From) ++ Acc;
+            Followers = ?wocky_roster_item:followers(From#jid.luser),
+            get_contact_addresses(Followers) ++ Acc;
         {value, <<"to">>} ->
             add_target(Attrs, Acc);
         {value, Type} ->
@@ -102,11 +102,9 @@ get_address(From, #xmlel{name = <<"address">>, attrs = Attrs}, Acc) ->
             Acc
     end.
 
-get_contact_addresses(FilterFun, #jid{luser = LUser}) ->
-    Roster = ?wocky_roster_item:find(LUser),
-    RosterItems = [wocky_roster:to_wocky_roster(R) || R <- Roster],
-    Filtered = lists:filter(FilterFun, RosterItems),
-    [jid:make(CJ) || #wocky_roster{contact_jid = CJ} <- Filtered].
+get_contact_addresses(Contacts) ->
+    RosterItems = [wocky_roster:to_wocky_roster(R) || R <- Contacts],
+    [jid:make(CJ) || #wocky_roster{contact_jid = CJ} <- RosterItems].
 
 add_target(Attrs, Acc) ->
     case xml:get_attr(<<"jid">>, Attrs) of

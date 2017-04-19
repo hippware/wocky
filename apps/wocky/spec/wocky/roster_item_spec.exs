@@ -3,9 +3,9 @@ defmodule Wocky.RosterItemSpec do
 
   alias Faker.Lorem
   alias Faker.Name
-  alias Wocky.RosterItem
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.RosterItem
 
   before_all do
     # Avoid handle clashes after repeated runs
@@ -25,8 +25,9 @@ defmodule Wocky.RosterItemSpec do
 
     {:ok,
      user: user,
-     contacts: contacts,
-     contact_ids: Enum.map(contacts, &Map.get(&1, :id)),
+     contacts: Enum.sort(contacts),
+     contact: hd(contacts),
+     contact_ids: contacts |> Enum.map(&Map.get(&1, :id)) |> Enum.sort,
      rosterless_user: user2,
      groups: groups}
   end
@@ -35,6 +36,7 @@ defmodule Wocky.RosterItemSpec do
     it "should return all roster items for a user" do
       RosterItem.find(shared.user.id)
       |> Enum.map(&Map.get(&1, :contact))
+      |> Enum.sort
       |> should(eq shared.contacts)
     end
 
@@ -76,14 +78,11 @@ defmodule Wocky.RosterItemSpec do
     end
 
     context "when there is an existing entry for the contact" do
-      before do
-        setup_pair(shared)
-      end
-
       it "should update the existing contact" do
         new_name = Name.first_name
+        new_groups = take_random(shared.groups)
         RosterItem.put(shared.user.id, shared.contact.id, new_name,
-                       [shared.group], :out, :both)
+                       new_groups, :out, :both)
         |> should(eq :ok)
 
         item = RosterItem.find(shared.user.id, shared.contact.id)
@@ -91,48 +90,34 @@ defmodule Wocky.RosterItemSpec do
         item.name |> should(eq new_name)
         item.ask |> should(eq :out)
         item.subscription |> should(eq :both)
-        item.groups |> hd |> should(eq shared.group)
+        item.groups |> should(eq new_groups)
       end
     end
   end
 
   describe "version/1" do
-    before do
-      setup_pair(shared)
-    end
-
     it "should return the version for the roster" do
       RosterItem.version(shared.user.id)
       |> should(be_binary())
     end
 
-    it "should return 0 for a user with no roster items" do
-      RosterItem.version(shared.rosterless_user.id) |> should(eq "0")
+    it "should return 0-0 for a user with no roster items" do
+      RosterItem.version(shared.rosterless_user.id) |> should(eq "0-0")
     end
 
-    it "should return 0 for a non-existant user" do
-      RosterItem.version(ID.new) |> should(eq "0")
+    it "should return 0-0 for a non-existant user" do
+      RosterItem.version(ID.new) |> should(eq "0-0")
     end
 
     it "should change when the roster is written to" do
       initial = RosterItem.version(shared.user.id)
-
       RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
                      [], :out, :both)
-
       RosterItem.version(shared.user.id) |> should(be :!=, initial)
     end
   end
 
   describe "delete/1" do
-    before do
-      {:ok, params} = setup_pair(shared)
-      setup_pair(params[:user], shared)
-      setup_pair(params[:user], shared)
-      setup_pair(params[:user], shared)
-      setup_pair(params[:user], shared)
-    end
-
     it "should remove all contacts from the user" do
       RosterItem.delete(shared.user.id) |> should(eq :ok)
       RosterItem.find(shared.user.id, shared.contact.id) |> should(eq nil)
@@ -147,15 +132,10 @@ defmodule Wocky.RosterItemSpec do
   end
 
   describe "delete/2" do
-    before do
-      {:ok, params} = setup_pair(shared)
-      setup_pair(params[:user], shared)
-    end
-
     it "should remove the contact from the user's roster" do
       RosterItem.delete(shared.user.id, shared.contact.id) |> should(eq :ok)
       RosterItem.find(shared.user.id, shared.contact.id) |> should(eq nil)
-      RosterItem.find(shared.user.id) |> should(have_length 1)
+      RosterItem.find(shared.user.id) |> should(have_length 4)
     end
 
     it "should change the roster version" do
@@ -183,18 +163,157 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
+  describe "has_contact/2" do
+    it "should return true when the user has a the specified contact" do
+      RosterItem.has_contact(shared.user.id, hd(shared.contacts).id)
+      |> should(be_true())
+    end
 
-  defp setup_pair(shared) do
-    user = Factory.insert(:user, %{server: shared.server})
-    setup_pair(user, shared)
+    it "should return false when the user has the contact with non-none ask" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     [], :out, :both)
+      RosterItem.has_contact(shared.user.id, hd(shared.contacts).id)
+      |> should(be_false())
+    end
+
+    it "should return false for non-existant contacts" do
+      RosterItem.has_contact(shared.user.id, ID.new)
+      |> should(be_false())
+    end
   end
 
-  defp setup_pair(user, shared) do
-    contact = Factory.insert(:user, %{server: shared.server})
-    group = Lorem.word
-    insert_roster_pair(user, contact, [group])
-    {:ok, user: user, contact: contact, group: group}
+  describe "is_friend/2" do
+    it "should return true when a user is subscribed" do
+      RosterItem.is_friend(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the contact is in the __blocked__ group" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     ["__blocked__"], :none, :both)
+      RosterItem.is_friend(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false if the contact does not have 'both' subscription" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     [], :none, :from)
+      RosterItem.is_friend(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false for non-existant contacts" do
+      RosterItem.is_friend(shared.user.id, ID.new)
+      |> should(be_false())
+      RosterItem.is_friend(shared.user.id, shared.rosterless_user.id)
+      |> should(be_false())
+    end
   end
+
+  describe "is_follower/2" do
+    it "should return true when a user is subscribed" do
+      RosterItem.is_follower(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the contact is in the __blocked__ group" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     ["__blocked__"], :none, :both)
+      RosterItem.is_follower(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return true if the contact has 'from' subscription" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     [], :none, :from)
+      RosterItem.is_follower(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the contact does not have 'both' or 'from' subscription" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     [], :none, :to)
+      RosterItem.is_follower(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false for non-existant contacts" do
+      RosterItem.is_follower(shared.user.id, ID.new)
+      |> should(be_false())
+      RosterItem.is_follower(shared.user.id, shared.rosterless_user.id)
+      |> should(be_false())
+    end
+  end
+
+  describe "followers/1" do
+    it "should return the full list of followers" do
+      RosterItem.followers(shared.user.id)
+      |> Enum.map(&Map.get(&1, :contact))
+      |> Enum.sort
+      |> should(eq shared.contacts)
+    end
+
+    it "should not return users who aren't followers" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     [], :none, :to)
+      RosterItem.followers(shared.user.id)
+      |> Enum.map(&Map.get(&1, :contact))
+      |> Enum.sort
+      |> should(eq shared.contacts -- [shared.contact])
+    end
+
+    it "should return an empty list for non-users" do
+      RosterItem.followers(ID.new) |> should(eq [])
+    end
+
+    it "should return an empty list for users with no contacts" do
+      RosterItem.followers(shared.rosterless_user.id) |> should(eq [])
+    end
+  end
+
+  describe "friends/1" do
+    it "should return the full list of friends" do
+      RosterItem.friends(shared.user.id)
+      |> Enum.map(&Map.get(&1, :contact))
+      |> Enum.sort
+      |> should(eq shared.contacts)
+    end
+
+    it "should not return users who aren't friends" do
+      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
+                     [], :none, :from)
+      RosterItem.friends(shared.user.id)
+      |> Enum.map(&Map.get(&1, :contact))
+      |> Enum.sort
+      |> should(eq shared.contacts -- [shared.contact])
+    end
+
+    it "should return an empty list for non-users" do
+      RosterItem.friends(ID.new) |> should(eq [])
+    end
+
+    it "should return an empty list for users with no contacts" do
+      RosterItem.friends(shared.rosterless_user.id) |> should(eq [])
+    end
+  end
+
+  describe "bump_version/2" do
+    it "should change the version" do
+      initial = RosterItem.version(shared.user.id)
+      RosterItem.bump_version(shared.user.id, shared.contact.id)
+      |> should(eq :ok)
+      RosterItem.version(shared.user.id) |> should(be :!=, initial)
+    end
+
+    it "should not change the data" do
+      RosterItem.bump_version(shared.user.id, shared.contact.id)
+      |> should(eq :ok)
+      RosterItem.find(shared.user.id, shared.contact.id)
+      |> Map.get(:contact)
+      |> should(eq shared.contact)
+    end
+  end
+
 
   defp insert_roster_pair(user, contact, groups) do
     Factory.insert(
