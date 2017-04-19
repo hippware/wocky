@@ -33,11 +33,11 @@ defmodule Wocky.User do
 
     timestamps()
 
-    has_many :tokens, Token
-    has_many :devices, Device
     has_many :conversations, Conversation
-    has_many :tros_metadatas, TROSMetadata
+    has_many :devices, Device
     has_many :roster_items, RosterItem
+    has_many :tokens, Token
+    has_many :tros_metadatas, TROSMetadata
   end
 
   @type id           :: binary
