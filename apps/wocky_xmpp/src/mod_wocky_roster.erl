@@ -236,7 +236,7 @@ process_item_els(Item, []) -> Item.
 %% roster_get --------------------------------------------------------
 
 roster_get_hook(Acc, {LUser, _LServer}) ->
-    Items = [to_wocky_roster(R) || R <- ?wocky_roster_item:find(LUser)],
+    Items = to_wocky_roster(?wocky_roster_item:find(LUser)),
     lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
                      (_) ->
@@ -405,7 +405,7 @@ send_auto_reply(ToJID, JID1, Attrs) ->
 roster_get_subscription_lists_hook(_Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Items = [to_wocky_roster(R) || R <- ?wocky_roster_item:find(LUser)],
+    Items = to_wocky_roster(?wocky_roster_item:find(LUser)),
     JID = jid:make(User, Server, <<>>),
     fill_subscription_lists(JID, LServer, Items, [], []).
 
