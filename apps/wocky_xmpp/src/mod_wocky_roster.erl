@@ -143,7 +143,7 @@ create_sub_el(Items, Version) ->
 
 % If there are no items, there shouldn't be a version attribute
 maybe_version([], _) -> [];
-maybe_version(_, Version) -> [{<<"ver">>, integer_to_binary(Version)}].
+maybe_version(_, Version) -> [{<<"ver">>, Version}].
 
 process_iq_set(#jid{lserver = LServer} = From, To, #iq{sub_el = SubEl} = IQ) ->
     #xmlel{children = Els} = SubEl,
@@ -236,9 +236,8 @@ process_item_els(Item, []) -> Item.
 %% roster_get --------------------------------------------------------
 
 roster_get_hook(Acc, {LUser, _LServer}) ->
-    Items = [to_mim_roster(to_wocky_roster(R))
-             || R <- ?wocky_roster_item:find(LUser)],
-    lists:filter(fun (#roster{subscription = none, ask = in}) ->
+    Items = [to_wocky_roster(R) || R <- ?wocky_roster_item:find(LUser)],
+    lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
                      (_) ->
                          true

@@ -3,10 +3,14 @@ defmodule Wocky.RosterItemSpec do
 
   alias Faker.Lorem
   alias Faker.Name
-  alias Wocky.RosterGroup
   alias Wocky.RosterItem
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+
+  before_all do
+    # Avoid handle clashes after repeated runs
+    Wocky.Repo.delete_all(Wocky.User)
+  end
 
   before do
     # A user with 5 contacts in a randomised subset of 5 groups
@@ -99,15 +103,15 @@ defmodule Wocky.RosterItemSpec do
 
     it "should return the version for the roster" do
       RosterItem.version(shared.user.id)
-      |> should(be_integer())
+      |> should(be_binary())
     end
 
     it "should return 0 for a user with no roster items" do
-      RosterItem.version(shared.rosterless_user.id) |> should(eq 0)
+      RosterItem.version(shared.rosterless_user.id) |> should(eq "0")
     end
 
     it "should return 0 for a non-existant user" do
-      RosterItem.version(ID.new) |> should(eq 0)
+      RosterItem.version(ID.new) |> should(eq "0")
     end
 
     it "should change when the roster is written to" do
@@ -120,14 +124,38 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
+  describe "delete/1" do
+    before do
+      {:ok, params} = setup_pair(shared)
+      setup_pair(params[:user], shared)
+      setup_pair(params[:user], shared)
+      setup_pair(params[:user], shared)
+      setup_pair(params[:user], shared)
+    end
+
+    it "should remove all contacts from the user" do
+      RosterItem.delete(shared.user.id) |> should(eq :ok)
+      RosterItem.find(shared.user.id, shared.contact.id) |> should(eq nil)
+      RosterItem.find(shared.user.id) |> should(have_length 0)
+    end
+
+    it "should change the roster version" do
+      initial = RosterItem.version(shared.user.id)
+      RosterItem.delete(shared.user.id) |> should(eq :ok)
+      RosterItem.version(shared.user.id) |> should(be :!=, initial)
+    end
+  end
+
   describe "delete/2" do
     before do
-      setup_pair(shared)
+      {:ok, params} = setup_pair(shared)
+      setup_pair(params[:user], shared)
     end
 
     it "should remove the contact from the user's roster" do
       RosterItem.delete(shared.user.id, shared.contact.id) |> should(eq :ok)
       RosterItem.find(shared.user.id, shared.contact.id) |> should(eq nil)
+      RosterItem.find(shared.user.id) |> should(have_length 1)
     end
 
     it "should change the roster version" do
@@ -158,6 +186,10 @@ defmodule Wocky.RosterItemSpec do
 
   defp setup_pair(shared) do
     user = Factory.insert(:user, %{server: shared.server})
+    setup_pair(user, shared)
+  end
+
+  defp setup_pair(user, shared) do
     contact = Factory.insert(:user, %{server: shared.server})
     group = Lorem.word
     insert_roster_pair(user, contact, [group])

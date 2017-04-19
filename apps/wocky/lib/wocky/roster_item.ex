@@ -26,7 +26,7 @@ defmodule Wocky.RosterItem do
   @type name :: binary
   @type ask  :: :in | :out | :both | :none
   @type subscription :: :both | :from | :to | :none | :remove
-  @type version :: integer
+  @type version :: binary
   @type group :: binary
 
   @type t :: %RosterItem{
@@ -83,10 +83,19 @@ defmodule Wocky.RosterItem do
     |> normalise_version()
   end
 
-  @spec delete(User.id, User.id) :: :ok
-  def delete(user_id, contact) do
+  @spec delete(User.id) :: :ok
+  def delete(user_id) do
     RosterItem
     |> with_user(user_id)
+    |> Repo.delete_all
+    :ok
+  end
+
+  @spec delete(User.id, User.id) :: :ok
+  def delete(user_id, contact_id) do
+    RosterItem
+    |> with_user(user_id)
+    |> with_contact(contact_id)
     |> Repo.delete_all
     :ok
   end
@@ -119,8 +128,13 @@ defmodule Wocky.RosterItem do
     from r in query, preload: :contact
   end
 
-  defp normalise_version(nil), do: 0
-  defp normalise_version(ver), do: Timex.to_gregorian_microseconds(ver)
+  defp normalise_version(nil), do: "0"
+  defp normalise_version(ver) do
+    ver
+    |> Timex.to_gregorian_microseconds
+    |> Integer.to_string
+  end
+
 
   defp serialise_groups(groups), do: Enum.join(groups, <<0>>)
 

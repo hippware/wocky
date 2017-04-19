@@ -55,7 +55,7 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [roster]),
+    ?wocky_repo:delete_all(?wocky_roster_item),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol])
@@ -309,11 +309,10 @@ subscribed_follow(Config) ->
 %%-----------------------------------------------------------------
 
 remove_roster(Config, UserSpec) ->
-    [User, Server, _] = [escalus_ejabberd:unify_str_arg(Item) ||
+    [User, _, _] = [escalus_ejabberd:unify_str_arg(Item) ||
                             Item <- escalus_users:get_usp(Config, UserSpec)],
 
-    ok = escalus_ejabberd:rpc(mod_wocky_roster, remove_user_hook,
-                              [User, Server]).
+    ok = ?wocky_roster_item:delete(User).
 
 get_ver(Element) ->
     exml_query:path(Element, [{element, <<"query">>}, {attr, <<"ver">>}]).
