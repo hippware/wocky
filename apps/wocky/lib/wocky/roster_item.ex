@@ -5,10 +5,15 @@ defmodule Wocky.RosterItem do
 
   use Wocky.Repo.Model
 
+  import EctoEnum
+
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
   alias Wocky.User
   alias __MODULE__, as: RosterItem
+
+  defenum AskEnum, in: 0, out: 1, both: 2, none: 3
+  defenum SubscriptionEnum, none: 0, from: 1, to: 2, both: 3
 
   @foreign_key_type :binary_id
   schema "roster_items" do
