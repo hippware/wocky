@@ -58,9 +58,11 @@ defmodule Wocky.User.Location do
     struct
     |> cast(params, [:resource, :lat, :lon, :accuracy])
     |> validate_required([:resource, :lat, :lon, :accuracy])
-    |> validate_number(:lat, greater_than: -90, less_than: 90)
-    |> validate_number(:lon, greater_than: -180, less_than: 180)
-    |> validate_number(:accuracy, greater_than: 0)
+    |> validate_number(:lat, greater_than_or_equal_to: -90,
+                             less_than_or_equal_to: 90)
+    |> validate_number(:lon, greater_than_or_equal_to: -180,
+                             less_than_or_equal_to: 180)
+    |> validate_number(:accuracy, greater_than_or_equal_to: 0)
   end
 
   @doc ""
@@ -150,7 +152,7 @@ defmodule Wocky.User.Location do
   end
 
   defp handle_intersection(true, user, bot, acc) do
-    if check_for_enter_event(user, bot) do
+    if should_generate_enter_event(user, bot) do
       log_check_result(user, bot, "has entered")
       BotEvent.add_event(user.id, bot.id, :enter)
       [{bot, :enter} | acc]
@@ -160,7 +162,7 @@ defmodule Wocky.User.Location do
     end
   end
   defp handle_intersection(false, user, bot, acc) do
-    if check_for_exit_event(user, bot) do
+    if should_generate_exit_event(user, bot) do
       log_check_result(user, bot, "has left")
       BotEvent.add_event(user.id, bot.id, :exit)
       [{bot, :exit} | acc]
@@ -170,7 +172,7 @@ defmodule Wocky.User.Location do
     end
   end
 
-  defp check_for_enter_event(user, bot) do
+  defp should_generate_enter_event(user, bot) do
     case BotEvent.get_last_event_type(user.id, bot.id) do
       nil -> true
       :exit -> true
@@ -178,7 +180,7 @@ defmodule Wocky.User.Location do
     end
   end
 
-  defp check_for_exit_event(user, bot) do
+  defp should_generate_exit_event(user, bot) do
     case BotEvent.get_last_event_type(user.id, bot.id) do
       nil -> false
       :exit -> false
