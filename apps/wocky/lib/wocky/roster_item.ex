@@ -9,6 +9,7 @@ defmodule Wocky.RosterItem do
 
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
+  alias Wocky.StringList
   alias Wocky.User
   alias __MODULE__, as: RosterItem
 
@@ -20,7 +21,7 @@ defmodule Wocky.RosterItem do
     field :name,         :binary
     field :ask,          AskEnum
     field :subscription, SubscriptionEnum
-    field :groups,       :binary
+    field :groups,       StringList
 
     belongs_to :user,    User
     belongs_to :contact, User
@@ -45,20 +46,22 @@ defmodule Wocky.RosterItem do
     updated_at: DateTime::t
   }
 
+  @change_fields [:contact_id, :name, :ask, :subscription, :groups]
   @blocked_group "__blocked__"
 
   @doc "Write a conversation record to the database"
   @spec put(User.id, User.id, name, [group], ask, subscription) :: :ok
   def put(user_id, contact_id, name, groups, ask, subscription) do
-    item = %RosterItem{
-      user_id: user_id,
+    fields = %{
       contact_id: contact_id,
       name: name,
       ask: ask,
       subscription: subscription,
-      groups: serialise_groups(groups),
+      groups: groups
     }
-    Repo.insert!(item, on_conflict: :replace_all)
+    %RosterItem{user_id: user_id}
+    |> changeset(fields)
+    |> Repo.insert!(on_conflict: :replace_all)
     :ok
   end
 
@@ -68,7 +71,6 @@ defmodule Wocky.RosterItem do
     |> with_user(user_id)
     |> preload_contact()
     |> Repo.all
-    |> Enum.map(&deserialise/1)
   end
 
   @spec find(User.id, User.id) :: t | nil
@@ -78,7 +80,6 @@ defmodule Wocky.RosterItem do
     |> with_contact(contact_id)
     |> preload_contact()
     |> Repo.one
-    |> deserialise()
   end
 
   @spec version(User.id) :: version
@@ -159,7 +160,7 @@ defmodule Wocky.RosterItem do
   @spec bump_version(User.id, User.id) :: :ok
   def bump_version(user_id, contact_id) do
     find(user_id, contact_id)
-    |> changeset()
+    |> version_bump_changeset()
     |> Repo.update(force: true)
     :ok
   end
@@ -206,15 +207,6 @@ defmodule Wocky.RosterItem do
     verstr <> "-" <> Integer.to_string(count)
   end
 
-  defp serialise_groups(groups), do: Enum.join(groups, <<0>>)
-
-  defp deserialise(nil), do: nil
-  defp deserialise(item) do
-    Map.put(item, :groups, deserialise_groups(item.groups))
-  end
-
-  defp deserialise_groups(groups), do: String.split(groups, <<0>>)
-
   defp is_friend(%RosterItem{subscription: :both,
                              groups: groups}) do
     ! Enum.member?(groups, @blocked_group)
@@ -229,9 +221,13 @@ defmodule Wocky.RosterItem do
   end
   defp is_follower(_), do: false
 
-  defp changeset(struct) do
+  defp changeset(struct, params) do
+    cast(struct, params, @change_fields)
+  end
+
+  defp version_bump_changeset(struct) do
     struct
-    |> Ecto.Changeset.cast(%{}, [:user_id])
+    |> cast(%{}, [:user_id])
   end
 
 end

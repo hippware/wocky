@@ -318,19 +318,13 @@ defmodule Wocky.RosterItemSpec do
   defp insert_roster_pair(user, contact, groups) do
     Factory.insert(
       :roster_item,
-      user_id: user.id, contact_id: contact.id, groups: make_groups(groups))
+      user_id: user.id, contact_id: contact.id, groups: take_random(groups))
     Factory.insert(
       :roster_item,
-      user_id: contact.id, contact_id: user.id, groups: make_groups(groups))
+      user_id: contact.id, contact_id: user.id, groups: take_random(groups))
   end
 
-  defp make_groups(groups) do
-    groups
-    |> take_random()
-    |> Enum.join(<<0>>)
-  end
-
-  defp take_random(groups) do
-    Enum.take_random(groups, :rand.uniform(length(groups)))
+  defp take_random(list) do
+    Enum.take_random(list, :rand.uniform(length(list)))
   end
 end
