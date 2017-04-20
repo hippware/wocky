@@ -36,6 +36,7 @@
   "ex_guard": {:hex, :ex_guard, "1.2.0", "222aaa7a606f5e975d895f7cce1978351d8960924504915e33871465dc244f21", [:mix], [{:fs, "~> 0.9", [hex: :fs, optional: false]}]},
   "ex_machina": {:hex, :ex_machina, "2.0.0", "ec284c6f57233729cea9319e083f66e613e82549f78eccdb2059aeba5d0df9f3", [:mix], [{:ecto, "~> 2.1", [hex: :ecto, optional: true]}]},
   "exconstructor": {:hex, :exconstructor, "1.1.0", "272623a7b203cb2901c20cbb92c5c3ab103cc0087ff7c881979e046043346752", [:mix], []},
+  "excoveralls": {:hex, :excoveralls, "0.6.3", "894bf9254890a4aac1d1165da08145a72700ff42d8cb6ce8195a584cb2a4b374", [:mix], [{:exjsx, "~> 3.0", [hex: :exjsx, optional: false]}, {:hackney, ">= 0.12.0", [hex: :hackney, optional: false]}]},
   "exjsx": {:hex, :exjsx, "3.2.1", "1bc5bf1e4fd249104178f0885030bcd75a4526f4d2a1e976f4b428d347614f0f", [:mix], [{:jsx, "~> 2.8.0", [hex: :jsx, optional: false]}]},
   "exml": {:git, "https://github.com/esl/exml.git", "06e743197a519e86e7faef6b938e09e80cddeaa3", [tag: "2.4.1"]},
   "exometer": {:git, "https://github.com/Feuerlabs/exometer.git", "7a7bd8d2b52de4d90f65aa3f6044b0e988319b9e", [branch: "master"]},
