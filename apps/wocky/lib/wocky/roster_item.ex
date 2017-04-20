@@ -116,8 +116,8 @@ defmodule Wocky.RosterItem do
     :ok
   end
 
-  @spec users_with_contact(User.id) :: [User.id]
-  def users_with_contact(contact_id) do
+  @spec find_users_with_contact(User.id) :: [User.id]
+  def find_users_with_contact(contact_id) do
     RosterItem
     |> with_contact(contact_id)
     |> select_user()
@@ -137,29 +137,32 @@ defmodule Wocky.RosterItem do
 
   @spec followers(User.id) :: [t]
   def followers(user_id) do
-    find(user_id)
+    user_id
+    |> find()
     |> Enum.filter(&is_follower/1)
   end
 
   @spec friends(User.id) :: [t]
   def friends(user_id) do
-    find(user_id)
+    user_id
+    |> find()
     |> Enum.filter(&is_friend/1)
   end
 
   @spec is_friend(User.id, User.id) :: boolean
   def is_friend(user_id, contact_id) do
-    find(user_id, contact_id) |> is_friend
+    user_id |> find(contact_id) |> is_friend
   end
 
   @spec is_follower(User.id, User.id) :: boolean
   def is_follower(user_id, contact_id) do
-    find(user_id, contact_id) |> is_follower
+    user_id |> find(contact_id) |> is_follower
   end
 
   @spec bump_version(User.id, User.id) :: :ok
   def bump_version(user_id, contact_id) do
-    find(user_id, contact_id)
+    user_id
+    |> find(contact_id)
     |> version_bump_changeset()
     |> Repo.update(force: true)
     :ok
@@ -226,8 +229,7 @@ defmodule Wocky.RosterItem do
   end
 
   defp version_bump_changeset(struct) do
-    struct
-    |> cast(%{}, [:user_id])
+    cast(struct, %{}, [:user_id])
   end
 
 end

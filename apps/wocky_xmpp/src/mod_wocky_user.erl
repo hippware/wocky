@@ -487,5 +487,5 @@ error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
     {error, Stanza#xmlel{children = [ExtraChild | Children]}}.
 
 update_roster_contacts(LUser) ->
-    Users = ?wocky_roster_item:users_with_contact(LUser),
+    Users = ?wocky_roster_item:find_users_with_contact(LUser),
     lists:foreach(?wocky_roster_item:bump_version(_, LUser), Users).

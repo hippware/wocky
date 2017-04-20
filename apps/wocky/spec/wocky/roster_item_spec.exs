@@ -145,21 +145,21 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
-  describe "users_with_contact/1" do
+  describe "find_users_with_contact/1" do
     it "should return the count of users with a given contact" do
-      RosterItem.users_with_contact(shared.user.id)
+      RosterItem.find_users_with_contact(shared.user.id)
       |> should(eq shared.contact_ids)
-      RosterItem.users_with_contact(hd(shared.contacts).id)
+      RosterItem.find_users_with_contact(hd(shared.contacts).id)
       |> should(eq [shared.user.id])
     end
 
     it "should return 0 for a non-existant user" do
-      RosterItem.users_with_contact(ID.new) |> should(eq [])
+      RosterItem.find_users_with_contact(ID.new) |> should(eq [])
     end
 
     it "should return 0 for a user with no contacts" do
       user = Factory.insert(:user, %{server: shared.server})
-      RosterItem.users_with_contact(user.id) |> should(eq [])
+      RosterItem.find_users_with_contact(user.id) |> should(eq [])
     end
   end
 
