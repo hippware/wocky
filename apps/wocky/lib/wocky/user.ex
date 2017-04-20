@@ -36,6 +36,7 @@ defmodule Wocky.User do
     has_many :conversations, Conversation
     has_many :devices, Device
     has_many :roster_items, RosterItem
+    has_many :roster_contacts, RosterItem, foreign_key: :contact_id
     has_many :tokens, Token
     has_many :tros_metadatas, TROSMetadata
   end
