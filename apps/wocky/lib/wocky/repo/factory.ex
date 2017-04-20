@@ -11,6 +11,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Conversation
   alias Wocky.JID
   alias Wocky.Repo.ID
+  alias Wocky.TrafficLog
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
 
@@ -43,6 +44,14 @@ defmodule Wocky.Repo.Factory do
     %TROSMetadata{
       id: ID.new,
       access: Lorem.sentence
+    }
+  end
+
+  def traffic_log_factory do
+    %TrafficLog{
+      ip: Internet.ip_v6_address,
+      packet: Lorem.paragraph,
+      incoming: false,
     }
   end
 
