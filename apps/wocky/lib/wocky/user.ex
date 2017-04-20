@@ -174,12 +174,23 @@ defmodule Wocky.User do
     |> Repo.one
   end
 
+  @doc "Subscribe to the bot"
+  @spec subscribe_to_bot(t, Bot.t) :: :ok
+  def subscribe_to_bot(user, bot) do
+    user
+    |> Repo.preload(:subscriptions)
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(:subscriptions, [bot])
+    |> Repo.update!
+
+    :ok
+  end
+
   @doc "Returns all bots that the user subscribes to"
   @spec get_subscribed_bots(t) :: [Bot.t]
   def get_subscribed_bots(user) do
-    user
-    |> Ecto.assoc(:subscriptions)
-    |> Repo.all
+    user = Repo.preload(user, :subscriptions)
+    user.subscriptions
   end
 
   @doc "Returns all bots that the user owns"
@@ -190,7 +201,7 @@ defmodule Wocky.User do
     |> Repo.all
   end
 
-  @doc "Returns all bots that the user owns as has set to 'follow me'"
+  @doc "Returns all bots that the user owns and has set to 'follow me'"
   @spec get_owned_bots_with_follow_me(t) :: [Bot.t]
   def get_owned_bots_with_follow_me(user) do
     user
@@ -201,7 +212,7 @@ defmodule Wocky.User do
 
   defp with_follow_me(query) do
     from b in query,
-      where: b.follow_me == ^true and b.follow_me_expiry < ^Timestamp.now
+      where: b.follow_me == ^true and b.follow_me_expiry > ^Timestamp.now
   end
 
   @doc """
@@ -271,7 +282,7 @@ defmodule Wocky.User do
 
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
   def set_location(user, resource, lat, lon, accuracy) do
-    case Location.store(user, resource, lat, lon, accuracy) do
+    case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
         loc
         |> Location.check_for_bot_events

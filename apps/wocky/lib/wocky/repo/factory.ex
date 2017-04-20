@@ -51,7 +51,6 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-
   def bot_factory do
     %Bot{
       id: ID.new,
@@ -66,8 +65,8 @@ defmodule Wocky.Repo.Factory do
       lat: Address.latitude,
       lon: Address.longitude,
       radius: :rand.uniform(100) * 1000,
-      visibility: 1,
-      alerts: 1,
+      visibility: 100,
+      alerts: true,
       follow_me: false
     }
   end

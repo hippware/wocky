@@ -23,6 +23,7 @@
   "dialyxir": {:hex, :dialyxir, "0.5.0", "5bc543f9c28ecd51b99cc1a685a3c2a1a93216990347f259406a910cf048d1d7", [:mix], []},
   "distillery": {:hex, :distillery, "1.3.1", "211231af29ea55c79143d601a2caaf5936cc7b99e73bef25d78a0ff7f321b7fe", [:mix], []},
   "ecto": {:hex, :ecto, "2.1.4", "d1ba932813ec0e0d9db481ef2c17777f1cefb11fc90fa7c142ff354972dfba7e", [:mix], [{:db_connection, "~> 1.1", [hex: :db_connection, optional: true]}, {:decimal, "~> 1.2", [hex: :decimal, optional: false]}, {:mariaex, "~> 0.8.0", [hex: :mariaex, optional: true]}, {:poison, "~> 2.2 or ~> 3.0", [hex: :poison, optional: true]}, {:poolboy, "~> 1.5", [hex: :poolboy, optional: false]}, {:postgrex, "~> 0.13.0", [hex: :postgrex, optional: true]}, {:sbroker, "~> 1.0", [hex: :sbroker, optional: true]}]},
+  "ecto_homoiconic_enum": {:hex, :ecto_homoiconic_enum, "0.1.1", "7050ad4aed308b74c97cc078f4011c89ae0e021a4c5a7657eb8a6d09933bf52b", [:mix], [{:ecto, "~> 2.1", [hex: :ecto, optional: false]}, {:postgrex, "~> 0.13", [hex: :postgrex, optional: true]}]},
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
   "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "8c44adaa81d26fdf4b76bfe835a9776248de3fa3", [branch: "working-2.0.1"]},
   "elvis": {:hex, :elvis_core, "0.3.5", "9c6de2da5317081d12512ca34ec9cac858d3a169e6882e86bfac97fa47962c4d", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, optional: false]}, {:lager, "3.2.4", [hex: :lager, optional: false]}, {:zipper, "1.0.1", [hex: :zipper, optional: false]}]},

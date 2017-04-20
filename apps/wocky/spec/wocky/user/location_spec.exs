@@ -1,220 +1,274 @@
+Code.require_file("spec/support/test_event_handler.ex")
+
 defmodule Wocky.User.LocationSpec do
   use ESpec
   use Wocky.JID
 
+  import ChangesetAssertions
+
+  alias Ecto.Changeset
+  alias Faker.Address
   alias Wocky.Bot
-  alias Wocky.PushNotifier
+  alias Wocky.Events.BotPerimeterEvent
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.User
+  alias Wocky.User.BotEvent
   alias Wocky.User.Location
 
+  before_all do
+    TestEventHandler.init
+    Application.put_env(:wocky, :event_handler, TestEventHandler)
+  end
+
   before do
-    # owner = Factory.insert(:user)
-    # user = Factory.insert(:user)
-    # jid = User.to_jid(user, "testing")
+    owner = Factory.insert(:user)
+    user = Factory.insert(:user)
 
-    # bot_list = Factory.insert_list(3, :bot, user_id: owner.id)
-    # bot = hd(bot_list)
+    bot_list = Factory.insert_list(3, :bot, user_id: owner.id)
+    bot = hd(bot_list)
 
-    # bots = Enum.into(bot_list, %{},
-    #                  fn (%Bot{id: id} = b) -> {id, b} end)
-    # bot_jids = Enum.map(bot_list, &Bot.to_jid(&1))
+    :ok = User.subscribe_to_bot(user, bot)
 
-    # allow :ejabberd_router |> to(accept :route, fn (_, _, _) -> :ok end)
-    # allow PushNotifier |> to(accept :push, fn (_, _) -> :ok end)
-    # allow User |> to(accept :get_subscribed_bots, fn (_) -> bot_jids end)
-    # allow User |> to(accept :add_bot_event, fn (_, _, _) -> true end)
-    # allow User |> to(accept :get_last_bot_event, fn (_, _) -> [] end)
-    # allow Bot |> to(accept :get, fn (key) -> bots[key] end)
-
-    # {:ok, user: user, jid: jid, bot: bot}
+    {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end
 
   finally do
-    # Repo.delete_all(User)
-    # Repo.delete_all(Bot)
+    TestEventHandler.reset
+    Repo.delete!(shared.owner)
+    Repo.delete!(shared.user)
   end
 
-  describe "store/5" do
+  describe "changeset/2 validations" do
+    it "should pass with valid attributes" do
+      data = %{resource: "testing", lat: 1.0, lon: 1.0, accuracy: 10}
 
+      %Location{user: shared.user}
+      |> Location.changeset(data)
+      |> should(be_valid())
+    end
+
+    it "should fail if fields are missing" do
+      %Location{user: shared.user}
+      |> Location.changeset(%{})
+      |> should(have_errors([:resource, :lat, :lon, :accuracy]))
+    end
+
+    it "should fail if the accuracy is negative" do
+      data = %{resource: "testing", lat: 1.0, lon: 1.0, accuracy: -1}
+
+      %Location{user: shared.user}
+      |> Location.changeset(data)
+      |> should(have_errors([:accuracy]))
+    end
+  end
+
+  describe "insert/5" do
+    before do
+      result = Location.insert(
+        shared.user,
+        "testing",
+        Address.latitude,
+        Address.longitude,
+        10
+      )
+
+      {:ok, result: result}
+    end
+
+    it "should return a successful result" do
+      shared.result |> should(be_ok_result())
+    end
   end
 
   describe "check_for_bot_events/1" do
-    xcontext "with a user location that is inside a bot perimeter" do
+    context "with a user location that is inside a bot perimeter" do
       before do
-        {:shared, inside_loc: {shared.bot.lat, shared.bot.lon, 10}}
+        loc = %Location{
+          user: shared.user,
+          lat: shared.bot.lat,
+          lon: shared.bot.lon,
+          accuracy: 10
+        }
+
+        {:ok, inside_loc: loc}
+      end
+
+      context "when the user owns the bot" do
+        before do
+          :ok = User.subscribe_to_bot(shared.owner, shared.bot)
+          loc = %Location{shared.inside_loc | user: shared.owner}
+          Location.check_for_bot_events(loc)
+        end
+
+        it "should not store an enter event" do
+          event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+          event |> should(be_nil())
+        end
+
+        it "should not generate a notification" do
+          TestEventHandler.get_events |> should(be_empty())
+        end
+      end
+
+      context "when the bot has a negative radius" do
+        before do
+          shared.bot
+          |> Changeset.change(%{radius: -1})
+          |> Repo.update!
+
+          Location.check_for_bot_events(shared.inside_loc)
+        end
+
+        it "should not store an enter event" do
+          event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+          event |> should(be_nil())
+        end
+
+        it "should not generate a notification" do
+          TestEventHandler.get_events |> should(be_empty())
+        end
       end
 
       context "when there are no existing enter events" do
         before do
-          :ok = Location.user_location_changed(shared.jid,
-                                              shared.inside_loc,
-                                              false)
+          Location.check_for_bot_events(shared.inside_loc)
         end
 
-        it "should generate an enter event" do
-          expect User
-          |> to(accepted :add_bot_event, [shared.user, shared.bot.id, :enter])
+        it "should store an enter event" do
+          shared.user.id
+          |> BotEvent.get_last_event_type(shared.bot.id)
+          |> should(eq :enter)
         end
 
         it "should generate a notification" do
-          expect :ejabberd_router |> to(accepted :route)
-        end
+          [{_, %BotPerimeterEvent{} = event}] = TestEventHandler.get_events
 
-        it "should generate a push notification" do
-          expect PushNotifier |> to(accepted :push)
+          event.user.id |> should(eq shared.user.id)
+          event.bot.id |> should(eq shared.bot.id)
+          event.event |> should(eq :enter)
         end
       end
 
       context "when there is already an existing enter event" do
         before do
-          bot_id = shared.bot.id
-          allow User
-          |> to(accept :get_last_bot_event,
-                      fn (_, ^bot_id) -> [%{event: "enter"}]
-                          (_, _) -> []
-                      end)
-
-          :ok = Location.user_location_changed(shared.jid,
-                                              shared.inside_loc,
-                                              false)
+          event = BotEvent.insert(shared.user, shared.bot, :enter)
+          Location.check_for_bot_events(shared.inside_loc)
+          {:ok, event: event}
         end
 
-        it "should not generate an enter event" do
-          expect User |> to_not(accepted :add_bot_event)
+        it "should not store an enter event" do
+          event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+          event.id |> should(eq shared.event.id)
         end
 
         it "should not generate a notification" do
-          expect :ejabberd_router |> to_not(accepted :route)
-        end
-
-        it "should not generate a push notification" do
-          expect PushNotifier |> to_not(accepted :push)
+          TestEventHandler.get_events |> should(be_empty())
         end
       end
     end
 
-    xcontext "with a user location that is outside a bot perimeter" do
+    context "with a user location that is outside a bot perimeter" do
       before do
-        loc = Factory.build(:location)
-        {:shared, outside_loc: {loc.lat, loc.lon, loc.accuracy}}
+        loc = Factory.build(:location, %{user: shared.user})
+        {:shared, outside_loc: loc}
       end
 
       context "when there is already an existing enter event" do
         before do
-          bot_id = shared.bot.id
-          allow User
-          |> to(accept :get_last_bot_event,
-                      fn (_, ^bot_id) -> [%{event: "enter"}]
-                          (_, _) -> []
-                      end)
-
-          :ok = Location.user_location_changed(shared.jid,
-                                              shared.outside_loc,
-                                              false)
+          event = BotEvent.insert(shared.user, shared.bot, :enter)
+          Location.check_for_bot_events(shared.outside_loc)
+          {:ok, event: event}
         end
 
-        it "should generate an exit event" do
-          expect User
-          |> to(accepted :add_bot_event, [shared.user, shared.bot.id, :exit])
+        it "should store an exit event" do
+          shared.user.id
+          |> BotEvent.get_last_event_type(shared.bot.id)
+          |> should(eq :exit)
         end
 
         it "should generate a notification" do
-          expect :ejabberd_router |> to(accepted :route)
-        end
+          [{_, %BotPerimeterEvent{} = event}] = TestEventHandler.get_events
 
-        it "should generate a push notification" do
-          expect PushNotifier |> to(accepted :push)
+          event.user.id |> should(eq shared.user.id)
+          event.bot.id |> should(eq shared.bot.id)
+          event.event |> should(eq :exit)
         end
       end
 
       context "when there is already an existing exit event" do
         before do
-          bot_id = shared.bot.id
-          allow User
-          |> to(accept :get_last_bot_event,
-                      fn (_, ^bot_id) -> [%{event: "exit"}]
-                          (_, _) -> []
-                      end)
-
-          :ok = Location.user_location_changed(shared.jid,
-                                              shared.outside_loc,
-                                              false)
+          event = BotEvent.insert(shared.user, shared.bot, :exit)
+          Location.check_for_bot_events(shared.outside_loc)
+          {:ok, event: event}
         end
 
-        it "should not generate an exit event" do
-          expect User |> to_not(accepted :add_bot_event)
+        it "should not store an exit event" do
+          event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+          event.id |> should(eq shared.event.id)
         end
 
         it "should not generate a notification" do
-          expect :ejabberd_router |> to_not(accepted :route)
-        end
-
-        it "should not generate a push notification" do
-          expect PushNotifier |> to_not(accepted :push)
+          TestEventHandler.get_events |> should(be_empty())
         end
       end
 
       context "when there are no events" do
         before do
-          :ok = Location.user_location_changed(shared.jid,
-                                              shared.outside_loc,
-                                              false)
+          Location.check_for_bot_events(shared.outside_loc)
         end
 
-        it "should not generate an exit event" do
-          expect User |> to_not(accepted :add_bot_event)
+        it "should not store an exit event" do
+          event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+          event |> should(be_nil())
         end
 
         it "should not generate a notification" do
-          expect :ejabberd_router |> to_not(accepted :route)
-        end
-
-        it "should not generate a push notification" do
-          expect PushNotifier |> to_not(accepted :push)
+          TestEventHandler.get_events |> should(be_empty())
         end
       end
     end
   end
 
   describe "update_bot_locations/1" do
-    xcontext "with a user that has a bot set to 'follow me'" do
+    context "with a user that has a bot set to 'follow me'" do
       before do
-        allow Bot |> to(accept :set_location, fn (_, _) -> :ok end)
-        loc = Factory.build(:location)
-        {:shared, loc: {loc.lat, loc.lon, loc.accuracy}}
+        loc = Factory.build(:location, %{user: shared.owner})
+        {:shared, loc: loc}
       end
 
       context "and an expiry in the future" do
         before do
           expiry = Timestamp.now + 86400
-          Factory.insert(:bot,
-                        user_id: shared.user.id,
-                        follow_me: true,
-                        follow_me_expiry: expiry)
+          shared.bot
+          |> Changeset.change(%{follow_me: true, follow_me_expiry: expiry})
+          |> Repo.update!
 
-          :ok = Location.user_location_changed(shared.jid, shared.loc, false)
+          Location.update_bot_locations(shared.loc)
         end
 
         it "should update the bot location" do
-          expect Bot |> to(accepted :set_location)
+          bot = Bot.get(shared.bot.id)
+          bot.lat |> should(eq shared.loc.lat)
+          bot.lon |> should(eq shared.loc.lon)
         end
       end
 
       context "and an expiry in the past" do
         before do
-          expiry = :wocky_db.now_to_timestamp(:os.timestamp()) - 86400
-          Factory.insert(:bot,
-                        owner: User.to_bare_jid_string(shared.user),
-                        follow_me: true,
-                        follow_me_expiry: expiry)
+          expiry = Timestamp.now - 86400
+          shared.bot
+          |> Changeset.change(%{follow_me: true, follow_me_expiry: expiry})
+          |> Repo.update!
 
-          :ok = Location.user_location_changed(shared.jid, shared.loc, false)
+          Location.update_bot_locations(shared.loc)
         end
 
         it "should not update the bot location" do
-          expect Bot |> to_not(accepted :set_location)
+          bot = Bot.get(shared.bot.id)
+          bot.lat |> should_not(eq shared.loc.lat)
+          bot.lon |> should_not(eq shared.loc.lon)
         end
       end
     end

@@ -5,6 +5,7 @@ defmodule Wocky.Bot do
   use Wocky.JID
 
   alias Wocky.Index
+  alias Wocky.User
   alias __MODULE__, as: Bot
 
   require Record

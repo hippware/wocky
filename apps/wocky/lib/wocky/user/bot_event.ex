@@ -5,14 +5,18 @@ defmodule Wocky.User.BotEvent do
 
   use Wocky.Repo.Model
 
+  import EctoHomoiconicEnum, only: [defenum: 2]
+
   alias Wocky.Bot
   alias Wocky.User
   alias __MODULE__, as: BotEvent
 
+  defenum EventType, [:enter, :exit]
+
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_bot_events" do
-    field :event,  :string, null: false
+    field :event,  EventType, null: false
 
     timestamps()
 
@@ -28,31 +32,39 @@ defmodule Wocky.User.BotEvent do
     event: event
   }
 
+  @spec get_last_event(User.id, Bot.id) :: t | nil
+  def get_last_event(user_id, bot_id) do
+    Repo.one(
+      from e in BotEvent,
+      where: e.user_id == ^user_id and e.bot_id == ^bot_id,
+      order_by: [desc: :created_at],
+      limit: 1
+    )
+  end
+
   @spec get_last_event_type(User.id, Bot.id) :: :enter | :exit | nil
   def get_last_event_type(user_id, bot_id) do
-    event = Repo.one(
+    Repo.one(
       from e in BotEvent,
         where: e.user_id == ^user_id and e.bot_id == ^bot_id,
         select: e.event,
         order_by: [desc: :created_at],
         limit: 1
     )
-
-    case event do
-      nil -> nil
-      "enter" -> :enter
-      "exit" -> :exit
-    end
   end
 
-  @spec add_event(User.id, Bot.id, event) :: :ok
-  def add_event(user_id, bot_id, event) do
-    Repo.insert!(
-      %BotEvent{
-        user_id: user_id,
-        bot_id: bot_id,
-        event: to_string(event)
-      }
-    )
+  @spec insert(User.t, Bot.t, event) :: t
+  def insert(user, bot, event) do
+    %BotEvent{user: user, bot: bot}
+    |> changeset(%{event: event})
+    |> Repo.insert!
+  end
+
+  defp changeset(struct, params) do
+    struct
+    |> cast(params, [:event])
+    |> validate_required([:event])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:bot_id)
   end
 end

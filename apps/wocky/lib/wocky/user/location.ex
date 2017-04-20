@@ -5,7 +5,6 @@ defmodule Wocky.User.Location do
   use Wocky.JID
 
   alias Wocky.Bot
-  alias Wocky.EventHandler
   alias Wocky.Events.BotPerimeterEvent
   alias Wocky.GeoUtils
   alias Wocky.User
@@ -38,9 +37,9 @@ defmodule Wocky.User.Location do
   }
 
   @doc "Store a user location datapoint"
-  @spec store(User.t, User.resource, float, float, float)
+  @spec insert(User.t, User.resource, float, float, float)
     :: {:ok, t} | {:error, any}
-  def store(user, resource, lat, lon, accuracy) do
+  def insert(user, resource, lat, lon, accuracy) do
     data = %{
       resource: resource,
       lat: GeoUtils.normalize_latitude(lat),
@@ -54,7 +53,7 @@ defmodule Wocky.User.Location do
     |> Repo.insert
   end
 
-  defp changeset(struct, params) do
+  def changeset(struct, params) do
     struct
     |> cast(params, [:resource, :lat, :lon, :accuracy])
     |> validate_required([:resource, :lat, :lon, :accuracy])
@@ -154,7 +153,7 @@ defmodule Wocky.User.Location do
   defp handle_intersection(true, user, bot, acc) do
     if should_generate_enter_event(user, bot) do
       log_check_result(user, bot, "has entered")
-      BotEvent.add_event(user.id, bot.id, :enter)
+      BotEvent.insert(user, bot, :enter)
       [{bot, :enter} | acc]
     else
       log_check_result(user, bot, "is within")
@@ -164,7 +163,7 @@ defmodule Wocky.User.Location do
   defp handle_intersection(false, user, bot, acc) do
     if should_generate_exit_event(user, bot) do
       log_check_result(user, bot, "has left")
-      BotEvent.add_event(user.id, bot.id, :exit)
+      BotEvent.insert(user, bot, :exit)
       [{bot, :exit} | acc]
     else
       log_check_result(user, bot, "is outside of")
@@ -199,7 +198,9 @@ defmodule Wocky.User.Location do
         event: event
       }
 
-      EventHandler.broadcast(event)
+      event_handler().broadcast(event)
     end
   end
+
+  defp event_handler, do: Application.fetch_env!(:wocky, :event_handler)
 end
