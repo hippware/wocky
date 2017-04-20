@@ -82,7 +82,7 @@ defmodule Wocky.TROS.Metadata do
     :ok
   end
 
-  defp changeset(struct, params \\ %{}) do
+  defp changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
     |> validate_required(:access)

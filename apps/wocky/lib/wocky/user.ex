@@ -179,8 +179,8 @@ defmodule Wocky.User do
   def subscribe_to_bot(user, bot) do
     user
     |> Repo.preload(:subscriptions)
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.put_assoc(:subscriptions, [bot])
+    |> change()
+    |> put_assoc(:subscriptions, [bot])
     |> Repo.update!
 
     :ok
@@ -290,7 +290,7 @@ defmodule Wocky.User do
 
         :ok
 
-      {:error, _} = error->
+      {:error, _} = error ->
         error
     end
   end
