@@ -18,7 +18,7 @@ defmodule Wocky.RosterItem do
 
   @foreign_key_type :binary_id
   schema "roster_items" do
-    field :name,         :binary
+    field :name,         :binary, default: ""
     field :ask,          AskEnum
     field :subscription, SubscriptionEnum
     field :groups,       StringList
@@ -50,7 +50,8 @@ defmodule Wocky.RosterItem do
   @blocked_group "__blocked__"
 
   @doc "Write a roster record to the database"
-  @spec put(User.id, User.id, name, [group], ask, subscription) :: :ok
+  @spec put(User.id, User.id, name, [group], ask, subscription)
+  :: {:ok, RosterItem.t}
   def put(user_id, contact_id, name, groups, ask, subscription) do
     fields = %{
       contact_id: contact_id,
@@ -59,10 +60,10 @@ defmodule Wocky.RosterItem do
       subscription: subscription,
       groups: groups
     }
-    %RosterItem{user_id: user_id}
-    |> changeset(fields)
-    |> Repo.insert!(on_conflict: :replace_all)
-    :ok
+    {:ok,
+     %RosterItem{user_id: user_id}
+     |> changeset(fields)
+     |> Repo.insert!(on_conflict: :replace_all)}
   end
 
   @spec get(User.id) :: [t]

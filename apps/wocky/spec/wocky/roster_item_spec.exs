@@ -64,8 +64,10 @@ defmodule Wocky.RosterItemSpec do
         contact = Factory.insert(:user, %{server: shared.server})
         name = Name.first_name
         groups = take_random(shared.groups)
-        RosterItem.put(shared.user.id, contact.id, name, groups, :out, :both)
-        |> should(eq :ok)
+        put_result = RosterItem.put(shared.user.id, contact.id,
+                                    name, groups, :out, :both)
+        put_result |> should(be_ok_result())
+        put_result |> Kernel.elem(1) |> should(be_struct RosterItem)
 
         item = RosterItem.get(shared.user.id, contact.id)
         item.contact |> should(eq contact)
@@ -74,15 +76,24 @@ defmodule Wocky.RosterItemSpec do
         item.subscription |> should(eq :both)
         item.groups |> should(have_count length(groups))
       end
+
+      it "should not fail with an empty name" do
+        contact = Factory.insert(:user, %{server: shared.server})
+        groups = take_random(shared.groups)
+        put_result = RosterItem.put(shared.user.id, contact.id,
+                                    "", groups, :out, :both)
+        put_result |> should(be_ok_result())
+      end
     end
 
     context "when there is an existing entry for the contact" do
       it "should update the existing contact" do
         new_name = Name.first_name
         new_groups = take_random(shared.groups)
-        RosterItem.put(shared.user.id, shared.contact.id, new_name,
-                       new_groups, :out, :both)
-        |> should(eq :ok)
+        put_result =RosterItem.put(shared.user.id, shared.contact.id, new_name,
+                                   new_groups, :out, :both)
+        put_result |> should(be_ok_result())
+        put_result |> Kernel.elem(1) |> should(be_struct RosterItem)
 
         item = RosterItem.get(shared.user.id, shared.contact.id)
         item.contact |> should(eq shared.contact)

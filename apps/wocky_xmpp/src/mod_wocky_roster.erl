@@ -178,8 +178,8 @@ do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
                groups = Groups,
                ask = Ask,
                subscription = Subscription} = Item2,
-            ?wocky_roster_item:put(LUser, ContactUser, Name,
-                                   Groups, Ask, Subscription)
+            {ok, _} = ?wocky_roster_item:put(LUser, ContactUser, Name,
+                                             Groups, Ask, Subscription)
     end,
 
     Item3 = ejabberd_hooks:run_fold(roster_process_item, LServer,
@@ -368,7 +368,8 @@ do_roster_action(LUser, ContactUser, {insert, OldItem, NewItem}) ->
        groups = Groups,
        ask = Ask,
        subscription = Subscription} = NewItem,
-    ?wocky_roster_item:put(LUser, ContactUser, Nick, Groups, Ask, Subscription),
+    {ok, _} = ?wocky_roster_item:put(LUser, ContactUser, Nick,
+                                     Groups, Ask, Subscription),
     {push, OldItem, NewItem}.
 
 get_auto_reply(out, _, _, _) -> none;
