@@ -27,6 +27,7 @@
   "edown": {:hex, :edown, "0.8.1", "7333b6f6b7bbc736c263e9ceb8261667d7c8f7d92e251829f1a9fe8f24e7b694", [:rebar3], []},
   "ejabberd": {:git, "https://github.com/hippware/mim-ejabberd.git", "8c44adaa81d26fdf4b76bfe835a9776248de3fa3", [branch: "working-2.0.1"]},
   "elvis": {:hex, :elvis_core, "0.3.5", "9c6de2da5317081d12512ca34ec9cac858d3a169e6882e86bfac97fa47962c4d", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, optional: false]}, {:lager, "3.2.4", [hex: :lager, optional: false]}, {:zipper, "1.0.1", [hex: :zipper, optional: false]}]},
+  "email_checker": {:hex, :email_checker, "0.1.0", "6efd6132e5ab3c9af57b4b8f5d9e456af17db6de4a2af1596d61697949d5eb52", [:mix], [{:socket, "~> 0.3.1", [hex: :socket, optional: false]}]},
   "eper": {:hex, :eper, "0.94.0", "f5fb2daa0df8878748e1c598428eda942a173e5121ff35c1d632129b84593a3a", [:rebar], []},
   "erlando": {:git, "https://github.com/rabbitmq/erlando.git", "1c1ef25a9bc228671b32b4a6ee30c7525314b1fd", [branch: "master"]},
   "erlang_murmurhash": {:git, "https://github.com/hippware/erlang-murmurhash.git", "73fe63aad252c9d503c889935f30370995026403", [branch: "master"]},
@@ -103,6 +104,7 @@
   "setup": {:git, "git://github.com/uwiger/setup.git", "5c7d635145e5ffb8b0fa6b470770cdd1cb16b0b2", [tag: "1.6"]},
   "slackex": {:git, "https://github.com/hippware/slackex.git", "d68531f26506b3ce55e449c1f65659b41b15c8ca", [branch: "master"]},
   "snappy": {:git, "https://github.com/fdmanana/snappy-erlang-nif.git", "4e3b8611b6a1ff85a417b0f2fad8886c9485810e", [branch: "master"]},
+  "socket": {:hex, :socket, "0.3.11", "46004230045c2207c0b90adb9abe3ba15a83e634b341ac37af39a4adf48ed00b", [:mix], []},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], []},
   "stringprep": {:hex, :stringprep, "1.0.8", "870d72db031796177261af88d1e6eb081dc314ad217377d441e5ea3c8504a310", [:rebar3], [{:p1_utils, "1.0.7", [hex: :p1_utils, optional: false]}]},
   "sweet_xml": {:hex, :sweet_xml, "0.6.5", "dd9cde443212b505d1b5f9758feb2000e66a14d3c449f04c572f3048c66e6697", [:mix], []},
@@ -113,5 +115,4 @@
   "uuid": {:hex, :uuid_erl, "1.6.0", "1ba81515eeb37eeb7f1563b658e30cdf18bcaf1fd6a390bbf3838461753e69d8", [:rebar3], [{:quickrand, "~> 1.6.0", [hex: :quickrand, optional: false]}]},
   "wsecli": {:git, "https://github.com/esl/wsecli.git", "a89054cf71c5ee9e780998e5acb2a78fd3419dd9", [branch: "master"]},
   "wsock": {:git, "https://github.com/esl/wsock", "251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383", [ref: "251e18b"]},
-  "z_stdlib": {:git, "https://github.com/zotonic/z_stdlib.git", "b9f19b95e12c53b0287abab74f1dbaf84c0ef2f6", [ref: "b9f19b9"]},
   "zipper": {:git, "https://github.com/inaka/zipper.git", "f06f2c77d79f20571c589a31b138214cf0e4428f", [branch: "master"]}}

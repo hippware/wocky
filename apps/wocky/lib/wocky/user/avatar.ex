@@ -3,6 +3,7 @@ defmodule Wocky.User.Avatar do
   Validation and logic regarding user avatars.
   """
 
+  alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.User
 
@@ -15,6 +16,15 @@ defmodule Wocky.User.Avatar do
   @spec check_is_local(t, User.server) :: {:ok, t} | {:error, any}
   def check_is_local({server, _} = avatar, server), do: {:ok, avatar}
   def check_is_local(_, _), do: {:error, :not_local_file}
+
+  @spec check_valid_filename(t) :: {:ok, t} | {:error, any}
+  def check_valid_filename({_server, file_id} = avatar) do
+    if ID.valid?(file_id) do
+      {:ok, avatar}
+    else
+      {:error, :invalid_file}
+    end
+  end
 
   @spec check_owner(t, User.id) :: {:ok, t} | {:error, any}
   def check_owner({_server, id} = avatar, user_id) do

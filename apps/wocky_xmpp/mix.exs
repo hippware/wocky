@@ -90,7 +90,6 @@ defmodule Wocky.XMPP.Mixfile do
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
-      {:z_stdlib,   github: "zotonic/z_stdlib",      ref: "b9f19b9"},
       {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-2.0.1"},
       {:schemata,   github: "hippware/schemata",     branch: "master"},
       {:exometer_core,

@@ -75,6 +75,7 @@ defmodule Wocky.Mixfile do
       {:ok,                   "~> 1.2", runtime: false},
       {:lager,                "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
+      {:email_checker,        "~> 0.1.0"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",

@@ -348,7 +348,6 @@ get_set_req_field(#xmlel{attrs = Attrs, children = Children}) ->
         check_type(Field, Type),
         check_editability(Field),
         Value <- get_value(Children, Field),
-        check_valid_value(field_name(Field), field_type(Field), Value),
         {ok, {Var, Value}}]).
 
 
@@ -406,32 +405,6 @@ get_value([_ | Tail], Field) ->
     get_value(Tail, Field).
 
 
-check_valid_value("email", "string", Value) ->
-    case z_email_utils:is_email(Value) of
-        true -> ok;
-        false -> not_valid("Invalid email address")
-    end;
-
-check_valid_value(_, "file", Value) ->
-    Server = wocky_xmpp_app:server(),
-    case (?tros:parse_url(Value)) of
-        {ok, {Server, File}} -> check_file(File);
-        {ok, {OtherServer, _}} -> not_valid(["Server ", OtherServer,
-                                             " is not local"]);
-        {error, invalid_url} -> not_valid("Invalid file URL")
-    end;
-
-check_valid_value(_, _, _) ->
-    ok.
-
-
-check_file(File) ->
-    case ?wocky_id:'valid?'(File) of
-        true -> ok;
-        false -> not_valid("Invalid file name (must be UUID)")
-    end.
-
-
 set_user_fields(LUser, LServer, Fields) ->
     Row = build_row(Fields),
     case maps:size(Row) of
@@ -452,9 +425,7 @@ build_row(Fields) ->
                 #{},
                 Fields).
 
-valid_user_fields() ->
-    [<<"handle">>, <<"avatar">>, <<"first_name">>,
-     <<"last_name">>, <<"email">>].
+valid_user_fields() -> ?wocky_user:valid_update_fields().
 
 update_user(LUser, LServer, Row) ->
    case ?wocky_user:update(LUser, Row) of
@@ -463,16 +434,21 @@ update_user(LUser, LServer, Row) ->
          ejabberd_hooks:run(wocky_user_updated, LServer, [LUser, LServer]),
          ok;
 
-      {error, duplicate_handle} ->
-         error_with_child(
-           ?ERRT_CONFLICT(?MYLANG, <<"Could not set handle - already in use">>),
-           #xmlel{name = <<"field">>, attrs = [{<<"var">>, <<"handle">>}]});
+      {error, #{'valid?' := false} = Changeset} ->
+           handle_validation_errors(?wocky_errors:to_map(Changeset));
 
       {error, Reason} ->
          Message = iolist_to_binary(
                      io_lib:format("Unexpected error: ~p", [Reason])),
          {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Message)}
    end.
+
+handle_validation_errors(#{handle := <<"unavailable">>}) ->
+    error_with_child(
+      ?ERRT_CONFLICT(?MYLANG, <<"Could not set handle - already in use">>),
+      #xmlel{name = <<"field">>, attrs = [{<<"var">>, <<"handle">>}]});
+handle_validation_errors(Errors) ->
+    not_valid(?wocky_errors:render_errors(Errors)).
 
 not_valid(Message) ->
     El = #xmlel{children = Children} =
