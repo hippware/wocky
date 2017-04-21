@@ -3,9 +3,14 @@
 -include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_roster.hrl").
 
--export([to_wocky_roster/3, to_wocky_roster/1]).
+-export([to_wocky_roster/3, to_wocky_roster/1, to_map/1]).
 
 -type wocky_roster_item() :: #wocky_roster{}.
+
+
+%%%===================================================================
+%%% Hook callbacks
+%%%===================================================================
 
 -spec to_wocky_roster(ejabberd:luser(),
                       binary() | ejabberd:simple_jid(),
@@ -50,6 +55,25 @@ to_wocky_roster(#{user_id := UserID,
        contact_handle = safe_value(Handle),
        first_name = safe_value(FirstName),
        last_name = safe_value(LastName)}.
+
+-spec to_map(wocky_roster()) -> map().
+to_map(#wocky_roster{
+          user = UserID,
+          contact_jid = {ContactID, _, _},
+          name = Name,
+          subscription = Subscription,
+          ask = Ask,
+          groups = Groups}) ->
+    #{user_id => UserID,
+      contact_id => ContactID,
+      name => Name,
+      subscription => Subscription,
+      ask => Ask,
+      groups => Groups}.
+
+%%%===================================================================
+%%% Helpers
+%%%===================================================================
 
 safe_value(nil) -> <<>>;
 safe_value(Value) -> Value.

@@ -173,13 +173,7 @@ do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
             send_unsubscribing_presence(From, OldItem);
 
         _ ->
-            #wocky_roster{
-               name = Name,
-               groups = Groups,
-               ask = Ask,
-               subscription = Subscription} = Item2,
-            {ok, _} = ?wocky_roster_item:put(LUser, ContactUser, Name,
-                                             Groups, Ask, Subscription)
+            {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(Item2))
     end,
 
     Item3 = ejabberd_hooks:run_fold(roster_process_item, LServer,
@@ -262,7 +256,7 @@ process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
 
     StateChange = state_change(Direction, Subscription, Ask, Type),
     Action = process_state_change(StateChange, Item),
-    Push = do_roster_action(LUser, ContactUser, Action),
+    Push = do_roster_action(Action),
 
     ToJID = jid:make(User, Server, <<"">>),
     AutoReply = get_auto_reply(Direction, Subscription, Ask, Type),
@@ -360,16 +354,10 @@ process_state_change({NewSubscription, Pending}, Item) ->
                },
     {insert, Item, NewItem}.
 
-do_roster_action(_, _, none) ->
+do_roster_action(none) ->
     none;
-do_roster_action(LUser, ContactUser, {insert, OldItem, NewItem}) ->
-    #wocky_roster{
-       name = Nick,
-       groups = Groups,
-       ask = Ask,
-       subscription = Subscription} = NewItem,
-    {ok, _} = ?wocky_roster_item:put(LUser, ContactUser, Nick,
-                                     Groups, Ask, Subscription),
+do_roster_action({insert, OldItem, NewItem}) ->
+    {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(NewItem)),
     {push, OldItem, NewItem}.
 
 get_auto_reply(out, _, _, _) -> none;

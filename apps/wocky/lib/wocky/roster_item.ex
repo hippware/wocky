@@ -46,22 +46,15 @@ defmodule Wocky.RosterItem do
     updated_at: DateTime.t
   }
 
-  @change_fields [:contact_id, :name, :ask, :subscription, :groups]
+  @change_fields [:user_id, :contact_id, :name, :ask, :subscription, :groups]
   @blocked_group "__blocked__"
 
   @doc "Write a roster record to the database"
-  @spec put(User.id, User.id, name, [group], ask, subscription)
+  @spec put(map)
   :: {:ok, RosterItem.t}
-  def put(user_id, contact_id, name, groups, ask, subscription) do
-    fields = %{
-      contact_id: contact_id,
-      name: name,
-      ask: ask,
-      subscription: subscription,
-      groups: groups
-    }
+  def put(fields) do
     {:ok,
-     %RosterItem{user_id: user_id}
+     %RosterItem{}
      |> changeset(fields)
      |> Repo.insert!(on_conflict: :replace_all)}
   end

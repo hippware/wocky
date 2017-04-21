@@ -64,8 +64,12 @@ defmodule Wocky.RosterItemSpec do
         contact = Factory.insert(:user, %{server: shared.server})
         name = Name.first_name
         groups = take_random(shared.groups)
-        put_result = RosterItem.put(shared.user.id, contact.id,
-                                    name, groups, :out, :both)
+        put_result = RosterItem.put(%{user_id: shared.user.id,
+                                      contact_id: contact.id,
+                                      name: name,
+                                      groups: groups,
+                                      ask: :out,
+                                      subscription: :both})
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct RosterItem)
 
@@ -80,8 +84,12 @@ defmodule Wocky.RosterItemSpec do
       it "should not fail with an empty name" do
         contact = Factory.insert(:user, %{server: shared.server})
         groups = take_random(shared.groups)
-        put_result = RosterItem.put(shared.user.id, contact.id,
-                                    "", groups, :out, :both)
+        put_result = RosterItem.put(%{user_id: shared.user.id,
+                                      contact_id: contact.id,
+                                      name: "",
+                                      groups: groups,
+                                      ask: :out,
+                                      subscription: :both})
         put_result |> should(be_ok_result())
       end
     end
@@ -90,8 +98,12 @@ defmodule Wocky.RosterItemSpec do
       it "should update the existing contact" do
         new_name = Name.first_name
         new_groups = take_random(shared.groups)
-        put_result =RosterItem.put(shared.user.id, shared.contact.id, new_name,
-                                   new_groups, :out, :both)
+        put_result = RosterItem.put(%{user_id: shared.user.id,
+                                      contact_id: shared.contact.id,
+                                      name: new_name,
+                                      groups: new_groups,
+                                      ask: :out,
+                                      subscription: :both})
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct RosterItem)
 
@@ -121,8 +133,12 @@ defmodule Wocky.RosterItemSpec do
 
     it "should change when the roster is written to" do
       initial = RosterItem.version(shared.user.id)
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :out, :both)
+      RosterItem.put(%{user_id: shared.user.id,
+                       contact_id: shared.contact.id,
+                       name: Name.first_name,
+                       groups: [],
+                       ask: :out,
+                       subscription: :both})
       RosterItem.version(shared.user.id) |> should(be :!=, initial)
     end
   end
@@ -162,7 +178,7 @@ defmodule Wocky.RosterItemSpec do
       RosterItem.find_users_with_contact(shared.user.id)
       |> Enum.sort
       |> should(eq shared.contacts)
-      RosterItem.find_users_with_contact(hd(shared.contacts).id)
+      RosterItem.find_users_with_contact(shared.contact.id)
       |> should(eq [shared.user])
     end
 
@@ -178,14 +194,13 @@ defmodule Wocky.RosterItemSpec do
 
   describe "has_contact/2" do
     it "should return true when the user has a the specified contact" do
-      RosterItem.has_contact(shared.user.id, hd(shared.contacts).id)
+      RosterItem.has_contact(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
     it "should return false when the user has the contact with non-none ask" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :out, :both)
-      RosterItem.has_contact(shared.user.id, hd(shared.contacts).id)
+      RosterItem.put(default_item(shared, ask: :out))
+      RosterItem.has_contact(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
@@ -202,15 +217,13 @@ defmodule Wocky.RosterItemSpec do
     end
 
     it "should return false if the contact is in the __blocked__ group" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     ["__blocked__"], :none, :both)
+      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
       RosterItem.is_friend(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return false if the contact does not have 'both' subscription" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :none, :from)
+      RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.is_friend(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
@@ -230,22 +243,19 @@ defmodule Wocky.RosterItemSpec do
     end
 
     it "should return false if the contact is in the __blocked__ group" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     ["__blocked__"], :none, :both)
+      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return true if the contact has 'from' subscription" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :none, :from)
+      RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
     it "should return false if the contact does not have 'both' or 'from' subscription" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :none, :to)
+      RosterItem.put(default_item(shared, subscription: :to))
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
@@ -267,8 +277,7 @@ defmodule Wocky.RosterItemSpec do
     end
 
     it "should not return users who aren't followers" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :none, :to)
+      RosterItem.put(default_item(shared, subscription: :to))
       RosterItem.followers(shared.user.id)
       |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
@@ -293,8 +302,7 @@ defmodule Wocky.RosterItemSpec do
     end
 
     it "should not return users who aren't friends" do
-      RosterItem.put(shared.user.id, shared.contact.id, Name.first_name,
-                     [], :none, :from)
+      RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.friends(shared.user.id)
       |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
@@ -339,5 +347,15 @@ defmodule Wocky.RosterItemSpec do
 
   defp take_random(list) do
     Enum.take_random(list, :rand.uniform(length(list)))
+  end
+
+  defp default_item(shared, replace) do
+    r = %{user_id: shared.user.id,
+          contact_id: shared.contact.id,
+          name: Name.first_name,
+          groups: [],
+          ask: :out,
+          subscription: :both}
+    Map.merge(r, Map.new(replace))
   end
 end
