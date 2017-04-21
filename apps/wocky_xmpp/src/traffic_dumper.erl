@@ -63,9 +63,9 @@ display_result(Result) ->
 format_row(#{user_id := User, resource := Resource, created_at := Timestamp,
              ip := IP, incoming := Incoming, packet := Packet}) ->
     io:fwrite("~s@~s/~s (~s) ~s ~s @ ~s\n~s~s~s\n",
-              [User, wocky_app:server(), Resource, IP,
+              [User, wocky_xmpp_app:server(), Resource, IP,
                direction_arrow(Incoming),
-               wocky_app:server(),
+               wocky_xmpp_app:server(),
                format_timestamp(Timestamp),
                colour_direction(Incoming),
                format_packet(Packet),
