@@ -100,7 +100,9 @@ user_send_packet_hook(From, To, Packet) ->
     end.
 
 should_notify(_From, To, Packet) ->
-    has_destination(To) andalso is_chat_message(Packet) andalso has_body(Packet).
+    has_destination(To) andalso
+    is_chat_message(Packet) andalso
+    has_body(Packet).
 
 has_destination(#jid{luser = <<>>}) -> false;
 has_destination(_) -> true.
