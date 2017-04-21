@@ -33,8 +33,8 @@ defmodule Wocky.TROS.Metadata do
 
   @spec put(id, User.id, access) :: {:ok, t}
   def put(id, user_id, access) do
-    %TROSMetadata{id: id, user_id: user_id, access: access}
-    |> changeset
+    %TROSMetadata{}
+    |> changeset(%{id: id, user_id: user_id, access: access})
     |> Repo.insert
   end
 
@@ -48,6 +48,13 @@ defmodule Wocky.TROS.Metadata do
         |> changeset(%{access: access})
         |> Repo.update
     end
+  end
+
+  @spec get(id) :: t | nil
+  def get(id) do
+    TROSMetadata
+    |> with_file(id)
+    |> Repo.one
   end
 
   @spec get_user_id(id) :: User.id | nil
@@ -75,7 +82,7 @@ defmodule Wocky.TROS.Metadata do
     :ok
   end
 
-  defp changeset(struct, params \\ %{}) do
+  defp changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
     |> validate_required(:access)

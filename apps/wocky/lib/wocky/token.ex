@@ -45,7 +45,7 @@ defmodule Wocky.Token do
     @token_marker <> string
   end
 
-  def changeset(struct, params \\ %{}) do
+  def changeset(struct, params) do
     struct
     |> cast(params, @assign_fields)
     |> validate_required(@assign_fields)
@@ -55,12 +55,11 @@ defmodule Wocky.Token do
   @doc "Generates a token and assigns it to the specified user and resource."
   @spec assign(User.id, User.resource) :: {:ok, {t, expiry}}
   def assign(user_id, resource) do
-    %Token{
-      user_id: user_id,
-      resource: resource,
-      token: generate(),
-      expires_at: expiry()
-    }
+    %Token{}
+    |> changeset(%{user_id: user_id,
+                   resource: resource,
+                   token: generate(),
+                   expires_at: expiry()})
     |> Repo.insert!(on_conflict: :replace_all)
     |> handle_assign_result()
   end

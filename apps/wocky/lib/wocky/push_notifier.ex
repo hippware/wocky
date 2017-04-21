@@ -106,7 +106,6 @@ defmodule Wocky.PushNotifier do
     '#{endpoint}' with body '#{message}'\
     """)
   end
-
   defp log_result(:ok, endpoint, message) do
     Logger.debug("""
     Notification sent to endpoint '#{endpoint}' with body '#{message}'\

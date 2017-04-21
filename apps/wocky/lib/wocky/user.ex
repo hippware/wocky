@@ -11,9 +11,13 @@ defmodule Wocky.User do
   alias Wocky.Device
   alias Wocky.Index
   alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.RosterItem
   alias Wocky.Token
   alias Wocky.TROS.Metadata, as: TROSMetadata
+  alias Wocky.User.Avatar
+  alias Wocky.User.BotEvent
+  alias Wocky.User.Location
   alias __MODULE__, as: User
 
   @primary_key {:id, :binary_id, autogenerate: false}
@@ -33,12 +37,17 @@ defmodule Wocky.User do
 
     timestamps()
 
+    has_many :bots, Bot
+    has_many :bot_events, BotEvent
     has_many :conversations, Conversation
     has_many :devices, Device
-    has_many :roster_items, RosterItem
+    has_many :locations, Location
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id
+    has_many :roster_items, RosterItem
     has_many :tokens, Token
     has_many :tros_metadatas, TROSMetadata
+
+    many_to_many :subscriptions, Bot, join_through: "bot_subscribers"
   end
 
   @type id           :: binary
@@ -62,30 +71,23 @@ defmodule Wocky.User do
     phone_number:   nil | phone_number,
   }
 
-  @change_fields [:handle, :avatar, :first_name, :last_name, :email]
+  @register_fields [:username, :server, :external_id, :phone_number,
+                    :password, :pass_details]
+  @update_fields [:handle, :avatar, :first_name, :last_name, :email]
 
   @doc """
   Creates a new user with a password.
   Used for testing only.
   """
-  @spec register(username, server, binary, binary) :: :ok | {:error, any}
+  @spec register(username, server, binary, binary) :: {:ok, t} | {:error, any}
   def register(username, server, password, pass_details) do
-    if ID.valid?(username) do
-      user = %User{
-        id: username,
-        username: username,
-        external_id: username,
-        server: server,
-        password: password,
-        pass_details: pass_details
-      }
-
-      Repo.insert!(user)
-
-      :ok
-    else
-      {:error, :invalid_id}
-    end
+    %{username: username,
+      server: server,
+      external_id: username,
+      password: password,
+      pass_details: pass_details}
+    |> register_changeset()
+    |> Repo.insert
   end
 
   @doc """
@@ -97,21 +99,36 @@ defmodule Wocky.User do
   def register(server, external_id, phone_number) do
     case Repo.get_by(User, external_id: external_id) do
       nil ->
-        username = ID.new
-        user = %User{
-          id: username,
-          username: username,
-          server: server,
-          external_id: external_id,
-          phone_number: phone_number
-        }
+        user =
+          %{username: ID.new,
+            server: server,
+            external_id: external_id,
+            phone_number: phone_number}
+          |> register_changeset()
+          |> Repo.insert!
 
-        Repo.insert!(user)
-
-        {:ok, {username, server, true}}
+        {:ok, {user.username, user.server, true}}
 
       user ->
         {:ok, {user.username, user.server, false}}
+    end
+  end
+
+  def register_changeset(params) do
+    %User{}
+    |> cast(params, @register_fields)
+    |> validate_required([:username, :server, :external_id])
+    |> validate_format(:phone_number, ~r//) # TODO
+    |> validate_change(:username, &validate_username/2)
+    |> put_change(:id, params[:username])
+    |> unique_constraint(:external_id)
+  end
+
+  defp validate_username(:username, username) do
+    if ID.valid?(username) do
+      []
+    else
+      [username: "not a valid UUID"]
     end
   end
 
@@ -160,6 +177,47 @@ defmodule Wocky.User do
     |> Repo.one
   end
 
+  @doc "Subscribe to the bot"
+  @spec subscribe_to_bot(t, Bot.t) :: :ok
+  def subscribe_to_bot(user, bot) do
+    user
+    |> Repo.preload(:subscriptions)
+    |> change()
+    |> put_assoc(:subscriptions, [bot])
+    |> Repo.update!
+
+    :ok
+  end
+
+  @doc "Returns all bots that the user subscribes to"
+  @spec get_subscribed_bots(t) :: [Bot.t]
+  def get_subscribed_bots(user) do
+    user = Repo.preload(user, :subscriptions)
+    user.subscriptions
+  end
+
+  @doc "Returns all bots that the user owns"
+  @spec get_owned_bots(t) :: [Bot.t]
+  def get_owned_bots(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> Repo.all
+  end
+
+  @doc "Returns all bots that the user owns and has set to 'follow me'"
+  @spec get_owned_bots_with_follow_me(t) :: [Bot.t]
+  def get_owned_bots_with_follow_me(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> with_follow_me()
+    |> Repo.all
+  end
+
+  defp with_follow_me(query) do
+    from b in query,
+      where: b.follow_me == ^true and b.follow_me_expiry > ^Timestamp.now
+  end
+
   @doc """
   Update the data on an existing user.
   Fields is a map containing fields to update.
@@ -173,13 +231,17 @@ defmodule Wocky.User do
     ~>> do_update_index(fields)
   end
 
-  defp changeset(struct, params) do
+  def changeset(struct, params) do
     struct
-    |> cast(params, @change_fields)
+    |> cast(params, @update_fields)
     |> validate_format(:email, ~r/@/)
-    |> validate_change(:handle, :none, &validate_handle/2)
+    |> validate_change(:handle, &validate_handle/2)
+    |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
     |> unique_constraint(:handle)
-    |> unique_constraint(:external_id)
+    |> prepare_changes(fn changeset ->
+      maybe_cleanup_avatar(changeset.changes[:avatar], struct.avatar)
+      changeset
+    end)
   end
 
   defp validate_handle(:handle, handle) do
@@ -193,8 +255,47 @@ defmodule Wocky.User do
   defp reserved_handles,
     do: Application.get_env(:wocky, :reserved_handles, [])
 
-  defp do_update_index(%User{username: username}, fields) do
+  defp validate_avatar(:avatar, user, avatar) do
+    case do_validate_avatar(user, avatar) do
+      {:ok, _} -> []
+      {:error, :not_found} ->
+        [avatar: "does not exist"]
+      {:error, :invalid_url} ->
+        [avatar: "not a valid TROS URL"]
+      {:error, :not_local_file} ->
+        [avatar: "not a local file"]
+      {:error, :not_file_owner} ->
+        [avatar: "not owned by the user"]
+    end
+  end
+
+ defp do_validate_avatar(user, avatar) do
+   Avatar.prepare(avatar)
+   ~>> Avatar.check_is_local(user.server)
+   ~>> Avatar.check_owner(user.id)
+ end
+
+ defp do_update_index(%User{username: username}, fields) do
     :ok = Index.user_updated(username, fields)
+  end
+
+  defp maybe_cleanup_avatar(new_avatar, old_avatar) do
+    Avatar.maybe_delete_existing(new_avatar, old_avatar)
+  end
+
+  @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
+  def set_location(user, resource, lat, lon, accuracy) do
+    case Location.insert(user, resource, lat, lon, accuracy) do
+      {:ok, loc} ->
+        loc
+        |> Location.check_for_bot_events
+        |> Location.update_bot_locations
+
+        :ok
+
+      {:error, _} = error ->
+        error
+    end
   end
 
   @doc "Removes the user from the database"
@@ -207,86 +308,8 @@ defmodule Wocky.User do
     :ok = Index.user_removed(id)
   end
 
-  # =========================================================================
-
-  # def set_avatar(user, avatar) do
-  #   Avatar.prepare(avatar)
-  #   ~>> Avatar.check_is_local(user.server)
-  #   ~>> Avatar.check_owner(user.id)
-  #   ~>> Avatar.delete_existing(user.avatar)
-  #   ~>> Avatar.to_url
-  #   ~>> do_set_avatar(user)
-  # end
-
-  # defp do_set_avatar(avatar, user) do
-  #   {:ok, %User{user | avatar: avatar}}
-  # end
-
-  # @spec set_location(t, Location.t) :: {:ok, t}
-  # def set_location(user, location) do
-  #   do_set_location(user, location)
-  #   ~>> Location.check_for_bot_events(location)
-  #   ~>> Location.update_bot_locations(location)
-  # end
-
-  # defp do_set_location(user, location) do
-  #   %User{user | location: Map.from_struct(location)}
-  # end
-
   @spec to_jid(t, binary | nil) :: JID.t
   def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
     JID.make!(user, server, resource || (u.resource || ""))
-  end
-
-  @spec to_jid_string(t, binary | nil) :: binary
-  def to_jid_string(%User{} = user, resource \\ nil) do
-    user |> to_jid(resource) |> JID.to_binary
-  end
-
-  @spec to_bare_jid(t) :: JID.t
-  def to_bare_jid(%User{} = user) do
-    user |> to_jid |> JID.to_bare
-  end
-
-  @spec to_bare_jid_string(t) :: binary
-  def to_bare_jid_string(%User{} = user) do
-    user |> to_bare_jid |> JID.to_binary
-  end
-
-  @spec get_subscribed_bots(t) :: [JID.t]
-  def get_subscribed_bots(_user) do
-    # :wocky_db_bot.subscribed_bots(to_jid(user))
-    []
-  end
-
-  @spec get_owned_bots(t) :: [Bot.t]
-  def get_owned_bots(_user) do
-    # :all
-    # |> Schemata.select(
-    #     from: :user_bot, in: :wocky_db.shared_keyspace,
-    #     where: %{owner: to_bare_jid_string(user)})
-    # |> Enum.map(&Bot.new(&1))
-    []
-  end
-
-  @spec get_last_bot_event(t, binary) :: [map]
-  def get_last_bot_event(_user, _bot_id) do
-    # Schemata.select :all,
-    #   from: :bot_event, in: :wocky_db.local_keyspace,
-    #   where: %{jid: to_jid_string(user), bot: bot_id},
-    #   limit: 1
-    []
-  end
-
-  @spec add_bot_event(t, binary, :enter | :exit) :: boolean
-  def add_bot_event(_user, _bot_id, _event) do
-    # Schemata.insert into: :bot_event, in: :wocky_db.local_keyspace,
-    #   values: %{
-    #     jid: to_jid_string(user),
-    #     bot: bot_id,
-    #     event: event,
-    #     created_at: :now
-    #   }
-    true
   end
 end

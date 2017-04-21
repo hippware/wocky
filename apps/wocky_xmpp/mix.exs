@@ -81,6 +81,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:meck,                 "~> 0.8.4", override: true, runtime: false},
       {:hackney,              "~> 1.7",   override: true},
       {:base16,               "~> 1.0",   override: true},
+      {:exjsx,                "~> 3.2",   override: true},
       {:timex,                "~> 3.1"},
       {:porcelain,            "~> 2.0"},
       {:logger_lager_backend, "~> 0.0.2"},

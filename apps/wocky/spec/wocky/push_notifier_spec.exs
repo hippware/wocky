@@ -120,18 +120,31 @@ defmodule Wocky.PushNotifierSpec do
   end
 
   describe "push/2" do
-    before do
-      result = PushNotifier.push(shared.jid, @message)
-      {:ok, result: result}
+    context "on success" do
+      before do
+        result = PushNotifier.push(shared.jid, @message)
+        {:ok, result: result}
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should send a push notification" do
+        [{_, message}] = TestBackend.get_notifications
+        message |> should(eq @message)
+      end
     end
 
-    it "should return :ok" do
-      shared.result |> should(eq :ok)
-    end
+    context "on failure" do
+      before do
+        result = PushNotifier.push(shared.jid, "error")
+        {:ok, result: result}
+      end
 
-    it "should send a push notification" do
-      [{_, message}] = TestBackend.get_notifications
-      message |> should(eq @message)
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
     end
   end
 

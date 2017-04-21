@@ -1,86 +1,94 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
+  use Wocky.Repo.Model
   use Wocky.JID
 
   alias Wocky.Index
-  alias Wocky.Location
+  alias Wocky.User
   alias __MODULE__, as: Bot
 
-  defstruct [
-    id:               nil,
-    server:           nil,
-    title:            nil,
-    shortname:        nil,
-    owner:            nil,
-    description:      nil,
-    image:            nil,
-    type:             nil,
-    address:          nil,
-    lat:              nil,
-    lon:              nil,
-    radius:           nil,
-    visibility:       nil,
-    affiliates:       [],
-    alerts:           nil,
-    updated:          nil,
-    follow_me:        nil,
-    follow_me_expiry: nil
-  ]
+  require Record
 
-  @type t :: %Bot{
-    id:               binary,
-    server:           binary,
-    title:            binary,
-    shortname:        binary,
-    owner:            binary,
-    description:      binary,
-    image:            binary,
-    type:             binary,
-    address:          binary,
-    lat:              float,
-    lon:              float,
-    radius:           integer,
-    visibility:       integer,
-    affiliates:       [binary],
-    alerts:           integer,
-    updated:          integer,
-    follow_me:        boolean,
-    follow_me_expiry: integer
-  }
+  @foreign_key_type :binary_id
+  @primary_key {:id, :binary_id, autogenerate: false}
+  schema "bots" do
+    field :server,           :string  # Bot server
+    field :title,            :string  # Bot title
+    field :shortname,        :string  # Bot shortname for URL representation
+    field :description,      :string  # User-supplied description
+    field :image,            :string  # Bot graphical image
+    field :type,             :string  # Bot type (freeform string from
+                                      # server's perspective)
+    field :address,          :string  # Free-form string field describing bot's
+                                      # location
+    field :lat,              :float   # Latitude
+    field :lon,              :float   # Longitude
+    field :radius,           :integer # Radius of bot circle
+    field :visibility,       :integer # Visibility of bot
+    field :alerts,           :boolean # Whether alerts are enabled
+    field :follow_me,        :boolean # Does bot follow owner
+    field :follow_me_expiry, :integer # When follow me expires
 
-  use ExConstructor
+    timestamps()
 
-  @spec to_jid(Bot.t) :: JID.t
-  def to_jid(bot) do
-    :wocky_bot_util.make_jid(bot.server, bot.id)
+    belongs_to :user, User
+
+    many_to_many :subscribers, User, join_through: "bot_subscribers"
   end
 
-  @spec to_jid_string(Bot.t) :: binary
+  @type id           :: binary
+
+  @type t :: %Bot{
+    id:               id,
+    server:           binary,
+    title:            nil | binary,
+    shortname:        nil | binary,
+    description:      nil | binary,
+    image:            nil | binary,
+    type:             nil | binary,
+    address:          nil | binary,
+    lat:              nil | float,
+    lon:              nil | float,
+    radius:           nil | integer,
+    visibility:       nil | integer,
+    alerts:           nil | boolean,
+    follow_me:        nil | boolean,
+    follow_me_expiry: nil | integer
+  }
+
+  @spec to_jid(t) :: JID.t
+  def to_jid(bot) do
+    JID.make("", bot.server, bot.id)
+  end
+
+  @spec to_jid_string(t) :: binary
   def to_jid_string(bot) do
     bot |> to_jid |> JID.to_binary
   end
 
-  @spec get(binary) :: nil | Bot.t
+  @spec get_id_from_jid(JID.t) :: id
+  def get_id_from_jid(jid(lresource: "bot/" <> id)), do: id
+  def get_id_from_jid({_, _, "bot/" <> id}), do: id
+  def get_id_from_jid(_), do: ""
+
+  @spec get(id) :: t | nil
   def get(id) do
-    case :wocky_db_bot.get_bot(<<>>, id) do
-      :not_found -> nil
-      bot -> new(bot)
-    end
+    Repo.get(Bot, id)
   end
 
-  @spec set_location(Bot.t, Location.t) :: :ok
-  def set_location(%{id: id} = _bot, %{lat: lat, lon: lon} = _location) do
-    Schemata.update :bot, in: :wocky_db.shared_keyspace,
-      set: %{lat: lat, lon: lon},
-      where: %{id: id}
+  @spec set_location(t, float, float, float) :: :ok
+  def set_location(%Bot{id: id} = bot, lat, lon, _accuracy) do
+    bot
+    |> location_changeset(%{lat: lat, lon: lon})
+    |> Repo.update!
 
     Index.bot_updated(id, %{lat: lat, lon: lon})
   end
 
-  @spec insert(Bot.t) :: :ok
-  def insert(%Bot{} = struct) do
-    bot = Map.from_struct(struct)
-    :wocky_db_bot.insert("", bot)
+  defp location_changeset(struct, params) do
+    struct
+    |> cast(params, [:lat, :lon])
+    |> validate_required([:lat, :lon])
   end
 end

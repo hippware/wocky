@@ -83,8 +83,8 @@ defmodule Wocky.Index do
   end
 
   def handle_call({:geosearch, lat, lon}, _, state) do
-    nlat = GeoUtils.normalize_degrees(lat)
-    nlon = GeoUtils.normalize_degrees(lon)
+    nlat = GeoUtils.normalize_latitude(lat)
+    nlon = GeoUtils.normalize_longitude(lon)
     {:ok, result} = Algolia.search(state.bot_index, <<>>, %{
                                      aroundLatLng: "#{nlat},#{nlon}",
                                      getRankingInfo: true
@@ -110,12 +110,12 @@ defmodule Wocky.Index do
   end
 
   def handle_call({:reindex, :bots}, _, state) do
-    # Bot
-    # |> Repo.all
-    # |> Enum.each(
-    #     fn (%Bot{id: bot_id} = bot) ->
-    #       update_index(state.bot_index, bot_id, bot, @bot_fields)
-    #     end)
+    Bot
+    |> Repo.all
+    |> Enum.each(
+        fn (%Bot{id: bot_id} = bot) ->
+          update_index(state.bot_index, bot_id, bot, @bot_fields)
+        end)
 
     {:reply, :ok, state}
   end

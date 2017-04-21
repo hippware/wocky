@@ -3,20 +3,35 @@ defmodule Wocky.GeoUtils do
 
   @type degrees :: binary | float
 
-  @doc "Normalise degrees to the range [-180,180]"
-  @spec normalize_degrees(degrees) :: degrees
-  def normalize_degrees(degrees) when is_binary(degrees) do
+  @doc "Normalize longitude to the range [-180,180]"
+  @spec normalize_longitude(degrees) :: degrees
+  def normalize_longitude(degrees) when is_binary(degrees) do
     # Note that this will throw an error if degrees is an integer
-    degrees |> String.to_float |> normalize_degrees()
+    degrees |> String.to_float |> normalize_longitude()
   end
-  def normalize_degrees(degrees) when degrees < -180 do
-    normalize_degrees(degrees + 2 * 180)
+  def normalize_longitude(degrees) when degrees < -180 do
+    normalize_longitude(degrees + (2 * 180))
   end
-  def normalize_degrees(degrees) when degrees > 180 do
-    normalize_degrees(degrees - 2 * 180)
+  def normalize_longitude(degrees) when degrees > 180 do
+    normalize_longitude(degrees - (2 * 180))
   end
-  def normalize_degrees(degrees) do
+  def normalize_longitude(degrees) do
     degrees
   end
 
+  @doc "Normalize latitude to the range [-90,90]"
+  @spec normalize_latitude(degrees) :: degrees
+  def normalize_latitude(degrees) when is_binary(degrees) do
+    # Note that this will throw an error if degrees is an integer
+    degrees |> String.to_float |> normalize_latitude()
+  end
+  def normalize_latitude(degrees) when degrees < -90 do
+    normalize_latitude(degrees + (2 * 90))
+  end
+  def normalize_latitude(degrees) when degrees > 90 do
+    normalize_latitude(degrees - (2 * 90))
+  end
+  def normalize_latitude(degrees) do
+    degrees
+  end
 end

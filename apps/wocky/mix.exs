@@ -11,9 +11,11 @@ defmodule Wocky.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     test_coverage: [tool: Coverex.Task],
+     test_coverage: [tool: ExCoveralls, test_task: "espec"],
      preferred_cli_env: [
-       espec: :test
+       espec: :test,
+       coveralls: :test,
+       "coveralls.html": :test
      ],
      aliases: aliases(),
      deps: deps()]
@@ -25,6 +27,7 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
+        event_handler: Wocky.EventHandler,
         tros_backend: Wocky.TROS.S3,
         tros_s3_bucket: "wocky-tros",
         tros_s3_access_key_id: nil,
@@ -32,9 +35,9 @@ defmodule Wocky.Mixfile do
         notification_system: "test",
         algolia_user_index_name: nil,
         algolia_bot_index_name: nil,
+        async_location_processing: false,
         enable_bot_event_notifications: false,
         enable_follow_me_updates: false,
-        enable_follow_me: false,
         reserved_handles: [
           "root",
           "admin",
@@ -61,6 +64,7 @@ defmodule Wocky.Mixfile do
       {:ex_aws,               "~> 1.1"},
       {:sweet_xml,            "~> 0.6.5"},
       {:hackney,              "~> 1.7", override: true},
+      {:exjsx,                "~> 3.2", override: true},
       {:algolia,              "~> 0.4.0"},
       {:honeybadger,          "~> 0.6"},
       {:geocalc,              "~> 0.5.3"},
@@ -77,11 +81,11 @@ defmodule Wocky.Mixfile do
         tag: "v1.0.1",
         manager: :rebar3},
 
-      {:espec,      "~> 1.2", only: :test},
-      {:coverex,    "~> 1.4", only: :test},
-      {:credo,      "~> 0.6", only: :dev, runtime: false},
-      {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
-      {:reprise,    "~> 0.5", only: :dev}
+      {:espec,       "~> 1.2", only: :test},
+      {:excoveralls, "~> 0.6", only: :test},
+      {:credo,       "~> 0.6", only: :dev, runtime: false},
+      {:ex_guard,    "~> 1.1", only: :dev, runtime: false},
+      {:reprise,     "~> 0.5", only: :dev}
     ]
   end
 
