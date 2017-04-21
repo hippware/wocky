@@ -149,10 +149,12 @@ make_friends(User1, User2) ->
 make_friend({#{id := User1, server := Server1},
              #{id := User2, server := Server2}}) ->
     JID2 = jid:to_binary(jid:make(User2, Server2, <<>>)),
-    RosterItem = wocky_db_roster:get_roster_item(User1, Server1, JID2),
+    RosterItem = wocky_roster:to_wocky_roster(User1, JID2,
+                   ?wocky_roster_item:get(User1, User2)),
     RosterItem2 = RosterItem#wocky_roster{subscription = both,
                                           ask = none},
-    wocky_db_roster:update_roster_item(User1, Server1, JID2, RosterItem2),
+
+    ?wocky_roster_item:put(wocky_roster:to_map(RosterItem2)),
     ejabberd_hooks:run(roster_modified, wocky_xmpp_app:server(),
                        [User1, Server1, JID2]).
 

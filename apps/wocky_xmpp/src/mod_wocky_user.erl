@@ -162,8 +162,8 @@ relationship(FromJID, UserJID) ->
         false -> relationship_not_self(FromJID, UserJID)
     end.
 
-relationship_not_self(FromJID, UserJID) ->
-    case wocky_db_roster:has_contact(UserJID, FromJID) of
+relationship_not_self(#jid{luser = FromUser}, #jid{luser = User}) ->
+    case ?wocky_roster_item:has_contact(User, FromUser) of
         true -> friend;
         false -> stranger
     end.
@@ -459,7 +459,7 @@ valid_user_fields() ->
 update_user(LUser, LServer, Row) ->
    case ?wocky_user:update(LUser, Row) of
        ok ->
-         update_roster_contacts(LUser, LServer),
+         update_roster_contacts(LUser),
          ejabberd_hooks:run(wocky_user_updated, LServer, [LUser, LServer]),
          ok;
 
@@ -486,11 +486,9 @@ not_valid(Message) ->
 error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
     {error, Stanza#xmlel{children = [ExtraChild | Children]}}.
 
-update_roster_contacts(LUser, LServer) ->
-    ContactJID = jid:make(LUser, LServer, <<>>),
-    Users = wocky_db_roster:users_with_contact(ContactJID),
-    ContactJIDBin = jid:to_binary(ContactJID),
-    lists:foreach(bump_roster_version(_, ContactJIDBin), Users).
+update_roster_contacts(LUser) ->
+    Users = ?wocky_roster_item:find_users_with_contact(LUser),
+    lists:foreach(bump_roster_version(LUser, _), Users).
 
-bump_roster_version(#jid{luser = User}, ContactJIDBin) ->
-    wocky_db_roster:bump_roster_version(User, ContactJIDBin).
+bump_roster_version(LUser, #{id := ContactID}) ->
+    ?wocky_roster_item:bump_version(LUser, ContactID).

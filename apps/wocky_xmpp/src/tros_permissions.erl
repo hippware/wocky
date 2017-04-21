@@ -9,6 +9,7 @@
         ]).
 
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky.hrl").
 
 can_download(User = #jid{luser = UserID}, OwnerID, Access) ->
     case OwnerID of
@@ -63,6 +64,6 @@ matches_rule(_, all) -> true;
 matches_rule(User, {user, RuleUser}) ->
     jid:are_bare_equal(User, RuleUser);
 matches_rule(User, {friends, RuleUser}) ->
-    wocky_db_roster:is_friend(RuleUser, User);
+    ?wocky_roster_item:is_friend(RuleUser#jid.luser, User#jid.luser);
 matches_rule(User, {redirect, Target}) ->
     access_query:run(Target, User, view) =:= allow.
