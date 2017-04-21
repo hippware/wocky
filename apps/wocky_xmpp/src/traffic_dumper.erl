@@ -55,7 +55,7 @@ apply_unit(N, "w") -> ?duration:from_weeks(N).
 get_traffic(User, any, Start, Duration) ->
     {ok, ?wocky_traffic_log:get_by_period(User, Start, Duration)};
 get_traffic(User, Resource, Start, Duration) ->
-    {ok, ?wocky_traffic_log:get_by_period(User, Resource, Start, Duration)}.
+    {ok, ?wocky_traffic_log:get_by_resource(User, Resource, Start, Duration)}.
 
 display_result(Result) ->
     lists:foreach(format_row(_), Result).
