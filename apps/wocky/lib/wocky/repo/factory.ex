@@ -11,6 +11,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Conversation
   alias Wocky.JID
   alias Wocky.Repo.ID
+  alias Wocky.RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
 
@@ -43,6 +44,15 @@ defmodule Wocky.Repo.Factory do
     %TROSMetadata{
       id: ID.new,
       access: Lorem.sentence
+    }
+  end
+
+  def roster_item_factory do
+    %RosterItem{
+      name: Name.first_name,
+      ask: :none,
+      subscription: :both,
+      groups: ""
     }
   end
 
