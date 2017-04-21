@@ -33,12 +33,12 @@ defmodule Wocky.TrafficLogSpec do
     }
   end
 
-  describe "put/5" do
+  describe "put/1" do
     it "should add a traffic entry for the user" do
       now = Timex.now
       user = Factory.insert(:user, %{server: shared.server})
-      put_result = TrafficLog.put(user.id, Lorem.word, Internet.ip_v6_address,
-                                  Lorem.paragraph, true)
+      log = Factory.params_for(:traffic_log, user_id: user.id)
+      put_result = TrafficLog.put(log)
       put_result |> should(be_ok_result())
       entry = Kernel.elem(put_result, 1)
       entry |> should(be_struct TrafficLog)

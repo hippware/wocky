@@ -3,8 +3,9 @@ defmodule Wocky.Repo.Migrations.AddTrafficTable do
 
   def change do
     create table(:traffic_logs) do
-      add :user_id,    references(:users, type: :uuid, on_delete: :nothing)
+      add :user_id,    references(:users, type: :uuid, on_delete: :delete_all)
       add :resource,   :string, null: false
+      add :host,       :string, null: false
       add :ip,         :string, null: false
       add :incoming,   :boolean, null: false
       add :packet,     :binary, null: false

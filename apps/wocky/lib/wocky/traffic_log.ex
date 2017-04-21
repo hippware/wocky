@@ -14,6 +14,7 @@ defmodule Wocky.TrafficLog do
   @foreign_key_type :binary_id
   schema "traffic_logs" do
     field :resource, :binary
+    field :host,     :binary
     field :ip,       :binary
     field :incoming, :boolean
     field :packet,   :binary
@@ -29,24 +30,18 @@ defmodule Wocky.TrafficLog do
   @type t :: %TrafficLog{
     user_id:    User.id,
     resource:   JID.resource,
+    host:       binary,
     ip:         ip,
     incoming:   boolean,
     packet:     packet,
     created_at: DateTime.t
   }
 
-  @change_fields [:user_id, :resource, :ip, :packet, :incoming]
+  @change_fields [:user_id, :resource, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
-  @spec put(User.id, JID.resource, ip, packet, boolean) :: {:ok, TrafficLog.t}
-  def put(user_id, resource, ip, packet, incoming) do
-    fields = %{
-      user_id: user_id,
-      resource: resource,
-      ip: ip,
-      packet: packet,
-      incoming: incoming
-    }
+  @spec put(map) :: {:ok, TrafficLog.t}
+  def put(fields) do
     {:ok,
      %TrafficLog{}
      |> cast(fields, @change_fields)

@@ -49,7 +49,9 @@ defmodule Wocky.Repo.Factory do
 
   def traffic_log_factory do
     %TrafficLog{
-      ip: Internet.ip_v6_address,
+      resource: Lorem.word,
+      ip: Internet.ip_v6_address <> ":5020",
+      host: Internet.domain_name,
       packet: Lorem.paragraph,
       incoming: false,
     }

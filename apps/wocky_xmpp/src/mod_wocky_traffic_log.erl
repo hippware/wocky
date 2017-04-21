@@ -11,7 +11,7 @@
 
 -include_lib("ejabberd/include/jlib.hrl").
 -include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky_roster.hrl").
+-include("wocky.hrl").
 
 -define(DEFAULT_EXPIRE, 3600).
 
@@ -54,22 +54,14 @@ stanza_received_hook(JID, {IP, Port}, Element) ->
 
 log_packet(JID, IP, Port, Element, Incoming) ->
     {ok, Hostname} = inet:gethostname(),
-    Query = "INSERT INTO traffic_log "
-            "(user, resource, timestamp, ip, server, packet, incoming) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?) USING TTL ?",
-    Values = #{user => jid:to_binary(jid:to_bare(JID)),
-               resource => JID#jid.lresource,
-               timestamp => now,
-               ip => ip_port_str(IP, Port),
-               server => Hostname,
-               packet => exml:to_binary(Element),
-               incoming => Incoming,
-               '[ttl]' => expiry()},
-    % Use 'one' here for speed - we shouldn't get any clashes and if we do
-    % it's not the end of the world.
-    {ok, _} = wocky_db:query(shared, Query, Values, one),
+    ?wocky_traffic_log:put(
+       #{user_id => JID#jid.luser,
+         resource => JID#jid.resource,
+         host => list_to_binary(Hostname),
+         ip => ip_port_str(IP, Port),
+         packet => exml:to_binary(Element),
+         incoming => Incoming}),
     ok.
 
-ip_port_str(IP, Port) -> inet:ntoa(IP) ++ ":" ++ integer_to_list(Port).
-
-expiry() -> ejabberd_config:get_local_option(traffic_log_expire).
+ip_port_str(IP, Port) -> list_to_binary(
+                           inet:ntoa(IP) ++ ":" ++ integer_to_list(Port)).
