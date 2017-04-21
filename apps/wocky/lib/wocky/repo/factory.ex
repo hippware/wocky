@@ -12,6 +12,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.JID
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
+  alias Wocky.TrafficLog
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
 
@@ -56,6 +57,15 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
+  def traffic_log_factory do
+    %TrafficLog{
+      resource: Lorem.word,
+      ip: Internet.ip_v6_address <> ":5020",
+      host: Internet.domain_name,
+      packet: Lorem.paragraph,
+      incoming: false,
+    }
+  end
 
   # def bot_factory do
   #   %Bot{

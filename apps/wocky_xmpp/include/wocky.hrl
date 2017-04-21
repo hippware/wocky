@@ -65,6 +65,7 @@
 -define(wocky_roster_item, 'Elixir.Wocky.RosterItem').
 -define(wocky_token, 'Elixir.Wocky.Token').
 -define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
+-define(wocky_traffic_log, 'Elixir.Wocky.TrafficLog').
 -define(wocky_user, 'Elixir.Wocky.User').
 
 -define(tros, 'Elixir.Wocky.TROS').
@@ -81,6 +82,7 @@
 -define(wocky_push_notifier, 'Elixir.Wocky.PushNotifier').
 
 -define(timex, 'Elixir.Timex').
+-define(duration, 'Elixir.Timex.Duration').
 
 % Standard time format to use unless there's a good reason to do otherwise
 -define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended}">>).
