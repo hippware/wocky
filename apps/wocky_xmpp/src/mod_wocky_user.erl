@@ -488,4 +488,7 @@ error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
 
 update_roster_contacts(LUser) ->
     Users = ?wocky_roster_item:find_users_with_contact(LUser),
-    lists:foreach(?wocky_roster_item:bump_version(_, LUser), Users).
+    lists:foreach(bump_roster_version(LUser, _), Users).
+
+bump_roster_version(LUser, #{id := ContactID}) ->
+    ?wocky_roster_item:bump_version(LUser, ContactID).

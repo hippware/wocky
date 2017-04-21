@@ -153,13 +153,15 @@ forward_item(open, _From, _Node, _Item) ->
     erlang:error(unimplemented);
 forward_item(presence, From = #jid{luser = LUser},
              Node, Item) ->
-    Roster = wocky_roster:to_wocky_roster(?wocky_roster_item:find(LUser)),
+    Roster = wocky_roster:to_wocky_roster(
+               ?wocky_roster_item:get(LUser)),
     PresenceSubs = get_presence_subs(Roster),
     lists:foreach(forward_to_user(From, _, Node, Item),
                   add_self(From, PresenceSubs));
 forward_item(roster, From = #jid{luser = LUser},
              Node, Item) ->
-    Roster = wocky_roster:to_wocky_roster(?wocky_roster_item:find(LUser)),
+    Roster = wocky_roster:to_wocky_roster(
+               ?wocky_roster_item:get(LUser)),
     Contacts = get_non_blocked(Roster),
     lists:foreach(forward_to_user(From, _, Node, Item),
                   add_self(From, Contacts));

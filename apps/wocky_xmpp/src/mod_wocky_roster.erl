@@ -163,7 +163,7 @@ do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
 
     OldItem = to_wocky_roster(
                 LUser, ContactUser,
-                ?wocky_roster_item:find(LUser, ContactUser)),
+                ?wocky_roster_item:get(LUser, ContactUser)),
     Item1 = process_item_attrs(OldItem, Attrs),
     Item2 = process_item_els(Item1#wocky_roster{groups = []}, Els),
 
@@ -236,7 +236,7 @@ process_item_els(Item, []) -> Item.
 %% roster_get --------------------------------------------------------
 
 roster_get_hook(Acc, {LUser, _LServer}) ->
-    Items = to_wocky_roster(?wocky_roster_item:find(LUser)),
+    Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
                      (_) ->
@@ -257,7 +257,7 @@ process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
     #jid{luser = ContactUser} = JID1,
 
     Item = to_wocky_roster(LUser, jid:to_lower(JID1),
-                           ?wocky_roster_item:find(LUser, ContactUser)),
+                           ?wocky_roster_item:get(LUser, ContactUser)),
     #wocky_roster{subscription = Subscription, ask = Ask} = Item,
 
     StateChange = state_change(Direction, Subscription, Ask, Type),
@@ -405,7 +405,7 @@ send_auto_reply(ToJID, JID1, Attrs) ->
 roster_get_subscription_lists_hook(_Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Items = to_wocky_roster(?wocky_roster_item:find(LUser)),
+    Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     JID = jid:make(User, Server, <<>>),
     fill_subscription_lists(JID, LServer, Items, [], []).
 
@@ -434,8 +434,9 @@ roster_get_jid_info_hook(_Acc, User, _Server, JID) ->
     {ContactUser, _, _} = JID,
     case ?wocky_id:'valid?'(ContactUser) andalso ?wocky_id:'valid?'(User) of
         true ->
-            Item = to_wocky_roster(LUser, JID,
-                                   ?wocky_roster_item:find(LUser, ContactUser)),
+            Item = to_wocky_roster(
+                     LUser, JID,
+                     ?wocky_roster_item:get(LUser, ContactUser)),
             {Item#wocky_roster.subscription, Item#wocky_roster.groups};
         false ->
             {none, []}
@@ -480,8 +481,8 @@ check_headline(_) -> {error, not_headline}.
 send_update(#jid{user = User, server = Server}, JID) ->
     Version = ?wocky_roster_item:version(User),
     #jid{luser = ContactUser} = jid:from_binary(JID),
-    Item = to_wocky_roster(User, JID,
-                           ?wocky_roster_item:find(User, ContactUser)),
+    Item = to_wocky_roster(
+             User, JID, ?wocky_roster_item:get(User, ContactUser)),
     push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Version).
 
 

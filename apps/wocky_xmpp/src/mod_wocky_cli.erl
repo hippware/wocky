@@ -150,7 +150,7 @@ make_friend({#{id := User1, server := Server1},
              #{id := User2, server := Server2}}) ->
     JID2 = jid:to_binary(jid:make(User2, Server2, <<>>)),
     RosterItem = wocky_roster:to_wocky_roster(User1, JID2,
-                   ?wocky_roster_item:find(User1, User2)),
+                   ?wocky_roster_item:get(User1, User2)),
     RosterItem2 = RosterItem#wocky_roster{subscription = both,
                                           ask = none},
 

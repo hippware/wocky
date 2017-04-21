@@ -36,20 +36,20 @@ defmodule Wocky.RosterItem do
   @type group :: binary
 
   @type t :: %RosterItem{
-    user_id:       User.id,
-    contact:       User::t,
+    user:          User.t,
+    contact:       User.t,
     name:          name,
     ask:           ask,
     subscription:  subscription,
     groups:        [group],
 
-    updated_at: DateTime::t
+    updated_at: DateTime.t
   }
 
   @change_fields [:contact_id, :name, :ask, :subscription, :groups]
   @blocked_group "__blocked__"
 
-  @doc "Write a conversation record to the database"
+  @doc "Write a roster record to the database"
   @spec put(User.id, User.id, name, [group], ask, subscription) :: :ok
   def put(user_id, contact_id, name, groups, ask, subscription) do
     fields = %{
@@ -65,21 +65,20 @@ defmodule Wocky.RosterItem do
     :ok
   end
 
-  @spec find(User.id) :: [t]
-  def find(user_id) do
+  @spec get(User.id) :: [t]
+  def get(user_id) do
     RosterItem
     |> with_user(user_id)
     |> preload_contact()
     |> Repo.all
   end
 
-  @spec find(User.id, User.id) :: t | nil
-  def find(user_id, contact_id) do
+  @spec get(User.id, User.id) :: t | nil
+  def get(user_id, contact_id) do
     RosterItem
-    |> with_user(user_id)
     |> with_contact(contact_id)
     |> preload_contact()
-    |> Repo.one
+    |> Repo.get_by(user_id: user_id)
   end
 
   @spec version(User.id) :: version
@@ -116,12 +115,13 @@ defmodule Wocky.RosterItem do
     :ok
   end
 
-  @spec find_users_with_contact(User.id) :: [User.id]
+  @spec find_users_with_contact(User.id) :: [User.t]
   def find_users_with_contact(contact_id) do
     RosterItem
     |> with_contact(contact_id)
-    |> select_user()
+    |> preload_user()
     |> Repo.all
+    |> Enum.map(&Map.get(&1, :user))
   end
 
   @spec has_contact(User.id, User.id) :: boolean
@@ -138,31 +138,31 @@ defmodule Wocky.RosterItem do
   @spec followers(User.id) :: [t]
   def followers(user_id) do
     user_id
-    |> find()
+    |> get()
     |> Enum.filter(&is_follower/1)
   end
 
   @spec friends(User.id) :: [t]
   def friends(user_id) do
     user_id
-    |> find()
+    |> get()
     |> Enum.filter(&is_friend/1)
   end
 
   @spec is_friend(User.id, User.id) :: boolean
   def is_friend(user_id, contact_id) do
-    user_id |> find(contact_id) |> is_friend
+    user_id |> get(contact_id) |> is_friend
   end
 
   @spec is_follower(User.id, User.id) :: boolean
   def is_follower(user_id, contact_id) do
-    user_id |> find(contact_id) |> is_follower
+    user_id |> get(contact_id) |> is_follower
   end
 
   @spec bump_version(User.id, User.id) :: :ok
   def bump_version(user_id, contact_id) do
     user_id
-    |> find(contact_id)
+    |> get(contact_id)
     |> version_bump_changeset()
     |> Repo.update(force: true)
     :ok
@@ -180,10 +180,6 @@ defmodule Wocky.RosterItem do
     from r in query, where: r.ask == ^ask
   end
 
-  defp select_user(query) do
-    from r in query, select: r.user_id
-  end
-
   defp select_version(query) do
     from r in query, select: max(r.updated_at)
   end
@@ -194,6 +190,10 @@ defmodule Wocky.RosterItem do
 
   defp preload_contact(query) do
     from r in query, preload: :contact
+  end
+
+  defp preload_user(query) do
+    from r in query, preload: :user
   end
 
   defp make_version(nil, count) do

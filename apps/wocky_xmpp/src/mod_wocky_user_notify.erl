@@ -39,8 +39,8 @@ user_updated(LUser, _LServer) ->
     WithContact = ?wocky_roster_item:find_users_with_contact(LUser),
     lists:foreach(notify_user_update(User, _), WithContact).
 
-notify_user_update(nil, _) -> ok;
-notify_user_update(Item = #{id := User, server := Server}, WithContact) ->
+notify_user_update(Item = #{id := User, server := Server},
+                   #{id := WithContact})  ->
     ejabberd_router:route(jid:make(User, Server, <<>>),
                           jid:make(WithContact, Server, <<>>),
                           user_change_packet(Item)).

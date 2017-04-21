@@ -27,32 +27,31 @@ defmodule Wocky.RosterItemSpec do
      user: user,
      contacts: Enum.sort(contacts),
      contact: hd(contacts),
-     contact_ids: contacts |> Enum.map(&Map.get(&1, :id)) |> Enum.sort,
      rosterless_user: user2,
      groups: groups}
   end
 
-  describe "find/1" do
+  describe "get/1" do
     it "should return all roster items for a user" do
-      RosterItem.find(shared.user.id)
+      RosterItem.get(shared.user.id)
       |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
       |> should(eq shared.contacts)
     end
 
     it "should return an empty list for a user with no roster items" do
-      RosterItem.find(shared.rosterless_user.id) |> should(eq [])
+      RosterItem.get(shared.rosterless_user.id) |> should(eq [])
     end
 
     it "should return an empty list for a non-existant user" do
-      RosterItem.find(ID.new) |> should(eq [])
+      RosterItem.get(ID.new) |> should(eq [])
     end
   end
 
-  describe "find/2" do
+  describe "get/2" do
     it "should return the roster item for the specified contact" do
       Enum.map shared.contacts, fn(c) ->
-        RosterItem.find(shared.user.id, c.id)
+        RosterItem.get(shared.user.id, c.id)
         |> Map.get(:contact)
         |> should(eq c)
       end
@@ -68,7 +67,7 @@ defmodule Wocky.RosterItemSpec do
         RosterItem.put(shared.user.id, contact.id, name, groups, :out, :both)
         |> should(eq :ok)
 
-        item = RosterItem.find(shared.user.id, contact.id)
+        item = RosterItem.get(shared.user.id, contact.id)
         item.contact |> should(eq contact)
         item.name |> should(eq name)
         item.ask |> should(eq :out)
@@ -85,7 +84,7 @@ defmodule Wocky.RosterItemSpec do
                        new_groups, :out, :both)
         |> should(eq :ok)
 
-        item = RosterItem.find(shared.user.id, shared.contact.id)
+        item = RosterItem.get(shared.user.id, shared.contact.id)
         item.contact |> should(eq shared.contact)
         item.name |> should(eq new_name)
         item.ask |> should(eq :out)
@@ -120,8 +119,9 @@ defmodule Wocky.RosterItemSpec do
   describe "delete/1" do
     it "should remove all contacts from the user" do
       RosterItem.delete(shared.user.id) |> should(eq :ok)
-      RosterItem.find(shared.user.id, shared.contact.id) |> should(eq nil)
-      RosterItem.find(shared.user.id) |> should(have_length 0)
+      RosterItem.get(shared.user.id, shared.contact.id)
+      |> should(eq nil)
+      RosterItem.get(shared.user.id) |> should(have_length 0)
     end
 
     it "should change the roster version" do
@@ -134,8 +134,9 @@ defmodule Wocky.RosterItemSpec do
   describe "delete/2" do
     it "should remove the contact from the user's roster" do
       RosterItem.delete(shared.user.id, shared.contact.id) |> should(eq :ok)
-      RosterItem.find(shared.user.id, shared.contact.id) |> should(eq nil)
-      RosterItem.find(shared.user.id) |> should(have_length 4)
+      RosterItem.get(shared.user.id, shared.contact.id)
+      |> should(eq nil)
+      RosterItem.get(shared.user.id) |> should(have_length 4)
     end
 
     it "should change the roster version" do
@@ -148,16 +149,17 @@ defmodule Wocky.RosterItemSpec do
   describe "find_users_with_contact/1" do
     it "should return the count of users with a given contact" do
       RosterItem.find_users_with_contact(shared.user.id)
-      |> should(eq shared.contact_ids)
+      |> Enum.sort
+      |> should(eq shared.contacts)
       RosterItem.find_users_with_contact(hd(shared.contacts).id)
-      |> should(eq [shared.user.id])
+      |> should(eq [shared.user])
     end
 
-    it "should return 0 for a non-existant user" do
+    it "should return [] for a non-existant user" do
       RosterItem.find_users_with_contact(ID.new) |> should(eq [])
     end
 
-    it "should return 0 for a user with no contacts" do
+    it "should return [] for a user with no contacts" do
       user = Factory.insert(:user, %{server: shared.server})
       RosterItem.find_users_with_contact(user.id) |> should(eq [])
     end
@@ -308,7 +310,7 @@ defmodule Wocky.RosterItemSpec do
     it "should not change the data" do
       RosterItem.bump_version(shared.user.id, shared.contact.id)
       |> should(eq :ok)
-      RosterItem.find(shared.user.id, shared.contact.id)
+      RosterItem.get(shared.user.id, shared.contact.id)
       |> Map.get(:contact)
       |> should(eq shared.contact)
     end
