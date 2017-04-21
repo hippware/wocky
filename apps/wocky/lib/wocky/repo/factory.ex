@@ -14,6 +14,8 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot
   alias Wocky.Conversation
   alias Wocky.Repo.ID
+  alias Wocky.RosterItem
+  alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
@@ -68,6 +70,25 @@ defmodule Wocky.Repo.Factory do
       visibility: 100,
       alerts: true,
       follow_me: false
+    }
+  end
+
+  def roster_item_factory do
+    %RosterItem{
+      name: Name.first_name,
+      ask: :none,
+      subscription: :both,
+      groups: ""
+    }
+  end
+
+  def traffic_log_factory do
+    %TrafficLog{
+      resource: Lorem.word,
+      ip: Internet.ip_v6_address <> ":5020",
+      host: Internet.domain_name,
+      packet: Lorem.paragraph,
+      incoming: false,
     }
   end
 

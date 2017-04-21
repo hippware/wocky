@@ -33,12 +33,12 @@ test_befriend() ->
   { "Makes two users friends",
     [
       { "Succeeds with valid users", inorder, [
-        ?_assertNot(wocky_db_roster:is_friend(?ALICE_JID, ?BOB_JID)),
-        ?_assertNot(wocky_db_roster:is_friend(?BOB_JID, ?ALICE_JID)),
+        ?_assertNot(?wocky_roster_item:is_friend(?ALICE, ?BOB)),
+        ?_assertNot(?wocky_roster_item:is_friend(?BOB, ?ALICE)),
         ?_assertEqual({ok, "Success"},
                       befriend(<<"alice">>, <<"bob">>)),
-        ?_assert(wocky_db_roster:is_friend(?ALICE_JID, ?BOB_JID)),
-        ?_assert(wocky_db_roster:is_friend(?BOB_JID, ?ALICE_JID))
+        ?_assert(?wocky_roster_item:is_friend(?ALICE, ?BOB)),
+        ?_assert(?wocky_roster_item:is_friend(?BOB, ?ALICE))
       ]},
       { "Returns an error on invalid user(s)", inparallel, [
         ?_assertMatch({error, _}, befriend(<<"alice">>, <<"bobbb">>)),

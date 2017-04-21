@@ -74,7 +74,8 @@ all() ->
      share,
      open_visibility,
      follow_notifications,
-     geosearch
+     geosearch,
+     empty_shortname
     ].
 
 suite() ->
@@ -674,6 +675,15 @@ geosearch(Config) ->
       fun(Alice) ->
         Stanza = expect_iq_success(add_to_s(geosearch_stanza(), Alice), Alice),
         check_geosearch_return(Stanza)
+      end).
+
+empty_shortname(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        % Successfully create a bot with an empty (but present) shortname field
+        Fields = lists:keyreplace("shortname", 1, default_fields(),
+                                  {"shortname", "string", ""}),
+        expect_iq_success(create_stanza(Fields), Alice)
       end).
 
 %%--------------------------------------------------------------------

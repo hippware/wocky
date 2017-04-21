@@ -26,20 +26,18 @@ dump(Handle, Resource, StartBin, DurationBin) ->
         User <- get_user(Handle),
         Start <- get_time(StartBin),
         Duration <- get_duration(DurationBin),
-        get_traffic(User, Resource, Start, Duration)
+        Traffic <- get_traffic(User, Resource, Start, Duration),
+        display_result(Traffic)
        ]).
 
 get_user(Handle) ->
     case ?wocky_user:find_by(handle, Handle) of
         nil -> {error, "User not found"};
-        #{id := ID, server := Server} -> {ok, jid:make(ID, Server, <<>>)}
+        #{id := ID} -> {ok, ID}
     end.
 
 get_time(StartBin) ->
-    case ?timex:parse(StartBin, ?DEFAULT_TIME_FORMAT) of
-        {error, Term} -> {error, Term};
-        {ok, Result} -> {ok, ?timex:to_unix(Result)}
-    end.
+    ?timex:parse(StartBin, ?DEFAULT_TIME_FORMAT).
 
 get_duration(DurationBin) ->
     case re:split(DurationBin, "([0-9]+)(ms|s|m|h|d|w)", [{return, list}]) of
@@ -47,44 +45,31 @@ get_duration(DurationBin) ->
         _ -> {error, "Invalid duration"}
     end.
 
-apply_unit(N, "ms") -> N;
-apply_unit(N, "s") -> N * 1000;
-apply_unit(N, "m") -> N * 1000 * 60;
-apply_unit(N, "h") -> N * 1000 * 60 * 60;
-apply_unit(N, "d") -> N * 1000 * 60 * 60 * 24;
-apply_unit(N, "w") -> N * 1000 * 60 * 60 * 24 * 7.
+apply_unit(N, "ms") -> ?duration:from_milliseconds(N);
+apply_unit(N, "s") -> ?duration:from_seconds(N);
+apply_unit(N, "m") -> ?duration:from_minutes(N);
+apply_unit(N, "h") -> ?duration:from_hours(N);
+apply_unit(N, "d") -> ?duration:from_days(N);
+apply_unit(N, "w") -> ?duration:from_weeks(N).
 
+get_traffic(User, any, Start, Duration) ->
+    {ok, ?wocky_traffic_log:get_by_period(User, Start, Duration)};
 get_traffic(User, Resource, Start, Duration) ->
-    StartTS = timer:seconds(Start),
-    DurationTS = timer:seconds(Duration),
-    Q = <<"SELECT * FROM traffic_log WHERE user = ? AND timestamp >= :start "
-          "AND timestamp < :stop">>,
-    V = #{user => jid:to_binary(User),
-          start => StartTS,
-          stop => StartTS + DurationTS},
-    Result = wocky_db:query(shared, Q, V, one),
-    display_result(Result, Resource).
+    {ok, ?wocky_traffic_log:get_by_period(User, Resource, Start, Duration)}.
 
-display_result(no_more_results, _) ->
-    ok;
-display_result({ok, Result}, Resource) ->
-    Rows = wocky_db:rows(Result),
-    Filtered = lists:filter(show_row(_, Resource), Rows),
-    lists:foreach(format_row(_), Filtered),
-    display_result(wocky_db:fetch_more(Result), Resource).
+display_result(Result) ->
+    lists:foreach(format_row(_), Result).
 
-format_row(#{user := User, resource := Resource, timestamp := Timestamp,
-             ip := IP, incoming := Incoming, server := Server,
-             packet := Packet}) ->
-    io:fwrite("~s/~s (~s) ~s ~s @ ~s\n~s~s~s\n",
-              [User, Resource, IP, direction_arrow(Incoming), Server,
-               format_timestamp(Timestamp), colour_direction(Incoming),
-               format_packet(Packet), clear_colour()]).
-
-show_row(_, any) -> true;
-show_row(#{resource := Resource}, Resource) -> true;
-show_row(_, _) -> false.
-
+format_row(#{user_id := User, resource := Resource, created_at := Timestamp,
+             ip := IP, incoming := Incoming, packet := Packet}) ->
+    io:fwrite("~s@~s/~s (~s) ~s ~s @ ~s\n~s~s~s\n",
+              [User, wocky_app:server(), Resource, IP,
+               direction_arrow(Incoming),
+               wocky_app:server(),
+               format_timestamp(Timestamp),
+               colour_direction(Incoming),
+               format_packet(Packet),
+               clear_colour()]).
 
 direction_arrow(true) ->
     "<===";
@@ -92,8 +77,7 @@ direction_arrow(false) ->
     "===>".
 
 format_timestamp(Timestamp) ->
-    {ok, T} = ?timex:format(?timex:from_unix(Timestamp, milliseconds),
-                            ?DEFAULT_TIME_FORMAT),
+    {ok, T} = ?timex:format(Timestamp, ?DEFAULT_TIME_FORMAT),
     T.
 
 colour_direction(true) -> ?ansi:red();

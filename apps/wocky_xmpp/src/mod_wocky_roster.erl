@@ -43,11 +43,12 @@
          roster_out_subscription_hook/4,
          roster_get_subscription_lists_hook/3,
          roster_get_jid_info_hook/4,
-         remove_user_hook/2,
          roster_get_versioning_feature_hook/2,
          filter_local_packet_hook/1,
          roster_modified_hook/3
         ]).
+
+-import(wocky_roster, [to_wocky_roster/1, to_wocky_roster/3]).
 
 -define(NULL_VERSION, <<"0">>).
 
@@ -72,8 +73,6 @@ hooks() ->
      {roster_out_subscription,       roster_out_subscription_hook},
      {roster_get_subscription_lists, roster_get_subscription_lists_hook},
      {roster_get_jid_info,           roster_get_jid_info_hook},
-     {remove_user,                   remove_user_hook},
-     {anonymous_purge_hook,          remove_user_hook},
      {roster_get_versioning_feature, roster_get_versioning_feature_hook},
      {filter_local_packet,           filter_local_packet_hook},
      {roster_modified,               roster_modified_hook}
@@ -121,7 +120,7 @@ get_user_roster_based_on_version(false, From, To) ->
     get_user_roster_based_on_version({value, ?NULL_VERSION}, From, To);
 get_user_roster_based_on_version({value, RequestedVersion}, From, To) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    case wocky_db_roster:get_roster_version(LUser, LServer) of
+    case ?wocky_roster_item:version(LUser) of
         ?NULL_VERSION ->
             {[], ?NULL_VERSION};
 
@@ -160,19 +159,21 @@ process_item_set(_From, _To, _) -> ok.
 do_process_item_set(error, _, _, _) -> ok;
 do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
     #jid{user = User, luser = LUser, lserver = LServer} = From,
-    LJID = jid:to_binary(jid:to_lower(JID1)),
+    #jid{luser = ContactUser} = JID1,
 
-    OldItem = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
+    OldItem = to_wocky_roster(
+                LUser, ContactUser,
+                ?wocky_roster_item:get(LUser, ContactUser)),
     Item1 = process_item_attrs(OldItem, Attrs),
     Item2 = process_item_els(Item1#wocky_roster{groups = []}, Els),
 
     case Item2#wocky_roster.subscription of
         remove ->
-            wocky_db_roster:delete_roster_item(LUser, LServer, LJID),
+            ?wocky_roster_item:delete(LUser, ContactUser),
             send_unsubscribing_presence(From, OldItem);
 
         _ ->
-            wocky_db_roster:update_roster_item(LUser, LServer, LJID, Item2)
+            {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(Item2))
     end,
 
     Item3 = ejabberd_hooks:run_fold(roster_process_item, LServer,
@@ -228,12 +229,13 @@ process_item_els(Item, []) -> Item.
 
 %% roster_get --------------------------------------------------------
 
-roster_get_hook(Acc, {LUser, LServer}) ->
+roster_get_hook(Acc, {LUser, _LServer}) ->
+    Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
                      (_) ->
                          true
-                 end, wocky_db_roster:get_roster(LUser, LServer)) ++ Acc.
+                 end, Items ++ Acc).
 
 
 %% roster_in_subscription, roster_out_subscription -------------------
@@ -246,15 +248,15 @@ roster_out_subscription_hook(User, Server, JID, Type) ->
 
 process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
     LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    LJID = jid:to_binary(jid:to_lower(JID1)),
+    #jid{luser = ContactUser} = JID1,
 
-    Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
+    Item = to_wocky_roster(LUser, jid:to_lower(JID1),
+                           ?wocky_roster_item:get(LUser, ContactUser)),
     #wocky_roster{subscription = Subscription, ask = Ask} = Item,
 
     StateChange = state_change(Direction, Subscription, Ask, Type),
     Action = process_state_change(StateChange, Item),
-    Push = do_roster_action(LUser, LServer, LJID, Action),
+    Push = do_roster_action(Action),
 
     ToJID = jid:make(User, Server, <<"">>),
     AutoReply = get_auto_reply(Direction, Subscription, Ask, Type),
@@ -352,10 +354,10 @@ process_state_change({NewSubscription, Pending}, Item) ->
                },
     {insert, Item, NewItem}.
 
-do_roster_action(_, _, _, none) ->
+do_roster_action(none) ->
     none;
-do_roster_action(LUser, LServer, LJID, {insert, OldItem, NewItem}) ->
-    wocky_db_roster:update_roster_item(LUser, LServer, LJID, NewItem),
+do_roster_action({insert, OldItem, NewItem}) ->
+    {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(NewItem)),
     {push, OldItem, NewItem}.
 
 get_auto_reply(out, _, _, _) -> none;
@@ -392,7 +394,7 @@ send_auto_reply(ToJID, JID1, Attrs) ->
 roster_get_subscription_lists_hook(_Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Items = wocky_db_roster:get_roster(LUser, LServer),
+    Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     JID = jid:make(User, Server, <<>>),
     fill_subscription_lists(JID, LServer, Items, [], []).
 
@@ -416,32 +418,18 @@ fill_subscription_lists(_, _, [], F, T) ->
 
 %% roster_get_jid_info -----------------------------------------------
 
-roster_get_jid_info_hook(_Acc, User, Server, JID) ->
+roster_get_jid_info_hook(_Acc, User, _Server, JID) ->
     LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    LJID = jid:to_binary(jid:to_lower(jid:to_bare(JID))),
-    Item = wocky_db_roster:get_roster_item(LUser, LServer, LJID),
-    {Item#wocky_roster.subscription, Item#wocky_roster.groups}.
-
-
-%% remove_user -------------------------------------------------------
-
-remove_user_hook(User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    send_unsubscription_to_rosteritems(LUser, LServer),
-    wocky_db_roster:delete_roster(LUser, LServer).
-
-%% For each contact with Subscription:
-%% Both or From, send a "unsubscribed" presence stanza;
-%% Both or To, send a "unsubscribe" presence stanza.
-send_unsubscription_to_rosteritems(LUser, LServer) ->
-    RosterItems = roster_get_hook([], {LUser, LServer}),
-    From = jid:make({LUser, LServer, <<"">>}),
-    lists:foreach(fun (RosterItem) ->
-                          send_unsubscribing_presence(From, RosterItem)
-                  end,
-                  RosterItems).
+    {ContactUser, _, _} = JID,
+    case ?wocky_id:'valid?'(ContactUser) andalso ?wocky_id:'valid?'(User) of
+        true ->
+            Item = to_wocky_roster(
+                     LUser, JID,
+                     ?wocky_roster_item:get(LUser, ContactUser)),
+            {Item#wocky_roster.subscription, Item#wocky_roster.groups};
+        false ->
+            {none, []}
+    end.
 
 
 %% roster_get_versioning_feature -------------------------------------
@@ -480,8 +468,10 @@ check_headline(#xmlel{name = <<"message">>, attrs = Attrs}) ->
 check_headline(_) -> {error, not_headline}.
 
 send_update(#jid{user = User, server = Server}, JID) ->
-    Version = wocky_db_roster:get_roster_version(User, Server),
-    Item = wocky_db_roster:get_roster_item(User, Server, JID),
+    Version = ?wocky_roster_item:version(User),
+    #jid{luser = ContactUser} = jid:from_binary(JID),
+    Item = to_wocky_roster(
+             User, JID, ?wocky_roster_item:get(User, ContactUser)),
     push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Version).
 
 
@@ -567,7 +557,7 @@ push_item(User, Server, From,
                                         to_mim_roster(OldItem),
                                         to_mim_roster(NewItem)}}),
     push_item(User, Server, From, NewItem,
-              wocky_db_roster:get_roster_version(jid:nodeprep(User), Server));
+              ?wocky_roster_item:version(jid:nodeprep(User)));
 
 push_item(User, Server, From, Item, RosterVersion) ->
     lists:foreach(fun (Resource) ->
@@ -592,15 +582,15 @@ to_mim_roster(#wocky_roster{
                  user = User,
                  server = Server,
                  contact_jid = ContactJID,
-                 contact_handle = ContactHandle,
+                 name = Name,
                  subscription = Subscription,
                  ask = Ask,
                  groups = Groups,
                  xs = XS}) ->
     #roster{
        usj = {User, Server, ContactJID},
-       us = {User, Server, ContactJID},
-       name = ContactHandle,
+       us = {User, Server},
+       name = Name,
        subscription = Subscription,
        ask = Ask,
        groups = Groups,
