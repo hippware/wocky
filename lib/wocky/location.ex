@@ -3,9 +3,10 @@ defmodule Wocky.Location do
 
   use Exref, ignore: [__struct__: 0, __struct__: 1, user_location_changed: 3]
   use Wocky.Ejabberd
-  alias Wocky.Location
-  alias Wocky.User
   alias Wocky.Bot
+  alias Wocky.Location
+  alias Wocky.PushNotification
+  alias Wocky.User
   require Logger
 
   @type t :: %__MODULE__{
@@ -179,16 +180,11 @@ defmodule Wocky.Location do
   end
 
   defp send_push_notification(owner_jid, user, bot, event) do
-    result = :wocky_notification_handler.notify_bot_event(
-                  owner_jid, User.to_jid(user), bot.title, event)
-    case result do
-      :ok -> :ok
-      {:error, reason} ->
-        Logger.error("""
-        Failed to send push notification to #{:jid.to_binary(owner_jid)}: \
-        #{inspect(reason)}\
-        """)
+    body = case event do
+      :enter -> "#{user.handle} is near the bot #{bot.title}"
+      :exit -> "#{user.handle} is leaving the area for #{bot.title}"
     end
+    PushNotification.send(owner_jid, User.to_jid(user), body)
   end
 
   defp send_notification(owner_jid, user, bot, event) do

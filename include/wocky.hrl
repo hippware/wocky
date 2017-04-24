@@ -52,4 +52,6 @@
 
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
+-define(wocky_push_notification, 'Elixir.Wocky.PushNotification').
+
 -endif. % ifdef WOCKY_HRL

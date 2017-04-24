@@ -5,26 +5,29 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
 
+-define(notification_broker, 'Elixir.Wocky.PushNotificationBroker').
+-define(notification_handler, 'Elixir.Wocky.PushNotificationHandler').
+
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 
-start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+start_link(CfgTerms) ->
+    supervisor:start_link({local, ?SERVER}, ?MODULE, CfgTerms).
 
 
 %%%===================================================================
 %%% Supervisor callbacks
 %%%===================================================================
 
-init([]) ->
+init(CfgTerms) ->
     SupFlags = #{strategy  => one_for_one,
                  intensity => 1,
                  period    => 5},
@@ -50,4 +53,25 @@ init([]) ->
              type     => supervisor
             },
 
-    {ok, {SupFlags, [UserIdx, BotExpiryMon, Cron]}}.
+    NotificationBroker = #{id => notification_broker,
+                           start => {?notification_broker, start_link, []},
+                           restart => permanent,
+                           shutdown => 5000,
+                           type => worker,
+                           modules => [?notification_broker]},
+
+    NotificationHandler = #{id => notification_handler,
+                            start => {?notification_handler,
+                                      start_link, [CfgTerms]},
+                            restart => permanent,
+                            shutdown => 5000,
+                            type => worker,
+                            modules => [?notification_handler]},
+
+
+    {ok, {SupFlags, [UserIdx,
+                     BotExpiryMon,
+                     Cron,
+                     NotificationBroker,
+                     NotificationHandler
+                    ]}}.

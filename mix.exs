@@ -33,7 +33,7 @@ defmodule Wocky.Mixfile do
          :erlang_murmurhash, :timex, :ejabberd, :lager, :ossp_uuid, :algolia,
          :logger, :schemata, :porcelain, :geocalc, :mix, :faker, :ex_machina,
          :base16, :poison, :ex_aws, :exconstructor, :honeybadger, :slackex,
-         :crone
+         :crone, :gen_stage, :stringprep
        ],
        plt_add_deps: true,
        flags: [
@@ -130,6 +130,7 @@ defmodule Wocky.Mixfile do
       {:eper,                 "~> 0.94.0"},
       {:binpp,                "~> 1.1"},
       {:sweet_xml,            "~> 0.6.5"},
+      {:gen_stage,            "~> 0.11"},
       {:espec,                "~> 1.2",    only: :test},
       {:dogma,                "~> 0.1.13", only: :dev, runtime: false},
       {:credo,                "~> 0.6.0",  only: :dev, runtime: false},
