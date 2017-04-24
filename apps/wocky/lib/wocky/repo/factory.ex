@@ -13,6 +13,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Bot
   alias Wocky.Conversation
+  alias Wocky.HomeStreamItem
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
   alias Wocky.TrafficLog
@@ -100,11 +101,21 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
+  def home_stream_item_factory do
+    %HomeStreamItem{
+      key: new_jid(),
+      from_jid: new_jid(),
+      stanza: Lorem.paragraph,
+      deleted: false
+    }
+  end
+
+
   defp phone_number do
     "+1555#{Phone.area_code}#{Phone.extension}"
   end
 
-  defp new_jid do
+  def new_jid do
     ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
   end
 end
