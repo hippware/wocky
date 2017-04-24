@@ -4,6 +4,10 @@ defmodule Wocky.Bot do
   use Wocky.Repo.Model
   use Wocky.JID
 
+  alias Wocky.Bot.Item
+  alias Wocky.Bot.Share
+  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.TempSubscription
   alias Wocky.Index
   alias Wocky.User
   alias __MODULE__, as: Bot
@@ -15,6 +19,7 @@ defmodule Wocky.Bot do
   schema "bots" do
     field :server,           :string  # Bot server
     field :title,            :string  # Bot title
+    field :pending,          :boolean # True if this is a preallocated bot ID
     field :shortname,        :string  # Bot shortname for URL representation
     field :description,      :string  # User-supplied description
     field :image,            :string  # Bot graphical image
@@ -25,7 +30,7 @@ defmodule Wocky.Bot do
     field :lat,              :float   # Latitude
     field :lon,              :float   # Longitude
     field :radius,           :integer # Radius of bot circle
-    field :visibility,       :integer # Visibility of bot
+    field :public,           :boolean # Visibility of bot
     field :alerts,           :boolean # Whether alerts are enabled
     field :follow_me,        :boolean # Does bot follow owner
     field :follow_me_expiry, :integer # When follow me expires
@@ -34,7 +39,11 @@ defmodule Wocky.Bot do
 
     belongs_to :user, User
 
-    many_to_many :subscribers, User, join_through: "bot_subscribers"
+    has_many :items, Item
+
+    many_to_many :shares, User, join_through: Share
+    many_to_many :subscribers, User, join_through: Subscription
+    many_to_many :temp_subscribers, User, join_through: TempSubscription
   end
 
   @type id           :: binary
@@ -42,19 +51,20 @@ defmodule Wocky.Bot do
   @type t :: %Bot{
     id:               id,
     server:           binary,
-    title:            nil | binary,
-    shortname:        nil | binary,
-    description:      nil | binary,
-    image:            nil | binary,
-    type:             nil | binary,
-    address:          nil | binary,
-    lat:              nil | float,
-    lon:              nil | float,
-    radius:           nil | integer,
-    visibility:       nil | integer,
-    alerts:           nil | boolean,
-    follow_me:        nil | boolean,
-    follow_me_expiry: nil | integer
+    pending:          boolean,
+    title:            binary | nil,
+    shortname:        binary | nil,
+    description:      binary | nil,
+    image:            binary | nil,
+    type:             binary | nil,
+    address:          binary | nil,
+    lat:              float | nil,
+    lon:              float | nil,
+    radius:           integer,
+    public:           boolean,
+    alerts:           boolean,
+    follow_me:        boolean,
+    follow_me_expiry: integer | nil
   }
 
   @spec to_jid(t) :: JID.t

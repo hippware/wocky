@@ -58,6 +58,7 @@ defmodule Wocky.Repo.Factory do
     %Bot{
       id: ID.new,
       server: "localhost",
+      pending: false,
       title: Company.name,
       shortname: Company.buzzword,
       user_id: ID.new,
@@ -68,7 +69,7 @@ defmodule Wocky.Repo.Factory do
       lat: Address.latitude,
       lon: Address.longitude,
       radius: :rand.uniform(100) * 1000,
-      visibility: 100,
+      public: true,
       alerts: true,
       follow_me: false
     }

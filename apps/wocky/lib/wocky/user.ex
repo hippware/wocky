@@ -7,6 +7,9 @@ defmodule Wocky.User do
   import OK, only: ["~>>": 2]
 
   alias Wocky.Bot
+  alias Wocky.Bot.Share
+  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.Device
   alias Wocky.HomeStreamItem
@@ -49,7 +52,9 @@ defmodule Wocky.User do
     has_many :tokens, Token
     has_many :tros_metadatas, TROSMetadata
 
-    many_to_many :subscriptions, Bot, join_through: "bot_subscribers"
+    many_to_many :shares, Bot, join_through: Share
+    many_to_many :subscriptions, Bot, join_through: Subscription
+    many_to_many :temp_subscriptions, Bot, join_through: TempSubscription
   end
 
   @type id           :: binary
