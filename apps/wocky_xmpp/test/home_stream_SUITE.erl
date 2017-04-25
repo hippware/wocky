@@ -57,14 +57,11 @@ users() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [home_stream]),
-    wocky_db:clear_tables(shared, [bot]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [home_stream]),
-    wocky_db_seed:seed_tables(shared, [bot]),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users(users()),
-        test_helper:make_everyone_friends(escalus:get_users(users()))
+        test_helper:make_everyone_friends(escalus:get_users(users())),
+        seed_home_stream()
     ).
 
 end_per_suite(Config) ->
@@ -101,8 +98,9 @@ get_first(Config) ->
                    get_hs_stanza(#rsm_in{direction = before, max = 1}),
                    Alice, Alice),
         [Item] = check_hs_result(Stanza, 1),
-        ?assertEqual(?HS_V_3, Item#item.version),
-        test_helper:check_attr(<<"version">>, ?HS_V_3, Stanza)
+        V3 = lists:last(proplists:get_value(alice_versions, Config)),
+        ?assertEqual(V3, Item#item.version),
+        test_helper:check_attr(<<"version">>, V3, Stanza)
       end).
 
 publish(Config) ->
@@ -166,9 +164,12 @@ subscribe(Config) ->
 subscribe_version(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
+
+        V2 = hd(tl(proplists:get_value(alice_versions, Config))),
+
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(?HS_V_2)])),
+                                           [hs_query_el(V2)])),
 
         lists:foreach(
           fun(_) ->
@@ -179,10 +180,10 @@ subscribe_version(Config) ->
         %% Alice's (since it's not his)
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
-                                           [hs_query_el(?HS_V_2)])),
+                                           [hs_query_el(V2)])),
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(?HS_V_2)])),
+                                           [hs_query_el(V2)])),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
@@ -377,7 +378,7 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
       end, Clients).
 
 clear_home_streams() ->
-    wocky_db:truncate(?LOCAL_CONTEXT, home_stream).
+    ?wocky_repo:delete_all(?wocky_home_stream_item).
 
 pub_item() ->
     #xmlel{name = <<"pep-test-item">>,
@@ -391,3 +392,27 @@ pub_node() -> ?NS_TEST.
 
 handle_pep(_From, Element) ->
     Element.
+
+%%--------------------------------------------------------------------
+%% DB seeding
+%%--------------------------------------------------------------------
+
+seed_home_stream(Config) ->
+    #{updated_at := V1} = ok(?wocky_home_stream_item:put(
+                                ?ALICE, ?BOT, ?BOT_B_JID, ?BOT_UPDATE_STANZA)),
+    #{updated_at := V2} = ok(?wocky_home_stream_item:put(
+                                ?ALICE, ?ITEM, ?BOT_B_JID, ?ITEM_STANZA)),
+    #{updated_at := V3} = ok(?wocky_home_stream_item:put(
+                                ?ALICE, ?ITEM2, ?BOT_B_JID, ?ITEM_STANZA2)),
+    Versions = [ok(?timex:format(V, ?DEFAULT_TIME_FORMAT))
+                || V <- [V1, V2, V3]],
+
+    lists:foreach(
+      fun (_) ->
+              ?wocky_home_stream_item:put(?BOB, ?wocky_id:new(),
+                                          ?BOB_B_JID, ?BOT_UPDATE_STANZA)
+      end,
+      lists:seq(1, ?BOB_HS_ITEM_COUNT)),
+    [{alice_versions, Versions} | Config].
+
+ok({ok, Val}) -> Val.

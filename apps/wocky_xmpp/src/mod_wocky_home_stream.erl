@@ -64,33 +64,36 @@ stop(Host) ->
 
 -spec publish(ejabberd:jid(), ejabberd:jid(), pub_item_id(),
               published_stanza()) -> ok.
-publish(UserJID = #jid{luser = User, lserver = Server}, From, ID, Stanza) ->
-    ItemMap = wocky_db_home_stream:publish(User, Server, ID, Stanza, From),
+publish(UserJID = #jid{luser = User}, From, ID, Stanza) ->
+    {ok, ItemMap} = ?wocky_home_stream_item:put(User, ID,
+                                                jid:to_binary(From),
+                                                exml:to_binary(Stanza)),
     send_notifications(UserJID, map_to_item(ItemMap)).
 
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
-delete(UserJID = #jid{luser = User, lserver = Server}, ID) ->
-    ItemMap = wocky_db_home_stream:delete(User, Server, ID),
+delete(UserJID = #jid{luser = User}, ID) ->
+    {ok, ItemMap} = ?wocky_home_stream_item:delete(User, ID),
     send_notifications(UserJID, map_to_item(ItemMap)).
 
 -spec get(ejabberd:jid(), jlib:rsm_in() | pub_item_id()) ->
     {ok, {[published_item()], pub_version(), jlib:rsm_out()}} |
     {ok, {published_item(), pub_version()} | not_found}.
-get(#jid{luser = User, lserver = Server}, RSMIn = #rsm_in{}) ->
-    Items = wocky_db_home_stream:get(User, Server),
+get(#jid{luser = User}, RSMIn = #rsm_in{}) ->
+    Items = [map_to_item(I) || I <- ?wocky_home_stream_item:get(User)],
     {Filtered, RSMOut} = rsm_util:filter_with_rsm(Items, RSMIn),
-    {ok, {[map_to_item(I) || I <- Filtered],
-          version_from_map(Items),
+    {ok, {Filtered,
+          version_from_items(lists:reverse(Items)),
           RSMOut}};
 
-get(#jid{luser = User, lserver = Server}, ID) ->
-    Item = wocky_db_home_stream:get(User, Server, ID),
+get(#jid{luser = User}, ID) ->
+    Item = ?wocky_home_stream_item:get_by_key(User, ID),
     case Item of
-        not_found ->
+        nil ->
             {ok, not_found};
         _ ->
             {ok, {map_to_item(Item),
-                  wocky_db_home_stream:current_version(User, Server)}}
+                  format_version(
+                    ?wocky_home_stream_item:get_latest_time(User))}}
     end.
 
 -spec available(ejabberd:jid(), pub_version()) -> ok.
@@ -183,9 +186,9 @@ check_publish_bot(From, BotEl) ->
         {_JIDBin, enter}        -> {ok, {drop, new_id()}};
         {_JIDBin, exit}         -> {ok, {drop, new_id()}};
         {JIDBin, follow_on}     -> {ok, {drop, jid_event_id(
-                                                  JIDBin, <<"follow_on">>)}};
+                                                 JIDBin, <<"follow_on">>)}};
         {JIDBin, follow_off}    -> {ok, {drop, jid_event_id(
-                                                  JIDBin, <<"follow_off">>)}};
+                                                 JIDBin, <<"follow_off">>)}};
         {JIDBin, follow_expire} -> {ok, {drop, jid_event_id(
                                                  JIDBin, <<"follow_expiry">>)}}
     end.
@@ -208,21 +211,25 @@ node_cleanup(Node) ->
 new_id() ->
     ?wocky_id:new().
 
-map_to_item(#{id := ID, version := Version,
-              from := From, stanza := Stanza,
+map_to_item(#{key := Key, updated_at := UpdatedAt,
+              from_jid := FromJID, stanza := StanzaBin,
               deleted := Deleted}) ->
-    #published_item{id = ID,
-                    version = Version,
-                    from = From,
+    {ok, Stanza} = wocky_xml:parse_multiple(StanzaBin),
+    #published_item{id = Key,
+                    version = format_version(UpdatedAt),
+                    from = jid:from_binary(FromJID),
                     stanza = Stanza,
                     deleted = Deleted}.
 
-version_from_map([]) -> not_found;
-version_from_map([#{version := Version} | _]) -> Version.
+format_version(Time) ->
+    ?timex:'format!'(Time, ?DEFAULT_TIME_FORMAT).
+
+version_from_items([]) -> not_found;
+version_from_items([#published_item{version = Version} | _]) -> Version.
 
 maybe_send_catchup(_, undefined) -> ok;
-maybe_send_catchup(UserJID = #jid{luser = User, lserver = Server}, Version) ->
-    CatchupRows = wocky_db_home_stream:get_catchup(User, Server, Version),
+maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
+    CatchupRows = ?wocky_home_stream_item:get_after_time(User, Version),
     Items = [map_to_item(R) || R <- CatchupRows],
     lists:foreach(
       wocky_publishing_handler:send_notification(UserJID, ?HOME_STREAM_NODE, _),

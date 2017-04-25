@@ -34,7 +34,7 @@ defmodule Wocky.HomeStreamItem do
   @change_fields [:user_id, :key, :from_jid, :stanza, :deleted]
 
   @doc "Write a home stream item to the database"
-  @spec put(User.id, key, binary, binary) :: :ok
+  @spec put(User.id, key, binary, binary) :: {:ok, t}
   def put(user_id, key, from_jid, stanza) do
     fields = %{
       user_id: user_id,
@@ -50,15 +50,16 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @doc "Mark a single item as deleted"
-  @spec delete(User.id, key) :: :ok
+  @spec delete(User.id, key) :: {:ok, t | nil}
   def delete(user_id, key) do
     item = Repo.get_by(HomeStreamItem, %{user_id: user_id, key: key})
     if item != nil do
       item
       |> changeset(%{deleted: true})
       |> Repo.update
+    else
+      {:ok, nil}
     end
-    :ok
   end
 
   @doc "Get all home stream items for a user"

@@ -78,18 +78,17 @@ defmodule Wocky.HomeStreamItemSpec do
 
   describe "delete/2" do
     it "should flag an existing item as deleted" do
-      shared.user.id
-      |> HomeStreamItem.delete(shared.last_item.key)
-      |> should(eq :ok)
-      get_result = HomeStreamItem.get_by_key(shared.user.id, shared.last_item.key)
-      get_result |> should(be_struct HomeStreamItem)
-      get_result.deleted |> should(be_true())
+      result = HomeStreamItem.delete(shared.user.id, shared.last_item.key)
+      result |> should(be_ok_result())
+      result_val = Kernel.elem(result, 1)
+      result_val |> should(be_struct HomeStreamItem)
+      result_val.deleted |> should(be_true())
     end
 
     it "should not fail for a non-existant item" do
       shared.user.id
       |> HomeStreamItem.delete(Factory.new_jid)
-      |> should(eq :ok)
+      |> should(eq {:ok, nil})
     end
   end
 
