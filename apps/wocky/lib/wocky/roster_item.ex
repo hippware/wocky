@@ -7,9 +7,9 @@ defmodule Wocky.RosterItem do
 
   import EctoHomoiconicEnum, only: [defenum: 2]
 
+  alias Wocky.Repo.StringList
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
-  alias Wocky.StringList
   alias Wocky.User
   alias __MODULE__, as: RosterItem
 

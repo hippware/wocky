@@ -1,4 +1,4 @@
-defmodule Wocky.StringList do
+defmodule Wocky.Repo.StringList do
   @moduledoc """
   Custom ecto type for (de)serialising string lists
   """

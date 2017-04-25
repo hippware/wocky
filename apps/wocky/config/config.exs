@@ -5,6 +5,9 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo]
 
+config :email_checker,
+  validations: [EmailChecker.Check.Format]
+
 config :algolia,
   application_id: "HIE75ZR7Q7",
   api_key: "ALGOLIA_KEY"

@@ -1,7 +1,6 @@
 defmodule Wocky.TrafficLogSpec do
   use ESpec, async: true
 
-  alias Faker.Internet
   alias Faker.Lorem
   alias Timex.Duration
   alias Wocky.Repo.Factory

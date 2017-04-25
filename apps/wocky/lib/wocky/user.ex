@@ -75,6 +75,12 @@ defmodule Wocky.User do
                     :password, :pass_details]
   @update_fields [:handle, :avatar, :first_name, :last_name, :email]
 
+  @doc "Return the list of fields that can be updated on an existing user."
+  @spec valid_update_fields :: [binary]
+  def valid_update_fields do
+    for field <- @update_fields, do: to_string(field)
+  end
+
   @doc """
   Creates a new user with a password.
   Used for testing only.
@@ -234,7 +240,7 @@ defmodule Wocky.User do
   def changeset(struct, params) do
     struct
     |> cast(params, @update_fields)
-    |> validate_format(:email, ~r/@/)
+    |> validate_change(:email, &validate_email/2)
     |> validate_change(:handle, &validate_handle/2)
     |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
     |> unique_constraint(:handle)
@@ -242,6 +248,14 @@ defmodule Wocky.User do
       maybe_cleanup_avatar(changeset.changes[:avatar], struct.avatar)
       changeset
     end)
+  end
+
+  defp validate_email(:email, email) do
+    if EmailChecker.valid?(email) do
+      []
+    else
+      [email: "address is invalid"]
+    end
   end
 
   defp validate_handle(:handle, handle) do
@@ -260,17 +274,20 @@ defmodule Wocky.User do
       {:ok, _} -> []
       {:error, :not_found} ->
         [avatar: "does not exist"]
+      {:error, :invalid_file} ->
+        [avatar: "has an invalid file name (must be UUID)"]
       {:error, :invalid_url} ->
-        [avatar: "not a valid TROS URL"]
+        [avatar: "is an invalid file URL"]
       {:error, :not_local_file} ->
-        [avatar: "not a local file"]
+        [avatar: "is not a local file"]
       {:error, :not_file_owner} ->
-        [avatar: "not owned by the user"]
+        [avatar: "is not owned by the user"]
     end
   end
 
  defp do_validate_avatar(user, avatar) do
    Avatar.prepare(avatar)
+   ~>> Avatar.check_valid_filename
    ~>> Avatar.check_is_local(user.server)
    ~>> Avatar.check_owner(user.id)
  end

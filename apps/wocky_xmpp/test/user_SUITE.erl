@@ -86,13 +86,9 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, [media, media_data]),
-    wocky_db_seed:maybe_seed_s3_file(?ALICE_JID, ?AVATAR_FILE),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    wocky_db:clear_tables(shared, [roster]),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [media, media_data]),
     escalus:end_per_suite(Config).
 
 %% init_per_group(friend, Config) ->
@@ -103,7 +99,9 @@ end_per_suite(Config) ->
 %%     );
 init_per_group(_GroupName, Config) ->
     wocky_db_seed:seed_tables(shared, [roster]),
-    test_helper:setup_users(Config, [alice, bob, robert]).
+    Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
+    ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
+    Config2.
 
 end_per_group(_GroupName, Config) ->
     Config.

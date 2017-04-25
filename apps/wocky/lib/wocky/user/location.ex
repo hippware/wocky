@@ -40,12 +40,7 @@ defmodule Wocky.User.Location do
   @spec insert(User.t, User.resource, float, float, float)
     :: {:ok, t} | {:error, any}
   def insert(user, resource, lat, lon, accuracy) do
-    data = %{
-      resource: resource,
-      lat: GeoUtils.normalize_latitude(lat),
-      lon: GeoUtils.normalize_longitude(lon),
-      accuracy: accuracy
-    }
+    data = %{resource: resource, lat: lat, lon: lon, accuracy: accuracy}
 
     user
     |> build_assoc(:locations)
@@ -57,11 +52,9 @@ defmodule Wocky.User.Location do
     struct
     |> cast(params, [:resource, :lat, :lon, :accuracy])
     |> validate_required([:resource, :lat, :lon, :accuracy])
-    |> validate_number(:lat, greater_than_or_equal_to: -90,
-                             less_than_or_equal_to: 90)
-    |> validate_number(:lon, greater_than_or_equal_to: -180,
-                             less_than_or_equal_to: 180)
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
+    |> update_change(:lat, &GeoUtils.normalize_latitude/1)
+    |> update_change(:lon, &GeoUtils.normalize_longitude/1)
   end
 
   @doc ""

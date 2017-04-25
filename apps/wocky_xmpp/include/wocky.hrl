@@ -61,6 +61,7 @@
 -define(wocky_conversation, 'Elixir.Wocky.Conversation').
 -define(wocky_factory, 'Elixir.Wocky.Repo.Factory').
 -define(wocky_id, 'Elixir.Wocky.Repo.ID').
+-define(wocky_errors, 'Elixir.Wocky.Repo.Errors').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
 -define(wocky_roster_item, 'Elixir.Wocky.RosterItem').
 -define(wocky_token, 'Elixir.Wocky.Token').
