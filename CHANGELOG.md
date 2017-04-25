@@ -11,6 +11,8 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 * Fix handling of empty bot shortname field (#629)
+* Better input handling for GeoUtils and multicast stanzas. 
+  * Fixes: ArgumentError: argument error (#635)
 
 
 # 17.04.12+1736.ec69c83
