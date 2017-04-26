@@ -66,12 +66,12 @@ handle_iq(_From, _To, IQ) ->
 handle_request(JID, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
     {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
-    case wocky_notification_handler:enable(JID, Platform, DeviceId) of
-        ok -> {ok, <<"enabled">>};
+    case ?wocky_push_notifier:enable(JID, Platform, DeviceId) of
+        {ok, _} -> {ok, <<"enabled">>};
         {error, _} = Error -> Error
     end;
 handle_request(JID, #xmlel{name = <<"disable">>}) ->
-    ok = wocky_notification_handler:disable(JID),
+    ok = ?wocky_push_notifier:disable(JID),
     {ok, <<"disabled">>}.
 
 make_error_response(IQ, ErrStanza) ->
@@ -93,7 +93,10 @@ user_send_packet_hook(From, To, Packet) ->
     case should_notify(From, To, Packet) of
         true ->
             Body = get_body(Packet),
-            wocky_notification_handler:notify_message(To, From, Body);
+            Event = ?new_message_event:new(#{to => To,
+                                             from => From,
+                                             body => Body}),
+            ?wocky_event_handler:broadcast(Event);
 
         _Else ->
             ok
@@ -121,6 +124,4 @@ get_body(Packet) ->
 
 %% remove_user -------------------------------------------------------
 remove_user_hook(User, Server) ->
-    LUser = jid:nodeprep(User),
-    LServer = jid:nameprep(Server),
-    wocky_notification_handler:delete(LUser, LServer).
+    ?wocky_push_notifier:delete(jid:make(User, Server, <<>>)).

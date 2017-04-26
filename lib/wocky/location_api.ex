@@ -6,9 +6,13 @@ defmodule Wocky.LocationApi do
     content_types_accepted: 2, from_json: 2, is_authorized: 2,
     malformed_request: 2, resource_exists: 2
   ]
+
   import OK, only: :macros
+
+  alias Poison.Parser
   alias Wocky.User
   alias Wocky.Location
+
   require Logger
 
   defmodule State do
@@ -80,7 +84,7 @@ defmodule Wocky.LocationApi do
   @spec malformed_request(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}
   def malformed_request(req, state) do
-    case req |> read_and_parse_body do
+    case read_and_parse_body(req) do
       {:ok, coords, resource} ->
         {false, req, %State{state | resource: resource, coords: coords}}
 
@@ -96,8 +100,7 @@ defmodule Wocky.LocationApi do
   end
 
   defp read_and_parse_body(request) do
-    request
-    |> read_body
+    read_body(request)
     ~>> parse_body
     ~>> extract_values
     ~>> handle_parse_result
@@ -110,7 +113,7 @@ defmodule Wocky.LocationApi do
     end
   end
 
-  defp parse_body(body), do: body |> Poison.Parser.parse(keys: :atoms)
+  defp parse_body(body), do: Parser.parse(body, keys: :atoms)
 
   defp extract_values(data),
     do: {:ok, extract_values(data[:location], data[:resource])}

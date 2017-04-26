@@ -88,16 +88,16 @@ config :lager,
     {{:lager_file_backend, 'location.log'}, [module: Wocky.LocationAPI]},
     {{:lager_file_backend, 'location.log'}, [module: :mod_wocky_geoloc]},
     {{:lager_file_backend, 'notifications.log'}, [
-      module: Wocky.Notification.AWSHandler
+      module: Wocky.PushNotifier
     ]},
     {{:lager_file_backend, 'notifications.log'}, [
-      module: Wocky.Notification.NullHandler
+      module: Wocky.PushNotifier.SNSBackend
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.PushNotifier.NullBackend
     ]},
     {{:lager_file_backend, 'notifications.log'}, [
       module: :mod_wocky_notifications
-    ]},
-    {{:lager_file_backend, 'notifications.log'}, [
-      module: :wocky_notification_handler
     ]}
   ]
 

@@ -52,4 +52,13 @@
 
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
+-define(wocky_event_handler, 'Elixir.Wocky.EventHandler').
+-define(home_stream_handler, 'Elixir.Wocky.EventHandler.HomeStream').
+-define(push_notification_handler,
+         'Elixir.Wocky.EventHandler.PushNotification').
+-define(new_message_event, 'Elixir.Wocky.Events.NewMessageEvent').
+-define(bot_share_event, 'Elixir.Wocky.Events.BotShareEvent').
+
+-define(wocky_push_notifier, 'Elixir.Wocky.PushNotifier').
+
 -endif. % ifdef WOCKY_HRL

@@ -10,7 +10,7 @@
 
 -define(slack_files, 'Elixir.Slackex.Files').
 
--spec post_bot_report(binary(), non_neg_integer()) -> map().
+-spec post_bot_report(binary(), non_neg_integer()) -> binary().
 post_bot_report(Channel, Days) ->
     Token = wocky_app:get_config(slack_token),
     Report = wocky_report:generate_bot_report(Days),
