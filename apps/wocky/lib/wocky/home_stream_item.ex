@@ -67,7 +67,7 @@ defmodule Wocky.HomeStreamItem do
   def get(user_id) do
     HomeStreamItem
     |> with_user(user_id)
-    |> order_by_time
+    |> order_by_time()
     |> Repo.all
   end
 
@@ -86,7 +86,7 @@ defmodule Wocky.HomeStreamItem do
     HomeStreamItem
     |> with_user(user_id)
     |> after_time(time)
-    |> order_by_time
+    |> order_by_time()
     |> Repo.all
   end
 
