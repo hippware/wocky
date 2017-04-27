@@ -9,6 +9,7 @@ defmodule Wocky.User do
   alias Wocky.Bot
   alias Wocky.Conversation
   alias Wocky.Device
+  alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
@@ -41,6 +42,7 @@ defmodule Wocky.User do
     has_many :bot_events, BotEvent
     has_many :conversations, Conversation
     has_many :devices, Device
+    has_many :home_stream_items, HomeStreamItem
     has_many :locations, Location
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id
     has_many :roster_items, RosterItem
