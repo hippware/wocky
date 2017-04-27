@@ -6,7 +6,7 @@
   "binpp": {:hex, :binpp, "1.1.1", "a01060124841ed3a22ed98ddeafc10d14166d2991683d5ce907a3a410559c9ee", [:rebar3], []},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], []},
   "cache_tab": {:hex, :cache_tab, "1.0.7", "8e2c958c0c2178e6c015aa7340c761521dc71b642192a5a7887f4aeffa29c7b1", [:rebar3], [{:p1_utils, "1.0.7", [hex: :p1_utils, optional: false]}]},
-  "certifi": {:hex, :certifi, "1.1.0", "c9b71a547016c2528a590ccfc28de786c7edb74aafa17446b84f54e04efc00ee", [:rebar3], []},
+  "certifi": {:git, "https://github.com/hippware/erlang-certifi.git", "9f16a0c10e82814eca582da6b98fe919433018e6", [branch: "working"]},
   "cf": {:hex, :cf, "0.2.1", "69d0b1349fd4d7d4dc55b7f407d29d7a840bf9a1ef5af529f1ebe0ce153fc2ab", [:rebar3], []},
   "combine": {:hex, :combine, "0.9.6", "8d1034a127d4cbf6924c8a5010d3534d958085575fa4d9b878f200d79ac78335", [:mix], []},
   "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], []},
