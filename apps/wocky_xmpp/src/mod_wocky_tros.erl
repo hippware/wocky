@@ -211,9 +211,6 @@ binary_to_integer_def(Binary, Default) ->
 expand_err({error, not_found}) ->
     Text = <<"File not found">>,
     {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, Text)};
-expand_err({error, Error}) ->
-    Text = list_to_binary(io_lib:format("Error retrieving file: ~p", [Error])),
-    {error, ?ERRT_INTERNAL_SERVER_ERROR(?MYLANG, Text)};
 expand_err(NonError) -> NonError.
 
 setup_metrics() ->
