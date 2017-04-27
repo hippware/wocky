@@ -28,7 +28,7 @@ defmodule Wocky.HomeStreamItem do
     from_jid:   binary,
     stanza:     binary,
     deleted:    boolean,
-    updated_at: DateTime::t
+    updated_at: DateTime.t
   }
 
   @change_fields [:user_id, :key, :from_jid, :stanza, :deleted]
