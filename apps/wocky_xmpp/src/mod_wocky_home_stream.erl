@@ -79,10 +79,12 @@ delete(UserJID = #jid{luser = User}, ID) ->
     {ok, {[published_item()], pub_version(), jlib:rsm_out()}} |
     {ok, {published_item(), pub_version()} | not_found}.
 get(#jid{luser = User}, RSMIn = #rsm_in{}) ->
-    Items = [map_to_item(I) || I <- ?wocky_home_stream_item:get(User)],
-    {Filtered, RSMOut} = rsm_util:filter_with_rsm(Items, RSMIn),
-    {ok, {Filtered,
-          version_from_items(lists:reverse(Items)),
+    Maps = [I#{id => format_version(T)}
+            || I = #{updated_at := T} <- ?wocky_home_stream_item:get(User)],
+    {Filtered, RSMOut} = rsm_util:filter_with_rsm(Maps, RSMIn),
+    AllItems = [map_to_item(I) || I <- Maps],
+    {ok, {[map_to_item(I) || I <- Filtered],
+          version_from_items(lists:reverse(AllItems)),
           RSMOut}};
 
 get(#jid{luser = User}, ID) ->

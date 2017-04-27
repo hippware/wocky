@@ -32,6 +32,7 @@
 all() -> [
           get,
           get_first,
+          get_with_rsm,
           publish,
           delete,
           no_auto_publish_chat,
@@ -100,6 +101,18 @@ get_first(Config) ->
         [Item] = check_hs_result(Stanza, 1),
         V3 = lists:last(proplists:get_value(alice_versions, Config)),
         ?assertEqual(V3, Item#item.version),
+        test_helper:check_attr(<<"version">>, V3, Stanza)
+      end).
+
+get_with_rsm(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        [V1, V2, V3] = proplists:get_value(alice_versions, Config),
+        Stanza = expect_iq_success_u(
+                   get_hs_stanza(#rsm_in{direction = before, max = 1, id = V2}),
+                   Alice, Alice),
+        [Item] = check_hs_result(Stanza, 1),
+        ?assertEqual(V1, Item#item.version),
         test_helper:check_attr(<<"version">>, V3, Stanza)
       end).
 
