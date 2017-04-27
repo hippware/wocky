@@ -28,12 +28,7 @@ defmodule Wocky.Release.Mixfile do
   defp deps do
     [
       {:distillery, "~> 1.1"},
-      {:dialyxir,   "~> 0.5"},
-      {:certifi,
-        github: "hippware/erlang-certifi",
-        branch: "working",
-        manager: :rebar3,
-        override: true}
+      {:dialyxir,   "~> 0.5"}
     ]
   end
 
