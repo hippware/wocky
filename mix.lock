@@ -77,7 +77,7 @@
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},
   "mime": {:hex, :mime, "1.1.0", "01c1d6f4083d8aa5c7b8c246ade95139620ef8effb009edde934e0ec3b28090a", [:mix], []},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], []},
-  "mix_ct": {:git, "https://github.com/hippware/mix_ct.git", "209ce78e1ea9d4b85c124134d7e9dde57e123773", [branch: "master"]},
+  "mix_ct": {:git, "https://github.com/hippware/mix_ct.git", "5cafb89fab65c6bfd24a3c9ae8de45c69ad30d53", [branch: "master"]},
   "mix_elvis": {:git, "https://github.com/hippware/mix_elvis.git", "a7aba5dd8a92b50bb3832864aca90c73a5a2e9fa", [branch: "master"]},
   "mix_eunit": {:git, "https://github.com/hippware/mix_eunit.git", "ec0044ef5cb40cb23fbf95d1b0f01bd980d94bd8", [branch: "working"]},
   "mochijson2": {:git, "https://github.com/bjnortier/mochijson2.git", "e162b7f5be57b8a1fcf5cc99aa4948864af42bba", [branch: "master"]},

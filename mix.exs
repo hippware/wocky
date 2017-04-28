@@ -6,7 +6,10 @@ defmodule Wocky.Release.Mixfile do
       apps_path: "apps",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
-      preferred_cli_env: [release: :prod],
+      preferred_cli_env: [espec:   :test,
+                          eunit:   :test,
+                          ct:      :test,
+                          release: :prod],
       deps: deps(),
       aliases: aliases(),
       dialyzer: [
@@ -27,15 +30,15 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:distillery, "~> 1.1"},
-      {:dialyxir,   "~> 0.5"}
+      {:distillery, "~> 1.1", runtime: false},
+      {:dialyxir,   "~> 0.5", only: :dev, runtime: false}
     ]
   end
 
   defp aliases do
     [
       recompile: ["clean", "compile"],
-      prepare: ["deps.get", "deps.compile goldrush lager", "compile"]
+      prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
     ]
   end
 end
