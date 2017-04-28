@@ -3,7 +3,8 @@
 use Mix.Config
 
 config :wocky_xmpp,
-  keyspace_prefix: 'wocky_'
+  keyspace_prefix: 'wocky_',
+  ecto_repos: []
 
 config :schemata,
   drop_nulls: false
