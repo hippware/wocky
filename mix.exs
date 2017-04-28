@@ -23,7 +23,6 @@ defmodule Wocky.Release.Mixfile do
           :race_conditions
         ]
       ],
-     elvis_config: [],
     ]
   end
 
@@ -40,7 +39,7 @@ defmodule Wocky.Release.Mixfile do
     [
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
-      lint: ["credo", "elvis"]
+      lint: ["elvis", "credo"]
     ]
   end
 end

@@ -17,6 +17,7 @@ defmodule Wocky.Mixfile do
        coveralls: :test,
        "coveralls.html": :test
      ],
+     elvis_config: [%{src_dirs: [], rules: []}],
      aliases: aliases(),
      deps: deps()]
   end
