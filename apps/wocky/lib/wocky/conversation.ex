@@ -25,8 +25,8 @@ defmodule Wocky.Conversation do
     other_jid:  binary,
     message:    binary,
     outgoing:   boolean,
-    created_at: DateTime::t,
-    updated_at: DateTime::t
+    created_at: DateTime.t,
+    updated_at: DateTime.t
   }
 
   @doc "Write a conversation record to the database"

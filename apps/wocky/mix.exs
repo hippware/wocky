@@ -17,6 +17,7 @@ defmodule Wocky.Mixfile do
        coveralls: :test,
        "coveralls.html": :test
      ],
+     elvis_config: [%{src_dirs: [], rules: []}],
      aliases: aliases(),
      deps: deps()]
   end
@@ -81,6 +82,11 @@ defmodule Wocky.Mixfile do
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",
         manager: :rebar3},
+      {:certifi,
+        github: "hippware/erlang-certifi",
+        branch: "working",
+        manager: :rebar3,
+        override: true},
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},

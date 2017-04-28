@@ -139,6 +139,11 @@ defmodule Wocky.XMPP.Mixfile do
       {:slackex,
         github: "hippware/slackex",
         branch: "master"},
+      {:certifi,
+        github: "hippware/erlang-certifi",
+        branch: "working",
+        manager: :rebar3,
+        override: true},
 
       # Overrides
       # These are transitive dependencies that need to be overriden to build

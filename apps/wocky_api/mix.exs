@@ -15,6 +15,7 @@ defmodule WockyAPI.Mixfile do
      preferred_cli_env: [
        espec: :test
      ],
+     elvis_config: [%{src_dirs: [], rules: []}],
      aliases: aliases(),
      deps: deps()]
   end

@@ -27,7 +27,7 @@ defmodule Wocky.TrafficLogSpec do
      traffic: traffic,
      resource: resource,
      first: hd(traffic).created_at,
-     middle: Enum.at(traffic, div(@packets, 2)-1).created_at,
+     middle: Enum.at(traffic, div(@packets, 2) - 1).created_at,
      last: List.last(traffic).created_at
     }
   end
