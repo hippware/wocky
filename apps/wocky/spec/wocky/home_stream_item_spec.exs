@@ -25,7 +25,7 @@ defmodule Wocky.HomeStreamItemSpec do
      user: user,
      items: items,
      middle_time: Enum.at(items, middle_item).updated_at,
-     after_items: Enum.slice(items, (middle_item+1)..@num_items),
+     after_items: Enum.slice(items, (middle_item + 1)..@num_items),
      last_item: List.last(items)}
   end
 
