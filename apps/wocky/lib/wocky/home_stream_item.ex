@@ -45,7 +45,8 @@ defmodule Wocky.HomeStreamItem do
     result =
       %HomeStreamItem{}
       |> changeset(fields)
-      |> Repo.insert!(on_conflict: :replace_all)
+      |> Repo.insert!(on_conflict: :replace_all,
+                      conflict_target: [:user_id, :key])
     {:ok, result}
   end
 

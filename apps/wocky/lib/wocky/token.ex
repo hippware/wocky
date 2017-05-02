@@ -60,7 +60,8 @@ defmodule Wocky.Token do
                    resource: resource,
                    token: generate(),
                    expires_at: expiry()})
-    |> Repo.insert!(on_conflict: :replace_all)
+    |> Repo.insert!(on_conflict: :replace_all,
+                    conflict_target: [:user_id, :resource])
     |> handle_assign_result()
   end
 

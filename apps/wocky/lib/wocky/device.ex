@@ -34,7 +34,8 @@ defmodule Wocky.Device do
       endpoint: endpoint
     }
 
-    Repo.insert!(device, on_conflict: :replace_all)
+    Repo.insert!(device, on_conflict: :replace_all,
+                         conflict_target: [:user_id, :resource])
 
     :ok
   end

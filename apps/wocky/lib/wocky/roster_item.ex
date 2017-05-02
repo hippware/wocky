@@ -7,7 +7,6 @@ defmodule Wocky.RosterItem do
 
   import EctoHomoiconicEnum, only: [defenum: 2]
 
-  alias Wocky.Repo.StringList
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
   alias Wocky.User
@@ -21,7 +20,7 @@ defmodule Wocky.RosterItem do
     field :name,         :binary, default: ""
     field :ask,          AskEnum
     field :subscription, SubscriptionEnum
-    field :groups,       StringList
+    field :groups,       {:array, :string}
 
     belongs_to :user,    User
     belongs_to :contact, User
@@ -56,7 +55,8 @@ defmodule Wocky.RosterItem do
     {:ok,
      %RosterItem{}
      |> changeset(fields)
-     |> Repo.insert!(on_conflict: :replace_all)}
+     |> Repo.insert!(on_conflict: :replace_all,
+                     conflict_target: [:user_id, :contact_id])}
   end
 
   @spec get(User.id) :: [t]

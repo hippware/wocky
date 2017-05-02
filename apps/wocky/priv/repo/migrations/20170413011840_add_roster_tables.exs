@@ -12,7 +12,7 @@ defmodule Wocky.Repo.Migrations.AddRosterTables do
       add :name,         :string, null: false
       add :ask,          :string, size: 10, null: false
       add :subscription, :string, size: 10, null: false
-      add :groups,       :string, size: 1024, null: false
+      add :groups,       {:array, :string}, null: false
 
       timestamps()
     end
