@@ -2,7 +2,7 @@ use Mix.Config
 
 # Configure your database
 config :wocky, Wocky.Repo,
-  adapter: Ecto.Adapters.MySQL,
+  adapter: Ecto.Adapters.Postgres,
   username: "DB_USER",
   password: "DB_PASS",
   database: "wocky_prod",

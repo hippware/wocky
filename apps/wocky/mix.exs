@@ -89,9 +89,9 @@ defmodule Wocky.Mixfile do
         manager: :rebar3,
         override: true},
       {:pgsql,
-        github: "semiocast/pgsql",
-        tag: "v26.0.1",
-        manager: :rebar3
+        github: "processone/p1_pgsql",
+        tag: "1.1.2",
+        manager: :rebar
       },
 
       {:espec,       "~> 1.2", only: :test},
