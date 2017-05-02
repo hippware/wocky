@@ -62,7 +62,7 @@ defmodule Wocky.User.Location do
   def check_for_bot_events(%Location{user: user} = loc) do
     maybe_do_async fn ->
       user
-      |> User.get_subscribed_bots
+      |> User.get_subscriptions
       |> bots_with_events(user, loc)
       |> Enum.each(&trigger_bot_notification(user, &1))
     end

@@ -25,7 +25,7 @@ defmodule Wocky.User.LocationSpec do
     bot_list = Factory.insert_list(3, :bot, user_id: owner.id)
     bot = hd(bot_list)
 
-    :ok = User.subscribe_to_bot(user, bot)
+    :ok = User.subscribe(user, bot)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end

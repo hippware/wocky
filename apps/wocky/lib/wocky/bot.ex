@@ -8,7 +8,9 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
+  alias Wocky.GeoUtils
   alias Wocky.Index
+  alias Wocky.Repo.ID
   alias Wocky.User
   alias __MODULE__, as: Bot
 
@@ -67,38 +69,194 @@ defmodule Wocky.Bot do
     follow_me_expiry: integer | nil
   }
 
-  @spec to_jid(t) :: JID.t
-  def to_jid(bot) do
-    JID.make("", bot.server, bot.id)
+  @bot_prefix "bot/"
+  @change_fields [:id, :server, :user_id, :title, :shortname, :description,
+                  :image, :type, :address, :lat, :lon, :radius, :public,
+                  :alerts, :follow_me, :follow_me_expiry]
+  @required_fields [:id, :server, :user_id, :title, :lat, :lon, :radius]
+
+  @spec make_node(t) :: binary
+  def make_node(bot) do
+    @bot_prefix <> bot.id
   end
 
-  @spec to_jid_string(t) :: binary
-  def to_jid_string(bot) do
-    bot |> to_jid |> JID.to_binary
+  @spec to_jid(t) :: JID.t
+  def to_jid(bot) do
+    JID.make("", bot.server, make_node(bot))
   end
 
   @spec get_id_from_jid(JID.t) :: id
-  def get_id_from_jid(jid(lresource: "bot/" <> id)), do: id
-  def get_id_from_jid({_, _, "bot/" <> id}), do: id
-  def get_id_from_jid(_), do: ""
+  def get_id_from_jid(jid(lresource: @bot_prefix <> id)), do: id
+  def get_id_from_jid({_, _, @bot_prefix <> id}), do: id
+  def get_id_from_jid(_), do: nil
+
+  @spec get_id_from_node(binary) :: binary
+  def get_id_from_node(@bot_prefix <> id), do: id
+  def get_id_from_node(_), do: nil
+
+  @spec new :: t
+  def new, do: %Bot{}
 
   @spec get(id) :: t | nil
   def get(id) do
     Repo.get(Bot, id)
   end
 
+  @spec preallocate(User.id, User.server) :: t | no_return
+  def preallocate(user_id, server) do
+    params = %{id: ID.new, server: server, user_id: user_id, pending: true}
+
+    %Bot{}
+    |> cast(params, [:id, :server, :user_id, :pending])
+    |> foreign_key_constraint(:user_id)
+    |> Repo.insert!
+  end
+
+  @spec pending?(id) :: boolean
+  def pending?(bot_id) do
+    case get(bot_id) do
+      nil -> false
+      bot -> bot.pending
+    end
+  end
+
+  def changeset(struct, params \\ %{}) do
+    struct
+    |> cast(params, @change_fields)
+    |> validate_required(@required_fields)
+    |> put_change(:pending, false)
+    |> unique_constraint(:shortname)
+    |> foreign_key_constraint(:user_id)
+  end
+
+  def insert(params) do
+    %Bot{}
+    |> changeset(params)
+    |> Repo.insert
+  end
+
+  def update(bot, params) do
+    bot
+    |> changeset(params)
+    |> Repo.update
+  end
+
   @spec set_location(t, float, float, float) :: :ok
   def set_location(%Bot{id: id} = bot, lat, lon, _accuracy) do
     bot
-    |> location_changeset(%{lat: lat, lon: lon})
+    |> cast(%{lat: lat, lon: lon}, [:lat, :lon])
+    |> update_change(:lat, &GeoUtils.normalize_latitude/1)
+    |> update_change(:lon, &GeoUtils.normalize_longitude/1)
     |> Repo.update!
 
     Index.bot_updated(id, %{lat: lat, lon: lon})
   end
 
-  defp location_changeset(struct, params) do
-    struct
-    |> cast(params, [:lat, :lon])
-    |> validate_required([:lat, :lon])
+  @spec items(Bot.t) :: [Item.t]
+  def items(bot) do
+    bot
+    |> assoc(:items)
+    |> order_by(desc: :updated_at)
+    |> Repo.all
+  end
+
+  @spec image_items(Bot.t) :: [Item.t]
+  def image_items(bot) do
+    bot
+    |> assoc(:items)
+    |> where(image: true)
+    |> order_by(desc: :updated_at)
+    |> Repo.all
+  end
+
+  @spec image_items_count(Bot.t) :: pos_integer
+  def image_items_count(bot) do
+    bot
+    |> assoc(:items)
+    |> where(image: true)
+    |> select([i], count(i.bot_id))
+    |> Repo.one
+  end
+
+  @spec publish_item(Bot.t, binary, binary, boolean) ::
+    {:ok, Item.t} | {:error, any}
+  def publish_item(bot, id, stanza, image?) do
+    Item.put(%{id: id, bot_id: bot.id, stanza: stanza, image: image?})
+  end
+
+  @spec delete_item(Bot.t, binary) :: :ok
+  def delete_item(bot, id) do
+    bot
+    |> assoc(:items)
+    |> where(id: ^id)
+    |> Repo.delete_all
+  end
+
+  @spec owner(Bot.t) :: User.t
+  def owner(bot) do
+    bot = Repo.preload(bot, :user)
+    bot.user
+  end
+
+  @spec subscribers(Bot.t) :: [User.t]
+  def subscribers(bot) do
+    bot = Repo.preload(bot,
+      [:subscribers, :temp_subscribers],
+      in_parallel: false)
+
+    [bot.subscribers, bot.temp_subscribers]
+    |> List.flatten
+    |> Enum.sort_by(&(&1.id))
+    |> Enum.uniq_by(&(&1.id))
+  end
+
+  @spec subscriber_count(Bot.t) :: pos_integer
+  def subscriber_count(bot) do
+    subscribers =
+      bot
+      |> assoc(:subscribers)
+      |> select([s], count(s.id))
+      |> Repo.one
+
+    temp_subscribers =
+      bot
+      |> assoc(:temp_subscribers)
+      |> select([s], count(s.id))
+      |> Repo.one
+
+    subscribers + temp_subscribers + 1
+  end
+
+  @spec public?(t) :: boolean
+  def public?(%Bot{public: is_public}), do: is_public
+
+  @spec share(t, User.t, User.t) :: :ok
+  def share(bot, to, from) do
+    Share.put(bot, to, from)
+  end
+
+  @spec shared_to?(t, User.t) :: boolean
+  def shared_to?(bot, user) do
+    Share.exists?(user, bot)
+  end
+
+  @spec follow_me(t, pos_integer) :: {:ok, t} | {:error, any}
+  def follow_me(bot, expiry) do
+    bot
+    |> changeset(%{follow_me: true, follow_me_expiry: expiry})
+    |> Repo.update
+  end
+
+  @spec unfollow_me(t) :: {:ok, t} | {:error, any}
+  def unfollow_me(bot) do
+    bot
+    |> changeset(%{follow_me: false, follow_me_expiry: nil})
+    |> Repo.update
+  end
+
+  @spec delete(t) :: :ok
+  def delete(bot) do
+    Repo.delete(bot)
+    :ok
   end
 end

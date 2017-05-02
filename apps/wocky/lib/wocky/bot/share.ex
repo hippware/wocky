@@ -27,4 +27,16 @@ defmodule Wocky.Bot.Share do
     |> cast(params, [:user_id, :bot_id, :sharer_id])
     |> validate_required([:user_id, :bot_id, :sharer_id])
   end
+
+  def put(bot, to, from) do
+    %Share{}
+    |> changeset(%{bot_id: bot.id, user_id: to.id, sharer_id: from.id})
+    |> Repo.insert!(on_conflict: :nothing, conflict_target: [:user_id, :bot_id])
+
+    :ok
+  end
+
+  def exists?(user, bot) do
+    Repo.get_by(Share, user_id: user.id, bot_id: bot.id) != nil
+  end
 end
