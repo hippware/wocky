@@ -12,8 +12,8 @@ defmodule Wocky.Repo.Migrations.AddBotTables do
       add :image,            :string
       add :type,             :string
       add :address,          :string
-      add :lat,              :double, null: false
-      add :lon,              :double, null: false
+      add :lat,              :float, null: false
+      add :lon,              :float, null: false
       add :radius,           :integer, null: false
       add :visibility,       :integer
       add :alerts,           :boolean, null: false, default: true

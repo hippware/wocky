@@ -5,9 +5,9 @@ defmodule Wocky.Repo.Migrations.AddUserGeolocTables do
     create table(:user_locations, primary_key: false) do
       add :user_id,   references(:users, type: :uuid, on_delete: :delete_all), primary_key: true
       add :resource,  :string, null: false, primary_key: true
-      add :lat,       :double, null: false
-      add :lon,       :double, null: false
-      add :accuracy,  :double, null: false
+      add :lat,       :float, null: false
+      add :lon,       :float, null: false
+      add :accuracy,  :float, null: false
 
       timestamps()
     end

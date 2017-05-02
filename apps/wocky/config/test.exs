@@ -2,9 +2,9 @@ use Mix.Config
 
 # Configure your database
 config :wocky, Wocky.Repo,
-  adapter: Ecto.Adapters.MySQL,
-  username: "root",
-  password: "",
+  adapter: Ecto.Adapters.Postgres,
+  username: "postgres",
+  password: "password",
   database: "wocky_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
