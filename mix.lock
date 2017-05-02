@@ -85,6 +85,7 @@
   "ok": {:hex, :ok, "1.6.1", "0d1118f48f9d3563d9f1cc23b67e8c77cf67a4ea3bc09673bc1fa79c92eaa61d", [:mix], []},
   "ossp_uuid": {:git, "https://github.com/hippware/erlang-ossp-uuid.git", "c0ce1c3687390e5583eac8be877a1f077262ba7b", [tag: "v1.0.1"]},
   "p1_mysql": {:hex, :p1_mysql, "1.0.2", "893a99415f98ce8b6ad014ef950d4e878895787b6c8333587f1e506f831571e0", [:rebar3], []},
+  "p1_pgsql": {:git, "https://github.com/processone/p1_pgsql.git", "8040c9a33104a3fe214e2fde353ef2d96f9feffe", [tag: "1.1.2"]},
   "p1_utils": {:hex, :p1_utils, "1.0.7", "030adbce8935f1b87aaedfdb037d3127cc671ee3e1904b394e6dde9e449d6979", [:rebar3], []},
   "parse_trans": {:git, "git://github.com/uwiger/parse_trans.git", "a210adafdfbb904d156d8f22abd5fb58fc17de1e", [tag: "2.9.2"]},
   "partial": {:git, "https://github.com/hippware/partial", "2d7099c54bd37118e517ce1d6003be47b047a442", [branch: "master"]},
