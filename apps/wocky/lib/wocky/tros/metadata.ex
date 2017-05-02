@@ -85,7 +85,7 @@ defmodule Wocky.TROS.Metadata do
   defp changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
-    |> unique_constraint(:id, name: :PRIMARY)
+    |> unique_constraint(:id, name: :tros_metadatas_pkey)
     |> validate_required(:access)
     |> foreign_key_constraint(:user_id)
   end
