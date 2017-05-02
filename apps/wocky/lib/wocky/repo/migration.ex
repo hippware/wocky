@@ -13,7 +13,7 @@ defmodule Wocky.Repo.Migration do
   end
 
   def timestamps(overrides \\ []) do
-    [inserted_at: :created_at, type: :utc_datetime, size: 6]
+    [inserted_at: :created_at, type: :utc_datetime]
     |> Keyword.merge(overrides)
     |> Migration.timestamps()
   end
