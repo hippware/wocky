@@ -38,7 +38,8 @@ defmodule Wocky.Conversation do
       message: message,
       outgoing: outgoing
     }
-    Repo.insert!(conversation, on_conflict: :replace_all)
+    Repo.insert!(conversation, on_conflict: :replace_all,
+                               conflict_target: [:user_id, :other_jid])
     :ok
   end
 
