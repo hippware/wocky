@@ -60,7 +60,7 @@ defmodule Wocky.Repo.Factory do
       server: "localhost",
       pending: false,
       title: Company.name,
-      shortname: Company.buzzword,
+      shortname: sequence(:shortname, &"#{Company.buzzword}-#{&1}"),
       user_id: ID.new,
       description: Lorem.paragraph(%Range{first: 1, last: 2}),
       image: TROS.make_url("localhost", ID.new),
@@ -69,8 +69,8 @@ defmodule Wocky.Repo.Factory do
       lat: Address.latitude,
       lon: Address.longitude,
       radius: :rand.uniform(100) * 1000,
-      public: true,
-      alerts: true,
+      public: false,
+      alerts: false,
       follow_me: false
     }
   end
@@ -80,7 +80,7 @@ defmodule Wocky.Repo.Factory do
       name: Name.first_name,
       ask: :none,
       subscription: :both,
-      groups: ""
+      groups: []
     }
   end
 

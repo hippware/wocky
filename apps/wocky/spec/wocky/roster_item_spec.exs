@@ -7,11 +7,6 @@ defmodule Wocky.RosterItemSpec do
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
 
-  before_all do
-    # Avoid handle clashes after repeated runs
-    Wocky.Repo.delete_all(Wocky.User)
-  end
-
   before do
     # A user with 5 contacts in a randomised subset of 5 groups
     user = Factory.insert(:user, %{server: shared.server})

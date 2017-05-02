@@ -1,17 +1,11 @@
-Code.require_file("spec/support/test_event_handler.ex")
-
 defmodule Wocky.User.LocationSpec do
   use ESpec
+  use ModelHelpers
   use Wocky.JID
 
-  import ChangesetAssertions
-
-  alias Ecto.Changeset
   alias Faker.Address
   alias Wocky.Bot
   alias Wocky.Events.BotPerimeterEvent
-  alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.User
   alias Wocky.User.BotEvent
@@ -23,6 +17,8 @@ defmodule Wocky.User.LocationSpec do
   end
 
   before do
+    TestEventHandler.reset
+
     owner = Factory.insert(:user)
     user = Factory.insert(:user)
 
@@ -32,12 +28,6 @@ defmodule Wocky.User.LocationSpec do
     :ok = User.subscribe_to_bot(user, bot)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
-  end
-
-  finally do
-    TestEventHandler.reset
-    Repo.delete!(shared.owner)
-    Repo.delete!(shared.user)
   end
 
   describe "changeset/2 validations" do
@@ -97,13 +87,12 @@ defmodule Wocky.User.LocationSpec do
 
       context "when the user owns the bot" do
         before do
-          :ok = User.subscribe_to_bot(shared.owner, shared.bot)
           loc = %Location{shared.inside_loc | user: shared.owner}
           Location.check_for_bot_events(loc)
         end
 
         it "should not store an enter event" do
-          event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+          event = BotEvent.get_last_event(shared.owner.id, shared.bot.id)
           event |> should(be_nil())
         end
 
@@ -115,7 +104,7 @@ defmodule Wocky.User.LocationSpec do
       context "when the bot has a negative radius" do
         before do
           shared.bot
-          |> Changeset.change(%{radius: -1})
+          |> Bot.changeset(%{radius: -1})
           |> Repo.update!
 
           Location.check_for_bot_events(shared.inside_loc)
@@ -242,7 +231,7 @@ defmodule Wocky.User.LocationSpec do
         before do
           expiry = Timestamp.now + 86400
           shared.bot
-          |> Changeset.change(%{follow_me: true, follow_me_expiry: expiry})
+          |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
           |> Repo.update!
 
           Location.update_bot_locations(shared.loc)
@@ -259,7 +248,7 @@ defmodule Wocky.User.LocationSpec do
         before do
           expiry = Timestamp.now - 86400
           shared.bot
-          |> Changeset.change(%{follow_me: true, follow_me_expiry: expiry})
+          |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
           |> Repo.update!
 
           Location.update_bot_locations(shared.loc)

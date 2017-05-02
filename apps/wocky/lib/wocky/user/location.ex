@@ -85,9 +85,10 @@ defmodule Wocky.User.Location do
   end
 
   defp maybe_do_async(fun) do
-    task = Task.async(fun)
-    unless Application.fetch_env!(:wocky, :async_location_processing) do
-      Task.await(task)
+    if Application.fetch_env!(:wocky, :async_location_processing) do
+      Task.async(fun)
+    else
+      fun.()
     end
   end
 
