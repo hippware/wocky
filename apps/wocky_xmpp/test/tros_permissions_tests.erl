@@ -17,7 +17,37 @@ tros_permissions_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db_seed:seed_tables(shared, [roster, user]),
+    ?wocky_repo:delete_all(?wocky_user),
+    ?wocky_repo:delete_all(?wocky_roster_item),
+
+    ?wocky_factory:insert(user, #{id => ?ALICE,
+                                  username => ?ALICE,
+                                  handle => <<"alice">>}),
+    ?wocky_factory:insert(user, #{id => ?BOB,
+                                  username => ?BOB,
+                                  handle => <<"bob">>}),
+    ?wocky_factory:insert(user, #{id => ?CAROL,
+                                  username => ?CAROL,
+                                  handle => <<"carol">>}),
+    ?wocky_factory:insert(user, #{id => ?ROBERT,
+                                  username => ?ROBERT,
+                                  handle => <<"robert">>}),
+    ?wocky_factory:insert(user, #{id => ?KAREN,
+                                  username => ?KAREN,
+                                  handle => <<"karen">>}),
+    ?wocky_factory:insert(user, #{id => ?TIM,
+                                  username => ?TIM,
+                                  handle => <<"tim">>}),
+
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?BOB}),
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?CAROL}),
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?ROBERT}),
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?KAREN}),
+
     ok.
 
 after_all(_) ->

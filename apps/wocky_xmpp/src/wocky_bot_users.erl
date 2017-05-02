@@ -22,11 +22,13 @@
 %%%===================================================================
 
 handle_share(_From, _To, error) -> drop;
-handle_share(From, To, BotJID = #jid{lserver = Server}) ->
-    ID = wocky_bot_util:get_id_from_jid(BotJID),
+handle_share(From, To, BotJID) ->
     Result = do([error_m ||
-                 check_can_share(Server, ID, From),
-                 wocky_db_bot:add_share(From, To, BotJID),
+                 Bot <- wocky_bot_util:get_bot_from_jid(BotJID),
+                 Sharer <- wocky_bot_util:get_user_from_jid(From),
+                 check_can_share(Sharer, Bot),
+                 Recipient <- wocky_bot_util:get_user_from_jid(To),
+                 ?wocky_bot:share(Bot, Recipient, Sharer),
                  send_notification(From, To, BotJID)
                 ]),
     case Result of
@@ -34,13 +36,12 @@ handle_share(From, To, BotJID = #jid{lserver = Server}) ->
         _ -> drop
     end.
 
-check_can_share(Server, ID, Sharer) ->
-    case wocky_db_bot:is_public(Server, ID) of
+check_can_share(Sharer, Bot) ->
+    case ?wocky_bot:'public?'(Bot) of
         true ->
             ok;
         false ->
-            Owner = wocky_db_bot:owner(ID),
-            case jid:are_bare_equal(Owner, Sharer) of
+            case ?wocky_user:'owns?'(Sharer, Bot) of
                 true -> ok;
                 false -> {error, cant_share}
             end
@@ -55,7 +56,7 @@ send_notification(From, To, BotJID) ->
 %%%===================================================================
 
 -spec notify_new_viewers(Server :: ejabberd:lserver(),
-                         ID :: wocky_db:id(),
+                         Bot :: ?wocky_bot:t(),
                          OldPublic :: boolean() | none,
                          NewPublic :: boolean()) -> ok.
 
@@ -63,31 +64,28 @@ send_notification(From, To, BotJID) ->
 notify_new_viewers(_, _, Vis, Vis) -> ok;
 
 % New visibility is public - notify friends and followers
-notify_new_viewers(Server, ID, _, true) ->
-    Owner = wocky_db_bot:owner(ID),
-    notify_new_viewers(Server, ID, get_friends_and_followers(Owner));
+notify_new_viewers(Server, #{user_id := Owner} = Bot, _, true) ->
+    notify_new_viewers(Server, Bot, get_friends_and_followers(Owner));
 
 % Any other case does not generate notification
 notify_new_viewers(_, _, _, _) -> ok.
 
-notify_new_viewers(Server, ID, NewViewers) ->
-    lists:foreach(notify_new_viewer(Server, ID, _), NewViewers).
+notify_new_viewers(Server, Bot, NewViewers) ->
+    lists:foreach(notify_new_viewer(Server, Bot, _), NewViewers).
 
-notify_new_viewer(Server, ID, Viewer) ->
+notify_new_viewer(Server, Bot, Viewer) ->
     ejabberd_router:route(jid:make(<<>>, Server, <<>>),
-                          Viewer,
-                          bot_visible_stanza(Server, ID)).
+                          Viewer, bot_visible_stanza(Bot)).
 
-bot_visible_stanza(Server, ID) ->
+bot_visible_stanza(Bot) ->
     #xmlel{name = <<"message">>,
            attrs = [{<<"type">>, <<"headline">>}],
            children = [#xmlel{name = <<"bot">>,
                               attrs = [{<<"xmlns">>, ?NS_BOT}],
-                              children = bot_visible_children(Server, ID)}]}.
+                              children = bot_visible_children(Bot)}]}.
 
-bot_visible_children(Server, ID) ->
-    [cdata_el(<<"jid">>, jid:to_binary(
-                           wocky_bot_util:make_jid(Server, ID))),
+bot_visible_children(#{id := ID} = Bot) ->
+    [cdata_el(<<"jid">>, jid:to_binary(?wocky_bot:to_jid(Bot))),
      cdata_el(<<"id">>, ID),
      cdata_el(<<"server">>, wocky_xmpp_app:server()),
      cdata_el(<<"action">>, <<"show">>)].
@@ -96,7 +94,7 @@ cdata_el(Name, Value) ->
     #xmlel{name = Name,
            children = [#xmlcdata{content = Value}]}.
 
-get_friends_and_followers(#jid{luser = LUser}) ->
+get_friends_and_followers(LUser) ->
     [roster_to_jid(wocky_roster:to_wocky_roster(R))
      || R <- ?wocky_roster_item:followers(LUser)].
 

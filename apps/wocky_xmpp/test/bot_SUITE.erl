@@ -98,9 +98,10 @@ init_per_testcase(geosearch, Config) ->
     meck:expect('Elixir.Wocky.Index', geosearch,
                 fun (_Lat, _Lon) ->
                         {ok, [#{id => ?BOT, server => ?SERVER,
-                                title => ?BOT_TITLE, image => ?CREATE_IMAGE,
-                                lat => ?BOT_LAT, lon => ?BOT_LON,
-                                radius => ?BOT_RADIUS, distance => 8000}]}
+                                user_id => ?ALICE, title => ?BOT_TITLE,
+                                image => ?CREATE_IMAGE, lat => ?BOT_LAT,
+                                lon => ?BOT_LON, radius => ?BOT_RADIUS,
+                                distance => 8000}]}
                 end),
     escalus:init_per_testcase(geosearch, Config);
 init_per_testcase(CaseName, Config) ->
@@ -116,16 +117,50 @@ local_tables() ->
     [bot_name, bot_item, home_stream].
 
 reset_tables(Config) ->
-    wocky_db:clear_tables(shared, [bot, bot_subscriber, bot_share]),
-    wocky_db:clear_tables(?LOCAL_CONTEXT, local_tables()),
-    wocky_db_seed:seed_tables(shared, [bot, roster, bot_subscriber,
-                                       temp_subscription, bot_share]),
-    wocky_db_seed:seed_tables(?LOCAL_CONTEXT, local_tables()),
-    fun_chain:first(Config,
+    ?wocky_repo:delete_all(?wocky_user),
+    Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
-    ).
+    ),
 
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?BOB}),
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?CAROL}),
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?ROBERT}),
+    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
+                                         contact_id => ?KAREN}),
+
+    Bot = ?wocky_factory:insert(bot, #{id => ?BOT,
+                                       title => ?BOT_TITLE,
+                                       shortname => ?BOT_NAME,
+                                       user_id => ?ALICE,
+                                       description => ?BOT_DESC,
+                                       lat => ?BOT_LAT,
+                                       lon => ?BOT_LON,
+                                       radius => ?BOT_RADIUS,
+                                       address => ?BOT_ADDRESS,
+                                       image => ?AVATAR_FILE,
+                                       type => ?BOT_TYPE}),
+
+    ?wocky_item:put(#{id => ?ITEM, bot_id => ?BOT,
+                      stanza => ?ITEM_STANZA, image => true}),
+
+    ?wocky_item:put(#{id => ?ITEM2, bot_id => ?BOT,
+                      stanza => ?ITEM_STANZA2, image => false}),
+
+    Alice = ?wocky_user:find(?ALICE),
+    Bob = ?wocky_user:find(?BOB),
+    ?wocky_bot:share(Bot, Bob, Alice),
+
+    Carol = ?wocky_user:find(?CAROL),
+    ?wocky_user:subscribe(Carol, Bot),
+
+    Karen = ?wocky_user:find(?KAREN),
+    ?wocky_user:subscribe(Karen, Bot),
+
+    Config2.
 
 %%--------------------------------------------------------------------
 %% mod_wocky_bot tests
@@ -192,8 +227,8 @@ update(Config) ->
         % And the new bot should have the change
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
         NewFields =
-        lists:keyreplace("description", 1, expected_retrieve_fields(true),
-                         {"description", string, ?NEW_DESCRIPTION}),
+            lists:keyreplace("description", 1, expected_retrieve_fields(true),
+                            {"description", string, ?NEW_DESCRIPTION}),
         check_returned_bot(Stanza, NewFields),
 
         % Bob can't update it since he's not the owner
@@ -257,7 +292,6 @@ subscribe_temporary(Config) ->
                            expected_retrieve_fields(false, ?BOT_DESC,
                                                     ?WOCKY_BOT_VIS_OPEN, 2)),
         subscribe_temporary(?BOT_B_JID, Tim),
-        timer:sleep(500),
 
         check_returned_bot(expect_iq_success(retrieve_stanza(), Tim),
                            expected_retrieve_fields(true, ?BOT_DESC,
@@ -265,8 +299,7 @@ subscribe_temporary(Config) ->
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID,
-                                    escalus_client:full_jid(Tim)
-                                   ]),
+                                    escalus_client:full_jid(Tim)]),
 
         ensure_all_clean([Alice, Tim])
       end).
@@ -283,8 +316,7 @@ unsubscribe_temporary(Config) ->
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID,
-                                    escalus_client:full_jid(Tim)
-                                   ]),
+                                    escalus_client:full_jid(Tim)]),
 
         unsubscribe_temporary(?BOT_B_JID, Tim),
 
@@ -770,7 +802,7 @@ expected_create_fields() ->
 
 expected_retrieve_fields(Subscribed) ->
     expected_retrieve_fields(Subscribed, ?BOT_DESC,
-                             ?WOCKY_BOT_VIS_WHITELIST, 2).
+                             ?WOCKY_BOT_VIS_OWNER, 2).
 expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
     [{"id",                 string, ?BOT},
      {"server",             string, ?LOCAL_CONTEXT},
@@ -862,9 +894,21 @@ check_return_fields(Elements, ExpectedFields) ->
     lists:foreach(check_field(_, Elements), ExpectedFields).
 
 check_field({Name, Type, any}, Elements) ->
+    case has_field(list_to_binary(Name), atom_to_binary(Type, utf8), Elements) of
+        true -> ok;
+        false ->
+            ct:pal("Name: ~p, Type: ~p, Elements: ~p~n",
+                   [Name, Type, Elements])
+    end,
     ?assert(has_field(list_to_binary(Name), atom_to_binary(Type, utf8),
             Elements));
 check_field({Name, Type, Value}, Elements) ->
+    case has_field_val(list_to_binary(Name), atom_to_binary(Type, utf8), Value, Elements) of
+        true -> ok;
+        false ->
+            ct:pal("Name: ~p, Type: ~p, Value: ~p, Elements: ~p~n",
+                   [Name, Type, Value, Elements])
+    end,
     ?assert(has_field_val(list_to_binary(Name), atom_to_binary(Type, utf8),
                           Value, Elements)).
 
@@ -950,7 +994,7 @@ subscribed_stanza(RSM) ->
                                        children = [rsm_elem(RSM)]}).
 
 bot_jid(ID) ->
-    jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, bot_node(ID))).
+    jid:to_binary(jid:make(<<>>, ?SERVER, bot_node(ID))).
 
 change_visibility_stanza(Bot, Visibility) ->
     test_helper:iq_set(?NS_BOT, node_el(Bot, <<"fields">>,
@@ -1223,7 +1267,7 @@ set_visibility(Client, Visibility, Bot) ->
 follow_me_stanza() ->
     follow_me_stanza(86400). % 1 Day
 follow_me_stanza(ExpiryPeriod) ->
-    Expiry = wocky_db:now_to_timestamp(os:timestamp()) div 1000 + ExpiryPeriod,
+    Expiry = ?wocky_timestamp:now() div 1000 + ExpiryPeriod,
     QueryEl = #xmlel{name = <<"follow-me">>,
                      attrs = [
                        {<<"node">>, bot_node(?BOT)},
@@ -1259,12 +1303,9 @@ share_stanza(BotID, From, Target) ->
 bot_el(BotID) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = [cdata_el(<<"jid">>,
-                                jid:to_binary(
-                                  wocky_bot_util:make_jid(
-                                    ?LOCAL_CONTEXT, BotID))),
+           children = [cdata_el(<<"jid">>, bot_jid(BotID)),
                        cdata_el(<<"id">>, BotID),
-                       cdata_el(<<"server">>, ?LOCAL_CONTEXT),
+                       cdata_el(<<"server">>, ?SERVER),
                        cdata_el(<<"action">>, <<"share">>)]}.
 
 is_bot_action_hs_notification(JID, Action,
