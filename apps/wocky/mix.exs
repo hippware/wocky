@@ -88,6 +88,11 @@ defmodule Wocky.Mixfile do
         branch: "working",
         manager: :rebar3,
         override: true},
+      {:pgsql,
+        github: "semiocast/pgsql",
+        tag: "v26.0.1",
+        manager: :rebar3
+      },
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
