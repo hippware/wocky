@@ -48,26 +48,8 @@ defmodule Wocky.Bot do
     many_to_many :temp_subscribers, User, join_through: TempSubscription
   end
 
-  @type id           :: binary
-
-  @type t :: %Bot{
-    id:               id,
-    server:           binary,
-    pending:          boolean,
-    title:            binary | nil,
-    shortname:        binary | nil,
-    description:      binary | nil,
-    image:            binary | nil,
-    type:             binary | nil,
-    address:          binary | nil,
-    lat:              float | nil,
-    lon:              float | nil,
-    radius:           integer,
-    public:           boolean,
-    alerts:           boolean,
-    follow_me:        boolean,
-    follow_me_expiry: integer | nil
-  }
+  @type id :: binary
+  @type t :: %Bot{}
 
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
@@ -85,12 +67,12 @@ defmodule Wocky.Bot do
     JID.make("", bot.server, make_node(bot))
   end
 
-  @spec get_id_from_jid(JID.t) :: id
+  @spec get_id_from_jid(JID.t) :: id | nil
   def get_id_from_jid(jid(lresource: @bot_prefix <> id)), do: id
   def get_id_from_jid({_, _, @bot_prefix <> id}), do: id
   def get_id_from_jid(_), do: nil
 
-  @spec get_id_from_node(binary) :: binary
+  @spec get_id_from_node(binary) :: id | nil
   def get_id_from_node(@bot_prefix <> id), do: id
   def get_id_from_node(_), do: nil
 
@@ -100,6 +82,11 @@ defmodule Wocky.Bot do
   @spec get(id) :: t | nil
   def get(id) do
     Repo.get(Bot, id)
+  end
+
+  @spec all :: [t]
+  def all do
+    Repo.all(Bot)
   end
 
   @spec preallocate(User.id, User.server) :: t | no_return
@@ -120,6 +107,7 @@ defmodule Wocky.Bot do
     end
   end
 
+  @spec changeset(t, map) :: Changeset.t
   def changeset(struct, params \\ %{}) do
     struct
     |> cast(params, @change_fields)
@@ -129,12 +117,14 @@ defmodule Wocky.Bot do
     |> foreign_key_constraint(:user_id)
   end
 
+  @spec insert(map) :: {:ok, t} | {:error, any}
   def insert(params) do
     %Bot{}
     |> changeset(params)
     |> Repo.insert
   end
 
+  @spec update(t, map) :: {:ok, t} | {:error, any}
   def update(bot, params) do
     bot
     |> changeset(params)
@@ -152,23 +142,22 @@ defmodule Wocky.Bot do
     Index.bot_updated(id, %{lat: lat, lon: lon})
   end
 
-  @spec items(Bot.t) :: [Item.t]
+  @spec items(t) :: [Item.t]
   def items(bot) do
     Item.get(bot)
   end
 
-  @spec image_items(Bot.t) :: [Item.t]
+  @spec image_items(t) :: [Item.t]
   def image_items(bot) do
     Item.get_images(bot)
   end
 
-  @spec image_items_count(Bot.t) :: pos_integer
+  @spec image_items_count(t) :: pos_integer
   def image_items_count(bot) do
     Item.get_image_count(bot)
   end
 
-  @spec publish_item(Bot.t, binary, binary, boolean) ::
-    {:ok, Item.t} | {:error, any}
+  @spec publish_item(t, binary, binary, boolean) :: {:ok, Item.t}
   def publish_item(bot, id, stanza, image?) do
     :ok = Item.put(bot, id, stanza, image?)
     {:ok, Item.get(bot, id)}
@@ -179,13 +168,13 @@ defmodule Wocky.Bot do
     Item.delete(bot, id)
   end
 
-  @spec owner(Bot.t) :: User.t
+  @spec owner(t) :: User.t
   def owner(bot) do
     bot = Repo.preload(bot, :user)
     bot.user
   end
 
-  @spec subscribers(Bot.t) :: [User.t]
+  @spec subscribers(t) :: [User.t]
   def subscribers(bot) do
     bot = Repo.preload(bot, [:subscribers, :temp_subscribers])
 

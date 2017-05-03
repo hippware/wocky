@@ -141,7 +141,7 @@ user_send_packet_hook(From,
     end;
 user_send_packet_hook(_, _, _) -> ok.
 
-handle_untyped_presence(From, _LServer, BotID, Stanza) ->
+handle_untyped_presence(From, LServer, BotID, Stanza) ->
     case xml:get_path_s(Stanza, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) of
         ?NS_BOT ->
             handle_subscribe_temporary(From, LServer, BotID);
