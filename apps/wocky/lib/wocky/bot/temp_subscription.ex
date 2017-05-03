@@ -25,38 +25,46 @@ defmodule Wocky.Bot.TempSubscription do
 
   @type t :: %TempSubscription{}
 
-  def changeset(struct, params \\ %{}) do
+  @spec changeset(t, map) :: Changeset.t
+  def changeset(struct, params) do
     struct
     |> cast(params, [:bot_id, :user_id, :resource, :node])
     |> validate_required([:bot_id, :user_id, :resource, :node])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:bot_id)
   end
 
+  @spec exists?(User.t, Bot.t) :: boolean
   def exists?(user, bot) do
+    get(user, bot) != nil
+  end
+
+  @spec get(User.t, Bot.t) :: t | nil
+  def get(user, bot) do
     Repo.get_by(
       TempSubscription,
       user_id: user.id, resource: user.resource, bot_id: bot.id
-    ) != nil
+    )
   end
 
+  @spec put(User.t, Bot.t, atom | binary) :: :ok | no_return
   def put(user, bot, node) do
-    Logger.error("""
-    Creating temp subscription for user #{user.handle} to bot #{bot.shortname}
-    """)
     data = %{
       user_id: user.id,
       resource: user.resource,
       bot_id: bot.id,
-      node: node
+      node: to_string(node)
     }
 
     %TempSubscription{}
     |> changeset(data)
     |> Repo.insert!(on_conflict: :replace_all,
-                    conflict_target: [:bot_id, :user_id])
+                    conflict_target: [:bot_id, :user_id, :resource])
 
     :ok
   end
 
+  @spec delete(User.t | atom | binary) :: :ok
   def delete(%User{id: id, resource: resource}) do
     TempSubscription
     |> where(user_id: ^id, resource: ^resource)
@@ -72,6 +80,7 @@ defmodule Wocky.Bot.TempSubscription do
     :ok
   end
 
+  @spec delete(User.t, Bot.t) :: :ok
   def delete(user, bot) do
     TempSubscription
     |> where(user_id: ^user.id, resource: ^user.resource, bot_id: ^bot.id)

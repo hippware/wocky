@@ -22,21 +22,41 @@ defmodule Wocky.Bot.Share do
 
   @type t :: %Share{}
 
-  def changeset(struct, params \\ %{}) do
+  @spec changeset(t, map) :: Changeset.t
+  def changeset(struct, params) do
     struct
     |> cast(params, [:user_id, :bot_id, :sharer_id])
     |> validate_required([:user_id, :bot_id, :sharer_id])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:bot_id)
+    |> foreign_key_constraint(:sharer_id)
   end
 
-  def put(bot, to, from) do
+  @spec exists?(User.t, Bot.t) :: boolean
+  def exists?(user, bot) do
+    get(user, bot) != nil
+  end
+
+  @spec get(User.t, Bot.t) :: t
+  def get(user, bot) do
+    Repo.get_by(Share, user_id: user.id, bot_id: bot.id)
+  end
+
+  @spec put(User.t, Bot.t, User.t) :: :ok | no_return
+  def put(user, bot, from) do
     %Share{}
-    |> changeset(%{bot_id: bot.id, user_id: to.id, sharer_id: from.id})
+    |> changeset(%{bot_id: bot.id, user_id: user.id, sharer_id: from.id})
     |> Repo.insert!(on_conflict: :nothing, conflict_target: [:user_id, :bot_id])
 
     :ok
   end
 
-  def exists?(user, bot) do
-    Repo.get_by(Share, user_id: user.id, bot_id: bot.id) != nil
+  @spec delete(User.t, Bot.t) :: :ok
+  def delete(user, bot) do
+    Share
+    |> where(user_id: ^user.id, bot_id: ^bot.id)
+    |> Repo.delete_all
+
+    :ok
   end
 end

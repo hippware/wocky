@@ -21,16 +21,26 @@ defmodule Wocky.Bot.Subscription do
 
   @type t :: %Subscription{}
 
-  def changeset(struct, params \\ %{}) do
+  @spec changeset(t, map) :: Changeset.t
+  def changeset(struct, params) do
     struct
     |> cast(params, [:user_id, :bot_id])
     |> validate_required([:user_id, :bot_id])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:bot_id)
   end
 
+  @spec exists?(User.t, Bot.t) :: boolean
   def exists?(user, bot) do
-    Repo.get_by(Subscription, user_id: user.id, bot_id: bot.id) != nil
+    get(user, bot) != nil
   end
 
+  @spec get(User.t, Bot.t) :: t | nil
+  def get(user, bot) do
+    Repo.get_by(Subscription, user_id: user.id, bot_id: bot.id)
+  end
+
+  @spec put(User.t, Bot.t) :: :ok | no_return
   def put(user, bot) do
     %Subscription{}
     |> changeset(%{user_id: user.id, bot_id: bot.id})
@@ -39,6 +49,7 @@ defmodule Wocky.Bot.Subscription do
     :ok
   end
 
+  @spec delete(User.t, Bot.t) :: :ok
   def delete(user, bot) do
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)

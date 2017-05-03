@@ -12,6 +12,10 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Bot
+  alias Wocky.Bot.Item
+  alias Wocky.Bot.Share
+  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.HomeStreamItem
   alias Wocky.Repo.ID
@@ -38,6 +42,59 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
+  def bot_factory do
+    %Bot{
+      id: ID.new,
+      server: "localhost",
+      user: build(:user),
+      pending: false,
+      title: Company.name,
+      shortname: sequence(:shortname, &"#{Company.buzzword}-#{&1}"),
+      description: Lorem.paragraph(%Range{first: 1, last: 2}),
+      image: TROS.make_url("localhost", ID.new),
+      type: "test",
+      address: Address.street_address,
+      lat: Address.latitude,
+      lon: Address.longitude,
+      radius: :rand.uniform(100) * 1000,
+      public: false,
+      alerts: false,
+      follow_me: false
+    }
+  end
+
+  def item_factory do
+    %Item{
+      id: ID.new,
+      bot: build(:bot),
+      stanza: Lorem.sentence
+    }
+  end
+
+  def share_factory do
+    %Share{
+      user: build(:user),
+      bot: build(:bot),
+      sharer: build(:user)
+    }
+  end
+
+  def subscription_factory do
+    %Subscription{
+      user: build(:user),
+      bot: build(:bot)
+    }
+  end
+
+  def temp_subscription_factory do
+    %TempSubscription{
+      user: build(:user),
+      bot: build(:bot),
+      resource: Code.isbn13,
+      node: to_string(node())
+    }
+  end
+
   def conversation_factory do
     message = "<message>" <> Lorem.sentence() <> "</message>"
     %Conversation{
@@ -51,27 +108,6 @@ defmodule Wocky.Repo.Factory do
     %TROSMetadata{
       id: ID.new,
       access: Lorem.sentence
-    }
-  end
-
-  def bot_factory do
-    %Bot{
-      id: ID.new,
-      server: "localhost",
-      pending: false,
-      title: Company.name,
-      shortname: sequence(:shortname, &"#{Company.buzzword}-#{&1}"),
-      user_id: ID.new,
-      description: Lorem.paragraph(%Range{first: 1, last: 2}),
-      image: TROS.make_url("localhost", ID.new),
-      type: "test",
-      address: Address.street_address,
-      lat: Address.latitude,
-      lon: Address.longitude,
-      radius: :rand.uniform(100) * 1000,
-      public: false,
-      alerts: false,
-      follow_me: false
     }
   end
 

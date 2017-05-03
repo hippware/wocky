@@ -154,42 +154,29 @@ defmodule Wocky.Bot do
 
   @spec items(Bot.t) :: [Item.t]
   def items(bot) do
-    bot
-    |> assoc(:items)
-    |> order_by(desc: :updated_at)
-    |> Repo.all
+    Item.get(bot)
   end
 
   @spec image_items(Bot.t) :: [Item.t]
   def image_items(bot) do
-    bot
-    |> assoc(:items)
-    |> where(image: true)
-    |> order_by(desc: :updated_at)
-    |> Repo.all
+    Item.get_images(bot)
   end
 
   @spec image_items_count(Bot.t) :: pos_integer
   def image_items_count(bot) do
-    bot
-    |> assoc(:items)
-    |> where(image: true)
-    |> select([i], count(i.bot_id))
-    |> Repo.one
+    Item.get_image_count(bot)
   end
 
   @spec publish_item(Bot.t, binary, binary, boolean) ::
     {:ok, Item.t} | {:error, any}
   def publish_item(bot, id, stanza, image?) do
-    Item.put(%{id: id, bot_id: bot.id, stanza: stanza, image: image?})
+    :ok = Item.put(bot, id, stanza, image?)
+    {:ok, Item.get(bot, id)}
   end
 
   @spec delete_item(Bot.t, binary) :: :ok
   def delete_item(bot, id) do
-    bot
-    |> assoc(:items)
-    |> where(id: ^id)
-    |> Repo.delete_all
+    Item.delete(bot, id)
   end
 
   @spec owner(Bot.t) :: User.t
@@ -200,9 +187,7 @@ defmodule Wocky.Bot do
 
   @spec subscribers(Bot.t) :: [User.t]
   def subscribers(bot) do
-    bot = Repo.preload(bot,
-      [:subscribers, :temp_subscribers],
-      in_parallel: false)
+    bot = Repo.preload(bot, [:subscribers, :temp_subscribers])
 
     [bot.subscribers, bot.temp_subscribers]
     |> List.flatten
@@ -232,7 +217,7 @@ defmodule Wocky.Bot do
 
   @spec share(t, User.t, User.t) :: :ok
   def share(bot, to, from) do
-    Share.put(bot, to, from)
+    Share.put(to, bot, from)
   end
 
   @spec shared_to?(t, User.t) :: boolean

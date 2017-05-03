@@ -360,8 +360,6 @@ defmodule Wocky.UserSpec do
       |> should(be_empty())
     end
 
-    it "should remove any location data associated with the user"
-
     it "should remove the user from the full text search index"
 
     it "should succeed if the user does not exist" do

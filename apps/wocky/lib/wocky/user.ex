@@ -230,9 +230,7 @@ defmodule Wocky.User do
   @doc "Returns all bots that the user subscribes to"
   @spec get_subscriptions(t) :: [Bot.t]
   def get_subscriptions(user) do
-    user = Repo.preload(user,
-      [:bots, :subscriptions, :temp_subscriptions],
-      in_parallel: false)
+    user = Repo.preload(user, [:bots, :subscriptions, :temp_subscriptions])
 
     [user.bots, user.subscriptions, user.temp_subscriptions]
     |> List.flatten
