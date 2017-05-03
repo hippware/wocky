@@ -70,7 +70,7 @@ retrieve_subscribers(Bot) ->
 make_subscribers_element(Bot) ->
     Subscribers = ?wocky_bot:subscribers(Bot),
     #xmlel{name = <<"subscribers">>,
-           attrs = wocky_bot_util:list_attrs(Bot, Subscribers),
+           attrs = list_attrs(Bot, Subscribers),
            children = make_subscriber_elements(Subscribers)}.
 
 make_subscriber_elements(Subscribers) ->
@@ -157,3 +157,9 @@ handle_untyped_presence(From, LServer, BotID, Stanza) ->
 make_subscriber_count_element(Bot) ->
     Count = ?wocky_bot:subscriber_count(Bot),
     wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).
+
+list_attrs(Bot, List) ->
+    [{<<"xmlns">>, ?NS_BOT},
+     {<<"node">>, ?wocky_bot:make_node(Bot)},
+     {<<"size">>, integer_to_binary(length(List))},
+     {<<"hash">>, wocky_bot_util:list_hash(List)}].

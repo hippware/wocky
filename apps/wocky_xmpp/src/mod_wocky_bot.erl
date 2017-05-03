@@ -418,12 +418,11 @@ users_bots_result(Bots, User, RSMOut) ->
            children = BotEls ++ jlib:rsm_encode(RSMOut)}.
 
 make_bot_els(Bots, User) ->
-    lists:reverse(
-      lists:foldl(make_bot_els(_, User, _), [], Bots)).
+    lists:map(do_make_bot_els(_, User), Bots).
 
-make_bot_els(Bot, User, Acc) ->
+do_make_bot_els(Bot, User) ->
     {ok, El} = make_bot_el(Bot, User),
-    [El|Acc].
+    El.
 
 
 %%%===================================================================

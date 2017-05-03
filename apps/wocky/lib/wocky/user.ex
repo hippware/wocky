@@ -206,7 +206,7 @@ defmodule Wocky.User do
 
   @spec subscribe_temporary(t, Bot.t, atom | binary) :: :ok
   def subscribe_temporary(user, bot, node) do
-    TempSubscription.put(user, bot, to_string(node))
+    TempSubscription.put(user, bot, node)
   end
 
   @doc "Unsubscribe from the bot"

@@ -34,7 +34,7 @@ defmodule Wocky.Bot.Item do
   def get(bot) do
     bot
     |> assoc(:items)
-    |> order_by(desc: :updated_at)
+    |> order_by(asc: :updated_at)
     |> Repo.all
   end
 
@@ -43,7 +43,7 @@ defmodule Wocky.Bot.Item do
     bot
     |> assoc(:items)
     |> where(image: true)
-    |> order_by(desc: :updated_at)
+    |> order_by(asc: :updated_at)
     |> Repo.all
   end
 

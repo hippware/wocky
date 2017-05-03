@@ -47,6 +47,20 @@ defmodule Wocky.Bot.TempSubscription do
     )
   end
 
+  @spec get_all(Bot.t | User.t) :: [t]
+  def get_all(%Bot{} = bot) do
+    TempSubscription
+    |> where(bot_id: ^bot.id)
+    |> preload(:user)
+    |> Repo.all
+  end
+  def get_all(%User{} = user) do
+    TempSubscription
+    |> where(user_id: ^user.id)
+    |> preload(:bot)
+    |> Repo.all
+  end
+
   @spec put(User.t, Bot.t, atom | binary) :: :ok | no_return
   def put(user, bot, node) do
     data = %{

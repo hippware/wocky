@@ -123,19 +123,21 @@ reset_tables(Config) ->
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
     ),
 
-    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
-                                         contact_id => ?BOB}),
-    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
-                                         contact_id => ?CAROL}),
-    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
-                                         contact_id => ?ROBERT}),
-    ?wocky_factory:insert(roster_item, #{user_id => ?ALICE,
-                                         contact_id => ?KAREN}),
+    Alice = ?wocky_user:find(?ALICE),
+    Bob = ?wocky_user:find(?BOB),
+    Carol = ?wocky_user:find(?CAROL),
+    Karen = ?wocky_user:find(?KAREN),
+    Robert = ?wocky_user:find(?ROBERT),
+
+    ?wocky_factory:insert(roster_item, #{user => Alice, contact => Bob}),
+    ?wocky_factory:insert(roster_item, #{user => Alice, contact => Carol}),
+    ?wocky_factory:insert(roster_item, #{user => Alice, contact => Robert}),
+    ?wocky_factory:insert(roster_item, #{user => Alice, contact => Karen}),
 
     Bot = ?wocky_factory:insert(bot, #{id => ?BOT,
                                        title => ?BOT_TITLE,
                                        shortname => ?BOT_NAME,
-                                       user_id => ?ALICE,
+                                       user => Alice,
                                        description => ?BOT_DESC,
                                        lat => ?BOT_LAT,
                                        lon => ?BOT_LON,
@@ -144,20 +146,11 @@ reset_tables(Config) ->
                                        image => ?AVATAR_FILE,
                                        type => ?BOT_TYPE}),
 
-    ?wocky_item:put(#{id => ?ITEM, bot_id => ?BOT,
-                      stanza => ?ITEM_STANZA, image => true}),
+    ?wocky_item:put(Bot, ?ITEM, ?ITEM_STANZA, true),
+    ?wocky_item:put(Bot, ?ITEM2, ?ITEM_STANZA2, false),
 
-    ?wocky_item:put(#{id => ?ITEM2, bot_id => ?BOT,
-                      stanza => ?ITEM_STANZA2, image => false}),
-
-    Alice = ?wocky_user:find(?ALICE),
-    Bob = ?wocky_user:find(?BOB),
     ?wocky_bot:share(Bot, Bob, Alice),
-
-    Carol = ?wocky_user:find(?CAROL),
     ?wocky_user:subscribe(Carol, Bot),
-
-    Karen = ?wocky_user:find(?KAREN),
     ?wocky_user:subscribe(Karen, Bot),
 
     Config2.
@@ -307,6 +300,8 @@ subscribe_temporary(Config) ->
 unsubscribe_temporary(Config) ->
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
+
         %% Tim's previous temp subscription should have been cleared
         %% by his disconnection
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
@@ -351,7 +346,7 @@ errors(Config) ->
 
 retrieve_for_user(Config) ->
     reset_tables(Config),
-    wocky_db:clear_tables(shared, [bot]),
+    ?wocky_repo:delete_all(?wocky_bot),
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
@@ -435,9 +430,9 @@ publish_item(Config) ->
         expect_item_publication(Karen, ?BOT, NoteID, Title, Content),
 
         % As the owner, Alice should *not* get a notification,
-        % so should just have her 3 seeded HS items
+        % so her HS should be empty
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza, 3, 0, false),
+        check_hs_result(Stanza, 0, 0, false),
 
         % Nobody else can publish an item to the bot besides the owner
         expect_iq_error(
@@ -503,7 +498,7 @@ edit_item(Config) ->
       end).
 
 get_items(Config) ->
-    wocky_db:clear_tables(?LOCAL_CONTEXT, [bot_item]),
+    ?wocky_repo:delete_all(?wocky_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
         % Alice publishes a bunch of items on her bot
@@ -594,7 +589,6 @@ unfollow_me(Config) ->
 
 follow_notifications(Config) ->
     reset_tables(Config),
-    wocky_db:truncate(?LOCAL_CONTEXT, home_stream),
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         %% Subscribe to HS notifications
@@ -688,7 +682,7 @@ share(Config) ->
 
 open_visibility(Config) ->
     reset_tables(Config),
-    wocky_db:truncate(shared, roster),
+    ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
       fun(Alice, Bob, Carol, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, [?BOT]),
@@ -847,32 +841,33 @@ check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
                     ExpectedIDs, Index, Total) ->
     #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = Children} = BotsStanza,
-    {First, Last} = case ExpectedIDs of
-                        [] -> {undefined, undefined};
-                        _ -> {hd(ExpectedIDs), lists:last(ExpectedIDs)}
-                    end,
     ?assertEqual(ok,
        do([error_m ||
            RSM <- check_get_children(Children, <<"set">>,
                                      [{<<"xmlns">>, ?NS_RSM}]),
            RSMOut <- decode_rsm(RSM),
-           check_rsm(RSMOut, Total, Index, First, Last),
+           check_rsm(RSMOut, Total, Index, ExpectedIDs),
            check_ids(ExpectedIDs, Children)
           ])
       ).
 
-check_geosearch_return(#xmlel{name = <<"iq">>, children = [BotsStanza]}) ->
-    #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = Children} = BotsStanza,
-    lists:foreach(
-      fun (#xmlel{name = <<"bot">>, children = Fields}) ->
-              check_return_fields(Fields, expected_geosearch_fields())
-      end,
-      Children).
+check_rsm(#rsm_out{count = 0, index = undefined,
+                   first = undefined, last = undefined}, 0, undefined, []) ->
+    ok;
+check_rsm(#rsm_out{count = Count, index = Index, first = F, last = L},
+          ExpectedCount, ExpectedIndex, Items) ->
+    case {Count, Index, lists:member(F, Items), lists:member(L, Items)} of
+        {ExpectedCount, ExpectedIndex, true, true} ->
+            ok;
+        _Else ->
+            {error,
+             {bad_rsm, {Count, Index, F, L},
+              {ExpectedCount, ExpectedIndex, Items}}}
+    end.
 
 check_ids(ExpectedIDs, Children) ->
-    IDs = get_ids(Children, []),
-    case ExpectedIDs of
+    IDs = lists:sort(get_ids(Children, [])),
+    case lists:sort(ExpectedIDs) of
         IDs -> ok;
         _ -> {error, {incorrect_ids, IDs, ExpectedIDs}}
     end.
@@ -890,27 +885,36 @@ get_id([El = #xmlel{name = <<"field">>, attrs = Attrs} | Rest]) ->
         _ -> get_id(Rest)
     end.
 
+check_geosearch_return(#xmlel{name = <<"iq">>, children = [BotsStanza]}) ->
+    #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = Children} = BotsStanza,
+    lists:foreach(
+      fun (#xmlel{name = <<"bot">>, children = Fields}) ->
+              check_return_fields(Fields, expected_geosearch_fields())
+      end,
+      Children).
+
 check_return_fields(Elements, ExpectedFields) ->
     lists:foreach(check_field(_, Elements), ExpectedFields).
 
-check_field({Name, Type, any}, Elements) ->
-    case has_field(list_to_binary(Name), atom_to_binary(Type, utf8), Elements) of
+check_field({Name0, Type0, any}, Elements) ->
+    Name = list_to_binary(Name0),
+    Type = atom_to_binary(Type0, utf8),
+    case has_field(Name, Type, Elements) of
         true -> ok;
         false ->
-            ct:pal("Name: ~p, Type: ~p, Elements: ~p~n",
-                   [Name, Type, Elements])
-    end,
-    ?assert(has_field(list_to_binary(Name), atom_to_binary(Type, utf8),
-            Elements));
-check_field({Name, Type, Value}, Elements) ->
-    case has_field_val(list_to_binary(Name), atom_to_binary(Type, utf8), Value, Elements) of
+            ct:fail("Expected field ~s:~s in elements:~n~p~n",
+                    [Name, Type, Elements])
+    end;
+check_field({Name0, Type0, Value}, Elements) ->
+    Name = list_to_binary(Name0),
+    Type = atom_to_binary(Type0, utf8),
+    case has_field_val(Name, Type, Value, Elements) of
         true -> ok;
         false ->
-            ct:pal("Name: ~p, Type: ~p, Value: ~p, Elements: ~p~n",
+            ct:fail("Expected field ~s:~s with value ~p in elements:~n~p~n",
                    [Name, Type, Value, Elements])
-    end,
-    ?assert(has_field_val(list_to_binary(Name), atom_to_binary(Type, utf8),
-                          Value, Elements)).
+    end.
 
 has_field(Name, Type, Elements) ->
     find_field(Name, Type, Elements) =/= false.

@@ -176,9 +176,16 @@ defmodule Wocky.Bot do
 
   @spec subscribers(t) :: [User.t]
   def subscribers(bot) do
-    bot = Repo.preload(bot, [:subscribers, :temp_subscribers])
+    bot = Repo.preload(bot, [:subscribers])
 
-    [bot.subscribers, bot.temp_subscribers]
+    temp_subscribers =
+      bot
+      |> TempSubscription.get_all
+      |> Enum.map(fn %TempSubscription{user: user, resource: resource} ->
+        %User{user | resource: resource}
+      end)
+
+    [bot.subscribers, temp_subscribers]
     |> List.flatten
     |> Enum.sort_by(&(&1.id))
     |> Enum.uniq_by(&(&1.id))

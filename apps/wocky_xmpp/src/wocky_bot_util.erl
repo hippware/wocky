@@ -25,7 +25,6 @@
          list_hash/1,
          extract_images/1,
          get_image/1,
-         list_attrs/2,
          bot_packet_action/1,
          follow_stanza/2
         ]).
@@ -88,7 +87,7 @@ list_hash(List) ->
      ).
 
 extract_images(Items) ->
-    lists:foldl(extract_image(_, _), [], Items).
+    lists:reverse(lists:foldl(extract_image(_, _), [], Items)).
 
 extract_image(#{image := true, id := ID, updated_at := Updated, stanza := S},
               Acc) ->
@@ -108,12 +107,6 @@ get_image(Entry = #xmlel{}) ->
         #xmlel{children = [#xmlcdata{content = C}]} -> C;
         false -> none
     end.
-
-list_attrs(Bot, List) ->
-    [{<<"xmlns">>, ?NS_BOT},
-     {<<"node">>, ?wocky_bot:make_node(Bot)},
-     {<<"size">>, integer_to_binary(length(List))},
-     {<<"hash">>, list_hash(List)}].
 
 bot_packet_action(BotStanza) ->
     Action = xml:get_path_s(BotStanza, [{elem, <<"action">>}, cdata]),

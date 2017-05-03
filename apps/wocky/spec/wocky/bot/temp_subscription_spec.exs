@@ -112,6 +112,32 @@ defmodule Wocky.Bot.TempSubscriptionSpec do
       end
     end
 
+    describe "get_all/1" do
+      it "should return a list of subscriptions for a bot" do
+        [temp_sub] = TempSubscription.get_all(shared.bot)
+        temp_sub.resource |> should(eq shared.sub.resource)
+        temp_sub.node |> should(eq shared.sub.node)
+      end
+
+      it "should return a list of subscriptions for a user" do
+        [temp_sub] = TempSubscription.get_all(shared.user)
+        temp_sub.resource |> should(eq shared.sub.resource)
+        temp_sub.node |> should(eq shared.sub.node)
+      end
+
+      it "should return an empty list when the user does not exist" do
+        user = Factory.build(:user, resource: "testing")
+        TempSubscription.get_all(user)
+        |> should(be_empty())
+      end
+
+      it "should return an empty list when the bot does not exist" do
+        bot = Factory.build(:bot)
+        TempSubscription.get_all(bot)
+        |> should(be_empty())
+      end
+    end
+
     describe "put/3" do
       context "when a subscription does not already exist" do
         before do
