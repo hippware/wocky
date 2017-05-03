@@ -23,7 +23,17 @@ access_query_test_() -> {
 }.
 
 before_all() ->
-    {ok, _} = wocky_db_seed:seed_table(shared, bot),
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    _ = ?wocky_factory:insert(user, #{id => ?ALICE,
+                                      username => ?ALICE,
+                                      handle => <<"alice">>}),
+    Bob = ?wocky_factory:insert(user, #{id => ?BOB,
+                                      username => ?BOB,
+                                      handle => <<"bob">>}),
+    Bot = ?wocky_factory:insert(bot, #{id => ?BOT, user_id => ?ALICE}),
+
+    ?wocky_user:subscribe(Bob, Bot),
+
     setup_errors(),
     ok.
 

@@ -1,11 +1,8 @@
 defmodule Wocky.UserSpec do
   use ESpec, async: true
+  use ModelHelpers
   use Wocky.JID
 
-  import ChangesetAssertions
-  import Ecto.Query, only: [from: 2]
-
-  alias Ecto.Changeset
   alias Faker.Internet
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -18,10 +15,6 @@ defmodule Wocky.UserSpec do
   before do
     user = Factory.insert(:user, %{server: shared.server})
     {:ok, user: user, id: user.id, external_id: user.external_id}
-  end
-
-  finally do
-    Repo.delete_all(from u in User, where: u.id == ^shared.id)
   end
 
   describe "register_changeset/1 validations" do
@@ -291,7 +284,7 @@ defmodule Wocky.UserSpec do
       context "and the user already has that avatar" do
         before do
           shared.user
-          |> Changeset.cast(%{avatar: shared.avatar_url}, [:avatar])
+          |> cast(%{avatar: shared.avatar_url}, [:avatar])
           |> Repo.update!
 
           result = User.update(shared.id, %{avatar: shared.avatar_url})
@@ -319,7 +312,7 @@ defmodule Wocky.UserSpec do
           Metadata.put(avatar_id, shared.user.id, "public")
 
           shared.user
-          |> Changeset.cast(%{avatar: avatar_url}, [:avatar])
+          |> cast(%{avatar: avatar_url}, [:avatar])
           |> Repo.update!
 
           result = User.update(shared.id, %{avatar: shared.avatar_url})
@@ -366,8 +359,6 @@ defmodule Wocky.UserSpec do
       |> Token.get_all
       |> should(be_empty())
     end
-
-    it "should remove any location data associated with the user"
 
     it "should remove the user from the full text search index"
 

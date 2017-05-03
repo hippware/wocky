@@ -59,14 +59,8 @@ defmodule Wocky.Repo.IDSpec do
     end
 
     it "should raise an error if the UUID is not valid" do
-      # "alice" |> ID.to_binary! |> should(raise_exception ArgumentError)
-      try do
-        ID.to_binary!("alice")
-        false
-      rescue
-        ArgumentError -> true
-      end
-      |> should(be_true())
+      fn -> ID.to_binary!("alice") end
+      |> should(raise_exception ArgumentError)
     end
 
     it "should be transitive with to_string!/1" do

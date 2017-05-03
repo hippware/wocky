@@ -9,10 +9,6 @@ defmodule Wocky.TrafficLogSpec do
 
   @packets 100
 
-  before_all do
-    Wocky.Repo.delete_all(Wocky.TrafficLog)
-  end
-
   before do
     user = Factory.insert(:user, %{server: shared.server})
     resource = Lorem.word

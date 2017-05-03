@@ -8,10 +8,6 @@ defmodule Wocky.HomeStreamItemSpec do
 
   @num_items 10
 
-  before_all do
-    Wocky.Repo.delete_all(Wocky.User)
-  end
-
   before do
     user = Factory.insert(:user, %{server: shared.server})
 
@@ -59,7 +55,8 @@ defmodule Wocky.HomeStreamItemSpec do
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
-        get_result = HomeStreamItem.get_by_key(shared.user.id, shared.last_item.key)
+        get_result = HomeStreamItem.get_by_key(shared.user.id,
+                                               shared.last_item.key)
         get_result |> should(be_struct HomeStreamItem)
         get_result.stanza |> should(eq stanza)
       end

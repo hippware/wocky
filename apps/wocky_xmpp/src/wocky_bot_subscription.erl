@@ -10,16 +10,17 @@
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
 
+-define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
+
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
 -export([start/1,
          stop/1]).
 
--export([handle_subscribe/3,
-         handle_unsubscribe/3,
-         handle_retrieve_subscribers/3
-        ]).
+-export([subscribe/2,
+         unsubscribe/2,
+         retrieve_subscribers/1]).
 
 %%%===================================================================
 %%% Setup
@@ -28,7 +29,7 @@
 start(Host) ->
     %% This call may fail if the database hasn't been updated yet. Isolate
     %% it in a temporary process so that the application can start.
-    spawn(fun () -> wocky_db_bot:clear_temporary_subscriptions(node()) end),
+    spawn(fun () -> ?wocky_temp_subscription:delete(node()) end),
     ejabberd_hooks:add(node_cleanup, global, fun node_cleanup_hook/1, 90),
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
                        fun remove_connection_hook/4, 90),
@@ -41,94 +42,88 @@ stop(Host) ->
     ejabberd_hooks:delete(node_cleanup, global, fun node_cleanup_hook/1, 90),
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
                           fun remove_connection_hook/4, 90),
-    wocky_db_bot:clear_temporary_subscriptions(node()).
+    ?wocky_temp_subscription:delete(node()).
 
 %%%===================================================================
 %%% Action - subscribe
 %%%===================================================================
 
-handle_subscribe(From, #jid{lserver = Server}, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_access(Server, ID, From),
-        subscribe_bot(Server, ID, From),
-        {ok, make_subscriber_count_element(Server, ID)}
-       ]).
-
-subscribe_bot(Server, ID, From) ->
-    {ok, wocky_db_bot:subscribe(Server, ID, From)}.
+subscribe(User, Bot) ->
+    ?wocky_user:subscribe(User, Bot),
+    {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
 %%% Action - unsubscribe
 %%%===================================================================
 
-handle_unsubscribe(From, #jid{lserver = Server}, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_bot_exists(Server, ID),
-        unsubscribe_bot(Server, ID, From),
-        {ok, make_subscriber_count_element(Server, ID)}
-       ]).
-
-unsubscribe_bot(Server, ID, From) ->
-    {ok, wocky_db_bot:unsubscribe(Server, ID, From)}.
+unsubscribe(User, Bot) ->
+    ?wocky_user:unsubscribe(User, Bot),
+    {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
 %%% Action - retrieve subscribers
 %%%===================================================================
 
-handle_retrieve_subscribers(From, #jid{lserver = Server}, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(Server, ID, From),
-        {ok, make_subscribers_element(Server, ID)}
-       ]).
+retrieve_subscribers(Bot) ->
+    {ok, make_subscribers_element(Bot)}.
 
-make_subscribers_element(Server, ID) ->
-    Subscribers = wocky_db_bot:subscribers(Server, ID),
+make_subscribers_element(Bot) ->
+    Subscribers = ?wocky_bot:subscribers(Bot),
     #xmlel{name = <<"subscribers">>,
-           attrs = wocky_bot_util:list_attrs(ID, Subscribers),
+           attrs = wocky_bot_util:list_attrs(Bot, Subscribers),
            children = make_subscriber_elements(Subscribers)}.
 
 make_subscriber_elements(Subscribers) ->
     lists:map(fun make_subscriber_element/1, Subscribers).
 
-make_subscriber_element(JID) ->
+make_subscriber_element(User) ->
     #xmlel{name = <<"subscriber">>,
-           attrs = [{<<"jid">>, jid:to_binary(JID)}]}.
+           attrs = [{<<"jid">>, jid:to_binary(?wocky_user:to_jid(User))}]}.
 
 %%%===================================================================
 %%% Action - subscribe temporary
 %%%===================================================================
 
-handle_subscribe_temporary(From, Server, BotID) ->
-    case wocky_bot_util:check_access(Server, BotID, From) of
-        ok ->
-            wocky_db_bot:subscribe_temporary(Server, BotID, From, node());
-        _ ->
-            ok
+handle_subscribe_temporary(From, _Server, BotID) ->
+    do([error_m ||
+        Bot <- wocky_bot_util:get_bot(BotID),
+        User <- wocky_bot_util:get_user_from_jid(From),
+        do_subscribe_temporary(User, Bot)
+       ]).
+
+do_subscribe_temporary(User, Bot) ->
+    case wocky_bot_util:check_access(User, Bot) of
+        ok -> ?wocky_user:subscribe_temporary(User, Bot, node());
+        _ -> ok
     end.
 
 %%%===================================================================
 %%% Action - unsubscribe temporary
 %%%===================================================================
 
-handle_unsubscribe_temporary(From, Server, BotID) ->
-    wocky_db_bot:unsubscribe_temporary(Server, BotID, From).
+handle_unsubscribe_temporary(From, _Server, BotID) ->
+    do([error_m ||
+        Bot <- wocky_bot_util:get_bot(BotID),
+        User <- wocky_bot_util:get_user_from_jid(From),
+        ?wocky_user:unsubscribe_temporary(User, Bot)
+       ]).
 
 %%%===================================================================
 %%% Hook - node down
 %%%===================================================================
 
 node_cleanup_hook(Node) ->
-    wocky_db_bot:clear_temporary_subscriptions(Node).
+    ?wocky_temp_subscription:delete(Node).
 
 %%%===================================================================
 %%% Hook - client connection down
 %%%===================================================================
 
 remove_connection_hook(_SID, JID, _Info, _Reason) ->
-    wocky_db_bot:clear_temporary_subscriptions(JID).
+    do([error_m ||
+        User <- wocky_bot_util:get_user_from_jid(JID),
+        ?wocky_temp_subscription:delete(User)
+       ]).
 
 %%%===================================================================
 %%% Hook - client connection down
@@ -150,6 +145,7 @@ handle_untyped_presence(From, LServer, BotID, Stanza) ->
     case xml:get_path_s(Stanza, [{elem, <<"query">>}, {attr, <<"xmlns">>}]) of
         ?NS_BOT ->
             handle_subscribe_temporary(From, LServer, BotID);
+
         _ ->
             ok
     end.
@@ -158,6 +154,6 @@ handle_untyped_presence(From, LServer, BotID, Stanza) ->
 %%% Common helpers
 %%%===================================================================
 
-make_subscriber_count_element(Server, ID) ->
-    Count = wocky_db_bot:subscriber_count(Server, ID),
+make_subscriber_count_element(Bot) ->
+    Count = ?wocky_bot:subscriber_count(Bot),
     wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).

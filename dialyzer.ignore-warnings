@@ -1,3 +1,4 @@
 Function fields_for/1 has no local return
 Function fields_for/2 only terminates with explicit exception
 <<_:40,_:_*8>>
+lib/wocky/index.ex:207: Function delete_object/2 has no local return

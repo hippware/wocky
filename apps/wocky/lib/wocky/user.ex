@@ -7,6 +7,9 @@ defmodule Wocky.User do
   import OK, only: ["~>>": 2]
 
   alias Wocky.Bot
+  alias Wocky.Bot.Share
+  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.Device
   alias Wocky.HomeStreamItem
@@ -49,7 +52,9 @@ defmodule Wocky.User do
     has_many :tokens, Token
     has_many :tros_metadatas, TROSMetadata
 
-    many_to_many :subscriptions, Bot, join_through: "bot_subscribers"
+    many_to_many :shares, Bot, join_through: Share
+    many_to_many :subscriptions, Bot, join_through: Subscription
+    many_to_many :temp_subscriptions, Bot, join_through: TempSubscription
   end
 
   @type id           :: binary
@@ -149,6 +154,14 @@ defmodule Wocky.User do
     Repo.get(User, id)
   end
 
+  @spec find_by_jid(JID.t) :: t | nil
+  def find_by_jid(jid(luser: id, lresource: resource)) do
+    case Repo.get(User, id) do
+      nil -> nil
+      user -> %User{user | resource: resource}
+    end
+  end
+
   @doc "Search for a user based on the value of a property"
   @spec find_by(:handle | :phone_number | :external_id, binary) :: t | nil
   def find_by(field, value) do
@@ -186,29 +199,59 @@ defmodule Wocky.User do
   end
 
   @doc "Subscribe to the bot"
-  @spec subscribe_to_bot(t, Bot.t) :: :ok
-  def subscribe_to_bot(user, bot) do
-    user
-    |> Repo.preload(:subscriptions)
-    |> change()
-    |> put_assoc(:subscriptions, [bot])
-    |> Repo.update!
+  @spec subscribe(t, Bot.t) :: :ok
+  def subscribe(user, bot) do
+    Subscription.put(user, bot)
+  end
 
-    :ok
+  @spec subscribe_temporary(t, Bot.t, atom | binary) :: :ok
+  def subscribe_temporary(user, bot, node) do
+    TempSubscription.put(user, bot, to_string(node))
+  end
+
+  @doc "Unsubscribe from the bot"
+  @spec unsubscribe(t, Bot.t) :: :ok
+  def unsubscribe(user, bot) do
+    Subscription.delete(user, bot)
+  end
+
+  @spec unsubscribe_temporary(t, Bot.t) :: :ok
+  def unsubscribe_temporary(user, bot) do
+    TempSubscription.delete(user, bot)
+  end
+
+  @spec subscribed?(t, Bot.t) :: boolean
+  def subscribed?(user, bot) do
+    owns?(user, bot) ||
+    Subscription.exists?(user, bot) ||
+    TempSubscription.exists?(user, bot)
   end
 
   @doc "Returns all bots that the user subscribes to"
-  @spec get_subscribed_bots(t) :: [Bot.t]
-  def get_subscribed_bots(user) do
-    user = Repo.preload(user, :subscriptions)
-    user.subscriptions
+  @spec get_subscriptions(t) :: [Bot.t]
+  def get_subscriptions(user) do
+    user = Repo.preload(user, [:bots, :subscriptions, :temp_subscriptions])
+
+    [user.bots, user.subscriptions, user.temp_subscriptions]
+    |> List.flatten
+    |> Enum.sort_by(&(&1.created_at))
+    |> Enum.uniq_by(&(&1.id))
   end
+
+  @spec owns?(t, Bot.t) :: boolean
+  def owns?(user, bot), do: user.id == bot.user_id
+
+  @spec can_access?(t, Bot.t) :: boolean
+  def can_access?(user, bot),
+    do: owns?(user, bot) || Bot.public?(bot) || Bot.shared_to?(bot, user)
 
   @doc "Returns all bots that the user owns"
   @spec get_owned_bots(t) :: [Bot.t]
   def get_owned_bots(user) do
     user
     |> Ecto.assoc(:bots)
+    |> where(pending: false)
+    |> order_by(asc: :updated_at)
     |> Repo.all
   end
 
@@ -287,14 +330,14 @@ defmodule Wocky.User do
     end
   end
 
- defp do_validate_avatar(user, avatar) do
-   Avatar.prepare(avatar)
-   ~>> Avatar.check_valid_filename
-   ~>> Avatar.check_is_local(user.server)
-   ~>> Avatar.check_owner(user.id)
- end
+  defp do_validate_avatar(user, avatar) do
+    Avatar.prepare(avatar)
+    ~>> Avatar.check_valid_filename
+    ~>> Avatar.check_is_local(user.server)
+    ~>> Avatar.check_owner(user.id)
+  end
 
- defp do_update_index(%User{username: username}, fields) do
+  defp do_update_index(%User{username: username}, fields) do
     :ok = Index.user_updated(username, fields)
   end
 

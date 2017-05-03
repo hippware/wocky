@@ -31,7 +31,7 @@
 -type tags() :: [binary()].
 
 -type field_type() :: string | int | bool | geoloc | jid | timestamp | tags.
--type value_type() :: not_found | binary() | integer() | boolean()
+-type value_type() :: nil | binary() | integer() | boolean()
                       | loc() | jid() | tags().
 
 
@@ -74,346 +74,151 @@ stop(Host) ->
                 To :: ejabberd:jid(),
                 IQ :: iq()) -> iq().
 handle_iq(From, To, IQ) ->
-    case handle_iq_type(From, To, IQ) of
-        {ok, SubEl} -> IQ#iq{type = result, sub_el = SubEl};
-        {error, Error} -> wocky_util:make_error_iq_response(IQ, Error)
+    #iq{type = Type, sub_el = #xmlel{name = Op, attrs = Attrs}} = IQ,
+    case handle_iq_type(From, To, Type, Op, Attrs, IQ) of
+        {ok, SubEl} ->
+            IQ#iq{type = result, sub_el = SubEl};
+
+        {error, #{'valid?' := false} = Changeset} ->
+            Error = handle_validation_errors(?wocky_errors:to_map(Changeset)),
+            wocky_util:make_error_iq_response(IQ, Error);
+
+        {error, Error} ->
+            wocky_util:make_error_iq_response(IQ, Error)
     end.
 
 % New ID
-handle_iq_type(From, _To, #iq{type = set,
-                              sub_el = #xmlel{name = <<"new-id">>}}) ->
-    handle_new_id(From);
+handle_iq_type(From, _To, set, <<"new-id">>, _Attrs, _IQ) ->
+    handle_preallocate(From);
 
 % Create
-handle_iq_type(From, _To, #iq{type = set,
-                              sub_el = #xmlel{name = <<"create">>,
-                                              children = Children}
-                             }) ->
+handle_iq_type(From, _To, set, <<"create">>, _Attrs, IQ) ->
+    #iq{sub_el = #xmlel{children = Children}} = IQ,
     handle_create(From, Children);
 
 % Delete
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = #xmlel{name = <<"delete">>,
-                                             attrs = Attrs}
-                            }) ->
-    handle_delete(From, To, Attrs);
+handle_iq_type(From, To, set, <<"delete">>, Attrs, IQ) ->
+    handle_owner_action(delete, From, To, Attrs, IQ);
 
 % Retrieve owned bots
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = Name,
-                                                  attrs = Attrs}
-                                 })
+handle_iq_type(From, To, get, Name, Attrs, IQ)
   %% We want 'bot' for retrieving a single bot and 'bots' for a list of bots.
   %% The documentation is inconsistent, so to avoid breaking anything, we will
   %% accept either.
   when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
-    handle_get(From, To, IQ, Attrs);
+    case wocky_bot_util:get_id_from_node(Attrs) of
+        {ok, _ID} -> handle_access_action(get_bot, From, To, Attrs, IQ);
+        {error, _} ->
+            case get_location_from_attrs(Attrs) of
+                {ok, {Lat, Lon}} ->
+                    get_bots_near_location(From, Lat, Lon);
+
+                {error, _} ->
+                    get_bots_for_user(From, IQ, Attrs)
+            end
+    end;
 
 % Retrieve subscribed bots
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = Name}
-                                 })
+handle_iq_type(From, To, get, Name, _Attrs, IQ)
   when Name =:= <<"following">> orelse %% Backwards compatability only
        Name =:= <<"subscribed">> ->
     handle_subscribed(From, To, IQ);
 
 % Update
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = #xmlel{name = <<"fields">>,
-                                             attrs = Attrs,
-                                             children = Children}
-                            }) ->
-    handle_update(From, To, Attrs, Children);
+handle_iq_type(From, To, set, <<"fields">>, Attrs, IQ) ->
+    handle_owner_action(update, From, To, Attrs, IQ);
 
 % Subscribe
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = #xmlel{name = <<"subscribe">>,
-                                             attrs = Attrs}
-                            }) ->
-    wocky_bot_subscription:handle_subscribe(From, To, Attrs);
+handle_iq_type(From, To, set, <<"subscribe">>, Attrs, IQ) ->
+    handle_access_action(subscribe, From, To, Attrs, IQ);
 
 % Unsubscribe
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = #xmlel{name = <<"unsubscribe">>,
-                                             attrs = Attrs}
-                            }) ->
-    wocky_bot_subscription:handle_unsubscribe(From, To, Attrs);
+handle_iq_type(From, To, set, <<"unsubscribe">>, Attrs, _IQ) ->
+    handle_unsubscribe(From, To, Attrs);
 
 % Retrieve subscribers
-handle_iq_type(From, To, #iq{type = get,
-                             sub_el = #xmlel{name = <<"subscribers">>,
-                                             attrs = Attrs}
-                            }) ->
-    wocky_bot_subscription:handle_retrieve_subscribers(From, To, Attrs);
-
-% Publish an item
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = SubEl = #xmlel{name = <<"publish">>,
-                                                     attrs = Attrs}
-                            }) ->
-    wocky_bot_item:handle_publish(From, To, SubEl, Attrs);
+handle_iq_type(From, To, get, <<"subscribers">>, Attrs, IQ) ->
+    handle_owner_action(subscribers, From, To, Attrs, IQ);
 
 % Retrieve item(s)
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"query">>,
-                                                  attrs = Attrs}
-                                 }) ->
-    wocky_bot_item:handle_query(From, To, IQ, Attrs);
+handle_iq_type(From, To, get, <<"query">>, Attrs, IQ) ->
+    handle_access_action(item_query, From, To, Attrs, IQ);
+
+% Publish an item
+handle_iq_type(From, To, set, <<"publish">>, Attrs, IQ) ->
+    handle_owner_action(publish, From, To, Attrs, IQ);
 
 % Delete an item
-handle_iq_type(From, To, #iq{type = set,
-                             sub_el = SubEl = #xmlel{name = <<"retract">>,
-                                                     attrs = Attrs}
-                            }) ->
-    wocky_bot_item:handle_retract(From, To, SubEl, Attrs);
+handle_iq_type(From, To, set, <<"retract">>, Attrs, IQ) ->
+    handle_owner_action(retract, From, To, Attrs, IQ);
 
 % Get a list of images from items on the bot
-handle_iq_type(From, To, IQ = #iq{type = get,
-                                  sub_el = #xmlel{name = <<"item_images">>,
-                                                  attrs = Attrs}}) ->
-    handle_item_images(From, To, IQ, Attrs);
+handle_iq_type(From, To, get, <<"item_images">>, Attrs, IQ) ->
+    handle_access_action(item_images, From, To, Attrs, IQ);
 
 % Follow me
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"follow-me">>,
-                                                  attrs = Attrs}}) ->
-    handle_follow_me(From, To, IQ, Attrs);
+handle_iq_type(From, To, set, <<"follow-me">>, Attrs, IQ) ->
+    handle_owner_action(follow_me, From, To, Attrs, IQ);
 
 % Un-follow me
-handle_iq_type(From, To, IQ = #iq{type = set,
-                                  sub_el = #xmlel{name = <<"un-follow-me">>,
-                                                  attrs = Attrs}}) ->
-    handle_unfollow_me(From, To, IQ, Attrs);
+handle_iq_type(From, To, set, <<"un-follow-me">>, Attrs, IQ) ->
+    handle_owner_action(unfollow_me, From, To, Attrs, IQ);
 
-handle_iq_type(_From, _To, _IQ) ->
+handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
 
-%%%===================================================================
-%%% Action - new-id
-%%%===================================================================
-
-handle_new_id(From) ->
-    ID = wocky_db_bot:new_id(From),
-    {ok, make_new_id_stanza(ID)}.
 
 %%%===================================================================
-%%% Action - create
+%%% Actions that only the owner may perform
 %%%===================================================================
 
-handle_create(From, Children) ->
-    Server = wocky_xmpp_app:server(),
+handle_owner_action(Action, From, To, Attrs, IQ) ->
+    do([error_m ||
+           Bot <- wocky_bot_util:get_bot_from_node(Attrs),
+           wocky_bot_util:check_owner(Bot, From),
+           perform_owner_action(Action, Bot, From, To, IQ)
+       ]).
+
+perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
+    #iq{sub_el = #xmlel{children = Children}} = IQ,
     do([error_m ||
         Fields <- get_fields(Children),
-        Fields2 <- add_server(Fields, Server),
-        check_required_fields(Fields2, required_fields()),
-        {ID, BotEl} <- create(From, Server, Fields2),
-        wocky_bot_users:notify_new_viewers(Server, ID, none,
-                                           wocky_db_bot:is_public(Server, ID)),
-        {ok, BotEl}
-       ]).
-
-add_server(Fields, Server) ->
-    {ok,
-     [#field{name = <<"server">>, type = string, value = Server} | Fields]}.
-
-%%%===================================================================
-%%% Action - delete
-%%%===================================================================
-
-handle_delete(From, #jid{lserver = Server}, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(Server, ID, From),
-        wocky_db_bot:delete(Server, ID),
+        OldPublic = ?wocky_bot:'public?'(Bot),
+        FieldsMap = normalise_fields(Fields),
+        NewBot <- ?wocky_bot:update(Bot, FieldsMap),
+        wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
+                                           ?wocky_bot:'public?'(NewBot)),
         {ok, []}
-       ]).
+       ]);
 
-%%%===================================================================
-%%% Actions - get/subscribed
-%%%===================================================================
+perform_owner_action(delete, Bot, _From, _To, _IQ) ->
+    ?wocky_bot:delete(Bot),
+    {ok, []};
 
-handle_get(From, #jid{lserver = Server}, IQ, Attrs) ->
-    case wocky_bot_util:get_id_from_node(Attrs) of
-        {ok, ID} -> get_bot_by_id(From, Server, ID);
-        {error, _} ->
-            case get_location_from_attrs(Attrs) of
-                {ok, {Lat, Lon}} ->
-                    get_bots_near_location(From, Server, IQ, Lat, Lon);
+perform_owner_action(subscribers, Bot, _From, _To, _IQ) ->
+    wocky_bot_subscription:retrieve_subscribers(Bot);
 
-                {error, _} ->
-                    get_bots_for_user(From, Server, IQ, Attrs)
-            end
-    end.
+perform_owner_action(publish, Bot, _From, To, #iq{sub_el = SubEl}) ->
+    wocky_bot_item:publish(Bot, To, SubEl);
 
-handle_subscribed(From, #jid{lserver = Server}, IQ) ->
+perform_owner_action(retract, Bot, _From, To, #iq{sub_el = SubEl}) ->
+    wocky_bot_item:retract(Bot, To, SubEl);
+
+perform_owner_action(follow_me, Bot, From, _To, IQ) ->
+    #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
     do([error_m ||
-        RSMIn <- rsm_util:get_rsm(IQ),
-        BotJIDs <- {ok, wocky_db_bot:subscribed_bots(From)},
-        {Bots, RSMOut} <- filter_bots_for_user(BotJIDs, Server, From, RSMIn),
-        {ok, users_bots_result(Bots, From, RSMOut)}
-       ]).
-
-get_bot_by_id(From, Server, ID) ->
-    do([error_m ||
-        wocky_bot_util:check_access(Server, ID, From),
-        BotEl <- make_bot_el(Server, ID, From),
-        {ok, BotEl}
-       ]).
-
-get_location_from_attrs(Attrs) ->
-    do([error_m ||
-        Lat <- wocky_xml:get_attr(<<"lat">>, Attrs),
-        Lon <- wocky_xml:get_attr(<<"lon">>, Attrs),
-        {ok, {Lat, Lon}}
-       ]).
-
-get_bots_near_location(From, _Server, _IQ, Lat, Lon) ->
-    case 'Elixir.Wocky.Index':geosearch(Lat, Lon) of
-        {ok, AllBots} ->
-            VisibleBots = lists:filter(
-                            geosearch_access_filter(From, _), AllBots),
-            {ok, make_geosearch_result(VisibleBots)};
-        {error, no_index_configured} ->
-            {error,
-             ?ERRT_FEATURE_NOT_IMPLEMENTED(
-                ?MYLANG, <<"Index search is not configured on this server">>)}
-    end.
-
-geosearch_access_filter(From, #{server := Server, id := ID}) ->
-    ok =:= wocky_bot_util:check_access(Server, ID, From).
-
-make_geosearch_result(Bots) ->
-    #xmlel{name = <<"bots">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = make_geosearch_els(Bots)}.
-
-make_geosearch_els(Bots) ->
-    [make_geosearch_el(Bot) || Bot <- Bots].
-
-geosearch_el_fields() ->
-    [id, server, title, image, lat, lon, radius, distance].
-
-make_geosearch_el(#{server :=  Server, id := ID} = Bot) ->
-    JidField = make_field(<<"jid">>, jid, bot_jid(Server, ID)),
-    MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
-    RetFields = encode_fields([JidField | MapFields]),
-    make_ret_stanza(RetFields).
-
-get_bots_for_user(From, Server, IQ, Attrs) ->
-    do([error_m ||
-        User <- wocky_xml:get_attr(<<"user">>, Attrs),
-        UserJID <- make_jid(User),
-        RSMIn <- rsm_util:get_rsm(IQ),
-        BotJIDs <- {ok, wocky_db_bot:owned_bots(UserJID)},
-        {Bots, RSMOut} <- filter_bots_for_user(BotJIDs, Server, From, RSMIn),
-        {ok, users_bots_result(Bots, From, RSMOut)}
-       ]).
-
-filter_bots_for_user(BotJIDs, Server, From, RSMIn) ->
-    VisibleJIDs = lists:filter(access_filter(Server, From, _), BotJIDs),
-    % Sort bots with most recently updated last
-    Bots = [wocky_db_bot:get_bot(JID) || JID <- VisibleJIDs],
-    SortedBots = lists:sort(update_order(_, _), Bots),
-    {FilteredBots, RSMOut} = rsm_util:filter_with_rsm(SortedBots, RSMIn),
-    {ok, {FilteredBots, RSMOut}}.
-
-update_order(#{updated := U1}, #{updated := U2}) ->
-    U1 =< U2.
-
-access_filter(Server, From, JID) ->
-    ID = wocky_bot_util:get_id_from_jid(JID),
-    ok =:= wocky_bot_util:check_access(Server, ID, From).
-
-users_bots_result(Bots, UserJID, RSMOut) ->
-    BotEls = make_bot_els(Bots, UserJID),
-    #xmlel{name = <<"bots">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = BotEls ++ jlib:rsm_encode(RSMOut)}.
-
-make_bot_els(BotIDs, UserJID) ->
-    lists:reverse(
-      lists:foldl(make_bot_els(_, UserJID, _), [], BotIDs)).
-
-make_bot_els(ID, UserJID, Acc) ->
-    {ok, El} = make_bot_el(ID, UserJID),
-    [El|Acc].
-
-%%%===================================================================
-%%% Action - update
-%%%===================================================================
-
-handle_update(From, #jid{lserver = Server}, Attrs, Children) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(Server, ID, From),
-        OldPublic <- {ok, wocky_db_bot:is_public(Server, ID)},
-        Fields <- get_fields(Children),
-        update_bot(Server, ID, Fields),
-        wocky_bot_users:notify_new_viewers(Server, ID, OldPublic,
-                                           wocky_db_bot:is_public(Server, ID)),
-        {ok, []}
-       ]).
-
-%%%===================================================================
-%%% Action - item_images
-%%%===================================================================
-
-handle_item_images(From, #jid{lserver = Server}, IQ, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        RSMIn <- rsm_util:get_rsm(IQ),
-        wocky_bot_util:check_access(Server, ID, From),
-        Images <- get_bot_item_images(Server, ID),
-        {FilteredImages, RSMOut} <-
-        {ok, rsm_util:filter_with_rsm(Images, RSMIn)},
-        Owner <- {ok, wocky_db_bot:owner(ID)},
-        {ok, images_result(Owner, FilteredImages, RSMOut)}
-       ]).
-
-get_bot_item_images(Server, ID) ->
-    Images = wocky_db_bot:item_images(Server, ID),
-    {ok, lists:sort(update_order(_, _), Images)}.
-
-images_result(Owner, Images, RSMOut) ->
-    ImageEls = image_els(Owner, Images),
-    #xmlel{name = <<"item_images">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = ImageEls ++ jlib:rsm_encode(RSMOut)}.
-
-image_els(Owner, Images) ->
-    lists:map(image_el(Owner, _), Images).
-
-image_el(Owner, #{id := ID, image := Image, updated := Updated}) ->
-    #xmlel{name = <<"image">>,
-           attrs = [{<<"owner">>, jid:to_binary(Owner)},
-                    {<<"item">>, ID},
-                    {<<"url">>, Image},
-                    {<<"updated">>, wocky_db:timestamp_to_string(Updated)}]}.
-
-%%%===================================================================
-%%% Action - follow-me
-%%%===================================================================
-
-handle_follow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
-    do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(Server, ID, From),
         Expiry <- get_follow_me_expiry(Attrs),
-        wocky_db_bot:set_follow_me(ID, Expiry),
-        publish_follow_me(From, ID, Server),
-        wocky_bot_expiry_mon:follow_started(
-          wocky_bot_util:make_jid(Server, ID), Expiry),
+        ?wocky_bot:follow_me(Bot, Expiry),
+        publish_follow_me(From, Bot),
+        wocky_bot_expiry_mon:follow_started(?wocky_bot:to_jid(Bot), Expiry),
         {ok, follow_me_result(IQ)}
-       ]).
+       ]);
 
-handle_unfollow_me(From, #jid{lserver = Server}, IQ, Attrs) ->
+perform_owner_action(unfollow_me, Bot, From, _To, IQ) ->
     do([error_m ||
-        ID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(Server, ID, From),
-        wocky_db_bot:set_unfollow_me(ID),
-        publish_unfollow_me(From, ID, Server),
-        wocky_bot_expiry_mon:follow_stopped(
-          wocky_bot_util:make_jid(Server, ID)),
+        ?wocky_bot:unfollow_me(Bot),
+        publish_unfollow_me(From, Bot),
+        wocky_bot_expiry_mon:follow_stopped(?wocky_bot:to_jid(Bot)),
         {ok, follow_me_result(IQ)}
        ]).
 
@@ -426,16 +231,200 @@ get_follow_me_expiry(Attrs) ->
 follow_me_result(#iq{sub_el = SubEl}) ->
     SubEl.
 
-publish_follow_me(Owner, ID, Server) ->
-    Stanza = wocky_bot_util:follow_stanza(Server, ID, <<"follow on">>),
-    send_hs_notification(Owner, ID, Server, Stanza).
+publish_follow_me(Owner, Bot) ->
+    Stanza = wocky_bot_util:follow_stanza(Bot, <<"follow on">>),
+    send_hs_notification(Owner, Bot, Stanza).
 
-publish_unfollow_me(Owner, ID, Server) ->
-    Stanza = wocky_bot_util:follow_stanza(Server, ID, <<"follow off">>),
-    send_hs_notification(Owner, ID, Server, Stanza).
+publish_unfollow_me(Owner, Bot) ->
+    Stanza = wocky_bot_util:follow_stanza(Bot, <<"follow off">>),
+    send_hs_notification(Owner, Bot, Stanza).
 
-send_hs_notification(From, ID, Server, Stanza) ->
-    ejabberd_router:route(wocky_bot_util:make_jid(Server, ID), From, Stanza).
+send_hs_notification(From, Bot, Stanza) ->
+    ejabberd_router:route(?wocky_bot:to_jid(Bot), From, Stanza).
+
+
+%%%===================================================================
+%%% Actions that require the user to have access to the bot
+%%%===================================================================
+
+handle_access_action(Action, From, _To, Attrs, IQ) ->
+    do([error_m ||
+           Bot <- wocky_bot_util:get_bot_from_node(Attrs),
+           User <- wocky_bot_util:get_user_from_jid(From),
+           wocky_bot_util:check_access(User, Bot),
+           perform_access_action(Action, Bot, User, IQ)
+       ]).
+
+perform_access_action(get_bot, Bot, User, _IQ) ->
+    do([error_m ||
+           BotEl <- make_bot_el(Bot, User),
+           {ok, BotEl}
+       ]);
+
+perform_access_action(item_query, Bot, _User, IQ) ->
+    wocky_bot_item:query(Bot, IQ);
+
+perform_access_action(item_images, Bot, _User, IQ) ->
+    wocky_bot_item:query_images(Bot, IQ);
+
+perform_access_action(subscribe, Bot, User, _IQ) ->
+    wocky_bot_subscription:subscribe(User, Bot).
+
+%%%===================================================================
+%%% Action - new-id
+%%%===================================================================
+
+handle_preallocate(#jid{luser = UserID}) ->
+    Server = wocky_xmpp_app:server(),
+    #{id := ID} = ?wocky_bot:preallocate(UserID, Server),
+    {ok, make_new_id_stanza(ID)}.
+
+%%%===================================================================
+%%% Action - create
+%%%===================================================================
+
+handle_create(From, Children) ->
+    Server = wocky_xmpp_app:server(),
+    do([error_m ||
+        Fields <- get_fields(Children),
+        {ID, PendingBot} <- get_id_and_bot(Fields),
+        User <- wocky_bot_util:get_user_from_jid(From),
+        Fields2 <- add_server(Fields, Server),
+        Fields3 <- add_defaults(Fields2),
+        check_required_fields(Fields3, required_fields()),
+        FieldsMap = normalise_fields(Fields3),
+        Bot <- create_bot(ID, PendingBot, User, FieldsMap),
+        BotEl <- make_bot_el(Bot, User),
+        wocky_bot_users:notify_new_viewers(Server, Bot, none,
+                                           ?wocky_bot:'public?'(Bot)),
+        {ok, BotEl}
+       ]).
+
+add_server(Fields, Server) ->
+    {ok, [#field{name = <<"server">>, type = string, value = Server} | Fields]}.
+
+add_defaults(Fields) ->
+    {ok, lists:foldl(fun maybe_add_default/2, Fields, optional_fields())}.
+
+maybe_add_default(#field{name = Name, type = Type, value = Default}, Fields) ->
+    case lists:keyfind(Name, #field.name, Fields) of
+        false ->
+            [#field{name = Name, type = Type, value = Default} | Fields];
+        _ ->
+            Fields
+    end.
+
+get_id_and_bot(Fields) ->
+    case lists:keyfind(<<"id">>, #field.name, Fields) of
+        false -> {ok, {?wocky_id:new(), nil}};
+        #field{value = ID} -> check_id(ID)
+    end.
+
+check_id(ID) ->
+    case ?wocky_bot:get(ID) of
+        nil -> {error, ?ERR_ITEM_NOT_FOUND};
+        Bot -> {ok, {ID, Bot}}
+    end.
+
+create_bot(ID, nil, #{id := UserID}, Fields) ->
+    ?wocky_bot:insert(Fields#{id => ID, user_id => UserID});
+create_bot(_ID, PendingBot, _User, Fields) ->
+    ?wocky_bot:update(PendingBot, Fields).
+
+%%%===================================================================
+%%% Actions - get/subscribed
+%%%===================================================================
+
+handle_subscribed(From, _To, IQ) ->
+    do([error_m ||
+        User <- wocky_bot_util:get_user_from_jid(From),
+        RSMIn <- rsm_util:get_rsm(IQ),
+        Bots = ?wocky_user:get_subscriptions(User),
+        {FilteredBots, RSMOut} <- filter_bots_for_user(Bots, User, RSMIn),
+        {ok, users_bots_result(FilteredBots, User, RSMOut)}
+       ]).
+
+handle_unsubscribe(From, _To, Attrs) ->
+    do([error_m ||
+        User <- wocky_bot_util:get_user_from_jid(From),
+        Bot <- wocky_bot_util:get_bot_from_node(Attrs),
+        wocky_bot_subscription:unsubscribe(User, Bot)
+       ]).
+
+get_location_from_attrs(Attrs) ->
+    do([error_m ||
+        Lat <- wocky_xml:get_attr(<<"lat">>, Attrs),
+        Lon <- wocky_xml:get_attr(<<"lon">>, Attrs),
+        {ok, {Lat, Lon}}
+       ]).
+
+get_bots_near_location(From, Lat, Lon) ->
+    case 'Elixir.Wocky.Index':geosearch(Lat, Lon) of
+        {ok, AllBots} ->
+            User = ?wocky_user:find_by_jid(From),
+            VisibleBots = lists:filter(
+                            geosearch_access_filter(User, _), AllBots),
+            {ok, make_geosearch_result(VisibleBots)};
+        {error, no_index_configured} ->
+            {error,
+             ?ERRT_FEATURE_NOT_IMPLEMENTED(
+                ?MYLANG, <<"Index search is not configured on this server">>)}
+    end.
+
+geosearch_access_filter(User, Bot) ->
+    ok =:= wocky_bot_util:check_access(User, Bot).
+
+make_geosearch_result(Bots) ->
+    #xmlel{name = <<"bots">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = make_geosearch_els(Bots)}.
+
+make_geosearch_els(Bots) ->
+    [make_geosearch_el(Bot) || Bot <- Bots].
+
+geosearch_el_fields() ->
+    [id, server, title, image, lat, lon, radius, distance].
+
+make_geosearch_el(Bot) ->
+    JidField = make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
+    MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
+    RetFields = encode_fields([JidField | MapFields]),
+    make_ret_stanza(RetFields).
+
+get_bots_for_user(From, IQ, Attrs) ->
+    do([error_m ||
+        UserBin <- wocky_xml:get_attr(<<"user">>, Attrs),
+        UserJID <- make_jid(UserBin),
+        User <- wocky_bot_util:get_user_from_jid(UserJID),
+        RSMIn <- rsm_util:get_rsm(IQ),
+        Bots = ?wocky_user:get_owned_bots(User),
+        FromUser <- wocky_bot_util:get_user_from_jid(From),
+        {FilteredBots, RSMOut} <- filter_bots_for_user(Bots, FromUser, RSMIn),
+        {ok, users_bots_result(FilteredBots, User, RSMOut)}
+       ]).
+
+filter_bots_for_user(Bots, User, RSMIn) ->
+    VisibleBots = lists:filter(access_filter(User, _), Bots),
+    {FilteredBots, RSMOut} = rsm_util:filter_with_rsm(VisibleBots, RSMIn),
+    {ok, {FilteredBots, RSMOut}}.
+
+access_filter(Bot, User) ->
+    ok =:= wocky_bot_util:check_access(Bot, User).
+
+users_bots_result(Bots, User, RSMOut) ->
+    BotEls = make_bot_els(Bots, User),
+    #xmlel{name = <<"bots">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = BotEls ++ jlib:rsm_encode(RSMOut)}.
+
+make_bot_els(Bots, User) ->
+    lists:reverse(
+      lists:foldl(make_bot_els(_, User, _), [], Bots)).
+
+make_bot_els(Bot, User, Acc) ->
+    {ok, El} = make_bot_el(Bot, User),
+    [El|Acc].
+
 
 %%%===================================================================
 %%% Incoming packet handler
@@ -504,17 +493,25 @@ handle_bot_stanza(From, To, BotStanza) ->
 
 -spec check_access(binary(), ejabberd:jid(), mod_wocky_access:op()) ->
     mod_wocky_access:access_result().
-check_access(<<"bot/", ID/binary>>, Actor, view) ->
-    allow_to_result(
-      wocky_db_bot:has_access(wocky_xmpp_app:server(), ID, Actor));
+check_access(BotNode, ActorJID, view) ->
+    BotID = ?wocky_bot:get_id_from_node(BotNode),
+    R = do([error_m ||
+               Bot <- wocky_bot_util:get_bot(BotID),
+               Actor <- wocky_bot_util:get_user_from_jid(ActorJID),
+               {ok, ?wocky_user:'can_access?'(Actor, Bot)}
+           ]),
+    allow_to_result(R);
 
-check_access(<<"bot/", ID/binary>>, Actor, _) ->
-    case wocky_db_bot:owner(ID) of
-        not_found -> deny;
-        Owner -> allow_to_result(jid:are_bare_equal(Owner, Actor))
-    end.
+check_access(BotNode, ActorJID, _) ->
+    BotID = ?wocky_bot:get_id_from_node(BotNode),
+    R = do([error_m ||
+               Bot <- wocky_bot_util:get_bot(BotID),
+               Actor <- wocky_bot_util:get_user_from_jid(ActorJID),
+               {ok, ?wocky_user:'owns?'(Actor, Bot)}
+           ]),
+    allow_to_result(R).
 
-allow_to_result(true) -> allow;
+allow_to_result({ok, true}) -> allow;
 allow_to_result(_) -> deny.
 
 %%%===================================================================
@@ -578,10 +575,6 @@ read_tag(#xmlel{name = <<"tag">>,
 read_tag(_Element, _Acc) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid tag">>)}.
 
-add_owner(Owner, Fields) ->
-    {ok, [#field{name = <<"owner">>, type = jid, value = jid:to_bare(Owner)} |
-          Fields]}.
-
 check_required_fields(_Fields, []) -> ok;
 check_required_fields(Fields, [#field{name = Name} | Rest]) ->
     case lists:any(fun(#field{name = FName}) -> FName =:= Name end, Fields) of
@@ -628,7 +621,8 @@ optional_fields() ->
      field(<<"type">>,          string, <<>>),
      field(<<"address">>,       string, <<>>),
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
-     field(<<"alerts">>,        int,    ?WOCKY_BOT_ALERT_DISABLED),
+     field(<<"public">>,        bool,   false),
+     field(<<"alerts">>,        int,    0),
      field(<<"tags">>,          tags,   [])].
 
 output_only_fields() ->
@@ -645,113 +639,63 @@ output_fields() -> required_fields() ++ optional_fields()
 field(Name, Type, Value) ->
     #field{name = Name, type = Type, value = Value}.
 
+handle_validation_errors(Errors) ->
+    not_valid(?wocky_errors:render_errors(Errors)).
 
-create(Owner, Server, Fields) ->
-    do([error_m ||
-        ID <- get_id(Owner, Fields),
-        maybe_insert_name(ID, Fields),
-        Fields2 <- add_defaults(Fields),
-        Fields3 <- add_owner(Owner, Fields2),
-        create_bot(Server, ID, Fields3),
-        BotEl <- make_bot_el(Server, ID, Owner),
-        {ok, {ID, BotEl}}
-       ]).
+not_valid(Message) ->
+    El = #xmlel{children = Children} =
+        jlib:stanza_errort(<<"409">>, <<"modify">>, <<"undefined-condition">>,
+                           ?MYLANG, iolist_to_binary(Message)),
+    El#xmlel{children = [#xmlel{name = <<"not-valid">>,
+                                attrs = [{<<"xmlns">>, ?NS_ERRORS}]}
+                         | Children]}.
 
-get_id(Owner, Fields) ->
-    case lists:keyfind(<<"id">>, #field.name, Fields) of
-        false -> {ok, ?wocky_id:new()};
-        #field{value = ID} -> check_id(Owner, ID)
-    end.
-
-check_id(Owner, ID) ->
-    case wocky_db_bot:is_preallocated_id(Owner, ID) of
-        true -> {ok, ID};
-        false -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
-
-maybe_insert_name(ID, Fields) ->
-    case lists:keyfind(<<"shortname">>, #field.name, Fields) of
-        false -> ok;
-        #field{value = <<>>} -> ok;
-        #field{value = Val} -> insert_name(ID, Val)
-    end.
-
-insert_name(ID, Val) ->
-    case wocky_db_bot:insert_new_name(ID, Val) of
-        ok -> ok;
-        {error, exists} -> {error, name_conflict_error()}
-    end.
-
-name_conflict_error() ->
-    BaseStanza = jlib:stanza_error(<<"409">>, <<"modify">>,
-                                   <<"undefined-condition">>),
-    ConflictEl = #xmlel{name = <<"conflict">>,
-                        attrs = [{<<"xmlns">>, ?NS_ERRORS}],
-                        children = [#xmlel{name = <<"field">>,
-                                           attrs = [{<<"var">>,
-                                                     <<"shortname">>}]}]},
-    BaseStanza#xmlel{children = [ConflictEl | BaseStanza#xmlel.children]}.
-
-add_defaults(Fields) ->
-    {ok, lists:foldl(fun maybe_add_default/2, Fields, optional_fields())}.
-
-maybe_add_default(#field{name = Name, type = Type, value = Default}, Fields) ->
-    case lists:keyfind(Name, #field.name, Fields) of
-        false ->
-            [#field{name = Name, type = Type, value = Default} | Fields];
-        _ ->
-            Fields
-    end.
-
-create_bot(Server, ID, Fields) ->
-    FieldsMap = normalise_fields(Fields),
-    insert_bot(Server, ID, FieldsMap#{updated => now}).
-
-update_bot(Server, ID, Fields) ->
-    FieldsMap = normalise_fields(Fields),
-    insert_bot(Server, ID, FieldsMap).
-
-insert_bot(Server, ID, FieldsMap) ->
-    wocky_db_bot:insert(Server, FieldsMap#{id => ID}).
+%% TODO
+%% name_conflict_error() ->
+%%     BaseStanza = jlib:stanza_error(<<"409">>, <<"modify">>,
+%%                                    <<"undefined-condition">>),
+%%     ConflictEl = #xmlel{name = <<"conflict">>,
+%%                         attrs = [{<<"xmlns">>, ?NS_ERRORS}],
+%%                         children = [#xmlel{name = <<"field">>,
+%%                                            attrs = [{<<"var">>,
+%%                                                      <<"shortname">>}]}]},
+%%     BaseStanza#xmlel{children = [ConflictEl | BaseStanza#xmlel.children]}.
 
 normalise_fields(Fields) ->
     lists:foldl(fun normalise_field/2, #{}, Fields).
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
     Acc#{lat => Lat, lon => Lon};
-normalise_field(#field{name = N, type = jid, value = JID = #jid{}}, Acc) ->
-    Acc#{binary_to_existing_atom(N, utf8) => jid:to_binary(JID)};
+normalise_field(#field{type = jid, value = #jid{luser = UserID}}, Acc) ->
+    Acc#{user_id => UserID};
+normalise_field(#field{name = <<"visibility">>, value = 100}, Acc) ->
+    Acc#{public => true};
+normalise_field(#field{name = <<"visibility">>}, Acc) ->
+    Acc#{public => false};
+normalise_field(#field{name = <<"alerts">>, value = 1}, Acc) ->
+    Acc#{alerts => true};
+normalise_field(#field{name = <<"alerts">>, value = 0}, Acc) ->
+    Acc#{alerts => false};
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
-make_bot_el(Server, ID, UserJID) ->
-    case wocky_db_bot:get_bot(Server, ID) of
-        not_found ->
-            {error, ?ERR_ITEM_NOT_FOUND};
-        Map ->
-            make_bot_el(Map, UserJID)
-    end.
-
-make_bot_el(Bot, UserJID) ->
-    RetFields = make_ret_elements(Bot, UserJID),
+make_bot_el(Bot, User) ->
+    RetFields = make_ret_elements(Bot, User),
     {ok, make_ret_stanza(RetFields)}.
 
-make_ret_elements(Map, UserJID) ->
-    MetaFields = meta_fields(Map, UserJID),
-    Fields = map_to_fields(Map),
+make_ret_elements(Bot, User) ->
+    MetaFields = meta_fields(Bot, User),
+    Fields = map_to_fields(Bot),
     encode_fields(Fields ++ MetaFields).
 
-meta_fields(#{id := ID, server := Server}, UserJID) ->
-    Subscribers = wocky_db_bot:subscribers(Server, ID),
-    ImageItems = wocky_db_bot:image_items_count(Server, ID),
-    Subscribed = wocky_db_bot:is_subscribed(UserJID, ID),
-    [make_field(<<"jid">>, jid, bot_jid(Server, ID)),
+meta_fields(Bot, User) ->
+    Subscribers = ?wocky_bot:subscribers(Bot),
+    ImageItems = ?wocky_bot:image_items_count(Bot),
+    Subscribed = ?wocky_user:'subscribed?'(User, Bot),
+    [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"image_items">>, int, ImageItems),
      make_field(<<"subscribed">>, bool, Subscribed)
      | size_and_hash(<<"subscribers">>, Subscribers)].
-
-bot_jid(Server, ID) ->
-    jid:make(<<>>, Server, <<"bot/", ID/binary>>).
 
 size_and_hash(Name, List) ->
     [make_field(<<Name/binary, "+size">>, int, length(List)),
@@ -762,8 +706,27 @@ size_and_hash(Name, List) ->
 map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
     [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} |
      map_to_fields(maps:without([lat, lon], Map))];
+map_to_fields(Map = #{user_id := UserID}) ->
+    User = ?wocky_user:find(UserID),
+    [#field{name = <<"owner">>, type = jid, value = ?wocky_user:to_jid(User)} |
+     map_to_fields(maps:without([user_id], Map))];
+map_to_fields(Map = #{public := Public}) ->
+    [#field{name = <<"visibility">>, type = int, value = vis(Public)} |
+     map_to_fields(maps:without([public], Map))];
+map_to_fields(Map = #{alerts := Alerts}) ->
+    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} |
+     map_to_fields(maps:without([alerts], Map))];
+map_to_fields(Map = #{updated_at := Updated}) ->
+     [#field{name = <<"updated">>, type = timestamp, value = Updated} |
+     map_to_fields(maps:without([updated_at], Map))];
 map_to_fields(Map) ->
     maps:fold(fun to_field/3, [], Map).
+
+vis(true) -> 100;
+vis(false) -> 0.
+
+alerts(true) -> 1;
+alerts(false) -> 0.
 
 encode_fields(Fields) ->
     lists:foldl(fun encode_field/2, [], Fields).
@@ -789,7 +752,7 @@ make_field(Name, jid, Val = #jid{}) ->
     #field{name = Name, type = jid, value = Val}.
 
 encode_field(#field{name = N, type = string, value = V}, Acc) ->
-    [field_element(N, string, V) | Acc];
+    [field_element(N, string, safe_string(V)) | Acc];
 encode_field(#field{name = N, type = jid, value = V}, Acc) ->
     [field_element(N, jid, safe_jid_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
@@ -799,7 +762,7 @@ encode_field(#field{name = N, type = bool, value = V}, Acc) ->
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [geoloc_field(N, V) | Acc];
 encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
-    [field_element(N, timestamp, wocky_db:timestamp_to_string(V)) | Acc];
+    [field_element(N, timestamp, ?wocky_timestamp:to_string(V)) | Acc];
 encode_field(#field{name = N, type = tags, value = V}, Acc) ->
     [tags_element(N, V) | Acc].
 
@@ -809,11 +772,14 @@ make_jid(User) ->
         JID -> {ok, JID}
     end.
 
-safe_jid_from_binary(<<>>) -> not_found;
+safe_jid_from_binary(<<>>) -> nil;
 safe_jid_from_binary(JID) -> jid:from_binary(JID).
 
-safe_jid_to_binary(not_found) -> <<>>;
+safe_jid_to_binary(nil) -> <<>>;
 safe_jid_to_binary(JID) -> jid:to_binary(JID).
+
+safe_string(nil) -> <<>>;
+safe_string(Str) -> Str.
 
 field_element(Name, Type, Val) ->
     #xmlel{name = <<"field">>,

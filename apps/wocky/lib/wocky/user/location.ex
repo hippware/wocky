@@ -62,7 +62,7 @@ defmodule Wocky.User.Location do
   def check_for_bot_events(%Location{user: user} = loc) do
     maybe_do_async fn ->
       user
-      |> User.get_subscribed_bots
+      |> User.get_subscriptions
       |> bots_with_events(user, loc)
       |> Enum.each(&trigger_bot_notification(user, &1))
     end
@@ -85,9 +85,10 @@ defmodule Wocky.User.Location do
   end
 
   defp maybe_do_async(fun) do
-    task = Task.async(fun)
-    unless Application.fetch_env!(:wocky, :async_location_processing) do
-      Task.await(task)
+    if Application.fetch_env!(:wocky, :async_location_processing) do
+      Task.async(fun)
+    else
+      fun.()
     end
   end
 

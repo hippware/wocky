@@ -12,110 +12,122 @@
 -include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 
--export([handle_query/4,
-         handle_publish/4,
-         handle_retract/4]).
+-export([query/2,
+         query_images/2,
+         publish/3,
+         retract/3]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-handle_query(From, #jid{lserver = LServer}, IQ, Attrs) ->
+query(Bot, IQ) ->
     do([error_m ||
-        BotID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_access(LServer, BotID, From),
-        RSMIn <- rsm_util:get_rsm(IQ),
-        {Items, RSMOut} <- get_items(LServer, BotID, RSMIn),
-        {ok, make_results(Items, RSMOut)}
+           RSMIn <- rsm_util:get_rsm(IQ),
+           {Items, RSMOut} = get_items(Bot, RSMIn),
+           {ok, make_results(Items, RSMOut)}
        ]).
 
-handle_retract(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
+query_images(Bot, IQ) ->
     do([error_m ||
-        BotID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(LServer, BotID, From),
-        Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
-        ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
-        retract_item(To, BotID, ItemID),
-        {ok, []}
+           RSMIn <- rsm_util:get_rsm(IQ),
+           Owner = wocky_bot_util:owner_jid(Bot),
+           {Images, RSMOut} = get_bot_item_images(Bot, RSMIn),
+           {ok, images_result(Owner, Images, RSMOut)}
        ]).
 
-handle_publish(From, To = #jid{lserver = LServer}, SubEl, Attrs) ->
+publish(Bot, To, SubEl) ->
     do([error_m ||
-        BotID <- wocky_bot_util:get_id_from_node(Attrs),
-        wocky_bot_util:check_owner(LServer, BotID, From),
-        Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
-        ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
-        Entry <- wocky_xml:get_sub_el(<<"entry">>, Item),
-        wocky_xml:check_namespace(?NS_ATOM, Entry),
-        publish_item(To, BotID, ItemID, Entry),
-        {ok, []}
+           Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
+           ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
+           Entry <- wocky_xml:get_sub_el(<<"entry">>, Item),
+           wocky_xml:check_namespace(?NS_ATOM, Entry),
+           publish_item(To, Bot, ItemID, Entry),
+           {ok, []}
+       ]).
+
+retract(Bot, To, SubEl) ->
+    do([error_m ||
+           Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
+           ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
+           retract_item(To, Bot, ItemID),
+           {ok, []}
        ]).
 
 %%%===================================================================
 %%% Helpers - query
 %%%===================================================================
 
-get_items(LServer, BotID, RSM) ->
-    Items = wocky_db_bot:get_items(LServer, BotID),
-    SortedItems = lists:sort(updated_order(_, _), Items),
-    {ok, rsm_util:filter_with_rsm(SortedItems, RSM)}.
-
-% Update time only has one-second resolution. Break ties using `id` to
-% ensure consistent ordering.
-updated_order(#{updated := U, id := ID1}, #{updated := U, id := ID2}) ->
-    ID1 =< ID2;
-updated_order(#{updated := U1}, #{updated := U2}) ->
-    U1 =< U2.
+get_items(Bot, RSM) ->
+    Items = ?wocky_bot:items(Bot),
+    rsm_util:filter_with_rsm(Items, RSM).
 
 make_results(Items, RSMOut) ->
     #xmlel{name = <<"query">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children =
-           make_items(Items) ++
-           jlib:rsm_encode(RSMOut)
-          }.
+           children = make_items(Items) ++ jlib:rsm_encode(RSMOut)}.
 
 make_items(Items) ->
     [make_item_element(Item) || Item <- Items].
 
 %%%===================================================================
+%%% Helpers - query images
+%%%===================================================================
+
+get_bot_item_images(Bot, RSMIn) ->
+    Items = ?wocky_bot:image_items(Bot),
+    Images = wocky_bot_util:extract_images(Items),
+    rsm_util:filter_with_rsm(Images, RSMIn).
+
+images_result(Owner, Images, RSMOut) ->
+    ImageEls = image_els(Owner, Images),
+    #xmlel{name = <<"item_images">>,
+           attrs = [{<<"xmlns">>, ?NS_BOT}],
+           children = ImageEls ++ jlib:rsm_encode(RSMOut)}.
+
+image_els(Owner, Images) ->
+    lists:map(image_el(Owner, _), Images).
+
+image_el(Owner, #{id := ID, image := Image, updated := Updated}) ->
+    #xmlel{name = <<"image">>,
+           attrs = [{<<"owner">>, jid:to_binary(Owner)},
+                    {<<"item">>, ID},
+                    {<<"url">>, Image},
+                    {<<"updated">>, ?wocky_timestamp:to_string(Updated)}]}.
+
+%%%===================================================================
+%%% Helpers - publish
+%%%===================================================================
+
+publish_item(From, Bot, ItemID, Entry) ->
+    Image = has_image(Entry),
+    EntryBin = exml:to_binary(Entry),
+    {ok, Item} = ?wocky_bot:publish_item(Bot, ItemID, EntryBin, Image),
+    Message = notification_message(Bot, make_item_element(Item)),
+    notify_subscribers(From, Bot, Message).
+
+has_image(Entry) ->
+    wocky_bot_util:get_image(Entry) =/= none.
+
+%%%===================================================================
 %%% Helpers - retract
 %%%===================================================================
 
-retract_item(From = #jid{lserver = LServer}, BotID, ItemID) ->
-    wocky_db_bot:delete_item(LServer, BotID, ItemID),
-    Message = notification_message(BotID, retract_item(ItemID)),
-    notify_subscribers(From, BotID, Message).
+retract_item(From, Bot, ItemID) ->
+    ?wocky_bot:delete_item(Bot, ItemID),
+    Message = notification_message(Bot, retract_item(ItemID)),
+    notify_subscribers(From, Bot, Message).
 
 retract_item(ItemID) ->
     #xmlel{name = <<"retract">>,
            attrs = [{<<"id">>, ItemID}]}.
 
 %%%===================================================================
-%%% Helpers - publish
-%%%===================================================================
-
-publish_item(From = #jid{lserver = LServer}, BotID, ItemID, Entry) ->
-    Image = has_image(Entry),
-    EntryBin = exml:to_binary(Entry),
-    wocky_db_bot:publish_item(LServer, BotID, ItemID, EntryBin, Image),
-    Item = wocky_db_bot:get_item(LServer, BotID, ItemID),
-    Message = notification_message(BotID, make_item_element(Item)),
-    notify_subscribers(From, BotID, Message).
-
-notify_subscribers(From = #jid{lserver = LServer}, BotID, Message) ->
-    Subscribers = wocky_db_bot:subscribers(LServer, BotID),
-    lists:foreach(notify_subscriber(From, _, Message), Subscribers).
-
-has_image(Entry) ->
-    wocky_bot_util:get_image(Entry) =/= none.
-
-%%%===================================================================
 %%% Helpers - common
 %%%===================================================================
 
-make_item_element(#{id := ID, published := Published,
-                    updated := Updated, stanza := Stanza}) ->
+make_item_element(#{id := ID, created_at := Published,
+                    updated_at := Updated, stanza := Stanza}) ->
     {ok, Entry} = exml:parse(Stanza),
     FullEntry = add_time_fields(Published, Updated, Entry),
     #xmlel{name = <<"item">>,
@@ -136,18 +148,22 @@ is_time_el(_) -> false.
 time_field(Name, Value) ->
     #xmlel{name = Name,
            children =
-           [#xmlcdata{content = wocky_db:timestamp_to_string(Value)}]}.
+           [#xmlcdata{content = ?wocky_timestamp:to_string(Value)}]}.
+
+notify_subscribers(From, Bot, Message) ->
+    Subscribers = ?wocky_bot:subscribers(Bot),
+    lists:foreach(notify_subscriber(From, _, Message), Subscribers).
 
 notify_subscriber(From, To, Message) ->
-    ejabberd_router:route(From, To, Message).
+    ejabberd_router:route(From, ?wocky_user:to_jid(To), Message).
 
-notification_message(BotID, ItemEl) ->
+notification_message(Bot, ItemEl) ->
     #xmlel{name = <<"message">>,
            attrs = [{<<"type">>, <<"headline">>}],
-           children = [notification_event(BotID, ItemEl)]}.
+           children = [notification_event(Bot, ItemEl)]}.
 
-notification_event(BotID, ItemEl) ->
+notification_event(Bot, ItemEl) ->
     #xmlel{name = <<"event">>,
            attrs = [{<<"xmlns">>, ?NS_BOT_EVENT},
-                    {<<"node">>, wocky_bot_util:make_node(BotID)}],
+                    {<<"node">>, ?wocky_bot:make_node(Bot)}],
            children = [ItemEl]}.
