@@ -82,9 +82,12 @@ list_hash(List) ->
       List,
       lists:sort(),
       term_to_binary(),
-      erlang_murmurhash:murmurhash3_x64_128(),
-      integer_to_binary(36)
+      hash(),
+      'Elixir.Base':encode32([{padding, false}])
      ).
+
+hash(Term) ->
+    crypto:hash(sha512, Term).
 
 extract_images(Items) ->
     lists:reverse(lists:foldl(extract_image(_, _), [], Items)).

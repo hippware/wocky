@@ -16,15 +16,7 @@ defmodule Wocky.XMPP.Mixfile do
      erlc_options: erlc_options(Mix.env),
      aliases: aliases(),
      deps: deps(),
-     preferred_cli_env: [eunit:   :test,
-                         ct:      :test,
-                         'db.dump.test':     :test,
-                         'db.load.test':     :test,
-                         'db.reset.test':    :test,
-                         'db.migrate.test':  :test,
-                         'db.rollback.test': :test,
-                         'db.test_migrations': :test
-                       ],
+     preferred_cli_env: [eunit: :test, ct: :test],
      elvis_config: elvis_config(),
      # set switches that affect every invocation of the eunit task
      eunit: [
@@ -64,13 +56,12 @@ defmodule Wocky.XMPP.Mixfile do
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :schemata, :ejabberd, :crone
+       :ejabberd, :crone
      ],
      mod: {:wocky_xmpp_app, []},
      env: [
        wocky_inst: 'local',
-       config_dir: 'etc',
-       keyspace_prefix: 'wocky_test_'
+       config_dir: 'etc'
      ]]
   end
 
@@ -91,7 +82,6 @@ defmodule Wocky.XMPP.Mixfile do
       {:reprise,              "~> 0.5",    only: :dev},
 
       {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-2.0.1"},
-      {:schemata,   github: "hippware/schemata",     branch: "master"},
       {:exometer_core,
         github: "Feuerlabs/exometer_core",
         branch: "master",
@@ -197,12 +187,7 @@ defmodule Wocky.XMPP.Mixfile do
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: ["elvis"],
-      "test": ["eunit"],
-      'db.dump.test': "db.dump",
-      'db.load.test': "db.load",
-      'db.reset.test': "db.reset",
-      'db.migrate.test': "db.migrate",
-      'db.rollback.test': "db.rollback"
+      "test": ["eunit"]
     ]
   end
 
@@ -221,8 +206,7 @@ defmodule Wocky.XMPP.Mixfile do
           {:elvis_style, :operator_spaces,
            %{rules: [right: ",", right: "++", left: "++"]}},
           {:elvis_style, :nesting_level, %{level: 3}},
-          {:elvis_style, :god_modules, %{limit: 25, ignore: [:wocky_db,
-                                                             :wocky_db_bot]}},
+          {:elvis_style, :god_modules, %{limit: 25, ignore: []}},
           {:elvis_style, :no_if_expression},
           {:elvis_style, :invalid_dynamic_call},
           {:elvis_style, :used_ignored_variable},

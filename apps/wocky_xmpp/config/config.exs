@@ -3,11 +3,7 @@
 use Mix.Config
 
 config :wocky_xmpp,
-  keyspace_prefix: 'wocky_',
   ecto_repos: []
-
-config :schemata,
-  drop_nulls: false
 
 config :ejabberd,
   keep_lager_intact: true
@@ -29,10 +25,6 @@ config :setup,
 
 config :hut,
   level: :critical
-
-config :porcelain,
-  driver: Porcelain.Driver.Basic,
-  goon_warn_if_missing: false
 
 config :logger,
   handle_otp_reports: false,

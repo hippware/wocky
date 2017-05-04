@@ -11,9 +11,11 @@ defmodule WockyAPI.Mixfile do
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     test_coverage: [tool: Coverex.Task],
+     test_coverage: [tool: ExCoveralls, test_task: "espec"],
      preferred_cli_env: [
-       espec: :test
+       espec: :test,
+       coveralls: :test,
+       "coveralls.html": :test
      ],
      elvis_config: [%{src_dirs: [], rules: []}],
      aliases: aliases(),
@@ -42,7 +44,7 @@ defmodule WockyAPI.Mixfile do
       {:logger_lager_backend, "~> 0.0.2"},
 
       {:espec,      "~> 1.2", only: :test},
-      {:coverex,    "~> 1.4", only: :test},
+      {:excoveralls,"~> 0.6", only: :test},
       {:credo,      "~> 0.6", only: :dev, runtime: false},
       {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
       {:reprise,    "~> 0.5", only: :dev}
