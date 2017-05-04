@@ -98,7 +98,6 @@ end_per_suite(Config) ->
 %%         escalus_story:make_everyone_friends(Users)
 %%     );
 init_per_group(_GroupName, Config) ->
-    wocky_db_seed:seed_tables(shared, [roster]),
     Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
     ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
     Config2.

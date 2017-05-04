@@ -15,7 +15,6 @@ mod_wocky_lookup_phone_test_() -> {
   [
     test_phone_iq_get_request(),
     test_phone_iq_get_results(),
-    test_phone_iq_get_limits(),
     test_phone_iq_set()
   ]
 }.
@@ -31,7 +30,6 @@ mod_wocky_lookup_handle_test_() -> {
 }.
 
 before_all() ->
-    ok = wocky_db:clear_tables(?LOCAL_CONTEXT, [phone_lookup_count]),
     _ = ?wocky_repo:delete_all(?wocky_user),
     _User = ?wocky_factory:insert(user, #{id => ?ALICE,
                                           username => ?ALICE,
@@ -126,26 +124,6 @@ test_phone_iq_get_results() ->
     ] end
   }.
 
-
-setup_limits() ->
-    ok = mod_wocky_lookup:save_reductions(?SERVER, ?ALICE, 3),
-    setup_phone_request().
-
-test_phone_iq_get_limits() ->
-  { "handle_phone_iq with type get",
-    setup,
-    fun setup_limits/0,
-    fun after_each/1,
-    fun (Els) -> [
-      { "saves reductions to the database", [
-        ?_assertEqual(0, mod_wocky_lookup:lookup_reductions(?SERVER, ?ALICE))
-      ]},
-      { "returns not-acceptable once the limit is reached", [
-        ?_assertEqual(<<"not-acceptable">>,
-                      proplists:get_value(<<"error">>, ?FIRST(Els)))
-      ]}
-    ] end
-  }.
 
 test_phone_iq_set() ->
   ErrorIQ = #iq{type = error, sub_el = [?ERR_NOT_ALLOWED]},

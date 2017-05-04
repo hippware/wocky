@@ -23,7 +23,18 @@ access_query_test_() -> {
 }.
 
 before_all() ->
-    {ok, _} = wocky_db_seed:seed_table(shared, bot),
+    _ = ?wocky_repo:delete_all(?wocky_user),
+    Alice = ?wocky_factory:insert(user, #{id => ?ALICE,
+                                          username => ?ALICE,
+                                          handle => <<"alice">>}),
+    Bob = ?wocky_factory:insert(user, #{id => ?BOB,
+                                        username => ?BOB,
+                                        handle => <<"bob">>}),
+    Bot = ?wocky_factory:insert(bot, #{id => ?BOT, user => Alice}),
+
+    ?wocky_bot:share(Bot, Bob, Alice),
+    ?wocky_user:subscribe(Bob, Bot),
+
     setup_errors(),
     ok.
 
@@ -36,12 +47,12 @@ setup_errors() ->
     mod_wocky_access:register(<<"timeout">>, ?MODULE).
 
 check_access(<<"loop/1">>, _, _) ->
-    {redirect, jid:make(<<>>, ?LOCAL_CONTEXT, <<"loop/2">>)};
+    {redirect, jid:make(<<>>, ?SERVER, <<"loop/2">>)};
 check_access(<<"loop/2">>, _, _) ->
-    {redirect, jid:make(<<>>, ?LOCAL_CONTEXT, <<"loop/1">>)};
+    {redirect, jid:make(<<>>, ?SERVER, <<"loop/1">>)};
 check_access(<<"overflow/", I/binary>>, _, _) ->
     J = integer_to_binary(binary_to_integer(I) + 1),
-    {redirect, jid:make(<<>>, ?LOCAL_CONTEXT, <<"overflow/", J/binary>>)};
+    {redirect, jid:make(<<>>, ?SERVER, <<"overflow/", J/binary>>)};
 check_access(<<"timeout">>, _, _) ->
     timer:sleep(5000).
 
@@ -64,18 +75,18 @@ test_run() -> {
 
 test_loop() -> {
   "run with redirect loop", [
-     ?_assertEqual(deny, run(jid:make(<<>>, ?LOCAL_CONTEXT, <<"loop/1">>),
+     ?_assertEqual(deny, run(jid:make(<<>>, ?SERVER, <<"loop/1">>),
                              ?ALICE_JID, view))
   ]}.
 
 test_overflow() -> {
   "run with redirect overflow", [
-     ?_assertEqual(deny, run(jid:make(<<>>, ?LOCAL_CONTEXT, <<"overflow/1">>),
+     ?_assertEqual(deny, run(jid:make(<<>>, ?SERVER, <<"overflow/1">>),
                              ?ALICE_JID, view))
   ]}.
 
 test_timeout() -> {
   "run with timeout", [
-     ?_assertEqual(deny, run(jid:make(<<>>, ?LOCAL_CONTEXT, <<"timeout">>),
+     ?_assertEqual(deny, run(jid:make(<<>>, ?SERVER, <<"timeout">>),
                              ?ALICE_JID, view))
   ]}.

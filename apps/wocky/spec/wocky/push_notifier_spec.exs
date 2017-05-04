@@ -16,7 +16,6 @@ defmodule Wocky.PushNotifierSpec do
   @message  "Message content"
 
   before do
-    Repo.delete_all(Device)
     TestBackend.reset
 
     user = Factory.insert(:user, %{server: shared.server})

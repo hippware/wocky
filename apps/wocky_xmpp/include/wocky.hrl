@@ -58,6 +58,8 @@
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
 % Elixir module names
+-define(wocky_bot, 'Elixir.Wocky.Bot').
+-define(wocky_item, 'Elixir.Wocky.Bot.Item').
 -define(wocky_conversation, 'Elixir.Wocky.Conversation').
 -define(wocky_factory, 'Elixir.Wocky.Repo.Factory').
 -define(wocky_home_stream_item, 'Elixir.Wocky.HomeStreamItem').

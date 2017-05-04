@@ -1,11 +1,8 @@
 defmodule Wocky.DeviceSpec do
   use ESpec, async: true
-
-  import Ecto.Query, only: [from: 2]
+  use ModelHelpers
 
   alias Wocky.Device
-  alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   before do
@@ -22,14 +19,6 @@ defmodule Wocky.DeviceSpec do
       resource: resource,
       device: device,
       endpoint: endpoint}
-  end
-
-  finally do
-    Repo.delete_all(
-      from d in Device,
-      where: d.user_id == ^shared.id,
-      where: d.resource == ^shared.resource
-    )
   end
 
   describe "update/5" do

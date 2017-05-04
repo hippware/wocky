@@ -10,46 +10,40 @@
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
 
+-compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--export([check_owner/3,
-         check_access/3,
-         check_bot_exists/2,
+-export([get_user_from_jid/1,
+         get_bot_from_jid/1,
+         get_bot_from_node/1,
+         get_bot/1,
+         owner_jid/1,
+         check_owner/2,
+         check_access/2,
          get_id_from_node/1,
-         get_id_from_jid/1,
-         make_jid/2,
-         make_node/1,
          list_hash/1,
+         extract_images/1,
          get_image/1,
-         list_attrs/2,
          bot_packet_action/1,
-         follow_stanza/3
+         follow_stanza/2
         ]).
 
-check_owner(_Server, ID, User) ->
-    case jid:are_bare_equal(wocky_db_bot:owner(ID), User) of
-        true ->
-            ok;
-        false ->
-            case wocky_db_bot:is_preallocated_id(User, ID) of
-                true -> ok;
-                false -> {error, ?ERR_FORBIDDEN}
-            end
+get_user_from_jid(JID) ->
+    case ?wocky_user:find_by_jid(JID) of
+        nil -> {error, ?ERR_FORBIDDEN};
+        User -> {ok, User}
     end.
 
-check_access(Server, ID, From) ->
-    case wocky_db_bot:has_access(Server, ID, From) of
-        true -> ok;
-        false -> {error, ?ERR_FORBIDDEN};
-        not_found -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
+get_bot_from_jid(JID) ->
+    BotID = ?wocky_bot:get_id_from_jid(JID),
+    get_bot(BotID).
 
-check_bot_exists(Server, ID) ->
-    case wocky_db_bot:exists(Server, ID) of
-        true -> ok;
-        false -> {error, ?ERR_ITEM_NOT_FOUND}
-    end.
+get_bot_from_node(Attrs) ->
+    do([error_m ||
+        BotID <- get_id_from_node(Attrs),
+        get_bot(BotID)
+      ]).
 
 get_id_from_node(Attrs) ->
     case wocky_xml:get_attr(<<"node">>, Attrs) of
@@ -58,15 +52,30 @@ get_id_from_node(Attrs) ->
     end.
 
 get_id_from_node_value(Node) ->
-    case binary:split(Node, <<$/>>, [global]) of
-        [<<"bot">>, ID] -> {ok, ID};
-        _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)}
+    case ?wocky_bot:get_id_from_node(Node) of
+        nil -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)};
+        ID -> {ok, ID}
     end.
 
-get_id_from_jid(#jid{lresource = <<"bot/", ID/binary>>}) ->
-    ID;
-get_id_from_jid(_) ->
-    <<>>.
+get_bot(ID) ->
+    case ?wocky_bot:get(ID) of
+        nil -> {error, ?ERR_ITEM_NOT_FOUND};
+        Bot -> {ok, Bot}
+    end.
+
+owner_jid(Bot) ->
+    ?wocky_user:to_jid(?wocky_bot:owner(Bot)).
+
+check_owner(#{user_id := UserID}, #{id := UserID}) -> ok;
+check_owner(#{user_id := UserID}, #jid{luser = UserID}) -> ok;
+check_owner(#{user_id := UserID}, UserID) -> ok;
+check_owner(_, _) -> {error, ?ERR_FORBIDDEN}.
+
+check_access(User, Bot) ->
+    case ?wocky_user:'can_access?'(User, Bot) of
+        true -> ok;
+        false -> {error, ?ERR_FORBIDDEN}
+    end.
 
 list_hash(List) ->
     fun_chain:first(
@@ -77,11 +86,16 @@ list_hash(List) ->
       integer_to_binary(36)
      ).
 
-make_jid(Server, ID) ->
-    jid:make(<<>>, Server, make_node(ID)).
+extract_images(Items) ->
+    lists:reverse(lists:foldl(extract_image(_, _), [], Items)).
 
-make_node(ID) ->
-    <<"bot/", ID/binary>>.
+extract_image(#{image := true, id := ID, updated_at := Updated, stanza := S},
+              Acc) ->
+    case get_image(S) of
+        none -> Acc;
+        I -> [#{id => ID, updated => Updated, image => I} | Acc]
+    end;
+extract_image(_, Acc) -> Acc.
 
 get_image(Entry) when is_binary(Entry) ->
     case exml:parse(Entry) of
@@ -93,12 +107,6 @@ get_image(Entry = #xmlel{}) ->
         #xmlel{children = [#xmlcdata{content = C}]} -> C;
         false -> none
     end.
-
-list_attrs(ID, List) ->
-    [{<<"xmlns">>, ?NS_BOT},
-     {<<"node">>, wocky_bot_util:make_node(ID)},
-     {<<"size">>, integer_to_binary(length(List))},
-     {<<"hash">>, wocky_bot_util:list_hash(List)}].
 
 bot_packet_action(BotStanza) ->
     Action = xml:get_path_s(BotStanza, [{elem, <<"action">>}, cdata]),
@@ -116,17 +124,16 @@ bot_packet_action(BotStanza) ->
         _                             -> {none, none}
     end.
 
-follow_stanza(Server, ID, Action) ->
+follow_stanza(Bot, Action) ->
     #xmlel{name = <<"message">>,
            attrs = [{<<"type">>, <<"headline">>}],
-           children = [bot_el(Server, ID, Action)]}.
+           children = [bot_el(Bot, Action)]}.
 
-bot_el(Server, ID, Action) ->
+bot_el(#{id := ID, server := Server} = Bot, Action) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = [wocky_xml:cdata_el(
-                         <<"jid">>, jid:to_binary(
-                                      wocky_bot_util:make_jid(Server, ID))),
+                         <<"jid">>, jid:to_binary(?wocky_bot:to_jid(Bot))),
                        wocky_xml:cdata_el(<<"id">>, ID),
                        wocky_xml:cdata_el(<<"server">>, Server) |
                        action_els(Action)]}.

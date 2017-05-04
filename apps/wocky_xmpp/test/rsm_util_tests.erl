@@ -1,5 +1,5 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Test suite for wocky_db_bot.erl
+%%% @doc Test suite for RSM utilities
 -module(rsm_util_tests).
 
 -include_lib("eunit/include/eunit.hrl").

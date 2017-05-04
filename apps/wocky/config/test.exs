@@ -7,7 +7,8 @@ config :wocky, Wocky.Repo,
   password: "password",
   database: "wocky_test",
   hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  ownership_timeout: 30_000 # ms
 
 config :wocky,
   tros_s3_bucket: "wocky-tros-test",

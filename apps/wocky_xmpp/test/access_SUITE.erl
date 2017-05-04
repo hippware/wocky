@@ -31,11 +31,29 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db_seed:seed_table(shared, bot),
-    fun_chain:first(Config,
+    Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
-        test_helper:setup_users([alice])
-    ).
+        test_helper:setup_users([alice, tim, bob])
+    ),
+
+    Alice = ?wocky_user:find(?ALICE),
+    Bob = ?wocky_user:find(?BOB),
+
+    Bot = ?wocky_factory:insert(bot, #{id => ?BOT,
+                                       title => ?BOT_TITLE,
+                                       shortname => ?BOT_NAME,
+                                       user => Alice,
+                                       description => ?BOT_DESC,
+                                       lat => ?BOT_LAT,
+                                       lon => ?BOT_LON,
+                                       radius => ?BOT_RADIUS,
+                                       address => ?BOT_ADDRESS,
+                                       image => ?AVATAR_FILE,
+                                       type => ?BOT_TYPE}),
+
+    ?wocky_bot:share(Bot, Bob, Alice),
+
+    Config2.
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).

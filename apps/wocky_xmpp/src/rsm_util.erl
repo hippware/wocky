@@ -85,7 +85,7 @@ get_result_list(Items, Result, FirstIndex) ->
 
 get_id(#{id := ID}) -> get_id(ID);
 get_id(ID) when is_integer(ID) -> integer_to_binary(ID);
-get_id(ID) when is_binary(ID) -> (ID).
+get_id(ID) when is_binary(ID) -> ID.
 
 safesplit(N, List) when N < 0 ->
     {[], List};

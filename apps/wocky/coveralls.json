@@ -7,6 +7,10 @@
   ],
 
   "custom_stop_words": [
+    "defenum",
+    "defstruct",
+    "use",
+    "schema.+\".+\".+do"
   ],
 
   "coverage_options": {

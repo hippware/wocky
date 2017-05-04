@@ -163,21 +163,14 @@ make_friend({#{id := User1, server := Server1},
 %%%===================================================================
 
 fix_bot_images() ->
-    Q = "SELECT * FROM bot",
-    Result = wocky_db:query(shared, Q, #{}, one),
-    fix_bot_images(Result).
-
-fix_bot_images(no_more_results) -> ok;
-fix_bot_images({ok, Result}) ->
-    lists:foreach(fix_images_on_bot(_), wocky_db:rows(Result)),
-    fix_bot_images(wocky_db:fetch_more(Result)).
+    Result = ?wocky_bot:all(),
+    lists:foreach(fix_images_on_bot(_), Result).
 
 fix_images_on_bot(Bot = #{id          := ID,
                           description := Description,
-                          server      := Server,
                           image       := BotImage}) ->
     io:fwrite("Bot: ~p - ~s\n", [binary_to_list(ID), Description]),
-    Images = wocky_db_bot:item_images(Server, ID),
+    Images = ?wocky_bot:image_items(Bot),
     ImageURLs = [I || #{image := I} <- Images],
     ValidImages = [I || I <- [BotImage | ImageURLs], I =/= <<>>],
     fix_images(Bot, ValidImages).
@@ -187,8 +180,8 @@ fix_images(Bot, Images) ->
     Fixed = lists:foldl(maybe_fix_image(Bot, _, _), 0, Images),
     io:fwrite("~B needed fixing.\n", [Fixed]).
 
-maybe_fix_image(#{id := BotID, server := BotServer}, Image, Acc) ->
-    BotJID = wocky_bot_util:make_jid(BotServer, BotID),
+maybe_fix_image(Bot, Image, Acc) ->
+    BotJID = ?wocky_bot:to_jid(Bot),
     R = do([error_m ||
             {_Server, FileID} <- ?tros:parse_url(Image),
             Access           <- ?tros:get_access(FileID),

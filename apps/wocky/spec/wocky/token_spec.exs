@@ -1,10 +1,7 @@
 defmodule Wocky.TokenSpec do
   use ESpec, async: true
+  use ModelHelpers
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Token
 

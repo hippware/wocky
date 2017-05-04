@@ -7,6 +7,7 @@
 -compile({parse_transform, cut}).
 
 -include_lib("ejabberd/include/jlib.hrl").
+-include("wocky.hrl").
 
 %% API
 -export([start_link/0,
@@ -122,7 +123,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 start_timers(JID, ExpiryS, WarningTime, Bots) ->
     CleanBots = stop_existing_timers(JID, Bots),
-    Now = wocky_db:now_to_timestamp(os:timestamp()),
+    Now = ?wocky_timestamp:now(),
     ExpiryMS = timer:seconds(ExpiryS) - Now,
     WarningMS = ExpiryMS - WarningTime,
     References = maybe_set_timers(JID, [ExpiryMS, WarningMS]),
@@ -157,23 +158,19 @@ maybe_store_references(JID, References, Bots) -> Bots#{JID => References}.
 stop_timers(References) ->
     lists:foreach(erlang:cancel_timer(_, []), References).
 
-send_expiry_warning(JIDBin) ->
-    Bot = wocky_db_bot:get_bot(jid:from_binary(JIDBin)),
-    case Bot of
-        not_found ->
-            ok;
-        #{id := ID, server := Server,
-          owner := Owner, follow_me_expiry := Expiry} ->
-            OwnerJID = jid:from_binary(Owner),
-            send_expiry_warning(ID, Server, OwnerJID, Expiry)
-    end.
-
-send_expiry_warning(ID, Server, Owner, Expiry) ->
-    BotJID = wocky_bot_util:make_jid(Server, ID),
-    Stanza = wocky_bot_util:follow_stanza(
-               Server, ID, {<<"follow expire">>,
-                            integer_to_binary(Expiry div 1000)}),
-    ejabberd_router:route(BotJID, Owner, Stanza).
+send_expiry_warning(JIDBin) when is_binary(JIDBin) ->
+    BotID = ?wocky_bot:get_id_from_jid(jid:from_binary(JIDBin)),
+    case ?wocky_bot:get(BotID) of
+        nil -> ok;
+        Bot -> send_expiry_warning(Bot)
+    end;
+send_expiry_warning(#{user_id := OwnerID, follow_me_expiry := Expiry} = Bot) ->
+    OwnerJID = ?wocky_user:to_jid(?wocky_user:find(OwnerID)),
+    BotJID = ?wocky_bot:to_jid(Bot),
+    ExpiryStr = integer_to_binary(Expiry div 1000),
+    Stanza =
+        wocky_bot_util:follow_stanza(Bot, {<<"follow expire">>, ExpiryStr}),
+    ejabberd_router:route(BotJID, OwnerJID, Stanza).
 
 remove_timer_ref(JID, Ref, Bots) ->
     case maps:get(JID, Bots, undefined) of

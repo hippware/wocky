@@ -37,7 +37,6 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db:clear_user_tables(?LOCAL_CONTEXT),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice])

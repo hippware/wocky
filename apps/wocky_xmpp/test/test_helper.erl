@@ -377,10 +377,14 @@ get_item(_, Acc) ->
     Acc.
 
 check_elements(Items, NumItems, NumDeletes, NumRSM) ->
-    ?assert(NumItems =:= any orelse
-            NumItems =:= count_elements(Items, <<"item">>)),
-    ?assert(NumDeletes =:= any orelse
-            NumDeletes =:= count_elements(Items, <<"delete">>)),
+    case NumItems of
+        any -> ok;
+        _ -> ?assertEqual(NumItems, count_elements(Items, <<"item">>))
+    end,
+    case NumDeletes of
+        any -> ok;
+        _ -> ?assertEqual(NumDeletes, count_elements(Items, <<"delete">>))
+    end,
     ?assertEqual(NumRSM, count_elements(Items, <<"set">>)),
     ok.
 
