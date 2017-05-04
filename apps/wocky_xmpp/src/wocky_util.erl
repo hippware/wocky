@@ -5,10 +5,11 @@
 %%% their own module but are used from multiple places.
 -module(wocky_util).
 
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky_roster.hrl").
-
 -compile({parse_transform, fun_chain}).
+-compile({parse_transform, cut}).
+
+-include("wocky.hrl").
+-include("wocky_roster.hrl").
 
 -export([
    add_hooks/4,
@@ -31,12 +32,9 @@
    remove_redundant_jids/1
         ]).
 
+-type hook() :: {Hook :: atom(), Callback :: atom()}.
 -export_type([hook/0]).
 
--compile({parse_transform, fun_chain}).
--compile({parse_transform, cut}).
-
--type hook() :: {Hook :: atom(), Callback :: atom()}.
 
 %% @doc Register a set of hooks with ejabberd's hook system
 -spec add_hooks(

@@ -1,16 +1,15 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for mod_wocky_pep
 -module(pep_SUITE).
+
 -compile(export_all).
 
--include("wocky.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
-
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 
 -define(NS_TEST, <<"test-item-ns">>).
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration

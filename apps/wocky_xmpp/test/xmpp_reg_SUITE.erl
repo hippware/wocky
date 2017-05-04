@@ -1,20 +1,13 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for mod_wocky_user
 -module(xmpp_reg_SUITE).
+
 -compile(export_all).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
 
--include("wocky_db_seed.hrl").
--include("wocky.hrl").
-
-%TODO: Remove me
--define(ALICE_UUID, escalus_users:get_username(Config, alice)).
--define(BOB_UUID, escalus_users:get_username(Config, bob)).
-
-%-import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration

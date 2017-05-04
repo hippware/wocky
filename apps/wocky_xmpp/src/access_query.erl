@@ -7,8 +7,6 @@
 
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 
 -export([run/3]).

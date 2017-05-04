@@ -5,18 +5,15 @@
 %%%
 -module(mod_wocky_bot).
 
--behaviour(gen_mod).
--behaviour(wocky_access_manager).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
--include("wocky_roster.hrl").
+
+-behaviour(gen_mod).
+-behaviour(wocky_access_manager).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -34,7 +31,6 @@
 -type value_type() :: nil | binary() | integer() | boolean()
                       | loc() | jid() | tags().
 
-
 -record(field, {
           name :: binary(),
           type :: field_type(),
@@ -42,6 +38,7 @@
          }).
 
 -define(PACKET_FILTER_PRIORITY, 40).
+
 
 %%%===================================================================
 %%% gen_mod handlers

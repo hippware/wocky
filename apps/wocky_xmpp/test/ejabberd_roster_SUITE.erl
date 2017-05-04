@@ -13,17 +13,15 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%==============================================================================
-
 -module(ejabberd_roster_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 
--include_lib("escalus/include/escalus.hrl").
 -include_lib("common_test/include/ct.hrl").
--include_lib("exml/include/exml.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
 
--include("wocky_db_seed.hrl").
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -112,7 +110,7 @@ add_contact(Config) ->
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
-        escalus:assert(roster_contains, [?BOB_B_JID], Received2)
+        escalus:assert(roster_contains, [?BJID(?BOB)], Received2)
     end).
 
 roster_push(Config) ->
@@ -182,7 +180,7 @@ versioning(Config) ->
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
-        escalus:assert(roster_contains, [?BOB_B_JID], Received2),
+        escalus:assert(roster_contains, [?BJID(?BOB)], Received2),
 
         %% check version
         Ver2 = get_ver(Received2),
@@ -249,7 +247,7 @@ unsubscribe(Config) ->
 
         %% Alice sends unsubscribe
         escalus:send(Alice,
-                     escalus_stanza:presence_direct(?BOB_B_JID,
+                     escalus_stanza:presence_direct(?BJID(?BOB),
                                                     <<"unsubscribe">>)),
 
         PushReqA2 = escalus:wait_for_stanza(Alice),
@@ -291,7 +289,7 @@ subscribed_follow(Config) ->
         %% Bob sends subscribed presence - this indicates that Bob
         %% has become a follower of Alice. Bob is automatically added to
         %% Alice's roster under the __new__ group.
-        escalus:send(Bob, escalus_stanza:presence_direct(?ALICE_B_JID,
+        escalus:send(Bob, escalus_stanza:presence_direct(?BJID(?ALICE),
                                                          <<"subscribed">>)),
         Stanzas = test_helper:expect_subscription_stanzas(
                     Alice, <<"subscribed">>),

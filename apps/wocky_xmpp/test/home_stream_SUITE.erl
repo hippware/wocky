@@ -1,20 +1,16 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for home stream
 -module(home_stream_SUITE).
+
 -compile(export_all).
-
--include("wocky.hrl").
--include("wocky_bot.hrl").
--include("test_helper.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("common_test/include/ct.hrl").
--include_lib("stdlib/include/assert.hrl").
-
--include("wocky_db_seed.hrl").
-
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
+
+-include_lib("common_test/include/ct.hrl").
+-include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
+-include("wocky_bot.hrl").
 
 -import(test_helper, [expect_iq_success_u/3, expect_iq_error_u/3,
                       expect_iq_success/2, add_to_u/2,
@@ -24,6 +20,9 @@
                       hs_query_el/1, hs_node/1]).
 
 -define(NS_TEST, <<"test-item-ns">>).
+-define(BOB_HS_ITEM_COUNT, 250).
+-define(BOT_UPDATE_STANZA, <<"<bot_update>A thing happened</bot_update>">>).
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -150,7 +149,7 @@ delete(Config) ->
 no_auto_publish_chat(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        Stanza = escalus_stanza:chat_to(?ALICE_B_JID, <<"All your base">>),
+        Stanza = escalus_stanza:chat_to(?BJID(?ALICE), <<"All your base">>),
         escalus:send(Bob, Stanza),
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
@@ -253,7 +252,7 @@ auto_publish_bot(Config) ->
 
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT, [Bob], false),
 
-        Stanza = escalus_stanza:to(share_bot_stanza(), ?BOB_B_JID),
+        Stanza = escalus_stanza:to(share_bot_stanza(), ?BJID(?BOB)),
         escalus_client:send(Alice, Stanza),
         timer:sleep(400),
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
@@ -281,7 +280,7 @@ auto_publish_private_bot(Config) ->
       fun(Alice, Karen) ->
         check_home_stream_sizes(0, [Karen]),
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        Stanza = escalus_stanza:to(share_bot_stanza(), ?KAREN_B_JID),
+        Stanza = escalus_stanza:to(share_bot_stanza(), ?BJID(?KAREN)),
         escalus_client:send(Alice, Stanza),
         timer:sleep(400),
         check_home_stream_sizes(1, [Karen])
@@ -349,7 +348,7 @@ share_bot_stanza() ->
 share_children() ->
     [cdata_el(<<"jid">>, ?BOT_B_JID),
      cdata_el(<<"id">>, ?BOT),
-     cdata_el(<<"server">>, ?LOCAL_CONTEXT),
+     cdata_el(<<"server">>, ?SERVER),
      cdata_el(<<"action">>, <<"share">>)].
 
 new_item(ID) ->
@@ -423,7 +422,7 @@ seed_home_stream(Config) ->
     lists:foreach(
       fun (_) ->
               ?wocky_home_stream_item:put(?BOB, ?wocky_id:new(),
-                                          ?BOB_B_JID, ?BOT_UPDATE_STANZA)
+                                          ?BJID(?BOB), ?BOT_UPDATE_STANZA)
       end,
       lists:seq(1, ?BOB_HS_ITEM_COUNT)),
     [{alice_versions, Versions} | Config].

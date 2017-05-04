@@ -4,8 +4,6 @@
 
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 
 %% gen_mod behaviour

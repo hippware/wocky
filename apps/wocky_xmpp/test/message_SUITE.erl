@@ -1,14 +1,14 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for message stanza extensions
 -module(message_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
 
--include("wocky_db_seed.hrl").
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -60,12 +60,12 @@ messages_story(Config) ->
 extended_fields(Config) ->
     %% Alice sends a message to Bob, who is offline
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        Stanza = escalus_stanza:chat_to(?BOB_B_JID, <<"Check out my LOLCAT">>),
+        Stanza = escalus_stanza:chat_to(?BJID(?BOB), <<"Check out my LOLCAT">>),
         ImageURL = #xmlel{name = <<"url">>,
                           children =
                           [#xmlcdata{content =
                                      <<"tros", ?ALICE/binary, "@",
-                                       ?LOCAL_CONTEXT/binary, "/file/",
+                                       ?SERVER/binary, "/file/",
                                        ?AVATAR_FILE/binary>>}]},
         ImageField = #xmlel{name = <<"image">>,
                             attrs = [{<<"xmlns">>,

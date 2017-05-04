@@ -2,14 +2,12 @@
 %%% @doc Behavior and interface to publishing service
 -module(wocky_publishing_handler).
 
--include_lib("wocky_publishing.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
-
 -compile({parse_transform, cut}).
 
--export([register/2, unregister/2, send_notification/3]).
+-include("wocky.hrl").
+-include("wocky_publishing.hrl").
 
+-export([register/2, unregister/2, send_notification/3]).
 -export([set/5, get/3, available/3, unavailable/1]).
 
 -callback publish(ejabberd:jid(), ejabberd:jid(), pub_item_id(),
@@ -26,6 +24,7 @@
 -callback available(ejabberd:jid(), pub_version()) -> ok.
 
 -callback unavailable(ejabberd:jid()) -> ok.
+
 
 %%%===================================================================
 %%% Hook registration

@@ -4,9 +4,9 @@
 %%%
 -module(wocky_cron).
 
--behaviour(supervisor).
-
 -compile({parse_transform, cut}).
+
+-behaviour(supervisor).
 
 %% API
 -export([start_link/0]).
@@ -14,7 +14,6 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--ignore_xref([start_link/0]).
 
 %%===================================================================
 %%% API functions

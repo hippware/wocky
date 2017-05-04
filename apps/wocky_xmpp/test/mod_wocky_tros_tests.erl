@@ -2,12 +2,14 @@
 %%% @doc Test suite for mod_wocky_tros.erl
 -module(mod_wocky_tros_tests).
 
--include_lib("eunit/include/eunit.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky_db_seed.hrl").
--include("wocky.hrl").
-
 -compile({parse_transform, cut}).
+
+-include_lib("eunit/include/eunit.hrl").
+-include("test_helper.hrl").
+
+-define(MEDIA_FILE, <<"ff9451f2-e712-11e5-9ab0-08002719e96e">>).
+-define(FILENAME,   <<"photo of cat.jpg">>).
+
 
 mod_wocky_tros_test_() -> {
   "mod_wocky_tros",
@@ -43,7 +45,7 @@ before_all() ->
     _ = ?wocky_repo:delete_all(?tros_metadata),
     {ok, _} = ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
     {ok, _} = ?tros_metadata:put(?MEDIA_FILE, ?ALICE,
-                                 <<"user:", (?BOB_B_JID)/binary>>),
+                                 <<"user:", (?BJID(?BOB))/binary>>),
     ok.
 
 after_all(_) ->
@@ -59,7 +61,7 @@ test_avatar_upload_request() ->
         {"Successful request", [
           ?_assert(
              is_expected_upload_packet(
-               handle_iq(?ALICE_JID,
+               handle_iq(?JID(?ALICE),
                          test_server_jid(),
                          upload_packet(10000,
                                        <<"all">>
@@ -71,11 +73,11 @@ test_message_media_upload_request() ->
         {"Successful request", [
           ?_assert(
              is_expected_upload_packet(
-               handle_iq(?ALICE_JID,
+               handle_iq(?JID(?ALICE),
                          test_server_jid(),
                          upload_packet(10000,
                                        <<"user:",
-                                         (?BOB_B_JID)/binary>>
+                                         (?BJID(?BOB))/binary>>
                                       ))))
     ]}]}.
 
@@ -86,7 +88,7 @@ test_oversized_upload_request() ->
           ?_assertEqual(
              expected_ul_error_packet("Invalid size: 10485761",
                                       <<"all">>, Size),
-             handle_iq(?ALICE_JID,
+             handle_iq(?JID(?ALICE),
                        test_server_jid(),
                        upload_packet(Size, <<"all">>)))
     ]}]}.
@@ -97,7 +99,7 @@ test_avatar_download_request() ->
           ?_assert(
              is_expected_download_packet(
                ?AVATAR_FILE,
-               handle_iq(?ALICE_JID,
+               handle_iq(?JID(?ALICE),
                          test_server_jid(),
                          download_packet(?AVATAR_FILE))))
     ]},
@@ -105,17 +107,17 @@ test_avatar_download_request() ->
           ?_assert(
              is_expected_download_packet(
                ?AVATAR_FILE,
-               handle_iq(?ALICE_JID,
+               handle_iq(?JID(?ALICE),
                          test_server_jid(),
                          download_packet(
-                           <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+                           <<"tros:", ?ALICE/binary, "@", ?SERVER/binary,
                              "/file/", ?AVATAR_FILE/binary>>))))
     ]},
         {"Successful request on someone else's avatar", [
           ?_assert(
              is_expected_download_packet(
                ?AVATAR_FILE,
-               handle_iq(?BOB_JID,
+               handle_iq(?JID(?BOB),
                          test_server_jid(),
                          download_packet(?AVATAR_FILE))))
     ]}]}.
@@ -126,7 +128,7 @@ test_message_media_download_request() ->
           ?_assert(
              is_expected_download_packet(
                ?MEDIA_FILE,
-               handle_iq(?ALICE_JID,
+               handle_iq(?JID(?ALICE),
                          test_server_jid(),
                          download_packet(?MEDIA_FILE))))
     ]},
@@ -134,17 +136,17 @@ test_message_media_download_request() ->
           ?_assert(
              is_expected_download_packet(
                ?MEDIA_FILE,
-               handle_iq(?BOB_JID,
+               handle_iq(?JID(?BOB),
                          test_server_jid(),
                          download_packet(?MEDIA_FILE))))
     ]},
         {"Failed request on someone else's media that was NOT sent to us", [
           ?_test(begin
              meck:expect(?tros, get_access, 1,
-                         {ok, <<"user:",(?BOB_B_JID)/binary>>}),
+                         {ok, <<"user:",(?BJID(?BOB))/binary>>}),
              ?assertEqual(
              expected_dl_auth_error_packet(?MEDIA_FILE),
-             handle_iq(?CAROL_JID,
+             handle_iq(?JID(?CAROL),
                        test_server_jid(),
                        download_packet(?MEDIA_FILE)))
           end)
@@ -159,21 +161,21 @@ test_bad_download_ids() ->
         {"Failed due to malformed UUID", [
             ?_assertEqual(
                NotFound(BadUUID),
-                 handle_iq(?CAROL_JID,
+                 handle_iq(?JID(?CAROL),
                            test_server_jid(),
                            download_packet(BadUUID)))
         ]},
         {"Failed due to malformed URL", [
             ?_assertEqual(
                expected_dl_error_packet("Invalid file URL", BadURL),
-                 handle_iq(?CAROL_JID,
+                 handle_iq(?JID(?CAROL),
                            test_server_jid(),
                            download_packet(BadURL)))
         ]},
         {"Failed due to missing file metadata", [
             ?_assertEqual(
                NotFound(MissingID),
-                 handle_iq(?CAROL_JID,
+                 handle_iq(?JID(?CAROL),
                            test_server_jid(),
                            download_packet(MissingID)))
         ]}
@@ -198,7 +200,7 @@ handle_iq(FromJID, ServerJID, Packet) ->
 new_file_uuid() ->
     <<"a65ecb4e-c633-11e5-9fdc-080027f70e96">>.
 
-test_server_jid() -> jid:make(<<>>, ?LOCAL_CONTEXT, <<>>).
+test_server_jid() -> jid:make(<<>>, ?SERVER, <<>>).
 
 common_packet(Type, Request) ->
     #iq{id = <<"123456">>,
@@ -234,9 +236,9 @@ download_request(FileID) ->
 is_expected_upload_packet(P) ->
     {ok, XML} = exml:parse(P),
     UUID = new_file_uuid(),
-    JID = <<(?LOCAL_CONTEXT)/binary, "/file/", UUID/binary>>,
+    JID = <<(?SERVER)/binary, "/file/", UUID/binary>>,
     ID = new_file_uuid(),
-    RefURL = <<"tros:", ?ALICE/binary, "@", ?LOCAL_CONTEXT/binary,
+    RefURL = <<"tros:", ?ALICE/binary, "@", ?SERVER/binary,
                "/file/", ID/binary>>,
     #xmlel{name = <<"iq">>,
            attrs = [{<<"id">>, <<"123456">>},

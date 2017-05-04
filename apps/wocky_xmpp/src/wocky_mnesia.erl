@@ -8,6 +8,7 @@
 
 -define(WFT_TIMEOUT, timer:seconds(30)).
 
+
 initialise_shared_ram_table(Name, Opts, Attributes) ->
     case create_shared_ram_table(Name, Opts, Attributes) of
         {aborted, {already_exists, Name}} ->

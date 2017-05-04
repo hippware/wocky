@@ -1,15 +1,14 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for mod_wocky_cli
 -module(cli_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
 
--include("wocky_db_seed.hrl").
--include("wocky.hrl").
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -74,7 +73,7 @@ fix_bot_images(Config) ->
         %% Add bot image item
         NoteID = <<"new-item1">>,
         Content = <<"Some content">>,
-        Image = ?tros:make_url(?LOCAL_CONTEXT, ItemFile),
+        Image = ?tros:make_url(?SERVER, ItemFile),
         Title = <<"title ZZZ">>,
         % Alice publishes an item to her bot
         bot_SUITE:publish_item(?BOT, NoteID, Title, Content, Image, Alice),
@@ -127,7 +126,7 @@ out_file_data(Config) -> load_file(Config, "out.png").
 
 set_image_field(ID) ->
     bot_SUITE:create_field({"image", "string",
-                            ?tros:make_url(?LOCAL_CONTEXT, ID)}).
+                            ?tros:make_url(?SERVER, ID)}).
 
 load_file(Config, FileName) ->
     DataDir = proplists:get_value(data_dir, Config),

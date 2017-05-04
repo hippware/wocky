@@ -1,6 +1,5 @@
 -module(wocky_roster).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include("wocky_roster.hrl").
 
 -export([to_wocky_roster/3, to_wocky_roster/1, to_map/1]).

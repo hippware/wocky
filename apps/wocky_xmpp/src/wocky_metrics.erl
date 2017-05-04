@@ -6,6 +6,7 @@
 
 -export([setup_spiral/1, inc/1, inc/2]).
 
+
 setup_spiral(Metrics) ->
     lists:foreach(fun(M) ->
                           mongoose_metrics:ensure_metric(

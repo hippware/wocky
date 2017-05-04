@@ -4,20 +4,15 @@
 %%%
 -module(mod_wocky_cli).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/ejabberd_commands.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky_roster.hrl").
 -include("wocky.hrl").
+-include("wocky_roster.hrl").
+-include_lib("ejabberd/include/ejabberd_commands.hrl").
 
--define(s3, 'Elixir.ExAws.S3').
--define(ex_aws, 'Elixir.ExAws').
--define(enum, 'Elixir.Enum').
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -29,6 +24,10 @@
          reprocess_images/0,
          reindex/1
         ]).
+
+-define(s3, 'Elixir.ExAws.S3').
+-define(ex_aws, 'Elixir.ExAws').
+-define(enum, 'Elixir.Enum').
 
 
 %%%===================================================================

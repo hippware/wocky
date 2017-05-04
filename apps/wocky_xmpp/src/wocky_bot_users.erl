@@ -5,17 +5,15 @@
 %%%
 -module(wocky_bot_users).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
--include("wocky_bot.hrl").
--include("wocky_roster.hrl").
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
+-include("wocky.hrl").
+-include("wocky_roster.hrl").
+
 -export([handle_share/3,
          notify_new_viewers/4]).
+
 
 %%%===================================================================
 %%% Action - bot shared

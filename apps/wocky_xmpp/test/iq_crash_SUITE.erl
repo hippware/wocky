@@ -1,13 +1,13 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for MIM IQ handler crash handling
 -module(iq_crash_SUITE).
+
 -compile(export_all).
 
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky.hrl").
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -25,11 +25,11 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    gen_mod:start_module(?LOCAL_CONTEXT, mod_wocky_crash_test, []),
+    gen_mod:start_module(?SERVER, mod_wocky_crash_test, []),
     escalus:init_per_suite(Config).
 
 end_per_suite(Config) ->
-    gen_mod:stop_module(?LOCAL_CONTEXT, mod_wocky_crash_test),
+    gen_mod:stop_module(?SERVER, mod_wocky_crash_test),
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->

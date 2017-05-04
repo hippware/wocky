@@ -5,15 +5,10 @@
 %%%
 -module(wocky_bot_subscription).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
--include("wocky_bot.hrl").
-
--define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
+
+-include("wocky.hrl").
 
 -export([start/1,
          stop/1]).
@@ -21,6 +16,9 @@
 -export([subscribe/2,
          unsubscribe/2,
          retrieve_subscribers/1]).
+
+-define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
+
 
 %%%===================================================================
 %%% Setup

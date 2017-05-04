@@ -3,11 +3,12 @@
 %%% authroization server.
 -module(fake_digits_server).
 
+-include("test_helper.hrl").
+
 -behaviour(cowboy_http_handler).
 
 -export([start/2, stop/0, url/0, init/3, handle/2, terminate/3]).
 
--include("wocky_db_seed.hrl").
 
 %% Start the server. `AllowAuth' specifies whether requests to this server
 %% should succeed or fail.

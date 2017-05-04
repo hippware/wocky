@@ -8,14 +8,13 @@
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 
 -export([query/2,
          query_images/2,
          publish/3,
          retract/3]).
+
 
 %%%===================================================================
 %%% API

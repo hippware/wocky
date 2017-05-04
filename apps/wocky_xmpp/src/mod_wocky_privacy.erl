@@ -4,9 +4,9 @@
 %%%
 -module(mod_wocky_privacy).
 
--behaviour(gen_mod).
+-include("wocky.hrl").
 
--include_lib("ejabberd/include/jlib.hrl").
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -15,6 +15,7 @@
 -export([check_packet/6]).
 
 -define(CHECK_PACKET_PRIORITY, 90).
+
 
 %%%===================================================================
 %%% gen_mod handlers

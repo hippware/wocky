@@ -3,12 +3,12 @@
 -module(rsm_util_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky.hrl").
+-include("test_helper.hrl").
 
 -import(rsm_util, [get_rsm/1, filter_with_rsm/2]).
 
 -define(COUNT, 200).
+
 
 rsm_util_test_() -> {
   "rsm_util:filter_with_rsm",

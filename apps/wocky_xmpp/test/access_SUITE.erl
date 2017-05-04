@@ -1,17 +1,16 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite mod_wocky_access.erl
 -module(access_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
-
--include("wocky.hrl").
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 
 -import(test_helper, [expect_iq_success/2]).
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -39,17 +38,7 @@ init_per_suite(Config) ->
     Alice = ?wocky_user:find(?ALICE),
     Bob = ?wocky_user:find(?BOB),
 
-    Bot = ?wocky_factory:insert(bot, #{id => ?BOT,
-                                       title => ?BOT_TITLE,
-                                       shortname => ?BOT_NAME,
-                                       user => Alice,
-                                       description => ?BOT_DESC,
-                                       lat => ?BOT_LAT,
-                                       lon => ?BOT_LON,
-                                       radius => ?BOT_RADIUS,
-                                       address => ?BOT_ADDRESS,
-                                       image => ?AVATAR_FILE,
-                                       type => ?BOT_TYPE}),
+    Bot = ?wocky_factory:insert(bot, #{id => ?BOT, user => Alice}),
 
     ?wocky_bot:share(Bot, Bob, Alice),
 
@@ -73,39 +62,39 @@ bot_access(Config) ->
       %% Alice can see her own bot
       expect_allow(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?ALICE_B_JID, <<"view">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?ALICE), <<"view">>), Alice)),
 
       %% Tim cannot see Alice's bot because he's not a friend
       expect_deny(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?TIM_B_JID, <<"view">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?TIM), <<"view">>), Alice)),
 
       %% Bob can see the bot because he's an affiliate
       expect_allow(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?BOB_B_JID, <<"view">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?BOB), <<"view">>), Alice)),
 
       %% Alice canedit it because she's the owner
       expect_allow(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?ALICE_B_JID, <<"modify">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?ALICE), <<"modify">>), Alice)),
       expect_allow(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?ALICE_B_JID, <<"delete">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?ALICE), <<"delete">>), Alice)),
 
       %% Bob cannot edit it because he's not the owner
       expect_deny(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?BOB_B_JID, <<"modify">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?BOB), <<"modify">>), Alice)),
       expect_deny(
         expect_iq_success(
-          access_query(bot_node(?BOT), ?BOB_B_JID, <<"delete">>), Alice)),
+          access_query(bot_node(?BOT), ?BJID(?BOB), <<"delete">>), Alice)),
 
       %% Nobody has permissions on a non-existant bot
       expect_deny(
         expect_iq_success(
           access_query(bot_node(?wocky_id:new()),
-                       ?ALICE_B_JID, <<"view">>), Alice))
+                       ?BJID(?ALICE), <<"view">>), Alice))
     end).
 
 access_query(ID, Actor, Op) ->

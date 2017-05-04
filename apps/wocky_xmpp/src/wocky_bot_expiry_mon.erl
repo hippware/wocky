@@ -2,12 +2,11 @@
 %%% @doc Server to monitor and notify expiry of bot follow-me
 -module(wocky_bot_expiry_mon).
 
--behaviour(gen_server).
-
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
+
+-behaviour(gen_server).
 
 %% API
 -export([start_link/0,
@@ -25,13 +24,13 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
-
 -define(WARNING_TIME, timer:minutes(10)).
 
 -record(state, {bots = #{} :: map(), %% #{BotJID => [timer_ref()]}
                 warning_time = ?WARNING_TIME :: non_neg_integer()
                }).
 -type state() :: #state{}.
+
 
 %%%===================================================================
 %%% API

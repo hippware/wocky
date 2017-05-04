@@ -2,14 +2,11 @@
 %%% @doc Helper functions for Wocky integration test suites
 -module(test_helper).
 
--include("wocky.hrl").
--include("wocky_db_seed.hrl").
--include("test_helper.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("stdlib/include/assert.hrl").
-
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
+
+-include("test_helper.hrl").
+-include_lib("stdlib/include/assert.hrl").
 
 -export([ensure_wocky_is_running/0,
          setup_users/2,
@@ -68,6 +65,7 @@
 
          set_notifications/2
         ]).
+
 
 ensure_wocky_is_running() ->
     case net_kernel:start(['mongooseim@localhost', longnames]) of
@@ -466,10 +464,10 @@ is_bot_action(ID, Action, Stanza) ->
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"id">>}, cdata])
         =:= ID andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"jid">>}, cdata])
-        =:= jid:to_binary(jid:make(<<>>, ?LOCAL_CONTEXT, <<"bot/", ID/binary>>))
+        =:= jid:to_binary(jid:make(<<>>, ?SERVER, <<"bot/", ID/binary>>))
         andalso
     xml:get_path_s(Stanza, [{elem, <<"bot">>}, {elem, <<"server">>}, cdata])
-        =:= ?LOCAL_CONTEXT.
+        =:= ?SERVER.
 
 matches(Value, any) -> Value =/= <<>>;
 matches(Value, Match) -> Value =:= Match.
@@ -485,7 +483,7 @@ maybe_version_attr(Version) -> [{<<"version">>, Version}].
 
 hs_node(User) ->
     jid:to_binary(
-      jid:make(User, ?LOCAL_CONTEXT, <<"home_stream">>)).
+      jid:make(User, ?SERVER, <<"home_stream">>)).
 
 get_hs_stanza() ->
     get_hs_stanza(#rsm_in{max = 500}).

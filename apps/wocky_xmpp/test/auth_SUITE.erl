@@ -1,20 +1,17 @@
 %%% @copyright 2017+ Hippware, Inc.
 %%% @doc Integration test suite for auth functionality
--module(auth_SUITE).
 %%% Note that we are not trying to re-test all of the underlying authentication
 %%% functionality from MIM and ejabberd_auth_riak. We are only testing changes
 %%% to the stock MIM functionality made in ejabberd_auth_wocky and
 %%% mod_wocky_sasl_plain.
--compile(export_all).
+-module(auth_SUITE).
 
+-compile(export_all).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
-
--include("wocky_db_seed.hrl").
--include("wocky.hrl").
+-include("test_helper.hrl").
 
 
 %%--------------------------------------------------------------------

@@ -5,16 +5,13 @@
 %%%
 -module(mod_wocky_pep).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
+-include("wocky.hrl").
 -include("wocky_roster.hrl").
 
--define(HANDLER_TABLE, mod_wocky_pep_handlers).
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -28,6 +25,9 @@
 -type pep_model() :: open | presence | roster | whitelist.
 
 -export_type([pep_model/0]).
+
+-define(HANDLER_TABLE, mod_wocky_pep_handlers).
+
 
 %%%===================================================================
 %%% gen_mod handlers

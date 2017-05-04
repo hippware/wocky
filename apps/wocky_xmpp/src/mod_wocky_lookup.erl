@@ -2,7 +2,6 @@
 %%% @doc Module to handle phone number and handle lookups
 -module(mod_wocky_lookup).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 
 %% gen_mod behaviour

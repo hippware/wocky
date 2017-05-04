@@ -3,8 +3,7 @@
 -module(mod_wocky_lookup_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 
 -import(mod_wocky_lookup, [handle_phone_iq/3, handle_handle_iq/3]).
 
@@ -33,12 +32,8 @@ before_all() ->
     _ = ?wocky_repo:delete_all(?wocky_user),
     _User = ?wocky_factory:insert(user, #{id => ?ALICE,
                                           username => ?ALICE,
-                                          server => ?SERVER,
                                           phone_number => ?PHONE_NUMBER,
-                                          handle => <<"alice">>,
-                                          first_name => <<"Alice">>,
-                                          last_name => <<"Wonderland">>,
-                                          avatar => ?AVATAR_ID}),
+                                          handle => <<"alice">>}),
     ok.
 
 after_all(_) ->
@@ -68,7 +63,7 @@ test_phone_iq_get_request() ->
     { "returns an empty result when the JID is not a UUID", [
       ?_assertMatch(?RESULT_IQ([]),
                     handle_phone_iq(#jid{luser = <<"foo">>,
-                                         lserver = ?LOCAL_CONTEXT},
+                                         lserver = ?SERVER},
                                     ?TO, make_iq([])))
     ]},
     { "returns an empty result IQ if there are no item elements", [
@@ -114,7 +109,7 @@ test_phone_iq_get_results() ->
       { "returns the proper user information for a phone number", [
         ?_assertEqual(<<"+1234">>,
                       proplists:get_value(<<"id">>, ?FIRST(Els))),
-        ?_assertEqual(<<?ALICE/binary, "@", ?LOCAL_CONTEXT/binary>>,
+        ?_assertEqual(<<?ALICE/binary, "@", ?SERVER/binary>>,
                       proplists:get_value(<<"jid">>, ?FIRST(Els))),
         ?_assertEqual(<<"alice">>,
                       proplists:get_value(<<"handle">>, ?FIRST(Els))),
@@ -171,7 +166,7 @@ test_handle_iq_get_results() ->
       { "returns the proper user information for a handle", [
         ?_assertEqual(<<"alice">>,
                       proplists:get_value(<<"id">>, ?FIRST(Els))),
-        ?_assertEqual(<<?ALICE/binary, "@", ?LOCAL_CONTEXT/binary>>,
+        ?_assertEqual(<<?ALICE/binary, "@", ?SERVER/binary>>,
                       proplists:get_value(<<"jid">>, ?FIRST(Els)))
       ]}
     ] end

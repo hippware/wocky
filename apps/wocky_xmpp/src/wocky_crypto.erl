@@ -1,13 +1,14 @@
 -module(wocky_crypto).
 
--define(CIPHER, aes_cbc).
--define(IV_LENGTH, 16).
-
 -export([encrypt/2,
          encrypt/3,
          decrypt/2,
          decrypt/3
         ]).
+
+-define(CIPHER, aes_cbc).
+-define(IV_LENGTH, 16).
+
 
 encrypt(Key, Data) -> encrypt(Key, Data, 0).
 encrypt(Key, Data, PadTo) ->

@@ -3,11 +3,12 @@
 -module(access_query_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 
 -import(access_query, [run/3]).
 
 -export([check_access/3]).
+
 
 access_query_test_() -> {
   "access_query",
@@ -59,34 +60,34 @@ check_access(<<"timeout">>, _, _) ->
 test_run() -> {
   "run", [
     { "Forward query to a bot should return bot permissions", [
-      ?_assertEqual(allow, run(?BOT_JID, ?ALICE_JID, view)),
-      ?_assertEqual(allow, run(?BOT_JID, ?ALICE_JID, delete)),
-      ?_assertEqual(allow, run(?BOT_JID, ?ALICE_JID, modify)),
+      ?_assertEqual(allow, run(?BOT_JID, ?JID(?ALICE), view)),
+      ?_assertEqual(allow, run(?BOT_JID, ?JID(?ALICE), delete)),
+      ?_assertEqual(allow, run(?BOT_JID, ?JID(?ALICE), modify)),
 
-      ?_assertEqual(allow, run(?BOT_JID, ?BOB_JID, view)),
-      ?_assertEqual(deny, run(?BOT_JID, ?BOB_JID, delete)),
-      ?_assertEqual(deny, run(?BOT_JID, ?BOB_JID, modify)),
+      ?_assertEqual(allow, run(?BOT_JID, ?JID(?BOB), view)),
+      ?_assertEqual(deny, run(?BOT_JID, ?JID(?BOB), delete)),
+      ?_assertEqual(deny, run(?BOT_JID, ?JID(?BOB), modify)),
 
-      ?_assertEqual(deny, run(?BOT_JID, ?CAROL_JID, view)),
-      ?_assertEqual(deny, run(?BOT_JID, ?CAROL_JID, delete)),
-      ?_assertEqual(deny, run(?BOT_JID, ?CAROL_JID, modify))
+      ?_assertEqual(deny, run(?BOT_JID, ?JID(?CAROL), view)),
+      ?_assertEqual(deny, run(?BOT_JID, ?JID(?CAROL), delete)),
+      ?_assertEqual(deny, run(?BOT_JID, ?JID(?CAROL), modify))
     ]}
   ]}.
 
 test_loop() -> {
   "run with redirect loop", [
      ?_assertEqual(deny, run(jid:make(<<>>, ?SERVER, <<"loop/1">>),
-                             ?ALICE_JID, view))
+                             ?JID(?ALICE), view))
   ]}.
 
 test_overflow() -> {
   "run with redirect overflow", [
      ?_assertEqual(deny, run(jid:make(<<>>, ?SERVER, <<"overflow/1">>),
-                             ?ALICE_JID, view))
+                             ?JID(?ALICE), view))
   ]}.
 
 test_timeout() -> {
   "run with timeout", [
      ?_assertEqual(deny, run(jid:make(<<>>, ?SERVER, <<"timeout">>),
-                             ?ALICE_JID, view))
+                             ?JID(?ALICE), view))
   ]}.

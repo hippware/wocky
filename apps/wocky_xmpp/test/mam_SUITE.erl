@@ -14,15 +14,14 @@
 %% limitations under the License.
 %%==============================================================================
 -module(mam_SUITE).
+
 -compile(export_all).
-
--include_lib("escalus/include/escalus.hrl").
--include_lib("common_test/include/ct.hrl").
--include_lib("exml/include/exml_stream.hrl").
-
--include("wocky_db_seed.hrl").
-
 -compile({parse_transform, fun_chain}).
+
+-include_lib("common_test/include/ct.hrl").
+-include_lib("exml/include/exml.hrl").
+-define(WOCKY_HRL, true).
+-include("test_helper.hrl").
 
 -define(ASSERT_EQUAL(E, V), (
     [ct:fail("ASSERT EQUAL~n\tExpected ~p~n\tValue ~p~n", [(E), (V)])
@@ -64,6 +63,7 @@
     last            :: binary() | undefined,
     count           :: non_neg_integer()
 }).
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -509,7 +509,7 @@ send_rsm_messages(Config) ->
 
         %% Get whole history.
         escalus:send(Alice,
-                     stanza_archive_request(P, <<"all_messages">>, ?BOB_B_JID)),
+                     stanza_archive_request(P, <<"all_messages">>, ?BJID(?BOB))),
 
         [_ArcIQ|AllMessages] =
             assert_respond_size(15, wait_archive_respond_iq_first(Alice)),

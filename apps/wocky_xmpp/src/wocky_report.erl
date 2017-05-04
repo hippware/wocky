@@ -4,13 +4,12 @@
 %%%
 -module(wocky_report).
 
+-compile({parse_transform, cut}).
+
 -include("wocky.hrl").
--include("wocky_bot.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 
 -export([generate_bot_report/1]).
 
--compile({parse_transform, cut}).
 
 % Duration is in days
 -spec generate_bot_report(non_neg_integer()) -> iolist().

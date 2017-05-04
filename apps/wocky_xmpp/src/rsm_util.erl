@@ -5,16 +5,15 @@
 %%%
 -module(rsm_util).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
+-compile({parse_transform, cut}).
+
 -include("wocky.hrl").
 
--compile({parse_transform, cut}).
+-export([get_rsm/1, filter_with_rsm/2]).
 
 -define(EX_TO_UNDEFINED(F), try F catch _:_ -> undefined end).
 -define(RSM_MAX, 1000).
 
--export([get_rsm/1, filter_with_rsm/2]).
 
 -spec get_rsm(xmlel() | ejabberd:iq()) ->
     {error, xmlel()} | {ok, jlib:rsm_in()}.

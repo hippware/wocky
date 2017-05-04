@@ -33,6 +33,8 @@
 
 -compile({parse_transform, fun_chain}).
 
+-include("wocky.hrl").
+
 -behaviour(ejabberd_gen_auth).
 -export([start/1,
          stop/1,
@@ -52,9 +54,6 @@
          does_user_exist/2,
          remove_user/2,
          remove_user/3]).
-
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
 
 
 %%%----------------------------------------------------------------------

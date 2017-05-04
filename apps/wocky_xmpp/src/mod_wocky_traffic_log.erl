@@ -4,16 +4,15 @@
 %%%
 -module(mod_wocky_traffic_log).
 
+-include("wocky.hrl").
+
 -behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
-
 -define(DEFAULT_EXPIRE, 3600).
+
 
 %%%===================================================================
 %%% gen_mod handlers

@@ -8,13 +8,12 @@
 -compile({parse_transform, cut}).
 
 -include("wocky.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
-
--define(ansi, 'Elixir.IO.ANSI').
 
 -export([dump/3,
          dump/4]).
+
+-define(ansi, 'Elixir.IO.ANSI').
+
 
 % All user's traffic
 dump(Handle, StartBin, DurationBin) ->

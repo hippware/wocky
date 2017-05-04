@@ -4,18 +4,16 @@
 %%%
 -module(mod_wocky_user_notify).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
--include("wocky_roster.hrl").
+
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
+
 
 %%%===================================================================
 %%% gen_mod handlers

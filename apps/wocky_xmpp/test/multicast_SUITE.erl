@@ -1,16 +1,15 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for multicast addressing
 -module(multicast_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
+-compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
 
--include("wocky_db_seed.hrl").
-
--compile({parse_transform, cut}).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -91,7 +90,7 @@ to(Config) ->
       fun(Alice, Bob, Tim, Robert) ->
         test_helper:subscribe_pair(Bob, Alice),
         SendStanza = multicast_stanza([[{<<"type">>, <<"to">>},
-                                        {<<"jid">>, ?BOB_B_JID}]],
+                                        {<<"jid">>, ?BJID(?BOB)}]],
                                       ?NS_ADDRESS),
 
         escalus:send(Alice, SendStanza),
@@ -111,7 +110,7 @@ mix(Config) ->
         SendStanza = multicast_stanza([[{<<"type">>, <<"followers">>}],
                                        [{<<"type">>, <<"friends">>}],
                                        [{<<"type">>, <<"to">>},
-                                        {<<"jid">>,  ?ROBERT_B_JID}]],
+                                        {<<"jid">>,  ?BJID(?ROBERT)}]],
                                       ?NS_ADDRESS),
 
         escalus:send(Alice, SendStanza),

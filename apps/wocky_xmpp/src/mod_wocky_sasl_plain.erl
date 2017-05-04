@@ -31,12 +31,11 @@
 -module(mod_wocky_sasl_plain).
 -xep([{xep, 78}, {version, "2.5"}]).
 
--behaviour(gen_mod).
--behaviour(cyrsasl).
-
 -include("wocky.hrl").
 -include("wocky_reg.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
+
+-behaviour(gen_mod).
+-behaviour(cyrsasl).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).

@@ -3,10 +3,10 @@
 -module(cli_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include("wocky_db_seed.hrl").
--include("wocky.hrl").
+-include("test_helper.hrl").
 
 -import(mod_wocky_cli, [befriend/2]).
+
 
 cli_test_() -> {
   "mod_wocky_cli",

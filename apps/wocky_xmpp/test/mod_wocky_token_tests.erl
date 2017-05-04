@@ -3,10 +3,7 @@
 -module(mod_wocky_token_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/ejabberd_config.hrl").
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 
 -import(mod_wocky_token, [handle_iq/3]).
 
@@ -26,14 +23,7 @@ mod_wocky_token_test_() -> {
 
 before_all() ->
     _ = ?wocky_repo:delete_all(?wocky_user),
-    _User = ?wocky_factory:insert(user, #{id => ?ALICE,
-                                          username => ?ALICE,
-                                          server => ?SERVER,
-                                          phone_number => ?PHONE_NUMBER,
-                                          handle => <<"alice">>,
-                                          first_name => <<"Alice">>,
-                                          last_name => <<"Wonderland">>,
-                                          avatar => ?AVATAR_ID}),
+    _User = ?wocky_factory:insert(user, #{id => ?ALICE, username => ?ALICE}),
     ok.
 
 after_all(_) ->
@@ -41,7 +31,7 @@ after_all(_) ->
 
 
 jid() ->
-    jid:make(?USER, ?SERVER, ?RESOURCE).
+    jid:make(?ALICE, ?SERVER, <<"testing">>).
 
 -define(RESULT_IQ(Content),
         #iq{type = result,

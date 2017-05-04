@@ -3,13 +3,13 @@
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
+-include("wocky.hrl").
+
 -export([
          can_download/3,
          access_rules_from_list/1
         ]).
 
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky.hrl").
 
 can_download(User = #jid{luser = UserID}, OwnerID, Access) ->
     case OwnerID of
