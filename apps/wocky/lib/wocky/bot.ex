@@ -36,6 +36,7 @@ defmodule Wocky.Bot do
     field :alerts,           :boolean # Whether alerts are enabled
     field :follow_me,        :boolean # Does bot follow owner
     field :follow_me_expiry, :integer # When follow me expires
+    field :tags,             {:array, :string}
 
     timestamps()
 
@@ -54,7 +55,7 @@ defmodule Wocky.Bot do
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
                   :image, :type, :address, :lat, :lon, :radius, :public,
-                  :alerts, :follow_me, :follow_me_expiry]
+                  :alerts, :follow_me, :follow_me_expiry, :tags]
   @required_fields [:id, :server, :user_id, :title, :lat, :lon, :radius]
 
   @spec make_node(t) :: binary

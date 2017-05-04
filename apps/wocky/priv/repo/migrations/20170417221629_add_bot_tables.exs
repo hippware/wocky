@@ -20,6 +20,7 @@ defmodule Wocky.Repo.Migrations.AddBotTables do
       add :alerts,           :boolean, null: false, default: false
       add :follow_me,        :boolean, null: false, default: false
       add :follow_me_expiry, :integer
+      add :tags,             {:array, :string}, null: false, default: []
 
       timestamps()
     end
