@@ -16,7 +16,13 @@ defmodule Wocky.XMPP.Mixfile do
      erlc_options: erlc_options(Mix.env),
      aliases: aliases(),
      deps: deps(),
-     preferred_cli_env: [eunit: :test, ct: :test],
+     preferred_cli_env: [
+       ct: :test,
+       eunit: :test,
+       espec: :test,
+       "coveralls.html": :test
+     ],
+     test_coverage: [tool: ExCoveralls, test_task: "testall"],
      elvis_config: elvis_config(),
      # set switches that affect every invocation of the eunit task
      eunit: [
@@ -78,6 +84,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:logger_lager_backend, "~> 0.0.2"},
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
+      {:excoveralls,          "~> 0.6",    only: :test},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
@@ -187,8 +194,14 @@ defmodule Wocky.XMPP.Mixfile do
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: ["elvis"],
-      "test": ["eunit"]
+      "test": ["espec"],
+      testall: ["espec", &reset/1, "ct"]
     ]
+  end
+
+  def reset(_) do
+    :net_kernel.stop
+    :wocky_xmpp_app.stop
   end
 
   defp elvis_config do
