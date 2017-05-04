@@ -2,7 +2,9 @@
 -ifndef(WOCKY_PUBLISHING_HRL).
 -define(WOCKY_PUBLISHING_HRL, 1).
 
--type pub_version() :: wocky_db:id() | not_found.
+-include("wocky.hrl").
+
+-type pub_version() :: ?wocky_id:t() | not_found.
 -type pub_item_id() :: binary().
 -type published_stanza() :: jlib:xmlel() | [jlib:xmlel()].
 
