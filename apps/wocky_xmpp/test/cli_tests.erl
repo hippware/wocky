@@ -23,7 +23,6 @@ before_all() ->
     _ = ?wocky_factory:insert(user, #{id => ?BOB,
                                       username => ?BOB,
                                       handle => <<"bob">>}),
-    ok = wocky_db:truncate(shared, roster),
     ok.
 
 after_all(_) ->

@@ -654,7 +654,6 @@ block_jid_message_but_not_presence(Config) ->
         end).
 
 default_privacy_list(Config) ->
-    wocky_db:truncate(shared, roster),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
       fun(Alice, Bob, Carol, Tim) ->
         test_helper:subscribe_pair(Alice, Bob),

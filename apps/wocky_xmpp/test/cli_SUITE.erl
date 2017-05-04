@@ -31,7 +31,6 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    wocky_db_seed:seed_tables(shared, [bot, bot_subscriber]),
     Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol])
@@ -60,7 +59,6 @@ befriend(Config) ->
       end).
 
 fix_bot_images(Config) ->
-    wocky_db:truncate(shared, roster),
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         BotFile = create_file(Config, Alice, <<"invalid_access">>),

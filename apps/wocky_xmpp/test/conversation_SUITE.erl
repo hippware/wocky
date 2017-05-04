@@ -205,7 +205,7 @@ get_id(Item) ->
 
 seed_conversations(Config) ->
     ?wocky_repo:delete_all(?wocky_conversation),
-    Convos = wocky_db_seed:random_conversation_list(),
+    Convos = random_conversation_list(),
     lists:foreach(archive_message(_), Convos),
     Config.
 
@@ -227,3 +227,58 @@ archive_message(#{id := ID,
 
 direction(true) -> outgoing;
 direction(false) -> incoming.
+
+archive_users() ->
+    [jid:to_binary(J) ||
+     J <- [
+           ?ALICE_JID,
+           ?BOB_JID,
+           ?CAROL_JID,
+           ?KAREN_JID,
+           ?ROBERT_JID
+          ]].
+
+random_conversation_list() ->
+    Messages = sort_by_time(random_message_history()),
+    unique_pairs(Messages, [], []).
+
+unique_pairs([], _, Acc) -> Acc;
+unique_pairs([M = #{user_jid := U, other_jid := O} | Rest], Pairs, Acc) ->
+    Pair = {U, O},
+    case lists:member(Pair, Pairs) of
+        true -> unique_pairs(Rest, Pairs, Acc);
+        false -> unique_pairs(Rest, [Pair | Pairs], [M | Acc])
+    end.
+
+random_message_history() ->
+    _ = rand:seed(exsplus, {1, 2, 3}),
+    [random_message(ID, archive_users()) || ID <- lists:seq(1, 300)].
+
+random_message(ID, Users) ->
+    From = lists:nth(rand:uniform(length(Users)), Users),
+    RemainingUsers = Users -- [From],
+    To = lists:nth(rand:uniform(length(RemainingUsers)), RemainingUsers),
+    archive_row(ID, From, To).
+
+archive_row(ID, From, To) ->
+    #{user_jid => From,
+      other_jid => To,
+      id => ID,
+      time => ID,
+      outgoing => rand:uniform(2) =:= 1,
+      message => msg_xml_packet(<<To/binary,
+                                  (integer_to_binary(ID))/binary>>)
+     }.
+
+sort_by_time(ArchiveRows) ->
+    lists:sort(fun sort_by_time/2, ArchiveRows).
+
+% Sorts newest first
+sort_by_time(#{time := T1}, #{time := T2}) ->
+    T1 > T2.
+
+msg_xml_packet(Handle) ->
+    <<"<message xml:lang=\"en\" type=\"chat\"
+                to=\"278e4ba0-b9ae-11e5-a436-080027f70e96@localhost\">
+           <body>Hi, ", Handle/binary, "</body>
+      </message>">>.

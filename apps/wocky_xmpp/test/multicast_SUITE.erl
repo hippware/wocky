@@ -72,7 +72,7 @@ friends(Config) ->
     end).
 
 followers(Config) ->
-    ok = wocky_db:clear_tables(shared, [roster]),
+    ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Tim, Robert) ->
         test_helper:subscribe_pair(Bob, Alice),
@@ -86,7 +86,7 @@ followers(Config) ->
       end).
 
 to(Config) ->
-    ok = wocky_db:clear_tables(shared, [roster]),
+    ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Tim, Robert) ->
         test_helper:subscribe_pair(Bob, Alice),
@@ -101,7 +101,7 @@ to(Config) ->
       end).
 
 mix(Config) ->
-    ok = wocky_db:clear_tables(shared, [roster]),
+    ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
                            {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Carol, Tim, Robert) ->
@@ -121,7 +121,7 @@ mix(Config) ->
       end).
 
 error(Config) ->
-    ok = wocky_db:clear_tables(shared, [roster]),
+    ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
         test_helper:subscribe_pair(Bob, Alice),
@@ -154,7 +154,7 @@ multicast_stanza(Type) ->
 
 multicast_stanza(AddressAttrs, NS) ->
     Stanza = escalus_stanza:chat_to(
-               ?LOCAL_CONTEXT, <<"Check out my LOLCAT">>),
+               ?SERVER, <<"Check out my LOLCAT">>),
     AddressEls = make_address_els(AddressAttrs),
     Addresses = #xmlel{name = <<"addresses">>,
                        attrs = [{<<"xmlns">>, NS}],
