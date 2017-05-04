@@ -12,16 +12,6 @@
 %% IQ handler callback
 -export([handle_phone_iq/3, handle_handle_iq/3]).
 
--ifdef(TEST).
--export([lookup_reductions/2, save_reductions/3]).
--endif.
-
--define(DEFAULT_REDUCTIONS, 5000).
--define(REDUCTION_TTL, 86400). % 24 hours
-
-%% calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}})
--define(EPOCH_SECONDS, 62167219200).
-
 
 %%%===================================================================
 %%% gen_mod implementation
@@ -50,44 +40,16 @@ handle_phone_iq(From, _To, #iq{type = get} = IQ) ->
 handle_phone_iq(_From, _To, #iq{type = set} = IQ) ->
     IQ#iq{type = error, sub_el = [?ERR_NOT_ALLOWED]}.
 
-handle_phone_iq_get(User, Server, Els, IQ) ->
-    Reductions = lookup_reductions(Server, User),
-    {Users, Remaining} = lookup_numbers(items_from_xml(Els), Reductions),
-    ok = save_reductions(Server, User, Remaining),
+handle_phone_iq_get(_User, _Server, Els, IQ) ->
+    Users = lookup_numbers(items_from_xml(Els)),
     iq_result(IQ, users_to_xml(Users)).
 
-lookup_reductions(Server, User) ->
-    Criteria = #{user => User, server => Server, date => get_date()},
-    case wocky_db:select_one(Server, phone_lookup_count, count, Criteria) of
-        not_found -> ?DEFAULT_REDUCTIONS;
-        null -> ?DEFAULT_REDUCTIONS;
-        Reductions -> Reductions
-    end.
-
-save_reductions(Server, User, Reductions) ->
-    ok = wocky_db:insert(Server, phone_lookup_count,
-                         #{user => User,
-                           server => Server,
-                           date => get_date(),
-                           count => Reductions,
-                           '[ttl]' => ?REDUCTION_TTL}).
-
-get_date() ->
-    {Date, _Time} = calendar:universal_time(),
-    Seconds = calendar:datetime_to_gregorian_seconds({Date, {0, 0, 0}}),
-    wocky_db:seconds_to_timestamp(Seconds - ?EPOCH_SECONDS).
-
-lookup_numbers(Numbers, StartingReductions) ->
+lookup_numbers(Numbers) ->
     lists:foldr(fun (false, Acc) -> Acc;
-                    (Number, {UserData, Reductions}) ->
-                        {Result, Remaining} = lookup_number(Number, Reductions),
-                        {[{Number, Result} | UserData], Remaining}
-                end, {[], StartingReductions}, Numbers).
-
-lookup_number(_Number, 0) ->
-    {not_acceptable, 0};
-lookup_number(Number, Reductions) ->
-    {lookup_number(Number), Reductions - 1}.
+                    (Number, Acc) ->
+                        Result = lookup_number(Number),
+                        [{Number, Result} | Acc]
+                end, [], Numbers).
 
 lookup_number(Number) ->
     ?wocky_user:find_by(phone_number, maybe_add_plus(Number)).
