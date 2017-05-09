@@ -205,7 +205,8 @@ perform_owner_action(follow_me, Bot, From, _To, IQ) ->
     #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
     do([error_m ||
         Expiry <- get_follow_me_expiry(Attrs),
-        ?wocky_bot:follow_me(Bot, Expiry),
+        ?wocky_bot:update(Bot, #{follow_me => true,
+                                 follow_me_expiry => Expiry}),
         publish_follow_me(From, Bot),
         wocky_bot_expiry_mon:follow_started(?wocky_bot:to_jid(Bot), Expiry),
         {ok, follow_me_result(IQ)}
@@ -213,7 +214,7 @@ perform_owner_action(follow_me, Bot, From, _To, IQ) ->
 
 perform_owner_action(unfollow_me, Bot, From, _To, IQ) ->
     do([error_m ||
-        ?wocky_bot:unfollow_me(Bot),
+        ?wocky_bot:update(Bot, #{follow_me => false, follow_me_expiry => nil}),
         publish_unfollow_me(From, Bot),
         wocky_bot_expiry_mon:follow_stopped(?wocky_bot:to_jid(Bot)),
         {ok, follow_me_result(IQ)}
@@ -318,7 +319,7 @@ get_id_and_bot(Fields) ->
     end.
 
 check_id(ID) ->
-    case ?wocky_bot:get(ID) of
+    case ?wocky_repo:get(?wocky_bot, ID) of
         nil -> {error, ?ERR_ITEM_NOT_FOUND};
         Bot -> {ok, {ID, Bot}}
     end.
@@ -686,7 +687,7 @@ make_ret_elements(Bot, User) ->
 
 meta_fields(Bot, User) ->
     Subscribers = ?wocky_bot:subscribers(Bot),
-    ImageItems = ?wocky_bot:image_items_count(Bot),
+    ImageItems = ?wocky_item:get_image_count(Bot),
     Subscribed = ?wocky_user:'subscribed?'(User, Bot),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"image_items">>, int, ImageItems),

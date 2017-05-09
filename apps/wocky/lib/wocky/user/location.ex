@@ -77,7 +77,7 @@ defmodule Wocky.User.Location do
       maybe_do_async fn ->
         user
         |> User.get_owned_bots_with_follow_me
-        |> Enum.each(&Bot.set_location(&1, loc.lat, loc.lon, loc.accuracy))
+        |> Enum.each(&Bot.update(&1, %{lat: loc.lat, lon: loc.lon}))
       end
     end
 

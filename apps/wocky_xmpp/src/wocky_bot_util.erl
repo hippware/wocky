@@ -56,7 +56,7 @@ get_id_from_node_value(Node) ->
     end.
 
 get_bot(ID) ->
-    case ?wocky_bot:get(ID) of
+    case ?wocky_repo:get(?wocky_bot, ID) of
         nil -> {error, ?ERR_ITEM_NOT_FOUND};
         Bot -> {ok, Bot}
     end.

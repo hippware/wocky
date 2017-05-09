@@ -58,7 +58,7 @@ retract(Bot, To, SubEl) ->
 %%%===================================================================
 
 get_items(Bot, RSM) ->
-    Items = ?wocky_bot:items(Bot),
+    Items = ?wocky_item:get(Bot),
     rsm_util:filter_with_rsm(Items, RSM).
 
 make_results(Items, RSMOut) ->
@@ -74,7 +74,7 @@ make_items(Items) ->
 %%%===================================================================
 
 get_bot_item_images(Bot, RSMIn) ->
-    Items = ?wocky_bot:image_items(Bot),
+    Items = ?wocky_item:get_images(Bot),
     Images = wocky_bot_util:extract_images(Items),
     rsm_util:filter_with_rsm(Images, RSMIn).
 
@@ -101,7 +101,7 @@ image_el(Owner, #{id := ID, image := Image, updated := Updated}) ->
 publish_item(From, Bot, ItemID, Entry) ->
     Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
-    {ok, Item} = ?wocky_bot:publish_item(Bot, ItemID, EntryBin, Image),
+    {ok, Item} = ?wocky_item:publish(Bot, ItemID, EntryBin, Image),
     Message = notification_message(Bot, make_item_element(Item)),
     notify_subscribers(From, Bot, Message).
 
@@ -113,7 +113,7 @@ has_image(Entry) ->
 %%%===================================================================
 
 retract_item(From, Bot, ItemID) ->
-    ?wocky_bot:delete_item(Bot, ItemID),
+    ?wocky_item:delete(Bot, ItemID),
     Message = notification_message(Bot, retract_item(ItemID)),
     notify_subscribers(From, Bot, Message).
 

@@ -40,7 +40,7 @@ init_per_suite(Config) ->
 
     Bot = ?wocky_factory:insert(bot, #{id => ?BOT, user => Alice}),
 
-    ?wocky_bot:share(Bot, Bob, Alice),
+    ?wocky_share:put(Bob, Bot, Alice),
 
     Config2.
 

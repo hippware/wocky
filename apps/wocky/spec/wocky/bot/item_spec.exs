@@ -132,6 +132,19 @@ defmodule Wocky.Bot.ItemSpec do
       end
     end
 
+    describe "publish/4" do
+      before do
+        new_id = ID.new
+        result = Item.publish(shared.bot, new_id, "testing", true)
+        {:ok, new_id: new_id, result: result}
+      end
+
+      it "should return the item" do
+        {:ok, item} = shared.result
+        item.id |> should(eq shared.new_id)
+      end
+    end
+
     describe "delete/1" do
       context "when items exists" do
         before do

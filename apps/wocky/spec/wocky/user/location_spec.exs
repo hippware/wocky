@@ -238,7 +238,7 @@ defmodule Wocky.User.LocationSpec do
         end
 
         it "should update the bot location" do
-          bot = Bot.get(shared.bot.id)
+          bot = Repo.get(Bot, shared.bot.id)
           bot.lat |> should(eq shared.loc.lat)
           bot.lon |> should(eq shared.loc.lon)
         end
@@ -255,7 +255,7 @@ defmodule Wocky.User.LocationSpec do
         end
 
         it "should not update the bot location" do
-          bot = Bot.get(shared.bot.id)
+          bot = Repo.get(Bot, shared.bot.id)
           bot.lat |> should_not(eq shared.loc.lat)
           bot.lon |> should_not(eq shared.loc.lon)
         end

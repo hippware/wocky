@@ -159,7 +159,7 @@ stop_timers(References) ->
 
 send_expiry_warning(JIDBin) when is_binary(JIDBin) ->
     BotID = ?wocky_bot:get_id_from_jid(jid:from_binary(JIDBin)),
-    case ?wocky_bot:get(BotID) of
+    case ?wocky_repo:get(?wocky_bot, BotID) of
         nil -> ok;
         Bot -> send_expiry_warning(Bot)
     end;

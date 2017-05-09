@@ -243,7 +243,7 @@ defmodule Wocky.User do
 
   @spec can_access?(t, Bot.t) :: boolean
   def can_access?(user, bot),
-    do: owns?(user, bot) || Bot.public?(bot) || Bot.shared_to?(bot, user)
+    do: owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot)
 
   @doc "Returns all bots that the user owns"
   @spec get_owned_bots(t) :: [Bot.t]

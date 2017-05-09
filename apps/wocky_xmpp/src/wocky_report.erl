@@ -15,7 +15,7 @@
 -spec generate_bot_report(non_neg_integer()) -> iolist().
 generate_bot_report(Duration) ->
     After = ?timex:to_unix(?timex:now()) - (Duration * 60 * 60 * 24),
-    Bots = ?wocky_bot:all(),
+    Bots = ?wocky_repo:all(?wocky_bot),
     Report = lists:map(maybe_report_bot(_, After), Bots),
     [header(), Report].
 
@@ -50,7 +50,7 @@ report_bot(#{id := ID,
                    Lat, Lon,
                    vis_string(Public),
                    ?wocky_bot:subscriber_count(Bot),
-                   ?wocky_bot:image_items_count(Bot),
+                   ?wocky_item:get_image_count(Bot),
                    csv_escape(Description)]).
 
 csv_escape(nil) ->

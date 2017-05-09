@@ -26,7 +26,7 @@ handle_share(From, To, BotJID) ->
                  Sharer <- wocky_bot_util:get_user_from_jid(From),
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),
-                 ?wocky_bot:share(Bot, Recipient, Sharer),
+                 ?wocky_share:put(Recipient, Bot, Sharer),
                  send_notification(From, To, BotJID)
                 ]),
     case Result of

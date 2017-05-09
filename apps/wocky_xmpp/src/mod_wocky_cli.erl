@@ -162,7 +162,7 @@ make_friend({#{id := User1, server := Server1},
 %%%===================================================================
 
 fix_bot_images() ->
-    Result = ?wocky_bot:all(),
+    Result = ?wocky_repo:all(?wocky_bot),
     lists:foreach(fix_images_on_bot(_), Result).
 
 fix_images_on_bot(Bot = #{id          := ID,
