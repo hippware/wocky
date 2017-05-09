@@ -4,6 +4,10 @@ defmodule WockyAPI.LocationAPISpec do
   alias Wocky.Repo.Factory
   alias Wocky.Token
 
+  before_all do
+    WockyAPI.LocationAPI.start
+  end
+
   defp url(port, user_id) do
     "http://localhost:#{port}/api/v1/users/#{user_id}/location"
   end
@@ -52,7 +56,7 @@ defmodule WockyAPI.LocationAPISpec do
     """
   end
 
-  describe "Location HTTP API" do
+  xdescribe "Location HTTP API" do
     context "on success" do
       before do
         {:ok, code, _resp_headers, ref} =

@@ -1,4 +1,4 @@
-defmodule WockyAPI.LocationApi do
+defmodule WockyAPI.LocationAPI do
   @moduledoc "HTTP API implementation for sending user location updates"
 
   import OK, only: ["~>>": 2]
