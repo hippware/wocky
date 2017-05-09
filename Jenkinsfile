@@ -15,12 +15,10 @@ node {
     }
 
     stage('Unit Tests') {
-      env.CQLSH_NO_BUNDLED = "true"
+      sh "MIX_ENV=test mix prepare"
       sh "MIX_ENV=test mix ecto.create"
       sh "MIX_ENV=test mix ecto.migrate"
-      sh "MIX_ENV=test mix prepare"
       sh "mix espec"
-      sh "mix eunit"
     }
 
     stage('Integration Tests') {

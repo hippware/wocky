@@ -7,7 +7,6 @@ defmodule Wocky.Release.Mixfile do
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       preferred_cli_env: [espec:   :test,
-                          eunit:   :test,
                           ct:      :test,
                           release: :prod],
       deps: deps(),

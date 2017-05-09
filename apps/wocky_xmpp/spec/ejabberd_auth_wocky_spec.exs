@@ -1,39 +1,35 @@
-defmodule EjabberdAuthWockySpec do
-  use ESpec, async: true
+defmodule :ejabberd_auth_wocky_spec do
+  use ESpec, async: true, sandbox: true
+  use SandboxHelper
 
-  alias Wocky.ID
+  alias Wocky.Repo.ID
   alias Wocky.Token
-  alias :ejabberd_auth_wocky, as: Auth
+
+  before do
+    user = ID.new
+    resource = ID.new
+    {:ok, _} =
+      :ejabberd_auth_wocky.try_register(user, shared.server, "password")
+    {:ok, {token, _}} = Token.assign(user, resource)
+    {:ok, user: user, resource: resource, token: token}
+  end
 
   describe "check_password/3 with token" do
-    before do
-      user = ID.new
-      resource = ID.new
-      :ok = Auth.try_register(user, shared.server, "password")
-      {:ok, {token, _}} = Token.assign(user, shared.server, resource)
-      {:ok, user: user, resource: resource, token: token}
-    end
-
-    finally do
-      Token.release(shared.user, shared.server, shared.resource)
-      Auth.remove_user(shared.user, shared.server)
-    end
-
     it "should return true when the user exists and token matches" do
       shared.user
-      |> Auth.check_password(shared.server, shared.token)
+      |> :ejabberd_auth_wocky.check_password(shared.server, shared.token)
       |> should(be_true())
     end
 
     it "should return false when the user exists but the token doesn't match" do
       shared.user
-      |> Auth.check_password(shared.server, Token.new)
+      |> :ejabberd_auth_wocky.check_password(shared.server, Token.generate)
       |> should(be_false())
     end
 
     it "should return false when the user does not exist" do
       ID.new
-      |> Auth.check_password(shared.server, shared.token)
+      |> :ejabberd_auth_wocky.check_password(shared.server, shared.token)
       |> should(be_false())
     end
   end

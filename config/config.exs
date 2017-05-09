@@ -28,7 +28,6 @@ config :distillery,
     :meck,
     :mix_ct,
     :mix_elvis,
-    :mix_eunit,
     :mustache,
     :parse_trans,
     :proper
