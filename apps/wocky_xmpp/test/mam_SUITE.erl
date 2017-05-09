@@ -508,8 +508,8 @@ send_rsm_messages(Config) ->
         timer:sleep(1000),
 
         %% Get whole history.
-        escalus:send(Alice,
-                     stanza_archive_request(P, <<"all_messages">>, ?BJID(?BOB))),
+        escalus:send(
+          Alice, stanza_archive_request(P, <<"all_messages">>, ?BJID(?BOB))),
 
         [_ArcIQ|AllMessages] =
             assert_respond_size(15, wait_archive_respond_iq_first(Alice)),
