@@ -18,9 +18,9 @@
       files: %{
         #
         # You can give explicit globs or simply directories.
-        # In the latter case `**/*.{ex, exs}` will be used.
-        included: ["lib/", "src/", "web/", "apps/"],
-        excluded: [~r"/_build/", ~r"/deps/"]
+        # In the latter case `**/*.{ex,exs}` will be used.
+        included: ["lib/", "apps/"],
+        excluded: [~r"spec/", ~r"migrations/", ~r"config/"]
       },
       #
       # If you create your own checks, you must specify the source files for
@@ -85,6 +85,7 @@
         {Credo.Check.Readability.RedundantBlankLines, max_blank_lines: 2},
         {Credo.Check.Readability.Semicolons},
         {Credo.Check.Readability.SinglePipe},
+        {Credo.Check.Readability.SpaceAfterCommas},
         {Credo.Check.Readability.StringSigils},
         {Credo.Check.Readability.TrailingBlankLine},
         {Credo.Check.Readability.TrailingWhiteSpace},
@@ -104,6 +105,7 @@
         {Credo.Check.Warning.BoolOperationOnSameValues},
         {Credo.Check.Warning.IExPry},
         {Credo.Check.Warning.IoInspect},
+        {Credo.Check.Warning.LazyLogging, false},
         {Credo.Check.Warning.OperationOnSameValues},
         {Credo.Check.Warning.OperationWithConstantResult},
         {Credo.Check.Warning.UnusedEnumOperation},
