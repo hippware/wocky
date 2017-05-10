@@ -1,4 +1,4 @@
-defmodule Wocky.TROS.Test do
+defmodule Wocky.TROS.TestStore do
   @moduledoc "Test backend for the TROS file management system"
 
   use Wocky.JID

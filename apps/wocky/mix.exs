@@ -29,7 +29,7 @@ defmodule Wocky.Mixfile do
       mod: {Wocky.Application, []},
       env: [
         event_handler: Wocky.EventHandler,
-        tros_backend: Wocky.TROS.Test,
+        tros_backend: Wocky.TROS.TestStore,
         tros_s3_bucket: "wocky-tros",
         tros_s3_access_key_id: nil,
         tros_s3_secret_key: nil,
