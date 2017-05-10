@@ -7,6 +7,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
+  alias Wocky.Index.TestIndexer
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -17,6 +18,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.User
 
   before do
+    TestIndexer.reset
     user = Factory.insert(:user, %{resource: "testing"})
     {:ok, user: user, id: user.id, external_id: user.external_id}
   end
@@ -282,7 +284,11 @@ defmodule Wocky.UserSpec do
       new_user.resource |> should(be_nil())
     end
 
-    it "should update the user's entry in the full text search index"
+    context "full text search index", async: false do
+      it "should be updated" do
+        TestIndexer.get_index_operations |> should_not(be_empty())
+      end
+    end
 
     context "when a valid avatar is passed" do
       before do
@@ -391,10 +397,14 @@ defmodule Wocky.UserSpec do
       shared.id |> Token.get_all |> should(be_empty())
     end
 
-    it "should remove the user from the full text search index"
-
     it "should succeed if the user does not exist" do
       ID.new |> User.delete |> should(eq :ok)
+    end
+
+    context "full text search index", async: false do
+      it "should be updated" do
+        TestIndexer.get_index_operations |> should_not(be_empty())
+      end
     end
   end
 

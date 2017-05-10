@@ -6,8 +6,13 @@ defmodule Wocky.BotSpec do
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
+  alias Wocky.Index.TestIndexer
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+
+  before do
+    TestIndexer.reset
+  end
 
   describe "helper functions" do
     let :bot, do: Factory.build(:bot)
@@ -126,7 +131,16 @@ defmodule Wocky.BotSpec do
         %{} |> Bot.insert |> should(be_error_result())
       end
 
-      it "should update the search index"
+      context "full text search index", async: false do
+        before do
+          :bot |> Factory.params_for(user: user()) |> Bot.insert
+          :ok
+        end
+
+        it "should be updated" do
+          TestIndexer.get_index_operations |> should_not(be_empty())
+        end
+      end
     end
 
     describe "update/2" do
@@ -140,7 +154,16 @@ defmodule Wocky.BotSpec do
         %Bot{} |> Bot.update(%{}) |> should(be_error_result())
       end
 
-      it "should update the search index"
+      context "full text search index", async: false do
+        before do
+          Bot.update(bot(), %{title: "updated bot"})
+          :ok
+        end
+
+        it "should be updated" do
+          TestIndexer.get_index_operations |> should_not(be_empty())
+        end
+      end
     end
 
     describe "delete/1" do
@@ -154,7 +177,9 @@ defmodule Wocky.BotSpec do
         Repo.get(Bot, bot().id) |> should(be_nil())
       end
 
-      it "should update the search index"
+      it "should remove the bot from the full text search index" do
+        TestIndexer.get_index_operations |> should_not(be_empty())
+      end
     end
 
     describe "owner/1" do
