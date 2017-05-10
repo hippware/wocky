@@ -17,8 +17,6 @@
          unsubscribe/2,
          retrieve_subscribers/1]).
 
--define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
-
 
 %%%===================================================================
 %%% Setup

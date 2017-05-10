@@ -5,35 +5,32 @@ defmodule :access_query_spec do
   import :access_query, only: [run: 3]
 
   alias Wocky.Bot
+  alias Wocky.Bot.Share
+  alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.User
 
-  @alice_id ID.new
-  @bob_id ID.new
-  @bot_id ID.new
-
-  @alice_jid JID.make(@alice_id, "localhost")
-  @bob_jid JID.make(@bob_id, "localhost")
-  @carol_jid JID.make(ID.new, "localhost")
-  @bot_jid JID.make("", "localhost", "bot/" <> @bot_id)
-
   before_all do
-    alice = Factory.insert(:user, %{id: @alice_id, username: @alice_id})
-    bob = Factory.insert(:user, %{id: @bob_id, username: @bob_id})
-    bot = Factory.insert(:bot, %{id: @bot_id, user: alice})
-
-    Bot.share(bot, bob, alice)
-    User.subscribe(bob, bot)
-
     :mod_wocky_access.register("loop", __MODULE__)
     :mod_wocky_access.register("overflow", __MODULE__)
     :mod_wocky_access.register("timeout", __MODULE__)
   end
 
-  after_all do
-    User.delete(@alice_id)
-    User.delete(@bob_id)
+  before do
+    alice = Factory.insert(:user)
+    bob = Factory.insert(:user)
+    bot = Factory.insert(:bot, user: alice)
+
+    Share.put(bob, bot, alice)
+    Subscription.put(bob, bot)
+
+    {:ok, alice: alice, bob: bob, bot: bot}
+  end
+
+  finally do
+    User.delete(shared.alice.id)
+    User.delete(shared.bob.id)
   end
 
   def check_access("loop/1", _, _) do
@@ -51,31 +48,38 @@ defmodule :access_query_spec do
   end
 
   describe "run/3" do
-    it do: run(@bot_jid, @alice_jid, :view) |> should(eq :allow)
-    it do: run(@bot_jid, @alice_jid, :delete) |> should(eq :allow)
-    it do: run(@bot_jid, @alice_jid, :modify) |> should(eq :allow)
+    let :bot_jid, do: Bot.to_jid(shared.bot)
+    let :alice_jid, do: User.to_jid(shared.alice)
 
-    it do: run(@bot_jid, @bob_jid, :view) |> should(eq :allow)
-    it do: run(@bot_jid, @bob_jid, :delete) |> should(eq :deny)
-    it do: run(@bot_jid, @bob_jid, :modify) |> should(eq :deny)
+    it do: run(bot_jid(), alice_jid(), :view) |> should(eq :allow)
+    it do: run(bot_jid(), alice_jid(), :delete) |> should(eq :allow)
+    it do: run(bot_jid(), alice_jid(), :modify) |> should(eq :allow)
 
-    it do: run(@bot_jid, @carol_jid, :view) |> should(eq :deny)
-    it do: run(@bot_jid, @carol_jid, :delete) |> should(eq :deny)
-    it do: run(@bot_jid, @carol_jid, :modify) |> should(eq :deny)
+    let :bob_jid, do: User.to_jid(shared.bob)
+
+    it do: run(bot_jid(), bob_jid(), :view) |> should(eq :allow)
+    it do: run(bot_jid(), bob_jid(), :delete) |> should(eq :deny)
+    it do: run(bot_jid(), bob_jid(), :modify) |> should(eq :deny)
+
+    let :carol_jid, do: JID.make!(ID.new, "localhost")
+
+    it do: run(bot_jid(), carol_jid(), :view) |> should(eq :deny)
+    it do: run(bot_jid(), carol_jid(), :delete) |> should(eq :deny)
+    it do: run(bot_jid(), carol_jid(), :modify) |> should(eq :deny)
 
     context "with a redirect loop" do
       let :user, do: JID.make("", "localhost", "loop/1")
-      it do: run(user(), @alice_jid, :view) |> should(eq :deny)
+      it do: run(user(), alice_jid(), :view) |> should(eq :deny)
     end
 
     context "with a redirect overflow", slow: true do
       let :user, do: JID.make("", "localhost", "overflow/1")
-      it do: run(user(), @alice_jid, :view) |> should(eq :deny)
+      it do: run(user(), alice_jid(), :view) |> should(eq :deny)
     end
 
     context "with a timeout", slow: true do
       let :user, do: JID.make("", "localhost", "timeout")
-      it do: run(user(), @alice_jid, :view) |> should(eq :deny)
+      it do: run(user(), alice_jid(), :view) |> should(eq :deny)
     end
   end
 end

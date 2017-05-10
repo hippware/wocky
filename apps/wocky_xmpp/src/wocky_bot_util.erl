@@ -28,7 +28,7 @@
 
 
 get_user_from_jid(JID) ->
-    case ?wocky_user:find_by_jid(JID) of
+    case ?wocky_user:get_by_jid(JID) of
         nil -> {error, ?ERR_FORBIDDEN};
         User -> {ok, User}
     end.
