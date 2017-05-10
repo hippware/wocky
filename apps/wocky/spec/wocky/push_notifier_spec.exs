@@ -7,7 +7,7 @@ defmodule Wocky.PushNotifierSpec do
   alias Faker.Code
   alias Wocky.Device
   alias Wocky.PushNotifier
-  alias Wocky.PushNotifier.TestBackend
+  alias Wocky.PushNotifier.TestNotifier
   alias Wocky.Repo
   alias Wocky.Repo.Factory
 
@@ -16,7 +16,7 @@ defmodule Wocky.PushNotifierSpec do
   @message  "Message content"
 
   before do
-    TestBackend.reset
+    TestNotifier.reset
 
     user = Factory.insert(:user, %{server: shared.server})
     jid = JID.make(user.username, user.server, @resource)
@@ -40,7 +40,7 @@ defmodule Wocky.PushNotifierSpec do
       end
 
       it "should register the device with the backend" do
-        [{_, jid, platform, device_id}] = TestBackend.get_registrations
+        [{_, jid, platform, device_id}] = TestNotifier.get_registrations
         jid |> should(eq JID.to_binary(shared.jid))
         platform |> should(eq @platform)
         device_id |> should(eq shared.device_id)
@@ -58,7 +58,7 @@ defmodule Wocky.PushNotifierSpec do
     context "on failure" do
       before do
         Repo.delete_all(Device)
-        TestBackend.reset
+        TestNotifier.reset
 
         result = PushNotifier.enable(shared.jid, @platform, "error")
         {:ok, result: result}
@@ -69,7 +69,7 @@ defmodule Wocky.PushNotifierSpec do
       end
 
       it "should not register the device" do
-        TestBackend.get_registrations |> should(eq [])
+        TestNotifier.get_registrations |> should(eq [])
       end
 
       it "should not insert anything into the database" do
@@ -89,7 +89,7 @@ defmodule Wocky.PushNotifierSpec do
     end
 
     it "should remove the device registration" do
-      TestBackend.get_registrations |> should(eq [])
+      TestNotifier.get_registrations |> should(eq [])
     end
 
     it "should remove the database records" do
@@ -110,7 +110,7 @@ defmodule Wocky.PushNotifierSpec do
     end
 
     it "should remove all device registrations" do
-      TestBackend.get_registrations |> should(eq [])
+      TestNotifier.get_registrations |> should(eq [])
     end
 
     it "should remove all database records" do
@@ -130,7 +130,7 @@ defmodule Wocky.PushNotifierSpec do
       end
 
       it "should send a push notification" do
-        [{_, message}] = TestBackend.get_notifications
+        [{_, message}] = TestNotifier.get_notifications
         message |> should(eq @message)
       end
     end
@@ -160,7 +160,7 @@ defmodule Wocky.PushNotifierSpec do
     end
 
     it "should send a push notification to each endpoint" do
-      TestBackend.get_notifications |> should(have_size 2)
+      TestNotifier.get_notifications |> should(have_size 2)
     end
   end
 end

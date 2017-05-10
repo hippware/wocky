@@ -25,7 +25,7 @@
 
 -export([set_visibility/3]).
 
--define(notification_handler, 'Elixir.Wocky.PushNotifier.TestBackend').
+-define(notification_handler, 'Elixir.Wocky.PushNotifier.TestNotifier').
 
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).

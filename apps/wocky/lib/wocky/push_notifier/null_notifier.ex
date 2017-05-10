@@ -1,4 +1,4 @@
-defmodule Wocky.PushNotifier.NullBackend do
+defmodule Wocky.PushNotifier.NullNotifier do
   @moduledoc """
   Implements a null `PushNotifier`. All operations are no-ops that ignore
   their inputs. This handler effectively disables notifications.

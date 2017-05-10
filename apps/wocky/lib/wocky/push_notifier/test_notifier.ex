@@ -1,4 +1,4 @@
-defmodule Wocky.PushNotifier.TestBackend do
+defmodule Wocky.PushNotifier.TestNotifier do
   @moduledoc """
   Implements a testing `PushNotifier`. All notifications are recorded and the
   call is logged, but no further action occurs. The notifications can then be

@@ -5,7 +5,7 @@ defmodule :mod_wocky_notifications_spec do
 
   import :mod_wocky_notifications
 
-  alias Wocky.PushNotifier.TestBackend
+  alias Wocky.PushNotifier.TestNotifier
   alias Wocky.Repo.ID
   alias Wocky.Repo.Factory
   alias Wocky.User
@@ -47,7 +47,7 @@ defmodule :mod_wocky_notifications_spec do
   end
 
   before do
-    TestBackend.reset
+    TestNotifier.reset
 
     user = Factory.insert(:user)
     {:ok, user: user, user_jid: User.to_jid(user)}
@@ -74,7 +74,7 @@ defmodule :mod_wocky_notifications_spec do
           end
 
           it "should register the device" do
-            [{_, jid, platform, device_id}] = TestBackend.get_registrations
+            [{_, jid, platform, device_id}] = TestNotifier.get_registrations
             expect jid |> to(eq JID.to_binary(shared.user_jid))
             expect platform |> to(eq "apple")
             expect device_id |> to(eq @test_id)
@@ -92,7 +92,7 @@ defmodule :mod_wocky_notifications_spec do
           end
 
           it "should not register the device" do
-            expect TestBackend.get_registrations |> to(eq [])
+            expect TestNotifier.get_registrations |> to(eq [])
           end
         end
       end
@@ -109,7 +109,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should remove the device registration" do
-          expect TestBackend.get_registrations |> to(eq [])
+          expect TestNotifier.get_registrations |> to(eq [])
         end
       end
     end
@@ -128,7 +128,7 @@ defmodule :mod_wocky_notifications_spec do
         xit "should send a notification" do
           # Wait for the event to be processed
           Process.sleep(50)
-          [{_, message}] = TestBackend.get_notifications
+          [{_, message}] = TestNotifier.get_notifications
           expect message |> to(end_with "Message content")
         end
       end
@@ -140,7 +140,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should not send a notification" do
-          expect TestBackend.get_notifications |> to(eq [])
+          expect TestNotifier.get_notifications |> to(eq [])
         end
       end
 
@@ -151,7 +151,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should not send a notification" do
-          expect TestBackend.get_notifications |> to(eq [])
+          expect TestNotifier.get_notifications |> to(eq [])
         end
       end
 
@@ -173,7 +173,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should not send a notification" do
-          expect TestBackend.get_notifications |> to(eq [])
+          expect TestNotifier.get_notifications |> to(eq [])
         end
       end
     end
@@ -185,7 +185,7 @@ defmodule :mod_wocky_notifications_spec do
       end
 
       it "should remove all device registrations" do
-        expect TestBackend.get_registrations |> to(eq [])
+        expect TestNotifier.get_registrations |> to(eq [])
       end
     end
   end
