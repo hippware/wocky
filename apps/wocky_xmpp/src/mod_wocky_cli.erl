@@ -315,7 +315,7 @@ reindex(Index) ->
 %%%===================================================================
 
 get_user(Handle) ->
-    case ?wocky_user:find_by(handle, Handle) of
+    case ?wocky_repo:get_by(?wocky_user, [{handle, Handle}]) of
         nil ->
             {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
         User ->

@@ -359,7 +359,7 @@ get_location_from_attrs(Attrs) ->
 get_bots_near_location(From, Lat, Lon) ->
     case 'Elixir.Wocky.Index':geosearch(Lat, Lon) of
         {ok, AllBots} ->
-            User = ?wocky_user:find_by_jid(From),
+            User = ?wocky_user:get_by_jid(From),
             VisibleBots = lists:filter(
                             geosearch_access_filter(User, _), AllBots),
             {ok, make_geosearch_result(VisibleBots)};
@@ -704,7 +704,7 @@ map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
     [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} |
      map_to_fields(maps:without([lat, lon], Map))];
 map_to_fields(Map = #{user_id := UserID}) ->
-    User = ?wocky_user:find(UserID),
+    User = ?wocky_repo:get(?wocky_user, UserID),
     [#field{name = <<"owner">>, type = jid, value = ?wocky_user:to_jid(User)} |
      map_to_fields(maps:without([user_id], Map))];
 map_to_fields(Map = #{public := Public}) ->

@@ -27,7 +27,7 @@ handle_share(From, To, BotJID) ->
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),
                  ?wocky_share:put(Recipient, Bot, Sharer),
-                 send_notification(From, To, BotJID)
+                 send_notification(Sharer, Recipient, Bot)
                 ]),
     case Result of
         ok -> ok;
@@ -45,8 +45,8 @@ check_can_share(Sharer, Bot) ->
             end
     end.
 
-send_notification(From, To, BotJID) ->
-    Event = ?bot_share_event:new(#{from => From, to => To, bot => BotJID}),
+send_notification(From, To, Bot) ->
+    Event = ?bot_share_event:new(#{from => From, to => To, bot => Bot}),
     ?wocky_event_handler:broadcast(Event).
 
 %%%===================================================================

@@ -45,11 +45,11 @@ defmodule Wocky.EventHandler.PushNotification do
   end
   defp handle_event(%BotShareEvent{to: to} = event, _state) do
     body = format(event)
-    PushNotifier.push_all(to, body)
+    PushNotifier.push_all(to_jid(to), body)
   end
   defp handle_event(%NewMessageEvent{to: to} = event, _state) do
     body = format(event)
-    PushNotifier.push_all(to, body)
+    PushNotifier.push_all(to_jid(to), body)
   end
   defp handle_event(_, _) do
     :ok
@@ -75,11 +75,25 @@ defmodule Wocky.EventHandler.PushNotification do
     inspect(event)
   end
 
-  defp get_handle(from) do
-    jid(luser: user) = from
-    case User.get_handle(user) do
+  defp to_jid(%User{} = user), do: User.to_jid(user)
+  defp to_jid(jid() = jid), do: jid
+
+  defp get_handle(obj) do
+    case do_get_handle(obj) do
       nil -> "Someone"
-      h -> h
+      "" -> "Someone"
+      handle -> handle
     end
   end
+
+  defp do_get_handle(obj) do
+    case get_user(obj) do
+      nil -> nil
+      user -> user.handle
+    end
+  end
+
+  defp get_user(nil), do: nil
+  defp get_user(%User{} = user), do: user
+  defp get_user(jid() = jid), do: User.get_by_jid(jid)
 end

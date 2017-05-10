@@ -30,7 +30,6 @@ maybe_report_bot(_, _) ->
 
 report_bot(#{id := ID,
              title := Title,
-             user_id := OUser,
              address := Address,
              lat := Lat,
              lon := Lon,
@@ -39,7 +38,7 @@ report_bot(#{id := ID,
              created_at := CreatedAt,
              updated_at := UpdatedAt
             } = Bot) ->
-    Handle = ?wocky_user:get_handle(OUser),
+    #{handle := Handle} = ?wocky_bot:owner(Bot),
     io_lib:fwrite("~s,\"~s\",\"~s\",~s,~s,\"~s\",~f,~f,~s,~B,~B,\"~s\"\n",
                   [ID,
                    csv_escape(Title),

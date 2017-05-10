@@ -4,6 +4,8 @@ defmodule Wocky.BotSpec do
   use Wocky.JID
 
   alias Wocky.Bot
+  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.TempSubscription
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.User
@@ -186,8 +188,8 @@ defmodule Wocky.BotSpec do
         sub = Factory.insert(:user)
         temp_sub = Factory.insert(:user, resource: "testing")
 
-        User.subscribe(sub, bot())
-        User.subscribe_temporary(temp_sub, bot(), node())
+        Subscription.put(sub, bot())
+        TempSubscription.put(temp_sub, bot(), node())
       end
 
       describe "subscribers/1" do

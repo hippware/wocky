@@ -51,7 +51,7 @@ lookup_numbers(Numbers) ->
                 end, [], Numbers).
 
 lookup_number(Number) ->
-    ?wocky_user:find_by(phone_number, maybe_add_plus(Number)).
+    ?wocky_repo:get_by(?wocky_user, [{phone_number, maybe_add_plus(Number)}]).
 
 maybe_add_plus(<<"+", _/binary>> = String) -> String;
 maybe_add_plus(String) -> <<"+", String/binary>>.
@@ -76,7 +76,7 @@ lookup_handles(Handles) ->
                 end, [], Handles).
 
 lookup_handle(Handle) ->
-    ?wocky_user:find_by(handle, Handle).
+    ?wocky_repo:get_by(?wocky_user, [{handle, Handle}]).
 
 
 %%%===================================================================

@@ -47,7 +47,7 @@ stop(Host) ->
 %%%===================================================================
 
 subscribe(User, Bot) ->
-    ?wocky_user:subscribe(User, Bot),
+    ?wocky_subscription:put(User, Bot),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
@@ -55,7 +55,7 @@ subscribe(User, Bot) ->
 %%%===================================================================
 
 unsubscribe(User, Bot) ->
-    ?wocky_user:unsubscribe(User, Bot),
+    ?wocky_subscription:delete(User, Bot),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
@@ -91,7 +91,7 @@ handle_subscribe_temporary(From, _Server, BotID) ->
 
 do_subscribe_temporary(User, Bot) ->
     case wocky_bot_util:check_access(User, Bot) of
-        ok -> ?wocky_user:subscribe_temporary(User, Bot, node());
+        ok -> ?wocky_temp_subscription:put(User, Bot, node());
         _ -> ok
     end.
 
@@ -103,7 +103,7 @@ handle_unsubscribe_temporary(From, _Server, BotID) ->
     do([error_m ||
         Bot <- wocky_bot_util:get_bot(BotID),
         User <- wocky_bot_util:get_user_from_jid(From),
-        ?wocky_user:unsubscribe_temporary(User, Bot)
+        ?wocky_temp_subscription:delete(User, Bot)
        ]).
 
 %%%===================================================================
