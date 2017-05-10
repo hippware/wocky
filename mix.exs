@@ -31,7 +31,16 @@ defmodule Wocky.Release.Mixfile do
   defp deps do
     [
       {:distillery, "~> 1.1", runtime: false},
-      {:dialyxir,   "~> 0.5", only: :dev, runtime: false}
+      {:dialyxir,   "~> 0.5", only: :dev, runtime: false},
+      {:mix_ct,
+        github: "hippware/mix_ct",
+        branch: "master",
+        only: :test},
+      {:mix_eunit,
+        github: "hippware/mix_eunit",
+        branch: "working",
+        override: true,
+        only: :test},
     ]
   end
 
