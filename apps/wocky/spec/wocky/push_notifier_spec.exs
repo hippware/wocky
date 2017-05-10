@@ -99,7 +99,7 @@ defmodule Wocky.PushNotifierSpec do
 
   describe "delete/1" do
     before do
-      other_jid = JID.replace_resource(shared.jid, "other")
+      other_jid = jid(shared.jid, resource: "other", lresource: "other")
       _ = PushNotifier.enable(other_jid, @platform, "987654321")
       result = PushNotifier.delete(shared.jid)
       {:ok, result: result}
@@ -149,7 +149,7 @@ defmodule Wocky.PushNotifierSpec do
 
   describe "push_all/2" do
     before do
-      other_jid = JID.replace_resource(shared.jid, "other")
+      other_jid = jid(shared.jid, resource: "other", lresource: "other")
       _ = PushNotifier.enable(other_jid, @platform, "987654321")
       result = PushNotifier.push_all(shared.jid, @message)
       {:ok, result: result}

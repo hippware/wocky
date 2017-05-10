@@ -73,7 +73,6 @@ defmodule Wocky.Bot do
 
   @spec get_id_from_jid(JID.t) :: id | nil
   def get_id_from_jid(jid(lresource: @bot_prefix <> id)), do: id
-  def get_id_from_jid({_, _, @bot_prefix <> id}), do: id
   def get_id_from_jid(_), do: nil
 
   @spec get_id_from_node(binary) :: id | nil

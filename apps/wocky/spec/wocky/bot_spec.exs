@@ -8,7 +8,6 @@ defmodule Wocky.BotSpec do
   alias Wocky.Bot.TempSubscription
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.User
 
   describe "helper functions" do
     let :bot, do: Factory.build(:bot)
@@ -28,31 +27,12 @@ defmodule Wocky.BotSpec do
     end
 
     describe "get_id_from_jid/1" do
-      it do
-        bot()
-        |> Bot.to_jid
-        |> Bot.get_id_from_jid
-        |> should(eq bot().id)
-      end
-
-      it do
-        bot()
-        |> Bot.to_jid
-        |> JID.to_lower
-        |> Bot.get_id_from_jid
-        |> should(eq bot().id)
-      end
+      it do: bot() |> Bot.to_jid |> Bot.get_id_from_jid |> should(eq bot().id)
+      it do: "bogus" |> Bot.get_id_from_jid |> should(be_nil())
 
       it do
         "bogus"
-        |> Bot.get_id_from_jid
-        |> should(be_nil())
-      end
-
-      it do
-        :user
-        |> Factory.build(resource: "testing")
-        |> User.to_jid
+        |> JID.make("localhost", "testing")
         |> Bot.get_id_from_jid
         |> should(be_nil())
       end

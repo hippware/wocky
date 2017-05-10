@@ -61,7 +61,7 @@ defmodule :access_query_spec do
     it do: run(bot_jid(), bob_jid(), :delete) |> should(eq :deny)
     it do: run(bot_jid(), bob_jid(), :modify) |> should(eq :deny)
 
-    let :carol_jid, do: JID.make!(ID.new, "localhost")
+    let :carol_jid, do: JID.make(ID.new, "localhost")
 
     it do: run(bot_jid(), carol_jid(), :view) |> should(eq :deny)
     it do: run(bot_jid(), carol_jid(), :delete) |> should(eq :deny)

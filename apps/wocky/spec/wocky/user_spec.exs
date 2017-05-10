@@ -44,7 +44,7 @@ defmodule Wocky.UserSpec do
     end
 
     context "when the user does not exist" do
-      subject do: ID.new |> JID.make!(shared.server) |> User.get_by_jid
+      subject do: ID.new |> JID.make(shared.server) |> User.get_by_jid
 
       it do: should(be_nil())
     end

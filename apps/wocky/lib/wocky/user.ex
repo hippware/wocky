@@ -90,7 +90,7 @@ defmodule Wocky.User do
 
   @spec to_jid(t, binary | nil) :: JID.t
   def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
-    JID.make!(user, server, resource || (u.resource || ""))
+    JID.make(user, server, resource || (u.resource || ""))
   end
 
   @spec get_by_jid(JID.t) :: t | nil

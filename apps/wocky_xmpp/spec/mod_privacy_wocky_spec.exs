@@ -24,14 +24,14 @@ defmodule :mod_privacy_wocky_spec do
       carol, shared.server, @privacy_list1, [
         listitem(
           type: :jid,
-          value: JID.to_lower(JID.make(karen, shared.server)),
+          value: :jid.to_lower(JID.make(karen, shared.server)),
           action: :block,
           order: 1,
           match_all: true
         ),
         listitem(
           type: :jid,
-          value: JID.to_lower(JID.make(karen, shared.server)),
+          value: :jid.to_lower(JID.make(karen, shared.server)),
           action: :block,
           order: 2,
           match_iq: true
