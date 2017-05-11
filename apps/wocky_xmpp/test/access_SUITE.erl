@@ -35,8 +35,8 @@ init_per_suite(Config) ->
         test_helper:setup_users([alice, tim, bob])
     ),
 
-    Alice = ?wocky_user:find(?ALICE),
-    Bob = ?wocky_user:find(?BOB),
+    Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+    Bob = ?wocky_repo:get(?wocky_user, ?BOB),
 
     Bot = ?wocky_factory:insert(bot, #{id => ?BOT, user => Alice}),
 

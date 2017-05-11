@@ -343,7 +343,7 @@ set_fields(Config) ->
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
-            ?wocky_user:find(?ALICE),
+            ?wocky_repo:get(?wocky_user, ?ALICE),
 
         % Robert should get an update for his roster record of Alice
         Received = escalus:wait_for_stanza(Robert),
@@ -463,7 +463,7 @@ handle_clash(Config) ->
         BobQueryStanza = set_request(?BOB, set_fields()),
         expect_iq_error(BobQueryStanza, Bob),
 
-        #{id := ?BOB, first_name := nil} = ?wocky_user:find(?BOB)
+        #{id := ?BOB, first_name := nil} = ?wocky_repo:get(?wocky_user, ?BOB)
     end).
 
 reserved_handle(Config) ->

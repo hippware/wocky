@@ -131,11 +131,11 @@ reset_tables(Config) ->
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
     ),
 
-    Alice = ?wocky_user:find(?ALICE),
-    Bob = ?wocky_user:find(?BOB),
-    Carol = ?wocky_user:find(?CAROL),
-    Karen = ?wocky_user:find(?KAREN),
-    Robert = ?wocky_user:find(?ROBERT),
+    Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+    Bob = ?wocky_repo:get(?wocky_user, ?BOB),
+    Carol = ?wocky_repo:get(?wocky_user, ?CAROL),
+    Karen = ?wocky_repo:get(?wocky_user, ?KAREN),
+    Robert = ?wocky_repo:get(?wocky_user, ?ROBERT),
 
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Bob}),
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Carol}),
