@@ -1,15 +1,13 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for TROS
 -module(tros_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
-
--include("wocky_db_seed.hrl").
--include("wocky.hrl").
+-include("test_helper.hrl").
 
 -define(S3_TIMEOUT, 5000).
 

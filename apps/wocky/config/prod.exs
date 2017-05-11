@@ -9,6 +9,7 @@ config :wocky, Wocky.Repo,
   pool_size: 15
 
 config :wocky,
+  tros_backend: Wocky.TROS.S3Store,
   async_location_processing: true,
   tros_s3_bucket: "wocky-tros-WOCKY_INST",
   tros_s3_access_key_id: "TROS_S3_ACCESS_KEY_ID",

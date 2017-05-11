@@ -65,26 +65,25 @@
 %%%
 -module(mod_wocky_mam).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, fun_chain}).
 
 -include("wocky.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 
-% This value MUST be higher than the one in the backend being used (such as
-% mod_mam_riak_timed_arch_yz) so that the messages are processed
--define(LOOKUP_HOOK_PRIORITY, 100).
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
-
 -export([
          %% MAM hook handlers
          lookup_messages_hook/14
         ]).
 
 -type result_row() :: {non_neg_integer(), ejabberd:jid(), exml:element()}.
+
+%% This value MUST be higher than the one in the backend being used (such as
+%% mod_mam_riak_timed_arch_yz) so that the messages are processed
+-define(LOOKUP_HOOK_PRIORITY, 100).
+
 
 %%%===================================================================
 %%% gen_mod implementation

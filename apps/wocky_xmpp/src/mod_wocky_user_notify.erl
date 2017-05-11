@@ -4,18 +4,16 @@
 %%%
 -module(mod_wocky_user_notify).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
--include("wocky_roster.hrl").
+
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
+
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -35,7 +33,7 @@ stop(Host) ->
 
 -spec user_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
 user_updated(LUser, _LServer) ->
-    User = ?wocky_user:find(LUser),
+    User = ?wocky_repo:get(?wocky_user, LUser),
     WithContact = ?wocky_roster_item:find_users_with_contact(LUser),
     lists:foreach(notify_user_update(User, _), WithContact).
 

@@ -6,12 +6,16 @@ defmodule Wocky.Release.Mixfile do
       apps_path: "apps",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
-      preferred_cli_env: [espec:   :test,
-                          eunit:   :test,
-                          ct:      :test,
-                          release: :prod],
+      preferred_cli_env: [
+        espec: :test,
+        ct: :test,
+        coveralls: :test,
+        "coveralls.html": :test,
+        release: :prod
+      ],
       deps: deps(),
       aliases: aliases(),
+      test_coverage: [tool: ExCoveralls, test_task: "espec"],
       dialyzer: [
         plt_add_apps: [:mix, :mnesia, :inets],
         plt_add_deps: :transitive,
@@ -32,15 +36,12 @@ defmodule Wocky.Release.Mixfile do
     [
       {:distillery, "~> 1.1", runtime: false},
       {:dialyxir,   "~> 0.5", only: :dev, runtime: false},
+      {:espec,       "~> 1.2", only: :test},
+      {:excoveralls, "~> 0.6", only: :test},
       {:mix_ct,
         github: "hippware/mix_ct",
         branch: "master",
-        only: :test},
-      {:mix_eunit,
-        github: "hippware/mix_eunit",
-        branch: "working",
-        override: true,
-        only: :test},
+        only: :test}
     ]
   end
 

@@ -5,15 +5,13 @@
 %%%
 -module(mod_wocky_publishing).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 -include("wocky_publishing.hrl").
+
+-behaviour(gen_mod).
 
 -export([init/0]).
 
@@ -25,6 +23,7 @@
 
 %% Notification callback
 -export([send_notification/3]).
+
 
 %%%===================================================================
 %%% gen_mod handlers

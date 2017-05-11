@@ -1,5 +1,7 @@
 -module(wocky_reg).
 
+-compile({parse_transform, do}).
+
 -include("wocky.hrl").
 -include("wocky_reg.hrl").
 
@@ -7,7 +9,6 @@
 
 -type reg_result() :: #reg_result{}.
 
--compile({parse_transform, do}).
 
 -spec register_user(binary()) ->
     {ok, reg_result()} | {error, {string(), string()}}.

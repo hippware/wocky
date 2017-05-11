@@ -5,17 +5,15 @@
 %%%
 -module(wocky_bot_users).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
--include("wocky_bot.hrl").
--include("wocky_roster.hrl").
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
+-include("wocky.hrl").
+-include("wocky_roster.hrl").
+
 -export([handle_share/3,
          notify_new_viewers/4]).
+
 
 %%%===================================================================
 %%% Action - bot shared
@@ -28,8 +26,8 @@ handle_share(From, To, BotJID) ->
                  Sharer <- wocky_bot_util:get_user_from_jid(From),
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),
-                 ?wocky_bot:share(Bot, Recipient, Sharer),
-                 send_notification(From, To, BotJID)
+                 ?wocky_share:put(Recipient, Bot, Sharer),
+                 send_notification(Sharer, Recipient, Bot)
                 ]),
     case Result of
         ok -> ok;
@@ -47,8 +45,8 @@ check_can_share(Sharer, Bot) ->
             end
     end.
 
-send_notification(From, To, BotJID) ->
-    Event = ?bot_share_event:new(#{from => From, to => To, bot => BotJID}),
+send_notification(From, To, Bot) ->
+    Event = ?bot_share_event:new(#{from => From, to => To, bot => Bot}),
     ?wocky_event_handler:broadcast(Event).
 
 %%%===================================================================

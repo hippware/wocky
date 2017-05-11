@@ -5,9 +5,9 @@ defmodule Wocky.User.LocationSpec do
 
   alias Faker.Address
   alias Wocky.Bot
+  alias Wocky.Bot.Subscription
   alias Wocky.Events.BotPerimeterEvent
   alias Wocky.Repo.Timestamp
-  alias Wocky.User
   alias Wocky.User.BotEvent
   alias Wocky.User.Location
 
@@ -25,7 +25,7 @@ defmodule Wocky.User.LocationSpec do
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)
 
-    :ok = User.subscribe(user, bot)
+    :ok = Subscription.put(user, bot)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end
@@ -238,7 +238,7 @@ defmodule Wocky.User.LocationSpec do
         end
 
         it "should update the bot location" do
-          bot = Bot.get(shared.bot.id)
+          bot = Repo.get(Bot, shared.bot.id)
           bot.lat |> should(eq shared.loc.lat)
           bot.lon |> should(eq shared.loc.lon)
         end
@@ -255,7 +255,7 @@ defmodule Wocky.User.LocationSpec do
         end
 
         it "should not update the bot location" do
-          bot = Bot.get(shared.bot.id)
+          bot = Repo.get(Bot, shared.bot.id)
           bot.lat |> should_not(eq shared.loc.lat)
           bot.lon |> should_not(eq shared.loc.lon)
         end

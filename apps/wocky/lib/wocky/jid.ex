@@ -1,7 +1,7 @@
 defmodule Wocky.JID do
   @moduledoc "TODO"
 
-  import Record, only: [defrecord: 2, is_record: 2]
+  import Record, only: [defrecord: 2]
 
   require Record
 
@@ -21,12 +21,6 @@ defmodule Wocky.JID do
   @type lserver   :: binary
   @type lresource :: binary
 
-  # A tuple-style JID
-  @type simple_jid :: {user, server, resource}
-  @type ljid :: {luser, lserver, lresource}
-
-  # A tuple-style JID without resource part
-  @type simple_bare_jid :: {luser, lserver}
   @type literal_jid :: binary
 
   @type jid :: record(:jid, user:      user,
@@ -64,55 +58,13 @@ defmodule Wocky.JID do
     end
   end
 
-  @spec make!(user, server, resource) :: t | no_return
-  def make!(user, server, resource \\ "") do
-    case make(user, server, resource) do
-      :error -> raise ArgumentError
-      jid -> jid
-    end
-  end
-
-  @spec make(simple_jid) :: t | :error
-  def make({user, server, resource}), do: make(user, server, resource)
-
-  @spec make!(simple_jid) :: t | no_return
-  def make!({user, server, resource}), do: make!(user, server, resource)
-
-  @spec make_noprep(luser, lserver, lresource) :: t
-  def make_noprep(luser, lserver, lresource) do
-    jid(user: luser,
-        server: lserver,
-        resource: lresource,
-        luser: luser,
-        lserver: lserver,
-        lresource: lresource)
-  end
-
-  @spec make_noprep(simple_jid) :: t
-  def make_noprep({luser, lserver, lresource}),
-    do: make_noprep(luser, lserver, lresource)
-
   @spec equal?(t, t) :: boolean
   def equal?(jid(luser: luser, lserver: lserver, lresource: lres),
              jid(luser: luser, lserver: lserver, lresource: lres)), do: true
   def equal?(_, _), do: false
 
-  @doc "Returns true if `are_equal(to_bare(A), to_bare(B))`"
-  @spec bare_equal?(t, t) :: boolean
-  def bare_equal?(jid(luser: luser, lserver: lserver),
-                  jid(luser: luser, lserver: lserver)), do: true
-  def bare_equal?(_, _), do: false
-
-  @spec from_binary(binary) :: t | :error
+  @spec from_binary(literal_jid) :: t | :error
   def from_binary(j), do: binary_to_jid1(j, [])
-
-  @spec from_binary!(binary) :: t | no_return
-  def from_binary!(j) do
-    case from_binary(j) do
-      :error -> raise ArgumentError
-      jid -> jid
-    end
-  end
 
   @spec binary_to_jid1(binary, [byte]) :: t | :error
   defp binary_to_jid1("@" <> _j, []), do: :error
@@ -154,14 +106,8 @@ defmodule Wocky.JID do
     make(to_string(n), to_string(s), to_string(Enum.reverse(r)))
   end
 
-  @spec to_binary(simple_jid | simple_bare_jid | jid) :: binary
-  def to_binary(jid(user: user, server: server, resource: resource)) do
-    to_binary({user, server, resource})
-  end
-  def to_binary({user, server}) do
-    to_binary({user, server, ""})
-  end
-  def to_binary({user, server, resource}) do
+  @spec to_binary(t) :: literal_jid
+  def to_binary(jid(luser: user, lserver: server, lresource: resource)) do
     prefix = case user do
       "" -> ""
       _ -> user <> "@"
@@ -172,10 +118,6 @@ defmodule Wocky.JID do
     end
     prefix <> server <> suffix
   end
-
-  @spec nodename?(<<>> | binary) :: boolean
-  def nodename?(""), do: false
-  def nodename?(j), do: nodeprep(j) != :error
 
   @spec nodeprep(server) :: {:ok, lserver} | :error
   defp nodeprep(s) when is_binary(s) and byte_size(s) < @sane_limit do
@@ -197,42 +139,4 @@ defmodule Wocky.JID do
 
   defp prep_check(r) when byte_size(r) < @sane_limit, do: {:ok, r}
   defp prep_check(_), do: :error
-
-  @spec to_lower(simple_jid | jid) :: simple_jid | :error
-  def to_lower(jid(luser: u, lserver: s, lresource: r)), do: {u, s, r}
-  def to_lower({u, s, r}) do
-    with {:ok, luser} <- nodeprep(u),
-         {:ok, lserver} <- nameprep(s),
-         {:ok, lresource} <- resourceprep(r)
-    do
-      {luser, lserver, lresource}
-    else
-      :error -> :error
-    end
-  end
-
-  @spec to_lus(jid) :: simple_bare_jid
-  def to_lus(jid(luser: u, lserver: s)), do: {u, s}
-
-  @spec to_bare(simple_jid | jid) :: simple_jid | jid
-  def to_bare({u, s, _r}), do: {u, s, ""}
-  def to_bare(full_jid) when is_record(full_jid, :jid) do
-    jid(full_jid, resource: "", lresource: "")
-  end
-
-  @spec replace_resource(jid, resource) :: jid | :error
-  def replace_resource(jid, resource) do
-    case resourceprep(resource) do
-      :error -> :error
-      {:ok, lresource} -> jid(jid, resource: resource, lresource: lresource)
-    end
-  end
-
-  @spec binary_to_bare(binary) :: jid | :error
-  def binary_to_bare(jid) when is_binary(jid) do
-    case from_binary(jid) do
-      :error -> :error
-      result -> to_bare(result)
-    end
-  end
 end

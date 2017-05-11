@@ -6,26 +6,21 @@
 
 -module(mod_wocky_conversations).
 
--behaviour(gen_mod).
+-compile({parse_transform, cut}).
 
 -include("wocky.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 
--compile({parse_transform, cut}).
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
-
 -export([handle_iq/3]).
-
 -export([archive_message_hook/9]).
 
 -define(DEFAULT_MAX, 50).
-
 -define(INDEX, <<"conversation">>).
-
 -define(datetime, 'Elixir.DateTime').
+
 
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(default_max,

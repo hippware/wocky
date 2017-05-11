@@ -1,45 +1,27 @@
 defmodule Wocky.JIDSpec do
   use ESpec, async: true
+  use Wocky.JID
+
+  subject do: JID.make("a", "b", "c")
 
   describe "make/3" do
+    it do: should(be_tuple())
+    it do: JID.make(<<0>>, "b", "c") |> should(eq :error)
+    it do: JID.make("a", "b", <<0>>) |> should(eq :error)
   end
 
-  describe "make!/3" do
-  end
-
-  describe "make/1" do
-  end
-
-  describe "make!/1" do
-  end
-
-  describe "make_noprep/3" do
+  describe "equal?/2" do
+    it do: assert JID.equal?(subject(), subject())
+    it do: refute JID.equal?(subject(), JID.make("a", "c"))
   end
 
   describe "from_binary/1" do
-  end
-
-  describe "from_binary!/1" do
+    it do: JID.from_binary("b") |> should(eq JID.make("", "b"))
+    it do: JID.from_binary("a@b") |> should(eq JID.make("a", "b"))
+    it do: JID.from_binary("a@b/c") |> should(eq JID.make("a", "b", "c"))
   end
 
   describe "to_binary/1" do
-  end
-
-  describe "nodename?/1" do
-  end
-
-  describe "to_lower/1" do
-  end
-
-  describe "to_lus/1" do
-  end
-
-  describe "to_bare/1" do
-  end
-
-  describe "replace_resource/2" do
-  end
-
-  describe "binary_to_bare/1" do
+    it do: JID.to_binary(subject()) |> should(eq "a@b/c")
   end
 end

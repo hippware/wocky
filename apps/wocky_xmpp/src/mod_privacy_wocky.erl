@@ -2,6 +2,9 @@
 %%% @doc Wocky backend for mod_privacy
 -module(mod_privacy_wocky).
 
+-include("wocky.hrl").
+-include_lib("ejabberd/include/mod_privacy.hrl").
+
 -behaviour(mod_privacy).
 
 -export([init/2,
@@ -18,11 +21,8 @@
 -export([default_list_items/2]).
 -endif.
 
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/mod_privacy.hrl").
-
 -define(DEFAULT_LIST, <<"default">>).
+
 
 %%====================================================================
 %% mod_privacy callbacks

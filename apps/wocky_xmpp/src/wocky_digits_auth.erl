@@ -6,9 +6,10 @@
 %%% number returned matches the one the user supplied.
 -module(wocky_digits_auth).
 
+-compile({parse_transform, do}).
+
 -export([verify/1]).
 
--compile({parse_transform, do}).
 
 -spec verify(map()) -> {ok, {binary(), binary()}} |
                        {error, {non_neg_integer(), iolist()}}.

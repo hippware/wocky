@@ -5,14 +5,11 @@
 %%%
 -module(wocky_bot_util).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
--include("wocky_bot.hrl").
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
+
+-include("wocky.hrl").
 
 -export([get_user_from_jid/1,
          get_bot_from_jid/1,
@@ -29,8 +26,9 @@
          follow_stanza/2
         ]).
 
+
 get_user_from_jid(JID) ->
-    case ?wocky_user:find_by_jid(JID) of
+    case ?wocky_user:get_by_jid(JID) of
         nil -> {error, ?ERR_FORBIDDEN};
         User -> {ok, User}
     end.
@@ -58,7 +56,7 @@ get_id_from_node_value(Node) ->
     end.
 
 get_bot(ID) ->
-    case ?wocky_bot:get(ID) of
+    case ?wocky_repo:get(?wocky_bot, ID) of
         nil -> {error, ?ERR_ITEM_NOT_FOUND};
         Bot -> {ok, Bot}
     end.

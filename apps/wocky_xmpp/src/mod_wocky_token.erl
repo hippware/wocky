@@ -2,8 +2,6 @@
 %%% @doc Module to handle token related IQs
 -module(mod_wocky_token).
 
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
 
 %% gen_mod behaviour
@@ -12,6 +10,7 @@
 
 %% IQ handler callback
 -export([handle_iq/3]).
+
 
 %%%===================================================================
 %%% gen_mod implementation

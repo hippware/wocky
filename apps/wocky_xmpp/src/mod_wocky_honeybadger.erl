@@ -6,16 +6,16 @@
 
 -module(mod_wocky_honeybadger).
 
--behaviour(gen_mod).
+-include("wocky.hrl").
 
--include_lib("ejabberd/include/jlib.hrl").
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
 -define(HOOK_PRIORITY, 5).
-
 -define(honeybadger, 'Elixir.Wocky.Honeybadger').
+
 
 %%%===================================================================
 %%% gen_mod handlers

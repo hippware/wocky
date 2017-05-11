@@ -1,4 +1,4 @@
-defmodule Wocky.PushNotifier.SNSBackend do
+defmodule Wocky.PushNotifier.SNSNotifier do
   @moduledoc """
   Implementes the `PushNotifier` behavior for Amazon SNS.
   """

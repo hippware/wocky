@@ -1,4 +1,4 @@
-defmodule Wocky.PushNotifier.TestBackend do
+defmodule Wocky.PushNotifier.TestNotifier do
   @moduledoc """
   Implements a testing `PushNotifier`. All notifications are recorded and the
   call is logged, but no further action occurs. The notifications can then be
@@ -26,7 +26,7 @@ defmodule Wocky.PushNotifier.TestBackend do
 
   def enable(_, _, _, _, "error"), do: {:error, :testing}
   def enable(user, server, resource, platform, device) do
-    jid = user |> JID.make!(server, resource) |> JID.to_binary
+    jid = user |> JID.make(server, resource) |> JID.to_binary
     Logger.info("""
     Notification registration request for #{jid} with device '#{device}'\
     """)

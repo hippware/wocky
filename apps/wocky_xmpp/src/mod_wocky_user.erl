@@ -4,22 +4,26 @@
 %%%
 -module(mod_wocky_user).
 
+-compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--export([
-   start/2,
-   stop/1,
-   handle_iq/3
-        ]).
-
 -include("wocky.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 
 -behaviour(gen_mod).
 
--compile({parse_transform, do}).
+-export([
+         start/2,
+         stop/1,
+         handle_iq/3
+        ]).
+
+%% Delay between sending result of a delete request and calling the
+%% delete hook (which terminates the connection). This is needed to
+%% ensure that the deleting user receives the IQ response before
+%% the connection is dropped.
+-define(USER_DELETE_DELAY, 2000).
+
 
 %%--------------------------------------------------------------------
 %% gen_mod interface
@@ -246,7 +250,7 @@ is_visible(_,    private)  -> false;
 is_visible(_,    public)   -> true.
 
 get_resp_fields(Fields, _LServer, LUser) ->
-    case ?wocky_user:find(LUser) of
+    case ?wocky_repo:get(?wocky_user, LUser) of
         nil ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->

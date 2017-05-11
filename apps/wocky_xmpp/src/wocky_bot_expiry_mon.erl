@@ -2,12 +2,11 @@
 %%% @doc Server to monitor and notify expiry of bot follow-me
 -module(wocky_bot_expiry_mon).
 
--behaviour(gen_server).
-
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include("wocky.hrl").
+
+-behaviour(gen_server).
 
 %% API
 -export([start_link/0,
@@ -25,13 +24,13 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
-
 -define(WARNING_TIME, timer:minutes(10)).
 
 -record(state, {bots = #{} :: map(), %% #{BotJID => [timer_ref()]}
                 warning_time = ?WARNING_TIME :: non_neg_integer()
                }).
 -type state() :: #state{}.
+
 
 %%%===================================================================
 %%% API
@@ -160,12 +159,12 @@ stop_timers(References) ->
 
 send_expiry_warning(JIDBin) when is_binary(JIDBin) ->
     BotID = ?wocky_bot:get_id_from_jid(jid:from_binary(JIDBin)),
-    case ?wocky_bot:get(BotID) of
+    case ?wocky_repo:get(?wocky_bot, BotID) of
         nil -> ok;
         Bot -> send_expiry_warning(Bot)
     end;
 send_expiry_warning(#{user_id := OwnerID, follow_me_expiry := Expiry} = Bot) ->
-    OwnerJID = ?wocky_user:to_jid(?wocky_user:find(OwnerID)),
+    OwnerJID = ?wocky_user:to_jid(?wocky_repo:get(?wocky_user, OwnerID)),
     BotJID = ?wocky_bot:to_jid(Bot),
     ExpiryStr = integer_to_binary(Expiry div 1000),
     Stanza =

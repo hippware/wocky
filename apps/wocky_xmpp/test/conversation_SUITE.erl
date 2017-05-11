@@ -1,16 +1,15 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite mod_conversations.erl
 -module(conversation_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
 
--include("wocky.hrl").
--include("wocky_db_seed.hrl").
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -216,7 +215,7 @@ archive_message(#{id := ID,
                   message := XML}) ->
     mod_wocky_conversations:archive_message_hook(
       ok,
-      ?LOCAL_CONTEXT,
+      ?SERVER,
       ID,
       unused,
       jid:from_binary(UserJID),
@@ -231,11 +230,11 @@ direction(false) -> incoming.
 archive_users() ->
     [jid:to_binary(J) ||
      J <- [
-           ?ALICE_JID,
-           ?BOB_JID,
-           ?CAROL_JID,
-           ?KAREN_JID,
-           ?ROBERT_JID
+           ?JID(?ALICE),
+           ?JID(?BOB),
+           ?JID(?CAROL),
+           ?JID(?KAREN),
+           ?JID(?ROBERT)
           ]].
 
 random_conversation_list() ->

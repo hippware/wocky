@@ -8,13 +8,12 @@
 -compile({parse_transform, cut}).
 
 -include("wocky.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
-
--define(ansi, 'Elixir.IO.ANSI').
 
 -export([dump/3,
          dump/4]).
+
+-define(ansi, 'Elixir.IO.ANSI').
+
 
 % All user's traffic
 dump(Handle, StartBin, DurationBin) ->
@@ -31,7 +30,7 @@ dump(Handle, Resource, StartBin, DurationBin) ->
        ]).
 
 get_user(Handle) ->
-    case ?wocky_user:find_by(handle, Handle) of
+    case ?wocky_repo:get_by(?wocky_user, [{handle, Handle}]) of
         nil -> {error, "User not found"};
         #{id := ID} -> {ok, ID}
     end.

@@ -1,26 +1,18 @@
-defmodule ModWockyNotificationsSpec do
-  use ESpec
-  use Wocky.JID
+defmodule :mod_wocky_notifications_spec do
+  use ESpec, sandbox: true
+  use SandboxHelper
+  use IQHandlerSpec
 
-  import Record, only: [defrecordp: 2, extract: 2]
+  import :mod_wocky_notifications
 
-  alias Wocky.PushNotifier.TestBackend
-  alias :mod_wocky_notifications, as: ModWockyNotifications
+  alias Wocky.PushNotifier.TestNotifier
+  alias Wocky.Repo.ID
+  alias Wocky.Repo.Factory
+  alias Wocky.User
 
-  require Record
-
-  defrecordp :xmlel, extract(:xmlel, from_lib: "exml/include/exml.hrl")
-  defrecordp :xmlcdata, extract(:xmlcdata, from_lib: "exml/include/exml.hrl")
-  defrecordp :iq, extract(:iq, from_lib: "ejabberd/include/jlib.hrl")
-
-  @user          "043e8c96-ba30-11e5-9912-ba0be0483c18"
-  @server        "localhost"
-  @resource      "testing"
-  @local_context "localhost"
-  @jid           JID.make(@user, @server, @resource)
   @test_id       "123456789"
 
-  def enable_notifications(device \\ @test_id) do
+  def enable_notifications(user_jid, device \\ @test_id) do
     iq_set = iq(
       type: :set,
       sub_el: xmlel(
@@ -28,17 +20,17 @@ defmodule ModWockyNotificationsSpec do
         attrs: [{"device", device}, {"platform", "apple"}]
       )
     )
-    ModWockyNotifications.handle_iq(@jid, @jid, iq_set)
+    handle_iq(user_jid, @server_jid, iq_set)
   end
 
-  def disable_notifications do
+  def disable_notifications(user_jid) do
     iq_set = iq(
       type: :set,
       sub_el: xmlel(
         name: "disable"
       )
     )
-    ModWockyNotifications.handle_iq(@jid, @jid, iq_set)
+    handle_iq(user_jid, @server_jid, iq_set)
   end
 
   def packet(name \\ "message", type \\ "chat") do
@@ -55,13 +47,16 @@ defmodule ModWockyNotificationsSpec do
   end
 
   before do
-    TestBackend.reset
+    TestNotifier.reset
+
+    user = Factory.insert(:user)
+    {:ok, user: user, user_jid: User.to_jid(user)}
   end
 
   describe "mod_wocky_notifications" do
     describe "handling an IQ 'get'" do
       it "should return an error result" do
-        result = ModWockyNotifications.handle_iq(@jid, @jid, iq(type: :get))
+        result = handle_iq(shared.user_jid, @server_jid, iq(type: :get))
         expect iq(result, :type) |> to(eq :error)
       end
     end
@@ -70,7 +65,7 @@ defmodule ModWockyNotificationsSpec do
       context "with an 'enable' element" do
         context "on success" do
           before do
-            result = enable_notifications()
+            result = enable_notifications(shared.user_jid)
             {:ok, result: result}
           end
 
@@ -79,23 +74,16 @@ defmodule ModWockyNotificationsSpec do
           end
 
           it "should register the device" do
-            [{_, jid, platform, device_id}] = TestBackend.get_registrations
-            expect jid |> to(eq JID.to_binary(@jid))
+            [{_, jid, platform, device_id}] = TestNotifier.get_registrations
+            expect jid |> to(eq JID.to_binary(shared.user_jid))
             expect platform |> to(eq "apple")
             expect device_id |> to(eq @test_id)
-          end
-
-          xit "should insert the device_id and endpoint into the database" do
-            # row = WockyDb.select_row(@local_context, :device, :all,
-            #   %{user: @user, server: @server, resource: @resource})
-
-            # expect row.device_id |> to(eq @test_id)
           end
         end
 
         context "on failure" do
           before do
-            result = enable_notifications("error")
+            result = enable_notifications(shared.user_jid, "error")
             {:ok, result: result}
           end
 
@@ -104,22 +92,15 @@ defmodule ModWockyNotificationsSpec do
           end
 
           it "should not register the device" do
-            expect TestBackend.get_registrations |> to(eq [])
-          end
-
-          xit "should not insert anything into the database" do
-            # row = WockyDb.select_row(@local_context, :device, :all,
-            #   %{user: @user, server: @server, resource: @resource})
-
-            # expect row |> to(eq :not_found)
+            expect TestNotifier.get_registrations |> to(eq [])
           end
         end
       end
 
       context "with a 'disable' element" do
         before do
-          _ = enable_notifications()
-          result = disable_notifications()
+          _ = enable_notifications(shared.user_jid)
+          result = disable_notifications(shared.user_jid)
           {:ok, result: result}
         end
 
@@ -128,56 +109,49 @@ defmodule ModWockyNotificationsSpec do
         end
 
         it "should remove the device registration" do
-          expect TestBackend.get_registrations |> to(eq [])
-        end
-
-        xit "should remove the device_id and endpoint from the database" do
-          # row = WockyDb.select_row(@local_context, :device, :all,
-          #   %{user: @user, server: @server, resource: @resource})
-
-          # expect row |> to(eq :not_found)
+          expect TestNotifier.get_registrations |> to(eq [])
         end
       end
     end
 
     describe "handling the user_send_packet hook" do
       before do
-        _ = enable_notifications()
+        _ = enable_notifications(shared.user_jid)
       end
 
       context "with a message packet" do
         before do
-          :ok = ModWockyNotifications.user_send_packet_hook(
-            @jid, @jid, packet())
+          :ok = user_send_packet_hook(
+            shared.user_jid, JID.make(ID.new, "localhost"), packet())
         end
 
-        it "should send a notification" do
+        xit "should send a notification" do
           # Wait for the event to be processed
           Process.sleep(50)
-          [{_, message}] = TestBackend.get_notifications
+          [{_, message}] = TestNotifier.get_notifications
           expect message |> to(end_with "Message content")
         end
       end
 
       context "with a non-message packet" do
         before do
-          :ok = ModWockyNotifications.user_send_packet_hook(
-            @jid, @jid, packet("parlay"))
+          :ok = user_send_packet_hook(
+            shared.user_jid, @server_jid, packet("parlay"))
         end
 
         it "should not send a notification" do
-          expect TestBackend.get_notifications |> to(eq [])
+          expect TestNotifier.get_notifications |> to(eq [])
         end
       end
 
       context "with a non-chat message packet" do
         before do
-          :ok = ModWockyNotifications.user_send_packet_hook(
-            @jid, @jid, packet("message", "parlay"))
+          :ok = user_send_packet_hook(
+            shared.user_jid, @server_jid, packet("message", "parlay"))
         end
 
         it "should not send a notification" do
-          expect TestBackend.get_notifications |> to(eq [])
+          expect TestNotifier.get_notifications |> to(eq [])
         end
       end
 
@@ -194,33 +168,24 @@ defmodule ModWockyNotificationsSpec do
             ]
           )
 
-          result = ModWockyNotifications.user_send_packet_hook(
-            @jid, @jid, no_body)
+          result = user_send_packet_hook(shared.user_jid, @server_jid, no_body)
           {:ok, result: result}
         end
 
         it "should not send a notification" do
-          expect TestBackend.get_notifications |> to(eq [])
+          expect TestNotifier.get_notifications |> to(eq [])
         end
       end
     end
 
     describe "handling the remove_user hook" do
       before do
-        _ = enable_notifications()
-        :ok = ModWockyNotifications.remove_user_hook(@user, @server)
-        :ok
+        _ = enable_notifications(shared.user_jid)
+        :ok = remove_user_hook(shared.user.username, shared.user.server)
       end
 
       it "should remove all device registrations" do
-        expect TestBackend.get_registrations |> to(eq [])
-      end
-
-      xit "should remove all user records" do
-        # row = WockyDb.select_row(@local_context, :device, :all,
-        #   %{user: @user, server: @server, resource: @resource})
-
-        # expect row |> to(eq :not_found)
+        expect TestNotifier.get_registrations |> to(eq [])
       end
     end
   end

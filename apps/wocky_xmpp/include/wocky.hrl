@@ -10,56 +10,43 @@
 -ifndef(WOCKY_HRL).
 -define(WOCKY_HRL, true).
 
--record(table_def, {
-          name          :: atom(),
-          columns       :: [{atom(), atom()
-                                 | {set | list, atom()}
-                                 | {map, atom(), atom()}}],
-          primary_key   :: atom() | [[atom()] | atom()],
-          order_by = [] :: atom() | [{atom(), asc | desc}]
-         }).
+-include_lib("ejabberd/include/jlib.hrl").
+-include_lib("ejabberd/include/ejabberd.hrl").
 
--define(NS_ERRORS,        <<"hippware.com/hxep/errors">>).
--define(NS_TOKEN,         <<"hippware.com/hxep/token">>).
--define(NS_PHONE,         <<"hippware.com/hxep/phone">>).
--define(NS_HANDLE,        <<"hippware.com/hxep/handle">>).
--define(NS_BOT,           <<"hippware.com/hxep/bot">>).
--define(NS_BOT_EVENT,     <<"hippware.com/hxep/bot#event">>).
--define(NS_GROUP_CHAT,    <<"hippware.com/hxep/groupchat">>).
--define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
--define(NS_TROS,          <<"hippware.com/hxep/http-file">>).
--define(NS_WOCKY_ROSTER,  <<"hippware.com/hxep/roster">>).
--define(NS_USER,          <<"hippware.com/hxep/user">>).
--define(NS_ACCESS,        <<"hippware.com/hxep/access">>).
--define(NS_NOTIFICATIONS, <<"hippware.com/hxep/notifications">>).
--define(NS_CRASH_TEST,    <<"hippware.com/hxep/crash-test">>).
--define(NS_PUBLISHING,    <<"hippware.com/hxep/publishing">>).
+-define(HOME_STREAM_NODE, <<"home_stream">>).
+
+%% Standard time format to use unless there's a good reason to do otherwise
+-define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended}">>).
+
+%% Standard namespaces
+-define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
 
 %% Escalus defines NS_GEOLOC which causes problems when running tests
 -ifndef(NS_GEOLOC).
 -define(NS_GEOLOC,        <<"http://jabber.org/protocol/geoloc">>).
 -endif.
 
--define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
+%% Wocky namespaces
+-define(NS_ACCESS,        <<"hippware.com/hxep/access">>).
+-define(NS_BOT,           <<"hippware.com/hxep/bot">>).
+-define(NS_BOT_EVENT,     <<"hippware.com/hxep/bot#event">>).
+-define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
+-define(NS_CRASH_TEST,    <<"hippware.com/hxep/crash-test">>).
+-define(NS_ERRORS,        <<"hippware.com/hxep/errors">>).
+-define(NS_HANDLE,        <<"hippware.com/hxep/handle">>).
+-define(NS_NOTIFICATIONS, <<"hippware.com/hxep/notifications">>).
+-define(NS_PHONE,         <<"hippware.com/hxep/phone">>).
+-define(NS_PUBLISHING,    <<"hippware.com/hxep/publishing">>).
+-define(NS_TOKEN,         <<"hippware.com/hxep/token">>).
+-define(NS_TROS,          <<"hippware.com/hxep/http-file">>).
+-define(NS_USER,          <<"hippware.com/hxep/user">>).
 
--define(GROUP_CHAT_RESOURCE_PREFIX, "groupchat/").
--define(GROUP_CHAT_WITH_JID, <<"$$GROUP_CHAT$$">>).
-
--define(TOKEN_BYTES, 32).
--define(TOKEN_MARKER, "$T$").
--define(TOKEN_EXPIRE, 1209600). % two weeks in seconds
-
-% Delay between sending result of a delete request and calling the
-% delete hook (which terminates the connection). This is needed to
-% ensure that the deleting user receives the IQ response before
-% the connection is dropped.
--define(USER_DELETE_DELAY, 2000).
-
--define(HOME_STREAM_NODE, <<"home_stream">>).
-
-% Elixir module names
+%% Elixir module names
 -define(wocky_bot, 'Elixir.Wocky.Bot').
 -define(wocky_item, 'Elixir.Wocky.Bot.Item').
+-define(wocky_share, 'Elixir.Wocky.Bot.Share').
+-define(wocky_subscription, 'Elixir.Wocky.Bot.Subscription').
+-define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
 -define(wocky_conversation, 'Elixir.Wocky.Conversation').
 -define(wocky_factory, 'Elixir.Wocky.Repo.Factory').
 -define(wocky_home_stream_item, 'Elixir.Wocky.HomeStreamItem').
@@ -73,7 +60,7 @@
 -define(wocky_user, 'Elixir.Wocky.User').
 
 -define(tros, 'Elixir.Wocky.TROS').
--define(tros_s3, 'Elixir.Wocky.TROS.S3').
+-define(tros_s3, 'Elixir.Wocky.TROS.S3Store').
 -define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
 
 -define(wocky_event_handler, 'Elixir.Wocky.EventHandler').
@@ -87,9 +74,5 @@
 
 -define(timex, 'Elixir.Timex').
 -define(duration, 'Elixir.Timex.Duration').
-
-% Standard time format to use unless there's a good reason to do otherwise
--define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended}">>).
-
 
 -endif. % ifdef WOCKY_HRL

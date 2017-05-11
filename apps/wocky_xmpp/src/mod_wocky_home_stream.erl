@@ -5,14 +5,16 @@
 %%%
 -module(mod_wocky_home_stream).
 
--behaviour(gen_mod).
--behaviour(wocky_publishing_handler).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 
--export([start/2, stop/1]).
+-include("wocky.hrl").
+-include("wocky_publishing.hrl").
 
+-behaviour(gen_mod).
+-behaviour(wocky_publishing_handler).
+
+-export([start/2, stop/1]).
 -export([publish/4,
          delete/2,
          get/2,
@@ -20,18 +22,14 @@
          unavailable/1
         ]).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky.hrl").
--include("wocky_publishing.hrl").
-
--define(PACKET_FILTER_PRIORITY, 50).
--define(NODE_CLEANUP_PRIORITY, 80).
-
 -record(hs_subscription,
         {jid  :: ejabberd:simple_jid() | {binary(), binary(), '_'} | '_',
          node :: node() | '_'
         }).
+
+-define(PACKET_FILTER_PRIORITY, 50).
+-define(NODE_CLEANUP_PRIORITY, 80).
+
 
 %%%===================================================================
 %%% gen_mod handlers

@@ -88,6 +88,19 @@ defmodule Wocky.User do
     for field <- @update_fields, do: to_string(field)
   end
 
+  @spec to_jid(t, binary | nil) :: JID.t
+  def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
+    JID.make(user, server, resource || (u.resource || ""))
+  end
+
+  @spec get_by_jid(JID.t) :: t | nil
+  def get_by_jid(jid(luser: id, lresource: resource)) do
+    case Repo.get(User, id) do
+      nil -> nil
+      user -> %User{user | resource: resource}
+    end
+  end
+
   @doc """
   Creates a new user with a password.
   Used for testing only.
@@ -145,81 +158,6 @@ defmodule Wocky.User do
     end
   end
 
-  @doc """
-  Returns a map of all fields for a given user or `nil' if no such
-  user exists.
-  """
-  @spec find(id) :: t | nil
-  def find(id) do
-    Repo.get(User, id)
-  end
-
-  @spec find_by_jid(JID.t) :: t | nil
-  def find_by_jid(jid(luser: id, lresource: resource)) do
-    case Repo.get(User, id) do
-      nil -> nil
-      user -> %User{user | resource: resource}
-    end
-  end
-
-  @doc "Search for a user based on the value of a property"
-  @spec find_by(:handle | :phone_number | :external_id, binary) :: t | nil
-  def find_by(field, value) do
-    Repo.get_by(User, [{field, value}])
-  end
-
-  defp with_user(query, username) do
-    from u in query, where: u.username == ^username
-  end
-
-  defp select_handle(query) do
-    from u in query, select: u.handle
-  end
-
-  defp select_phone_number(query) do
-    from u in query, select: u.phone_number
-  end
-
-  @doc "Returns the user's handle"
-  @spec get_handle(id) :: handle | nil
-  def get_handle(id) do
-    User
-    |> with_user(id)
-    |> select_handle
-    |> Repo.one
-  end
-
-  @doc "Returns the user's phone number"
-  @spec get_phone_number(id) :: phone_number | nil
-  def get_phone_number(id) do
-    User
-    |> with_user(id)
-    |> select_phone_number
-    |> Repo.one
-  end
-
-  @doc "Subscribe to the bot"
-  @spec subscribe(t, Bot.t) :: :ok
-  def subscribe(user, bot) do
-    Subscription.put(user, bot)
-  end
-
-  @spec subscribe_temporary(t, Bot.t, atom | binary) :: :ok
-  def subscribe_temporary(user, bot, node) do
-    TempSubscription.put(user, bot, node)
-  end
-
-  @doc "Unsubscribe from the bot"
-  @spec unsubscribe(t, Bot.t) :: :ok
-  def unsubscribe(user, bot) do
-    Subscription.delete(user, bot)
-  end
-
-  @spec unsubscribe_temporary(t, Bot.t) :: :ok
-  def unsubscribe_temporary(user, bot) do
-    TempSubscription.delete(user, bot)
-  end
-
   @spec subscribed?(t, Bot.t) :: boolean
   def subscribed?(user, bot) do
     owns?(user, bot) ||
@@ -243,7 +181,7 @@ defmodule Wocky.User do
 
   @spec can_access?(t, Bot.t) :: boolean
   def can_access?(user, bot),
-    do: owns?(user, bot) || Bot.public?(bot) || Bot.shared_to?(bot, user)
+    do: owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot)
 
   @doc "Returns all bots that the user owns"
   @spec get_owned_bots(t) :: [Bot.t]
@@ -290,7 +228,7 @@ defmodule Wocky.User do
     |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
     |> unique_constraint(:handle)
     |> prepare_changes(fn changeset ->
-      maybe_cleanup_avatar(changeset.changes[:avatar], struct.avatar)
+      Avatar.maybe_delete_existing(changeset.changes[:avatar], struct.avatar)
       changeset
     end)
   end
@@ -341,10 +279,6 @@ defmodule Wocky.User do
     :ok = Index.user_updated(username, fields)
   end
 
-  defp maybe_cleanup_avatar(new_avatar, old_avatar) do
-    Avatar.maybe_delete_existing(new_avatar, old_avatar)
-  end
-
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
@@ -364,14 +298,9 @@ defmodule Wocky.User do
   @spec delete(id) :: :ok | no_return
   def delete(id) do
     User
-    |> with_user(id)
+    |> where(username: ^id)
     |> Repo.delete_all
 
     :ok = Index.user_removed(id)
-  end
-
-  @spec to_jid(t, binary | nil) :: JID.t
-  def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
-    JID.make!(user, server, resource || (u.resource || ""))
   end
 end

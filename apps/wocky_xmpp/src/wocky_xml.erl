@@ -1,10 +1,9 @@
 -module(wocky_xml).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("exml/include/exml_stream.hrl").
-
 -compile({parse_transform, cut}).
+
+-include("wocky.hrl").
+-include_lib("exml/include/exml_stream.hrl").
 
 -export([
          get_subel_cdata/2,
@@ -21,6 +20,7 @@
         ]).
 
 -type error() :: {error, jlib:xmlel()}.
+
 
 -spec get_subel_cdata(binary(), jlib:xmlel()) -> {ok, binary()} | error().
 get_subel_cdata(TagName, Element) ->

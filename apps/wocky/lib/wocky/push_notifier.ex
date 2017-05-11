@@ -34,9 +34,9 @@ defmodule Wocky.PushNotifier do
   def init do
     backend_type = Application.get_env(:wocky, :notification_system, "none")
     backend_module = case backend_type do
-      "aws" -> Wocky.PushNotifier.SNSBackend
-      "test" -> Wocky.PushNotifier.TestBackend
-      "none" -> Wocky.PushNotifier.NullBackend
+      "aws" -> Wocky.PushNotifier.SNSNotifier
+      "test" -> Wocky.PushNotifier.TestNotifier
+      "none" -> Wocky.PushNotifier.NullNotifier
     end
     Application.put_env(:wocky, :push_notification_backend, backend_module)
     backend_module.init()

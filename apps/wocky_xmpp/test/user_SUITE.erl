@@ -1,19 +1,18 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for mod_wocky_user
 -module(user_SUITE).
+
 -compile(export_all).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
-
--include("wocky.hrl").
--include("wocky_db_seed.hrl").
+-include("test_helper.hrl").
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
 -import(wocky_util, [iq_id/0]).
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -313,13 +312,13 @@ bulk_get(Config) ->
              children = [Result]}
       = expect_iq_success(
                  users_request(
-                   [?ALICE_B_JID, ?BOB_B_JID, ?TIM_B_JID,
+                   [?BJID(?ALICE), ?BJID(?BOB), ?BJID(?TIM),
                     <<"xxx">>, <<"xxx@123">>, <<>>]),
                  Alice),
       expect_bulk_results(Result,
-                          [{?ALICE_B_JID, all_fields()},
-                           {?BOB_B_JID, public_fields()},
-                           {?TIM_B_JID, error},
+                          [{?BJID(?ALICE), all_fields()},
+                           {?BJID(?BOB), public_fields()},
+                           {?BJID(?TIM), error},
                            {<<"xxx@123">>, error},
                            {<<>>, error},
                            {<<"xxx">>, error}
@@ -344,7 +343,7 @@ set_fields(Config) ->
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
-            ?wocky_user:find(?ALICE),
+            ?wocky_repo:get(?wocky_user, ?ALICE),
 
         % Robert should get an update for his roster record of Alice
         Received = escalus:wait_for_stanza(Robert),
@@ -464,7 +463,7 @@ handle_clash(Config) ->
         BobQueryStanza = set_request(?BOB, set_fields()),
         expect_iq_error(BobQueryStanza, Bob),
 
-        #{id := ?BOB, first_name := nil} = ?wocky_user:find(?BOB)
+        #{id := ?BOB, first_name := nil} = ?wocky_repo:get(?wocky_user, ?BOB)
     end).
 
 reserved_handle(Config) ->
@@ -527,7 +526,7 @@ non_uuid_avatar(Config) ->
             set_request(?ALICE,
                         [{<<"avatar">>, <<"file">>,
                           <<"tros:", (?ALICE)/binary, "@",
-                            ?LOCAL_CONTEXT/binary, "/file/blahblah">>}]),
+                            ?SERVER/binary, "/file/blahblah">>}]),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -578,7 +577,7 @@ set_fields() ->
      {<<"email">>, <<"string">>, <<"bob@alice.com">>},
      {<<"avatar">>, <<"file">>,
       <<"tros:", ?ALICE/binary, "@",
-        ?LOCAL_CONTEXT/binary, "/file/", ?AVATAR_FILE/binary>>}].
+        ?SERVER/binary, "/file/", ?AVATAR_FILE/binary>>}].
 
 delete_request() ->
     #xmlel{name = <<"iq">>,

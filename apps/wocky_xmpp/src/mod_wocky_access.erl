@@ -12,16 +12,11 @@
 %%%
 -module(mod_wocky_access).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
--include("wocky_bot.hrl").
 
--define(MANAGER_TABLE, mod_wocky_access_managers).
+-behaviour(gen_mod).
 
 -export([init/0]).
 
@@ -43,6 +38,9 @@
 -type access_result() :: allow | deny | {redirect, ejabberd:jid()}.
 
 -export_type([op/0, access_result/0]).
+
+-define(MANAGER_TABLE, mod_wocky_access_managers).
+
 
 %%%===================================================================
 %%% gen_mod handlers

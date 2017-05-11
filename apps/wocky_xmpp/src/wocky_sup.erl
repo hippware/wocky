@@ -2,9 +2,9 @@
 %%% @doc Top level wocky supervisor
 -module(wocky_sup).
 
--behaviour(supervisor).
-
 -include("wocky.hrl").
+
+-behaviour(supervisor).
 
 %% API
 -export([start_link/0]).

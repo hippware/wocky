@@ -11,7 +11,7 @@ ESpec.configure fn config ->
             {:already, :owner} -> :ok
             error -> error
           end
-    {:ok, tags: tags, server: "local.test"}
+    {:ok, tags: tags, server: "localhost"}
   end
 
   config.finally fn _shared ->

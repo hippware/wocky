@@ -4,20 +4,15 @@
 %%%
 -module(mod_wocky_cli).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/ejabberd_commands.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky_roster.hrl").
 -include("wocky.hrl").
+-include("wocky_roster.hrl").
+-include_lib("ejabberd/include/ejabberd_commands.hrl").
 
--define(s3, 'Elixir.ExAws.S3').
--define(ex_aws, 'Elixir.ExAws').
--define(enum, 'Elixir.Enum').
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -29,6 +24,10 @@
          reprocess_images/0,
          reindex/1
         ]).
+
+-define(s3, 'Elixir.ExAws.S3').
+-define(ex_aws, 'Elixir.ExAws').
+-define(enum, 'Elixir.Enum').
 
 
 %%%===================================================================
@@ -163,14 +162,14 @@ make_friend({#{id := User1, server := Server1},
 %%%===================================================================
 
 fix_bot_images() ->
-    Result = ?wocky_bot:all(),
+    Result = ?wocky_repo:all(?wocky_bot),
     lists:foreach(fix_images_on_bot(_), Result).
 
 fix_images_on_bot(Bot = #{id          := ID,
                           description := Description,
                           image       := BotImage}) ->
     io:fwrite("Bot: ~p - ~s\n", [binary_to_list(ID), Description]),
-    Images = ?wocky_bot:image_items(Bot),
+    Images = ?wocky_item:get_images(Bot),
     ImageURLs = [I || #{image := I} <- Images],
     ValidImages = [I || I <- [BotImage | ImageURLs], I =/= <<>>],
     fix_images(Bot, ValidImages).
@@ -316,7 +315,7 @@ reindex(Index) ->
 %%%===================================================================
 
 get_user(Handle) ->
-    case ?wocky_user:find_by(handle, Handle) of
+    case ?wocky_repo:get_by(?wocky_user, [{handle, Handle}]) of
         nil ->
             {error, "User '" ++ binary_to_list(Handle) ++ "' not found"};
         User ->

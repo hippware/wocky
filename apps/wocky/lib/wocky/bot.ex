@@ -58,6 +58,9 @@ defmodule Wocky.Bot do
                   :alerts, :follow_me, :follow_me_expiry, :tags]
   @required_fields [:id, :server, :user_id, :title, :lat, :lon, :radius]
 
+  #----------------------------------------------------------------------
+  # Helpers
+
   @spec make_node(t) :: binary
   def make_node(bot) do
     @bot_prefix <> bot.id
@@ -70,25 +73,17 @@ defmodule Wocky.Bot do
 
   @spec get_id_from_jid(JID.t) :: id | nil
   def get_id_from_jid(jid(lresource: @bot_prefix <> id)), do: id
-  def get_id_from_jid({_, _, @bot_prefix <> id}), do: id
   def get_id_from_jid(_), do: nil
 
   @spec get_id_from_node(binary) :: id | nil
   def get_id_from_node(@bot_prefix <> id), do: id
   def get_id_from_node(_), do: nil
 
-  @spec new :: t
-  def new, do: %Bot{}
+  @spec public?(t) :: boolean
+  def public?(%Bot{public: is_public}), do: is_public
 
-  @spec get(id) :: t | nil
-  def get(id) do
-    Repo.get(Bot, id)
-  end
-
-  @spec all :: [t]
-  def all do
-    Repo.all(Bot)
-  end
+  #----------------------------------------------------------------------
+  # Databse interaction
 
   @spec preallocate(User.id, User.server) :: t | no_return
   def preallocate(user_id, server) do
@@ -100,73 +95,40 @@ defmodule Wocky.Bot do
     |> Repo.insert!
   end
 
-  @spec pending?(id) :: boolean
-  def pending?(bot_id) do
-    case get(bot_id) do
-      nil -> false
-      bot -> bot.pending
-    end
-  end
-
   @spec changeset(t, map) :: Changeset.t
-  def changeset(struct, params \\ %{}) do
+  def changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
     |> validate_required(@required_fields)
+    |> update_change(:lat, &GeoUtils.normalize_latitude/1)
+    |> update_change(:lon, &GeoUtils.normalize_longitude/1)
     |> put_change(:pending, false)
     |> unique_constraint(:shortname)
     |> foreign_key_constraint(:user_id)
   end
 
   @spec insert(map) :: {:ok, t} | {:error, any}
-  def insert(params) do
-    %Bot{}
-    |> changeset(params)
-    |> Repo.insert
-  end
+  def insert(params), do: do_update(%Bot{}, params, &Repo.insert/1)
 
   @spec update(t, map) :: {:ok, t} | {:error, any}
-  def update(bot, params) do
-    bot
-    |> changeset(params)
-    |> Repo.update
+  def update(bot, params), do: do_update(bot, params, &Repo.update/1)
+
+  defp do_update(struct, params, op) do
+    case struct |> changeset(params) |> op.() do
+      {:ok, bot} = result ->
+        Index.bot_updated(bot.id, params)
+        result
+
+      {:error, _} = error ->
+        error
+    end
   end
 
-  @spec set_location(t, float, float, float) :: :ok
-  def set_location(%Bot{id: id} = bot, lat, lon, _accuracy) do
-    bot
-    |> cast(%{lat: lat, lon: lon}, [:lat, :lon])
-    |> update_change(:lat, &GeoUtils.normalize_latitude/1)
-    |> update_change(:lon, &GeoUtils.normalize_longitude/1)
-    |> Repo.update!
-
-    Index.bot_updated(id, %{lat: lat, lon: lon})
-  end
-
-  @spec items(t) :: [Item.t]
-  def items(bot) do
-    Item.get(bot)
-  end
-
-  @spec image_items(t) :: [Item.t]
-  def image_items(bot) do
-    Item.get_images(bot)
-  end
-
-  @spec image_items_count(t) :: pos_integer
-  def image_items_count(bot) do
-    Item.get_image_count(bot)
-  end
-
-  @spec publish_item(t, binary, binary, boolean) :: {:ok, Item.t}
-  def publish_item(bot, id, stanza, image?) do
-    :ok = Item.put(bot, id, stanza, image?)
-    {:ok, Item.get(bot, id)}
-  end
-
-  @spec delete_item(Bot.t, binary) :: :ok
-  def delete_item(bot, id) do
-    Item.delete(bot, id)
+  @spec delete(t) :: :ok
+  def delete(bot) do
+    Repo.delete(bot)
+    Index.bot_removed(bot.id)
+    :ok
   end
 
   @spec owner(t) :: User.t
@@ -207,38 +169,5 @@ defmodule Wocky.Bot do
       |> Repo.one
 
     subscribers + temp_subscribers + 1
-  end
-
-  @spec public?(t) :: boolean
-  def public?(%Bot{public: is_public}), do: is_public
-
-  @spec share(t, User.t, User.t) :: :ok
-  def share(bot, to, from) do
-    Share.put(to, bot, from)
-  end
-
-  @spec shared_to?(t, User.t) :: boolean
-  def shared_to?(bot, user) do
-    Share.exists?(user, bot)
-  end
-
-  @spec follow_me(t, pos_integer) :: {:ok, t} | {:error, any}
-  def follow_me(bot, expiry) do
-    bot
-    |> changeset(%{follow_me: true, follow_me_expiry: expiry})
-    |> Repo.update
-  end
-
-  @spec unfollow_me(t) :: {:ok, t} | {:error, any}
-  def unfollow_me(bot) do
-    bot
-    |> changeset(%{follow_me: false, follow_me_expiry: nil})
-    |> Repo.update
-  end
-
-  @spec delete(t) :: :ok
-  def delete(bot) do
-    Repo.delete(bot)
-    :ok
   end
 end

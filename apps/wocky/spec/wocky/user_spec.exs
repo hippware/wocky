@@ -4,17 +4,52 @@ defmodule Wocky.UserSpec do
   use Wocky.JID
 
   alias Faker.Internet
+  alias Wocky.Bot.Share
+  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.TempSubscription
+  alias Wocky.Index.TestIndexer
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
 
   before do
-    user = Factory.insert(:user, %{server: shared.server})
+    TestIndexer.reset
+    user = Factory.insert(:user, %{resource: "testing"})
     {:ok, user: user, id: user.id, external_id: user.external_id}
+  end
+
+  describe "valid_update_fields/0" do
+    subject do: User.valid_update_fields
+
+    it do: should(have_count 5)
+  end
+
+  describe "to_jid/1" do
+    it "should return the user's JID" do
+      jid1 = User.to_jid(shared.user)
+      jid2 = JID.make(shared.user.id, shared.user.server, shared.user.resource)
+      jid1 |> JID.equal?(jid2) |> should(be_true())
+    end
+  end
+
+  describe "get_by_jid/1" do
+    context "when the user exists" do
+      subject do: shared.user |> User.to_jid |> User.get_by_jid
+
+      it do: subject().id |> should(eq shared.user.id)
+      it do: subject().resource |> should(eq shared.user.resource)
+    end
+
+    context "when the user does not exist" do
+      subject do: ID.new |> JID.make(shared.server) |> User.get_by_jid
+
+      it do: should(be_nil())
+    end
   end
 
   describe "register_changeset/1 validations" do
@@ -131,7 +166,7 @@ defmodule Wocky.UserSpec do
     end
 
     it "should create a user" do
-      new_user = User.find(shared.id)
+      new_user = Repo.get(User, shared.id)
 
       new_user |> should_not(be_nil())
       new_user.server |> should(eq shared.server)
@@ -249,7 +284,11 @@ defmodule Wocky.UserSpec do
       new_user.resource |> should(be_nil())
     end
 
-    it "should update the user's entry in the full text search index"
+    context "full text search index", async: false do
+      it "should be updated" do
+        TestIndexer.get_index_operations |> should_not(be_empty())
+      end
+    end
 
     context "when a valid avatar is passed" do
       before do
@@ -276,7 +315,7 @@ defmodule Wocky.UserSpec do
         end
 
         it "should update the user's avatar" do
-          new_user = User.find(shared.id)
+          new_user = Repo.get(User, shared.id)
           new_user.avatar |> should(eq shared.avatar_url)
         end
       end
@@ -296,7 +335,7 @@ defmodule Wocky.UserSpec do
         end
 
         it "should not change the user's avatar" do
-          new_user = User.find(shared.id)
+          new_user = Repo.get(User, shared.id)
           new_user.avatar |> should(eq shared.avatar_url)
         end
 
@@ -324,7 +363,7 @@ defmodule Wocky.UserSpec do
         end
 
         it "should update the user's avatar" do
-          new_user = User.find(shared.id)
+          new_user = Repo.get(User, shared.id)
           new_user.avatar |> should(eq shared.avatar_url)
         end
 
@@ -355,112 +394,98 @@ defmodule Wocky.UserSpec do
     end
 
     it "should remove any tokens associated with the user" do
-      shared.id
-      |> Token.get_all
-      |> should(be_empty())
+      shared.id |> Token.get_all |> should(be_empty())
     end
-
-    it "should remove the user from the full text search index"
 
     it "should succeed if the user does not exist" do
-      ID.new
-      |> User.delete
-      |> should(eq :ok)
+      ID.new |> User.delete |> should(eq :ok)
+    end
+
+    context "full text search index", async: false do
+      it "should be updated" do
+        TestIndexer.get_index_operations |> should_not(be_empty())
+      end
     end
   end
 
-  describe "find/2" do
-    context "when the user exists" do
+  describe "bot relationships" do
+    before do
+      other_user = Factory.insert(:user)
+
+      owned_bot = Factory.insert(:bot, user: shared.user)
+      public_bot = Factory.insert(:bot, user: other_user, public: true)
+      shared_bot = Factory.insert(:bot, user: other_user)
+      subscribed_bot = Factory.insert(:bot, user: other_user)
+      temp_subscribed_bot = Factory.insert(:bot, user: other_user)
+      unaffiliated_bot = Factory.insert(:bot, user: other_user)
+
+      Share.put(shared.user, shared_bot, other_user)
+      Subscription.put(shared.user, subscribed_bot)
+      TempSubscription.put(shared.user, temp_subscribed_bot, node())
+
+      {:ok, [
+          owned_bot: owned_bot,
+          public_bot: public_bot,
+          shared_bot: shared_bot,
+          subscribed_bot: subscribed_bot,
+          temp_subscribed_bot: temp_subscribed_bot,
+          unaffiliated_bot: unaffiliated_bot
+        ]}
+    end
+
+    describe "owns?/2" do
+      it do: assert User.owns?(shared.user, shared.owned_bot)
+      it do: refute User.owns?(shared.user, shared.unaffiliated_bot)
+    end
+
+    describe "can_access?/2" do
+      it do: assert User.can_access?(shared.user, shared.owned_bot)
+      it do: assert User.can_access?(shared.user, shared.shared_bot)
+      it do: assert User.can_access?(shared.user, shared.public_bot)
+      it do: refute User.can_access?(shared.user, shared.unaffiliated_bot)
+    end
+
+    describe "subscribed?/2" do
+      it do: assert User.subscribed?(shared.user, shared.owned_bot)
+      it do: assert User.subscribed?(shared.user, shared.subscribed_bot)
+      it do: assert User.subscribed?(shared.user, shared.temp_subscribed_bot)
+      it do: refute User.subscribed?(shared.user, shared.unaffiliated_bot)
+    end
+
+    describe "get_subscriptions/1" do
+      subject do: User.get_subscriptions(shared.user)
+
+      it do: should(have_count 3)
+      it do: should(have_any &same_bot(&1, shared.owned_bot))
+      it do: should(have_any &same_bot(&1, shared.subscribed_bot))
+      it do: should(have_any &same_bot(&1, shared.temp_subscribed_bot))
+    end
+
+    describe "get_owned_bots/1" do
+      subject do: User.get_owned_bots(shared.user)
+
+      it do: should(have_count 1)
+      it do: should(have_any &same_bot(&1, shared.owned_bot))
+    end
+
+    describe "get_owned_bots_with_follow_me/1" do
       before do
-        result = User.find(shared.id)
-        {:ok, result: result}
+        follow_bot = Factory.insert(:bot, [
+              user: shared.user,
+              follow_me: true,
+              follow_me_expiry: Timestamp.now + 1000
+            ])
+
+        {:ok, follow_bot: follow_bot}
       end
 
-      it "should return a User struct" do
-        shared.result |> should(be_struct User)
-      end
+      subject do: User.get_owned_bots_with_follow_me(shared.user)
 
-      it "should return the right user" do
-        shared.result.id |> should(eq shared.id)
-        shared.result.server |> should(eq shared.server)
-        shared.result.external_id |> should(eq shared.external_id)
-      end
-    end
-
-    context "when the user does not exist" do
-      it "should return `nil`" do
-        ID.new
-        |> User.find
-        |> should(be_nil())
-      end
+      it do: should(have_count 1)
+      it do: should(have_any &same_bot(&1, shared.follow_bot))
+      it do: should_not(have_any &same_bot(&1, shared.owned_bot))
     end
   end
 
-  describe "find_by/2" do
-    context "when there is a matching user" do
-      before do
-        result = User.find_by(:external_id, shared.external_id)
-        {:ok, result: result}
-      end
-
-      it "should return a User struct" do
-        shared.result |> should(be_struct User)
-      end
-
-      it "should return matching user" do
-        shared.result |> should(eq User.find(shared.id))
-      end
-    end
-
-    context "when there is not a matching user" do
-      before do
-        result = User.find_by(:external_id, "nosuchuser")
-        {:ok, result: result}
-      end
-
-      it "should return nil" do
-        shared.result |> should(be_nil())
-      end
-    end
-  end
-
-  describe "get_handle/1" do
-    it "should return the user's handle" do
-      shared.id |> User.get_handle |> should(eq shared.user.handle)
-    end
-
-    it "should return nil if the user does not exist" do
-      ID.new |> User.get_handle |> should(eq nil)
-    end
-  end
-
-  describe "get_phone_number/1" do
-    it "should return the user's phone number" do
-      shared.id |> User.get_phone_number |> should(eq shared.user.phone_number)
-    end
-
-    it "should return nil if the user does not exist" do
-      ID.new |> User.get_phone_number |> should(eq nil)
-    end
-  end
-
-  describe "get_subscribed_bots/1" do
-
-  end
-
-  describe "get_owned_bots/1" do
-
-  end
-
-  describe "get_owned_bots_with_follow_me/1" do
-
-  end
-
-  describe "to_jid/1" do
-    it "should return the user's JID" do
-      jid1 = User.to_jid(shared.user)
-      jid2 = JID.make(shared.user.id, shared.user.server)
-      jid1 |> JID.equal?(jid2) |> should(be_true())
-    end
-  end
+  defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 end

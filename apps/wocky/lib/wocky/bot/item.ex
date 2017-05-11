@@ -70,6 +70,12 @@ defmodule Wocky.Bot.Item do
     :ok
   end
 
+  @spec publish(Bot.t, id, binary, boolean) :: {:ok, t}
+  def publish(bot, id, stanza, image?) do
+    :ok = put(bot, id, stanza, image?)
+    {:ok, get(bot, id)}
+  end
+
   @spec delete(Bot.t) :: :ok
   def delete(bot) do
     bot

@@ -11,6 +11,8 @@ config :wocky, Wocky.Repo,
   ownership_timeout: 30_000 # ms
 
 config :wocky,
+  notification_system: "test",
+  indexing_system: "test",
   tros_s3_bucket: "wocky-tros-test",
   tros_s3_access_key_id: "AKIAJED6VHHVIE2ZM5CA",
   tros_s3_secret_key: "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",

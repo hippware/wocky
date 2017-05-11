@@ -25,6 +25,14 @@ defmodule Wocky.TROS do
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
 
+  @spec make_jid(server, file_id) :: JID.t
+  def make_jid(server, file_id),
+    do: make_jid("", server, file_id)
+
+  @spec make_jid(owner, server, file_id) :: JID.t
+  def make_jid(owner, server, file_id),
+    do: JID.make(owner, server, "file/#{file_id}")
+
   @spec parse_url(url) :: {:ok, {server, file_id}} | {:error, :invalid_url}
   def parse_url("tros:" <> jid) do
     jid(lserver: server, lresource: resource) = JID.from_binary(jid)
@@ -34,14 +42,6 @@ defmodule Wocky.TROS do
     end
   end
   def parse_url(_), do: {:error, :invalid_url}
-
-  @spec make_jid(server, file_id) :: JID.t
-  def make_jid(server, file_id),
-    do: make_jid("", server, file_id)
-
-  @spec make_jid(owner, server, file_id) :: JID.t
-  def make_jid(owner, server, file_id),
-    do: JID.make(owner, server, "file/#{file_id}")
 
   @spec make_url(server, file_id) :: url
   def make_url(server, file_id),

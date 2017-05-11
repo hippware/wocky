@@ -4,17 +4,16 @@
 %%%
 -module(mod_wocky_crash_test).
 
--behaviour(gen_mod).
-
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
+
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
 %% IQ hook
 -export([handle_iq/3]).
+
 
 %%%===================================================================
 %%% gen_mod handlers

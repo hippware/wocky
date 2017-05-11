@@ -1,23 +1,16 @@
 %%% @copyright 2016+ Hippware, Inc.
 %%% @doc Integration test suite for mod_wocky_bot
 -module(bot_SUITE).
+
 -compile(export_all).
-
--include("wocky.hrl").
--include("wocky_bot.hrl").
--include("wocky_db_seed.hrl").
--include("test_helper.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("common_test/include/ct.hrl").
--include_lib("stdlib/include/assert.hrl").
-
 -compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
 
--export([set_visibility/3]).
-
--define(notification_handler, 'Elixir.Wocky.PushNotifier.TestBackend').
+-include_lib("common_test/include/ct.hrl").
+-include_lib("stdlib/include/assert.hrl").
+-include("test_helper.hrl").
+-include("wocky_bot.hrl").
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
@@ -30,6 +23,19 @@
                       add_to_s/2, set_notifications/2
                      ]).
 
+-export([set_visibility/3]).
+
+-define(notification_handler, 'Elixir.Wocky.PushNotifier.TestNotifier').
+
+-define(BOT_TITLE, <<"Alice's Bot">>).
+-define(BOT_NAME, <<"AliceBot">>).
+-define(BOT_DESC, <<"A test bot owned by Alice">>).
+-define(BOT_ADDRESS, <<"260 Tinakori Road, Thorndon, Wellington">>).
+-define(BOT_TYPE, <<"LucyLiuBot">>).
+-define(BOT_LAT, 55.0).
+-define(BOT_LON, 60.1).
+-define(BOT_RADIUS, 10000).
+
 -define(CREATE_TITLE,       <<"Created Bot">>).
 -define(CREATE_SHORTNAME,   <<"NewBot">>).
 -define(CREATE_DESCRIPTION, <<"Test bot for creation operation">>).
@@ -39,10 +45,12 @@
 -define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
 -define(CREATE_TYPE,        <<"floatbot">>).
 -define(CREATE_TAGS,        [<<"tag1">>, <<"tag2">>]).
+
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
 -define(CREATED_BOTS,       30).
 -define(CREATED_ITEMS,      50).
+
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -123,11 +131,11 @@ reset_tables(Config) ->
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
     ),
 
-    Alice = ?wocky_user:find(?ALICE),
-    Bob = ?wocky_user:find(?BOB),
-    Carol = ?wocky_user:find(?CAROL),
-    Karen = ?wocky_user:find(?KAREN),
-    Robert = ?wocky_user:find(?ROBERT),
+    Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+    Bob = ?wocky_repo:get(?wocky_user, ?BOB),
+    Carol = ?wocky_repo:get(?wocky_user, ?CAROL),
+    Karen = ?wocky_repo:get(?wocky_user, ?KAREN),
+    Robert = ?wocky_repo:get(?wocky_user, ?ROBERT),
 
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Bob}),
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Carol}),
@@ -149,9 +157,9 @@ reset_tables(Config) ->
     ?wocky_item:put(Bot, ?ITEM, ?ITEM_STANZA, true),
     ?wocky_item:put(Bot, ?ITEM2, ?ITEM_STANZA2, false),
 
-    ?wocky_bot:share(Bot, Bob, Alice),
-    ?wocky_user:subscribe(Carol, Bot),
-    ?wocky_user:subscribe(Karen, Bot),
+    ?wocky_share:put(Bob, Bot, Alice),
+    ?wocky_subscription:put(Carol, Bot),
+    ?wocky_subscription:put(Karen, Bot),
 
     Config2.
 
@@ -233,8 +241,8 @@ subscribers(Config) ->
       fun(Alice, Bob) ->
         % Alice can get the correct subscribers
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?CAROL_B_JID,
-                                   ?KAREN_B_JID]),
+        check_subscribers(Stanza, [?BJID(?CAROL),
+                                   ?BJID(?KAREN)]),
 
         % Bob can't because he's not the owner
         expect_iq_error(subscribers_stanza(), Bob)
@@ -248,7 +256,7 @@ unsubscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?KAREN_B_JID])
+        check_subscribers(Stanza2, [?BJID(?KAREN)])
       end).
 
 subscribe(Config) ->
@@ -270,9 +278,9 @@ subscribe(Config) ->
 
         % Alice can get the correct subscribers
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?KAREN_B_JID,
-                                    ?CAROL_B_JID,
-                                    ?BOB_B_JID])
+        check_subscribers(Stanza3, [?BJID(?KAREN),
+                                    ?BJID(?CAROL),
+                                    ?BJID(?BOB)])
       end).
 
 subscribe_temporary(Config) ->
@@ -291,7 +299,7 @@ subscribe_temporary(Config) ->
                                                     ?WOCKY_BOT_VIS_OPEN, 3)),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID,
+        check_subscribers(Stanza3, [?BJID(?CAROL), ?BJID(?KAREN),
                                     escalus_client:full_jid(Tim)]),
 
         ensure_all_clean([Alice, Tim])
@@ -305,18 +313,18 @@ unsubscribe_temporary(Config) ->
         %% Tim's previous temp subscription should have been cleared
         %% by his disconnection
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza, [?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza, [?BJID(?CAROL), ?BJID(?KAREN)]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?CAROL_B_JID, ?KAREN_B_JID,
+        check_subscribers(Stanza2, [?BJID(?CAROL), ?BJID(?KAREN),
                                     escalus_client:full_jid(Tim)]),
 
         unsubscribe_temporary(?BOT_B_JID, Tim),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?CAROL_B_JID, ?KAREN_B_JID]),
+        check_subscribers(Stanza3, [?BJID(?CAROL), ?BJID(?KAREN)]),
         ensure_all_clean([Alice, Tim])
       end).
 
@@ -356,24 +364,24 @@ retrieve_for_user(Config) ->
 
         %% Alice can see all her bots
         Stanza = expect_iq_success(
-                   retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
+                   retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Alice),
         check_returned_bots(Stanza, IDs, 0, ?CREATED_BOTS),
 
         Stanza2 = expect_iq_success(
-                   retrieve_stanza(?ALICE_B_JID,
+                   retrieve_stanza(?BJID(?ALICE),
                                    #rsm_in{direction = before}), Alice),
         check_returned_bots(Stanza2, IDs, 0, ?CREATED_BOTS),
 
         %% Bob can only see the public bots
         Stanza3 = expect_iq_success(
-                    retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Bob),
+                    retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Bob),
         check_returned_bots(Stanza3, PublicBots,
                             0, length(PublicBots)),
 
         %% Test some basic RSM functionality
         %% Bob can only see the subset of bots set to be visible by everyone
         Stanza6 = expect_iq_success(
-                    retrieve_stanza(?ALICE_B_JID,
+                    retrieve_stanza(?BJID(?ALICE),
                                     #rsm_in{index = 3, max = 2}), Bob),
         ExpectedBots = lists:sublist(PublicBots, 4, 2),
         check_returned_bots(Stanza6, ExpectedBots, 3,
@@ -389,7 +397,7 @@ retrieve_for_user(Config) ->
 
         %% Alice can see all her bots with the updated one now at the end
         Stanza7 = expect_iq_success(
-                   retrieve_stanza(?ALICE_B_JID, #rsm_in{}), Alice),
+                   retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Alice),
         check_returned_bots(Stanza7, (IDs -- [PublishBot]) ++ [PublishBot],
                             0, ?CREATED_BOTS)
 
@@ -776,10 +784,10 @@ create_field(Name, Type, Child) ->
 
 expected_create_fields() ->
     [{"id",                 string, any},
-     {"server",             string, ?LOCAL_CONTEXT},
+     {"server",             string, ?SERVER},
      {"title",              string, ?CREATE_TITLE},
      {"shortname",          string, ?CREATE_SHORTNAME},
-     {"owner",              jid,    ?ALICE_B_JID},
+     {"owner",              jid,    ?BJID(?ALICE)},
      {"description",        string, ?CREATE_DESCRIPTION},
      {"address",            string, ?CREATE_ADDRESS},
      {"image",              string, ?CREATE_IMAGE},
@@ -799,10 +807,10 @@ expected_retrieve_fields(Subscribed) ->
                              ?WOCKY_BOT_VIS_OWNER, 2).
 expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
     [{"id",                 string, ?BOT},
-     {"server",             string, ?LOCAL_CONTEXT},
+     {"server",             string, ?SERVER},
      {"title",              string, ?BOT_TITLE},
      {"shortname",          string, ?BOT_NAME},
-     {"owner",              jid,    ?ALICE_B_JID},
+     {"owner",              jid,    ?BJID(?ALICE)},
      {"description",        string, Description},
      {"address",            string, ?BOT_ADDRESS},
      {"image",              string, ?AVATAR_FILE},
@@ -1239,10 +1247,10 @@ publish_item_with_image(I, Client) ->
 check_returned_images(#xmlel{name = <<"iq">>, children = Children},
                       First, Last) ->
     [#xmlel{name = <<"item_images">>, children = ImageList}] = Children,
-    Remaining = check_image(?ALICE_B_JID, ?ITEM, ?ITEM_IMAGE, ImageList),
+    Remaining = check_image(?BJID(?ALICE), ?ITEM, ?ITEM_IMAGE, ImageList),
     RSMXML = lists:foldl(
                fun(I, S) ->
-                       check_image(?ALICE_B_JID, item_id(I),
+                       check_image(?BJID(?ALICE), item_id(I),
                                    item_image_url(I), S)
                end, Remaining, lists:seq(First, Last)),
     {ok, RSMEls} = check_get_children(hd(RSMXML), <<"set">>,

@@ -2,8 +2,13 @@
 %%% @doc Implementation module for TROS file transfer system
 %%% (https://github.com/hippware/tr-wiki/wiki/HXEP%3A-Files-over-http).
 %%%
-
 -module(mod_wocky_tros).
+
+-compile({parse_transform, do}).
+
+-include("wocky.hrl").
+
+-behaviour(gen_mod).
 
 -export([
    start/2,
@@ -15,14 +20,6 @@
 -export([make_file_id/0]).
 -endif.
 
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include("wocky.hrl").
-
--behaviour(gen_mod).
-
--compile({parse_transform, do}).
-
 -record(request, {
           from_jid :: ejabberd:jid(),
           to_jid :: ejabberd:jid(),
@@ -30,6 +27,7 @@
          }).
 
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
+
 
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(max_upload_size, tros_max_upload_size,

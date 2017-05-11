@@ -4,19 +4,18 @@
 %%%
 -module(wocky_report).
 
+-compile({parse_transform, cut}).
+
 -include("wocky.hrl").
--include("wocky_bot.hrl").
--include_lib("ejabberd/include/jlib.hrl").
 
 -export([generate_bot_report/1]).
 
--compile({parse_transform, cut}).
 
 % Duration is in days
 -spec generate_bot_report(non_neg_integer()) -> iolist().
 generate_bot_report(Duration) ->
     After = ?timex:to_unix(?timex:now()) - (Duration * 60 * 60 * 24),
-    Bots = ?wocky_bot:all(),
+    Bots = ?wocky_repo:all(?wocky_bot),
     Report = lists:map(maybe_report_bot(_, After), Bots),
     [header(), Report].
 
@@ -31,7 +30,6 @@ maybe_report_bot(_, _) ->
 
 report_bot(#{id := ID,
              title := Title,
-             user_id := OUser,
              address := Address,
              lat := Lat,
              lon := Lon,
@@ -40,7 +38,7 @@ report_bot(#{id := ID,
              created_at := CreatedAt,
              updated_at := UpdatedAt
             } = Bot) ->
-    Handle = ?wocky_user:get_handle(OUser),
+    #{handle := Handle} = ?wocky_bot:owner(Bot),
     io_lib:fwrite("~s,\"~s\",\"~s\",~s,~s,\"~s\",~f,~f,~s,~B,~B,\"~s\"\n",
                   [ID,
                    csv_escape(Title),
@@ -51,7 +49,7 @@ report_bot(#{id := ID,
                    Lat, Lon,
                    vis_string(Public),
                    ?wocky_bot:subscriber_count(Bot),
-                   ?wocky_bot:image_items_count(Bot),
+                   ?wocky_item:get_image_count(Bot),
                    csv_escape(Description)]).
 
 csv_escape(nil) ->

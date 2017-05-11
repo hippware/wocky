@@ -1,10 +1,11 @@
-defmodule WockyAPI.LocationApi do
+defmodule WockyAPI.LocationAPI do
   @moduledoc "HTTP API implementation for sending user location updates"
 
   import OK, only: ["~>>": 2]
 
   alias Poison.Parser
   # alias Wocky.Location
+  alias Wocky.Repo
   alias Wocky.Token
   alias Wocky.User
 
@@ -67,7 +68,7 @@ defmodule WockyAPI.LocationApi do
     {boolean, :cowboy_req.req, any}
   def resource_exists(req, state) do
     {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
-    case User.find(user_id) do
+    case Repo.get(User, user_id) do
       %User{} = user ->
         {true, req, %State{state | user: user}}
 

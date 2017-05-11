@@ -24,11 +24,9 @@
 
 -compile({parse_transform, do}).
 
--include_lib("ejabberd/include/ejabberd.hrl").
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/mod_roster.hrl").
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
+-include_lib("ejabberd/include/mod_roster.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).

@@ -5,17 +5,17 @@
 %%%
 -module(mod_wocky_multicast).
 
--behaviour(gen_mod).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
+
+-include("wocky.hrl").
+-include("wocky_roster.hrl").
+
+-behaviour(gen_mod).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
--include("wocky_roster.hrl").
 
 %%%===================================================================
 %%% gen_mod handlers

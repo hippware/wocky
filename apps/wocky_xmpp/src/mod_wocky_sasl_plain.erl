@@ -31,12 +31,11 @@
 -module(mod_wocky_sasl_plain).
 -xep([{xep, 78}, {version, "2.5"}]).
 
--behaviour(gen_mod).
--behaviour(cyrsasl).
-
 -include("wocky.hrl").
 -include("wocky_reg.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
+
+-behaviour(gen_mod).
+-behaviour(cyrsasl).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -116,9 +115,10 @@ make_register_response(#reg_result{user = User,
                                    token = Token,
                                    token_expiry = TokenExpiry,
                                    external_id = ExternalID}) ->
-   Handle = case ?wocky_user:get_handle(User) of
+   Handle = case ?wocky_repo:get(?wocky_user, User) of
                 nil -> <<>>;
-                H -> H
+                #{handle := nil} -> <<>>;
+                #{handle := H} -> H
             end,
    JSONFields = [{user, User},
                  {server, Server},

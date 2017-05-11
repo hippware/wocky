@@ -16,12 +16,13 @@ defmodule Wocky.XMPP.Mixfile do
      erlc_options: erlc_options(Mix.env),
      aliases: aliases(),
      deps: deps(),
-     preferred_cli_env: [eunit: :test, ct: :test],
-     elvis_config: elvis_config(),
-     # set switches that affect every invocation of the eunit task
-     eunit: [
-       start: true
-     ]
+     preferred_cli_env: [
+       ct: :test,
+       espec: :test,
+       "coveralls.html": :test
+     ],
+     test_coverage: [tool: ExCoveralls, test_task: "espec"],
+     elvis_config: elvis_config()
    ]
   end
 
@@ -78,6 +79,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:logger_lager_backend, "~> 0.0.2"},
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
+      {:excoveralls,          "~> 0.6",    only: :test},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
@@ -108,10 +110,6 @@ defmodule Wocky.XMPP.Mixfile do
         branch: "master",
         runtime: false,
         only: :dev},
-      {:mix_eunit,
-        github: "hippware/mix_eunit",
-        branch: "working",
-        only: :test},
       {:mix_ct,
         github: "hippware/mix_ct",
         branch: "master",
@@ -187,8 +185,14 @@ defmodule Wocky.XMPP.Mixfile do
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: ["elvis"],
-      "test": ["eunit"]
+      "test": ["espec"],
+      testall: ["espec", &reset/1, "ct"]
     ]
+  end
+
+  def reset(_) do
+    :net_kernel.stop
+    :wocky_xmpp_app.stop
   end
 
   defp elvis_config do
@@ -241,8 +245,7 @@ defmodule Wocky.XMPP.Mixfile do
                                                              :test_helper]}},
           {:elvis_style, :no_if_expression},
           {:elvis_style, :invalid_dynamic_call},
-          # Binary patterns in Eunit tests sometimes trip this warning
-          # {:elvis_style, :used_ignored_variable},
+          {:elvis_style, :used_ignored_variable},
           {:elvis_style, :no_behavior_info},
           {:elvis_style, :module_naming_convention,
            %{regex: "^[a-z]([a-z0-9]*_?)*(_SUITE)?$"}},

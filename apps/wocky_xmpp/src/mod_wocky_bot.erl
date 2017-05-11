@@ -5,18 +5,15 @@
 %%%
 -module(mod_wocky_bot).
 
--behaviour(gen_mod).
--behaviour(wocky_access_manager).
-
 -compile({parse_transform, do}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, fun_chain}).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
 -include("wocky.hrl").
 -include("wocky_bot.hrl").
--include("wocky_roster.hrl").
+
+-behaviour(gen_mod).
+-behaviour(wocky_access_manager).
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
@@ -34,7 +31,6 @@
 -type value_type() :: nil | binary() | integer() | boolean()
                       | loc() | jid() | tags().
 
-
 -record(field, {
           name :: binary(),
           type :: field_type(),
@@ -42,6 +38,7 @@
          }).
 
 -define(PACKET_FILTER_PRIORITY, 40).
+
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -208,7 +205,8 @@ perform_owner_action(follow_me, Bot, From, _To, IQ) ->
     #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
     do([error_m ||
         Expiry <- get_follow_me_expiry(Attrs),
-        ?wocky_bot:follow_me(Bot, Expiry),
+        ?wocky_bot:update(Bot, #{follow_me => true,
+                                 follow_me_expiry => Expiry}),
         publish_follow_me(From, Bot),
         wocky_bot_expiry_mon:follow_started(?wocky_bot:to_jid(Bot), Expiry),
         {ok, follow_me_result(IQ)}
@@ -216,7 +214,7 @@ perform_owner_action(follow_me, Bot, From, _To, IQ) ->
 
 perform_owner_action(unfollow_me, Bot, From, _To, IQ) ->
     do([error_m ||
-        ?wocky_bot:unfollow_me(Bot),
+        ?wocky_bot:update(Bot, #{follow_me => false, follow_me_expiry => nil}),
         publish_unfollow_me(From, Bot),
         wocky_bot_expiry_mon:follow_stopped(?wocky_bot:to_jid(Bot)),
         {ok, follow_me_result(IQ)}
@@ -321,7 +319,7 @@ get_id_and_bot(Fields) ->
     end.
 
 check_id(ID) ->
-    case ?wocky_bot:get(ID) of
+    case ?wocky_repo:get(?wocky_bot, ID) of
         nil -> {error, ?ERR_ITEM_NOT_FOUND};
         Bot -> {ok, {ID, Bot}}
     end.
@@ -361,7 +359,7 @@ get_location_from_attrs(Attrs) ->
 get_bots_near_location(From, Lat, Lon) ->
     case 'Elixir.Wocky.Index':geosearch(Lat, Lon) of
         {ok, AllBots} ->
-            User = ?wocky_user:find_by_jid(From),
+            User = ?wocky_user:get_by_jid(From),
             VisibleBots = lists:filter(
                             geosearch_access_filter(User, _), AllBots),
             {ok, make_geosearch_result(VisibleBots)};
@@ -689,7 +687,7 @@ make_ret_elements(Bot, User) ->
 
 meta_fields(Bot, User) ->
     Subscribers = ?wocky_bot:subscribers(Bot),
-    ImageItems = ?wocky_bot:image_items_count(Bot),
+    ImageItems = ?wocky_item:get_image_count(Bot),
     Subscribed = ?wocky_user:'subscribed?'(User, Bot),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"image_items">>, int, ImageItems),
@@ -706,7 +704,7 @@ map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
     [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} |
      map_to_fields(maps:without([lat, lon], Map))];
 map_to_fields(Map = #{user_id := UserID}) ->
-    User = ?wocky_user:find(UserID),
+    User = ?wocky_repo:get(?wocky_user, UserID),
     [#field{name = <<"owner">>, type = jid, value = ?wocky_user:to_jid(User)} |
      map_to_fields(maps:without([user_id], Map))];
 map_to_fields(Map = #{public := Public}) ->
