@@ -108,20 +108,13 @@ defmodule Wocky.Bot do
   end
 
   @spec insert(map) :: {:ok, t} | {:error, any}
-  def insert(params) do
-    case %Bot{} |> changeset(params) |> Repo.insert do
-      {:ok, bot} = result ->
-        Index.bot_updated(bot.id, params)
-        result
-
-      {:error, _} = error ->
-        error
-    end
-  end
+  def insert(params), do: do_update(%Bot{}, params, &Repo.insert/1)
 
   @spec update(t, map) :: {:ok, t} | {:error, any}
-  def update(bot, params) do
-    case bot |> changeset(params) |> Repo.update do
+  def update(bot, params), do: do_update(bot, params, &Repo.update/1)
+
+  defp do_update(struct, params, op) do
+    case struct |> changeset(params) |> op.() do
       {:ok, bot} = result ->
         Index.bot_updated(bot.id, params)
         result

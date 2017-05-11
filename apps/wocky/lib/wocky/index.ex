@@ -97,24 +97,22 @@ defmodule Wocky.Index do
     {:reply, result, state}
   end
 
-  def handle_call({:reindex, :users}, _, %State{backend: backend} = state) do
+  def handle_call({:reindex, :users}, _, state) do
     User
     |> Repo.all
-    |> Enum.each(
-        fn (%User{username: user_id} = user) ->
-          update_index(state.user_index, user_id, user, @user_fields, backend)
-        end)
+    |> Enum.each(fn %User{username: user_id} = user ->
+      update_index(state.user_index, user_id, user, @user_fields, state.backend)
+    end)
 
     {:reply, :ok, state}
   end
 
-  def handle_call({:reindex, :bots}, _, %State{backend: backend} = state) do
+  def handle_call({:reindex, :bots}, _, state) do
     Bot
     |> Repo.all
-    |> Enum.each(
-        fn (%Bot{id: bot_id} = bot) ->
-          update_index(state.bot_index, bot_id, bot, @bot_fields, backend)
-        end)
+    |> Enum.each(fn %Bot{id: bot_id} = bot ->
+      update_index(state.bot_index, bot_id, bot, @bot_fields, state.backend)
+    end)
 
     {:reply, :ok, state}
   end

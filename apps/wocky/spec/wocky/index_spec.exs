@@ -63,7 +63,7 @@ defmodule Wocky.IndexSpec do
     it do: assert [{_, :bots, :delete, nil}] = TestIndexer.get_index_operations
   end
 
-  describe "uknown calls" do
+  describe "unknown calls" do
     it do: GenServer.call(:wocky_index, :bogus) |> should(be_error_result())
     it do: GenServer.cast(:wocky_index, :bogus) |> should(eq :ok)
   end
