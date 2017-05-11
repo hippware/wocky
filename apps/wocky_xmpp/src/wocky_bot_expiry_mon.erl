@@ -164,7 +164,7 @@ send_expiry_warning(JIDBin) when is_binary(JIDBin) ->
         Bot -> send_expiry_warning(Bot)
     end;
 send_expiry_warning(#{user_id := OwnerID, follow_me_expiry := Expiry} = Bot) ->
-    OwnerJID = ?wocky_user:to_jid(?wocky_user:find(OwnerID)),
+    OwnerJID = ?wocky_user:to_jid(?wocky_repo:get(?wocky_user, OwnerID)),
     BotJID = ?wocky_bot:to_jid(Bot),
     ExpiryStr = integer_to_binary(Expiry div 1000),
     Stanza =

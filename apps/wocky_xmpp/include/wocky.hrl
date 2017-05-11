@@ -60,7 +60,7 @@
 -define(wocky_user, 'Elixir.Wocky.User').
 
 -define(tros, 'Elixir.Wocky.TROS').
--define(tros_s3, 'Elixir.Wocky.TROS.S3').
+-define(tros_s3, 'Elixir.Wocky.TROS.S3Store').
 -define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
 
 -define(wocky_event_handler, 'Elixir.Wocky.EventHandler').

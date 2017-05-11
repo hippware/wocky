@@ -30,7 +30,7 @@ dump(Handle, Resource, StartBin, DurationBin) ->
        ]).
 
 get_user(Handle) ->
-    case ?wocky_user:find_by(handle, Handle) of
+    case ?wocky_repo:get_by(?wocky_user, [{handle, Handle}]) of
         nil -> {error, "User not found"};
         #{id := ID} -> {ok, ID}
     end.

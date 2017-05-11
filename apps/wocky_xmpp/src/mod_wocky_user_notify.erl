@@ -33,7 +33,7 @@ stop(Host) ->
 
 -spec user_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
 user_updated(LUser, _LServer) ->
-    User = ?wocky_user:find(LUser),
+    User = ?wocky_repo:get(?wocky_user, LUser),
     WithContact = ?wocky_roster_item:find_users_with_contact(LUser),
     lists:foreach(notify_user_update(User, _), WithContact).
 

@@ -250,7 +250,7 @@ is_visible(_,    private)  -> false;
 is_visible(_,    public)   -> true.
 
 get_resp_fields(Fields, _LServer, LUser) ->
-    case ?wocky_user:find(LUser) of
+    case ?wocky_repo:get(?wocky_user, LUser) of
         nil ->
             {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
         Row ->

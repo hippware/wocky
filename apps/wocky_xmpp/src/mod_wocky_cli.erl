@@ -169,7 +169,7 @@ fix_images_on_bot(Bot = #{id          := ID,
                           description := Description,
                           image       := BotImage}) ->
     io:fwrite("Bot: ~p - ~s\n", [binary_to_list(ID), Description]),
-    Images = ?wocky_bot:image_items(Bot),
+    Images = ?wocky_item:get_images(Bot),
     ImageURLs = [I || #{image := I} <- Images],
     ValidImages = [I || I <- [BotImage | ImageURLs], I =/= <<>>],
     fix_images(Bot, ValidImages).

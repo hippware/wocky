@@ -25,7 +25,7 @@ defmodule Wocky.Index do
   @callback update_object(index :: binary, id :: binary, map :: map) :: :ok
   @callback delete_object(index :: binary, id :: binary) :: :ok
   @callback geosearch(index :: binary, lat :: float, lon :: float) ::
-    {:ok, any} :: {:error, any}
+    {:ok, any} | {:error, any}
 
   # ===================================================================
   # API
