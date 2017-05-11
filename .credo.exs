@@ -49,7 +49,6 @@
       checks: [
         {Credo.Check.Consistency.ExceptionNames},
         {Credo.Check.Consistency.LineEndings},
-        {Credo.Check.Consistency.MultiAliasImportRequireUse},
         {Credo.Check.Consistency.ParameterPatternMatching},
         {Credo.Check.Consistency.SpaceAroundOperators},
         {Credo.Check.Consistency.SpaceInParentheses},
@@ -69,7 +68,7 @@
         # You can also customize the exit_status of each check.
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
-        {Credo.Check.Design.TagTODO, exit_status: 0},
+        {Credo.Check.Design.TagTODO, exit_status: 2},
         {Credo.Check.Design.TagFIXME, exit_status: 0},
 
         {Credo.Check.Readability.FunctionNames},
@@ -78,22 +77,21 @@
         {Credo.Check.Readability.ModuleAttributeNames},
         {Credo.Check.Readability.ModuleDoc},
         {Credo.Check.Readability.ModuleNames},
-        {Credo.Check.Readability.ParenthesesInCondition},
         {Credo.Check.Readability.ParenthesesOnZeroArityDefs},
+        {Credo.Check.Readability.ParenthesesInCondition},
         {Credo.Check.Readability.PredicateFunctionNames},
         {Credo.Check.Readability.PreferImplicitTry},
         {Credo.Check.Readability.RedundantBlankLines, max_blank_lines: 2},
-        {Credo.Check.Readability.Semicolons},
-        {Credo.Check.Readability.SinglePipe},
-        {Credo.Check.Readability.SpaceAfterCommas},
         {Credo.Check.Readability.StringSigils},
         {Credo.Check.Readability.TrailingBlankLine},
         {Credo.Check.Readability.TrailingWhiteSpace},
         {Credo.Check.Readability.VariableNames},
+        {Credo.Check.Readability.Semicolons},
+        {Credo.Check.Readability.SpaceAfterCommas},
 
+        {Credo.Check.Refactor.DoubleBooleanNegation},
         {Credo.Check.Refactor.CondStatements},
         {Credo.Check.Refactor.CyclomaticComplexity},
-        {Credo.Check.Refactor.DoubleBooleanNegation},
         {Credo.Check.Refactor.FunctionArity},
         {Credo.Check.Refactor.MatchInCondition},
         {Credo.Check.Refactor.NegatedConditionsInUnless},
@@ -123,6 +121,7 @@
         {Credo.Check.Refactor.AppendSingleItem},
         {Credo.Check.Refactor.VariableRebinding},
         {Credo.Check.Warning.MapGetUnsafePass},
+        {Credo.Check.Consistency.MultiAliasImportRequireUse},
 
         # Deprecated checks (these will be deleted after a grace period)
         {Credo.Check.Readability.Specs, false},
