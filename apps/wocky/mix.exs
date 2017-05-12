@@ -90,11 +90,6 @@ defmodule Wocky.Mixfile do
         branch: "working",
         manager: :rebar3,
         override: true},
-      {:p1_pgsql,
-        github: "processone/p1_pgsql",
-        tag: "1.1.2",
-        manager: :rebar
-      },
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
