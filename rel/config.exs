@@ -32,11 +32,15 @@ end
 
 release :wocky do
   set version: current_version(:wocky)
+  set applications: [
+    :wocky,
+    :wocky_api,
+    :wocky_xmpp
+  ]
   set vm_args: "rel/vm.args"
   set overlays: [
     {:copy, "rel/wockyctl", "bin/wockyctl"},
-    {:copy, "etc", "etc"},
-    {:copy, "db", "db"}
+    {:copy, "etc", "etc"}
   ]
 end
 

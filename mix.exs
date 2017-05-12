@@ -4,14 +4,13 @@ defmodule Wocky.Release.Mixfile do
   def project do
     [
       apps_path: "apps",
-      build_embedded: Mix.env == :prod,
+      build_embedded: false, # Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       preferred_cli_env: [
         espec: :test,
         ct: :test,
         coveralls: :test,
-        "coveralls.html": :test,
-        release: :prod
+        "coveralls.html": :test
       ],
       deps: deps(),
       aliases: aliases(),

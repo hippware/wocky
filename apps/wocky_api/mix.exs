@@ -3,7 +3,7 @@ defmodule WockyAPI.Mixfile do
 
   def project do
     [app: :wocky_api,
-     version: "0.1.0",
+     version: version(),
      build_path: "../../_build",
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
@@ -20,6 +20,11 @@ defmodule WockyAPI.Mixfile do
      elvis_config: [%{src_dirs: [], rules: []}],
      aliases: aliases(),
      deps: deps()]
+  end
+
+  defp version do
+    {ver_result, _} = System.cmd("bash", ["../../version"])
+    ver_result
   end
 
   def application do
