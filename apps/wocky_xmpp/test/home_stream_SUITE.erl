@@ -39,11 +39,15 @@ all() -> [
           subscribe_version,
           unsubscribe,
           get_item,
-          auto_publish_bot,
-          auto_publish_private_bot,
-          auto_publish_bot_item,
+          {group, publish_bot},
           no_auto_publish_pep_item
          ].
+
+groups() ->
+    [{publish_bot, [], publish_bot_cases()}].
+
+publish_bot_cases() ->
+    [auto_publish_bot, auto_publish_private_bot, auto_publish_bot_item].
 
 suite() ->
     escalus:suite().
@@ -66,6 +70,16 @@ init_per_suite(Config) ->
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
+
+init_per_group(publish_bot, Config) ->
+    User = ?wocky_repo:get(?wocky_user, ?ALICE),
+    ?wocky_factory:insert(bot, #{id => ?BOT, user => User}),
+    Config;
+init_per_group(_GroupName, Config) ->
+    Config.
+
+end_per_group(_GroupName, Config) ->
+    Config.
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
