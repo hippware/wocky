@@ -39,8 +39,8 @@ all() -> [
           subscribe_version,
           unsubscribe,
           get_item,
-          no_auto_publish_pep_item,
-          {group, publish_bot}
+          {group, publish_bot},
+          no_auto_publish_pep_item
          ].
 
 groups() ->
