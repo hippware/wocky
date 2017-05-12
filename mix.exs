@@ -10,8 +10,7 @@ defmodule Wocky.Release.Mixfile do
         espec: :test,
         ct: :test,
         coveralls: :test,
-        "coveralls.html": :test,
-        release: :prod
+        "coveralls.html": :test
       ],
       deps: deps(),
       aliases: aliases(),
