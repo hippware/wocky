@@ -3,7 +3,7 @@ defmodule Wocky.Mixfile do
 
   def project do
     [app: :wocky,
-     version: "0.1.0",
+     version: version(),
      build_path: "../../_build",
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
@@ -22,10 +22,15 @@ defmodule Wocky.Mixfile do
      deps: deps()]
   end
 
+  defp version do
+    {ver_result, _} = System.cmd("bash", ["../../version"])
+    ver_result
+  end
+
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:logger],
+      extra_applications: [:logger, :plug],
       mod: {Wocky.Application, []},
       env: [
         event_handler: Wocky.EventHandler,
