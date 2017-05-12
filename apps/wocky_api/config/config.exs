@@ -4,4 +4,4 @@ use Mix.Config
 
 config :wocky_api, ecto_repos: []
 
-# import_config "#{Mix.env}.exs"
+import_config "#{Mix.env}.exs"
