@@ -19,5 +19,8 @@ config :wocky,
   algolia_user_index_name: "ALGOLIA_USER_INDEX_NAME",
   algolia_bot_index_name: "ALGOLIA_BOT_INDEX_NAME"
 
+config :slackex,
+  slack_token: nil
+
 config :honeybadger,
   environment_name: "HONEYBADGER_ENV"

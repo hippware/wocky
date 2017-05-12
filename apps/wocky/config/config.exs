@@ -8,6 +8,9 @@ config :wocky,
 config :email_checker,
   validations: [EmailChecker.Check.Format]
 
+config :slackex,
+  slack_token: "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"
+
 config :algolia,
   application_id: "HIE75ZR7Q7",
   api_key: "ALGOLIA_KEY"

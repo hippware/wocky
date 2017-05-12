@@ -9,8 +9,7 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 -export([start/1, start/0, stop/0, ensure_loaded/1,
-         server/0, is_testing/0,
-         get_config/1, get_config/2]).
+         server/0, is_testing/0]).
 
 
 -spec start(string()) -> ok.
@@ -55,24 +54,6 @@ servers() ->
 is_testing() ->
     is_testing_server(server()).
 
--spec get_config(atom()) -> term().
-get_config(Key) ->
-    get_config(Key, undefined).
-
--spec get_config(atom(), term()) -> term().
-get_config(Key, Default) ->
-    try
-        %% Try pulling the config from ejabberd
-        case ejabberd_config:get_local_option(Key, get_host()) of
-            undefined -> default_config(Key, Default);
-            Value -> Value
-        end
-    catch
-        _:_ -> default_config(Key, Default)
-    end.
-
-get_host() ->
-    hd(ejabberd_config:get_global_option(hosts)).
 
 %%%===================================================================
 %%% Application callbacks
@@ -160,9 +141,6 @@ maybe_change_loglevel(_) ->
 is_testing_server(<<"localhost">>) -> true;
 is_testing_server(<<"testing.", _/binary>>) -> true;
 is_testing_server(_) -> false.
-
-default_config(Key, Default) ->
-    application:get_env(wocky_xmpp, Key, Default).
 
 cache_server_names(CfgTerms) ->
     Servers = proplists:get_value(hosts, CfgTerms),

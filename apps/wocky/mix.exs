@@ -80,6 +80,7 @@ defmodule Wocky.Mixfile do
       {:lager,                "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
       {:email_checker,        "~> 0.1.0"},
+      {:csv,                  "~> 1.4"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
@@ -90,6 +91,9 @@ defmodule Wocky.Mixfile do
         branch: "working",
         manager: :rebar3,
         override: true},
+      {:slackex,
+       github: "hippware/slackex",
+       branch: "master"},
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
