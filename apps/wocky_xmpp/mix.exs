@@ -75,7 +75,6 @@ defmodule Wocky.XMPP.Mixfile do
       {:base16,               "~> 1.0",   override: true},
       {:exjsx,                "~> 3.2",   override: true},
       {:timex,                "~> 3.1"},
-      {:porcelain,            "~> 2.0"},
       {:logger_lager_backend, "~> 0.0.2"},
       {:binpp,                "~> 1.1"},
       {:espec,                "~> 1.2",    only: :test},
