@@ -64,7 +64,6 @@
   "lager_syslog": {:git, "https://github.com/basho/lager_syslog", "c59ccd421426a3d54b379e9b1f62f1f145dd5802", [tag: "3.0.3"]},
   "lasse": {:hex, :lasse, "1.1.0", "b1d8b9a528c5df4423256e52fee9b8f9a4a48096bb384fb5d4a7e483eb8dcacb", [:make], []},
   "logger_lager_backend": {:hex, :logger_lager_backend, "0.0.2", "b957da78205c0bf946c2b5fefc68fc95a4b42955413e69acf4702d01658aa6ca", [:mix], []},
-  "mariaex": {:hex, :mariaex, "0.8.2", "a9ee64a02fd72579f844934b4cbecca9566593e499125edf6032c58f9d50b5f9", [:mix], [{:db_connection, "~> 1.1", [hex: :db_connection, optional: false]}, {:decimal, "~> 1.0", [hex: :decimal, optional: false]}]},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], []},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], []},
   "mime": {:hex, :mime, "1.1.0", "01c1d6f4083d8aa5c7b8c246ade95139620ef8effb009edde934e0ec3b28090a", [:mix], []},

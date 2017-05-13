@@ -60,7 +60,6 @@ defmodule Wocky.Mixfile do
     [
       {:ecto,                 "~> 2.0"},
       {:ecto_homoiconic_enum, "~> 0.1.1"},
-      {:mariaex,              "~> 0.8.1"},
       {:postgrex,             "~> 0.13.0"},
       {:poolboy,              "~> 1.5"},
       {:faker,                "~> 0.7.0"},
