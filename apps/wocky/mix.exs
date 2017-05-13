@@ -75,6 +75,7 @@ defmodule Wocky.Mixfile do
       {:email_checker,        "~> 0.1.0"},
       {:csv,                  "~> 1.4"},
       {:confex,               "~> 2.0"},
+      {:quantum,              "~> 1.9"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",

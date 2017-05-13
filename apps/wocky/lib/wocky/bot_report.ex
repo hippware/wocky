@@ -14,8 +14,18 @@ defmodule Wocky.BotReport do
     Visibility Subscribers ImageItems Description
   )
 
-  @spec post_bot_report(binary, binary, non_neg_integer) :: binary
-  def post_bot_report(server, channel, days) do
+  @spec run(binary, non_neg_integer) :: binary
+  def run(channel, days) do
+    if Confex.get(:wocky, :enable_bot_report) do
+      post_bot_report(channel, days)
+    end
+  end
+
+  def post_bot_report(channel, days) do
+    # FIXME This application should have no visibility into wocky_xmpp,
+    # but there wasn't a better way to handle this situation.
+    servers = Application.get_env(:wocky_xmpp, :servers, ["localhost"])
+    server = hd(servers)
     report = generate_bot_report(days)
     Files.upload(%{content: CSV.encode(report),
                    filename: "weekly_bot_report_#{server}.csv",

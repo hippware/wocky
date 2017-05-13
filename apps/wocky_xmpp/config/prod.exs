@@ -22,6 +22,3 @@ config :exometer,
       ]}
     ]}
   ]
-
-config :crone,
-  tasks: :CRON_TASKS

@@ -21,9 +21,22 @@ config :wocky,
   indexing_system:         {:system, "WOCKY_INDEXING_SYSTEM"},
   user_index_name:         {:system, "WOCKY_USER_INDEX_NAME"},
   bot_index_name:          {:system, "WOCKY_BOT_INDEX_NAME"},
+  enable_bot_report:       {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false}
 
 config :slackex,
   slack_token: nil
 
 config :honeybadger,
   environment_name: "HONEYBADGER_ENV"
+
+config :quantum,
+  global?: true
+
+config :quantum, :wocky,
+  cron: [
+    bot_report: [
+      schedule: "@weekly",
+      task: "Wocky.BotReport.run",
+      args: ["wocky-report", 7]
+    ]
+  ]
