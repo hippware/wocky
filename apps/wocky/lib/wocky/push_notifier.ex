@@ -32,7 +32,7 @@ defmodule Wocky.PushNotifier do
 
   @spec init :: :ok
   def init do
-    backend_type = Application.get_env(:wocky, :notification_system, "none")
+    backend_type = Confex.get(:wocky, :notification_system, "none")
     backend_module = case backend_type do
       "aws" -> Wocky.PushNotifier.SNSNotifier
       "test" -> Wocky.PushNotifier.TestNotifier

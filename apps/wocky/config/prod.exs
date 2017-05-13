@@ -3,21 +3,24 @@ use Mix.Config
 # Configure your database
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
-  username: "DB_USER",
-  password: "DB_PASS",
-  database: "wocky_prod",
-  pool_size: 15
+  database:  {:system, :string, "DB_NAME", "wocky"},
+  username:  {:system, :string, "DB_USER", "wocky"},
+  password:  {:system, :string, "DB_PASSWORD"},
+  hostname:  {:system, :string, "DB_HOST"},
+  port:      {:system, :integer, "DB_PORT", 5432},
+  pool_size: {:system, :integer, "DB_POOL_SIZE", 15}
 
 config :wocky,
-  tros_backend: Wocky.TROS.S3Store,
+  enable_follow_me_updates: false,
+  enable_bot_event_notifications: false,
   async_location_processing: true,
-  tros_s3_bucket: "wocky-tros-WOCKY_INST",
-  tros_s3_access_key_id: "TROS_S3_ACCESS_KEY_ID",
-  tros_s3_secret_key: "TROS_S3_SECRET_KEY",
-  application_arn: "APPLICATION_ARN",
-  notification_system: "NOTIFICATION_SYSTEM",
-  algolia_user_index_name: "ALGOLIA_USER_INDEX_NAME",
-  algolia_bot_index_name: "ALGOLIA_BOT_INDEX_NAME"
+  tros_backend:            Wocky.TROS.S3Store,
+  tros_s3_bucket:          {:system, "WOCKY_TROS_S3_BUCKET"},
+  application_arn:         {:system, "WOCKY_APPLICATION_ARN"},
+  notification_system:     {:system, "WOCKY_NOTIFICATION_SYSTEM"},
+  indexing_system:         {:system, "WOCKY_INDEXING_SYSTEM"},
+  user_index_name:         {:system, "WOCKY_USER_INDEX_NAME"},
+  bot_index_name:          {:system, "WOCKY_BOT_INDEX_NAME"},
 
 config :slackex,
   slack_token: nil
