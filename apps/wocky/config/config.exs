@@ -4,18 +4,26 @@ use Mix.Config
 
 config :wocky,
   ecto_repos: [Wocky.Repo],
-  tros_backend: Wocky.TROS.TestStore,
-  tros_s3_bucket: "wocky-tros-test",
   enable_bot_event_notifications: true,
   enable_follow_me_updates: true,
-  async_location_processing: false
+  async_location_processing: false,
+  tros_backend: Wocky.TROS.TestStore,
+  tros_s3_bucket:      {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
+  application_arn:     {:system, "WOCKY_APPLICATION_ARN"},
+  notification_system: {:system, "WOCKY_NOTIFICATION_SYSTEM", "none"},
+  indexing_system:     {:system, "WOCKY_INDEXING_SYSTEM", "none"},
+  user_index_name:     {:system, "WOCKY_USER_INDEX_NAME"},
+  bot_index_name:      {:system, "WOCKY_BOT_INDEX_NAME"},
+  enable_bot_report:   {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false}
 
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "password",
-  hostname: "localhost",
-  pool_size: 10
+  database:  {:system, :string, "WOCKY_DB_NAME"},
+  username:  {:system, :string, "WOCKY_DB_USER", "wocky"},
+  password:  {:system, :string, "WOCKY_DB_PASSWORD", "password"},
+  hostname:  {:system, :string, "WOCKY_DB_HOST", "localhost"},
+  port:      {:system, :integer, "WOCKY_DB_PORT", 5432},
+  pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15}
 
 config :logger,
   level: :info
