@@ -63,7 +63,6 @@ defmodule Wocky.Mixfile do
       {:hackney,              "~> 1.7", override: true},
       {:exjsx,                "~> 3.2", override: true},
       {:algolia,              "~> 0.6"},
-      {:honeybadger,          "~> 0.6"},
       {:geocalc,              "~> 0.5.3"},
       {:gen_stage,            "~> 0.11"},
       {:timex,                "~> 3.1"},

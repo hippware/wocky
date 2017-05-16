@@ -9,9 +9,6 @@ config :wocky,
 config :slackex,
   slack_token: nil
 
-config :honeybadger,
-  environment_name: "HONEYBADGER_ENV"
-
 config :quantum,
   global?: true
 

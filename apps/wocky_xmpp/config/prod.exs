@@ -6,6 +6,9 @@ config :wocky_xmpp,
 config :mnesia,
   dir: 'data/mnesia'
 
+config :honeybadger,
+  environment_name: "HONEYBADGER_ENV"
+
 config :lager,
   log_root: 'log'
 

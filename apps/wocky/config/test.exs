@@ -12,6 +12,3 @@ config :wocky,
 
 config :logger,
   level: :warn
-
-config :honeybadger,
-  environment_name: :test
