@@ -57,7 +57,7 @@ defmodule Wocky.XMPP.Mixfile do
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :ejabberd, :crone
+       :ejabberd
      ],
      mod: {:wocky_xmpp_app, []},
      env: [
