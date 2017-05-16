@@ -23,7 +23,7 @@ defmodule Wocky.Mixfile do
   end
 
   defp version do
-    {ver_result, _} = System.cmd("bash", ["../../version"])
+    {ver_result, _} = System.cmd("elixir", ["../../version.exs"])
     ver_result
   end
 
@@ -86,8 +86,8 @@ defmodule Wocky.Mixfile do
         manager: :rebar3,
         override: true},
       {:slackex,
-       github: "hippware/slackex",
-       branch: "master"},
+        github: "hippware/slackex",
+        branch: "master"},
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
