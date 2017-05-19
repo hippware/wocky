@@ -16,6 +16,7 @@ node {
 
     stage('Unit Tests') {
       sh "MIX_ENV=test mix prepare"
+      sh "MIX_ENV=test mix ecto.drop"
       sh "MIX_ENV=test mix ecto.create"
       sh "MIX_ENV=test mix ecto.migrate"
       sh "mix espec"
