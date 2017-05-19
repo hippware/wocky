@@ -4,7 +4,7 @@ defmodule Wocky.Repo.Migrations.FixBotDescSize do
   def change do
     alter table(:bots) do
       remove :description
-      add :description, :binary, null: false
+      add :description, :binary
     end
   end
 end
