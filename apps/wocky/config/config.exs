@@ -18,7 +18,7 @@ config :wocky,
 
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
-  database:  {:system, :string, "WOCKY_DB_NAME"},
+  database:  {:system, :string, "WOCKY_DB_NAME", "wocky"},
   username:  {:system, :string, "WOCKY_DB_USER", "wocky"},
   password:  {:system, :string, "WOCKY_DB_PASSWORD", "password"},
   hostname:  {:system, :string, "WOCKY_DB_HOST", "localhost"},
