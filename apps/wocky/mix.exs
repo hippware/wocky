@@ -30,7 +30,7 @@ defmodule Wocky.Mixfile do
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:logger, :plug],
+      extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
         event_handler: Wocky.EventHandler,
