@@ -4,3 +4,4 @@ Function fields_for/2 only terminates with explicit exception
 lib/wocky/index/algolia_indexer.ex:14: Function update_object/3 has no local return
 lib/wocky/index/algolia_indexer.ex:20: Function delete_object/2 has no local return
 lib/wocky/index/algolia_indexer.ex:25: Function geosearch/3 has no local return
+lib/wocky/index/algolia_indexer.ex:21: The pattern {'ok', _} can never match the type
