@@ -52,7 +52,7 @@ defmodule Wocky.XMPP.Mixfile do
     [description: 'JabberWocky XMPP Server',
      # Specify extra applications you'll use from Erlang/Elixir
      extra_applications: [
-       :crypto, :ssl, :runtime_tools, :cowboy, :partial, :plug
+       :crypto, :ssl, :runtime_tools, :cowboy, :partial
      ],
      included_applications: [
        # These are here because we start them manually and do not want them
@@ -61,8 +61,10 @@ defmodule Wocky.XMPP.Mixfile do
      ],
      mod: {:wocky_xmpp_app, []},
      env: [
-       wocky_inst: 'local',
-       config_dir: 'etc'
+       wocky_inst: {:system, "WOCKY_INST", "local"},
+       wocky_host: {:system, "WOCKY_HOST", "localhost"},
+       iq_crash_response: {:system, :atom, "WOCKY_IQ_CRASH_RESPONSE",
+                           :error_with_dump}
      ]]
   end
 
@@ -78,12 +80,13 @@ defmodule Wocky.XMPP.Mixfile do
       {:honeybadger,          "~> 0.6"},
       {:logger_lager_backend, "~> 0.0.2"},
       {:binpp,                "~> 1.1"},
+      {:confex,               "~> 2.0"},
       {:espec,                "~> 1.2",    only: :test},
       {:excoveralls,          "~> 0.6",    only: :test},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
-      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-2.0.1-2"},
+      {:ejabberd, github: "hippware/mim-ejabberd", branch: "working-2.0.1-2"},
       {:exometer_core,
         github: "Feuerlabs/exometer_core",
         branch: "master",
