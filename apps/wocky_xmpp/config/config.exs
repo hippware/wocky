@@ -12,7 +12,7 @@ config :kernel,
   start_pg2: :true
 
 config :sasl,
-  sasl_error_logger: :false
+  sasl_error_logger: false
 
 config :ssl,
   session_lifetime: 600 # 10 minutes
@@ -21,7 +21,7 @@ config :mnesia,
   dir: '_build/#{Mix.env}/mnesia'
 
 config :setup,
-  verify_directories: :false
+  verify_directories: false
 
 config :hut,
   level: :critical
@@ -32,7 +32,7 @@ config :logger,
   level: :debug
 
 config :lager,
-  colored: :true,
+  colored: true,
   log_root: '_build/#{Mix.env}/log',
   crash_log: 'crash.log',
   handlers: [
