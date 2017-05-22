@@ -52,7 +52,7 @@ defmodule Wocky.XMPP.Mixfile do
     [description: 'JabberWocky XMPP Server',
      # Specify extra applications you'll use from Erlang/Elixir
      extra_applications: [
-       :crypto, :ssl, :runtime_tools, :cowboy, :partial
+       :crypto, :ssl, :runtime_tools, :cowboy, :partial, :plug
      ],
      included_applications: [
        # These are here because we start them manually and do not want them
