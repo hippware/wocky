@@ -42,5 +42,8 @@ release :wocky do
     {:copy, "rel/wockyctl", "bin/wockyctl"},
     {:copy, "etc", "etc"}
   ]
+  set commands: [
+    "migrate": "rel/commands/migrate.sh"
+  ]
 end
 

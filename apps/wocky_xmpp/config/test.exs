@@ -1,8 +1,10 @@
 use Mix.Config
 
 config :wocky_xmpp,
-  wocky_env: 'test',
-  config_dir: File.cwd |> elem(1) |> Path.join("etc") |> String.to_char_list
+  wocky_env: 'test'
+
+config :honeybadger,
+  environment_name: :test
 
 config :logger,
   level: :error

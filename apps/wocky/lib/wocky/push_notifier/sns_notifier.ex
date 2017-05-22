@@ -21,7 +21,7 @@ defmodule Wocky.PushNotifier.SNSNotifier do
     user_data = user |> JID.make(server, resource) |> JID.to_binary
 
     :wocky
-    |> Application.fetch_env!(:application_arn)
+    |> Confex.get(:application_arn)
     |> SNS.create_platform_endpoint(device_id, user_data)
     |> ExAws.request
     |> handle_register_result

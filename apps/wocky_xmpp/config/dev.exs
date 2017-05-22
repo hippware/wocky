@@ -12,12 +12,5 @@ config :lager,
     ]
   ]
 
-# We don't actually want this to do anything, but having it here verifies that
-# crone will start up correctly
-config :crone,
-  tasks: [
-    {
-       {:weekly, :sun, {12, :am}},
-       {:wocky_slack, :post_bot_report, ["report-testing", 7]}
-    }
-   ]
+config :honeybadger,
+  environment_name: :dev

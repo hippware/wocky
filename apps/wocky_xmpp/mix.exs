@@ -27,7 +27,7 @@ defmodule Wocky.XMPP.Mixfile do
   end
 
   defp version do
-    {ver_result, _} = System.cmd("bash", ["../../version"])
+    {ver_result, _} = System.cmd("elixir", ["../../version.exs"])
     ver_result
   end
 
@@ -52,17 +52,19 @@ defmodule Wocky.XMPP.Mixfile do
     [description: 'JabberWocky XMPP Server',
      # Specify extra applications you'll use from Erlang/Elixir
      extra_applications: [
-       :crypto, :ssl, :runtime_tools, :cowboy, :partial
+       :crypto, :ssl, :runtime_tools, :cowboy, :partial, :plug
      ],
      included_applications: [
        # These are here because we start them manually and do not want them
        # starting automatically when Wocky starts.
-       :ejabberd, :crone
+       :ejabberd
      ],
      mod: {:wocky_xmpp_app, []},
      env: [
-       wocky_inst: 'local',
-       config_dir: 'etc'
+       wocky_inst: {:system, "WOCKY_INST", "local"},
+       wocky_host: {:system, "WOCKY_HOST", "localhost"},
+       iq_crash_response: {:system, :atom, "WOCKY_IQ_CRASH_RESPONSE",
+                           :error_with_dump}
      ]]
   end
 
@@ -75,14 +77,16 @@ defmodule Wocky.XMPP.Mixfile do
       {:base16,               "~> 1.0",   override: true},
       {:exjsx,                "~> 3.2",   override: true},
       {:timex,                "~> 3.1"},
+      {:honeybadger,          "~> 0.6"},
       {:logger_lager_backend, "~> 0.0.2"},
       {:binpp,                "~> 1.1"},
+      {:confex,               "~> 2.0"},
       {:espec,                "~> 1.2",    only: :test},
       {:excoveralls,          "~> 0.6",    only: :test},
       {:ex_guard,             "~> 1.1",    only: :dev, runtime: false},
       {:reprise,              "~> 0.5",    only: :dev},
 
-      {:ejabberd,   github: "hippware/mim-ejabberd", branch: "working-2.0.1-2"},
+      {:ejabberd, github: "hippware/mim-ejabberd", branch: "working-2.0.1-2"},
       {:exometer_core,
         github: "Feuerlabs/exometer_core",
         branch: "master",
@@ -120,12 +124,6 @@ defmodule Wocky.XMPP.Mixfile do
         github: "hippware/escalus",
         branch: "working",
         only: :test},
-      {:crone,
-        github: "hippware/crone",
-        branch: "master"},
-      {:slackex,
-        github: "hippware/slackex",
-        branch: "master"},
       {:certifi,
         github: "hippware/erlang-certifi",
         branch: "working",

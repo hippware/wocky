@@ -120,7 +120,7 @@ defmodule Wocky.TROS.S3Store do
 
   def secret_key, do: get_opt(:tros_s3_secret_key)
 
-  defp get_opt(opt), do: Application.fetch_env!(:wocky, opt)
+  defp get_opt(opt), do: Confex.get(:wocky, opt)
 
   defp path(server, file_id),
     do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"

@@ -23,7 +23,7 @@ defmodule WockyAPI.Mixfile do
   end
 
   defp version do
-    {ver_result, _} = System.cmd("bash", ["../../version"])
+    {ver_result, _} = System.cmd("elixir", ["../../version.exs"])
     ver_result
   end
 
