@@ -47,7 +47,7 @@ version() ->
 
 -spec server() -> ejabberd:server().
 server() ->
-    ejabberd_config:get_global_option(host).
+    hd(ejabberd_config:get_global_option(hosts)).
 
 -spec is_testing() -> boolean().
 is_testing() ->
