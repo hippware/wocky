@@ -3,7 +3,7 @@ defmodule Wocky.Repo.Migrations.UseTextFields do
 
   def change do
     alter table(:bots) do
-      modify :description, :text, null: false
+      modify :description, :text
     end
 
     alter table(:conversations) do
