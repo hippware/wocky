@@ -66,7 +66,7 @@ pipeline {
           sh "rm -rf _build/prod/rel/wocky"
           sh "mix prepare"
           sh "mix release --warnings-as-errors"
-          sh "echo `./version` > RELEASE"
+          sh "elixir version.exs > RELEASE"
 
           archive 'RELEASE'
           archive '_build/prod/rel/wocky/releases/**/wocky.tar.gz'
