@@ -13,15 +13,19 @@ pipeline {
           checkout scm
           sh "mix local.hex --force"
           sh "mix local.rebar --force"
-          sh "mix clean"
-          sh "mix prepare"
         }
       }
     }
 
     stage('Basic Checks') {
+      environment {
+        MIX_ENV = "test"
+      }
+
       steps {
         ansiColor('xterm') {
+          sh "mix prepare"
+          sh "mix ecto.reset"
           sh "mix lint"
           sh "mix dialyzer --halt-exit-status"
         }
@@ -29,18 +33,22 @@ pipeline {
     }
 
     stage('Unit Tests') {
+      environment {
+        MIX_ENV = "test"
+      }
+
       steps {
         ansiColor('xterm') {
-          sh "MIX_ENV=test mix prepare"
-          sh "MIX_ENV=test mix ecto.drop"
-          sh "MIX_ENV=test mix ecto.create"
-          sh "MIX_ENV=test mix ecto.migrate"
           sh "mix espec"
         }
       }
     }
 
     stage('Integration Tests') {
+      environment {
+        MIX_ENV = "test"
+      }
+
       steps {
         ansiColor('xterm') {
           sh "mix ct"
@@ -49,11 +57,15 @@ pipeline {
     }
 
     stage('Build Release') {
+      environment {
+        MIX_ENV = "prod"
+      }
+
       steps {
         ansiColor('xterm') {
           sh "rm -rf _build/prod/rel/wocky"
-          sh "MIX_ENV=prod mix prepare"
-          sh "MIX_ENV=prod mix release --warnings-as-errors"
+          sh "mix prepare"
+          sh "mix release --warnings-as-errors"
           sh "echo `./version` > RELEASE"
 
           archive 'RELEASE'
