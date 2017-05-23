@@ -44,6 +44,7 @@ defmodule Wocky.TrafficLog do
   def put(fields) do
     %TrafficLog{}
     |> cast(fields, @change_fields)
+    |> validate_required(@change_fields)
     |> foreign_key_constraint(:user_id)
     |> Repo.insert
   end
