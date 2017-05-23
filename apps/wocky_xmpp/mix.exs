@@ -112,7 +112,7 @@ defmodule Wocky.XMPP.Mixfile do
         github: "hippware/mix_elvis",
         branch: "master",
         runtime: false,
-        only: :dev},
+        only: [:dev, :test]},
       {:mix_ct,
         github: "hippware/mix_ct",
         branch: "master",

@@ -50,7 +50,7 @@ defmodule WockyAPI.Mixfile do
 
       {:espec,      "~> 1.2", only: :test},
       {:excoveralls,"~> 0.6", only: :test},
-      {:credo,      "~> 0.6", only: :dev, runtime: false},
+      {:credo,      "~> 0.6", only: [:dev, :test], runtime: false},
       {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
       {:reprise,    "~> 0.5", only: :dev}
     ]
