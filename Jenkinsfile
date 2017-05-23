@@ -6,9 +6,9 @@ pipeline {
   }
 
   stages {
-    ansiColor('xterm') {
-      stage('Prepare') {
-        steps {
+    stage('Prepare') {
+      steps {
+        ansiColor('xterm') {
           sh "epmd -daemon"
           checkout scm
           sh "mix local.hex --force"
@@ -17,16 +17,20 @@ pipeline {
           sh "mix prepare"
         }
       }
+    }
 
-      stage('Basic Checks') {
-        steps {
+    stage('Basic Checks') {
+      steps {
+        ansiColor('xterm') {
           sh "mix lint"
           sh "mix dialyzer --halt-exit-status"
         }
       }
+    }
 
-      stage('Unit Tests') {
-        steps {
+    stage('Unit Tests') {
+      steps {
+        ansiColor('xterm') {
           sh "MIX_ENV=test mix prepare"
           sh "MIX_ENV=test mix ecto.drop"
           sh "MIX_ENV=test mix ecto.create"
@@ -34,15 +38,19 @@ pipeline {
           sh "mix espec"
         }
       }
+    }
 
-      stage('Integration Tests') {
-        steps {
+    stage('Integration Tests') {
+      steps {
+        ansiColor('xterm') {
           sh "mix ct"
         }
       }
+    }
 
-      stage('Build Release') {
-        steps {
+    stage('Build Release') {
+      steps {
+        ansiColor('xterm') {
           sh "rm -rf _build/prod/rel/wocky"
           sh "MIX_ENV=prod mix prepare"
           sh "MIX_ENV=prod mix release --warnings-as-errors"
