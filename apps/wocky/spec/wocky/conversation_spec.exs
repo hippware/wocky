@@ -27,10 +27,10 @@ defmodule Wocky.ConversationSpec do
       conversations |> hd |> should_match(shared.conversation)
     end
 
-    it "should return conversations sorted by timestamp" do
+    it "should return conversations sorted by decreasing timestamp" do
       conversations = Conversation.find(shared.user2.id)
       conversations |> should(have_length 10)
-      Enum.zip(conversations, shared.conversations)
+      Enum.zip(conversations, Enum.reverse(shared.conversations))
       |> should(have_all fn({a, b}) -> should_match(a, b) end)
     end
 

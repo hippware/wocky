@@ -123,21 +123,23 @@ defmodule Wocky.User do
   @spec register(server, external_id, phone_number) ::
     {:ok, {username, server, boolean}} | no_return
   def register(server, external_id, phone_number) do
-    case Repo.get_by(User, external_id: external_id) do
-      nil ->
-        user =
-          %{username: ID.new,
-            server: server,
-            external_id: external_id,
-            phone_number: phone_number}
-          |> register_changeset()
-          |> Repo.insert!
+    Repo.transaction(fn ->
+      case Repo.get_by(User, external_id: external_id) do
+        nil ->
+          user =
+            %{username: ID.new,
+              server: server,
+              external_id: external_id,
+              phone_number: phone_number}
+              |> register_changeset()
+              |> Repo.insert!
 
-        {:ok, {user.username, user.server, true}}
+          {user.username, user.server, true}
 
-      user ->
-        {:ok, {user.username, user.server, false}}
-    end
+        user ->
+          {user.username, user.server, false}
+      end
+    end)
   end
 
   def register_changeset(params) do
@@ -172,6 +174,7 @@ defmodule Wocky.User do
 
     [user.bots, user.subscriptions, user.temp_subscriptions]
     |> List.flatten
+    |> Enum.filter(&(!&1.pending))
     |> Enum.sort_by(&(&1.created_at))
     |> Enum.uniq_by(&(&1.id))
   end

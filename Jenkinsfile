@@ -6,47 +6,67 @@ pipeline {
   }
 
   stages {
-    ansiColor('xterm') {
-      stage('Prepare') {
-        steps {
+    stage('Prepare') {
+      steps {
+        ansiColor('xterm') {
           sh "epmd -daemon"
           checkout scm
           sh "mix local.hex --force"
           sh "mix local.rebar --force"
-          sh "mix clean"
-          sh "mix prepare"
         }
       }
+    }
 
-      stage('Basic Checks') {
-        steps {
+    stage('Basic Checks') {
+      environment {
+        MIX_ENV = "test"
+      }
+
+      steps {
+        ansiColor('xterm') {
+          sh "mix prepare"
+          sh "mix ecto.reset"
           sh "mix lint"
           sh "mix dialyzer --halt-exit-status"
         }
       }
+    }
 
-      stage('Unit Tests') {
-        steps {
-          sh "MIX_ENV=test mix prepare"
-          sh "MIX_ENV=test mix ecto.drop"
-          sh "MIX_ENV=test mix ecto.create"
-          sh "MIX_ENV=test mix ecto.migrate"
+    stage('Unit Tests') {
+      environment {
+        MIX_ENV = "test"
+      }
+
+      steps {
+        ansiColor('xterm') {
           sh "mix espec"
         }
       }
+    }
 
-      stage('Integration Tests') {
-        steps {
+    stage('Integration Tests') {
+      environment {
+        MIX_ENV = "test"
+      }
+
+      steps {
+        ansiColor('xterm') {
           sh "mix ct"
         }
       }
+    }
 
-      stage('Build Release') {
-        steps {
+    stage('Build Release') {
+      environment {
+        MIX_ENV = "prod"
+      }
+
+      steps {
+        ansiColor('xterm') {
           sh "rm -rf _build/prod/rel/wocky"
-          sh "MIX_ENV=prod mix prepare"
-          sh "MIX_ENV=prod mix release --warnings-as-errors"
-          sh "echo `./version` > RELEASE"
+          sh "mix prepare"
+          sh "mix release --warnings-as-errors"
+          sh "elixir version.exs > RELEASE"
 
           archive 'RELEASE'
           archive '_build/prod/rel/wocky/releases/**/wocky.tar.gz'

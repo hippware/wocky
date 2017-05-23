@@ -46,6 +46,6 @@ defmodule Wocky.Conversation do
   @spec find(binary) :: [t]
   def find(user_id) do
     Repo.all(from c in Conversation, where: c.user_id == ^user_id,
-                                     order_by: [asc: :updated_at])
+                                     order_by: [desc: :updated_at])
   end
 end

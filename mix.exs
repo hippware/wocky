@@ -34,7 +34,7 @@ defmodule Wocky.Release.Mixfile do
   defp deps do
     [
       {:distillery, "~> 1.1", runtime: false},
-      {:dialyxir,   "~> 0.5", only: :dev, runtime: false},
+      {:dialyxir,   "~> 0.5", only: [:dev, :test], runtime: false},
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:mix_ct,
@@ -47,8 +47,10 @@ defmodule Wocky.Release.Mixfile do
   defp aliases do
     [
       recompile: ["clean", "compile"],
-      prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
-      lint: ["elvis", "credo"]
+      prepare: ["deps.get", "deps.compile goldrush lager", "recompile"],
+      lint: ["elvis", "credo"],
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
   end
 end

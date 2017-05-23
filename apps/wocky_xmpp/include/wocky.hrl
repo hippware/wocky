@@ -16,7 +16,7 @@
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
 %% Standard time format to use unless there's a good reason to do otherwise
--define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended}">>).
+-define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended:Z}">>).
 
 %% Standard namespaces
 -define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
