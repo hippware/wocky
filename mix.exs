@@ -49,7 +49,7 @@ defmodule Wocky.Release.Mixfile do
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "recompile"],
       lint: ["elvis", "credo"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
   end
