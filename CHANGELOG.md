@@ -8,6 +8,13 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+# Unreleased
+
+**DATABASE MIGRATION** from Cassandra to postgresql-compatible. 
+
+* Lots of refactoring and rewrites. 
+
+
 # 17.04.26+1768.151aff7
 
 * Push notifications restructure
