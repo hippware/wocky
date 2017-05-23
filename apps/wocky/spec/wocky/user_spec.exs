@@ -413,6 +413,7 @@ defmodule Wocky.UserSpec do
       other_user = Factory.insert(:user)
 
       owned_bot = Factory.insert(:bot, user: shared.user)
+      pending_bot = Factory.insert(:bot, user: shared.user, pending: true)
       public_bot = Factory.insert(:bot, user: other_user, public: true)
       shared_bot = Factory.insert(:bot, user: other_user)
       subscribed_bot = Factory.insert(:bot, user: other_user)
@@ -425,6 +426,7 @@ defmodule Wocky.UserSpec do
 
       {:ok, [
           owned_bot: owned_bot,
+          pending_bot: pending_bot,
           public_bot: public_bot,
           shared_bot: shared_bot,
           subscribed_bot: subscribed_bot,
@@ -459,6 +461,7 @@ defmodule Wocky.UserSpec do
       it do: should(have_any &same_bot(&1, shared.owned_bot))
       it do: should(have_any &same_bot(&1, shared.subscribed_bot))
       it do: should(have_any &same_bot(&1, shared.temp_subscribed_bot))
+      it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
 
     describe "get_owned_bots/1" do
@@ -466,6 +469,7 @@ defmodule Wocky.UserSpec do
 
       it do: should(have_count 1)
       it do: should(have_any &same_bot(&1, shared.owned_bot))
+      it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
 
     describe "get_owned_bots_with_follow_me/1" do
@@ -484,6 +488,7 @@ defmodule Wocky.UserSpec do
       it do: should(have_count 1)
       it do: should(have_any &same_bot(&1, shared.follow_bot))
       it do: should_not(have_any &same_bot(&1, shared.owned_bot))
+      it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
   end
 
