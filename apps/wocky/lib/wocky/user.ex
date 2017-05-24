@@ -186,6 +186,30 @@ defmodule Wocky.User do
   def can_access?(user, bot),
     do: owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot)
 
+  @doc """
+    Returns true if a bot should appear in a user's geosearch results. Criteria:
+      * Bots I own
+      * Bots I'm subscribed to
+      * Public bots owned by users I follow
+        (which includes public bots owned by my friends)
+      * Private bots owned by friends which have also been shared to me
+      """
+  @spec searchable?(t, Bot.t) :: boolean
+  def searchable?(user, bot) do
+    subscribed?(user, bot)
+    || (bot.public && follow_owner?(user, bot))
+    || shared_friends_bot?(user, bot)
+  end
+
+  defp follow_owner?(user, bot),
+    do: RosterItem.is_follower(user.id, bot.user_id)
+
+  # Returns true if the bot belongs to a friend and is shared to the user
+  defp shared_friends_bot?(user, bot) do
+    Share.exists?(user, bot)
+    && RosterItem.is_friend(user.id, bot.user_id)
+  end
+
   @doc "Returns all bots that the user owns"
   @spec get_owned_bots(t) :: [Bot.t]
   def get_owned_bots(user) do
