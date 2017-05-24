@@ -8,6 +8,8 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+* Geo-search API not returning all expected bots (#641)
+
 # Unreleased
 
 
