@@ -8,9 +8,13 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+# Unreleased
+
+* Conversations query tweaks (#650)
 * Enable special bypass phone number prefix on Staging (#668)
 
-# Unreleased
+
+# 17.5.23+2177.2daf71f
 
 **DATABASE MIGRATION** from Cassandra to postgresql-compatible. 
 

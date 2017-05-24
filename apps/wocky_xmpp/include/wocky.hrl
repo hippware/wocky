@@ -30,7 +30,8 @@
 -define(NS_ACCESS,        <<"hippware.com/hxep/access">>).
 -define(NS_BOT,           <<"hippware.com/hxep/bot">>).
 -define(NS_BOT_EVENT,     <<"hippware.com/hxep/bot#event">>).
--define(NS_CONVERSATIONS, <<"hippware.com/hexp/conversations">>).
+-define(NS_CONVERSATIONS_LEGACY, <<"hippware.com/hexp/conversations">>).
+-define(NS_CONVERSATIONS, <<"hippware.com/hxep/conversations">>).
 -define(NS_CRASH_TEST,    <<"hippware.com/hxep/crash-test">>).
 -define(NS_ERRORS,        <<"hippware.com/hxep/errors">>).
 -define(NS_HANDLE,        <<"hippware.com/hxep/handle">>).
