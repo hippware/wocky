@@ -126,7 +126,7 @@ all_no_set(Config) ->
 %%--------------------------------------------------------------------
 
 query_stanza(Children) ->
-    test_helper:iq_set(?NS_CONVERSATIONS,
+    test_helper:iq_get(?NS_CONVERSATIONS,
                        #xmlel{name = <<"query">>,
                               children = Children}).
 
