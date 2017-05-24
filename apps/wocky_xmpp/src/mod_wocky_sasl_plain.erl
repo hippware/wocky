@@ -95,9 +95,9 @@ mech_step(Creds, ClientIn) ->
     end.
 
 get_auth_bypass_prefixes(Opts) ->
-  case wocky_xmpp_app:is_testing() of
-    true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
-    false -> []
+  case wocky_xmpp_app:is_production() of
+    false -> proplists:get_value(auth_bypass_prefixes, Opts, []);
+    true  -> []
   end.
 
 do_registration(JSON) ->
