@@ -8,6 +8,8 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+* Enable special bypass phone number prefix on Staging (#668)
+
 # Unreleased
 
 **DATABASE MIGRATION** from Cassandra to postgresql-compatible. 
