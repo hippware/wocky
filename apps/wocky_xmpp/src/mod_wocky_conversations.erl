@@ -27,6 +27,8 @@ start(Host, Opts) ->
                                    conv_max,
                                    ?DEFAULT_MAX,
                                    Opts),
+    gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CONVERSATIONS_LEGACY,
+                                  ?MODULE, handle_iq, parallel),
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_CONVERSATIONS,
                                   ?MODULE, handle_iq, parallel),
     ejabberd_hooks:add(mam_archive_message, Host, ?MODULE,
@@ -35,7 +37,10 @@ start(Host, Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(mam_archive_message, Host, ?MODULE,
                           archive_message_hook, 50),
-    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_CONVERSATIONS).
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
+                                     ?NS_CONVERSATIONS),
+    gen_iq_handler:remove_iq_handler(ejabberd_sm, Host,
+                                     ?NS_CONVERSATIONS_LEGACY).
 
 %%%===================================================================
 %%% IQ packet handling
@@ -47,8 +52,13 @@ stop(Host) ->
 handle_iq(From, To, IQ) ->
     handle_iq_type(From, To, IQ).
 
+%% TODO: Remove the 'set' variant once the client is updated
 handle_iq_type(From, _To,
                IQ = #iq{type = set,
+                        sub_el = #xmlel{name = <<"query">>}}) ->
+    get_conversations_response(From, IQ);
+handle_iq_type(From, _To,
+               IQ = #iq{type = get,
                         sub_el = #xmlel{name = <<"query">>}}) ->
     get_conversations_response(From, IQ);
 handle_iq_type(_From, _To, _IQ) ->
