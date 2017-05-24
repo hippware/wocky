@@ -11,7 +11,7 @@ If there are not many items, just list them sequentially.
 # Unreleased
 
 
-# 2017.5.23+2177.2daf71f
+# 17.5.23+2177.2daf71f
 
 **DATABASE MIGRATION** from Cassandra to postgresql-compatible. 
 
