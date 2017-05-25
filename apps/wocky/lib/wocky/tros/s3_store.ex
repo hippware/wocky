@@ -130,7 +130,7 @@ defmodule Wocky.TROS.S3Store do
     |> TROS.get_base_id
     |> do_hash()
     |> :binary.part(0, 2)
-    |> Base.encode16
+    |> Base.encode16([:lower])
   end
 
   defp do_hash(str), do: :crypto.hash(:md5, str)
