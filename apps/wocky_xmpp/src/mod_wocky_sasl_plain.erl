@@ -94,8 +94,11 @@ mech_step(Creds, ClientIn) ->
             {error, <<"bad-protocol">>}
     end.
 
+enable_digits_bypass() ->
+    ?confex:get(wocky_xmpp, enable_digits_bypass).
+
 get_auth_bypass_prefixes(Opts) ->
-  case wocky_xmpp_app:is_production() of
+  case enable_digits_bypass() of
     false -> proplists:get_value(auth_bypass_prefixes, Opts, []);
     true  -> []
   end.
