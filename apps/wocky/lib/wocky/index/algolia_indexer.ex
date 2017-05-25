@@ -46,7 +46,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
     %{
       id: obj["objectID"],
       server: obj["server"],
-      owner: obj["owner"],
+      user_id: obj["user_id"],
       title: obj["title"],
       image: obj["image"],
       lat: obj["lat"],
