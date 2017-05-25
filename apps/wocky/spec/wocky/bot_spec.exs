@@ -77,6 +77,12 @@ defmodule Wocky.BotSpec do
       |> should(have_errors Map.keys(attrs()))
     end
 
+    it "should fail with negative radius" do
+      %Bot{}
+      |> Bot.changeset(Map.put(attrs(), :radius, -1))
+      |> should(have_errors [:radius])
+    end
+
     it "should normalize latitude" do
       attrs = Map.put(attrs(), :lat, -95.0)
       changeset = Bot.changeset(%Bot{}, attrs)
