@@ -110,7 +110,7 @@ defmodule Wocky.TROS do
     {list, list}
   def make_upload_response(owner_jid, file_id, size, access, meta) do
     jid(luser: owner) = owner_jid
-    Metadata.put(file_id, owner, access)
+    {:ok, _} = Metadata.put(file_id, owner, access)
 
     (backend()).make_upload_response(owner_jid, file_id, size, meta)
   end
