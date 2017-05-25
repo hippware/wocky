@@ -8,11 +8,9 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start/1, start/0, stop/0, ensure_loaded/1,
-         server/0, is_production/0]).
+-export([start/1, start/0, stop/0, ensure_loaded/1, server/0]).
 
 -define(system, 'Elixir.System').
--define(confex, 'Elixir.Confex').
 
 
 -spec start(string()) -> ok.
@@ -48,10 +46,6 @@ version() ->
 -spec server() -> ejabberd:server().
 server() ->
     hd(ejabberd_config:get_global_option(hosts)).
-
--spec is_production() -> boolean().
-is_production() ->
-    is_production_server(server()).
 
 
 %%%===================================================================
@@ -118,8 +112,3 @@ start_ejabberd(CfgPath) ->
     ok = application:set_env(ejabberd, config, CfgPath),
     {ok, _} = application:ensure_all_started(ejabberd),
     ok.
-
-is_production_server(<<"localhost">>) -> false;
-is_production_server(<<"testing.", _/binary>>) -> false;
-is_production_server(<<"staging.", _/binary>>) -> false;
-is_production_server(_) -> true.

@@ -73,6 +73,7 @@
 
 -define(wocky_push_notifier, 'Elixir.Wocky.PushNotifier').
 
+-define(confex, 'Elixir.Confex').
 -define(timex, 'Elixir.Timex').
 -define(duration, 'Elixir.Timex.Duration').
 
