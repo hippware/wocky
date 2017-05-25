@@ -10,11 +10,16 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Lots of small fixes.
+
+
+# 2017.5.24+2186.ae67e94
+
 * Conversations query tweaks (#650)
 * Enable special bypass phone number prefix on Staging (#668)
 
 
-# 17.5.23+2177.2daf71f
+# 2017.5.23+2177.2daf71f
 
 **DATABASE MIGRATION** from Cassandra to postgresql-compatible. 
 
