@@ -120,9 +120,10 @@ get_first(Config) ->
 get_with_rsm(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
-        [V1, V2, V3] = proplists:get_value(alice_versions, Config),
+        [V1, _, V3] = proplists:get_value(alice_versions, Config),
+        [_, K2, _] = proplists:get_value(alice_keys, Config),
         Stanza = expect_iq_success_u(
-                   get_hs_stanza(#rsm_in{direction = before, max = 1, id = V2}),
+                   get_hs_stanza(#rsm_in{direction = before, max = 1, id = K2}),
                    Alice, Alice),
         [Item] = check_hs_result(Stanza, 1),
         ?assertEqual(V1, Item#item.version),
@@ -424,12 +425,15 @@ handle_pep(_From, Element) ->
 %%--------------------------------------------------------------------
 
 seed_home_stream(Config) ->
-    #{updated_at := V1} = ok(?wocky_home_stream_item:put(
-                                ?ALICE, ?BOT, ?BOT_B_JID, ?BOT_UPDATE_STANZA)),
-    #{updated_at := V2} = ok(?wocky_home_stream_item:put(
-                                ?ALICE, ?ITEM, ?BOT_B_JID, ?ITEM_STANZA)),
-    #{updated_at := V3} = ok(?wocky_home_stream_item:put(
-                                ?ALICE, ?ITEM2, ?BOT_B_JID, ?ITEM_STANZA2)),
+    #{updated_at := V1, key := K1} =
+        ok(?wocky_home_stream_item:put(?ALICE, ?BOT,
+                                       ?BOT_B_JID, ?BOT_UPDATE_STANZA)),
+    #{updated_at := V2, key := K2} =
+        ok(?wocky_home_stream_item:put(?ALICE, ?ITEM,
+                                       ?BOT_B_JID, ?ITEM_STANZA)),
+    #{updated_at := V3, key := K3} =
+        ok(?wocky_home_stream_item:put(?ALICE, ?ITEM2,
+                                       ?BOT_B_JID, ?ITEM_STANZA2)),
     Versions = [ok(?timex:format(V, ?DEFAULT_TIME_FORMAT))
                 || V <- [V1, V2, V3]],
 
@@ -439,6 +443,6 @@ seed_home_stream(Config) ->
                                           ?BJID(?BOB), ?BOT_UPDATE_STANZA)
       end,
       lists:seq(1, ?BOB_HS_ITEM_COUNT)),
-    [{alice_versions, Versions} | Config].
+    [{alice_versions, Versions}, {alice_keys, [K1, K2, K3]} | Config].
 
 ok({ok, Val}) -> Val.
