@@ -30,8 +30,7 @@ groups() ->
        message_media_updown_story,
        update_metadata,
        file_up_too_big_story,
-       request_too_big_story,
-       update_metadata
+       request_too_big_story
       ]
      }
     ].

@@ -64,8 +64,9 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
     do([error_m ||
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
-        OwnerID <- expand_err(?tros:get_owner(FileID)),
-        Access <- expand_err(?tros:get_access(FileID)),
+        BaseID <- {ok, ?tros:get_base_id(FileID)},
+        OwnerID <- expand_err(?tros:get_owner(BaseID)),
+        Access <- expand_err(?tros:get_access(BaseID)),
         check_download_permissions(FromJID, OwnerID, Access),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID)

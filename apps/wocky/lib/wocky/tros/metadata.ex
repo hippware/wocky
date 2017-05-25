@@ -13,7 +13,7 @@ defmodule Wocky.TROS.Metadata do
   @foreign_key_type :binary_id
   schema "tros_metadatas" do
     field :id,     :binary_id, primary_key: true
-    field :access, :binary
+    field :access, :binary, default: ""
 
     belongs_to :user, User
 
@@ -86,7 +86,6 @@ defmodule Wocky.TROS.Metadata do
     struct
     |> cast(params, @change_fields)
     |> unique_constraint(:id, name: :tros_metadatas_pkey)
-    |> validate_required(:access)
     |> foreign_key_constraint(:user_id)
   end
 
