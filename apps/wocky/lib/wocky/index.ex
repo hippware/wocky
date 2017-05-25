@@ -16,7 +16,7 @@ defmodule Wocky.Index do
   end
 
   @user_fields [:handle, :last_name, :first_name, :avatar]
-  @bot_fields [:server, :user_id, :title, :image, :lat, :lon, :radius]
+  @bot_fields [:server, :user_id, :title, :image, :lat, :lon, :radius, :public]
 
   # ===================================================================
   # Behaviour definition
