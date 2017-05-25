@@ -52,7 +52,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
       lat: obj["lat"],
       lon: obj["lon"],
       radius: obj["radius"],
-      distance: obj["_rankingInfo"]["geoDistance"] * 1000 # millimeters
+      distance: obj["_rankingInfo"]["geoDistance"] * 1000, # millimeters
       public: obj["public"]
     }
   end
