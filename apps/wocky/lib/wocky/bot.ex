@@ -102,6 +102,7 @@ defmodule Wocky.Bot do
     |> validate_required(@required_fields)
     |> update_change(:lat, &GeoUtils.normalize_latitude/1)
     |> update_change(:lon, &GeoUtils.normalize_longitude/1)
+    |> validate_number(:radius, greater_than: 0)
     |> put_change(:pending, false)
     |> unique_constraint(:shortname)
     |> foreign_key_constraint(:user_id)

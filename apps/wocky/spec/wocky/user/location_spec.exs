@@ -104,7 +104,7 @@ defmodule Wocky.User.LocationSpec do
       context "when the bot has a negative radius" do
         before do
           shared.bot
-          |> Bot.changeset(%{radius: -1})
+          |> cast(%{radius: -1}, [:radius])
           |> Repo.update!
 
           Location.check_for_bot_events(shared.inside_loc)
