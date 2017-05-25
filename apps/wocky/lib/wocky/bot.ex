@@ -79,8 +79,8 @@ defmodule Wocky.Bot do
   def get_id_from_node(@bot_prefix <> id), do: id
   def get_id_from_node(_), do: nil
 
-  @spec public?(t) :: boolean
-  def public?(%Bot{public: is_public}), do: is_public
+  @spec public?(map) :: boolean
+  def public?(%{public: is_public}), do: is_public
 
   #----------------------------------------------------------------------
   # Databse interaction
