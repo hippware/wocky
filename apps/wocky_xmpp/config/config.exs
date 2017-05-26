@@ -56,20 +56,23 @@ config :lager,
     ]
   ],
   traces: [
-    # {{:lager_file_backend, 'location.log'}, [module: Wocky.Location]},
-    # {{:lager_file_backend, 'location.log'}, [module: Wocky.LocationAPI]},
-    # {{:lager_file_backend, 'notifications.log'}, [
-    #   module: Wocky.PushNotifier
-    # ]},
-    # {{:lager_file_backend, 'notifications.log'}, [
-    #   module: Wocky.PushNotifier.SNSBackend
-    # ]},
-    # {{:lager_file_backend, 'notifications.log'}, [
-    #   module: Wocky.PushNotifier.NullBackend
-    # ]},
-    # {{:lager_file_backend, 'notifications.log'}, [
-    #   module: :mod_wocky_notifications
-    # ]}
+    {{:lager_file_backend, 'location.log'}, [module: Wocky.User.Location]},
+    {{:lager_file_backend, 'location.log'}, [module: WockyAPI.LocationAPI]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.PushNotifier
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.PushNotifier.SNSNotifier
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+       module: Wocky.PushNotifier.TestNotifier
+     ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.PushNotifier.NullNotifier
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
+      module: :mod_wocky_notifications
+    ]}
   ]
 
 import_config "#{Mix.env}.exs"
