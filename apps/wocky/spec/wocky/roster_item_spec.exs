@@ -313,16 +313,16 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
-  describe "bump_version/2" do
-    it "should change the version" do
+  describe "bump_all_versions/2" do
+    it "should change the version for all roster entries with the contact" do
       initial = RosterItem.version(shared.user.id)
-      RosterItem.bump_version(shared.user.id, shared.contact.id)
+      RosterItem.bump_all_versions(shared.contact.id)
       |> should(eq :ok)
       RosterItem.version(shared.user.id) |> should(be :!=, initial)
     end
 
     it "should not change the data" do
-      RosterItem.bump_version(shared.user.id, shared.contact.id)
+      RosterItem.bump_all_versions(shared.contact.id)
       |> should(eq :ok)
       RosterItem.get(shared.user.id, shared.contact.id)
       |> Map.get(:contact)
