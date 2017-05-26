@@ -58,8 +58,7 @@ start(Host, _Opts) ->
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_ACCESS),
-    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ACCESS),
-    ets:delete(?MANAGER_TABLE).
+    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_ACCESS).
 
 
 %%%===================================================================
