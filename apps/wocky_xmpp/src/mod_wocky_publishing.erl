@@ -46,7 +46,6 @@ stop(Host) ->
     ejabberd_hooks:delete(filter_local_packet, Host,
                           fun filter_local_packet_hook/1, 80),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBLISHING),
-    ets:delete(?PUBLISHING_HANDLER_TABLE),
     ok.
 
 %%%===================================================================
