@@ -16,6 +16,9 @@
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
+% This should occur before most other modules, since they often expect addresses
+% in the standard format
+-define(PACKET_FILTER_PRIORITY, 20).
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -24,12 +27,14 @@
 start(Host, _Opts) ->
     mod_disco:register_feature(Host, ?NS_ADDRESS),
     ejabberd_hooks:add(filter_local_packet, Host,
-                       fun filter_local_packet_hook/1, 80).
+                       fun filter_local_packet_hook/1,
+                       ?PACKET_FILTER_PRIORITY).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_ADDRESS),
     ejabberd_hooks:delete(filter_local_packet, Host,
-                          fun filter_local_packet_hook/1, 80).
+                          fun filter_local_packet_hook/1,
+                          ?PACKET_FILTER_PRIORITY).
 
 %%%===================================================================
 %%% Incoming packet handler

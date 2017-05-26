@@ -154,12 +154,15 @@ multicast_stanza(Type) ->
 multicast_stanza(AddressAttrs, NS) ->
     Stanza = escalus_stanza:chat_to(
                ?SERVER, <<"Check out my LOLCAT">>),
+    multicast_stanza(AddressAttrs, NS, Stanza).
+
+multicast_stanza(AddressAttrs, NS, Contents) ->
     AddressEls = make_address_els(AddressAttrs),
     Addresses = #xmlel{name = <<"addresses">>,
                        attrs = [{<<"xmlns">>, NS}],
                        children = AddressEls},
-    Stanza#xmlel{children =
-                 [Addresses | Stanza#xmlel.children]}.
+    Contents#xmlel{children =
+                   [Addresses | Contents#xmlel.children]}.
 
 make_address_els(AddressAttrsList) ->
     lists:map(

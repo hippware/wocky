@@ -80,6 +80,7 @@ all() ->
      follow_me,
      unfollow_me,
      share,
+     share_multicast,
      open_visibility,
      follow_notifications,
      geosearch,
@@ -687,6 +688,34 @@ share(Config) ->
 
         test_helper:ensure_all_clean([Alice, Tim])
       end).
+
+share_multicast(Config) ->
+    reset_tables(Config),
+    ?notification_handler:reset(),
+    escalus:story(Config, [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
+
+        set_notifications(true, Tim),
+
+        % Alice shares the bot to him
+        Stanza = multicast_SUITE:multicast_stanza(
+                   [[{<<"type">>, <<"to">>},
+                     {<<"jid">>, ?BJID(?TIM)}]],
+                   ?NS_ADDRESS,
+                   escalus_stanza:to(share_stanza(?BOT), ?SERVER)
+                  ),
+        escalus:send(Alice, Stanza),
+        timer:sleep(500),
+
+        % Tim can now see the bot
+        expect_iq_success(retrieve_stanza(), Tim),
+
+        1 = length(?notification_handler:get_notifications()),
+
+        test_helper:ensure_all_clean([Alice, Tim])
+      end).
+
 
 open_visibility(Config) ->
     reset_tables(Config),
@@ -1304,13 +1333,17 @@ unsubscribe_temporary(Bot, Client) ->
 
 share_stanza(BotID, From, Target) ->
     fun_chain:first(
-      #xmlel{name = <<"message">>,
-             attrs = [{<<"type">>, <<"headline">>}],
-             children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
-                         bot_el(BotID)]},
+      BotID,
+      share_stanza(),
       escalus_stanza:to(Target),
       escalus_stanza:from(From)
      ).
+
+share_stanza(BotID) ->
+    #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
+           children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
+                       bot_el(BotID)]}.
 
 bot_el(BotID) ->
     #xmlel{name = <<"bot">>,
