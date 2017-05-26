@@ -79,6 +79,11 @@ defmodule Wocky.Bot do
   def get_id_from_node(@bot_prefix <> id), do: id
   def get_id_from_node(_), do: nil
 
+  # public? takes a bare map rather than requiring a %Bot struct because it's
+  # used by the bot geosearch. The geosearch retrives partially complete bots
+  # from algolia and stores them in a map. Rather than hitting the DB and
+  # fililng out the Bot struct, we just allow those maps to be used directly
+  # here.
   @spec public?(map) :: boolean
   def public?(%{public: is_public}), do: is_public
 
