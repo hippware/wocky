@@ -16,7 +16,7 @@ If there are not many items, just list them sequentially.
 * Fix digits bypass
 
 
-# 2017.5.26+2222.84833a7, 2017.5.26+2222.84833a7
+# 2017.5.26+2222.84833a7
 
 * Lots of small fixes.
 
