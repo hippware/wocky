@@ -288,6 +288,44 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
+  describe "following/1" do
+    before do
+      following_none = Factory.insert(:user, %{server: shared.server})
+      following_one = Factory.insert(:user, %{server: shared.server})
+      following_two = Factory.insert(:user, %{server: shared.server})
+      insert_follower_pair(following_two, following_one)
+      insert_follower_pair(following_two, following_none)
+      insert_follower_pair(following_one, following_none)
+
+      {:ok,
+       following_none: following_none,
+       following_one: following_one,
+       following_two: following_two,
+       following_list: Enum.sort([following_none, following_one])
+      }
+    end
+
+    it "should return the full list of users being followed" do
+      shared.following_none.id
+      |> RosterItem.following
+      |> should(eq [])
+
+      shared.following_one.id
+      |> RosterItem.following
+      |> should(eq [shared.following_none])
+
+      shared.following_two.id
+      |> RosterItem.following
+      |> Enum.sort
+      |> should(eq shared.following_list)
+    end
+
+    it "should return an empty list for non-users" do
+      RosterItem.following(ID.new) |> should(eq [])
+    end
+  end
+
+
   describe "friends/1" do
     it "should return the full list of friends" do
       RosterItem.friends(shared.user.id)
@@ -338,6 +376,15 @@ defmodule Wocky.RosterItemSpec do
     Factory.insert(
       :roster_item,
       user_id: contact.id, contact_id: user.id, groups: take_random(groups))
+  end
+
+  defp insert_follower_pair(follower, followee) do
+    Factory.insert(
+      :roster_item, subscription: :from,
+      user_id: followee.id, contact_id: follower.id)
+    Factory.insert(
+      :roster_item, subscription: :to,
+      user_id: follower.id, contact_id: followee.id)
   end
 
   defp take_random(list) do
