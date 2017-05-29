@@ -425,6 +425,7 @@ defmodule Wocky.UserSpec do
       TempSubscription.put(shared.user, temp_subscribed_bot, node())
 
       {:ok, [
+          other_user: other_user,
           owned_bot: owned_bot,
           pending_bot: pending_bot,
           public_bot: public_bot,
@@ -462,6 +463,11 @@ defmodule Wocky.UserSpec do
       it do: should(have_any &same_bot(&1, shared.subscribed_bot))
       it do: should(have_any &same_bot(&1, shared.temp_subscribed_bot))
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
+    end
+
+    describe "bot_count/1" do
+      it do: User.bot_count(shared.user) |> should(eq 1)
+      it do: User.bot_count(shared.other_user) |> should(eq 5)
     end
 
     describe "get_owned_bots/1" do

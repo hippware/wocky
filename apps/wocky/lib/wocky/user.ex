@@ -179,6 +179,15 @@ defmodule Wocky.User do
     |> Enum.uniq_by(&(&1.id))
   end
 
+  @spec bot_count(User.t) :: non_neg_integer
+  def bot_count(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> where(pending: false)
+    |> select([b], count(b.id))
+    |> Repo.one!
+  end
+
   @spec owns?(t, Bot.t) :: boolean
   def owns?(user, bot), do: user.id == bot.user_id
 
