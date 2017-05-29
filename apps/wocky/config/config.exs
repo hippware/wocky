@@ -46,7 +46,7 @@ config :ex_aws,
   ]
 
 config :slackex,
-  slack_token: "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"
+  token: "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"
 
 config :algolia,
   application_id: "HIE75ZR7Q7"
