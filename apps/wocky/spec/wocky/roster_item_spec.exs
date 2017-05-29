@@ -266,7 +266,6 @@ defmodule Wocky.RosterItemSpec do
   describe "followers/1" do
     it "should return the full list of followers" do
       RosterItem.followers(shared.user.id)
-      |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
       |> should(eq shared.contacts)
     end
@@ -274,7 +273,6 @@ defmodule Wocky.RosterItemSpec do
     it "should not return users who aren't followers" do
       RosterItem.put(default_item(shared, subscription: :to))
       RosterItem.followers(shared.user.id)
-      |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
       |> should(eq shared.contacts -- [shared.contact])
     end
@@ -325,11 +323,9 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
-
   describe "friends/1" do
     it "should return the full list of friends" do
       RosterItem.friends(shared.user.id)
-      |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
       |> should(eq shared.contacts)
     end
@@ -337,7 +333,6 @@ defmodule Wocky.RosterItemSpec do
     it "should not return users who aren't friends" do
       RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.friends(shared.user.id)
-      |> Enum.map(&Map.get(&1, :contact))
       |> Enum.sort
       |> should(eq shared.contacts -- [shared.contact])
     end
