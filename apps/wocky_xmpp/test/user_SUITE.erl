@@ -119,7 +119,7 @@ all_fields(Config) ->
         QueryStanza = get_request(?ALICE, []),
         ResultStanza = expect_iq_success(QueryStanza, Alice),
         FieldsXML = exml_query:path(ResultStanza, [{element, <<"fields">>}]),
-        10 = length(FieldsXML#xmlel.children)
+        13 = length(FieldsXML#xmlel.children)
     end).
 
 some_fields(Config) ->
@@ -592,7 +592,8 @@ users_request(BJIDs) ->
     test_helper:iq_get(?NS_USER, #xmlel{name = <<"users">>, children = Users}).
 
 public_fields() ->
-    [jid, user, server, handle, avatar, first_name, last_name].
+    [jid, user, server, handle, avatar, first_name, last_name,
+     'bots+size', 'followers+size', 'followed+size'].
 private_fields() -> [phone_number, email, external_id].
 all_fields() -> public_fields() ++ private_fields().
 
