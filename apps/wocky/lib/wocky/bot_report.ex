@@ -4,6 +4,7 @@ defmodule Wocky.BotReport do
   import Ecto.Query
 
   alias Slackex.Files
+  alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo
@@ -41,7 +42,7 @@ defmodule Wocky.BotReport do
   defp generate_bot_report(days) do
     aft =
       Timex.now
-      |> Timex.subtract(Timex.Duration.from_days(days))
+      |> Timex.subtract(Duration.from_days(days))
       |> Timex.to_naive_datetime
 
     report =
