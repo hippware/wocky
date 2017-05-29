@@ -26,8 +26,12 @@ defmodule Wocky.BotReport do
     # but there wasn't a better way to handle this situation.
     servers = Application.get_env(:wocky_xmpp, :servers, ["localhost"])
     server = hd(servers)
-    report = generate_bot_report(days)
-    Files.upload(%{content: CSV.encode(report),
+    report =
+      days
+      |> generate_bot_report()
+      |> CSV.encode
+      |> Enum.to_list
+    Files.upload(%{content: report,
                    filename: "weekly_bot_report_#{server}.csv",
                    title: "Weekly Bot Report for #{server}",
                    filetype: "csv",
@@ -35,7 +39,10 @@ defmodule Wocky.BotReport do
   end
 
   defp generate_bot_report(days) do
-    aft = Timex.to_unix(Timex.now) - (days * 60 * 60 * 24)
+    aft =
+      Timex.now
+      |> Timex.subtract(Timex.Duration.from_days(days))
+      |> Timex.to_naive_datetime
 
     report =
       Bot
