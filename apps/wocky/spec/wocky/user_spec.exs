@@ -412,18 +412,6 @@ defmodule Wocky.UserSpec do
     before do
       other_user = Factory.insert(:user)
 
-      friend = Factory.insert(:user)
-      Factory.insert(:roster_item, user_id: shared.user.id,
-                     contact_id: friend.id)
-      Factory.insert(:roster_item, user_id: friend.id,
-                     contact_id: shared.user.id)
-
-      following = Factory.insert(:user)
-      Factory.insert(:roster_item, user_id: shared.user.id,
-                     contact_id: following.id, subscription: :from)
-      Factory.insert(:roster_item, user_id: following.id,
-                     contact_id: shared.user.id, subscription: :to)
-
       owned_bot = Factory.insert(:bot, user: shared.user)
       pending_bot = Factory.insert(:bot, user: shared.user, pending: true)
       public_bot = Factory.insert(:bot, user: other_user, public: true)
@@ -431,16 +419,8 @@ defmodule Wocky.UserSpec do
       subscribed_bot = Factory.insert(:bot, user: other_user)
       temp_subscribed_bot = Factory.insert(:bot, user: other_user)
       unaffiliated_bot = Factory.insert(:bot, user: other_user)
-      friends_public_bot = Factory.insert(:bot, user: friend, public: true)
-      friends_private_bot = Factory.insert(:bot, user: friend)
-      friends_shared_private_bot = Factory.insert(:bot, user: friend)
-      following_public_bot = Factory.insert(:bot, user: following, public: true)
-      following_private_bot = Factory.insert(:bot, user: following)
-      following_shared_private_bot = Factory.insert(:bot, user: following)
 
       Share.put(shared.user, shared_bot, other_user)
-      Share.put(shared.user, friends_shared_private_bot, friend)
-      Share.put(shared.user, following_shared_private_bot, following)
       Subscription.put(shared.user, subscribed_bot)
       TempSubscription.put(shared.user, temp_subscribed_bot, node())
 
@@ -452,12 +432,6 @@ defmodule Wocky.UserSpec do
           subscribed_bot: subscribed_bot,
           temp_subscribed_bot: temp_subscribed_bot,
           unaffiliated_bot: unaffiliated_bot,
-          friends_public_bot: friends_public_bot,
-          friends_private_bot: friends_private_bot,
-          friends_shared_private_bot: friends_shared_private_bot,
-          following_public_bot: following_public_bot,
-          following_private_bot: following_private_bot,
-          following_shared_private_bot: following_shared_private_bot,
         ]}
     end
 
@@ -467,6 +441,41 @@ defmodule Wocky.UserSpec do
     end
 
     describe "searchable?/2" do
+      before do
+        friend = Factory.insert(:user)
+        Factory.insert(:roster_item, user_id: shared.user.id,
+                       contact_id: friend.id)
+        Factory.insert(:roster_item, user_id: friend.id,
+                       contact_id: shared.user.id)
+
+        following = Factory.insert(:user)
+        Factory.insert(:roster_item, user_id: shared.user.id,
+                       contact_id: following.id, subscription: :from)
+        Factory.insert(:roster_item, user_id: following.id,
+                       contact_id: shared.user.id, subscription: :to)
+
+
+        friends_public_bot = Factory.insert(:bot, user: friend, public: true)
+        friends_private_bot = Factory.insert(:bot, user: friend)
+        friends_shared_private_bot = Factory.insert(:bot, user: friend)
+        following_public_bot = Factory.insert(:bot, user: following,
+                                              public: true)
+        following_private_bot = Factory.insert(:bot, user: following)
+        following_shared_private_bot = Factory.insert(:bot, user: following)
+
+        Share.put(shared.user, friends_shared_private_bot, friend)
+        Share.put(shared.user, following_shared_private_bot, following)
+
+        {:ok, [
+          friends_public_bot: friends_public_bot,
+          friends_private_bot: friends_private_bot,
+          friends_shared_private_bot: friends_shared_private_bot,
+          following_public_bot: following_public_bot,
+          following_private_bot: following_private_bot,
+          following_shared_private_bot: following_shared_private_bot
+        ]}
+      end
+
       it do: assert User.searchable?(shared.user, shared.owned_bot)
       it do: assert User.searchable?(shared.user, shared.subscribed_bot)
       it do: assert User.searchable?(shared.user, shared.temp_subscribed_bot)
