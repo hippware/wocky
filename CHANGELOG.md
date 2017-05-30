@@ -12,6 +12,7 @@ If there are not many items, just list them sequentially.
 
 * Fix: Conversations being stored with non-bare JID (#720)
 * Fix: Weekly reports not being generated on staging after migration (#713)
+* Fix: Inconsistent ordering of bots (#711)
 
 
 # 2017.5.29+2225.a8ec3ff
