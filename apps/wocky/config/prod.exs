@@ -7,7 +7,7 @@ config :wocky,
   tros_backend: Wocky.TROS.S3Store
 
 config :slackex,
-  slack_token: nil
+  token: nil
 
 config :quantum,
   global?: true
