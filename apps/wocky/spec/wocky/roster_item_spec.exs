@@ -359,9 +359,9 @@ defmodule Wocky.RosterItemSpec do
       |> should(eq :follower)
     end
 
-    it "should return :following where user b is following user a" do
+    it "should return :followee where user b is following user a" do
       RosterItem.relationship(shared.followee.id, shared.follower.id)
-      |> should(eq :following)
+      |> should(eq :followee)
     end
 
     it "should return :none if the users have no relationship" do

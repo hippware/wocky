@@ -35,7 +35,7 @@ defmodule Wocky.RosterItem do
   @type subscription :: :both | :from | :to | :none | :remove
   @type version :: binary
   @type group :: binary
-  @type relationship :: :self | :friend | :follower | :following | :none
+  @type relationship :: :self | :friend | :follower | :followee | :none
 
   @type t :: %RosterItem{
     user:          User.t,
@@ -177,7 +177,7 @@ defmodule Wocky.RosterItem do
           is_follower(a_to_b) ->
             :follower
           is_follower(b_to_a) ->
-            :following
+            :followee
           true ->
             :none
         end
