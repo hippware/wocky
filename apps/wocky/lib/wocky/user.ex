@@ -198,17 +198,14 @@ defmodule Wocky.User do
   def searchable?(user, bot) do
     owns?(user, bot) ||
     Subscription.exists?(user, bot) ||
-    (bot.public && follow_owner?(user, bot)) ||
-    shared_friends_bot?(user, bot)
-  end
-
-  defp follow_owner?(user, bot),
-    do: RosterItem.is_follower(user.id, bot.user_id)
-
-  # Returns true if the bot belongs to a friend and is shared to the user
-  defp shared_friends_bot?(user, bot) do
-    Share.exists?(user, bot)
-    && RosterItem.is_friend(user.id, bot.user_id)
+    case RosterItem.relationship(user.id, bot.user_id) do
+      :follower ->
+        bot.public
+      :friend ->
+        bot.public || Share.exists?(user, bot)
+      :none ->
+        false
+    end
   end
 
   @doc "Returns all bots that the user owns"
