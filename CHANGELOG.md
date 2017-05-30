@@ -8,6 +8,9 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+* Add user fields for number of bots, followers, and followees (#686)
+
+
 # Unreleased
 
 * Lots of small fixes.
