@@ -9,10 +9,13 @@ defmodule Wocky.TROS.MetadataSpec do
   before do
     user = Factory.insert(:user)
     metadata = Factory.insert(:tros_metadata, user: user)
+    unready = Factory.insert(:tros_metadata, user: user, ready: false)
     {:ok,
      id: metadata.id,
      user: user,
-     access: metadata.access}
+     access: metadata.access,
+     unready: unready
+    }
   end
 
   describe "put/3" do
@@ -94,6 +97,13 @@ defmodule Wocky.TROS.MetadataSpec do
     it "should return `nil` for a non-existant file" do
       Metadata.get_access(ID.new) |> should(eq nil)
     end
+  end
+
+  describe "ready?/1" do
+    it do: assert Metadata.ready?(shared.id)
+
+    it do: refute Metadata.ready?(shared.unready.id)
+    it do: refute Metadata.ready?(ID.new)
   end
 
   defp should_be_result(result) do

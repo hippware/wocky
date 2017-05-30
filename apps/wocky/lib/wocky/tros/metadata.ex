@@ -14,6 +14,7 @@ defmodule Wocky.TROS.Metadata do
   schema "tros_metadatas" do
     field :id,     :binary_id, primary_key: true
     field :access, :binary, default: ""
+    field :ready,  :boolean
 
     belongs_to :user, User
 
@@ -26,15 +27,16 @@ defmodule Wocky.TROS.Metadata do
   @type t :: %TROSMetadata{
     id:      id,
     user_id: User.id,
-    access:  access
+    access:  access,
+    ready:   boolean
   }
 
-  @change_fields [:id, :user_id, :access]
+  @change_fields [:id, :user_id, :access, :ready]
 
   @spec put(id, User.id, access) :: {:ok, t}
   def put(id, user_id, access) do
     %TROSMetadata{}
-    |> changeset(%{id: id, user_id: user_id, access: access})
+    |> changeset(%{id: id, user_id: user_id, access: access, ready: false})
     |> Repo.insert
   end
 
@@ -61,7 +63,7 @@ defmodule Wocky.TROS.Metadata do
   def get_user_id(id) do
     TROSMetadata
     |> with_file(id)
-    |> select_user_id
+    |> select_user_id()
     |> Repo.one
   end
 
@@ -69,7 +71,7 @@ defmodule Wocky.TROS.Metadata do
   def get_access(id) do
     TROSMetadata
     |> with_file(id)
-    |> select_access
+    |> select_access()
     |> Repo.one
   end
 
@@ -82,6 +84,15 @@ defmodule Wocky.TROS.Metadata do
     :ok
   end
 
+  @spec ready?(id) :: boolean
+  def ready?(id) do
+    TROSMetadata
+    |> with_file(id)
+    |> select_ready()
+    |> Repo.one
+    |> Kernel.==(true) # Return false for nil result
+  end
+
   defp changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
@@ -89,15 +100,9 @@ defmodule Wocky.TROS.Metadata do
     |> foreign_key_constraint(:user_id)
   end
 
-  defp with_file(query, id) do
-    from f in query, where: f.id == ^id
-  end
+  defp with_file(query, id),  do: from f in query, where:  f.id == ^id
 
-  defp select_user_id(query) do
-    from f in query, select: f.user_id
-  end
-
-  defp select_access(query) do
-    from f in query, select: f.access
-  end
+  defp select_user_id(query), do: from f in query, select: f.user_id
+  defp select_access(query),  do: from f in query, select: f.access
+  defp select_ready(query),   do: from f in query, select: f.ready
 end

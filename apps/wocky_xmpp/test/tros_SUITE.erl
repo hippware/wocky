@@ -75,8 +75,6 @@ file_updown_story(Config) ->
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200),
 
-        timer:sleep(4000),
-
         %% Download
         download_success(Alice, FileID, load_test_out_file(Config)),
         download_success(Alice, <<FileID/binary, "-thumbnail">>,
@@ -96,8 +94,6 @@ message_media_updown_story(Config) ->
         common_upload_request(FileSize, Alice, access_list([Bob, Carol])),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200),
-
-        timer:sleep(4000),
 
         %% Download - Successes
         lists:foreach(fun(C) ->
@@ -136,8 +132,6 @@ update_metadata(Config) ->
         common_upload_request(FileSize, Alice, <<"">>),
         escalus:assert(is_iq_result, [QueryStanza], ResultStanza),
         FileID = do_upload(ResultStanza, ImageData, 200),
-
-        timer:sleep(4000),
 
         OutData = load_test_out_file(Config),
         download_success(Alice, FileID, OutData),
