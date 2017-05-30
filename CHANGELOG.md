@@ -10,6 +10,9 @@ If there are not many items, just list them sequentially.
 
 # Unreleased
 
+* Fix: Conversations being stored with non-bare JID (#720)
+* Fix: Weekly reports not being generated on staging after migration (#713)
+
 
 # 2017.5.29+2225.a8ec3ff
 
