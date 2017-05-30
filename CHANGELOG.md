@@ -8,7 +8,7 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
-# # 2017.5.30+2237.d83ae56
+# 2017.5.30+2237.d83ae56
 
 * Fix: Conversations being stored with non-bare JID (#720)
 * Fix: Weekly reports not being generated on staging after migration (#713)
