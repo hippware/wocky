@@ -6,9 +6,10 @@ defmodule :mod_wocky_token_spec do
   import :mod_wocky_token, only: [handle_iq: 3]
 
   alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
   alias Wocky.User
 
-  @iso8601_regex ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ/
+  @iso8601_regex Timestamp.regex
 
   def result_iq(content) do
     iq(

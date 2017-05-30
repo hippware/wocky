@@ -36,7 +36,7 @@ get_user(Handle) ->
     end.
 
 get_time(StartBin) ->
-    ?timex:parse(StartBin, ?DEFAULT_TIME_FORMAT).
+    ?wocky_timestamp:from_string(StartBin).
 
 get_duration(DurationBin) ->
     case re:split(DurationBin, "([0-9]+)(ms|s|m|h|d|w)", [{return, list}]) of
@@ -76,8 +76,7 @@ direction_arrow(false) ->
     "===>".
 
 format_timestamp(Timestamp) ->
-    {ok, T} = ?timex:format(Timestamp, ?DEFAULT_TIME_FORMAT),
-    T.
+    ?wocky_timestamp:to_string(Timestamp).
 
 colour_direction(true) -> ?ansi:red();
 colour_direction(false) -> ?ansi:cyan().

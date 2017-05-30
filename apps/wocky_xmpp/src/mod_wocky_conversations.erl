@@ -18,8 +18,6 @@
 -export([archive_message_hook/9]).
 
 -define(DEFAULT_MAX, 50).
--define(INDEX, <<"conversation">>).
--define(datetime, 'Elixir.DateTime').
 
 
 start(Host, Opts) ->
@@ -148,8 +146,7 @@ conversation_element(message, Message) ->
     end;
 
 conversation_element(updated_at, Time) ->
-    wocky_xml:cdata_el(<<"timestamp">>,
-                       ?timex:'format!'(Time, ?DEFAULT_TIME_FORMAT));
+    wocky_xml:cdata_el(<<"timestamp">>, ?wocky_timestamp:to_string(Time));
 
 conversation_element(E, V) ->
     wocky_xml:cdata_el(atom_to_binary(E, utf8), to_binary(V)).
