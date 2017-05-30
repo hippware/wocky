@@ -8,7 +8,7 @@ defmodule :mod_wocky_token_spec do
   alias Wocky.Repo.Factory
   alias Wocky.User
 
-  @iso8601_regex ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+\d\d:\d\d/
+  @iso8601_regex ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ/
 
   def result_iq(content) do
     iq(

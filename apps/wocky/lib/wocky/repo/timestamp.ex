@@ -16,10 +16,10 @@ defmodule Wocky.Repo.Timestamp do
   def to_string(ts) when is_integer(ts) do
     ts
     |> Timex.from_unix
-    |> Timex.format!("{ISO:Extended}")
+    |> Timex.format!("{ISO:Extended:Z}")
   end
   def to_string(dt) do
-    Timex.format!(dt, "{ISO:Extended}")
+    Timex.format!(dt, "{ISO:Extended:Z}")
   end
 
   @doc "Helper function for timestamp sorting"

@@ -3,7 +3,7 @@ defmodule Wocky.Repo.TimestampSpec do
 
   alias Wocky.Repo.Timestamp
 
-  @iso8601_rx ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+\d\d:\d\d/
+  @iso8601_rx ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ/
 
   describe "now/1" do
     subject do: Timestamp.now
