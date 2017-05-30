@@ -81,7 +81,7 @@ handle_iq_type(_From, _To, _IQ) ->
 archive_message_hook(_Result, _Host, _MessID, _ArcID,
                 LocJID, RemJID, _SrcJID, Dir, Packet) ->
   ok = ?wocky_conversation:put(LocJID#jid.luser,
-                               jid:to_binary(RemJID),
+                               jid:to_binary(jid:to_bare(RemJID)),
                                exml:to_binary(Packet),
                                Dir =:= outgoing
                               ).
