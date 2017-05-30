@@ -8,9 +8,17 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
-* Geo-search API not returning all expected bots (#641)
 
 # Unreleased
+
+* Geo-search API not returning all expected bots (#641)
+
+
+# 2017.5.30+2237.d83ae56
+
+* Fix: Conversations being stored with non-bare JID (#720)
+* Fix: Weekly reports not being generated on staging after migration (#713)
+* Fix: Inconsistent ordering of bots (#711)
 
 
 # 2017.5.29+2225.a8ec3ff
