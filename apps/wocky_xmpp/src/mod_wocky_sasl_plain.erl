@@ -99,8 +99,8 @@ enable_digits_bypass() ->
 
 get_auth_bypass_prefixes(Opts) ->
   case enable_digits_bypass() of
-    false -> proplists:get_value(auth_bypass_prefixes, Opts, []);
-    true  -> []
+    true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
+    false -> []
   end.
 
 do_registration(JSON) ->

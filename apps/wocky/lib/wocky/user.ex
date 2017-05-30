@@ -175,7 +175,7 @@ defmodule Wocky.User do
     [user.bots, user.subscriptions, user.temp_subscriptions]
     |> List.flatten
     |> Enum.filter(&(!&1.pending))
-    |> Enum.sort_by(&(&1.created_at))
+    |> Enum.sort_by(&(&1.updated_at))
     |> Enum.uniq_by(&(&1.id))
   end
 

@@ -167,12 +167,11 @@ defmodule Wocky.RosterItem do
     user_id |> get(contact_id) |> is_follower
   end
 
-  @spec bump_version(User.id, User.id) :: :ok
-  def bump_version(user_id, contact_id) do
-    user_id
-    |> get(contact_id)
-    |> version_bump_changeset()
-    |> Repo.update(force: true)
+  @spec bump_all_versions(User.id) :: :ok
+  def bump_all_versions(contact_id) do
+    RosterItem
+    |> with_contact(contact_id)
+    |> Repo.update_all(set: [updated_at: NaiveDateTime.utc_now()])
     :ok
   end
 
@@ -234,10 +233,6 @@ defmodule Wocky.RosterItem do
 
   defp changeset(struct, params) do
     cast(struct, params, @change_fields)
-  end
-
-  defp version_bump_changeset(struct) do
-    cast(struct, %{}, [:user_id])
   end
 
 end
