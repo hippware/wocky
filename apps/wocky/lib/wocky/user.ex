@@ -196,9 +196,10 @@ defmodule Wocky.User do
       """
   @spec searchable?(t, Bot.t) :: boolean
   def searchable?(user, bot) do
-    subscribed?(user, bot)
-    || (bot.public && follow_owner?(user, bot))
-    || shared_friends_bot?(user, bot)
+    owns?(user, bot) ||
+    Subscription.exists?(user, bot) ||
+    (bot.public && follow_owner?(user, bot)) ||
+    shared_friends_bot?(user, bot)
   end
 
   defp follow_owner?(user, bot),

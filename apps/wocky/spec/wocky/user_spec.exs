@@ -478,12 +478,12 @@ defmodule Wocky.UserSpec do
 
       it do: assert User.searchable?(shared.user, shared.owned_bot)
       it do: assert User.searchable?(shared.user, shared.subscribed_bot)
-      it do: assert User.searchable?(shared.user, shared.temp_subscribed_bot)
       it do: assert User.searchable?(shared.user, shared.friends_public_bot)
       it do: assert User.searchable?(shared.user,
                                      shared.friends_shared_private_bot)
       it do: assert User.searchable?(shared.user, shared.following_public_bot)
 
+      it do: refute User.searchable?(shared.user, shared.temp_subscribed_bot)
       it do: refute User.searchable?(shared.user, shared.public_bot)
       it do: refute User.searchable?(shared.user, shared.shared_bot)
       it do: refute User.searchable?(shared.user, shared.unaffiliated_bot)
