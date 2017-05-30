@@ -203,7 +203,7 @@ defmodule Wocky.User do
         bot.public
       :friend ->
         bot.public || Share.exists?(user, bot)
-      :none ->
+      _ ->
         false
     end
   end
