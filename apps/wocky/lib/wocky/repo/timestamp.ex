@@ -21,4 +21,9 @@ defmodule Wocky.Repo.Timestamp do
   def to_string(dt) do
     Timex.format!(dt, "{ISO:Extended}")
   end
+
+  @doc "Helper function for timestamp sorting"
+  @spec less_than_eq?(DateTime.t, DateTime.t) :: boolean
+  def less_than_eq?(dt1, dt2), do: DateTime.compare(dt1, dt2) != :gt
+
 end
