@@ -98,6 +98,7 @@ defmodule Wocky.Repo.Factory do
   def conversation_factory do
     message = "<message>" <> Lorem.sentence() <> "</message>"
     %Conversation{
+      id: :rand.uniform(0x7FFFFFFFFFFFFFFF),
       other_jid: new_jid(),
       message: message,
       outgoing: true

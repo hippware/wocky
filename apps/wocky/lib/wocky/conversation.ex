@@ -19,6 +19,8 @@ defmodule Wocky.Conversation do
     timestamps()
   end
 
+  @type mam_id :: non_neg_integer
+
   @type t :: %Conversation{
     id:         integer,
     user_id:    User.id,
@@ -30,9 +32,10 @@ defmodule Wocky.Conversation do
   }
 
   @doc "Write a conversation record to the database"
-  @spec put(User.id, binary, binary, boolean) :: :ok
-  def put(user_id, other_jid, message, outgoing) do
+  @spec put(mam_id, User.id, binary, binary, boolean) :: :ok
+  def put(id, user_id, other_jid, message, outgoing) do
     conversation = %Conversation{
+      id: id,
       user_id: user_id,
       other_jid: other_jid,
       message: message,
