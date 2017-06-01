@@ -216,11 +216,19 @@ defmodule Wocky.User do
   """
   @spec update(id, map) :: :ok | {:error, term}
   def update(id, fields) do
-    User
-    |> Repo.get!(id)
-    |> changeset(fields)
-    |> Repo.update
-    ~>> do_update_index(fields)
+    changeset =
+      User
+      |> Repo.get!(id)
+      |> changeset(fields)
+
+    case Repo.update(changeset) do
+      {:ok, user} ->
+        Index.user_updated(user.id, changeset.changes)
+        :ok
+
+      {:error, _} = error ->
+        error
+    end
   end
 
   def changeset(struct, params) do
@@ -276,10 +284,6 @@ defmodule Wocky.User do
     ~>> Avatar.check_valid_filename
     ~>> Avatar.check_is_local(user.server)
     ~>> Avatar.check_owner(user.id)
-  end
-
-  defp do_update_index(%User{username: username}, fields) do
-    :ok = Index.user_updated(username, fields)
   end
 
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
