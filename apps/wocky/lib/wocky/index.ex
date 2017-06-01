@@ -12,11 +12,16 @@ defmodule Wocky.Index do
 
   defmodule State do
     @moduledoc false
-    defstruct [:backend, :user_index, :bot_index]
+    defstruct [:backend, :indexes]
   end
 
-  @user_fields [:handle, :last_name, :first_name, :avatar]
-  @bot_fields [:server, :user_id, :title, :image, :lat, :lon, :radius, :public]
+  @type index_t :: :users | :bots
+  @type object_t :: :user | :bot
+
+  @fields [
+    user: [:handle, :last_name, :first_name, :avatar],
+    bot: [:server, :user_id, :title, :image, :lat, :lon, :radius, :public]
+  ]
 
   # ===================================================================
   # Behaviour definition
@@ -40,29 +45,19 @@ defmodule Wocky.Index do
     GenServer.call(:wocky_index, {:geosearch, lat, lon})
   end
 
-  @spec reindex(:users | :bots) :: :ok | {:error, :unknown_index}
+  @spec reindex(index_t) :: :ok | {:error, :unknown_index}
   def reindex(idx) do
     GenServer.call(:wocky_index, {:reindex, idx})
   end
 
-  @spec user_updated(User.id, map) :: :ok
-  def user_updated(user_id, fields) do
-    GenServer.call(:wocky_index, {:user_updated, user_id, fields})
+  @spec update(object_t, binary, map) :: :ok
+  def update(obj_t, id, fields) do
+    GenServer.call(:wocky_index, {:update, obj_t, id, fields})
   end
 
-  @spec user_removed(User.id) :: :ok
-  def user_removed(user_id) do
-    GenServer.call(:wocky_index, {:user_removed, user_id})
-  end
-
-  @spec bot_updated(Bot.id, map) :: :ok
-  def bot_updated(bot_id, fields) do
-    GenServer.call(:wocky_index, {:bot_updated, bot_id, fields})
-  end
-
-  @spec bot_removed(Bot.id) :: :ok
-  def bot_removed(bot_id) do
-    GenServer.call(:wocky_index, {:bot_removed, bot_id})
+  @spec remove(object_t, binary) :: :ok
+  def remove(obj_t, id) do
+    GenServer.call(:wocky_index, {:remove, obj_t, id})
   end
 
   # ===================================================================
@@ -84,8 +79,10 @@ defmodule Wocky.Index do
     {:ok,
       %State{
         backend: backend_module,
-        user_index: user_index,
-        bot_index: bot_index
+        indexes: [
+          user: user_index,
+          bot: bot_index
+        ]
       }
     }
   end
@@ -93,25 +90,29 @@ defmodule Wocky.Index do
   def handle_call({:geosearch, lat, lon}, _, state) do
     nlat = lat |> GeoUtils.to_degrees |> GeoUtils.normalize_latitude
     nlon = lon |> GeoUtils.to_degrees |> GeoUtils.normalize_longitude
-    result = state.backend.geosearch(state.bot_index, nlat, nlon)
+    result = state.backend.geosearch(state.indexes[:bot], nlat, nlon)
     {:reply, result, state}
   end
 
   def handle_call({:reindex, :users}, _, state) do
+    index = state.indexes[:user]
+
     User
     |> Repo.all
-    |> Enum.each(fn %User{username: user_id} = user ->
-      update_index(state.user_index, user_id, user, @user_fields, state.backend)
+    |> Enum.each(fn %User{id: id} = user ->
+      update_index(index, id, user, @fields[:user], state.backend)
     end)
 
     {:reply, :ok, state}
   end
 
   def handle_call({:reindex, :bots}, _, state) do
+    index = state.indexes[:bot]
+
     Bot
     |> Repo.all
-    |> Enum.each(fn %Bot{id: bot_id} = bot ->
-      update_index(state.bot_index, bot_id, bot, @bot_fields, state.backend)
+    |> Enum.each(fn %Bot{id: id} = bot ->
+      update_index(index, id, bot, @fields[:bot], state.backend)
     end)
 
     {:reply, :ok, state}
@@ -121,23 +122,14 @@ defmodule Wocky.Index do
     {:reply, {:error, :unknown_index}, state}
   end
 
-  def handle_call({:user_updated, user_id, user}, _, state) do
-    update_index(state.user_index, user_id, user, @user_fields, state.backend)
+  def handle_call({:update, obj_t, id, fields}, _, state) do
+    index = state.indexes[obj_t]
+    update_index(index, id, fields, @fields[obj_t], state.backend)
     {:reply, :ok, state}
   end
 
-  def handle_call({:user_removed, user_id}, _, state) do
-    delete_object(state.user_index, user_id, state.backend)
-    {:reply, :ok, state}
-  end
-
-  def handle_call({:bot_updated, bot_id, bot}, _, state) do
-    update_index(state.bot_index, bot_id, bot, @bot_fields, state.backend)
-    {:reply, :ok, state}
-  end
-
-  def handle_call({:bot_removed, bot_id}, _, state) do
-    delete_object(state.bot_index, bot_id, state.backend)
+  def handle_call({:remove, obj_t, id}, _, state) do
+    delete_object(state.indexes[obj_t], id, state.backend)
     {:reply, :ok, state}
   end
 

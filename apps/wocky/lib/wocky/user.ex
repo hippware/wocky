@@ -223,7 +223,7 @@ defmodule Wocky.User do
 
     case Repo.update(changeset) do
       {:ok, user} ->
-        Index.user_updated(user.id, changeset.changes)
+        Index.update(:user, user.id, changeset.changes)
         :ok
 
       {:error, _} = error ->
@@ -308,6 +308,6 @@ defmodule Wocky.User do
     |> where(username: ^id)
     |> Repo.delete_all
 
-    :ok = Index.user_removed(id)
+    :ok = Index.remove(:user, id)
   end
 end

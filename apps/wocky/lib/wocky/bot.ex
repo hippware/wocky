@@ -123,7 +123,7 @@ defmodule Wocky.Bot do
     changeset = changeset(struct, params)
     case op.(changeset) do
       {:ok, bot} = result ->
-        Index.bot_updated(bot.id, changeset.changes)
+        Index.update(:bot, bot.id, changeset.changes)
         result
 
       {:error, _} = error ->
@@ -134,7 +134,7 @@ defmodule Wocky.Bot do
   @spec delete(t) :: :ok
   def delete(bot) do
     Repo.delete(bot)
-    Index.bot_removed(bot.id)
+    Index.remove(:bot, bot.id)
     :ok
   end
 
