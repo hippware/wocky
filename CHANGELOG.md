@@ -9,7 +9,10 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 If there are not many items, just list them sequentially. 
 
 
+# 2017.6.1+2251.80891f8
+
 * Conversation id fix (#730)
+* Various migration fixes. 
 
 
 # 2017.5.31+2242.dd22001
