@@ -120,10 +120,9 @@ defmodule Wocky.Bot do
   def update(bot, params), do: do_update(bot, params, &Repo.update/1)
 
   defp do_update(struct, params, op) do
-    changeset = changeset(struct, params)
-    case op.(changeset) do
+    case struct |> changeset(params) |> op.() do
       {:ok, bot} = result ->
-        Index.update(:bot, bot.id, changeset.changes)
+        Index.update(:bot, bot.id, bot)
         result
 
       {:error, _} = error ->

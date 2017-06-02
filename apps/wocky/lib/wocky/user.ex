@@ -223,7 +223,7 @@ defmodule Wocky.User do
 
     case Repo.update(changeset) do
       {:ok, user} ->
-        Index.update(:user, user.id, changeset.changes)
+        Index.update(:user, user.id, user)
         :ok
 
       {:error, _} = error ->
