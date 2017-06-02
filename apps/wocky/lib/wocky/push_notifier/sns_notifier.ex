@@ -33,8 +33,10 @@ defmodule Wocky.PushNotifier.SNSNotifier do
     {:ok, arn}
   end
 
-  def disable(_endpoint) do
-    # TODO delete the endpoint when disable is called.
+  def disable(endpoint) do
+    endpoint
+    |> SNS.delete_endpoint
+    |> ExAws.request
     :ok
   end
 
