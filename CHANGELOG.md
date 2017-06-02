@@ -9,6 +9,11 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 If there are not many items, just list them sequentially. 
 
 
+# 2017.6.2+2263.74bd7a4
+
+* Bot aren't indexed correctly on Algolia (#729)
+
+
 # 2017.6.1+2251.80891f8
 
 * Conversation id fix (#730)
