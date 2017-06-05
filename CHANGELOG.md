@@ -8,6 +8,9 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+* Delete SNS endpoint when client de-registers for push notifications. 
+  * Add logging.
+
 
 # 2017.6.2+2263.74bd7a4
 
