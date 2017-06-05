@@ -20,6 +20,9 @@ defmodule Wocky.PushNotifier.SNSNotifier do
   def enable(user, server, resource, _platform, device_id) do
     user_data = user |> JID.make(server, resource) |> JID.to_binary
 
+    :ok = Logger.info(
+      "Registering SNS endpoint for #{device_id} belonging to #{user_data}")
+
     :wocky
     |> Confex.get(:application_arn)
     |> SNS.create_platform_endpoint(device_id, user_data)
@@ -33,8 +36,10 @@ defmodule Wocky.PushNotifier.SNSNotifier do
     {:ok, arn}
   end
 
-  def disable(_endpoint) do
-    # TODO delete the endpoint when disable is called.
+  def disable(endpoint) do
+    endpoint
+    |> SNS.delete_endpoint
+    |> ExAws.request
     :ok
   end
 

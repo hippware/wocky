@@ -82,7 +82,7 @@ defmodule Wocky.TrafficLogSpec do
     end
 
     it "should get nothing from a different resource" do
-      TrafficLog.get_by_resource(shared.user.id, Lorem.word,
+      TrafficLog.get_by_resource(shared.user.id, "fnord",
                                  default_start(), default_duration())
       |> should(eq [])
     end

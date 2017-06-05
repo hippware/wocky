@@ -175,7 +175,7 @@ defmodule Wocky.User do
     [user.bots, user.subscriptions, user.temp_subscriptions]
     |> List.flatten
     |> Enum.filter(&(!&1.pending))
-    |> Enum.sort_by(&(&1.updated_at))
+    |> Enum.sort_by(&(&1.updated_at), &Timestamp.less_than_eq?/2)
     |> Enum.uniq_by(&(&1.id))
   end
 
@@ -238,11 +238,19 @@ defmodule Wocky.User do
   """
   @spec update(id, map) :: :ok | {:error, term}
   def update(id, fields) do
-    User
-    |> Repo.get!(id)
-    |> changeset(fields)
-    |> Repo.update
-    ~>> do_update_index(fields)
+    changeset =
+      User
+      |> Repo.get!(id)
+      |> changeset(fields)
+
+    case Repo.update(changeset) do
+      {:ok, user} ->
+        Index.update(:user, user.id, user)
+        :ok
+
+      {:error, _} = error ->
+        error
+    end
   end
 
   def changeset(struct, params) do
@@ -300,10 +308,6 @@ defmodule Wocky.User do
     ~>> Avatar.check_owner(user.id)
   end
 
-  defp do_update_index(%User{username: username}, fields) do
-    :ok = Index.user_updated(username, fields)
-  end
-
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
@@ -326,6 +330,6 @@ defmodule Wocky.User do
     |> where(username: ^id)
     |> Repo.delete_all
 
-    :ok = Index.user_removed(id)
+    :ok = Index.remove(:user, id)
   end
 end

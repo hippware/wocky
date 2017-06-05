@@ -44,7 +44,8 @@ defmodule Wocky.ConversationSpec do
       before do
         user = Factory.insert(:user, %{server: shared.server})
         conversation = Factory.build(:conversation, user_id: user.id)
-        result = Conversation.put(user.id,
+        result = Conversation.put(conversation.id,
+                                  user.id,
                                   conversation.other_jid,
                                   conversation.message,
                                   conversation.outgoing)
@@ -72,7 +73,8 @@ defmodule Wocky.ConversationSpec do
                          :conversation,
                          %{user_id: shared.conversation.user_id,
                           other_jid: shared.conversation.other_jid})
-        result = Conversation.put(conversation.user_id,
+        result = Conversation.put(conversation.id,
+                                  conversation.user_id,
                                   conversation.other_jid,
                                   conversation.message,
                                   conversation.outgoing)
@@ -97,7 +99,7 @@ defmodule Wocky.ConversationSpec do
   end
 
   defp should_match(a, b) do
-    fields = [:user_id, :other_jid, :message, :outgoing]
+    fields = [:id, :user_id, :other_jid, :message, :outgoing]
     a |> Map.take(fields) |> should(eq b |> Map.take(fields))
   end
 end
