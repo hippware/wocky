@@ -12,8 +12,23 @@ defmodule Wocky.Index.AlgoliaIndexer do
   end
 
   def update_object(index, id, map) do
-    object = map |> set_object_id(id) |> with_geoloc
-    Algolia.partial_update_objects(index, [object])
+    map
+    |> set_object_id(id)
+    |> with_geoloc
+    |> do_update_object(index)
+  end
+
+  defp set_object_id(data, id) do
+    Map.put(data, "objectID", id)
+  end
+
+  defp with_geoloc(%{"lat" => lat, "lon" => lon} = data) do
+    Map.put(data, "_geoloc", %{"lat" => lat, "lng" => lon})
+  end
+  defp with_geoloc(data), do: data
+
+  defp do_update_object(object, index) do
+     Algolia.partial_update_objects(index, [object])
     :ok
   end
 
@@ -32,15 +47,6 @@ defmodule Wocky.Index.AlgoliaIndexer do
     bots = Enum.map(result["hits"], &object_to_bot/1)
     {:ok, bots}
   end
-
-  defp set_object_id(map, id) do
-    Map.put(map, "objectID", id)
-  end
-
-  defp with_geoloc(%{lat: lat, lon: lon} = data) do
-    Map.put(data, "_geoloc", %{lat: lat, lng: lon})
-  end
-  defp with_geoloc(data), do: data
 
   defp object_to_bot(obj) do
     %{

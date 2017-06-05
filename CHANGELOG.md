@@ -8,9 +8,26 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
-# Unreleased
 
 * Add user fields for number of bots, followers, and followees (#686)
+* Delete SNS endpoint when client de-registers for push notifications. 
+  * Add logging.
+
+
+# 2017.6.2+2263.74bd7a4
+
+* Bot aren't indexed correctly on Algolia (#729)
+
+
+# 2017.6.1+2251.80891f8
+
+* Conversation id fix (#730)
+* Various migration fixes. 
+
+
+# 2017.5.31+2242.dd22001
+
+* Rework: Inconsistent ordering of bots (#711)
 
 
 # 2017.5.30+2237.d83ae56

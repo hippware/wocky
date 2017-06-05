@@ -26,4 +26,16 @@ defmodule Wocky.Repo.TimestampSpec do
       |> should(match @iso8601_rx)
     end
   end
+
+  describe "less_than_eq?/2" do
+    before do
+      ts1 = DateTime.utc_now
+      ts2 = DateTime.utc_now
+      {:ok, ts1: ts1, ts2: ts2}
+    end
+
+    it do: assert Timestamp.less_than_eq?(shared.ts1, shared.ts2)
+    it do: assert Timestamp.less_than_eq?(shared.ts1, shared.ts1)
+    it do: refute Timestamp.less_than_eq?(shared.ts2, shared.ts1)
+  end
 end

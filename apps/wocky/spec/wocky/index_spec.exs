@@ -31,36 +31,40 @@ defmodule Wocky.IndexSpec do
     it do: :bots |> Index.reindex |> should(eq :ok)
   end
 
-  describe "user_updated/2" do
-    before do
-      Index.user_updated(id(), Factory.build(:user))
+  describe "update/3" do
+    context "users" do
+      before do
+        Index.update(:user, id(), Factory.build(:user))
+      end
+
+      it do: assert [{_, :users, :update, _}] = TestIndexer.get_index_operations
     end
 
-    it do: assert [{_, :users, :update, _}] = TestIndexer.get_index_operations
+    context "bots" do
+      before do
+        Index.update(:bot, id(), Factory.build(:bot))
+      end
+
+      it do: assert [{_, :bots, :update, _}] = TestIndexer.get_index_operations
+    end
   end
 
-  describe "user_removed/1" do
-    before do
-      Index.user_removed(id())
+  describe "remove/2" do
+    context "users" do
+      before do
+        Index.remove(:user, id())
+      end
+
+      it do: assert [{_, :users, :delete, nil}] = TestIndexer.get_index_operations
     end
 
-    it do: assert [{_, :users, :delete, nil}] = TestIndexer.get_index_operations
-  end
+    context "bots" do
+      before do
+        Index.remove(:bot, id())
+      end
 
-  describe "bot_updated/2" do
-    before do
-      Index.bot_updated(id(), Factory.build(:bot))
+      it do: assert [{_, :bots, :delete, nil}] = TestIndexer.get_index_operations
     end
-
-    it do: assert [{_, :bots, :update, _}] = TestIndexer.get_index_operations
-  end
-
-  describe "bot_removed/1" do
-    before do
-      Index.bot_removed(id())
-    end
-
-    it do: assert [{_, :bots, :delete, nil}] = TestIndexer.get_index_operations
   end
 
   describe "unknown calls" do
