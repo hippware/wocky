@@ -37,6 +37,9 @@ register(Node, Module) ->
 
 -spec unregister(binary(), module()) -> ok.
 unregister(Node, Module) ->
+    % Under shutdown conditions, the ets table has already been deleted
+    ets:info(?PUBLISHING_HANDLER_TABLE) =/= undefined
+    andalso
     ets:delete_object(?PUBLISHING_HANDLER_TABLE, {Node, Module}),
     ok.
 
