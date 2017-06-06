@@ -9,6 +9,7 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 If there are not many items, just list them sequentially. 
 
 
+* Add user fields for number of bots, followers, and followees (#686)
 * Geo-search API not returning all expected bots (#641)
 * Delete SNS endpoint when client de-registers for push notifications. 
   * Add logging.

@@ -140,18 +140,32 @@ defmodule Wocky.RosterItem do
     |> Kernel.!=(0)
   end
 
-  @spec followers(User.id) :: [t]
+  @doc "Gets all followers of a user"
+  @spec followers(User.id) :: [User.t]
   def followers(user_id) do
     user_id
     |> get()
     |> Enum.filter(&is_follower/1)
+    |> Enum.map(&Map.get(&1, :contact))
   end
 
-  @spec friends(User.id) :: [t]
+  @doc "Gets all users being followed by the user"
+  @spec following(User.id) :: [User.t]
+  def following(user_id) do
+    RosterItem
+    |> with_contact(user_id)
+    |> preload_user()
+    |> Repo.all
+    |> Enum.filter(&is_follower/1)
+    |> Enum.map(&Map.get(&1, :user))
+  end
+
+  @spec friends(User.id) :: [User.t]
   def friends(user_id) do
     user_id
     |> get()
     |> Enum.filter(&is_friend/1)
+    |> Enum.map(&Map.get(&1, :contact))
   end
 
   @spec is_friend(User.id, User.id) :: boolean

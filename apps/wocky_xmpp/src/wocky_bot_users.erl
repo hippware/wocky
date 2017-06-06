@@ -93,8 +93,4 @@ cdata_el(Name, Value) ->
            children = [#xmlcdata{content = Value}]}.
 
 get_friends_and_followers(LUser) ->
-    [roster_to_jid(wocky_roster:to_wocky_roster(R))
-     || R <- ?wocky_roster_item:followers(LUser)].
-
-roster_to_jid(#wocky_roster{contact_jid = SimpleJID}) ->
-    jid:make(SimpleJID).
+    [?wocky_user:to_jid(R) || R <- ?wocky_roster_item:followers(LUser)].

@@ -187,7 +187,7 @@ fields() ->
       fun(#{id := LUser, server := LServer}) ->
               jid:to_binary(jid:make(LUser, LServer, <<>>)) end},
      {"user",         "uuid",   public,      read_only,
-      fun (#{id := User}) -> User end},
+      fun(#{id := User}) -> User end},
      {"server",       "string", public,      read_only, default},
      {"handle",       "string", public,      write,     default},
      {"phone_number", "string", private,     read_only, default},
@@ -195,7 +195,18 @@ fields() ->
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
      {"email",        "string", private,     write,     default},
-     {"external_id",  "string", private,     read_only, default}
+     {"external_id",  "string", private,     read_only, default},
+     {"bots+size",    "int",    public,      read_only,
+      fun(User) ->
+              integer_to_binary(?wocky_user:bot_count(User)) end},
+     {"followers+size", "int",  public,      read_only,
+      fun(#{id := LUser}) ->
+              integer_to_binary(
+                length(?wocky_roster_item:followers(LUser))) end},
+     {"followed+size", "int",   public,      read_only,
+      fun(#{id := LUser}) ->
+              integer_to_binary(
+                length(?wocky_roster_item:following(LUser))) end}
     ].
 
 
