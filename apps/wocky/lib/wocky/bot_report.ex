@@ -8,7 +8,6 @@ defmodule Wocky.BotReport do
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo
-  alias Wocky.Repo.Timestamp
 
   @header ~w(
     ID Title Owner Created Updated Address Latitude Longitude
@@ -30,8 +29,7 @@ defmodule Wocky.BotReport do
     report =
       days
       |> generate_bot_report()
-      |> CSV.encode
-      |> Enum.to_list
+      |> encode_as_csv()
     Files.upload(%{content: report,
                    filename: "weekly_bot_report_#{server}.csv",
                    title: "Weekly Bot Report for #{server}",
@@ -39,7 +37,13 @@ defmodule Wocky.BotReport do
                    channels: channel})
   end
 
-  defp generate_bot_report(days) do
+  def encode_as_csv(report) do
+    report
+    |> CSV.encode
+    |> Enum.join
+  end
+
+  def generate_bot_report(days) do
     aft =
       Timex.now
       |> Timex.subtract(Duration.from_days(days))
@@ -51,7 +55,7 @@ defmodule Wocky.BotReport do
       |> Repo.all
       |> Enum.map(&report_bot(&1))
 
-    [@header, report]
+    [@header | report]
   end
 
   defp report_bot(%Bot{} = bot) do
@@ -60,8 +64,8 @@ defmodule Wocky.BotReport do
       bot.id,
       bot.title,
       handle,
-      Timestamp.to_string(bot.created_at),
-      Timestamp.to_string(bot.updated_at),
+      bot.created_at,
+      bot.updated_at,
       bot.address,
       bot.lat,
       bot.lon,
@@ -70,6 +74,7 @@ defmodule Wocky.BotReport do
       Item.get_image_count(bot),
       bot.description
     ]
+    |> Enum.map(&to_string/1)
   end
 
   defp vis_string(true), do: "public"
