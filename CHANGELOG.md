@@ -8,6 +8,8 @@ Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Se
 
 If there are not many items, just list them sequentially. 
 
+
+* Geo-search API not returning all expected bots (#641)
 * Delete SNS endpoint when client de-registers for push notifications. 
   * Add logging.
 

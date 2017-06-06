@@ -12,6 +12,8 @@ defmodule Wocky.RosterItem do
   alias Wocky.User
   alias __MODULE__, as: RosterItem
 
+  require Logger
+
   defenum AskEnum, [:in, :out, :both, :none]
   defenum SubscriptionEnum, [:none, :from, :to, :both]
 
@@ -33,6 +35,7 @@ defmodule Wocky.RosterItem do
   @type subscription :: :both | :from | :to | :none | :remove
   @type version :: binary
   @type group :: binary
+  @type relationship :: :self | :friend | :follower | :followee | :none
 
   @type t :: %RosterItem{
     user:          User.t,
@@ -73,6 +76,14 @@ defmodule Wocky.RosterItem do
     |> with_contact(contact_id)
     |> preload_contact()
     |> Repo.get_by(user_id: user_id)
+  end
+
+  @spec get_pair(User.id, User.id) :: {t, t} | nil
+  def get_pair(a, b) do
+    RosterItem
+    |> with_pair(a, b)
+    |> Repo.all
+    |> maybe_sort_pair(a, b)
   end
 
   @spec version(User.id) :: version
@@ -153,6 +164,26 @@ defmodule Wocky.RosterItem do
     user_id |> get(contact_id) |> is_follower
   end
 
+  @spec relationship(User.id, User.id) :: relationship
+  def relationship(a, a), do: :self
+  def relationship(a, b) do
+    case get_pair(a, b) do
+      nil ->
+        :none
+      {a_to_b, b_to_a} ->
+        cond do
+          is_friend(a_to_b) ->
+            :friend
+          is_follower(a_to_b) ->
+            :follower
+          is_follower(b_to_a) ->
+            :followee
+          true ->
+            :none
+        end
+    end
+  end
+
   @spec bump_all_versions(User.id) :: :ok
   def bump_all_versions(contact_id) do
     RosterItem
@@ -171,6 +202,12 @@ defmodule Wocky.RosterItem do
 
   defp with_ask(query, ask) do
     from r in query, where: r.ask == ^ask
+  end
+
+  defp with_pair(query, a, b) do
+    from r in query,
+      where: ((r.user_id == ^a and r.contact_id == ^b) or
+              (r.user_id == ^b and r.contact_id == ^a))
   end
 
   defp select_version(query) do
@@ -221,4 +258,15 @@ defmodule Wocky.RosterItem do
     cast(struct, params, @change_fields)
   end
 
+  defp maybe_sort_pair([], _, _), do: nil
+  defp maybe_sort_pair([first = %RosterItem{user_id: first_id}, second],
+                       first_id, _) do
+    {first, second}
+  end
+  defp maybe_sort_pair([first, second], _, _), do: {second, first}
+  defp maybe_sort_pair(other_list, a, b) do
+    :ok = Logger.warn(
+            "Expected a roster pair but got #{other_list} for #{a}, #{b}")
+    nil
+  end
 end
