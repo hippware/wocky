@@ -126,7 +126,7 @@ filter_local_packet_hook(P = {From,
                  check_user_present(To),
                  {Action, ID} <- check_publish(From, Stanza),
                  publish(jid:to_bare(To), From, ID, Stanza),
-                 Action
+                 {ok, Action}
                 ]),
     maybe_drop(Result, P);
 
@@ -244,7 +244,7 @@ publish_bot_action(From, BotEl) ->
     end,
     {publish, Result}.
 
-maybe_drop(drop, _) -> drop;
+maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
 
 %%%===================================================================
