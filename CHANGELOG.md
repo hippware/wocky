@@ -4,10 +4,6 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
-Suggested subheadings: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`
-
-If there are not many items, just list them sequentially. 
-
 
 * Add user fields for number of bots, followers, and followees (#686)
 * Geo-search API not returning all expected bots (#641)
