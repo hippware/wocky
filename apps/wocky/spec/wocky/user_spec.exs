@@ -4,6 +4,7 @@ defmodule Wocky.UserSpec do
   use Wocky.JID
 
   alias Faker.Internet
+  alias Timex.Duration
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
@@ -11,7 +12,6 @@ defmodule Wocky.UserSpec do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
@@ -538,7 +538,8 @@ defmodule Wocky.UserSpec do
         follow_bot = Factory.insert(:bot, [
               user: shared.user,
               follow_me: true,
-              follow_me_expiry: Timestamp.now + 1000
+              follow_me_expiry:
+                Timex.add(DateTime.utc_now, Duration.from_seconds(1000))
             ])
 
         {:ok, follow_bot: follow_bot}

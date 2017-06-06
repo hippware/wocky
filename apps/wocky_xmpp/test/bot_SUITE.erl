@@ -1308,11 +1308,13 @@ set_visibility(Client, Visibility, Bot) ->
 follow_me_stanza() ->
     follow_me_stanza(86400). % 1 Day
 follow_me_stanza(ExpiryPeriod) ->
-    Expiry = ?wocky_timestamp:now() div 1000 + ExpiryPeriod,
+    Expiry = ?wocky_timestamp:to_string(
+                ?timex:add(
+                   ?datetime:utc_now(), ?duration:from_seconds(ExpiryPeriod))),
     QueryEl = #xmlel{name = <<"follow-me">>,
                      attrs = [
                        {<<"node">>, bot_node(?BOT)},
-                       {<<"expiry">>, integer_to_binary(Expiry)}
+                       {<<"expiry">>, Expiry}
                      ]},
     test_helper:iq_set(?NS_BOT, QueryEl).
 

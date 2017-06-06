@@ -35,7 +35,7 @@ defmodule Wocky.Bot do
     field :public,           :boolean # Visibility of bot
     field :alerts,           :boolean # Whether alerts are enabled
     field :follow_me,        :boolean # Does bot follow owner
-    field :follow_me_expiry, :integer # When follow me expires
+    field :follow_me_expiry, :utc_datetime # When follow me expires
     field :tags,             {:array, :string}
 
     timestamps()

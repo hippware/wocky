@@ -38,7 +38,7 @@ defmodule Wocky.TokenSpec do
 
     it "should return an expiry value" do
       {:ok, {_, expiry}} = shared.result
-      expiry |> should(be_integer())
+      expiry |> should(be_struct DateTime)
     end
 
     it "should store the token for the user" do
@@ -142,7 +142,7 @@ defmodule Wocky.TokenSpec do
 
       query
       |> Repo.one
-      |> Token.changeset(%{expires_at: 100})
+      |> Token.changeset(%{expires_at: DateTime.utc_now})
       |> Repo.update
 
       shared.id

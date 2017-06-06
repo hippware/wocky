@@ -4,10 +4,10 @@ defmodule Wocky.User.LocationSpec do
   use Wocky.JID
 
   alias Faker.Address
+  alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Events.BotPerimeterEvent
-  alias Wocky.Repo.Timestamp
   alias Wocky.User.BotEvent
   alias Wocky.User.Location
 
@@ -229,7 +229,7 @@ defmodule Wocky.User.LocationSpec do
 
       context "and an expiry in the future" do
         before do
-          expiry = Timestamp.now + 86400
+          expiry = Timex.add(DateTime.utc_now, Duration.from_days(1))
           shared.bot
           |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
           |> Repo.update!
@@ -246,7 +246,7 @@ defmodule Wocky.User.LocationSpec do
 
       context "and an expiry in the past" do
         before do
-          expiry = Timestamp.now - 86400
+          expiry = Timex.subtract(DateTime.utc_now, Duration.from_days(1))
           shared.bot
           |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
           |> Repo.update!

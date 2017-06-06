@@ -240,7 +240,7 @@ defmodule Wocky.User do
 
   defp with_follow_me(query) do
     from b in query,
-      where: b.follow_me == ^true and b.follow_me_expiry > ^Timestamp.now
+      where: b.follow_me == ^true and b.follow_me_expiry > ^DateTime.utc_now
   end
 
   @doc """
