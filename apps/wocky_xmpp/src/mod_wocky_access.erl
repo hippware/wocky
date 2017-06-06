@@ -124,6 +124,9 @@ register(NodePrefix, Module) ->
 
 -spec unregister(binary(), module()) -> ok.
 unregister(NodePrefix, Module) ->
+    % Under shutdown conditions, the ets table has already been deleted
+    ets:info(?MANAGER_TABLE) =/= undefined
+    andalso
     ets:delete_object(?MANAGER_TABLE, #access_manager{node_prefix = NodePrefix,
                                                       module = Module}),
     ok.
