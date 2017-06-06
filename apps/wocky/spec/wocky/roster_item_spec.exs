@@ -14,15 +14,23 @@ defmodule Wocky.RosterItemSpec do
       Factory.insert(:user, %{server: shared.server})
     end
     groups = for _ <- 1..5, do: Lorem.word
-    Enum.each(contacts, &insert_roster_pair(user, &1, groups))
+    roster_pairs = Enum.map(contacts, &insert_roster_pair(user, &1, groups))
 
-    user2 = Factory.insert(:user, %{server: shared.server})
+    rosterless_user = Factory.insert(:user, %{server: shared.server})
+
+    follower = Factory.insert(:user, %{server: shared.server})
+    followee = Factory.insert(:user, %{server: shared.server})
+    make_follower(follower, followee)
 
     {:ok,
      user: user,
      contacts: Enum.sort(contacts),
      contact: hd(contacts),
-     rosterless_user: user2,
+     roster_pairs: roster_pairs,
+     roster_pair: hd(roster_pairs),
+     rosterless_user: rosterless_user,
+     follower: follower,
+     followee: followee,
      groups: groups}
   end
 
@@ -50,6 +58,25 @@ defmodule Wocky.RosterItemSpec do
         |> Map.get(:contact)
         |> should(eq c)
       end
+    end
+  end
+
+  describe "get_pair/2" do
+    it "should return the pair of roster items with the first one first" do
+      {a, b} = shared.roster_pair
+      RosterItem.get_pair(shared.user.id, shared.contact.id)
+      |> should(eq {a, b})
+
+      RosterItem.get_pair(shared.contact.id, shared.user.id)
+      |> should(eq {b, a})
+    end
+
+    it "should return nil where no relationship exists" do
+      RosterItem.get_pair(shared.rosterless_user.id, shared.user.id)
+      |> should(be_nil())
+
+      RosterItem.get_pair(shared.user.id, shared.rosterless_user.id)
+      |> should(be_nil())
     end
   end
 
@@ -346,6 +373,39 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
+  describe "relationship/2" do
+    it "should return :self when both user IDs are equal" do
+      RosterItem.relationship(shared.user.id, shared.user.id)
+      |> should(eq :self)
+    end
+
+    it "should return :friend where the two users are friends" do
+      RosterItem.relationship(shared.user.id, shared.contact.id)
+      |> should(eq :friend)
+
+      RosterItem.relationship(shared.contact.id, shared.user.id)
+      |> should(eq :friend)
+    end
+
+    it "should return :follower where user a is following user b" do
+      RosterItem.relationship(shared.follower.id, shared.followee.id)
+      |> should(eq :follower)
+    end
+
+    it "should return :followee where user b is following user a" do
+      RosterItem.relationship(shared.followee.id, shared.follower.id)
+      |> should(eq :followee)
+    end
+
+    it "should return :none if the users have no relationship" do
+      RosterItem.relationship(shared.user.id, shared.rosterless_user.id)
+      |> should(eq :none)
+
+      RosterItem.relationship(shared.rosterless_user.id, shared.user.id)
+      |> should(eq :none)
+    end
+  end
+
   describe "bump_all_versions/2" do
     it "should change the version for all roster entries with the contact" do
       initial = RosterItem.version(shared.user.id)
@@ -365,12 +425,13 @@ defmodule Wocky.RosterItemSpec do
 
 
   defp insert_roster_pair(user, contact, groups) do
-    Factory.insert(
-      :roster_item,
-      user_id: user.id, contact_id: contact.id, groups: take_random(groups))
-    Factory.insert(
-      :roster_item,
-      user_id: contact.id, contact_id: user.id, groups: take_random(groups))
+    a = Factory.insert(
+          :roster_item,
+          user_id: user.id, contact_id: contact.id, groups: take_random(groups))
+    b = Factory.insert(
+          :roster_item,
+          user_id: contact.id, contact_id: user.id, groups: take_random(groups))
+    {a, b}
   end
 
   defp insert_follower_pair(follower, followee) do
@@ -380,6 +441,13 @@ defmodule Wocky.RosterItemSpec do
     Factory.insert(
       :roster_item, subscription: :to,
       user_id: follower.id, contact_id: followee.id)
+  end
+
+  defp make_follower(follower, followee) do
+    Factory.insert(:roster_item, user_id: follower.id,
+                   contact_id: followee.id, subscription: :from)
+    Factory.insert(:roster_item, user_id: followee.id,
+                   contact_id: follower.id, subscription: :to)
   end
 
   defp take_random(list) do

@@ -432,13 +432,66 @@ defmodule Wocky.UserSpec do
           shared_bot: shared_bot,
           subscribed_bot: subscribed_bot,
           temp_subscribed_bot: temp_subscribed_bot,
-          unaffiliated_bot: unaffiliated_bot
+          unaffiliated_bot: unaffiliated_bot,
         ]}
     end
 
     describe "owns?/2" do
       it do: assert User.owns?(shared.user, shared.owned_bot)
       it do: refute User.owns?(shared.user, shared.unaffiliated_bot)
+    end
+
+    describe "searchable?/2" do
+      before do
+        friend = Factory.insert(:user)
+        Factory.insert(:roster_item, user_id: shared.user.id,
+                       contact_id: friend.id)
+        Factory.insert(:roster_item, user_id: friend.id,
+                       contact_id: shared.user.id)
+
+        following = Factory.insert(:user)
+        Factory.insert(:roster_item, user_id: shared.user.id,
+                       contact_id: following.id, subscription: :from)
+        Factory.insert(:roster_item, user_id: following.id,
+                       contact_id: shared.user.id, subscription: :to)
+
+
+        friends_public_bot = Factory.insert(:bot, user: friend, public: true)
+        friends_private_bot = Factory.insert(:bot, user: friend)
+        friends_shared_private_bot = Factory.insert(:bot, user: friend)
+        following_public_bot = Factory.insert(:bot, user: following,
+                                              public: true)
+        following_private_bot = Factory.insert(:bot, user: following)
+        following_shared_private_bot = Factory.insert(:bot, user: following)
+
+        Share.put(shared.user, friends_shared_private_bot, friend)
+        Share.put(shared.user, following_shared_private_bot, following)
+
+        {:ok, [
+          friends_public_bot: friends_public_bot,
+          friends_private_bot: friends_private_bot,
+          friends_shared_private_bot: friends_shared_private_bot,
+          following_public_bot: following_public_bot,
+          following_private_bot: following_private_bot,
+          following_shared_private_bot: following_shared_private_bot
+        ]}
+      end
+
+      it do: assert User.searchable?(shared.user, shared.owned_bot)
+      it do: assert User.searchable?(shared.user, shared.subscribed_bot)
+      it do: assert User.searchable?(shared.user, shared.friends_public_bot)
+      it do: assert User.searchable?(shared.user,
+                                     shared.friends_shared_private_bot)
+      it do: assert User.searchable?(shared.user, shared.following_public_bot)
+
+      it do: refute User.searchable?(shared.user, shared.temp_subscribed_bot)
+      it do: refute User.searchable?(shared.user, shared.public_bot)
+      it do: refute User.searchable?(shared.user, shared.shared_bot)
+      it do: refute User.searchable?(shared.user, shared.unaffiliated_bot)
+      it do: refute User.searchable?(shared.user, shared.friends_private_bot)
+      it do: refute User.searchable?(shared.user, shared.following_private_bot)
+      it do: refute User.searchable?(shared.user,
+                                     shared.following_shared_private_bot)
     end
 
     describe "can_access?/2" do

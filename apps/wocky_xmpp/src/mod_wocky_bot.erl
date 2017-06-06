@@ -361,16 +361,13 @@ get_bots_near_location(From, Lat, Lon) ->
         {ok, AllBots} ->
             User = ?wocky_user:get_by_jid(From),
             VisibleBots = lists:filter(
-                            geosearch_access_filter(User, _), AllBots),
+                            ?wocky_user:'searchable?'(User, _), AllBots),
             {ok, make_geosearch_result(VisibleBots)};
         {error, no_index_configured} ->
             {error,
              ?ERRT_FEATURE_NOT_IMPLEMENTED(
                 ?MYLANG, <<"Index search is not configured on this server">>)}
     end.
-
-geosearch_access_filter(User, Bot) ->
-    ok =:= wocky_bot_util:check_access(User, Bot).
 
 make_geosearch_result(Bots) ->
     #xmlel{name = <<"bots">>,
