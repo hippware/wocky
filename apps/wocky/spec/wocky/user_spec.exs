@@ -26,7 +26,7 @@ defmodule Wocky.UserSpec do
   describe "valid_update_fields/0" do
     subject do: User.valid_update_fields
 
-    it do: should(have_count 5)
+    it do: should(have_count 6)
   end
 
   describe "to_jid/1" do
@@ -260,7 +260,8 @@ defmodule Wocky.UserSpec do
         handle: Internet.user_name,
         first_name: "Svein",
         last_name: "Forkbeard",
-        email: "svein@forkbeard.com"
+        email: "svein@forkbeard.com",
+        tagline: "It was the blurst of times"
       }
 
       result = User.update(shared.id, fields)
@@ -277,6 +278,7 @@ defmodule Wocky.UserSpec do
       new_user.first_name |> should(eq shared.fields.first_name)
       new_user.last_name |> should(eq shared.fields.last_name)
       new_user.email |> should(eq shared.fields.email)
+      new_user.tagline |> should(eq shared.fields.tagline)
     end
 
     it "should not update the user's resource" do

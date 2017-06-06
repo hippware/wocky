@@ -36,6 +36,7 @@ defmodule Wocky.User do
     field :last_name,    :string # User's last name
     field :phone_number, :string # The user's phone number (also from digits)
     field :email,        :string # User's email address
+    field :tagline,      :string # User's tagline
     field :password,     :string # Password hash
     field :pass_details, :string
 
@@ -74,13 +75,14 @@ defmodule Wocky.User do
     first_name:     nil | binary,
     last_name:      nil | binary,
     email:          nil | binary,
+    tagline:        nil | binary,
     external_id:    nil | external_id,
     phone_number:   nil | phone_number,
   }
 
   @register_fields [:username, :server, :external_id, :phone_number,
                     :password, :pass_details]
-  @update_fields [:handle, :avatar, :first_name, :last_name, :email]
+  @update_fields [:handle, :avatar, :first_name, :last_name, :email, :tagline]
 
   @doc "Return the list of fields that can be updated on an existing user."
   @spec valid_update_fields :: [binary]
