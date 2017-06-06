@@ -24,6 +24,9 @@
 %% Access manager callback
 -export([check_access/3]).
 
+%% Other functions
+-export([make_bot_el/2]).
+
 -type loc() :: {float(), float()}.
 -type tags() :: [binary()].
 
@@ -185,6 +188,7 @@ perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
         NewBot <- ?wocky_bot:update(Bot, FieldsMap),
         wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
                                            ?wocky_bot:'public?'(NewBot)),
+        wocky_bot_users:maybe_notify_subscribers(Server, Bot, NewBot),
         {ok, []}
        ]);
 

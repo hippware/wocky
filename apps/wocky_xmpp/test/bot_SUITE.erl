@@ -23,7 +23,7 @@
                       add_to_s/2, set_notifications/2
                      ]).
 
--export([set_visibility/3]).
+-export([set_visibility/3, create_field/1]).
 
 -define(notification_handler, 'Elixir.Wocky.PushNotifier.TestNotifier').
 

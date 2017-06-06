@@ -126,7 +126,7 @@ filter_local_packet_hook(P = {From,
                  check_user_present(To),
                  {Action, ID} <- check_publish(From, Stanza),
                  publish(jid:to_bare(To), From, ID, Stanza),
-                 {ok, Action}
+                 Action
                 ]),
     maybe_drop(Result, P);
 
@@ -154,6 +154,7 @@ publish_checks() ->
     [
      fun check_publish_headline/2,
      fun check_publish_bot/2,
+     fun check_publish_bot_description/2,
      fun check_publish_event/2,
      fun check_publish_skip_notification/2
     ].
@@ -187,6 +188,19 @@ check_publish_bot(From, Stanza) ->
             continue;
         BotEl ->
             publish_bot_action(From, BotEl)
+    end.
+
+check_publish_bot_description(From, Stanza) ->
+    BotEl = xml:get_path_s(Stanza, [{elem, <<"bot-description-changed">>},
+                                    {elem, <<"bot">>}]),
+    BotNS = xml:get_path_s(Stanza, [{elem, <<"bot-description-changed">>},
+                                    {attr, <<"xmlns">>}]),
+    BotID = wocky_bot_util:get_id_from_fields(BotEl),
+    case BotNS of
+        ?NS_BOT when BotID =/= <<>> ->
+            {publish, {drop, bot_description_id(From, BotID)}};
+        _ ->
+            continue
     end.
 
 check_publish_event(From, Stanza) ->
@@ -230,7 +244,7 @@ publish_bot_action(From, BotEl) ->
     end,
     {publish, Result}.
 
-maybe_drop({ok, drop}, _) -> drop;
+maybe_drop(drop, _) -> drop;
 maybe_drop(_, P) -> P.
 
 %%%===================================================================
@@ -297,6 +311,10 @@ jid_event_id(JIDBin, Event) ->
 
 bot_event_id(#jid{lserver = Server}, BotNode) ->
     jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
+
+bot_description_id(#jid{lserver = Server}, BotID) ->
+    jid:to_binary(
+      jid:make(<<>>, Server, <<"bot/", BotID/binary, "/description">>)).
 
 jid_message_id(From) ->
     jid:to_binary(jid:to_bare(From)).

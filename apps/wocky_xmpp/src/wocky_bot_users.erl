@@ -12,7 +12,8 @@
 -include("wocky_roster.hrl").
 
 -export([handle_share/3,
-         notify_new_viewers/4]).
+         notify_new_viewers/4,
+         maybe_notify_subscribers/3]).
 
 
 %%%===================================================================
@@ -94,3 +95,43 @@ cdata_el(Name, Value) ->
 
 get_friends_and_followers(LUser) ->
     [?wocky_user:to_jid(R) || R <- ?wocky_roster_item:followers(LUser)].
+
+%%%===================================================================
+%%% Notify non-temp bot subscribers of changes to the bot
+%%%
+%%% Currently this only encompases (non-whitespace) changes to the
+%%% description
+%%%===================================================================
+
+-spec maybe_notify_subscribers(Server :: ejabberd:lserver(),
+                               OldBot :: ?wocky_bot:t(),
+                               NewBot :: ?wocky_bot:t()) -> ok.
+maybe_notify_subscribers(Server,
+                         #{description := OldDesc},
+                         NewBot = #{description := NewDesc}) ->
+    Old = wocky_util:remove_whitespace(OldDesc),
+    New = wocky_util:remove_whitespace(NewDesc),
+    case Old of
+        New -> ok; % No change
+        _ -> notify_subscribers(NewBot, Old, Server)
+    end.
+
+notify_subscribers(NewBot, OldDesc, Server) ->
+    Subscribers = ?wocky_bot:non_temp_subscribers(NewBot),
+    lists:foreach(notify_desc_change(NewBot, OldDesc, _, Server), Subscribers).
+
+notify_desc_change(NewBot, OldDesc, User, Server) ->
+    ejabberd_router:route(jid:make(<<>>, Server, <<>>),
+                          ?wocky_user:to_jid(User),
+                          desc_change_stanza(NewBot, OldDesc, User)).
+
+desc_change_stanza(NewBot, OldDesc, User) ->
+    {ok, BotEl} = mod_wocky_bot:make_bot_el(NewBot, User),
+    #xmlel{name = <<"message">>,
+           attrs = [{<<"type">>, <<"headline">>}],
+           children = [#xmlel{name = <<"bot-description-changed">>,
+                              attrs = [{<<"xmlns">>, ?NS_BOT}],
+                              children = maybe_new_tag(OldDesc) ++ [BotEl]}]}.
+
+maybe_new_tag(<<>>) ->  [#xmlel{name = <<"new">>}];
+maybe_new_tag(_) -> [].

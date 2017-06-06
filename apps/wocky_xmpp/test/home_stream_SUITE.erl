@@ -17,7 +17,8 @@
                       ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
                       check_hs_result/2, check_hs_result/4,
-                      hs_query_el/1, hs_node/1]).
+                      hs_query_el/1, hs_node/1, node_el/3,
+                      subscribe_stanza/0]).
 
 -define(NS_TEST, <<"test-item-ns">>).
 -define(BOB_HS_ITEM_COUNT, 250).
@@ -47,7 +48,12 @@ groups() ->
     [{publish_bot, [], publish_bot_cases()}].
 
 publish_bot_cases() ->
-    [auto_publish_bot, auto_publish_private_bot, auto_publish_bot_item].
+    [
+     auto_publish_bot,
+     auto_publish_private_bot,
+     auto_publish_bot_item,
+     bot_description_update
+    ].
 
 suite() ->
     escalus:suite().
@@ -317,6 +323,42 @@ auto_publish_bot_item(Config) ->
 
       end).
 
+bot_description_update(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        expect_iq_success(subscribe_stanza(), Carol),
+
+        % New description should generate an HS item for non-owner subscribers
+        clear_home_streams(),
+        expect_iq_success(update_bot_desc_stanza("Updated Description"), Alice),
+        timer:sleep(400),
+        check_home_stream_sizes(0, [Alice, Bob]),
+        expect_home_stream_bot_desc(Carol, false),
+
+        % A description changing only whitespace should generate no HS items
+        clear_home_streams(),
+        expect_iq_success(
+          update_bot_desc_stanza("\n Updat\red \tDes cription   "), Alice),
+        timer:sleep(400),
+        check_home_stream_sizes(0, [Alice, Carol, Bob]),
+
+        % Blank the description
+        clear_home_streams(),
+        expect_iq_success(update_bot_desc_stanza("  \t  "), Alice),
+        timer:sleep(400),
+        check_home_stream_sizes(0, [Alice, Bob]),
+        expect_home_stream_bot_desc(Carol, false),
+
+        % Changing from a white-space only description should add the <new> tag
+        clear_home_streams(),
+        expect_iq_success(update_bot_desc_stanza("Fnord"), Alice),
+        timer:sleep(400),
+        check_home_stream_sizes(0, [Alice, Bob]),
+        expect_home_stream_bot_desc(Carol, true),
+
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice)
+      end).
+
 no_auto_publish_pep_item(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, whitelist, ?MODULE),
     escalus:story(Config, [{alice, 1}],
@@ -404,6 +446,19 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
                              hd((lists:last(I))#item.stanzas))
       end, Clients).
 
+expect_home_stream_bot_desc(Client, New) ->
+    S = expect_iq_success_u(get_hs_stanza(), Client, Client),
+    ct:log("S: ~p", [S]),
+    El = #xmlel{} = xml:get_path_s(S, [{elem, <<"items">>},
+                                       {elem, <<"item">>},
+                                       {elem, <<"message">>},
+                                       {elem, <<"bot-description-changed">>}]),
+    case {New, xml:get_path_s(El, [{elem, <<"new">>}])} of
+        {true, #xmlel{}} -> ok;
+        {false, <<>>} -> ok;
+        E -> ct:fail("Incorrect <new> tag: ~p", [E])
+    end.
+
 clear_home_streams() ->
     ?wocky_repo:delete_all(?wocky_home_stream_item).
 
@@ -446,3 +501,10 @@ seed_home_stream(Config) ->
     [{alice_versions, Versions}, {alice_keys, [K1, K2, K3]} | Config].
 
 ok({ok, Val}) -> Val.
+
+update_bot_desc_stanza(Desc) ->
+    test_helper:iq_set(
+      ?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field(Desc)])).
+
+modify_field(Desc) ->
+    bot_SUITE:create_field({"description", "string", Desc}).

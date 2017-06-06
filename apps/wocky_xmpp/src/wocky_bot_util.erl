@@ -19,6 +19,7 @@
          check_owner/2,
          check_access/2,
          get_id_from_node/1,
+         get_id_from_fields/1,
          list_hash/1,
          extract_images/1,
          get_image/1,
@@ -53,6 +54,25 @@ get_id_from_node_value(Node) ->
     case ?wocky_bot:get_id_from_node(Node) of
         nil -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)};
         ID -> {ok, ID}
+    end.
+
+get_id_from_fields(#xmlel{name = <<"bot">>, children = Fields}) ->
+    get_id_from_fields(Fields);
+get_id_from_fields([El = #xmlel{name = <<"field">>} | Rest]) ->
+    case xml:get_tag_attr_s(<<"var">>, El) of
+        <<"id">> ->
+            get_field_value(El);
+        _ -> get_id_from_fields(Rest)
+    end;
+get_id_from_fields([_ | Rest]) ->
+    get_id_from_fields(Rest);
+get_id_from_fields(_) ->
+    <<>>.
+
+get_field_value(El) ->
+    case wocky_xml:get_subel_cdata(<<"value">>, El) of
+        {ok, Value} -> Value;
+        {error, _} -> <<>>
     end.
 
 get_bot(ID) ->
