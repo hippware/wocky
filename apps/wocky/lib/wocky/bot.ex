@@ -22,8 +22,7 @@ defmodule Wocky.Bot do
     field :server,           :string  # Bot server
     field :title,            :string, default: ""  # Bot title
     field :pending,          :boolean # True if this is a preallocated bot ID
-    field :shortname,        :string, default: ""
-    # Bot shortname for URL representation
+    field :shortname,        :string  # Bot shortname for URL representation
     field :description,      :string, default: ""  # User-supplied description
     field :image,            :string  # Bot graphical image
     field :type,             :string, default: ""
