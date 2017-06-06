@@ -13,6 +13,8 @@ If there are not many items, just list them sequentially.
 * Geo-search API not returning all expected bots (#641)
 * Delete SNS endpoint when client de-registers for push notifications. 
   * Add logging.
+* Fix up string handling in bot report generation (#740)
+* Fix: ETS errors on shutdown (#734)
 
 
 # 2017.6.2+2263.74bd7a4
