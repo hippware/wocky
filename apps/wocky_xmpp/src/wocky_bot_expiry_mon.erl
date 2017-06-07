@@ -42,7 +42,7 @@ start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %% @doc Adds a bot being followed. Expiry is in seconds.
--spec follow_started(jid(), non_neg_integer()) -> ok.
+-spec follow_started(jid(), ?datetime:t()) -> ok.
 follow_started(JID, ExpiryS) ->
     gen_server:cast(?SERVER, {follow_started, jid:to_binary(JID), ExpiryS}).
 
@@ -72,8 +72,9 @@ handle_call(_Request, _From, State) ->
 
 %% @private
 %% @doc Handling cast messages
--spec handle_cast({atom(), binary()} | {atom(), binary(), map()} | any(),
-                  state()) -> {noreply, state()}.
+-spec handle_cast(
+        {atom(), binary()} | {atom(), binary(), ?datetime:t()} | any(),
+        state()) -> {noreply, state()}.
 
 handle_cast({follow_started, JID, ExpiryS},
             State = #state{bots = Bots, warning_time = WarningTime}) ->
@@ -120,10 +121,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-start_timers(JID, ExpiryS, WarningTime, Bots) ->
+start_timers(JID, Expiry, WarningTime, Bots) ->
     CleanBots = stop_existing_timers(JID, Bots),
-    Now = ?wocky_timestamp:now(),
-    ExpiryMS = timer:seconds(ExpiryS) - Now,
+    ExpiryDuration = ?timex:diff(Expiry, ?datetime:utc_now(), duration),
+    ExpiryMS = trunc(?duration:to_milliseconds(ExpiryDuration)),
     WarningMS = ExpiryMS - WarningTime,
     References = maybe_set_timers(JID, [ExpiryMS, WarningMS]),
     maybe_store_references(JID, References, CleanBots).
@@ -166,9 +167,9 @@ send_expiry_warning(JIDBin) when is_binary(JIDBin) ->
 send_expiry_warning(#{user_id := OwnerID, follow_me_expiry := Expiry} = Bot) ->
     OwnerJID = ?wocky_user:to_jid(?wocky_repo:get(?wocky_user, OwnerID)),
     BotJID = ?wocky_bot:to_jid(Bot),
-    ExpiryStr = integer_to_binary(Expiry div 1000),
     Stanza =
-        wocky_bot_util:follow_stanza(Bot, {<<"follow expire">>, ExpiryStr}),
+        wocky_bot_util:follow_stanza(Bot, {<<"follow expire">>,
+                                           ?wocky_timestamp:to_string(Expiry)}),
     ejabberd_router:route(BotJID, OwnerJID, Stanza).
 
 remove_timer_ref(JID, Ref, Bots) ->
