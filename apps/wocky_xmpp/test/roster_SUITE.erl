@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%==============================================================================
--module(ejabberd_roster_SUITE).
+-module(roster_SUITE).
 
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
@@ -110,7 +110,8 @@ add_contact(Config) ->
         Received2 = escalus:wait_for_stanza(Alice),
 
         escalus:assert(is_roster_result, Received2),
-        escalus:assert(roster_contains, [?BJID(?BOB)], Received2)
+        escalus:assert(roster_contains, [?BJID(?BOB)], Received2),
+        ?assert(has_created_at(Received2))
     end).
 
 roster_push(Config) ->
@@ -181,6 +182,7 @@ versioning(Config) ->
 
         escalus:assert(is_roster_result, Received2),
         escalus:assert(roster_contains, [?BJID(?BOB)], Received2),
+        ?assert(has_created_at(Received2)),
 
         %% check version
         Ver2 = get_ver(Received2),
@@ -314,3 +316,9 @@ remove_roster(Config, UserSpec) ->
 
 get_ver(Element) ->
     exml_query:path(Element, [{element, <<"query">>}, {attr, <<"ver">>}]).
+
+has_created_at(Element) ->
+    xml:get_path_s(Element, [{elem, <<"query">>},
+                             {elem, <<"item">>},
+                             {attr, <<"created_at">>}])
+    =/= <<>>.
