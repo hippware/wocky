@@ -33,8 +33,10 @@ defmodule Wocky.Bot.ShareSpec do
         end
 
         it "has error" do
-          error = {:bot_id, {"does not exist", []}}
-          expect(new_changeset().errors).to have(error)
+          errors = [bot_id: {"does not exist", []},
+                    user_id: {"does not exist", []},
+                    sharer_id: {"does not exist", []}]
+          expect(new_changeset().errors).to have_any(&Enum.member?(errors, &1))
         end
       end
     end
