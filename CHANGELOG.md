@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.7+2303.8e6072a
+
 * Add user fields for number of bots, followers, and followees (#686)
 * Geo-search API not returning all expected bots (#641)
 * Delete SNS endpoint when client de-registers for push notifications. 
