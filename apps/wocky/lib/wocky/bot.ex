@@ -20,15 +20,15 @@ defmodule Wocky.Bot do
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "bots" do
     field :server,           :string  # Bot server
-    field :title,            :string  # Bot title
+    field :title,            :string, default: ""  # Bot title
     field :pending,          :boolean # True if this is a preallocated bot ID
     field :shortname,        :string  # Bot shortname for URL representation
-    field :description,      :string  # User-supplied description
+    field :description,      :string, default: ""  # User-supplied description
     field :image,            :string  # Bot graphical image
-    field :type,             :string  # Bot type (freeform string from
-                                      # server's perspective)
-    field :address,          :string  # Free-form string field describing bot's
-                                      # location
+    field :type,             :string, default: ""
+    # Bot type (freeform string from server's perspective)
+    field :address,          :string, default: ""
+    # Free-form string field describing bot's location
     field :lat,              :float   # Latitude
     field :lon,              :float   # Longitude
     field :radius,           :integer # Radius of bot circle
@@ -160,6 +160,12 @@ defmodule Wocky.Bot do
     |> Enum.uniq_by(&(&1.id))
   end
 
+  @spec non_temp_subscribers(t) :: [User.t]
+  def non_temp_subscribers(bot) do
+    Repo.preload(bot, [:subscribers]).subscribers
+  end
+
+  @doc "Count of all subscribers (temporary and premanant) plus the owner"
   @spec subscriber_count(Bot.t) :: pos_integer
   def subscriber_count(bot) do
     subscribers =
@@ -174,6 +180,7 @@ defmodule Wocky.Bot do
       |> select([s], count(s.id))
       |> Repo.one
 
+    # Add one for the owner:
     subscribers + temp_subscribers + 1
   end
 end

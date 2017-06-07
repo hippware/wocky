@@ -11,6 +11,8 @@
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
 
+-define(string, 'Elixir.String').
+
 -export([
    add_hooks/4,
    delete_hooks/4,
@@ -29,7 +31,9 @@
 
    v1_uuid_order/2,
 
-   remove_redundant_jids/1
+   remove_redundant_jids/1,
+
+   remove_whitespace/1
         ]).
 
 -type hook() :: {Hook :: atom(), Callback :: atom()}.
@@ -141,7 +145,18 @@ remove_redundant_jids(JIDs) ->
 
 redundant(#jid{lresource = <<>>}, _) -> false;
 redundant(JID, JIDs) ->
-    fun_chain:first(JID,
-                    jid:to_bare(),
-                    jid:are_equal(_),
-                    lists:any(JIDs)).
+    fun_chain:first(
+      JID,
+      jid:to_bare(),
+      jid:are_equal(_),
+      lists:any(JIDs)
+     ).
+
+% Strips all (unicode-defined) whitespace out of a binary string
+-spec remove_whitespace(binary()) -> binary().
+remove_whitespace(String) ->
+    fun_chain:first(
+      String,
+      ?string:split(),
+      list_to_binary()
+     ).

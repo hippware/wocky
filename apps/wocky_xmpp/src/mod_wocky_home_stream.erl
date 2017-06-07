@@ -142,56 +142,107 @@ filter_local_packet_hook(Other) -> Other.
 check_user_present(#jid{luser = <<>>}) -> {error, no_user};
 check_user_present(#jid{luser = _}) -> ok.
 
+%% Home stream publishing checks are performed in order. They may return one
+%% of 3 values:
+%%
+%% * `continue` - continues on to the next check
+%% * `dont_publish` - stops checking immediately and does not publish
+%% * `{publish, {Drop, ID}` - publishes the packet with the supplied ID
+%%                            Drop may be `drop` or `keep` and controls whether
+%%                            the packet is dropped from further routing.
+publish_checks() ->
+    [
+     fun check_publish_headline/2,
+     fun check_publish_bot/2,
+     fun check_publish_bot_description/2,
+     fun check_publish_event/2,
+     fun check_publish_skip_notification/2
+    ].
+
 check_publish(From, Stanza) ->
+    check_publish(publish_checks(), From, Stanza).
+
+check_publish([], _From, _Stanza) ->
+    {error, dont_publish};
+check_publish([Check | Rest], From, Stanza) ->
+    case Check(From, Stanza) of
+        dont_publish ->
+            {error, dont_publish};
+        {publish, {Action, ID}} ->
+            {ok, {Action, ID}};
+        continue ->
+            check_publish(Rest, From, Stanza)
+    end.
+
+check_publish_headline(_From, Stanza) ->
     case xml:get_tag_attr(<<"type">>, Stanza) of
-        {value, <<"headline">>} -> check_publish_headline(From, Stanza);
-        _ -> {error, dont_publish}
+        {value, <<"headline">>} ->
+            continue;
+        _ ->
+            dont_publish
     end.
 
-check_publish_headline(From, Stanza) ->
+check_publish_bot(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
-        false -> check_publish_non_bot(From, Stanza);
-        BotEl -> check_publish_bot(From, BotEl)
+        false ->
+            continue;
+        BotEl ->
+            publish_bot_action(From, BotEl)
     end.
 
-check_publish_non_bot(From, Stanza) ->
+check_publish_bot_description(From, Stanza) ->
+    BotEl = xml:get_path_s(Stanza, [{elem, <<"bot-description-changed">>},
+                                    {elem, <<"bot">>}]),
+    BotNS = xml:get_path_s(Stanza, [{elem, <<"bot-description-changed">>},
+                                    {attr, <<"xmlns">>}]),
+    BotID = wocky_bot_util:get_id_from_fields(BotEl),
+    case BotNS of
+        ?NS_BOT when BotID =/= <<>> ->
+            {publish, {drop, bot_description_id(From, BotID)}};
+        _ ->
+            continue
+    end.
+
+check_publish_event(From, Stanza) ->
     EventNS = xml:get_path_s(Stanza, [{elem, <<"event">>},
                                       {attr, <<"xmlns">>}]),
     BotNode = xml:get_path_s(Stanza, [{elem, <<"event">>},
                                       {attr, <<"node">>}]),
     case EventNS of
         ?NS_BOT_EVENT when BotNode =/= <<>> ->
-            {ok, {drop, bot_event_id(From, BotNode)}};
+            {publish, {drop, bot_event_id(From, BotNode)}};
         ?NS_PUBSUB_EVENT ->
-            {error, dont_publish};
+            dont_publish;
         _ ->
-            check_publish_non_event(From, Stanza)
+            continue
     end.
 
 %% Very important: Filter out publishing notification events -
 %% the home stream generates these and we don't want to get caught in a loop.
-check_publish_non_event(From, Stanza) ->
+check_publish_skip_notification(From, Stanza) ->
     NotificationNS = xml:get_path_s(Stanza, [{elem, <<"notification">>},
                                              {attr, <<"xmlns">>}]),
     case NotificationNS of
-        ?NS_PUBLISHING -> {error, dont_publish};
-        _  -> {ok, {keep, jid_message_id(From)}}
+        ?NS_PUBLISHING -> dont_publish;
+        _  -> {publish, {keep, jid_message_id(From)}}
     end.
 
-check_publish_bot(From, BotEl) ->
+publish_bot_action(From, BotEl) ->
+    Result =
     case wocky_bot_util:bot_packet_action(BotEl) of
-        {none, none}            -> {ok, {keep, jid_message_id(From)}};
-        {JIDBin, show}          -> {ok, {drop, bot_id(JIDBin)}};
-        {JIDBin, share}         -> {ok, {drop, bot_id(JIDBin)}};
-        {_JIDBin, enter}        -> {ok, {drop, new_id()}};
-        {_JIDBin, exit}         -> {ok, {drop, new_id()}};
-        {JIDBin, follow_on}     -> {ok, {drop, jid_event_id(
-                                                 JIDBin, <<"follow_on">>)}};
-        {JIDBin, follow_off}    -> {ok, {drop, jid_event_id(
-                                                 JIDBin, <<"follow_off">>)}};
-        {JIDBin, follow_expire} -> {ok, {drop, jid_event_id(
-                                                 JIDBin, <<"follow_expiry">>)}}
-    end.
+        {none, none}            -> {keep, jid_message_id(From)};
+        {JIDBin, show}          -> {drop, bot_id(JIDBin)};
+        {JIDBin, share}         -> {drop, bot_id(JIDBin)};
+        {_JIDBin, enter}        -> {drop, new_id()};
+        {_JIDBin, exit}         -> {drop, new_id()};
+        {JIDBin, follow_on}     -> {drop, jid_event_id(
+                                            JIDBin, <<"follow_on">>)};
+        {JIDBin, follow_off}    -> {drop, jid_event_id(
+                                            JIDBin, <<"follow_off">>)};
+        {JIDBin, follow_expire} -> {drop, jid_event_id(
+                                            JIDBin, <<"follow_expiry">>)}
+    end,
+    {publish, Result}.
 
 maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
@@ -260,6 +311,10 @@ jid_event_id(JIDBin, Event) ->
 
 bot_event_id(#jid{lserver = Server}, BotNode) ->
     jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
+
+bot_description_id(#jid{lserver = Server}, BotID) ->
+    jid:to_binary(
+      jid:make(<<>>, Server, <<"bot/", BotID/binary, "/description">>)).
 
 jid_message_id(From) ->
     jid:to_binary(jid:to_bare(From)).
