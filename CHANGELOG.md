@@ -11,6 +11,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Add logging.
 * Fix up string handling in bot report generation (#740)
 * Fix: ETS errors on shutdown (#734)
+* Changes in bot description to be published to Home Stream (#646)
+* Add new user field: 'tagline' (#689)
 
 
 # 2017.6.2+2263.74bd7a4
