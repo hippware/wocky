@@ -195,6 +195,7 @@ fields() ->
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
      {"email",        "string", private,     write,     default},
+     {"tagline",      "string", public,      write,     default},
      {"external_id",  "string", private,     read_only, default},
      {"bots+size",    "int",    public,      read_only,
       fun(User) ->
