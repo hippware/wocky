@@ -19,6 +19,7 @@
    safe_bin_to_integer/1,
    default_bin_to_integer/2,
    safe_bin_to_float/1,
+   safe_bin_to_boolean/1,
    coord_to_binary/1,
    null_to_list/1,
    intersection/2,
@@ -92,6 +93,15 @@ default_bin_to_integer(Bin, Default) ->
     case safe_bin_to_integer(Bin) of
         {ok, Int} -> Int;
         {error, bad_integer} -> Default
+    end.
+
+-spec safe_bin_to_boolean(binary()) -> {ok, boolean()} | {error, bad_boolean}.
+safe_bin_to_boolean(Bin) ->
+    try binary_to_existing_atom(Bin, utf8) of
+        X when X =:= true orelse X =:= false -> {ok, X};
+        _ -> {error, bad_boolean}
+    catch
+        _:_ -> {error, bad_boolean}
     end.
 
 -spec set_config_from_opt(atom(), atom(), term(), proplists:proplist()) -> ok.

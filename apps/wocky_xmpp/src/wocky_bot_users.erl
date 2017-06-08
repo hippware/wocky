@@ -62,9 +62,12 @@ send_notification(From, To, Bot) ->
 % Unchanged visibility
 notify_new_viewers(_, _, Vis, Vis) -> ok;
 
-% New visibility is public - notify friends and followers
+% Newly created public bot or new visibility is public.
+% Notify friends, followers and the creator
 notify_new_viewers(Server, #{user_id := Owner} = Bot, _, true) ->
-    notify_new_viewers(Server, Bot, get_friends_and_followers(Owner));
+    notify_new_viewers(Server, Bot,
+                       [jid:make(Owner, Server, <<>>)
+                        | get_friends_and_followers(Owner)]);
 
 % Any other case does not generate notification
 notify_new_viewers(_, _, _, _) -> ok.
