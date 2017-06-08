@@ -63,7 +63,10 @@
          cdata_el/2,
          hs_query_el/1,
 
-         set_notifications/2
+         set_notifications/2,
+
+         check_home_stream_sizes/2,
+         check_home_stream_sizes/3
         ]).
 
 
@@ -514,3 +517,15 @@ notifications_stanza(true, Client) ->
                            {<<"platform">>, <<"escalus">>}]});
 notifications_stanza(false, _Client) ->
     iq_set(?NS_NOTIFICATIONS, #xmlel{name = <<"disable">>}).
+
+check_home_stream_sizes(ExpectedSize, Clients) ->
+    check_home_stream_sizes(ExpectedSize, Clients, true).
+check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
+    lists:foreach(
+      fun(Client) ->
+              S = expect_iq_success_u(get_hs_stanza(), Client, Client),
+              I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
+              ExpectedSize =:= 0 orelse not CheckLastContent orelse
+              escalus:assert(is_bot_action(?BOT, _),
+                             hd((lists:last(I))#item.stanzas))
+      end, Clients).

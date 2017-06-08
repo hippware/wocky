@@ -543,7 +543,10 @@ get_field_value(geoloc, FieldEl) ->
     wocky_xml:act_on_subel(<<"geoloc">>, FieldEl, fun read_geoloc/1);
 
 get_field_value(tags, FieldEl) ->
-    wocky_xml:foldl_subels(FieldEl, [], fun read_tag/2).
+    wocky_xml:foldl_subels(FieldEl, [], fun read_tag/2);
+
+get_field_value(bool, FieldEl) ->
+    wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_bool/1).
 
 read_integer(Binary) ->
     case wocky_util:safe_bin_to_integer(Binary) of
@@ -572,6 +575,12 @@ read_tag(#xmlel{name = <<"tag">>,
     {ok, [Val | Acc]};
 read_tag(_Element, _Acc) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid tag">>)}.
+
+read_bool(Binary) ->
+    case wocky_util:safe_bin_to_boolean(Binary) of
+        {ok, Bool} -> {ok, Bool};
+        {error, _} -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid boolean">>)}
+    end.
 
 check_required_fields(_Fields, []) -> ok;
 check_required_fields(Fields, [#field{name = Name} | Rest]) ->

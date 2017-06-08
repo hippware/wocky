@@ -18,7 +18,8 @@
                       get_hs_stanza/0, get_hs_stanza/1,
                       check_hs_result/2, check_hs_result/4,
                       hs_query_el/1, hs_node/1, node_el/3,
-                      subscribe_stanza/0]).
+                      subscribe_stanza/0, check_home_stream_sizes/2,
+                      check_home_stream_sizes/3]).
 
 -define(NS_TEST, <<"test-item-ns">>).
 -define(BOB_HS_ITEM_COUNT, 250).
@@ -433,18 +434,6 @@ is_presence_error(Stanza) ->
 
 set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
-
-check_home_stream_sizes(ExpectedSize, Clients) ->
-    check_home_stream_sizes(ExpectedSize, Clients, true).
-check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
-    lists:foreach(
-      fun(Client) ->
-              S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-              I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
-              ExpectedSize =:= 0 orelse not CheckLastContent orelse
-              escalus:assert(test_helper:is_bot_action(?BOT, _),
-                             hd((lists:last(I))#item.stanzas))
-      end, Clients).
 
 expect_home_stream_bot_desc(Client, New) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
