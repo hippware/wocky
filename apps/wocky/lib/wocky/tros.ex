@@ -119,6 +119,9 @@ defmodule Wocky.TROS do
   def make_download_response(server, file_id),
     do: (backend()).make_download_response(server, file_id)
 
+  @spec ready?(file_id) :: boolean
+  def ready?(file_id), do: Metadata.ready?(file_id)
+
   defp backend do
     Application.fetch_env!(:wocky, :tros_backend)
   end
