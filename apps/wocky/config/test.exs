@@ -7,7 +7,6 @@ config :wocky, Wocky.Repo,
   ownership_timeout: 30_000 # ms
 
 config :wocky,
-  notification_system: "test",
   indexing_system: "test"
 
 config :logger,
@@ -16,3 +15,6 @@ config :logger,
 # Make token tests go faster:
 config :comeonin,
   bcrypt_log_rounds: 4
+
+config :pushex,
+  sandbox: true

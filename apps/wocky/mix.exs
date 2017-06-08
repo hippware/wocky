@@ -58,6 +58,7 @@ defmodule Wocky.Mixfile do
       {:faker,                "~> 0.7.0"},
       {:ex_machina,           "~> 2.0"},
       {:ex_aws,               "~> 1.1"},
+      {:pushex,               "~> 0.2.0"},
       {:configparser_ex,      "~> 1.0", override: true},
       {:sweet_xml,            "~> 0.6.5"},
       {:hackney,              "~> 1.7", override: true},
@@ -77,6 +78,10 @@ defmodule Wocky.Mixfile do
       {:quantum,              "~> 1.9"},
       {:comeonin,             "~> 3.0"},
 
+      {:apns,
+        github: "chvanikoff/apns4ex",
+        branch: "master",
+        override: true},
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",
