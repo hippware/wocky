@@ -109,8 +109,7 @@ defmodule Wocky.Repo.Factory do
   def tros_metadata_factory do
     %TROSMetadata{
       id: ID.new,
-      access: Lorem.sentence,
-      ready: true
+      access: Lorem.sentence
     }
   end
 

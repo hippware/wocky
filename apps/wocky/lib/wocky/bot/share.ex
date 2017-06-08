@@ -37,7 +37,7 @@ defmodule Wocky.Bot.Share do
     get(user, bot) != nil
   end
 
-  @spec get(User.t, Bot.t) :: t | nil
+  @spec get(User.t, Bot.t) :: t
   def get(user, bot) do
     Repo.get_by(Share, user_id: user.id, bot_id: bot.id)
   end
