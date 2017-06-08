@@ -9,12 +9,10 @@ defmodule Wocky.TROS.MetadataSpec do
   before do
     user = Factory.insert(:user)
     metadata = Factory.insert(:tros_metadata, user: user)
-    unready = Factory.insert(:tros_metadata, user: user, ready: false)
     {:ok,
      id: metadata.id,
      user: user,
-     access: metadata.access,
-     unready: unready
+     access: metadata.access
     }
   end
 
@@ -100,6 +98,11 @@ defmodule Wocky.TROS.MetadataSpec do
   end
 
   describe "ready?/1" do
+    before do
+      unready = Factory.insert(:tros_metadata, user: shared.user, ready: false)
+      {:ok, unready: unready}
+    end
+
     it do: assert Metadata.ready?(shared.id)
 
     it do: refute Metadata.ready?(shared.unready.id)
