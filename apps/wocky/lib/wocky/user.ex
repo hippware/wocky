@@ -39,6 +39,7 @@ defmodule Wocky.User do
     field :tagline,      :string # User's tagline
     field :password,     :string # Password hash
     field :pass_details, :string
+    field :roles,        {:array, :string}, default: []
 
     timestamps()
 
@@ -65,6 +66,7 @@ defmodule Wocky.User do
   @type external_id  :: binary
   @type phone_number :: binary
   @type handle       :: binary
+  @type role         :: binary
 
   @type t :: %User{
     id:             id,
@@ -78,11 +80,13 @@ defmodule Wocky.User do
     tagline:        nil | binary,
     external_id:    nil | external_id,
     phone_number:   nil | phone_number,
+    roles:          nil | [role]
   }
 
   @register_fields [:username, :server, :external_id, :phone_number,
                     :password, :pass_details]
-  @update_fields [:handle, :avatar, :first_name, :last_name, :email, :tagline]
+  @update_fields [:handle, :avatar, :first_name, :last_name,
+                  :email, :tagline, :roles]
 
   @doc "Return the list of fields that can be updated on an existing user."
   @spec valid_update_fields :: [binary]
@@ -342,5 +346,22 @@ defmodule Wocky.User do
     |> Repo.delete_all
 
     :ok = Index.remove(:user, id)
+  end
+
+  @spec add_role(id, role) :: :ok
+  def add_role(id, role) do
+    User
+    |> where(username: ^id)
+    |> where([q], not ^role in q.roles)
+    |> Repo.update_all(push: [roles: role])
+    :ok
+  end
+
+  @spec remove_role(id, role) :: User.t
+  def remove_role(id, role) do
+    User
+    |> where(username: ^id)
+    |> Repo.update_all(pull: [roles: role])
+    :ok
   end
 end
