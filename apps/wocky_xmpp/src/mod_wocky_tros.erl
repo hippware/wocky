@@ -69,7 +69,7 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         OwnerID <- expand_err(?tros:get_owner(BaseID)),
         Access <- expand_err(?tros:get_access(BaseID)),
         check_download_permissions(FromJID, OwnerID, Access),
-        wait_ready(FileID),
+        wait_ready(BaseID),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID)
        ]).
