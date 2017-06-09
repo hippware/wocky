@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.9+2316.7038371
+
+* Fix a crash in RosterItem.maybe_sort_pair (#759)
+* Request to download image file should wait until post-processing is complete (#643)
+
+
 # 2017.6.8+2311.b907e49
 
 * Remove null values before migration #756
