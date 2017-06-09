@@ -27,7 +27,8 @@
          }).
 
 -define(DEFAULT_MAX_UPLOAD_SIZE, (1024*1024 * 10)). % 10MB
-
+-define(PROCESSING_TIMEOUT, 5 * 60). % Seconds
+-define(PROCESSING_POLL_INTERVAL, timer:seconds(2)).
 
 start(Host, Opts) ->
     wocky_util:set_config_from_opt(max_upload_size, tros_max_upload_size,
@@ -68,6 +69,7 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         OwnerID <- expand_err(?tros:get_owner(BaseID)),
         Access <- expand_err(?tros:get_access(BaseID)),
         check_download_permissions(FromJID, OwnerID, Access),
+        wait_ready(FileID),
         {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
         download_response(Req, OwnerID, FileID)
        ]).
@@ -82,6 +84,27 @@ handle_upload_request(Req, UR) ->
         {ok, wocky_metrics:inc(mod_wocky_tros_upload_requests)},
         upload_response(Req, Fields, Size)
        ]).
+
+wait_ready(FileID) ->
+    wait_ready(FileID, erlang:system_time(seconds)).
+
+wait_ready(FileID, Start) ->
+    case ?tros:'ready?'(FileID) of
+        true ->
+            ok;
+        false ->
+            maybe_wait_ready(FileID, Start)
+    end.
+
+maybe_wait_ready(FileID, Start) ->
+    case erlang:system_time(seconds) - Start of
+        T when T >= ?PROCESSING_TIMEOUT ->
+            {error, ?ERRT_INTERNAL_SERVER_ERROR(
+                        ?MYLANG, <<"Timeout waiting for file to be ready">>)};
+        _ ->
+            timer:sleep(?PROCESSING_POLL_INTERVAL),
+            wait_ready(FileID, Start)
+    end.
 
 extract_fields(Req, RequiredFields, OptionalFields, Defaults) ->
     Fields = lists:foldl(fun(F, Acc) -> add_field(Req, F, Acc) end,
