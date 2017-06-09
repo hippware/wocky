@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.9+2319.ac1c9e4
+
+* Fix TROS download error for thumbnails
+
+
 # 2017.6.9+2316.7038371
 
 * Fix a crash in RosterItem.maybe_sort_pair (#759)
