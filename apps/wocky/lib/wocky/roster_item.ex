@@ -273,14 +273,16 @@ defmodule Wocky.RosterItem do
   end
 
   defp maybe_sort_pair([], _, _), do: nil
-  defp maybe_sort_pair([first = %RosterItem{user_id: first_id}, second],
-                       first_id, _) do
+  defp maybe_sort_pair([_], _, _), do: nil
+  defp maybe_sort_pair([first = %RosterItem{user_id: id}, second], id, _) do
     {first, second}
   end
-  defp maybe_sort_pair([first, second], _, _), do: {second, first}
-  defp maybe_sort_pair(other_list, a, b) do
+  defp maybe_sort_pair([first, second], _, _) do
+    {second, first}
+  end
+  defp maybe_sort_pair(list, a, b) do
     :ok = Logger.warn(
-            "Expected a roster pair but got #{other_list} for #{a}, #{b}")
+            "Expected a roster pair but got #{inspect list} for #{a}, #{b}")
     nil
   end
 end
