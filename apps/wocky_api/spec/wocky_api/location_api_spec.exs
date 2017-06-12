@@ -125,23 +125,78 @@ defmodule WockyAPI.LocationAPISpec do
         expect code |> to(eq 400)
       end
 
-      it "should return 400 when the payload is missing a key" do
-        # This packet is missig 'latitude'
-        data =
-          """
-          {
-              "location":{
-                  "coords":{
-                      "longitude":-85.7935821931526,
-                      "accuracy":3000,
-                  }
-              },
-              "resource": "testing"
-          }
-          """
-        {:ok, %Response{status_code: code}} =
-          HTTPoison.post(url(), data, headers())
-        expect code |> to(eq 400)
+      context "when the payload is missing keys" do
+        it "should return 400 when the payload is missing latitude" do
+          data =
+            """
+            {
+                "location":{
+                    "coords":{
+                        "longitude":-85.7935821931526,
+                        "accuracy":3000,
+                    }
+                },
+                "resource": "testing"
+            }
+            """
+          {:ok, %Response{status_code: code}} =
+            HTTPoison.post(url(), data, headers())
+          expect code |> to(eq 400)
+        end
+
+        it "should return 400 when the payload is missing longitude" do
+          data =
+            """
+            {
+                "location":{
+                    "coords":{
+                        "latitude":35.17448497921099,
+                        "accuracy":3000
+                    }
+                },
+                "resource": "testing"
+            }
+            """
+          {:ok, %Response{status_code: code}} =
+            HTTPoison.post(url(), data, headers())
+          expect code |> to(eq 400)
+        end
+
+        it "should return 400 when the payload is missing accuracy" do
+          data =
+            """
+            {
+                "location":{
+                    "coords":{
+                        "latitude":35.17448497921099,
+                        "longitude":-85.7935821931526
+                    }
+                },
+                "resource": "testing"
+            }
+            """
+          {:ok, %Response{status_code: code}} =
+            HTTPoison.post(url(), data, headers())
+          expect code |> to(eq 400)
+        end
+
+        it "should return 400 when the payload is missing resource" do
+          data =
+            """
+            {
+                "location":{
+                    "coords":{
+                        "latitude":35.17448497921099,
+                        "longitude":-85.7935821931526,
+                        "accuracy":3000
+                    }
+                }
+            }
+            """
+          {:ok, %Response{status_code: code}} =
+            HTTPoison.post(url(), data, headers())
+          expect code |> to(eq 400)
+        end
       end
     end
   end
