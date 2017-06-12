@@ -73,9 +73,9 @@ defmodule Wocky.EventHandler.PushNotification do
   defp format(%BotShareEvent{from: from}) do
     get_handle(from) <> " shared a bot with you!"
   end
-  defp format(%NewMessageEvent{from: from, body: body}) do
-    if is_nil(from) do
-      body
+  defp format(%NewMessageEvent{from: from, body: body, image: _image}) do
+    if blank?(body) do
+      get_handle(from) <> " sent you an image!"
     else
       "From: #{get_handle(from)}\n#{body}"
     end
@@ -83,6 +83,10 @@ defmodule Wocky.EventHandler.PushNotification do
   defp format(event) do
     inspect(event)
   end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(_), do: false
 
   defp to_jid(%User{} = user), do: User.to_jid(user)
   defp to_jid(jid() = jid), do: jid

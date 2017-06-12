@@ -4,7 +4,7 @@ defmodule Wocky.Events do
   defmodule NewMessageEvent do
     @moduledoc false
 
-    defstruct [:from, :to, :body]
+    defstruct [:from, :to, :body, :image]
 
     use ExConstructor
   end

@@ -77,9 +77,11 @@ user_send_packet_hook(From, To, Packet) ->
     case should_notify(From, To, Packet) of
         true ->
             Body = get_body(Packet),
+            Image = get_image(Packet),
             Event = ?new_message_event:new(#{to => To,
                                              from => From,
-                                             body => Body}),
+                                             body => Body,
+                                             image => Image}),
             ?wocky_event_handler:broadcast(Event);
 
         _Else ->
@@ -89,7 +91,7 @@ user_send_packet_hook(From, To, Packet) ->
 should_notify(_From, To, Packet) ->
     has_destination(To) andalso
     is_chat_message(Packet) andalso
-    has_body(Packet).
+    (has_body(Packet) orelse has_image(Packet)).
 
 has_destination(#jid{luser = <<>>}) -> false;
 has_destination(_) -> true.
@@ -102,8 +104,18 @@ is_chat_message(_) ->
 has_body(Packet) ->
     get_body(Packet) =/= <<"">>.
 
+has_image(Packet) ->
+    get_image(Packet) =/= <<"">>.
+
 get_body(Packet) ->
     exml_query:path(Packet, [{element, <<"body">>}, cdata], <<"">>).
+
+get_image(Packet) ->
+    exml_query:path(Packet,
+                    [{element, <<"image">>},
+                     {element, <<"url">>},
+                     cdata],
+                    <<"">>).
 
 
 %% remove_user -------------------------------------------------------

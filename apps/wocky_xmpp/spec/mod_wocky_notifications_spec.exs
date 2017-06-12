@@ -45,6 +45,46 @@ defmodule :mod_wocky_notifications_spec do
     )
   end
 
+  def image_packet do
+    xmlel(
+      name: "message",
+      attrs: [{"type", "chat"}],
+      children: [
+        xmlel(
+          name: "image",
+          children: [
+            xmlel(
+              name: "url",
+              children: [xmlcdata(content: "Image URL")]
+            )
+          ]
+        )
+      ]
+    )
+  end
+
+  def combo_packet do
+    xmlel(
+      name: "message",
+      attrs: [{"type", "chat"}],
+      children: [
+        xmlel(
+          name: "body",
+          children: [xmlcdata(content: "Message content")]
+        ),
+        xmlel(
+          name: "image",
+          children: [
+            xmlel(
+              name: "url",
+              children: [xmlcdata(content: "Image URL")]
+            )
+          ]
+        )
+      ]
+    )
+  end
+
   before do
     pid = GenServer.whereis(:push_notification_event_handler)
     Ecto.Adapters.SQL.Sandbox.allow(Wocky.Repo, self(), pid)
@@ -110,6 +150,36 @@ defmodule :mod_wocky_notifications_spec do
         end
       end
 
+      context "with an image message packet" do
+        before do
+          :ok = user_send_packet_hook(
+            shared.sender_jid, shared.user_jid, image_packet())
+        end
+
+        it "should send a notification" do
+          notifications = Sandbox.wait_notifications(count: 1, pid: shared.pid)
+          notifications |> should(have_size 1)
+
+          [{{:ok, _}, request, _}] = notifications
+          request.notification.alert |> should(end_with "sent you an image!")
+        end
+      end
+
+      context "with a message that contains both a body and an image" do
+        before do
+          :ok = user_send_packet_hook(
+            shared.sender_jid, shared.user_jid, combo_packet())
+        end
+
+        it "should send a notification" do
+          notifications = Sandbox.wait_notifications(count: 1, pid: shared.pid)
+          notifications |> should(have_size 1)
+
+          [{{:ok, _}, request, _}] = notifications
+          request.notification.alert |> should(end_with "Message content")
+        end
+      end
+
       context "with a non-message packet" do
         before do
           :ok = user_send_packet_hook(
@@ -132,7 +202,7 @@ defmodule :mod_wocky_notifications_spec do
         end
       end
 
-      context "with a packet with no body" do
+      context "with a packet with no body and no image" do
         before do
           no_body = xmlel(
             name: "message",
