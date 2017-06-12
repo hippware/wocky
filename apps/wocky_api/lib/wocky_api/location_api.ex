@@ -19,7 +19,7 @@ defmodule WockyAPI.LocationAPI do
   def start do
     dispatch = :cowboy_router.compile([
         {:_, [
-            {"/api/v1/users/[:user_id]/location", Wocky.LocationApi, []}
+            {"/api/v1/users/[:user_id]/location", WockyAPI.LocationAPI, []}
         ]}
     ])
 
@@ -153,22 +153,9 @@ defmodule WockyAPI.LocationAPI do
   defp check_token(user, token),
     do: Token.valid?(user, token)
 
-  @spec from_json(:cowboy_req.req, any) ::
-    {boolean, :cowboy_req.req, any}
-  def from_json(req, %State{user: _user, coords: _coords} = state) do
-    # FIXME
-    # location = %Location{
-    #   lat: coords.latitude,
-    #   lon: coords.longitude,
-    #   accuracy: coords.accuracy
-    # }
-    # user = %User{user | resource: state.resource}
-
-    # :ok =
-    #   user
-    #   |> User.set_location(location)
-    #   |> User.update
-
+  @spec from_json(:cowboy_req.req, any) :: {boolean, :cowboy_req.req, any}
+  def from_json(req, %State{user: user, resource: rsrc, coords: c} = state) do
+    :ok = User.set_location(user, rsrc, c.latitude, c.longitude, c.accuracy)
     {true, req, state}
   end
 end
