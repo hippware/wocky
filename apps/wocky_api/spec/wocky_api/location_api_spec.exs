@@ -1,6 +1,7 @@
 defmodule WockyAPI.LocationAPISpec do
   use ESpec
 
+  alias HTTPoison.Response
   alias Wocky.Repo.Factory
   alias Wocky.Token
 
@@ -56,13 +57,11 @@ defmodule WockyAPI.LocationAPISpec do
     """
   end
 
-  xdescribe "Location HTTP API" do
+  describe "Location HTTP API" do
     context "on success" do
       before do
-        {:ok, code, _resp_headers, ref} =
-          :hackney.request(:POST, url(), headers(), payload())
-
-        {:ok, body} = :hackney.body(ref)
+        {:ok, %Response{status_code: code, body: body}} =
+          HTTPoison.post(url(), payload(), headers())
         {:shared, code: code, body: body}
       end
 
@@ -77,26 +76,25 @@ defmodule WockyAPI.LocationAPISpec do
 
     context "on failure" do
       it "should return 405 when sent an unknown method" do
-        {:ok, code, _, _} = :hackney.request(:GET, url())
+        {:ok, %Response{status_code: code}} = HTTPoison.get(url())
         expect code |> to(eq 405)
       end
 
       it "should return 401 when the auth header is missing" do
-        {:ok, code, _, _} = :hackney.request(:POST, url(), [], payload())
+        {:ok, %Response{status_code: code}} =
+          HTTPoison.post(url(), payload(), [])
         expect code |> to(eq 401)
       end
 
       it "should return 401 when the auth header and user don't match" do
-        {:ok, code, _, _} =
-          :hackney.request(:POST, url(port(), "foo"), headers(), payload())
-
+        {:ok, %Response{status_code: code}} =
+          HTTPoison.post(url(port(), "foo"), payload(), headers())
         expect code |> to(eq 401)
       end
 
       it "should return 400 when the payload is not json" do
-        {:ok, code, _, _} =
-          :hackney.request(:POST, url(), headers(), "bad data")
-
+        {:ok, %Response{status_code: code}} =
+          HTTPoison.post(url(), "bad data", headers())
         expect code |> to(eq 400)
       end
 
@@ -122,9 +120,8 @@ defmodule WockyAPI.LocationAPISpec do
               "resource": "testing"
           }
           """
-        {:ok, code, _, _} =
-          :hackney.request(:POST, url(), headers(), data)
-
+        {:ok, %Response{status_code: code}} =
+          HTTPoison.post(url(), data, headers())
         expect code |> to(eq 400)
       end
 
@@ -142,9 +139,8 @@ defmodule WockyAPI.LocationAPISpec do
               "resource": "testing"
           }
           """
-        {:ok, code, _, _} =
-          :hackney.request(:POST, url(), headers(), data)
-
+        {:ok, %Response{status_code: code}} =
+          HTTPoison.post(url(), data, headers())
         expect code |> to(eq 400)
       end
     end
