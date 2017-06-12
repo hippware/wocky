@@ -58,19 +58,6 @@ defmodule WockyAPI.LocationAPI do
     :cowboy_req.set_resp_body(error_text, req)
   end
 
-  @spec resource_exists(:cowboy_req.req, any) ::
-    {boolean, :cowboy_req.req, any}
-  def resource_exists(req, state) do
-    {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
-    case Repo.get(User, user_id) do
-      %User{} = user ->
-        {true, req, %State{state | user: user}}
-
-      nil ->
-        {false, set_response_text(req, "User #{user_id} not found."), state}
-    end
-  end
-
   @spec malformed_request(:cowboy_req.req, any) ::
     {boolean, :cowboy_req.req, any}
   def malformed_request(req, state) do
@@ -135,7 +122,9 @@ defmodule WockyAPI.LocationAPI do
     {user_id, _} = :cowboy_req.binding(:user_id, req, nil)
 
     if check_token(auth_user, auth_token) && auth_user === user_id do
-      {true, req, state}
+      # This can't return nil since the token check passed.
+      user = Repo.get(User, user_id)
+      {true, req, %State{state | user: user}}
     else
       msg = "Authorization headers missing or authorization failed."
       {{false, "API Token"}, set_response_text(req, msg), state}
