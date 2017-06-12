@@ -46,12 +46,6 @@ defmodule WockyAPI.LocationAPI do
     {["POST"], req, state}
   end
 
-  @spec allow_missing_post(:cowboy_req.req, any) ::
-    {boolean, :cowboy_req.req, any}
-  def allow_missing_post(req, state) do
-    {true, req, state}
-  end
-
   @spec content_types_accepted(:cowboy_req.req, any) ::
     {[{binary, atom}], :cowboy_req.req, any}
   def content_types_accepted(req, state) do
