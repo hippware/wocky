@@ -324,8 +324,8 @@ defmodule Wocky.User do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
         loc
-        |> Location.check_for_bot_events
-        |> Location.update_bot_locations
+        |> Location.check_for_bot_events(user)
+        |> Location.update_bot_locations(user)
 
         :ok
 
