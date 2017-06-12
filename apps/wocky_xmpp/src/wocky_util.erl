@@ -107,7 +107,7 @@ iq_id() ->
 
 -spec make_error_iq_response(iq(), jlib:xmlel() | [jlib:xmlel()]) -> iq().
 make_error_iq_response(IQ, ErrStanza) ->
-    ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
+    ok = lager:debug("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
 
 -spec coord_to_binary(float()) -> binary().
