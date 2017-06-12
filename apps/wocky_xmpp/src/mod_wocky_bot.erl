@@ -367,7 +367,7 @@ get_bots_near_location(From, Lat, Lon) ->
             VisibleBots = lists:filter(
                             ?wocky_user:'searchable?'(User, _), AllBots),
             {ok, make_geosearch_result(VisibleBots)};
-        {error, no_index_configured} ->
+        {error, indexing_disabled} ->
             {error,
              ?ERRT_FEATURE_NOT_IMPLEMENTED(
                 ?MYLANG, <<"Index search is not configured on this server">>)}
