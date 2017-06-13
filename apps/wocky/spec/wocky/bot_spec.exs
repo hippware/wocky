@@ -10,10 +10,6 @@ defmodule Wocky.BotSpec do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
-  before do
-    TestIndexer.reset
-  end
-
   describe "helper functions" do
     let :bot, do: Factory.build(:bot)
 
@@ -101,9 +97,13 @@ defmodule Wocky.BotSpec do
     end
   end
 
-  describe "database interactions" do
+  describe "database interactions", async: false do
     let :user, do: Factory.insert(:user)
     let! :bot, do: Factory.insert(:bot, user: user())
+
+    before do
+      TestIndexer.reset
+    end
 
     describe "preallocate/2" do
       let :preallocated, do: Bot.preallocate(user().id, user().server)
