@@ -322,7 +322,7 @@ response_attrs(User) ->
 
 
 make_error_response(IQ, ErrStanza) ->
-    ok = lager:warning("Error on user IQ request: ~p", [ErrStanza]),
+    ok = lager:debug("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
 
 wrap_user_result(Result, BJID) ->
