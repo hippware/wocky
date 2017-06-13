@@ -21,7 +21,9 @@ to_wocky_roster(LUser, ContactJID = {_, _, _}, nil) ->
     #wocky_roster{
        user = LUser,
        server = wocky_xmpp_app:server(),
-       contact_jid = ContactJID};
+       contact_jid = ContactJID,
+       created_at = ?datetime:utc_now()
+      };
 to_wocky_roster(_LUser, _ContactJID, RosterItem) when is_map(RosterItem) ->
     to_wocky_roster(RosterItem).
 
@@ -35,7 +37,8 @@ to_wocky_roster(#{user_id := UserID,
                   name := Name,
                   ask := Ask,
                   subscription := Subscription,
-                  groups := Groups
+                  groups := Groups,
+                  created_at := CreatedAt
                  }) ->
     ContactJID =
         jid:to_lower(jid:make(ContactID, wocky_xmpp_app:server(), <<>>)),
@@ -54,7 +57,9 @@ to_wocky_roster(#{user_id := UserID,
        avatar = safe_value(Avatar),
        contact_handle = safe_value(Handle),
        first_name = safe_value(FirstName),
-       last_name = safe_value(LastName)}.
+       last_name = safe_value(LastName),
+       created_at = CreatedAt
+      }.
 
 -spec to_map(wocky_roster()) -> map().
 to_map(#wocky_roster{
@@ -63,13 +68,17 @@ to_map(#wocky_roster{
           name = Name,
           subscription = Subscription,
           ask = Ask,
-          groups = Groups}) ->
+          groups = Groups,
+          created_at = CreatedAt
+         }) ->
     #{user_id => UserID,
       contact_id => ContactID,
       name => Name,
       subscription => Subscription,
       ask => Ask,
-      groups => Groups}.
+      groups => Groups,
+      created_at => CreatedAt
+     }.
 
 %%%===================================================================
 %%% Helpers

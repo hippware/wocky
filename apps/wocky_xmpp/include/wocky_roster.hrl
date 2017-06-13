@@ -15,6 +15,7 @@
           avatar = <<>>         :: binary(),
           subscription = none   :: ?wocky_roster_item:subscription(),
           ask = none            :: ?wocky_roster_item:ask(),
+          created_at            :: ?datetime:t(),
           groups = []           :: [binary()],
           xs = []               :: [term()]
          }).

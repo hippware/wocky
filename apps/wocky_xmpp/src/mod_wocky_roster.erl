@@ -519,6 +519,7 @@ item_to_xml(Item) ->
                   item_name_to_xml(first_name, Item#wocky_roster.first_name),
                   item_name_to_xml(last_name, Item#wocky_roster.last_name),
                   item_name_to_xml(avatar, Item#wocky_roster.avatar),
+                  item_date_to_xml(created_at, Item#wocky_roster.created_at),
                   item_sub_to_xml(Item#wocky_roster.subscription),
                   item_ask_to_xml(Item#wocky_roster.ask)]),
        children = [#xmlel{
@@ -534,6 +535,9 @@ item_jid_to_xml(JID) ->
 item_name_to_xml(_Key, <<"">>) -> [];
 item_name_to_xml(Key, Name) ->
     {erlang:atom_to_binary(Key, utf8), Name}.
+
+item_date_to_xml(Key, DateTime) ->
+    {erlang:atom_to_binary(Key, utf8), ?wocky_timestamp:to_string(DateTime)}.
 
 item_sub_to_xml(Subscription) ->
     {<<"subscription">>, erlang:atom_to_binary(Subscription, utf8)}.
