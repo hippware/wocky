@@ -80,7 +80,7 @@ defmodule Wocky.User do
     tagline:        nil | binary,
     external_id:    nil | external_id,
     phone_number:   nil | phone_number,
-    roles:          nil | [role]
+    roles:          [role]
   }
 
   @register_fields [:username, :server, :external_id, :phone_number,
