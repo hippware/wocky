@@ -489,8 +489,7 @@ seed_home_stream(Config) ->
     #{updated_at := V3, key := K3} =
         ok(?wocky_home_stream_item:put(?ALICE, ?ITEM2,
                                        ?BOT_B_JID, ?ITEM_STANZA2)),
-    Versions = [ok(?timex:format(V, ?DEFAULT_TIME_FORMAT))
-                || V <- [V1, V2, V3]],
+    Versions = [?wocky_timestamp:to_string(V) || V <- [V1, V2, V3]],
 
     lists:foreach(
       fun (_) ->

@@ -3,6 +3,7 @@ defmodule Wocky.Token do
 
   use Wocky.Repo.Model
 
+  alias Timex.Duration
   alias Wocky.Repo.Timestamp
   alias Wocky.User
   alias __MODULE__, as: Token
@@ -13,7 +14,7 @@ defmodule Wocky.Token do
     field :user_id,    :binary_id, null: false, primary_key: true
     field :resource,   :string, null: false, primary_key: true
     field :token,      :string, null: false
-    field :expires_at, :integer, null: false
+    field :expires_at, :utc_datetime, null: false
 
     timestamps()
 
@@ -21,7 +22,7 @@ defmodule Wocky.Token do
   end
 
   @type t :: binary
-  @type expiry :: pos_integer
+  @type expiry :: DateTime.t
   @type entry :: %Token{
     user_id:    pos_integer,
     resource:   User.resource,
@@ -31,7 +32,7 @@ defmodule Wocky.Token do
 
   @token_bytes 32
   @token_marker "$T$"
-  @token_expire 1_209_600 # 2 weeks
+  @token_expire Duration.from_weeks(2)
   @assign_fields [:user_id, :resource, :token, :expires_at]
 
   @doc "Generates a token"
@@ -65,7 +66,7 @@ defmodule Wocky.Token do
     |> handle_assign_result()
   end
 
-  defp expiry, do: Timestamp.now + @token_expire
+  defp expiry, do: Timex.add(DateTime.utc_now, @token_expire)
 
   defp handle_assign_result(struct) do
     {:ok, {struct.token, struct.expires_at}}

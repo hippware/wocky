@@ -15,9 +15,6 @@
 
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 
-%% Standard time format to use unless there's a good reason to do otherwise
--define(DEFAULT_TIME_FORMAT, <<"{ISO:Extended:Z}">>).
-
 %% Standard namespaces
 -define(NS_ATOM,          <<"http://www.w3.org/2005/Atom">>).
 
@@ -55,8 +52,8 @@
 -define(wocky_errors, 'Elixir.Wocky.Repo.Errors').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
 -define(wocky_roster_item, 'Elixir.Wocky.RosterItem').
--define(wocky_token, 'Elixir.Wocky.Token').
 -define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
+-define(wocky_token, 'Elixir.Wocky.Token').
 -define(wocky_traffic_log, 'Elixir.Wocky.TrafficLog').
 -define(wocky_user, 'Elixir.Wocky.User').
 
@@ -74,7 +71,8 @@
 -define(wocky_push_notifier, 'Elixir.Wocky.PushNotifier').
 
 -define(confex, 'Elixir.Confex').
--define(timex, 'Elixir.Timex').
+-define(datetime, 'Elixir.DateTime').
 -define(duration, 'Elixir.Timex.Duration').
+-define(timex, 'Elixir.Timex').
 
 -endif. % ifdef WOCKY_HRL

@@ -273,7 +273,7 @@ map_to_item(#{key := Key, updated_at := UpdatedAt,
                     deleted = Deleted}.
 
 format_version(Time) ->
-    ?timex:'format!'(Time, ?DEFAULT_TIME_FORMAT).
+    ?wocky_timestamp:to_string(Time).
 
 version_from_items([]) -> not_found;
 version_from_items([#published_item{version = Version} | _]) -> Version.

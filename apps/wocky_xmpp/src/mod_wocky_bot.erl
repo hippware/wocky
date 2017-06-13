@@ -32,7 +32,7 @@
 
 -type field_type() :: string | int | bool | geoloc | jid | timestamp | tags.
 -type value_type() :: nil | binary() | integer() | boolean()
-                      | loc() | jid() | tags().
+                      | loc() | jid() | tags() | ?datetime:t().
 
 -record(field, {
           name :: binary(),
@@ -227,7 +227,7 @@ perform_owner_action(unfollow_me, Bot, From, _To, IQ) ->
 get_follow_me_expiry(Attrs) ->
     case wocky_xml:get_attr(<<"expiry">>, Attrs) of
         {error, _} = E -> E;
-        {ok, Expiry} -> {ok, binary_to_integer(Expiry)}
+        {ok, Expiry} -> ?wocky_timestamp:from_string(Expiry)
     end.
 
 follow_me_result(#iq{sub_el = SubEl}) ->

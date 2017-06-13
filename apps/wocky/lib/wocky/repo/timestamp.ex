@@ -1,25 +1,27 @@
 defmodule Wocky.Repo.Timestamp do
-  @moduledoc "Timestamps for use in the database"
+  @moduledoc "Timestamp helper functions"
 
-  @type t :: integer
+  @format "{ISO:Extended:Z}"
+  @regex ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\.\d?\d?\d?\d?\d?\d?Z/
 
-  @doc "Returns a Unix timestamp"
-  @spec now :: t
-  def now, do: DateTime.to_unix(DateTime.utc_now)
+  def regex, do: @regex
 
   @doc "Returns true if the expiry has passed"
-  @spec expired?(t) :: boolean
-  def expired?(expiry), do: expiry < now()
+  @spec expired?(DateTime.t) :: boolean
+  def expired?(expiry) do
+    DateTime.compare(expiry, DateTime.utc_now) == :lt
+  end
+
+  @doc "Parses an ISO-8601 string representation and returns a timestamp"
+  @spec from_string(binary) :: {:ok, DateTime.t} | {:error, any}
+  def from_string(str) do
+    Timex.parse(str, @format)
+  end
 
   @doc "Returns the ISO-8601 string representation of a timestamp"
-  @spec to_string(t | DateTime.t) :: binary
-  def to_string(ts) when is_integer(ts) do
-    ts
-    |> Timex.from_unix
-    |> Timex.format!("{ISO:Extended}")
-  end
+  @spec to_string(DateTime.t) :: binary
   def to_string(dt) do
-    Timex.format!(dt, "{ISO:Extended}")
+    Timex.format!(dt, @format)
   end
 
   @doc "Helper function for timestamp sorting"
