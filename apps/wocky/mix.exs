@@ -75,6 +75,7 @@ defmodule Wocky.Mixfile do
       {:csv,                  "~> 1.4"},
       {:confex,               "~> 2.0"},
       {:quantum,              "~> 1.9"},
+      {:comeonin,             "~> 3.0"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",

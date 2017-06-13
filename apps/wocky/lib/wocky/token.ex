@@ -3,6 +3,7 @@ defmodule Wocky.Token do
 
   use Wocky.Repo.Model
 
+  alias Comeonin.Bcrypt
   alias Timex.Duration
   alias Wocky.Repo.Timestamp
   alias Wocky.User
@@ -13,7 +14,7 @@ defmodule Wocky.Token do
   schema "tokens" do
     field :user_id,    :binary_id, null: false, primary_key: true
     field :resource,   :string, null: false, primary_key: true
-    field :token,      :string, null: false
+    field :token_hash, :string, null: false
     field :expires_at, :utc_datetime, null: false
 
     timestamps()
@@ -21,22 +22,23 @@ defmodule Wocky.Token do
     belongs_to :user, User, define_field: false
   end
 
-  @type t :: binary
+  @type token_hash :: binary
+  @type token :: binary
   @type expiry :: DateTime.t
   @type entry :: %Token{
     user_id:    pos_integer,
     resource:   User.resource,
-    token:      t,
+    token_hash: token_hash,
     expires_at: expiry
   }
 
   @token_bytes 32
   @token_marker "$T$"
   @token_expire Duration.from_weeks(2)
-  @assign_fields [:user_id, :resource, :token, :expires_at]
+  @assign_fields [:user_id, :resource, :token_hash, :expires_at]
 
   @doc "Generates a token"
-  @spec generate :: t
+  @spec generate :: token
   def generate do
     string =
       @token_bytes
@@ -54,22 +56,23 @@ defmodule Wocky.Token do
   end
 
   @doc "Generates a token and assigns it to the specified user and resource."
-  @spec assign(User.id, User.resource) :: {:ok, {t, expiry}}
+  @spec assign(User.id, User.resource) :: {:ok, {token, expiry}}
   def assign(user_id, resource) do
+    token = generate()
     %Token{}
     |> changeset(%{user_id: user_id,
                    resource: resource,
-                   token: generate(),
+                   token_hash: Bcrypt.hashpwsalt(token),
                    expires_at: expiry()})
     |> Repo.insert!(on_conflict: :replace_all,
                     conflict_target: [:user_id, :resource])
-    |> handle_assign_result()
+    |> handle_assign_result(token)
   end
 
   defp expiry, do: Timex.add(DateTime.utc_now, @token_expire)
 
-  defp handle_assign_result(struct) do
-    {:ok, {struct.token, struct.expires_at}}
+  defp handle_assign_result(struct, token) do
+    {:ok, {token, struct.expires_at}}
   end
 
   def with_user(query, user_id) do
@@ -84,43 +87,32 @@ defmodule Wocky.Token do
     from t in query, select: t.token
   end
 
-  @doc "Return the token assigned to the specified user and resource."
-  @spec get(User.id, User.resource) :: t | nil
-  def get(user_id, resource) do
-    Token
-    |> with_user(user_id)
-    |> and_resource(resource)
-    |> select_token
-    |> Repo.one
-  end
-
-  @doc """
-  Returns all tokens currently assigned to resources belonging to the
-  specified user.
-  """
-  @spec get_all(User.id) :: [t]
-  def get_all(user_id) do
-    Token
-    |> with_user(user_id)
-    |> select_token
-    |> Repo.all
-  end
-
   @doc """
   Returns `true' if a token is valid for the supplied
   user or `false' otherwise.
   """
-  @spec valid?(User.id, Token.t) :: boolean
+  @spec valid?(User.id, token) :: boolean
   def valid?(user_id, token) do
     Token
     |> with_user(user_id)
     |> Repo.all
-    |> Enum.any?(&check_token(token, &1))
+    |> Enum.to_list
+    |> check_token(token)
   end
 
-  defp check_token(token, %Token{token: token} = t),
-    do: !Timestamp.expired?(t.expires_at)
-  defp check_token(_, _), do: false
+  # Avoid user-probing timing attack:
+  defp check_token([], _) do
+    Bcrypt.dummy_checkpw
+  end
+  defp check_token(records, token) do
+    Enum.any?(records, &do_check_token(token, &1))
+  end
+
+  defp do_check_token(token, t) do
+    Bcrypt.checkpw(token, t.token_hash)
+    and
+    !Timestamp.expired?(t.expires_at)
+  end
 
   @doc """
   Releases any token currently assigned to the specified user and resource.

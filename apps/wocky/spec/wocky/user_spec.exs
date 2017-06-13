@@ -408,8 +408,11 @@ defmodule Wocky.UserSpec do
           TestIndexer.get_index_operations |> should_not(be_empty())
         end
       end
-    end
 
+      it "should remove any tokens associated with the user" do
+        Token |> Repo.get_by(user_id: shared.id) |> should(be_nil())
+      end
+    end
   end
 
   describe "set_location/5" do
