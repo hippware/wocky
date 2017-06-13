@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix a crash on testing when calling geosearch (#764)
+* Reduce the logging threshold for user IQ errors (#769)
+* Change remaining time formats to Z-suffix form (#723)
+* Add roster timestamps. Addresses: Expire followers from being new (#606)
+* Optimise roster item queries (#751)
+
+
 # 2017.6.9+2319.ac1c9e4
 
 * Fix TROS download error for thumbnails
