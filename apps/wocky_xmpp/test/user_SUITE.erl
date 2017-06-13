@@ -33,6 +33,7 @@ groups() ->
     [
      {self, [], [all_fields,
                  some_fields,
+                 roles,
                  garbage_get]},
      {other, [], [other_user_all_fields,
                   other_user_allowed_fields,
@@ -137,6 +138,23 @@ some_fields(Config) ->
              [#xmlcdata{content = ?ALICE}] =:= V#xmlel.children
            end,
            FieldsXML#xmlel.children)
+    end).
+
+roles(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ?wocky_user:add_role(?ALICE, <<"role1">>),
+        ?wocky_user:add_role(?ALICE, <<"role2">>),
+        QueryStanza = get_request(?ALICE, [<<"roles">>]),
+        ResultStanza = expect_iq_success(QueryStanza, Alice),
+
+        FieldsXML = xml:get_path_s(ResultStanza, [{elem, <<"fields">>},
+                                                  {elem, <<"field">>},
+                                                  {elem, <<"roles">>}]),
+        2 = length(FieldsXML#xmlel.children),
+        RoleElems = exml_query:subelements(FieldsXML, <<"role">>),
+        [<<"role1">>, <<"role2">>] = lists:sort(
+                                       lists:map(
+                                         xml:get_tag_cdata(_), RoleElems))
     end).
 
 other_user_all_fields(Config) ->
@@ -596,7 +614,7 @@ users_request(BJIDs) ->
 public_fields() ->
     [jid, user, server, handle, avatar, first_name, last_name, tagline,
      'bots+size', 'followers+size', 'followed+size'].
-private_fields() -> [phone_number, email, external_id].
+private_fields() -> [phone_number, email, external_id, roles].
 all_fields() -> public_fields() ++ private_fields().
 
 expect_bulk_results(#xmlel{name = <<"users">>, children = Children}, Results) ->

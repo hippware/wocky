@@ -207,7 +207,8 @@ fields() ->
      {"followed+size", "int",   public,      read_only,
       fun(#{id := LUser}) ->
               integer_to_binary(
-                length(?wocky_roster_item:following(LUser))) end}
+                length(?wocky_roster_item:following(LUser))) end},
+     {"roles",        "roles",  private,     read_only, make_roles(_)}
     ].
 
 
@@ -283,13 +284,13 @@ build_resp_field(Row, Field) ->
            children = [value_element(extract(field_name(Field), Row,
                                              field_accessor(Field)))]}.
 
-
 extract(Key, Row, default) ->
     maps:get(list_to_existing_atom(Key), Row);
 
 extract(_, Row, Fun) -> Fun(Row).
 
 
+value_element({non_default, Element}) -> Element;
 value_element(Value) ->
     #xmlel{name = <<"value">>,
            children = [#xmlcdata{content = null_to_bin(Value)}]}.
@@ -329,6 +330,11 @@ wrap_user_result(Result, BJID) ->
     #xmlel{name = <<"user">>,
            attrs = [{<<"jid">>, BJID}],
            children = Result}.
+
+make_roles(#{roles := Roles}) ->
+    {non_default,
+     #xmlel{name = <<"roles">>,
+            children = lists:map(wocky_xml:cdata_el(<<"role">>, _), Roles)}}.
 
 handle_fields_error({ok, XML}) ->
     XML;
