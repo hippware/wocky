@@ -291,10 +291,26 @@ defmodule Wocky.RosterItemSpec do
   end
 
   describe "followers/1" do
+    before do
+      blocked_follower = Factory.insert(:user, %{server: shared.server})
+      Factory.insert(
+        :roster_item,
+        user_id: shared.user.id,
+        contact_id: blocked_follower.id,
+        subscription: :from,
+        groups: [RosterItem.blocked_group()])
+      Factory.insert(
+        :roster_item,
+        user_id: blocked_follower.id,
+        subscription: :to,
+        contact_id: shared.user.id)
+      :ok
+    end
+
     it "should return the full list of followers" do
       RosterItem.followers(shared.user.id)
       |> Enum.sort
-      |> should(eq shared.contacts)
+      |> should(eq shared.contacts) # Does not include blocked follower
     end
 
     it "should not return users who aren't followers" do
@@ -351,10 +367,24 @@ defmodule Wocky.RosterItemSpec do
   end
 
   describe "friends/1" do
+    before do
+      blocked_friend = Factory.insert(:user, %{server: shared.server})
+      Factory.insert(
+        :roster_item,
+        user_id: shared.user.id,
+        contact_id: blocked_friend.id,
+        groups: [RosterItem.blocked_group()])
+      Factory.insert(
+        :roster_item,
+        user_id: blocked_friend.id,
+        contact_id: shared.user.id)
+      :ok
+    end
+
     it "should return the full list of friends" do
       RosterItem.friends(shared.user.id)
       |> Enum.sort
-      |> should(eq shared.contacts)
+      |> should(eq shared.contacts) # Does not include blocked friend
     end
 
     it "should not return users who aren't friends" do

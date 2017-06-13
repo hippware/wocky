@@ -154,17 +154,21 @@ defmodule Wocky.RosterItem do
   def following(user_id) do
     RosterItem
     |> with_contact(user_id)
+    |> with_subscriptions([:both, :from])
+    |> not_blocked()
     |> preload_user()
     |> Repo.all
-    |> Enum.filter(&is_follower/1)
     |> Enum.map(&Map.get(&1, :user))
   end
 
   @spec friends(User.id) :: [User.t]
   def friends(user_id) do
-    user_id
-    |> get()
-    |> Enum.filter(&is_friend/1)
+    RosterItem
+    |> with_user(user_id)
+    |> with_subscriptions([:both])
+    |> not_blocked()
+    |> preload_contact()
+    |> Repo.all
     |> Enum.map(&Map.get(&1, :contact))
   end
 
@@ -206,12 +210,22 @@ defmodule Wocky.RosterItem do
     :ok
   end
 
+  def blocked_group, do: @blocked_group
+
   defp with_user(query, user_id) do
     from r in query, where: r.user_id == ^user_id
   end
 
   defp with_contact(query, contact_id) do
     from r in query, where: r.contact_id == ^contact_id
+  end
+
+  defp with_subscriptions(query, sub_types) do
+    from q in query, where: q.subscription in ^sub_types
+  end
+
+  defp not_blocked(query) do
+    from q in query, where: not @blocked_group in q.groups
   end
 
   defp with_ask(query, ask) do
