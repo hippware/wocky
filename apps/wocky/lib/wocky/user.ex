@@ -357,7 +357,7 @@ defmodule Wocky.User do
     :ok
   end
 
-  @spec remove_role(id, role) :: User.t
+  @spec remove_role(id, role) :: :ok
   def remove_role(id, role) do
     User
     |> where(username: ^id)
