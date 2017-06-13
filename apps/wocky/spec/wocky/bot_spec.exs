@@ -10,10 +10,6 @@ defmodule Wocky.BotSpec do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
-  before do
-    TestIndexer.reset
-  end
-
   describe "helper functions" do
     let :bot, do: Factory.build(:bot)
 
@@ -101,9 +97,13 @@ defmodule Wocky.BotSpec do
     end
   end
 
-  describe "database interactions" do
+  describe "database interactions", async: false do
     let :user, do: Factory.insert(:user)
     let! :bot, do: Factory.insert(:bot, user: user())
+
+    before do
+      TestIndexer.reset
+    end
 
     describe "preallocate/2" do
       let :preallocated, do: Bot.preallocate(user().id, user().server)
@@ -137,7 +137,7 @@ defmodule Wocky.BotSpec do
         %{} |> Bot.insert |> should(be_error_result())
       end
 
-      context "full text search index", async: false do
+      context "full text search index" do
         before do
           :bot |> Factory.params_for(user: user()) |> Bot.insert
           :ok
@@ -160,7 +160,7 @@ defmodule Wocky.BotSpec do
         %Bot{} |> Bot.update(%{}) |> should(be_error_result())
       end
 
-      context "full text search index", async: false do
+      context "full text search index" do
         before do
           Bot.update(bot(), %{title: "updated bot"})
           :ok
