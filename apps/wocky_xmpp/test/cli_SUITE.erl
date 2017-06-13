@@ -100,12 +100,12 @@ make_token(_Config) ->
     ok = mod_wocky_cli:make_token(<<"alice">>),
     {error, _} = mod_wocky_cli:make_token(<<"non-user">>).
 
-add_role(_config) ->
+add_role(_Config) ->
     {ok, _} = mod_wocky_cli:role(<<"alice">>, <<"add">>, <<"admin">>),
     #{roles := [<<"admin">>]} = ?wocky_repo:get_by(
                                    ?wocky_user, [{handle, <<"alice">>}]).
 
-remove_role(_config) ->
+remove_role(_Config) ->
     {ok, _} = mod_wocky_cli:role(<<"alice">>, <<"remove">>, <<"admin">>),
     #{roles := []} = ?wocky_repo:get_by(
                         ?wocky_user, [{handle, <<"alice">>}]).
