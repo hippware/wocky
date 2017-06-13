@@ -137,7 +137,7 @@ defmodule Wocky.BotSpec do
         %{} |> Bot.insert |> should(be_error_result())
       end
 
-      context "full text search index", async: false do
+      context "full text search index" do
         before do
           :bot |> Factory.params_for(user: user()) |> Bot.insert
           :ok
@@ -160,7 +160,7 @@ defmodule Wocky.BotSpec do
         %Bot{} |> Bot.update(%{}) |> should(be_error_result())
       end
 
-      context "full text search index", async: false do
+      context "full text search index" do
         before do
           Bot.update(bot(), %{title: "updated bot"})
           :ok
