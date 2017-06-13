@@ -30,7 +30,8 @@ config :distillery,
     :mix_elvis,
     :mustache,
     :parse_trans,
-    :proper
+    :proper,
+    :elixir_make
   ]
 
 # Import environment specific config. This must remain at the bottom
