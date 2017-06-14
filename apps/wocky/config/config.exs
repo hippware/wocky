@@ -15,7 +15,8 @@ config :wocky,
   indexing_system:       {:system, "WOCKY_INDEXING_SYSTEM", "none"},
   user_index_name:       {:system, "WOCKY_USER_INDEX_NAME"},
   bot_index_name:        {:system, "WOCKY_BOT_INDEX_NAME"},
-  enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false}
+  enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false},
+  enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false}
 
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
@@ -55,16 +56,15 @@ config :apns,
   callback_module: Pushex.APNS.Callback
 
 config :pushex,
-  # sandbox: true,
   event_handlers: [Wocky.PushEventHandler],
   apns: [
-    default_app: "wocky",
+    default_app: "testing",
     apps: [
       [
-        name: "wocky",
+        name: "testing",
         env: :prod,
-        certfile: {:wocky, "certs/staging.crt"},
-        keyfile: {:wocky, "certs/staging.key"},
+        certfile: {:wocky, "certs/testing.crt"},
+        keyfile: {:wocky, "certs/testing.key"},
         pool_size: 5
       ]
     ]

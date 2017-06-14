@@ -57,8 +57,7 @@ defmodule Wocky.PushNotifier do
     body
     |> maybe_truncate_message
     |> make_payload
-    |> Pushex.push(to: token, using: :apns)
-    :ok
+    |> maybe_push(token, enabled?())
   end
 
   defp maybe_truncate_message(message) do
@@ -71,5 +70,15 @@ defmodule Wocky.PushNotifier do
 
   defp make_payload(message) do
     %{alert: message, badge: 1}
+  end
+
+  defp maybe_push(_body, _token, false), do: :ok
+  defp maybe_push(body, token, true) do
+    Pushex.push(body, to: token, using: :apns)
+    :ok
+  end
+
+  defp enabled? do
+    Confex.get(:wocky, :enable_push_notifications)
   end
 end

@@ -9,6 +9,20 @@ config :wocky,
 config :slackex,
   token: nil
 
+config :pushex,
+  apns: [
+    default_app: "${WOCKY_INST}",
+    apps: [
+      [
+        name: "${WOCKY_INST}",
+        env: :prod,
+        certfile: {:wocky, "certs/${WOCKY_INST}.crt"},
+        keyfile: {:wocky, "certs/${WOCKY_INST}.key"},
+        pool_size: 5
+      ]
+    ]
+  ]
+
 config :quantum,
   global?: true
 

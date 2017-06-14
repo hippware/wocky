@@ -7,6 +7,7 @@ config :wocky, Wocky.Repo,
   ownership_timeout: 30_000 # ms
 
 config :wocky,
+  enable_push_notifications: true,
   indexing_system: "test"
 
 config :logger,
