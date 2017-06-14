@@ -22,7 +22,8 @@
          fix_bot_images/0,
          make_token/1,
          reprocess_images/0,
-         reindex/1
+         reindex/1,
+         role/3
         ]).
 
 -define(s3, 'Elixir.ExAws.S3').
@@ -127,6 +128,16 @@ commands() ->
                         args     = [{index, binary}],
                         result   = {result, rescode}}
 
+     %% Add/Remove a role to/from a user
+     #ejabberd_commands{name     = role,
+                        desc     = "Add/Remove a user role",
+                        longdesc = "Parameters: <handle> [add|remove] <role>",
+                        module   = ?MODULE,
+                        function = role,
+                        args     = [{handle, binary},
+                                    {operation, binary},
+                                    {role, binary}],
+                        result   = {result, rescode}}
     ].
 
 %%%===================================================================
@@ -309,6 +320,24 @@ reindex(Index) ->
         error:badarg ->
             io:fwrite("Unknown index\n")
     end.
+
+%%%===================================================================
+%%% Role management
+%%%===================================================================
+
+role(Handle, Operation, Role) ->
+    do([error_m ||
+        User <- get_user(Handle),
+        do_role_op(Operation, User, Role),
+        {ok, "Success"}
+       ]).
+
+do_role_op(<<"add">>, #{id := ID}, Role) ->
+    ?wocky_user:add_role(ID, Role);
+do_role_op(<<"remove">>, #{id := ID}, Role) ->
+    ?wocky_user:remove_role(ID, Role);
+do_role_op(_, _, _) ->
+    {error, "Operation must be either 'add' or 'remove'"}.
 
 %%%===================================================================
 %%% Common helpers

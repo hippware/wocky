@@ -23,7 +23,6 @@ all() ->
      {group, self},
      {group, other},
      {group, bulk},
-%    {group, friend},
      {group, error},
      {group, set},
      {group, error_set}
@@ -33,6 +32,7 @@ groups() ->
     [
      {self, [], [all_fields,
                  some_fields,
+                 roles,
                  garbage_get]},
      {other, [], [other_user_all_fields,
                   other_user_allowed_fields,
@@ -42,10 +42,6 @@ groups() ->
                   invalid_user]},
      {bulk, [], [bulk_get,
                  bulk_get_empty]},
-%%     {friend, [], [friend_all_fields,
-%%                   friend_allowed_fields,
-%%                   friend_denied_field,
-%%                   friend_mixed_fields]},
      {error, [], [missing_node,
                   malformed_user,
                   missing_user,
@@ -90,12 +86,6 @@ init_per_suite(Config) ->
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
-%% init_per_group(friend, Config) ->
-%%     Users = escalus:get_users([alice, bob]),
-%%     fun_chain:first(Config,
-%%         escalus:create_users(Users),
-%%         escalus_story:make_everyone_friends(Users)
-%%     );
 init_per_group(_GroupName, Config) ->
     Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
     ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
@@ -139,6 +129,23 @@ some_fields(Config) ->
            FieldsXML#xmlel.children)
     end).
 
+roles(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        ?wocky_user:add_role(?ALICE, <<"role1">>),
+        ?wocky_user:add_role(?ALICE, <<"role2">>),
+        QueryStanza = get_request(?ALICE, [<<"roles">>]),
+        ResultStanza = expect_iq_success(QueryStanza, Alice),
+
+        FieldsXML = xml:get_path_s(ResultStanza, [{elem, <<"fields">>},
+                                                  {elem, <<"field">>},
+                                                  {elem, <<"roles">>}]),
+        2 = length(FieldsXML#xmlel.children),
+        RoleElems = exml_query:subelements(FieldsXML, <<"role">>),
+        [<<"role1">>, <<"role2">>] = lists:sort(
+                                       lists:map(
+                                         xml:get_tag_cdata(_), RoleElems))
+    end).
+
 other_user_all_fields(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
         QueryStanza = get_request(?ALICE, []),
@@ -179,33 +186,6 @@ invalid_user(Config) ->
                                   [<<"handle">>]),
         expect_iq_error(QueryStanza, Bob)
     end).
-
-%%friend_all_fields(Config) ->
-%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%%        QueryStanza = get_request(?ALICE, []),
-%%        expect_iq_error(QueryStanza, Bob)
-%%    end).
-
-%%friend_allowed_fields(Config) ->
-%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%%        QueryStanza = get_request(?ALICE,
-%%                                  [<<"handle">>, <<"avatar">>,
-%%                                   <<"phoneNumber">>]),
-%%        expect_iq_success(QueryStanza, Bob)
-%%    end).
-
-%%friend_denied_field(Config) ->
-%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%%        QueryStanza = get_request(?ALICE, [<<"userID">>]),
-%%        expect_iq_error(QueryStanza, Bob)
-%%    end).
-
-%%friend_mixed_fields(Config) ->
-%%    escalus:story(Config, [{bob, 1}], fun(Bob) ->
-%%        QueryStanza = get_request(?ALICE,
-%%                                  [<<"uuid">>, <<"email">>, <<"userID">>]),
-%%        expect_iq_error(QueryStanza, Bob)
-%%    end).
 
 missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
@@ -596,7 +576,7 @@ users_request(BJIDs) ->
 public_fields() ->
     [jid, user, server, handle, avatar, first_name, last_name, tagline,
      'bots+size', 'followers+size', 'followed+size'].
-private_fields() -> [phone_number, email, external_id].
+private_fields() -> [phone_number, email, external_id, roles].
 all_fields() -> public_fields() ++ private_fields().
 
 expect_bulk_results(#xmlel{name = <<"users">>, children = Children}, Results) ->

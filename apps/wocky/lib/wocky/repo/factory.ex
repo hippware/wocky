@@ -39,7 +39,8 @@ defmodule Wocky.Repo.Factory do
       last_name: Name.last_name,
       phone_number: phone_number(),
       email: Internet.email,
-      tagline: Lorem.sentence
+      tagline: Lorem.sentence,
+      roles: []
     }
   end
 

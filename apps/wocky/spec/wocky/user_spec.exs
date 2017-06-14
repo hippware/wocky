@@ -4,6 +4,7 @@ defmodule Wocky.UserSpec do
   use Wocky.JID
 
   alias Faker.Internet
+  alias Faker.Lorem
   alias Timex.Duration
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -25,7 +26,7 @@ defmodule Wocky.UserSpec do
   describe "valid_update_fields/0" do
     subject do: User.valid_update_fields
 
-    it do: should(have_count 6)
+    it do: should(have_count 7)
   end
 
   describe "to_jid/1" do
@@ -413,6 +414,76 @@ defmodule Wocky.UserSpec do
 
   describe "set_location/5" do
 
+  end
+
+  describe "add and remove roles" do
+    before do
+      role = Lorem.word
+      role2 = "role2"
+      result = User.add_role(shared.id, role)
+      result2 = User.add_role(shared.id, role2)
+      {:ok, role: role, role2: role2, result: result, result2: result2}
+    end
+
+    describe "add_role/2" do
+      it "should add the role to the user" do
+        User
+        |> Repo.get(shared.id)
+        |> Map.get(:roles)
+        |> Enum.sort
+        |> should(eq Enum.sort([shared.role, shared.role2]))
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+        shared.result2 |> should(eq :ok)
+      end
+
+      it "should not add re-add the same group" do
+        User.add_role(shared.id, shared.role)
+        User
+        |> Repo.get(shared.id)
+        |> Map.get(:roles)
+        |> Enum.sort
+        |> should(eq Enum.sort([shared.role, shared.role2]))
+      end
+
+      it "should nd not fail when acting on an inavlid user" do
+        User.add_role(ID.new, Lorem.word) |> should(eq :ok)
+      end
+    end
+
+    describe "remove_role/2" do
+      before do
+        result = User.remove_role(shared.id, shared.role)
+        {:ok, result: result}
+      end
+
+      it "should remove the role form the user" do
+        User
+        |> Repo.get(shared.id)
+        |> Map.get(:roles)
+        |> should(eq [shared.role2])
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should not have any effect when applied again" do
+        User.remove_role(shared.id, shared.role)
+        |> should(eq :ok)
+
+        User
+        |> Repo.get(shared.id)
+        |> Map.get(:roles)
+        |> should(eq [shared.role2])
+      end
+
+      it "should nd not fail when acting on an inavlid user" do
+        User.remove_role(ID.new, Lorem.word) |> should(eq :ok)
+      end
+    end
   end
 
   describe "bot relationships" do
