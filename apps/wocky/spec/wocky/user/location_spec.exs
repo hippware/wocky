@@ -87,8 +87,7 @@ defmodule Wocky.User.LocationSpec do
 
       context "when the user owns the bot" do
         before do
-          loc = %Location{shared.inside_loc | user: shared.owner}
-          Location.check_for_bot_events(loc)
+          Location.check_for_bot_events(shared.inside_loc, shared.owner)
         end
 
         it "should not store an enter event" do
@@ -107,7 +106,7 @@ defmodule Wocky.User.LocationSpec do
           |> cast(%{radius: -1}, [:radius])
           |> Repo.update!
 
-          Location.check_for_bot_events(shared.inside_loc)
+          Location.check_for_bot_events(shared.inside_loc, shared.user)
         end
 
         it "should not store an enter event" do
@@ -122,7 +121,7 @@ defmodule Wocky.User.LocationSpec do
 
       context "when there are no existing enter events" do
         before do
-          Location.check_for_bot_events(shared.inside_loc)
+          Location.check_for_bot_events(shared.inside_loc, shared.user)
         end
 
         it "should store an enter event" do
@@ -143,7 +142,7 @@ defmodule Wocky.User.LocationSpec do
       context "when there is already an existing enter event" do
         before do
           event = BotEvent.insert(shared.user, shared.bot, :enter)
-          Location.check_for_bot_events(shared.inside_loc)
+          Location.check_for_bot_events(shared.inside_loc, shared.user)
           {:ok, event: event}
         end
 
@@ -167,7 +166,7 @@ defmodule Wocky.User.LocationSpec do
       context "when there is already an existing enter event" do
         before do
           event = BotEvent.insert(shared.user, shared.bot, :enter)
-          Location.check_for_bot_events(shared.outside_loc)
+          Location.check_for_bot_events(shared.outside_loc, shared.user)
           {:ok, event: event}
         end
 
@@ -189,7 +188,7 @@ defmodule Wocky.User.LocationSpec do
       context "when there is already an existing exit event" do
         before do
           event = BotEvent.insert(shared.user, shared.bot, :exit)
-          Location.check_for_bot_events(shared.outside_loc)
+          Location.check_for_bot_events(shared.outside_loc, shared.user)
           {:ok, event: event}
         end
 
@@ -205,7 +204,7 @@ defmodule Wocky.User.LocationSpec do
 
       context "when there are no events" do
         before do
-          Location.check_for_bot_events(shared.outside_loc)
+          Location.check_for_bot_events(shared.outside_loc, shared.user)
         end
 
         it "should not store an exit event" do
@@ -223,7 +222,7 @@ defmodule Wocky.User.LocationSpec do
   describe "update_bot_locations/1" do
     context "with a user that has a bot set to 'follow me'" do
       before do
-        loc = Factory.build(:location, %{user: shared.owner})
+        loc = Factory.build(:location)
         {:shared, loc: loc}
       end
 
@@ -234,7 +233,7 @@ defmodule Wocky.User.LocationSpec do
           |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
           |> Repo.update!
 
-          Location.update_bot_locations(shared.loc)
+          Location.update_bot_locations(shared.loc, shared.owner)
         end
 
         it "should update the bot location" do
@@ -251,7 +250,7 @@ defmodule Wocky.User.LocationSpec do
           |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
           |> Repo.update!
 
-          Location.update_bot_locations(shared.loc)
+          Location.update_bot_locations(shared.loc, shared.owner)
         end
 
         it "should not update the bot location" do

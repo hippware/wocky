@@ -58,8 +58,8 @@ defmodule Wocky.User.Location do
   end
 
   @doc ""
-  @spec check_for_bot_events(t) :: t
-  def check_for_bot_events(%Location{user: user} = loc) do
+  @spec check_for_bot_events(t, User.t) :: t
+  def check_for_bot_events(%Location{} = loc, user) do
     maybe_do_async fn ->
       user
       |> User.get_subscriptions
@@ -71,8 +71,8 @@ defmodule Wocky.User.Location do
   end
 
   @doc ""
-  @spec update_bot_locations(t) :: t
-  def update_bot_locations(%Location{user: user} = loc) do
+  @spec update_bot_locations(t, User.t) :: t
+  def update_bot_locations(%Location{} = loc, user) do
     if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
       maybe_do_async fn ->
         user

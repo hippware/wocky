@@ -19,7 +19,7 @@ defmodule WockyAPI.LocationAPI do
   def start do
     dispatch = :cowboy_router.compile([
         {:_, [
-            {"/api/v1/users/[:user_id]/location", Wocky.LocationApi, []}
+            {"/api/v1/users/[:user_id]/location", WockyAPI.LocationAPI, []}
         ]}
     ])
 
@@ -46,12 +46,6 @@ defmodule WockyAPI.LocationAPI do
     {["POST"], req, state}
   end
 
-  @spec allow_missing_post(:cowboy_req.req, any) ::
-    {boolean, :cowboy_req.req, any}
-  def allow_missing_post(req, state) do
-    {true, req, state}
-  end
-
   @spec content_types_accepted(:cowboy_req.req, any) ::
     {[{binary, atom}], :cowboy_req.req, any}
   def content_types_accepted(req, state) do
@@ -62,19 +56,6 @@ defmodule WockyAPI.LocationAPI do
     :ok = Logger.info("Error processing Location API request: #{error_text}")
     req = :cowboy_req.set_resp_header("content-type", "text/plain", req)
     :cowboy_req.set_resp_body(error_text, req)
-  end
-
-  @spec resource_exists(:cowboy_req.req, any) ::
-    {boolean, :cowboy_req.req, any}
-  def resource_exists(req, state) do
-    {user_id, req} = :cowboy_req.binding(:user_id, req, nil)
-    case Repo.get(User, user_id) do
-      %User{} = user ->
-        {true, req, %State{state | user: user}}
-
-      nil ->
-        {false, set_response_text(req, "User #{user_id} not found."), state}
-    end
   end
 
   @spec malformed_request(:cowboy_req.req, any) ::
@@ -141,7 +122,9 @@ defmodule WockyAPI.LocationAPI do
     {user_id, _} = :cowboy_req.binding(:user_id, req, nil)
 
     if check_token(auth_user, auth_token) && auth_user === user_id do
-      {true, req, state}
+      # This can't return nil since the token check passed.
+      user = Repo.get(User, user_id)
+      {true, req, %State{state | user: user}}
     else
       msg = "Authorization headers missing or authorization failed."
       {{false, "API Token"}, set_response_text(req, msg), state}
@@ -153,22 +136,9 @@ defmodule WockyAPI.LocationAPI do
   defp check_token(user, token),
     do: Token.valid?(user, token)
 
-  @spec from_json(:cowboy_req.req, any) ::
-    {boolean, :cowboy_req.req, any}
-  def from_json(req, %State{user: _user, coords: _coords} = state) do
-    # FIXME
-    # location = %Location{
-    #   lat: coords.latitude,
-    #   lon: coords.longitude,
-    #   accuracy: coords.accuracy
-    # }
-    # user = %User{user | resource: state.resource}
-
-    # :ok =
-    #   user
-    #   |> User.set_location(location)
-    #   |> User.update
-
+  @spec from_json(:cowboy_req.req, any) :: {boolean, :cowboy_req.req, any}
+  def from_json(req, %State{user: user, resource: rsrc, coords: c} = state) do
+    :ok = User.set_location(user, rsrc, c.latitude, c.longitude, c.accuracy)
     {true, req, state}
   end
 end
