@@ -10,7 +10,7 @@ defmodule Wocky.PushEventHandler do
     {:ok, state}
   end
 
-  def handle_event({:response, response, request, _info}, state) do
+  def handle_event({:response, {:ok, response}, request, _info}, state) do
     if response.success >= 1 do
       Logger.info """
       Sent notification to device #{request.to} with content \
