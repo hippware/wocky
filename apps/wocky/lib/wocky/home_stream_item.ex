@@ -106,8 +106,10 @@ defmodule Wocky.HomeStreamItem do
     end
   end
 
+  def with_user(user_id), do: with_user(HomeStreamItem, user_id)
 
-  defp with_user(query, user_id) do
+
+  def with_user(query, user_id) do
     from h in query, where: h.user_id == ^user_id
   end
 

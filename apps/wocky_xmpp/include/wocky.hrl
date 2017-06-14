@@ -52,6 +52,7 @@
 -define(wocky_errors, 'Elixir.Wocky.Repo.Errors').
 -define(wocky_repo, 'Elixir.Wocky.Repo').
 -define(wocky_roster_item, 'Elixir.Wocky.RosterItem').
+-define(wocky_rsm_helper, 'Elixir.Wocky.RSMHelper').
 -define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
 -define(wocky_token, 'Elixir.Wocky.Token').
 -define(wocky_traffic_log, 'Elixir.Wocky.TrafficLog').

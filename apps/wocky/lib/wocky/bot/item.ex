@@ -33,7 +33,7 @@ defmodule Wocky.Bot.Item do
   @spec get(Bot.t) :: [t]
   def get(bot) do
     bot
-    |> assoc(:items)
+    |> items_query()
     |> order_by(asc: :updated_at)
     |> Repo.all
   end
@@ -41,8 +41,7 @@ defmodule Wocky.Bot.Item do
   @spec get_images(Bot.t) :: [t]
   def get_images(bot) do
     bot
-    |> assoc(:items)
-    |> where(image: true)
+    |> images_query()
     |> order_by(asc: :updated_at)
     |> Repo.all
   end
@@ -93,5 +92,16 @@ defmodule Wocky.Bot.Item do
     |> Repo.delete_all
 
     :ok
+  end
+
+  def items_query(bot) do
+    bot
+    |> assoc(:items)
+  end
+
+  def images_query(bot) do
+    bot
+    |> assoc(:items)
+    |> where(image: true)
   end
 end

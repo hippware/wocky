@@ -21,7 +21,6 @@
          get_id_from_node/1,
          get_id_from_fields/1,
          list_hash/1,
-         extract_images/1,
          get_image/1,
          bot_packet_action/1,
          follow_stanza/2
@@ -107,26 +106,15 @@ list_hash(List) ->
 hash(Term) ->
     crypto:hash(sha512, Term).
 
-extract_images(Items) ->
-    lists:reverse(lists:foldl(extract_image(_, _), [], Items)).
-
-extract_image(#{image := true, id := ID, updated_at := Updated, stanza := S},
-              Acc) ->
-    case get_image(S) of
-        none -> Acc;
-        I -> [#{id => ID, updated => Updated, image => I} | Acc]
-    end;
-extract_image(_, Acc) -> Acc.
-
 get_image(Entry) when is_binary(Entry) ->
     case exml:parse(Entry) of
         {ok, EntryXML} -> get_image(EntryXML);
-        _ -> none
+        _ -> <<>>
     end;
 get_image(Entry = #xmlel{}) ->
     case xml:get_subtag(Entry, <<"image">>) of
         #xmlel{children = [#xmlcdata{content = C}]} -> C;
-        false -> none
+        false -> <<>>
     end.
 
 bot_packet_action(BotStanza) ->
