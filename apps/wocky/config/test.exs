@@ -12,3 +12,7 @@ config :wocky,
 
 config :logger,
   level: :warn
+
+# Make token tests go faster:
+config :comeonin,
+  bcrypt_log_rounds: 4

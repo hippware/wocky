@@ -2,6 +2,7 @@ defmodule Wocky.TokenSpec do
   use ESpec, async: true
   use ModelHelpers
 
+  alias Comeonin.Bcrypt
   alias Wocky.Repo.ID
   alias Wocky.Token
 
@@ -52,8 +53,8 @@ defmodule Wocky.TokenSpec do
 
       data.user_id    |> should(eq shared.id)
       data.resource   |> should(eq shared.resource)
-      data.token      |> should(eq token)
       data.expires_at |> should(eq expiry)
+      Bcrypt.checkpw(token, data.token_hash) |> assert
     end
 
     it "should return a different token every time" do
@@ -76,44 +77,8 @@ defmodule Wocky.TokenSpec do
 
       data.user_id    |> should(eq shared.id)
       data.resource   |> should(eq shared.resource)
-      data.token      |> should_not(eq token)
       data.expires_at |> should_not(eq to_string(expiry))
-    end
-  end
-
-  describe "get/2" do
-    it "should return the token assigned to a resource" do
-      {:ok, {token, _}} = shared.result
-
-      shared.id
-      |> Token.get(shared.resource)
-      |> should(eq token)
-    end
-
-    it "should return nil if the resource is not assigned a token" do
-      ID.new
-      |> Token.get(shared.resource)
-      |> should(be_nil())
-
-      shared.id
-      |> Token.get("nosuchresource")
-      |> should(be_nil())
-    end
-  end
-
-  describe "get_all/1" do
-    it "should return a list of tokens for the specified user" do
-      {:ok, {token, _}} = shared.result
-
-      shared.id
-      |> Token.get_all
-      |> should(eq [token])
-    end
-
-    it "should return an empty list if the user has no assigned tokens" do
-      ID.new
-      |> Token.get_all
-      |> should(be_empty())
+      Bcrypt.checkpw(token, data.token_hash) |> refute
     end
   end
 
