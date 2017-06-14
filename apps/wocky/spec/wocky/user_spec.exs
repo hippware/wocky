@@ -395,10 +395,6 @@ defmodule Wocky.UserSpec do
         User |> Repo.get(shared.id) |> should(be_nil())
       end
 
-      it "should remove any tokens associated with the user" do
-        shared.id |> Token.get_all |> should(be_empty())
-      end
-
       it "should succeed if the user does not exist" do
         ID.new |> User.delete |> should(eq :ok)
       end
