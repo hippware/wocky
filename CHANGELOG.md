@@ -10,6 +10,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Change remaining time formats to Z-suffix form (#723)
 * Add roster timestamps. Addresses: Expire followers from being new (#606)
 * Optimise roster item queries (#751)
+* Make all indexer operations synchronous with respect to each other (#771)
+* Re-enable location upload API (#766)
+* Hash authentication tokens (#483)
 
 
 # 2017.6.9+2319.ac1c9e4
