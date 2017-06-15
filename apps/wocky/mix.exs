@@ -73,7 +73,7 @@ defmodule Wocky.Mixfile do
       {:lager,                "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
       {:email_checker,        "~> 0.1.0"},
-      {:csv,                  "~> 1.4"},
+      {:csv,                  "~> 2.0"},
       {:confex,               "~> 2.0"},
       {:quantum,              "~> 1.9"},
       {:comeonin,             "~> 3.0"},
