@@ -39,4 +39,17 @@
 
 -record(item, {id, version, from, stanzas}).
 
+% Reproduced from escalus.hrl. We can't include it directly because it
+% redefines the `jid` record :(
+-record(client, {
+        jid :: binary() | undefined,
+        module :: atom(),
+        socket :: term(),
+        ssl :: boolean(),
+        compress :: {zlib, {Zin::zlib:zstream(), Zout::zlib:zstream()}}
+                 |  false,
+        rcv_pid :: pid(),
+        event_client :: any()
+       }).
+
 -endif. % ifdef TEST_HELPER_HRL

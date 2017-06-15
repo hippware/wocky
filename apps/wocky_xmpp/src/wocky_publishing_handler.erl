@@ -8,7 +8,7 @@
 -include("wocky_publishing.hrl").
 
 -export([register/2, unregister/2, send_notification/3]).
--export([set/5, get/3, available/3, unavailable/1]).
+-export([set/5, get/3, subscribe/3, unsubscribe/2]).
 
 -callback publish(ejabberd:jid(), ejabberd:jid(), pub_item_id(),
               published_stanza()) -> ok.
@@ -21,9 +21,9 @@
          not_found} |
     {error, term()}.
 
--callback available(ejabberd:jid(), pub_version()) -> ok.
+-callback subscribe(ejabberd:jid(), pub_version()) -> ok.
 
--callback unavailable(ejabberd:jid()) -> ok.
+-callback unsubscribe(ejabberd:jid()) -> ok.
 
 
 %%%===================================================================
@@ -64,13 +64,16 @@ set(Node, From, To, ID, Stanza) ->
 get(Node, From, Param) ->
     call_hook(get, Node, [From, Param]).
 
-available(Node, User, Version) ->
-    call_hook(available, Node, [User, Version]).
+subscribe(Node, User, Version) ->
+    call_hook(subscribe, Node, [User, Version]).
 
-unavailable(User) ->
+unsubscribe(all, User) ->
     lists:foreach(
-      call_hook(unavailable, _, [User]),
-      all_nodes()).
+      call_hook(unsubscribe, _, [User]),
+      all_nodes());
+
+unsubscribe(Node, User) ->
+    call_hook(unsubscribe, Node, [User]).
 
 %%%===================================================================
 %%% Helpers

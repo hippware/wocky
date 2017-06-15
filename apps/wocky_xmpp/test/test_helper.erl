@@ -63,7 +63,9 @@
          cdata_el/2,
          hs_query_el/1,
 
-         set_notifications/2
+         set_notifications/2,
+
+         kill_connection/1
         ]).
 
 
@@ -514,3 +516,17 @@ notifications_stanza(true, Client) ->
                            {<<"platform">>, <<"escalus">>}]});
 notifications_stanza(false, _Client) ->
     iq_set(?NS_NOTIFICATIONS, #xmlel{name = <<"disable">>}).
+
+% From sm_SUITE.erl:
+kill_connection(#client{module = escalus_tcp, ssl = SSL,
+                        socket = Socket} = Conn) ->
+    %% Ugly, but there's no API for killing the connection
+    %% without sending </stream:stream>.
+    case SSL of
+        true ->
+            ssl:close(Socket);
+        false ->
+            gen_tcp:close(Socket)
+    end,
+    %% There might be open zlib streams left...
+    catch escalus_connection:stop(Conn).

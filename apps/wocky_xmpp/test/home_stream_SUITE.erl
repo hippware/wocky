@@ -39,6 +39,7 @@ all() -> [
           subscribe,
           subscribe_version,
           unsubscribe,
+          maintain_subscription,
           get_item,
           {group, publish_bot},
           no_auto_publish_pep_item
@@ -230,9 +231,20 @@ subscribe_version(Config) ->
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
+        % Alice's previous temp subscription should have been cleared by
+        % her reconnection
+        expect_iq_success_u(pub_stanza(<<"unpushed_item">>), Alice, Alice),
+        timer:sleep(500),
+        ensure_all_clean([Alice]),
+
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
                                            [hs_query_el(undefined)])),
+
+        escalus:send(Alice,
+                     add_to_u(pub_stanza(<<"pushed_item">>), Alice)),
+        escalus:assert_many([is_iq_result, is_message],
+                            escalus:wait_for_stanzas(Alice, 2)),
 
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"unavailable">>,
@@ -243,6 +255,59 @@ unsubscribe(Config) ->
 
         ensure_all_clean([Alice])
       end).
+
+maintain_subscription(Config) ->
+    AliceSpec = [{manual_ack, true}, {resource, <<"res1">>}
+                 | escalus_users:get_userspec(Config, alice)],
+    escalus:fresh_story(Config, [], fun() ->
+        Steps = [start_stream,
+                 stream_features,
+                 maybe_use_ssl,
+                 authenticate,
+                 bind,
+                 session,
+                 stream_resumption],
+        {ok, A, Props, _} = escalus_connection:start(AliceSpec, Steps),
+
+        Alice = A#client{jid = ?BJID(?ALICE)},
+        escalus:send(Alice,
+                     escalus_stanza:presence_direct(
+                       hs_node(?ALICE), <<"available">>,
+                       [hs_query_el(undefined)])),
+
+        % Give the subscription time to take before we axe the connection
+        timer:sleep(250),
+
+        test_helper:kill_connection(Alice),
+
+        SMID = proplists:get_value(smid, Props),
+
+        Steps2 = [start_stream,
+                  stream_features,
+                  maybe_use_ssl,
+                  authenticate,
+                  mk_resume_stream(SMID, 0)],
+        {ok, A2, _, _} = escalus_connection:start(AliceSpec, Steps2),
+
+        Alice2 = A2#client{jid = ?BJID(?ALICE)},
+
+        escalus:send(Alice2,
+                     add_to_u(pub_stanza(<<"pushed_item">>), Alice2)),
+
+        Stanzas1 = escalus:wait_for_stanzas(Alice2, 2),
+        escalus:send(Alice2, escalus_stanza:sm_ack(1)),
+        Stanzas2 = escalus:wait_for_stanzas(Alice2, 2),
+        escalus:send(Alice2, escalus_stanza:sm_ack(2)),
+
+        escalus:assert_many([is_iq_result, is_sm_ack_request,
+                             is_message, is_sm_ack_request],
+                            Stanzas1 ++ Stanzas2),
+
+        ct:log("Stanzas: ~p", [Stanzas1 ++ Stanzas2]),
+        timer:sleep(250),
+
+        test_helper:kill_connection(Alice2)
+    end).
 
 get_item(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
@@ -467,6 +532,14 @@ pub_item() ->
            attrs = [{<<"xmlns">>, ?NS_TEST}]}.
 
 pub_node() -> ?NS_TEST.
+
+mk_resume_stream(SMID, PrevH) ->
+    fun (Conn, Props, Features) ->
+            escalus_connection:send(Conn, escalus_stanza:resume(SMID, PrevH)),
+            Resumed = escalus_connection:get_stanza(Conn, get_resumed),
+            true = escalus_pred:is_sm_resumed(SMID, Resumed),
+            {Conn, [{smid, SMID} | Props], Features}
+    end.
 
 %%--------------------------------------------------------------------
 %% Identity PEP hook
