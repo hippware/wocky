@@ -14,7 +14,7 @@ defmodule Wocky.EventHandler.PushNotification do
   @spec start_link :: {:ok, pid}
   def start_link do
     :ok = PushNotifier.init
-    GenStage.start_link(__MODULE__, [])
+    GenStage.start_link(__MODULE__, [], name: :push_notification_event_handler)
   end
 
   ## Callbacks
@@ -28,10 +28,14 @@ defmodule Wocky.EventHandler.PushNotification do
 
   @spec handle_events(list, term, module) :: {:noreply, [], any}
   def handle_events(events, _from, state) do
-    _ =
-      events
-      |> Task.async_stream(fn(e) -> handle_event(e, state) end)
-      |> Enum.to_list
+    if Application.get_env(:wocky, :async_push_notifications, true) do
+      _ =
+        events
+        |> Task.async_stream(fn e -> handle_event(e, state) end)
+        |> Enum.to_list
+    else
+      Enum.each events, fn e -> handle_event(e, state) end
+    end
 
     {:noreply, [], state}
   end
