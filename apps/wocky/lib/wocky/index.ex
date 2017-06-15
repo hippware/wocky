@@ -66,12 +66,11 @@ defmodule Wocky.Index do
   def init(_) do
     user_index = Confex.get(:wocky, :user_index_name, :users)
     bot_index  = Confex.get(:wocky, :bot_index_name, :bots)
-    backend_type = Confex.get(:wocky, :indexing_system, "none")
+    backend_type = Confex.get(:wocky, :indexing_system)
     backend_module =
       case backend_type do
         "algolia" -> Wocky.Index.AlgoliaIndexer
         "test" -> Wocky.Index.TestIndexer
-        "none" -> Wocky.Index.NullIndexer
       end
 
     backend_module.init()

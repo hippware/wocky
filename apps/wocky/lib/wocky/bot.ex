@@ -14,6 +14,7 @@ defmodule Wocky.Bot do
   alias Wocky.User
   alias __MODULE__, as: Bot
 
+  require Logger
   require Record
 
   @foreign_key_type :binary_id
@@ -182,5 +183,26 @@ defmodule Wocky.Bot do
 
     # Add one for the owner:
     subscribers + temp_subscribers + 1
+  end
+
+  @doc "Returns the bot's distance from the specified location."
+  @spec distance_from(Bot.t, map) :: non_neg_integer
+  def distance_from(bot, loc) do
+    Geocalc.distance_between(Map.from_struct(bot), loc)
+  end
+
+  @doc "Returns true if the location is within the bot's radius."
+  @spec contains?(Bot.t, map) :: boolean
+  def contains?(bot, loc) do
+    radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
+
+    if radius < 0 do
+      :ok = Logger.warn(
+        "Bot #{bot.id} has a negative radius (#{radius} meters)."
+      )
+      false
+    else
+      distance_from(bot, loc) <= radius
+    end
   end
 end
