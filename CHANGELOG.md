@@ -13,6 +13,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Make all indexer operations synchronous with respect to each other (#771)
 * Re-enable location upload API (#766)
 * Hash authentication tokens (#483)
+* Add user roles to distinguish privileged accounts (#748)
+* Replace SNS with direct calls to APNS (#767)
 
 
 # 2017.6.9+2319.ac1c9e4
