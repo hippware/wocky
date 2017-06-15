@@ -18,8 +18,8 @@
 -export([publish/4,
          delete/2,
          get/2,
-         available/2,
-         unavailable/1
+         subscribe/2,
+         unsubscribe/1
         ]).
 
 -record(hs_subscription,
@@ -96,14 +96,14 @@ get(#jid{luser = User}, ID) ->
                     ?wocky_home_stream_item:get_latest_time(User))}}
     end.
 
--spec available(ejabberd:jid(), pub_version()) -> ok.
-available(User, Version) ->
+-spec subscribe(ejabberd:jid(), pub_version()) -> ok.
+subscribe(User, Version) ->
     mnesia:dirty_write(make_record(User)),
     maybe_send_catchup(User, Version),
     ok.
 
--spec unavailable(ejabberd:jid()) -> ok.
-unavailable(User) ->
+-spec unsubscribe(ejabberd:jid()) -> ok.
+unsubscribe(User) ->
     mnesia:dirty_delete_object(make_record(User)),
     ok.
 

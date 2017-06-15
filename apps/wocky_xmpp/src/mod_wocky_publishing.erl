@@ -39,12 +39,16 @@ start(Host, _Opts) ->
                                   ?MODULE, handle_iq, parallel),
     ejabberd_hooks:add(filter_local_packet, Host,
                        fun filter_local_packet_hook/1, 80),
+    ejabberd_hooks:add(sm_remove_connection_hook, Host,
+                       fun remove_connection_hook/4, 100),
     mod_disco:register_feature(Host, ?NS_PUBLISHING).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_PUBLISHING),
     ejabberd_hooks:delete(filter_local_packet, Host,
                           fun filter_local_packet_hook/1, 80),
+    ejabberd_hooks:delete(sm_remove_connection_hook, Host,
+                          fun remove_connection_hook/4, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBLISHING),
     ok.
 
@@ -127,11 +131,18 @@ handle_presence(From, To, available, Packet) ->
         Query <- wocky_xml:get_subel(<<"query">>, Packet),
         wocky_xml:check_namespace(?NS_PUBLISHING, Query),
         Version <- get_version(Query#xmlel.attrs),
-        wocky_publishing_handler:available(To#jid.lresource, From, Version)
+        wocky_publishing_handler:subscribe(To#jid.lresource, From, Version)
        ]);
 
-handle_presence(From, _To, unavailable, _Packet) ->
-    wocky_publishing_handler:unavailable(From).
+% Explicit unsubscription
+handle_presence(From, To, unavailable, _Packet) ->
+    wocky_publishing_handler:unsubscribe(To#jid.lresource, From).
+
+% Implicit unsubscription on disconnection unless the stream was resumed
+remove_connection_hook(_SID, _JID, _Info, resumed) ->
+    ok;
+remove_connection_hook(_SID, JID, _Info, _Reason) ->
+    wocky_publishing_handler:unsubscribe(all, JID).
 
 %%%===================================================================
 %%% Handler callbacks
