@@ -5,8 +5,7 @@ defmodule :mod_wocky_notifications_spec do
 
   import :mod_wocky_notifications
 
-  alias Wocky.PushNotifier.TestNotifier
-  alias Wocky.Repo.ID
+  alias Pushex.Sandbox
   alias Wocky.Repo.Factory
   alias Wocky.User
 
@@ -47,10 +46,15 @@ defmodule :mod_wocky_notifications_spec do
   end
 
   before do
-    TestNotifier.reset
+    pid = GenServer.whereis(:push_notification_event_handler)
+    Ecto.Adapters.SQL.Sandbox.allow(Wocky.Repo, self(), pid)
 
+    Sandbox.clear_notifications(pid: pid)
+
+    sender = Factory.insert(:user)
     user = Factory.insert(:user)
-    {:ok, user: user, user_jid: User.to_jid(user)}
+    {:ok, pid: pid, user: user, user_jid: User.to_jid(user),
+          sender: sender, sender_jid: User.to_jid(sender)}
   end
 
   describe "mod_wocky_notifications" do
@@ -63,37 +67,13 @@ defmodule :mod_wocky_notifications_spec do
 
     describe "handling an IQ 'set'" do
       context "with an 'enable' element" do
-        context "on success" do
-          before do
-            result = enable_notifications(shared.user_jid)
-            {:ok, result: result}
-          end
-
-          it "should return an IQ result" do
-            expect iq(shared.result, :type) |> to(eq :result)
-          end
-
-          it "should register the device" do
-            [{_, jid, platform, device_id}] = TestNotifier.get_registrations
-            expect jid |> to(eq JID.to_binary(shared.user_jid))
-            expect platform |> to(eq "apple")
-            expect device_id |> to(eq @test_id)
-          end
+        before do
+          result = enable_notifications(shared.user_jid)
+          {:ok, result: result}
         end
 
-        context "on failure" do
-          before do
-            result = enable_notifications(shared.user_jid, "error")
-            {:ok, result: result}
-          end
-
-          it "should return an IQ error" do
-            expect iq(shared.result, :type) |> to(eq :error)
-          end
-
-          it "should not register the device" do
-            expect TestNotifier.get_registrations |> to(eq [])
-          end
+        it "should return an IQ result" do
+          expect iq(shared.result, :type) |> to(eq :result)
         end
       end
 
@@ -107,10 +87,6 @@ defmodule :mod_wocky_notifications_spec do
         it "should return an IQ result" do
           expect iq(shared.result, :type) |> to(eq :result)
         end
-
-        it "should remove the device registration" do
-          expect TestNotifier.get_registrations |> to(eq [])
-        end
       end
     end
 
@@ -122,36 +98,37 @@ defmodule :mod_wocky_notifications_spec do
       context "with a message packet" do
         before do
           :ok = user_send_packet_hook(
-            shared.user_jid, JID.make(ID.new, "localhost"), packet())
+            shared.sender_jid, shared.user_jid, packet())
         end
 
-        xit "should send a notification" do
-          # Wait for the event to be processed
-          Process.sleep(50)
-          [{_, message}] = TestNotifier.get_notifications
-          expect message |> to(end_with "Message content")
+        it "should send a notification" do
+          notifications = Sandbox.wait_notifications(count: 1, pid: shared.pid)
+          notifications |> should(have_size 1)
+
+          [{{:ok, _}, request, _}] = notifications
+          request.notification.alert |> should(end_with "Message content")
         end
       end
 
       context "with a non-message packet" do
         before do
           :ok = user_send_packet_hook(
-            shared.user_jid, @server_jid, packet("parlay"))
+            shared.sender_jid, shared.user_jid, packet("parlay"))
         end
 
         it "should not send a notification" do
-          expect TestNotifier.get_notifications |> to(eq [])
+          expect Sandbox.list_notifications(pid: shared.pid) |> to(eq [])
         end
       end
 
       context "with a non-chat message packet" do
         before do
           :ok = user_send_packet_hook(
-            shared.user_jid, @server_jid, packet("message", "parlay"))
+            shared.sender_jid, shared.user_jid, packet("message", "parlay"))
         end
 
         it "should not send a notification" do
-          expect TestNotifier.get_notifications |> to(eq [])
+          expect Sandbox.list_notifications(pid: shared.pid) |> to(eq [])
         end
       end
 
@@ -168,12 +145,13 @@ defmodule :mod_wocky_notifications_spec do
             ]
           )
 
-          result = user_send_packet_hook(shared.user_jid, @server_jid, no_body)
+          result =
+            user_send_packet_hook(shared.sender_jid, shared.user_jid, no_body)
           {:ok, result: result}
         end
 
         it "should not send a notification" do
-          expect TestNotifier.get_notifications |> to(eq [])
+          expect Sandbox.list_notifications(pid: shared.pid) |> to(eq [])
         end
       end
     end
@@ -181,11 +159,12 @@ defmodule :mod_wocky_notifications_spec do
     describe "handling the remove_user hook" do
       before do
         _ = enable_notifications(shared.user_jid)
-        :ok = remove_user_hook(shared.user.username, shared.user.server)
+        result = remove_user_hook(shared.user.username, shared.user.server)
+        {:ok, result: result}
       end
 
-      it "should remove all device registrations" do
-        expect TestNotifier.get_registrations |> to(eq [])
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
       end
     end
   end
