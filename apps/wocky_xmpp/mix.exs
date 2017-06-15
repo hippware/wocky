@@ -62,7 +62,6 @@ defmodule Wocky.XMPP.Mixfile do
      mod: {:wocky_xmpp_app, []},
      env: [
        wocky_inst: {:system, "WOCKY_INST", "local"},
-       wocky_host: {:system, "WOCKY_HOST", "localhost"},
        enable_digits_bypass: {:system, :boolean, "WOCKY_ENABLE_BYPASS", true},
        iq_crash_response: {:system, :atom, "WOCKY_IQ_CRASH_RESPONSE",
                            :error_with_dump}

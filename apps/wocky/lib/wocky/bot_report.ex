@@ -14,56 +14,58 @@ defmodule Wocky.BotReport do
     Visibility Subscribers ImageItems Description
   )
 
-  @spec run(binary, non_neg_integer) :: binary
+  @spec run(binary, non_neg_integer) :: nil | binary
   def run(channel, days) do
     if Confex.get(:wocky, :enable_bot_report) do
-      post_bot_report(channel, days)
+      server = Confex.get(:wocky, :wocky_host)
+      report = generate_report(days)
+      Files.upload(%{content: report,
+                     filename: "weekly_bot_report_#{server}.csv",
+                     title: "Weekly Bot Report for #{server}",
+                     filetype: "csv",
+                     channels: channel})
     end
   end
 
-  def post_bot_report(channel, days) do
-    # FIXME This application should have no visibility into wocky_xmpp,
-    # but there wasn't a better way to handle this situation.
-    servers = Application.get_env(:wocky_xmpp, :servers, ["localhost"])
-    server = hd(servers)
-    report =
-      days
-      |> generate_bot_report()
-      |> encode_as_csv()
-    Files.upload(%{content: report,
-                   filename: "weekly_bot_report_#{server}.csv",
-                   title: "Weekly Bot Report for #{server}",
-                   filetype: "csv",
-                   channels: channel})
+  @spec generate_report(non_neg_integer) :: binary
+  def generate_report(days) do
+    {:ok, csv} =
+      Repo.transaction fn ->
+        days
+        |> since()
+        |> get_bot_data()
+        |> add_header()
+        |> Enum.join
+      end
+
+    csv
   end
 
-  def encode_as_csv(report) do
-    report
+  defp add_header(data) do
+    [@header]
     |> CSV.encode
-    |> Enum.join
+    |> Stream.concat(data)
   end
 
-  def generate_bot_report(days) do
-    aft =
-      Timex.now
-      |> Timex.subtract(Duration.from_days(days))
-      |> Timex.to_naive_datetime
-
-    report =
-      Bot
-      |> where([b], b.created_at > ^aft)
-      |> Repo.all
-      |> Enum.map(&report_bot(&1))
-
-    [@header | report]
+  defp since(days) do
+    Timex.now
+    |> Timex.subtract(Duration.from_days(days))
+    |> Timex.to_naive_datetime
   end
 
-  defp report_bot(%Bot{} = bot) do
-    %{handle: handle} = Bot.owner(bot)
+  defp get_bot_data(since) do
+    Bot
+    |> where([b], b.created_at > ^since)
+    |> Repo.stream
+    |> Stream.map(&format_bot/1)
+    |> CSV.encode
+  end
+
+  defp format_bot(%Bot{} = bot) do
     [
       bot.id,
       bot.title,
-      handle,
+      owner_handle(bot),
       bot.created_at,
       bot.updated_at,
       bot.address,
@@ -76,6 +78,8 @@ defmodule Wocky.BotReport do
     ]
     |> Enum.map(&to_string/1)
   end
+
+  defp owner_handle(bot), do: Bot.owner(bot).handle
 
   defp vis_string(true), do: "public"
   defp vis_string(_), do: "private"
