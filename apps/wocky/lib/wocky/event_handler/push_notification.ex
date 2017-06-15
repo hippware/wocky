@@ -40,6 +40,11 @@ defmodule Wocky.EventHandler.PushNotification do
     {:noreply, [], state}
   end
 
+  def handle_info({{:ok, _}, _, _}, state) do
+    # Message from Pushex.Sandbox during testing. Ignore.
+    {:noreply, [], state}
+  end
+
   defp handle_event(%BotPerimeterEvent{bot: bot} = event, _state) do
     body = format(event)
 
