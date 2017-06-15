@@ -25,8 +25,6 @@
 
 -export([set_visibility/3, create_field/1]).
 
--define(notification_handler, 'Elixir.Wocky.PushNotifier.TestNotifier').
-
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
 -define(BOT_DESC, <<"A test bot owned by Alice">>).
@@ -675,7 +673,7 @@ share(Config) ->
         % Tim can't see the private bot because it's not shared to him
         expect_iq_error(retrieve_stanza(), Tim),
 
-        [] = ?notification_handler:get_notifications(),
+        [] = list_notifications(),
 
         % Alice shares the bot to him
         escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
@@ -684,14 +682,14 @@ share(Config) ->
         % Tim can now see the bot
         expect_iq_success(retrieve_stanza(), Tim),
 
-        1 = length(?notification_handler:get_notifications()),
+        1 = length(list_notifications()),
 
         test_helper:ensure_all_clean([Alice, Tim])
       end).
 
 share_multicast(Config) ->
     reset_tables(Config),
-    ?notification_handler:reset(),
+    clear_notifications(),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
@@ -711,7 +709,7 @@ share_multicast(Config) ->
         % Tim can now see the bot
         expect_iq_success(retrieve_stanza(), Tim),
 
-        1 = length(?notification_handler:get_notifications()),
+        1 = length(list_notifications()),
 
         test_helper:ensure_all_clean([Alice, Tim])
       end).
@@ -752,6 +750,15 @@ empty_shortname(Config) ->
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
+
+clear_notifications() ->
+    'Elixir.Pushex.Sandbox':clear_notifications([{pid, notifier()}]).
+
+list_notifications() ->
+    'Elixir.Pushex.Sandbox':wait_notifications([{count, 1}, {pid, notifier()}]).
+
+notifier() ->
+    whereis(push_notification_event_handler).
 
 new_id_stanza() ->
     test_helper:iq_set(?NS_BOT, #xmlel{name = <<"new-id">>}).

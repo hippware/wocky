@@ -62,15 +62,6 @@ config :lager,
       module: Wocky.PushNotifier
     ]},
     {{:lager_file_backend, 'notifications.log'}, [
-      module: Wocky.PushNotifier.SNSNotifier
-    ]},
-    {{:lager_file_backend, 'notifications.log'}, [
-       module: Wocky.PushNotifier.TestNotifier
-     ]},
-    {{:lager_file_backend, 'notifications.log'}, [
-      module: Wocky.PushNotifier.NullNotifier
-    ]},
-    {{:lager_file_backend, 'notifications.log'}, [
       module: :mod_wocky_notifications
     ]}
   ]

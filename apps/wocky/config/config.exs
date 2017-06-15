@@ -11,12 +11,11 @@ config :wocky,
   tros_s3_bucket:        {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
   tros_s3_access_key_id: {:system, "WOCKY_S3_ACCESS_KEY_ID"},
   tros_s3_secret_key:    {:system, "WOCKY_S3_SECRET_KEY"},
-  application_arn:       {:system, "WOCKY_APPLICATION_ARN"},
-  notification_system:   {:system, "WOCKY_NOTIFICATION_SYSTEM", "none"},
   indexing_system:       {:system, "WOCKY_INDEXING_SYSTEM", "none"},
   user_index_name:       {:system, "WOCKY_USER_INDEX_NAME"},
   bot_index_name:        {:system, "WOCKY_BOT_INDEX_NAME"},
-  enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false}
+  enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false},
+  enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false}
 
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
@@ -50,5 +49,24 @@ config :slackex,
 
 config :algolia,
   application_id: "HIE75ZR7Q7"
+
+config :apns,
+  pools: [],
+  callback_module: Pushex.APNS.Callback
+
+config :pushex,
+  event_handlers: [Wocky.PushEventHandler],
+  apns: [
+    default_app: "testing",
+    apps: [
+      [
+        name: "testing",
+        env: :prod,
+        certfile: {:wocky, "certs/testing.crt"},
+        keyfile: {:wocky, "certs/testing.key"},
+        pool_size: 5
+      ]
+    ]
+  ]
 
 import_config "#{Mix.env}.exs"

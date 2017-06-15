@@ -12,26 +12,23 @@ defmodule Wocky.Device do
     field :user_id,   :binary_id, null: false, primary_key: true
     field :resource,  :string, null: false, primary_key: true
     field :platform,  :string, null: false
-    field :device,    :string, null: false
-    field :endpoint,  :string, null: false
+    field :token,     :string, null: false
 
     timestamps()
 
     belongs_to :user, User, define_field: false
   end
 
-  @type device :: binary
+  @type token :: binary
   @type platform :: binary # :apple | :google
-  @type endpoint :: binary
 
-  @spec update(User.id, User.resource, platform, device, endpoint) :: :ok
-  def update(user_id, resource, platform, device, endpoint) do
+  @spec update(User.id, User.resource, platform, token) :: :ok
+  def update(user_id, resource, platform, token) do
     device = %Device{
       user_id: user_id,
       resource: resource,
       platform: to_string(platform),
-      device: device,
-      endpoint: endpoint
+      token: token
     }
 
     Repo.insert!(device, on_conflict: :replace_all,
@@ -48,17 +45,17 @@ defmodule Wocky.Device do
     from d in query, where: d.resource == ^resource
   end
 
-  def select_endpoint(query) do
-    from d in query, select: d.endpoint
+  def select_token(query) do
+    from d in query, select: d.token
   end
 
   @doc "Return the endpoint assigned to the specified user and resource."
-  @spec get_endpoint(User.id, User.resource) :: nil | endpoint
-  def get_endpoint(user_id, resource) do
+  @spec get_token(User.id, User.resource) :: nil | token
+  def get_token(user_id, resource) do
     Device
     |> with_user(user_id)
     |> and_resource(resource)
-    |> select_endpoint
+    |> select_token
     |> Repo.one
   end
 
@@ -66,11 +63,11 @@ defmodule Wocky.Device do
   Returns all endpoints currently assigned to resources belonging to the
   specified user.
   """
-  @spec get_all_endpoints(User.id) :: [endpoint]
-  def get_all_endpoints(user_id) do
+  @spec get_all_tokens(User.id) :: [token]
+  def get_all_tokens(user_id) do
     Device
     |> with_user(user_id)
-    |> select_endpoint
+    |> select_token
     |> Repo.all
   end
 

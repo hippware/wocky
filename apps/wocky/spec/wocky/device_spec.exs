@@ -8,20 +8,18 @@ defmodule Wocky.DeviceSpec do
   before do
     user = Factory.insert(:user, %{server: shared.server})
     resource = Faker.Code.issn
-    device = Faker.Code.issn
-    endpoint = Faker.Code.issn
+    token = Faker.Code.issn
 
-    result = Device.update(user.id, resource, :apple, device, endpoint)
+    result = Device.update(user.id, resource, :apple, token)
 
     {:ok,
       result: result,
       id: user.id,
       resource: resource,
-      device: device,
-      endpoint: endpoint}
+      token: token}
   end
 
-  describe "update/5" do
+  describe "update/4" do
     it "should return :ok" do
       shared.result |> should(eq :ok)
     end
@@ -36,13 +34,12 @@ defmodule Wocky.DeviceSpec do
       data.user_id    |> should(eq shared.id)
       data.resource   |> should(eq shared.resource)
       data.platform   |> should(eq "apple")
-      data.device     |> should(eq shared.device)
-      data.endpoint   |> should(eq shared.endpoint)
+      data.token      |> should(eq shared.token)
     end
 
     it "should overwrite devices when there are multiple requests" do
       :ok = Device.update(shared.id, shared.resource,
-                          :apple, Faker.Code.issn, Faker.Code.issn)
+                          :apple, Faker.Code.issn)
 
       data = Repo.one(
         from d in Device,
@@ -52,39 +49,38 @@ defmodule Wocky.DeviceSpec do
 
       data.user_id    |> should(eq shared.id)
       data.resource   |> should(eq shared.resource)
-      data.device     |> should_not(eq shared.device)
-      data.endpoint   |> should_not(eq shared.endpoint)
+      data.token      |> should_not(eq shared.token)
     end
   end
 
-  describe "get_endpoint/2" do
+  describe "get_token/2" do
     it "should return the device assigned to a resource" do
       shared.id
-      |> Device.get_endpoint(shared.resource)
-      |> should(eq shared.endpoint)
+      |> Device.get_token(shared.resource)
+      |> should(eq shared.token)
     end
 
     it "should return nil if the resource is not assigned a device" do
       ID.new
-      |> Device.get_endpoint(shared.resource)
+      |> Device.get_token(shared.resource)
       |> should(be_nil())
 
       shared.id
-      |> Device.get_endpoint("nosuchresource")
+      |> Device.get_token("nosuchresource")
       |> should(be_nil())
     end
   end
 
-  describe "get_all_endpoints/1" do
-    it "should return a list of endpoints for the specified user" do
+  describe "get_all_tokens/1" do
+    it "should return a list of tokens for the specified user" do
       shared.id
-      |> Device.get_all_endpoints
-      |> should(eq [shared.endpoint])
+      |> Device.get_all_tokens
+      |> should(eq [shared.token])
     end
 
     it "should return an empty list if the user has no assigned devices" do
       ID.new
-      |> Device.get_all_endpoints
+      |> Device.get_all_tokens
       |> should(be_empty())
     end
   end

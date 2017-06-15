@@ -44,26 +44,16 @@ hooks() ->
 
 -spec handle_iq(ejabberd:jid(), ejabberd:jid(), iq()) -> iq().
 handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
-    case handle_request(From, ReqEl) of
-        {ok, State} ->
-            make_response(IQ, State);
-
-        {error, _} ->
-            Error =
-                ?ERRT_SERVICE_UNAVAILABLE(?MYLANG,
-                                          <<"service unavailable">>),
-            make_error_response(IQ, Error)
-    end;
+    {ok, State} = handle_request(From, ReqEl),
+    make_response(IQ, State);
 handle_iq(_From, _To, IQ) ->
     make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
 
 handle_request(JID, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
     {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
-    case ?wocky_push_notifier:enable(JID, Platform, DeviceId) of
-        {ok, _} -> {ok, <<"enabled">>};
-        {error, _} = Error -> Error
-    end;
+    ok = ?wocky_push_notifier:enable(JID, Platform, DeviceId),
+    {ok, <<"enabled">>};
 handle_request(JID, #xmlel{name = <<"disable">>}) ->
     ok = ?wocky_push_notifier:disable(JID),
     {ok, <<"disabled">>}.
