@@ -16,7 +16,26 @@ defmodule Wocky.IndexSpec do
   end
 
   describe "geosearch/2" do
-    it do: Index.geosearch(1.0, 1.0) |> should(be_ok_result())
+    before do
+      Sandbox.allow(Repo, self(), indexer())
+
+      bots = Factory.insert_list(100, :bot)
+      bot = hd(bots)
+      result = Index.geosearch(bot.lat, bot.lon)
+
+      {:ok, bot: bot, result: result}
+    end
+
+    it "should return a success result" do
+      shared.result |> should(be_ok_result())
+    end
+
+    it "should find a bot that contains the point" do
+      {:ok, bots} = shared.result
+
+      bots |> should(have_size 1)
+      bots |> hd |> Map.get("objectID") |> should(eq shared.bot.id)
+    end
   end
 
   describe "reindex/1" do

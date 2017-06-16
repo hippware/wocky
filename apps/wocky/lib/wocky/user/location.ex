@@ -118,29 +118,8 @@ defmodule Wocky.User.Location do
       acc
     else
       bot
-      |> intersects?(loc)
+      |> Bot.contains?(Map.from_struct(loc))
       |> handle_intersection(user, bot, acc)
-    end
-  end
-
-  defp intersects?(bot, loc) do
-    radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
-
-    if radius < 0 do
-      :ok = Logger.warn(
-        "Bot #{bot.id} has a negative radius (#{radius} meters); skipping."
-      )
-      false
-    else
-      distance = Geocalc.distance_between(Map.from_struct(bot),
-                                          Map.from_struct(loc))
-      intersects = distance <= radius
-      :ok = Logger.debug("""
-      The distance of #{distance} meters is \
-      #{if intersects, do: "within", else: "outside"} the radius of bot \
-      #{bot.id} (#{radius} meters)\
-      """)
-      intersects
     end
   end
 

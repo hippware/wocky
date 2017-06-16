@@ -5,6 +5,9 @@ defmodule Wocky.Index.TestIndexer do
   queried by the testing system.
   """
 
+  alias Wocky.Bot
+  alias Wocky.Repo
+
   require Logger
 
   @behaviour Wocky.Index
@@ -27,8 +30,34 @@ defmodule Wocky.Index.TestIndexer do
     :ok
   end
 
-  def geosearch(_index, _lat, _lon) do
-    {:ok, []}
+  def geosearch(_index, lat, lon) do
+    # Do a brute-force search of the bots
+    loc = %{lat: lat, lon: lon}
+    {:ok, bots} =
+      Repo.transaction fn ->
+        Bot
+        |> Repo.stream
+        |> Stream.filter_map(&Bot.contains?(&1, loc), &bot_to_object(&1, loc))
+        |> Enum.to_list
+      end
+
+    {:ok, bots}
+  end
+
+  defp bot_to_object(bot, loc) do
+    distance = Bot.distance_from(bot, loc)
+    %{
+      "objectID"     => bot.id,
+      "server"       => bot.server,
+      "user_id"      => bot.user_id,
+      "title"        => bot.title,
+      "image"        => bot.image,
+      "lat"          => bot.lat,
+      "lon"          => bot.lon,
+      "radius"       => bot.radius,
+      "public"       => bot.public,
+      "_rankingInfo" => %{"geoDistance" => distance / 1000} # meters
+    }
   end
 
   def get_index_operations do
