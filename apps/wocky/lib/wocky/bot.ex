@@ -4,6 +4,7 @@ defmodule Wocky.Bot do
   use Wocky.Repo.Model
   use Wocky.JID
 
+  alias Geocalc.Point
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -186,13 +187,13 @@ defmodule Wocky.Bot do
   end
 
   @doc "Returns the bot's distance from the specified location."
-  @spec distance_from(Bot.t, map) :: non_neg_integer
+  @spec distance_from(Bot.t, Point.t) :: non_neg_integer
   def distance_from(bot, loc) do
     Geocalc.distance_between(Map.from_struct(bot), loc)
   end
 
   @doc "Returns true if the location is within the bot's radius."
-  @spec contains?(Bot.t, map) :: boolean
+  @spec contains?(Bot.t, Point.t) :: boolean
   def contains?(bot, loc) do
     radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
 
