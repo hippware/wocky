@@ -15,6 +15,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Hash authentication tokens (#483)
 * Add user roles to distinguish privileged accounts (#748)
 * Replace SNS with direct calls to APNS (#767)
+* Push notifications for image-only messages (#743)
+* Maintain temporary subscriptions across stream resumption (#776)
+* Use OS environment variables to configure 3rd party libraries (#780)
+
 
 
 # 2017.6.9+2319.ac1c9e4
