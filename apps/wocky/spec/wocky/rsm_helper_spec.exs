@@ -14,6 +14,7 @@ defmodule Wocky.RSMHelperSpec do
   before do
     user = Factory.insert(:user)
     Factory.insert_list(@count, :bot, user: user)
+    query = where(Bot, [user_id: ^user.id])
 
     bots =
       Bot
@@ -23,7 +24,8 @@ defmodule Wocky.RSMHelperSpec do
 
     {:ok,
       user: user,
-      bots: bots}
+      bots: bots,
+      query: query}
   end
 
   describe "rsm_query/4" do
@@ -128,6 +130,24 @@ defmodule Wocky.RSMHelperSpec do
              should(eq Enum.at(shared.bots, 3).id)
     end
 
+    context "simple reverse sort order" do
+      before do
+        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 10), shared.query,
+                                                 :id, {:desc, :created_at})
+        {:ok, records: records, rsm_out: rsm_out}
+      end
+
+      it do: shared.records |>
+             should(eq Enum.reverse(
+               Enum.slice(shared.bots, (@count - 10)..@count-1)))
+      it do: rsm_out(shared.rsm_out, :index) |> should(eq 0)
+      it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
+      it do: rsm_out(shared.rsm_out, :first) |>
+             should(eq Enum.at(shared.bots, @count-1).id)
+      it do: rsm_out(shared.rsm_out, :last) |>
+             should(eq Enum.at(shared.bots, 10).id)
+    end
+
     context "empty result set" do
       before do
         id = ID.new
@@ -143,11 +163,34 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :first) |> should(eq :undefined)
       it do: rsm_out(shared.rsm_out, :last) |> should(eq :undefined)
     end
+
+    context "when the key field is a DateTime" do
+      before do
+        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), shared.query,
+                                                 :created_at,
+                                                 {:asc, :created_at})
+        {:ok, records: records, rsm_out: rsm_out}
+      end
+
+      it do: rsm_out(shared.rsm_out, :first) |> should(be_binary())
+      it do: rsm_out(shared.rsm_out, :last) |> should(be_binary())
+    end
+
+    context "when the key field is an integer" do
+      before do
+        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), shared.query,
+                                                 :radius,
+                                                 {:asc, :created_at})
+        {:ok, records: records, rsm_out: rsm_out}
+      end
+
+      it do: rsm_out(shared.rsm_out, :first) |> should(be_binary())
+      it do: rsm_out(shared.rsm_out, :last) |> should(be_binary())
+    end
   end
 
   defp setup_query(shared, rsm_in) do
-    query = where(Bot, [user_id: ^shared.user.id])
-    {records, rsm_out} = RSMHelper.rsm_query(rsm_in, query,
+    {records, rsm_out} = RSMHelper.rsm_query(rsm_in, shared.query,
                                              :id, {:asc, :created_at})
     {:ok, records: records, rsm_out: rsm_out}
   end
