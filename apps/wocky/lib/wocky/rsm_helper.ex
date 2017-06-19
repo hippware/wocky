@@ -46,6 +46,13 @@ defmodule Wocky.RSMHelper do
                           first: binary | :undefined,
                           last:  binary | :undefined)
 
+  defmacro __using__(_) do
+    quote do
+      alias unquote(__MODULE__)
+      import unquote(__MODULE__), only: :macros
+    end
+  end
+
   @spec rsm_query(rsm_in, Ecto.Queryable.t, atom, sorting) ::
     {[struct], rsm_out}
   def rsm_query(rsm_in, queryable, key_field, sorting) do
@@ -90,20 +97,20 @@ defmodule Wocky.RSMHelper do
   end
 
   defp get_index([], _, _), do: :undefined
-  defp get_index([first | _], queryable, {sort_order, sort_field}) do
+  defp get_index([first | _], queryable, sorting = {_, sort_field}) do
     pivot = Map.get(first, sort_field)
 
     queryable
     |> select([r], count(field(r, ^sort_field)))
-    |> index_where(sort_field, pivot, sort_order)
+    |> index_where(pivot, sorting)
     |> Repo.one!()
   end
 
-  defp index_where(queryable, sort_field, key, :asc) do
+  defp index_where(queryable, key, {:asc, sort_field}) do
     queryable
     |> where([r], field(r, ^sort_field) < ^key)
   end
-  defp index_where(queryable, sort_field, key, :desc) do
+  defp index_where(queryable, key, {:desc, sort_field}) do
     queryable
     |> where([r], field(r, ^sort_field) > ^key)
   end

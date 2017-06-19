@@ -1,19 +1,15 @@
 defmodule Wocky.RSMHelperSpec do
-  use ESpec, async: false
+  use ESpec, async: true
   use Wocky.Repo.Model
-
-  import Wocky.RSMHelper, only: [rsm_query: 4]
+  use Wocky.RSMHelper
 
   require Record
 
   alias Wocky.Bot
   alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
-  @rsm_hdr "ejabberd/include/jlib.hrl"
   @count 20
-
-  Record.defrecord :rsm_in,  Record.extract(:rsm_in, from_lib: @rsm_hdr)
-  Record.defrecord :rsm_out, Record.extract(:rsm_out, from_lib: @rsm_hdr)
 
   before do
     user = Factory.insert(:user)
@@ -131,11 +127,28 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :last) |>
              should(eq Enum.at(shared.bots, 3).id)
     end
+
+    context "empty result set" do
+      before do
+        id = ID.new
+        query = where(Bot, [user_id: ^id])
+        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), query,
+                                                 :id, {:asc, :created_at})
+        {:ok, records: records, rsm_out: rsm_out}
+      end
+
+      it do: shared.records |> should(eq [])
+      it do: rsm_out(shared.rsm_out, :index) |> should(eq :undefined)
+      it do: rsm_out(shared.rsm_out, :count) |> should(eq 0)
+      it do: rsm_out(shared.rsm_out, :first) |> should(eq :undefined)
+      it do: rsm_out(shared.rsm_out, :last) |> should(eq :undefined)
+    end
   end
 
   defp setup_query(shared, rsm_in) do
     query = where(Bot, [user_id: ^shared.user.id])
-    {records, rsm_out} = rsm_query(rsm_in, query, :id, {:asc, :created_at})
+    {records, rsm_out} = RSMHelper.rsm_query(rsm_in, query,
+                                             :id, {:asc, :created_at})
     {:ok, records: records, rsm_out: rsm_out}
   end
 end
