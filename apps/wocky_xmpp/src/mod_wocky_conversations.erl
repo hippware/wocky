@@ -96,8 +96,14 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
     create_response(IQ, Conversations, RSMOut).
 
 get_conversations(From, RSMIn) ->
-    Conversations = ?wocky_conversation:find(From#jid.luser),
-    rsm_util:filter_with_rsm(Conversations, RSMIn).
+    {Records, RSMOut = #rsm_out{first = First, last = Last}} =
+    ?wocky_rsm_helper:rsm_query(RSMIn,
+                                ?wocky_conversation:with_user(From#jid.luser),
+                                id,
+                                {desc, updated_at}),
+    {Records,
+     RSMOut#rsm_out{first = maybe_integer_to_binary(First),
+                    last = maybe_integer_to_binary(Last)}}.
 
 %%%===================================================================
 %%% Helpers
@@ -154,3 +160,6 @@ conversation_element(E, V) ->
 to_binary(B) when is_binary(B) -> B;
 to_binary(I) when is_integer(I) -> integer_to_binary(I);
 to_binary(A) when is_atom(A) -> atom_to_binary(A, utf8).
+
+maybe_integer_to_binary(undefined) -> undefined;
+maybe_integer_to_binary(I) when is_integer(I) -> integer_to_binary(I).
