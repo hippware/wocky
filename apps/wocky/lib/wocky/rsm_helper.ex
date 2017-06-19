@@ -10,7 +10,11 @@ defmodule Wocky.RSMHelper.Guard do
 end
 
 defmodule Wocky.RSMHelper do
-  @moduledoc ""
+  @moduledoc """
+  This module provides a helper interface to allow RSM queries to be handled
+  entirely by the database, removing the need to retrieve any more records
+  than necessary to satisfy the request.
+  """
 
   use Wocky.Repo.Model
 
@@ -55,6 +59,21 @@ defmodule Wocky.RSMHelper do
     end
   end
 
+  @doc """
+  `rsm_query/4`, takes four parameters:
+
+  * `rsm_in` is an RSM record with the parameters for the query.
+  * `queryable` is an Ecto Queryable.t struct which describes how to retrieve
+    the full set of elements upon which the query is to act (for example, all
+    bots belonging to a given user).
+  * `key_field` is the name of the field upon which the RSM IDs are based.
+  * `sorting` is of the form `{:asc | :desc, sort_field}` and describes how
+    objects within the entire result set are to be sorted.
+
+  The function will compose `queryable` with the extra query options necessary
+  to retrive the RSM set requested, run the query, and return
+  `{objects, rsm_out}`.
+  """
   @spec rsm_query(rsm_in, Ecto.Queryable.t, atom, sorting) ::
     {[struct], rsm_out}
   def rsm_query(rsm_in, queryable, key_field, sorting) do
