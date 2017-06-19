@@ -77,7 +77,7 @@ delete(UserJID = #jid{luser = User}, ID) ->
     {ok, {[published_item()], pub_version(), jlib:rsm_out()}} |
     {ok, {published_item(), pub_version()} | not_found}.
 get(#jid{luser = User}, RSMIn = #rsm_in{}) ->
-    {Results, RSMOut = #rsm_out{first = First, last = Last}} =
+    {Results, RSMOut} =
       ?wocky_rsm_helper:rsm_query(
          RSMIn,
          ?wocky_home_stream_item:with_user(User),
@@ -85,7 +85,7 @@ get(#jid{luser = User}, RSMIn = #rsm_in{}) ->
          {asc, created_at}),
     {ok, {[map_to_item(I) || I <- Results],
           format_version(?wocky_home_stream_item:get_latest_time(User)),
-          RSMOut#rsm_out{first = First, last = Last}}};
+          RSMOut}};
 
 get(#jid{luser = User}, ID) ->
     Item = ?wocky_home_stream_item:get_by_key(User, ID),

@@ -1,5 +1,5 @@
 defmodule Wocky.RSMHelper.Guard do
-  defmacro order_forward(dir, sort_order) do
+  defmacro is_order_forward(dir, sort_order) do
     quote do
       (unquote(dir) == :aft and unquote(sort_order) == :asc) or
       (unquote(dir) == :before and unquote(sort_order) == :desc)
@@ -12,18 +12,39 @@ defmodule Wocky.RSMHelper do
 
   use Wocky.Repo.Model
 
-  require Record
   import Wocky.RSMHelper.Guard
 
-  # FIXME: make this explicit so we're not relying on ejabberd
-  @rsm_hdr "ejabberd/include/jlib.hrl"
+  require Record
 
-  Record.defrecord :rsm_in,  Record.extract(:rsm_in, from_lib: @rsm_hdr)
-  Record.defrecord :rsm_out, Record.extract(:rsm_out, from_lib: @rsm_hdr)
+  alias Wocky.Repo.Timestamp
 
-  @type rsm_in :: record(:rsm_in)
-  @type rsm_out :: record(:rsm_out)
+  Record.defrecord(:rsm_in,
+    max:        :undefined,
+    direction:  :undefined,
+    id:         :undefined,
+    index:      :undefined,
+    reverse:    false)
+
+  Record.defrecord(:rsm_out,
+    count:  0,
+    index:  :undefined,
+    first:  :undefined,
+    last:   :undefined)
+
   @type sorting :: {:asc | :desc, atom}
+  @type direction :: :before | :aft
+  @type rsm_in :: record(:rsm_in,
+                         max:       non_neg_integer | :undefined,
+                         direction: direction | :undefined,
+                         id:        binary | integer | :undefined,
+                         index:     non_neg_integer | :undefined,
+                         reverse:   boolean)
+
+  @type rsm_out :: record(:rsm_out,
+                          count: non_neg_integer,
+                          index: non_neg_integer | :undefined,
+                          first: binary | :undefined,
+                          last:  binary | :undefined)
 
   @spec rsm_query(rsm_in, Ecto.Queryable.t, atom, sorting) ::
     {[struct], rsm_out}
@@ -37,8 +58,8 @@ defmodule Wocky.RSMHelper do
     {maybe_reverse_result(records, rsm_in(rsm_in, :reverse)),
      rsm_out(count: count,
              index: index,
-             first: get_first(records, key_field),
-             last: get_last(records, key_field))
+             first: to_rsm_id(get_first(records, key_field)),
+             last:  to_rsm_id(get_last(records, key_field)))
     }
   end
 
@@ -100,7 +121,7 @@ defmodule Wocky.RSMHelper do
   defp maybe_join_clause(queryable, "", _, _, _), do: queryable
   defp maybe_join_clause(queryable, :undefined, _, _, _), do: queryable
   defp maybe_join_clause(queryable, key, key_field, dir, {sort_order, sort_field})
-  when order_forward(dir, sort_order) do
+  when is_order_forward(dir, sort_order) do
     queryable
     |> join(:inner, [r], p in ^queryable,
             field(p, ^key_field) == ^key and
@@ -114,7 +135,7 @@ defmodule Wocky.RSMHelper do
   end
 
   defp order(query, dir, {sort_order, sort_field})
-  when order_forward(dir, sort_order) do
+  when is_order_forward(dir, sort_order) do
     from r in query, order_by: ^sort_field
   end
   defp order(query, _, {_, sort_field}) do
@@ -131,4 +152,9 @@ defmodule Wocky.RSMHelper do
   defp get_first([r | _], key_field), do: Map.get(r, key_field)
   defp get_last([], _), do: :undefined
   defp get_last(recs, key_field), do: recs |> Enum.at(-1) |> Map.get(key_field)
+
+  defp to_rsm_id(:undefined), do: :undefined
+  defp to_rsm_id(b) when is_binary(b), do: b
+  defp to_rsm_id(i) when is_integer(i), do: Integer.to_string(i)
+  defp to_rsm_id(%DateTime{} = d), do: Timestamp.to_string(d)
 end
