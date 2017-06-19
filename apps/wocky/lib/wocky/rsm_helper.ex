@@ -1,4 +1,6 @@
 defmodule Wocky.RSMHelper.Guard do
+  @moduledoc false
+
   defmacro is_order_forward(dir, sort_order) do
     quote do
       (unquote(dir) == :aft and unquote(sort_order) == :asc) or

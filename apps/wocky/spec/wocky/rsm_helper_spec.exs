@@ -143,7 +143,7 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 0)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
       it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, @count-1).id)
+             should(eq Enum.at(shared.bots, -1).id)
       it do: rsm_out(shared.rsm_out, :last) |>
              should(eq Enum.at(shared.bots, 10).id)
     end
