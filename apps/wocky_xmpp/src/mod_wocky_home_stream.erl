@@ -274,8 +274,6 @@ map_to_item(#{key := Key, updated_at := UpdatedAt,
                     stanza = Stanza,
                     deleted = Deleted}.
 
-format_version(undefined) ->
-    undefined;
 format_version(Time) ->
     ?wocky_timestamp:to_string(Time).
 
