@@ -96,8 +96,10 @@ get_conversations_response(From, IQ = #iq{sub_el = SubEl}) ->
     create_response(IQ, Conversations, RSMOut).
 
 get_conversations(From, RSMIn) ->
-    Conversations = ?wocky_conversation:find(From#jid.luser),
-    rsm_util:filter_with_rsm(Conversations, RSMIn).
+    ?wocky_rsm_helper:rsm_query(RSMIn,
+                                ?wocky_conversation:with_user(From#jid.luser),
+                                id,
+                                {desc, updated_at}).
 
 %%%===================================================================
 %%% Helpers

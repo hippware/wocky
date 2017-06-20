@@ -77,12 +77,14 @@ delete(UserJID = #jid{luser = User}, ID) ->
     {ok, {[published_item()], pub_version(), jlib:rsm_out()}} |
     {ok, {published_item(), pub_version()} | not_found}.
 get(#jid{luser = User}, RSMIn = #rsm_in{}) ->
-    Maps = [I#{id => Key}
-            || I = #{key := Key} <- ?wocky_home_stream_item:get(User)],
-    {Filtered, RSMOut} = rsm_util:filter_with_rsm(Maps, RSMIn),
-    AllItems = [map_to_item(I) || I <- Maps],
-    {ok, {[map_to_item(I) || I <- Filtered],
-          version_from_items(lists:reverse(AllItems)),
+    {Results, RSMOut} =
+      ?wocky_rsm_helper:rsm_query(
+         RSMIn,
+         ?wocky_home_stream_item:with_user(User),
+         key,
+         {asc, created_at}),
+    {ok, {[map_to_item(I) || I <- Results],
+          format_version(?wocky_home_stream_item:get_latest_time(User)),
           RSMOut}};
 
 get(#jid{luser = User}, ID) ->
@@ -274,9 +276,6 @@ map_to_item(#{key := Key, updated_at := UpdatedAt,
 
 format_version(Time) ->
     ?wocky_timestamp:to_string(Time).
-
-version_from_items([]) -> not_found;
-version_from_items([#published_item{version = Version} | _]) -> Version.
 
 maybe_send_catchup(_, undefined) -> ok;
 maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
