@@ -1,13 +1,20 @@
 defmodule Wocky.BotReportSpec do
   use ESpec, async: true
 
+  alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.BotReport
 
   before do
+    Repo.delete_all(Bot)
     user = Factory.insert(:user)
     bots = Factory.insert_list(5, :bot, %{user: user})
-    {:ok, bots: bots}
+    pending = Factory.insert(:bot, %{user: user, pending: true})
+    {:ok,
+      bots: bots,
+      bot_ids: Enum.sort(Enum.map(bots, &Map.get(&1, :id))),
+      pending: pending}
   end
 
   let :line_count, do: length(shared.bots) + 1
@@ -29,6 +36,17 @@ defmodule Wocky.BotReportSpec do
       |> CSV.decode
       |> Enum.to_list
       |> should(have_all fn {x, _} -> x == :ok end)
+    end
+
+    it "should have all the bots except pending ones" do
+      subject()
+      |> String.split("\n")
+      |> CSV.decode!
+      |> Enum.to_list
+      |> tl
+      |> Enum.map(&hd/1)
+      |> Enum.sort
+      |> should(eq shared.bot_ids)
     end
   end
 end

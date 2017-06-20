@@ -55,7 +55,7 @@ defmodule Wocky.BotReport do
 
   defp get_bot_data(since) do
     Bot
-    |> where([b], b.created_at > ^since)
+    |> where([b], b.created_at > ^since and not b.pending)
     |> Repo.stream
     |> Stream.map(&format_bot/1)
     |> CSV.encode
