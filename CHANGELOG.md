@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.20+2404.07f57c0
+
 * Fix a crash on testing when calling geosearch (#764)
 * Reduce the logging threshold for user IQ errors (#769)
 * Change remaining time formats to Z-suffix form (#723)
