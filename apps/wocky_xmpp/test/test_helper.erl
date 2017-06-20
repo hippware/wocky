@@ -65,7 +65,10 @@
 
          set_notifications/2,
 
-         kill_connection/1
+         kill_connection/1,
+
+         check_home_stream_sizes/2,
+         check_home_stream_sizes/3
         ]).
 
 
@@ -530,3 +533,15 @@ kill_connection(#client{module = escalus_tcp, ssl = SSL,
     end,
     %% There might be open zlib streams left...
     catch escalus_connection:stop(Conn).
+
+check_home_stream_sizes(ExpectedSize, Clients) ->
+    check_home_stream_sizes(ExpectedSize, Clients, true).
+check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
+    lists:foreach(
+      fun(Client) ->
+              S = expect_iq_success_u(get_hs_stanza(), Client, Client),
+              I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
+              ExpectedSize =:= 0 orelse not CheckLastContent orelse
+              escalus:assert(is_bot_action(?BOT, _),
+                             hd((lists:last(I))#item.stanzas))
+      end, Clients).

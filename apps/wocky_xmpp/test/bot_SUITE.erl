@@ -20,7 +20,9 @@
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
                       ensure_all_clean/1, hs_query_el/1, hs_node/1,
-                      add_to_s/2, set_notifications/2
+                      add_to_s/2, set_notifications/2,
+                      check_home_stream_sizes/2,
+                      check_home_stream_sizes/3
                      ]).
 
 -export([set_visibility/3, create_field/1]).
@@ -167,11 +169,24 @@ reset_tables(Config) ->
 %%--------------------------------------------------------------------
 
 create(Config) ->
-    escalus:story(Config, [{alice, 1}],
-      fun(Alice) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
         % Successfully create a bot
         Stanza = expect_iq_success(create_stanza(), Alice),
         check_returned_bot(Stanza, expected_create_fields()),
+
+        % No home stream updates should occur for private bots
+        timer:sleep(400),
+        check_home_stream_sizes(0, [Alice, Bob]),
+
+        CreateFields = [{"public", "bool", true} |
+                        lists:keydelete("shortname", 1, default_fields())],
+        expect_iq_success(create_stanza(CreateFields), Alice),
+
+        % Both the creator and their friends and followers should get
+        % HS notifications for public bots:
+        timer:sleep(400),
+        check_home_stream_sizes(1, [Alice, Bob], false),
 
         % Fail due to shortname conflict if we try to create the same bot
         expect_iq_error(create_stanza(), Alice)
@@ -795,7 +810,9 @@ create_field({Name, "geoloc", Value}) ->
     create_field(Name, "geoloc", geoloc_element(Value));
 create_field({Name, "tags", Values}) ->
     create_field(Name, "tags",
-                 [wocky_xml:cdata_el(<<"tag">>, V) || V <- Values]).
+                 [wocky_xml:cdata_el(<<"tag">>, V) || V <- Values]);
+create_field({Name, "bool", Value}) ->
+    create_field(Name, "bool", value_element(atom_to_binary(Value, utf8))).
 
 value_element(Value) ->
     wocky_xml:cdata_el(<<"value">>, Value).
