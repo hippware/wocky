@@ -19,6 +19,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Maintain temporary subscriptions across stream resumption (#776)
 * Use OS environment variables to configure 3rd party libraries (#780)
 * Add geosearch implementation for testing (#782)
+* Refactor RSM queries into common code (#429)
+* Filter pending bots from report (#786)
 
 
 # 2017.6.9+2319.ac1c9e4
