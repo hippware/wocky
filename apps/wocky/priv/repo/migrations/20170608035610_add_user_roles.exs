@@ -3,7 +3,7 @@ defmodule Wocky.Repo.Migrations.AddUserRoles do
 
   def change do
     alter table(:users) do
-      add :roles, {:array, :string}, null: false
+      add :roles, {:array, :string}, null: false, default: []
     end
   end
 end
