@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Bot owners should receive bot creation notification within hs (#744)
+* Fix a function clause crash in PushEventHandler (#791)
+
+
 # 2017.6.20+2404.07f57c0
 
 * Fix a crash on testing when calling geosearch (#764)
