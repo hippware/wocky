@@ -20,7 +20,10 @@ defmodule WockyVersion do
 
   defp git_rev do
     {rev, _} = System.cmd("git", ["rev-parse", "--short", "HEAD"])
-    String.strip(rev)
+    case String.strip(rev) do
+      "" -> "0"
+      str -> str
+    end
   end
 end
 
