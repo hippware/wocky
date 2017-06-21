@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wocky-deployment
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: wocky
+    spec:
+      containers:
+        - name: wocky
+          image: wocky:2
+          ports:
+            - containerPort: 5222
+          args: ["foreground"]
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: WOCKY_HOST
+              value: "localhost"
+            - name: WOCKY_DB_USER
+              value: "postgres"
+            - name: WOCKY_DB_PASS
+              value: "password"
+            - name: WOCKY_DB_NAME
+              value: "wocky_dev"
+            - name: WOCKY_DB_HOST
+              value: "10.0.2.2"
