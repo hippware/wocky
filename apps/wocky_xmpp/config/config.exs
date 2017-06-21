@@ -62,6 +62,9 @@ config :lager,
       module: Wocky.PushNotifier
     ]},
     {{:lager_file_backend, 'notifications.log'}, [
+      module: Wocky.PushEventHandler
+    ]},
+    {{:lager_file_backend, 'notifications.log'}, [
       module: :mod_wocky_notifications
     ]}
   ]
