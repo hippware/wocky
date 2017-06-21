@@ -32,9 +32,17 @@ defmodule Wocky.PushEventHandler do
   end
 
   def handle_event({:error, error, token}, state) do
-    Logger.info "Unknown error for token #{token}: #{inspect error}"
+    Logger.error "Unknown error for token #{token}: #{inspect error}"
     {:ok, state}
   end
 
-  def handle_event({:feedback, _feedback}, state), do: {:ok, state}
+  def handle_event({:feedback, feedback}, state) do
+    Logger.warn "Feedback on push operation: #{inspect feedback}"
+    {:ok, state}
+  end
+
+  def handle_event(event, state) do
+    Logger.error "Unknown push notification event: #{inspect event}"
+    {:ok, state}
+  end
 end
