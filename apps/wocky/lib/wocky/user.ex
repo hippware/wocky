@@ -87,6 +87,7 @@ defmodule Wocky.User do
                     :password, :pass_details]
   @update_fields [:handle, :avatar, :first_name, :last_name,
                   :email, :tagline, :roles]
+  @max_register_retries 5
 
   @doc "Return the list of fields that can be updated on an existing user."
   @spec valid_update_fields :: [binary]
@@ -129,23 +130,46 @@ defmodule Wocky.User do
   @spec register(server, external_id, phone_number) ::
     {:ok, {username, server, boolean}} | no_return
   def register(server, external_id, phone_number) do
-    Repo.transaction(fn ->
-      case Repo.get_by(User, external_id: external_id) do
-        nil ->
-          user =
-            %{username: ID.new,
-              server: server,
-              external_id: external_id,
-              phone_number: phone_number}
-              |> register_changeset()
-              |> Repo.insert!
+    {:ok, do_register(server, external_id, phone_number, 0)}
+  end
 
-          {user.username, user.server, true}
+  # There's scope for a race condition here. Since the database uses "read
+  # committed"
+  # (see https://www.postgresql.org/docs/current/static/transaction-iso.html)
+  # we can't SELECT then INSERT and assume something hasn't been inserted
+  # in the interim, even in a transaction. Thus we implement a retry system
+  # here - if the user was inserted after the SELECT, the next time around it
+  # should work fine (unless it gets deleted in the interim in which case
+  # what the heck is even going on?). Either way, if we fail after 5 retries
+  # there's something seriously weird going on and raising an exception
+  # is a pretty reasonable response.
+  defp do_register(server, external_id, phone_number, @max_register_retries) do
+    raise :max_register_retries
+  end
+  defp do_register(server, external_id, phone_number, retries) do
+    case Repo.get_by(User, external_id: external_id) do
+      nil ->
+        user =
+          %{username: ID.new,
+            server: server,
+            external_id: external_id,
+            phone_number: phone_number}
 
-        user ->
-          {user.username, user.server, false}
-      end
-    end)
+        {result, _} =
+          user
+          |> register_changeset()
+          |> Repo.insert
+
+        case result do
+          :ok ->
+            {user.username, user.server, true}
+          :error ->
+            do_register(server, external_id, phone_number, retries + 1)
+        end
+
+      user ->
+        {user.username, user.server, false}
+    end
   end
 
   def register_changeset(params) do
