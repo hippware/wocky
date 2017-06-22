@@ -194,6 +194,18 @@ defmodule Wocky.UserSpec do
       |> should(have_errors([:handle]))
     end
 
+    context "when there is a pre-existing matching handle regardless of case" do
+      subject do
+        :user
+        |> Factory.insert
+        |> User.changeset(%{handle: String.upcase(shared.user.handle)})
+        |> Repo.update
+      end
+
+      it do: should(be_error_result())
+      it do: subject() |> Kernel.elem(1) |> should(have_errors([:handle]))
+    end
+
     context "avatar validations" do
       context "with invalid data" do
         before do
