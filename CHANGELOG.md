@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.21+2413.14e2b67
+
 * Bot owners should receive bot creation notification within hs (#744)
 * Fix a function clause crash in PushEventHandler (#791)
+* More push notification logging (#797)
 
 
 # 2017.6.20+2404.07f57c0
