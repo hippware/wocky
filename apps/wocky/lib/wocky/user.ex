@@ -274,7 +274,7 @@ defmodule Wocky.User do
     |> validate_change(:email, &validate_email/2)
     |> validate_change(:handle, &validate_handle/2)
     |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
-    |> unique_constraint(:handle)
+    |> unique_constraint(:handle, name: :users_lower_handle_index)
     |> prepare_changes(fn changeset ->
       Avatar.maybe_delete_existing(changeset.changes[:avatar], struct.avatar)
       changeset
