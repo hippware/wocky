@@ -144,7 +144,7 @@ defmodule Wocky.User do
   # there's something seriously weird going on and raising an exception
   # is a pretty reasonable response.
   defp do_register(server, external_id, phone_number, @max_register_retries) do
-    raise :max_register_retries
+    raise "Exceeded maximum register retries"
   end
   defp do_register(server, external_id, phone_number, retries) do
     case Repo.get_by(User, external_id: external_id) do
