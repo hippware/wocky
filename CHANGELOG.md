@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Make user handles unique regardless of case (#794)
+* Work around DB race condition in register operation (#796)
+
+
 # 2017.6.21+2413.14e2b67
 
 * Bot owners should receive bot creation notification within hs (#744)
