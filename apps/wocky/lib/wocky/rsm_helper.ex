@@ -151,13 +151,13 @@ defmodule Wocky.RSMHelper do
   defp maybe_join_clause(queryable, key, key_field, dir, {sort_order, sort_field})
   when is_order_forward(dir, sort_order) do
     queryable
-    |> join(:inner, [r], p in ^queryable,
+    |> join(:inner, [r], p in subquery(queryable),
             field(p, ^key_field) == ^key and
             field(r, ^sort_field) > field(p, ^sort_field))
   end
   defp maybe_join_clause(queryable, key, key_field, _, {_, sort_field}) do
     queryable
-    |> join(:inner, [r], p in ^queryable,
+    |> join(:inner, [r], p in subquery(queryable),
             field(p, ^key_field) == ^key and
             field(r, ^sort_field) < field(p, ^sort_field))
   end

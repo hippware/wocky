@@ -187,6 +187,42 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :first) |> should(be_binary())
       it do: rsm_out(shared.rsm_out, :last) |> should(be_binary())
     end
+
+    context "can be composed with more complex queries" do
+      before do
+        user1 = Factory.insert(:user)
+        user2 = Factory.insert(:user)
+        bots =
+          1..5
+          |> Enum.map(fn(_) ->
+            Factory.insert(:bot, user: user2)
+            bot = Factory.insert(:bot, user: user1)
+            bot.id
+            end)
+
+        query =
+          Bot
+          |> where(user_id: ^user1.id)
+          |> Bot.read_access_filter(user1)
+
+        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(id: Enum.at(bots, 2)), query,
+                                                 :id, {:asc, :created_at})
+
+        {:ok,
+          bots: bots,
+          records: Enum.map(records, &Map.get(&1, :id)),
+          rsm_out: rsm_out}
+      end
+
+      it do: shared.records |>
+             should(eq Enum.slice(shared.bots, 3, 2))
+      it do: rsm_out(shared.rsm_out, :index) |> should(eq 3)
+      it do: rsm_out(shared.rsm_out, :count) |> should(eq 5)
+      it do: rsm_out(shared.rsm_out, :first) |>
+             should(eq Enum.at(shared.bots, 3))
+      it do: rsm_out(shared.rsm_out, :last) |>
+             should(eq Enum.at(shared.bots, -1))
+    end
   end
 
   defp setup_query(shared, rsm_in) do
