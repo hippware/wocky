@@ -401,6 +401,19 @@ retrieve_for_user(Config) ->
         check_returned_bots(Stanza6, ExpectedBots, 3,
                             length(PublicBots)),
 
+        %% Test RSM id functionality
+        %% Bob can only see the subset of bots set to be visible by everyone
+        Stanza7 = expect_iq_success(
+                    retrieve_stanza(?BJID(?ALICE),
+                                    #rsm_in{id = hd(tl(PublicBots)),
+                                            max = 2,
+                                            direction = aft
+                                           }),
+                    Bob),
+        ExpectedBots2 = lists:sublist(PublicBots, 3, 2),
+        check_returned_bots(Stanza7, ExpectedBots2, 2,
+                            length(PublicBots)),
+
         %% When alice publishes to a bot, that bot should become the most
         %% recently updated, moving it to the end of the list:
         PublishBot = lists:nth(10, IDs),
@@ -410,9 +423,9 @@ retrieve_for_user(Config) ->
         publish_item(PublishBot, NoteID, Title, Content, undefined, Alice),
 
         %% Alice can see all her bots with the updated one now at the end
-        Stanza7 = expect_iq_success(
+        Stanza8 = expect_iq_success(
                    retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Alice),
-        check_returned_bots(Stanza7, (IDs -- [PublishBot]) ++ [PublishBot],
+        check_returned_bots(Stanza8, (IDs -- [PublishBot]) ++ [PublishBot],
                             0, ?CREATED_BOTS)
 
       end).

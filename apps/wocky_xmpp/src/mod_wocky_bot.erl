@@ -341,9 +341,8 @@ handle_subscribed(From, _To, IQ) ->
     do([error_m ||
         User <- wocky_bot_util:get_user_from_jid(From),
         RSMIn <- rsm_util:get_rsm(IQ),
-        Bots = ?wocky_user:get_subscriptions(User),
-        {FilteredBots, RSMOut} <- filter_bots_for_user(Bots, User, RSMIn),
-        {ok, users_bots_result(FilteredBots, User, RSMOut)}
+        {SubscribedBots, RSMOut} <- get_subscribed_bots(User, RSMIn),
+        {ok, users_bots_result(SubscribedBots, User, RSMOut)}
        ]).
 
 handle_unsubscribe(From, _To, Attrs) ->
@@ -373,6 +372,12 @@ get_bots_near_location(From, Lat, Lon) ->
                 ?MYLANG, <<"Index search is not configured on this server">>)}
     end.
 
+get_subscribed_bots(User, RSMIn) ->
+    BaseQuery = ?wocky_user:subscribed_bots_query(User),
+    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, User),
+    {ok,
+     ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, {asc, updated_at})}.
+
 make_geosearch_result(Bots) ->
     #xmlel{name = <<"bots">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
@@ -396,19 +401,16 @@ get_bots_for_user(From, IQ, Attrs) ->
         UserJID <- make_jid(UserBin),
         User <- wocky_bot_util:get_user_from_jid(UserJID),
         RSMIn <- rsm_util:get_rsm(IQ),
-        Bots = ?wocky_user:get_owned_bots(User),
         FromUser <- wocky_bot_util:get_user_from_jid(From),
-        {FilteredBots, RSMOut} <- filter_bots_for_user(Bots, FromUser, RSMIn),
+        {FilteredBots, RSMOut} <- get_bots_for_user_rsm(User, FromUser, RSMIn),
         {ok, users_bots_result(FilteredBots, User, RSMOut)}
        ]).
 
-filter_bots_for_user(Bots, User, RSMIn) ->
-    VisibleBots = lists:filter(access_filter(User, _), Bots),
-    {FilteredBots, RSMOut} = rsm_util:filter_with_rsm(VisibleBots, RSMIn),
-    {ok, {FilteredBots, RSMOut}}.
-
-access_filter(Bot, User) ->
-    ok =:= wocky_bot_util:check_access(Bot, User).
+get_bots_for_user_rsm(User, QueryingUser, RSMIn) ->
+    BaseQuery = ?wocky_user:owned_bots_query(User),
+    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, QueryingUser),
+    {ok,
+     ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, {asc, updated_at})}.
 
 users_bots_result(Bots, User, RSMOut) ->
     BotEls = make_bot_els(Bots, User),

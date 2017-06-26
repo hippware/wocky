@@ -200,13 +200,9 @@ defmodule Wocky.User do
   @doc "Returns all bots that the user subscribes to"
   @spec get_subscriptions(t) :: [Bot.t]
   def get_subscriptions(user) do
-    user = Repo.preload(user, [:bots, :subscriptions, :temp_subscriptions])
-
-    [user.bots, user.subscriptions, user.temp_subscriptions]
-    |> List.flatten
-    |> Enum.filter(&(!&1.pending))
-    |> Enum.sort_by(&(&1.updated_at), &Timestamp.less_than_eq?/2)
-    |> Enum.uniq_by(&(&1.id))
+    user
+    |> subscribed_bots_query()
+    |> Repo.all
   end
 
   @spec bot_count(User.t) :: non_neg_integer
@@ -251,8 +247,7 @@ defmodule Wocky.User do
   @spec get_owned_bots(t) :: [Bot.t]
   def get_owned_bots(user) do
     user
-    |> Ecto.assoc(:bots)
-    |> where(pending: false)
+    |> owned_bots_query()
     |> order_by(asc: :updated_at)
     |> Repo.all
   end
@@ -387,5 +382,25 @@ defmodule Wocky.User do
     |> where(username: ^id)
     |> Repo.update_all(pull: [roles: role])
     :ok
+  end
+
+  @spec owned_bots_query(User.t) :: Queryable.t
+  def owned_bots_query(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> where(pending: false)
+  end
+
+  def subscribed_bots_query(user) do
+    Bot
+    |> where(pending: false)
+    |> join(:left, [b], s in Subscription,
+            b.id == s.bot_id and s.user_id == ^user.id)
+    |> join(:left, [b], ts in TempSubscription,
+            b.id == ts.bot_id and ts.user_id == ^user.id)
+    |> where([b, s, ts],
+             b.user_id == ^user.id or
+             not is_nil(s.user_id) or
+             not is_nil(ts.user_id))
   end
 end

@@ -61,7 +61,8 @@ defmodule Wocky.Repo.Factory do
       radius: :rand.uniform(100) * 1000,
       public: false,
       alerts: false,
-      follow_me: false
+      follow_me: false,
+      tags: []
     }
   end
 
