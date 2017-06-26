@@ -199,6 +199,12 @@ new_id(Config) ->
         Result = expect_iq_success(new_id_stanza(), Alice),
         ID = xml:get_path_s(Result, [{elem, <<"new-id">>}, cdata]),
 
+        %% We can't specify an un-allocated ID for creation
+        CreateFields = [{"id", "string", ID} |
+                        lists:keydelete("shortname", 1, default_fields())],
+        expect_iq_error(create_stanza(CreateFields), Bob),
+        expect_iq_success(create_stanza(CreateFields), Alice),
+
         %% Alice can publish to the bot ID
         publish_item(ID, <<"ID">>,
                      <<"title">>, <<"content">>, undefined, Alice),

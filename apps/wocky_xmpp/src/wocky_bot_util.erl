@@ -83,6 +83,9 @@ get_bot(ID) ->
 owner_jid(Bot) ->
     ?wocky_user:to_jid(?wocky_bot:owner(Bot)).
 
+check_owner(NoBot, _) when NoBot =:= nil orelse NoBot =:= undefined -> ok;
+check_owner(BotID, User) when is_binary(BotID) ->
+    check_owner(?wocky_repo:get_by(?wocky_bot, [{id, BotID}]), User);
 check_owner(#{user_id := UserID}, #{id := UserID}) -> ok;
 check_owner(#{user_id := UserID}, #jid{luser = UserID}) -> ok;
 check_owner(#{user_id := UserID}, UserID) -> ok;
