@@ -290,6 +290,7 @@ handle_create(From, Children) ->
     do([error_m ||
         Fields <- get_fields(Children),
         {ID, PendingBot} <- get_id_and_bot(Fields),
+        wocky_bot_util:check_owner(ID, From),
         User <- wocky_bot_util:get_user_from_jid(From),
         Fields2 <- add_server(Fields, Server),
         Fields3 <- add_defaults(Fields2),
