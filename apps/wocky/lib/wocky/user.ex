@@ -15,7 +15,6 @@ defmodule Wocky.User do
   alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
   alias Wocky.RosterItem
   alias Wocky.Token
   alias Wocky.TROS.Metadata, as: TROSMetadata
@@ -143,7 +142,7 @@ defmodule Wocky.User do
   # what the heck is even going on?). Either way, if we fail after 5 retries
   # there's something seriously weird going on and raising an exception
   # is a pretty reasonable response.
-  defp do_register(server, external_id, phone_number, @max_register_retries) do
+  defp do_register(_, _, _, @max_register_retries) do
     raise "Exceeded maximum register retries"
   end
   defp do_register(server, external_id, phone_number, retries) do
