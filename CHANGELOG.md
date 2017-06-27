@@ -7,6 +7,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Make user handles unique regardless of case (#794)
 * Work around DB race condition in register operation (#796)
+* Move bot query RSM filtering to the DB (#785)
+* Add permissions check for creation of bot with preallocated ID (#805)
 
 
 # 2017.6.21+2413.14e2b67
