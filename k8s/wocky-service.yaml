@@ -4,10 +4,26 @@ metadata:
   name: wocky-service
 spec:
   ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
     - port: 5222
       targetPort: 5222
       protocol: TCP
-      name: http
+      name: xmpp
+    - port: 5269
+      targetPort: 5269
+      protocol: TCP
+      name: xmpp-s2s
+    - port: 4369
+      targetPort: 4369
+      protocol: TCP
+      name: epmd
+    - port: 9100
+      targetPort: 9100
+      protocol: TCP
+      name: distribution
   selector:
     app: wocky
   type: LoadBalancer
