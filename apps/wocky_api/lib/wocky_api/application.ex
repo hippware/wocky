@@ -5,7 +5,11 @@ defmodule WockyAPI.Application do
 
   use Application
 
+  alias WockyAPI.LocationAPI
+
   def start(_type, _args) do
+    LocationAPI.start
+
     import Supervisor.Spec, warn: false
 
     # Define workers and child supervisors to be supervised

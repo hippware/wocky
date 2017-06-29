@@ -4,7 +4,6 @@ defmodule WockyAPI.LocationAPI do
   import OK, only: ["~>>": 2]
 
   alias Poison.Parser
-  # alias Wocky.Location
   alias Wocky.Repo
   alias Wocky.Token
   alias Wocky.User
