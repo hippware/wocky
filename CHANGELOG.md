@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.29+2434.e9f14f3
+
 * Make user handles unique regardless of case (#794)
 * Work around DB race condition in register operation (#796)
 * Move bot query RSM filtering to the DB (#785)
