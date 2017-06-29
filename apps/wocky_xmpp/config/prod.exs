@@ -4,13 +4,13 @@ config :wocky_xmpp,
   wocky_env: 'prod'
 
 config :mnesia,
-  dir: 'var/mnesia/${HOSTNAME}'
+  dir: '${HOME}/var/mnesia/${HOSTNAME}'
 
 config :honeybadger,
   environment_name: "${HONEYBADGER_ENV}"
 
 config :lager,
-  log_root: 'var/log/${HOSTNAME}'
+  log_root: '${HOME}/var/log/${HOSTNAME}'
 
 config :exometer,
   mongooseim_report_interval: 300000, # 5 minutes
