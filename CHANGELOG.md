@@ -11,6 +11,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add permissions check for creation of bot with preallocated ID (#805)
 * Fix us1 APNS cert filename (#811)
 * Fix compiler warnings (#808)
+* Re-enable location upload API, revisited (#814)
 
 
 # 2017.6.21+2413.14e2b67
