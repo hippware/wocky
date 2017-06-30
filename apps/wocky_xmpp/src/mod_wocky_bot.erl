@@ -404,7 +404,7 @@ get_bots_for_user(From, IQ, Attrs) ->
         RSMIn <- rsm_util:get_rsm(IQ),
         FromUser <- wocky_bot_util:get_user_from_jid(From),
         {FilteredBots, RSMOut} <- get_bots_for_user_rsm(User, FromUser, RSMIn),
-        {ok, users_bots_result(FilteredBots, User, RSMOut)}
+        {ok, users_bots_result(FilteredBots, FromUser, RSMOut)}
        ]).
 
 get_bots_for_user_rsm(User, QueryingUser, RSMIn) ->
@@ -413,17 +413,17 @@ get_bots_for_user_rsm(User, QueryingUser, RSMIn) ->
     {ok,
      ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, {asc, updated_at})}.
 
-users_bots_result(Bots, User, RSMOut) ->
-    BotEls = make_bot_els(Bots, User),
+users_bots_result(Bots, FromUser, RSMOut) ->
+    BotEls = make_bot_els(Bots, FromUser),
     #xmlel{name = <<"bots">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = BotEls ++ jlib:rsm_encode(RSMOut)}.
 
-make_bot_els(Bots, User) ->
-    lists:map(do_make_bot_els(_, User), Bots).
+make_bot_els(Bots, FromUser) ->
+    lists:map(do_make_bot_els(_, FromUser), Bots).
 
-do_make_bot_els(Bot, User) ->
-    {ok, El} = make_bot_el(Bot, User),
+do_make_bot_els(Bot, FromUser) ->
+    {ok, El} = make_bot_el(Bot, FromUser),
     El.
 
 
@@ -689,19 +689,19 @@ normalise_field(#field{name = <<"alerts">>, value = 0}, Acc) ->
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
-make_bot_el(Bot, User) ->
-    RetFields = make_ret_elements(Bot, User),
+make_bot_el(Bot, FromUser) ->
+    RetFields = make_ret_elements(Bot, FromUser),
     {ok, make_ret_stanza(RetFields)}.
 
-make_ret_elements(Bot, User) ->
-    MetaFields = meta_fields(Bot, User),
+make_ret_elements(Bot, FromUser) ->
+    MetaFields = meta_fields(Bot, FromUser),
     Fields = map_to_fields(Bot),
     encode_fields(Fields ++ MetaFields).
 
-meta_fields(Bot, User) ->
+meta_fields(Bot, FromUser) ->
     Subscribers = ?wocky_bot:subscribers(Bot),
     ImageItems = ?wocky_item:get_image_count(Bot),
-    Subscribed = ?wocky_user:'subscribed?'(User, Bot),
+    Subscribed = ?wocky_user:'subscribed?'(FromUser, Bot),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"image_items">>, int, ImageItems),
      make_field(<<"subscribed">>, bool, Subscribed)
