@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update bot modification time when items are published to them. (#825)
+* Fix: Retrieving bots by user id always returns subscribed bots (#822)
+
+
 # 2017.6.29+2434.e9f14f3
 
 * Make user handles unique regardless of case (#794)
