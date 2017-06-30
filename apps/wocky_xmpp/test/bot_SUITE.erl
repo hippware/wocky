@@ -422,18 +422,31 @@ retrieve_for_user(Config) ->
 
         %% When alice publishes to a bot, that bot should become the most
         %% recently updated, moving it to the end of the list:
-        PublishBot = lists:nth(10, IDs),
+        PublishBot = lists:nth(10, PublicBots),
         NoteID = <<"Note">>,
         Title = <<"Title">>,
         Content = <<"Content">>,
         publish_item(PublishBot, NoteID, Title, Content, undefined, Alice),
 
-        %% Alice can see all her bots with the updated one now at the end
+        %% Bob can see all the public bots with the updated one now at the end
         Stanza8 = expect_iq_success(
-                   retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Alice),
-        check_returned_bots(Stanza8, (IDs -- [PublishBot]) ++ [PublishBot],
-                            0, ?CREATED_BOTS)
-
+                   retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Bob),
+        Bots = check_returned_bots(Stanza8, PublicBots, 0, ?CREATED_BOTS div 2),
+        check_returned_bot(
+          lists:last(Bots -- [lists:last(Bots)]),
+          [{"id",          string, PublishBot},
+           {"title",       string, ?CREATE_TITLE},
+           {"description", string, ?CREATE_DESCRIPTION},
+           {"address",     string, ?CREATE_ADDRESS},
+           {"location",    geoloc, ?CREATE_LOCATION},
+           {"radius",      int,    ?CREATE_RADIUS},
+           {"image",       string, ?CREATE_IMAGE},
+           {"type",        string, ?CREATE_TYPE},
+           {"owner",       jid,    ?BJID(?ALICE)},
+           {"visibility",  int,    ?WOCKY_BOT_VIS_OPEN},
+           {"alerts",      int,    ?WOCKY_BOT_ALERT_DISABLED},
+           {"jid",         jid,    bot_jid(PublishBot)},
+           {"subscribed",  bool,   false}])
       end).
 
 get_subscribed(Config) ->
@@ -911,10 +924,11 @@ expected_geosearch_fields() ->
 
 check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
                    ExpectedFields) ->
-    #xmlel{name = <<"bot">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = Children} = BotStanza,
+    check_returned_bot(BotStanza, ExpectedFields);
+
+check_returned_bot(#xmlel{name = <<"bot">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
+                          children = Children}, ExpectedFields) ->
     check_return_fields(Children, ExpectedFields),
-    % Return the bot ID
     get_id(Children).
 
 check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
@@ -929,7 +943,8 @@ check_returned_bots(#xmlel{name = <<"iq">>, children = [BotsStanza]},
            check_rsm(RSMOut, Total, Index, ExpectedIDs),
            check_ids(ExpectedIDs, Children)
           ])
-      ).
+      ),
+    Children.
 
 check_rsm(#rsm_out{count = 0, index = undefined,
                    first = undefined, last = undefined}, 0, undefined, []) ->

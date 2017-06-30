@@ -2,6 +2,7 @@ defmodule Wocky.Bot.ItemSpec do
   use ESpec, async: true
   use ModelHelpers
 
+  alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo.ID
 
@@ -112,6 +113,12 @@ defmodule Wocky.Bot.ItemSpec do
         it "should create an item" do
           Item.get(shared.bot, shared.new_id) |> should_not(be_nil())
         end
+
+        it "should update the updated_at for the bot" do
+          bot = Repo.get(Bot, shared.bot.id)
+          DateTime.compare(bot.updated_at, shared.bot.updated_at)
+          |> should(eq :gt)
+        end
       end
 
       context "when an item already exists" do
@@ -128,6 +135,12 @@ defmodule Wocky.Bot.ItemSpec do
           item = Item.get(shared.bot, shared.id)
           item.stanza |> should(eq "testing")
           item.image |> should(be_false())
+        end
+
+        it "should update the updated_at for the bot" do
+          bot = Repo.get(Bot, shared.bot.id)
+          DateTime.compare(bot.updated_at, shared.bot.updated_at)
+          |> should(eq :gt)
         end
       end
     end
