@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.6.30+2439.e6f5eda
+
 * Update bot modification time when items are published to them. (#825)
 * Fix: Retrieving bots by user id always returns subscribed bots (#822)
 
