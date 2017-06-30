@@ -39,6 +39,7 @@ pipeline {
 
       steps {
         ansiColor('xterm') {
+          sh "mix test"
           sh "mix espec"
         }
       }
@@ -75,3 +76,4 @@ pipeline {
     }
   }
 }
+

@@ -182,7 +182,7 @@ defmodule Wocky.XMPP.Mixfile do
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
       lint: ["elvis"],
-      "test": ["espec"],
+      "test": [],
       testall: ["espec", &reset/1, "ct"]
     ]
   end
