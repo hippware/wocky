@@ -14,10 +14,10 @@ defmodule Wocky.User.Location do
   require Logger
 
   @foreign_key_type :binary_id
-  @primary_key false
+  @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_locations" do
-    field :user_id,   :binary_id, null: false, primary_key: true
-    field :resource,  :string, null: false, primary_key: true
+    field :user_id,   :binary_id, null: false
+    field :resource,  :string, null: false
     field :lat,       :float, null: false
     field :lon,       :float, null: false
     field :accuracy,  :float
