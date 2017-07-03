@@ -8,6 +8,11 @@ defmodule Wocky.TROS.S3StoreSpec do
 
   @url_re ~r/https:\/\/.*/
 
+  before_all do
+    Application.put_env(:wocky, :tros_s3_secret_key, "1234")
+    Application.put_env(:wocky, :tros_s3_access_key_id, "1234")
+  end
+
   describe "make_download_response/2" do
     before do
       {headers, fields} = S3Store.make_download_response(shared.server, ID.new)
