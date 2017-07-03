@@ -6,6 +6,11 @@ defmodule Wocky.TROS.S3StoreTest do
 
   @test_file "d49ff638-4736-11e7-8017-0e6514633f23"
 
+  setup_all do
+    Application.put_env(:wocky, :tros_s3_secret_key, "1234")
+    Application.put_env(:wocky, :tros_s3_access_key_id, "1234")
+  end
+
   describe "do_delete/2" do
     setup do
       bypass = Bypass.open
