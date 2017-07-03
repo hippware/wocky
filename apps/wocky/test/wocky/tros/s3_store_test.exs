@@ -1,6 +1,7 @@
 defmodule Wocky.TROS.S3StoreTest do
   use ExUnit.Case, async: true
 
+  alias Plug.Conn
   alias Wocky.TROS.S3Store
 
   @test_file "d49ff638-4736-11e7-8017-0e6514633f23"
@@ -20,7 +21,7 @@ defmodule Wocky.TROS.S3StoreTest do
       Bypass.expect(context.bypass,
                     fn conn ->
                       assert "DELETE" == conn.method
-                      Plug.Conn.resp(conn, 204, "")
+                      Conn.resp(conn, 204, "")
                     end)
       {:ok, _} = S3Store.do_delete(context.server, @test_file)
     end
@@ -29,7 +30,7 @@ defmodule Wocky.TROS.S3StoreTest do
       setup_server(context.bypass)
       Bypass.expect(context.bypass,
                     fn conn ->
-                      Plug.Conn.resp(conn, 401, "")
+                      Conn.resp(conn, 401, "")
                     end)
       {:error, _} = S3Store.do_delete(context.server, @test_file)
     end
