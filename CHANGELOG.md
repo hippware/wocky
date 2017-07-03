@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix the primary key on the user_locations table (#826)
+
+
 # 2017.6.30+2439.e6f5eda
 
 * Update bot modification time when items are published to them. (#825)
