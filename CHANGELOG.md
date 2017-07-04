@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Fix the primary key on the user_locations table (#826)
+* Create a database log of push notifications (#793)
 
 
 # 2017.6.30+2439.e6f5eda
