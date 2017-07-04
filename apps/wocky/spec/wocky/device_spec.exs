@@ -16,7 +16,9 @@ defmodule Wocky.DeviceSpec do
       result: result,
       id: user.id,
       resource: resource,
-      token: token}
+      token: token,
+      user: user
+    }
   end
 
   describe "update/4" do
@@ -50,6 +52,21 @@ defmodule Wocky.DeviceSpec do
       data.user_id    |> should(eq shared.id)
       data.resource   |> should(eq shared.resource)
       data.token      |> should_not(eq shared.token)
+    end
+  end
+
+  describe "get/1" do
+    it "should return all devices for a user" do
+      devices = Device.get(shared.user.id)
+      devices |> should(have_length 1)
+      [device] = devices
+      device.user_id |> should(eq shared.user.id)
+      device.token |> should(eq shared.token)
+      device.resource |> should(eq shared.resource)
+    end
+
+    it "should return an empty list if no devices exist for the user" do
+      Device.get(ID.new) |> should(eq [])
     end
   end
 

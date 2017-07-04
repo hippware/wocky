@@ -3,6 +3,7 @@ defmodule Wocky.Device do
 
   use Wocky.Repo.Model
 
+  alias Wocky.Repo
   alias Wocky.User
   alias __MODULE__, as: Device
 
@@ -18,6 +19,13 @@ defmodule Wocky.Device do
 
     belongs_to :user, User, define_field: false
   end
+
+  @type t :: %Device{
+    user_id:  User.id,
+    resource: binary,
+    platform: binary,
+    token:    binary
+  }
 
   @type token :: binary
   @type platform :: binary # :apple | :google
@@ -47,6 +55,13 @@ defmodule Wocky.Device do
 
   def select_token(query) do
     from d in query, select: d.token
+  end
+
+  @spec get(User.id) :: [Device.t]
+  def get(user_id) do
+    Device
+    |> with_user(user_id)
+    |> Repo.all
   end
 
   @doc "Return the endpoint assigned to the specified user and resource."

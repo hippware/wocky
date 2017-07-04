@@ -4,6 +4,7 @@ defmodule Wocky.PushNotifier do
   use Wocky.JID
 
   alias Wocky.Device
+  alias Wocky.NotificationLog
 
   require Logger
 
@@ -39,12 +40,15 @@ defmodule Wocky.PushNotifier do
     user
     |> Device.get_token(resource)
     |> do_push(message)
+    |> maybe_log(user, resource, message)
   end
 
   @spec push_all(JID.t, binary) :: :ok
   def push_all(jid(luser: user), message) do
-    for token <- Device.get_all_tokens(user) do
-      do_push(token, message)
+    for device <- Device.get(user) do
+      device.token
+      |> do_push(message)
+      |> maybe_log(user, device.resource, message)
     end
     :ok
   end
@@ -72,13 +76,17 @@ defmodule Wocky.PushNotifier do
     %{alert: message, badge: 1}
   end
 
-  defp maybe_push(_body, _token, false), do: :ok
+  defp maybe_push(_body, _token, false), do: false
   defp maybe_push(body, token, true) do
     Pushex.push(body, to: token, using: :apns)
-    :ok
   end
 
   defp enabled? do
     Confex.get(:wocky, :enable_push_notifications)
   end
+
+  defp maybe_log(false, _, _, _), do: :ok
+  defp maybe_log(reference, user, resource, message)
+  when is_reference(reference),
+    do: NotificationLog.send(reference, user, resource, message)
 end

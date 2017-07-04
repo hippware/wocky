@@ -4,6 +4,7 @@ defmodule Wocky.PushEventHandler do
   use GenEvent
 
   alias Pushex.APNS.Response
+  alias Wocky.NotificationLog
 
   require Logger
 
@@ -16,17 +17,20 @@ defmodule Wocky.PushEventHandler do
     handle_event({:response, response, request, info}, state)
   end
 
-  def handle_event({:response, %Response{} = response, request, _}, state) do
+  def handle_event({:response, %Response{} = response,
+                   request, {_, reference}}, state) do
     if response.success >= 1 do
       Logger.info """
       Sent notification to device #{request.to} with content \
       #{inspect request.notification}\
       """
+      NotificationLog.result(reference, true)
     else
       Logger.warn """
       Failed to send notification to device #{request.to} with content \
       #{inspect request.notification}: #{inspect response.results}\
       """
+      NotificationLog.result(reference, false, inspect response.results)
     end
     {:ok, state}
   end
