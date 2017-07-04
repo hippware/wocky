@@ -102,13 +102,14 @@ defmodule Wocky.Mixfile do
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
-      {:bypass,      "~> 0.7", only: :test},
+      {:bypass,      "~> 0.7", only: :test, runtime: false},
       # Use this once https://github.com/parroty/exvcr/issues/112 is resolved:
       #{:exvcr,       "~> 0.8", only: :test},
       # Until then, this fork has a fix:
       {:exvcr,
         github: "AgilionApps/exvcr",
-        ref: "452cec8"},
+        ref: "452cec8",
+        runtime: false},
 
       {:credo,       "~> 0.6", only: [:dev, :test], runtime: false},
       {:ex_guard,    "~> 1.1", only: :dev, runtime: false},
