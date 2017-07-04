@@ -29,7 +29,7 @@ defmodule Wocky.TrafficLog do
 
   @type t :: %TrafficLog{
     user_id:    User.id,
-    resource:   JID.resource,
+    resource:   User.resource,
     host:       binary,
     ip:         ip,
     incoming:   boolean,

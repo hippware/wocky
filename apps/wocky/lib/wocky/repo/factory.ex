@@ -18,6 +18,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.HomeStreamItem
+  alias Wocky.NotificationLog
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
   alias Wocky.TrafficLog
@@ -152,6 +153,12 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
+  def notification_log_factory do
+    %NotificationLog{
+      resource: Lorem.word,
+      message: Lorem.sentence
+    }
+  end
 
   defp phone_number do
     "+1555#{Phone.area_code}#{Phone.extension}"
