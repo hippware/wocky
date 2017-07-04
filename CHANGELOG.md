@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.7.4+2445.cd82a75
+
 * Fix the primary key on the user_locations table (#826)
 * Create a database log of push notifications (#793)
 
