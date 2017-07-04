@@ -144,32 +144,53 @@ defmodule Wocky.RosterItem do
   @spec followers(User.id) :: [User.t]
   def followers(user_id) do
     user_id
-    |> get()
-    |> Enum.filter(&is_follower/1)
-    |> Enum.map(&Map.get(&1, :contact))
+    |> followers_query()
+    |> Repo.all
   end
 
   @doc "Gets all users being followed by the user"
   @spec following(User.id) :: [User.t]
   def following(user_id) do
-    RosterItem
-    |> with_contact(user_id)
-    |> with_subscriptions([:both, :from])
-    |> not_blocked()
-    |> preload_user()
+    user_id
+    |> following_query()
     |> Repo.all
-    |> Enum.map(&Map.get(&1, :user))
   end
 
   @spec friends(User.id) :: [User.t]
   def friends(user_id) do
+    user_id
+    |> friends_query()
+    |> Repo.all
+  end
+
+  @spec followers_query(User.id) :: Ecto.queryable
+  def followers_query(user_id) do
+    RosterItem
+    |> with_user(user_id)
+    |> with_subscriptions([:both, :from])
+    |> not_blocked()
+    |> join(:left, [r], u in User, r.contact_id == u.id)
+    |> select([r, u], u)
+  end
+
+  @spec following_query(User.id) :: Ecto.queryable
+  def following_query(user_id) do
+    RosterItem
+    |> with_contact(user_id)
+    |> with_subscriptions([:both, :from])
+    |> not_blocked()
+    |> join(:left, [r], u in User, r.user_id == u.id)
+    |> select([r, u], u)
+  end
+
+  @spec friends_query(User.id) :: Ecto.queryable
+  def friends_query(user_id) do
     RosterItem
     |> with_user(user_id)
     |> with_subscriptions([:both])
     |> not_blocked()
-    |> preload_contact()
-    |> Repo.all
-    |> Enum.map(&Map.get(&1, :contact))
+    |> join(:left, [r], u in User, r.contact_id == u.id)
+    |> select([r, u], u)
   end
 
   @spec is_friend(User.id, User.id) :: boolean
