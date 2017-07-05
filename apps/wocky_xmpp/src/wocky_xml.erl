@@ -6,6 +6,7 @@
 -include_lib("exml/include/exml_stream.hrl").
 
 -export([
+         get_subel_cdata/3,
          get_subel_cdata/2,
          act_on_subel_cdata/3,
          get_subel/2,
@@ -21,6 +22,12 @@
 
 -type error() :: {error, jlib:xmlel()}.
 
+-spec get_subel_cdata(binary(), jlib:xmlel(), binary()) -> {ok, binary()}.
+get_subel_cdata(TagName, Element, Default) ->
+    case get_subel_cdata(TagName, Element) of
+        R = {ok, _} -> R;
+        {error, _} -> {ok, Default}
+    end.
 
 -spec get_subel_cdata(binary(), jlib:xmlel()) -> {ok, binary()} | error().
 get_subel_cdata(TagName, Element) ->
