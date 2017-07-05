@@ -10,7 +10,7 @@
 -include_lib("stdlib/include/assert.hrl").
 -include("test_helper.hrl").
 
--import(test_helper, [expect_iq_success/2, expect_iq_error/2]).
+-import(test_helper, [expect_iq_success/2, expect_iq_error/2, rsm_elem/1]).
 -import(wocky_util, [iq_id/0]).
 
 
@@ -22,6 +22,7 @@ all() ->
     [
      {group, self},
      {group, other},
+     {group, contacts},
      {group, bulk},
      {group, error},
      {group, set},
@@ -40,6 +41,10 @@ groups() ->
                   other_user_mixed_fields,
                   non_existant_user,
                   invalid_user]},
+     {contacts, [], [other_user_friends,
+                     other_user_followers,
+                     other_user_followees
+                    ]},
      {bulk, [], [bulk_get,
                  bulk_get_empty]},
      {error, [], [missing_node,
@@ -86,6 +91,11 @@ init_per_suite(Config) ->
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
+init_per_group(contacts, Config) ->
+    Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
+    ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
+    Contacts = seed_contacts(),
+    Contacts ++ Config2;
 init_per_group(_GroupName, Config) ->
     Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
     ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
@@ -185,6 +195,36 @@ invalid_user(Config) ->
         QueryStanza = get_request(<<"non-uuid-user">>,
                                   [<<"handle">>]),
         expect_iq_error(QueryStanza, Bob)
+    end).
+
+other_user_friends(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        fun_chain:first(
+          ?BOB,
+          contact_request(<<"friend">>, #rsm_in{}),
+          expect_iq_success(Alice),
+          check_returned_contacs(Config, [friend])
+         )
+    end).
+
+other_user_followers(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        fun_chain:first(
+          ?BOB,
+          contact_request(<<"follower">>, #rsm_in{}),
+          expect_iq_success(Alice),
+          check_returned_contacs(Config, [friend, follower])
+         )
+    end).
+
+other_user_followees(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        fun_chain:first(
+          ?BOB,
+          contact_request(<<"following">>, #rsm_in{}),
+          expect_iq_success(Alice),
+          check_returned_contacs(Config, [friend, following])
+         )
     end).
 
 missing_node(Config) ->
@@ -515,12 +555,14 @@ non_uuid_avatar(Config) ->
 %% Helpers
 %%--------------------------------------------------------------------
 
-
 request_wrapper(Type, User, DataFields) ->
+    request_wrapper(Type, Type, User, DataFields).
+
+request_wrapper(IQType, Request, User, DataFields) ->
     #xmlel{name = <<"iq">>,
            attrs = [{<<"id">>, iq_id()},
-                    {<<"type">>, Type}],
-           children = [#xmlel{name = Type,
+                    {<<"type">>, IQType}],
+           children = [#xmlel{name = Request,
                               attrs = [{<<"xmlns">>,
                                         ?NS_USER},
                                        {<<"node">>,
@@ -542,6 +584,11 @@ set_request(User, Fields) ->
                                            [#xmlcdata{content = Value}]}]}
                  || {Var, Type, Value} <- Fields],
     request_wrapper(<<"set">>, User, ReqFields).
+
+contact_request(UserID, Association, RSMIn) ->
+    ReqFields = [wocky_xml:cdata_el(<<"association">>, Association),
+                 rsm_elem(RSMIn)],
+    request_wrapper(<<"get">>, <<"contacts">>, UserID, ReqFields).
 
 invalid_request(User, Fields) ->
     ReqFields = [#xmlel{name = <<"field">>, attrs = [{<<"var">>, F}]}
@@ -602,3 +649,72 @@ has_field(Fields, Field) ->
     lists:any(fun(El = #xmlel{name = <<"field">>}) ->
                       exml_query:path(El, [{attr, <<"var">>}]) =:= FieldBin
               end, Fields).
+
+seed_contacts() ->
+    Friends = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
+    lists:foreach(insert_friend_pair(?BOB, _), ids(Friends)),
+
+    Followers = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
+    lists:foreach(insert_follower_pair(_, ?BOB), ids(Followers)),
+
+    Followees = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
+    lists:foreach(insert_follower_pair(?BOB, _), ids(Followees)),
+
+    [{friend, Friends}, {follower, Followers}, {following, Followees}].
+
+ids(UserList) ->
+    [maps:get(id, U) || U <- UserList].
+
+insert_follower_pair(Follower, Followee) ->
+    insert_roster_pair(Follower, Followee, from, to).
+
+insert_friend_pair(User1, User2) ->
+    insert_roster_pair(User1, User2, both, both).
+
+insert_roster_pair(User1, User2, Dir1, Dir2) ->
+    ?wocky_factory:insert(roster_item,
+                          #{subscription => Dir1,
+                            contact_id => User1,
+                            user_id => User2}),
+    ?wocky_factory:insert(roster_item,
+                          #{subscription => Dir2,
+                            contact_id => User2,
+                            user_id => User1}).
+
+check_returned_contacs(Stanza, Config, Sets) ->
+    Users = lists:flatten([add_associations(proplists:get_value(S, Config), S)
+                           || S <- Sets]),
+    SortedUsers = lists:sort(handle_sort(_, _), Users),
+
+    Contacts = extract_contacts(Stanza),
+    match_contacts(Contacts, SortedUsers).
+
+add_associations(Users, Association) ->
+    lists:map(fun(U) -> U#{association => Association} end, Users).
+
+handle_sort(#{handle := H1}, #{handle := H2}) ->
+    'Elixir.String':downcase(H1) =< 'Elixir.String':downcase(H2).
+
+extract_contacts(#xmlel{name = <<"iq">>,
+                        children = [#xmlel{name = <<"contacts">>,
+                                           children = Children}]}) ->
+    lists:foldl(extract_contact(_, _), [], Children).
+
+extract_contact(#xmlel{name = <<"contact">>, attrs = Attrs}, Acc) ->
+    [#{jid => proplists:get_value(<<"jid">>, Attrs),
+       handle => proplists:get_value(<<"handle">>, Attrs),
+       association => proplists:get_value(<<"association">>, Attrs)}
+     | Acc];
+extract_contact(_, Acc) -> lists:reverse(Acc).
+
+match_contacts([], []) -> ok;
+match_contacts([#{handle := CHandle, jid := CJID,
+                  association := CAssociation} | Contacts],
+               [#{handle := UHandle, id := ID, server := Server,
+                  association := UAssociation} | Users]) ->
+    ?assert(CHandle =:= UHandle),
+    ?assert(CJID =:= jid:to_binary(jid:make(ID, Server, <<>>))),
+    ?assert(CAssociation =:= atom_to_binary(UAssociation, utf8)),
+    match_contacts(Contacts, Users);
+match_contacts(Contacts, Users) ->
+    ct:fail("Failed to match ~p to ~p", [Contacts, Users]).

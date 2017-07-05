@@ -1,6 +1,32 @@
 defmodule Wocky.RosterItem do
   @moduledoc """
   DB interface module for roster items
+
+  NOTE (Because I'm forever messing this up):
+
+  Roster item subscriptions should be read in the following way:
+
+  [contact_id] sends/gets presences [suscription] [user_id]
+
+  eg:
+  %RosterItem{
+    user_id: A
+    contact_id: B
+    subscription: :from
+  }
+
+  reads as: "B gets presences from A" (ie B is a follower of A).
+
+  The corresponding entry for B:
+
+  %RosterItem{
+    user_id: B
+    contact_id: A
+    subscription: :to
+  }
+
+  reads as: "A sends presences to B" (ie A is a followee of B).
+
   """
 
   use Wocky.Repo.Model
@@ -145,14 +171,16 @@ defmodule Wocky.RosterItem do
   def followers(user_id) do
     user_id
     |> followers_query()
+    |> select([u, r], u)
     |> Repo.all
   end
 
   @doc "Gets all users being followed by the user"
-  @spec following(User.id) :: [User.t]
-  def following(user_id) do
+  @spec followees(User.id) :: [User.t]
+  def followees(user_id) do
     user_id
-    |> following_query()
+    |> followees_query()
+    |> select([u, r], u)
     |> Repo.all
   end
 
@@ -160,37 +188,35 @@ defmodule Wocky.RosterItem do
   def friends(user_id) do
     user_id
     |> friends_query()
+    |> select([u, r], u)
     |> Repo.all
   end
 
   @spec followers_query(User.id) :: Ecto.queryable
   def followers_query(user_id) do
-    RosterItem
-    |> with_user(user_id)
+    User
+    |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
+    |> where([u, r], r.user_id == ^user_id)
     |> with_subscriptions([:both, :from])
     |> not_blocked()
-    |> join(:left, [r], u in User, r.contact_id == u.id)
-    |> select([r, u], u)
   end
 
-  @spec following_query(User.id) :: Ecto.queryable
-  def following_query(user_id) do
-    RosterItem
-    |> with_contact(user_id)
+  @spec followees_query(User.id) :: Ecto.queryable
+  def followees_query(user_id) do
+    User
+    |> join(:left, [u], r in RosterItem, u.id == r.user_id)
+    |> where([u, r], r.contact_id == ^user_id)
     |> with_subscriptions([:both, :from])
     |> not_blocked()
-    |> join(:left, [r], u in User, r.user_id == u.id)
-    |> select([r, u], u)
   end
 
   @spec friends_query(User.id) :: Ecto.queryable
   def friends_query(user_id) do
-    RosterItem
-    |> with_user(user_id)
+    User
+    |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
+    |> where([u, r], r.user_id == ^user_id)
     |> with_subscriptions([:both])
     |> not_blocked()
-    |> join(:left, [r], u in User, r.contact_id == u.id)
-    |> select([r, u], u)
   end
 
   @spec is_friend(User.id, User.id) :: boolean
@@ -242,11 +268,11 @@ defmodule Wocky.RosterItem do
   end
 
   defp with_subscriptions(query, sub_types) do
-    from q in query, where: q.subscription in ^sub_types
+    from [u, r] in query, where: r.subscription in ^sub_types
   end
 
   defp not_blocked(query) do
-    from q in query, where: not @blocked_group in q.groups
+    from [u, r] in query, where: not @blocked_group in r.groups
   end
 
   defp with_ask(query, ask) do

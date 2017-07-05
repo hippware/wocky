@@ -78,6 +78,18 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
        make_users_response_iq(IQ)
       )};
 
+handle_request(IQ, _FromJID, _ToJID, get,
+               ReqEl = #xmlel{name = <<"contacts">>}) ->
+    do([error_m ||
+        UserID <- get_user_node(ReqEl),
+        Association <- wocky_xml:get_subel_cdata(
+                         <<"association">>, ReqEl, <<"follower">>),
+        RSMIn <- rsm_util:get_rsm(IQ),
+        AssociationQuery <- get_association_query(Association, UserID),
+        {Contacts, RSMOut} <- do_contacts_query(AssociationQuery, RSMIn),
+        {ok, make_contacts_response_iq(IQ, Contacts, Association, UserID, RSMOut)}
+       ]);
+
 handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
                ReqEl = #xmlel{name = <<"set">>, children = Children}) ->
     do([error_m ||
@@ -207,7 +219,7 @@ fields() ->
      {"followed+size", "int",   public,      read_only,
       fun(#{id := LUser}) ->
               integer_to_binary(
-                length(?wocky_roster_item:following(LUser))) end},
+                length(?wocky_roster_item:followees(LUser))) end},
      {"roles",        "roles",  private,     read_only, make_roles(_)}
     ].
 
@@ -221,6 +233,19 @@ field_accessor(Field) -> element(5, Field).
 %%--------------------------------------------------------------------
 %% GET-specific helpers
 %%--------------------------------------------------------------------
+
+get_association_query(<<"follower">>, UserID) ->
+    {ok, ?wocky_roster_item:followers_query(UserID)};
+get_association_query(<<"following">>, UserID) ->
+    {ok, ?wocky_roster_item:followees_query(UserID)};
+get_association_query(<<"friend">>, UserID) ->
+    {ok, ?wocky_roster_item:friends_query(UserID)};
+get_association_query(_, _) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid association type">>)}.
+
+do_contacts_query(AssociationQuery, RSMIn) ->
+    {ok, ?wocky_rsm_helper:rsm_query(RSMIn, AssociationQuery,
+                                     id, {asc, handle})}.
 
 get_get_req_fields([], []) ->
     {ok, fields()};
@@ -308,6 +333,13 @@ make_users_response_iq(Fields, IQ) ->
           sub_el = #xmlel{name = <<"users">>,
                           children = Fields}}.
 
+make_contacts_response_iq(IQ, Contacts, RequestedAssociation, UserID, RSMOut) ->
+    IQ#iq{type = result,
+          sub_el = #xmlel{name = <<"contacts">>,
+                          children = lists:map(
+                                       make_contact(_, RequestedAssociation, UserID),
+                                       Contacts)
+                                     ++ jlib:rsm_encode(RSMOut)}}.
 
 make_set_response_iq(IQ, User) ->
     IQ#iq{type = result,
@@ -335,6 +367,20 @@ make_roles(#{roles := Roles}) ->
     {non_default,
      #xmlel{name = <<"roles">>,
             children = lists:map(wocky_xml:cdata_el(<<"role">>, _), Roles)}}.
+
+make_contact(#{id := UserID, server := Server, handle := Handle},
+             RequestedAssociation, TargetID) ->
+    #xmlel{name = <<"contact">>,
+           attrs = [{<<"jid">>, jid:to_binary(jid:make(UserID, Server, <<>>))},
+                    {<<"handle">>, Handle},
+                    {<<"association">>,
+                     association(UserID, TargetID, RequestedAssociation)}]}.
+
+association(UserID, TargetID, RequestedAssociation) ->
+    case ?wocky_roster_item:is_friend(UserID, TargetID) of
+        true -> <<"friend">>;
+        false -> RequestedAssociation
+    end.
 
 handle_fields_error({ok, XML}) ->
     XML;
