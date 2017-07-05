@@ -87,7 +87,8 @@ handle_request(IQ, _FromJID, _ToJID, get,
         RSMIn <- rsm_util:get_rsm(IQ),
         AssociationQuery <- get_association_query(Association, UserID),
         {Contacts, RSMOut} <- do_contacts_query(AssociationQuery, RSMIn),
-        {ok, make_contacts_response_iq(IQ, Contacts, Association, UserID, RSMOut)}
+        {ok, make_contacts_response_iq(
+               IQ, Contacts, Association, UserID, RSMOut)}
        ]);
 
 handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
@@ -335,11 +336,11 @@ make_users_response_iq(Fields, IQ) ->
 
 make_contacts_response_iq(IQ, Contacts, RequestedAssociation, UserID, RSMOut) ->
     IQ#iq{type = result,
-          sub_el = #xmlel{name = <<"contacts">>,
-                          children = lists:map(
-                                       make_contact(_, RequestedAssociation, UserID),
-                                       Contacts)
-                                     ++ jlib:rsm_encode(RSMOut)}}.
+          sub_el = #xmlel{
+                      name = <<"contacts">>,
+                      children = make_contacts(
+                                   Contacts, RequestedAssociation, UserID)
+                                 ++ jlib:rsm_encode(RSMOut)}}.
 
 make_set_response_iq(IQ, User) ->
     IQ#iq{type = result,
@@ -367,6 +368,9 @@ make_roles(#{roles := Roles}) ->
     {non_default,
      #xmlel{name = <<"roles">>,
             children = lists:map(wocky_xml:cdata_el(<<"role">>, _), Roles)}}.
+
+make_contacts(Contacts, RequestedAssociation, UserID) ->
+    lists:map(make_contact(_, RequestedAssociation, UserID), Contacts).
 
 make_contact(#{id := UserID, server := Server, handle := Handle},
              RequestedAssociation, TargetID) ->
