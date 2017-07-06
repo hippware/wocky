@@ -28,7 +28,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
   defp with_geoloc(data), do: data
 
   defp do_update_object(object, index) do
-     Algolia.partial_update_objects(index, [object])
+    Algolia.partial_update_objects(index, [object])
     :ok
   end
 

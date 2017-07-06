@@ -15,7 +15,11 @@ defmodule Wocky.Mixfile do
      preferred_cli_env: [
        espec: :test,
        coveralls: :test,
-       "coveralls.html": :test
+       "coveralls.html": :test,
+       vcr: :test,
+       "vcr.delete": :test,
+       "vcr.check": :test,
+       "vcr.show": :test
      ],
      elvis_config: [%{src_dirs: [], rules: []}],
      aliases: aliases(),
@@ -63,7 +67,7 @@ defmodule Wocky.Mixfile do
       {:configparser_ex,      "~> 1.0", override: true},
       {:sweet_xml,            "~> 0.6.5"},
       {:hackney,              "~> 1.7", override: true},
-      {:exjsx,                "~> 3.2", override: true},
+      {:exjsx,                "~> 3.2.0", override: true},
       {:algolia,              "~> 0.6"},
       {:geocalc,              "~> 0.5.3"},
       {:gen_stage,            "~> 0.11"},
@@ -98,6 +102,15 @@ defmodule Wocky.Mixfile do
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
+      {:bypass,      "~> 0.7", only: :test, runtime: false},
+      # Use this once https://github.com/parroty/exvcr/issues/112 is resolved:
+      #{:exvcr,       "~> 0.8", only: :test},
+      # Until then, this fork has a fix:
+      {:exvcr,
+        github: "AgilionApps/exvcr",
+        ref: "452cec8",
+        runtime: false},
+
       {:credo,       "~> 0.6", only: [:dev, :test], runtime: false},
       {:ex_guard,    "~> 1.1", only: :dev, runtime: false},
       {:reprise,     "~> 0.5", only: :dev}
@@ -110,7 +123,6 @@ defmodule Wocky.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "espec": ["ecto.create --quiet", "ecto.migrate", "espec"],
-      "test": ["espec"]
     ]
   end
 end

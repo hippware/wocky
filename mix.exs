@@ -37,6 +37,7 @@ defmodule Wocky.Release.Mixfile do
       {:dialyxir,   "~> 0.5", only: [:dev, :test], runtime: false},
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
+      {:idna,        "~> 5.0", override: true},
       {:mix_ct,
         github: "hippware/mix_ct",
         branch: "master",

@@ -1,0 +1,76 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "X-Algolia-API-Key": "ffd47f99438c5dfe778a307d9a58e29a",
+        "X-Algolia-Application-Id": "765J3YW5XN"
+      },
+      "method": "delete",
+      "options": {
+        "with_body": "true",
+        "connect_timeout": 3000,
+        "recv_timeout": 30000,
+        "ssl_options": {
+          "versions": [
+            "tlsv1.2"
+          ]
+        }
+      },
+      "request_body": "",
+      "url": "https://765J3YW5XN.algolia.net/1/indexes/test_wocky_bots/9992ad9e-5c9c-11e7-be21-8bd16ebc6dce"
+    },
+    "response": {
+      "body": "{\"deletedAt\":\"2017-06-30T06:56:37.700Z\",\"taskID\":9106032142,\"objectID\":\"9992ad9e-5c9c-11e7-be21-8bd16ebc6dce\"}",
+      "headers": {
+        "Server": "nginx",
+        "Date": "Fri, 30 Jun 2017 06:56:37 GMT",
+        "Content-Type": "application/json; charset=UTF-8",
+        "Content-Length": "110",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-cache",
+        "Content-Disposition": "inline; filename=a.txt"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  },
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "X-Algolia-API-Key": "ffd47f99438c5dfe778a307d9a58e29a",
+        "X-Algolia-Application-Id": "765J3YW5XN"
+      },
+      "method": "get",
+      "options": {
+        "with_body": "true",
+        "connect_timeout": 3000,
+        "recv_timeout": 30000,
+        "ssl_options": {
+          "versions": [
+            "tlsv1.2"
+          ]
+        }
+      },
+      "request_body": "",
+      "url": "https://765J3YW5XN-dsn.algolia.net/1/indexes/test_wocky_bots?query=&aroundLatLng=1.0,2.0&getRankingInfo=true"
+    },
+    "response": {
+      "body": "{\"hits\":[{\"title\":\"title1\",\"server\":\"localhost\",\"radius\":1000,\"public\":true,\"lon\":2.0,\"lat\":1.0,\"image\":\"image1\",\"_geoloc\":{\"lng\":2.0,\"lat\":1.0},\"objectID\":\"92ec75ce-5c9c-11e7-a6fc-6bc2ef6cf59f\",\"_highlightResult\":{\"title\":{\"value\":\"title1\",\"matchLevel\":\"none\",\"matchedWords\":[]},\"server\":{\"value\":\"localhost\",\"matchLevel\":\"none\",\"matchedWords\":[]},\"image\":{\"value\":\"image1\",\"matchLevel\":\"none\",\"matchedWords\":[]}},\"_rankingInfo\":{\"nbTypos\":0,\"firstMatchedWord\":0,\"proximityDistance\":0,\"userScore\":0,\"geoDistance\":0,\"geoPrecision\":1,\"nbExactWords\":0,\"words\":0,\"filters\":0,\"matchedGeoLocation\":{\"lat\":1,\"lng\":2,\"distance\":0}}}],\"nbHits\":1,\"page\":0,\"nbPages\":1,\"hitsPerPage\":20,\"processingTimeMS\":1,\"exhaustiveNbHits\":true,\"query\":\"\",\"params\":\"query=&aroundLatLng=1.0,2.0&getRankingInfo=true\",\"automaticRadius\":\"10121593\",\"serverUsed\":\"c1-sydney-1.algolia.net\",\"parsedQuery\":\"\",\"timeoutCounts\":false,\"timeoutHits\":false}\n",
+      "headers": {
+        "Server": "nginx",
+        "Date": "Fri, 30 Jun 2017 06:56:52 GMT",
+        "Content-Type": "application/json; charset=UTF-8",
+        "Content-Length": "919",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-cache",
+        "Content-Disposition": "inline; filename=a.txt"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

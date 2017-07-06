@@ -75,13 +75,12 @@ defmodule Wocky.TROS.S3Store do
      {@amz_content_type, Map.get(metadata, @amz_content_type)}
     ]
 
-    config = Config.new(:s3, [access_key_id: access_key_id(),
-                              secret_access_key: secret_key()])
 
     url =
       "https://#{upload_bucket()}.s3.amazonaws.com/#{path(lserver, file_id)}"
 
-    {:ok, ret_headers} = Auth.headers(:put, url, :s3, config, headers, nil)
+    {:ok, ret_headers} = Auth.headers(:put, url, :s3,
+                                      make_config(), headers, nil)
 
     resp_fields = resp_fields(:put, url, reference_url)
 
@@ -97,16 +96,14 @@ defmodule Wocky.TROS.S3Store do
   end
 
   defp s3_url(server, bucket, file_id, method, url_params) do
-    config = Config.new(:s3, [access_key_id: access_key_id(),
-                              secret_access_key: secret_key()])
-
     options = [
       expires_in: @link_expiry,
       virtual_host: false,
       query_params: url_params
+
     ]
 
-    {:ok, url} = S3.presigned_url(config, method, bucket,
+    {:ok, url} = S3.presigned_url(make_config(), method, bucket,
                                   path(server, file_id), options)
 
     url
@@ -134,4 +131,19 @@ defmodule Wocky.TROS.S3Store do
   end
 
   defp do_hash(str), do: :crypto.hash(:md5, str)
+
+  defp make_config do
+    config_opts = Keyword.merge([access_key_id: access_key_id(),
+                                 secret_access_key: secret_key()],
+                                 maybe_override_host())
+    Config.new(:s3, config_opts)
+  end
+
+  defp maybe_override_host do
+    case get_opt(:s3_host_override) do
+      nil -> []
+      host -> [scheme: "http://", host: host]
+    end
+  end
+
 end
