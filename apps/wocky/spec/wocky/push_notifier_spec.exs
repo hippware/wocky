@@ -92,6 +92,21 @@ defmodule Wocky.PushNotifierSpec do
       end
     end
 
+    context "with a long message" do
+      before do
+        result = PushNotifier.push(shared.jid, Faker.Lorem.paragraph(100))
+        {:ok, result: result}
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should send a push notification" do
+        assert_receive {{:ok, _response}, _request, _ref}
+      end
+    end
+
     context "on failure" do
       before do
         result = PushNotifier.push(shared.jid, "error")
