@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add an operation to retrieve any user's followers and followees (#829)
+
+
 # 2017.7.4+2445.cd82a75
 
 * Fix the primary key on the user_locations table (#826)
