@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Add an operation to retrieve any user's followers and followees (#829)
+* Remove limit on message size for notification log (#834)
+* Write integration tests for SNS, S3 and Algolia (#207)
 
 
 # 2017.7.4+2445.cd82a75
