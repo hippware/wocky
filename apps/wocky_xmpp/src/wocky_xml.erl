@@ -15,7 +15,6 @@
          check_namespace/2,
          check_attr/3,
          get_attr/2,
-         get_sub_el/2,
          parse_multiple/1,
          cdata_el/2
         ]).
@@ -38,7 +37,7 @@ get_subel_cdata(TagName, Element) ->
 act_on_subel_cdata(TagName, Element, Fun) ->
     Fun(act_on_subel(TagName, Element, fun xml:get_tag_cdata/1)).
 
--spec get_subel(binary(), jlib:xmlel()) -> {ok, binary()} | error().
+-spec get_subel(binary(), jlib:xmlel()) -> {ok, jlib:xmlel()} | error().
 get_subel(TagName, Element) ->
     act_on_subel(TagName, Element, id_pass_error(_)).
 
@@ -90,8 +89,17 @@ check_attr(Attr, Value, #xmlel{attrs = Attrs}) ->
                                         Attr/binary>>)}
     end.
 
--spec get_attr(binary(), [exml:attr()]) -> {ok, binary()} | error().
-get_attr(AttrName, Attrs) ->
+-spec get_attr(binary() | [binary()], [exml:attr()])
+-> {ok, binary()} | error().
+
+get_attr([AttrName|Rest], Attrs) ->
+    case get_attr(AttrName, Attrs) of
+        {ok, Val} -> {ok, Val};
+        Error when Rest =:= [] -> Error;
+        _ -> get_attr(Rest, Attrs)
+    end;
+
+get_attr(AttrName, Attrs) when is_binary(AttrName) ->
     case xml:get_attr(AttrName, Attrs) of
         {value, Val} ->
             {ok, Val};
@@ -99,15 +107,6 @@ get_attr(AttrName, Attrs) ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG,
                                       <<"Missing ", AttrName/binary,
                                         " attribute">>)}
-    end.
-
--spec get_sub_el(binary(), jlib:xmlel()) ->
-    {error, jlib:xmlel()} | {ok, jlib:xmlel()}.
-get_sub_el(Name, El) ->
-    case xml:get_path_s(El, [{elem, Name}]) of
-        <<>> -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Missing '", Name/binary,
-                                                     "' element">>)};
-        SubEl -> {ok, SubEl}
     end.
 
 %% Same as exml:parse except it can handle cases with multiple top-level

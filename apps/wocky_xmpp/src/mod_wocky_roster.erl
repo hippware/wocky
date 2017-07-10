@@ -451,9 +451,9 @@ filter_local_packet_hook(Other) -> Other.
 handle_local_packet(_From, To, Packet) ->
     do([error_m ||
         check_headline(Packet),
-        UserChanged <- wocky_xml:get_sub_el(<<"user-changed">>, Packet),
+        UserChanged <- wocky_xml:get_subel(<<"user-changed">>, Packet),
         wocky_xml:check_namespace(?NS_USER, UserChanged),
-        #xmlel{attrs = Attrs} <- wocky_xml:get_sub_el(<<"item">>, UserChanged),
+        #xmlel{attrs = Attrs} <- wocky_xml:get_subel(<<"item">>, UserChanged),
         JID <- wocky_xml:get_attr(<<"jid">>, Attrs),
         send_update(To, JID)
        ]).

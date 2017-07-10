@@ -37,9 +37,9 @@ query_images(Bot, IQ) ->
 
 publish(Bot, To, SubEl) ->
     do([error_m ||
-           Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
+           Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
-           Entry <- wocky_xml:get_sub_el(<<"entry">>, Item),
+           Entry <- wocky_xml:get_subel(<<"entry">>, Item),
            wocky_xml:check_namespace(?NS_ATOM, Entry),
            publish_item(To, Bot, ItemID, Entry),
            {ok, []}
@@ -47,7 +47,7 @@ publish(Bot, To, SubEl) ->
 
 retract(Bot, To, SubEl) ->
     do([error_m ||
-           Item <- wocky_xml:get_sub_el(<<"item">>, SubEl),
+           Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            retract_item(To, Bot, ItemID),
            {ok, []}
