@@ -57,6 +57,7 @@
   "fun_chain": {:git, "https://github.com/sasa1977/fun_chain.git", "e6eede57b74e7588f7aadcf21602023a21c18910", [branch: "master"]},
   "fusco": {:git, "https://github.com/esl/fusco", "0c2442b236e99b2564e35a76c7e86168917c052e", [branch: "master"]},
   "gen_stage": {:hex, :gen_stage, "0.11.0", "943bdfa85c75fa624e0a36a9d135baad20a523be040178f5a215444b45c66ea4", [:mix], [], "hexpm"},
+  "geo": {:hex, :geo, "1.5.0", "14301aae05bc9124f36b3726e028830477d2ee6b397b7a00b98eca3da06de193", [:mix], [{:ecto, "~> 2.1", [hex: :ecto, repo: "hexpm", optional: true]}, {:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.13", [hex: :postgrex, repo: "hexpm", optional: true]}], "hexpm"},
   "geocalc": {:hex, :geocalc, "0.5.4", "2812b33ed5519636848584805a629acc0687eb8cd34d38b9f19aaecc0b58307a", [:mix], [], "hexpm"},
   "gettext": {:hex, :gettext, "0.13.1", "5e0daf4e7636d771c4c71ad5f3f53ba09a9ae5c250e1ab9c42ba9edccc476263", [:mix], [], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},

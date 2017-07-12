@@ -7,6 +7,7 @@ defmodule Wocky.BotSpec do
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
   alias Wocky.Index.TestIndexer
+  alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
@@ -58,7 +59,8 @@ defmodule Wocky.BotSpec do
   describe "validations" do
     let :attrs do
       %{id: ID.new, server: "localhost", user_id: ID.new,
-        title: "test bot", lat: 1.0, lon: 1.0, radius: 1000}
+        title: "test bot", location: GeoUtils.point(5.0, 5.0),
+        radius: 1000}
     end
 
     it "should pass with valid attributes" do
@@ -77,18 +79,6 @@ defmodule Wocky.BotSpec do
       %Bot{}
       |> Bot.changeset(Map.put(attrs(), :radius, -1))
       |> should(have_errors [:radius])
-    end
-
-    it "should normalize latitude" do
-      attrs = Map.put(attrs(), :lat, -95.0)
-      changeset = Bot.changeset(%Bot{}, attrs)
-      changeset.changes.lat |> should(eq 85.0)
-    end
-
-    it "should normalize longitude" do
-      attrs = Map.put(attrs(), :lon, -185.0)
-      changeset = Bot.changeset(%Bot{}, attrs)
-      changeset.changes.lon |> should(eq 175.0)
     end
 
     it "should set pending to 'false'" do
@@ -170,6 +160,15 @@ defmodule Wocky.BotSpec do
           TestIndexer.get_index_operations |> should_not(be_empty())
         end
       end
+
+      context "out of range location" do
+        it "should normalize latitude and longitude" do
+          {:ok, %Bot{id: id}} =
+            Bot.update(bot(), %{location: GeoUtils.point(-185, -95.0)})
+          Repo.get(Bot, id).location |> should(eq GeoUtils.point(175, -85))
+        end
+      end
+
     end
 
     describe "delete/1" do

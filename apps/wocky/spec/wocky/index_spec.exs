@@ -2,6 +2,7 @@ defmodule Wocky.IndexSpec do
   use ESpec, async: false
 
   alias Ecto.Adapters.SQL.Sandbox
+  alias Wocky.Bot
   alias Wocky.Index
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
@@ -21,7 +22,7 @@ defmodule Wocky.IndexSpec do
 
       bots = Factory.insert_list(100, :bot)
       bot = hd(bots)
-      result = Index.geosearch(bot.lat, bot.lon)
+      result = Index.geosearch(Bot.lat(bot), Bot.lon(bot))
 
       {:ok, bot: bot, result: result}
     end
