@@ -213,4 +213,12 @@ defmodule Wocky.Bot do
     |> join(:left, [b], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
     |> where([b, s], b.user_id == ^user.id or b.public or not is_nil(s.user_id))
   end
+
+  @spec bump_update_time(Bot.t) :: :ok
+  def bump_update_time(bot) do
+    bot
+    |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
+    |> Repo.update!
+    :ok
+  end
 end

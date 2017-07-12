@@ -66,10 +66,7 @@ defmodule Wocky.Bot.Item do
     |> changeset(%{id: id, bot_id: bot.id, stanza: stanza, image: image?})
     |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:id, :bot_id])
 
-    bot
-    |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
-    |> Repo.update!
-    :ok
+    Bot.bump_update_time(bot)
   end
 
   @spec publish(Bot.t, id, binary, boolean) :: {:ok, t}

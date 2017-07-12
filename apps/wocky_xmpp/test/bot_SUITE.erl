@@ -71,6 +71,7 @@ all() ->
      errors,
      retrieve_for_user,
      get_subscribed,
+     sorting,
      publish_item,
      retract_item,
      edit_item,
@@ -467,6 +468,65 @@ get_subscribed(Config) ->
         Stanza3 = expect_iq_success(subscribed_stanza(#rsm_in{}), Bob),
         check_returned_bots(Stanza3, [], undefined, 0)
       end).
+
+sorting(Config) ->
+    AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
+    ?wocky_repo:delete_all(?wocky_bot),
+    Bots = lists:map(
+      fun(_) ->
+              ?wocky_factory:insert(bot, #{user => AliceUser, shortname => nil})
+      end,
+      lists:seq(1, 10)),
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        % Simple ascending order on title
+        Stanza = expect_iq_success(
+                   retrieve_stanza(?BJID(?ALICE), <<"asc">>,
+                                   <<"lexicographic">>, #rsm_in{}),
+                   Alice),
+
+        IDsByTitle = sort_bot_ids(Bots, title),
+        check_returned_bots(Stanza, IDsByTitle, 0, 10),
+
+        % Reverse sort order on title, subset by index
+        Stanza2 = expect_iq_success(
+                    retrieve_stanza(?BJID(?ALICE), <<"desc">>,
+                                    <<"lexicographic">>,
+                                    #rsm_in{index = 5, max = 4}),
+                    Alice),
+
+        ReverseTitleSubset = lists:sublist(lists:reverse(IDsByTitle), 6, 4),
+        check_returned_bots(Stanza2, ReverseTitleSubset, 5, 10),
+
+        % Ascending by creation time, subset by ID
+        IDsByCreated = sort_bot_ids(Bots, created_at),
+        Stanza3 = expect_iq_success(
+                    subscribed_stanza(<<"asc">>, <<"created">>,
+                                      #rsm_in{id = lists:nth(3, IDsByCreated),
+                                              direction = aft}),
+                    Alice),
+
+        AscCreationSubset = lists:sublist(IDsByCreated, 4, 10),
+        check_returned_bots(Stanza3, AscCreationSubset, 3, 10),
+
+        % Descending by update time - first bot should be the just-updated one
+        UpdatedBot = lists:nth(5, Bots),
+        ?wocky_bot:bump_update_time(UpdatedBot),
+        Stanza4 = expect_iq_success(
+                    retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"updated">>,
+                                    #rsm_in{index = 0, max = 1}),
+                    Alice),
+        check_returned_bots(Stanza4, [maps:get(id, UpdatedBot)], 0, 10),
+
+        % Invalid sorting options
+        expect_iq_error(
+          retrieve_stanza(?BJID(?ALICE), <<"desk">>, <<"updated">>, #rsm_in{}),
+          Alice),
+        expect_iq_error(
+          retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"title">>, #rsm_in{}),
+          Alice)
+      end).
+
 
 publish_item(Config) ->
     reset_tables(Config),
@@ -1076,6 +1136,13 @@ is_field(Name, Type, #xmlel{attrs = Attrs}) ->
     xml:get_attr(<<"var">>, Attrs) =:= {value, Name} andalso
     xml:get_attr(<<"type">>, Attrs) =:= {value, Type}.
 
+retrieve_stanza(User, Dir, Field, RSM) ->
+    test_helper:iq_get(?NS_BOT,
+                       #xmlel{name = <<"bot">>,
+                              children = [owner_elem(User),
+                                          sort_elem(Dir, Field),
+                                          rsm_elem(RSM)]}).
+
 retrieve_stanza(User, RSM) ->
     test_helper:iq_get(?NS_BOT,
                        #xmlel{name = <<"bot">>,
@@ -1088,9 +1155,21 @@ retrieve_stanza() ->
 retrieve_stanza(BotID) ->
     test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
 
+subscribed_stanza(Dir, Field, RSM) ->
+    test_helper:iq_get(?NS_BOT, #xmlel{name = <<"subscribed">>,
+                                       children = [sort_elem(Dir, Field),
+                                                   rsm_elem(RSM)]}).
+
 subscribed_stanza(RSM) ->
     test_helper:iq_get(?NS_BOT, #xmlel{name = <<"subscribed">>,
                                        children = [rsm_elem(RSM)]}).
+
+owner_elem(User) ->
+    #xmlel{name = <<"owner">>, attrs = [{<<"jid">>, User}]}.
+
+sort_elem(Dir, Field) ->
+    #xmlel{name = <<"sort">>,
+           attrs = [{<<"direction">>, Dir}, {<<"by">>, Field}]}.
 
 bot_jid(ID) ->
     jid:to_binary(jid:make(<<>>, ?SERVER, bot_node(ID))).
@@ -1430,3 +1509,17 @@ geosearch_stanza() ->
                        {<<"lon">>, float_to_binary(?BOT_LON)}
                      ]},
     test_helper:iq_get(?NS_BOT, QueryEl).
+
+sort_bot_ids(Bots, Field) when Field =:= <<"created_at">>;
+                               Field =:= <<"updated_at">> ->
+    Sorted = lists:sort(fun(A, B) ->
+                                ?datetime:compare(
+                                   maps:get(Field, A), maps:get(Field, B)
+                                  ) =/= gt
+                        end, Bots),
+    lists:map(maps:get(id, _), Sorted);
+sort_bot_ids(Bots, Field) ->
+    Sorted = lists:sort(fun(A, B) ->
+                                maps:get(Field, A) =< maps:get(Field, B)
+                        end, Bots),
+    lists:map(maps:get(id, _), Sorted).

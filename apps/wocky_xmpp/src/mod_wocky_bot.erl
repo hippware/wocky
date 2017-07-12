@@ -42,6 +42,7 @@
 
 -define(PACKET_FILTER_PRIORITY, 40).
 
+-define(DEFAULT_SORTING, {asc, updated_at}).
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -106,16 +107,23 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
   %% The documentation is inconsistent, so to avoid breaking anything, we will
   %% accept either.
   when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
-    case wocky_bot_util:get_id_from_node(Attrs) of
-        {ok, _ID} -> handle_access_action(get_bot, From, To, Attrs, IQ);
-        {error, _} ->
-            case get_location_from_attrs(Attrs) of
-                {ok, {Lat, Lon}} ->
-                    get_bots_near_location(From, Lat, Lon);
+    Node = wocky_bot_util:get_id_from_node(Attrs),
+    Location = get_location_from_attrs(Attrs),
+    User = wocky_xml:get_attr(<<"user">>, Attrs),
+    Owner = wocky_xml:act_on_subel(<<"owner">>, IQ#iq.sub_el,
+                                   wocky_xml:get_attr(<<"jid">>, _)),
 
-                {error, _} ->
-                    get_bots_for_user(From, IQ, Attrs)
-            end
+    case {Node, Location, User, Owner} of
+        {{ok, _Bot}, _, _, _} ->
+            handle_access_action(get_bot, From, To, Attrs, IQ);
+        {_, {ok, {Lat, Lon}}, _, _} ->
+            get_bots_near_location(From, Lat, Lon);
+        {_, _, {ok, UserBin}, _} ->
+            get_bots_for_owner(From, IQ, UserBin);
+        {_, _, _, {ok, OwnerBin}} ->
+            get_bots_for_owner(From, IQ, OwnerBin);
+        _ ->
+            {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot request">>)}
     end;
 
 % Retrieve subscribed bots
@@ -342,7 +350,8 @@ handle_subscribed(From, _To, IQ) ->
     do([error_m ||
         User <- wocky_bot_util:get_user_from_jid(From),
         RSMIn <- rsm_util:get_rsm(IQ),
-        {SubscribedBots, RSMOut} <- get_subscribed_bots(User, RSMIn),
+        Sorting <- get_sorting(IQ),
+        {SubscribedBots, RSMOut} <- get_subscribed_bots(User, Sorting, RSMIn),
         {ok, users_bots_result(SubscribedBots, User, RSMOut)}
        ]).
 
@@ -373,11 +382,11 @@ get_bots_near_location(From, Lat, Lon) ->
                 ?MYLANG, <<"Index search is not configured on this server">>)}
     end.
 
-get_subscribed_bots(User, RSMIn) ->
+get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
     FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, User),
     {ok,
-     ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, {asc, updated_at})}.
+     ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
 make_geosearch_result(Bots) ->
     #xmlel{name = <<"bots">>,
@@ -396,22 +405,22 @@ make_geosearch_el(Bot) ->
     RetFields = encode_fields([JidField | MapFields]),
     make_ret_stanza(RetFields).
 
-get_bots_for_user(From, IQ, Attrs) ->
+get_bots_for_owner(From, IQ, OwnerBin) ->
     do([error_m ||
-        UserBin <- wocky_xml:get_attr(<<"user">>, Attrs),
-        UserJID <- make_jid(UserBin),
-        User <- wocky_bot_util:get_user_from_jid(UserJID),
+        OwnerJID <- make_jid(OwnerBin),
+        Owner <- wocky_bot_util:get_user_from_jid(OwnerJID),
         RSMIn <- rsm_util:get_rsm(IQ),
         FromUser <- wocky_bot_util:get_user_from_jid(From),
-        {FilteredBots, RSMOut} <- get_bots_for_user_rsm(User, FromUser, RSMIn),
+        Sorting <- get_sorting(IQ),
+        {FilteredBots, RSMOut} <-
+            get_bots_for_owner_rsm(Owner, FromUser, Sorting, RSMIn),
         {ok, users_bots_result(FilteredBots, FromUser, RSMOut)}
        ]).
 
-get_bots_for_user_rsm(User, QueryingUser, RSMIn) ->
-    BaseQuery = ?wocky_user:owned_bots_query(User),
+get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
+    BaseQuery = ?wocky_user:owned_bots_query(Owner),
     FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, QueryingUser),
-    {ok,
-     ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, {asc, updated_at})}.
+    {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
 users_bots_result(Bots, FromUser, RSMOut) ->
     BotEls = make_bot_els(Bots, FromUser),
@@ -584,6 +593,32 @@ read_bool(Binary) ->
         {ok, Bool} -> {ok, Bool};
         {error, _} -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid boolean">>)}
     end.
+
+get_sorting(#iq{sub_el = SubEl}) ->
+    case wocky_xml:get_subel(<<"sort">>, SubEl) of
+        {ok, SortEl} -> parse_sorting(SortEl#xmlel.attrs);
+        {error, _} -> {ok, ?DEFAULT_SORTING}
+    end.
+
+parse_sorting(Attrs) ->
+    do([error_m ||
+        By <- wocky_xml:get_attr(<<"by">>, Attrs),
+        ByResult <- check_by(By),
+        Dir <- wocky_xml:get_attr(<<"direction">>, Attrs),
+        DirResult <- check_dir(Dir),
+        {ok, {DirResult, ByResult}}
+       ]).
+
+check_by(<<"created">>) -> {ok, created_at};
+check_by(<<"updated">>) -> {ok, updated_at};
+check_by(<<"lexicographic">>) -> {ok, title};
+check_by(_) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid sort criterion">>)}.
+
+check_dir(<<"asc">>) -> {ok, asc};
+check_dir(<<"desc">>) -> {ok, desc};
+check_dir(_) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid sort direction">>)}.
 
 check_required_fields(_Fields, []) -> ok;
 check_required_fields(Fields, [#field{name = Name} | Rest]) ->
