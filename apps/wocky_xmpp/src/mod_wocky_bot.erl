@@ -107,16 +107,23 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
   %% The documentation is inconsistent, so to avoid breaking anything, we will
   %% accept either.
   when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
-    case wocky_bot_util:get_id_from_node(Attrs) of
-        {ok, _ID} -> handle_access_action(get_bot, From, To, Attrs, IQ);
-        {error, _} ->
-            case get_location_from_attrs(Attrs) of
-                {ok, {Lat, Lon}} ->
-                    get_bots_near_location(From, Lat, Lon);
+    Node = wocky_bot_util:get_id_from_node(Attrs),
+    Location = get_location_from_attrs(Attrs),
+    User = wocky_xml:get_attr(<<"user">>, Attrs),
+    Owner = wocky_xml:act_on_subel(<<"owner">>, IQ#iq.sub_el,
+                                   wocky_xml:get_attr(<<"jid">>, _)),
 
-                {error, _} ->
-                    get_bots_for_owner(From, IQ, Attrs)
-            end
+    case {Node, Location, User, Owner} of
+        {{ok, _Bot}, _, _, _} ->
+            handle_access_action(get_bot, From, To, Attrs, IQ);
+        {_, {ok, {Lat, Lon}}, _, _} ->
+            get_bots_near_location(From, Lat, Lon);
+        {_, _, {ok, UserBin}, _} ->
+            get_bots_for_owner(From, IQ, UserBin);
+        {_, _, _, {ok, OwnerBin}} ->
+            get_bots_for_owner(From, IQ, OwnerBin);
+        _ ->
+            {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot request">>)}
     end;
 
 % Retrieve subscribed bots
@@ -398,9 +405,8 @@ make_geosearch_el(Bot) ->
     RetFields = encode_fields([JidField | MapFields]),
     make_ret_stanza(RetFields).
 
-get_bots_for_owner(From, IQ, Attrs) ->
+get_bots_for_owner(From, IQ, OwnerBin) ->
     do([error_m ||
-        OwnerBin <- wocky_xml:get_attr([<<"user">>, <<"owner">>], Attrs),
         OwnerJID <- make_jid(OwnerBin),
         Owner <- wocky_bot_util:get_user_from_jid(OwnerJID),
         RSMIn <- rsm_util:get_rsm(IQ),

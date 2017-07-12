@@ -1139,8 +1139,8 @@ is_field(Name, Type, #xmlel{attrs = Attrs}) ->
 retrieve_stanza(User, Dir, Field, RSM) ->
     test_helper:iq_get(?NS_BOT,
                        #xmlel{name = <<"bot">>,
-                              attrs = [{<<"owner">>, User}],
-                              children = [sort_elem(Dir, Field),
+                              children = [owner_elem(User),
+                                          sort_elem(Dir, Field),
                                           rsm_elem(RSM)]}).
 
 retrieve_stanza(User, RSM) ->
@@ -1163,6 +1163,9 @@ subscribed_stanza(Dir, Field, RSM) ->
 subscribed_stanza(RSM) ->
     test_helper:iq_get(?NS_BOT, #xmlel{name = <<"subscribed">>,
                                        children = [rsm_elem(RSM)]}).
+
+owner_elem(User) ->
+    #xmlel{name = <<"owner">>, attrs = [{<<"jid">>, User}]}.
 
 sort_elem(Dir, Field) ->
     #xmlel{name = <<"sort">>,

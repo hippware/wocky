@@ -89,17 +89,12 @@ check_attr(Attr, Value, #xmlel{attrs = Attrs}) ->
                                         Attr/binary>>)}
     end.
 
--spec get_attr(binary() | [binary()], [exml:attr()])
+-spec get_attr(binary(), [exml:attr()])
 -> {ok, binary()} | error().
 
-get_attr([AttrName|Rest], Attrs) ->
-    case get_attr(AttrName, Attrs) of
-        {ok, Val} -> {ok, Val};
-        Error when Rest =:= [] -> Error;
-        _ -> get_attr(Rest, Attrs)
-    end;
-
-get_attr(AttrName, Attrs) when is_binary(AttrName) ->
+get_attr(AttrName, #xmlel{attrs = Attrs}) ->
+    get_attr(AttrName, Attrs);
+get_attr(AttrName, Attrs) when is_list(Attrs) ->
     case xml:get_attr(AttrName, Attrs) of
         {value, Val} ->
             {ok, Val};
