@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove limit on message size for notification log (#834)
 * Write integration tests for SNS, S3 and Algolia (#207)
 * Fix auth disconnect crash (#835)
+* Bot lists to be sortable by simple criteria (#757)
 
 
 # 2017.7.4+2445.cd82a75
