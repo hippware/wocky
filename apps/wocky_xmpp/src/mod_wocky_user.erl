@@ -60,7 +60,7 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
         User <- get_user_node(ReqEl),
         UserJID <- get_user_jid(User, LServer),
         Relationship <- {ok, relationship(FromJID, UserJID)},
-        Fields <- get_get_req_fields(Children, []),
+        Fields <- get_get_req_fields(Relationship, Children),
         check_field_permissions(Relationship, Fields),
         XMLFields <- get_resp_fields(Fields, LServer, User),
 
@@ -221,7 +221,7 @@ fields() ->
       fun(#{id := LUser}) ->
               integer_to_binary(
                 length(?wocky_roster_item:followees(LUser))) end},
-     {"roles",        "roles",  private,     read_only, make_roles(_)}
+     {"roles",        "roles",  public,      read_only, make_roles(_)}
     ].
 
 
@@ -248,19 +248,22 @@ do_contacts_query(AssociationQuery, RSMIn) ->
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, AssociationQuery,
                                      id, {asc, handle})}.
 
-get_get_req_fields([], []) ->
-    {ok, fields()};
-get_get_req_fields([], Fields) ->
+get_get_req_fields(Relationship, []) ->
+    {ok, get_visible_fields(Relationship)};
+get_get_req_fields(_, Fields) ->
+    do_get_get_req_fields(Fields, []).
+
+do_get_get_req_fields([], Fields) ->
     {ok, Fields};
-get_get_req_fields([El = #xmlel{name = <<"field">>} | Tail], Acc) ->
+do_get_get_req_fields([El = #xmlel{name = <<"field">>} | Tail], Acc) ->
     case exml_query:attr(El, <<"var">>) of
         undefined ->
             not_valid(<<"Missing var attribute on field">>);
         Var ->
             add_get_req_field(Tail, Acc, Var)
     end;
-get_get_req_fields([_ | Tail], Acc) ->
-    get_get_req_fields(Tail, Acc).
+do_get_get_req_fields([_ | Tail], Acc) ->
+    do_get_get_req_fields(Tail, Acc).
 
 
 add_get_req_field(RemainingFields, Acc, Var) ->
@@ -268,7 +271,7 @@ add_get_req_field(RemainingFields, Acc, Var) ->
         {error, E} ->
             {error, E};
         {ok, Field} ->
-            get_get_req_fields(RemainingFields, [Field | Acc])
+            do_get_get_req_fields(RemainingFields, [Field | Acc])
     end.
 
 

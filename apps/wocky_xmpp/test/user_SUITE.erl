@@ -159,7 +159,11 @@ roles(Config) ->
 other_user_all_fields(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
         QueryStanza = get_request(?ALICE, []),
-        expect_iq_error(QueryStanza, Bob)
+        ResultStanza = expect_iq_success(QueryStanza, Bob),
+        FieldsXML = exml_query:path(ResultStanza, [{element, <<"fields">>}]),
+        NumFields = length(public_fields()),
+        NumFields = length(FieldsXML#xmlel.children),
+        expect_results(public_fields(), FieldsXML#xmlel.children)
     end).
 
 other_user_allowed_fields(Config) ->
@@ -622,8 +626,8 @@ users_request(BJIDs) ->
 
 public_fields() ->
     [jid, user, server, handle, avatar, first_name, last_name, tagline,
-     'bots+size', 'followers+size', 'followed+size'].
-private_fields() -> [phone_number, email, external_id, roles].
+     'bots+size', 'followers+size', 'followed+size', roles].
+private_fields() -> [phone_number, email, external_id].
 all_fields() -> public_fields() ++ private_fields().
 
 expect_bulk_results(#xmlel{name = <<"users">>, children = Children}, Results) ->
