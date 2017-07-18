@@ -41,6 +41,7 @@
 
 %% Elixir module names
 -define(wocky_bot, 'Elixir.Wocky.Bot').
+-define(wocky_initial_followee, 'Elixir.Wocky.InitialFollowee').
 -define(wocky_item, 'Elixir.Wocky.Bot.Item').
 -define(wocky_share, 'Elixir.Wocky.Bot.Share').
 -define(wocky_subscription, 'Elixir.Wocky.Bot.Subscription').

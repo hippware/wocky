@@ -1,6 +1,7 @@
 -module(wocky_reg).
 
 -compile({parse_transform, do}).
+-compile({parse_transform, cut}).
 
 -include("wocky.hrl").
 -include("wocky_reg.hrl").
@@ -21,11 +22,14 @@ register_user(JSON) ->
         GetToken <- get_token(Elements),
         {ExternalID, PhoneNumber} <- check_provider_auth(Provider,
                                                          ProviderData),
-        {User, Server, IsNew} <- create_or_update_user(ExternalID,
+        {UserID, Server, IsNew} <- create_or_update_user(ExternalID,
                                                        PhoneNumber),
-        {Token, Expiry} <- maybe_get_token(GetToken, User, Resource),
+
+        {ok, IsNew andalso set_initial_followees(UserID)},
+
+        {Token, Expiry} <- maybe_get_token(GetToken, UserID, Resource),
         {ok, #reg_result{
-                user = User,
+                user = UserID,
                 server = Server,
                 provider = Provider,
                 is_new = IsNew,
@@ -75,3 +79,27 @@ maybe_get_token(false, _, _) ->
 maybe_get_token(true, User, Resource) ->
     {ok, {Token, Expiry}} = ?wocky_token:assign(User, Resource),
     {ok, {Token, ?wocky_timestamp:to_string(Expiry)}}.
+
+set_initial_followees(UserID) ->
+    InitialFollowees = ?wocky_initial_followee:get(),
+    lists:foreach(set_initial_followee(UserID, _), InitialFollowees).
+
+set_initial_followee(UserID, #{id := FolloweeID, handle := Handle}) ->
+    UserContact = #{user_id => UserID,
+                    contact_id => FolloweeID,
+                    name => Handle,
+                    ask => none,
+                    subscription => to,
+                    groups => [<<"__welcome__">>]
+                   },
+
+    FolloweeContact = #{user_id => FolloweeID,
+                        contact_id => UserID,
+                        name => <<>>,
+                        ask => none,
+                        subscription => from,
+                        groups => [<<"__welcomed__">>]
+                       },
+
+    ?wocky_roster_item:put(UserContact),
+    ?wocky_roster_item:put(FolloweeContact).
