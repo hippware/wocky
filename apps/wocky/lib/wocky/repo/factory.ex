@@ -18,6 +18,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.HomeStreamItem
+  alias Wocky.InitialFollowee
   alias Wocky.NotificationLog
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
@@ -158,6 +159,10 @@ defmodule Wocky.Repo.Factory do
       resource: Lorem.word,
       message: Lorem.sentence
     }
+  end
+
+  def initial_followee_factory do
+    %InitialFollowee{}
   end
 
   defp phone_number do

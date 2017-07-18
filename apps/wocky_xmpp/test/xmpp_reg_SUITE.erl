@@ -62,7 +62,15 @@ suite() ->
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     ?wocky_repo:delete_all(?wocky_user),
-    escalus:init_per_suite(Config).
+
+    Users = ?wocky_factory:insert_list(3, user),
+    lists:foreach(
+      fun(#{id := ID}) ->
+              ?wocky_factory:insert(initial_followee, [{user_id, ID}])
+      end,
+      Users),
+
+    escalus:init_per_suite([{initial_followees, Users} | Config]).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
@@ -94,7 +102,31 @@ new_user(Config) ->
     Client = start_client(Config),
     Stanza = request_stanza(request_data(provider_data())),
     Result = escalus:send_and_wait(Client, Stanza),
-    assert_is_redirect(Result, true, true).
+    {UserID, Token} = assert_is_redirect(Result, true, true),
+
+    NewConfig = [{escalus_users,
+                  [{alice,
+                    [{username, UserID},
+                     {server, ?SERVER},
+                     {password, Token}]}]}
+                 | Config],
+
+    % Verify that initial followees have been added
+    escalus:story(NewConfig, [{alice, 1}], fun(Alice) ->
+        InitialFollowees = proplists:get_value(initial_followees, NewConfig),
+        JIDs = lists:map(fun(#{id := ID}) ->
+                                 jid:to_binary(jid:make(ID, ?SERVER, <<>>))
+                         end, InitialFollowees),
+
+        escalus:send(Alice, escalus_stanza:roster_get()),
+        Stanza2 = escalus:wait_for_stanza(Alice),
+        escalus_assert:is_roster_result(Stanza2),
+
+        escalus:assert(count_roster_items, [length(JIDs)], Stanza2),
+        lists:foreach(fun(JID) ->
+                              escalus:assert(roster_contains, [JID], Stanza2)
+                      end, JIDs)
+    end).
 
 invalid_json(Config) ->
     Client = start_client(Config),
@@ -233,14 +265,15 @@ assert_has_redirect_data(JSON, IsNew, HasToken) ->
     lists:foreach(fun(F) -> ?assert(proplists:is_defined(F, Fields)) end,
                   RequiredFields),
     ?assertEqual(IsNew, proplists:get_value(<<"is_new">>, Fields)),
-    check_token(Fields, HasToken).
+    {proplists:get_value(<<"user">>, Fields), check_token(Fields, HasToken)}.
 
 check_token(Fields, HasToken) ->
     lists:foreach(fun(F) ->
                           ?assertEqual(HasToken,
                                        proplists:is_defined(F, Fields))
                   end,
-                  [<<"token">>, <<"token_expiry">>]).
+                  [<<"token">>, <<"token_expiry">>]),
+    proplists:get_value(<<"token">>, Fields).
 
 request_data(ProviderData) ->
     [{provider, <<"digits">>},
