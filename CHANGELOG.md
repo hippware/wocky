@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.7.18+2476.1c4ac8a
+
 * Initialise new accounts with a set of followees (#841)
 * Fix: Can't get user: No access to field (#842)
 * Makes user roles field public (#843)
