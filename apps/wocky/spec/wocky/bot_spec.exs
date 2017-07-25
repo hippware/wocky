@@ -2,12 +2,14 @@ defmodule Wocky.BotSpec do
   use ESpec, async: true
   use ModelHelpers
   use Wocky.JID
+  use Wocky.RSMHelper
 
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
   alias Wocky.Index.TestIndexer
   alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
@@ -257,7 +259,9 @@ defmodule Wocky.BotSpec do
         |> should(be_nil())
       end
     end
+
   end
+
 
   defp run_filter(bot, user) do
     Bot

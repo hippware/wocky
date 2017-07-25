@@ -1,8 +1,9 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Wocky.Repo.Model
   use Wocky.JID
+  use Wocky.Repo.Model
+  use Wocky.RSMHelper
 
   alias Geocalc.Point
   alias Wocky.Bot.Item

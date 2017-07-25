@@ -6,5 +6,3 @@ lib/wocky/index/algolia_indexer.ex:32: Function do_update_object/2 has no local 
 lib/wocky/index/algolia_indexer.ex:37: Function delete_object/2 has no local return
 lib/wocky/index/algolia_indexer.ex:38: The pattern {'ok', _} can never match the type
 lib/wocky/index/algolia_indexer.ex:42: Function geosearch/3 has no local return
-deps/postgrex/lib/postgrex/type_module.ex:717: The pattern {'error', #{'__struct__':='Elixir.Postgrex.TypeInfo', 'type':=_@61}} can never match the type {'error','nil' | #{'__struct__':='Elixir.Postgrex.TypeInfo', 'array_elem':=pos_integer(), 'base_type':=pos_integer(), 'comp_elems':=[pos_integer()], 'input':=binary(), 'oid':=pos_integer(), 'output':=binary(), 'receive':=binary(), 'send':=binary(), 'type':=binary()},atom()}
-deps/postgrex/lib/postgrex/type_module.ex:717: The pattern {'error', 'nil'} can never match the type {'error','nil' | #{'__struct__':='Elixir.Postgrex.TypeInfo', 'array_elem':=pos_integer(), 'base_type':=pos_integer(), 'comp_elems':=[pos_integer()], 'input':=binary(), 'oid':=pos_integer(), 'output':=binary(), 'receive':=binary(), 'send':=binary(), 'type':=binary()},atom()}
