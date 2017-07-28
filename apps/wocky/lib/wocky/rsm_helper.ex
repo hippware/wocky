@@ -184,5 +184,6 @@ defmodule Wocky.RSMHelper do
   defp to_rsm_id(:undefined), do: :undefined
   defp to_rsm_id(b) when is_binary(b), do: b
   defp to_rsm_id(i) when is_integer(i), do: Integer.to_string(i)
+  defp to_rsm_id(f) when is_float(f), do: Float.to_string(f)
   defp to_rsm_id(%DateTime{} = d), do: Timestamp.to_string(d)
 end

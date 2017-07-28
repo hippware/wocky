@@ -32,7 +32,7 @@ defmodule Wocky.Bot do
     field :address,          :string, default: ""
     # Free-form string field describing bot's location
     field :location,         Geo.Point # Location
-    field :radius,           :integer # Radius of bot circle
+    field :radius,           :float   # Radius of bot circle
     field :public,           :boolean # Visibility of bot
     field :alerts,           :boolean # Whether alerts are enabled
     field :follow_me,        :boolean # Does bot follow owner
@@ -183,7 +183,7 @@ defmodule Wocky.Bot do
     subscribers + temp_subscribers + 1
   end
 
-  @doc "Returns the bot's distance from the specified location."
+  @doc "Returns the bot's distance from the specified location in meters."
   @spec distance_from(Bot.t, Point.t) :: non_neg_integer
   def distance_from(bot, loc) do
     Geocalc.distance_between(%{lat: lat(bot), lon: lon(bot)}, loc)
@@ -192,15 +192,13 @@ defmodule Wocky.Bot do
   @doc "Returns true if the location is within the bot's radius."
   @spec contains?(Bot.t, Point.t) :: boolean
   def contains?(bot, loc) do
-    radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
-
-    if radius < 0 do
+    if bot.radius < 0 do
       :ok = Logger.warn(
-        "Bot #{bot.id} has a negative radius (#{radius} meters)."
+        "Bot #{bot.id} has a negative radius (#{bot.radius} meters)."
       )
       false
     else
-      distance_from(bot, loc) <= radius
+      distance_from(bot, loc) <= bot.radius
     end
   end
 
