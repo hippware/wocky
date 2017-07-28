@@ -688,16 +688,12 @@ insert_roster_pair(User1, User2, Dir1, Dir2) ->
 check_returned_contacs(Stanza, Config, Sets) ->
     Users = lists:flatten([add_associations(proplists:get_value(S, Config), S)
                            || S <- Sets]),
-    SortedUsers = lists:sort(handle_sort(_, _), Users),
 
     Contacts = extract_contacts(Stanza),
-    match_contacts(Contacts, SortedUsers).
+    match_contacts(Contacts, Users).
 
 add_associations(Users, Association) ->
     lists:map(fun(U) -> U#{association => Association} end, Users).
-
-handle_sort(#{handle := H1}, #{handle := H2}) ->
-    'Elixir.String':downcase(H1) =< 'Elixir.String':downcase(H2).
 
 extract_contacts(#xmlel{name = <<"iq">>,
                         children = [#xmlel{name = <<"contacts">>,
@@ -712,13 +708,19 @@ extract_contact(#xmlel{name = <<"contact">>, attrs = Attrs}, Acc) ->
 extract_contact(_, Acc) -> lists:reverse(Acc).
 
 match_contacts([], []) -> ok;
-match_contacts([#{handle := CHandle, jid := CJID,
-                  association := CAssociation} | Contacts],
-               [#{handle := UHandle, id := ID, server := Server,
-                  association := UAssociation} | Users]) ->
-    ?assert(CHandle =:= UHandle),
-    ?assert(CJID =:= jid:to_binary(jid:make(ID, Server, <<>>))),
-    ?assert(CAssociation =:= atom_to_binary(UAssociation, utf8)),
-    match_contacts(Contacts, Users);
+match_contacts(Contacts, [#{handle := UHandle, id := ID, server := Server,
+                            association := UAssociation} | Users]) ->
+    CJID = jid:to_binary(jid:make(ID, Server, <<>>)),
+    CAssociation = atom_to_binary(UAssociation, utf8),
+    Remaining = lists:filter(
+                  fun(#{handle := H, jid := J, association := A}) ->
+                          not (
+                            H =:= UHandle andalso
+                            J =:= CJID andalso
+                            A =:= CAssociation
+                           )
+                  end, Contacts),
+    ?assert(length(Remaining) =:= length(Contacts) - 1),
+    match_contacts(Remaining, Users);
 match_contacts(Contacts, Users) ->
     ct:fail("Failed to match ~p to ~p", [Contacts, Users]).
