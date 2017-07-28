@@ -88,7 +88,7 @@ defmodule Wocky.PushNotifierSpec do
       end
 
       it "should send a push notification" do
-        assert_receive {{:ok, _response}, _request, _ref}
+        assert_receive {{:ok, _response}, _request, _ref}, 5000
       end
     end
 
@@ -103,7 +103,7 @@ defmodule Wocky.PushNotifierSpec do
       end
 
       it "should send a push notification" do
-        assert_receive {{:ok, _response}, _request, _ref}
+        assert_receive {{:ok, _response}, _request, _ref}, 5000
       end
     end
 
@@ -132,7 +132,7 @@ defmodule Wocky.PushNotifierSpec do
     end
 
     it "should send a push notification to each endpoint" do
-      notifications = Sandbox.wait_notifications(count: 2)
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
       notifications |> should(have_size 2)
     end
   end
