@@ -19,15 +19,15 @@ defmodule Wocky.Bot.Geosearch do
   alias Wocky.GeoUtils
   alias Wocky.Repo
 
-  @spec user_distance_query(float, float, User.id, User.id RSMHelper.rsm_in)
+  @spec user_distance_query(float, float, User.t, User.t RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
-  def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
-    do: distance_query(lat, lon, &where_visible(&1, user_id, owner_id), rsm_in)
+  def user_distance_query(lat, lon, user, owner, rsm_in \\ rsm_in()),
+    do: distance_query(lat, lon, &where_visible(&1, user.id, owner.id), rsm_in)
 
-  @spec explore_nearby(float, float, User.id, RSMHelper.rsm_in)
+  @spec explore_nearby(float, float, User.t, RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
-  def explore_nearby(lat, lon, user_id, rsm_in \\ rsm_in()),
-    do: distance_query(lat, lon, &where_searchable(&1, user_id), rsm_in)
+  def explore_nearby(lat, lon, user, rsm_in \\ rsm_in()),
+    do: distance_query(lat, lon, &where_searchable(&1, user.id), rsm_in)
 
   defp distance_query(lat, lon, where_clause, rsm_in) do
     limit = rsm_in(rsm_in, :max)
@@ -61,11 +61,11 @@ defmodule Wocky.Bot.Geosearch do
       rsm_out(count: count, index: index, first: first, last: last)}
   end
 
-  def get_all(lat, lon, user_id, owner_id),
-    do: do_get_all(lat, lon, &where_visible(&1, user_id, owner_id))
+  def get_all(lat, lon, user, owner),
+    do: do_get_all(lat, lon, &where_visible(&1, user.id, owner.id))
 
-  def get_all(lat, lon, user_id),
-    do: do_get_all(lat, lon, &where_searchable(&1, user_id))
+  def get_all(lat, lon, user),
+    do: do_get_all(lat, lon, &where_searchable(&1, user.id))
 
   defp do_get_all(lat, lon, where_clause) do
     point = GeoUtils.point(lon, lat)

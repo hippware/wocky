@@ -176,7 +176,7 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :last) |> should(be_binary())
     end
 
-    context "when the key field is an integer" do
+    context "when the key field is a float" do
       before do
         {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), shared.query,
                                                  :radius,

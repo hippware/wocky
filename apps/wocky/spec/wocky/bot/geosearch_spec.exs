@@ -6,6 +6,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
   alias Faker.Address
   alias Wocky.Bot.Geosearch
+  alias Wocky.GeoUtils
 
   describe "user_distance_query/4" do
     before do
@@ -15,7 +16,7 @@ defmodule Wocky.Bot.GeosearchSpec do
       lat = Address.latitude
       lon = Address.longitude
 
-      visible_bots = Geosearch.get_all(lat, lon, user.id, user.id)
+      visible_bots = Geosearch.get_all(lat, lon, user, user)
 
       {:ok,
         bots: visible_bots,
@@ -30,7 +31,7 @@ defmodule Wocky.Bot.GeosearchSpec do
       before do
         query =
           &Geosearch.user_distance_query(shared.lat, shared.lon,
-                                         shared.user.id, shared.user.id, &1)
+                                         shared.user, shared.user, &1)
         {:ok, query: query}
       end
 
@@ -98,12 +99,12 @@ defmodule Wocky.Bot.GeosearchSpec do
                   &Factory.insert(:share, user: user, sharer: owner, bot: &1))
 
         visible_bots = Geosearch.get_all(shared.lat, shared.lon,
-                                         user.id, owner.id)
+                                         user, owner)
 
         _other_bots = Factory.insert_list(5, :bot, user: other_user)
 
         query = &Geosearch.user_distance_query(shared.lat, shared.lon,
-                                               user.id, owner.id, &1)
+                                               user, owner, &1)
         {:ok,
           bots: visible_bots,
           query: query,
@@ -185,7 +186,7 @@ defmodule Wocky.Bot.GeosearchSpec do
         Enum.each(shared_bots,
                   &Factory.insert(:share, user: user, sharer: owner, bot: &1))
 
-        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id)
+        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user)
 
         # Bots from unknown users should never show up, regardlesss of being
         # public or shared
@@ -194,7 +195,7 @@ defmodule Wocky.Bot.GeosearchSpec do
         Enum.each(other_bots,
                   &Factory.insert(:share, user: user, bot: &1))
 
-        query = &Geosearch.explore_nearby(shared.lat, shared.lon, user.id, &1)
+        query = &Geosearch.explore_nearby(shared.lat, shared.lon, user, &1)
 
         {:ok,
           bots: searchable_bots,
@@ -249,6 +250,23 @@ defmodule Wocky.Bot.GeosearchSpec do
         results |> should(eq [Enum.at(shared.bots, 9)])
         rsm_out |> should(eq make_rsm(20, 9, 9, 9, shared.bots))
       end
+    end
+  end
+
+  describe "sorting by distance" do
+    before do
+      user = Factory.insert(:user)
+      bots =
+        for i <- 1..10 do
+          Factory.insert(:bot, user: user, location: GeoUtils.point(i, i))
+        end
+      query = &Geosearch.explore_nearby(0.0, 0.0, user, &1)
+      {:ok, user: user, bots: bots, query: query}
+    end
+
+    it "should work for id lookups" do
+      {_results, rsm_out} = shared.query.(rsm_in(index: 1))
+      rsm_out |> should(eq make_rsm(10, 1, 1, 9, shared.bots))
     end
   end
 
