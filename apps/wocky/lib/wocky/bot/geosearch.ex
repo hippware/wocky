@@ -19,15 +19,20 @@ defmodule Wocky.Bot.Geosearch do
   alias Wocky.GeoUtils
   alias Wocky.Repo
 
-  @spec distance_query(float, float, User.id, User.id | :undefined,
-                       RSMHelper.rsm_in) :: {[%Bot{}], RSMHelper.rsm_out}
-  def distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()) do
+  @spec user_distance_query(float, float, User.id, User.id RSMHelper.rsm_in)
+  :: {[%Bot{}], RSMHelper.rsm_out}
+  def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
+    do: distance_query(lat, lon, &where_visible(&1, user_id, owner_id), rsm_in)
+
+  @spec explore_nearby(float, float, User.id, RSMHelper.rsm_in)
+  :: {[%Bot{}], RSMHelper.rsm_out}
+  def explore_nearby(lat, lon, user_id, rsm_in \\ rsm_in()),
+    do: distance_query(lat, lon, &where_searchable(&1, user_id), rsm_in)
+
+  defp distance_query(lat, lon, where_clause, rsm_in) do
     limit = rsm_in(rsm_in, :max)
     offset = rsm_in(rsm_in, :index)
-    {:ok, pivot} = case rsm_in(rsm_in, :id) do
-      :undefined -> {:ok, :undefined}
-      id -> UUID.dump(id)
-    end
+    pivot = dump_uuid(rsm_in(rsm_in, :id))
     direction = rsm_in(rsm_in, :direction)
     reverse = rsm_in(rsm_in, :reverse)
     point = GeoUtils.point(lon, lat)
@@ -36,7 +41,7 @@ defmodule Wocky.Bot.Geosearch do
       point
       |> fields()
       |> maybe_join(pivot, point, direction)
-      |> where_searchable(user_id, owner_id)
+      |> where_clause.()
       |> order(point, direction)
       |> maybe_limit(limit)
       |> maybe_offset(offset)
@@ -48,20 +53,26 @@ defmodule Wocky.Bot.Geosearch do
       |> results_to_bots()
       |> fix_sorting(direction)
 
-    count = get_count(user_id, owner_id)
-    index = get_index(results, point, user_id, owner_id)
+    count = get_count(where_clause)
+    index = get_index(results, point, where_clause)
     {first, last} = get_first_last(results)
 
     {maybe_reverse(results, reverse),
       rsm_out(count: count, index: index, first: first, last: last)}
   end
 
-  def get_all(lat, lon, user_id, owner_id) do
+  def get_all(lat, lon, user_id, owner_id),
+    do: do_get_all(lat, lon, &where_visible(&1, user_id, owner_id))
+
+  def get_all(lat, lon, user_id),
+    do: do_get_all(lat, lon, &where_searchable(&1, user_id))
+
+  defp do_get_all(lat, lon, where_clause) do
     point = GeoUtils.point(lon, lat)
     {query_str, params} =
       point
       |> fields()
-      |> where_searchable(user_id, owner_id)
+      |> where_clause.()
       |> order(point, :aft)
       |> finalize_query()
 
@@ -78,19 +89,17 @@ defmodule Wocky.Bot.Geosearch do
 
   defp count, do: {"SELECT count(id) FROM bots AS bot", []}
 
-  defp where_searchable({str, params}, owner_id, owner_id) do
-    {str <> " WHERE bot.user_id = #{p(1, params)}",
-     [dump_uuid(owner_id) | params]}
-  end
-  defp where_searchable({str, params}, user_id, :undefined) do
-    {str <> " WHERE is_searchable(#{p(1, params)}, bot)",
-     [dump_uuid(user_id) | params]}
-  end
-  defp where_searchable({str, params}, user_id, owner_id) do
+  defp where_visible({str, params}, user_id, owner_id) do
     {str <>
       " WHERE bot.user_id = #{p(1, params)}" <>
-       " AND is_searchable(#{p(2, params)}, bot)",
+       " AND is_visible(#{p(2, params)}, bot)",
       [dump_uuid(user_id), dump_uuid(owner_id) | params]}
+  end
+
+  defp where_searchable({str, params}, user_id) do
+    {str <>
+      " WHERE is_searchable(#{p(1, params)}, bot)",
+      [dump_uuid(user_id) | params]}
   end
 
   defp index_where({str, params}, point, pivot_dist) do
@@ -170,21 +179,21 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_reverse(rows, true), do: Enum.reverse(rows)
   defp maybe_reverse(rows, false), do: rows
 
-  defp get_count(user_id, owner_id) do
+  defp get_count(where_clause) do
     {query_str, params} =
       count()
-      |> where_searchable(user_id, owner_id)
+      |> where_clause.()
       |> finalize_query()
 
     results = SQL.query!(Repo, query_str, params)
     hd(hd(results.rows))
   end
 
-  defp get_index([], _, _, _), do: :undefined
-  defp get_index([first | _], point, user_id, owner_id) do
+  defp get_index([], _, _), do: :undefined
+  defp get_index([first | _], point, where_clause) do
     {query_str, params} =
       count()
-      |> where_searchable(user_id, owner_id)
+      |> where_clause.()
       |> index_where(point, first.distance)
       |> finalize_query()
 
@@ -197,6 +206,7 @@ defmodule Wocky.Bot.Geosearch do
     {Enum.at(results, 0).id, Enum.at(results, -1).id}
   end
 
+  defp dump_uuid(:undefined), do: :undefined
   defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
 
 end

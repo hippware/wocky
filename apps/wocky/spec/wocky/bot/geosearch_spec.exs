@@ -7,7 +7,7 @@ defmodule Wocky.Bot.GeosearchSpec do
   alias Faker.Address
   alias Wocky.Bot.Geosearch
 
-  describe "distance_query/4" do
+  describe "user_distance_query/4" do
     before do
       user = Factory.insert(:user)
       Factory.insert_list(5, :bot, user: user)
@@ -15,11 +15,11 @@ defmodule Wocky.Bot.GeosearchSpec do
       lat = Address.latitude
       lon = Address.longitude
 
-      bots = Geosearch.get_all(lat, lon, user.id, user.id)
+      visible_bots = Geosearch.get_all(lat, lon, user.id, user.id)
 
       {:ok,
-        bots: bots,
-        middle_id: Enum.at(bots, 2).id,
+        bots: visible_bots,
+        middle_id: Enum.at(visible_bots, 2).id,
         user: user,
         lat: lat,
         lon: lon,
@@ -28,12 +28,14 @@ defmodule Wocky.Bot.GeosearchSpec do
 
     context "Queried user is owner" do
       before do
-        query = fn(rsm) ->
-          Geosearch.distance_query(shared.lat, shared.lon,
-                                   shared.user.id, shared.user.id,
-                                   rsm)
-        end
+        query =
+          &Geosearch.user_distance_query(shared.lat, shared.lon,
+                                         shared.user.id, shared.user.id, &1)
         {:ok, query: query}
+      end
+
+      it "should be checking against all the user's bots" do
+        shared.bots |> should(have_length 5)
       end
 
       it "should work for index lookups" do
@@ -95,20 +97,21 @@ defmodule Wocky.Bot.GeosearchSpec do
         Enum.each(shared_bots,
                   &Factory.insert(:share, user: user, sharer: owner, bot: &1))
 
-        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id, owner.id)
+        visible_bots = Geosearch.get_all(shared.lat, shared.lon,
+                                         user.id, owner.id)
 
         _other_bots = Factory.insert_list(5, :bot, user: other_user)
 
-        query = fn(rsm) ->
-          Geosearch.distance_query(shared.lat, shared.lon,
-                                   user.id, owner.id, rsm)
-        end
-        {:ok, query: query}
-
+        query = &Geosearch.user_distance_query(shared.lat, shared.lon,
+                                               user.id, owner.id, &1)
         {:ok,
-          bots: searchable_bots,
+          bots: visible_bots,
           query: query,
-          middle_id: Enum.at(searchable_bots, 5).id}
+          middle_id: Enum.at(visible_bots, 5).id}
+      end
+
+      it "should be checking all the visible bots owneb by the selected user" do
+        shared.bots |> should(have_length 10)
       end
 
       it "should work for index lookups" do
@@ -157,7 +160,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
     end
 
-    context "owner is not specified (\"explore nearby\")", async: false do
+    context "explore nearby", async: false do
       before do
         user = shared.user
         owner = Factory.insert(:user)
@@ -170,33 +173,37 @@ defmodule Wocky.Bot.GeosearchSpec do
 
         _own_bots = shared.bots
 
-        subscribed_bots = Factory.insert_list(5, :bot, user: Factory.insert(:user))
+        subscribed_bots = Factory.insert_list(5, :bot, user:
+                                              Factory.insert(:user))
         Enum.each(subscribed_bots,
                   &Factory.insert(:subscription, user: user, bot: &1))
 
-        _public_bots = Factory.insert_list(5, :bot, public: true, user: followee)
+        _public_bots = Factory.insert_list(5, :bot, public: true,
+                                           user: followee)
 
         shared_bots = Factory.insert_list(5, :bot, user: friend)
         Enum.each(shared_bots,
                   &Factory.insert(:share, user: user, sharer: owner, bot: &1))
 
-        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id, :undefined)
+        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id)
 
         # Bots from unknown users should never show up, regardlesss of being
         # public or shared
-        other_bots = Factory.insert_list(5, :bot, public: true, user: Factory.insert(:user))
+        other_bots = Factory.insert_list(5, :bot, public: true,
+                                         user: Factory.insert(:user))
         Enum.each(other_bots,
                   &Factory.insert(:share, user: user, bot: &1))
 
-        query = fn(rsm) ->
-          Geosearch.distance_query(shared.lat, shared.lon,
-                                   user.id, :undefined, rsm)
-        end
+        query = &Geosearch.explore_nearby(shared.lat, shared.lon, user.id, &1)
 
         {:ok,
           bots: searchable_bots,
           query: query,
           middle_id: Enum.at(searchable_bots, 10).id}
+      end
+
+      it "should have all the searchable bots" do
+        shared.bots |> should(have_length 20)
       end
 
       it "should work for index lookups" do
