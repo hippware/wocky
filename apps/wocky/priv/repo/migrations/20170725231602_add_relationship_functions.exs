@@ -44,14 +44,26 @@ defmodule Wocky.Repo.Migrations.AddRelationshipFunctions do
     create_bot_link_fun("is_subscribed", "bot_subscriptions")
 
     execute """
+    CREATE FUNCTION is_visible(usr uuid, bot bots) \
+    RETURNS boolean AS $$ \
+    BEGIN \
+      RETURN
+        bot.user_id = usr \
+        OR bot.public \
+        OR is_shared(usr, bot.id); \
+    END; \
+    $$ LANGUAGE plpgsql;\
+    """
+
+    execute """
     CREATE FUNCTION is_searchable(usr uuid, bot bots) \
     RETURNS boolean AS $$ \
     BEGIN \
       RETURN
-      (bot.user_id = usr) \
-      OR is_subscribed(usr, bot.id) \
-      OR (bot.public = TRUE AND is_unblocked_follower(usr, bot.user_id)) \
-      OR (is_unblocked_friend(usr, bot.user_id) AND is_shared(usr, bot.id)); \
+        bot.user_id = usr \
+        OR is_subscribed(usr, bot.id) \
+        OR (bot.public = TRUE AND is_unblocked_follower(usr, bot.user_id)) \
+        OR (is_unblocked_friend(usr, bot.user_id) AND is_shared(usr, bot.id)); \
     END; \
     $$ LANGUAGE plpgsql;\
     """

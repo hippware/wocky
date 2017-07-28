@@ -220,7 +220,7 @@ defmodule Wocky.BotSpec do
   end
 
   describe "Query fragments" do
-    describe "read_access_filter/2" do
+    describe "is_visible_query/2" do
       before do
         [user1, user2] = Factory.insert_list(2, :user)
         owned_bot = Factory.insert(:bot, user: user1)
@@ -240,22 +240,22 @@ defmodule Wocky.BotSpec do
       end
 
       it "should allow owned bots" do
-        run_filter(shared.owned_bot, shared.user)
+        run_query(shared.owned_bot, shared.user)
         |> should(eq shared.owned_bot)
       end
 
       it "should allow public bots" do
-        run_filter(shared.public_bot, shared.user)
+        run_query(shared.public_bot, shared.user)
         |> should(eq shared.public_bot)
       end
 
       it "should allow shared bots" do
-        run_filter(shared.shared_bot, shared.user)
+        run_query(shared.shared_bot, shared.user)
         |> should(eq shared.shared_bot)
       end
 
       it "should refuse private bots" do
-        run_filter(shared.private_bot, shared.user)
+        run_query(shared.private_bot, shared.user)
         |> should(be_nil())
       end
     end
@@ -263,10 +263,10 @@ defmodule Wocky.BotSpec do
   end
 
 
-  defp run_filter(bot, user) do
+  defp run_query(bot, user) do
     Bot
     |> where(id: ^bot.id)
-    |> Bot.read_access_filter(user)
+    |> Bot.is_visible_query(user)
     |> preload(:user)
     |> Repo.one
   end

@@ -204,8 +204,8 @@ defmodule Wocky.Bot do
     end
   end
 
-  @spec read_access_filter(Queryable.t, User.t) :: Queryable.t
-  def read_access_filter(queryable, user) do
+  @spec is_visible_query(Queryable.t, User.t) :: Queryable.t
+  def is_visible_query(queryable, user) do
     queryable
     |> join(:left, [b], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
     |> where([b, s], b.user_id == ^user.id or b.public or not is_nil(s.user_id))

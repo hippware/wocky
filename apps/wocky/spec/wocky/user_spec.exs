@@ -657,15 +657,61 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "is_visible_query/2" do
+    before do
+      user1 = shared.user
+      user2 = Factory.insert(:user)
+      owned_bot = Factory.insert(:bot, user: user1)
+      public_bot = Factory.insert(:bot, user: user2, public: true)
+      shared_bot = Factory.insert(:bot, user: user2)
+      Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
+      private_bot = Factory.insert(:bot, user: user2)
+      pending_bot = Factory.insert(:bot, user: user1, pending: true)
+      {:ok,
+        owned_bot: owned_bot,
+        public_bot: public_bot,
+        shared_bot: shared_bot,
+        private_bot: private_bot,
+        pending_bot: pending_bot
+      }
+    end
+
+    it "should allow owned bots" do
+      is_visible_sp(shared.user, shared.owned_bot)
+      |> should(be_true())
+    end
+
+    it "should allow public bots" do
+      is_visible_sp(shared.user, shared.public_bot)
+      |> should(be_true())
+    end
+
+    it "should allow shared bots" do
+      is_visible_sp(shared.user, shared.shared_bot)
+      |> should(be_true())
+    end
+
+    it "should refuse private bots" do
+      is_visible_sp(shared.user, shared.private_bot)
+      |> should(be_false())
+    end
+  end
+
+
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
-  defp is_searchable_sp(user, bot) do
+  defp is_searchable_sp(user, bot),
+    do: run_stored_proc(user, bot, "is_searchable")
+  defp is_visible_sp(user, bot),
+    do: run_stored_proc(user, bot, "is_visible")
+
+  defp run_stored_proc(user, bot, proc) do
     {:ok, u} = Ecto.UUID.dump(user.id)
     {:ok, b} = Ecto.UUID.dump(bot.id)
     Repo
     result = SQL.query!(
       Repo,
-      "SELECT * FROM bots AS bot WHERE id = $2 AND is_searchable($1, bot)",
+      "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
       [u, b])
     length(result.rows) == 1
   end

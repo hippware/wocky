@@ -384,7 +384,7 @@ get_bots_near_location(From, Lat, Lon) ->
 
 get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
-    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, User),
+    FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
     {ok,
      ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
@@ -420,7 +420,7 @@ get_bots_for_owner(From, IQ, OwnerBin) ->
 
 get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:owned_bots_query(Owner),
-    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, QueryingUser),
+    FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, QueryingUser),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
 users_bots_result(Bots, FromUser, RSMOut) ->
