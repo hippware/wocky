@@ -87,8 +87,8 @@ defmodule Wocky.Index do
   end
 
   def handle_call({:geosearch, lat, lon}, _, state) do
-    nlat = lat |> GeoUtils.to_degrees |> GeoUtils.normalize_latitude
-    nlon = lon |> GeoUtils.to_degrees |> GeoUtils.normalize_longitude
+    {nlat, nlon} = GeoUtils.normalize_lat_lon(
+      GeoUtils.to_degrees(lat), GeoUtils.to_degrees(lon))
     result = state.backend.geosearch(state.indexes[:bot], nlat, nlon)
     {:reply, result, state}
   end

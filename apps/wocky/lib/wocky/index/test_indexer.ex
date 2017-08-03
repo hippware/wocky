@@ -45,6 +45,7 @@ defmodule Wocky.Index.TestIndexer do
   end
 
   defp bot_to_object(bot, loc) do
+
     distance = Bot.distance_from(bot, loc)
     %{
       "objectID"     => bot.id,
@@ -52,8 +53,8 @@ defmodule Wocky.Index.TestIndexer do
       "user_id"      => bot.user_id,
       "title"        => bot.title,
       "image"        => bot.image,
-      "lat"          => bot.lat,
-      "lon"          => bot.lon,
+      "lat"          => Bot.lat(bot),
+      "lon"          => Bot.lon(bot),
       "radius"       => bot.radius,
       "public"       => bot.public,
       "_rankingInfo" => %{"geoDistance" => distance / 1000} # meters

@@ -64,6 +64,7 @@
 -define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
 
 -define(wocky_event_handler, 'Elixir.Wocky.EventHandler').
+-define(wocky_geo_utils, 'Elixir.Wocky.GeoUtils').
 -define(home_stream_handler, 'Elixir.Wocky.EventHandler.HomeStream').
 -define(push_notification_handler,
          'Elixir.Wocky.EventHandler.PushNotification').

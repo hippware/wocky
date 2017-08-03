@@ -1,4 +1,6 @@
 defmodule Wocky.GeoUtils do
+  alias Geo.Point
+
   @moduledoc "Geographic utilities for Wocky"
 
   @doc "Convert a string or integer to a float"
@@ -13,25 +15,39 @@ defmodule Wocky.GeoUtils do
   def to_degrees(float) when is_float(float), do: float
   def to_degrees(_), do: raise ArgumentError
 
-  @doc "Normalize longitude to the range [-180,180]"
-  @spec normalize_longitude(float) :: float
-  def normalize_longitude(degrees) do
-    normalize_degrees(degrees, -180, 180)
+  def point(lon, lat) do
+    %Point{coordinates: {lon, lat}, srid: 4326}
   end
 
-  @doc "Normalize latitude to the range [-90,90]"
-  @spec normalize_latitude(float) :: float
-  def normalize_latitude(degrees) do
-    normalize_degrees(degrees, -90, 90)
+  @doc "Normalize latitude and logitude to the range [-90,90], (-180, 180]"
+  @spec normalize_lat_lon(float, float) :: {float, float}
+  def normalize_lat_lon(lat, lon) do
+    quadrant = round(fmod(Float.floor(abs(lat) / 90), 4))
+    pole =
+      if lat > 0 do 90
+      else -90
+      end
+    offset = fmod(lat, 90)
+
+    {nlat, ilon} =
+      case quadrant do
+        0 -> {offset, lon}
+        1 -> {pole - offset, lon + 180}
+        2 -> {-offset, lon + 180}
+        3 -> {-pole + offset, lon}
+      end
+
+    nlon =
+      if (ilon > 180) || (ilon <= -180) do
+        ilon - Float.floor((ilon + 180) / 360) * 360
+      else
+        ilon
+      end
+    {nlat, nlon}
   end
 
-  defp normalize_degrees(degrees, lower, upper) when degrees < lower do
-    normalize_degrees(degrees + (2 * upper), lower, upper)
-  end
-  defp normalize_degrees(degrees, lower, upper) when degrees > upper do
-    normalize_degrees(degrees - (2 * upper), lower, upper)
-  end
-  defp normalize_degrees(degrees, _lower, _upper) do
-    degrees
+  defp fmod(a, b) do
+    multiple = trunc(a / b)
+    a - (multiple * b)
   end
 end

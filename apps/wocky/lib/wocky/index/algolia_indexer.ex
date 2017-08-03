@@ -5,6 +5,8 @@ defmodule Wocky.Index.AlgoliaIndexer do
 
   require Logger
 
+  alias Wocky.GeoUtils
+
   @behaviour Wocky.Index
 
   def init do
@@ -55,8 +57,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
       user_id: obj["user_id"],
       title: obj["title"],
       image: obj["image"],
-      lat: obj["lat"],
-      lon: obj["lon"],
+      location: GeoUtils.point(obj["lon"], obj["lat"]),
       radius: obj["radius"],
       distance: obj["_rankingInfo"]["geoDistance"] * 1000, # millimeters
       public: obj["public"]

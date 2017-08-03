@@ -390,6 +390,7 @@ defmodule Wocky.User do
     |> where(pending: false)
   end
 
+  @spec subscribed_bots_query(User.t) :: Queryable.t
   def subscribed_bots_query(user) do
     Bot
     |> where(pending: false)

@@ -40,7 +40,8 @@ defmodule Wocky.User.Location do
   @spec insert(User.t, User.resource, float, float, float)
     :: {:ok, t} | {:error, any}
   def insert(user, resource, lat, lon, accuracy) do
-    data = %{resource: resource, lat: lat, lon: lon, accuracy: accuracy}
+    {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
+    data = %{resource: resource, lat: nlat, lon: nlon, accuracy: accuracy}
 
     user
     |> build_assoc(:locations)
@@ -53,8 +54,6 @@ defmodule Wocky.User.Location do
     |> cast(params, [:resource, :lat, :lon, :accuracy])
     |> validate_required([:resource, :lat, :lon, :accuracy])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
-    |> update_change(:lat, &GeoUtils.normalize_latitude/1)
-    |> update_change(:lon, &GeoUtils.normalize_longitude/1)
   end
 
   @doc ""
@@ -77,7 +76,8 @@ defmodule Wocky.User.Location do
       maybe_do_async fn ->
         user
         |> User.get_owned_bots_with_follow_me
-        |> Enum.each(&Bot.update(&1, %{lat: loc.lat, lon: loc.lon}))
+        |> Enum.each(
+          &Bot.update(&1, %{location: GeoUtils.point(loc.lon, loc.lat)}))
       end
     end
 
