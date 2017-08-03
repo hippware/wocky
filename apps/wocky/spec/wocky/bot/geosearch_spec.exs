@@ -8,7 +8,7 @@ defmodule Wocky.Bot.GeosearchSpec do
   alias Wocky.Bot.Geosearch
   alias Wocky.GeoUtils
 
-  describe "user_distance_query/4" do
+  describe "geosearch" do
     before do
       user = Factory.insert(:user)
       Factory.insert_list(5, :bot, user: user)

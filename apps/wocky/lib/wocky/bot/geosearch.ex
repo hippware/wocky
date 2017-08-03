@@ -53,7 +53,7 @@ defmodule Wocky.Bot.Geosearch do
       |> results_to_bots()
       |> fix_sorting(direction)
 
-    count = get_count(where_clause)
+    count = get_count(point, where_clause)
     index = get_index(results, point, where_clause)
     {first, last} = get_first_last(results)
 
@@ -82,12 +82,17 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   defp fields(point) do
-    {~s|SELECT *, ST_Distance(bot.location, #{p(1, [])})| <>
-      ~s|AS "distance" FROM bots AS bot|,
-     [point]}
+    {~s|SELECT *, ST_Distance(bot.location, #{p(1, [])}) AS "distance" FROM|,
+      [point]}
+    |> closest(point)
+    |> add_str(" AS bot")
   end
 
-  defp count, do: {"SELECT count(id) FROM bots AS bot", []}
+  defp count(point) do
+    {"SELECT count(id) FROM", []}
+    |> closest(point)
+    |> add_str(" AS bot")
+  end
 
   defp where_visible({str, params}, user_id, owner_id) do
     {str <>
@@ -111,13 +116,15 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_join(acc, pivot, point, dir) do
     acc
     |> add_str(" INNER JOIN")
-    |> join_fields()
+    |> join_fields(point)
     |> join_on(pivot, point, dir)
   end
 
-  defp join_fields(acc) do
-    add_str(acc, " (SELECT id AS pivot_id, location " <>
-                  "AS pivot_location FROM bots) AS pivot")
+  defp join_fields(acc, point) do
+    acc
+    |> add_str(" (SELECT id AS pivot_id, location AS pivot_location FROM")
+    |> closest(point)
+    |> add_str(" AS x) AS pivot")
   end
 
   defp join_on({str, params}, pivot, point, dir) do
@@ -143,8 +150,8 @@ defmodule Wocky.Bot.Geosearch do
   defp order({str, params}, point, direction) do
     {str <>
       ~s| ORDER BY ST_Distance(bot.location, #{p(1, params)})| <>
-      ~s|#{maybe_desc(direction)}|,
-     [point | params]}
+        ~s|#{maybe_desc(direction)}|,
+      [point | params]}
   end
 
   defp maybe_desc(:before), do: "DESC"
@@ -154,7 +161,9 @@ defmodule Wocky.Bot.Geosearch do
 
   defp add_str({str, params}, tail), do: {str <> tail, params}
 
-  defp finalize_query({str, params}), do: {str, Enum.reverse(params)}
+  defp finalize_query({str, params}) do
+    {str, Enum.reverse(params)}
+  end
 
   ### Post-processing
 
@@ -179,9 +188,10 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_reverse(rows, true), do: Enum.reverse(rows)
   defp maybe_reverse(rows, false), do: rows
 
-  defp get_count(where_clause) do
+  defp get_count(point, where_clause) do
     {query_str, params} =
-      count()
+      point
+      |> count()
       |> where_clause.()
       |> finalize_query()
 
@@ -192,7 +202,8 @@ defmodule Wocky.Bot.Geosearch do
   defp get_index([], _, _), do: :undefined
   defp get_index([first | _], point, where_clause) do
     {query_str, params} =
-      count()
+      point
+      |> count()
       |> where_clause.()
       |> index_where(point, first.distance)
       |> finalize_query()
@@ -209,4 +220,8 @@ defmodule Wocky.Bot.Geosearch do
   defp dump_uuid(:undefined), do: :undefined
   defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
 
+  defp closest({str, params}, point) do
+    {str <> " (SELECT * FROM bots ORDER BY location <-> #{p(1, params)} LIMIT 100000)",
+     [point | params]}
+  end
 end
