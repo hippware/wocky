@@ -1,15 +1,15 @@
 defmodule Wocky.Bot do
   @moduledoc ""
 
-  use Wocky.Repo.Model
   use Wocky.JID
+  use Wocky.Repo.Model
+  use Wocky.RSMHelper
 
   alias Geocalc.Point
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
-  alias Wocky.GeoUtils
   alias Wocky.Index
   alias Wocky.Repo.ID
   alias Wocky.User
@@ -31,9 +31,8 @@ defmodule Wocky.Bot do
     # Bot type (freeform string from server's perspective)
     field :address,          :string, default: ""
     # Free-form string field describing bot's location
-    field :lat,              :float   # Latitude
-    field :lon,              :float   # Longitude
-    field :radius,           :integer # Radius of bot circle
+    field :location,         Geo.Point # Location
+    field :radius,           :float   # Radius of bot circle
     field :public,           :boolean # Visibility of bot
     field :alerts,           :boolean # Whether alerts are enabled
     field :follow_me,        :boolean # Does bot follow owner
@@ -56,9 +55,9 @@ defmodule Wocky.Bot do
 
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
-                  :image, :type, :address, :lat, :lon, :radius, :public,
+                  :image, :type, :address, :location, :radius, :public,
                   :alerts, :follow_me, :follow_me_expiry, :tags]
-  @required_fields [:id, :server, :user_id, :title, :lat, :lon, :radius]
+  @required_fields [:id, :server, :user_id, :title, :location, :radius]
 
   #----------------------------------------------------------------------
   # Helpers
@@ -107,8 +106,6 @@ defmodule Wocky.Bot do
     struct
     |> cast(params, @change_fields)
     |> validate_required(@required_fields)
-    |> update_change(:lat, &GeoUtils.normalize_latitude/1)
-    |> update_change(:lon, &GeoUtils.normalize_longitude/1)
     |> validate_number(:radius, greater_than: 0)
     |> put_change(:pending, false)
     |> unique_constraint(:shortname)
@@ -186,29 +183,27 @@ defmodule Wocky.Bot do
     subscribers + temp_subscribers + 1
   end
 
-  @doc "Returns the bot's distance from the specified location."
+  @doc "Returns the bot's distance from the specified location in meters."
   @spec distance_from(Bot.t, Point.t) :: non_neg_integer
   def distance_from(bot, loc) do
-    Geocalc.distance_between(Map.from_struct(bot), loc)
+    Geocalc.distance_between(%{lat: lat(bot), lon: lon(bot)}, loc)
   end
 
   @doc "Returns true if the location is within the bot's radius."
   @spec contains?(Bot.t, Point.t) :: boolean
   def contains?(bot, loc) do
-    radius = (bot.radius / 1000.0) # Bot radius is stored as millimeters
-
-    if radius < 0 do
+    if bot.radius < 0 do
       :ok = Logger.warn(
-        "Bot #{bot.id} has a negative radius (#{radius} meters)."
+        "Bot #{bot.id} has a negative radius (#{bot.radius} meters)."
       )
       false
     else
-      distance_from(bot, loc) <= radius
+      distance_from(bot, loc) <= bot.radius
     end
   end
 
-  @spec read_access_filter(Queryable.t, User.t) :: Queryable.t
-  def read_access_filter(queryable, user) do
+  @spec is_visible_query(Queryable.t, User.t) :: Queryable.t
+  def is_visible_query(queryable, user) do
     queryable
     |> join(:left, [b], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
     |> where([b, s], b.user_id == ^user.id or b.public or not is_nil(s.user_id))
@@ -221,4 +216,12 @@ defmodule Wocky.Bot do
     |> Repo.update!
     :ok
   end
+
+  @spec lat(Bot.t) :: float | nil
+  def lat(%Bot{location: %Geo.Point{coordinates: {_, lat}}}), do: lat
+  def lat(_), do: nil
+
+  @spec lon(Bot.t) :: float | nil
+  def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
+  def lon(_), do: nil
 end

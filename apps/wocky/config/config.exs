@@ -18,7 +18,8 @@ config :wocky,
   enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false}
 
 config :wocky, Wocky.Repo,
-  adapter: Ecto.Adapters.Postgres,
+  adapter:   Ecto.Adapters.Postgres,
+  types:     Wocky.Repo.PostgresTypes,
   database:  {:system, :string, "WOCKY_DB_NAME", "wocky"},
   username:  {:system, :string, "WOCKY_DB_USER", "postgres"},
   password:  {:system, :string, "WOCKY_DB_PASSWORD", "password"},

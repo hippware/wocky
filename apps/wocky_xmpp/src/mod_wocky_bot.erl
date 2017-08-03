@@ -30,13 +30,15 @@
 -type loc() :: {float(), float()}.
 -type tags() :: [binary()].
 
--type field_type() :: string | int | bool | geoloc | jid | timestamp | tags.
--type value_type() :: nil | binary() | integer() | boolean()
+-type field_type() :: string | int | float | bool |
+                      geoloc | jid | timestamp | tags.
+-type field_types() :: field_type() | [field_type()].
+-type value_type() :: nil | binary() | integer() | float() | boolean()
                       | loc() | jid() | tags() | ?datetime:t().
 
 -record(field, {
           name :: binary(),
-          type :: field_type(),
+          type :: field_types(),
           value :: value_type()
          }).
 
@@ -108,8 +110,10 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
   %% accept either.
   when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
     Node = wocky_bot_util:get_id_from_node(Attrs),
-    Location = get_location_from_attrs(Attrs),
-    User = wocky_xml:get_attr(<<"user">>, Attrs),
+
+    Location = get_location_from_attrs(Attrs),    % DEPRECATED
+    User = wocky_xml:get_attr(<<"user">>, Attrs), % DEPRECATED
+
     Owner = wocky_xml:act_on_subel(<<"owner">>, IQ#iq.sub_el,
                                    wocky_xml:get_attr(<<"jid">>, _)),
 
@@ -123,7 +127,7 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
         {_, _, _, {ok, OwnerBin}} ->
             get_bots_for_owner(From, IQ, OwnerBin);
         _ ->
-            {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot request">>)}
+            get_searchable_bots(From, IQ)
     end;
 
 % Retrieve subscribed bots
@@ -384,7 +388,7 @@ get_bots_near_location(From, Lat, Lon) ->
 
 get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
-    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, User),
+    FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
     {ok,
      ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
@@ -397,11 +401,12 @@ make_geosearch_els(Bots) ->
     [make_geosearch_el(Bot) || Bot <- Bots].
 
 geosearch_el_fields() ->
-    [id, server, title, image, lat, lon, radius, distance].
+    [id, server, title, image, location, radius, distance].
 
 make_geosearch_el(Bot) ->
     JidField = make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
-    MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
+    MapFields = maps:fold(fun to_field/3, [],
+                          maps:with(geosearch_el_fields(), Bot)),
     RetFields = encode_fields([JidField | MapFields]),
     make_ret_stanza(RetFields).
 
@@ -417,10 +422,30 @@ get_bots_for_owner(From, IQ, OwnerBin) ->
         {ok, users_bots_result(FilteredBots, FromUser, RSMOut)}
        ]).
 
+get_bots_for_owner_rsm(Owner, QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
+    ?wocky_geosearch:user_distance_query(Lat, Lon, QueryingUser, Owner, RSMIn);
+
 get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:owned_bots_query(Owner),
-    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, QueryingUser),
+    FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, QueryingUser),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
+
+get_searchable_bots(From, IQ) ->
+    do([error_m ||
+        RSMIn <- rsm_util:get_rsm(IQ),
+        FromUser <- wocky_bot_util:get_user_from_jid(From),
+        Sorting <- get_sorting(IQ),
+        {FilteredBots, RSMOut} <-
+            get_searchable_bots_rsm(FromUser, Sorting, RSMIn),
+        {ok, users_bots_result(FilteredBots, FromUser, RSMOut)}
+       ]).
+
+get_searchable_bots_rsm(QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
+    {ok, ?wocky_geosearch:explore_nearby(Lat, Lon, QueryingUser, RSMIn)};
+
+get_searchable_bots_rsm(QueryingUser, Sorting, RSMIn) ->
+    BaseQuery = ?wocky_user:searchable_bots_query(QueryingUser),
+    {ok, ?wocky_rsm_helper:rsm_query(RSMIn, BaseQuery, id, Sorting)}.
 
 users_bots_result(Bots, FromUser, RSMOut) ->
     BotEls = make_bot_els(Bots, FromUser),
@@ -558,7 +583,10 @@ get_field_value(tags, FieldEl) ->
     wocky_xml:foldl_subels(FieldEl, [], fun read_tag/2);
 
 get_field_value(bool, FieldEl) ->
-    wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_bool/1).
+    wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_bool/1);
+
+get_field_value(float, FieldEl) ->
+    wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_float/1).
 
 read_integer(Binary) ->
     case wocky_util:safe_bin_to_integer(Binary) of
@@ -596,29 +624,39 @@ read_bool(Binary) ->
 
 get_sorting(#iq{sub_el = SubEl}) ->
     case wocky_xml:get_subel(<<"sort">>, SubEl) of
-        {ok, SortEl} -> parse_sorting(SortEl#xmlel.attrs);
+        {ok, SortEl} -> parse_sorting(SortEl);
         {error, _} -> {ok, ?DEFAULT_SORTING}
     end.
 
-parse_sorting(Attrs) ->
+parse_sorting(SortEl) ->
     do([error_m ||
-        By <- wocky_xml:get_attr(<<"by">>, Attrs),
+        By <- wocky_xml:get_attr(<<"by">>, SortEl#xmlel.attrs),
         ByResult <- check_by(By),
-        Dir <- wocky_xml:get_attr(<<"direction">>, Attrs),
-        DirResult <- check_dir(Dir),
-        {ok, {DirResult, ByResult}}
+        Dir <- wocky_xml:get_attr(<<"direction">>, SortEl#xmlel.attrs),
+        DirResult <- check_dir(Dir, By),
+        maybe_add_near(SortEl, ByResult, DirResult)
        ]).
 
-check_by(<<"created">>) -> {ok, created_at};
-check_by(<<"updated">>) -> {ok, updated_at};
-check_by(<<"lexicographic">>) -> {ok, title};
+check_by(<<"created">>) ->  {ok, created_at};
+check_by(<<"updated">>) ->  {ok, updated_at};
+check_by(<<"title">>) ->    {ok, title};
+check_by(<<"distance">>) -> {ok, distance};
 check_by(_) ->
-    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid sort criterion">>)}.
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid sort field">>)}.
 
-check_dir(<<"asc">>) -> {ok, asc};
-check_dir(<<"desc">>) -> {ok, desc};
-check_dir(_) ->
+check_dir(<<"asc">>, _) -> {ok, asc};
+check_dir(<<"desc">>, By) when By =/= distance -> {ok, desc};
+check_dir(_, _) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid sort direction">>)}.
+
+maybe_add_near(SortEl, distance, asc) ->
+    do([error_m ||
+        Near <- wocky_xml:get_subel(<<"near">>, SortEl),
+        Lat <- wocky_xml:get_attr(<<"lat">>, Near),
+        Lon <- wocky_xml:get_attr(<<"lon">>, Near),
+        {ok, {asc, distance, Lat, Lon}}
+       ]);
+maybe_add_near(_, By, Dir) -> {ok, {Dir, By}}.
 
 check_required_fields(_Fields, []) -> ok;
 check_required_fields(Fields, [#field{name = Name} | Rest]) ->
@@ -639,6 +677,13 @@ check_field(Name, TypeBin) ->
                        ?MYLANG, <<"Invalid field ", Name/binary>>)}
     end.
 
+check_field_type(Name, TypeBin, [ExpectedType | Rest]) ->
+    case check_field_type(Name, TypeBin, ExpectedType) of
+        {ok, Result} -> {ok, Result};
+        {error, E} when Rest =:= [] -> {error, E};
+        {error, _} -> check_field_type(Name, TypeBin, Rest)
+    end;
+
 check_field_type(Name, TypeBin, ExpectedType) ->
     ExpectedTypeBin = atom_to_binary(ExpectedType, utf8),
     case ExpectedTypeBin of
@@ -656,7 +701,7 @@ required_fields() ->
     %% Name,                    Type,   Default
     [field(<<"title">>,         string, <<>>),
      field(<<"location">>,      geoloc, <<>>),
-     field(<<"radius">>,        int,    0)].
+     field(<<"radius">>,        [int, float], 0.0)]. % Int for backwards compat
 
 optional_fields() ->
     [field(<<"id">>,            string, <<>>),
@@ -675,7 +720,7 @@ output_only_fields() ->
      field(<<"owner">>,         jid,    <<>>),
      field(<<"updated">>,       timestamp, <<>>),
      field(<<"subscribed">>,    bool,   false),
-     field(<<"distance">>,      int,    0)].
+     field(<<"distance">>,      float,  0.0)].
 
 create_fields() -> required_fields() ++ optional_fields().
 output_fields() -> required_fields() ++ optional_fields()
@@ -710,7 +755,7 @@ normalise_fields(Fields) ->
     lists:foldl(fun normalise_field/2, #{}, Fields).
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
-    Acc#{lat => Lat, lon => Lon};
+    Acc#{location => ?wocky_geo_utils:point(Lon, Lat)};
 normalise_field(#field{type = jid, value = #jid{luser = UserID}}, Acc) ->
     Acc#{user_id => UserID};
 normalise_field(#field{name = <<"visibility">>, value = 100}, Acc) ->
@@ -730,7 +775,7 @@ make_bot_el(Bot, FromUser) ->
 
 make_ret_elements(Bot, FromUser) ->
     MetaFields = meta_fields(Bot, FromUser),
-    Fields = map_to_fields(Bot),
+    Fields = maps:fold(fun to_field/3, [], Bot),
     encode_fields(Fields ++ MetaFields).
 
 meta_fields(Bot, FromUser) ->
@@ -748,24 +793,6 @@ size_and_hash(Name, List) ->
                 wocky_bot_util:list_hash(List))
     ].
 
-map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
-    [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} |
-     map_to_fields(maps:without([lat, lon], Map))];
-map_to_fields(Map = #{user_id := UserID}) ->
-    User = ?wocky_repo:get(?wocky_user, UserID),
-    [#field{name = <<"owner">>, type = jid, value = ?wocky_user:to_jid(User)} |
-     map_to_fields(maps:without([user_id], Map))];
-map_to_fields(Map = #{public := Public}) ->
-    [#field{name = <<"visibility">>, type = int, value = vis(Public)} |
-     map_to_fields(maps:without([public], Map))];
-map_to_fields(Map = #{alerts := Alerts}) ->
-    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} |
-     map_to_fields(maps:without([alerts], Map))];
-map_to_fields(Map = #{updated_at := Updated}) ->
-     [#field{name = <<"updated">>, type = timestamp, value = Updated} |
-     map_to_fields(maps:without([updated_at], Map))];
-map_to_fields(Map) ->
-    maps:fold(fun to_field/3, [], Map).
 
 vis(true) -> 100;
 vis(false) -> 0.
@@ -776,6 +803,17 @@ alerts(false) -> 0.
 encode_fields(Fields) ->
     lists:foldl(fun encode_field/2, [], Fields).
 
+to_field(location, #{coordinates := {Lon, Lat}}, Acc) ->
+    [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} | Acc];
+to_field(user_id, UserID, Acc) ->
+    JID = ?wocky_user:to_jid(?wocky_repo:get(?wocky_user, UserID)),
+    [#field{name = <<"owner">>, type = jid, value = JID} | Acc];
+to_field(public, Public, Acc) ->
+    [#field{name = <<"visibility">>, type = int, value = vis(Public)} | Acc];
+to_field(alerts, Alerts, Acc) ->
+    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} | Acc];
+to_field(updated_at, Updated, Acc) ->
+    [#field{name = <<"updated">>, type = timestamp, value = Updated} | Acc];
 to_field(_, null, Acc) -> Acc;
 to_field(Key, Val, Acc) ->
     KeyBin = atom_to_binary(Key, utf8),
@@ -784,9 +822,13 @@ to_field(Key, Val, Acc) ->
         #field{type = Type} -> [make_field(KeyBin, Type, Val) | Acc]
     end.
 
+make_field(Name, Types, Val)
+  when is_list(Types) ->
+    make_field(Name, lists:last(Types), Val);
 make_field(Name, Type, Val)
   when Type =:= string orelse
        Type =:= int orelse
+       Type =:= float orelse
        Type =:= bool orelse
        Type =:= timestamp orelse
        Type =:= tags ->
@@ -802,6 +844,12 @@ encode_field(#field{name = N, type = jid, value = V}, Acc) ->
     [field_element(N, jid, safe_jid_to_binary(V)) | Acc];
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
+encode_field(#field{name = N, type = float, value = V}, Acc)
+  when is_float(V)->
+    [field_element(N, float, float_to_binary(V)) | Acc];
+encode_field(#field{name = N, type = float, value = V}, Acc)
+  when is_integer(V) ->
+    [field_element(N, float, float_to_binary(float(V))) | Acc];
 encode_field(#field{name = N, type = bool, value = V}, Acc) ->
     [field_element(N, bool, atom_to_binary(V, utf8)) | Acc];
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->

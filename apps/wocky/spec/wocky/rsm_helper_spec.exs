@@ -176,7 +176,7 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :last) |> should(be_binary())
     end
 
-    context "when the key field is an integer" do
+    context "when the key field is a float" do
       before do
         {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), shared.query,
                                                  :radius,
@@ -203,7 +203,7 @@ defmodule Wocky.RSMHelperSpec do
         query =
           Bot
           |> where(user_id: ^user1.id)
-          |> Bot.read_access_filter(user1)
+          |> Bot.is_visible_query(user1)
 
         {records, rsm_out} = RSMHelper.rsm_query(rsm_in(id: Enum.at(bots, 2)), query,
                                                  :id, {:asc, :created_at})

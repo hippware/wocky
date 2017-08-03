@@ -2,6 +2,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
   use ESpec, async: true
   use ModelHelpers
 
+  alias Ecto.Adapters.SQL
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.ID
 
@@ -146,6 +147,36 @@ defmodule Wocky.Bot.SubscriptionSpec do
         Subscription.delete(shared.user, bot)
         |> should(eq :ok)
       end
+    end
+
+    describe "is_subscribed/2 stored procedure" do
+      it "should return true if the user is subscribed to the bot" do
+        assert is_subscribed_sp(shared.user, shared.bot)
+      end
+
+      it "should return false when the user does not exist" do
+        user = Factory.build(:user, resource: "testing")
+        refute is_subscribed_sp(user, shared.bot)
+      end
+
+      it "should return false when the bot does not exist" do
+        bot = Factory.build(:bot)
+        refute is_subscribed_sp(shared.user, bot)
+      end
+
+      it "should return false when the user is not subscribed to the bot" do
+        refute is_subscribed_sp(shared.owner, shared.bot)
+      end
+    end
+
+    defp is_subscribed_sp(user, bot) do
+      {:ok, u} = Ecto.UUID.dump(user.id)
+      {:ok, b} = Ecto.UUID.dump(bot.id)
+      Repo
+      |> SQL.query!("SELECT is_subscribed($1, $2)", [u, b])
+      |> Map.get(:rows)
+      |> hd
+      |> hd
     end
   end
 end

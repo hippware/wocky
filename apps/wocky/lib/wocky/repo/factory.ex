@@ -17,6 +17,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
+  alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
   alias Wocky.InitialFollowee
   alias Wocky.NotificationLog
@@ -58,9 +59,8 @@ defmodule Wocky.Repo.Factory do
       image: TROS.make_url("localhost", ID.new),
       type: "test",
       address: Address.street_address,
-      lat: Address.latitude,
-      lon: Address.longitude,
-      radius: :rand.uniform(100) * 1000,
+      location: GeoUtils.point(Address.longitude, Address.latitude),
+      radius: :rand.uniform(100),
       public: false,
       alerts: false,
       follow_me: false,

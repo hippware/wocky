@@ -2,11 +2,14 @@ defmodule Wocky.BotSpec do
   use ESpec, async: true
   use ModelHelpers
   use Wocky.JID
+  use Wocky.RSMHelper
 
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
   alias Wocky.Index.TestIndexer
+  alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
@@ -58,7 +61,8 @@ defmodule Wocky.BotSpec do
   describe "validations" do
     let :attrs do
       %{id: ID.new, server: "localhost", user_id: ID.new,
-        title: "test bot", lat: 1.0, lon: 1.0, radius: 1000}
+        title: "test bot", location: GeoUtils.point(5.0, 5.0),
+        radius: 1000}
     end
 
     it "should pass with valid attributes" do
@@ -77,18 +81,6 @@ defmodule Wocky.BotSpec do
       %Bot{}
       |> Bot.changeset(Map.put(attrs(), :radius, -1))
       |> should(have_errors [:radius])
-    end
-
-    it "should normalize latitude" do
-      attrs = Map.put(attrs(), :lat, -95.0)
-      changeset = Bot.changeset(%Bot{}, attrs)
-      changeset.changes.lat |> should(eq 85.0)
-    end
-
-    it "should normalize longitude" do
-      attrs = Map.put(attrs(), :lon, -185.0)
-      changeset = Bot.changeset(%Bot{}, attrs)
-      changeset.changes.lon |> should(eq 175.0)
     end
 
     it "should set pending to 'false'" do
@@ -170,6 +162,15 @@ defmodule Wocky.BotSpec do
           TestIndexer.get_index_operations |> should_not(be_empty())
         end
       end
+
+      context "out of range location" do
+        it "should normalize latitude and longitude" do
+          {:ok, %Bot{id: id}} =
+            Bot.update(bot(), %{location: GeoUtils.point(-185, -95.0)})
+          Repo.get(Bot, id).location |> should(eq GeoUtils.point(175, -85))
+        end
+      end
+
     end
 
     describe "delete/1" do
@@ -219,7 +220,7 @@ defmodule Wocky.BotSpec do
   end
 
   describe "Query fragments" do
-    describe "read_access_filter/2" do
+    describe "is_visible_query/2" do
       before do
         [user1, user2] = Factory.insert_list(2, :user)
         owned_bot = Factory.insert(:bot, user: user1)
@@ -239,31 +240,33 @@ defmodule Wocky.BotSpec do
       end
 
       it "should allow owned bots" do
-        run_filter(shared.owned_bot, shared.user)
+        run_query(shared.owned_bot, shared.user)
         |> should(eq shared.owned_bot)
       end
 
       it "should allow public bots" do
-        run_filter(shared.public_bot, shared.user)
+        run_query(shared.public_bot, shared.user)
         |> should(eq shared.public_bot)
       end
 
       it "should allow shared bots" do
-        run_filter(shared.shared_bot, shared.user)
+        run_query(shared.shared_bot, shared.user)
         |> should(eq shared.shared_bot)
       end
 
       it "should refuse private bots" do
-        run_filter(shared.private_bot, shared.user)
+        run_query(shared.private_bot, shared.user)
         |> should(be_nil())
       end
     end
+
   end
 
-  defp run_filter(bot, user) do
+
+  defp run_query(bot, user) do
     Bot
     |> where(id: ^bot.id)
-    |> Bot.read_access_filter(user)
+    |> Bot.is_visible_query(user)
     |> preload(:user)
     |> Repo.one
   end
