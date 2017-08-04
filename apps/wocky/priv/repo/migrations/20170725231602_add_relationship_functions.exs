@@ -68,7 +68,7 @@ defmodule Wocky.Repo.Migrations.AddRelationshipFunctions do
     $$ LANGUAGE plpgsql;\
     """
 
-    exectue """
+    execute """
     CREATE INDEX bot_location_gix ON bots USING GIST (location);
     """
 

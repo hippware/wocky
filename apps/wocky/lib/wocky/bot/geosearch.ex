@@ -24,11 +24,6 @@ defmodule Wocky.Bot.Geosearch do
   def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
     do: distance_query(lat, lon, &where_visible(&1, user_id, owner_id), rsm_in)
 
-  @spec explore_nearby(float, float, User.id, RSMHelper.rsm_in)
-  :: {[%Bot{}], RSMHelper.rsm_out}
-  def explore_nearby(lat, lon, user_id, rsm_in \\ rsm_in()),
-    do: distance_query(lat, lon, &where_searchable(&1, user_id), rsm_in)
-
   defp distance_query(lat, lon, where_clause, rsm_in) do
     limit = rsm_in(rsm_in, :max)
     offset = rsm_in(rsm_in, :index)
@@ -62,18 +57,18 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   def get_all(lat, lon, user_id, owner_id),
-    do: do_get_all(lat, lon, &where_visible(&1, user_id, owner_id))
+    do: do_get_all(lat, lon, &where_visible(&1, user_id, owner_id), true)
 
   def get_all(lat, lon, user_id),
-    do: do_get_all(lat, lon, &where_searchable(&1, user_id))
+    do: do_get_all(lat, lon, &where_searchable(&1, user_id), false)
 
-  defp do_get_all(lat, lon, where_clause) do
+  defp do_get_all(lat, lon, where_clause, order_with_sphereoid) do
     point = GeoUtils.point(lon, lat)
     {query_str, params} =
       point
       |> fields()
       |> where_clause.()
-      |> order(point, :aft)
+      |> order(point, :aft, order_with_sphereoid)
       |> finalize_query()
 
     Repo
@@ -140,10 +135,11 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_offset({str, params}, offset),
     do: {str <> " OFFSET #{p(1, params)}", [offset | params]}
 
-  defp order({str, params}, point, direction) do
+  defp order({str, params}, point, direction, use_sphereoid \\ true) do
     {str <>
-      ~s| ORDER BY ST_Distance(bot.location, #{p(1, params)})| <>
-      ~s|#{maybe_desc(direction)}|,
+      ~s| ORDER BY| <>
+      ~s| ST_Distance(bot.location, #{p(1, params)}, #{use_sphereoid})| <>
+      ~s| #{maybe_desc(direction)}|,
      [point | params]}
   end
 
@@ -158,7 +154,7 @@ defmodule Wocky.Bot.Geosearch do
 
   ### Post-processing
 
-  defp results_to_bots(%{columns: columns, rows: rows}) do
+  def results_to_bots(%{columns: columns, rows: rows}) do
     Enum.map(rows, &row_to_bot(&1, columns))
   end
 
@@ -209,4 +205,33 @@ defmodule Wocky.Bot.Geosearch do
   defp dump_uuid(:undefined), do: :undefined
   defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
 
+  @spec explore_nearby(float, float, User.id, non_neg_integer) :: :ok
+  def explore_nearby(lat, lon, user_id, fun, limit \\ 1000) do
+    point = GeoUtils.point(lon, lat)
+    query_str =
+    """
+    DECLARE explore_nearby CURSOR FOR
+    SELECT *, ST_Distance(bot.location, $1) AS "distance" FROM bots AS bot
+    WHERE is_searchable($2, bot)
+    ORDER BY location <-> $1
+    LIMIT $3
+    """
+    params = [point, dump_uuid(user_id), limit]
+
+    Repo.transaction(fn() ->
+      SQL.query!(Repo, query_str, params)
+      fetch_results(fun) end)
+  end
+
+  def fetch_results(fun) do
+    results = SQL.query!(Repo, "FETCH NEXT explore_nearby")
+    case results.num_rows do
+      0 ->
+        fun.(:no_more_results)
+        :ok
+      _ ->
+        fun.(results |> results_to_bots() |> hd)
+        fetch_results(fun)
+    end
+  end
 end

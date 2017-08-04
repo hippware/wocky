@@ -194,63 +194,34 @@ defmodule Wocky.Bot.GeosearchSpec do
         Enum.each(other_bots,
                   &Factory.insert(:share, user: user, bot: &1))
 
-        query = &Geosearch.explore_nearby(shared.lat, shared.lon, user.id, &1)
-
         {:ok,
-          bots: searchable_bots,
-          query: query,
-          middle_id: Enum.at(searchable_bots, 10).id}
+          bots: searchable_bots
+        }
       end
 
       it "should have all the searchable bots" do
-        shared.bots |> should(have_length 20)
+        table = :ets.new(:table, [:public])
+        :ets.insert(table, {:acc, []})
+        Geosearch.explore_nearby(shared.lat, shared.lon, shared.user.id,
+                                 fn(:no_more_results) ->
+                                     :ok
+                                   (bot) ->
+                                     [{:acc, acc}] = :ets.lookup(table, :acc)
+                                     :ets.insert(table, {:acc, [bot | acc]})
+                                 end)
+
+        table
+        |> :ets.lookup(:acc)
+        |> hd
+        |> elem(1)
+        |> Enum.reverse
+        |> should(eq shared.bots)
       end
 
-      it "should work for index lookups" do
-        {results, rsm_out} = shared.query.(rsm_in(max: 10, index: 2))
-        results |> should(eq Enum.slice(shared.bots, 2..11))
-        rsm_out |> should(eq make_rsm(20, 2, 2, 11, shared.bots))
-      end
-
-      it "should not fail for out of range indices" do
-        {results, rsm_out} = shared.query.(rsm_in(max: 10, index: 20))
-        results |> should(eq [])
-        rsm_out |> should(eq make_rsm(20))
-      end
-
-      it "should work for id lookups" do
-        {results, rsm_out} = shared.query.(
-          rsm_in(id: shared.middle_id, direction: :aft))
-        results |> should(eq Enum.slice(shared.bots, 11..19))
-        rsm_out |> should(eq make_rsm(20, 11, 11, 19, shared.bots))
-      end
-
-      it "should work in reverse" do
-        {results, rsm_out} = shared.query.(
-          rsm_in(id: shared.middle_id, direction: :before))
-        results |> should(eq Enum.slice(shared.bots, 0..9))
-        rsm_out |> should(eq make_rsm(20, 0, 0, 9, shared.bots))
-
-        {results, rsm_out} = shared.query.(
-          rsm_in(id: shared.middle_id, direction: :before, reverse: true))
-        results |> should(eq Enum.reverse(Enum.slice(shared.bots, 0..9)))
-        rsm_out |> should(eq make_rsm(20, 0, 0, 9, shared.bots))
-      end
-
-      it "should limit as requested" do
-        {results, rsm_out} = shared.query.(
-          rsm_in(id: shared.middle_id, direction: :before, max: 2))
-        results |> should(eq Enum.slice(shared.bots, 8..9))
-        rsm_out |> should(eq make_rsm(20, 8, 8, 9, shared.bots))
-
-        {results, rsm_out} = shared.query.(
-          rsm_in(id: shared.middle_id, direction: :before,
-                 max: 1, reverse: true))
-        results |> should(eq [Enum.at(shared.bots, 9)])
-        rsm_out |> should(eq make_rsm(20, 9, 9, 9, shared.bots))
-      end
     end
   end
+
+
 
   defp make_rsm(count), do: rsm_out(count: count)
   defp make_rsm(count, index, first, last, bots) do
