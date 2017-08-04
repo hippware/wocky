@@ -68,6 +68,10 @@ defmodule Wocky.Repo.Migrations.AddRelationshipFunctions do
     $$ LANGUAGE plpgsql;\
     """
 
+    exectue """
+    CREATE INDEX bot_location_gix ON bots USING GIST (location);
+    """
+
   end
 
   def down do
@@ -77,6 +81,7 @@ defmodule Wocky.Repo.Migrations.AddRelationshipFunctions do
     DROP FUNCTION is_shared(uuid, uuid)
     DROP FUNCTION is_subscribed(uuid, uuid)
     DROP FUNCTION is_searchable(uuid, uuid)
+    DROP INDEX bot_location_gix
     """
   end
 
