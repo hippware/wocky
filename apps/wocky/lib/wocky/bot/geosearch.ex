@@ -19,6 +19,13 @@ defmodule Wocky.Bot.Geosearch do
   alias Wocky.GeoUtils
   alias Wocky.Repo
 
+  @type explore_callback :: ((Bot | :no_more_results | :explore_timeout) -> any)
+
+  @default_explore_timeout 60_000
+  # Extra buffer to add to explore timeout for database timeout to ensure that
+  # the app times out before the database (which will throw an error):
+  @explore_timeout_buffer 5_000
+
   @spec user_distance_query(float, float, User.id, User.id RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
   def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
@@ -205,7 +212,7 @@ defmodule Wocky.Bot.Geosearch do
   defp dump_uuid(:undefined), do: :undefined
   defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
 
-  @spec explore_nearby(float, float, User.id, ((Bot) -> any), non_neg_integer)
+  @spec explore_nearby(float, float, User.id, explore_callback, non_neg_integer)
   :: :ok
   def explore_nearby(lat, lon, user_id, fun, limit \\ 1000) do
     point = GeoUtils.point(lon, lat)
@@ -219,25 +226,42 @@ defmodule Wocky.Bot.Geosearch do
     """
     params = [point, dump_uuid(user_id), limit]
 
-    try do
-      Repo.transaction(fn() ->
-        SQL.query!(Repo, query_str, params)
-        fetch_results(fun) end,
-        timeout: 60_000)
-    rescue
-      DBConnection.ConnectionError -> fun.(:no_more_results)
-    end
+    max_explore_time = Confex.get(:wocky, :max_explore_time,
+                                  @default_explore_timeout)
+
+    Repo.transaction(
+      fn() ->
+        start_explore(query_str, params, fun, max_explore_time)
+      end,
+      timeout: max_explore_time + @explore_timeout_buffer)
+    :ok
   end
 
-  def fetch_results(fun) do
+  defp start_explore(query_str, params, fun, timeout) do
+    start_time = :erlang.monotonic_time()
+    SQL.query!(Repo, query_str, params)
+    fetch_results(fun, start_time, timeout)
+  end
+
+  defp fetch_results(fun, start_time, timeout) do
     results = SQL.query!(Repo, "FETCH NEXT explore_nearby")
     case results.num_rows do
       0 ->
         fun.(:no_more_results)
-        :ok
       _ ->
         fun.(results |> results_to_bots() |> hd)
-        fetch_results(fun)
+        maybe_fetch_more(fun, start_time, timeout)
+    end
+  end
+
+  defp maybe_fetch_more(fun, start_time, timeout) do
+    elapsed = :erlang.convert_time_unit(
+      :erlang.monotonic_time() - start_time,
+      :native, :millisecond)
+    if elapsed < timeout do
+      fetch_results(fun, start_time, timeout)
+    else
+      fun.(:max_explore_time)
     end
   end
 end
