@@ -81,11 +81,10 @@ defmodule Wocky.RosterItem do
   @spec put(map)
   :: {:ok, RosterItem.t}
   def put(fields) do
-    {:ok,
-     %RosterItem{}
-     |> changeset(fields)
-     |> Repo.insert!(on_conflict: :replace_all,
-                     conflict_target: [:user_id, :contact_id])}
+    %RosterItem{}
+    |> changeset(fields)
+    |> Repo.insert(on_conflict: :replace_all,
+                   conflict_target: [:user_id, :contact_id])
   end
 
   @spec get(User.id) :: [t]
@@ -330,7 +329,10 @@ defmodule Wocky.RosterItem do
   defp is_follower(_), do: false
 
   defp changeset(struct, params) do
-    cast(struct, params, @change_fields)
+    struct
+    |> cast(params, @change_fields)
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:contact_id)
   end
 
   defp maybe_sort_pair([], _, _), do: nil
