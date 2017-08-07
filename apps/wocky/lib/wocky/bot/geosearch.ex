@@ -205,7 +205,8 @@ defmodule Wocky.Bot.Geosearch do
   defp dump_uuid(:undefined), do: :undefined
   defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
 
-  @spec explore_nearby(float, float, User.id, non_neg_integer) :: :ok
+  @spec explore_nearby(float, float, User.id, ((Bot) -> any), non_neg_integer)
+  :: :ok
   def explore_nearby(lat, lon, user_id, fun, limit \\ 1000) do
     point = GeoUtils.point(lon, lat)
     query_str =
@@ -218,9 +219,14 @@ defmodule Wocky.Bot.Geosearch do
     """
     params = [point, dump_uuid(user_id), limit]
 
-    Repo.transaction(fn() ->
-      SQL.query!(Repo, query_str, params)
-      fetch_results(fun) end)
+    try do
+      Repo.transaction(fn() ->
+        SQL.query!(Repo, query_str, params)
+        fetch_results(fun) end,
+        timeout: 60_000)
+    rescue
+      DBConnection.ConnectionError -> fun.(:no_more_results)
+    end
   end
 
   def fetch_results(fun) do
