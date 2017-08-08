@@ -26,7 +26,7 @@ defmodule Wocky.Bot.Geosearch do
   # the app times out before the database (which will throw an error):
   @explore_timeout_buffer 5_000
 
-  @spec user_distance_query(float, float, User.id, User.id RSMHelper.rsm_in)
+  @spec user_distance_query(float, float, User.id, User.id, RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
   def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
     do: distance_query(lat, lon, &where_visible(&1, user_id, owner_id), rsm_in)
