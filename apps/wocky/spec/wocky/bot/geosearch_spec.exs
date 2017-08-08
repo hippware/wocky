@@ -5,20 +5,16 @@ defmodule Wocky.Bot.GeosearchSpec do
   use Wocky.RSMHelper
 
   alias Faker.Address
+  alias Wocky.Bot
   alias Wocky.Bot.Geosearch
+  alias Wocky.GeoUtils
 
   before do
     user = Factory.insert(:user)
-    Factory.insert_list(5, :bot, user: user)
-
     lat = Address.latitude
     lon = Address.longitude
 
-    visible_bots = Geosearch.get_all(lat, lon, user.id, user.id)
-
     {:ok,
-      bots: visible_bots,
-      middle_id: Enum.at(visible_bots, 2).id,
       user: user,
       lat: lat,
       lon: lon,
@@ -26,6 +22,18 @@ defmodule Wocky.Bot.GeosearchSpec do
   end
 
   describe "user_distance_query/4" do
+    before do
+      Factory.insert_list(5, :bot, user: shared.user)
+
+      visible_bots = Geosearch.get_all(shared.lat, shared.lon,
+                                       shared.user.id, shared.user.id)
+
+      {:ok,
+        bots: visible_bots,
+        middle_id: Enum.at(visible_bots, 2).id,
+      }
+    end
+
     context "Queried user is owner" do
       before do
         query =
@@ -163,60 +171,126 @@ defmodule Wocky.Bot.GeosearchSpec do
 
   describe "user_distance_query/4" do
     before do
-      user = shared.user
-      owner = Factory.insert(:user)
-
-      followee = Factory.insert(:user)
-      RosterHelper.follow(user, followee)
-
-      friend = Factory.insert(:user)
-      RosterHelper.make_friends(user, friend)
-
-      _own_bots = shared.bots
-
-      subscribed_bots = Factory.insert_list(5, :bot, user:
-                                            Factory.insert(:user))
-      Enum.each(subscribed_bots,
-                &Factory.insert(:subscription, user: user, bot: &1))
-
-      _public_bots = Factory.insert_list(5, :bot, public: true,
-                                         user: followee)
-
-      shared_bots = Factory.insert_list(5, :bot, user: friend)
-      Enum.each(shared_bots,
-                &Factory.insert(:share, user: user, sharer: owner, bot: &1))
-
-      searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id)
-
-      # Bots from unknown users should never show up, regardlesss of being
-      # public or shared
-      other_bots = Factory.insert_list(5, :bot, public: true,
-                                       user: Factory.insert(:user))
-      Enum.each(other_bots,
-                &Factory.insert(:share, user: user, bot: &1))
-
-      {:ok,
-        bots: searchable_bots
-      }
-    end
-
-    it "should have all the searchable bots" do
       table = :ets.new(:table, [:public])
       :ets.insert(table, {:acc, []})
-      Geosearch.explore_nearby(shared.lat, shared.lon, shared.user.id,
-                               fn(:no_more_results) ->
-                                 :ok
-                                 (bot) ->
-                                   [{:acc, acc}] = :ets.lookup(table, :acc)
-                                   :ets.insert(table, {:acc, [bot | acc]})
-                               end)
+      {:ok, table: table}
+    end
 
-      table
-      |> :ets.lookup(:acc)
-      |> hd
-      |> elem(1)
-      |> Enum.reverse
-      |> should(eq shared.bots)
+    context "lots of bots" do
+      before do
+        user = shared.user
+        owner = Factory.insert(:user)
+
+        followee = Factory.insert(:user)
+        RosterHelper.follow(user, followee)
+
+        friend = Factory.insert(:user)
+        RosterHelper.make_friends(user, friend)
+
+        _own_bots = Factory.insert_list(5, :bot, user: shared.user)
+
+        subscribed_bots = Factory.insert_list(5, :bot, user:
+                                              Factory.insert(:user))
+        Enum.each(subscribed_bots,
+                  &Factory.insert(:subscription, user: user, bot: &1))
+
+        _public_bots = Factory.insert_list(5, :bot, public: true,
+                                           user: followee)
+
+        shared_bots = Factory.insert_list(5, :bot, user: friend)
+        Enum.each(shared_bots,
+                  &Factory.insert(:share, user: user, sharer: owner, bot: &1))
+
+        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id)
+
+        # Bots from unknown users should never show up, regardlesss of being
+        # public or shared
+        other_bots = Factory.insert_list(5, :bot, public: true,
+                                         user: Factory.insert(:user))
+        Enum.each(other_bots,
+                  &Factory.insert(:share, user: user, bot: &1))
+
+        {:ok,
+          bots: searchable_bots
+        }
+      end
+
+      it "should have all the searchable bots" do
+        Geosearch.explore_nearby(shared.lat, shared.lon, 1_000_000_000.0,
+                                 shared.user.id, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        get_bots(shared.table) |> should(eq shared.bots)
+        get_terminator(shared.table) |> should(eq :no_more_results)
+      end
+    end
+
+    context "explore limits", async: false do
+      before do
+        other_user = Factory.insert(:user)
+
+        Enum.map(1..10,
+                 &Factory.insert(:bot, user: shared.user,
+                                 location: GeoUtils.point(&1, &1)))
+
+        Factory.insert(:bot, user: other_user,
+                       location: GeoUtils.point(0.0, 0.0))
+
+        bots = Geosearch.get_all(0.0, 0.0, shared.user.id)
+
+        {:ok, bots: bots}
+      end
+
+      it "should return all bots for a large radius" do
+        Geosearch.explore_nearby(0.0, 0.0, 1_000_000_000.0,
+                                 shared.user.id, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        get_bots(shared.table) |> should(eq shared.bots)
+        get_terminator(shared.table) |> should(eq :no_more_results)
+      end
+
+      it "should return only bots within the specified radius" do
+        Geosearch.explore_nearby(0.0, 0.0, 800_000.0,
+                                 shared.user.id, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        get_bots(shared.table) |> should(eq Enum.take(shared.bots, 5))
+        get_terminator(shared.table) |> should(eq :no_more_results)
+      end
+
+      it "should return only the specified number of bots" do
+        Geosearch.explore_nearby(0.0, 0.0, 1_00_000_000.0,
+                                 shared.user.id, 2,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        get_bots(shared.table) |> should(eq Enum.take(shared.bots, 2))
+        get_terminator(shared.table) |> should(eq :result_limit_reached)
+      end
+
+      it "should stop after it reaches the query time limit" do
+        Application.put_env(:wocky, :max_explore_time, 0)
+        Geosearch.explore_nearby(0.0, 0.0, 1_00_000_000.0,
+                                 shared.user.id, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        Application.delete_env(:wocky, :max_explore_time)
+
+        get_bots(shared.table) |> should(eq Enum.take(shared.bots, 1))
+        get_terminator(shared.table) |> should(eq :max_explore_time)
+      end
+
+      it "should stop when it has searched the maximum number of bots" do
+        Application.put_env(:wocky, :max_explored_bots, 3)
+        Geosearch.explore_nearby(0.0, 0.0, 1_00_000_000.0,
+                                 shared.user.id, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        Application.delete_env(:wocky, :max_explored_bots)
+
+        get_bots(shared.table) |> should(eq Enum.take(shared.bots, 2))
+        get_terminator(shared.table) |> should(eq :no_more_results)
+      end
     end
   end
 
@@ -225,6 +299,29 @@ defmodule Wocky.Bot.GeosearchSpec do
     rsm_out(count: count, index: index,
             first: Enum.at(bots, first).id,
             last: Enum.at(bots, last).id)
+  end
+
+  defp collect_bots(bot = %Bot{}, table) do
+    [{:acc, acc}] = :ets.lookup(table, :acc)
+    :ets.insert(table, {:acc, [bot | acc]})
+  end
+  defp collect_bots(terminator, table) do
+    :ets.insert(table, {:terminator, terminator})
+  end
+
+  defp get_bots(table) do
+    table
+    |> :ets.lookup(:acc)
+    |> hd
+    |> elem(1)
+    |> Enum.reverse
+  end
+
+  defp get_terminator(table) do
+    case :ets.lookup(table, :terminator) do
+      [] -> nil
+      [{:terminator, terminator}] -> terminator
+    end
   end
 
 end

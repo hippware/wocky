@@ -1,3 +1,7 @@
+defmodule Wocky.Bot.Geosearch.Limits do
+  defstruct [:radius, :count, :time]
+end
+
 defmodule Wocky.Bot.Geosearch do
   @moduledoc """
   In an ideal world, this module wouldn't have to exist. However Ecto has some
@@ -16,15 +20,16 @@ defmodule Wocky.Bot.Geosearch do
   alias Ecto.Adapters.SQL
   alias Ecto.UUID
   alias Wocky.Bot
+  alias Wocky.Bot.Geosearch.Limits
   alias Wocky.GeoUtils
   alias Wocky.Repo
 
-  @type explore_callback :: ((Bot | :no_more_results | :explore_timeout) -> any)
+  @type explore_end_message ::
+        :no_more_results | :result_limit_reached | :max_explore_time
+  @type explore_callback :: ((Bot | explore_end_message) -> any)
 
+  @default_max_explored_bots 1_000_000
   @default_explore_timeout 60_000
-  # Extra buffer to add to explore timeout for database timeout to ensure that
-  # the app times out before the database (which will throw an error):
-  @explore_timeout_buffer 5_000
 
   @spec user_distance_query(float, float, User.id, User.id, RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
@@ -212,54 +217,70 @@ defmodule Wocky.Bot.Geosearch do
   defp dump_uuid(:undefined), do: :undefined
   defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
 
-  @spec explore_nearby(float, float, User.id, explore_callback, non_neg_integer)
-  :: :ok
-  def explore_nearby(lat, lon, user_id, fun, limit \\ 1000) do
+  ### Explore nearby
+
+  @spec explore_nearby(float, float, float, User.id,
+                       non_neg_integer, explore_callback) :: :ok
+  def explore_nearby(lat, lon, radius, user_id, max, fun) do
     point = GeoUtils.point(lon, lat)
-    query_str =
-    """
-    DECLARE explore_nearby CURSOR FOR
-    SELECT *, ST_Distance(bot.location, $1) AS "distance" FROM bots AS bot
-    WHERE is_searchable($2, bot)
-    ORDER BY location <-> $1
-    LIMIT $3
-    """
-    params = [point, dump_uuid(user_id), limit]
 
     max_explore_time = Confex.get(:wocky, :max_explore_time,
                                   @default_explore_timeout)
+    max_explored_bots = Confex.get(:wocky, :max_explored_bots,
+                                   @default_max_explored_bots)
+
+    query_str =
+    """
+    DECLARE explore_nearby CURSOR FOR
+    SELECT *, ST_Distance(bot.location, $1) AS "distance" FROM
+      (SELECT * FROM bots ORDER BY location <-> $1 LIMIT $2)
+    AS bot
+    WHERE is_searchable($3, bot)
+    """
+    params = [point, max_explored_bots, dump_uuid(user_id)]
+    limits = %Limits{radius: radius, count: max, time: max_explore_time}
 
     Repo.transaction(
       fn() ->
-        start_explore(query_str, params, fun, max_explore_time)
+        start_explore(query_str, params, fun, limits)
       end,
-      timeout: max_explore_time + @explore_timeout_buffer)
+      timeout: :infinity)
     :ok
   end
 
-  defp start_explore(query_str, params, fun, timeout) do
+  defp start_explore(query_str, params, fun, limits) do
     start_time = :erlang.monotonic_time()
     SQL.query!(Repo, query_str, params)
-    fetch_results(fun, start_time, timeout)
+    fetch_results(fun, start_time, limits, 0)
   end
 
-  defp fetch_results(fun, start_time, timeout) do
+  defp fetch_results(fun, start_time,
+                     limits = %Limits{radius: radius}, count) do
     results = SQL.query!(Repo, "FETCH NEXT explore_nearby")
     case results.num_rows do
       0 ->
         fun.(:no_more_results)
       _ ->
-        fun.(results |> results_to_bots() |> hd)
-        maybe_fetch_more(fun, start_time, timeout)
+        bot = results |> results_to_bots() |> hd
+        if bot.distance > radius do
+          fun.(:no_more_results)
+        else
+          fun.(bot)
+          maybe_fetch_more(fun, start_time, limits, count + 1)
+        end
     end
   end
 
-  defp maybe_fetch_more(fun, start_time, timeout) do
+  defp maybe_fetch_more(fun, _start_time, %Limits{count: count}, count) do
+    fun.(:result_limit_reached)
+  end
+  defp maybe_fetch_more(fun, start_time,
+                        limits = %Limits{time: timeout}, count) do
     elapsed = :erlang.convert_time_unit(
       :erlang.monotonic_time() - start_time,
       :native, :millisecond)
     if elapsed < timeout do
-      fetch_results(fun, start_time, timeout)
+      fetch_results(fun, start_time, limits, count)
     else
       fun.(:max_explore_time)
     end
