@@ -79,7 +79,7 @@ defmodule Wocky.RosterItem do
 
   @doc "Write a roster record to the database"
   @spec put(map)
-  :: {:ok, RosterItem.t}
+  :: {:ok, RosterItem.t} | {:error, term}
   def put(fields) do
     %RosterItem{}
     |> changeset(fields)
