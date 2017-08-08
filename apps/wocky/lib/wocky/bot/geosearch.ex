@@ -1,4 +1,8 @@
 defmodule Wocky.Bot.Geosearch.Limits do
+  @moduledoc """
+  Structure describing various limits for explore-nearby query
+  """
+
   defstruct [:radius, :count, :time]
 end
 
@@ -19,6 +23,7 @@ defmodule Wocky.Bot.Geosearch do
 
   alias Ecto.Adapters.SQL
   alias Ecto.UUID
+  alias Geo.Point
   alias Wocky.Bot
   alias Wocky.Bot.Geosearch.Limits
   alias Wocky.GeoUtils
@@ -219,11 +224,9 @@ defmodule Wocky.Bot.Geosearch do
 
   ### Explore nearby
 
-  @spec explore_nearby(float, float, float, User.id,
+  @spec explore_nearby(Point, float, User.id,
                        non_neg_integer, explore_callback) :: :ok
-  def explore_nearby(lat, lon, radius, user_id, max, fun) do
-    point = GeoUtils.point(lon, lat)
-
+  def explore_nearby(point, radius, user_id, max, fun) do
     max_explore_time = Confex.get(:wocky, :max_explore_time,
                                   @default_explore_timeout)
     max_explored_bots = Confex.get(:wocky, :max_explored_bots,
