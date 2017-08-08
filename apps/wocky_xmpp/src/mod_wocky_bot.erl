@@ -117,17 +117,21 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
     Owner = wocky_xml:act_on_subel(<<"owner">>, IQ#iq.sub_el,
                                    wocky_xml:get_attr(<<"jid">>, _)),
 
-    case {Node, Location, User, Owner} of
-        {{ok, _Bot}, _, _, _} ->
+    ExploreNearby = wocky_xml:get_subel(<<"explore-nearby">>, IQ#iq.sub_el),
+
+    case {Node, Location, User, Owner, ExploreNearby} of
+        {{ok, _Bot}, _, _, _, _} ->
             handle_access_action(get_bot, From, To, Attrs, IQ);
-        {_, {ok, {Lat, Lon}}, _, _} ->
+        {_, {ok, {Lat, Lon}}, _, _, _} ->
             get_bots_near_location(From, Lat, Lon);
-        {_, _, {ok, UserBin}, _} ->
+        {_, _, {ok, UserBin}, _, _} ->
             get_bots_for_owner(From, IQ, UserBin);
-        {_, _, _, {ok, OwnerBin}} ->
+        {_, _, _, {ok, OwnerBin}, _} ->
             get_bots_for_owner(From, IQ, OwnerBin);
+        {_, _, _, _, {ok, ExploreNearbyEl}} ->
+            explore_nearby(From, IQ, ExploreNearbyEl);
         _ ->
-            get_searchable_bots(From, IQ)
+            {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}
     end;
 
 % Retrieve subscribed bots
@@ -430,22 +434,16 @@ get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
     FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, QueryingUser),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
-get_searchable_bots(From, IQ) ->
+explore_nearby(From, IQ, ExploreNearby) ->
     do([error_m ||
-        RSMIn <- rsm_util:get_rsm(IQ),
-        FromUser <- wocky_bot_util:get_user_from_jid(From),
-        Sorting <- get_sorting(IQ),
-        {FilteredBots, RSMOut} <-
-            get_searchable_bots_rsm(FromUser, Sorting, RSMIn),
-        {ok, users_bots_result(FilteredBots, FromUser, RSMOut)}
+        {Lat, Lon} <- get_location_from_attrs(ExploreNearby#xmlel.attrs),
+        RadiusBin <- wocky_xml:get_attr(<<"radius">>, ExploreNearby),
+        Radius <- wocky_util:safe_bin_to_float(RadiusBin),
+        LimitBin <- wocky_xml:get_attr(<<"limit">>, ExploreNearby),
+        Limit <- wocky_util:safe_bin_to_integer(LimitBin),
+        wocky_explore_worker:start(Lat, Lon, Radius, From, Limit, IQ#iq.id),
+        {ok, []}
        ]).
-
-get_searchable_bots_rsm(QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
-    {ok, ?wocky_geosearch:explore_nearby(Lat, Lon, QueryingUser, RSMIn)};
-
-get_searchable_bots_rsm(QueryingUser, Sorting, RSMIn) ->
-    BaseQuery = ?wocky_user:searchable_bots_query(QueryingUser),
-    {ok, ?wocky_rsm_helper:rsm_query(RSMIn, BaseQuery, id, Sorting)}.
 
 users_bots_result(Bots, FromUser, RSMOut) ->
     BotEls = make_bot_els(Bots, FromUser),

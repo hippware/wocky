@@ -72,7 +72,6 @@ all() ->
      retrieve_for_user,
      get_subscribed,
      sorting,
-     explore_nearby,
      publish_item,
      retract_item,
      edit_item,
@@ -86,7 +85,8 @@ all() ->
      open_visibility,
      follow_notifications,
      geosearch,
-     empty_shortname
+     empty_shortname,
+     explore_nearby
     ].
 
 suite() ->
@@ -117,6 +117,19 @@ init_per_testcase(geosearch, Config) ->
                         distance => 8000}]}
         end),
     escalus:init_per_testcase(geosearch, Config);
+init_per_testcase(explore_nearby, Config) ->
+    ?wocky_repo:delete_all(?wocky_bot),
+    Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+    Bots =
+    lists:map(
+      fun(I) ->
+              ?wocky_factory:insert(bot, #{user => Alice,
+                                           location =>
+                                           ?wocky_geo_utils:point(I, I)})
+      end,
+      lists:seq(1, 10)),
+
+    escalus:init_per_testcase(geosearch, [{bots, Bots} | Config]);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -538,34 +551,6 @@ sorting(Config) ->
           Alice)
       end).
 
-explore_nearby(Config) ->
-    AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
-    ?wocky_repo:delete_all(?wocky_bot),
-
-    Bots =
-    lists:map(
-      fun(X) ->
-              ?wocky_factory:insert(
-                 bot,
-                 #{user => AliceUser,
-                   shortname => nil,
-                   location => ?wocky_geo_utils:point(X, X)})
-      end, lists:seq(0, 9)),
-
-    escalus:story(Config, [{alice, 1}],
-      fun(Alice) ->
-        Stanza = expect_iq_success(retrieve_stanza(#rsm_in{max = 1}, 0.0, 0.0),
-                                   Alice),
-        Stanzas = check_returned_bots(Stanza, [maps:get(id, hd(Bots))], 0, 10),
-        check_returned_bot(hd(Stanzas), [{"distance", float, 0.0}]),
-
-        Stanza2 = expect_iq_success(retrieve_stanza(
-                                      #rsm_in{index = 1}, 0.0, 0.0),
-                                    Alice),
-        check_returned_bots(Stanza2,
-                            lists:map(maps:get(id, _), tl(Bots)), 1, 10)
-      end).
-
 publish_item(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
@@ -890,6 +875,31 @@ empty_shortname(Config) ->
         Fields = lists:keyreplace("shortname", 1, default_fields(),
                                   {"shortname", "string", ""}),
         expect_iq_success(create_stanza(Fields), Alice)
+      end).
+
+explore_nearby(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        % Complete result set
+        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 100),
+                                   Alice), Alice),
+        lists:foreach(
+          expect_explore_result(_, Alice),
+          proplists:get_value(bots, Config)
+         ),
+        expect_explore_result(<<"no-more-bots">>, Alice),
+
+        % Tiny radius
+        expect_iq_success(add_to_s(explore_nearby_stanza(160000.0, 100),
+                                   Alice), Alice),
+        expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
+        expect_explore_result(<<"no-more-bots">>, Alice),
+
+        % Limit bot count
+        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 1),
+                                   Alice), Alice),
+        expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
+        expect_explore_result(<<"bot-limit-reached">>, Alice)
       end).
 
 %%--------------------------------------------------------------------
@@ -1570,6 +1580,17 @@ geosearch_stanza() ->
                      ]},
     test_helper:iq_get(?NS_BOT, QueryEl).
 
+explore_nearby_stanza(Radius, Limit) ->
+    QueryEl =
+    #xmlel{name = <<"bots">>,
+           children = [#xmlel{name = <<"explore-nearby">>,
+                              attrs = [{<<"limit">>, integer_to_binary(Limit)},
+                                       {<<"radius">>,
+                                        float_to_binary(Radius)},
+                                       {<<"lat">>, float_to_binary(0.0)},
+                                       {<<"lon">>, float_to_binary(0.0)}]}]},
+    test_helper:iq_get(?NS_BOT, QueryEl).
+
 sort_bot_ids(Bots, Field) when Field =:= <<"created_at">>;
                                Field =:= <<"updated_at">> ->
     Sorted = lists:sort(fun(A, B) ->
@@ -1583,3 +1604,25 @@ sort_bot_ids(Bots, Field) ->
                                 maps:get(Field, A) =< maps:get(Field, B)
                         end, Bots),
     lists:map(maps:get(id, _), Sorted).
+
+expect_explore_result(#{id := BotID}, User) ->
+    Stanza = escalus_client:wait_for_stanza(User),
+    escalus:assert(is_message, Stanza),
+    escalus:assert(has_type, [<<"headline">>], Stanza),
+    IDEl = wocky_xml:path_by_attr(Stanza,
+                                  [{element, <<"explore-nearby-result">>},
+                                   {element, <<"bot">>},
+                                   {element, <<"field">>}],
+                                  <<"var">>, <<"id">>),
+    {ok, Value} = wocky_xml:get_subel_cdata(<<"value">>, IDEl),
+    ?assertEqual(Value, BotID);
+
+expect_explore_result(Terminator, User) ->
+    Stanza = escalus_client:wait_for_stanza(User),
+    escalus:assert(is_message, Stanza),
+    escalus:assert(has_type, [<<"headline">>], Stanza),
+    ?assertNotEqual(
+       exml_query:path(Stanza,
+                       [{element, <<"explore-nearby-result">>},
+                        {element, Terminator}]),
+       undefined).
