@@ -46,10 +46,10 @@ defmodule Wocky.Index.AlgoliaIndexer do
 
   def geosearch(index, lat, lon) do
     {:ok, result} =
-      Algolia.search(index, <<>>, %{
+      Algolia.search(index, <<>>, [
           aroundLatLng: "#{lat},#{lon}",
           getRankingInfo: true
-      })
+      ])
 
     bots = Enum.map(result["hits"], &object_to_bot/1)
     {:ok, bots}
