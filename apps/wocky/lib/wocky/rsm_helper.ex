@@ -118,7 +118,7 @@ defmodule Wocky.RSMHelper do
   end
 
   defp get_index([], _, _), do: :undefined
-  defp get_index([first | _], queryable, sorting = {_, sort_field}) do
+  defp get_index([first | _], queryable, {_, sort_field} = sorting) do
     pivot = Map.get(first, sort_field)
 
     queryable

@@ -24,8 +24,10 @@ defmodule Wocky.GeoUtils do
   def normalize_lat_lon(lat, lon) do
     quadrant = round(fmod(Float.floor(abs(lat) / 90), 4))
     pole =
-      if lat > 0 do 90
-      else -90
+      if lat > 0 do
+        90
+      else
+        -90
       end
     offset = fmod(lat, 90)
 

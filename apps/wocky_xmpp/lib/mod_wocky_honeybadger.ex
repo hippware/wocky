@@ -58,7 +58,7 @@ defmodule :mod_wocky_honeybadger do
 
   @type filter_packet() :: {:ejabberd.jid, :ejabberd.jid, :jlib.xmlel}
   @spec filter_local_packet_hook(filter_packet | :drop) :: filter_packet
-  def filter_local_packet_hook(p = {from, to, packet}) do
+  def filter_local_packet_hook({from, to, packet} = p) do
     Honeybadger.context(%{last_packet: %{from: :jid.to_binary(from),
                                          to: :jid.to_binary(to),
                                          packet: :exml.to_binary(packet)}})

@@ -40,21 +40,21 @@ defmodule WockyAPI.Mixfile do
 
   defp deps do
     [
-      {:wocky,      in_umbrella: true},
-      {:cowboy,     "~> 1.0"},
-      {:poison,     "~> 2.2"},
-      {:httpoison,  "~> 0.11.2"},
-      {:exjsx,      "~> 3.2", override: true},
-      {:hackney,    "~> 1.7", override: true},
-      {:ok,         "~> 1.2", runtime: false},
-      {:lager,      "~> 3.2", override: true},
+      {:wocky,       in_umbrella: true},
+      {:cowboy,      "~> 1.0"},
+      {:poison,      "~> 2.2"},
+      {:httpoison,   "~> 0.11.2"},
+      {:exjsx,       "~> 3.2", override: true},
+      {:hackney,     "~> 1.7", override: true},
+      {:ok,          "~> 1.2", runtime: false},
+      {:lager,       "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.0.2"},
 
-      {:espec,      "~> 1.2", only: :test},
-      {:excoveralls,"~> 0.6", only: :test},
-      {:credo,      "~> 0.6", only: [:dev, :test], runtime: false},
-      {:ex_guard,   "~> 1.1", only: :dev, runtime: false},
-      {:reprise,    "~> 0.5", only: :dev}
+      {:espec,       "~> 1.2", only: :test},
+      {:excoveralls, "~> 0.6", only: :test},
+      {:credo,       "~> 0.6", only: [:dev, :test], runtime: false},
+      {:ex_guard,    "~> 1.1", only: :dev, runtime: false},
+      {:reprise,     "~> 0.5", only: :dev}
     ]
   end
 
