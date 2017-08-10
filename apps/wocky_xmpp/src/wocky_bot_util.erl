@@ -13,8 +13,11 @@
 
 -export([get_user_from_jid/1,
          get_bot_from_jid/1,
+         get_bot_from_jid/2,
          get_bot_from_node/1,
+         get_bot_from_node/2,
          get_bot/1,
+         get_bot/2,
          owner_jid/1,
          check_owner/2,
          check_access/2,
@@ -33,14 +36,16 @@ get_user_from_jid(JID) ->
         User -> {ok, User}
     end.
 
-get_bot_from_jid(JID) ->
+get_bot_from_jid(JID) -> get_bot_from_jid(JID, false).
+get_bot_from_jid(JID, IncludePending) ->
     BotID = ?wocky_bot:get_id_from_jid(JID),
-    get_bot(BotID).
+    get_bot(BotID, IncludePending).
 
-get_bot_from_node(Attrs) ->
+get_bot_from_node(Attrs) -> get_bot_from_node(Attrs, false).
+get_bot_from_node(Attrs, IncludePending) ->
     do([error_m ||
         BotID <- get_id_from_node(Attrs),
-        get_bot(BotID)
+        get_bot(BotID, IncludePending)
       ]).
 
 get_id_from_node(Attrs) ->
@@ -74,8 +79,9 @@ get_field_value(El) ->
         {error, _} -> <<>>
     end.
 
-get_bot(ID) ->
-    case ?wocky_repo:get(?wocky_bot, ID) of
+get_bot(ID) -> get_bot(ID, false).
+get_bot(ID, IncludePending) ->
+    case ?wocky_bot:get(ID, IncludePending) of
         nil -> {error, ?ERR_ITEM_NOT_FOUND};
         Bot -> {ok, Bot}
     end.

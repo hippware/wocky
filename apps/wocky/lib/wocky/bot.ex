@@ -90,7 +90,15 @@ defmodule Wocky.Bot do
   def public?(%{public: is_public}), do: is_public
 
   #----------------------------------------------------------------------
-  # Databse interaction
+  # Database interaction
+
+  @spec get(Bot.id, boolean) :: t | nil
+  def get(id, include_pending \\ false) do
+    Bot
+    |> where(id: ^id)
+    |> maybe_filter_pending(not include_pending)
+    |> Repo.one
+  end
 
   @spec preallocate(User.id, User.server) :: t | no_return
   def preallocate(user_id, server) do
@@ -220,5 +228,13 @@ defmodule Wocky.Bot do
     |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
     |> Repo.update!
     :ok
+  end
+
+  defp maybe_filter_pending(queryable, false) do
+    queryable
+  end
+  defp maybe_filter_pending(queryable, true) do
+    queryable
+    |> where(pending: false)
   end
 end
