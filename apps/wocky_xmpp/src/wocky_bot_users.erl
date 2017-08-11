@@ -114,8 +114,9 @@ maybe_notify_subscribers(Server,
                          NewBot = #{description := NewDesc}) ->
     Old = wocky_util:remove_whitespace(OldDesc),
     New = wocky_util:remove_whitespace(NewDesc),
-    case Old of
-        New -> ok; % No change
+    case New of
+        Old -> ok; % No change
+        <<>> -> ok; % New version is only whitespace
         _ -> notify_subscribers(NewBot, Old, Server)
     end.
 
