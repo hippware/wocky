@@ -105,6 +105,37 @@ defmodule Wocky.BotSpec do
       TestIndexer.reset
     end
 
+    describe "get/2" do
+      let! :pending, do: Factory.insert(:bot, user: user(), pending: true)
+      it "should return the requested bot" do
+        bot().id
+        |> Bot.get
+        |> Repo.preload(:user)
+        |> should(eq bot())
+      end
+
+      it "should return nil for non-existant bots" do
+        ID.new
+        |> Bot.get
+        |> Repo.preload(:user)
+        |> should(be_nil())
+      end
+
+      it "should not return pending bots by default" do
+        pending().id
+        |> Bot.get
+        |> Repo.preload(:user)
+        |> should(be_nil())
+      end
+
+      it "should return pending bots if specified" do
+        pending().id
+        |> Bot.get(true)
+        |> Repo.preload(:user)
+        |> should(eq pending())
+      end
+    end
+
     describe "preallocate/2" do
       let :preallocated, do: Bot.preallocate(user().id, user().server)
 
