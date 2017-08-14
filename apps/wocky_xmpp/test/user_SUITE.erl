@@ -405,7 +405,8 @@ delete_user(Config) ->
         escalus:assert(is_stream_error,
                        [<<"conflict">>, <<"User removed">>], R),
         timer:sleep(500),
-        ?assertNot(escalus_connection:is_connected(Alice))
+        ?assertNot(escalus_connection:is_connected(Alice)),
+        ?assertEqual(?wocky_repo:get(?wocky_user, ?ALICE), nil)
     end).
 
 %%--------------------------------------------------------------------
