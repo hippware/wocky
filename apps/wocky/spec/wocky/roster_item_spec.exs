@@ -267,6 +267,14 @@ defmodule Wocky.RosterItemSpec do
       |> should(be_false())
     end
 
+    it "should return true if the user is in the contact's __blocked__ group" do
+      RosterItem.put(default_item(shared, user_id: shared.contact.id,
+                                          contact_id: shared.user.id,
+                                          groups: ["__blocked__"]))
+      RosterItem.is_friend(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
     it "should return false if the contact does not have 'both' subscription" do
       RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.is_friend(shared.user.id, shared.contact.id)
@@ -281,6 +289,41 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
+  describe "is_unblocked_friend/2" do
+    it "should return true when a user is subscribed" do
+      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the contact is in the __blocked__ group" do
+      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
+      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false if the user is in the contact's __blocked__ group" do
+      RosterItem.put(default_item(shared, user_id: shared.contact.id,
+                                          contact_id: shared.user.id,
+                                          groups: ["__blocked__"]))
+      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false if the contact does not have 'both' subscription" do
+      RosterItem.put(default_item(shared, subscription: :from))
+      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false for non-existant contacts" do
+      RosterItem.is_unblocked_friend(shared.user.id, ID.new)
+      |> should(be_false())
+      RosterItem.is_unblocked_friend(shared.user.id, shared.rosterless_user.id)
+      |> should(be_false())
+    end
+  end
+
+
   describe "is_follower/2" do
     it "should return true when a user is subscribed" do
       RosterItem.is_follower(shared.user.id, shared.contact.id)
@@ -293,14 +336,23 @@ defmodule Wocky.RosterItemSpec do
       |> should(be_false())
     end
 
-    it "should return true if the contact has 'from' subscription" do
-      RosterItem.put(default_item(shared, subscription: :from))
+    it "should return true if the user is in the contact's __blocked__ group" do
+      RosterItem.put(default_item(shared, user_id: shared.contact.id,
+                                          contact_id: shared.user.id,
+                                          subscription: :from,
+                                          groups: ["__blocked__"]))
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
-    it "should return false if the contact does not have 'both' or 'from' subscription" do
+    it "should return true if the user has 'to' subscription" do
       RosterItem.put(default_item(shared, subscription: :to))
+      RosterItem.is_follower(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the user does not have 'both' or 'to' subscription" do
+      RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
@@ -312,6 +364,49 @@ defmodule Wocky.RosterItemSpec do
       |> should(be_false())
     end
   end
+
+  describe "is_unblocked_follower/2" do
+    it "should return true when a user is subscribed" do
+      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the contact is in the __blocked__ group" do
+      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
+      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return true if the user is in the contact's __blocked__ group" do
+      RosterItem.put(default_item(shared, user_id: shared.contact.id,
+                                          contact_id: shared.user.id,
+                                          subscription: :from,
+                                          groups: ["__blocked__"]))
+      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+
+    it "should return true if the user has 'from' subscription" do
+      RosterItem.put(default_item(shared, subscription: :to))
+      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
+      |> should(be_true())
+    end
+
+    it "should return false if the user does not have 'both' or 'to' subscription" do
+      RosterItem.put(default_item(shared, subscription: :from))
+      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
+      |> should(be_false())
+    end
+
+    it "should return false for non-existant contacts" do
+      RosterItem.is_unblocked_follower(shared.user.id, ID.new)
+      |> should(be_false())
+      RosterItem.is_unblocked_follower(shared.user.id, shared.rosterless_user.id)
+      |> should(be_false())
+    end
+  end
+
 
   describe "followers/1" do
     before do
@@ -441,12 +536,12 @@ defmodule Wocky.RosterItemSpec do
     end
 
     it "should return :follower where user a is following user b" do
-      RosterItem.relationship(shared.followee.id, shared.follower.id)
+      RosterItem.relationship(shared.follower.id, shared.followee.id)
       |> should(eq :follower)
     end
 
     it "should return :followee where user b is following user a" do
-      RosterItem.relationship(shared.follower.id, shared.followee.id)
+      RosterItem.relationship(shared.followee.id, shared.follower.id)
       |> should(eq :followee)
     end
 
@@ -504,7 +599,7 @@ defmodule Wocky.RosterItemSpec do
           contact_id: shared.contact.id,
           name: Name.first_name,
           groups: [],
-          ask: :out,
+          ask: :none,
           subscription: :both}
     Map.merge(r, Map.new(replace))
   end

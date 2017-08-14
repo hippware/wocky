@@ -56,7 +56,6 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
-      {:ecto,                 "~> 2.0"},
       {:ecto_homoiconic_enum, "~> 0.1.1"},
       {:postgrex,             "~> 0.13.0"},
       {:poolboy,              "~> 1.5"},
@@ -69,6 +68,7 @@ defmodule Wocky.Mixfile do
       {:hackney,              "~> 1.7", override: true},
       {:exjsx,                "~> 3.2.0", override: true},
       {:algolia,              "~> 0.6"},
+      {:geo,                  "~> 1.5"},
       {:geocalc,              "~> 0.5.3"},
       {:gen_stage,            "~> 0.11"},
       {:timex,                "~> 3.1"},
@@ -83,6 +83,10 @@ defmodule Wocky.Mixfile do
       {:quantum,              "~> 1.9"},
       {:comeonin,             "~> 3.0"},
 
+      {:ecto,
+        github: "hippware/ecto",
+        branch: "working",
+        override: true},
       {:apns,
         github: "chvanikoff/apns4ex",
         branch: "master",

@@ -3,6 +3,7 @@ defmodule Wocky.UserSpec do
   use ModelHelpers
   use Wocky.JID
 
+  alias Ecto.Adapters.SQL
   alias Faker.Internet
   alias Faker.Lorem
   alias Timex.Duration
@@ -531,31 +532,25 @@ defmodule Wocky.UserSpec do
       it do: refute User.owns?(shared.user, shared.unaffiliated_bot)
     end
 
-    describe "searchable?/2" do
+    describe "searchable checks" do
       before do
         friend = Factory.insert(:user)
-        Factory.insert(:roster_item, user_id: shared.user.id,
-                       contact_id: friend.id)
-        Factory.insert(:roster_item, user_id: friend.id,
-                       contact_id: shared.user.id)
+        RosterHelper.make_friends(friend, shared.user)
 
-        following = Factory.insert(:user)
-        Factory.insert(:roster_item, user_id: shared.user.id,
-                       contact_id: following.id, subscription: :from)
-        Factory.insert(:roster_item, user_id: following.id,
-                       contact_id: shared.user.id, subscription: :to)
+        followee = Factory.insert(:user)
+        RosterHelper.follow(shared.user, followee)
 
 
         friends_public_bot = Factory.insert(:bot, user: friend, public: true)
         friends_private_bot = Factory.insert(:bot, user: friend)
         friends_shared_private_bot = Factory.insert(:bot, user: friend)
-        following_public_bot = Factory.insert(:bot, user: following,
+        following_public_bot = Factory.insert(:bot, user: followee,
                                               public: true)
-        following_private_bot = Factory.insert(:bot, user: following)
-        following_shared_private_bot = Factory.insert(:bot, user: following)
+        following_private_bot = Factory.insert(:bot, user: followee)
+        following_shared_private_bot = Factory.insert(:bot, user: followee)
 
         Share.put(shared.user, friends_shared_private_bot, friend)
-        Share.put(shared.user, following_shared_private_bot, following)
+        Share.put(shared.user, following_shared_private_bot, followee)
 
         {:ok, [
           friends_public_bot: friends_public_bot,
@@ -567,21 +562,41 @@ defmodule Wocky.UserSpec do
         ]}
       end
 
-      it do: assert User.searchable?(shared.user, shared.owned_bot)
-      it do: assert User.searchable?(shared.user, shared.subscribed_bot)
-      it do: assert User.searchable?(shared.user, shared.friends_public_bot)
-      it do: assert User.searchable?(shared.user,
-                                     shared.friends_shared_private_bot)
-      it do: assert User.searchable?(shared.user, shared.following_public_bot)
+      describe "searchable?/2" do
+        it do: assert User.searchable?(shared.user, shared.owned_bot)
+        it do: assert User.searchable?(shared.user, shared.subscribed_bot)
+        it do: assert User.searchable?(shared.user, shared.friends_public_bot)
+        it do: assert User.searchable?(shared.user,
+                                       shared.friends_shared_private_bot)
+        it do: assert User.searchable?(shared.user, shared.following_public_bot)
 
-      it do: refute User.searchable?(shared.user, shared.temp_subscribed_bot)
-      it do: refute User.searchable?(shared.user, shared.public_bot)
-      it do: refute User.searchable?(shared.user, shared.shared_bot)
-      it do: refute User.searchable?(shared.user, shared.unaffiliated_bot)
-      it do: refute User.searchable?(shared.user, shared.friends_private_bot)
-      it do: refute User.searchable?(shared.user, shared.following_private_bot)
-      it do: refute User.searchable?(shared.user,
-                                     shared.following_shared_private_bot)
+        it do: refute User.searchable?(shared.user, shared.temp_subscribed_bot)
+        it do: refute User.searchable?(shared.user, shared.public_bot)
+        it do: refute User.searchable?(shared.user, shared.shared_bot)
+        it do: refute User.searchable?(shared.user, shared.unaffiliated_bot)
+        it do: refute User.searchable?(shared.user, shared.friends_private_bot)
+        it do: refute User.searchable?(shared.user, shared.following_private_bot)
+        it do: refute User.searchable?(shared.user,
+                                       shared.following_shared_private_bot)
+      end
+
+      describe "searchable stored procedure" do
+        it do: assert is_searchable_sp(shared.user, shared.owned_bot)
+        it do: assert is_searchable_sp(shared.user, shared.subscribed_bot)
+        it do: assert is_searchable_sp(shared.user, shared.friends_public_bot)
+        it do: assert is_searchable_sp(shared.user,
+                                       shared.friends_shared_private_bot)
+        it do: assert is_searchable_sp(shared.user, shared.following_public_bot)
+
+        it do: refute is_searchable_sp(shared.user, shared.temp_subscribed_bot)
+        it do: refute is_searchable_sp(shared.user, shared.public_bot)
+        it do: refute is_searchable_sp(shared.user, shared.shared_bot)
+        it do: refute is_searchable_sp(shared.user, shared.unaffiliated_bot)
+        it do: refute is_searchable_sp(shared.user, shared.friends_private_bot)
+        it do: refute is_searchable_sp(shared.user, shared.following_private_bot)
+        it do: refute is_searchable_sp(shared.user,
+                                       shared.following_shared_private_bot)
+      end
     end
 
     describe "can_access?/2" do
@@ -642,5 +657,62 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "is_visible_query/2" do
+    before do
+      user1 = shared.user
+      user2 = Factory.insert(:user)
+      owned_bot = Factory.insert(:bot, user: user1)
+      public_bot = Factory.insert(:bot, user: user2, public: true)
+      shared_bot = Factory.insert(:bot, user: user2)
+      Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
+      private_bot = Factory.insert(:bot, user: user2)
+      pending_bot = Factory.insert(:bot, user: user1, pending: true)
+      {:ok,
+        owned_bot: owned_bot,
+        public_bot: public_bot,
+        shared_bot: shared_bot,
+        private_bot: private_bot,
+        pending_bot: pending_bot
+      }
+    end
+
+    it "should allow owned bots" do
+      is_visible_sp(shared.user, shared.owned_bot)
+      |> should(be_true())
+    end
+
+    it "should allow public bots" do
+      is_visible_sp(shared.user, shared.public_bot)
+      |> should(be_true())
+    end
+
+    it "should allow shared bots" do
+      is_visible_sp(shared.user, shared.shared_bot)
+      |> should(be_true())
+    end
+
+    it "should refuse private bots" do
+      is_visible_sp(shared.user, shared.private_bot)
+      |> should(be_false())
+    end
+  end
+
+
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
+
+  defp is_searchable_sp(user, bot),
+    do: run_stored_proc(user, bot, "is_searchable")
+  defp is_visible_sp(user, bot),
+    do: run_stored_proc(user, bot, "is_visible")
+
+  defp run_stored_proc(user, bot, proc) do
+    {:ok, u} = Ecto.UUID.dump(user.id)
+    {:ok, b} = Ecto.UUID.dump(bot.id)
+    Repo
+    result = SQL.query!(
+      Repo,
+      "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
+      [u, b])
+    length(result.rows) == 1
+  end
 end

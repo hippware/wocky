@@ -203,7 +203,7 @@ defmodule Wocky.RSMHelperSpec do
         query =
           Bot
           |> where(user_id: ^user1.id)
-          |> Bot.read_access_filter(user1)
+          |> Bot.is_visible_query(user1)
 
         {records, rsm_out} = RSMHelper.rsm_query(rsm_in(id: Enum.at(bots, 2)), query,
                                                  :id, {:asc, :created_at})

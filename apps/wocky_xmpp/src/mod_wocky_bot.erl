@@ -384,7 +384,7 @@ get_bots_near_location(From, Lat, Lon) ->
 
 get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
-    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, User),
+    FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
     {ok,
      ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
@@ -397,11 +397,12 @@ make_geosearch_els(Bots) ->
     [make_geosearch_el(Bot) || Bot <- Bots].
 
 geosearch_el_fields() ->
-    [id, server, title, image, lat, lon, radius, distance].
+    [id, server, title, image, location, radius, distance].
 
 make_geosearch_el(Bot) ->
     JidField = make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
-    MapFields = map_to_fields(maps:with(geosearch_el_fields(), Bot)),
+    MapFields = maps:fold(fun to_field/3, [],
+                          maps:with(geosearch_el_fields(), Bot)),
     RetFields = encode_fields([JidField | MapFields]),
     make_ret_stanza(RetFields).
 
@@ -419,7 +420,7 @@ get_bots_for_owner(From, IQ, OwnerBin) ->
 
 get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:owned_bots_query(Owner),
-    FilteredQuery = ?wocky_bot:read_access_filter(BaseQuery, QueryingUser),
+    FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, QueryingUser),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
 users_bots_result(Bots, FromUser, RSMOut) ->
@@ -710,7 +711,7 @@ normalise_fields(Fields) ->
     lists:foldl(fun normalise_field/2, #{}, Fields).
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
-    Acc#{lat => Lat, lon => Lon};
+    Acc#{location => ?wocky_geo_utils:point(Lon, Lat)};
 normalise_field(#field{type = jid, value = #jid{luser = UserID}}, Acc) ->
     Acc#{user_id => UserID};
 normalise_field(#field{name = <<"visibility">>, value = 100}, Acc) ->
@@ -730,7 +731,7 @@ make_bot_el(Bot, FromUser) ->
 
 make_ret_elements(Bot, FromUser) ->
     MetaFields = meta_fields(Bot, FromUser),
-    Fields = map_to_fields(Bot),
+    Fields = maps:fold(fun to_field/3, [], Bot),
     encode_fields(Fields ++ MetaFields).
 
 meta_fields(Bot, FromUser) ->
@@ -748,24 +749,6 @@ size_and_hash(Name, List) ->
                 wocky_bot_util:list_hash(List))
     ].
 
-map_to_fields(Map = #{lat := Lat, lon := Lon}) ->
-    [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} |
-     map_to_fields(maps:without([lat, lon], Map))];
-map_to_fields(Map = #{user_id := UserID}) ->
-    User = ?wocky_repo:get(?wocky_user, UserID),
-    [#field{name = <<"owner">>, type = jid, value = ?wocky_user:to_jid(User)} |
-     map_to_fields(maps:without([user_id], Map))];
-map_to_fields(Map = #{public := Public}) ->
-    [#field{name = <<"visibility">>, type = int, value = vis(Public)} |
-     map_to_fields(maps:without([public], Map))];
-map_to_fields(Map = #{alerts := Alerts}) ->
-    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} |
-     map_to_fields(maps:without([alerts], Map))];
-map_to_fields(Map = #{updated_at := Updated}) ->
-     [#field{name = <<"updated">>, type = timestamp, value = Updated} |
-     map_to_fields(maps:without([updated_at], Map))];
-map_to_fields(Map) ->
-    maps:fold(fun to_field/3, [], Map).
 
 vis(true) -> 100;
 vis(false) -> 0.
@@ -776,6 +759,17 @@ alerts(false) -> 0.
 encode_fields(Fields) ->
     lists:foldl(fun encode_field/2, [], Fields).
 
+to_field(location, #{coordinates := {Lon, Lat}}, Acc) ->
+    [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} | Acc];
+to_field(user_id, UserID, Acc) ->
+    JID = ?wocky_user:to_jid(?wocky_repo:get(?wocky_user, UserID)),
+    [#field{name = <<"owner">>, type = jid, value = JID} | Acc];
+to_field(public, Public, Acc) ->
+    [#field{name = <<"visibility">>, type = int, value = vis(Public)} | Acc];
+to_field(alerts, Alerts, Acc) ->
+    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} | Acc];
+to_field(updated_at, Updated, Acc) ->
+    [#field{name = <<"updated">>, type = timestamp, value = Updated} | Acc];
 to_field(_, null, Acc) -> Acc;
 to_field(Key, Val, Acc) ->
     KeyBin = atom_to_binary(Key, utf8),

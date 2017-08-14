@@ -105,14 +105,16 @@ end_per_suite(Config) ->
 
 init_per_testcase(geosearch, Config) ->
     meck:new('Elixir.Wocky.Index', [passthrough]),
-    meck:expect('Elixir.Wocky.Index', geosearch,
-                fun (_Lat, _Lon) ->
-                        {ok, [#{id => ?BOT, server => ?SERVER,
-                                user_id => ?ALICE, title => ?BOT_TITLE,
-                                image => ?CREATE_IMAGE, lat => ?BOT_LAT,
-                                lon => ?BOT_LON, radius => ?BOT_RADIUS,
-                                distance => 8000}]}
-                end),
+    meck:expect(
+        'Elixir.Wocky.Index', geosearch,
+        fun (_Lat, _Lon) ->
+                {ok, [#{id => ?BOT, server => ?SERVER,
+                        user_id => ?ALICE, title => ?BOT_TITLE,
+                        image => ?CREATE_IMAGE,
+                        location => ?wocky_geo_utils:point(?BOT_LON, ?BOT_LAT),
+                        radius => ?BOT_RADIUS,
+                        distance => 8000}]}
+        end),
     escalus:init_per_testcase(geosearch, Config);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -144,17 +146,17 @@ reset_tables(Config) ->
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Robert}),
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Karen}),
 
-    Bot = ?wocky_factory:insert(bot, #{id => ?BOT,
-                                       title => ?BOT_TITLE,
-                                       shortname => ?BOT_NAME,
-                                       user => Alice,
-                                       description => ?BOT_DESC,
-                                       lat => ?BOT_LAT,
-                                       lon => ?BOT_LON,
-                                       radius => ?BOT_RADIUS,
-                                       address => ?BOT_ADDRESS,
-                                       image => ?AVATAR_FILE,
-                                       type => ?BOT_TYPE}),
+    B = #{id => ?BOT,
+          title => ?BOT_TITLE,
+          shortname => ?BOT_NAME,
+          user => Alice,
+          description => ?BOT_DESC,
+          location => ?wocky_geo_utils:point(?BOT_LON, ?BOT_LAT),
+          radius => ?BOT_RADIUS,
+          address => ?BOT_ADDRESS,
+          image => ?AVATAR_FILE,
+          type => ?BOT_TYPE},
+    Bot = ?wocky_factory:insert(bot, B),
 
     ?wocky_item:put(Bot, ?ITEM, ?ITEM_STANZA, true),
     ?wocky_item:put(Bot, ?ITEM2, ?ITEM_STANZA2, false),

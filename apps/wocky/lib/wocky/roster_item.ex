@@ -33,6 +33,8 @@ defmodule Wocky.RosterItem do
 
   import EctoHomoiconicEnum, only: [defenum: 2]
 
+  alias Ecto.Adapters.SQL
+  alias Ecto.UUID
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
   alias Wocky.User
@@ -218,16 +220,50 @@ defmodule Wocky.RosterItem do
     |> not_blocked()
   end
 
+  @doc """
+  Returns true if `user_id` is a friend of `contact_id`, regardless of
+  whether contact_id has blocked `user_id`
+  """
   @spec is_friend(User.id, User.id) :: boolean
   def is_friend(user_id, contact_id) do
     user_id |> get(contact_id) |> is_friend
   end
 
-  @spec is_follower(User.id, User.id) :: boolean
-  def is_follower(user_id, contact_id) do
-    user_id |> get(contact_id) |> is_follower
+  @doc """
+  Returns true if user1 and user2 are friends and neither has the other
+  blocked
+  """
+  @spec is_unblocked_friend(User.id, User.id) :: boolean
+  def is_unblocked_friend(user1, user2) do
+    call_stored_relationship_proc(user1, user2, "is_unblocked_friend")
   end
 
+  @doc """
+  Returns true if user1 is a follower of user2 and user2 does not have user1
+  blocked
+  """
+  @spec is_unblocked_follower(User.id, User.id) :: boolean
+  def is_unblocked_follower(user1, user2) do
+    call_stored_relationship_proc(user1, user2, "is_unblocked_follower")
+  end
+
+  def call_stored_relationship_proc(user1, user2, proc) do
+    {:ok, u1} = UUID.dump(user1)
+    {:ok, u2} = UUID.dump(user2)
+    Repo
+    |> SQL.query!("SELECT #{proc}($1, $2)", [u1, u2])
+    |> Map.get(:rows)
+    |> hd
+    |> hd
+  end
+
+  @doc "Returns true if `user_id` is a follower of contact_id"
+  @spec is_follower(User.id, User.id) :: boolean
+  def is_follower(user_id, contact_id) do
+    user_id |> get(contact_id) |> is_followee
+  end
+
+  @doc "Returns the relationship of a to b"
   @spec relationship(User.id, User.id) :: relationship
   def relationship(a, a), do: :self
   def relationship(a, b) do
@@ -239,9 +275,9 @@ defmodule Wocky.RosterItem do
           is_friend(a_to_b) ->
             :friend
           is_follower(a_to_b) ->
-            :follower
-          is_follower(b_to_a) ->
             :followee
+          is_follower(b_to_a) ->
+            :follower
           true ->
             :none
         end
@@ -320,13 +356,22 @@ defmodule Wocky.RosterItem do
   end
   defp is_friend(_), do: false
 
+  # Returns true if the roster item referrs to a follower of the item owner
   defp is_follower(%RosterItem{subscription: subscription,
                                groups: groups}) do
     (subscription == :both || subscription == :from)
     &&
     ! Enum.member?(groups, @blocked_group)
   end
-  defp is_follower(_), do: false
+
+  # Returns true if the roster item referrs to a followee of the item owner
+  defp is_followee(%RosterItem{subscription: subscription,
+                               groups: groups}) do
+    (subscription == :both || subscription == :to)
+    &&
+    ! Enum.member?(groups, @blocked_group)
+  end
+  defp is_followee(_), do: false
 
   defp changeset(struct, params) do
     struct
