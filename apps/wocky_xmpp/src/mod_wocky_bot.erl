@@ -99,7 +99,7 @@ handle_iq_type(From, _To, set, <<"create">>, _Attrs, IQ) ->
 
 % Delete
 handle_iq_type(From, To, set, <<"delete">>, Attrs, IQ) ->
-    handle_owner_action(delete, From, To, Attrs, IQ);
+    handle_owner_action(delete, From, To, Attrs, false, IQ);
 
 % Retrieve owned bots
 handle_iq_type(From, To, get, Name, Attrs, IQ)
@@ -115,7 +115,7 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
 
     case {Node, Location, User, Owner} of
         {{ok, _Bot}, _, _, _} ->
-            handle_access_action(get_bot, From, To, Attrs, IQ);
+            handle_access_action(get_bot, From, To, Attrs, false, IQ);
         {_, {ok, {Lat, Lon}}, _, _} ->
             get_bots_near_location(From, Lat, Lon);
         {_, _, {ok, UserBin}, _} ->
@@ -134,11 +134,11 @@ handle_iq_type(From, To, get, Name, _Attrs, IQ)
 
 % Update
 handle_iq_type(From, To, set, <<"fields">>, Attrs, IQ) ->
-    handle_owner_action(update, From, To, Attrs, IQ);
+    handle_owner_action(update, From, To, Attrs, false, IQ);
 
 % Subscribe
 handle_iq_type(From, To, set, <<"subscribe">>, Attrs, IQ) ->
-    handle_access_action(subscribe, From, To, Attrs, IQ);
+    handle_access_action(subscribe, From, To, Attrs, false, IQ);
 
 % Unsubscribe
 handle_iq_type(From, To, set, <<"unsubscribe">>, Attrs, _IQ) ->
@@ -146,31 +146,31 @@ handle_iq_type(From, To, set, <<"unsubscribe">>, Attrs, _IQ) ->
 
 % Retrieve subscribers
 handle_iq_type(From, To, get, <<"subscribers">>, Attrs, IQ) ->
-    handle_owner_action(subscribers, From, To, Attrs, IQ);
+    handle_owner_action(subscribers, From, To, Attrs, false, IQ);
 
 % Retrieve item(s)
 handle_iq_type(From, To, get, <<"query">>, Attrs, IQ) ->
-    handle_access_action(item_query, From, To, Attrs, IQ);
+    handle_access_action(item_query, From, To, Attrs, true, IQ);
 
 % Publish an item
 handle_iq_type(From, To, set, <<"publish">>, Attrs, IQ) ->
-    handle_owner_action(publish, From, To, Attrs, IQ);
+    handle_owner_action(publish, From, To, Attrs, true, IQ);
 
 % Delete an item
 handle_iq_type(From, To, set, <<"retract">>, Attrs, IQ) ->
-    handle_owner_action(retract, From, To, Attrs, IQ);
+    handle_owner_action(retract, From, To, Attrs, true, IQ);
 
 % Get a list of images from items on the bot
 handle_iq_type(From, To, get, <<"item_images">>, Attrs, IQ) ->
-    handle_access_action(item_images, From, To, Attrs, IQ);
+    handle_access_action(item_images, From, To, Attrs, false, IQ);
 
 % Follow me
 handle_iq_type(From, To, set, <<"follow-me">>, Attrs, IQ) ->
-    handle_owner_action(follow_me, From, To, Attrs, IQ);
+    handle_owner_action(follow_me, From, To, Attrs, false, IQ);
 
 % Un-follow me
 handle_iq_type(From, To, set, <<"un-follow-me">>, Attrs, IQ) ->
-    handle_owner_action(unfollow_me, From, To, Attrs, IQ);
+    handle_owner_action(unfollow_me, From, To, Attrs, false, IQ);
 
 handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -180,9 +180,9 @@ handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
 %%% Actions that only the owner may perform
 %%%===================================================================
 
-handle_owner_action(Action, From, To, Attrs, IQ) ->
+handle_owner_action(Action, From, To, Attrs, AllowPending, IQ) ->
     do([error_m ||
-           Bot <- wocky_bot_util:get_bot_from_node(Attrs),
+           Bot <- wocky_bot_util:get_bot_from_node(Attrs, AllowPending),
            wocky_bot_util:check_owner(Bot, From),
            perform_owner_action(Action, Bot, From, To, IQ)
        ]).
@@ -257,9 +257,9 @@ send_hs_notification(From, Bot, Stanza) ->
 %%% Actions that require the user to have access to the bot
 %%%===================================================================
 
-handle_access_action(Action, From, _To, Attrs, IQ) ->
+handle_access_action(Action, From, _To, Attrs, AllowPending, IQ) ->
     do([error_m ||
-           Bot <- wocky_bot_util:get_bot_from_node(Attrs),
+           Bot <- wocky_bot_util:get_bot_from_node(Attrs, AllowPending),
            User <- wocky_bot_util:get_user_from_jid(From),
            wocky_bot_util:check_access(User, Bot),
            perform_access_action(Action, Bot, User, IQ)
@@ -297,7 +297,7 @@ handle_create(From, Children) ->
     Server = wocky_xmpp_app:server(),
     do([error_m ||
         Fields <- get_fields(Children),
-        {ID, PendingBot} <- get_id_and_bot(Fields),
+        {ID, PendingBot} <- get_pending_id_and_bot(Fields),
         wocky_bot_util:check_owner(ID, From),
         User <- wocky_bot_util:get_user_from_jid(From),
         Fields2 <- add_server(Fields, Server),
@@ -325,16 +325,16 @@ maybe_add_default(#field{name = Name, type = Type, value = Default}, Fields) ->
             Fields
     end.
 
-get_id_and_bot(Fields) ->
+get_pending_id_and_bot(Fields) ->
     case lists:keyfind(<<"id">>, #field.name, Fields) of
         false -> {ok, {?wocky_id:new(), nil}};
-        #field{value = ID} -> check_id(ID)
+        #field{value = ID} -> check_pending_id(ID)
     end.
 
-check_id(ID) ->
+check_pending_id(ID) ->
     case ?wocky_repo:get(?wocky_bot, ID) of
-        nil -> {error, ?ERR_ITEM_NOT_FOUND};
-        Bot -> {ok, {ID, Bot}}
+        Bot = #{pending := true} -> {ok, {ID, Bot}};
+        _ -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
 create_bot(ID, nil, #{id := UserID}, Fields) ->
@@ -507,7 +507,7 @@ handle_bot_stanza(From, To, BotStanza) ->
 check_access(BotNode, ActorJID, view) ->
     BotID = ?wocky_bot:get_id_from_node(BotNode),
     R = do([error_m ||
-               Bot <- wocky_bot_util:get_bot(BotID),
+               Bot <- wocky_bot_util:get_bot(BotID, true),
                Actor <- wocky_bot_util:get_user_from_jid(ActorJID),
                {ok, ?wocky_user:'can_access?'(Actor, Bot)}
            ]),
@@ -516,7 +516,7 @@ check_access(BotNode, ActorJID, view) ->
 check_access(BotNode, ActorJID, _) ->
     BotID = ?wocky_bot:get_id_from_node(BotNode),
     R = do([error_m ||
-               Bot <- wocky_bot_util:get_bot(BotID),
+               Bot <- wocky_bot_util:get_bot(BotID, true),
                Actor <- wocky_bot_util:get_user_from_jid(ActorJID),
                {ok, ?wocky_user:'owns?'(Actor, Bot)}
            ]),

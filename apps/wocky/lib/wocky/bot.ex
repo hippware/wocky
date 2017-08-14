@@ -89,7 +89,15 @@ defmodule Wocky.Bot do
   def public?(%{public: is_public}), do: is_public
 
   #----------------------------------------------------------------------
-  # Databse interaction
+  # Database interaction
+
+  @spec get(Bot.id, boolean) :: t | nil
+  def get(id, include_pending \\ false) do
+    Bot
+    |> where(id: ^id)
+    |> maybe_filter_pending(not include_pending)
+    |> Repo.one
+  end
 
   @spec preallocate(User.id, User.server) :: t | no_return
   def preallocate(user_id, server) do
@@ -226,4 +234,12 @@ defmodule Wocky.Bot do
   @spec lon(Bot.t) :: float | nil
   def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
   def lon(_), do: nil
+
+  defp maybe_filter_pending(queryable, false) do
+    queryable
+  end
+  defp maybe_filter_pending(queryable, true) do
+    queryable
+    |> where(pending: false)
+  end
 end

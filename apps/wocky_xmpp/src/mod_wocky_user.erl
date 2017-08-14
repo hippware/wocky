@@ -15,7 +15,8 @@
 -export([
          start/2,
          stop/1,
-         handle_iq/3
+         handle_iq/3,
+         remove_user_hook/2
         ]).
 
 %% Delay between sending result of a delete request and calling the
@@ -24,6 +25,7 @@
 %% the connection is dropped.
 -define(USER_DELETE_DELAY, 2000).
 
+-define(REMOVE_USER_HOOK_PRI, 1000). % Do this after all other remove user hooks
 
 %%--------------------------------------------------------------------
 %% gen_mod interface
@@ -32,11 +34,15 @@
 -spec start(ejabberd:server(), list()) -> any().
 start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_USER,
-                                  ?MODULE, handle_iq, parallel).
+                                  ?MODULE, handle_iq, parallel),
+    ejabberd_hooks:add(remove_user, Host,
+                       ?MODULE, remove_user_hook, ?REMOVE_USER_HOOK_PRI).
 
 
 -spec stop(ejabberd:server()) -> any().
 stop(Host) ->
+    ejabberd_hooks:delete(remove_user, Host,
+                          ?MODULE, remove_user_hook, ?REMOVE_USER_HOOK_PRI),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_USER).
 
 
@@ -103,7 +109,6 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
 
 handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
                #xmlel{name = <<"delete">>}) ->
-    ok = ?wocky_user:delete(LUser),
     {ok, _Ref} = timer:apply_after(?USER_DELETE_DELAY, ejabberd_hooks, run,
                                    [remove_user, LServer, [LUser, LServer]]),
     {ok, make_delete_response_iq(IQ)}.
@@ -539,3 +544,12 @@ error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
 
 update_roster_contacts(LUser) ->
     ?wocky_roster_item:bump_all_versions(LUser).
+
+
+%%--------------------------------------------------------------------
+%% Hook callbacks
+%%--------------------------------------------------------------------
+
+remove_user_hook(User, _Server) ->
+    LUser = jid:nodeprep(User),
+    ok = ?wocky_user:delete(LUser).
