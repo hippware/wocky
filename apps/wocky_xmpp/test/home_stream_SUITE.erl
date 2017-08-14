@@ -450,12 +450,11 @@ bot_description_update(Config) ->
         timer:sleep(400),
         check_home_stream_sizes(0, [Alice, Carol, Bob]),
 
-        % Blank the description
+        % Blanking the description should not generate a notification
         clear_home_streams(),
         expect_iq_success(update_bot_desc_stanza("  \t  "), Alice),
         timer:sleep(400),
-        check_home_stream_sizes(0, [Alice, Bob]),
-        expect_home_stream_bot_desc(Carol, false),
+        check_home_stream_sizes(0, [Alice, Bob, Carol]),
 
         % Changing from a white-space only description should add the <new> tag
         clear_home_streams(),

@@ -224,10 +224,13 @@ new_id(Config) ->
         ID = xml:get_path_s(Result, [{elem, <<"new-id">>}, cdata]),
 
         %% We can't specify an un-allocated ID for creation
-        CreateFields = [{"id", "string", ID} |
+        CreateFields = [{"id", "string", ?wocky_id:new()} |
                         lists:keydelete("shortname", 1, default_fields())],
         expect_iq_error(create_stanza(CreateFields), Bob),
-        expect_iq_success(create_stanza(CreateFields), Alice),
+        expect_iq_error(create_stanza(CreateFields), Alice),
+
+        %% Alice can't yet get the bot because it hasn't been created
+        expect_iq_error(retrieve_stanza(ID), Alice),
 
         %% Alice can publish to the bot ID
         publish_item(ID, <<"ID">>,
@@ -238,14 +241,12 @@ new_id(Config) ->
           publish_item_stanza(ID, <<"ID">>, <<"title">>, <<"content">>), Bob),
 
         % Now create the bot
-        CreateFields = [{"id", "string", ID} |
-                        lists:keydelete("shortname", 1, default_fields())],
-        expect_iq_success(create_stanza(CreateFields), Alice),
+        CreateFields2 = [{"id", "string", ID} |
+                         lists:keydelete("shortname", 1, default_fields())],
+        expect_iq_success(create_stanza(CreateFields2), Alice),
 
-        %% We can't specify an un-allocated ID for creation
-        FailedCreateFields = [{"id", "string", ?wocky_id:new()}
-                              | default_fields()],
-        expect_iq_error(create_stanza(FailedCreateFields), Alice)
+        %% Alice can now get the bot
+        expect_iq_success(retrieve_stanza(ID), Alice)
       end).
 
 retrieve(Config) ->

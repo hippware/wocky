@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix crash on insertion of invalid roster item. Fixes #856.
+* Don't generate a HS item if bot description becomes empty (#863)
+* Fix a crash relating to pending bots. Fixes #859.
+
+
 # 2017.7.18+2476.1c4ac8a
 
 * Initialise new accounts with a set of followees (#841)
