@@ -9,8 +9,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Don't generate a HS item if bot description becomes empty (#863)
 * Fix a crash relating to pending bots. Fixes #859.
 * Only delete user db entry after all other delete operations are done. Fixes #851.
-* Use PostGIS to manage bot location data. (#857, #864)
-* Bot lists to be sortable by distance (#763)
+* Use PostGIS to manage bot location data.
+  * Experimental, incomplete port of 'explore nearby' to use PostGIS. (#857, #864)
 
 
 # 2017.7.18+2476.1c4ac8a
