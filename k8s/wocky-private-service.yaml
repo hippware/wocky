@@ -1,7 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: wocky-service-headless
+  name: wocky-private
+  labels:
+    app: wocky
 spec:
   ports:
     - port: 8080

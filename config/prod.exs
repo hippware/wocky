@@ -4,6 +4,6 @@ use Mix.Config
 config :logger, level: :info
 
 config :peerage, via: Peerage.Via.Dns,
-  dns_name: "wocky-service-headless.default.svc.cluster.local",
+  dns_name: "wocky-private",
   app_name: "wocky",
   interval: 5

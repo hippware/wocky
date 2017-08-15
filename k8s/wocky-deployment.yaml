@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: wocky-deployment
+  name: wocky
 spec:
   replicas: 2
   template:
@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: wocky
-          image: wocky:2
+          image: hippware/wocky:2017-08-24T073905Z
           ports:
             - containerPort: 5222
             - containerPort: 8080
@@ -24,13 +24,23 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: WOCKY_ENV
+              value: prod
+            - name: WOCKY_INST
+              value: testing
             - name: WOCKY_HOST
-              value: "localhost"
+              value: "testing.prod.tinyrobot.com"
             - name: WOCKY_DB_USER
               value: "postgres"
             - name: WOCKY_DB_PASS
               value: "password"
             - name: WOCKY_DB_NAME
-              value: "wocky_dev"
+              value: "wocky_testing"
             - name: WOCKY_DB_HOST
-              value: "10.0.2.2"
+              value: "wocky-testing.cx7fev3pluk8.us-west-2.rds.amazonaws.com"
+            - name: HONEYBADGER_API_KEY
+              value: e4532738
+            - name: HONEYBADGER_ENV
+              value: kube_testing
+      imagePullSecrets:
+        - name: dockerhub
