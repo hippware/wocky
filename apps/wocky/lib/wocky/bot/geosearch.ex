@@ -36,10 +36,17 @@ defmodule Wocky.Bot.Geosearch do
   @default_max_explored_bots 1_000_000
   @default_explore_timeout 60_000
 
-  @spec user_distance_query(float, float, User.id, User.id, RSMHelper.rsm_in)
+  @spec user_distance_query(float, float, User.id, User.id RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
   def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
-    do: distance_query(lat, lon, &where_visible(&1, user_id, owner_id), rsm_in)
+    do: distance_query(lat, lon,
+     &where_owner_and_visible(&1, user_id, owner_id), rsm_in)
+
+  @spec subscribed_distance_query(float, float, User.id, RSMHelper.rsm_in)
+  :: {[%Bot{}], RSMHelper.rsm_out}
+  def subscribed_distance_query(lat, lon, user_id, rsm_in \\ rsm_in()),
+    do: distance_query(lat, lon,
+     &where_subscribed(&1, user_id), rsm_in)
 
   defp distance_query(lat, lon, where_clause, rsm_in) do
     limit = rsm_in(rsm_in, :max)
@@ -74,7 +81,8 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   def get_all(lat, lon, user_id, owner_id),
-    do: do_get_all(lat, lon, &where_visible(&1, user_id, owner_id), true)
+    do: do_get_all(lat, lon,
+     &where_owner_and_visible(&1, user_id, owner_id), true)
 
   def get_all(lat, lon, user_id),
     do: do_get_all(lat, lon, &where_searchable(&1, user_id), false)
@@ -94,18 +102,27 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   defp fields(point) do
-    {~s|SELECT *, ST_Distance(bot.location, #{p(1, [])})| <>
+    {~s|SELECT bot.*, ST_Distance(bot.location, #{p(1, [])})| <>
       ~s|AS "distance" FROM bots AS bot|,
      [point]}
   end
 
   defp count, do: {"SELECT count(id) FROM bots AS bot", []}
 
-  defp where_visible({str, params}, user_id, owner_id) do
+  defp where_owner_and_visible({str, params}, user_id, owner_id) do
     {str <>
       " WHERE bot.user_id = #{p(1, params)}" <>
        " AND is_visible(#{p(2, params)}, bot)",
       [dump_uuid(user_id), dump_uuid(owner_id) | params]}
+  end
+
+  defp where_subscribed({str, params}, user_id) do
+    {str <>
+     " INNER JOIN bot_subscriptions AS bot_subscription " <>
+      " ON bot.id = bot_subscription.bot_id" <>
+      " WHERE bot_subscription.user_id = #{p(1, params)}" <>
+      " AND is_visible(#{p(1, params)}, bot)",
+      [dump_uuid(user_id) | params]}
   end
 
   defp where_searchable({str, params}, user_id) do
