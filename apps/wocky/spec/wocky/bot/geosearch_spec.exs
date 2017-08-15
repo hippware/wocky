@@ -118,7 +118,7 @@ defmodule Wocky.Bot.GeosearchSpec do
           middle_id: Enum.at(visible_bots, 5).id}
       end
 
-      it "should be checking all the visible bots owneb by the selected user" do
+      it "should be checking all the visible bots owned by the selected user" do
         shared.bots |> should(have_length 10)
       end
 
@@ -169,7 +169,48 @@ defmodule Wocky.Bot.GeosearchSpec do
     end
   end
 
-  describe "user_distance_query/4" do
+  describe "subscribed_distance_query/4" do
+    before do
+      5
+      |> Factory.insert_list(:bot, public: true)
+      |> Enum.map(&Factory.insert(:subscription, user: shared.user, bot: &1))
+
+      bots = Geosearch.get_all(shared.lat, shared.lon, shared.user.id)
+
+      _unsubscribed = Factory.insert_list(5, :bot, public: true)
+
+      query = &Geosearch.subscribed_distance_query(shared.lat, shared.lon,
+                                                   shared.user.id, &1)
+
+      {:ok,
+       query: query,
+       bots: bots,
+       middle_id: Enum.at(bots, 2).id
+      }
+    end
+
+    it "should return all the subscribed bots" do
+      {results, rsm_out} = shared.query.(rsm_in())
+      results |> should(eq shared.bots)
+      rsm_out |> should(eq make_rsm(5, 0, 0, 4, shared.bots))
+    end
+
+    it "should limit as requested" do
+      {results, rsm_out} = shared.query.(
+       rsm_in(id: shared.middle_id, direction: :before, max: 2))
+      results |> should(eq Enum.slice(shared.bots, 0..1))
+      rsm_out |> should(eq make_rsm(5, 0, 0, 1, shared.bots))
+
+      {results, rsm_out} = shared.query.(
+       rsm_in(id: shared.middle_id, direction: :before,
+        max: 1, reverse: true))
+      results |> should(eq [Enum.at(shared.bots, 1)])
+      rsm_out |> should(eq make_rsm(5, 1, 1, 1, shared.bots))
+    end
+
+  end
+
+  describe "explore_nearby/5" do
     before do
       table = :ets.new(:table, [:public])
       :ets.insert(table, {:acc, []})
