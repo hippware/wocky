@@ -39,4 +39,12 @@ init([]) ->
                      type     => worker,
                      modules  => [wocky_bot_expiry_mon]},
 
-    {ok, {SupFlags, [BotExpiryMon]}}.
+    ExploreNearbyWorkerSup =
+    #{id       => wocky_explore_worker_sup,
+      start    => {wocky_explore_worker_sup, start_link, []},
+      restart  => permanent,
+      shutdown => 5000,
+      type     => supervisor,
+      modules  => []},
+
+    {ok, {SupFlags, [BotExpiryMon, ExploreNearbyWorkerSup]}}.

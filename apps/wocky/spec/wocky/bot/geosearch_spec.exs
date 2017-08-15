@@ -218,7 +218,7 @@ defmodule Wocky.Bot.GeosearchSpec do
       it "should have all the searchable bots" do
         Geosearch.explore_nearby(GeoUtils.point(shared.lon, shared.lat),
                                  1_000_000_000.0,
-                                 shared.user.id, 100,
+                                 shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
         get_bots(shared.table) |> should(eq shared.bots)
@@ -244,7 +244,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
       it "should return all bots for a large radius" do
         Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 1_000_000_000.0,
-                                 shared.user.id, 100,
+                                 shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
         get_bots(shared.table) |> should(eq shared.bots)
@@ -253,7 +253,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
       it "should return only bots within the specified radius" do
         Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 800_000.0,
-                                 shared.user.id, 100,
+                                 shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
         get_bots(shared.table) |> should(eq Enum.take(shared.bots, 5))
@@ -262,7 +262,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
       it "should return only the specified number of bots" do
         Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 1_00_000_000.0,
-                                 shared.user.id, 2,
+                                 shared.user, 2,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
         get_bots(shared.table) |> should(eq Enum.take(shared.bots, 2))
@@ -272,7 +272,7 @@ defmodule Wocky.Bot.GeosearchSpec do
       it "should stop after it reaches the query time limit" do
         Application.put_env(:wocky, :max_explore_time, 0)
         Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 1_00_000_000.0,
-                                 shared.user.id, 100,
+                                 shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
         Application.delete_env(:wocky, :max_explore_time)
@@ -284,7 +284,7 @@ defmodule Wocky.Bot.GeosearchSpec do
       it "should stop when it has searched the maximum number of bots" do
         Application.put_env(:wocky, :max_explored_bots, 3)
         Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 1_00_000_000.0,
-                                 shared.user.id, 100,
+                                 shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
         Application.delete_env(:wocky, :max_explored_bots)

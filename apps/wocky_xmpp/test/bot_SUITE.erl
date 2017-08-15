@@ -34,14 +34,14 @@
 -define(BOT_TYPE, <<"LucyLiuBot">>).
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
--define(BOT_RADIUS, 10000).
+-define(BOT_RADIUS, 10000.0).
 
 -define(CREATE_TITLE,       <<"Created Bot">>).
 -define(CREATE_SHORTNAME,   <<"NewBot">>).
 -define(CREATE_DESCRIPTION, <<"Test bot for creation operation">>).
 -define(CREATE_ADDRESS,     <<"5 Adelaide Avenue, Deakin, ACT">>).
 -define(CREATE_LOCATION,    {2.5, 1.6}).
--define(CREATE_RADIUS,      10).
+-define(CREATE_RADIUS,      10.0).
 -define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
 -define(CREATE_TYPE,        <<"floatbot">>).
 -define(CREATE_TAGS,        [<<"tag1">>, <<"tag2">>]).
@@ -85,7 +85,8 @@ all() ->
      open_visibility,
      follow_notifications,
      geosearch,
-     empty_shortname
+     empty_shortname,
+     explore_nearby
     ].
 
 suite() ->
@@ -116,6 +117,19 @@ init_per_testcase(geosearch, Config) ->
                         distance => 8000}]}
         end),
     escalus:init_per_testcase(geosearch, Config);
+init_per_testcase(explore_nearby, Config) ->
+    ?wocky_repo:delete_all(?wocky_bot),
+    Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+    Bots =
+    lists:map(
+      fun(I) ->
+              ?wocky_factory:insert(bot, #{user => Alice,
+                                           location =>
+                                           ?wocky_geo_utils:point(I, I)})
+      end,
+      lists:seq(1, 10)),
+
+    escalus:init_per_testcase(geosearch, [{bots, Bots} | Config]);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -190,6 +204,13 @@ create(Config) ->
         % HS notifications for public bots:
         timer:sleep(400),
         check_home_stream_sizes(1, [Alice, Bob], false),
+
+        % Check functionality of deprecated integer radius
+        CreateFields2 = [{"radius", "int", 10} |
+                         lists:keydelete("radius", 1,
+                                         lists:keydelete("shortname", 1,
+                                                         default_fields()))],
+        expect_iq_success(create_stanza(CreateFields2), Alice),
 
         % Fail due to shortname conflict if we try to create the same bot
         expect_iq_error(create_stanza(), Alice)
@@ -443,7 +464,7 @@ retrieve_for_user(Config) ->
            {"description", string, ?CREATE_DESCRIPTION},
            {"address",     string, ?CREATE_ADDRESS},
            {"location",    geoloc, ?CREATE_LOCATION},
-           {"radius",      int,    ?CREATE_RADIUS},
+           {"radius",      float,  ?CREATE_RADIUS},
            {"image",       string, ?CREATE_IMAGE},
            {"type",        string, ?CREATE_TYPE},
            {"owner",       jid,    ?BJID(?ALICE)},
@@ -475,17 +496,14 @@ get_subscribed(Config) ->
 sorting(Config) ->
     AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
     ?wocky_repo:delete_all(?wocky_bot),
-    Bots = lists:map(
-      fun(_) ->
-              ?wocky_factory:insert(bot, #{user => AliceUser, shortname => nil})
-      end,
-      lists:seq(1, 10)),
+    Bots = ?wocky_factory:insert_list(10, bot,
+                                      #{user => AliceUser, shortname => nil}),
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         % Simple ascending order on title
         Stanza = expect_iq_success(
                    retrieve_stanza(?BJID(?ALICE), <<"asc">>,
-                                   <<"lexicographic">>, #rsm_in{}),
+                                   <<"title">>, #rsm_in{}),
                    Alice),
 
         IDsByTitle = sort_bot_ids(Bots, title),
@@ -494,7 +512,7 @@ sorting(Config) ->
         % Reverse sort order on title, subset by index
         Stanza2 = expect_iq_success(
                     retrieve_stanza(?BJID(?ALICE), <<"desc">>,
-                                    <<"lexicographic">>,
+                                    <<"title">>,
                                     #rsm_in{index = 5, max = 4}),
                     Alice),
 
@@ -526,10 +544,13 @@ sorting(Config) ->
           retrieve_stanza(?BJID(?ALICE), <<"desk">>, <<"updated">>, #rsm_in{}),
           Alice),
         expect_iq_error(
-          retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"title">>, #rsm_in{}),
+          retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"turtle">>, #rsm_in{}),
+          Alice),
+        expect_iq_error(
+          retrieve_stanza(?BJID(?ALICE),
+                          <<"desc">>, <<"direction">>, #rsm_in{}),
           Alice)
       end).
-
 
 publish_item(Config) ->
     reset_tables(Config),
@@ -857,6 +878,31 @@ empty_shortname(Config) ->
         expect_iq_success(create_stanza(Fields), Alice)
       end).
 
+explore_nearby(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        % Complete result set
+        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 100),
+                                   Alice), Alice),
+        lists:foreach(
+          expect_explore_result(_, Alice),
+          proplists:get_value(bots, Config)
+         ),
+        expect_explore_result(<<"no-more-bots">>, Alice),
+
+        % Tiny radius
+        expect_iq_success(add_to_s(explore_nearby_stanza(160000.0, 100),
+                                   Alice), Alice),
+        expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
+        expect_explore_result(<<"no-more-bots">>, Alice),
+
+        % Limit bot count
+        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 1),
+                                   Alice), Alice),
+        expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
+        expect_explore_result(<<"bot-limit-reached">>, Alice)
+      end).
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -886,7 +932,7 @@ default_fields() ->
      {"description",   "string", ?CREATE_DESCRIPTION},
      {"address",       "string", ?CREATE_ADDRESS},
      {"location",      "geoloc", ?CREATE_LOCATION},
-     {"radius",        "int",    ?CREATE_RADIUS},
+     {"radius",        "float",  ?CREATE_RADIUS},
      {"image",         "string", ?CREATE_IMAGE},
      {"type",          "string", ?CREATE_TYPE},
      {"tags",          "tags",   ?CREATE_TAGS}
@@ -899,6 +945,8 @@ create_field({Name, "string", Value}) ->
     create_field(Name, "string", value_element(Value));
 create_field({Name, "int", Value}) ->
     create_field(Name, "int", value_element(integer_to_binary(Value)));
+create_field({Name, "float", Value}) ->
+    create_field(Name, "float", value_element(float_to_binary(Value)));
 create_field({Name, "jid", Value}) ->
     create_field(Name, "jid", value_element(jid:to_binary(Value)));
 create_field({Name, "geoloc", Value}) ->
@@ -941,7 +989,7 @@ expected_create_fields() ->
      {"image",              string, ?CREATE_IMAGE},
      {"type",               string, ?CREATE_TYPE},
      {"location",           geoloc, ?CREATE_LOCATION},
-     {"radius",             int,    ?CREATE_RADIUS},
+     {"radius",             float,  ?CREATE_RADIUS},
      {"visibility",         int,    ?WOCKY_BOT_VIS_OWNER},
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    any},
@@ -964,7 +1012,7 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"image",              string, ?AVATAR_FILE},
      {"type",               string, ?BOT_TYPE},
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
-     {"radius",             int,    ?BOT_RADIUS},
+     {"radius",             float,  ?BOT_RADIUS},
      {"visibility",         int,    Visibility},
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
@@ -982,8 +1030,8 @@ expected_geosearch_fields() ->
      {"title",              string, any},
      {"image",              string, any},
      {"location",           geoloc, any},
-     {"radius",             int,    any},
-     {"distance",           int,    any}].
+     {"radius",             float,  any},
+     {"distance",           float,  any}].
 
 check_returned_bot(#xmlel{name = <<"iq">>, children = [BotStanza]},
                    ExpectedFields) ->
@@ -1109,6 +1157,10 @@ check_value_el(Value, <<"bool">>,
                [#xmlel{name = <<"value">>,
                        children = [#xmlcdata{content = InValue}]}]) ->
     Value =:= binary_to_atom(InValue, utf8);
+check_value_el(Value, <<"float">>,
+               [#xmlel{name = <<"value">>,
+                       children = [#xmlcdata{content = InValue}]}]) ->
+    Value =:= binary_to_float(InValue);
 check_value_el(Value, Type, Elements) ->
     ct:fail("check_value_el failed: ~p ~p ~p", [Value, Type, Elements]).
 
@@ -1139,12 +1191,13 @@ is_field(Name, Type, #xmlel{attrs = Attrs}) ->
     xml:get_attr(<<"var">>, Attrs) =:= {value, Name} andalso
     xml:get_attr(<<"type">>, Attrs) =:= {value, Type}.
 
-retrieve_stanza(User, Dir, Field, RSM) ->
-    test_helper:iq_get(?NS_BOT,
-                       #xmlel{name = <<"bot">>,
-                              children = [owner_elem(User),
-                                          sort_elem(Dir, Field),
-                                          rsm_elem(RSM)]}).
+retrieve_stanza() ->
+    retrieve_stanza(?BOT).
+
+retrieve_stanza(RSM = #rsm_in{}) ->
+    retrieve_stanza(RSM, 0.0, 0.0);
+retrieve_stanza(BotID) when is_binary(BotID)->
+    test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
 
 retrieve_stanza(User, RSM) ->
     test_helper:iq_get(?NS_BOT,
@@ -1152,11 +1205,19 @@ retrieve_stanza(User, RSM) ->
                               attrs = [{<<"user">>, User}],
                               children = [rsm_elem(RSM)]}).
 
-retrieve_stanza() ->
-    retrieve_stanza(?BOT).
+retrieve_stanza(RSM, Lat, Lon) ->
+    test_helper:iq_get(?NS_BOT,
+                       #xmlel{name = <<"bot">>,
+                              children = [#xmlel{name = <<"explore-nearby">>},
+                                          sort_elem(Lat, Lon),
+                                          rsm_elem(RSM)]}).
 
-retrieve_stanza(BotID) ->
-    test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
+retrieve_stanza(User, Dir, Field, RSM) ->
+    test_helper:iq_get(?NS_BOT,
+                       #xmlel{name = <<"bot">>,
+                              children = [owner_elem(User),
+                                          sort_elem(Dir, Field),
+                                          rsm_elem(RSM)]}).
 
 subscribed_stanza(Dir, Field, RSM) ->
     test_helper:iq_get(?NS_BOT, #xmlel{name = <<"subscribed">>,
@@ -1169,6 +1230,13 @@ subscribed_stanza(RSM) ->
 
 owner_elem(User) ->
     #xmlel{name = <<"owner">>, attrs = [{<<"jid">>, User}]}.
+
+sort_elem(Lat, Lon) when is_float(Lat), is_float(Lon) ->
+    #xmlel{name = <<"sort">>,
+           attrs = [{<<"direction">>, <<"asc">>}, {<<"by">>, <<"distance">>}],
+           children = [#xmlel{name = <<"near">>,
+                              attrs = [{<<"lat">>, float_to_binary(Lat)},
+                                       {<<"lon">>, float_to_binary(Lon)}]}]};
 
 sort_elem(Dir, Field) ->
     #xmlel{name = <<"sort">>,
@@ -1513,6 +1581,17 @@ geosearch_stanza() ->
                      ]},
     test_helper:iq_get(?NS_BOT, QueryEl).
 
+explore_nearby_stanza(Radius, Limit) ->
+    QueryEl =
+    #xmlel{name = <<"bots">>,
+           children = [#xmlel{name = <<"explore-nearby">>,
+                              attrs = [{<<"limit">>, integer_to_binary(Limit)},
+                                       {<<"radius">>,
+                                        float_to_binary(Radius)},
+                                       {<<"lat">>, float_to_binary(0.0)},
+                                       {<<"lon">>, float_to_binary(0.0)}]}]},
+    test_helper:iq_get(?NS_BOT, QueryEl).
+
 sort_bot_ids(Bots, Field) when Field =:= <<"created_at">>;
                                Field =:= <<"updated_at">> ->
     Sorted = lists:sort(fun(A, B) ->
@@ -1526,3 +1605,25 @@ sort_bot_ids(Bots, Field) ->
                                 maps:get(Field, A) =< maps:get(Field, B)
                         end, Bots),
     lists:map(maps:get(id, _), Sorted).
+
+expect_explore_result(#{id := BotID}, User) ->
+    Stanza = escalus_client:wait_for_stanza(User),
+    escalus:assert(is_message, Stanza),
+    escalus:assert(has_type, [<<"headline">>], Stanza),
+    IDEl = wocky_xml:path_by_attr(Stanza,
+                                  [{element, <<"explore-nearby-result">>},
+                                   {element, <<"bot">>},
+                                   {element, <<"field">>}],
+                                  <<"var">>, <<"id">>),
+    {ok, Value} = wocky_xml:get_subel_cdata(<<"value">>, IDEl),
+    ?assertEqual(Value, BotID);
+
+expect_explore_result(Terminator, User) ->
+    Stanza = escalus_client:wait_for_stanza(User),
+    escalus:assert(is_message, Stanza),
+    escalus:assert(has_type, [<<"headline">>], Stanza),
+    ?assertNotEqual(
+       exml_query:path(Stanza,
+                       [{element, <<"explore-nearby-result">>},
+                        {element, Terminator}]),
+       undefined).

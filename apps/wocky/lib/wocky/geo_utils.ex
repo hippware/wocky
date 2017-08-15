@@ -16,7 +16,7 @@ defmodule Wocky.GeoUtils do
   def to_degrees(_), do: raise ArgumentError
 
   def point(lon, lat) do
-    %Point{coordinates: {lon, lat}, srid: 4326}
+    %Point{coordinates: {to_degrees(lon), to_degrees(lat)}, srid: 4326}
   end
 
   @doc "Normalize latitude and logitude to the range [-90,90], (-180, 180]"

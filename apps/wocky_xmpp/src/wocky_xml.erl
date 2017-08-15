@@ -16,7 +16,8 @@
          check_attr/3,
          get_attr/2,
          parse_multiple/1,
-         cdata_el/2
+         cdata_el/2,
+         path_by_attr/4
         ]).
 
 -type error() :: {error, jlib:xmlel()}.
@@ -89,7 +90,7 @@ check_attr(Attr, Value, #xmlel{attrs = Attrs}) ->
                                         Attr/binary>>)}
     end.
 
--spec get_attr(binary(), [exml:attr()])
+-spec get_attr(binary(), jlib:xmlel() | [exml:attr()])
 -> {ok, binary()} | error().
 
 get_attr(AttrName, #xmlel{attrs = Attrs}) ->
@@ -134,3 +135,17 @@ id_pass_error(X)          -> {ok, X}.
 
 cdata_el(Name, Value) ->
     #xmlel{name = Name, children = [#xmlcdata{content = Value}]}.
+
+% Find the first element at Path (see exml_query.erl) with the specified
+% attribute pair
+-spec path_by_attr(jlib:xmlel(), exml_query:path(), binary(), binary()) ->
+    jlib:xmlel() | undefined.
+path_by_attr(Element, Path, AttrName, AttrValue) ->
+    Elements = exml_query:paths(Element, Path),
+    L = lists:dropwhile(
+          fun(E) -> exml_query:attr(E, AttrName) =/= AttrValue end,
+          Elements),
+    case L of
+        [] -> undefined;
+        [E|_] -> E
+    end.

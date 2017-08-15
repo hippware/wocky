@@ -40,24 +40,25 @@
 -define(NS_USER,          <<"hippware.com/hxep/user">>).
 
 %% Elixir module names
--define(wocky_bot, 'Elixir.Wocky.Bot').
--define(wocky_initial_followee, 'Elixir.Wocky.InitialFollowee').
--define(wocky_item, 'Elixir.Wocky.Bot.Item').
--define(wocky_share, 'Elixir.Wocky.Bot.Share').
--define(wocky_subscription, 'Elixir.Wocky.Bot.Subscription').
+-define(wocky_bot,               'Elixir.Wocky.Bot').
+-define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').
+-define(wocky_item,              'Elixir.Wocky.Bot.Item').
+-define(wocky_share,             'Elixir.Wocky.Bot.Share').
+-define(wocky_subscription,      'Elixir.Wocky.Bot.Subscription').
 -define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
--define(wocky_conversation, 'Elixir.Wocky.Conversation').
--define(wocky_home_stream_item, 'Elixir.Wocky.HomeStreamItem').
--define(wocky_repo, 'Elixir.Wocky.Repo').
--define(wocky_errors, 'Elixir.Wocky.Repo.Errors').
--define(wocky_factory, 'Elixir.Wocky.Repo.Factory').
--define(wocky_id, 'Elixir.Wocky.Repo.ID').
--define(wocky_timestamp, 'Elixir.Wocky.Repo.Timestamp').
--define(wocky_roster_item, 'Elixir.Wocky.RosterItem').
--define(wocky_rsm_helper, 'Elixir.Wocky.RSMHelper').
--define(wocky_token, 'Elixir.Wocky.Token').
--define(wocky_traffic_log, 'Elixir.Wocky.TrafficLog').
--define(wocky_user, 'Elixir.Wocky.User').
+-define(wocky_conversation,      'Elixir.Wocky.Conversation').
+-define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
+-define(wocky_initial_followee,  'Elixir.Wocky.InitialFollowee').
+-define(wocky_repo,              'Elixir.Wocky.Repo').
+-define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
+-define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
+-define(wocky_id,                'Elixir.Wocky.Repo.ID').
+-define(wocky_timestamp,         'Elixir.Wocky.Repo.Timestamp').
+-define(wocky_roster_item,       'Elixir.Wocky.RosterItem').
+-define(wocky_rsm_helper,        'Elixir.Wocky.RSMHelper').
+-define(wocky_token,             'Elixir.Wocky.Token').
+-define(wocky_traffic_log,       'Elixir.Wocky.TrafficLog').
+-define(wocky_user,              'Elixir.Wocky.User').
 
 -define(tros, 'Elixir.Wocky.TROS').
 -define(tros_s3, 'Elixir.Wocky.TROS.S3Store').

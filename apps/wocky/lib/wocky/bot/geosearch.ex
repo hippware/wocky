@@ -224,9 +224,9 @@ defmodule Wocky.Bot.Geosearch do
 
   ### Explore nearby
 
-  @spec explore_nearby(Point, float, User.id,
+  @spec explore_nearby(Point.t, float, User.t,
                        non_neg_integer, explore_callback) :: :ok
-  def explore_nearby(point, radius, user_id, max, fun) do
+  def explore_nearby(point, radius, user, max, fun) do
     max_explore_time = Confex.get(:wocky, :max_explore_time,
                                   @default_explore_timeout)
     max_explored_bots = Confex.get(:wocky, :max_explored_bots,
@@ -240,7 +240,7 @@ defmodule Wocky.Bot.Geosearch do
     AS bot
     WHERE is_searchable($3, bot)
     """
-    params = [point, max_explored_bots, dump_uuid(user_id)]
+    params = [point, max_explored_bots, dump_uuid(user.id)]
     limits = %Limits{radius: radius, count: max, time: max_explore_time}
 
     Repo.transaction(
