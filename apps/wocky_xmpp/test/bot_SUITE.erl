@@ -471,7 +471,12 @@ retrieve_for_user(Config) ->
            {"visibility",  int,    ?WOCKY_BOT_VIS_OPEN},
            {"alerts",      int,    ?WOCKY_BOT_ALERT_DISABLED},
            {"jid",         jid,    bot_jid(PublishBot)},
-           {"subscribed",  bool,   false}])
+           {"subscribed",  bool,   false}]),
+
+        Stanza9 = expect_iq_success(retrieve_stanza(?BJID(?ALICE),
+                                                    0.0, 0.0, #rsm_in{}),
+                                    Alice),
+        check_returned_bots(Stanza9, IDs, 0, ?CREATED_BOTS)
       end).
 
 get_subscribed(Config) ->
@@ -490,7 +495,11 @@ get_subscribed(Config) ->
 
         %% Bob is not subscribed to the bot at all so gets nothing
         Stanza3 = expect_iq_success(subscribed_stanza(#rsm_in{}), Bob),
-        check_returned_bots(Stanza3, [], undefined, 0)
+        check_returned_bots(Stanza3, [], undefined, 0),
+
+        Stanza4 = expect_iq_success(subscribed_stanza(0.0, 0.0, #rsm_in{}),
+                                    Karen),
+        check_returned_bots(Stanza4, [?BOT], 0, 1)
       end).
 
 sorting(Config) ->
@@ -548,7 +557,7 @@ sorting(Config) ->
           Alice),
         expect_iq_error(
           retrieve_stanza(?BJID(?ALICE),
-                          <<"desc">>, <<"direction">>, #rsm_in{}),
+                          <<"desc">>, <<"distance">>, #rsm_in{}),
           Alice)
       end).
 
@@ -1194,8 +1203,6 @@ is_field(Name, Type, #xmlel{attrs = Attrs}) ->
 retrieve_stanza() ->
     retrieve_stanza(?BOT).
 
-retrieve_stanza(RSM = #rsm_in{}) ->
-    retrieve_stanza(RSM, 0.0, 0.0);
 retrieve_stanza(BotID) when is_binary(BotID)->
     test_helper:iq_get(?NS_BOT, node_el(BotID, <<"bot">>)).
 
@@ -1205,23 +1212,16 @@ retrieve_stanza(User, RSM) ->
                               attrs = [{<<"user">>, User}],
                               children = [rsm_elem(RSM)]}).
 
-retrieve_stanza(RSM, Lat, Lon) ->
-    test_helper:iq_get(?NS_BOT,
-                       #xmlel{name = <<"bot">>,
-                              children = [#xmlel{name = <<"explore-nearby">>},
-                                          sort_elem(Lat, Lon),
-                                          rsm_elem(RSM)]}).
-
-retrieve_stanza(User, Dir, Field, RSM) ->
+retrieve_stanza(User, Sort1, Sort2, RSM) ->
     test_helper:iq_get(?NS_BOT,
                        #xmlel{name = <<"bot">>,
                               children = [owner_elem(User),
-                                          sort_elem(Dir, Field),
+                                          sort_elem(Sort1, Sort2),
                                           rsm_elem(RSM)]}).
 
-subscribed_stanza(Dir, Field, RSM) ->
+subscribed_stanza(Sort1, Sort2, RSM) ->
     test_helper:iq_get(?NS_BOT, #xmlel{name = <<"subscribed">>,
-                                       children = [sort_elem(Dir, Field),
+                                       children = [sort_elem(Sort1, Sort2),
                                                    rsm_elem(RSM)]}).
 
 subscribed_stanza(RSM) ->

@@ -390,11 +390,16 @@ get_bots_near_location(From, Lat, Lon) ->
                 ?MYLANG, <<"Index search is not configured on this server">>)}
     end.
 
+get_subscribed_bots(QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
+    {ok,
+     ?wocky_geosearch:subscribed_distance_query(Lat, Lon,
+                                                maps:get(id, QueryingUser),
+                                                RSMIn)};
+
 get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
     FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
-    {ok,
-     ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
+    {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
 make_geosearch_result(Bots) ->
     #xmlel{name = <<"bots">>,
@@ -427,7 +432,11 @@ get_bots_for_owner(From, IQ, OwnerBin) ->
        ]).
 
 get_bots_for_owner_rsm(Owner, QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
-    ?wocky_geosearch:user_distance_query(Lat, Lon, QueryingUser, Owner, RSMIn);
+    {ok,
+     ?wocky_geosearch:user_distance_query(Lat, Lon,
+                                          maps:get(id, QueryingUser),
+                                          maps:get(id, Owner),
+                                          RSMIn)};
 
 get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:owned_bots_query(Owner),
