@@ -10,7 +10,7 @@ defmodule :mod_wocky_notifications_spec do
   alias Wocky.User
 
   @test_id       "123456789"
-  @notify_timeout 1000
+  @notify_timeout 10000
 
   def enable_notifications(user_jid, device \\ @test_id) do
     iq_set = iq(
