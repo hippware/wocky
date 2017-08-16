@@ -10,6 +10,7 @@ defmodule :mod_wocky_notifications_spec do
   alias Wocky.User
 
   @test_id       "123456789"
+  @notify_timeout 10000
 
   def enable_notifications(user_jid, device \\ @test_id) do
     iq_set = iq(
@@ -86,14 +87,9 @@ defmodule :mod_wocky_notifications_spec do
   end
 
   before do
-    pid = GenServer.whereis(:push_notification_event_handler)
-    Ecto.Adapters.SQL.Sandbox.allow(Wocky.Repo, self(), pid)
-
-    Sandbox.clear_notifications(pid: pid)
-
     sender = Factory.insert(:user)
     user = Factory.insert(:user)
-    {:ok, pid: pid, user: user, user_jid: User.to_jid(user),
+    {:ok, user: user, user_jid: User.to_jid(user),
           sender: sender, sender_jid: User.to_jid(sender)}
   end
 
@@ -132,7 +128,13 @@ defmodule :mod_wocky_notifications_spec do
 
     describe "handling the user_send_packet hook" do
       before do
+        pid = GenServer.whereis(:push_notification_event_handler)
+        Ecto.Adapters.SQL.Sandbox.allow(Wocky.Repo, self(), pid)
+
+        Sandbox.clear_notifications(pid: pid)
+
         _ = enable_notifications(shared.user_jid)
+        {:ok, pid: pid}
       end
 
       context "with a message packet" do
@@ -142,7 +144,9 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should send a notification" do
-          notifications = Sandbox.wait_notifications(count: 1, pid: shared.pid)
+          notifications = Sandbox.wait_notifications(count: 1,
+                                                     timeout: @notify_timeout,
+                                                     pid: shared.pid)
           notifications |> should(have_size 1)
 
           [{{:ok, _}, request, _}] = notifications
@@ -157,7 +161,9 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should send a notification" do
-          notifications = Sandbox.wait_notifications(count: 1, pid: shared.pid)
+          notifications = Sandbox.wait_notifications(count: 1,
+                                                     timeout: @notify_timeout,
+                                                     pid: shared.pid)
           notifications |> should(have_size 1)
 
           [{{:ok, _}, request, _}] = notifications
@@ -172,7 +178,9 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should send a notification" do
-          notifications = Sandbox.wait_notifications(count: 1, pid: shared.pid)
+          notifications = Sandbox.wait_notifications(count: 1,
+                                                     timeout: @notify_timeout,
+                                                     pid: shared.pid)
           notifications |> should(have_size 1)
 
           [{{:ok, _}, request, _}] = notifications
