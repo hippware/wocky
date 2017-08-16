@@ -11,6 +11,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Only delete user db entry after all other delete operations are done. Fixes #851.
 * Use PostGIS to manage bot location data.
   * Experimental, incomplete port of 'explore nearby' to use PostGIS. (#857, #864)
+* Bot lists to be sortable by distance (#763)
 
 
 # 2017.7.18+2476.1c4ac8a
