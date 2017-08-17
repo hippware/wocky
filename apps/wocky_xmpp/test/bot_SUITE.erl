@@ -338,6 +338,7 @@ subscribe_temporary(Config) ->
                            expected_retrieve_fields(false, ?BOT_DESC,
                                                     ?WOCKY_BOT_VIS_OPEN, 2)),
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(500),
 
         check_returned_bot(expect_iq_success(retrieve_stanza(), Tim),
                            expected_retrieve_fields(true, ?BOT_DESC,
@@ -361,12 +362,14 @@ unsubscribe_temporary(Config) ->
         check_subscribers(Stanza, [?BJID(?CAROL), ?BJID(?KAREN)]),
 
         subscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(500),
 
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza2, [?BJID(?CAROL), ?BJID(?KAREN),
                                     escalus_client:full_jid(Tim)]),
 
         unsubscribe_temporary(?BOT_B_JID, Tim),
+        timer:sleep(500),
 
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza3, [?BJID(?CAROL), ?BJID(?KAREN)]),
