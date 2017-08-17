@@ -1,0 +1,31 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": [],
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    },
+    "response": {
+      "body": "{\n \"3450b0ba9e31722e090ed2135bcdb7c177a32f27\": \"-----BEGIN CERTIFICATE-----\\nMIIDHDCCAgSgAwIBAgIIQsUUSIWD+jwwDQYJKoZIhvcNAQEFBQAwMTEvMC0GA1UE\\nAxMmc2VjdXJldG9rZW4uc3lzdGVtLmdzZXJ2aWNlYWNjb3VudC5jb20wHhcNMTcw\\nODE3MDA0NTI2WhcNMTcwODIwMDExNTI2WjAxMS8wLQYDVQQDEyZzZWN1cmV0b2tl\\nbi5zeXN0ZW0uZ3NlcnZpY2VhY2NvdW50LmNvbTCCASIwDQYJKoZIhvcNAQEBBQAD\\nggEPADCCAQoCggEBAOXC/+IqxPoPZs5PZF3UtG7lN+sisDATauyPb9oysDsD1/e3\\ningpDGDZrMTceNUuZosK2Ivn+iopWCNRBGmTcMUlNFMOzlQWnY2APUn/Jf0fkxfG\\nuw7syQS6eFq1+gd/qclXG78pF3BAk5C0g1zfplgRUi3oT646Cl5Lm59njYpcyptU\\nMo5LmvzxWxtjNHChH3aRDx/cZDzrcVyDwQ31vxERTjb/RkzQkHdSSWrE32l7CcrR\\nYqEFuuayWBW7MTOtODqIGmFpi/qBdzMw6xzKVaFGAlos8xbcXug07dA8tScHFciM\\n6FKzHsKNm+/ASgjIkwob9am7XKr3hFqtPzpLT/sCAwEAAaM4MDYwDAYDVR0TAQH/\\nBAIwADAOBgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwIwDQYJ\\nKoZIhvcNAQEFBQADggEBAHsKM9xugA8gTp9Yh5DB12xMnzkYJv3GrfVOG4bUqJ3b\\nxJQLCXD6PWBBM3mhbfbf7z2IOaPQlgXSTdfkcj2i61Ivas7BeDbUN6Vnxaqoo7tP\\n6UI+mjEPLGP2kN30+jvfjg4isi2on+cTdJjopmMY5jIk8eGBpIANzgNkIi6yaA+r\\nC4tKVi3kSVgPnrVDIeBMuVux5nSct2ZZmrZrcsFS9LoVxYXJouie3irSFIy6e8gB\\nN8yMZY1SH3FDu/288FHCQ6lkzGJ3fMfhGG/xXgNPRQgekukZnDIZOCev30JLYAGB\\nwHl3KkZYe+Q2g97N3lkd4ZN0yJm4WTTdCVbZuWTrl+k=\\n-----END CERTIFICATE-----\\n\",\"OLDID\": \"OLDCERT1234\"\n}\n",
+      "headers": {
+        "Expires": "Fri, 18 Aug 2017 08:48:49 GMT",
+        "Date": "Fri, 18 Aug 2017 02:29:54 GMT",
+        "Vary": "Origin",
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        "Content-Length": "3624",
+        "Server": "GSE",
+        "Cache-Control": "public, max-age=1, must-revalidate, no-transform",
+        "Age": "7218",
+        "Alt-Svc": "quic=\":443\"; ma=2592000; v=\"39,38,37,35\""
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
