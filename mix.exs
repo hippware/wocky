@@ -51,7 +51,8 @@ defmodule Wocky.Release.Mixfile do
       lint: ["elvis", "credo"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "ecto.wait": &wait_for_db/1
+      "ecto.wait": &wait_for_db/1,
+      epmd: &run_epmd/1
     ]
   end
 
@@ -74,4 +75,6 @@ defmodule Wocky.Release.Mixfile do
     Process.sleep(1000)
     do_wait_for_db(retries + 1)
   end
+
+  defp run_epmd(_), do: System.cmd("epmd", ["-daemon"])
 end
