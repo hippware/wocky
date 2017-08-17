@@ -50,7 +50,28 @@ defmodule Wocky.Release.Mixfile do
       prepare: ["deps.get", "deps.compile goldrush lager", "recompile"],
       lint: ["elvis", "credo"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"]
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.wait": &wait_for_db/1
     ]
+  end
+
+  defp wait_for_db(_) do
+    do_wait_for_db(0)
+  end
+
+  defp do_wait_for_db(retries) do
+    user = System.get_env("WOCKY_DB_USER") || "postgres"
+    host = System.get_env("WOCKY_DB_HOST") || "localhost"
+
+    "pg_isready"
+    |> System.cmd(["-h", host, "-U", user])
+    |> handle_db_result(retries)
+  end
+
+  defp handle_db_result({_, 0}, _), do: :ok
+  defp handle_db_result({_, _}, 60), do: raise "PostgreSQL wasn't ready in time"
+  defp handle_db_result({_, _}, retries) do
+    Process.sleep(1000)
+    do_wait_for_db(retries + 1)
   end
 end
