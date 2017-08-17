@@ -1592,8 +1592,8 @@ explore_nearby_stanza(Radius, Limit) ->
                                        {<<"lon">>, float_to_binary(0.0)}]}]},
     test_helper:iq_get(?NS_BOT, QueryEl).
 
-sort_bot_ids(Bots, Field) when Field =:= <<"created_at">>;
-                               Field =:= <<"updated_at">> ->
+sort_bot_ids(Bots, Field) when Field =:= created_at;
+                               Field =:= updated_at ->
     Sorted = lists:sort(fun(A, B) ->
                                 ?datetime:compare(
                                    maps:get(Field, A), maps:get(Field, B)
