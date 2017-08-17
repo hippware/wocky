@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.8.17+2529.8eecea6
+
+* Fix a migration script (#871)
+
+
+# 2017.8.17+2527.951e779
+
 * Fix crash on insertion of invalid roster item. Fixes #856.
 * Don't generate a HS item if bot description becomes empty (#863)
 * Fix a crash relating to pending bots. Fixes #859.
@@ -12,6 +19,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Use PostGIS to manage bot location data.
   * Experimental, incomplete port of 'explore nearby' to use PostGIS. (#857, #864)
 * Bot lists to be sortable by distance (#763)
+* Fixed some tests (#869, #870)
 
 
 # 2017.7.18+2476.1c4ac8a
