@@ -75,14 +75,13 @@ defmodule Wocky.Repo.Migrations.AddRelationshipFunctions do
   end
 
   def down do
-    execute """
-    DROP FUNCTION is_unblocked_friend(uuid, uuid)
-    DROP FUNCTION is_unblocked_follower(uuid, uuid)
-    DROP FUNCTION is_shared(uuid, uuid)
-    DROP FUNCTION is_subscribed(uuid, uuid)
-    DROP FUNCTION is_searchable(uuid, uuid)
-    DROP INDEX bot_location_gix
-    """
+    execute "DROP FUNCTION is_unblocked_friend(uuid, uuid);"
+    execute "DROP FUNCTION is_unblocked_follower(uuid, uuid);"
+    execute "DROP FUNCTION is_shared(uuid, uuid);"
+    execute "DROP FUNCTION is_subscribed(uuid, uuid);"
+    execute "DROP FUNCTION is_visible(uuid, bots);"
+    execute "DROP FUNCTION is_searchable(uuid, bots);"
+    execute "DROP INDEX bot_location_gix;"
   end
 
   defp create_bot_link_fun(fun, table) do

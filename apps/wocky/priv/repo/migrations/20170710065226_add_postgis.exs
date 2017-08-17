@@ -30,6 +30,11 @@ defmodule Wocky.Repo.Migrations.AddPostgis do
   end
 
   def down do
+    alter table(:bots) do
+      add :lat, :float
+      add :lon, :float
+    end
+
     from(b in "bots",
          select: %{:id => b.id,
                    :location => b.location})
@@ -45,7 +50,7 @@ defmodule Wocky.Repo.Migrations.AddPostgis do
     execute "DROP EXTENSION postgis;"
   end
 
-  defp set_location(%{id: id, lat: lat, lon: lon}) do
+  defp set_location(%{id: id, lat: lat, lon: lon}) when is_float(lat) and is_float(lon) do
     {:ok, id_str} = UUID.load(id)
 
     # Unfortunately we can't use the pretty Ecto functions here because for
@@ -53,11 +58,17 @@ defmodule Wocky.Repo.Migrations.AddPostgis do
     # restart. So we have to do things the old fashioned way:
     execute "UPDATE bots SET location = 'POINT(#{lon} #{lat})' WHERE id = '#{id_str}';"
   end
+  defp set_location(_) do
+    :ok
+  end
 
   defp set_lat_lon(%{id: id, location: %Point{coordinates: {lon, lat}}}) do
     from(b in "bots",
          update: [set: [lat: ^lat, lon: ^lon]],
          where: [id: ^id, pending: false])
     |> Repo.update_all([])
+  end
+  defp set_lat_lon(_) do
+    :ok
   end
 end
