@@ -1,0 +1,14 @@
+- type: parallel
+  service: wocky_build
+  steps:
+  - name: lint
+    command: mix lint # mix do lint, dialyzer
+  - name: unit_test
+    command: mix do ecto.wait, ecto.reset, test, espec
+  - name: int_test
+    command: /bin/sh -c "mix do ecto.wait, ecto.reset, epmd && mix ct"
+
+- name: release
+  service: wocky_build
+  tag: master
+  command: MIX_ENV=prod mix release --warnings-as-errors

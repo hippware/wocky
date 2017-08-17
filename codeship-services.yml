@@ -1,0 +1,16 @@
+wocky_build:
+  build:
+    context: .
+    dockerfile: Dockerfile.build
+    image: hippware/wocky:build
+  cached: true
+  environment:
+    WOCKY_DB_HOST: "postgres"
+  links:
+    - postgres
+postgres:
+  image: mdillon/postgis:9.6-alpine
+  environment:
+    POSTGRES_PASSWORD: "password"
+  ports:
+    - "5432"
