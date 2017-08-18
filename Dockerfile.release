@@ -47,7 +47,9 @@ EXPOSE 8080 5222 5269 4369 9100
 VOLUME ["/opt/app/var/mnesia", "/opt/app/var/log"]
 
 # Deploy the application into the container
-RUN tar xfz ./tmp/artifacts/wocky.tar.gz
+COPY ./tmp/artifacts/wocky.tar.gz ./
+RUN tar xfz wocky.tar.gz && \
+    rm -f wocky.tar.gz
 
 ENTRYPOINT ["bin/wocky"]
 # CMD "foreground"
