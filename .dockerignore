@@ -3,7 +3,9 @@
 **/.gitignore
 **/.exguard.exs
 deps
+log
 k8s
+tmp
 tags
 codeship-*.yml
 .session.vim
@@ -13,3 +15,5 @@ Jenkinsfile
 CHANGELOG.md
 README.md
 erl_crash.dump
+codeship.aes
+dockercfg

@@ -4,9 +4,12 @@
 /RELEASE
 cover
 log
+tmp
 doc
 .eunit
 .rebar
 .vagrant
 *.nonode@nohost
 erl_crash.dump
+codeship.aes
+dockercfg

@@ -24,3 +24,11 @@ postgres:
     POSTGRES_PASSWORD: "password"
   ports:
     - "5432"
+wocky_rel:
+  build:
+    context: .
+    dockerfile: Dockerfile.release
+    image: hippware/wocky:latest
+  cached: true
+  volumes:
+    - ./tmp/artifacts:/artifacts
