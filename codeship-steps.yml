@@ -13,6 +13,6 @@
   type: push
   tag: master
   image_name: hippware/wocky
-  image_tag: latest
+  image_tag: "{{.StringTime}}"
   registry: https://index.docker.io/v1/
   encrypted_dockercfg_path: dockercfg.encrypted
