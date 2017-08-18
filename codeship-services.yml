@@ -4,6 +4,16 @@ wocky_build:
     dockerfile: Dockerfile.build
     image: hippware/wocky:build
   cached: true
+  volumes:
+    - ./tmp/artifacts:/artifacts
+wocky_test:
+  build:
+    context: .
+    dockerfile: Dockerfile.build
+    image: hippware/wocky:build
+  cached: true
+  volumes:
+    - ./tmp/artifacts:/artifacts
   environment:
     WOCKY_DB_HOST: "postgres"
   links:

@@ -1,11 +1,13 @@
 - type: parallel
-  service: wocky_build
   steps:
   - name: lint
+    service: wocky_build
     command: mix lint # mix do lint, dialyzer
   - name: unit_test
+    service: wocky_test
     command: mix do ecto.wait, ecto.reset, test, espec
   - name: int_test
+    service: wocky_test
     command: /bin/sh -c "mix do ecto.wait, ecto.reset, epmd && mix ct"
 
 - name: release
