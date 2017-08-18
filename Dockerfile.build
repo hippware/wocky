@@ -1,0 +1,26 @@
+FROM hippware/alpine-elixir-dev:1.4.5
+
+ENV MIX_ENV=test
+
+# Cache elixir deps
+COPY mix.exs mix.lock version.exs ./
+
+RUN mkdir -p apps/wocky
+COPY apps/wocky/mix.exs apps/wocky/
+
+RUN mkdir -p apps/wocky_xmpp
+COPY apps/wocky_xmpp/mix.exs apps/wocky_xmpp/
+
+RUN mkdir -p apps/wocky_api
+COPY apps/wocky_api/mix.exs apps/wocky_api/
+
+RUN mix deps.get && \
+    mix deps.compile lager && \
+    mix deps.compile && \
+    # mix dialyzer --plt && \
+    MIX_ENV=prod mix deps.compile lager && \
+    MIX_ENV=prod mix deps.compile
+
+COPY . .
+
+RUN mix recompile

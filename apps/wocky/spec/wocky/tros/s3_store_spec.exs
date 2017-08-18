@@ -6,7 +6,7 @@ defmodule Wocky.TROS.S3StoreSpec do
   alias Wocky.Repo.ID
   alias Wocky.TROS.S3Store
 
-  @url_re ~r/https:\/\/.*/
+  @url_re ~r/https?:\/\/.*/
 
   before_all do
     Application.put_env(:wocky, :tros_s3_secret_key, "1234")

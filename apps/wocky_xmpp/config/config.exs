@@ -18,7 +18,7 @@ config :ssl,
   session_lifetime: 600 # 10 minutes
 
 config :mnesia,
-  dir: '_build/#{Mix.env}/mnesia'
+  dir: 'log/#{Mix.env}/mnesia'
 
 config :setup,
   verify_directories: false
@@ -33,7 +33,7 @@ config :logger,
 
 config :lager,
   colored: true,
-  log_root: '_build/#{Mix.env}/log',
+  log_root: 'log/#{Mix.env}',
   crash_log: 'crash.log',
   handlers: [
     lager_console_backend: [

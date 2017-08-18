@@ -1,0 +1,18 @@
+- name: unit_test
+  service: wocky_test
+  command: mix do lint, ecto.wait, ecto.reset, test, espec
+- name: int_test
+  service: wocky_test
+  command: /bin/sh -c "mix do ecto.wait, ecto.reset, epmd && mix ct"
+- name: release
+  service: wocky_build
+  tag: master
+  command: /bin/sh -c "MIX_ENV=prod mix release --warnings-as-errors && cp _build/prod/rel/wocky/releases/`elixir ./version.exs`/wocky.tar.gz /artifacts"
+- name: push_image
+  service: wocky_rel
+  type: push
+  tag: master
+  image_name: hippware/wocky
+  image_tag: latest
+  registry: https://index.docker.io/v1/
+  encrypted_dockercfg_path: dockercfg.encrypted
