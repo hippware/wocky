@@ -116,7 +116,7 @@ commands() ->
                         module   = ?MODULE,
                         function = reprocess_images,
                         args     = [],
-                        result   = {result, rescode}}
+                        result   = {result, rescode}},
 
      %% Regenerate Algolia indices
      #ejabberd_commands{name     = reindex,
@@ -126,7 +126,7 @@ commands() ->
                         module   = ?MODULE,
                         function = reindex,
                         args     = [{index, binary}],
-                        result   = {result, rescode}}
+                        result   = {result, rescode}},
 
      %% Add/Remove a role to/from a user
      #ejabberd_commands{name     = role,

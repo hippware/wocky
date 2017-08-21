@@ -47,7 +47,7 @@ defmodule Wocky.Index do
 
   @spec reindex(index_t) :: :ok | {:error, :unknown_index}
   def reindex(idx) do
-    GenServer.call(:wocky_index, {:reindex, idx})
+    GenServer.call(:wocky_index, {:reindex, idx}, :infinity)
   end
 
   @spec update(object_t, binary, map) :: :ok
@@ -135,7 +135,7 @@ defmodule Wocky.Index do
       |> Repo.stream
       |> Stream.each(&update_object(obj_t, &1, state))
       |> Stream.run
-    end
+    end, timeout: 600_000
   end
 
   defp update_object(obj_t, %{id: id} = data, state) do
