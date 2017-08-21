@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 1.0.2566-287968c - 2017-08-21
+
+* Algolia reindexing fixes (#883, #886).
+
+
 # 1.0.2557-10851ce - 2017-08-21
 
 * Build environment changes (for Codeship and other)
