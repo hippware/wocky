@@ -3,6 +3,7 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
   alias ExVCR.Setting
+  alias Wocky.GeoUtils
 
   import Wocky.Index.AlgoliaIndexer
 
@@ -22,16 +23,14 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
                           %{"server" => @server,
                             "title" => "title1",
                             "image" => "image1",
-                            "lat" => 1.0,
-                            "lon" => 2.0,
+                            "location" => GeoUtils.point(2.0, 1.0),
                             "radius" => 1000,
                             "public" => true})
       :ok = update_object(@index, @object_id2,
                           %{"server" => @server,
                             "title" => "title2",
                             "image" => "image2",
-                            "lat" => 5.0,
-                            "lon" => 6.0,
+                            "location" => GeoUtils.point(6.0, 5.0),
                             "radius" => 1000,
                             "public" => true})
     end
