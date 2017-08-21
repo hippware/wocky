@@ -2,6 +2,7 @@ defmodule Wocky.Index do
   @moduledoc "Wocky interface to Algolia for full text search of users and bots"
 
   use GenServer
+  use Wocky.Repo.Model
 
   alias Wocky.Bot
   alias Wocky.GeoUtils
@@ -99,7 +100,11 @@ defmodule Wocky.Index do
   end
 
   def handle_call({:reindex, :bots}, _, state) do
-    do_reindex(:bot, Bot, state)
+    query =
+      Bot
+      |> where(pending == false)
+
+    do_reindex(:bot, query, state)
     {:reply, :ok, state}
   end
 
