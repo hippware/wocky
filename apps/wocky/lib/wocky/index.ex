@@ -102,7 +102,7 @@ defmodule Wocky.Index do
   def handle_call({:reindex, :bots}, _, state) do
     query =
       Bot
-      |> where(pending == false)
+      |> where([b], b.pending == false)
 
     do_reindex(:bot, query, state)
     {:reply, :ok, state}
