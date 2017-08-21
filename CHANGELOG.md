@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 1.0.2557-10851ce - 2017-08-21
+
 * Build environment changes (for Codeship and other)
 * Location indexing in algolia broken after location changes (#878)
 
