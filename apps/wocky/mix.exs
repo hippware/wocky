@@ -82,7 +82,7 @@ defmodule Wocky.Mixfile do
       {:confex,               "~> 2.0"},
       {:quantum,              "~> 1.9"},
       {:comeonin,             "~> 3.0"},
-
+      {:joken,                "~> 1.1"},
       {:ecto,
         github: "hippware/ecto",
         branch: "working",

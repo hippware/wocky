@@ -134,7 +134,6 @@ defmodule Wocky.XMPP.Mixfile do
       # Overrides
       # These are transitive dependencies that need to be overriden to build
       # correctly. They are not used directly by Wocky.
-      {:uuid,   "~> 1.6.0", override: true, hex: :uuid_erl},
       {:edown,  "~> 0.8.1", override: true, runtime: false},
       {:folsom, "~> 0.8.3", override: true},
       {:idna,   "~> 5.0",   override: true},

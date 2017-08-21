@@ -71,8 +71,7 @@ check_provider_auth(<<"digits">>, ProviderData) ->
 check_provider_auth(<<"firebase">>, ProviderData) ->
     case ?wocky_firebase:verify(ProviderData) of
         {ok, Result} -> {ok, Result};
-        {error, {500, Error}} -> {error, {"temporary-auth-failure", Error}};
-        {error, {_, Error}} -> {error, {"not-authorized", Error}}
+        {error, Error} -> {error, {"not-authorized", Error}}
     end;
 
 check_provider_auth(P, _) -> {error, {"not-authorized",

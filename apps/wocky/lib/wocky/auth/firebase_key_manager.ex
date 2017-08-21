@@ -11,8 +11,8 @@ defmodule Wocky.Auth.FirebaseKeyManager do
 
   def get_key(id) do
     case :ets.lookup(:firebase_keys, id) do
-      [{id, key}] -> key
-      [] -> nil
+      [{^id, key}] -> {:ok, key}
+      [] -> {:error, :no_key}
     end
   end
 
@@ -21,7 +21,7 @@ defmodule Wocky.Auth.FirebaseKeyManager do
   end
 
   def init(_) do
-    table = :ets.new(:firebase_keys, [:protected, :named_table])
+    _ = :ets.new(:firebase_keys, [:protected, :named_table])
     if Confex.get(:wocky, :firebase_load_on_startup, true) do
       reload_keys()
     end
@@ -40,7 +40,7 @@ defmodule Wocky.Auth.FirebaseKeyManager do
 
   defp reload_keys() do
     case :hackney.get(@key_url, [], "", []) do
-      {ok, 200, headers, client} ->
+      {:ok, 200, headers, client} ->
         update_keys(headers, client)
       other ->
         :ok = Logger.warn("Error getting Firebase keys: #{inspect other}")
