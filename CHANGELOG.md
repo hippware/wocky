@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Build environment changes (for Codeship and other)
+
+
 # 2017.8.17+2529.8eecea6
 
 * Fix a migration script (#871)
