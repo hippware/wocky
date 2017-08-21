@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Build environment changes (for Codeship and other)
+* Location indexing in algolia broken after location changes (#878)
 
 
 # 2017.8.17+2529.8eecea6
