@@ -5,6 +5,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
 
   require Logger
 
+  alias Geo.Point
   alias Wocky.GeoUtils
 
   @behaviour Wocky.Index
@@ -24,8 +25,12 @@ defmodule Wocky.Index.AlgoliaIndexer do
     Map.put(data, "objectID", id)
   end
 
-  defp with_geoloc(%{"lat" => lat, "lon" => lon} = data) do
-    Map.put(data, "_geoloc", %{"lat" => lat, "lng" => lon})
+  defp with_geoloc(%{"location" => %Point{coordinates: {lon, lat}}} = data) do
+    data
+    |> Map.delete("location")
+    |> Map.put("lat", lat)
+    |> Map.put("lon", lon)
+    |> Map.put("_geoloc", %{"lat" => lat, "lng" => lon})
   end
   defp with_geoloc(data), do: data
 
