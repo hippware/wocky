@@ -21,7 +21,7 @@ defmodule Wocky.Index do
 
   @fields [
     user: [:handle, :last_name, :first_name, :avatar],
-    bot: [:server, :user_id, :title, :image, :lat, :lon, :radius, :public]
+    bot: [:server, :user_id, :title, :image, :location, :radius, :public]
   ]
 
   # ===================================================================
