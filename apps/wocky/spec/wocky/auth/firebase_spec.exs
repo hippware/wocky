@@ -94,6 +94,8 @@ vm20OdFQ+qZh++T72uGmXxk=
 -----END PRIVATE KEY-----
   """
 
+  @iss "https://securetoken.google.com/"
+
   @user_id "UserID1"
 
   describe "Firebase auth" do
@@ -158,7 +160,7 @@ vm20OdFQ+qZh++T72uGmXxk=
         iat: DateTime.utc_now
              |> Timex.to_unix,
         aud: project,
-        iss: "https://securetoken.google.com/" <> project,
+        iss: @iss <> project,
         sub: @user_id,
         kid: @key_id,
         key: @private_key

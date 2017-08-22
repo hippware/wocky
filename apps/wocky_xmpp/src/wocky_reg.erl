@@ -70,7 +70,7 @@ check_provider_auth(<<"digits">>, ProviderData) ->
 
 check_provider_auth(<<"firebase">>, ProviderData) ->
     case ?wocky_firebase:verify(ProviderData) of
-        {ok, Result} -> {ok, Result};
+        {ok, ExternalID} -> {ok, {ExternalID, <<"">>}};
         {error, Error} -> {error, {"not-authorized", Error}}
     end;
 

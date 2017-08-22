@@ -1,6 +1,8 @@
 defmodule Wocky.User do
   @moduledoc ""
 
+  require Logger
+
   use Wocky.JID
   use Wocky.Repo.Model
 
@@ -154,15 +156,16 @@ defmodule Wocky.User do
             external_id: external_id,
             phone_number: phone_number}
 
-        {result, _} =
+        result =
           user
           |> register_changeset()
           |> Repo.insert
 
         case result do
-          :ok ->
+          {:ok, _} ->
             {user.username, user.server, true}
-          :error ->
+          {:error, e} ->
+            Logger.debug("registration failed with error: #{inspect e}")
             do_register(server, external_id, phone_number, retries + 1)
         end
 

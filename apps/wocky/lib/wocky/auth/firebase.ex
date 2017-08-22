@@ -17,9 +17,10 @@ defmodule Wocky.Auth.Firebase do
   # https://firebase.google.com/docs/auth/admin/verify-id-tokens ...
   # #verify_id_tokens_using_a_third-party_jwt_library
   @spec verify(binary) :: {:ok, {firebase_id, binary}} | {:error, term}
-  def verify(jwt_binary) do
+  def verify(provider_data) do
     result =
-      with jwt <- Joken.token(jwt_binary),
+      with jwt_binary <- provider_data["jwt"],
+           jwt <- Joken.token(jwt_binary),
            headers <- Joken.peek_header(jwt),
            @expected_alg <- headers["alg"],
            key_id <- headers["kid"],
