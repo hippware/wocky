@@ -1,11 +1,17 @@
 defmodule Wocky.Auth.FirebaseKeyManager do
+  @moduledoc """
+  GenServer process for managing Firebase key retrieval and update
+  """
+
   require Logger
 
   use GenServer
 
+  alias Poison.Parser
+
   @key_url "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
 
-  def start_link() do
+  def start_link do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
@@ -16,7 +22,7 @@ defmodule Wocky.Auth.FirebaseKeyManager do
     end
   end
 
-  def force_reload() do
+  def force_reload do
     GenServer.call(__MODULE__, :reload_keys)
   end
 
@@ -38,7 +44,7 @@ defmodule Wocky.Auth.FirebaseKeyManager do
     {:noreply, nil}
   end
 
-  defp reload_keys() do
+  defp reload_keys do
     case :hackney.get(@key_url, [], "", []) do
       {:ok, 200, headers, client} ->
         update_keys(headers, client)
@@ -50,7 +56,7 @@ defmodule Wocky.Auth.FirebaseKeyManager do
 
   defp update_keys(headers, client) do
     {:ok, body} = :hackney.body(client)
-    keys = Poison.Parser.parse!(body)
+    keys = Parser.parse!(body)
     Enum.each(keys, &:ets.insert(:firebase_keys, &1))
     remove_old_keys(keys)
     set_reload_from_header(headers)

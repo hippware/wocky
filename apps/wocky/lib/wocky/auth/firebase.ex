@@ -1,4 +1,7 @@
 defmodule Wocky.Auth.Firebase do
+  @moduledoc """
+  Module for verifying Firebase JWT tokens
+  """
 
   require Logger
 
@@ -11,7 +14,8 @@ defmodule Wocky.Auth.Firebase do
   @expected_alg "RS256"
 
   # Verify according to the rules at
-  # https://firebase.google.com/docs/auth/admin/verify-id-tokens#verify_id_tokens_using_a_third-party_jwt_library
+  # https://firebase.google.com/docs/auth/admin/verify-id-tokens ...
+  # #verify_id_tokens_using_a_third-party_jwt_library
   @spec verify(binary) :: {:ok, {firebase_id, binary}} | {:error, term}
   def verify(jwt_binary) do
     result =
