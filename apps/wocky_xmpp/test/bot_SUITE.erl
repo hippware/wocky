@@ -687,8 +687,11 @@ publish_image_item(Config) ->
         Expected =
         lists:keyreplace("image_items", 1, expected_retrieve_fields(true),
                          {"image_items", int, 2}),
+        Expected2 =
+        lists:keyreplace("total_items", 1, Expected,
+                         {"total_items", int, 3}),
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
-        check_returned_bot(Stanza, Expected),
+        check_returned_bot(Stanza, Expected2),
 
         test_helper:ensure_all_clean([Alice])
       end).
@@ -1006,6 +1009,7 @@ expected_create_fields() ->
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    any},
      {"image_items",        int,    0},
+     {"total_items",        int,    0},
      {"updated",            timestamp, any},
      {"subscribers+size",   int,    0}, % Owner is always a subscriber
      {"subscribers+hash",   string, any}].
@@ -1029,6 +1033,7 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
+     {"total_items",        int,    2},
      {"updated",            timestamp, any},
      {"subscribed",         bool,   Subscribed},
      {"subscribers+size",   int,    Subscribers},

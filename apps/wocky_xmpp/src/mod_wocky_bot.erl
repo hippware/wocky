@@ -787,9 +787,11 @@ make_ret_elements(Bot, FromUser) ->
 
 meta_fields(Bot, FromUser) ->
     Subscribers = ?wocky_bot:subscribers(Bot),
+    TotalItems = ?wocky_item:get_count(Bot),
     ImageItems = ?wocky_item:get_image_count(Bot),
     Subscribed = ?wocky_user:'subscribed?'(FromUser, Bot),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
+     make_field(<<"total_items">>, int, TotalItems),
      make_field(<<"image_items">>, int, ImageItems),
      make_field(<<"subscribed">>, bool, Subscribed)
      | size_and_hash(<<"subscribers">>, Subscribers)].
