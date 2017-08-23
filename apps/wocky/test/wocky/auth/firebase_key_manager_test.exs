@@ -2,8 +2,6 @@ defmodule Wocky.Auth.FirebaseKeyManagerTest do
   use ExUnit.Case, async: false
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
-  alias ExVCR.Setting
-
   import Wocky.Auth.FirebaseKeyManager
 
   @id1 "3450b0ba9e31722e090ed2135bcdb7c177a32f27"
@@ -61,8 +59,8 @@ jVqILtFtaDcNqZO3mRW3Se5oKNR34BOMRaJ3lMGTILc=
   test "startup" do
     use_cassette "firebase_startup" do
       force_reload()
-      assert get_key(@id1) == @cert1
-      assert get_key(@id2) == @cert2
+      assert get_key(@id1) == {:ok, @cert1}
+      assert get_key(@id2) == {:ok, @cert2}
     end
   end
 
@@ -71,13 +69,13 @@ jVqILtFtaDcNqZO3mRW3Se5oKNR34BOMRaJ3lMGTILc=
       force_reload()
     end
     use_cassette "firebase_startup" do
-      assert get_key(@id1) == @cert1
-      assert get_key(@id2) == nil
-      assert get_key(@oldid) == @oldcert
+      assert get_key(@id1) == {:ok, @cert1}
+      assert get_key(@id2) == {:error, :no_key}
+      assert get_key(@oldid) == {:ok, @oldcert}
       Process.sleep(1500)
-      assert get_key(@id1) == @cert1
-      assert get_key(@id2) == @cert2
-      assert get_key(@oldid) == nil
+      assert get_key(@id1) == {:ok, @cert1}
+      assert get_key(@id2) == {:ok, @cert2}
+      assert get_key(@oldid) == {:error, :no_key}
     end
   end
 end
