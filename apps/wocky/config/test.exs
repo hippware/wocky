@@ -22,11 +22,3 @@ config :comeonin,
 
 config :pushex,
   sandbox: true
-
-config :guardian, Guardian,
-  allowed_algos: ["RS256"],
-  issuer: "MyApp",
-  ttl: { 30, :days },
-  allowed_drift: 2000,
-  verify_issuer: true, # optional
-  serializer: Wocky.Auth.GuardianSerializer
