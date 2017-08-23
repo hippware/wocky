@@ -34,7 +34,7 @@ defmodule Wocky.Auth.Firebase do
 
   defp make_verify_result({:ok, id}), do: {:ok, id}
   defp make_verify_result(failure) do
-    Logger.debug("Auth failed with error: #{inspect fail}")
+    Logger.debug("Auth failed with error: #{inspect failure}")
     {:error, "Firebase auth failed"}
   end
 

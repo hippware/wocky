@@ -31,7 +31,7 @@ defmodule Wocky.User do
     field :server,       :string # User Server (domainpart of JID)
     field :resource,     :string, virtual: true
     field :provider,     :string # The external auth provider
-    field :external_id,  :string # The user ID received from the privder
+    field :external_id,  :string # The user ID received from the provider
     field :handle,       :string # User handle (as seen by other users)
     field :avatar,       :string # ID of file containing user's avatar
     field :first_name,   :string # User's first name
