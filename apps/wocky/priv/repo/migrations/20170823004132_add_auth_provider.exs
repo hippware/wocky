@@ -3,7 +3,7 @@ defmodule Wocky.Repo.Migrations.AddAuthProvider do
 
   def change do
     alter table(:users) do
-      add :auth_provider, :string, null: false, default: "digits"
+      add :provider, :string, null: false, default: "digits"
     end
   end
 end
