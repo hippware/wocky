@@ -55,7 +55,7 @@ defmodule Wocky.UserSpec do
 
   describe "register_changeset/1 validations" do
     it "should pass with valid attributes" do
-      %{username: ID.new, server: "foo", external_id: "bar"}
+      %{username: ID.new, server: "foo", provider: "local", external_id: "bar"}
       |> User.register_changeset
       |> should(be_valid())
     end

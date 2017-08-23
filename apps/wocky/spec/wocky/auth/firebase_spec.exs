@@ -167,17 +167,20 @@ vm20OdFQ+qZh++T72uGmXxk=
       }
       |> Map.merge(opts)
 
-    %{}
-    |> token
-    |> with_header_arg("kid", params[:kid])
-    |> with_exp(params[:exp])
-    |> with_iat(params[:iat])
-    |> with_aud(params[:aud])
-    |> with_iss(params[:iss])
-    |> with_sub(params[:sub])
-    |> with_signer(rs256(JWK.from_pem(params[:key])))
-    |> sign
-    |> get_compact
+    jwt =
+      %{}
+      |> token
+      |> with_header_arg("kid", params[:kid])
+      |> with_exp(params[:exp])
+      |> with_iat(params[:iat])
+      |> with_aud(params[:aud])
+      |> with_iss(params[:iss])
+      |> with_sub(params[:sub])
+      |> with_signer(rs256(JWK.from_pem(params[:key])))
+      |> sign
+      |> get_compact
+
+    %{"jwt" => jwt}
   end
 
 end
