@@ -16,27 +16,26 @@ defmodule Wocky.Auth.Firebase do
   # Verify according to the rules at
   # https://firebase.google.com/docs/auth/admin/verify-id-tokens ...
   # #verify_id_tokens_using_a_third-party_jwt_library
-  @spec verify(binary) :: {:ok, {firebase_id, binary}} | {:error, term}
+  @spec verify(map) :: {:ok, firebase_id} | {:error, binary}
   def verify(provider_data) do
-    result =
-      with jwt_binary <- provider_data["jwt"],
-           jwt <- Joken.token(jwt_binary),
-           headers <- Joken.peek_header(jwt),
-           @expected_alg <- headers["alg"],
-           key_id <- headers["kid"],
-           {:ok, cert} <- FirebaseKeyManager.get_key(key_id),
-           {:ok, claims} <- decode_and_verify(jwt, cert),
-           user_id <- claims["sub"]
-      do
-        {:ok, user_id}
-      end
-    case result do
-      {:ok, id} ->
-        {:ok, id}
-      fail ->
-        Logger.debug("Auth failed with error: #{inspect fail}")
-        {:error, "Firebase auth failed"}
+    with jwt_binary <- provider_data["jwt"],
+         jwt <- Joken.token(jwt_binary),
+         headers <- Joken.peek_header(jwt),
+         @expected_alg <- headers["alg"],
+         key_id <- headers["kid"],
+         {:ok, cert} <- FirebaseKeyManager.get_key(key_id),
+         {:ok, claims} <- decode_and_verify(jwt, cert),
+         user_id <- claims["sub"]
+    do
+      {:ok, user_id}
     end
+    |> make_verify_result()
+  end
+
+  defp make_verify_result({:ok, id}), do: {:ok, id}
+  defp make_verify_result(failure) do
+    Logger.debug("Auth failed with error: #{inspect fail}")
+    {:error, "Firebase auth failed"}
   end
 
   defp decode_and_verify(jwt, cert) do

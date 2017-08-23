@@ -98,11 +98,12 @@ defmodule Wocky.UserSpec do
     end
   end
 
-  describe "register/3" do
+  describe "register_external/4" do
     context "when the user already exists" do
       before do
         {:ok, result} =
-          User.register("another_server", shared.external_id, "+15551234567")
+          User.register_external("another_server", "firebase",
+                                 shared.external_id, "+15551234567")
 
         {:shared, result: result}
       end
@@ -127,7 +128,8 @@ defmodule Wocky.UserSpec do
     context "when the user does not exist" do
       before do
         {:ok, result} =
-          User.register(shared.server, ID.new, "+15551234567")
+          User.register_external(shared.server, "firebase",
+                                 ID.new, "+15551234567")
 
         {:shared, result: result}
       end
