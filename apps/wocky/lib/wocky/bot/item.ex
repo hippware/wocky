@@ -4,6 +4,7 @@ defmodule Wocky.Bot.Item do
   use Wocky.Repo.Model
 
   alias Wocky.Bot
+  alias Wocky.User
   alias __MODULE__, as: Item
 
   @foreign_key_type :binary_id
@@ -26,9 +27,10 @@ defmodule Wocky.Bot.Item do
   @spec changeset(t, map) :: Changeset.t
   def changeset(struct, params) do
     struct
-    |> cast(params, [:id, :bot_id, :stanza, :image])
-    |> validate_required([:id, :bot_id, :stanza])
+    |> cast(params, [:id, :bot_id, :user_id, :stanza, :image])
+    |> validate_required([:id, :bot_id, :user_id, :stanza])
     |> foreign_key_constraint(:bot_id)
+    |> foreign_key_constraint(:user_id)
   end
 
   @spec get(Bot.t) :: [t]
@@ -69,18 +71,19 @@ defmodule Wocky.Bot.Item do
     Repo.get_by(Item, id: id, bot_id: bot.id)
   end
 
-  @spec put(Bot.t, id, binary, boolean) :: :ok | no_return
-  def put(bot, id, stanza, image? \\ false) do
+  @spec put(Bot.t, User.t, id, binary, boolean) :: :ok | no_return
+  def put(bot, user, id, stanza, image? \\ false) do
     %Item{}
-    |> changeset(%{id: id, bot_id: bot.id, stanza: stanza, image: image?})
+    |> changeset(%{id: id, bot_id: bot.id, user_id: user.id,
+                   stanza: stanza, image: image?})
     |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:id, :bot_id])
 
     Bot.bump_update_time(bot)
   end
 
-  @spec publish(Bot.t, id, binary, boolean) :: {:ok, t}
-  def publish(bot, id, stanza, image?) do
-    :ok = put(bot, id, stanza, image?)
+  @spec publish(Bot.t, User.t, id, binary, boolean) :: {:ok, t}
+  def publish(bot, user, id, stanza, image?) do
+    :ok = put(bot, user, id, stanza, image?)
     {:ok, get(bot, id)}
   end
 
