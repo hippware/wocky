@@ -61,10 +61,22 @@ defmodule Wocky.Bot.ItemSpec do
       end
     end
 
+    describe "get_count/1" do
+      before do
+        Factory.insert(:item, bot: shared.bot, image: true)
+        Factory.insert(:item, bot: shared.bot, image: false)
+        :ok
+      end
+
+      it "should return total item count including images" do
+        Item.get_count(shared.bot) |> should(eq 3)
+      end
+    end
+
     describe "get_images/1" do
       before do
-        new_item = Factory.insert(:item, bot: shared.bot, image: true)
-        {:ok, image_item: new_item}
+        Factory.insert(:item, bot: shared.bot, image: true)
+        :ok
       end
 
       it "should return items that have the image flag set" do
@@ -74,8 +86,8 @@ defmodule Wocky.Bot.ItemSpec do
 
     describe "get_image_count/1" do
       before do
-        new_item = Factory.insert(:item, bot: shared.bot, image: true)
-        {:ok, image_item: new_item}
+        Factory.insert(:item, bot: shared.bot, image: true)
+        :ok
       end
 
       it "should return items that have the image flag set" do

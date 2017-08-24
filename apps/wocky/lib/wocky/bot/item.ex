@@ -38,6 +38,14 @@ defmodule Wocky.Bot.Item do
     |> Repo.all
   end
 
+  @spec get_count(Bot.t) :: non_neg_integer
+  def get_count(bot) do
+    bot
+    |> assoc(:items)
+    |> select([i], count(i.bot_id))
+    |> Repo.one
+  end
+
   @spec get_images(Bot.t) :: [t]
   def get_images(bot) do
     bot
@@ -46,7 +54,7 @@ defmodule Wocky.Bot.Item do
     |> Repo.all
   end
 
-  @spec get_image_count(Bot.t) :: pos_integer
+  @spec get_image_count(Bot.t) :: non_neg_integer
   def get_image_count(bot) do
     bot
     |> assoc(:items)
