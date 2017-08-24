@@ -215,8 +215,8 @@ perform_owner_action(delete, Bot, _From, _To, _IQ) ->
 perform_owner_action(subscribers, Bot, _From, _To, _IQ) ->
     wocky_bot_subscription:retrieve_subscribers(Bot);
 
-perform_owner_action(publish, Bot, _From, To, #iq{sub_el = SubEl}) ->
-    wocky_bot_item:publish(Bot, To, SubEl);
+perform_owner_action(publish, Bot, From, To, #iq{sub_el = SubEl}) ->
+    wocky_bot_item:publish(Bot, From, To, SubEl);
 
 perform_owner_action(retract, Bot, _From, To, #iq{sub_el = SubEl}) ->
     wocky_bot_item:retract(Bot, To, SubEl);

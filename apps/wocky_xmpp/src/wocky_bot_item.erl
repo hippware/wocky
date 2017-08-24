@@ -12,7 +12,7 @@
 
 -export([query/2,
          query_images/2,
-         publish/3,
+         publish/4,
          retract/3]).
 
 
@@ -35,13 +35,13 @@ query_images(Bot, IQ) ->
            {ok, images_result(Owner, Images, RSMOut)}
        ]).
 
-publish(Bot, To, SubEl) ->
+publish(Bot, From, To, SubEl) ->
     do([error_m ||
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            Entry <- wocky_xml:get_subel(<<"entry">>, Item),
            wocky_xml:check_namespace(?NS_ATOM, Entry),
-           publish_item(To, Bot, ItemID, Entry),
+           publish_item(From, To, Bot, ItemID, Entry),
            {ok, []}
        ]).
 
@@ -97,12 +97,13 @@ image_el(Owner, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 %%% Helpers - publish
 %%%===================================================================
 
-publish_item(From, Bot, ItemID, Entry) ->
+publish_item(FromJID, ToJID, Bot, ItemID, Entry) ->
     Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
-    {ok, Item} = ?wocky_item:publish(Bot, ItemID, EntryBin, Image),
+    From = ?wocky_user:get_by_jid(FromJID),
+    {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin, Image),
     Message = notification_message(Bot, make_item_element(Item)),
-    notify_subscribers(From, Bot, Message).
+    notify_subscribers(ToJID, Bot, Message).
 
 has_image(Entry) ->
     wocky_bot_util:get_image(Entry) =/= <<>>.
@@ -111,10 +112,10 @@ has_image(Entry) ->
 %%% Helpers - retract
 %%%===================================================================
 
-retract_item(From, Bot, ItemID) ->
+retract_item(To, Bot, ItemID) ->
     ?wocky_item:delete(Bot, ItemID),
     Message = notification_message(Bot, retract_item(ItemID)),
-    notify_subscribers(From, Bot, Message).
+    notify_subscribers(To, Bot, Message).
 
 retract_item(ItemID) ->
     #xmlel{name = <<"retract">>,
@@ -124,12 +125,12 @@ retract_item(ItemID) ->
 %%% Helpers - common
 %%%===================================================================
 
-make_item_element(#{id := ID, created_at := Published,
+make_item_element(#{id := ID, user_id := UserID, created_at := Published,
                     updated_at := Updated, stanza := Stanza}) ->
     {ok, Entry} = exml:parse(Stanza),
     FullEntry = add_time_fields(Published, Updated, Entry),
     #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, ID}],
+           attrs = [{<<"id">>, ID}, {<<"author">>, UserID}],
            children = [FullEntry]}.
 
 add_time_fields(Published, Updated, Entry = #xmlel{children = Children}) ->
