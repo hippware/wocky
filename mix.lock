@@ -49,7 +49,7 @@
   "exometer_cloudwatch": {:git, "https://github.com/hippware/exometer_cloudwatch.git", "64c9e6b7f488b2517926bb5533a8a39eeeb61f3c", [branch: "master"]},
   "exometer_core": {:git, "https://github.com/Feuerlabs/exometer_core.git", "9206b28d045b395abd1b86cc794223ec9aeeb0ea", [branch: "master"]},
   "exref": {:git, "https://github.com/hippware/exref.git", "4be6acbae147ba90eb1d895e2886cf8949c0eb55", [branch: "master"]},
-  "exvcr": {:git, "https://github.com/AgilionApps/exvcr.git", "452cec8b1ebfad8cde2d38788bc1d9b7278eafc7", [ref: "452cec8"]},
+  "exvcr": {:hex, :exvcr, "0.8.12", "1ec5148708fedb9b4d0d32ca74bf8722de1854b5a666b3f8f9ba6fdee8353881", [:mix], [{:exactor, "~> 2.2", [hex: :exactor, repo: "hexpm", optional: false]}, {:exjsx, "~> 4.0", [hex: :exjsx, repo: "hexpm", optional: false]}, {:httpoison, "~> 0.11", [hex: :httpoison, repo: "hexpm", optional: true]}, {:httpotion, "~> 3.0", [hex: :httpotion, repo: "hexpm", optional: true]}, {:ibrowse, "~> 4.2.2", [hex: :ibrowse, repo: "hexpm", optional: true]}, {:meck, "~> 0.8.3", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
   "faker": {:hex, :faker, "0.7.0", "2c42deeac7be717173c78c77fb3edc749fb5d5e460e33d01fe592ae99acc2f0d", [:mix], [], "hexpm"},
   "fast_tls": {:hex, :fast_tls, "1.0.11", "8ccff4b68e6bb79b91c689da8cf92ec1006a575d2b6a09ac1ed5f9bf4724a39a", [:rebar3], [{:p1_utils, "1.0.7", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "folsom": {:hex, :folsom, "0.8.3", "71cff146152fa95e6092e62119f9dc96888660111e7b61853c8fdcf80598a4e0", [:rebar3], [{:bear, "0.8.3", [hex: :bear, repo: "hexpm", optional: false]}], "hexpm"},
