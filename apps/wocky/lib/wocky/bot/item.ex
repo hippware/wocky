@@ -17,6 +17,7 @@ defmodule Wocky.Bot.Item do
     timestamps()
 
     belongs_to :bot, Bot, define_field: false
+    belongs_to :user, User
   end
 
   @type id :: binary
