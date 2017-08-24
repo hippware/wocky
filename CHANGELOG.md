@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* New bot field: Number of content items (#867)
+* Bot content items should include author data (#892)
+
+
 # 1.0.2566-287968c - 2017-08-21
 
 * Algolia reindexing fixes (#883, #886).
