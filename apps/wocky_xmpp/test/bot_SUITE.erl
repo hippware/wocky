@@ -172,8 +172,8 @@ reset_tables(Config) ->
           type => ?BOT_TYPE},
     Bot = ?wocky_factory:insert(bot, B),
 
-    ?wocky_item:put(Bot, ?ITEM, ?ITEM_STANZA, true),
-    ?wocky_item:put(Bot, ?ITEM2, ?ITEM_STANZA2, false),
+    ?wocky_item:put(Bot, Alice, ?ITEM, ?ITEM_STANZA, true),
+    ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2, false),
 
     ?wocky_share:put(Bob, Bot, Alice),
     ?wocky_subscription:put(Carol, Bot),
@@ -1435,6 +1435,8 @@ is_item(I, #xmlel{name = <<"item">>,
                   attrs = Attrs,
                   children = [Entry]}) ->
     {value, item_id(I)} =:= xml:get_attr(<<"id">>, Attrs)
+    andalso
+    {value, ?ALICE} =:= xml:get_attr(<<"author">>, Attrs)
     andalso
     is_item_entry(I, Entry);
 is_item(_, _) -> false.

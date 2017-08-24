@@ -5,9 +5,11 @@ defmodule Wocky.Bot.ItemSpec do
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo.ID
+  alias Wocky.User
 
   describe "validation" do
-    let :valid_attrs, do: %{bot_id: ID.new, id: ID.new, stanza: "testing"}
+    let :valid_attrs, do: %{bot_id: ID.new, user_id: ID.new,
+                            id: ID.new, stanza: "testing"}
 
     it "should pass with valid attributes" do
       %Item{}
@@ -18,7 +20,7 @@ defmodule Wocky.Bot.ItemSpec do
     it "should fail with missing attributes" do
       %Item{}
       |> Item.changeset(%{})
-      |> should(have_errors [:bot_id, :id, :stanza])
+      |> should(have_errors [:bot_id, :user_id, :id, :stanza])
     end
 
     describe "converting foreign key constraints to errors" do
@@ -45,7 +47,7 @@ defmodule Wocky.Bot.ItemSpec do
     before do
       owner = Factory.insert(:user)
       bot = Factory.insert(:bot, user: owner)
-      item = Factory.insert(:item, bot: bot)
+      item = Factory.insert(:item, bot: bot, user: owner)
 
       {:ok, owner: owner, bot: bot, id: item.id, item: item}
     end
@@ -75,7 +77,7 @@ defmodule Wocky.Bot.ItemSpec do
 
     describe "get_images/1" do
       before do
-        Factory.insert(:item, bot: shared.bot, image: true)
+        Factory.insert(:item, bot: shared.bot, user: shared.owner, image: true)
         :ok
       end
 
@@ -86,7 +88,7 @@ defmodule Wocky.Bot.ItemSpec do
 
     describe "get_image_count/1" do
       before do
-        Factory.insert(:item, bot: shared.bot, image: true)
+        Factory.insert(:item, bot: shared.bot, user: shared.owner, image: true)
         :ok
       end
 
@@ -114,7 +116,7 @@ defmodule Wocky.Bot.ItemSpec do
       context "when an item does not already exist" do
         before do
           new_id = ID.new
-          result = Item.put(shared.bot, new_id, "testing", true)
+          result = Item.put(shared.bot, shared.owner, new_id, "testing", true)
           {:ok, new_id: new_id, result: result}
         end
 
@@ -135,7 +137,7 @@ defmodule Wocky.Bot.ItemSpec do
 
       context "when an item already exists" do
         before do
-          result = Item.put(shared.bot, shared.id, "testing")
+          result = Item.put(shared.bot, shared.owner, shared.id, "testing")
           {:ok, result: result}
         end
 
@@ -160,7 +162,7 @@ defmodule Wocky.Bot.ItemSpec do
     describe "publish/4" do
       before do
         new_id = ID.new
-        result = Item.publish(shared.bot, new_id, "testing", true)
+        result = Item.publish(shared.bot, shared.owner, new_id, "testing", true)
         {:ok, new_id: new_id, result: result}
       end
 
