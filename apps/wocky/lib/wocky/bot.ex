@@ -152,17 +152,26 @@ defmodule Wocky.Bot do
 
   @spec subscribers(t) :: [User.t]
   def subscribers(bot) do
+    bot
+    |> unsorted_subscribers()
+    |> tidy_subscribers()
+  end
+
+  defp unsorted_subscribers(bot) do
     bot = Repo.preload(bot, [:subscribers])
 
     temp_subscribers =
       bot
       |> TempSubscription.get_all
       |> Enum.map(fn %TempSubscription{user: user, resource: resource} ->
-        %User{user | resource: resource}
-      end)
+                    %User{user | resource: resource}
+                  end)
 
-    [bot.subscribers, temp_subscribers]
-    |> List.flatten
+    Enum.concat(bot.subscribers, temp_subscribers)
+  end
+
+  defp tidy_subscribers(subscribers) do
+    subscribers
     |> Enum.sort_by(&(&1.id))
     |> Enum.uniq_by(&(&1.id))
   end
@@ -170,6 +179,24 @@ defmodule Wocky.Bot do
   @spec non_temp_subscribers(t) :: [User.t]
   def non_temp_subscribers(bot) do
     Repo.preload(bot, [:subscribers]).subscribers
+  end
+
+  @spec notification_recipients(Bot.t, User.t) :: [JID.t]
+  def notification_recipients(bot, sender) do
+    bot = Repo.preload(bot, [:user])
+
+    bot
+    |> unsorted_subscribers()
+    |> Enum.concat([bot.user])
+    |> tidy_subscribers()
+    |> Enum.filter(&(not is_same_subscriber(&1, sender)))
+    |> Enum.map(&User.to_jid(&1))
+  end
+
+  # Returns true if the user id is the same and they have no resource,
+  # indicating a subscription
+  defp is_same_subscriber(user, sender) do
+    (user.id == sender.id) and (user.resource == nil)
   end
 
   @doc "Count of all subscribers (temporary and premanant) plus the owner"

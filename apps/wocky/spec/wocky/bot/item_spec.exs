@@ -5,7 +5,6 @@ defmodule Wocky.Bot.ItemSpec do
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo.ID
-  alias Wocky.User
 
   describe "validation" do
     let :valid_attrs, do: %{bot_id: ID.new, user_id: ID.new,

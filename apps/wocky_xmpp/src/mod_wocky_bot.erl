@@ -162,11 +162,11 @@ handle_iq_type(From, To, get, <<"query">>, Attrs, IQ) ->
 
 % Publish an item
 handle_iq_type(From, To, set, <<"publish">>, Attrs, IQ) ->
-    handle_owner_action(publish, From, To, Attrs, true, IQ);
+    handle_access_action(publish, From, To, Attrs, true, IQ);
 
 % Delete an item
 handle_iq_type(From, To, set, <<"retract">>, Attrs, IQ) ->
-    handle_owner_action(retract, From, To, Attrs, true, IQ);
+    handle_access_action(retract, From, To, Attrs, true, IQ);
 
 % Get a list of images from items on the bot
 handle_iq_type(From, To, get, <<"item_images">>, Attrs, IQ) ->
@@ -215,12 +215,6 @@ perform_owner_action(delete, Bot, _From, _To, _IQ) ->
 perform_owner_action(subscribers, Bot, _From, _To, _IQ) ->
     wocky_bot_subscription:retrieve_subscribers(Bot);
 
-perform_owner_action(publish, Bot, From, To, #iq{sub_el = SubEl}) ->
-    wocky_bot_item:publish(Bot, From, To, SubEl);
-
-perform_owner_action(retract, Bot, _From, To, #iq{sub_el = SubEl}) ->
-    wocky_bot_item:retract(Bot, To, SubEl);
-
 perform_owner_action(follow_me, Bot, From, _To, IQ) ->
     #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
     do([error_m ||
@@ -265,28 +259,34 @@ send_hs_notification(From, Bot, Stanza) ->
 %%% Actions that require the user to have access to the bot
 %%%===================================================================
 
-handle_access_action(Action, From, _To, Attrs, AllowPending, IQ) ->
+handle_access_action(Action, FromJID, ToJID, Attrs, AllowPending, IQ) ->
     do([error_m ||
            Bot <- wocky_bot_util:get_bot_from_node(Attrs, AllowPending),
-           User <- wocky_bot_util:get_user_from_jid(From),
-           wocky_bot_util:check_access(User, Bot),
-           perform_access_action(Action, Bot, User, IQ)
+           From <- wocky_bot_util:get_user_from_jid(FromJID),
+           wocky_bot_util:check_access(From, Bot),
+           perform_access_action(Action, Bot, From, ToJID, IQ)
        ]).
 
-perform_access_action(get_bot, Bot, User, _IQ) ->
+perform_access_action(get_bot, Bot, From, _ToJID, _IQ) ->
     do([error_m ||
-           BotEl <- make_bot_el(Bot, User),
+           BotEl <- make_bot_el(Bot, From),
            {ok, BotEl}
        ]);
 
-perform_access_action(item_query, Bot, _User, IQ) ->
+perform_access_action(item_query, Bot, _From, _ToJID, IQ) ->
     wocky_bot_item:query(Bot, IQ);
 
-perform_access_action(item_images, Bot, _User, IQ) ->
+perform_access_action(item_images, Bot, _From, _ToJID, IQ) ->
     wocky_bot_item:query_images(Bot, IQ);
 
-perform_access_action(subscribe, Bot, User, _IQ) ->
-    wocky_bot_subscription:subscribe(User, Bot).
+perform_access_action(subscribe, Bot, From, _ToJID, _IQ) ->
+    wocky_bot_subscription:subscribe(From, Bot);
+
+perform_access_action(publish, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
+    wocky_bot_item:publish(Bot, From, ToJID, SubEl);
+
+perform_access_action(retract, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
+    wocky_bot_item:retract(Bot, From, ToJID, SubEl).
 
 %%%===================================================================
 %%% Action - new-id
