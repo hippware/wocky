@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: wocky
-          image: hippware/wocky:2017-08-24T073905Z
+          image: hippware/wocky:latest
           ports:
             - containerPort: 5222
             - containerPort: 8080

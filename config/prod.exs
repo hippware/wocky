@@ -3,7 +3,13 @@ use Mix.Config
 # Do not print debug messages in production
 config :logger, level: :info
 
-config :peerage, via: Peerage.Via.Dns,
-  dns_name: "wocky-private",
-  app_name: "wocky",
-  interval: 5
+config :libcluster,
+  topologies: [
+    wocky_k8s: [
+      strategy: Cluster.Strategy.Kubernetes,
+      config: [
+        kubernetes_selector: "app=wocky",
+        kubernetes_node_basename: "wocky"
+      ]
+    ]
+  ]
