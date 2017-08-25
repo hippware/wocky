@@ -19,28 +19,15 @@ spec:
             - containerPort: 4369
             - containerPort: 9100
           args: ["foreground"]
+          envFrom:
+            - configMapRef:
+              name: wocky-config
+            - secretRef:
+              name: wocky-secrets
           env:
             - name: MY_POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: WOCKY_ENV
-              value: prod
-            - name: WOCKY_INST
-              value: testing
-            - name: WOCKY_HOST
-              value: "testing.prod.tinyrobot.com"
-            - name: WOCKY_DB_USER
-              value: "postgres"
-            - name: WOCKY_DB_PASS
-              value: "password"
-            - name: WOCKY_DB_NAME
-              value: "wocky_testing"
-            - name: WOCKY_DB_HOST
-              value: "wocky-testing.cx7fev3pluk8.us-west-2.rds.amazonaws.com"
-            - name: HONEYBADGER_API_KEY
-              value: e4532738
-            - name: HONEYBADGER_ENV
-              value: kube_testing
       imagePullSecrets:
         - name: dockerhub
