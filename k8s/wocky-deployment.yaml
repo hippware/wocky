@@ -21,9 +21,9 @@ spec:
           args: ["foreground"]
           envFrom:
             - configMapRef:
-              name: wocky-config
+                name: wocky-config
             - secretRef:
-              name: wocky-secrets
+                name: wocky-secrets
           env:
             - name: MY_POD_IP
               valueFrom:
