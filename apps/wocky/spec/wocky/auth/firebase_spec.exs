@@ -98,6 +98,8 @@ vm20OdFQ+qZh++T72uGmXxk=
 
   @user_id "UserID1"
 
+  @phone_number "+15551231234"
+
   describe "Firebase auth" do
     before_all do
       :meck.new(FirebaseKeyManager)
@@ -108,7 +110,7 @@ vm20OdFQ+qZh++T72uGmXxk=
     end
 
     it "should verify valid certifiates" do
-      Firebase.verify(make_jwt()) |> should(eq {:ok, @user_id})
+      Firebase.verify(make_jwt()) |> should(eq {:ok, {@user_id, @phone_number}})
     end
 
     it "should fail if the key id is missing or wrong" do
@@ -163,7 +165,8 @@ vm20OdFQ+qZh++T72uGmXxk=
         iss: @iss <> project,
         sub: @user_id,
         kid: @key_id,
-        key: @private_key
+        key: @private_key,
+        phone_number: @phone_number
       }
       |> Map.merge(opts)
 
@@ -176,6 +179,7 @@ vm20OdFQ+qZh++T72uGmXxk=
       |> with_aud(params[:aud])
       |> with_iss(params[:iss])
       |> with_sub(params[:sub])
+      |> with_claim("phone_number", params[:phone_number])
       |> with_signer(rs256(JWK.from_pem(params[:key])))
       |> sign
       |> get_compact
