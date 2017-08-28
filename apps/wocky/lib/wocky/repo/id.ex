@@ -3,6 +3,8 @@ defmodule Wocky.Repo.ID do
   Responsible for generating unique IDs for records stored in a database.
   """
 
+  alias Ecto.UUID
+
   @type t :: binary
 
   @doc "Generates a UUID in canonical text format for use as an id."
@@ -42,9 +44,13 @@ defmodule Wocky.Repo.ID do
   @doc "Returns true if the ID is a valid UUID."
   @spec valid?(t) :: boolean
   def valid?(id) do
-    :ossp_uuid.import(id, :binary)
-    true
-  rescue
-    ArgumentError -> false
+    case UUID.dump(id) do
+      {:ok, _} -> true
+      :error ->
+        case UUID.load(id) do
+          {:ok, _} -> true
+          :error -> false
+        end
+    end
   end
 end
