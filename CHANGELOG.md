@@ -5,11 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 1.0.2582-62e3cb6 - 2017-08-28
+
 * New bot field: Number of content items (#867)
 * Bot content items should include author data (#892)
 * Allow all bot viewers to publish items (#887)
 * Add more author fields to bot item (#898)
-
 
 
 # 1.0.2566-287968c - 2017-08-21
