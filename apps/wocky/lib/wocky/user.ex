@@ -91,7 +91,7 @@ defmodule Wocky.User do
   @register_fields [:username, :server, :provider, :external_id,
                     :phone_number, :password, :pass_details]
   @update_fields [:handle, :avatar, :first_name, :last_name,
-                  :email, :tagline, :roles]
+                  :email, :tagline, :roles, :external_id, :provider]
   @max_register_retries 5
 
   @doc "Return the list of fields that can be updated on an existing user."
@@ -153,33 +153,45 @@ defmodule Wocky.User do
     raise "Exceeded maximum register retries"
   end
   defp do_register(server, provider, external_id, phone_number, retries) do
-    case Repo.get_by(User, external_id: external_id) do
+    case Repo.get_by(User, external_id: external_id, provider: provider) do
       nil ->
-        user =
-          %{username: ID.new,
-            server: server,
-            provider: provider,
-            external_id: external_id,
-            phone_number: phone_number}
-
-        result =
-          user
-          |> register_changeset()
-          |> Repo.insert
-
-        case result do
-          {:ok, _} ->
-            {user.username, user.server, true}
-          {:error, e} ->
-            Logger.debug("registration failed with error: #{inspect e}")
-            do_register(server, provider, external_id,
-                        phone_number, retries + 1)
+        case Repo.get_by(User, phone_number: phone_number) do
+          nil ->
+            register_new(server, provider, external_id, phone_number, retries)
+          user ->
+            __MODULE__.update(user.id, %{provider: provider,
+                                         external_id: external_id,
+                                         phone_number: phone_number})
+            {user.username, user.server, false}
         end
-
       user ->
         {user.username, user.server, false}
     end
   end
+
+  defp register_new(server, provider, external_id, phone_number, retries) do
+    user =
+      %{username: ID.new,
+       server: server,
+       provider: provider,
+       external_id: external_id,
+       phone_number: phone_number}
+
+    result =
+      user
+      |> register_changeset()
+      |> Repo.insert
+
+    case result do
+      {:ok, _} ->
+        {user.username, user.server, true}
+      {:error, e} ->
+        Logger.debug("registration failed with error: #{inspect e}")
+        do_register(server, provider, external_id,
+         phone_number, retries + 1)
+    end
+  end
+
 
   def register_changeset(params) do
     %User{}

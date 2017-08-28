@@ -25,9 +25,12 @@ defmodule Wocky.Auth.Firebase do
          key_id <- headers["kid"],
          {:ok, cert} <- FirebaseKeyManager.get_key(key_id),
          {:ok, claims} <- decode_and_verify(jwt, cert),
-         user_id <- claims["sub"]
+         user_id when not is_nil(user_id) <- claims["sub"],
+         phone when not is_nil(phone) <- claims["phone_number"]
+         # ^^^^ Best guess on name - will need
+         # verification once we have a client
     do
-      {:ok, user_id}
+      {:ok, {user_id, phone}}
     end
     |> make_verify_result()
   end
