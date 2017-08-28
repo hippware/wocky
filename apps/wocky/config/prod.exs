@@ -4,8 +4,7 @@ config :wocky,
   enable_bot_event_notifications: false,
   enable_follow_me_updates: false,
   async_location_processing: true,
-  tros_backend: Wocky.TROS.S3Store,
-  firebase_project_id: "tinyrobot-3ce47"
+  tros_backend: Wocky.TROS.S3Store
 
 config :slackex,
   token: nil

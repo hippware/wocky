@@ -10,8 +10,7 @@ config :wocky,
   async_push_notifications: false,
   enable_push_notifications: true,
   indexing_system: "test",
-  firebase_load_on_startup: false,
-  firebase_project_id: "tinyrobot-3ce47"
+  firebase_load_on_startup: false
 
 config :logger,
   level: :warn
