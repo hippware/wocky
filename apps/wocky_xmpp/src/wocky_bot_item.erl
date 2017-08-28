@@ -13,7 +13,7 @@
 -export([query/2,
          query_images/2,
          publish/4,
-         retract/3]).
+         retract/4]).
 
 
 %%%===================================================================
@@ -35,21 +35,26 @@ query_images(Bot, IQ) ->
            {ok, images_result(Owner, Images, RSMOut)}
        ]).
 
-publish(Bot, From, To, SubEl) ->
+
+-spec publish(?wocky_bot:t(), ?wocky_user:t(), jlib:jid(), jlib:xmlel()) ->
+{ok, []} | {error, binary()}.
+publish(Bot, From, ToJID, SubEl) ->
     do([error_m ||
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            Entry <- wocky_xml:get_subel(<<"entry">>, Item),
            wocky_xml:check_namespace(?NS_ATOM, Entry),
-           publish_item(From, To, Bot, ItemID, Entry),
+           check_can_publish(From, Bot, ItemID),
+           publish_item(From, ToJID, Bot, ItemID, Entry),
            {ok, []}
        ]).
 
-retract(Bot, To, SubEl) ->
+retract(Bot, From, ToJID, SubEl) ->
     do([error_m ||
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
-           retract_item(To, Bot, ItemID),
+           check_can_retract(From, Bot, ItemID),
+           retract_item(From, ToJID, Bot, ItemID),
            {ok, []}
        ]).
 
@@ -97,29 +102,43 @@ image_el(Owner, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 %%% Helpers - publish
 %%%===================================================================
 
-publish_item(FromJID, ToJID, Bot, ItemID, Entry) ->
+publish_item(From, ToJID, Bot, ItemID, Entry) ->
     Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
-    From = ?wocky_user:get_by_jid(FromJID),
     {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin, Image),
     Message = notification_message(Bot, make_item_element(Item)),
-    notify_subscribers(ToJID, Bot, Message).
+    notify_subscribers(From, ToJID, Bot, Message).
 
 has_image(Entry) ->
     wocky_bot_util:get_image(Entry) =/= <<>>.
+
+check_can_publish(#{id := UserID}, Bot, ItemID) ->
+    case ?wocky_item:get(Bot, ItemID) of
+        nil -> ok;
+        #{user_id := UserID} -> ok;
+        _ -> {error, ?ERR_FORBIDDEN}
+    end.
 
 %%%===================================================================
 %%% Helpers - retract
 %%%===================================================================
 
-retract_item(To, Bot, ItemID) ->
+retract_item(From, ToJID, Bot, ItemID) ->
     ?wocky_item:delete(Bot, ItemID),
     Message = notification_message(Bot, retract_item(ItemID)),
-    notify_subscribers(To, Bot, Message).
+    notify_subscribers(From, ToJID, Bot, Message).
 
 retract_item(ItemID) ->
     #xmlel{name = <<"retract">>,
            attrs = [{<<"id">>, ItemID}]}.
+
+check_can_retract(#{id := UserID}, Bot = #{user_id := BotOwner}, ItemID) ->
+    case ?wocky_item:get(Bot, ItemID) of
+        nil -> {error, ?ERR_ITEM_NOT_FOUND};
+        #{user_id := UserID} -> ok;
+        _ when UserID =:= BotOwner -> ok;
+        _ -> {error, ?ERR_FORBIDDEN}
+    end.
 
 %%%===================================================================
 %%% Helpers - common
@@ -149,12 +168,12 @@ time_field(Name, Value) ->
            children =
            [#xmlcdata{content = ?wocky_timestamp:to_string(Value)}]}.
 
-notify_subscribers(From, Bot, Message) ->
-    Subscribers = ?wocky_bot:subscribers(Bot),
-    lists:foreach(notify_subscriber(From, _, Message), Subscribers).
+notify_subscribers(From, ToJID, Bot, Message) ->
+    NotificationJIDs = ?wocky_bot:notification_recipients(Bot, From),
+    lists:foreach(notify_subscriber(ToJID, _, Message), NotificationJIDs).
 
-notify_subscriber(From, To, Message) ->
-    ejabberd_router:route(From, ?wocky_user:to_jid(To), Message).
+notify_subscriber(FromJID, ToJID, Message) ->
+    ejabberd_router:route(FromJID, ToJID, Message).
 
 notification_message(Bot, ItemEl) ->
     #xmlel{name = <<"message">>,

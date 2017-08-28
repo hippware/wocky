@@ -269,6 +269,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
     context "explore limits", async: false do
       before do
+        Repo.delete_all(Bot)
         other_user = Factory.insert(:user)
 
         Enum.map(1..10,

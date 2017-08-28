@@ -12,6 +12,7 @@ defmodule Wocky.BotSpec do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.User
 
   describe "helper functions" do
     let :bot, do: Factory.build(:bot)
@@ -233,6 +234,7 @@ defmodule Wocky.BotSpec do
 
         Subscription.put(sub, bot())
         TempSubscription.put(temp_sub, bot(), node())
+        {:ok, sub: sub, temp_sub: temp_sub}
       end
 
       describe "subscribers/1" do
@@ -246,6 +248,26 @@ defmodule Wocky.BotSpec do
         subject do: Bot.subscriber_count(bot())
 
         it do: should(eq 3)
+      end
+
+      describe "notification_recipients/2" do
+        let :user_jid, do: User.to_jid(user())
+        let :sub_jid, do: User.to_jid(shared.sub)
+        let :temp_sub_jid, do: User.to_jid(shared.temp_sub)
+
+        it "should not include the user" do
+          result = Bot.notification_recipients(bot(), user())
+          result |> should(have_length 2)
+          result |> should_not(have user_jid())
+          result |> should(have sub_jid())
+          result |> should(have temp_sub_jid())
+
+          result = Bot.notification_recipients(bot(), shared.sub)
+          result |> should(have_length 2)
+          result |> should_not(have sub_jid())
+          result |> should(have user_jid())
+          result |> should(have temp_sub_jid())
+        end
       end
     end
   end

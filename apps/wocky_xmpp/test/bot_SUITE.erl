@@ -14,7 +14,7 @@
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
-                      get_hs_stanza/0, bot_node/1,
+                      get_hs_stanza/0, bot_node/1, check_hs_result/2,
                       check_hs_result/4, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
@@ -51,6 +51,7 @@
 -define(CREATED_BOTS,       30).
 -define(CREATED_ITEMS,      50).
 
+-define(BOBS_ITEM_ID, <<"item2">>).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -566,8 +567,9 @@ sorting(Config) ->
 
 publish_item(Config) ->
     reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
-      fun(Alice, Bob, Carol, Karen) ->
+    escalus:story(Config,
+                  [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}, {robert, 1}],
+      fun(Alice, Bob, Carol, Karen, Robert) ->
         NoteID = <<"item1">>,
         Content = <<"content ZZZ">>,
         Title = <<"title ZZZ">>,
@@ -575,22 +577,43 @@ publish_item(Config) ->
         publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
         % Carol and Karen are subscribers, and so receive a notification
-        % Bob is an affiliate but not subscribed, so does not receive anything
-        expect_item_publication(Carol, ?BOT, NoteID, Title, Content),
-        expect_item_publication(Karen, ?BOT, NoteID, Title, Content),
+        % Bob is a viewr (via share) but not subscribed,
+        % so does not receive anything
+        lists:foreach(
+          expect_item_publication(_, ?BOT, NoteID, Title, Content),
+          [Carol, Karen]),
 
-        % As the owner, Alice should *not* get a notification,
+        % As the publisher, Alice should *not* get a notification,
         % so her HS should be empty
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
         check_hs_result(Stanza, 0, 0, false),
 
-        % Nobody else can publish an item to the bot besides the owner
+        % As someone to whom the bot has been shared, Bob can publish items
+        % to the bot and all the subscribers are notified.
+        publish_item(?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
+        lists:foreach(
+          expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, Content),
+          [Alice, Carol, Karen]),
+
+        % Bob can update his own item and subscribers will be informed.
+        NewContent = <<"New Content">>,
+        publish_item(?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
+        lists:foreach(
+          expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, NewContent),
+          [Alice, Carol, Karen]),
+
+        % Robert can't view the bot so can't publish a note to it:
+        expect_iq_error(
+          publish_item_stanza(?BOT, <<"robertsnote">>, Title, Content),
+          Robert),
+
+        % Nobody else can publish to an item except the item owner
         expect_iq_error(
           publish_item_stanza(?BOT, NoteID, Title, Content),
           Bob),
         expect_iq_error(
-          publish_item_stanza(?BOT, NoteID, Title, Content),
-          Carol),
+          publish_item_stanza(?BOT, ?BOBS_ITEM_ID, Title, Content),
+          Alice),
 
         % Alice cannot publish to a non-existant bot
         expect_iq_error(
@@ -602,7 +625,8 @@ publish_item(Config) ->
 retract_item(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
-        % Nobody else can publish an item to the bot besides the owner
+        % Nobody else can publish an item to the bot besides the item or bot
+        % owners
         expect_iq_error(
           retract_item_stanza(?BOT, ?ITEM),
           Bob),
@@ -617,6 +641,12 @@ retract_item(Config) ->
         % Bob is an affiliate but not subscribed, so does not receive anything
         expect_item_retraction(Carol, ?BOT, ?ITEM),
         expect_item_retraction(Karen, ?BOT, ?ITEM),
+
+        % Bob can retract his own item
+        expect_iq_success(retract_item_stanza(?BOT, ?BOBS_ITEM_ID), Bob),
+        expect_item_retraction(Alice, ?BOT, ?BOBS_ITEM_ID),
+        expect_item_retraction(Carol, ?BOT, ?BOBS_ITEM_ID),
+        expect_item_retraction(Karen, ?BOT, ?BOBS_ITEM_ID),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
@@ -805,7 +835,7 @@ follow_notifications(Config) ->
           escalus:wait_for_stanza(Alice, 2500)),
 
         Stanza = expect_iq_success_u(test_helper:get_hs_stanza(), Alice, Alice),
-        test_helper:check_hs_result(Stanza, 3)
+        check_hs_result(Stanza, 3)
       end).
 
 share(Config) ->
