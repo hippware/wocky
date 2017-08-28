@@ -25,9 +25,13 @@ spec:
             - secretRef:
                 name: wocky-secrets
           env:
-            - name: MY_POD_IP
+            - name: KUBE_POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: KUBE_POD_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
       imagePullSecrets:
         - name: dockerhub
