@@ -328,6 +328,7 @@ provider_data(firebase) ->
         ?joken:with_aud(Project),
         ?joken:with_iss(<<?iss/binary, Project/binary>>),
         ?joken:with_sub(integer_to_binary(rand:uniform(10000))),
+        ?joken:with_claim(<<"phone_number">>, <<"+15551231234">>),
         ?joken:with_signer(?joken:rs256(?jwk:from_pem(private_key()))),
         ?joken:sign(),
         ?joken:get_compact()
