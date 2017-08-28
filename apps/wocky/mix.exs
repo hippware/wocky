@@ -83,7 +83,7 @@ defmodule Wocky.Mixfile do
       {:quantum,              "~> 1.9"},
       {:comeonin,             "~> 3.0"},
       {:joken,                "~> 1.1"},
-      {:libcluster,           "~> 2.2"},
+      {:peerage,              "~> 1.0"},
 
       {:ecto,
         github: "hippware/ecto",
