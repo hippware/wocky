@@ -19,7 +19,8 @@
 all() ->
     [
      %% Uncomment this to enable tests against real-world S3:
-%     {group, s3}
+%     {group, s3},
+     {group, general}
     ].
 
 groups() ->
@@ -32,6 +33,9 @@ groups() ->
        file_up_too_big_story,
        request_too_big_story
       ]
+     },
+     {general,
+      [invalid_file_id]
      }
     ].
 
@@ -146,6 +150,12 @@ update_metadata(Config) ->
         download_success(Bob, FileID, OutData)
     end).
 
+invalid_file_id(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        download_failure(Alice, "Not a valid ID"),
+        download_failure(Alice, "tros:localhost/file/Not a valid ID"),
+        download_failure(Alice, "hello world url!-thumbnail")
+    end).
 
 %%--------------------------------------------------------------------
 %% Helpers
