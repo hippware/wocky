@@ -125,12 +125,24 @@ retract_item(ItemID) ->
 %%% Helpers - common
 %%%===================================================================
 
-make_item_element(#{id := ID, user_id := UserID, created_at := Published,
-                    updated_at := Updated, stanza := Stanza}) ->
+make_item_element(I = #{id := ID, created_at := Published,
+                        updated_at := Updated, stanza := Stanza}) ->
+    Item = ?wocky_repo:preload(I, user),
+    User = maps:get(user, Item),
     {ok, Entry} = exml:parse(Stanza),
     FullEntry = add_time_fields(Published, Updated, Entry),
+
+    BaseAttrs = [{<<"id">>, ID},
+                 {<<"author">>, jid:to_binary(?wocky_user:to_jid(User))},
+                 {<<"author_handle">>, maps:get(handle, User)},
+                 {<<"author_avatar">>, maps:get(avatar, User)},
+                 {<<"author_first_name">>, maps:get(first_name, User)},
+                 {<<"author_last_name">>, maps:get(last_name, User)}
+                ],
+    Attrs = [{K, wocky_util:nil_to_bin(V)} || {K, V} <- BaseAttrs],
+
     #xmlel{name = <<"item">>,
-           attrs = [{<<"id">>, ID}, {<<"author">>, UserID}],
+           attrs = Attrs,
            children = [FullEntry]}.
 
 add_time_fields(Published, Updated, Entry = #xmlel{children = Children}) ->

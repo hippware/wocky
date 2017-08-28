@@ -21,7 +21,7 @@
    safe_bin_to_float/1,
    safe_bin_to_boolean/1,
    coord_to_binary/1,
-   null_to_list/1,
+   nil_to_bin/1,
    intersection/2,
    intersection/3,
 
@@ -127,9 +127,9 @@ coord_to_binary(Coordinate) ->
     % rouding errors on 64 bit floats
     float_to_binary(Coordinate, [{decimals, 6}]).
 
--spec null_to_list(not_found | null | list()) -> list() | not_found.
-null_to_list(null) -> [];
-null_to_list(L) -> L.
+-spec nil_to_bin(nil | binary()) -> binary().
+nil_to_bin(nil) -> <<>>;
+nil_to_bin(B) -> B.
 
 -spec intersection(list(), list()) -> list().
 intersection(A, B) ->

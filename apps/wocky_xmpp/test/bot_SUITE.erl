@@ -48,6 +48,12 @@
 
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
+-define(ALICE_HANDLE, <<"Alice Handle">>).
+-define(AVATAR_ID, <<"cc25d9de-8b8b-11e7-ad2c-83478732a270">>).
+-define(AVATAR_URL, ?tros:make_url(?SERVER, ?AVATAR_ID)).
+-define(ALICE_FIRST_NAME, <<"Alice">>).
+-define(ALICE_LAST_NAME, <<"Alison">>).
+
 -define(CREATED_BOTS,       30).
 -define(CREATED_ITEMS,      50).
 
@@ -143,7 +149,6 @@ local_tables() ->
     [bot_name, bot_item, home_stream].
 
 reset_tables(Config) ->
-    ?wocky_repo:delete_all(?wocky_user),
     Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
@@ -159,6 +164,15 @@ reset_tables(Config) ->
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Carol}),
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Robert}),
     ?wocky_factory:insert(roster_item, #{user => Alice, contact => Karen}),
+
+    ?wocky_factory:insert(tros_metadata, #{id => ?AVATAR_ID,
+                                           user => Alice,
+                                           access => <<"all">>}),
+
+    ok = ?wocky_user:update(?ALICE, #{handle => ?ALICE_HANDLE,
+                                      avatar => ?AVATAR_URL,
+                                      first_name => ?ALICE_FIRST_NAME,
+                                      last_name => ?ALICE_LAST_NAME}),
 
     B = #{id => ?BOT,
           title => ?BOT_TITLE,
@@ -1434,11 +1448,22 @@ check_items(Children, [I | Rest]) ->
 is_item(I, #xmlel{name = <<"item">>,
                   attrs = Attrs,
                   children = [Entry]}) ->
-    {value, item_id(I)} =:= xml:get_attr(<<"id">>, Attrs)
-    andalso
-    {value, ?ALICE} =:= xml:get_attr(<<"author">>, Attrs)
-    andalso
-    is_item_entry(I, Entry);
+    ID = item_id(I),
+    AliceBJID = ?BJID(?ALICE),
+
+    lists:all(
+      fun({K, V}) -> {value, V} =:= xml:get_attr(K, Attrs);
+         (X)      -> X
+      end,
+      [
+       {<<"id">>, ID},
+       {<<"author">>, AliceBJID},
+       {<<"author_avatar">>, ?AVATAR_URL},
+       {<<"author_handle">>, ?ALICE_HANDLE},
+       {<<"author_first_name">>, ?ALICE_FIRST_NAME},
+       {<<"author_last_name">>, ?ALICE_LAST_NAME},
+       is_item_entry(I, Entry)
+      ]);
 is_item(_, _) -> false.
 
 is_item_entry(I, El = #xmlel{name = <<"entry">>,
