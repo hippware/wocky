@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix crash on certain invalid TROS IDs (#900)
+* Firebase baseline integration (#877)
+
+
 # 1.0.2582-62e3cb6 - 2017-08-28
 
 * New bot field: Number of content items (#867)
