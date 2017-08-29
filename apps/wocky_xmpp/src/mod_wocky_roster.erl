@@ -235,7 +235,6 @@ roster_get_hook(Acc, {LUser, _LServer}) ->
                          true
                  end, Items ++ Acc).
 
-
 %% roster_in_subscription, roster_out_subscription -------------------
 
 roster_in_subscription_hook(_, User, Server, JID, Type, Reason) ->
@@ -509,7 +508,8 @@ send_presence_type(From, To, Type) ->
                           #xmlel{name = <<"presence">>,
                                  attrs = [{<<"type">>, Type}], children = []}).
 
-item_to_xml(Item) ->
+item_to_xml(I = #wocky_roster{contact_jid = {ContactUser, _, _}}) ->
+    Item = populate_extra_fields(I, ContactUser),
     #xmlel{
        name = <<"item">>,
        attrs = lists:flatten(
@@ -532,7 +532,7 @@ item_to_xml(Item) ->
 item_jid_to_xml(JID) ->
     {<<"jid">>, jid:to_binary(JID)}.
 
-item_name_to_xml(_Key, <<"">>) -> [];
+item_name_to_xml(_Key, nil) -> [];
 item_name_to_xml(Key, Name) ->
     {erlang:atom_to_binary(Key, utf8), Name}.
 
@@ -597,3 +597,18 @@ to_mim_roster(#wocky_roster{
        ask = Ask,
        groups = Groups,
        xs = XS}.
+
+populate_extra_fields(Item, ContactUID) ->
+    case ?wocky_repo:get_by(?wocky_user, [{id, ContactUID}]) of
+        nil -> Item;
+        #{handle := Handle,
+          avatar := Avatar,
+          first_name := FirstName,
+          last_name := LastName} ->
+            Item#wocky_roster{
+              contact_handle = Handle,
+              avatar = Avatar,
+              first_name = FirstName,
+              last_name = LastName}
+    end.
+
