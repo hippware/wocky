@@ -1,0 +1,31 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": [],
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    },
+    "response": {
+      "body": "{\n \"3450b0ba9e31722e090ed2135bcdb7c177a32f27\": \"-----BEGIN CERTIFICATE-----\\nMIIDHDCCAgSgAwIBAgIIQsUUSIWD+jwwDQYJKoZIhvcNAQEFBQAwMTEvMC0GA1UE\\nAxMmc2VjdXJldG9rZW4uc3lzdGVtLmdzZXJ2aWNlYWNjb3VudC5jb20wHhcNMTcw\\nODE3MDA0NTI2WhcNMTcwODIwMDExNTI2WjAxMS8wLQYDVQQDEyZzZWN1cmV0b2tl\\nbi5zeXN0ZW0uZ3NlcnZpY2VhY2NvdW50LmNvbTCCASIwDQYJKoZIhvcNAQEBBQAD\\nggEPADCCAQoCggEBAOXC/+IqxPoPZs5PZF3UtG7lN+sisDATauyPb9oysDsD1/e3\\ningpDGDZrMTceNUuZosK2Ivn+iopWCNRBGmTcMUlNFMOzlQWnY2APUn/Jf0fkxfG\\nuw7syQS6eFq1+gd/qclXG78pF3BAk5C0g1zfplgRUi3oT646Cl5Lm59njYpcyptU\\nMo5LmvzxWxtjNHChH3aRDx/cZDzrcVyDwQ31vxERTjb/RkzQkHdSSWrE32l7CcrR\\nYqEFuuayWBW7MTOtODqIGmFpi/qBdzMw6xzKVaFGAlos8xbcXug07dA8tScHFciM\\n6FKzHsKNm+/ASgjIkwob9am7XKr3hFqtPzpLT/sCAwEAAaM4MDYwDAYDVR0TAQH/\\nBAIwADAOBgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwIwDQYJ\\nKoZIhvcNAQEFBQADggEBAHsKM9xugA8gTp9Yh5DB12xMnzkYJv3GrfVOG4bUqJ3b\\nxJQLCXD6PWBBM3mhbfbf7z2IOaPQlgXSTdfkcj2i61Ivas7BeDbUN6Vnxaqoo7tP\\n6UI+mjEPLGP2kN30+jvfjg4isi2on+cTdJjopmMY5jIk8eGBpIANzgNkIi6yaA+r\\nC4tKVi3kSVgPnrVDIeBMuVux5nSct2ZZmrZrcsFS9LoVxYXJouie3irSFIy6e8gB\\nN8yMZY1SH3FDu/288FHCQ6lkzGJ3fMfhGG/xXgNPRQgekukZnDIZOCev30JLYAGB\\nwHl3KkZYe+Q2g97N3lkd4ZN0yJm4WTTdCVbZuWTrl+k=\\n-----END CERTIFICATE-----\\n\",\n \"48b0f8082a7be2db150268ac6b5cc82a29bedd08\": \"-----BEGIN CERTIFICATE-----\\nMIIDHDCCAgSgAwIBAgIIUrboFwAbrykwDQYJKoZIhvcNAQEFBQAwMTEvMC0GA1UE\\nAxMmc2VjdXJldG9rZW4uc3lzdGVtLmdzZXJ2aWNlYWNjb3VudC5jb20wHhcNMTcw\\nODE4MDA0NTI2WhcNMTcwODIxMDExNTI2WjAxMS8wLQYDVQQDEyZzZWN1cmV0b2tl\\nbi5zeXN0ZW0uZ3NlcnZpY2VhY2NvdW50LmNvbTCCASIwDQYJKoZIhvcNAQEBBQAD\\nggEPADCCAQoCggEBAKGbItI6sLkvtkrr+pw6Mmb5te16TS8Uny1+1v0s0zgTs421\\nlRhqBHAN83NZ5okLkvWUH5alpWQuKEjlcfIRBjoZm+4xO9lMuExktjNoHQBNFwNr\\nZdKKI36oabh7mgB2LEc2DJQJEWOQzddGGkbAQVGy07SDJCU/SPr45rG7rBTiOyWO\\nUkKUcaAAkCNk/Hso85B58gXwbfdktM77qNIH+9BYHxUj/juTmhlNaVeDwRlb7+kW\\noSMCUZQELtK3vZh+I3KV0RufBH1WyFXK0HOlGOLQcTg7gCxJVr6170AEIn06Es37\\ncUI3PsXQhbkjv+qEmkYMNzZ/EKVqBeHRozoycjECAwEAAaM4MDYwDAYDVR0TAQH/\\nBAIwADAOBgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwIwDQYJ\\nKoZIhvcNAQEFBQADggEBAIhfpoKZciRba6aWDzl5gmsY2CNHEwQ2Oy8daQJLu4vd\\niqGt7oaz9rgWwLeN2+AebycxI00KNqu3WYij1M7EM0jfzBekAf3FHg0okcPHhwNF\\nk0QzDRCDpWgE6nkUkqLPBvUNbGPeobWi4rPDK7nItOoegRg1Xrr+Ao+0jTrJvcRj\\nLpvOco0ZLZxDXuSBk5oRTdwHYfiyzc35q4XcdFwLNmcQP3YNZ+6o5LU68eXr0B1s\\nxaxNVRF+LyHVntP1EGVV9766H6EH4m6uKIxk/CH+jkxjI54Zt2JyX81H5ZV1ifIM\\ntIbP3M+NzBUkgEUWjuN8wWm8j/Dc5bdar0MZuir8yJk=\\n-----END CERTIFICATE-----\\n\",\n \"84b68b30be86fc92f80f51f671378c0b776f69a9\": \"-----BEGIN CERTIFICATE-----\\nMIIDHDCCAgSgAwIBAgIIAtfEkZTK8NEwDQYJKoZIhvcNAQEFBQAwMTEvMC0GA1UE\\nAxMmc2VjdXJldG9rZW4uc3lzdGVtLmdzZXJ2aWNlYWNjb3VudC5jb20wHhcNMTcw\\nODE2MDA0NTI2WhcNMTcwODE5MDExNTI2WjAxMS8wLQYDVQQDEyZzZWN1cmV0b2tl\\nbi5zeXN0ZW0uZ3NlcnZpY2VhY2NvdW50LmNvbTCCASIwDQYJKoZIhvcNAQEBBQAD\\nggEPADCCAQoCggEBAPNZwpcUh4oHDEPbjvbr7AyduJLWNAn9q5MVEsgSi0xDTPW2\\n3ZsIG2poIwyNNT/k8pq/AgythJkxoUozmVywL56myPqKuGk8kSk593CqPI7LAAR5\\nOyoeuHBvwguOs5QjzfLFECewb56xqyKwLzEuGTUikGzsM79GL4a8ycOZ7+VTCM3Q\\nUd9+rmiRVOvIeSVxtkwvrUgTP5oLlFdTRoUyYdhv17Ak4k3ToN/gvpLRXLQe+HBy\\nhPuPTd4lpXRF15GGsevymI4+4KGJpKRiyKferLQSvJMUEdRGswHDf7fkoPIHWJez\\ntH1bCszUnNDk63SBXqtT63F1lIv0TCkP6qERP8kCAwEAAaM4MDYwDAYDVR0TAQH/\\nBAIwADAOBgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwIwDQYJ\\nKoZIhvcNAQEFBQADggEBAMfFIXkKw6+KuMVm9ohuppt22wczVHGy0H0FX/XeM8S1\\nya1CQUo1iqkuamUJjyGUT+pgsZFPIf2F9Wv15fgS2WKhp7FtaQd872NehLPqMOyQ\\nxoV+pJlDOpgQdrmVC7iPogujAuq+kgHiFRbsEZa/Khc/9+hbU3jmY2a0YgPJtA8/\\n0/szawXH1fZ0hVYtzfKLgLlNY/nEycD4TufNqljDXEVboumxkTWKkSxtZNNQBmng\\npUKmWJZe2puhUh+CiAq+sGmVeAE+dGv0zXuPDfNLSOX3w+XWTmirp+qe2M8gavjW\\njVqILtFtaDcNqZO3mRW3Se5oKNR34BOMRaJ3lMGTILc=\\n-----END CERTIFICATE-----\\n\"\n}\n",
+      "headers": {
+        "Expires": "Fri, 18 Aug 2017 08:48:49 GMT",
+        "Date": "Fri, 18 Aug 2017 02:29:54 GMT",
+        "Vary": "Origin",
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        "Content-Length": "3624",
+        "Server": "GSE",
+        "Cache-Control": "public, max-age=22735, must-revalidate, no-transform",
+        "Age": "7218",
+        "Alt-Svc": "quic=\":443\"; ma=2592000; v=\"39,38,37,35\""
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

@@ -1,6 +1,8 @@
 defmodule Wocky.User do
   @moduledoc ""
 
+  require Logger
+
   use Wocky.JID
   use Wocky.Repo.Model
 
@@ -28,12 +30,14 @@ defmodule Wocky.User do
     field :username,     :string # User ID (userpart of JID)
     field :server,       :string # User Server (domainpart of JID)
     field :resource,     :string, virtual: true
-    field :external_id,  :string # The user ID received from Twitter Digits
+    field :provider,     :string # The external auth provider
+    field :external_id,  :string # The user ID received from the provider
     field :handle,       :string # User handle (as seen by other users)
     field :avatar,       :string # ID of file containing user's avatar
     field :first_name,   :string # User's first name
     field :last_name,    :string # User's last name
-    field :phone_number, :string # The user's phone number (also from digits)
+    field :phone_number, :string # The user's phone number
+                                 # (also from auth provider)
     field :email,        :string # User's email address
     field :tagline,      :string # User's tagline
     field :password,     :string # Password hash
@@ -62,6 +66,7 @@ defmodule Wocky.User do
   @type username     :: binary
   @type server       :: binary
   @type resource     :: binary
+  @type provider     :: binary
   @type external_id  :: binary
   @type phone_number :: binary
   @type handle       :: binary
@@ -77,15 +82,16 @@ defmodule Wocky.User do
     last_name:      nil | binary,
     email:          nil | binary,
     tagline:        nil | binary,
+    provider:       nil | provider,
     external_id:    nil | external_id,
     phone_number:   nil | phone_number,
     roles:          [role]
   }
 
-  @register_fields [:username, :server, :external_id, :phone_number,
-                    :password, :pass_details]
+  @register_fields [:username, :server, :provider, :external_id,
+                    :phone_number, :password, :pass_details]
   @update_fields [:handle, :avatar, :first_name, :last_name,
-                  :email, :tagline, :roles]
+                  :email, :tagline, :roles, :external_id, :provider]
   @max_register_retries 5
 
   @doc "Return the list of fields that can be updated on an existing user."
@@ -115,6 +121,7 @@ defmodule Wocky.User do
   def register(username, server, password, pass_details) do
     %{username: username,
       server: server,
+      provider: "local",
       external_id: username,
       password: password,
       pass_details: pass_details}
@@ -126,10 +133,10 @@ defmodule Wocky.User do
   Creates or updates a user based on the external authentication ID and
   phone number.
   """
-  @spec register(server, external_id, phone_number) ::
+  @spec register_external(server, provider, external_id, phone_number) ::
     {:ok, {username, server, boolean}} | no_return
-  def register(server, external_id, phone_number) do
-    {:ok, do_register(server, external_id, phone_number, 0)}
+  def register_external(server, provider, external_id, phone_number) do
+    {:ok, do_register(server, provider, external_id, phone_number, 0)}
   end
 
   # There's scope for a race condition here. Since the database uses "read
@@ -142,39 +149,54 @@ defmodule Wocky.User do
   # what the heck is even going on?). Either way, if we fail after 5 retries
   # there's something seriously weird going on and raising an exception
   # is a pretty reasonable response.
-  defp do_register(_, _, _, @max_register_retries) do
+  defp do_register(_, _, _, _, @max_register_retries) do
     raise "Exceeded maximum register retries"
   end
-  defp do_register(server, external_id, phone_number, retries) do
-    case Repo.get_by(User, external_id: external_id) do
+  defp do_register(server, provider, external_id, phone_number, retries) do
+    case Repo.get_by(User, external_id: external_id, provider: provider) do
       nil ->
-        user =
-          %{username: ID.new,
-            server: server,
-            external_id: external_id,
-            phone_number: phone_number}
-
-        {result, _} =
-          user
-          |> register_changeset()
-          |> Repo.insert
-
-        case result do
-          :ok ->
-            {user.username, user.server, true}
-          :error ->
-            do_register(server, external_id, phone_number, retries + 1)
+        case Repo.get_by(User, phone_number: phone_number) do
+          nil ->
+            register_new(server, provider, external_id, phone_number, retries)
+          user ->
+            __MODULE__.update(user.id, %{provider: provider,
+                                         external_id: external_id,
+                                         phone_number: phone_number})
+            {user.username, user.server, false}
         end
-
       user ->
         {user.username, user.server, false}
     end
   end
 
+  defp register_new(server, provider, external_id, phone_number, retries) do
+    user =
+      %{username: ID.new,
+       server: server,
+       provider: provider,
+       external_id: external_id,
+       phone_number: phone_number}
+
+    result =
+      user
+      |> register_changeset()
+      |> Repo.insert
+
+    case result do
+      {:ok, _} ->
+        {user.username, user.server, true}
+      {:error, e} ->
+        Logger.debug("registration failed with error: #{inspect e}")
+        do_register(server, provider, external_id,
+         phone_number, retries + 1)
+    end
+  end
+
+
   def register_changeset(params) do
     %User{}
     |> cast(params, @register_fields)
-    |> validate_required([:username, :server, :external_id])
+    |> validate_required([:username, :server, :provider, :external_id])
     |> validate_format(:phone_number, ~r//) # TODO
     |> validate_change(:username, &validate_username/2)
     |> put_change(:id, params[:username])

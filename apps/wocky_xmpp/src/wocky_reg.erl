@@ -22,8 +22,9 @@ register_user(JSON) ->
         GetToken <- get_token(Elements),
         {ExternalID, PhoneNumber} <- check_provider_auth(Provider,
                                                          ProviderData),
-        {UserID, Server, IsNew} <- create_or_update_user(ExternalID,
-                                                       PhoneNumber),
+        {UserID, Server, IsNew} <- create_or_update_user(Provider,
+                                                         ExternalID,
+                                                         PhoneNumber),
 
         {ok, IsNew andalso set_initial_followees(UserID)},
 
@@ -68,11 +69,18 @@ check_provider_auth(<<"digits">>, ProviderData) ->
         {error, {_, Error}} -> {error, {"not-authorized", Error}}
     end;
 
+check_provider_auth(<<"firebase">>, ProviderData) ->
+    case ?wocky_firebase:verify(ProviderData) of
+        {ok, Result} -> {ok, Result};
+        {error, Error} -> {error, {"not-authorized", Error}}
+    end;
+
 check_provider_auth(P, _) -> {error, {"not-authorized",
                                       ["Unsupported provider: ", P]}}.
 
-create_or_update_user(ExternalId, PhoneNumber) ->
-    ?wocky_user:register(wocky_xmpp_app:server(), ExternalId, PhoneNumber).
+create_or_update_user(Provider, ExternalId, PhoneNumber) ->
+    ?wocky_user:register_external(
+       wocky_xmpp_app:server(), Provider, ExternalId, PhoneNumber).
 
 maybe_get_token(false, _, _) ->
     {ok, {undefined, undefined}};

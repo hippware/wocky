@@ -15,7 +15,8 @@ config :wocky,
   user_index_name:       {:system, "WOCKY_USER_INDEX_NAME"},
   bot_index_name:        {:system, "WOCKY_BOT_INDEX_NAME"},
   enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false},
-  enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false}
+  enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false},
+  firebase_project_id:   "tinyrobot-3ce47"
 
 config :wocky, Wocky.Repo,
   adapter:   Ecto.Adapters.Postgres,

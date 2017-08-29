@@ -9,7 +9,8 @@ config :wocky, Wocky.Repo,
 config :wocky,
   async_push_notifications: false,
   enable_push_notifications: true,
-  indexing_system: "test"
+  indexing_system: "test",
+  firebase_load_on_startup: false
 
 config :logger,
   level: :warn

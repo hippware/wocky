@@ -2,7 +2,7 @@ defmodule WockyVersion do
   @doc "Generates a version number using the date and git metadata"
   @spec version :: String.t
   def version do
-    "1.0.#{git_rev_count()}-#{git_rev()}"
+    "1.0.#{git_rev_count()}-r#{git_rev()}"
   end
 
   defp git_rev_count do

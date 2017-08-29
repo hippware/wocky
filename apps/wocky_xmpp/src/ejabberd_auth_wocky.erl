@@ -21,8 +21,6 @@
 %%% will be useful or are expected to be used in normal operations.
 %%%
 %%%
-%%% For schema, see priv/schema*.cql
-%%%
 %%% Enable with the following in ejabberd.cfg
 %%%
 %%% ```

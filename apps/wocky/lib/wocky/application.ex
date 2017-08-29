@@ -17,7 +17,8 @@ defmodule Wocky.Application do
       worker(Wocky.Index, []),
       worker(Wocky.EventHandler, []),
       worker(Wocky.EventHandler.HomeStream, []),
-      worker(Wocky.EventHandler.PushNotification, [])
+      worker(Wocky.EventHandler.PushNotification, []),
+      worker(Wocky.Auth.FirebaseKeyManager, [])
     ], strategy: :one_for_one, name: Wocky.Supervisor)
   end
 end

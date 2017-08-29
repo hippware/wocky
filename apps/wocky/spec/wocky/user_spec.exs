@@ -4,6 +4,7 @@ defmodule Wocky.UserSpec do
   use Wocky.JID
 
   alias Ecto.Adapters.SQL
+  alias Faker.Code
   alias Faker.Internet
   alias Faker.Lorem
   alias Timex.Duration
@@ -21,13 +22,18 @@ defmodule Wocky.UserSpec do
 
   before do
     user = Factory.insert(:user, %{resource: "testing"})
-    {:ok, user: user, id: user.id, external_id: user.external_id}
+    {:ok,
+     user: user,
+     id: user.id,
+     external_id: user.external_id,
+     phone_number: user.phone_number
+    }
   end
 
   describe "valid_update_fields/0" do
     subject do: User.valid_update_fields
 
-    it do: should(have_count 7)
+    it do: should(have_count 9)
   end
 
   describe "to_jid/1" do
@@ -55,7 +61,7 @@ defmodule Wocky.UserSpec do
 
   describe "register_changeset/1 validations" do
     it "should pass with valid attributes" do
-      %{username: ID.new, server: "foo", external_id: "bar"}
+      %{username: ID.new, server: "foo", provider: "local", external_id: "bar"}
       |> User.register_changeset
       |> should(be_valid())
     end
@@ -98,11 +104,12 @@ defmodule Wocky.UserSpec do
     end
   end
 
-  describe "register/3" do
-    context "when the user already exists" do
+  describe "register_external/4" do
+    context "when the user already exists with the same provider/extID" do
       before do
         {:ok, result} =
-          User.register("another_server", shared.external_id, "+15551234567")
+          User.register_external("another_server", "local",
+                                 shared.external_id, "+15551234567")
 
         {:shared, result: result}
       end
@@ -124,10 +131,44 @@ defmodule Wocky.UserSpec do
       end
     end
 
+    context "when the user already exists with the same phone number" do
+      before do
+        external_id = Code.isbn13
+        {:ok, result} =
+          User.register_external("another_server", "firebase",
+                                 external_id, shared.phone_number)
+
+        {:shared, external_id: external_id, result: result}
+      end
+
+      it "should return the ID of the existing user" do
+        {result_id, _, _} = shared.result
+        result_id |> should(eq shared.id)
+      end
+
+      it "should return the server of the existing user" do
+        {_, result_server, _} = shared.result
+        result_server |> should(eq shared.server)
+        result_server |> should_not(eq "another_server")
+      end
+
+      it "should update the provider and external ID" do
+        user = Repo.get_by(User, id: shared.id)
+        user.provider |> should(eq "firebase")
+        user.external_id |> should(eq shared.external_id)
+      end
+
+      it "should return 'false' in the last slot" do
+        {_, _, result_is_new} = shared.result
+        result_is_new |> should_not(be_true())
+      end
+    end
+
     context "when the user does not exist" do
       before do
         {:ok, result} =
-          User.register(shared.server, ID.new, "+15551234567")
+          User.register_external(shared.server, "firebase",
+                                 ID.new, "+15551234567")
 
         {:shared, result: result}
       end
