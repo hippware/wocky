@@ -33,5 +33,9 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bin/wocky", "stop"]
       imagePullSecrets:
         - name: dockerhub
