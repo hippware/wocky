@@ -21,7 +21,13 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
 -include("test_helper.hrl").
+-include("wocky.hrl").
 
+-define(BOB_HANDLE, <<"Bob">>).
+-define(AVATAR_ID, <<"ba191e16-8c87-11e7-8372-5f4e6ef88769">>).
+-define(BOB_AVATAR, ?tros:make_url(?SERVER, ?AVATAR_ID)).
+-define(BOB_FIRST_NAME, <<"Bobble">>).
+-define(BOB_LAST_NAME, <<"Robertson">>).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -54,10 +60,19 @@ suite() ->
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     ?wocky_repo:delete_all(?wocky_roster_item),
-    fun_chain:first(Config,
+    Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol])
-    ).
+    ),
+
+    ?wocky_factory:insert(tros_metadata, [{id, ?AVATAR_ID}, {user_id, ?BOB}]),
+
+    ok = ?wocky_user:update(?BOB, #{handle => ?BOB_HANDLE,
+                                    avatar => ?BOB_AVATAR,
+                                    first_name => ?BOB_FIRST_NAME,
+                                    last_name => ?BOB_LAST_NAME}),
+
+    Config2.
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
@@ -103,6 +118,7 @@ add_contact(Config) ->
 
         Result = hd([R || R <- Received, escalus_pred:is_roster_set(R)]),
         escalus:assert(count_roster_items, [1], Result),
+        check_extra_fields(Result),
         escalus:send(Alice, escalus_stanza:iq_result(Result)),
 
         %% check roster
@@ -111,6 +127,7 @@ add_contact(Config) ->
 
         escalus:assert(is_roster_result, Received2),
         escalus:assert(roster_contains, [?BJID(?BOB)], Received2),
+        check_extra_fields(Received2),
         ?assert(has_created_at(Received2))
     end).
 
@@ -121,10 +138,12 @@ roster_push(Config) ->
                                                    <<"Bobby">>),
         escalus:send(Alice1, Stanza),
         Received = escalus_client:wait_for_stanza(Alice1),
+        check_extra_fields(Received),
         escalus_client:send(Alice1, escalus_stanza:iq_result(Received)),
         escalus_client:wait_for_stanza(Alice1),
 
         Received2 = escalus_client:wait_for_stanza(Alice2),
+        check_extra_fields(Received2),
         escalus_client:send(Alice2, escalus_stanza:iq_result(Received2))
     end).
 
@@ -174,6 +193,7 @@ versioning(Config) ->
 
         Result = hd([R || R <- Received, escalus_pred:is_roster_set(R)]),
         escalus:assert(count_roster_items, [1], Result),
+        check_extra_fields(Result),
         escalus:send(Alice, escalus_stanza:iq_result(Result)),
 
         %% check roster, no old ver
@@ -322,3 +342,15 @@ has_created_at(Element) ->
                              {elem, <<"item">>},
                              {attr, <<"created_at">>}])
     =/= <<>>.
+
+check_extra_fields(RosterSet) ->
+    Item = exml_query:path(RosterSet, [{element, <<"query">>},
+                                       {element, <<"item">>}]),
+    Expected = [{<<"handle">>, ?BOB_HANDLE},
+                {<<"avatar">>, ?BOB_AVATAR},
+                {<<"first_name">>, ?BOB_FIRST_NAME},
+                {<<"last_name">>, ?BOB_LAST_NAME}],
+
+    ?assert(lists:all(fun(Elem) ->
+                              lists:member(Elem, Item#xmlel.attrs)
+                      end, Expected)).
