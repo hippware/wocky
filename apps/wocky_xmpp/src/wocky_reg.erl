@@ -26,7 +26,7 @@ register_user(JSON) ->
                                                          ExternalID,
                                                          PhoneNumber),
 
-        {ok, IsNew andalso set_initial_followees(UserID)},
+        {ok, IsNew andalso set_initial_contacts(UserID)},
 
         {Token, Expiry} <- maybe_get_token(GetToken, UserID, Resource),
         {ok, #reg_result{
@@ -88,26 +88,34 @@ maybe_get_token(true, User, Resource) ->
     {ok, {Token, Expiry}} = ?wocky_token:assign(User, Resource),
     {ok, {Token, ?wocky_timestamp:to_string(Expiry)}}.
 
-set_initial_followees(UserID) ->
-    InitialFollowees = ?wocky_initial_followee:get(),
-    lists:foreach(set_initial_followee(UserID, _), InitialFollowees).
+set_initial_contacts(UserID) ->
+    InitialFollowees = ?wocky_initial_contact:get(),
+    lists:foreach(set_initial_contact(UserID, _), InitialFollowees).
 
-set_initial_followee(UserID, #{id := FolloweeID, handle := Handle}) ->
+set_initial_contact(UserID, #{user := User, type := followee}) ->
+    set_initial_contact(UserID, User, to, from);
+set_initial_contact(UserID, #{user := User, type := follower}) ->
+    set_initial_contact(UserID, User, from, to);
+set_initial_contact(UserID, #{user := User, type := friend}) ->
+    set_initial_contact(UserID, User, both, both).
+
+set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
+                    USub, FSub) ->
     UserContact = #{user_id => UserID,
                     contact_id => FolloweeID,
                     name => Handle,
                     ask => none,
-                    subscription => to,
+                    subscription => USub,
                     groups => [<<"__welcome__">>]
                    },
 
-    FolloweeContact = #{user_id => FolloweeID,
-                        contact_id => UserID,
-                        name => <<>>,
-                        ask => none,
-                        subscription => from,
-                        groups => [<<"__welcomed__">>]
-                       },
+    InitContact = #{user_id => FolloweeID,
+                    contact_id => UserID,
+                    name => <<>>,
+                    ask => none,
+                    subscription => FSub,
+                    groups => [<<"__welcomed__">>]
+                   },
 
     ?wocky_roster_item:put(UserContact),
-    ?wocky_roster_item:put(FolloweeContact).
+    ?wocky_roster_item:put(InitContact).
