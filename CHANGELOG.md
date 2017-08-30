@@ -7,6 +7,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Fix crash on certain invalid TROS IDs (#900)
 * Firebase baseline integration (#877)
+* Fix missing fields in roster updates and add tests (#876)
+* Fix dialyzer error in roster (PR #907)
 
 
 # 1.0.2582-62e3cb6 - 2017-08-28
