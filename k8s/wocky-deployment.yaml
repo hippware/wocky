@@ -16,6 +16,7 @@ spec:
             - containerPort: 5222
             - containerPort: 8080
             - containerPort: 5269
+            - containerPort: 5280
             - containerPort: 4369
             - containerPort: 9100
           args: ["foreground"]
