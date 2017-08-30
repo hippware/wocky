@@ -133,7 +133,7 @@ defmodule Wocky.PushNotifierSpec do
 
     it "should send a push notification to each endpoint" do
       notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
-      notifications |> should(have_size 2)
+      notifications |> Enum.count |> should(be :>=, 2)
     end
   end
 end
