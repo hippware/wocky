@@ -167,7 +167,6 @@ new_user_common(Config, Client, Stanza) ->
     end).
 
 check_contact(#{id := ID}, SubType, Stanza2) ->
-    ct:log("ID: ~p SubType: ~p", [ID, SubType]),
     Query = exml_query:subelement(Stanza2, <<"query">>),
     JID = jid:to_binary(jid:make(ID, ?SERVER, <<>>)),
     Item = lists:filter(
