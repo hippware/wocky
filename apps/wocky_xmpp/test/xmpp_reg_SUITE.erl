@@ -4,6 +4,7 @@
 
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
+-compile({parse_transform, cut}).
 
 -include_lib("common_test/include/ct.hrl").
 -include_lib("stdlib/include/assert.hrl").
@@ -70,12 +71,8 @@ init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     ?wocky_repo:delete_all(?wocky_user),
 
-    Users = ?wocky_factory:insert_list(3, user),
-    lists:foreach(
-      fun(#{id := ID}) ->
-              ?wocky_factory:insert(initial_followee, [{user_id, ID}])
-      end,
-      Users),
+    InitialContacts = [setup_initial_contacts(T) ||
+                       T <- [followee, follower, friend]],
 
     meck:new(?key_manager, [passthrough, no_link]),
     meck:expect(?key_manager, get_key,
@@ -83,7 +80,17 @@ init_per_suite(Config) ->
                    (_) -> {error, no_key}
                 end),
 
-    escalus:init_per_suite([{initial_followees, Users} | Config]).
+    escalus:init_per_suite([{initial_contacts, InitialContacts} | Config]).
+
+setup_initial_contacts(Type) ->
+    Users = ?wocky_factory:insert_list(3, user),
+    lists:foreach(
+      fun(#{id := ID}) ->
+              ?wocky_factory:insert(initial_contact, [{user_id, ID},
+                                                      {type, Type}])
+      end,
+      Users),
+    Users.
 
 end_per_suite(Config) ->
     meck:unload(),
@@ -135,10 +142,12 @@ new_user_common(Config, Client, Stanza) ->
 
     % Verify that initial followees have been added
     escalus:story(NewConfig, [{alice, 1}], fun(Alice) ->
-        InitialFollowees = proplists:get_value(initial_followees, NewConfig),
+        InitialContacts
+        = [InitialFollowees, InitialFollowers, InitialFriends]
+        = proplists:get_value(initial_contacts, NewConfig),
         JIDs = lists:map(fun(#{id := ID}) ->
                                  jid:to_binary(jid:make(ID, ?SERVER, <<>>))
-                         end, InitialFollowees),
+                         end, lists:flatten(InitialContacts)),
 
         escalus:send(Alice, escalus_stanza:roster_get()),
         Stanza2 = escalus:wait_for_stanza(Alice),
@@ -147,8 +156,31 @@ new_user_common(Config, Client, Stanza) ->
         escalus:assert(count_roster_items, [length(JIDs)], Stanza2),
         lists:foreach(fun(JID) ->
                               escalus:assert(roster_contains, [JID], Stanza2)
-                      end, JIDs)
+                      end, JIDs),
+        lists:foreach(
+          fun({Users, SubType}) ->
+                  lists:foreach(check_contact(_, SubType, Stanza2), Users)
+          end,
+          [{InitialFollowees, <<"to">>},
+           {InitialFollowers, <<"from">>},
+           {InitialFriends, <<"both">>}])
     end).
+
+check_contact(#{id := ID}, SubType, Stanza2) ->
+    ct:log("ID: ~p SubType: ~p", [ID, SubType]),
+    Query = exml_query:subelement(Stanza2, <<"query">>),
+    JID = jid:to_binary(jid:make(ID, ?SERVER, <<>>)),
+    Item = lists:filter(
+             fun(E) ->
+                     xml:get_attr(<<"jid">>, E#xmlel.attrs)
+                     =:= {value, JID}
+             end,
+             Query#xmlel.children),
+    case Item of
+        [I] -> ?assertEqual({value, SubType},
+                            xml:get_attr(<<"subscription">>, I#xmlel.attrs));
+        X -> ct:fail("Could not find item for jid ~p (~p)", [JID, X])
+    end.
 
 invalid_json(Config) ->
     Client = start_client(Config),

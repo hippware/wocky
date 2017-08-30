@@ -19,7 +19,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Conversation
   alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
-  alias Wocky.InitialFollowee
+  alias Wocky.InitialContact
   alias Wocky.NotificationLog
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
@@ -162,8 +162,10 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def initial_followee_factory do
-    %InitialFollowee{}
+  def initial_contact_factory do
+    %InitialContact{
+      type: Enum.random(["follower", "followee", "friend"])
+    }
   end
 
   defp phone_number do

@@ -49,7 +49,7 @@
 -define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
--define(wocky_initial_followee,  'Elixir.Wocky.InitialFollowee').
+-define(wocky_initial_contact,   'Elixir.Wocky.InitialContact').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
