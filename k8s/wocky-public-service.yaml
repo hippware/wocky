@@ -4,6 +4,11 @@ metadata:
   name: wocky-public
   labels:
     app: wocky
+  annotations:
+    # service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: 'tcp'
 spec:
   ports:
     - port: 80
