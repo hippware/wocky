@@ -8,9 +8,9 @@ data:
   WOCKY_INST: testing
   WOCKY_HOST: testing.prod.tinyrobot.com
   WOCKY_IQ_CRASH_RESPONSE: error_with_dump
-  WOCKY_TROS_S3_BUCKET: wocky-tros-testing
+  WOCKY_TROS_S3_BUCKET: wocky-kube-tros-testing
   WOCKY_S3_REGION: us-west-2
-  WOCKY_S3_ACCESS_KEY_ID: AKIAJUXCSKCUKDBNDX6Q
+  WOCKY_S3_ACCESS_KEY_ID: AKIAJOOG6KJT7K4EHNCA
   WOCKY_ENABLE_PUSH: "false"
   WOCKY_INDEXING_SYSTEM: test
   WOCKY_USER_INDEX_NAME: ""
