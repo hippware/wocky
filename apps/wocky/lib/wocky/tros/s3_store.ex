@@ -58,7 +58,7 @@ defmodule Wocky.TROS.S3Store do
 
   def make_download_response(server, file_id) do
     resp_fields = [
-      {"url", s3_url(server, bucket(), file_id, :get, [])}
+      {"url", s3_url(server, bucket(), file_id, :get)}
     ]
 
     {[], resp_fields}
@@ -95,12 +95,11 @@ defmodule Wocky.TROS.S3Store do
     ]
   end
 
-  defp s3_url(server, bucket, file_id, method, url_params) do
+  defp s3_url(server, bucket, file_id, method, url_params \\ []) do
     options = [
       expires_in: @link_expiry,
       virtual_host: false,
       query_params: url_params
-
     ]
 
     {:ok, url} = S3.presigned_url(make_config(), method, bucket,
@@ -117,7 +116,9 @@ defmodule Wocky.TROS.S3Store do
 
   def secret_key, do: get_opt(:tros_s3_secret_key)
 
-  defp get_opt(opt), do: Confex.get(:wocky, opt)
+  def region, do: get_opt(:tros_s3_region, "us-east-1")
+
+  defp get_opt(opt, default \\ nil), do: Confex.get(:wocky, opt, default)
 
   defp path(server, file_id),
     do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"
@@ -134,8 +135,9 @@ defmodule Wocky.TROS.S3Store do
 
   defp make_config do
     config_opts = Keyword.merge([access_key_id: access_key_id(),
-                                 secret_access_key: secret_key()],
-                                 maybe_override_host())
+                                 secret_access_key: secret_key(),
+                                 region: region()],
+                                maybe_override_host())
     Config.new(:s3, config_opts)
   end
 
