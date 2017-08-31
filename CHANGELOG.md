@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Firebase baseline integration (#877)
 * Fix missing fields in roster updates and add tests (#876)
 * Fix dialyzer error in roster (PR #907)
+* Broaden initial contacts to allow followers, followees and friends (#880)
 
 
 # 1.0.2582-62e3cb6 - 2017-08-28
