@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
         - name: wocky
-          image: hippware/wocky:latest
+          image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
           ports:
             - containerPort: 5222
             - containerPort: 8080
@@ -39,4 +39,4 @@ spec:
               exec:
                 command: ["bin/wocky", "stop"]
       imagePullSecrets:
-        - name: dockerhub
+        - name: amazonecr

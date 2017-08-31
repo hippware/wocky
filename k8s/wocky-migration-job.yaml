@@ -9,7 +9,8 @@ spec:
     spec:
       containers:
         - name: wocky
-          image: hippware/wocky:latest
+          image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
+          imagePullPolicy: Always
           args: ["migrate"]
           envFrom:
             - configMapRef:
@@ -25,5 +26,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+      imagePullSecrets:
+        - name: dockerhub
       # Do not restart containers after they exit
       restartPolicy: Never
