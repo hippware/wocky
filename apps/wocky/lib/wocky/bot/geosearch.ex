@@ -275,7 +275,7 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   defp fetch_results(fun, start_time,
-                     limits = %Limits{radius: radius}, count) do
+                     %Limits{radius: radius} = limits, count) do
     results = SQL.query!(Repo, "FETCH NEXT explore_nearby")
     case results.num_rows do
       0 ->
@@ -295,7 +295,7 @@ defmodule Wocky.Bot.Geosearch do
     fun.(:result_limit_reached)
   end
   defp maybe_fetch_more(fun, start_time,
-                        limits = %Limits{time: timeout}, count) do
+                        %Limits{time: timeout} = limits, count) do
     elapsed = :erlang.convert_time_unit(
       :erlang.monotonic_time() - start_time,
       :native, :millisecond)
