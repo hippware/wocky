@@ -3,6 +3,7 @@
 VERSION ?= $(shell elixir ./version.exs)
 IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
 IMAGE_NAME ?= hippware/wocky
+IMAGE_TAG ?= $(shell git rev-parse HEAD)
 WOCKY_ENV ?= testing
 KUBE_NS := wocky-$(WOCKY_ENV)
 
@@ -28,16 +29,16 @@ build: ## Build the release Docker image
 		-v ${PWD}/tmp/artifacts:/artifacts \
 		$(IMAGE_NAME):build make release
 	docker build . -f Dockerfile.release \
-		-t $(IMAGE_REPO)/$(IMAGE_NAME):$(VERSION) \
+		-t $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) \
 		-t $(IMAGE_REPO)/$(IMAGE_NAME):latest
 
 push: ## Push the Docker image to ECR
-	docker push $(IMAGE_REPO)/$(IMAGE_NAME):$(VERSION)
+	docker push $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
 	docker push $(IMAGE_REPO)/$(IMAGE_NAME):latest
 
 deploy: ## Deploy the image to the cluster
 	kubectl patch deployment wocky -n $(KUBE_NS) --type='json' \
-		-p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"$(IMAGE_REPO)/$(IMAGE_NAME):$(VERSION)"}]'
+		-p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"$(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)"}]'
 
 migrate: ## Run the database migrations in a k8s job
 	kubectl create -f k8s/wocky-migration-job.yaml -n $(KUBE_NS)
