@@ -11,6 +11,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix dialyzer error in roster (PR #907)
 * Broaden initial contacts to allow followers, followees and friends (#880)
 * Add configurable S3 region (PR #911)
+* Update dependencies and fix a few small issues (PR #914)
 
 
 # 1.0.2582-62e3cb6 - 2017-08-28
