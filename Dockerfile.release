@@ -27,6 +27,7 @@ RUN \
     apk --no-cache upgrade && \
     # Install necessary shared libs
     apk add --no-cache \
+      bash \
       ca-certificates \
       expat \
       libgcc \
