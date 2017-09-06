@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 1.0.2627-r611e801 - 2017-09-05
+
 * Fix crash on certain invalid TROS IDs (#900)
 * Firebase baseline integration (#877)
 * Fix missing fields in roster updates and add tests (#876)
@@ -12,6 +14,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Broaden initial contacts to allow followers, followees and friends (#880)
 * Add configurable S3 region (PR #911)
 * Update dependencies and fix a few small issues (PR #914)
+* Fix the Lager config (PR #920)
 
 
 # 1.0.2582-62e3cb6 - 2017-08-28
