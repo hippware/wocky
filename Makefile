@@ -37,8 +37,8 @@ push: ## Push the Docker image to ECR
 	docker push $(IMAGE_REPO)/$(IMAGE_NAME):latest
 
 deploy: ## Deploy the image to the cluster
-	kubectl patch deployment wocky -n $(KUBE_NS) --type='json' \
-		-p='[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value":"$(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)"}]'
+	kubectl set image deployment/wocky -n $(KUBE_NS) \
+		wocky=$(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
 
 migrate: ## Run the database migrations in a k8s job
 	kubectl create -f k8s/wocky-migration-job.yaml -n $(KUBE_NS)
