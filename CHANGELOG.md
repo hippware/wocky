@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix Firebase ID (PR #922)
+
+
 # 1.0.2627-r611e801 - 2017-09-05
 
 * Fix crash on certain invalid TROS IDs (#900)
