@@ -11,7 +11,15 @@
   service: wocky_build
   tag: master
   command: make release
-- name: push_image
+- name: push_latest_image
+  service: wocky_rel
+  type: push
+  tag: master
+  image_tag: latest
+  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+  dockercfg_service: aws_dockercfg
+- name: push_tagged_image
   service: wocky_rel
   type: push
   tag: master
