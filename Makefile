@@ -42,3 +42,5 @@ deploy: ## Deploy the image to the cluster
 
 migrate: ## Run the database migrations in a k8s job
 	kubectl create -f k8s/wocky-migration-job.yaml -n $(KUBE_NS)
+
+shipit: build push deploy ## Build, push and deploy the image
