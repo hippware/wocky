@@ -116,7 +116,7 @@ start_ejabberd(CfgPath) ->
     ok.
 
 maybe_join_cluster() ->
-    Self = self(),
+    Self = node(),
     case lists:sort(erlang:nodes([visible, this])) of
         [] -> ok;
         [Self | _] -> ok;
