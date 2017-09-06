@@ -8,7 +8,10 @@ WOCKY_ENV ?= testing
 KUBE_NS := wocky-$(WOCKY_ENV)
 
 help:
-	@echo "$(IMAGE_REPO)/$(IMAGE_NAME):$(VERSION)"
+	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
+	@echo "Tag:     $(IMAGE_TAG)"
+	@echo "Version: $(VERSION)"
+	@echo ""
 	@perl -nle'print $& if m{^[a-zA-Z_-]+:.*?## .*$$}' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 unittest: ## Run the unit tests locally
