@@ -1,3 +1,6 @@
+- name: version
+  service: wocky_build
+  command: elixir version.exs
 - name: unit_test
   service: wocky_test
   command: make unittest
