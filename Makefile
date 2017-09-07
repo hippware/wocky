@@ -1,4 +1,4 @@
-.PHONY: help
+.PHONY: help unittest inttest release build push deploy migrate shipit
 
 VERSION ?= $(shell elixir ./version.exs)
 IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
