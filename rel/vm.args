@@ -2,7 +2,7 @@
 ## ex: ts=4 sw=4 ft=sh et
 
 ## Name of the node
--sname wocky
+-name wocky@${KUBE_POD_IP}
 
 ## Cookie for distributed erlang
 -setcookie ejabberd
@@ -24,3 +24,6 @@
 
 ## With lager sasl reports are redundant so turn them off
 -sasl sasl_error_logger false
+
+## Use port 9001 only for distribution
+-kernel inet_dist_listen_min 9100 inet_dist_listen_max 9100

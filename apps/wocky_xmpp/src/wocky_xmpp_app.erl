@@ -66,6 +66,8 @@ start(_StartType, _StartArgs) ->
     {ok, CfgPath} = load_xmpp_config(),
     ok = start_ejabberd(CfgPath),
 
+    ok = maybe_join_cluster(),
+
     wocky_sup:start_link().
 
 stop(_State) ->
@@ -112,3 +114,19 @@ start_ejabberd(CfgPath) ->
     ok = application:set_env(ejabberd, config, CfgPath),
     {ok, _} = application:ensure_all_started(ejabberd),
     ok.
+
+maybe_join_cluster() ->
+    Self = node(),
+    case lists:sort(erlang:nodes([visible, this])) of
+        [] -> ok;
+        [Self | _] -> ok;
+        [First | _] -> join_cluster(First)
+    end.
+
+join_cluster(Node) ->
+    Name = atom_to_list(Node),
+    case ejabberd_commands:execute_command(join_cluster, [Name]) of
+        {ok, Message} -> lager:info(Message);
+        {alread_joined, Message} -> lager:info(Message);
+        Error -> lager:error("Failed to join cluster: ~p", [Error])
+    end.

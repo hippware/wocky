@@ -26,5 +26,9 @@ wocky_rel:
   build:
     context: .
     dockerfile: Dockerfile.release
-    image: hippware/wocky:latest
+    image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
   cached: true
+aws_dockercfg:
+  image: codeship/aws-ecr-dockercfg-generator
+  add_docker: true
+  encrypted_env_file: aws.env.encrypted
