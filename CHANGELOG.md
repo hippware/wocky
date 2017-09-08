@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Support for Kubernetes deployment (PR #908)
+
+
 # 1.0.2630-r012b3c0 - 2017-09-06
 
 * Fix Firebase ID (PR #922)
