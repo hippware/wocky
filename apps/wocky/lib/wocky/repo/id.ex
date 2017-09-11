@@ -46,11 +46,7 @@ defmodule Wocky.Repo.ID do
   def valid?(id) do
     case UUID.dump(id) do
       {:ok, _} -> true
-      :error ->
-        case UUID.load(id) do
-          {:ok, _} -> true
-          :error -> false
-        end
+      :error -> false
     end
   end
 end
