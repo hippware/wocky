@@ -1,5 +1,5 @@
 # vim: set noexpandtab ts=2 sw=2:
-.PHONY: help unittest inttest release build push deploy migrate shipit restart pods top exec console shell describe logs follow
+.PHONY: help unittest inttest release build push deploy migrate shipit restart pods status top exec console shell describe logs follow
 
 VERSION ?= $(shell elixir ./version.exs)
 IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
@@ -55,6 +55,9 @@ restart: ## Do a rolling restart of the running pods
 
 pods: ## Return a list of running pods
 	@kubectl get pods -n $(KUBE_NS) -l 'app=wocky' -o jsonpath='{.items[].metadata.name}'
+
+status: ## Show the deployment status
+	@kubectl get deployments,pods -n $(KUBE_NS) -l 'app=wocky'
 
 top: ## Show resource usage for app pods
 	@kubectl top pod -n $(KUBE_NS) -l 'app=wocky'
