@@ -6,7 +6,7 @@ metadata:
 data:
   WOCKY_ENV: prod
   WOCKY_INST: staging
-  WOCKY_HOST: staging.prod.tinyrobot.com
+  WOCKY_HOST: staging.dev.tinyrobot.com
   WOCKY_IQ_CRASH_RESPONSE: error
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-staging
   WOCKY_S3_REGION: us-west-2

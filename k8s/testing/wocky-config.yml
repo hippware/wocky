@@ -6,7 +6,7 @@ metadata:
 data:
   WOCKY_ENV: prod
   WOCKY_INST: testing
-  WOCKY_HOST: testing.prod.tinyrobot.com
+  WOCKY_HOST: testing.dev.tinyrobot.com
   WOCKY_IQ_CRASH_RESPONSE: error_with_dump
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-testing
   WOCKY_S3_REGION: us-west-2
