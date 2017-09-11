@@ -1,4 +1,5 @@
-.PHONY: help unittest inttest release build push deploy migrate shipit
+# vim: set noexpandtab ts=2 sw=2:
+.PHONY: help unittest inttest release build push deploy migrate shipit restart pods top exec console shell describe logs follow
 
 VERSION ?= $(shell elixir ./version.exs)
 IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
@@ -47,3 +48,45 @@ migrate: ## Run the database migrations in a k8s job
 	kubectl create -f k8s/wocky-migration-job.yml -n $(KUBE_NS)
 
 shipit: build push deploy ## Build, push and deploy the image
+
+restart: ## Do a rolling restart of the running pods
+	@kubectl patch deployment wocky -n $(KUBE_NS) \
+		-p'{"spec":{"template":{"spec":{"containers":[{"name":"wocky","env":[{"name":"RESTART_","value":"$(date -uIseconds)"}]}]}}}}'
+
+pods: ## Return a list of running pods
+	@kubectl get pods -n $(KUBE_NS) -l 'app=wocky' -o jsonpath='{.items[].metadata.name}'
+
+top: ## Show resource usage for app pods
+	@kubectl top pod -n $(KUBE_NS) -l 'app=wocky'
+
+define first-pod
+$(shell kubectl get pods -n $(KUBE_NS) -l 'app=wocky' -o jsonpath='{.items[0].metadata.name}')
+endef
+
+define do-exec
+kubectl exec -it -n $(KUBE_NS) $(POD) $(1)
+endef
+
+exec: POD ?= $(first-pod)
+exec: ## Execute $CMD on a pod
+	$(call do-exec,$(CMD))
+
+console: POD ?= $(first-pod)
+console: ## Start an Iex remote console on a pod
+	@$(call do-exec,bin/wocky remote_console)
+
+shell: POD ?= $(first-pod)
+shell: ## Start a shell on a pod
+	@$(call do-exec,/bin/sh)
+
+describe: POD ?= $(first-pod)
+describe: ## Describe the current release on a pod
+	@$(call do-exec,bin/wocky describe)
+
+logs: POD ?= $(first-pod)
+logs: ## Show the logs for a pod
+	@kubectl logs -n $(KUBE_NS) $(POD)
+
+follow: POD ?= $(first-pod)
+follow: ## Follow the logs for a pod
+	@kubectl logs -n $(KUBE_NS) -f $(POD)
