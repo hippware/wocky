@@ -67,26 +67,36 @@ define do-exec
 kubectl exec -it -n $(KUBE_NS) $(POD) $(1)
 endef
 
+define print-pod
+@echo "Pod: $(POD)"
+@echo ""
+endef
+
 exec: POD ?= $(first-pod)
 exec: ## Execute $CMD on a pod
 	$(call do-exec,$(CMD))
 
 console: POD ?= $(first-pod)
 console: ## Start an Iex remote console on a pod
+	@$(call print-pod)
 	@$(call do-exec,bin/wocky remote_console)
 
 shell: POD ?= $(first-pod)
 shell: ## Start a shell on a pod
+	@$(call print-pod)
 	@$(call do-exec,/bin/sh)
 
 describe: POD ?= $(first-pod)
 describe: ## Describe the current release on a pod
+	@$(call print-pod)
 	@$(call do-exec,bin/wocky describe)
 
 logs: POD ?= $(first-pod)
 logs: ## Show the logs for a pod
+	@$(call print-pod)
 	@kubectl logs -n $(KUBE_NS) $(POD)
 
 follow: POD ?= $(first-pod)
 follow: ## Follow the logs for a pod
+	@$(call print-pod)
 	@kubectl logs -n $(KUBE_NS) -f $(POD)
