@@ -80,13 +80,14 @@ defmodule Wocky.Repo.IDSpec do
 
   describe "valid?/1" do
     it "returns true if the user ID is valid" do
-      [ID.new(:v1), :v1 |> ID.new |> ID.to_binary!,
-       ID.new(:v4), :v4 |> ID.new |> ID.to_binary!]
+      [ID.new(:v1), :v1 |> ID.new |> ID.to_string!,
+       ID.new(:v4), :v4 |> ID.new |> ID.to_string!]
       |> Enum.each(fn id -> id |> ID.valid? |> should(be_true()) end)
     end
 
     it "returns false if the user ID is not valid" do
       "alice" |> ID.valid? |> should(be_false())
+      "hello world url!" |> ID.valid? |> should(be_false())
     end
   end
 end
