@@ -13,18 +13,10 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '443,5223,5285'
 spec:
   ports:
-    - port: 80
-      targetPort: 8080
-      protocol: TCP
-      name: http
     - port: 443
       targetPort: 8080
       protocol: TCP
       name: https
-    - port: 5222
-      targetPort: 5222
-      protocol: TCP
-      name: xmpp
     - port: 5223
       targetPort: 5222
       protocol: TCP
