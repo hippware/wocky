@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Support for Kubernetes deployment (PR #908)
+* Don't validate binary UUIDs (PR #942)
 
 
 # 1.0.2630-r012b3c0 - 2017-09-06
