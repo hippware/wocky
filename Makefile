@@ -51,7 +51,7 @@ shipit: build push deploy ## Build, push and deploy the image
 
 restart: ## Do a rolling restart of the running pods
 	@kubectl patch deployment wocky -n $(KUBE_NS) \
-		-p'{"spec":{"template":{"spec":{"containers":[{"name":"wocky","env":[{"name":"RESTART_","value":"$(date -uIseconds)"}]}]}}}}'
+		-p'{"spec":{"template":{"spec":{"containers":[{"name":"wocky","env":[{"name":"RESTART_","value":"$(shell date -u)"}]}]}}}}'
 
 pods: ## Return a list of running pods
 	@kubectl get pods -n $(KUBE_NS) -l 'app=wocky' -o jsonpath='{.items[].metadata.name}'
