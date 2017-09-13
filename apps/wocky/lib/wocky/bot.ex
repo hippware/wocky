@@ -31,6 +31,8 @@ defmodule Wocky.Bot do
     # Bot type (freeform string from server's perspective)
     field :address,          :string, default: ""
     # Free-form string field describing bot's location
+    field :address_data,     :string, default: ""
+    # Opaque field containing adress related information
     field :location,         Geo.Point # Location
     field :radius,           :float   # Radius of bot circle
     field :public,           :boolean # Visibility of bot
