@@ -207,9 +207,7 @@ create(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         % Successfully create a bot
-        ct:pal("~p~n", [create_stanza()]),
         Stanza = expect_iq_success(create_stanza(), Alice),
-        ct:pal("~p~n", [Stanza]),
         check_returned_bot(Stanza, expected_create_fields()),
 
         % No home stream updates should occur for private bots
