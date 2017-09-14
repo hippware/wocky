@@ -215,7 +215,6 @@ defmodule Wocky.RosterItem do
     |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
     |> with_subscriptions(groups)
-    |> Blocking.not_blocked_query()
     |> Blocking.object_visible_query(requester_id, :contact_id)
   end
 
@@ -326,26 +325,18 @@ defmodule Wocky.RosterItem do
     verstr <> "-" <> Integer.to_string(count)
   end
 
-  defp is_friend(%RosterItem{subscription: :both,
-                             groups: groups}) do
-    ! Enum.member?(groups, Blocking.blocked_group)
-  end
+  defp is_friend(%RosterItem{subscription: :both}), do: true
   defp is_friend(_), do: false
 
   # Returns true if the roster item referrs to a follower of the item owner
-  defp is_follower(%RosterItem{subscription: subscription,
-                               groups: groups}) do
+  defp is_follower(%RosterItem{subscription: subscription}) do
     (subscription == :both || subscription == :from)
-    &&
-    ! Enum.member?(groups, Blocking.blocked_group)
   end
+  defp is_follower(_), do: false
 
   # Returns true if the roster item referrs to a followee of the item owner
-  defp is_followee(%RosterItem{subscription: subscription,
-                               groups: groups}) do
+  defp is_followee(%RosterItem{subscription: subscription}) do
     (subscription == :both || subscription == :to)
-    &&
-    ! Enum.member?(groups, Blocking.blocked_group)
   end
   defp is_followee(_), do: false
 

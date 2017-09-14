@@ -336,17 +336,8 @@ defmodule Wocky.RosterItemSpec do
   describe "followers/1" do
     before do
       blocked_follower = Factory.insert(:user, %{server: shared.server})
-      Factory.insert(
-        :roster_item,
-        user_id: shared.user.id,
-        contact_id: blocked_follower.id,
-        subscription: :from,
-        groups: [Blocking.blocked_group()])
-      Factory.insert(
-        :roster_item,
-        user_id: blocked_follower.id,
-        subscription: :to,
-        contact_id: shared.user.id)
+      RosterHelper.follow(blocked_follower, shared.user)
+      Blocking.block(shared.user, blocked_follower)
       :ok
     end
 
@@ -412,15 +403,8 @@ defmodule Wocky.RosterItemSpec do
   describe "friends/1" do
     before do
       blocked_friend = Factory.insert(:user, %{server: shared.server})
-      Factory.insert(
-        :roster_item,
-        user_id: shared.user.id,
-        contact_id: blocked_friend.id,
-        groups: [Blocking.blocked_group()])
-      Factory.insert(
-        :roster_item,
-        user_id: blocked_friend.id,
-        contact_id: shared.user.id)
+      RosterHelper.make_friends(blocked_friend, shared.user)
+      Blocking.block(shared.user, blocked_friend)
       :ok
     end
 
