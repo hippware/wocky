@@ -34,9 +34,7 @@ defmodule Wocky.HomeStreamItemSpec do
         put_result = HomeStreamItem.put(shared.user.id,
                                         key,
                                         from_jid,
-                                        stanza,
-                                        nil,
-                                        nil)
+                                        stanza)
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
@@ -56,9 +54,7 @@ defmodule Wocky.HomeStreamItemSpec do
         put_result = HomeStreamItem.put(shared.user.id,
                                         shared.last_item.key,
                                         shared.last_item.from_jid,
-                                        stanza,
-                                        nil,
-                                        nil)
+                                        stanza)
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
@@ -77,8 +73,8 @@ defmodule Wocky.HomeStreamItemSpec do
                                         shared.last_item.key,
                                         shared.last_item.from_jid,
                                         Lorem.paragraph,
-                                        ref_user.id,
-                                        ref_bot.id)
+                                        ref_user_id: ref_user.id,
+                                        ref_bot_id: ref_bot.id)
 
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
@@ -94,16 +90,14 @@ defmodule Wocky.HomeStreamItemSpec do
                            shared.last_item.key,
                            shared.last_item.from_jid,
                            Lorem.paragraph,
-                           ID.new,
-                           nil)
+                           ref_user_id: ID.new)
                            |> should(be_error_result())
 
         HomeStreamItem.put(shared.user.id,
                            shared.last_item.key,
                            shared.last_item.from_jid,
                            Lorem.paragraph,
-                           nil,
-                           ID.new)
+                           ref_bot_id: ID.new)
                            |> should(be_error_result())
       end
     end

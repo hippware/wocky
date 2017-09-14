@@ -97,8 +97,7 @@ defmodule Wocky.Blocking do
     # Wrap in a transaction so that if two users block each other
     # at the same time, the final result will at least be consistant
     # with one user as the blocker and one as the blockee
-    try do
-      Repo.transaction(
+    Repo.transaction(
       fn() ->
         [
           %{
@@ -120,10 +119,9 @@ defmodule Wocky.Blocking do
         ]
         |> Enum.each(&RosterItem.put/1)
       end)
-      :ok
-    rescue
-      _ -> :ok
-    end
+    :ok
+  rescue
+    _ -> :ok
   end
 
   defp delete_bot_references(a, b) do

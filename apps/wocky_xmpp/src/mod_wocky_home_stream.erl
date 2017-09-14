@@ -70,8 +70,8 @@ publish(UserJID = #jid{luser = UserID}, From, {ID, RefUser, RefBot}, Stanza) ->
     {ok, ItemMap} = ?wocky_home_stream_item:put(UserID, ID,
                                                 jid:to_binary(From),
                                                 exml:to_binary(Stanza),
-                                                get_id(RefUser),
-                                                get_id(RefBot)
+                                                [{ref_user_id, get_id(RefUser)},
+                                                 {ref_bot_id, get_id(RefBot)}]
                                                ),
     send_notifications(UserJID, map_to_item(ItemMap)).
 

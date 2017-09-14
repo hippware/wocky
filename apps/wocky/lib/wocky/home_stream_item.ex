@@ -43,16 +43,16 @@ defmodule Wocky.HomeStreamItem do
                    reference_user_id: nil, reference_bot_id: nil]
 
   @doc "Write a home stream item to the database"
-  @spec put(User.id, key, binary, binary, User.id | nil, Bot.id | nil)
+  @spec put(User.id, key, binary, binary, Keyword.t)
   :: {:ok, t} | {:error, term}
-  def put(user_id, key, from_jid, stanza, ref_user_id \\ nil, ref_bot_id \\ nil) do
+  def put(user_id, key, from_jid, stanza, opts \\ []) do
     fields = %{
       user_id: user_id,
       key: key,
       from_jid: from_jid,
       stanza: stanza,
-      reference_user_id: ref_user_id,
-      reference_bot_id: ref_bot_id
+      reference_user_id: Keyword.get(opts, :ref_user_id),
+      reference_bot_id: Keyword.get(opts, :ref_bot_id)
     }
 
     %HomeStreamItem{}
