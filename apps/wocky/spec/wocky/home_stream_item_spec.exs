@@ -129,7 +129,7 @@ defmodule Wocky.HomeStreamItemSpec do
     end
   end
 
-  describe "delete_by_user_ref/1" do
+  describe "deletion by reference" do
     before do
       ref_user = Factory.insert(:user)
       ref_bot = Factory.insert(:bot, %{user: ref_user})
@@ -178,6 +178,52 @@ defmodule Wocky.HomeStreamItemSpec do
 
       other |> should(have_length(2 * @num_items))
       Enum.each(other, fn(i) -> i.deleted |> should(be_false()) end)
+    end
+
+    context "deletion of items for users who can no longer see the bot" do
+      before do
+        shared_to_user = Factory.insert(:user)
+        for _ <- 1..@num_items do
+          Factory.insert(:home_stream_item,
+                         %{user: shared_to_user,
+                           reference_bot: shared.ref_bot})
+          Factory.insert(:home_stream_item,
+                         %{user: shared.ref_user,
+                           reference_bot: shared.ref_bot})
+        end
+        Factory.insert(:share, %{bot: shared.ref_bot,
+                                 sharer: shared.ref_user,
+                                 user: shared_to_user})
+
+        result = HomeStreamItem.delete_by_bot_ref_invisible(shared.ref_bot)
+
+        {:ok, result: result, shared_to_user: shared_to_user}
+      end
+
+      it "should return ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should remove referenced items from unshared-to users" do
+        shared.user.id
+        |> HomeStreamItem.get
+        |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
+        |> should(eq [])
+      end
+
+      it "should not affect the items of users to whom the bot is shared" do
+        shared.shared_to_user.id
+        |> HomeStreamItem.get
+        |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
+        |> should(have_length(@num_items))
+      end
+
+      it "should not affect the items of the bot owner" do
+        shared.ref_user.id
+        |> HomeStreamItem.get
+        |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
+        |> should(have_length(@num_items))
+      end
     end
   end
 

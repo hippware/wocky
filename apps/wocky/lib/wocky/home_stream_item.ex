@@ -6,6 +6,7 @@ defmodule Wocky.HomeStreamItem do
   use Wocky.Repo.Model
 
   alias Wocky.Bot
+  alias Wocky.Bot.Share
   alias Wocky.User
   alias __MODULE__, as: HomeStreamItem
 
@@ -99,11 +100,38 @@ defmodule Wocky.HomeStreamItem do
     :ok
   end
 
-  @spec delete_by_user_ref(Bot.t) :: :ok
+  @spec delete_by_bot_ref(Bot.t) :: :ok
   def delete_by_bot_ref(bot) do
     HomeStreamItem
     |> where(reference_bot_id: ^bot.id)
     |> Repo.update_all(set: @delete_changes)
+    :ok
+  end
+
+  @doc """
+  Marks as deleted all home stream items referencing the given bot where the
+  item's owner is not able to view the bot
+  """
+  @spec delete_by_bot_ref_invisible(Bot.t) :: :ok
+  def delete_by_bot_ref_invisible(%Bot{public: true}), do: :ok
+  def delete_by_bot_ref_invisible(bot) do
+    Repo.transaction fn ->
+      HomeStreamItem
+      |> join(:left, [i], s in Share,
+              s.user_id == i.user_id
+              and s.bot_id == ^bot.id)
+      |> where([i, s],
+               i.reference_bot_id == ^bot.id
+               and is_nil(s.user_id)
+               and i.user_id != ^bot.user_id)
+      |> Repo.stream
+      |> Stream.each(fn(item) ->
+        item
+        |> changeset(Map.new(@delete_changes))
+        |> Repo.update
+      end)
+      |> Stream.run
+    end
     :ok
   end
 

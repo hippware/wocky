@@ -13,7 +13,9 @@
 
 -export([handle_share/3,
          notify_new_viewers/4,
-         maybe_notify_subscribers/3]).
+         maybe_notify_subscribers/3,
+         clean_home_streams/3
+        ]).
 
 
 %%%===================================================================
@@ -138,3 +140,13 @@ desc_change_stanza(NewBot, OldDesc, User) ->
 
 maybe_new_tag(<<>>) ->  [#xmlel{name = <<"new">>}];
 maybe_new_tag(_) -> [].
+
+%%%===================================================================
+%%% Remove home stream items referencing a bot from users who have lost
+%%% access to it.
+%%%===================================================================
+
+-spec clean_home_streams(Bot :: ?wocky_bot:t(), boolean(), boolean()) -> ok.
+clean_home_streams(Bot, true, false) ->
+    ?wocky_home_stream_item:delete_by_bot_ref_unshared(Bot);
+clean_home_streams(_, _, _) -> ok.

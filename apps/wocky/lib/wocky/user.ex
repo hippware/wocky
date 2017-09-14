@@ -382,10 +382,10 @@ defmodule Wocky.User do
   @doc "Removes the user from the database"
   @spec delete(id) :: :ok | no_return
   def delete(id) do
-    User
-    |> where(username: ^id)
-    |> Repo.delete_all
+    user = Repo.get(User, id)
 
+    user && HomeStreamItem.delete_by_user_ref(user)
+    user && Repo.delete!(user)
     :ok = Index.remove(:user, id)
   end
 
