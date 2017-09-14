@@ -44,16 +44,24 @@ defmodule Wocky.Bot.ItemSpec do
 
   describe "database operations" do
     before do
-      owner = Factory.insert(:user)
+      [owner, author] = Factory.insert_list(2, :user)
       bot = Factory.insert(:bot, user: owner)
       item = Factory.insert(:item, bot: bot, user: owner)
+      item2 = Factory.insert(:item, bot: bot, user: author)
 
-      {:ok, owner: owner, bot: bot, id: item.id, item: item}
+      {:ok,
+       owner: owner,
+       author: author,
+       bot: bot,
+       id: item.id,
+       item: item,
+       item2: item2
+      }
     end
 
     describe "get/1" do
       it "should return a list of items" do
-        Item.get(shared.bot) |> should(have_count 1)
+        Item.get(shared.bot) |> should(have_count 2)
       end
 
       it "should return an empty list when the bot does not exist" do
@@ -70,7 +78,7 @@ defmodule Wocky.Bot.ItemSpec do
       end
 
       it "should return total item count including images" do
-        Item.get_count(shared.bot) |> should(eq 3)
+        Item.get_count(shared.bot) |> should(eq 4)
       end
     end
 
@@ -210,6 +218,22 @@ defmodule Wocky.Bot.ItemSpec do
         end
       end
 
+      context "for an author" do
+        before do
+          result = Item.delete(shared.bot, shared.author)
+          {:ok, result: result}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should remove the item" do
+          Item.get(shared.bot, shared.item2.id) |> should(be_nil())
+        end
+
+      end
+
       it "should return :ok when the bot doesn't exist" do
         bot = Factory.build(:bot)
         Item.delete(bot, shared.id)
@@ -218,6 +242,11 @@ defmodule Wocky.Bot.ItemSpec do
 
       it "should return :ok when the id doesn't exist" do
         Item.delete(shared.bot, ID.new)
+        |> should(eq :ok)
+      end
+
+      it "should return :ok when the user doesn't exist" do
+        Item.delete(shared.bot, Factory.build(:user))
         |> should(eq :ok)
       end
     end

@@ -20,10 +20,9 @@
 %%% Action - bot shared
 %%%===================================================================
 
-handle_share(_From, _To, error) -> drop;
-handle_share(From, To, BotJID) ->
+handle_share(_From, _To, none) -> drop;
+handle_share(From, To, Bot) ->
     Result = do([error_m ||
-                 Bot <- wocky_bot_util:get_bot_from_jid(BotJID),
                  Sharer <- wocky_bot_util:get_user_from_jid(From),
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),

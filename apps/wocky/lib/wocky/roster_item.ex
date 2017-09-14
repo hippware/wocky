@@ -35,6 +35,8 @@ defmodule Wocky.RosterItem do
 
   alias Ecto.Adapters.SQL
   alias Ecto.UUID
+  alias Wocky.Blocking
+  alias Wocky.Repo
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
   alias Wocky.User
@@ -77,7 +79,6 @@ defmodule Wocky.RosterItem do
   }
 
   @change_fields [:user_id, :contact_id, :name, :ask, :subscription, :groups]
-  @blocked_group "__blocked__"
 
   @doc "Write a roster record to the database"
   @spec put(map)
@@ -105,6 +106,10 @@ defmodule Wocky.RosterItem do
     |> Repo.get_by(user_id: user_id)
   end
 
+  @doc """
+  Returns the pair of roster items for a/b if they exist. a's item for
+  b will always be the first of the pair
+  """
   @spec get_pair(User.id, User.id) :: {t, t} | nil
   def get_pair(a, b) do
     RosterItem
@@ -171,8 +176,7 @@ defmodule Wocky.RosterItem do
   @spec followers(User.id) :: [User.t]
   def followers(user_id) do
     user_id
-    |> followers_query()
-    |> select([u, r], u)
+    |> followers_query(user_id)
     |> Repo.all
   end
 
@@ -180,44 +184,39 @@ defmodule Wocky.RosterItem do
   @spec followees(User.id) :: [User.t]
   def followees(user_id) do
     user_id
-    |> followees_query()
-    |> select([u, r], u)
+    |> followees_query(user_id)
     |> Repo.all
   end
 
   @spec friends(User.id) :: [User.t]
   def friends(user_id) do
     user_id
-    |> friends_query()
-    |> select([u, r], u)
+    |> friends_query(user_id)
     |> Repo.all
   end
 
-  @spec followers_query(User.id) :: Ecto.queryable
-  def followers_query(user_id) do
+  @spec followers_query(User.id, User.id) :: Ecto.queryable
+  def followers_query(user_id, requester_id) do
+    relationships_query(user_id, requester_id, [:both, :from])
+  end
+
+  @spec followees_query(User.id, User.id) :: Ecto.queryable
+  def followees_query(user_id, requester_id) do
+    relationships_query(user_id, requester_id, [:both, :to])
+  end
+
+  @spec friends_query(User.id, User.id) :: Ecto.queryable
+  def friends_query(user_id, requester_id) do
+    relationships_query(user_id, requester_id, [:both])
+  end
+
+  defp relationships_query(user_id, requester_id, groups) do
     User
     |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
-    |> with_subscriptions([:both, :from])
-    |> not_blocked()
-  end
-
-  @spec followees_query(User.id) :: Ecto.queryable
-  def followees_query(user_id) do
-    User
-    |> join(:left, [u], r in RosterItem, u.id == r.user_id)
-    |> where([u, r], r.contact_id == ^user_id)
-    |> with_subscriptions([:both, :from])
-    |> not_blocked()
-  end
-
-  @spec friends_query(User.id) :: Ecto.queryable
-  def friends_query(user_id) do
-    User
-    |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
-    |> where([u, r], r.user_id == ^user_id)
-    |> with_subscriptions([:both])
-    |> not_blocked()
+    |> with_subscriptions(groups)
+    |> Blocking.not_blocked_query()
+    |> Blocking.object_visible_query(requester_id, :contact_id)
   end
 
   @doc """
@@ -227,24 +226,6 @@ defmodule Wocky.RosterItem do
   @spec is_friend(User.id, User.id) :: boolean
   def is_friend(user_id, contact_id) do
     user_id |> get(contact_id) |> is_friend
-  end
-
-  @doc """
-  Returns true if user1 and user2 are friends and neither has the other
-  blocked
-  """
-  @spec is_unblocked_friend(User.id, User.id) :: boolean
-  def is_unblocked_friend(user1, user2) do
-    call_stored_relationship_proc(user1, user2, "is_unblocked_friend")
-  end
-
-  @doc """
-  Returns true if user1 is a follower of user2 and user2 does not have user1
-  blocked
-  """
-  @spec is_unblocked_follower(User.id, User.id) :: boolean
-  def is_unblocked_follower(user1, user2) do
-    call_stored_relationship_proc(user1, user2, "is_unblocked_follower")
   end
 
   def call_stored_relationship_proc(user1, user2, proc) do
@@ -292,7 +273,6 @@ defmodule Wocky.RosterItem do
     :ok
   end
 
-  def blocked_group, do: @blocked_group
 
   defp with_user(query, user_id) do
     from r in query, where: r.user_id == ^user_id
@@ -304,10 +284,6 @@ defmodule Wocky.RosterItem do
 
   defp with_subscriptions(query, sub_types) do
     from [u, r] in query, where: r.subscription in ^sub_types
-  end
-
-  defp not_blocked(query) do
-    from [u, r] in query, where: not @blocked_group in r.groups
   end
 
   defp with_ask(query, ask) do
@@ -352,7 +328,7 @@ defmodule Wocky.RosterItem do
 
   defp is_friend(%RosterItem{subscription: :both,
                              groups: groups}) do
-    ! Enum.member?(groups, @blocked_group)
+    ! Enum.member?(groups, Blocking.blocked_group)
   end
   defp is_friend(_), do: false
 
@@ -361,7 +337,7 @@ defmodule Wocky.RosterItem do
                                groups: groups}) do
     (subscription == :both || subscription == :from)
     &&
-    ! Enum.member?(groups, @blocked_group)
+    ! Enum.member?(groups, Blocking.blocked_group)
   end
 
   # Returns true if the roster item referrs to a followee of the item owner
@@ -369,7 +345,7 @@ defmodule Wocky.RosterItem do
                                groups: groups}) do
     (subscription == :both || subscription == :to)
     &&
-    ! Enum.member?(groups, @blocked_group)
+    ! Enum.member?(groups, Blocking.blocked_group)
   end
   defp is_followee(_), do: false
 

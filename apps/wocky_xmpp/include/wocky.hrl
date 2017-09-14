@@ -41,6 +41,7 @@
 
 %% Elixir module names
 -define(wocky_firebase,          'Elixir.Wocky.Auth.Firebase').
+-define(wocky_blocking,          'Elixir.Wocky.Blocking').
 -define(wocky_bot,               'Elixir.Wocky.Bot').
 -define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').
 -define(wocky_item,              'Elixir.Wocky.Bot.Item').
@@ -48,6 +49,7 @@
 -define(wocky_subscription,      'Elixir.Wocky.Bot.Subscription').
 -define(wocky_temp_subscription, 'Elixir.Wocky.Bot.TempSubscription').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
+-define(wocky_home_stream_id,    'Elixir.Wocky.HomeStreamID').
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
 -define(wocky_initial_contact,   'Elixir.Wocky.InitialContact').
 -define(wocky_repo,              'Elixir.Wocky.Repo').

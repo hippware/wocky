@@ -106,10 +106,15 @@ default_list_items(LUser, LServer) ->
                          action = allow, order = 5},
 
      %% Block the __no_presence__ and __blocked groups
-     BaseRecord#listitem{type = group, value = <<"__no_presence__">>,
+     BaseRecord#listitem{type = group,
+                         value = <<"__no_presence__">>,
                          action = deny, order = 10},
-     BaseRecord#listitem{type = group, value = <<"__blocked__">>,
+     BaseRecord#listitem{type = group,
+                         value = ?wocky_blocking:blocked_group(),
                          action = deny, order = 15},
+     BaseRecord#listitem{type = group,
+                         value = ?wocky_blocking:blocked_by_group(),
+                         action = deny, order = 20},
 
      %% Allow messages and presences between friends
      BaseRecord#listitem{type = subscription, value = both,

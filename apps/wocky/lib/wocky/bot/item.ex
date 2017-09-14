@@ -96,11 +96,20 @@ defmodule Wocky.Bot.Item do
     :ok
   end
 
-  @spec delete(Bot.t, id) :: :ok
-  def delete(bot, id) do
+  @spec delete(Bot.t, id | User.t) :: :ok
+  def delete(bot, id) when is_binary(id) do
     bot
     |> assoc(:items)
     |> where(id: ^id)
+    |> Repo.delete_all
+
+    :ok
+  end
+
+  def delete(bot, %User{id: id}) do
+    bot
+    |> assoc(:items)
+    |> where(user_id: ^id)
     |> Repo.delete_all
 
     :ok

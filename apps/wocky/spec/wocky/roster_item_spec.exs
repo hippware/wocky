@@ -3,23 +3,30 @@ defmodule Wocky.RosterItemSpec do
 
   alias Faker.Lorem
   alias Faker.Name
+  alias Wocky.Blocking
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
 
   before do
     # A user with 5 contacts in a randomised subset of 5 groups
-    user = Factory.insert(:user, %{server: shared.server})
+    user = Factory.insert(:user)
     contacts = for _ <- 1..5 do
-      Factory.insert(:user, %{server: shared.server})
+      Factory.insert(:user)
     end
     groups = for _ <- 1..5, do: Lorem.word
     roster_pairs = Enum.map(contacts, &insert_roster_pair(user, &1, groups))
 
-    rosterless_user = Factory.insert(:user, %{server: shared.server})
+    rosterless_user = Factory.insert(:user)
 
-    follower = Factory.insert(:user, %{server: shared.server})
-    followee = Factory.insert(:user, %{server: shared.server})
+    follower = Factory.insert(:user)
+    followee = Factory.insert(:user)
+
+    blocked_viewer = Factory.insert(:user)
+    Blocking.block(follower, blocked_viewer)
+    Blocking.block(blocked_viewer, followee)
+
     insert_follower_pair(follower, followee)
 
     {:ok,
@@ -31,6 +38,7 @@ defmodule Wocky.RosterItemSpec do
      rosterless_user: rosterless_user,
      follower: follower,
      followee: followee,
+     blocked_viewer: blocked_viewer,
      groups: groups}
   end
 
@@ -261,18 +269,16 @@ defmodule Wocky.RosterItemSpec do
       |> should(be_true())
     end
 
-    it "should return false if the contact is in the __blocked__ group" do
-      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
+    it "should return false if the user has blocked the contact" do
+      Blocking.block(shared.user, shared.contact)
       RosterItem.is_friend(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
-    it "should return true if the user is in the contact's __blocked__ group" do
-      RosterItem.put(default_item(shared, user_id: shared.contact.id,
-                                          contact_id: shared.user.id,
-                                          groups: ["__blocked__"]))
+    it "should return true if the contact has blocked the user" do
+      Blocking.block(shared.contact, shared.user)
       RosterItem.is_friend(shared.user.id, shared.contact.id)
-      |> should(be_true())
+      |> should(be_false())
     end
 
     it "should return false if the contact does not have 'both' subscription" do
@@ -289,60 +295,22 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
-  describe "is_unblocked_friend/2" do
-    it "should return true when a user is subscribed" do
-      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
-      |> should(be_true())
-    end
-
-    it "should return false if the contact is in the __blocked__ group" do
-      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
-      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
-      |> should(be_false())
-    end
-
-    it "should return false if the user is in the contact's __blocked__ group" do
-      RosterItem.put(default_item(shared, user_id: shared.contact.id,
-                                          contact_id: shared.user.id,
-                                          groups: ["__blocked__"]))
-      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
-      |> should(be_false())
-    end
-
-    it "should return false if the contact does not have 'both' subscription" do
-      RosterItem.put(default_item(shared, subscription: :from))
-      RosterItem.is_unblocked_friend(shared.user.id, shared.contact.id)
-      |> should(be_false())
-    end
-
-    it "should return false for non-existant contacts" do
-      RosterItem.is_unblocked_friend(shared.user.id, ID.new)
-      |> should(be_false())
-      RosterItem.is_unblocked_friend(shared.user.id, shared.rosterless_user.id)
-      |> should(be_false())
-    end
-  end
-
-
   describe "is_follower/2" do
     it "should return true when a user is subscribed" do
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
-    it "should return false if the contact is in the __blocked__ group" do
-      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
+    it "should return false if the user has blocked the contact" do
+      Blocking.block(shared.user, shared.contact)
       RosterItem.is_follower(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
-    it "should return true if the user is in the contact's __blocked__ group" do
-      RosterItem.put(default_item(shared, user_id: shared.contact.id,
-                                          contact_id: shared.user.id,
-                                          subscription: :from,
-                                          groups: ["__blocked__"]))
+    it "should return false if the user is blocked by the contact" do
+      Blocking.block(shared.contact, shared.user)
       RosterItem.is_follower(shared.user.id, shared.contact.id)
-      |> should(be_true())
+      |> should(be_false())
     end
 
     it "should return true if the user has 'to' subscription" do
@@ -365,49 +333,6 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
-  describe "is_unblocked_follower/2" do
-    it "should return true when a user is subscribed" do
-      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
-      |> should(be_true())
-    end
-
-    it "should return false if the contact is in the __blocked__ group" do
-      RosterItem.put(default_item(shared, groups: ["__blocked__"]))
-      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
-      |> should(be_false())
-    end
-
-    it "should return true if the user is in the contact's __blocked__ group" do
-      RosterItem.put(default_item(shared, user_id: shared.contact.id,
-                                          contact_id: shared.user.id,
-                                          subscription: :from,
-                                          groups: ["__blocked__"]))
-      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
-      |> should(be_false())
-    end
-
-
-    it "should return true if the user has 'from' subscription" do
-      RosterItem.put(default_item(shared, subscription: :to))
-      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
-      |> should(be_true())
-    end
-
-    it "should return false if the user does not have 'both' or 'to' subscription" do
-      RosterItem.put(default_item(shared, subscription: :from))
-      RosterItem.is_unblocked_follower(shared.user.id, shared.contact.id)
-      |> should(be_false())
-    end
-
-    it "should return false for non-existant contacts" do
-      RosterItem.is_unblocked_follower(shared.user.id, ID.new)
-      |> should(be_false())
-      RosterItem.is_unblocked_follower(shared.user.id, shared.rosterless_user.id)
-      |> should(be_false())
-    end
-  end
-
-
   describe "followers/1" do
     before do
       blocked_follower = Factory.insert(:user, %{server: shared.server})
@@ -416,7 +341,7 @@ defmodule Wocky.RosterItemSpec do
         user_id: shared.user.id,
         contact_id: blocked_follower.id,
         subscription: :from,
-        groups: [RosterItem.blocked_group()])
+        groups: [Blocking.blocked_group()])
       Factory.insert(
         :roster_item,
         user_id: blocked_follower.id,
@@ -491,7 +416,7 @@ defmodule Wocky.RosterItemSpec do
         :roster_item,
         user_id: shared.user.id,
         contact_id: blocked_friend.id,
-        groups: [RosterItem.blocked_group()])
+        groups: [Blocking.blocked_group()])
       Factory.insert(
         :roster_item,
         user_id: blocked_friend.id,
@@ -518,6 +443,57 @@ defmodule Wocky.RosterItemSpec do
 
     it "should return an empty list for users with no contacts" do
       RosterItem.friends(shared.rosterless_user.id) |> should(eq [])
+    end
+  end
+
+  describe "followers_query/2" do
+    it "should return all followers" do
+      RosterItem.followers_query(shared.followee.id, shared.user.id)
+      |> Repo.all
+      |> should(eq [shared.follower])
+    end
+
+    it "should not return entries blocked by the requester" do
+      RosterItem.followers_query(shared.followee.id, shared.blocked_viewer.id)
+      |> Repo.all
+      |> should(eq [])
+    end
+  end
+
+  describe "followees_query/2" do
+    it "should return all followees" do
+      RosterItem.followees_query(shared.follower.id, shared.user.id)
+      |> Repo.all
+      |> should(eq [shared.followee])
+    end
+
+    it "should not return entries blocked by the requester" do
+      RosterItem.followees_query(shared.follower.id, shared.blocked_viewer.id)
+      |> Repo.all
+      |> should(eq [])
+    end
+  end
+
+  describe "friends_query/2" do
+    before do
+      blocked_friend = Factory.insert(:user, %{first_name: "BLOCKYMCBLOCK"})
+      insert_roster_pair(shared.user, blocked_friend, [Lorem.word])
+      Blocking.block(blocked_friend, shared.blocked_viewer)
+      {:ok, blocked_friend: blocked_friend}
+    end
+
+    it "should return all friends" do
+      RosterItem.friends_query(shared.user.id, shared.follower.id)
+      |> Repo.all
+      |> Enum.sort
+      |> should(eq Enum.sort([shared.blocked_friend | shared.contacts]))
+    end
+
+    it "should not return entries blocked by the requester" do
+      RosterItem.friends_query(shared.user.id, shared.blocked_viewer.id)
+      |> Repo.all
+      |> Enum.sort
+      |> should(eq shared.contacts)
     end
   end
 

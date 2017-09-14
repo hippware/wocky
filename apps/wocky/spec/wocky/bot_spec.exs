@@ -107,6 +107,21 @@ defmodule Wocky.BotSpec do
         |> should(eq bot())
       end
 
+      it "should work for retrieving by jid" do
+        bot()
+        |> Bot.to_jid
+        |> Bot.get
+        |> Repo.preload(:user)
+        |> should(eq bot())
+      end
+
+      it "should return nil for invalid bot jids" do
+        ""
+        |> JID.make(bot().server, "/notbot/" <> bot().id)
+        |> Bot.get
+        |> should(be_nil())
+      end
+
       it "should return nil for non-existant bots" do
         ID.new
         |> Bot.get

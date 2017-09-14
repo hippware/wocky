@@ -273,11 +273,11 @@ perform_access_action(get_bot, Bot, From, _ToJID, _IQ) ->
            {ok, BotEl}
        ]);
 
-perform_access_action(item_query, Bot, _From, _ToJID, IQ) ->
-    wocky_bot_item:query(Bot, IQ);
+perform_access_action(item_query, Bot, #{id := FromID}, _ToJID, IQ) ->
+    wocky_bot_item:query(Bot, IQ, FromID);
 
-perform_access_action(item_images, Bot, _From, _ToJID, IQ) ->
-    wocky_bot_item:query_images(Bot, IQ);
+perform_access_action(item_images, Bot, #{id := FromID}, _ToJID, IQ) ->
+    wocky_bot_item:query_images(Bot, IQ, FromID);
 
 perform_access_action(subscribe, Bot, From, _ToJID, _IQ) ->
     wocky_bot_subscription:subscribe(From, Bot);
@@ -523,8 +523,8 @@ handle_headline_packet(From, To, Stanza) ->
 
 handle_bot_stanza(From, To, BotStanza) ->
     case wocky_bot_util:bot_packet_action(BotStanza) of
-        {JIDBin, share} ->
-            wocky_bot_users:handle_share(From, To, jid:from_binary(JIDBin));
+        {Bot, share} ->
+            wocky_bot_users:handle_share(From, To, Bot);
         _ ->
             ok
     end.

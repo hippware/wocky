@@ -207,7 +207,7 @@ other_user_friends(Config) ->
           ?BOB,
           contact_request(<<"friend">>, #rsm_in{}),
           expect_iq_success(Alice),
-          check_returned_contacs(Config, [friend])
+          check_returned_contacts(Config, [friend])
          )
     end).
 
@@ -217,7 +217,7 @@ other_user_followers(Config) ->
           ?BOB,
           contact_request(<<"follower">>, #rsm_in{}),
           expect_iq_success(Alice),
-          check_returned_contacs(Config, [friend, follower])
+          check_returned_contacts(Config, [friend, follower])
          )
     end).
 
@@ -227,7 +227,7 @@ other_user_followees(Config) ->
           ?BOB,
           contact_request(<<"following">>, #rsm_in{}),
           expect_iq_success(Alice),
-          check_returned_contacs(Config, [friend, following])
+          check_returned_contacts(Config, [friend, following])
          )
     end).
 
@@ -686,7 +686,7 @@ insert_roster_pair(User1, User2, Dir1, Dir2) ->
                             contact_id => User2,
                             user_id => User1}).
 
-check_returned_contacs(Stanza, Config, Sets) ->
+check_returned_contacts(Stanza, Config, Sets) ->
     Users = lists:flatten([add_associations(proplists:get_value(S, Config), S)
                            || S <- Sets]),
 

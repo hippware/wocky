@@ -73,7 +73,7 @@ defmodule Wocky.Repo.Factory do
     %Item{
       id: ID.new,
       bot: build(:bot),
-      stanza: Lorem.sentence
+      stanza: "<text>" <> Lorem.sentence <> "</text>"
     }
   end
 
