@@ -329,7 +329,7 @@ check_attr(Name, Value, #xmlel{attrs = Attrs}) ->
 timeout() ->
     case ejabberd_config:get_local_option(tros_backend) of
         s3 -> 10000; % Extra time for S3 latency
-        _ -> 1000 % Default in escalus
+        _ -> 1500 % Default in escalus
     end.
 
 check_hs_result(Stanza, NumItems) ->

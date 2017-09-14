@@ -32,6 +32,8 @@ defmodule Wocky.Bot do
     # Bot type (freeform string from server's perspective)
     field :address,          :string, default: ""
     # Free-form string field describing bot's location
+    field :address_data,     :string, default: ""
+    # Opaque field containing adress related information
     field :location,         Geo.Point # Location
     field :radius,           :float   # Radius of bot circle
     field :public,           :boolean # Visibility of bot
@@ -56,8 +58,8 @@ defmodule Wocky.Bot do
 
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
-                  :image, :type, :address, :location, :radius, :public,
-                  :alerts, :follow_me, :follow_me_expiry, :tags]
+                  :image, :type, :address, :address_data, :location, :radius,
+                  :public, :alerts, :follow_me, :follow_me_expiry, :tags]
   @required_fields [:id, :server, :user_id, :title, :location, :radius]
 
   #----------------------------------------------------------------------

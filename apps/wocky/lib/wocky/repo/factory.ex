@@ -60,6 +60,7 @@ defmodule Wocky.Repo.Factory do
       image: TROS.make_url("localhost", ID.new),
       type: "test",
       address: Address.street_address,
+      address_data: "{name: foo}",
       location: GeoUtils.point(Address.longitude, Address.latitude),
       radius: :rand.uniform(100),
       public: false,
