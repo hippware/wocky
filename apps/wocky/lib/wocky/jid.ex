@@ -66,6 +66,15 @@ defmodule Wocky.JID do
   @spec from_binary(literal_jid) :: t | :error
   def from_binary(j), do: binary_to_jid1(j, [])
 
+  @spec replace_resource(t, resource) :: t | :error
+  def replace_resource(jid, resource) do
+    case resourceprep(resource) do
+        :error -> :error
+        {:ok, lresource} -> jid(jid, lresource: lresource, resource: resource)
+    end
+  end
+
+
   @spec binary_to_jid1(binary, [byte]) :: t | :error
   defp binary_to_jid1("@" <> _j, []), do: :error
   defp binary_to_jid1("/" <> _j, []), do: :error
@@ -118,6 +127,9 @@ defmodule Wocky.JID do
     end
     prefix <> server <> suffix
   end
+
+  @spec to_bare(t) :: t
+  def to_bare(jid), do: make(jid(jid, :user), jid(jid, :server), "")
 
   @spec nodeprep(server) :: {:ok, lserver} | :error
   defp nodeprep(s) when is_binary(s) and byte_size(s) < @sane_limit do

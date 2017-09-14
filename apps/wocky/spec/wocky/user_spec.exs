@@ -57,6 +57,12 @@ defmodule Wocky.UserSpec do
 
       it do: should(be_nil())
     end
+
+    context "when the jid has no user ID" do
+      subject do: "" |> JID.make(shared.server) |> User.get_by_jid
+
+      it do: should(be_nil())
+    end
   end
 
   describe "register_changeset/1 validations" do

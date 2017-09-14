@@ -60,12 +60,19 @@ stop(Host) ->
 %%% Publishing callback API
 %%%===================================================================
 
--spec publish(ejabberd:jid(), ejabberd:jid(), pub_item_id(),
+-spec publish(ejabberd:jid(),
+              ejabberd:jid(),
+              ?wocky_home_stream_id:id() | pub_item_id(),
               published_stanza()) -> ok.
-publish(UserJID = #jid{luser = User}, From, ID, Stanza) ->
-    {ok, ItemMap} = ?wocky_home_stream_item:put(User, ID,
+publish(UserJID, From, ID, Stanza) when is_binary(ID) ->
+    publish(UserJID, From, {ID, nil, nil}, Stanza);
+publish(UserJID = #jid{luser = UserID}, From, {ID, RefUser, RefBot}, Stanza) ->
+    {ok, ItemMap} = ?wocky_home_stream_item:put(UserID, ID,
                                                 jid:to_binary(From),
-                                                exml:to_binary(Stanza)),
+                                                exml:to_binary(Stanza),
+                                                [{ref_user_id, get_id(RefUser)},
+                                                 {ref_bot_id, get_id(RefBot)}]
+                                               ),
     send_notifications(UserJID, map_to_item(ItemMap)).
 
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
@@ -149,9 +156,17 @@ check_user_present(#jid{luser = _}) -> ok.
 %%
 %% * `continue` - continues on to the next check
 %% * `dont_publish` - stops checking immediately and does not publish
-%% * `{publish, {Drop, ID}` - publishes the packet with the supplied ID
-%%                            Drop may be `drop` or `keep` and controls whether
-%%                            the packet is dropped from further routing.
+%% * `{publish, {Drop, ID}}` - publishes the packet with the supplied ID
+%%                             Drop may be `drop` or `keep` and controls whether
+%%                             the packet is dropped from further routing.
+
+-type publish_check_cb() ::
+        fun((jlib:jid(), jlib:xmlel()) ->
+            continue |
+            dont_publish |
+            {publish, {drop | keep, ?wocky_home_stream_id:id()}}).
+
+-spec publish_checks() -> [publish_check_cb()].
 publish_checks() ->
     [
      fun check_publish_headline/2,
@@ -192,27 +207,34 @@ check_publish_bot(From, Stanza) ->
             publish_bot_action(From, BotEl)
     end.
 
-check_publish_bot_description(From, Stanza) ->
+check_publish_bot_description(_From, Stanza) ->
     BotEl = xml:get_path_s(Stanza, [{elem, <<"bot-description-changed">>},
                                     {elem, <<"bot">>}]),
     BotNS = xml:get_path_s(Stanza, [{elem, <<"bot-description-changed">>},
                                     {attr, <<"xmlns">>}]),
     BotID = wocky_bot_util:get_id_from_fields(BotEl),
+    Bot = case ?wocky_id:'valid?'(BotID) of
+              false -> nil;
+              true -> ?wocky_bot:get(BotID)
+          end,
+
     case BotNS of
-        ?NS_BOT when BotID =/= <<>> ->
-            {publish, {drop, bot_description_id(From, BotID)}};
+        ?NS_BOT when Bot =/= nil ->
+            {publish, {drop, ?wocky_home_stream_id:bot_description_id(Bot)}};
         _ ->
             continue
     end.
 
-check_publish_event(From, Stanza) ->
+check_publish_event(_From, Stanza) ->
     EventNS = xml:get_path_s(Stanza, [{elem, <<"event">>},
                                       {attr, <<"xmlns">>}]),
     BotNode = xml:get_path_s(Stanza, [{elem, <<"event">>},
                                       {attr, <<"node">>}]),
+    {Result, Bot} = wocky_bot_util:get_bot_from_node(BotNode),
+
     case EventNS of
-        ?NS_BOT_EVENT when BotNode =/= <<>> ->
-            {publish, {drop, bot_event_id(From, BotNode)}};
+        ?NS_BOT_EVENT when Result =:= ok ->
+            {publish, {drop, ?wocky_home_stream_id:bot_event_id(Bot)}};
         ?NS_PUBSUB_EVENT ->
             dont_publish;
         _ ->
@@ -226,23 +248,29 @@ check_publish_skip_notification(From, Stanza) ->
                                              {attr, <<"xmlns">>}]),
     case NotificationNS of
         ?NS_PUBLISHING -> dont_publish;
-        _  -> {publish, {keep, jid_message_id(From)}}
+        _  ->
+            User = ?wocky_user:get_by_jid(From),
+            {publish, {keep, ?wocky_home_stream_id:user_message_id(User)}}
     end.
 
 publish_bot_action(From, BotEl) ->
+    User = ?wocky_user:get_by_jid(From),
     Result =
     case wocky_bot_util:bot_packet_action(BotEl) of
-        {none, none}            -> {keep, jid_message_id(From)};
-        {JIDBin, show}          -> {drop, bot_id(JIDBin)};
-        {JIDBin, share}         -> {drop, bot_id(JIDBin)};
-        {_JIDBin, enter}        -> {drop, new_id()};
-        {_JIDBin, exit}         -> {drop, new_id()};
-        {JIDBin, follow_on}     -> {drop, jid_event_id(
-                                            JIDBin, <<"follow_on">>)};
-        {JIDBin, follow_off}    -> {drop, jid_event_id(
-                                            JIDBin, <<"follow_off">>)};
-        {JIDBin, follow_expire} -> {drop, jid_event_id(
-                                            JIDBin, <<"follow_expiry">>)}
+        {none, none}         -> {keep, ?wocky_home_stream_id:user_message_id(
+                                          User)};
+        {Bot, show}          -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
+        {Bot, share}         -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
+        {Bot, enter}         -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                          Bot, <<"enter">>, User)};
+        {Bot, exit}          -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                          Bot, <<"exit">>, User)};
+        {Bot, follow_on}     -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                          Bot, <<"follow_on">>)};
+        {Bot, follow_off}    -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                          Bot, <<"follow_off">>)};
+        {Bot, follow_expire} -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                          Bot, <<"follow_expiry">>)}
     end,
     {publish, Result}.
 
@@ -260,9 +288,6 @@ node_cleanup(Node) ->
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
-
-new_id() ->
-    ?wocky_id:new().
 
 map_to_item(#{key := Key, updated_at := UpdatedAt,
               from_jid := FromJID, stanza := StanzaBin,
@@ -302,18 +327,6 @@ check_server(Server) ->
         _ -> {error, not_local_server}
     end.
 
-bot_id(JIDBin) ->
-    JIDBin.
+get_id(nil) -> nil;
+get_id(Struct) -> maps:get(id, Struct).
 
-jid_event_id(JIDBin, Event) ->
-    <<JIDBin/binary, "/", Event/binary>>.
-
-bot_event_id(#jid{lserver = Server}, BotNode) ->
-    jid:to_binary(jid:make(<<>>, Server, <<BotNode/binary, "/event">>)).
-
-bot_description_id(#jid{lserver = Server}, BotID) ->
-    jid:to_binary(
-      jid:make(<<>>, Server, <<"bot/", BotID/binary, "/description">>)).
-
-jid_message_id(From) ->
-    jid:to_binary(jid:to_bare(From)).

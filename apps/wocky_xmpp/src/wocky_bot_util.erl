@@ -41,8 +41,13 @@ get_bot_from_jid(JID, IncludePending) ->
     BotID = ?wocky_bot:get_id_from_jid(JID),
     get_bot(BotID, IncludePending).
 
-get_bot_from_node(Attrs) -> get_bot_from_node(Attrs, false).
-get_bot_from_node(Attrs, IncludePending) ->
+get_bot_from_node(NodeOrAttrs) -> get_bot_from_node(NodeOrAttrs, false).
+get_bot_from_node(Node, IncludePending) when is_binary(Node) ->
+    do([error_m ||
+        BotID <- get_id_from_node_value(Node),
+        get_bot(BotID, IncludePending)
+      ]);
+get_bot_from_node(Attrs, IncludePending) when is_list(Attrs) ->
     do([error_m ||
         BotID <- get_id_from_node(Attrs),
         get_bot(BotID, IncludePending)
@@ -97,10 +102,15 @@ check_owner(#{user_id := UserID}, #jid{luser = UserID}) -> ok;
 check_owner(#{user_id := UserID}, UserID) -> ok;
 check_owner(_, _) -> {error, ?ERR_FORBIDDEN}.
 
-check_access(User, Bot) ->
+check_access(User = #{id := UserID}, Bot = #{user_id := BotOwnerID}) ->
     case ?wocky_user:'can_access?'(User, Bot) of
-        true -> ok;
-        false -> {error, ?ERR_FORBIDDEN}
+        true ->
+            case ?wocky_blocking:'blocked?'(UserID, BotOwnerID) of
+                true -> {error, ?ERR_ITEM_NOT_FOUND};
+                false -> ok
+            end;
+        false ->
+            {error, ?ERR_FORBIDDEN}
     end.
 
 list_hash(List) ->
@@ -130,16 +140,22 @@ bot_packet_action(BotStanza) ->
     Action = xml:get_path_s(BotStanza, [{elem, <<"action">>}, cdata]),
     JIDBin = xml:get_path_s(BotStanza, [{elem, <<"jid">>}, cdata]),
 
-    case {JIDBin, Action} of
-        {<<>>, _}                     -> {none, none};
-        {JIDBin, <<"show">>}          -> {JIDBin, show};
-        {JIDBin, <<"share">>}         -> {JIDBin, share};
-        {JIDBin, <<"enter">>}         -> {JIDBin, enter};
-        {JIDBin, <<"exit">>}          -> {JIDBin, exit};
-        {JIDBin, <<"follow on">>}     -> {JIDBin, follow_on};
-        {JIDBin, <<"follow off">>}    -> {JIDBin, follow_off};
-        {JIDBin, <<"follow expire">>} -> {JIDBin, follow_expire};
-        _                             -> {none, none}
+    case jid:from_binary(JIDBin) of
+        JID = #jid{} -> bot_packet_action(JID, Action);
+        error -> {none, none}
+    end.
+
+bot_packet_action(JID, Action) ->
+    case {?wocky_bot:get(JID), Action} of
+        {nil, _}                   -> {none, none};
+        {Bot, <<"show">>}          -> {Bot, show};
+        {Bot, <<"share">>}         -> {Bot, share};
+        {Bot, <<"enter">>}         -> {Bot, enter};
+        {Bot, <<"exit">>}          -> {Bot, exit};
+        {Bot, <<"follow on">>}     -> {Bot, follow_on};
+        {Bot, <<"follow off">>}    -> {Bot, follow_off};
+        {Bot, <<"follow expire">>} -> {Bot, follow_expire};
+        _                          -> {none, none}
     end.
 
 follow_stanza(Bot, Action) ->

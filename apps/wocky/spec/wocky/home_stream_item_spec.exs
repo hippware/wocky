@@ -31,7 +31,10 @@ defmodule Wocky.HomeStreamItemSpec do
         key = Factory.new_jid()
         from_jid = Factory.new_jid()
         stanza = Lorem.paragraph
-        put_result = HomeStreamItem.put(shared.user.id, key, from_jid, stanza)
+        put_result = HomeStreamItem.put(shared.user.id,
+                                        key,
+                                        from_jid,
+                                        stanza)
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
@@ -62,6 +65,43 @@ defmodule Wocky.HomeStreamItemSpec do
       end
     end
 
+    context "with referenced user or bot" do
+      it "should store the reference" do
+        ref_user = Factory.insert(:user)
+        ref_bot = Factory.insert(:bot)
+        put_result = HomeStreamItem.put(shared.user.id,
+                                        shared.last_item.key,
+                                        shared.last_item.from_jid,
+                                        Lorem.paragraph,
+                                        ref_user_id: ref_user.id,
+                                        ref_bot_id: ref_bot.id)
+
+        put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
+
+        get_result = HomeStreamItem.get_by_key(shared.user.id,
+                                               shared.last_item.key)
+        get_result |> should(be_struct HomeStreamItem)
+        get_result.reference_user_id |> should(eq ref_user.id)
+        get_result.reference_bot_id |> should(eq ref_bot.id)
+      end
+
+      it "should fail on invalid references" do
+        HomeStreamItem.put(shared.user.id,
+                           shared.last_item.key,
+                           shared.last_item.from_jid,
+                           Lorem.paragraph,
+                           ref_user_id: ID.new)
+                           |> should(be_error_result())
+
+        HomeStreamItem.put(shared.user.id,
+                           shared.last_item.key,
+                           shared.last_item.from_jid,
+                           Lorem.paragraph,
+                           ref_bot_id: ID.new)
+                           |> should(be_error_result())
+      end
+    end
+
     context "when the user is invalid" do
       it "should cause an exception" do
         fn ->
@@ -88,6 +128,59 @@ defmodule Wocky.HomeStreamItemSpec do
       |> should(eq {:ok, nil})
     end
   end
+
+  describe "delete_by_user_ref/1" do
+    before do
+      ref_user = Factory.insert(:user)
+      ref_bot = Factory.insert(:bot, %{user: ref_user})
+
+      ref_user_items = for _ <- 1..@num_items do
+        Factory.insert(:home_stream_item,
+                       %{user: shared.user, reference_user: ref_user})
+      end
+
+      ref_bot_items = for _ <- 1..@num_items do
+        Factory.insert(:home_stream_item,
+                       %{user: shared.user, reference_bot: ref_bot})
+      end
+
+      {:ok,
+        ref_user: ref_user,
+        ref_bot: ref_bot,
+        ref_user_ids: Enum.map(ref_user_items, &(&1.id)),
+        ref_bot_ids: Enum.map(ref_bot_items, &(&1.id))
+      }
+    end
+
+    it "should mark all HS entries with the referenced user as deleted" do
+      HomeStreamItem.delete_by_user_ref(shared.ref_user)
+      {referenced, other} =
+        shared.user.id
+        |> HomeStreamItem.get
+        |> Enum.split_with(&Enum.member?(shared.ref_user_ids, &1.id))
+
+      referenced |> should(have_length(@num_items))
+      Enum.each(referenced, fn(i) -> i.deleted |> should(be_true()) end)
+
+      other |> should(have_length(2 * @num_items))
+      Enum.each(other, fn(i) -> i.deleted |> should(be_false()) end)
+    end
+
+    it "should mark all HS entries with the referenced bot as deleted" do
+      HomeStreamItem.delete_by_bot_ref(shared.ref_bot)
+      {referenced, other} =
+        shared.user.id
+        |> HomeStreamItem.get
+        |> Enum.split_with(&Enum.member?(shared.ref_bot_ids, &1.id))
+
+      referenced |> should(have_length(@num_items))
+      Enum.each(referenced, fn(i) -> i.deleted |> should(be_true()) end)
+
+      other |> should(have_length(2 * @num_items))
+      Enum.each(other, fn(i) -> i.deleted |> should(be_false()) end)
+    end
+  end
+
 
   describe "get/1" do
     it "should return all items for a user in chronological order" do

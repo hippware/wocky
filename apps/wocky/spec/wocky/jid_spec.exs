@@ -24,4 +24,15 @@ defmodule Wocky.JIDSpec do
   describe "to_binary/1" do
     it do: JID.to_binary(subject()) |> should(eq "a@b/c")
   end
+
+  describe "to_bare/1" do
+    it do: JID.to_bare(subject()) |> should(eq JID.make("a", "b", ""))
+  end
+
+  describe "replace_resource/2" do
+    it do
+      JID.replace_resource(subject(), "new_resource")
+      |> should(eq JID.make("a", "b", "new_resource"))
+    end
+  end
 end

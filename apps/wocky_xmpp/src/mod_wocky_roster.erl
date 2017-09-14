@@ -146,38 +146,101 @@ maybe_version(_, Version) -> [{<<"ver">>, Version}].
 process_iq_set(#jid{lserver = LServer} = From, To, #iq{sub_el = SubEl} = IQ) ->
     #xmlel{children = Els} = SubEl,
     ejabberd_hooks:run(roster_set, LServer, [From, To, SubEl]),
-    lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
-    IQ#iq{type = result, sub_el = []}.
+    Result = lists:foldl(
+               fun(El, Result) ->
+                       process_item_set(From, To, El, Result)
+               end, ok, Els),
+    case Result of
+        ok -> IQ#iq{type = result, sub_el = []};
+        {error, Error} -> wocky_util:make_error_iq_response(IQ, Error)
+    end.
 
-process_item_set(From, To, #xmlel{attrs = Attrs} = El) ->
+process_item_set(From, To, #xmlel{attrs = Attrs} = El, Result) ->
     JID1 = jid:from_binary(xml:get_attr_s(<<"jid">>, Attrs)),
-    do_process_item_set(JID1, From, To, El);
-process_item_set(_From, _To, _) -> ok.
+    do_process_item_set(JID1, From, To, El, Result);
+process_item_set(_From, _To, _, Result) -> Result.
 
-do_process_item_set(error, _, _, _) -> ok;
-do_process_item_set(JID1, From, To, #xmlel{attrs = Attrs, children = Els}) ->
-    #jid{user = User, luser = LUser, lserver = LServer} = From,
-    #jid{luser = ContactUser} = JID1,
+do_process_item_set(error, _, _, _, Result) -> Result;
+do_process_item_set(JID1, From, To, El, Result) ->
+    #jid{luser = LUser} = From,
+    #jid{luser = ContactUser, lserver = ContactServer} = JID1,
 
     OldItem = to_wocky_roster(
                 LUser, ContactUser,
                 ?wocky_roster_item:get(LUser, ContactUser)),
-    Item1 = process_item_attrs(OldItem, Attrs),
-    Item2 = process_item_els(Item1#wocky_roster{groups = []}, Els),
 
-    case Item2#wocky_roster.subscription of
+    case is_blocked_by(OldItem#wocky_roster.groups) of
+        true ->
+            {error, ?ERR_FORBIDDEN};
+        false ->
+            do_process_item_set_1(ContactUser, ContactServer,
+                                  From, To, OldItem, El),
+            Result
+    end.
+
+do_process_item_set_1(ContactUser, ContactServer, From, To, OldItem,
+                      #xmlel{attrs = Attrs, children = Els}) ->
+    #jid{luser = LUser} = From,
+    Item1 = #wocky_roster{groups = OldGroups}
+        = process_item_attrs(OldItem, Attrs),
+    Item2 = #wocky_roster{groups = NewGroups}
+        = process_item_els(Item1#wocky_roster{groups = []}, Els),
+
+    % For an unblocking action, reinitialise the items and clear the
+    % blocked/blocked_by groups on both
+    is_unblock(OldGroups, NewGroups)
+    andalso
+    ?wocky_blocking:unblock(
+       ?wocky_repo:get(?wocky_user, LUser),
+       ?wocky_repo:get(?wocky_user, ContactUser)),
+
+    % For a new block, immediately mark both the roster items as blocked
+    % and send the unsubscription to the blocked user
+    case is_new_block(OldGroups, NewGroups) of
+        true ->
+            ?wocky_blocking:block(
+               ?wocky_repo:get(?wocky_user, LUser),
+               ?wocky_repo:get(?wocky_user, ContactUser)),
+            BlockNotification = #wocky_roster{
+                                   user = ContactUser,
+                                   server = ContactServer,
+                                   contact_jid = jid:to_lower(
+                                                   jid:to_bare(From)),
+                                   created_at = ?datetime:utc_now()},
+            push_item(ContactUser, ContactServer, From,
+                      OldItem, BlockNotification);
+        false ->
+            do_process_item_set_2(Item2, OldItem, From, To, ContactUser)
+    end.
+
+do_process_item_set_2(NewItem, OldItem,
+                      From =#jid{user = User, luser = LUser, lserver = LServer},
+                      To, ContactUser) ->
+    case NewItem#wocky_roster.subscription of
         remove ->
             ?wocky_roster_item:delete(LUser, ContactUser),
             send_unsubscribing_presence(From, OldItem);
 
         _ ->
-            {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(Item2))
+            {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(NewItem))
     end,
 
     Item3 = ejabberd_hooks:run_fold(roster_process_item, LServer,
-                                    Item2, [LServer]),
+                                    NewItem, [LServer]),
 
     push_item(User, LServer, To, OldItem, Item3).
+
+is_blocked_by(Groups) ->
+    lists:member(?wocky_blocking:blocked_by_group(), Groups).
+
+is_new_block(OldGroups, NewGroups) ->
+    (not has_block(OldGroups)) andalso has_block(NewGroups).
+
+is_unblock(OldGroups, NewGroups) ->
+    has_block(OldGroups) andalso (not has_block(NewGroups)).
+
+has_block(Groups) ->
+    lists:member(?wocky_blocking:blocked_group(), Groups).
 
 process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
     case jid:from_binary(Val) of
@@ -231,8 +294,9 @@ roster_get_hook(Acc, {LUser, _LServer}) ->
     Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
-                     (_) ->
-                         true
+                     (#wocky_roster{groups = Groups}) ->
+                         not lists:member(?wocky_blocking:blocked_by_group(),
+                                          Groups)
                  end, Items ++ Acc).
 
 %% roster_in_subscription, roster_out_subscription -------------------

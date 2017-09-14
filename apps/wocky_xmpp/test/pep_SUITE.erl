@@ -35,7 +35,7 @@ end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
 init_per_testcase(CaseName, Config) ->
-    Config1 = test_helper:setup_users(Config, [alice, bob, carol, karen]),
+    Config1 = test_helper:setup_users(Config, [alice, bob, carol]),
     escalus:init_per_testcase(CaseName, Config1).
 
 end_per_testcase(CaseName, Config) ->
@@ -65,14 +65,12 @@ publish_presence(Config) ->
 
 publish_roster(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, roster, ?MODULE),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
-                  fun (Alice, Bob, Carol, Karen) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+                  fun (Alice, Bob, Carol) ->
         test_helper:subscribe(Bob, Alice),
         test_helper:subscribe(Carol, Alice),
-        test_helper:subscribe(Karen, Alice),
         test_helper:add_contact(Alice, Bob, [], <<"Bobbie">>),
         test_helper:add_contact(Alice, Carol, [], <<"Car">>),
-        test_helper:add_contact(Alice, Karen, <<"__blocked__">>, <<"Kaz">>),
         Stanza = escalus_pubsub_stanza:publish(Alice, <<"test_item_id">>,
                                                pub_item(), <<"123">>,
                                                {pep, pub_node()}),
@@ -82,9 +80,8 @@ publish_roster(Config) ->
         Recieved2 = escalus:wait_for_stanza(Bob),
         escalus:assert(is_message, Recieved2),
         Recieved3 = escalus:wait_for_stanza(Carol),
-        escalus:assert(is_message, Recieved3),
+        escalus:assert(is_message, Recieved3)
 
-        test_helper:ensure_all_clean([Karen])
     end),
     mod_wocky_pep:unregister_handler(?NS_TEST, roster, ?MODULE).
 

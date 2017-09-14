@@ -113,7 +113,7 @@ defmodule Wocky.RSMHelper do
 
   defp get_count(queryable, key_field) do
     queryable
-    |> select([r], count(field(r, ^key_field)))
+    |> select([r, ...], count(field(r, ^key_field)))
     |> Repo.one!()
   end
 
@@ -129,11 +129,11 @@ defmodule Wocky.RSMHelper do
 
   defp index_where(queryable, key, {:asc, sort_field}) do
     queryable
-    |> where([r], field(r, ^sort_field) < ^key)
+    |> where([r, ...], field(r, ^sort_field) < ^key)
   end
   defp index_where(queryable, key, {:desc, sort_field}) do
     queryable
-    |> where([r], field(r, ^sort_field) > ^key)
+    |> where([r, ...], field(r, ^sort_field) > ^key)
   end
 
 
@@ -141,33 +141,33 @@ defmodule Wocky.RSMHelper do
   defp direction(dir), do: dir
 
   defp maybe_limit(query, :undefined), do: query
-  defp maybe_limit(query, max), do: from h in query, limit: ^max
+  defp maybe_limit(query, max), do: from [h, ...] in query, limit: ^max
 
   defp maybe_offset(query, :undefined), do: query
-  defp maybe_offset(query, index), do: from h in query, offset: ^index
+  defp maybe_offset(query, index), do: from [h, ...] in query, offset: ^index
 
   defp maybe_join_clause(queryable, "", _, _, _), do: queryable
   defp maybe_join_clause(queryable, :undefined, _, _, _), do: queryable
   defp maybe_join_clause(queryable, key, key_field, dir, {sort_order, sort_field})
   when is_order_forward(dir, sort_order) do
     queryable
-    |> join(:inner, [r], p in subquery(queryable),
+    |> join(:inner, [r, ...], p in subquery(queryable),
             field(p, ^key_field) == ^key and
             field(r, ^sort_field) > field(p, ^sort_field))
   end
   defp maybe_join_clause(queryable, key, key_field, _, {_, sort_field}) do
     queryable
-    |> join(:inner, [r], p in subquery(queryable),
+    |> join(:inner, [r, ...], p in subquery(queryable),
             field(p, ^key_field) == ^key and
             field(r, ^sort_field) < field(p, ^sort_field))
   end
 
   defp order(query, dir, {sort_order, sort_field})
   when is_order_forward(dir, sort_order) do
-    from r in query, order_by: ^sort_field
+    from [r, ...] in query, order_by: ^sort_field
   end
   defp order(query, _, {_, sort_field}) do
-    from r in query, order_by: [desc: ^sort_field]
+    from [r, ...] in query, order_by: [desc: ^sort_field]
   end
 
   defp maybe_reverse_dir(records, :aft), do: records

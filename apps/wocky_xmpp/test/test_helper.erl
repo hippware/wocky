@@ -77,8 +77,10 @@ ensure_wocky_is_running() ->
         {ok, _Pid} -> ok;
         {error, {already_started, _Pid}} -> ok
     end,
-
-    ok = wocky_xmpp_app:start("ct.test").
+    ok = wocky_xmpp_app:start("ct.test"),
+    % Cause tests expecting to fail if the error is caused by a crash:
+%    {atomic, ok} = ejabberd_config:add_local_option(iq_crash_response, crash),
+    ok.
 
 setup_users(Config, Users) ->
     _ = ?wocky_repo:delete_all(?wocky_user),
@@ -223,7 +225,11 @@ remove_friend(Who, Whom) ->
        escalus_pred:is_presence_with_type(<<"unsubscribe">>, _),
        escalus_pred:is_presence_with_type(<<"unavailable">>, _)
       ],
-      escalus:wait_for_stanzas(Whom, 3)).
+      escalus:wait_for_stanzas(Whom, 3)),
+
+    escalus:send(Whom, escalus_stanza:roster_remove_contact(Who)),
+    escalus:assert_many(
+      [is_roster_set, is_iq_result], escalus:wait_for_stanzas(Whom, 2)).
 
 start_clients_before_all_friends(Config, ClientDescs) ->
     ct:log("start_clients_all_friends ~p", [ClientDescs]),

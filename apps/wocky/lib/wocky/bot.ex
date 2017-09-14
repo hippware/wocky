@@ -10,6 +10,7 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
+  alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
   alias Wocky.User
@@ -73,7 +74,12 @@ defmodule Wocky.Bot do
   end
 
   @spec get_id_from_jid(JID.t) :: id | nil
-  def get_id_from_jid(jid(lresource: @bot_prefix <> id)), do: id
+  def get_id_from_jid(jid(lresource: @bot_prefix <> id)) do
+    case ID.valid?(id) do
+      true -> id
+      false -> nil
+    end
+  end
   def get_id_from_jid(_), do: nil
 
   @spec get_id_from_node(binary) :: id | nil
@@ -91,12 +97,19 @@ defmodule Wocky.Bot do
   #----------------------------------------------------------------------
   # Database interaction
 
-  @spec get(Bot.id, boolean) :: t | nil
-  def get(id, include_pending \\ false) do
+  @spec get(Bot.id | JID.t, boolean) :: t | nil
+  def get(id, include_pending \\ false)
+  def get(id, include_pending) when is_binary(id) do
     Bot
     |> where(id: ^id)
     |> maybe_filter_pending(not include_pending)
     |> Repo.one
+  end
+  def get(jid, include_pending) when Record.is_record(jid, :jid) do
+    case get_id_from_jid(jid) do
+      nil -> nil
+      id -> get(id, include_pending)
+    end
   end
 
   @spec preallocate(User.id, User.server) :: t | no_return
@@ -139,6 +152,7 @@ defmodule Wocky.Bot do
 
   @spec delete(t) :: :ok
   def delete(bot) do
+    HomeStreamItem.delete_by_bot_ref(bot)
     Repo.delete(bot)
     Index.remove(:bot, bot.id)
     :ok

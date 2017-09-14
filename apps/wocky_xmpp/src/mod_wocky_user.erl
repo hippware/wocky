@@ -68,6 +68,7 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
         Relationship <- {ok, relationship(FromJID, UserJID)},
         Fields <- get_get_req_fields(Relationship, Children),
         check_field_permissions(Relationship, Fields),
+        check_blocking(FromJID, UserJID),
         XMLFields <- get_resp_fields(Fields, LServer, User),
 
         {ok, make_get_response_iq(XMLFields, IQ, User)}
@@ -80,18 +81,20 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
        Children,
        get_users(),
        make_jids(),
+       filter_blocked_users(FromJID),
        get_users_fields(FromJID, LServer),
        make_users_response_iq(IQ)
       )};
 
-handle_request(IQ, _FromJID, _ToJID, get,
+handle_request(IQ, _FromJID = #jid{luser = RequesterID}, _ToJID, get,
                ReqEl = #xmlel{name = <<"contacts">>}) ->
     do([error_m ||
         UserID <- get_user_node(ReqEl),
         Association <- wocky_xml:get_subel_cdata(
                          <<"association">>, ReqEl, <<"follower">>),
         RSMIn <- rsm_util:get_rsm(IQ),
-        AssociationQuery <- get_association_query(Association, UserID),
+        AssociationQuery <- get_association_query(
+                              Association, UserID, RequesterID),
         {Contacts, RSMOut} <- do_contacts_query(AssociationQuery, RSMIn),
         {ok, make_contacts_response_iq(
                IQ, Contacts, Association, UserID, RSMOut)}
@@ -115,6 +118,18 @@ handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
 
 make_jids(BJIDs) ->
     [{get_user_jid(B), B} || B <- BJIDs].
+
+filter_blocked_users(JIDs, #jid{luser = User}) ->
+    lists:map(
+      fun(U = {{ok, #jid{luser = Target}}, BJID}) ->
+        case ?wocky_blocking:'blocked?'(User, Target) of
+            false ->
+                U;
+            true ->
+                {{error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user">>)}, BJID}
+        end;
+         (Error) -> Error
+      end, JIDs).
 
 get_users_fields(JIDs, FromJID, LServer) ->
     lists:map(get_user_fields(FromJID, LServer, _), JIDs).
@@ -240,13 +255,13 @@ field_accessor(Field) -> element(5, Field).
 %% GET-specific helpers
 %%--------------------------------------------------------------------
 
-get_association_query(<<"follower">>, UserID) ->
-    {ok, ?wocky_roster_item:followers_query(UserID)};
-get_association_query(<<"following">>, UserID) ->
-    {ok, ?wocky_roster_item:followees_query(UserID)};
-get_association_query(<<"friend">>, UserID) ->
-    {ok, ?wocky_roster_item:friends_query(UserID)};
-get_association_query(_, _) ->
+get_association_query(<<"follower">>, UserID, RequesterID) ->
+    {ok, ?wocky_roster_item:followers_query(UserID, RequesterID)};
+get_association_query(<<"following">>, UserID, RequesterID) ->
+    {ok, ?wocky_roster_item:followees_query(UserID, RequesterID)};
+get_association_query(<<"friend">>, UserID, RequesterID) ->
+    {ok, ?wocky_roster_item:friends_query(UserID, RequesterID)};
+get_association_query(_, _, _) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid association type">>)}.
 
 do_contacts_query(AssociationQuery, RSMIn) ->
@@ -287,6 +302,11 @@ check_field_permissions(Relationship, Fields) ->
         false -> {error, ?ERRT_FORBIDDEN(?MYLANG, <<"No access to field">>)}
     end.
 
+check_blocking(#jid{luser = User}, #jid{luser = Target}) ->
+    case ?wocky_blocking:'blocked?'(User, Target) of
+        false -> ok;
+        true -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)}
+    end.
 
 get_visible_fields(Relationship) ->
     lists:filter(fun(F) -> is_visible(Relationship, field_visibility(F)) end,
@@ -298,10 +318,8 @@ is_visible(_,    public)   -> true.
 
 get_resp_fields(Fields, _LServer, LUser) ->
     case ?wocky_repo:get(?wocky_user, LUser) of
-        nil ->
-            {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
-        Row ->
-            {ok, build_resp_fields(Row, Fields)}
+        nil -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
+        Row -> {ok, build_resp_fields(Row, Fields)}
     end.
 
 

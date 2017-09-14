@@ -522,6 +522,7 @@ get_subscribed(Config) ->
 
 sorting(Config) ->
     AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
+    ?wocky_repo:delete_all(?wocky_home_stream_item),
     ?wocky_repo:delete_all(?wocky_bot),
     Bots = ?wocky_factory:insert_list(10, bot,
                                       #{user => AliceUser, shortname => nil}),
@@ -712,7 +713,8 @@ get_items(Config) ->
 
         % Carol can't because she hasn't
         expect_iq_error(
-               test_helper:iq_get(?NS_BOT, query_el(#rsm_in{max = 10})), Carol),
+               test_helper:iq_get(
+                 ?NS_BOT, item_query_el(#rsm_in{max = 10})), Carol),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
@@ -1432,13 +1434,14 @@ add_item(Client, Subs, N) ->
 
 get_items(Client, RSM, First, Last) ->
     Result = expect_iq_success(
-               test_helper:iq_get(?NS_BOT, query_el(RSM)), Client),
+               test_helper:iq_get(?NS_BOT, item_query_el(RSM)), Client),
 
     ?assertEqual(ok, check_result(Result, First, Last)).
 
-query_el(RSM) ->
+item_query_el(RSM) -> item_query_el(RSM, ?BOT).
+item_query_el(RSM, BotID) ->
     #xmlel{name = <<"query">>,
-           attrs = [{<<"node">>, bot_node(?BOT)}],
+           attrs = [{<<"node">>, bot_node(BotID)}],
            children = [rsm_elem(RSM)]}.
 
 check_result(Stanza, First, Last) ->
@@ -1673,6 +1676,7 @@ sort_bot_ids(Bots, Field) ->
 
 expect_explore_result(#{id := BotID}, User) ->
     Stanza = escalus_client:wait_for_stanza(User),
+    ct:log("Explore result: ~p", [Stanza]),
     escalus:assert(is_message, Stanza),
     escalus:assert(has_type, [<<"headline">>], Stanza),
     IDEl = wocky_xml:path_by_attr(Stanza,

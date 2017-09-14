@@ -106,6 +106,7 @@ defmodule Wocky.User do
   end
 
   @spec get_by_jid(JID.t) :: t | nil
+  def get_by_jid(jid(luser: "")), do: nil
   def get_by_jid(jid(luser: id, lresource: resource)) do
     case Repo.get(User, id) do
       nil -> nil

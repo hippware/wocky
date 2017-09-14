@@ -10,8 +10,8 @@
 
 -include("wocky.hrl").
 
--export([query/2,
-         query_images/2,
+-export([query/3,
+         query_images/3,
          publish/4,
          retract/4]).
 
@@ -20,18 +20,18 @@
 %%% API
 %%%===================================================================
 
-query(Bot, IQ) ->
+query(Bot, IQ, FromID) ->
     do([error_m ||
            RSMIn <- rsm_util:get_rsm(IQ),
-           {Items, RSMOut} = get_items(Bot, RSMIn),
+           {Items, RSMOut} = get_items(Bot, RSMIn, FromID),
            {ok, make_results(Items, RSMOut)}
        ]).
 
-query_images(Bot, IQ) ->
+query_images(Bot, IQ, FromID) ->
     do([error_m ||
            RSMIn <- rsm_util:get_rsm(IQ),
            Owner = wocky_bot_util:owner_jid(Bot),
-           {Images, RSMOut} = get_bot_item_images(Bot, RSMIn),
+           {Images, RSMOut} = get_bot_item_images(Bot, RSMIn, FromID),
            {ok, images_result(Owner, Images, RSMOut)}
        ]).
 
@@ -62,9 +62,10 @@ retract(Bot, From, ToJID, SubEl) ->
 %%% Helpers - query
 %%%===================================================================
 
-get_items(Bot, RSM) ->
-    ?wocky_rsm_helper:rsm_query(RSM, ?wocky_item:items_query(Bot),
-                                id, {asc, updated_at}).
+get_items(Bot, RSM, FromID) ->
+    Query = ?wocky_blocking:object_visible_query(
+               ?wocky_item:items_query(Bot), FromID, user_id),
+    ?wocky_rsm_helper:rsm_query(RSM, Query, id, {asc, updated_at}).
 
 make_results(Items, RSMOut) ->
     #xmlel{name = <<"query">>,
@@ -78,9 +79,10 @@ make_items(Items) ->
 %%% Helpers - query images
 %%%===================================================================
 
-get_bot_item_images(Bot, RSMIn) ->
-    ?wocky_rsm_helper:rsm_query(RSMIn, ?wocky_item:images_query(Bot),
-                                id, {asc, updated_at}).
+get_bot_item_images(Bot, RSMIn, FromID) ->
+    Query = ?wocky_blocking:object_visible_query(
+               ?wocky_item:images_query(Bot), FromID, user_id),
+    ?wocky_rsm_helper:rsm_query(RSMIn, Query, id, {asc, updated_at}).
 
 images_result(Owner, Images, RSMOut) ->
     ImageEls = image_els(Owner, Images),
