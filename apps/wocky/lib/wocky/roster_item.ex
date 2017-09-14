@@ -332,7 +332,6 @@ defmodule Wocky.RosterItem do
   defp is_follower(%RosterItem{subscription: subscription}) do
     (subscription == :both || subscription == :from)
   end
-  defp is_follower(_), do: false
 
   # Returns true if the roster item referrs to a followee of the item owner
   defp is_followee(%RosterItem{subscription: subscription}) do
