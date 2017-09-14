@@ -31,6 +31,7 @@
 -define(BOT_NAME, <<"AliceBot">>).
 -define(BOT_DESC, <<"A test bot owned by Alice">>).
 -define(BOT_ADDRESS, <<"260 Tinakori Road, Thorndon, Wellington">>).
+-define(BOT_ADDRESS_DATA, <<"{name: foo}">>).
 -define(BOT_TYPE, <<"LucyLiuBot">>).
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
@@ -40,6 +41,7 @@
 -define(CREATE_SHORTNAME,   <<"NewBot">>).
 -define(CREATE_DESCRIPTION, <<"Test bot for creation operation">>).
 -define(CREATE_ADDRESS,     <<"5 Adelaide Avenue, Deakin, ACT">>).
+-define(CREATE_ADDRESS_DATA,<<"{name: bar}">>).
 -define(CREATE_LOCATION,    {2.5, 1.6}).
 -define(CREATE_RADIUS,      10.0).
 -define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
@@ -183,6 +185,7 @@ reset_tables(Config) ->
           location => ?wocky_geo_utils:point(?BOT_LON, ?BOT_LAT),
           radius => ?BOT_RADIUS,
           address => ?BOT_ADDRESS,
+          address_data => ?BOT_ADDRESS_DATA,
           image => ?AVATAR_FILE,
           type => ?BOT_TYPE},
     Bot = ?wocky_factory:insert(bot, B),
@@ -204,7 +207,9 @@ create(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         % Successfully create a bot
+        ct:pal("~p~n", [create_stanza()]),
         Stanza = expect_iq_success(create_stanza(), Alice),
+        ct:pal("~p~n", [Stanza]),
         check_returned_bot(Stanza, expected_create_fields()),
 
         % No home stream updates should occur for private bots
@@ -481,6 +486,7 @@ retrieve_for_user(Config) ->
            {"title",       string, ?CREATE_TITLE},
            {"description", string, ?CREATE_DESCRIPTION},
            {"address",     string, ?CREATE_ADDRESS},
+           {"address_data",string, ?CREATE_ADDRESS_DATA},
            {"location",    geoloc, ?CREATE_LOCATION},
            {"radius",      float,  ?CREATE_RADIUS},
            {"image",       string, ?CREATE_IMAGE},
@@ -990,6 +996,7 @@ default_fields() ->
      {"shortname",     "string", ?CREATE_SHORTNAME},
      {"description",   "string", ?CREATE_DESCRIPTION},
      {"address",       "string", ?CREATE_ADDRESS},
+     {"address_data",  "string", ?CREATE_ADDRESS_DATA},
      {"location",      "geoloc", ?CREATE_LOCATION},
      {"radius",        "float",  ?CREATE_RADIUS},
      {"image",         "string", ?CREATE_IMAGE},
@@ -1045,6 +1052,7 @@ expected_create_fields() ->
      {"owner",              jid,    ?BJID(?ALICE)},
      {"description",        string, ?CREATE_DESCRIPTION},
      {"address",            string, ?CREATE_ADDRESS},
+     {"address_data",       string, ?CREATE_ADDRESS_DATA},
      {"image",              string, ?CREATE_IMAGE},
      {"type",               string, ?CREATE_TYPE},
      {"location",           geoloc, ?CREATE_LOCATION},
@@ -1069,6 +1077,7 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"owner",              jid,    ?BJID(?ALICE)},
      {"description",        string, Description},
      {"address",            string, ?BOT_ADDRESS},
+     {"address_data",       string, ?BOT_ADDRESS_DATA},
      {"image",              string, ?AVATAR_FILE},
      {"type",               string, ?BOT_TYPE},
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},

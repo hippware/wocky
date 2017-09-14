@@ -57,8 +57,8 @@ defmodule Wocky.Bot do
 
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
-                  :image, :type, :address, :location, :radius, :public,
-                  :alerts, :follow_me, :follow_me_expiry, :tags]
+                  :image, :type, :address, :address_data, :location, :radius,
+                  :public, :alerts, :follow_me, :follow_me_expiry, :tags]
   @required_fields [:id, :server, :user_id, :title, :location, :radius]
 
   #----------------------------------------------------------------------
