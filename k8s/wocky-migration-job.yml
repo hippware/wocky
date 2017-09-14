@@ -1,11 +1,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: wocky-migration
+  generateName: wocky-migration-
 spec:
   template:
-    metadata:
-      name: wocky-migration
     spec:
       containers:
         - name: wocky
@@ -27,6 +25,6 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
       imagePullSecrets:
-        - name: dockerhub
+        - name: amazonecr
       # Do not restart containers after they exit
       restartPolicy: Never
