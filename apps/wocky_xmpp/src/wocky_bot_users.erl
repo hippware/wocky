@@ -13,7 +13,8 @@
 
 -export([handle_share/3,
          notify_new_viewers/4,
-         maybe_notify_subscribers/3]).
+         maybe_notify_subscribers/3
+        ]).
 
 
 %%%===================================================================

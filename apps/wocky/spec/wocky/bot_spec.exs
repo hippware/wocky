@@ -4,9 +4,11 @@ defmodule Wocky.BotSpec do
   use Wocky.JID
   use Wocky.RSMHelper
 
+  alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
+  alias Wocky.HomeStreamItem
   alias Wocky.Index.TestIndexer
   alias Wocky.GeoUtils
   alias Wocky.Repo
@@ -218,6 +220,53 @@ defmodule Wocky.BotSpec do
         end
       end
 
+      context "home stream cleanup" do
+        before do
+          bot = Factory.insert(:bot, %{public: true, user: user()})
+          shared_user = Factory.insert(:user)
+          unshared_user = Factory.insert(:user)
+
+           Enum.each(
+            [user(), shared_user, unshared_user],
+            &Factory.insert(:home_stream_item, %{reference_bot: bot,
+              user: &1}))
+
+          Factory.insert(:share, %{sharer: user(), user: shared_user, bot: bot})
+
+          {:ok,
+            bot: bot,
+            shared_user: shared_user,
+            unshared_user: unshared_user}
+        end
+
+        context "bot becomes private" do
+          before do
+            Bot.update(shared.bot, %{public: false})
+            :ok
+          end
+
+          it do: shared.shared_user.id |> HomeStreamItem.get
+                 |> is_deleted() |> should(be_false())
+          it do: shared.unshared_user.id |> HomeStreamItem.get
+                 |> is_deleted() |> should(be_true())
+          it do: user().id |> HomeStreamItem.get
+                 |> is_deleted() |> should(be_false())
+        end
+
+        context "bot remains public" do
+          before do
+            Bot.update(shared.bot, %{description: Lorem.sentence})
+            :ok
+          end
+
+          it do: shared.shared_user.id |> HomeStreamItem.get
+                 |> is_deleted() |> should(be_false())
+          it do: shared.unshared_user.id |> HomeStreamItem.get
+                 |> is_deleted() |> should(be_false())
+          it do: user().id |> HomeStreamItem.get |> is_deleted()
+                 |> should(be_false())
+        end
+      end
     end
 
     describe "delete/1" do
@@ -338,4 +387,6 @@ defmodule Wocky.BotSpec do
     |> preload(:user)
     |> Repo.one
   end
+
+  defp is_deleted([%HomeStreamItem{deleted: deleted}]), do: deleted
 end

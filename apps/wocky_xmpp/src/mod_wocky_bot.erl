@@ -205,6 +205,7 @@ perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
         wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
                                            ?wocky_bot:'public?'(NewBot)),
         wocky_bot_users:maybe_notify_subscribers(Server, Bot, NewBot),
+
         {ok, []}
        ]);
 
