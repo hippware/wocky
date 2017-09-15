@@ -49,12 +49,12 @@ publish(Bot, From, ToJID, SubEl) ->
            {ok, []}
        ]).
 
-retract(Bot, From, ToJID, SubEl) ->
+retract(Bot, From, _ToJID, SubEl) ->
     do([error_m ||
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            check_can_retract(From, Bot, ItemID),
-           retract_item(From, ToJID, Bot, ItemID),
+           ?wocky_item:delete(Bot, ItemID),
            {ok, []}
        ]).
 
@@ -124,15 +124,6 @@ check_can_publish(#{id := UserID}, Bot, ItemID) ->
 %%%===================================================================
 %%% Helpers - retract
 %%%===================================================================
-
-retract_item(From, ToJID, Bot, ItemID) ->
-    ?wocky_item:delete(Bot, ItemID),
-    Message = notification_message(Bot, retract_item(ItemID)),
-    notify_subscribers(From, ToJID, Bot, Message).
-
-retract_item(ItemID) ->
-    #xmlel{name = <<"retract">>,
-           attrs = [{<<"id">>, ItemID}]}.
 
 check_can_retract(#{id := UserID}, Bot = #{user_id := BotOwner}, ItemID) ->
     case ?wocky_item:get(Bot, ItemID) of

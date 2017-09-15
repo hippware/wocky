@@ -656,16 +656,8 @@ retract_item(Config) ->
         % Alice can retract the item as its owner
         expect_iq_success(retract_item_stanza(?BOT, ?ITEM), Alice),
 
-        % Carol and Karen are subscribers, and so receive a notification
-        % Bob is an affiliate but not subscribed, so does not receive anything
-        expect_item_retraction(Carol, ?BOT, ?ITEM),
-        expect_item_retraction(Karen, ?BOT, ?ITEM),
-
         % Bob can retract his own item
         expect_iq_success(retract_item_stanza(?BOT, ?BOBS_ITEM_ID), Bob),
-        expect_item_retraction(Alice, ?BOT, ?BOBS_ITEM_ID),
-        expect_item_retraction(Carol, ?BOT, ?BOBS_ITEM_ID),
-        expect_item_retraction(Karen, ?BOT, ?BOBS_ITEM_ID),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
