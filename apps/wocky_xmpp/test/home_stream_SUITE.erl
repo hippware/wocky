@@ -56,7 +56,8 @@ publish_bot_cases() ->
      auto_publish_new_bot_non_friends,
      auto_publish_shared_private_bot,
      auto_publish_bot_item,
-     bot_description_update
+     bot_description_update,
+     bot_becomes_private
     ].
 
 suite() ->
@@ -466,6 +467,28 @@ bot_description_update(Config) ->
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice)
       end).
 
+bot_becomes_private(Config) ->
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
+        set_public(true, Alice),
+        clear_home_streams(),
+
+        expect_iq_success(subscribe_stanza(), Carol),
+
+        % Place an item in Carol's HS about the bot
+        expect_iq_success(update_bot_desc_stanza("Updated Description"), Alice),
+        timer:sleep(400),
+        expect_home_stream_bot_desc(Carol, false),
+
+        % Make the bot private
+        set_public(false, Alice),
+
+        % The item should have been marked deleted on Carol's HS
+        Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
+        check_hs_result(Stanza2, 0, 1, true)
+      end).
+
+
 no_auto_publish_pep_item(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, whitelist, ?MODULE),
     escalus:story(Config, [{alice, 1}],
@@ -614,3 +637,10 @@ modify_field(Desc) ->
 safe_fields() ->
     lists:keyreplace("shortname", 1, bot_SUITE:default_fields(),
                      {"shortname", "string", ""}).
+
+set_public(Public, Client) ->
+    Stanza = test_helper:iq_set(
+               ?NS_BOT, node_el(?BOT, <<"fields">>,
+                                [bot_SUITE:create_field(
+                                   {"public", "bool", Public})])),
+    expect_iq_success(Stanza, Client).
