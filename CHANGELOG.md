@@ -5,10 +5,21 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.9.15+r4c68618f
+
 * Support for Kubernetes deployment (PR #908)
 * Don't validate binary UUIDs (PR #942)
 * More Kubernetes configuration (PR #941)
   - Closes ports 80 and 5222.
+* Blocking
+  * Blocking: Roster and presence (#924)
+  * Blocking: User Profile (#925)
+  * Blocking: Third party follower/followee lists (#926)
+  * Blocking: HS (#927)
+  * Blocking: Bots (#928)
+  * Blocking: Bot content (#929)
+* Add updated APNS push certificates (#945)
+* New bot field 'address_data' to store location/address metadata as json (#915)
 
 
 # 1.0.2630-r012b3c0 - 2017-09-06
