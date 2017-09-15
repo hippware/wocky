@@ -139,7 +139,10 @@ defmodule Wocky.Bot do
   def insert(params), do: do_update(%Bot{}, params, &Repo.insert/1)
 
   @spec update(t, map) :: {:ok, t} | {:error, any}
-  def update(bot, params), do: do_update(bot, params, &Repo.update/1)
+  def update(bot, params) do
+    maybe_tidy_home_streams(bot, params)
+    do_update(bot, params, &Repo.update/1)
+  end
 
   defp do_update(struct, params, op) do
     case struct |> changeset(params) |> op.() do
@@ -283,4 +286,10 @@ defmodule Wocky.Bot do
     queryable
     |> where(pending: false)
   end
+
+  defp maybe_tidy_home_streams(bot = %Bot{public: true}, %{public: false}) do
+    HomeStreamItem.delete_by_bot_ref_invisible(%{bot | public: false})
+  end
+  defp maybe_tidy_home_streams(_, _), do: :ok
+
 end
