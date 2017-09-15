@@ -287,7 +287,7 @@ defmodule Wocky.Bot do
     |> where(pending: false)
   end
 
-  defp maybe_tidy_home_streams(bot = %Bot{public: true}, %{public: false}) do
+  defp maybe_tidy_home_streams(%Bot{public: true} = bot, %{public: false}) do
     HomeStreamItem.delete_by_bot_ref_invisible(%{bot | public: false})
   end
   defp maybe_tidy_home_streams(_, _), do: :ok
