@@ -108,7 +108,7 @@ do_registration(JSON) ->
         {ok, RegResult} ->
             make_register_response(RegResult);
         {error, {Response, Text}} ->
-            {error, {list_to_binary(Response), list_to_binary(Text)}}
+            {error, {iolist_to_binary(Response), iolist_to_binary(Text)}}
     end.
 
 make_register_response(#reg_result{user = User,
