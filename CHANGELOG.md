@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.9.??
+
+* Do not publish item revocation events (#923)
+* When bots are deleted or made private, referencing HS items should be deleted (#919)
+* Fix a crash on Firebase auth failure (PR #968)
+
+
 # 2017.9.15+r4c68618f
 
 * Support for Kubernetes deployment (PR #908)
