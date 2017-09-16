@@ -5,7 +5,7 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-# 2017.9.??
+# 2017.9.15+r8f753bb
 
 * Do not publish item revocation events (#923)
 * When bots are deleted or made private, referencing HS items should be deleted (#919)
