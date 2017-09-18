@@ -201,12 +201,8 @@ do_process_item_set_1(ContactUser, ContactServer, From, To, OldItem,
             ?wocky_blocking:block(
                ?wocky_repo:get(?wocky_user, LUser),
                ?wocky_repo:get(?wocky_user, ContactUser)),
-            BlockNotification = #wocky_roster{
-                                   user = ContactUser,
-                                   server = ContactServer,
-                                   contact_jid = jid:to_lower(
-                                                   jid:to_bare(From)),
-                                   created_at = ?datetime:utc_now()},
+            BlockNotification = to_wocky_roster(
+                                  ?wocky_roster_item:get(ContactUser, LUser)),
             push_item(ContactUser, ContactServer, From,
                       OldItem, BlockNotification);
         false ->
@@ -294,9 +290,8 @@ roster_get_hook(Acc, {LUser, _LServer}) ->
     Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
-                     (#wocky_roster{groups = Groups}) ->
-                         not lists:member(?wocky_blocking:blocked_by_group(),
-                                          Groups)
+                     (_) ->
+                         true
                  end, Items ++ Acc).
 
 %% roster_in_subscription, roster_out_subscription -------------------
