@@ -6,6 +6,7 @@ defmodule Wocky.Bot do
   use Wocky.RSMHelper
 
   alias Geocalc.Point
+  alias Wocky.Blocking
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -259,8 +260,9 @@ defmodule Wocky.Bot do
   @spec is_visible_query(Queryable.t, User.t) :: Queryable.t
   def is_visible_query(queryable, user) do
     queryable
-    |> join(:left, [b], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
-    |> where([b, s], b.user_id == ^user.id or b.public or not is_nil(s.user_id))
+    |> Blocking.object_visible_query(user.id, :user_id)
+    |> join(:left, [b, ...], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
+    |> where([b, ..., s], b.user_id == ^user.id or b.public or not is_nil(s.user_id))
   end
 
   @spec bump_update_time(Bot.t) :: :ok
