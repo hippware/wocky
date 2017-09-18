@@ -5,6 +5,7 @@ defmodule Wocky.Conversation do
 
   use Wocky.Repo.Model
 
+  alias Wocky.JID
   alias Wocky.User
   alias __MODULE__, as: Conversation
 
@@ -46,7 +47,7 @@ defmodule Wocky.Conversation do
     :ok
   end
 
-  @spec find(binary) :: [t]
+  @spec find(User.id) :: [t]
   def find(user_id) do
     user_id
     |> with_user()
@@ -54,9 +55,24 @@ defmodule Wocky.Conversation do
     |> Repo.all()
   end
 
-  @spec with_user(binary) :: Queryable.t
+  @spec with_user(User.id) :: Queryable.t
   def with_user(user_id) do
     Conversation
     |> where(user_id: ^user_id)
   end
+
+  @spec delete_user_pair(User.t, User.t) :: :ok
+  def delete_user_pair(a, b) do
+    other_jid =
+      b
+      |> User.to_jid
+      |> JID.to_binary
+
+    Conversation
+    |> where([c], c.user_id == ^a.id and c.other_jid == ^other_jid)
+    |> Repo.delete_all
+
+    :ok
+  end
+
 end

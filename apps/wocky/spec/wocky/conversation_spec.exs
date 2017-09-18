@@ -2,8 +2,10 @@ defmodule Wocky.ConversationSpec do
   use ESpec, async: true
 
   alias Wocky.Conversation
+  alias Wocky.JID
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.User
 
   before do
     # A simple user with one conversation
@@ -16,8 +18,12 @@ defmodule Wocky.ConversationSpec do
       Factory.insert(:conversation, user: user2)
     end
 
-    {:ok, conversation: conversation,
-     conversations: conversations, user2: user2}
+    {:ok,
+      user: user,
+      user2: user2,
+      conversation: conversation,
+      conversations: conversations
+    }
   end
 
   describe "find/1" do
@@ -96,6 +102,26 @@ defmodule Wocky.ConversationSpec do
 
     end
 
+  end
+
+  describe "delete_user_pair/2" do
+    before do
+      conversation =
+        Factory.insert(:conversation,
+                       %{user: shared.user,
+                         other_jid: JID.to_binary(User.to_jid(shared.user2))})
+      {:ok, conversation: conversation}
+    end
+
+    it "should return :ok" do
+      Conversation.delete_user_pair(shared.user, shared.user2) |> should(eq :ok)
+    end
+
+    it "should remove all entries for the user pair" do
+      Conversation.delete_user_pair(shared.user, shared.user2)
+      Conversation.find(shared.user.id)
+      |> should_not(have(shared.conversation))
+    end
   end
 
   defp should_match(a, b) do

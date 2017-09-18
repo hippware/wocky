@@ -17,8 +17,10 @@
 -import(user_SUITE, [get_request/2, users_request/1, expect_bulk_results/2,
                      contact_request/3, check_returned_contacts/3,
                      public_fields/0]).
--import(bot_SUITE, [retrieve_stanza/1, explore_nearby_stanza/2,
-                    expect_explore_result/2, item_query_el/2]).
+-import(bot_SUITE, [retrieve_stanza/1, retrieve_stanza/2,
+                    explore_nearby_stanza/2, expect_explore_result/2,
+                    item_query_el/2, check_returned_bots/4]).
+-import(conversation_SUITE, [query_stanza/4, check_ret/4]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -38,18 +40,23 @@ groups() ->
                     blocked_roster_access,
                     blocked_user_access,
                     blocked_bot_access,
+                    blocked_bot_by_user_access,
                     blocked_publish_access,
                     blocked_explore_access,
                     blocked_item_access,
-                    blocked_contact_access
+                    blocked_contact_access,
+                    blocked_conversation_access,
+                    blocked_messages
                    ]},
      {unblocked, [], [
                     unblocked_roster_access,
                     unblocked_user_access,
                     unblocked_bot_access,
+                    unblocked_bot_by_user_access,
                     unblocked_publish_access,
                     unblocked_explore_access,
                     unblocked_item_access,
+                    unblocked_messages,
                     unblocked_contact_access
                    ]}
     ].
@@ -88,6 +95,11 @@ init_per_suite(Config) ->
     ?wocky_factory:insert(item, #{user => Alice, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Bob, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Carol, bot => CarolsBot}),
+
+    ?wocky_factory:insert(conversation,
+                          #{user => Alice, other_jid => ?BJID(?BOB)}),
+    ?wocky_factory:insert(conversation,
+                          #{user => Bob, other_jid => ?BJID(?ALICE)}),
 
     [{alices_bot, AlicesBot},
      {bobs_bot, BobsBot},
@@ -176,6 +188,18 @@ blocked_bot_access(Config) ->
         expect_iq_error(Stanza2, Bob)
       end).
 
+blocked_bot_by_user_access(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        Stanza = expect_iq_success(
+                   retrieve_stanza(?BJID(?BOB), #rsm_in{}), Alice),
+        check_returned_bots(Stanza, [], undefined, 0),
+
+        Stanza2 = expect_iq_success(
+                   retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Bob),
+        check_returned_bots(Stanza2, [], undefined, 0)
+      end).
+
 blocked_publish_access(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
@@ -239,6 +263,39 @@ blocked_contact_access(Config) ->
 
         remove_friend(Bob, Carol)
       end).
+
+blocked_conversation_access(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        Stanza = query_stanza(undefined, undefined, undefined, undefined),
+        Result = test_helper:expect_iq_success_u(Stanza, Alice),
+        check_ret(Result, 0, 0, undefined),
+
+        Stanza2 = query_stanza(undefined, undefined, undefined, undefined),
+        Result2 = test_helper:expect_iq_success_u(Stanza2, Bob),
+        check_ret(Result2, 0, 0, undefined)
+      end).
+
+blocked_messages(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi B!">>)),
+        escalus:assert(is_error, [<<"cancel">>, <<"service-unavailable">>],
+                       escalus:wait_for_stanza(Alice)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi A!">>)),
+        escalus:assert(is_error, [<<"cancel">>, <<"service-unavailable">>],
+                       escalus:wait_for_stanza(Bob)),
+
+        timer:sleep(400),
+
+        escalus_assert:has_no_stanzas(Alice),
+        escalus_assert:has_no_stanzas(Bob)
+      end).
+
+%%--------------------------------------------------------------------
+%% unblocking tests
+%%--------------------------------------------------------------------
+
 
 unblock(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
@@ -307,6 +364,22 @@ unblocked_bot_access(Config) ->
         expect_iq_success(Stanza2, Bob)
       end).
 
+unblocked_bot_by_user_access(Config) ->
+    escalus:story([everyone_is_friends | Config], [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        Stanza = expect_iq_success(
+                   retrieve_stanza(?BJID(?BOB), #rsm_in{}), Alice),
+        check_returned_bots(
+          Stanza, [maps:get(id, proplists:get_value(bobs_bot, Config))],
+          0, 1),
+
+        Stanza2 = expect_iq_success(
+                   retrieve_stanza(?BJID(?ALICE), #rsm_in{}), Bob),
+        check_returned_bots(
+          Stanza2, [maps:get(id, proplists:get_value(alices_bot, Config))],
+          0, 1)
+      end).
+
 unblocked_publish_access(Config) ->
     escalus:story([everyone_is_friends | Config], [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
@@ -350,7 +423,19 @@ unblocked_item_access(Config) ->
 
         Request2 = iq_get(?NS_BOT, item_query_el(#rsm_in{}, BotID)),
         Result2 = expect_iq_success(Request2, Bob),
-        expect_items_not_owner(Result2, 3, ?TIM),
+        expect_items_not_owner(Result2, 3, ?TIM)
+      end).
+
+unblocked_messages(Config) ->
+    escalus:story([everyone_is_friends | Config], [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi B!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi A!">>)),
+
+        escalus_assert:is_chat_message(
+          <<"Hi A!">>, escalus_client:wait_for_stanza(Alice)),
+        escalus_assert:is_chat_message(
+          <<"Hi B!">>, escalus_client:wait_for_stanza(Bob)),
 
         remove_friend(Alice, Bob)
       end).
@@ -368,7 +453,6 @@ unblocked_contact_access(Config) ->
           check_returned_contacts([{friend, [BobUser]}], [friend])
          )
       end).
-
 
 %%--------------------------------------------------------------------
 %% helpers
