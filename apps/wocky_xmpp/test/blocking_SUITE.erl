@@ -279,10 +279,10 @@ blocked_conversation_access(Config) ->
 blocked_messages(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi Bob!">>)),
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi B!">>)),
         escalus:assert(is_error, [<<"cancel">>, <<"service-unavailable">>],
                        escalus:wait_for_stanza(Alice)),
-        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi Alice!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi A!">>)),
         escalus:assert(is_error, [<<"cancel">>, <<"service-unavailable">>],
                        escalus:wait_for_stanza(Bob)),
 
