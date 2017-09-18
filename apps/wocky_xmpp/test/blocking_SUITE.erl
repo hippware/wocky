@@ -20,6 +20,7 @@
 -import(bot_SUITE, [retrieve_stanza/1, retrieve_stanza/2,
                     explore_nearby_stanza/2, expect_explore_result/2,
                     item_query_el/2, check_returned_bots/4]).
+-import(conversation_SUITE, [query_stanza/4, check_ret/4]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -43,7 +44,9 @@ groups() ->
                     blocked_publish_access,
                     blocked_explore_access,
                     blocked_item_access,
-                    blocked_contact_access
+                    blocked_contact_access,
+                    blocked_conversation_access,
+                    blocked_messages
                    ]},
      {unblocked, [], [
                     unblocked_roster_access,
@@ -53,6 +56,7 @@ groups() ->
                     unblocked_publish_access,
                     unblocked_explore_access,
                     unblocked_item_access,
+                    unblocked_messages,
                     unblocked_contact_access
                    ]}
     ].
@@ -91,6 +95,11 @@ init_per_suite(Config) ->
     ?wocky_factory:insert(item, #{user => Alice, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Bob, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Carol, bot => CarolsBot}),
+
+    ?wocky_factory:insert(conversation,
+                          #{user => Alice, other_jid => ?BJID(?BOB)}),
+    ?wocky_factory:insert(conversation,
+                          #{user => Bob, other_jid => ?BJID(?ALICE)}),
 
     [{alices_bot, AlicesBot},
      {bobs_bot, BobsBot},
@@ -255,6 +264,39 @@ blocked_contact_access(Config) ->
         remove_friend(Bob, Carol)
       end).
 
+blocked_conversation_access(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        Stanza = query_stanza(undefined, undefined, undefined, undefined),
+        Result = test_helper:expect_iq_success_u(Stanza, Alice),
+        check_ret(Result, 0, 0, undefined),
+
+        Stanza2 = query_stanza(undefined, undefined, undefined, undefined),
+        Result2 = test_helper:expect_iq_success_u(Stanza2, Bob),
+        check_ret(Result2, 0, 0, undefined)
+      end).
+
+blocked_messages(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi Bob!">>)),
+        escalus:assert(is_error, [<<"cancel">>, <<"service-unavailable">>],
+                       escalus:wait_for_stanza(Alice)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi Alice!">>)),
+        escalus:assert(is_error, [<<"cancel">>, <<"service-unavailable">>],
+                       escalus:wait_for_stanza(Bob)),
+
+        timer:sleep(400),
+
+        escalus_assert:has_no_stanzas(Alice),
+        escalus_assert:has_no_stanzas(Bob)
+      end).
+
+%%--------------------------------------------------------------------
+%% unblocking tests
+%%--------------------------------------------------------------------
+
+
 unblock(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
@@ -381,7 +423,19 @@ unblocked_item_access(Config) ->
 
         Request2 = iq_get(?NS_BOT, item_query_el(#rsm_in{}, BotID)),
         Result2 = expect_iq_success(Request2, Bob),
-        expect_items_not_owner(Result2, 3, ?TIM),
+        expect_items_not_owner(Result2, 3, ?TIM)
+      end).
+
+unblocked_messages(Config) ->
+    escalus:story([everyone_is_friends | Config], [{alice, 1}, {bob, 1}],
+      fun(Alice, Bob) ->
+        escalus_client:send(Alice, escalus_stanza:chat_to(Bob, <<"Hi B!">>)),
+        escalus_client:send(Bob, escalus_stanza:chat_to(Alice, <<"Hi A!">>)),
+
+        escalus_assert:is_chat_message(
+          <<"Hi A!">>, escalus_client:wait_for_stanza(Alice)),
+        escalus_assert:is_chat_message(
+          <<"Hi B!">>, escalus_client:wait_for_stanza(Bob)),
 
         remove_friend(Alice, Bob)
       end).
@@ -399,7 +453,6 @@ unblocked_contact_access(Config) ->
           check_returned_contacts([{friend, [BobUser]}], [friend])
          )
       end).
-
 
 %%--------------------------------------------------------------------
 %% helpers

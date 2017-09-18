@@ -8,6 +8,7 @@ defmodule Wocky.Blocking do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
+  alias Wocky.Conversation
   alias Wocky.HomeStreamItem
   alias Wocky.RosterItem
   alias Wocky.User
@@ -35,6 +36,9 @@ defmodule Wocky.Blocking do
     delete_bot_references(blocker, blockee)
     delete_bot_references(blockee, blocker)
 
+    # Delete conversations and MAM entries between the users
+    delete_message_logs(blocker, blockee)
+    delete_message_logs(blockee, blocker)
     :ok
   end
 
@@ -134,5 +138,9 @@ defmodule Wocky.Blocking do
         Share.delete(b, bot)
         Subscription.delete(b, bot)
       end)
+  end
+
+  defp delete_message_logs(a, b) do
+    Conversation.delete_user_pair(a, b)
   end
 end

@@ -105,7 +105,7 @@ default_list_items(LUser, LServer) ->
                          value = jid:to_lower({LUser, LServer, <<"">>}),
                          action = allow, order = 5},
 
-     %% Block the __no_presence__ and __blocked groups
+     %% Block the __no_presence__ and __blocked__/__blocked_by__ groups
      BaseRecord#listitem{type = group,
                          value = <<"__no_presence__">>,
                          action = deny, order = 10},
