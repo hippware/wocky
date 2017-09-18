@@ -34,7 +34,9 @@ RUN \
       libstdc++ \
       ncurses \
       openssl \
+      tcpdump \
       zlib && \
+    chmod +s /usr/sbin/tcpdump && \
     # Update ca certificates
     update-ca-certificates --fresh
 
