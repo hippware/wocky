@@ -5,6 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.9.18+rabf481e
+
+* Blocking fixes (PR #971, PR #972)
+  * Bots searched for by owner were not being correctly filtered.
+  * Conversations between blocked users were not cleaned up.
+  * Re-enable roster read access for blocked users
+  * Include __blocked_by__ roster group
+
+
 # 2017.9.15+r8f753bb
 
 * Do not publish item revocation events (#923)
