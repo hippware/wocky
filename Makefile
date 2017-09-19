@@ -1,5 +1,5 @@
 # vim: set noexpandtab ts=2 sw=2:
-.PHONY: help unittest inttest release build push deploy migrate shipit restart pods status top exec console shell describe logs follow
+.PHONY: help unittest inttest release build push deploy migrate shipit restart pods status top exec console shell describe logs follow cp
 
 VERSION ?= $(shell elixir ./version.exs)
 IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
@@ -103,3 +103,8 @@ follow: POD ?= $(first-pod)
 follow: ## Follow the logs for a pod
 	@$(call print-pod)
 	@kubectl logs -n $(KUBE_NS) -f $(POD)
+
+cp: POD ?= $(first-pod)
+cp: ## Follow the logs for a pod
+	@$(call print-pod)
+	kubectl cp $(KUBE_NS)/$(POD):$(src) $(dest)
