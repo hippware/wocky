@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wocky-public
+  namespace: wocky-testing
+  labels:
+    app: wocky
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: 'false'
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'false'
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '300'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: '5'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: 'wocky-testing-access-logs'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: ''
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: 'tcp'
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: 'arn:aws:acm:us-west-2:773488857071:certificate/0342584c-d783-4f1f-bfb1-f437c11b53e9'
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '443,5223,5285'
+spec:
+  ports:
+    - port: 443
+      targetPort: 8080
+      protocol: TCP
+      name: https
+    - port: 5223
+      targetPort: 5222
+      protocol: TCP
+      name: xmpps
+    - port: 5280
+      targetPort: 5280
+      protocol: TCP
+      name: xmpp-ws
+    - port: 5285
+      targetPort: 5280
+      protocol: TCP
+      name: xmpp-wss
+  selector:
+    app: wocky
+  type: LoadBalancer
