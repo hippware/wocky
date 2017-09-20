@@ -10,6 +10,7 @@
 
 -type reg_result() :: #reg_result{}.
 
+-define(DEFAULT_HS_PREPOP_DAYS, 14).
 
 -spec register_user(binary()) ->
     {ok, reg_result()} | {error, {string(), string()}}.
@@ -124,5 +125,18 @@ set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
     ?wocky_roster_item:put(UserContact),
     ?wocky_roster_item:put(InitContact).
 
-prepopulate_home_stream(_UserID) ->
-    ok.
+prepopulate_home_stream(UserID) ->
+    case ?confex:get(wocky_xmpp, hs_prepopulation_user) of
+        nil ->
+            ok;
+        SourceHandle ->
+            prepopulate_from_user(
+              UserID, ?wocky_repo:get_by(?wocky_user, [{handle, SourceHandle}]))
+    end.
+
+prepopulate_from_user(_, nil) -> ok;
+prepopulate_from_user(UserID, #{id := SourceID}) ->
+    Period = ?confex:get(wocky_xmpp, hs_prepopulation_days,
+                         ?DEFAULT_HS_PREPOP_DAYS),
+    ?wocky_home_stream_item:prepopulate_from(
+       UserID, SourceID, ?duration:from_days(Period)).

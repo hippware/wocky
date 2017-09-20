@@ -187,7 +187,7 @@ defmodule Wocky.HomeStreamItem do
 
     from_id
     |> get_after_time(from_time)
-    |> Enum.map(
+    |> Enum.each(
       fn(i) ->
         params =
           i
@@ -201,7 +201,6 @@ defmodule Wocky.HomeStreamItem do
         |> Repo.insert(on_conflict: :replace_all,
                        conflict_target: [:user_id, :key])
       end)
-    :ok
   end
 
   def with_user(user_id), do: with_user(HomeStreamItem, user_id)

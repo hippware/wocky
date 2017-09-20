@@ -15,6 +15,7 @@
 -define(jwk, 'Elixir.JOSE.JWK').
 -define(key_id, <<"c947c408c8dd053f7e13117c4e00f0b2b16dc789">>).
 -define(iss, <<"https://securetoken.google.com/">>).
+-define(PREPOP_USER, <<"__new_user_hs_archive__">>).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -74,13 +75,17 @@ init_per_suite(Config) ->
     InitialContacts = [setup_initial_contacts(T) ||
                        T <- [followee, follower, friend]],
 
+    PrepopItems = setup_hs_prepop(),
+
     meck:new(?key_manager, [passthrough, no_link]),
     meck:expect(?key_manager, get_key,
                 fun(?key_id) -> {ok, cert()};
                    (_) -> {error, no_key}
                 end),
 
-    escalus:init_per_suite([{initial_contacts, InitialContacts} | Config]).
+    escalus:init_per_suite([{initial_contacts, InitialContacts},
+                            {prepop_items, PrepopItems}
+                            | Config]).
 
 setup_initial_contacts(Type) ->
     Users = ?wocky_factory:insert_list(3, user),
@@ -91,6 +96,18 @@ setup_initial_contacts(Type) ->
       end,
       Users),
     Users.
+
+setup_hs_prepop() ->
+    #{id := UserID} =
+    ?wocky_factory:insert(user, #{handle => ?PREPOP_USER,
+                                  roles => [?wocky_user:no_index_role()]}),
+
+    OldTS = ?timex:subtract(?datetime:utc_now(), ?duration:from_weeks(4)),
+
+    ?wocky_factory:insert_list(5, home_stream_item, #{user_id => UserID,
+                                                      created_at => OldTS,
+                                                      updated_at => OldTS}),
+    ?wocky_factory:insert_list(5, home_stream_item, #{user_id => UserID}).
 
 end_per_suite(Config) ->
     meck:unload(),
@@ -140,8 +157,8 @@ new_user_common(Config, Client, Stanza) ->
                      {password, Token}]}]}
                  | Config],
 
-    % Verify that initial followees have been added
     escalus:story(NewConfig, [{alice, 1}], fun(Alice) ->
+        % Verify that initial followees have been added
         InitialContacts
         = [InitialFollowees, InitialFollowers, InitialFriends]
         = proplists:get_value(initial_contacts, NewConfig),
@@ -163,7 +180,12 @@ new_user_common(Config, Client, Stanza) ->
           end,
           [{InitialFollowees, <<"to">>},
            {InitialFollowers, <<"from">>},
-           {InitialFriends, <<"both">>}])
+           {InitialFriends, <<"both">>}]),
+
+        % Verify that initial HS items have been added
+        Stanza3 = test_helper:expect_iq_success_u(
+                    test_helper:get_hs_stanza(), Alice, Alice),
+        test_helper:check_hs_result(Stanza3, 5)
     end).
 
 check_contact(#{id := ID}, SubType, Stanza2) ->

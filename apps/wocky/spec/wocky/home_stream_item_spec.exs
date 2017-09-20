@@ -335,21 +335,24 @@ defmodule Wocky.HomeStreamItemSpec do
                                       Duration.from_days(10))
       |> should(eq :ok)
 
-      HomeStreamItem.get(shared.target_user.id)
+      shared.target_user.id
+      |> HomeStreamItem.get
       |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
       |> should(eq shared.items)
     end
 
-    it "should not copy items not in the time period" do
+    it "should not copy items if a zero period is given" do
       HomeStreamItem.prepopulate_from(shared.target_user.id,
                                       shared.source_user.id,
                                       Duration.from_seconds(0))
       |> should(eq :ok)
 
-      HomeStreamItem.get(shared.target_user.id) |> should(eq [])
+      shared.target_user.id
+      |> HomeStreamItem.get
+      |> should(eq [])
     end
 
-    it "should get only items in the time period" do
+    it "should copy only items in the time period" do
       pivot = Enum.at(shared.items, 5)
       period = Timex.diff(DateTime.utc_now(), pivot.created_at(), :duration)
 
@@ -358,7 +361,8 @@ defmodule Wocky.HomeStreamItemSpec do
                                       period)
       |> should(eq :ok)
 
-      HomeStreamItem.get(shared.target_user.id)
+      shared.target_user.id
+      |> HomeStreamItem.get
       |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
       |> should(eq Enum.slice(shared.items, 6..@num_items - 1))
     end
