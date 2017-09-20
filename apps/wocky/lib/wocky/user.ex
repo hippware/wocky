@@ -94,6 +94,8 @@ defmodule Wocky.User do
                   :email, :tagline, :roles, :external_id, :provider]
   @max_register_retries 5
 
+  @no_index_role "__no_index__"
+
   @doc "Return the list of fields that can be updated on an existing user."
   @spec valid_update_fields :: [binary]
   def valid_update_fields do
@@ -301,7 +303,7 @@ defmodule Wocky.User do
 
     case Repo.update(changeset) do
       {:ok, user} ->
-        Index.update(:user, user.id, user)
+        maybe_update_index(user)
         :ok
 
       {:error, _} = error ->
@@ -431,5 +433,12 @@ defmodule Wocky.User do
              b.user_id == ^user.id or
              not is_nil(s.user_id) or
              not is_nil(ts.user_id))
+  end
+
+  def no_index_role, do: @no_index_role
+
+  defp maybe_update_index(user) do
+    Enum.member?(user.roles, @no_index_role)
+    || Index.update(:user, user.id, user)
   end
 end
