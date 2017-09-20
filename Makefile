@@ -105,6 +105,6 @@ follow: ## Follow the logs for a pod
 	@kubectl logs -n $(KUBE_NS) -f $(POD)
 
 cp: POD ?= $(first-pod)
-cp: ## Follow the logs for a pod
+cp: ## Copy a file from the container
 	@$(call print-pod)
 	kubectl cp $(KUBE_NS)/$(POD):$(src) $(dest)
