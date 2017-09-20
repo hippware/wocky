@@ -5,6 +5,7 @@ defmodule Wocky.HomeStreamItem do
 
   use Wocky.Repo.Model
 
+  alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.User
@@ -39,6 +40,8 @@ defmodule Wocky.HomeStreamItem do
 
   @change_fields [:user_id, :key, :from_jid, :stanza, :deleted,
                   :reference_user_id, :reference_bot_id]
+
+  @prepopulate_fields @change_fields ++ [:created_at, :updated_at]
 
   @delete_changes [deleted: true, stanza: "", from_jid: "",
                    reference_user_id: nil, reference_bot_id: nil]
@@ -176,6 +179,28 @@ defmodule Wocky.HomeStreamItem do
     else
       time
     end
+  end
+
+  @spec prepopulate_from(User.id, User.id, Duration.t) :: :ok
+  def prepopulate_from(user_id, from_id, period) do
+    from_time = Timex.subtract(DateTime.utc_now(), period)
+
+    from_id
+    |> get_after_time(from_time)
+    |> Enum.each(
+      fn(i) ->
+        params =
+          i
+          |> Map.take(@prepopulate_fields)
+          |> Map.put(:user_id, user_id)
+
+        %HomeStreamItem{}
+        |> cast(params, @prepopulate_fields)
+        |> foreign_key_constraint(:reference_user_id)
+        |> foreign_key_constraint(:reference_bot_id)
+        |> Repo.insert(on_conflict: :replace_all,
+                       conflict_target: [:user_id, :key])
+      end)
   end
 
   def with_user(user_id), do: with_user(HomeStreamItem, user_id)

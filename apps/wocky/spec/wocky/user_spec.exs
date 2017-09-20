@@ -7,6 +7,7 @@ defmodule Wocky.UserSpec do
   alias Faker.Code
   alias Faker.Internet
   alias Faker.Lorem
+  alias Faker.Name
   alias Timex.Duration
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -319,124 +320,147 @@ defmodule Wocky.UserSpec do
     end
 
     describe "update/2" do
-      before do
-        fields = %{
-          resource: ID.new,
-          handle: Internet.user_name,
-          first_name: "Svein",
-          last_name: "Forkbeard",
-          email: "svein@forkbeard.com",
-          tagline: "It was the blurst of times"
-        }
-
-        result = User.update(shared.id, fields)
-        {:ok, fields: fields, result: result}
-      end
-
-      it "should return :ok" do
-        shared.result |> should(eq :ok)
-      end
-
-      it "should update the user's attributes" do
-        new_user = Repo.get(User, shared.id)
-        new_user.handle |> should(eq shared.fields.handle)
-        new_user.first_name |> should(eq shared.fields.first_name)
-        new_user.last_name |> should(eq shared.fields.last_name)
-        new_user.email |> should(eq shared.fields.email)
-        new_user.tagline |> should(eq shared.fields.tagline)
-      end
-
-      it "should not update the user's resource" do
-        new_user = Repo.get(User, shared.id)
-        new_user.resource |> should(be_nil())
-      end
-
-      context "full text search index" do
-        it "should be updated" do
-          TestIndexer.get_index_operations |> should_not(be_empty())
-        end
-      end
-
-      context "when a valid avatar is passed" do
+      context "standard update" do
         before do
-          avatar_id = ID.new
-          avatar_url = TROS.make_url(shared.server, avatar_id)
+          fields = %{
+            resource: ID.new,
+            handle: Internet.user_name,
+            first_name: "Svein",
+            last_name: "Forkbeard",
+            email: "svein@forkbeard.com",
+            tagline: "It was the blurst of times"
+          }
 
-          Metadata.put(avatar_id, shared.user.id, "public")
-
-          {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
+          result = User.update(shared.id, fields)
+          {:ok, fields: fields, result: result}
         end
 
-        finally do
-          Metadata.delete(shared.avatar_id)
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
         end
 
-        context "and the user does not have an existing avatar" do
-          before do
-            result = User.update(shared.id, %{avatar: shared.avatar_url})
-            {:ok, result: result}
-          end
-
-          it "should return :ok" do
-            shared.result |> should(eq :ok)
-          end
-
-          it "should update the user's avatar" do
-            new_user = Repo.get(User, shared.id)
-            new_user.avatar |> should(eq shared.avatar_url)
-          end
+        it "should update the user's attributes" do
+          new_user = Repo.get(User, shared.id)
+          new_user.handle |> should(eq shared.fields.handle)
+          new_user.first_name |> should(eq shared.fields.first_name)
+          new_user.last_name |> should(eq shared.fields.last_name)
+          new_user.email |> should(eq shared.fields.email)
+          new_user.tagline |> should(eq shared.fields.tagline)
         end
 
-        context "and the user already has that avatar" do
-          before do
-            shared.user
-            |> cast(%{avatar: shared.avatar_url}, [:avatar])
-            |> Repo.update!
+        it "should not update the user's resource" do
+          new_user = Repo.get(User, shared.id)
+          new_user.resource |> should(be_nil())
+        end
 
-            result = User.update(shared.id, %{avatar: shared.avatar_url})
-            {:ok, result: result}
-          end
-
-          it "should return :ok" do
-            shared.result |> should(eq :ok)
-          end
-
-          it "should not change the user's avatar" do
-            new_user = Repo.get(User, shared.id)
-            new_user.avatar |> should(eq shared.avatar_url)
-          end
-
-          it "should not try to delete the avatar" do
-            Metadata.get(shared.avatar_id) |> should_not(be_nil())
+        context "full text search index" do
+          it "should be updated" do
+            TestIndexer.get_index_operations |> should_not(be_empty())
           end
         end
 
-        context "and the user has a valid avatar" do
+        context "when a valid avatar is passed" do
           before do
             avatar_id = ID.new
             avatar_url = TROS.make_url(shared.server, avatar_id)
+
             Metadata.put(avatar_id, shared.user.id, "public")
 
-            shared.user
-            |> cast(%{avatar: avatar_url}, [:avatar])
-            |> Repo.update!
-
-            result = User.update(shared.id, %{avatar: shared.avatar_url})
-            {:ok, result: result, old_avatar_id: avatar_id}
+            {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
           end
 
-          it "should return :ok" do
-            shared.result |> should(eq :ok)
+          finally do
+            Metadata.delete(shared.avatar_id)
           end
 
-          it "should update the user's avatar" do
-            new_user = Repo.get(User, shared.id)
-            new_user.avatar |> should(eq shared.avatar_url)
+          context "and the user does not have an existing avatar" do
+            before do
+              result = User.update(shared.id, %{avatar: shared.avatar_url})
+              {:ok, result: result}
+            end
+
+            it "should return :ok" do
+              shared.result |> should(eq :ok)
+            end
+
+            it "should update the user's avatar" do
+              new_user = Repo.get(User, shared.id)
+              new_user.avatar |> should(eq shared.avatar_url)
+            end
           end
 
-          it "should delete the old avatar" do
-            Metadata.get(shared.old_avatar_id) |> should(be_nil())
+          context "and the user already has that avatar" do
+            before do
+              shared.user
+              |> cast(%{avatar: shared.avatar_url}, [:avatar])
+              |> Repo.update!
+
+              result = User.update(shared.id, %{avatar: shared.avatar_url})
+              {:ok, result: result}
+            end
+
+            it "should return :ok" do
+              shared.result |> should(eq :ok)
+            end
+
+            it "should not change the user's avatar" do
+              new_user = Repo.get(User, shared.id)
+              new_user.avatar |> should(eq shared.avatar_url)
+            end
+
+            it "should not try to delete the avatar" do
+              Metadata.get(shared.avatar_id) |> should_not(be_nil())
+            end
           end
+
+          context "and the user has a valid avatar" do
+            before do
+              avatar_id = ID.new
+              avatar_url = TROS.make_url(shared.server, avatar_id)
+              Metadata.put(avatar_id, shared.user.id, "public")
+
+              shared.user
+              |> cast(%{avatar: avatar_url}, [:avatar])
+              |> Repo.update!
+
+              result = User.update(shared.id, %{avatar: shared.avatar_url})
+              {:ok, result: result, old_avatar_id: avatar_id}
+            end
+
+            it "should return :ok" do
+              shared.result |> should(eq :ok)
+            end
+
+            it "should update the user's avatar" do
+              new_user = Repo.get(User, shared.id)
+              new_user.avatar |> should(eq shared.avatar_url)
+            end
+
+            it "should delete the old avatar" do
+              Metadata.get(shared.old_avatar_id) |> should(be_nil())
+            end
+          end
+        end
+      end
+
+      context "non-indexed user" do
+        before do
+          user = Factory.insert(:user, %{roles: [User.no_index_role]})
+          fields = %{
+            resource: ID.new,
+            handle: Internet.user_name,
+            first_name: Name.first_name,
+            last_name: Name.last_name,
+            email: Internet.email,
+            tagline: Lorem.sentence
+          }
+
+          result = User.update(user.id, fields)
+          :ok
+        end
+
+        it "should not update the index" do
+          TestIndexer.get_index_operations |> should(be_empty())
         end
       end
     end

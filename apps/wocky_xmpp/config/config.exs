@@ -3,7 +3,8 @@
 use Mix.Config
 
 config :wocky_xmpp,
-  ecto_repos: []
+  ecto_repos: [],
+  hs_prepopulation_user: "__new_user_hs_archive__"
 
 config :ejabberd,
   keep_lager_intact: true
