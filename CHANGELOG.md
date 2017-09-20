@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.9.20+r535d2cb
+
+* Home stream prepopulation (PR #978)
+
+
 # 2017.9.18+rabf481e
 
 * Blocking fixes (PR #971, PR #972)
