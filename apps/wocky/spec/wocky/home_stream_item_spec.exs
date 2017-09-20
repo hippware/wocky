@@ -2,11 +2,14 @@ defmodule Wocky.HomeStreamItemSpec do
   use ESpec, async: true
 
   alias Faker.Lorem
+  alias Timex.Duration
   alias Wocky.HomeStreamItem
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   @num_items 10
+
+  @differeing_prepop_fields [:user, :user_id, :id]
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
@@ -301,6 +304,63 @@ defmodule Wocky.HomeStreamItemSpec do
       ID.new
       |> HomeStreamItem.get_latest_time
       |> should(be_struct DateTime)
+    end
+  end
+
+  describe "prepopulate_from/3" do
+    before do
+      source_user = Factory.insert(:user)
+      now = DateTime.utc_now
+
+      items = for i <- 1..@num_items do
+        time = Timex.subtract(now, Duration.from_seconds(i * 5))
+        Factory.insert(:home_stream_item,
+                       %{user: source_user,
+                         created_at: time,
+                         updated_at: time})
+      end
+
+      target_user = Factory.insert(:user)
+
+      {:ok,
+        items: Enum.map(Enum.reverse(items),
+                        &Map.drop(&1, @differeing_prepop_fields)),
+        source_user: source_user,
+        target_user: target_user}
+    end
+
+    it "should copy items for the specified time period" do
+      HomeStreamItem.prepopulate_from(shared.target_user.id,
+                                      shared.source_user.id,
+                                      Duration.from_days(10))
+      |> should(eq :ok)
+
+      HomeStreamItem.get(shared.target_user.id)
+      |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
+      |> should(eq shared.items)
+    end
+
+    it "should not copy items not in the time period" do
+      HomeStreamItem.prepopulate_from(shared.target_user.id,
+                                      shared.source_user.id,
+                                      Duration.from_seconds(0))
+      |> should(eq :ok)
+
+      HomeStreamItem.get(shared.target_user.id) |> should(eq [])
+    end
+
+    it "should get only items in the time period" do
+      pivot = Enum.at(shared.items, 5)
+      period = Timex.diff(DateTime.utc_now(), pivot.created_at(), :duration)
+
+      HomeStreamItem.prepopulate_from(shared.target_user.id,
+                                      shared.source_user.id,
+                                      period)
+      |> should(eq :ok)
+
+      HomeStreamItem.get(shared.target_user.id)
+      |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
+      |> should(eq Enum.slice(shared.items, 6..@num_items - 1))
     end
   end
 

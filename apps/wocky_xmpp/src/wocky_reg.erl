@@ -26,7 +26,7 @@ register_user(JSON) ->
                                                          ExternalID,
                                                          PhoneNumber),
 
-        {ok, IsNew andalso set_initial_contacts(UserID)},
+        {ok, IsNew andalso prepopulate_user(UserID)},
 
         {Token, Expiry} <- maybe_get_token(GetToken, UserID, Resource),
         {ok, #reg_result{
@@ -88,6 +88,10 @@ maybe_get_token(true, User, Resource) ->
     {ok, {Token, Expiry}} = ?wocky_token:assign(User, Resource),
     {ok, {Token, ?wocky_timestamp:to_string(Expiry)}}.
 
+prepopulate_user(UserID) ->
+    set_initial_contacts(UserID),
+    prepopulate_home_stream(UserID).
+
 set_initial_contacts(UserID) ->
     InitialFollowees = ?wocky_initial_contact:get(),
     lists:foreach(set_initial_contact(UserID, _), InitialFollowees).
@@ -119,3 +123,6 @@ set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
 
     ?wocky_roster_item:put(UserContact),
     ?wocky_roster_item:put(InitContact).
+
+prepopulate_home_stream(_UserID) ->
+    ok.

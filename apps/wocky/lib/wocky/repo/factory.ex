@@ -55,7 +55,7 @@ defmodule Wocky.Repo.Factory do
       user: build(:user),
       pending: false,
       title: Company.name,
-      shortname: sequence(:shortname, &"#{Company.buzzword}-#{&1}"),
+      shortname: Lorem.sentence,
       description: Lorem.paragraph(%Range{first: 1, last: 2}),
       image: TROS.make_url("localhost", ID.new),
       type: "test",
