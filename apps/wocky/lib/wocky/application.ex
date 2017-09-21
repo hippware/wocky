@@ -9,8 +9,12 @@ defmodule Wocky.Application do
   """
   use Application
 
+  alias Wocky.Mailer
+
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
+
+    Mailer.init
 
     Supervisor.start_link([
       worker(Wocky.Repo, []),

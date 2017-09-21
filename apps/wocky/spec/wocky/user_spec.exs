@@ -455,7 +455,7 @@ defmodule Wocky.UserSpec do
             tagline: Lorem.sentence
           }
 
-          result = User.update(user.id, fields)
+          User.update(user.id, fields)
           :ok
         end
 
@@ -768,6 +768,9 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "full_name/1" do
+    it do: User.full_name(shared.user) |> should(be_binary())
+  end
 
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 

@@ -435,6 +435,16 @@ defmodule Wocky.User do
              not is_nil(ts.user_id))
   end
 
+  @doc "Generate a full name for anywhere it needs pretty-printing"
+  @spec full_name(User.t) :: String.t
+  def full_name(user) do
+    String.trim(safe_bin(user.first_name) <> " " <> safe_bin(user.last_name))
+  end
+
+  defp safe_bin(nil), do: ""
+  defp safe_bin(b), do: b
+
+
   def no_index_role, do: @no_index_role
 
   defp maybe_update_index(user) do

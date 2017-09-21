@@ -26,3 +26,4 @@ data:
   CLOUDWATCH_REGION: us-west-2
   CLOUDWATCH_INSTANCE: ""
   REPLACE_OS_VARS: "true"
+  BAMBOO_ADAPTER: Bamboo.TestAdapter

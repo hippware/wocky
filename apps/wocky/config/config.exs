@@ -17,7 +17,12 @@ config :wocky,
   bot_index_name:        {:system, "WOCKY_BOT_INDEX_NAME"},
   enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false},
   enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false},
-  firebase_project_id:   "my-project-1480497595993"
+  firebase_project_id:   "my-project-1480497595993",
+
+  welcome_email_template: "official_tr_welcome_email",
+  welcome_email_from:     {"tinyrobot support", "support@tinyrobot.com"},
+  welcome_email_subject:  "Welcome to tinyrobot!",
+  welcome_field_mappings: [{"user_handle", :handle}]
 
 config :wocky, Wocky.Repo,
   adapter:   Ecto.Adapters.Postgres,

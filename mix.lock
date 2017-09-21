@@ -2,6 +2,7 @@
   "aleppo": {:hex, :inaka_aleppo, "1.0.0", "8db14cf16bb8c263c14ff4c3f69f64d7c849d40888944f4204d2ca74f1114ceb", [:rebar3], [], "hexpm"},
   "algolia": {:hex, :algolia, "0.6.4", "aee2ca04a7ceabacaa89974680cfc619c2f3e1dbe5bb03c7ea5c83684daa766c", [:mix], [{:hackney, "~> 1.6.5 or ~> 1.7.1 or ~> 1.8.6", [hex: :hackney, repo: "hexpm", optional: false]}, {:poison, "~> 2.2 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "apns": {:git, "https://github.com/chvanikoff/apns4ex.git", "7691a3ff660a722a37567f1a987e47583886a669", [branch: "master"]},
+  "bamboo": {:hex, :bamboo, "0.8.0", "573889a3efcb906bb9d25a1c4caa4ca22f479235e1b8cc3260d8b88dabeb4b14", [], [{:hackney, "~> 1.6", [hex: :hackney, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}, {:poison, ">= 1.5.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "base16": {:hex, :base16, "1.0.0", "283644e2b21bd5915acb7178bed7851fb07c6e5749b8fad68a53c501092176d9", [:rebar3], [], "hexpm"},
   "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
   "bear": {:hex, :bear, "0.8.5", "e95fca1627cd9e15baf93ce0a52aff16917baf325f0ee65b88cd715376cd2344", [:rebar3], [], "hexpm"},

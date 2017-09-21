@@ -84,6 +84,7 @@ defmodule Wocky.Mixfile do
       {:comeonin,             "~> 3.0"},
       {:joken,                "~> 1.1"},
       {:peerage,              "~> 1.0"},
+      {:bamboo,               "~> 0.8"},
 
       {:ecto,
         github: "hippware/ecto",
