@@ -448,7 +448,8 @@ defmodule Wocky.User do
   def no_index_role, do: @no_index_role
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
-  defp maybe_send_welcome(%User{email: email} = user) when not is_nil(email) do
+  defp maybe_send_welcome(%User{email: email}) when is_nil(email), do: :ok
+  defp maybe_send_welcome(%User{} = user) do
     Email.send_welcome_email(user)
     user
     |> cast(%{welcome_sent: true}, [:welcome_sent])

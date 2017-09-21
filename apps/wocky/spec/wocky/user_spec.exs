@@ -500,6 +500,23 @@ defmodule Wocky.UserSpec do
           :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
         end
       end
+
+      context "update to an un-welcomed user that leaves the email unset" do
+        before do
+          user = Factory.insert(:user, %{email: nil})
+
+          fields = %{
+            first_name: Name.first_name
+          }
+
+          User.update(user.id, fields)
+          :ok
+        end
+
+        it "should not send a welcome email" do
+          :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
+        end
+      end
     end
 
     describe "delete/1" do
