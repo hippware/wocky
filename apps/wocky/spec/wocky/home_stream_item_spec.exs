@@ -250,6 +250,14 @@ defmodule Wocky.HomeStreamItemSpec do
       |> HomeStreamItem.get
       |> should(eq [])
     end
+
+    it "should exclude deleted items when requested" do
+      HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
+
+      shared.user.id
+      |> HomeStreamItem.get(true)
+      |> should_match_items(tl(shared.items))
+    end
   end
 
   describe "get_by_key/2" do
@@ -269,6 +277,14 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should return nil if the user doesn't exit" do
       ID.new
       |> HomeStreamItem.get_by_key(hd(shared.items).key)
+      |> should(be_nil())
+    end
+
+    it "should exclude deleted items when requested" do
+      HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
+
+      shared.user.id
+      |> HomeStreamItem.get_by_key(hd(shared.items).key, true)
       |> should(be_nil())
     end
   end

@@ -8,14 +8,14 @@
 -include("wocky_publishing.hrl").
 
 -export([register/2, unregister/2, send_notification/3]).
--export([set/5, get/3, subscribe/3, unsubscribe/2]).
+-export([set/5, get/4, subscribe/3, unsubscribe/2]).
 
 -callback publish(ejabberd:jid(), ejabberd:jid(), pub_item_id(),
               published_stanza()) -> ok.
 
 -callback delete(ejabberd:jid(), pub_item_id()) -> ok.
 
--callback get(ejabberd:jid(), jlib:rsm_in() | pub_item_id()) ->
+-callback get(ejabberd:jid(), jlib:rsm_in() | pub_item_id(), boolean()) ->
     {ok, {[published_item()], pub_version(), jlib:rsm_out()} |
          {published_item(), pub_version()} |
          not_found} |
@@ -61,8 +61,8 @@ set(Node, _From, To, ID, #xmlel{name = <<"delete">>}) ->
 set(Node, From, To, ID, Stanza) ->
     call_hook(publish, Node, [To, From, ID, Stanza]).
 
-get(Node, From, Param) ->
-    call_hook(get, Node, [From, Param]).
+get(Node, From, Param, ExcludeDeleted) ->
+    call_hook(get, Node, [From, Param, ExcludeDeleted]).
 
 subscribe(Node, User, Version) ->
     call_hook(subscribe, Node, [User, Version]).

@@ -497,20 +497,33 @@ hs_node(User) ->
       jid:make(User, ?SERVER, <<"home_stream">>)).
 
 get_hs_stanza() ->
-    get_hs_stanza(#rsm_in{max = 500}).
+    get_hs_stanza(#rsm_in{max = 500}, false).
 
-get_hs_stanza(RSM = #rsm_in{}) ->
+get_hs_stanza(ExcludeDeleted) when is_boolean(ExcludeDeleted) ->
+    get_hs_stanza(#rsm_in{max = 500}, ExcludeDeleted);
+
+get_hs_stanza(RSMIn = #rsm_in{}) ->
+    get_hs_stanza(RSMIn, false);
+
+get_hs_stanza(ID) when is_binary(ID) ->
+    get_hs_stanza(ID, false).
+
+get_hs_stanza(RSM = #rsm_in{}, ExcludeDeleted) ->
     test_helper:iq_get(?NS_PUBLISHING,
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [rsm_elem(RSM)]});
+                              children = [rsm_elem(RSM) |
+                                          maybe_exclude_deleted_elem(
+                                            ExcludeDeleted)]});
 
-get_hs_stanza(ID) when is_binary(ID) ->
+get_hs_stanza(ID, ExcludeDeleted) when is_binary(ID) ->
     test_helper:iq_get(?NS_PUBLISHING,
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [#xmlel{name = <<"item">>,
-                                                 attrs = [{<<"id">>, ID}]}]}).
+                                                 attrs = [{<<"id">>, ID}]} |
+                                          maybe_exclude_deleted_elem(
+                                            ExcludeDeleted)]}).
 
 set_notifications(Enabled, Client) ->
     Stanza = notifications_stanza(Enabled, Client),
@@ -551,3 +564,6 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
               escalus:assert(is_bot_action(?BOT, _),
                              hd((lists:last(I))#item.stanzas))
       end, Clients).
+
+maybe_exclude_deleted_elem(false) -> [];
+maybe_exclude_deleted_elem(true) -> [#xmlel{name = <<"exclude-deleted">>}].

@@ -109,16 +109,18 @@ handle_publish(From, To, Attrs, Children) ->
         ID      <- get_id(Item#xmlel.attrs),
         Stanza  <- get_stanza(Item),
         wocky_publishing_handler:set(Node, From, To, ID, Stanza),
-        {_, Version} <- wocky_publishing_handler:get(Node, From, ID),
+        {_, Version} <- wocky_publishing_handler:get(Node, From, ID, false),
         {ok, published_stanza(Node, ID, Version)}
        ]).
 
 handle_items(From, To, Attrs, Children) ->
     do([error_m ||
         check_same_user(From, To),
-        Node    <- get_node(Attrs),
-        Param   <- get_item_id_or_rsm(Children),
-        Result  <- wocky_publishing_handler:get(Node, From, Param),
+        Node           <- get_node(Attrs),
+        Param          <- get_item_id_or_rsm(Children),
+        ExcludeDeleted <- get_exclude_deleted(Children),
+        Result         <- wocky_publishing_handler:get(
+                            Node, From, Param, ExcludeDeleted),
         result_stanza(Result, Node)
        ]).
 
@@ -200,6 +202,9 @@ get_item_id_or_rsm(Children) ->
         <<>> -> rsm_util:get_rsm(Elem);
         ID -> {ok, ID}
     end.
+
+get_exclude_deleted(Children) ->
+    {ok, lists:keyfind(<<"exclude-deleted">>, #xmlel.name, Children) =/= false}.
 
 get_stanza(XML = #xmlel{name = <<"delete">>}) ->
     {ok, XML};
