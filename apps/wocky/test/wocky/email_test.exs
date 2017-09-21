@@ -4,6 +4,7 @@ defmodule Wocky.EmailSpec do
 
   alias Wocky.Email
   alias Wocky.Repo.Factory
+  alias Wocky.User
 
   setup do
     {:ok, user: Factory.build(:user)}
@@ -12,7 +13,6 @@ defmodule Wocky.EmailSpec do
   test "send_welcome_email/1", context do
     assert Email.send_welcome_email(context.user) == :ok
     assert_delivered_with(
-      to: [{context.user.first_name <> " " <> context.user.last_name,
-            context.user.email}])
+      to: [{User.full_name(context.user), context.user.email}])
   end
 end

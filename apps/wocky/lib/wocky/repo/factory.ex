@@ -44,7 +44,8 @@ defmodule Wocky.Repo.Factory do
       email: Internet.email,
       tagline: Lorem.sentence,
       provider: "local",
-      roles: []
+      roles: [],
+      welcome_sent: false
     }
   end
 

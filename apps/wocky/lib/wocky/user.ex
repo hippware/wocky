@@ -445,10 +445,6 @@ defmodule Wocky.User do
     String.trim(safe_bin(user.first_name) <> " " <> safe_bin(user.last_name))
   end
 
-  defp safe_bin(nil), do: ""
-  defp safe_bin(b), do: b
-
-
   def no_index_role, do: @no_index_role
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
@@ -463,4 +459,7 @@ defmodule Wocky.User do
     Enum.member?(user.roles, @no_index_role)
     || Index.update(:user, user.id, user)
   end
+
+  defp safe_bin(nil), do: ""
+  defp safe_bin(b), do: b
 end
