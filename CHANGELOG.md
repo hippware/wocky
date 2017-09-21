@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Logging changes (PR #980)
+
+
 # 2017.9.20+r535d2cb
 
 * Home stream prepopulation (PR #978)
