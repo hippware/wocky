@@ -170,7 +170,10 @@ delete(Config) ->
 
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
         Items = check_hs_result(Stanza2, 4, 1, true),
-        ?assertEqual({delete, <<"some_id">>}, lists:last(Items))
+        ?assertEqual({delete, <<"some_id">>}, lists:last(Items)),
+
+        Stanza3 = expect_iq_success_u(get_hs_stanza(true), Alice, Alice),
+        check_hs_result(Stanza3, 4, 0, true)
       end).
 
 no_auto_publish_chat(Config) ->

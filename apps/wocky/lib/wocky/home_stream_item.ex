@@ -139,19 +139,21 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @doc "Get all home stream items for a user"
-  @spec get(User.id) :: [t]
-  def get(user_id) do
+  @spec get(User.id, boolean) :: [t]
+  def get(user_id, exclude_deleted \\ false) do
     HomeStreamItem
     |> with_user(user_id)
+    |> maybe_exclude_deleted(exclude_deleted)
     |> order_by_time()
     |> Repo.all
   end
 
   @doc "Get a single item by its key"
-  @spec get_by_key(User.id, key) :: t | nil
-  def get_by_key(user_id, key) do
+  @spec get_by_key(User.id, key, boolean) :: t | nil
+  def get_by_key(user_id, key, exclude_deleted \\ false) do
     HomeStreamItem
     |> with_user(user_id)
+    |> maybe_exclude_deleted(exclude_deleted)
     |> with_key(key)
     |> Repo.one
   end
@@ -224,6 +226,11 @@ defmodule Wocky.HomeStreamItem do
 
   defp max_time(query) do
     from h in query, select: max(h.updated_at)
+  end
+
+  def maybe_exclude_deleted(query, false), do: query
+  def maybe_exclude_deleted(query, true) do
+    from h in query, where: h.deleted == false
   end
 
   defp changeset(struct, params) do
