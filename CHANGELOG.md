@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Send a welcome email to new users (#952)
 * Allow filtering of deleted HS items (#987)
 * k8s updates (PR #990)
+* Fix handling of nil user handle in user contacts (#985)
 
 
 # 2017.9.20+r535d2cb
