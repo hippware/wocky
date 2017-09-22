@@ -6,6 +6,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Logging changes (PR #980)
+* Send a welcome email to new users (#952)
+* Allow filtering of deleted HS items (#987)
+* k8s updates (PR #990)
 
 
 # 2017.9.20+r535d2cb
