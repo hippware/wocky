@@ -441,9 +441,7 @@ defmodule Wocky.User do
 
   @doc "Generate a full name for anywhere it needs pretty-printing"
   @spec full_name(User.t) :: String.t
-  def full_name(user) do
-    String.trim(safe_bin(user.first_name) <> " " <> safe_bin(user.last_name))
-  end
+  def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
 
   def no_index_role, do: @no_index_role
 
@@ -460,7 +458,4 @@ defmodule Wocky.User do
     Enum.member?(user.roles, @no_index_role)
     || Index.update(:user, user.id, user)
   end
-
-  defp safe_bin(nil), do: ""
-  defp safe_bin(b), do: b
 end
