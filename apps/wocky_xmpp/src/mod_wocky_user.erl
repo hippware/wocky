@@ -402,7 +402,7 @@ make_contact(#{id := UserID, server := Server, handle := Handle},
              RequestedAssociation, TargetID) ->
     #xmlel{name = <<"contact">>,
            attrs = [{<<"jid">>, jid:to_binary(jid:make(UserID, Server, <<>>))},
-                    {<<"handle">>, Handle},
+                    {<<"handle">>, wocky_util:nil_to_bin(Handle)},
                     {<<"association">>,
                      association(UserID, TargetID, RequestedAssociation)}]}.
 
