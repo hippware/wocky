@@ -14,6 +14,7 @@ defmodule Wocky.User do
   alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.Device
+  alias Wocky.Email
   alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
@@ -43,6 +44,7 @@ defmodule Wocky.User do
     field :password,     :string # Password hash
     field :pass_details, :string
     field :roles,        {:array, :string}, default: []
+    field :welcome_sent, :boolean
 
     timestamps()
 
@@ -85,7 +87,8 @@ defmodule Wocky.User do
     provider:       nil | provider,
     external_id:    nil | external_id,
     phone_number:   nil | phone_number,
-    roles:          [role]
+    roles:          [role],
+    welcome_sent:   boolean
   }
 
   @register_fields [:username, :server, :provider, :external_id,
@@ -303,6 +306,7 @@ defmodule Wocky.User do
 
     case Repo.update(changeset) do
       {:ok, user} ->
+        maybe_send_welcome(user)
         maybe_update_index(user)
         :ok
 
@@ -435,7 +439,20 @@ defmodule Wocky.User do
              not is_nil(ts.user_id))
   end
 
+  @doc "Generate a full name for anywhere it needs pretty-printing"
+  @spec full_name(User.t) :: String.t
+  def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
+
   def no_index_role, do: @no_index_role
+
+  defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
+  defp maybe_send_welcome(%User{email: nil}), do: :ok
+  defp maybe_send_welcome(%User{} = user) do
+    Email.send_welcome_email(user)
+    user
+    |> cast(%{welcome_sent: true}, [:welcome_sent])
+    |> Repo.update
+  end
 
   defp maybe_update_index(user) do
     Enum.member?(user.roles, @no_index_role)

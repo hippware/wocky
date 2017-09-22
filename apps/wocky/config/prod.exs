@@ -6,6 +6,10 @@ config :wocky,
   async_location_processing: true,
   tros_backend: Wocky.TROS.S3Store
 
+config :wocky, Wocky.Mailer,
+  adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.MandrillAdapter},
+  api_key: {:system, :string, "MANDRILL_API_KEY"}
+
 config :slackex,
   token: nil
 

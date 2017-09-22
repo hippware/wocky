@@ -12,6 +12,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
+  alias Wocky.Email
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -319,16 +320,25 @@ defmodule Wocky.UserSpec do
       TestIndexer.reset
     end
 
-    describe "update/2" do
+    describe "update/2", async: false do
+      before do
+        :meck.new(Email)
+        :meck.expect(Email, :send_welcome_email, fn(%User{}) -> :ok end)
+      end
+
+      finally do
+        :meck.unload(Email)
+      end
+
       context "standard update" do
         before do
           fields = %{
             resource: ID.new,
             handle: Internet.user_name,
-            first_name: "Svein",
-            last_name: "Forkbeard",
-            email: "svein@forkbeard.com",
-            tagline: "It was the blurst of times"
+            first_name: Name.first_name,
+            last_name: Name.last_name,
+            email: Internet.email,
+            tagline: Lorem.sentence
           }
 
           result = User.update(shared.id, fields)
@@ -357,6 +367,16 @@ defmodule Wocky.UserSpec do
           it "should be updated" do
             TestIndexer.get_index_operations |> should_not(be_empty())
           end
+        end
+
+        it "should trigger the sending of a welcome email" do
+          :meck.validate(Email) |> should(be_true())
+          :meck.called(Email, :send_welcome_email, :_) |> should(be_true())
+        end
+
+        it "should mark the welcome email as sent" do
+          new_user = Repo.get(User, shared.id)
+          new_user.welcome_sent |> should(be_true())
         end
 
         context "when a valid avatar is passed" do
@@ -455,12 +475,46 @@ defmodule Wocky.UserSpec do
             tagline: Lorem.sentence
           }
 
-          result = User.update(user.id, fields)
+          User.update(user.id, fields)
           :ok
         end
 
         it "should not update the index" do
           TestIndexer.get_index_operations |> should(be_empty())
+        end
+      end
+
+      context "update to an already-welcomed user" do
+        before do
+          user = Factory.insert(:user, %{welcome_sent: true})
+
+          fields = %{
+            email: Internet.email,
+          }
+
+          User.update(user.id, fields)
+          :ok
+        end
+
+        it "should not re-send the welcome email" do
+          :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
+        end
+      end
+
+      context "update to an un-welcomed user that leaves the email unset" do
+        before do
+          user = Factory.insert(:user, %{email: nil})
+
+          fields = %{
+            first_name: Name.first_name
+          }
+
+          User.update(user.id, fields)
+          :ok
+        end
+
+        it "should not send a welcome email" do
+          :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
         end
       end
     end
@@ -768,6 +822,9 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "full_name/1" do
+    it do: User.full_name(shared.user) |> should(be_binary())
+  end
 
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
