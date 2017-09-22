@@ -656,7 +656,8 @@ has_field(Fields, Field) ->
               end, Fields).
 
 seed_contacts() ->
-    Friends = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
+    Friends = [?wocky_factory:insert(user, #{server => ?SERVER, handle => nil})
+               | ?wocky_factory:insert_list(4, user, #{server => ?SERVER})],
     lists:foreach(insert_friend_pair(?BOB, _), ids(Friends)),
 
     Followers = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
@@ -716,7 +717,8 @@ match_contacts(Contacts, [#{handle := UHandle, id := ID, server := Server,
     Remaining = lists:filter(
                   fun(#{handle := H, jid := J, association := A}) ->
                           not (
-                            H =:= UHandle andalso
+                            (H =:= UHandle orelse
+                             (H =:= <<>> andalso UHandle =:= nil)) andalso
                             J =:= CJID andalso
                             A =:= CAssociation
                            )
