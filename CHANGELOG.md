@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.9.22+r3e3ec07
+
 * Logging changes (PR #980)
 * Send a welcome email to new users (#952)
 * Allow filtering of deleted HS items (#987)
