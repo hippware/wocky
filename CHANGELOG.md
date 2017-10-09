@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update Mandrill API key (PR #1014)
+* Add K8s templates for a load test environment (PR #1015)
+
+
 # 2017.9.22+r3e3ec07
 
 * Logging changes (PR #980)
