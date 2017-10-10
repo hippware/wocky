@@ -17,7 +17,8 @@
          get_attr/2,
          parse_multiple/1,
          cdata_el/2,
-         path_by_attr/4
+         path_by_attr/4,
+         paths_by_attr/4
         ]).
 
 -type error() :: {error, jlib:xmlel()}.
@@ -141,11 +142,14 @@ cdata_el(Name, Value) ->
 -spec path_by_attr(jlib:xmlel(), exml_query:path(), binary(), binary()) ->
     jlib:xmlel() | undefined.
 path_by_attr(Element, Path, AttrName, AttrValue) ->
+    hd(paths_by_attr(Element, Path, AttrName, AttrValue)).
+
+% Find the first element at Path (see exml_query.erl) with the specified
+% attribute pair
+-spec paths_by_attr(jlib:xmlel(), exml_query:path(), binary(), binary()) ->
+    [jlib:xmlel()] | undefined.
+paths_by_attr(Element, Path, AttrName, AttrValue) ->
     Elements = exml_query:paths(Element, Path),
-    L = lists:dropwhile(
-          fun(E) -> exml_query:attr(E, AttrName) =/= AttrValue end,
-          Elements),
-    case L of
-        [] -> undefined;
-        [E|_] -> E
-    end.
+    lists:filter(
+      fun(E) -> exml_query:attr(E, AttrName) =:= AttrValue end,
+      Elements).
