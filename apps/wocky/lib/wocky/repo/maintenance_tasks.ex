@@ -8,7 +8,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
   alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TrafficLog
-  alias Wocky.TROSMetadata
+  alias Wocky.TROS.Metadata
 
   require Logger
 
@@ -63,10 +63,10 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_pending_tros_files do
-    expire_date = Timestamp.shift(hours: -1)
+    expire_date = Timestamp.shift(weeks: -1)
 
     {deleted, nil} =
-      TROSMetadata
+      Metadata
       |> where([t], t.ready == false)
       |> where([t], t.created_at < ^expire_date)
       |> Repo.delete_all
