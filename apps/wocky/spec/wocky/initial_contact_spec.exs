@@ -6,8 +6,6 @@ defmodule Wocky.InitialContactSpec do
   alias Wocky.Repo
 
   before do
-    Repo.delete_all(InitialContact)
-
     init_contacts =
       5
       |> Factory.insert_list(:user)
