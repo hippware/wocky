@@ -5,6 +5,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
 
   alias Wocky.Bot
   alias Wocky.Repo
+  alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TrafficLog
   alias Wocky.TROSMetadata
@@ -24,7 +25,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_pending_bots do
-    expire_date = time_ago(days: -1)
+    expire_date = Timestamp.shift(days: -1)
 
     {deleted, nil} =
       Bot
@@ -38,7 +39,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_traffic_logs do
-    expire_date = time_ago(months: -1)
+    expire_date = Timestamp.shift(months: -1)
 
     {deleted, nil} =
       TrafficLog
@@ -62,7 +63,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_pending_tros_files do
-    expire_date = time_ago(hours: -1)
+    expire_date = Timestamp.shift(hours: -1)
 
     {deleted, nil} =
       TROSMetadata
@@ -94,11 +95,5 @@ defmodule Wocky.Repo.MaintenanceTasks do
 
   def clean_user_avatar_links do
     {:ok, 0}
-  end
-
-  defp time_ago(modifier) do
-    DateTime.utc_now
-    |> Timex.shift(modifier)
-    |> Timex.format!("{ISO:Extended:Z}")
   end
 end
