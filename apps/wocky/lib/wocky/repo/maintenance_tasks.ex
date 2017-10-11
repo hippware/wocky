@@ -2,13 +2,17 @@ defmodule Wocky.Repo.MaintenanceTasks do
   @moduledoc "Functions that keep the database nice and clean."
 
   import Ecto.Query
+  import SweetXml
 
   alias Wocky.Bot
+  alias Wocky.Bot.Item
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TrafficLog
+  alias Wocky.TROS
   alias Wocky.TROS.Metadata
+  alias Wocky.User
 
   require Logger
 
@@ -86,14 +90,67 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_bot_item_image_links do
-    {:ok, 0}
+    Repo.transaction(fn ->
+      Item
+      |> where(image: true)
+      |> Repo.stream
+      |> Stream.map(&extract_item_image/1)
+      |> Stream.filter(fn {_, image} -> image_missing?(image) end)
+      |> Stream.each(&purge_missing_item_image/1)
+      |> Enum.count
+    end)
+  end
+
+  defp extract_item_image(item) do
+    image = xpath(item.stanza, ~x"/entry/image/text()"S)
+    {item, image}
+  end
+
+  defp image_missing?(""), do: false
+  defp image_missing?(image_url) do
+    case TROS.parse_url(image_url) do
+      {:ok, {_, file_id}} -> Metadata.get(file_id) == nil
+      {:error, _} -> true
+    end
+  end
+
+  defp purge_missing_item_image({item, _}) do
+    Item.delete(item.bot_id, item.id)
   end
 
   def clean_bot_image_links do
-    {:ok, 0}
+    Repo.transaction(fn ->
+      Bot
+      |> where([b], not is_nil(b.image))
+      |> where([b], b.image != "")
+      |> Repo.stream
+      |> Stream.filter(&image_missing?(&1.image))
+      |> Stream.each(&purge_missing_bot_image/1)
+      |> Enum.count
+    end)
+  end
+
+  defp purge_missing_bot_image(bot) do
+    bot
+    |> Bot.changeset(%{image: nil})
+    |> Repo.update!
   end
 
   def clean_user_avatar_links do
-    {:ok, 0}
+    Repo.transaction(fn ->
+      User
+      |> where([u], not is_nil(u.avatar))
+      |> where([u], u.avatar != "")
+      |> Repo.stream
+      |> Stream.filter(&image_missing?(&1.avatar))
+      |> Stream.each(&purge_missing_user_image/1)
+      |> Enum.count
+    end)
+  end
+
+  defp purge_missing_user_image(user) do
+    user
+    |> User.changeset(%{avatar: nil})
+    |> Repo.update!
   end
 end
