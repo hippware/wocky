@@ -26,15 +26,3 @@ config :pushex,
       ]
     ]
   ]
-
-config :quantum,
-  global?: true
-
-config :quantum, :wocky,
-  cron: [
-    bot_report: [
-      schedule: "@weekly",
-      task: "Wocky.BotReport.run",
-      args: ["wocky-reports", 7]
-    ]
-  ]

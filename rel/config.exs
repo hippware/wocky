@@ -43,6 +43,7 @@ release :wocky do
     {:copy, "etc", "etc"}
   ]
   set commands: [
+    "bot_report": "rel/commands/bot_report.sh",
     "migrate": "rel/commands/migrate.sh"
   ]
 end

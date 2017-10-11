@@ -14,11 +14,15 @@ defmodule Wocky.BotReport do
     Visibility Subscribers ImageItems Description
   )
 
-  @spec run(binary, non_neg_integer) :: nil | binary
-  def run(channel, days) do
+  @spec run :: nil | binary
+  def run do
+    {:ok, _} = Application.ensure_all_started(:wocky)
     if Confex.get(:wocky, :enable_bot_report) do
-      server = Confex.get(:wocky, :wocky_host)
+      days = Confex.get(:wocky, :bot_report_days)
       report = generate_report(days)
+
+      server = Confex.get(:wocky, :wocky_host)
+      channel = Confex.get(:wocky, :bot_report_channel)
       Files.upload(%{content: report,
                      filename: "weekly_bot_report_#{server}.csv",
                      title: "Weekly Bot Report for #{server}",
