@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.MaintenanceTasksSpec do
-  use ESpec, async: false
+  use ESpec, async: true
 
   import Ecto.Query
 
