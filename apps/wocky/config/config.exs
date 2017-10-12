@@ -26,6 +26,7 @@ config :wocky,
   enable_bot_report:     {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false},
   bot_report_channel:    {:system, :string,  "WOCKY_BOT_REPORT_CHANNEL", "wocky-reports"},
   bot_report_days:       {:system, :integer, "WOCKY_BOT_REPORT_DAYS", 7},
+  slack_token:           {:system, :string,  "SLACK_TOKEN", "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"},
 
   # Push notifications
   enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false},
@@ -66,9 +67,6 @@ config :ex_aws,
     {:awscli, "default", 30},
     :instance_role
   ]
-
-config :slackex,
-  token: "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"
 
 config :algolia,
   application_id: "HIE75ZR7Q7"

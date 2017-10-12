@@ -105,7 +105,7 @@
   "redo": {:hex, :redo, "2.0.1", "b895c67f4c1266db8fecca0079fbab65bdfaf7c2f5618c8edbdbf4800e7e248b", [:rebar], [], "hexpm"},
   "reprise": {:hex, :reprise, "0.5.1", "8b6e6266c46780e47f89e8e03e5fc945348dc0d5eb1e47b5ba017481d3a5f5dd", [:mix], [], "hexpm"},
   "setup": {:git, "git://github.com/uwiger/setup.git", "5c7d635145e5ffb8b0fa6b470770cdd1cb16b0b2", [tag: "1.6"]},
-  "slackex": {:git, "https://github.com/hippware/slackex.git", "d68531f26506b3ce55e449c1f65659b41b15c8ca", [branch: "master"]},
+  "slack_ex": {:hex, :slack_ex, "0.1.0", "64e819c1e874cb053f097d3b5989f4cd839761b10bab9c4e41cc45865853ad38", [], [{:httpoison, "~> 0.11", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "socket": {:hex, :socket, "0.3.12", "4a6543815136503fee67eff0932da1742fad83f84c49130c854114153cc549a6", [:mix], [], "hexpm"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], [], "hexpm"},
   "stringprep": {:hex, :stringprep, "1.0.8", "870d72db031796177261af88d1e6eb081dc314ad217377d441e5ea3c8504a310", [:rebar3], [{:p1_utils, "1.0.7", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},

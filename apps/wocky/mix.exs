@@ -37,6 +37,8 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
+        wocky_env: {:system, "WOCKY_ENV", "dev"},
+        wocky_inst: {:system, "WOCKY_INST", "local"},
         wocky_host: {:system, "WOCKY_HOST", "localhost"},
         event_handler: Wocky.EventHandler,
         reserved_handles: [
@@ -84,6 +86,7 @@ defmodule Wocky.Mixfile do
       {:joken,                "~> 1.1"},
       {:peerage,              "~> 1.0"},
       {:bamboo,               "~> 0.8"},
+      {:slack_ex,             "~> 0.1.0"},
 
       {:ecto,
         github: "hippware/ecto",
@@ -102,9 +105,6 @@ defmodule Wocky.Mixfile do
         branch: "working",
         manager: :rebar3,
         override: true},
-      {:slackex,
-        github: "hippware/slackex",
-        branch: "master"},
 
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},

@@ -62,6 +62,9 @@ status: ## Show the deployment status
 top: ## Show resource usage for app pods
 	@kubectl top pod -n $(KUBE_NS) -l 'app=wocky'
 
+watch: ## Watch the pods for changes
+	@kubectl get pods -n $(KUBE_NS) -l 'app=wocky' -w
+
 define first-pod
 $(shell kubectl get pods -n $(KUBE_NS) -l 'app=wocky' -o jsonpath='{.items[0].metadata.name}')
 endef
@@ -108,3 +111,8 @@ cp: POD ?= $(first-pod)
 cp: ## Copy a file from the container
 	@$(call print-pod)
 	kubectl cp $(KUBE_NS)/$(POD):$(src) $(dest)
+
+notify: POD ?= $(first-pod)
+notify:
+	# Notify Slack
+	@$(call do-exec,bin/wocky notify_deployment)

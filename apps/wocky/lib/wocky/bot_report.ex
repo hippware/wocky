@@ -3,7 +3,7 @@ defmodule Wocky.BotReport do
 
   import Ecto.Query
 
-  alias Slackex.Files
+  alias Slack.File
   alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Bot.Item
@@ -23,11 +23,15 @@ defmodule Wocky.BotReport do
 
       server = Confex.get(:wocky, :wocky_host)
       channel = Confex.get(:wocky, :bot_report_channel)
-      Files.upload(%{content: report,
+
+      :wocky
+      |> Confex.get(:slack_token)
+      |> Slack.client
+      |> File.upload(content: report,
                      filename: "weekly_bot_report_#{server}.csv",
                      title: "Weekly Bot Report for #{server}",
                      filetype: "csv",
-                     channels: channel})
+                     channels: channel)
     end
   end
 
