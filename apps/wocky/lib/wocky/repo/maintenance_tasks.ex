@@ -114,8 +114,18 @@ defmodule Wocky.Repo.MaintenanceTasks do
     end
   end
 
-  defp purge_missing_item_image({item, _}) do
-    Item.delete(item.bot_id, item.id)
+  defp purge_missing_item_image({item, image}) do
+    content = xpath(item.stanza, ~x"/entry/content/text()"S)
+    if String.length(content) > 0 do
+      image_tag = "<image>#{image}</image>"
+      new_stanza = String.replace(item.stanza, image_tag, "")
+
+      item
+      |> Item.changeset(%{stanza: new_stanza, image: false})
+      |> Repo.update!
+    else
+      Repo.delete!(item)
+    end
   end
 
   def clean_bot_image_links do

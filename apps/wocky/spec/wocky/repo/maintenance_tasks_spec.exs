@@ -2,10 +2,13 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
   use ESpec, async: true
 
   import Ecto.Query
+  import SweetXml
 
   alias Wocky.Bot
+  alias Wocky.Bot.Item
   alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
   alias Wocky.Repo.MaintenanceTasks
   alias Wocky.Repo.Timestamp
   alias Wocky.Token
@@ -203,6 +206,22 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     end
   end
 
+  defp item_stanza(opts) do
+    """
+    <entry xmlns='http://www.w3.org/2005/Atom'>
+      <title/>
+      #{content_tag(opts[:content])}
+      #{image_tag(opts[:image])}
+    </entry>
+    """
+  end
+
+  defp image_tag(nil), do: ""
+  defp image_tag(image), do: "<image>#{image}</image>"
+
+  defp content_tag(nil), do: ""
+  defp content_tag(text), do: "<content>#{text}</content>"
+
   describe "clean_dead_tros_links" do
     before do
       md = Factory.insert(:tros_metadata, user: shared.user)
@@ -210,7 +229,99 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     end
 
     describe "clean_bot_item_image_links" do
+      before do
+        bad_url = TROS.make_url("localhost", ID.new)
+        bot = Factory.insert(:bot, user: shared.user)
 
+        good_with_content =
+          Factory.insert(:item, bot: bot, user: shared.user, image: true,
+                         stanza: item_stanza(image: shared.file_url,
+                                             content: "testing"))
+        bad_with_content =
+          Factory.insert(:item, bot: bot, user: shared.user, image: true,
+                         stanza: item_stanza(image: bad_url,
+                                             content: "testing"))
+        good_no_content =
+          Factory.insert(:item, bot: bot, user: shared.user, image: true,
+                         stanza: item_stanza(image: shared.file_url))
+        bad_no_content =
+          Factory.insert(:item, bot: bot, user: shared.user, image: true,
+                         stanza: item_stanza(image: bad_url))
+        only_content =
+          Factory.insert(:item, bot: bot, user: shared.user, image: false,
+                         stanza: item_stanza(content: "testing"))
+
+        {:ok, result} = MaintenanceTasks.clean_bot_item_image_links
+        {:ok, [
+          bot: bot,
+          good_with_content: good_with_content,
+          bad_with_content: bad_with_content,
+          good_no_content: good_no_content,
+          bad_no_content: bad_no_content,
+          only_content: only_content,
+          result: result
+        ]}
+      end
+
+      it "should return the number of images purged" do
+        shared.result |> should(eq 2)
+      end
+
+      context "when the item stanza has content" do
+        it "should not delete an item with an invalid image link" do
+          Item
+          |> where(id: ^shared.bad_with_content.id)
+          |> where(bot_id: ^shared.bot.id)
+          |> Repo.one
+          |> should_not(be_nil())
+        end
+
+        it "should remove the invalid image link from the item" do
+          Item
+          |> where(id: ^shared.bad_with_content.id)
+          |> where(bot_id: ^shared.bot.id)
+          |> select([i], i.stanza)
+          |> Repo.one
+          |> xpath(~x"/entry/image/text()"S)
+          |> should(eq "")
+        end
+
+        it "should not change a stanza with valid image link" do
+          Item
+          |> where(id: ^shared.good_with_content.id)
+          |> where(bot_id: ^shared.bot.id)
+          |> select([i], i.stanza)
+          |> Repo.one
+          |> should(eq shared.good_with_content.stanza)
+        end
+
+        it "should not change a stanza with no image link" do
+          Item
+          |> where(id: ^shared.only_content.id)
+          |> where(bot_id: ^shared.bot.id)
+          |> select([i], i.stanza)
+          |> Repo.one
+          |> should(eq shared.only_content.stanza)
+        end
+      end
+
+      context "when the item stanza has no content" do
+        it "should delete an item with an invalid image link" do
+          Item
+          |> where(id: ^shared.bad_no_content.id)
+          |> where(bot_id: ^shared.bot.id)
+          |> Repo.one
+          |> should(be_nil())
+        end
+
+        it "should not delete an item with a valid image link" do
+          Item
+          |> where(id: ^shared.good_no_content.id)
+          |> where(bot_id: ^shared.bot.id)
+          |> Repo.one
+          |> should_not(be_nil())
+        end
+      end
     end
 
     describe "clean_bot_image_links" do
@@ -223,11 +334,11 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
         {:ok, result: result, invalid_bot: invalid_bot, valid_bot: valid_bot}
       end
 
-      it "should return the number of avatars nillified" do
+      it "should return the number of images nillified" do
         shared.result |> should(eq 1)
       end
 
-      it "should nillify non-existing avatars" do
+      it "should nillify non-existing images" do
         Bot
         |> where(id: ^shared.invalid_bot.id)
         |> select([b], b.image)
@@ -235,7 +346,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
         |> should(be_nil())
       end
 
-      it "should leave existing avatars" do
+      it "should leave existing images" do
         Bot
         |> where(id: ^shared.valid_bot.id)
         |> select([b], b.image)
