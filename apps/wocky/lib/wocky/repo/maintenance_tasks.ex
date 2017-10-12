@@ -21,8 +21,8 @@ defmodule Wocky.Repo.MaintenanceTasks do
 
     _ = clean_pending_bots()
     _ = clean_traffic_logs()
-    _ = clean_expired_auth_tokens()
     _ = clean_pending_tros_files()
+    _ = clean_expired_auth_tokens()
     _ = clean_dead_tros_links()
 
     :ok
@@ -90,15 +90,20 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_bot_item_image_links do
-    Repo.transaction(fn ->
-      Item
-      |> where(image: true)
-      |> Repo.stream
-      |> Stream.map(&extract_item_image/1)
-      |> Stream.filter(fn {_, image} -> image_missing?(image) end)
-      |> Stream.each(&purge_missing_item_image/1)
-      |> Enum.count
-    end)
+    {:ok, cleaned} =
+      Repo.transaction(fn ->
+        Item
+        |> where(image: true)
+        |> Repo.stream
+        |> Stream.map(&extract_item_image/1)
+        |> Stream.filter(fn {_, image} -> image_missing?(image) end)
+        |> Stream.each(&purge_missing_item_image/1)
+        |> Enum.count
+      end)
+
+    Logger.info("Cleaned up #{cleaned} bot item image links")
+
+    {:ok, cleaned}
   end
 
   defp extract_item_image(item) do
@@ -129,15 +134,20 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_bot_image_links do
-    Repo.transaction(fn ->
-      Bot
-      |> where([b], not is_nil(b.image))
-      |> where([b], b.image != "")
-      |> Repo.stream
-      |> Stream.filter(&image_missing?(&1.image))
-      |> Stream.each(&purge_missing_bot_image/1)
-      |> Enum.count
-    end)
+    {:ok, nillified} =
+      Repo.transaction(fn ->
+        Bot
+        |> where([b], not is_nil(b.image))
+        |> where([b], b.image != "")
+        |> Repo.stream
+        |> Stream.filter(&image_missing?(&1.image))
+        |> Stream.each(&purge_missing_bot_image/1)
+        |> Enum.count
+      end)
+
+    Logger.info("Nillified #{nillified} bot image fields with bad links")
+
+    {:ok, nillified}
   end
 
   defp purge_missing_bot_image(bot) do
@@ -147,15 +157,20 @@ defmodule Wocky.Repo.MaintenanceTasks do
   end
 
   def clean_user_avatar_links do
-    Repo.transaction(fn ->
-      User
-      |> where([u], not is_nil(u.avatar))
-      |> where([u], u.avatar != "")
-      |> Repo.stream
-      |> Stream.filter(&image_missing?(&1.avatar))
-      |> Stream.each(&purge_missing_user_image/1)
-      |> Enum.count
-    end)
+    {:ok, nillified} =
+      Repo.transaction(fn ->
+        User
+        |> where([u], not is_nil(u.avatar))
+        |> where([u], u.avatar != "")
+        |> Repo.stream
+        |> Stream.filter(&image_missing?(&1.avatar))
+        |> Stream.each(&purge_missing_user_image/1)
+        |> Enum.count
+      end)
+
+    Logger.info("Nillified #{nillified} user avatar fields with bad links")
+
+    {:ok, nillified}
   end
 
   defp purge_missing_user_image(user) do
