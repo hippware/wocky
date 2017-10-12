@@ -10,23 +10,29 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
   alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TrafficLog
+  alias Wocky.TROS
   alias Wocky.TROS.Metadata
+  alias Wocky.User
 
+  before do
+    user = Factory.insert(:user)
+    {:ok, user: user}
+  end
 
   describe "clean_pending_bots" do
     before do
       # Pending Bot, recent create date
-      new_pending = Factory.insert(:bot, pending: true)
+      new_pending = Factory.insert(:bot, user: shared.user, pending: true)
 
       # Pending Bot, older create date
-      old_pending = Factory.insert(:bot, pending: true,
+      old_pending = Factory.insert(:bot, user: shared.user, pending: true,
                                    created_at: Timestamp.shift(days: -2))
 
       # Non-pending bot, recent create date
-      new_nonpending = Factory.insert(:bot, pending: false)
+      new_nonpending = Factory.insert(:bot, user: shared.user, pending: false)
 
       # Non-pending bot, older create date
-      old_nonpending = Factory.insert(:bot, pending: false,
+      old_nonpending = Factory.insert(:bot, user: shared.user, pending: false,
                                       created_at: Timestamp.shift(days: -2))
 
       {:ok, result} = MaintenanceTasks.clean_pending_bots
@@ -70,8 +76,8 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
 
   describe "clean_traffic_logs" do
     before do
-      new = Factory.insert(:traffic_log)
-      old = Factory.insert(:traffic_log,
+      new = Factory.insert(:traffic_log, user: shared.user)
+      old = Factory.insert(:traffic_log, user: shared.user,
                            created_at: Timestamp.shift(months: -2))
 
       {:ok, result} = MaintenanceTasks.clean_traffic_logs
@@ -97,13 +103,11 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
 
   describe "clean_expired_auth_tokens" do
     before do
-      user = Factory.insert(:user)
-
-      {:ok, {_, _}} = Token.assign(user.id, "old_token")
-      {:ok, {_, _}} = Token.assign(user.id, "new_token")
+      {:ok, {_, _}} = Token.assign(shared.user.id, "old_token")
+      {:ok, {_, _}} = Token.assign(shared.user.id, "new_token")
 
       query = from t in Token,
-                where: t.user_id == ^user.id,
+                where: t.user_id == ^shared.user.id,
                 where: t.resource == ^"old_token"
 
       query
@@ -112,7 +116,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       |> Repo.update!
 
       {:ok, result} = MaintenanceTasks.clean_expired_auth_tokens
-      {:ok, result: result, user_id: user.id}
+      {:ok, result: result}
     end
 
     it "should return the number of tokens removed" do
@@ -121,7 +125,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
 
     it "should remove the old token" do
       query = from t in Token,
-                where: t.user_id == ^shared.user_id,
+                where: t.user_id == ^shared.user.id,
                 where: t.resource == ^"old_token"
 
       query
@@ -131,7 +135,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
 
     it "should not remove the recent token" do
       query = from t in Token,
-                where: t.user_id == ^shared.user_id,
+                where: t.user_id == ^shared.user.id,
                 where: t.resource == ^"new_token"
 
       query
@@ -143,17 +147,21 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
   describe "clean_pending_tros_files" do
     before do
       # Pending file, recent create date
-      new_pending = Factory.insert(:tros_metadata, ready: false)
+      new_pending = Factory.insert(:tros_metadata,
+                                   user: shared.user, ready: false)
 
       # Pending file, older create date
-      old_pending = Factory.insert(:tros_metadata, ready: false,
+      old_pending = Factory.insert(:tros_metadata,
+                                   user: shared.user, ready: false,
                                    created_at: Timestamp.shift(weeks: -2))
 
       # Non-pending file, recent create date
-      new_nonpending = Factory.insert(:tros_metadata, ready: true)
+      new_nonpending = Factory.insert(:tros_metadata,
+                                      user: shared.user, ready: true)
 
       # Non-pending file, older create date
-      old_nonpending = Factory.insert(:tros_metadata, ready: true,
+      old_nonpending = Factory.insert(:tros_metadata,
+                                      user: shared.user, ready: true,
                                       created_at: Timestamp.shift(weeks: -2))
 
       {:ok, result} = MaintenanceTasks.clean_pending_tros_files
@@ -196,17 +204,72 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
   end
 
   describe "clean_dead_tros_links" do
+    before do
+      md = Factory.insert(:tros_metadata, user: shared.user)
+      {:ok, md: md, file_url: TROS.make_url("localhost", md.id)}
+    end
 
     describe "clean_bot_item_image_links" do
 
     end
 
     describe "clean_bot_image_links" do
+      before do
+        invalid_bot = Factory.insert(:bot, user: shared.user)
+        valid_bot = Factory.insert(:bot, user: shared.user,
+                                   image: shared.file_url)
 
+        {:ok, result} = MaintenanceTasks.clean_bot_image_links
+        {:ok, result: result, invalid_bot: invalid_bot, valid_bot: valid_bot}
+      end
+
+      it "should return the number of avatars nillified" do
+        shared.result |> should(eq 1)
+      end
+
+      it "should nillify non-existing avatars" do
+        Bot
+        |> where(id: ^shared.invalid_bot.id)
+        |> select([b], b.image)
+        |> Repo.one
+        |> should(be_nil())
+      end
+
+      it "should leave existing avatars" do
+        Bot
+        |> where(id: ^shared.valid_bot.id)
+        |> select([b], b.image)
+        |> Repo.one
+        |> should(eq shared.file_url)
+      end
     end
 
     describe "clean_user_avatar_links" do
+      before do
+        valid_user = Factory.insert(:user, avatar: shared.file_url)
+        {:ok, result} = MaintenanceTasks.clean_user_avatar_links
+        {:ok, result: result, valid_user: valid_user}
+      end
 
+      it "should return the number of avatars nillified" do
+        shared.result |> should(eq 1)
+      end
+
+      it "should nillify non-existing avatars" do
+        User
+        |> where(id: ^shared.user.id)
+        |> select([u], u.avatar)
+        |> Repo.one
+        |> should(be_nil())
+      end
+
+      it "should leave existing avatars" do
+        User
+        |> where(id: ^shared.valid_user.id)
+        |> select([u], u.avatar)
+        |> Repo.one
+        |> should(eq shared.file_url)
+      end
     end
   end
 end
