@@ -10,9 +10,6 @@ config :wocky, Wocky.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.MandrillAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY"}
 
-config :slackex,
-  token: nil
-
 config :pushex,
   apns: [
     default_app: "${WOCKY_INST}",

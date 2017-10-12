@@ -13,7 +13,8 @@ config :wocky,
   async_push_notifications: false,
   enable_push_notifications: true,
   indexing_system: "test",
-  firebase_load_on_startup: false
+  firebase_load_on_startup: false,
+  bot_report_channel: "report-testing"
 
 config :logger,
   level: :warn
