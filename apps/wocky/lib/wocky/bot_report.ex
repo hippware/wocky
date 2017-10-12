@@ -27,11 +27,11 @@ defmodule Wocky.BotReport do
       :wocky
       |> Confex.get(:slack_token)
       |> Slack.client
-      |> File.upload([content: report,
-                      filename: "weekly_bot_report_#{server}.csv",
-                      title: "Weekly Bot Report for #{server}",
-                      filetype: "csv",
-                      channels: channel])
+      |> File.upload(content: report,
+                     filename: "weekly_bot_report_#{server}.csv",
+                     title: "Weekly Bot Report for #{server}",
+                     filetype: "csv",
+                     channels: channel)
     end
   end
 

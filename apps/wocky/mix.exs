@@ -37,6 +37,8 @@ defmodule Wocky.Mixfile do
       extra_applications: [:logger],
       mod: {Wocky.Application, []},
       env: [
+        wocky_env: {:system, "WOCKY_ENV", "dev"},
+        wocky_inst: {:system, "WOCKY_INST", "local"},
         wocky_host: {:system, "WOCKY_HOST", "localhost"},
         event_handler: Wocky.EventHandler,
         reserved_handles: [
