@@ -19,13 +19,13 @@ defmodule Wocky.Repo.MaintenanceTasks do
   def clean_all do
     {:ok, _} = Application.ensure_all_started(:wocky)
 
-    _ = clean_pending_bots()
-    _ = clean_traffic_logs()
-    _ = clean_pending_tros_files()
-    _ = clean_expired_auth_tokens()
-    _ = clean_dead_tros_links()
+    {:ok, d1} = clean_traffic_logs()
+    {:ok, d2} = clean_pending_bots()
+    {:ok, d3} = clean_pending_tros_files()
+    {:ok, d4} = clean_expired_auth_tokens()
+    {:ok, d5} = clean_dead_tros_links()
 
-    :ok
+    {:ok, d1 + d2 + d3 + d4 + d5}
   end
 
   def clean_pending_bots do
@@ -81,15 +81,15 @@ defmodule Wocky.Repo.MaintenanceTasks do
     {:ok, deleted}
   end
 
-  def clean_dead_tros_links do
-    {:ok, d1} = clean_bot_item_image_links()
-    {:ok, d2} = clean_bot_image_links()
-    {:ok, d3} = clean_user_avatar_links()
+  def clean_dead_tros_links(do_clean \\ false) do
+    {:ok, d1} = clean_bot_item_image_links(do_clean)
+    {:ok, d2} = clean_bot_image_links(do_clean)
+    {:ok, d3} = clean_user_avatar_links(do_clean)
 
     {:ok, d1 + d2 + d3}
   end
 
-  def clean_bot_item_image_links do
+  def clean_bot_item_image_links(do_clean) do
     {:ok, cleaned} =
       Repo.transaction(fn ->
         Item
@@ -97,11 +97,11 @@ defmodule Wocky.Repo.MaintenanceTasks do
         |> Repo.stream
         |> Stream.map(&extract_item_image/1)
         |> Stream.filter(fn {_, image} -> image_missing?(image) end)
-        |> Stream.each(&purge_missing_item_image/1)
+        |> Stream.each(&purge_missing_item_image(do_clean, &1))
         |> Enum.count
       end)
 
-    Logger.info("Cleaned up #{cleaned} bot item image links")
+    log_maybe_cleaned(do_clean, cleaned, "bot item image fields with bad links")
 
     {:ok, cleaned}
   end
@@ -119,7 +119,8 @@ defmodule Wocky.Repo.MaintenanceTasks do
     end
   end
 
-  defp purge_missing_item_image({item, image}) do
+  defp purge_missing_item_image(false, {_, _}), do: :ok
+  defp purge_missing_item_image(true, {item, image}) do
     content = xpath(item.stanza, ~x"/entry/content/text()"S)
     if String.length(content) > 0 do
       image_tag = "<image>#{image}</image>"
@@ -133,7 +134,17 @@ defmodule Wocky.Repo.MaintenanceTasks do
     end
   end
 
-  def clean_bot_image_links do
+  defp log_maybe_cleaned(do_clean, count, msg) do
+    start = if do_clean do
+      "Cleaned up"
+    else
+      "Found"
+    end
+
+    Logger.info("#{start} #{count} #{msg}")
+  end
+
+  def clean_bot_image_links(do_clean) do
     {:ok, nillified} =
       Repo.transaction(fn ->
         Bot
@@ -141,22 +152,23 @@ defmodule Wocky.Repo.MaintenanceTasks do
         |> where([b], b.image != "")
         |> Repo.stream
         |> Stream.filter(&image_missing?(&1.image))
-        |> Stream.each(&purge_missing_bot_image/1)
+        |> Stream.each(&purge_missing_bot_image(do_clean, &1))
         |> Enum.count
       end)
 
-    Logger.info("Nillified #{nillified} bot image fields with bad links")
+    log_maybe_cleaned(do_clean, nillified, "bot image fields with bad links")
 
     {:ok, nillified}
   end
 
-  defp purge_missing_bot_image(bot) do
+  defp purge_missing_bot_image(false, _), do: :ok
+  defp purge_missing_bot_image(true, bot) do
     bot
     |> Bot.changeset(%{image: nil})
     |> Repo.update!
   end
 
-  def clean_user_avatar_links do
+  def clean_user_avatar_links(do_clean) do
     {:ok, nillified} =
       Repo.transaction(fn ->
         User
@@ -164,16 +176,17 @@ defmodule Wocky.Repo.MaintenanceTasks do
         |> where([u], u.avatar != "")
         |> Repo.stream
         |> Stream.filter(&image_missing?(&1.avatar))
-        |> Stream.each(&purge_missing_user_image/1)
+        |> Stream.each(&purge_missing_user_image(do_clean, &1))
         |> Enum.count
       end)
 
-    Logger.info("Nillified #{nillified} user avatar fields with bad links")
+    log_maybe_cleaned(do_clean, nillified, "user avatar fields with bad links")
 
     {:ok, nillified}
   end
 
-  defp purge_missing_user_image(user) do
+  defp purge_missing_user_image(false, _), do: :ok
+  defp purge_missing_user_image(true, user) do
     user
     |> User.changeset(%{avatar: nil})
     |> Repo.update!

@@ -251,7 +251,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
           Factory.insert(:item, bot: bot, user: shared.user, image: false,
                          stanza: item_stanza(content: "testing"))
 
-        {:ok, result} = MaintenanceTasks.clean_bot_item_image_links
+        {:ok, result} = MaintenanceTasks.clean_bot_item_image_links(true)
         {:ok, [
           bot: bot,
           good_with_content: good_with_content,
@@ -330,7 +330,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
         valid_bot = Factory.insert(:bot, user: shared.user,
                                    image: shared.file_url)
 
-        {:ok, result} = MaintenanceTasks.clean_bot_image_links
+        {:ok, result} = MaintenanceTasks.clean_bot_image_links(true)
         {:ok, result: result, invalid_bot: invalid_bot, valid_bot: valid_bot}
       end
 
@@ -358,7 +358,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     describe "clean_user_avatar_links" do
       before do
         valid_user = Factory.insert(:user, avatar: shared.file_url)
-        {:ok, result} = MaintenanceTasks.clean_user_avatar_links
+        {:ok, result} = MaintenanceTasks.clean_user_avatar_links(true)
         {:ok, result: result, valid_user: valid_user}
       end
 
