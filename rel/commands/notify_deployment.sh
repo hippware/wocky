@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/wocky command Elixir.Wocky.DeployNotifier notify
+bin/wocky eval "'Elixir.Wocky.DeployNotifier':notify()"
