@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add K8s templates for a load test environment (PR #1015)
 * Re-implement bot reports (#1013)
   * And associated cron job infrastructure
+* Restore Slack deployment notifications (#1017)
 
 
 # 2017.9.22+r3e3ec07
