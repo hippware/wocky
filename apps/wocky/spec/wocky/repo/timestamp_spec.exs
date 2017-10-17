@@ -62,4 +62,13 @@ defmodule Wocky.Repo.TimestampSpec do
     it do: assert Timestamp.less_than_eq?(shared.ts1, shared.ts1)
     it do: refute Timestamp.less_than_eq?(shared.ts2, shared.ts1)
   end
+
+  describe "shift/1" do
+    it do: Timestamp.shift(days: -1)
+           |> Timestamp.from_string!
+           |> should(be :<, DateTime.utc_now)
+    it do: Timestamp.shift(days: 1)
+           |> Timestamp.from_string!
+           |> should(be :>, DateTime.utc_now)
+  end
 end

@@ -20,7 +20,7 @@ defmodule Wocky.BotReportSpec do
   let :line_count, do: length(shared.bots) + 1
 
   describe "generate_report/1" do
-    subject do: BotReport.generate_report(1) |> String.strip
+    subject do: BotReport.generate_report(1) |> String.trim
 
     it do: should(be_binary())
 
