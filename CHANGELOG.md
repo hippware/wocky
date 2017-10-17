@@ -10,6 +10,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Re-implement bot reports (#1013)
   * And associated cron job infrastructure
 * Restore Slack deployment notifications (#1017)
+* Database maintenance tasks (#788)
+* Changes to support AMOC load testing (PR #1029)
 
 
 # 2017.9.22+r3e3ec07
