@@ -36,7 +36,7 @@ defmodule Wocky.XMPP.Mixfile do
   defp erlc_options(_) do
     [
       :debug_info,
-      :warnings_as_errors,
+      # :warnings_as_errors,
       # :warn_export_all,
       :warn_export_vars,
       :warn_obsolete_guard,
@@ -77,6 +77,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:hackney,              "~> 1.7",   override: true},
       {:base16,               "~> 1.0",   override: true},
       {:exjsx,                "~> 3.2",   override: true},
+      {:ranch,                "~> 1.4",   override: true},
       {:timex,                "~> 3.1"},
       {:honeybadger,          "~> 0.6"},
       {:logger_lager_backend, "~> 0.0.2"},
@@ -126,6 +127,10 @@ defmodule Wocky.XMPP.Mixfile do
         github: "hippware/escalus",
         branch: "working",
         only: :test},
+      {:cowlib,
+        github: "hippware/cowlib",
+        branch: "working",
+        override: true},
       {:certifi,
         github: "hippware/erlang-certifi",
         branch: "working",
@@ -135,7 +140,7 @@ defmodule Wocky.XMPP.Mixfile do
       # Overrides
       # These are transitive dependencies that need to be overriden to build
       # correctly. They are not used directly by Wocky.
-      {:uuid,   "~> 1.6.0", override: true, hex: :uuid_erl},
+      {:uuid,   "~> 1.7", override: true, hex: :uuid_erl},
       {:edown,  "~> 0.8.1", override: true, runtime: false},
       {:folsom, "~> 0.8.3", override: true},
       {:idna,   "~> 5.0",   override: true},
