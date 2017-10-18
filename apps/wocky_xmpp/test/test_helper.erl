@@ -65,8 +65,6 @@
 
          set_notifications/2,
 
-         kill_connection/1,
-
          check_home_stream_sizes/2,
          check_home_stream_sizes/3,
 
@@ -204,10 +202,16 @@ make_everyone_friends(Config0, Users) ->
     ensure_all_clean(Clients),
 
     % stop the clients
+    stop_clients(Config1, Clients),
     escalus_cleaner:stop(Config1),
 
     % return Config0
     [{everyone_is_friends, true} | Config0].
+
+stop_clients(Config, Clients) ->
+    lists:foreach(
+      fun (Client) -> escalus_client:stop(Config, Client) end,
+      Clients).
 
 subscribe_pair(Alice, Bob) ->
     subscribe(Alice, Bob),
@@ -543,20 +547,6 @@ notifications_stanza(true, Client) ->
                            {<<"platform">>, <<"escalus">>}]});
 notifications_stanza(false, _Client) ->
     iq_set(?NS_NOTIFICATIONS, #xmlel{name = <<"disable">>}).
-
-% From sm_SUITE.erl:
-kill_connection(#client{module = escalus_tcp, ssl = SSL,
-                        socket = Socket} = Conn) ->
-    %% Ugly, but there's no API for killing the connection
-    %% without sending </stream:stream>.
-    case SSL of
-        true ->
-            ssl:close(Socket);
-        false ->
-            gen_tcp:close(Socket)
-    end,
-    %% There might be open zlib streams left...
-    catch escalus_connection:stop(Conn).
 
 check_home_stream_sizes(ExpectedSize, Clients) ->
     check_home_stream_sizes(ExpectedSize, Clients, true).
