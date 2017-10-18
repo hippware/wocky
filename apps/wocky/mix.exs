@@ -58,11 +58,12 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
+      {:ecto,                 "~> 2.2"},
       {:ecto_homoiconic_enum, "~> 0.1.1"},
-      {:postgrex,             "~> 0.13.0"},
+      {:postgrex,             "~> 0.13.3"},
       {:poolboy,              "~> 1.5"},
       {:faker,                "~> 0.7.0"},
-      {:ex_machina,           "~> 2.0"},
+      {:ex_machina,           "~> 2.1"},
       {:ex_aws,               "~> 1.1"},
       {:pushex,               "~> 0.2.0"},
       {:configparser_ex,      "~> 1.0", override: true},
@@ -88,10 +89,6 @@ defmodule Wocky.Mixfile do
       {:bamboo,               "~> 0.8"},
       {:slack_ex,             "~> 0.1.0"},
 
-      {:ecto,
-        github: "hippware/ecto",
-        branch: "working",
-        override: true},
       {:apns,
         github: "chvanikoff/apns4ex",
         branch: "master",
