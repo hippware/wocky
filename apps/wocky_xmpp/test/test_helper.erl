@@ -204,7 +204,6 @@ make_everyone_friends(Config0, Users) ->
     ensure_all_clean(Clients),
 
     % stop the clients
-    escalus_cleaner:clean(Config1),
     escalus_cleaner:stop(Config1),
 
     % return Config0

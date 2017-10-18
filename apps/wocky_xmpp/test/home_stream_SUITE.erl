@@ -275,7 +275,7 @@ maintain_subscription(Config) ->
                  bind,
                  session,
                  stream_resumption],
-        {ok, A, Props, _} = escalus_connection:start(AliceSpec, Steps),
+        {ok, A, Props} = escalus_connection:start(AliceSpec, Steps),
 
         Alice = A#client{jid = ?BJID(?ALICE)},
         escalus:send(Alice,

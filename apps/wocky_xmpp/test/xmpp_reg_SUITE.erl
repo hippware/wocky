@@ -299,9 +299,9 @@ digits_unavailable(Config) ->
 
 start_client(Config) ->
     AliceSpec = escalus_users:get_options(Config, alice),
-    {ok, Client, _, _} = escalus_connection:start(AliceSpec,
-                                                  [start_stream,
-                                                   stream_features]),
+    {ok, Client, _} = escalus_connection:start(AliceSpec,
+                                               [start_stream,
+                                                stream_features]),
     Client.
 
 assert_is_malformed_error(Result) ->
