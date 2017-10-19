@@ -27,6 +27,7 @@ defmodule Wocky.User do
   alias __MODULE__, as: User
 
   @primary_key {:id, :binary_id, autogenerate: false}
+
   schema "users" do
     field :username,     :string # User ID (userpart of JID)
     field :server,       :string # User Server (domainpart of JID)
@@ -98,6 +99,7 @@ defmodule Wocky.User do
   @max_register_retries 5
 
   @no_index_role "__no_index__"
+  @system_role "__system__"
 
   @doc "Return the list of fields that can be updated on an existing user."
   @spec valid_update_fields :: [binary]
@@ -444,6 +446,7 @@ defmodule Wocky.User do
   def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
 
   def no_index_role, do: @no_index_role
+  def system_role, do: @system_role
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
   defp maybe_send_welcome(%User{email: nil}), do: :ok

@@ -68,7 +68,9 @@
          kill_connection/1,
 
          check_home_stream_sizes/2,
-         check_home_stream_sizes/3
+         check_home_stream_sizes/3,
+
+         insert_system_users/0
         ]).
 
 
@@ -571,3 +573,10 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
 
 maybe_exclude_deleted_elem(false) -> [];
 maybe_exclude_deleted_elem(true) -> [#xmlel{name = <<"exclude-deleted">>}].
+
+insert_system_users() ->
+    ?wocky_factory:insert(
+       user, #{handle => ?confex:get(wocky_xmpp, hs_prepopulation_user),
+               roles => [?wocky_user:no_index_role(),
+                         ?wocky_user:system_role()]}).
+
