@@ -65,7 +65,8 @@ init_per_suite(Config) ->
         test_helper:setup_users([alice, bob, carol])
     ),
 
-    ?wocky_factory:insert(tros_metadata, [{id, ?AVATAR_ID}, {user_id, ?BOB}]),
+    Bob = ?wocky_repo:get(?wocky_user, ?BOB),
+    ?wocky_factory:insert(tros_metadata, [{id, ?AVATAR_ID}, {user, Bob}]),
 
     ok = ?wocky_user:update(?BOB, #{handle => ?BOB_HANDLE,
                                     avatar => ?BOB_AVATAR,
