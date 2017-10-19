@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix bot item indices (PR #1036)
+* Fix roster integration tests
+
+
 # 2017.10.17+r4890609
 
 * Update Mandrill API key (PR #1014)
