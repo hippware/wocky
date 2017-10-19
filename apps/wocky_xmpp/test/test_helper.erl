@@ -579,4 +579,3 @@ insert_system_users() ->
        user, #{handle => ?confex:get(wocky_xmpp, hs_prepopulation_user),
                roles => [?wocky_user:no_index_role(),
                          ?wocky_user:system_role()]}).
-

@@ -214,7 +214,7 @@ defmodule Wocky.RosterItem do
     User
     |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
-    |> where([u, r], not ^Wocky.User.system_role in u.roles)
+    |> where([u, r], not ^User.system_role in u.roles)
     |> with_subscriptions(groups)
     |> Blocking.object_visible_query(requester_id, :contact_id)
   end
