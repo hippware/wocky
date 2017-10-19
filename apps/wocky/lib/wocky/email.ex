@@ -13,17 +13,17 @@ defmodule Wocky.Email do
   def send_welcome_email(user) do
     new_email()
     |> to({User.full_name(user), user.email})
-    |> from(Confex.get(:wocky, :welcome_email_from))
-    |> subject(Confex.get(:wocky, :welcome_email_subject))
+    |> from(Confex.get_env(:wocky, :welcome_email_from))
+    |> subject(Confex.get_env(:wocky, :welcome_email_subject))
     |> MandrillHelper.put_param("global_merge_vars", make_merge_vars(user))
-    |> MandrillHelper.template(Confex.get(:wocky, :welcome_email_template))
+    |> MandrillHelper.template(Confex.get_env(:wocky, :welcome_email_template))
     |> Mailer.deliver_later
     :ok
   end
 
   defp make_merge_vars(user) do
     :wocky
-    |> Confex.get(:welcome_field_mappings, [])
+    |> Confex.get_env(:welcome_field_mappings, [])
     |> Enum.map(
       fn({merge_field, user_field}) ->
           %{"name": merge_field, "content": Map.get(user, user_field)}

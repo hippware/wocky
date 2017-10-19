@@ -8,7 +8,7 @@ defmodule Wocky.Repo do
     url = System.get_env("DATABASE_URL")
     config = if url,
       do: Keyword.merge(opts, Ecto.Repo.Supervisor.parse_url(url)),
-      else: Confex.process_env(opts)
+      else: Confex.Resolver.resolve!(opts)
 
     unless config[:database] do
       raise "Set WOCKY_DB_NAME environment variable!"

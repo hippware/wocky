@@ -42,7 +42,7 @@ defmodule Wocky.Auth.Firebase do
   end
 
   defp decode_and_verify(jwt, cert) do
-    project_id = Confex.get(:wocky, :firebase_project_id)
+    project_id = Confex.get_env(:wocky, :firebase_project_id)
 
     jwt
     |> Joken.with_validation("exp", &(&1 > DateTime.utc_now |> Timex.to_unix),

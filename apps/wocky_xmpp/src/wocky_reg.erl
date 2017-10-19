@@ -126,7 +126,7 @@ set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
     ?wocky_roster_item:put(InitContact).
 
 prepopulate_home_stream(UserID) ->
-    case ?confex:get(wocky_xmpp, hs_prepopulation_user) of
+    case ?confex:get_env(wocky_xmpp, hs_prepopulation_user) of
         nil ->
             ok;
         SourceHandle ->
@@ -136,7 +136,7 @@ prepopulate_home_stream(UserID) ->
 
 prepopulate_from_user(_, nil) -> ok;
 prepopulate_from_user(UserID, #{id := SourceID}) ->
-    Period = ?confex:get(wocky_xmpp, hs_prepopulation_days,
+    Period = ?confex:get_env(wocky_xmpp, hs_prepopulation_days,
                          ?DEFAULT_HS_PREPOP_DAYS),
     ?wocky_home_stream_item:prepopulate_from(
        UserID, SourceID, ?duration:from_days(Period)).

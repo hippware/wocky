@@ -153,7 +153,7 @@ vm20OdFQ+qZh++T72uGmXxk=
 
 
   defp make_jwt(opts \\ %{}) do
-    project = Confex.get(:wocky, :firebase_project_id)
+    project = Confex.get_env(:wocky, :firebase_project_id)
 
     params =
       %{exp: DateTime.utc_now

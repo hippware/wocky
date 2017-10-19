@@ -20,7 +20,7 @@ config :logger,
   level: :warn
 
 # Make token tests go faster:
-config :comeonin,
+config :bcrypt_elixir,
   bcrypt_log_rounds: 4
 
 config :pushex,

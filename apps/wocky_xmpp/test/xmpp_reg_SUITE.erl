@@ -368,7 +368,7 @@ provider_data(digits) ->
      }];
 
 provider_data(firebase) ->
-    Project = ?confex:get(wocky, firebase_project_id),
+    Project = ?confex:get_env(wocky, firebase_project_id),
 
     [{jwt,
       fun_chain:first(

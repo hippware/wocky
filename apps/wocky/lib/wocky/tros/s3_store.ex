@@ -118,7 +118,7 @@ defmodule Wocky.TROS.S3Store do
 
   def region, do: get_opt(:tros_s3_region, "us-east-1")
 
-  defp get_opt(opt, default \\ nil), do: Confex.get(:wocky, opt, default)
+  defp get_opt(opt, default \\ nil), do: Confex.get_env(:wocky, opt, default)
 
   defp path(server, file_id),
     do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"

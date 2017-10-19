@@ -65,9 +65,9 @@ defmodule Wocky.Index do
   # Callbacks
 
   def init(_) do
-    user_index = Confex.get(:wocky, :user_index_name, :users)
-    bot_index  = Confex.get(:wocky, :bot_index_name, :bots)
-    backend_type = Confex.get(:wocky, :indexing_system)
+    user_index = Confex.get_env(:wocky, :user_index_name, :users)
+    bot_index  = Confex.get_env(:wocky, :bot_index_name, :bots)
+    backend_type = Confex.get_env(:wocky, :indexing_system)
     backend_module =
       case backend_type do
         "algolia" -> Wocky.Index.AlgoliaIndexer

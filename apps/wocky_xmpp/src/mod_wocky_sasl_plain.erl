@@ -95,7 +95,7 @@ mech_step(Creds, ClientIn) ->
     end.
 
 enable_digits_bypass() ->
-    ?confex:get(wocky_xmpp, enable_digits_bypass).
+    ?confex:get_env(wocky_xmpp, enable_digits_bypass).
 
 get_auth_bypass_prefixes(Opts) ->
   case enable_digits_bypass() of
