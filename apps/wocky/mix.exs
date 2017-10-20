@@ -104,6 +104,10 @@ defmodule Wocky.Mixfile do
         branch: "working",
         manager: :rebar3,
         override: true},
+      {:cowlib,
+        github: "hippware/cowlib",
+        branch: "working",
+        override: true},
 
       {:espec,       "~> 1.4", only: :test},
       {:excoveralls, "~> 0.6", only: :test},

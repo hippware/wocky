@@ -50,6 +50,11 @@ defmodule WockyAPI.Mixfile do
       {:lager,      "~> 3.2", override: true},
       {:logger_lager_backend, "~> 0.1"},
 
+      {:cowlib,
+        github: "hippware/cowlib",
+        branch: "working",
+        override: true},
+
       {:espec,       "~> 1.2", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:credo,       "~> 0.6", only: [:dev, :test], runtime: false},
