@@ -666,7 +666,11 @@ seed_contacts() ->
     Followees = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
     lists:foreach(insert_follower_pair(?BOB, _), ids(Followees)),
 
-    [{friend, Friends}, {follower, Followers}, {following, Followees}].
+    SystemUser = test_helper:insert_system_users(),
+    insert_friend_pair(?BOB, maps:get(id, SystemUser)),
+
+    [{friend, Friends}, {follower, Followers},
+     {following, Followees}, {system, SystemUser}].
 
 ids(UserList) ->
     [maps:get(id, U) || U <- UserList].

@@ -98,9 +98,7 @@ setup_initial_contacts(Type) ->
     Users.
 
 setup_hs_prepop() ->
-    #{id := UserID} =
-    ?wocky_factory:insert(user, #{handle => ?PREPOP_USER,
-                                  roles => [?wocky_user:no_index_role()]}),
+    #{id := UserID} = test_helper:insert_system_users(),
 
     OldTS = ?timex:subtract(?datetime:utc_now(), ?duration:from_weeks(4)),
 
