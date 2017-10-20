@@ -656,9 +656,10 @@ has_field(Fields, Field) ->
               end, Fields).
 
 seed_contacts() ->
-    Friends = [?wocky_factory:insert(user, #{server => ?SERVER, handle => nil})
-               | ?wocky_factory:insert_list(4, user, #{server => ?SERVER})],
-    lists:foreach(insert_friend_pair(?BOB, _), ids(Friends)),
+    NilHandleUser = ?wocky_factory:insert(user,
+                                          #{server => ?SERVER, handle => nil}),
+    Friends = ?wocky_factory:insert_list(4, user, #{server => ?SERVER}),
+    lists:foreach(insert_friend_pair(?BOB, _), ids([NilHandleUser | Friends])),
 
     Followers = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
     lists:foreach(insert_follower_pair(_, ?BOB), ids(Followers)),
