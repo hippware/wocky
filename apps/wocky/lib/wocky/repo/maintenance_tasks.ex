@@ -24,8 +24,9 @@ defmodule Wocky.Repo.MaintenanceTasks do
     {:ok, d3} = clean_pending_tros_files()
     {:ok, d4} = clean_expired_auth_tokens()
     {:ok, d5} = clean_dead_tros_links()
+    {:ok, d6} = clean_pending_users()
 
-    {:ok, d1 + d2 + d3 + d4 + d5}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6}
   end
 
   def clean_pending_bots do
@@ -190,5 +191,19 @@ defmodule Wocky.Repo.MaintenanceTasks do
     user
     |> User.changeset(%{avatar: nil})
     |> Repo.update!
+  end
+
+  def clean_pending_users do
+    expire_date = Timestamp.shift(days: -1)
+
+    {deleted, nil} =
+      User
+      |> where([u], is_nil(u.handle))
+      |> where([u], u.created_at <= ^expire_date)
+      |> Repo.delete_all
+
+    Logger.info("Deleted #{deleted} pending users created before #{expire_date}")
+
+    {:ok, deleted}
   end
 end

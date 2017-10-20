@@ -383,4 +383,60 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       end
     end
   end
+
+  describe "clean_pending_users" do
+    before do
+      # Pending user, recent create date
+      new_pending = Factory.insert(:user, handle: nil)
+
+      # Pending user, older create date
+      old_pending = Factory.insert(:user, handle: nil,
+                                   created_at: Timestamp.shift(days: -2))
+
+      # Non-pending user, recent create date
+      new_nonpending = Factory.insert(:user)
+
+      # Non-pending user, older create date
+      old_nonpending = Factory.insert(:user,
+                                      created_at: Timestamp.shift(days: -2))
+
+      {:ok, result} = MaintenanceTasks.clean_pending_users
+      {:ok, [
+        new_pending: new_pending,
+        old_pending: old_pending,
+        new_nonpending: new_nonpending,
+        old_nonpending: old_nonpending,
+        result: result
+      ]}
+    end
+
+    it "should return the number of users removed" do
+      shared.result |> should(eq 1)
+    end
+
+    it "should remove the old, pending user" do
+      User
+      |> Repo.get(shared.old_pending.id)
+      |> should(be_nil())
+    end
+
+    it "should not remove the recent, pending user" do
+      User
+      |> Repo.get(shared.new_pending.id)
+      |> should_not(be_nil())
+    end
+
+    it "should not remove the old, non-pending user" do
+      User
+      |> Repo.get(shared.old_nonpending.id)
+      |> should_not(be_nil())
+    end
+
+    it "should not remove the recent, non-pending user" do
+      User
+      |> Repo.get(shared.new_nonpending.id)
+      |> should_not(be_nil())
+    end
+  end
+
 end
