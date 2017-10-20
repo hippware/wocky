@@ -22,6 +22,10 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     {:ok, user: user}
   end
 
+  finally do
+    Repo.delete(shared.user)
+  end
+
   describe "clean_pending_bots" do
     before do
       # Pending Bot, recent create date
