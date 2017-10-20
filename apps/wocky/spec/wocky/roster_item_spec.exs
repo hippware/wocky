@@ -30,13 +30,11 @@ defmodule Wocky.RosterItemSpec do
 
     insert_follower_pair(follower, followee)
 
-
     system_user = Factory.insert(:user, [roles: [User.system_role]])
     insert_friend_pair(user, system_user, [Lorem.word])
 
     nil_handle_user = Factory.insert(:user, handle: nil)
     insert_friend_pair(nil_handle_user, user, [Lorem.word])
-
 
     {:ok,
      user: user,

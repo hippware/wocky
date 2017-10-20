@@ -438,5 +438,4 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       |> should_not(be_nil())
     end
   end
-
 end
