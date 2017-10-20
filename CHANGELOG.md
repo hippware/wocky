@@ -7,6 +7,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Fix bot item indices (PR #1036)
 * Fix roster integration tests
+* HS prepopulation user is appearing in list of followers (#1028)
 
 
 # 2017.10.17+r4890609
