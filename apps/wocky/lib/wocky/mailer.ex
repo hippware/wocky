@@ -5,11 +5,13 @@ defmodule Wocky.Mailer do
 
   use Bamboo.Mailer, otp_app: :wocky
 
+  alias Confex.Resolver
+
   def init do
     new_vals =
       :wocky
       |> Application.fetch_env!(__MODULE__)
-      |> Confex.Resolver.resolve!
+      |> Resolver.resolve!
 
     Application.put_env(:wocky, __MODULE__, new_vals)
   end
