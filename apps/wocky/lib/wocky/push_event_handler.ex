@@ -1,7 +1,7 @@
 defmodule Wocky.PushEventHandler do
   @moduledoc "Event handler for Pushex push notifications"
 
-  use GenEvent
+  use Pushex.EventHandler
 
   alias Pushex.APNS.Response
   alias Wocky.NotificationLog
