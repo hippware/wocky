@@ -86,7 +86,14 @@ ensure_wocky_is_running() ->
 
 setup_users(Config, Users) ->
     _ = ?wocky_repo:delete_all(?wocky_user),
-    escalus:create_users(Config, escalus:get_users(Users)).
+    Config2 = escalus:create_users(Config, escalus:get_users(Users)),
+    ConfigUsers = proplists:get_value(escalus_users, Config2),
+    lists:foreach(
+      fun({U, Props}) ->
+              ID = proplists:get_value(username, Props),
+              ?wocky_user:update(ID, #{handle => atom_to_binary(U, utf8)})
+      end, ConfigUsers),
+    Config2.
 
 ensure_all_clean(Clients) ->
     lists:foreach(fun(Client) ->
