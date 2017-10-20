@@ -30,6 +30,7 @@ config :wocky,
 
   # Push notifications
   enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false},
+  log_push_notifications:    {:system, :boolean, "WOCKY_LOG_PUSHES", true},
 
   # Firebase
   firebase_project_id:   "my-project-1480497595993",

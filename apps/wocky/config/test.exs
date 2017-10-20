@@ -12,6 +12,7 @@ config :wocky, Wocky.Mailer,
 config :wocky,
   async_push_notifications: false,
   enable_push_notifications: true,
+  log_push_notifications: false,
   indexing_system: "test",
   firebase_load_on_startup: false,
   bot_report_channel: "report-testing"
