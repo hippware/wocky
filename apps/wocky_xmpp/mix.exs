@@ -32,12 +32,13 @@ defmodule Wocky.XMPP.Mixfile do
     ver_result
   end
 
-  defp erlc_options(:test), do: [{:d, :TEST} | erlc_options(:dev)]
+  defp erlc_options(:test) do
+    [{:d, :TEST}, :nowarn_export_all | erlc_options(:dev)]
+  end
   defp erlc_options(_) do
     [
       :debug_info,
-      # :warnings_as_errors,
-      # :warn_export_all,
+      :warnings_as_errors,
       :warn_export_vars,
       :warn_obsolete_guard,
       :warn_unused_import,
