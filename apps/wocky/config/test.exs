@@ -6,9 +6,6 @@ config :wocky, Wocky.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   ownership_timeout: 30_000 # ms
 
-config :wocky, Wocky.Mailer,
-  adapter: Bamboo.TestAdapter
-
 config :wocky,
   async_push_notifications: false,
   enable_push_notifications: true,
