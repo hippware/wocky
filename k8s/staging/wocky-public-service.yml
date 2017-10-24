@@ -26,14 +26,6 @@ spec:
       targetPort: 5222
       protocol: TCP
       name: xmpps
-    - port: 5280
-      targetPort: 5280
-      protocol: TCP
-      name: xmpp-ws
-    - port: 5285
-      targetPort: 5280
-      protocol: TCP
-      name: xmpp-wss
   selector:
     app: wocky
   type: LoadBalancer
