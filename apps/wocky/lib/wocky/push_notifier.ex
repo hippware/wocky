@@ -56,7 +56,7 @@ defmodule Wocky.PushNotifier do
   # ===================================================================
   # Helpers
 
-  defp do_push(nil, _body), do: :ok
+  defp do_push(nil, _body), do: :no_token
   defp do_push(token, body) do
     body
     |> maybe_truncate_message
@@ -76,7 +76,7 @@ defmodule Wocky.PushNotifier do
     %{alert: message, badge: 1}
   end
 
-  defp maybe_push(_body, _token, false), do: false
+  defp maybe_push(_body, _token, false), do: :disabled
   defp maybe_push(body, token, true) do
     Pushex.push(body, to: token, using: :apns)
   end
@@ -85,8 +85,12 @@ defmodule Wocky.PushNotifier do
     Confex.get_env(:wocky, :enable_push_notifications)
   end
 
-  defp maybe_log(false, _, _, _), do: :ok
-  defp maybe_log(reference, user, resource, message)
-  when is_reference(reference),
-    do: NotificationLog.send(reference, user, resource, message)
+  defp maybe_log(:disabled, _, _, _), do: :ok
+  defp maybe_log(:no_token, user, resource, _message) do
+    Logger.error "Attempted to send notification to user #{user}/#{resource}" <>
+      " and they have no valid token."
+  end
+  defp maybe_log(ref, user, resource, message) when is_reference(ref) do
+    NotificationLog.send(ref, user, resource, message)
+  end
 end
