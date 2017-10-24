@@ -1087,6 +1087,7 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
 
 expected_geosearch_fields() ->
     [{"jid",                jid,    any},
+     {"owner",              jid,    any},
      {"id",                 string, any},
      {"server",             string, any},
      {"title",              string, any},
