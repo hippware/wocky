@@ -37,7 +37,8 @@ defmodule Wocky.Index.TestIndexer do
       Repo.transaction fn ->
         Bot
         |> Repo.stream
-        |> Stream.filter_map(&Bot.contains?(&1, loc), &bot_to_object(&1, loc))
+        |> Stream.filter(&Bot.contains?(&1, loc))
+        |> Stream.map(&bot_to_object(&1, loc))
         |> Enum.to_list
       end
 

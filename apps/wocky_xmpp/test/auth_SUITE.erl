@@ -85,7 +85,7 @@ auth_failure(Config) ->
     UserSpec = escalus_users:get_userspec(Config, alice),
     ConnSteps = [start_stream,
                  stream_features],
-    {ok, ClientConnection, _Props, _Features} =
+    {ok, ClientConnection, _Features} =
     escalus_connection:start(UserSpec, ConnSteps),
 
     try

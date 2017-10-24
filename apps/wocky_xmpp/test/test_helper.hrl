@@ -44,12 +44,9 @@
 -record(client, {
         jid :: binary() | undefined,
         module :: atom(),
-        socket :: term(),
-        ssl :: boolean(),
-        compress :: {zlib, {Zin::zlib:zstream(), Zout::zlib:zstream()}}
-                 |  false,
         rcv_pid :: pid(),
-        event_client :: any()
+        event_client :: any(),
+        props :: list()
        }).
 
 -endif. % ifdef TEST_HELPER_HRL

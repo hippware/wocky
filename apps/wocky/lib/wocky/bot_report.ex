@@ -17,15 +17,15 @@ defmodule Wocky.BotReport do
   @spec run :: nil | binary
   def run do
     {:ok, _} = Application.ensure_all_started(:wocky)
-    if Confex.get(:wocky, :enable_bot_report) do
-      days = Confex.get(:wocky, :bot_report_days)
+    if Confex.get_env(:wocky, :enable_bot_report) do
+      days = Confex.get_env(:wocky, :bot_report_days)
       report = generate_report(days)
 
-      server = Confex.get(:wocky, :wocky_host)
-      channel = Confex.get(:wocky, :bot_report_channel)
+      server = Confex.get_env(:wocky, :wocky_host)
+      channel = Confex.get_env(:wocky, :bot_report_channel)
 
       :wocky
-      |> Confex.get(:slack_token)
+      |> Confex.get_env(:slack_token)
       |> Slack.client
       |> File.upload(content: report,
                      filename: "weekly_bot_report_#{server}.csv",

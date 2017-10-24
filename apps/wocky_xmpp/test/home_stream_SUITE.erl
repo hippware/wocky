@@ -275,9 +275,8 @@ maintain_subscription(Config) ->
                  bind,
                  session,
                  stream_resumption],
-        {ok, A, Props, _} = escalus_connection:start(AliceSpec, Steps),
+        {ok, Alice, _} = escalus_connection:start(AliceSpec, Steps),
 
-        Alice = A#client{jid = ?BJID(?ALICE)},
         escalus:send(Alice,
                      escalus_stanza:presence_direct(
                        hs_node(?ALICE), <<"available">>,
@@ -286,18 +285,16 @@ maintain_subscription(Config) ->
         % Give the subscription time to take before we axe the connection
         timer:sleep(250),
 
-        test_helper:kill_connection(Alice),
+        escalus_client:kill_connection(Config, Alice),
 
-        SMID = proplists:get_value(smid, Props),
+        SMID = proplists:get_value(smid, Alice#client.props),
 
         Steps2 = [start_stream,
                   stream_features,
                   maybe_use_ssl,
                   authenticate,
                   mk_resume_stream(SMID, 0)],
-        {ok, A2, _, _} = escalus_connection:start(AliceSpec, Steps2),
-
-        Alice2 = A2#client{jid = ?BJID(?ALICE)},
+        {ok, Alice2, _} = escalus_connection:start(AliceSpec, Steps2),
 
         escalus:send(Alice2,
                      add_to_u(pub_stanza(<<"pushed_item">>), Alice2)),
@@ -314,7 +311,7 @@ maintain_subscription(Config) ->
         ct:log("Stanzas: ~p", [Stanzas1 ++ Stanzas2]),
         timer:sleep(250),
 
-        test_helper:kill_connection(Alice2)
+        escalus_client:kill_connection(Config, Alice2)
     end).
 
 get_item(Config) ->
@@ -590,11 +587,12 @@ pub_item() ->
 pub_node() -> ?NS_TEST.
 
 mk_resume_stream(SMID, PrevH) ->
-    fun (Conn, Props, Features) ->
+    fun (Conn, Features) ->
             escalus_connection:send(Conn, escalus_stanza:resume(SMID, PrevH)),
             Resumed = escalus_connection:get_stanza(Conn, get_resumed),
             true = escalus_pred:is_sm_resumed(SMID, Resumed),
-            {Conn, [{smid, SMID} | Props], Features}
+            Props = Conn#client.props,
+            {Conn#client{props = [{smid, SMID} | Props]}, Features}
     end.
 
 %%--------------------------------------------------------------------

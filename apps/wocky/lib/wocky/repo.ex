@@ -1,14 +1,17 @@
 defmodule Wocky.Repo do
   use Ecto.Repo, otp_app: :wocky
 
+  alias Ecto.Repo.Supervisor
+  alias Confex.Resolver
+
   @doc """
   Dynamically loads the repository configuration from the environment variables.
   """
   def init(_, opts) do
     url = System.get_env("DATABASE_URL")
     config = if url,
-      do: Keyword.merge(opts, Ecto.Repo.Supervisor.parse_url(url)),
-      else: Confex.process_env(opts)
+      do: Keyword.merge(opts, Supervisor.parse_url(url)),
+      else: Resolver.resolve!(opts)
 
     unless config[:database] do
       raise "Set WOCKY_DB_NAME environment variable!"

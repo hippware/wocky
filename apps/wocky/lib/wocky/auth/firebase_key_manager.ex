@@ -28,7 +28,7 @@ defmodule Wocky.Auth.FirebaseKeyManager do
 
   def init(_) do
     _ = :ets.new(:firebase_keys, [:protected, :named_table])
-    if Confex.get(:wocky, :firebase_load_on_startup, true) do
+    if Confex.get_env(:wocky, :firebase_load_on_startup, true) do
       reload_keys()
     end
     {:ok, nil}

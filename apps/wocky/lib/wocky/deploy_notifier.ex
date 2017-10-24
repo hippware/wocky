@@ -8,11 +8,11 @@ defmodule Wocky.DeployNotifier do
             "174ca39965923045b97862ee34114ea7.jpg"
 
   def notify do
-    client = :wocky |> Confex.get(:slack_token) |> Slack.client
+    client = :wocky |> Confex.get_env(:slack_token) |> Slack.client
 
     version = Application.spec(:wocky, :vsn)
-    wocky_env = Confex.get(:wocky, :wocky_env)
-    wocky_inst = Confex.get(:wocky, :wocky_inst)
+    wocky_env = Confex.get_env(:wocky, :wocky_env)
+    wocky_inst = Confex.get_env(:wocky, :wocky_inst)
     instance_name = "#{wocky_inst}.#{wocky_env}"
     message = "Wocky release `#{version}` deployed to #{instance_name}"
 

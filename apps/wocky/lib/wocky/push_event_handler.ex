@@ -1,7 +1,7 @@
 defmodule Wocky.PushEventHandler do
   @moduledoc "Event handler for Pushex push notifications"
 
-  use GenEvent
+  use Pushex.EventHandler
 
   alias Pushex.APNS.Response
   alias Wocky.NotificationLog
@@ -24,13 +24,14 @@ defmodule Wocky.PushEventHandler do
       Sent notification to device #{request.to} with content \
       #{inspect request.notification}\
       """
-      NotificationLog.result(reference, true)
+      if log_notifications?(), do: NotificationLog.result(reference, true)
     else
       Logger.warn """
       Failed to send notification to device #{request.to} with content \
       #{inspect request.notification}: #{inspect response.results}\
       """
-      NotificationLog.result(reference, false, inspect response.results)
+      if log_notifications?(),
+        do: NotificationLog.result(reference, false, inspect response.results)
     end
     {:ok, state}
   end
@@ -49,4 +50,6 @@ defmodule Wocky.PushEventHandler do
     Logger.error "Unknown push notification event: #{inspect event}"
     {:ok, state}
   end
+
+  defp log_notifications?, do: Confex.get_env(:wocky, :log_push_notifications)
 end

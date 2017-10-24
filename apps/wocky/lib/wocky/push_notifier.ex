@@ -82,7 +82,7 @@ defmodule Wocky.PushNotifier do
   end
 
   defp enabled? do
-    Confex.get(:wocky, :enable_push_notifications)
+    Confex.get_env(:wocky, :enable_push_notifications)
   end
 
   defp maybe_log(false, _, _, _), do: :ok

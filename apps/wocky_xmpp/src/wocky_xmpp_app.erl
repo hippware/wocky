@@ -11,6 +11,7 @@
 -export([start/1, start/0, stop/0, ensure_loaded/1, server/0]).
 
 -define(system, 'Elixir.System').
+-define(confex_resolver, 'Elixir.Confex.Resolver').
 
 
 -spec start(string()) -> ok.
@@ -82,13 +83,14 @@ get_wocky_env() ->
     application:get_env(wocky_xmpp, wocky_env, nil).
 
 get_wocky_inst() ->
-    ?confex:get(wocky_xmpp, wocky_inst).
+    ?confex:get_env(wocky_xmpp, wocky_inst).
 
 load_xmpp_config() ->
     CfgTplPath = filename:join(code:priv_dir(wocky_xmpp), "ejabberd.cfg"),
     {ok, CfgTplTerms} = file:consult(CfgTplPath),
 
-    CfgTerms = [{odbc_server, db_config()} | ?confex:process_env(CfgTplTerms)],
+    CfgTerms = [{odbc_server, db_config()}
+                | ?confex_resolver:'resolve!'(CfgTplTerms)],
 
     TmpDir = 'Elixir.System':tmp_dir(),
     CfgPath = filename:join(TmpDir, "ejabberd.cfg"),
