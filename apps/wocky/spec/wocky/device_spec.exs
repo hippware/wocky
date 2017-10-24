@@ -56,7 +56,7 @@ defmodule Wocky.DeviceSpec do
   end
 
   describe "get/1" do
-    it "should return all devices for a user" do
+    it "should return all valid devices for a user" do
       devices = Device.get(shared.user.id)
       devices |> should(have_length 1)
       [device] = devices
@@ -65,19 +65,32 @@ defmodule Wocky.DeviceSpec do
       device.resource |> should(eq shared.resource)
     end
 
-    it "should return an empty list if no devices exist for the user" do
+    it "should return an empty list if no valid devices exist for the user" do
       Device.get(ID.new) |> should(eq [])
     end
   end
 
+  describe "get_by_token/1" do
+    it "should return the device for a token" do
+      device = Device.get_by_token(shared.token)
+      device.user_id |> should(eq shared.user.id)
+      device.resource |> should(eq shared.resource)
+      device.token |> should(eq shared.token)
+    end
+
+    it "should return nil if no device is associated with the token" do
+      "foobar" |> Device.get_by_token |> should(be_nil())
+    end
+  end
+
   describe "get_token/2" do
-    it "should return the device assigned to a resource" do
+    it "should return the valid token assigned to a resource" do
       shared.id
       |> Device.get_token(shared.resource)
       |> should(eq shared.token)
     end
 
-    it "should return nil if the resource is not assigned a device" do
+    it "should return nil if the resource is not assigned a valid token" do
       ID.new
       |> Device.get_token(shared.resource)
       |> should(be_nil())
@@ -89,16 +102,76 @@ defmodule Wocky.DeviceSpec do
   end
 
   describe "get_all_tokens/1" do
-    it "should return a list of tokens for the specified user" do
+    it "should return a list of valid tokens for the specified user" do
       shared.id
       |> Device.get_all_tokens
       |> should(eq [shared.token])
     end
 
-    it "should return an empty list if the user has no assigned devices" do
+    it "should return an empty list if the user has no valid tokens" do
       ID.new
       |> Device.get_all_tokens
       |> should(be_empty())
+    end
+  end
+
+  describe "invalidate/2" do
+    context "when feedback is false" do
+      before do
+        result = Device.invalidate(shared.token)
+        {:ok, result: result}
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should set invalid to true" do
+        device =
+          Device
+          |> where(token: ^shared.token)
+          |> Repo.one
+
+        device.invalid |> should(eq true)
+      end
+
+      it "should set feedback to false" do
+        device =
+          Device
+          |> where(token: ^shared.token)
+          |> Repo.one
+
+        device.feedback |> should(eq false)
+      end
+    end
+
+    context "when feedback is true" do
+      before do
+        result = Device.invalidate(shared.token, true)
+        {:ok, result: result}
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should set invalid to true" do
+        device =
+          Device
+          |> where(token: ^shared.token)
+          |> Repo.one
+
+        device.invalid |> should(eq true)
+      end
+
+      it "should set feedback to true" do
+        device =
+          Device
+          |> where(token: ^shared.token)
+          |> Repo.one
+
+        device.feedback |> should(eq true)
+      end
     end
   end
 
