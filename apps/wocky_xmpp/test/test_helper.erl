@@ -565,6 +565,6 @@ maybe_exclude_deleted_elem(true) -> [#xmlel{name = <<"exclude-deleted">>}].
 
 insert_system_users() ->
     ?wocky_factory:insert(
-       user, #{handle => ?confex:get(wocky_xmpp, hs_prepopulation_user),
+       user, #{handle => ?confex:get_env(wocky_xmpp, hs_prepopulation_user),
                roles => [?wocky_user:no_index_role(),
                          ?wocky_user:system_role()]}).
