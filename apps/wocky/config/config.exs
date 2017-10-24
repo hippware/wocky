@@ -51,6 +51,10 @@ config :wocky, Wocky.Repo,
   port:      {:system, :integer, "WOCKY_DB_PORT", 5432},
   pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15}
 
+config :wocky, Wocky.Mailer,
+  adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
+  api_key: {:system, :string, "MANDRILL_API_KEY", ""}
+
 config :logger,
   level: :info
 

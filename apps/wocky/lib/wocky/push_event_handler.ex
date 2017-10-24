@@ -3,7 +3,10 @@ defmodule Wocky.PushEventHandler do
 
   use Pushex.EventHandler
 
+  alias APNS.Error
+  alias APNS.Feedback
   alias Pushex.APNS.Response
+  alias Wocky.Device
   alias Wocky.NotificationLog
 
   require Logger
@@ -36,13 +39,24 @@ defmodule Wocky.PushEventHandler do
     {:ok, state}
   end
 
-  def handle_event({:error, error, token}, state) do
-    Logger.error "Unknown error for token #{token}: #{inspect error}"
+  def handle_event({:error, %Error{status: 8}, token}, state) do
+    Logger.warn "Received validation error for token #{token}; invalidating."
+    Device.invalidate(token)
     {:ok, state}
   end
 
-  def handle_event({:feedback, feedback}, state) do
-    Logger.warn "Feedback on push operation: #{inspect feedback}"
+  def handle_event({:error, error, token}, state) do
+    Logger.error "Received error for token #{token}: #{error.error}"
+    {:ok, state}
+  end
+
+  def handle_event({:feedback, %Feedback{time: utime, token: token}}, state) do
+    Logger.warn "Received feedback on token #{token}; invalidating."
+    time = Timex.from_unix(utime)
+    device = Device.get_by_token(token)
+    if device && !device.invalid && device.updated_at < time do
+      Device.invalidate(token, true)
+    end
     {:ok, state}
   end
 

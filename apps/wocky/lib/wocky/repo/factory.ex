@@ -17,6 +17,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Subscription
   alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
+  alias Wocky.Device
   alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
   alias Wocky.InitialContact
@@ -160,13 +161,25 @@ defmodule Wocky.Repo.Factory do
   def notification_log_factory do
     %NotificationLog{
       resource: Lorem.word,
-      message: Lorem.sentence
+      message: Lorem.sentence,
+      reference: <<1>>
     }
   end
 
   def initial_contact_factory do
     %InitialContact{
       type: Enum.random(["follower", "followee", "friend"])
+    }
+  end
+
+  def device_factory do
+    %Device{
+      user: build(:user),
+      resource: ID.new,
+      platform: "apple",
+      token: ID.new,
+      invalid: false,
+      feedback: false
     }
   end
 

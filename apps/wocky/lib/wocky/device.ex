@@ -14,6 +14,8 @@ defmodule Wocky.Device do
     field :resource,  :string, null: false, primary_key: true
     field :platform,  :string, null: false
     field :token,     :string, null: false
+    field :invalid,   :boolean, null: false, default: false
+    field :feedback,  :boolean, null: false, default: false
 
     timestamps()
 
@@ -53,6 +55,10 @@ defmodule Wocky.Device do
     from d in query, where: d.resource == ^resource
   end
 
+  def and_valid(query) do
+    from d in query, where: d.invalid == false
+  end
+
   def select_token(query) do
     from d in query, select: d.token
   end
@@ -61,29 +67,50 @@ defmodule Wocky.Device do
   def get(user_id) do
     Device
     |> with_user(user_id)
+    |> and_valid()
     |> Repo.all
   end
 
-  @doc "Return the endpoint assigned to the specified user and resource."
+  @spec get_by_token(token) :: Device.t
+  def get_by_token(token) do
+    Device
+    |> where(token: ^token)
+    |> Repo.one
+  end
+
+  @doc "Return the valid token assigned to the specified user and resource."
   @spec get_token(User.id, User.resource) :: nil | token
   def get_token(user_id, resource) do
     Device
     |> with_user(user_id)
     |> and_resource(resource)
-    |> select_token
+    |> and_valid()
+    |> select_token()
     |> Repo.one
   end
 
   @doc """
-  Returns all endpoints currently assigned to resources belonging to the
+  Returns all valid tokens currently assigned to resources belonging to the
   specified user.
   """
   @spec get_all_tokens(User.id) :: [token]
   def get_all_tokens(user_id) do
     Device
     |> with_user(user_id)
-    |> select_token
+    |> and_valid()
+    |> select_token()
     |> Repo.all
+  end
+
+  @doc "Mark the specified token as invalid"
+  @spec invalidate(token, boolean) :: :ok
+  def invalidate(token, from_feedback? \\ false) do
+    Device
+    |> where(token: ^token)
+    |> update(set: [invalid: true, feedback: ^from_feedback?])
+    |> Repo.update_all([])
+
+    :ok
   end
 
   @doc """
