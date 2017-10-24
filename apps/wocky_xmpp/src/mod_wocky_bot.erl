@@ -411,7 +411,7 @@ make_geosearch_els(Bots) ->
     [make_geosearch_el(Bot) || Bot <- Bots].
 
 geosearch_el_fields() ->
-    [id, server, title, image, location, radius, distance].
+    [id, server, user_id, title, image, location, radius, distance].
 
 make_geosearch_el(Bot) ->
     JidField = make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
