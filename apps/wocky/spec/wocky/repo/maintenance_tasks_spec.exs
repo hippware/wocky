@@ -6,6 +6,8 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Device
+  alias Wocky.NotificationLog
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -439,6 +441,84 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     it "should not remove the recent, non-pending user" do
       User
       |> Repo.get(shared.new_nonpending.id)
+      |> should_not(be_nil())
+    end
+  end
+
+  describe "clean_invalid_push_tokens" do
+    before do
+      # Invalid token, recent update date
+      new_invalid = Factory.insert(:device, invalid: true)
+
+      # Invalid token, older update date
+      old_invalid = Factory.insert(:device, invalid: true,
+                                   updated_at: Timestamp.shift(weeks: -3))
+
+      # Valid token, recent update date
+      new_valid = Factory.insert(:device)
+
+      # Valid token, older update date
+      old_valid = Factory.insert(:device,
+                                 updated_at: Timestamp.shift(weeks: -3))
+
+      {:ok, result} = MaintenanceTasks.clean_invalid_push_tokens
+      {:ok, [
+        new_invalid: new_invalid,
+        old_invalid: old_invalid,
+        new_valid: new_valid,
+        old_valid: old_valid,
+        result: result
+      ]}
+    end
+
+    it "should return the number of push tokens removed" do
+      shared.result |> should(eq 1)
+    end
+
+    it "should remove the old, invalid push token" do
+      Device.get_by_token(shared.old_invalid.token)
+      |> should(be_nil())
+    end
+
+    it "should not remove the recent, invalid push token" do
+      Device.get_by_token(shared.new_invalid.token)
+      |> should_not(be_nil())
+    end
+
+    it "should not remove the old, valid push token" do
+      Device.get_by_token(shared.old_valid.token)
+      |> should_not(be_nil())
+    end
+
+    it "should not remove the recent, valid push token" do
+      Device.get_by_token(shared.new_valid.token)
+      |> should_not(be_nil())
+    end
+  end
+
+  describe "clean_notification_logs" do
+    before do
+      new = Factory.insert(:notification_log, user: shared.user)
+      old = Factory.insert(:notification_log, user: shared.user,
+                           created_at: Timestamp.shift(months: -2))
+
+      {:ok, result} = MaintenanceTasks.clean_notification_logs
+      {:ok, result: result, new: new, old: old}
+    end
+
+    it "should return the number of log entries removed" do
+      shared.result |> should(eq 1)
+    end
+
+    it "should remove the old log entry" do
+      NotificationLog
+      |> Repo.get(shared.old.id)
+      |> should(be_nil())
+    end
+
+    it "should not remove the recent log entry" do
+      NotificationLog
+      |> Repo.get(shared.new.id)
       |> should_not(be_nil())
     end
   end

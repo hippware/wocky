@@ -6,6 +6,8 @@ defmodule Wocky.Repo.MaintenanceTasks do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Device
+  alias Wocky.NotificationLog
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
   alias Wocky.Token
@@ -20,13 +22,15 @@ defmodule Wocky.Repo.MaintenanceTasks do
     {:ok, _} = Application.ensure_all_started(:wocky)
 
     {:ok, d1} = clean_traffic_logs()
-    {:ok, d2} = clean_pending_bots()
-    {:ok, d3} = clean_pending_tros_files()
-    {:ok, d4} = clean_expired_auth_tokens()
-    {:ok, d5} = clean_dead_tros_links()
-    {:ok, d6} = clean_pending_users()
+    {:ok, d2} = clean_notification_logs()
+    {:ok, d3} = clean_pending_users()
+    {:ok, d4} = clean_pending_bots()
+    {:ok, d5} = clean_pending_tros_files()
+    {:ok, d6} = clean_invalid_push_tokens()
+    {:ok, d7} = clean_expired_auth_tokens()
+    {:ok, d8} = clean_dead_tros_links()
 
-    {:ok, d1 + d2 + d3 + d4 + d5 + d6}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
   end
 
   def clean_pending_bots do
@@ -52,6 +56,35 @@ defmodule Wocky.Repo.MaintenanceTasks do
       |> Repo.delete_all
 
     Logger.info("Deleted #{deleted} traffic logs created before #{expire_date}")
+
+    {:ok, deleted}
+  end
+
+  def clean_notification_logs do
+    expire_date = Timestamp.shift(months: -1)
+
+    {deleted, nil} =
+      NotificationLog
+      |> where([n], n.created_at <= ^expire_date)
+      |> Repo.delete_all
+
+    Logger.info(
+      "Deleted #{deleted} notification logs created before #{expire_date}")
+
+    {:ok, deleted}
+  end
+
+  def clean_invalid_push_tokens do
+    expire_date = Timestamp.shift(weeks: -2)
+
+    {deleted, nil} =
+      Device
+      |> where([d], d.invalid == true)
+      |> where([d], d.updated_at <= ^expire_date)
+      |> Repo.delete_all
+
+    Logger.info(
+      "Deleted #{deleted} invalid push tokens updated before #{expire_date}")
 
     {:ok, deleted}
   end
