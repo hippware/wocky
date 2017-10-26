@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.10.24+ra8aefef
+
 * Fix bot item indices (PR #1036)
 * Fix roster integration tests
 * HS prepopulation user is appearing in list of followers (#1028)
