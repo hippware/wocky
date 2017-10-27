@@ -8,7 +8,7 @@
 
 -define(WFT_TIMEOUT, timer:seconds(30)).
 
-
+-spec initialise_shared_ram_table(atom(), proplists:proplist(), [atom()]) -> ok.
 initialise_shared_ram_table(Name, Opts, Attributes) ->
     case create_shared_ram_table(Name, Opts, Attributes) of
         {aborted, {already_exists, Name}} ->

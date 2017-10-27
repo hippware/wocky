@@ -189,14 +189,7 @@ defmodule Wocky.Bot do
     |> subscribers()
     |> Enum.concat([bot.user])
     |> tidy_subscribers()
-    |> Enum.filter(&(not is_same_subscriber(&1, sender)))
     |> Enum.map(&User.to_jid(&1))
-  end
-
-  # Returns true if the user id is the same and they have no resource,
-  # indicating a subscription
-  defp is_same_subscriber(user, sender) do
-    (user.id == sender.id) and (user.resource == nil)
   end
 
   @doc "Count of all subscribers plus the owner"
