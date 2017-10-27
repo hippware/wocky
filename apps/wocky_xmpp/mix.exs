@@ -81,7 +81,6 @@ defmodule Wocky.XMPP.Mixfile do
       {:ranch,                "~> 1.4",   override: true},
       {:timex,                "~> 3.1"},
       {:honeybadger,          "~> 0.6"},
-      {:logger_lager_backend, "~> 0.1"},
       {:binpp,                "~> 1.1"},
       {:confex,               "~> 3.3"},
       {:espec,                "~> 1.2",    only: :test},

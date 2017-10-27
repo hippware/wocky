@@ -48,7 +48,6 @@ defmodule WockyAPI.Mixfile do
       {:hackney,    "~> 1.7", override: true},
       {:ok,         "~> 1.2", runtime: false},
       {:lager,      "~> 3.2", override: true},
-      {:logger_lager_backend, "~> 0.1"},
 
       {:cowlib,
         github: "hippware/cowlib",
