@@ -11,7 +11,6 @@ defmodule Wocky.UserSpec do
   alias Timex.Duration
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
-  alias Wocky.Bot.TempSubscription
   alias Wocky.Email
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
@@ -633,12 +632,10 @@ defmodule Wocky.UserSpec do
       public_bot = Factory.insert(:bot, user: other_user, public: true)
       shared_bot = Factory.insert(:bot, user: other_user)
       subscribed_bot = Factory.insert(:bot, user: other_user)
-      temp_subscribed_bot = Factory.insert(:bot, user: other_user)
       unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
       Share.put(shared.user, shared_bot, other_user)
       Subscription.put(shared.user, subscribed_bot)
-      TempSubscription.put(shared.user, temp_subscribed_bot, node())
 
       {:ok, [
           other_user: other_user,
@@ -647,7 +644,6 @@ defmodule Wocky.UserSpec do
           public_bot: public_bot,
           shared_bot: shared_bot,
           subscribed_bot: subscribed_bot,
-          temp_subscribed_bot: temp_subscribed_bot,
           unaffiliated_bot: unaffiliated_bot,
         ]}
     end
@@ -695,7 +691,6 @@ defmodule Wocky.UserSpec do
                                        shared.friends_shared_private_bot)
         it do: assert User.searchable?(shared.user, shared.following_public_bot)
 
-        it do: refute User.searchable?(shared.user, shared.temp_subscribed_bot)
         it do: refute User.searchable?(shared.user, shared.public_bot)
         it do: refute User.searchable?(shared.user, shared.shared_bot)
         it do: refute User.searchable?(shared.user, shared.unaffiliated_bot)
@@ -713,7 +708,6 @@ defmodule Wocky.UserSpec do
                                        shared.friends_shared_private_bot)
         it do: assert is_searchable_sp(shared.user, shared.following_public_bot)
 
-        it do: refute is_searchable_sp(shared.user, shared.temp_subscribed_bot)
         it do: refute is_searchable_sp(shared.user, shared.public_bot)
         it do: refute is_searchable_sp(shared.user, shared.shared_bot)
         it do: refute is_searchable_sp(shared.user, shared.unaffiliated_bot)
@@ -734,23 +728,21 @@ defmodule Wocky.UserSpec do
     describe "subscribed?/2" do
       it do: assert User.subscribed?(shared.user, shared.owned_bot)
       it do: assert User.subscribed?(shared.user, shared.subscribed_bot)
-      it do: assert User.subscribed?(shared.user, shared.temp_subscribed_bot)
       it do: refute User.subscribed?(shared.user, shared.unaffiliated_bot)
     end
 
     describe "get_subscriptions/1" do
       subject do: User.get_subscriptions(shared.user)
 
-      it do: should(have_count 3)
+      it do: should(have_count 2)
       it do: should(have_any &same_bot(&1, shared.owned_bot))
       it do: should(have_any &same_bot(&1, shared.subscribed_bot))
-      it do: should(have_any &same_bot(&1, shared.temp_subscribed_bot))
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
 
     describe "bot_count/1" do
       it do: User.bot_count(shared.user) |> should(eq 1)
-      it do: User.bot_count(shared.other_user) |> should(eq 5)
+      it do: User.bot_count(shared.other_user) |> should(eq 4)
     end
 
     describe "get_owned_bots/1" do

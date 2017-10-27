@@ -25,7 +25,6 @@
 start(Host) ->
     %% This call may fail if the database hasn't been updated yet. Isolate
     %% it in a temporary process so that the application can start.
-    spawn(fun () -> ?wocky_temp_subscription:delete(node()) end),
     ejabberd_hooks:add(node_cleanup, global, fun node_cleanup_hook/1, 90),
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
                        fun remove_connection_hook/4, 90),
@@ -37,8 +36,7 @@ stop(Host) ->
                           fun user_send_packet_hook/3, 90),
     ejabberd_hooks:delete(node_cleanup, global, fun node_cleanup_hook/1, 90),
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
-                          fun remove_connection_hook/4, 90),
-    ?wocky_temp_subscription:delete(node()).
+                          fun remove_connection_hook/4, 90).
 
 %%%===================================================================
 %%% Action - subscribe
@@ -89,8 +87,10 @@ handle_subscribe_temporary(From, _Server, BotID) ->
 
 do_subscribe_temporary(User, Bot) ->
     case wocky_bot_util:check_access(User, Bot) of
-        ok -> ?wocky_temp_subscription:put(User, Bot, node());
-        _ -> ok
+        ok -> % TODO
+            ok;
+        _ ->
+            ok
     end.
 
 %%%===================================================================
@@ -99,17 +99,19 @@ do_subscribe_temporary(User, Bot) ->
 
 handle_unsubscribe_temporary(From, _Server, BotID) ->
     do([error_m ||
-        Bot <- wocky_bot_util:get_bot(BotID),
-        User <- wocky_bot_util:get_user_from_jid(From),
-        ?wocky_temp_subscription:delete(User, Bot)
+        _Bot <- wocky_bot_util:get_bot(BotID),
+        _User <- wocky_bot_util:get_user_from_jid(From),
+        ok
+        %TODO
        ]).
 
 %%%===================================================================
 %%% Hook - node down
 %%%===================================================================
 
-node_cleanup_hook(Node) ->
-    ?wocky_temp_subscription:delete(Node).
+node_cleanup_hook(_Node) ->
+    % TODO
+    ok.
 
 %%%===================================================================
 %%% Hook - client connection down
@@ -117,8 +119,9 @@ node_cleanup_hook(Node) ->
 
 remove_connection_hook(_SID, JID, _Info, _Reason) ->
     do([error_m ||
-        User <- wocky_bot_util:get_user_from_jid(JID),
-        ?wocky_temp_subscription:delete(User)
+        _User <- wocky_bot_util:get_user_from_jid(JID),
+        % TODO
+        ok
        ]).
 
 %%%===================================================================

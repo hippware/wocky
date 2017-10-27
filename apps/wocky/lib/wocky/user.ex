@@ -12,7 +12,6 @@ defmodule Wocky.User do
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
-  alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.Device
   alias Wocky.Email
@@ -63,7 +62,6 @@ defmodule Wocky.User do
 
     many_to_many :shares, Bot, join_through: Share
     many_to_many :subscriptions, Bot, join_through: Subscription
-    many_to_many :temp_subscriptions, Bot, join_through: TempSubscription
   end
 
   @type id           :: binary
@@ -223,8 +221,7 @@ defmodule Wocky.User do
   @spec subscribed?(t, Bot.t) :: boolean
   def subscribed?(user, bot) do
     owns?(user, bot) ||
-    Subscription.exists?(user, bot) ||
-    TempSubscription.exists?(user, bot)
+    Subscription.exists?(user, bot)
   end
 
   @doc "Returns all bots that the user subscribes to"
@@ -434,12 +431,9 @@ defmodule Wocky.User do
     |> where(pending: false)
     |> join(:left, [b], s in Subscription,
             b.id == s.bot_id and s.user_id == ^user.id)
-    |> join(:left, [b], ts in TempSubscription,
-            b.id == ts.bot_id and ts.user_id == ^user.id)
-    |> where([b, s, ts],
+    |> where([b, s],
              b.user_id == ^user.id or
-             not is_nil(s.user_id) or
-             not is_nil(ts.user_id))
+             not is_nil(s.user_id))
   end
 
   @doc "Generate a full name for anywhere it needs pretty-printing"
