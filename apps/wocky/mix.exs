@@ -34,7 +34,7 @@ defmodule Wocky.Mixfile do
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:logger],
+      extra_applications: [:lager, :logger],
       mod: {Wocky.Application, []},
       env: [
         wocky_env: {:system, "WOCKY_ENV", "dev"},
@@ -80,7 +80,8 @@ defmodule Wocky.Mixfile do
       {:exconstructor,        "~> 1.0"},
       {:ok,                   "~> 1.2", runtime: false},
       {:lager,                "~> 3.2", override: true},
-      {:logger_lager_backend, "~> 0.1"},
+      {:lager_logger,         "~> 1.0"},
+      {:ex_json_logger,       "~> 0.1"},
       {:email_checker,        "~> 0.1"},
       {:csv,                  "~> 2.0"},
       {:confex,               "~> 3.3"},

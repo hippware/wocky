@@ -14,9 +14,6 @@ config :wocky,
   firebase_load_on_startup: false,
   bot_report_channel: "report-testing"
 
-config :logger,
-  level: :warn
-
 # Make token tests go faster:
 config :bcrypt_elixir,
   bcrypt_log_rounds: 4
