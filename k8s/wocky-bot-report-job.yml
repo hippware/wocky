@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: wocky-migration-
+  generateName: wocky-bot-report-
 spec:
   template:
     spec:
