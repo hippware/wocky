@@ -21,4 +21,7 @@ config :mnesia,
 config :setup,
   verify_directories: false
 
+config :alarms,
+  large_heap: 10_000_000
+
 import_config "#{Mix.env}.exs"
