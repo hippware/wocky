@@ -5,6 +5,7 @@ defmodule Wocky.Conversation do
 
   use Wocky.Repo.Model
 
+  alias Ecto.Queryable
   alias Wocky.JID
   alias Wocky.User
   alias __MODULE__, as: Conversation

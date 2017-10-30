@@ -28,6 +28,7 @@ defmodule Wocky.Bot.Geosearch do
   alias Wocky.Bot.Geosearch.Limits
   alias Wocky.GeoUtils
   alias Wocky.Repo
+  alias Wocky.User
 
   @type explore_end_message ::
         :no_more_results | :result_limit_reached | :max_explore_time
@@ -36,7 +37,7 @@ defmodule Wocky.Bot.Geosearch do
   @default_max_explored_bots 1_000_000
   @default_explore_timeout 60_000
 
-  @spec user_distance_query(float, float, User.id, User.id RSMHelper.rsm_in)
+  @spec user_distance_query(float, float, User.id, User.id, RSMHelper.rsm_in)
   :: {[%Bot{}], RSMHelper.rsm_out}
   def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
     do: distance_query(lat, lon,

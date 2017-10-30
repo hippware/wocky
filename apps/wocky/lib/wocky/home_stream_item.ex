@@ -159,7 +159,7 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @doc "Get all items after a certain timestamp"
-  @spec get_after_time(User.id, Datetime.t) :: [t]
+  @spec get_after_time(User.id, DateTime.t) :: [t]
   def get_after_time(user_id, time) do
     HomeStreamItem
     |> with_user(user_id)
@@ -169,7 +169,7 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @doc "Get the latest timestamp for a user"
-  @spec get_latest_time(User.id) :: Datetime.t
+  @spec get_latest_time(User.id) :: DateTime.t
   def get_latest_time(user_id) do
     time =
       HomeStreamItem

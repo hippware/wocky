@@ -3,6 +3,7 @@ defmodule Wocky.Bot.TempSubscription do
 
   use Wocky.Repo.Model
 
+  alias Ecto.Changeset
   alias Wocky.Bot
   alias Wocky.User
   alias __MODULE__, as: TempSubscription

@@ -34,6 +34,7 @@ defmodule Wocky.RosterItem do
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Ecto.Adapters.SQL
+  alias Ecto.Queryable
   alias Ecto.UUID
   alias Wocky.Blocking
   alias Wocky.Repo
@@ -195,17 +196,17 @@ defmodule Wocky.RosterItem do
     |> Repo.all
   end
 
-  @spec followers_query(User.id, User.id) :: Ecto.queryable
+  @spec followers_query(User.id, User.id) :: Queryable.t
   def followers_query(user_id, requester_id) do
     relationships_query(user_id, requester_id, [:both, :from])
   end
 
-  @spec followees_query(User.id, User.id) :: Ecto.queryable
+  @spec followees_query(User.id, User.id) :: Queryable.t
   def followees_query(user_id, requester_id) do
     relationships_query(user_id, requester_id, [:both, :to])
   end
 
-  @spec friends_query(User.id, User.id) :: Ecto.queryable
+  @spec friends_query(User.id, User.id) :: Queryable.t
   def friends_query(user_id, requester_id) do
     relationships_query(user_id, requester_id, [:both])
   end

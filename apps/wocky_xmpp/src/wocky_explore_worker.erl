@@ -6,7 +6,7 @@
 
 -export([start/6, start_link/1, explore/6]).
 
--spec start(float(), float(), float(), jlib:jid(), pos_integer(), binary())
+-spec start(float(), float(), float(), ejabberd:jid(), pos_integer(), binary())
 -> {ok, pid()}.
 start(Lat, Lon, Radius, FromJID, Limit, ID) ->
     supervisor:start_child(wocky_explore_worker_sup,

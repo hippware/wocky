@@ -8,6 +8,7 @@ defmodule Wocky.User do
 
   import OK, only: ["~>>": 2]
 
+  alias Ecto.Queryable
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
