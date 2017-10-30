@@ -36,7 +36,7 @@ query_images(Bot, IQ, FromID) ->
        ]).
 
 
--spec publish(?wocky_bot:t(), ?wocky_user:t(), jlib:jid(), jlib:xmlel()) ->
+-spec publish(?wocky_bot:t(), ?wocky_user:t(), ejabberd:jid(), jlib:xmlel()) ->
 {ok, []} | {error, binary()}.
 publish(Bot, From, ToJID, SubEl) ->
     do([error_m ||

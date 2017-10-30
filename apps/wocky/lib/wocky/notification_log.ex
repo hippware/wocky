@@ -32,7 +32,7 @@ defmodule Wocky.NotificationLog do
     details:    binary
   }
 
-  @spec send(reference, User.user, User.resource, binary) :: :ok
+  @spec send(reference, User.t, User.resource, binary) :: :ok
   def send(reference, user, resource, body) do
     params = %{user_id: user,
                resource: resource,

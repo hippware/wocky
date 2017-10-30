@@ -5,6 +5,7 @@ defmodule Wocky.Blocking do
 
   use Wocky.Repo.Model
 
+  alias Ecto.Queryable
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -47,14 +48,14 @@ defmodule Wocky.Blocking do
     write_unblocked_items(blocker, blockee)
   end
 
-  @spec not_blocked_query(Ecto.queryable) :: Ecto.queryable
+  @spec not_blocked_query(Queryable.t) :: Queryable.t
   def not_blocked_query(query) do
     query
     |> where([..., r], not (@blocked_group in r.groups or
                             @blocked_by_group in r.groups))
   end
 
-  @spec blocked_query(Ecto.queryable) :: Ecto.queryable
+  @spec blocked_query(Queryable.t) :: Queryable.t
   def blocked_query(query) do
     from [..., r] in query, where: @blocked_group in r.groups or
                                    @blocked_by_group in r.groups
@@ -64,7 +65,7 @@ defmodule Wocky.Blocking do
   Composable query fragment to filter out objects with owners that are blocking/
   blocked by the supplied user.
   """
-  @spec object_visible_query(Ecto.queryable, User.id, atom) :: Ecto.queryable
+  @spec object_visible_query(Queryable.t, User.id, atom) :: Queryable.t
   def object_visible_query(query, requester_id, owner_field) do
     query
     |> join(:left, [..., o],

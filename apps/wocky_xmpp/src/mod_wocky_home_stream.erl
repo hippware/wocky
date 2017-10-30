@@ -159,7 +159,7 @@ check_user_present(#jid{luser = _}) -> ok.
 %%                             the packet is dropped from further routing.
 
 -type publish_check_cb() ::
-        fun((jlib:jid(), jlib:xmlel()) ->
+        fun((ejabberd:jid(), jlib:xmlel()) ->
             continue |
             dont_publish |
             {publish, {drop | keep, ?wocky_home_stream_id:id()}}).

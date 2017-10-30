@@ -5,6 +5,8 @@ defmodule Wocky.Bot do
   use Wocky.Repo.Model
   use Wocky.RSMHelper
 
+  alias Ecto.Changeset
+  alias Ecto.Queryable
   alias Geocalc.Point
   alias Wocky.Blocking
   alias Wocky.Bot.Item
