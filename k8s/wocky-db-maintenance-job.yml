@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: wocky-bot-report-
+  generateName: wocky-db-maintenance-
 spec:
   template:
     spec:
@@ -9,7 +9,7 @@ spec:
         - name: wocky
           image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
           imagePullPolicy: Always
-          args: ["bot_report"]
+          args: ["db_maintenance"]
           envFrom:
             - configMapRef:
                 name: wocky-config

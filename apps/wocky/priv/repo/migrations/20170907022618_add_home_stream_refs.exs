@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddHomeStreamRefs do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def change do
     alter table(:home_stream_items) do

@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.StoreTokensAsHashes do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   import Ecto.Query
 

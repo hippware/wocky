@@ -40,7 +40,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
       Bot
       |> where([b], b.pending == true)
       |> where([b], b.created_at <= ^expire_date)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} pending bots created before #{expire_date}")
 
@@ -53,7 +53,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
     {deleted, nil} =
       TrafficLog
       |> where([t], t.created_at <= ^expire_date)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} traffic logs created before #{expire_date}")
 
@@ -66,7 +66,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
     {deleted, nil} =
       NotificationLog
       |> where([n], n.created_at <= ^expire_date)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
       "Deleted #{deleted} notification logs created before #{expire_date}")
@@ -81,7 +81,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
       Device
       |> where([d], d.invalid == true)
       |> where([d], d.updated_at <= ^expire_date)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
       "Deleted #{deleted} invalid push tokens updated before #{expire_date}")
@@ -93,7 +93,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
     {deleted, nil} =
       Token
       |> where([t], t.expires_at < ^DateTime.utc_now)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} expired authentication tokens")
 
@@ -107,7 +107,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
       Metadata
       |> where([t], t.ready == false)
       |> where([t], t.created_at < ^expire_date)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
       "Deleted #{deleted} pending files created before #{expire_date}")
@@ -133,7 +133,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
         |> Stream.filter(fn {_, image} -> image_missing?(image) end)
         |> Stream.each(&purge_missing_item_image(do_clean, &1))
         |> Enum.count
-      end)
+      end, timeout: :infinity)
 
     log_maybe_cleaned(do_clean, cleaned, "bot item image fields with bad links")
 
@@ -188,7 +188,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
         |> Stream.filter(&image_missing?(&1.image))
         |> Stream.each(&purge_missing_bot_image(do_clean, &1))
         |> Enum.count
-      end)
+      end, timeout: :infinity)
 
     log_maybe_cleaned(do_clean, nillified, "bot image fields with bad links")
 
@@ -212,7 +212,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
         |> Stream.filter(&image_missing?(&1.avatar))
         |> Stream.each(&purge_missing_user_image(do_clean, &1))
         |> Enum.count
-      end)
+      end, timeout: :infinity)
 
     log_maybe_cleaned(do_clean, nillified, "user avatar fields with bad links")
 
@@ -233,7 +233,7 @@ defmodule Wocky.Repo.MaintenanceTasks do
       User
       |> where([u], is_nil(u.handle))
       |> where([u], u.created_at <= ^expire_date)
-      |> Repo.delete_all
+      |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} pending users created before #{expire_date}")
 

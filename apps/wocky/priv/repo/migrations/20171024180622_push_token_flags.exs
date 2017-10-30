@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.PushTokenFlags do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def change do
     alter table(:devices) do

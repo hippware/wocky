@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddLowerCaseHandleIndex do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def change do
     drop unique_index(:users, [:handle])

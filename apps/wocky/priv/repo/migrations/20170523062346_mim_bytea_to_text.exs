@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.MimByteaToText do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def change do
     alter table(:offline_message) do

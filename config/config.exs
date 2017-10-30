@@ -21,8 +21,10 @@ config :logger,
   level: :info
 
 config :logger, :console,
-  colors: [enabled: true, info: [:bright, :white]],
-  format: "$date $time $metadata[$level] $levelpad$message\n"
+  format: "$date $time [$level] $levelpad$metadata$message\n",
+  # Include Ecto logging metadata
+  metadata: [:query, :query_params, :queue_time, :query_time, :decode_time,
+             :db_duration]
 
 # Stop lager redirecting :error_logger messages
 config :lager, :error_logger_redirect, false

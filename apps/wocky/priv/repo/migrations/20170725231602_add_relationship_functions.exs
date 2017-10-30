@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddRelationshipFunctions do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def up do
     execute """

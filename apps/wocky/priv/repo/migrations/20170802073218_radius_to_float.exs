@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.RadiusToFloat do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def up do
     alter table(:bots) do
