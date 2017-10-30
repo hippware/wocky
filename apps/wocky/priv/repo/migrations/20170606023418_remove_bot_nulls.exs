@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.RemoveBotNulls do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   import Ecto.Query
 

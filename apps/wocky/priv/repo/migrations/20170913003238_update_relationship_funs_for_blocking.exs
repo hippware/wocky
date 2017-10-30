@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.UpdateRelationshipFunsForBlocking do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def up do
     execute "DROP FUNCTION is_unblocked_friend(usr1 uuid, usr2 uuid)"

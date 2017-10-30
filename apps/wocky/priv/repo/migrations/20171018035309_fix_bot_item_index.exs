@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.FixBotItemIndex do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
   @disable_ddl_transaction true
 
   def change do

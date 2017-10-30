@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddUserRoles do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def change do
     alter table(:users) do

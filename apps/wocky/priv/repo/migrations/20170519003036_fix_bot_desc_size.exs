@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.FixBotDescSize do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def change do
     alter table(:bots) do
