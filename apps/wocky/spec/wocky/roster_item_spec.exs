@@ -36,11 +36,13 @@ defmodule Wocky.RosterItemSpec do
     nil_handle_user = Factory.insert(:user, handle: nil)
     insert_friend_pair(nil_handle_user, user, [Lorem.word])
 
+    non_hidden_contacts = Enum.sort([system_user | contacts])
+
     {:ok,
      user: user,
      all_contacts: Enum.sort([system_user, nil_handle_user | contacts]),
-     non_hidden_contacts: Enum.sort(contacts),
-     contact: hd(contacts),
+     non_hidden_contacts: non_hidden_contacts,
+     contact: hd(non_hidden_contacts),
      roster_pairs: roster_pairs,
      roster_pair: hd(roster_pairs),
      rosterless_user: rosterless_user,
@@ -407,7 +409,7 @@ defmodule Wocky.RosterItemSpec do
     end
 
     it "should not include followees who have the __system__ role" do
-      RosterItem.followees(shared.user.id)
+      RosterItem.followees(shared.user.id, false)
       |> should_not(have shared.system_user)
     end
 
