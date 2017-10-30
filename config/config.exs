@@ -21,7 +21,6 @@ config :logger,
   level: :info
 
 config :logger, :console,
-  colors: [enabled: true, info: [:bright, :white]],
   format: "$date $time $metadata[$level] $levelpad$message\n"
 
 # Stop lager redirecting :error_logger messages
