@@ -2,7 +2,7 @@ use Mix.Config
 
 # format log timestamps as UTC
 config :sasl, :utc_log, true
-config :logger, :utc_log, true,
+config :logger, :utc_log, true
 
 # Log as JSON and turn off ANSI colors
 config :logger, :console,
