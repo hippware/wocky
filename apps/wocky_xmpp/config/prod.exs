@@ -9,9 +9,6 @@ config :mnesia,
 config :honeybadger,
   environment_name: "${HONEYBADGER_ENV}"
 
-config :lager,
-  log_root: '${HOME}/var/log/${HOSTNAME}'
-
 config :exometer,
   mongooseim_report_interval: 300000, # 5 minutes
   report: [

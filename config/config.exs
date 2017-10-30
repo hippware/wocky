@@ -9,11 +9,34 @@ use Mix.Config
 # back to each application for organization purposes.
 import_config "../apps/*/config/config.exs"
 
-# Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+# Configure Logging
 
+# Let Logger handle error_logger logs
+config :sasl, :sasl_error_logger, false
+
+config :logger,
+  truncate: :infinity,
+  backends: [:console],
+  compile_time_purge_level: :info,
+  level: :info
+
+config :logger, :console,
+  colors: [enabled: true, info: [:bright, :white]],
+  format: "$date $time $metadata[$level] $levelpad$message\n"
+
+# Stop lager redirecting :error_logger messages
+config :lager, :error_logger_redirect, false
+# Stop lager removing Logger's :error_logger handler
+config :lager, :error_logger_whitelist, [Logger.ErrorHandler]
+# Stop lager writing a crash log
+config :lager, :crash_log, false
+# Use LagerLogger as lager's only handler.
+config :lager, :handlers, [{LagerLogger, [level: :info]}]
+
+# Exometer uses Hut as a logging abstraction
+config :hut, :level, :info
+
+# Configure release generation
 config :distillery,
   no_warn_missing: [
     :distillery,

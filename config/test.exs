@@ -1,4 +1,4 @@
 use Mix.Config
 
-# Print only warnings and errors during test
-config :logger, level: :warn
+# Print only errors during test
+config :logger, :level, :error
