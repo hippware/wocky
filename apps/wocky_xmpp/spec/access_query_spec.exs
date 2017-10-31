@@ -44,7 +44,7 @@ defmodule :access_query_spec do
     {:redirect, JID.make("", "localhost", "overflow/" <> j)}
   end
   def check_access("timeout", _, _) do
-    Process.sleep(2000)
+    Process.sleep(3500)
     :allow
   end
 
