@@ -256,11 +256,11 @@ field_accessor(Field) -> element(5, Field).
 %%--------------------------------------------------------------------
 
 get_association_query(<<"follower">>, UserID, RequesterID) ->
-    {ok, ?wocky_roster_item:followers_query(UserID, RequesterID)};
+    {ok, ?wocky_roster_item:followers_query(UserID, RequesterID, false)};
 get_association_query(<<"following">>, UserID, RequesterID) ->
-    {ok, ?wocky_roster_item:followees_query(UserID, RequesterID)};
+    {ok, ?wocky_roster_item:followees_query(UserID, RequesterID, false)};
 get_association_query(<<"friend">>, UserID, RequesterID) ->
-    {ok, ?wocky_roster_item:friends_query(UserID, RequesterID)};
+    {ok, ?wocky_roster_item:friends_query(UserID, RequesterID, false)};
 get_association_query(_, _, _) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid association type">>)}.
 

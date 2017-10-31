@@ -174,51 +174,57 @@ defmodule Wocky.RosterItem do
   end
 
   @doc "Gets all followers of a user"
-  @spec followers(User.id) :: [User.t]
-  def followers(user_id) do
+  @spec followers(User.id, boolean) :: [User.t]
+  def followers(user_id, include_system \\ true) do
     user_id
-    |> followers_query(user_id)
+    |> followers_query(user_id, include_system)
     |> Repo.all
   end
 
   @doc "Gets all users being followed by the user"
-  @spec followees(User.id) :: [User.t]
-  def followees(user_id) do
+  @spec followees(User.id, boolean) :: [User.t]
+  def followees(user_id, include_system \\ true) do
     user_id
-    |> followees_query(user_id)
+    |> followees_query(user_id, include_system)
     |> Repo.all
   end
 
-  @spec friends(User.id) :: [User.t]
-  def friends(user_id) do
+  @spec friends(User.id, boolean) :: [User.t]
+  def friends(user_id, include_system \\ true) do
     user_id
-    |> friends_query(user_id)
+    |> friends_query(user_id, include_system)
     |> Repo.all
   end
 
-  @spec followers_query(User.id, User.id) :: Queryable.t
-  def followers_query(user_id, requester_id) do
-    relationships_query(user_id, requester_id, [:both, :from])
+  @spec followers_query(User.id, User.id, boolean) :: Queryable.t
+  def followers_query(user_id, requester_id, include_system \\ true) do
+    relationships_query(user_id, requester_id, [:both, :from], include_system)
   end
 
-  @spec followees_query(User.id, User.id) :: Queryable.t
-  def followees_query(user_id, requester_id) do
-    relationships_query(user_id, requester_id, [:both, :to])
+  @spec followees_query(User.id, User.id, boolean) :: Queryable.t
+  def followees_query(user_id, requester_id, include_system \\ true) do
+    relationships_query(user_id, requester_id, [:both, :to], include_system)
   end
 
-  @spec friends_query(User.id, User.id) :: Queryable.t
-  def friends_query(user_id, requester_id) do
-    relationships_query(user_id, requester_id, [:both])
+  @spec friends_query(User.id, User.id, boolean) :: Queryable.t
+  def friends_query(user_id, requester_id, include_system \\ true) do
+    relationships_query(user_id, requester_id, [:both], include_system)
   end
 
-  defp relationships_query(user_id, requester_id, groups) do
+  defp relationships_query(user_id, requester_id, groups, include_system) do
     User
     |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
-    |> where([u, r], not ^User.system_role in u.roles)
+    |> maybe_filter_system(not include_system)
     |> where([u, r], not is_nil(u.handle))
     |> with_subscriptions(groups)
     |> Blocking.object_visible_query(requester_id, :contact_id)
+  end
+
+  defp maybe_filter_system(query, false), do: query
+  defp maybe_filter_system(query, true) do
+    query
+    |> where([u, r], not ^User.system_role in u.roles)
   end
 
   @doc """
