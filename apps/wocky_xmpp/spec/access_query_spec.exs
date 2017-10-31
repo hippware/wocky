@@ -39,12 +39,13 @@ defmodule :access_query_spec do
   def check_access("loop/2", _, _) do
     {:redirect, JID.make("", "localhost", "loop/1")}
   end
-  def check_access("overflow" <> i, _, _) do
+  def check_access("overflow/" <> i, _, _) do
     j = i |> String.to_integer |> Kernel.+(1) |> Integer.to_string
     {:redirect, JID.make("", "localhost", "overflow/" <> j)}
   end
   def check_access("timeout", _, _) do
-    Process.sleep(2000)
+    Process.sleep(3500)
+    :allow
   end
 
   describe "run/3" do

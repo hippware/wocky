@@ -87,8 +87,8 @@ defmodule :mod_wocky_notifications_spec do
   end
 
   before do
-    sender = Factory.insert(:user)
-    user = Factory.insert(:user)
+    sender = Factory.insert(:user, resource: "testing")
+    user = Factory.insert(:user, resource: "testing")
     {:ok, user: user, user_jid: User.to_jid(user),
           sender: sender, sender_jid: User.to_jid(sender)}
   end
