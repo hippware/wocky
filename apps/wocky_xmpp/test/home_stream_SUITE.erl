@@ -56,6 +56,7 @@ publish_bot_cases() ->
      auto_publish_new_bot_non_friends,
      auto_publish_shared_private_bot,
      auto_publish_bot_item,
+     auto_publish_to_system_user,
      bot_description_update,
      bot_becomes_private
     ].
@@ -431,6 +432,26 @@ auto_publish_bot_item(Config) ->
         check_home_stream_sizes(2, [Carol], false)
 
       end).
+
+auto_publish_to_system_user(Config) ->
+    ?wocky_user:add_role(?CAROL, ?wocky_user:system_role()),
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
+        clear_home_streams(),
+        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
+        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
+        check_home_stream_sizes(1, [Carol]),
+
+        expect_iq_success(test_helper:subscribe_stanza(), Carol),
+
+        expect_iq_success(
+          publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
+          Alice),
+
+        check_home_stream_sizes(2, [Carol], false)
+
+      end),
+    ?wocky_user:remove_role(?CAROL, ?wocky_user:system_role()).
 
 bot_description_update(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
