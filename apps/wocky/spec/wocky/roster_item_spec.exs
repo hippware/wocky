@@ -36,13 +36,13 @@ defmodule Wocky.RosterItemSpec do
     nil_handle_user = Factory.insert(:user, handle: nil)
     insert_friend_pair(nil_handle_user, user, [Lorem.word])
 
-    non_hidden_contacts = Enum.sort([system_user | contacts])
+    visible_contacts = Enum.sort([system_user | contacts])
 
     {:ok,
      user: user,
      all_contacts: Enum.sort([system_user, nil_handle_user | contacts]),
-     non_hidden_contacts: non_hidden_contacts,
-     contact: hd(non_hidden_contacts),
+     visible_contacts: visible_contacts,
+     contact: hd(visible_contacts),
      roster_pairs: roster_pairs,
      roster_pair: hd(roster_pairs),
      rosterless_user: rosterless_user,
@@ -354,17 +354,24 @@ defmodule Wocky.RosterItemSpec do
       :ok
     end
 
-    it "should return the full list of followers except system users" do
+    it "should return the full list of followers" do
       RosterItem.followers(shared.user.id)
       |> Enum.sort
-      |> should(eq shared.non_hidden_contacts) # Does not include blocked follower
+      |> should(eq shared.visible_contacts) # Does not include blocked follower
+    end
+
+    it "should optionally exclude system useres" do
+      RosterItem.followers(shared.user.id, false)
+      |> Enum.sort
+      |> should(eq shared.visible_contacts -- [shared.system_user])
+      # Does not include blocked follower
     end
 
     it "should not return users who aren't followers" do
       RosterItem.put(default_item(shared, subscription: :to))
       RosterItem.followers(shared.user.id)
       |> Enum.sort
-      |> should(eq shared.non_hidden_contacts -- [shared.contact])
+      |> should(eq shared.visible_contacts -- [shared.contact])
     end
 
     it "should return an empty list for non-users" do
@@ -408,9 +415,14 @@ defmodule Wocky.RosterItemSpec do
       |> should(eq shared.following_list)
     end
 
-    it "should not include followees who have the __system__ role" do
+    it "should optionally not include system users" do
       RosterItem.followees(shared.user.id, false)
       |> should_not(have shared.system_user)
+    end
+
+    it "should optionally include system users" do
+      RosterItem.followees(shared.user.id, true)
+      |> should(have shared.system_user)
     end
 
     it "should return an empty list for non-users" do
@@ -429,14 +441,21 @@ defmodule Wocky.RosterItemSpec do
     it "should return the full list of friends" do
       RosterItem.friends(shared.user.id)
       |> Enum.sort
-      |> should(eq shared.non_hidden_contacts) # Does not include blocked friend
+      |> should(eq shared.visible_contacts) # Does not include blocked friend
+    end
+
+    it "should optinally exclude system users" do
+      RosterItem.friends(shared.user.id, false)
+      |> Enum.sort
+      |> should(eq shared.visible_contacts -- [shared.system_user])
+      # Does not include blocked friend
     end
 
     it "should not return users who aren't friends" do
       RosterItem.put(default_item(shared, subscription: :from))
       RosterItem.friends(shared.user.id)
       |> Enum.sort
-      |> should(eq shared.non_hidden_contacts -- [shared.contact])
+      |> should(eq shared.visible_contacts -- [shared.contact])
     end
 
     it "should return an empty list for non-users" do
@@ -455,6 +474,13 @@ defmodule Wocky.RosterItemSpec do
       |> should(eq [shared.follower])
     end
 
+    it "should exclude system users when set to do so" do
+      RosterItem.followers_query(shared.user.id, shared.user.id, false)
+      |> Repo.all
+      |> Enum.sort
+      |> should(eq shared.visible_contacts -- [shared.system_user])
+    end
+
     it "should not return entries blocked by the requester" do
       RosterItem.followers_query(shared.followee.id, shared.blocked_viewer.id)
       |> Repo.all
@@ -467,6 +493,13 @@ defmodule Wocky.RosterItemSpec do
       RosterItem.followees_query(shared.follower.id, shared.user.id)
       |> Repo.all
       |> should(eq [shared.followee])
+    end
+
+    it "should exclude system users when set to do so" do
+      RosterItem.followees_query(shared.user.id, shared.user.id, false)
+      |> Repo.all
+      |> Enum.sort
+      |> should(eq shared.visible_contacts -- [shared.system_user])
     end
 
     it "should not return entries blocked by the requester" do
@@ -489,14 +522,22 @@ defmodule Wocky.RosterItemSpec do
       |> Repo.all
       |> Enum.sort
       |> should(eq Enum.sort([shared.blocked_friend
-                              | shared.non_hidden_contacts]))
+                              | shared.visible_contacts]))
+    end
+
+    it "should exclude system users when set to do so" do
+      RosterItem.friends_query(shared.user.id, shared.user.id, false)
+      |> Repo.all
+      |> Enum.sort
+      |> should(eq Enum.sort([shared.blocked_friend | shared.visible_contacts])
+                             -- [shared.system_user])
     end
 
     it "should not return entries blocked by the requester" do
       RosterItem.friends_query(shared.user.id, shared.blocked_viewer.id)
       |> Repo.all
       |> Enum.sort
-      |> should(eq shared.non_hidden_contacts)
+      |> should(eq shared.visible_contacts)
     end
   end
 
