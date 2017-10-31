@@ -189,6 +189,7 @@ defmodule Wocky.Bot do
     |> subscribers()
     |> Enum.concat([bot.user])
     |> tidy_subscribers()
+    |> Enum.filter(&(&1.id != sender.id))
     |> Enum.map(&User.to_jid(&1))
   end
 

@@ -13,6 +13,10 @@
          watchers/2
         ]).
 
+-ifdef(TEST).
+-export([table/1]).
+-endif.
+
 -define(NODE_CLEANUP_PRIORITY, 80).
 -define(REMOVE_CONNECTION_PRIORITY, 90).
 
@@ -29,21 +33,22 @@
 register(Class, Host) ->
     wocky_mnesia:initialise_shared_ram_table(
       table(Class),
-      [{type, set}],
+      [{type, bag},
+       {record_name, watcher}],
       record_info(fields, watcher)),
 
     ejabberd_hooks:add(node_cleanup, global,
                        node_cleanup_hook(Class, _),
                        ?NODE_CLEANUP_PRIORITY),
-    ejabberd_hooks:add(sm_remove_connection_hook, Host,
-                       remove_connection_hook(Class, _, _, _, _),
+    ejabberd_hooks:add(unset_prsence_hook, Host,
+                       unset_prsence_hook(Class, _, _, _, _),
                        ?REMOVE_CONNECTION_PRIORITY),
     ok.
 
 -spec unregister(class(), ejabberd:server()) -> ok.
 unregister(Class, Host) ->
-    ejabberd_hooks:delete(sm_remove_connection_hook, Host,
-                          remove_connection_hook(Class, _, _, _, _),
+    ejabberd_hooks:delete(unset_prsence_hook, Host,
+                          unset_prsence_hook(Class, _, _, _, _),
                           ?REMOVE_CONNECTION_PRIORITY),
     ok.
 
@@ -62,7 +67,7 @@ watchers(Class, Object) ->
     BareWatchers = mnesia:dirty_match_object(
                      table(Class),
                      #watcher{object = jid:to_lower(Object), _ = '_'}),
-    lists:map(jid:make(_), BareWatchers).
+    lists:map(fun(#watcher{jid = SJID}) -> jid:make(SJID) end, BareWatchers).
 
 
 %%%===================================================================
@@ -70,15 +75,18 @@ watchers(Class, Object) ->
 %%%===================================================================
 
 node_cleanup_hook(Class, Node) ->
-    Table = table(Class),
-    ToClean = mnesia:dirty_match_object(Table, #watcher{node = Node, _ = '_'}),
-    lists:foreach(mnesia:dirty_delete_object(Table, _), ToClean).
+    cleanup(Class, #watcher{node = Node, _ = '_'}).
 
-remove_connection_hook(Class, _SID, JID, _Info, _Reason) ->
-    mnesia:dirty_delete_object(table(Class),
-                               #watcher{object = '_',
-                                        jid = jid:to_lower(JID),
-                                        node = node()}).
+unset_prsence_hook(Class, User, Server, Resource, _Status) ->
+    cleanup(Class,
+            #watcher{object = '_',
+                     jid = jid:to_lower(jid:make(User, Server, Resource)),
+                     node = node()}).
+
+cleanup(Class, Pattern) ->
+    Table = table(Class),
+    ToClean = mnesia:dirty_match_object(Table, Pattern),
+    lists:foreach(mnesia:dirty_delete_object(Table, _), ToClean).
 
 %%%===================================================================
 %%% Helpers

@@ -33,6 +33,7 @@
 
 start(Host, _Opts) ->
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
+    wocky_watcher:register(?WATCHER_CLASS, Host),
     ejabberd_hooks:add(filter_local_packet, Host,
                        filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
     ok.
@@ -40,6 +41,7 @@ start(Host, _Opts) ->
 stop(Host) ->
     ejabberd_hooks:delete(filter_local_packet, Host,
                           filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
+    wocky_watcher:unregister(?WATCHER_CLASS, Host),
     wocky_publishing_handler:unregister(?HOME_STREAM_NODE, ?MODULE),
     ok.
 
