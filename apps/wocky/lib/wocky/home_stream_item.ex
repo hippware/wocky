@@ -159,7 +159,7 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @doc "Get all items after a certain timestamp"
-  @spec get_after_time(User.id, DateTime.t) :: [t]
+  @spec get_after_time(User.id, DateTime.t | binary) :: [t]
   def get_after_time(user_id, time) do
     HomeStreamItem
     |> with_user(user_id)
