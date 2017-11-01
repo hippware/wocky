@@ -316,7 +316,7 @@ unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
         Stanza1 = expect_iq_success(unsubscribe_stanza(), Carol),
-        check_subscriber_count(Stanza1, 2),
+        check_subscriber_count(Stanza1, 1),
 
         % Alice can get the correct subscribers
         Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
@@ -335,10 +335,10 @@ subscribe(Config) ->
         check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
                            expected_retrieve_fields(true, ?NEW_DESCRIPTION,
                                                     ?WOCKY_BOT_VIS_OPEN, 2)),
-        check_subscriber_count(Stanza1, 3),
+        check_subscriber_count(Stanza1, 2),
 
         Stanza2 = expect_iq_success(subscribe_stanza(), Bob),
-        check_subscriber_count(Stanza2, 4),
+        check_subscriber_count(Stanza2, 3),
 
         % Alice can get the correct subscribers
         Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
