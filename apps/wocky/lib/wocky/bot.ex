@@ -12,7 +12,6 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
-  alias Wocky.Bot.TempSubscription
   alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
@@ -53,7 +52,6 @@ defmodule Wocky.Bot do
 
     many_to_many :shares, User, join_through: Share
     many_to_many :subscribers, User, join_through: Subscription
-    many_to_many :temp_subscribers, User, join_through: TempSubscription
   end
 
   @type id :: binary
@@ -174,22 +172,7 @@ defmodule Wocky.Bot do
 
   @spec subscribers(t) :: [User.t]
   def subscribers(bot) do
-    bot
-    |> unsorted_subscribers()
-    |> tidy_subscribers()
-  end
-
-  defp unsorted_subscribers(bot) do
-    bot = Repo.preload(bot, [:subscribers])
-
-    temp_subscribers =
-      bot
-      |> TempSubscription.get_all
-      |> Enum.map(fn %TempSubscription{user: user, resource: resource} ->
-                    %User{user | resource: resource}
-                  end)
-
-    Enum.concat(bot.subscribers, temp_subscribers)
+    Repo.preload(bot, [:subscribers]).subscribers
   end
 
   defp tidy_subscribers(subscribers) do
@@ -198,46 +181,26 @@ defmodule Wocky.Bot do
     |> Enum.uniq_by(&(&1.id))
   end
 
-  @spec non_temp_subscribers(t) :: [User.t]
-  def non_temp_subscribers(bot) do
-    Repo.preload(bot, [:subscribers]).subscribers
-  end
-
   @spec notification_recipients(Bot.t, User.t) :: [JID.t]
   def notification_recipients(bot, sender) do
     bot = Repo.preload(bot, [:user])
 
     bot
-    |> unsorted_subscribers()
+    |> subscribers()
     |> Enum.concat([bot.user])
     |> tidy_subscribers()
-    |> Enum.filter(&(not is_same_subscriber(&1, sender)))
+    |> Enum.filter(&(&1.id != sender.id))
     |> Enum.map(&User.to_jid(&1))
   end
 
-  # Returns true if the user id is the same and they have no resource,
-  # indicating a subscription
-  defp is_same_subscriber(user, sender) do
-    (user.id == sender.id) and (user.resource == nil)
-  end
-
-  @doc "Count of all subscribers (temporary and premanant) plus the owner"
+  @doc "Count of all subscribers plus the owner"
   @spec subscriber_count(Bot.t) :: pos_integer
   def subscriber_count(bot) do
-    subscribers =
-      bot
-      |> assoc(:subscribers)
-      |> select([s], count(s.id))
-      |> Repo.one
-
-    temp_subscribers =
-      bot
-      |> assoc(:temp_subscribers)
-      |> select([s], count(s.id))
-      |> Repo.one
-
-    # Add one for the owner:
-    subscribers + temp_subscribers + 1
+    bot
+    |> assoc(:subscribers)
+    |> select([s], count(s.id))
+    |> Repo.one
+    |> Kernel.+(1)
   end
 
   @doc "Returns the bot's distance from the specified location in meters."

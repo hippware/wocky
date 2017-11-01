@@ -121,7 +121,7 @@ maybe_notify_subscribers(Server,
     end.
 
 notify_subscribers(NewBot, OldDesc, Server) ->
-    Subscribers = ?wocky_bot:non_temp_subscribers(NewBot),
+    Subscribers = ?wocky_bot:subscribers(NewBot),
     lists:foreach(notify_desc_change(NewBot, OldDesc, _, Server), Subscribers).
 
 notify_desc_change(NewBot, OldDesc, User, Server) ->

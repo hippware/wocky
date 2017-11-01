@@ -44,7 +44,8 @@
 -define(CREATE_ADDRESS_DATA,<<"{name: bar}">>).
 -define(CREATE_LOCATION,    {2.5, 1.6}).
 -define(CREATE_RADIUS,      10.0).
--define(CREATE_IMAGE,       <<"tros:localhost/file/123465">>).
+-define(CREATE_IMAGE,
+        <<"tros:localhost/file/231d325e-bde7-11e7-aeea-e3fd897704af">>).
 -define(CREATE_TYPE,        <<"floatbot">>).
 -define(CREATE_TAGS,        [<<"tag1">>, <<"tag2">>]).
 
@@ -74,8 +75,8 @@ all() ->
      subscribers,
      unsubscribe,
      subscribe,
-     subscribe_temporary,
-     unsubscribe_temporary,
+     %subscribe_temporary,
+     %unsubscribe_temporary,
      delete,
      errors,
      retrieve_for_user,

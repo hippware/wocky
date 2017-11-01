@@ -22,13 +22,9 @@
          unsubscribe/1
         ]).
 
--record(hs_subscription,
-        {jid  :: ejabberd:simple_jid() | {binary(), binary(), '_'} | '_',
-         node :: node() | '_'
-        }).
-
+-define(WATCHER_CLASS, home_stream).
 -define(PACKET_FILTER_PRIORITY, 50).
--define(NODE_CLEANUP_PRIORITY, 80).
+-define(NODE_RESOURCE, <<"home_stream">>).
 
 
 %%%===================================================================
@@ -36,23 +32,16 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
-    wocky_mnesia:initialise_shared_ram_table(
-      hs_subscription,
-      [{type, set}],
-      record_info(fields, hs_subscription)),
-
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
+    wocky_watcher:register(?WATCHER_CLASS, Host),
     ejabberd_hooks:add(filter_local_packet, Host,
                        filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
-    ejabberd_hooks:add(node_cleanup, global,
-                       node_cleanup(_), ?NODE_CLEANUP_PRIORITY),
     ok.
 
 stop(Host) ->
-    ejabberd_hooks:delete(node_cleanup, global,
-                          node_cleanup(_), ?NODE_CLEANUP_PRIORITY),
     ejabberd_hooks:delete(filter_local_packet, Host,
                           filter_local_packet_hook(_), ?PACKET_FILTER_PRIORITY),
+    wocky_watcher:unregister(?WATCHER_CLASS, Host),
     wocky_publishing_handler:unregister(?HOME_STREAM_NODE, ?MODULE),
     ok.
 
@@ -105,18 +94,14 @@ get(#jid{luser = User}, ID, ExcludeDeleted) ->
 
 -spec subscribe(ejabberd:jid(), pub_version()) -> ok.
 subscribe(User, Version) ->
-    mnesia:dirty_write(make_record(User)),
+    wocky_watcher:watch(?WATCHER_CLASS, User, hs_node(User)),
     maybe_send_catchup(User, Version),
     ok.
 
 -spec unsubscribe(ejabberd:jid()) -> ok.
 unsubscribe(User) ->
-    mnesia:dirty_delete_object(make_record(User)),
+    wocky_watcher:unwatch(?WATCHER_CLASS, User, hs_node(User)),
     ok.
-
-make_record(User) ->
-    #hs_subscription{jid = jid:to_lower(User),
-                     node = node()}.
 
 %%%===================================================================
 %%% Packet filtering API
@@ -275,18 +260,6 @@ publish_bot_action(From, BotEl) ->
 maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
 
-%%%===================================================================
-%%% Cleanup hook
-%%%===================================================================
-
-node_cleanup(Node) ->
-    ToClean = mnesia:dirty_match_object(#hs_subscription{node = Node, _ = '_'}),
-    lists:foreach(mnesia:dirty_delete_object(_), ToClean).
-
-%%%===================================================================
-%%% Helpers
-%%%===================================================================
-
 map_to_item(#{key := Key, updated_at := UpdatedAt,
               from_jid := FromJID, stanza := StanzaBin,
               deleted := Deleted}) ->
@@ -309,13 +282,11 @@ maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
       Items).
 
 send_notifications(User, Item) ->
-    {U, S} = jid:to_lus(User),
-    Subscriptions = mnesia:dirty_match_object(
-                      #hs_subscription{jid = {U, S, '_'}, _ = '_'}),
-    lists:foreach(send_notification(_, Item), Subscriptions).
+    Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(User)),
+    lists:foreach(send_notification(_, Item), Watchers).
 
-send_notification(#hs_subscription{jid = BareJID}, Item) ->
-    wocky_publishing_handler:send_notification(jid:make(BareJID),
+send_notification(JID, Item) ->
+    wocky_publishing_handler:send_notification(JID,
                                                ?HOME_STREAM_NODE,
                                                Item).
 
@@ -328,3 +299,5 @@ check_server(Server) ->
 get_id(nil) -> nil;
 get_id(Struct) -> maps:get(id, Struct).
 
+hs_node(UserJID) ->
+    jid:replace_resource(UserJID, ?NODE_RESOURCE).

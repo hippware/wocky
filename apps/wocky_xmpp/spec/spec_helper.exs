@@ -1,3 +1,6 @@
+Code.require_file("spec/support/custom_assertions.ex")
+Code.require_file("spec/support/assertions/cause_exit_assertion.ex")
+
 ESpec.configure fn config ->
   config.before fn tags ->
     if tags[:sandbox], do: SandboxHelper.checkout

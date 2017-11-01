@@ -15,7 +15,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
-  alias Wocky.Bot.TempSubscription
   alias Wocky.Conversation
   alias Wocky.Device
   alias Wocky.GeoUtils
@@ -92,15 +91,6 @@ defmodule Wocky.Repo.Factory do
     %Subscription{
       user: build(:user),
       bot: build(:bot)
-    }
-  end
-
-  def temp_subscription_factory do
-    %TempSubscription{
-      user: build(:user),
-      bot: build(:bot),
-      resource: Code.isbn13,
-      node: to_string(node())
     }
   end
 
