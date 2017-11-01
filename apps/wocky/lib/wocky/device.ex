@@ -71,7 +71,7 @@ defmodule Wocky.Device do
     |> Repo.all
   end
 
-  @spec get_by_token(token) :: Device.t
+  @spec get_by_token(token) :: Device.t | nil
   def get_by_token(token) do
     Device
     |> where(token: ^token)

@@ -4,7 +4,7 @@
 
 -include("wocky.hrl").
 
--type pub_version() :: ?wocky_id:t() | not_found.
+-type pub_version() :: binary() | not_found.
 -type pub_item_id() :: binary().
 -type published_stanza() :: jlib:xmlel() | [jlib:xmlel()].
 
