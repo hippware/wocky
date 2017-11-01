@@ -155,7 +155,7 @@ check_user_present(#jid{luser = _}) -> ok.
 publish_checks() ->
     [
      fun check_publish_skip_notification/2,
-     fun check_publish_message/2,
+     fun check_publish_headline_message/2,
      fun check_publish_bot/2,
      fun check_publish_bot_description/2,
      fun check_publish_event/2
@@ -190,17 +190,14 @@ check_publish_skip_notification(_From, Stanza) ->
             continue
     end.
 
-check_publish_message(From, Stanza = #xmlel{name = <<"message">>}) ->
+check_publish_headline_message(_From, Stanza = #xmlel{name = <<"message">>}) ->
     case xml:get_tag_attr(<<"type">>, Stanza) of
         {value, <<"headline">>} ->
             continue;
-        X when X =:= {value, <<"chat">>} orelse X =:= false ->
-            User = ?wocky_user:get_by_jid(From),
-            {publish, {keep, ?wocky_home_stream_id:user_message_id(User)}};
         _ ->
             dont_publish
     end;
-check_publish_message(_From, _Stanza) -> continue.
+check_publish_headline_message(_From, _Stanza) -> dont_publish.
 
 check_publish_bot(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
