@@ -45,9 +45,10 @@ defmodule :wocky_watcher_spec do
       object = JID.make(ID.new, shared.server, ID.new)
       result = watch(shared.class, jid, object)
       {:ok,
-       jid: jid,
-       object: object,
-       result: result
+        user: user,
+        jid: jid,
+        object: object,
+        result: result
       }
     end
 
@@ -127,6 +128,42 @@ defmodule :wocky_watcher_spec do
 
       it "should not have users from different objects" do
         shared.result |> should_not(have shared.different_object)
+      end
+    end
+
+    describe "node_cleanup hook", async: false do
+      before do
+        :ejabberd_hooks.run(:node_cleanup, :global, [node()])
+      end
+
+      it "should clear out all memebers of the table on this node" do
+        shared.class
+        |> table()
+        |> :mnesia.dirty_all_keys
+        |> should(eq [])
+      end
+    end
+
+    describe "unset_presence_hook", async: false do
+      before do
+        resource = ID.new
+        remaining_user =
+          :user
+          |> Factory.build
+          |> User.to_jid(resource)
+        watch(shared.class, remaining_user, shared.object)
+        :ejabberd_hooks.run(
+          :unset_presence_hook, shared.server,
+          [shared.user.id, shared.server, jid(shared.jid, :lresource),
+           "disconnected"])
+        {:ok,
+          remaining_user: remaining_user
+        }
+      end
+
+      it "should clear out only the user for whome the presence was unset" do
+        watchers(shared.class, shared.object)
+        |> should(eq [shared.remaining_user])
       end
     end
   end

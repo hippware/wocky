@@ -18,7 +18,7 @@
 -endif.
 
 -define(NODE_CLEANUP_PRIORITY, 80).
--define(REMOVE_CONNECTION_PRIORITY, 90).
+-define(UNSET_PRESENCE_PRIORITY, 90).
 
 -record(watcher,
         {
@@ -40,16 +40,16 @@ register(Class, Host) ->
     ejabberd_hooks:add(node_cleanup, global,
                        node_cleanup_hook(Class, _),
                        ?NODE_CLEANUP_PRIORITY),
-    ejabberd_hooks:add(unset_prsence_hook, Host,
-                       unset_prsence_hook(Class, _, _, _, _),
-                       ?REMOVE_CONNECTION_PRIORITY),
+    ejabberd_hooks:add(unset_presence_hook, Host,
+                       unset_presence_hook(Class, _, _, _, _),
+                       ?UNSET_PRESENCE_PRIORITY),
     ok.
 
 -spec unregister(class(), ejabberd:server()) -> ok.
 unregister(Class, Host) ->
-    ejabberd_hooks:delete(unset_prsence_hook, Host,
-                          unset_prsence_hook(Class, _, _, _, _),
-                          ?REMOVE_CONNECTION_PRIORITY),
+    ejabberd_hooks:delete(unset_presence_hook, Host,
+                          unset_presence_hook(Class, _, _, _, _),
+                          ?UNSET_PRESENCE_PRIORITY),
     ok.
 
 -spec watch(class(), ejabberd:jid(), ejabberd:jid()) -> ok.
@@ -77,7 +77,7 @@ watchers(Class, Object) ->
 node_cleanup_hook(Class, Node) ->
     cleanup(Class, #watcher{node = Node, _ = '_'}).
 
-unset_prsence_hook(Class, User, Server, Resource, _Status) ->
+unset_presence_hook(Class, User, Server, Resource, _Status) ->
     cleanup(Class,
             #watcher{object = '_',
                      jid = jid:to_lower(jid:make(User, Server, Resource)),
