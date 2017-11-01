@@ -108,8 +108,8 @@ publish_item(From, ToJID, Bot, ItemID, Entry) ->
     Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
     {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin, Image),
-    Message = notification_message(Bot, make_item_element(Item)),
-    notify_subscribers(From, ToJID, Bot, Message).
+    Message = notification_event(Bot, make_item_element(Item)),
+    wocky_bot_users:notify_subscribers_and_watchers(Bot, From, ToJID, Message).
 
 has_image(Entry) ->
     wocky_bot_util:get_image(Entry) =/= <<>>.
@@ -172,18 +172,6 @@ time_field(Name, Value) ->
     #xmlel{name = Name,
            children =
            [#xmlcdata{content = ?wocky_timestamp:to_string(Value)}]}.
-
-notify_subscribers(From, ToJID, Bot, Message) ->
-    NotificationJIDs = ?wocky_bot:notification_recipients(Bot, From),
-    lists:foreach(notify_subscriber(ToJID, _, Message), NotificationJIDs).
-
-notify_subscriber(FromJID, ToJID, Message) ->
-    ejabberd_router:route(FromJID, ToJID, Message).
-
-notification_message(Bot, ItemEl) ->
-    #xmlel{name = <<"message">>,
-           attrs = [{<<"type">>, <<"headline">>}],
-           children = [notification_event(Bot, ItemEl)]}.
 
 notification_event(Bot, ItemEl) ->
     #xmlel{name = <<"event">>,

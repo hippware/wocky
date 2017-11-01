@@ -83,6 +83,7 @@ ensure_wocky_is_running() ->
     ok.
 
 setup_users(Config, Users) ->
+    _ = ?wocky_repo:delete_all(?wocky_home_stream_item),
     _ = ?wocky_repo:delete_all(?wocky_user),
     Config2 = escalus:create_users(Config, escalus:get_users(Users)),
     ConfigUsers = proplists:get_value(escalus_users, Config2),

@@ -139,29 +139,33 @@ check_user_present(#jid{luser = _}) -> ok.
 %%
 %% * `continue` - continues on to the next check
 %% * `dont_publish` - stops checking immediately and does not publish
-%% * `{publish, {Drop, ID}}` - publishes the packet with the supplied ID
-%%                             Drop may be `drop` or `keep` and controls whether
-%%                             the packet is dropped from further routing.
+%% * `{publish, {Action, ID}}` - publishes the packet with the supplied ID
+%%                               Action may be `drop` or `keep` and controls
+%%                               whether the packet is dropped from further
+%%                               routing.
+
+-type publish_result() :: {publish, {drop | keep, ?wocky_home_stream_id:id()}}.
+
+-type publish_check_cb_result() :: continue | dont_publish | publish_result().
 
 -type publish_check_cb() ::
-        fun((ejabberd:jid(), jlib:xmlel()) ->
-            continue |
-            dont_publish |
-            {publish, {drop | keep, ?wocky_home_stream_id:id()}}).
+        fun((ejabberd:jid(), jlib:xmlel()) -> publish_check_cb_result()).
 
 -spec publish_checks() -> [publish_check_cb()].
 publish_checks() ->
     [
-     fun check_publish_headline/2,
+     fun check_publish_skip_notification/2,
+     fun check_publish_message/2,
      fun check_publish_bot/2,
      fun check_publish_bot_description/2,
-     fun check_publish_event/2,
-     fun check_publish_skip_notification/2
+     fun check_publish_event/2
     ].
 
 check_publish(From, Stanza) ->
     check_publish(publish_checks(), From, Stanza).
 
+-spec check_publish([publish_check_cb()], ejabberd:jid(), jlib:xmlel()) ->
+    {ok, publish_result()} | {error, dont_publish}.
 check_publish([], _From, _Stanza) ->
     {error, dont_publish};
 check_publish([Check | Rest], From, Stanza) ->
@@ -174,13 +178,29 @@ check_publish([Check | Rest], From, Stanza) ->
             check_publish(Rest, From, Stanza)
     end.
 
-check_publish_headline(_From, Stanza) ->
+%% Very important: Filter out publishing notification events -
+%% the home stream generates these and we don't want to get caught in a loop.
+check_publish_skip_notification(_From, Stanza) ->
+    NotificationNS = xml:get_path_s(Stanza, [{elem, <<"notification">>},
+                                             {attr, <<"xmlns">>}]),
+    case NotificationNS of
+        ?NS_PUBLISHING ->
+            dont_publish;
+        _  ->
+            continue
+    end.
+
+check_publish_message(From, Stanza = #xmlel{name = <<"message">>}) ->
     case xml:get_tag_attr(<<"type">>, Stanza) of
         {value, <<"headline">>} ->
             continue;
+        X when X =:= {value, <<"chat">>} orelse X =:= false ->
+            User = ?wocky_user:get_by_jid(From),
+            {publish, {keep, ?wocky_home_stream_id:user_message_id(User)}};
         _ ->
             dont_publish
-    end.
+    end;
+check_publish_message(_From, _Stanza) -> continue.
 
 check_publish_bot(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
@@ -222,18 +242,6 @@ check_publish_event(_From, Stanza) ->
             dont_publish;
         _ ->
             continue
-    end.
-
-%% Very important: Filter out publishing notification events -
-%% the home stream generates these and we don't want to get caught in a loop.
-check_publish_skip_notification(From, Stanza) ->
-    NotificationNS = xml:get_path_s(Stanza, [{elem, <<"notification">>},
-                                             {attr, <<"xmlns">>}]),
-    case NotificationNS of
-        ?NS_PUBLISHING -> dont_publish;
-        _  ->
-            User = ?wocky_user:get_by_jid(From),
-            {publish, {keep, ?wocky_home_stream_id:user_message_id(User)}}
     end.
 
 publish_bot_action(From, BotEl) ->

@@ -51,7 +51,7 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
-    wocky_bot_subscription:start(Host),
+    wocky_watcher:register(bot, Host),
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BOT,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
@@ -67,7 +67,7 @@ stop(Host) ->
                           fun filter_local_packet_hook/1,
                           ?PACKET_FILTER_PRIORITY),
     mod_wocky_access:unregister(<<"bot">>, ?MODULE),
-    wocky_bot_subscription:stop(Host).
+    wocky_watcher:unregister(bot, Host).
 
 %%%===================================================================
 %%% Event handler
@@ -204,7 +204,7 @@ perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
         NewBot <- ?wocky_bot:update(Bot, FieldsMap),
         wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
                                            ?wocky_bot:'public?'(NewBot)),
-        wocky_bot_users:maybe_notify_subscribers(Server, Bot, NewBot),
+        wocky_bot_users:maybe_notify_desc_change(Server, Bot, NewBot),
 
         {ok, []}
        ]);
