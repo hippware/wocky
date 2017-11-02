@@ -15,10 +15,12 @@
 -behaviour(wocky_publishing_handler).
 
 -export([start/2, stop/1]).
+
+% wocky_publishing_handler exports
 -export([publish/4,
          delete/2,
-         get/3,
-         subscribe/2,
+         get/4,
+         subscribe/3,
          unsubscribe/1
         ]).
 
@@ -53,26 +55,28 @@ stop(Host) ->
               ejabberd:jid(),
               ?wocky_home_stream_id:id() | pub_item_id(),
               published_stanza()) -> ok.
-publish(UserJID, From, ID, Stanza) when is_binary(ID) ->
-    publish(UserJID, From, {ID, nil, nil}, Stanza);
-publish(UserJID = #jid{luser = UserID}, From, {ID, RefUser, RefBot}, Stanza) ->
+publish(TargetJID, From, ID, Stanza) when is_binary(ID) ->
+    publish(TargetJID, From, {ID, nil, nil}, Stanza);
+publish(TargetJID = #jid{luser = UserID},
+        From, {ID, RefUser, RefBot}, Stanza) ->
     {ok, ItemMap} = ?wocky_home_stream_item:put(UserID, ID,
                                                 jid:to_binary(From),
                                                 exml:to_binary(Stanza),
                                                 [{ref_user_id, get_id(RefUser)},
                                                  {ref_bot_id, get_id(RefBot)}]
                                                ),
-    send_notifications(UserJID, map_to_item(ItemMap)).
+    send_notifications(TargetJID, map_to_item(ItemMap)),
+    ok.
 
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
 delete(UserJID = #jid{luser = User}, ID) ->
     {ok, ItemMap} = ?wocky_home_stream_item:delete(User, ID),
     send_notifications(UserJID, map_to_item(ItemMap)).
 
--spec get(ejabberd:jid(), jlib:rsm_in() | pub_item_id(), boolean()) ->
-    {ok, {[published_item()], pub_version(), jlib:rsm_out()}} |
-    {ok, {published_item(), pub_version()} | not_found}.
-get(#jid{luser = User}, RSMIn = #rsm_in{}, ExcludeDeleted) ->
+-spec get(ejabberd:jid(), ejabberd:jid(),
+          jlib:rsm_in() | pub_item_id(), boolean()) -> pub_get_result().
+get(#jid{luser = User}, #jid{luser = User},
+    RSMIn = #rsm_in{}, ExcludeDeleted) ->
     Query = ?wocky_home_stream_item:maybe_exclude_deleted(
                ?wocky_home_stream_item:with_user(User), ExcludeDeleted),
     {Results, RSMOut} =
@@ -81,7 +85,7 @@ get(#jid{luser = User}, RSMIn = #rsm_in{}, ExcludeDeleted) ->
           format_version(?wocky_home_stream_item:get_latest_time(User)),
           RSMOut}};
 
-get(#jid{luser = User}, ID, ExcludeDeleted) ->
+get(#jid{luser = User}, #jid{luser = User}, ID, ExcludeDeleted) ->
     Item = ?wocky_home_stream_item:get_by_key(User, ID, ExcludeDeleted),
     case Item of
         nil ->
@@ -90,13 +94,17 @@ get(#jid{luser = User}, ID, ExcludeDeleted) ->
             {ok, {map_to_item(Item),
                   format_version(
                     ?wocky_home_stream_item:get_latest_time(User))}}
-    end.
+    end;
+get(_, _, _, _) ->
+    {error, ?ERR_FORBIDDEN}.
 
--spec subscribe(ejabberd:jid(), pub_version()) -> ok.
-subscribe(User, Version) ->
+-spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> ok.
+subscribe(#jid{luser = ToID}, User = #jid{luser = ToID}, Version) ->
     wocky_watcher:watch(?WATCHER_CLASS, User, hs_node(User)),
     maybe_send_catchup(User, Version),
-    ok.
+    ok;
+subscribe(_, _, _) ->
+    {error, ?ERR_FORBIDDEN}.
 
 -spec unsubscribe(ejabberd:jid()) -> ok.
 unsubscribe(User) ->
@@ -286,8 +294,8 @@ maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
       wocky_publishing_handler:send_notification(UserJID, ?HOME_STREAM_NODE, _),
       Items).
 
-send_notifications(User, Item) ->
-    Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(User)),
+send_notifications(UserJID, Item) ->
+    Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(UserJID)),
     lists:foreach(send_notification(_, Item), Watchers).
 
 send_notification(JID, Item) ->

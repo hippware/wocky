@@ -104,24 +104,25 @@ filter_local_packet_hook(Other) ->
 handle_publish(From, To, Attrs, Children) ->
     do([error_m ||
         check_same_user(From, To),
-        Node    <- get_node(Attrs),
-        Item    <- get_item_or_delete(Children),
-        ID      <- get_id(Item#xmlel.attrs),
-        Stanza  <- get_stanza(Item),
-        wocky_publishing_handler:set(Node, From, To, ID, Stanza),
-        {_, Version} <- wocky_publishing_handler:get(Node, From, ID, false),
-        {ok, published_stanza(Node, ID, Version)}
+        TargetJID <- get_target_jid(To, Attrs),
+        Item      <- get_item_or_delete(Children),
+        ID        <- get_id(Item#xmlel.attrs),
+        Stanza    <- get_stanza(Item),
+        wocky_publishing_handler:set(TargetJID, From, To, ID, Stanza),
+        {_, Version} <- wocky_publishing_handler:get(
+                          TargetJID, From, ID, false),
+        {ok, published_stanza(TargetJID, ID, Version)}
        ]).
 
 handle_items(From, To, Attrs, Children) ->
     do([error_m ||
         check_same_user(From, To),
-        Node           <- get_node(Attrs),
+        TargetJID      <- get_target_jid(To, Attrs),
         Param          <- get_item_id_or_rsm(Children),
         ExcludeDeleted <- get_exclude_deleted(Children),
         Result         <- wocky_publishing_handler:get(
-                            Node, From, Param, ExcludeDeleted),
-        result_stanza(Result, Node)
+                            TargetJID, From, Param, ExcludeDeleted),
+        result_stanza(Result, TargetJID)
        ]).
 
 handle_presence(_, _, unhandled_presence_type, _) ->
@@ -129,16 +130,15 @@ handle_presence(_, _, unhandled_presence_type, _) ->
 
 handle_presence(From, To, available, Packet) ->
     do([error_m ||
-        check_same_user(From, To),
         Query <- wocky_xml:get_subel(<<"query">>, Packet),
         wocky_xml:check_namespace(?NS_PUBLISHING, Query),
         Version <- get_version(Query#xmlel.attrs),
-        wocky_publishing_handler:subscribe(To#jid.lresource, From, Version)
+        wocky_publishing_handler:subscribe(To, From, Version)
        ]);
 
 % Explicit unsubscription
 handle_presence(From, To, unavailable, _Packet) ->
-    wocky_publishing_handler:unsubscribe(To#jid.lresource, From).
+    wocky_publishing_handler:unsubscribe(To, From).
 
 % Implicit unsubscription on disconnection unless the stream was resumed
 remove_connection_hook(_SID, _JID, _Info, resumed) ->
@@ -165,8 +165,15 @@ check_same_user(A, B) ->
         false -> {error, ?ERR_FORBIDDEN}
     end.
 
-get_node(Attrs) ->
-    wocky_xml:get_attr(<<"node">>, Attrs).
+get_target_jid(To = #jid{lresource = LResource}, Attrs) ->
+    case xml:get_attr(<<"node">>, Attrs) of
+        {value, V} -> {ok, jid:replace_resource(To, V)};
+        false ->
+            case LResource of
+                <<>> -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Missing node">>)};
+                _ -> {ok, To}
+            end
+    end.
 
 get_version(Attrs) ->
     case xml:get_attr(<<"version">>, Attrs) of
@@ -211,10 +218,10 @@ get_stanza(XML = #xmlel{name = <<"delete">>}) ->
 get_stanza(#xmlel{children = Children}) ->
     {ok, Children}.
 
-published_stanza(Node, ID, Version) ->
+published_stanza(#jid{lresource = LResource}, ID, Version) ->
     #xmlel{name = <<"published">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
-                    {<<"node">>, Node}],
+                    {<<"node">>, LResource}],
            children = [published_child(ID, Version)]}.
 
 published_child(ID, Version) ->
@@ -222,20 +229,20 @@ published_child(ID, Version) ->
            attrs = [{<<"id">>, ID},
                     {<<"version">>, Version}]}.
 
-result_stanza(not_found, _Node) ->
+result_stanza(not_found, _TargetJID) ->
     {error, ?ERR_ITEM_NOT_FOUND};
-result_stanza({#published_item{deleted = true}, _Version}, _Node) ->
+result_stanza({#published_item{deleted = true}, _Version}, _TargetJID) ->
     {error, ?ERR_ITEM_NOT_FOUND};
-result_stanza({Item = #published_item{}, Version}, Node) ->
-    items_stanza([item_stanza(Item)], Version, Node);
-result_stanza({Items, Version, RSMOut}, Node) ->
+result_stanza({Item = #published_item{}, Version}, TargetJID) ->
+    items_stanza([item_stanza(Item)], Version, TargetJID);
+result_stanza({Items, Version, RSMOut}, TargetJID) ->
     items_stanza(items_elements(Items) ++ jlib:rsm_encode(RSMOut),
-                 Version, Node).
+                 Version, TargetJID).
 
-items_stanza(Children, Version, Node) ->
+items_stanza(Children, Version, #jid{lresource = LResource}) ->
     {ok, #xmlel{name = <<"items">>,
                 attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
-                         {<<"node">>, Node} |
+                         {<<"node">>, LResource} |
                          maybe_version_attr(Version)
                         ],
                 children = Children}}.

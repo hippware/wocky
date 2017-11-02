@@ -140,7 +140,7 @@ desc_change_stanza(NewBot, OldDesc, User) ->
 %%% FromJID is the jid from which the notification will be sent
 %%%===================================================================
 
--spec notify_subscribers_and_watchers(?wocky_bot:t(), ejabberd:jid(),
+-spec notify_subscribers_and_watchers(?wocky_bot:t(), ?wocky_user:t(),
                                       ejabberd:jid(), jlib:xmlel()) -> ok.
 notify_subscribers_and_watchers(Bot, Actor, FromJID, Message) ->
     % Subscribers
