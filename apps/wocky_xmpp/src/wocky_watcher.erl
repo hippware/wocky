@@ -9,6 +9,7 @@
 
          watch/3,
          unwatch/3,
+         unwatch_all/2,
 
          watchers/2
         ]).
@@ -62,6 +63,13 @@ unwatch(Class, User, Object) ->
     mnesia:dirty_delete_object(table(Class), make_record(User, Object)),
     ok.
 
+-spec unwatch_all(class(), ejabberd:jid()) -> ok.
+unwatch_all(Class, UserJID) ->
+    cleanup(Class,
+            #watcher{object = '_',
+                     jid = jid:to_lower(UserJID),
+                     node = node()}).
+
 -spec watchers(class(), ejabberd:jid()) -> [ejabberd:jid()].
 watchers(Class, Object) ->
     BareWatchers = mnesia:dirty_match_object(
@@ -74,23 +82,24 @@ watchers(Class, Object) ->
 %%% MIM hook handlers
 %%%===================================================================
 
+-spec node_cleanup_hook(class(), ejabberd:lresource()) -> ok.
 node_cleanup_hook(Class, Node) ->
     cleanup(Class, #watcher{node = Node, _ = '_'}).
 
+-spec unset_presence_hook(class(), ejabberd:luser(),
+                          ejabberd:lserver(), ejabberd:lresource(),
+                          binary()) -> ok.
 unset_presence_hook(Class, User, Server, Resource, _Status) ->
-    cleanup(Class,
-            #watcher{object = '_',
-                     jid = jid:to_lower(jid:make(User, Server, Resource)),
-                     node = node()}).
+    unwatch_all(Class, jid:make(User, Server, Resource)).
+
+%%%===================================================================
+%%% Helpers
+%%%===================================================================
 
 cleanup(Class, Pattern) ->
     Table = table(Class),
     ToClean = mnesia:dirty_match_object(Table, Pattern),
     lists:foreach(mnesia:dirty_delete_object(Table, _), ToClean).
-
-%%%===================================================================
-%%% Helpers
-%%%===================================================================
 
 table(Class) ->
     list_to_atom(atom_to_list(Class) ++ "_watcher_table").
