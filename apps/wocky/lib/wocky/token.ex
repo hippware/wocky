@@ -92,12 +92,16 @@ defmodule Wocky.Token do
   user or `false' otherwise.
   """
   @spec valid?(User.id, token) :: boolean
+  def valid?(_user_id, nil), do: false
+  def valid?(nil, _token), do: false
   def valid?(user_id, token) do
     Token
     |> with_user(user_id)
     |> Repo.all
     |> Enum.to_list
     |> check_token(token)
+  rescue
+    Ecto.Query.CastError -> false
   end
 
   # Avoid user-probing timing attack:
