@@ -610,14 +610,16 @@ publish_item(Config) ->
 
         % As someone to whom the bot has been shared, Bob can publish items
         % to the bot and all the subscribers are notified.
-        publish_item_watching(?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
+        publish_item_watching(
+          ?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
         lists:foreach(
           expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, Content),
           [Alice, Carol, Karen]),
 
         % Bob can update his own item and subscribers will be informed.
         NewContent = <<"New Content">>,
-        publish_item_watching(?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
+        publish_item_watching(
+          ?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
         lists:foreach(
           expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, NewContent),
           [Alice, Carol, Karen]),
