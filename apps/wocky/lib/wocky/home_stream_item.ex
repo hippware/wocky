@@ -83,7 +83,7 @@ defmodule Wocky.HomeStreamItem do
     HomeStreamItem
     |> where(user_id: ^user_id)
     |> where(reference_user_id: ^ref_user_id)
-    |> Repo.update_all(set: @delete_changes)
+    |> Repo.update_all(set: delete_changes())
     :ok
   end
 
@@ -91,7 +91,7 @@ defmodule Wocky.HomeStreamItem do
     HomeStreamItem
     |> where(user_id: ^user_id)
     |> where(reference_bot_id: ^ref_bot_id)
-    |> Repo.update_all(set: @delete_changes)
+    |> Repo.update_all(set: delete_changes())
     :ok
   end
 
@@ -99,7 +99,7 @@ defmodule Wocky.HomeStreamItem do
   def delete_by_user_ref(user) do
     HomeStreamItem
     |> where(reference_user_id: ^user.id)
-    |> Repo.update_all(set: @delete_changes)
+    |> Repo.update_all(set: delete_changes())
     :ok
   end
 
@@ -107,7 +107,7 @@ defmodule Wocky.HomeStreamItem do
   def delete_by_bot_ref(bot) do
     HomeStreamItem
     |> where(reference_bot_id: ^bot.id)
-    |> Repo.update_all(set: @delete_changes)
+    |> Repo.update_all(set: delete_changes())
     :ok
   end
 
@@ -238,5 +238,11 @@ defmodule Wocky.HomeStreamItem do
     |> cast(params, @change_fields)
     |> foreign_key_constraint(:reference_user_id)
     |> foreign_key_constraint(:reference_bot_id)
+  end
+
+  # `update_all` does not set the `updated_at` field so we need to do it
+  # ourselves
+  defp delete_changes do
+    Keyword.put(@delete_changes, :updated_at, DateTime.utc_now())
   end
 end
