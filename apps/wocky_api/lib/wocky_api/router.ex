@@ -12,5 +12,7 @@ defmodule WockyAPI.Router do
 
   scope "/api/v1", WockyAPI do
     pipe_through :api
+
+    resources "/users/:user_id/locations", LocationController, only: [:create]
   end
 end

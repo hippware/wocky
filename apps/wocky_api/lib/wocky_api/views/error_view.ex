@@ -1,6 +1,10 @@
 defmodule WockyAPI.ErrorView do
   use WockyAPI, :view
 
+  def render("error.json", assigns) do
+    %{errors: %{detail: assigns.message}}
+  end
+
   def render("404.json", _assigns) do
     %{errors: %{detail: "Page not found"}}
   end
