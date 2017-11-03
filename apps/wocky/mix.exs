@@ -2,29 +2,30 @@ defmodule Wocky.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :wocky,
-     version: version(),
-     build_path: "../../_build",
-     config_path: "../../config/config.exs",
-     deps_path: "../../deps",
-     lockfile: "../../mix.lock",
-     elixir: "~> 1.4",
-     elixirc_paths: elixirc_paths(Mix.env),
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     test_coverage: [tool: ExCoveralls, test_task: "espec"],
-     preferred_cli_env: [
-       espec: :test,
-       coveralls: :test,
-       "coveralls.html": :test,
-       vcr: :test,
-       "vcr.delete": :test,
-       "vcr.check": :test,
-       "vcr.show": :test
-     ],
-     elvis_config: [%{src_dirs: [], rules: []}],
-     aliases: aliases(),
-     deps: deps()]
+    [
+      app: :wocky,
+      version: version(),
+      build_path: "../../_build",
+      config_path: "../../config/config.exs",
+      deps_path: "../../deps",
+      lockfile: "../../mix.lock",
+      elixir: "~> 1.4",
+      elixirc_paths: elixirc_paths(Mix.env),
+      start_permanent: Mix.env == :prod,
+      test_coverage: [tool: ExCoveralls, test_task: "espec"],
+      preferred_cli_env: [
+        espec: :test,
+        coveralls: :test,
+        "coveralls.html": :test,
+        vcr: :test,
+        "vcr.delete": :test,
+        "vcr.check": :test,
+        "vcr.show": :test
+      ],
+      elvis_config: [%{src_dirs: [], rules: []}],
+      aliases: aliases(),
+      deps: deps()
+    ]
   end
 
   defp version do
@@ -39,7 +40,7 @@ defmodule Wocky.Mixfile do
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:lager, :logger],
+      extra_applications: [:lager, :logger, :runtime_tools],
       mod: {Wocky.Application, []},
       env: [
         wocky_env: {:system, "WOCKY_ENV", "dev"},
@@ -62,9 +63,9 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
+      {:postgrex,             ">= 0.0.0"},
       {:ecto,                 "~> 2.2"},
       {:ecto_homoiconic_enum, "~> 0.1"},
-      {:postgrex,             "~> 0.13"},
       {:poolboy,              "~> 1.5"},
       {:faker,                "~> 0.9"},
       {:ex_machina,           "~> 2.1"},
@@ -96,6 +97,9 @@ defmodule Wocky.Mixfile do
       {:peerage,              "~> 1.0"},
       {:bamboo,               "~> 0.8"},
       {:slack_ex,             "~> 0.1"},
+      {:prometheus_ex,        "~> 1.4"},
+      {:prometheus_ecto,      "~> 1.0"},
+      {:prometheus_process_collector, "~> 1.2"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
@@ -133,6 +137,7 @@ defmodule Wocky.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "espec": ["ecto.create --quiet", "ecto.migrate", "espec"],
+      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 end
