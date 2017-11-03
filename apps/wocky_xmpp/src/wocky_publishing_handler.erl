@@ -15,20 +15,19 @@
             TargetJID :: ejabberd:jid(),
             UserJID   :: ejabberd:jid(),
             ItemID    :: pub_item_id(),
-            Stanza    :: published_stanza()) -> ok.
+            Stanza    :: published_stanza()) -> pub_result().
 
 % Called when a user deletes an item
 -callback delete(
             UserJID :: ejabberd:jid(),
-            ItemID  :: pub_item_id()) -> ok.
+            ItemID  :: pub_item_id()) -> pub_result().
 
 % Called when a user requests a specific item or set of items
 -callback get(
             TargetJID      :: ejabberd:jid(),
             UserJID        :: ejabberd:jid(),
             RSM            :: jlib:rsm_in() | pub_item_id(),
-            ExcludeDeleted :: boolean()) ->
-    pub_get_result().
+            ExcludeDeleted :: boolean()) -> pub_get_result().
 
 % Called when a user subscribes to a target matching the node prefix
 -callback subscribe(
@@ -38,7 +37,8 @@
 
 % Called when a user unsubscribes from a target matching the node prefix
 -callback unsubscribe(
-            UserJID :: ejabberd:jid()) -> pub_result().
+            TargetJID :: ejabberd:jid(),
+            UserJID   :: ejabberd:jid()) -> pub_result().
 
 %%%===================================================================
 %%% Hook registration
@@ -61,9 +61,9 @@ unregister(NodePrefix, Module) ->
 %%% Handler API
 %%%===================================================================
 
--spec send_notification(ejabberd:jid(), pub_node(), pub_item()) -> ok.
-send_notification(User, Node, Item) ->
-    mod_wocky_publishing:send_notification(User, Node, Item).
+-spec send_notification(ejabberd:jid(), ejabberd:jid(), pub_item()) -> ok.
+send_notification(ToJID, FromJID, Item) ->
+    mod_wocky_publishing:send_notification(ToJID, FromJID, Item).
 
 %%%===================================================================
 %%% Hook calls
@@ -84,11 +84,11 @@ subscribe(TargetJID, UserJID, Version) ->
 -spec unsubscribe(all | ejabberd:jid(), ejabberd:jid()) -> pub_result().
 unsubscribe(all, UserJID) ->
     lists:foreach(
-      call_hook(unsubscribe, _, [UserJID]),
+      fun(J) -> call_hook(unsubscribe, J, [J, UserJID]) end,
       all_nodes(UserJID));
 
 unsubscribe(TargetJID, UserJID) ->
-    call_hook(unsubscribe, TargetJID, [UserJID]).
+    call_hook(unsubscribe, TargetJID, [TargetJID, UserJID]).
 
 %%%===================================================================
 %%% Helpers
@@ -102,8 +102,8 @@ call_hook(Hook, TargetJID, Args) ->
             {error, ?ERRT_SERVICE_UNAVAILABLE(?MYLANG, <<"Unknown node type">>)}
     end.
 
-all_nodes(User) ->
-    [jid:replace_resource(User, NodePrefix)
+all_nodes(UserJID) ->
+    [jid:replace_resource(UserJID, NodePrefix)
      || {NodePrefix, _} <- ets:tab2list(?PUBLISHING_HANDLER_TABLE)].
 
 node_prefix(#jid{lresource = LResource}) ->

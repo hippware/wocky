@@ -17,7 +17,7 @@
                       ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
                       check_hs_result/2, check_hs_result/4,
-                      hs_query_el/1, hs_node/1, node_el/3,
+                      query_el/1, hs_node/1, node_el/3,
                       subscribe_stanza/0, check_home_stream_sizes/2,
                       check_home_stream_sizes/3]).
 
@@ -193,7 +193,7 @@ subscribe(Config) ->
       fun(Alice, Bob) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(undefined)])),
+                                           [query_el(undefined)])),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item">>), Alice)),
@@ -212,7 +212,7 @@ subscribe_version(Config) ->
 
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(V2)])),
+                                           [query_el(V2)])),
 
         lists:foreach(
           fun(_) ->
@@ -223,10 +223,10 @@ subscribe_version(Config) ->
         %% Alice's (since it's not his)
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
-                                           [hs_query_el(V2)])),
+                                           [query_el(V2)])),
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(V2)])),
+                                           [query_el(V2)])),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
@@ -248,7 +248,7 @@ unsubscribe(Config) ->
 
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(undefined)])),
+                                           [query_el(undefined)])),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"pushed_item">>), Alice)),
@@ -257,7 +257,7 @@ unsubscribe(Config) ->
 
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"unavailable">>,
-                                           [hs_query_el(undefined)])),
+                                           [query_el(undefined)])),
 
         expect_iq_success_u(pub_stanza(<<"new_item3">>), Alice, Alice),
         timer:sleep(500),
@@ -281,7 +281,7 @@ maintain_subscription(Config) ->
         escalus:send(Alice,
                      escalus_stanza:presence_direct(
                        hs_node(?ALICE), <<"available">>,
-                       [hs_query_el(undefined)])),
+                       [query_el(undefined)])),
 
         % Give the subscription time to take before we axe the connection
         timer:sleep(250),

@@ -61,7 +61,7 @@
          node_el/2,
          node_el/3,
          cdata_el/2,
-         hs_query_el/1,
+         query_el/1,
 
          set_notifications/2,
 
@@ -501,7 +501,7 @@ matches(Value, any) -> Value =/= <<>>;
 matches(Value, Match) -> Value =:= Match.
 
 
-hs_query_el(Version) ->
+query_el(Version) ->
     #xmlel{name = <<"query">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING} |
                     maybe_version_attr(Version)]}.

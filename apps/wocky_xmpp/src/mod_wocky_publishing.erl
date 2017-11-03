@@ -38,7 +38,7 @@ start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUBLISHING,
                                   ?MODULE, handle_iq, parallel),
     ejabberd_hooks:add(filter_local_packet, Host,
-                       fun filter_local_packet_hook/1, 80),
+                       fun filter_local_packet_hook/1, 90),
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
                        fun remove_connection_hook/4, 100),
     mod_disco:register_feature(Host, ?NS_PUBLISHING).
@@ -46,7 +46,7 @@ start(Host, _Opts) ->
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_PUBLISHING),
     ejabberd_hooks:delete(filter_local_packet, Host,
-                          fun filter_local_packet_hook/1, 80),
+                          fun filter_local_packet_hook/1, 90),
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
                           fun remove_connection_hook/4, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBLISHING),
@@ -92,8 +92,10 @@ handle_iq_type(_From, _To, _IQ) ->
 filter_local_packet_hook(P = {From, To,
                               Packet = #xmlel{name = <<"presence">>}}) ->
     Type = presence_type(Packet),
-    _ = handle_presence(From, To, Type, Packet),
-    P;
+    case handle_presence(From, To, Type, Packet) of
+        drop -> drop;
+        ignore -> P
+    end;
 filter_local_packet_hook(Other) ->
     Other.
 
@@ -126,19 +128,28 @@ handle_items(From, To, Attrs, Children) ->
        ]).
 
 handle_presence(_, _, unhandled_presence_type, _) ->
-    ok;
+    ignore;
 
 handle_presence(From, To, available, Packet) ->
+    Result =
     do([error_m ||
         Query <- wocky_xml:get_subel(<<"query">>, Packet),
         wocky_xml:check_namespace(?NS_PUBLISHING, Query),
         Version <- get_version(Query#xmlel.attrs),
         wocky_publishing_handler:subscribe(To, From, Version)
-       ]);
+       ]),
+
+    case Result of
+        ok -> drop;
+        _ -> ignore
+    end;
 
 % Explicit unsubscription
 handle_presence(From, To, unavailable, _Packet) ->
-    wocky_publishing_handler:unsubscribe(To, From).
+    case wocky_publishing_handler:unsubscribe(To, From) of
+        ok -> drop;
+        {error, _} -> ignore
+    end.
 
 % Implicit unsubscription on disconnection unless the stream was resumed
 remove_connection_hook(_SID, _JID, _Info, resumed) ->
@@ -150,9 +161,9 @@ remove_connection_hook(_SID, JID, _Info, _Reason) ->
 %%% Handler callbacks
 %%%===================================================================
 
-send_notification(User, Node, Item) ->
-    Stanza = notification_stanza(Node, item_stanza(Item)),
-    ejabberd_router:route(jid:to_bare(User), User, Stanza),
+send_notification(ToJID, FromJID = #jid{lresource = LResource}, Item) ->
+    Stanza = notification_stanza(LResource, item_stanza(Item)),
+    ejabberd_router:route(ToJID, FromJID, Stanza),
     ok.
 
 %%%===================================================================

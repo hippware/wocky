@@ -9,11 +9,12 @@
 -compile({parse_transform, cut}).
 
 -include("wocky.hrl").
+-include("wocky_publishing.hrl").
 -include("wocky_roster.hrl").
 
 -export([handle_share/3,
          notify_new_viewers/4,
-         maybe_notify_desc_change/3,
+         maybe_notify_desc_change/2,
          notify_subscribers_and_watchers/4
         ]).
 
@@ -107,11 +108,9 @@ get_friends_and_followers(LUser) ->
 %%% description
 %%%===================================================================
 
--spec maybe_notify_desc_change(Server :: ejabberd:lserver(),
-                               OldBot :: ?wocky_bot:t(),
+-spec maybe_notify_desc_change(OldBot :: ?wocky_bot:t(),
                                NewBot :: ?wocky_bot:t()) -> ok.
-maybe_notify_desc_change(Server,
-                         #{description := OldDesc},
+maybe_notify_desc_change(#{description := OldDesc},
                          NewBot = #{description := NewDesc}) ->
     Old = wocky_util:remove_whitespace(OldDesc),
     New = wocky_util:remove_whitespace(NewDesc),
@@ -121,7 +120,7 @@ maybe_notify_desc_change(Server,
         _ ->
             Owner = ?wocky_bot:owner(NewBot),
             notify_subscribers_and_watchers(
-              NewBot, Owner, jid:make(<<>>, Server, <<>>),
+              NewBot, Owner, ?wocky_bot:to_jid(NewBot),
               desc_change_stanza(NewBot, Old, Owner))
     end.
 
@@ -148,9 +147,8 @@ notify_subscribers_and_watchers(Bot, Actor, FromJID, Message) ->
     lists:foreach(notify_subscriber(_, FromJID, Message), Recipients),
 
     % Watchers
-    Watchers = wocky_watcher:watchers(bot,
-                                      ?wocky_bot:to_jid(Bot)),
-    lists:foreach(notify_watcher(_, FromJID, Message), Watchers).
+    Watchers = wocky_watcher:watchers(bot, ?wocky_bot:to_jid(Bot)),
+    lists:foreach(notify_watcher(_, FromJID, Bot, Message), Watchers).
 
 notify_subscriber(UserJID, FromJID, Message) ->
     Stanza = #xmlel{name = <<"message">>,
@@ -158,11 +156,18 @@ notify_subscriber(UserJID, FromJID, Message) ->
                     children = [Message]},
     ejabberd_router:route(FromJID, UserJID, Stanza).
 
-notify_watcher(UserJID, FromJID, Message) ->
+notify_watcher(UserJID, FromJID, Bot = #{updated_at := UpatedAt}, Message) ->
+    BotJID = ?wocky_bot:to_jid(Bot),
     Stanza = #xmlel{name = <<"message">>,
                     attrs = [{<<"type">>, <<"headline">>}],
                     children = [Message]},
-    ejabberd_router:route(FromJID, UserJID, Stanza).
+
+    Item = #published_item{
+              id = jid:to_binary(BotJID),
+              version = ?wocky_timestamp:to_string(UpatedAt),
+              from = FromJID,
+              stanza = Stanza},
+    wocky_publishing_handler:send_notification(UserJID, BotJID, Item).
 
 maybe_new_tag(<<>>) ->  [#xmlel{name = <<"new">>}];
 maybe_new_tag(_) -> [].

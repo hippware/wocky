@@ -19,7 +19,7 @@
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
-                      ensure_all_clean/1, hs_query_el/1, hs_node/1,
+                      ensure_all_clean/1, query_el/1, hs_node/1,
                       add_to_s/2, set_notifications/2,
                       check_home_stream_sizes/2,
                       check_home_stream_sizes/3
@@ -75,8 +75,8 @@ all() ->
      subscribers,
      unsubscribe,
      subscribe,
-     %subscribe_temporary,
-     %unsubscribe_temporary,
+     watch,
+     unwatch,
      delete,
      errors,
      retrieve_for_user,
@@ -347,7 +347,7 @@ subscribe(Config) ->
                                     ?BJID(?BOB)])
       end).
 
-subscribe_temporary(Config) ->
+watch(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
@@ -356,21 +356,22 @@ subscribe_temporary(Config) ->
         check_returned_bot(expect_iq_success(retrieve_stanza(), Tim),
                            expected_retrieve_fields(false, ?BOT_DESC,
                                                     ?WOCKY_BOT_VIS_OPEN, 2)),
-        subscribe_temporary(?BOT_B_JID, Tim),
+        watch(?BOT_B_JID, Tim),
         timer:sleep(500),
 
+        % Should not affect subscriptions
         check_returned_bot(expect_iq_success(retrieve_stanza(), Tim),
-                           expected_retrieve_fields(true, ?BOT_DESC,
-                                                    ?WOCKY_BOT_VIS_OPEN, 3)),
+                           expected_retrieve_fields(false, ?BOT_DESC,
+                                                    ?WOCKY_BOT_VIS_OPEN, 2)),
 
-        Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?BJID(?CAROL), ?BJID(?KAREN),
-                                    escalus_client:full_jid(Tim)]),
+        expect_iq_success(update_stanza(<<"TestDesc">>), Alice),
+        S = escalus_client:wait_for_stanza(Tim),
+        ?assert(is_bot_update_notification(S)),
 
         ensure_all_clean([Alice, Tim])
       end).
 
-unsubscribe_temporary(Config) ->
+unwatch(Config) ->
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
@@ -380,18 +381,12 @@ unsubscribe_temporary(Config) ->
         Stanza = expect_iq_success(subscribers_stanza(), Alice),
         check_subscribers(Stanza, [?BJID(?CAROL), ?BJID(?KAREN)]),
 
-        subscribe_temporary(?BOT_B_JID, Tim),
+        watch(?BOT_B_JID, Tim),
+        unwatch(?BOT_B_JID, Tim),
+
+        expect_iq_success(update_stanza(<<"BrandShinyNewDesc">>), Alice),
         timer:sleep(500),
 
-        Stanza2 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza2, [?BJID(?CAROL), ?BJID(?KAREN),
-                                    escalus_client:full_jid(Tim)]),
-
-        unsubscribe_temporary(?BOT_B_JID, Tim),
-        timer:sleep(500),
-
-        Stanza3 = expect_iq_success(subscribers_stanza(), Alice),
-        check_subscribers(Stanza3, [?BJID(?CAROL), ?BJID(?KAREN)]),
         ensure_all_clean([Alice, Tim])
       end).
 
@@ -790,7 +785,7 @@ follow_notifications(Config) ->
         %% Subscribe to HS notifications
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [hs_query_el(undefined)])),
+                                           [query_el(undefined)])),
 
         %% Simple follow on and off tests
         escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(), Alice)),
@@ -1308,10 +1303,13 @@ visibility_field(Visibility) ->
     create_field({"visibility", "int", Visibility}).
 
 update_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field()])).
+    update_stanza(?NEW_DESCRIPTION).
+update_stanza(NewDesc) ->
+    test_helper:iq_set(
+      ?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field(NewDesc)])).
 
-modify_field() ->
-    create_field({"description", "string", ?NEW_DESCRIPTION}).
+modify_field(NewDesc) ->
+    create_field({"description", "string", NewDesc}).
 
 subscribers_stanza() ->
     test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"subscribers">>)).
@@ -1599,14 +1597,12 @@ unfollow_me_stanza() ->
     QueryEl = node_el(?BOT, <<"un-follow-me">>, []),
     test_helper:iq_set(?NS_BOT, QueryEl).
 
-subscribe_temporary(Bot, Client) ->
+watch(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(
-               Bot, <<>>,
-               [#xmlel{name = <<"query">>,
-                       attrs = [{<<"xmlns">>, ?NS_BOT}]}]),
+               Bot, <<"available">>, [query_el(undefined)]),
     escalus:send(Client, Stanza).
 
-unsubscribe_temporary(Bot, Client) ->
+unwatch(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
     escalus:send(Client, Stanza).
 
@@ -1641,6 +1637,18 @@ is_bot_action_hs_notification(JID, Action,
         SubStanza -> test_helper:is_bot_action(JID, Action, SubStanza)
     end;
 is_bot_action_hs_notification(_, _, _) -> false.
+
+is_bot_update_notification(Stanza = #xmlel{name = <<"message">>}) ->
+    case xml:get_path_s(Stanza,
+                        [{elem, <<"notification">>},
+                         {elem, <<"item">>},
+                         {elem, <<"message">>},
+                         {elem, <<"bot-description-changed">>},
+                         {elem, <<"bot">>}]) of
+        <<>> -> false;
+        _ -> true
+    end;
+is_bot_update_notification(_) -> false.
 
 geosearch_stanza() ->
     QueryEl = #xmlel{name = <<"bots">>,

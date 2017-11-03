@@ -21,12 +21,11 @@
          delete/2,
          get/4,
          subscribe/3,
-         unsubscribe/1
+         unsubscribe/2
         ]).
 
 -define(WATCHER_CLASS, home_stream).
 -define(PACKET_FILTER_PRIORITY, 50).
--define(NODE_RESOURCE, <<"home_stream">>).
 
 
 %%%===================================================================
@@ -106,9 +105,9 @@ subscribe(#jid{luser = ToID}, User = #jid{luser = ToID}, Version) ->
 subscribe(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
--spec unsubscribe(ejabberd:jid()) -> ok.
-unsubscribe(User) ->
-    wocky_watcher:unwatch(?WATCHER_CLASS, User, hs_node(User)),
+-spec unsubscribe(ejabberd:jid(), ejabberd:jid()) -> ok.
+unsubscribe(TargetJID, UserJID) ->
+    wocky_watcher:unwatch(?WATCHER_CLASS, UserJID, hs_node(TargetJID)),
     ok.
 
 %%%===================================================================
@@ -291,7 +290,10 @@ maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
     CatchupRows = ?wocky_home_stream_item:get_after_time(User, Version),
     Items = [map_to_item(R) || R <- CatchupRows],
     lists:foreach(
-      wocky_publishing_handler:send_notification(UserJID, ?HOME_STREAM_NODE, _),
+      wocky_publishing_handler:send_notification(
+        UserJID,
+        jid:replace_resource(UserJID, ?HOME_STREAM_NODE),
+        _),
       Items).
 
 send_notifications(UserJID, Item) ->
@@ -299,9 +301,8 @@ send_notifications(UserJID, Item) ->
     lists:foreach(send_notification(_, Item), Watchers).
 
 send_notification(JID, Item) ->
-    wocky_publishing_handler:send_notification(JID,
-                                               ?HOME_STREAM_NODE,
-                                               Item).
+    wocky_publishing_handler:send_notification(
+      JID, jid:replace_resource(JID, ?HOME_STREAM_NODE), Item).
 
 check_server(Server) ->
     case wocky_xmpp_app:server() of
@@ -313,4 +314,4 @@ get_id(nil) -> nil;
 get_id(Struct) -> maps:get(id, Struct).
 
 hs_node(UserJID) ->
-    jid:replace_resource(UserJID, ?NODE_RESOURCE).
+    jid:replace_resource(UserJID, ?HOME_STREAM_NODE).

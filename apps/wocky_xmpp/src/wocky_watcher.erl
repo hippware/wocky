@@ -82,7 +82,7 @@ watchers(Class, Object) ->
 %%% MIM hook handlers
 %%%===================================================================
 
--spec node_cleanup_hook(class(), ejabberd:lresource()) -> ok.
+-spec node_cleanup_hook(class(), node()) -> ok.
 node_cleanup_hook(Class, Node) ->
     cleanup(Class, #watcher{node = Node, _ = '_'}).
 
