@@ -147,40 +147,54 @@ defmodule Wocky.HomeStreamItemSpec do
                        %{user: shared.user, reference_bot: ref_bot})
       end
 
+      user_ids = Enum.map(ref_user_items, &(&1.id))
+      HomeStreamItem.delete_by_user_ref(ref_user)
+      referenced_user_items =
+        shared.user.id
+        |> HomeStreamItem.get
+        |> Enum.filter(&Enum.member?(user_ids, &1.id))
+
+      bot_ids = Enum.map(ref_bot_items, &(&1.id))
+      HomeStreamItem.delete_by_bot_ref(ref_bot)
+      referenced_bot_items =
+        shared.user.id
+        |> HomeStreamItem.get
+        |> Enum.filter(&Enum.member?(bot_ids, &1.id))
+
       {:ok,
         ref_user: ref_user,
         ref_bot: ref_bot,
-        ref_user_ids: Enum.map(ref_user_items, &(&1.id)),
-        ref_bot_ids: Enum.map(ref_bot_items, &(&1.id))
+        referenced_user_items: referenced_user_items,
+        ref_user_times: Enum.map(ref_user_items, &(&1.updated_at)),
+        referenced_bot_items: referenced_bot_items,
+        ref_bot_times: Enum.map(ref_bot_items, &(&1.updated_at))
       }
     end
 
     it "should mark all HS entries with the referenced user as deleted" do
-      HomeStreamItem.delete_by_user_ref(shared.ref_user)
-      {referenced, other} =
-        shared.user.id
-        |> HomeStreamItem.get
-        |> Enum.split_with(&Enum.member?(shared.ref_user_ids, &1.id))
+      shared.referenced_user_items |> should(have_length(@num_items))
+      Enum.each(shared.referenced_user_items,
+                fn(i) -> i.deleted |> should(be_true()) end)
+    end
 
-      referenced |> should(have_length(@num_items))
-      Enum.each(referenced, fn(i) -> i.deleted |> should(be_true()) end)
-
-      other |> should(have_length(2 * @num_items))
-      Enum.each(other, fn(i) -> i.deleted |> should(be_false()) end)
+    it "should update the updated_at timestamps on all deleted items" do
+      shared.referenced_user_items
+      |> Enum.map(&(&1.updated_at))
+      |> Kernel.--(shared.ref_user_times)
+      |> should(have_length length(shared.referenced_user_items))
     end
 
     it "should mark all HS entries with the referenced bot as deleted" do
-      HomeStreamItem.delete_by_bot_ref(shared.ref_bot)
-      {referenced, other} =
-        shared.user.id
-        |> HomeStreamItem.get
-        |> Enum.split_with(&Enum.member?(shared.ref_bot_ids, &1.id))
+      shared.referenced_bot_items |> should(have_length(@num_items))
+      Enum.each(shared.referenced_bot_items,
+                fn(i) -> i.deleted |> should(be_true()) end)
+    end
 
-      referenced |> should(have_length(@num_items))
-      Enum.each(referenced, fn(i) -> i.deleted |> should(be_true()) end)
-
-      other |> should(have_length(2 * @num_items))
-      Enum.each(other, fn(i) -> i.deleted |> should(be_false()) end)
+    it "should update the updated_at timestamps on all deleted items" do
+      shared.referenced_bot_items
+      |> Enum.map(&(&1.updated_at))
+      |> Kernel.--(shared.ref_bot_times)
+      |> should(have_length length(shared.referenced_bot_items))
     end
 
     context "deletion of items for users who can no longer see the bot" do
