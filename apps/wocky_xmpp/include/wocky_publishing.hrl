@@ -4,7 +4,7 @@
 
 -include("wocky.hrl").
 
--type pub_version() :: binary() | not_found.
+-type pub_version() :: binary() | undefined.
 -type pub_item_id() :: binary().
 -type published_stanza() :: jlib:xmlel() | [jlib:xmlel()].
 
@@ -16,10 +16,22 @@
           deleted = false :: boolean()
          }).
 
--type published_item() :: #published_item{}.
--type publishing_node() :: binary().
+-type pub_item() :: #published_item{}.
+
+-type pub_node() :: ejabberd:lresource().
 
 -type pub_presence_type() :: available | unavailable.
+
+-type pub_error_result() :: {error, jlib:xmlel()}.
+
+-type pub_result() :: ok | pub_error_result().
+
+-type pub_get_result() ::
+    {ok, {[pub_item()], pub_version(), jlib:rsm_out()} |
+         {pub_item(), pub_version()} |
+         not_found} |
+    pub_error_result().
+
 
 -define(PUBLISHING_HANDLER_TABLE, mod_wocky_publishing_handlers).
 

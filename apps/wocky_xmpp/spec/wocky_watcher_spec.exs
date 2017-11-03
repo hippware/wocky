@@ -40,12 +40,10 @@ defmodule :wocky_watcher_spec do
 
   describe "watch/unwatch/watchers" do
     before do
-      user = Factory.build(:user)
-      jid = User.to_jid(user, ID.new)
+      jid = make_user_jid()
       object = JID.make(ID.new, shared.server, ID.new)
       result = watch(shared.class, jid, object)
       {:ok,
-        user: user,
         jid: jid,
         object: object,
         result: result
@@ -93,12 +91,43 @@ defmodule :wocky_watcher_spec do
       end
     end
 
+    describe "unwatch_all/2" do
+      before do
+        other_jid = make_user_jid()
+        watch(shared.class, other_jid, shared.object)
+        objects =
+          Enum.map(
+            1..2,
+            fn(_) ->
+              object = JID.make(ID.new, shared.server, ID.new)
+              watch(shared.class, shared.jid, object)
+              object
+            end)
+        unwatch_all(shared.class, shared.jid)
+        {:ok,
+          other_jid: other_jid,
+          objects: [shared.object | objects]
+        }
+      end
+
+      it "should clear out all watches for a user" do
+        refute(
+          Enum.any?(shared.objects,
+                    fn(o) ->
+                      watchers(shared.class, o)
+                      |> Enum.member?(shared.jid)
+                    end
+          ))
+      end
+
+      it "should not remove other watchers" do
+        watchers(shared.class, shared.object) |> should(have shared.other_jid)
+      end
+    end
+
     describe "watchers/2" do
       before do
-        [j1, j2, j3] =
-          3
-          |> Factory.build_list(:user)
-          |> Enum.map(&User.to_jid(&1, ID.new))
+        [j1, j2, j3] = Enum.map(1..3, fn(_) -> make_user_jid() end)
 
         other_object = JID.make(ID.new, shared.server, ID.new)
         other_class = String.to_atom(ID.new)
@@ -146,15 +175,11 @@ defmodule :wocky_watcher_spec do
 
     describe "unset_presence_hook", async: false do
       before do
-        resource = ID.new
-        remaining_user =
-          :user
-          |> Factory.build
-          |> User.to_jid(resource)
+        remaining_user = make_user_jid()
         watch(shared.class, remaining_user, shared.object)
         :ejabberd_hooks.run(
           :unset_presence_hook, shared.server,
-          [shared.user.id, shared.server, jid(shared.jid, :lresource),
+          [jid(shared.jid, :luser), shared.server, jid(shared.jid, :lresource),
            "disconnected"])
         {:ok,
           remaining_user: remaining_user
@@ -166,5 +191,11 @@ defmodule :wocky_watcher_spec do
         |> should(eq [shared.remaining_user])
       end
     end
+  end
+
+  defp make_user_jid() do
+    :user
+    |> Factory.build
+    |> User.to_jid(ID.new)
   end
 end

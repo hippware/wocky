@@ -15,16 +15,17 @@
 -behaviour(wocky_publishing_handler).
 
 -export([start/2, stop/1]).
+
+% wocky_publishing_handler exports
 -export([publish/4,
          delete/2,
-         get/3,
-         subscribe/2,
-         unsubscribe/1
+         get/4,
+         subscribe/3,
+         unsubscribe/2
         ]).
 
 -define(WATCHER_CLASS, home_stream).
 -define(PACKET_FILTER_PRIORITY, 50).
--define(NODE_RESOURCE, <<"home_stream">>).
 
 
 %%%===================================================================
@@ -53,26 +54,28 @@ stop(Host) ->
               ejabberd:jid(),
               ?wocky_home_stream_id:id() | pub_item_id(),
               published_stanza()) -> ok.
-publish(UserJID, From, ID, Stanza) when is_binary(ID) ->
-    publish(UserJID, From, {ID, nil, nil}, Stanza);
-publish(UserJID = #jid{luser = UserID}, From, {ID, RefUser, RefBot}, Stanza) ->
+publish(TargetJID, From, ID, Stanza) when is_binary(ID) ->
+    publish(TargetJID, From, {ID, nil, nil}, Stanza);
+publish(TargetJID = #jid{luser = UserID},
+        From, {ID, RefUser, RefBot}, Stanza) ->
     {ok, ItemMap} = ?wocky_home_stream_item:put(UserID, ID,
                                                 jid:to_binary(From),
                                                 exml:to_binary(Stanza),
                                                 [{ref_user_id, get_id(RefUser)},
                                                  {ref_bot_id, get_id(RefBot)}]
                                                ),
-    send_notifications(UserJID, map_to_item(ItemMap)).
+    send_notifications(TargetJID, map_to_item(ItemMap)),
+    ok.
 
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
 delete(UserJID = #jid{luser = User}, ID) ->
     {ok, ItemMap} = ?wocky_home_stream_item:delete(User, ID),
     send_notifications(UserJID, map_to_item(ItemMap)).
 
--spec get(ejabberd:jid(), jlib:rsm_in() | pub_item_id(), boolean()) ->
-    {ok, {[published_item()], pub_version(), jlib:rsm_out()}} |
-    {ok, {published_item(), pub_version()} | not_found}.
-get(#jid{luser = User}, RSMIn = #rsm_in{}, ExcludeDeleted) ->
+-spec get(ejabberd:jid(), ejabberd:jid(),
+          jlib:rsm_in() | pub_item_id(), boolean()) -> pub_get_result().
+get(#jid{luser = User}, #jid{luser = User},
+    RSMIn = #rsm_in{}, ExcludeDeleted) ->
     Query = ?wocky_home_stream_item:maybe_exclude_deleted(
                ?wocky_home_stream_item:with_user(User), ExcludeDeleted),
     {Results, RSMOut} =
@@ -81,7 +84,7 @@ get(#jid{luser = User}, RSMIn = #rsm_in{}, ExcludeDeleted) ->
           format_version(?wocky_home_stream_item:get_latest_time(User)),
           RSMOut}};
 
-get(#jid{luser = User}, ID, ExcludeDeleted) ->
+get(#jid{luser = User}, #jid{luser = User}, ID, ExcludeDeleted) ->
     Item = ?wocky_home_stream_item:get_by_key(User, ID, ExcludeDeleted),
     case Item of
         nil ->
@@ -90,17 +93,21 @@ get(#jid{luser = User}, ID, ExcludeDeleted) ->
             {ok, {map_to_item(Item),
                   format_version(
                     ?wocky_home_stream_item:get_latest_time(User))}}
-    end.
+    end;
+get(_, _, _, _) ->
+    {error, ?ERR_FORBIDDEN}.
 
--spec subscribe(ejabberd:jid(), pub_version()) -> ok.
-subscribe(User, Version) ->
+-spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> ok.
+subscribe(#jid{luser = ToID}, User = #jid{luser = ToID}, Version) ->
     wocky_watcher:watch(?WATCHER_CLASS, User, hs_node(User)),
     maybe_send_catchup(User, Version),
-    ok.
+    ok;
+subscribe(_, _, _) ->
+    {error, ?ERR_FORBIDDEN}.
 
--spec unsubscribe(ejabberd:jid()) -> ok.
-unsubscribe(User) ->
-    wocky_watcher:unwatch(?WATCHER_CLASS, User, hs_node(User)),
+-spec unsubscribe(ejabberd:jid(), ejabberd:jid()) -> ok.
+unsubscribe(TargetJID, UserJID) ->
+    wocky_watcher:unwatch(?WATCHER_CLASS, UserJID, hs_node(TargetJID)),
     ok.
 
 %%%===================================================================
@@ -139,29 +146,33 @@ check_user_present(#jid{luser = _}) -> ok.
 %%
 %% * `continue` - continues on to the next check
 %% * `dont_publish` - stops checking immediately and does not publish
-%% * `{publish, {Drop, ID}}` - publishes the packet with the supplied ID
-%%                             Drop may be `drop` or `keep` and controls whether
-%%                             the packet is dropped from further routing.
+%% * `{publish, {Action, ID}}` - publishes the packet with the supplied ID
+%%                               Action may be `drop` or `keep` and controls
+%%                               whether the packet is dropped from further
+%%                               routing.
+
+-type publish_result() :: {publish, {drop | keep, ?wocky_home_stream_id:id()}}.
+
+-type publish_check_cb_result() :: continue | dont_publish | publish_result().
 
 -type publish_check_cb() ::
-        fun((ejabberd:jid(), jlib:xmlel()) ->
-            continue |
-            dont_publish |
-            {publish, {drop | keep, ?wocky_home_stream_id:id()}}).
+        fun((ejabberd:jid(), jlib:xmlel()) -> publish_check_cb_result()).
 
 -spec publish_checks() -> [publish_check_cb()].
 publish_checks() ->
     [
-     fun check_publish_headline/2,
+     fun check_publish_skip_notification/2,
+     fun check_publish_headline_message/2,
      fun check_publish_bot/2,
      fun check_publish_bot_description/2,
-     fun check_publish_event/2,
-     fun check_publish_skip_notification/2
+     fun check_publish_event/2
     ].
 
 check_publish(From, Stanza) ->
     check_publish(publish_checks(), From, Stanza).
 
+-spec check_publish([publish_check_cb()], ejabberd:jid(), jlib:xmlel()) ->
+    {ok, publish_result()} | {error, dont_publish}.
 check_publish([], _From, _Stanza) ->
     {error, dont_publish};
 check_publish([Check | Rest], From, Stanza) ->
@@ -174,13 +185,26 @@ check_publish([Check | Rest], From, Stanza) ->
             check_publish(Rest, From, Stanza)
     end.
 
-check_publish_headline(_From, Stanza) ->
+%% Very important: Filter out publishing notification events -
+%% the home stream generates these and we don't want to get caught in a loop.
+check_publish_skip_notification(_From, Stanza) ->
+    NotificationNS = xml:get_path_s(Stanza, [{elem, <<"notification">>},
+                                             {attr, <<"xmlns">>}]),
+    case NotificationNS of
+        ?NS_PUBLISHING ->
+            dont_publish;
+        _  ->
+            continue
+    end.
+
+check_publish_headline_message(_From, Stanza = #xmlel{name = <<"message">>}) ->
     case xml:get_tag_attr(<<"type">>, Stanza) of
         {value, <<"headline">>} ->
             continue;
         _ ->
             dont_publish
-    end.
+    end;
+check_publish_headline_message(_From, _Stanza) -> dont_publish.
 
 check_publish_bot(From, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of
@@ -222,18 +246,6 @@ check_publish_event(_From, Stanza) ->
             dont_publish;
         _ ->
             continue
-    end.
-
-%% Very important: Filter out publishing notification events -
-%% the home stream generates these and we don't want to get caught in a loop.
-check_publish_skip_notification(From, Stanza) ->
-    NotificationNS = xml:get_path_s(Stanza, [{elem, <<"notification">>},
-                                             {attr, <<"xmlns">>}]),
-    case NotificationNS of
-        ?NS_PUBLISHING -> dont_publish;
-        _  ->
-            User = ?wocky_user:get_by_jid(From),
-            {publish, {keep, ?wocky_home_stream_id:user_message_id(User)}}
     end.
 
 publish_bot_action(From, BotEl) ->
@@ -278,17 +290,19 @@ maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
     CatchupRows = ?wocky_home_stream_item:get_after_time(User, Version),
     Items = [map_to_item(R) || R <- CatchupRows],
     lists:foreach(
-      wocky_publishing_handler:send_notification(UserJID, ?HOME_STREAM_NODE, _),
+      wocky_publishing_handler:send_notification(
+        UserJID,
+        jid:replace_resource(UserJID, ?HOME_STREAM_NODE),
+        _),
       Items).
 
-send_notifications(User, Item) ->
-    Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(User)),
+send_notifications(UserJID, Item) ->
+    Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(UserJID)),
     lists:foreach(send_notification(_, Item), Watchers).
 
 send_notification(JID, Item) ->
-    wocky_publishing_handler:send_notification(JID,
-                                               ?HOME_STREAM_NODE,
-                                               Item).
+    wocky_publishing_handler:send_notification(
+      JID, jid:replace_resource(JID, ?HOME_STREAM_NODE), Item).
 
 check_server(Server) ->
     case wocky_xmpp_app:server() of
@@ -300,4 +314,4 @@ get_id(nil) -> nil;
 get_id(Struct) -> maps:get(id, Struct).
 
 hs_node(UserJID) ->
-    jid:replace_resource(UserJID, ?NODE_RESOURCE).
+    jid:replace_resource(UserJID, ?HOME_STREAM_NODE).

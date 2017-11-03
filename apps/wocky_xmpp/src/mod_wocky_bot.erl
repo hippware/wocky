@@ -51,7 +51,9 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
-    wocky_bot_subscription:start(Host),
+    wocky_watcher:register(bot, Host),
+    wocky_publishing_handler:register(<<"bot">>, wocky_bot_publishing),
+
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BOT,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
@@ -67,7 +69,9 @@ stop(Host) ->
                           fun filter_local_packet_hook/1,
                           ?PACKET_FILTER_PRIORITY),
     mod_wocky_access:unregister(<<"bot">>, ?MODULE),
-    wocky_bot_subscription:stop(Host).
+
+    wocky_publishing_handler:unregister(<<"bot">>, wocky_bot_publishing),
+    wocky_watcher:unregister(bot, Host).
 
 %%%===================================================================
 %%% Event handler
@@ -204,7 +208,7 @@ perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
         NewBot <- ?wocky_bot:update(Bot, FieldsMap),
         wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
                                            ?wocky_bot:'public?'(NewBot)),
-        wocky_bot_users:maybe_notify_subscribers(Server, Bot, NewBot),
+        wocky_bot_users:maybe_notify_desc_change(Bot, NewBot),
 
         {ok, []}
        ]);
@@ -477,16 +481,6 @@ do_make_bot_els(Bot, FromUser) ->
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
 
-%% Packets to the bot - dropped if they were processed here.
-filter_local_packet_hook(P = {From,
-                              #jid{user = <<>>, lserver = LServer,
-                                   resource= <<"bot/", BotID/binary>>},
-                              Packet}) ->
-    case handle_bot_packet(From, LServer, BotID, Packet) of
-        ok -> drop;
-        ignored -> P
-    end;
-
 %% Packets to another entity which reference a bot. Passed through unless
 %% they hit a condition to block them.
 filter_local_packet_hook(P = {From, To,
@@ -506,15 +500,6 @@ filter_local_packet_hook(P = {From, To,
 %% Ignore all other packets
 filter_local_packet_hook(Other) ->
     Other.
-
-% Presence packets are handled in the user_send_packet hook in
-% wocky_bot_subscriber however that hook can't drop them (and as a result
-% they return errors back to the sender). So we cause them to be dropped here.
-handle_bot_packet(_From, _LServer, _BotID,
-                  #xmlel{name = <<"presence">>}) ->
-    ok;
-handle_bot_packet(_, _, _, _) ->
-    ignored.
 
 handle_headline_packet(From, To, Stanza) ->
     case xml:get_subtag(Stanza, <<"bot">>) of

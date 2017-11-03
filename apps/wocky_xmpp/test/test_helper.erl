@@ -61,7 +61,7 @@
          node_el/2,
          node_el/3,
          cdata_el/2,
-         hs_query_el/1,
+         query_el/1,
 
          set_notifications/2,
 
@@ -83,6 +83,7 @@ ensure_wocky_is_running() ->
     ok.
 
 setup_users(Config, Users) ->
+    _ = ?wocky_repo:delete_all(?wocky_home_stream_item),
     _ = ?wocky_repo:delete_all(?wocky_user),
     Config2 = escalus:create_users(Config, escalus:get_users(Users)),
     ConfigUsers = proplists:get_value(escalus_users, Config2),
@@ -500,7 +501,7 @@ matches(Value, any) -> Value =/= <<>>;
 matches(Value, Match) -> Value =:= Match.
 
 
-hs_query_el(Version) ->
+query_el(Version) ->
     #xmlel{name = <<"query">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING} |
                     maybe_version_attr(Version)]}.

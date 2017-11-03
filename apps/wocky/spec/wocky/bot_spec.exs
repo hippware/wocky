@@ -308,7 +308,7 @@ defmodule Wocky.BotSpec do
       describe "subscriber_count/1" do
         subject do: Bot.subscriber_count(bot())
 
-        it do: should(eq 2)
+        it do: should(eq 1)
       end
 
       describe "notification_recipients/2" do

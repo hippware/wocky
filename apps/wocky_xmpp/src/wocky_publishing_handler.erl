@@ -10,82 +10,101 @@
 -export([register/2, unregister/2, send_notification/3]).
 -export([set/5, get/4, subscribe/3, unsubscribe/2]).
 
--callback publish(ejabberd:jid(), ejabberd:jid(), pub_item_id(),
-              published_stanza()) -> ok.
+% Called when an item is newly published or updated
+-callback publish(
+            TargetJID :: ejabberd:jid(),
+            UserJID   :: ejabberd:jid(),
+            ItemID    :: pub_item_id(),
+            Stanza    :: published_stanza()) -> pub_result().
 
--callback delete(ejabberd:jid(), pub_item_id()) -> ok.
+% Called when a user deletes an item
+-callback delete(
+            UserJID :: ejabberd:jid(),
+            ItemID  :: pub_item_id()) -> pub_result().
 
--callback get(ejabberd:jid(), jlib:rsm_in() | pub_item_id(), boolean()) ->
-    {ok, {[published_item()], pub_version(), jlib:rsm_out()} |
-         {published_item(), pub_version()} |
-         not_found} |
-    {error, term()}.
+% Called when a user requests a specific item or set of items
+-callback get(
+            TargetJID      :: ejabberd:jid(),
+            UserJID        :: ejabberd:jid(),
+            RSM            :: jlib:rsm_in() | pub_item_id(),
+            ExcludeDeleted :: boolean()) -> pub_get_result().
 
--callback subscribe(ejabberd:jid(), pub_version()) -> ok.
+% Called when a user subscribes to a target matching the node prefix
+-callback subscribe(
+            TargetJID :: ejabberd:jid(),
+            UserJID   :: ejabberd:jid(),
+            Version   :: pub_version()) -> pub_result().
 
--callback unsubscribe(ejabberd:jid()) -> ok.
-
+% Called when a user unsubscribes from a target matching the node prefix
+-callback unsubscribe(
+            TargetJID :: ejabberd:jid(),
+            UserJID   :: ejabberd:jid()) -> pub_result().
 
 %%%===================================================================
 %%% Hook registration
 %%%===================================================================
 
 -spec register(binary(), module()) -> ok.
-register(Node, Module) ->
-    ets:insert(?PUBLISHING_HANDLER_TABLE, {Node, Module}),
+register(NodePrefix, Module) ->
+    ets:insert(?PUBLISHING_HANDLER_TABLE, {NodePrefix, Module}),
     ok.
 
 -spec unregister(binary(), module()) -> ok.
-unregister(Node, Module) ->
+unregister(NodePrefix, Module) ->
     % Under shutdown conditions, the ets table has already been deleted
     ets:info(?PUBLISHING_HANDLER_TABLE) =/= undefined
     andalso
-    ets:delete_object(?PUBLISHING_HANDLER_TABLE, {Node, Module}),
+    ets:delete_object(?PUBLISHING_HANDLER_TABLE, {NodePrefix, Module}),
     ok.
 
 %%%===================================================================
 %%% Handler API
 %%%===================================================================
 
--spec send_notification(ejabberd:jid(), publishing_node(), published_item()) ->
-    ok.
-send_notification(User, Node, Item) ->
-    mod_wocky_publishing:send_notification(User, Node, Item).
+-spec send_notification(ejabberd:jid(), ejabberd:jid(), pub_item()) -> ok.
+send_notification(ToJID, FromJID, Item) ->
+    mod_wocky_publishing:send_notification(ToJID, FromJID, Item).
 
 %%%===================================================================
 %%% Hook calls
 %%%===================================================================
 
-set(Node, _From, To, ID, #xmlel{name = <<"delete">>}) ->
-    call_hook(delete, Node, [To, ID]);
-set(Node, From, To, ID, Stanza) ->
-    call_hook(publish, Node, [To, From, ID, Stanza]).
+set(TargetJID, _From, To, ID, #xmlel{name = <<"delete">>}) ->
+    call_hook(delete, TargetJID, [To, ID]);
+set(TargetJID, From, To, ID, Stanza) ->
+    call_hook(publish, TargetJID, [To, From, ID, Stanza]).
 
-get(Node, From, Param, ExcludeDeleted) ->
-    call_hook(get, Node, [From, Param, ExcludeDeleted]).
+get(TargetJID, From, Param, ExcludeDeleted) ->
+    call_hook(get, TargetJID, [TargetJID, From, Param, ExcludeDeleted]).
 
-subscribe(Node, User, Version) ->
-    call_hook(subscribe, Node, [User, Version]).
+-spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> pub_result().
+subscribe(TargetJID, UserJID, Version) ->
+    call_hook(subscribe, TargetJID, [TargetJID, UserJID, Version]).
 
-unsubscribe(all, User) ->
+-spec unsubscribe(all | ejabberd:jid(), ejabberd:jid()) -> pub_result().
+unsubscribe(all, UserJID) ->
     lists:foreach(
-      call_hook(unsubscribe, _, [User]),
-      all_nodes());
+      fun(J) -> call_hook(unsubscribe, J, [J, UserJID]) end,
+      all_nodes(UserJID));
 
-unsubscribe(Node, User) ->
-    call_hook(unsubscribe, Node, [User]).
+unsubscribe(TargetJID, UserJID) ->
+    call_hook(unsubscribe, TargetJID, [TargetJID, UserJID]).
 
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
 
-call_hook(Hook, Node, Args) ->
-    case ets:lookup(?PUBLISHING_HANDLER_TABLE, Node) of
-        [{Node, HandlerMod}] ->
+call_hook(Hook, TargetJID, Args) ->
+    case ets:lookup(?PUBLISHING_HANDLER_TABLE, node_prefix(TargetJID)) of
+        [{_, HandlerMod}] ->
             apply(HandlerMod, Hook, Args);
         [] ->
             {error, ?ERRT_SERVICE_UNAVAILABLE(?MYLANG, <<"Unknown node type">>)}
     end.
 
-all_nodes() ->
-    [HandlerMod || {HandlerMod, _} <- ets:tab2list(?PUBLISHING_HANDLER_TABLE)].
+all_nodes(UserJID) ->
+    [jid:replace_resource(UserJID, NodePrefix)
+     || {NodePrefix, _} <- ets:tab2list(?PUBLISHING_HANDLER_TABLE)].
+
+node_prefix(#jid{lresource = LResource}) ->
+    hd(binary:split(LResource, <<"/">>)).

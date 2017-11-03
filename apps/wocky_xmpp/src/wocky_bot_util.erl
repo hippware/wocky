@@ -102,6 +102,8 @@ check_owner(#{user_id := UserID}, #jid{luser = UserID}) -> ok;
 check_owner(#{user_id := UserID}, UserID) -> ok;
 check_owner(_, _) -> {error, ?ERR_FORBIDDEN}.
 
+check_access(NoUser, _) when NoUser =:= nil orelse NoUser =:= undefined ->
+    {error, ?ERR_FORBIDDEN};
 check_access(User = #{id := UserID}, Bot = #{user_id := BotOwnerID}) ->
     case ?wocky_user:'can_access?'(User, Bot) of
         true ->

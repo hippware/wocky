@@ -193,14 +193,13 @@ defmodule Wocky.Bot do
     |> Enum.map(&User.to_jid(&1))
   end
 
-  @doc "Count of all subscribers plus the owner"
+  @doc "Count of all subscribers"
   @spec subscriber_count(Bot.t) :: pos_integer
   def subscriber_count(bot) do
     bot
     |> assoc(:subscribers)
     |> select([s], count(s.id))
     |> Repo.one
-    |> Kernel.+(1)
   end
 
   @doc "Returns the bot's distance from the specified location in meters."
