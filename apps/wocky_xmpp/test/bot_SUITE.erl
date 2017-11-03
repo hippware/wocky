@@ -583,16 +583,21 @@ sorting(Config) ->
 publish_item(Config) ->
     reset_tables(Config),
     escalus:story(Config,
-                  [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}, {robert, 1}],
+                  [{alice, 1}, {bob, 1}, {carol, 1},
+                   {karen, 1}, {robert, 1}],
       fun(Alice, Bob, Carol, Karen, Robert) ->
         NoteID = <<"item1">>,
         Content = <<"content ZZZ">>,
         Title = <<"title ZZZ">>,
+
+        watch(?BOT_B_JID, Bob),
+
         % Alice publishes an item to her bot
         publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
+        expect_item_pub_notification(Bob),
         % Carol and Karen are subscribers, and so receive a notification
-        % Bob is a viewr (via share) but not subscribed,
+        % Bob is a viewer (via share) but not subscribed,
         % so does not receive anything
         lists:foreach(
           expect_item_publication(_, ?BOT, NoteID, Title, Content),
@@ -605,14 +610,14 @@ publish_item(Config) ->
 
         % As someone to whom the bot has been shared, Bob can publish items
         % to the bot and all the subscribers are notified.
-        publish_item(?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
+        publish_item_watching(?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
         lists:foreach(
           expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, Content),
           [Alice, Carol, Karen]),
 
         % Bob can update his own item and subscribers will be informed.
         NewContent = <<"New Content">>,
-        publish_item(?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
+        publish_item_watching(?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
         lists:foreach(
           expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, NewContent),
           [Alice, Carol, Karen]),
@@ -633,6 +638,8 @@ publish_item(Config) ->
         % Alice cannot publish to a non-existant bot
         expect_iq_error(
           publish_item_stanza(?wocky_id:new(), NoteID, Title, Content), Alice),
+
+        unwatch(?BOT, Bob),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
@@ -1402,6 +1409,23 @@ check_children_cdata(Element, [{Name, Value} | Rest]) ->
 has_attr(Attrs, {Name, Val}) ->
     {value, Val} =:= xml:get_attr(Name, Attrs).
 
+
+expect_item_pub_notification(Client) ->
+    ?assert(is_item_pub_notification(escalus_client:wait_for_stanza(Client))).
+
+is_item_pub_notification(Stanza = #xmlel{name = <<"message">>}) ->
+    R = xml:get_path_s(Stanza,
+                       [{elem, <<"notification">>},
+                        {elem, <<"item">>},
+                        {elem, <<"message">>},
+                        {elem, <<"event">>},
+                        {elem, <<"item">>}]),
+    case R of
+        false -> false;
+        _ -> true
+    end;
+is_item_pub_notification(_) -> false.
+
 expect_item_retraction(Client, BotID, NoteID) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
     I = check_hs_result(S, any, any, false),
@@ -1540,6 +1564,15 @@ is_pres_unavailable() ->
             escalus_pred:is_presence_with_type(<<"unavailable">>, S)
     end.
 
+publish_item_watching(BotID, NoteID, Title, Content, Image, Client) ->
+    Stanza = add_to_s(
+               publish_item_stanza(BotID, NoteID, Title, Content, Image),
+               Client),
+    escalus_client:send(Client, Stanza),
+    Results = escalus_client:wait_for_stanzas(Client, 2),
+    escalus:assert_many([is_iq_result, fun is_item_pub_notification/1],
+                        Results).
+
 publish_item(BotID, NoteID, Title, Content, Image, Client) ->
     expect_iq_success(publish_item_stanza(BotID, NoteID, Title, Content, Image),
                       Client).
@@ -1597,9 +1630,9 @@ unfollow_me_stanza() ->
     QueryEl = node_el(?BOT, <<"un-follow-me">>, []),
     test_helper:iq_set(?NS_BOT, QueryEl).
 
-watch(Bot, Client) ->
+watch(BotBJID, Client) ->
     Stanza = escalus_stanza:presence_direct(
-               Bot, <<"available">>, [query_el(undefined)]),
+               BotBJID, <<"available">>, [query_el(undefined)]),
     escalus:send(Client, Stanza).
 
 unwatch(Bot, Client) ->

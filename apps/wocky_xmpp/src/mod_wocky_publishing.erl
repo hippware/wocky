@@ -163,7 +163,7 @@ remove_connection_hook(_SID, JID, _Info, _Reason) ->
 
 send_notification(ToJID, FromJID = #jid{lresource = LResource}, Item) ->
     Stanza = notification_stanza(LResource, item_stanza(Item)),
-    ejabberd_router:route(ToJID, FromJID, Stanza),
+    ejabberd_router:route(FromJID, ToJID, Stanza),
     ok.
 
 %%%===================================================================
