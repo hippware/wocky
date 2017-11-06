@@ -289,13 +289,38 @@ defmodule Wocky.HomeStreamItemSpec do
       |> HomeStreamItem.get
       |> should(eq [])
     end
+  end
 
+  describe "get/2" do
     it "should exclude deleted items when requested" do
       HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
 
       shared.user.id
       |> HomeStreamItem.get(true)
       |> should_match_items(tl(shared.items))
+    end
+  end
+
+  describe "get/3" do
+    before do
+      time = Timex.shift(DateTime.utc_now(), days: -1)
+      item = Factory.insert(:home_stream_item, %{user: shared.user,
+                                                 ordering: time})
+      {:ok, item: item}
+    end
+
+    it "should order by update time if specified" do
+      shared.user.id
+      |> HomeStreamItem.get(false, true)
+      |> List.last
+      |> should_match_item(shared.item)
+    end
+
+    it "should order by ordering otherwise" do
+      shared.user.id
+      |> HomeStreamItem.get(false)
+      |> hd
+      |> should_match_item(shared.item)
     end
   end
 
@@ -368,7 +393,7 @@ defmodule Wocky.HomeStreamItemSpec do
       now = DateTime.utc_now
 
       items = for i <- 1..@num_items do
-        time = Timex.subtract(now, Duration.from_seconds(i * 5))
+        time = Timex.shift(now, seconds: -(i * 5))
         Factory.insert(:home_stream_item,
                        %{user: source_user,
                          created_at: time,
