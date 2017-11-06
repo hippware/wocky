@@ -43,7 +43,7 @@ defmodule Wocky.Index do
 
   @spec geosearch(float, float) :: {:ok, list} | {:error, any}
   def geosearch(lat, lon) do
-    GenServer.call(:wocky_index, {:geosearch, lat, lon})
+    GenServer.call(:wocky_index, {:geosearch, lat, lon}, 30_000)
   end
 
   @spec reindex(index_t) :: :ok | {:error, :unknown_index}
