@@ -5,6 +5,7 @@ defmodule ModelHelpers do
       import Ecto.Changeset, except: [change: 1, change: 2]
       import Ecto.Query
       import ChangesetAssertions
+      import TimestampAssertions
 
       alias Wocky.Repo
       alias Wocky.Repo.Factory

@@ -1,5 +1,6 @@
 defmodule Wocky.HomeStreamItemSpec do
   use ESpec, async: true
+  use ModelHelpers
 
   alias Faker.Lorem
   alias Timex.Duration
@@ -31,8 +32,8 @@ defmodule Wocky.HomeStreamItemSpec do
   describe "put/4" do
     context "when there is no existing record for the key" do
       it "should insert a new record" do
-        key = Factory.new_jid()
-        from_jid = Factory.new_jid()
+        key = Factory.new_jid
+        from_jid = Factory.new_jid
         stanza = Lorem.paragraph
         put_result = HomeStreamItem.put(shared.user.id,
                                         key,
@@ -48,6 +49,15 @@ defmodule Wocky.HomeStreamItemSpec do
         get_result.from_jid |> should(eq from_jid)
         get_result.stanza |> should(eq stanza)
         get_result.deleted |> should(be_false())
+      end
+
+      it "should work even when :set_ordering is false" do
+        HomeStreamItem.put(shared.user.id,
+                           Factory.new_jid,
+                           Factory.new_jid,
+                           Lorem.paragraph,
+                           set_ordering: false)
+        |> should(be_ok_result())
       end
     end
 
@@ -65,6 +75,21 @@ defmodule Wocky.HomeStreamItemSpec do
                                                shared.last_item.key)
         get_result |> should(be_struct HomeStreamItem)
         get_result.stanza |> should(eq stanza)
+        get_result.ordering |> should(be_later_than(shared.last_item.ordering))
+      end
+
+      it "should not update the ordering when set_ordering is false" do
+        stanza = Lorem.paragraph
+        put_result = HomeStreamItem.put(shared.user.id,
+                                        shared.last_item.key,
+                                        shared.last_item.from_jid,
+                                        stanza,
+                                        set_ordering: false)
+        put_result |> should(be_ok_result())
+
+        get_result = HomeStreamItem.get_by_key(shared.user.id,
+                                               shared.last_item.key)
+        get_result.ordering |> should(eq(shared.last_item.ordering))
       end
     end
 
@@ -347,7 +372,8 @@ defmodule Wocky.HomeStreamItemSpec do
         Factory.insert(:home_stream_item,
                        %{user: source_user,
                          created_at: time,
-                         updated_at: time})
+                         updated_at: time,
+                         ordering: time})
       end
 
       target_user = Factory.insert(:user)

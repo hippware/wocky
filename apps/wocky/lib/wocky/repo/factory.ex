@@ -144,7 +144,8 @@ defmodule Wocky.Repo.Factory do
       key: new_jid(),
       from_jid: new_jid(),
       stanza: Lorem.paragraph,
-      deleted: false
+      deleted: false,
+      ordering: DateTime.utc_now()
     }
   end
 
