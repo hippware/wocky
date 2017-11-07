@@ -20,7 +20,6 @@ defmodule Wocky.Application do
     Mailer.init
 
     RepoInstrumenter.setup()
-    Prometheus.Registry.register_collector(:prometheus_process_collector)
 
     Supervisor.start_link([
       worker(Wocky.Repo, []),

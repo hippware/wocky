@@ -99,7 +99,6 @@ defmodule Wocky.Mixfile do
       {:slack_ex,             "~> 0.1"},
       {:prometheus_ex,        "~> 1.4"},
       {:prometheus_ecto,      "~> 1.0"},
-      {:prometheus_process_collector, "~> 1.2"},
 
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
