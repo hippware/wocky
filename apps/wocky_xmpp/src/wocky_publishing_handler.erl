@@ -8,7 +8,7 @@
 -include("wocky_publishing.hrl").
 
 -export([register/2, unregister/2, send_notification/3]).
--export([set/5, get/4, subscribe/3, unsubscribe/2]).
+-export([set/5, get/3, subscribe/3, unsubscribe/2]).
 
 % Called when an item is newly published or updated
 -callback publish(
@@ -24,10 +24,9 @@
 
 % Called when a user requests a specific item or set of items
 -callback get(
-            TargetJID      :: ejabberd:jid(),
-            UserJID        :: ejabberd:jid(),
-            RSM            :: jlib:rsm_in() | pub_item_id(),
-            ExcludeDeleted :: boolean()) -> pub_get_result().
+            TargetJID :: ejabberd:jid(),
+            UserJID   :: ejabberd:jid(),
+            RSM       :: jlib:rsm_in() | pub_item_id()) -> pub_get_result().
 
 % Called when a user subscribes to a target matching the node prefix
 -callback subscribe(
@@ -74,8 +73,8 @@ set(TargetJID, _From, To, ID, #xmlel{name = <<"delete">>}) ->
 set(TargetJID, From, To, ID, Stanza) ->
     call_hook(publish, TargetJID, [To, From, ID, Stanza]).
 
-get(TargetJID, From, Param, ExcludeDeleted) ->
-    call_hook(get, TargetJID, [TargetJID, From, Param, ExcludeDeleted]).
+get(TargetJID, From, Param) ->
+    call_hook(get, TargetJID, [TargetJID, From, Param]).
 
 -spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> pub_result().
 subscribe(TargetJID, UserJID, Version) ->

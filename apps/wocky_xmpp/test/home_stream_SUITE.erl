@@ -16,7 +16,7 @@
                       expect_iq_success/2, add_to_u/2,
                       ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
-                      check_hs_result/2, check_hs_result/4,
+                      check_hs_result/2, check_hs_result/3,
                       query_el/1, hs_node/1, node_el/3,
                       subscribe_stanza/0, check_home_stream_sizes/2,
                       check_home_stream_sizes/3]).
@@ -37,11 +37,12 @@ all() -> [
           publish,
           delete,
           no_auto_publish_chat,
-          subscribe,
-          subscribe_version,
+          watch,
+          watch_with_version,
           unsubscribe,
           maintain_subscription,
           get_item,
+          override_ordering,
           {group, publish_bot},
           no_auto_publish_pep_item
          ].
@@ -115,7 +116,7 @@ get(Config) ->
 
         % Carol's own stream is empty
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
-        check_hs_result(Stanza2, 0, 0, false)
+        check_hs_result(Stanza2, 0, false)
       end).
 
 get_first(Config) ->
@@ -164,17 +165,13 @@ delete(Config) ->
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
         check_hs_result(Stanza, 5),
 
-        expect_iq_success_u(delete_stanza(), Alice, Alice),
+        expect_iq_success_u(delete_stanza(<<"some_id">>), Alice, Alice),
 
         % Bob can't delete from Alice's home stream
-        expect_iq_error_u(delete_stanza(), Bob, Alice),
+        expect_iq_error_u(delete_stanza(<<"some_id">>), Bob, Alice),
 
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        Items = check_hs_result(Stanza2, 4, 1, true),
-        ?assertEqual({delete, <<"some_id">>}, lists:last(Items)),
-
-        Stanza3 = expect_iq_success_u(get_hs_stanza(true), Alice, Alice),
-        check_hs_result(Stanza3, 4, 0, true)
+        check_hs_result(Stanza2, 4)
       end).
 
 no_auto_publish_chat(Config) ->
@@ -185,18 +182,22 @@ no_auto_publish_chat(Config) ->
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza2, 4, 1, true)
+        check_hs_result(Stanza2, 4)
       end).
 
-subscribe(Config) ->
+watch(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         escalus:send(Alice,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
                                            [query_el(undefined)])),
 
-        escalus:send(Alice,
-                     add_to_u(pub_stanza(<<"new_item">>), Alice)),
+        % Both published and deleted items should be sent to watchers
+        escalus:send(Alice, add_to_u(pub_stanza(<<"new_item">>), Alice)),
+        escalus:assert_many([is_iq_result, is_message],
+                            escalus:wait_for_stanzas(Alice, 2)),
+
+        escalus:send(Alice, add_to_u(delete_stanza(<<"new_item">>), Alice)),
         escalus:assert_many([is_iq_result, is_message],
                             escalus:wait_for_stanzas(Alice, 2)),
 
@@ -204,7 +205,7 @@ subscribe(Config) ->
         ensure_all_clean([Alice, Bob])
       end).
 
-subscribe_version(Config) ->
+watch_with_version(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
 
@@ -220,7 +221,7 @@ subscribe_version(Config) ->
           end, lists:seq(1, 4)),
 
         %% Carol should get nothing from her own HS (since it's empty) nor from
-        %% Alice's (since it's not his)
+        %% Alice's (since it's not hers)
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
                                            [query_el(V2)])),
@@ -324,6 +325,29 @@ get_item(Config) ->
         % Deleted and never-existed items should both return not-found
         expect_iq_error_u(get_hs_stanza(<<"some_id">>), Alice, Alice),
         expect_iq_error_u(get_hs_stanza(?wocky_id:new()), Alice, Alice)
+      end).
+
+override_ordering(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        clear_home_streams(),
+        check_home_stream_sizes(0, [Alice]),
+
+        expect_iq_success_u(pub_stanza(<<"id_1">>), Alice, Alice),
+        expect_iq_success_u(pub_stanza(<<"id_2">>), Alice, Alice),
+        expect_iq_success_u(pub_stanza(<<"id_3">>), Alice, Alice),
+
+        Ordering = ?wocky_timestamp:shift([{days, -1}]),
+        expect_iq_success_u(pub_stanza(<<"id_2">>, Ordering), Alice, Alice),
+
+        Stanza = expect_iq_success_u(
+                   get_hs_stanza(#rsm_in{direction = before}),
+                   Alice, Alice),
+        [Item1, Item2, Item3] = check_hs_result(Stanza, 3),
+
+        ?assertEqual(<<"id_1">>, Item1#item.id),
+        ?assertEqual(<<"id_3">>, Item2#item.id),
+        ?assertEqual(<<"id_2">>, Item3#item.id)
       end).
 
 auto_publish_newly_public_bot(Config) ->
@@ -504,9 +528,9 @@ bot_becomes_private(Config) ->
         % Make the bot private
         set_public(false, Alice),
 
-        % The item should have been marked deleted on Carol's HS
+        % The item should have been deleted on Carol's HS
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
-        check_hs_result(Stanza2, 0, 1, true)
+        check_hs_result(Stanza2, 0)
       end).
 
 
@@ -534,17 +558,18 @@ no_auto_publish_pep_item(Config) ->
 %% Helpers
 %%--------------------------------------------------------------------
 
-pub_stanza(ID) ->
+pub_stanza(ID) -> pub_stanza(ID, undefined).
+pub_stanza(ID, Ordering) ->
     test_helper:iq_set(?NS_PUBLISHING,
                        #xmlel{name = <<"publish">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [new_item(ID)]}).
+                              children = [new_item(ID, Ordering)]}).
 
-delete_stanza() ->
+delete_stanza(ID) ->
     test_helper:iq_set(?NS_PUBLISHING,
                        #xmlel{name = <<"publish">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [delete_item()]}).
+                              children = [delete_item(ID)]}).
 
 share_bot_stanza() ->
     #xmlel{name = <<"message">>,
@@ -559,9 +584,9 @@ share_children() ->
      cdata_el(<<"server">>, ?SERVER),
      cdata_el(<<"action">>, <<"share">>)].
 
-new_item(ID) ->
+new_item(ID, Ordering) ->
     #xmlel{name = <<"item">>,
-           attrs = maybe_id(ID),
+           attrs = maybe_id(ID) ++ maybe_ordering(Ordering),
            children = [cdata_el(<<"new-published-element">>,
                                 <<"hello there!">>),
                        #xmlel{name = <<"second-element">>,
@@ -573,9 +598,12 @@ cdata_el(Name, CData) ->
 maybe_id(undefined) -> [];
 maybe_id(ID) -> [{<<"id">>, ID}].
 
-delete_item() ->
+maybe_ordering(undefined) -> [];
+maybe_ordering(Ordering) -> [{<<"ordering">>, Ordering}].
+
+delete_item(ID) ->
     #xmlel{name = <<"delete">>,
-           attrs = [{<<"id">>, <<"some_id">>}]}.
+           attrs = [{<<"id">>, ID}]}.
 
 is_presence_error(Stanza) ->
     escalus_pred:is_presence(Stanza)
@@ -587,7 +615,6 @@ set_bot_vis(Vis, Client) ->
 
 expect_home_stream_bot_desc(Client, New) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-    ct:log("S: ~p", [S]),
     El = #xmlel{} = xml:get_path_s(S, [{elem, <<"items">>},
                                        {elem, <<"item">>},
                                        {elem, <<"message">>},

@@ -162,9 +162,11 @@ notify_watcher(UserJID, FromJID, Bot = #{updated_at := UpatedAt}, Message) ->
                     attrs = [{<<"type">>, <<"headline">>}],
                     children = [Message]},
 
+    Timestamp = ?wocky_timestamp:to_string(UpatedAt),
     Item = #published_item{
               id = jid:to_binary(BotJID),
-              version = ?wocky_timestamp:to_string(UpatedAt),
+              version = Timestamp,
+              ordering = Timestamp,
               from = FromJID,
               stanza = Stanza},
     wocky_publishing_handler:send_notification(UserJID, BotJID, Item).

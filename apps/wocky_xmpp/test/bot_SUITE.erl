@@ -15,7 +15,7 @@
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
                       get_hs_stanza/0, bot_node/1, check_hs_result/2,
-                      check_hs_result/4, expect_iq_success_u/3,
+                      check_hs_result/3, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
@@ -606,7 +606,7 @@ publish_item(Config) ->
         % As the publisher, Alice should *not* get a notification,
         % so her HS should be empty
         Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza, 0, 0, false),
+        check_hs_result(Stanza, 0, false),
 
         % As someone to whom the bot has been shared, Bob can publish items
         % to the bot and all the subscribers are notified.
@@ -1363,7 +1363,7 @@ delete_stanza() ->
 
 expect_item_publication(Client, BotID, NoteID, Title, Content) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-    I = check_hs_result(S, any, any, false),
+    I = check_hs_result(S, any, false),
     escalus:assert(
       is_publication_update(BotID, NoteID, Title, Content, _),
       hd((lists:last(I))#item.stanzas)).
@@ -1430,7 +1430,7 @@ is_item_pub_notification(_) -> false.
 
 expect_item_retraction(Client, BotID, NoteID) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-    I = check_hs_result(S, any, any, false),
+    I = check_hs_result(S, any, false),
     escalus:assert(
       is_retraction_update(BotID, NoteID, _),
       hd((lists:last(I))#item.stanzas)).

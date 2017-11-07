@@ -1,5 +1,6 @@
 Code.require_file("spec/support/assertions/be_valid_assertion.ex")
 Code.require_file("spec/support/assertions/have_errors_assertion.ex")
+Code.require_file("spec/support/assertions/timestamp_assertions.ex")
 Code.require_file("spec/support/changeset_assertions.ex")
 Code.require_file("spec/support/test_event_handler.ex")
 Code.require_file("spec/support/model_helpers.ex")

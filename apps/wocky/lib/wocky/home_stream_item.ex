@@ -17,6 +17,7 @@ defmodule Wocky.HomeStreamItem do
     field :from_jid, :binary, default: ""
     field :stanza,   :binary, default: ""
     field :deleted,  :boolean, default: false
+    field :ordering, :utc_datetime
 
     belongs_to :user, User
     belongs_to :reference_user, User, foreign_key: :reference_user_id
@@ -34,12 +35,13 @@ defmodule Wocky.HomeStreamItem do
     stanza:         binary,
     deleted:        boolean,
     updated_at:     DateTime.t,
+    ordering:       DateTime.t,
     reference_user: User.t,
     reference_bot:  Bot.t
   }
 
   @change_fields [:user_id, :key, :from_jid, :stanza, :deleted,
-                  :reference_user_id, :reference_bot_id]
+                  :reference_user_id, :reference_bot_id, :ordering]
 
   @prepopulate_fields @change_fields ++ [:created_at, :updated_at]
 
@@ -56,12 +58,18 @@ defmodule Wocky.HomeStreamItem do
       from_jid: from_jid,
       stanza: stanza,
       reference_user_id: Keyword.get(opts, :ref_user_id),
-      reference_bot_id: Keyword.get(opts, :ref_bot_id)
+      reference_bot_id: Keyword.get(opts, :ref_bot_id),
+      ordering: Keyword.get(opts, :ordering, DateTime.utc_now())
     }
+
+    conflict_set =
+      fields
+      |> conflict_set(Keyword.get(opts, :set_ordering, true))
+      |> Map.to_list
 
     %HomeStreamItem{}
     |> changeset(fields)
-    |> Repo.insert(on_conflict: :replace_all,
+    |> Repo.insert(on_conflict: [set: conflict_set],
                    conflict_target: [:user_id, :key])
   end
 
@@ -140,11 +148,11 @@ defmodule Wocky.HomeStreamItem do
 
   @doc "Get all home stream items for a user"
   @spec get(User.id, boolean) :: [t]
-  def get(user_id, exclude_deleted \\ false) do
+  def get(user_id, exclude_deleted \\ false, update_ordering \\ false) do
     HomeStreamItem
     |> with_user(user_id)
     |> maybe_exclude_deleted(exclude_deleted)
-    |> order_by_time()
+    |> set_order(update_ordering)
     |> Repo.all
   end
 
@@ -153,8 +161,8 @@ defmodule Wocky.HomeStreamItem do
   def get_by_key(user_id, key, exclude_deleted \\ false) do
     HomeStreamItem
     |> with_user(user_id)
+    |> where(key: ^key)
     |> maybe_exclude_deleted(exclude_deleted)
-    |> with_key(key)
     |> Repo.one
   end
 
@@ -163,18 +171,18 @@ defmodule Wocky.HomeStreamItem do
   def get_after_time(user_id, time) do
     HomeStreamItem
     |> with_user(user_id)
-    |> after_time(time)
-    |> order_by_time()
+    |> where([i], i.updated_at > ^time)
+    |> set_order(true)
     |> Repo.all
   end
 
-  @doc "Get the latest timestamp for a user"
-  @spec get_latest_time(User.id) :: DateTime.t
-  def get_latest_time(user_id) do
+  @doc "Get the latest version for a user"
+  @spec get_latest_version(User.id) :: DateTime.t
+  def get_latest_version(user_id) do
     time =
       HomeStreamItem
       |> with_user(user_id)
-      |> max_time()
+      |> select([i], max(i.updated_at))
       |> Repo.one
     if time == nil do
       DateTime.from_unix!(0)
@@ -209,28 +217,23 @@ defmodule Wocky.HomeStreamItem do
 
 
   def with_user(query, user_id) do
-    from h in query, where: h.user_id == ^user_id
+    query
+    |> where(user_id: ^user_id)
   end
 
-  defp with_key(query, key) do
-    from h in query, where: h.key == ^key
+  defp set_order(query, true) do
+    query
+    |> order_by(asc: :updated_at)
   end
-
-  defp order_by_time(query) do
-    from h in query, order_by: [asc: h.updated_at]
-  end
-
-  defp after_time(query, time) do
-    from h in query, where: h.updated_at > ^time
-  end
-
-  defp max_time(query) do
-    from h in query, select: max(h.updated_at)
+  defp set_order(query, false) do
+    query
+    |> order_by(asc: :ordering)
   end
 
   def maybe_exclude_deleted(query, false), do: query
   def maybe_exclude_deleted(query, true) do
-    from h in query, where: h.deleted == false
+    query
+    |> where(deleted: false)
   end
 
   defp changeset(struct, params) do
@@ -245,4 +248,7 @@ defmodule Wocky.HomeStreamItem do
   defp delete_changes do
     Keyword.put(@delete_changes, :updated_at, DateTime.utc_now())
   end
+
+  defp conflict_set(fields, true), do: fields
+  defp conflict_set(fields, false), do: Map.drop(fields, [:ordering])
 end

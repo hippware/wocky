@@ -106,24 +106,21 @@ filter_local_packet_hook(Other) ->
 handle_publish(From, To, Attrs, Children) ->
     do([error_m ||
         check_same_user(From, To),
-        TargetJID <- get_target_jid(To, Attrs),
-        Item      <- get_item_or_delete(Children),
-        ID        <- get_id(Item#xmlel.attrs),
-        Stanza    <- get_stanza(Item),
+        TargetJID    <- get_target_jid(To, Attrs),
+        Item         <- get_item_or_delete(Children),
+        ID           <- get_id(Item#xmlel.attrs),
+        Stanza       <- get_stanza(Item),
         wocky_publishing_handler:set(TargetJID, From, To, ID, Stanza),
-        {_, Version} <- wocky_publishing_handler:get(
-                          TargetJID, From, ID, false),
-        {ok, published_stanza(TargetJID, ID, Version)}
+        {NewItem, _} <- wocky_publishing_handler:get(TargetJID, From, ID),
+        {ok, published_stanza(TargetJID, ID, NewItem)}
        ]).
 
 handle_items(From, To, Attrs, Children) ->
     do([error_m ||
         check_same_user(From, To),
-        TargetJID      <- get_target_jid(To, Attrs),
-        Param          <- get_item_id_or_rsm(Children),
-        ExcludeDeleted <- get_exclude_deleted(Children),
-        Result         <- wocky_publishing_handler:get(
-                            TargetJID, From, Param, ExcludeDeleted),
+        TargetJID <- get_target_jid(To, Attrs),
+        Param     <- get_item_id_or_rsm(Children),
+        Result    <- wocky_publishing_handler:get(TargetJID, From, Param),
         result_stanza(Result, TargetJID)
        ]).
 
@@ -221,24 +218,23 @@ get_item_id_or_rsm(Children) ->
         ID -> {ok, ID}
     end.
 
-get_exclude_deleted(Children) ->
-    {ok, lists:keyfind(<<"exclude-deleted">>, #xmlel.name, Children) =/= false}.
-
 get_stanza(XML = #xmlel{name = <<"delete">>}) ->
     {ok, XML};
 get_stanza(#xmlel{children = Children}) ->
     {ok, Children}.
 
-published_stanza(#jid{lresource = LResource}, ID, Version) ->
+published_stanza(#jid{lresource = LResource}, ID,
+                 #published_item{version = Version, ordering = Ordering}) ->
     #xmlel{name = <<"published">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
                     {<<"node">>, LResource}],
-           children = [published_child(ID, Version)]}.
+           children = [published_child(ID, Version, Ordering)]}.
 
-published_child(ID, Version) ->
+published_child(ID, Version, Ordering) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, ID},
-                    {<<"version">>, Version}]}.
+                    {<<"version">>, Version},
+                    {<<"ordering">>, Ordering}]}.
 
 result_stanza(not_found, _TargetJID) ->
     {error, ?ERR_ITEM_NOT_FOUND};
@@ -263,17 +259,21 @@ items_elements(Items) ->
 
 item_stanza(#published_item{id = ID,
                             version = Version,
+                            ordering = Ordering,
                             deleted = true}) ->
     #xmlel{name = <<"delete">>,
            attrs = [{<<"id">>, ID},
-                    {<<"version">>, Version}]};
+                    {<<"version">>, Version},
+                    {<<"ordering">>, Ordering}]};
 item_stanza(#published_item{id = ID,
                             version = Version,
+                            ordering = Ordering,
                             from = From,
                             stanza = Stanza}) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, ID},
                     {<<"version">>, Version},
+                    {<<"ordering">>, Ordering},
                     {<<"from">>, jid:to_binary(From)}],
            children = maybe_wrap_list(Stanza)}.
 
