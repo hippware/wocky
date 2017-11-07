@@ -373,16 +373,16 @@ defmodule Wocky.HomeStreamItemSpec do
     end
   end
 
-  describe "get_latest_time/1" do
+  describe "get_latest_version/1" do
     it "should return the most recent updated_at value for the user" do
       shared.user.id
-      |> HomeStreamItem.get_latest_time
+      |> HomeStreamItem.get_latest_version
       |> should(eq shared.last_item.updated_at)
     end
 
     it "should return a valid timestamp for a non-existant user" do
       ID.new
-      |> HomeStreamItem.get_latest_time
+      |> HomeStreamItem.get_latest_version
       |> should(be_struct DateTime)
     end
   end

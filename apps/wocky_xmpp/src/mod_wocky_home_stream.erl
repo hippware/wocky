@@ -19,7 +19,7 @@
 % wocky_publishing_handler exports
 -export([publish/4,
          delete/2,
-         get/4,
+         get/3,
          subscribe/3,
          unsubscribe/2
         ]).
@@ -73,28 +73,27 @@ delete(UserJID = #jid{luser = User}, ID) ->
     send_notifications(UserJID, map_to_item(ItemMap)).
 
 -spec get(ejabberd:jid(), ejabberd:jid(),
-          jlib:rsm_in() | pub_item_id(), boolean()) -> pub_get_result().
-get(#jid{luser = User}, #jid{luser = User},
-    RSMIn = #rsm_in{}, ExcludeDeleted) ->
+          jlib:rsm_in() | pub_item_id()) -> pub_get_result().
+get(#jid{luser = User}, #jid{luser = User}, RSMIn = #rsm_in{}) ->
     Query = ?wocky_home_stream_item:maybe_exclude_deleted(
-               ?wocky_home_stream_item:with_user(User), ExcludeDeleted),
+               ?wocky_home_stream_item:with_user(User), true),
     {Results, RSMOut} =
-      ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, created_at}),
+      ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, ordering}),
     {ok, {[map_to_item(I) || I <- Results],
-          format_version(?wocky_home_stream_item:get_latest_time(User)),
+          format_version(?wocky_home_stream_item:get_latest_version(User)),
           RSMOut}};
 
-get(#jid{luser = User}, #jid{luser = User}, ID, ExcludeDeleted) ->
-    Item = ?wocky_home_stream_item:get_by_key(User, ID, ExcludeDeleted),
+get(#jid{luser = User}, #jid{luser = User}, ID) ->
+    Item = ?wocky_home_stream_item:get_by_key(User, ID, false),
     case Item of
         nil ->
             {ok, not_found};
         _ ->
             {ok, {map_to_item(Item),
                   format_version(
-                    ?wocky_home_stream_item:get_latest_time(User))}}
+                    ?wocky_home_stream_item:get_latest_version(User))}}
     end;
-get(_, _, _, _) ->
+get(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
 -spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> ok.

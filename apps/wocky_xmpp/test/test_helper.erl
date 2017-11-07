@@ -45,7 +45,7 @@
          get_hs_stanza/0,
          get_hs_stanza/1,
          check_hs_result/2,
-         check_hs_result/4,
+         check_hs_result/3,
          check_single_hs_result/2,
          get_items_el/1,
 
@@ -350,15 +350,15 @@ timeout() ->
     end.
 
 check_hs_result(Stanza, NumItems) ->
-    check_hs_result(Stanza, NumItems, 0, true).
-check_hs_result(Stanza, NumItems, NumDeletes, CheckVersion) ->
+    check_hs_result(Stanza, NumItems, true).
+check_hs_result(Stanza, NumItems, CheckVersion) ->
     {ok, L} = do([error_m ||
                   ItemsEl <- get_items_el(Stanza),
                   check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
                   check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
                   maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
                   ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, NumItems, NumDeletes, 1),
+                  check_elements(ItemsEl, NumItems, 1),
                   {ok, ItemList}
                  ]),
     L.
@@ -378,7 +378,7 @@ check_single_hs_result(Stanza, ID) ->
                   check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
                   check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
                   ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, 1, 0, 0),
+                  check_elements(ItemsEl, 1, 0),
                   {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
                   {ok, hd(ItemList)}
                  ]),
@@ -402,14 +402,10 @@ get_item(#xmlel{name = <<"delete">>, attrs = Attrs, children = []}, Acc) ->
 get_item(_, Acc) ->
     Acc.
 
-check_elements(Items, NumItems, NumDeletes, NumRSM) ->
+check_elements(Items, NumItems, NumRSM) ->
     case NumItems of
         any -> ok;
         _ -> ?assertEqual(NumItems, count_elements(Items, <<"item">>))
-    end,
-    case NumDeletes of
-        any -> ok;
-        _ -> ?assertEqual(NumDeletes, count_elements(Items, <<"delete">>))
     end,
     ?assertEqual(NumRSM, count_elements(Items, <<"set">>)),
     ok.
@@ -514,33 +510,20 @@ hs_node(User) ->
       jid:make(User, ?SERVER, <<"home_stream">>)).
 
 get_hs_stanza() ->
-    get_hs_stanza(#rsm_in{max = 500}, false).
+    get_hs_stanza(#rsm_in{max = 500}).
 
-get_hs_stanza(ExcludeDeleted) when is_boolean(ExcludeDeleted) ->
-    get_hs_stanza(#rsm_in{max = 500}, ExcludeDeleted);
-
-get_hs_stanza(RSMIn = #rsm_in{}) ->
-    get_hs_stanza(RSMIn, false);
-
-get_hs_stanza(ID) when is_binary(ID) ->
-    get_hs_stanza(ID, false).
-
-get_hs_stanza(RSM = #rsm_in{}, ExcludeDeleted) ->
+get_hs_stanza(RSM = #rsm_in{}) ->
     test_helper:iq_get(?NS_PUBLISHING,
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [rsm_elem(RSM) |
-                                          maybe_exclude_deleted_elem(
-                                            ExcludeDeleted)]});
+                              children = [rsm_elem(RSM)]});
 
-get_hs_stanza(ID, ExcludeDeleted) when is_binary(ID) ->
+get_hs_stanza(ID) when is_binary(ID) ->
     test_helper:iq_get(?NS_PUBLISHING,
                        #xmlel{name = <<"items">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
                               children = [#xmlel{name = <<"item">>,
-                                                 attrs = [{<<"id">>, ID}]} |
-                                          maybe_exclude_deleted_elem(
-                                            ExcludeDeleted)]}).
+                                                 attrs = [{<<"id">>, ID}]}]}).
 
 set_notifications(Enabled, Client) ->
     Stanza = notifications_stanza(Enabled, Client),
@@ -562,14 +545,11 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
     lists:foreach(
       fun(Client) ->
               S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-              I = check_hs_result(S, ExpectedSize, 0, ExpectedSize =/= 0),
+              I = check_hs_result(S, ExpectedSize, ExpectedSize =/= 0),
               ExpectedSize =:= 0 orelse not CheckLastContent orelse
               escalus:assert(is_bot_action(?BOT, _),
                              hd((lists:last(I))#item.stanzas))
       end, Clients).
-
-maybe_exclude_deleted_elem(false) -> [];
-maybe_exclude_deleted_elem(true) -> [#xmlel{name = <<"exclude-deleted">>}].
 
 insert_system_users() ->
     ?wocky_factory:insert(

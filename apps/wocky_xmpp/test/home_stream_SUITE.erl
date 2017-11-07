@@ -16,7 +16,7 @@
                       expect_iq_success/2, add_to_u/2,
                       ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
-                      check_hs_result/2, check_hs_result/4,
+                      check_hs_result/2, check_hs_result/3,
                       query_el/1, hs_node/1, node_el/3,
                       subscribe_stanza/0, check_home_stream_sizes/2,
                       check_home_stream_sizes/3]).
@@ -115,7 +115,7 @@ get(Config) ->
 
         % Carol's own stream is empty
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
-        check_hs_result(Stanza2, 0, 0, false)
+        check_hs_result(Stanza2, 0, false)
       end).
 
 get_first(Config) ->
@@ -170,11 +170,7 @@ delete(Config) ->
         expect_iq_error_u(delete_stanza(), Bob, Alice),
 
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        Items = check_hs_result(Stanza2, 4, 1, true),
-        ?assertEqual({delete, <<"some_id">>}, lists:last(Items)),
-
-        Stanza3 = expect_iq_success_u(get_hs_stanza(true), Alice, Alice),
-        check_hs_result(Stanza3, 4, 0, true)
+        check_hs_result(Stanza2, 4)
       end).
 
 no_auto_publish_chat(Config) ->
@@ -185,7 +181,7 @@ no_auto_publish_chat(Config) ->
         escalus:assert(is_chat_message, escalus_client:wait_for_stanza(Alice)),
 
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza2, 4, 1, true)
+        check_hs_result(Stanza2, 4)
       end).
 
 subscribe(Config) ->
@@ -504,9 +500,9 @@ bot_becomes_private(Config) ->
         % Make the bot private
         set_public(false, Alice),
 
-        % The item should have been marked deleted on Carol's HS
+        % The item should have been deleted on Carol's HS
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
-        check_hs_result(Stanza2, 0, 1, true)
+        check_hs_result(Stanza2, 0)
       end).
 
 
@@ -587,7 +583,6 @@ set_bot_vis(Vis, Client) ->
 
 expect_home_stream_bot_desc(Client, New) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-    ct:log("S: ~p", [S]),
     El = #xmlel{} = xml:get_path_s(S, [{elem, <<"items">>},
                                        {elem, <<"item">>},
                                        {elem, <<"message">>},

@@ -176,9 +176,9 @@ defmodule Wocky.HomeStreamItem do
     |> Repo.all
   end
 
-  @doc "Get the latest timestamp for a user"
-  @spec get_latest_time(User.id) :: DateTime.t
-  def get_latest_time(user_id) do
+  @doc "Get the latest version for a user"
+  @spec get_latest_version(User.id) :: DateTime.t
+  def get_latest_version(user_id) do
     time =
       HomeStreamItem
       |> with_user(user_id)

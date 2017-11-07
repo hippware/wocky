@@ -14,7 +14,7 @@
 % wocky_publishing_handler exports
 -export([publish/4,
          delete/2,
-         get/4,
+         get/3,
          subscribe/3,
          unsubscribe/2
         ]).
@@ -28,7 +28,7 @@ delete(_, _) ->
      ?ERRT_NOT_ACCEPTABLE(
         ?MYLANG, <<"Deleteing via publishing interface not available">>)}.
 
-get(_, _, _, _) ->
+get(_, _, _) ->
     {error,
      ?ERRT_NOT_ACCEPTABLE(
         ?MYLANG, <<"Getting via publishing interface not available">>)}.
