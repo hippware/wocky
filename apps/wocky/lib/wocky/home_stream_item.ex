@@ -250,5 +250,5 @@ defmodule Wocky.HomeStreamItem do
   end
 
   defp conflict_set(fields, true), do: fields
-  defp conflict_set(fields, _), do: Map.drop(fields, [:ordering])
+  defp conflict_set(fields, false), do: Map.drop(fields, [:ordering])
 end
