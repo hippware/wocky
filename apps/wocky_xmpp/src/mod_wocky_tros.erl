@@ -49,7 +49,7 @@ handle_iq(FromJID, ToJID, IQ = #iq{type = Type, sub_el = ReqEl}) ->
     Req = #request{from_jid = FromJID, to_jid = ToJID, iq = IQ},
     case handle_request(Req, Type, ReqEl) of
         {error, E} ->
-            _ = wocky_metrics:inc(mod_wocky_tros_failed_requests),
+            _ = inc_counter(wocky_tros_failed_requests_total),
             error_response(IQ, E);
         {ok, R} -> R
     end.
@@ -70,7 +70,7 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         Access <- expand_err(?tros:get_access(BaseID)),
         check_download_permissions(FromJID, OwnerID, Access),
         wait_ready(BaseID),
-        {ok, wocky_metrics:inc(mod_wocky_tros_download_requests)},
+        {ok, inc_counter(wocky_tros_download_requests_total)},
         download_response(Req, OwnerID, FileID)
        ]).
 
@@ -81,7 +81,7 @@ handle_upload_request(Req, UR) ->
     do([error_m ||
         Fields <- extract_fields(UR, RequiredFields, OptionalFields, Defaults),
         Size <- check_upload_size(Fields),
-        {ok, wocky_metrics:inc(mod_wocky_tros_upload_requests)},
+        {ok, inc_counter(wocky_tros_upload_requests_total)},
         upload_response(Req, Fields, Size)
        ]).
 
@@ -236,7 +236,17 @@ expand_err({error, not_found}) ->
 expand_err(NonError) -> NonError.
 
 setup_metrics() ->
-    Metrics = [mod_wocky_tros_download_requests,
-               mod_wocky_tros_upload_requests,
-               mod_wocky_tros_failed_requests],
-    wocky_metrics:setup_spiral(Metrics).
+    prometheus_counter:new([{name, wocky_tros_download_requests_total},
+                            {help, "File download request count"},
+                            {labels, [server]}]),
+    prometheus_counter:new([{name, wocky_tros_upload_requests_total},
+                            {help, "File upload request count"},
+                            {labels, [server]}]),
+    prometheus_counter:new([{name, wocky_tros_failed_requests_total},
+                            {help, "Failed file request count"},
+                            {labels, [server]}]),
+    ok.
+
+inc_counter(Name) ->
+    _ = prometheus_counter:inc(Name, [wocky_xmpp_app:server()]),
+    ok.
