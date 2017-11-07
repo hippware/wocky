@@ -13,7 +13,7 @@ defmodule WockyAPI.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       start_permanent: Mix.env == :prod,
-      test_coverage: [tool: ExCoveralls, test_task: "espec"],
+      test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         espec: :test,
         coveralls: :test,
@@ -30,9 +30,7 @@ defmodule WockyAPI.Mixfile do
       # Specify extra applications you'll use from Erlang/Elixir
       extra_applications: [:lager, :logger, :runtime_tools],
       mod: {WockyAPI.Application, []},
-      env: [
-        location_api_port: 8080
-      ]
+      env: []
     ]
   end
 
