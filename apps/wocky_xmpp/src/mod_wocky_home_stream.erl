@@ -273,10 +273,11 @@ maybe_drop(_, P) -> P.
 
 map_to_item(#{key := Key, updated_at := UpdatedAt,
               from_jid := FromJID, stanza := StanzaBin,
-              deleted := Deleted}) ->
+              ordering := Ordering, deleted := Deleted}) ->
     {ok, Stanza} = wocky_xml:parse_multiple(StanzaBin),
     #published_item{id = Key,
                     version = format_version(UpdatedAt),
+                    ordering = format_version(Ordering),
                     from = jid:from_binary(FromJID),
                     stanza = Stanza,
                     deleted = Deleted}.

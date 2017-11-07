@@ -377,6 +377,7 @@ check_single_hs_result(Stanza, ID) ->
                   ItemsEl <- test_helper:get_items_el(Stanza),
                   check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
                   check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
+                  check_attr(<<"version">>, any, ItemsEl),
                   ItemList <- get_items(ItemsEl),
                   check_elements(ItemsEl, 1, 0),
                   {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
@@ -390,9 +391,11 @@ get_items(Stanza) ->
 get_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children}, Acc) ->
     {value, ID} = xml:get_attr(<<"id">>, Attrs),
     {value, Version} = xml:get_attr(<<"version">>, Attrs),
+    {value, Ordering} = xml:get_attr(<<"ordering">>, Attrs),
     {value, From} = xml:get_attr(<<"from">>, Attrs),
     [#item{id = ID,
            version = Version,
+           ordering = Ordering,
            from = From,
            stanzas = Children}
      | Acc];

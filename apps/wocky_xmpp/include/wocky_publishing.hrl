@@ -5,12 +5,14 @@
 -include("wocky.hrl").
 
 -type pub_version() :: binary() | undefined.
+-type pub_ordering() :: binary() | undefined.
 -type pub_item_id() :: binary().
 -type published_stanza() :: jlib:xmlel() | [jlib:xmlel()].
 
 -record(published_item, {
           id        :: pub_item_id(),
           version   :: pub_version(),
+          ordering  :: pub_ordering(),
           from      :: ejabberd:jid(),
           stanza    :: published_stanza(),
           deleted = false :: boolean()

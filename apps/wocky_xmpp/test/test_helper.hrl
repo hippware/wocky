@@ -37,7 +37,7 @@
           "<content>'Does it float?' he wrote, 'I hope not(e)'.</content>",
           "</entry>">>).
 
--record(item, {id, version, from, stanzas}).
+-record(item, {id, version, ordering, from, stanzas}).
 
 % Reproduced from escalus.hrl. We can't include it directly because it
 % redefines the `jid` record :(
