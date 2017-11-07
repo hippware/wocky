@@ -5,6 +5,22 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update the staging SSL certificate (PR #1075)
+* Set timeout of Algolia geosearch call to 30s (PR #1077)
+
+
+# 2017.11.3+r5c0a757
+
+* Overhaul logging (PR #1061)
+* Fix DB maintenance tasks (PR #1066)
+* Miscellaneous fixes
+* Fix: HS prepopulation is not working on Staging (#1062)
+* Fix some unit tests (PR 1068, PR #1070)
+* Clarify bot subscription system (#896)
+* Update updated_at when home stream items are marked as deleted (PR #1074)
+  * Fixes: Long delays in async HS delete notifications upon deleting a bot (#1063)
+
+
 # 2017.10.24+ra8aefef
 
 * Fix bot item indices (PR #1036)
