@@ -359,6 +359,7 @@ check_hs_result(Stanza, NumItems, CheckVersion) ->
                   maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
                   ItemList <- get_items(ItemsEl),
                   check_elements(ItemsEl, NumItems, 1),
+                  check_extra(ItemList, Stanza),
                   {ok, ItemList}
                  ]),
     L.
@@ -380,6 +381,7 @@ check_single_hs_result(Stanza, ID) ->
                   check_attr(<<"version">>, any, ItemsEl),
                   ItemList <- get_items(ItemsEl),
                   check_elements(ItemsEl, 1, 0),
+                  check_extra(ItemList, Stanza),
                   {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
                   {ok, hd(ItemList)}
                  ]),
@@ -559,3 +561,35 @@ insert_system_users() ->
        user, #{handle => ?confex:get_env(wocky_xmpp, hs_prepopulation_user),
                roles => [?wocky_user:no_index_role(),
                          ?wocky_user:system_role()]}).
+
+check_extra(ItemList, Stanza) ->
+    BotIDs = get_bot_ids(ItemList),
+
+    ProvidedBots = exml_query:paths(Stanza, [{element, <<"items">>},
+                                             {element, <<"extra-data">>},
+                                             {element, <<"bot">>}]),
+
+    ProvidedBotIDFields = lists:map(
+                            wocky_xml:path_by_attr(_, [{element, <<"field">>}],
+                                                   <<"var">>, <<"id">>),
+                            ProvidedBots),
+
+    ProvidedBotIDs =
+    lists:map(
+      fun(F) ->
+              {ok, V} = wocky_xml:get_subel_cdata(<<"value">>, F),
+              V
+      end, ProvidedBotIDFields),
+
+    ?assertEqual(lists:sort(ProvidedBotIDs), BotIDs),
+    ok.
+
+get_bot_ids(ItemList) ->
+    lists:usort(
+      lists:foldl(fun(Item, Acc) ->
+                          case binary:split(Item#item.id, <<"/">>, [global]) of
+                              [?SERVER, <<"bot">>, ID | _] -> [ID | Acc];
+                              _ -> Acc
+                          end
+                  end,
+                  [], ItemList)).
