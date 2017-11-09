@@ -67,8 +67,8 @@ publish_roster(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, roster, ?MODULE),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
                   fun (Alice, Bob, Carol) ->
-        test_helper:subscribe(Bob, Alice),
-        test_helper:subscribe(Carol, Alice),
+        test_helper:follow(Bob, Alice),
+        test_helper:follow(Carol, Alice),
         test_helper:add_contact(Alice, Bob, [], <<"Bobbie">>),
         test_helper:add_contact(Alice, Carol, [], <<"Car">>),
         Stanza = escalus_pubsub_stanza:publish(Alice, <<"test_item_id">>,

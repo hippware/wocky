@@ -219,6 +219,7 @@ defmodule Wocky.HomeStreamItem do
     |> where(reference_bot_id: ^ref_bot.id)
     |> Repo.update_all([set: [updated_at: DateTime.utc_now]], returning: true)
     |> elem(1)
+    |> Repo.preload(:user)
   end
 
   def with_user(user_id), do: with_user(HomeStreamItem, user_id)

@@ -23,10 +23,10 @@
          ensure_all_clean/1,
 
          expect_friendship_presence/2,
-         subscribe/2,
+         follow/2,
          expect_subscription_stanzas/2,
          add_sample_contact/2,
-         subscribe_pair/2,
+         befriend/2,
          add_contact/4,
          add_to_s/2,
          add_to_u/2,
@@ -154,7 +154,7 @@ add_contact(Who, Whom, Groups, Nick) when is_list(Groups) ->
     reply_to_roster_set(Who, [Received]),
     escalus:assert(is_iq_result, escalus:wait_for_stanza(Who)).
 
-subscribe(Who, Whom) ->
+follow(Who, Whom) ->
     %% 'Who' sends a subscribe request to 'Whom'
     escalus:send(Who, escalus_stanza:presence_direct(
                         escalus_client:short_jid(Whom), <<"subscribe">>)),
@@ -205,7 +205,7 @@ make_everyone_friends(Config0, Users) ->
                 Config1, [[{US, <<"friendly">>}] || {_Name, US} <- Users]),
 
     % exchange subscribe and subscribed stanzas
-    escalus_utils:distinct_pairs(fun subscribe_pair/2, Clients),
+    escalus_utils:distinct_pairs(fun befriend/2, Clients),
 
     ensure_all_clean(Clients),
 
@@ -221,9 +221,9 @@ stop_clients(Config, Clients) ->
       fun (Client) -> escalus_client:stop(Config, Client) end,
       Clients).
 
-subscribe_pair(Alice, Bob) ->
-    subscribe(Alice, Bob),
-    subscribe(Bob, Alice),
+befriend(Alice, Bob) ->
+    follow(Alice, Bob),
+    follow(Bob, Alice),
     Presence = escalus:wait_for_stanza(Bob),
     escalus:assert(is_presence, Presence).
 

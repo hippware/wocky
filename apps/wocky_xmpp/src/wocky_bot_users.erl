@@ -16,7 +16,8 @@
          notify_new_viewers/4,
          maybe_notify_desc_change/2,
          notify_subscribers_and_watchers/4,
-         maybe_update_hs_items/2
+         maybe_update_hs_items/2,
+         update_hs_items/1
         ]).
 
 
@@ -184,7 +185,7 @@ maybe_new_tag(_) -> [].
 %%% FromJID is the jid from which the notification will be sent
 %%%===================================================================
 
--spec maybe_update_hs_items(?wocky_bot:t(), ?wocky_user:t()) -> ok.
+-spec maybe_update_hs_items(?wocky_bot:t(), ?wocky_bot:t()) -> ok.
 maybe_update_hs_items(OldBot, NewBot) ->
     case should_update_hs(OldBot, NewBot) of
         true -> update_hs_items(NewBot);
@@ -196,7 +197,13 @@ should_update_hs(#{image := I1}, #{image := I2}) when I1 =/= I2 -> true;
 should_update_hs(#{address := A1}, #{address := A2}) when A1 =/= A2 -> true;
 should_update_hs(#{location := L1}, #{location := L2}) when L1 =/= L2 -> true;
 should_update_hs(#{public := P1}, #{public := P2}) when P1 =/= P2 -> true;
-should_update_hs(Bot1, Bot2) ->
-    ?wocky_item:get_count(Bot1) =/= ?wocky_item:get_count(Bot2).
+should_update_hs(_, _) -> false.
 
-update_hs_items(_) -> ok.
+update_hs_items(Bot) ->
+    Items = ?wocky_home_stream_item:bump_version_by_ref_bot(Bot),
+    lists:foreach(
+      fun(Item = #{user := User}) ->
+              mod_wocky_home_stream:send_notifications(
+                ?wocky_user:to_jid(User),
+                mod_wocky_home_stream:map_to_item(Item))
+      end, Items).

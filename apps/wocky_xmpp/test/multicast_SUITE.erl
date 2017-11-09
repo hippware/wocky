@@ -54,11 +54,11 @@ friends(Config) ->
       fun(Alice, Bob, Carol, Robert, Karen, Tim) ->
         %% Make Alice friends with Bob and Carol
         lists:foreach(
-          test_helper:subscribe_pair(_, Alice),
+          test_helper:befriend(_, Alice),
           [Bob, Carol]),
 
         %% Make Tim a follower of Alice
-        test_helper:subscribe(Tim, Alice),
+        test_helper:follow(Tim, Alice),
 
         SendStanza = multicast_stanza(<<"friends">>),
 
@@ -74,8 +74,8 @@ followers(Config) ->
     ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Tim, Robert) ->
-        test_helper:subscribe_pair(Bob, Alice),
-        test_helper:subscribe(Tim, Alice),
+        test_helper:befriend(Bob, Alice),
+        test_helper:follow(Tim, Alice),
         SendStanza = multicast_stanza(<<"followers">>),
 
         escalus:send(Alice, SendStanza),
@@ -88,7 +88,7 @@ to(Config) ->
     ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Tim, Robert) ->
-        test_helper:subscribe_pair(Bob, Alice),
+        test_helper:befriend(Bob, Alice),
         SendStanza = multicast_stanza([[{<<"type">>, <<"to">>},
                                         {<<"jid">>, ?BJID(?BOB)}]],
                                       ?NS_ADDRESS),
@@ -104,9 +104,9 @@ mix(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
                            {tim, 1}, {robert, 1}],
       fun(Alice, Bob, Carol, Tim, Robert) ->
-        test_helper:subscribe_pair(Robert, Alice),
-        test_helper:subscribe_pair(Bob, Alice),
-        test_helper:subscribe(Tim, Alice),
+        test_helper:befriend(Robert, Alice),
+        test_helper:befriend(Bob, Alice),
+        test_helper:follow(Tim, Alice),
         SendStanza = multicast_stanza([[{<<"type">>, <<"followers">>}],
                                        [{<<"type">>, <<"friends">>}],
                                        [{<<"type">>, <<"to">>},
@@ -123,8 +123,8 @@ error(Config) ->
     ?wocky_repo:delete_all(?wocky_roster_item),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
-        test_helper:subscribe_pair(Bob, Alice),
-        test_helper:subscribe(Tim, Alice),
+        test_helper:befriend(Bob, Alice),
+        test_helper:follow(Tim, Alice),
 
         %% Unknown multicast address
         escalus:send(Alice, multicast_stanza(<<"fnord">>)),

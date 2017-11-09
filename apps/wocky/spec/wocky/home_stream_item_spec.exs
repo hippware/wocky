@@ -491,6 +491,7 @@ defmodule Wocky.HomeStreamItemSpec do
       expected =
         HomeStreamItem
         |> where(reference_bot_id: ^shared.ref_bot.id)
+        |> preload(:user)
         |> Repo.all
         |> Enum.sort
 
@@ -506,6 +507,13 @@ defmodule Wocky.HomeStreamItemSpec do
                     Enum.all?(shared.ref_item_versions,
                               fn(v2) -> DateTime.compare(v, v2) == :gt end)
                    end)
+      |> should(be_true())
+    end
+
+    it "should preload the users" do
+      shared.ref_bot
+      |> HomeStreamItem.bump_version_by_ref_bot
+      |> Enum.all?(fn(i) -> i.user == shared.user end)
       |> should(be_true())
     end
 

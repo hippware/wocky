@@ -251,7 +251,7 @@ subscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
         %% Only bi-directional subscriptions send presence data by default in
         %% wocky
-        test_helper:subscribe_pair(Alice, Bob),
+        test_helper:befriend(Alice, Bob),
 
         %% Bob sends presence
         escalus:send(Bob, escalus_stanza:presence(<<"available">>)),
@@ -265,7 +265,7 @@ subscribe(Config) ->
 
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        test_helper:subscribe_pair(Alice, Bob),
+        test_helper:befriend(Alice, Bob),
 
         %% Alice sends unsubscribe
         escalus:send(Alice,
@@ -288,7 +288,7 @@ unsubscribe(Config) ->
 
 remove_unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun (Alice, Bob) ->
-        test_helper:subscribe_pair(Alice, Bob),
+        test_helper:befriend(Alice, Bob),
 
         %% remove contact
         escalus:send(Alice, escalus_stanza:roster_remove_contact(Bob)),

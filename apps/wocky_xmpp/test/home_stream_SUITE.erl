@@ -59,6 +59,7 @@ publish_bot_cases() ->
      auto_publish_bot_item,
      auto_publish_to_system_user,
      bot_description_update,
+     bot_hs_version_bumps,
      bot_becomes_private
     ].
 
@@ -366,7 +367,7 @@ auto_publish_newly_public_bot(Config) ->
         ?wocky_roster_item:delete(?KAREN, ?TIM),
         ?wocky_roster_item:delete(?TIM, ?KAREN),
 
-        test_helper:subscribe(Tim, Alice),
+        test_helper:follow(Tim, Alice),
 
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT, [Bob], false),
         check_home_stream_sizes(3, [Alice], false),
@@ -512,6 +513,50 @@ bot_description_update(Config) ->
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice)
       end).
 
+bot_hs_version_bumps(Config) ->
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
+        clear_home_streams(),
+        escalus:send(Carol,
+            escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
+                                           [query_el(undefined)])),
+        timer:sleep(400),
+
+        expect_iq_success(update_bot_desc_stanza("Different description"), Alice),
+        get_message(Carol),
+        ensure_all_clean([Alice, Carol]),
+
+        expect_iq_success(
+          update_field_stanza("title", "string", "newtitle"), Alice),
+        get_message(Carol),
+        ensure_all_clean([Alice, Carol]),
+
+        bot_SUITE:publish_item(?BOT, <<"BrandNewID">>, <<"title">>,
+                               <<"content">>, undefined, Alice),
+        % Two items - one for description, one for bot post
+        get_message(Carol),
+        get_message(Carol),
+        ensure_all_clean([Alice, Carol]),
+
+        expect_iq_success(
+          update_field_stanza("address", "string", "hereabouts"), Alice),
+        % Two items - one for description, one for bot post
+        get_message(Carol),
+        get_message(Carol),
+        ensure_all_clean([Alice, Carol]),
+
+        % No updated generated for address_data change
+        expect_iq_success(
+          update_field_stanza("address_data", "string", "hereabouts"), Alice),
+        timer:sleep(400),
+
+        ensure_all_clean([Alice, Carol])
+      end).
+
+get_message(Client) ->
+    S = escalus:wait_for_stanza(Client),
+    escalus:assert(is_message, S).
+
 bot_becomes_private(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
@@ -521,7 +566,7 @@ bot_becomes_private(Config) ->
         expect_iq_success(subscribe_stanza(), Carol),
 
         % Place an item in Carol's HS about the bot
-        expect_iq_success(update_bot_desc_stanza("Updated Description"), Alice),
+        expect_iq_success(update_bot_desc_stanza("Re-Updated Description"), Alice),
         timer:sleep(400),
         expect_home_stream_bot_desc(Carol, false),
 
@@ -677,11 +722,12 @@ seed_home_stream(Config) ->
 ok({ok, Val}) -> Val.
 
 update_bot_desc_stanza(Desc) ->
-    test_helper:iq_set(
-      ?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field(Desc)])).
+    update_field_stanza("description", "string", Desc).
 
-modify_field(Desc) ->
-    bot_SUITE:create_field({"description", "string", Desc}).
+update_field_stanza(Name, Type, Value) ->
+    test_helper:iq_set(
+      ?NS_BOT, node_el(?BOT, <<"fields">>,
+                       [bot_SUITE:create_field({Name, Type, Value})])).
 
 safe_fields() ->
     lists:keyreplace("shortname", 1, bot_SUITE:default_fields(),
