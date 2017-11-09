@@ -13,7 +13,7 @@ defmodule Wocky.InitialContactSpec do
                     :initial_contact
                     |> Factory.insert(user_id: c.id)
                     |> Repo.preload(:user)
-                  end)
+      end)
       |> Enum.sort
 
     {:ok,

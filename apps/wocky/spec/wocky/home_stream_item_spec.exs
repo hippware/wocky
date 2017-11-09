@@ -399,6 +399,7 @@ defmodule Wocky.HomeStreamItemSpec do
                          created_at: time,
                          updated_at: time,
                          ordering: time})
+        |> Repo.preload(:reference_bot)
       end
 
       target_user = Factory.insert(:user)
@@ -460,8 +461,8 @@ defmodule Wocky.HomeStreamItemSpec do
   defp should_match_item(item, expected) do
     # Skip over the user field since we don't preload it
     item
-    |> Map.drop([:user])
-    |> should(eq Map.drop(expected, [:user]))
+    |> Map.drop([:user, :reference_bot])
+    |> should(eq Map.drop(expected, [:user, :reference_bot]))
   end
 
 end

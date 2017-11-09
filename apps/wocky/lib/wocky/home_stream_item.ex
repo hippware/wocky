@@ -149,10 +149,7 @@ defmodule Wocky.HomeStreamItem do
   @doc "Get all home stream items for a user"
   @spec get(User.id, boolean) :: [t]
   def get(user_id, exclude_deleted \\ false, update_ordering \\ false) do
-    HomeStreamItem
-    |> with_user(user_id)
-    |> preload(:reference_bot)
-    |> maybe_exclude_deleted(exclude_deleted)
+    get_query(user_id ,exclude_deleted)
     |> set_order(update_ordering)
     |> Repo.all
   end
@@ -160,20 +157,15 @@ defmodule Wocky.HomeStreamItem do
   @doc "Get a single item by its key"
   @spec get_by_key(User.id, key, boolean) :: t | nil
   def get_by_key(user_id, key, exclude_deleted \\ false) do
-    HomeStreamItem
-    |> with_user(user_id)
-    |> preload(:reference_bot)
+    get_query(user_id, exclude_deleted)
     |> where(key: ^key)
-    |> maybe_exclude_deleted(exclude_deleted)
     |> Repo.one
   end
 
   @doc "Get all items after a certain timestamp"
   @spec get_after_time(User.id, DateTime.t | binary) :: [t]
   def get_after_time(user_id, time) do
-    HomeStreamItem
-    |> with_user(user_id)
-    |> preload(:reference_bot)
+    get_query(user_id, false)
     |> where([i], i.updated_at > ^time)
     |> set_order(true)
     |> Repo.all
