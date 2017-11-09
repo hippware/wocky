@@ -113,6 +113,8 @@ defmodule Wocky.RSMHelper do
 
   defp get_count(queryable, key_field) do
     queryable
+    |> exclude(:preload)
+    |> exclude(:select)
     |> select([r, ...], count(field(r, ^key_field)))
     |> Repo.one!()
   end
@@ -122,6 +124,8 @@ defmodule Wocky.RSMHelper do
     pivot = Map.get(first, sort_field)
 
     queryable
+    |> exclude(:preload)
+    |> exclude(:select)
     |> select([r], count(field(r, ^sort_field)))
     |> index_where(pivot, sorting)
     |> Repo.one!()
@@ -150,14 +154,16 @@ defmodule Wocky.RSMHelper do
   defp maybe_join_clause(queryable, :undefined, _, _, _), do: queryable
   defp maybe_join_clause(queryable, key, key_field, dir, {sort_order, sort_field})
   when is_order_forward(dir, sort_order) do
+    subquery = queryable |> exclude(:preload)
     queryable
-    |> join(:inner, [r, ...], p in subquery(queryable),
+    |> join(:inner, [r, ...], p in subquery(subquery),
             field(p, ^key_field) == ^key and
             field(r, ^sort_field) > field(p, ^sort_field))
   end
   defp maybe_join_clause(queryable, key, key_field, _, {_, sort_field}) do
+    subquery = queryable |> exclude(:preload)
     queryable
-    |> join(:inner, [r, ...], p in subquery(queryable),
+    |> join(:inner, [r, ...], p in subquery(subquery),
             field(p, ^key_field) == ^key and
             field(r, ^sort_field) < field(p, ^sort_field))
   end
