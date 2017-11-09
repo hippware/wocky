@@ -22,7 +22,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.User
 
   before do
-    user = Factory.insert(:user, %{resource: "testing"})
+    user = Factory.insert(:user, resource: "testing")
     {:ok,
      user: user,
      id: user.id,
@@ -814,6 +814,70 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "avatar deletion", async: false do
+    before do
+      :meck.new(TROS, [:passthrough])
+    end
+
+    finally do
+      :meck.unload(TROS)
+    end
+
+    context "when no avatar is set" do
+      before do
+        user = Factory.insert(:user, avatar: nil)
+        {:ok,
+         user: user,
+         new_avatar: make_avatar(user)
+        }
+      end
+
+      it "should not delete the avatar when a new one is set" do
+        User.update(shared.user.id, %{avatar: shared.new_avatar})
+        |> should(eq :ok)
+        :meck.called(TROS, :delete, :_) |> should(be_false())
+      end
+
+      it "should not delete the avatar when a new one is set" do
+        User.update(shared.user.id, %{first_name: Name.first_name})
+        |> should(eq :ok)
+        :meck.called(TROS, :delete, :_) |> should(be_false())
+      end
+
+      it "should not delete the avatar when the same one is set" do
+        User.update(shared.user.id, %{avatar: shared.user.avatar})
+        |> should(eq :ok)
+        :meck.called(TROS, :delete, :_) |> should(be_false())
+      end
+    end
+
+    context "when an avatar is set" do
+      before do
+        {:ok, new_avatar: make_avatar(shared.user)}
+      end
+
+      it "should delete the avatar when a new one is set" do
+        User.update(shared.user.id, %{avatar: shared.new_avatar})
+        |> should(eq :ok)
+        :meck.called(TROS, :delete, :_) |> should(be_true())
+      end
+
+      it "should not delete the avatar when one is not set" do
+        User.update(shared.user.id, %{first_name: Name.first_name})
+        |> should(eq :ok)
+        :meck.called(TROS, :delete, :_) |> should(be_false())
+      end
+
+      it "should not delete the avatar when the same one is set" do
+        User.update(shared.user.id, %{avatar: shared.user.avatar})
+        |> should(eq :ok)
+        :meck.called(TROS, :delete, :_) |> should(be_false())
+      end
+
+    end
+
+  end
+
   describe "full_name/1" do
     it do: User.full_name(shared.user) |> should(be_binary())
   end
@@ -834,5 +898,10 @@ defmodule Wocky.UserSpec do
       "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
       [u, b])
     length(result.rows) == 1
+  end
+
+  defp make_avatar(user) do
+    new_avatar = Factory.insert(:tros_metadata, user: user)
+    TROS.make_url(user.server, new_avatar.id)
   end
 end
