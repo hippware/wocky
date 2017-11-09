@@ -149,7 +149,8 @@ defmodule Wocky.HomeStreamItem do
   @doc "Get all home stream items for a user"
   @spec get(User.id, boolean) :: [t]
   def get(user_id, exclude_deleted \\ false, update_ordering \\ false) do
-    get_query(user_id ,exclude_deleted)
+    user_id
+    |> get_query(exclude_deleted)
     |> set_order(update_ordering)
     |> Repo.all
   end
@@ -157,7 +158,8 @@ defmodule Wocky.HomeStreamItem do
   @doc "Get a single item by its key"
   @spec get_by_key(User.id, key, boolean) :: t | nil
   def get_by_key(user_id, key, exclude_deleted \\ false) do
-    get_query(user_id, exclude_deleted)
+    user_id
+    |> get_query(exclude_deleted)
     |> where(key: ^key)
     |> Repo.one
   end
@@ -165,7 +167,8 @@ defmodule Wocky.HomeStreamItem do
   @doc "Get all items after a certain timestamp"
   @spec get_after_time(User.id, DateTime.t | binary) :: [t]
   def get_after_time(user_id, time) do
-    get_query(user_id, false)
+    user_id
+    |> get_query(false)
     |> where([i], i.updated_at > ^time)
     |> set_order(true)
     |> Repo.all
@@ -186,7 +189,7 @@ defmodule Wocky.HomeStreamItem do
     end
   end
 
-  @spec get_query(User.id, boolean) :: Ecto.queryable
+  @spec get_query(User.id, boolean) :: Ecto.Queryable.t
   def get_query(user_id, exclude_deleted \\ false) do
     HomeStreamItem
     |> with_user(user_id)
