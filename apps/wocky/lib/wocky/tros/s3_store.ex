@@ -123,7 +123,7 @@ defmodule Wocky.TROS.S3Store do
   defp path(server, file_id),
     do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"
 
-  defp hash_prefix(file_id) do
+  def hash_prefix(file_id) do
     file_id
     |> TROS.get_base_id
     |> do_hash()

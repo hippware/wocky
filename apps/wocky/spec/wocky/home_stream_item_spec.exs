@@ -449,6 +449,68 @@ defmodule Wocky.HomeStreamItemSpec do
     end
   end
 
+  describe "bump_version_by_ref_bot/1" do
+    before do
+      ref_bot = Factory.insert(:bot, user: shared.user)
+      ref_items = Factory.insert_list(3, :home_stream_item,
+                                      user: shared.user,
+                                      reference_bot_id: ref_bot.id)
+
+      other_bot = Factory.insert(:bot, user: shared.user)
+      Factory.insert_list(5, :home_stream_item,
+                          user: shared.user,
+                          reference_bot_id: other_bot.id)
+      {:ok,
+        ref_bot: ref_bot,
+        ref_item_versions: ref_items |> Enum.map(&(&1.updated_at)),
+        ref_item_ids: ref_items |> Enum.map(&(&1.id)) |> Enum.sort
+      }
+    end
+
+    it "should return all referenced items" do
+      shared.ref_bot
+      |> HomeStreamItem.bump_version_by_ref_bot
+      |> Enum.map(&(&1.id))
+      |> Enum.sort
+      |> should(eq shared.ref_item_ids)
+    end
+
+    it "should return an empty list if there are no referenced items" do
+      :bot
+      |> Factory.build
+      |> HomeStreamItem.bump_version_by_ref_bot
+      |> should(eq [])
+    end
+
+    it "should return the modified versions" do
+      returned =
+        shared.ref_bot
+        |> HomeStreamItem.bump_version_by_ref_bot
+        |> Enum.sort
+
+      expected =
+        HomeStreamItem
+        |> where(reference_bot_id: ^shared.ref_bot.id)
+        |> Repo.all
+        |> Enum.sort
+
+      returned |> should(eq expected)
+    end
+
+    it "should increment the versions of all touched items" do
+      shared.ref_bot
+      |> HomeStreamItem.bump_version_by_ref_bot
+      |> Enum.map(&(&1.updated_at))
+      |> Enum.sort
+      |> Enum.all?(fn(v) ->
+                    Enum.all?(shared.ref_item_versions,
+                              fn(v2) -> DateTime.compare(v, v2) == :gt end)
+                   end)
+      |> should(be_true())
+    end
+
+  end
+
   defp should_match_items(items, expected) do
     items |> should(have_length length(expected))
     items
