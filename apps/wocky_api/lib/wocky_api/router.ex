@@ -1,5 +1,6 @@
 defmodule WockyAPI.Router do
   use WockyAPI, :router
+  use Honeybadger.Plug
 
   import WockyAPI.Authentication
 
