@@ -151,6 +151,7 @@ defmodule Wocky.HomeStreamItem do
   def get(user_id, exclude_deleted \\ false, update_ordering \\ false) do
     HomeStreamItem
     |> with_user(user_id)
+    |> preload(:reference_bot)
     |> maybe_exclude_deleted(exclude_deleted)
     |> set_order(update_ordering)
     |> Repo.all
@@ -161,6 +162,7 @@ defmodule Wocky.HomeStreamItem do
   def get_by_key(user_id, key, exclude_deleted \\ false) do
     HomeStreamItem
     |> with_user(user_id)
+    |> preload(:reference_bot)
     |> where(key: ^key)
     |> maybe_exclude_deleted(exclude_deleted)
     |> Repo.one
@@ -171,6 +173,7 @@ defmodule Wocky.HomeStreamItem do
   def get_after_time(user_id, time) do
     HomeStreamItem
     |> with_user(user_id)
+    |> preload(:reference_bot)
     |> where([i], i.updated_at > ^time)
     |> set_order(true)
     |> Repo.all
@@ -189,6 +192,14 @@ defmodule Wocky.HomeStreamItem do
     else
       time
     end
+  end
+
+  @spec get_query(User.id, boolean) :: Ecto.queryable
+  def get_query(user_id, exclude_deleted \\ false) do
+    HomeStreamItem
+    |> with_user(user_id)
+    |> preload(:reference_bot)
+    |> maybe_exclude_deleted(exclude_deleted)
   end
 
   @spec prepopulate_from(User.id, User.id, Duration.t) :: :ok
@@ -214,7 +225,6 @@ defmodule Wocky.HomeStreamItem do
   end
 
   def with_user(user_id), do: with_user(HomeStreamItem, user_id)
-
 
   def with_user(query, user_id) do
     query

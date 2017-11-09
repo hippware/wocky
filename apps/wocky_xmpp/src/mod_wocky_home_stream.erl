@@ -75,8 +75,7 @@ delete(UserJID = #jid{luser = User}, ID) ->
 -spec get(ejabberd:jid(), ejabberd:jid(),
           jlib:rsm_in() | pub_item_id()) -> pub_get_result().
 get(#jid{luser = User}, FromJID = #jid{luser = User}, RSMIn = #rsm_in{}) ->
-    Query = ?wocky_home_stream_item:maybe_exclude_deleted(
-               ?wocky_home_stream_item:with_user(User), true),
+    Query = ?wocky_home_stream_item:get_query(User, true),
     {Results, RSMOut} =
       ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, ordering}),
     {ok, {[map_to_item(I) || I <- Results],
@@ -319,10 +318,9 @@ hs_node(UserJID) ->
     jid:replace_resource(UserJID, ?HOME_STREAM_NODE).
 
 extra_data(Items, FromJID) ->
-    BotIDs = lists:usort(
-               lists:map(
-                 maps:get(reference_bot_id, _), Items)) -- [nil],
-    Bots = lists:map(?wocky_bot:get(_), BotIDs),
+    Bots = lists:usort(
+             lists:map(
+               maps:get(reference_bot, _), Items)) -- [nil],
     User = ?wocky_user:get_by_jid(FromJID),
 
     mod_wocky_bot:make_bot_els(Bots, User).
