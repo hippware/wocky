@@ -522,7 +522,8 @@ bot_hs_version_bumps(Config) ->
                                            [query_el(undefined)])),
         timer:sleep(400),
 
-        expect_iq_success(update_bot_desc_stanza("Different description"), Alice),
+        expect_iq_success(update_bot_desc_stanza("Different description"),
+                          Alice),
         get_message(Carol),
         ensure_all_clean([Alice, Carol]),
 
@@ -566,7 +567,8 @@ bot_becomes_private(Config) ->
         expect_iq_success(subscribe_stanza(), Carol),
 
         % Place an item in Carol's HS about the bot
-        expect_iq_success(update_bot_desc_stanza("Re-Updated Description"), Alice),
+        expect_iq_success(update_bot_desc_stanza("Re-Updated Description"),
+                          Alice),
         timer:sleep(400),
         expect_home_stream_bot_desc(Carol, false),
 
