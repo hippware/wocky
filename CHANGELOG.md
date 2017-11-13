@@ -7,6 +7,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update the staging SSL certificate (PR #1075)
 * Set timeout of Algolia geosearch call to 30s (PR #1077)
+* Rework (HS) Publishing protocol (#1043)
+* Update tzdata version (PR #1093)
 
 
 # 2017.11.3+r5c0a757
