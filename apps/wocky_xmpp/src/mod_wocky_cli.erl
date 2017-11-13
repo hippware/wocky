@@ -152,19 +152,14 @@ befriend(Handle1, Handle2) ->
         {ok, "Success"}
        ]).
 
-make_friends(User1, User2) ->
+make_friends(U1 = #{id := User1}, U2 = #{id := User2}) ->
+    ?wocky_roster_item:befriend(User1, User2),
     lists:foreach(
-      make_friend(_), [{User1, User2}, {User2, User1}]).
+      run_roster_hook(_), [{U1, U2}, {U2, U1}]).
 
-make_friend({#{id := User1, server := Server1},
-             #{id := User2, server := Server2}}) ->
+run_roster_hook({#{id := User1, server := Server1},
+                 #{id := User2, server := Server2}}) ->
     JID2 = jid:to_binary(jid:make(User2, Server2, <<>>)),
-    RosterItem = wocky_roster:to_wocky_roster(User1, JID2,
-                   ?wocky_roster_item:get(User1, User2)),
-    RosterItem2 = RosterItem#wocky_roster{subscription = both,
-                                          ask = none},
-
-    ?wocky_roster_item:put(wocky_roster:to_map(RosterItem2)),
     ejabberd_hooks:run(roster_modified, wocky_xmpp_app:server(),
                        [User1, Server1, JID2]).
 
