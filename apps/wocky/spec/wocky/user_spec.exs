@@ -816,62 +816,61 @@ defmodule Wocky.UserSpec do
 
   describe "avatar deletion", async: false do
     before do
-      :meck.new(TROS, [:passthrough])
-    end
-
-    finally do
-      :meck.unload(TROS)
+      user = Factory.insert(:user, avatar: nil)
+      avatar = Factory.insert(:tros_metadata, user: user)
+      {:ok,
+        user: user,
+        avatar: avatar,
+        avatar_url: TROS.make_url(user.server, avatar.id)
+      }
     end
 
     context "when no avatar is set" do
-      before do
-        user = Factory.insert(:user, avatar: nil)
-        {:ok,
-         user: user,
-         new_avatar: make_avatar(user)
-        }
-      end
-
       it "should not delete the avatar when a new one is set" do
-        User.update(shared.user.id, %{avatar: shared.new_avatar})
+        User.update(shared.user.id, %{avatar: shared.avatar_url})
         |> should(eq :ok)
-        :meck.called(TROS, :delete, :_) |> should(be_false())
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when a new one is set" do
         User.update(shared.user.id, %{first_name: Name.first_name})
         |> should(eq :ok)
-        :meck.called(TROS, :delete, :_) |> should(be_false())
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when the same one is set" do
         User.update(shared.user.id, %{avatar: shared.user.avatar})
         |> should(eq :ok)
-        :meck.called(TROS, :delete, :_) |> should(be_false())
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
     end
 
     context "when an avatar is set" do
       before do
-        {:ok, new_avatar: make_avatar(shared.user)}
+        User.update(shared.user.id, %{avatar: shared.avatar_url})
+        new_avatar = Factory.insert(:tros_metadata, user: shared.user)
+        {:ok,
+         new_avatar: new_avatar,
+         new_avatar_url: TROS.make_url(shared.user.server, new_avatar.id)
+        }
       end
 
       it "should delete the avatar when a new one is set" do
-        User.update(shared.user.id, %{avatar: shared.new_avatar})
+        User.update(shared.user.id, %{avatar: shared.new_avatar_url})
         |> should(eq :ok)
-        :meck.called(TROS, :delete, :_) |> should(be_true())
+        Metadata.get(shared.avatar.id) |> should(be_nil())
       end
 
       it "should not delete the avatar when one is not set" do
         User.update(shared.user.id, %{first_name: Name.first_name})
         |> should(eq :ok)
-        :meck.called(TROS, :delete, :_) |> should(be_false())
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when the same one is set" do
         User.update(shared.user.id, %{avatar: shared.user.avatar})
         |> should(eq :ok)
-        :meck.called(TROS, :delete, :_) |> should(be_false())
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
     end
@@ -898,10 +897,5 @@ defmodule Wocky.UserSpec do
       "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
       [u, b])
     length(result.rows) == 1
-  end
-
-  defp make_avatar(user) do
-    new_avatar = Factory.insert(:tros_metadata, user: user)
-    TROS.make_url(user.server, new_avatar.id)
   end
 end
