@@ -25,7 +25,8 @@
 -export([check_access/3]).
 
 %% Other functions
--export([make_bot_el/2]).
+-export([make_bot_el/2,
+         make_bot_els/2]).
 
 -type loc() :: {float(), float()}.
 -type tags() :: [binary()].

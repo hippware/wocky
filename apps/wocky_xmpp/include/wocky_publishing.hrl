@@ -6,6 +6,7 @@
 
 -type pub_version() :: binary() | undefined.
 -type pub_ordering() :: binary() | undefined.
+-type pub_extra_data() :: [jlib:xmlel()].
 -type pub_item_id() :: binary().
 -type published_stanza() :: jlib:xmlel() | [jlib:xmlel()].
 
@@ -29,8 +30,8 @@
 -type pub_result() :: ok | pub_error_result().
 
 -type pub_get_result() ::
-    {ok, {[pub_item()], pub_version(), jlib:rsm_out()} |
-         {pub_item(), pub_version()} |
+    {ok, {[pub_item()], pub_version(), pub_extra_data(), jlib:rsm_out()} |
+         {pub_item(), pub_version(), pub_extra_data()} |
          not_found} |
     pub_error_result().
 

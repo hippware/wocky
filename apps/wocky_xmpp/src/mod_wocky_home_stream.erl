@@ -74,16 +74,16 @@ delete(UserJID = #jid{luser = User}, ID) ->
 
 -spec get(ejabberd:jid(), ejabberd:jid(),
           jlib:rsm_in() | pub_item_id()) -> pub_get_result().
-get(#jid{luser = User}, #jid{luser = User}, RSMIn = #rsm_in{}) ->
-    Query = ?wocky_home_stream_item:maybe_exclude_deleted(
-               ?wocky_home_stream_item:with_user(User), true),
+get(#jid{luser = User}, FromJID = #jid{luser = User}, RSMIn = #rsm_in{}) ->
+    Query = ?wocky_home_stream_item:get_query(User, true),
     {Results, RSMOut} =
       ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, ordering}),
     {ok, {[map_to_item(I) || I <- Results],
           format_version(?wocky_home_stream_item:get_latest_version(User)),
+          extra_data(Results, FromJID),
           RSMOut}};
 
-get(#jid{luser = User}, #jid{luser = User}, ID) ->
+get(#jid{luser = User}, FromJID = #jid{luser = User}, ID) ->
     Item = ?wocky_home_stream_item:get_by_key(User, ID, false),
     case Item of
         nil ->
@@ -91,7 +91,8 @@ get(#jid{luser = User}, #jid{luser = User}, ID) ->
         _ ->
             {ok, {map_to_item(Item),
                   format_version(
-                    ?wocky_home_stream_item:get_latest_version(User))}}
+                    ?wocky_home_stream_item:get_latest_version(User)),
+                  extra_data([Item], FromJID)}}
     end;
 get(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
@@ -315,3 +316,11 @@ get_id(Struct) -> maps:get(id, Struct).
 
 hs_node(UserJID) ->
     jid:replace_resource(UserJID, ?HOME_STREAM_NODE).
+
+extra_data(Items, FromJID) ->
+    Bots = lists:usort(
+             lists:map(
+               maps:get(reference_bot, _), Items)) -- [nil],
+    User = ?wocky_user:get_by_jid(FromJID),
+
+    mod_wocky_bot:make_bot_els(Bots, User).

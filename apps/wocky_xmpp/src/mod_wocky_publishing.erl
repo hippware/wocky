@@ -111,8 +111,9 @@ handle_publish(From, To, Attrs, Children) ->
         ID           <- get_id(Item#xmlel.attrs),
         Stanza       <- get_stanza(Item),
         wocky_publishing_handler:set(TargetJID, From, To, ID, Stanza),
-        {NewItem, _} <- wocky_publishing_handler:get(TargetJID, From, ID),
-        {ok, published_stanza(TargetJID, ID, NewItem)}
+        {NewItem, _, ExtraData}
+            <- wocky_publishing_handler:get(TargetJID, From, ID),
+        {ok, published_stanza(TargetJID, ID, NewItem, ExtraData)}
        ]).
 
 handle_items(From, To, Attrs, Children) ->
@@ -224,11 +225,13 @@ get_stanza(#xmlel{children = Children}) ->
     {ok, Children}.
 
 published_stanza(#jid{lresource = LResource}, ID,
-                 #published_item{version = Version, ordering = Ordering}) ->
+                 #published_item{version = Version, ordering = Ordering},
+                 ExtraData) ->
     #xmlel{name = <<"published">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
                     {<<"node">>, LResource}],
-           children = [published_child(ID, Version, Ordering)]}.
+           children = [published_child(ID, Version, Ordering) |
+                       extra_data_child(ExtraData)]}.
 
 published_child(ID, Version, Ordering) ->
     #xmlel{name = <<"item">>,
@@ -236,23 +239,28 @@ published_child(ID, Version, Ordering) ->
                     {<<"version">>, Version},
                     {<<"ordering">>, Ordering}]}.
 
+extra_data_child([]) -> [];
+extra_data_child(ExtraData) ->
+    [#xmlel{name = <<"extra-data">>, children = ExtraData}].
+
 result_stanza(not_found, _TargetJID) ->
     {error, ?ERR_ITEM_NOT_FOUND};
-result_stanza({#published_item{deleted = true}, _Version}, _TargetJID) ->
+result_stanza({#published_item{deleted = true}, _Version, _ExtraData},
+              _TargetJID) ->
     {error, ?ERR_ITEM_NOT_FOUND};
-result_stanza({Item = #published_item{}, Version}, TargetJID) ->
-    items_stanza([item_stanza(Item)], Version, TargetJID);
-result_stanza({Items, Version, RSMOut}, TargetJID) ->
+result_stanza({Item = #published_item{}, Version, ExtraData}, TargetJID) ->
+    items_stanza([item_stanza(Item)], Version, TargetJID, ExtraData);
+result_stanza({Items, Version, ExtraData, RSMOut}, TargetJID) ->
     items_stanza(items_elements(Items) ++ jlib:rsm_encode(RSMOut),
-                 Version, TargetJID).
+                 Version, TargetJID, ExtraData).
 
-items_stanza(Children, Version, #jid{lresource = LResource}) ->
+items_stanza(Children, Version, #jid{lresource = LResource}, ExtraData) ->
     {ok, #xmlel{name = <<"items">>,
                 attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
                          {<<"node">>, LResource} |
                          maybe_version_attr(Version)
                         ],
-                children = Children}}.
+                children = Children ++ extra_data_child(ExtraData)}}.
 
 items_elements(Items) ->
     lists:map(item_stanza(_), Items).
