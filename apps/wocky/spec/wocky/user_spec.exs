@@ -22,7 +22,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.User
 
   before do
-    user = Factory.insert(:user, %{resource: "testing"})
+    user = Factory.insert(:user, resource: "testing")
     {:ok,
      user: user,
      id: user.id,
@@ -812,6 +812,69 @@ defmodule Wocky.UserSpec do
       is_visible_sp(shared.user, shared.private_bot)
       |> should(be_false())
     end
+  end
+
+  describe "avatar deletion", async: false do
+    before do
+      user = Factory.insert(:user, avatar: nil)
+      avatar = Factory.insert(:tros_metadata, user: user)
+      {:ok,
+        user: user,
+        avatar: avatar,
+        avatar_url: TROS.make_url(user.server, avatar.id)
+      }
+    end
+
+    context "when no avatar is set" do
+      it "should not delete the avatar when a new one is set" do
+        User.update(shared.user.id, %{avatar: shared.avatar_url})
+        |> should(eq :ok)
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
+      end
+
+      it "should not delete the avatar when a new one is set" do
+        User.update(shared.user.id, %{first_name: Name.first_name})
+        |> should(eq :ok)
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
+      end
+
+      it "should not delete the avatar when the same one is set" do
+        User.update(shared.user.id, %{avatar: shared.user.avatar})
+        |> should(eq :ok)
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
+      end
+    end
+
+    context "when an avatar is set" do
+      before do
+        User.update(shared.user.id, %{avatar: shared.avatar_url})
+        new_avatar = Factory.insert(:tros_metadata, user: shared.user)
+        {:ok,
+         new_avatar: new_avatar,
+         new_avatar_url: TROS.make_url(shared.user.server, new_avatar.id)
+        }
+      end
+
+      it "should delete the avatar when a new one is set" do
+        User.update(shared.user.id, %{avatar: shared.new_avatar_url})
+        |> should(eq :ok)
+        Metadata.get(shared.avatar.id) |> should(be_nil())
+      end
+
+      it "should not delete the avatar when one is not set" do
+        User.update(shared.user.id, %{first_name: Name.first_name})
+        |> should(eq :ok)
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
+      end
+
+      it "should not delete the avatar when the same one is set" do
+        User.update(shared.user.id, %{avatar: shared.user.avatar})
+        |> should(eq :ok)
+        Metadata.get(shared.avatar.id) |> should_not(be_nil())
+      end
+
+    end
+
   end
 
   describe "full_name/1" do
