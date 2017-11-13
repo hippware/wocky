@@ -95,7 +95,7 @@ defmodule Wocky.RosterItem do
   def get(user_id) do
     RosterItem
     |> with_user(user_id)
-    |> preload_contact()
+    |> preload(:contact)
     |> Repo.all
   end
 
@@ -103,7 +103,7 @@ defmodule Wocky.RosterItem do
   def get(user_id, contact_id) do
     RosterItem
     |> with_contact(contact_id)
-    |> preload_contact()
+    |> preload(:contact)
     |> Repo.get_by(user_id: user_id)
   end
 
@@ -124,7 +124,7 @@ defmodule Wocky.RosterItem do
     timestamp =
       RosterItem
       |> with_user(user_id)
-      |> select_version()
+      |> select([r], max(r.updated_at))
       |> Repo.one
 
     count =
@@ -157,7 +157,7 @@ defmodule Wocky.RosterItem do
   def find_users_with_contact(contact_id) do
     RosterItem
     |> with_contact(contact_id)
-    |> preload_user()
+    |> preload(:user)
     |> Repo.all
     |> Enum.map(&Map.get(&1, :user))
   end
@@ -167,7 +167,7 @@ defmodule Wocky.RosterItem do
     RosterItem
     |> with_user(user_id)
     |> with_contact(contact_id)
-    |> with_ask(:none)
+    |> where(ask: ^:none)
     |> count()
     |> Repo.one
     |> Kernel.!=(0)
@@ -211,13 +211,13 @@ defmodule Wocky.RosterItem do
     relationships_query(user_id, requester_id, [:both], include_system)
   end
 
-  defp relationships_query(user_id, requester_id, groups, include_system) do
+  defp relationships_query(user_id, requester_id, sub_types, include_system) do
     User
     |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
     |> maybe_filter_system(not include_system)
     |> where([u, r], not is_nil(u.handle))
-    |> with_subscriptions(groups)
+    |> where([u, r], r.subscription in ^sub_types)
     |> Blocking.object_visible_query(requester_id, :contact_id)
   end
 
@@ -273,6 +273,31 @@ defmodule Wocky.RosterItem do
     end
   end
 
+  @spec befriend(User.id, User.id) :: :ok
+  def befriend(u1, u2) do
+    add_relationship(u1, u2, :both)
+    add_relationship(u2, u1, :both)
+    :ok
+  end
+
+  @spec follow(User.id, User.id) :: :ok
+  def follow(follower, followee) do
+    add_relationship(followee, follower, :from)
+    add_relationship(follower, followee, :to)
+    :ok
+  end
+
+  defp add_relationship(user_id, contact_id, subscription) do
+    %RosterItem{}
+    |> changeset(%{user_id: user_id,
+                   contact_id: contact_id,
+                   subscription: subscription,
+                   ask: :none,
+                   groups: []})
+    |> Repo.insert(on_conflict: [set: [subscription: subscription, ask: :none]],
+                   conflict_target: [:user_id, :contact_id])
+  end
+
   @spec bump_all_versions(User.id) :: :ok
   def bump_all_versions(contact_id) do
     RosterItem
@@ -280,7 +305,6 @@ defmodule Wocky.RosterItem do
     |> Repo.update_all(set: [updated_at: NaiveDateTime.utc_now()])
     :ok
   end
-
 
   defp with_user(query, user_id) do
     from r in query, where: r.user_id == ^user_id
@@ -290,34 +314,14 @@ defmodule Wocky.RosterItem do
     from r in query, where: r.contact_id == ^contact_id
   end
 
-  defp with_subscriptions(query, sub_types) do
-    from [u, r] in query, where: r.subscription in ^sub_types
-  end
-
-  defp with_ask(query, ask) do
-    from r in query, where: r.ask == ^ask
-  end
-
   defp with_pair(query, a, b) do
     from r in query,
       where: ((r.user_id == ^a and r.contact_id == ^b) or
               (r.user_id == ^b and r.contact_id == ^a))
   end
 
-  defp select_version(query) do
-    from r in query, select: max(r.updated_at)
-  end
-
   defp count(query) do
     from r in query, select: count(r.contact_id)
-  end
-
-  defp preload_contact(query) do
-    from r in query, preload: :contact
-  end
-
-  defp preload_user(query) do
-    from r in query, preload: :user
   end
 
   defp make_version(nil, count) do

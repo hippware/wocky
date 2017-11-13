@@ -591,6 +591,122 @@ defmodule Wocky.RosterItemSpec do
     end
   end
 
+  describe "relationship creation functions" do
+    before do
+      user2 = Factory.insert(:user)
+      {:ok, user2: user2}
+    end
+
+    describe "befriend/2" do
+      context "when there is no existing relationship" do
+        before do
+          result = RosterItem.befriend(shared.user.id, shared.user2.id)
+          {:ok, result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make the users friends" do
+          RosterItem.is_friend(shared.user.id, shared.user2.id)
+          |> should(be_true())
+        end
+      end
+
+      context "when there is an existing relationship" do
+        before do
+          name = Name.first_name
+          name2 = Name.first_name
+          Factory.insert(:roster_item, name: name, user_id: shared.user.id,
+                         contact_id: shared.user2.id, subscription: :from,
+                         name: name)
+          Factory.insert(:roster_item, user_id: shared.user2.id,
+                         contact_id: shared.user.id, subscription: :to,
+                         name: name2)
+          result = RosterItem.befriend(shared.user.id, shared.user2.id)
+          {:ok,
+            name: name,
+            name2: name2,
+            result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make the users friends" do
+          RosterItem.is_friend(shared.user.id, shared.user2.id)
+          |> should(be_true())
+        end
+
+        it "should not remove the existing name data" do
+          RosterItem.get(shared.user.id, shared.user2.id).name
+          |> should(eq shared.name)
+          RosterItem.get(shared.user2.id, shared.user.id).name
+          |> should(eq shared.name2)
+        end
+      end
+    end
+
+    describe "follow/2" do
+      context "when there is no existing relationship" do
+        before do
+          result = RosterItem.follow(shared.user.id, shared.user2.id)
+          {:ok, result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make user1 follow user2" do
+          RosterItem.is_follower(shared.user.id, shared.user2.id)
+          |> should(be_true())
+        end
+
+        it "should not make the users friends" do
+          RosterItem.is_friend(shared.user.id, shared.user2.id)
+          |> should(be_false())
+        end
+      end
+
+      context "when there is an existing relationship" do
+        before do
+          name = Name.first_name
+          name2 = Name.first_name
+          Factory.insert(:roster_item, name: name, user_id: shared.user.id,
+                         contact_id: shared.user2.id, subscription: :both,
+                         name: name)
+          Factory.insert(:roster_item, user_id: shared.user2.id,
+                         contact_id: shared.user.id, subscription: :both,
+                         name: name2)
+          result = RosterItem.follow(shared.user.id, shared.user2.id)
+          {:ok,
+            name: name,
+            name2: name2,
+            result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make user1 follow user 2" do
+          RosterItem.is_follower(shared.user.id, shared.user2.id)
+          |> should(be_true())
+        end
+
+        it "should not remove the existing name data" do
+          RosterItem.get(shared.user.id, shared.user2.id).name
+          |> should(eq shared.name)
+          RosterItem.get(shared.user2.id, shared.user.id).name
+          |> should(eq shared.name2)
+        end
+      end
+    end
+  end
+
   defp insert_friend_pair(user, contact, groups) do
     a = Factory.insert(
           :roster_item,
