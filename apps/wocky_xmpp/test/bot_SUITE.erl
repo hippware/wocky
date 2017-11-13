@@ -25,7 +25,7 @@
                       check_home_stream_sizes/3
                      ]).
 
--export([set_visibility/3, create_field/1]).
+-export([set_visibility/3, create_field/1, publish_item/6]).
 
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).

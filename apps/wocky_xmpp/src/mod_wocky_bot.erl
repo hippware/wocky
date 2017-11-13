@@ -207,6 +207,7 @@ perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
         OldPublic = ?wocky_bot:'public?'(Bot),
         FieldsMap = normalise_fields(Fields),
         NewBot <- ?wocky_bot:update(Bot, FieldsMap),
+        wocky_bot_users:maybe_update_hs_items(Bot, NewBot),
         wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
                                            ?wocky_bot:'public?'(NewBot)),
         wocky_bot_users:maybe_notify_desc_change(Bot, NewBot),

@@ -14,7 +14,14 @@
 -behaviour(gen_mod).
 -behaviour(wocky_publishing_handler).
 
--export([start/2, stop/1]).
+-export([start/2,
+         stop/1,
+
+         % TODO: These can be removed once DB callbacks are implemented and
+         % the HS can deal with its own publications
+         send_notifications/2,
+         map_to_item/1
+        ]).
 
 % wocky_publishing_handler exports
 -export([publish/4,
@@ -297,6 +304,7 @@ maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
         _),
       Items).
 
+-spec send_notifications(ejabberd:jid(), pub_item()) -> ok.
 send_notifications(UserJID, Item) ->
     Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(UserJID)),
     lists:foreach(send_notification(_, Item), Watchers).

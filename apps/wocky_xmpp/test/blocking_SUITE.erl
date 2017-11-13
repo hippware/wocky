@@ -11,7 +11,7 @@
 -include_lib("stdlib/include/assert.hrl").
 -include("test_helper.hrl").
 
--import(test_helper, [expect_iq_error/2, expect_iq_success/2, subscribe_pair/2,
+-import(test_helper, [expect_iq_error/2, expect_iq_success/2, befriend/2,
                       remove_friend/2, add_to_s/2, iq_get/2,
                       publish_item_stanza/4]).
 -import(user_SUITE, [get_request/2, users_request/1, expect_bulk_results/2,
@@ -249,7 +249,7 @@ blocked_item_access(Config) ->
 blocked_contact_access(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
-        subscribe_pair(Bob, Carol),
+        befriend(Bob, Carol),
         % Alice asks carol for their followers which should exclude bob
         lists:foreach(
           fun(Type) ->
@@ -307,7 +307,7 @@ unblock(Config) ->
         escalus:assert_many([is_roster_set, is_iq_result],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        subscribe_pair(Alice, Bob)
+        befriend(Alice, Bob)
       end).
 
 unblocked_roster_access(Config) ->
@@ -444,7 +444,7 @@ unblocked_messages(Config) ->
 unblocked_contact_access(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
-        subscribe_pair(Bob, Carol),
+        befriend(Bob, Carol),
         BobUser = ?wocky_repo:get(?wocky_user, ?BOB),
         % Alice asks carol for their followers which should now include bob
         fun_chain:first(
