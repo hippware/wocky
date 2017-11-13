@@ -470,7 +470,7 @@ allow_subscription_both_message(Config) ->
         test_helper:follow(Alice, Bob),
         %% Because we're not on the default wocky privacy lists, Alice *will*
         %% get a presence stanza here (so we can't use
-        %% test_helper:subscribe_pair)
+        %% test_helper:befriend)
         escalus:assert(is_presence, escalus_client:wait_for_stanza(Alice)),
         test_helper:follow(Bob, Alice),
         escalus:assert(is_presence, escalus_client:wait_for_stanza(Bob)),
@@ -654,7 +654,7 @@ block_jid_message_but_not_presence(Config) ->
 default_privacy_list(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {tim, 1}],
       fun(Alice, Bob, Carol, Tim) ->
-        test_helper:subscribe_pair(Alice, Bob),
+        test_helper:befriend(Alice, Bob),
         test_helper:follow(Carol, Alice),
 
         %% Alice and bob are friends so can chat in both directions

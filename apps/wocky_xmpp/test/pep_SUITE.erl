@@ -50,7 +50,7 @@ publish_presence(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, presence, ?MODULE),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
                   fun (Alice, Bob, Carol) ->
-        test_helper:subscribe_pair(Alice, Bob),
+        test_helper:befriend(Alice, Bob),
         Stanza = escalus_pubsub_stanza:publish(Alice, <<"test_item_id">>,
                                                pub_item(), <<"123">>,
                                                {pep, pub_node()}),
