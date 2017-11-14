@@ -14,14 +14,20 @@ wocky_test:
   cached: true
   environment:
     WOCKY_DB_HOST: "postgres"
+    REDIS_HOST: "redis"
   links:
     - postgres
+    - redis
 postgres:
   image: mdillon/postgis:9.6-alpine
   environment:
     POSTGRES_PASSWORD: "password"
   ports:
     - "5432"
+redis:
+  image: redis:3.2-alpine
+  ports:
+    - "6379"
 wocky_rel:
   build:
     context: .
