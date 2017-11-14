@@ -9,6 +9,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Set timeout of Algolia geosearch call to 30s (PR #1077)
 * Rework (HS) Publishing protocol (#1043)
 * Update tzdata version (PR #1093)
+* HS items to include bot object if relevant (#962)
+* Avatars being wiped when other, non-avatar user changes are made (#1084)
+* Add befriend/2 and follow/2 operations to Wocky.RosterItem (PR #1096)
+* If a bot changes, all referencing HS items should be updated (#1026)
+* Change timestamp columns to use timestamptz (PR #1100)
 
 
 # 2017.11.3+r5c0a757
