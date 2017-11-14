@@ -27,3 +27,7 @@ data:
   CLOUDWATCH_INSTANCE: ""
   REPLACE_OS_VARS: "true"
   BAMBOO_ADAPTER: Bamboo.TestAdapter
+  REDIS_POOL_SIZE: "10"
+  REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
+  REDIS_PORT: "6379"
+  REDIS_DB: "4"
