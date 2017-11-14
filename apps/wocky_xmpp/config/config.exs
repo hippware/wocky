@@ -6,6 +6,12 @@ config :wocky_xmpp,
   ecto_repos: [],
   hs_prepopulation_user: "__new_user_hs_archive__"
 
+config :wocky_xmpp, :redis,
+  host:      {:system, :string,  "REDIS_HOST",      "localhost"},
+  port:      {:system, :integer, "REDIS_PORT",      6379},
+  db:        {:system, :integer, "REDIS_DB",        0},
+  pool_size: {:system, :integer, "REDIS_POOL_SIZE", 10}
+
 config :ejabberd,
   keep_lager_intact: true
 

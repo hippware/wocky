@@ -87,7 +87,8 @@ load_xmpp_config() ->
     CfgTplPath = filename:join(code:priv_dir(wocky_xmpp), "ejabberd.cfg"),
     {ok, CfgTplTerms} = file:consult(CfgTplPath),
 
-    CfgTerms = [{odbc_server, db_config()}
+    CfgTerms = [{odbc_server, db_config()},
+                {sm_backend, sm_config()}
                 | ?confex_resolver:'resolve!'(CfgTplTerms)],
 
     TmpDir = 'Elixir.System':tmp_dir(),
@@ -103,6 +104,15 @@ db_config() ->
      proplists:get_value(database, DbConfig),
      proplists:get_value(username, DbConfig),
      proplists:get_value(password, DbConfig)}.
+
+sm_config() ->
+    RedisConfig = ?confex:get_env(wocky_xmpp, redis),
+    {redis,
+     [{pool_size, proplists:get_value(pool_size, RedisConfig)},
+      {worker_config,
+       [{host, binary_to_list(proplists:get_value(host, RedisConfig))},
+        {port, proplists:get_value(port, RedisConfig)},
+        {db, proplists:get_value(db, RedisConfig)}]}]}.
 
 write_terms(Filename, List) ->
     Format = fun(Term) -> io_lib:format("~tp.~n", [Term]) end,
