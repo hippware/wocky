@@ -106,7 +106,7 @@ db_config() ->
      proplists:get_value(password, DbConfig)}.
 
 sm_config() ->
-    RedisConfig = ?confex:get_env(wocky_xmpp, redis),
+    RedisConfig = ?confex:'fetch_env!'(wocky_xmpp, redis),
     {redis,
      [{pool_size, proplists:get_value(pool_size, RedisConfig)},
       {worker_config,
