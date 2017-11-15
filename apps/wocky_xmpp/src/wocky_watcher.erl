@@ -14,6 +14,10 @@
          watchers/2
         ]).
 
+-ifdef(TEST).
+-export([key/1]).
+-endif.
+
 -define(NODE_CLEANUP_PRIORITY, 80).
 -define(UNSET_PRESENCE_PRIORITY, 90).
 
@@ -100,7 +104,7 @@ delete_by_jid(UserJID, K, V) ->
 
 delete_by_node(Node, K, V) ->
     {_, NodeStr} = val(V),
-    case atom_to_list(Node) of
+    case Node of
         NodeStr -> ejabberd_redis:cmd(["SREM", K, V]);
         _ -> ok
     end.
