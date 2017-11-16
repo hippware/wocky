@@ -23,14 +23,14 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
                           %{"server" => @server,
                             "title" => "title1",
                             "image" => "image1",
-                            "location" => GeoUtils.point(2.0, 1.0),
+                            "location" => GeoUtils.point(1.0, 2.0),
                             "radius" => 1000,
                             "public" => true})
       :ok = update_object(@index, @object_id2,
                           %{"server" => @server,
                             "title" => "title2",
                             "image" => "image2",
-                            "location" => GeoUtils.point(6.0, 5.0),
+                            "location" => GeoUtils.point(5.0, 6.0),
                             "radius" => 1000,
                             "public" => true})
     end

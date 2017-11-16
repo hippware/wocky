@@ -77,7 +77,7 @@ defmodule Wocky.User.Location do
         user
         |> User.get_owned_bots_with_follow_me
         |> Enum.each(
-          &Bot.update(&1, %{location: GeoUtils.point(loc.lon, loc.lat)}))
+          &Bot.update(&1, %{location: GeoUtils.point(loc.lat, loc.lon)}))
       end
     end
 

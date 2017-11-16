@@ -751,7 +751,7 @@ normalise_fields(Fields) ->
     lists:foldl(fun normalise_field/2, #{}, Fields).
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
-    Acc#{location => ?wocky_geo_utils:point(Lon, Lat)};
+    Acc#{location => ?wocky_geo_utils:point(Lat, Lon)};
 normalise_field(#field{type = jid, value = #jid{luser = UserID}}, Acc) ->
     Acc#{user_id => UserID};
 normalise_field(#field{name = <<"visibility">>, value = 100}, Acc) ->

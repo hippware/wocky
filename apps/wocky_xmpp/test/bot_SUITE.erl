@@ -122,7 +122,7 @@ init_per_testcase(geosearch, Config) ->
                 {ok, [#{id => ?BOT, server => ?SERVER,
                         user_id => ?ALICE, title => ?BOT_TITLE,
                         image => ?CREATE_IMAGE,
-                        location => ?wocky_geo_utils:point(?BOT_LON, ?BOT_LAT),
+                        location => ?wocky_geo_utils:point(?BOT_LAT, ?BOT_LON),
                         radius => ?BOT_RADIUS,
                         distance => 8000}]}
         end),
@@ -183,7 +183,7 @@ reset_tables(Config) ->
           shortname => ?BOT_NAME,
           user => Alice,
           description => ?BOT_DESC,
-          location => ?wocky_geo_utils:point(?BOT_LON, ?BOT_LAT),
+          location => ?wocky_geo_utils:point(?BOT_LAT, ?BOT_LON),
           radius => ?BOT_RADIUS,
           address => ?BOT_ADDRESS,
           address_data => ?BOT_ADDRESS_DATA,

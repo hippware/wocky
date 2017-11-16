@@ -257,7 +257,7 @@ defmodule Wocky.Bot.GeosearchSpec do
       end
 
       it "should have all the searchable bots" do
-        Geosearch.explore_nearby(GeoUtils.point(shared.lon, shared.lat),
+        Geosearch.explore_nearby(GeoUtils.point(shared.lat, shared.lon),
                                  1_000_000_000.0,
                                  shared.user, 100,
                                  &collect_bots(&1, shared.table))

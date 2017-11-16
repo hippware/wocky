@@ -55,7 +55,7 @@ defmodule Wocky.Bot.Geosearch do
     pivot = dump_uuid(rsm_in(rsm_in, :id))
     direction = rsm_in(rsm_in, :direction)
     reverse = rsm_in(rsm_in, :reverse)
-    point = GeoUtils.point(lon, lat)
+    point = GeoUtils.point(lat, lon)
 
     {query_str, params} =
       point
@@ -89,7 +89,7 @@ defmodule Wocky.Bot.Geosearch do
     do: do_get_all(lat, lon, &where_searchable(&1, user_id), false)
 
   defp do_get_all(lat, lon, where_clause, order_with_sphereoid) do
-    point = GeoUtils.point(lon, lat)
+    point = GeoUtils.point(lat, lon)
     {query_str, params} =
       point
       |> fields()

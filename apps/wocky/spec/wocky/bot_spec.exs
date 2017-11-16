@@ -214,8 +214,8 @@ defmodule Wocky.BotSpec do
       context "out of range location" do
         it "should normalize latitude and longitude" do
           {:ok, %Bot{id: id}} =
-            Bot.update(bot(), %{location: GeoUtils.point(-185, -95.0)})
-          Repo.get(Bot, id).location |> should(eq GeoUtils.point(175, -85))
+            Bot.update(bot(), %{location: GeoUtils.point(-95.0, -185)})
+          Repo.get(Bot, id).location |> should(eq GeoUtils.point(-85, 175))
         end
       end
 

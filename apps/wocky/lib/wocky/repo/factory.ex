@@ -62,7 +62,7 @@ defmodule Wocky.Repo.Factory do
       type: "test",
       address: Address.street_address,
       address_data: "{name: foo}",
-      location: GeoUtils.point(Address.longitude, Address.latitude),
+      location: GeoUtils.point(Address.latitude, Address.longitude),
       radius: :rand.uniform(100),
       public: false,
       alerts: false,
