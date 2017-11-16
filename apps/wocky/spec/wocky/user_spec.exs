@@ -238,9 +238,73 @@ defmodule Wocky.UserSpec do
     end
 
     it "should fail with a reserved handle" do
-      shared.user
-      |> User.changeset(%{handle: "Root"})
+      set_handle(shared, "Root")
       |> should(have_errors([:handle]))
+    end
+
+    it "should fail if the handle has invalid characters" do
+      set_handle(shared, "a-bcdef")
+      |> should(have_errors([:handle]))
+
+      set_handle(shared, "abąab")
+      |> should(have_errors([:handle]))
+    end
+
+    it "should fail if the handle is too short" do
+      set_handle(shared, "ab")
+      |> should(have_errors([:handle]))
+    end
+
+    it "should fail if the handle is too long" do
+      set_handle(shared, "abcdefghijklmnopq")
+      |> should(have_errors([:handle]))
+    end
+
+    it "should succeed for valid handles within the correct length" do
+      set_handle(shared, "abc")
+      |> should(be_valid())
+
+      set_handle(shared, "abcdefghijklmnop")
+      |> should(be_valid())
+    end
+
+    it "should fail if the name starts or ends with a space or hyphen" do
+      set_name(shared, "-abdc")
+      |> should_not(be_valid())
+
+      set_name(shared, " abdc")
+      |> should_not(be_valid())
+
+      set_name(shared, "abdc ")
+      |> should_not(be_valid())
+
+      set_name(shared, "abdc-")
+      |> should_not(be_valid())
+    end
+
+    it "should fail if the name starts with a digit" do
+      set_name(shared, "5aaaa")
+      |> should_not(be_valid())
+    end
+
+    it "should succeed with characters, digits and spaces in the middle" do
+      set_name(shared, "Ƶ𝓾 え-09")
+      |> should(be_valid())
+    end
+
+    it "should accept a name up to the 32 character limit" do
+      set_name(shared, "ええええええええええええええええええええええええええええええええ")
+      |> should(be_valid())
+    end
+
+    it "should fail a name with more than the limit" do
+      set_name(shared, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+      |> should_not(be_valid())
+    end
+
+    it "should accept an empty name" do
+      set_name(shared, "")
+      |> should(be_valid())
     end
 
     context "when there is a pre-existing matching handle regardless of case" do
@@ -333,7 +397,7 @@ defmodule Wocky.UserSpec do
         before do
           fields = %{
             resource: ID.new,
-            handle: Internet.user_name,
+            handle: Name.first_name,
             first_name: Name.first_name,
             last_name: Name.last_name,
             email: Internet.email,
@@ -467,7 +531,7 @@ defmodule Wocky.UserSpec do
           user = Factory.insert(:user, %{roles: [User.no_index_role]})
           fields = %{
             resource: ID.new,
-            handle: Internet.user_name,
+            handle: Name.first_name,
             first_name: Name.first_name,
             last_name: Name.last_name,
             email: Internet.email,
@@ -897,5 +961,16 @@ defmodule Wocky.UserSpec do
       "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
       [u, b])
     length(result.rows) == 1
+  end
+
+  defp set_handle(shared, handle) do
+    shared.user
+    |> User.changeset(%{handle: handle})
+  end
+
+  defp set_name(shared, name) do
+    field = Enum.random([:first_name, :last_name])
+    shared.user
+    |> User.changeset(%{field => name})
   end
 end
