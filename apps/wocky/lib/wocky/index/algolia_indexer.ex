@@ -62,7 +62,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
       user_id: obj["user_id"],
       title: obj["title"],
       image: obj["image"],
-      location: GeoUtils.point(obj["lon"], obj["lat"]),
+      location: GeoUtils.point(obj["lat"], obj["lon"]),
       radius: obj["radius"],
       distance: obj["_rankingInfo"]["geoDistance"] * 1000, # millimeters
       public: obj["public"]
