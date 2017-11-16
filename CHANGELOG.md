@@ -5,6 +5,7 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* **Replace Mnesia as the MIM session store with Redis (#1107)**
 * Update the staging SSL certificate (PR #1075)
 * Set timeout of Algolia geosearch call to 30s (PR #1077)
 * Rework (HS) Publishing protocol (#1043)
