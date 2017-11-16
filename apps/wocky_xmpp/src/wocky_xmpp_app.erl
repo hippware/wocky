@@ -67,8 +67,6 @@ start(_StartType, _StartArgs) ->
     {ok, CfgPath} = load_xmpp_config(),
     ok = start_ejabberd(CfgPath),
 
-    ok = maybe_join_cluster(),
-
     wocky_sup:start_link().
 
 stop(_State) ->
@@ -89,7 +87,8 @@ load_xmpp_config() ->
     CfgTplPath = filename:join(code:priv_dir(wocky_xmpp), "ejabberd.cfg"),
     {ok, CfgTplTerms} = file:consult(CfgTplPath),
 
-    CfgTerms = [{odbc_server, db_config()}
+    CfgTerms = [{odbc_server, db_config()},
+                {sm_backend, sm_config()}
                 | ?confex_resolver:'resolve!'(CfgTplTerms)],
 
     TmpDir = 'Elixir.System':tmp_dir(),
@@ -106,6 +105,15 @@ db_config() ->
      proplists:get_value(username, DbConfig),
      proplists:get_value(password, DbConfig)}.
 
+sm_config() ->
+    RedisConfig = ?confex:'fetch_env!'(wocky_xmpp, redis),
+    {redis,
+     [{pool_size, proplists:get_value(pool_size, RedisConfig)},
+      {worker_config,
+       [{host, binary_to_list(proplists:get_value(host, RedisConfig))},
+        {port, proplists:get_value(port, RedisConfig)},
+        {db, proplists:get_value(db, RedisConfig)}]}]}.
+
 write_terms(Filename, List) ->
     Format = fun(Term) -> io_lib:format("~tp.~n", [Term]) end,
     Text = lists:map(Format, List),
@@ -116,19 +124,3 @@ start_ejabberd(CfgPath) ->
     ok = application:set_env(ejabberd, config, CfgPath),
     {ok, _} = application:ensure_all_started(ejabberd),
     ok.
-
-maybe_join_cluster() ->
-    Self = node(),
-    case lists:sort(erlang:nodes([visible, this])) of
-        [] -> ok;
-        [Self | _] -> ok;
-        [First | _] -> join_cluster(First)
-    end.
-
-join_cluster(Node) ->
-    Name = atom_to_list(Node),
-    case ejabberd_commands:execute_command(join_cluster, [Name]) of
-        {ok, Message} -> lager:info(Message);
-        {alread_joined, Message} -> lager:info(Message);
-        Error -> lager:error("Failed to join cluster: ~p", [Error])
-    end.

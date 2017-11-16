@@ -25,9 +25,7 @@ defmodule :wocky_watcher_spec do
     end
 
     it "should create an empty watcher list" do
-      shared.class
-      |> table()
-      |> :mnesia.dirty_all_keys
+      :ejabberd_redis.cmd(["KEYS", key(shared.class)])
       |> should(eq [])
     end
   end
@@ -55,12 +53,13 @@ defmodule :wocky_watcher_spec do
         shared.result |> should(eq :ok)
       end
 
-      it "should crash with an unregistered class" do
-        fn() ->
-          watch(String.to_atom(ID.new), shared.jid, shared.object)
-        end
-        |> should(cause_exit())
-      end
+      # This no longer happens with Redis. TODO: Revisit.
+      #      it "should crash with an unregistered class" do
+      #  fn() ->
+      #    watch(String.to_atom(ID.new), shared.jid, shared.object)
+      #  end
+      #  |> should(cause_exit())
+      #end
 
       it "should add an item to the table" do
         watchers(shared.class, shared.object)
@@ -78,12 +77,13 @@ defmodule :wocky_watcher_spec do
         shared.result |> should(eq :ok)
       end
 
-      it "should crash with an unregistered class" do
-        fn() ->
-          unwatch(String.to_atom(ID.new), shared.jid, shared.object)
-        end
-        |> should(cause_exit())
-      end
+      # This no longer happens with Redis. TODO: Revisit.
+      #it "should crash with an unregistered class" do
+      #  fn() ->
+      #    unwatch(String.to_atom(ID.new), shared.jid, shared.object)
+      #  end
+      #  |> should(cause_exit())
+      #end
 
       it "should remove the specified item from the watchers" do
         watchers(shared.class, shared.object)
@@ -166,9 +166,7 @@ defmodule :wocky_watcher_spec do
       end
 
       it "should clear out all memebers of the table on this node" do
-        shared.class
-        |> table()
-        |> :mnesia.dirty_all_keys
+        :ejabberd_redis.cmd(["KEYS", key(shared.class)])
         |> should(eq [])
       end
     end

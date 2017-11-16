@@ -15,29 +15,16 @@
         ]).
 
 -ifdef(TEST).
--export([table/1]).
+-export([key/1]).
 -endif.
 
 -define(NODE_CLEANUP_PRIORITY, 80).
 -define(UNSET_PRESENCE_PRIORITY, 90).
 
--record(watcher,
-        {
-         object :: ejabberd:simple_jid() | '_',
-         jid    :: ejabberd:simple_jid() | '_',
-         node   :: node() | '_'
-        }).
-
 -type class() :: atom().
 
 -spec register(class(), ejabberd:server()) -> ok.
 register(Class, Host) ->
-    wocky_mnesia:initialise_shared_ram_table(
-      table(Class),
-      [{type, bag},
-       {record_name, watcher}],
-      record_info(fields, watcher)),
-
     ejabberd_hooks:add(node_cleanup, global,
                        node_cleanup_hook(Class, _),
                        ?NODE_CLEANUP_PRIORITY),
@@ -55,28 +42,22 @@ unregister(Class, Host) ->
 
 -spec watch(class(), ejabberd:jid(), ejabberd:jid()) -> ok.
 watch(Class, User, Object) ->
-    mnesia:dirty_write(table(Class), make_record(User, Object)),
+    ejabberd_redis:cmd(["SADD", key(Class, Object), val(User, node())]),
     ok.
 
 -spec unwatch(class(), ejabberd:jid(), ejabberd:jid()) -> ok.
 unwatch(Class, User, Object) ->
-    mnesia:dirty_delete_object(table(Class), make_record(User, Object)),
+    ejabberd_redis:cmd(["SREM", key(Class, Object), val(User, node())]),
     ok.
 
 -spec unwatch_all(class(), ejabberd:jid()) -> ok.
 unwatch_all(Class, UserJID) ->
-    cleanup(Class,
-            #watcher{object = '_',
-                     jid = jid:to_lower(UserJID),
-                     node = node()}).
+    cleanup(Class, delete_by_jid(UserJID, _, _)).
 
 -spec watchers(class(), ejabberd:jid()) -> [ejabberd:jid()].
 watchers(Class, Object) ->
-    BareWatchers = mnesia:dirty_match_object(
-                     table(Class),
-                     #watcher{object = jid:to_lower(Object), _ = '_'}),
-    lists:map(fun(#watcher{jid = SJID}) -> jid:make(SJID) end, BareWatchers).
-
+    Vals = ejabberd_redis:cmd(["SMEMBERS", key(Class, Object)]),
+    lists:map(fun(V) -> element(1, val(V)) end, Vals).
 
 %%%===================================================================
 %%% MIM hook handlers
@@ -84,7 +65,7 @@ watchers(Class, Object) ->
 
 -spec node_cleanup_hook(class(), node()) -> ok.
 node_cleanup_hook(Class, Node) ->
-    cleanup(Class, #watcher{node = Node, _ = '_'}).
+    cleanup(Class, delete_by_node(Node, _, _)).
 
 -spec unset_presence_hook(class(), ejabberd:luser(),
                           ejabberd:lserver(), ejabberd:lresource(),
@@ -95,16 +76,35 @@ unset_presence_hook(Class, User, Server, Resource, _Status) ->
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
+%%%
+cleanup(Class, CleanupFun) ->
+    Keys = ejabberd_redis:cmd(["KEYS", key(Class)]),
+    lists:foreach(
+      fun(K) ->
+              Vals = ejabberd_redis:cmd(["SMEMBERS", K]),
+              lists:foreach(CleanupFun(K, _), Vals)
+      end, Keys).
 
-cleanup(Class, Pattern) ->
-    Table = table(Class),
-    ToClean = mnesia:dirty_match_object(Table, Pattern),
-    lists:foreach(mnesia:dirty_delete_object(Table, _), ToClean).
+key(Class) ->
+    ["watch:", atom_to_list(Class), ":*"].
+key(Class, Object) ->
+    ["watch:", atom_to_list(Class), ":", jid:to_binary(Object)].
 
-table(Class) ->
-    list_to_atom(atom_to_list(Class) ++ "_watcher_table").
+val(User, Node) ->
+    term_to_binary({User, Node}).
+val(Bin) ->
+    binary_to_term(Bin).
 
-make_record(User, Object) ->
-    #watcher{jid = jid:to_lower(User),
-             object = jid:to_lower(Object),
-             node = node()}.
+delete_by_jid(UserJID, K, V) ->
+    {ValJID, _} = val(V),
+    case jid:are_equal(UserJID, ValJID) of
+        true -> ejabberd_redis:cmd(["SREM", K, V]);
+        false -> ok
+    end.
+
+delete_by_node(Node, K, V) ->
+    {_, NodeStr} = val(V),
+    case Node of
+        NodeStr -> ejabberd_redis:cmd(["SREM", K, V]);
+        _ -> ok
+    end.
