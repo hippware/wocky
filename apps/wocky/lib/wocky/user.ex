@@ -97,6 +97,10 @@ defmodule Wocky.User do
                   :email, :tagline, :roles, :external_id, :provider]
   @max_register_retries 5
 
+  @min_handle_len 3
+  @max_handle_len 16
+  @max_name_len 32
+
   @no_index_role "__no_index__"
   @system_role "__system__"
 
@@ -319,7 +323,12 @@ defmodule Wocky.User do
     struct
     |> cast(params, @update_fields)
     |> validate_change(:email, &validate_email/2)
+    |> validate_length(:handle, min: @min_handle_len, max: @max_handle_len)
     |> validate_change(:handle, &validate_handle/2)
+    |> validate_length(:first_name, max: @max_name_len)
+    |> validate_length(:last_name, max: @max_name_len)
+    |> validate_change(:first_name, &validate_name/2)
+    |> validate_change(:last_name, &validate_name/2)
     |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
     |> unique_constraint(:handle, name: :users_lower_handle_index)
     |> prepare_changes(fn changeset ->
@@ -337,15 +346,35 @@ defmodule Wocky.User do
   end
 
   defp validate_handle(:handle, handle) do
-    if Enum.member?(reserved_handles(), String.downcase(handle)) do
-      [handle: "unavailable"]
-    else
-      []
+    cond do
+      Enum.member?(reserved_handles(), String.downcase(handle)) ->
+        [handle: "unavailable"]
+      Regex.run(~r/[a-zA-Z0-9_]+/, handle) != [handle] ->
+        [handle: "invalid characters"]
+      true ->
+        []
     end
   end
 
   defp reserved_handles,
     do: Application.get_env(:wocky, :reserved_handles, [])
+
+  defp validate_name(field, name) do
+    cond do
+      # Fail names with leading spaces, hyphens or digits or trailing spaces or
+      # hyphens
+      Regex.match?(~r/(^[ \-0-9]|[ -]$)/u, name) ->
+        [{field, "invalid leading or trailing"}]
+
+      # Fail names with characters other than unicode upper, lower or other
+      # letter categories plus space, hypen or Hindu-Arabic digits.
+      Regex.run(~r/[\p{Ll}\p{Lu}\p{Lo} \-0-9]*/u, name) != [name] ->
+        [{field, "invalid characters"}]
+
+      true ->
+        []
+    end
+  end
 
   defp validate_avatar(:avatar, user, avatar) do
     case do_validate_avatar(user, avatar) do
