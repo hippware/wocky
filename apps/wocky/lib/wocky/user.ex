@@ -360,18 +360,13 @@ defmodule Wocky.User do
     do: Application.get_env(:wocky, :reserved_handles, [])
 
   defp validate_name(field, name) do
-    cond do
-      # Fail names with leading spaces, hyphens or digits or trailing spaces or
-      # hyphens
-      Regex.match?(~r/(^[ \-0-9]|[ -]$)/u, name) ->
-        [{field, "invalid leading or trailing"}]
-
-      # Fail names with characters other than unicode upper, lower or other
-      # letter categories plus space, hypen or Hindu-Arabic digits.
-      Regex.run(~r/[\p{Ll}\p{Lu}\p{Lo} \-0-9]*/u, name) != [name] ->
+    # regex implementing the rules at
+    # https://github.com/hippware/tr-wiki/wiki/
+    #     User-fields-validation-discussion#first-name-last-name
+    if Regex.run(
+      ~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-0-9]*(?<![ -])/u, name) != [name] do
         [{field, "invalid characters"}]
-
-      true ->
+    else
         []
     end
   end
