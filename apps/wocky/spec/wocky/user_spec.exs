@@ -302,6 +302,11 @@ defmodule Wocky.UserSpec do
       |> should_not(be_valid())
     end
 
+    it "should accept an empty name" do
+      set_name(shared, "")
+      |> should(be_valid())
+    end
+
     context "when there is a pre-existing matching handle regardless of case" do
       subject do
         :user
