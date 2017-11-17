@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.11.17+r68d76fd
+
 * Implement new user validation rules (server) (#1086)
 * Fix lat/lon swap in GeoUtils.point (#1110)
 * Adjust prepopulation logic to four weeks, min 10 items (#1081)
