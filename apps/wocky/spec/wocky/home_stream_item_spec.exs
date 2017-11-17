@@ -387,7 +387,7 @@ defmodule Wocky.HomeStreamItemSpec do
     end
   end
 
-  describe "prepopulate_from/3" do
+  describe "prepopulate_from/4" do
     before do
       source_user = Factory.insert(:user)
       now = DateTime.utc_now
@@ -414,7 +414,8 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should copy items for the specified time period" do
       HomeStreamItem.prepopulate_from(shared.target_user.id,
                                       shared.source_user.id,
-                                      Duration.from_days(10))
+                                      Duration.from_days(10),
+                                      0)
       |> should(eq :ok)
 
       shared.target_user.id
@@ -426,7 +427,8 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should not copy items if a zero period is given" do
       HomeStreamItem.prepopulate_from(shared.target_user.id,
                                       shared.source_user.id,
-                                      Duration.from_seconds(0))
+                                      Duration.from_seconds(0),
+                                      0)
       |> should(eq :ok)
 
       shared.target_user.id
@@ -440,13 +442,28 @@ defmodule Wocky.HomeStreamItemSpec do
 
       HomeStreamItem.prepopulate_from(shared.target_user.id,
                                       shared.source_user.id,
-                                      period)
+                                      period,
+                                      0)
       |> should(eq :ok)
 
       shared.target_user.id
       |> HomeStreamItem.get
       |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
       |> should(eq Enum.slice(shared.items, 6..@num_items - 1))
+    end
+
+    it "should copy the minimum requested items even if
+        outside the time period" do
+      HomeStreamItem.prepopulate_from(shared.target_user.id,
+                                      shared.source_user.id,
+                                      Timex.Duration.from_seconds(1),
+                                      8)
+      |> should(eq :ok)
+
+      shared.target_user.id
+      |> HomeStreamItem.get
+      |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
+      |> should(eq Enum.slice(shared.items, (@num_items - 8)..(@num_items - 1)))
     end
   end
 
