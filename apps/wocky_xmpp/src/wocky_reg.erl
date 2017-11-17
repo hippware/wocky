@@ -10,7 +10,8 @@
 
 -type reg_result() :: #reg_result{}.
 
--define(DEFAULT_HS_PREPOP_DAYS, 14).
+-define(DEFAULT_HS_PREPOP_DAYS, 28).
+-define(DEFAULT_HS_MIN_PREPOP, 10).
 
 -spec register_user(binary()) ->
     {ok, reg_result()} | {error, {string(), string()}}.
@@ -138,5 +139,7 @@ prepopulate_from_user(_, nil) -> ok;
 prepopulate_from_user(UserID, #{id := SourceID}) ->
     Period = ?confex:get_env(wocky_xmpp, hs_prepopulation_days,
                          ?DEFAULT_HS_PREPOP_DAYS),
+    Min = ?confex:get_env(wocky_xmpp, hs_prepopulation_min,
+                          ?DEFAULT_HS_MIN_PREPOP),
     ?wocky_home_stream_item:prepopulate_from(
-       UserID, SourceID, ?duration:from_days(Period)).
+       UserID, SourceID, ?duration:from_days(Period), Min).
