@@ -165,10 +165,10 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @doc "Get all items after a certain timestamp"
-  @spec get_after_time(User.id, DateTime.t | binary) :: [t]
-  def get_after_time(user_id, time) do
+  @spec get_after_time(User.id, DateTime.t | binary, boolean) :: [t]
+  def get_after_time(user_id, time, exclude_deleted \\ false) do
     user_id
-    |> get_query(false)
+    |> get_query(exclude_deleted)
     |> where([i], i.updated_at > ^time)
     |> set_order(true)
     |> Repo.all
@@ -197,12 +197,10 @@ defmodule Wocky.HomeStreamItem do
     |> maybe_exclude_deleted(exclude_deleted)
   end
 
-  @spec prepopulate_from(User.id, User.id, Duration.t) :: :ok
-  def prepopulate_from(user_id, from_id, period) do
-    from_time = Timex.subtract(DateTime.utc_now(), period)
-
+  @spec prepopulate_from(User.id, User.id, Duration.t, non_neg_integer) :: :ok
+  def prepopulate_from(user_id, from_id, period, min) do
     from_id
-    |> get_after_time(from_time)
+    |> prepop_items(period, min)
     |> Enum.each(
       fn(i) ->
         params =
@@ -217,6 +215,26 @@ defmodule Wocky.HomeStreamItem do
         |> Repo.insert(on_conflict: :replace_all,
                        conflict_target: [:user_id, :key])
       end)
+  end
+
+  defp prepop_items(from_id, period, min) do
+    from_time = Timex.subtract(DateTime.utc_now(), period)
+
+    time_items = get_after_time(from_id, from_time, true)
+
+    if length(time_items) < min do
+      get_by_count(from_id, min)
+    else
+      time_items
+    end
+  end
+
+  defp get_by_count(user_id, count) do
+    user_id
+    |> get_query(true)
+    |> order_by(desc: :ordering)
+    |> limit(^count)
+    |> Repo.all
   end
 
   @spec bump_version_by_ref_bot(Bot.t) :: [HomeStreamItem.t]

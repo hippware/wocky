@@ -100,12 +100,13 @@ setup_initial_contacts(Type) ->
 setup_hs_prepop() ->
     #{id := UserID} = test_helper:insert_system_users(),
 
-    OldTS = ?timex:subtract(?datetime:utc_now(), ?duration:from_weeks(4)),
+    OldTS = ?timex:subtract(?datetime:utc_now(), ?duration:from_weeks(6)),
 
-    ?wocky_factory:insert_list(5, home_stream_item, #{user_id => UserID,
+    ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID,
                                                       created_at => OldTS,
-                                                      updated_at => OldTS}),
-    ?wocky_factory:insert_list(5, home_stream_item, #{user_id => UserID}).
+                                                      updated_at => OldTS,
+                                                      ordering => OldTS}),
+    ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID}).
 
 end_per_suite(Config) ->
     meck:unload(),
@@ -183,7 +184,7 @@ new_user_common(Config, Client, Stanza) ->
         % Verify that initial HS items have been added
         Stanza3 = test_helper:expect_iq_success_u(
                     test_helper:get_hs_stanza(), Alice, Alice),
-        test_helper:check_hs_result(Stanza3, 5)
+        test_helper:check_hs_result(Stanza3, 15)
     end).
 
 check_contact(#{id := ID}, SubType, Stanza2) ->
