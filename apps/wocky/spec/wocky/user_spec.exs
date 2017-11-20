@@ -242,6 +242,11 @@ defmodule Wocky.UserSpec do
       |> should(have_errors([:handle]))
     end
 
+    it "should fail if it contains a reserved handle" do
+      set_handle(shared, "wWwgf")
+      |> should(have_errors([:handle]))
+    end
+
     it "should fail if the handle has invalid characters" do
       set_handle(shared, "a-bcdef")
       |> should(have_errors([:handle]))

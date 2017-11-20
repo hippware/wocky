@@ -346,8 +346,13 @@ defmodule Wocky.User do
   end
 
   defp validate_handle(:handle, handle) do
+    reserved =
+      Enum.any?(
+        reserved_handles(),
+        &Regex.match?(~r/.*#{&1}.*/, String.downcase(handle)))
+
     cond do
-      Enum.member?(reserved_handles(), String.downcase(handle)) ->
+      reserved ->
         [handle: "unavailable"]
       Regex.run(~r/[a-zA-Z0-9_]+/, handle) != [handle] ->
         [handle: "invalid characters"]
