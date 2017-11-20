@@ -167,6 +167,7 @@ notify_watcher(UserJID, FromJID, Bot = #{updated_at := UpatedAt}, Message) ->
     Timestamp = ?wocky_timestamp:to_string(UpatedAt),
     Item = #published_item{
               id = jid:to_binary(BotJID),
+              new = false,
               version = Timestamp,
               ordering = Timestamp,
               from = FromJID,
@@ -205,5 +206,5 @@ update_hs_items(Bot) ->
       fun(Item = #{user := User}) ->
               mod_wocky_home_stream:send_notifications(
                 ?wocky_user:to_jid(User),
-                mod_wocky_home_stream:map_to_item(Item))
+                mod_wocky_home_stream:map_to_item(Item, false))
       end, Items).

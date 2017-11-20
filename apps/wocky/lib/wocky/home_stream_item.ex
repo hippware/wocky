@@ -41,9 +41,10 @@ defmodule Wocky.HomeStreamItem do
   }
 
   @change_fields [:user_id, :key, :from_jid, :stanza, :deleted,
-                  :reference_user_id, :reference_bot_id, :ordering]
+                  :reference_user_id, :reference_bot_id, :ordering,
+                  :created_at, :updated_at]
 
-  @prepopulate_fields @change_fields ++ [:created_at, :updated_at]
+  @prepopulate_fields @change_fields
 
   @delete_changes [deleted: true, stanza: "", from_jid: "",
                    reference_user_id: nil, reference_bot_id: nil]
@@ -52,6 +53,8 @@ defmodule Wocky.HomeStreamItem do
   @spec put(User.id, key, binary, binary, Keyword.t)
   :: {:ok, t} | {:error, term}
   def put(user_id, key, from_jid, stanza, opts \\ []) do
+    now = DateTime.utc_now()
+
     fields = %{
       user_id: user_id,
       key: key,
@@ -59,7 +62,14 @@ defmodule Wocky.HomeStreamItem do
       stanza: stanza,
       reference_user_id: Keyword.get(opts, :ref_user_id),
       reference_bot_id: Keyword.get(opts, :ref_bot_id),
-      ordering: Keyword.get(opts, :ordering, DateTime.utc_now())
+      ordering: Keyword.get(opts, :ordering, now),
+
+      # Usually we let ecto handle these timestamps, however in this case we
+      # want to know if the item is newly inserted. We do this by checking if
+      # the two values match which, if we let ecto handle it, they never
+      # actually do (since, I presume, it makes two internal now() calls).
+      updated_at: now,
+      created_at: now
     }
 
     conflict_set =
@@ -70,7 +80,8 @@ defmodule Wocky.HomeStreamItem do
     %HomeStreamItem{}
     |> changeset(fields)
     |> Repo.insert(on_conflict: [set: conflict_set],
-                   conflict_target: [:user_id, :key])
+                   conflict_target: [:user_id, :key],
+                   returning: true)
   end
 
   @doc "Mark a single item as deleted"
@@ -281,6 +292,7 @@ defmodule Wocky.HomeStreamItem do
     Keyword.put(@delete_changes, :updated_at, DateTime.utc_now())
   end
 
-  defp conflict_set(fields, true), do: fields
-  defp conflict_set(fields, false), do: Map.drop(fields, [:ordering])
+  defp conflict_set(fields, true), do: Map.drop(fields, [:created_at])
+  defp conflict_set(fields, false), do: Map.drop(fields, [:created_at,
+                                                          :ordering])
 end
