@@ -195,12 +195,21 @@ watch(Config) ->
 
         % Both published and deleted items should be sent to watchers
         escalus:send(Alice, add_to_u(pub_stanza(<<"new_item">>), Alice)),
-        escalus:assert_many([is_iq_result, is_message],
-                            escalus:wait_for_stanzas(Alice, 2)),
+        S = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_iq_result, is_message], S),
+        % The first publication should have the `new='true'` attribute
+        check_has_new_attr(S, true),
+
+        escalus:send(Alice, add_to_u(pub_stanza(<<"new_item">>), Alice)),
+        S2 = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_iq_result, is_message], S2),
+        % The second publication should not have the `new='true'` attribute
+        check_has_new_attr(S2, false),
 
         escalus:send(Alice, add_to_u(delete_stanza(<<"new_item">>), Alice)),
-        escalus:assert_many([is_iq_result, is_message],
-                            escalus:wait_for_stanzas(Alice, 2)),
+        S3 = escalus:wait_for_stanzas(Alice, 2),
+        escalus:assert_many([is_iq_result, is_message], S3),
+        check_is_deletion(S3),
 
         timer:sleep(500),
         ensure_all_clean([Alice, Bob])
@@ -741,3 +750,25 @@ set_public(Public, Client) ->
                                 [bot_SUITE:create_field(
                                    {"public", "bool", Public})])),
     expect_iq_success(Stanza, Client).
+
+check_has_new_attr(Stanzas, HasNew) ->
+    Stanza = get_message_stanza(Stanzas),
+
+    #xmlel{attrs = Attrs} = xml:get_path_s(Stanza, [{elem, <<"notification">>},
+                                                    {elem, <<"item">>}]),
+
+    case lists:member({<<"new">>, <<"true">>}, Attrs) of
+        true ->
+            ?assert(HasNew);
+        false ->
+            ?assertNot(HasNew)
+    end.
+
+check_is_deletion(Stanzas) ->
+    Stanza = get_message_stanza(Stanzas),
+    #xmlel{} = xml:get_path_s(Stanza, [{elem, <<"notification">>},
+                                       {elem, <<"delete">>}]).
+
+get_message_stanza(Stanzas) ->
+    [Stanza] = lists:filter(escalus_pred:is_message(_), Stanzas),
+    Stanza.

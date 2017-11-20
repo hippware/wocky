@@ -20,7 +20,7 @@
          % TODO: These can be removed once DB callbacks are implemented and
          % the HS can deal with its own publications
          send_notifications/2,
-         map_to_item/1
+         map_to_item/2
         ]).
 
 % wocky_publishing_handler exports
@@ -77,7 +77,7 @@ publish(TargetJID = #jid{luser = UserID},
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
 delete(UserJID = #jid{luser = User}, ID) ->
     {ok, ItemMap} = ?wocky_home_stream_item:delete(User, ID),
-    send_notifications(UserJID, map_to_item(ItemMap)).
+    send_notifications(UserJID, map_to_item(ItemMap, false)).
 
 -spec get(ejabberd:jid(), ejabberd:jid(),
           jlib:rsm_in() | pub_item_id()) -> pub_get_result().
@@ -85,7 +85,7 @@ get(#jid{luser = User}, FromJID = #jid{luser = User}, RSMIn = #rsm_in{}) ->
     Query = ?wocky_home_stream_item:get_query(User, true),
     {Results, RSMOut} =
       ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, ordering}),
-    {ok, {[map_to_item(I) || I <- Results],
+    {ok, {[map_to_item(I, false) || I <- Results],
           format_version(?wocky_home_stream_item:get_latest_version(User)),
           extra_data(Results, FromJID),
           RSMOut}};
@@ -96,7 +96,7 @@ get(#jid{luser = User}, FromJID = #jid{luser = User}, ID) ->
         nil ->
             {ok, not_found};
         _ ->
-            {ok, {map_to_item(Item),
+            {ok, {map_to_item(Item, false),
                   format_version(
                     ?wocky_home_stream_item:get_latest_version(User)),
                   extra_data([Item], FromJID)}}
@@ -279,11 +279,17 @@ publish_bot_action(From, BotEl) ->
 maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
 
+
+map_to_item(Item = #{created_at := CreatedAt, updated_at := UpdatedAt}) ->
+    map_to_item(Item, ?datetime:compare(CreatedAt, UpdatedAt) =:= eq).
+
 map_to_item(#{key := Key, updated_at := UpdatedAt,
               from_jid := FromJID, stanza := StanzaBin,
-              ordering := Ordering, deleted := Deleted}) ->
+              ordering := Ordering, deleted := Deleted},
+            New) ->
     {ok, Stanza} = wocky_xml:parse_multiple(StanzaBin),
     #published_item{id = Key,
+                    new = New,
                     version = format_version(UpdatedAt),
                     ordering = format_version(Ordering),
                     from = jid:from_binary(FromJID),

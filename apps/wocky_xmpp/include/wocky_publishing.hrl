@@ -12,6 +12,7 @@
 
 -record(published_item, {
           id        :: pub_item_id(),
+          new       :: boolean(),
           version   :: pub_version(),
           ordering  :: pub_ordering(),
           from      :: ejabberd:jid(),
