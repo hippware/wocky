@@ -71,6 +71,8 @@ defmodule Wocky.Mixfile do
       {:ex_machina,           "~> 2.1"},
       {:ex_aws,               "~> 1.1"},
       {:pushex,               "~> 0.2"},
+      {:pigeon,               "~> 1.1"},
+      {:kadabra,              "~> 0.3"},
       {:configparser_ex,      "~> 2.0", override: true},
       {:sweet_xml,            "~> 0.6"},
       {:hackney,              "~> 1.7", override: true},

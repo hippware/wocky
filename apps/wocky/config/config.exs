@@ -28,10 +28,6 @@ config :wocky,
   bot_report_days:       {:system, :integer, "WOCKY_BOT_REPORT_DAYS", 7},
   slack_token:           {:system, :string,  "SLACK_TOKEN", "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"},
 
-  # Push notifications
-  enable_push_notifications: {:system, :boolean, "WOCKY_ENABLE_PUSH", false},
-  log_push_notifications:    {:system, :boolean, "WOCKY_LOG_PUSHES", true},
-
   # Firebase
   firebase_project_id:   "my-project-1480497595993",
 
@@ -40,6 +36,12 @@ config :wocky,
   welcome_email_from:     {"tinyrobot support", "support@tinyrobot.com"},
   welcome_email_subject:  "Welcome to tinyrobot!",
   welcome_field_mappings: [{"user_handle", :handle}]
+
+# Push notifications
+config :wocky, Wocky.Push,
+  enabled:  {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
+  sandbox:  {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
+  logging: {:system, :boolean, "WOCKY_PUSH_LOGGING", true}
 
 config :wocky, Wocky.Repo,
   adapter:   Ecto.Adapters.Postgres,
@@ -74,23 +76,13 @@ config :ex_aws,
 config :algolia,
   application_id: "HIE75ZR7Q7"
 
-config :apns,
-  pools: [],
-  callback_module: Pushex.APNS.Callback
+config :pigeon, :debug_log, true
 
-config :pushex,
-  event_handlers: [Wocky.PushEventHandler],
-  apns: [
-    default_app: "testing",
-    apps: [
-      [
-        name: "testing",
-        env: :prod,
-        certfile: {:wocky, "certs/testing.crt"},
-        keyfile: {:wocky, "certs/testing.key"},
-        pool_size: 5
-      ]
-    ]
-  ]
+config :pigeon, :apns,
+  apns_default: %{
+    cert: {:wocky, "certs/testing.crt"},
+    key: {:wocky, "certs/testing.key"},
+    mode: :dev
+  }
 
 import_config "#{Mix.env}.exs"

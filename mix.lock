@@ -97,6 +97,7 @@
   "parse_trans": {:git, "git://github.com/uwiger/parse_trans.git", "a210adafdfbb904d156d8f22abd5fb58fc17de1e", [tag: "2.9.2"]},
   "partial": {:git, "https://github.com/hippware/partial", "2d7099c54bd37118e517ce1d6003be47b047a442", [branch: "master"]},
   "peerage": {:hex, :peerage, "1.0.2", "43417cae92ca93fa3065194f5c6cb0b3df2214b2009128e470482563402cc9e5", [:mix], [{:deferred_config, "~> 0.1.1", [hex: :deferred_config, repo: "hexpm", optional: false]}], "hexpm"},
+  "pigeon": {:hex, :pigeon, "1.1.1", "9c1947c2013bca19c87714c4764e14696b835b887ff423193b28f21475edc868", [], [{:httpoison, "~> 0.7", [hex: :httpoison, repo: "hexpm", optional: false]}, {:kadabra, "~> 0.3.4", [hex: :kadabra, repo: "hexpm", optional: true]}, {:poison, "~> 2.0 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "plug": {:hex, :plug, "1.4.3", "236d77ce7bf3e3a2668dc0d32a9b6f1f9b1f05361019946aae49874904be4aed", [:mix], [{:cowboy, "~> 1.0.1 or ~> 1.1", [hex: :cowboy, repo: "hexpm", optional: true]}, {:mime, "~> 1.0", [hex: :mime, repo: "hexpm", optional: false]}], "hexpm"},
   "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], [], "hexpm"},
   "poolboy": {:hex, :poolboy, "1.5.1", "6b46163901cfd0a1b43d692657ed9d7e599853b3b21b95ae5ae0a777cf9b6ca8", [:rebar], [], "hexpm"},
