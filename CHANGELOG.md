@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add `new` attribute for new HS item async updates (#1114)
+* Block handles containing reserved words (#1113)
+
+
 # 2017.11.17+r68d76fd
 
 * Implement new user validation rules (server) (#1086)
