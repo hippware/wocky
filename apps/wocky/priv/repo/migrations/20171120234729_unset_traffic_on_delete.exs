@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.UnsetTrafficOnDelete do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def up do
     execute "ALTER TABLE traffic_logs DROP CONSTRAINT traffic_logs_user_id_fkey"
