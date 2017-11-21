@@ -2,7 +2,6 @@ defmodule :wocky_watcher_spec do
   use ESpec, async: true
   use Wocky.JID
 
-  import CustomAssertions
   import :wocky_watcher
 
   alias Wocky.Repo.Factory
