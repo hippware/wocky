@@ -9,6 +9,7 @@ defmodule Wocky.Mixfile do
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
      elixir: "~> 1.4",
+     elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      test_coverage: [tool: ExCoveralls, test_task: "espec"],
@@ -30,6 +31,10 @@ defmodule Wocky.Mixfile do
     {ver_result, _} = System.cmd("elixir", ["../../version.exs"])
     ver_result
   end
+
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support", "spec/support"]
+  defp elixirc_paths(_),     do: ["lib"]
 
   def application do
     [
