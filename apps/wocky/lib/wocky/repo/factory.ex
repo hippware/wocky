@@ -36,7 +36,7 @@ defmodule Wocky.Repo.Factory do
       username: user_id,
       server: "localhost",
       external_id: Code.isbn13,
-      handle: Internet.user_name,
+      handle: new_handle(),
       avatar: TROS.make_url("localhost", ID.new),
       first_name: Name.first_name,
       last_name: Name.last_name,
@@ -180,5 +180,9 @@ defmodule Wocky.Repo.Factory do
 
   def new_jid do
     ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
+  end
+
+  def new_handle() do
+    Base.encode32(:crypto.strong_rand_bytes(10))
   end
 end

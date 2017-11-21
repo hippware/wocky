@@ -402,7 +402,7 @@ defmodule Wocky.UserSpec do
         before do
           fields = %{
             resource: ID.new,
-            handle: Name.first_name,
+            handle: Factory.new_handle,
             first_name: Name.first_name,
             last_name: Name.last_name,
             email: Internet.email,
@@ -536,7 +536,7 @@ defmodule Wocky.UserSpec do
           user = Factory.insert(:user, %{roles: [User.no_index_role]})
           fields = %{
             resource: ID.new,
-            handle: Name.first_name,
+            handle: Factory.new_handle,
             first_name: Name.first_name,
             last_name: Name.last_name,
             email: Internet.email,
