@@ -182,7 +182,7 @@ defmodule Wocky.Repo.Factory do
     ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
   end
 
-  def new_handle() do
+  def new_handle do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end
 end

@@ -369,7 +369,8 @@ defmodule Wocky.User do
     # https://github.com/hippware/tr-wiki/wiki/
     #     User-fields-validation-discussion#first-name-last-name
     if Regex.run(
-      ~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])/u, name) != [name] do
+      ~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])/u,
+      name) != [name] do
         [{field, "invalid characters"}]
     else
         []
