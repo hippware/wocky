@@ -182,6 +182,8 @@ defmodule Wocky.Repo.Factory do
     ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
   end
 
+  # Handles have a more restricted set of characters than any of the Faker
+  # functions provide, so we provide our own function for constructing them
   def new_handle do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end

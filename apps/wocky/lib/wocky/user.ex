@@ -368,6 +368,11 @@ defmodule Wocky.User do
     # regex implementing the rules at
     # https://github.com/hippware/tr-wiki/wiki/
     #     User-fields-validation-discussion#first-name-last-name
+    #
+    # The ?! and ?<! blocks provide negated lookaround checks for characters
+    # at the start and end of the string without consuming them.
+    # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
+    # and other characters).
     if Regex.run(
       ~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])/u,
       name) != [name] do
