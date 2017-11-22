@@ -7,6 +7,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Add `new` attribute for new HS item async updates (#1114)
 * Block handles containing reserved words (#1113)
+* Various fixes to ensure tests run cleanly (#1116)
+  * Allow apostrophe in user names.
+* Remove user FK constraint on traffic_logs (#1117)
 
 
 # 2017.11.17+r68d76fd
