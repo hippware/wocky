@@ -51,7 +51,7 @@
 
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
 
--define(ALICE_HANDLE, <<"Alice Handle">>).
+-define(ALICE_HANDLE, <<"AliceHandle">>).
 -define(AVATAR_ID, <<"cc25d9de-8b8b-11e7-ad2c-83478732a270">>).
 -define(AVATAR_URL, ?tros:make_url(?SERVER, ?AVATAR_ID)).
 -define(ALICE_FIRST_NAME, <<"Alice">>).
