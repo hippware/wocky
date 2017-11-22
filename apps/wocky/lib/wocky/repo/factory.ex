@@ -16,11 +16,11 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
-  alias Wocky.Device
   alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
   alias Wocky.InitialContact
-  alias Wocky.NotificationLog
+  alias Wocky.Push.Log, as: PushLog
+  alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
   alias Wocky.TrafficLog
@@ -149,11 +149,14 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def notification_log_factory do
-    %NotificationLog{
+  def push_log_factory do
+    %PushLog{
+      user: build(:user),
       resource: Lorem.word,
-      message: Lorem.sentence,
-      reference: <<1>>
+      token: ID.new,
+      message_id: ID.new,
+      payload: ~s(%{"aps" => %{"alert" => #{Lorem.sentence}}}),
+      response: "success"
     }
   end
 
@@ -163,14 +166,14 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def device_factory do
-    %Device{
+  def push_token_factory do
+    %PushToken{
       user: build(:user),
       resource: ID.new,
       platform: "apple",
       token: ID.new,
-      invalid: false,
-      feedback: false
+      valid: true,
+      enabled_at: DateTime.utc_now
     }
   end
 
