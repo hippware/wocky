@@ -13,6 +13,7 @@
           last_name = <<>>      :: binary() | nil,
           name = <<>>           :: binary(),
           avatar = <<>>         :: binary() | nil,
+          roles = []            :: [binary()],
           subscription = none   :: ?wocky_roster_item:subscription(),
           ask = none            :: ?wocky_roster_item:ask(),
           created_at            :: ?datetime:t(),
