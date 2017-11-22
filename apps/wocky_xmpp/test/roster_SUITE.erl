@@ -28,6 +28,8 @@
 -define(BOB_AVATAR, ?tros:make_url(?SERVER, ?AVATAR_ID)).
 -define(BOB_FIRST_NAME, <<"Bobble">>).
 -define(BOB_LAST_NAME, <<"Robertson">>).
+-define(ROLE1, <<"a role">>).
+-define(ROLE2, <<"a different role">>).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -69,6 +71,7 @@ init_per_suite(Config) ->
 
     ok = ?wocky_user:update(?BOB, #{handle => ?BOB_HANDLE,
                                     avatar => ?BOB_AVATAR,
+                                    roles => [?ROLE1, ?ROLE2],
                                     first_name => ?BOB_FIRST_NAME,
                                     last_name => ?BOB_LAST_NAME}),
 
@@ -353,4 +356,10 @@ check_extra_fields(RosterSet) ->
 
     ?assert(lists:all(fun(Elem) ->
                               lists:member(Elem, Item#xmlel.attrs)
-                      end, Expected)).
+                      end, Expected)),
+
+    Roles = exml_query:paths(Item, [{element, <<"roles">>},
+                                    {element, <<"role">>},
+                                    cdata]),
+
+    ?assertEqual(lists:sort(Roles), lists:sort([?ROLE1, ?ROLE2])).

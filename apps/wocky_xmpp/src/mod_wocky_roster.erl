@@ -581,10 +581,12 @@ item_to_xml(I = #wocky_roster{contact_jid = {ContactUser, _, _}}) ->
                   item_date_to_xml(created_at, Item#wocky_roster.created_at),
                   item_sub_to_xml(Item#wocky_roster.subscription),
                   item_ask_to_xml(Item#wocky_roster.ask)]),
-       children = [#xmlel{
-                      name = <<"group">>, attrs = [],
-                      children = [{xmlcdata, G}]
-                     } || G <- Item#wocky_roster.groups]
+       children = [wocky_xml:cdata_el(<<"group">>, G) ||
+                   G <- Item#wocky_roster.groups]
+                  ++ [#xmlel{
+                         name = <<"roles">>,
+                         children = [wocky_xml:cdata_el(<<"role">>, R) ||
+                                     R <- Item#wocky_roster.roles]}]
                   ++ Item#wocky_roster.xs
       }.
 
@@ -660,14 +662,18 @@ to_mim_roster(#wocky_roster{
 populate_extra_fields(Item, ContactUID) ->
     case ?wocky_repo:get_by(?wocky_user, [{id, ContactUID}]) of
         nil -> Item;
-        #{handle := Handle,
-          avatar := Avatar,
+        #{handle     := Handle,
+          avatar     := Avatar,
           first_name := FirstName,
-          last_name := LastName} ->
+          last_name  := LastName,
+          roles      := Roles
+         } ->
             Item#wocky_roster{
               contact_handle = Handle,
-              avatar = Avatar,
-              first_name = FirstName,
-              last_name = LastName}
+              avatar         = Avatar,
+              first_name     = FirstName,
+              last_name      = LastName,
+              roles          = Roles
+             }
     end.
 
