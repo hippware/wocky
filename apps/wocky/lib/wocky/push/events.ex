@@ -6,6 +6,8 @@ defmodule Wocky.Push.Events do
   defmodule Utils do
     @moduledoc false
 
+    use Wocky.JID
+
     alias Wocky.User
 
     @doc false
@@ -31,6 +33,7 @@ defmodule Wocky.Push.Events do
 
     defp get_user(nil), do: nil
     defp get_user(%User{} = user), do: user
+    defp get_user(jid() = jid), do: User.get_by_jid(jid)
   end
 
   defmodule BotPerimeterEvent do
