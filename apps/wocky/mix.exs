@@ -45,7 +45,6 @@ defmodule Wocky.Mixfile do
         wocky_env: {:system, "WOCKY_ENV", "dev"},
         wocky_inst: {:system, "WOCKY_INST", "local"},
         wocky_host: {:system, "WOCKY_HOST", "localhost"},
-        event_handler: Wocky.EventHandler,
         reserved_handles: [
           "root",
           "admin",
@@ -70,7 +69,6 @@ defmodule Wocky.Mixfile do
       {:faker,                "~> 0.9"},
       {:ex_machina,           "~> 2.1"},
       {:ex_aws,               "~> 1.1"},
-      {:pushex,               "~> 0.2"},
       {:pigeon,               "~> 1.1"},
       {:kadabra,              "~> 0.3"},
       {:configparser_ex,      "~> 2.0", override: true},
@@ -99,10 +97,6 @@ defmodule Wocky.Mixfile do
       {:bamboo,               "~> 0.8"},
       {:slack_ex,             "~> 0.1"},
 
-      {:apns,
-        github: "chvanikoff/apns4ex",
-        branch: "master",
-        override: true},
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",
