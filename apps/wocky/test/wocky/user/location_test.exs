@@ -17,7 +17,7 @@ defmodule Wocky.User.LocationTest do
   @platform "apple"
 
   setup do
-    {:ok, _pid} = Sandbox.start_link
+    Sandbox.clear_notifications
 
     owner = Factory.insert(:user)
     Push.enable(owner.id, @rsrc, @platform, Code.isbn13)

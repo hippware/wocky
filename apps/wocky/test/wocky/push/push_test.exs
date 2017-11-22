@@ -19,7 +19,7 @@ defmodule Wocky.PushTest do
   @message  "Message content"
 
   setup do
-    {:ok, _pid} = Sandbox.start_link
+    Sandbox.clear_notifications
 
     user = Factory.insert(:user, resource: "testing")
     token = Code.isbn13

@@ -25,17 +25,17 @@ defmodule Wocky.Push.Sandbox do
   Wait until a notification arrives.
   """
   @spec wait_notifications([pid: pid,
+                            global: boolean,
                             timeout: non_neg_integer,
                             count: non_neg_integer]) :: [%Notification{}]
   def wait_notifications(opts \\ []) do
-    pid     = opts[:pid] || self()
     timeout = opts[:timeout] || 100
     count   = opts[:count] || 1
-    case list_notifications(pid: pid) do
+    case list_notifications(opts) do
       notifications when length(notifications) < count and timeout > 0 ->
         receive do
         after 10 ->
-          wait_notifications(pid: pid, timeout: timeout - 10, count: count)
+          wait_notifications(Keyword.put(opts, :timeout, timeout - 10))
         end
       notifications -> notifications
     end
@@ -44,19 +44,19 @@ defmodule Wocky.Push.Sandbox do
   @doc """
   List recorded notifications keeping their order of arrival.
   """
-  @spec list_notifications([pid: pid]) :: [%Notification{}]
+  @spec list_notifications([pid: pid, global: boolean]) :: [%Notification{}]
   def list_notifications(opts \\ []) do
     pid = opts[:pid] || self()
-    GenServer.call(__MODULE__, {:list_notifications, pid})
+    GenServer.call(__MODULE__, {:list_notifications, pid, opts[:global]})
   end
 
   @doc """
   Clear all the recorded notifications.
   """
-  @spec clear_notifications([pid: pid]) :: :ok
+  @spec clear_notifications([pid: pid, global: boolean]) :: :ok
   def clear_notifications(opts \\ []) do
     pid = opts[:pid] || self()
-    GenServer.call(__MODULE__, {:clear_notifications, pid})
+    GenServer.call(__MODULE__, {:clear_notifications, pid, opts[:global]})
   end
 
   @doc false
@@ -71,13 +71,21 @@ defmodule Wocky.Push.Sandbox do
   end
 
   @doc false
-  def handle_call({:list_notifications, pid}, _from, state) do
-    notifications = state |> Map.get(pid, []) |> Enum.reverse
+  def handle_call({:list_notifications, pid, global}, _from, state) do
+    notifications = if global do
+      state |> Map.values |> List.flatten
+    else
+      state |> Map.get(pid, []) |> Enum.reverse
+    end
     {:reply, notifications, state}
   end
 
   @doc false
-  def handle_call({:clear_notifications, pid}, _from, state) do
-    {:reply, :ok, Map.put(state, pid, [])}
+  def handle_call({:clear_notifications, pid, global}, _from, state) do
+    if global do
+      {:reply, :ok, %{}}
+    else
+      {:reply, :ok, Map.put(state, pid, [])}
+    end
   end
 end
