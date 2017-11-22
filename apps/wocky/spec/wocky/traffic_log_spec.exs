@@ -41,11 +41,6 @@ defmodule Wocky.TrafficLogSpec do
       TrafficLog.get_by_period(user.id, now, default_duration())
       |> should(eq [entry])
     end
-
-    it "should not add logs for invalid users" do
-      log = Factory.params_for(:traffic_log, user_id: ID.new())
-      TrafficLog.put(log) |> should(be_error_result())
-    end
   end
 
   describe "get_by_period/3" do
