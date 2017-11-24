@@ -10,6 +10,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Various fixes to ensure tests run cleanly (#1116)
   * Allow apostrophe in user names.
 * Remove user FK constraint on traffic_logs (#1117)
+* Add roles to roster response (#1118)
+* Quick fix for bot integration tests (PR #1121)
 
 
 # 2017.11.17+r68d76fd
