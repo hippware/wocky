@@ -14,10 +14,17 @@ defmodule Wocky.HomeStreamItemSpec do
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
+    bot = Factory.insert(:bot, %{user: user})
 
     items = for _ <- 1..@num_items do
       Factory.insert(:home_stream_item, %{user: user})
     end
+
+    # ref_update objects should not be returned by standard get operations
+    # They are only sent as async updates
+    update_item =
+      Factory.insert(:home_stream_item,
+                     %{user: user, class: :ref_update, reference_bot: bot})
 
     middle_item = div(@num_items, 2) - 1
 
@@ -26,7 +33,10 @@ defmodule Wocky.HomeStreamItemSpec do
      items: items,
      middle_time: Enum.at(items, middle_item).updated_at,
      after_items: Enum.slice(items, (middle_item + 1)..@num_items),
-     last_item: List.last(items)}
+     last_item: List.last(items),
+     update_item: update_item,
+     version: update_item.updated_at
+    }
   end
 
   describe "put/4" do
@@ -48,16 +58,7 @@ defmodule Wocky.HomeStreamItemSpec do
         get_result.key |> should(eq key)
         get_result.from_jid |> should(eq from_jid)
         get_result.stanza |> should(eq stanza)
-        get_result.deleted |> should(be_false())
-      end
-
-      it "should work even when :set_ordering is false" do
-        HomeStreamItem.put(shared.user.id,
-                           Factory.new_jid,
-                           Factory.new_jid,
-                           Lorem.paragraph,
-                           set_ordering: false)
-        |> should(be_ok_result())
+        get_result.class |> should(eq :item)
       end
     end
 
@@ -75,21 +76,6 @@ defmodule Wocky.HomeStreamItemSpec do
                                                shared.last_item.key)
         get_result |> should(be_struct HomeStreamItem)
         get_result.stanza |> should(eq stanza)
-        get_result.ordering |> should(be_later_than(shared.last_item.ordering))
-      end
-
-      it "should not update the ordering when set_ordering is false" do
-        stanza = Lorem.paragraph
-        put_result = HomeStreamItem.put(shared.user.id,
-                                        shared.last_item.key,
-                                        shared.last_item.from_jid,
-                                        stanza,
-                                        set_ordering: false)
-        put_result |> should(be_ok_result())
-
-        get_result = HomeStreamItem.get_by_key(shared.user.id,
-                                               shared.last_item.key)
-        get_result.ordering |> should(eq(shared.last_item.ordering))
       end
     end
 
@@ -147,7 +133,7 @@ defmodule Wocky.HomeStreamItemSpec do
       result |> should(be_ok_result())
       result_val = Kernel.elem(result, 1)
       result_val |> should(be_struct HomeStreamItem)
-      result_val.deleted |> should(be_true())
+      result_val.class |> should(eq :deleted)
     end
 
     it "should not fail for a non-existant item" do
@@ -171,6 +157,11 @@ defmodule Wocky.HomeStreamItemSpec do
         Factory.insert(:home_stream_item,
                        %{user: shared.user, reference_bot: ref_bot})
       end
+
+      Factory.insert(:home_stream_item,
+                     %{user: shared.user,
+                       reference_bot: ref_bot,
+                       class: :ref_update})
 
       user_ids = Enum.map(ref_user_items, &(&1.id))
       HomeStreamItem.delete_by_user_ref(ref_user)
@@ -199,7 +190,7 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should mark all HS entries with the referenced user as deleted" do
       shared.referenced_user_items |> should(have_length(@num_items))
       Enum.each(shared.referenced_user_items,
-                fn(i) -> i.deleted |> should(be_true()) end)
+                fn(i) -> i.class |> should(eq :deleted) end)
     end
 
     it "should update the updated_at timestamps on all deleted items" do
@@ -212,7 +203,7 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should mark all HS entries with the referenced bot as deleted" do
       shared.referenced_bot_items |> should(have_length(@num_items))
       Enum.each(shared.referenced_bot_items,
-                fn(i) -> i.deleted |> should(be_true()) end)
+                fn(i) -> i.class |> should(eq :deleted) end)
     end
 
     it "should update the updated_at timestamps on all deleted items" do
@@ -266,6 +257,14 @@ defmodule Wocky.HomeStreamItemSpec do
         |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
         |> should(have_length(@num_items))
       end
+
+      it "should entirely remove ref_update items for the deleted object" do
+        HomeStreamItem
+        |> where(reference_bot_id: ^shared.ref_bot.id)
+        |> where(class: ^:ref_update)
+        |> Repo.all
+        |> should(eq [])
+      end
     end
   end
 
@@ -296,31 +295,16 @@ defmodule Wocky.HomeStreamItemSpec do
       HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
 
       shared.user.id
-      |> HomeStreamItem.get(true)
+      |> HomeStreamItem.get(false)
       |> should_match_items(tl(shared.items))
     end
   end
 
   describe "get/3" do
-    before do
-      time = Timex.shift(DateTime.utc_now(), days: -1)
-      item = Factory.insert(:home_stream_item, %{user: shared.user,
-                                                 ordering: time})
-      {:ok, item: item}
-    end
-
-    it "should order by update time if specified" do
+    it "should order by update time" do
       shared.user.id
-      |> HomeStreamItem.get(false, true)
-      |> List.last
-      |> should_match_item(shared.item)
-    end
-
-    it "should order by ordering otherwise" do
-      shared.user.id
-      |> HomeStreamItem.get(false)
-      |> hd
-      |> should_match_item(shared.item)
+      |> HomeStreamItem.get(true)
+      |> should_match_items(shared.items)
     end
   end
 
@@ -348,16 +332,19 @@ defmodule Wocky.HomeStreamItemSpec do
       HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
 
       shared.user.id
-      |> HomeStreamItem.get_by_key(hd(shared.items).key, true)
+      |> HomeStreamItem.get_by_key(hd(shared.items).key, false)
       |> should(be_nil())
     end
   end
 
   describe "get_after_time/2" do
-    it "should return all items with updated_at later than the given time" do
+    it """
+    should return all items with updated_at later than the given time
+    including ref_update items
+    """ do
       shared.user.id
       |> HomeStreamItem.get_after_time(shared.middle_time)
-      |> should_match_items(shared.after_items)
+      |> should_match_items(shared.after_items ++ [shared.update_item])
     end
 
     it "should return an empty list for a non-existant user" do
@@ -377,7 +364,7 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should return the most recent updated_at value for the user" do
       shared.user.id
       |> HomeStreamItem.get_latest_version
-      |> should(eq shared.last_item.updated_at)
+      |> should(eq shared.version)
     end
 
     it "should return a valid timestamp for a non-existant user" do
@@ -397,8 +384,7 @@ defmodule Wocky.HomeStreamItemSpec do
         Factory.insert(:home_stream_item,
                        %{user: source_user,
                          created_at: time,
-                         updated_at: time,
-                         ordering: time})
+                         updated_at: time})
         |> Repo.preload(:reference_bot)
       end
 
@@ -467,74 +453,53 @@ defmodule Wocky.HomeStreamItemSpec do
     end
   end
 
-  describe "bump_version_by_ref_bot/1" do
+  describe "update_ref_bot/2", async: false do
     before do
-      ref_bot = Factory.insert(:bot, user: shared.user)
-      ref_items = Factory.insert_list(3, :home_stream_item,
-                                      user: shared.user,
-                                      reference_bot_id: ref_bot.id)
+      allow TestMock |> to(accept :update_callback, fn(_, _) -> :ok end)
 
-      other_bot = Factory.insert(:bot, user: shared.user)
-      Factory.insert_list(5, :home_stream_item,
-                          user: shared.user,
-                          reference_bot_id: other_bot.id)
+      user2 = Factory.insert(:user)
+      bot = Factory.insert(:bot, %{user: shared.user})
+
+      Factory.insert_list(2, :home_stream_item,
+                          %{user: shared.user, reference_bot: bot})
+      Factory.insert(:home_stream_item,
+                     %{user: user2, reference_bot: bot})
+
+      HomeStreamItem.update_ref_bot(bot, &TestMock.update_callback(&1, &2))
+
+      user_items = get_all_items(shared.user.id)
+      user2_items = get_all_items(user2.id)
+
       {:ok,
-        ref_bot: ref_bot,
-        ref_item_versions: ref_items |> Enum.map(&(&1.updated_at)),
-        ref_item_ids: ref_items |> Enum.map(&(&1.id)) |> Enum.sort
+        bot: bot,
+        user2: user2,
+        user_items: user_items,
+        user2_items: user2_items,
+        new_item: List.last(user_items),
+        new_item2: List.last(user2_items)
       }
     end
 
-    it "should return all referenced items" do
-      shared.ref_bot
-      |> HomeStreamItem.bump_version_by_ref_bot
-      |> Enum.map(&(&1.id))
-      |> Enum.sort
-      |> should(eq shared.ref_item_ids)
+    it "should add a new update item" do
+      # base items plus new items plus explit update plus auto-gen update
+      shared.user_items |> should(have_length @num_items + 4)
+      shared.user2_items |> should(have_length 2)
     end
 
-    it "should return an empty list if there are no referenced items" do
-      :bot
-      |> Factory.build
-      |> HomeStreamItem.bump_version_by_ref_bot
-      |> should(eq [])
+    it "should have the new item at the end" do
+      shared.new_item.class |> should(eq :ref_update)
+      shared.new_item.reference_bot_id |> should(eq shared.bot.id)
+
+      shared.new_item2.class |> should(eq :ref_update)
+      shared.new_item2.reference_bot_id |> should(eq shared.bot.id)
     end
 
-    it "should return the modified versions" do
-      returned =
-        shared.ref_bot
-        |> HomeStreamItem.bump_version_by_ref_bot
-        |> Enum.sort
-
-      expected =
-        HomeStreamItem
-        |> where(reference_bot_id: ^shared.ref_bot.id)
-        |> preload(:user)
-        |> Repo.all
-        |> Enum.sort
-
-      returned |> should(eq expected)
+    it "should call the callback once for each user" do
+      TestMock |> should(accepted :update_callback,
+                         [shared.new_item, shared.user], count: 1)
+      TestMock |> should(accepted :update_callback,
+                         [shared.new_item2, shared.user2], count: 1)
     end
-
-    it "should increment the versions of all touched items" do
-      shared.ref_bot
-      |> HomeStreamItem.bump_version_by_ref_bot
-      |> Enum.map(&(&1.updated_at))
-      |> Enum.sort
-      |> Enum.all?(fn(v) ->
-                    Enum.all?(shared.ref_item_versions,
-                              fn(v2) -> DateTime.compare(v, v2) == :gt end)
-                   end)
-      |> should(be_true())
-    end
-
-    it "should preload the users" do
-      shared.ref_bot
-      |> HomeStreamItem.bump_version_by_ref_bot
-      |> Enum.all?(fn(i) -> i.user == shared.user end)
-      |> should(be_true())
-    end
-
   end
 
   defp should_match_items(items, expected) do
@@ -550,6 +515,14 @@ defmodule Wocky.HomeStreamItemSpec do
     item
     |> Map.drop([:user, :reference_bot])
     |> should(eq Map.drop(expected, [:user, :reference_bot]))
+  end
+
+  defp get_all_items(user_id) do
+    user_id
+    |> HomeStreamItem.get_query(
+        include_deleted: true, include_ref_updates: true)
+    |> exclude(:preload)
+    |> Repo.all
   end
 
 end

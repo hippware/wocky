@@ -382,5 +382,5 @@ defmodule Wocky.BotSpec do
     |> Repo.one
   end
 
-  defp is_deleted([%HomeStreamItem{deleted: deleted}]), do: deleted
+  defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted
 end

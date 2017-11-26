@@ -19,7 +19,12 @@ defmodule Wocky.HomeStreamID do
   # ID for follow on/off/expire
   @spec bot_event_id(Bot.t, binary) :: id
   def bot_event_id(bot, event) do
-    {JID.to_binary(Bot.to_jid(bot)) <> "/" <> event, nil, bot}
+    bot_jid = Bot.to_jid(bot)
+    str =
+      bot_jid
+      |> JID.replace_resource(jid(bot_jid, :resource) <> "/" <> event)
+      |> JID.to_binary
+    {str, nil, bot}
   end
 
   # ID for user entry/exit. These are suffixed with a unique ID so that
@@ -36,25 +41,15 @@ defmodule Wocky.HomeStreamID do
 
   # ID for publication event and any others for which we only want
   # one ocurrence on the HS per bot
-  def bot_event_id(bot) do
-    bot_jid = Bot.to_jid(bot)
-    str =
-      bot_jid
-      |> JID.replace_resource(jid(bot_jid, :resource) <> "/event")
-      |> JID.to_binary
-    {str, nil, bot}
-  end
+  def bot_event_id(bot), do: bot_event_id(bot, "event")
 
   # ID for bot decription change
   @spec bot_description_id(Bot.t) :: id
-  def bot_description_id(bot) do
-    bot_jid = Bot.to_jid(bot)
-    str =
-      bot_jid
-      |> JID.replace_resource(jid(bot_jid, :resource) <> "/description")
-      |> JID.to_binary
-    {str, nil, bot}
-  end
+  def bot_description_id(bot), do: bot_event_id(bot, "description")
+
+  # ID for a referenced bot update
+  @spec bot_changed_id(Bot.t) :: id
+  def bot_changed_id(bot), do: bot_event_id(bot, "changed")
 
   # ID for chat message from user
   @spec user_message_id(User.t) :: id

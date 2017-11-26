@@ -54,9 +54,9 @@ defmodule Wocky.BlockingSpec do
 
       it "should remove all HS references for the blocked user's bots and msgs" do
         HomeStreamItem.get(shared.alice.id)
-        |> Enum.each(&(&1.deleted |> should(be_true())))
+        |> Enum.each(&(&1.class |> should(eq :deleted)))
         HomeStreamItem.get(shared.eve.id)
-        |> Enum.each(&(&1.deleted |> should(be_true())))
+        |> Enum.each(&(&1.class |> should(eq :deleted)))
       end
 
       it "should delete all items on the user's bots by the blocked author" do
