@@ -393,11 +393,9 @@ get_items(Stanza) ->
 get_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children}, Acc) ->
     {value, ID} = xml:get_attr(<<"id">>, Attrs),
     {value, Version} = xml:get_attr(<<"version">>, Attrs),
-    {value, Ordering} = xml:get_attr(<<"ordering">>, Attrs),
     {value, From} = xml:get_attr(<<"from">>, Attrs),
     [#item{id = ID,
            version = Version,
-           ordering = Ordering,
            from = From,
            stanzas = Children}
      | Acc];

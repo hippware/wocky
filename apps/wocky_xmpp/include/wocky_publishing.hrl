@@ -11,13 +11,13 @@
 -type published_stanza() :: jlib:xmlel() | [jlib:xmlel()].
 
 -record(published_item, {
-          id        :: pub_item_id(),
-          new       :: boolean(),
-          version   :: pub_version(),
-          ordering  :: pub_ordering(),
-          from      :: ejabberd:jid(),
-          stanza    :: published_stanza(),
-          deleted = false :: boolean()
+          id                :: pub_item_id(),
+          type = <<"item">> :: binary(),
+          new = false       :: boolean(),
+          version           :: pub_version(),
+          from              :: ejabberd:jid(),
+          stanza            :: published_stanza(),
+          deleted = false   :: boolean()
          }).
 
 -type pub_item() :: #published_item{}.

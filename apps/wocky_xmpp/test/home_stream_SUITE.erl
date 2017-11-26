@@ -42,7 +42,6 @@ all() -> [
           unsubscribe,
           maintain_subscription,
           get_item,
-          override_ordering,
           {group, publish_bot},
           no_auto_publish_pep_item
          ].
@@ -59,7 +58,7 @@ publish_bot_cases() ->
      auto_publish_bot_item,
      auto_publish_to_system_user,
      bot_description_update,
-     bot_hs_version_bumps,
+     bot_change_notification,
      bot_becomes_private
     ].
 
@@ -337,29 +336,6 @@ get_item(Config) ->
         expect_iq_error_u(get_hs_stanza(?wocky_id:new()), Alice, Alice)
       end).
 
-override_ordering(Config) ->
-    escalus:story(Config, [{alice, 1}],
-      fun(Alice) ->
-        clear_home_streams(),
-        check_home_stream_sizes(0, [Alice]),
-
-        expect_iq_success_u(pub_stanza(<<"id_1">>), Alice, Alice),
-        expect_iq_success_u(pub_stanza(<<"id_2">>), Alice, Alice),
-        expect_iq_success_u(pub_stanza(<<"id_3">>), Alice, Alice),
-
-        Ordering = ?wocky_timestamp:shift([{days, -1}]),
-        expect_iq_success_u(pub_stanza(<<"id_2">>, Ordering), Alice, Alice),
-
-        Stanza = expect_iq_success_u(
-                   get_hs_stanza(#rsm_in{direction = before}),
-                   Alice, Alice),
-        [Item1, Item2, Item3] = check_hs_result(Stanza, 3),
-
-        ?assertEqual(<<"id_1">>, Item1#item.id),
-        ?assertEqual(<<"id_3">>, Item2#item.id),
-        ?assertEqual(<<"id_2">>, Item3#item.id)
-      end).
-
 auto_publish_newly_public_bot(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
                            {karen, 1}, {tim, 1}],
@@ -522,7 +498,7 @@ bot_description_update(Config) ->
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice)
       end).
 
-bot_hs_version_bumps(Config) ->
+bot_change_notification(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
         clear_home_streams(),
@@ -533,26 +509,27 @@ bot_hs_version_bumps(Config) ->
 
         expect_iq_success(update_bot_desc_stanza("Different description"),
                           Alice),
-        get_message(Carol),
+        escalus:assert(fun is_bot_desc_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         ensure_all_clean([Alice, Carol]),
 
         expect_iq_success(
           update_field_stanza("title", "string", "newtitle"), Alice),
-        get_message(Carol),
+        escalus:assert(fun is_bot_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         ensure_all_clean([Alice, Carol]),
 
         bot_SUITE:publish_item(?BOT, <<"BrandNewID">>, <<"title">>,
                                <<"content">>, undefined, Alice),
-        % Two items - one for description, one for bot post
-        get_message(Carol),
-        get_message(Carol),
+        escalus:assert_many([fun is_bot_change_notification/1,
+                             fun is_item_publish_notification/1],
+                            escalus:wait_for_stanzas(Carol, 2)),
         ensure_all_clean([Alice, Carol]),
 
         expect_iq_success(
           update_field_stanza("address", "string", "hereabouts"), Alice),
-        % Two items - one for description, one for bot post
-        get_message(Carol),
-        get_message(Carol),
+        escalus:assert(fun is_bot_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         ensure_all_clean([Alice, Carol]),
 
         % No updated generated for address_data change
@@ -563,9 +540,31 @@ bot_hs_version_bumps(Config) ->
         ensure_all_clean([Alice, Carol])
       end).
 
-get_message(Client) ->
-    S = escalus:wait_for_stanza(Client),
-    escalus:assert(is_message, S).
+is_bot_change_notification(S) ->
+
+    escalus_pred:is_message(S)
+    andalso
+    <<>> =/= xml:get_path_s(S, [{elem, <<"notification">>},
+                                {elem, <<"reference-changed">>},
+                                {elem, <<"bot">>}]).
+
+is_bot_desc_change_notification(S) ->
+    escalus_pred:is_message(S)
+    andalso
+    <<>> =/= xml:get_path_s(S, [{elem, <<"notification">>},
+                                {elem, <<"item">>},
+                                {elem, <<"message">>},
+                                {elem, <<"bot-description-changed">>}]).
+
+is_item_publish_notification(S) ->
+    escalus_pred:is_message(S)
+    andalso
+    <<>> =/= xml:get_path_s(S, [{elem, <<"notification">>},
+                                {elem, <<"item">>},
+                                {elem, <<"message">>},
+                                {elem, <<"event">>},
+                                {elem, <<"item">>},
+                                {elem, <<"entry">>}]).
 
 bot_becomes_private(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
@@ -614,12 +613,11 @@ no_auto_publish_pep_item(Config) ->
 %% Helpers
 %%--------------------------------------------------------------------
 
-pub_stanza(ID) -> pub_stanza(ID, undefined).
-pub_stanza(ID, Ordering) ->
+pub_stanza(ID) ->
     test_helper:iq_set(?NS_PUBLISHING,
                        #xmlel{name = <<"publish">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [new_item(ID, Ordering)]}).
+                              children = [new_item(ID)]}).
 
 delete_stanza(ID) ->
     test_helper:iq_set(?NS_PUBLISHING,
@@ -640,9 +638,9 @@ share_children() ->
      cdata_el(<<"server">>, ?SERVER),
      cdata_el(<<"action">>, <<"share">>)].
 
-new_item(ID, Ordering) ->
+new_item(ID) ->
     #xmlel{name = <<"item">>,
-           attrs = maybe_id(ID) ++ maybe_ordering(Ordering),
+           attrs = maybe_id(ID),
            children = [cdata_el(<<"new-published-element">>,
                                 <<"hello there!">>),
                        #xmlel{name = <<"second-element">>,
@@ -653,9 +651,6 @@ cdata_el(Name, CData) ->
 
 maybe_id(undefined) -> [];
 maybe_id(ID) -> [{<<"id">>, ID}].
-
-maybe_ordering(undefined) -> [];
-maybe_ordering(Ordering) -> [{<<"ordering">>, Ordering}].
 
 delete_item(ID) ->
     #xmlel{name = <<"delete">>,

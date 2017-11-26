@@ -26,7 +26,8 @@
          list_hash/1,
          get_image/1,
          bot_packet_action/1,
-         follow_stanza/2
+         follow_stanza/2,
+         bot_action_el/2
         ]).
 
 
@@ -163,9 +164,11 @@ bot_packet_action(JID, Action) ->
 follow_stanza(Bot, Action) ->
     #xmlel{name = <<"message">>,
            attrs = [{<<"type">>, <<"headline">>}],
-           children = [bot_el(Bot, Action)]}.
+           children = [bot_action_el(Bot, Action)]}.
 
-bot_el(#{id := ID, server := Server} = Bot, Action) ->
+-spec bot_action_el(?wocky_bot:t(), binary() | {binary(), binary()}) ->
+    jlib:xmlel().
+bot_action_el(#{id := ID, server := Server} = Bot, Action) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = [wocky_xml:cdata_el(
