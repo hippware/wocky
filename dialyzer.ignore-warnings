@@ -1,6 +1,4 @@
-Function fields_for/1 has no local return
-Function fields_for/2 only terminates with explicit exception
-<<_:40,_:_*8>>
+:0: Unknown function 'Elixir.Wocky.Push.Event.
 lib/wocky/index/algolia_indexer.ex:17: Function update_object/3 has no local return
 lib/wocky/index/algolia_indexer.ex:37: Function do_update_object/2 has no local return
 lib/wocky/index/algolia_indexer.ex:42: Function delete_object/2 has no local return

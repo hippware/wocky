@@ -111,7 +111,7 @@ defmodule Wocky.Push do
   end
   defp do_notify(token, user_id, resource, message) do
     message
-    |> maybe_truncate_message
+    |> maybe_truncate_message()
     |> make_payload(token)
     |> maybe_push(sandbox?())
     |> handle_response(user_id, resource)
@@ -147,7 +147,6 @@ defmodule Wocky.Push do
     Confex.get_env(:wocky, Wocky.Push)[:sandbox]
   end
 
-  defp handle_response(:disabled, _, _), do: :ok
   defp handle_response(%Notification{response: resp} = n, user_id, resource) do
     if resp == :bad_device_token do
       Logger.error "Bad device token for user #{user_id}/#{resource}."
