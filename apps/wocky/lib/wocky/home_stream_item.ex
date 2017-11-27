@@ -5,19 +5,24 @@ defmodule Wocky.HomeStreamItem do
 
   use Wocky.Repo.Model
 
+  import EctoHomoiconicEnum, only: [defenum: 2]
+
   alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Bot.Share
+  alias Wocky.HomeStreamID
+  alias Wocky.JID
   alias Wocky.User
   alias __MODULE__, as: HomeStreamItem
+
+  defenum ClassEnum, [:item, :deleted, :ref_update]
 
   @foreign_key_type :binary_id
   schema "home_stream_items" do
     field :key,      :string
     field :from_jid, :binary, default: ""
     field :stanza,   :binary, default: ""
-    field :deleted,  :boolean, default: false
-    field :ordering, :utc_datetime
+    field :class,    ClassEnum, default: :item
 
     belongs_to :user, User
     belongs_to :reference_user, User, foreign_key: :reference_user_id
@@ -27,26 +32,26 @@ defmodule Wocky.HomeStreamItem do
   end
 
   @type key :: binary
+  @type class :: :item | :deleted | :ref_update
 
   @type t :: %HomeStreamItem{
     user_id:        User.id,
     key:            key,
     from_jid:       binary,
     stanza:         binary,
-    deleted:        boolean,
+    class:          class,
     updated_at:     DateTime.t,
-    ordering:       DateTime.t,
     reference_user: User.t,
     reference_bot:  Bot.t
   }
 
-  @change_fields [:user_id, :key, :from_jid, :stanza, :deleted,
-                  :reference_user_id, :reference_bot_id, :ordering,
+  @change_fields [:user_id, :key, :from_jid, :stanza, :class,
+                  :reference_user_id, :reference_bot_id,
                   :created_at, :updated_at]
 
   @prepopulate_fields @change_fields
 
-  @delete_changes [deleted: true, stanza: "", from_jid: "",
+  @delete_changes [class: :deleted, stanza: "", from_jid: "",
                    reference_user_id: nil, reference_bot_id: nil]
 
   @doc "Write a home stream item to the database"
@@ -62,7 +67,7 @@ defmodule Wocky.HomeStreamItem do
       stanza: stanza,
       reference_user_id: Keyword.get(opts, :ref_user_id),
       reference_bot_id: Keyword.get(opts, :ref_bot_id),
-      ordering: Keyword.get(opts, :ordering, now),
+      class: :item,
 
       # Usually we let ecto handle these timestamps, however in this case we
       # want to know if the item is newly inserted. We do this by checking if
@@ -72,14 +77,14 @@ defmodule Wocky.HomeStreamItem do
       created_at: now
     }
 
-    conflict_set =
+    on_conflict =
       fields
-      |> conflict_set(Keyword.get(opts, :set_ordering, true))
+      |> Map.drop([:created_at])
       |> Map.to_list
 
     %HomeStreamItem{}
     |> changeset(fields)
-    |> Repo.insert(on_conflict: [set: conflict_set],
+    |> Repo.insert(on_conflict: [set: on_conflict],
                    conflict_target: [:user_id, :key],
                    returning: true)
   end
@@ -159,29 +164,31 @@ defmodule Wocky.HomeStreamItem do
 
   @doc "Get all home stream items for a user"
   @spec get(User.id, boolean) :: [t]
-  def get(user_id, exclude_deleted \\ false, update_ordering \\ false) do
+  def get(user_id, include_deleted \\ true) do
     user_id
-    |> get_query(exclude_deleted)
-    |> set_order(update_ordering)
+    |> get_query([include_deleted: include_deleted])
+    |> order_by(asc: :updated_at)
     |> Repo.all
   end
 
   @doc "Get a single item by its key"
   @spec get_by_key(User.id, key, boolean) :: t | nil
-  def get_by_key(user_id, key, exclude_deleted \\ false) do
+  def get_by_key(user_id, key, include_deleted \\ true) do
     user_id
-    |> get_query(exclude_deleted)
+    |> get_query([include_deleted: include_deleted])
     |> where(key: ^key)
     |> Repo.one
   end
 
-  @doc "Get all items after a certain timestamp"
+  @doc """
+  Get all items after a certain timestamp *including* ref_update items
+  """
   @spec get_after_time(User.id, DateTime.t | binary, boolean) :: [t]
-  def get_after_time(user_id, time, exclude_deleted \\ false) do
+  def get_after_time(user_id, time, include_deleted \\ true) do
     user_id
-    |> get_query(exclude_deleted)
+    |> get_query([include_deleted: include_deleted, include_ref_updates: true])
     |> where([i], i.updated_at > ^time)
-    |> set_order(true)
+    |> order_by(asc: :updated_at)
     |> Repo.all
   end
 
@@ -200,12 +207,13 @@ defmodule Wocky.HomeStreamItem do
     end
   end
 
-  @spec get_query(User.id, boolean) :: Ecto.Queryable.t
-  def get_query(user_id, exclude_deleted \\ false) do
+  @spec get_query(User.id, Keyword.t) :: Ecto.Queryable.t
+  def get_query(user_id, opts) do
     HomeStreamItem
     |> with_user(user_id)
     |> preload(:reference_bot)
-    |> maybe_exclude_deleted(exclude_deleted)
+    |> maybe_include_ref_update(Keyword.get(opts, :include_ref_updates, false))
+    |> maybe_include_deleted(Keyword.get(opts, :include_deleted, false))
   end
 
   @spec prepopulate_from(User.id, User.id, Duration.t, non_neg_integer) :: :ok
@@ -228,6 +236,38 @@ defmodule Wocky.HomeStreamItem do
       end)
   end
 
+  @spec update_ref_bot(Bot.t, (t, User.t -> any)) :: :ok
+  def update_ref_bot(bot, callback) do
+    Repo.transaction(
+      fn() ->
+        HomeStreamItem
+        |> where(reference_bot_id: ^bot.id)
+        |> where(class: ^:item)
+        |> distinct([i], [i.user_id])
+        |> preload(:user)
+        |> Repo.stream
+        |> Stream.map(&update_ref_bot(bot, &1.user, callback))
+        |> Stream.run
+      end)
+  end
+
+  defp update_ref_bot(bot, user, callback) do
+    fields = %{
+      user_id: user.id,
+      key: bot |> HomeStreamID.bot_changed_id |> elem(0),
+      from_jid: "" |> JID.make(bot.server, "") |> JID.to_binary,
+      class: :ref_update,
+      reference_bot_id: bot.id
+    }
+
+    %HomeStreamItem{}
+    |> changeset(fields)
+    |> Repo.insert!(on_conflict: :replace_all,
+                    conflict_target: [:user_id, :key],
+                    returning: true)
+    |> callback.(user)
+  end
+
   defp prepop_items(from_id, period, min) do
     from_time = Timex.subtract(DateTime.utc_now(), period)
 
@@ -242,19 +282,10 @@ defmodule Wocky.HomeStreamItem do
 
   defp get_by_count(user_id, count) do
     user_id
-    |> get_query(true)
-    |> order_by(desc: :ordering)
+    |> get_query([include_deleted: true])
+    |> order_by(desc: :updated_at)
     |> limit(^count)
     |> Repo.all
-  end
-
-  @spec bump_version_by_ref_bot(Bot.t) :: [HomeStreamItem.t]
-  def bump_version_by_ref_bot(ref_bot) do
-    HomeStreamItem
-    |> where(reference_bot_id: ^ref_bot.id)
-    |> Repo.update_all([set: [updated_at: DateTime.utc_now]], returning: true)
-    |> elem(1)
-    |> Repo.preload(:user)
   end
 
   def with_user(user_id), do: with_user(HomeStreamItem, user_id)
@@ -264,19 +295,16 @@ defmodule Wocky.HomeStreamItem do
     |> where(user_id: ^user_id)
   end
 
-  defp set_order(query, true) do
+  def maybe_include_ref_update(query, true), do: query
+  def maybe_include_ref_update(query, false) do
     query
-    |> order_by(asc: :updated_at)
-  end
-  defp set_order(query, false) do
-    query
-    |> order_by(asc: :ordering)
+    |> where([i], i.class != ^:ref_update)
   end
 
-  def maybe_exclude_deleted(query, false), do: query
-  def maybe_exclude_deleted(query, true) do
+  def maybe_include_deleted(query, true), do: query
+  def maybe_include_deleted(query, false) do
     query
-    |> where(deleted: false)
+    |> where([i], i.class != ^:deleted)
   end
 
   defp changeset(struct, params) do
@@ -291,8 +319,4 @@ defmodule Wocky.HomeStreamItem do
   defp delete_changes do
     Keyword.put(@delete_changes, :updated_at, DateTime.utc_now())
   end
-
-  defp conflict_set(fields, true), do: Map.drop(fields, [:created_at])
-  defp conflict_set(fields, false), do: Map.drop(fields, [:created_at,
-                                                          :ordering])
 end

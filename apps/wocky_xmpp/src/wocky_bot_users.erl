@@ -167,9 +167,7 @@ notify_watcher(UserJID, FromJID, Bot = #{updated_at := UpatedAt}, Message) ->
     Timestamp = ?wocky_timestamp:to_string(UpatedAt),
     Item = #published_item{
               id = jid:to_binary(BotJID),
-              new = false,
               version = Timestamp,
-              ordering = Timestamp,
               from = FromJID,
               stanza = Stanza},
     wocky_publishing_handler:send_notification(UserJID, BotJID, Item).
@@ -193,18 +191,13 @@ maybe_update_hs_items(OldBot, NewBot) ->
         false -> ok
     end.
 
-should_update_hs(#{title := T1}, #{title := T2}) when T1 =/= T2 -> true;
-should_update_hs(#{image := I1}, #{image := I2}) when I1 =/= I2 -> true;
-should_update_hs(#{address := A1}, #{address := A2}) when A1 =/= A2 -> true;
-should_update_hs(#{location := L1}, #{location := L2}) when L1 =/= L2 -> true;
-should_update_hs(#{public := P1}, #{public := P2}) when P1 =/= P2 -> true;
-should_update_hs(_, _) -> false.
+should_update_hs(Bot1, Bot2) ->
+    Fields = [title, image, address, location, public],
+    lists:any(fun(F) -> maps:get(F, Bot1) =/= maps:get(F, Bot2) end, Fields).
 
 update_hs_items(Bot) ->
-    Items = ?wocky_home_stream_item:bump_version_by_ref_bot(Bot),
-    lists:foreach(
-      fun(Item = #{user := User}) ->
-              mod_wocky_home_stream:send_notifications(
-                ?wocky_user:to_jid(User),
-                mod_wocky_home_stream:map_to_item(Item, false))
-      end, Items).
+    ?wocky_home_stream_item:update_ref_bot(Bot, send_ref_update(Bot, _, _)).
+
+send_ref_update(Bot, HSItem, User) ->
+    mod_wocky_home_stream:send_bot_ref_update(
+      ?wocky_user:to_jid(User), HSItem, Bot).

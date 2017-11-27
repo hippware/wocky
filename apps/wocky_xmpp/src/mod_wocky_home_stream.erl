@@ -20,7 +20,7 @@
          % TODO: These can be removed once DB callbacks are implemented and
          % the HS can deal with its own publications
          send_notifications/2,
-         map_to_item/2
+         send_bot_ref_update/3
         ]).
 
 % wocky_publishing_handler exports
@@ -77,26 +77,26 @@ publish(TargetJID = #jid{luser = UserID},
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
 delete(UserJID = #jid{luser = User}, ID) ->
     {ok, ItemMap} = ?wocky_home_stream_item:delete(User, ID),
-    send_notifications(UserJID, map_to_item(ItemMap, false)).
+    send_notifications(UserJID, map_to_item(ItemMap)).
 
 -spec get(ejabberd:jid(), ejabberd:jid(),
           jlib:rsm_in() | pub_item_id()) -> pub_get_result().
 get(#jid{luser = User}, FromJID = #jid{luser = User}, RSMIn = #rsm_in{}) ->
-    Query = ?wocky_home_stream_item:get_query(User, true),
+    Query = ?wocky_home_stream_item:get_query(User, [{include_deleted, false}]),
     {Results, RSMOut} =
-      ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, ordering}),
-    {ok, {[map_to_item(I, false) || I <- Results],
+      ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, updated_at}),
+    {ok, {[map_to_item(I) || I <- Results],
           format_version(?wocky_home_stream_item:get_latest_version(User)),
           extra_data(Results, FromJID),
           RSMOut}};
 
 get(#jid{luser = User}, FromJID = #jid{luser = User}, ID) ->
-    Item = ?wocky_home_stream_item:get_by_key(User, ID, false),
+    Item = ?wocky_home_stream_item:get_by_key(User, ID, true),
     case Item of
         nil ->
             {ok, not_found};
         _ ->
-            {ok, {map_to_item(Item, false),
+            {ok, {map_to_item(Item),
                   format_version(
                     ?wocky_home_stream_item:get_latest_version(User)),
                   extra_data([Item], FromJID)}}
@@ -279,22 +279,15 @@ publish_bot_action(From, BotEl) ->
 maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
 
-
-map_to_item(Item = #{created_at := CreatedAt, updated_at := UpdatedAt}) ->
-    map_to_item(Item, ?datetime:compare(CreatedAt, UpdatedAt) =:= eq).
-
 map_to_item(#{key := Key, updated_at := UpdatedAt,
               from_jid := FromJID, stanza := StanzaBin,
-              ordering := Ordering, deleted := Deleted},
-            New) ->
+              class := Class}) ->
     {ok, Stanza} = wocky_xml:parse_multiple(StanzaBin),
     #published_item{id = Key,
-                    new = New,
                     version = format_version(UpdatedAt),
-                    ordering = format_version(Ordering),
                     from = jid:from_binary(FromJID),
                     stanza = Stanza,
-                    deleted = Deleted}.
+                    deleted = Class =:= deleted}.
 
 format_version(Time) ->
     ?wocky_timestamp:to_string(Time).
@@ -318,6 +311,26 @@ send_notifications(UserJID, Item) ->
 send_notification(JID, Item) ->
     wocky_publishing_handler:send_notification(
       JID, jid:replace_resource(JID, ?HOME_STREAM_NODE), Item).
+
+-spec send_bot_ref_update(ejabberd:jid(),
+                          ?wocky_home_stream_item:t(),
+                          ?wocky_bot:t()) -> ok.
+send_bot_ref_update(ToJID,
+                    #{id := ItemID,
+                      updated_at := Version,
+                      from_jid := FromJIDBin},
+                    Bot) ->
+
+    Item =
+    #published_item{
+       id = integer_to_binary(ItemID),
+       type = <<"reference-changed">>,
+       version = format_version(Version),
+       from = jid:from_binary(FromJIDBin),
+       stanza = wocky_bot_util:bot_action_el(Bot, <<"changed">>)
+      },
+
+    send_notifications(ToJID, Item).
 
 check_server(Server) ->
     case wocky_xmpp_app:server() of

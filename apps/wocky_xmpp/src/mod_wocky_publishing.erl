@@ -225,19 +225,18 @@ get_stanza(#xmlel{children = Children}) ->
     {ok, Children}.
 
 published_stanza(#jid{lresource = LResource}, ID,
-                 #published_item{version = Version, ordering = Ordering},
+                 #published_item{version = Version},
                  ExtraData) ->
     #xmlel{name = <<"published">>,
            attrs = [{<<"xmlns">>, ?NS_PUBLISHING},
                     {<<"node">>, LResource}],
-           children = [published_child(ID, Version, Ordering) |
+           children = [published_child(ID, Version) |
                        extra_data_child(ExtraData)]}.
 
-published_child(ID, Version, Ordering) ->
+published_child(ID, Version) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, ID},
-                    {<<"version">>, Version},
-                    {<<"ordering">>, Ordering}]}.
+                    {<<"version">>, Version}]}.
 
 extra_data_child([]) -> [];
 extra_data_child(ExtraData) ->
@@ -267,28 +266,20 @@ items_elements(Items) ->
 
 item_stanza(#published_item{id = ID,
                             version = Version,
-                            ordering = Ordering,
                             deleted = true}) ->
     #xmlel{name = <<"delete">>,
            attrs = [{<<"id">>, ID},
-                    {<<"version">>, Version},
-                    {<<"ordering">>, Ordering}]};
+                    {<<"version">>, Version}]};
 item_stanza(#published_item{id = ID,
-                            new = New,
+                            type = Type,
                             version = Version,
-                            ordering = Ordering,
                             from = From,
                             stanza = Stanza}) ->
-    #xmlel{name = <<"item">>,
+    #xmlel{name = Type,
            attrs = [{<<"id">>, ID},
                     {<<"version">>, Version},
-                    {<<"ordering">>, Ordering},
-                    {<<"from">>, jid:to_binary(From)} |
-                    maybe_new(New)],
+                    {<<"from">>, jid:to_binary(From)}],
            children = maybe_wrap_list(Stanza)}.
-
-maybe_new(false) -> [];
-maybe_new(true) -> [{<<"new">>, <<"true">>}].
 
 maybe_wrap_list(X) when is_list(X) -> X;
 maybe_wrap_list(X) -> [X].
