@@ -219,8 +219,8 @@ perform_owner_action(delete, Bot, _From, _To, _IQ) ->
     ?wocky_bot:delete(Bot),
     {ok, []};
 
-perform_owner_action(subscribers, Bot, _From, _To, _IQ) ->
-    wocky_bot_subscription:retrieve_subscribers(Bot);
+perform_owner_action(subscribers, Bot, _From, _To, IQ) ->
+    wocky_bot_subscription:retrieve_subscribers(Bot, IQ);
 
 perform_owner_action(follow_me, Bot, From, _To, IQ) ->
     #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,

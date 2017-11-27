@@ -12,7 +12,9 @@
 
 -export([subscribe/2,
          unsubscribe/2,
-         retrieve_subscribers/1]).
+         retrieve_subscribers/2]).
+
+-define(DEFAULT_MAX_SUBS, 50).
 
 %%%===================================================================
 %%% Action - subscribe
@@ -34,14 +36,17 @@ unsubscribe(User, Bot) ->
 %%% Action - retrieve subscribers
 %%%===================================================================
 
-retrieve_subscribers(Bot) ->
-    {ok, make_subscribers_element(Bot)}.
+retrieve_subscribers(Bot, IQ) ->
+    RSM = rsm_util:get_rsm(IQ, #rsm_in{max = ?DEFAULT_MAX_SUBS}),
+    {ok, make_subscribers_element(Bot, RSM)}.
 
-make_subscribers_element(Bot) ->
-    Subscribers = ?wocky_bot:subscribers(Bot),
+make_subscribers_element(Bot, RSM) ->
+    {Results, RSMOut} = ?wocky_rsm_helper:rsm_query(
+                           RSM, ?wocky_bot:subscribers_query(Bot),
+                           id, {asc, handle}),
     #xmlel{name = <<"subscribers">>,
-           attrs = list_attrs(Bot, Subscribers),
-           children = make_subscriber_elements(Subscribers)}.
+           attrs = list_attrs(Bot, RSMOut#rsm_out.count),
+           children = make_subscriber_elements(Results)}.
 
 make_subscriber_elements(Subscribers) ->
     lists:map(fun make_subscriber_element/1, Subscribers).
@@ -58,8 +63,9 @@ make_subscriber_count_element(Bot) ->
     Count = ?wocky_bot:subscriber_count(Bot),
     wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).
 
-list_attrs(Bot, List) ->
+list_attrs(Bot, Count) ->
     [{<<"xmlns">>, ?NS_BOT},
      {<<"node">>, ?wocky_bot:make_node(Bot)},
-     {<<"size">>, integer_to_binary(length(List))},
-     {<<"hash">>, wocky_bot_util:list_hash(List)}].
+     {<<"size">>, integer_to_binary(Count)},
+     % FIXME:
+     {<<"hash">>, base64:encode(crypto:strong_rand_bytes(8))}].

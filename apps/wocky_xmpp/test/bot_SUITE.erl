@@ -74,7 +74,8 @@ all() ->
      new_id,
      retrieve,
      update,
-     subscribers,
+     subscribers_no_rsm,
+     subscribers_rsm,
      unsubscribe,
      subscribe,
      watch,
@@ -302,7 +303,7 @@ update(Config) ->
         expect_iq_error(update_stanza(), Bob)
       end).
 
-subscribers(Config) ->
+subscribers_no_rsm(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         % Alice can get the correct subscribers
@@ -313,6 +314,15 @@ subscribers(Config) ->
         % Bob can't because he's not the owner
         expect_iq_error(subscribers_stanza(), Bob)
       end).
+
+subscribers_rsm(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        % Alice can get the correct subscribers
+        Stanza = expect_iq_success(subscribers_stanza(#rsm_in{max = 1}), Alice),
+        check_subscribers(Stanza, [?BJID(?CAROL)], 2)
+      end).
+
 
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
@@ -1322,10 +1332,16 @@ modify_field(NewDesc) ->
 subscribers_stanza() ->
     test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"subscribers">>)).
 
+subscribers_stanza(RSM) ->
+    test_helper:iq_get(
+      ?NS_BOT, node_el(?BOT, <<"subscribers">>, [rsm_elem(RSM)])).
+
+check_subscribers(Stanza, Subscribers) ->
+    check_subscribers(Stanza, Subscribers, length(Subscribers)).
 check_subscribers(#xmlel{name = <<"iq">>, children = [SubscribersEl]},
-                   Subscribers) ->
+                   Subscribers, Count) ->
     ReceivedSubscribers = SubscribersEl#xmlel.children,
-    ?assertEqual({value, integer_to_binary(length(Subscribers))},
+    ?assertEqual({value, integer_to_binary(Count)},
                  xml:get_attr(<<"size">>, SubscribersEl#xmlel.attrs)),
     ?assertEqual(length(Subscribers), length(ReceivedSubscribers)),
     lists:foreach(check_subscriber(ReceivedSubscribers, _), Subscribers).
