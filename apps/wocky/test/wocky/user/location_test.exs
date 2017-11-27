@@ -14,16 +14,15 @@ defmodule Wocky.User.LocationTest do
   alias Wocky.User.Location
 
   @rsrc "testing"
-  @platform "apple"
 
   setup do
     Sandbox.clear_notifications
 
     owner = Factory.insert(:user)
-    Push.enable(owner.id, @rsrc, @platform, Code.isbn13)
+    Push.enable(owner.id, @rsrc, Code.isbn13)
 
     user = Factory.insert(:user)
-    Push.enable(user.id, @rsrc, @platform, Code.isbn13)
+    Push.enable(user.id, @rsrc, Code.isbn13)
 
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)

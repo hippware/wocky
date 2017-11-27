@@ -170,7 +170,6 @@ defmodule Wocky.Repo.Factory do
     %PushToken{
       user: build(:user),
       resource: ID.new,
-      platform: "apple",
       token: ID.new,
       valid: true,
       enabled_at: DateTime.utc_now

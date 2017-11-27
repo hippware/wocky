@@ -51,8 +51,7 @@ handle_iq(_From, _To, IQ) ->
 
 handle_request(J, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
-    {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
-    ok = ?wocky_push:enable(J#jid.luser, J#jid.lresource, Platform, DeviceId),
+    ok = ?wocky_push:enable(J#jid.luser, J#jid.lresource, DeviceId),
     {ok, <<"enabled">>};
 handle_request(J, #xmlel{name = <<"disable">>}) ->
     ok = ?wocky_push:disable(J#jid.luser, J#jid.lresource),

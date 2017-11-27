@@ -6,7 +6,6 @@ defmodule Wocky.Repo.Migrations.CreatePushTokens do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, on_delete: :delete_all, type: :binary_id)
       add :resource, :string, null: false
-      add :platform, :string, null: false
       add :token, :string, null: false
       add :valid, :boolean, null: false, default: true
       add :enabled_at, :timestamptz

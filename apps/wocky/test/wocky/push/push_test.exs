@@ -15,7 +15,6 @@ defmodule Wocky.PushTest do
 
   require Logger
 
-  @platform "apple"
   @message  "Message content"
 
   setup do
@@ -24,7 +23,7 @@ defmodule Wocky.PushTest do
     user = Factory.insert(:user, resource: "testing")
     token = Code.isbn13
 
-    :ok = Push.enable(user.id, user.resource, @platform, token)
+    :ok = Push.enable(user.id, user.resource, token)
 
     {:ok, user_id: user.id, resource: user.resource, token: token}
   end
@@ -38,20 +37,17 @@ defmodule Wocky.PushTest do
       row = get_user_token(shared.user_id, shared.resource)
       assert row.valid
       assert row.token == shared.token
-      assert row.platform == @platform
       refute is_nil(row.enabled_at)
       assert Timex.diff(row.enabled_at, row.created_at, :seconds) == 0
     end
 
     test "should overwrite rows when a token is re-enabled", shared do
       old_row = get_user_token(shared.user_id, shared.resource)
-      :ok = Push.enable(shared.user_id, shared.resource,
-                        @platform, shared.token)
+      :ok = Push.enable(shared.user_id, shared.resource, shared.token)
 
       row = get_user_token(shared.user_id, shared.resource)
       assert row.valid
       assert row.token == shared.token
-      assert row.platform == @platform
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
     end
   end
@@ -70,7 +66,7 @@ defmodule Wocky.PushTest do
 
   describe "purge/2" do
     setup %{user_id: user_id} do
-      :ok = Push.enable(user_id, "other", @platform, "987654321")
+      :ok = Push.enable(user_id, "other", "987654321")
       :ok = Push.purge(user_id)
     end
 
@@ -134,7 +130,7 @@ defmodule Wocky.PushTest do
 
   describe "notify_all/2" do
     setup %{user_id: user_id} do
-      :ok = Push.enable(user_id, "other", @platform, "987654321")
+      :ok = Push.enable(user_id, "other", "987654321")
       :ok = Push.notify_all(user_id, @message)
     end
 

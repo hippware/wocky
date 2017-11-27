@@ -23,12 +23,11 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Token API
 
-  @spec enable(Wocky.User.id, Wocky.User.resource, Token.platform, Token.token)
+  @spec enable(Wocky.User.id, Wocky.User.resource, Token.token)
     :: :ok
-  def enable(user_id, resource, platform, token) do
+  def enable(user_id, resource, token) do
     %{user_id: user_id,
       resource: resource,
-      platform: platform,
       token: token}
     |> Token.register_changeset
     |> Repo.insert!(
