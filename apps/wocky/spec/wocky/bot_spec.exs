@@ -305,6 +305,14 @@ defmodule Wocky.BotSpec do
         it do: should_not(have user())
       end
 
+      describe "subscribers_query/1" do
+        subject do: Bot.subscribers_query(bot()) |> Repo.all
+
+        it do: should(have_length 1)
+        it do: should_not(have user())
+        it do: subject() |> hd() |> should(be_struct User)
+      end
+
       describe "subscriber_count/1" do
         subject do: Bot.subscriber_count(bot())
 

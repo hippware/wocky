@@ -170,6 +170,11 @@ defmodule Wocky.Bot do
     bot.user
   end
 
+  @spec subscribers_query(t) :: [User.t]
+  def subscribers_query(bot) do
+    Ecto.assoc(bot, :subscribers)
+  end
+
   @spec subscribers(t) :: [User.t]
   def subscribers(bot) do
     Repo.preload(bot, [:subscribers]).subscribers
