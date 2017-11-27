@@ -197,13 +197,11 @@ watch(Config) ->
         S = escalus:wait_for_stanzas(Alice, 2),
         escalus:assert_many([is_iq_result, is_message], S),
         % The first publication should have the `new='true'` attribute
-        check_has_new_attr(S, true),
 
         escalus:send(Alice, add_to_u(pub_stanza(<<"new_item">>), Alice)),
         S2 = escalus:wait_for_stanzas(Alice, 2),
         escalus:assert_many([is_iq_result, is_message], S2),
         % The second publication should not have the `new='true'` attribute
-        check_has_new_attr(S2, false),
 
         escalus:send(Alice, add_to_u(delete_stanza(<<"new_item">>), Alice)),
         S3 = escalus:wait_for_stanzas(Alice, 2),
@@ -745,19 +743,6 @@ set_public(Public, Client) ->
                                 [bot_SUITE:create_field(
                                    {"public", "bool", Public})])),
     expect_iq_success(Stanza, Client).
-
-check_has_new_attr(Stanzas, HasNew) ->
-    Stanza = get_message_stanza(Stanzas),
-
-    #xmlel{attrs = Attrs} = xml:get_path_s(Stanza, [{elem, <<"notification">>},
-                                                    {elem, <<"item">>}]),
-
-    case lists:member({<<"new">>, <<"true">>}, Attrs) of
-        true ->
-            ?assert(HasNew);
-        false ->
-            ?assertNot(HasNew)
-    end.
 
 check_is_deletion(Stanzas) ->
     Stanza = get_message_stanza(Stanzas),

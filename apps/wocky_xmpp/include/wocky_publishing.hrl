@@ -13,7 +13,6 @@
 -record(published_item, {
           id                :: pub_item_id(),
           type = <<"item">> :: binary(),
-          new = false       :: boolean(),
           version           :: pub_version(),
           from              :: ejabberd:jid(),
           stanza            :: published_stanza(),

@@ -272,19 +272,14 @@ item_stanza(#published_item{id = ID,
                     {<<"version">>, Version}]};
 item_stanza(#published_item{id = ID,
                             type = Type,
-                            new = New,
                             version = Version,
                             from = From,
                             stanza = Stanza}) ->
     #xmlel{name = Type,
            attrs = [{<<"id">>, ID},
                     {<<"version">>, Version},
-                    {<<"from">>, jid:to_binary(From)} |
-                    maybe_new(New)],
+                    {<<"from">>, jid:to_binary(From)}],
            children = maybe_wrap_list(Stanza)}.
-
-maybe_new(false) -> [];
-maybe_new(true) -> [{<<"new">>, <<"true">>}].
 
 maybe_wrap_list(X) when is_list(X) -> X;
 maybe_wrap_list(X) -> [X].

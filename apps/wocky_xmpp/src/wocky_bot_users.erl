@@ -167,7 +167,6 @@ notify_watcher(UserJID, FromJID, Bot = #{updated_at := UpatedAt}, Message) ->
     Timestamp = ?wocky_timestamp:to_string(UpatedAt),
     Item = #published_item{
               id = jid:to_binary(BotJID),
-              new = false,
               version = Timestamp,
               from = FromJID,
               stanza = Stanza},
