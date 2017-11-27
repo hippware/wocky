@@ -62,6 +62,8 @@
 
 -define(BOBS_ITEM_ID, <<"item2">>).
 
+-define(wocky_push_sandbox, 'Elixir.Wocky.Push.Sandbox').
+
 %%--------------------------------------------------------------------
 %% Suite configuration
 %%--------------------------------------------------------------------
@@ -970,13 +972,10 @@ explore_nearby(Config) ->
 %%--------------------------------------------------------------------
 
 clear_notifications() ->
-    'Elixir.Pushex.Sandbox':clear_notifications([{pid, notifier()}]).
+    ?wocky_push_sandbox:clear_notifications([{global, true}]).
 
 list_notifications() ->
-    'Elixir.Pushex.Sandbox':wait_notifications([{count, 1}, {pid, notifier()}]).
-
-notifier() ->
-    whereis(push_notification_event_handler).
+    ?wocky_push_sandbox:wait_notifications([{count, 1}, {global, true}]).
 
 new_id_stanza() ->
     test_helper:iq_set(?NS_BOT, #xmlel{name = <<"new-id">>}).

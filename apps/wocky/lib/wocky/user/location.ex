@@ -5,8 +5,9 @@ defmodule Wocky.User.Location do
   use Wocky.JID
 
   alias Wocky.Bot
-  alias Wocky.Events.BotPerimeterEvent
   alias Wocky.GeoUtils
+  alias Wocky.Push
+  alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.User
   alias Wocky.User.BotEvent
   alias __MODULE__, as: Location
@@ -171,9 +172,7 @@ defmodule Wocky.User.Location do
         event: event
       }
 
-      event_handler().broadcast(event)
+      Push.notify_all(bot.user_id, event)
     end
   end
-
-  defp event_handler, do: Application.fetch_env!(:wocky, :event_handler)
 end

@@ -13,13 +13,13 @@ defmodule Wocky.User do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
-  alias Wocky.Device
   alias Wocky.Email
   alias Wocky.HomeStreamItem
   alias Wocky.Index
+  alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
-  alias Wocky.Token
+  alias Wocky.Token, as: AuthToken
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User.Avatar
   alias Wocky.User.BotEvent
@@ -52,12 +52,12 @@ defmodule Wocky.User do
     has_many :bots, Bot
     has_many :bot_events, BotEvent
     has_many :conversations, Conversation
-    has_many :devices, Device
     has_many :home_stream_items, HomeStreamItem
     has_many :locations, Location
+    has_many :push_tokens, PushToken
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id
     has_many :roster_items, RosterItem
-    has_many :tokens, Token
+    has_many :tokens, AuthToken
     has_many :tros_metadatas, TROSMetadata
 
     many_to_many :shares, Bot, join_through: Share

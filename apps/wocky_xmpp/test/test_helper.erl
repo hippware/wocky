@@ -532,13 +532,11 @@ set_notifications(Enabled, Client) ->
     Stanza = notifications_stanza(Enabled, Client),
     expect_iq_success(Stanza, Client).
 
-notifications_stanza(true, Client) ->
-    #jid{lresource = Resource} = jid:from_binary(
-                                   escalus_client:full_jid(Client)),
+notifications_stanza(true, _Client) ->
     iq_set(?NS_NOTIFICATIONS,
            #xmlel{name = <<"enable">>,
-                  attrs = [{<<"device">>, Resource},
-                           {<<"platform">>, <<"escalus">>}]});
+                  attrs = [{<<"device">>, ?wocky_id:new()},
+                           {<<"platform">>, <<"apple">>}]});
 notifications_stanza(false, _Client) ->
     iq_set(?NS_NOTIFICATIONS, #xmlel{name = <<"disable">>}).
 

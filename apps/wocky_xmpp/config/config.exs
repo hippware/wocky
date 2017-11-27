@@ -30,4 +30,7 @@ config :setup,
 config :alarms,
   large_heap: 10_000_000
 
+config :honeybadger,
+  use_logger: true
+
 import_config "#{Mix.env}.exs"

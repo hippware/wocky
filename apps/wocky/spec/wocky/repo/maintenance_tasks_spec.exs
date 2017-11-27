@@ -6,8 +6,8 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Device
-  alias Wocky.NotificationLog
+  alias Wocky.Push.Log, as: PushLog
+  alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -445,21 +445,25 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     end
   end
 
+  defp get_by_token(token) do
+    Repo.one(from PushToken, where: [token: ^token])
+  end
+
   describe "clean_invalid_push_tokens" do
     before do
       # Invalid token, recent update date
-      new_invalid = Factory.insert(:device, invalid: true)
+      new_invalid = Factory.insert(:push_token, valid: false)
 
       # Invalid token, older update date
-      old_invalid = Factory.insert(:device, invalid: true,
-                                   updated_at: Timestamp.shift(weeks: -3))
+      old_invalid = Factory.insert(:push_token, valid: false,
+                                   enabled_at: Timestamp.shift(weeks: -3))
 
       # Valid token, recent update date
-      new_valid = Factory.insert(:device)
+      new_valid = Factory.insert(:push_token)
 
       # Valid token, older update date
-      old_valid = Factory.insert(:device,
-                                 updated_at: Timestamp.shift(weeks: -3))
+      old_valid = Factory.insert(:push_token,
+                                 enabled_at: Timestamp.shift(weeks: -3))
 
       {:ok, result} = MaintenanceTasks.clean_invalid_push_tokens
       {:ok, [
@@ -476,30 +480,30 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     end
 
     it "should remove the old, invalid push token" do
-      Device.get_by_token(shared.old_invalid.token)
+      get_by_token(shared.old_invalid.token)
       |> should(be_nil())
     end
 
     it "should not remove the recent, invalid push token" do
-      Device.get_by_token(shared.new_invalid.token)
+      get_by_token(shared.new_invalid.token)
       |> should_not(be_nil())
     end
 
     it "should not remove the old, valid push token" do
-      Device.get_by_token(shared.old_valid.token)
+      get_by_token(shared.old_valid.token)
       |> should_not(be_nil())
     end
 
     it "should not remove the recent, valid push token" do
-      Device.get_by_token(shared.new_valid.token)
+      get_by_token(shared.new_valid.token)
       |> should_not(be_nil())
     end
   end
 
   describe "clean_notification_logs" do
     before do
-      new = Factory.insert(:notification_log, user: shared.user)
-      old = Factory.insert(:notification_log, user: shared.user,
+      new = Factory.insert(:push_log, user: shared.user)
+      old = Factory.insert(:push_log, user: shared.user,
                            created_at: Timestamp.shift(months: -2))
 
       {:ok, result} = MaintenanceTasks.clean_notification_logs
@@ -511,13 +515,13 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     end
 
     it "should remove the old log entry" do
-      NotificationLog
+      PushLog
       |> Repo.get(shared.old.id)
       |> should(be_nil())
     end
 
     it "should not remove the recent log entry" do
-      NotificationLog
+      PushLog
       |> Repo.get(shared.new.id)
       |> should_not(be_nil())
     end

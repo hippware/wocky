@@ -19,9 +19,7 @@ defmodule Wocky.Application do
     Supervisor.start_link([
       worker(Wocky.Repo, []),
       worker(Wocky.Index, []),
-      worker(Wocky.EventHandler, []),
-      worker(Wocky.EventHandler.HomeStream, []),
-      worker(Wocky.EventHandler.PushNotification, []),
+      worker(Wocky.Push.Sandbox, []),
       worker(Wocky.Auth.FirebaseKeyManager, [])
     ], strategy: :one_for_one, name: Wocky.Supervisor)
   end

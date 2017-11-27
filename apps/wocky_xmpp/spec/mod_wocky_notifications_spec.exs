@@ -5,7 +5,8 @@ defmodule :mod_wocky_notifications_spec do
 
   import :mod_wocky_notifications
 
-  alias Pushex.Sandbox
+  alias Pigeon.APNS.Notification
+  alias Wocky.Push.Sandbox
   alias Wocky.Repo.Factory
   alias Wocky.User
 
@@ -87,6 +88,7 @@ defmodule :mod_wocky_notifications_spec do
   end
 
   before do
+    Sandbox.start_link
     sender = Factory.insert(:user, resource: "testing")
     user = Factory.insert(:user, resource: "testing")
     {:ok, user: user, user_jid: User.to_jid(user),
@@ -128,13 +130,10 @@ defmodule :mod_wocky_notifications_spec do
 
     describe "handling the user_send_packet hook" do
       before do
-        pid = GenServer.whereis(:push_notification_event_handler)
-        Ecto.Adapters.SQL.Sandbox.allow(Wocky.Repo, self(), pid)
-
-        Sandbox.clear_notifications(pid: pid)
+        Sandbox.clear_notifications
 
         _ = enable_notifications(shared.user_jid)
-        {:ok, pid: pid}
+        :ok
       end
 
       context "with a message packet" do
@@ -144,13 +143,13 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should send a notification" do
-          notifications = Sandbox.wait_notifications(count: 1,
-                                                     timeout: @notify_timeout,
-                                                     pid: shared.pid)
+          notifications =
+            Sandbox.wait_notifications(count: 1, timeout: @notify_timeout)
+
           notifications |> should(have_size 1)
 
-          [{{:ok, _}, request, _}] = notifications
-          request.notification.alert |> should(end_with "Message content")
+          [%Notification{payload: payload}] = notifications
+          payload["aps"]["alert"] |> should(end_with "Message content")
         end
       end
 
@@ -161,13 +160,13 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should send a notification" do
-          notifications = Sandbox.wait_notifications(count: 1,
-                                                     timeout: @notify_timeout,
-                                                     pid: shared.pid)
+          notifications =
+            Sandbox.wait_notifications(count: 1, timeout: @notify_timeout)
+
           notifications |> should(have_size 1)
 
-          [{{:ok, _}, request, _}] = notifications
-          request.notification.alert |> should(end_with "sent you an image!")
+          [%Notification{payload: payload}] = notifications
+          payload["aps"]["alert"] |> should(end_with "sent you an image!")
         end
       end
 
@@ -178,13 +177,13 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should send a notification" do
-          notifications = Sandbox.wait_notifications(count: 1,
-                                                     timeout: @notify_timeout,
-                                                     pid: shared.pid)
+          notifications =
+            Sandbox.wait_notifications(count: 1, timeout: @notify_timeout)
+
           notifications |> should(have_size 1)
 
-          [{{:ok, _}, request, _}] = notifications
-          request.notification.alert |> should(end_with "Message content")
+          [%Notification{payload: payload}] = notifications
+          payload["aps"]["alert"] |> should(end_with "Message content")
         end
       end
 
@@ -195,7 +194,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should not send a notification" do
-          expect Sandbox.list_notifications(pid: shared.pid) |> to(eq [])
+          expect Sandbox.list_notifications |> to(eq [])
         end
       end
 
@@ -206,7 +205,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should not send a notification" do
-          expect Sandbox.list_notifications(pid: shared.pid) |> to(eq [])
+          expect Sandbox.list_notifications |> to(eq [])
         end
       end
 
@@ -229,7 +228,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should not send a notification" do
-          expect Sandbox.list_notifications(pid: shared.pid) |> to(eq [])
+          expect Sandbox.list_notifications |> to(eq [])
         end
       end
     end

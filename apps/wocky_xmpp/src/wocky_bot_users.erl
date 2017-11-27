@@ -32,7 +32,7 @@ handle_share(From, To, Bot) ->
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),
                  ?wocky_share:put(Recipient, Bot, Sharer),
-                 send_notification(Sharer, Recipient, Bot)
+                 send_notification(To#jid.luser, Sharer, Recipient, Bot)
                 ]),
     case Result of
         ok -> ok;
@@ -50,9 +50,9 @@ check_can_share(Sharer, Bot) ->
             end
     end.
 
-send_notification(From, To, Bot) ->
+send_notification(User, From, To, Bot) ->
     Event = ?bot_share_event:new(#{from => From, to => To, bot => Bot}),
-    ?wocky_event_handler:broadcast(Event).
+    ?wocky_push:notify_all(User, Event).
 
 %%%===================================================================
 %%% Access change notifications

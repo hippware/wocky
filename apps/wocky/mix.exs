@@ -9,6 +9,7 @@ defmodule Wocky.Mixfile do
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
      elixir: "~> 1.4",
+     elixirc_paths: elixirc_paths(Mix.env),
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      test_coverage: [tool: ExCoveralls, test_task: "espec"],
@@ -31,6 +32,10 @@ defmodule Wocky.Mixfile do
     ver_result
   end
 
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support", "spec/support"]
+  defp elixirc_paths(_),     do: ["lib"]
+
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
@@ -40,7 +45,6 @@ defmodule Wocky.Mixfile do
         wocky_env: {:system, "WOCKY_ENV", "dev"},
         wocky_inst: {:system, "WOCKY_INST", "local"},
         wocky_host: {:system, "WOCKY_HOST", "localhost"},
-        event_handler: Wocky.EventHandler,
         reserved_handles: [
           "root",
           "admin",
@@ -65,7 +69,8 @@ defmodule Wocky.Mixfile do
       {:faker,                "~> 0.9"},
       {:ex_machina,           "~> 2.1"},
       {:ex_aws,               "~> 1.1"},
-      {:pushex,               "~> 0.2"},
+      {:pigeon,               "~> 1.1"},
+      {:kadabra,              "~> 0.3"},
       {:configparser_ex,      "~> 2.0", override: true},
       {:sweet_xml,            "~> 0.6"},
       {:hackney,              "~> 1.7", override: true},
@@ -92,10 +97,6 @@ defmodule Wocky.Mixfile do
       {:bamboo,               "~> 0.8"},
       {:slack_ex,             "~> 0.1"},
 
-      {:apns,
-        github: "chvanikoff/apns4ex",
-        branch: "master",
-        override: true},
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",

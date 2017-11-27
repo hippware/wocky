@@ -6,11 +6,11 @@ defmodule Wocky.Repo.MaintenanceTasks do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Device
-  alias Wocky.NotificationLog
+  alias Wocky.Push.Log, as: PushLog
+  alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
-  alias Wocky.Token
+  alias Wocky.Token, as: AuthToken
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
@@ -64,12 +64,12 @@ defmodule Wocky.Repo.MaintenanceTasks do
     expire_date = Timestamp.shift(months: -1)
 
     {deleted, nil} =
-      NotificationLog
+      PushLog
       |> where([n], n.created_at <= ^expire_date)
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
-      "Deleted #{deleted} notification logs created before #{expire_date}")
+      "Deleted #{deleted} push notification logs created before #{expire_date}")
 
     {:ok, deleted}
   end
@@ -78,20 +78,20 @@ defmodule Wocky.Repo.MaintenanceTasks do
     expire_date = Timestamp.shift(weeks: -2)
 
     {deleted, nil} =
-      Device
-      |> where([d], d.invalid == true)
-      |> where([d], d.updated_at <= ^expire_date)
+      PushToken
+      |> where([t], t.valid == false)
+      |> where([t], t.enabled_at <= ^expire_date)
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
-      "Deleted #{deleted} invalid push tokens updated before #{expire_date}")
+      "Deleted #{deleted} invalid push tokens registered before #{expire_date}")
 
     {:ok, deleted}
   end
 
   def clean_expired_auth_tokens do
     {deleted, nil} =
-      Token
+      AuthToken
       |> where([t], t.expires_at < ^DateTime.utc_now)
       |> Repo.delete_all(timeout: :infinity)
 

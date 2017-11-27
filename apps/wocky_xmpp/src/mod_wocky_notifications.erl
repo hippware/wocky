@@ -49,13 +49,12 @@ handle_iq(From, _To, IQ = #iq{type = set, sub_el = ReqEl}) ->
 handle_iq(_From, _To, IQ) ->
     make_error_response(IQ, ?ERRT_NOT_ALLOWED(?MYLANG, <<"not allowed">>)).
 
-handle_request(JID, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
+handle_request(J, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
-    {value, Platform} = xml:get_attr(<<"platform">>, Attrs),
-    ok = ?wocky_push_notifier:enable(JID, Platform, DeviceId),
+    ok = ?wocky_push:enable(J#jid.luser, J#jid.lresource, DeviceId),
     {ok, <<"enabled">>};
-handle_request(JID, #xmlel{name = <<"disable">>}) ->
-    ok = ?wocky_push_notifier:disable(JID),
+handle_request(J, #xmlel{name = <<"disable">>}) ->
+    ok = ?wocky_push:disable(J#jid.luser, J#jid.lresource),
     {ok, <<"disabled">>}.
 
 make_error_response(IQ, ErrStanza) ->
@@ -82,7 +81,7 @@ user_send_packet_hook(From, To, Packet) ->
                                              from => From,
                                              body => Body,
                                              image => Image}),
-            ?wocky_event_handler:broadcast(Event);
+            ?wocky_push:notify_all(To#jid.luser, Event);
 
         _Else ->
             ok
@@ -119,5 +118,5 @@ get_image(Packet) ->
 
 
 %% remove_user -------------------------------------------------------
-remove_user_hook(User, Server) ->
-    ?wocky_push_notifier:delete(jid:make(User, Server, <<>>)).
+remove_user_hook(User, _Server) ->
+    ?wocky_push:purge(User).

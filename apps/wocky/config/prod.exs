@@ -10,16 +10,9 @@ config :wocky, Wocky.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.MandrillAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY"}
 
-config :pushex,
-  apns: [
-    default_app: "${WOCKY_INST}",
-    apps: [
-      [
-        name: "${WOCKY_INST}",
-        env: :prod,
-        certfile: {:wocky, "certs/${WOCKY_INST}.crt"},
-        keyfile: {:wocky, "certs/${WOCKY_INST}.key"},
-        pool_size: 5
-      ]
-    ]
-  ]
+config :pigeon, :apns,
+  apns_default: %{
+    cert: {:wocky, "certs/${WOCKY_INST}.crt"},
+    key: {:wocky, "certs/${WOCKY_INST}.key"},
+    mode: :prod
+  }

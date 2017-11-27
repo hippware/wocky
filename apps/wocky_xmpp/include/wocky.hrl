@@ -48,6 +48,7 @@
 -define(wocky_share,             'Elixir.Wocky.Bot.Share').
 -define(wocky_subscription,      'Elixir.Wocky.Bot.Subscription').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
+-define(wocky_geo_utils,         'Elixir.Wocky.GeoUtils').
 -define(wocky_home_stream_id,    'Elixir.Wocky.HomeStreamID').
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
 -define(wocky_initial_contact,   'Elixir.Wocky.InitialContact').
@@ -66,15 +67,9 @@
 -define(tros_s3, 'Elixir.Wocky.TROS.S3Store').
 -define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
 
--define(wocky_event_handler, 'Elixir.Wocky.EventHandler').
--define(wocky_geo_utils, 'Elixir.Wocky.GeoUtils').
--define(home_stream_handler, 'Elixir.Wocky.EventHandler.HomeStream').
--define(push_notification_handler,
-         'Elixir.Wocky.EventHandler.PushNotification').
--define(new_message_event, 'Elixir.Wocky.Events.NewMessageEvent').
--define(bot_share_event, 'Elixir.Wocky.Events.BotShareEvent').
-
--define(wocky_push_notifier, 'Elixir.Wocky.PushNotifier').
+-define(wocky_push, 'Elixir.Wocky.Push').
+-define(new_message_event, 'Elixir.Wocky.Push.Events.NewMessageEvent').
+-define(bot_share_event, 'Elixir.Wocky.Push.Events.BotShareEvent').
 
 -define(confex, 'Elixir.Confex').
 -define(datetime, 'Elixir.DateTime').
