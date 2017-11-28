@@ -15,7 +15,7 @@ defmodule WockyAPI.FallbackController do
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> render(WockyAPI.ErrorView, :"404")
+    |> render(WockyAPI.ErrorView, "404.json", [])
   end
 
   def call(conn, {:error, :missing_keys}) do
