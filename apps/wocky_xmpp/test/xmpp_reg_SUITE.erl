@@ -103,9 +103,8 @@ setup_hs_prepop() ->
     OldTS = ?timex:subtract(?datetime:utc_now(), ?duration:from_weeks(6)),
 
     ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID,
-                                                      created_at => OldTS,
-                                                      updated_at => OldTS,
-                                                      ordering => OldTS}),
+                                                       created_at => OldTS,
+                                                       updated_at => OldTS}),
     ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID}).
 
 end_per_suite(Config) ->
