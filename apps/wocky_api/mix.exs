@@ -55,6 +55,7 @@ defmodule WockyAPI.Mixfile do
       {:exjsx,          "~> 4.0", override: true},
       {:hackney,        "~> 1.7", override: true},
       {:lager,          "~> 3.2", override: true},
+      {:honeybadger,    "~> 0.6"},
 
       {:cowlib,
         github: "hippware/cowlib",
