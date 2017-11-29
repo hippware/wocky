@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.11.29+r8fea483
+
 * Add `new` attribute for new HS item async updates (#1114)
 * Block handles containing reserved words (#1113)
 * Various fixes to ensure tests run cleanly (#1116)
