@@ -35,7 +35,10 @@ config :wocky,
   welcome_email_template: "official_tr_welcome_email",
   welcome_email_from:     {"tinyrobot support", "support@tinyrobot.com"},
   welcome_email_subject:  "Welcome to tinyrobot!",
-  welcome_field_mappings: [{"user_handle", :handle}]
+  welcome_field_mappings: [{"user_handle", :handle}],
+
+  # Special users
+  hs_prepopulation_user: "__new_user_hs_archive__"
 
 # Push notifications
 config :wocky, Wocky.Push,

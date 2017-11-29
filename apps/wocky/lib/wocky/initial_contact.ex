@@ -35,4 +35,12 @@ defmodule Wocky.InitialContact do
     |> preload(:user)
     |> Repo.all
   end
+
+  @spec put(User.t, type) :: :ok
+  def put(user, type) do
+    %InitialContact{}
+    |> cast(%{user_id: user.id, type: type}, [:user_id, :type])
+    |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:user_id])
+    :ok
+  end
 end
