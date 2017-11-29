@@ -219,8 +219,8 @@ perform_owner_action(delete, Bot, _From, _To, _IQ) ->
     ?wocky_bot:delete(Bot),
     {ok, []};
 
-perform_owner_action(subscribers, Bot, _From, _To, _IQ) ->
-    wocky_bot_subscription:retrieve_subscribers(Bot);
+perform_owner_action(subscribers, Bot, _From, _To, IQ) ->
+    wocky_bot_subscription:retrieve_subscribers(Bot, IQ);
 
 perform_owner_action(follow_me, Bot, From, _To, IQ) ->
     #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
@@ -775,22 +775,13 @@ make_ret_elements(Bot, FromUser) ->
     encode_fields(Fields ++ MetaFields).
 
 meta_fields(Bot, FromUser) ->
-    Subscribers = ?wocky_bot:subscribers(Bot),
     TotalItems = ?wocky_item:get_count(Bot),
     ImageItems = ?wocky_item:get_image_count(Bot),
     Subscribed = ?wocky_user:'subscribed?'(FromUser, Bot),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"total_items">>, int, TotalItems),
      make_field(<<"image_items">>, int, ImageItems),
-     make_field(<<"subscribed">>, bool, Subscribed)
-     | size_and_hash(<<"subscribers">>, Subscribers)].
-
-size_and_hash(Name, List) ->
-    [make_field(<<Name/binary, "+size">>, int, length(List)),
-     make_field(<<Name/binary, "+hash">>, string,
-                wocky_bot_util:list_hash(List))
-    ].
-
+     make_field(<<"subscribed">>, bool, Subscribed)].
 
 vis(true) -> 100;
 vis(false) -> 0.
@@ -812,6 +803,10 @@ to_field(alerts, Alerts, Acc) ->
     [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} | Acc];
 to_field(updated_at, Updated, Acc) ->
     [#field{name = <<"updated">>, type = timestamp, value = Updated} | Acc];
+to_field(subscribers_hash, Hash, Acc) ->
+    [#field{name = <<"subscribers+hash">>, type = string, value = Hash} | Acc];
+to_field(subscribers_count, Count, Acc) ->
+    [#field{name = <<"subscribers+size">>, type = int, value = Count} | Acc];
 to_field(_, null, Acc) -> Acc;
 to_field(Key, Val, Acc) ->
     KeyBin = atom_to_binary(Key, utf8),

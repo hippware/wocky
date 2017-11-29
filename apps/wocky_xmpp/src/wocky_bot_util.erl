@@ -23,7 +23,6 @@
          check_access/2,
          get_id_from_node/1,
          get_id_from_fields/1,
-         list_hash/1,
          get_image/1,
          bot_packet_action/1,
          follow_stanza/2,
@@ -115,18 +114,6 @@ check_access(User = #{id := UserID}, Bot = #{user_id := BotOwnerID}) ->
         false ->
             {error, ?ERR_FORBIDDEN}
     end.
-
-list_hash(List) ->
-    fun_chain:first(
-      List,
-      lists:sort(),
-      term_to_binary(),
-      hash(),
-      'Elixir.Base':encode32([{padding, false}])
-     ).
-
-hash(Term) ->
-    crypto:hash(sha512, Term).
 
 get_image(Entry) when is_binary(Entry) ->
     case exml:parse(Entry) of

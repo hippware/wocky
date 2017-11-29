@@ -9,7 +9,7 @@
 
 -include("wocky.hrl").
 
--export([get_rsm/1, filter_with_rsm/2]).
+-export([get_rsm/1, get_rsm/2, filter_with_rsm/2]).
 
 -define(EX_TO_UNDEFINED(F), try F catch _:_ -> undefined end).
 -define(RSM_MAX, 1000).
@@ -22,6 +22,13 @@ get_rsm(IQ) ->
         none -> {error, ?ERRT_BAD_REQUEST(
                            ?MYLANG, <<"Missing or invalid RSM values">>)};
         RSM = #rsm_in{} -> {ok, RSM}
+    end.
+
+-spec get_rsm(xmlel() | ejabberd:iq(), jlib:rsm_in()) -> jlib:rsm_in().
+get_rsm(IQ, Default) ->
+    case get_rsm(IQ) of
+        {ok, RSM} -> RSM;
+        _ -> Default
     end.
 
 %% This function takes a list of records and an RSM selection structure.

@@ -24,25 +24,28 @@ defmodule Wocky.Bot do
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "bots" do
-    field :server,           :string  # Bot server
-    field :title,            :string, default: ""  # Bot title
-    field :pending,          :boolean # True if this is a preallocated bot ID
-    field :shortname,        :string  # Bot shortname for URL representation
-    field :description,      :string, default: ""  # User-supplied description
-    field :image,            :string  # Bot graphical image
-    field :type,             :string, default: ""
+    field :server,            :string  # Bot server
+    field :title,             :string, default: ""  # Bot title
+    field :pending,           :boolean # True if this is a preallocated bot ID
+    field :shortname,         :string  # Bot shortname for URL representation
+    field :description,       :string, default: ""  # User-supplied description
+    field :image,             :string  # Bot graphical image
+    field :type,              :string, default: ""
     # Bot type (freeform string from server's perspective)
-    field :address,          :string, default: ""
+    field :address,           :string, default: ""
     # Free-form string field describing bot's location
-    field :address_data,     :string, default: ""
+    field :address_data,      :string, default: ""
     # Opaque field containing adress related information
-    field :location,         Geo.Point # Location
-    field :radius,           :float   # Radius of bot circle
-    field :public,           :boolean # Visibility of bot
-    field :alerts,           :boolean # Whether alerts are enabled
-    field :follow_me,        :boolean # Does bot follow owner
-    field :follow_me_expiry, :utc_datetime # When follow me expires
-    field :tags,             {:array, :string}
+    field :location,          Geo.Point # Location
+    field :radius,            :float   # Radius of bot circle
+    field :public,            :boolean # Visibility of bot
+    field :alerts,            :boolean # Whether alerts are enabled
+    field :follow_me,         :boolean # Does bot follow owner
+    field :follow_me_expiry,  :utc_datetime # When follow me expires
+    field :tags,              {:array, :string}
+    field :subscribers_hash,  :string,
+           default: "d41d8cd98f00b204e9800998ecf8427e" # md5("")
+    field :subscribers_count, :integer, default: 0
 
     timestamps()
 
@@ -168,6 +171,11 @@ defmodule Wocky.Bot do
   def owner(bot) do
     bot = Repo.preload(bot, :user)
     bot.user
+  end
+
+  @spec subscribers_query(t) :: [User.t]
+  def subscribers_query(bot) do
+    Ecto.assoc(bot, :subscribers)
   end
 
   @spec subscribers(t) :: [User.t]
