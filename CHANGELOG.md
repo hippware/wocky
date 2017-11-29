@@ -8,6 +8,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 # 2017.11.29+r8fea483
 
 * Add `new` attribute for new HS item async updates (#1114)
+  - Reverted by #1123 below.
 * Block handles containing reserved words (#1113)
 * Various fixes to ensure tests run cleanly (#1116)
   * Allow apostrophe in user names.
@@ -15,7 +16,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add roles to roster response (#1118)
 * Quick fix for bot integration tests (PR #1121)
 * Rework (v2) / Revert (HS) Publishing protocol (#1123)
-  * Reverts #1043
+  * Reverts #1043, #1114
 * Push notifications rework and more diagnostics (#1087)
 * Fix regression in xmpp_reg_SUITE (PR #1126)
 * Convert wocky_api to Phoenix (PR #1127)
