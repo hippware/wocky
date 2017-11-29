@@ -16,7 +16,7 @@ use Mix.Config
 config :wocky_api, WockyAPI.Endpoint,
   http: [port: 8080],
   url: [host: "${WOCKY_HOST}"],
-  secret_key_base: "${WOCKY_SECRET_KEY_BASE}"
+  secret_key_base: "${WOCKY_SECRET_KEY_BASE}",
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Using releases
