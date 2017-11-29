@@ -22,7 +22,7 @@ defmodule Wocky.XMPP.Mixfile do
        "coveralls.html": :test
      ],
      test_coverage: [tool: ExCoveralls, test_task: "espec"],
-     ct: [log_dir: "log/ct"],
+     ct: [log_dir: "log/ct", fail_auto_skip: true],
      elvis_config: elvis_config()
    ]
   end
