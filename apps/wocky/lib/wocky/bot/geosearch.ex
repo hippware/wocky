@@ -83,18 +83,18 @@ defmodule Wocky.Bot.Geosearch do
 
   def get_all(lat, lon, user_id, owner_id),
     do: do_get_all(lat, lon,
-     &where_owner_and_visible(&1, user_id, owner_id), true)
+     &where_owner_and_visible(&1, user_id, owner_id))
 
   def get_all(lat, lon, user_id),
-    do: do_get_all(lat, lon, &where_searchable(&1, user_id), false)
+    do: do_get_all(lat, lon, &where_searchable(&1, user_id))
 
-  defp do_get_all(lat, lon, where_clause, order_with_sphereoid) do
+  defp do_get_all(lat, lon, where_clause) do
     point = GeoUtils.point(lat, lon)
     {query_str, params} =
       point
       |> fields()
       |> where_clause.()
-      |> order(point, :aft, order_with_sphereoid)
+      |> order(point, :aft)
       |> finalize_query()
 
     Repo
@@ -170,10 +170,10 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_offset({str, params}, offset),
     do: {str <> " OFFSET #{p(1, params)}", [offset | params]}
 
-  defp order({str, params}, point, direction, use_sphereoid \\ true) do
+  defp order({str, params}, point, direction) do
     {str <>
       ~s| ORDER BY| <>
-      ~s| ST_Distance(bot.location, #{p(1, params)}, #{use_sphereoid})| <>
+      ~s| ST_Distance(bot.location, #{p(1, params)}, true)| <>
       ~s| #{maybe_desc(direction)}|,
      [point | params]}
   end
