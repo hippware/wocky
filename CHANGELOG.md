@@ -12,6 +12,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove user FK constraint on traffic_logs (#1117)
 * Add roles to roster response (#1118)
 * Quick fix for bot integration tests (PR #1121)
+* Rework (v2) / Revert (HS) Publishing protocol (#1123)
+  * Reverts #1043
+* Push notifications rework and more diagnostics (#1087)
+* Fix regression in xmpp_reg_SUITE (PR #1126)
+* Convert wocky_api to Phoenix (PR #1127)
 
 
 # 2017.11.17+r68d76fd
