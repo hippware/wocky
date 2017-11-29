@@ -4,10 +4,15 @@ defmodule Wocky.User.SpecialSpec do
 
   alias Wocky.InitialContact
   alias Wocky.RosterItem
+  alias Wocky.User
   alias Wocky.User.Special
 
   before do
-    Factory.insert(:user, handle: Special.hs_prepopulation_handle())
+    # This user is inserted by the db migrations, however we'd rather have this
+    # test also work properly on a completely empty DB
+    if Repo.get_by(User, handle: Special.hs_prepopulation_handle()) == nil do
+      Factory.insert(:user, handle: Special.hs_prepopulation_handle())
+    end
   end
 
   describe "add_hs_prepop_source/1" do
