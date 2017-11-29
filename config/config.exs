@@ -22,9 +22,9 @@ config :logger,
 
 config :logger, :console,
   format: "$date $time [$level] $levelpad$metadata$message\n",
-  # Include Ecto logging metadata
+  # Include Ecto and Phoenix logging metadata
   metadata: [:query, :query_params, :queue_time, :query_time, :decode_time,
-             :db_duration]
+             :db_duration, :request_id]
 
 # Stop lager redirecting :error_logger messages
 config :lager, :error_logger_redirect, false

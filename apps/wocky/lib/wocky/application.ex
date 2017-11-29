@@ -4,7 +4,7 @@ defmodule Wocky.Application do
 
   The wocky system business domain lives in this application.
 
-  Exposes API to clients such as the `Wocky.Web` application
+  Exposes API to clients such as the `Wocky.API` application
   for use in channels, controllers, and elsewhere.
   """
   use Application
