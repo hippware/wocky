@@ -1343,7 +1343,8 @@ check_subscribers(#xmlel{name = <<"iq">>, children = [SubscribersEl]},
     ReceivedSubscribers = SubscribersEl#xmlel.children,
     ?assertEqual({value, integer_to_binary(Count)},
                  xml:get_attr(<<"size">>, SubscribersEl#xmlel.attrs)),
-    ?assertEqual(length(Subscribers), length(ReceivedSubscribers)),
+    % Subtract 1 from ReceivedSubscribers for RSM element:
+    ?assertEqual(length(Subscribers), length(ReceivedSubscribers) - 1),
     lists:foreach(check_subscriber(ReceivedSubscribers, _), Subscribers).
 
 check_subscriber(SubscriberEls, Name) ->

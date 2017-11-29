@@ -45,8 +45,9 @@ make_subscribers_element(Bot, RSM) ->
                            RSM, ?wocky_bot:subscribers_query(Bot),
                            id, {asc, handle}),
     #xmlel{name = <<"subscribers">>,
-           attrs = list_attrs(Bot, RSMOut#rsm_out.count),
-           children = make_subscriber_elements(Results)}.
+           attrs = list_attrs(Bot),
+           children = make_subscriber_elements(Results) ++
+                      jlib:rsm_encode(RSMOut)}.
 
 make_subscriber_elements(Subscribers) ->
     lists:map(fun make_subscriber_element/1, Subscribers).
@@ -63,9 +64,9 @@ make_subscriber_count_element(Bot) ->
     Count = ?wocky_bot:subscriber_count(Bot),
     wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).
 
-list_attrs(Bot, Count) ->
+list_attrs(Bot = #{subscribers_hash := SubscribersHash,
+                   subscribers_count := SubscribersCount}) ->
     [{<<"xmlns">>, ?NS_BOT},
      {<<"node">>, ?wocky_bot:make_node(Bot)},
-     {<<"size">>, integer_to_binary(Count)},
-     % FIXME:
-     {<<"hash">>, base64:encode(crypto:strong_rand_bytes(8))}].
+     {<<"size">>, integer_to_binary(SubscribersCount)},
+     {<<"hash">>, SubscribersHash}].
