@@ -99,7 +99,8 @@ all() ->
      follow_notifications,
      geosearch,
      empty_shortname,
-     explore_nearby
+     explore_nearby_radius,
+     explore_nearby_rectangle
     ].
 
 suite() ->
@@ -130,7 +131,8 @@ init_per_testcase(geosearch, Config) ->
                         distance => 8000}]}
         end),
     escalus:init_per_testcase(geosearch, Config);
-init_per_testcase(explore_nearby, Config) ->
+init_per_testcase(EN, Config) when EN =:= explore_nearby_radius
+                              orelse EN =:= explore_nearby_rectangle ->
     ?wocky_repo:delete_all(?wocky_bot),
     Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
     Bots =
@@ -141,7 +143,6 @@ init_per_testcase(explore_nearby, Config) ->
                                            ?wocky_geo_utils:point(I, I)})
       end,
       lists:seq(1, 10)),
-
     escalus:init_per_testcase(geosearch, [{bots, Bots} | Config]);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
@@ -952,7 +953,7 @@ empty_shortname(Config) ->
         expect_iq_success(create_stanza(Fields), Alice)
       end).
 
-explore_nearby(Config) ->
+explore_nearby_radius(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         % Complete result set
@@ -976,6 +977,32 @@ explore_nearby(Config) ->
         expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
         expect_explore_result(<<"bot-limit-reached">>, Alice)
       end).
+
+explore_nearby_rectangle(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        % Complete result set
+        expect_iq_success(add_to_s(explore_nearby_stanza(25.0, 25.0, 100),
+                                   Alice), Alice),
+        lists:foreach(
+          expect_explore_result(_, Alice),
+          proplists:get_value(bots, Config)
+         ),
+        expect_explore_result(<<"no-more-bots">>, Alice),
+
+        % Tiny radius
+        expect_iq_success(add_to_s(explore_nearby_stanza(2.5, 2.5, 100),
+                                   Alice), Alice),
+        expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
+        expect_explore_result(<<"no-more-bots">>, Alice),
+
+        % Limit bot count
+        expect_iq_success(add_to_s(explore_nearby_stanza(25.0, 25.0, 1),
+                                   Alice), Alice),
+        expect_explore_result(hd(proplists:get_value(bots, Config)), Alice),
+        expect_explore_result(<<"bot-limit-reached">>, Alice)
+      end).
+
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -1716,6 +1743,19 @@ explore_nearby_stanza(Radius, Limit) ->
                               attrs = [{<<"limit">>, integer_to_binary(Limit)},
                                        {<<"radius">>,
                                         float_to_binary(Radius)},
+                                       {<<"lat">>, float_to_binary(0.0)},
+                                       {<<"lon">>, float_to_binary(0.0)}]}]},
+    test_helper:iq_get(?NS_BOT, QueryEl).
+
+explore_nearby_stanza(DeltaLat, DeltaLon, Limit) ->
+    QueryEl =
+    #xmlel{name = <<"bots">>,
+           children = [#xmlel{name = <<"explore-nearby">>,
+                              attrs = [{<<"limit">>, integer_to_binary(Limit)},
+                                       {<<"lat_delta">>,
+                                        float_to_binary(DeltaLat)},
+                                       {<<"lon_delta">>,
+                                        float_to_binary(DeltaLon)},
                                        {<<"lat">>, float_to_binary(0.0)},
                                        {<<"lon">>, float_to_binary(0.0)}]}]},
     test_helper:iq_get(?NS_BOT, QueryEl).
