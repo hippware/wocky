@@ -127,7 +127,7 @@ set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
     ?wocky_roster_item:put(InitContact).
 
 prepopulate_home_stream(UserID) ->
-    prepopulate_from_user(UserID, ?wocky_user_special:hs_prepopulation_user()).
+    prepopulate_from_user(UserID, ?wocky_user_hs_prepop:user()).
 
 prepopulate_from_user(_, nil) -> ok;
 prepopulate_from_user(UserID, #{id := SourceID}) ->
