@@ -62,6 +62,7 @@
 -define(wocky_token,             'Elixir.Wocky.Token').
 -define(wocky_traffic_log,       'Elixir.Wocky.TrafficLog').
 -define(wocky_user,              'Elixir.Wocky.User').
+-define(wocky_user_hs_prepop,    'Elixir.Wocky.User.HSPrepop').
 
 -define(tros, 'Elixir.Wocky.TROS').
 -define(tros_s3, 'Elixir.Wocky.TROS.S3Store').

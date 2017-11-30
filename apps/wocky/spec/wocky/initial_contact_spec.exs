@@ -26,4 +26,24 @@ defmodule Wocky.InitialContactSpec do
       InitialContact.get |> Enum.sort |> should(eq shared.init_contacts)
     end
   end
+
+  describe "put/2" do
+    before do
+      user = Factory.insert(:user)
+      result = InitialContact.put(user, :friend)
+      {:ok,
+        user: user,
+        result: result}
+    end
+
+    it "should return :ok" do
+      shared.result |> should(eq :ok)
+    end
+
+    it "should insert an item into the db" do
+      new_contact = InitialContact.get -- shared.init_contacts |> hd
+      new_contact |> should(have user: shared.user)
+      new_contact |> should(have type: :friend)
+    end
+  end
 end

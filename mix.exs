@@ -35,7 +35,10 @@ defmodule Wocky.Release.Mixfile do
     [
       {:distillery, "~> 1.1", runtime: false},
       {:dialyxir,   "~> 0.5", only: [:dev, :test], runtime: false},
-      {:espec,       "~> 1.2", only: :test},
+      {:espec,
+        github: "antonmi/espec",
+        branch: "master",
+        only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:mix_ct,
         github: "hippware/mix_ct",
