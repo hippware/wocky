@@ -269,7 +269,7 @@ defmodule Wocky.Bot.GeosearchSpec do
     end
 
     # Use async: false to avoid hitting search timeouts
-    context "explore limits" async: false do
+    context "explore limits", async: false do
       before do
         Repo.delete_all(Bot)
         other_user = Factory.insert(:user)
@@ -296,7 +296,8 @@ defmodule Wocky.Bot.GeosearchSpec do
       end
 
       it "should return all for a large rectangle" do
-        Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 22.0, 22.0,
+        Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0),
+                                 GeoUtils.point(22.0, 22.0),
                                  shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)
@@ -314,7 +315,8 @@ defmodule Wocky.Bot.GeosearchSpec do
       end
 
       it "should return only bots within the specified rectangle" do
-        Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 11.0, 11.0,
+        Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0),
+                                 GeoUtils.point(11.0, 11.0),
                                  shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)

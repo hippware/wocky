@@ -242,10 +242,10 @@ defmodule Wocky.Bot.Geosearch do
 
   ### Explore nearby
 
-  # Radius limit
-  @spec explore_nearby(Point.t, float, User.t,
+  @spec explore_nearby(Point.t, float | Point.t, User.t,
                        non_neg_integer, explore_callback) :: :ok
-  def explore_nearby(point, radius, user, max, fun) do
+  # Radius limit
+  def explore_nearby(point, radius, user, max, fun) when is_float(radius) do
     query_str =
     """
     DECLARE explore_nearby CURSOR FOR
@@ -261,9 +261,8 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   # Rectangle limit
-  @spec explore_nearby(Point.t, float, float, User.t,
-                       non_neg_integer, explore_callback) :: :ok
-  def explore_nearby(point, delta_lat, delta_lon, user, max, fun) do
+  def explore_nearby(point, delta, user, max, fun) do
+    {delta_lon, delta_lat} = delta.coordinates
     {lon, lat} = point.coordinates
     lat_offset = delta_lat / 2
     lon_offset = delta_lon / 2
