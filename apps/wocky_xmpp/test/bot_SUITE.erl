@@ -515,9 +515,10 @@ get_subscribed(Config) ->
       fun(Alice, Bob, Karen) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
-        %% Alice is the owner (and therefore a follower) so should get the bot
+        %% Alice is the owner but not subscribed so should not
+        %% see the bot in her subscribed list
         Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),
-        check_returned_bots(Stanza, [?BOT], 0, 1),
+        check_returned_bots(Stanza, [], undefined, 0),
 
         %% Karen is a subscriber so should get the bot
         Stanza2 = expect_iq_success(subscribed_stanza(#rsm_in{}), Karen),
@@ -551,8 +552,7 @@ sorting(Config) ->
 
         % Reverse sort order on title, subset by index
         Stanza2 = expect_iq_success(
-                    retrieve_stanza(?BJID(?ALICE), <<"desc">>,
-                                    <<"title">>,
+                    retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"title">>,
                                     #rsm_in{index = 5, max = 4}),
                     Alice),
 
@@ -562,9 +562,9 @@ sorting(Config) ->
         % Ascending by creation time, subset by ID
         IDsByCreated = sort_bot_ids(Bots, created_at),
         Stanza3 = expect_iq_success(
-                    subscribed_stanza(<<"asc">>, <<"created">>,
-                                      #rsm_in{id = lists:nth(3, IDsByCreated),
-                                              direction = aft}),
+                    retrieve_stanza(?BJID(?ALICE), <<"asc">>, <<"created">>,
+                                    #rsm_in{id = lists:nth(3, IDsByCreated),
+                                            direction = aft}),
                     Alice),
 
         AscCreationSubset = lists:sublist(IDsByCreated, 4, 10),
