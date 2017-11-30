@@ -11,7 +11,7 @@ defmodule Wocky.Push.Log do
   schema "push_logs" do
     field :resource,   :string, null: false
     field :token,      :string, null: false
-    field :message_id, :string, null: false
+    field :message_id, :string
     field :payload,    :string, null: false
     field :response,   :string, null: false
     field :details,    :string
@@ -38,7 +38,7 @@ defmodule Wocky.Push.Log do
   def insert_changeset(attrs) do
     %Log{}
     |> cast(attrs, @insert_attrs)
-    |> validate_required(@insert_attrs -- [:details])
+    |> validate_required(@insert_attrs -- [:message_id, :details])
     |> foreign_key_constraint(:user_id)
   end
 end
