@@ -43,7 +43,8 @@ config :wocky,
 # Push notifications
 config :wocky, Wocky.Push,
   enabled:  {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
-  sandbox:  {:system, :boolean, "WOCKY_PUSH_SANDBOX", false}
+  sandbox:  {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
+  topic:    {:system, :string,  "WOCKY_PUSH_TOPIC",   "app"}
 
 config :wocky, Wocky.Repo,
   adapter:   Ecto.Adapters.Postgres,

@@ -14,6 +14,7 @@ data:
   # Deprecated
   WOCKY_ENABLE_PUSH: "true"
   WOCKY_PUSH_ENABLED: "true"
+  WOCKY_PUSH_TOPIC: "com.hippware.ios.ChatStaging"
   WOCKY_INDEXING_SYSTEM: algolia
   WOCKY_USER_INDEX_NAME: dev_wocky_users
   WOCKY_BOT_INDEX_NAME: dev_wocky_bots
