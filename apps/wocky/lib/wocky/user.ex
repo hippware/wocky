@@ -466,9 +466,7 @@ defmodule Wocky.User do
     |> where(pending: false)
     |> join(:left, [b], s in Subscription,
             b.id == s.bot_id and s.user_id == ^user.id)
-    |> where([b, s],
-             b.user_id == ^user.id or
-             not is_nil(s.user_id))
+    |> where([b, s], not is_nil(s.user_id))
   end
 
   @doc "Generate a full name for anywhere it needs pretty-printing"

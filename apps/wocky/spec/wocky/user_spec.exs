@@ -803,9 +803,9 @@ defmodule Wocky.UserSpec do
     describe "get_subscriptions/1" do
       subject do: User.get_subscriptions(shared.user)
 
-      it do: should(have_count 2)
-      it do: should(have_any &same_bot(&1, shared.owned_bot))
+      it do: should(have_count 1)
       it do: should(have_any &same_bot(&1, shared.subscribed_bot))
+      it do: should_not(have_any &same_bot(&1, shared.owned_bot))
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
 

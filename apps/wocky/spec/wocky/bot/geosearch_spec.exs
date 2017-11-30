@@ -179,6 +179,8 @@ defmodule Wocky.Bot.GeosearchSpec do
 
       _unsubscribed = Factory.insert_list(5, :bot, public: true)
 
+      _owned = Factory.insert(:bot, user: shared.user)
+
       query = &Geosearch.subscribed_distance_query(shared.lat, shared.lon,
                                                    shared.user.id, &1)
 
