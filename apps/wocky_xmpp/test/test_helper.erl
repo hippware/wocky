@@ -79,7 +79,7 @@ ensure_wocky_is_running() ->
     end,
     ok = wocky_xmpp_app:start("ct.test"),
     % Cause tests expecting to fail if the error is caused by a crash:
-%    {atomic, ok} = ejabberd_config:add_local_option(iq_crash_response, crash),
+    {atomic, ok} = ejabberd_config:add_local_option(iq_crash_response, crash),
     ok.
 
 setup_users(Config, Users) ->
