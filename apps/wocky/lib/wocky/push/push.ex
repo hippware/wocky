@@ -126,7 +126,7 @@ defmodule Wocky.Push do
 
   defp make_payload(message, token) do
     message
-    |> Notification.new(token)
+    |> Notification.new(token, topic())
     |> Notification.put_badge(1)
   end
 
@@ -144,6 +144,10 @@ defmodule Wocky.Push do
 
   defp sandbox? do
     Confex.get_env(:wocky, Wocky.Push)[:sandbox]
+  end
+
+  defp topic do
+    Confex.get_env(:wocky, Wocky.Push)[:topic]
   end
 
   defp handle_response(%Notification{response: resp} = n, user_id, resource) do
