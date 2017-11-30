@@ -51,6 +51,7 @@
 -define(wocky_geo_utils,         'Elixir.Wocky.GeoUtils').
 -define(wocky_home_stream_id,    'Elixir.Wocky.HomeStreamID').
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
+-define(wocky_index,             'Elixir.Wocky.Index').
 -define(wocky_initial_contact,   'Elixir.Wocky.InitialContact').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').

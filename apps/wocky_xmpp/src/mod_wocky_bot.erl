@@ -385,7 +385,7 @@ get_location_from_attrs(Attrs) ->
        ]).
 
 get_bots_near_location(From, Lat, Lon) ->
-    case 'Elixir.Wocky.Index':geosearch(Lat, Lon) of
+    case ?wocky_index:geosearch(Lat, Lon) of
         {ok, AllBots} ->
             User = ?wocky_user:get_by_jid(From),
             VisibleBots = lists:filter(
@@ -453,12 +453,29 @@ get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
 explore_nearby(From, IQ, ExploreNearby) ->
     do([error_m ||
         {Lat, Lon} <- get_location_from_attrs(ExploreNearby#xmlel.attrs),
-        RadiusBin <- wocky_xml:get_attr(<<"radius">>, ExploreNearby),
-        Radius <- wocky_util:safe_bin_to_float(RadiusBin),
+        AreaConstraint <- get_area_constraint(ExploreNearby),
         LimitBin <- wocky_xml:get_attr(<<"limit">>, ExploreNearby),
         Limit <- wocky_util:safe_bin_to_integer(LimitBin),
-        wocky_explore_worker:start(Lat, Lon, Radius, From, Limit, IQ#iq.id),
+        wocky_explore_worker:start(
+          Lat, Lon, AreaConstraint, From, Limit, IQ#iq.id),
         {ok, []}
+       ]).
+
+get_area_constraint(ExploreNearby) ->
+    case wocky_xml:get_attr(<<"radius">>, ExploreNearby) of
+        {ok, RadiusBin} ->
+            wocky_util:safe_bin_to_float(RadiusBin);
+        _ ->
+            get_lat_lon_delta(ExploreNearby)
+    end.
+
+get_lat_lon_delta(ExploreNearby) ->
+    do([error_m ||
+        LatDeltaBin <- wocky_xml:get_attr(<<"lat_delta">>, ExploreNearby),
+        LonDeltaBin <- wocky_xml:get_attr(<<"lon_delta">>, ExploreNearby),
+        LatDelta <- wocky_util:safe_bin_to_float(LatDeltaBin),
+        LonDelta <- wocky_util:safe_bin_to_float(LonDeltaBin),
+        {ok, ?wocky_geo_utils:point(LatDelta, LonDelta)}
        ]).
 
 users_bots_result(Bots, FromUser, RSMOut) ->
