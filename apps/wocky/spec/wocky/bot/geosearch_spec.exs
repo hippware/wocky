@@ -25,8 +25,8 @@ defmodule Wocky.Bot.GeosearchSpec do
     before do
       Factory.insert_list(5, :bot, user: shared.user)
 
-      visible_bots = Geosearch.get_all(shared.lat, shared.lon,
-                                       shared.user.id, shared.user.id)
+      visible_bots = Geosearch.get_all_with_owner(shared.lat, shared.lon,
+                                                  shared.user.id, shared.user.id)
 
       {:ok,
         bots: visible_bots,
@@ -105,8 +105,8 @@ defmodule Wocky.Bot.GeosearchSpec do
         Enum.each(shared_bots,
                   &Factory.insert(:share, user: user, sharer: owner, bot: &1))
 
-        visible_bots = Geosearch.get_all(shared.lat, shared.lon,
-                                         user.id, owner.id)
+        visible_bots = Geosearch.get_all_with_owner(shared.lat, shared.lon,
+                                                    user.id, owner.id)
 
         _other_bots = Factory.insert_list(5, :bot, user: other_user)
 
@@ -242,7 +242,8 @@ defmodule Wocky.Bot.GeosearchSpec do
         Enum.each(shared_bots,
                   &Factory.insert(:share, user: user, sharer: owner, bot: &1))
 
-        searchable_bots = Geosearch.get_all(shared.lat, shared.lon, user.id)
+        searchable_bots = Geosearch.get_all(shared.lat, shared.lon,
+                                            user.id, false)
 
         # Bots from unknown users should never show up, regardlesss of being
         # public or shared
@@ -256,7 +257,7 @@ defmodule Wocky.Bot.GeosearchSpec do
         }
       end
 
-      it "should have all the searchable bots" do
+      it "should have all the searchable bots (circle limit)" do
         Geosearch.explore_nearby(GeoUtils.point(shared.lat, shared.lon),
                                  1_000_000_000.0,
                                  shared.user, 100,
@@ -267,7 +268,8 @@ defmodule Wocky.Bot.GeosearchSpec do
       end
     end
 
-    context "explore limits", async: false do
+    # Use async: false to avoid hitting search timeouts
+    context "explore limits" async: false do
       before do
         Repo.delete_all(Bot)
         other_user = Factory.insert(:user)
@@ -293,8 +295,26 @@ defmodule Wocky.Bot.GeosearchSpec do
         get_terminator(shared.table) |> should(eq :no_more_results)
       end
 
+      it "should return all for a large rectangle" do
+        Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 22.0, 22.0,
+                                 shared.user, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        get_bots(shared.table) |> should(eq shared.bots)
+        get_terminator(shared.table) |> should(eq :no_more_results)
+      end
+
       it "should return only bots within the specified radius" do
         Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 800_000.0,
+                                 shared.user, 100,
+                                 &collect_bots(&1, shared.table))
+        |> should(eq :ok)
+        get_bots(shared.table) |> should(eq Enum.take(shared.bots, 5))
+        get_terminator(shared.table) |> should(eq :no_more_results)
+      end
+
+      it "should return only bots within the specified rectangle" do
+        Geosearch.explore_nearby(GeoUtils.point(0.0, 0.0), 11.0, 11.0,
                                  shared.user, 100,
                                  &collect_bots(&1, shared.table))
         |> should(eq :ok)

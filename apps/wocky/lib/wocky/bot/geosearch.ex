@@ -3,7 +3,7 @@ defmodule Wocky.Bot.Geosearch.Limits do
   Structure describing various limits for explore-nearby query
   """
 
-  defstruct [:radius, :count, :time]
+  defstruct [:count, :time]
 end
 
 defmodule Wocky.Bot.Geosearch do
@@ -81,20 +81,20 @@ defmodule Wocky.Bot.Geosearch do
       rsm_out(count: count, index: index, first: first, last: last)}
   end
 
-  def get_all(lat, lon, user_id, owner_id),
+  def get_all_with_owner(lat, lon, user_id, owner_id),
     do: do_get_all(lat, lon,
      &where_owner_and_visible(&1, user_id, owner_id))
 
-  def get_all(lat, lon, user_id),
-    do: do_get_all(lat, lon, &where_searchable(&1, user_id))
+  def get_all(lat, lon, user_id, use_sphereoid \\ true),
+    do: do_get_all(lat, lon, &where_searchable(&1, user_id), use_sphereoid)
 
-  defp do_get_all(lat, lon, where_clause) do
+  defp do_get_all(lat, lon, where_clause, use_sphereoid \\ true) do
     point = GeoUtils.point(lat, lon)
     {query_str, params} =
       point
       |> fields()
       |> where_clause.()
-      |> order(point, :aft)
+      |> order(point, :aft, use_sphereoid)
       |> finalize_query()
 
     Repo
@@ -170,10 +170,10 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_offset({str, params}, offset),
     do: {str <> " OFFSET #{p(1, params)}", [offset | params]}
 
-  defp order({str, params}, point, direction) do
+  defp order({str, params}, point, direction, use_sphereoid \\ true) do
     {str <>
       ~s| ORDER BY| <>
-      ~s| ST_Distance(bot.location, #{p(1, params)}, true)| <>
+      ~s| ST_Distance(bot.location, #{p(1, params)}, #{use_sphereoid})| <>
       ~s| #{maybe_desc(direction)}|,
      [point | params]}
   end
@@ -242,14 +242,10 @@ defmodule Wocky.Bot.Geosearch do
 
   ### Explore nearby
 
+  # Radius limit
   @spec explore_nearby(Point.t, float, User.t,
                        non_neg_integer, explore_callback) :: :ok
   def explore_nearby(point, radius, user, max, fun) do
-    max_explore_time = Confex.get_env(:wocky, :max_explore_time,
-                                      @default_explore_timeout)
-    max_explored_bots = Confex.get_env(:wocky, :max_explored_bots,
-                                       @default_max_explored_bots)
-
     query_str =
     """
     DECLARE explore_nearby CURSOR FOR
@@ -257,9 +253,44 @@ defmodule Wocky.Bot.Geosearch do
       (SELECT * FROM bots ORDER BY location <-> $1 LIMIT $2)
     AS bot
     WHERE is_searchable($3, bot)
+      AND ST_Distance(bot.location, $1) < $4
     """
-    params = [point, max_explored_bots, dump_uuid(user.id)]
-    limits = %Limits{radius: radius, count: max, time: max_explore_time}
+    params = [point, max_explored_bots(), dump_uuid(user.id), radius]
+
+    do_explore_nearby(query_str, params, max, fun)
+  end
+
+  # Rectangle limit
+  @spec explore_nearby(Point.t, float, float, User.t,
+                       non_neg_integer, explore_callback) :: :ok
+  def explore_nearby(point, delta_lat, delta_lon, user, max, fun) do
+    {lon, lat} = point.coordinates
+    lat_offset = delta_lat / 2
+    lon_offset = delta_lon / 2
+    lat1 = lat - lat_offset
+    lon1 = lon - lon_offset
+    lat2 = lat + lat_offset
+    lon2 = lon + lon_offset
+
+    query_str =
+    """
+    DECLARE explore_nearby CURSOR FOR
+    SELECT *, ST_Distance(bot.location, $1) AS "distance" FROM
+    (SELECT * FROM bots
+      WHERE location && ST_MakeEnvelope($2, $3, $4, $5, 4326)::geography
+      ORDER BY location <-> $1
+      LIMIT $6)
+    AS bot
+    WHERE is_searchable($7, bot)
+    """
+    params = [point, lon1, lat1, lon2, lat2,
+              max_explored_bots(), dump_uuid(user.id)]
+
+    do_explore_nearby(query_str, params, max, fun)
+  end
+
+  defp do_explore_nearby(query_str, params, max, fun) do
+    limits = %Limits{count: max, time: max_explore_time()}
 
     Repo.transaction(
       fn() ->
@@ -275,20 +306,15 @@ defmodule Wocky.Bot.Geosearch do
     fetch_results(fun, start_time, limits, 0)
   end
 
-  defp fetch_results(fun, start_time,
-                     %Limits{radius: radius} = limits, count) do
+  defp fetch_results(fun, start_time, limits, count) do
     results = SQL.query!(Repo, "FETCH NEXT explore_nearby")
     case results.num_rows do
       0 ->
         fun.(:no_more_results)
       _ ->
         bot = results |> results_to_bots() |> hd
-        if bot.distance > radius do
-          fun.(:no_more_results)
-        else
-          fun.(bot)
-          maybe_fetch_more(fun, start_time, limits, count + 1)
-        end
+        fun.(bot)
+        maybe_fetch_more(fun, start_time, limits, count + 1)
     end
   end
 
@@ -306,4 +332,10 @@ defmodule Wocky.Bot.Geosearch do
       fun.(:max_explore_time)
     end
   end
+
+  defp max_explore_time,
+    do: Confex.get_env(:wocky, :max_explore_time, @default_explore_timeout)
+
+  defp max_explored_bots,
+    do: Confex.get_env(:wocky, :max_explored_bots, @default_max_explored_bots)
 end
