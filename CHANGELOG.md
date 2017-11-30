@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update mix_ct and enable fail_auto_skip (PR #1130)
+* More efficiently calculate and track subscribers+hash bot field (#1038)
+* Add RSM support to bot subscriber list retrieval (#1125)
+* Always use sphereoid for distance sorting (PR #1134)
+* A convenient way to update auto follow users and the system user together (#992)
+
+
 # 2017.11.29+r8fea483
 
 * Add `new` attribute for new HS item async updates (#1114)
