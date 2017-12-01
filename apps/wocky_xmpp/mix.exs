@@ -92,7 +92,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:reprise,              "~> 0.5",    only: :dev},
       {:joken,                "~> 1.1"},
 
-      {:ejabberd, github: "hippware/mim-ejabberd", branch: "working-2.0.1-2"},
+      {:ejabberd, github: "hippware/mim-ejabberd", branch: "working-2.0.1-3"},
       {:exometer_core,
         github: "Feuerlabs/exometer_core",
         branch: "master",
