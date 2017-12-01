@@ -56,6 +56,18 @@ defmodule Wocky.RSMHelperSpec do
              should(eq Enum.at(shared.bots, -1).id)
     end
 
+    context "out of range index query" do
+      before do
+        setup_query(shared, rsm_in(index: 500))
+      end
+
+      it do: shared.records |> should(eq [])
+      it do: rsm_out(shared.rsm_out, :index) |> should(eq :undefined)
+      it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
+      it do: rsm_out(shared.rsm_out, :first) |> should(eq :undefined)
+      it do: rsm_out(shared.rsm_out, :last) |> should(eq :undefined)
+    end
+
     context "simple end of set query" do
       before do
         setup_query(shared, rsm_in(direction: :before, max: 2))
@@ -114,6 +126,18 @@ defmodule Wocky.RSMHelperSpec do
              should(eq Enum.at(shared.bots, 18).id)
       it do: rsm_out(shared.rsm_out, :last) |>
              should(eq Enum.at(shared.bots, 19).id)
+    end
+
+    context "Non-existant ID - should return an empty set" do
+      before do
+        setup_query(shared, rsm_in(id: ID.new))
+      end
+
+      it do: shared.records |> should(eq [])
+      it do: rsm_out(shared.rsm_out, :index) |> should(eq :undefined)
+      it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
+      it do: rsm_out(shared.rsm_out, :first) |> should(eq :undefined)
+      it do: rsm_out(shared.rsm_out, :last) |> should(eq :undefined)
     end
 
     context "simple reverse query" do
