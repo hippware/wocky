@@ -645,7 +645,7 @@ parse_sorting(SortEl) ->
         By <- wocky_xml:get_attr(<<"by">>, SortEl#xmlel.attrs),
         ByResult <- check_by(By),
         Dir <- wocky_xml:get_attr(<<"direction">>, SortEl#xmlel.attrs),
-        DirResult <- check_dir(Dir, By),
+        DirResult <- check_dir(Dir, ByResult),
         maybe_add_near(SortEl, ByResult, DirResult)
        ]).
 

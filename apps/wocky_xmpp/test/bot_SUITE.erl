@@ -505,7 +505,8 @@ retrieve_for_user(Config) ->
            {"subscribed",  bool,   false}]),
 
         Stanza9 = expect_iq_success(retrieve_stanza(?BJID(?ALICE),
-                                                    0.0, 0.0, #rsm_in{}),
+                                                    sort_elem(0.0, 0.0),
+                                                    #rsm_in{}),
                                     Alice),
         check_returned_bots(Stanza9, IDs, 0, ?CREATED_BOTS)
       end).
@@ -544,8 +545,9 @@ sorting(Config) ->
       fun(Alice) ->
         % Simple ascending order on title
         Stanza = expect_iq_success(
-                   retrieve_stanza(?BJID(?ALICE), <<"asc">>,
-                                   <<"title">>, #rsm_in{}),
+                   retrieve_stanza(?BJID(?ALICE),
+                                   sort_elem(<<"asc">>, <<"title">>),
+                                   #rsm_in{}),
                    Alice),
 
         IDsByTitle = sort_bot_ids(Bots, title),
@@ -553,7 +555,8 @@ sorting(Config) ->
 
         % Reverse sort order on title, subset by index
         Stanza2 = expect_iq_success(
-                    retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"title">>,
+                    retrieve_stanza(?BJID(?ALICE),
+                                    sort_elem(<<"desc">>, <<"title">>),
                                     #rsm_in{index = 5, max = 4}),
                     Alice),
 
@@ -563,7 +566,8 @@ sorting(Config) ->
         % Ascending by creation time, subset by ID
         IDsByCreated = sort_bot_ids(Bots, created_at),
         Stanza3 = expect_iq_success(
-                    retrieve_stanza(?BJID(?ALICE), <<"asc">>, <<"created">>,
+                    retrieve_stanza(?BJID(?ALICE),
+                                    sort_elem(<<"asc">>, <<"created">>),
                                     #rsm_in{id = lists:nth(3, IDsByCreated),
                                             direction = aft}),
                     Alice),
@@ -575,21 +579,32 @@ sorting(Config) ->
         UpdatedBot = lists:nth(5, Bots),
         ?wocky_bot:bump_update_time(UpdatedBot),
         Stanza4 = expect_iq_success(
-                    retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"updated">>,
+                    retrieve_stanza(?BJID(?ALICE),
+                                    sort_elem(<<"desc">>, <<"updated">>),
                                     #rsm_in{index = 0, max = 1}),
                     Alice),
         check_returned_bots(Stanza4, [maps:get(id, UpdatedBot)], 0, 10),
 
         % Invalid sorting options
         expect_iq_error(
-          retrieve_stanza(?BJID(?ALICE), <<"desk">>, <<"updated">>, #rsm_in{}),
-          Alice),
-        expect_iq_error(
-          retrieve_stanza(?BJID(?ALICE), <<"desc">>, <<"turtle">>, #rsm_in{}),
+          retrieve_stanza(?BJID(?ALICE),
+                          sort_elem(<<"desk">>, <<"updated">>),
+                          #rsm_in{}),
           Alice),
         expect_iq_error(
           retrieve_stanza(?BJID(?ALICE),
-                          <<"desc">>, <<"distance">>, #rsm_in{}),
+                          sort_elem(<<"desc">>, <<"turtle">>),
+                          #rsm_in{}),
+          Alice),
+        expect_iq_error(
+          retrieve_stanza(?BJID(?ALICE),
+                          bad_distance_sort_elem(1.0, 1.0),
+                          #rsm_in{}),
+          Alice),
+        expect_iq_success(
+          retrieve_stanza(?BJID(?ALICE),
+                          sort_elem(1.0, 1.0),
+                          #rsm_in{}),
           Alice)
       end).
 
@@ -1307,11 +1322,11 @@ retrieve_stanza(User, RSM) ->
                               attrs = [{<<"user">>, User}],
                               children = [rsm_elem(RSM)]}).
 
-retrieve_stanza(User, Sort1, Sort2, RSM) ->
+retrieve_stanza(User, SortElem, RSM) ->
     test_helper:iq_get(?NS_BOT,
                        #xmlel{name = <<"bot">>,
                               children = [owner_elem(User),
-                                          sort_elem(Sort1, Sort2),
+                                          SortElem,
                                           rsm_elem(RSM)]}).
 
 subscribed_stanza(Sort1, Sort2, RSM) ->
@@ -1343,6 +1358,13 @@ bot_jid(ID) ->
 change_visibility_stanza(Bot, Visibility) ->
     test_helper:iq_set(?NS_BOT, node_el(Bot, <<"fields">>,
                                         [visibility_field(Visibility)])).
+
+bad_distance_sort_elem(Lat, Lon) ->
+    #xmlel{name = <<"sort">>,
+           attrs = [{<<"direction">>, <<"desc">>}, {<<"by">>, <<"distance">>}],
+           children = [#xmlel{name = <<"near">>,
+                              attrs = [{<<"lat">>, float_to_binary(Lat)},
+                                       {<<"lon">>, float_to_binary(Lon)}]}]}.
 
 visibility_field(Visibility) ->
     create_field({"visibility", "int", Visibility}).
