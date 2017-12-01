@@ -10,6 +10,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add RSM support to bot subscriber list retrieval (#1125)
 * Always use sphereoid for distance sorting (PR #1134)
 * A convenient way to update auto follow users and the system user together (#992)
+* Retreiving list of subscribed bots should omit owned bots (#1131)
+* Allow explore-nearby to take a rectangle instead of a radius (#1135)
+* Add topic to push notifications (#1147, PR #1151)
 
 
 # 2017.11.29+r8fea483
