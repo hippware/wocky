@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Improve integration tests to catch crashes (#902)
+* Add tests to clarify RSM behaviour in certain cases (#1153)
+
+
+# 2017.12.1+r3ea2504
+
 * Update mix_ct and enable fail_auto_skip (PR #1130)
 * More efficiently calculate and track subscribers+hash bot field (#1038)
 * Add RSM support to bot subscriber list retrieval (#1125)
