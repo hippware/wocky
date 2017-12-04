@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wocky
+  namespace: wocky-staging
+  labels:
+    app: wocky
+    env: staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wocky
+      env: staging
+  template:
+    metadata:
+      labels:
+        app: wocky
+        env: staging
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - wocky
+                  - key: env
+                    operator: In
+                    values:
+                      - staging
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: wocky
+          image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
+          ports:
+            - containerPort: 5222
+            - containerPort: 8080
+            - containerPort: 5269
+            - containerPort: 5280
+            - containerPort: 4369
+            - containerPort: 9100
+          args: ["foreground"]
+          envFrom:
+            - configMapRef:
+                name: wocky-config
+            - secretRef:
+                name: wocky-secrets
+          env:
+            - name: KUBE_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: KUBE_POD_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bin/wocky", "stop"]
+      imagePullSecrets:
+        - name: amazonecr
