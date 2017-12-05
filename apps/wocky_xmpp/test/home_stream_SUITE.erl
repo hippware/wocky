@@ -365,7 +365,7 @@ auto_publish_newly_public_bot(Config) ->
         timer:sleep(400),
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
 
-        % Bob and Carol are friends and Tim is a subscriber so they all get
+        % Bob and Carol are friends and Tim is a follower so they all get
         % notified of the bot's new publicness - additionally Alice, as the
         % owner, also gets notified:
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
@@ -491,15 +491,14 @@ bot_description_update(Config) ->
         expect_iq_success(update_bot_desc_stanza("Fnord"), Alice),
         timer:sleep(400),
         check_home_stream_sizes(0, [Alice, Bob]),
-        expect_home_stream_bot_desc(Carol, true),
-
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice)
+        expect_home_stream_bot_desc(Carol, true)
       end).
 
 bot_change_notification(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
         clear_home_streams(),
+
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
                                            [query_el(undefined)])),

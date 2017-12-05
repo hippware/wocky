@@ -543,13 +543,14 @@ notifications_stanza(false, _Client) ->
 check_home_stream_sizes(ExpectedSize, Clients) ->
     check_home_stream_sizes(ExpectedSize, Clients, true).
 check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
-    lists:foreach(
+    lists:map(
       fun(Client) ->
               S = expect_iq_success_u(get_hs_stanza(), Client, Client),
               I = check_hs_result(S, ExpectedSize, ExpectedSize =/= 0),
               ExpectedSize =:= 0 orelse not CheckLastContent orelse
               escalus:assert(is_bot_action(?BOT, _),
-                             hd((lists:last(I))#item.stanzas))
+                             hd((lists:last(I))#item.stanzas)),
+              S
       end, Clients).
 
 insert_system_users() ->
