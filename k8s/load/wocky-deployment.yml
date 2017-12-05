@@ -2,13 +2,36 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: wocky
+  namespace: wocky-load
+  labels:
+    app: wocky
+    env: load
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      app: wocky
+      env: load
   template:
     metadata:
       labels:
         app: wocky
+        env: load
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - wocky
+                  - key: env
+                    operator: In
+                    values:
+                      - load
+              topologyKey: "kubernetes.io/hostname"
       containers:
         - name: wocky
           image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
