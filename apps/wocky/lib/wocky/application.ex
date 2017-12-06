@@ -10,7 +10,6 @@ defmodule Wocky.Application do
   use Application
 
   alias Wocky.Mailer
-  alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
 
   require Prometheus.Registry
 
@@ -18,8 +17,6 @@ defmodule Wocky.Application do
     import Supervisor.Spec, warn: false
 
     Mailer.init
-
-    RepoInstrumenter.setup()
 
     Supervisor.start_link([
       worker(Wocky.Repo, []),
