@@ -1,4 +1,5 @@
 :0: Unknown function 'Elixir.Wocky.Push.Event.
+lib/wocky/repo/intrumenter.ex:3: The call 'Elixir.System':convert_time_unit
 lib/wocky/index/algolia_indexer.ex:17: Function update_object/3 has no local return
 lib/wocky/index/algolia_indexer.ex:37: Function do_update_object/2 has no local return
 lib/wocky/index/algolia_indexer.ex:42: Function delete_object/2 has no local return
