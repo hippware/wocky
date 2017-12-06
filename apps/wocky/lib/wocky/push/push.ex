@@ -61,11 +61,9 @@ defmodule Wocky.Push do
   @spec notify(Wocky.User.id, Wocky.User.resource, any) :: :ok
   def notify(user_id, resource, event) do
     if enabled?() do
-      message = Event.format(event)
-
       user_id
       |> get_token(resource)
-      |> do_notify(user_id, resource, message)
+      |> do_notify(user_id, resource, event)
     end
     :ok
   end
@@ -73,9 +71,8 @@ defmodule Wocky.Push do
   @spec notify_all(Wocky.User.id, any) :: :ok
   def notify_all(user_id, event) do
     if enabled?() do
-      message = Event.format(event)
       for {resource, token} <- get_all_tokens(user_id) do
-        do_notify(token, user_id, resource, message)
+        do_notify(token, user_id, resource, event)
       end
     end
     :ok
@@ -104,13 +101,12 @@ defmodule Wocky.Push do
     )
   end
 
-  defp do_notify(nil, user_id, resource, _message) do
+  defp do_notify(nil, user_id, resource, _event) do
     Logger.error "Attempted to send notification to user " <>
       "#{user_id}/#{resource} but they have no token."
   end
-  defp do_notify(token, user_id, resource, message) do
-    message
-    |> maybe_truncate_message()
+  defp do_notify(token, user_id, resource, event) do
+    event
     |> make_payload(token)
     |> maybe_push(sandbox?())
     |> handle_response(user_id, resource)
@@ -124,10 +120,15 @@ defmodule Wocky.Push do
     end
   end
 
-  defp make_payload(message, token) do
-    message
+  defp make_payload(event, token) do
+    uri = Event.uri(event)
+
+    event
+    |> Event.message
+    |> maybe_truncate_message()
     |> Notification.new(token, topic())
     |> Notification.put_badge(1)
+    |> Notification.put_custom(%{"uri" => uri})
   end
 
   defp maybe_push(n, false), do: APNS.push(n)
