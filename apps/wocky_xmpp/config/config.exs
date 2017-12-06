@@ -32,4 +32,12 @@ config :alarms,
 config :honeybadger,
   use_logger: true
 
+config :exometer,
+  mongooseim_report_interval: 300_000, # 5 minutes
+  report: [
+    reporters: [
+      exometer_report_prometheus: [:enable_httpd]
+    ]
+  ]
+
 import_config "#{Mix.env}.exs"
