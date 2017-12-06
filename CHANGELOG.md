@@ -8,6 +8,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Improve integration tests to catch crashes (#902)
 * Add tests to clarify RSM behaviour in certain cases (#1153)
 * A Private bot should unsubscribe users who can no longer view it (#1019)
+* Don't colocate Wocky containers from the same env (PR #1163, #1158)
 
 
 # 2017.12.1+r3ea2504
