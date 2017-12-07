@@ -9,6 +9,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add tests to clarify RSM behaviour in certain cases (#1153)
 * A Private bot should unsubscribe users who can no longer view it (#1019)
 * Don't colocate Wocky containers from the same env (PR #1163, #1158)
+* Clean up old push notification artifacts (#1168)
+* Add Prometheus metrics collection (#1170)
 
 
 # 2017.12.1+r3ea2504
