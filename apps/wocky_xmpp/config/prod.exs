@@ -8,17 +8,3 @@ config :mnesia,
 
 config :honeybadger,
   environment_name: "${HONEYBADGER_ENV}"
-
-config :exometer,
-  mongooseim_report_interval: 300000, # 5 minutes
-  report: [
-    {:reporters, [
-      {:exometer_report_cloudwatch, [
-        {:access_key_id, '${CLOUDWATCH_KEY_ID}'},
-        {:secret_access_key, '${CLOUDWATCH_SECRET_KEY}'},
-        {:region, '${CLOUDWATCH_REGION}'},
-        {:namespace, 'App/Wocky'},
-        {:dimensions, [{'InstanceId', '${CLOUDWATCH_INSTANCE}'}]}
-      ]}
-    ]}
-  ]

@@ -4,17 +4,14 @@ defmodule Wocky.Release.Mixfile do
   def project do
     [
       apps_path: "apps",
-      build_embedded: false, # Mix.env == :prod,
       start_permanent: Mix.env == :prod,
+      test_coverage: [tool: ExCoveralls, test_task: "espec"],
       preferred_cli_env: [
         espec: :test,
         ct: :test,
         coveralls: :test,
         "coveralls.html": :test
       ],
-      deps: deps(),
-      aliases: aliases(),
-      test_coverage: [tool: ExCoveralls, test_task: "espec"],
       dialyzer: [
         plt_add_apps: [:mix, :mnesia, :inets],
         plt_add_deps: :transitive,
@@ -26,6 +23,8 @@ defmodule Wocky.Release.Mixfile do
           :race_conditions
         ]
       ],
+      deps: deps(),
+      aliases: aliases()
     ]
   end
 

@@ -39,6 +39,8 @@ defmodule WockyAPI.Endpoint do
   #  key: "_wocky_api_key",
   #  signing_salt: "JqDu/CcJ"
 
+  plug WockyAPI.PrometheusExporter     # makes the /metrics URL happen
+  plug WockyAPI.PipelineInstrumenter   # measures pipeline exec times
   plug WockyAPI.Router
 
   @doc """

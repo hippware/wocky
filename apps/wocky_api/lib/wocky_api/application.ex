@@ -4,9 +4,16 @@ defmodule WockyAPI.Application do
   use Application
 
   alias WockyAPI.Endpoint
+  alias WockyAPI.PhoenixInstrumenter
+  alias WockyAPI.PipelineInstrumenter
+  alias WockyAPI.PrometheusExporter
 
   def start(_type, _args) do
     import Supervisor.Spec
+
+    PhoenixInstrumenter.setup()
+    PipelineInstrumenter.setup()
+    PrometheusExporter.setup()
 
     # Define workers and child supervisors to be supervised
     children = [

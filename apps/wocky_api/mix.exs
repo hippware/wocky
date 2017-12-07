@@ -57,6 +57,9 @@ defmodule WockyAPI.Mixfile do
       {:lager,          "~> 3.2", override: true},
       {:honeybadger,    "~> 0.6"},
 
+      {:prometheus_phoenix, "~> 1.2"},
+      {:prometheus_plugs,   "~> 1.1"},
+
       {:cowlib,
         github: "hippware/cowlib",
         branch: "working",
