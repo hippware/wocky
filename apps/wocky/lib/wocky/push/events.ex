@@ -1,7 +1,10 @@
 defmodule Wocky.Push.Events do
   @moduledoc false
 
+  alias Wocky.Conversation
   alias Wocky.Push.Event
+  alias Wocky.Repo
+  alias Wocky.User
 
   defmodule Utils do
     @moduledoc false
@@ -104,6 +107,11 @@ defmodule Wocky.Push.Events do
       end
     end
 
-    def uri(%NewMessageEvent{} = _event), do: make_uri(:conversation, "NONE")
+    def uri(%NewMessageEvent{to: to, from: from} = _event) do
+      conversation = Repo.get_by(Conversation,
+                                 user_id: User.get_by_jid(to).id,
+                                 other_jid: from)
+      make_uri(:conversation, Integer.to_string(conversation.id))
+    end
   end
 end

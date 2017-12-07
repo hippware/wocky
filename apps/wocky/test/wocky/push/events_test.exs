@@ -1,7 +1,11 @@
 defmodule Wocky.Push.EventsTest do
   use ExUnit.Case, async: true
+  use Wocky.DataCase
 
+  alias Faker.Lorem
   alias Wocky.Bot
+  alias Wocky.JID
+  alias Wocky.Repo.Factory
   alias Wocky.Push.Event
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Push.Events.BotShareEvent
@@ -14,10 +18,17 @@ defmodule Wocky.Push.EventsTest do
   @test_body "test body"
 
   setup do
-    u = %User{handle: @test_handle}
+    u = Factory.insert(:user, handle: @test_handle)
     b = %Bot{id: ID.new, title: @test_title}
 
-    {:ok, user: u, bot: b}
+    oj = ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
+    c = Factory.insert(:conversation, user_id: u.id, other_jid: oj)
+
+    {:ok,
+      user: u,
+      bot: b,
+      conversation: c,
+      other_jid: oj}
   end
 
   describe "BotPerimeterEvent" do
@@ -76,10 +87,11 @@ defmodule Wocky.Push.EventsTest do
       assert msg =~ @test_body
     end
 
-    test "returns an appropriate URI", %{user: u} do
-      uri = Event.uri(%NewMessageEvent{from: u})
+    test "returns an appropriate URI",
+    %{user: u, conversation: c, other_jid: other_jid} do
+      uri = Event.uri(%NewMessageEvent{to: User.to_jid(u), from: other_jid})
       assert uri =~ "/conversation/"
-      assert uri =~ "NONE"
+      assert uri =~ "/#{Integer.to_string(c.id)}"
     end
   end
 end
