@@ -11,6 +11,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Don't colocate Wocky containers from the same env (PR #1163, #1158)
 * Clean up old push notification artifacts (#1168)
 * Add infrastructure for metrics collection (#1137)
+* Add deep links to push notifications (#1099)
 
 
 # 2017.12.1+r3ea2504
