@@ -2,33 +2,21 @@ defmodule Wocky.Push.EventsTest do
   use ExUnit.Case, async: true
   use Wocky.DataCase
 
-  alias Faker.Lorem
-  alias Wocky.Bot
-  alias Wocky.JID
   alias Wocky.Repo.Factory
   alias Wocky.Push.Event
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Push.Events.BotShareEvent
   alias Wocky.Push.Events.NewMessageEvent
-  alias Wocky.Repo.ID
-  alias Wocky.User
 
   @test_handle "test_handle"
   @test_title "test_title"
   @test_body "test body"
 
   setup do
-    u = Factory.insert(:user, handle: @test_handle)
-    b = %Bot{id: ID.new, title: @test_title}
+    u = Factory.build(:user, handle: @test_handle)
+    b = Factory.build(:bot, title: @test_title)
 
-    oj = ID.new |> JID.make(Lorem.word, Lorem.word) |> JID.to_binary
-    c = Factory.insert(:conversation, user_id: u.id, other_jid: oj)
-
-    {:ok,
-      user: u,
-      bot: b,
-      conversation: c,
-      other_jid: oj}
+    {:ok, user: u, bot: b}
   end
 
   describe "BotPerimeterEvent" do
@@ -72,6 +60,15 @@ defmodule Wocky.Push.EventsTest do
   end
 
   describe "NewMessageEvent" do
+    setup %{user: u} do
+      {:ok, _} = Repo.insert(u)
+
+      oj = Factory.new_jid
+      c = Factory.insert(:conversation, user_id: u.id, other_jid: oj)
+
+      {:ok, cid: c.id, other_jid: oj}
+    end
+
     test "uses 'Someone' when there is no user handle" do
       assert Event.message(%NewMessageEvent{}) =~ "Someone"
       assert Event.message(%NewMessageEvent{body: "foo"}) =~ "From: Someone"
@@ -87,11 +84,10 @@ defmodule Wocky.Push.EventsTest do
       assert msg =~ @test_body
     end
 
-    test "returns an appropriate URI",
-    %{user: u, conversation: c, other_jid: other_jid} do
-      uri = Event.uri(%NewMessageEvent{to: User.to_jid(u), from: other_jid})
+    test "returns an appropriate URI", %{user: u, other_jid: oj, cid: cid} do
+      uri = Event.uri(%NewMessageEvent{to: u, from: oj, conversation_id: cid})
       assert uri =~ "/conversation/"
-      assert uri =~ "/#{Integer.to_string(c.id)}"
+      assert uri =~ "/#{Integer.to_string(cid)}"
     end
   end
 end

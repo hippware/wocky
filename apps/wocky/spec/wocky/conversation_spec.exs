@@ -45,6 +45,31 @@ defmodule Wocky.ConversationSpec do
     end
   end
 
+  describe "get_id/2" do
+    context "when the conversation exists" do
+      before do
+        other_jid = shared.conversation.other_jid
+        result = Conversation.get_id(shared.user.id, other_jid)
+        {:ok, result: result}
+      end
+
+      it "should return an integer" do
+        shared.result |> should(be_integer())
+      end
+
+      it "should return the conversation id" do
+        shared.result |> should(eq shared.conversation.id)
+      end
+    end
+
+    context "when the conversation does not exist" do
+      it "should return nil" do
+        Conversation.get_id(shared.user.id, Factory.new_jid)
+        |> should(be_nil())
+      end
+    end
+  end
+
   describe "put/4" do
     context "when there is no existing entry for the other user" do
       before do

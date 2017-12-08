@@ -1,9 +1,7 @@
 defmodule Wocky.Push.Events do
   @moduledoc false
 
-  alias Wocky.Conversation
   alias Wocky.Push.Event
-  alias Wocky.Repo
   alias Wocky.User
 
   defmodule Utils do
@@ -50,6 +48,10 @@ defmodule Wocky.Push.Events do
     defp uri_prefix do
       Confex.get_env(:wocky, Wocky.Push)[:uri_prefix]
     end
+
+    @doc false
+    def stringify_id(nil), do: "0"
+    def stringify_id(id), do: Integer.to_string(id)
   end
 
   defmodule BotPerimeterEvent do
@@ -92,7 +94,7 @@ defmodule Wocky.Push.Events do
   defmodule NewMessageEvent do
     @moduledoc false
 
-    defstruct [:from, :to, :body, :image]
+    defstruct [:from, :to, :body, :image, :conversation_id]
 
     use ExConstructor
   end
@@ -107,11 +109,8 @@ defmodule Wocky.Push.Events do
       end
     end
 
-    def uri(%NewMessageEvent{to: to, from: from} = _event) do
-      conversation = Repo.get_by(Conversation,
-                                 user_id: User.get_by_jid(to).id,
-                                 other_jid: from)
-      make_uri(:conversation, Integer.to_string(conversation.id))
+    def uri(%NewMessageEvent{conversation_id: id}) do
+      make_uri(:conversation, stringify_id(id))
     end
   end
 end
