@@ -45,6 +45,31 @@ defmodule Wocky.ConversationSpec do
     end
   end
 
+  describe "get_id/2" do
+    context "when the conversation exists" do
+      before do
+        other_jid = shared.conversation.other_jid
+        result = Conversation.get_id(shared.user.id, other_jid)
+        {:ok, result: result}
+      end
+
+      it "should return an integer" do
+        shared.result |> should(be_integer())
+      end
+
+      it "should return the conversation id" do
+        shared.result |> should(eq shared.conversation.id)
+      end
+    end
+
+    context "when the conversation does not exist" do
+      it "should return nil" do
+        Conversation.get_id(shared.user.id, Factory.new_jid)
+        |> should(be_nil())
+      end
+    end
+  end
+
   describe "put/4" do
     context "when there is no existing entry for the other user" do
       before do
@@ -86,7 +111,7 @@ defmodule Wocky.ConversationSpec do
                                   conversation.outgoing)
         {:ok,
          result: result,
-         conversation: conversation,
+         new_conversation: conversation,
          user_id: shared.conversation.user_id}
       end
 
@@ -97,7 +122,12 @@ defmodule Wocky.ConversationSpec do
       it "should replace the existing conversation entry" do
         conversations = Conversation.find(shared.user_id)
         conversations |> should(have_length 1)
-        conversations |> hd |> should_match(shared.conversation)
+        conversations |> hd |> should_match(shared.new_conversation, [:id])
+
+        conversations
+        |> hd
+        |> Map.get(:id)
+        |> should(eq shared.conversation.id)
       end
 
     end
@@ -124,8 +154,8 @@ defmodule Wocky.ConversationSpec do
     end
   end
 
-  defp should_match(a, b) do
-    fields = [:id, :user_id, :other_jid, :message, :outgoing]
+  defp should_match(a, b, exclusions \\ []) do
+    fields = [:id, :user_id, :other_jid, :message, :outgoing] -- exclusions
     a |> Map.take(fields) |> should(eq b |> Map.take(fields))
   end
 end

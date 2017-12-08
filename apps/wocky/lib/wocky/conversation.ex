@@ -33,6 +33,8 @@ defmodule Wocky.Conversation do
     updated_at: DateTime.t
   }
 
+  @change_fields [:message, :outgoing]
+
   @doc "Write a conversation record to the database"
   @spec put(mam_id, User.id, binary, binary, boolean) :: :ok
   def put(id, user_id, other_jid, message, outgoing) do
@@ -43,9 +45,28 @@ defmodule Wocky.Conversation do
       message: message,
       outgoing: outgoing
     }
-    Repo.insert!(conversation, on_conflict: :replace_all,
-                               conflict_target: [:user_id, :other_jid])
+    Repo.insert!(
+      conversation,
+      on_conflict: [set: conversation
+                         |> Map.take(@change_fields)
+                         |> Map.to_list],
+      conflict_target: [:user_id, :other_jid])
     :ok
+  end
+
+  @spec get_id(User.id, JID.literal_jid) :: integer | nil
+  def get_id(user_id, other_jid) do
+    conversation =
+      Repo.get_by(
+        Conversation,
+        user_id: user_id,
+        other_jid: other_jid
+      )
+
+    case conversation do
+      nil -> nil
+      c -> c.id
+    end
   end
 
   @spec find(User.id) :: [t]
@@ -75,5 +96,4 @@ defmodule Wocky.Conversation do
 
     :ok
   end
-
 end
