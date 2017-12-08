@@ -54,7 +54,7 @@ defmodule Wocky.Conversation do
     :ok
   end
 
-  @spec get_id(User.id, JID.t) :: integer | nil
+  @spec get_id(User.id, JID.literal_jid) :: integer | nil
   def get_id(user_id, other_jid) do
     conversation =
       Repo.get_by(
