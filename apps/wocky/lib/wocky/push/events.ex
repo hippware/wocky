@@ -1,13 +1,12 @@
 defmodule Wocky.Push.Events do
   @moduledoc false
 
+  alias Wocky.Bot
   alias Wocky.Push.Event
   alias Wocky.User
 
   defmodule Utils do
     @moduledoc false
-
-    use Wocky.JID
 
     alias Wocky.User
 
@@ -25,16 +24,8 @@ defmodule Wocky.Push.Events do
       end
     end
 
-    defp do_get_handle(obj) do
-      case get_user(obj) do
-        nil -> nil
-        user -> user.handle
-      end
-    end
-
-    defp get_user(nil), do: nil
-    defp get_user(%User{} = user), do: user
-    defp get_user(jid() = jid), do: User.get_by_jid(jid)
+    defp do_get_handle(nil), do: nil
+    defp do_get_handle(%User{} = user), do: user.handle
 
     @doc false
     def make_uri(type, id) do
@@ -59,6 +50,12 @@ defmodule Wocky.Push.Events do
 
     defstruct [:user, :bot, :event]
 
+    @type t :: %__MODULE__{
+      user: User.t,
+      bot: Bot.t,
+      event: :enter | :exit
+    }
+
     use ExConstructor
   end
 
@@ -79,6 +76,12 @@ defmodule Wocky.Push.Events do
 
     defstruct [:from, :to, :bot]
 
+    @type t :: %__MODULE__{
+      from: User.t,
+      to: User.t,
+      bot: Bot.t
+    }
+
     use ExConstructor
   end
 
@@ -95,6 +98,14 @@ defmodule Wocky.Push.Events do
     @moduledoc false
 
     defstruct [:from, :to, :body, :image, :conversation_id]
+
+    @type t :: %__MODULE__{
+      from: User.t,
+      to: User.t,
+      body: nil | binary,
+      image: nil | binary,
+      conversation_id: binary
+    }
 
     use ExConstructor
   end
