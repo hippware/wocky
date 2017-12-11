@@ -12,6 +12,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Clean up old push notification artifacts (#1168)
 * Add infrastructure for metrics collection (#1137)
 * Add deep links to push notifications (#1099)
+* Fix up stream management (session storage) (#1166)
 
 
 # 2017.12.1+r3ea2504
