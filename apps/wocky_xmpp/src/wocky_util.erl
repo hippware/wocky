@@ -34,7 +34,9 @@
 
    remove_redundant_jids/1,
 
-   remove_whitespace/1
+   remove_whitespace/1,
+
+   check_foldl/3
         ]).
 
 -type hook() :: {Hook :: atom(), Callback :: atom()}.
@@ -170,3 +172,13 @@ remove_whitespace(String) ->
       ?string:split(),
       list_to_binary()
      ).
+
+% Foldl with error checking for each iteration
+-spec check_foldl(fun((A, term()) -> {ok, term()} | {error, term()}),
+                  term(), [A]) -> {ok, term()} | {error, term()}.
+check_foldl(_, Acc, []) -> {ok, Acc};
+check_foldl(Fun, Acc, [H | T]) ->
+    case Fun(H, Acc) of
+        {error, E} -> {error, E};
+        {ok, Acc2} -> check_foldl(Fun, Acc2, T)
+    end.

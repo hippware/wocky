@@ -146,7 +146,11 @@ handle_iq_type(From, To, get, Name, _Attrs, IQ)
     handle_subscribed(From, To, IQ);
 
 % Update
+% Old style
 handle_iq_type(From, To, set, <<"fields">>, Attrs, IQ) ->
+    handle_owner_action(update, From, To, Attrs, false, IQ);
+% New style
+handle_iq_type(From, To, set, <<"update">>, Attrs, IQ) ->
     handle_owner_action(update, From, To, Attrs, false, IQ);
 
 % Subscribe
@@ -570,6 +574,7 @@ get_fields(Children) ->
 
 get_fields(_, [{error, E} | _]) -> {error, E};
 get_fields([], Acc) -> {ok, Acc};
+% Old Style:
 get_fields([El = #xmlel{name = <<"field">>,
                         attrs = Attrs}
             | Rest] , Acc) ->
@@ -577,28 +582,46 @@ get_fields([El = #xmlel{name = <<"field">>,
             Name <- wocky_xml:get_attr(<<"var">>, Attrs),
             TypeBin <- wocky_xml:get_attr(<<"type">>, Attrs),
             Type <- check_field(Name, TypeBin),
-            Value <- get_field_value(Type, El),
+            Value <- old_get_field_value(Type, El),
+            #field{name = Name, type = Type, value = Value}
+           ]),
+    get_fields(Rest, [F | Acc]);
+% New Style:
+get_fields([#xmlel{name = Name, children = Children} | Rest], Acc) ->
+    F = do([error_m ||
+            Type <- check_field(Name),
+            Value <- get_field_value(Type, Children),
             #field{name = Name, type = Type, value = Value}
            ]),
     get_fields(Rest, [F | Acc]).
 
-get_field_value(string, FieldEl) ->
+old_get_field_value(string, FieldEl) ->
     wocky_xml:get_subel_cdata(<<"value">>, FieldEl);
-
-get_field_value(int, FieldEl) ->
+old_get_field_value(int, FieldEl) ->
     wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_integer/1);
-
-get_field_value(geoloc, FieldEl) ->
-    wocky_xml:act_on_subel(<<"geoloc">>, FieldEl, fun read_geoloc/1);
-
-get_field_value(tags, FieldEl) ->
-    wocky_xml:foldl_subels(FieldEl, [], fun read_tag/2);
-
-get_field_value(bool, FieldEl) ->
+old_get_field_value(bool, FieldEl) ->
     wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_bool/1);
+old_get_field_value(float, FieldEl) ->
+    wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_float/1);
+old_get_field_value(geoloc, FieldEl) ->
+    wocky_xml:act_on_subel(<<"geoloc">>, FieldEl, fun read_geoloc/1);
+old_get_field_value(tags, FieldEl) ->
+    wocky_xml:foldl_subels(FieldEl, [], fun read_tag/2).
 
-get_field_value(float, FieldEl) ->
-    wocky_xml:act_on_subel_cdata(<<"value">>, FieldEl, fun read_float/1).
+get_field_value(string, [#xmlcdata{content = Value}]) -> {ok, Value};
+get_field_value(string, []) -> {ok, <<>>};
+% Remove once old interface is removed:
+get_field_value([int, float], [#xmlcdata{content = Value}]) ->
+    read_float(Value);
+get_field_value(int, [#xmlcdata{content = Value}]) -> read_integer(Value);
+get_field_value(bool, [#xmlcdata{content = Value}]) -> read_bool(Value);
+get_field_value(float, [#xmlcdata{content = Value}]) -> read_float(Value);
+get_field_value(geoloc, [Geoloc]) -> read_geoloc(Geoloc);
+get_field_value(tags, Children) ->
+    wocky_util:check_foldl(fun read_tag/2, [], Children);
+get_field_value(_, _) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid field type">>)}.
+
 
 read_integer(Binary) ->
     case wocky_util:safe_bin_to_integer(Binary) of
@@ -678,6 +701,15 @@ check_required_fields(Fields, [#field{name = Name} | Rest]) ->
         false ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG,
                                       <<"Missing ", Name/binary, " field">>)}
+    end.
+
+check_field(Name) ->
+    case lists:keyfind(Name, #field.name, create_fields()) of
+        #field{type = ExpectedType} ->
+            {ok, ExpectedType};
+        false ->
+            {error, ?ERRT_BAD_REQUEST(
+                       ?MYLANG, <<"Invalid field ", Name/binary>>)}
     end.
 
 check_field(Name, TypeBin) ->
@@ -807,6 +839,7 @@ alerts(true) -> 1;
 alerts(false) -> 0.
 
 encode_fields(Fields) ->
+    lists:foldl(fun old_encode_field/2, [], Fields) ++
     lists:foldl(fun encode_field/2, [], Fields).
 
 to_field(location, #{coordinates := {Lon, Lat}}, Acc) ->
@@ -848,26 +881,30 @@ make_field(Name, jid, Val) when is_binary(Val) ->
 make_field(Name, jid, Val = #jid{}) ->
     #field{name = Name, type = jid, value = Val}.
 
-encode_field(#field{name = N, type = string, value = V}, Acc) ->
+%%%===================================================================
+%%% Field encoding - deprecated <field ... > style
+%%%===================================================================
+
+old_encode_field(#field{name = N, type = string, value = V}, Acc) ->
     [field_element(N, string, safe_string(V)) | Acc];
-encode_field(#field{name = N, type = jid, value = V}, Acc) ->
+old_encode_field(#field{name = N, type = jid, value = V}, Acc) ->
     [field_element(N, jid, safe_jid_to_binary(V)) | Acc];
-encode_field(#field{name = N, type = int, value = V}, Acc) ->
+old_encode_field(#field{name = N, type = int, value = V}, Acc) ->
     [field_element(N, int, integer_to_binary(V)) | Acc];
-encode_field(#field{name = N, type = float, value = V}, Acc)
+old_encode_field(#field{name = N, type = float, value = V}, Acc)
   when is_float(V)->
     [field_element(N, float, float_to_binary(V)) | Acc];
-encode_field(#field{name = N, type = float, value = V}, Acc)
+old_encode_field(#field{name = N, type = float, value = V}, Acc)
   when is_integer(V) ->
     [field_element(N, float, float_to_binary(float(V))) | Acc];
-encode_field(#field{name = N, type = bool, value = V}, Acc) ->
+old_encode_field(#field{name = N, type = bool, value = V}, Acc) ->
     [field_element(N, bool, atom_to_binary(V, utf8)) | Acc];
-encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
+old_encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [geoloc_field(N, V) | Acc];
-encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
+old_encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
     [field_element(N, timestamp, ?wocky_timestamp:to_string(V)) | Acc];
-encode_field(#field{name = N, type = tags, value = V}, Acc) ->
-    [tags_element(N, V) | Acc].
+old_encode_field(#field{name = N, type = tags, value = V}, Acc) ->
+    [old_tags_element(N, V) | Acc].
 
 make_jid(User) ->
     case jid:from_binary(User) of
@@ -893,6 +930,35 @@ field_element(Name, Type, Val) ->
 value_element(Val) ->
     wocky_xml:cdata_el(<<"value">>, Val).
 
+
+
+%%%===================================================================
+%%% Field encoding - new <id> style
+%%%===================================================================
+
+encode_field(#field{name = N, type = string, value = V}, Acc) ->
+    [cdata_el(N, safe_string(V)) | Acc];
+encode_field(#field{name = N, type = jid, value = V}, Acc) ->
+    [cdata_el(N, safe_jid_to_binary(V)) | Acc];
+encode_field(#field{name = N, type = int, value = V}, Acc) ->
+    [cdata_el(N, integer_to_binary(V)) | Acc];
+encode_field(#field{name = N, type = float, value = V}, Acc) when is_float(V) ->
+    [cdata_el(N, float_to_binary(V)) | Acc];
+encode_field(F = #field{type = float, value = V}, Acc) when is_integer(V) ->
+    encode_field(F#field{value = float(V)}, Acc);
+encode_field(#field{name = N, type = bool, value = V}, Acc) ->
+    [cdata_el(N, atom_to_binary(V, utf8)) | Acc];
+encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
+    [#xmlel{name = N, children = [geoloc_element(V)]} | Acc];
+encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
+    [cdata_el(N, ?wocky_timestamp:to_string(V)) | Acc];
+encode_field(#field{name = N, type = tags, value = V}, Acc) ->
+    [tags_element(N, V) | Acc].
+
+
+cdata_el(Name, Value) ->
+    wocky_xml:cdata_el(binary:replace(Name, <<"+">>, <<"-">>), Value).
+
 geoloc_field(Name, Val) ->
     #xmlel{name = <<"field">>,
            attrs = [{<<"var">>, Name},
@@ -904,10 +970,14 @@ geoloc_element({Lat, Lon}) ->
            attrs = [{<<"xmlns">>, ?NS_GEOLOC}],
            children = [wocky_xml:cdata_el(N, wocky_util:coord_to_binary(V))
                        || {N, V} <- [{<<"lat">>, Lat}, {<<"lon">>, Lon}]]}.
-tags_element(Name, Tags) ->
+old_tags_element(Name, Tags) ->
     #xmlel{name = <<"tags">>,
            attrs = [{<<"var">>, Name},
                     {<<"type">>, <<"tags">>}],
+           children = [wocky_xml:cdata_el(<<"tag">>, T) || T <- Tags]}.
+
+tags_element(Name, Tags) ->
+    #xmlel{name = Name,
            children = [wocky_xml:cdata_el(<<"tag">>, T) || T <- Tags]}.
 
 make_ret_stanza(Fields) ->
