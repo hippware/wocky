@@ -104,6 +104,7 @@ defmodule Wocky.ConversationSpec do
                          :conversation,
                          %{user_id: shared.conversation.user_id,
                           other_jid: shared.conversation.other_jid})
+
         result = Conversation.put(conversation.id,
                                   conversation.user_id,
                                   conversation.other_jid,
@@ -122,12 +123,15 @@ defmodule Wocky.ConversationSpec do
       it "should replace the existing conversation entry" do
         conversations = Conversation.find(shared.user_id)
         conversations |> should(have_length 1)
-        conversations |> hd |> should_match(shared.new_conversation, [:id])
 
-        conversations
-        |> hd
-        |> Map.get(:id)
-        |> should(eq shared.conversation.id)
+        c = hd(conversations)
+        c |> should_match(shared.new_conversation, [:id])
+
+        c.updated_at
+        |> DateTime.compare(shared.conversation.updated_at)
+        |> should(eq :gt)
+
+        c.id |> should(eq shared.conversation.id)
       end
 
     end

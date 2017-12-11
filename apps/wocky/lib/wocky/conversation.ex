@@ -49,6 +49,7 @@ defmodule Wocky.Conversation do
       conversation,
       on_conflict: [set: conversation
                          |> Map.take(@change_fields)
+                         |> Map.put(:updated_at, DateTime.utc_now)
                          |> Map.to_list],
       conflict_target: [:user_id, :other_jid])
     :ok
