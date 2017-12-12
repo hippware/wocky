@@ -4,7 +4,6 @@ defmodule Wocky.BotReport do
   import Ecto.Query
 
   alias Slack.File
-  alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo
@@ -18,35 +17,45 @@ defmodule Wocky.BotReport do
   def run do
     {:ok, _} = Application.ensure_all_started(:wocky)
     if Confex.get_env(:wocky, :enable_bot_report) do
-      days = Confex.get_env(:wocky, :bot_report_days)
-      report = generate_report(days)
-
-      server = Confex.get_env(:wocky, :wocky_host)
-      channel = Confex.get_env(:wocky, :bot_report_channel)
-
       :wocky
-      |> Confex.get_env(:slack_token)
-      |> Slack.client
-      |> File.upload(content: report,
-                     filename: "weekly_bot_report_#{server}.csv",
-                     title: "Weekly Bot Report for #{server}",
-                     filetype: "csv",
-                     channels: channel)
+      |> Confex.get_env(:bot_report_days)
+      |> generate_report()
+      |> publish_report()
     end
   end
 
   @spec generate_report(non_neg_integer) :: binary
   def generate_report(days) do
+    now = Timex.now
+    generate_report(Timex.shift(now, days: -days), now)
+  end
+
+  @spec generate_report(DateTime.t, DateTime.t) :: binary
+  def generate_report(first, last) do
     {:ok, csv} =
       Repo.transaction fn ->
-        days
-        |> since()
-        |> get_bot_data()
+        first
+        |> get_bot_data(last)
         |> add_header()
         |> Enum.join
       end
 
     csv
+  end
+
+  @spec publish_report(binary) :: any
+  def publish_report(report) do
+    server = Confex.get_env(:wocky, :wocky_host)
+    channel = Confex.get_env(:wocky, :bot_report_channel)
+
+    :wocky
+    |> Confex.get_env(:slack_token)
+    |> Slack.client
+    |> File.upload(content: report,
+                   filename: "weekly_bot_report_#{server}.csv",
+                   title: "Weekly Bot Report for #{server}",
+                   filetype: "csv",
+                   channels: channel)
   end
 
   defp add_header(data) do
@@ -55,15 +64,10 @@ defmodule Wocky.BotReport do
     |> Stream.concat(data)
   end
 
-  defp since(days) do
-    Timex.now
-    |> Timex.subtract(Duration.from_days(days))
-    |> Timex.to_naive_datetime
-  end
-
-  defp get_bot_data(since) do
+  defp get_bot_data(first, last) do
     Bot
-    |> where([b], b.created_at > ^since and not b.pending)
+    |> where([b], b.created_at > ^first and b.created_at <= ^last)
+    |> where([b], not b.pending)
     |> Repo.stream
     |> Stream.map(&format_bot/1)
     |> CSV.encode
