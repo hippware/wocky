@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2017.12.11+re507ecc
+
 * Fix up stream management (session storage) (#1166)
 * Fix updated_at on updated conversations (PR #1178)
 
