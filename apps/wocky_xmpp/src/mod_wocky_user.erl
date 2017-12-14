@@ -324,36 +324,47 @@ get_resp_fields(Fields, _LServer, LUser) ->
 
 
 build_resp_fields(Row, Fields) ->
-    lists:foldl(
-      fun(Field, Acc) -> [build_resp_field(Row, Field) | Acc] end,
-      [], Fields).
+    {lists:foldl(
+       fun(Field, Acc) -> [old_build_resp_field(Row, Field) | Acc] end,
+       [], Fields),
+     lists:foldl(
+       fun(Field, Acc) -> [build_resp_field(Row, Field) | Acc] end,
+       [], Fields)}.
 
 
-build_resp_field(Row, Field) ->
+old_build_resp_field(Row, Field) ->
     #xmlel{name = <<"field">>,
            attrs = [{<<"var">>,  list_to_binary(field_name(Field))},
                     {<<"type">>, list_to_binary(field_type(Field))}],
            children = [value_element(extract(field_name(Field), Row,
                                              field_accessor(Field)))]}.
 
+build_resp_field(Row, Field) ->
+    Value = extract(field_name(Field), Row, field_accessor(Field)),
+    case Value of
+        {non_default, El} -> El;
+        Value -> cdata_el(list_to_binary(field_name(Field)), null_to_bin(Value))
+    end.
+
+cdata_el(Name, Value) ->
+    wocky_xml:cdata_el(binary:replace(Name, <<"+">>, <<"-">>), Value).
+
 extract(Key, Row, default) ->
     maps:get(list_to_existing_atom(Key), Row);
 
 extract(_, Row, Fun) -> Fun(Row).
-
 
 value_element({non_default, Element}) -> Element;
 value_element(Value) ->
     #xmlel{name = <<"value">>,
            children = [#xmlcdata{content = null_to_bin(Value)}]}.
 
-
-make_get_response_iq(Fields, IQ, User) ->
+make_get_response_iq({OldFields, NewFields}, IQ, User) ->
     IQ#iq{type = result,
-          sub_el = #xmlel{name = <<"fields">>,
-                          attrs = response_attrs(User),
-                          children = Fields}}.
-
+          sub_el = [#xmlel{name = <<"fields">>,
+                           attrs = response_attrs(User),
+                           children = OldFields} |
+                    NewFields]}.
 
 make_users_response_iq(Fields, IQ) ->
     IQ#iq{type = result,
@@ -385,10 +396,14 @@ make_error_response(IQ, ErrStanza) ->
     ok = lager:debug("Error on user IQ request: ~p", [ErrStanza]),
     IQ#iq{type = error, sub_el = ErrStanza}.
 
-wrap_user_result(Result, BJID) ->
+wrap_user_result(Error = [#xmlel{}], BJID) ->
     #xmlel{name = <<"user">>,
            attrs = [{<<"jid">>, BJID}],
-           children = Result}.
+           children = Error};
+wrap_user_result({OldResult, NewResult}, BJID) ->
+    #xmlel{name = <<"user">>,
+           attrs = [{<<"jid">>, BJID}],
+           children = OldResult ++ NewResult}.
 
 make_roles(#{roles := Roles}) ->
     {non_default,

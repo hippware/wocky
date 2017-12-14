@@ -643,17 +643,29 @@ expect_bulk_result(
     UnmatchedResults2.
 
 expect_results(error, [#xmlel{name = <<"error">>}]) -> ok;
+% Expected size can be 2* fields because we have both old and new forms for now
+expect_results(ExpectedFields, Fields)
+  when length(ExpectedFields) =:= length(Fields) div 2 ->
+    lists:foreach(fun(F) ->
+                          ?assert(has_field(Fields, F, true))
+                  end, ExpectedFields);
 expect_results(ExpectedFields, Fields)
   when length(ExpectedFields) =:= length(Fields) ->
     lists:foreach(fun(F) ->
-                          ?assert(has_field(Fields, F))
+                          ?assert(has_field(Fields, F, false))
                   end, ExpectedFields).
 
-has_field(Fields, Field) ->
+has_field(Fields, Field, CheckNew) ->
     FieldBin = atom_to_binary(Field, utf8),
     lists:any(fun(El = #xmlel{name = <<"field">>}) ->
                       exml_query:path(El, [{attr, <<"var">>}]) =:= FieldBin
-              end, Fields).
+              end, Fields)
+    andalso
+    (not CheckNew orelse
+     lists:any(fun(#xmlel{name = Name}) -> Name =:= fix_name(FieldBin) end,
+               Fields)).
+
+fix_name(Name) -> binary:replace(Name, <<"+">>, <<"-">>).
 
 seed_contacts() ->
     NilHandleUser = ?wocky_factory:insert(user,
