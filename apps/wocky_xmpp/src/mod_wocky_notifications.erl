@@ -5,6 +5,7 @@
 -compile({parse_transform, cut}).
 
 -include("wocky.hrl").
+-include("wocky_roster.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).
@@ -12,6 +13,7 @@
 
 %% Hook callbacks
 -export([user_send_packet_hook/3,
+         roster_process_item_hook/2,
          remove_user_hook/2]).
 
 %% IQ handler
@@ -35,6 +37,7 @@ stop(Host) ->
 
 hooks() ->
     [{user_send_packet,     user_send_packet_hook},
+     {roster_process_item,  roster_process_item_hook},
      {remove_user,          remove_user_hook}].
 
 
@@ -123,6 +126,22 @@ get_image(Packet) ->
                      cdata],
                     <<"">>).
 
+
+%% roster_process_item -----------------------------------------------
+roster_process_item_hook(Item, _Host) ->
+    case Item#wocky_roster.subscription of
+        remove ->
+            ok;
+
+        _ ->
+            UserID = Item#wocky_roster.user,
+            User = ?wocky_repo:get(?wocky_user, UserID),
+            Follower = ?wocky_user:get_by_jid(Item#wocky_roster.contact_jid),
+            Event = ?new_follower_event:new(#{user => User,
+                                              follower => Follower}),
+            ?wocky_push:notify_all(UserID, Event)
+    end,
+    Item.
 
 %% remove_user -------------------------------------------------------
 remove_user_hook(User, _Server) ->

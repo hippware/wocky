@@ -71,6 +71,7 @@
 
 -define(wocky_push, 'Elixir.Wocky.Push').
 -define(new_message_event, 'Elixir.Wocky.Push.Events.NewMessageEvent').
+-define(new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(bot_share_event, 'Elixir.Wocky.Push.Events.BotShareEvent').
 
 -define(confex, 'Elixir.Confex').

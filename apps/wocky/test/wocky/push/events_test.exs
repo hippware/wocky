@@ -7,6 +7,7 @@ defmodule Wocky.Push.EventsTest do
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Push.Events.BotShareEvent
   alias Wocky.Push.Events.NewMessageEvent
+  alias Wocky.Push.Events.NewFollowerEvent
 
   @test_handle "test_handle"
   @test_title "test_title"
@@ -88,6 +89,23 @@ defmodule Wocky.Push.EventsTest do
       uri = Event.uri(%NewMessageEvent{to: u, from: oj, conversation_id: cid})
       assert uri =~ "/conversation/"
       assert uri =~ "/#{Integer.to_string(cid)}"
+    end
+  end
+
+  describe "NewFollowerEvent" do
+    setup %{user: follower} do
+      {:ok, user: Factory.build(:user), follower: follower}
+    end
+
+    test "returns an appropriate message", %{user: u, follower: f} do
+      msg = Event.message(%NewFollowerEvent{user: u, follower: f})
+      assert msg =~ @test_handle
+      assert msg =~ "just followed you!"
+    end
+
+    test "returns an appropriate uri", %{user: u, follower: f} do
+      uri = Event.uri(%NewFollowerEvent{user: u, follower: f})
+      assert uri =~ "/followers"
     end
   end
 end

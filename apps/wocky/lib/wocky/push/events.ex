@@ -20,7 +20,7 @@ defmodule Wocky.Push.Events do
       case do_get_handle(obj) do
         nil -> "Someone"
         "" -> "Someone"
-        handle -> handle
+        handle -> "@" <> handle
       end
     end
 
@@ -28,9 +28,17 @@ defmodule Wocky.Push.Events do
     defp do_get_handle(%User{} = user), do: user.handle
 
     @doc false
-    def make_uri(type, id) do
-      "#{uri_prefix()}://#{type}/#{server()}/#{id}"
+    def make_uri(type, id \\ nil, server? \\ true) do
+      "#{uri_prefix()}://#{type}"
+      |> maybe_add_server(server?)
+      |> maybe_add_id(id)
     end
+
+    defp maybe_add_server(uri, false), do: uri
+    defp maybe_add_server(uri, true), do: uri <> "/" <> server()
+
+    defp maybe_add_id(uri, nil), do: uri
+    defp maybe_add_id(uri, id), do: uri <> "/" <> id
 
     defp server do
       Confex.get_env(:wocky, :wocky_host)
@@ -41,7 +49,7 @@ defmodule Wocky.Push.Events do
     end
 
     @doc false
-    def stringify_id(nil), do: "0"
+    def stringify_id(nil), do: nil
     def stringify_id(id), do: Integer.to_string(id)
   end
 
@@ -122,6 +130,30 @@ defmodule Wocky.Push.Events do
 
     def uri(%NewMessageEvent{conversation_id: id}) do
       make_uri(:conversation, stringify_id(id))
+    end
+  end
+
+  defmodule NewFollowerEvent do
+    @moduledoc false
+
+    defstruct [:user, :follower]
+
+    @type t :: %__MODULE__{
+      user: User.t,
+      follower: User.t
+    }
+
+    use ExConstructor
+  end
+
+  defimpl Event, for: NewFollowerEvent do
+    import Wocky.Push.Events.Utils
+    def message(%NewFollowerEvent{follower: follower} = _event) do
+      "#{get_handle(follower)} just followed you!"
+    end
+
+    def uri(%NewFollowerEvent{} = _event) do
+      make_uri(:followers, nil, false)
     end
   end
 end
