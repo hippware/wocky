@@ -15,6 +15,7 @@
 -export([publish/4,
          delete/2,
          get/3,
+         catchup/3,
          subscribe/3,
          unsubscribe/2
         ]).
@@ -32,6 +33,11 @@ get(_, _, _) ->
     {error,
      ?ERRT_NOT_ACCEPTABLE(
         ?MYLANG, <<"Getting via publishing interface not available">>)}.
+
+catchup(_, _, _) ->
+    {error,
+     ?ERRT_NOT_ACCEPTABLE(
+        ?MYLANG, <<"Catchup via publishing interface not available">>)}.
 
 subscribe(TargetJID, UserJID, _) ->
     do([error_m ||

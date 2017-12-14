@@ -35,6 +35,8 @@
          not_found} |
     pub_error_result().
 
+-type pub_catchup_result() ::
+    {ok, {[pub_item()], pub_version(), pub_extra_data()}} | pub_error_result().
 
 -define(PUBLISHING_HANDLER_TABLE, mod_wocky_publishing_handlers).
 

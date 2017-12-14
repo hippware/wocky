@@ -46,6 +46,7 @@
          get_hs_stanza/1,
          check_hs_result/2,
          check_hs_result/3,
+         check_hs_result/4,
          check_single_hs_result/2,
          get_items_el/1,
 
@@ -352,13 +353,15 @@ timeout() ->
 check_hs_result(Stanza, NumItems) ->
     check_hs_result(Stanza, NumItems, true).
 check_hs_result(Stanza, NumItems, CheckVersion) ->
+    check_hs_result(Stanza, NumItems, CheckVersion, 1).
+check_hs_result(Stanza, NumItems, CheckVersion, RSMCount) ->
     {ok, L} = do([error_m ||
                   ItemsEl <- get_items_el(Stanza),
                   check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
                   check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
                   maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
                   ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, NumItems, 1),
+                  check_elements(ItemsEl, NumItems, RSMCount),
                   check_extra(ItemList, Stanza),
                   {ok, ItemList}
                  ]),

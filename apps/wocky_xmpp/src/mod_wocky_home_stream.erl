@@ -27,6 +27,7 @@
 -export([publish/4,
          delete/2,
          get/3,
+         catchup/3,
          subscribe/3,
          unsubscribe/2
         ]).
@@ -102,6 +103,20 @@ get(#jid{luser = User}, FromJID = #jid{luser = User}, ID) ->
                   extra_data([Item], FromJID)}}
     end;
 get(_, _, _) ->
+    {error, ?ERR_FORBIDDEN}.
+
+-spec catchup(ejabberd:jid(), ejabberd:jid(), pub_version())
+-> pub_get_result().
+catchup(#jid{luser = User}, FromJID = #jid{luser = User}, Version) ->
+    LatestVersion = format_version(
+                      ?wocky_home_stream_item:get_latest_version(User)),
+    CatchupRows = ?wocky_home_stream_item:get_after_time(User, Version),
+    {ok, {[map_to_item(R) || R <- CatchupRows],
+          LatestVersion,
+          extra_data(CatchupRows, FromJID)
+         }};
+
+catchup(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
 -spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> ok.

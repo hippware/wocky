@@ -16,7 +16,7 @@
                       expect_iq_success/2, add_to_u/2,
                       ensure_all_clean/1, publish_item_stanza/4,
                       get_hs_stanza/0, get_hs_stanza/1,
-                      check_hs_result/2, check_hs_result/3,
+                      check_hs_result/2, check_hs_result/3, check_hs_result/4,
                       query_el/1, hs_node/1, node_el/3,
                       subscribe_stanza/0, check_home_stream_sizes/2,
                       check_home_stream_sizes/3]).
@@ -34,6 +34,7 @@ all() -> [
           get,
           get_first,
           get_with_rsm,
+          catchup,
           publish,
           delete,
           no_auto_publish_chat,
@@ -142,6 +143,16 @@ get_with_rsm(Config) ->
         [Item] = check_hs_result(Stanza, 1),
         ?assertEqual(V1, Item#item.version),
         test_helper:check_attr(<<"version">>, V3, Stanza)
+      end).
+
+catchup(Config) ->
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
+        V2 = hd(tl(proplists:get_value(alice_versions, Config))),
+        Stanza = expect_iq_success_u(catchup_stanza(V2), Alice, Alice),
+        check_hs_result(Stanza, 1, true, 0),
+
+        expect_iq_error_u(catchup_stanza(V2), Carol, Alice)
       end).
 
 publish(Config) ->
@@ -751,3 +762,9 @@ check_is_deletion(Stanzas) ->
 get_message_stanza(Stanzas) ->
     [Stanza] = lists:filter(escalus_pred:is_message(_), Stanzas),
     Stanza.
+
+catchup_stanza(Version) ->
+    test_helper:iq_get(?NS_PUBLISHING,
+                       #xmlel{name = <<"catchup">>,
+                              attrs = [{<<"node">>, ?HOME_STREAM_NODE},
+                                       {<<"version">>, Version}]}).
