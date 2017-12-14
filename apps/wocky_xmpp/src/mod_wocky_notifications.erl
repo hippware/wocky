@@ -79,8 +79,9 @@ user_send_packet_hook(From, To, Packet) ->
             Image = get_image(Packet),
             Sender = ?wocky_user:get_by_jid(From),
             Recipient = ?wocky_user:get_by_jid(To),
-            ConversationID = ?wocky_conversation:get_id(To#jid.luser,
-                                                        jid:to_binary(From)),
+            ConversationID =
+                ?wocky_conversation:get_id(To#jid.luser,
+                                           jid:to_binary(jid:to_bare(From))),
             Event = ?new_message_event:new(
                        #{to => Recipient,
                          from => Sender,
