@@ -79,6 +79,12 @@ handle_iq_type(From, To, #iq{type = get,
                             }) ->
     handle_items(From, To, Attrs, Children);
 
+handle_iq_type(From, To, #iq{type = get,
+                             sub_el = #xmlel{name = <<"catchup">>,
+                                             attrs = Attrs}
+                            }) ->
+    handle_catchup(From, To, Attrs);
+
 handle_iq_type(_From, _To, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
 
@@ -124,6 +130,16 @@ handle_items(From, To, Attrs, Children) ->
         Result    <- wocky_publishing_handler:get(TargetJID, From, Param),
         result_stanza(Result, TargetJID)
        ]).
+
+handle_catchup(From, To, Attrs) ->
+    do([error_m ||
+        check_same_user(From, To),
+        TargetJID <- get_target_jid(To, Attrs),
+        Version   <- wocky_xml:get_attr(<<"version">>, Attrs),
+        Result    <- wocky_publishing_handler:catchup(TargetJID, From, Version),
+        result_stanza(Result, TargetJID)
+       ]).
+
 
 handle_presence(_, _, unhandled_presence_type, _) ->
     ignore;
@@ -249,6 +265,8 @@ result_stanza({#published_item{deleted = true}, _Version, _ExtraData},
     {error, ?ERR_ITEM_NOT_FOUND};
 result_stanza({Item = #published_item{}, Version, ExtraData}, TargetJID) ->
     items_stanza([item_stanza(Item)], Version, TargetJID, ExtraData);
+result_stanza({Items, Version, ExtraData}, TargetJID) when is_list(Items) ->
+    items_stanza(items_elements(Items), Version, TargetJID, ExtraData);
 result_stanza({Items, Version, ExtraData, RSMOut}, TargetJID) ->
     items_stanza(items_elements(Items) ++ jlib:rsm_encode(RSMOut),
                  Version, TargetJID, ExtraData).

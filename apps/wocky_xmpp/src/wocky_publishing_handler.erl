@@ -8,7 +8,7 @@
 -include("wocky_publishing.hrl").
 
 -export([register/2, unregister/2, send_notification/3]).
--export([set/5, get/3, subscribe/3, unsubscribe/2]).
+-export([set/5, get/3, catchup/3, subscribe/3, unsubscribe/2]).
 
 % Called when an item is newly published or updated
 -callback publish(
@@ -27,6 +27,12 @@
             TargetJID :: ejabberd:jid(),
             UserJID   :: ejabberd:jid(),
             RSM       :: jlib:rsm_in() | pub_item_id()) -> pub_get_result().
+
+% Called when a user requests all items newer than the specified version
+-callback catchup(
+            TargetJID :: ejabberd:jid(),
+            UserJID   :: ejabberd:jid(),
+            Version   :: pub_version()) -> pub_catchup_result().
 
 % Called when a user subscribes to a target matching the node prefix
 -callback subscribe(
@@ -75,6 +81,9 @@ set(TargetJID, From, To, ID, Stanza) ->
 
 get(TargetJID, From, Param) ->
     call_hook(get, TargetJID, [TargetJID, From, Param]).
+
+catchup(TargetJID, From, Version) ->
+    call_hook(catchup, TargetJID, [TargetJID, From, Version]).
 
 -spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> pub_result().
 subscribe(TargetJID, UserJID, Version) ->
