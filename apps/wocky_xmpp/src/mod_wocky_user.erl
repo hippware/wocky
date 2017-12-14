@@ -444,25 +444,33 @@ get_set_req_fields([], Acc) ->
     {ok, Acc};
 
 get_set_req_fields([El = #xmlel{name = <<"field">>} | Tail], Acc) ->
-    case get_set_req_field(El) of
+    case old_get_set_req_field(El) of
         {ok, Result} -> get_set_req_fields(Tail, [Result | Acc]);
         {error, E} -> {error, E}
     end;
 
-get_set_req_fields([_ | Tail], Acc) ->
-    get_set_req_fields(Tail, Acc).
+get_set_req_fields([El | Tail], Acc) ->
+    case get_set_req_field(El) of
+        {ok, Result} -> get_set_req_fields(Tail, [Result | Acc]);
+        {error, E} -> {error, E}
+    end.
 
-
-get_set_req_field(#xmlel{attrs = Attrs, children = Children}) ->
+old_get_set_req_field(#xmlel{attrs = Attrs, children = Children}) ->
     do([error_m ||
         Var <- get_var(Attrs),
         Type <- get_type(Attrs),
         Field <- get_field(Var),
         check_type(Field, Type),
         check_editability(Field),
-        Value <- get_value(Children, Field),
+        Value <- old_get_value(Children, Field),
         {ok, {Var, Value}}]).
 
+get_set_req_field(#xmlel{name = Name, children = Children}) ->
+    do([error_m ||
+        Field <- get_field(Name),
+        check_editability(Field),
+        Value <- get_value(Children, Field),
+        {ok, {Name, Value}}]).
 
 get_var(Attrs) ->
     get_attr(<<"var">>, Attrs).
@@ -503,20 +511,22 @@ check_editability(Field) ->
     end.
 
 
-get_value([#xmlel{name = <<"value">>,
+old_get_value([#xmlel{name = <<"value">>,
                   children = [#xmlcdata{content = Value}]} | _], _Field) ->
     {ok, Value};
 
-get_value([#xmlel{name = <<"value">>} | _], Field) ->
+old_get_value([#xmlel{name = <<"value">>} | _], Field) ->
     % Missing value content - treat the same as an absent value field
-    get_value([], Field);
+    old_get_value([], Field);
 
-get_value([], Field) ->
+old_get_value([], Field) ->
     not_valid(["Missing value on ", field_name(Field)]);
 
-get_value([_ | Tail], Field) ->
-    get_value(Tail, Field).
+old_get_value([_ | Tail], Field) ->
+    old_get_value(Tail, Field).
 
+get_value([#xmlcdata{content = Value}], _Field) -> {ok, Value};
+get_value(_, Field) -> not_valid(["Missing value on ", field_name(Field)]).
 
 set_user_fields(LUser, LServer, Fields) ->
     Row = build_row(Fields),

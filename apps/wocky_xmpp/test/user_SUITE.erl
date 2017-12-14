@@ -25,7 +25,8 @@ all() ->
      {group, contacts},
      {group, bulk},
      {group, error},
-     {group, set},
+     {group, set_old},
+     {group, set_new},
      {group, error_set}
     ].
 
@@ -55,10 +56,14 @@ groups() ->
                   wrong_type2,
                   missing_var,
                   non_existant_field]},
-     {set, [], [set_fields,
-                set_other_user,
-                garbage_set,
-                delete_user]},
+     {set_old, [], [set_fields,
+                    set_other_user,
+                    garbage_set,
+                    delete_user]},
+     {set_new, [], [set_fields,
+                    set_other_user,
+                    garbage_set,
+                    delete_user]},
      {error_set, [], [set_missing_node,
                       rest_writable_field,
                       non_writable_field,
@@ -86,17 +91,25 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    escalus:init_per_suite(Config).
+    escalus:init_per_suite([{interface, new} | Config]).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
 
 init_per_group(contacts, Config) ->
-    Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
-    ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
+    Config2 = common_init_per_group(Config),
     Contacts = seed_contacts(),
     Contacts ++ Config2;
+init_per_group(set_old, Config) ->
+    Config2 = common_init_per_group(Config),
+    [{interface, old} | proplists:delete(interface, Config2)];
+init_per_group(set_new, Config) ->
+    Config2 = common_init_per_group(Config),
+    [{interface, new} | proplists:delete(interface, Config2)];
 init_per_group(_GroupName, Config) ->
+    common_init_per_group(Config).
+
+common_init_per_group(Config) ->
     Config2 = test_helper:setup_users(Config, [alice, bob, robert]),
     ?tros_metadata:put(?AVATAR_FILE, ?ALICE, <<"all">>),
     Config2.
@@ -364,7 +377,7 @@ bulk_get_empty(Config) ->
 set_fields(Config) ->
     escalus:story(Config, [{alice, 1}, {robert, 1}], fun(Alice, Robert) ->
         test_helper:befriend(Alice, Robert),
-        QueryStanza = set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields(), Config),
         expect_iq_success(QueryStanza, Alice),
 
         #{handle := <<"Alieee">>, first_name := <<"Bob">>} =
@@ -381,13 +394,13 @@ set_fields(Config) ->
 
 set_other_user(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
-        QueryStanza = set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields(), Config),
         expect_iq_error(QueryStanza, Bob)
     end).
 
 set_missing_node(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza = set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields(), Config),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = proplists:delete(<<"node">>, Attrs),
         BrokenStanza =
@@ -417,7 +430,8 @@ rest_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
             set_request(?ALICE,
-                        [{<<"phone_number">>, <<"string">>, <<"+1444">>}]),
+                        [{<<"phone_number">>, <<"string">>, <<"+1444">>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -425,7 +439,8 @@ non_writable_field(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
             set_request(?ALICE,
-                        [{<<"user">>, <<"uuid">>, ?wocky_id:new()}]),
+                        [{<<"user">>, <<"uuid">>, ?wocky_id:new()}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -433,14 +448,15 @@ blank_handle(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
             set_request(?ALICE,
-                        [{<<"handle">>, <<"string">>, <<"">>}]),
+                        [{<<"handle">>, <<"string">>, <<"">>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
 
 set_malformed_user(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza = set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields(), Config),
         Attrs = (hd(QueryStanza#xmlel.children))#xmlel.attrs,
         BrokenAttrs = [{<<"node">>, <<"ack-fnord">>} |
                        proplists:delete(<<"node">>, Attrs)],
@@ -484,9 +500,9 @@ set_missing_value(Config) ->
 
 handle_clash(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
-        QueryStanza = set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields(), Config),
         expect_iq_success(QueryStanza, Alice),
-        BobQueryStanza = set_request(?BOB, set_fields()),
+        BobQueryStanza = set_request(?BOB, set_fields(), Config),
         expect_iq_error(BobQueryStanza, Bob),
 
         #{id := ?BOB, first_name := nil} = ?wocky_repo:get(?wocky_user, ?BOB)
@@ -497,19 +513,21 @@ reserved_handle(Config) ->
         %% Reserved names should be rejected
         QueryStanza =
             set_request(?ALICE,
-                        [{<<"handle">>, <<"string">>, <<"root">>}]),
+                        [{<<"handle">>, <<"string">>, <<"root">>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice),
 
         %% Check with alternative capitalisation
         QueryStanza2 =
             set_request(?ALICE,
-                        [{<<"handle">>, <<"string">>, <<"rOOt">>}]),
+                        [{<<"handle">>, <<"string">>, <<"rOOt">>}],
+                        Config),
         expect_iq_error(QueryStanza2, Alice)
     end).
 
 same_handle(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
-        QueryStanza = set_request(?ALICE, set_fields()),
+        QueryStanza = set_request(?ALICE, set_fields(), Config),
         expect_iq_success(QueryStanza, Alice)
     end).
 
@@ -517,14 +535,15 @@ garbage_set(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza = garbage_request(?ALICE, <<"set">>),
         % Successfully set nothing:
-        expect_iq_success(QueryStanza, Alice)
+        expect_iq_error(QueryStanza, Alice)
     end).
 
 invalid_email(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
             set_request(?ALICE,
-                        [{<<"email">>, <<"string">>, <<"notanemail">>}]),
+                        [{<<"email">>, <<"string">>, <<"notanemail">>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -532,7 +551,8 @@ invalid_avatar(Config) ->
     escalus:story(Config, [{alice, 1}], fun(Alice) ->
         QueryStanza =
             set_request(?ALICE,
-                        [{<<"avatar">>, <<"file">>, <<"notaURL">>}]),
+                        [{<<"avatar">>, <<"file">>, <<"notaURL">>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -542,7 +562,8 @@ non_local_avatar(Config) ->
             set_request(?ALICE,
                         [{<<"avatar">>, <<"file">>,
                           <<"tros:user@otherserver.com/file/",
-                            ?AVATAR_FILE/binary>>}]),
+                            ?AVATAR_FILE/binary>>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -552,7 +573,8 @@ non_uuid_avatar(Config) ->
             set_request(?ALICE,
                         [{<<"avatar">>, <<"file">>,
                           <<"tros:", (?ALICE)/binary, "@",
-                            ?SERVER/binary, "/file/blahblah">>}]),
+                            ?SERVER/binary, "/file/blahblah">>}],
+                        Config),
         expect_iq_error(QueryStanza, Alice)
     end).
 
@@ -580,7 +602,11 @@ get_request(User, Fields) ->
                  || F <- Fields],
     request_wrapper(<<"get">>, User, ReqFields).
 
-set_request(User, Fields) ->
+set_request(User, Fields, Config) when is_list(Config) ->
+    Interface = proplists:get_value(interface, Config),
+    set_request(User, Fields, Interface);
+
+set_request(User, Fields, old) ->
     ReqFields = [#xmlel{name = <<"field">>,
                         attrs = [{<<"var">>, Var},
                                  {<<"type">>, Type}],
@@ -588,7 +614,13 @@ set_request(User, Fields) ->
                                            children =
                                            [#xmlcdata{content = Value}]}]}
                  || {Var, Type, Value} <- Fields],
+    request_wrapper(<<"set">>, User, ReqFields);
+
+set_request(User, Fields, new) ->
+    ReqFields = [wocky_xml:cdata_el(Var, Value)
+                 || {Var, _Type, Value} <- Fields],
     request_wrapper(<<"set">>, User, ReqFields).
+
 
 contact_request(UserID, Association, RSMIn) ->
     ReqFields = [wocky_xml:cdata_el(<<"association">>, Association),
