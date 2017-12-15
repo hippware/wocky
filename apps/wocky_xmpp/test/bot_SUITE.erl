@@ -25,7 +25,8 @@
                       check_home_stream_sizes/3
                      ]).
 
--export([set_visibility/3, create_field/1, publish_item/6]).
+-export([create_bot_stanza/1, set_visibility/3,
+         old_create_field/1, publish_item/6]).
 
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
@@ -70,10 +71,9 @@
 
 all() ->
     [
-     create,
-     new_id,
+     {group, old_interface},
+     {group, new_interface},
      retrieve,
-     update,
      subscribers_no_rsm,
      subscribers_rsm,
      unsubscribe,
@@ -103,6 +103,20 @@ all() ->
      explore_nearby_rectangle
     ].
 
+groups() ->
+    [{old_interface, [], multi_interface()},
+     {new_interface, [], multi_interface()}].
+
+%Groups
+multi_interface() ->
+    [
+     create,
+     new_id,
+     update,
+     errors,
+     empty_shortname
+    ].
+
 suite() ->
     escalus:suite().
 
@@ -113,10 +127,20 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
-    reset_tables(Config).
+    NewConfig = reset_tables(Config),
+    [{interface, new} | NewConfig].
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
+
+init_per_group(old_interface, Config) -> set_interface(old, Config);
+init_per_group(new_interface, Config) -> set_interface(new, Config).
+
+end_per_group(_, _) -> ok.
+
+set_interface(I, Config) ->
+    reset_tables(Config),
+    [{interface, I} | proplists:delete(interface, Config)].
 
 init_per_testcase(geosearch, Config) ->
     meck:new('Elixir.Wocky.Index', [passthrough]),
@@ -212,7 +236,7 @@ create(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         % Successfully create a bot
-        Stanza = expect_iq_success(create_stanza(), Alice),
+        Stanza = expect_iq_success(create_stanza(Config), Alice),
         check_returned_bot(Stanza, expected_create_fields()),
 
         % No home stream updates should occur for private bots
@@ -221,7 +245,7 @@ create(Config) ->
 
         CreateFields = [{"public", "bool", true} |
                         lists:keydelete("shortname", 1, default_fields())],
-        expect_iq_success(create_stanza(CreateFields), Alice),
+        expect_iq_success(create_stanza(CreateFields, Config), Alice),
 
         % Both the creator and their friends and followers should get
         % HS notifications for public bots:
@@ -233,10 +257,10 @@ create(Config) ->
                          lists:keydelete("radius", 1,
                                          lists:keydelete("shortname", 1,
                                                          default_fields()))],
-        expect_iq_success(create_stanza(CreateFields2), Alice),
+        expect_iq_success(create_stanza(CreateFields2, Config), Alice),
 
         % Fail due to shortname conflict if we try to create the same bot
-        expect_iq_error(create_stanza(), Alice)
+        expect_iq_error(create_stanza(Config), Alice)
       end).
 
 new_id(Config) ->
@@ -249,8 +273,8 @@ new_id(Config) ->
         %% We can't specify an un-allocated ID for creation
         CreateFields = [{"id", "string", ?wocky_id:new()} |
                         lists:keydelete("shortname", 1, default_fields())],
-        expect_iq_error(create_stanza(CreateFields), Bob),
-        expect_iq_error(create_stanza(CreateFields), Alice),
+        expect_iq_error(create_stanza(CreateFields, Config), Bob),
+        expect_iq_error(create_stanza(CreateFields, Config), Alice),
 
         %% Alice can't yet get the bot because it hasn't been created
         expect_iq_error(retrieve_stanza(ID), Alice),
@@ -266,13 +290,14 @@ new_id(Config) ->
         % Now create the bot
         CreateFields2 = [{"id", "string", ID} |
                          lists:keydelete("shortname", 1, default_fields())],
-        expect_iq_success(create_stanza(CreateFields2), Alice),
+        expect_iq_success(create_stanza(CreateFields2, Config), Alice),
 
         %% Alice can now get the bot
         expect_iq_success(retrieve_stanza(ID), Alice)
       end).
 
 retrieve(Config) ->
+    reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
         % Alice can retrieve her own bot
@@ -291,7 +316,7 @@ update(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
         % Alice can update the bot
-        expect_iq_success(update_stanza(), Alice),
+        expect_iq_success(update_stanza(Config), Alice),
 
         % And the new bot should have the change
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
@@ -301,7 +326,7 @@ update(Config) ->
         check_returned_bot(Stanza, NewFields),
 
         % Bob can't update it since he's not the owner
-        expect_iq_error(update_stanza(), Bob)
+        expect_iq_error(update_stanza(Config), Bob)
       end).
 
 subscribers_no_rsm(Config) ->
@@ -342,11 +367,11 @@ subscribe(Config) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
         check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
-                           expected_retrieve_fields(false, ?NEW_DESCRIPTION,
+                           expected_retrieve_fields(false, ?BOT_DESC,
                                                     ?WOCKY_BOT_VIS_OPEN, 1)),
         Stanza1 = expect_iq_success(subscribe_stanza(), Carol),
         check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
-                           expected_retrieve_fields(true, ?NEW_DESCRIPTION,
+                           expected_retrieve_fields(true, ?BOT_DESC,
                                                     ?WOCKY_BOT_VIS_OPEN, 2)),
         check_subscriber_count(Stanza1, 2),
 
@@ -377,7 +402,7 @@ watch(Config) ->
                            expected_retrieve_fields(false, ?BOT_DESC,
                                                     ?WOCKY_BOT_VIS_OPEN, 2)),
 
-        expect_iq_success(update_stanza(<<"TestDesc">>), Alice),
+        expect_iq_success(update_stanza(<<"TestDesc">>, Config), Alice),
         S = escalus_client:wait_for_stanza(Tim),
         ?assert(is_bot_update_notification(S)),
 
@@ -397,7 +422,8 @@ unwatch(Config) ->
         watch(?BOT_B_JID, Tim),
         unwatch(?BOT_B_JID, Tim),
 
-        expect_iq_success(update_stanza(<<"BrandShinyNewDesc">>), Alice),
+        expect_iq_success(update_stanza(<<"BrandShinyNewDesc">>, Config),
+                          Alice),
         timer:sleep(500),
 
         ensure_all_clean([Alice, Tim])
@@ -418,13 +444,14 @@ errors(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         Missing = lists:keydelete("title", 1, default_fields()),
-        expect_iq_error(create_stanza(Missing), Alice),
+        expect_iq_error(create_stanza(Missing, Config), Alice),
 
         Extra = [{"unknownfield", "string", <<"abc">>} | default_fields()],
-        expect_iq_error(create_stanza(Extra), Alice),
+        expect_iq_error(create_stanza(Extra, Config), Alice),
 
+        NewConfig = [{interface, old} | proplists:delete(interface, Config)],
         WrongType = [{"title", "int", 10} | Missing],
-        expect_iq_error(create_stanza(WrongType), Alice)
+        expect_iq_error(create_stanza(WrongType, NewConfig), Alice)
       end).
 
 retrieve_for_user(Config) ->
@@ -432,7 +459,8 @@ retrieve_for_user(Config) ->
     ?wocky_repo:delete_all(?wocky_bot),
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        IDs = [create_simple_bot(Alice) || _ <- lists:seq(1, ?CREATED_BOTS)],
+        IDs = [create_simple_bot(Alice, Config)
+               || _ <- lists:seq(1, ?CREATED_BOTS)],
         {_PrivateBots, PublicBots} = distribute(IDs),
 
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, PublicBots),
@@ -965,7 +993,7 @@ empty_shortname(Config) ->
         % Successfully create a bot with an empty (but present) shortname field
         Fields = lists:keyreplace("shortname", 1, default_fields(),
                                   {"shortname", "string", ""}),
-        expect_iq_success(create_stanza(Fields), Alice)
+        expect_iq_success(create_stanza(Fields, Config), Alice)
       end).
 
 explore_nearby_radius(Config) ->
@@ -1032,12 +1060,16 @@ list_notifications() ->
 new_id_stanza() ->
     test_helper:iq_set(?NS_BOT, #xmlel{name = <<"new-id">>}).
 
-create_stanza() ->
-    create_stanza(default_fields()).
-create_stanza(Fields) ->
+create_bot_stanza(Fields) ->
+    create_stanza(Fields, [{interface, new}]).
+
+create_stanza(Config) ->
+    create_stanza(default_fields(), Config).
+create_stanza(Fields, Config) ->
+    Interface = proplists:get_value(interface, Config),
     test_helper:iq_set(?NS_BOT,
                        #xmlel{name = <<"create">>,
-                              children = create_fields(Fields)}).
+                              children = create_fields(Fields, Interface)}).
 
 default_fields() ->
     [{"title",         "string", ?CREATE_TITLE},
@@ -1052,24 +1084,26 @@ default_fields() ->
      {"tags",          "tags",   ?CREATE_TAGS}
     ].
 
-create_fields(Fields) ->
+create_fields(Fields, old) ->
+    [old_create_field(F) || F <- Fields];
+create_fields(Fields, new) ->
     [create_field(F) || F <- Fields].
 
-create_field({Name, "string", Value}) ->
-    create_field(Name, "string", value_element(Value));
-create_field({Name, "int", Value}) ->
-    create_field(Name, "int", value_element(integer_to_binary(Value)));
-create_field({Name, "float", Value}) ->
-    create_field(Name, "float", value_element(float_to_binary(Value)));
-create_field({Name, "jid", Value}) ->
-    create_field(Name, "jid", value_element(jid:to_binary(Value)));
-create_field({Name, "geoloc", Value}) ->
-    create_field(Name, "geoloc", geoloc_element(Value));
-create_field({Name, "tags", Values}) ->
-    create_field(Name, "tags",
+old_create_field({Name, "string", Value}) ->
+    old_create_field(Name, "string", value_element(Value));
+old_create_field({Name, "int", Value}) ->
+    old_create_field(Name, "int", value_element(integer_to_binary(Value)));
+old_create_field({Name, "float", Value}) ->
+    old_create_field(Name, "float", value_element(float_to_binary(Value)));
+old_create_field({Name, "jid", Value}) ->
+    old_create_field(Name, "jid", value_element(jid:to_binary(Value)));
+old_create_field({Name, "geoloc", Value}) ->
+    old_create_field(Name, "geoloc", geoloc_element(Value));
+old_create_field({Name, "tags", Values}) ->
+    old_create_field(Name, "tags",
                  [wocky_xml:cdata_el(<<"tag">>, V) || V <- Values]);
-create_field({Name, "bool", Value}) ->
-    create_field(Name, "bool", value_element(atom_to_binary(Value, utf8))).
+old_create_field({Name, "bool", Value}) ->
+    old_create_field(Name, "bool", value_element(atom_to_binary(Value, utf8))).
 
 value_element(Value) ->
     wocky_xml:cdata_el(<<"value">>, Value).
@@ -1084,13 +1118,37 @@ coordinate_element(Name, Val) ->
     #xmlel{name = Name,
            children = [#xmlcdata{content = float_to_binary(Val)}]}.
 
-create_field(Name, Type, Children) when is_list(Children) ->
+old_create_field(Name, Type, Children) when is_list(Children) ->
     #xmlel{name = <<"field">>,
            attrs = [{<<"var">>, list_to_binary(Name)},
                     {<<"type">>, list_to_binary(Type)}],
            children = Children};
-create_field(Name, Type, Child) ->
-    create_field(Name, Type, [Child]).
+old_create_field(Name, Type, Child) ->
+    old_create_field(Name, Type, [Child]).
+
+create_field({Name, "string", Value}) ->
+    create_field(Name, Value);
+create_field({Name, "int", Value}) ->
+    create_field(Name, integer_to_binary(Value));
+create_field({Name, "float", Value}) ->
+    create_field(Name, float_to_binary(Value));
+create_field({Name, "jid", Value}) ->
+    create_field(Name, jid:to_binary(Value));
+create_field({Name, "geoloc", Value}) ->
+    create_field(Name, geoloc_element(Value));
+create_field({Name, "tags", Values}) ->
+    create_field(Name, [wocky_xml:cdata_el(<<"tag">>, V) || V <- Values]);
+create_field({Name, "bool", Value}) ->
+    create_field(Name, atom_to_binary(Value, utf8)).
+
+create_field(Name, Value) when is_binary(Value) ->
+    #xmlel{name = list_to_binary(Name),
+           children = [#xmlcdata{content = Value}]};
+create_field(Name, Children) when is_list(Children) ->
+    #xmlel{name = list_to_binary(Name),
+           children = Children};
+create_field(Name, Child = #xmlel{}) ->
+    create_field(Name, [Child]).
 
 expected_create_fields() ->
     [{"id",                 string, any},
@@ -1367,16 +1425,24 @@ bad_distance_sort_elem(Lat, Lon) ->
                                        {<<"lon">>, float_to_binary(Lon)}]}]}.
 
 visibility_field(Visibility) ->
-    create_field({"visibility", "int", Visibility}).
+    old_create_field({"visibility", "int", Visibility}).
 
-update_stanza() ->
-    update_stanza(?NEW_DESCRIPTION).
-update_stanza(NewDesc) ->
+update_stanza(Config) ->
+    update_stanza(?NEW_DESCRIPTION, Config).
+update_stanza(NewDesc, Config) when is_list(Config) ->
+    Interface = proplists:get_value(interface, Config),
+    update_stanza(NewDesc, Interface);
+update_stanza(NewDesc, old) ->
     test_helper:iq_set(
-      ?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field(NewDesc)])).
+      ?NS_BOT, node_el(?BOT, <<"fields">>, [modify_field(NewDesc)]));
+update_stanza(NewDesc, new) ->
+    test_helper:iq_set(
+      ?NS_BOT, node_el(?BOT, <<"update">>,
+                       [#xmlel{name = <<"description">>,
+                               children = [#xmlcdata{content = NewDesc}]}])).
 
 modify_field(NewDesc) ->
-    create_field({"description", "string", NewDesc}).
+    old_create_field({"description", "string", NewDesc}).
 
 subscribers_stanza() ->
     test_helper:iq_get(?NS_BOT, node_el(?BOT, <<"subscribers">>)).
@@ -1607,9 +1673,10 @@ item_content(I) ->
 item_image_url(I) ->
     <<"tros:server/Image_", (integer_to_binary(I))/binary>>.
 
-create_simple_bot(Client) ->
+create_simple_bot(Client, Config) ->
     Fields = lists:keydelete("shortname", 1, default_fields()),
-    Stanza = expect_iq_success(create_stanza(Fields), Client),
+    Stanza = expect_iq_success(
+               create_stanza(Fields, Config), Client),
     check_returned_bot(Stanza, expected_simple_bot_fields()).
 
 expected_simple_bot_fields() ->

@@ -395,12 +395,12 @@ auto_publish_new_bot_friends(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
         clear_home_streams(),
-        expect_iq_success(bot_SUITE:create_stanza(safe_fields()), Alice),
+        expect_iq_success(bot_SUITE:create_bot_stanza(safe_fields()), Alice),
         timer:sleep(400),
         check_home_stream_sizes(0, [Alice, Bob, Carol]),
 
         Fields = [{"public", "bool", true} | safe_fields()],
-        expect_iq_success(bot_SUITE:create_stanza(Fields), Alice),
+        expect_iq_success(bot_SUITE:create_bot_stanza(Fields), Alice),
         timer:sleep(400),
         check_home_stream_sizes(1, [Alice, Bob, Carol], false)
       end).
@@ -410,12 +410,12 @@ auto_publish_new_bot_non_friends(Config) ->
                   [{alice, 1}, {karen, 1}, {tim, 1}],
       fun(Alice, Karen, Tim) ->
         clear_home_streams(),
-        expect_iq_success(bot_SUITE:create_stanza(safe_fields()), Alice),
+        expect_iq_success(bot_SUITE:create_bot_stanza(safe_fields()), Alice),
         timer:sleep(400),
         check_home_stream_sizes(0, [Alice, Karen, Tim]),
 
         Fields = [{"public", "bool", true} | safe_fields()],
-        expect_iq_success(bot_SUITE:create_stanza(Fields), Alice),
+        expect_iq_success(bot_SUITE:create_bot_stanza(Fields), Alice),
         timer:sleep(400),
         check_home_stream_sizes(1, [Alice, Tim], false),
         check_home_stream_sizes(0, [Karen])
@@ -741,7 +741,7 @@ update_bot_desc_stanza(Desc) ->
 update_field_stanza(Name, Type, Value) ->
     test_helper:iq_set(
       ?NS_BOT, node_el(?BOT, <<"fields">>,
-                       [bot_SUITE:create_field({Name, Type, Value})])).
+                       [bot_SUITE:old_create_field({Name, Type, Value})])).
 
 safe_fields() ->
     lists:keyreplace("shortname", 1, bot_SUITE:default_fields(),
@@ -750,7 +750,7 @@ safe_fields() ->
 set_public(Public, Client) ->
     Stanza = test_helper:iq_set(
                ?NS_BOT, node_el(?BOT, <<"fields">>,
-                                [bot_SUITE:create_field(
+                                [bot_SUITE:old_create_field(
                                    {"public", "bool", Public})])),
     expect_iq_success(Stanza, Client).
 
