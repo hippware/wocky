@@ -53,6 +53,7 @@
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
 -define(wocky_index,             'Elixir.Wocky.Index').
 -define(wocky_initial_contact,   'Elixir.Wocky.InitialContact').
+-define(wocky_new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').

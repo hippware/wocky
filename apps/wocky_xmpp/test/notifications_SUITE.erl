@@ -48,8 +48,13 @@ new_follower(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun (Alice, Bob) ->
         test_helper:follow(Alice, Bob),
-        ?assertEqual(meck:num_calls(?wocky_push, notify_all, [?BOB, '_']), 1),
-        ?assertEqual(meck:num_calls(?wocky_push, notify_all, '_'), 1),
+
+        [{_, {?wocky_push, notify_all,
+              [?BOB, #{user := EUser, follower := EFollower}]}, _}]
+        = meck:history(?wocky_push),
+
+        ?assertEqual(maps:get(id, EUser), ?BOB),
+        ?assertEqual(maps:get(id, EFollower), ?ALICE),
 
         % A follow-back (ie a befriending) should not generate an additional
         % notification
