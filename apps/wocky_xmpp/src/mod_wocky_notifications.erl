@@ -127,7 +127,7 @@ get_image(Packet) ->
                     <<"">>).
 
 
-%% roster_process_item -----------------------------------------------
+%% roster_updated ----------------------------------------------------
 roster_updated_hook(
   UserID,
   _Server,
