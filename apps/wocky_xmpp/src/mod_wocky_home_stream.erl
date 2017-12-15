@@ -106,7 +106,7 @@ get(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
 -spec catchup(ejabberd:jid(), ejabberd:jid(), pub_version())
--> pub_get_result().
+-> pub_catchup_result().
 catchup(#jid{luser = User}, FromJID = #jid{luser = User}, Version) ->
     LatestVersion = format_version(
                       ?wocky_home_stream_item:get_latest_version(User)),
