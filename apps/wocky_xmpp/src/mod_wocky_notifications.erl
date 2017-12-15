@@ -13,7 +13,7 @@
 
 %% Hook callbacks
 -export([user_send_packet_hook/3,
-         roster_process_item_hook/2,
+         roster_updated_hook/4,
          remove_user_hook/2]).
 
 %% IQ handler
@@ -36,9 +36,9 @@ stop(Host) ->
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 100).
 
 hooks() ->
-    [{user_send_packet,     user_send_packet_hook},
-     {roster_process_item,  roster_process_item_hook},
-     {remove_user,          remove_user_hook}].
+    [{user_send_packet, user_send_packet_hook},
+     {roster_updated,   roster_updated_hook},
+     {remove_user,      remove_user_hook}].
 
 
 %%%===================================================================
@@ -128,20 +128,21 @@ get_image(Packet) ->
 
 
 %% roster_process_item -----------------------------------------------
-roster_process_item_hook(Item, _Host) ->
-    case Item#wocky_roster.subscription of
-        remove ->
-            ok;
-
-        _ ->
-            UserID = Item#wocky_roster.user,
+roster_updated_hook(
+  UserID,
+  _Server,
+  #wocky_roster{subscription = OldSubscription},
+  #wocky_roster{subscription = NewSubscription, contact_jid = ContactJID}) ->
+    case {OldSubscription, NewSubscription} of
+        {none, from} ->
             User = ?wocky_repo:get(?wocky_user, UserID),
-            Follower = ?wocky_user:get_by_jid(Item#wocky_roster.contact_jid),
+            Follower = ?wocky_user:get_by_jid(jid:make(ContactJID)),
             Event = ?new_follower_event:new(#{user => User,
                                               follower => Follower}),
-            ?wocky_push:notify_all(UserID, Event)
-    end,
-    Item.
+            ?wocky_push:notify_all(UserID, Event);
+        _ ->
+            ok
+    end.
 
 %% remove_user -------------------------------------------------------
 remove_user_hook(User, _Server) ->
