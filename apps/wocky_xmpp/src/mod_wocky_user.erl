@@ -327,9 +327,7 @@ build_resp_fields(Row, Fields) ->
     {lists:foldl(
        fun(Field, Acc) -> [old_build_resp_field(Row, Field) | Acc] end,
        [], Fields),
-     lists:foldl(
-       fun(Field, Acc) -> [build_resp_field(Row, Field) | Acc] end,
-       [], Fields)}.
+     lists:foldl(add_resp_field(Row, _, _), [], Fields)}.
 
 
 old_build_resp_field(Row, Field) ->
@@ -339,15 +337,15 @@ old_build_resp_field(Row, Field) ->
            children = [value_element(extract(field_name(Field), Row,
                                              field_accessor(Field)))]}.
 
-build_resp_field(Row, Field) ->
+add_resp_field(Row, Field, Acc) ->
     Value = extract(field_name(Field), Row, field_accessor(Field)),
     case Value of
-        {non_default, El} -> El;
-        Value -> cdata_el(list_to_binary(field_name(Field)), null_to_bin(Value))
+        {non_default, El} ->
+            [El | Acc];
+        Value ->
+            wocky_util:add_cdata_el(list_to_binary(field_name(Field)),
+                                    null_to_bin(Value), Acc)
     end.
-
-cdata_el(Name, Value) ->
-    wocky_xml:cdata_el(binary:replace(Name, <<"+">>, <<"-">>), Value).
 
 extract(Key, Row, default) ->
     maps:get(list_to_existing_atom(Key), Row);

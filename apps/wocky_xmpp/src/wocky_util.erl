@@ -36,7 +36,9 @@
 
    remove_whitespace/1,
 
-   check_foldl/3
+   check_foldl/3,
+
+   add_cdata_el/3
         ]).
 
 -type hook() :: {Hook :: atom(), Callback :: atom()}.
@@ -182,3 +184,19 @@ check_foldl(Fun, Acc, [H | T]) ->
         {error, E} -> {error, E};
         {ok, Acc2} -> check_foldl(Fun, Acc2, T)
     end.
+
+-spec add_cdata_el(binary(), binary(), [jlib:xmlel()]) -> [jlib:xmlel()].
+add_cdata_el(ElName, Value, Acc) ->
+    case binary:split(ElName, <<"+">>) of
+        [Name] ->
+            [wocky_xml:cdata_el(Name, Value) | Acc];
+        [Name, Trait] ->
+            NewEl = #xmlel{name = Name,
+                           children = [wocky_xml:cdata_el(Trait, Value)]},
+            maybe_merge_item(NewEl, Acc)
+    end.
+
+maybe_merge_item(#xmlel{name = Name, children = [Child]},
+                 [Hd = #xmlel{name = Name, children = Children} | T]) ->
+    [Hd#xmlel{children = [Child | Children]} | T];
+maybe_merge_item(El, Acc) -> [El | Acc].

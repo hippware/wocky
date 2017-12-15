@@ -697,7 +697,7 @@ has_field(Fields, Field, CheckNew) ->
      lists:any(fun(#xmlel{name = Name}) -> Name =:= fix_name(FieldBin) end,
                Fields)).
 
-fix_name(Name) -> binary:replace(Name, <<"+">>, <<"-">>).
+fix_name(Name) -> hd(binary:split(Name, <<"+">>)).
 
 seed_contacts() ->
     NilHandleUser = ?wocky_factory:insert(user,

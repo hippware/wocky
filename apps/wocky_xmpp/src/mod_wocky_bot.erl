@@ -937,27 +937,23 @@ value_element(Val) ->
 %%%===================================================================
 
 encode_field(#field{name = N, type = string, value = V}, Acc) ->
-    [cdata_el(N, safe_string(V)) | Acc];
+    wocky_util:add_cdata_el(N, safe_string(V), Acc);
 encode_field(#field{name = N, type = jid, value = V}, Acc) ->
-    [cdata_el(N, safe_jid_to_binary(V)) | Acc];
+    wocky_util:add_cdata_el(N, safe_jid_to_binary(V), Acc);
 encode_field(#field{name = N, type = int, value = V}, Acc) ->
-    [cdata_el(N, integer_to_binary(V)) | Acc];
+    wocky_util:add_cdata_el(N, integer_to_binary(V), Acc);
 encode_field(#field{name = N, type = float, value = V}, Acc) when is_float(V) ->
-    [cdata_el(N, float_to_binary(V)) | Acc];
+    wocky_util:add_cdata_el(N, float_to_binary(V), Acc);
 encode_field(F = #field{type = float, value = V}, Acc) when is_integer(V) ->
     encode_field(F#field{value = float(V)}, Acc);
 encode_field(#field{name = N, type = bool, value = V}, Acc) ->
-    [cdata_el(N, atom_to_binary(V, utf8)) | Acc];
+    wocky_util:add_cdata_el(N, atom_to_binary(V, utf8), Acc);
 encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
     [#xmlel{name = N, children = [geoloc_element(V)]} | Acc];
 encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
-    [cdata_el(N, ?wocky_timestamp:to_string(V)) | Acc];
+    wocky_util:add_cdata_el(N, ?wocky_timestamp:to_string(V), Acc);
 encode_field(#field{name = N, type = tags, value = V}, Acc) ->
     [tags_element(N, V) | Acc].
-
-
-cdata_el(Name, Value) ->
-    wocky_xml:cdata_el(binary:replace(Name, <<"+">>, <<"-">>), Value).
 
 geoloc_field(Name, Val) ->
     #xmlel{name = <<"field">>,
