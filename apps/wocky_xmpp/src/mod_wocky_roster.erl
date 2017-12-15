@@ -528,7 +528,7 @@ send_update(#jid{user = User, server = Server}, JID) ->
     #jid{luser = ContactUser} = jid:from_binary(JID),
     Item = to_wocky_roster(
              User, JID, ?wocky_roster_item:get(User, ContactUser)),
-    push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Version).
+    push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Item, Version).
 
 
 %% hook for out-of-band roster modification --------------------------
@@ -619,20 +619,21 @@ push_item(User, Server, From,
                                         NewItem#wocky_roster.subscription,
                                         to_mim_roster(OldItem),
                                         to_mim_roster(NewItem)}}),
-    push_item(User, Server, From, NewItem,
-              ?wocky_roster_item:version(jid:nodeprep(User)));
+    push_item(User, Server, From, OldItem, NewItem,
+              ?wocky_roster_item:version(jid:nodeprep(User))).
 
-push_item(User, Server, From, Item, RosterVersion) ->
+push_item(User, Server, From, OldItem, NewItem, RosterVersion) ->
     lists:foreach(fun (Resource) ->
-                          push_item(User, Server, Resource, From, Item,
-                                    RosterVersion)
+                          push_item1(User, Server, Resource, From, NewItem,
+                                     RosterVersion)
                   end,
                   ejabberd_sm:get_user_resources(User, Server)),
 
-    ejabberd_hooks:run(roster_updated, Server, [User, Server, Item]).
+    ejabberd_hooks:run(
+      roster_updated, Server, [User, Server, OldItem, NewItem]).
 
 
-push_item(User, Server, Resource, From, Item, RosterVersion) ->
+push_item1(User, Server, Resource, From, Item, RosterVersion) ->
     ResIQ = #iq{type = set, xmlns = ?NS_ROSTER,
                 %% Roster push, calculate and include the version attribute.
                 %% TODO: don't push to those who didn't load roster
