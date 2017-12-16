@@ -5,6 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Change object fields to custom elements (#1132)
+
+
+# 2017.12.15+r2eb3b42
+
+* Add HS catchup command (#1189)
+* Use bare JIDs when searching for conversation IDs (PR #1192)
+* Add a push notification for new followers (#1186)
+
+
 # 2017.12.11+re507ecc
 
 * Fix up stream management (session storage) (#1166)
