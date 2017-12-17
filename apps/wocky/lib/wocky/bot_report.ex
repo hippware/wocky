@@ -72,7 +72,7 @@ defmodule Wocky.BotReport do
   defp format_bot(%Bot{} = bot) do
     [
       bot.id,
-      bot.title,
+      word_count(bot.title),
       owner_handle(bot),
       bot.created_at,
       bot.updated_at,
@@ -82,7 +82,7 @@ defmodule Wocky.BotReport do
       vis_string(bot.public),
       Bot.subscriber_count(bot),
       Item.get_image_count(bot),
-      bot.description
+      word_count(bot.description)
     ]
     |> Enum.map(&to_string/1)
   end
@@ -91,4 +91,6 @@ defmodule Wocky.BotReport do
 
   defp vis_string(true), do: "public"
   defp vis_string(_), do: "private"
+
+  defp word_count(words), do: words |> String.split |> Enum.count
 end
