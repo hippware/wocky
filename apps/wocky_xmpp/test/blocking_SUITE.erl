@@ -12,13 +12,12 @@
 -include("test_helper.hrl").
 
 -import(test_helper, [expect_iq_error/2, expect_iq_success/2, befriend/2,
-                      remove_friend/2, add_to_s/2, iq_get/2,
+                      remove_friend/2, iq_get/2,
                       publish_item_stanza/4]).
 -import(user_SUITE, [get_request/2, users_request/1, expect_bulk_results/2,
                      contact_request/3, check_returned_contacts/3,
                      public_fields/0]).
 -import(bot_SUITE, [retrieve_stanza/1, retrieve_stanza/2,
-                    explore_nearby_stanza/2, expect_explore_result/2,
                     item_query_el/2, check_returned_bots/4]).
 -import(conversation_SUITE, [query_stanza/4, check_ret/4]).
 
@@ -42,7 +41,6 @@ groups() ->
                     blocked_bot_access,
                     blocked_bot_by_user_access,
                     blocked_publish_access,
-                    blocked_explore_access,
                     blocked_item_access,
                     blocked_contact_access,
                     blocked_conversation_access,
@@ -54,7 +52,6 @@ groups() ->
                     unblocked_bot_access,
                     unblocked_bot_by_user_access,
                     unblocked_publish_access,
-                    unblocked_explore_access,
                     unblocked_item_access,
                     unblocked_messages,
                     unblocked_contact_access
@@ -215,22 +212,6 @@ blocked_publish_access(Config) ->
             maps:get(id, proplists:get_value(alices_bot, Config)),
             <<"blockednote">>, <<"title">>, <<"content">>),
         Bob)
-      end).
-
-blocked_explore_access(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        % Explore-nearby should find their own bots, but not ones of
-        % blocked users
-        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 100),
-                                   Alice), Alice),
-        expect_explore_result(proplists:get_value(alices_bot, Config), Alice),
-        expect_explore_result(<<"no-more-bots">>, Alice),
-
-        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 100),
-                                   Bob), Bob),
-        expect_explore_result(proplists:get_value(bobs_bot, Config), Bob),
-        expect_explore_result(<<"no-more-bots">>, Bob)
       end).
 
 blocked_item_access(Config) ->
@@ -395,23 +376,6 @@ unblocked_publish_access(Config) ->
             maps:get(id, proplists:get_value(alices_bot, Config)),
             <<"blockednote">>, <<"title">>, <<"content">>),
         Bob)
-      end).
-
-unblocked_explore_access(Config) ->
-    escalus:story([everyone_is_friends | Config], [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        % Explore-nearby should find their own bots, and those of their friends
-        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 100),
-                                   Alice), Alice),
-        expect_explore_result(proplists:get_value(alices_bot, Config), Alice),
-        expect_explore_result(proplists:get_value(bobs_bot, Config), Alice),
-        expect_explore_result(<<"no-more-bots">>, Alice),
-
-        expect_iq_success(add_to_s(explore_nearby_stanza(100000000.0, 100),
-                                   Bob), Bob),
-        expect_explore_result(proplists:get_value(alices_bot, Config), Bob),
-        expect_explore_result(proplists:get_value(bobs_bot, Config), Bob),
-        expect_explore_result(<<"no-more-bots">>, Bob)
       end).
 
 unblocked_item_access(Config) ->
