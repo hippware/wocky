@@ -755,10 +755,10 @@ defmodule Wocky.UserSpec do
       describe "searchable?/2" do
         it do: assert User.searchable?(shared.user, shared.owned_bot)
         it do: assert User.searchable?(shared.user, shared.subscribed_bot)
-        it do: assert User.searchable?(shared.user, shared.friends_public_bot)
-        it do: assert User.searchable?(shared.user,
+        it do: refute User.searchable?(shared.user, shared.friends_public_bot)
+        it do: refute User.searchable?(shared.user,
                                        shared.friends_shared_private_bot)
-        it do: assert User.searchable?(shared.user, shared.following_public_bot)
+        it do: refute User.searchable?(shared.user, shared.following_public_bot)
 
         it do: refute User.searchable?(shared.user, shared.public_bot)
         it do: refute User.searchable?(shared.user, shared.shared_bot)
@@ -772,10 +772,10 @@ defmodule Wocky.UserSpec do
       describe "searchable stored procedure" do
         it do: assert is_searchable_sp(shared.user, shared.owned_bot)
         it do: assert is_searchable_sp(shared.user, shared.subscribed_bot)
-        it do: assert is_searchable_sp(shared.user, shared.friends_public_bot)
-        it do: assert is_searchable_sp(shared.user,
+        it do: refute is_searchable_sp(shared.user, shared.friends_public_bot)
+        it do: refute is_searchable_sp(shared.user,
                                        shared.friends_shared_private_bot)
-        it do: assert is_searchable_sp(shared.user, shared.following_public_bot)
+        it do: refute is_searchable_sp(shared.user, shared.following_public_bot)
 
         it do: refute is_searchable_sp(shared.user, shared.public_bot)
         it do: refute is_searchable_sp(shared.user, shared.shared_bot)

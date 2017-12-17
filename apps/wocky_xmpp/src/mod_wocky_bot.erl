@@ -388,6 +388,7 @@ get_location_from_attrs(Attrs) ->
         {ok, {Lat, Lon}}
        ]).
 
+% Old-style (Algolia-based) explore-nearby
 get_bots_near_location(From, Lat, Lon) ->
     case ?wocky_index:geosearch(Lat, Lon) of
         {ok, AllBots} ->
