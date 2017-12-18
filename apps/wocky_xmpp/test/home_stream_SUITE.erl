@@ -44,11 +44,13 @@ all() -> [
           maintain_subscription,
           get_item,
           {group, publish_bot},
-          no_auto_publish_pep_item
+          no_auto_publish_pep_item,
+          {group, catchup_limits}
          ].
 
 groups() ->
-    [{publish_bot, [], publish_bot_cases()}].
+    [{publish_bot, [], publish_bot_cases()},
+     {catchup_limits, [], catchup_limits_cases()}].
 
 publish_bot_cases() ->
     [
@@ -61,6 +63,12 @@ publish_bot_cases() ->
      bot_description_update,
      bot_change_notification,
      bot_becomes_private
+    ].
+
+catchup_limits_cases() ->
+    [
+     catchup_command_limits,
+     subscribe_command_limits
     ].
 
 suite() ->
@@ -90,6 +98,15 @@ init_per_group(publish_bot, Config) ->
     ?wocky_factory:insert(bot, #{id => ?BOT, user => User}),
     clear_home_streams(),
     seed_home_stream(Config);
+init_per_group(catchup_limits, Config) ->
+    clear_home_streams(),
+    User = ?wocky_repo:get(?wocky_user, ?ALICE),
+    lists:foreach(
+      fun(_) ->
+              ?wocky_factory:insert(home_stream_item, #{user => User})
+      end,
+      lists:seq(1, 200)),
+    Config;
 init_per_group(_GroupName, Config) ->
     Config.
 
@@ -152,7 +169,10 @@ catchup(Config) ->
         Stanza = expect_iq_success_u(catchup_stanza(V2), Alice, Alice),
         check_hs_result(Stanza, 1, true, 0),
 
-        expect_iq_error_u(catchup_stanza(V2), Carol, Alice)
+        expect_iq_error_u(catchup_stanza(V2), Carol, Alice),
+
+        expect_iq_error_u(catchup_stanza(<<"2016-12-31T23:00:00Z">>),
+                          Alice, Alice)
       end).
 
 publish(Config) ->
@@ -251,8 +271,17 @@ watch_with_version(Config) ->
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
         escalus:assert_many([is_iq_result, is_message],
                             escalus:wait_for_stanzas(Alice, 2)),
-        timer:sleep(500),
 
+        % Before the magic time we should get an error
+        escalus:send(Alice,
+            escalus_stanza:presence_direct(
+              hs_node(?ALICE),
+              <<"available">>,
+              [query_el(<<"2016-12-31T23:00:00Z">>)])),
+
+        escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice)),
+
+        timer:sleep(500),
         ensure_all_clean([Alice, Carol])
       end).
 
@@ -617,6 +646,27 @@ no_auto_publish_pep_item(Config) ->
       end),
     mod_wocky_pep:unregister_handler(?NS_TEST, whitelist, ?MODULE).
 
+catchup_command_limits(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        expect_iq_error_u(
+          catchup_stanza(?wocky_timestamp:shift([{days, -1}])),
+          Alice, Alice)
+      end).
+
+subscribe_command_limits(Config) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
+        escalus:send(Alice,
+            escalus_stanza:presence_direct(
+              hs_node(?ALICE),
+              <<"available">>,
+              [query_el(?wocky_timestamp:shift([{days, -1}]))])),
+
+        escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice))
+      end).
+
+
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
@@ -667,7 +717,7 @@ delete_item(ID) ->
 is_presence_error(Stanza) ->
     escalus_pred:is_presence(Stanza)
     andalso
-    escalus_pred:is_error(<<"cancel">>, <<"not-acceptable">>, Stanza).
+    escalus_pred:is_error(<<"modify">>, <<"not-acceptable">>, Stanza).
 
 set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).

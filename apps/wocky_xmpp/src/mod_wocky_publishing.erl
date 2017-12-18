@@ -158,7 +158,8 @@ handle_presence(FromJID, ToJID, available, Packet) ->
             drop;
         {error, too_many_items} ->
             Stanza = too_many_items_error(Packet),
-            ejabberd_router:route(FromJID, ToJID, Stanza);
+            ejabberd_router:route(ToJID, FromJID, Stanza),
+            drop;
         _ ->
             ignore
     end;
@@ -336,8 +337,8 @@ too_many_items_error(Packet) ->
                               children = [not_acceptable_el(),
                                           too_many_items_el()]}]}.
 
-maybe_id(Query) ->
-    case xml:get_attr(<<"id">>, Query) of
+maybe_id(#xmlel{attrs = Attrs}) ->
+    case xml:get_attr(<<"id">>, Attrs) of
         false -> [];
         {value, ID} -> [{<<"id">>, ID}]
     end.

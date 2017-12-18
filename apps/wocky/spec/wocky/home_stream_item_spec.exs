@@ -347,6 +347,12 @@ defmodule Wocky.HomeStreamItemSpec do
       |> should_match_items(shared.after_items ++ [shared.update_item])
     end
 
+    it "should honour the requested limit" do
+      shared.user.id
+      |> HomeStreamItem.get_after_time(shared.middle_time, 2)
+      |> should_match_items(Enum.slice(shared.after_items, 0..1))
+    end
+
     it "should return an empty list for a non-existant user" do
       ID.new
       |> HomeStreamItem.get_after_time(shared.middle_time)
