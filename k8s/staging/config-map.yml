@@ -1,8 +1,12 @@
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: wocky-config
   namespace: wocky-staging
+  labels:
+    app: wocky
+    env: staging
 data:
   WOCKY_ENV: prod
   WOCKY_INST: staging

@@ -1,3 +1,29 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wocky-private
+  namespace: wocky-staging
+  labels:
+    app: wocky
+    env: staging
+spec:
+  ports:
+    - port: 8080
+      name: http
+    - port: 5222
+      name: xmpp
+    - port: 5269
+      name: xmpp-s2s
+    - port: 4369
+      name: epmd
+    - port: 9100
+      name: distribution
+  selector:
+    app: wocky
+    env: staging
+  clusterIP: None
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -5,6 +31,7 @@ metadata:
   namespace: wocky-staging
   labels:
     app: wocky
+    env: staging
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: 'false'
     service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'false'
@@ -28,4 +55,5 @@ spec:
       name: xmpps
   selector:
     app: wocky
+    env: staging
   type: LoadBalancer
