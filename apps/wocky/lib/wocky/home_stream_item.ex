@@ -183,12 +183,14 @@ defmodule Wocky.HomeStreamItem do
   @doc """
   Get all items after a certain timestamp *including* ref_update items
   """
-  @spec get_after_time(User.id, DateTime.t | binary, boolean) :: [t]
-  def get_after_time(user_id, time, include_deleted \\ true) do
+  @spec get_after_time(
+    User.id, DateTime.t | binary, non_neg_integer, boolean) :: [t]
+  def get_after_time(user_id, time, limit, include_deleted \\ true) do
     user_id
     |> get_query([include_deleted: include_deleted, include_ref_updates: true])
     |> where([i], i.updated_at > ^time)
     |> order_by(asc: :updated_at)
+    |> limit(^limit)
     |> Repo.all
   end
 

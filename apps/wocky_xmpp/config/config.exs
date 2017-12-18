@@ -3,7 +3,8 @@
 use Mix.Config
 
 config :wocky_xmpp,
-  ecto_repos: []
+  ecto_repos: [],
+  catchup_limit: {:system, :integer, "WOCKY_CATCHUP_LIMIT", 100}
 
 config :wocky_xmpp, :redis,
   host:      {:system, :string,  "REDIS_HOST",      "localhost"},

@@ -34,7 +34,7 @@
 
 -define(WATCHER_CLASS, home_stream).
 -define(PACKET_FILTER_PRIORITY, 50).
-
+-define(NO_CATCHUP_BEFORE, <<"2017-01-01T00:00:00Z">>).
 
 %%%===================================================================
 %%% gen_mod handlers
@@ -110,20 +110,27 @@ get(_, _, _) ->
 catchup(#jid{luser = User}, FromJID = #jid{luser = User}, Version) ->
     LatestVersion = format_version(
                       ?wocky_home_stream_item:get_latest_version(User)),
-    CatchupRows = ?wocky_home_stream_item:get_after_time(User, Version),
-    {ok, {[map_to_item(R) || R <- CatchupRows],
-          LatestVersion,
-          extra_data(CatchupRows, FromJID)
-         }};
+    CatchupRows = ?wocky_home_stream_item:get_after_time(
+                     User, Version, catchup_limit() + 1),
+
+    case should_send_catchup(Version, CatchupRows) of
+         true ->
+            {ok, {[map_to_item(R) || R <- CatchupRows],
+                  LatestVersion,
+                  extra_data(CatchupRows, FromJID)
+                 }};
+        false ->
+            {error, ?ERRT_NOT_ACCEPTABLE(
+                       ?MYLANG, <<"Would return too many rows">>)}
+    end;
 
 catchup(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
--spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> ok.
+-spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> pub_result().
 subscribe(#jid{luser = ToID}, User = #jid{luser = ToID}, Version) ->
     wocky_watcher:watch(?WATCHER_CLASS, User, hs_node(User)),
-    maybe_send_catchup(User, Version),
-    ok;
+    maybe_send_catchup(User, Version);
 subscribe(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
@@ -309,7 +316,16 @@ format_version(Time) ->
 
 maybe_send_catchup(_, undefined) -> ok;
 maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
-    CatchupRows = ?wocky_home_stream_item:get_after_time(User, Version),
+    CatchupRows = ?wocky_home_stream_item:get_after_time(
+                     User, Version, catchup_limit() + 1),
+    case should_send_catchup(Version, CatchupRows) of
+        true ->
+            send_catchup(CatchupRows, UserJID);
+        false ->
+            {error, too_many_items}
+    end.
+
+send_catchup(CatchupRows, UserJID) ->
     Items = [map_to_item(R) || R <- CatchupRows],
     lists:foreach(
       wocky_publishing_handler:send_notification(
@@ -366,3 +382,13 @@ extra_data(Items, FromJID) ->
     User = ?wocky_user:get_by_jid(FromJID),
 
     mod_wocky_bot:make_bot_els(Bots, User).
+
+catchup_limit() ->
+    ?confex:get_env(wocky_xmpp, catchup_limit).
+
+should_send_catchup(Version, Rows) ->
+    length(Rows) < catchup_limit()
+    andalso
+    ?NO_CATCHUP_BEFORE < Version.
+    % Bit of a cheat - our timestamps sort lexicographically.
+    % But this feature is only for client testing anyway.
