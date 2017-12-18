@@ -114,7 +114,7 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
   %% The documentation is inconsistent, so to avoid breaking anything, we will
   %% accept either.
   when Name =:= <<"bot">> orelse Name =:= <<"bots">> ->
-    Node = wocky_bot_util:get_id_from_node(Attrs),
+    Node = wocky_xml:get_attr(<<"node">>, Attrs),
 
     Location = get_location_from_attrs(Attrs),    % DEPRECATED
     User = wocky_xml:get_attr(<<"user">>, Attrs), % DEPRECATED
@@ -125,7 +125,7 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
     ExploreNearby = wocky_xml:get_subel(<<"explore-nearby">>, IQ#iq.sub_el),
 
     case {Node, Location, User, Owner, ExploreNearby} of
-        {{ok, _Bot}, _, _, _, _} ->
+        {{ok, _Node}, _, _, _, _} ->
             handle_access_action(get_bot, From, To, Attrs, false, IQ);
         {_, {ok, {Lat, Lon}}, _, _, _} ->
             get_bots_near_location(From, Lat, Lon);
