@@ -16,7 +16,7 @@
 -behaviour(wocky_access_manager).
 
 %% gen_mod handlers
--export([start/2, stop/1]).
+-export([start/2, stop/1, deps/2]).
 
 %% IQ handler
 -export([handle_iq/3]).
@@ -73,6 +73,10 @@ stop(Host) ->
 
     wocky_publishing_handler:unregister(<<"bot">>, wocky_bot_publishing),
     wocky_watcher:unregister(bot, Host).
+
+deps(_Host, _Opts) ->
+    [{mod_wocky_publishing, hard},
+     {mod_wocky_access, hard}].
 
 %%%===================================================================
 %%% Event handler

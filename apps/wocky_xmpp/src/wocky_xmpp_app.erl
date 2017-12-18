@@ -61,9 +61,6 @@ start(_StartType, _StartArgs) ->
     ok = lager:info("Wocky instance ~s starting with version ~s.",
                     [InstName, version()]),
 
-    ok = mod_wocky_access:init(),
-    ok = mod_wocky_publishing:init(),
-
     {ok, CfgPath} = load_xmpp_config(),
     ok = start_ejabberd(CfgPath),
 
