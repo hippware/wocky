@@ -183,12 +183,14 @@ defmodule Wocky.HomeStreamItem do
   @doc """
   Get all items after a certain timestamp *including* ref_update items
   """
-  @spec get_after_time(User.id, DateTime.t | binary, boolean) :: [t]
-  def get_after_time(user_id, time, include_deleted \\ true) do
+  @spec get_after_time(
+    User.id, DateTime.t | binary, non_neg_integer | :none, boolean) :: [t]
+  def get_after_time(user_id, time, limit \\ :none, include_deleted \\ true) do
     user_id
     |> get_query([include_deleted: include_deleted, include_ref_updates: true])
     |> where([i], i.updated_at > ^time)
     |> order_by(asc: :updated_at)
+    |> maybe_limit(limit)
     |> Repo.all
   end
 
@@ -271,7 +273,7 @@ defmodule Wocky.HomeStreamItem do
   defp prepop_items(from_id, period, min) do
     from_time = Timex.subtract(DateTime.utc_now(), period)
 
-    time_items = get_after_time(from_id, from_time, true)
+    time_items = get_after_time(from_id, from_time, :none, true)
 
     if length(time_items) < min do
       get_by_count(from_id, min)
@@ -305,6 +307,12 @@ defmodule Wocky.HomeStreamItem do
   def maybe_include_deleted(query, false) do
     query
     |> where([i], i.class != ^:deleted)
+  end
+
+  def maybe_limit(query, :none), do: query
+  def maybe_limit(query, limit) do
+    query
+    |> limit(^limit)
   end
 
   defp changeset(struct, params) do
