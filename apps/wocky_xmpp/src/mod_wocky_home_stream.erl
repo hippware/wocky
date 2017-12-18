@@ -16,6 +16,7 @@
 
 -export([start/2,
          stop/1,
+         deps/2,
 
          % TODO: These can be removed once DB callbacks are implemented and
          % the HS can deal with its own publications
@@ -53,6 +54,9 @@ stop(Host) ->
     wocky_watcher:unregister(?WATCHER_CLASS, Host),
     wocky_publishing_handler:unregister(?HOME_STREAM_NODE, ?MODULE),
     ok.
+
+deps(_Host, _Opts) ->
+    [{mod_wocky_publishing, hard}].
 
 %%%===================================================================
 %%% Publishing callback API

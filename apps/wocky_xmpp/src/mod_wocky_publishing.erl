@@ -13,8 +13,6 @@
 
 -behaviour(gen_mod).
 
--export([init/0]).
-
 %% gen_mod handlers
 -export([start/2, stop/1]).
 
@@ -29,12 +27,9 @@
 %%% gen_mod handlers
 %%%===================================================================
 
-init() ->
+start(Host, _Opts) ->
     _ = ets:new(?PUBLISHING_HANDLER_TABLE,
                 [named_table, public, {read_concurrency, true}]),
-    ok.
-
-start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_sm, Host, ?NS_PUBLISHING,
                                   ?MODULE, handle_iq, parallel),
     ejabberd_hooks:add(filter_local_packet, Host,
