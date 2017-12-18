@@ -1,8 +1,12 @@
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: wocky-config
   namespace: wocky-testing
+  labels:
+    app: wocky
+    env: testing
 data:
   WOCKY_ENV: prod
   WOCKY_INST: testing
