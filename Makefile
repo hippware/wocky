@@ -1,12 +1,12 @@
 # vim: set noexpandtab ts=2 sw=2:
 .PHONY: help unittest inttest release build push deploy migrate shipit restart pods status top exec console shell describe logs follow cp
 
-VERSION ?= $(shell elixir ./version.exs)
+VERSION    ?= $(shell elixir ./version.exs)
 IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
 IMAGE_NAME ?= hippware/wocky
-IMAGE_TAG ?= $(shell git rev-parse HEAD)
-WOCKY_ENV ?= testing
-KUBE_NS := wocky-$(WOCKY_ENV)
+IMAGE_TAG  ?= $(shell git rev-parse HEAD)
+WOCKY_ENV  ?= testing
+KUBE_NS    := wocky-$(WOCKY_ENV)
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
@@ -15,12 +15,18 @@ help:
 	@echo ""
 	@perl -nle'print $& if m{^[a-zA-Z_-]+:.*?## .*$$}' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+########################################################################
+### Run tests in CI
+
 unittest: ## Run the unit tests locally
 	mix do lint, ecto.wait, ecto.reset, test, espec
 
 inttest: ## Run the integration tests locally
 	mix do ecto.wait, ecto.reset, epmd
 	mix ct
+
+########################################################################
+### Build release images
 
 release: ## Build the release tarball
 	MIX_ENV=prod mix release --warnings-as-errors
@@ -40,14 +46,17 @@ push: ## Push the Docker image to ECR
 	docker push $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
 	docker push $(IMAGE_REPO)/$(IMAGE_NAME):latest
 
-deploy: ## Deploy the image to the cluster
-	kubectl set image deployment/wocky -n $(KUBE_NS) \
-		wocky=$(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
+########################################################################
+### Cluster deployment
 
-migrate: ## Run the database migrations in a k8s job
-	kubectl create -f k8s/wocky-migration-job.yml -n $(KUBE_NS)
+deploy: ## Deploy the image to the cluster
+	@KUBECONFIG=~/.kube/config REVISION=$(IMAGE_TAG) \
+		kubernetes-deploy $(KUBE_NS) tectonic --template-dir=k8s/$(WOCKY_ENV)
 
 shipit: build push deploy ## Build, push and deploy the image
+
+########################################################################
+### Cluster ops
 
 restart: ## Do a rolling restart of the running pods
 	@kubectl patch deployment wocky -n $(KUBE_NS) \
@@ -113,6 +122,5 @@ cp: ## Copy a file from the container
 	kubectl cp $(KUBE_NS)/$(POD):$(src) $(dest)
 
 notify: POD ?= $(first-pod)
-notify:
-	# Notify Slack
+notify: ## Notify Slack
 	@$(call do-exec,bin/wocky notify_deployment)
