@@ -112,7 +112,7 @@ set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
                     name => Handle,
                     ask => none,
                     subscription => USub,
-                    groups => [<<"__welcome__">>]
+                    groups => [<<"__welcome__">>, <<"__new__">>]
                    },
 
     InitContact = #{user_id => FolloweeID,
@@ -120,7 +120,7 @@ set_initial_contact(UserID, #{id := FolloweeID, handle := Handle},
                     name => <<>>,
                     ask => none,
                     subscription => FSub,
-                    groups => [<<"__welcomed__">>]
+                    groups => [<<"__welcomed__">>, <<"__new__">>]
                    },
 
     ?wocky_roster_item:put(UserContact),

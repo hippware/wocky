@@ -70,7 +70,7 @@ start(_StartType, _StartArgs) ->
     wocky_sup:start_link().
 
 stop(_State) ->
-    ok.
+    ok = application:stop(ejabberd).
 
 
 %%%===================================================================
