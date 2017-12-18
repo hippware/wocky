@@ -309,7 +309,12 @@ retrieve(Config) ->
         check_returned_bot(Stanza2, expected_retrieve_fields(false)),
 
         % Carol cannot retrive since the bot is not public
-        expect_iq_error(retrieve_stanza(), Carol)
+        expect_iq_error(retrieve_stanza(), Carol),
+
+        % Invalid IDs should fail but not crash
+        expect_iq_error(
+          retrieve_stanza(<<"6ca1153a-dad4-11e7-83cf-0a580a02012c1">>),
+          Alice)
       end).
 
 update(Config) ->

@@ -21,7 +21,6 @@
          owner_jid/1,
          check_owner/2,
          check_access/2,
-         get_id_from_node/1,
          get_id_from_fields/1,
          get_image/1,
          bot_packet_action/1,
@@ -45,24 +44,25 @@ get_bot_from_node(NodeOrAttrs) -> get_bot_from_node(NodeOrAttrs, false).
 get_bot_from_node(Node, IncludePending) when is_binary(Node) ->
     do([error_m ||
         BotID <- get_id_from_node_value(Node),
+        check_id(BotID),
         get_bot(BotID, IncludePending)
       ]);
 get_bot_from_node(Attrs, IncludePending) when is_list(Attrs) ->
     do([error_m ||
-        BotID <- get_id_from_node(Attrs),
-        get_bot(BotID, IncludePending)
+        Node <- wocky_xml:get_attr(<<"node">>, Attrs),
+        get_bot_from_node(Node, IncludePending)
       ]).
-
-get_id_from_node(Attrs) ->
-    case wocky_xml:get_attr(<<"node">>, Attrs) of
-        {error, E} -> {error, E};
-        {ok, NodeValue} -> get_id_from_node_value(NodeValue)
-    end.
 
 get_id_from_node_value(Node) ->
     case ?wocky_bot:get_id_from_node(Node) of
         nil -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)};
         ID -> {ok, ID}
+    end.
+
+check_id(ID) ->
+    case ?wocky_id:'valid?'(ID) of
+        false -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid ID">>)};
+        true -> ok
     end.
 
 get_id_from_fields(#xmlel{name = <<"bot">>, children = Fields}) ->
