@@ -45,11 +45,13 @@ get_bot_from_node(NodeOrAttrs) -> get_bot_from_node(NodeOrAttrs, false).
 get_bot_from_node(Node, IncludePending) when is_binary(Node) ->
     do([error_m ||
         BotID <- get_id_from_node_value(Node),
+        check_id(BotID),
         get_bot(BotID, IncludePending)
       ]);
 get_bot_from_node(Attrs, IncludePending) when is_list(Attrs) ->
     do([error_m ||
         BotID <- get_id_from_node(Attrs),
+        check_id(BotID),
         get_bot(BotID, IncludePending)
       ]).
 
@@ -63,6 +65,12 @@ get_id_from_node_value(Node) ->
     case ?wocky_bot:get_id_from_node(Node) of
         nil -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid bot node">>)};
         ID -> {ok, ID}
+    end.
+
+check_id(ID) ->
+    case ?wocky_id:'valid?'(ID) of
+        false -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid ID">>)};
+        true -> ok
     end.
 
 get_id_from_fields(#xmlel{name = <<"bot">>, children = Fields}) ->
