@@ -196,9 +196,15 @@ check_contact(#{id := ID}, SubType, Stanza2) ->
              end,
              Query#xmlel.children),
     case Item of
-        [I] -> ?assertEqual({value, SubType},
-                            xml:get_attr(<<"subscription">>, I#xmlel.attrs));
-        X -> ct:fail("Could not find item for jid ~p (~p)", [JID, X])
+        [I] ->
+            ?assertEqual({value, SubType},
+                         xml:get_attr(<<"subscription">>, I#xmlel.attrs)),
+            ?assert(lists:member(
+                      <<"__new__">>,
+                      exml_query:paths(I, [{element, <<"group">>}, cdata])));
+        X ->
+            ct:fail("Could not find item or __new__ group for jid ~p (~p)",
+                    [JID, X])
     end.
 
 invalid_json(Config) ->
