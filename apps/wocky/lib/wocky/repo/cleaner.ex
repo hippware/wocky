@@ -1,4 +1,4 @@
-defmodule Wocky.Repo.MaintenanceTasks do
+defmodule Wocky.Repo.Cleaner do
   @moduledoc "Functions that keep the database nice and clean."
 
   import Ecto.Query
@@ -19,8 +19,6 @@ defmodule Wocky.Repo.MaintenanceTasks do
   require Logger
 
   def clean_all do
-    {:ok, _} = Application.ensure_all_started(:wocky)
-
     {:ok, d1} = clean_traffic_logs()
     {:ok, d2} = clean_notification_logs()
     {:ok, d3} = clean_pending_users()

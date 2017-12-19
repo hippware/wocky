@@ -1,4 +1,4 @@
-defmodule Wocky.Repo.MaintenanceTasksSpec do
+defmodule Wocky.Repo.CleanerSpec do
   use ESpec, async: true
 
   import Ecto.Query
@@ -9,9 +9,9 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
+  alias Wocky.Repo.Cleaner
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Repo.MaintenanceTasks
   alias Wocky.Repo.Timestamp
   alias Wocky.Token
   alias Wocky.TrafficLog
@@ -44,7 +44,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       old_nonpending = Factory.insert(:bot, user: shared.user, pending: false,
                                       created_at: Timestamp.shift(days: -2))
 
-      {:ok, result} = MaintenanceTasks.clean_pending_bots
+      {:ok, result} = Cleaner.clean_pending_bots
       {:ok, [
         new_pending: new_pending,
         old_pending: old_pending,
@@ -89,7 +89,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       old = Factory.insert(:traffic_log, user: shared.user,
                            created_at: Timestamp.shift(months: -2))
 
-      {:ok, result} = MaintenanceTasks.clean_traffic_logs
+      {:ok, result} = Cleaner.clean_traffic_logs
       {:ok, result: result, new: new, old: old}
     end
 
@@ -124,7 +124,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       |> Token.changeset(%{expires_at: Timestamp.shift(weeks: -1)})
       |> Repo.update!
 
-      {:ok, result} = MaintenanceTasks.clean_expired_auth_tokens
+      {:ok, result} = Cleaner.clean_expired_auth_tokens
       {:ok, result: result}
     end
 
@@ -173,7 +173,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
                                       user: shared.user, ready: true,
                                       created_at: Timestamp.shift(weeks: -2))
 
-      {:ok, result} = MaintenanceTasks.clean_pending_tros_files
+      {:ok, result} = Cleaner.clean_pending_tros_files
       {:ok, [
         new_pending: new_pending,
         old_pending: old_pending,
@@ -257,7 +257,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
           Factory.insert(:item, bot: bot, user: shared.user, image: false,
                          stanza: item_stanza(content: "testing"))
 
-        {:ok, result} = MaintenanceTasks.clean_bot_item_image_links(true)
+        {:ok, result} = Cleaner.clean_bot_item_image_links(true)
         {:ok, [
           bot: bot,
           good_with_content: good_with_content,
@@ -336,7 +336,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
         valid_bot = Factory.insert(:bot, user: shared.user,
                                    image: shared.file_url)
 
-        {:ok, result} = MaintenanceTasks.clean_bot_image_links(true)
+        {:ok, result} = Cleaner.clean_bot_image_links(true)
         {:ok, result: result, invalid_bot: invalid_bot, valid_bot: valid_bot}
       end
 
@@ -364,7 +364,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
     describe "clean_user_avatar_links" do
       before do
         valid_user = Factory.insert(:user, avatar: shared.file_url)
-        {:ok, result} = MaintenanceTasks.clean_user_avatar_links(true)
+        {:ok, result} = Cleaner.clean_user_avatar_links(true)
         {:ok, result: result, valid_user: valid_user}
       end
 
@@ -406,7 +406,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       old_nonpending = Factory.insert(:user,
                                       created_at: Timestamp.shift(days: -2))
 
-      {:ok, result} = MaintenanceTasks.clean_pending_users
+      {:ok, result} = Cleaner.clean_pending_users
       {:ok, [
         new_pending: new_pending,
         old_pending: old_pending,
@@ -465,7 +465,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       old_valid = Factory.insert(:push_token,
                                  enabled_at: Timestamp.shift(weeks: -3))
 
-      {:ok, result} = MaintenanceTasks.clean_invalid_push_tokens
+      {:ok, result} = Cleaner.clean_invalid_push_tokens
       {:ok, [
         new_invalid: new_invalid,
         old_invalid: old_invalid,
@@ -506,7 +506,7 @@ defmodule Wocky.Repo.MaintenanceTasksSpec do
       old = Factory.insert(:push_log, user: shared.user,
                            created_at: Timestamp.shift(months: -2))
 
-      {:ok, result} = MaintenanceTasks.clean_notification_logs
+      {:ok, result} = Cleaner.clean_notification_logs
       {:ok, result: result, new: new, old: old}
     end
 

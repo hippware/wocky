@@ -1,4 +1,4 @@
-defmodule Wocky.BotReport do
+defmodule Wocky.Bot.Report do
   @moduledoc "Generate a report of active bots and post to Slack"
 
   import Ecto.Query

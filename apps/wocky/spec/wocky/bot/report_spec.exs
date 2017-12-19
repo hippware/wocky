@@ -1,10 +1,10 @@
-defmodule Wocky.BotReportSpec do
+defmodule Wocky.Bot.ReportSpec do
   use ESpec, async: true
 
   alias Wocky.Bot
+  alias Wocky.Bot.Report
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.BotReport
 
   before do
     Repo.delete_all(Bot)
@@ -20,7 +20,7 @@ defmodule Wocky.BotReportSpec do
   let :line_count, do: length(shared.bots) + 1
 
   describe "generate_report/1" do
-    subject do: BotReport.generate_report(1) |> String.trim
+    subject do: Report.generate_report(1) |> String.trim
 
     it do: should(be_binary())
 

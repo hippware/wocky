@@ -44,8 +44,7 @@ release :wocky do
   ]
   set commands: [
     "predeploy": "rel/commands/predeploy.sh",
-    "bot_report": "rel/commands/bot_report.sh",
-    "db_maintenance": "rel/commands/db_maintenance.sh"
+    "weekly": "rel/commands/weekly.sh"
   ]
 end
 
