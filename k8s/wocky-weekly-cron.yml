@@ -1,18 +1,26 @@
 apiVersion: batch/v2alpha1
 kind: CronJob
 metadata:
-  name: wocky-db-maintenance
+  name: wocky-bot-report
+  labels:
+    app: wocky
 spec:
-  schedule: "0 0 * * *"
+  schedule: "0 0 * * 0"
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            app: wocky
         spec:
+          imagePullSecrets:
+            - name: amazonecr
+          restartPolicy: Never
           containers:
             - name: wocky
               image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
               imagePullPolicy: Always
-              args: ["db_maintenance"]
+              args: ["weekly"]
               envFrom:
                 - configMapRef:
                     name: wocky-config
@@ -27,7 +35,3 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-          imagePullSecrets:
-            - name: amazonecr
-          # Do not restart containers after they exit
-          restartPolicy: Never

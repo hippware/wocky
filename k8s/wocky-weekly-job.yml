@@ -1,15 +1,18 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: wocky-db-maintenance-
+  generateName: wocky-bot-report-
 spec:
   template:
     spec:
+      imagePullSecrets:
+        - name: amazonecr
+      restartPolicy: Never
       containers:
         - name: wocky
           image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
           imagePullPolicy: Always
-          args: ["db_maintenance"]
+          args: ["weekly"]
           envFrom:
             - configMapRef:
                 name: wocky-config
@@ -24,7 +27,3 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-      imagePullSecrets:
-        - name: amazonecr
-      # Do not restart containers after they exit
-      restartPolicy: Never
