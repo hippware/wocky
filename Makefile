@@ -120,7 +120,3 @@ cp: POD ?= $(first-pod)
 cp: ## Copy a file from the container
 	@$(call print-pod)
 	kubectl cp $(KUBE_NS)/$(POD):$(src) $(dest)
-
-notify: POD ?= $(first-pod)
-notify: ## Notify Slack
-	@$(call do-exec,bin/wocky notify_deployment)
