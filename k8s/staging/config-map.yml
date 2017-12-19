@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wocky-config
+  namespace: wocky-staging
+  labels:
+    app: wocky
+    env: staging
+data:
+  WOCKY_ENV: prod
+  WOCKY_INST: staging
+  WOCKY_HOST: staging.dev.tinyrobot.com
+  WOCKY_IQ_CRASH_RESPONSE: error
+  WOCKY_TROS_S3_BUCKET: wocky-kube-tros-staging
+  WOCKY_S3_REGION: us-west-2
+  WOCKY_S3_ACCESS_KEY_ID: AKIAI27BKDF3XOXX3VDQ
+  WOCKY_PUSH_ENABLED: "true"
+  WOCKY_PUSH_TOPIC: "com.hippware.ios.ChatStaging"
+  WOCKY_PUSH_URI_PREFIX: "tinyrobotStaging"
+  WOCKY_INDEXING_SYSTEM: algolia
+  WOCKY_USER_INDEX_NAME: dev_wocky_users
+  WOCKY_BOT_INDEX_NAME: dev_wocky_bots
+  WOCKY_ENABLE_BOT_REPORT: "true"
+  WOCKY_ENABLE_BYPASS: "true"
+  WOCKY_DB_HOST: wocky-staging.cx7fev3pluk8.us-west-2.rds.amazonaws.com
+  WOCKY_DB_NAME: wocky_staging
+  WOCKY_DB_USER: postgres
+  AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
+  HONEYBADGER_ENV: staging
+  CLOUDWATCH_KEY_ID: AKIAJUCGS5NJU6ALDHKA
+  CLOUDWATCH_REGION: us-west-2
+  CLOUDWATCH_INSTANCE: ""
+  REPLACE_OS_VARS: "true"
+  BAMBOO_ADAPTER: Bamboo.MandrillAdapter
+  REDIS_POOL_SIZE: "10"
+  REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
+  REDIS_PORT: "6379"
+  REDIS_DB: "2"

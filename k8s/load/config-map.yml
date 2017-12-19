@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wocky-config
+  namespace: wocky-load
+  labels:
+    app: wocky
+    env: load
+data:
+  WOCKY_ENV: prod
+  WOCKY_INST: load
+  WOCKY_HOST: load-test.prod.tinyrobot.com
+  WOCKY_IQ_CRASH_RESPONSE: error
+  WOCKY_TROS_S3_BUCKET: wocky-kube-tros-load
+  WOCKY_S3_REGION: us-west-2
+  WOCKY_S3_ACCESS_KEY_ID: AKIAIQVQFTQKAOOY6Y6A
+  WOCKY_PUSH_ENABLED: "false"
+  WOCKY_INDEXING_SYSTEM: test
+  WOCKY_USER_INDEX_NAME: ""
+  WOCKY_BOT_INDEX_NAME: ""
+  WOCKY_ENABLE_BOT_REPORT: "false"
+  WOCKY_ENABLE_BYPASS: "false"
+  WOCKY_DB_HOST: wocky-load.cx7fev3pluk8.us-west-2.rds.amazonaws.com
+  WOCKY_DB_NAME: wocky_load
+  WOCKY_DB_USER: postgres
+  AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
+  HONEYBADGER_ENV: load
+  CLOUDWATCH_KEY_ID: AKIAJUCGS5NJU6ALDHKA
+  CLOUDWATCH_REGION: us-west-2
+  CLOUDWATCH_INSTANCE: ""
+  REPLACE_OS_VARS: "true"
+  BAMBOO_ADAPTER: Bamboo.TestAdapter
+  REDIS_POOL_SIZE: "10"
+  REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
+  REDIS_PORT: "6379"
+  REDIS_DB: "4"
