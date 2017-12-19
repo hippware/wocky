@@ -1,113 +1,93 @@
 Wocky
 ========
-This is the main server-side software. At the moment, it incorporates an XMPP
-server which will be extended with custom functionality.
+This is the main server-side component of the TinyRobot application. It
+incorporates an XMPP server which has been extended with custom functionality
+and an HTTP API. The application is built in a Docker container and runs on a
+Kubernetes cluster.
 
 Building
 ========
-For information about prerequisites, please refer to the MongooseIM
-documentation.
+Use `git` to checkout the code:
 
-In order the checkout the code and initialize the Git submodules, pass the
-`--recursive` flag to `git clone`:
+    $ git clone git@github.com:hippware/wocky.git
 
-    $ git clone --recursive git@github.com:hippware/wocky.git
+The project uses both Elixir and Erlang and is built using the `mix` tool.
+After the first checkout, use `mix prepare` to download and compile all
+dependencies.
 
-Alternatively, if the repository is already checked out, you can use the
-following commands:
+Database schema
+===============
+Wocky uses both PostgreSQL with PostGIS and Redis.
 
-    $ git submodule init
-    $ git submodule update
+You can drop the old database (if any), create the database schema, and run the
+migrations with:
 
-Then, the rebar3 package index needs to be initialized by typing:
+    $ mix ecto.reset
 
-    $ ./rebar3 update
+Testing
+=======
+Wocky uses Espec and ExUnit for unit tests. The unit test suites can be run
+with `mix spec` and `mix test`, respectively. Integration tests use Erlang's
+Common Test library and are run using `mix ct`.
 
-This tells rebar3 how to fetch rebar3 plugins. It only needs to be done once.
+Releases
+========
+The final release artifact for Wocky is a Docker container. The container is
+built by the CI system (Codeship) whenever changes are published to `master`.
+It is possible to manually build a release artifact using `make build` followed
+by `make push`, but this is rarely necessary.
 
-To build, once the repository is checked out type
+The release image is pushed to an Amazon ECR repository and is tagged with the
+Git SHA of the commit that was built. There is a user-friendly version number,
+but the deploymement system uses commit SHAs exclusively to identify specific
+releases.
 
-    $ ./rebar3 compile
+There are 4 production environments to which the code can be deployed:
 
-This will download all of the dependencies and compile everything. Once the
-code is built, start the application using:
+1. `load`: Used to load test the application
+2. `testing`: Used for running front-end integration tests
+3. `staging`: Used for testing production-ready code
+4. `us1`: The first (and currently only) customer-facing environment
 
-    $ ./rebar3 shell
+Deploying
+=========
+In order to deploy you need `kubernetes-deploy` and `ejson`. These both require
+Ruby version 2.3 or greater. Use `gem` to install them:
 
-To create a production release, use:
+    $ gem install kubernetes-deploy ejson
 
-    $ ./rebar3 release
+You may have to use `sudo`, depending on how your system is setup.
 
-The production release will be built in _build/default/rel/wocky. If you want to
-run the release, you can:
+Deployment and general cluster ops are automated using `make`. To deploy, use
+`make deploy` and specify the target environment by setting `WOCKY_ENV`. For
+example, to deploy to `staging`, use:
 
-    $ cd _build/default/rel/wocky
-    $ bin/wocky console
+    $ make deploy WOCKY_ENV=staging
 
-If you want a tarball of the production release use the command:
+By default, the release corresponding to the current Git SHA is deployed. If
+there is no release corresponding to the current Git SHA, you will get a
+confusing error message. If you want to specify which release is deployed,
+you can set `IMAGE_TAG`:
 
-    $ ./rebar3 tar
+    $ make deploy WOCKY_ENV=staging IMAGE_TAG=6eb2a571f9ad00407a6c5bef77ea9011e92bb9ca
 
-Database schema and seed data
-=============================
-You can create the database schema and load it with seed data using:
+Of course, this only works if there is a release tagged with that SHA. It is
+not a good idea to try and deploy `latest`. It may or may not do what you want.
 
-    > wocky_db:bootstrap().
+The deployment process performs the following steps:
 
-To create the schema without loading seed data use:
+1. Verifies that all of the required resources are present
+2. Pushes any new or updated secrets to the cluster
+3. Synchronizes any ConfigMaps to the cluster
+4. Runs the "predeploy" pod to notify Slack and run database migrations
+5. Updates any other resources (services, etc)
+6. Updates the Wocky Deployment with the image tag and kicks off a rollout
+7. Waits for the rollout to complete
 
-    > wocky_db:create_schema().
+If you want to edit the secrets in the `secrets.ejson` file, you will need the
+keys. The keys are stored in a CSV file in LastPass. The `ejson` command looks
+for keys in the directory `/opt/ejson/keys/`. Each key should be a file named
+after the public key and containing the private key. Create the files with a
+command like:
 
-Runtime diagnostic tools
-========================
-
-The Wocky application includes a number of runtime diagnostic tools. You can
-find more information on these tools below:
-
-* redbug: https://github.com/massemanet/eper/blob/master/doc/redbug.txt
-* recon: http://ferd.github.io/recon/
-* binpp: https://github.com/jtendo/binpp/blob/master/README.md
-* pretty\_errors: https://github.com/eproxus/pretty_errors/blob/master/README.md
-
-In addition, there are a number of helper functions that can be used in the
-shell defined in the module `user_default.erl`.
-
-Module naming convention
-========================
-
-To help keep everything straight we are following a simple naming convention.
-
-Erlang modules that:
-* interact with the database are prefixed with 'wocky\_db'
-* implement functionality unique to wocky as ejabberd modules are prefixed with
-'mod\_wocky'
-* implement backend functionality for existing ejabberd modules follow the naming
-convention established by ejabberd with 'wocky' as the backend name (i.e.,
-'ejabberd\_auth\_wocky' or 'mod\_roster\_wocky')
-
-Repository separation
-=====================
-Wocky incorporates an open source XMPP server. It also contains fully
-proprietary custom functionality. In order to separate public intellectual
-property from private intellectual property, the source code needs to be
-partitioned into distinct repositories.
-
-This repository contains fully proprietary code and features.
-
-Wocky is the "top level" project and the XMPP server is a component sub-project.
-
-In the development environment, this is the "parent" git repository and the
-XMPP server is a nested git repository located in the `ext/` directory (managed
-by `git` as a submodule). In other words, the development tree has (at least)
-two git repositories. This is important to keep in mind.
-
-Wocky is the "top level" Erlang release and the XMPP server (along with other
-components) is a dependency.
-
-Nesting of git repositories is accomplished by telling git to ignore the deps/
-directory (ie. `deps/` is listed in .gitignore). This method may not be the best
-nor standard way of nesting git repositories but it is the most natural fit to
-the directory structure used by Erlang/OTP and various build tools (ie. rebar).
-
-This repository will contain all of the custom functionality and features which
-extend the vanilla XMPP server.
+    $ echo {private_key} > /opt/ejson/keys/{public_key}
