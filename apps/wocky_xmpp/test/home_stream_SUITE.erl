@@ -544,18 +544,21 @@ bot_change_notification(Config) ->
                                            [query_el(undefined)])),
         timer:sleep(400),
 
+        % Update description
         expect_iq_success(update_bot_desc_stanza("Different description"),
                           Alice),
         escalus:assert(fun is_bot_desc_change_notification/1,
                        escalus:wait_for_stanza(Carol)),
         ensure_all_clean([Alice, Carol]),
 
+        % Update title
         expect_iq_success(
           update_field_stanza("title", "string", "newtitle"), Alice),
         escalus:assert(fun is_bot_change_notification/1,
                        escalus:wait_for_stanza(Carol)),
         ensure_all_clean([Alice, Carol]),
 
+        % Publish item
         bot_SUITE:publish_item(?BOT, <<"BrandNewID">>, <<"title">>,
                                <<"content">>, undefined, Alice),
         escalus:assert_many([fun is_bot_change_notification/1,
@@ -563,6 +566,13 @@ bot_change_notification(Config) ->
                             escalus:wait_for_stanzas(Carol, 2)),
         ensure_all_clean([Alice, Carol]),
 
+        % Retract item
+        bot_SUITE:retract_item(?BOT, <<"BrandNewID">>, Alice),
+        escalus:assert(fun is_bot_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
+        ensure_all_clean([Alice, Carol]),
+
+        % Update address
         expect_iq_success(
           update_field_stanza("address", "string", "hereabouts"), Alice),
         escalus:assert(fun is_bot_change_notification/1,

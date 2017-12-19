@@ -55,6 +55,7 @@ retract(Bot, From, _ToJID, SubEl) ->
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            check_can_retract(From, Bot, ItemID),
+           wocky_bot_users:update_hs_items(Bot),
            ?wocky_item:delete(Bot, ItemID),
            {ok, []}
        ]).

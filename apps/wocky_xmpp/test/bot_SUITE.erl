@@ -720,10 +720,10 @@ retract_item(Config) ->
           Carol),
 
         % Alice can retract the item as its owner
-        expect_iq_success(retract_item_stanza(?BOT, ?ITEM), Alice),
+        retract_item(?BOT, ?ITEM, Alice),
 
         % Bob can retract his own item
-        expect_iq_success(retract_item_stanza(?BOT, ?BOBS_ITEM_ID), Bob),
+        retract_item(?BOT, ?BOBS_ITEM_ID, Bob),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
@@ -1715,6 +1715,9 @@ publish_item_watching(BotID, NoteID, Title, Content, Image, Client) ->
 publish_item(BotID, NoteID, Title, Content, Image, Client) ->
     expect_iq_success(publish_item_stanza(BotID, NoteID, Title, Content, Image),
                       Client).
+
+retract_item(BotID, NoteID, Client) ->
+    expect_iq_success(retract_item_stanza(BotID, NoteID), Client).
 
 publish_item_with_image(I, Client) ->
     publish_item(?BOT, item_id(I), <<"Title">>, <<"Content">>,
