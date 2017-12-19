@@ -1,7 +1,6 @@
 defmodule Wocky.TrafficLogSpec do
   use ESpec, async: true
 
-  alias Faker.Lorem
   alias Timex.Duration
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -11,12 +10,12 @@ defmodule Wocky.TrafficLogSpec do
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
-    resource = Lorem.word
+    resource = ID.new
     traffic = for _ <- 1..@packets do
       Factory.insert(:traffic_log, user: user, resource: resource)
     end
 
-    Factory.insert(:traffic_log, user: user, resource: Lorem.word)
+    Factory.insert(:traffic_log, user: user, resource: ID.new)
 
     {:ok,
      user: user,
