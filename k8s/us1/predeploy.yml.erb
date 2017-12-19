@@ -14,8 +14,7 @@ spec:
   containers:
     - name: wocky
       image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:<%= current_sha %>
-      imagePullPolicy: Always
-      args: ["migrate"]
+      args: ["predeploy"]
       envFrom:
         - configMapRef:
             name: wocky-config
