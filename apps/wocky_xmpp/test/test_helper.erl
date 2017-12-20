@@ -225,8 +225,11 @@ stop_clients(Config, Clients) ->
 befriend(Alice, Bob) ->
     follow(Alice, Bob),
     follow(Bob, Alice),
-    Presence = escalus:wait_for_stanza(Bob),
-    escalus:assert(is_presence, Presence).
+    lists:foreach(
+      fun(C) ->
+              Presence = escalus:wait_for_stanza(C),
+              escalus:assert(is_presence, Presence)
+      end, [Alice, Bob]).
 
 remove_friend(Who, Whom) ->
     escalus:send(Who, escalus_stanza:roster_remove_contact(Whom)),
