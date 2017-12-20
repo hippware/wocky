@@ -5,6 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Notify HS if a referenced bot's post count changes (#1182)
+* Fix intermittant failure on traffic_log test (PR #1209)
+
+
+# 2017.12.19+r861dd8b
+
+* Rewrite deployment functionality (#1191)
+
+
 # 2017.12.18+r6eb2a57
 
 * Change object fields to custom elements (#1132)
@@ -12,7 +21,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Reduce geosearch to simpler calculations (#1184)
 * Fix invalid id crash (PR #1202)
 * Fix: Auto following does not indicate followers as new (#1176)
-* Clean up module startup order and system (#PR 1204)
+* Clean up module startup order and system (PR #1204)
 * (HS) Publishing: Flag 'too many updates' error (#1177)
 
 
