@@ -23,7 +23,11 @@
 %% delete hook (which terminates the connection). This is needed to
 %% ensure that the deleting user receives the IQ response before
 %% the connection is dropped.
--define(USER_DELETE_DELAY, 2000).
+-define(USER_DELETE_HOOK_DELAY, 2000).
+%% If we delete a user immeidately upon firing the hook and disconnectin the
+%% client, in-flight IQs can still try to reference it, causing DB errors.
+%% Therefore we add a grace period.
+-define(USER_DELETE_DELAY, 4000).
 
 -define(REMOVE_USER_HOOK_PRI, 1000). % Do this after all other remove user hooks
 
@@ -112,7 +116,7 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
 
 handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
                #xmlel{name = <<"delete">>}) ->
-    {ok, _Ref} = timer:apply_after(?USER_DELETE_DELAY, ejabberd_hooks, run,
+    {ok, _Ref} = timer:apply_after(?USER_DELETE_HOOK_DELAY, ejabberd_hooks, run,
                                    [remove_user, LServer, [LUser, LServer]]),
     {ok, make_delete_response_iq(IQ)}.
 
@@ -591,6 +595,18 @@ update_roster_contacts(LUser) ->
 %% Hook callbacks
 %%--------------------------------------------------------------------
 
+% For tests we want the user deleted immediately because we then attempt to
+% recreate the same user.
+-ifdef(TEST).
 remove_user_hook(User, _Server) ->
     LUser = jid:nodeprep(User),
-    ok = ?wocky_user:delete(LUser).
+    ?wocky_user:delete(LUser).
+-else.
+
+%% However in the real world we want to delay the deletion to ensure that
+%% in-flight IQs won't trip over the missing user in the database.
+remove_user_hook(User, _Server) ->
+    LUser = jid:nodeprep(User),
+    {ok, _Ref} = timer:apply_after(
+                   ?USER_DELETE_DELAY, ?wocky_user, delete, [LUser]).
+-endif.
