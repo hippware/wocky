@@ -573,7 +573,7 @@ handle_validation_errors(Errors) ->
 
 not_valid(Message) ->
     El = #xmlel{children = Children} =
-    jlib:stanza_errort(<<"500">>, <<"modify">>, <<"undefined-condition">>,
+    jlib:stanza_errort(<<"409">>, <<"modify">>, <<"undefined-condition">>,
                        ?MYLANG, iolist_to_binary(Message)),
     Stanza = El#xmlel{children = [#xmlel{name = <<"not-valid">>,
                                          attrs = [{<<"xmlns">>, ?NS_ERRORS}]}
