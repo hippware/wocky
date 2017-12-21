@@ -6,7 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Notify HS if a referenced bot's post count changes (#1182)
-* Fix intermittant failure on traffic_log test (PR #1209)
+* Fix intermittent failure on traffic_log test (PR #1209)
+* Fix: Positive online presence not transmitted when accounts become friends (#1165)
 
 
 # 2017.12.19+r861dd8b
