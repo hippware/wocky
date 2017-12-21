@@ -5,6 +5,7 @@ defmodule Wocky.Bot do
   use Wocky.Repo.Model
   use Wocky.RSMHelper
 
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Ecto.Queryable
   alias Geocalc.Point
@@ -58,7 +59,36 @@ defmodule Wocky.Bot do
   end
 
   @type id :: binary
-  @type t :: %Bot{}
+  @type not_loaded :: %NotLoaded{}
+
+  @type t :: %Bot{
+    id:                 nil | id,
+    server:             nil | binary,
+    title:              binary,
+    pending:            nil | boolean,
+    shortname:          nil | binary,
+    description:        binary,
+    image:              nil | binary,
+    type:               binary,
+    address:            binary,
+    address_data:       binary,
+    location:           nil | Geo.Point.t,
+    radius:             nil | float,
+    public:             nil | boolean,
+    alerts:             nil | boolean,
+    follow_me:          nil | boolean,
+    follow_me_expiry:   nil | DateTime.t,
+    tags:               nil | [binary],
+    subscribers_hash:   binary,
+    subscribers_count:  non_neg_integer,
+
+    user:               not_loaded | User.t,
+    items:              not_loaded | [Item.t],
+
+    shares:             not_loaded | [User.t],
+    subscribers:        not_loaded | [User.t]
+  }
+
 
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
