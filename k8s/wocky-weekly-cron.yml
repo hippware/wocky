@@ -1,7 +1,7 @@
 apiVersion: batch/v2alpha1
 kind: CronJob
 metadata:
-  name: wocky-bot-report
+  name: wocky-weekly
   labels:
     app: wocky
 spec:
