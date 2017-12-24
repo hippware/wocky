@@ -5,7 +5,7 @@ defmodule Wocky.Tasks.Weekly do
   alias Wocky.Repo.Cleaner
 
   def run do
-    :ok = Application.ensure_all_started(:wocky)
+    {:ok, _} = Application.ensure_all_started(:wocky)
 
     _ = Cleaner.clean_all
     _ = Report.run
