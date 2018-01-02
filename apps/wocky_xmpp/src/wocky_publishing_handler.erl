@@ -38,12 +38,12 @@
 -callback subscribe(
             TargetJID :: ejabberd:jid(),
             UserJID   :: ejabberd:jid(),
-            Version   :: pub_version()) -> pub_result().
+            Version   :: pub_version()) -> pub_sub_result().
 
 % Called when a user unsubscribes from a target matching the node prefix
 -callback unsubscribe(
             TargetJID :: ejabberd:jid(),
-            UserJID   :: ejabberd:jid()) -> pub_result().
+            UserJID   :: ejabberd:jid()) -> pub_sub_result().
 
 %%%===================================================================
 %%% Hook registration

@@ -112,13 +112,22 @@ get(_, _, _) ->
 -spec catchup(ejabberd:jid(), ejabberd:jid(), pub_version())
 -> pub_catchup_result().
 catchup(#jid{luser = User}, FromJID = #jid{luser = User}, Version) ->
+    case ?wocky_timestamp:from_string(Version) of
+        {ok, TS} -> do_catchup(User, FromJID, TS);
+        {error, _} -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid version">>)}
+    end;
+
+catchup(_, _, _) ->
+    {error, ?ERR_FORBIDDEN}.
+
+do_catchup(User, FromJID, Version) ->
     LatestVersion = format_version(
                       ?wocky_home_stream_item:get_latest_version(User)),
     CatchupRows = ?wocky_home_stream_item:get_after_time(
                      User, Version, catchup_limit() + 1),
 
     case should_send_catchup(Version, CatchupRows) of
-         true ->
+        true ->
             {ok, {[map_to_item(R) || R <- CatchupRows],
                   LatestVersion,
                   extra_data(CatchupRows, FromJID)
@@ -126,15 +135,13 @@ catchup(#jid{luser = User}, FromJID = #jid{luser = User}, Version) ->
         false ->
             {error, ?ERRT_NOT_ACCEPTABLE(
                        ?MYLANG, <<"Would return too many rows">>)}
-    end;
+    end.
 
-catchup(_, _, _) ->
-    {error, ?ERR_FORBIDDEN}.
-
--spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version()) -> pub_result().
+-spec subscribe(ejabberd:jid(), ejabberd:jid(), pub_version())
+-> pub_sub_result().
 subscribe(#jid{luser = ToID}, User = #jid{luser = ToID}, Version) ->
     wocky_watcher:watch(?WATCHER_CLASS, User, hs_node(User)),
-    maybe_send_catchup(User, Version);
+    maybe_send_async_catchup(User, Version);
 subscribe(_, _, _) ->
     {error, ?ERR_FORBIDDEN}.
 
@@ -318,18 +325,25 @@ map_to_item(#{key := Key, updated_at := UpdatedAt,
 format_version(Time) ->
     ?wocky_timestamp:to_string(Time).
 
-maybe_send_catchup(_, undefined) -> ok;
-maybe_send_catchup(UserJID = #jid{luser = User}, Version) ->
+maybe_send_async_catchup(_, undefined) -> ok;
+maybe_send_async_catchup(UserJID, Version) ->
+    case ?wocky_timestamp:from_string(Version) of
+        {ok, TS} -> send_async_catchup(UserJID, TS);
+        {error, _} -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid version">>)}
+    end.
+
+send_async_catchup(UserJID = #jid{luser = User}, Version) ->
     CatchupRows = ?wocky_home_stream_item:get_after_time(
                      User, Version, catchup_limit() + 1),
     case should_send_catchup(Version, CatchupRows) of
         true ->
-            send_catchup(CatchupRows, UserJID);
+            send_async_catchup(CatchupRows, UserJID);
         false ->
-            {error, too_many_items}
-    end.
+            {error, ?ERRT_NOT_ACCEPTABLE(
+                       ?MYLANG, <<"Would return too many rows">>)}
+    end;
 
-send_catchup(CatchupRows, UserJID) ->
+send_async_catchup(CatchupRows, UserJID) when is_list(CatchupRows) ->
     Items = [map_to_item(R) || R <- CatchupRows],
     lists:foreach(
       wocky_publishing_handler:send_notification(
@@ -393,6 +407,5 @@ catchup_limit() ->
 should_send_catchup(Version, Rows) ->
     length(Rows) < catchup_limit()
     andalso
-    ?NO_CATCHUP_BEFORE < Version.
-    % Bit of a cheat - our timestamps sort lexicographically.
-    % But this feature is only for client testing anyway.
+    ?datetime:compare(
+       ?wocky_timestamp:'from_string!'(?NO_CATCHUP_BEFORE), Version) =:= lt.

@@ -172,7 +172,10 @@ catchup(Config) ->
         expect_iq_error_u(catchup_stanza(V2), Carol, Alice),
 
         expect_iq_error_u(catchup_stanza(<<"2016-12-31T23:00:00Z">>),
-                          Alice, Alice)
+                          Alice, Alice),
+
+        % Invalid versions should cause an error
+        expect_iq_error_u(catchup_stanza(?wocky_id:new()), Alice, Alice)
       end).
 
 publish(Config) ->
@@ -258,14 +261,17 @@ watch_with_version(Config) ->
                   escalus:assert(is_message, escalus:wait_for_stanza(Alice))
           end, lists:seq(1, 4)),
 
-        %% Carol should get nothing from her own HS (since it's empty) nor from
-        %% Alice's (since it's not hers)
+        %% Carol should get nothing from her own HS (since it's empty) and an
+        %% auth error from Alice's (since it's not hers)
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
                                            [query_el(V2)])),
+
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
                                            [query_el(V2)])),
+        escalus:assert(is_presence_auth_error(_),
+                       escalus:wait_for_stanza(Carol)),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"new_item2">>), Alice)),
@@ -278,6 +284,15 @@ watch_with_version(Config) ->
               hs_node(?ALICE),
               <<"available">>,
               [query_el(<<"2016-12-31T23:00:00Z">>)])),
+
+        escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice)),
+
+        % An invalid version should cause an error
+        escalus:send(Alice,
+            escalus_stanza:presence_direct(
+              hs_node(?ALICE),
+              <<"available">>,
+              [query_el(?wocky_id:new())])),
 
         escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice)),
 
@@ -727,7 +742,16 @@ delete_item(ID) ->
 is_presence_error(Stanza) ->
     escalus_pred:is_presence(Stanza)
     andalso
-    escalus_pred:is_error(<<"modify">>, <<"not-acceptable">>, Stanza).
+    (
+     escalus_pred:is_error(<<"modify">>, <<"not-acceptable">>, Stanza)
+     orelse
+     escalus_pred:is_error(<<"modify">>, <<"bad-request">>, Stanza)
+    ).
+
+is_presence_auth_error(Stanza) ->
+    escalus_pred:is_presence(Stanza)
+    andalso
+    escalus_pred:is_error(<<"auth">>, <<"forbidden">>, Stanza).
 
 set_bot_vis(Vis, Client) ->
     expect_iq_success(bot_SUITE:change_visibility_stanza(?BOT, Vis), Client).
