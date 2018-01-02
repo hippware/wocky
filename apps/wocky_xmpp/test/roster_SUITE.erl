@@ -131,7 +131,16 @@ add_contact(Config) ->
         escalus:assert(is_roster_result, Received2),
         escalus:assert(roster_contains, [?BJID(?BOB)], Received2),
         check_extra_fields(Received2),
-        ?assert(has_created_at(Received2))
+        ?assert(has_created_at(Received2)),
+
+        %% Add invalid contact
+        BadJID = jid:to_binary(jid:make(?wocky_id:new(), ?SERVER, <<>>)),
+        Query = #xmlel{name = <<"query">>,
+                       children = [#xmlel{name = <<"item">>,
+                                          attrs = [{<<"jid">>, BadJID},
+                                                   {<<"name">>, <<"bad">>}]}]},
+        BadStanza = test_helper:iq_set(?NS_ROSTER, Query),
+        test_helper:expect_iq_error_u(BadStanza, Alice)
     end).
 
 roster_push(Config) ->
