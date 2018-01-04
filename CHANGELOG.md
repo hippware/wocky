@@ -8,6 +8,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Notify HS if a referenced bot's post count changes (#1182)
 * Fix intermittent failure on traffic_log test (PR #1209)
 * Fix: Positive online presence not transmitted when accounts become friends (#1165)
+* Increase sandbox timeout to prevent errors during ct tests (PR #1215)
+* Fix: Duplicate handle error is rendered with a 500 error code (#1199)
+* Fix: Gracefully handle a missing user 14 days ago (#1138)
+* Quick fixes for the weekly job (PR #1221)
 
 
 # 2017.12.19+r861dd8b
