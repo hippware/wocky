@@ -484,6 +484,7 @@ auto_publish_bot_item(Config) ->
       fun(Alice, Carol) ->
         clear_home_streams(),
         set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
+        timer:sleep(400),
         check_home_stream_sizes(1, [Carol]),
 
         expect_iq_success(test_helper:subscribe_stanza(), Carol),
@@ -503,6 +504,7 @@ auto_publish_to_system_user(Config) ->
         clear_home_streams(),
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
+        timer:sleep(400),
         check_home_stream_sizes(1, [Carol]),
 
         expect_iq_success(test_helper:subscribe_stanza(), Carol),

@@ -21,18 +21,15 @@ defmodule WockyXMPP.BotCallbacks do
     {:noreply, [], state}
   end
 
-  defp handle_event(%Watcher{action: :insert}) do
-
-    :ok
+  defp handle_event(%Watcher{action: :insert, new: new}) do
+    :wocky_bot_users.notify_new_viewers(new.server, new, :none, new.public)
   end
 
   defp handle_event(%Watcher{action: :update, old: old, new: new}) do
+    :wocky_bot_users.notify_new_viewers(new.server, new, old.public, new.public)
     :wocky_bot_users.maybe_update_hs_items(old, new)
     :wocky_bot_users.maybe_notify_desc_change(old, new)
   end
 
-
-  #wocky_bot_users:notify_new_viewers/4 trigger (bot update or creation)
-  #
   #wocky_bot_users:send_notification/4 trigger (bot share created)
 end
