@@ -27,14 +27,12 @@ defmodule WockyXMPP.BotCallbacks do
   end
 
   defp handle_event(%Watcher{action: :update, old: old, new: new}) do
+    :wocky_bot_users.maybe_update_hs_items(old, new)
     :wocky_bot_users.maybe_notify_desc_change(old, new)
   end
 
 
   #wocky_bot_users:notify_new_viewers/4 trigger (bot update or creation)
-  #
-  #wocky_bot_users:maybe_notify_desc_change/2 trigger (bot changed)
-  #wocky_bot_users:maybe_update_hs_items/2 trigger (bot changed)
   #
   #wocky_bot_users:send_notification/4 trigger (bot share created)
 end
