@@ -42,6 +42,7 @@ defmodule WockyDBWatcher.WatcherTest do
 
   alias Faker.Lorem
   alias Wocky.Bot
+  alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.User
@@ -85,6 +86,13 @@ defmodule WockyDBWatcher.WatcherTest do
       assert event.old == nil
       check_match(event.new, Bot.get(event.new.id, true))
       assert not TestConsumer.has_events
+    end
+
+    test "provides whole integer locations as floats" do
+      TestConsumer.start_link
+      Factory.insert(:bot, location: GeoUtils.point(5, 10))
+      [event] = TestConsumer.get_events
+      check_match(event.new, Bot.get(event.new.id))
     end
   end
 
@@ -130,6 +138,8 @@ defmodule WockyDBWatcher.WatcherTest do
       # data directly from the DB, so accept a small rounding error:
       {a_lon, a_lat} = a.location.coordinates
       {b_lon, b_lat} = b.location.coordinates
+      Enum.each([a_lat, a_lon, b_lat, b_lon],
+                fn(x) -> assert is_float(x) end)
       assert abs(a_lat - b_lat) < @rounding_error
       assert abs(a_lon - b_lon) < @rounding_error
     else

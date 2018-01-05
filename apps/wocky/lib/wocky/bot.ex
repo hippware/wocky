@@ -13,6 +13,7 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
+  alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
@@ -284,6 +285,23 @@ defmodule Wocky.Bot do
   @spec lon(Bot.t) :: float | nil
   def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
   def lon(_), do: nil
+
+  @spec fix_from_json(Bot.t) :: Bot.t
+  def fix_from_json(%Bot{location: nil} = bot), do: bot
+  def fix_from_json(%Bot{location: location} = bot) do
+    new_loc =
+      location
+      |> GeoUtils.get_lat_lon
+      |> Tuple.to_list
+      |> Enum.map(&ensure_float/1)
+      |> List.to_tuple
+      |> GeoUtils.point
+
+    Map.put(bot, :location, new_loc)
+  end
+
+  defp ensure_float(i) when is_integer(i), do: i / 1
+  defp ensure_float(f) when is_float(f), do: f
 
   defp maybe_filter_pending(queryable, false) do
     queryable

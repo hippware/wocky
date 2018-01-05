@@ -120,5 +120,13 @@ defmodule WockyDBWatcher.Watcher do
     object.__struct__
     |> Changeset.cast(json, object.__schema__(:fields))
     |> Changeset.apply_changes
+    |> maybe_fix(object)
+  end
+
+  def maybe_fix(struct, object) do
+    case function_exported?(object, :fix_from_json, 1) do
+      true -> object.fix_from_json(struct)
+      false -> struct
+    end
   end
 end
