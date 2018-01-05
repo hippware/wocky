@@ -51,6 +51,11 @@ init([]) ->
     #{id     => wocky_bot_callbacks,
       start  => {?wocky_xmpp_bot_callbacks, start_link, []}},
 
+    BotShareCallbacks =
+    #{id     => wocky_bot_share_callbacks,
+      start  => {?wocky_xmpp_bot_share_callbacks, start_link, []}},
+
     {ok, {SupFlags, [BotExpiryMon,
                      ExploreNearbyWorkerSup,
-                     BotCallbacks]}}.
+                     BotCallbacks,
+                     BotShareCallbacks]}}.

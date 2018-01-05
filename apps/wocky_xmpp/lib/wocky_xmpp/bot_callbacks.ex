@@ -30,6 +30,4 @@ defmodule WockyXMPP.BotCallbacks do
     :wocky_bot_users.maybe_update_hs_items(old, new)
     :wocky_bot_users.maybe_notify_desc_change(old, new)
   end
-
-  #wocky_bot_users:send_notification/4 trigger (bot share created)
 end

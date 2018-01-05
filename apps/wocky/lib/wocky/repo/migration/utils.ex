@@ -15,7 +15,7 @@ defmodule Wocky.Repo.Migration.Utils do
   # of the "title" field, use:
   # {"title", "my_encoding_function($ITEM$)"}
   @spec add_notify(binary, Watcher.action(), [override]) :: term
-  def add_notify(table, action_atom, overrides) do
+  def add_notify(table, action_atom, overrides \\ []) do
     action = Atom.to_string(action_atom)
 
     execute """

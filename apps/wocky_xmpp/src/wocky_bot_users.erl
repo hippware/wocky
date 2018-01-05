@@ -17,7 +17,8 @@
          maybe_notify_desc_change/2,
          notify_subscribers_and_watchers/4,
          maybe_update_hs_items/2,
-         update_hs_items/1
+         update_hs_items/1,
+         send_share_notification/3
         ]).
 
 
@@ -31,8 +32,7 @@ handle_share(From, To, Bot) ->
                  Sharer <- wocky_bot_util:get_user_from_jid(From),
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),
-                 ?wocky_share:put(Recipient, Bot, Sharer),
-                 send_notification(To#jid.luser, Sharer, Recipient, Bot)
+                 ?wocky_share:put(Recipient, Bot, Sharer)
                 ]),
     case Result of
         ok -> ok;
@@ -50,9 +50,9 @@ check_can_share(Sharer, Bot) ->
             end
     end.
 
-send_notification(User, From, To, Bot) ->
+send_share_notification(From, To = #{id := UserID}, Bot) ->
     Event = ?bot_share_event:new(#{from => From, to => To, bot => Bot}),
-    ?wocky_push:notify_all(User, Event).
+    ?wocky_push:notify_all(UserID, Event).
 
 %%%===================================================================
 %%% Access change notifications
