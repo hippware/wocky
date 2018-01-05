@@ -45,7 +45,15 @@ defmodule Wocky.Repo.Migration.Utils do
   defp wrap_overrides(base, object, [{field, action} | rest]) do
     mapped_action = String.replace(
       action, "$ITEM$", "#{object}.#{field}", [:global])
-    new = "jsonb_set(#{base}, '{#{field}}', to_jsonb(#{mapped_action}))"
+    # We have to call COALESCE here because jsonb_set is, inexplicably, STRICT.
+    # See
+    # https://www.postgresql.org/message-id/flat/
+    # 37E2F9B3-B65B-4AF2-B2E9-436ADE37D670%40gida.in#
+    # 37E2F9B3-B65B-4AF2-B2E9-436ADE37D670@gida.in
+    new = """
+    jsonb_set(#{base}, '{#{field}}',
+              COALESCE(to_jsonb(#{mapped_action}), 'null'))
+    """
     wrap_overrides(new, object, rest)
   end
 

@@ -35,19 +35,21 @@ defmodule WockyDBWatcher.Watcher do
   @type action :: :insert | :update | :delete
   @type t :: %__MODULE__{}
 
-  @spec start_link(module, action | [action]) :: {:ok, pid} | [{:ok, pid}]
-  def start_link(object, actions) when is_list(actions) do
-    Enum.map(actions, &start_link(object, &1))
+  @spec start_link(module, action | [action], binary)
+  :: {:ok, pid} | [{:ok, pid}]
+  def start_link(object, actions, suffix) when is_list(actions) do
+    Enum.map(actions, &start_link(object, &1, suffix))
   end
 
-  def start_link(object, action) do
+  def start_link(object, action, suffix) do
     GenStage.start_link(__MODULE__, [object, action],
-                        name: name(object, action))
+                        name: name(object, action, suffix))
   end
 
-  def name(object, action) do
+  def name(object, action, suffix) do
     {:global,
-      String.to_atom("#{table(object)}_#{Atom.to_string(action)}_db_watcher")}
+      String.to_atom(
+        "#{table(object)}_#{Atom.to_string(action)}_db_watcher-#{suffix}")}
   end
 
   defp table(object), do: object.__schema__(:source)

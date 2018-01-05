@@ -4,6 +4,7 @@ defmodule WockyDBWatcher.WatcherTest do
     use GenStage
 
     alias Wocky.Bot
+    alias Wocky.User
     alias WockyDBWatcher.Watcher
 
     @actions [:insert, :update, :delete]
@@ -11,7 +12,7 @@ defmodule WockyDBWatcher.WatcherTest do
     def start_link, do: GenStage.start_link(__MODULE__, nil, name: __MODULE__)
 
     def init(_) do
-      subscriptions = Enum.map(@actions, &Watcher.name(Bot, &1))
+      subscriptions = Enum.map(@actions, &Watcher.name(Bot, &1, "test"))
       {:consumer, {nil, []}, subscribe_to: subscriptions}
     end
 
@@ -51,7 +52,7 @@ defmodule WockyDBWatcher.WatcherTest do
   setup_all do
     Enum.map(TestConsumer.actions,
              fn(action) ->
-               {:ok, _} = WockyDBWatcher.start_watcher(Bot, action)
+               {:ok, _} = WockyDBWatcher.start_watcher(Bot, action, "test")
              end)
 
     # Because we can't use the Sandbox in its :manual mode (because it doesn't
@@ -71,6 +72,18 @@ defmodule WockyDBWatcher.WatcherTest do
       assert event.object == Bot
       assert event.old == nil
       check_match(event.new, Bot.get(event.new.id))
+      assert not TestConsumer.has_events
+    end
+
+    test "generates insert event even with missing geometry" do
+      TestConsumer.start_link
+      u = Factory.insert(:user)
+      Bot.preallocate(u.id, u.server)
+      [event] = TestConsumer.get_events
+      assert event.action == :insert
+      assert event.object == Bot
+      assert event.old == nil
+      check_match(event.new, Bot.get(event.new.id, true))
       assert not TestConsumer.has_events
     end
   end
@@ -110,14 +123,18 @@ defmodule WockyDBWatcher.WatcherTest do
 
   defp check_match(a, b) do
     assert clean(a) == clean(b)
-    assert a.location.srid == b.location.srid
+    if a.location && b.location do
+      assert a.location.srid == b.location.srid
 
-    # The JSON encoding by PostGIS is not quite as precise as the data directly
-    # from the DB, so accept a small rounding error:
-    {a_lon, a_lat} = a.location.coordinates
-    {b_lon, b_lat} = b.location.coordinates
-    assert abs(a_lat - b_lat) < @rounding_error
-    assert abs(a_lon - b_lon) < @rounding_error
+      # The JSON encoding by PostGIS is not quite as precise as the
+      # data directly from the DB, so accept a small rounding error:
+      {a_lon, a_lat} = a.location.coordinates
+      {b_lon, b_lat} = b.location.coordinates
+      assert abs(a_lat - b_lat) < @rounding_error
+      assert abs(a_lon - b_lon) < @rounding_error
+    else
+      assert a.location == b.location
+    end
 
     # The timestamps can end up encoded with one digit less of precision as far
     # as DateTime is concerned, so using == to compare them can sometimes fail

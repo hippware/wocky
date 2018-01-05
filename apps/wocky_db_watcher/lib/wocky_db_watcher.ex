@@ -5,11 +5,11 @@ defmodule WockyDBWatcher do
 
   alias WockyDBWatcher.Watcher
 
-  def start_watcher(object, action) do
+  def start_watcher(object, action, suffix) do
     result = Supervisor.start_child(
       {:global, WockyDBWatcher.Supervisor},
-      %{id: Watcher.name(object, action),
-        start: {Watcher, :start_link, [object, action]}
+      %{id: Watcher.name(object, action, suffix),
+        start: {Watcher, :start_link, [object, action, suffix]}
       })
 
     case result do
