@@ -47,4 +47,10 @@ init([]) ->
       type     => supervisor,
       modules  => []},
 
-    {ok, {SupFlags, [BotExpiryMon, ExploreNearbyWorkerSup]}}.
+    BotCallbacks =
+    #{id     => wocky_bot_callbacks,
+      start  => {?wocky_xmpp_bot_callbacks, start_link, []}},
+
+    {ok, {SupFlags, [BotExpiryMon,
+                     ExploreNearbyWorkerSup,
+                     BotCallbacks]}}.

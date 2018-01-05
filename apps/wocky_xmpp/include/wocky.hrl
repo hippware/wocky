@@ -66,6 +66,8 @@
 -define(wocky_user,              'Elixir.Wocky.User').
 -define(wocky_user_hs_prepop,    'Elixir.Wocky.User.HSPrepop').
 
+-define(wocky_xmpp_bot_callbacks, 'Elixir.WockyXMPP.BotCallbacks').
+
 -define(tros, 'Elixir.Wocky.TROS').
 -define(tros_s3, 'Elixir.Wocky.TROS.S3Store').
 -define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
