@@ -1,4 +1,8 @@
 defmodule WockyXMPP.BotCallbacks do
+  @moduledoc """
+  Callback handler for DB bot changes
+  """
+
   use GenStage
 
   alias Wocky.Bot
