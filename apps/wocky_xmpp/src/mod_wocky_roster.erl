@@ -174,12 +174,11 @@ do_process_item_set(JID1, From, To, El, Result) ->
             {error, ?ERR_FORBIDDEN};
         false ->
             do_process_item_set_1(ContactUser, ContactServer,
-                                  From, To, OldItem, El),
-            Result
+                                  From, To, OldItem, El, Result)
     end.
 
 do_process_item_set_1(ContactUser, ContactServer, From, To, OldItem,
-                      #xmlel{attrs = Attrs, children = Els}) ->
+                      #xmlel{attrs = Attrs, children = Els}, Result) ->
     #jid{luser = LUser} = From,
     Item1 = #wocky_roster{groups = OldGroups}
         = process_item_attrs(OldItem, Attrs),
@@ -204,27 +203,35 @@ do_process_item_set_1(ContactUser, ContactServer, From, To, OldItem,
             BlockNotification = to_wocky_roster(
                                   ?wocky_roster_item:get(ContactUser, LUser)),
             push_item(ContactUser, ContactServer, From,
-                      OldItem, BlockNotification);
+                      OldItem, BlockNotification),
+            Result;
         false ->
-            do_process_item_set_2(Item2, OldItem, From, To, ContactUser)
+            do_process_item_set_2(Item2, OldItem, From, To, ContactUser, Result)
     end.
 
 do_process_item_set_2(NewItem, OldItem,
                       From =#jid{user = User, luser = LUser, lserver = LServer},
-                      To, ContactUser) ->
-    case NewItem#wocky_roster.subscription of
+                      To, ContactUser, Result) ->
+    ChangeResult = case NewItem#wocky_roster.subscription of
         remove ->
-            ?wocky_roster_item:delete(LUser, ContactUser),
-            send_unsubscribing_presence(From, OldItem);
-
+            CR = ?wocky_roster_item:delete(LUser, ContactUser),
+            send_unsubscribing_presence(From, OldItem),
+            CR;
         _ ->
-            {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(NewItem))
+            ?wocky_roster_item:put(wocky_roster:to_map(NewItem))
     end,
 
-    Item3 = ejabberd_hooks:run_fold(roster_process_item, LServer,
-                                    NewItem, [LServer]),
-
-    push_item(User, LServer, To, OldItem, Item3).
+    case ChangeResult of
+        {error, Error} ->
+            ErrStr = ?wocky_errors:render_errors(?wocky_errors:to_map(Error)),
+            {error, ?ERRT_BAD_REQUEST(
+                       ?MYLANG, <<"Error(s): ", ErrStr/binary>>)};
+        _ ->
+            Item = ejabberd_hooks:run_fold(roster_process_item, LServer,
+                                           NewItem, [LServer]),
+            push_item(User, LServer, To, OldItem, Item),
+            Result
+    end.
 
 is_blocked_by(Groups) ->
     lists:member(?wocky_blocking:blocked_by_group(), Groups).
