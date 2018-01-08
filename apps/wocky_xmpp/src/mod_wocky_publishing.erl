@@ -144,18 +144,14 @@ handle_presence(FromJID, ToJID, available, Packet) ->
     do([error_m ||
         Query <- wocky_xml:get_subel(<<"query">>, Packet),
         wocky_xml:check_namespace(?NS_PUBLISHING, Query),
-        Version <- get_version(Query#xmlel.attrs),
-        wocky_publishing_handler:subscribe(ToJID, FromJID, Version)
+        {ok, Query}
        ]),
 
     case Result of
-        ok ->
-            drop;
-        {error, too_many_items} ->
-            Stanza = too_many_items_error(Packet),
-            ejabberd_router:route(ToJID, FromJID, Stanza),
-            drop;
-        _ ->
+        {ok, Query} ->
+            Version = get_version(Query#xmlel.attrs),
+            handle_available(FromJID, ToJID, Query, Version);
+        {error, _} ->
             ignore
     end;
 
@@ -185,6 +181,18 @@ send_notification(ToJID, FromJID = #jid{lresource = LResource}, Item) ->
 %%% Private helpers
 %%%===================================================================
 
+handle_available(FromJID, ToJID, Query, Version) ->
+    case wocky_publishing_handler:subscribe(ToJID, FromJID, Version) of
+        ok ->
+            drop;
+        {error, ErrorStanza} ->
+            Stanza = presence_error_stanza(Query, ErrorStanza),
+            ejabberd_router:route(ToJID, FromJID, Stanza),
+            drop;
+        ignore ->
+            ignore
+    end.
+
 check_same_user(A, B) ->
     case jid:are_bare_equal(A, B) of
         true -> ok;
@@ -203,8 +211,8 @@ get_target_jid(To = #jid{lresource = LResource}, Attrs) ->
 
 get_version(Attrs) ->
     case xml:get_attr(<<"version">>, Attrs) of
-        false -> {ok, undefined};
-        {value, V} -> {ok, V}
+        false -> undefined;
+        {value, V} -> V
     end.
 
 get_item_or_delete(Children) ->
@@ -322,26 +330,13 @@ notification_stanza(Node, ItemStanza) ->
 maybe_version_attr(not_found) -> [];
 maybe_version_attr(Version) -> [{<<"version">>, Version}].
 
-too_many_items_error(Packet) ->
-    {ok, Query} = wocky_xml:get_subel(<<"query">>, Packet),
+presence_error_stanza(Query, Error) ->
     #xmlel{name = <<"presence">>,
            attrs = [{<<"type">>, <<"error">>} | maybe_id(Query)],
-           children = [Query,
-                       #xmlel{name = <<"error">>,
-                              attrs = [{<<"type">>, <<"modify">>}],
-                              children = [not_acceptable_el(),
-                                          too_many_items_el()]}]}.
+           children = [Query, Error]}.
 
 maybe_id(#xmlel{attrs = Attrs}) ->
     case xml:get_attr(<<"id">>, Attrs) of
         false -> [];
         {value, ID} -> [{<<"id">>, ID}]
     end.
-
-not_acceptable_el() ->
-    #xmlel{name = <<"not-acceptable">>,
-           attrs = [{<<"xmlns">>, ?NS_STANZAS}]}.
-
-too_many_items_el() ->
-    #xmlel{name = <<"too-many-notifications">>,
-           attrs = [{<<"xmlns">>, ?NS_PUBLISHING}]}.

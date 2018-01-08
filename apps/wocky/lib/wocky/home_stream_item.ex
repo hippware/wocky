@@ -184,7 +184,7 @@ defmodule Wocky.HomeStreamItem do
   Get all items after a certain timestamp *including* ref_update items
   """
   @spec get_after_time(
-    User.id, DateTime.t | binary, non_neg_integer | :none, boolean) :: [t]
+    User.id, DateTime.t, non_neg_integer | :none, boolean) :: [t]
   def get_after_time(user_id, time, limit \\ :none, include_deleted \\ true) do
     user_id
     |> get_query([include_deleted: include_deleted, include_ref_updates: true])

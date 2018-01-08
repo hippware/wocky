@@ -27,7 +27,9 @@
 
 -type pub_error_result() :: {error, jlib:xmlel()}.
 
--type pub_result() :: ok | pub_error_result().
+-type pub_result() :: ok | ignore | pub_error_result().
+
+-type pub_sub_result() :: pub_result() | ignore.
 
 -type pub_get_result() ::
     {ok, {[pub_item()], pub_version(), pub_extra_data(), jlib:rsm_out()} |
