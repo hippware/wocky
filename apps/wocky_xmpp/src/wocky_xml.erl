@@ -18,7 +18,8 @@
          parse_multiple/1,
          cdata_el/2,
          path_by_attr/4,
-         paths_by_attr/4
+         paths_by_attr/4,
+         image_element/3
         ]).
 
 -type error() :: {error, jlib:xmlel()}.
@@ -153,3 +154,13 @@ paths_by_attr(Element, Path, AttrName, AttrValue) ->
     lists:filter(
       fun(E) -> exml_query:attr(E, AttrName) =:= AttrValue end,
       Elements).
+
+-spec image_element(binary(), binary(), ejabberd:jid()) -> jlib:xmlel().
+image_element(Name, nil, _FromJID) ->
+    #xmlel{name = Name};
+image_element(Name, TROSURL, FromJID) ->
+    {Full, Thumb} = mod_wocky_tros:get_download_urls(TROSURL, FromJID),
+    #xmlel{name = Name,
+           attrs = [{<<"thumbnail_url">>, Thumb},
+                    {<<"full_url">>, Full}],
+           children = [#xmlcdata{content = TROSURL}]}.

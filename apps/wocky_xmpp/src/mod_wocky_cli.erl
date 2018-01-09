@@ -189,8 +189,8 @@ maybe_fix_image(Bot, Image, Acc) ->
     BotJID = ?wocky_bot:to_jid(Bot),
     R = do([error_m ||
             {_Server, FileID} <- ?tros:parse_url(Image),
-            Access           <- ?tros:get_access(FileID),
-            check_access(BotJID, Access),
+            Metadata          <- ?tros:get_metadata(FileID),
+            check_access(BotJID, Metadata),
             fix_access(BotJID, FileID)
            ]),
     case R of
@@ -201,7 +201,7 @@ maybe_fix_image(Bot, Image, Acc) ->
             Acc
     end.
 
-check_access(BotJID, Access) ->
+check_access(BotJID, #{access := Access}) ->
     Rules = tros_permissions:access_rules_from_list(Access),
     case lists:any(is_bot_redirect(BotJID, _), Rules) of
         true -> {error, no_change_needed};

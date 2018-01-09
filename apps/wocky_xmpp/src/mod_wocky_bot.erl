@@ -32,7 +32,7 @@
 -type tags() :: [binary()].
 
 -type field_type() :: string | int | float | bool |
-                      geoloc | jid | timestamp | tags.
+                      geoloc | jid | timestamp | tags | url_list.
 -type field_types() :: field_type() | [field_type()].
 -type value_type() :: nil | binary() | integer() | float() | boolean()
                       | loc() | jid() | tags() | ?datetime:t().
@@ -291,8 +291,8 @@ perform_access_action(get_bot, Bot, From, _ToJID, _IQ) ->
 perform_access_action(item_query, Bot, #{id := FromID}, _ToJID, IQ) ->
     wocky_bot_item:query(Bot, IQ, FromID);
 
-perform_access_action(item_images, Bot, #{id := FromID}, _ToJID, IQ) ->
-    wocky_bot_item:query_images(Bot, IQ, FromID);
+perform_access_action(item_images, Bot, FromUser, _ToJID, IQ) ->
+    wocky_bot_item:query_images(Bot, IQ, FromUser);
 
 perform_access_action(subscribe, Bot, From, _ToJID, _IQ) ->
     wocky_bot_subscription:subscribe(From, Bot);
@@ -399,7 +399,7 @@ get_bots_near_location(From, Lat, Lon) ->
             User = ?wocky_user:get_by_jid(From),
             VisibleBots = lists:filter(
                             ?wocky_user:'searchable?'(User, _), AllBots),
-            {ok, make_geosearch_result(VisibleBots)};
+            {ok, make_geosearch_result(VisibleBots, User)};
         {error, indexing_disabled} ->
             {error,
              ?ERRT_FEATURE_NOT_IMPLEMENTED(
@@ -417,22 +417,22 @@ get_subscribed_bots(User, Sorting, RSMIn) ->
     FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
-make_geosearch_result(Bots) ->
+make_geosearch_result(Bots, FromUser) ->
     #xmlel{name = <<"bots">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = make_geosearch_els(Bots)}.
+           children = make_geosearch_els(Bots, FromUser)}.
 
-make_geosearch_els(Bots) ->
-    [make_geosearch_el(Bot) || Bot <- Bots].
+make_geosearch_els(Bots, FromUser) ->
+    [make_geosearch_el(Bot, FromUser) || Bot <- Bots].
 
 geosearch_el_fields() ->
     [id, server, user_id, title, image, location, radius, distance].
 
-make_geosearch_el(Bot) ->
+make_geosearch_el(Bot, FromUser) ->
     JidField = make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
     MapFields = maps:fold(fun to_field/3, [],
                           maps:with(geosearch_el_fields(), Bot)),
-    RetFields = encode_fields([JidField | MapFields]),
+    RetFields = encode_fields([JidField | MapFields], FromUser),
     make_ret_stanza(RetFields).
 
 get_bots_for_owner(From, IQ, OwnerBin) ->
@@ -770,7 +770,8 @@ output_only_fields() ->
      field(<<"owner">>,         jid,    <<>>),
      field(<<"updated">>,       timestamp, <<>>),
      field(<<"subscribed">>,    bool,   false),
-     field(<<"distance">>,      float,  0.0)].
+     field(<<"distance">>,      float,  0.0)
+    ].
 
 create_fields() -> required_fields() ++ optional_fields().
 output_fields() -> required_fields() ++ optional_fields()
@@ -824,11 +825,11 @@ make_bot_el(Bot, FromUser) ->
     {ok, make_ret_stanza(RetFields)}.
 
 make_ret_elements(Bot, FromUser) ->
-    MetaFields = meta_fields(Bot, FromUser),
+    DynamicFields = dynamic_fields(Bot, FromUser),
     Fields = maps:fold(fun to_field/3, [], Bot),
-    encode_fields(Fields ++ MetaFields).
+    encode_fields(Fields ++ DynamicFields, FromUser).
 
-meta_fields(Bot, FromUser) ->
+dynamic_fields(Bot, FromUser) ->
     TotalItems = ?wocky_item:get_count(Bot),
     ImageItems = ?wocky_item:get_image_count(Bot),
     Subscribed = ?wocky_user:'subscribed?'(FromUser, Bot),
@@ -843,9 +844,9 @@ vis(false) -> 0.
 alerts(true) -> 1;
 alerts(false) -> 0.
 
-encode_fields(Fields) ->
+encode_fields(Fields, FromUser) ->
     lists:foldl(fun old_encode_field/2, [], Fields) ++
-    lists:foldl(fun encode_field/2, [], Fields).
+    lists:foldl(encode_field(_, FromUser, _), [], Fields).
 
 to_field(location, #{coordinates := {Lon, Lat}}, Acc) ->
     [#field{name = <<"location">>, type = geoloc, value = {Lat, Lon}} | Acc];
@@ -941,23 +942,29 @@ value_element(Val) ->
 %%% Field encoding - new <id> style
 %%%===================================================================
 
-encode_field(#field{name = N, type = string, value = V}, Acc) ->
+% TODO: Hack until we remove the old stuff, then we can tidy this up:
+encode_field(#field{name = <<"image">>, value = V}, FromUser, Acc) ->
+    [wocky_xml:image_element(<<"image">>, V, ?wocky_user:to_jid(FromUser))
+     | Acc];
+encode_field(#field{name = N, type = string, value = V}, _, Acc) ->
     wocky_util:add_cdata_el(N, safe_string(V), Acc);
-encode_field(#field{name = N, type = jid, value = V}, Acc) ->
+encode_field(#field{name = N, type = jid, value = V}, _, Acc) ->
     wocky_util:add_cdata_el(N, safe_jid_to_binary(V), Acc);
-encode_field(#field{name = N, type = int, value = V}, Acc) ->
+encode_field(#field{name = N, type = int, value = V}, _, Acc) ->
     wocky_util:add_cdata_el(N, integer_to_binary(V), Acc);
-encode_field(#field{name = N, type = float, value = V}, Acc) when is_float(V) ->
+encode_field(#field{name = N, type = float, value = V}, _, Acc)
+  when is_float(V) ->
     wocky_util:add_cdata_el(N, float_to_binary(V), Acc);
-encode_field(F = #field{type = float, value = V}, Acc) when is_integer(V) ->
-    encode_field(F#field{value = float(V)}, Acc);
-encode_field(#field{name = N, type = bool, value = V}, Acc) ->
+encode_field(F = #field{type = float, value = V}, FromUser, Acc)
+  when is_integer(V) ->
+    encode_field(F#field{value = float(V)}, FromUser, Acc);
+encode_field(#field{name = N, type = bool, value = V}, _, Acc) ->
     wocky_util:add_cdata_el(N, atom_to_binary(V, utf8), Acc);
-encode_field(#field{name = N, type = geoloc, value = V}, Acc) ->
+encode_field(#field{name = N, type = geoloc, value = V}, _, Acc) ->
     [#xmlel{name = N, children = [geoloc_element(V)]} | Acc];
-encode_field(#field{name = N, type = timestamp, value = V}, Acc) ->
+encode_field(#field{name = N, type = timestamp, value = V}, _, Acc) ->
     wocky_util:add_cdata_el(N, ?wocky_timestamp:to_string(V), Acc);
-encode_field(#field{name = N, type = tags, value = V}, Acc) ->
+encode_field(#field{name = N, type = tags, value = V}, _, Acc) ->
     [tags_element(N, V) | Acc].
 
 geoloc_field(Name, Val) ->

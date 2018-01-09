@@ -30,6 +30,10 @@ defmodule Wocky.TROS.TestStore do
     {[], resp_fields}
   end
 
+  def get_download_url(server, file_id) do
+    "https://" <> server <> "/" <> file_id
+  end
+
   defp resp_fields(method, url, reference_url) do
     [
       {"method", method |> to_string |> String.upcase},

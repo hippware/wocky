@@ -64,6 +64,10 @@ defmodule Wocky.TROS.S3Store do
     {[], resp_fields}
   end
 
+  def get_download_url(server, file_id) do
+    s3_url(server, bucket(), file_id, :get)
+  end
+
   def make_upload_response(owner_jid, file_id, size, metadata) do
     jid(luser: owner, lserver: lserver) = owner_jid
     file_jid = TROS.make_jid(owner, lserver, file_id)

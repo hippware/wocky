@@ -219,6 +219,9 @@ reset_tables(Config) ->
           type => ?BOT_TYPE},
     Bot = ?wocky_factory:insert(bot, B),
 
+    ?wocky_factory:insert(tros_metadata, [{id, ?ITEM_IMAGE_ID},
+                                          {user_id, ?ALICE},
+                                          {access, <<"all">>}]),
     ?wocky_item:put(Bot, Alice, ?ITEM, ?ITEM_STANZA, true),
     ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2, false),
 
@@ -808,15 +811,24 @@ item_images(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
-        lists:foreach(publish_item_with_image(_, Alice), lists:seq(0, 9)),
+        ItemIDs = lists:seq(0, 9),
+        Images =
+        lists:map(
+          fun(_) ->
+                  ?wocky_factory:insert(tros_metadata, [{user_id, ?ALICE},
+                                                        {access, <<"all">>}])
+          end, ItemIDs),
+        ImageIDs = lists:map(maps:get(id, _), Images),
+        IDPairs = lists:zip(ItemIDs, ImageIDs),
+        lists:map(publish_item_with_image(_, Alice), IDPairs),
 
         %% Alice can see all the images
         Stanza = expect_iq_success(item_image_stanza(), Alice),
-        check_returned_images(Stanza, 0, 9),
+        check_returned_images(Stanza, IDPairs),
 
         %% So can bob who can access the bot
         Stanza2 = expect_iq_success(item_image_stanza(), Bob),
-        check_returned_images(Stanza2, 0, 9),
+        check_returned_images(Stanza2, IDPairs),
 
         %% Tim cannot since he can't see the bot
         expect_iq_error(item_image_stanza(), Tim)
@@ -1668,15 +1680,15 @@ is_item_entry(I, El = #xmlel{name = <<"entry">>,
 is_item_entry(_, _) -> false.
 
 item_id(undefined) -> undefined;
-item_id(I) when is_binary(I) -> I;
-item_id(I) ->
-    <<"ID_", (integer_to_binary(I))/binary>>.
-item_title(I) ->
-    <<"Title_", (integer_to_binary(I))/binary>>.
-item_content(I) ->
-    <<"Content_", (integer_to_binary(I))/binary>>.
-item_image_url(I) ->
-    <<"tros:server/Image_", (integer_to_binary(I))/binary>>.
+item_id(ItemID) when is_binary(ItemID) -> ItemID;
+item_id(ItemID) ->
+    <<"ID_", (integer_to_binary(ItemID))/binary>>.
+item_title(ItemID) ->
+    <<"Title_", (integer_to_binary(ItemID))/binary>>.
+item_content(ItemID) ->
+    <<"Content_", (integer_to_binary(ItemID))/binary>>.
+item_image_url(ImageID) ->
+    <<"tros:", ?ALICE/binary, "@", ?SERVER/binary, "/file/", ImageID/binary>>.
 
 create_simple_bot(Client, Config) ->
     Fields = lists:keydelete("shortname", 1, default_fields()),
@@ -1719,29 +1731,34 @@ publish_item(BotID, NoteID, Title, Content, Image, Client) ->
 retract_item(BotID, NoteID, Client) ->
     expect_iq_success(retract_item_stanza(BotID, NoteID), Client).
 
-publish_item_with_image(I, Client) ->
-    publish_item(?BOT, item_id(I), <<"Title">>, <<"Content">>,
-                 item_image_url(I), Client).
+publish_item_with_image({ItemID, ImageID}, Client) ->
+    publish_item(?BOT, item_id(ItemID), <<"Title">>, <<"Content">>,
+                 item_image_url(ImageID), Client).
 
-check_returned_images(#xmlel{name = <<"iq">>, children = Children},
-                      First, Last) ->
+check_returned_images(#xmlel{name = <<"iq">>, children = Children}, IDPairs) ->
     [#xmlel{name = <<"item_images">>, children = ImageList}] = Children,
-    Remaining = check_image(?BJID(?ALICE), ?ITEM, ?ITEM_IMAGE, ImageList),
+    Remaining = check_image(?BJID(?ALICE), ?ITEM, ?ITEM_IMAGE_ID, ImageList),
     RSMXML = lists:foldl(
-               fun(I, S) ->
-                       check_image(?BJID(?ALICE), item_id(I),
-                                   item_image_url(I), S)
-               end, Remaining, lists:seq(First, Last)),
+               fun({ItemID, ImageID}, S) ->
+                       check_image(?BJID(?ALICE), item_id(ItemID), ImageID, S)
+               end, Remaining, IDPairs),
     {ok, RSMEls} = check_get_children(hd(RSMXML), <<"set">>,
                                       [{<<"xmlns">>, ?NS_RSM}]),
     {ok, RSM} = decode_rsm(RSMEls),
-    ok = check_rsm(RSM, (Last - First) + 2, 0, ?ITEM, item_id(Last)).
+    ItemCount = length(IDPairs),
+    ok = check_rsm(RSM, ItemCount + 1, 0, ?ITEM, item_id(ItemCount-1)).
 
-check_image(Owner, Item, URL,
+check_image(Owner, Item, ImageID,
             [#xmlel{name = <<"image">>, attrs = Attrs} | Rest]) ->
+    URL = item_image_url(ImageID),
     ?assertEqual({value, Owner}, xml:get_attr(<<"owner">>, Attrs)),
     ?assertEqual({value, Item}, xml:get_attr(<<"item">>, Attrs)),
     ?assertEqual({value, URL}, xml:get_attr(<<"url">>, Attrs)),
+    ?assertEqual({value, <<"https://", ?SERVER/binary, "/", ImageID/binary,
+                           "-thumbnail">>},
+                 xml:get_attr(<<"thumbnail_url">>, Attrs)),
+    ?assertEqual({value, <<"https://", ?SERVER/binary, "/", ImageID/binary>>},
+                 xml:get_attr(<<"full_url">>, Attrs)),
     ?assertMatch({value, _}, xml:get_attr(<<"updated">>, Attrs)),
     Rest.
 

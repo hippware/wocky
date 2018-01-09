@@ -5,6 +5,7 @@ defmodule Wocky.User.Avatar do
 
   alias Wocky.Repo.ID
   alias Wocky.TROS
+  alias Wocky.TROS.Metadata
   alias Wocky.User
 
   @type url :: binary
@@ -28,8 +29,8 @@ defmodule Wocky.User.Avatar do
 
   @spec check_owner(t, User.id) :: {:ok, t} | {:error, any}
   def check_owner({_server, id} = avatar, user_id) do
-    case TROS.get_owner(id) do
-      {:ok, ^user_id} -> {:ok, avatar}
+    case TROS.get_metadata(id) do
+      {:ok, %Metadata{user_id: ^user_id}} -> {:ok, avatar}
       {:ok, _} -> {:error, :not_file_owner}
       error -> error
     end

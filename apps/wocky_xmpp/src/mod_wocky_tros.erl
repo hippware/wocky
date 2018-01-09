@@ -10,10 +10,16 @@
 
 -behaviour(gen_mod).
 
+% gen_mod exports
 -export([
    start/2,
    stop/1,
    handle_iq/3
+        ]).
+
+% Other XMPP TROS functions
+-export([
+   get_download_urls/2
         ]).
 
 -ifdef(TEST).
@@ -66,8 +72,8 @@ handle_download_request(Req = #request{from_jid = FromJID}, DR) ->
         Fields <- extract_fields(DR, [<<"id">>], [], #{}),
         FileID <- check_file_id(Fields),
         BaseID <- {ok, ?tros:get_base_id(FileID)},
-        OwnerID <- expand_err(?tros:get_owner(BaseID)),
-        Access <- expand_err(?tros:get_access(BaseID)),
+        #{user_id := OwnerID, access := Access}
+            <- expand_err(?tros:get_metadata(BaseID)),
         check_download_permissions(FromJID, OwnerID, Access),
         wait_ready(BaseID),
         {ok, inc_counter(wocky_tros_download_requests_total)},
@@ -85,6 +91,26 @@ handle_upload_request(Req, UR) ->
         upload_response(Req, Fields, Size)
        ]).
 
+% Gets full and thumbnail URLs for the specified image
+-spec get_download_urls(binary(), ejabberd:jid()) -> {binary(), binary()}.
+get_download_urls(URL, FromJID) ->
+    Result =
+    do([error_m ||
+        {Server, FileID} <- ?tros:parse_url(URL),
+        #{user_id := OwnerID, access := Access}
+            <- expand_err(?tros:get_metadata(FileID)),
+        check_ready(FileID),
+        check_download_permissions(FromJID, OwnerID, Access),
+        {ok, {Server, FileID}}
+       ]),
+    case Result of
+        {ok, {Server, FileID}} ->
+            {?tros:get_download_url(Server, FileID),
+             ?tros:get_download_url(Server, ?tros:thumbnail_id(FileID))};
+        _ ->
+            {<<>>, <<>>}
+    end.
+
 wait_ready(FileID) ->
     wait_ready(FileID, erlang:system_time(seconds)).
 
@@ -94,6 +120,12 @@ wait_ready(FileID, Start) ->
             ok;
         false ->
             maybe_wait_ready(FileID, Start)
+    end.
+
+check_ready(FileID) ->
+    case ?tros:'ready?'(FileID) of
+        true -> ok;
+        false -> {error, not_ready}
     end.
 
 maybe_wait_ready(FileID, Start) ->

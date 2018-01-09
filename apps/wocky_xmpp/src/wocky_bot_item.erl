@@ -27,12 +27,12 @@ query(Bot, IQ, FromID) ->
            {ok, make_results(Items, RSMOut)}
        ]).
 
-query_images(Bot, IQ, FromID) ->
+query_images(Bot, IQ, FromUser) ->
     do([error_m ||
            RSMIn <- rsm_util:get_rsm(IQ),
            Owner = wocky_bot_util:owner_jid(Bot),
-           {Images, RSMOut} = get_bot_item_images(Bot, RSMIn, FromID),
-           {ok, images_result(Owner, Images, RSMOut)}
+           {Images, RSMOut} = get_bot_item_images(Bot, FromUser, RSMIn),
+           {ok, images_result(Owner, FromUser, Images, RSMOut)}
        ]).
 
 
@@ -81,25 +81,30 @@ make_items(Items) ->
 %%% Helpers - query images
 %%%===================================================================
 
-get_bot_item_images(Bot, RSMIn, FromID) ->
+get_bot_item_images(Bot, #{id := FromID}, RSMIn) ->
     Query = ?wocky_blocking:object_visible_query(
                ?wocky_item:images_query(Bot), FromID, user_id),
     ?wocky_rsm_helper:rsm_query(RSMIn, Query, id, {asc, updated_at}).
 
-images_result(Owner, Images, RSMOut) ->
-    ImageEls = image_els(Owner, Images),
+images_result(Owner, FromUser, Images, RSMOut) ->
+    ImageEls = image_els(Owner, FromUser, Images),
     #xmlel{name = <<"item_images">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = ImageEls ++ jlib:rsm_encode(RSMOut)}.
 
-image_els(Owner, Images) ->
-    lists:map(image_el(Owner, _), Images).
+image_els(Owner, FromUser, Images) ->
+    FromJID = ?wocky_user:to_jid(FromUser),
+    lists:map(image_el(Owner, FromJID, _), Images).
 
-image_el(Owner, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
+image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
+    TROSURL = wocky_bot_util:get_image(S),
+    {Full, Thumbnail} = mod_wocky_tros:get_download_urls(TROSURL, FromJID),
     #xmlel{name = <<"image">>,
            attrs = [{<<"owner">>, jid:to_binary(Owner)},
                     {<<"item">>, ID},
-                    {<<"url">>, wocky_bot_util:get_image(S)},
+                    {<<"url">>, TROSURL},
+                    {<<"full_url">>, Full},
+                    {<<"thumbnail_url">>, Thumbnail},
                     {<<"updated">>, ?wocky_timestamp:to_string(UpdatedAt)}]}.
 
 %%%===================================================================
