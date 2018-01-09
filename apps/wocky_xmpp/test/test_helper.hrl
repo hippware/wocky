@@ -26,7 +26,9 @@
 
 -define(ITEM, <<"test-item-id">>).
 -define(ITEM2, <<"test-item-id2">>).
--define(ITEM_IMAGE, <<"Some image or other">>).
+-define(ITEM_IMAGE_ID, <<"afafab50-f4e9-11e7-a13e-c72167c50ae4">>).
+-define(ITEM_IMAGE, <<"tros:", ?ALICE/binary, "@", ?SERVER/binary, "/file/",
+                      ?ITEM_IMAGE_ID/binary>>).
 -define(ITEM_STANZA,
         <<"<entry xmlns='", ?NS_ATOM/binary, "'>",
           "<content>This is a note I wrote on a boat in a moat</content>",

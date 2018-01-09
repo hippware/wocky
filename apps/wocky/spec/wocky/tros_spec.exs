@@ -2,6 +2,7 @@ defmodule Wocky.TROSSpec do
   use ESpec, async: true
   use Wocky.JID
 
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
@@ -74,14 +75,22 @@ defmodule Wocky.TROSSpec do
       {:ok, id: md.id, owner: user.id, md: md, user: user}
     end
 
-    describe "get_owner/1" do
-      it do: TROS.get_owner(shared.id) |> should(eq {:ok, shared.owner})
-      it do: TROS.get_owner(ID.new) |> should(be_error_result())
-    end
+    describe "get_metadata/1" do
+      it do
+        shared.id
+        |> TROS.get_metadata
+        |> should(be_ok_result())
+      end
 
-    describe "get_access/1" do
-      it do: TROS.get_access(shared.id) |> should(eq {:ok, shared.md.access})
-      it do: TROS.get_access(ID.new) |> should(be_error_result())
+      it do
+        shared.id
+        |> TROS.get_metadata
+        |> elem(1)
+        |> Repo.preload(:user)
+        |> should(eq shared.md)
+      end
+
+      it do: TROS.get_metadata(ID.new) |> should(be_error_result())
     end
 
     describe "update_access/2" do

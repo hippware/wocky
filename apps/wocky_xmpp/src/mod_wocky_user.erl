@@ -73,7 +73,7 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, get,
         Fields <- get_get_req_fields(Relationship, Children),
         check_field_permissions(Relationship, Fields),
         check_blocking(FromJID, UserJID),
-        XMLFields <- get_resp_fields(Fields, LServer, User),
+        XMLFields <- get_resp_fields(Fields, LServer, User, FromJID),
 
         {ok, make_get_response_iq(XMLFields, IQ, User)}
        ]);
@@ -150,7 +150,7 @@ get_user_fields(FromJID, LServer, {{ok, JID}, BinaryJID}) ->
       FromJID,
       relationship(JID),
       get_visible_fields(),
-      get_resp_fields(LServer, JID#jid.luser),
+      get_resp_fields(LServer, JID#jid.luser, FromJID),
       handle_fields_error(),
       wrap_user_result(BinaryJID)
      ).
@@ -221,31 +221,31 @@ get_field(Var) ->
 fields() ->
      % Field name     % Type    % Visibility % Access   % Accessor
     [{"jid",          "jid",    public,      read_only,
-      fun(#{id := LUser, server := LServer}) ->
+      fun(_, #{id := LUser, server := LServer}, _) ->
               jid:to_binary(jid:make(LUser, LServer, <<>>)) end},
      {"user",         "uuid",   public,      read_only,
-      fun(#{id := User}) -> User end},
+      fun(_, #{id := User}, _) -> User end},
      {"server",       "string", public,      read_only, default},
      {"handle",       "string", public,      write,     default},
      {"phone_number", "string", private,     read_only, default},
-     {"avatar",       "file",   public,      write,     default},
+     {"avatar",       "file",   public,      write,     fun make_avatar/3},
      {"first_name",   "string", public,      write,     default},
      {"last_name",    "string", public,      write,     default},
      {"email",        "string", private,     write,     default},
      {"tagline",      "string", public,      write,     default},
      {"external_id",  "string", private,     read_only, default},
      {"bots+size",    "int",    public,      read_only,
-      fun(User) ->
+      fun(_, User, _) ->
               integer_to_binary(?wocky_user:bot_count(User)) end},
      {"followers+size", "int",  public,      read_only,
-      fun(#{id := LUser}) ->
+      fun(_, #{id := LUser}, _) ->
               integer_to_binary(
                 length(?wocky_roster_item:followers(LUser))) end},
      {"followed+size", "int",   public,      read_only,
-      fun(#{id := LUser}) ->
+      fun(_, #{id := LUser}, _) ->
               integer_to_binary(
                 length(?wocky_roster_item:followees(LUser))) end},
-     {"roles",        "roles",  public,      read_only, make_roles(_)}
+     {"roles",        "roles",  public,      read_only, fun make_roles/3}
     ].
 
 
@@ -320,29 +320,33 @@ is_visible(self, _)        -> true;
 is_visible(_,    private)  -> false;
 is_visible(_,    public)   -> true.
 
-get_resp_fields(Fields, _LServer, LUser) ->
+get_resp_fields(Fields, _LServer, LUser, FromJID) ->
     case ?wocky_repo:get(?wocky_user, LUser) of
         nil -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)};
-        Row -> {ok, build_resp_fields(Row, Fields)}
+        Row -> {ok, build_resp_fields(Row, Fields, FromJID)}
     end.
 
 
-build_resp_fields(Row, Fields) ->
+build_resp_fields(Row, Fields, FromJID) ->
     {lists:foldl(
-       fun(Field, Acc) -> [old_build_resp_field(Row, Field) | Acc] end,
+       fun ({_, "url_pair", _, _}, Acc) -> Acc;
+           (Field, Acc) -> [old_build_resp_field(Row, FromJID, Field) | Acc]
+       end,
        [], Fields),
-     lists:foldl(add_resp_field(Row, _, _), [], Fields)}.
+     lists:foldl(add_resp_field(Row, FromJID, _, _), [], Fields)}.
 
 
-old_build_resp_field(Row, Field) ->
+old_build_resp_field(Row, FromJID, Field) ->
     #xmlel{name = <<"field">>,
            attrs = [{<<"var">>,  list_to_binary(field_name(Field))},
                     {<<"type">>, list_to_binary(field_type(Field))}],
-           children = [value_element(extract(field_name(Field), Row,
+           children = [value_element(extract(old, field_name(Field),
+                                             Row, FromJID,
                                              field_accessor(Field)))]}.
 
-add_resp_field(Row, Field, Acc) ->
-    Value = extract(field_name(Field), Row, field_accessor(Field)),
+add_resp_field(Row, FromJID, Field, Acc) ->
+    Value = extract(new, field_name(Field), Row,
+                    FromJID, field_accessor(Field)),
     case Value of
         {non_default, El} ->
             [El | Acc];
@@ -351,10 +355,10 @@ add_resp_field(Row, Field, Acc) ->
                                     null_to_bin(Value), Acc)
     end.
 
-extract(Key, Row, default) ->
+extract(_, Key, Row, _FromJID, default) ->
     maps:get(list_to_existing_atom(Key), Row);
 
-extract(_, Row, Fun) -> Fun(Row).
+extract(Style, _, Row, FromJID, Fun) -> Fun(Style, Row, FromJID).
 
 value_element({non_default, Element}) -> Element;
 value_element(Value) ->
@@ -407,10 +411,16 @@ wrap_user_result({OldResult, NewResult}, BJID) ->
            attrs = [{<<"jid">>, BJID}],
            children = OldResult ++ NewResult}.
 
-make_roles(#{roles := Roles}) ->
+make_roles(_, #{roles := Roles}, _) ->
     {non_default,
      #xmlel{name = <<"roles">>,
             children = lists:map(wocky_xml:cdata_el(<<"role">>, _), Roles)}}.
+
+make_avatar(old, Row, FromJID) ->
+    extract(old, "avatar", Row, FromJID, default);
+make_avatar(new, #{avatar := Avatar}, FromJID) ->
+    {non_default,
+     wocky_xml:image_element(<<"avatar">>, Avatar, FromJID)}.
 
 make_contacts(Contacts, RequestedAssociation, UserID) ->
     lists:map(make_contact(_, RequestedAssociation, UserID), Contacts).

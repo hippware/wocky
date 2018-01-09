@@ -21,6 +21,7 @@ defmodule Wocky.TROS do
   @callback make_upload_response(JID.t, file_id, integer, metadata) ::
     {list, list}
   @callback make_download_response(server, file_id) :: {list, list}
+  @callback get_download_url(server, file_id) :: url
 
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
@@ -78,15 +79,10 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec get_owner(file_id) :: result(owner)
-  def get_owner(id), do: get_info(id, &Metadata.get_user_id/1)
-
-  @spec get_access(file_id) :: result(binary)
-  def get_access(id), do: get_info(id, &Metadata.get_access/1)
-
-  defp get_info(id, fun) do
+  @spec get_metadata(file_id) :: result(Metadata.t)
+  def get_metadata(id) do
     if ID.valid?(id) do
-      case fun.(id) do
+      case Metadata.get(id) do
         nil -> {:error, :not_found}
         value -> {:ok, value}
       end
@@ -121,6 +117,13 @@ defmodule Wocky.TROS do
 
   @spec ready?(file_id) :: boolean
   def ready?(file_id), do: Metadata.ready?(file_id)
+
+  @spec get_download_url(server, file_id) :: binary
+  def get_download_url(server, file_id) do
+    (backend()).get_download_url(server, file_id)
+  end
+
+  def thumbnail_id(file_id), do: file_id <> @thumbnail_suffix
 
   defp backend do
     Application.fetch_env!(:wocky, :tros_backend)
