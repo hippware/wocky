@@ -61,6 +61,7 @@ groups() ->
                     garbage_set,
                     delete_user]},
      {set_new, [], [set_fields,
+                    check_avatar_urls,
                     set_other_user,
                     garbage_set,
                     delete_user]},
@@ -375,6 +376,10 @@ bulk_get_empty(Config) ->
 %%--------------------------------------------------------------------
 
 set_fields(Config) ->
+    ?wocky_repo:delete_all(?tros_metadata),
+    ?wocky_factory:insert(tros_metadata, [{id, ?AVATAR_FILE},
+                                          {user_id, ?ALICE},
+                                          {access, <<"all">>}]),
     escalus:story(Config, [{alice, 1}, {robert, 1}], fun(Alice, Robert) ->
         test_helper:befriend(Alice, Robert),
         QueryStanza = set_request(?ALICE, set_fields(), Config),
@@ -391,6 +396,20 @@ set_fields(Config) ->
                                                {elem, <<"item">>},
                                                {attr, <<"handle">>}]))
     end).
+
+check_avatar_urls(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        QueryStanza = get_request(?ALICE, [<<"avatar">>]),
+        Stanza = expect_iq_success(QueryStanza, Alice),
+        ?assertEqual(<<"https://", ?SERVER/binary, "/",
+                       ?AVATAR_FILE/binary, "-thumbnail">>,
+                     xml:get_path_s(Stanza, [{elem, <<"avatar">>},
+                                             {attr, <<"thumbnail_url">>}])),
+        ?assertEqual(<<"https://", ?SERVER/binary, "/", ?AVATAR_FILE/binary>>,
+                     xml:get_path_s(Stanza, [{elem, <<"avatar">>},
+                                             {attr, <<"full_url">>}]))
+    end).
+
 
 set_other_user(Config) ->
     escalus:story(Config, [{bob, 1}], fun(Bob) ->
