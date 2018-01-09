@@ -5,3 +5,4 @@ lib/wocky/index/algolia_indexer.ex:37: Function do_update_object/2 has no local 
 lib/wocky/index/algolia_indexer.ex:42: Function delete_object/2 has no local return
 lib/wocky/index/algolia_indexer.ex:43: The pattern {'ok', _} can never match the type
 lib/wocky/index/algolia_indexer.ex:47: Function geosearch/3 has no local return
+apps/wocky/lib/wocky/repo/migration/utils.ex:39: The call 'Elixir.String':replace

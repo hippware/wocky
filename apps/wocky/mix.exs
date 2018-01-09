@@ -77,7 +77,6 @@ defmodule Wocky.Mixfile do
       {:hackney,              "~> 1.7", override: true},
       {:exjsx,                "~> 4.0", override: true},
       {:algolia,              "~> 0.6"},
-      {:geo,                  "~> 2.0"},
       {:geo_postgis,          "~> 1.0"},
       {:geocalc,              "~> 0.5"},
       {:gen_stage,            "~> 0.12"},
@@ -100,6 +99,10 @@ defmodule Wocky.Mixfile do
       {:prometheus_ex,        "~> 1.4"},
       {:prometheus_ecto,      "~> 1.0"},
 
+      {:geo,
+        github: "bryanjos/geo",
+        branch: "master",
+        override: true},
       {:ossp_uuid,
         github: "hippware/erlang-ossp-uuid",
         tag: "v1.0.1",

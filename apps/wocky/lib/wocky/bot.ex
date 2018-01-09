@@ -5,6 +5,7 @@ defmodule Wocky.Bot do
   use Wocky.Repo.Model
   use Wocky.RSMHelper
 
+  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Ecto.Queryable
   alias Geocalc.Point
@@ -12,6 +13,7 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
+  alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Repo.ID
@@ -58,7 +60,36 @@ defmodule Wocky.Bot do
   end
 
   @type id :: binary
-  @type t :: %Bot{}
+  @type not_loaded :: %NotLoaded{}
+
+  @type t :: %Bot{
+    id:                 nil | id,
+    server:             nil | binary,
+    title:              binary,
+    pending:            nil | boolean,
+    shortname:          nil | binary,
+    description:        binary,
+    image:              nil | binary,
+    type:               binary,
+    address:            binary,
+    address_data:       binary,
+    location:           nil | Geo.Point.t,
+    radius:             nil | float,
+    public:             nil | boolean,
+    alerts:             nil | boolean,
+    follow_me:          nil | boolean,
+    follow_me_expiry:   nil | DateTime.t,
+    tags:               nil | [binary],
+    subscribers_hash:   binary,
+    subscribers_count:  non_neg_integer,
+
+    user:               not_loaded | User.t,
+    items:              not_loaded | [Item.t],
+
+    shares:             not_loaded | [User.t],
+    subscribers:        not_loaded | [User.t]
+  }
+
 
   @bot_prefix "bot/"
   @change_fields [:id, :server, :user_id, :title, :shortname, :description,
@@ -254,6 +285,23 @@ defmodule Wocky.Bot do
   @spec lon(Bot.t) :: float | nil
   def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
   def lon(_), do: nil
+
+  @spec fix_from_json(Bot.t) :: Bot.t
+  def fix_from_json(%Bot{location: nil} = bot), do: bot
+  def fix_from_json(%Bot{location: location} = bot) do
+    new_loc =
+      location
+      |> GeoUtils.get_lat_lon
+      |> Tuple.to_list
+      |> Enum.map(&ensure_float/1)
+      |> List.to_tuple
+      |> GeoUtils.point
+
+    Map.put(bot, :location, new_loc)
+  end
+
+  defp ensure_float(i) when is_integer(i), do: i / 1
+  defp ensure_float(f) when is_float(f), do: f
 
   defp maybe_filter_pending(queryable, false) do
     queryable

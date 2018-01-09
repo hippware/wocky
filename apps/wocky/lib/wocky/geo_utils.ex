@@ -15,9 +15,12 @@ defmodule Wocky.GeoUtils do
   def to_degrees(float) when is_float(float), do: float
   def to_degrees(_), do: raise ArgumentError
 
+  def point({lat, lon}), do: point(lat, lon)
   def point(lat, lon) do
     %Point{coordinates: {to_degrees(lon), to_degrees(lat)}, srid: 4326}
   end
+
+  def get_lat_lon(%Point{coordinates: {lon, lat}}), do: {lat, lon}
 
   @doc "Normalize latitude and logitude to the range [-90,90], (-180, 180]"
   @spec normalize_lat_lon(float, float) :: {float, float}
