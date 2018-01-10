@@ -15,6 +15,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Handle invalid publishing versions gracefully (PR #1223)
 * Fix crash on invalid contact_id (PR #1224)
 * Implement DB modification callback system (#1082)
+* Pregenerate S3 urls for image and avatar tags (#496)
 
 
 # 2017.12.19+r861dd8b
