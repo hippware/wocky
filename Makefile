@@ -1,12 +1,13 @@
 # vim: set noexpandtab ts=2 sw=2:
 .PHONY: help unittest inttest release build push deploy migrate shipit restart pods status top exec console shell describe logs follow cp
 
-VERSION    ?= $(shell elixir ./version.exs)
-IMAGE_REPO ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
-IMAGE_NAME ?= hippware/wocky
-IMAGE_TAG  ?= $(shell git rev-parse HEAD)
-WOCKY_ENV  ?= testing
-KUBE_NS    := wocky-$(WOCKY_ENV)
+VERSION      ?= $(shell elixir ./version.exs)
+RELEASE_NAME ?= wocky
+IMAGE_REPO   ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
+IMAGE_NAME   ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
+IMAGE_TAG    ?= $(shell git rev-parse HEAD)
+WOCKY_ENV    ?= testing
+KUBE_NS      := wocky-$(WOCKY_ENV)
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
@@ -29,16 +30,18 @@ inttest: ## Run the integration tests locally
 ### Build release images
 
 release: ## Build the release tarball
-	MIX_ENV=prod mix release --warnings-as-errors
-	cp _build/prod/rel/wocky/releases/$(VERSION)/wocky.tar.gz /artifacts
+	MIX_ENV=prod mix release --warnings-as-errors --name $(RELEASE_NAME)
+	cp _build/prod/rel/$(RELEASE_NAME)/releases/$(VERSION)/$(RELEASE_NAME).tar.gz /artifacts
 
 build: ## Build the release Docker image
-	rm -f ${PWD}/tmp/artifacts/wocky.tar.gz
-	docker build . -t $(IMAGE_NAME):build -f Dockerfile.build
+	rm -f ${PWD}/tmp/artifacts/$(RELEASE_NAME).tar.gz
+	docker build . -t wocky-build:latest -f Dockerfile.build
 	docker run -it --rm \
 		-v ${PWD}/tmp/artifacts:/artifacts \
-		$(IMAGE_NAME):build make release
+		-e "RELEASE_NAME=$(RELEASE_NAME)" \
+		wocky-build:latest make release
 	docker build . -f Dockerfile.release \
+		--build-arg RELEASE_NAME=$(RELEASE_NAME) \
 		-t $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) \
 		-t $(IMAGE_REPO)/$(IMAGE_NAME):latest
 
