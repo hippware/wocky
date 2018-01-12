@@ -1,0 +1,41 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: wocky-weekly
+  namespace: wocky-staging
+  labels:
+    app: wocky
+    mod: weekly
+    env: staging
+spec:
+  schedule: "0 0 * * 0"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: wocky
+            mod: weekly
+            env: staging
+        spec:
+          imagePullSecrets:
+            - name: amazonecr
+          restartPolicy: Never
+          containers:
+            - name: wocky
+              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:<%= current_sha %>
+              args: ["weekly"]
+              envFrom:
+                - configMapRef:
+                    name: wocky-config
+                - secretRef:
+                    name: wocky-secrets
+              env:
+                - name: KUBE_POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: KUBE_POD_NS
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
