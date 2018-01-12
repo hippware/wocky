@@ -1,29 +1,32 @@
 - name: version
   service: wocky_build
   command: elixir version.exs
-- name: unit_test
-  service: wocky_test
-  command: make unittest
-- name: int_test
-  service: wocky_test
-  command: make inttest
-- name: release
-  service: wocky_build
-  tag: master
-  command: make release
-- name: push_latest_image
-  service: wocky_rel
-  type: push
-  tag: master
-  image_tag: latest
-  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
-  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-  dockercfg_service: aws_dockercfg
-- name: push_tagged_image
-  service: wocky_rel
-  type: push
-  tag: master
-  image_tag: "{{.CommitID}}"
-  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
-  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-  dockercfg_service: aws_dockercfg
+- type: parallel
+  steps:
+  - type: serial
+    service: wocky_test
+    steps:
+    - name: unit_test
+      command: make unittest
+    - name: int_test
+      command: make inttest
+  - type: serial
+    tag: master
+    steps:
+    - name: release
+      service: wocky_build
+      command: make release
+    - name: push_latest_image
+      service: wocky_rel
+      type: push
+      image_tag: latest
+      image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+      registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+      dockercfg_service: aws_dockercfg
+    - name: push_tagged_image
+      service: wocky_rel
+      type: push
+      image_tag: "{{.CommitID}}"
+      image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+      registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+      dockercfg_service: aws_dockercfg
