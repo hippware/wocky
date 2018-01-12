@@ -1,9 +1,12 @@
-apiVersion: batch/v2alpha1
+apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: wocky-weekly
+  namespace: wocky-us1
   labels:
     app: wocky
+    mod: weekly
+    env: us1
 spec:
   schedule: "0 0 * * 0"
   jobTemplate:
@@ -12,14 +15,15 @@ spec:
         metadata:
           labels:
             app: wocky
+            mod: weekly
+            env: us1
         spec:
           imagePullSecrets:
             - name: amazonecr
           restartPolicy: Never
           containers:
             - name: wocky
-              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
-              imagePullPolicy: Always
+              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:<%= current_sha %>
               args: ["weekly"]
               envFrom:
                 - configMapRef:
