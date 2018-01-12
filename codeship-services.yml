@@ -34,6 +34,8 @@ wocky_rel:
     context: .
     dockerfile: Dockerfile.release
     image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
+    args:
+      RELEASE_NAME: wocky
   cached: true
 aws_dockercfg:
   image: codeship/aws-ecr-dockercfg-generator
