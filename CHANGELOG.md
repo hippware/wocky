@@ -10,7 +10,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix: Positive online presence not transmitted when accounts become friends (#1165)
 * Increase sandbox timeout to prevent errors during ct tests (PR #1215)
 * Fix: Duplicate handle error is rendered with a 500 error code (#1199)
-* Fix: Gracefully handle a missing user 14 days ago (#1138)
+* Fix: Gracefully handle a missing user (#1138)
 * Quick fixes for the weekly job (PR #1221)
 * Handle invalid publishing versions gracefully (PR #1223)
 * Fix crash on invalid contact_id (PR #1224)
