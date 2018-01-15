@@ -16,6 +16,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix crash on invalid contact_id (PR #1224)
 * Implement DB modification callback system (#1082)
 * Pregenerate S3 urls for image and avatar tags (#496)
+* Updates to deployment infrastructure (PR #1232, PR #1233)
+  * Bot report and db maintenance failing due to mismatched db schema (#1160)
+  * Update deployment images to latest versions of Alpine, Erlang and Elixir
 
 
 # 2017.12.19+r861dd8b
