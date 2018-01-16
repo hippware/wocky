@@ -398,6 +398,26 @@ defmodule Wocky.UserSpec do
         :meck.unload(Email)
       end
 
+      context "when the user does not exist" do
+        before do
+          fields = %{
+            resource: ID.new,
+            handle: Factory.new_handle,
+            first_name: Name.first_name,
+            last_name: Name.last_name,
+            email: Internet.email,
+            tagline: Lorem.sentence
+          }
+
+          result = User.update(ID.new, fields)
+          {:ok, fields: fields, result: result}
+        end
+
+        it "should return an error" do
+          shared.result |> should(be_error_result())
+        end
+      end
+
       context "standard update" do
         before do
           fields = %{

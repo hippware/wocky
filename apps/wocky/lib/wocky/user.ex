@@ -292,19 +292,21 @@ defmodule Wocky.User do
   """
   @spec update(id, map) :: :ok | {:error, term}
   def update(id, fields) do
-    changeset =
-      User
-      |> Repo.get!(id)
-      |> changeset(fields)
+    case Repo.get(User, id) do
+      nil ->
+        {:error, :user_not_found}
 
-    case Repo.update(changeset) do
-      {:ok, user} ->
-        maybe_send_welcome(user)
-        maybe_update_index(user)
-        :ok
+      struct ->
+        changeset = changeset(struct, fields)
+        case Repo.update(changeset) do
+          {:ok, user} ->
+            maybe_send_welcome(user)
+            maybe_update_index(user)
+            :ok
 
-      {:error, _} = error ->
-        error
+          {:error, _} = error ->
+            error
+        end
     end
   end
 
