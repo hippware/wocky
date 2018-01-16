@@ -103,17 +103,21 @@ defmodule Wocky.TROS do
   end
 
   @spec make_upload_response(JID.t, file_id, integer, binary, metadata) ::
-    {list, list}
+    {:ok, {list, list}} | {:error, term}
   def make_upload_response(owner_jid, file_id, size, access, meta) do
-    jid(luser: owner) = owner_jid
-    {:ok, _} = Metadata.put(file_id, owner, access)
+    jid(luser: owner_id) = owner_jid
+    case Metadata.put(file_id, owner_id, access) do
+      {:ok, _} ->
+        {:ok, (backend()).make_upload_response(owner_jid, file_id, size, meta)}
 
-    (backend()).make_upload_response(owner_jid, file_id, size, meta)
+      {:error, _} = error ->
+        error
+    end
   end
 
-  @spec make_download_response(server, file_id) :: {list, list}
+  @spec make_download_response(server, file_id) :: {:ok, {list, list}}
   def make_download_response(server, file_id),
-    do: (backend()).make_download_response(server, file_id)
+    do: {:ok, (backend()).make_download_response(server, file_id)}
 
   @spec ready?(file_id) :: boolean
   def ready?(file_id), do: Metadata.ready?(file_id)
