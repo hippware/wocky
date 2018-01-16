@@ -268,9 +268,14 @@ get_association_query(<<"friend">>, UserID, RequesterID) ->
 get_association_query(_, _, _) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid association type">>)}.
 
-do_contacts_query(AssociationQuery, RSMIn) ->
-    {ok, ?wocky_rsm_helper:rsm_query(RSMIn, AssociationQuery,
-                                     id, {asc, handle})}.
+do_contacts_query(AssociationQuery, #rsm_in{id = ID} = RSMIn) ->
+   case ID =:= undefined orelse ?wocky_id:'valid?'(ID) of
+      true ->
+         {ok, ?wocky_rsm_helper:rsm_query(RSMIn, AssociationQuery,
+                                          id, {asc, handle})};
+      false ->
+         {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid user ID in 'after'">>)}
+   end.
 
 get_get_req_fields(Relationship, []) ->
     {ok, get_visible_fields(Relationship)};
