@@ -104,13 +104,13 @@ defmodule Wocky.TROSSpec do
     describe "make_upload_response/5" do
       let :owner_jid, do: User.to_jid(shared.user)
       subject do: TROS.make_upload_response(owner_jid(), ID.new, 100, "all", [])
-      it do: assert {_, _} = subject()
+      it do: assert {:ok, {_, _}} = subject()
     end
 
     describe "make_download_response/2" do
       let :owner_jid, do: User.to_jid(shared.user)
       subject do: TROS.make_download_response("localhost", shared.id)
-      it do: assert {_, _} = subject()
+      it do: assert {:ok, {_, _}} = subject()
     end
   end
 end

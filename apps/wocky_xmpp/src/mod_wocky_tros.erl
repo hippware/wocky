@@ -214,15 +214,20 @@ upload_response(Req = #request{from_jid = FromJID},
                 Size) ->
     Metadata = #{<<"content-type">> => MimeType, <<"name">> => Filename},
     FileID = make_file_id(),
-    {Headers, RespFields} =
-        ?tros:make_upload_response(FromJID, FileID, Size, Access, Metadata),
+    case ?tros:make_upload_response(FromJID, FileID, Size, Access, Metadata) of
+        {ok, {Headers, RespFields}} ->
+            FullFields = common_fields(FromJID, FileID) ++ RespFields,
+            response(Req, Headers, FullFields, <<"upload">>);
 
-    FullFields = common_fields(FromJID, FileID) ++ RespFields,
-    response(Req, Headers, FullFields, <<"upload">>).
+        {error, Errors} ->
+            upload_validation_error(
+                ?wocky_errors:render_errors(
+                    ?wocky_errors:to_map(Errors)))
+    end.
 
 download_response(Req = #request{from_jid = FromJID}, _OwnerID, FileID) ->
-    {Headers, RespFields} =
-      ?tros:make_download_response(FromJID#jid.lserver, FileID),
+    {ok, {Headers, RespFields}} =
+        ?tros:make_download_response(FromJID#jid.lserver, FileID),
 
     response(Req, Headers, RespFields, <<"download">>).
 
