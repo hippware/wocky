@@ -5,6 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.1.17+r1173119
+
+* Fix a warning from Phoenix in the log files (PR #1239)
+* Return an error when updating a nonexistent user (PR #1240)
+* Return an error when the contacts RSM id isn't valid (PR #1241)
+* Return an error for upload request for a missing user (PR #1242)
+
+
 # 2018.1.15+r5e2d786
 
 * Notify HS if a referenced bot's post count changes (#1182)
