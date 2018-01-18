@@ -65,6 +65,11 @@ defmodule Wocky.Push.Sandbox do
   end
 
   @doc false
+  def init(args) do
+    {:ok, args}
+  end
+
+  @doc false
   def handle_call({:record_notification, n, pid}, _from, state) do
     notifications = [n | Map.get(state, pid, [])]
     {:reply, :ok, Map.put(state, pid, notifications)}
