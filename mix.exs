@@ -32,12 +32,9 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:distillery, "~> 1.1", runtime: false},
-      {:dialyxir,   "~> 0.5", only: [:dev, :test], runtime: false},
-      {:espec,
-        github: "antonmi/espec",
-        branch: "master",
-        only: :test},
+      {:distillery,  "~> 1.1", runtime: false},
+      {:dialyxir,    "~> 0.5", only: [:dev, :test], runtime: false},
+      {:espec,       "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:mix_ct,
         github: "hippware/mix_ct",
