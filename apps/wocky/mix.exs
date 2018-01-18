@@ -86,7 +86,7 @@ defmodule Wocky.Mixfile do
       {:ok,                   "~> 1.2", runtime: false},
       {:lager,                "~> 3.2", override: true},
       {:lager_logger,         "~> 1.0"},
-      {:ex_json_logger,       "~> 0.1"},
+      #{:ex_json_logger,       "~> 0.1"},
       {:email_checker,        "~> 0.1"},
       {:csv,                  "~> 2.0"},
       {:confex,               "~> 3.3"},
@@ -99,6 +99,10 @@ defmodule Wocky.Mixfile do
       {:prometheus_ex,        "~> 1.4"},
       {:prometheus_ecto,      "~> 1.0"},
 
+      # TODO switch back to the Hex package when it is released
+      {:ex_json_logger,
+        github: "rentpath/ex_json_logger",
+        branch: "elixir-1.6.0"},
       {:geo,
         github: "bryanjos/geo",
         branch: "master",
