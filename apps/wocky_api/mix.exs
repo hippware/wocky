@@ -65,10 +65,7 @@ defmodule WockyAPI.Mixfile do
         branch: "working",
         override: true},
 
-      {:espec,
-        github: "antonmi/espec",
-        branch: "master",
-        only: :test},
+      {:espec,          "~> 1.5", only: :test},
       {:excoveralls,    "~> 0.6", only: :test},
       {:credo,          "~> 0.6", only: [:dev, :test], runtime: false},
       {:ex_guard,       "~> 1.1", only: :dev, runtime: false},
