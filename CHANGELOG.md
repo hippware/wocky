@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update to Elixir 1.6.
+
+
 # 2018.1.17+r1173119
 
 * Fix a warning from Phoenix in the log files (PR #1239)
