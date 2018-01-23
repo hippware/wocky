@@ -24,27 +24,33 @@ defmodule Wocky.Push.Sandbox do
   @doc """
   Wait until a notification arrives.
   """
-  @spec wait_notifications([pid: pid,
-                            global: boolean,
-                            timeout: non_neg_integer,
-                            count: non_neg_integer]) :: [%Notification{}]
+  @spec wait_notifications(
+          pid: pid,
+          global: boolean,
+          timeout: non_neg_integer,
+          count: non_neg_integer
+        ) :: [%Notification{}]
   def wait_notifications(opts \\ []) do
     timeout = opts[:timeout] || 100
-    count   = opts[:count] || 1
+    count = opts[:count] || 1
+
     case list_notifications(opts) do
       notifications when length(notifications) < count and timeout > 0 ->
         receive do
-        after 10 ->
-          wait_notifications(Keyword.put(opts, :timeout, timeout - 10))
+        after
+          10 ->
+            wait_notifications(Keyword.put(opts, :timeout, timeout - 10))
         end
-      notifications -> notifications
+
+      notifications ->
+        notifications
     end
   end
 
   @doc """
   List recorded notifications keeping their order of arrival.
   """
-  @spec list_notifications([pid: pid, global: boolean]) :: [%Notification{}]
+  @spec list_notifications(pid: pid, global: boolean) :: [%Notification{}]
   def list_notifications(opts \\ []) do
     pid = opts[:pid] || self()
     GenServer.call(__MODULE__, {:list_notifications, pid, opts[:global]})
@@ -53,7 +59,7 @@ defmodule Wocky.Push.Sandbox do
   @doc """
   Clear all the recorded notifications.
   """
-  @spec clear_notifications([pid: pid, global: boolean]) :: :ok
+  @spec clear_notifications(pid: pid, global: boolean) :: :ok
   def clear_notifications(opts \\ []) do
     pid = opts[:pid] || self()
     GenServer.call(__MODULE__, {:clear_notifications, pid, opts[:global]})
@@ -77,11 +83,13 @@ defmodule Wocky.Push.Sandbox do
 
   @doc false
   def handle_call({:list_notifications, pid, global}, _from, state) do
-    notifications = if global do
-      state |> Map.values |> List.flatten
-    else
-      state |> Map.get(pid, []) |> Enum.reverse
-    end
+    notifications =
+      if global do
+        state |> Map.values() |> List.flatten()
+      else
+        state |> Map.get(pid, []) |> Enum.reverse()
+      end
+
     {:reply, notifications, state}
   end
 

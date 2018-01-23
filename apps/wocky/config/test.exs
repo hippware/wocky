@@ -14,8 +14,8 @@ config :wocky, Wocky.Push,
 config :wocky, Wocky.Repo,
   database: "wocky_test",
   pool: Ecto.Adapters.SQL.Sandbox,
-  ownership_timeout: 1_800_000 # ms (30 minutes)
+  # ms (30 minutes)
+  ownership_timeout: 1_800_000
 
 # Make token tests go faster:
-config :bcrypt_elixir,
-  bcrypt_log_rounds: 4
+config :bcrypt_elixir, bcrypt_log_rounds: 4

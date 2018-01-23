@@ -32,6 +32,7 @@ defmodule Wocky.Index.AlgoliaIndexer do
     |> Map.put("lon", lon)
     |> Map.put("_geoloc", %{"lat" => lat, "lng" => lon})
   end
+
   defp with_geoloc(data), do: data
 
   defp do_update_object(object, index) do
@@ -46,10 +47,12 @@ defmodule Wocky.Index.AlgoliaIndexer do
 
   def geosearch(index, lat, lon) do
     {:ok, result} =
-      Algolia.search(index, <<>>, [
-          aroundLatLng: "#{lat},#{lon}",
-          getRankingInfo: true
-      ])
+      Algolia.search(
+        index,
+        <<>>,
+        aroundLatLng: "#{lat},#{lon}",
+        getRankingInfo: true
+      )
 
     bots = Enum.map(result["hits"], &object_to_bot/1)
     {:ok, bots}
@@ -64,7 +67,8 @@ defmodule Wocky.Index.AlgoliaIndexer do
       image: obj["image"],
       location: GeoUtils.point(obj["lat"], obj["lon"]),
       radius: obj["radius"],
-      distance: obj["_rankingInfo"]["geoDistance"] * 1000, # millimeters
+      # millimeters
+      distance: obj["_rankingInfo"]["geoDistance"] * 1000,
       public: obj["public"]
     }
   end

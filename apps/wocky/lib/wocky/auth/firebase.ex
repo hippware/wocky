@@ -26,18 +26,16 @@ defmodule Wocky.Auth.Firebase do
          {:ok, cert} <- FirebaseKeyManager.get_key(key_id),
          {:ok, claims} <- decode_and_verify(jwt, cert),
          user_id when not is_nil(user_id) <- claims["sub"],
-         phone when not is_nil(phone) <- claims["phone_number"]
-         # ^^^^ Best guess on name - will need
-         # verification once we have a client
-    do
+         phone when not is_nil(phone) <- claims["phone_number"] do
       {:ok, {user_id, phone}}
     end
     |> make_verify_result()
   end
 
   defp make_verify_result({:ok, id}), do: {:ok, id}
+
   defp make_verify_result(failure) do
-    Logger.debug("Auth failed with error: #{inspect failure}")
+    Logger.debug("Auth failed with error: #{inspect(failure)}")
     {:error, "Firebase auth failed"}
   end
 
@@ -45,14 +43,23 @@ defmodule Wocky.Auth.Firebase do
     project_id = Confex.get_env(:wocky, :firebase_project_id)
 
     jwt
-    |> Joken.with_validation("exp", &(&1 > DateTime.utc_now |> Timex.to_unix),
-                             "Expiry is in past")
-    |> Joken.with_validation("iat", &(&1 <= DateTime.utc_now |> Timex.to_unix),
-                             "Issue time is in future")
+    |> Joken.with_validation(
+      "exp",
+      &(&1 > DateTime.utc_now() |> Timex.to_unix()),
+      "Expiry is in past"
+    )
+    |> Joken.with_validation(
+      "iat",
+      &(&1 <= DateTime.utc_now() |> Timex.to_unix()),
+      "Issue time is in future"
+    )
     |> Joken.with_validation("aud", &(&1 == project_id), "Invalid audience")
-    |> Joken.with_validation("iss", &(&1 == @issuer_prefix <> project_id),
-                             "Invalid issuer")
+    |> Joken.with_validation(
+      "iss",
+      &(&1 == @issuer_prefix <> project_id),
+      "Invalid issuer"
+    )
     |> Joken.with_signer(Joken.rs256(JWK.from_pem(cert)))
-    |> Joken.verify!
+    |> Joken.verify!()
   end
 end

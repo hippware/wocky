@@ -6,9 +6,9 @@ defmodule WockyDBWatcher do
   alias WockyDBWatcher.Watcher
 
   def start_watcher(object, action, suffix) do
-    result = Supervisor.start_child(
-      {:global, WockyDBWatcher.Supervisor},
-      %{id: Watcher.name(object, action, suffix),
+    result =
+      Supervisor.start_child({:global, WockyDBWatcher.Supervisor}, %{
+        id: Watcher.name(object, action, suffix),
         start: {Watcher, :start_link, [object, action, suffix]}
       })
 
@@ -18,5 +18,4 @@ defmodule WockyDBWatcher do
       error -> error
     end
   end
-
 end

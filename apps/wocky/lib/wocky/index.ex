@@ -31,7 +31,7 @@ defmodule Wocky.Index do
   @callback update_object(index :: binary, id :: binary, map :: map) :: :ok
   @callback delete_object(index :: binary, id :: binary) :: :ok
   @callback geosearch(index :: binary, lat :: float, lon :: float) ::
-    {:ok, any} | {:error, any}
+              {:ok, any} | {:error, any}
 
   # ===================================================================
   # API
@@ -66,8 +66,9 @@ defmodule Wocky.Index do
 
   def init(_) do
     user_index = Confex.get_env(:wocky, :user_index_name, :users)
-    bot_index  = Confex.get_env(:wocky, :bot_index_name, :bots)
+    bot_index = Confex.get_env(:wocky, :bot_index_name, :bots)
     backend_type = Confex.get_env(:wocky, :indexing_system)
+
     backend_module =
       case backend_type do
         "algolia" -> Wocky.Index.AlgoliaIndexer
@@ -77,19 +78,22 @@ defmodule Wocky.Index do
     backend_module.init()
 
     {:ok,
-      %State{
-        backend: backend_module,
-        indexes: [
-          user: user_index,
-          bot: bot_index
-        ]
-      }
-    }
+     %State{
+       backend: backend_module,
+       indexes: [
+         user: user_index,
+         bot: bot_index
+       ]
+     }}
   end
 
   def handle_call({:geosearch, lat, lon}, _, state) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(
-      GeoUtils.to_degrees(lat), GeoUtils.to_degrees(lon))
+    {nlat, nlon} =
+      GeoUtils.normalize_lat_lon(
+        GeoUtils.to_degrees(lat),
+        GeoUtils.to_degrees(lon)
+      )
+
     result = state.backend.geosearch(state.indexes[:bot], nlat, nlon)
     {:reply, result, state}
   end
@@ -135,12 +139,15 @@ defmodule Wocky.Index do
   # Helpers
 
   defp do_reindex(obj_t, query, state) do
-    Repo.transaction fn ->
-      query
-      |> Repo.stream
-      |> Stream.each(&update_object(obj_t, &1, state))
-      |> Stream.run
-    end, timeout: 600_000
+    Repo.transaction(
+      fn ->
+        query
+        |> Repo.stream()
+        |> Stream.each(&update_object(obj_t, &1, state))
+        |> Stream.run()
+      end,
+      timeout: 600_000
+    )
   end
 
   defp update_object(obj_t, %{id: id} = data, state) do
@@ -162,6 +169,7 @@ defmodule Wocky.Index do
 
   defp do_update_object(object, id, index, backend) do
     :ok = Logger.debug("Updating #{index} index with object #{inspect(object)}")
+
     if map_size(object) < 1 do
       {:ok, :no_changes}
     else

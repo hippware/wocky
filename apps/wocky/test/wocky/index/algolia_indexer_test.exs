@@ -19,20 +19,25 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
 
   test "update_object/3" do
     use_cassette "update_object3", match_requests_on: [:request_body] do
-      :ok = update_object(@index, @object_id1,
-                          %{"server" => @server,
-                            "title" => "title1",
-                            "image" => "image1",
-                            "location" => GeoUtils.point(1.0, 2.0),
-                            "radius" => 1000,
-                            "public" => true})
-      :ok = update_object(@index, @object_id2,
-                          %{"server" => @server,
-                            "title" => "title2",
-                            "image" => "image2",
-                            "location" => GeoUtils.point(5.0, 6.0),
-                            "radius" => 1000,
-                            "public" => true})
+      :ok =
+        update_object(@index, @object_id1, %{
+          "server" => @server,
+          "title" => "title1",
+          "image" => "image1",
+          "location" => GeoUtils.point(1.0, 2.0),
+          "radius" => 1000,
+          "public" => true
+        })
+
+      :ok =
+        update_object(@index, @object_id2, %{
+          "server" => @server,
+          "title" => "title2",
+          "image" => "image2",
+          "location" => GeoUtils.point(5.0, 6.0),
+          "radius" => 1000,
+          "public" => true
+        })
     end
   end
 
@@ -65,5 +70,4 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
     dir = Setting.get(:cassette_library_dir)
     not File.exists?("#{dir}/#{cassette}.json")
   end
-
 end

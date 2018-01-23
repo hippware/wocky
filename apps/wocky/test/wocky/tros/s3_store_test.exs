@@ -13,40 +13,36 @@ defmodule Wocky.TROS.S3StoreTest do
 
   describe "do_delete/2" do
     setup do
-      bypass = Bypass.open
-      {:ok,
-        bypass: bypass,
-        server: "localhost"
-      }
-
+      bypass = Bypass.open()
+      {:ok, bypass: bypass, server: "localhost"}
     end
 
     test "should succeed with valid credentials", context do
       setup_server(context.bypass)
-      Bypass.expect(context.bypass,
-                    fn conn ->
-                      assert "DELETE" == conn.method
-                      Conn.resp(conn, 204, "")
-                    end)
+
+      Bypass.expect(context.bypass, fn conn ->
+        assert "DELETE" == conn.method
+        Conn.resp(conn, 204, "")
+      end)
+
       {:ok, _} = S3Store.do_delete(context.server, @test_file)
     end
 
     test "should return an error if the server rejects the auth", context do
       setup_server(context.bypass)
-      Bypass.expect(context.bypass,
-                    fn conn ->
-                      Conn.resp(conn, 401, "")
-                    end)
+
+      Bypass.expect(context.bypass, fn conn ->
+        Conn.resp(conn, 401, "")
+      end)
+
       {:error, _} = S3Store.do_delete(context.server, @test_file)
     end
-
   end
 
   # make_upload_resonse/4 and make_download_response/2 are tested in the
   # corresponding espec file.
 
   defp setup_server(bypass) do
-      Application.put_env(:wocky, :s3_host_override,
-                          "localhost:#{bypass.port}")
+    Application.put_env(:wocky, :s3_host_override, "localhost:#{bypass.port}")
   end
 end

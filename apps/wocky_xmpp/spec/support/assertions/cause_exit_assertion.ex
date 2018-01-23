@@ -33,31 +33,35 @@ defmodule CauseExitAssertion do
 
   defp success_message(subject, [], _result, positive) do
     act = if positive, do: "exits", else: "doesn't exit"
-    "#{inspect subject} #{act}."
+    "#{inspect(subject)} #{act}."
   end
 
   defp success_message(subject, [term], _result, positive) do
     act = if positive, do: "exits", else: "doesn't exit"
-    "#{inspect subject} #{act} with `#{term}`."
+    "#{inspect(subject)} #{act} with `#{term}`."
   end
 
   defp error_message(subject, [], false, positive) do
     if positive do
-      "Expected #{inspect subject} to exit, but it didn't."
+      "Expected #{inspect(subject)} to exit, but it didn't."
     else
-      "Expected #{inspect subject} not exit, but it did."
+      "Expected #{inspect(subject)} not exit, but it did."
     end
   end
 
   defp error_message(subject, [term], err_term, positive) do
     if positive do
       case err_term do
-        {false, nil} -> "Expected #{inspect subject} to exit with `#{term}, but it didn't exit."
-        err_term -> "Expected #{inspect subject} to exit with `#{term}, but it exited with `#{err_term}` was raised instead."
+        {false, nil} ->
+          "Expected #{inspect(subject)} to exit with `#{term}, but it didn't exit."
+
+        err_term ->
+          "Expected #{inspect(subject)} to exit with `#{term}, but it exited with `#{
+            err_term
+          }` was raised instead."
       end
     else
-      "Expected #{inspect subject} not to exit with `#{term}` exception, but it did."
+      "Expected #{inspect(subject)} not to exit with `#{term}` exception, but it did."
     end
   end
-
 end

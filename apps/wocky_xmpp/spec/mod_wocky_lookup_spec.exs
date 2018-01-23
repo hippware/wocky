@@ -38,21 +38,24 @@ defmodule :mod_wocky_lookup_spec do
 
   before do
     user = Factory.insert(:user)
-    {:ok, [
-        user: user,
-        phone: user.phone_number,
-        handle: user.handle,
-        user_jid: User.to_jid(user)
-      ]}
+
+    {:ok,
+     [
+       user: user,
+       phone: user.phone_number,
+       handle: user.handle,
+       user_jid: User.to_jid(user)
+     ]}
   end
 
   describe "mod_wocky_lookup" do
     describe "handling an IQ 'get' for a phone number" do
       context "when there are no item elements in the IQ" do
         before do
-          {:ok, [
-              result: handle_phone_iq(shared.user_jid, @server_jid, make_iq([]))
-            ]}
+          {:ok,
+           [
+             result: handle_phone_iq(shared.user_jid, @server_jid, make_iq([]))
+           ]}
         end
 
         it "should return an empty result IQ" do
@@ -62,11 +65,12 @@ defmodule :mod_wocky_lookup_spec do
 
       context "where there are items without an ID in the IQ" do
         before do
-          result = handle_phone_iq(
-            shared.user_jid,
-            @server_jid,
-            iq_get([xmlel(name: "item")])
-          )
+          result =
+            handle_phone_iq(
+              shared.user_jid,
+              @server_jid,
+              iq_get([xmlel(name: "item")])
+            )
 
           {:ok, result: result}
         end
@@ -79,20 +83,23 @@ defmodule :mod_wocky_lookup_spec do
       context "when the IQ is properly formatted" do
         before do
           numbers = [shared.phone, "4567", "+5555", "+6666", "+9999"]
-          result = handle_phone_iq(
-            shared.user_jid,
-            @server_jid,
-            make_iq(numbers)
-          )
+
+          result =
+            handle_phone_iq(
+              shared.user_jid,
+              @server_jid,
+              make_iq(numbers)
+            )
 
           iq(sub_el: [xmlel(children: els)]) = result
 
-          {:ok, [
-              result: result,
-              els: els,
-              first: elem(List.first(els), 2),
-              last: elem(List.last(els), 2)
-            ]}
+          {:ok,
+           [
+             result: result,
+             els: els,
+             first: elem(List.first(els), 2),
+             last: elem(List.last(els), 2)
+           ]}
         end
 
         it "should return a result IQ" do
@@ -142,11 +149,12 @@ defmodule :mod_wocky_lookup_spec do
 
       context "where there are items without an ID in the IQ" do
         before do
-          result = handle_handle_iq(
-            shared.user_jid,
-            @server_jid,
-            iq_get([xmlel(name: "item")])
-          )
+          result =
+            handle_handle_iq(
+              shared.user_jid,
+              @server_jid,
+              iq_get([xmlel(name: "item")])
+            )
 
           {:ok, result: result}
         end
@@ -159,20 +167,23 @@ defmodule :mod_wocky_lookup_spec do
       context "when the request is properly formatted" do
         before do
           handles = [shared.handle, "4567", "+5555", "+6666", "+9999"]
-          result = handle_handle_iq(
-            shared.user_jid,
-            @server_jid,
-            make_iq(handles)
-          )
+
+          result =
+            handle_handle_iq(
+              shared.user_jid,
+              @server_jid,
+              make_iq(handles)
+            )
 
           iq(sub_el: [xmlel(children: els)]) = result
 
-          {:ok, [
-              result: result,
-              els: els,
-              first: elem(List.first(els), 2),
-              last: elem(List.last(els), 2)
-            ]}
+          {:ok,
+           [
+             result: result,
+             els: els,
+             first: elem(List.first(els), 2),
+             last: elem(List.last(els), 2)
+           ]}
         end
 
         it "should return a result IQ" do

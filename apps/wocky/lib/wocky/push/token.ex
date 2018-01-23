@@ -5,15 +5,14 @@ defmodule Wocky.Push.Token do
 
   alias Wocky.User
 
-
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "push_tokens" do
-    field :resource,  :string, null: false
-    field :token,     :string, null: false
-    field :valid,     :boolean, null: false, default: true
-    field :enabled_at,     :utc_datetime
-    field :disabled_at,    :utc_datetime
+    field :resource, :string, null: false
+    field :token, :string, null: false
+    field :valid, :boolean, null: false, default: true
+    field :enabled_at, :utc_datetime
+    field :disabled_at, :utc_datetime
     field :invalidated_at, :utc_datetime
 
     timestamps(updated_at: false)
@@ -24,14 +23,14 @@ defmodule Wocky.Push.Token do
   @type token :: binary
 
   @type t :: %Token{
-    user_id:        Wocky.User.id,
-    resource:       Wocky.User.resource,
-    token:          token,
-    valid:          boolean,
-    enabled_at:     DateTime,
-    disabled_at:    DateTime,
-    invalidated_at: DateTime
-  }
+          user_id: Wocky.User.id(),
+          resource: Wocky.User.resource(),
+          token: token,
+          valid: boolean,
+          enabled_at: DateTime,
+          disabled_at: DateTime,
+          invalidated_at: DateTime
+        }
 
   @register_attrs [:user_id, :resource, :token]
 
@@ -41,7 +40,7 @@ defmodule Wocky.Push.Token do
     |> cast(attrs, @register_attrs)
     |> validate_required(@register_attrs)
     |> foreign_key_constraint(:user_id)
-    |> put_change(:enabled_at, DateTime.utc_now)
+    |> put_change(:enabled_at, DateTime.utc_now())
     |> put_change(:valid, true)
   end
 end

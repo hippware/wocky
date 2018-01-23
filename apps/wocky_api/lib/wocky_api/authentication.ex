@@ -6,8 +6,8 @@ defmodule WockyAPI.Authentication do
   alias Wocky.Token
 
   def authenticate(conn, _opts \\ []) do
-    user = conn |> get_req_header("x-auth-user") |> List.first
-    token = conn |> get_req_header("x-auth-token") |> List.first
+    user = conn |> get_req_header("x-auth-user") |> List.first()
+    token = conn |> get_req_header("x-auth-token") |> List.first()
 
     if Token.valid?(user, token) do
       assign(conn, :current_user, user)

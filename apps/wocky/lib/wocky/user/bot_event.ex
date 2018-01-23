@@ -16,7 +16,7 @@ defmodule Wocky.User.BotEvent do
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_bot_events" do
-    field :event,  EventType, null: false
+    field :event, EventType, null: false
 
     timestamps()
 
@@ -26,23 +26,23 @@ defmodule Wocky.User.BotEvent do
 
   @type event :: :enter | :exit
   @type t :: %BotEvent{
-    id: binary,
-    user_id: User.id,
-    bot_id: Bot.id,
-    event: event
-  }
+          id: binary,
+          user_id: User.id(),
+          bot_id: Bot.id(),
+          event: event
+        }
 
-  @spec get_last_event(User.id, Bot.id) :: t | nil
+  @spec get_last_event(User.id(), Bot.id()) :: t | nil
   def get_last_event(user_id, bot_id) do
     Repo.one(
       from e in BotEvent,
-      where: e.user_id == ^user_id and e.bot_id == ^bot_id,
-      order_by: [desc: :created_at],
-      limit: 1
+        where: e.user_id == ^user_id and e.bot_id == ^bot_id,
+        order_by: [desc: :created_at],
+        limit: 1
     )
   end
 
-  @spec get_last_event_type(User.id, Bot.id) :: :enter | :exit | nil
+  @spec get_last_event_type(User.id(), Bot.id()) :: :enter | :exit | nil
   def get_last_event_type(user_id, bot_id) do
     Repo.one(
       from e in BotEvent,
@@ -53,11 +53,11 @@ defmodule Wocky.User.BotEvent do
     )
   end
 
-  @spec insert(User.t, Bot.t, event) :: t
+  @spec insert(User.t(), Bot.t(), event) :: t
   def insert(user, bot, event) do
     %BotEvent{user: user, bot: bot}
     |> changeset(%{event: event})
-    |> Repo.insert!
+    |> Repo.insert!()
   end
 
   defp changeset(struct, params) do

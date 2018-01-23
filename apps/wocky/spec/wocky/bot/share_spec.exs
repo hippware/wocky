@@ -7,7 +7,8 @@ defmodule Wocky.Bot.ShareSpec do
   alias Wocky.Repo.ID
 
   describe "validation" do
-    let :valid_attrs, do: %{bot_id: ID.new, user_id: ID.new, sharer_id: ID.new}
+    let :valid_attrs,
+      do: %{bot_id: ID.new(), user_id: ID.new(), sharer_id: ID.new()}
 
     it "should pass with valid attributes" do
       %Share{}
@@ -22,10 +23,9 @@ defmodule Wocky.Bot.ShareSpec do
     end
 
     describe "converting foreign key constraints to errors" do
-      let :changeset,
-        do: Share.changeset(%Share{}, valid_attrs())
+      let :changeset, do: Share.changeset(%Share{}, valid_attrs())
 
-      it do: changeset() |> Repo.insert |> should(be_error_result())
+      it do: changeset() |> Repo.insert() |> should(be_error_result())
 
       context "when the bot does not exist" do
         let :new_changeset do
@@ -34,10 +34,13 @@ defmodule Wocky.Bot.ShareSpec do
         end
 
         it "has error" do
-          errors = [bot_id: {"does not exist", []},
-                    user_id: {"does not exist", []},
-                    sharer_id: {"does not exist", []}]
-          expect(new_changeset().errors).to have_any(&Enum.member?(errors, &1))
+          errors = [
+            bot_id: {"does not exist", []},
+            user_id: {"does not exist", []},
+            sharer_id: {"does not exist", []}
+          ]
+
+          expect(new_changeset().errors).to(have_any(&Enum.member?(errors, &1)))
         end
       end
     end
@@ -140,12 +143,14 @@ defmodule Wocky.Bot.ShareSpec do
 
       it "should return :ok when the user doesn't exist" do
         user = Factory.build(:user)
+
         Share.delete(user, shared.bot)
         |> should(eq :ok)
       end
 
       it "should return :ok when the bot doesn't exist" do
         bot = Factory.build(:bot)
+
         Share.delete(shared.user, bot)
         |> should(eq :ok)
       end
@@ -170,12 +175,12 @@ defmodule Wocky.Bot.ShareSpec do
         refute is_shared_sp(shared.owner, shared.bot)
       end
     end
-
   end
 
   defp is_shared_sp(user, bot) do
     {:ok, u} = Ecto.UUID.dump(user.id)
     {:ok, b} = Ecto.UUID.dump(bot.id)
+
     Repo
     |> SQL.query!("SELECT is_shared($1, $2)", [u, b])
     |> Map.get(:rows)

@@ -23,7 +23,7 @@ defmodule Wocky.TROS.TestStore do
     jid(luser: owner, lserver: lserver) = owner_jid
     file_jid = TROS.make_jid(owner, lserver, file_id)
     reference_url = TROS.make_url(file_jid)
-    url =  "http://localhost/some/file/location"
+    url = "http://localhost/some/file/location"
 
     resp_fields = resp_fields(:put, url, reference_url)
 
@@ -36,7 +36,7 @@ defmodule Wocky.TROS.TestStore do
 
   defp resp_fields(method, url, reference_url) do
     [
-      {"method", method |> to_string |> String.upcase},
+      {"method", method |> to_string |> String.upcase()},
       {"url", url},
       {"reference_url", reference_url}
     ]

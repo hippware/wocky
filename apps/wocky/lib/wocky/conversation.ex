@@ -13,8 +13,8 @@ defmodule Wocky.Conversation do
   @foreign_key_type :binary_id
   schema "conversations" do
     field :other_jid, :string
-    field :message,   :binary
-    field :outgoing,  :boolean
+    field :message, :binary
+    field :outgoing, :boolean
 
     belongs_to :user, User
 
@@ -24,19 +24,19 @@ defmodule Wocky.Conversation do
   @type mam_id :: non_neg_integer
 
   @type t :: %Conversation{
-    id:         integer,
-    user_id:    User.id,
-    other_jid:  binary,
-    message:    binary,
-    outgoing:   boolean,
-    created_at: DateTime.t,
-    updated_at: DateTime.t
-  }
+          id: integer,
+          user_id: User.id(),
+          other_jid: binary,
+          message: binary,
+          outgoing: boolean,
+          created_at: DateTime.t(),
+          updated_at: DateTime.t()
+        }
 
   @change_fields [:message, :outgoing]
 
   @doc "Write a conversation record to the database"
-  @spec put(mam_id, User.id, binary, binary, boolean) :: :ok
+  @spec put(mam_id, User.id(), binary, binary, boolean) :: :ok
   def put(id, user_id, other_jid, message, outgoing) do
     conversation = %Conversation{
       id: id,
@@ -45,17 +45,23 @@ defmodule Wocky.Conversation do
       message: message,
       outgoing: outgoing
     }
+
     Repo.insert!(
       conversation,
-      on_conflict: [set: conversation
-                         |> Map.take(@change_fields)
-                         |> Map.put(:updated_at, DateTime.utc_now)
-                         |> Map.to_list],
-      conflict_target: [:user_id, :other_jid])
+      on_conflict: [
+        set:
+          conversation
+          |> Map.take(@change_fields)
+          |> Map.put(:updated_at, DateTime.utc_now())
+          |> Map.to_list()
+      ],
+      conflict_target: [:user_id, :other_jid]
+    )
+
     :ok
   end
 
-  @spec get_id(User.id, JID.literal_jid) :: integer | nil
+  @spec get_id(User.id(), JID.literal_jid()) :: integer | nil
   def get_id(user_id, other_jid) do
     conversation =
       Repo.get_by(
@@ -70,7 +76,7 @@ defmodule Wocky.Conversation do
     end
   end
 
-  @spec find(User.id) :: [t]
+  @spec find(User.id()) :: [t]
   def find(user_id) do
     user_id
     |> with_user()
@@ -78,22 +84,22 @@ defmodule Wocky.Conversation do
     |> Repo.all()
   end
 
-  @spec with_user(User.id) :: Queryable.t
+  @spec with_user(User.id()) :: Queryable.t()
   def with_user(user_id) do
     Conversation
     |> where(user_id: ^user_id)
   end
 
-  @spec delete_user_pair(User.t, User.t) :: :ok
+  @spec delete_user_pair(User.t(), User.t()) :: :ok
   def delete_user_pair(a, b) do
     other_jid =
       b
-      |> User.to_jid
-      |> JID.to_binary
+      |> User.to_jid()
+      |> JID.to_binary()
 
     Conversation
     |> where([c], c.user_id == ^a.id and c.other_jid == ^other_jid)
-    |> Repo.delete_all
+    |> Repo.delete_all()
 
     :ok
   end

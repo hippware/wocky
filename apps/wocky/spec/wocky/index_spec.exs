@@ -10,10 +10,10 @@ defmodule Wocky.IndexSpec do
   alias Wocky.Repo.ID
 
   let :indexer, do: GenServer.whereis(:wocky_index)
-  let! :id, do: ID.new
+  let! :id, do: ID.new()
 
   before do
-    TestIndexer.reset
+    TestIndexer.reset()
   end
 
   describe "geosearch/2" do
@@ -46,9 +46,9 @@ defmodule Wocky.IndexSpec do
       _bot = Factory.insert(:bot, user: user)
     end
 
-    it do: :bogus |> Index.reindex |> should(be_error_result())
-    it do: :users |> Index.reindex |> should(eq :ok)
-    it do: :bots |> Index.reindex |> should(eq :ok)
+    it do: :bogus |> Index.reindex() |> should(be_error_result())
+    it do: :users |> Index.reindex() |> should(eq :ok)
+    it do: :bots |> Index.reindex() |> should(eq :ok)
   end
 
   describe "update/3" do
@@ -57,7 +57,10 @@ defmodule Wocky.IndexSpec do
         Index.update(:user, id(), Factory.build(:user))
       end
 
-      it do: assert [{_, :users, :update, _}] = TestIndexer.get_index_operations
+      it do:
+           assert(
+             [{_, :users, :update, _}] = TestIndexer.get_index_operations()
+           )
     end
 
     context "bots" do
@@ -65,7 +68,8 @@ defmodule Wocky.IndexSpec do
         Index.update(:bot, id(), Factory.build(:bot))
       end
 
-      it do: assert [{_, :bots, :update, _}] = TestIndexer.get_index_operations
+      it do:
+           assert([{_, :bots, :update, _}] = TestIndexer.get_index_operations())
     end
   end
 
@@ -75,7 +79,10 @@ defmodule Wocky.IndexSpec do
         Index.remove(:user, id())
       end
 
-      it do: assert [{_, :users, :delete, nil}] = TestIndexer.get_index_operations
+      it do:
+           assert(
+             [{_, :users, :delete, nil}] = TestIndexer.get_index_operations()
+           )
     end
 
     context "bots" do
@@ -83,7 +90,10 @@ defmodule Wocky.IndexSpec do
         Index.remove(:bot, id())
       end
 
-      it do: assert [{_, :bots, :delete, nil}] = TestIndexer.get_index_operations
+      it do:
+           assert(
+             [{_, :bots, :delete, nil}] = TestIndexer.get_index_operations()
+           )
     end
   end
 

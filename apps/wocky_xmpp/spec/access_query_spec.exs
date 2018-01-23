@@ -36,13 +36,16 @@ defmodule :access_query_spec do
   def check_access("loop/1", _, _) do
     {:redirect, JID.make("", "localhost", "loop/2")}
   end
+
   def check_access("loop/2", _, _) do
     {:redirect, JID.make("", "localhost", "loop/1")}
   end
+
   def check_access("overflow/" <> i, _, _) do
-    j = i |> String.to_integer |> Kernel.+(1) |> Integer.to_string
+    j = i |> String.to_integer() |> Kernel.+(1) |> Integer.to_string()
     {:redirect, JID.make("", "localhost", "overflow/" <> j)}
   end
+
   def check_access("timeout", _, _) do
     Process.sleep(3500)
     :allow
@@ -62,7 +65,7 @@ defmodule :access_query_spec do
     it do: run(bot_jid(), bob_jid(), :delete) |> should(eq :deny)
     it do: run(bot_jid(), bob_jid(), :modify) |> should(eq :deny)
 
-    let :carol_jid, do: JID.make(ID.new, "localhost")
+    let :carol_jid, do: JID.make(ID.new(), "localhost")
 
     it do: run(bot_jid(), carol_jid(), :view) |> should(eq :deny)
     it do: run(bot_jid(), carol_jid(), :delete) |> should(eq :deny)

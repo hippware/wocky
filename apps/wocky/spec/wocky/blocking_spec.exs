@@ -11,29 +11,27 @@ defmodule Wocky.BlockingSpec do
   alias Wocky.RosterItem
   alias Wocky.User
 
-
   before do
     [alice, eve] = Factory.insert_list(2, :user)
 
     RosterHelper.make_friends(alice, eve)
 
-    Enum.each(
-      [{alice, eve}, {eve, alice}],
-      fn({a, b}) ->
-        bot = Factory.insert(:bot, %{user: a})
-        Factory.insert(:item, %{bot: bot, user: b})
-        Factory.insert(:share, %{bot: bot, sharer: a, user: b})
-        Factory.insert(:subscription, %{bot: bot, user: b})
-        Factory.insert(:home_stream_item, %{user: b, reference_bot: bot})
-        Factory.insert(:home_stream_item, %{user: b, reference_user: a})
-        Factory.insert(:home_stream_item, %{user: b, reference_user: a,
-                                                     reference_bot: bot})
-      end)
+    Enum.each([{alice, eve}, {eve, alice}], fn {a, b} ->
+      bot = Factory.insert(:bot, %{user: a})
+      Factory.insert(:item, %{bot: bot, user: b})
+      Factory.insert(:share, %{bot: bot, sharer: a, user: b})
+      Factory.insert(:subscription, %{bot: bot, user: b})
+      Factory.insert(:home_stream_item, %{user: b, reference_bot: bot})
+      Factory.insert(:home_stream_item, %{user: b, reference_user: a})
 
-    {:ok,
-     alice: alice,
-     eve: eve
-    }
+      Factory.insert(:home_stream_item, %{
+        user: b,
+        reference_user: a,
+        reference_bot: bot
+      })
+    end)
+
+    {:ok, alice: alice, eve: eve}
   end
 
   describe "block/2" do
@@ -55,13 +53,14 @@ defmodule Wocky.BlockingSpec do
       it "should remove all HS references for the blocked user's bots and msgs" do
         HomeStreamItem.get(shared.alice.id)
         |> Enum.each(&(&1.class |> should(eq :deleted)))
+
         HomeStreamItem.get(shared.eve.id)
         |> Enum.each(&(&1.class |> should(eq :deleted)))
       end
 
       it "should delete all items on the user's bots by the blocked author" do
-        shared.alice |> User.get_owned_bots |> Item.get |> should(eq [])
-        shared.eve |> User.get_owned_bots |> Item.get |> should(eq [])
+        shared.alice |> User.get_owned_bots() |> Item.get() |> should(eq [])
+        shared.eve |> User.get_owned_bots() |> Item.get() |> should(eq [])
       end
 
       it "should delete all shares to blocked user's bots" do

@@ -16,6 +16,7 @@ defmodule Wocky.Bot.Report do
   @spec run :: nil | binary
   def run do
     {:ok, _} = Application.ensure_all_started(:wocky)
+
     if Confex.get_env(:wocky, :enable_bot_report) do
       :wocky
       |> Confex.get_env(:bot_report_days)
@@ -26,19 +27,19 @@ defmodule Wocky.Bot.Report do
 
   @spec generate_report(non_neg_integer) :: binary
   def generate_report(days) do
-    now = Timex.now
+    now = Timex.now()
     generate_report(Timex.shift(now, days: -days), now)
   end
 
-  @spec generate_report(DateTime.t, DateTime.t) :: binary
+  @spec generate_report(DateTime.t(), DateTime.t()) :: binary
   def generate_report(first, last) do
     {:ok, csv} =
-      Repo.transaction fn ->
+      Repo.transaction(fn ->
         first
         |> get_bot_data(last)
         |> add_header()
-        |> Enum.join
-      end
+        |> Enum.join()
+      end)
 
     csv
   end
@@ -50,17 +51,19 @@ defmodule Wocky.Bot.Report do
 
     :wocky
     |> Confex.get_env(:slack_token)
-    |> Slack.client
-    |> File.upload(content: report,
-                   filename: "weekly_bot_report_#{server}.csv",
-                   title: "Weekly Bot Report for #{server}",
-                   filetype: "csv",
-                   channels: channel)
+    |> Slack.client()
+    |> File.upload(
+      content: report,
+      filename: "weekly_bot_report_#{server}.csv",
+      title: "Weekly Bot Report for #{server}",
+      filetype: "csv",
+      channels: channel
+    )
   end
 
   defp add_header(data) do
     [@header]
-    |> CSV.encode
+    |> CSV.encode()
     |> Stream.concat(data)
   end
 
@@ -68,9 +71,9 @@ defmodule Wocky.Bot.Report do
     Bot
     |> where([b], b.created_at > ^first and b.created_at <= ^last)
     |> where([b], not b.pending)
-    |> Repo.stream
+    |> Repo.stream()
     |> Stream.map(&format_bot/1)
-    |> CSV.encode
+    |> CSV.encode()
   end
 
   defp format_bot(%Bot{} = bot) do
@@ -96,5 +99,5 @@ defmodule Wocky.Bot.Report do
   defp vis_string(true), do: "public"
   defp vis_string(_), do: "private"
 
-  defp word_count(words), do: words |> String.split |> Enum.count
+  defp word_count(words), do: words |> String.split() |> Enum.count()
 end

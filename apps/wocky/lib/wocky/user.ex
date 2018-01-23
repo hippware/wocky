@@ -6,7 +6,7 @@ defmodule Wocky.User do
   use Wocky.JID
   use Wocky.Repo.Model
 
-  import OK, only: ["~>>": 2]
+  import OK, only: [~>>: 2]
 
   alias Ecto.Queryable
   alias Wocky.Bot
@@ -29,22 +29,34 @@ defmodule Wocky.User do
   @primary_key {:id, :binary_id, autogenerate: false}
 
   schema "users" do
-    field :username,     :string # User ID (userpart of JID)
-    field :server,       :string # User Server (domainpart of JID)
-    field :resource,     :string, virtual: true
-    field :provider,     :string # The external auth provider
-    field :external_id,  :string # The user ID received from the provider
-    field :handle,       :string # User handle (as seen by other users)
-    field :avatar,       :string # ID of file containing user's avatar
-    field :first_name,   :string # User's first name
-    field :last_name,    :string # User's last name
-    field :phone_number, :string # The user's phone number
-                                 # (also from auth provider)
-    field :email,        :string # User's email address
-    field :tagline,      :string # User's tagline
-    field :password,     :string # Password hash
+    # User ID (userpart of JID)
+    field :username, :string
+    # User Server (domainpart of JID)
+    field :server, :string
+    field :resource, :string, virtual: true
+    # The external auth provider
+    field :provider, :string
+    # The user ID received from the provider
+    field :external_id, :string
+    # User handle (as seen by other users)
+    field :handle, :string
+    # ID of file containing user's avatar
+    field :avatar, :string
+    # User's first name
+    field :first_name, :string
+    # User's last name
+    field :last_name, :string
+    # The user's phone number
+    field :phone_number, :string
+    # (also from auth provider)
+    # User's email address
+    field :email, :string
+    # User's tagline
+    field :tagline, :string
+    # Password hash
+    field :password, :string
     field :pass_details, :string
-    field :roles,        {:array, :string}, default: []
+    field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
 
     timestamps()
@@ -60,41 +72,57 @@ defmodule Wocky.User do
     has_many :tokens, AuthToken
     has_many :tros_metadatas, TROSMetadata
 
-    many_to_many :shares, Bot, join_through: Share
-    many_to_many :subscriptions, Bot, join_through: Subscription
+    many_to_many(:shares, Bot, join_through: Share)
+    many_to_many(:subscriptions, Bot, join_through: Subscription)
   end
 
-  @type id           :: binary
-  @type username     :: binary
-  @type server       :: binary
-  @type resource     :: binary
-  @type provider     :: binary
-  @type external_id  :: binary
+  @type id :: binary
+  @type username :: binary
+  @type server :: binary
+  @type resource :: binary
+  @type provider :: binary
+  @type external_id :: binary
   @type phone_number :: binary
-  @type handle       :: binary
-  @type role         :: binary
+  @type handle :: binary
+  @type role :: binary
 
   @type t :: %User{
-    id:             id,
-    username:       username,
-    server:         server,
-    handle:         nil | handle,
-    avatar:         nil | binary,
-    first_name:     nil | binary,
-    last_name:      nil | binary,
-    email:          nil | binary,
-    tagline:        nil | binary,
-    provider:       nil | provider,
-    external_id:    nil | external_id,
-    phone_number:   nil | phone_number,
-    roles:          [role],
-    welcome_sent:   boolean
-  }
+          id: id,
+          username: username,
+          server: server,
+          handle: nil | handle,
+          avatar: nil | binary,
+          first_name: nil | binary,
+          last_name: nil | binary,
+          email: nil | binary,
+          tagline: nil | binary,
+          provider: nil | provider,
+          external_id: nil | external_id,
+          phone_number: nil | phone_number,
+          roles: [role],
+          welcome_sent: boolean
+        }
 
-  @register_fields [:username, :server, :provider, :external_id,
-                    :phone_number, :password, :pass_details]
-  @update_fields [:handle, :avatar, :first_name, :last_name,
-                  :email, :tagline, :roles, :external_id, :provider]
+  @register_fields [
+    :username,
+    :server,
+    :provider,
+    :external_id,
+    :phone_number,
+    :password,
+    :pass_details
+  ]
+  @update_fields [
+    :handle,
+    :avatar,
+    :first_name,
+    :last_name,
+    :email,
+    :tagline,
+    :roles,
+    :external_id,
+    :provider
+  ]
   @max_register_retries 5
 
   @min_handle_len 3
@@ -110,13 +138,14 @@ defmodule Wocky.User do
     for field <- @update_fields, do: to_string(field)
   end
 
-  @spec to_jid(t, binary | nil) :: JID.t
+  @spec to_jid(t, binary | nil) :: JID.t()
   def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
     JID.make(user, server, resource || (u.resource || ""))
   end
 
-  @spec get_by_jid(JID.t) :: t | nil
+  @spec get_by_jid(JID.t()) :: t | nil
   def get_by_jid(jid(luser: "")), do: nil
+
   def get_by_jid(jid(luser: id, lresource: resource)) do
     case Repo.get(User, id) do
       nil -> nil
@@ -130,14 +159,16 @@ defmodule Wocky.User do
   """
   @spec register(username, server, binary, binary) :: {:ok, t} | {:error, any}
   def register(username, server, password, pass_details) do
-    %{username: username,
+    %{
+      username: username,
       server: server,
       provider: "local",
       external_id: username,
       password: password,
-      pass_details: pass_details}
+      pass_details: pass_details
+    }
     |> register_changeset()
-    |> Repo.insert
+    |> Repo.insert()
   end
 
   @doc """
@@ -145,7 +176,7 @@ defmodule Wocky.User do
   phone number.
   """
   @spec register_external(server, provider, external_id, phone_number) ::
-    {:ok, {username, server, boolean}} | no_return
+          {:ok, {username, server, boolean}} | no_return
   def register_external(server, provider, external_id, phone_number) do
     {:ok, do_register(server, provider, external_id, phone_number, 0)}
   end
@@ -163,52 +194,59 @@ defmodule Wocky.User do
   defp do_register(_, _, _, _, @max_register_retries) do
     raise "Exceeded maximum register retries"
   end
+
   defp do_register(server, provider, external_id, phone_number, retries) do
     case Repo.get_by(User, external_id: external_id, provider: provider) do
       nil ->
         case Repo.get_by(User, phone_number: phone_number) do
           nil ->
             register_new(server, provider, external_id, phone_number, retries)
+
           user ->
-            __MODULE__.update(user.id, %{provider: provider,
-                                         external_id: external_id,
-                                         phone_number: phone_number})
+            __MODULE__.update(user.id, %{
+              provider: provider,
+              external_id: external_id,
+              phone_number: phone_number
+            })
+
             {user.username, user.server, false}
         end
+
       user ->
         {user.username, user.server, false}
     end
   end
 
   defp register_new(server, provider, external_id, phone_number, retries) do
-    user =
-      %{username: ID.new,
-       server: server,
-       provider: provider,
-       external_id: external_id,
-       phone_number: phone_number}
+    user = %{
+      username: ID.new(),
+      server: server,
+      provider: provider,
+      external_id: external_id,
+      phone_number: phone_number
+    }
 
     result =
       user
       |> register_changeset()
-      |> Repo.insert
+      |> Repo.insert()
 
     case result do
       {:ok, _} ->
         {user.username, user.server, true}
+
       {:error, e} ->
-        Logger.debug("registration failed with error: #{inspect e}")
-        do_register(server, provider, external_id,
-         phone_number, retries + 1)
+        Logger.debug("registration failed with error: #{inspect(e)}")
+        do_register(server, provider, external_id, phone_number, retries + 1)
     end
   end
 
-
   def register_changeset(params) do
+    # TODO
     %User{}
     |> cast(params, @register_fields)
     |> validate_required([:username, :server, :provider, :external_id])
-    |> validate_format(:phone_number, ~r//) # TODO
+    |> validate_format(:phone_number, ~r//)
     |> validate_change(:username, &validate_username/2)
     |> put_change(:id, params[:username])
     |> unique_constraint(:external_id)
@@ -222,33 +260,32 @@ defmodule Wocky.User do
     end
   end
 
-  @spec subscribed?(t, Bot.t) :: boolean
+  @spec subscribed?(t, Bot.t()) :: boolean
   def subscribed?(user, bot) do
-    owns?(user, bot) ||
-    Subscription.exists?(user, bot)
+    owns?(user, bot) || Subscription.exists?(user, bot)
   end
 
   @doc "Returns all bots that the user subscribes to"
-  @spec get_subscriptions(t) :: [Bot.t]
+  @spec get_subscriptions(t) :: [Bot.t()]
   def get_subscriptions(user) do
     user
     |> subscribed_bots_query()
-    |> Repo.all
+    |> Repo.all()
   end
 
-  @spec bot_count(User.t) :: non_neg_integer
+  @spec bot_count(User.t()) :: non_neg_integer
   def bot_count(user) do
     user
     |> Ecto.assoc(:bots)
     |> where(pending: false)
     |> select([b], count(b.id))
-    |> Repo.one!
+    |> Repo.one!()
   end
 
-  @spec owns?(t, Bot.t) :: boolean
+  @spec owns?(t, Bot.t()) :: boolean
   def owns?(user, bot), do: user.id == bot.user_id
 
-  @spec can_access?(t, Bot.t) :: boolean
+  @spec can_access?(t, Bot.t()) :: boolean
   def can_access?(user, bot),
     do: owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot)
 
@@ -257,33 +294,32 @@ defmodule Wocky.User do
       * Bots user owns
       * Bots user is subscribed to
   """
-  @spec searchable?(t, Bot.t) :: boolean
+  @spec searchable?(t, Bot.t()) :: boolean
   def searchable?(user, bot) do
-    owns?(user, bot) ||
-    Subscription.exists?(user, bot)
+    owns?(user, bot) || Subscription.exists?(user, bot)
   end
 
   @doc "Returns all bots that the user owns"
-  @spec get_owned_bots(t) :: [Bot.t]
+  @spec get_owned_bots(t) :: [Bot.t()]
   def get_owned_bots(user) do
     user
     |> owned_bots_query()
     |> order_by(asc: :updated_at)
-    |> Repo.all
+    |> Repo.all()
   end
 
   @doc "Returns all bots that the user owns and has set to 'follow me'"
-  @spec get_owned_bots_with_follow_me(t) :: [Bot.t]
+  @spec get_owned_bots_with_follow_me(t) :: [Bot.t()]
   def get_owned_bots_with_follow_me(user) do
     user
     |> Ecto.assoc(:bots)
     |> with_follow_me()
-    |> Repo.all
+    |> Repo.all()
   end
 
   defp with_follow_me(query) do
     from b in query,
-      where: b.follow_me == ^true and b.follow_me_expiry > ^DateTime.utc_now
+      where: b.follow_me == ^true and b.follow_me_expiry > ^DateTime.utc_now()
   end
 
   @doc """
@@ -298,6 +334,7 @@ defmodule Wocky.User do
 
       struct ->
         changeset = changeset(struct, fields)
+
         case Repo.update(changeset) do
           {:ok, user} ->
             maybe_send_welcome(user)
@@ -340,20 +377,22 @@ defmodule Wocky.User do
     reserved =
       Enum.any?(
         reserved_handles(),
-        &Regex.match?(~r/.*#{&1}.*/, String.downcase(handle)))
+        &Regex.match?(~r/.*#{&1}.*/, String.downcase(handle))
+      )
 
     cond do
       reserved ->
         [handle: "unavailable"]
+
       Regex.run(~r/[a-zA-Z0-9_]+/, handle) != [handle] ->
         [handle: "invalid characters"]
+
       true ->
         []
     end
   end
 
-  defp reserved_handles,
-    do: Application.get_env(:wocky, :reserved_handles, [])
+  defp reserved_handles, do: Application.get_env(:wocky, :reserved_handles, [])
 
   defp validate_name(field, name) do
     # regex implementing the rules at
@@ -364,26 +403,31 @@ defmodule Wocky.User do
     # at the start and end of the string without consuming them.
     # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
     # and other characters).
-    if Regex.run(
-      ~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])/u,
-      name) != [name] do
-        [{field, "invalid characters"}]
+    if Regex.run(~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])/u, name) !=
+         [name] do
+      [{field, "invalid characters"}]
     else
-        []
+      []
     end
   end
 
   defp validate_avatar(:avatar, user, avatar) do
     case do_validate_avatar(user, avatar) do
-      {:ok, _} -> []
+      {:ok, _} ->
+        []
+
       {:error, :not_found} ->
         [avatar: "does not exist"]
+
       {:error, :invalid_file} ->
         [avatar: "has an invalid file name (must be UUID)"]
+
       {:error, :invalid_url} ->
         [avatar: "is an invalid file URL"]
+
       {:error, :not_local_file} ->
         [avatar: "is not a local file"]
+
       {:error, :not_file_owner} ->
         [avatar: "is not owned by the user"]
     end
@@ -391,7 +435,7 @@ defmodule Wocky.User do
 
   defp do_validate_avatar(user, avatar) do
     Avatar.prepare(avatar)
-    ~>> Avatar.check_valid_filename
+    ~>> Avatar.check_valid_filename()
     ~>> Avatar.check_is_local(user.server)
     ~>> Avatar.check_owner(user.id)
   end
@@ -425,8 +469,9 @@ defmodule Wocky.User do
   def add_role(id, role) do
     User
     |> where(username: ^id)
-    |> where([q], not ^role in q.roles)
+    |> where([q], ^role not in q.roles)
     |> Repo.update_all(push: [roles: role])
+
     :ok
   end
 
@@ -435,33 +480,38 @@ defmodule Wocky.User do
     User
     |> where(username: ^id)
     |> Repo.update_all(pull: [roles: role])
+
     :ok
   end
 
-  @spec owned_bots_query(User.t) :: Queryable.t
+  @spec owned_bots_query(User.t()) :: Queryable.t()
   def owned_bots_query(user) do
     user
     |> Ecto.assoc(:bots)
     |> where(pending: false)
   end
 
-  @spec searchable_bots_query(User.t) :: Queryable.t
+  @spec searchable_bots_query(User.t()) :: Queryable.t()
   def searchable_bots_query(user) do
     Bot
     |> where([b], fragment("is_searchable(?, ?)", ^user.id, b.id))
   end
 
-  @spec subscribed_bots_query(User.t) :: Queryable.t
+  @spec subscribed_bots_query(User.t()) :: Queryable.t()
   def subscribed_bots_query(user) do
     Bot
     |> where(pending: false)
-    |> join(:left, [b], s in Subscription,
-            b.id == s.bot_id and s.user_id == ^user.id)
+    |> join(
+      :left,
+      [b],
+      s in Subscription,
+      b.id == s.bot_id and s.user_id == ^user.id
+    )
     |> where([b, s], not is_nil(s.user_id))
   end
 
   @doc "Generate a full name for anywhere it needs pretty-printing"
-  @spec full_name(User.t) :: String.t
+  @spec full_name(User.t()) :: String.t()
   def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
 
   def no_index_role, do: @no_index_role
@@ -469,15 +519,17 @@ defmodule Wocky.User do
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
   defp maybe_send_welcome(%User{email: nil}), do: :ok
+
   defp maybe_send_welcome(%User{} = user) do
     Email.send_welcome_email(user)
+
     user
     |> cast(%{welcome_sent: true}, [:welcome_sent])
-    |> Repo.update
+    |> Repo.update()
   end
 
   defp maybe_update_index(user) do
-    Enum.member?(user.roles, @no_index_role)
-    || Index.update(:user, user.id, user)
+    Enum.member?(user.roles, @no_index_role) ||
+      Index.update(:user, user.id, user)
   end
 end

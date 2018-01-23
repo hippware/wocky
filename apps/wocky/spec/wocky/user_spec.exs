@@ -23,16 +23,16 @@ defmodule Wocky.UserSpec do
 
   before do
     user = Factory.insert(:user, resource: "testing")
+
     {:ok,
      user: user,
      id: user.id,
      external_id: user.external_id,
-     phone_number: user.phone_number
-    }
+     phone_number: user.phone_number}
   end
 
   describe "valid_update_fields/0" do
-    subject do: User.valid_update_fields
+    subject do: User.valid_update_fields()
 
     it do: should(have_count 9)
   end
@@ -47,20 +47,20 @@ defmodule Wocky.UserSpec do
 
   describe "get_by_jid/1" do
     context "when the user exists" do
-      subject do: shared.user |> User.to_jid |> User.get_by_jid
+      subject do: shared.user |> User.to_jid() |> User.get_by_jid()
 
       it do: subject().id |> should(eq shared.user.id)
       it do: subject().resource |> should(eq shared.user.resource)
     end
 
     context "when the user does not exist" do
-      subject do: ID.new |> JID.make(shared.server) |> User.get_by_jid
+      subject do: ID.new() |> JID.make(shared.server) |> User.get_by_jid()
 
       it do: should(be_nil())
     end
 
     context "when the jid has no user ID" do
-      subject do: "" |> JID.make(shared.server) |> User.get_by_jid
+      subject do: "" |> JID.make(shared.server) |> User.get_by_jid()
 
       it do: should(be_nil())
     end
@@ -68,43 +68,49 @@ defmodule Wocky.UserSpec do
 
   describe "register_changeset/1 validations" do
     it "should pass with valid attributes" do
-      %{username: ID.new, server: "foo", provider: "local", external_id: "bar"}
-      |> User.register_changeset
+      %{
+        username: ID.new(),
+        server: "foo",
+        provider: "local",
+        external_id: "bar"
+      }
+      |> User.register_changeset()
       |> should(be_valid())
     end
 
     it "should fail if the username is missing" do
       %{server: "foo", eternal_id: "bar"}
-      |> User.register_changeset
+      |> User.register_changeset()
       |> should(have_errors([:username]))
     end
 
     it "should fail with an invalid username" do
       %{username: "alice", server: "foo", external_id: "bar"}
-      |> User.register_changeset
+      |> User.register_changeset()
       |> should(have_errors([:username]))
     end
 
     it "should fail if the server is missing" do
-      %{username: ID.new, eternal_id: "bar"}
-      |> User.register_changeset
+      %{username: ID.new(), eternal_id: "bar"}
+      |> User.register_changeset()
       |> should(have_errors([:server]))
     end
 
     it "should fail if the external ID is missing" do
-      %{username: ID.new, server: "foo"}
-      |> User.register_changeset
+      %{username: ID.new(), server: "foo"}
+      |> User.register_changeset()
       |> should(have_errors([:external_id]))
     end
 
     it "should set the ID to the username" do
-      id = ID.new
+      id = ID.new()
 
-      changeset = User.register_changeset(%{
-            username: id,
-            server: "foo",
-            eternal_id: "bar"
-      })
+      changeset =
+        User.register_changeset(%{
+          username: id,
+          server: "foo",
+          eternal_id: "bar"
+        })
 
       changeset.changes.id |> should(eq changeset.changes.username)
       changeset.changes.id |> should(eq id)
@@ -115,8 +121,12 @@ defmodule Wocky.UserSpec do
     context "when the user already exists with the same provider/extID" do
       before do
         {:ok, result} =
-          User.register_external("another_server", "local",
-                                 shared.external_id, "+15551234567")
+          User.register_external(
+            "another_server",
+            "local",
+            shared.external_id,
+            "+15551234567"
+          )
 
         {:shared, result: result}
       end
@@ -140,10 +150,15 @@ defmodule Wocky.UserSpec do
 
     context "when the user already exists with the same phone number" do
       before do
-        external_id = Code.isbn13
+        external_id = Code.isbn13()
+
         {:ok, result} =
-          User.register_external("another_server", "firebase",
-                                 external_id, shared.phone_number)
+          User.register_external(
+            "another_server",
+            "firebase",
+            external_id,
+            shared.phone_number
+          )
 
         {:shared, external_id: external_id, result: result}
       end
@@ -174,8 +189,12 @@ defmodule Wocky.UserSpec do
     context "when the user does not exist" do
       before do
         {:ok, result} =
-          User.register_external(shared.server, "firebase",
-                                 ID.new, "+15551234567")
+          User.register_external(
+            shared.server,
+            "firebase",
+            ID.new(),
+            "+15551234567"
+          )
 
         {:shared, result: result}
       end
@@ -205,7 +224,7 @@ defmodule Wocky.UserSpec do
 
   describe "register/4" do
     before do
-      id = ID.new
+      id = ID.new()
       result = User.register(id, shared.server, "password", "password")
       {:ok, id: id, result: result}
     end
@@ -315,9 +334,9 @@ defmodule Wocky.UserSpec do
     context "when there is a pre-existing matching handle regardless of case" do
       subject do
         :user
-        |> Factory.insert
+        |> Factory.insert()
         |> User.changeset(%{handle: String.upcase(shared.user.handle)})
-        |> Repo.update
+        |> Repo.update()
       end
 
       it do: should(be_error_result())
@@ -327,9 +346,9 @@ defmodule Wocky.UserSpec do
     context "avatar validations" do
       context "with invalid data" do
         before do
-          file_id = ID.new
+          file_id = ID.new()
           url = TROS.make_url(shared.server, file_id)
-          Metadata.put(file_id, ID.new, "public")
+          Metadata.put(file_id, ID.new(), "public")
           {:ok, file_id: file_id, url: url}
         end
 
@@ -345,13 +364,13 @@ defmodule Wocky.UserSpec do
 
         it "should fail with a non-existing avatar URL" do
           shared.user
-          |> User.changeset(%{avatar: TROS.make_url(shared.server, ID.new)})
+          |> User.changeset(%{avatar: TROS.make_url(shared.server, ID.new())})
           |> should(have_errors([:avatar]))
         end
 
         it "should fail with a non-local avatar URL" do
           shared.user
-          |> User.changeset(%{avatar: TROS.make_url("otherhost", ID.new)})
+          |> User.changeset(%{avatar: TROS.make_url("otherhost", ID.new())})
           |> should(have_errors([:avatar]))
         end
 
@@ -365,7 +384,7 @@ defmodule Wocky.UserSpec do
 
     context "with valid data" do
       before do
-        file_id = ID.new
+        file_id = ID.new()
         url = TROS.make_url(shared.server, file_id)
         Metadata.put(file_id, shared.user.id, "public")
         {:ok, file_id: file_id, url: url}
@@ -385,13 +404,13 @@ defmodule Wocky.UserSpec do
 
   describe "tests using TestIndexer", async: false do
     before do
-      TestIndexer.reset
+      TestIndexer.reset()
     end
 
     describe "update/2", async: false do
       before do
         :meck.new(Email)
-        :meck.expect(Email, :send_welcome_email, fn(%User{}) -> :ok end)
+        :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
       end
 
       finally do
@@ -401,15 +420,15 @@ defmodule Wocky.UserSpec do
       context "when the user does not exist" do
         before do
           fields = %{
-            resource: ID.new,
-            handle: Factory.new_handle,
-            first_name: Name.first_name,
-            last_name: Name.last_name,
-            email: Internet.email,
-            tagline: Lorem.sentence
+            resource: ID.new(),
+            handle: Factory.new_handle(),
+            first_name: Name.first_name(),
+            last_name: Name.last_name(),
+            email: Internet.email(),
+            tagline: Lorem.sentence()
           }
 
-          result = User.update(ID.new, fields)
+          result = User.update(ID.new(), fields)
           {:ok, fields: fields, result: result}
         end
 
@@ -421,12 +440,12 @@ defmodule Wocky.UserSpec do
       context "standard update" do
         before do
           fields = %{
-            resource: ID.new,
-            handle: Factory.new_handle,
-            first_name: Name.first_name,
-            last_name: Name.last_name,
-            email: Internet.email,
-            tagline: Lorem.sentence
+            resource: ID.new(),
+            handle: Factory.new_handle(),
+            first_name: Name.first_name(),
+            last_name: Name.last_name(),
+            email: Internet.email(),
+            tagline: Lorem.sentence()
           }
 
           result = User.update(shared.id, fields)
@@ -453,7 +472,7 @@ defmodule Wocky.UserSpec do
 
         context "full text search index" do
           it "should be updated" do
-            TestIndexer.get_index_operations |> should_not(be_empty())
+            TestIndexer.get_index_operations() |> should_not(be_empty())
           end
         end
 
@@ -469,7 +488,7 @@ defmodule Wocky.UserSpec do
 
         context "when a valid avatar is passed" do
           before do
-            avatar_id = ID.new
+            avatar_id = ID.new()
             avatar_url = TROS.make_url(shared.server, avatar_id)
 
             Metadata.put(avatar_id, shared.user.id, "public")
@@ -501,7 +520,7 @@ defmodule Wocky.UserSpec do
             before do
               shared.user
               |> cast(%{avatar: shared.avatar_url}, [:avatar])
-              |> Repo.update!
+              |> Repo.update!()
 
               result = User.update(shared.id, %{avatar: shared.avatar_url})
               {:ok, result: result}
@@ -523,13 +542,13 @@ defmodule Wocky.UserSpec do
 
           context "and the user has a valid avatar" do
             before do
-              avatar_id = ID.new
+              avatar_id = ID.new()
               avatar_url = TROS.make_url(shared.server, avatar_id)
               Metadata.put(avatar_id, shared.user.id, "public")
 
               shared.user
               |> cast(%{avatar: avatar_url}, [:avatar])
-              |> Repo.update!
+              |> Repo.update!()
 
               result = User.update(shared.id, %{avatar: shared.avatar_url})
               {:ok, result: result, old_avatar_id: avatar_id}
@@ -553,14 +572,15 @@ defmodule Wocky.UserSpec do
 
       context "non-indexed user" do
         before do
-          user = Factory.insert(:user, %{roles: [User.no_index_role]})
+          user = Factory.insert(:user, %{roles: [User.no_index_role()]})
+
           fields = %{
-            resource: ID.new,
-            handle: Factory.new_handle,
-            first_name: Name.first_name,
-            last_name: Name.last_name,
-            email: Internet.email,
-            tagline: Lorem.sentence
+            resource: ID.new(),
+            handle: Factory.new_handle(),
+            first_name: Name.first_name(),
+            last_name: Name.last_name(),
+            email: Internet.email(),
+            tagline: Lorem.sentence()
           }
 
           User.update(user.id, fields)
@@ -568,7 +588,7 @@ defmodule Wocky.UserSpec do
         end
 
         it "should not update the index" do
-          TestIndexer.get_index_operations |> should(be_empty())
+          TestIndexer.get_index_operations() |> should(be_empty())
         end
       end
 
@@ -577,7 +597,7 @@ defmodule Wocky.UserSpec do
           user = Factory.insert(:user, %{welcome_sent: true})
 
           fields = %{
-            email: Internet.email,
+            email: Internet.email()
           }
 
           User.update(user.id, fields)
@@ -594,7 +614,7 @@ defmodule Wocky.UserSpec do
           user = Factory.insert(:user, %{email: nil})
 
           fields = %{
-            first_name: Name.first_name
+            first_name: Name.first_name()
           }
 
           User.update(user.id, fields)
@@ -609,7 +629,7 @@ defmodule Wocky.UserSpec do
 
     describe "delete/1" do
       before do
-        {:ok, _} = Token.assign(shared.id, ID.new)
+        {:ok, _} = Token.assign(shared.id, ID.new())
         result = User.delete(shared.id)
         {:ok, result: result}
       end
@@ -623,12 +643,12 @@ defmodule Wocky.UserSpec do
       end
 
       it "should succeed if the user does not exist" do
-        ID.new |> User.delete |> should(eq :ok)
+        ID.new() |> User.delete() |> should(eq :ok)
       end
 
       context "full text search index" do
         it "should be updated" do
-          TestIndexer.get_index_operations |> should_not(be_empty())
+          TestIndexer.get_index_operations() |> should_not(be_empty())
         end
       end
 
@@ -639,12 +659,11 @@ defmodule Wocky.UserSpec do
   end
 
   describe "set_location/5" do
-
   end
 
   describe "add and remove roles" do
     before do
-      role = Lorem.word
+      role = Lorem.word()
       role2 = "role2"
       result = User.add_role(shared.id, role)
       result2 = User.add_role(shared.id, role2)
@@ -656,7 +675,7 @@ defmodule Wocky.UserSpec do
         User
         |> Repo.get(shared.id)
         |> Map.get(:roles)
-        |> Enum.sort
+        |> Enum.sort()
         |> should(eq Enum.sort([shared.role, shared.role2]))
       end
 
@@ -667,15 +686,16 @@ defmodule Wocky.UserSpec do
 
       it "should not add re-add the same group" do
         User.add_role(shared.id, shared.role)
+
         User
         |> Repo.get(shared.id)
         |> Map.get(:roles)
-        |> Enum.sort
+        |> Enum.sort()
         |> should(eq Enum.sort([shared.role, shared.role2]))
       end
 
       it "should nd not fail when acting on an inavlid user" do
-        User.add_role(ID.new, Lorem.word) |> should(eq :ok)
+        User.add_role(ID.new(), Lorem.word()) |> should(eq :ok)
       end
     end
 
@@ -707,7 +727,7 @@ defmodule Wocky.UserSpec do
       end
 
       it "should nd not fail when acting on an inavlid user" do
-        User.remove_role(ID.new, Lorem.word) |> should(eq :ok)
+        User.remove_role(ID.new(), Lorem.word()) |> should(eq :ok)
       end
     end
   end
@@ -726,20 +746,21 @@ defmodule Wocky.UserSpec do
       Share.put(shared.user, shared_bot, other_user)
       Subscription.put(shared.user, subscribed_bot)
 
-      {:ok, [
-          other_user: other_user,
-          owned_bot: owned_bot,
-          pending_bot: pending_bot,
-          public_bot: public_bot,
-          shared_bot: shared_bot,
-          subscribed_bot: subscribed_bot,
-          unaffiliated_bot: unaffiliated_bot,
-        ]}
+      {:ok,
+       [
+         other_user: other_user,
+         owned_bot: owned_bot,
+         pending_bot: pending_bot,
+         public_bot: public_bot,
+         shared_bot: shared_bot,
+         subscribed_bot: subscribed_bot,
+         unaffiliated_bot: unaffiliated_bot
+       ]}
     end
 
     describe "owns?/2" do
-      it do: assert User.owns?(shared.user, shared.owned_bot)
-      it do: refute User.owns?(shared.user, shared.unaffiliated_bot)
+      it do: assert(User.owns?(shared.user, shared.owned_bot))
+      it do: refute(User.owns?(shared.user, shared.unaffiliated_bot))
     end
 
     describe "searchable checks" do
@@ -750,74 +771,106 @@ defmodule Wocky.UserSpec do
         followee = Factory.insert(:user)
         RosterHelper.follow(shared.user, followee)
 
-
         friends_public_bot = Factory.insert(:bot, user: friend, public: true)
         friends_private_bot = Factory.insert(:bot, user: friend)
         friends_shared_private_bot = Factory.insert(:bot, user: friend)
-        following_public_bot = Factory.insert(:bot, user: followee,
-                                              public: true)
+
+        following_public_bot =
+          Factory.insert(
+            :bot,
+            user: followee,
+            public: true
+          )
+
         following_private_bot = Factory.insert(:bot, user: followee)
         following_shared_private_bot = Factory.insert(:bot, user: followee)
 
         Share.put(shared.user, friends_shared_private_bot, friend)
         Share.put(shared.user, following_shared_private_bot, followee)
 
-        {:ok, [
-          friends_public_bot: friends_public_bot,
-          friends_private_bot: friends_private_bot,
-          friends_shared_private_bot: friends_shared_private_bot,
-          following_public_bot: following_public_bot,
-          following_private_bot: following_private_bot,
-          following_shared_private_bot: following_shared_private_bot
-        ]}
+        {:ok,
+         [
+           friends_public_bot: friends_public_bot,
+           friends_private_bot: friends_private_bot,
+           friends_shared_private_bot: friends_shared_private_bot,
+           following_public_bot: following_public_bot,
+           following_private_bot: following_private_bot,
+           following_shared_private_bot: following_shared_private_bot
+         ]}
       end
 
       describe "searchable?/2" do
-        it do: assert User.searchable?(shared.user, shared.owned_bot)
-        it do: assert User.searchable?(shared.user, shared.subscribed_bot)
-        it do: refute User.searchable?(shared.user, shared.friends_public_bot)
-        it do: refute User.searchable?(shared.user,
-                                       shared.friends_shared_private_bot)
-        it do: refute User.searchable?(shared.user, shared.following_public_bot)
+        it do: assert(User.searchable?(shared.user, shared.owned_bot))
+        it do: assert(User.searchable?(shared.user, shared.subscribed_bot))
+        it do: refute(User.searchable?(shared.user, shared.friends_public_bot))
 
-        it do: refute User.searchable?(shared.user, shared.public_bot)
-        it do: refute User.searchable?(shared.user, shared.shared_bot)
-        it do: refute User.searchable?(shared.user, shared.unaffiliated_bot)
-        it do: refute User.searchable?(shared.user, shared.friends_private_bot)
-        it do: refute User.searchable?(shared.user, shared.following_private_bot)
-        it do: refute User.searchable?(shared.user,
-                                       shared.following_shared_private_bot)
+        it do:
+             refute(
+               User.searchable?(shared.user, shared.friends_shared_private_bot)
+             )
+
+        it do:
+             refute(User.searchable?(shared.user, shared.following_public_bot))
+
+        it do: refute(User.searchable?(shared.user, shared.public_bot))
+        it do: refute(User.searchable?(shared.user, shared.shared_bot))
+        it do: refute(User.searchable?(shared.user, shared.unaffiliated_bot))
+        it do: refute(User.searchable?(shared.user, shared.friends_private_bot))
+
+        it do:
+             refute(User.searchable?(shared.user, shared.following_private_bot))
+
+        it do:
+             refute(
+               User.searchable?(
+                 shared.user,
+                 shared.following_shared_private_bot
+               )
+             )
       end
 
       describe "searchable stored procedure" do
-        it do: assert is_searchable_sp(shared.user, shared.owned_bot)
-        it do: assert is_searchable_sp(shared.user, shared.subscribed_bot)
-        it do: refute is_searchable_sp(shared.user, shared.friends_public_bot)
-        it do: refute is_searchable_sp(shared.user,
-                                       shared.friends_shared_private_bot)
-        it do: refute is_searchable_sp(shared.user, shared.following_public_bot)
+        it do: assert(is_searchable_sp(shared.user, shared.owned_bot))
+        it do: assert(is_searchable_sp(shared.user, shared.subscribed_bot))
+        it do: refute(is_searchable_sp(shared.user, shared.friends_public_bot))
 
-        it do: refute is_searchable_sp(shared.user, shared.public_bot)
-        it do: refute is_searchable_sp(shared.user, shared.shared_bot)
-        it do: refute is_searchable_sp(shared.user, shared.unaffiliated_bot)
-        it do: refute is_searchable_sp(shared.user, shared.friends_private_bot)
-        it do: refute is_searchable_sp(shared.user, shared.following_private_bot)
-        it do: refute is_searchable_sp(shared.user,
-                                       shared.following_shared_private_bot)
+        it do:
+             refute(
+               is_searchable_sp(shared.user, shared.friends_shared_private_bot)
+             )
+
+        it do:
+             refute(is_searchable_sp(shared.user, shared.following_public_bot))
+
+        it do: refute(is_searchable_sp(shared.user, shared.public_bot))
+        it do: refute(is_searchable_sp(shared.user, shared.shared_bot))
+        it do: refute(is_searchable_sp(shared.user, shared.unaffiliated_bot))
+        it do: refute(is_searchable_sp(shared.user, shared.friends_private_bot))
+
+        it do:
+             refute(is_searchable_sp(shared.user, shared.following_private_bot))
+
+        it do:
+             refute(
+               is_searchable_sp(
+                 shared.user,
+                 shared.following_shared_private_bot
+               )
+             )
       end
     end
 
     describe "can_access?/2" do
-      it do: assert User.can_access?(shared.user, shared.owned_bot)
-      it do: assert User.can_access?(shared.user, shared.shared_bot)
-      it do: assert User.can_access?(shared.user, shared.public_bot)
-      it do: refute User.can_access?(shared.user, shared.unaffiliated_bot)
+      it do: assert(User.can_access?(shared.user, shared.owned_bot))
+      it do: assert(User.can_access?(shared.user, shared.shared_bot))
+      it do: assert(User.can_access?(shared.user, shared.public_bot))
+      it do: refute(User.can_access?(shared.user, shared.unaffiliated_bot))
     end
 
     describe "subscribed?/2" do
-      it do: assert User.subscribed?(shared.user, shared.owned_bot)
-      it do: assert User.subscribed?(shared.user, shared.subscribed_bot)
-      it do: refute User.subscribed?(shared.user, shared.unaffiliated_bot)
+      it do: assert(User.subscribed?(shared.user, shared.owned_bot))
+      it do: assert(User.subscribed?(shared.user, shared.subscribed_bot))
+      it do: refute(User.subscribed?(shared.user, shared.unaffiliated_bot))
     end
 
     describe "get_subscriptions/1" do
@@ -844,12 +897,14 @@ defmodule Wocky.UserSpec do
 
     describe "get_owned_bots_with_follow_me/1" do
       before do
-        follow_bot = Factory.insert(:bot, [
-              user: shared.user,
-              follow_me: true,
-              follow_me_expiry:
-                Timex.add(DateTime.utc_now, Duration.from_seconds(1000))
-            ])
+        follow_bot =
+          Factory.insert(
+            :bot,
+            user: shared.user,
+            follow_me: true,
+            follow_me_expiry:
+              Timex.add(DateTime.utc_now(), Duration.from_seconds(1000))
+          )
 
         {:ok, follow_bot: follow_bot}
       end
@@ -873,13 +928,13 @@ defmodule Wocky.UserSpec do
       Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
       private_bot = Factory.insert(:bot, user: user2)
       pending_bot = Factory.insert(:bot, user: user1, pending: true)
+
       {:ok,
-        owned_bot: owned_bot,
-        public_bot: public_bot,
-        shared_bot: shared_bot,
-        private_bot: private_bot,
-        pending_bot: pending_bot
-      }
+       owned_bot: owned_bot,
+       public_bot: public_bot,
+       shared_bot: shared_bot,
+       private_bot: private_bot,
+       pending_bot: pending_bot}
     end
 
     it "should allow owned bots" do
@@ -907,29 +962,32 @@ defmodule Wocky.UserSpec do
     before do
       user = Factory.insert(:user, avatar: nil)
       avatar = Factory.insert(:tros_metadata, user: user)
+
       {:ok,
-        user: user,
-        avatar: avatar,
-        avatar_url: TROS.make_url(user.server, avatar.id)
-      }
+       user: user,
+       avatar: avatar,
+       avatar_url: TROS.make_url(user.server, avatar.id)}
     end
 
     context "when no avatar is set" do
       it "should not delete the avatar when a new one is set" do
         User.update(shared.user.id, %{avatar: shared.avatar_url})
         |> should(eq :ok)
+
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when a new one is set" do
-        User.update(shared.user.id, %{first_name: Name.first_name})
+        User.update(shared.user.id, %{first_name: Name.first_name()})
         |> should(eq :ok)
+
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when the same one is set" do
         User.update(shared.user.id, %{avatar: shared.user.avatar})
         |> should(eq :ok)
+
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
     end
@@ -938,32 +996,33 @@ defmodule Wocky.UserSpec do
       before do
         User.update(shared.user.id, %{avatar: shared.avatar_url})
         new_avatar = Factory.insert(:tros_metadata, user: shared.user)
+
         {:ok,
          new_avatar: new_avatar,
-         new_avatar_url: TROS.make_url(shared.user.server, new_avatar.id)
-        }
+         new_avatar_url: TROS.make_url(shared.user.server, new_avatar.id)}
       end
 
       it "should delete the avatar when a new one is set" do
         User.update(shared.user.id, %{avatar: shared.new_avatar_url})
         |> should(eq :ok)
+
         Metadata.get(shared.avatar.id) |> should(be_nil())
       end
 
       it "should not delete the avatar when one is not set" do
-        User.update(shared.user.id, %{first_name: Name.first_name})
+        User.update(shared.user.id, %{first_name: Name.first_name()})
         |> should(eq :ok)
+
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when the same one is set" do
         User.update(shared.user.id, %{avatar: shared.user.avatar})
         |> should(eq :ok)
+
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
-
     end
-
   end
 
   describe "full_name/1" do
@@ -974,17 +1033,21 @@ defmodule Wocky.UserSpec do
 
   defp is_searchable_sp(user, bot),
     do: run_stored_proc(user, bot, "is_searchable")
-  defp is_visible_sp(user, bot),
-    do: run_stored_proc(user, bot, "is_visible")
+
+  defp is_visible_sp(user, bot), do: run_stored_proc(user, bot, "is_visible")
 
   defp run_stored_proc(user, bot, proc) do
     {:ok, u} = Ecto.UUID.dump(user.id)
     {:ok, b} = Ecto.UUID.dump(bot.id)
     Repo
-    result = SQL.query!(
-      Repo,
-      "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
-      [u, b])
+
+    result =
+      SQL.query!(
+        Repo,
+        "SELECT * FROM bots AS bot WHERE id = $2 AND #{proc}($1, bot)",
+        [u, b]
+      )
+
     length(result.rows) == 1
   end
 
@@ -995,6 +1058,7 @@ defmodule Wocky.UserSpec do
 
   defp set_name(shared, name) do
     field = Enum.random([:first_name, :last_name])
+
     shared.user
     |> User.changeset(%{field => name})
   end

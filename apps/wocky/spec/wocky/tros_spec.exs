@@ -8,7 +8,7 @@ defmodule Wocky.TROSSpec do
   alias Wocky.TROS
   alias Wocky.User
 
-  let :id, do: ID.new
+  let :id, do: ID.new()
   let :tros_jid, do: TROS.make_jid("server", "file_id")
   let :tros_jid_u, do: TROS.make_jid("user", "server", "file_id")
 
@@ -78,19 +78,19 @@ defmodule Wocky.TROSSpec do
     describe "get_metadata/1" do
       it do
         shared.id
-        |> TROS.get_metadata
+        |> TROS.get_metadata()
         |> should(be_ok_result())
       end
 
       it do
         shared.id
-        |> TROS.get_metadata
+        |> TROS.get_metadata()
         |> elem(1)
         |> Repo.preload(:user)
         |> should(eq shared.md)
       end
 
-      it do: TROS.get_metadata(ID.new) |> should(be_error_result())
+      it do: TROS.get_metadata(ID.new()) |> should(be_error_result())
     end
 
     describe "update_access/2" do
@@ -103,14 +103,17 @@ defmodule Wocky.TROSSpec do
 
     describe "make_upload_response/5" do
       let :owner_jid, do: User.to_jid(shared.user)
-      subject do: TROS.make_upload_response(owner_jid(), ID.new, 100, "all", [])
-      it do: assert {:ok, {_, _}} = subject()
+
+      subject do:
+                TROS.make_upload_response(owner_jid(), ID.new(), 100, "all", [])
+
+      it do: assert({:ok, {_, _}} = subject())
     end
 
     describe "make_download_response/2" do
       let :owner_jid, do: User.to_jid(shared.user)
       subject do: TROS.make_download_response("localhost", shared.id)
-      it do: assert {:ok, {_, _}} = subject()
+      it do: assert({:ok, {_, _}} = subject())
     end
   end
 end

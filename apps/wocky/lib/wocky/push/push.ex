@@ -23,32 +23,29 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Token API
 
-  @spec enable(Wocky.User.id, Wocky.User.resource, Token.token)
-    :: :ok
+  @spec enable(Wocky.User.id(), Wocky.User.resource(), Token.token()) :: :ok
   def enable(user_id, resource, token) do
-    %{user_id: user_id,
-      resource: resource,
-      token: token}
-    |> Token.register_changeset
+    %{user_id: user_id, resource: resource, token: token}
+    |> Token.register_changeset()
     |> Repo.insert!(
-      on_conflict: [set: [valid: true, enabled_at: DateTime.utc_now]],
+      on_conflict: [set: [valid: true, enabled_at: DateTime.utc_now()]],
       conflict_target: [:user_id, :resource, :token]
     )
 
     :ok
   end
 
-  @spec disable(Wocky.User.id, Wocky.User.resource) :: :ok
+  @spec disable(Wocky.User.id(), Wocky.User.resource()) :: :ok
   def disable(user_id, resource) do
     Repo.update_all(
       from(Token, where: [user_id: ^user_id, resource: ^resource, valid: true]),
-      set: [valid: false, disabled_at: DateTime.utc_now]
+      set: [valid: false, disabled_at: DateTime.utc_now()]
     )
 
     :ok
   end
 
-  @spec purge(Wocky.User.id) :: :ok
+  @spec purge(Wocky.User.id()) :: :ok
   def purge(user_id) do
     Repo.delete_all(from Token, where: [user_id: ^user_id])
 
@@ -58,23 +55,25 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Notification API
 
-  @spec notify(Wocky.User.id, Wocky.User.resource, any) :: :ok
+  @spec notify(Wocky.User.id(), Wocky.User.resource(), any) :: :ok
   def notify(user_id, resource, event) do
     if enabled?() do
       user_id
       |> get_token(resource)
       |> do_notify(user_id, resource, event)
     end
+
     :ok
   end
 
-  @spec notify_all(Wocky.User.id, any) :: :ok
+  @spec notify_all(Wocky.User.id(), any) :: :ok
   def notify_all(user_id, event) do
     if enabled?() do
       for {resource, token} <- get_all_tokens(user_id) do
         do_notify(token, user_id, resource, event)
       end
     end
+
     :ok
   end
 
@@ -102,9 +101,12 @@ defmodule Wocky.Push do
   end
 
   defp do_notify(nil, user_id, resource, _event) do
-    Logger.error "Attempted to send notification to user " <>
-      "#{user_id}/#{resource} but they have no token."
+    Logger.error(
+      "Attempted to send notification to user " <>
+        "#{user_id}/#{resource} but they have no token."
+    )
   end
+
   defp do_notify(token, user_id, resource, event) do
     event
     |> make_payload(token)
@@ -124,7 +126,7 @@ defmodule Wocky.Push do
     uri = Event.uri(event)
 
     event
-    |> Event.message
+    |> Event.message()
     |> maybe_truncate_message()
     |> Notification.new(token, topic())
     |> Notification.put_badge(1)
@@ -132,12 +134,15 @@ defmodule Wocky.Push do
   end
 
   defp maybe_push(n, false), do: APNS.push(n)
+
   defp maybe_push(n, true) do
-    notif = if n.payload["aps"]["alert"] == "bad token" do
-      %Notification{n | id: "testing", response: :bad_device_token}
-    else
-      %Notification{n | id: "testing", response: :success}
-    end
+    notif =
+      if n.payload["aps"]["alert"] == "bad token" do
+        %Notification{n | id: "testing", response: :bad_device_token}
+      else
+        %Notification{n | id: "testing", response: :success}
+      end
+
     Sandbox.record_notification(notif, self())
     send(self(), notif)
     notif
@@ -153,7 +158,7 @@ defmodule Wocky.Push do
 
   defp handle_response(%Notification{response: resp} = n, user_id, resource) do
     if resp == :bad_device_token do
-      Logger.error "Bad device token for user #{user_id}/#{resource}."
+      Logger.error("Bad device token for user #{user_id}/#{resource}.")
       invalidate_token(user_id, resource, n.device_token)
     end
 
@@ -162,21 +167,25 @@ defmodule Wocky.Push do
 
   defp invalidate_token(user_id, resource, token) do
     Repo.update_all(
-      from(Token,
-           where: [user_id: ^user_id, resource: ^resource, token: ^token]),
-      set: [valid: false, invalidated_at: DateTime.utc_now]
+      from(
+        Token,
+        where: [user_id: ^user_id, resource: ^resource, token: ^token]
+      ),
+      set: [valid: false, invalidated_at: DateTime.utc_now()]
     )
   end
 
   defp do_db_log(user_id, resource, %Notification{} = n) do
-    %{user_id: user_id,
+    %{
+      user_id: user_id,
       resource: resource,
       token: n.device_token,
       message_id: n.id,
       payload: inspect(n.payload),
       response: to_string(n.response),
-      details: Error.msg(n.response)}
-    |> Log.insert_changeset
-    |> Repo.insert!
+      details: Error.msg(n.response)
+    }
+    |> Log.insert_changeset()
+    |> Repo.insert!()
   end
 end

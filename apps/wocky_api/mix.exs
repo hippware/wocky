@@ -10,9 +10,9 @@ defmodule WockyAPI.Mixfile do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.4",
-      elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix] ++ Mix.compilers,
-      start_permanent: Mix.env == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix] ++ Mix.compilers(),
+      start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         espec: :test,
@@ -41,45 +41,39 @@ defmodule WockyAPI.Mixfile do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_),     do: ["lib"]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
     [
-      {:wocky,          in_umbrella: true},
-      {:phoenix,        "~> 1.3"},
+      {:wocky, in_umbrella: true},
+      {:phoenix, "~> 1.3"},
       {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_ecto,   "~> 3.2"},
-      {:cowboy,         "~> 1.0"},
-      {:httpoison,      "~> 0.11"},
-      {:ok,             "~> 1.2", runtime: false},
-      {:exjsx,          "~> 4.0", override: true},
-      {:hackney,        "~> 1.7", override: true},
-      {:lager,          "~> 3.2", override: true},
-      {:honeybadger,    "~> 0.6"},
-
+      {:phoenix_ecto, "~> 3.2"},
+      {:cowboy, "~> 1.0"},
+      {:httpoison, "~> 0.11"},
+      {:ok, "~> 1.2", runtime: false},
+      {:exjsx, "~> 4.0", override: true},
+      {:hackney, "~> 1.7", override: true},
+      {:lager, "~> 3.2", override: true},
+      {:honeybadger, "~> 0.6"},
       {:prometheus_phoenix, "~> 1.2"},
-      {:prometheus_plugs,   "~> 1.1"},
-
-      {:cowlib,
-        github: "hippware/cowlib",
-        branch: "working",
-        override: true},
-
-      {:espec,          "~> 1.5", only: :test},
-      {:excoveralls,    "~> 0.6", only: :test},
-      {:credo,          "~> 0.6", only: [:dev, :test], runtime: false},
-      {:ex_guard,       "~> 1.1", only: :dev, runtime: false},
-      {:reprise,        "~> 0.5", only: :dev}
+      {:prometheus_plugs, "~> 1.1"},
+      {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
+      {:espec, "~> 1.5", only: :test},
+      {:excoveralls, "~> 0.6", only: :test},
+      {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
+      {:ex_guard, "~> 1.1", only: :dev, runtime: false},
+      {:reprise, "~> 0.5", only: :dev}
     ]
   end
 
   defp aliases do
     [
-      "recompile": ["clean", "compile"],
+      recompile: ["clean", "compile"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "espec": ["ecto.create --quiet", "ecto.migrate", "espec"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
+      espec: ["ecto.create --quiet", "ecto.migrate", "espec"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 end

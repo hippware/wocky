@@ -33,13 +33,15 @@ defmodule Wocky.BotSpec do
     end
 
     describe "get_id_from_jid/1" do
-      it do: bot() |> Bot.to_jid |> Bot.get_id_from_jid |> should(eq bot().id)
-      it do: "bogus" |> Bot.get_id_from_jid |> should(be_nil())
+      it do:
+           bot() |> Bot.to_jid() |> Bot.get_id_from_jid() |> should(eq bot().id)
+
+      it do: "bogus" |> Bot.get_id_from_jid() |> should(be_nil())
 
       it do
         "bogus"
         |> JID.make("localhost", "testing")
-        |> Bot.get_id_from_jid
+        |> Bot.get_id_from_jid()
         |> should(be_nil())
       end
     end
@@ -47,24 +49,29 @@ defmodule Wocky.BotSpec do
     describe "get_id_from_node/1" do
       it do
         bot()
-        |> Bot.make_node
-        |> Bot.get_id_from_node
+        |> Bot.make_node()
+        |> Bot.get_id_from_node()
         |> should(eq bot().id)
       end
 
-      it do: "bogus" |> Bot.get_id_from_node |> should(be_nil())
+      it do: "bogus" |> Bot.get_id_from_node() |> should(be_nil())
     end
 
     describe "public?" do
-      it do: bot() |> Bot.public? |> should(eq bot().public)
+      it do: bot() |> Bot.public?() |> should(eq bot().public)
     end
   end
 
   describe "validations" do
     let :attrs do
-      %{id: ID.new, server: "localhost", user_id: ID.new,
-        title: "test bot", location: GeoUtils.point(5.0, 5.0),
-        radius: 1000}
+      %{
+        id: ID.new(),
+        server: "localhost",
+        user_id: ID.new(),
+        title: "test bot",
+        location: GeoUtils.point(5.0, 5.0),
+        radius: 1000
+      }
     end
 
     it "should pass with valid attributes" do
@@ -76,13 +83,13 @@ defmodule Wocky.BotSpec do
     it "should fail with missing fields" do
       %Bot{}
       |> Bot.changeset(%{})
-      |> should(have_errors Map.keys(attrs()))
+      |> should(have_errors(Map.keys(attrs())))
     end
 
     it "should fail with negative radius" do
       %Bot{}
       |> Bot.changeset(Map.put(attrs(), :radius, -1))
-      |> should(have_errors [:radius])
+      |> should(have_errors([:radius]))
     end
 
     it "should set pending to 'false'" do
@@ -96,22 +103,23 @@ defmodule Wocky.BotSpec do
     let! :bot, do: Factory.insert(:bot, user: user())
 
     before do
-      TestIndexer.reset
+      TestIndexer.reset()
     end
 
     describe "get/2" do
       let! :pending, do: Factory.insert(:bot, user: user(), pending: true)
+
       it "should return the requested bot" do
         bot().id
-        |> Bot.get
+        |> Bot.get()
         |> Repo.preload(:user)
         |> should(eq bot())
       end
 
       it "should work for retrieving by jid" do
         bot()
-        |> Bot.to_jid
-        |> Bot.get
+        |> Bot.to_jid()
+        |> Bot.get()
         |> Repo.preload(:user)
         |> should(eq bot())
       end
@@ -119,20 +127,20 @@ defmodule Wocky.BotSpec do
       it "should return nil for invalid bot jids" do
         ""
         |> JID.make(bot().server, "/notbot/" <> bot().id)
-        |> Bot.get
+        |> Bot.get()
         |> should(be_nil())
       end
 
       it "should return nil for non-existant bots" do
-        ID.new
-        |> Bot.get
+        ID.new()
+        |> Bot.get()
         |> Repo.preload(:user)
         |> should(be_nil())
       end
 
       it "should not return pending bots by default" do
         pending().id
-        |> Bot.get
+        |> Bot.get()
         |> Repo.preload(:user)
         |> should(be_nil())
       end
@@ -160,7 +168,7 @@ defmodule Wocky.BotSpec do
       end
 
       it "raises on error" do
-        fn -> Bot.preallocate(ID.new, "localhost") end
+        fn -> Bot.preallocate(ID.new(), "localhost") end
         |> should(raise_exception())
       end
     end
@@ -169,22 +177,22 @@ defmodule Wocky.BotSpec do
       it "returns an ok result on success" do
         :bot
         |> Factory.params_for(user: user())
-        |> Bot.insert
+        |> Bot.insert()
         |> should(be_ok_result())
       end
 
       it "returns an error result on failure" do
-        %{} |> Bot.insert |> should(be_error_result())
+        %{} |> Bot.insert() |> should(be_error_result())
       end
 
       context "full text search index" do
         before do
-          :bot |> Factory.params_for(user: user()) |> Bot.insert
+          :bot |> Factory.params_for(user: user()) |> Bot.insert()
           :ok
         end
 
         it "should be updated" do
-          TestIndexer.get_index_operations |> should_not(be_empty())
+          TestIndexer.get_index_operations() |> should_not(be_empty())
         end
       end
     end
@@ -207,7 +215,7 @@ defmodule Wocky.BotSpec do
         end
 
         it "should be updated" do
-          TestIndexer.get_index_operations |> should_not(be_empty())
+          TestIndexer.get_index_operations() |> should_not(be_empty())
         end
       end
 
@@ -215,6 +223,7 @@ defmodule Wocky.BotSpec do
         it "should normalize latitude and longitude" do
           {:ok, %Bot{id: id}} =
             Bot.update(bot(), %{location: GeoUtils.point(-95.0, -185)})
+
           Repo.get(Bot, id).location |> should(eq GeoUtils.point(-85, 175))
         end
       end
@@ -225,17 +234,15 @@ defmodule Wocky.BotSpec do
           shared_user = Factory.insert(:user)
           unshared_user = Factory.insert(:user)
 
-           Enum.each(
+          Enum.each(
             [user(), shared_user, unshared_user],
-            &Factory.insert(:home_stream_item, %{reference_bot: bot,
-              user: &1}))
+            &Factory.insert(:home_stream_item, %{reference_bot: bot, user: &1})
+          )
 
           Factory.insert(:share, %{sharer: user(), user: shared_user, bot: bot})
 
           {:ok,
-            bot: bot,
-            shared_user: shared_user,
-            unshared_user: unshared_user}
+           bot: bot, shared_user: shared_user, unshared_user: unshared_user}
         end
 
         context "bot becomes private" do
@@ -244,26 +251,46 @@ defmodule Wocky.BotSpec do
             :ok
           end
 
-          it do: shared.shared_user.id |> HomeStreamItem.get
-                 |> is_deleted() |> should(be_false())
-          it do: shared.unshared_user.id |> HomeStreamItem.get
-                 |> is_deleted() |> should(be_true())
-          it do: user().id |> HomeStreamItem.get
-                 |> is_deleted() |> should(be_false())
+          it do:
+               shared.shared_user.id
+               |> HomeStreamItem.get()
+               |> is_deleted()
+               |> should(be_false())
+
+          it do:
+               shared.unshared_user.id
+               |> HomeStreamItem.get()
+               |> is_deleted()
+               |> should(be_true())
+
+          it do:
+               user().id
+               |> HomeStreamItem.get()
+               |> is_deleted()
+               |> should(be_false())
         end
 
         context "bot remains public" do
           before do
-            Bot.update(shared.bot, %{description: Lorem.sentence})
+            Bot.update(shared.bot, %{description: Lorem.sentence()})
             :ok
           end
 
-          it do: shared.shared_user.id |> HomeStreamItem.get
-                 |> is_deleted() |> should(be_false())
-          it do: shared.unshared_user.id |> HomeStreamItem.get
-                 |> is_deleted() |> should(be_false())
-          it do: user().id |> HomeStreamItem.get |> is_deleted()
-                 |> should(be_false())
+          it do:
+               shared.shared_user.id
+               |> HomeStreamItem.get()
+               |> is_deleted()
+               |> should(be_false())
+
+          it do:
+               shared.unshared_user.id
+               |> HomeStreamItem.get()
+               |> is_deleted()
+               |> should(be_false())
+
+          it do:
+               user().id |> HomeStreamItem.get() |> is_deleted()
+               |> should(be_false())
         end
       end
     end
@@ -280,7 +307,7 @@ defmodule Wocky.BotSpec do
       end
 
       it "should remove the bot from the full text search index" do
-        TestIndexer.get_index_operations |> should_not(be_empty())
+        TestIndexer.get_index_operations() |> should_not(be_empty())
       end
     end
 
@@ -306,7 +333,7 @@ defmodule Wocky.BotSpec do
       end
 
       describe "subscribers_query/1" do
-        subject do: Bot.subscribers_query(bot()) |> Repo.all
+        subject do: Bot.subscribers_query(bot()) |> Repo.all()
 
         it do: should(have_length 1)
         it do: should_not(have user())
@@ -347,14 +374,14 @@ defmodule Wocky.BotSpec do
         Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
         private_bot = Factory.insert(:bot, user: user2)
         pending_bot = Factory.insert(:bot, user: user1, pending: true)
+
         {:ok,
-          user: user1,
-          owned_bot: owned_bot,
-          public_bot: public_bot,
-          shared_bot: shared_bot,
-          private_bot: private_bot,
-          pending_bot: pending_bot
-        }
+         user: user1,
+         owned_bot: owned_bot,
+         public_bot: public_bot,
+         shared_bot: shared_bot,
+         private_bot: private_bot,
+         pending_bot: pending_bot}
       end
 
       it "should allow owned bots" do
@@ -377,16 +404,13 @@ defmodule Wocky.BotSpec do
         |> should(be_nil())
       end
     end
-
   end
 
   describe "Subscribers hash and count generation" do
     before do
       user = Factory.insert(:user)
       bot = Factory.insert(:bot, user: user)
-      {:ok,
-        user: user,
-        bot: bot}
+      {:ok, user: user, bot: bot}
     end
 
     it "should have correct initial values" do
@@ -398,9 +422,7 @@ defmodule Wocky.BotSpec do
       before do
         subscriber = Factory.insert(:user)
         Subscription.put(subscriber, shared.bot)
-        {:ok,
-          subscriber: subscriber,
-          bot: Bot.get(shared.bot.id)}
+        {:ok, subscriber: subscriber, bot: Bot.get(shared.bot.id)}
       end
 
       it "should correctly update the values" do
@@ -420,16 +442,14 @@ defmodule Wocky.BotSpec do
         end
       end
     end
-
   end
-
 
   defp run_query(bot, user) do
     Bot
     |> where(id: ^bot.id)
     |> Bot.is_visible_query(user)
     |> preload(:user)
-    |> Repo.one
+    |> Repo.one()
   end
 
   defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted

@@ -13,12 +13,14 @@ defmodule Wocky.Repo do
     # to ensure that PrometheusEx is started and setup the Ecto instrumenter's
     # internal state.
     Application.ensure_all_started(:prometheus_ex)
-    RepoInstrumenter.setup
+    RepoInstrumenter.setup()
 
     url = System.get_env("DATABASE_URL")
-    config = if url,
-      do: Keyword.merge(opts, Supervisor.parse_url(url)),
-      else: Resolver.resolve!(opts)
+
+    config =
+      if url,
+        do: Keyword.merge(opts, Supervisor.parse_url(url)),
+        else: Resolver.resolve!(opts)
 
     unless config[:database] do
       raise "Set WOCKY_DB_NAME environment variable!"

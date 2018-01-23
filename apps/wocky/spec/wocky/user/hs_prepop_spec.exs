@@ -10,7 +10,7 @@ defmodule Wocky.User.HSPrepopSpec do
   before do
     # This user is inserted by the db migrations, however we'd rather have this
     # test also work properly on a completely empty DB
-    user = Factory.build(:user, handle: HSPrepop.handle)
+    user = Factory.build(:user, handle: HSPrepop.handle())
     Repo.insert(user, on_conflict: :nothing)
   end
 
@@ -26,17 +26,14 @@ defmodule Wocky.User.HSPrepopSpec do
     end
 
     it "should make the prepop user follow the specified user" do
-      RosterItem.relationship(
-        HSPrepop.user().id, shared.user.id)
+      RosterItem.relationship(HSPrepop.user().id, shared.user.id)
       |> should(eq :follower)
     end
 
     it "should make the user an initial contact followee" do
-      ic = InitialContact.get |> hd
+      ic = InitialContact.get() |> hd
       ic |> should(have user_id: shared.user.id)
       ic |> should(have type: :followee)
     end
-
   end
-
 end

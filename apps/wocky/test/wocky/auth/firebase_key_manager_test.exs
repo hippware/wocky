@@ -68,6 +68,7 @@ defmodule Wocky.Auth.FirebaseKeyManagerTest do
     use_cassette "firebase_reload", custom: true do
       force_reload()
     end
+
     use_cassette "firebase_startup" do
       assert get_key(@id1) == {:ok, @cert1}
       assert get_key(@id2) == {:error, :no_key}
@@ -79,4 +80,3 @@ defmodule Wocky.Auth.FirebaseKeyManagerTest do
     end
   end
 end
-

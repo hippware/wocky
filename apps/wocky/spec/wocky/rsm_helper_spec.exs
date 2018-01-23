@@ -14,18 +14,15 @@ defmodule Wocky.RSMHelperSpec do
   before do
     user = Factory.insert(:user)
     Factory.insert_list(@count, :bot, user: user)
-    query = where(Bot, [user_id: ^user.id])
+    query = where(Bot, user_id: ^user.id)
 
     bots =
       Bot
       |> where(user_id: ^user.id)
       |> order_by(asc: :created_at)
-      |> Repo.all
+      |> Repo.all()
 
-    {:ok,
-      user: user,
-      bots: bots,
-      query: query}
+    {:ok, user: user, bots: bots, query: query}
   end
 
   describe "rsm_query/4" do
@@ -38,8 +35,10 @@ defmodule Wocky.RSMHelperSpec do
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 0)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
       it do: rsm_out(shared.rsm_out, :first) |> should(eq hd(shared.bots).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, 1).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, 1).id)
     end
 
     context "simple index query" do
@@ -47,13 +46,19 @@ defmodule Wocky.RSMHelperSpec do
         setup_query(shared, rsm_in(index: 2))
       end
 
-      it do: shared.records |> should(eq Enum.slice(shared.bots, 2..@count-1))
+      it do:
+           shared.records |> should(eq Enum.slice(shared.bots, 2..(@count - 1)))
+
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 2)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, 2).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, -1).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, 2).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, -1).id)
     end
 
     context "out of range index query" do
@@ -73,14 +78,20 @@ defmodule Wocky.RSMHelperSpec do
         setup_query(shared, rsm_in(direction: :before, max: 2))
       end
 
-      it do: shared.records |>
-             should(eq Enum.slice(shared.bots, @count-2..@count-1))
+      it do:
+           shared.records
+           |> should(eq Enum.slice(shared.bots, (@count - 2)..(@count - 1)))
+
       it do: rsm_out(shared.rsm_out, :index) |> should(eq @count - 2)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, -2).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, -1).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, -2).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, -1).id)
     end
 
     context "simple ID query" do
@@ -92,10 +103,14 @@ defmodule Wocky.RSMHelperSpec do
       it do: shared.records |> should(eq Enum.slice(shared.bots, 11..13))
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 11)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, 11).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, 13).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, 11).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, 13).id)
     end
 
     context "clipped before ID query" do
@@ -107,10 +122,14 @@ defmodule Wocky.RSMHelperSpec do
       it do: shared.records |> should(eq Enum.slice(shared.bots, 0..2))
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 0)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, 0).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, 2).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, 0).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, 2).id)
     end
 
     context "clipped ID+index query (should drop index)" do
@@ -122,15 +141,19 @@ defmodule Wocky.RSMHelperSpec do
       it do: shared.records |> should(eq Enum.slice(shared.bots, 18..19))
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 18)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, 18).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, 19).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, 18).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, 19).id)
     end
 
     context "Non-existant ID - should return an empty set" do
       before do
-        setup_query(shared, rsm_in(id: ID.new))
+        setup_query(shared, rsm_in(id: ID.new()))
       end
 
       it do: shared.records |> should(eq [])
@@ -145,39 +168,60 @@ defmodule Wocky.RSMHelperSpec do
         setup_query(shared, rsm_in(reverse: true, max: 4))
       end
 
-      it do: shared.records |>
-             should(eq Enum.reverse(Enum.slice(shared.bots, 0..3)))
+      it do:
+           shared.records
+           |> should(eq Enum.reverse(Enum.slice(shared.bots, 0..3)))
+
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 0)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
       it do: rsm_out(shared.rsm_out, :first) |> should(eq hd(shared.bots).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, 3).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, 3).id)
     end
 
     context "simple reverse sort order" do
       before do
-        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 10), shared.query,
-                                                 :id, {:desc, :created_at})
+        {records, rsm_out} =
+          RSMHelper.rsm_query(
+            rsm_in(max: 10),
+            shared.query,
+            :id,
+            {:desc, :created_at}
+          )
+
         {:ok, records: records, rsm_out: rsm_out}
       end
 
-      it do: shared.records |>
-             should(eq Enum.reverse(
-               Enum.slice(shared.bots, @count-10..@count-1)))
+      it do:
+           shared.records
+           |> should(
+             eq Enum.reverse(
+                  Enum.slice(shared.bots, (@count - 10)..(@count - 1))
+                )
+           )
+
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 0)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq @count)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, -1).id)
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, 10).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, -1).id)
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, 10).id)
     end
 
     context "empty result set" do
       before do
-        id = ID.new
-        query = where(Bot, [user_id: ^id])
-        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), query,
-                                                 :id, {:asc, :created_at})
+        id = ID.new()
+        query = where(Bot, user_id: ^id)
+
+        {records, rsm_out} =
+          RSMHelper.rsm_query(rsm_in(max: 20), query, :id, {:asc, :created_at})
+
         {:ok, records: records, rsm_out: rsm_out}
       end
 
@@ -190,9 +234,14 @@ defmodule Wocky.RSMHelperSpec do
 
     context "when the key field is a DateTime" do
       before do
-        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), shared.query,
-                                                 :created_at,
-                                                 {:asc, :created_at})
+        {records, rsm_out} =
+          RSMHelper.rsm_query(
+            rsm_in(max: 20),
+            shared.query,
+            :created_at,
+            {:asc, :created_at}
+          )
+
         {:ok, records: records, rsm_out: rsm_out}
       end
 
@@ -202,9 +251,14 @@ defmodule Wocky.RSMHelperSpec do
 
     context "when the key field is a float" do
       before do
-        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(max: 20), shared.query,
-                                                 :radius,
-                                                 {:asc, :created_at})
+        {records, rsm_out} =
+          RSMHelper.rsm_query(
+            rsm_in(max: 20),
+            shared.query,
+            :radius,
+            {:asc, :created_at}
+          )
+
         {:ok, records: records, rsm_out: rsm_out}
       end
 
@@ -216,42 +270,55 @@ defmodule Wocky.RSMHelperSpec do
       before do
         user1 = Factory.insert(:user)
         user2 = Factory.insert(:user)
+
         bots =
           1..5
-          |> Enum.map(fn(_) ->
+          |> Enum.map(fn _ ->
             Factory.insert(:bot, user: user2)
             bot = Factory.insert(:bot, user: user1)
             bot.id
-            end)
+          end)
 
         query =
           Bot
           |> where(user_id: ^user1.id)
           |> Bot.is_visible_query(user1)
 
-        {records, rsm_out} = RSMHelper.rsm_query(rsm_in(id: Enum.at(bots, 2)), query,
-                                                 :id, {:asc, :created_at})
+        {records, rsm_out} =
+          RSMHelper.rsm_query(
+            rsm_in(id: Enum.at(bots, 2)),
+            query,
+            :id,
+            {:asc, :created_at}
+          )
 
         {:ok,
-          bots: bots,
-          records: Enum.map(records, &Map.get(&1, :id)),
-          rsm_out: rsm_out}
+         bots: bots,
+         records: Enum.map(records, &Map.get(&1, :id)),
+         rsm_out: rsm_out}
       end
 
-      it do: shared.records |>
-             should(eq Enum.slice(shared.bots, 3, 2))
+      it do:
+           shared.records
+           |> should(eq Enum.slice(shared.bots, 3, 2))
+
       it do: rsm_out(shared.rsm_out, :index) |> should(eq 3)
       it do: rsm_out(shared.rsm_out, :count) |> should(eq 5)
-      it do: rsm_out(shared.rsm_out, :first) |>
-             should(eq Enum.at(shared.bots, 3))
-      it do: rsm_out(shared.rsm_out, :last) |>
-             should(eq Enum.at(shared.bots, -1))
+
+      it do:
+           rsm_out(shared.rsm_out, :first)
+           |> should(eq Enum.at(shared.bots, 3))
+
+      it do:
+           rsm_out(shared.rsm_out, :last)
+           |> should(eq Enum.at(shared.bots, -1))
     end
   end
 
   defp setup_query(shared, rsm_in) do
-    {records, rsm_out} = RSMHelper.rsm_query(rsm_in, shared.query,
-                                             :id, {:asc, :created_at})
+    {records, rsm_out} =
+      RSMHelper.rsm_query(rsm_in, shared.query, :id, {:asc, :created_at})
+
     {:ok, records: records, rsm_out: rsm_out}
   end
 end

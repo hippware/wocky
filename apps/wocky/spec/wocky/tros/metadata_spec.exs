@@ -9,24 +9,15 @@ defmodule Wocky.TROS.MetadataSpec do
   before do
     user = Factory.insert(:user)
     metadata = Factory.insert(:tros_metadata, user: user)
-    {:ok,
-     id: metadata.id,
-     user: user,
-     access: metadata.access
-    }
+    {:ok, id: metadata.id, user: user, access: metadata.access}
   end
 
   describe "put/3" do
     context "when there is no existing metadata entry" do
       before do
         metadata = Factory.build(:tros_metadata, user: shared.user)
-        result = Metadata.put(metadata.id,
-                                  metadata.user.id,
-                                  metadata.access)
-        {:ok,
-         result: result,
-         id: metadata.id,
-         access: metadata.access}
+        result = Metadata.put(metadata.id, metadata.user.id, metadata.access)
+        {:ok, result: result, id: metadata.id, access: metadata.access}
       end
 
       it "should return {:ok, TROSMetadata}" do
@@ -55,7 +46,7 @@ defmodule Wocky.TROS.MetadataSpec do
   describe "set_access/2" do
     context "when there is no existing entry for the file" do
       it "should return an error" do
-        Metadata.set_access(ID.new, Lorem.sentence())
+        Metadata.set_access(ID.new(), Lorem.sentence())
         |> should(be_error_result())
       end
     end
@@ -83,7 +74,7 @@ defmodule Wocky.TROS.MetadataSpec do
     end
 
     it "should return `nil` for a non-existant file" do
-      Metadata.get_user_id(ID.new) |> should(eq nil)
+      Metadata.get_user_id(ID.new()) |> should(eq nil)
     end
   end
 
@@ -93,7 +84,7 @@ defmodule Wocky.TROS.MetadataSpec do
     end
 
     it "should return `nil` for a non-existant file" do
-      Metadata.get_access(ID.new) |> should(eq nil)
+      Metadata.get_access(ID.new()) |> should(eq nil)
     end
   end
 
@@ -103,10 +94,10 @@ defmodule Wocky.TROS.MetadataSpec do
       {:ok, unready: unready}
     end
 
-    it do: assert Metadata.ready?(shared.id)
+    it do: assert(Metadata.ready?(shared.id))
 
-    it do: refute Metadata.ready?(shared.unready.id)
-    it do: refute Metadata.ready?(ID.new)
+    it do: refute(Metadata.ready?(shared.unready.id))
+    it do: refute(Metadata.ready?(ID.new()))
   end
 
   defp should_be_result(result) do

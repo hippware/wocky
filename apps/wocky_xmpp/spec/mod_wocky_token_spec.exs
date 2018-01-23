@@ -9,7 +9,7 @@ defmodule :mod_wocky_token_spec do
   alias Wocky.Repo.Timestamp
   alias Wocky.User
 
-  @iso8601_regex Timestamp.regex
+  @iso8601_regex Timestamp.regex()
 
   def result_iq(content) do
     iq(

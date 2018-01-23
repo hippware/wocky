@@ -2,14 +2,14 @@ defmodule WockyAPI.Endpoint do
   use Phoenix.Endpoint, otp_app: :wocky_api
 
   # Not using WebSockets at the moment
-  #socket "/socket", WockyAPI.UserSocket
+  # socket "/socket", WockyAPI.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
   # Not serving static content right now
-  #plug Plug.Static,
+  # plug Plug.Static,
   #  at: "/", from: :wocky_api, gzip: false,
   #  only: ~w(css fonts images js favicon.ico robots.txt)
 
@@ -34,13 +34,15 @@ defmodule WockyAPI.Endpoint do
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   # No session tracking right now
-  #plug Plug.Session,
+  # plug Plug.Session,
   #  store: :cookie,
   #  key: "_wocky_api_key",
   #  signing_salt: "JqDu/CcJ"
 
-  plug WockyAPI.PrometheusExporter     # makes the /metrics URL happen
-  plug WockyAPI.PipelineInstrumenter   # measures pipeline exec times
+  # makes the /metrics URL happen
+  plug WockyAPI.PrometheusExporter
+  # measures pipeline exec times
+  plug WockyAPI.PipelineInstrumenter
   plug WockyAPI.Router
 
   @doc """
@@ -51,8 +53,10 @@ defmodule WockyAPI.Endpoint do
   """
   def init(_key, config) do
     if config[:load_from_system_env] do
-      port = System.get_env("PORT") ||
-        raise "expected the PORT environment variable to be set"
+      port =
+        System.get_env("PORT") ||
+          raise "expected the PORT environment variable to be set"
+
       {:ok, Keyword.put(config, :http, [:inet6, port: port])}
     else
       {:ok, config}

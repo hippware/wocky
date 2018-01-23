@@ -9,7 +9,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
   alias Wocky.RosterItem
 
   describe "validation" do
-    let :valid_attrs, do: %{bot_id: ID.new, user_id: ID.new}
+    let :valid_attrs, do: %{bot_id: ID.new(), user_id: ID.new()}
 
     it "should pass with valid attributes" do
       %Subscription{}
@@ -20,14 +20,13 @@ defmodule Wocky.Bot.SubscriptionSpec do
     it "should fail with missing attributes" do
       %Subscription{}
       |> Subscription.changeset(%{})
-      |> should(have_errors [:bot_id, :user_id])
+      |> should(have_errors([:bot_id, :user_id]))
     end
 
     describe "converting foreign key constraints to errors" do
-      let :changeset,
-        do: Subscription.changeset(%Subscription{}, valid_attrs())
+      let :changeset, do: Subscription.changeset(%Subscription{}, valid_attrs())
 
-      it do: changeset() |> Repo.insert |> should(be_error_result())
+      it do: changeset() |> Repo.insert() |> should(be_error_result())
 
       context "when the user does not exist" do
         let :new_changeset do
@@ -37,7 +36,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
         it "has error" do
           error = {:user_id, {"does not exist", []}}
-          expect(new_changeset().errors).to have(error)
+          new_changeset().errors |> should(have error)
         end
       end
     end
@@ -140,12 +139,14 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
       it "should return :ok when the user doesn't exist" do
         user = Factory.build(:user)
+
         Subscription.delete(user, shared.bot)
         |> should(eq :ok)
       end
 
       it "should return :ok when the bot doesn't exist" do
         bot = Factory.build(:bot)
+
         Subscription.delete(shared.user, bot)
         |> should(eq :ok)
       end
@@ -174,6 +175,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
     defp is_subscribed_sp(user, bot) do
       {:ok, u} = Ecto.UUID.dump(user.id)
       {:ok, b} = Ecto.UUID.dump(bot.id)
+
       Repo
       |> SQL.query!("SELECT is_subscribed($1, $2)", [u, b])
       |> Map.get(:rows)
@@ -184,11 +186,12 @@ defmodule Wocky.Bot.SubscriptionSpec do
     describe "update_bot_public_trigger trigger and stored procedure" do
       before do
         bot = Factory.insert(:bot, public: true)
-        users = [subscribed_user, shared_sub_user, friend]
-          = Factory.insert_list(3, :user)
 
-        Enum.each(users,
-                  &Factory.insert(:subscription, bot: bot, user: &1))
+        users =
+          [subscribed_user, shared_sub_user, friend] =
+          Factory.insert_list(3, :user)
+
+        Enum.each(users, &Factory.insert(:subscription, bot: bot, user: &1))
 
         Factory.insert(:share, bot: bot, user: shared_sub_user)
         RosterItem.befriend(bot.user.id, friend.id)
@@ -196,11 +199,10 @@ defmodule Wocky.Bot.SubscriptionSpec do
         Bot.update(bot, %{public: false})
 
         {:ok,
-          bot: bot,
-          subscribed_user: subscribed_user,
-          shared_sub_user: shared_sub_user,
-          friend: friend
-        }
+         bot: bot,
+         subscribed_user: subscribed_user,
+         shared_sub_user: shared_sub_user,
+         friend: friend}
       end
 
       it "should remove the subscription for a standard subscriber" do

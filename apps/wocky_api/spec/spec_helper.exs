@@ -1,9 +1,9 @@
-ESpec.configure fn (config) ->
-  config.before fn (tags) ->
+ESpec.configure(fn config ->
+  config.before(fn tags ->
     {:ok, tags: tags, server: "local.test"}
-  end
+  end)
 
-  config.finally fn (_shared) ->
+  config.finally(fn _shared ->
     :ok
-  end
-end
+  end)
+end)

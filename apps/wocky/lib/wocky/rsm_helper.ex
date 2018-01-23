@@ -4,7 +4,7 @@ defmodule Wocky.RSMHelper.Guard do
   defmacro is_order_forward(dir, sort_order) do
     quote do
       (unquote(dir) == :aft and unquote(sort_order) == :asc) or
-      (unquote(dir) == :before and unquote(sort_order) == :desc)
+        (unquote(dir) == :before and unquote(sort_order) == :desc)
     end
   end
 end
@@ -24,33 +24,43 @@ defmodule Wocky.RSMHelper do
 
   alias Wocky.Repo.Timestamp
 
-  Record.defrecord(:rsm_in,
-    max:        :undefined,
-    direction:  :undefined,
-    id:         :undefined,
-    index:      :undefined,
-    reverse:    false)
+  Record.defrecord(
+    :rsm_in,
+    max: :undefined,
+    direction: :undefined,
+    id: :undefined,
+    index: :undefined,
+    reverse: false
+  )
 
-  Record.defrecord(:rsm_out,
-    count:  0,
-    index:  :undefined,
-    first:  :undefined,
-    last:   :undefined)
+  Record.defrecord(
+    :rsm_out,
+    count: 0,
+    index: :undefined,
+    first: :undefined,
+    last: :undefined
+  )
 
   @type sorting :: {:asc | :desc, atom}
   @type direction :: :before | :aft
-  @type rsm_in :: record(:rsm_in,
-                         max:       non_neg_integer | :undefined,
-                         direction: direction | :undefined,
-                         id:        binary | integer | :undefined,
-                         index:     non_neg_integer | :undefined,
-                         reverse:   boolean)
+  @type rsm_in ::
+          record(
+            :rsm_in,
+            max: non_neg_integer | :undefined,
+            direction: direction | :undefined,
+            id: binary | integer | :undefined,
+            index: non_neg_integer | :undefined,
+            reverse: boolean
+          )
 
-  @type rsm_out :: record(:rsm_out,
-                          count: non_neg_integer,
-                          index: non_neg_integer | :undefined,
-                          first: binary | :undefined,
-                          last:  binary | :undefined)
+  @type rsm_out ::
+          record(
+            :rsm_out,
+            count: non_neg_integer,
+            index: non_neg_integer | :undefined,
+            first: binary | :undefined,
+            last: binary | :undefined
+          )
 
   defmacro __using__(_) do
     quote do
@@ -74,8 +84,8 @@ defmodule Wocky.RSMHelper do
   to retrive the RSM set requested, run the query, and return
   `{objects, rsm_out}`.
   """
-  @spec rsm_query(rsm_in, Ecto.Queryable.t, atom, sorting) ::
-    {[struct], rsm_out}
+  @spec rsm_query(rsm_in, Ecto.Queryable.t(), atom, sorting) ::
+          {[struct], rsm_out}
   def rsm_query(rsm_in, queryable, key_field, sorting) do
     rsm_in = sanitise_rsm_in(rsm_in)
     dir = direction(rsm_in(rsm_in, :direction))
@@ -84,17 +94,18 @@ defmodule Wocky.RSMHelper do
     index = get_index(records, queryable, sorting)
 
     {maybe_reverse_result(records, rsm_in(rsm_in, :reverse)),
-     rsm_out(count: count,
-             index: index,
-             first: to_rsm_id(get_first(records, key_field)),
-             last:  to_rsm_id(get_last(records, key_field)))
-    }
+     rsm_out(
+       count: count,
+       index: index,
+       first: to_rsm_id(get_first(records, key_field)),
+       last: to_rsm_id(get_last(records, key_field))
+     )}
   end
 
   # index and id should never both be present - if they are, drop index
   defp sanitise_rsm_in(rsm_in) do
     if rsm_in(rsm_in, :index) != :undefined and
-       rsm_in(rsm_in, :id) != :undefined do
+         rsm_in(rsm_in, :id) != :undefined do
       rsm_in(rsm_in, index: :undefined)
     else
       rsm_in
@@ -120,6 +131,7 @@ defmodule Wocky.RSMHelper do
   end
 
   defp get_index([], _, _), do: :undefined
+
   defp get_index([first | _], queryable, {_, sort_field} = sorting) do
     pivot = Map.get(first, sort_field)
 
@@ -135,43 +147,62 @@ defmodule Wocky.RSMHelper do
     queryable
     |> where([r, ...], field(r, ^sort_field) < ^key)
   end
+
   defp index_where(queryable, key, {:desc, sort_field}) do
     queryable
     |> where([r, ...], field(r, ^sort_field) > ^key)
   end
 
-
   defp direction(:undefined), do: :aft
   defp direction(dir), do: dir
 
   defp maybe_limit(query, :undefined), do: query
-  defp maybe_limit(query, max), do: from [h, ...] in query, limit: ^max
+  defp maybe_limit(query, max), do: from([h, ...] in query, limit: ^max)
 
   defp maybe_offset(query, :undefined), do: query
-  defp maybe_offset(query, index), do: from [h, ...] in query, offset: ^index
+  defp maybe_offset(query, index), do: from([h, ...] in query, offset: ^index)
 
   defp maybe_join_clause(queryable, "", _, _, _), do: queryable
   defp maybe_join_clause(queryable, :undefined, _, _, _), do: queryable
-  defp maybe_join_clause(queryable, key, key_field, dir, {sort_order, sort_field})
-  when is_order_forward(dir, sort_order) do
+
+  defp maybe_join_clause(
+         queryable,
+         key,
+         key_field,
+         dir,
+         {sort_order, sort_field}
+       )
+       when is_order_forward(dir, sort_order) do
     subquery = queryable |> exclude(:preload)
+
     queryable
-    |> join(:inner, [r, ...], p in subquery(subquery),
-            field(p, ^key_field) == ^key and
-            field(r, ^sort_field) > field(p, ^sort_field))
+    |> join(
+      :inner,
+      [r, ...],
+      p in subquery(subquery),
+      field(p, ^key_field) == ^key and
+        field(r, ^sort_field) > field(p, ^sort_field)
+    )
   end
+
   defp maybe_join_clause(queryable, key, key_field, _, {_, sort_field}) do
     subquery = queryable |> exclude(:preload)
+
     queryable
-    |> join(:inner, [r, ...], p in subquery(subquery),
-            field(p, ^key_field) == ^key and
-            field(r, ^sort_field) < field(p, ^sort_field))
+    |> join(
+      :inner,
+      [r, ...],
+      p in subquery(subquery),
+      field(p, ^key_field) == ^key and
+        field(r, ^sort_field) < field(p, ^sort_field)
+    )
   end
 
   defp order(query, dir, {sort_order, sort_field})
-  when is_order_forward(dir, sort_order) do
+       when is_order_forward(dir, sort_order) do
     from [r, ...] in query, order_by: ^sort_field
   end
+
   defp order(query, _, {_, sort_field}) do
     from [r, ...] in query, order_by: [desc: ^sort_field]
   end
