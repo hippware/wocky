@@ -3,7 +3,7 @@
     "mix.exs",
     "config/*.{ex,exs}",
     "apps/*/mix.exs",
-    "apps/*/{config,lib,test,espec}/**/*.{ex,exs}"
+    "apps/*/{config,lib,test,spec}/**/*.{ex,exs}"
   ],
   line_length: 80,
   # In the future, we will be able to import DSL function names from
@@ -124,14 +124,18 @@
 
     ### have_*
     have: 1,
+    have_any: 1,
     have_key: 1,
     have_value: 1,
     have_count: 1,
     have_first: 1,
     have_last: 1,
     have_length: 1,
+    have_size: 1,
+    have_errors: 1,
 
     ### match_*
+    match: 1,
     match_pattern: 1,
     match_list: 1,
 
@@ -144,6 +148,7 @@
 
     ## Mocking / Stubbing
     allow: 1,
-    accept: 2
+    accept: 2,
+    accepted: :*
   ]
 ]
