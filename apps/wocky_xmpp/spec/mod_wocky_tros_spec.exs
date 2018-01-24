@@ -18,18 +18,20 @@ defmodule :mod_wocky_tros_spec do
     bob = Factory.insert(:user)
     carol = Factory.insert(:user)
 
-    bob_access = "user:" <> (bob |> User.to_jid |> JID.to_binary)
+    bob_access = "user:" <> (bob |> User.to_jid() |> JID.to_binary())
     avatar = Factory.insert(:tros_metadata, user: alice, access: "all")
     media = Factory.insert(:tros_metadata, user: alice, access: bob_access)
-    {:ok, [
-        user_jid: User.to_jid(alice),
-        alice: alice,
-        bob: bob,
-        carol: carol,
-        bob_access: bob_access,
-        avatar: avatar,
-        media: media
-      ]}
+
+    {:ok,
+     [
+       user_jid: User.to_jid(alice),
+       alice: alice,
+       bob: bob,
+       carol: carol,
+       bob_access: bob_access,
+       avatar: avatar,
+       media: media
+     ]}
   end
 
   describe "upload request" do
@@ -43,8 +45,12 @@ defmodule :mod_wocky_tros_spec do
 
   describe "message media upload request" do
     example "successful request" do
-      result = handle_iq(
-        shared.user_jid, @server_jid, upload_packet(10000, shared.bob_access))
+      result =
+        handle_iq(
+          shared.user_jid,
+          @server_jid,
+          upload_packet(10000, shared.bob_access)
+        )
 
       assert_expected_upload_packet(shared, result)
     end
@@ -88,7 +94,7 @@ defmodule :mod_wocky_tros_spec do
       url =
         shared.alice.id
         |> TROS.make_jid(shared.server, shared.avatar.id)
-        |> TROS.make_url
+        |> TROS.make_url()
 
       packet = download_packet(url)
       result = handle_iq(shared.user_jid, @server_jid, packet)
@@ -147,6 +153,7 @@ defmodule :mod_wocky_tros_spec do
     example "failed due to malformed UUID" do
       bad_uuid =
         String.slice(shared.media.id, 1, String.length(shared.media.id) - 1)
+
       packet = download_packet(bad_uuid)
       result = handle_iq(shared.user_jid, @server_jid, packet)
 
@@ -195,7 +202,7 @@ defmodule :mod_wocky_tros_spec do
     end
 
     example "failed due to missing file metadata" do
-      packet = download_packet(ID.new)
+      packet = download_packet(ID.new())
       result = handle_iq(shared.user_jid, @server_jid, packet)
 
       iq(sub_el: req_sub_el) = packet
@@ -260,40 +267,42 @@ defmodule :mod_wocky_tros_spec do
   defp assert_expected_upload_packet(shared, packet) do
     iq(
       type: :result,
-      sub_el: xmlel(
-        name: "upload",
-        children: [
-          xmlel(name: "headers"),
-          xmlel(name: "id", children: [xmlcdata: file_id]),
-          xmlel(name: "jid", children: [xmlcdata: jid]),
-          xmlel(name: "method", children: [xmlcdata: "PUT"]),
-          xmlel(name: "url"),
-          xmlel(name: "reference_url", children: [xmlcdata: ref_url])
-        ]
-      )
+      sub_el:
+        xmlel(
+          name: "upload",
+          children: [
+            xmlel(name: "headers"),
+            xmlel(name: "id", children: [xmlcdata: file_id]),
+            xmlel(name: "jid", children: [xmlcdata: jid]),
+            xmlel(name: "method", children: [xmlcdata: "PUT"]),
+            xmlel(name: "url"),
+            xmlel(name: "reference_url", children: [xmlcdata: ref_url])
+          ]
+        )
     ) = packet
 
     shared.server
     |> TROS.make_jid(file_id)
-    |> JID.to_binary
+    |> JID.to_binary()
     |> should(eq jid)
 
     shared.alice.id
     |> TROS.make_jid(shared.server, file_id)
-    |> TROS.make_url
+    |> TROS.make_url()
     |> should(eq ref_url)
   end
 
   defp assert_expected_download_packet(packet) do
     assert iq(
-      type: :result,
-      sub_el: xmlel(
-        name: "download",
-        children: [
-          xmlel(name: "headers", children: []),
-          xmlel(name: "url")
-        ]
-      )
-    ) = packet
+             type: :result,
+             sub_el:
+               xmlel(
+                 name: "download",
+                 children: [
+                   xmlel(name: "headers", children: []),
+                   xmlel(name: "url")
+                 ]
+               )
+           ) = packet
   end
 end

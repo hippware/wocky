@@ -24,23 +24,24 @@ defmodule Wocky.InitialContact do
   @type type :: :follower | :followee | :friend
 
   @type t :: %InitialContact{
-    user_id: User.id,
-    user: User.t,
-    type: type
-  }
+          user_id: User.id(),
+          user: User.t(),
+          type: type
+        }
 
-  @spec get :: [InitialContact.t]
+  @spec get :: [InitialContact.t()]
   def get do
     InitialContact
     |> preload(:user)
-    |> Repo.all
+    |> Repo.all()
   end
 
-  @spec put(User.t, type) :: :ok
+  @spec put(User.t(), type) :: :ok
   def put(user, type) do
     %InitialContact{}
     |> cast(%{user_id: user.id, type: type}, [:user_id, :type])
     |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:user_id])
+
     :ok
   end
 end

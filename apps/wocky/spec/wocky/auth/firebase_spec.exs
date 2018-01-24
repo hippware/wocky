@@ -103,9 +103,12 @@ defmodule Wocky.Auth.FirebaseSpec do
   describe "Firebase auth" do
     before_all do
       :meck.new(FirebaseKeyManager)
-      :meck.expect(FirebaseKeyManager, :get_key, fn(@key_id) -> {:ok, @cert}
-                                                   (_) -> {:error, :no_key}
+
+      :meck.expect(FirebaseKeyManager, :get_key, fn
+        @key_id -> {:ok, @cert}
+        _ -> {:error, :no_key}
       end)
+
       :ok
     end
 
@@ -125,17 +128,19 @@ defmodule Wocky.Auth.FirebaseSpec do
 
     it "should fail if the expiry date is in the past" do
       exp =
-        DateTime.utc_now
+        DateTime.utc_now()
         |> Timex.subtract(Duration.from_days(1))
-        |> Timex.to_unix
+        |> Timex.to_unix()
+
       Firebase.verify(make_jwt(%{exp: exp})) |> should(be_error_result())
     end
 
     it "should fail if the issue date is in the future" do
       iat =
-        DateTime.utc_now
+        DateTime.utc_now()
         |> Timex.add(Duration.from_days(1))
-        |> Timex.to_unix
+        |> Timex.to_unix()
+
       Firebase.verify(make_jwt(%{iat: iat})) |> should(be_error_result())
     end
 
@@ -148,19 +153,20 @@ defmodule Wocky.Auth.FirebaseSpec do
       Firebase.verify(make_jwt(%{iss: "https://wrong_issuer/wrong"}))
       |> should(be_error_result())
     end
-
   end
-
 
   defp make_jwt(opts \\ %{}) do
     project = Confex.get_env(:wocky, :firebase_project_id)
 
     params =
-      %{exp: DateTime.utc_now
-             |> Timex.add(Duration.from_days(1))
-             |> Timex.to_unix,
-        iat: DateTime.utc_now
-             |> Timex.to_unix,
+      %{
+        exp:
+          DateTime.utc_now()
+          |> Timex.add(Duration.from_days(1))
+          |> Timex.to_unix(),
+        iat:
+          DateTime.utc_now()
+          |> Timex.to_unix(),
         aud: project,
         iss: @iss <> project,
         sub: @user_id,
@@ -186,5 +192,4 @@ defmodule Wocky.Auth.FirebaseSpec do
 
     %{"jwt" => jwt}
   end
-
 end

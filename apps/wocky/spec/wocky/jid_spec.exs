@@ -11,8 +11,8 @@ defmodule Wocky.JIDSpec do
   end
 
   describe "equal?/2" do
-    it do: assert JID.equal?(subject(), subject())
-    it do: refute JID.equal?(subject(), JID.make("a", "c"))
+    it do: assert(JID.equal?(subject(), subject()))
+    it do: refute(JID.equal?(subject(), JID.make("a", "c")))
   end
 
   describe "from_binary/1" do

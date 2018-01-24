@@ -10,27 +10,30 @@ defmodule :mod_wocky_notifications_spec do
   alias Wocky.Repo.Factory
   alias Wocky.User
 
-  @test_id       "123456789"
+  @test_id "123456789"
   @notify_timeout 10000
 
   def enable_notifications(user_jid, device \\ @test_id) do
-    iq_set = iq(
-      type: :set,
-      sub_el: xmlel(
-        name: "enable",
-        attrs: [{"device", device}, {"platform", "apple"}]
+    iq_set =
+      iq(
+        type: :set,
+        sub_el:
+          xmlel(
+            name: "enable",
+            attrs: [{"device", device}, {"platform", "apple"}]
+          )
       )
-    )
+
     handle_iq(user_jid, @server_jid, iq_set)
   end
 
   def disable_notifications(user_jid) do
-    iq_set = iq(
-      type: :set,
-      sub_el: xmlel(
-        name: "disable"
+    iq_set =
+      iq(
+        type: :set,
+        sub_el: xmlel(name: "disable")
       )
-    )
+
     handle_iq(user_jid, @server_jid, iq_set)
   end
 
@@ -88,18 +91,22 @@ defmodule :mod_wocky_notifications_spec do
   end
 
   before do
-    Sandbox.start_link
+    Sandbox.start_link()
     sender = Factory.insert(:user, resource: "testing")
     user = Factory.insert(:user, resource: "testing")
-    {:ok, user: user, user_jid: User.to_jid(user),
-          sender: sender, sender_jid: User.to_jid(sender)}
+
+    {:ok,
+     user: user,
+     user_jid: User.to_jid(user),
+     sender: sender,
+     sender_jid: User.to_jid(sender)}
   end
 
   describe "mod_wocky_notifications" do
     describe "handling an IQ 'get'" do
       it "should return an error result" do
         result = handle_iq(shared.user_jid, @server_jid, iq(type: :get))
-        expect iq(result, :type) |> to(eq :error)
+        iq(result, :type) |> should(eq :error)
       end
     end
 
@@ -111,7 +118,7 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should return an IQ result" do
-          expect iq(shared.result, :type) |> to(eq :result)
+          iq(shared.result, :type) |> should(eq :result)
         end
       end
 
@@ -123,14 +130,14 @@ defmodule :mod_wocky_notifications_spec do
         end
 
         it "should return an IQ result" do
-          expect iq(shared.result, :type) |> to(eq :result)
+          iq(shared.result, :type) |> should(eq :result)
         end
       end
     end
 
     describe "handling the user_send_packet hook" do
       before do
-        Sandbox.clear_notifications
+        Sandbox.clear_notifications()
 
         _ = enable_notifications(shared.user_jid)
         :ok
@@ -138,8 +145,8 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a message packet" do
         before do
-          :ok = user_send_packet_hook(
-            shared.sender_jid, shared.user_jid, packet())
+          :ok =
+            user_send_packet_hook(shared.sender_jid, shared.user_jid, packet())
         end
 
         it "should send a notification" do
@@ -155,8 +162,12 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with an image message packet" do
         before do
-          :ok = user_send_packet_hook(
-            shared.sender_jid, shared.user_jid, image_packet())
+          :ok =
+            user_send_packet_hook(
+              shared.sender_jid,
+              shared.user_jid,
+              image_packet()
+            )
         end
 
         it "should send a notification" do
@@ -172,8 +183,12 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a message that contains both a body and an image" do
         before do
-          :ok = user_send_packet_hook(
-            shared.sender_jid, shared.user_jid, combo_packet())
+          :ok =
+            user_send_packet_hook(
+              shared.sender_jid,
+              shared.user_jid,
+              combo_packet()
+            )
         end
 
         it "should send a notification" do
@@ -189,46 +204,56 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a non-message packet" do
         before do
-          :ok = user_send_packet_hook(
-            shared.sender_jid, shared.user_jid, packet("parlay"))
+          :ok =
+            user_send_packet_hook(
+              shared.sender_jid,
+              shared.user_jid,
+              packet("parlay")
+            )
         end
 
         it "should not send a notification" do
-          expect Sandbox.list_notifications |> to(eq [])
+          Sandbox.list_notifications() |> should(eq [])
         end
       end
 
       context "with a non-chat message packet" do
         before do
-          :ok = user_send_packet_hook(
-            shared.sender_jid, shared.user_jid, packet("message", "parlay"))
+          :ok =
+            user_send_packet_hook(
+              shared.sender_jid,
+              shared.user_jid,
+              packet("message", "parlay")
+            )
         end
 
         it "should not send a notification" do
-          expect Sandbox.list_notifications |> to(eq [])
+          Sandbox.list_notifications() |> should(eq [])
         end
       end
 
       context "with a packet with no body and no image" do
         before do
-          no_body = xmlel(
-            name: "message",
-            attrs: [{"type", "chat"}],
-            children: [
-              xmlel(
-                name: "content",
-                children: [xmlcdata(content: "Message content")]
-              )
-            ]
-          )
+          no_body =
+            xmlel(
+              name: "message",
+              attrs: [{"type", "chat"}],
+              children: [
+                xmlel(
+                  name: "content",
+                  children: [xmlcdata(content: "Message content")]
+                )
+              ]
+            )
 
           result =
             user_send_packet_hook(shared.sender_jid, shared.user_jid, no_body)
+
           {:ok, result: result}
         end
 
         it "should not send a notification" do
-          expect Sandbox.list_notifications |> to(eq [])
+          Sandbox.list_notifications() |> should(eq [])
         end
       end
     end

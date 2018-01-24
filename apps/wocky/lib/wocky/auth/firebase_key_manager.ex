@@ -28,9 +28,11 @@ defmodule Wocky.Auth.FirebaseKeyManager do
 
   def init(_) do
     _ = :ets.new(:firebase_keys, [:protected, :named_table])
+
     if Confex.get_env(:wocky, :firebase_load_on_startup, true) do
       reload_keys()
     end
+
     {:ok, nil}
   end
 
@@ -48,8 +50,9 @@ defmodule Wocky.Auth.FirebaseKeyManager do
     case :hackney.get(@key_url, [], "", []) do
       {:ok, 200, headers, client} ->
         update_keys(headers, client)
+
       other ->
-        :ok = Logger.warn("Error getting Firebase keys: #{inspect other}")
+        :ok = Logger.warn("Error getting Firebase keys: #{inspect(other)}")
         set_reload(10)
     end
   end
@@ -66,12 +69,12 @@ defmodule Wocky.Auth.FirebaseKeyManager do
     all_keys =
       :firebase_keys
       |> :ets.tab2list()
-      |> Enum.unzip
+      |> Enum.unzip()
       |> elem(0)
 
     new_keys =
       keys
-      |> Enum.unzip
+      |> Enum.unzip()
       |> elem(0)
 
     expired_keys = all_keys -- new_keys
@@ -85,12 +88,11 @@ defmodule Wocky.Auth.FirebaseKeyManager do
     |> Enum.find(&String.match?(&1, ~r/max-age=.*/))
     |> String.split("=")
     |> Enum.at(1)
-    |> String.to_integer
+    |> String.to_integer()
     |> set_reload()
   end
 
   defp set_reload(seconds) do
     :erlang.send_after(:timer.seconds(seconds), self(), :reload_keys)
   end
-
 end

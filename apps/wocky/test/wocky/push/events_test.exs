@@ -64,7 +64,7 @@ defmodule Wocky.Push.EventsTest do
     setup %{user: u} do
       {:ok, _} = Repo.insert(u)
 
-      oj = Factory.new_jid
+      oj = Factory.new_jid()
       c = Factory.insert(:conversation, user_id: u.id, other_jid: oj)
 
       {:ok, cid: c.id, other_jid: oj}

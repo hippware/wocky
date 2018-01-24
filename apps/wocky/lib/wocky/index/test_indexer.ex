@@ -14,9 +14,11 @@ defmodule Wocky.Index.TestIndexer do
 
   def init do
     Logger.info("Test indexer enabled")
+
     if :ets.info(:test_index_table) == :undefined do
       _ = :ets.new(:test_index_table, [:public, :named_table, :duplicate_bag])
     end
+
     reset()
   end
 
@@ -33,32 +35,34 @@ defmodule Wocky.Index.TestIndexer do
   def geosearch(_index, lat, lon) do
     # Do a brute-force search of the bots
     loc = %{lat: lat, lon: lon}
+
     {:ok, bots} =
-      Repo.transaction fn ->
+      Repo.transaction(fn ->
         Bot
-        |> Repo.stream
+        |> Repo.stream()
         |> Stream.filter(&Bot.contains?(&1, loc))
         |> Stream.map(&bot_to_object(&1, loc))
-        |> Enum.to_list
-      end
+        |> Enum.to_list()
+      end)
 
     {:ok, bots}
   end
 
   defp bot_to_object(bot, loc) do
-
     distance = Bot.distance_from(bot, loc)
+
     %{
-      "objectID"     => bot.id,
-      "server"       => bot.server,
-      "user_id"      => bot.user_id,
-      "title"        => bot.title,
-      "image"        => bot.image,
-      "lat"          => Bot.lat(bot),
-      "lon"          => Bot.lon(bot),
-      "radius"       => bot.radius,
-      "public"       => bot.public,
-      "_rankingInfo" => %{"geoDistance" => distance / 1000} # meters
+      "objectID" => bot.id,
+      "server" => bot.server,
+      "user_id" => bot.user_id,
+      "title" => bot.title,
+      "image" => bot.image,
+      "lat" => Bot.lat(bot),
+      "lon" => Bot.lon(bot),
+      "radius" => bot.radius,
+      "public" => bot.public,
+      # meters
+      "_rankingInfo" => %{"geoDistance" => distance / 1000}
     }
   end
 

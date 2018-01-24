@@ -16,7 +16,7 @@ defmodule WockyAPI.AuthenticationTest do
   describe ":authenticate plug" do
     setup do
       user = Factory.insert(:user)
-      resource = Faker.Code.issn
+      resource = Faker.Code.issn()
       {:ok, {token, _}} = Token.assign(user.id, resource)
 
       {:ok, token: token, user_id: user.id}
@@ -104,7 +104,7 @@ defmodule WockyAPI.AuthenticationTest do
     test "no user ID in URL, current user", context do
       conn =
         context.conn
-        |> assign(:current_user, ID.new)
+        |> assign(:current_user, ID.new())
         |> check_owner_access
 
       refute conn.halted
@@ -120,7 +120,8 @@ defmodule WockyAPI.AuthenticationTest do
     end
 
     test "current user matches user ID in URL", _context do
-      id = ID.new
+      id = ID.new()
+
       conn =
         "/#{id}"
         |> setup_conn()
@@ -132,9 +133,9 @@ defmodule WockyAPI.AuthenticationTest do
 
     test "current user does not match user ID in URL", _context do
       conn =
-        "/#{ID.new}"
+        "/#{ID.new()}"
         |> setup_conn()
-        |> assign(:current_user, ID.new)
+        |> assign(:current_user, ID.new())
         |> check_owner_access
 
       assert conn.status == 403

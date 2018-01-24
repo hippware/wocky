@@ -15,13 +15,13 @@ defmodule Wocky.PushTest do
 
   require Logger
 
-  @message  "Message content"
+  @message "Message content"
 
   setup do
-    Sandbox.clear_notifications
+    Sandbox.clear_notifications()
 
     user = Factory.insert(:user, resource: "testing")
-    token = Code.isbn13
+    token = Code.isbn13()
 
     :ok = Push.enable(user.id, user.resource, token)
 
@@ -79,18 +79,25 @@ defmodule Wocky.PushTest do
   describe "notify/3" do
     test "should send a push notification", shared do
       :ok = Push.notify(shared.user_id, shared.resource, @message)
-      assert_receive %Notification{payload: %{
-        "aps" => %{"alert" => @message}
-      }}, 5000
+
+      assert_receive %Notification{
+                       payload: %{
+                         "aps" => %{"alert" => @message}
+                       }
+                     },
+                     5000
     end
 
     test "should truncate long messages", shared do
       sent_message = Lorem.paragraph(100)
       :ok = Push.notify(shared.user_id, shared.resource, sent_message)
 
-      assert_receive %Notification{payload: %{
-        "aps" => %{"alert" => rcvd_message}
-      }}, 5000
+      assert_receive %Notification{
+                       payload: %{
+                         "aps" => %{"alert" => rcvd_message}
+                       }
+                     },
+                     5000
 
       assert String.length(sent_message) > String.length(rcvd_message)
       assert String.slice(rcvd_message, -3..-1) == "..."
@@ -100,9 +107,11 @@ defmodule Wocky.PushTest do
       :ok = Push.notify(shared.user_id, shared.resource, @message)
       assert_receive %Notification{}, 5000
 
-      log = Repo.one(
-        from Log, where: [user_id: ^shared.user_id, resource: ^shared.resource]
-      )
+      log =
+        Repo.one(
+          from Log,
+            where: [user_id: ^shared.user_id, resource: ^shared.resource]
+        )
 
       refute is_nil(log)
     end
@@ -111,14 +120,14 @@ defmodule Wocky.PushTest do
       :ok = Push.disable(shared.user_id, shared.resource)
 
       assert capture_log(fn ->
-        :ok = Push.notify(shared.user_id, shared.resource, @message)
-      end) =~ "no token"
+               :ok = Push.notify(shared.user_id, shared.resource, @message)
+             end) =~ "no token"
     end
 
     test "token is invalidated when the service returns an error", shared do
       assert capture_log(fn ->
-        :ok = Push.notify(shared.user_id, shared.resource, "bad token")
-      end) =~ "Bad device token"
+               :ok = Push.notify(shared.user_id, shared.resource, "bad token")
+             end) =~ "Bad device token"
 
       assert_receive %Notification{response: :bad_device_token}, 5000
 

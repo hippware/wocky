@@ -1,13 +1,17 @@
 defmodule HaveErrorsAssertion do
+  @moduledoc "Implements an Espec assertion to match Ecto changeset errors"
+
   use ESpec.Assertions.Interface
 
-  defp match(changeset, list) when is_list list do
-    result = if Keyword.keyword?(list) do
-      Enum.all?(list, &Enum.member?(changeset.errors, &1))
-    else
-      keys = Keyword.keys(changeset.errors)
-      Enum.all?(list, &Enum.member?(keys, &1))
-    end
+  defp match(changeset, list) when is_list(list) do
+    result =
+      if Keyword.keyword?(list) do
+        Enum.all?(list, &Enum.member?(changeset.errors, &1))
+      else
+        keys = Keyword.keys(changeset.errors)
+        Enum.all?(list, &Enum.member?(keys, &1))
+      end
+
     {result, result}
   end
 
@@ -18,12 +22,15 @@ defmodule HaveErrorsAssertion do
 
   defp success_message(changeset, value, _result, positive) do
     has = if positive, do: "has", else: "has not"
-    "`#{inspect changeset}` #{has} errors `#{inspect value}`."
+    "`#{inspect(changeset)}` #{has} errors `#{inspect(value)}`."
   end
 
   defp error_message(changeset, value, _result, positive) do
     have = if positive, do: "have", else: "not to have"
     but = if positive, do: "it has not", else: "it has"
-    "Expected `#{inspect changeset}` to #{have} errors `#{inspect value}`, but #{but}."
+
+    "Expected `#{inspect(changeset)}` to #{have} errors `#{inspect(value)}`, but #{
+      but
+    }."
   end
 end

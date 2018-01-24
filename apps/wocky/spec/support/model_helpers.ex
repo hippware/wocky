@@ -1,4 +1,6 @@
 defmodule ModelHelpers do
+  @moduledoc "Used in specs to setup Ecto"
+
   defmacro __using__(_args) do
     quote do
       import Ecto

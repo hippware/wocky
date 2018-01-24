@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.MaxLineLength
 defmodule Wocky.Repo.Migrations.AddItemAuthor do
   use Wocky.Repo.Migration
   use Wocky.Repo.Model

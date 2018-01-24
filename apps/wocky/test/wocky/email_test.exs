@@ -12,7 +12,9 @@ defmodule Wocky.EmailSpec do
 
   test "send_welcome_email/1", context do
     assert Email.send_welcome_email(context.user) == :ok
+
     assert_delivered_with(
-      to: [{User.full_name(context.user), context.user.email}])
+      to: [{User.full_name(context.user), context.user.email}]
+    )
   end
 end

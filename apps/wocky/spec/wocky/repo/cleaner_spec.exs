@@ -34,24 +34,36 @@ defmodule Wocky.Repo.CleanerSpec do
       new_pending = Factory.insert(:bot, user: shared.user, pending: true)
 
       # Pending Bot, older create date
-      old_pending = Factory.insert(:bot, user: shared.user, pending: true,
-                                   created_at: Timestamp.shift(days: -2))
+      old_pending =
+        Factory.insert(
+          :bot,
+          user: shared.user,
+          pending: true,
+          created_at: Timestamp.shift(days: -2)
+        )
 
       # Non-pending bot, recent create date
       new_nonpending = Factory.insert(:bot, user: shared.user, pending: false)
 
       # Non-pending bot, older create date
-      old_nonpending = Factory.insert(:bot, user: shared.user, pending: false,
-                                      created_at: Timestamp.shift(days: -2))
+      old_nonpending =
+        Factory.insert(
+          :bot,
+          user: shared.user,
+          pending: false,
+          created_at: Timestamp.shift(days: -2)
+        )
 
-      {:ok, result} = Cleaner.clean_pending_bots
-      {:ok, [
-        new_pending: new_pending,
-        old_pending: old_pending,
-        new_nonpending: new_nonpending,
-        old_nonpending: old_nonpending,
-        result: result
-      ]}
+      {:ok, result} = Cleaner.clean_pending_bots()
+
+      {:ok,
+       [
+         new_pending: new_pending,
+         old_pending: old_pending,
+         new_nonpending: new_nonpending,
+         old_nonpending: old_nonpending,
+         result: result
+       ]}
     end
 
     it "should return the number of bots removed" do
@@ -86,10 +98,15 @@ defmodule Wocky.Repo.CleanerSpec do
   describe "clean_traffic_logs" do
     before do
       new = Factory.insert(:traffic_log, user: shared.user)
-      old = Factory.insert(:traffic_log, user: shared.user,
-                           created_at: Timestamp.shift(months: -2))
 
-      {:ok, result} = Cleaner.clean_traffic_logs
+      old =
+        Factory.insert(
+          :traffic_log,
+          user: shared.user,
+          created_at: Timestamp.shift(months: -2)
+        )
+
+      {:ok, result} = Cleaner.clean_traffic_logs()
       {:ok, result: result, new: new, old: old}
     end
 
@@ -115,16 +132,17 @@ defmodule Wocky.Repo.CleanerSpec do
       {:ok, {_, _}} = Token.assign(shared.user.id, "old_token")
       {:ok, {_, _}} = Token.assign(shared.user.id, "new_token")
 
-      query = from t in Token,
-                where: t.user_id == ^shared.user.id,
-                where: t.resource == ^"old_token"
+      query =
+        from t in Token,
+          where: t.user_id == ^shared.user.id,
+          where: t.resource == ^"old_token"
 
       query
-      |> Repo.one
+      |> Repo.one()
       |> Token.changeset(%{expires_at: Timestamp.shift(weeks: -1)})
-      |> Repo.update!
+      |> Repo.update!()
 
-      {:ok, result} = Cleaner.clean_expired_auth_tokens
+      {:ok, result} = Cleaner.clean_expired_auth_tokens()
       {:ok, result: result}
     end
 
@@ -133,22 +151,24 @@ defmodule Wocky.Repo.CleanerSpec do
     end
 
     it "should remove the old token" do
-      query = from t in Token,
-                where: t.user_id == ^shared.user.id,
-                where: t.resource == ^"old_token"
+      query =
+        from t in Token,
+          where: t.user_id == ^shared.user.id,
+          where: t.resource == ^"old_token"
 
       query
-      |> Repo.one
+      |> Repo.one()
       |> should(be_nil())
     end
 
     it "should not remove the recent token" do
-      query = from t in Token,
-                where: t.user_id == ^shared.user.id,
-                where: t.resource == ^"new_token"
+      query =
+        from t in Token,
+          where: t.user_id == ^shared.user.id,
+          where: t.resource == ^"new_token"
 
       query
-      |> Repo.one
+      |> Repo.one()
       |> should_not(be_nil())
     end
   end
@@ -156,31 +176,41 @@ defmodule Wocky.Repo.CleanerSpec do
   describe "clean_pending_tros_files" do
     before do
       # Pending file, recent create date
-      new_pending = Factory.insert(:tros_metadata,
-                                   user: shared.user, ready: false)
+      new_pending =
+        Factory.insert(:tros_metadata, user: shared.user, ready: false)
 
       # Pending file, older create date
-      old_pending = Factory.insert(:tros_metadata,
-                                   user: shared.user, ready: false,
-                                   created_at: Timestamp.shift(weeks: -2))
+      old_pending =
+        Factory.insert(
+          :tros_metadata,
+          user: shared.user,
+          ready: false,
+          created_at: Timestamp.shift(weeks: -2)
+        )
 
       # Non-pending file, recent create date
-      new_nonpending = Factory.insert(:tros_metadata,
-                                      user: shared.user, ready: true)
+      new_nonpending =
+        Factory.insert(:tros_metadata, user: shared.user, ready: true)
 
       # Non-pending file, older create date
-      old_nonpending = Factory.insert(:tros_metadata,
-                                      user: shared.user, ready: true,
-                                      created_at: Timestamp.shift(weeks: -2))
+      old_nonpending =
+        Factory.insert(
+          :tros_metadata,
+          user: shared.user,
+          ready: true,
+          created_at: Timestamp.shift(weeks: -2)
+        )
 
-      {:ok, result} = Cleaner.clean_pending_tros_files
-      {:ok, [
-        new_pending: new_pending,
-        old_pending: old_pending,
-        new_nonpending: new_nonpending,
-        old_nonpending: old_nonpending,
-        result: result
-      ]}
+      {:ok, result} = Cleaner.clean_pending_tros_files()
+
+      {:ok,
+       [
+         new_pending: new_pending,
+         old_pending: old_pending,
+         new_nonpending: new_nonpending,
+         old_nonpending: old_nonpending,
+         result: result
+       ]}
     end
 
     it "should return the number of metadatas removed" do
@@ -236,37 +266,74 @@ defmodule Wocky.Repo.CleanerSpec do
 
     describe "clean_bot_item_image_links" do
       before do
-        bad_url = TROS.make_url("localhost", ID.new)
+        bad_url = TROS.make_url("localhost", ID.new())
         bot = Factory.insert(:bot, user: shared.user)
 
         good_with_content =
-          Factory.insert(:item, bot: bot, user: shared.user, image: true,
-                         stanza: item_stanza(image: shared.file_url,
-                                             content: "testing"))
+          Factory.insert(
+            :item,
+            bot: bot,
+            user: shared.user,
+            image: true,
+            stanza:
+              item_stanza(
+                image: shared.file_url,
+                content: "testing"
+              )
+          )
+
         bad_with_content =
-          Factory.insert(:item, bot: bot, user: shared.user, image: true,
-                         stanza: item_stanza(image: bad_url,
-                                             content: "testing"))
+          Factory.insert(
+            :item,
+            bot: bot,
+            user: shared.user,
+            image: true,
+            stanza:
+              item_stanza(
+                image: bad_url,
+                content: "testing"
+              )
+          )
+
         good_no_content =
-          Factory.insert(:item, bot: bot, user: shared.user, image: true,
-                         stanza: item_stanza(image: shared.file_url))
+          Factory.insert(
+            :item,
+            bot: bot,
+            user: shared.user,
+            image: true,
+            stanza: item_stanza(image: shared.file_url)
+          )
+
         bad_no_content =
-          Factory.insert(:item, bot: bot, user: shared.user, image: true,
-                         stanza: item_stanza(image: bad_url))
+          Factory.insert(
+            :item,
+            bot: bot,
+            user: shared.user,
+            image: true,
+            stanza: item_stanza(image: bad_url)
+          )
+
         only_content =
-          Factory.insert(:item, bot: bot, user: shared.user, image: false,
-                         stanza: item_stanza(content: "testing"))
+          Factory.insert(
+            :item,
+            bot: bot,
+            user: shared.user,
+            image: false,
+            stanza: item_stanza(content: "testing")
+          )
 
         {:ok, result} = Cleaner.clean_bot_item_image_links(true)
-        {:ok, [
-          bot: bot,
-          good_with_content: good_with_content,
-          bad_with_content: bad_with_content,
-          good_no_content: good_no_content,
-          bad_no_content: bad_no_content,
-          only_content: only_content,
-          result: result
-        ]}
+
+        {:ok,
+         [
+           bot: bot,
+           good_with_content: good_with_content,
+           bad_with_content: bad_with_content,
+           good_no_content: good_no_content,
+           bad_no_content: bad_no_content,
+           only_content: only_content,
+           result: result
+         ]}
       end
 
       it "should return the number of images purged" do
@@ -278,7 +345,7 @@ defmodule Wocky.Repo.CleanerSpec do
           Item
           |> where(id: ^shared.bad_with_content.id)
           |> where(bot_id: ^shared.bot.id)
-          |> Repo.one
+          |> Repo.one()
           |> should_not(be_nil())
         end
 
@@ -287,7 +354,7 @@ defmodule Wocky.Repo.CleanerSpec do
           |> where(id: ^shared.bad_with_content.id)
           |> where(bot_id: ^shared.bot.id)
           |> select([i], i.stanza)
-          |> Repo.one
+          |> Repo.one()
           |> xpath(~x"/entry/image/text()"S)
           |> should(eq "")
         end
@@ -297,7 +364,7 @@ defmodule Wocky.Repo.CleanerSpec do
           |> where(id: ^shared.good_with_content.id)
           |> where(bot_id: ^shared.bot.id)
           |> select([i], i.stanza)
-          |> Repo.one
+          |> Repo.one()
           |> should(eq shared.good_with_content.stanza)
         end
 
@@ -306,7 +373,7 @@ defmodule Wocky.Repo.CleanerSpec do
           |> where(id: ^shared.only_content.id)
           |> where(bot_id: ^shared.bot.id)
           |> select([i], i.stanza)
-          |> Repo.one
+          |> Repo.one()
           |> should(eq shared.only_content.stanza)
         end
       end
@@ -316,7 +383,7 @@ defmodule Wocky.Repo.CleanerSpec do
           Item
           |> where(id: ^shared.bad_no_content.id)
           |> where(bot_id: ^shared.bot.id)
-          |> Repo.one
+          |> Repo.one()
           |> should(be_nil())
         end
 
@@ -324,7 +391,7 @@ defmodule Wocky.Repo.CleanerSpec do
           Item
           |> where(id: ^shared.good_no_content.id)
           |> where(bot_id: ^shared.bot.id)
-          |> Repo.one
+          |> Repo.one()
           |> should_not(be_nil())
         end
       end
@@ -333,8 +400,13 @@ defmodule Wocky.Repo.CleanerSpec do
     describe "clean_bot_image_links" do
       before do
         invalid_bot = Factory.insert(:bot, user: shared.user)
-        valid_bot = Factory.insert(:bot, user: shared.user,
-                                   image: shared.file_url)
+
+        valid_bot =
+          Factory.insert(
+            :bot,
+            user: shared.user,
+            image: shared.file_url
+          )
 
         {:ok, result} = Cleaner.clean_bot_image_links(true)
         {:ok, result: result, invalid_bot: invalid_bot, valid_bot: valid_bot}
@@ -348,7 +420,7 @@ defmodule Wocky.Repo.CleanerSpec do
         Bot
         |> where(id: ^shared.invalid_bot.id)
         |> select([b], b.image)
-        |> Repo.one
+        |> Repo.one()
         |> should(be_nil())
       end
 
@@ -356,7 +428,7 @@ defmodule Wocky.Repo.CleanerSpec do
         Bot
         |> where(id: ^shared.valid_bot.id)
         |> select([b], b.image)
-        |> Repo.one
+        |> Repo.one()
         |> should(eq shared.file_url)
       end
     end
@@ -376,7 +448,7 @@ defmodule Wocky.Repo.CleanerSpec do
         User
         |> where(id: ^shared.user.id)
         |> select([u], u.avatar)
-        |> Repo.one
+        |> Repo.one()
         |> should(be_nil())
       end
 
@@ -384,7 +456,7 @@ defmodule Wocky.Repo.CleanerSpec do
         User
         |> where(id: ^shared.valid_user.id)
         |> select([u], u.avatar)
-        |> Repo.one
+        |> Repo.one()
         |> should(eq shared.file_url)
       end
     end
@@ -396,24 +468,30 @@ defmodule Wocky.Repo.CleanerSpec do
       new_pending = Factory.insert(:user, handle: nil)
 
       # Pending user, older create date
-      old_pending = Factory.insert(:user, handle: nil,
-                                   created_at: Timestamp.shift(days: -2))
+      old_pending =
+        Factory.insert(
+          :user,
+          handle: nil,
+          created_at: Timestamp.shift(days: -2)
+        )
 
       # Non-pending user, recent create date
       new_nonpending = Factory.insert(:user)
 
       # Non-pending user, older create date
-      old_nonpending = Factory.insert(:user,
-                                      created_at: Timestamp.shift(days: -2))
+      old_nonpending =
+        Factory.insert(:user, created_at: Timestamp.shift(days: -2))
 
-      {:ok, result} = Cleaner.clean_pending_users
-      {:ok, [
-        new_pending: new_pending,
-        old_pending: old_pending,
-        new_nonpending: new_nonpending,
-        old_nonpending: old_nonpending,
-        result: result
-      ]}
+      {:ok, result} = Cleaner.clean_pending_users()
+
+      {:ok,
+       [
+         new_pending: new_pending,
+         old_pending: old_pending,
+         new_nonpending: new_nonpending,
+         old_nonpending: old_nonpending,
+         result: result
+       ]}
     end
 
     it "should return the number of users removed" do
@@ -455,24 +533,30 @@ defmodule Wocky.Repo.CleanerSpec do
       new_invalid = Factory.insert(:push_token, valid: false)
 
       # Invalid token, older update date
-      old_invalid = Factory.insert(:push_token, valid: false,
-                                   enabled_at: Timestamp.shift(weeks: -3))
+      old_invalid =
+        Factory.insert(
+          :push_token,
+          valid: false,
+          enabled_at: Timestamp.shift(weeks: -3)
+        )
 
       # Valid token, recent update date
       new_valid = Factory.insert(:push_token)
 
       # Valid token, older update date
-      old_valid = Factory.insert(:push_token,
-                                 enabled_at: Timestamp.shift(weeks: -3))
+      old_valid =
+        Factory.insert(:push_token, enabled_at: Timestamp.shift(weeks: -3))
 
-      {:ok, result} = Cleaner.clean_invalid_push_tokens
-      {:ok, [
-        new_invalid: new_invalid,
-        old_invalid: old_invalid,
-        new_valid: new_valid,
-        old_valid: old_valid,
-        result: result
-      ]}
+      {:ok, result} = Cleaner.clean_invalid_push_tokens()
+
+      {:ok,
+       [
+         new_invalid: new_invalid,
+         old_invalid: old_invalid,
+         new_valid: new_valid,
+         old_valid: old_valid,
+         result: result
+       ]}
     end
 
     it "should return the number of push tokens removed" do
@@ -503,10 +587,15 @@ defmodule Wocky.Repo.CleanerSpec do
   describe "clean_notification_logs" do
     before do
       new = Factory.insert(:push_log, user: shared.user)
-      old = Factory.insert(:push_log, user: shared.user,
-                           created_at: Timestamp.shift(months: -2))
 
-      {:ok, result} = Cleaner.clean_notification_logs
+      old =
+        Factory.insert(
+          :push_log,
+          user: shared.user,
+          created_at: Timestamp.shift(months: -2)
+        )
+
+      {:ok, result} = Cleaner.clean_notification_logs()
       {:ok, result: result, new: new, old: old}
     end
 

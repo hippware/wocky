@@ -4,7 +4,7 @@ defmodule Wocky.Release.Mixfile do
   def project do
     [
       apps_path: "apps",
-      start_permanent: Mix.env == :prod,
+      start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls, test_task: "espec"],
       preferred_cli_env: [
         espec: :test,
@@ -32,14 +32,11 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:distillery,  "~> 1.1", runtime: false},
-      {:dialyxir,    "~> 0.5", only: [:dev, :test], runtime: false},
-      {:espec,       "~> 1.5", only: :test},
+      {:distillery, "~> 1.1", runtime: false},
+      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
-      {:mix_ct,
-        github: "hippware/mix_ct",
-        branch: "master",
-        only: :test}
+      {:mix_ct, github: "hippware/mix_ct", branch: "master", only: :test}
     ]
   end
 
@@ -69,7 +66,10 @@ defmodule Wocky.Release.Mixfile do
   end
 
   defp handle_db_result({_, 0}, _), do: :ok
-  defp handle_db_result({_, _}, 60), do: raise "PostgreSQL wasn't ready in time"
+
+  defp handle_db_result({_, _}, 60),
+    do: raise("PostgreSQL wasn't ready in time")
+
   defp handle_db_result({_, _}, retries) do
     Process.sleep(1000)
     do_wait_for_db(retries + 1)

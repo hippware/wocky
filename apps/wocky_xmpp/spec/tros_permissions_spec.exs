@@ -21,21 +21,23 @@ defmodule :tros_permissions_spec do
     Factory.insert(:roster_item, user: alice, contact: robert)
     Factory.insert(:roster_item, user: alice, contact: karen)
 
-    {:ok, [
-        alice: alice,
-        bob: bob,
-        carol: carol,
-        robert: robert,
-        karen: karen,
-        tim: tim
-      ]}
+    {:ok,
+     [
+       alice: alice,
+       bob: bob,
+       carol: carol,
+       robert: robert,
+       karen: karen,
+       tim: tim
+     ]}
   end
 
   describe "download permissions" do
     let :owner, do: shared.alice.id
 
     describe "user access" do
-      let :access, do: "user:" <> (shared.bob |> User.to_jid |> JID.to_binary)
+      let :access,
+        do: "user:" <> (shared.bob |> User.to_jid() |> JID.to_binary())
 
       it "should allow the owner to download" do
         assert can_download(User.to_jid(shared.alice), owner(), access())
@@ -56,7 +58,7 @@ defmodule :tros_permissions_spec do
 
     describe "friends access" do
       let :access,
-        do: "friends:" <> (shared.alice |> User.to_jid |> JID.to_binary)
+        do: "friends:" <> (shared.alice |> User.to_jid() |> JID.to_binary())
 
       it "should allow the owner to download" do
         assert can_download(User.to_jid(shared.alice), owner(), access())

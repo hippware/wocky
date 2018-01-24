@@ -7,9 +7,9 @@ defmodule Wocky.Tasks.Weekly do
   def run do
     {:ok, _} = Application.ensure_all_started(:wocky)
 
-    _ = Cleaner.clean_all
-    _ = Report.run
+    _ = Cleaner.clean_all()
+    _ = Report.run()
 
-    :init.stop
+    :init.stop()
   end
 end

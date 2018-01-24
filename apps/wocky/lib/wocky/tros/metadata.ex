@@ -12,9 +12,9 @@ defmodule Wocky.TROS.Metadata do
   @primary_key false
   @foreign_key_type :binary_id
   schema "tros_metadatas" do
-    field :id,     :binary_id, primary_key: true
+    field :id, :binary_id, primary_key: true
     field :access, :binary, default: ""
-    field :ready,  :boolean
+    field :ready, :boolean
 
     belongs_to :user, User
 
@@ -25,19 +25,19 @@ defmodule Wocky.TROS.Metadata do
   @type access :: binary
 
   @type t :: %TROSMetadata{
-    id:      id,
-    user_id: User.id,
-    access:  access,
-    ready:   boolean
-  }
+          id: id,
+          user_id: User.id(),
+          access: access,
+          ready: boolean
+        }
 
   @change_fields [:id, :user_id, :access, :ready]
 
-  @spec put(id, User.id, access) :: {:ok, t}
+  @spec put(id, User.id(), access) :: {:ok, t}
   def put(id, user_id, access) do
     %TROSMetadata{}
     |> changeset(%{id: id, user_id: user_id, access: access, ready: false})
-    |> Repo.insert
+    |> Repo.insert()
   end
 
   @spec set_access(id, access) :: {:ok, t} | {:error, :not_found}
@@ -45,10 +45,11 @@ defmodule Wocky.TROS.Metadata do
     case Repo.get(TROSMetadata, id) do
       nil ->
         {:error, :not_found}
+
       md ->
         md
         |> changeset(%{access: access})
-        |> Repo.update
+        |> Repo.update()
     end
   end
 
@@ -56,15 +57,15 @@ defmodule Wocky.TROS.Metadata do
   def get(id) do
     TROSMetadata
     |> with_file(id)
-    |> Repo.one
+    |> Repo.one()
   end
 
-  @spec get_user_id(id) :: User.id | nil
+  @spec get_user_id(id) :: User.id() | nil
   def get_user_id(id) do
     TROSMetadata
     |> with_file(id)
     |> select_user_id()
-    |> Repo.one
+    |> Repo.one()
   end
 
   @spec get_access(id) :: access | nil
@@ -72,25 +73,26 @@ defmodule Wocky.TROS.Metadata do
     TROSMetadata
     |> with_file(id)
     |> select_access()
-    |> Repo.one
+    |> Repo.one()
   end
 
   @spec delete(id) :: :ok
   def delete(id) do
     TROSMetadata
     |> with_file(id)
-    |> Repo.delete_all
+    |> Repo.delete_all()
 
     :ok
   end
 
   @spec ready?(id) :: boolean
   def ready?(id) do
+    # Return false for nil result
     TROSMetadata
     |> with_file(id)
     |> select_ready()
-    |> Repo.one
-    |> Kernel.==(true) # Return false for nil result
+    |> Repo.one()
+    |> Kernel.==(true)
   end
 
   defp changeset(struct, params) do
@@ -100,9 +102,9 @@ defmodule Wocky.TROS.Metadata do
     |> foreign_key_constraint(:user_id)
   end
 
-  defp with_file(query, id),  do: from f in query, where:  f.id == ^id
+  defp with_file(query, id), do: from(f in query, where: f.id == ^id)
 
-  defp select_user_id(query), do: from f in query, select: f.user_id
-  defp select_access(query),  do: from f in query, select: f.access
-  defp select_ready(query),   do: from f in query, select: f.ready
+  defp select_user_id(query), do: from(f in query, select: f.user_id)
+  defp select_access(query), do: from(f in query, select: f.access)
+  defp select_ready(query), do: from(f in query, select: f.ready)
 end

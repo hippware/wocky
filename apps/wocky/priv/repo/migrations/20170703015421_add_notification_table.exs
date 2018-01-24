@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.MaxLineLength
 defmodule Wocky.Repo.Migrations.AddNotificationTable do
   use Wocky.Repo.Migration
 

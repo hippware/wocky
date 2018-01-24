@@ -21,7 +21,7 @@ defmodule Wocky.Repo.Migrations.AddPostgis do
                    :lon => b.lon})
     |> Repo.stream
     |> Stream.each(&set_location/1)
-    |> Enum.to_list
+    |> Stream.run
 
     alter table(:bots) do
       remove :lat
@@ -40,7 +40,7 @@ defmodule Wocky.Repo.Migrations.AddPostgis do
                    :location => b.location})
     |> Repo.stream
     |> Stream.each(&set_lat_lon/1)
-    |> Enum.to_list
+    |> Stream.run
 
     alter table(:bots) do
       remove :location

@@ -4,7 +4,6 @@ defmodule WockyAPI.Router do
 
   import WockyAPI.Authentication
 
-
   pipeline :api do
     plug :accepts, ["json"]
     plug :authenticate

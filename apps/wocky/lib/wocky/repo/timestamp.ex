@@ -9,38 +9,38 @@ defmodule Wocky.Repo.Timestamp do
   def regex, do: @regex
 
   @doc "Returns true if the expiry has passed"
-  @spec expired?(DateTime.t) :: boolean
+  @spec expired?(DateTime.t()) :: boolean
   def expired?(expiry) do
-    DateTime.compare(expiry, DateTime.utc_now) == :lt
+    DateTime.compare(expiry, DateTime.utc_now()) == :lt
   end
 
   @doc "Parses an ISO-8601 string representation and returns a timestamp"
-  @spec from_string(String.t) :: {:ok, DateTime.t} | {:error, any}
+  @spec from_string(String.t()) :: {:ok, DateTime.t()} | {:error, any}
   def from_string(str) do
     Timex.parse(str, @format)
   end
 
   @doc "Parses an ISO-8601 string representation and returns a timestamp"
-  @spec from_string!(String.t) :: DateTime.t
+  @spec from_string!(String.t()) :: DateTime.t()
   def from_string!(str) do
     Timex.parse!(str, @format)
   end
 
   @doc "Returns the ISO-8601 string representation of a timestamp"
-  @spec to_string(DateTime.t) :: String.t
+  @spec to_string(DateTime.t()) :: String.t()
   def to_string(dt) do
     Timex.format!(dt, @format)
   end
 
   @doc "Helper function for timestamp sorting"
-  @spec less_than_eq?(DateTime.t, DateTime.t) :: boolean
+  @spec less_than_eq?(DateTime.t(), DateTime.t()) :: boolean
   def less_than_eq?(dt1, dt2), do: DateTime.compare(dt1, dt2) != :gt
 
   @doc "Gives a timestamp string shifted from the current UTC time"
-  @spec shift(Keyword.t) :: String.t
+  @spec shift(Keyword.t()) :: String.t()
   def shift(modifier) do
-    DateTime.utc_now
+    DateTime.utc_now()
     |> Timex.shift(modifier)
-    |> Timestamp.to_string
+    |> Timestamp.to_string()
   end
 end

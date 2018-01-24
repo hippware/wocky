@@ -18,37 +18,67 @@ defmodule :mod_wocky_honeybadger do
   # ===================================================================
 
   def start(host, _opts) do
-    :ejabberd_hooks.add(:sm_register_connection_hook, host,
-                        &sm_register_connection_hook/3, @hook_priority)
+    :ejabberd_hooks.add(
+      :sm_register_connection_hook,
+      host,
+      &sm_register_connection_hook/3,
+      @hook_priority
+    )
 
-    :ejabberd_hooks.add(:filter_local_packet, host,
-                        &filter_local_packet_hook/1, @hook_priority)
+    :ejabberd_hooks.add(
+      :filter_local_packet,
+      host,
+      &filter_local_packet_hook/1,
+      @hook_priority
+    )
 
-    :ejabberd_hooks.add(:iq_handler_crash, host,
-                        &iq_handler_crash_hook/4, @hook_priority)
+    :ejabberd_hooks.add(
+      :iq_handler_crash,
+      host,
+      &iq_handler_crash_hook/4,
+      @hook_priority
+    )
   end
 
   def stop(host) do
-    :ejabberd_hooks.delete(:iq_handler_crash, host,
-                           &iq_handler_crash_hook/4, @hook_priority)
+    :ejabberd_hooks.delete(
+      :iq_handler_crash,
+      host,
+      &iq_handler_crash_hook/4,
+      @hook_priority
+    )
 
-    :ejabberd_hooks.delete(:filter_local_packet, host,
-                           &filter_local_packet_hook/1, @hook_priority)
+    :ejabberd_hooks.delete(
+      :filter_local_packet,
+      host,
+      &filter_local_packet_hook/1,
+      @hook_priority
+    )
 
-    :ejabberd_hooks.delete(:sm_register_connection_hook, host,
-                           &sm_register_connection_hook/3, @hook_priority)
+    :ejabberd_hooks.delete(
+      :sm_register_connection_hook,
+      host,
+      &sm_register_connection_hook/3,
+      @hook_priority
+    )
   end
 
   # ===================================================================
   # User connection handler
   # ===================================================================
 
-  @spec sm_register_connection_hook(:ejabberd_sm.sid, :ejabberd.jid, any) :: :ok
+  @spec sm_register_connection_hook(:ejabberd_sm.sid(), :ejabberd.jid(), any) ::
+          :ok
   def sm_register_connection_hook(sid, jid, info) do
-    Honeybadger.context(%{user_id: jid(jid, :luser),
-                          connection: %{JID: :jid.to_binary(jid),
-                                        SID: inspect(sid),
-                                        info: inspect(info)}})
+    Honeybadger.context(%{
+      user_id: jid(jid, :luser),
+      connection: %{
+        JID: :jid.to_binary(jid),
+        SID: inspect(sid),
+        info: inspect(info)
+      }
+    })
+
     :ok
   end
 
@@ -56,27 +86,39 @@ defmodule :mod_wocky_honeybadger do
   # Incoming packet handler
   # ===================================================================
 
-  @type filter_packet() :: {:ejabberd.jid, :ejabberd.jid, :jlib.xmlel}
+  @type filter_packet() :: {:ejabberd.jid(), :ejabberd.jid(), :jlib.xmlel()}
   @spec filter_local_packet_hook(filter_packet | :drop) :: filter_packet
   def filter_local_packet_hook({from, to, packet} = p) do
-    Honeybadger.context(%{last_packet: %{from: :jid.to_binary(from),
-                                         to: :jid.to_binary(to),
-                                         packet: :exml.to_binary(packet)}})
+    Honeybadger.context(%{
+      last_packet: %{
+        from: :jid.to_binary(from),
+        to: :jid.to_binary(to),
+        packet: :exml.to_binary(packet)
+      }
+    })
+
     p
   end
+
   def filter_local_packet_hook(:drop), do: :drop
 
   # ===================================================================
   # IQ handler crash
   # ===================================================================
 
-  @spec iq_handler_crash_hook(:ejabberd.jid, :ejabberd.jid, :ejabberd.iq, any)
-  :: :ok
+  @spec iq_handler_crash_hook(
+          :ejabberd.jid(),
+          :ejabberd.jid(),
+          :ejabberd.iq(),
+          any
+        ) :: :ok
   def iq_handler_crash_hook(from, to, iq, exception) do
-    stacktrace = :erlang.get_stacktrace
+    stacktrace = :erlang.get_stacktrace()
+
     Honeybadger.notify(
       "IQ handler crash: #{iq(iq, :xmlns)}",
-      %{user_id: jid(from, :luser),
+      %{
+        user_id: jid(from, :luser),
         exception: inspect(exception),
         iq: %{
           from: :jid.to_binary(from),

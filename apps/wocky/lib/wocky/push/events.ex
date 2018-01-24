@@ -59,16 +59,17 @@ defmodule Wocky.Push.Events do
     defstruct [:user, :bot, :event]
 
     @type t :: %__MODULE__{
-      user: User.t,
-      bot: Bot.t,
-      event: :enter | :exit
-    }
+            user: User.t(),
+            bot: Bot.t(),
+            event: :enter | :exit
+          }
 
     use ExConstructor
   end
 
   defimpl Event, for: BotPerimeterEvent do
     import Wocky.Push.Events.Utils
+
     def message(%BotPerimeterEvent{user: user, bot: bot, event: event}) do
       case event do
         :enter -> "#{user.handle} is near the bot #{bot.title}"
@@ -85,16 +86,17 @@ defmodule Wocky.Push.Events do
     defstruct [:from, :to, :bot]
 
     @type t :: %__MODULE__{
-      from: User.t,
-      to: User.t,
-      bot: Bot.t
-    }
+            from: User.t(),
+            to: User.t(),
+            bot: Bot.t()
+          }
 
     use ExConstructor
   end
 
   defimpl Event, for: BotShareEvent do
     import Wocky.Push.Events.Utils
+
     def message(%BotShareEvent{from: from}) do
       get_handle(from) <> " shared a bot with you!"
     end
@@ -108,18 +110,19 @@ defmodule Wocky.Push.Events do
     defstruct [:from, :to, :body, :image, :conversation_id]
 
     @type t :: %__MODULE__{
-      from: User.t,
-      to: User.t,
-      body: nil | binary,
-      image: nil | binary,
-      conversation_id: binary
-    }
+            from: User.t(),
+            to: User.t(),
+            body: nil | binary,
+            image: nil | binary,
+            conversation_id: binary
+          }
 
     use ExConstructor
   end
 
   defimpl Event, for: NewMessageEvent do
     import Wocky.Push.Events.Utils
+
     def message(%NewMessageEvent{from: from, body: body}) do
       if blank?(body) do
         get_handle(from) <> " sent you an image!"
@@ -139,15 +142,16 @@ defmodule Wocky.Push.Events do
     defstruct [:user, :follower]
 
     @type t :: %__MODULE__{
-      user: User.t,
-      follower: User.t
-    }
+            user: User.t(),
+            follower: User.t()
+          }
 
     use ExConstructor
   end
 
   defimpl Event, for: NewFollowerEvent do
     import Wocky.Push.Events.Utils
+
     def message(%NewFollowerEvent{follower: follower} = _event) do
       "#{get_handle(follower)} just followed you!"
     end

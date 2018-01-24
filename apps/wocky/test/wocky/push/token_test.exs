@@ -8,6 +8,7 @@ defmodule Wocky.Push.TokenTest do
   test "required attributes" do
     changeset = Token.register_changeset(%{})
     refute changeset.valid?
+
     for a <- @attrs do
       assert "can't be blank" in errors_on(changeset)[a]
     end

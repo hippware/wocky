@@ -16,13 +16,17 @@ defmodule Wocky.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    Mailer.init
+    Mailer.init()
 
-    Supervisor.start_link([
-      worker(Wocky.Repo, []),
-      worker(Wocky.Index, []),
-      worker(Wocky.Push.Sandbox, []),
-      worker(Wocky.Auth.FirebaseKeyManager, [])
-    ], strategy: :one_for_one, name: Wocky.Supervisor)
+    Supervisor.start_link(
+      [
+        worker(Wocky.Repo, []),
+        worker(Wocky.Index, []),
+        worker(Wocky.Push.Sandbox, []),
+        worker(Wocky.Auth.FirebaseKeyManager, [])
+      ],
+      strategy: :one_for_one,
+      name: Wocky.Supervisor
+    )
   end
 end

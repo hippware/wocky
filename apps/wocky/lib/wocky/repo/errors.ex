@@ -4,7 +4,7 @@ defmodule Wocky.Repo.Errors do
   alias Ecto.Changeset
 
   @doc "Convert changeset errors into a map"
-  @spec to_map(Changeset.t) :: map
+  @spec to_map(Changeset.t()) :: map
   def to_map(changeset) do
     changeset.errors
     |> Enum.map(fn {field, detail} -> {field, render_detail(detail)} end)
@@ -16,11 +16,13 @@ defmodule Wocky.Repo.Errors do
   def render_detail({message, []}) do
     message
   end
+
   def render_detail({message, values}) do
-    Enum.reduce values, message, fn {k, v}, acc ->
+    Enum.reduce(values, message, fn {k, v}, acc ->
       String.replace(acc, "%{#{k}}", to_string(v))
-    end
+    end)
   end
+
   def render_detail(message) do
     message
   end
@@ -36,6 +38,6 @@ defmodule Wocky.Repo.Errors do
   @doc "Render an string with field and validation error message"
   @spec render_error(atom, binary) :: binary
   def render_error(field, message) do
-    "#{field |> to_string |> String.capitalize} #{message}."
+    "#{field |> to_string |> String.capitalize()} #{message}."
   end
 end

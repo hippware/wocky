@@ -5,30 +5,32 @@ defmodule WockyAPI.LocationControllerTest do
   alias Wocky.Token
 
   @create_attrs %{
-    location: [%{
-      coords: %{
-        speed: -1,
-        longitude: -85.7935821931526,
-        latitude: 35.17448497921099,
-        accuracy: 3000,
-        heading: -1,
-        altitude: 271.4361267089844,
-        altitudeAccuracy: 10
-      },
-      is_heartbeat: false,
-      is_moving: true,
-      odometer: 38_876_926.28380141,
-      uuid: "3B30B2EA-4EF7-4B0F-927A-089921DA86FC",
-      activity: %{
-        type: "unknown",
-        confidence: 100
-      },
-      battery: %{
-        level: 0.78,
-        is_charging: false
-      },
-      timestamp: "2016-10-24T09:45:05.621Z"
-    }],
+    location: [
+      %{
+        coords: %{
+          speed: -1,
+          longitude: -85.7935821931526,
+          latitude: 35.17448497921099,
+          accuracy: 3000,
+          heading: -1,
+          altitude: 271.4361267089844,
+          altitudeAccuracy: 10
+        },
+        is_heartbeat: false,
+        is_moving: true,
+        odometer: 38_876_926.28380141,
+        uuid: "3B30B2EA-4EF7-4B0F-927A-089921DA86FC",
+        activity: %{
+          type: "unknown",
+          confidence: 100
+        },
+        battery: %{
+          level: 0.78,
+          is_charging: false
+        },
+        timestamp: "2016-10-24T09:45:05.621Z"
+      }
+    ],
     resource: "testing"
   }
 

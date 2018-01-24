@@ -5,12 +5,13 @@ defmodule TestEventHandler do
     if :ets.info(:test_events_table) == :undefined do
       _ = :ets.new(:test_events_table, [:public, :named_table, :set])
     end
+
     reset()
     :ok
   end
 
   def broadcast(event) do
-    :ets.insert(:test_events_table, {DateTime.utc_now, event})
+    :ets.insert(:test_events_table, {DateTime.utc_now(), event})
     :ok
   end
 

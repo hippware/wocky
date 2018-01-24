@@ -6,10 +6,12 @@ defmodule :ejabberd_auth_wocky_spec do
   alias Wocky.Token
 
   before do
-    user = ID.new
-    resource = ID.new
+    user = ID.new()
+    resource = ID.new()
+
     {:ok, _} =
       :ejabberd_auth_wocky.try_register(user, shared.server, "password")
+
     {:ok, {token, _}} = Token.assign(user, resource)
     {:ok, user: user, resource: resource, token: token}
   end
@@ -23,12 +25,12 @@ defmodule :ejabberd_auth_wocky_spec do
 
     it "should return false when the user exists but the token doesn't match" do
       shared.user
-      |> :ejabberd_auth_wocky.check_password(shared.server, Token.generate)
+      |> :ejabberd_auth_wocky.check_password(shared.server, Token.generate())
       |> should(be_false())
     end
 
     it "should return false when the user does not exist" do
-      ID.new
+      ID.new()
       |> :ejabberd_auth_wocky.check_password(shared.server, shared.token)
       |> should(be_false())
     end

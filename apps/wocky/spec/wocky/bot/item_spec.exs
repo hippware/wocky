@@ -7,8 +7,13 @@ defmodule Wocky.Bot.ItemSpec do
   alias Wocky.Repo.ID
 
   describe "validation" do
-    let :valid_attrs, do: %{bot_id: ID.new, user_id: ID.new,
-                            id: ID.new, stanza: "testing"}
+    let :valid_attrs,
+      do: %{
+        bot_id: ID.new(),
+        user_id: ID.new(),
+        id: ID.new(),
+        stanza: "testing"
+      }
 
     it "should pass with valid attributes" do
       %Item{}
@@ -23,10 +28,9 @@ defmodule Wocky.Bot.ItemSpec do
     end
 
     describe "converting foreign key constraints to errors" do
-      let :changeset,
-        do: Item.changeset(%Item{}, valid_attrs())
+      let :changeset, do: Item.changeset(%Item{}, valid_attrs())
 
-      it do: changeset() |> Repo.insert |> should(be_error_result())
+      it do: changeset() |> Repo.insert() |> should(be_error_result())
 
       context "when the bot does not exist" do
         let :new_changeset do
@@ -36,7 +40,7 @@ defmodule Wocky.Bot.ItemSpec do
 
         it "has error" do
           error = {:bot_id, {"does not exist", []}}
-          expect(new_changeset().errors).to have(error)
+          new_changeset().errors |> should(have error)
         end
       end
     end
@@ -55,8 +59,7 @@ defmodule Wocky.Bot.ItemSpec do
        bot: bot,
        id: item.id,
        item: item,
-       item2: item2
-      }
+       item2: item2}
     end
 
     describe "get/1" do
@@ -115,14 +118,14 @@ defmodule Wocky.Bot.ItemSpec do
       end
 
       it "should return nil when the id does not exist" do
-        Item.get(shared.bot, ID.new) |> should(be_nil())
+        Item.get(shared.bot, ID.new()) |> should(be_nil())
       end
     end
 
     describe "put/4" do
       context "when an item does not already exist" do
         before do
-          new_id = ID.new
+          new_id = ID.new()
           result = Item.put(shared.bot, shared.owner, new_id, "testing", true)
           {:ok, new_id: new_id, result: result}
         end
@@ -137,6 +140,7 @@ defmodule Wocky.Bot.ItemSpec do
 
         it "should update the updated_at for the bot" do
           bot = Repo.get(Bot, shared.bot.id)
+
           DateTime.compare(bot.updated_at, shared.bot.updated_at)
           |> should(eq :gt)
         end
@@ -160,6 +164,7 @@ defmodule Wocky.Bot.ItemSpec do
 
         it "should update the updated_at for the bot" do
           bot = Repo.get(Bot, shared.bot.id)
+
           DateTime.compare(bot.updated_at, shared.bot.updated_at)
           |> should(eq :gt)
         end
@@ -168,7 +173,7 @@ defmodule Wocky.Bot.ItemSpec do
 
     describe "publish/4" do
       before do
-        new_id = ID.new
+        new_id = ID.new()
         result = Item.publish(shared.bot, shared.owner, new_id, "testing", true)
         {:ok, new_id: new_id, result: result}
       end
@@ -197,6 +202,7 @@ defmodule Wocky.Bot.ItemSpec do
 
       it "should return :ok when the bot doesn't exist" do
         bot = Factory.build(:bot)
+
         Item.delete(bot)
         |> should(eq :ok)
       end
@@ -231,17 +237,17 @@ defmodule Wocky.Bot.ItemSpec do
         it "should remove the item" do
           Item.get(shared.bot, shared.item2.id) |> should(be_nil())
         end
-
       end
 
       it "should return :ok when the bot doesn't exist" do
         bot = Factory.build(:bot)
+
         Item.delete(bot, shared.id)
         |> should(eq :ok)
       end
 
       it "should return :ok when the id doesn't exist" do
-        Item.delete(shared.bot, ID.new)
+        Item.delete(shared.bot, ID.new())
         |> should(eq :ok)
       end
 

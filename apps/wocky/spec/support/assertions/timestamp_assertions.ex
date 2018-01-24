@@ -1,4 +1,6 @@
 defmodule TimestampAssertions do
+  @moduledoc "Assertions for checking timestamp values in tests"
+
   def be_later_than(value), do: {BeLaterThanAssertion, value}
   def be_earlier_than(value), do: {BeEarlierThanAssertion, value}
 
@@ -9,14 +11,15 @@ defmodule TimestampAssertions do
 
   def success_message(subject, term, positive, type) do
     act = if positive, do: "", else: " not"
-    "#{inspect subject} is#{act} #{type} than #{inspect term}."
+    "#{inspect(subject)} is#{act} #{type} than #{inspect(term)}."
   end
 
   def error_message(subject, [term], result, positive, type) do
     if positive do
-      "Expected #{inspect subject} to be #{type} than #{inspect term} but it was #{str(result)} instead."
+      "Expected #{inspect(subject)} to be #{type} than #{inspect(term)} " <>
+        "but it was #{str(result)} instead."
     else
-      "Expected #{inspect subject} not to be #{type} than #{term} but it was."
+      "Expected #{inspect(subject)} not to be #{type} than #{term} but it was."
     end
   end
 
@@ -63,6 +66,12 @@ defmodule BeEarlierThanAssertion do
   end
 
   defp error_message(subject, term, result, positive) do
-    TimestampAssertions.error_message(subject, term, result, positive, "earlier")
+    TimestampAssertions.error_message(
+      subject,
+      term,
+      result,
+      positive,
+      "earlier"
+    )
   end
 end

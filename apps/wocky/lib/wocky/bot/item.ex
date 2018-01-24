@@ -11,10 +11,10 @@ defmodule Wocky.Bot.Item do
   @foreign_key_type :binary_id
   @primary_key false
   schema "bot_items" do
-    field :id,     :string, primary_key: true
+    field :id, :string, primary_key: true
     field :bot_id, :binary_id, primary_key: true
     field :stanza, :string
-    field :image,  :boolean, default: false
+    field :image, :boolean, default: false
 
     timestamps()
 
@@ -25,7 +25,7 @@ defmodule Wocky.Bot.Item do
   @type id :: binary
   @type t :: %Item{}
 
-  @spec changeset(t, map) :: Changeset.t
+  @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
     |> cast(params, [:id, :bot_id, :user_id, :stanza, :image])
@@ -34,75 +34,80 @@ defmodule Wocky.Bot.Item do
     |> foreign_key_constraint(:user_id)
   end
 
-  @spec get(Bot.t) :: [t]
+  @spec get(Bot.t()) :: [t]
   def get(bot) do
     bot
     |> items_query()
     |> order_by(asc: :updated_at)
-    |> Repo.all
+    |> Repo.all()
   end
 
-  @spec get_count(Bot.t) :: non_neg_integer
+  @spec get_count(Bot.t()) :: non_neg_integer
   def get_count(bot) do
     bot
     |> assoc(:items)
     |> select([i], count(i.bot_id))
-    |> Repo.one
+    |> Repo.one()
   end
 
-  @spec get_images(Bot.t) :: [t]
+  @spec get_images(Bot.t()) :: [t]
   def get_images(bot) do
     bot
     |> images_query()
     |> order_by(asc: :updated_at)
-    |> Repo.all
+    |> Repo.all()
   end
 
-  @spec get_image_count(Bot.t) :: non_neg_integer
+  @spec get_image_count(Bot.t()) :: non_neg_integer
   def get_image_count(bot) do
     bot
     |> assoc(:items)
     |> where(image: true)
     |> select([i], count(i.bot_id))
-    |> Repo.one
+    |> Repo.one()
   end
 
-  @spec get(Bot.t, id) :: t | nil
+  @spec get(Bot.t(), id) :: t | nil
   def get(bot, id) do
     Repo.get_by(Item, id: id, bot_id: bot.id)
   end
 
-  @spec put(Bot.t, User.t, id, binary, boolean) :: :ok | no_return
+  @spec put(Bot.t(), User.t(), id, binary, boolean) :: :ok | no_return
   def put(bot, user, id, stanza, image? \\ false) do
     %Item{}
-    |> changeset(%{id: id, bot_id: bot.id, user_id: user.id,
-                   stanza: stanza, image: image?})
+    |> changeset(%{
+      id: id,
+      bot_id: bot.id,
+      user_id: user.id,
+      stanza: stanza,
+      image: image?
+    })
     |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:id, :bot_id])
 
     Bot.bump_update_time(bot)
   end
 
-  @spec publish(Bot.t, User.t, id, binary, boolean) :: {:ok, t}
+  @spec publish(Bot.t(), User.t(), id, binary, boolean) :: {:ok, t}
   def publish(bot, user, id, stanza, image?) do
     :ok = put(bot, user, id, stanza, image?)
     {:ok, get(bot, id)}
   end
 
-  @spec delete(Bot.t) :: :ok
+  @spec delete(Bot.t()) :: :ok
   def delete(bot) do
     bot
     |> assoc(:items)
-    |> Repo.delete_all
+    |> Repo.delete_all()
 
     :ok
   end
 
-  @spec delete(Bot.t, id | User.t) :: :ok
+  @spec delete(Bot.t(), id | User.t()) :: :ok
   def delete(bot, id) when is_binary(id) do
     bot
     |> assoc(:items)
     |> where(id: ^id)
-    |> Repo.delete_all
+    |> Repo.delete_all()
 
     :ok
   end
@@ -111,7 +116,7 @@ defmodule Wocky.Bot.Item do
     bot
     |> assoc(:items)
     |> where(user_id: ^id)
-    |> Repo.delete_all
+    |> Repo.delete_all()
 
     :ok
   end

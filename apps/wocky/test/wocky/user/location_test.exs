@@ -16,13 +16,13 @@ defmodule Wocky.User.LocationTest do
   @rsrc "testing"
 
   setup do
-    Sandbox.clear_notifications
+    Sandbox.clear_notifications()
 
     owner = Factory.insert(:user)
-    Push.enable(owner.id, @rsrc, Code.isbn13)
+    Push.enable(owner.id, @rsrc, Code.isbn13())
 
     user = Factory.insert(:user)
-    Push.enable(user.id, @rsrc, Code.isbn13)
+    Push.enable(user.id, @rsrc, Code.isbn13())
 
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)
@@ -46,6 +46,7 @@ defmodule Wocky.User.LocationTest do
     test "should fail if fields are missing", %{loc: loc} do
       changeset = Location.changeset(loc, %{})
       refute changeset.valid?
+
       for a <- [:resource, :lat, :lon, :accuracy] do
         assert "can't be blank" in errors_on(changeset)[a]
       end
@@ -60,13 +61,14 @@ defmodule Wocky.User.LocationTest do
 
   describe "insert/5" do
     setup %{user: user} do
-      result = Location.insert(
-        user,
-        "testing",
-        Address.latitude,
-        Address.longitude,
-        10
-      )
+      result =
+        Location.insert(
+          user,
+          "testing",
+          Address.latitude(),
+          Address.longitude(),
+          10
+        )
 
       {:ok, result: result}
     end
@@ -92,16 +94,16 @@ defmodule Wocky.User.LocationTest do
       Location.check_for_bot_events(shared.inside_loc, shared.owner)
 
       assert BotEvent.get_last_event(shared.owner.id, shared.bot.id) == nil
-      assert Sandbox.list_notifications == []
+      assert Sandbox.list_notifications() == []
     end
 
     test "bots with a negative radius should not generate an event", shared do
-      shared.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!
+      shared.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
 
       Location.check_for_bot_events(shared.inside_loc, shared.user)
 
       assert BotEvent.get_last_event(shared.user.id, shared.bot.id) == nil
-      assert Sandbox.list_notifications == []
+      assert Sandbox.list_notifications() == []
     end
 
     test "user who was outside should generate an event", shared do
@@ -121,7 +123,7 @@ defmodule Wocky.User.LocationTest do
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event.id == initial_event.id
 
-      assert Sandbox.list_notifications == []
+      assert Sandbox.list_notifications() == []
     end
   end
 
@@ -149,14 +151,14 @@ defmodule Wocky.User.LocationTest do
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event.id == initial_event.id
 
-      assert Sandbox.list_notifications == []
+      assert Sandbox.list_notifications() == []
     end
 
     test "unknown previous location should not generate an event", shared do
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
       assert BotEvent.get_last_event(shared.user.id, shared.bot.id) == nil
-      assert Sandbox.list_notifications == []
+      assert Sandbox.list_notifications() == []
     end
   end
 
@@ -167,10 +169,11 @@ defmodule Wocky.User.LocationTest do
     end
 
     test "unexpired follow me should update the bot location", shared do
-      expiry = Timex.add(DateTime.utc_now, Duration.from_days(1))
+      expiry = Timex.add(DateTime.utc_now(), Duration.from_days(1))
+
       shared.bot
       |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
-      |> Repo.update!
+      |> Repo.update!()
 
       Location.update_bot_locations(shared.loc, shared.owner)
 
@@ -180,10 +183,11 @@ defmodule Wocky.User.LocationTest do
     end
 
     test "expired follow me should not update the bot location", shared do
-      expiry = Timex.subtract(DateTime.utc_now, Duration.from_days(1))
+      expiry = Timex.subtract(DateTime.utc_now(), Duration.from_days(1))
+
       shared.bot
       |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
-      |> Repo.update!
+      |> Repo.update!()
 
       Location.update_bot_locations(shared.loc, shared.owner)
 

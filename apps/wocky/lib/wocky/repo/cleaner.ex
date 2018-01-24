@@ -67,7 +67,8 @@ defmodule Wocky.Repo.Cleaner do
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
-      "Deleted #{deleted} push notification logs created before #{expire_date}")
+      "Deleted #{deleted} push notification logs created before #{expire_date}"
+    )
 
     {:ok, deleted}
   end
@@ -82,7 +83,8 @@ defmodule Wocky.Repo.Cleaner do
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
-      "Deleted #{deleted} invalid push tokens registered before #{expire_date}")
+      "Deleted #{deleted} invalid push tokens registered before #{expire_date}"
+    )
 
     {:ok, deleted}
   end
@@ -90,7 +92,7 @@ defmodule Wocky.Repo.Cleaner do
   def clean_expired_auth_tokens do
     {deleted, nil} =
       AuthToken
-      |> where([t], t.expires_at < ^DateTime.utc_now)
+      |> where([t], t.expires_at < ^DateTime.utc_now())
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} expired authentication tokens")
@@ -108,7 +110,8 @@ defmodule Wocky.Repo.Cleaner do
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info(
-      "Deleted #{deleted} pending files created before #{expire_date}")
+      "Deleted #{deleted} pending files created before #{expire_date}"
+    )
 
     {:ok, deleted}
   end
@@ -123,15 +126,18 @@ defmodule Wocky.Repo.Cleaner do
 
   def clean_bot_item_image_links(do_clean) do
     {:ok, cleaned} =
-      Repo.transaction(fn ->
-        Item
-        |> where(image: true)
-        |> Repo.stream
-        |> Stream.map(&extract_item_image/1)
-        |> Stream.filter(fn {_, image} -> image_missing?(image) end)
-        |> Stream.each(&purge_missing_item_image(do_clean, &1))
-        |> Enum.count
-      end, timeout: :infinity)
+      Repo.transaction(
+        fn ->
+          Item
+          |> where(image: true)
+          |> Repo.stream()
+          |> Stream.map(&extract_item_image/1)
+          |> Stream.filter(fn {_, image} -> image_missing?(image) end)
+          |> Stream.each(&purge_missing_item_image(do_clean, &1))
+          |> Enum.count()
+        end,
+        timeout: :infinity
+      )
 
     log_maybe_cleaned(do_clean, cleaned, "bot item image fields with bad links")
 
@@ -144,6 +150,7 @@ defmodule Wocky.Repo.Cleaner do
   end
 
   defp image_missing?(""), do: false
+
   defp image_missing?(image_url) do
     case TROS.parse_url(image_url) do
       {:ok, {_, file_id}} -> Metadata.get(file_id) == nil
@@ -152,41 +159,47 @@ defmodule Wocky.Repo.Cleaner do
   end
 
   defp purge_missing_item_image(false, {_, _}), do: :ok
+
   defp purge_missing_item_image(true, {item, image}) do
     content = xpath(item.stanza, ~x"/entry/content/text()"S)
+
     if String.length(content) > 0 do
       image_tag = "<image>#{image}</image>"
       new_stanza = String.replace(item.stanza, image_tag, "")
 
       item
       |> Item.changeset(%{stanza: new_stanza, image: false})
-      |> Repo.update!
+      |> Repo.update!()
     else
       Repo.delete!(item)
     end
   end
 
   defp log_maybe_cleaned(do_clean, count, msg) do
-    start = if do_clean do
-      "Cleaned up"
-    else
-      "Found"
-    end
+    start =
+      if do_clean do
+        "Cleaned up"
+      else
+        "Found"
+      end
 
     Logger.info("#{start} #{count} #{msg}")
   end
 
   def clean_bot_image_links(do_clean) do
     {:ok, nillified} =
-      Repo.transaction(fn ->
-        Bot
-        |> where([b], not is_nil(b.image))
-        |> where([b], b.image != "")
-        |> Repo.stream
-        |> Stream.filter(&image_missing?(&1.image))
-        |> Stream.each(&purge_missing_bot_image(do_clean, &1))
-        |> Enum.count
-      end, timeout: :infinity)
+      Repo.transaction(
+        fn ->
+          Bot
+          |> where([b], not is_nil(b.image))
+          |> where([b], b.image != "")
+          |> Repo.stream()
+          |> Stream.filter(&image_missing?(&1.image))
+          |> Stream.each(&purge_missing_bot_image(do_clean, &1))
+          |> Enum.count()
+        end,
+        timeout: :infinity
+      )
 
     log_maybe_cleaned(do_clean, nillified, "bot image fields with bad links")
 
@@ -194,23 +207,27 @@ defmodule Wocky.Repo.Cleaner do
   end
 
   defp purge_missing_bot_image(false, _), do: :ok
+
   defp purge_missing_bot_image(true, bot) do
     bot
     |> Bot.changeset(%{image: nil})
-    |> Repo.update!
+    |> Repo.update!()
   end
 
   def clean_user_avatar_links(do_clean) do
     {:ok, nillified} =
-      Repo.transaction(fn ->
-        User
-        |> where([u], not is_nil(u.avatar))
-        |> where([u], u.avatar != "")
-        |> Repo.stream
-        |> Stream.filter(&image_missing?(&1.avatar))
-        |> Stream.each(&purge_missing_user_image(do_clean, &1))
-        |> Enum.count
-      end, timeout: :infinity)
+      Repo.transaction(
+        fn ->
+          User
+          |> where([u], not is_nil(u.avatar))
+          |> where([u], u.avatar != "")
+          |> Repo.stream()
+          |> Stream.filter(&image_missing?(&1.avatar))
+          |> Stream.each(&purge_missing_user_image(do_clean, &1))
+          |> Enum.count()
+        end,
+        timeout: :infinity
+      )
 
     log_maybe_cleaned(do_clean, nillified, "user avatar fields with bad links")
 
@@ -218,10 +235,11 @@ defmodule Wocky.Repo.Cleaner do
   end
 
   defp purge_missing_user_image(false, _), do: :ok
+
   defp purge_missing_user_image(true, user) do
     user
     |> User.changeset(%{avatar: nil})
-    |> Repo.update!
+    |> Repo.update!()
   end
 
   def clean_pending_users do
@@ -233,7 +251,9 @@ defmodule Wocky.Repo.Cleaner do
       |> where([u], u.created_at <= ^expire_date)
       |> Repo.delete_all(timeout: :infinity)
 
-    Logger.info("Deleted #{deleted} pending users created before #{expire_date}")
+    Logger.info(
+      "Deleted #{deleted} pending users created before #{expire_date}"
+    )
 
     {:ok, deleted}
   end

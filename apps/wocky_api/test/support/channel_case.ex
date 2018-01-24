@@ -29,9 +29,11 @@ defmodule WockyAPI.ChannelCase do
 
   setup tags do
     :ok = Sandbox.checkout(Wocky.Repo)
+
     unless tags[:async] do
       Sandbox.mode(Wocky.Repo, {:shared, self()})
     end
+
     :ok
   end
 end

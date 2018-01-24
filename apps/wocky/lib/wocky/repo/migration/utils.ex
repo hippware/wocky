@@ -14,9 +14,10 @@ defmodule Wocky.Repo.Migration.Utils do
   # $ITEM$ as the item to be overridden. For example, to override the encoding
   # of the "title" field, use:
   # {"title", "my_encoding_function($ITEM$)"}
-  @spec add_notify(binary, Watcher.action, [override]) :: term
+  @spec add_notify(binary, Watcher.action(), [override]) :: term
   def add_notify(table, action_atom, overrides) do
     action = Atom.to_string(action_atom)
+
     execute """
     CREATE FUNCTION notify_#{table}_#{action}()
     RETURNS trigger AS $$
@@ -42,9 +43,11 @@ defmodule Wocky.Repo.Migration.Utils do
   end
 
   defp wrap_overrides(base, _object, []), do: base
+
   defp wrap_overrides(base, object, [{field, action} | rest]) do
-    mapped_action = String.replace(
-      action, "$ITEM$", "#{object}.#{field}", [:global])
+    mapped_action =
+      String.replace(action, "$ITEM$", "#{object}.#{field}", [:global])
+
     # We have to call COALESCE here because jsonb_set is, inexplicably, STRICT.
     # See
     # https://www.postgresql.org/message-id/flat/
@@ -54,6 +57,7 @@ defmodule Wocky.Repo.Migration.Utils do
     jsonb_set(#{base}, '{#{field}}',
               COALESCE(to_jsonb(#{mapped_action}), 'null'))
     """
+
     wrap_overrides(new, object, rest)
   end
 
@@ -74,7 +78,7 @@ defmodule Wocky.Repo.Migration.Utils do
   end
 
   ### Remove function/trigger
-  @spec remove_notify(binary, Watcher.action) :: term
+  @spec remove_notify(binary, Watcher.action()) :: term
   def remove_notify(table, action_atom) do
     action = Atom.to_string(action_atom)
     execute "DROP TRIGGER IF EXISTS #{name(table, action)} ON #{table}"

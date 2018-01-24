@@ -14,16 +14,17 @@ defmodule Wocky.ConversationSpec do
 
     # A user with 10 conversations
     user2 = Factory.insert(:user, %{server: shared.server})
-    conversations = for _ <- 1..10 do
-      Factory.insert(:conversation, user: user2)
-    end
+
+    conversations =
+      for _ <- 1..10 do
+        Factory.insert(:conversation, user: user2)
+      end
 
     {:ok,
-      user: user,
-      user2: user2,
-      conversation: conversation,
-      conversations: conversations
-    }
+     user: user,
+     user2: user2,
+     conversation: conversation,
+     conversations: conversations}
   end
 
   describe "find/1" do
@@ -36,12 +37,13 @@ defmodule Wocky.ConversationSpec do
     it "should return conversations sorted by decreasing timestamp" do
       conversations = Conversation.find(shared.user2.id)
       conversations |> should(have_length 10)
+
       Enum.zip(conversations, Enum.reverse(shared.conversations))
-      |> should(have_all fn({a, b}) -> should_match(a, b) end)
+      |> should(have_all(fn {a, b} -> should_match(a, b) end))
     end
 
     it "should return an empty list if a user has no conversations" do
-      Conversation.find(ID.new) |> should(eq [])
+      Conversation.find(ID.new()) |> should(eq [])
     end
   end
 
@@ -64,7 +66,7 @@ defmodule Wocky.ConversationSpec do
 
     context "when the conversation does not exist" do
       it "should return nil" do
-        Conversation.get_id(shared.user.id, Factory.new_jid)
+        Conversation.get_id(shared.user.id, Factory.new_jid())
         |> should(be_nil())
       end
     end
@@ -75,11 +77,16 @@ defmodule Wocky.ConversationSpec do
       before do
         user = Factory.insert(:user, %{server: shared.server})
         conversation = Factory.build(:conversation, user_id: user.id)
-        result = Conversation.put(conversation.id,
-                                  user.id,
-                                  conversation.other_jid,
-                                  conversation.message,
-                                  conversation.outgoing)
+
+        result =
+          Conversation.put(
+            conversation.id,
+            user.id,
+            conversation.other_jid,
+            conversation.message,
+            conversation.outgoing
+          )
+
         {:ok,
          conversation: conversation,
          user: user,
@@ -100,16 +107,21 @@ defmodule Wocky.ConversationSpec do
 
     context "when there is an existing entry for the other user" do
       before do
-        conversation = Factory.build(
-                         :conversation,
-                         %{user_id: shared.conversation.user_id,
-                          other_jid: shared.conversation.other_jid})
+        conversation =
+          Factory.build(:conversation, %{
+            user_id: shared.conversation.user_id,
+            other_jid: shared.conversation.other_jid
+          })
 
-        result = Conversation.put(conversation.id,
-                                  conversation.user_id,
-                                  conversation.other_jid,
-                                  conversation.message,
-                                  conversation.outgoing)
+        result =
+          Conversation.put(
+            conversation.id,
+            conversation.user_id,
+            conversation.other_jid,
+            conversation.message,
+            conversation.outgoing
+          )
+
         {:ok,
          result: result,
          new_conversation: conversation,
@@ -133,17 +145,17 @@ defmodule Wocky.ConversationSpec do
 
         c.id |> should(eq shared.conversation.id)
       end
-
     end
-
   end
 
   describe "delete_user_pair/2" do
     before do
       conversation =
-        Factory.insert(:conversation,
-                       %{user: shared.user,
-                         other_jid: JID.to_binary(User.to_jid(shared.user2))})
+        Factory.insert(:conversation, %{
+          user: shared.user,
+          other_jid: JID.to_binary(User.to_jid(shared.user2))
+        })
+
       {:ok, conversation: conversation}
     end
 
@@ -153,6 +165,7 @@ defmodule Wocky.ConversationSpec do
 
     it "should remove all entries for the user pair" do
       Conversation.delete_user_pair(shared.user, shared.user2)
+
       Conversation.find(shared.user.id)
       |> should_not(have(shared.conversation))
     end

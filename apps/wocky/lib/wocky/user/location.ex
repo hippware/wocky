@@ -17,11 +17,11 @@ defmodule Wocky.User.Location do
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_locations" do
-    field :user_id,   :binary_id, null: false
-    field :resource,  :string, null: false
-    field :lat,       :float, null: false
-    field :lon,       :float, null: false
-    field :accuracy,  :float
+    field :user_id, :binary_id, null: false
+    field :resource, :string, null: false
+    field :lat, :float, null: false
+    field :lon, :float, null: false
+    field :accuracy, :float
 
     timestamps()
 
@@ -30,16 +30,16 @@ defmodule Wocky.User.Location do
 
   @type location_tuple :: {float, float, float}
   @type t :: %Location{
-    user_id: User.id,
-    resource: User.resource,
-    lat: float,
-    lon: float,
-    accuracy: float
-  }
+          user_id: User.id(),
+          resource: User.resource(),
+          lat: float,
+          lon: float,
+          accuracy: float
+        }
 
   @doc "Store a user location datapoint"
-  @spec insert(User.t, User.resource, float, float, float)
-    :: {:ok, t} | {:error, any}
+  @spec insert(User.t(), User.resource(), float, float, float) ::
+          {:ok, t} | {:error, any}
   def insert(user, resource, lat, lon, accuracy) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
     data = %{resource: resource, lat: nlat, lon: nlon, accuracy: accuracy}
@@ -47,7 +47,7 @@ defmodule Wocky.User.Location do
     user
     |> build_assoc(:locations)
     |> changeset(data)
-    |> Repo.insert
+    |> Repo.insert()
   end
 
   def changeset(struct, params) do
@@ -58,28 +58,29 @@ defmodule Wocky.User.Location do
   end
 
   @doc ""
-  @spec check_for_bot_events(t, User.t) :: t
+  @spec check_for_bot_events(t, User.t()) :: t
   def check_for_bot_events(%Location{} = loc, user) do
-    maybe_do_async fn ->
+    maybe_do_async(fn ->
       user
-      |> User.get_subscriptions
+      |> User.get_subscriptions()
       |> bots_with_events(user, loc)
       |> Enum.each(&trigger_bot_notification(user, &1))
-    end
+    end)
 
     loc
   end
 
   @doc ""
-  @spec update_bot_locations(t, User.t) :: t
+  @spec update_bot_locations(t, User.t()) :: t
   def update_bot_locations(%Location{} = loc, user) do
     if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
-      maybe_do_async fn ->
+      maybe_do_async(fn ->
         user
-        |> User.get_owned_bots_with_follow_me
+        |> User.get_owned_bots_with_follow_me()
         |> Enum.each(
-          &Bot.update(&1, %{location: GeoUtils.point(loc.lat, loc.lon)}))
-      end
+          &Bot.update(&1, %{location: GeoUtils.point(loc.lat, loc.lon)})
+        )
+      end)
     end
 
     loc
@@ -99,23 +100,32 @@ defmodule Wocky.User.Location do
 
   defmacrop log_check_result(user, bot, result) do
     quote do
-      :ok = Logger.debug("""
-      User #{unquote(user).id} #{unquote(result)} the perimeter \
-      of #{unquote(bot).id}\
-      """)
+      :ok =
+        Logger.debug(fn ->
+          """
+          User #{unquote(user).id} #{unquote(result)} the perimeter \
+          of #{unquote(bot).id}\
+          """
+        end)
     end
   end
 
   defp check_for_event(bot, user, loc, acc) do
-    :ok = Logger.debug("""
-    Checking user #{user.id} for collision with bot #{bot.id} \
-    at location (#{loc.lat},#{loc.lon})...\
-    """)
+    :ok =
+      Logger.debug(fn ->
+        """
+        Checking user #{user.id} for collision with bot #{bot.id} \
+        at location (#{loc.lat},#{loc.lon})...\
+        """
+      end)
+
     # Don't check bots that are owned by the user
     if bot.user_id == user.id do
-      :ok = Logger.debug(
-        "Skipping bot #{bot.id} since it is owned by #{user.id}"
-      )
+      :ok =
+        Logger.debug(fn ->
+          "Skipping bot #{bot.id} since it is owned by #{user.id}"
+        end)
+
       acc
     else
       bot
@@ -134,6 +144,7 @@ defmodule Wocky.User.Location do
       acc
     end
   end
+
   defp handle_intersection(false, user, bot, acc) do
     if should_generate_exit_event(user, bot) do
       log_check_result(user, bot, "has left")
@@ -162,7 +173,7 @@ defmodule Wocky.User.Location do
   end
 
   defp trigger_bot_notification(user, {bot, event}) do
-    jid = user.username |> JID.make(user.server) |> JID.to_binary
+    jid = user.username |> JID.make(user.server) |> JID.to_binary()
     :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
 
     if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do

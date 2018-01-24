@@ -9,7 +9,7 @@ defmodule :mod_privacy_wocky_spec do
   alias Wocky.Repo.ID
 
   defrecordp :listitem,
-    extract(:listitem, from_lib: "ejabberd/include/mod_privacy.hrl")
+             extract(:listitem, from_lib: "ejabberd/include/mod_privacy.hrl")
 
   @backend :mod_privacy_odbc
   @default_list "default"
@@ -17,39 +17,35 @@ defmodule :mod_privacy_wocky_spec do
   @privacy_list2 "privacy list 2"
 
   before do
-    carol = ID.new
-    karen = ID.new
+    carol = ID.new()
+    karen = ID.new()
 
-    @backend.replace_privacy_list(
-      carol, shared.server, @privacy_list1, [
-        listitem(
-          type: :jid,
-          value: :jid.to_lower(JID.make(karen, shared.server)),
-          action: :block,
-          order: 1,
-          match_all: true
-        ),
-        listitem(
-          type: :jid,
-          value: :jid.to_lower(JID.make(karen, shared.server)),
-          action: :block,
-          order: 2,
-          match_iq: true
-        )
-      ]
-    )
+    @backend.replace_privacy_list(carol, shared.server, @privacy_list1, [
+      listitem(
+        type: :jid,
+        value: :jid.to_lower(JID.make(karen, shared.server)),
+        action: :block,
+        order: 1,
+        match_all: true
+      ),
+      listitem(
+        type: :jid,
+        value: :jid.to_lower(JID.make(karen, shared.server)),
+        action: :block,
+        order: 2,
+        match_iq: true
+      )
+    ])
 
-    @backend.replace_privacy_list(
-      carol, shared.server, @privacy_list2, [
-        listitem(
-          type: :subscription,
-          value: :both,
-          action: :block,
-          order: 1,
-          match_message: true
-        )
-      ]
-    )
+    @backend.replace_privacy_list(carol, shared.server, @privacy_list2, [
+      listitem(
+        type: :subscription,
+        value: :both,
+        action: :block,
+        order: 1,
+        match_message: true
+      )
+    ])
 
     @backend.remove_user(karen, shared.server)
 
@@ -58,10 +54,11 @@ defmodule :mod_privacy_wocky_spec do
 
   describe "get_default_list/2" do
     before do
-      {:ok, [
-          default_items: default_list_items(shared.carol, shared.server),
-          result: get_default_list(shared.carol, shared.server)
-        ]}
+      {:ok,
+       [
+         default_items: default_list_items(shared.carol, shared.server),
+         result: get_default_list(shared.carol, shared.server)
+       ]}
     end
 
     it "should return a success result" do
@@ -165,7 +162,7 @@ defmodule :mod_privacy_wocky_spec do
 
     context "when the user does not exist" do
       before do
-        result = get_privacy_list(ID.new, shared.server, @privacy_list1)
+        result = get_privacy_list(ID.new(), shared.server, @privacy_list1)
         {:ok, result: result}
       end
 
@@ -195,9 +192,10 @@ defmodule :mod_privacy_wocky_spec do
 
   describe "set_default_list/2" do
     before do
-      {:ok, [
-          result: set_default_list(shared.carol, shared.server, @privacy_list1)
-        ]}
+      {:ok,
+       [
+         result: set_default_list(shared.carol, shared.server, @privacy_list1)
+       ]}
     end
 
     it "should return an error result" do
@@ -214,6 +212,7 @@ defmodule :mod_privacy_wocky_spec do
       before do
         result =
           remove_privacy_list(shared.carol, shared.server, @privacy_list2)
+
         {:ok, result: result}
       end
 
@@ -230,8 +229,7 @@ defmodule :mod_privacy_wocky_spec do
 
     context "when removing the default list" do
       before do
-        result =
-          remove_privacy_list(shared.karen, shared.server, @default_list)
+        result = remove_privacy_list(shared.karen, shared.server, @default_list)
         {:ok, result: result}
       end
 
@@ -254,8 +252,11 @@ defmodule :mod_privacy_wocky_spec do
   describe "replace_privacy_list/4" do
     context "when the list does not already exist" do
       before do
-        result = replace_privacy_list(
-          shared.karen, shared.server, "new list", [new_item()])
+        result =
+          replace_privacy_list(shared.karen, shared.server, "new list", [
+            new_item()
+          ])
+
         {:ok, result: result}
       end
 
@@ -271,8 +272,11 @@ defmodule :mod_privacy_wocky_spec do
 
     context "when the list already exists" do
       before do
-        result = replace_privacy_list(
-          shared.carol, shared.server, @privacy_list1, [new_item()])
+        result =
+          replace_privacy_list(shared.carol, shared.server, @privacy_list1, [
+            new_item()
+          ])
+
         {:ok, result: result}
       end
 
@@ -309,7 +313,7 @@ defmodule :mod_privacy_wocky_spec do
 
     context "when the user does not exist" do
       before do
-        {:ok, result: remove_user(ID.new, shared.server)}
+        {:ok, result: remove_user(ID.new(), shared.server)}
       end
 
       it "should return a success result" do

@@ -23,8 +23,15 @@ config :logger,
 config :logger, :console,
   format: "$date $time [$level] $levelpad$metadata$message\n",
   # Include Ecto and Phoenix logging metadata
-  metadata: [:query, :query_params, :queue_time, :query_time, :decode_time,
-             :db_duration, :request_id]
+  metadata: [
+    :query,
+    :query_params,
+    :queue_time,
+    :query_time,
+    :decode_time,
+    :db_duration,
+    :request_id
+  ]
 
 # Stop lager redirecting :error_logger messages
 config :lager, :error_logger_redirect, false
@@ -61,4 +68,4 @@ config :distillery,
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

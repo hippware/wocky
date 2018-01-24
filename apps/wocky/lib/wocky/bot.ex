@@ -26,27 +26,42 @@ defmodule Wocky.Bot do
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "bots" do
-    field :server,            :string  # Bot server
-    field :title,             :string, default: ""  # Bot title
-    field :pending,           :boolean # True if this is a preallocated bot ID
-    field :shortname,         :string  # Bot shortname for URL representation
-    field :description,       :string, default: ""  # User-supplied description
-    field :image,             :string  # Bot graphical image
-    field :type,              :string, default: ""
+    # Bot server
+    field :server, :string
+    # Bot title
+    field :title, :string, default: ""
+    # True if this is a preallocated bot ID
+    field :pending, :boolean
+    # Bot shortname for URL representation
+    field :shortname, :string
+    # User-supplied description
+    field :description, :string, default: ""
+    # Bot graphical image
+    field :image, :string
+    field :type, :string, default: ""
     # Bot type (freeform string from server's perspective)
-    field :address,           :string, default: ""
+    field :address, :string, default: ""
     # Free-form string field describing bot's location
-    field :address_data,      :string, default: ""
+    field :address_data, :string, default: ""
     # Opaque field containing adress related information
-    field :location,          Geo.Point # Location
-    field :radius,            :float   # Radius of bot circle
-    field :public,            :boolean # Visibility of bot
-    field :alerts,            :boolean # Whether alerts are enabled
-    field :follow_me,         :boolean # Does bot follow owner
-    field :follow_me_expiry,  :utc_datetime # When follow me expires
-    field :tags,              {:array, :string}
-    field :subscribers_hash,  :string,
-           default: "d41d8cd98f00b204e9800998ecf8427e" # md5("")
+    # Location
+    field :location, Geo.Point
+    # Radius of bot circle
+    field :radius, :float
+    # Visibility of bot
+    field :public, :boolean
+    # Whether alerts are enabled
+    field :alerts, :boolean
+    # Does bot follow owner
+    field :follow_me, :boolean
+    # When follow me expires
+    field :follow_me_expiry, :utc_datetime
+    field :tags, {:array, :string}
+
+    field :subscribers_hash, :string,
+      # md5("")
+      default: "d41d8cd98f00b204e9800998ecf8427e"
+
     field :subscribers_count, :integer, default: 0
 
     timestamps()
@@ -55,49 +70,62 @@ defmodule Wocky.Bot do
 
     has_many :items, Item
 
-    many_to_many :shares, User, join_through: Share
-    many_to_many :subscribers, User, join_through: Subscription
+    many_to_many(:shares, User, join_through: Share)
+    many_to_many(:subscribers, User, join_through: Subscription)
   end
 
   @type id :: binary
   @type not_loaded :: %NotLoaded{}
 
   @type t :: %Bot{
-    id:                 nil | id,
-    server:             nil | binary,
-    title:              binary,
-    pending:            nil | boolean,
-    shortname:          nil | binary,
-    description:        binary,
-    image:              nil | binary,
-    type:               binary,
-    address:            binary,
-    address_data:       binary,
-    location:           nil | Geo.Point.t,
-    radius:             nil | float,
-    public:             nil | boolean,
-    alerts:             nil | boolean,
-    follow_me:          nil | boolean,
-    follow_me_expiry:   nil | DateTime.t,
-    tags:               nil | [binary],
-    subscribers_hash:   binary,
-    subscribers_count:  non_neg_integer,
-
-    user:               not_loaded | User.t,
-    items:              not_loaded | [Item.t],
-
-    shares:             not_loaded | [User.t],
-    subscribers:        not_loaded | [User.t]
-  }
-
+          id: nil | id,
+          server: nil | binary,
+          title: binary,
+          pending: nil | boolean,
+          shortname: nil | binary,
+          description: binary,
+          image: nil | binary,
+          type: binary,
+          address: binary,
+          address_data: binary,
+          location: nil | Geo.Point.t(),
+          radius: nil | float,
+          public: nil | boolean,
+          alerts: nil | boolean,
+          follow_me: nil | boolean,
+          follow_me_expiry: nil | DateTime.t(),
+          tags: nil | [binary],
+          subscribers_hash: binary,
+          subscribers_count: non_neg_integer,
+          user: not_loaded | User.t(),
+          items: not_loaded | [Item.t()],
+          shares: not_loaded | [User.t()],
+          subscribers: not_loaded | [User.t()]
+        }
 
   @bot_prefix "bot/"
-  @change_fields [:id, :server, :user_id, :title, :shortname, :description,
-                  :image, :type, :address, :address_data, :location, :radius,
-                  :public, :alerts, :follow_me, :follow_me_expiry, :tags]
+  @change_fields [
+    :id,
+    :server,
+    :user_id,
+    :title,
+    :shortname,
+    :description,
+    :image,
+    :type,
+    :address,
+    :address_data,
+    :location,
+    :radius,
+    :public,
+    :alerts,
+    :follow_me,
+    :follow_me_expiry,
+    :tags
+  ]
   @required_fields [:id, :server, :user_id, :title, :location, :radius]
 
-  #----------------------------------------------------------------------
+  # ----------------------------------------------------------------------
   # Helpers
 
   @spec make_node(t) :: binary
@@ -105,18 +133,19 @@ defmodule Wocky.Bot do
     @bot_prefix <> bot.id
   end
 
-  @spec to_jid(t) :: JID.t
+  @spec to_jid(t) :: JID.t()
   def to_jid(bot) do
     JID.make("", bot.server, make_node(bot))
   end
 
-  @spec get_id_from_jid(JID.t) :: id | nil
+  @spec get_id_from_jid(JID.t()) :: id | nil
   def get_id_from_jid(jid(lresource: @bot_prefix <> id)) do
     case ID.valid?(id) do
       true -> id
       false -> nil
     end
   end
+
   def get_id_from_jid(_), do: nil
 
   @spec get_id_from_node(binary) :: id | nil
@@ -131,17 +160,19 @@ defmodule Wocky.Bot do
   @spec public?(map) :: boolean
   def public?(%{public: is_public}), do: is_public
 
-  #----------------------------------------------------------------------
+  # ----------------------------------------------------------------------
   # Database interaction
 
-  @spec get(Bot.id | JID.t, boolean) :: t | nil
+  @spec get(Bot.id() | JID.t(), boolean) :: t | nil
   def get(id, include_pending \\ false)
+
   def get(id, include_pending) when is_binary(id) do
     Bot
     |> where(id: ^id)
     |> maybe_filter_pending(not include_pending)
-    |> Repo.one
+    |> Repo.one()
   end
+
   def get(jid, include_pending) when Record.is_record(jid, :jid) do
     case get_id_from_jid(jid) do
       nil -> nil
@@ -149,17 +180,17 @@ defmodule Wocky.Bot do
     end
   end
 
-  @spec preallocate(User.id, User.server) :: t | no_return
+  @spec preallocate(User.id(), User.server()) :: t | no_return
   def preallocate(user_id, server) do
-    params = %{id: ID.new, server: server, user_id: user_id, pending: true}
+    params = %{id: ID.new(), server: server, user_id: user_id, pending: true}
 
     %Bot{}
     |> cast(params, [:id, :server, :user_id, :pending])
     |> foreign_key_constraint(:user_id)
-    |> Repo.insert!
+    |> Repo.insert!()
   end
 
-  @spec changeset(t, map) :: Changeset.t
+  @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
@@ -198,29 +229,29 @@ defmodule Wocky.Bot do
     :ok
   end
 
-  @spec owner(t) :: User.t
+  @spec owner(t) :: User.t()
   def owner(bot) do
     bot = Repo.preload(bot, :user)
     bot.user
   end
 
-  @spec subscribers_query(t) :: [User.t]
+  @spec subscribers_query(t) :: [User.t()]
   def subscribers_query(bot) do
     Ecto.assoc(bot, :subscribers)
   end
 
-  @spec subscribers(t) :: [User.t]
+  @spec subscribers(t) :: [User.t()]
   def subscribers(bot) do
     Repo.preload(bot, [:subscribers]).subscribers
   end
 
   defp tidy_subscribers(subscribers) do
     subscribers
-    |> Enum.sort_by(&(&1.id))
-    |> Enum.uniq_by(&(&1.id))
+    |> Enum.sort_by(& &1.id)
+    |> Enum.uniq_by(& &1.id)
   end
 
-  @spec notification_recipients(Bot.t, User.t) :: [JID.t]
+  @spec notification_recipients(Bot.t(), User.t()) :: [JID.t()]
   def notification_recipients(bot, sender) do
     bot = Repo.preload(bot, [:user])
 
@@ -233,69 +264,79 @@ defmodule Wocky.Bot do
   end
 
   @doc "Count of all subscribers"
-  @spec subscriber_count(Bot.t) :: pos_integer
+  @spec subscriber_count(Bot.t()) :: pos_integer
   def subscriber_count(bot) do
     bot
     |> assoc(:subscribers)
     |> select([s], count(s.id))
-    |> Repo.one
+    |> Repo.one()
   end
 
   @doc "Returns the bot's distance from the specified location in meters."
-  @spec distance_from(Bot.t, Point.t) :: non_neg_integer
+  @spec distance_from(Bot.t(), Point.t()) :: non_neg_integer
   def distance_from(bot, loc) do
     Geocalc.distance_between(%{lat: lat(bot), lon: lon(bot)}, loc)
   end
 
   @doc "Returns true if the location is within the bot's radius."
-  @spec contains?(Bot.t, Point.t) :: boolean
+  @spec contains?(Bot.t(), Point.t()) :: boolean
   def contains?(bot, loc) do
     if bot.radius < 0 do
-      :ok = Logger.warn(
-        "Bot #{bot.id} has a negative radius (#{bot.radius} meters)."
-      )
+      :ok =
+        Logger.warn(
+          "Bot #{bot.id} has a negative radius (#{bot.radius} meters)."
+        )
+
       false
     else
       distance_from(bot, loc) <= bot.radius
     end
   end
 
-  @spec is_visible_query(Queryable.t, User.t) :: Queryable.t
+  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     queryable
     |> Blocking.object_visible_query(user.id, :user_id)
-    |> join(:left, [b, ...], s in Share,
-            b.id == s.bot_id and s.user_id == ^user.id)
-    |> where([b, ..., s],
-             b.user_id == ^user.id or b.public or not is_nil(s.user_id))
+    |> join(
+      :left,
+      [b, ...],
+      s in Share,
+      b.id == s.bot_id and s.user_id == ^user.id
+    )
+    |> where(
+      [b, ..., s],
+      b.user_id == ^user.id or b.public or not is_nil(s.user_id)
+    )
   end
 
-  @spec bump_update_time(Bot.t) :: :ok
+  @spec bump_update_time(Bot.t()) :: :ok
   def bump_update_time(bot) do
     bot
     |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
-    |> Repo.update!
+    |> Repo.update!()
+
     :ok
   end
 
-  @spec lat(Bot.t) :: float | nil
+  @spec lat(Bot.t()) :: float | nil
   def lat(%Bot{location: %Geo.Point{coordinates: {_, lat}}}), do: lat
   def lat(_), do: nil
 
-  @spec lon(Bot.t) :: float | nil
+  @spec lon(Bot.t()) :: float | nil
   def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
   def lon(_), do: nil
 
-  @spec fix_from_json(Bot.t) :: Bot.t
+  @spec fix_from_json(Bot.t()) :: Bot.t()
   def fix_from_json(%Bot{location: nil} = bot), do: bot
+
   def fix_from_json(%Bot{location: location} = bot) do
     new_loc =
       location
-      |> GeoUtils.get_lat_lon
-      |> Tuple.to_list
+      |> GeoUtils.get_lat_lon()
+      |> Tuple.to_list()
       |> Enum.map(&ensure_float/1)
-      |> List.to_tuple
-      |> GeoUtils.point
+      |> List.to_tuple()
+      |> GeoUtils.point()
 
     Map.put(bot, :location, new_loc)
   end
@@ -306,6 +347,7 @@ defmodule Wocky.Bot do
   defp maybe_filter_pending(queryable, false) do
     queryable
   end
+
   defp maybe_filter_pending(queryable, true) do
     queryable
     |> where(pending: false)
@@ -314,6 +356,6 @@ defmodule Wocky.Bot do
   defp maybe_tidy_home_streams(%Bot{public: true} = bot, %{public: false}) do
     HomeStreamItem.delete_by_bot_ref_invisible(%{bot | public: false})
   end
-  defp maybe_tidy_home_streams(_, _), do: :ok
 
+  defp maybe_tidy_home_streams(_, _), do: :ok
 end

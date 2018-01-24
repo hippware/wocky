@@ -11,12 +11,14 @@ defmodule Wocky.TROS.S3Store do
   @behaviour TROS
 
   @amz_content_type "content-type"
-  @link_expiry 60 * 10 # 10 minute expiry on upload/download links.
+  # 10 minute expiry on upload/download links.
+  @link_expiry 60 * 10
 
   def delete(lserver, file_id) do
     for file <- TROS.variants(file_id) do
       do_delete(lserver, file)
     end
+
     :ok
   end
 
@@ -32,7 +34,7 @@ defmodule Wocky.TROS.S3Store do
     url =
       lserver
       |> s3_url(bucket(), file_id, type, [])
-      |> String.to_charlist
+      |> String.to_charlist()
 
     case :httpc.request(type, {url, []}, [], []) do
       {:ok, _} = res -> res
@@ -43,16 +45,19 @@ defmodule Wocky.TROS.S3Store do
   defp check_result_get_headers({{_, expected, _}, headers, _body}, expected) do
     {:ok, headers}
   end
+
   defp check_result_get_headers({{_, code, _}, _headers, _body}, _expected)
-  when code == 404 or code == 403 do
+       when code == 404 or code == 403 do
     # S3 likes to return 403 for non-existant files
     {:error, :not_found}
   end
+
   defp check_result_get_headers({error, headers, body}, expected) do
     text = """
     Error performing operation (expected #{expected}): \
     #{inspect(error)} #{inspect(headers)} #{inspect(body)}\
     """
+
     {:error, {:retrieve_error, text}}
   end
 
@@ -74,17 +79,16 @@ defmodule Wocky.TROS.S3Store do
     reference_url = TROS.make_url(file_jid)
 
     headers = [
-     {"x-amz-content-sha256", "UNSIGNED-PAYLOAD"},
-     {"content-length", Integer.to_string(size)},
-     {@amz_content_type, Map.get(metadata, @amz_content_type)}
+      {"x-amz-content-sha256", "UNSIGNED-PAYLOAD"},
+      {"content-length", Integer.to_string(size)},
+      {@amz_content_type, Map.get(metadata, @amz_content_type)}
     ]
-
 
     url =
       "https://#{upload_bucket()}.s3.amazonaws.com/#{path(lserver, file_id)}"
 
-    {:ok, ret_headers} = Auth.headers(:put, url, :s3,
-                                      make_config(), headers, nil)
+    {:ok, ret_headers} =
+      Auth.headers(:put, url, :s3, make_config(), headers, nil)
 
     resp_fields = resp_fields(:put, url, reference_url)
 
@@ -93,7 +97,7 @@ defmodule Wocky.TROS.S3Store do
 
   defp resp_fields(method, url, reference_url) do
     [
-      {"method", method |> to_string |> String.upcase},
+      {"method", method |> to_string |> String.upcase()},
       {"url", url},
       {"reference_url", reference_url}
     ]
@@ -106,8 +110,14 @@ defmodule Wocky.TROS.S3Store do
       query_params: url_params
     ]
 
-    {:ok, url} = S3.presigned_url(make_config(), method, bucket,
-                                  path(server, file_id), options)
+    {:ok, url} =
+      S3.presigned_url(
+        make_config(),
+        method,
+        bucket,
+        path(server, file_id),
+        options
+      )
 
     url
   end
@@ -124,24 +134,29 @@ defmodule Wocky.TROS.S3Store do
 
   defp get_opt(opt, default \\ nil), do: Confex.get_env(:wocky, opt, default)
 
-  defp path(server, file_id),
-    do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"
+  defp path(server, file_id), do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"
 
   def hash_prefix(file_id) do
     file_id
-    |> TROS.get_base_id
+    |> TROS.get_base_id()
     |> do_hash()
     |> :binary.part(0, 2)
-    |> Base.encode16([case: :lower])
+    |> Base.encode16(case: :lower)
   end
 
   defp do_hash(str), do: :crypto.hash(:md5, str)
 
   defp make_config do
-    config_opts = Keyword.merge([access_key_id: access_key_id(),
-                                 secret_access_key: secret_key(),
-                                 region: region()],
-                                maybe_override_host())
+    config_opts =
+      Keyword.merge(
+        [
+          access_key_id: access_key_id(),
+          secret_access_key: secret_key(),
+          region: region()
+        ],
+        maybe_override_host()
+      )
+
     Config.new(:s3, config_opts)
   end
 
@@ -151,5 +166,4 @@ defmodule Wocky.TROS.S3Store do
       host -> [scheme: "http://", host: host]
     end
   end
-
 end

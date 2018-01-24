@@ -26,24 +26,28 @@ defmodule :rsm_util_spec do
 
       it "should return the decoded RSM" do
         {:ok, rsm} = shared.result
-        rsm |> should(eq rsm_in(
-              max: 5,
-              direction: :aft,
-              id: "abc",
-              index: :undefined,
-              reverse: true
-            )
+
+        rsm
+        |> should(
+          eq rsm_in(
+               max: 5,
+               direction: :aft,
+               id: "abc",
+               index: :undefined,
+               reverse: true
+             )
         )
       end
     end
 
     context "when passed an IQ without an RSM" do
       before do
-        iq = iq(
-          id: "abc",
-          type: "result",
-          sub_el: xmlel(name: "blah")
-        )
+        iq =
+          iq(
+            id: "abc",
+            type: "result",
+            sub_el: xmlel(name: "blah")
+          )
 
         {:ok, result: get_rsm(iq)}
       end
@@ -55,23 +59,25 @@ defmodule :rsm_util_spec do
   end
 
   describe "filter_with_rsm/2" do
-    let :data,
-      do: for id <- 1..@count, do: %{id: id, val: :erlang.phash2(id)}
+    let :data, do: for(id <- 1..@count, do: %{id: id, val: :erlang.phash2(id)})
 
     let :unordered_data,
-      do: for id <- 1..@count, do: %{id: unordered_id(id), val: id}
+      do: for(id <- 1..@count, do: %{id: unordered_id(id), val: id})
 
     context "when no RSM values are set" do
       it "should return ordered data unchanged" do
         {data_out, rsm_out} = filter_with_rsm(data(), rsm_in())
 
         data_out |> should(eq data())
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 0,
-              first: to_string(1),
-              last: to_string(@count)
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 0,
+               first: to_string(1),
+               last: to_string(@count)
+             )
         )
       end
 
@@ -79,12 +85,15 @@ defmodule :rsm_util_spec do
         {data_out, rsm_out} = filter_with_rsm(unordered_data(), rsm_in())
 
         data_out |> should(eq unordered_data())
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 0,
-              first: 1 |> unordered_id() |> to_string,
-              last: @count |> unordered_id() |> to_string
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 0,
+               first: 1 |> unordered_id() |> to_string,
+               last: @count |> unordered_id() |> to_string
+             )
         )
       end
 
@@ -101,12 +110,15 @@ defmodule :rsm_util_spec do
         {data_out, rsm_out} = filter_with_rsm(data(), rsm_in(max: 50))
 
         data_out |> should(eq Enum.take(data(), 50))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 0,
-              first: to_string(1),
-              last: to_string(50)
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 0,
+               first: to_string(1),
+               last: to_string(50)
+             )
         )
       end
 
@@ -114,12 +126,15 @@ defmodule :rsm_util_spec do
         {data_out, rsm_out} = filter_with_rsm(unordered_data(), rsm_in(max: 50))
 
         data_out |> should(eq Enum.take(unordered_data(), 50))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 0,
-              first: 1 |> unordered_id() |> to_string,
-              last: 50 |> unordered_id() |> to_string
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 0,
+               first: 1 |> unordered_id() |> to_string,
+               last: 50 |> unordered_id() |> to_string
+             )
         )
       end
 
@@ -137,12 +152,15 @@ defmodule :rsm_util_spec do
           filter_with_rsm(data(), rsm_in(max: 10, direction: :aft, id: 50))
 
         data_out |> should(eq Enum.slice(data(), 50, 10))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 50,
-              first: to_string(51),
-              last: to_string(60)
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 50,
+               first: to_string(51),
+               last: to_string(60)
+             )
         )
       end
 
@@ -154,12 +172,15 @@ defmodule :rsm_util_spec do
           )
 
         data_out |> should(eq Enum.slice(unordered_data(), 50, 10))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 50,
-              first: 51 |> unordered_id() |> to_string,
-              last: 60 |> unordered_id() |> to_string
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 50,
+               first: 51 |> unordered_id() |> to_string,
+               last: 60 |> unordered_id() |> to_string
+             )
         )
       end
 
@@ -186,12 +207,15 @@ defmodule :rsm_util_spec do
           filter_with_rsm(data(), rsm_in(max: 10, direction: :aft, index: 50))
 
         data_out |> should(eq Enum.slice(data(), 50, 10))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 50,
-              first: to_string(51),
-              last: to_string(60)
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 50,
+               first: to_string(51),
+               last: to_string(60)
+             )
         )
       end
 
@@ -203,12 +227,15 @@ defmodule :rsm_util_spec do
           )
 
         data_out |> should(eq Enum.slice(unordered_data(), 50, 10))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: 50,
-              first: 51 |> unordered_id() |> to_string,
-              last: 60 |> unordered_id() |> to_string
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: 50,
+               first: 51 |> unordered_id() |> to_string,
+               last: 60 |> unordered_id() |> to_string
+             )
         )
       end
 
@@ -238,12 +265,15 @@ defmodule :rsm_util_spec do
           filter_with_rsm(data(), rsm_in(max: 10, direction: :before))
 
         data_out |> should(eq Enum.slice(data(), @count - 10, 10))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: @count - 10,
-              first: to_string(@count - 9),
-              last: to_string(@count)
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: @count - 10,
+               first: to_string(@count - 9),
+               last: to_string(@count)
+             )
         )
       end
 
@@ -255,12 +285,15 @@ defmodule :rsm_util_spec do
           )
 
         data_out |> should(eq Enum.slice(data(), @count - 60, 10))
-        rsm_out |> should(eq rsm_out(
-              count: @count,
-              index: @count - 60,
-              first: to_string(@count - 59),
-              last: to_string(@count - 50)
-            )
+
+        rsm_out
+        |> should(
+          eq rsm_out(
+               count: @count,
+               index: @count - 60,
+               first: to_string(@count - 59),
+               last: to_string(@count - 50)
+             )
         )
       end
 
@@ -288,6 +321,7 @@ defmodule :rsm_util_spec do
       it "should reverse the results" do
         {data1, rsm1} =
           filter_with_rsm(data(), rsm_in(max: 10, direction: :before))
+
         {data2, rsm2} =
           filter_with_rsm(
             data(),
@@ -306,12 +340,13 @@ defmodule :rsm_util_spec do
     iq(
       id: "some id",
       type: "request",
-      sub_el: xmlel(
-        name: "operation",
-        children: maybe_rand_tags() ++
-          [rsm_tag(max, dir, id, index, reverse)] ++
-          maybe_rand_tags()
-      )
+      sub_el:
+        xmlel(
+          name: "operation",
+          children:
+            maybe_rand_tags() ++
+              [rsm_tag(max, dir, id, index, reverse)] ++ maybe_rand_tags()
+        )
     )
   end
 
@@ -333,20 +368,26 @@ defmodule :rsm_util_spec do
     )
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defp rsm_children(:undefined, dir, id, index, reverse, acc) do
     rsm_children(dir, id, index, reverse, acc)
   end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defp rsm_children(max, dir, id, index, reverse, acc) do
-    rsm_children(dir, id, index, reverse,
-      [xml_with_cdata("max", Integer.to_string(max)) | acc])
+    rsm_children(dir, id, index, reverse, [
+      xml_with_cdata("max", Integer.to_string(max)) | acc
+    ])
   end
 
   defp rsm_children(:undefined, _id, index, reverse, acc) do
     rsm_children(index, reverse, acc)
   end
+
   defp rsm_children(:before, id, index, reverse, acc) do
     rsm_children(index, reverse, [dir_element("before", id) | acc])
   end
+
   defp rsm_children(:aft, id, index, reverse, acc) do
     rsm_children(index, reverse, [dir_element("after", id) | acc])
   end
@@ -354,9 +395,11 @@ defmodule :rsm_util_spec do
   defp rsm_children(:undefined, reverse, acc) do
     rsm_children(reverse, acc)
   end
+
   defp rsm_children(index, reverse, acc) do
-    rsm_children(reverse,
-      [xml_with_cdata("index", Integer.to_string(index)) | acc])
+    rsm_children(reverse, [
+      xml_with_cdata("index", Integer.to_string(index)) | acc
+    ])
   end
 
   defp rsm_children(false, acc), do: acc

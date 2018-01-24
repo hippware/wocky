@@ -8,7 +8,7 @@ defmodule Wocky.TokenSpec do
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
-    resource = Faker.Code.issn
+    resource = Faker.Code.issn()
     result = Token.assign(user.id, resource)
     {:ok, result: result, id: user.id, resource: resource}
   end
@@ -16,14 +16,14 @@ defmodule Wocky.TokenSpec do
   finally do
     Repo.delete_all(
       from t in Token,
-      where: t.user_id == ^shared.id,
-      where: t.resource == ^shared.resource
+        where: t.user_id == ^shared.id,
+        where: t.resource == ^shared.resource
     )
   end
 
   describe "generate/0" do
     it "should create a token that starts with '$T$'" do
-      Token.generate |> should(start_with "$T$")
+      Token.generate() |> should(start_with "$T$")
     end
   end
 
@@ -45,22 +45,22 @@ defmodule Wocky.TokenSpec do
     it "should store the token for the user" do
       {:ok, {token, expiry}} = shared.result
 
-      data = Repo.one(
-        from t in Token,
-        where: t.user_id == ^shared.id,
-        where: t.resource == ^shared.resource
-      )
+      data =
+        Repo.one(
+          from t in Token,
+            where: t.user_id == ^shared.id,
+            where: t.resource == ^shared.resource
+        )
 
-      data.user_id    |> should(eq shared.id)
-      data.resource   |> should(eq shared.resource)
+      data.user_id |> should(eq shared.id)
+      data.resource |> should(eq shared.resource)
       data.expires_at |> should(eq expiry)
       Bcrypt.checkpw(token, data.token_hash) |> assert
     end
 
     it "should return a different token every time" do
       {:ok, {token1, _}} = shared.result
-      {:ok, {token2, _}} =
-        Token.assign(shared.id, shared.resource)
+      {:ok, {token2, _}} = Token.assign(shared.id, shared.resource)
 
       token1 |> should_not(eq token2)
     end
@@ -69,14 +69,15 @@ defmodule Wocky.TokenSpec do
       {:ok, {token, expiry}} = shared.result
       {:ok, _} = Token.assign(shared.id, shared.resource)
 
-      data = Repo.one(
-        from t in Token,
-        where: t.user_id == ^shared.id,
-        where: t.resource == ^shared.resource
-      )
+      data =
+        Repo.one(
+          from t in Token,
+            where: t.user_id == ^shared.id,
+            where: t.resource == ^shared.resource
+        )
 
-      data.user_id    |> should(eq shared.id)
-      data.resource   |> should(eq shared.resource)
+      data.user_id |> should(eq shared.id)
+      data.resource |> should(eq shared.resource)
       data.expires_at |> should_not(eq to_string(expiry))
       Bcrypt.checkpw(token, data.token_hash) |> refute
     end
@@ -101,14 +102,15 @@ defmodule Wocky.TokenSpec do
     end
 
     it "should return false for an expired token" do
-      query = from t in Token,
-                where: t.user_id == ^shared.id,
-                where: t.resource == ^shared.resource
+      query =
+        from t in Token,
+          where: t.user_id == ^shared.id,
+          where: t.resource == ^shared.resource
 
       query
-      |> Repo.one
-      |> Token.changeset(%{expires_at: DateTime.utc_now})
-      |> Repo.update
+      |> Repo.one()
+      |> Token.changeset(%{expires_at: DateTime.utc_now()})
+      |> Repo.update()
 
       shared.id
       |> Token.valid?(shared.token)
@@ -116,7 +118,7 @@ defmodule Wocky.TokenSpec do
     end
 
     it "should return false for a nonexistent user" do
-      ID.new
+      ID.new()
       |> Token.valid?(shared.token)
       |> should(be_false())
     end
@@ -133,12 +135,13 @@ defmodule Wocky.TokenSpec do
     end
 
     it "should remove the token from the database" do
-      query = from t in Token,
-                where: t.user_id == ^shared.id,
-                where: t.resource == ^shared.resource
+      query =
+        from t in Token,
+          where: t.user_id == ^shared.id,
+          where: t.resource == ^shared.resource
 
       query
-      |> Repo.one
+      |> Repo.one()
       |> should(be_nil())
     end
 
@@ -169,13 +172,13 @@ defmodule Wocky.TokenSpec do
       query = from t in Token, where: t.user_id == ^shared.id
 
       query
-      |> Repo.all
+      |> Repo.all()
       |> should(be_empty())
     end
 
     it "should return :ok if the user doesn't have any tokens" do
-      ID.new
-      |> Token.release_all
+      ID.new()
+      |> Token.release_all()
       |> should(eq :ok)
     end
   end

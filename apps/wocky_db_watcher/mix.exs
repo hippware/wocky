@@ -10,7 +10,7 @@ defmodule WockyDbWatcher.Mixfile do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.5",
-      start_permanent: Mix.env == :prod,
+      start_permanent: Mix.env() == :prod,
       elvis_config: [%{src_dirs: [], rules: []}],
       deps: deps()
     ]
@@ -29,7 +29,7 @@ defmodule WockyDbWatcher.Mixfile do
       env: [
         wocky_env: {:system, "WOCKY_ENV", "dev"},
         wocky_inst: {:system, "WOCKY_INST", "local"},
-        wocky_host: {:system, "WOCKY_HOST", "localhost"},
+        wocky_host: {:system, "WOCKY_HOST", "localhost"}
       ]
     ]
   end
@@ -37,9 +37,9 @@ defmodule WockyDbWatcher.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:wocky,      in_umbrella: true},
-      {:gen_stage,  "~> 0.12"},
-      {:postgrex,   "~> 0.13.0"}
+      {:wocky, in_umbrella: true},
+      {:gen_stage, "~> 0.12"},
+      {:postgrex, "~> 0.13.0"}
     ]
   end
 end

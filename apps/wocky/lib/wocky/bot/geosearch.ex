@@ -31,23 +31,32 @@ defmodule Wocky.Bot.Geosearch do
   alias Wocky.User
 
   @type explore_end_message ::
-        :no_more_results | :result_limit_reached | :max_explore_time
-  @type explore_callback :: ((Bot | explore_end_message) -> any)
+          :no_more_results | :result_limit_reached | :max_explore_time
+  @type explore_callback :: (Bot | explore_end_message -> any)
 
   @default_max_explored_bots 1_000_000
   @default_explore_timeout 60_000
 
-  @spec user_distance_query(float, float, User.id, User.id, RSMHelper.rsm_in)
-  :: {[%Bot{}], RSMHelper.rsm_out}
+  @spec user_distance_query(
+          float,
+          float,
+          User.id(),
+          User.id(),
+          RSMHelper.rsm_in()
+        ) :: {[%Bot{}], RSMHelper.rsm_out()}
   def user_distance_query(lat, lon, user_id, owner_id, rsm_in \\ rsm_in()),
-    do: distance_query(lat, lon,
-     &where_owner_and_visible(&1, user_id, owner_id), rsm_in)
+    do:
+      distance_query(
+        lat,
+        lon,
+        &where_owner_and_visible(&1, user_id, owner_id),
+        rsm_in
+      )
 
-  @spec subscribed_distance_query(float, float, User.id, RSMHelper.rsm_in)
-  :: {[%Bot{}], RSMHelper.rsm_out}
+  @spec subscribed_distance_query(float, float, User.id(), RSMHelper.rsm_in()) ::
+          {[%Bot{}], RSMHelper.rsm_out()}
   def subscribed_distance_query(lat, lon, user_id, rsm_in \\ rsm_in()),
-    do: distance_query(lat, lon,
-     &where_subscribed(&1, user_id), rsm_in)
+    do: distance_query(lat, lon, &where_subscribed(&1, user_id), rsm_in)
 
   defp distance_query(lat, lon, where_clause, rsm_in) do
     limit = rsm_in(rsm_in, :max)
@@ -78,18 +87,18 @@ defmodule Wocky.Bot.Geosearch do
     {first, last} = get_first_last(results)
 
     {maybe_reverse(results, reverse),
-      rsm_out(count: count, index: index, first: first, last: last)}
+     rsm_out(count: count, index: index, first: first, last: last)}
   end
 
   def get_all_with_owner(lat, lon, user_id, owner_id),
-    do: do_get_all(lat, lon,
-     &where_owner_and_visible(&1, user_id, owner_id))
+    do: do_get_all(lat, lon, &where_owner_and_visible(&1, user_id, owner_id))
 
   def get_all(lat, lon, user_id, use_sphereoid \\ true),
     do: do_get_all(lat, lon, &where_searchable(&1, user_id), use_sphereoid)
 
   defp do_get_all(lat, lon, where_clause, use_sphereoid \\ true) do
     point = GeoUtils.point(lat, lon)
+
     {query_str, params} =
       point
       |> fields()
@@ -104,40 +113,38 @@ defmodule Wocky.Bot.Geosearch do
 
   defp fields(point) do
     {~s|SELECT bot.*, ST_Distance(bot.location, #{p(1, [])})| <>
-      ~s|AS "distance" FROM bots AS bot|,
-     [point]}
+       ~s|AS "distance" FROM bots AS bot|, [point]}
   end
 
   defp count, do: {"SELECT count(id) FROM bots AS bot", []}
 
   defp where_owner_and_visible({str, params}, user_id, owner_id) do
     {str <>
-      " WHERE bot.user_id = #{p(1, params)}" <>
+       " WHERE bot.user_id = #{p(1, params)}" <>
        " AND is_visible(#{p(2, params)}, bot)",
-      [dump_uuid(user_id), dump_uuid(owner_id) | params]}
+     [dump_uuid(user_id), dump_uuid(owner_id) | params]}
   end
 
   defp where_subscribed({str, params}, user_id) do
     {str <>
-     " INNER JOIN bot_subscriptions AS bot_subscription " <>
-      " ON bot.id = bot_subscription.bot_id" <>
-      " WHERE bot_subscription.user_id = #{p(1, params)}" <>
-      " AND is_visible(#{p(1, params)}, bot)",
-      [dump_uuid(user_id) | params]}
+       " INNER JOIN bot_subscriptions AS bot_subscription " <>
+       " ON bot.id = bot_subscription.bot_id" <>
+       " WHERE bot_subscription.user_id = #{p(1, params)}" <>
+       " AND is_visible(#{p(1, params)}, bot)", [dump_uuid(user_id) | params]}
   end
 
   defp where_searchable({str, params}, user_id) do
-    {str <>
-      " WHERE is_searchable(#{p(1, params)}, bot)",
-      [dump_uuid(user_id) | params]}
+    {str <> " WHERE is_searchable(#{p(1, params)}, bot)",
+     [dump_uuid(user_id) | params]}
   end
 
   defp index_where({str, params}, point, pivot_dist) do
     {str <> " AND ST_Distance(bot.location, #{p(1, params)}) < #{p(2, params)}",
-      [pivot_dist, point | params]}
+     [pivot_dist, point | params]}
   end
 
   defp maybe_join(acc, :undefined, _, _), do: acc
+
   defp maybe_join(acc, pivot, point, dir) do
     acc
     |> add_str(" INNER JOIN")
@@ -146,36 +153,40 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   defp join_fields(acc) do
-    add_str(acc, " (SELECT id AS pivot_id, location " <>
-                  "AS pivot_location FROM bots) AS pivot")
+    add_str(
+      acc,
+      " (SELECT id AS pivot_id, location " <>
+        "AS pivot_location FROM bots) AS pivot"
+    )
   end
 
   defp join_on({str, params}, pivot, point, dir) do
     {str <>
-      ~s| ON (pivot.pivot_id = #{p(1, params)})| <>
-      ~s| AND (ST_Distance(bot.location, #{p(2, params)})| <>
-      ~s| #{dir(dir)} | <>
-      ~s| ST_Distance(pivot.pivot_location, #{p(2, params)}))|,
-        [point, pivot | params]}
+       ~s| ON (pivot.pivot_id = #{p(1, params)})| <>
+       ~s| AND (ST_Distance(bot.location, #{p(2, params)})| <>
+       ~s| #{dir(dir)} | <>
+       ~s| ST_Distance(pivot.pivot_location, #{p(2, params)}))|,
+     [point, pivot | params]}
   end
 
   defp dir(:before), do: "<"
   defp dir(_), do: ">"
 
   defp maybe_limit(acc, :undefined), do: acc
-  defp maybe_limit({str, params}, max), do:
-    {str <> " LIMIT #{p(1, params)}", [max | params]}
+
+  defp maybe_limit({str, params}, max),
+    do: {str <> " LIMIT #{p(1, params)}", [max | params]}
 
   defp maybe_offset(acc, :undefined), do: acc
+
   defp maybe_offset({str, params}, offset),
     do: {str <> " OFFSET #{p(1, params)}", [offset | params]}
 
   defp order({str, params}, point, direction, use_sphereoid \\ true) do
     {str <>
-      ~s| ORDER BY| <>
-      ~s| ST_Distance(bot.location, #{p(1, params)}, #{use_sphereoid})| <>
-      ~s| #{maybe_desc(direction)}|,
-     [point | params]}
+       ~s| ORDER BY| <>
+       ~s| ST_Distance(bot.location, #{p(1, params)}, #{use_sphereoid})| <>
+       ~s| #{maybe_desc(direction)}|, [point | params]}
   end
 
   defp maybe_desc(:before), do: "DESC"
@@ -221,6 +232,7 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   defp get_index([], _, _), do: :undefined
+
   defp get_index([first | _], point, where_clause) do
     {query_str, params} =
       count()
@@ -233,21 +245,26 @@ defmodule Wocky.Bot.Geosearch do
   end
 
   defp get_first_last([]), do: {:undefined, :undefined}
+
   defp get_first_last(results) do
     {Enum.at(results, 0).id, Enum.at(results, -1).id}
   end
 
   defp dump_uuid(:undefined), do: :undefined
-  defp dump_uuid(uuid), do: uuid |> UUID.dump |> elem(1)
+  defp dump_uuid(uuid), do: uuid |> UUID.dump() |> elem(1)
 
   ### Explore nearby
 
-  @spec explore_nearby(Point.t, float | Point.t, User.t,
-                       non_neg_integer, explore_callback) :: :ok
+  @spec explore_nearby(
+          Point.t(),
+          float | Point.t(),
+          User.t(),
+          non_neg_integer,
+          explore_callback
+        ) :: :ok
   # Radius limit
   def explore_nearby(point, radius, user, max, fun) when is_float(radius) do
-    query_str =
-    """
+    query_str = """
     DECLARE explore_nearby CURSOR FOR
     SELECT *, ST_Distance(bot.location, $1) AS "distance" FROM
       (SELECT * FROM bots ORDER BY location <-> $1 LIMIT $2)
@@ -255,6 +272,7 @@ defmodule Wocky.Bot.Geosearch do
     WHERE is_searchable($3, bot)
       AND ST_Distance(bot.location, $1) < $4
     """
+
     params = [point, max_explored_bots(), dump_uuid(user.id), radius]
 
     do_explore_nearby(query_str, params, max, fun)
@@ -271,8 +289,7 @@ defmodule Wocky.Bot.Geosearch do
     lat2 = lat + lat_offset
     lon2 = lon + lon_offset
 
-    query_str =
-    """
+    query_str = """
     DECLARE explore_nearby CURSOR FOR
     SELECT *, ST_Distance(bot.location, $1) AS "distance" FROM
     (SELECT * FROM bots
@@ -282,8 +299,16 @@ defmodule Wocky.Bot.Geosearch do
     AS bot
     WHERE is_searchable($7, bot)
     """
-    params = [point, lon1, lat1, lon2, lat2,
-              max_explored_bots(), dump_uuid(user.id)]
+
+    params = [
+      point,
+      lon1,
+      lat1,
+      lon2,
+      lat2,
+      max_explored_bots(),
+      dump_uuid(user.id)
+    ]
 
     do_explore_nearby(query_str, params, max, fun)
   end
@@ -292,10 +317,12 @@ defmodule Wocky.Bot.Geosearch do
     limits = %Limits{count: max, time: max_explore_time()}
 
     Repo.transaction(
-      fn() ->
+      fn ->
         start_explore(query_str, params, fun, limits)
       end,
-      timeout: :infinity)
+      timeout: :infinity
+    )
+
     :ok
   end
 
@@ -307,9 +334,11 @@ defmodule Wocky.Bot.Geosearch do
 
   defp fetch_results(fun, start_time, limits, count) do
     results = SQL.query!(Repo, "FETCH NEXT explore_nearby")
+
     case results.num_rows do
       0 ->
         fun.(:no_more_results)
+
       _ ->
         bot = results |> results_to_bots() |> hd
         fun.(bot)
@@ -320,11 +349,15 @@ defmodule Wocky.Bot.Geosearch do
   defp maybe_fetch_more(fun, _start_time, %Limits{count: count}, count) do
     fun.(:result_limit_reached)
   end
-  defp maybe_fetch_more(fun, start_time,
-                        %Limits{time: timeout} = limits, count) do
-    elapsed = :erlang.convert_time_unit(
-      :erlang.monotonic_time() - start_time,
-      :native, :millisecond)
+
+  defp maybe_fetch_more(fun, start_time, %Limits{time: timeout} = limits, count) do
+    elapsed =
+      :erlang.convert_time_unit(
+        :erlang.monotonic_time() - start_time,
+        :native,
+        :millisecond
+      )
+
     if elapsed < timeout do
       fetch_results(fun, start_time, limits, count)
     else
