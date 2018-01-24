@@ -1,4 +1,6 @@
 defmodule TimestampAssertions do
+  @moduledoc "Assertions for checking timestamp values in tests"
+
   def be_later_than(value), do: {BeLaterThanAssertion, value}
   def be_earlier_than(value), do: {BeEarlierThanAssertion, value}
 

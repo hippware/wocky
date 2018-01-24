@@ -1,4 +1,6 @@
 defmodule RosterHelper do
+  @moduledoc "Helper functions for adding roster associations in tests"
+
   alias Wocky.Repo.Factory
 
   @doc "Make user1 and user2 friends"

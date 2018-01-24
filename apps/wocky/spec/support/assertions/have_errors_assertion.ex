@@ -1,4 +1,6 @@
 defmodule HaveErrorsAssertion do
+  @moduledoc "Implements an Espec assertion to match Ecto changeset errors"
+
   use ESpec.Assertions.Interface
 
   defp match(changeset, list) when is_list(list) do

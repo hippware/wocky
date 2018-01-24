@@ -1,4 +1,6 @@
 defmodule BeValidAssertion do
+  @moduledoc "Implements an Espec assertion to validate an Ecto changeset"
+
   use ESpec.Assertions.Interface
 
   defp match(changeset, _value) do
