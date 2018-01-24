@@ -181,7 +181,7 @@ defmodule :wocky_watcher_spec do
     end
   end
 
-  defp make_user_jid() do
+  defp make_user_jid do
     :user
     |> Factory.build()
     |> User.to_jid(ID.new())
