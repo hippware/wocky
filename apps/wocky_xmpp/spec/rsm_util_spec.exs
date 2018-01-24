@@ -368,10 +368,12 @@ defmodule :rsm_util_spec do
     )
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defp rsm_children(:undefined, dir, id, index, reverse, acc) do
     rsm_children(dir, id, index, reverse, acc)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defp rsm_children(max, dir, id, index, reverse, acc) do
     rsm_children(dir, id, index, reverse, [
       xml_with_cdata("max", Integer.to_string(max)) | acc
