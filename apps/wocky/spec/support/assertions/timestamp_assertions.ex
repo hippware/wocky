@@ -16,9 +16,8 @@ defmodule TimestampAssertions do
 
   def error_message(subject, [term], result, positive, type) do
     if positive do
-      "Expected #{inspect(subject)} to be #{type} than #{inspect(term)} but it was #{
-        str(result)
-      } instead."
+      "Expected #{inspect(subject)} to be #{type} than #{inspect(term)} " <>
+        "but it was #{str(result)} instead."
     else
       "Expected #{inspect(subject)} not to be #{type} than #{term} but it was."
     end

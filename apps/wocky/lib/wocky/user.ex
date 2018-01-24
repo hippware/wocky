@@ -404,8 +404,9 @@ defmodule Wocky.User do
     # at the start and end of the string without consuming them.
     # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
     # and other characters).
-    if Regex.run(~r/(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])/u, name) !=
-         [name] do
+    rx = ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])|u
+
+    if Regex.run(rx, name) != [name] do
       [{field, "invalid characters"}]
     else
       []
