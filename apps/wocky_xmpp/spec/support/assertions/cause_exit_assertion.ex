@@ -9,26 +9,22 @@ defmodule CauseExitAssertion do
   use ESpec.Assertions.Interface
 
   defp match(subject, []) do
-    try do
-      subject.()
-      {false, false}
-    catch
-      :exit, _ -> {true, false}
-    end
+    subject.()
+    {false, false}
+  catch
+    :exit, _ -> {true, false}
   end
 
   defp match(subject, [term]) do
-    try do
-      subject.()
-      {false, {false, nil}}
-    catch
-      :exit, exit_term ->
-        if exit_term == term do
-          {true, term}
-        else
-          {false, term}
-        end
-    end
+    subject.()
+    {false, {false, nil}}
+  catch
+    :exit, exit_term ->
+      if exit_term == term do
+        {true, term}
+      else
+        {false, term}
+      end
   end
 
   defp success_message(subject, [], _result, positive) do
