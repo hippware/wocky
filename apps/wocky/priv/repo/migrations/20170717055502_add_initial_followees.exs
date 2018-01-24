@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.MaxLineLength
 defmodule Wocky.Repo.Migrations.AddInitialFollowees do
   use Wocky.Repo.Migration
 
