@@ -16,6 +16,8 @@ ESpec.configure(fn config ->
 end)
 
 defmodule SandboxHelper do
+  alias Ecto.Adapters.SQL.Sandbox
+
   defmacro __using__(_) do
     quote do
       before_all do
@@ -29,12 +31,12 @@ defmodule SandboxHelper do
   end
 
   def mode(mode) do
-    Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, mode)
+    Sandbox.mode(Wocky.Repo, mode)
   end
 
   def checkout do
     :ok =
-      case Ecto.Adapters.SQL.Sandbox.checkout(Wocky.Repo) do
+      case Sandbox.checkout(Wocky.Repo) do
         :ok -> :ok
         {:already, :owner} -> :ok
         error -> error
@@ -42,7 +44,7 @@ defmodule SandboxHelper do
   end
 
   def checkin do
-    Ecto.Adapters.SQL.Sandbox.checkin(Wocky.Repo, [])
+    Sandbox.checkin(Wocky.Repo, [])
   end
 end
 
