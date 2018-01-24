@@ -236,7 +236,8 @@ defmodule Wocky.User do
         {user.username, user.server, true}
 
       {:error, e} ->
-        Logger.debug("registration failed with error: #{inspect(e)}")
+        Logger.debug(fn -> "registration failed with error: #{inspect(e)}" end)
+
         do_register(server, provider, external_id, phone_number, retries + 1)
     end
   end

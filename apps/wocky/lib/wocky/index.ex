@@ -168,7 +168,10 @@ defmodule Wocky.Index do
   end
 
   defp do_update_object(object, id, index, backend) do
-    :ok = Logger.debug("Updating #{index} index with object #{inspect(object)}")
+    :ok =
+      Logger.debug(fn ->
+        "Updating #{index} index with object #{inspect(object)}"
+      end)
 
     if map_size(object) < 1 do
       {:ok, :no_changes}
@@ -178,7 +181,7 @@ defmodule Wocky.Index do
   end
 
   defp delete_object(index, id, backend) do
-    :ok = Logger.debug("Removing object #{id} from #{index}")
+    :ok = Logger.debug(fn -> "Removing object #{id} from #{index}" end)
     backend.delete_object(index, id)
   end
 end

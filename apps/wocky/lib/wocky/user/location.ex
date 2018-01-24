@@ -101,24 +101,30 @@ defmodule Wocky.User.Location do
   defmacrop log_check_result(user, bot, result) do
     quote do
       :ok =
-        Logger.debug("""
-        User #{unquote(user).id} #{unquote(result)} the perimeter \
-        of #{unquote(bot).id}\
-        """)
+        Logger.debug(fn ->
+          """
+          User #{unquote(user).id} #{unquote(result)} the perimeter \
+          of #{unquote(bot).id}\
+          """
+        end)
     end
   end
 
   defp check_for_event(bot, user, loc, acc) do
     :ok =
-      Logger.debug("""
-      Checking user #{user.id} for collision with bot #{bot.id} \
-      at location (#{loc.lat},#{loc.lon})...\
-      """)
+      Logger.debug(fn ->
+        """
+        Checking user #{user.id} for collision with bot #{bot.id} \
+        at location (#{loc.lat},#{loc.lon})...\
+        """
+      end)
 
     # Don't check bots that are owned by the user
     if bot.user_id == user.id do
       :ok =
-        Logger.debug("Skipping bot #{bot.id} since it is owned by #{user.id}")
+        Logger.debug(fn ->
+          "Skipping bot #{bot.id} since it is owned by #{user.id}"
+        end)
 
       acc
     else
