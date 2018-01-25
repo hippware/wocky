@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update to Elixir 1.6 (PR #1246).
+* Code formatting changes (PR #1253)
+* Build infrastructure changes (PR #1254)
 
 
 # 2018.1.17+r1173119
