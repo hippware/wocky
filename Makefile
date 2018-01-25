@@ -29,6 +29,12 @@ inttest: ## Run the integration tests locally
 ########################################################################
 ### Build release images
 
+dockerlint: ## Run dockerlint on the Dockerfiles
+	@echo "Checking Dockerfile.build..."
+	@docker run -it --rm -v "${PWD}/Dockerfile.build":/Dockerfile:ro redcoolbeans/dockerlint:latest
+	@echo "Checking Dockerfile.release..."
+	@docker run -it --rm -v "${PWD}/Dockerfile.release":/Dockerfile:ro redcoolbeans/dockerlint:latest
+
 release: ## Build the release tarball
 	MIX_ENV=prod mix release --warnings-as-errors --name $(RELEASE_NAME)
 	cp _build/prod/rel/$(RELEASE_NAME)/releases/$(VERSION)/$(RELEASE_NAME).tar.gz /artifacts

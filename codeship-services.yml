@@ -16,7 +16,7 @@ wocky_test:
     WOCKY_DB_HOST: "postgres"
     REDIS_HOST: "redis"
     REDIS_PORT: 6379
-  links:
+  depends_on:
     - postgres
     - redis
 postgres:
