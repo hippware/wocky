@@ -127,7 +127,7 @@ defmodule Wocky.PushTest do
     test "token is invalidated when the service returns an error", shared do
       assert capture_log(fn ->
                :ok = Push.notify(shared.user_id, shared.resource, "bad token")
-             end) =~ "Bad device token"
+             end) =~ "device token was bad"
 
       assert_receive %Notification{response: :bad_device_token}, 5000
 
