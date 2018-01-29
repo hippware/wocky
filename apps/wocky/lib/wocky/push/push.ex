@@ -157,12 +157,32 @@ defmodule Wocky.Push do
   end
 
   defp handle_response(%Notification{response: resp} = n, user_id, resource) do
-    if resp == :bad_device_token do
-      Logger.error("Bad device token for user #{user_id}/#{resource}.")
-      invalidate_token(user_id, resource, n.device_token)
-    end
+    maybe_handle_error(resp, n, user_id, resource)
+    do_db_log(n, user_id, resource)
+  end
 
-    do_db_log(user_id, resource, n)
+  defp maybe_handle_error(:success, _n, _user_id, _resource), do: :ok
+
+  defp maybe_handle_error(resp, n, user_id, resource) do
+    Logger.error("PN Error: #{Error.msg(resp)}")
+
+    case resp do
+      :timeout ->
+        send_honeybadger(Error.msg(resp))
+
+      :bad_device_token ->
+        invalidate_token(user_id, resource, n.device_token)
+
+      _Else ->
+        :ok
+    end
+  end
+
+  defp send_honeybadger(message) do
+    raise RuntimeError, message
+  rescue
+    exception ->
+      Honeybadger.notify(exception)
   end
 
   defp invalidate_token(user_id, resource, token) do
@@ -175,7 +195,7 @@ defmodule Wocky.Push do
     )
   end
 
-  defp do_db_log(user_id, resource, %Notification{} = n) do
+  defp do_db_log(%Notification{} = n, user_id, resource) do
     %{
       user_id: user_id,
       resource: resource,
