@@ -10,8 +10,8 @@
 -ifndef(WOCKY_HRL).
 -define(WOCKY_HRL, true).
 
--include_lib("ejabberd/include/jlib.hrl").
--include_lib("ejabberd/include/ejabberd.hrl").
+-include_lib("mongooseim/include/jlib.hrl").
+-include_lib("mongooseim/include/ejabberd.hrl").
 
 -define(HOME_STREAM_NODE, <<"home_stream">>).
 

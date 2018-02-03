@@ -28,7 +28,7 @@ defmodule WockyAPI.Mixfile do
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:lager, :logger, :runtime_tools],
+      extra_applications: [:logger, :runtime_tools],
       mod: {WockyAPI.Application, []},
       env: []
     ]
@@ -46,22 +46,22 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-      {:phoenix, "~> 1.3"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_ecto, "~> 3.2"},
+
       {:cowboy, "~> 1.0"},
-      {:httpoison, "~> 0.11"},
-      {:ok, "~> 1.2", runtime: false},
-      {:exjsx, "~> 4.0", override: true},
-      {:hackney, "~> 1.7", override: true},
-      {:lager, "~> 3.2", override: true},
       {:honeybadger, "~> 0.6"},
+      {:httpoison, "~> 0.13"},
+      # {:ok, "~> 1.2", runtime: false},
+      {:phoenix, "~> 1.3"},
+      {:phoenix_ecto, "~> 3.2"},
+      {:phoenix_pubsub, "~> 1.0"},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
+      {:ranch, "~> 1.3.2", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
+
+      {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
-      {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:reprise, "~> 0.5", only: :dev}
     ]

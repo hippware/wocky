@@ -26,7 +26,7 @@
 
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
--include_lib("ejabberd/include/mod_roster.hrl").
+-include_lib("mongooseim/include/mod_roster.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).

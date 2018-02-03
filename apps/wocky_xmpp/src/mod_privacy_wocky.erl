@@ -3,7 +3,7 @@
 -module(mod_privacy_wocky).
 
 -include("wocky.hrl").
--include_lib("ejabberd/include/mod_privacy.hrl").
+-include_lib("mongooseim/include/mod_privacy.hrl").
 
 -behaviour(mod_privacy).
 

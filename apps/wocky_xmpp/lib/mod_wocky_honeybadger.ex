@@ -10,8 +10,8 @@ defmodule :mod_wocky_honeybadger do
 
   @hook_priority 5
 
-  defrecordp :iq, extract(:iq, from_lib: "ejabberd/include/jlib.hrl")
-  defrecordp :jid, extract(:jid, from_lib: "ejabberd/include/jlib.hrl")
+  defrecordp :iq, extract(:iq, from_lib: "mongooseim/include/jlib.hrl")
+  defrecordp :jid, extract(:jid, from_lib: "mongooseim/include/jlib.hrl")
 
   # ===================================================================
   # gen_mod handlers

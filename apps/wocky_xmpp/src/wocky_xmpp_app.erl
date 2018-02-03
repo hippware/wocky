@@ -67,7 +67,7 @@ start(_StartType, _StartArgs) ->
     wocky_sup:start_link().
 
 stop(_State) ->
-    ok = application:stop(ejabberd).
+    ok = application:stop(mongooseim).
 
 
 %%%===================================================================
@@ -117,7 +117,7 @@ write_terms(Filename, List) ->
     file:write_file(Filename, Text).
 
 start_ejabberd(CfgPath) ->
-    ok = ensure_loaded(ejabberd),
-    ok = application:set_env(ejabberd, config, CfgPath),
-    {ok, _} = application:ensure_all_started(ejabberd),
+    ok = ensure_loaded(mongooseim),
+    ok = application:set_env(mongooseim, config, CfgPath),
+    {ok, _} = application:ensure_all_started(mongooseim),
     ok.
