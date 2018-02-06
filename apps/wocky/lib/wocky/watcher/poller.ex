@@ -12,7 +12,7 @@ defmodule Wocky.Watcher.Poller do
     {:ok, messages} = source.recv()
 
     messages
-    |> Enum.map(fn(m) -> m.body end)
+    |> Enum.map(fn m -> m.body end)
     |> send_to.send()
 
     source.delete(messages)

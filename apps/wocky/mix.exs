@@ -118,10 +118,9 @@ defmodule Wocky.Mixfile do
       {:reprise, "~> 0.5", only: :dev},
       {:meck, "~> 0.8.8", only: :test, override: true},
       {:wocky_db_watcher,
-        git: "git@github.com:hippware/wocky_db_watcher",
-        branch: "master",
-        app: false
-      }
+       git: "git@github.com:hippware/wocky_db_watcher",
+       branch: "master",
+       app: false}
     ]
   end
 

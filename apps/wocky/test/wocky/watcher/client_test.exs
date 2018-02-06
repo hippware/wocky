@@ -58,9 +58,11 @@ defmodule Wocky.Wachter.ClientTest do
   test "generates update event" do
     Client.subscribe(Bot, :update, &Callback.send_event/1)
     bot = Factory.insert(:bot)
+
     bot
     |> cast(%{title: Lorem.sentence()}, [:title])
     |> Repo.update()
+
     :timer.sleep(200)
     [event] = Callback.get_events()
     assert %Event{action: :update, object: Bot} = event
