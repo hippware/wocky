@@ -98,8 +98,10 @@ defmodule Wocky.XMPP.Mixfile do
       {:erlando, github: "rabbitmq/erlando", branch: "master"},
       {:exml,
        github: "esl/exml", branch: "master", manager: :rebar3, override: true},
+      {:exometer,
+       github: "hippware/exometer", branch: "working", override: true},
       {:exometer_core,
-       github: "esl/exometer_core", branch: "master", override: true},
+       github: "hippware/exometer_core", branch: "working", override: true},
       {:exometer_prometheus,
        github: "GalaxyGorilla/exometer_prometheus",
        branch: "master",
@@ -133,7 +135,7 @@ defmodule Wocky.XMPP.Mixfile do
   defp aliases do
     [
       recompile: ["clean", "compile"],
-      prepare: ["deps.get", "deps.compile goldrush lager", "compile"],
+      prepare: ["deps.get", "compile"],
       lint: ["elvis"],
       test: [],
       testall: ["espec", &reset/1, "ct"]
