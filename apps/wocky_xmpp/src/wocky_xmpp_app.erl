@@ -96,11 +96,11 @@ load_xmpp_config() ->
 db_config() ->
     DbConfig = ?wocky_repo:config(),
     {pgsql,
-     proplists:get_value(hostname, DbConfig),
-     proplists:get_value(port,     DbConfig),
-     proplists:get_value(database, DbConfig),
-     proplists:get_value(username, DbConfig),
-     proplists:get_value(password, DbConfig)}.
+     binary_to_list(proplists:get_value(hostname, DbConfig)),
+     proplists:get_value(port, DbConfig),
+     binary_to_list(proplists:get_value(database, DbConfig)),
+     binary_to_list(proplists:get_value(username, DbConfig)),
+     binary_to_list(proplists:get_value(password, DbConfig))}.
 
 sm_config() ->
     RedisConfig = ?confex:'fetch_env!'(wocky_xmpp, redis),
