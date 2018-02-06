@@ -54,7 +54,7 @@ defmodule XMLHelper do
       import Record, only: [defrecordp: 2, extract: 2]
       require Record
 
-      defrecordp :iq, extract(:iq, from_lib: "ejabberd/include/jlib.hrl")
+      defrecordp :iq, extract(:iq, from_lib: "mongooseim/include/jlib.hrl")
       defrecordp :xmlel, extract(:xmlel, from_lib: "exml/include/exml.hrl")
 
       defrecordp :xmlcdata,
