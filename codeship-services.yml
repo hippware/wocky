@@ -38,7 +38,6 @@ wocky_rel:
     args:
       RELEASE_NAME: wocky
   cached: true
-  encrypted_env_file: release.env.encrypted
 aws_dockercfg:
   image: codeship/aws-ecr-dockercfg-generator
   add_docker: true
