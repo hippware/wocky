@@ -51,7 +51,8 @@ defmodule Wocky.Wachter.ClientTest do
     bot = Factory.insert(:bot)
     :timer.sleep(200)
     [event] = Callback.get_events()
-    assert %Event{action: :insert, object: Bot, old: nil} = event
+    assert %Event{action: :insert, old: nil} = event
+    assert %Bot{} = event.new
     assert bot.id == event.new.id
   end
 
@@ -65,7 +66,9 @@ defmodule Wocky.Wachter.ClientTest do
 
     :timer.sleep(200)
     [event] = Callback.get_events()
-    assert %Event{action: :update, object: Bot} = event
+    assert %Event{action: :update} = event
+    assert %Bot{} = event.old
+    assert %Bot{} = event.new
     assert bot.id == event.old.id
     assert bot.id == event.new.id
     assert event.old.title != event.new.title
@@ -77,7 +80,8 @@ defmodule Wocky.Wachter.ClientTest do
     Repo.delete(bot)
     :timer.sleep(200)
     [event] = Callback.get_events()
-    assert %Event{action: :delete, object: Bot, new: nil} = event
+    assert %Event{action: :delete, new: nil} = event
+    assert %Bot{} = event.old
     assert bot.id == event.old.id
   end
 

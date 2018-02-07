@@ -134,7 +134,7 @@
   "usec": {:git, "https://github.com/esl/usec.git", "f85ffd8350d7000c26392c18bdfcdbb30f3b5ee8", [branch: "master"]},
   "uuid": {:hex, :uuid_erl, "1.7.2", "d596c8dd01a4ae48b9d8d51832ccc8f8302bf67acd01336aec3fcfae6b9d2bc2", [:rebar3], [{:quickrand, "~> 1.7.2", [hex: :quickrand, repo: "hexpm", optional: false]}], "hexpm"},
   "vex": {:hex, :vex, "0.6.0", "4e79b396b2ec18cd909eed0450b19108d9631842598d46552dc05031100b7a56", [:mix], [], "hexpm"},
-  "wocky_db_watcher": {:git, "git@github.com:hippware/wocky_db_watcher", "56bd415facdbf9589e6fbda58e0f57706583e53e", [branch: "master"]},
+  "wocky_db_watcher": {:git, "git@github.com:hippware/wocky_db_watcher", "95a08ef670d589a46c764ce060cee1feb95f4f1e", [branch: "master"]},
   "wsecli": {:git, "https://github.com/esl/wsecli.git", "a89054cf71c5ee9e780998e5acb2a78fd3419dd9", [branch: "master"]},
   "wsock": {:git, "https://github.com/esl/wsock", "251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383", [ref: "251e18b"]},
   "zipper": {:git, "https://github.com/inaka/zipper.git", "f06f2c77d79f20571c589a31b138214cf0e4428f", [branch: "master"]},

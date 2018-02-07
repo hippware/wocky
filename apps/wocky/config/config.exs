@@ -41,7 +41,10 @@ config :wocky,
   welcome_field_mappings: [{"user_handle", :handle}],
 
   # Special users
-  hs_prepopulation_user: "__new_user_hs_archive__"
+  hs_prepopulation_user: "__new_user_hs_archive__",
+
+  # wocky_db_watcher watched types
+  watched_types: [Wocky.Bot, Wocky.Bot.Share]
 
 # Push notifications
 config :wocky, Wocky.Push,

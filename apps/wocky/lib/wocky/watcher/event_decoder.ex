@@ -6,27 +6,34 @@ defmodule Wocky.Watcher.EventDecoder do
   alias Ecto.Changeset
   alias WockyDBWatcher.Event
 
-  def from_json(json) do
+  def from_json(json, table_map) do
     json
     |> Poison.decode!(as: %Event{})
     |> fix_atoms()
-    |> convert_objects()
+    |> convert_objects(table_map)
   end
 
-  defp fix_atoms(%Event{object: object, action: action} = event) do
+  defp fix_atoms(%Event{table: table, action: action} = event) do
     %{
-      event
-      | object: String.to_existing_atom(object),
-        action: String.to_existing_atom(action)
+      event |
+      table: table,
+      action: String.to_existing_atom(action)
     }
   end
 
-  defp convert_objects(%Event{object: object, old: old, new: new} = event) do
-    %{
-      event
-      | old: convert_object(object, old),
-        new: convert_object(object, new)
-    }
+  defp convert_objects(%Event{table: table, old: old, new: new} = event, table_map) do
+    case Map.get(table_map, table) do
+      nil ->
+        {nil, event}
+      object ->
+        {object,
+          %{
+            event |
+            old: convert_object(object, old),
+            new: convert_object(object, new)
+          }
+        }
+    end
   end
 
   defp convert_object(_object, nil), do: nil

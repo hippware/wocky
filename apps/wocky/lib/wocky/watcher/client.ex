@@ -4,6 +4,15 @@ defmodule Wocky.Watcher.Client do
   events should subscribe to this process.
   """
 
+  defmodule State do
+    @moduledoc "State record for wocky watcher client"
+
+    defstruct [
+      :subscribers,
+      :table_map
+    ]
+  end
+
   use GenServer
 
   alias Wocky.Watcher.EventDecoder
@@ -30,7 +39,7 @@ defmodule Wocky.Watcher.Client do
     source.init
     Poller.start_link(source, __MODULE__)
 
-    {:ok, %{}}
+    {:ok, %State{subscribers: %{}, table_map: get_table_map()}}
   end
 
   def handle_call({:send, events}, _from, state) do
@@ -39,25 +48,30 @@ defmodule Wocky.Watcher.Client do
   end
 
   def handle_call({:subscribe, object, action, fun}, _from, state) do
-    current = Map.get(state, {object, action}, MapSet.new())
+    current = Map.get(state.subscribers, {object, action}, MapSet.new())
     ref = make_ref()
+    new_subscribers = Map.put(state.subscribers,
+                              {object, action},
+                              MapSet.put(current, {fun, ref}))
 
-    {:reply, {:ok, ref},
-     Map.put(state, {object, action}, MapSet.put(current, {fun, ref}))}
+    {:reply, {:ok, ref}, %{state | subscribers: new_subscribers}}
   end
 
   def handle_call({:unsubscribe, ref}, _from, state) do
-    {:reply, :ok, state |> Enum.map(&delete_ref(&1, ref)) |> Map.new()}
+    new_subscribers = state.subscribers
+                      |> Enum.map(&delete_ref(&1, ref))
+                      |> Map.new()
+    {:reply, :ok, %{state | subscribers: new_subscribers}}
   end
 
   defp forward_events(events, state) do
     events
-    |> Enum.map(&EventDecoder.from_json/1)
-    |> Enum.each(&forward_event(&1, state))
+    |> Enum.map(&EventDecoder.from_json(&1, state.table_map))
+    |> Enum.each(&forward_event(&1, state.subscribers))
   end
 
-  defp forward_event(%Event{object: object, action: action} = event, state) do
-    state
+  defp forward_event({object, %Event{action: action} = event}, subscribers) do
+    subscribers
     |> Map.get({object, action}, [])
     |> Enum.each(fn {fun, _ref} -> fun.(event) end)
   end
@@ -65,5 +79,12 @@ defmodule Wocky.Watcher.Client do
   defp delete_ref({key, val}, ref) do
     to_delete = Enum.find(val, fn v -> elem(v, 1) == ref end)
     {key, MapSet.delete(val, to_delete)}
+  end
+
+  defp get_table_map do
+    :wocky
+    |> Confex.fetch_env!(:watched_types)
+    |> Enum.map(fn t -> {t.__schema__(:source), t} end)
+    |> Map.new()
   end
 end

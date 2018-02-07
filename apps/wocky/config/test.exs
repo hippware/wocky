@@ -31,8 +31,6 @@ config :wocky_db_watcher, :db,
   port: {:system, :integer, "WOCKY_DB_PORT", 5432},
   pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15}
 
-config :wocky_db_watcher, backend: WockyDBWatcher.Backend.Direct
-
-config :wocky_db_watcher, :watches, [
-  {:bots, Wocky.Bot, [:insert, :update, :delete]}
-]
+config :wocky_db_watcher,
+  backend: WockyDBWatcher.Backend.Direct,
+  channel: "wocky_db_watcher_notify"
