@@ -15,24 +15,27 @@ defmodule Wocky.Watcher.EventDecoder do
 
   defp fix_atoms(%Event{table: table, action: action} = event) do
     %{
-      event |
-      table: table,
-      action: String.to_existing_atom(action)
+      event
+      | table: table,
+        action: String.to_existing_atom(action)
     }
   end
 
-  defp convert_objects(%Event{table: table, old: old, new: new} = event, table_map) do
+  defp convert_objects(
+         %Event{table: table, old: old, new: new} = event,
+         table_map
+       ) do
     case Map.get(table_map, table) do
       nil ->
         {nil, event}
+
       object ->
         {object,
-          %{
-            event |
-            old: convert_object(object, old),
-            new: convert_object(object, new)
-          }
-        }
+         %{
+           event
+           | old: convert_object(object, old),
+             new: convert_object(object, new)
+         }}
     end
   end
 

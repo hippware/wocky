@@ -50,17 +50,23 @@ defmodule Wocky.Watcher.Client do
   def handle_call({:subscribe, object, action, fun}, _from, state) do
     current = Map.get(state.subscribers, {object, action}, MapSet.new())
     ref = make_ref()
-    new_subscribers = Map.put(state.subscribers,
-                              {object, action},
-                              MapSet.put(current, {fun, ref}))
+
+    new_subscribers =
+      Map.put(
+        state.subscribers,
+        {object, action},
+        MapSet.put(current, {fun, ref})
+      )
 
     {:reply, {:ok, ref}, %{state | subscribers: new_subscribers}}
   end
 
   def handle_call({:unsubscribe, ref}, _from, state) do
-    new_subscribers = state.subscribers
-                      |> Enum.map(&delete_ref(&1, ref))
-                      |> Map.new()
+    new_subscribers =
+      state.subscribers
+      |> Enum.map(&delete_ref(&1, ref))
+      |> Map.new()
+
     {:reply, :ok, %{state | subscribers: new_subscribers}}
   end
 
