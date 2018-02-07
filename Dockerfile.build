@@ -16,7 +16,6 @@ RUN mkdir -p apps/wocky_api
 COPY apps/wocky_api/mix.exs apps/wocky_api/
 
 RUN mkdir /root/.ssh && \
-    echo "key:" && \
     echo "$SSH_PRIV_KEY" > /root/.ssh/id_rsa && \
     sed -i s/\\^/\\n/g /root/.ssh/id_rsa && \
     chmod go-rwx /root/.ssh/id_rsa && \
