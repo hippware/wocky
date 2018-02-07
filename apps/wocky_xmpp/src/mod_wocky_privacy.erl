@@ -33,27 +33,25 @@ stop(Host) ->
 %%% Privacy check callback
 %%%===================================================================
 
+-spec check_packet(mongoose_acc:t(), ejabberd:luser(), ejabberd:lserver(),
+                   mod_privacy:userlist(),
+                   {ejabberd:jid(), ejabberd:jid(), binary(), binary()},
+                   in | out) -> mongoose_acc:t().
+check_packet(#{result := Result} = Acc, _User, _Server, _UserList,
+             {From, To, Name, _Type}, Dir) ->
+    do_check_packet(Result, From, To, Name, Dir, Acc).
+
 % Allow messages sent by bare servers, possibly with resources.
 % We trust our own servers, so this should be fine.
 % This is used by messages from bots and chat rooms.
--spec check_packet(allow | deny, ejabberd:luser(), ejabberd:lserver(),
-                   mod_privacy:userlist(),
-                   {ejabberd:jid(), ejabberd:jid(), binary()},
-                   in | out) -> allow | deny.
-check_packet(deny, _User, _Server, _UserList,
-             {#jid{luser = <<>>},
-              _To,
-              _Packet},
-             in) ->
-    allow;
+do_check_packet(deny, #jid{luser = <<>>}, _To, _Name, in, Acc) ->
+    mongoose_acc:put(result, allow, Acc);
 
 % Allow outgoing presences to bots (overriding the default denial of
 % presence_out). These are used for temporary subscriptions.
-check_packet(deny, _User, _Server, _UserList,
-             {_From,
-              #jid{luser = <<>>, lresource = <<"bot/", _/binary>>},
-              #xmlel{name = <<"presence">>}},
-             out) ->
-    allow;
+do_check_packet(deny, _From,
+                #jid{luser = <<>>, lresource = <<"bot/", _/binary>>},
+                <<"presence">>, out, Acc) ->
+    mongoose_acc:put(result, allow, Acc);
 
-check_packet(Acc, _, _, _, _, _) -> Acc.
+do_check_packet(_, _, _, _, _, Acc) -> Acc.
