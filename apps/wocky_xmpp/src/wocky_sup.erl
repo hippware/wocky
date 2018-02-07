@@ -47,15 +47,10 @@ init([]) ->
       type     => supervisor,
       modules  => []},
 
-    BotCallbacks =
-    #{id     => wocky_bot_callbacks,
-      start  => {?wocky_xmpp_bot_callbacks, start_link, []}},
-
-    BotShareCallbacks =
-    #{id     => wocky_bot_share_callbacks,
-      start  => {?wocky_xmpp_bot_share_callbacks, start_link, []}},
+    WatcherClient = #{id    => ?wocky_watcher_client,
+                      start => {?wocky_watcher_client, start_link, []}},
 
     {ok, {SupFlags, [BotExpiryMon,
                      ExploreNearbyWorkerSup,
-                     BotCallbacks,
-                     BotShareCallbacks]}}.
+                     WatcherClient
+                    ]}}.

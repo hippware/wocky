@@ -52,6 +52,8 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
+    ?wocky_xmpp_bot_callbacks:register(),
+    ?wocky_xmpp_bot_share_callbacks:register(),
     wocky_watcher:register(bot, Host),
     wocky_publishing_handler:register(<<"bot">>, wocky_bot_publishing),
 
