@@ -19,7 +19,8 @@
                       check_hs_result/2, check_hs_result/3, check_hs_result/4,
                       query_el/1, hs_node/1, node_el/3,
                       subscribe_stanza/0, check_home_stream_sizes/2,
-                      check_home_stream_sizes/3]).
+                      check_home_stream_sizes/3, watch_hs/1, watch_hs/2,
+                      unwatch_hs/1]).
 
 -define(NS_TEST, <<"test-item-ns">>).
 -define(BOB_HS_ITEM_COUNT, 250).
@@ -222,9 +223,7 @@ no_auto_publish_chat(Config) ->
 watch(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun(Alice, Bob) ->
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [query_el(undefined)])),
+        watch_hs(Alice),
 
         % Both published and deleted items should be sent to watchers
         escalus:send(Alice, add_to_u(pub_stanza(<<"new_item">>), Alice)),
@@ -252,9 +251,7 @@ watch_with_version(Config) ->
 
         V2 = hd(tl(proplists:get_value(alice_versions, Config))),
 
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [query_el(V2)])),
+        watch_hs(Alice, V2),
 
         lists:foreach(
           fun(_) ->
@@ -263,9 +260,7 @@ watch_with_version(Config) ->
 
         %% Carol should get nothing from her own HS (since it's empty) and an
         %% auth error from Alice's (since it's not hers)
-        escalus:send(Carol,
-            escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
-                                           [query_el(V2)])),
+        watch_hs(Carol, V2),
 
         escalus:send(Carol,
             escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
@@ -279,20 +274,12 @@ watch_with_version(Config) ->
                             escalus:wait_for_stanzas(Alice, 2)),
 
         % Before the magic time we should get an error
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(
-              hs_node(?ALICE),
-              <<"available">>,
-              [query_el(<<"2016-12-31T23:00:00Z">>)])),
+        watch_hs(Alice, <<"2016-12-31T23:00:00Z">>),
 
         escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice)),
 
         % An invalid version should cause an error
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(
-              hs_node(?ALICE),
-              <<"available">>,
-              [query_el(?wocky_id:new())])),
+        watch_hs(Alice, ?wocky_id:new()),
 
         escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice)),
 
@@ -309,18 +296,14 @@ unsubscribe(Config) ->
         timer:sleep(500),
         ensure_all_clean([Alice]),
 
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [query_el(undefined)])),
+        watch_hs(Alice),
 
         escalus:send(Alice,
                      add_to_u(pub_stanza(<<"pushed_item">>), Alice)),
         escalus:assert_many([is_iq_result, is_message],
                             escalus:wait_for_stanzas(Alice, 2)),
 
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(hs_node(?ALICE), <<"unavailable">>,
-                                           [query_el(undefined)])),
+        unwatch_hs(Alice),
 
         expect_iq_success_u(pub_stanza(<<"new_item3">>), Alice, Alice),
         timer:sleep(500),
@@ -341,10 +324,7 @@ maintain_subscription(Config) ->
                  stream_resumption],
         {ok, Alice, _} = escalus_connection:start(AliceSpec, Steps),
 
-        escalus:send(Alice,
-                     escalus_stanza:presence_direct(
-                       hs_node(?ALICE), <<"available">>,
-                       [query_el(undefined)])),
+        watch_hs(Alice),
 
         % Give the subscription time to take before we axe the connection
         timer:sleep(250),
@@ -556,9 +536,8 @@ bot_change_notification(Config) ->
       fun(Alice, Carol) ->
         clear_home_streams(),
 
-        escalus:send(Carol,
-            escalus_stanza:presence_direct(hs_node(?CAROL), <<"available">>,
-                                           [query_el(undefined)])),
+        watch_hs(Carol),
+
         timer:sleep(400),
 
         % Update description
@@ -605,7 +584,6 @@ bot_change_notification(Config) ->
       end).
 
 is_bot_change_notification(S) ->
-
     escalus_pred:is_message(S)
     andalso
     <<>> =/= xml:get_path_s(S, [{elem, <<"notification">>},
@@ -684,11 +662,7 @@ catchup_command_limits(Config) ->
 subscribe_command_limits(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(
-              hs_node(?ALICE),
-              <<"available">>,
-              [query_el(?wocky_timestamp:shift([{days, -1}]))])),
+        watch_hs(Alice, ?wocky_timestamp:shift([{days, -1}])),
 
         escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice))
       end).

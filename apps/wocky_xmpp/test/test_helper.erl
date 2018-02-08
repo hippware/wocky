@@ -69,7 +69,11 @@
          check_home_stream_sizes/2,
          check_home_stream_sizes/3,
 
-         insert_system_users/0
+         insert_system_users/0,
+
+         watch_hs/1,
+         watch_hs/2,
+         unwatch_hs/1
         ]).
 
 
@@ -597,3 +601,18 @@ get_bot_ids(ItemList) ->
                           end
                   end,
                   [], ItemList)).
+
+watch_hs(Client) -> watch_hs(Client, undefined).
+watch_hs(Client, Version) ->
+    escalus:send(Client,
+                 escalus_stanza:presence_direct(
+                   hs_node(escalus_client:username(Client)),
+                   <<"available">>,
+                   [query_el(Version)])).
+
+unwatch_hs(Client) ->
+    escalus:send(Client,
+                 escalus_stanza:presence_direct(
+                   hs_node(escalus_client:username(Client)),
+                   <<"unavailable">>,
+                   [query_el(undefined)])).
