@@ -66,9 +66,12 @@ defmodule Wocky.XMPP.Mixfile do
         :plug
       ],
       included_applications: [
-        # These are here because we start them manually and do not want them
+        # This is here because we start it manually and do not want it
         # starting automatically when Wocky starts.
-        :ejabberd
+        :ejabberd,
+        # This one we use files from but don't actually want the application
+        # running
+        :wocky_db_watcher
       ],
       mod: {:wocky_xmpp_app, []},
       env: [
