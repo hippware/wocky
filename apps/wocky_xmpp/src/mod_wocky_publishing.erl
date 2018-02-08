@@ -35,7 +35,7 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(filter_local_packet, Host,
                        fun filter_local_packet_hook/1, 90),
     ejabberd_hooks:add(sm_remove_connection_hook, Host,
-                       fun remove_connection_hook/4, 100),
+                       fun remove_connection_hook/5, 100),
     mod_disco:register_feature(Host, ?NS_PUBLISHING).
 
 stop(Host) ->
@@ -43,7 +43,7 @@ stop(Host) ->
     ejabberd_hooks:delete(filter_local_packet, Host,
                           fun filter_local_packet_hook/1, 90),
     ejabberd_hooks:delete(sm_remove_connection_hook, Host,
-                          fun remove_connection_hook/4, 100),
+                          fun remove_connection_hook/5, 100),
     gen_iq_handler:remove_iq_handler(ejabberd_sm, Host, ?NS_PUBLISHING),
     ok.
 
@@ -87,10 +87,11 @@ handle_iq_type(_From, _To, _IQ) ->
 %%% Incoming packet handler
 %%%===================================================================
 
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
-filter_local_packet_hook(P = {From, To,
+filter_local_packet_hook(P = {From, To, _Acc,
                               Packet = #xmlel{name = <<"presence">>}}) ->
     Type = presence_type(Packet),
     case handle_presence(From, To, Type, Packet) of
@@ -163,10 +164,11 @@ handle_presence(FromJID, ToJID, unavailable, _Packet) ->
     end.
 
 % Implicit unsubscription on disconnection unless the stream was resumed
-remove_connection_hook(_SID, _JID, _Info, resumed) ->
-    ok;
-remove_connection_hook(_SID, JID, _Info, _Reason) ->
-    wocky_publishing_handler:unsubscribe(all, JID).
+remove_connection_hook(Acc, _SID, _JID, _Info, resumed) ->
+    Acc;
+remove_connection_hook(Acc, _SID, JID, _Info, _Reason) ->
+    wocky_publishing_handler:unsubscribe(all, JID),
+    Acc.
 
 %%%===================================================================
 %%% Handler callbacks

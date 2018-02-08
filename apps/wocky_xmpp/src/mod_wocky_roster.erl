@@ -38,12 +38,12 @@
 %% Hook callbacks
 -export([roster_get_hook/2,
          roster_in_subscription_hook/6,
-         roster_out_subscription_hook/4,
+         roster_out_subscription_hook/5,
          roster_get_subscription_lists_hook/3,
          roster_get_jid_info_hook/4,
          roster_get_versioning_feature_hook/2,
          filter_local_packet_hook/1,
-         roster_modified_hook/3
+         roster_modified_hook/4
         ]).
 
 -import(wocky_roster, [to_wocky_roster/1, to_wocky_roster/3]).
@@ -303,11 +303,13 @@ roster_get_hook(Acc, {LUser, _LServer}) ->
 
 %% roster_in_subscription, roster_out_subscription -------------------
 
-roster_in_subscription_hook(_, User, Server, JID, Type, Reason) ->
-    process_subscription(in, User, Server, JID, Type, Reason).
+roster_in_subscription_hook(Acc, User, Server, JID, Type, Reason) ->
+    Res = process_subscription(in, User, Server, JID, Type, Reason),
+    mongoose_acc:put(result, Res, Acc).
 
-roster_out_subscription_hook(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type, <<"">>).
+roster_out_subscription_hook(Acc, User, Server, JID, Type) ->
+    Res = process_subscription(out, User, Server, JID, Type, <<"">>),
+    mongoose_acc:put(result, Res, Acc).
 
 process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
     LUser = jid:nodeprep(User),
@@ -454,12 +456,13 @@ send_auto_reply(ToJID, JID1, Attrs) ->
 
 %% roster_get_subscription_lists -------------------------------------
 
-roster_get_subscription_lists_hook(_Acc, User, Server) ->
+roster_get_subscription_lists_hook(Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     JID = jid:make(User, Server, <<>>),
-    fill_subscription_lists(JID, LServer, Items, [], []).
+    SubLists = fill_subscription_lists(JID, LServer, Items, [], []),
+    mongoose_acc:put(subscription_lists, SubLists, Acc).
 
 fill_subscription_lists(JID, LServer, [#wocky_roster{} = I | Is], F, T) ->
     J = I#wocky_roster.contact_jid,
@@ -539,8 +542,9 @@ send_update(#jid{user = User, server = Server}, JID) ->
 
 
 %% hook for out-of-band roster modification --------------------------
-roster_modified_hook(User, Server, JID) ->
-    send_update(jid:make(User, Server, <<>>), JID).
+roster_modified_hook(Acc, User, Server, JID) ->
+    send_update(jid:make(User, Server, <<>>), JID),
+    Acc.
 
 %%%===================================================================
 %%% Helper functions

@@ -16,7 +16,7 @@
          start/2,
          stop/1,
          handle_iq/3,
-         remove_user_hook/2
+         remove_user_hook/3
         ]).
 
 %% Delay between sending result of a delete request and calling the
@@ -613,15 +613,17 @@ update_roster_contacts(LUser) ->
 % For tests we want the user deleted immediately because we then attempt to
 % recreate the same user.
 -ifdef(TEST).
-remove_user_hook(User, _Server) ->
+remove_user_hook(Acc, User, _Server) ->
     LUser = jid:nodeprep(User),
-    ?wocky_user:delete(LUser).
+    ?wocky_user:delete(LUser),
+    Acc.
 -else.
 
 %% However in the real world we want to delay the deletion to ensure that
 %% in-flight IQs won't trip over the missing user in the database.
-remove_user_hook(User, _Server) ->
+remove_user_hook(Acc, User, _Server) ->
     LUser = jid:nodeprep(User),
     {ok, _Ref} = timer:apply_after(
-                   ?USER_DELETE_DELAY, ?wocky_user, delete, [LUser]).
+                   ?USER_DELETE_DELAY, ?wocky_user, delete, [LUser]),
+    Acc.
 -endif.

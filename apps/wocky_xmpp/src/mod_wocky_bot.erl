@@ -267,7 +267,8 @@ publish_unfollow_me(Owner, Bot) ->
     send_hs_notification(Owner, Bot, Stanza).
 
 send_hs_notification(From, Bot, Stanza) ->
-    ejabberd_router:route(?wocky_bot:to_jid(Bot), From, Stanza).
+    ejabberd_router:route(?wocky_bot:to_jid(Bot), From, Stanza),
+    ok.
 
 
 %%%===================================================================
@@ -505,13 +506,14 @@ do_make_bot_els(Bot, FromUser) ->
 %%% Incoming packet handler
 %%%===================================================================
 
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
 
 %% Packets to another entity which reference a bot. Passed through unless
 %% they hit a condition to block them.
-filter_local_packet_hook(P = {From, To,
+filter_local_packet_hook(P = {From, To, _Acc,
                               Stanza = #xmlel{name = <<"message">>,
                                               attrs = Attrs}}) ->
     Result = case xml:get_attr(<<"type">>, Attrs) of

@@ -21,21 +21,23 @@
 
 start(Host, _Opts) ->
     ejabberd_hooks:add(wocky_user_updated, Host,
-                       fun user_updated/2, 50).
+                       fun user_updated/3, 50).
 
 stop(Host) ->
     ejabberd_hooks:delete(wocky_user_updated, Host,
-                          fun user_updated/2, 50).
+                          fun user_updated/3, 50).
 
 %%%===================================================================
 %%% Roster update hook handler
 %%%===================================================================
 
--spec user_updated(ejabberd:luser(), ejabberd:lserver()) -> ok.
-user_updated(LUser, _LServer) ->
+-spec user_updated(mongoose_acc:t(), ejabberd:luser(), ejabberd:lserver()) ->
+    mongoose_acc:t().
+user_updated(Acc, LUser, _LServer) ->
     User = ?wocky_repo:get(?wocky_user, LUser),
     WithContact = ?wocky_roster_item:find_users_with_contact(LUser),
-    lists:foreach(notify_user_update(User, _), WithContact).
+    lists:foreach(notify_user_update(User, _), WithContact),
+    Acc.
 
 notify_user_update(Item = #{id := User, server := Server},
                    #{id := WithContact})  ->

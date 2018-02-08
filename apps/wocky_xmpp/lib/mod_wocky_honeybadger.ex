@@ -21,7 +21,7 @@ defmodule :mod_wocky_honeybadger do
     :ejabberd_hooks.add(
       :sm_register_connection_hook,
       host,
-      &sm_register_connection_hook/3,
+      &sm_register_connection_hook/4,
       @hook_priority
     )
 
@@ -35,7 +35,7 @@ defmodule :mod_wocky_honeybadger do
     :ejabberd_hooks.add(
       :iq_handler_crash,
       host,
-      &iq_handler_crash_hook/4,
+      &iq_handler_crash_hook/5,
       @hook_priority
     )
   end
@@ -44,7 +44,7 @@ defmodule :mod_wocky_honeybadger do
     :ejabberd_hooks.delete(
       :iq_handler_crash,
       host,
-      &iq_handler_crash_hook/4,
+      &iq_handler_crash_hook/5,
       @hook_priority
     )
 
@@ -58,7 +58,7 @@ defmodule :mod_wocky_honeybadger do
     :ejabberd_hooks.delete(
       :sm_register_connection_hook,
       host,
-      &sm_register_connection_hook/3,
+      &sm_register_connection_hook/4,
       @hook_priority
     )
   end
@@ -67,9 +67,10 @@ defmodule :mod_wocky_honeybadger do
   # User connection handler
   # ===================================================================
 
-  @spec sm_register_connection_hook(:ejabberd_sm.sid(), :ejabberd.jid(), any) ::
-          :ok
-  def sm_register_connection_hook(sid, jid, info) do
+  @spec sm_register_connection_hook(
+    :mongoose_acc.t(), :ejabberd_sm.sid(), :ejabberd.jid(), any
+  ) :: :mongoose_acc.t()
+  def sm_register_connection_hook(acc, sid, jid, info) do
     Honeybadger.context(%{
       user_id: jid(jid, :luser),
       connection: %{
@@ -79,16 +80,17 @@ defmodule :mod_wocky_honeybadger do
       }
     })
 
-    :ok
+    acc
   end
 
   # ===================================================================
   # Incoming packet handler
   # ===================================================================
 
-  @type filter_packet() :: {:ejabberd.jid(), :ejabberd.jid(), :jlib.xmlel()}
+  @type filter_packet() :: {:ejabberd.jid(), :ejabberd.jid(),
+    :mongoose_acc.t(), :jlib.xmlel()}
   @spec filter_local_packet_hook(filter_packet | :drop) :: filter_packet
-  def filter_local_packet_hook({from, to, packet} = p) do
+  def filter_local_packet_hook({from, to, _acc, packet} = p) do
     Honeybadger.context(%{
       last_packet: %{
         from: :jid.to_binary(from),
@@ -107,12 +109,13 @@ defmodule :mod_wocky_honeybadger do
   # ===================================================================
 
   @spec iq_handler_crash_hook(
+          :mongoose_acc.t(),
           :ejabberd.jid(),
           :ejabberd.jid(),
           :ejabberd.iq(),
           any
         ) :: :ok
-  def iq_handler_crash_hook(from, to, iq, exception) do
+  def iq_handler_crash_hook(acc, from, to, iq, exception) do
     stacktrace = :erlang.get_stacktrace()
 
     Honeybadger.notify(
@@ -132,6 +135,6 @@ defmodule :mod_wocky_honeybadger do
       stacktrace
     )
 
-    :ok
+    acc
   end
 end
