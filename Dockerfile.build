@@ -1,5 +1,4 @@
 FROM hippware/alpine-elixir-dev:1.6
-ARG SSH_PRIV_KEY
 
 ENV MIX_ENV=test
 
@@ -14,6 +13,8 @@ COPY apps/wocky_xmpp/mix.exs apps/wocky_xmpp/
 
 RUN mkdir -p apps/wocky_api
 COPY apps/wocky_api/mix.exs apps/wocky_api/
+
+ARG SSH_PRIV_KEY
 
 RUN mkdir /root/.ssh && \
     echo "$SSH_PRIV_KEY" > /root/.ssh/id_rsa && \
