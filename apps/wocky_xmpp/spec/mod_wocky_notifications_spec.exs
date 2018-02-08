@@ -146,7 +146,12 @@ defmodule :mod_wocky_notifications_spec do
       context "with a message packet" do
         before do
           :ok =
-            user_send_packet_hook(shared.sender_jid, shared.user_jid, packet())
+            user_send_packet_hook(
+              :ok,
+              shared.sender_jid,
+              shared.user_jid,
+              packet()
+            )
         end
 
         it "should send a notification" do
@@ -164,6 +169,7 @@ defmodule :mod_wocky_notifications_spec do
         before do
           :ok =
             user_send_packet_hook(
+              :ok,
               shared.sender_jid,
               shared.user_jid,
               image_packet()
@@ -185,6 +191,7 @@ defmodule :mod_wocky_notifications_spec do
         before do
           :ok =
             user_send_packet_hook(
+              :ok,
               shared.sender_jid,
               shared.user_jid,
               combo_packet()
@@ -206,6 +213,7 @@ defmodule :mod_wocky_notifications_spec do
         before do
           :ok =
             user_send_packet_hook(
+              :ok,
               shared.sender_jid,
               shared.user_jid,
               packet("parlay")
@@ -221,6 +229,7 @@ defmodule :mod_wocky_notifications_spec do
         before do
           :ok =
             user_send_packet_hook(
+              :ok,
               shared.sender_jid,
               shared.user_jid,
               packet("message", "parlay")
@@ -247,7 +256,12 @@ defmodule :mod_wocky_notifications_spec do
             )
 
           result =
-            user_send_packet_hook(shared.sender_jid, shared.user_jid, no_body)
+            user_send_packet_hook(
+              :ok,
+              shared.sender_jid,
+              shared.user_jid,
+              no_body
+            )
 
           {:ok, result: result}
         end
@@ -261,7 +275,7 @@ defmodule :mod_wocky_notifications_spec do
     describe "handling the remove_user hook" do
       before do
         _ = enable_notifications(shared.user_jid)
-        result = remove_user_hook(shared.user.username, shared.user.server)
+        result = remove_user_hook(:ok, shared.user.username, shared.user.server)
         {:ok, result: result}
       end
 
