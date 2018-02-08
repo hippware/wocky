@@ -623,13 +623,13 @@ item_ask_to_xml(_) ->
 push_item(User, Server, From,
           OldItem = #wocky_roster{},
           NewItem = #wocky_roster{}) ->
-    ok = ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-                           jid:make(User, Server, <<"">>),
-                           {broadcast, {item,
-                                        NewItem#wocky_roster.contact_jid,
-                                        NewItem#wocky_roster.subscription,
-                                        to_mim_roster(OldItem),
-                                        to_mim_roster(NewItem)}}),
+    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
+                      jid:make(User, Server, <<"">>),
+                      {broadcast, {item,
+                                   NewItem#wocky_roster.contact_jid,
+                                   NewItem#wocky_roster.subscription,
+                                   to_mim_roster(OldItem),
+                                   to_mim_roster(NewItem)}}),
     push_item(User, Server, From, OldItem, NewItem,
               ?wocky_roster_item:version(jid:nodeprep(User))).
 

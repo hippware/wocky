@@ -28,9 +28,12 @@ do_query(LServer, LResource, Actor, Op, Redirects)
     deny;
 do_query(LServer, LRescource, Actor, Op, Redirects) ->
     IQ = make_access_query(LRescource, Actor, Op),
+    From = aq_jid(),
+    JID = jid:make(<<>>, LServer, <<>>),
     Waiter = self(),
-    ejabberd_local:route_iq(aq_jid(), jid:make(<<>>, LServer, <<>>),
-                            IQ, handle_reply(Waiter, _), ?IQ_TIMEOUT),
+    Fun = fun (Reply) -> handle_reply(Waiter, Reply) end,
+    Acc = mongoose_acc:from_element(IQ, From, JID),
+    ejabberd_local:route_iq(From, JID, Acc, IQ, Fun, ?IQ_TIMEOUT),
     Result = await_result(),
     handle_result(Result, LServer, LRescource, Actor, Op, Redirects).
 
