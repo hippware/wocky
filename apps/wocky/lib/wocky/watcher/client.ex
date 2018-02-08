@@ -31,6 +31,10 @@ defmodule Wocky.Watcher.Client do
     GenServer.call(__MODULE__, {:unsubscribe, ref})
   end
 
+  def clear_all_subscriptions do
+    GenServer.call(__MODULE__, :clear_all_subscriptions)
+  end
+
   def init(_) do
     source =
       :wocky_db_watcher
@@ -68,6 +72,10 @@ defmodule Wocky.Watcher.Client do
       |> Map.new()
 
     {:reply, :ok, %{state | subscribers: new_subscribers}}
+  end
+
+  def handle_call(:clear_all_subscriptions, _from, state) do
+    {:reply, :ok, %{state | subscribers: %{}}}
   end
 
   defp forward_events(events, state) do
