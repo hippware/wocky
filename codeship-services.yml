@@ -3,7 +3,6 @@ wocky_build:
     context: .
     dockerfile: Dockerfile.build
     image: hippware/wocky:build
-    encrypted_args_file: build_args.encrypted
   cached: true
   volumes:
     - ./tmp/artifacts:/artifacts

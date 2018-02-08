@@ -14,14 +14,6 @@ COPY apps/wocky_xmpp/mix.exs apps/wocky_xmpp/
 RUN mkdir -p apps/wocky_api
 COPY apps/wocky_api/mix.exs apps/wocky_api/
 
-ARG SSH_PRIV_KEY
-
-RUN mkdir /root/.ssh && \
-    echo "$SSH_PRIV_KEY" > /root/.ssh/id_rsa && \
-    sed -i s/\\^/\\n/g /root/.ssh/id_rsa && \
-    chmod go-rwx /root/.ssh/id_rsa && \
-    ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
-
 RUN mix deps.get && \
     mix deps.compile lager && \
     mix deps.compile && \
