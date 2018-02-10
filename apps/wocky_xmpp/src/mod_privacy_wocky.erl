@@ -33,19 +33,17 @@ init(Host, Opts) ->
     mod_privacy_odbc:init(Host, Opts).
 
 -spec get_default_list(ejabberd:luser(), ejabberd:lserver()) ->
-    {ok, {mod_privacy:list_name(), [mod_privacy:list_item()]}}.
+    {ok, {binary(), [mod_privacy:list_item()]}}.
 get_default_list(LUser, LServer) ->
     {ok, {?DEFAULT_LIST, default_list_items(LUser, LServer)}}.
 
 -spec get_list_names(ejabberd:luser(), ejabberd:lserver()) ->
-    {ok, {mod_privacy:list_name(), [mod_privacy:list_name()]}}.
+    {ok, {binary(), [binary()]}}.
 get_list_names(LUser, LServer) ->
     {ok, {_Default, List}} = mod_privacy_odbc:get_list_names(LUser, LServer),
     {ok, {?DEFAULT_LIST, [?DEFAULT_LIST | List]}}.
 
--spec get_privacy_list(ejabberd:luser(),
-                       ejabberd:lserver(),
-                       mod_privacy:list_name()) ->
+-spec get_privacy_list(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     {error, not_found} | {ok, [mod_privacy:list_item()]}.
 get_privacy_list(LUser, LServer, ?DEFAULT_LIST) ->
     {ok, default_list_items(LUser, LServer)};
@@ -58,17 +56,13 @@ forget_default_list(_LUser, _LServer) ->
     % Not implemented - the default list in wocky can't be forgotten.
     {error, not_found}.
 
--spec set_default_list(ejabberd:luser(),
-                       ejabberd:lserver(),
-                       mod_privacy:list_name()) ->
+-spec set_default_list(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     {error, not_found}.
 set_default_list(_LUser, _LServer, _Name) ->
     % Not implemented - the default list in wocky can't be overridden.
     {error, not_found}.
 
--spec remove_privacy_list(ejabberd:luser(),
-                          ejabberd:lserver(),
-                          mod_privacy:list_name()) ->
+-spec remove_privacy_list(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     {error, conflict} | ok.
 remove_privacy_list(_LUser, _LServer, ?DEFAULT_LIST) ->
     {error, conflict};
@@ -77,7 +71,7 @@ remove_privacy_list(LUser, LServer, Name) ->
 
 -spec replace_privacy_list(ejabberd:luser(),
                            ejabberd:lserver(),
-                           mod_privacy:list_name(),
+                           binary(),
                            [mod_privacy:list_item()]) ->
     ok | {error, not_allowed}.
 replace_privacy_list(_LUser, _LServer, ?DEFAULT_LIST, _Items) ->

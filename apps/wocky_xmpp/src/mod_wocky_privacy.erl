@@ -34,7 +34,7 @@ stop(Host) ->
 %%%===================================================================
 
 -spec check_packet(mongoose_acc:t(), ejabberd:luser(), ejabberd:lserver(),
-                   mod_privacy:userlist(),
+                   list(),
                    {ejabberd:jid(), ejabberd:jid(), binary(), binary()},
                    in | out) -> mongoose_acc:t().
 check_packet(#{result := Result} = Acc, _User, _Server, _UserList,
