@@ -91,11 +91,11 @@ user_send_packet_hook(Acc, From, To, Packet) ->
                          body => Body,
                          image => Image,
                          conversation_id => ConversationID}),
-            ?wocky_push:notify_all(To#jid.luser, Event),
-            Acc;
+            Result = ?wocky_push:notify_all(To#jid.luser, Event),
+            mongoose_acc:put(result, Result, Acc);
 
         _Else ->
-            Acc
+            mongoose_acc:put(result, ok, Acc)
     end.
 
 should_notify(_From, To, Packet) ->
@@ -141,10 +141,10 @@ roster_updated_hook(
             Follower = ?wocky_user:get_by_jid(jid:make(ContactJID)),
             Event = ?new_follower_event:new(#{user => User,
                                               follower => Follower}),
-            ?wocky_push:notify_all(UserID, Event),
-            Acc;
+            Result = ?wocky_push:notify_all(UserID, Event),
+            mongoose_acc:put(result, Result, Acc);
         _ ->
-            Acc
+            mongoose_acc:put(result, ok, Acc)
     end.
 
 %% remove_user -------------------------------------------------------

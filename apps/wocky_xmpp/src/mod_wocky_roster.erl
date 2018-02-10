@@ -506,10 +506,11 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
     [Feature | Acc].
 
 %% local packet filter hook for user update messages
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
-filter_local_packet_hook(P = {From, To, Packet}) ->
+filter_local_packet_hook(P = {From, To, _Acc, Packet}) ->
     case handle_local_packet(From, To, Packet) of
         ok -> drop;
         {error, _} -> P

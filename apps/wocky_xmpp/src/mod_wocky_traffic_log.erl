@@ -40,7 +40,7 @@ stop(Host) ->
 % clients to us (the server). Vice-versa for "received".
 % This is to maintain consistency with the
 % nomenclature in ejabberd_c2s.
--spec stanza_sent_hook(mongooseim_acc:t(), jid(),
+-spec stanza_sent_hook(mongoose_acc:t(), jid(),
                        {inet:ip_address(), inet:port_number()},
                        jlib:xmlel()) -> ok.
 stanza_sent_hook(Acc, JID, {IP,Port}, Element) ->
