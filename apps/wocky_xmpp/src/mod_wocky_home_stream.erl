@@ -42,6 +42,7 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
+    ?wocky_xmpp_home_stream_item_callbacks:register(),
     wocky_publishing_handler:register(?HOME_STREAM_NODE, ?MODULE),
     wocky_watcher:register(?WATCHER_CLASS, Host),
     ejabberd_hooks:add(filter_local_packet, Host,
@@ -68,21 +69,20 @@ deps(_Host, _Opts) ->
               published_stanza()) -> ok.
 publish(TargetJID, From, ID, Stanza) when is_binary(ID) ->
     publish(TargetJID, From, {ID, nil, nil}, Stanza);
-publish(TargetJID = #jid{luser = UserID},
+publish(#jid{luser = UserID},
         From, {ID, RefUser, RefBot}, Stanza) ->
-    {ok, ItemMap} = ?wocky_home_stream_item:put(UserID, ID,
-                                                jid:to_binary(From),
-                                                exml:to_binary(Stanza),
-                                                [{ref_user_id, get_id(RefUser)},
-                                                 {ref_bot_id, get_id(RefBot)}]
-                                               ),
-    send_notifications(TargetJID, map_to_item(ItemMap)),
+    {ok, _} = ?wocky_home_stream_item:put(UserID, ID,
+                                          jid:to_binary(From),
+                                          exml:to_binary(Stanza),
+                                          [{ref_user_id, get_id(RefUser)},
+                                           {ref_bot_id, get_id(RefBot)}]
+                                         ),
     ok.
 
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
-delete(UserJID = #jid{luser = User}, ID) ->
-    {ok, ItemMap} = ?wocky_home_stream_item:delete(User, ID),
-    send_notifications(UserJID, map_to_item(ItemMap)).
+delete(#jid{luser = User}, ID) ->
+    {ok, _} = ?wocky_home_stream_item:delete(User, ID),
+    ok.
 
 -spec get(ejabberd:jid(), ejabberd:jid(),
           jlib:rsm_in() | pub_item_id()) -> pub_get_result().
@@ -352,10 +352,13 @@ send_async_catchup(CatchupRows, UserJID) when is_list(CatchupRows) ->
         _),
       Items).
 
--spec send_notifications(ejabberd:jid(), pub_item()) -> ok.
-send_notifications(UserJID, Item) ->
+-spec send_notifications(ejabberd:jid(),
+                         pub_item() | ?wocky_home_stream_item:t()) -> ok.
+send_notifications(UserJID, Item = #published_item{}) ->
     Watchers = wocky_watcher:watchers(?WATCHER_CLASS, hs_node(UserJID)),
-    lists:foreach(send_notification(_, Item), Watchers).
+    lists:foreach(send_notification(_, Item), Watchers);
+send_notifications(UserJID, HomeStreamItem) ->
+    send_notifications(UserJID, map_to_item(HomeStreamItem)).
 
 send_notification(JID, Item) ->
     wocky_publishing_handler:send_notification(

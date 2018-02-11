@@ -86,6 +86,9 @@ ensure_wocky_is_running() ->
     ok = application:ensure_started(wocky_db_watcher),
     % Cause tests expecting to fail if the error is caused by a crash:
     {atomic, ok} = ejabberd_config:add_local_option(iq_crash_response, crash),
+
+    % Flush redis to get us a clean slate
+    ejabberd_redis:cmd(["FLUSHDB"]),
     ok.
 
 setup_users(Config, Users) ->

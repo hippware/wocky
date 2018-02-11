@@ -573,8 +573,10 @@ get_subscribed(Config) ->
 
 sorting(Config) ->
     AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
+    ?wocky_watcher_client:suspend_notifications(),
     ?wocky_repo:delete_all(?wocky_home_stream_item),
     ?wocky_repo:delete_all(?wocky_bot),
+    ?wocky_watcher_client:resume_notifications(),
     Bots = ?wocky_factory:insert_list(10, bot,
                                       #{user => AliceUser, shortname => nil}),
     escalus:story(Config, [{alice, 1}],

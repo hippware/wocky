@@ -15,10 +15,12 @@ defmodule WockyXMPP.BotShareCallbacks do
   def handle_insert(%Event{action: :insert, new: new}) do
     share = Repo.preload(new, [:user, :sharer, :bot])
 
-    :wocky_bot_users.send_share_notification(
-      share.sharer,
-      share.user,
-      share.bot
-    )
+    if share.user != nil and share.sharer != nil and share.bot != nil do
+      :wocky_bot_users.send_share_notification(
+        share.sharer,
+        share.user,
+        share.bot
+      )
+    end
   end
 end
