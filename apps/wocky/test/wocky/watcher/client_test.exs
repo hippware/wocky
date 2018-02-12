@@ -14,12 +14,14 @@ defmodule Wocky.Wachter.ClientTest do
     @moduledoc "Simple GenServer to collect and return events"
     use GenServer
 
-    def start_link, do: GenServer.start_link( __MODULE__, nil, name: __MODULE__)
+    def start_link, do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+
     def send_event(event, pid) do
       GenServer.call(__MODULE__, {:event, event, pid})
     end
 
     def init(_), do: {:ok, nil}
+
     def handle_call({:event, event, pid}, _from, state) do
       send(pid, event)
       {:reply, :ok, state}
@@ -55,9 +57,10 @@ defmodule Wocky.Wachter.ClientTest do
     self = self()
     Client.subscribe(Bot, :insert, &Callback.send_event(&1, self))
     %{id: bid} = Factory.insert(:bot)
+
     assert_receive %Event{action: :insert, old: nil, new: %Bot{id: id}}
-    when id == bid,
-      300
+                   when id == bid,
+                   300
   end
 
   test "generates update event" do
@@ -69,11 +72,13 @@ defmodule Wocky.Wachter.ClientTest do
     |> cast(%{title: Lorem.sentence()}, [:title])
     |> Repo.update()
 
-    assert_receive %Event{action: :update,
-      old: %Bot{id: id, title: title},
-      new: %Bot{id: id, title: title2}}
-    when id == bid and title != title2,
-      300
+    assert_receive %Event{
+                     action: :update,
+                     old: %Bot{id: id, title: title},
+                     new: %Bot{id: id, title: title2}
+                   }
+                   when id == bid and title != title2,
+                   300
   end
 
   test "generates delete event" do
@@ -81,14 +86,16 @@ defmodule Wocky.Wachter.ClientTest do
     Client.subscribe(Bot, :delete, &Callback.send_event(&1, self))
     bot = %{id: bid} = Factory.insert(:bot)
     Repo.delete(bot)
+
     assert_receive %Event{action: :delete, new: nil, old: %Bot{id: id}}
-    when id == bid,
-      300
+                   when id == bid,
+                   300
   end
 
   test "unsubscribe" do
-    {:ok, ref} = Client.subscribe(Bot, :insert,
-                                  &Callback.send_event(&1, self()))
+    {:ok, ref} =
+      Client.subscribe(Bot, :insert, &Callback.send_event(&1, self()))
+
     Client.unsubscribe(ref)
     Factory.insert(:bot)
     refute_receive _, 200
