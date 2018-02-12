@@ -24,6 +24,7 @@ data:
   WOCKY_DB_HOST: wocky-testing.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_testing
   WOCKY_DB_USER: postgres
+  WOCKY_DB_WATCHER_QUEUE: wocky-testing-db-watcher.fifo
   AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
   HONEYBADGER_ENV: testing
   CLOUDWATCH_KEY_ID: AKIAJUCGS5NJU6ALDHKA

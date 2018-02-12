@@ -25,6 +25,7 @@ data:
   WOCKY_DB_HOST: wocky-us1.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_us1
   WOCKY_DB_USER: postgres
+  WOCKY_DB_WATCHER_QUEUE: wocky-us1-db-watcher.fifo
   AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
   HONEYBADGER_ENV: us1
   CLOUDWATCH_KEY_ID: AKIAJUCGS5NJU6ALDHKA
