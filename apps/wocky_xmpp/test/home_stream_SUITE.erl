@@ -855,6 +855,3 @@ catchup_stanza(Version) ->
                        #xmlel{name = <<"catchup">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE},
                                        {<<"version">>, Version}]}).
-
-ends_with(Bin, Subject) ->
-    binary:part(Subject, {byte_size(Subject), -byte_size(Bin)}) =:= Bin.
