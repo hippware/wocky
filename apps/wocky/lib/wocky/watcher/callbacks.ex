@@ -4,8 +4,11 @@ defmodule Wocky.Watcher.Callbacks do
   """
 
   alias Wocky.Watcher.Callbacks.Bot
+  alias Wocky.Watcher.Callbacks.BotItem
+
+  @modules [Bot, BotItem]
 
   def register do
-    Bot.register()
+    Enum.each(@modules, fn m -> m.register() end)
   end
 end

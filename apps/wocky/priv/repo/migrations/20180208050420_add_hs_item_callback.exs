@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddHsItemCallback do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   alias Wocky.Repo.Migration.Utils
 

@@ -44,7 +44,10 @@ config :wocky,
   hs_prepopulation_user: "__new_user_hs_archive__",
 
   # wocky_db_watcher watched types
-  watched_types: [Wocky.Bot, Wocky.Bot.Share, Wocky.HomeStreamItem]
+  watched_types: [Wocky.Bot,
+                  Wocky.Bot.Item,
+                  Wocky.Bot.Share,
+                  Wocky.HomeStreamItem]
 
 # Push notifications
 config :wocky, Wocky.Push,
