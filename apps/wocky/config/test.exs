@@ -24,7 +24,6 @@ config :bcrypt_elixir, bcrypt_log_rounds: 4
 config :wocky_db_watcher, :db,
   database: "wocky_test",
   pool: Ecto.Adapters.SQL.Sandbox,
-  database: {:system, :string, "WOCKY_DB_NAME", "wocky"},
   username: {:system, :string, "WOCKY_DB_USER", "postgres"},
   password: {:system, :string, "WOCKY_DB_PASSWORD", "password"},
   hostname: {:system, :string, "WOCKY_DB_HOST", "localhost"},
