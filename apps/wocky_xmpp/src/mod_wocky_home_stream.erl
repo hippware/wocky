@@ -18,10 +18,7 @@
          stop/1,
          deps/2,
 
-         % TODO: These can be removed once DB callbacks are implemented and
-         % the HS can deal with its own publications
-         send_notifications/2,
-         send_bot_ref_update/3
+         send_notifications/2
         ]).
 
 % wocky_publishing_handler exports
@@ -376,26 +373,6 @@ send_notifications(UserJID, HomeStreamItem) ->
 send_notification(JID, Item) ->
     wocky_publishing_handler:send_notification(
       JID, jid:replace_resource(JID, ?HOME_STREAM_NODE), Item).
-
--spec send_bot_ref_update(ejabberd:jid(),
-                          ?wocky_home_stream_item:t(),
-                          ?wocky_bot:t()) -> ok.
-send_bot_ref_update(ToJID,
-                    #{id := ItemID,
-                      updated_at := Version,
-                      from_jid := FromJIDBin},
-                    Bot) ->
-
-    Item =
-    #published_item{
-       id = integer_to_binary(ItemID),
-       type = <<"reference-changed">>,
-       version = format_version(Version),
-       from = jid:from_binary(FromJIDBin),
-       stanza = wocky_bot_util:bot_action_el(Bot, <<"changed">>)
-      },
-
-    send_notifications(ToJID, Item).
 
 check_server(Server) ->
     case wocky_xmpp_app:server() of
