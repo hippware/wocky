@@ -14,8 +14,8 @@ defmodule Wocky.Repo.Migration.Utils do
   # $ITEM$ as the item to be overridden. For example, to override the encoding
   # of the "title" field, use:
   # {"title", "my_encoding_function($ITEM$)"}
-  @spec add_notify(binary, Watcher.action() | [Watcher.action()], [override])
-  :: term
+  @spec add_notify(binary, Watcher.action() | [Watcher.action()], [override]) ::
+          term
   def add_notify(table, actions, overrides \\ [])
 
   def add_notify(table, actions, overrides) when is_list(actions) do

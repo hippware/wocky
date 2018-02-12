@@ -10,6 +10,7 @@ defmodule Wocky.Application do
   use Application
 
   alias Wocky.Mailer
+  alias Wocky.Watcher.Callbacks
 
   require Prometheus.Registry
 
@@ -18,15 +19,21 @@ defmodule Wocky.Application do
 
     Mailer.init()
 
-    Supervisor.start_link(
-      [
-        worker(Wocky.Repo, []),
-        worker(Wocky.Index, []),
-        worker(Wocky.Push.Sandbox, []),
-        worker(Wocky.Auth.FirebaseKeyManager, [])
-      ],
-      strategy: :one_for_one,
-      name: Wocky.Supervisor
-    )
+    sup =
+      Supervisor.start_link(
+        [
+          worker(Wocky.Repo, []),
+          worker(Wocky.Index, []),
+          worker(Wocky.Push.Sandbox, []),
+          worker(Wocky.Auth.FirebaseKeyManager, []),
+          worker(Wocky.Watcher.Client, [])
+        ],
+        strategy: :one_for_one,
+        name: Wocky.Supervisor
+      )
+
+    Callbacks.register()
+
+    sup
   end
 end

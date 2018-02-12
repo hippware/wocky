@@ -312,6 +312,19 @@ publish_bot_action(From, BotEl) ->
 maybe_drop({ok, drop}, _) -> drop;
 maybe_drop(_, P) -> P.
 
+map_to_item(#{class := ref_update,
+              id := ItemID,
+              updated_at := Version,
+              from_jid := FromJIDBin,
+              reference_bot := Bot
+             }) ->
+    #published_item{
+       id = integer_to_binary(ItemID),
+       type = <<"reference-changed">>,
+       version = format_version(Version),
+       from = jid:from_binary(FromJIDBin),
+       stanza = wocky_bot_util:bot_action_el(Bot, <<"changed">>)
+      };
 map_to_item(#{key := Key, updated_at := UpdatedAt,
               from_jid := FromJID, stanza := StanzaBin,
               class := Class}) ->

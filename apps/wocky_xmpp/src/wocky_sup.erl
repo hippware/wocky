@@ -47,10 +47,6 @@ init([]) ->
       type     => supervisor,
       modules  => []},
 
-    WatcherClient = #{id    => ?wocky_watcher_client,
-                      start => {?wocky_watcher_client, start_link, []}},
-
     {ok, {SupFlags, [BotExpiryMon,
-                     ExploreNearbyWorkerSup,
-                     WatcherClient
+                     ExploreNearbyWorkerSup
                     ]}}.

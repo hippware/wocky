@@ -554,9 +554,8 @@ bot_change_notification(Config) ->
         % Update title
         expect_iq_success(
           update_field_stanza("title", "string", "newtitle"), Alice),
-        escalus:assert_many([fun is_bot_ref_change_notification/1,
-                             fun is_bot_change_notification/1],
-                            escalus:wait_for_stanzas(Carol, 2)),
+        escalus:assert(fun is_bot_ref_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         timer:sleep(400),
         ensure_all_clean([Alice, Carol]),
 
@@ -564,7 +563,6 @@ bot_change_notification(Config) ->
         bot_SUITE:publish_item(?BOT, <<"BrandNewID">>, <<"title">>,
                                <<"content">>, undefined, Alice),
         escalus:assert_many([fun is_bot_ref_change_notification/1,
-                             fun is_bot_change_notification/1,
                              fun is_item_publish_notification/1],
                             escalus:wait_for_stanzas(Carol, 3)),
         timer:sleep(400),
@@ -572,18 +570,16 @@ bot_change_notification(Config) ->
 
         % Retract item
         bot_SUITE:retract_item(?BOT, <<"BrandNewID">>, Alice),
-        escalus:assert_many([fun is_bot_ref_change_notification/1,
-                             fun is_bot_change_notification/1],
-                            escalus:wait_for_stanzas(Carol, 2)),
+        escalus:assert(fun is_bot_ref_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         timer:sleep(400),
         ensure_all_clean([Alice, Carol]),
 
         % Update address
         expect_iq_success(
           update_field_stanza("address", "string", "hereabouts"), Alice),
-        escalus:assert_many([fun is_bot_ref_change_notification/1,
-                             fun is_bot_change_notification/1],
-                            escalus:wait_for_stanzas(Carol, 2)),
+        escalus:assert(fun is_bot_ref_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         timer:sleep(400),
         ensure_all_clean([Alice, Carol]),
 
@@ -614,14 +610,6 @@ is_bot_ref_change_notification(S) ->
     <<>> =/= xml:get_path_s(S, [{elem, <<"notification">>},
                                 {elem, <<"reference-changed">>},
                                 {elem, <<"bot">>}]).
-
-is_bot_change_notification(S) ->
-    escalus_pred:is_message(S)
-    andalso
-    ends_with(<<"/changed">>,
-              xml:get_path_s(S, [{elem, <<"notification">>},
-                                 {elem, <<"item">>},
-                                 {attr, <<"id">>}])).
 
 is_bot_desc_change_notification(S) ->
     escalus_pred:is_message(S)

@@ -63,11 +63,9 @@ start(_StartType, _StartArgs) ->
 
     {ok, CfgPath} = load_xmpp_config(),
 
-    Result = wocky_sup:start_link(),
-
     ok = start_ejabberd(CfgPath),
 
-    Result.
+    wocky_sup:start_link().
 
 stop(_State) ->
     ok = application:stop(ejabberd).
