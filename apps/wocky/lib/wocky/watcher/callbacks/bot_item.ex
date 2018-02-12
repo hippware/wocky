@@ -24,6 +24,7 @@ defmodule Wocky.Watcher.Callbacks.BotItem do
 
   defp maybe_update_hs(item) do
     %{bot: bot} = Repo.preload(item, [:bot])
+
     if bot != nil do
       HomeStreamItem.update_ref_bot(bot)
     end
