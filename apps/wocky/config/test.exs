@@ -19,3 +19,17 @@ config :wocky, Wocky.Repo,
 
 # Make token tests go faster:
 config :bcrypt_elixir, bcrypt_log_rounds: 4
+
+# Config for wocky_db_watcher to allow us to run it in tests to test the client
+config :wocky_db_watcher, :db,
+  database: "wocky_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  username: {:system, :string, "WOCKY_DB_USER", "postgres"},
+  password: {:system, :string, "WOCKY_DB_PASSWORD", "password"},
+  hostname: {:system, :string, "WOCKY_DB_HOST", "localhost"},
+  port: {:system, :integer, "WOCKY_DB_PORT", 5432},
+  pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15}
+
+config :wocky_db_watcher,
+  backend: WockyDBWatcher.Backend.Direct,
+  channel: "wocky_db_watcher_notify"

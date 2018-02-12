@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Code formatting changes (PR #1253)
 * Build infrastructure changes (PR #1254)
 * Better PN error logging (PR #1258)
+* Update prod SSL cert (PR #1270)
 
 
 # 2018.1.17+r1173119

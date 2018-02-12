@@ -75,6 +75,7 @@ defmodule Wocky.Mixfile do
       {:email_checker, "~> 0.1"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_s3, "~> 2.0"},
+      {:ex_aws_sqs, "~> 2.0"},
       {:ex_json_logger, "~> 1.0"},
       {:ex_machina, "~> 2.1"},
       {:exconstructor, "~> 1.0"},
@@ -108,7 +109,11 @@ defmodule Wocky.Mixfile do
       {:exvcr, "~> 0.8", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:meck, "~> 0.8.8", only: :test, override: true},
-      {:reprise, "~> 0.5", only: :dev}
+      {:reprise, "~> 0.5", only: :dev},
+      {:wocky_db_watcher,
+       git: "https://github.com/hippware/wocky_db_watcher.git",
+       branch: "master",
+       app: false}
     ]
   end
 
