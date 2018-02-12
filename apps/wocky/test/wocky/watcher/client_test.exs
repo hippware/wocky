@@ -14,17 +14,22 @@ defmodule Wocky.Wachter.ClientTest do
     @moduledoc "Simple GenServer to collect and return events"
     use GenServer
 
-    def start_link, do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
-    def send_event(event), do: GenServer.call(__MODULE__, {:event, event})
-    def get_events, do: GenServer.call(__MODULE__, :get_events)
+    def start_link, do: GenServer.start_link( __MODULE__, nil, name: __MODULE__)
+    def send_event(event, pid) do
+      GenServer.call(__MODULE__, {:event, event, pid})
+    end
 
-    def init(_), do: {:ok, []}
-    def handle_call({:event, event}, _from, s), do: {:reply, :ok, [event | s]}
-    def handle_call(:get_events, _from, s), do: {:reply, Enum.reverse(s), []}
+    def init(_), do: {:ok, nil}
+    def handle_call({:event, event, pid}, _from, state) do
+      send(pid, event)
+      {:reply, :ok, state}
+    end
   end
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
+    # Give any DB notifications still in the system from previous tests
+    # a grace period to finish up before we start the watcher
     :timer.sleep(500)
     Application.start(:wocky_db_watcher)
 
@@ -47,50 +52,46 @@ defmodule Wocky.Wachter.ClientTest do
   end
 
   test "generates insert event" do
-    Client.subscribe(Bot, :insert, &Callback.send_event/1)
-    bot = Factory.insert(:bot)
-    :timer.sleep(200)
-    [event] = Callback.get_events()
-    assert %Event{action: :insert, old: nil} = event
-    assert %Bot{} = event.new
-    assert bot.id == event.new.id
+    self = self()
+    Client.subscribe(Bot, :insert, &Callback.send_event(&1, self))
+    %{id: bid} = Factory.insert(:bot)
+    assert_receive %Event{action: :insert, old: nil, new: %Bot{id: id}}
+    when id == bid,
+      300
   end
 
   test "generates update event" do
-    Client.subscribe(Bot, :update, &Callback.send_event/1)
-    bot = Factory.insert(:bot)
+    self = self()
+    Client.subscribe(Bot, :update, &Callback.send_event(&1, self))
+    bot = %{id: bid} = Factory.insert(:bot)
 
     bot
     |> cast(%{title: Lorem.sentence()}, [:title])
     |> Repo.update()
 
-    :timer.sleep(200)
-    [event] = Callback.get_events()
-    assert %Event{action: :update} = event
-    assert %Bot{} = event.old
-    assert %Bot{} = event.new
-    assert bot.id == event.old.id
-    assert bot.id == event.new.id
-    assert event.old.title != event.new.title
+    assert_receive %Event{action: :update,
+      old: %Bot{id: id, title: title},
+      new: %Bot{id: id, title: title2}}
+    when id == bid and title != title2,
+      300
   end
 
   test "generates delete event" do
-    Client.subscribe(Bot, :delete, &Callback.send_event/1)
-    bot = Factory.insert(:bot)
+    self = self()
+    Client.subscribe(Bot, :delete, &Callback.send_event(&1, self))
+    bot = %{id: bid} = Factory.insert(:bot)
     Repo.delete(bot)
-    :timer.sleep(200)
-    [event] = Callback.get_events()
-    assert %Event{action: :delete, new: nil} = event
-    assert %Bot{} = event.old
-    assert bot.id == event.old.id
+    assert_receive %Event{action: :delete, new: nil, old: %Bot{id: id}}
+    when id == bid,
+      300
   end
 
   test "unsubscribe" do
-    {:ok, ref} = Client.subscribe(Bot, :insert, &Callback.send_event/1)
+    {:ok, ref} = Client.subscribe(Bot, :insert,
+                                  &Callback.send_event(&1, self()))
     Client.unsubscribe(ref)
     Factory.insert(:bot)
-    :timer.sleep(200)
-    assert [] = Callback.get_events()
+    refute_receive _, 200
   end
 
   defp await_end(pid) do
