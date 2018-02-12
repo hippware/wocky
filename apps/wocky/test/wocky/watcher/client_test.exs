@@ -58,9 +58,7 @@ defmodule Wocky.Wachter.ClientTest do
     Client.subscribe(Bot, :insert, &Callback.send_event(&1, self))
     %{id: bid} = Factory.insert(:bot)
 
-    assert_receive %Event{action: :insert, old: nil, new: %Bot{id: id}}
-                   when id == bid,
-                   300
+    assert_receive %Event{action: :insert, old: nil, new: %Bot{id: ^bid}}, 300
   end
 
   test "generates update event" do
@@ -74,10 +72,10 @@ defmodule Wocky.Wachter.ClientTest do
 
     assert_receive %Event{
                      action: :update,
-                     old: %Bot{id: id, title: title},
-                     new: %Bot{id: id, title: title2}
+                     old: %Bot{id: ^bid, title: title},
+                     new: %Bot{id: ^bid, title: title2}
                    }
-                   when id == bid and title != title2,
+                   when title != title2,
                    300
   end
 
@@ -87,9 +85,7 @@ defmodule Wocky.Wachter.ClientTest do
     bot = %{id: bid} = Factory.insert(:bot)
     Repo.delete(bot)
 
-    assert_receive %Event{action: :delete, new: nil, old: %Bot{id: id}}
-                   when id == bid,
-                   300
+    assert_receive %Event{action: :delete, new: nil, old: %Bot{id: ^bid}}, 300
   end
 
   test "unsubscribe" do
