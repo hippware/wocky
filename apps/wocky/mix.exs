@@ -71,6 +71,7 @@ defmodule Wocky.Mixfile do
       {:ex_machina, "~> 2.1"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_s3, "~> 2.0"},
+      {:ex_aws_sqs, "~> 2.0"},
       {:pigeon, "~> 1.1"},
       {:kadabra, "~> 0.3"},
       {:configparser_ex, "~> 2.0", override: true},
@@ -115,7 +116,11 @@ defmodule Wocky.Mixfile do
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:reprise, "~> 0.5", only: :dev},
-      {:meck, "~> 0.8.8", only: :test, override: true}
+      {:meck, "~> 0.8.8", only: :test, override: true},
+      {:wocky_db_watcher,
+       git: "https://github.com/hippware/wocky_db_watcher.git",
+       branch: "master",
+       app: false}
     ]
   end
 

@@ -23,9 +23,10 @@ defmodule Wocky.Repo.Migration.Utils do
     RETURNS trigger AS $$
     BEGIN
       PERFORM pg_notify(
-        '#{table}_#{action}s',
+        'wocky_db_watcher_notify',
         json_build_object(
           'table', TG_TABLE_NAME
+          ,'action', '#{action}'
           #{maybe_old(action, ",'old', #{wrap_overrides("OLD", overrides)}")}
           #{maybe_new(action, ",'new', #{wrap_overrides("NEW", overrides)}")}
         )::text
