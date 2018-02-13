@@ -508,10 +508,8 @@ defmodule Wocky.HomeStreamItemSpec do
     end
   end
 
-  describe "update_ref_bot/2", async: false do
+  describe "update_ref_bot/1" do
     before do
-      allow TestMock |> to(accept :update_callback, fn _, _ -> :ok end)
-
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot, %{user: shared.user})
 
@@ -522,7 +520,7 @@ defmodule Wocky.HomeStreamItemSpec do
 
       Factory.insert(:home_stream_item, %{user: user2, reference_bot: bot})
 
-      HomeStreamItem.update_ref_bot(bot, &TestMock.update_callback(&1, &2))
+      HomeStreamItem.update_ref_bot(bot)
 
       user_items = get_all_items(shared.user.id)
       user2_items = get_all_items(user2.id)
@@ -548,18 +546,6 @@ defmodule Wocky.HomeStreamItemSpec do
 
       shared.new_item2.class |> should(eq :ref_update)
       shared.new_item2.reference_bot_id |> should(eq shared.bot.id)
-    end
-
-    it "should call the callback once for each user" do
-      TestMock
-      |> should(
-        accepted :update_callback, [shared.new_item, shared.user], count: 1
-      )
-
-      TestMock
-      |> should(
-        accepted :update_callback, [shared.new_item2, shared.user2], count: 1
-      )
     end
   end
 

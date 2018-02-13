@@ -47,4 +47,6 @@ init([]) ->
       type     => supervisor,
       modules  => []},
 
-    {ok, {SupFlags, [BotExpiryMon, ExploreNearbyWorkerSup]}}.
+    {ok, {SupFlags, [BotExpiryMon,
+                     ExploreNearbyWorkerSup
+                    ]}}.

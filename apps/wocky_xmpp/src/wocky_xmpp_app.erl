@@ -62,6 +62,7 @@ start(_StartType, _StartArgs) ->
                     [InstName, version()]),
 
     {ok, CfgPath} = load_xmpp_config(),
+
     ok = start_ejabberd(CfgPath),
 
     wocky_sup:start_link().

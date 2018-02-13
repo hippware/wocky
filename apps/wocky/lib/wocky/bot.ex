@@ -358,4 +358,15 @@ defmodule Wocky.Bot do
   end
 
   defp maybe_tidy_home_streams(_, _), do: :ok
+
+  def maybe_update_hs_items(old, new) do
+    if should_update_hs(old, new) do
+      HomeStreamItem.update_ref_bot(new)
+    end
+  end
+
+  defp should_update_hs(bot1, bot2) do
+    [:title, :image, :address, :location, :public]
+    |> Enum.any?(fn f -> Map.get(bot1, f) != Map.get(bot2, f) end)
+  end
 end
