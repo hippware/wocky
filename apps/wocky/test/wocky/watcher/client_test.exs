@@ -34,6 +34,7 @@ defmodule Wocky.Wachter.ClientTest do
     # a grace period to finish up before we start the watcher
     :timer.sleep(500)
     Application.start(:wocky_db_watcher)
+    Client.start_link()
 
     # Because we can't use the Sandbox in its :manual mode (because it doesn't
     # cause the NOTIFY actions in the DB to fire) we have to do our own cleanup
@@ -45,11 +46,10 @@ defmodule Wocky.Wachter.ClientTest do
 
   setup do
     {:ok, cb} = Callback.start_link()
-    {:ok, cn} = Client.start_link()
 
     on_exit(fn ->
       await_end(cb)
-      await_end(cn)
+      Client.clear_all_subscriptions()
     end)
   end
 

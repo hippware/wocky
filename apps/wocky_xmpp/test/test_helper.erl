@@ -69,7 +69,11 @@
          check_home_stream_sizes/2,
          check_home_stream_sizes/3,
 
-         insert_system_users/0
+         insert_system_users/0,
+
+         watch_hs/1,
+         watch_hs/2,
+         unwatch_hs/1
         ]).
 
 
@@ -79,8 +83,12 @@ ensure_wocky_is_running() ->
         {error, {already_started, _Pid}} -> ok
     end,
     ok = wocky_xmpp_app:start("ct.test"),
+    ok = application:ensure_started(wocky_db_watcher),
     % Cause tests expecting to fail if the error is caused by a crash:
     {atomic, ok} = ejabberd_config:add_local_option(iq_crash_response, crash),
+
+    % Flush redis to get us a clean slate
+    ejabberd_redis:cmd(["FLUSHDB"]),
     ok.
 
 setup_users(Config, Users) ->
@@ -596,3 +604,18 @@ get_bot_ids(ItemList) ->
                           end
                   end,
                   [], ItemList)).
+
+watch_hs(Client) -> watch_hs(Client, undefined).
+watch_hs(Client, Version) ->
+    escalus:send(Client,
+                 escalus_stanza:presence_direct(
+                   hs_node(escalus_client:username(Client)),
+                   <<"available">>,
+                   [query_el(Version)])).
+
+unwatch_hs(Client) ->
+    escalus:send(Client,
+                 escalus_stanza:presence_direct(
+                   hs_node(escalus_client:username(Client)),
+                   <<"unavailable">>,
+                   [query_el(undefined)])).

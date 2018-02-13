@@ -271,8 +271,8 @@ defmodule Wocky.HomeStreamItem do
     end)
   end
 
-  @spec update_ref_bot(Bot.t(), (t, User.t() -> any)) :: :ok
-  def update_ref_bot(bot, callback) do
+  @spec update_ref_bot(Bot.t()) :: :ok
+  def update_ref_bot(bot) do
     Repo.transaction(fn ->
       HomeStreamItem
       |> where(reference_bot_id: ^bot.id)
@@ -280,12 +280,12 @@ defmodule Wocky.HomeStreamItem do
       |> distinct([i], [i.user_id])
       |> preload(:user)
       |> Repo.stream()
-      |> Stream.map(&update_ref_bot(bot, &1.user, callback))
+      |> Stream.map(&update_ref_bot(bot, &1.user))
       |> Stream.run()
     end)
   end
 
-  defp update_ref_bot(bot, user, callback) do
+  defp update_ref_bot(bot, user) do
     fields = %{
       user_id: user.id,
       key: bot |> HomeStreamID.bot_changed_id() |> elem(0),
@@ -301,7 +301,6 @@ defmodule Wocky.HomeStreamItem do
       conflict_target: [:user_id, :key],
       returning: true
     )
-    |> callback.(user)
   end
 
   defp prepop_items(from_id, period, min) do

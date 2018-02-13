@@ -8,6 +8,7 @@ defmodule Wocky.Watcher.Client do
     @moduledoc "State record for wocky watcher client"
 
     defstruct [
+      :enabled,
       :subscribers,
       :table_map
     ]
@@ -31,6 +32,18 @@ defmodule Wocky.Watcher.Client do
     GenServer.call(__MODULE__, {:unsubscribe, ref})
   end
 
+  def clear_all_subscriptions do
+    GenServer.call(__MODULE__, :clear_all_subscriptions)
+  end
+
+  def suspend_notifications do
+    GenServer.call(__MODULE__, {:enable, false})
+  end
+
+  def resume_notifications do
+    GenServer.call(__MODULE__, {:enable, true})
+  end
+
   def init(_) do
     source =
       :wocky_db_watcher
@@ -39,7 +52,11 @@ defmodule Wocky.Watcher.Client do
     source.init
     Poller.start_link(source, __MODULE__)
 
-    {:ok, %State{subscribers: %{}, table_map: get_table_map()}}
+    {:ok, %State{enabled: true, subscribers: %{}, table_map: get_table_map()}}
+  end
+
+  def handle_call({:send, _events}, _from, %{enabled: false} = state) do
+    {:reply, :ok, state}
   end
 
   def handle_call({:send, events}, _from, state) do
@@ -68,6 +85,14 @@ defmodule Wocky.Watcher.Client do
       |> Map.new()
 
     {:reply, :ok, %{state | subscribers: new_subscribers}}
+  end
+
+  def handle_call(:clear_all_subscriptions, _from, state) do
+    {:reply, :ok, %{state | subscribers: %{}}}
+  end
+
+  def handle_call({:enable, enable}, _from, state) do
+    {:reply, :ok, %{state | enabled: enable}}
   end
 
   defp forward_events(events, state) do

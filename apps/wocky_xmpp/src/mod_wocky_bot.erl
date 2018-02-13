@@ -52,6 +52,8 @@
 %%%===================================================================
 
 start(Host, _Opts) ->
+    ?wocky_xmpp_bot_callbacks:register(),
+    ?wocky_xmpp_bot_share_callbacks:register(),
     wocky_watcher:register(bot, Host),
     wocky_publishing_handler:register(<<"bot">>, wocky_bot_publishing),
 
@@ -109,8 +111,8 @@ handle_iq_type(From, _To, set, <<"create">>, _Attrs, IQ) ->
     handle_create(From, Children);
 
 % Delete
-handle_iq_type(From, To, set, <<"delete">>, Attrs, IQ) ->
-    handle_owner_action(delete, From, To, Attrs, false, IQ);
+handle_iq_type(From, _To, set, <<"delete">>, Attrs, IQ) ->
+    handle_owner_action(delete, From, Attrs, false, IQ);
 
 % Retrieve owned bots
 handle_iq_type(From, To, get, Name, Attrs, IQ)
@@ -151,11 +153,11 @@ handle_iq_type(From, To, get, Name, _Attrs, IQ)
 
 % Update
 % Old style
-handle_iq_type(From, To, set, <<"fields">>, Attrs, IQ) ->
-    handle_owner_action(update, From, To, Attrs, false, IQ);
+handle_iq_type(From, _To, set, <<"fields">>, Attrs, IQ) ->
+    handle_owner_action(update, From, Attrs, false, IQ);
 % New style
-handle_iq_type(From, To, set, <<"update">>, Attrs, IQ) ->
-    handle_owner_action(update, From, To, Attrs, false, IQ);
+handle_iq_type(From, _To, set, <<"update">>, Attrs, IQ) ->
+    handle_owner_action(update, From, Attrs, false, IQ);
 
 % Subscribe
 handle_iq_type(From, To, set, <<"subscribe">>, Attrs, IQ) ->
@@ -166,8 +168,8 @@ handle_iq_type(From, To, set, <<"unsubscribe">>, Attrs, _IQ) ->
     handle_unsubscribe(From, To, Attrs);
 
 % Retrieve subscribers
-handle_iq_type(From, To, get, <<"subscribers">>, Attrs, IQ) ->
-    handle_owner_action(subscribers, From, To, Attrs, false, IQ);
+handle_iq_type(From, _To, get, <<"subscribers">>, Attrs, IQ) ->
+    handle_owner_action(subscribers, From, Attrs, false, IQ);
 
 % Retrieve item(s)
 handle_iq_type(From, To, get, <<"query">>, Attrs, IQ) ->
@@ -186,12 +188,12 @@ handle_iq_type(From, To, get, <<"item_images">>, Attrs, IQ) ->
     handle_access_action(item_images, From, To, Attrs, false, IQ);
 
 % Follow me
-handle_iq_type(From, To, set, <<"follow-me">>, Attrs, IQ) ->
-    handle_owner_action(follow_me, From, To, Attrs, false, IQ);
+handle_iq_type(From, _To, set, <<"follow-me">>, Attrs, IQ) ->
+    handle_owner_action(follow_me, From, Attrs, false, IQ);
 
 % Un-follow me
-handle_iq_type(From, To, set, <<"un-follow-me">>, Attrs, IQ) ->
-    handle_owner_action(unfollow_me, From, To, Attrs, false, IQ);
+handle_iq_type(From, _To, set, <<"un-follow-me">>, Attrs, IQ) ->
+    handle_owner_action(unfollow_me, From, Attrs, false, IQ);
 
 handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -201,36 +203,30 @@ handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
 %%% Actions that only the owner may perform
 %%%===================================================================
 
-handle_owner_action(Action, From, To, Attrs, AllowPending, IQ) ->
+handle_owner_action(Action, From, Attrs, AllowPending, IQ) ->
     do([error_m ||
            Bot <- wocky_bot_util:get_bot_from_node(Attrs, AllowPending),
            wocky_bot_util:check_owner(Bot, From),
-           perform_owner_action(Action, Bot, From, To, IQ)
+           perform_owner_action(Action, Bot, From, IQ)
        ]).
 
-perform_owner_action(update, Bot, _From, #jid{lserver = Server}, IQ) ->
+perform_owner_action(update, Bot, _From, IQ) ->
     #iq{sub_el = #xmlel{children = Children}} = IQ,
     do([error_m ||
         Fields <- get_fields(Children),
-        OldPublic = ?wocky_bot:'public?'(Bot),
         FieldsMap = normalise_fields(Fields),
-        NewBot <- ?wocky_bot:update(Bot, FieldsMap),
-        wocky_bot_users:maybe_update_hs_items(Bot, NewBot),
-        wocky_bot_users:notify_new_viewers(Server, NewBot, OldPublic,
-                                           ?wocky_bot:'public?'(NewBot)),
-        wocky_bot_users:maybe_notify_desc_change(Bot, NewBot),
-
+        ?wocky_bot:update(Bot, FieldsMap),
         {ok, []}
        ]);
 
-perform_owner_action(delete, Bot, _From, _To, _IQ) ->
+perform_owner_action(delete, Bot, _From, _IQ) ->
     ?wocky_bot:delete(Bot),
     {ok, []};
 
-perform_owner_action(subscribers, Bot, _From, _To, IQ) ->
+perform_owner_action(subscribers, Bot, _From, IQ) ->
     wocky_bot_subscription:retrieve_subscribers(Bot, IQ);
 
-perform_owner_action(follow_me, Bot, From, _To, IQ) ->
+perform_owner_action(follow_me, Bot, From, IQ) ->
     #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
     do([error_m ||
         Expiry <- get_follow_me_expiry(Attrs),
@@ -241,7 +237,7 @@ perform_owner_action(follow_me, Bot, From, _To, IQ) ->
         {ok, follow_me_result(IQ)}
        ]);
 
-perform_owner_action(unfollow_me, Bot, From, _To, IQ) ->
+perform_owner_action(unfollow_me, Bot, From, IQ) ->
     do([error_m ||
         ?wocky_bot:update(Bot, #{follow_me => false, follow_me_expiry => nil}),
         publish_unfollow_me(From, Bot),
@@ -330,8 +326,6 @@ handle_create(From, Children) ->
         FieldsMap = normalise_fields(Fields3),
         Bot <- create_bot(ID, PendingBot, User, FieldsMap),
         BotEl <- make_bot_el(Bot, User),
-        wocky_bot_users:notify_new_viewers(Server, Bot, none,
-                                           ?wocky_bot:'public?'(Bot)),
         {ok, BotEl}
        ]).
 

@@ -16,8 +16,7 @@
          notify_new_viewers/4,
          maybe_notify_desc_change/2,
          notify_subscribers_and_watchers/4,
-         maybe_update_hs_items/2,
-         update_hs_items/1
+         send_share_notification/3
         ]).
 
 
@@ -31,8 +30,7 @@ handle_share(From, To, Bot) ->
                  Sharer <- wocky_bot_util:get_user_from_jid(From),
                  check_can_share(Sharer, Bot),
                  Recipient <- wocky_bot_util:get_user_from_jid(To),
-                 ?wocky_share:put(Recipient, Bot, Sharer),
-                 send_notification(To#jid.luser, Sharer, Recipient, Bot)
+                 ?wocky_share:put(Recipient, Bot, Sharer)
                 ]),
     case Result of
         ok -> ok;
@@ -50,9 +48,9 @@ check_can_share(Sharer, Bot) ->
             end
     end.
 
-send_notification(User, From, To, Bot) ->
+send_share_notification(From, To = #{id := UserID}, Bot) ->
     Event = ?bot_share_event:new(#{from => From, to => To, bot => Bot}),
-    ?wocky_push:notify_all(User, Event).
+    ?wocky_push:notify_all(UserID, Event).
 
 %%%===================================================================
 %%% Access change notifications
@@ -174,30 +172,3 @@ notify_watcher(UserJID, FromJID, Bot = #{updated_at := UpatedAt}, Message) ->
 
 maybe_new_tag(<<>>) ->  [#xmlel{name = <<"new">>}];
 maybe_new_tag(_) -> [].
-
-%%%===================================================================
-%%% Send notification to bot subscribers
-%%%
-%%% Actor is the user who performed the action that triggered the
-%%% notification. They will be excluded from the set of notify targets
-%%%
-%%% FromJID is the jid from which the notification will be sent
-%%%===================================================================
-
--spec maybe_update_hs_items(?wocky_bot:t(), ?wocky_bot:t()) -> ok.
-maybe_update_hs_items(OldBot, NewBot) ->
-    case should_update_hs(OldBot, NewBot) of
-        true -> update_hs_items(NewBot);
-        false -> ok
-    end.
-
-should_update_hs(Bot1, Bot2) ->
-    Fields = [title, image, address, location, public],
-    lists:any(fun(F) -> maps:get(F, Bot1) =/= maps:get(F, Bot2) end, Fields).
-
-update_hs_items(Bot) ->
-    ?wocky_home_stream_item:update_ref_bot(Bot, send_ref_update(Bot, _, _)).
-
-send_ref_update(Bot, HSItem, User) ->
-    mod_wocky_home_stream:send_bot_ref_update(
-      ?wocky_user:to_jid(User), HSItem, Bot).

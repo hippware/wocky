@@ -181,6 +181,7 @@ local_tables() ->
     [bot_name, bot_item, home_stream].
 
 reset_tables(Config) ->
+    ?wocky_watcher_client:suspend_notifications(),
     Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
@@ -228,6 +229,7 @@ reset_tables(Config) ->
     ?wocky_share:put(Bob, Bot, Alice),
     ?wocky_subscription:put(Carol, Bot),
     ?wocky_subscription:put(Karen, Bot),
+    ?wocky_watcher_client:resume_notifications(),
 
     Config2.
 
@@ -573,8 +575,10 @@ get_subscribed(Config) ->
 
 sorting(Config) ->
     AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
+    ?wocky_watcher_client:suspend_notifications(),
     ?wocky_repo:delete_all(?wocky_home_stream_item),
     ?wocky_repo:delete_all(?wocky_bot),
+    ?wocky_watcher_client:resume_notifications(),
     Bots = ?wocky_factory:insert_list(10, bot,
                                       #{user => AliceUser, shortname => nil}),
     escalus:story(Config, [{alice, 1}],
