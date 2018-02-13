@@ -1,8 +1,6 @@
-defmodule :access_query_spec do
+defmodule :wocky_access_manager_spec do
   use ESpec, async: true
   use Wocky.JID
-
-  import :access_query, only: [run: 3]
 
   alias Wocky.Bot
   alias Wocky.Bot.Share
@@ -12,9 +10,8 @@ defmodule :access_query_spec do
   alias Wocky.User
 
   before_all do
-    :mod_wocky_access.register("loop", __MODULE__)
-    :mod_wocky_access.register("overflow", __MODULE__)
-    :mod_wocky_access.register("timeout", __MODULE__)
+    :wocky_access_manager.register("loop", __MODULE__)
+    :wocky_access_manager.register("overflow", __MODULE__)
   end
 
   before do
@@ -46,12 +43,11 @@ defmodule :access_query_spec do
     {:redirect, JID.make("", "localhost", "overflow/" <> j)}
   end
 
-  def check_access("timeout", _, _) do
-    Process.sleep(3500)
-    :allow
+  def run(bot_jid, user_jid, op) do
+    :wocky_access_manager.check_access(bot_jid, user_jid, op)
   end
 
-  describe "run/3" do
+  describe "check_access/3" do
     let :bot_jid, do: Bot.to_jid(shared.bot)
     let :alice_jid, do: User.to_jid(shared.alice)
 
@@ -78,11 +74,6 @@ defmodule :access_query_spec do
 
     context "with a redirect overflow", slow: true do
       let :user, do: JID.make("", "localhost", "overflow/1")
-      it do: run(user(), alice_jid(), :view) |> should(eq :deny)
-    end
-
-    context "with a timeout", slow: true do
-      let :user, do: JID.make("", "localhost", "timeout")
       it do: run(user(), alice_jid(), :view) |> should(eq :deny)
     end
   end

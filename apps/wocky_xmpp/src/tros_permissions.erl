@@ -66,4 +66,4 @@ matches_rule(User, {user, RuleUser}) ->
 matches_rule(User, {friends, RuleUser}) ->
     ?wocky_roster_item:is_friend(RuleUser#jid.luser, User#jid.luser);
 matches_rule(User, {redirect, Target}) ->
-    access_query:run(Target, User, view) =:= allow.
+    wocky_access_manager:check_access(Target, User, view) =:= allow.
