@@ -24,13 +24,4 @@ config :mnesia, dir: 'log/#{Mix.env()}/mnesia'
 
 config :honeybadger, use_logger: true
 
-config :exometer,
-  # 5 minutes
-  mongooseim_report_interval: 300_000,
-  report: [
-    reporters: [
-      exometer_report_prometheus: [:enable_httpd]
-    ]
-  ]
-
 import_config "#{Mix.env()}.exs"
