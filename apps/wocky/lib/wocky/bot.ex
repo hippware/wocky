@@ -273,7 +273,7 @@ defmodule Wocky.Bot do
   end
 
   @doc "Returns the bot's distance from the specified location in meters."
-  @spec distance_from(Bot.t(), Point.t()) :: non_neg_integer
+  @spec distance_from(Bot.t(), Point.t()) :: float
   def distance_from(bot, loc) do
     Geocalc.distance_between(%{lat: lat(bot), lon: lon(bot)}, loc)
   end

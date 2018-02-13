@@ -1,8 +1,13 @@
 :0: Unknown function 'Elixir.Wocky.Push.Event.
-lib/wocky/repo/intrumenter.ex:3: The call 'Elixir.System':convert_time_unit
+lib/wocky/repo/intrumenter.ex:3:
+lib/wocky/repo/factory.ex:4:
+lib/wocky/mailer.ex:6: Function deliver/1 only terminates with explicit exception
 lib/wocky/index/algolia_indexer.ex:17: Function update_object/3 has no local return
-lib/wocky/index/algolia_indexer.ex:37: Function do_update_object/2 has no local return
-lib/wocky/index/algolia_indexer.ex:42: Function delete_object/2 has no local return
-lib/wocky/index/algolia_indexer.ex:43: The pattern {'ok', _} can never match the type
-lib/wocky/index/algolia_indexer.ex:47: Function geosearch/3 has no local return
-apps/wocky/lib/wocky/repo/migration/utils.ex:39: The call 'Elixir.String':replace
+lib/wocky/index/algolia_indexer.ex:38: Function do_update_object/2 has no local return
+lib/wocky/index/algolia_indexer.ex:43: Function delete_object/2 has no local return
+lib/wocky/index/algolia_indexer.ex:44: The pattern {'ok', _} can never match the type
+lib/wocky/index/algolia_indexer.ex:48: Function geosearch/3 has no local return
+lib/wocky/repo/migration/utils.ex:50: The call 'Elixir.String':replace
+lib/wocky/push/push.ex:170: The pattern 'timeout' can never match
+lib/wocky/push/push.ex:176: The variable _Else@1 can never match
+lib/wocky/push/push.ex:181: Function send_honeybadger/1 will never be called

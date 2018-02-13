@@ -33,7 +33,7 @@ defmodule Wocky.TROS.Metadata do
 
   @change_fields [:id, :user_id, :access, :ready]
 
-  @spec put(id, User.id(), access) :: {:ok, t}
+  @spec put(id, User.id(), access) :: {:ok, t} | {:error, any}
   def put(id, user_id, access) do
     %TROSMetadata{}
     |> changeset(%{id: id, user_id: user_id, access: access, ready: false})
