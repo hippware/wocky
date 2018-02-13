@@ -145,9 +145,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
-              :ok,
+              %{},
               shared.sender_jid,
               shared.user_jid,
               packet()
@@ -167,9 +167,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with an image message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
-              :ok,
+              %{},
               shared.sender_jid,
               shared.user_jid,
               image_packet()
@@ -189,9 +189,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a message that contains both a body and an image" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
-              :ok,
+              %{},
               shared.sender_jid,
               shared.user_jid,
               combo_packet()
@@ -211,9 +211,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a non-message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
-              :ok,
+              %{},
               shared.sender_jid,
               shared.user_jid,
               packet("parlay")
@@ -227,9 +227,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a non-chat message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
-              :ok,
+              %{},
               shared.sender_jid,
               shared.user_jid,
               packet("message", "parlay")
@@ -257,7 +257,7 @@ defmodule :mod_wocky_notifications_spec do
 
           result =
             user_send_packet_hook(
-              :ok,
+              %{},
               shared.sender_jid,
               shared.user_jid,
               no_body
