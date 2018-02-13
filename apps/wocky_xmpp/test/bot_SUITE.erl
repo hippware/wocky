@@ -19,10 +19,11 @@
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
-                      ensure_all_clean/1, query_el/1, hs_node/1,
+                      ensure_all_clean/1, query_el/1,
                       add_to_s/2, set_notifications/2,
                       check_home_stream_sizes/2,
-                      check_home_stream_sizes/3
+                      check_home_stream_sizes/3,
+                      watch_hs/1, unwatch_hs/1
                      ]).
 
 -export([create_bot_stanza/1, set_visibility/3,
@@ -229,6 +230,7 @@ reset_tables(Config) ->
     ?wocky_share:put(Bob, Bot, Alice),
     ?wocky_subscription:put(Carol, Bot),
     ?wocky_subscription:put(Karen, Bot),
+
     ?wocky_watcher_client:resume_notifications(),
 
     Config2.
@@ -868,10 +870,10 @@ follow_notifications(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
-        %% Subscribe to HS notifications
-        escalus:send(Alice,
-            escalus_stanza:presence_direct(hs_node(?ALICE), <<"available">>,
-                                           [query_el(undefined)])),
+        %% Subscribe to HS notifications after letting the reset_tables()
+        %% activity calm down
+        timer:sleep(500),
+        watch_hs(Alice),
 
         %% Simple follow on and off tests
         escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(), Alice)),
@@ -929,7 +931,9 @@ follow_notifications(Config) ->
           escalus:wait_for_stanza(Alice, 2500)),
 
         Stanza = expect_iq_success_u(test_helper:get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza, 3)
+        check_hs_result(Stanza, 3),
+
+        unwatch_hs(Alice)
       end).
 
 share(Config) ->
