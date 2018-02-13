@@ -539,7 +539,9 @@ send_update(#jid{user = User, server = Server}, JID) ->
     #jid{luser = ContactUser} = jid:from_binary(JID),
     Item = to_wocky_roster(
              User, JID, ?wocky_roster_item:get(User, ContactUser)),
-    push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Item, Version).
+    Acc = push_item(User, Server, jid:make(<<>>, Server, <<>>),
+                    Item, Item, Version),
+    mongoose_acc:get(result, Acc).
 
 
 %% hook for out-of-band roster modification --------------------------
