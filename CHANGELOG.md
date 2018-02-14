@@ -11,7 +11,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Better PN error logging (PR #1258)
 * Update prod SSL cert (PR #1270)
 * Rework DB modification callback system (PR #1267)
-* Change bots to use DB callbacks (PR #1272)
+* Change bots to use DB callbacks (#1225, PR #1272)
+* Update MongooseIM to 2.1.1. (#1248)
 
 
 # 2018.1.17+r1173119
