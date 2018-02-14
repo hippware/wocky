@@ -12,6 +12,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update prod SSL cert (PR #1270)
 * Rework DB modification callback system (PR #1267)
 * Change bots to use DB callbacks (#1225, PR #1272)
+  * When a bot is made private and unviewable, referencing HS items should be deleted (#1208)
+  * Bot deletions not triggering live HS notifications for deleted items (#1266)
 * Update MongooseIM to 2.1.1. (#1248)
 
 
