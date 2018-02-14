@@ -63,7 +63,8 @@ publish_bot_cases() ->
      auto_publish_to_system_user,
      bot_description_update,
      bot_change_notification,
-     bot_becomes_private
+     bot_becomes_private,
+     bot_deleted
     ].
 
 catchup_limits_cases() ->
@@ -619,6 +620,17 @@ is_bot_desc_change_notification(S) ->
                                 {elem, <<"message">>},
                                 {elem, <<"bot-description-changed">>}]).
 
+is_bot_share_notification(S) ->
+    escalus_pred:is_message(S)
+    andalso
+    <<"share">> =:= xml:get_path_s(S, [{elem, <<"notification">>},
+                                       {elem, <<"item">>},
+                                       {elem, <<"message">>},
+                                       {elem, <<"bot">>},
+                                       {elem, <<"action">>},
+                                       cdata]).
+
+
 is_item_publish_notification(S) ->
     escalus_pred:is_message(S)
     andalso
@@ -639,24 +651,53 @@ bot_becomes_private(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
         set_public(true, Alice),
+        timer:sleep(500),
         clear_home_streams(),
+
+        watch_hs(Carol),
 
         expect_iq_success(subscribe_stanza(), Carol),
 
         % Place an item in Carol's HS about the bot
         expect_iq_success(update_bot_desc_stanza("Re-Updated Description"),
                           Alice),
-        timer:sleep(400),
+
+        escalus:assert(fun is_bot_desc_change_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         expect_home_stream_bot_desc(Carol, false),
 
         % Make the bot private
         set_public(false, Alice),
 
         % The item should have been deleted on Carol's HS
+        escalus:assert(fun is_hs_item_deleted_notification/1,
+                       escalus:wait_for_stanza(Carol)),
         Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
-        check_hs_result(Stanza2, 0)
+        check_hs_result(Stanza2, 0),
+
+        unwatch_hs(Carol)
       end).
 
+bot_deleted(Config) ->
+    User = ?wocky_repo:get(?wocky_user, ?ALICE),
+    #{id := BotID} = ?wocky_factory:insert(bot, #{user => User}),
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
+        clear_home_streams(),
+        watch_hs(Carol),
+
+        escalus:send(Alice, bot_SUITE:share_stanza(BotID, Alice, Carol)),
+
+        escalus:assert(fun is_bot_share_notification/1,
+                       escalus:wait_for_stanza(Carol)),
+
+        expect_iq_success(bot_SUITE:delete_stanza(BotID), Alice),
+
+        escalus:assert(fun is_hs_item_deleted_notification/1,
+                       escalus:wait_for_stanza(Carol)),
+
+        unwatch_hs(Carol)
+      end).
 
 no_auto_publish_pep_item(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, whitelist, ?MODULE),
