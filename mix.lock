@@ -87,7 +87,7 @@
   "mix_ct": {:git, "https://github.com/hippware/mix_ct.git", "cbe46b719d77593218efcb8e09aa4a0da5a40840", [branch: "master"]},
   "mix_elvis": {:git, "https://github.com/hippware/mix_elvis.git", "a7aba5dd8a92b50bb3832864aca90c73a5a2e9fa", [branch: "master"]},
   "mochijson2": {:git, "https://github.com/bjnortier/mochijson2", "e162b7f5be57b8a1fcf5cc99aa4948864af42bba", [branch: "master"]},
-  "mongooseim": {:git, "https://github.com/hippware/mongooseim.git", "080d6331c2acc86dd308aa6b0b2970d9dfe2c6a7", [branch: "2.1.1/working"]},
+  "mongooseim": {:git, "https://github.com/hippware/mongooseim.git", "9fabdfcfddac5cefcad5366b2886ac05259750f3", [branch: "2.1.1/working"]},
   "mustache": {:git, "https://github.com/mojombo/mustache.erl", "031c7aa302810424c198aa003aa8cf090150b555", [branch: "master"]},
   "ok": {:hex, :ok, "1.9.4", "fc8ff2193160c7a56bf2cf446077ff6a7bea34463b6c1958b101404a1b5a7fd3", [:mix], [], "hexpm"},
   "ossp_uuid": {:git, "https://github.com/hippware/erlang-ossp-uuid.git", "c0ce1c3687390e5583eac8be877a1f077262ba7b", [tag: "v1.0.1"]},
