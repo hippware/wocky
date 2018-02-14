@@ -27,7 +27,8 @@
                      ]).
 
 -export([create_bot_stanza/1, set_visibility/3,
-         old_create_field/1, publish_item/6]).
+         old_create_field/1, publish_item/6,
+         delete_stanza/1]).
 
 -define(BOT_TITLE, <<"Alice's Bot">>).
 -define(BOT_NAME, <<"AliceBot">>).
@@ -1514,8 +1515,9 @@ has_standard_attrs(Attrs) ->
 unsubscribe_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).
 
-delete_stanza() ->
-    test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"delete">>)).
+delete_stanza() -> delete_stanza(?BOT).
+delete_stanza(Bot) ->
+    test_helper:iq_set(?NS_BOT, node_el(Bot, <<"delete">>)).
 
 expect_item_publication(Client, BotID, NoteID, Title, Content) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
