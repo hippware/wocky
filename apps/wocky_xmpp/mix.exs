@@ -61,9 +61,6 @@ defmodule Wocky.XMPP.Mixfile do
         :crypto,
         :ssl,
         :runtime_tools
-        # :cowboy,
-        # :partial,
-        # :plug
       ],
       included_applications: [
         # This is here because we start it manually and do not want it
