@@ -99,7 +99,7 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 -spec try_register(ejabberd:luser(), ejabberd:lserver(), binary()) ->
     ok | {error, term()}.
 try_register(LUser, LServer, Password) ->
-    Username = ejabberd_odbc:escape(LUser),
+    Username = mongoose_rdbms:escape(LUser),
     {Pwd, Details} = prepare_password(LServer, Password),
     ?wocky_user:register(Username, LServer, Pwd, Details).
 
@@ -159,7 +159,7 @@ prepare_scrammed_password(Iterations, Password) when is_integer(Iterations) ->
         Password,
         scram:password_to_scram(Iterations),
         scram:serialize(),
-        ejabberd_odbc:escape()
+        mongoose_rdbms:escape()
      ),
     {<<>>, PassDetailsEscaped}.
 
@@ -169,5 +169,5 @@ prepare_password(Server, Password) ->
         true ->
             prepare_scrammed_password(scram:iterations(Server), Password);
         _ ->
-            {ejabberd_odbc:escape(Password), <<>>}
+            {mongoose_rdbms:escape(Password), <<>>}
     end.

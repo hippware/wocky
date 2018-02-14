@@ -12,9 +12,9 @@
 -export([start/2, stop/1]).
 
 %% Hook callbacks
--export([user_send_packet_hook/3,
-         roster_updated_hook/4,
-         remove_user_hook/2]).
+-export([user_send_packet_hook/4,
+         roster_updated_hook/5,
+         remove_user_hook/3]).
 
 %% IQ handler
 -export([handle_iq/3]).
@@ -75,7 +75,7 @@ make_response(IQ, State) ->
 %%%===================================================================
 
 %% user_send_packet --------------------------------------------------
-user_send_packet_hook(From, To, Packet) ->
+user_send_packet_hook(Acc, From, To, Packet) ->
     case should_notify(From, To, Packet) of
         true ->
             Body = get_body(Packet),
@@ -91,10 +91,11 @@ user_send_packet_hook(From, To, Packet) ->
                          body => Body,
                          image => Image,
                          conversation_id => ConversationID}),
-            ?wocky_push:notify_all(To#jid.luser, Event);
+            Result = ?wocky_push:notify_all(To#jid.luser, Event),
+            mongoose_acc:put(result, Result, Acc);
 
         _Else ->
-            ok
+            mongoose_acc:put(result, ok, Acc)
     end.
 
 should_notify(_From, To, Packet) ->
@@ -129,6 +130,7 @@ get_image(Packet) ->
 
 %% roster_updated ----------------------------------------------------
 roster_updated_hook(
+  Acc,
   UserID,
   _Server,
   #wocky_roster{subscription = OldSubscription},
@@ -139,11 +141,13 @@ roster_updated_hook(
             Follower = ?wocky_user:get_by_jid(jid:make(ContactJID)),
             Event = ?new_follower_event:new(#{user => User,
                                               follower => Follower}),
-            ?wocky_push:notify_all(UserID, Event);
+            Result = ?wocky_push:notify_all(UserID, Event),
+            mongoose_acc:put(result, Result, Acc);
         _ ->
-            ok
+            mongoose_acc:put(result, ok, Acc)
     end.
 
 %% remove_user -------------------------------------------------------
-remove_user_hook(User, _Server) ->
-    ?wocky_push:purge(User).
+remove_user_hook(Acc, User, _Server) ->
+    ?wocky_push:purge(User),
+    Acc.

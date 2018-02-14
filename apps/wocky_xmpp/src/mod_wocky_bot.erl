@@ -63,7 +63,7 @@ start(Host, _Opts) ->
     ejabberd_hooks:add(filter_local_packet, Host,
                        fun filter_local_packet_hook/1,
                        ?PACKET_FILTER_PRIORITY),
-    mod_wocky_access:register(<<"bot">>, ?MODULE).
+    wocky_access_manager:register(<<"bot">>, ?MODULE).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BOT),
@@ -71,14 +71,13 @@ stop(Host) ->
     ejabberd_hooks:delete(filter_local_packet, Host,
                           fun filter_local_packet_hook/1,
                           ?PACKET_FILTER_PRIORITY),
-    mod_wocky_access:unregister(<<"bot">>, ?MODULE),
+    wocky_access_manager:unregister(<<"bot">>, ?MODULE),
 
     wocky_publishing_handler:unregister(<<"bot">>, wocky_bot_publishing),
     wocky_watcher:unregister(bot, Host).
 
 deps(_Host, _Opts) ->
-    [{mod_wocky_publishing, hard},
-     {mod_wocky_access, hard}].
+    [{mod_wocky_publishing, hard}].
 
 %%%===================================================================
 %%% Event handler
@@ -263,7 +262,8 @@ publish_unfollow_me(Owner, Bot) ->
     send_hs_notification(Owner, Bot, Stanza).
 
 send_hs_notification(From, Bot, Stanza) ->
-    ejabberd_router:route(?wocky_bot:to_jid(Bot), From, Stanza).
+    ejabberd_router:route(?wocky_bot:to_jid(Bot), From, Stanza),
+    ok.
 
 
 %%%===================================================================
@@ -499,13 +499,14 @@ do_make_bot_els(Bot, FromUser) ->
 %%% Incoming packet handler
 %%%===================================================================
 
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
 
 %% Packets to another entity which reference a bot. Passed through unless
 %% they hit a condition to block them.
-filter_local_packet_hook(P = {From, To,
+filter_local_packet_hook(P = {From, To, _Acc,
                               Stanza = #xmlel{name = <<"message">>,
                                               attrs = Attrs}}) ->
     Result = case xml:get_attr(<<"type">>, Attrs) of
@@ -541,8 +542,8 @@ handle_bot_stanza(From, To, BotStanza) ->
 %%% Access manager callback
 %%%===================================================================
 
--spec check_access(binary(), ejabberd:jid(), mod_wocky_access:op()) ->
-    mod_wocky_access:access_result().
+-spec check_access(binary(), ejabberd:jid(), wocky_access_manager:op()) ->
+    wocky_access_manager:access_result().
 check_access(BotNode, ActorJID, view) ->
     BotID = ?wocky_bot:get_id_from_node(BotNode),
     R = do([error_m ||

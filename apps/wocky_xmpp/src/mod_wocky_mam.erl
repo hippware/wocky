@@ -73,12 +73,8 @@
 
 %% gen_mod handlers
 -export([start/2, stop/1]).
--export([
-         %% MAM hook handlers
-         lookup_messages_hook/14
-        ]).
-
--type result_row() :: {non_neg_integer(), ejabberd:jid(), exml:element()}.
+%% MAM hook handlers
+-export([lookup_messages_hook/3]).
 
 %% This value MUST be higher than the one in the backend being used (such as
 %% mod_mam_riak_timed_arch_yz) so that the messages are processed
@@ -103,35 +99,14 @@ stop(Host) ->
 %%% mam_lookup_messages callback
 %%%===================================================================
 
--spec lookup_messages_hook(
-        Result         :: term(),
-        Host           :: ejabberd:server(),
-        UserID         :: mod_mam:archive_id(),
-        UserJID        :: ejabberd:jid(),
-        RSM            :: jlib:rsm_in() | undefined,
-        Borders        :: mod_mam:borders() | undefined,
-        Start          :: mod_mam:unix_timestamp() | undefined,
-        End            :: mod_mam:unix_timestamp() | undefined,
-        Now            :: mod_mam:unix_timestamp(),
-        WithJID        :: ejabberd:jid() | undefined,
-        PageSize       :: non_neg_integer(),
-        LimitPassed    :: boolean(),
-        MaxResultLimit :: non_neg_integer(),
-        IsSimple       :: boolean()
-       ) ->
-    {ok, {TotalCount  :: non_neg_integer() | undefined,
-          Offset      :: non_neg_integer() | undefined,
-          MessageRows :: [result_row()]}}.
-
-lookup_messages_hook({ok, {Count, Offset, MessageList}},
-                     _Host, _UserID, _UserJID, #rsm_in{reverse = true},
-                     _Borders, _Start, _End, _Now, _WithJID,
-                     _PageSize, _LimitPassed, _MaxResultLimit,
-                     _Simple) ->
+-spec lookup_messages_hook(Result :: any(),
+                           Host :: ejabberd:server(),
+                           Params :: map()) ->
+    {ok, mod_mam:lookup_result()} | {error, 'policy-violation'}.
+lookup_messages_hook({error, _Reason} = Result, _Host, _Params) ->
+    Result;
+lookup_messages_hook({ok, {Count, Offset, MessageList}}, _Host,
+                     #{rsm := #rsm_in{reverse = true}}) ->
     {ok, {Count, Offset, lists:reverse(MessageList)}};
-
-lookup_messages_hook(Result, _Host, _UserID, _UserJID, _RSM,
-                     _Borders, _Start, _End, _Now, _WithJID,
-                     _PageSize, _LimitPassed, _MaxResultLimit,
-                     _Simple) ->
+lookup_messages_hook(Result, _Host, _Params) ->
     Result.

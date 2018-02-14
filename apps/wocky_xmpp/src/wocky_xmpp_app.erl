@@ -61,6 +61,7 @@ start(_StartType, _StartArgs) ->
     ok = lager:info("Wocky instance ~s starting with version ~s.",
                     [InstName, version()]),
 
+    ok = wocky_access_manager:init(),
     {ok, CfgPath} = load_xmpp_config(),
 
     ok = start_ejabberd(CfgPath),
@@ -68,7 +69,7 @@ start(_StartType, _StartArgs) ->
     wocky_sup:start_link().
 
 stop(_State) ->
-    ok = application:stop(ejabberd).
+    ok = application:stop(mongooseim).
 
 
 %%%===================================================================
@@ -97,11 +98,11 @@ load_xmpp_config() ->
 db_config() ->
     DbConfig = ?wocky_repo:config(),
     {pgsql,
-     proplists:get_value(hostname, DbConfig),
-     proplists:get_value(port,     DbConfig),
-     proplists:get_value(database, DbConfig),
-     proplists:get_value(username, DbConfig),
-     proplists:get_value(password, DbConfig)}.
+     binary_to_list(proplists:get_value(hostname, DbConfig)),
+     proplists:get_value(port, DbConfig),
+     binary_to_list(proplists:get_value(database, DbConfig)),
+     binary_to_list(proplists:get_value(username, DbConfig)),
+     binary_to_list(proplists:get_value(password, DbConfig))}.
 
 sm_config() ->
     RedisConfig = ?confex:'fetch_env!'(wocky_xmpp, redis),
@@ -118,7 +119,7 @@ write_terms(Filename, List) ->
     file:write_file(Filename, Text).
 
 start_ejabberd(CfgPath) ->
-    ok = ensure_loaded(ejabberd),
-    ok = application:set_env(ejabberd, config, CfgPath),
-    {ok, _} = application:ensure_all_started(ejabberd),
+    ok = ensure_loaded(mongooseim),
+    ok = application:set_env(mongooseim, config, CfgPath),
+    {ok, _} = application:ensure_all_started(mongooseim),
     ok.

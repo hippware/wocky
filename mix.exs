@@ -43,7 +43,7 @@ defmodule Wocky.Release.Mixfile do
   defp aliases do
     [
       recompile: ["clean", "compile"],
-      prepare: ["deps.get", "deps.compile goldrush lager", "recompile"],
+      prepare: ["deps.get", "recompile"],
       lint: ["elvis", "credo"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],

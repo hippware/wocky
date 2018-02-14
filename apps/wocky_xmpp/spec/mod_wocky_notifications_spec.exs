@@ -145,8 +145,13 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a message packet" do
         before do
-          :ok =
-            user_send_packet_hook(shared.sender_jid, shared.user_jid, packet())
+          %{result: :ok} =
+            user_send_packet_hook(
+              %{},
+              shared.sender_jid,
+              shared.user_jid,
+              packet()
+            )
         end
 
         it "should send a notification" do
@@ -162,8 +167,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with an image message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
+              %{},
               shared.sender_jid,
               shared.user_jid,
               image_packet()
@@ -183,8 +189,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a message that contains both a body and an image" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
+              %{},
               shared.sender_jid,
               shared.user_jid,
               combo_packet()
@@ -204,8 +211,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a non-message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
+              %{},
               shared.sender_jid,
               shared.user_jid,
               packet("parlay")
@@ -219,8 +227,9 @@ defmodule :mod_wocky_notifications_spec do
 
       context "with a non-chat message packet" do
         before do
-          :ok =
+          %{result: :ok} =
             user_send_packet_hook(
+              %{},
               shared.sender_jid,
               shared.user_jid,
               packet("message", "parlay")
@@ -247,7 +256,12 @@ defmodule :mod_wocky_notifications_spec do
             )
 
           result =
-            user_send_packet_hook(shared.sender_jid, shared.user_jid, no_body)
+            user_send_packet_hook(
+              %{},
+              shared.sender_jid,
+              shared.user_jid,
+              no_body
+            )
 
           {:ok, result: result}
         end
@@ -261,7 +275,7 @@ defmodule :mod_wocky_notifications_spec do
     describe "handling the remove_user hook" do
       before do
         _ = enable_notifications(shared.user_jid)
-        result = remove_user_hook(shared.user.username, shared.user.server)
+        result = remove_user_hook(:ok, shared.user.username, shared.user.server)
         {:ok, result: result}
       end
 

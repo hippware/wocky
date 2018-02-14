@@ -22,15 +22,15 @@ start(Host, Opts) ->
     wocky_util:set_config_from_opt(expire, traffic_log_expire,
                                    ?DEFAULT_EXPIRE, Opts),
     ejabberd_hooks:add(stanza_sent, Host,
-                       fun stanza_sent_hook/3, 80),
+                       fun stanza_sent_hook/4, 80),
     ejabberd_hooks:add(stanza_received, Host,
-                       fun stanza_received_hook/3, 80).
+                       fun stanza_received_hook/4, 80).
 
 stop(Host) ->
     ejabberd_hooks:delete(stanza_received, Host,
-                          fun stanza_received_hook/3, 80),
+                          fun stanza_received_hook/4, 80),
     ejabberd_hooks:delete(stanza_sent, Host,
-                          fun stanza_sent_hook/3, 80).
+                          fun stanza_sent_hook/4, 80).
 
 %%%===================================================================
 %%% Packet handlers
@@ -40,15 +40,19 @@ stop(Host) ->
 % clients to us (the server). Vice-versa for "received".
 % This is to maintain consistency with the
 % nomenclature in ejabberd_c2s.
--spec stanza_sent_hook(jid(), {inet:ip_address(), inet:port_number()},
+-spec stanza_sent_hook(mongoose_acc:t(), jid(),
+                       {inet:ip_address(), inet:port_number()},
                        jlib:xmlel()) -> ok.
-stanza_sent_hook(JID, {IP,Port}, Element) ->
-    log_packet(JID, IP, Port, Element, false).
+stanza_sent_hook(Acc, JID, {IP,Port}, Element) ->
+    log_packet(JID, IP, Port, Element, false),
+    Acc.
 
--spec stanza_received_hook(jid(), {inet:ip_address(), inet:port_number()},
+-spec stanza_received_hook(mongoose_acc:t(), jid(),
+                           {inet:ip_address(), inet:port_number()},
                            jlib:xmlel()) -> ok.
-stanza_received_hook(JID, {IP, Port}, Element) ->
-    log_packet(JID, IP, Port, Element, true).
+stanza_received_hook(Acc, JID, {IP, Port}, Element) ->
+    log_packet(JID, IP, Port, Element, true),
+    Acc.
 
 
 log_packet(JID, IP, Port, Element, Incoming) ->

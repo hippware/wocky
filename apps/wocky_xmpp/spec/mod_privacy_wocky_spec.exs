@@ -9,7 +9,7 @@ defmodule :mod_privacy_wocky_spec do
   alias Wocky.Repo.ID
 
   defrecordp :listitem,
-             extract(:listitem, from_lib: "ejabberd/include/mod_privacy.hrl")
+             extract(:listitem, from_lib: "mongooseim/include/mod_privacy.hrl")
 
   @backend :mod_privacy_odbc
   @default_list "default"

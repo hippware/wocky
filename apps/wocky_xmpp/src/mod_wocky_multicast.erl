@@ -40,10 +40,11 @@ stop(Host) ->
 %%% Incoming packet handler
 %%%===================================================================
 
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
-filter_local_packet_hook(P = {_, _, Packet = #xmlel{name = Name}})
+filter_local_packet_hook(P = {_, _, _, Packet = #xmlel{name = Name}})
       when Name =:= <<"message">> orelse
            Name =:= <<"presence">> ->
     case xml:get_subtag(Packet, <<"addresses">>) of
@@ -53,7 +54,7 @@ filter_local_packet_hook(P = {_, _, Packet = #xmlel{name = Name}})
 filter_local_packet_hook(Other) ->
     Other.
 
-multicast_packet(P = {From, To, Packet}, AddressesEl) ->
+multicast_packet(P = {From, To, _, Packet}, AddressesEl) ->
     case multicast_packet(From, To, Packet, AddressesEl) of
         ok -> drop;
         {error, _} -> P

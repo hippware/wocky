@@ -26,17 +26,17 @@
 -spec register(class(), ejabberd:server()) -> ok.
 register(Class, Host) ->
     ejabberd_hooks:add(node_cleanup, global,
-                       node_cleanup_hook(Class, _),
+                       node_cleanup_hook(Class, _, _),
                        ?NODE_CLEANUP_PRIORITY),
     ejabberd_hooks:add(unset_presence_hook, Host,
-                       unset_presence_hook(Class, _, _, _, _),
+                       unset_presence_hook(Class, _, _, _, _, _),
                        ?UNSET_PRESENCE_PRIORITY),
     ok.
 
 -spec unregister(class(), ejabberd:server()) -> ok.
 unregister(Class, Host) ->
     ejabberd_hooks:delete(unset_presence_hook, Host,
-                          unset_presence_hook(Class, _, _, _, _),
+                          unset_presence_hook(Class, _, _, _, _, _),
                           ?UNSET_PRESENCE_PRIORITY),
     ok.
 
@@ -63,15 +63,17 @@ watchers(Class, Object) ->
 %%% MIM hook handlers
 %%%===================================================================
 
--spec node_cleanup_hook(class(), node()) -> ok.
-node_cleanup_hook(Class, Node) ->
-    cleanup(Class, delete_by_node(Node, _, _)).
+-spec node_cleanup_hook(class(), mongoose_acc:t(), node()) -> mongoose_acc:t().
+node_cleanup_hook(Class, Acc, Node) ->
+    cleanup(Class, delete_by_node(Node, _, _)),
+    Acc.
 
--spec unset_presence_hook(class(), ejabberd:luser(),
+-spec unset_presence_hook(class(), mongoose_acc:t(), ejabberd:luser(),
                           ejabberd:lserver(), ejabberd:lresource(),
-                          binary()) -> ok.
-unset_presence_hook(Class, User, Server, Resource, _Status) ->
-    unwatch_all(Class, jid:make(User, Server, Resource)).
+                          binary()) -> mongoose_acc:t().
+unset_presence_hook(Class, Acc, User, Server, Resource, _Status) ->
+    unwatch_all(Class, jid:make(User, Server, Resource)),
+    Acc.
 
 %%%===================================================================
 %%% Helpers

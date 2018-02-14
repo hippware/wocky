@@ -10,7 +10,7 @@
 
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
--include_lib("ejabberd/include/ejabberd_commands.hrl").
+-include_lib("mongooseim/include/ejabberd_commands.hrl").
 
 -behaviour(gen_mod).
 

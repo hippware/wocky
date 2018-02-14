@@ -12,7 +12,7 @@ config :wocky_xmpp, :redis,
   db: {:system, :integer, "REDIS_DB", 0},
   pool_size: {:system, :integer, "REDIS_POOL_SIZE", 10}
 
-config :ejabberd, keep_lager_intact: true
+config :mongooseim, keep_lager_intact: true
 
 config :kernel, start_pg2: true
 
@@ -22,19 +22,6 @@ config :ssl,
 
 config :mnesia, dir: 'log/#{Mix.env()}/mnesia'
 
-config :setup, verify_directories: false
-
-config :alarms, large_heap: 10_000_000
-
 config :honeybadger, use_logger: true
-
-config :exometer,
-  # 5 minutes
-  mongooseim_report_interval: 300_000,
-  report: [
-    reporters: [
-      exometer_report_prometheus: [:enable_httpd]
-    ]
-  ]
 
 import_config "#{Mix.env()}.exs"

@@ -151,12 +151,12 @@ unsubscribe(TargetJID, UserJID) ->
 %%% Packet filtering API
 %%%===================================================================
 
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
-filter_local_packet_hook(P = {From,
-                              To = #jid{lserver = LServer},
-                              Stanza = #xmlel{name = <<"message">>}}) ->
+filter_local_packet_hook(P = {From, To = #jid{lserver = LServer},
+                              _Acc, Stanza = #xmlel{name = <<"message">>}}) ->
     Result = do([error_m ||
                  check_server(LServer),
                  check_user_present(To),

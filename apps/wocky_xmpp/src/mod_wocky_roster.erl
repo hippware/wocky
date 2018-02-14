@@ -26,7 +26,7 @@
 
 -include("wocky.hrl").
 -include("wocky_roster.hrl").
--include_lib("ejabberd/include/mod_roster.hrl").
+-include_lib("mongooseim/include/mod_roster.hrl").
 
 %% gen_mod behaviour
 -behaviour(gen_mod).
@@ -38,12 +38,12 @@
 %% Hook callbacks
 -export([roster_get_hook/2,
          roster_in_subscription_hook/6,
-         roster_out_subscription_hook/4,
+         roster_out_subscription_hook/5,
          roster_get_subscription_lists_hook/3,
          roster_get_jid_info_hook/4,
          roster_get_versioning_feature_hook/2,
          filter_local_packet_hook/1,
-         roster_modified_hook/3
+         roster_modified_hook/4
         ]).
 
 -import(wocky_roster, [to_wocky_roster/1, to_wocky_roster/3]).
@@ -303,11 +303,13 @@ roster_get_hook(Acc, {LUser, _LServer}) ->
 
 %% roster_in_subscription, roster_out_subscription -------------------
 
-roster_in_subscription_hook(_, User, Server, JID, Type, Reason) ->
-    process_subscription(in, User, Server, JID, Type, Reason).
+roster_in_subscription_hook(Acc, User, Server, JID, Type, Reason) ->
+    Res = process_subscription(in, User, Server, JID, Type, Reason),
+    mongoose_acc:put(result, Res, Acc).
 
-roster_out_subscription_hook(User, Server, JID, Type) ->
-    process_subscription(out, User, Server, JID, Type, <<"">>).
+roster_out_subscription_hook(Acc, User, Server, JID, Type) ->
+    Res = process_subscription(out, User, Server, JID, Type, <<"">>),
+    mongoose_acc:put(result, Res, Acc).
 
 process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
     LUser = jid:nodeprep(User),
@@ -454,12 +456,13 @@ send_auto_reply(ToJID, JID1, Attrs) ->
 
 %% roster_get_subscription_lists -------------------------------------
 
-roster_get_subscription_lists_hook(_Acc, User, Server) ->
+roster_get_subscription_lists_hook(Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
     Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
     JID = jid:make(User, Server, <<>>),
-    fill_subscription_lists(JID, LServer, Items, [], []).
+    SubLists = fill_subscription_lists(JID, LServer, Items, [], []),
+    mongoose_acc:put(subscription_lists, SubLists, Acc).
 
 fill_subscription_lists(JID, LServer, [#wocky_roster{} = I | Is], F, T) ->
     J = I#wocky_roster.contact_jid,
@@ -503,10 +506,11 @@ roster_get_versioning_feature_hook(Acc, _Host) ->
     [Feature | Acc].
 
 %% local packet filter hook for user update messages
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(), jlib:xmlel()}.
+-type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
+                          mongoose_acc:t(), jlib:xmlel()}.
 -spec filter_local_packet_hook(filter_packet() | drop) ->
     filter_packet() | drop.
-filter_local_packet_hook(P = {From, To, Packet}) ->
+filter_local_packet_hook(P = {From, To, _Acc, Packet}) ->
     case handle_local_packet(From, To, Packet) of
         ok -> drop;
         {error, _} -> P
@@ -535,12 +539,15 @@ send_update(#jid{user = User, server = Server}, JID) ->
     #jid{luser = ContactUser} = jid:from_binary(JID),
     Item = to_wocky_roster(
              User, JID, ?wocky_roster_item:get(User, ContactUser)),
-    push_item(User, Server, jid:make(<<>>, Server, <<>>), Item, Item, Version).
+    Acc = push_item(User, Server, jid:make(<<>>, Server, <<>>),
+                    Item, Item, Version),
+    mongoose_acc:get(result, Acc).
 
 
 %% hook for out-of-band roster modification --------------------------
-roster_modified_hook(User, Server, JID) ->
-    send_update(jid:make(User, Server, <<>>), JID).
+roster_modified_hook(Acc, User, Server, JID) ->
+    send_update(jid:make(User, Server, <<>>), JID),
+    Acc.
 
 %%%===================================================================
 %%% Helper functions
@@ -619,13 +626,13 @@ item_ask_to_xml(_) ->
 push_item(User, Server, From,
           OldItem = #wocky_roster{},
           NewItem = #wocky_roster{}) ->
-    ok = ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
-                           jid:make(User, Server, <<"">>),
-                           {broadcast, {item,
-                                        NewItem#wocky_roster.contact_jid,
-                                        NewItem#wocky_roster.subscription,
-                                        to_mim_roster(OldItem),
-                                        to_mim_roster(NewItem)}}),
+    ejabberd_sm:route(jid:make(<<"">>, <<"">>, <<"">>),
+                      jid:make(User, Server, <<"">>),
+                      {broadcast, {item,
+                                   NewItem#wocky_roster.contact_jid,
+                                   NewItem#wocky_roster.subscription,
+                                   to_mim_roster(OldItem),
+                                   to_mim_roster(NewItem)}}),
     push_item(User, Server, From, OldItem, NewItem,
               ?wocky_roster_item:version(jid:nodeprep(User))).
 
