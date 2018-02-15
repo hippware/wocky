@@ -73,6 +73,10 @@ config :wocky, Wocky.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
+config :wocky_db_watcher,
+  backend: WockyDBWatcher.Backend.Direct,
+  channel: "wocky_db_watcher_notify"
+
 config :email_checker, validations: [EmailChecker.Check.Format]
 
 config :ex_aws,
