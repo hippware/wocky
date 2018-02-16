@@ -9,6 +9,9 @@ defmodule WockyAPI.UserResolver do
     {:ok, users}
   end
 
+  def current_user(_root, _args, _info) do
+  end
+
   def set_handle(_root, args, _info) do
     IO.puts inspect(args)
     user = Repo.get!(User, args[:id])
