@@ -65,10 +65,7 @@ defmodule Wocky.XMPP.Mixfile do
       included_applications: [
         # This is here because we start it manually and do not want it
         # starting automatically when Wocky starts.
-        :mongooseim,
-        # This one we use files from but don't actually want the application
-        # running
-        :wocky_db_watcher
+        :mongooseim
       ],
       mod: {:wocky_xmpp_app, []},
       env: [

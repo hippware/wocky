@@ -41,6 +41,11 @@ defmodule Wocky.Mixfile do
     [
       # Specify extra applications you'll use from Erlang/Elixir
       extra_applications: [:logger, :runtime_tools],
+      included_applications: [
+        # This one we use files from but don't actually want the application
+        # running
+        :wocky_db_watcher
+      ],
       mod: {Wocky.Application, []},
       env: [
         wocky_env: {:system, "WOCKY_ENV", "dev"},
@@ -84,6 +89,7 @@ defmodule Wocky.Mixfile do
       {:geo_postgis, "~> 1.1"},
       {:geocalc, "~> 0.5"},
       {:hackney, "~> 1.7"},
+      {:honeybadger, "~> 0.6"},
       {:joken, "~> 1.1"},
       {:jsx, "~> 2.8"},
       {:kadabra, "~> 0.3"},
