@@ -11,6 +11,7 @@ defmodule WockyAPI.Authentication do
 
     if Token.valid?(user, token) do
       assign(conn, :current_user, user)
+      put_private(conn, :absinthe, %{context: %{current_user: user}})
     else
       conn |> send_resp(:unauthorized, "") |> halt()
     end

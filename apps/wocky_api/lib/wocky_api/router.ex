@@ -18,6 +18,7 @@ defmodule WockyAPI.Router do
 
   pipeline :graphql do
     plug :accepts, ["json"]
+    plug :authenticate
   end
 
   scope "/" do
