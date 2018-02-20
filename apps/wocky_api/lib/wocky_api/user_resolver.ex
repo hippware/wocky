@@ -4,15 +4,19 @@ defmodule WockyAPI.UserResolver do
   alias Wocky.Repo
   alias Wocky.User
 
-  def get_profile(_root, _args, %{context: %{current_user: current_user}}) do
-    {:ok, current_user}
+  def get_profile(_root, _args, %{context: %{current_user: user}}) do
+    {:ok, user}
   end
 
-  def update_profile(_root, args, %{context: %{current_user: current_user}}) do
-    user = Ecto.Changeset.change current_user, args
-    case Repo.update(user) do
-      {:ok, user} -> {:ok, user}
-      {:error, _} -> {:error, "Could not update handle"}
+  def update_profile(_root, args, %{context: %{current_user: user}}) do
+    input = args[:input]
+    cmi = input[:client_mutation_id]
+    case User.update(user, input) do
+      {:ok, user} ->
+        {:ok, %{client_mutation_id: cmi, profile: user}}
+
+      {:error, _} ->
+        {:error, "Could not update profile"}
     end
   end
 
