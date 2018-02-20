@@ -138,7 +138,18 @@ defmodule WockyAPI.Schema do
 
   object :bot do
     field :id, non_null(:id)
-    # ...
+    field :server, non_null(:string)
+    field :title, non_null(:string)
+    field :lat, non_null(:float)
+    field :lon, non_null(:float)
+    field :radius, non_null(:float)
+    field :description, :string
+    field :shortname, :string
+    field :image, :string
+    field :type, :string
+    field :address, :string
+    field :address_data, :string
+    field :public, non_null(:boolean)
   end
 
   query do
