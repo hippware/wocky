@@ -28,5 +28,8 @@ defmodule WockyAPI.Router do
       schema: WockyAPI.Schema,
       interface: :simple,
       context: %{pubsub: WockyAPI.Endpoint}
+
+    forward "/", Absinthe.Plug,
+      schema: WockyAPI.Schema
   end
 end
