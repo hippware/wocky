@@ -15,6 +15,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * When a bot is made private and unviewable, referencing HS items should be deleted (#1208)
   * Bot deletions not triggering live HS notifications for deleted items (#1266)
 * Update MongooseIM to 2.1.1. (#1248)
+* Dialyzer fixes (PR #1273)
+* Add extra tests for HS notifications (PR #1274)
+* Small fixes for dev mode (PR #1277)
 
 
 # 2018.1.17+r1173119
