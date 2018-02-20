@@ -125,6 +125,7 @@ defmodule WockyAPI.Schema do
   end
 
   object :user_bots_connection do
+    field :total_count, non_null(:integer)
     field :page_info, non_null(:page_info)
     field :edges, list_of(:user_bots_edge)
   end

@@ -29,7 +29,14 @@ defmodule WockyAPI.UserResolver do
   def get_conversations(_root, _args, _info) do
   end
 
-  def get_bots(_root, _args, _info) do
+  def get_bots(_root, _args, %{context: %{current_user: user}}) do
+    {:ok, %{
+      total_count: User.bot_count(user),
+      page_info: %{has_next_page: false, has_previous_page: false},
+      edges: for bot <- User.get_owned_bots(user) do
+        %{node: bot, relationship: :owned, cursor: bot.id}
+      end
+    }}
   end
 
   def get_user(_root, args, %{context: %{current_user: _current_user}}) do
