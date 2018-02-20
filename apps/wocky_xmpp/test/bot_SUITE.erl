@@ -204,10 +204,10 @@ reset_tables(Config) ->
                                            user => Alice,
                                            access => <<"all">>}),
 
-    ok = ?wocky_user:update(?ALICE, #{handle => ?ALICE_HANDLE,
-                                      avatar => ?AVATAR_URL,
-                                      first_name => ?ALICE_FIRST_NAME,
-                                      last_name => ?ALICE_LAST_NAME}),
+    {ok, _} = ?wocky_user:update(?ALICE, #{handle => ?ALICE_HANDLE,
+                                           avatar => ?AVATAR_URL,
+                                           first_name => ?ALICE_FIRST_NAME,
+                                           last_name => ?ALICE_LAST_NAME}),
 
     B = #{id => ?BOT,
           title => ?BOT_TITLE,

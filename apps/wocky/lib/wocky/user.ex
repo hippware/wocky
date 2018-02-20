@@ -327,24 +327,26 @@ defmodule Wocky.User do
   Update the data on an existing user.
   Fields is a map containing fields to update.
   """
-  @spec update(id, map) :: :ok | {:error, term}
+  @spec update(id | t, map) :: {:ok, t} | {:error, term}
+  def update(%User{} = user, fields) do
+    changeset = changeset(user, fields)
+    case Repo.update(changeset) do
+      {:ok, user} ->
+        maybe_send_welcome(user)
+        maybe_update_index(user)
+        {:ok, user}
+
+      {:error, _} = error ->
+        error
+    end
+  end
   def update(id, fields) do
     case Repo.get(User, id) do
       nil ->
         {:error, :user_not_found}
 
       struct ->
-        changeset = changeset(struct, fields)
-
-        case Repo.update(changeset) do
-          {:ok, user} ->
-            maybe_send_welcome(user)
-            maybe_update_index(user)
-            :ok
-
-          {:error, _} = error ->
-            error
-        end
+        User.update(struct, fields)
     end
   end
 

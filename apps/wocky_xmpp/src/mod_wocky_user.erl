@@ -569,7 +569,7 @@ valid_user_fields() -> ?wocky_user:valid_update_fields().
 
 update_user(LUser, LServer, Row) ->
    case ?wocky_user:update(LUser, Row) of
-       ok ->
+      {ok, _} ->
          update_roster_contacts(LUser),
          ejabberd_hooks:run(wocky_user_updated, LServer, [LUser, LServer]),
          ok;
