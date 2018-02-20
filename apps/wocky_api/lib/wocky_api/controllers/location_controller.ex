@@ -1,15 +1,13 @@
 defmodule WockyAPI.LocationController do
   use WockyAPI, :controller
 
-  alias Wocky.Repo
   alias Wocky.User
 
   action_fallback WockyAPI.FallbackController
 
   def create(conn, params) do
     with {:ok, c, rsrc} <- extract_values(params) do
-      # This can't return nil since the token check passed.
-      user = Repo.get(User, conn.assigns.current_user)
+      user = conn.assigns.current_user
 
       :ok =
         User.set_location(
