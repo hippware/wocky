@@ -78,6 +78,7 @@ defmodule WockyAPI.Schema do
   end
 
   object :user_contacts_connection do
+    field :total_count, non_null(:integer)
     field :page_info, non_null(:page_info)
     field :edges, list_of(:user_contacts_edge)
   end
@@ -89,6 +90,7 @@ defmodule WockyAPI.Schema do
   end
 
   object :user_home_stream_connection do
+    field :total_count, non_null(:integer)
     field :page_info, non_null(:page_info)
     field :edges, list_of(:user_home_stream_edge)
   end
@@ -104,6 +106,7 @@ defmodule WockyAPI.Schema do
   end
 
   object :user_conversations_connection do
+    field :total_count, non_null(:integer)
     field :page_info, non_null(:page_info)
     field :edges, list_of(:user_conversations_edge)
   end

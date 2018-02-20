@@ -21,12 +21,27 @@ defmodule WockyAPI.UserResolver do
   end
 
   def get_contacts(_root, _args, _info) do
+    {:ok, %{
+      total_count: 0,
+      page_info: %{has_next_page: false, has_previous_page: false},
+      edges: []
+    }}
   end
 
   def get_home_stream(_root, _args, _info) do
+    {:ok, %{
+      total_count: 0,
+      page_info: %{has_next_page: false, has_previous_page: false},
+      edges: []
+    }}
   end
 
   def get_conversations(_root, _args, _info) do
+    {:ok, %{
+      total_count: 0,
+      page_info: %{has_next_page: false, has_previous_page: false},
+      edges: []
+    }}
   end
 
   def get_bots(_root, _args, %{context: %{current_user: user}}) do
