@@ -141,7 +141,9 @@ defmodule WockyAPI.Schema do
   end
 
   query do
-    field :current_user, non_null(:current_user)
+    field :current_user, non_null(:current_user) do
+      resolve fn _, _, _ -> {:ok, %{}} end
+    end
 
     field :users, non_null(:profile) do
       arg :id, non_null(:string)
