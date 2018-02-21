@@ -3,7 +3,7 @@ defmodule Wocky.Blocking do
   Helper functions for blocking functionality
   """
 
-  use Wocky.Repo.Model
+  import Ecto.Query
 
   alias Ecto.Queryable
   alias Wocky.Bot.Item
@@ -11,6 +11,7 @@ defmodule Wocky.Blocking do
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.HomeStreamItem
+  alias Wocky.Repo
   alias Wocky.RosterItem
   alias Wocky.User
 

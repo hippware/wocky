@@ -2,8 +2,10 @@ defmodule Wocky.Bot do
   @moduledoc ""
 
   use Wocky.JID
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
   use Wocky.RSMHelper
+
+  import Ecto.Query
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
@@ -16,6 +18,7 @@ defmodule Wocky.Bot do
   alias Wocky.GeoUtils
   alias Wocky.HomeStreamItem
   alias Wocky.Index
+  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
   alias __MODULE__, as: Bot
@@ -267,7 +270,7 @@ defmodule Wocky.Bot do
   @spec subscriber_count(Bot.t()) :: pos_integer
   def subscriber_count(bot) do
     bot
-    |> assoc(:subscribers)
+    |> Ecto.assoc(:subscribers)
     |> select([s], count(s.id))
     |> Repo.one()
   end

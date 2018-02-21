@@ -1,12 +1,15 @@
 defmodule Wocky.Bot.Subscription do
   @moduledoc "Represents a subscription relationship between a User and a Bot"
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
+
+  import Ecto.Query
 
   alias Ecto.Changeset
   alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__, as: Subscription
+  alias __MODULE__
 
   @foreign_key_type :binary_id
   @primary_key false

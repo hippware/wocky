@@ -3,8 +3,9 @@ defmodule Wocky.HomeStreamItem do
   DB interface module for home stream items
   """
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
 
+  import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Timex.Duration
@@ -12,8 +13,9 @@ defmodule Wocky.HomeStreamItem do
   alias Wocky.Bot.Share
   alias Wocky.HomeStreamID
   alias Wocky.JID
+  alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__, as: HomeStreamItem
+  alias __MODULE__
 
   defenum ClassEnum, [:item, :deleted, :ref_update]
 

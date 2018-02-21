@@ -1,8 +1,10 @@
 defmodule Wocky.Repo.Migrations.AddHsPrepopUser do
   use Wocky.Repo.Migration
-  use Wocky.Repo.Model
+
+  import Ecto.Query
 
   alias Wocky.InitialContact
+  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
   alias Wocky.User

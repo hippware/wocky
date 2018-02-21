@@ -2,7 +2,8 @@ defmodule Wocky.Index do
   @moduledoc "Wocky interface to Algolia for full text search of users and bots"
 
   use GenServer
-  use Wocky.Repo.Model
+
+  import Ecto.Query
 
   alias Wocky.Bot
   alias Wocky.GeoUtils

@@ -1,13 +1,16 @@
 defmodule Wocky.Token do
   @moduledoc "Handles generation and validation of authentication tokens."
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
+
+  import Ecto.Query
 
   alias Comeonin.Bcrypt
   alias Timex.Duration
+  alias Wocky.Repo
   alias Wocky.Repo.Timestamp
   alias Wocky.User
-  alias __MODULE__, as: Token
+  alias __MODULE__
 
   @foreign_key_type :binary_id
   @primary_key false

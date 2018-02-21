@@ -29,8 +29,9 @@ defmodule Wocky.RosterItem do
 
   """
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
 
+  import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Ecto.Adapters.SQL
@@ -41,7 +42,7 @@ defmodule Wocky.RosterItem do
   alias Wocky.RosterItem.AskEnum
   alias Wocky.RosterItem.SubscriptionEnum
   alias Wocky.User
-  alias __MODULE__, as: RosterItem
+  alias __MODULE__
 
   require Logger
 

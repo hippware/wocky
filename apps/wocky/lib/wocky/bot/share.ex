@@ -1,12 +1,15 @@
 defmodule Wocky.Bot.Share do
   @moduledoc "Represents an bot being shared to a user"
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
+
+  import Ecto.Query
 
   alias Ecto.Changeset
   alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__, as: Share
+  alias __MODULE__
 
   @foreign_key_type :binary_id
   @primary_key false

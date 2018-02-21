@@ -4,8 +4,9 @@ defmodule Wocky.User do
   require Logger
 
   use Wocky.JID
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
 
+  import Ecto.Query
   import OK, only: [~>>: 2]
 
   alias Ecto.Queryable
@@ -17,6 +18,7 @@ defmodule Wocky.User do
   alias Wocky.HomeStreamItem
   alias Wocky.Index
   alias Wocky.Push.Token, as: PushToken
+  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.RosterItem
   alias Wocky.Token, as: AuthToken
@@ -24,7 +26,7 @@ defmodule Wocky.User do
   alias Wocky.User.Avatar
   alias Wocky.User.BotEvent
   alias Wocky.User.Location
-  alias __MODULE__, as: User
+  alias __MODULE__
 
   @primary_key {:id, :binary_id, autogenerate: false}
 

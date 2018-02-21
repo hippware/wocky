@@ -1,13 +1,15 @@
 defmodule Wocky.InitialContact do
   @moduledoc ""
 
-  use Wocky.Repo.Model
   use Wocky.JID
+  use Wocky.Repo.Schema
 
+  import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
-  alias __MODULE__, as: InitialContact
+  alias Wocky.Repo
   alias Wocky.User
+  alias __MODULE__
 
   defenum ContactType, [:follower, :followee, :friend]
 

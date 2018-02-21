@@ -1,10 +1,13 @@
 defmodule Wocky.Bot.Item do
   @moduledoc "Represents an item published to a bot"
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
+
+  import Ecto.Query
 
   alias Ecto.Changeset
   alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.User
   alias __MODULE__, as: Item
 
@@ -45,7 +48,7 @@ defmodule Wocky.Bot.Item do
   @spec get_count(Bot.t()) :: non_neg_integer
   def get_count(bot) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
     |> select([i], count(i.bot_id))
     |> Repo.one()
   end
@@ -61,7 +64,7 @@ defmodule Wocky.Bot.Item do
   @spec get_image_count(Bot.t()) :: non_neg_integer
   def get_image_count(bot) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
     |> where(image: true)
     |> select([i], count(i.bot_id))
     |> Repo.one()
@@ -96,7 +99,7 @@ defmodule Wocky.Bot.Item do
   @spec delete(Bot.t()) :: :ok
   def delete(bot) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
     |> Repo.delete_all()
 
     :ok
@@ -105,7 +108,7 @@ defmodule Wocky.Bot.Item do
   @spec delete(Bot.t(), id | User.t()) :: :ok
   def delete(bot, id) when is_binary(id) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
     |> where(id: ^id)
     |> Repo.delete_all()
 
@@ -114,7 +117,7 @@ defmodule Wocky.Bot.Item do
 
   def delete(bot, %User{id: id}) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
     |> where(user_id: ^id)
     |> Repo.delete_all()
 
@@ -123,12 +126,12 @@ defmodule Wocky.Bot.Item do
 
   def items_query(bot) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
   end
 
   def images_query(bot) do
     bot
-    |> assoc(:items)
+    |> Ecto.assoc(:items)
     |> where(image: true)
   end
 end
