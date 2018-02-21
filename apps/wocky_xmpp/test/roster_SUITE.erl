@@ -69,11 +69,11 @@ init_per_suite(Config) ->
     Bob = ?wocky_repo:get(?wocky_user, ?BOB),
     ?wocky_factory:insert(tros_metadata, [{id, ?AVATAR_ID}, {user, Bob}]),
 
-    ok = ?wocky_user:update(?BOB, #{handle => ?BOB_HANDLE,
-                                    avatar => ?BOB_AVATAR,
-                                    roles => [?ROLE1, ?ROLE2],
-                                    first_name => ?BOB_FIRST_NAME,
-                                    last_name => ?BOB_LAST_NAME}),
+    {ok, _} = ?wocky_user:update(?BOB, #{handle => ?BOB_HANDLE,
+                                         avatar => ?BOB_AVATAR,
+                                         roles => [?ROLE1, ?ROLE2],
+                                         first_name => ?BOB_FIRST_NAME,
+                                         last_name => ?BOB_LAST_NAME}),
 
     Config2.
 

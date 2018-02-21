@@ -453,7 +453,7 @@ defmodule Wocky.UserSpec do
         end
 
         it "should return :ok" do
-          shared.result |> should(eq :ok)
+          shared.result |> should(be_ok_result())
         end
 
         it "should update the user's attributes" do
@@ -507,7 +507,7 @@ defmodule Wocky.UserSpec do
             end
 
             it "should return :ok" do
-              shared.result |> should(eq :ok)
+              shared.result |> should(be_ok_result())
             end
 
             it "should update the user's avatar" do
@@ -527,7 +527,7 @@ defmodule Wocky.UserSpec do
             end
 
             it "should return :ok" do
-              shared.result |> should(eq :ok)
+              shared.result |> should(be_ok_result())
             end
 
             it "should not change the user's avatar" do
@@ -555,7 +555,7 @@ defmodule Wocky.UserSpec do
             end
 
             it "should return :ok" do
-              shared.result |> should(eq :ok)
+              shared.result |> should(be_ok_result())
             end
 
             it "should update the user's avatar" do
@@ -972,21 +972,21 @@ defmodule Wocky.UserSpec do
     context "when no avatar is set" do
       it "should not delete the avatar when a new one is set" do
         User.update(shared.user.id, %{avatar: shared.avatar_url})
-        |> should(eq :ok)
+        |> should(be_ok_result())
 
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when a new one is set" do
         User.update(shared.user.id, %{first_name: Name.first_name()})
-        |> should(eq :ok)
+        |> should(be_ok_result())
 
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when the same one is set" do
         User.update(shared.user.id, %{avatar: shared.user.avatar})
-        |> should(eq :ok)
+        |> should(be_ok_result())
 
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
@@ -1004,21 +1004,21 @@ defmodule Wocky.UserSpec do
 
       it "should delete the avatar when a new one is set" do
         User.update(shared.user.id, %{avatar: shared.new_avatar_url})
-        |> should(eq :ok)
+        |> should(be_ok_result())
 
         Metadata.get(shared.avatar.id) |> should(be_nil())
       end
 
       it "should not delete the avatar when one is not set" do
         User.update(shared.user.id, %{first_name: Name.first_name()})
-        |> should(eq :ok)
+        |> should(be_ok_result())
 
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end
 
       it "should not delete the avatar when the same one is set" do
         User.update(shared.user.id, %{avatar: shared.user.avatar})
-        |> should(eq :ok)
+        |> should(be_ok_result())
 
         Metadata.get(shared.avatar.id) |> should_not(be_nil())
       end

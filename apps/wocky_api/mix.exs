@@ -47,6 +47,8 @@ defmodule WockyAPI.Mixfile do
     [
       {:wocky, in_umbrella: true},
 
+      {:absinthe_phoenix, "~> 1.4"},
+      {:absinthe_ecto, "~> 0.1.3"},
       {:cowboy, "~> 1.0"},
       {:honeybadger, "~> 0.6"},
       {:httpoison, "~> 0.13"},

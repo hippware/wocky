@@ -6,6 +6,7 @@ defmodule WockyAPI.AuthenticationTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Token
+  alias Wocky.User
 
   def put_auth_headers(conn, user, token) do
     conn
@@ -104,7 +105,7 @@ defmodule WockyAPI.AuthenticationTest do
     test "no user ID in URL, current user", context do
       conn =
         context.conn
-        |> assign(:current_user, ID.new())
+        |> assign(:current_user, %User{})
         |> check_owner_access
 
       refute conn.halted
@@ -120,22 +121,24 @@ defmodule WockyAPI.AuthenticationTest do
     end
 
     test "current user matches user ID in URL", _context do
-      id = ID.new()
+      user = Factory.build(:user)
 
       conn =
-        "/#{id}"
+        "/#{user.id}"
         |> setup_conn()
-        |> assign(:current_user, id)
+        |> assign(:current_user, user)
         |> check_owner_access
 
       refute conn.halted
     end
 
     test "current user does not match user ID in URL", _context do
+      user = Factory.build(:user)
+
       conn =
         "/#{ID.new()}"
         |> setup_conn()
-        |> assign(:current_user, ID.new())
+        |> assign(:current_user, user)
         |> check_owner_access
 
       assert conn.status == 403
