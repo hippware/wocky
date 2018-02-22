@@ -1,5 +1,5 @@
 %%% @doc Module replacing cyrsasl_plain's SASL PLAIN handling to add
-%%% our own custom Digits auth system
+%%% our own custom OAuth 2 auth system
 %%% See https://github.com/hippware/tr-wiki/wiki/User-registration-XMPP-protocol
 
 %%% Adopted from cyrsasl_plain.erl:
@@ -94,11 +94,11 @@ mech_step(Creds, ClientIn) ->
             {error, <<"bad-protocol">>}
     end.
 
-enable_digits_bypass() ->
-    ?confex:get_env(wocky_xmpp, enable_digits_bypass).
+enable_auth_bypass() ->
+    ?confex:get_env(wocky_xmpp, enable_auth_bypass).
 
 get_auth_bypass_prefixes(Opts) ->
-  case enable_digits_bypass() of
+  case enable_auth_bypass() of
     true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
     false -> []
   end.

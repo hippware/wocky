@@ -24,19 +24,17 @@
 all() ->
     [
      {group, new},
-     {group, existing},
-     {group, no_digits}
+     {group, existing}
     ].
 
 groups() ->
-    [{new, [], new_cases()},
-     {existing, [], existing_cases()},
-     {no_digits, [], no_digits_cases()}
+    [
+     {new, [], new_cases()},
+     {existing, [], existing_cases()}
     ].
 
 new_cases() ->
     [
-     new_user_digits,
      new_user_firebase,
      invalid_json,
      missing_field,
@@ -53,11 +51,6 @@ existing_cases() ->
      no_token,
      unauthorized_update,
      empty_phone_number
-    ].
-
-no_digits_cases() ->
-    [
-     digits_unavailable
     ].
 
 suite() ->
@@ -111,18 +104,6 @@ end_per_suite(Config) ->
     meck:unload(),
     escalus:end_per_suite(Config).
 
-init_per_group(no_digits, Config) ->
-    Config;
-init_per_group(_GroupName, Config) ->
-    fake_digits_server:start(true, ?PHONE_NUMBER),
-    Config.
-
-end_per_group(no_digits, Config) ->
-    Config;
-end_per_group(_GroupName, Config) ->
-    fake_digits_server:stop(),
-    Config.
-
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -133,11 +114,6 @@ end_per_testcase(CaseName, Config) ->
 %%--------------------------------------------------------------------
 %% mod_wocky_reg new user tests
 %%--------------------------------------------------------------------
-
-new_user_digits(Config) ->
-    Client = start_client(Config),
-    Stanza = request_stanza(request_data(digits, provider_data(digits))),
-    new_user_common(Config, Client, Stanza).
 
 new_user_firebase(Config) ->
     Client = start_client(Config),
@@ -215,24 +191,23 @@ invalid_json(Config) ->
 
 missing_field(Config) ->
     Client = start_client(Config),
-    Data = request_data(digits, provider_data(digits)),
+    Data = request_data(firebase, provider_data(firebase)),
     BrokenData = proplists:delete(provider, Data),
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
     assert_is_malformed_error(Result).
 
 unauthorized_new(Config) ->
-    fake_digits_server:stop(),
-    fake_digits_server:start(false, ?PHONE_NUMBER),
     Client = start_client(Config),
-    Stanza = request_stanza(request_data(digits, provider_data(digits))),
+    Stanza = request_stanza(
+               request_data(firebase, bogus_provider_data(firebase))),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_not_authorized(Result).
 
 invalid_auth_provider(Config) ->
     Client = start_client(Config),
-    Data = request_data(digits, provider_data(digits)),
-    BrokenData = [{provider, <<"NOTDigits">>} |
+    Data = request_data(firebase, provider_data(firebase)),
+    BrokenData = [{provider, <<"NOTFirebase">>} |
                    proplists:delete(provider, Data)],
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
@@ -240,8 +215,8 @@ invalid_auth_provider(Config) ->
 
 invalid_provider_data(Config) ->
     Client = start_client(Config),
-    Data = request_data(digits, provider_data(digits)),
-    BrokenData = [{provider_data, <<"NOTDigitsData">>} |
+    Data = request_data(firebase, provider_data(firebase)),
+    BrokenData = [{provider_data, <<"NOTFirebaseData">>} |
                    proplists:delete(provider_data, Data)],
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
@@ -253,17 +228,17 @@ invalid_provider_data(Config) ->
 
 bypass_prefix(Config) ->
     Client = start_client(Config),
-    ProviderData = provider_data(digits),
+    ProviderData = provider_data(firebase),
     BypassProviderData = [{userID, ?EXTERNAL_ID},
                           {phoneNumber, <<"+155566854">>} |
                           proplists:delete(phoneNumber, ProviderData)],
-    Stanza = request_stanza(request_data(digits, BypassProviderData)),
+    Stanza = request_stanza(request_data(firebase, BypassProviderData)),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_redirect(Result, false, true).
 
 update(Config) ->
     Client = start_client(Config),
-    Stanza = request_stanza(request_data(digits, provider_data(digits))),
+    Stanza = request_stanza(request_data(firebase, provider_data(firebase))),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_redirect(Result, false, true).
 
@@ -273,7 +248,7 @@ update_no_changes(Config) ->
 no_token(Config) ->
     Client = start_client(Config),
 
-    Data = request_data(digits, provider_data(digits)),
+    Data = request_data(firebase, provider_data(firebase)),
     NoTokenData = [{token, false} |
                    proplists:delete(token, Data)],
     NoTokenStanza = request_stanza(NoTokenData),
@@ -285,18 +260,10 @@ unauthorized_update(Config) ->
     unauthorized_new(Config).
 
 empty_phone_number(Config) ->
-    fake_digits_server:stop(),
-    fake_digits_server:start(true, <<>>),
     Client = start_client(Config),
-    Stanza = request_stanza(request_data(digits, provider_data(digits))),
+    Stanza = request_stanza(request_data(firebase, provider_data(firebase))),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_redirect(Result, false, true).
-
-digits_unavailable(Config) ->
-    Client = start_client(Config),
-    Stanza = request_stanza(request_data(digits, provider_data(digits))),
-    Result = escalus:send_and_wait(Client, Stanza),
-    assert_is_temp_failure(Result).
 
 
 %%--------------------------------------------------------------------
@@ -360,19 +327,6 @@ request_data(Provider, ProviderData) ->
      {token, true},
      {provider_data, {struct, ProviderData}}].
 
-provider_data(digits) ->
-    [{authTokenSecret, <<"vViH56F2f1sNi6RYZZeztDo8NoQMWxhGMDKAL0wCFcIUH">>},
-     {authToken, <<"701990807448920064-JxNX4i57y5Wp6xBDVjNwKB4ZYUcC8FK">>},
-     {'X-Auth-Service-Provider', list_to_binary(fake_digits_server:url())},
-     {'X-Verify-Credentials-Authorization',
-         <<"OAuth oauth_signature=\"%2FeT%2FOC%2F78Rij8QPEd3ghy%2FUOIbI%3D\""
-         ",oauth_nonce=\"944F1D89-161C-47E4-8730-41BD43BB164F\","
-         "oauth_timestamp=\"1456701445\",oauth_consumer_key="
-         "\"e527IQiWSXZ5WHNxROUZk87uV\",oauth_token="
-         "\"701990807448920064-JxNX4i57y5Wp6xBDVjNwKB4ZYUcC8FK\""
-         ",oauth_version=\"1.0\",oauth_signature_method=\"HMAC-SHA1\"">>
-     }];
-
 provider_data(firebase) ->
     Project = ?confex:get_env(wocky, firebase_project_id),
 
@@ -386,6 +340,17 @@ provider_data(firebase) ->
         ?joken:with_iss(<<?iss/binary, Project/binary>>),
         ?joken:with_sub(integer_to_binary(rand:uniform(10000))),
         ?joken:with_claim(<<"phone_number">>, <<"+15551231234">>),
+        ?joken:with_signer(?joken:rs256(?jwk:from_pem(private_key()))),
+        ?joken:sign(),
+        ?joken:get_compact()
+       )
+     }].
+
+bogus_provider_data(firebase) ->
+    [{jwt,
+      fun_chain:first(
+        ?joken:token(),
+        ?joken:with_header_arg(<<"kid">>, ?key_id),
         ?joken:with_signer(?joken:rs256(?jwk:from_pem(private_key()))),
         ?joken:sign(),
         ?joken:get_compact()
