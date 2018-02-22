@@ -26,6 +26,7 @@ data:
   WOCKY_DB_NAME: wocky_us1
   WOCKY_DB_USER: postgres
   WOCKY_DB_WATCHER_QUEUE: wocky-us1-db-watcher.fifo
+  WOCKY_DB_WATCHER_REGION: "us-west-2"
   AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
   HONEYBADGER_ENV: us1
   CLOUDWATCH_KEY_ID: AKIAJUCGS5NJU6ALDHKA
@@ -37,4 +38,3 @@ data:
   REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
   REDIS_PORT: "6379"
   REDIS_DB: "1"
-  WOCKY_DB_WATCHER_REGION: "us-west-2"
