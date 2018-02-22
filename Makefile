@@ -8,6 +8,7 @@ IMAGE_NAME   ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
 IMAGE_TAG    ?= $(shell git rev-parse HEAD)
 WOCKY_ENV    ?= testing
 KUBE_NS      := wocky-$(WOCKY_ENV)
+WATCHER_SHA  := 95a08ef670d589a46c764ce060cee1feb95f4f1e
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
@@ -60,7 +61,8 @@ push: ## Push the Docker image to ECR
 
 deploy: ## Deploy the image to the cluster
 	@KUBECONFIG=~/.kube/config REVISION=$(IMAGE_TAG) \
-		kubernetes-deploy $(KUBE_NS) tectonic --template-dir=k8s/$(WOCKY_ENV)
+		kubernetes-deploy $(KUBE_NS) tectonic --template-dir=k8s/$(WOCKY_ENV) \
+			--bindings=watcher_sha=$(WATCHER_SHA)
 
 shipit: build push deploy ## Build, push and deploy the image
 
