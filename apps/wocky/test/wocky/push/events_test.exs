@@ -12,6 +12,7 @@ defmodule Wocky.Push.EventsTest do
   @test_handle "test_handle"
   @test_title "test_title"
   @test_body "test body"
+  @test_server "localhost"
 
   setup do
     u = Factory.build(:user, handle: @test_handle)
@@ -37,8 +38,9 @@ defmodule Wocky.Push.EventsTest do
 
     test "returns an appropriate URI", %{user: u, bot: b} do
       uri = Event.uri(%BotPerimeterEvent{user: u, bot: b, event: :exit})
-      assert uri =~ "/bot/"
-      assert uri =~ b.id
+      assert uri =~ "/bot"
+      assert uri =~ "/#{@test_server}"
+      assert uri =~ "/#{b.id}"
     end
   end
 
@@ -55,19 +57,15 @@ defmodule Wocky.Push.EventsTest do
 
     test "returns an appropriate URI", %{user: u, bot: b} do
       uri = Event.uri(%BotShareEvent{from: u, bot: b})
-      assert uri =~ "/bot/"
-      assert uri =~ b.id
+      assert uri =~ "/bot"
+      assert uri =~ "/#{@test_server}"
+      assert uri =~ "/#{b.id}"
     end
   end
 
   describe "NewMessageEvent" do
     setup %{user: u} do
-      {:ok, _} = Repo.insert(u)
-
-      oj = Factory.new_jid()
-      c = Factory.insert(:conversation, user_id: u.id, other_jid: oj)
-
-      {:ok, cid: c.id, other_jid: oj}
+      {:ok, sender: Factory.build(:user)}
     end
 
     test "uses 'Someone' when there is no user handle" do
@@ -85,10 +83,11 @@ defmodule Wocky.Push.EventsTest do
       assert msg =~ @test_body
     end
 
-    test "returns an appropriate URI", %{user: u, other_jid: oj, cid: cid} do
-      uri = Event.uri(%NewMessageEvent{to: u, from: oj, conversation_id: cid})
-      assert uri =~ "/conversation/"
-      assert uri =~ "/#{Integer.to_string(cid)}"
+    test "returns an appropriate URI", %{user: u, sender: sender} do
+      uri = Event.uri(%NewMessageEvent{to: u, from: sender})
+      assert uri =~ "/conversation"
+      assert uri =~ "/#{@test_server}"
+      assert uri =~ "/#{sender.id}"
     end
   end
 

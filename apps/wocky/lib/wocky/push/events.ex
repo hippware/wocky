@@ -47,10 +47,6 @@ defmodule Wocky.Push.Events do
     defp uri_prefix do
       Confex.get_env(:wocky, Wocky.Push)[:uri_prefix]
     end
-
-    @doc false
-    def stringify_id(nil), do: nil
-    def stringify_id(id), do: Integer.to_string(id)
   end
 
   defmodule BotPerimeterEvent do
@@ -131,8 +127,8 @@ defmodule Wocky.Push.Events do
       end
     end
 
-    def uri(%NewMessageEvent{conversation_id: id}) do
-      make_uri(:conversation, stringify_id(id))
+    def uri(%NewMessageEvent{from: from}) do
+      make_uri(:conversation, from.id)
     end
   end
 
