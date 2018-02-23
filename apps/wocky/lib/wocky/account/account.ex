@@ -7,11 +7,14 @@ defmodule Wocky.Account do
   import Ecto.Query, warn: false
   import Ecto.Changeset
 
+  alias Wocky.Account.Token
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
 
   require Logger
+
+  @type token :: Token.token()
 
   @max_register_retries 5
 
@@ -141,6 +144,32 @@ defmodule Wocky.Account do
       []
     else
       [username: "not a valid UUID"]
+    end
+  end
+
+  # ====================================================================
+  # Token management
+
+  @spec generate_token() :: Token.token()
+  def generate_token, do: Token.generate()
+
+  @spec assign_token(User.id(), User.resource()) ::
+          {:ok, {Token.token(), Token.expiry()}}
+  def assign_token(user_id, resource), do: Token.assign(user_id, resource)
+
+  @spec release_token(User.id(), User.resource()) :: :ok
+  def release_token(user_id, resource), do: Token.release(user_id, resource)
+
+  # ====================================================================
+  # Authentication
+
+  @spec authenticate_with_token(User.id(), Token.token()) ::
+          {:ok, User.t()} | {:error, any}
+  def authenticate_with_token(user_id, token) do
+    if Token.valid?(user_id, token) do
+      {:ok, Repo.get(User, user_id)}
+    else
+      {:error, :invalid_token}
     end
   end
 end

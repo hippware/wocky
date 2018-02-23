@@ -236,7 +236,7 @@ make_resource() ->
     {ok, <<"cli-resource-", Suffix/binary>>}.
 
 get_token(User, Resource) ->
-    {ok, {Token, _Expiry}} = ?wocky_token:assign(User, Resource),
+    {ok, {Token, _Expiry}} = ?wocky_account:assign_token(User, Resource),
     {ok, Token}.
 
 %%%===================================================================

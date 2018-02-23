@@ -8,6 +8,8 @@ defmodule Wocky.UserSpec do
   alias Faker.Lorem
   alias Faker.Name
   alias Timex.Duration
+  alias Wocky.Account
+  alias Wocky.Account.Token
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Email
@@ -15,7 +17,6 @@ defmodule Wocky.UserSpec do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Token
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
@@ -451,7 +452,7 @@ defmodule Wocky.UserSpec do
 
     describe "delete/1" do
       before do
-        {:ok, _} = Token.assign(shared.id, ID.new())
+        {:ok, _} = Account.assign_token(shared.id, ID.new())
         result = User.delete(shared.id)
         {:ok, result: result}
       end

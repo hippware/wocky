@@ -80,7 +80,7 @@ create_or_update_user(Provider, ExternalId, PhoneNumber) ->
 maybe_get_token(false, _, _) ->
     {ok, {undefined, undefined}};
 maybe_get_token(true, User, Resource) ->
-    {ok, {Token, Expiry}} = ?wocky_token:assign(User, Resource),
+    {ok, {Token, Expiry}} = ?wocky_account:assign_token(User, Resource),
     {ok, {Token, ?wocky_timestamp:to_string(Expiry)}}.
 
 prepopulate_user(UserID) ->

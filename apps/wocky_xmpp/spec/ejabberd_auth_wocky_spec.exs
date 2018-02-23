@@ -2,8 +2,8 @@ defmodule :ejabberd_auth_wocky_spec do
   use ESpec, async: true, sandbox: true
   use SandboxHelper
 
+  alias Wocky.Account
   alias Wocky.Repo.ID
-  alias Wocky.Token
 
   before do
     user = ID.new()
@@ -12,7 +12,7 @@ defmodule :ejabberd_auth_wocky_spec do
     {:ok, _} =
       :ejabberd_auth_wocky.try_register(user, shared.server, "password")
 
-    {:ok, {token, _}} = Token.assign(user, resource)
+    {:ok, {token, _}} = Account.assign_token(user, resource)
     {:ok, user: user, resource: resource, token: token}
   end
 
@@ -24,8 +24,9 @@ defmodule :ejabberd_auth_wocky_spec do
     end
 
     it "should return false when the user exists but the token doesn't match" do
+      token = Account.generate_token()
       shared.user
-      |> :ejabberd_auth_wocky.check_password(shared.server, Token.generate())
+      |> :ejabberd_auth_wocky.check_password(shared.server, token)
       |> should(be_false())
     end
 

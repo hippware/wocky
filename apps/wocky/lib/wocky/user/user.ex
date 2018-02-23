@@ -10,6 +10,7 @@ defmodule Wocky.User do
   import OK, only: [~>>: 2]
 
   alias Ecto.Queryable
+  alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -20,7 +21,6 @@ defmodule Wocky.User do
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.RosterItem
-  alias Wocky.Token, as: AuthToken
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User.Avatar
   alias Wocky.User.BotEvent

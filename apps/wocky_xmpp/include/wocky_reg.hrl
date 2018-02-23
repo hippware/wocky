@@ -9,7 +9,7 @@
           server        :: ejabberd:lserver(),
           provider      :: binary(),
           is_new        :: boolean(),
-          token         :: ?wocky_token:token() | undefined,
+          token         :: ?wocky_account:token() | undefined,
           token_expiry  :: binary(),
           external_id   :: binary()
          }).

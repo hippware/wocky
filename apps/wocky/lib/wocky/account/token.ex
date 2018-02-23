@@ -1,4 +1,4 @@
-defmodule Wocky.Token do
+defmodule Wocky.Account.Token do
   @moduledoc "Handles generation and validation of authentication tokens."
 
   use Wocky.Repo.Schema
@@ -10,7 +10,6 @@ defmodule Wocky.Token do
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
   alias Wocky.User
-  alias __MODULE__
 
   @foreign_key_type :binary_id
   @primary_key false
