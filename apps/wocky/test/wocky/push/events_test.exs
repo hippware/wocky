@@ -64,7 +64,7 @@ defmodule Wocky.Push.EventsTest do
   end
 
   describe "NewMessageEvent" do
-    setup %{user: u} do
+    setup do
       {:ok, sender: Factory.build(:user)}
     end
 
