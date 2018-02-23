@@ -95,21 +95,19 @@ defmodule Wocky.Watcher.Client do
   end
 
   defp forward_event(json_event, state) do
-    try do
-      {object, event} = EventDecoder.from_json(json_event, state.table_map)
+    {object, event} = EventDecoder.from_json(json_event, state.table_map)
 
-      state.subscribers
-      |> Map.get({object, event.action}, [])
-      |> Enum.each(fn {fun, _ref} -> fun.(event) end)
-    rescue
-      error ->
-        Honeybadger.notify(
-          "DB Watcher callback crash",
-          %{event: inspect(json_event),
-            error: inspect(error)},
-            :erlang.get_stacktrace()
-        )
-    end
+    state.subscribers
+    |> Map.get({object, event.action}, [])
+    |> Enum.each(fn {fun, _ref} -> fun.(event) end)
+  rescue
+    error ->
+      Honeybadger.notify(
+        "DB Watcher callback crash",
+        %{event: inspect(json_event),
+          error: inspect(error)},
+          :erlang.get_stacktrace()
+      )
   end
 
   defp delete_ref({key, val}, ref) do
