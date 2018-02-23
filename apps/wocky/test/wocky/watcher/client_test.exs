@@ -97,6 +97,22 @@ defmodule Wocky.Wachter.ClientTest do
     refute_receive _, 200
   end
 
+  test "crash handler" do
+    client = Process.whereis(Client)
+    {:ok, _ref} = Client.subscribe(Bot, :insert, &crash(&1))
+
+    Factory.insert(:bot)
+
+    :timer.sleep(500)
+    client2 = Process.whereis(Client)
+    assert client == client2
+    assert Process.alive?(client)
+  end
+
+  defp crash(_event) do
+    :lists.last([])
+  end
+
   defp await_end(pid) do
     if Process.alive?(pid) do
       await_end(pid)

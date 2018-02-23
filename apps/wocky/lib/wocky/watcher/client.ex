@@ -18,7 +18,6 @@ defmodule Wocky.Watcher.Client do
 
   alias Wocky.Watcher.EventDecoder
   alias Wocky.Watcher.Poller
-  alias WockyDBWatcher.Event
 
   def start_link, do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
@@ -60,7 +59,7 @@ defmodule Wocky.Watcher.Client do
   end
 
   def handle_call({:send, events}, _from, state) do
-    forward_events(events, state)
+    Enum.each(events, &forward_event(&1, state))
     {:reply, :ok, state}
   end
 
@@ -95,16 +94,22 @@ defmodule Wocky.Watcher.Client do
     {:reply, :ok, %{state | enabled: enable}}
   end
 
-  defp forward_events(events, state) do
-    events
-    |> Enum.map(&EventDecoder.from_json(&1, state.table_map))
-    |> Enum.each(&forward_event(&1, state.subscribers))
-  end
+  defp forward_event(json_event, state) do
+    try do
+      {object, event} = EventDecoder.from_json(json_event, state.table_map)
 
-  defp forward_event({object, %Event{action: action} = event}, subscribers) do
-    subscribers
-    |> Map.get({object, action}, [])
-    |> Enum.each(fn {fun, _ref} -> fun.(event) end)
+      state.subscribers
+      |> Map.get({object, event.action}, [])
+      |> Enum.each(fn {fun, _ref} -> fun.(event) end)
+    rescue
+      error ->
+        Honeybadger.notify(
+          "DB Watcher callback crash",
+          %{event: inspect(json_event),
+            error: inspect(error)},
+            :erlang.get_stacktrace()
+        )
+    end
   end
 
   defp delete_ref({key, val}, ref) do
