@@ -330,6 +330,7 @@ defmodule Wocky.User do
   @spec update(id | t, map) :: {:ok, t} | {:error, term}
   def update(%User{} = user, fields) do
     changeset = changeset(user, fields)
+
     case Repo.update(changeset) do
       {:ok, user} ->
         maybe_send_welcome(user)
@@ -340,6 +341,7 @@ defmodule Wocky.User do
         error
     end
   end
+
   def update(id, fields) do
     case Repo.get(User, id) do
       nil ->
