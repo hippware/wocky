@@ -7,16 +7,24 @@ defmodule Wocky.Account do
   import Ecto.Query, warn: false
   import Ecto.Changeset
 
-  alias Wocky.Account.Token
+  alias Timex.Duration
+  alias Wocky.Account.{Firebase, Token}
+  alias Wocky.HomeStreamItem
+  alias Wocky.InitialContact
+  alias Wocky.RosterItem
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.User.HSPrepop
 
   require Logger
 
   @type token :: Token.token()
 
   @max_register_retries 5
+
+  @default_hs_prepop_days 28
+  @default_hs_min_prepop 10
 
   @changeset_fields [
     :username,
@@ -50,14 +58,64 @@ defmodule Wocky.Account do
     |> Repo.insert()
   end
 
-  @doc """
-  Creates or updates a user based on the external authentication ID and
-  phone number.
-  """
-  @spec register_external(binary, binary, binary, binary) ::
-          {:ok, {binary, binary, boolean}} | no_return
-  def register_external(server, provider, external_id, phone_number) do
-    do_register(server, provider, external_id, phone_number, 0)
+  # ====================================================================
+  # Token management
+
+  @spec generate_token() :: Token.token()
+  def generate_token, do: Token.generate()
+
+  @spec assign_token(User.id(), User.resource()) ::
+          {:ok, {Token.token(), Token.expiry()}}
+  def assign_token(user_id, resource), do: Token.assign(user_id, resource)
+
+  @spec release_token(User.id(), User.resource()) :: :ok
+  def release_token(user_id, resource), do: Token.release(user_id, resource)
+
+  # ====================================================================
+  # Authentication
+
+  @spec authenticate_with_token(User.id(), Token.token()) ::
+          {:ok, User.t()} | {:error, any}
+  def authenticate_with_token(user_id, token) do
+    if Token.valid?(user_id, token) do
+      {:ok, Repo.get(User, user_id)}
+    else
+      {:error, :invalid_token}
+    end
+  end
+
+  @spec authenticate_with_digits(binary, binary, binary) ::
+          {:ok, User.t()} | {:error, any}
+  def authenticate_with_digits(server, external_id, phone_number) do
+    if has_bypass_prefix(phone_number) do
+      on_authenticated(server, "digits", external_id, phone_number)
+    else
+      {:error, :invalid_user}
+    end
+  end
+
+  defp has_bypass_prefix(phone_number) do
+    if Application.get_env(:wocky, :enable_auth_bypass) do
+      prefixes = Application.get_env(:wocky, :auth_bypass_prefixes)
+      String.starts_with?(phone_number, prefixes)
+    end
+  end
+
+  @spec authenticate_with_firebase(binary, binary) ::
+          {:ok, User.t()} | {:error, any}
+  def authenticate_with_firebase(server, jwt) do
+    case Firebase.verify(jwt) do
+      {:ok, {external_id, phone_number}} ->
+        on_authenticated(server, "firebase", external_id, phone_number)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  @doc false
+  def on_authenticated(server, provider, external_id, phone_number) do
+    on_authenticated(server, provider, external_id, phone_number, 0)
   end
 
   # There's scope for a race condition here. Since the database uses "read
@@ -70,35 +128,29 @@ defmodule Wocky.Account do
   # what the heck is even going on?). Either way, if we fail after 5 retries
   # there's something seriously weird going on and raising an exception
   # is a pretty reasonable response.
-  defp do_register(_, _, _, _, @max_register_retries) do
+  defp on_authenticated(_, _, _, _, @max_register_retries) do
     raise "Exceeded maximum registration retries"
   end
 
-  defp do_register(
-         server,
-         provider,
-         external_id,
-         phone_number,
-         retries
-       ) do
+  defp on_authenticated(server, provider, external_id, phone_number, retries) do
     case Repo.get_by(User, external_id: external_id, provider: provider) do
       nil ->
         case Repo.get_by(User, phone_number: phone_number) do
           nil ->
             register_new(server, provider, external_id, phone_number, retries)
 
-          user ->
-            User.update(user.id, %{
+          orig_user ->
+            {:ok, user} = User.update(orig_user, %{
               provider: provider,
               external_id: external_id,
               phone_number: phone_number
             })
 
-            {:ok, {user.id, user.server, false}}
+            {:ok, {user, false}}
         end
 
       user ->
-        {:ok, {user.id, user.server, false}}
+        {:ok, {user, false}}
     end
   end
 
@@ -113,12 +165,13 @@ defmodule Wocky.Account do
 
     case user_data |> changeset() |> Repo.insert() do
       {:ok, user} ->
-        {:ok, {user.id, user.server, true}}
+        prepopulate_user(user.id)
+        {:ok, {user, true}}
 
       {:error, e} ->
         Logger.debug(fn -> "registration failed with error: #{inspect(e)}" end)
 
-        do_register(
+        on_authenticated(
           server,
           provider,
           external_id,
@@ -147,29 +200,72 @@ defmodule Wocky.Account do
     end
   end
 
-  # ====================================================================
-  # Token management
+  defp prepopulate_user(user_id) do
+    set_initial_contacts(user_id)
+    prepopulate_home_stream(user_id)
+  end
 
-  @spec generate_token() :: Token.token()
-  def generate_token, do: Token.generate()
+  defp set_initial_contacts(user_id) do
+    InitialContact.get()
+    |> Enum.each(&set_initial_contact(user_id, &1))
+  end
 
-  @spec assign_token(User.id(), User.resource()) ::
-          {:ok, {Token.token(), Token.expiry()}}
-  def assign_token(user_id, resource), do: Token.assign(user_id, resource)
+  defp set_initial_contact(user_id, %{user: user, type: :followee}) do
+    set_initial_contact(user_id, user, :to, :from)
+  end
 
-  @spec release_token(User.id(), User.resource()) :: :ok
-  def release_token(user_id, resource), do: Token.release(user_id, resource)
+  defp set_initial_contact(user_id, %{user: user, type: :follower}) do
+    set_initial_contact(user_id, user, :from, :to)
+  end
 
-  # ====================================================================
-  # Authentication
+  defp set_initial_contact(user_id, %{user: user, type: :friend}) do
+    set_initial_contact(user_id, user, :both, :both)
+  end
 
-  @spec authenticate_with_token(User.id(), Token.token()) ::
-          {:ok, User.t()} | {:error, any}
-  def authenticate_with_token(user_id, token) do
-    if Token.valid?(user_id, token) do
-      {:ok, Repo.get(User, user_id)}
-    else
-      {:error, :invalid_token}
-    end
+  defp set_initial_contact(user_id, followee, usub, fsub) do
+    user_contact = %{
+      user_id: user_id,
+      contact_id: followee.id,
+      name: followee.handle,
+      ask: :none,
+      subscription: usub,
+      groups: ["__welcome__", "__new__"]
+    }
+
+    init_contact = %{
+      user_id: followee.id,
+      contact_id: user_id,
+      name: "",
+      ask: :none,
+      subscription: fsub,
+      groups: ["__welcomed__", "__new__"]
+    }
+
+    RosterItem.put(user_contact)
+    RosterItem.put(init_contact)
+  end
+
+  defp prepopulate_home_stream(user_id) do
+    prepopulate_from_user(user_id, HSPrepop.user())
+  end
+
+  defp prepopulate_from_user(_, nil), do: :ok
+
+  defp prepopulate_from_user(user_id, %{id: source_id}) do
+    period =
+      Confex.get_env(
+        :wocky_xmpp,
+        :hs_prepopulation_days,
+        @default_hs_prepop_days
+      )
+
+    min = Confex.get_env(:wocky, :hs_prepopulation_min, @default_hs_min_prepop)
+
+    HomeStreamItem.prepopulate_from(
+      user_id,
+      source_id,
+      Duration.from_days(period),
+      min
+    )
   end
 end

@@ -14,12 +14,13 @@ defmodule Wocky.AccountsTest do
     test "should pass with valid attributes" do
       id = ID.new()
 
-      changeset = Account.changeset(%{
-        username: id,
-        server: "foo",
-        provider: "local",
-        external_id: "bar"
-      })
+      changeset =
+        Account.changeset(%{
+          username: id,
+          server: "foo",
+          provider: "local",
+          external_id: "bar"
+        })
 
       assert changeset.valid?
       assert changeset.changes.id == changeset.changes.username
@@ -36,11 +37,12 @@ defmodule Wocky.AccountsTest do
     end
 
     test "should fail with an invalid username" do
-      changeset = Account.changeset(%{
-        username: "alice",
-        server: "foo",
-        external_id: "bar"
-      })
+      changeset =
+        Account.changeset(%{
+          username: "alice",
+          server: "foo",
+          external_id: "bar"
+        })
 
       refute changeset.valid?
       assert errors_on(changeset)[:username]
@@ -68,54 +70,62 @@ defmodule Wocky.AccountsTest do
     end
   end
 
-  describe "registration with external auth" do
+  describe "post authentication process" do
     setup do
       user = Factory.insert(:user, resource: "testing")
-
-      {:ok,
-       id: user.id,
-       external_id: user.external_id,
-       phone_number: user.phone_number}
+      {:ok, id: user.id, user: user}
     end
 
-    test "when the user already exists with the same provider/extID",
-        %{id: id, external_id: external_id} do
-      assert {:ok, {^id, @test_server, false}} =
-        Account.register_external(
-          "another_server",
-          "local",
-          external_id,
-          "+15551234567"
-        )
+    test "when a user with the same provider/ID exists", %{user: user} do
+      assert {:ok, {%User{} = new_user, false}} =
+               Account.on_authenticated(
+                 "a_server",
+                 user.provider,
+                 user.external_id,
+                 Factory.phone_number()
+               )
+
+      assert new_user.id == user.id
+      assert new_user.server == user.server
+      assert new_user.provider == user.provider
+      assert new_user.external_id == user.external_id
+      assert new_user.phone_number == user.phone_number
     end
 
-    test "when the user already exists with the same phone number",
-        %{id: id, phone_number: phone_number} do
+    test "when a user with the same phone number exists", %{user: user} do
       external_id = Faker.Code.isbn13()
 
-      assert {:ok, {^id, @test_server, false}} =
-        Account.register_external(
-          "another_server",
-          "firebase",
-          external_id,
-          phone_number
-        )
+      assert {:ok, {%User{} = new_user, false}} =
+               Account.on_authenticated(
+                 "a_server",
+                 "test_provider",
+                 external_id,
+                 user.phone_number
+               )
 
-      user = Repo.get_by(User, id: id)
-      assert user.provider == "firebase"
-      assert user.external_id == external_id
+      assert new_user.id == user.id
+      assert new_user.server == user.server
+      assert new_user.provider == "test_provider"
+      assert new_user.external_id == external_id
+      assert new_user.phone_number == user.phone_number
     end
 
     test "when the user does not exist" do
-      assert {:ok, {result_id, @test_server, true}} =
-        Account.register_external(
-          @test_server,
-          "firebase",
-          ID.new(),
-          "+15551234567"
-        )
+      external_id = Faker.Code.isbn13()
+      phone_number = Factory.phone_number()
 
-      assert Repo.get(User, result_id)
+      assert {:ok, {%User{} = new_user, true}} =
+               Account.on_authenticated(
+                 "a_server",
+                 "test_provider",
+                 external_id,
+                 phone_number
+               )
+
+      assert new_user.server == "a_server"
+      assert new_user.provider == "test_provider"
+      assert new_user.external_id == external_id
+      assert new_user.phone_number == phone_number
     end
   end
 end

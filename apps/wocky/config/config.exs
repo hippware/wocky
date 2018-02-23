@@ -33,6 +33,8 @@ config :wocky,
 
   # Firebase
   firebase_project_id: "my-project-1480497595993",
+  enable_auth_bypass: {:system, :boolean, "WOCKY_ENABLE_BYPASS", true},
+  auth_bypass_prefixes: ["+1555"],
 
   # Welcome email
   welcome_email_template: "official_tr_welcome_email",

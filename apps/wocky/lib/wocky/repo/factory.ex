@@ -177,7 +177,7 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  defp phone_number do
+  def phone_number do
     "+1555#{Phone.area_code()}#{Phone.extension()}"
   end
 
