@@ -8,7 +8,7 @@ IMAGE_NAME   ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
 IMAGE_TAG    ?= $(shell git rev-parse HEAD)
 WOCKY_ENV    ?= testing
 KUBE_NS      := wocky-$(WOCKY_ENV)
-WATCHER_SHA  := 2d25cc335275889dba8a61fadb671cdf38ba51bc
+WATCHER_SHA  := 6bcd4835781b3e3dbe735664ebb5455c375f8b24
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
