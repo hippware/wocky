@@ -19,17 +19,14 @@ defmodule Wocky.User do
   alias Wocky.Index
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
-  alias Wocky.Repo.ID
   alias Wocky.RosterItem
   alias Wocky.Token, as: AuthToken
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User.Avatar
   alias Wocky.User.BotEvent
   alias Wocky.User.Location
-  alias __MODULE__
 
   @primary_key {:id, :binary_id, autogenerate: false}
-
   schema "users" do
     # User ID (userpart of JID)
     field :username, :string
@@ -105,15 +102,6 @@ defmodule Wocky.User do
           welcome_sent: boolean
         }
 
-  @register_fields [
-    :username,
-    :server,
-    :provider,
-    :external_id,
-    :phone_number,
-    :password,
-    :pass_details
-  ]
   @update_fields [
     :handle,
     :avatar,
@@ -125,7 +113,6 @@ defmodule Wocky.User do
     :external_id,
     :provider
   ]
-  @max_register_retries 5
 
   @min_handle_len 3
   @max_handle_len 16
@@ -152,114 +139,6 @@ defmodule Wocky.User do
     case Repo.get(User, id) do
       nil -> nil
       user -> %User{user | resource: resource}
-    end
-  end
-
-  @doc """
-  Creates a new user with a password.
-  Used for testing only.
-  """
-  @spec register(username, server, binary, binary) :: {:ok, t} | {:error, any}
-  def register(username, server, password, pass_details) do
-    %{
-      username: username,
-      server: server,
-      provider: "local",
-      external_id: username,
-      password: password,
-      pass_details: pass_details
-    }
-    |> register_changeset()
-    |> Repo.insert()
-  end
-
-  @doc """
-  Creates or updates a user based on the external authentication ID and
-  phone number.
-  """
-  @spec register_external(server, provider, external_id, phone_number) ::
-          {:ok, {username, server, boolean}} | no_return
-  def register_external(server, provider, external_id, phone_number) do
-    {:ok, do_register(server, provider, external_id, phone_number, 0)}
-  end
-
-  # There's scope for a race condition here. Since the database uses "read
-  # committed"
-  # (see https://www.postgresql.org/docs/current/static/transaction-iso.html)
-  # we can't SELECT then INSERT and assume something hasn't been inserted
-  # in the interim, even in a transaction. Thus we implement a retry system
-  # here - if the user was inserted after the SELECT, the next time around it
-  # should work fine (unless it gets deleted in the interim in which case
-  # what the heck is even going on?). Either way, if we fail after 5 retries
-  # there's something seriously weird going on and raising an exception
-  # is a pretty reasonable response.
-  defp do_register(_, _, _, _, @max_register_retries) do
-    raise "Exceeded maximum register retries"
-  end
-
-  defp do_register(server, provider, external_id, phone_number, retries) do
-    case Repo.get_by(User, external_id: external_id, provider: provider) do
-      nil ->
-        case Repo.get_by(User, phone_number: phone_number) do
-          nil ->
-            register_new(server, provider, external_id, phone_number, retries)
-
-          user ->
-            __MODULE__.update(user.id, %{
-              provider: provider,
-              external_id: external_id,
-              phone_number: phone_number
-            })
-
-            {user.username, user.server, false}
-        end
-
-      user ->
-        {user.username, user.server, false}
-    end
-  end
-
-  defp register_new(server, provider, external_id, phone_number, retries) do
-    user = %{
-      username: ID.new(),
-      server: server,
-      provider: provider,
-      external_id: external_id,
-      phone_number: phone_number
-    }
-
-    result =
-      user
-      |> register_changeset()
-      |> Repo.insert()
-
-    case result do
-      {:ok, _} ->
-        {user.username, user.server, true}
-
-      {:error, e} ->
-        Logger.debug(fn -> "registration failed with error: #{inspect(e)}" end)
-
-        do_register(server, provider, external_id, phone_number, retries + 1)
-    end
-  end
-
-  def register_changeset(params) do
-    # TODO
-    %User{}
-    |> cast(params, @register_fields)
-    |> validate_required([:username, :server, :provider, :external_id])
-    |> validate_format(:phone_number, ~r//)
-    |> validate_change(:username, &validate_username/2)
-    |> put_change(:id, params[:username])
-    |> unique_constraint(:external_id)
-  end
-
-  defp validate_username(:username, username) do
-    if ID.valid?(username) do
-      []
-    else
-      [username: "not a valid UUID"]
     end
   end
 

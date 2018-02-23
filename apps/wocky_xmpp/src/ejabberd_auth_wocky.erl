@@ -101,7 +101,7 @@ check_password(LUser, LServer, Password, Digest, DigestGen) ->
 try_register(LUser, LServer, Password) ->
     Username = mongoose_rdbms:escape(LUser),
     {Pwd, Details} = prepare_password(LServer, Password),
-    ?wocky_user:register(Username, LServer, Pwd, Details).
+    ?wocky_account:register(Username, LServer, Pwd, Details).
 
 -spec dirty_get_registered_users() -> [ejabberd:simple_bare_jid()].
 dirty_get_registered_users() ->
