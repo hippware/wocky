@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.2.23+r433c862
+
 * Update to Elixir 1.6 (PR #1246).
 * Code formatting changes (PR #1253)
 * Build infrastructure changes (PR #1254)
@@ -18,6 +20,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Dialyzer fixes (PR #1273)
 * Add extra tests for HS notifications (PR #1274)
 * Small fixes for dev mode (PR #1277)
+* Prototype a GraphQL API within Wocky using Absinthe (#1278)
+* Add deployment for wocky watcher (PR #1282)
+  * Watcher deployment fixes (PR #1283, PR #1284, PR #1286)
 
 
 # 2018.1.17+r1173119
