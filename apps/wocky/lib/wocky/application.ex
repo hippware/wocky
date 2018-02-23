@@ -25,7 +25,7 @@ defmodule Wocky.Application do
           worker(Wocky.Repo, []),
           worker(Wocky.Index, []),
           worker(Wocky.Push.Sandbox, []),
-          worker(Wocky.Auth.FirebaseKeyManager, []),
+          worker(Wocky.Account.FirebaseKeyManager, []),
           worker(Wocky.Watcher.Client, [])
         ],
         strategy: :one_for_one,

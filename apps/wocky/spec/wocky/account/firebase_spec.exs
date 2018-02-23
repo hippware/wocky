@@ -1,12 +1,12 @@
-defmodule Wocky.Auth.FirebaseSpec do
+defmodule Wocky.Account.FirebaseSpec do
   use ESpec
 
   import Joken
 
   alias JOSE.JWK
   alias Timex.Duration
-  alias Wocky.Auth.Firebase
-  alias Wocky.Auth.FirebaseKeyManager
+  alias Wocky.Account.Firebase
+  alias Wocky.Account.FirebaseKeyManager
 
   @key_id "c947c408c8dd053f7e13117c4e00f0b2b16dc789"
 
@@ -176,20 +176,17 @@ defmodule Wocky.Auth.FirebaseSpec do
       }
       |> Map.merge(opts)
 
-    jwt =
-      %{}
-      |> token
-      |> with_header_arg("kid", params[:kid])
-      |> with_exp(params[:exp])
-      |> with_iat(params[:iat])
-      |> with_aud(params[:aud])
-      |> with_iss(params[:iss])
-      |> with_sub(params[:sub])
-      |> with_claim("phone_number", params[:phone_number])
-      |> with_signer(rs256(JWK.from_pem(params[:key])))
-      |> sign
-      |> get_compact
-
-    %{"jwt" => jwt}
+    %{}
+    |> token
+    |> with_header_arg("kid", params[:kid])
+    |> with_exp(params[:exp])
+    |> with_iat(params[:iat])
+    |> with_aud(params[:aud])
+    |> with_iss(params[:iss])
+    |> with_sub(params[:sub])
+    |> with_claim("phone_number", params[:phone_number])
+    |> with_signer(rs256(JWK.from_pem(params[:key])))
+    |> sign
+    |> get_compact
   end
 end

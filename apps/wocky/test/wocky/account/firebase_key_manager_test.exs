@@ -1,8 +1,8 @@
-defmodule Wocky.Auth.FirebaseKeyManagerTest do
+defmodule Wocky.Account.FirebaseKeyManagerTest do
   use ExUnit.Case, async: false
   use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
-  import Wocky.Auth.FirebaseKeyManager
+  import Wocky.Account.FirebaseKeyManager
 
   @id1 "3450b0ba9e31722e090ed2135bcdb7c177a32f27"
 

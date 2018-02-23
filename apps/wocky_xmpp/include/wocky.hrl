@@ -40,7 +40,7 @@
 -define(NS_USER,          <<"hippware.com/hxep/user">>).
 
 %% Elixir module names
--define(wocky_firebase,          'Elixir.Wocky.Auth.Firebase').
+-define(wocky_firebase,          'Elixir.Wocky.Account.Firebase').
 -define(wocky_blocking,          'Elixir.Wocky.Blocking').
 -define(wocky_bot,               'Elixir.Wocky.Bot').
 -define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').

@@ -1,4 +1,4 @@
-defmodule Wocky.Auth.Firebase do
+defmodule Wocky.Account.Firebase do
   @moduledoc """
   Module for verifying Firebase JWT tokens
   """
@@ -6,7 +6,7 @@ defmodule Wocky.Auth.Firebase do
   require Logger
 
   alias JOSE.JWK
-  alias Wocky.Auth.FirebaseKeyManager
+  alias Wocky.Account.FirebaseKeyManager
 
   @type firebase_id :: binary
 
@@ -16,10 +16,9 @@ defmodule Wocky.Auth.Firebase do
   # Verify according to the rules at
   # https://firebase.google.com/docs/auth/admin/verify-id-tokens ...
   # #verify_id_tokens_using_a_third-party_jwt_library
-  @spec verify(map) :: {:ok, firebase_id} | {:error, binary}
-  def verify(provider_data) do
-    with jwt_binary <- provider_data["jwt"],
-         jwt <- Joken.token(jwt_binary),
+  @spec verify(binary) :: {:ok, firebase_id} | {:error, binary}
+  def verify(jwt_binary) do
+    with jwt <- Joken.token(jwt_binary),
          headers <- Joken.peek_header(jwt),
          @expected_alg <- headers["alg"],
          key_id <- headers["kid"],

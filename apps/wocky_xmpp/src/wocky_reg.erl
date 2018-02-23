@@ -64,8 +64,8 @@ get_provider_data(Elements) ->
         _ -> {error, {"malformed-request", "Invalid provider_data"}}
     end.
 
-check_provider_auth(<<"firebase">>, ProviderData) ->
-    case ?wocky_firebase:verify(ProviderData) of
+check_provider_auth(<<"firebase">>, #{<<"jwt">> := JWT}) ->
+    case ?wocky_firebase:verify(JWT) of
         {ok, Result} -> {ok, Result};
         {error, Error} -> {error, {"not-authorized", Error}}
     end;

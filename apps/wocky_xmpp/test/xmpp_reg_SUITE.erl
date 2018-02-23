@@ -10,7 +10,7 @@
 -include_lib("stdlib/include/assert.hrl").
 -include("test_helper.hrl").
 
--define(key_manager, 'Elixir.Wocky.Auth.FirebaseKeyManager').
+-define(key_manager, 'Elixir.Wocky.Account.FirebaseKeyManager').
 -define(joken, 'Elixir.Joken').
 -define(jwk, 'Elixir.JOSE.JWK').
 -define(key_id, <<"c947c408c8dd053f7e13117c4e00f0b2b16dc789">>).
