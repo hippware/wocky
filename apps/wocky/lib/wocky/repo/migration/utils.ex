@@ -75,6 +75,13 @@ defmodule Wocky.Repo.Migration.Utils do
   defp maybe_new("delete", _), do: ""
   defp maybe_new(_, str), do: str
 
+  # NOTE: Triggers are hard-coded here to fire AFTER the triggering transaction
+  # is comitted. We don't ever want to fire them BEFORE because that delays
+  # the transaction being comitted until the function returns, which introduces
+  # a pointless delay. Why is it pointless? Because the function will put the
+  # message into the SQS queue, and then complete the transaction. By the time
+  # the message is processed by the app, the transaction has still finished,
+  # gaining us nothing.
   defp add_notify_trigger(table, action) do
     execute """
     CREATE TRIGGER #{name(table, action)}

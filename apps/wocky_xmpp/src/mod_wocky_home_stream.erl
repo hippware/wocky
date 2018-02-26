@@ -62,17 +62,18 @@ deps(_Host, _Opts) ->
 
 -spec publish(ejabberd:jid(),
               ejabberd:jid(),
-              ?wocky_home_stream_id:id() | pub_item_id(),
+              ?wocky_home_stream_id:t() | pub_item_id(),
               published_stanza()) -> ok.
 publish(TargetJID, From, ID, Stanza) when is_binary(ID) ->
-    publish(TargetJID, From, {ID, nil, nil}, Stanza);
+    publish(TargetJID, From, {ID, nil, nil, nil}, Stanza);
 publish(#jid{luser = UserID},
-        From, {ID, RefUser, RefBot}, Stanza) ->
+        From, {ID, RefUser, RefBot, RefItem}, Stanza) ->
     {ok, _} = ?wocky_home_stream_item:put(UserID, ID,
                                           jid:to_binary(From),
                                           exml:to_binary(Stanza),
                                           [{ref_user_id, get_id(RefUser)},
-                                           {ref_bot_id, get_id(RefBot)}]
+                                           {ref_bot_id, get_id(RefBot)},
+                                           {ref_bot_item_id, get_id(RefItem)}]
                                          ),
     ok.
 
@@ -188,7 +189,7 @@ check_user_present(#jid{luser = _}) -> ok.
 %%                               whether the packet is dropped from further
 %%                               routing.
 
--type publish_result() :: {publish, {drop | keep, ?wocky_home_stream_id:id()}}.
+-type publish_result() :: {publish, {drop | keep, ?wocky_home_stream_id:t()}}.
 
 -type publish_check_cb_result() :: continue | dont_publish | publish_result().
 
@@ -274,11 +275,15 @@ check_publish_event(_From, Stanza) ->
                                       {attr, <<"xmlns">>}]),
     BotNode = xml:get_path_s(Stanza, [{elem, <<"event">>},
                                       {attr, <<"node">>}]),
+    ItemID = xml:get_path_s(Stanza, [{elem, <<"event">>},
+                                     {elem, <<"item">>},
+                                     {attr, <<"id">>}]),
     {Result, Bot} = wocky_bot_util:get_bot_from_node(BotNode),
 
     case EventNS of
         ?NS_BOT_EVENT when Result =:= ok ->
-            {publish, {drop, ?wocky_home_stream_id:bot_event_id(Bot)}};
+            Item = ?wocky_item:get(Bot, ItemID),
+            {publish, {drop, ?wocky_home_stream_id:bot_event_id(Bot, Item)}};
         ?NS_PUBSUB_EVENT ->
             dont_publish;
         _ ->
@@ -294,9 +299,9 @@ publish_bot_action(From, BotEl) ->
         {Bot, show}          -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
         {Bot, share}         -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
         {Bot, enter}         -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, <<"enter">>, User)};
+                                          Bot, User, <<"enter">>)};
         {Bot, exit}          -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, <<"exit">>, User)};
+                                          Bot, User, <<"exit">>)};
         {Bot, follow_on}     -> {drop, ?wocky_home_stream_id:bot_event_id(
                                           Bot, <<"follow_on">>)};
         {Bot, follow_off}    -> {drop, ?wocky_home_stream_id:bot_event_id(

@@ -72,7 +72,6 @@ defmodule Wocky.Mixfile do
       {:bamboo, "~> 0.8"},
       {:comeonin, "~> 4.0"},
       {:confex, "~> 3.3"},
-      # {:configparser_ex, "~> 2.0", override: true},
       {:csv, "~> 2.0"},
       {:bcrypt_elixir, "~> 1.0"},
       {:ecto, "~> 2.2"},
@@ -90,6 +89,7 @@ defmodule Wocky.Mixfile do
       {:geocalc, "~> 0.5"},
       {:hackney, "~> 1.7"},
       {:honeybadger, "~> 0.6"},
+      {:idna, "~> 5.1.0", override: true},
       {:joken, "~> 1.1"},
       {:jsx, "~> 2.8"},
       {:kadabra, "~> 0.3"},
@@ -107,7 +107,6 @@ defmodule Wocky.Mixfile do
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:ossp_uuid,
        github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
-
       {:bypass, "~> 0.7", only: :test, runtime: false},
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},

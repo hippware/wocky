@@ -466,7 +466,6 @@ defmodule Wocky.User do
   def delete(id) do
     user = Repo.get(User, id)
 
-    user && HomeStreamItem.delete_by_user_ref(user)
     user && Repo.delete!(user)
     :ok = Index.remove(:user, id)
   end
