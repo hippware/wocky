@@ -5,7 +5,7 @@ defmodule Wocky.BlockingSpec do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Blocking
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.RosterItem
@@ -51,10 +51,10 @@ defmodule Wocky.BlockingSpec do
       end
 
       it "should remove all HS references for the blocked user's bots and msgs" do
-        HomeStreamItem.get(shared.alice.id)
+        HomeStream.get(shared.alice.id)
         |> Enum.each(&(&1.class |> should(eq :deleted)))
 
-        HomeStreamItem.get(shared.eve.id)
+        HomeStream.get(shared.eve.id)
         |> Enum.each(&(&1.class |> should(eq :deleted)))
       end
 

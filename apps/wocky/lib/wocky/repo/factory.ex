@@ -17,8 +17,8 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.GeoUtils
-  alias Wocky.HomeStreamItem
   alias Wocky.InitialContact
+  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo.ID

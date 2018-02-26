@@ -3,7 +3,7 @@ defmodule WockyXMPP.HomeStreamItemCallbacks do
   Callbacks for HomeStreamItem callbacks
   """
 
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Repo
   alias Wocky.User
   alias Wocky.Watcher.Client

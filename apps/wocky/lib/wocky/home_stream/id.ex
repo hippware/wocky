@@ -1,4 +1,4 @@
-defmodule Wocky.HomeStreamID do
+defmodule Wocky.HomeStream.ID do
   use Wocky.JID
 
   alias Wocky.Bot

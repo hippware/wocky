@@ -10,7 +10,7 @@ defmodule Wocky.Blocking do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.RosterItem
   alias Wocky.User
@@ -29,8 +29,8 @@ defmodule Wocky.Blocking do
     write_blocked_items(blocker, blockee)
 
     # Delete HS message items
-    HomeStreamItem.delete(blocker, blockee)
-    HomeStreamItem.delete(blockee, blocker)
+    HomeStream.delete(blocker, blockee)
+    HomeStream.delete(blockee, blocker)
 
     # Delete HS bot items for bots owned by blocked user
     # and bot shares of blocked user's bots
@@ -136,7 +136,7 @@ defmodule Wocky.Blocking do
     a
     |> User.get_owned_bots()
     |> Enum.each(fn bot ->
-      HomeStreamItem.delete(b, bot)
+      HomeStream.delete(b, bot)
       Item.delete(bot, b)
       Share.delete(b, bot)
       Subscription.delete(b, bot)

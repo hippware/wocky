@@ -16,7 +16,7 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
   alias Wocky.Index
   alias Wocky.Repo
   alias Wocky.Repo.ID
@@ -226,7 +226,7 @@ defmodule Wocky.Bot do
 
   @spec delete(t) :: :ok
   def delete(bot) do
-    HomeStreamItem.delete_by_bot_ref(bot)
+    HomeStream.delete_by_bot_ref(bot)
     Repo.delete(bot)
     Index.remove(:bot, bot.id)
     :ok
@@ -357,14 +357,14 @@ defmodule Wocky.Bot do
   end
 
   defp maybe_tidy_home_streams(%Bot{public: true} = bot, %{public: false}) do
-    HomeStreamItem.delete_by_bot_ref_invisible(%{bot | public: false})
+    HomeStream.delete_by_bot_ref_invisible(%{bot | public: false})
   end
 
   defp maybe_tidy_home_streams(_, _), do: :ok
 
   def maybe_update_hs_items(old, new) do
     if should_update_hs(old, new) do
-      HomeStreamItem.update_ref_bot(new)
+      HomeStream.update_ref_bot(new)
     end
   end
 

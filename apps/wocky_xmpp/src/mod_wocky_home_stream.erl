@@ -68,7 +68,7 @@ publish(TargetJID, From, ID, Stanza) when is_binary(ID) ->
     publish(TargetJID, From, {ID, nil, nil}, Stanza);
 publish(#jid{luser = UserID},
         From, {ID, RefUser, RefBot}, Stanza) ->
-    {ok, _} = ?wocky_home_stream_item:put(UserID, ID,
+    {ok, _} = ?wocky_home_stream:put(UserID, ID,
                                           jid:to_binary(From),
                                           exml:to_binary(Stanza),
                                           [{ref_user_id, get_id(RefUser)},
@@ -78,29 +78,29 @@ publish(#jid{luser = UserID},
 
 -spec delete(ejabberd:jid(), pub_item_id()) -> ok.
 delete(#jid{luser = User}, ID) ->
-    {ok, _} = ?wocky_home_stream_item:delete(User, ID),
+    {ok, _} = ?wocky_home_stream:delete(User, ID),
     ok.
 
 -spec get(ejabberd:jid(), ejabberd:jid(),
           jlib:rsm_in() | pub_item_id()) -> pub_get_result().
 get(#jid{luser = User}, FromJID = #jid{luser = User}, RSMIn = #rsm_in{}) ->
-    Query = ?wocky_home_stream_item:get_query(User, [{include_deleted, false}]),
+    Query = ?wocky_home_stream:get_query(User, [{include_deleted, false}]),
     {Results, RSMOut} =
       ?wocky_rsm_helper:rsm_query(RSMIn, Query, key, {asc, updated_at}),
     {ok, {[map_to_item(I) || I <- Results],
-          format_version(?wocky_home_stream_item:get_latest_version(User)),
+          format_version(?wocky_home_stream:get_latest_version(User)),
           extra_data(Results, FromJID),
           RSMOut}};
 
 get(#jid{luser = User}, FromJID = #jid{luser = User}, ID) ->
-    Item = ?wocky_home_stream_item:get_by_key(User, ID, true),
+    Item = ?wocky_home_stream:get_by_key(User, ID, true),
     case Item of
         nil ->
             {ok, not_found};
         _ ->
             {ok, {map_to_item(Item),
                   format_version(
-                    ?wocky_home_stream_item:get_latest_version(User)),
+                    ?wocky_home_stream:get_latest_version(User)),
                   extra_data([Item], FromJID)}}
     end;
 get(_, _, _) ->
@@ -119,8 +119,8 @@ catchup(_, _, _) ->
 
 do_catchup(User, FromJID, Version) ->
     LatestVersion = format_version(
-                      ?wocky_home_stream_item:get_latest_version(User)),
-    CatchupRows = ?wocky_home_stream_item:get_after_time(
+                      ?wocky_home_stream:get_latest_version(User)),
+    CatchupRows = ?wocky_home_stream:get_after_time(
                      User, Version, catchup_limit() + 1),
 
     case should_send_catchup(Version, CatchupRows) of
@@ -343,7 +343,7 @@ maybe_send_async_catchup(UserJID, Version) ->
     end.
 
 send_async_catchup(UserJID = #jid{luser = User}, Version) ->
-    CatchupRows = ?wocky_home_stream_item:get_after_time(
+    CatchupRows = ?wocky_home_stream:get_after_time(
                      User, Version, catchup_limit() + 1),
     case should_send_catchup(Version, CatchupRows) of
         true ->

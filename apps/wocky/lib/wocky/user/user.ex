@@ -16,7 +16,8 @@ defmodule Wocky.User do
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.Email
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
@@ -347,7 +348,7 @@ defmodule Wocky.User do
   def delete(id) do
     user = Repo.get(User, id)
 
-    user && HomeStreamItem.delete_by_user_ref(user)
+    user && HomeStream.delete_by_user_ref(user)
     user && Repo.delete!(user)
     :ok = Index.remove(:user, id)
   end

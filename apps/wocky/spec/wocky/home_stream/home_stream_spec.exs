@@ -1,16 +1,14 @@
-defmodule Wocky.HomeStreamItemSpec do
+defmodule Wocky.HomeStreamSpec do
   use ESpec, async: true
   use ModelHelpers
 
   alias Faker.Lorem
-  alias Timex.Duration
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   @num_items 10
-
-  @differeing_prepop_fields [:user, :user_id, :id]
 
   before do
     user = Factory.insert(:user, %{server: shared.server})
@@ -48,11 +46,11 @@ defmodule Wocky.HomeStreamItemSpec do
         key = Factory.new_jid()
         from_jid = Factory.new_jid()
         stanza = Lorem.paragraph()
-        put_result = HomeStreamItem.put(shared.user.id, key, from_jid, stanza)
+        put_result = HomeStream.put(shared.user.id, key, from_jid, stanza)
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
-        get_result = HomeStreamItem.get_by_key(shared.user.id, key)
+        get_result = HomeStream.get_by_key(shared.user.id, key)
         get_result |> should(be_struct HomeStreamItem)
         get_result.user_id |> should(eq shared.user.id)
         get_result.key |> should(eq key)
@@ -67,7 +65,7 @@ defmodule Wocky.HomeStreamItemSpec do
         stanza = Lorem.paragraph()
 
         put_result =
-          HomeStreamItem.put(
+          HomeStream.put(
             shared.user.id,
             shared.last_item.key,
             shared.last_item.from_jid,
@@ -78,7 +76,7 @@ defmodule Wocky.HomeStreamItemSpec do
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
         get_result =
-          HomeStreamItem.get_by_key(shared.user.id, shared.last_item.key)
+          HomeStream.get_by_key(shared.user.id, shared.last_item.key)
 
         get_result |> should(be_struct HomeStreamItem)
         get_result.stanza |> should(eq stanza)
@@ -91,7 +89,7 @@ defmodule Wocky.HomeStreamItemSpec do
         ref_bot = Factory.insert(:bot)
 
         put_result =
-          HomeStreamItem.put(
+          HomeStream.put(
             shared.user.id,
             shared.last_item.key,
             shared.last_item.from_jid,
@@ -103,7 +101,7 @@ defmodule Wocky.HomeStreamItemSpec do
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
         get_result =
-          HomeStreamItem.get_by_key(shared.user.id, shared.last_item.key)
+          HomeStream.get_by_key(shared.user.id, shared.last_item.key)
 
         get_result |> should(be_struct HomeStreamItem)
         get_result.reference_user_id |> should(eq ref_user.id)
@@ -111,7 +109,7 @@ defmodule Wocky.HomeStreamItemSpec do
       end
 
       it "should fail on invalid references" do
-        HomeStreamItem.put(
+        HomeStream.put(
           shared.user.id,
           shared.last_item.key,
           shared.last_item.from_jid,
@@ -120,7 +118,7 @@ defmodule Wocky.HomeStreamItemSpec do
         )
         |> should(be_error_result())
 
-        HomeStreamItem.put(
+        HomeStream.put(
           shared.user.id,
           shared.last_item.key,
           shared.last_item.from_jid,
@@ -134,7 +132,7 @@ defmodule Wocky.HomeStreamItemSpec do
     context "when the user is invalid" do
       it "should cause an exception" do
         fn ->
-          HomeStreamItem.put(
+          HomeStream.put(
             ID.new(),
             Lorem.word(),
             Factory.make_jid(),
@@ -148,7 +146,7 @@ defmodule Wocky.HomeStreamItemSpec do
 
   describe "delete/2" do
     it "should flag an existing item as deleted" do
-      result = HomeStreamItem.delete(shared.user.id, shared.last_item.key)
+      result = HomeStream.delete(shared.user.id, shared.last_item.key)
       result |> should(be_ok_result())
       result_val = Kernel.elem(result, 1)
       result_val |> should(be_struct HomeStreamItem)
@@ -157,7 +155,7 @@ defmodule Wocky.HomeStreamItemSpec do
 
     it "should not fail for a non-existant item" do
       shared.user.id
-      |> HomeStreamItem.delete(Factory.new_jid())
+      |> HomeStream.delete(Factory.new_jid())
       |> should(eq {:ok, nil})
     end
   end
@@ -190,19 +188,19 @@ defmodule Wocky.HomeStreamItemSpec do
       })
 
       user_ids = Enum.map(ref_user_items, & &1.id)
-      HomeStreamItem.delete_by_user_ref(ref_user)
+      HomeStream.delete_by_user_ref(ref_user)
 
       referenced_user_items =
         shared.user.id
-        |> HomeStreamItem.get()
+        |> HomeStream.get()
         |> Enum.filter(&Enum.member?(user_ids, &1.id))
 
       bot_ids = Enum.map(ref_bot_items, & &1.id)
-      HomeStreamItem.delete_by_bot_ref(ref_bot)
+      HomeStream.delete_by_bot_ref(ref_bot)
 
       referenced_bot_items =
         shared.user.id
-        |> HomeStreamItem.get()
+        |> HomeStream.get()
         |> Enum.filter(&Enum.member?(bot_ids, &1.id))
 
       {:ok,
@@ -266,7 +264,7 @@ defmodule Wocky.HomeStreamItemSpec do
           user: shared_to_user
         })
 
-        result = HomeStreamItem.delete_by_bot_ref_invisible(shared.ref_bot)
+        result = HomeStream.delete_by_bot_ref_invisible(shared.ref_bot)
 
         {:ok, result: result, shared_to_user: shared_to_user}
       end
@@ -277,21 +275,21 @@ defmodule Wocky.HomeStreamItemSpec do
 
       it "should remove referenced items from unshared-to users" do
         shared.user.id
-        |> HomeStreamItem.get()
+        |> HomeStream.get()
         |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
         |> should(eq [])
       end
 
       it "should not affect the items of users to whom the bot is shared" do
         shared.shared_to_user.id
-        |> HomeStreamItem.get()
+        |> HomeStream.get()
         |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
         |> should(have_length(@num_items))
       end
 
       it "should not affect the items of the bot owner" do
         shared.ref_user.id
-        |> HomeStreamItem.get()
+        |> HomeStream.get()
         |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
         |> should(have_length(@num_items))
       end
@@ -310,29 +308,29 @@ defmodule Wocky.HomeStreamItemSpec do
     it "should return all items for a user in chronological order" do
       # shared.items is already in chronological order
       shared.user.id
-      |> HomeStreamItem.get()
+      |> HomeStream.get()
       |> should_match_items(shared.items)
     end
 
     it "should return an empty list for a non-existant user" do
       ID.new()
-      |> HomeStreamItem.get()
+      |> HomeStream.get()
       |> should(eq [])
     end
 
     it "should reutrn an empty list for a user with no items" do
       Factory.insert(:user, %{server: shared.server}).id
-      |> HomeStreamItem.get()
+      |> HomeStream.get()
       |> should(eq [])
     end
   end
 
   describe "get/2" do
     it "should exclude deleted items when requested" do
-      HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
+      HomeStream.delete(shared.user.id, hd(shared.items).key)
 
       shared.user.id
-      |> HomeStreamItem.get(false)
+      |> HomeStream.get(false)
       |> should_match_items(tl(shared.items))
     end
   end
@@ -340,7 +338,7 @@ defmodule Wocky.HomeStreamItemSpec do
   describe "get/3" do
     it "should order by update time" do
       shared.user.id
-      |> HomeStreamItem.get(true)
+      |> HomeStream.get(true)
       |> should_match_items(shared.items)
     end
   end
@@ -350,27 +348,27 @@ defmodule Wocky.HomeStreamItemSpec do
       item = hd(shared.items)
 
       shared.user.id
-      |> HomeStreamItem.get_by_key(item.key)
+      |> HomeStream.get_by_key(item.key)
       |> should_match_item(item)
     end
 
     it "should return nil if the key doesn't exit" do
       shared.user.id
-      |> HomeStreamItem.get_by_key(Factory.new_jid())
+      |> HomeStream.get_by_key(Factory.new_jid())
       |> should(be_nil())
     end
 
     it "should return nil if the user doesn't exit" do
       ID.new()
-      |> HomeStreamItem.get_by_key(hd(shared.items).key)
+      |> HomeStream.get_by_key(hd(shared.items).key)
       |> should(be_nil())
     end
 
     it "should exclude deleted items when requested" do
-      HomeStreamItem.delete(shared.user.id, hd(shared.items).key)
+      HomeStream.delete(shared.user.id, hd(shared.items).key)
 
       shared.user.id
-      |> HomeStreamItem.get_by_key(hd(shared.items).key, false)
+      |> HomeStream.get_by_key(hd(shared.items).key, false)
       |> should(be_nil())
     end
   end
@@ -381,25 +379,25 @@ defmodule Wocky.HomeStreamItemSpec do
     including ref_update items
     """ do
       shared.user.id
-      |> HomeStreamItem.get_after_time(shared.middle_time)
+      |> HomeStream.get_after_time(shared.middle_time)
       |> should_match_items(shared.after_items ++ [shared.update_item])
     end
 
     it "should honour the requested limit" do
       shared.user.id
-      |> HomeStreamItem.get_after_time(shared.middle_time, 2)
+      |> HomeStream.get_after_time(shared.middle_time, 2)
       |> should_match_items(Enum.slice(shared.after_items, 0..1))
     end
 
     it "should return an empty list for a non-existant user" do
       ID.new()
-      |> HomeStreamItem.get_after_time(shared.middle_time)
+      |> HomeStream.get_after_time(shared.middle_time)
       |> should(eq [])
     end
 
     it "should return an empty list for a later time" do
       shared.user.id
-      |> HomeStreamItem.get_after_time(Timex.now())
+      |> HomeStream.get_after_time(Timex.now())
       |> should(eq [])
     end
   end
@@ -407,104 +405,14 @@ defmodule Wocky.HomeStreamItemSpec do
   describe "get_latest_version/1" do
     it "should return the most recent updated_at value for the user" do
       shared.user.id
-      |> HomeStreamItem.get_latest_version()
+      |> HomeStream.get_latest_version()
       |> should(eq shared.version)
     end
 
     it "should return a valid timestamp for a non-existant user" do
       ID.new()
-      |> HomeStreamItem.get_latest_version()
+      |> HomeStream.get_latest_version()
       |> should(be_struct DateTime)
-    end
-  end
-
-  describe "prepopulate_from/4" do
-    before do
-      source_user = Factory.insert(:user)
-      now = DateTime.utc_now()
-
-      items =
-        for i <- 1..@num_items do
-          time = Timex.shift(now, seconds: -(i * 5))
-
-          Factory.insert(:home_stream_item, %{
-            user: source_user,
-            created_at: time,
-            updated_at: time
-          })
-          |> Repo.preload(:reference_bot)
-        end
-
-      target_user = Factory.insert(:user)
-
-      {:ok,
-       items:
-         Enum.map(Enum.reverse(items), &Map.drop(&1, @differeing_prepop_fields)),
-       source_user: source_user,
-       target_user: target_user}
-    end
-
-    it "should copy items for the specified time period" do
-      HomeStreamItem.prepopulate_from(
-        shared.target_user.id,
-        shared.source_user.id,
-        Duration.from_days(10),
-        0
-      )
-      |> should(eq :ok)
-
-      shared.target_user.id
-      |> HomeStreamItem.get()
-      |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
-      |> should(eq shared.items)
-    end
-
-    it "should not copy items if a zero period is given" do
-      HomeStreamItem.prepopulate_from(
-        shared.target_user.id,
-        shared.source_user.id,
-        Duration.from_seconds(0),
-        0
-      )
-      |> should(eq :ok)
-
-      shared.target_user.id
-      |> HomeStreamItem.get()
-      |> should(eq [])
-    end
-
-    it "should copy only items in the time period" do
-      pivot = Enum.at(shared.items, 5)
-      period = Timex.diff(DateTime.utc_now(), pivot.created_at(), :duration)
-
-      HomeStreamItem.prepopulate_from(
-        shared.target_user.id,
-        shared.source_user.id,
-        period,
-        0
-      )
-      |> should(eq :ok)
-
-      shared.target_user.id
-      |> HomeStreamItem.get()
-      |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
-      |> should(eq Enum.slice(shared.items, 6..(@num_items - 1)))
-    end
-
-    it "should copy the minimum requested items even if
-        outside the time period" do
-      HomeStreamItem.prepopulate_from(
-        shared.target_user.id,
-        shared.source_user.id,
-        Timex.Duration.from_seconds(1),
-        8
-      )
-      |> should(eq :ok)
-
-      shared.target_user.id
-      |> HomeStreamItem.get()
-      |> Enum.map(&Map.drop(&1, @differeing_prepop_fields))
-      |> should(eq Enum.slice(shared.items, (@num_items - 8)..(@num_items - 1)))
     end
   end
 
@@ -520,7 +428,7 @@ defmodule Wocky.HomeStreamItemSpec do
 
       Factory.insert(:home_stream_item, %{user: user2, reference_bot: bot})
 
-      HomeStreamItem.update_ref_bot(bot)
+      HomeStream.update_ref_bot(bot)
 
       user_items = get_all_items(shared.user.id)
       user2_items = get_all_items(user2.id)
@@ -569,7 +477,7 @@ defmodule Wocky.HomeStreamItemSpec do
 
   defp get_all_items(user_id) do
     user_id
-    |> HomeStreamItem.get_query(
+    |> HomeStream.get_query(
       include_deleted: true,
       include_ref_updates: true
     )

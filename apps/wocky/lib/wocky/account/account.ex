@@ -7,24 +7,19 @@ defmodule Wocky.Account do
   import Ecto.Query, warn: false
   import Ecto.Changeset
 
-  alias Timex.Duration
   alias Wocky.Account.{Firebase, Token}
-  alias Wocky.HomeStreamItem
   alias Wocky.InitialContact
   alias Wocky.RosterItem
+  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
-  alias Wocky.User.HSPrepop
 
   require Logger
 
   @type token :: Token.token()
 
   @max_register_retries 5
-
-  @default_hs_prepop_days 28
-  @default_hs_min_prepop 10
 
   @changeset_fields [
     :username,
@@ -202,7 +197,7 @@ defmodule Wocky.Account do
 
   defp prepopulate_user(user_id) do
     set_initial_contacts(user_id)
-    prepopulate_home_stream(user_id)
+    HomeStream.prepopulate(user_id)
   end
 
   defp set_initial_contacts(user_id) do
@@ -243,29 +238,5 @@ defmodule Wocky.Account do
 
     RosterItem.put(user_contact)
     RosterItem.put(init_contact)
-  end
-
-  defp prepopulate_home_stream(user_id) do
-    prepopulate_from_user(user_id, HSPrepop.user())
-  end
-
-  defp prepopulate_from_user(_, nil), do: :ok
-
-  defp prepopulate_from_user(user_id, %{id: source_id}) do
-    period =
-      Confex.get_env(
-        :wocky_xmpp,
-        :hs_prepopulation_days,
-        @default_hs_prepop_days
-      )
-
-    min = Confex.get_env(:wocky, :hs_prepopulation_min, @default_hs_min_prepop)
-
-    HomeStreamItem.prepopulate_from(
-      user_id,
-      source_id,
-      Duration.from_days(period),
-      min
-    )
   end
 end

@@ -49,8 +49,9 @@
 -define(wocky_subscription,      'Elixir.Wocky.Bot.Subscription').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
 -define(wocky_geo_utils,         'Elixir.Wocky.GeoUtils').
--define(wocky_home_stream_id,    'Elixir.Wocky.HomeStreamID').
--define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
+-define(wocky_home_stream,       'Elixir.Wocky.HomeStream').
+-define(wocky_home_stream_id,    'Elixir.Wocky.HomeStream.ID').
+-define(wocky_home_stream_item,  'Elixir.Wocky.HomeStream.Item').
 -define(wocky_index,             'Elixir.Wocky.Index').
 -define(wocky_new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
@@ -62,7 +63,6 @@
 -define(wocky_rsm_helper,        'Elixir.Wocky.RSMHelper').
 -define(wocky_traffic_log,       'Elixir.Wocky.TrafficLog').
 -define(wocky_user,              'Elixir.Wocky.User').
--define(wocky_user_hs_prepop,    'Elixir.Wocky.User.HSPrepop').
 -define(wocky_watcher_client,    'Elixir.Wocky.Watcher.Client').
 
 -define(wocky_xmpp_bot_callbacks, 'Elixir.WockyXMPP.BotCallbacks').

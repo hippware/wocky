@@ -4,7 +4,7 @@ defmodule Wocky.Watcher.Callbacks.BotItem do
   """
 
   alias Wocky.Bot.Item
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Watcher.Client
   alias WockyDBWatcher.Event
@@ -26,7 +26,7 @@ defmodule Wocky.Watcher.Callbacks.BotItem do
     %{bot: bot} = Repo.preload(item, [:bot])
 
     if bot != nil do
-      HomeStreamItem.update_ref_bot(bot)
+      HomeStream.update_ref_bot(bot)
     end
   end
 end
