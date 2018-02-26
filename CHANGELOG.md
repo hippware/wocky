@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Catch and report errors in watcher CB (PR #1288)
+* Change format of conversation deep link (#1281)
+
+
 # 2018.2.23+r433c862
 
 * Update to Elixir 1.6 (PR #1246).
