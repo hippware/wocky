@@ -49,8 +49,7 @@ existing_cases() ->
      update,
      update_no_changes,
      no_token,
-     unauthorized_update,
-     empty_phone_number
+     unauthorized_update
     ].
 
 suite() ->
@@ -258,12 +257,6 @@ no_token(Config) ->
 unauthorized_update(Config) ->
     % Same test as new once the user exists
     unauthorized_new(Config).
-
-empty_phone_number(Config) ->
-    Client = start_client(Config),
-    Stanza = request_stanza(request_data(firebase, provider_data(firebase))),
-    Result = escalus:send_and_wait(Client, Stanza),
-    assert_is_redirect(Result, false, true).
 
 
 %%--------------------------------------------------------------------
