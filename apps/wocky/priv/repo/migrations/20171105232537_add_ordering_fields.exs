@@ -3,7 +3,7 @@ defmodule Wocky.Repo.Migrations.AddOrderingFields do
 
   import Ecto.Query
 
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream.Item
   alias Wocky.Repo
 
   def up do
@@ -13,7 +13,7 @@ defmodule Wocky.Repo.Migrations.AddOrderingFields do
 
     flush()
 
-    HomeStreamItem
+    Item
     |> update([i], set: [ordering: i.updated_at])
     |> Repo.update_all([])
 
