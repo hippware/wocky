@@ -1,8 +1,10 @@
 defmodule Wocky.Repo.Migrations.RemoveOrderingField do
   use Wocky.Repo.Migration
-  use Wocky.Repo.Model
+
+  import Ecto.Query
 
   alias Wocky.HomeStreamItem
+  alias Wocky.Repo
 
   def up do
     alter table(:home_stream_items) do

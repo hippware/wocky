@@ -1,10 +1,10 @@
-defmodule Wocky.TokenSpec do
+defmodule Wocky.Account.TokenSpec do
   use ESpec, async: true
   use ModelHelpers
 
   alias Comeonin.Bcrypt
+  alias Wocky.Account.Token
   alias Wocky.Repo.ID
-  alias Wocky.Token
 
   before do
     user = Factory.insert(:user, %{server: shared.server})

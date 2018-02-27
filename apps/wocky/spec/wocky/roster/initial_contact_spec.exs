@@ -1,8 +1,8 @@
-defmodule Wocky.InitialContactSpec do
+defmodule Wocky.Roster.InitialContactSpec do
   use ESpec, async: true
   use ModelHelpers
 
-  alias Wocky.InitialContact
+  alias Wocky.Roster.InitialContact
   alias Wocky.Repo
 
   before do

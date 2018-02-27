@@ -204,7 +204,7 @@ relationship(FromJID, UserJID) ->
     end.
 
 relationship_not_self(#jid{luser = FromUser}, #jid{luser = User}) ->
-    case ?wocky_roster_item:has_contact(User, FromUser) of
+    case ?wocky_roster:has_contact(User, FromUser) of
         true -> friend;
         false -> stranger
     end.
@@ -240,11 +240,11 @@ fields() ->
      {"followers+size", "int",  public,      read_only,
       fun(_, #{id := LUser}, _) ->
               integer_to_binary(
-                length(?wocky_roster_item:followers(LUser))) end},
+                length(?wocky_roster:followers(LUser))) end},
      {"followed+size", "int",   public,      read_only,
       fun(_, #{id := LUser}, _) ->
               integer_to_binary(
-                length(?wocky_roster_item:followees(LUser))) end},
+                length(?wocky_roster:followees(LUser))) end},
      {"roles",        "roles",  public,      read_only, fun make_roles/3}
     ].
 
@@ -260,11 +260,11 @@ field_accessor(Field) -> element(5, Field).
 %%--------------------------------------------------------------------
 
 get_association_query(<<"follower">>, UserID, RequesterID) ->
-    {ok, ?wocky_roster_item:followers_query(UserID, RequesterID, false)};
+    {ok, ?wocky_roster:followers_query(UserID, RequesterID, false)};
 get_association_query(<<"following">>, UserID, RequesterID) ->
-    {ok, ?wocky_roster_item:followees_query(UserID, RequesterID, false)};
+    {ok, ?wocky_roster:followees_query(UserID, RequesterID, false)};
 get_association_query(<<"friend">>, UserID, RequesterID) ->
-    {ok, ?wocky_roster_item:friends_query(UserID, RequesterID, false)};
+    {ok, ?wocky_roster:friends_query(UserID, RequesterID, false)};
 get_association_query(_, _, _) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid association type">>)}.
 
@@ -439,7 +439,7 @@ make_contact(#{id := UserID, server := Server, handle := Handle},
                      association(UserID, TargetID, RequestedAssociation)}]}.
 
 association(UserID, TargetID, RequestedAssociation) ->
-    case ?wocky_roster_item:is_friend(UserID, TargetID) of
+    case ?wocky_roster:is_friend(UserID, TargetID) of
         true -> <<"friend">>;
         false -> RequestedAssociation
     end.
@@ -603,7 +603,7 @@ error_with_child(Stanza = #xmlel{children = Children}, ExtraChild) ->
     {error, Stanza#xmlel{children = [ExtraChild | Children]}}.
 
 update_roster_contacts(LUser) ->
-    ?wocky_roster_item:bump_all_versions(LUser).
+    ?wocky_roster:bump_all_versions(LUser).
 
 
 %%--------------------------------------------------------------------

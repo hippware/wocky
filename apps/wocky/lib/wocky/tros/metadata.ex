@@ -3,10 +3,12 @@ defmodule Wocky.TROS.Metadata do
   DB interface module for TROS metadata (access and ownership info)
   """
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
 
+  import Ecto.Query
+
+  alias Wocky.Repo
   alias Wocky.User
-
   alias __MODULE__, as: TROSMetadata
 
   @primary_key false

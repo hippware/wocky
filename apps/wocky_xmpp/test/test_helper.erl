@@ -568,7 +568,7 @@ check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
 
 insert_system_users() ->
     ?wocky_factory:insert(
-       user, #{handle => ?wocky_user_hs_prepop:handle(),
+       user, #{handle => ?wocky_home_stream:prepopulation_user(),
                roles => [?wocky_user:no_index_role(),
                          ?wocky_user:system_role()]}).
 

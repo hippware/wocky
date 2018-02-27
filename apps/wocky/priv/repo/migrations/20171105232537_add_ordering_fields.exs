@@ -1,8 +1,10 @@
 defmodule Wocky.Repo.Migrations.AddOrderingFields do
   use Wocky.Repo.Migration
-  use Wocky.Repo.Model
 
-  alias Wocky.HomeStreamItem
+  import Ecto.Query
+
+  alias Wocky.HomeStream.Item
+  alias Wocky.Repo
 
   def up do
     alter table(:home_stream_items) do
@@ -11,7 +13,7 @@ defmodule Wocky.Repo.Migrations.AddOrderingFields do
 
     flush()
 
-    HomeStreamItem
+    Item
     |> update([i], set: [ordering: i.updated_at])
     |> Repo.update_all([])
 

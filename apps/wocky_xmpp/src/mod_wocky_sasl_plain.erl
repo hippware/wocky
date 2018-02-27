@@ -1,38 +1,13 @@
 %%% @doc Module replacing cyrsasl_plain's SASL PLAIN handling to add
-%%% our own custom Digits auth system
+%%% our own custom OAuth 2 auth system
 %%% See https://github.com/hippware/tr-wiki/wiki/User-registration-XMPP-protocol
-
-%%% Adopted from cyrsasl_plain.erl:
-%%%----------------------------------------------------------------------
-%%% Author  : Alexey Shchepin <alexey@process-one.net>
-%%% Purpose : PLAIN SASL mechanism
-%%% Created :  8 Mar 2003 by Alexey Shchepin <alexey@process-one.net>
-%%%
-%%%
-%%% ejabberd, Copyright (C) 2002-2011   ProcessOne
-%%%
-%%% This program is free software; you can redistribute it and/or
-%%% modify it under the terms of the GNU General Public License as
-%%% published by the Free Software Foundation; either version 2 of the
-%%% License, or (at your option) any later version.
-%%%
-%%% This program is distributed in the hope that it will be useful,
-%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
-%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-%%% General Public License for more details.
-%%%
-%%% You should have received a copy of the GNU General Public License
-%%% along with this program; if not, write to the Free Software
-%%% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-%%% 02111-1307 USA
-%%%
-%%%----------------------------------------------------------------------
 
 -module(mod_wocky_sasl_plain).
 -xep([{xep, 78}, {version, "2.5"}]).
 
+-compile({parse_transform, do}).
+
 -include("wocky.hrl").
--include("wocky_reg.hrl").
 
 -behaviour(gen_mod).
 -behaviour(cyrsasl).
@@ -43,15 +18,7 @@
 %% cyrsasl handlers
 -export([mech_new/2, mech_step/2]).
 
-
-start(_Host, Opts) ->
-    Providers = proplists:get_value(auth_providers, Opts),
-    {atomic, _} = ejabberd_config:add_local_option(wocky_sasl_auth_providers,
-                                                   Providers),
-    BypassPrefixes = get_auth_bypass_prefixes(Opts),
-    {atomic, _} = ejabberd_config:add_local_option(wocky_sasl_bypass_prefixes,
-                                                   BypassPrefixes),
-
+start(_Host, _Opts) ->
     % This *replaces* cyrsasl_plain's registration, since modules are
     % loaded/started after cyrsasl has registered its built-in modules.
     cyrsasl:register_mechanism(<<"PLAIN">>, ?MODULE, plain),
@@ -67,71 +34,101 @@ mech_new(Host, Creds) ->
 
 -spec mech_step(Creds :: mongoose_credentials:t(), ClientIn :: binary()) ->
     {ok, mongoose_credentials:t()} | {error, binary()}.
-mech_step(Creds, ClientIn) ->
-    %% There is a regression in ejabberd_auth that causes authentication
-    %% failures to return internal-error instead of not-authorized. We are
-    %% working around that regression here.
-    case cyrsasl_plain:parse(ClientIn) of
-        [_, <<"register">>, <<"$J$", JSON/binary>>] ->
-            do_registration(JSON);
-        [AuthzId, User, Password] ->
-            Request = mongoose_credentials:extend(Creds,
-                                                  [{username, User},
-                                                   {password, Password},
-                                                   {authzid, AuthzId}]),
-            case ejabberd_auth:authorize(Request) of
-                {ok, Result} ->
-                    {ok, Result};
-                {error, not_authorized} ->
-                    {error, <<"not-authorized">>, User};
-                {error, {no_auth_modules, _}} ->
-                    {error, <<"not-authorized">>, User};
-                {error, R} ->
-                    ok = lager:debug("authorize error: ~p", [R]),
-                    {error, <<"internal-error">>}
-            end;
-        _ ->
-            {error, <<"bad-protocol">>}
-    end.
-
-enable_digits_bypass() ->
-    ?confex:get_env(wocky_xmpp, enable_digits_bypass).
-
-get_auth_bypass_prefixes(Opts) ->
-  case enable_digits_bypass() of
-    true  -> proplists:get_value(auth_bypass_prefixes, Opts, []);
-    false -> []
-  end.
-
-do_registration(JSON) ->
-    case wocky_reg:register_user(JSON) of
+mech_step(_, <<0:8, "register", 0:8, "$J$", JSON/binary>>) ->
+    case authenticate_user(JSON) of
         {ok, RegResult} ->
-            make_register_response(RegResult);
+            make_auth_response(RegResult);
         {error, {Response, Text}} ->
             {error, {iolist_to_binary(Response), iolist_to_binary(Text)}}
+    end;
+mech_step(Creds, ClientIn) ->
+    cyrsasl_plain:mech_step(Creds, ClientIn).
+
+authenticate_user(JSON) ->
+    do([error_m ||
+        Elements <- decode_json(JSON),
+        Provider <- get_required_field(Elements, <<"provider">>),
+        Resource <- get_required_field(Elements, <<"resource">>),
+        ProviderData <- get_provider_data(Elements),
+        GetToken <- get_token(Elements),
+        {User, IsNew} <- authenticate_user(Provider, ProviderData),
+        {Token, Expiry} <- maybe_get_token(GetToken, User, Resource),
+        {ok, {User, Provider, Token, Expiry, IsNew}}
+       ]).
+
+decode_json(Body) ->
+    try mochijson2:decode(Body) of
+        {struct, Elements} -> {ok, maps:from_list(Elements)}
+    catch
+        error:_ -> {error, {"malformed-request", "Could not parse JSON"}}
     end.
 
-make_register_response(#reg_result{user = User,
-                                   server = Server,
-                                   provider = Provider,
-                                   is_new = IsNew,
-                                   token = Token,
-                                   token_expiry = TokenExpiry,
-                                   external_id = ExternalID}) ->
-   Handle = case ?wocky_repo:get(?wocky_user, User) of
-                nil -> <<>>;
-                #{handle := nil} -> <<>>;
-                #{handle := H} -> H
-            end,
-   JSONFields = [{user, User},
-                 {server, Server},
-                 {handle, Handle},
-                 {provider, Provider},
-                 {is_new, IsNew},
-                 {external_id, ExternalID} |
-                 maybe_token_fields(Token, TokenExpiry)],
-   JSON = mochijson2:encode({struct, JSONFields}),
-   {error, {<<"redirect">>, JSON}}.
+get_field(Field, Elements) ->
+    case maps:find(Field, Elements) of
+        {ok, Value} -> {ok, Value};
+        error -> {ok, <<>>}
+    end.
+
+get_required_field(Elements, Field) ->
+    case maps:find(Field, Elements) of
+        {ok, Value} -> {ok, Value};
+        error -> {error, {"malformed-request",
+                          ["Missing ", Field, " field"]}}
+    end.
+
+get_token(Elements) ->
+    {ok, maps:get(<<"token">>, Elements, false)}.
+
+get_provider_data(Elements) ->
+    case maps:get(<<"provider_data">>, Elements, {struct, []}) of
+        {struct, ProviderData} -> {ok, maps:from_list(ProviderData)};
+        _ -> {error, {"malformed-request", "Invalid provider_data"}}
+    end.
+
+maybe_get_token(false, _, _) ->
+    {ok, {undefined, undefined}};
+maybe_get_token(true, #{id := UserID}, Resource) ->
+    {ok, {Token, Expiry}} = ?wocky_account:assign_token(UserID, Resource),
+    {ok, {Token, ?wocky_timestamp:to_string(Expiry)}}.
+
+%% The digits provider exists only to support auth bypass
+authenticate_user(<<"digits">>, Fields) ->
+    Server = wocky_xmpp_app:server(),
+    UserID = get_field(<<"userID">>, Fields),
+    PhoneNumber = get_field(<<"phoneNumber">>, Fields),
+    case ?wocky_account:authenticate_with_digits(Server, UserID, PhoneNumber) of
+      {ok, Result} -> {ok, Result};
+      {error, Error} -> {error, {"not-authorized", Error}}
+    end;
+
+authenticate_user(<<"firebase">>, #{<<"jwt">> := JWT}) ->
+    Server = wocky_xmpp_app:server(),
+    case ?wocky_account:authenticate_with_firebase(Server, JWT) of
+        {ok, Result} -> {ok, Result};
+        {error, Error} -> {error, {"not-authorized", Error}}
+    end;
+
+authenticate_user(P, _) -> {error, {"not-authorized",
+                                    ["Unsupported provider: ", P]}}.
+
+make_auth_response({User, Provider, Token, Expiry, IsNew}) ->
+    #{id := UserID,
+      server := Server,
+      external_id := ExternalID,
+      handle := Handle} = User,
+
+    JSONFields = [{user, UserID},
+                  {server, Server},
+                  {handle, safe_handle(Handle)},
+                  {provider, Provider},
+                  {external_id, ExternalID},
+                  {is_new, IsNew} |
+                  maybe_token_fields(Token, Expiry)],
+    JSON = mochijson2:encode({struct, JSONFields}),
+    {error, {<<"redirect">>, JSON}}.
+
+safe_handle(nil) -> <<>>;
+safe_handle(H) -> H.
 
 maybe_token_fields(undefined, _) -> [];
 maybe_token_fields(Token, TokenExpiry) ->

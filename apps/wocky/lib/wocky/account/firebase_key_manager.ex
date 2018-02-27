@@ -1,4 +1,4 @@
-defmodule Wocky.Auth.FirebaseKeyManager do
+defmodule Wocky.Account.FirebaseKeyManager do
   @moduledoc """
   GenServer process for managing Firebase key retrieval and update
   """

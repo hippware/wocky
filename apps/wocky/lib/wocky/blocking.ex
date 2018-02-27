@@ -3,15 +3,17 @@ defmodule Wocky.Blocking do
   Helper functions for blocking functionality
   """
 
-  use Wocky.Repo.Model
+  import Ecto.Query
 
   alias Ecto.Queryable
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
-  alias Wocky.HomeStreamItem
-  alias Wocky.RosterItem
+  alias Wocky.HomeStream
+  alias Wocky.Repo
+  alias Wocky.Roster
+  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.User
 
   @blocked_group "__blocked__"
@@ -28,8 +30,8 @@ defmodule Wocky.Blocking do
     write_blocked_items(blocker, blockee)
 
     # Delete HS message items
-    HomeStreamItem.delete(blocker, blockee)
-    HomeStreamItem.delete(blockee, blocker)
+    HomeStream.delete(blocker, blockee)
+    HomeStream.delete(blockee, blocker)
 
     # Delete HS bot items for bots owned by blocked user
     # and bot shares of blocked user's bots
@@ -82,7 +84,7 @@ defmodule Wocky.Blocking do
 
   @spec blocked?(User.id(), User.id()) :: boolean
   def blocked?(a, b) do
-    case RosterItem.get(a, b) do
+    case Roster.get(a, b) do
       nil ->
         false
 
@@ -123,7 +125,7 @@ defmodule Wocky.Blocking do
           groups: b_groups
         }
       ]
-      |> Enum.each(&RosterItem.put/1)
+      |> Enum.each(&Roster.put/1)
     end)
 
     :ok
@@ -135,7 +137,7 @@ defmodule Wocky.Blocking do
     a
     |> User.get_owned_bots()
     |> Enum.each(fn bot ->
-      HomeStreamItem.delete(b, bot)
+      HomeStream.delete(b, bot)
       Item.delete(bot, b)
       Share.delete(b, bot)
       Subscription.delete(b, bot)

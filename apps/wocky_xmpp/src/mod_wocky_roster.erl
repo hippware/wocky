@@ -118,7 +118,7 @@ get_user_roster_based_on_version(false, From, To) ->
     get_user_roster_based_on_version({value, ?NULL_VERSION}, From, To);
 get_user_roster_based_on_version({value, RequestedVersion}, From, To) ->
     #jid{luser = LUser, lserver = LServer} = From,
-    case ?wocky_roster_item:version(LUser) of
+    case ?wocky_roster:version(LUser) of
         ?NULL_VERSION ->
             {[], ?NULL_VERSION};
 
@@ -167,7 +167,7 @@ do_process_item_set(JID1, From, To, El, Result) ->
 
     OldItem = to_wocky_roster(
                 LUser, ContactUser,
-                ?wocky_roster_item:get(LUser, ContactUser)),
+                ?wocky_roster:get(LUser, ContactUser)),
 
     case is_blocked_by(OldItem#wocky_roster.groups) of
         true ->
@@ -201,7 +201,7 @@ do_process_item_set_1(ContactUser, ContactServer, From, To, OldItem,
                ?wocky_repo:get(?wocky_user, LUser),
                ?wocky_repo:get(?wocky_user, ContactUser)),
             BlockNotification = to_wocky_roster(
-                                  ?wocky_roster_item:get(ContactUser, LUser)),
+                                  ?wocky_roster:get(ContactUser, LUser)),
             push_item(ContactUser, ContactServer, From,
                       OldItem, BlockNotification),
             Result;
@@ -214,11 +214,11 @@ do_process_item_set_2(NewItem, OldItem,
                       To, ContactUser, Result) ->
     ChangeResult = case NewItem#wocky_roster.subscription of
         remove ->
-            CR = ?wocky_roster_item:delete(LUser, ContactUser),
+            CR = ?wocky_roster:delete(LUser, ContactUser),
             send_unsubscribing_presence(From, OldItem),
             CR;
         _ ->
-            ?wocky_roster_item:put(wocky_roster:to_map(NewItem))
+            ?wocky_roster:put(wocky_roster:to_map(NewItem))
     end,
 
     case ChangeResult of
@@ -294,7 +294,7 @@ process_item_els(Item, []) -> Item.
 %% roster_get --------------------------------------------------------
 
 roster_get_hook(Acc, {LUser, _LServer}) ->
-    Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
+    Items = to_wocky_roster(?wocky_roster:get(LUser)),
     lists:filter(fun (#wocky_roster{subscription = none, ask = in}) ->
                          false;
                      (_) ->
@@ -316,7 +316,7 @@ process_subscription(Direction, User, Server, JID1, Type, _Reason) ->
     #jid{luser = ContactUser} = JID1,
 
     Item = to_wocky_roster(LUser, jid:to_lower(JID1),
-                           ?wocky_roster_item:get(LUser, ContactUser)),
+                           ?wocky_roster:get(LUser, ContactUser)),
     #wocky_roster{subscription = Subscription, ask = Ask} = Item,
 
     StateChange = state_change(Direction, Subscription, Ask, Type),
@@ -422,7 +422,7 @@ process_state_change({NewSubscription, Pending}, Item) ->
 do_roster_action(none) ->
     none;
 do_roster_action({insert, OldItem, NewItem}) ->
-    {ok, _} = ?wocky_roster_item:put(wocky_roster:to_map(NewItem)),
+    {ok, _} = ?wocky_roster:put(wocky_roster:to_map(NewItem)),
     {push, OldItem, NewItem}.
 
 get_auto_reply(out, _, _, _) -> none;
@@ -459,7 +459,7 @@ send_auto_reply(ToJID, JID1, Attrs) ->
 roster_get_subscription_lists_hook(Acc, User, Server) ->
     LUser = jid:nodeprep(User),
     LServer = jid:nameprep(Server),
-    Items = to_wocky_roster(?wocky_roster_item:get(LUser)),
+    Items = to_wocky_roster(?wocky_roster:get(LUser)),
     JID = jid:make(User, Server, <<>>),
     SubLists = fill_subscription_lists(JID, LServer, Items, [], []),
     mongoose_acc:put(subscription_lists, SubLists, Acc).
@@ -491,7 +491,7 @@ roster_get_jid_info_hook(_Acc, User, _Server, JID) ->
         true ->
             Item = to_wocky_roster(
                      LUser, JID,
-                     ?wocky_roster_item:get(LUser, ContactUser)),
+                     ?wocky_roster:get(LUser, ContactUser)),
             {Item#wocky_roster.subscription, Item#wocky_roster.groups};
         false ->
             {none, []}
@@ -535,10 +535,10 @@ check_headline(#xmlel{name = <<"message">>, attrs = Attrs}) ->
 check_headline(_) -> {error, not_headline}.
 
 send_update(#jid{user = User, server = Server}, JID) ->
-    Version = ?wocky_roster_item:version(User),
+    Version = ?wocky_roster:version(User),
     #jid{luser = ContactUser} = jid:from_binary(JID),
     Item = to_wocky_roster(
-             User, JID, ?wocky_roster_item:get(User, ContactUser)),
+             User, JID, ?wocky_roster:get(User, ContactUser)),
     Acc = push_item(User, Server, jid:make(<<>>, Server, <<>>),
                     Item, Item, Version),
     mongoose_acc:get(result, Acc).
@@ -634,7 +634,7 @@ push_item(User, Server, From,
                                    to_mim_roster(OldItem),
                                    to_mim_roster(NewItem)}}),
     push_item(User, Server, From, OldItem, NewItem,
-              ?wocky_roster_item:version(jid:nodeprep(User))).
+              ?wocky_roster:version(jid:nodeprep(User))).
 
 push_item(User, Server, From, OldItem, NewItem, RosterVersion) ->
     lists:foreach(fun (Resource) ->

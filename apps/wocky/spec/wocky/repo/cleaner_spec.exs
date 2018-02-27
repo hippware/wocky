@@ -4,6 +4,8 @@ defmodule Wocky.Repo.CleanerSpec do
   import Ecto.Query
   import SweetXml
 
+  alias Wocky.Account
+  alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Push.Log, as: PushLog
@@ -13,7 +15,6 @@ defmodule Wocky.Repo.CleanerSpec do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
-  alias Wocky.Token
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
@@ -129,17 +130,17 @@ defmodule Wocky.Repo.CleanerSpec do
 
   describe "clean_expired_auth_tokens" do
     before do
-      {:ok, {_, _}} = Token.assign(shared.user.id, "old_token")
-      {:ok, {_, _}} = Token.assign(shared.user.id, "new_token")
+      {:ok, {_, _}} = Account.assign_token(shared.user.id, "old_token")
+      {:ok, {_, _}} = Account.assign_token(shared.user.id, "new_token")
 
       query =
-        from t in Token,
+        from t in AuthToken,
           where: t.user_id == ^shared.user.id,
           where: t.resource == ^"old_token"
 
       query
       |> Repo.one()
-      |> Token.changeset(%{expires_at: Timestamp.shift(weeks: -1)})
+      |> AuthToken.changeset(%{expires_at: Timestamp.shift(weeks: -1)})
       |> Repo.update!()
 
       {:ok, result} = Cleaner.clean_expired_auth_tokens()
@@ -152,7 +153,7 @@ defmodule Wocky.Repo.CleanerSpec do
 
     it "should remove the old token" do
       query =
-        from t in Token,
+        from t in AuthToken,
           where: t.user_id == ^shared.user.id,
           where: t.resource == ^"old_token"
 
@@ -163,7 +164,7 @@ defmodule Wocky.Repo.CleanerSpec do
 
     it "should not remove the recent token" do
       query =
-        from t in Token,
+        from t in AuthToken,
           where: t.user_id == ^shared.user.id,
           where: t.resource == ^"new_token"
 

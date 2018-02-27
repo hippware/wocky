@@ -4,11 +4,12 @@ defmodule Wocky.UserSpec do
   use Wocky.JID
 
   alias Ecto.Adapters.SQL
-  alias Faker.Code
   alias Faker.Internet
   alias Faker.Lorem
   alias Faker.Name
   alias Timex.Duration
+  alias Wocky.Account
+  alias Wocky.Account.Token
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Email
@@ -16,7 +17,6 @@ defmodule Wocky.UserSpec do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Token
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
@@ -63,183 +63,6 @@ defmodule Wocky.UserSpec do
       subject do: "" |> JID.make(shared.server) |> User.get_by_jid()
 
       it do: should(be_nil())
-    end
-  end
-
-  describe "register_changeset/1 validations" do
-    it "should pass with valid attributes" do
-      %{
-        username: ID.new(),
-        server: "foo",
-        provider: "local",
-        external_id: "bar"
-      }
-      |> User.register_changeset()
-      |> should(be_valid())
-    end
-
-    it "should fail if the username is missing" do
-      %{server: "foo", eternal_id: "bar"}
-      |> User.register_changeset()
-      |> should(have_errors([:username]))
-    end
-
-    it "should fail with an invalid username" do
-      %{username: "alice", server: "foo", external_id: "bar"}
-      |> User.register_changeset()
-      |> should(have_errors([:username]))
-    end
-
-    it "should fail if the server is missing" do
-      %{username: ID.new(), eternal_id: "bar"}
-      |> User.register_changeset()
-      |> should(have_errors([:server]))
-    end
-
-    it "should fail if the external ID is missing" do
-      %{username: ID.new(), server: "foo"}
-      |> User.register_changeset()
-      |> should(have_errors([:external_id]))
-    end
-
-    it "should set the ID to the username" do
-      id = ID.new()
-
-      changeset =
-        User.register_changeset(%{
-          username: id,
-          server: "foo",
-          eternal_id: "bar"
-        })
-
-      changeset.changes.id |> should(eq changeset.changes.username)
-      changeset.changes.id |> should(eq id)
-    end
-  end
-
-  describe "register_external/4" do
-    context "when the user already exists with the same provider/extID" do
-      before do
-        {:ok, result} =
-          User.register_external(
-            "another_server",
-            "local",
-            shared.external_id,
-            "+15551234567"
-          )
-
-        {:shared, result: result}
-      end
-
-      it "should return the ID of the existing user" do
-        {result_id, _, _} = shared.result
-        result_id |> should(eq shared.id)
-      end
-
-      it "should return the server of the existing user" do
-        {_, result_server, _} = shared.result
-        result_server |> should(eq shared.server)
-        result_server |> should_not(eq "another_server")
-      end
-
-      it "should return 'false' in the last slot" do
-        {_, _, result_is_new} = shared.result
-        result_is_new |> should_not(be_true())
-      end
-    end
-
-    context "when the user already exists with the same phone number" do
-      before do
-        external_id = Code.isbn13()
-
-        {:ok, result} =
-          User.register_external(
-            "another_server",
-            "firebase",
-            external_id,
-            shared.phone_number
-          )
-
-        {:shared, external_id: external_id, result: result}
-      end
-
-      it "should return the ID of the existing user" do
-        {result_id, _, _} = shared.result
-        result_id |> should(eq shared.id)
-      end
-
-      it "should return the server of the existing user" do
-        {_, result_server, _} = shared.result
-        result_server |> should(eq shared.server)
-        result_server |> should_not(eq "another_server")
-      end
-
-      it "should update the provider and external ID" do
-        user = Repo.get_by(User, id: shared.id)
-        user.provider |> should(eq "firebase")
-        user.external_id |> should(eq shared.external_id)
-      end
-
-      it "should return 'false' in the last slot" do
-        {_, _, result_is_new} = shared.result
-        result_is_new |> should_not(be_true())
-      end
-    end
-
-    context "when the user does not exist" do
-      before do
-        {:ok, result} =
-          User.register_external(
-            shared.server,
-            "firebase",
-            ID.new(),
-            "+15551234567"
-          )
-
-        {:shared, result: result}
-      end
-
-      finally do
-        {id, _, _} = shared.result
-        Repo.delete!(%User{id: id})
-      end
-
-      it "should create the user and return its ID" do
-        {result_id, _, _} = shared.result
-        obj = Repo.get(User, result_id)
-        obj |> should_not(be_nil())
-      end
-
-      it "should return the server that was passed in" do
-        {_, result_server, _} = shared.result
-        result_server |> should(eq shared.server)
-      end
-
-      it "should return 'true' in the last slot" do
-        {_, _, result_is_new} = shared.result
-        result_is_new |> should(be_true())
-      end
-    end
-  end
-
-  describe "register/4" do
-    before do
-      id = ID.new()
-      result = User.register(id, shared.server, "password", "password")
-      {:ok, id: id, result: result}
-    end
-
-    it "should return a success result" do
-      shared.result |> should(be_ok_result())
-    end
-
-    it "should create a user" do
-      new_user = Repo.get(User, shared.id)
-
-      new_user |> should_not(be_nil())
-      new_user.server |> should(eq shared.server)
-      new_user.password |> should(eq "password")
-      new_user.pass_details |> should(eq "password")
     end
   end
 
@@ -629,7 +452,7 @@ defmodule Wocky.UserSpec do
 
     describe "delete/1" do
       before do
-        {:ok, _} = Token.assign(shared.id, ID.new())
+        {:ok, _} = Account.assign_token(shared.id, ID.new())
         result = User.delete(shared.id)
         {:ok, result: result}
       end

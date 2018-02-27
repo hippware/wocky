@@ -6,7 +6,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.ID
-  alias Wocky.RosterItem
+  alias Wocky.Roster
 
   describe "validation" do
     let :valid_attrs, do: %{bot_id: ID.new(), user_id: ID.new()}
@@ -194,7 +194,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
         Enum.each(users, &Factory.insert(:subscription, bot: bot, user: &1))
 
         Factory.insert(:share, bot: bot, user: shared_sub_user)
-        RosterItem.befriend(bot.user.id, friend.id)
+        Roster.befriend(bot.user.id, friend.id)
 
         Bot.update(bot, %{public: false})
 

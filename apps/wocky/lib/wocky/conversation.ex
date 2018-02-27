@@ -3,12 +3,15 @@ defmodule Wocky.Conversation do
   DB interface module for conversations
   """
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
+
+  import Ecto.Query
 
   alias Ecto.Queryable
   alias Wocky.JID
+  alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__, as: Conversation
+  alias __MODULE__
 
   @foreign_key_type :binary_id
   schema "conversations" do

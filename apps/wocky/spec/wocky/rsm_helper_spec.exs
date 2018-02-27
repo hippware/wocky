@@ -1,13 +1,15 @@
 defmodule Wocky.RSMHelperSpec do
   use ESpec, async: true
-  use Wocky.Repo.Model
   use Wocky.RSMHelper
 
-  require Record
+  import Ecto.Query
 
   alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+
+  require Record
 
   @count 20
 

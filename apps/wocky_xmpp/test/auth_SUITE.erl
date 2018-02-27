@@ -70,7 +70,7 @@ release_token(Config) ->
     end).
 
 login_with_token(Config) ->
-    {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_token, assign,
+    {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_account, assign_token,
                                             [?ALICE, <<"res1">>]),
     Config2 = escalus_users:update_userspec(Config, alice, password, Token),
     escalus:story(Config2, [{alice, 1}], fun (Alice) ->

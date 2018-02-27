@@ -3,23 +3,20 @@ defmodule WockyAPI.Authentication do
 
   import Plug.Conn
 
-  alias Wocky.Repo
-  alias Wocky.Token
-  alias Wocky.User
+  alias Wocky.Account
 
   def authenticate(conn, _opts \\ []) do
     user_id = conn |> get_req_header("x-auth-user") |> List.first()
     token = conn |> get_req_header("x-auth-token") |> List.first()
 
-    if Token.valid?(user_id, token) do
-      # This can't return nil since the token check passed.
-      user = Repo.get!(User, user_id)
+    case Account.authenticate_with_token(user_id, token) do
+      {:ok, user} ->
+        conn
+        |> assign(:current_user, user)
+        |> put_private(:absinthe, %{context: %{current_user: user}})
 
-      conn
-      |> assign(:current_user, user)
-      |> put_private(:absinthe, %{context: %{current_user: user}})
-    else
-      conn |> send_resp(:unauthorized, "") |> halt()
+      {:error, _} ->
+        conn |> send_resp(:unauthorized, "") |> halt()
     end
   end
 

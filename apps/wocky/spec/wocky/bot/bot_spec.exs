@@ -7,7 +7,8 @@ defmodule Wocky.BotSpec do
   alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index.TestIndexer
   alias Wocky.GeoUtils
   alias Wocky.Repo
@@ -253,19 +254,19 @@ defmodule Wocky.BotSpec do
 
           it do:
                shared.shared_user.id
-               |> HomeStreamItem.get()
+               |> HomeStream.get()
                |> is_deleted()
                |> should(be_false())
 
           it do:
                shared.unshared_user.id
-               |> HomeStreamItem.get()
+               |> HomeStream.get()
                |> is_deleted()
                |> should(be_true())
 
           it do:
                user().id
-               |> HomeStreamItem.get()
+               |> HomeStream.get()
                |> is_deleted()
                |> should(be_false())
         end
@@ -278,18 +279,18 @@ defmodule Wocky.BotSpec do
 
           it do:
                shared.shared_user.id
-               |> HomeStreamItem.get()
+               |> HomeStream.get()
                |> is_deleted()
                |> should(be_false())
 
           it do:
                shared.unshared_user.id
-               |> HomeStreamItem.get()
+               |> HomeStream.get()
                |> is_deleted()
                |> should(be_false())
 
           it do:
-               user().id |> HomeStreamItem.get() |> is_deleted()
+               user().id |> HomeStream.get() |> is_deleted()
                |> should(be_false())
         end
       end

@@ -4,13 +4,13 @@ defmodule Wocky.Repo.Cleaner do
   import Ecto.Query
   import SweetXml
 
+  alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
-  alias Wocky.Token, as: AuthToken
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata

@@ -1,4 +1,4 @@
-defmodule Wocky.RosterItem do
+defmodule Wocky.Roster do
   @moduledoc """
   DB interface module for roster items
 
@@ -9,7 +9,7 @@ defmodule Wocky.RosterItem do
   [contact_id] sends/gets presences [suscription] [user_id]
 
   eg:
-  %RosterItem{
+  %Item{
     user_id: A
     contact_id: B
     subscription: :from
@@ -19,7 +19,7 @@ defmodule Wocky.RosterItem do
 
   The corresponding entry for B:
 
-  %RosterItem{
+  %Item{
     user_id: B
     contact_id: A
     subscription: :to
@@ -29,79 +29,42 @@ defmodule Wocky.RosterItem do
 
   """
 
-  use Wocky.Repo.Model
-
-  import EctoHomoiconicEnum, only: [defenum: 2]
+  import Ecto.Query
 
   alias Ecto.Adapters.SQL
-  alias Ecto.Queryable
-  alias Ecto.UUID
+  alias Ecto.{Queryable, UUID}
   alias Wocky.Blocking
   alias Wocky.Repo
-  alias Wocky.RosterItem.AskEnum
-  alias Wocky.RosterItem.SubscriptionEnum
+  alias Wocky.Roster.{InitialContact, Item}
   alias Wocky.User
-  alias __MODULE__, as: RosterItem
 
   require Logger
 
-  defenum AskEnum, [:in, :out, :both, :none]
-  defenum SubscriptionEnum, [:none, :from, :to, :both]
-
-  @foreign_key_type :binary_id
-  schema "roster_items" do
-    field :name, :binary, default: ""
-    field :ask, AskEnum
-    field :subscription, SubscriptionEnum
-    field :groups, {:array, :string}
-
-    belongs_to :user, User
-    belongs_to :contact, User
-
-    timestamps()
-  end
-
-  @type name :: binary
-  @type ask :: :in | :out | :both | :none
-  @type subscription :: :both | :from | :to | :none | :remove
   @type version :: binary
-  @type group :: binary
   @type relationship :: :self | :friend | :follower | :followee | :none
 
-  @type t :: %RosterItem{
-          user: User.t(),
-          contact: User.t(),
-          name: name,
-          ask: ask,
-          subscription: subscription,
-          groups: [group],
-          updated_at: DateTime.t()
-        }
-
-  @change_fields [:user_id, :contact_id, :name, :ask, :subscription, :groups]
-
   @doc "Write a roster record to the database"
-  @spec put(map) :: {:ok, RosterItem.t()} | {:error, term}
+  @spec put(map) :: {:ok, Item.t()} | {:error, term}
   def put(fields) do
-    %RosterItem{}
-    |> changeset(fields)
+    %Item{}
+    |> Item.changeset(fields)
     |> Repo.insert(
       on_conflict: :replace_all,
       conflict_target: [:user_id, :contact_id]
     )
   end
 
-  @spec get(User.id()) :: [t]
+  @spec get(User.id()) :: [Item.t()]
   def get(user_id) do
-    RosterItem
+    Item
     |> with_user(user_id)
     |> preload(:contact)
     |> Repo.all()
   end
 
-  @spec get(User.id(), User.id()) :: t | nil
+  @spec get(User.id(), User.id()) :: Item.t() | nil
   def get(user_id, contact_id) do
-    RosterItem
+    Item
     |> with_contact(contact_id)
     |> preload(:contact)
     |> Repo.get_by(user_id: user_id)
@@ -111,9 +74,9 @@ defmodule Wocky.RosterItem do
   Returns the pair of roster items for a/b if they exist. a's item for
   b will always be the first of the pair
   """
-  @spec get_pair(User.id(), User.id()) :: {t, t} | nil
+  @spec get_pair(User.id(), User.id()) :: {Item.t(), Item.t()} | nil
   def get_pair(a, b) do
-    RosterItem
+    Item
     |> with_pair(a, b)
     |> Repo.all()
     |> maybe_sort_pair(a, b)
@@ -122,13 +85,13 @@ defmodule Wocky.RosterItem do
   @spec version(User.id()) :: version
   def version(user_id) do
     timestamp =
-      RosterItem
+      Item
       |> with_user(user_id)
       |> select([r], max(r.updated_at))
       |> Repo.one()
 
     count =
-      RosterItem
+      Item
       |> with_user(user_id)
       |> count()
       |> Repo.one()
@@ -138,7 +101,7 @@ defmodule Wocky.RosterItem do
 
   @spec delete(User.id()) :: :ok
   def delete(user_id) do
-    RosterItem
+    Item
     |> with_user(user_id)
     |> Repo.delete_all()
 
@@ -147,7 +110,7 @@ defmodule Wocky.RosterItem do
 
   @spec delete(User.id(), User.id()) :: :ok
   def delete(user_id, contact_id) do
-    RosterItem
+    Item
     |> with_user(user_id)
     |> with_contact(contact_id)
     |> Repo.delete_all()
@@ -157,7 +120,7 @@ defmodule Wocky.RosterItem do
 
   @spec find_users_with_contact(User.id()) :: [User.t()]
   def find_users_with_contact(contact_id) do
-    RosterItem
+    Item
     |> with_contact(contact_id)
     |> preload(:user)
     |> Repo.all()
@@ -166,7 +129,7 @@ defmodule Wocky.RosterItem do
 
   @spec has_contact(User.id(), User.id()) :: boolean
   def has_contact(user_id, contact_id) do
-    RosterItem
+    Item
     |> with_user(user_id)
     |> with_contact(contact_id)
     |> where(ask: ^:none)
@@ -215,7 +178,7 @@ defmodule Wocky.RosterItem do
 
   defp relationships_query(user_id, requester_id, sub_types, include_system) do
     User
-    |> join(:left, [u], r in RosterItem, u.id == r.contact_id)
+    |> join(:left, [u], r in Item, u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
     |> maybe_filter_system(not include_system)
     |> where([u, r], not is_nil(u.handle))
@@ -282,6 +245,13 @@ defmodule Wocky.RosterItem do
     end
   end
 
+  @spec add_initial_contact(User.t(), InitialContact.type()) :: :ok
+  def add_initial_contact(user, type), do: InitialContact.put(user, type)
+
+  @spec add_initial_contacts_to_user(User.id()) :: :ok
+  def add_initial_contacts_to_user(user_id),
+    do: InitialContact.add_to_user(user_id)
+
   @spec befriend(User.id(), User.id()) :: :ok
   def befriend(u1, u2) do
     add_relationship(u1, u2, :both)
@@ -297,8 +267,8 @@ defmodule Wocky.RosterItem do
   end
 
   defp add_relationship(user_id, contact_id, subscription) do
-    %RosterItem{}
-    |> changeset(%{
+    %Item{}
+    |> Item.changeset(%{
       user_id: user_id,
       contact_id: contact_id,
       subscription: subscription,
@@ -313,7 +283,7 @@ defmodule Wocky.RosterItem do
 
   @spec bump_all_versions(User.id()) :: :ok
   def bump_all_versions(contact_id) do
-    RosterItem
+    Item
     |> with_contact(contact_id)
     |> Repo.update_all(set: [updated_at: NaiveDateTime.utc_now()])
 
@@ -354,32 +324,25 @@ defmodule Wocky.RosterItem do
     verstr <> "-" <> Integer.to_string(count)
   end
 
-  defp is_friend(%RosterItem{subscription: :both}), do: true
+  defp is_friend(%Item{subscription: :both}), do: true
   defp is_friend(_), do: false
 
   # Returns true if the roster item referrs to a follower of the item owner
-  defp is_follower(%RosterItem{subscription: subscription}) do
+  defp is_follower(%Item{subscription: subscription}) do
     subscription == :both || subscription == :from
   end
 
   # Returns true if the roster item referrs to a followee of the item owner
-  defp is_followee(%RosterItem{subscription: subscription}) do
+  defp is_followee(%Item{subscription: subscription}) do
     subscription == :both || subscription == :to
   end
 
   defp is_followee(_), do: false
 
-  defp changeset(struct, params) do
-    struct
-    |> cast(params, @change_fields)
-    |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:contact_id)
-  end
-
   defp maybe_sort_pair([], _, _), do: nil
   defp maybe_sort_pair([_], _, _), do: nil
 
-  defp maybe_sort_pair([first = %RosterItem{user_id: id}, second], id, _) do
+  defp maybe_sort_pair([first = %Item{user_id: id}, second], id, _) do
     {first, second}
   end
 
