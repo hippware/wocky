@@ -7,7 +7,7 @@ defmodule Wocky.Account do
   import Ecto.Query, warn: false
   import Ecto.Changeset
 
-  alias Wocky.Account.{Firebase, Token}
+  alias Wocky.Account.{ClientJWT, Firebase, Token}
   alias Wocky.HomeStream
   alias Wocky.Roster
   alias Wocky.Repo
@@ -101,6 +101,25 @@ defmodule Wocky.Account do
     case Firebase.verify(jwt) do
       {:ok, {external_id, phone_number}} ->
         on_authenticated(server, "firebase", external_id, phone_number)
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  @doc """
+  Authenticates the user using an OAuth 2 access token wrapped in a
+  client-generated JWT. See the Wiki for details:
+  https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
+  """
+  @spec authenticate_with_jwt(binary, binary) :: {:ok, User.t()} | {:error, any}
+  def authenticate_with_jwt(server, jwt) do
+    case ClientJWT.verify(jwt) do
+      {:ok, {"firebase", token}} ->
+        authenticate_with_firebase(server, token)
+
+      {:ok, {provider, _}} ->
+        {:error, "Unknown provider: #{provider}"}
 
       {:error, _} = error ->
         error
