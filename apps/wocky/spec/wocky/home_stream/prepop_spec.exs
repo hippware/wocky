@@ -5,9 +5,9 @@ defmodule Wocky.HomeStream.PrepopSpec do
   alias Timex.Duration
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Prepop
-  alias Wocky.InitialContact
   alias Wocky.Repo
-  alias Wocky.RosterItem
+  alias Wocky.Roster
+  alias Wocky.Roster.InitialContact
 
   @num_items 10
   @differing_prepop_fields [:user, :user_id, :id]
@@ -33,7 +33,7 @@ defmodule Wocky.HomeStream.PrepopSpec do
     end
 
     it "should make the prepop user follow the specified user" do
-      RosterItem.relationship(shared.source_user.id, shared.user.id)
+      Roster.relationship(shared.source_user.id, shared.user.id)
       |> should(eq :follower)
     end
 

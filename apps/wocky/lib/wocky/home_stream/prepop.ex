@@ -8,8 +8,7 @@ defmodule Wocky.HomeStream.Prepop do
   alias Timex.Duration
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Item
-  alias Wocky.InitialContact
-  alias Wocky.RosterItem
+  alias Wocky.Roster
   alias Wocky.Repo
   alias Wocky.User
 
@@ -22,8 +21,8 @@ defmodule Wocky.HomeStream.Prepop do
   @spec add_source(User.handle()) :: :ok
   def add_source(handle) do
     user = Repo.get_by(User, handle: handle)
-    RosterItem.follow(user().id, user.id)
-    InitialContact.put(user, :followee)
+    Roster.follow(user().id, user.id)
+    Roster.add_initial_contact(user, :followee)
   end
 
   @spec prepopulate(User.id(), Keyword.t()) :: :ok

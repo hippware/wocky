@@ -12,7 +12,8 @@ defmodule Wocky.Blocking do
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.Repo
-  alias Wocky.RosterItem
+  alias Wocky.Roster
+  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.User
 
   @blocked_group "__blocked__"
@@ -83,7 +84,7 @@ defmodule Wocky.Blocking do
 
   @spec blocked?(User.id(), User.id()) :: boolean
   def blocked?(a, b) do
-    case RosterItem.get(a, b) do
+    case Roster.get(a, b) do
       nil ->
         false
 
@@ -124,7 +125,7 @@ defmodule Wocky.Blocking do
           groups: b_groups
         }
       ]
-      |> Enum.each(&RosterItem.put/1)
+      |> Enum.each(&Roster.put/1)
     end)
 
     :ok

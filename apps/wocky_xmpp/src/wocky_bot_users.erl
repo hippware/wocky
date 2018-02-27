@@ -99,7 +99,7 @@ cdata_el(Name, Value) ->
            children = [#xmlcdata{content = Value}]}.
 
 get_friends_and_followers(LUser) ->
-    [?wocky_user:to_jid(R) || R <- ?wocky_roster_item:followers(LUser)].
+    [?wocky_user:to_jid(R) || R <- ?wocky_roster:followers(LUser)].
 
 %%%===================================================================
 %%% Notify bot subscribers of changes to the bot description

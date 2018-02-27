@@ -8,9 +8,8 @@ defmodule Wocky.Account do
   import Ecto.Changeset
 
   alias Wocky.Account.{Firebase, Token}
-  alias Wocky.InitialContact
-  alias Wocky.RosterItem
   alias Wocky.HomeStream
+  alias Wocky.Roster
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
@@ -196,47 +195,7 @@ defmodule Wocky.Account do
   end
 
   defp prepopulate_user(user_id) do
-    set_initial_contacts(user_id)
+    Roster.add_initial_contacts_to_user(user_id)
     HomeStream.prepopulate(user_id)
-  end
-
-  defp set_initial_contacts(user_id) do
-    InitialContact.get()
-    |> Enum.each(&set_initial_contact(user_id, &1))
-  end
-
-  defp set_initial_contact(user_id, %{user: user, type: :followee}) do
-    set_initial_contact(user_id, user, :to, :from)
-  end
-
-  defp set_initial_contact(user_id, %{user: user, type: :follower}) do
-    set_initial_contact(user_id, user, :from, :to)
-  end
-
-  defp set_initial_contact(user_id, %{user: user, type: :friend}) do
-    set_initial_contact(user_id, user, :both, :both)
-  end
-
-  defp set_initial_contact(user_id, followee, usub, fsub) do
-    user_contact = %{
-      user_id: user_id,
-      contact_id: followee.id,
-      name: followee.handle,
-      ask: :none,
-      subscription: usub,
-      groups: ["__welcome__", "__new__"]
-    }
-
-    init_contact = %{
-      user_id: followee.id,
-      contact_id: user_id,
-      name: "",
-      ask: :none,
-      subscription: fsub,
-      groups: ["__welcomed__", "__new__"]
-    }
-
-    RosterItem.put(user_contact)
-    RosterItem.put(init_contact)
   end
 end

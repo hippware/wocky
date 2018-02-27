@@ -382,12 +382,12 @@ auto_publish_newly_public_bot(Config) ->
         %% test_helper:remove_contact/2 results in an asymmetric pair of rosters
         %% whcih should never happpen. This workaround will suffice until
         %% that gets fixed.
-        ?wocky_roster_item:delete(?ALICE, ?TIM),
-        ?wocky_roster_item:delete(?TIM, ?ALICE),
-        ?wocky_roster_item:delete(?ALICE, ?KAREN),
-        ?wocky_roster_item:delete(?KAREN, ?ALICE),
-        ?wocky_roster_item:delete(?KAREN, ?TIM),
-        ?wocky_roster_item:delete(?TIM, ?KAREN),
+        ?wocky_roster:delete(?ALICE, ?TIM),
+        ?wocky_roster:delete(?TIM, ?ALICE),
+        ?wocky_roster:delete(?ALICE, ?KAREN),
+        ?wocky_roster:delete(?KAREN, ?ALICE),
+        ?wocky_roster:delete(?KAREN, ?TIM),
+        ?wocky_roster:delete(?TIM, ?KAREN),
 
         test_helper:follow(Tim, Alice),
 

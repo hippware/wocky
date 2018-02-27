@@ -21,7 +21,7 @@ defmodule Wocky.User do
   alias Wocky.Index
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
-  alias Wocky.RosterItem
+  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User.Avatar
   alias Wocky.User.BotEvent

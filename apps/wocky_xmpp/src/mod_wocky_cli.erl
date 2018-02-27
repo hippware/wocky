@@ -153,7 +153,7 @@ befriend(Handle1, Handle2) ->
        ]).
 
 make_friends(U1 = #{id := User1}, U2 = #{id := User2}) ->
-    ?wocky_roster_item:befriend(User1, User2),
+    ?wocky_roster:befriend(User1, User2),
     lists:foreach(
       run_roster_hook(_), [{U1, U2}, {U2, U1}]).
 

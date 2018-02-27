@@ -3,10 +3,10 @@ defmodule Wocky.Repo.Migrations.AddHsPrepopUser do
 
   import Ecto.Query
 
-  alias Wocky.InitialContact
   alias Wocky.Repo
   alias Wocky.Repo.ID
-  alias Wocky.RosterItem
+  alias Wocky.Roster.Item, as: RosterItem
+  alias Wocky.Roster.InitialContact
   alias Wocky.User
 
   @handle "__new_user_hs_archive__"

@@ -344,7 +344,7 @@ remove_roster(Config, UserSpec) ->
     [User, _, _] = [escalus_ejabberd:unify_str_arg(Item) ||
                             Item <- escalus_users:get_usp(Config, UserSpec)],
 
-    ok = ?wocky_roster_item:delete(User).
+    ok = ?wocky_roster:delete(User).
 
 get_ver(Element) ->
     exml_query:path(Element, [{element, <<"query">>}, {attr, <<"ver">>}]).

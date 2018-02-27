@@ -92,10 +92,10 @@ get_addresses(From, AddressesEl) ->
 get_address(From, #xmlel{name = <<"address">>, attrs = Attrs}, Acc) ->
     case xml:get_attr(<<"type">>, Attrs) of
         {value, <<"friends">>} ->
-            Friends = ?wocky_roster_item:friends(From#jid.luser),
+            Friends = ?wocky_roster:friends(From#jid.luser),
             get_user_addresses(Friends) ++ Acc;
         {value, <<"followers">>} ->
-            Followers = ?wocky_roster_item:followers(From#jid.luser),
+            Followers = ?wocky_roster:followers(From#jid.luser),
             get_user_addresses(Followers) ++ Acc;
         {value, <<"to">>} ->
             add_target(Attrs, Acc);
