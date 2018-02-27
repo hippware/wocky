@@ -9,9 +9,9 @@ defmodule Wocky.HomeStreamItem do
 
   alias Timex.Duration
   alias Wocky.Bot
-  alias Wocky.Bot.Share
   alias Wocky.HomeStreamID
   alias Wocky.JID
+  alias Wocky.Repo.ID
   alias Wocky.User
   alias __MODULE__, as: HomeStreamItem
 
@@ -27,6 +27,9 @@ defmodule Wocky.HomeStreamItem do
     belongs_to :user, User
     belongs_to :reference_user, User, foreign_key: :reference_user_id
     belongs_to :reference_bot, Bot, foreign_key: :reference_bot_id
+    # This field points to half of a composite foreign key for Wocky.Bot.Item
+    # which Ecto doesn't natively support at the moment:
+    field :reference_bot_item_id, :string
 
     timestamps()
   end
@@ -42,7 +45,8 @@ defmodule Wocky.HomeStreamItem do
           class: class,
           updated_at: DateTime.t(),
           reference_user: User.t(),
-          reference_bot: Bot.t()
+          reference_bot: Bot.t(),
+          reference_bot_item_id: ID.t()
         }
 
   @change_fields [
@@ -53,6 +57,7 @@ defmodule Wocky.HomeStreamItem do
     :class,
     :reference_user_id,
     :reference_bot_id,
+    :reference_bot_item_id,
     :created_at,
     :updated_at
   ]
@@ -64,7 +69,8 @@ defmodule Wocky.HomeStreamItem do
     stanza: "",
     from_jid: "",
     reference_user_id: nil,
-    reference_bot_id: nil
+    reference_bot_id: nil,
+    reference_bot_item_id: nil
   ]
 
   @doc "Write a home stream item to the database"
@@ -80,6 +86,7 @@ defmodule Wocky.HomeStreamItem do
       stanza: stanza,
       reference_user_id: Keyword.get(opts, :ref_user_id),
       reference_bot_id: Keyword.get(opts, :ref_bot_id),
+      reference_bot_item_id: Keyword.get(opts, :ref_bot_item_id),
       class: :item,
 
       # Usually we let ecto handle these timestamps, however in this case we
@@ -133,57 +140,6 @@ defmodule Wocky.HomeStreamItem do
     |> where(user_id: ^user_id)
     |> where(reference_bot_id: ^ref_bot_id)
     |> Repo.update_all(set: delete_changes())
-
-    :ok
-  end
-
-  @spec delete_by_user_ref(User.t()) :: :ok
-  def delete_by_user_ref(user) do
-    HomeStreamItem
-    |> where(reference_user_id: ^user.id)
-    |> Repo.update_all(set: delete_changes())
-
-    :ok
-  end
-
-  @spec delete_by_bot_ref(Bot.t()) :: :ok
-  def delete_by_bot_ref(bot) do
-    HomeStreamItem
-    |> where(reference_bot_id: ^bot.id)
-    |> Repo.update_all(set: delete_changes())
-
-    :ok
-  end
-
-  @doc """
-  Marks as deleted all home stream items referencing the given bot where the
-  item's owner is not able to view the bot
-  """
-  @spec delete_by_bot_ref_invisible(Bot.t()) :: :ok
-  def delete_by_bot_ref_invisible(%Bot{public: true}), do: :ok
-
-  def delete_by_bot_ref_invisible(bot) do
-    Repo.transaction(fn ->
-      HomeStreamItem
-      |> join(
-        :left,
-        [i],
-        s in Share,
-        s.user_id == i.user_id and s.bot_id == ^bot.id
-      )
-      |> where(
-        [i, s],
-        i.reference_bot_id == ^bot.id and is_nil(s.user_id) and
-          i.user_id != ^bot.user_id
-      )
-      |> Repo.stream()
-      |> Stream.each(fn item ->
-        item
-        |> changeset(Map.new(@delete_changes))
-        |> Repo.update()
-      end)
-      |> Stream.run()
-    end)
 
     :ok
   end

@@ -46,7 +46,6 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-
       {:absinthe_phoenix, "~> 1.4"},
       {:absinthe_ecto, "~> 0.1.3"},
       {:cowboy, "~> 1.0"},
@@ -60,7 +59,6 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       {:ranch, "~> 1.3.2", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
-
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
