@@ -69,10 +69,11 @@ defmodule Wocky.HomeStream.PrepopSpec do
     end
 
     it "should copy items for the specified time period" do
-      Prepop.prepopulate(shared.target_user.id, [
+      Prepop.prepopulate(
+        shared.target_user.id,
         period: Duration.from_days(10),
         min: 0
-      ])
+      )
       |> should(eq :ok)
 
       shared.target_user.id
@@ -82,10 +83,11 @@ defmodule Wocky.HomeStream.PrepopSpec do
     end
 
     it "should not copy items if a zero period is given" do
-      Prepop.prepopulate(shared.target_user.id, [
+      Prepop.prepopulate(
+        shared.target_user.id,
         period: Duration.from_seconds(0),
         min: 0
-      ])
+      )
       |> should(eq :ok)
 
       shared.target_user.id
@@ -108,10 +110,11 @@ defmodule Wocky.HomeStream.PrepopSpec do
 
     it "should copy the minimum requested items even if
         outside the time period" do
-      Prepop.prepopulate(shared.target_user.id, [
+      Prepop.prepopulate(
+        shared.target_user.id,
         period: Timex.Duration.from_seconds(1),
         min: 8
-      ])
+      )
       |> should(eq :ok)
 
       shared.target_user.id

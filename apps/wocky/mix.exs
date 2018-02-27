@@ -110,7 +110,6 @@ defmodule Wocky.Mixfile do
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:ossp_uuid,
        github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
-
       {:bypass, "~> 0.7", only: :test, runtime: false},
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},

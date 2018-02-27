@@ -34,6 +34,7 @@ defmodule Wocky.HomeStream.Prepop do
 
   defp prepop_defaults do
     days = Confex.get_env(:wocky, :hs_prepopulation_days)
+
     [
       period: Duration.from_days(days),
       min: Confex.get_env(:wocky, :hs_prepopulation_min_items)
@@ -41,6 +42,7 @@ defmodule Wocky.HomeStream.Prepop do
   end
 
   defp prepopulate_from(_user_id, nil, _period, _min), do: :ok
+
   defp prepopulate_from(user_id, from, period, min) do
     from.id
     |> prepop_items(period, min)

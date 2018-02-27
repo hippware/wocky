@@ -75,8 +75,7 @@ defmodule Wocky.HomeStreamSpec do
         put_result |> should(be_ok_result())
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
-        get_result =
-          HomeStream.get_by_key(shared.user.id, shared.last_item.key)
+        get_result = HomeStream.get_by_key(shared.user.id, shared.last_item.key)
 
         get_result |> should(be_struct HomeStreamItem)
         get_result.stanza |> should(eq stanza)
@@ -100,8 +99,7 @@ defmodule Wocky.HomeStreamSpec do
 
         put_result |> Kernel.elem(1) |> should(be_struct HomeStreamItem)
 
-        get_result =
-          HomeStream.get_by_key(shared.user.id, shared.last_item.key)
+        get_result = HomeStream.get_by_key(shared.user.id, shared.last_item.key)
 
         get_result |> should(be_struct HomeStreamItem)
         get_result.reference_user_id |> should(eq ref_user.id)

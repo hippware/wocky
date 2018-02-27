@@ -134,11 +134,12 @@ defmodule Wocky.Account do
             register_new(server, provider, external_id, phone_number, retries)
 
           orig_user ->
-            {:ok, user} = User.update(orig_user, %{
-              provider: provider,
-              external_id: external_id,
-              phone_number: phone_number
-            })
+            {:ok, user} =
+              User.update(orig_user, %{
+                provider: provider,
+                external_id: external_id,
+                phone_number: phone_number
+              })
 
             {:ok, {user, false}}
         end
