@@ -8,7 +8,7 @@ defmodule Wocky.Account.Firebase do
   alias JOSE.JWK
   alias Wocky.Account.FirebaseKeyManager
 
-  @type firebase_id :: binary
+  @type firebase_id :: {binary, binary}
 
   @issuer_prefix "https://securetoken.google.com/"
   @expected_alg "RS256"
