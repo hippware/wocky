@@ -15,6 +15,7 @@
 -import(test_helper, [expect_iq_success_u/3, expect_iq_error_u/3,
                       expect_iq_success/2, add_to_u/2,
                       ensure_all_clean/1, publish_item_stanza/4,
+                      retract_item_stanza/2,
                       get_hs_stanza/0, get_hs_stanza/1,
                       check_hs_result/2, check_hs_result/3, check_hs_result/4,
                       query_el/1, hs_node/1, node_el/3,
@@ -477,7 +478,11 @@ auto_publish_bot_item(Config) ->
           publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
           Alice),
 
-        check_home_stream_sizes(2, [Carol], false)
+        check_home_stream_sizes(2, [Carol], false),
+
+        expect_iq_success(retract_item_stanza(?BOT, <<"ID">>), Alice),
+        timer:sleep(400),
+        check_home_stream_sizes(1, [Carol], false)
 
       end).
 
@@ -571,8 +576,9 @@ bot_change_notification(Config) ->
 
         % Retract item
         bot_SUITE:retract_item(?BOT, <<"BrandNewID">>, Alice),
-        escalus:assert(fun is_bot_ref_change_notification/1,
-                       escalus:wait_for_stanza(Carol)),
+        escalus:assert_many([fun is_hs_item_deleted_notification/1,
+                             fun is_bot_ref_change_notification/1],
+                            escalus:wait_for_stanzas(Carol, 2)),
         timer:sleep(400),
         ensure_all_clean([Alice, Carol]),
 
@@ -597,7 +603,7 @@ bot_change_notification(Config) ->
                   escalus:assert(fun is_hs_item_deleted_notification/1,
                                  escalus:wait_for_stanza(Carol))
           end,
-          lists:seq(1, 3)),
+          lists:seq(1, 2)),
 
         set_public(true, Alice),
 

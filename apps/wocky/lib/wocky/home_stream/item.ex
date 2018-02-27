@@ -19,6 +19,9 @@ defmodule Wocky.HomeStream.Item do
     belongs_to :user, Wocky.User
     belongs_to :reference_user, Wocky.User, foreign_key: :reference_user_id
     belongs_to :reference_bot, Wocky.Bot, foreign_key: :reference_bot_id
+    # This field points to half of a composite foreign key for Wocky.Bot.Item
+    # which Ecto doesn't natively support at the moment:
+    field :reference_bot_item_id, :string
 
     timestamps()
   end
@@ -34,7 +37,8 @@ defmodule Wocky.HomeStream.Item do
           class: class,
           updated_at: DateTime.t(),
           reference_user: Wocky.User.t(),
-          reference_bot: Wocky.Bot.t()
+          reference_bot: Wocky.Bot.t(),
+          reference_bot_item_id: Wocky.Repo.ID.t()
         }
 
   @change_fields [
@@ -45,6 +49,7 @@ defmodule Wocky.HomeStream.Item do
     :class,
     :reference_user_id,
     :reference_bot_id,
+    :reference_bot_item_id,
     :created_at,
     :updated_at
   ]
@@ -54,7 +59,8 @@ defmodule Wocky.HomeStream.Item do
     stanza: "",
     from_jid: "",
     reference_user_id: nil,
-    reference_bot_id: nil
+    reference_bot_id: nil,
+    reference_bot_item_id: nil
   ]
 
   def writable_fields, do: @change_fields

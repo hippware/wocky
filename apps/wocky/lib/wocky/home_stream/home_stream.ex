@@ -6,7 +6,6 @@ defmodule Wocky.HomeStream do
   import Ecto.Query
 
   alias Wocky.Bot
-  alias Wocky.Bot.Share
   alias Wocky.HomeStream.{ID, Item, Prepop}
   alias Wocky.JID
   alias Wocky.Repo
@@ -25,6 +24,7 @@ defmodule Wocky.HomeStream do
       stanza: stanza,
       reference_user_id: Keyword.get(opts, :ref_user_id),
       reference_bot_id: Keyword.get(opts, :ref_bot_id),
+      reference_bot_item_id: Keyword.get(opts, :ref_bot_item_id),
       class: :item,
 
       # Usually we let ecto handle these timestamps, however in this case we
@@ -78,57 +78,6 @@ defmodule Wocky.HomeStream do
     |> where(user_id: ^user_id)
     |> where(reference_bot_id: ^ref_bot_id)
     |> Repo.update_all(set: Item.delete_changes())
-
-    :ok
-  end
-
-  @spec delete_by_user_ref(User.t()) :: :ok
-  def delete_by_user_ref(user) do
-    Item
-    |> where(reference_user_id: ^user.id)
-    |> Repo.update_all(set: Item.delete_changes())
-
-    :ok
-  end
-
-  @spec delete_by_bot_ref(Bot.t()) :: :ok
-  def delete_by_bot_ref(bot) do
-    Item
-    |> where(reference_bot_id: ^bot.id)
-    |> Repo.update_all(set: Item.delete_changes())
-
-    :ok
-  end
-
-  @doc """
-  Marks as deleted all home stream items referencing the given bot where the
-  item's owner is not able to view the bot
-  """
-  @spec delete_by_bot_ref_invisible(Bot.t()) :: :ok
-  def delete_by_bot_ref_invisible(%Bot{public: true}), do: :ok
-
-  def delete_by_bot_ref_invisible(bot) do
-    Repo.transaction(fn ->
-      Item
-      |> join(
-        :left,
-        [i],
-        s in Share,
-        s.user_id == i.user_id and s.bot_id == ^bot.id
-      )
-      |> where(
-        [i, s],
-        i.reference_bot_id == ^bot.id and is_nil(s.user_id) and
-          i.user_id != ^bot.user_id
-      )
-      |> Repo.stream()
-      |> Stream.each(fn item ->
-        item
-        |> Item.delete_changeset()
-        |> Repo.update()
-      end)
-      |> Stream.run()
-    end)
 
     :ok
   end

@@ -209,7 +209,6 @@ defmodule Wocky.Bot do
 
   @spec update(t, map) :: {:ok, t} | {:error, any}
   def update(bot, params) do
-    maybe_tidy_home_streams(bot, params)
     do_update(bot, params, &Repo.update/1)
   end
 
@@ -226,7 +225,6 @@ defmodule Wocky.Bot do
 
   @spec delete(t) :: :ok
   def delete(bot) do
-    HomeStream.delete_by_bot_ref(bot)
     Repo.delete(bot)
     Index.remove(:bot, bot.id)
     :ok
@@ -355,12 +353,6 @@ defmodule Wocky.Bot do
     queryable
     |> where(pending: false)
   end
-
-  defp maybe_tidy_home_streams(%Bot{public: true} = bot, %{public: false}) do
-    HomeStream.delete_by_bot_ref_invisible(%{bot | public: false})
-  end
-
-  defp maybe_tidy_home_streams(_, _), do: :ok
 
   def maybe_update_hs_items(old, new) do
     if should_update_hs(old, new) do

@@ -3,6 +3,7 @@ defmodule Wocky.HomeStreamSpec do
   use ModelHelpers
 
   alias Faker.Lorem
+  alias Wocky.Bot
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Repo.Factory
@@ -185,25 +186,23 @@ defmodule Wocky.HomeStreamSpec do
         class: :ref_update
       })
 
-      user_ids = Enum.map(ref_user_items, & &1.id)
-      HomeStream.delete_by_user_ref(ref_user)
-
-      referenced_user_items =
-        shared.user.id
-        |> HomeStream.get()
-        |> Enum.filter(&Enum.member?(user_ids, &1.id))
-
       bot_ids = Enum.map(ref_bot_items, & &1.id)
-      HomeStream.delete_by_bot_ref(ref_bot)
+      Repo.delete!(ref_bot)
 
       referenced_bot_items =
         shared.user.id
         |> HomeStream.get()
         |> Enum.filter(&Enum.member?(bot_ids, &1.id))
 
+      user_ids = Enum.map(ref_user_items, & &1.id)
+      Repo.delete!(ref_user)
+
+      referenced_user_items =
+        shared.user.id
+        |> HomeStream.get()
+        |> Enum.filter(&Enum.member?(user_ids, &1.id))
+
       {:ok,
-       ref_user: ref_user,
-       ref_bot: ref_bot,
        referenced_user_items: referenced_user_items,
        ref_user_times: Enum.map(ref_user_items, & &1.updated_at),
        referenced_bot_items: referenced_bot_items,
@@ -243,32 +242,33 @@ defmodule Wocky.HomeStreamSpec do
     context "deletion of items for users who can no longer see the bot" do
       before do
         shared_to_user = Factory.insert(:user)
+        ref_user = Factory.insert(:user)
+        ref_bot = Factory.insert(:bot, user: ref_user)
 
         for _ <- 1..@num_items do
           Factory.insert(:home_stream_item, %{
             user: shared_to_user,
-            reference_bot: shared.ref_bot
+            reference_bot: ref_bot
           })
 
           Factory.insert(:home_stream_item, %{
-            user: shared.ref_user,
-            reference_bot: shared.ref_bot
+            user: ref_user,
+            reference_bot: ref_bot
           })
         end
 
         Factory.insert(:share, %{
-          bot: shared.ref_bot,
-          sharer: shared.ref_user,
+          bot: ref_bot,
+          sharer: ref_user,
           user: shared_to_user
         })
 
-        result = HomeStream.delete_by_bot_ref_invisible(shared.ref_bot)
+        {:ok, ref_bot} = Bot.update(ref_bot, %{public: false})
 
-        {:ok, result: result, shared_to_user: shared_to_user}
-      end
-
-      it "should return ok" do
-        shared.result |> should(eq :ok)
+        {:ok,
+         ref_user: ref_user,
+         ref_bot: ref_bot,
+         shared_to_user: shared_to_user}
       end
 
       it "should remove referenced items from unshared-to users" do
