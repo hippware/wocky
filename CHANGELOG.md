@@ -7,6 +7,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Catch and report errors in watcher CB (PR #1288)
 * Change format of conversation deep link (#1281)
+* When a bot post is deleted, referencing HS items should also be deleted (#1227)
+* Account refactoring (PR #1291)
+* Add unfriend/2 function (PR #1294)
 
 
 # 2018.2.23+r433c862
