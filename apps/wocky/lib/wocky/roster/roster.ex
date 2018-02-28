@@ -266,6 +266,16 @@ defmodule Wocky.Roster do
     :ok
   end
 
+  # Removes all relationships (friend + follow) between the two users
+  @spec unfriend(User.id(), User.id()) :: :ok
+  def unfriend(a, b) do
+    Item
+    |> with_pair(a, b)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
   defp add_relationship(user_id, contact_id, subscription) do
     %Item{}
     |> Item.changeset(%{
