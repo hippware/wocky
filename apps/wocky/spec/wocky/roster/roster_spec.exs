@@ -645,7 +645,7 @@ defmodule Wocky.RosterSpec do
     end
   end
 
-  describe "relationship creation functions" do
+  describe "relationship management functions" do
     before do
       user2 = Factory.insert(:user)
       {:ok, user2: user2}
@@ -776,6 +776,71 @@ defmodule Wocky.RosterSpec do
 
           Roster.get(shared.user2.id, shared.user.id).name
           |> should(eq shared.name2)
+        end
+      end
+    end
+
+    describe "unfriend/2" do
+      context "when users are friends" do
+        before do
+          Roster.befriend(shared.user.id, shared.user2.id)
+          result = Roster.unfriend(shared.user.id, shared.user2.id)
+          {:ok, result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make the users have no relationship" do
+          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+        end
+      end
+
+      context "when a is following b" do
+        before do
+          Roster.follow(shared.user.id, shared.user2.id)
+          result = Roster.unfriend(shared.user.id, shared.user2.id)
+          {:ok, result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make the users have no relationship" do
+          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+        end
+      end
+
+      context "when b is following a" do
+        before do
+          Roster.follow(shared.user.id, shared.user2.id)
+          result = Roster.unfriend(shared.user.id, shared.user2.id)
+          {:ok, result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make the users have no relationship" do
+          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+        end
+      end
+
+      context "when there is no existing relationship" do
+        before do
+          result = Roster.unfriend(shared.user.id, shared.user2.id)
+          {:ok, result: result}
+        end
+
+        it "should return ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should make the users have no relationship" do
+          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
         end
       end
     end
