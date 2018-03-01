@@ -68,9 +68,11 @@
 
 -define(wocky_xmpp_bot_callbacks, 'Elixir.WockyXMPP.BotCallbacks').
 -define(wocky_xmpp_bot_share_callbacks,
-                                 'Elixir.WockyXMPP.BotShareCallbacks').
+        'Elixir.WockyXMPP.BotShareCallbacks').
 -define(wocky_xmpp_home_stream_item_callbacks,
-                                 'Elixir.WockyXMPP.HomeStreamItemCallbacks').
+        'Elixir.WockyXMPP.HomeStreamItemCallbacks').
+-define(wocky_xmpp_tros_metadata_callbacks,
+        'Elixir.WockyXMPP.TROSMetadataCallbacks').
 
 -define(tros, 'Elixir.Wocky.TROS').
 -define(tros_s3, 'Elixir.Wocky.TROS.S3Store').

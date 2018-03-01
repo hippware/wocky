@@ -10,7 +10,7 @@ config :wocky,
   enable_follow_me_updates: true,
   async_location_processing: false,
 
-  # TROS file storage in S3
+  # TROS file storage in test storage system
   tros_backend: Wocky.TROS.TestStore,
   tros_s3_bucket: {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
   tros_s3_region: {:system, "WOCKY_S3_REGION"},
@@ -47,7 +47,8 @@ config :wocky,
     Wocky.Bot,
     Wocky.Bot.Item,
     Wocky.Bot.Share,
-    Wocky.HomeStream.Item
+    Wocky.HomeStream.Item,
+    Wocky.TROS.Metadata
   ]
 
 # Push notifications

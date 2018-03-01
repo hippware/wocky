@@ -1,17 +1,31 @@
 defmodule :mod_wocky_tros_spec do
-  use ESpec, async: true, sandbox: true
-  use SandboxHelper
+  use ESpec, async: false
   use IQHandlerSpec
 
-  import :mod_wocky_tros, only: [handle_iq: 3]
+  import :mod_wocky_tros, only: [handle_iq: 3, wait_ready: 1]
 
+  alias Ecto.Changeset
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
+  alias Wocky.TROS.Metadata
   alias Wocky.User
+  alias WockyXMPP.TROSMetadataCallbacks
 
   @ns_tros "foo"
   @filename "photo of cat.jpg"
+
+  before_all do
+    Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
+    Application.start(:wocky_db_watcher)
+    TROSMetadataCallbacks.register()
+  end
+
+  after_all do
+    Application.stop(:wocky_db_watcher)
+    Repo.delete_all(User)
+  end
 
   before do
     alice = Factory.insert(:user, resource: "testing")
@@ -226,6 +240,33 @@ defmodule :mod_wocky_tros_spec do
     end
   end
 
+  describe "wait_ready/1", async: false do
+    before do
+      %{id: id} = Factory.insert(:tros_metadata,
+                                 user: shared.alice,
+                                 ready: false)
+
+      {:ok, id: id}
+    end
+
+    it "should timeout when the image doesn't become ready" do
+      wait_ready(shared.id) |> should(be_error_result())
+    end
+
+    it "should succeed when the file becomes ready" do
+      Task.start(fn ->
+        :timer.sleep(500)
+        set_ready(shared.id)
+      end)
+      wait_ready(shared.id) |> should(eq :ok)
+    end
+
+    it "should succeed if the file is already ready" do
+      set_ready(shared.id)
+      wait_ready(shared.id) |> should(eq :ok)
+    end
+  end
+
   defp common_packet(type, request),
     do: iq(id: "123456", type: type, sub_el: request)
 
@@ -305,4 +346,11 @@ defmodule :mod_wocky_tros_spec do
                )
            ) = packet
   end
+
+  defp set_ready(id) do
+    %Metadata{id: id}
+    |> Changeset.cast(%{ready: true}, [:ready])
+    |> Repo.update!
+  end
+
 end
