@@ -28,10 +28,13 @@ defmodule Wocky.Account.FirebaseKeyManager do
 
   def init(_) do
     _ = :ets.new(:firebase_keys, [:protected, :named_table])
+    config = Confex.get_env(:wocky, Wocky.Account.Firebase)
 
-    if Confex.get_env(:wocky, :firebase_load_on_startup, true) do
+    if config[:load_keys_on_startup] do
       reload_keys()
     end
+
+    load_keys(config[:local_keys])
 
     {:ok, nil}
   end
@@ -59,10 +62,18 @@ defmodule Wocky.Account.FirebaseKeyManager do
 
   defp update_keys(headers, client) do
     {:ok, body} = :hackney.body(client)
-    keys = Parser.parse!(body)
-    Enum.each(keys, &:ets.insert(:firebase_keys, &1))
-    remove_old_keys(keys)
+
+    body
+    |> Parser.parse!()
+    |> load_keys()
+    |> remove_old_keys()
+
     set_reload_from_header(headers)
+  end
+
+  defp load_keys(keys) do
+    Enum.each(keys, &:ets.insert(:firebase_keys, &1))
+    keys
   end
 
   defp remove_old_keys(keys) do

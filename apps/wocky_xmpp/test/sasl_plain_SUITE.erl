@@ -11,7 +11,6 @@
 -include_lib("stdlib/include/assert.hrl").
 -include("test_helper.hrl").
 
--define(key_manager, 'Elixir.Wocky.Account.FirebaseKeyManager').
 -define(joken, 'Elixir.Joken').
 -define(jwk, 'Elixir.JOSE.JWK').
 -define(key_id, <<"c947c408c8dd053f7e13117c4e00f0b2b16dc789">>).
@@ -81,15 +80,9 @@ init_per_suite(Config) ->
 
     PrepopItems = setup_hs_prepop(),
 
-    meck:new(?key_manager, [passthrough, no_link]),
-    meck:expect(?key_manager, get_key,
-                fun(?key_id) -> {ok, cert()};
-                   (_) -> {error, no_key}
-                end),
-    Config1 = [{initial_contacts, InitialContacts},
-               {prepop_items, PrepopItems}
-               | Config],
-    escalus:init_per_suite(Config1).
+    escalus:init_per_suite([{initial_contacts, InitialContacts},
+                            {prepop_items, PrepopItems}
+                            | Config]).
 
 setup_initial_contacts(Type) ->
     Users = ?wocky_factory:insert_list(3, user),
@@ -112,7 +105,6 @@ setup_hs_prepop() ->
     ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID}).
 
 end_per_suite(Config) ->
-    meck:unload(),
     escalus:end_per_suite(Config).
 
 init_per_group(token, Config) ->
@@ -137,8 +129,7 @@ end_per_testcase(CaseName, Config) ->
 register_with_firebase(Config) ->
     Client = start_client(Config),
     Stanza = request_stanza(request_data(firebase, provider_data(firebase))),
-    register_common(Config, Client, Stanza),
-    ?assert(meck:validate(?key_manager)).
+    register_common(Config, Client, Stanza).
 
 register_with_digits_bypass(Config) ->
     Client = start_client(Config),
@@ -408,7 +399,8 @@ provider_data(digits_bypass) ->
      provider_data(digits)];
 
 provider_data(firebase) ->
-    Project = ?confex:get_env(wocky, firebase_project_id),
+    Config = ?confex:get_env(wocky, 'Elixir.Wocky.Account.Firebase'),
+    Project = proplists:get_value(project_id, Config),
 
     [{jwt,
       fun_chain:first(
@@ -480,27 +472,4 @@ ZomXwqs+Do40vXqWQg7C7fJ3C3Wgf1RO5MRncVpcawqPkN9jvskFtA18B4lXN6f+
 MRcUPLMy+tbWNleZ/KktLk5GdGeY8GaScFb82EwaWb2NIs1MF/ONyGF5sTZvToK7
 hHku1vi9fpU/eNt0FXgecd8=
 -----END PRIVATE KEY-----
-">>.
-
-cert() ->
-<<"
------BEGIN CERTIFICATE-----
-MIIDBjCCAe4CCQCgEOA/+QkMRTANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJB
-VTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0
-cyBQdHkgTHRkMB4XDTE3MDgyMjA3NDE1OFoXDTQ1MDEwNjA3NDE1OFowRTELMAkG
-A1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0
-IFdpZGdpdHMgUHR5IEx0ZDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
-ALdtBHIjCHlhvDQF3WQ15aHnupKlQprzrus9LdTCp3jYsZEOYLRkk0EHeY3ontY1
-oA76TAnUekYuRDk61BwrMGYqmmvX3Obp8AU4Wzn18MwdjloExh8ZoR2qeka/v5uN
-sUMRy1LBeI7ND75uvzzvUpQ9c0Tj/weN6X4dhA7utJYe4yreFQGymt9sBQoWjPVV
-oPscsFnGDiIQD6mMZn3KR8R9C0hhlI0aM2Zk/9eYTMZgX58a4qCKCOJnpW93vTev
-fSwVuNSFpoiYg5diTdu3RFhjEHHQJE4j7HVpOwRx7NBLAqxV4Sn8Gl6YToyiaASm
-Hys0Xc1I/vdLda5A/SMJfd0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAX1k2rWvP
-GJSiLoQuenA3iOT0BmRZYQSG/0uHMFaJOb42Xb3V0F35sjyYDGqH/yDI8/MlA0mq
-/BzkOG+5yQM2F3EjqAnFvO7eFfRHxU0E9xuiweFIx615sYTID6xvvbFFtZ1xD1YV
-EV3G88wSk1g6NYz2BfzpY089JrRNvLApNUk7ssemLOY/FMu+1bI6TNxgn1MU6zHK
-MlV3DJZAUdOZOyx77p4QQVH0BaPWSkNsmUXNQu/8aNbNktuiQN65+ByBPvq6W64u
-oVwftZpq3axVJyOZ9sfISPLUPvsHvK5r24kaSxFKknKO7X8Jb1FUGJ0UidgBi1pf
-hYWUqOAgiBY3RQ==
------END CERTIFICATE-----
 ">>.
