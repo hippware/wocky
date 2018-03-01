@@ -94,8 +94,8 @@ maybe_get_token(true, #{id := UserID}, Resource) ->
 %% The digits provider exists only to support auth bypass
 authenticate_user(<<"digits">>, Fields) ->
     Server = wocky_xmpp_app:server(),
-    UserID = get_field(<<"userID">>, Fields),
-    PhoneNumber = get_field(<<"phoneNumber">>, Fields),
+    {ok, UserID} = get_field(<<"userID">>, Fields),
+    {ok, PhoneNumber} = get_field(<<"phoneNumber">>, Fields),
     case ?wocky_account:authenticate_with_digits(Server, UserID, PhoneNumber) of
       {ok, Result} -> {ok, Result};
       {error, Error} -> {error, {"not-authorized", Error}}

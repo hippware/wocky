@@ -1,6 +1,7 @@
 %%% @copyright 2016+ Hippware, Inc.
-%%% @doc Integration test suite for mod_wocky_user
--module(xmpp_reg_SUITE).
+%%% @doc Integration test suite for extensions to the SASL PLAIN mechanism
+%%% including `mod_wocky_token`
+-module(sasl_plain_SUITE).
 
 -compile(export_all).
 -compile({parse_transform, fun_chain}).
@@ -24,32 +25,43 @@
 all() ->
     [
      {group, new},
-     {group, existing}
+     {group, existing},
+     {group, token}
     ].
 
 groups() ->
     [
      {new, [], new_cases()},
-     {existing, [], existing_cases()}
+     {existing, [], existing_cases()},
+     {token, [], token_cases()}
     ].
 
 new_cases() ->
     [
-     new_user_firebase,
-     invalid_json,
-     missing_field,
-     unauthorized_new,
-     invalid_auth_provider,
-     invalid_provider_data
+     register_with_firebase,
+     register_with_digits_bypass
     ].
 
 existing_cases() ->
     [
-     bypass_prefix,
-     update,
-     update_no_changes,
-     no_token,
-     unauthorized_update
+     login_with_invalid_json,
+     login_with_missing_provider,
+     login_with_invalid_provider,
+     login_with_digits,
+     login_with_digits_bypass,
+     login_with_firebase,
+     login_with_firebase_no_changes,
+     login_with_firebase_no_token,
+     login_with_firebase_invalid_provider_data,
+     login_with_firebase_bad_jwt
+    ].
+
+token_cases() ->
+    [
+     acquire_token,
+     release_token,
+     login_with_token,
+     login_with_bad_token
     ].
 
 suite() ->
@@ -74,10 +86,10 @@ init_per_suite(Config) ->
                 fun(?key_id) -> {ok, cert()};
                    (_) -> {error, no_key}
                 end),
-
-    escalus:init_per_suite([{initial_contacts, InitialContacts},
-                            {prepop_items, PrepopItems}
-                            | Config]).
+    Config1 = [{initial_contacts, InitialContacts},
+               {prepop_items, PrepopItems}
+               | Config],
+    escalus:init_per_suite(Config1).
 
 setup_initial_contacts(Type) ->
     Users = ?wocky_factory:insert_list(3, user),
@@ -103,6 +115,14 @@ end_per_suite(Config) ->
     meck:unload(),
     escalus:end_per_suite(Config).
 
+init_per_group(token, Config) ->
+    test_helper:setup_users(Config, [alice]);
+init_per_group(_GroupName, Config) ->
+    Config.
+
+end_per_group(_GroupName, Config) ->
+    Config.
+
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -111,27 +131,32 @@ end_per_testcase(CaseName, Config) ->
 
 
 %%--------------------------------------------------------------------
-%% mod_wocky_reg new user tests
+%% new user tests
 %%--------------------------------------------------------------------
 
-new_user_firebase(Config) ->
+register_with_firebase(Config) ->
     Client = start_client(Config),
     Stanza = request_stanza(request_data(firebase, provider_data(firebase))),
-    new_user_common(Config, Client, Stanza),
+    register_common(Config, Client, Stanza),
     ?assert(meck:validate(?key_manager)).
 
-new_user_common(Config, Client, Stanza) ->
+register_with_digits_bypass(Config) ->
+    Client = start_client(Config),
+    Stanza = request_stanza(request_data(digits, provider_data(digits_bypass))),
+    register_common(Config, Client, Stanza).
+
+register_common(Config, Client, Stanza) ->
     Result = escalus:send_and_wait(Client, Stanza),
     {UserID, Token} = assert_is_redirect(Result, true, true),
     NewConfig = [{escalus_users,
-                  [{alice,
+                  [{thedude,
                     [{username, UserID},
                      {server, ?SERVER},
                      {password, Token}]}]}
                  | Config],
 
-    escalus:story(NewConfig, [{alice, 1}], fun(Alice) ->
-        % Verify that initial followees have been added
+    escalus:story(NewConfig, [{thedude, 1}], fun(Alice) ->
+        %% Verify that initial followees have been added
         InitialContacts
         = [InitialFollowees, InitialFollowers, InitialFriends]
         = proplists:get_value(initial_contacts, NewConfig),
@@ -155,40 +180,24 @@ new_user_common(Config, Client, Stanza) ->
            {InitialFollowers, <<"from">>},
            {InitialFriends, <<"both">>}]),
 
-        % Verify that initial HS items have been added
+        %% Verify that initial HS items have been added
         Stanza3 = test_helper:expect_iq_success_u(
                     test_helper:get_hs_stanza(), Alice, Alice),
         test_helper:check_hs_result(Stanza3, 15)
     end).
 
-check_contact(#{id := ID}, SubType, Stanza2) ->
-    Query = exml_query:subelement(Stanza2, <<"query">>),
-    JID = jid:to_binary(jid:make(ID, ?SERVER, <<>>)),
-    Item = lists:filter(
-             fun(E) ->
-                     xml:get_attr(<<"jid">>, E#xmlel.attrs)
-                     =:= {value, JID}
-             end,
-             Query#xmlel.children),
-    case Item of
-        [I] ->
-            ?assertEqual({value, SubType},
-                         xml:get_attr(<<"subscription">>, I#xmlel.attrs)),
-            ?assert(lists:member(
-                      <<"__new__">>,
-                      exml_query:paths(I, [{element, <<"group">>}, cdata])));
-        X ->
-            ct:fail("Could not find item or __new__ group for jid ~p (~p)",
-                    [JID, X])
-    end.
 
-invalid_json(Config) ->
+%%--------------------------------------------------------------------
+%% existing user tests
+%%--------------------------------------------------------------------
+
+login_with_invalid_json(Config) ->
     Client = start_client(Config),
     Stanza = request_stanza(<<"Not at all valid JSON">>),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_malformed_error(Result).
 
-missing_field(Config) ->
+login_with_missing_provider(Config) ->
     Client = start_client(Config),
     Data = request_data(firebase, provider_data(firebase)),
     BrokenData = proplists:delete(provider, Data),
@@ -196,57 +205,38 @@ missing_field(Config) ->
     Result = escalus:send_and_wait(Client, BrokenStanza),
     assert_is_malformed_error(Result).
 
-unauthorized_new(Config) ->
-    Client = start_client(Config),
-    Stanza = request_stanza(
-               request_data(firebase, bogus_provider_data(firebase))),
-    Result = escalus:send_and_wait(Client, Stanza),
-    assert_is_not_authorized(Result).
-
-invalid_auth_provider(Config) ->
+login_with_invalid_provider(Config) ->
     Client = start_client(Config),
     Data = request_data(firebase, provider_data(firebase)),
     BrokenData = [{provider, <<"NOTFirebase">>} |
-                   proplists:delete(provider, Data)],
+                  proplists:delete(provider, Data)],
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
     assert_is_not_authorized(Result).
 
-invalid_provider_data(Config) ->
+login_with_digits(Config) ->
     Client = start_client(Config),
-    Data = request_data(firebase, provider_data(firebase)),
-    BrokenData = [{provider_data, <<"NOTFirebaseData">>} |
-                   proplists:delete(provider_data, Data)],
-    BrokenStanza = request_stanza(BrokenData),
-    Result = escalus:send_and_wait(Client, BrokenStanza),
-    assert_is_malformed_error(Result).
+    Stanza = request_stanza(request_data(digits, provider_data(digits))),
+    Result = escalus:send_and_wait(Client, Stanza),
+    assert_is_not_authorized(Result).
 
-%%--------------------------------------------------------------------
-%% mod_wocky_reg existing user tests
-%%--------------------------------------------------------------------
-
-bypass_prefix(Config) ->
+login_with_digits_bypass(Config) ->
     Client = start_client(Config),
-    ProviderData = provider_data(firebase),
-    BypassProviderData = [{userID, ?EXTERNAL_ID},
-                          {phoneNumber, <<"+155566854">>} |
-                          proplists:delete(phoneNumber, ProviderData)],
-    Stanza = request_stanza(request_data(firebase, BypassProviderData)),
+    Stanza = request_stanza(request_data(digits, provider_data(digits_bypass))),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_redirect(Result, false, true).
 
-update(Config) ->
+login_with_firebase(Config) ->
     Client = start_client(Config),
     Stanza = request_stanza(request_data(firebase, provider_data(firebase))),
     Result = escalus:send_and_wait(Client, Stanza),
     assert_is_redirect(Result, false, true).
 
-update_no_changes(Config) ->
-    update(Config).
+login_with_firebase_no_changes(Config) ->
+    login_with_firebase(Config).
 
-no_token(Config) ->
+login_with_firebase_no_token(Config) ->
     Client = start_client(Config),
-
     Data = request_data(firebase, provider_data(firebase)),
     NoTokenData = [{token, false} |
                    proplists:delete(token, Data)],
@@ -254,9 +244,72 @@ no_token(Config) ->
     Result = escalus:send_and_wait(Client, NoTokenStanza),
     assert_is_redirect(Result, false, false).
 
-unauthorized_update(Config) ->
-    % Same test as new once the user exists
-    unauthorized_new(Config).
+login_with_firebase_invalid_provider_data(Config) ->
+    Client = start_client(Config),
+    Data = request_data(firebase, provider_data(firebase)),
+    BrokenData = [{provider_data, <<"NOTFirebaseData">>} |
+                  proplists:delete(provider_data, Data)],
+    BrokenStanza = request_stanza(BrokenData),
+    Result = escalus:send_and_wait(Client, BrokenStanza),
+    assert_is_malformed_error(Result).
+
+login_with_firebase_bad_jwt(Config) ->
+    Client = start_client(Config),
+    Stanza = request_stanza(
+               request_data(firebase, provider_data(firebase_bad_jwt))),
+    Result = escalus:send_and_wait(Client, Stanza),
+    assert_is_not_authorized(Result).
+
+
+%%--------------------------------------------------------------------
+%% token management tests
+%%--------------------------------------------------------------------
+
+acquire_token(Config) ->
+    escalus:story(Config, [{alice, 1}], fun (Alice) ->
+        escalus_client:send(Alice, token_stanza(<<"get">>)),
+        Reply = escalus_client:wait_for_stanza(Alice),
+        <<"result">> = exml_query:path(Reply, [{attr, <<"type">>}]),
+        <<"$T$", _/binary>> =
+            exml_query:path(Reply, [{element, <<"query">>}, cdata])
+    end).
+
+release_token(Config) ->
+    escalus:story(Config, [{alice, 1}], fun (Alice) ->
+        escalus_client:send(Alice, token_stanza(<<"set">>)),
+        Reply = escalus_client:wait_for_stanza(Alice),
+        <<"result">> = exml_query:path(Reply, [{attr, <<"type">>}])
+    end).
+
+login_with_token(Config) ->
+    {ok, {Token, _}} = escalus_ejabberd:rpc(?wocky_account, assign_token,
+                                            [?ALICE, <<"res1">>]),
+    Config2 = escalus_users:update_userspec(Config, alice, password, Token),
+    escalus:story(Config2, [{alice, 1}], fun (Alice) ->
+        escalus_client:send(Alice, escalus_stanza:chat_to(Alice, <<"Hi!">>)),
+        escalus:assert(is_chat_message, [<<"Hi!">>],
+                       escalus_client:wait_for_stanza(Alice))
+    end).
+
+%% Test that our authorisation system is returning the correct
+%% failure message
+login_with_bad_token(Config) ->
+    UserSpec = escalus_users:get_userspec(Config, alice),
+    ConnSteps = [start_stream, stream_features],
+    {ok, ClientConnection, _Features} =
+        escalus_connection:start(UserSpec, ConnSteps),
+
+    try
+        escalus_auth:auth_plain(ClientConnection, [{username, ?ALICE},
+                                                   {password, <<"$T$blah">>}]),
+        ct:fail("Auth should not have succeeded")
+    catch throw:E ->
+        ?assertMatch({auth_failed, ?ALICE,
+                      #xmlel{name = <<"failure">>,
+                             attrs = [{<<"xmlns">>, ?NS_SASL}],
+                             children = [#xmlel{name = <<"not-authorized">>}]}},
+                     E)
+    end.
 
 
 %%--------------------------------------------------------------------
@@ -279,14 +332,11 @@ assert_is_not_authorized(Result) ->
 assert_is_temp_failure(Result) ->
     assert_is_failure(Result, <<"temporary-auth-failure">>).
 
-assert_is_failure(Result = #xmlel{name = Name, children = Children}, Type) ->
-    ct:log("Result ~p", [Result]),
+assert_is_failure(#xmlel{name = Name, children = Children}, Type) ->
     ?assertEqual(<<"failure">>, Name),
     ?assertNotEqual(false, lists:keyfind(Type, #xmlel.name, Children)).
 
-assert_is_redirect(Result = #xmlel{name = Name, children = Children},
-                   IsNew, HasToken) ->
-    ct:log("Result ~p", [Result]),
+assert_is_redirect(#xmlel{name = Name, children = Children}, IsNew, HasToken) ->
     ?assertEqual(<<"failure">>, Name),
     assert_has_redirect_children(Children, IsNew, HasToken).
 
@@ -306,6 +356,27 @@ assert_has_redirect_data(JSON, IsNew, HasToken) ->
     ?assertEqual(IsNew, proplists:get_value(<<"is_new">>, Fields)),
     {proplists:get_value(<<"user">>, Fields), check_token(Fields, HasToken)}.
 
+check_contact(#{id := ID}, SubType, Stanza2) ->
+    Query = exml_query:subelement(Stanza2, <<"query">>),
+    JID = jid:to_binary(jid:make(ID, ?SERVER, <<>>)),
+    Item = lists:filter(
+             fun(E) ->
+                     xml:get_attr(<<"jid">>, E#xmlel.attrs)
+                         =:= {value, JID}
+             end,
+             Query#xmlel.children),
+    case Item of
+        [I] ->
+            ?assertEqual({value, SubType},
+                         xml:get_attr(<<"subscription">>, I#xmlel.attrs)),
+            ?assert(lists:member(
+                      <<"__new__">>,
+                      exml_query:paths(I, [{element, <<"group">>}, cdata])));
+        X ->
+            ct:fail("Could not find item or __new__ group for jid ~p (~p)",
+                    [JID, X])
+    end.
+
 check_token(Fields, HasToken) ->
     lists:foreach(fun(F) ->
                           ?assertEqual(HasToken,
@@ -314,11 +385,31 @@ check_token(Fields, HasToken) ->
                   [<<"token">>, <<"token_expiry">>]),
     proplists:get_value(<<"token">>, Fields).
 
+token_stanza(Type) ->
+    escalus_stanza:iq(Type, [escalus_stanza:query_el(?NS_TOKEN, [])]).
+
 request_data(Provider, ProviderData) ->
     [{provider, atom_to_binary(Provider, utf8)},
      {resource, <<"test_resource">>},
      {token, true},
      {provider_data, {struct, ProviderData}}].
+
+provider_data(digits) ->
+    [{authTokenSecret, <<"vViH56F2f1sNi6RYZZeztDo8NoQMWxhGMDKAL0wCFcIUH">>},
+     {authToken, <<"701990807448920064-JxNX4i57y5Wp6xBDVjNwKB4ZYUcC8FK">>},
+     {'X-Auth-Service-Provider', <<"http://doesnt.really.matter/">>},
+     {'X-Verify-Credentials-Authorization',
+      <<"OAuth oauth_signature=\"%2FeT%2FOC%2F78Rij8QPEd3ghy%2FUOIbI%3D\""
+        ",oauth_nonce=\"944F1D89-161C-47E4-8730-41BD43BB164F\","
+        "oauth_timestamp=\"1456701445\",oauth_consumer_key="
+        "\"e527IQiWSXZ5WHNxROUZk87uV\",oauth_token="
+        "\"701990807448920064-JxNX4i57y5Wp6xBDVjNwKB4ZYUcC8FK\""
+        ",oauth_version=\"1.0\",oauth_signature_method=\"HMAC-SHA1\"">>
+     }];
+
+provider_data(digits_bypass) ->
+    [{userID, ?EXTERNAL_ID}, {phoneNumber, <<"+15551234567">>} |
+     provider_data(digits)];
 
 provider_data(firebase) ->
     Project = ?confex:get_env(wocky, firebase_project_id),
@@ -337,9 +428,9 @@ provider_data(firebase) ->
         ?joken:sign(),
         ?joken:get_compact()
        )
-     }].
+     }];
 
-bogus_provider_data(firebase) ->
+provider_data(firebase_bad_jwt) ->
     [{jwt,
       fun_chain:first(
         ?joken:token(),
@@ -352,13 +443,12 @@ bogus_provider_data(firebase) ->
 
 request_stanza(Data) when is_list(Data) ->
     BinData = iolist_to_binary(mochijson2:encode({struct, Data})),
-    ct:log("BinData: ~p", [BinData]),
     request_stanza(BinData);
 
 request_stanza(BinData) when is_binary(BinData) ->
     Payload = <<0:8, "register", 0:8, "$J$", BinData/binary>>,
     Stanza = escalus_stanza:auth(<<"PLAIN">>, [base64_cdata(Payload)]),
-    ct:log("Stanza: ~p", [Stanza]),
+    ct:log("Auth Stanza: ~p", [Stanza]),
     Stanza.
 
 base64_cdata(Payload) ->
