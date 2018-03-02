@@ -267,18 +267,14 @@ login_with_firebase_bad_jwt(Config) ->
 
 acquire_token(Config) ->
     escalus:story(Config, [{alice, 1}], fun (Alice) ->
-        escalus_client:send(Alice, token_stanza(<<"get">>)),
-        Reply = escalus_client:wait_for_stanza(Alice),
-        <<"result">> = exml_query:path(Reply, [{attr, <<"type">>}]),
+        Reply = test_helper:expect_iq_success_u(token_stanza(<<"get">>), Alice),
         <<"$T$", _/binary>> =
             exml_query:path(Reply, [{element, <<"query">>}, cdata])
     end).
 
 release_token(Config) ->
     escalus:story(Config, [{alice, 1}], fun (Alice) ->
-        escalus_client:send(Alice, token_stanza(<<"set">>)),
-        Reply = escalus_client:wait_for_stanza(Alice),
-        <<"result">> = exml_query:path(Reply, [{attr, <<"type">>}])
+        test_helper:expect_iq_success_u(token_stanza(<<"set">>), Alice)
     end).
 
 login_with_token(Config) ->
