@@ -10,6 +10,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * When a bot post is deleted, referencing HS items should also be deleted (#1227)
 * Account refactoring (PR #1291)
 * Add unfriend/2 function (PR #1294)
+* Change image readiness system to use DB callbacks (#1230)
 
 
 # 2018.2.23+r433c862
