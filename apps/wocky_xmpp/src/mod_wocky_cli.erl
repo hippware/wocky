@@ -153,7 +153,7 @@ befriend(Handle1, Handle2) ->
        ]).
 
 make_friends(U1 = #{id := User1}, U2 = #{id := User2}) ->
-    ?wocky_roster_item:befriend(User1, User2),
+    ?wocky_roster:befriend(User1, User2),
     lists:foreach(
       run_roster_hook(_), [{U1, U2}, {U2, U1}]).
 
@@ -236,7 +236,7 @@ make_resource() ->
     {ok, <<"cli-resource-", Suffix/binary>>}.
 
 get_token(User, Resource) ->
-    {ok, {Token, _Expiry}} = ?wocky_token:assign(User, Resource),
+    {ok, {Token, _Expiry}} = ?wocky_account:assign_token(User, Resource),
     {ok, Token}.
 
 %%%===================================================================

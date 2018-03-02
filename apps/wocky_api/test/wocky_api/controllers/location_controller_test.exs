@@ -1,8 +1,8 @@
 defmodule WockyAPI.LocationControllerTest do
   use WockyAPI.ConnCase
 
+  alias Wocky.Account
   alias Wocky.Repo.Factory
-  alias Wocky.Token
 
   @create_attrs %{
     location: [
@@ -36,7 +36,7 @@ defmodule WockyAPI.LocationControllerTest do
 
   setup %{conn: conn} do
     user = Factory.insert(:user, resource: "testing")
-    {:ok, {token, _}} = Token.assign(user.id, user.resource)
+    {:ok, {token, _}} = Account.assign_token(user.id, user.resource)
 
     conn =
       conn

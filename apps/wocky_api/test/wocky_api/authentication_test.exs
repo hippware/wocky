@@ -3,9 +3,9 @@ defmodule WockyAPI.AuthenticationTest do
 
   import WockyAPI.Authentication
 
+  alias Wocky.Account
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Token
   alias Wocky.User
 
   def put_auth_headers(conn, user, token) do
@@ -18,7 +18,7 @@ defmodule WockyAPI.AuthenticationTest do
     setup do
       user = Factory.insert(:user)
       resource = Faker.Code.issn()
-      {:ok, {token, _}} = Token.assign(user.id, resource)
+      {:ok, {token, _}} = Account.assign_token(user.id, resource)
 
       {:ok, token: token, user_id: user.id}
     end

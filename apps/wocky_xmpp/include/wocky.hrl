@@ -40,7 +40,7 @@
 -define(NS_USER,          <<"hippware.com/hxep/user">>).
 
 %% Elixir module names
--define(wocky_firebase,          'Elixir.Wocky.Auth.Firebase').
+-define(wocky_account,           'Elixir.Wocky.Account').
 -define(wocky_blocking,          'Elixir.Wocky.Blocking').
 -define(wocky_bot,               'Elixir.Wocky.Bot').
 -define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').
@@ -49,29 +49,30 @@
 -define(wocky_subscription,      'Elixir.Wocky.Bot.Subscription').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
 -define(wocky_geo_utils,         'Elixir.Wocky.GeoUtils').
--define(wocky_home_stream_id,    'Elixir.Wocky.HomeStreamID').
--define(wocky_home_stream_item,  'Elixir.Wocky.HomeStreamItem').
+-define(wocky_home_stream,       'Elixir.Wocky.HomeStream').
+-define(wocky_home_stream_id,    'Elixir.Wocky.HomeStream.ID').
+-define(wocky_home_stream_item,  'Elixir.Wocky.HomeStream.Item').
 -define(wocky_index,             'Elixir.Wocky.Index').
--define(wocky_initial_contact,   'Elixir.Wocky.InitialContact').
 -define(wocky_new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
 -define(wocky_id,                'Elixir.Wocky.Repo.ID').
 -define(wocky_timestamp,         'Elixir.Wocky.Repo.Timestamp').
--define(wocky_roster_item,       'Elixir.Wocky.RosterItem').
+-define(wocky_roster,            'Elixir.Wocky.Roster').
+-define(wocky_roster_item,       'Elixir.Wocky.Roster.Item').
 -define(wocky_rsm_helper,        'Elixir.Wocky.RSMHelper').
--define(wocky_token,             'Elixir.Wocky.Token').
 -define(wocky_traffic_log,       'Elixir.Wocky.TrafficLog').
 -define(wocky_user,              'Elixir.Wocky.User').
--define(wocky_user_hs_prepop,    'Elixir.Wocky.User.HSPrepop').
 -define(wocky_watcher_client,    'Elixir.Wocky.Watcher.Client').
 
 -define(wocky_xmpp_bot_callbacks, 'Elixir.WockyXMPP.BotCallbacks').
 -define(wocky_xmpp_bot_share_callbacks,
-                                 'Elixir.WockyXMPP.BotShareCallbacks').
+        'Elixir.WockyXMPP.BotShareCallbacks').
 -define(wocky_xmpp_home_stream_item_callbacks,
-                                 'Elixir.WockyXMPP.HomeStreamItemCallbacks').
+        'Elixir.WockyXMPP.HomeStreamItemCallbacks').
+-define(wocky_xmpp_tros_metadata_callbacks,
+        'Elixir.WockyXMPP.TROSMetadataCallbacks').
 
 -define(tros, 'Elixir.Wocky.TROS').
 -define(tros_s3, 'Elixir.Wocky.TROS.S3Store').

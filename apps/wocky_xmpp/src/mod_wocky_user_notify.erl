@@ -35,7 +35,7 @@ stop(Host) ->
     mongoose_acc:t().
 user_updated(Acc, LUser, _LServer) ->
     User = ?wocky_repo:get(?wocky_user, LUser),
-    WithContact = ?wocky_roster_item:find_users_with_contact(LUser),
+    WithContact = ?wocky_roster:find_users_with_contact(LUser),
     lists:foreach(notify_user_update(User, _), WithContact),
     Acc.
 

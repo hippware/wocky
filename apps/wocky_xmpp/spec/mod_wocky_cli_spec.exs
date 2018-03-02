@@ -5,7 +5,7 @@ defmodule :mod_wocky_cli_spec do
   import :mod_wocky_cli, only: [befriend: 2]
 
   alias Wocky.Repo.Factory
-  alias Wocky.RosterItem
+  alias Wocky.Roster
 
   before do
     alice = Factory.insert(:user)
@@ -25,11 +25,11 @@ defmodule :mod_wocky_cli_spec do
       end
 
       it "should make user A friends with user B" do
-        assert RosterItem.is_friend(shared.alice.id, shared.bob.id)
+        assert Roster.is_friend(shared.alice.id, shared.bob.id)
       end
 
       it "should make user B friends with user A" do
-        assert RosterItem.is_friend(shared.bob.id, shared.alice.id)
+        assert Roster.is_friend(shared.bob.id, shared.alice.id)
       end
     end
 

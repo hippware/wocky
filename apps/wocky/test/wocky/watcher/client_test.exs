@@ -1,7 +1,7 @@
 defmodule Wocky.Wachter.ClientTest do
   use ExUnit.Case, async: false
-  use Wocky.Repo.Model
 
+  alias Ecto.Changeset
   alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.Repo
@@ -67,7 +67,7 @@ defmodule Wocky.Wachter.ClientTest do
     bot = %{id: bid} = Factory.insert(:bot)
 
     bot
-    |> cast(%{title: Lorem.sentence()}, [:title])
+    |> Changeset.cast(%{title: Lorem.sentence()}, [:title])
     |> Repo.update()
 
     assert_receive %Event{

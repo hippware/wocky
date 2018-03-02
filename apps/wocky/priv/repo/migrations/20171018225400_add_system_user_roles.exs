@@ -1,7 +1,9 @@
 defmodule Wocky.Repo.Migrations.AddSystemUserRoles do
   use Wocky.Repo.Migration
-  use Wocky.Repo.Model
 
+  import Ecto.Query
+
+  alias Wocky.Repo
   alias Wocky.User
 
   @handle "__new_user_hs_archive__"

@@ -3,13 +3,15 @@ defmodule Wocky.TrafficLog do
   DB interface module for traffic logging
   """
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
+
+  import Ecto.Query
 
   alias Timex.Duration
   alias Wocky.JID
+  alias Wocky.Repo
   alias Wocky.User
-
-  alias __MODULE__, as: TrafficLog
+  alias __MODULE__
 
   @foreign_key_type :binary_id
   schema "traffic_logs" do

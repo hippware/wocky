@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Account refactoring (PR #1291)
+* Add unfriend/2 function (PR #1294)
+* Change image readiness system to use DB callbacks (#1230)
+
+
 # 2018.2.27+r3ad256c
 
 * Catch and report errors in watcher CB (PR #1288)

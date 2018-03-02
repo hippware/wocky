@@ -1,6 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddHsItemClassField do
   use Wocky.Repo.Migration
-  use Wocky.Repo.Model
 
   def up do
     alter table(:home_stream_items) do

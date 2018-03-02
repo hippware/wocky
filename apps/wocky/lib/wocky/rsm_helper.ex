@@ -16,12 +16,12 @@ defmodule Wocky.RSMHelper do
   than necessary to satisfy the request.
   """
 
-  use Wocky.Repo.Model
-
+  import Ecto.Query
   import Wocky.RSMHelper.Guard
 
   require Record
 
+  alias Wocky.Repo
   alias Wocky.Repo.Timestamp
 
   Record.defrecord(

@@ -1,6 +1,5 @@
 defmodule Wocky.Repo.Migrations.AddWelcomedField do
   use Wocky.Repo.Migration
-  use Wocky.Repo.Model
 
   alias Wocky.Repo
   alias Wocky.User

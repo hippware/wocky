@@ -1,16 +1,17 @@
 defmodule Wocky.User.Location do
   @moduledoc "Interface for user location processing."
 
-  use Wocky.Repo.Model
   use Wocky.JID
+  use Wocky.Repo.Schema
 
   alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Push
   alias Wocky.Push.Events.BotPerimeterEvent
+  alias Wocky.Repo
   alias Wocky.User
   alias Wocky.User.BotEvent
-  alias __MODULE__, as: Location
+  alias __MODULE__
 
   require Logger
 
@@ -45,7 +46,7 @@ defmodule Wocky.User.Location do
     data = %{resource: resource, lat: nlat, lon: nlon, accuracy: accuracy}
 
     user
-    |> build_assoc(:locations)
+    |> Ecto.build_assoc(:locations)
     |> changeset(data)
     |> Repo.insert()
   end

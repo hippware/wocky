@@ -3,13 +3,15 @@ defmodule Wocky.User.BotEvent do
   Represents a user event.
   """
 
-  use Wocky.Repo.Model
+  use Wocky.Repo.Schema
 
+  import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__, as: BotEvent
+  alias __MODULE__
 
   defenum EventType, [:enter, :exit]
 

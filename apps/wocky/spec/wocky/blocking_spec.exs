@@ -5,10 +5,10 @@ defmodule Wocky.BlockingSpec do
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Blocking
-  alias Wocky.HomeStreamItem
+  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.RosterItem
+  alias Wocky.Roster
   alias Wocky.User
 
   before do
@@ -46,15 +46,15 @@ defmodule Wocky.BlockingSpec do
       end
 
       it "should stop them being friends" do
-        RosterItem.friends(shared.alice.id) |> should(eq [])
-        RosterItem.friends(shared.eve.id) |> should(eq [])
+        Roster.friends(shared.alice.id) |> should(eq [])
+        Roster.friends(shared.eve.id) |> should(eq [])
       end
 
       it "should remove all HS references for the blocked user's bots and msgs" do
-        HomeStreamItem.get(shared.alice.id)
+        HomeStream.get(shared.alice.id)
         |> Enum.each(&(&1.class |> should(eq :deleted)))
 
-        HomeStreamItem.get(shared.eve.id)
+        HomeStream.get(shared.eve.id)
         |> Enum.each(&(&1.class |> should(eq :deleted)))
       end
 
@@ -74,7 +74,7 @@ defmodule Wocky.BlockingSpec do
       end
 
       it "should set the apprpriate blocking groups" do
-        {a, e} = RosterItem.get_pair(shared.alice.id, shared.eve.id)
+        {a, e} = Roster.get_pair(shared.alice.id, shared.eve.id)
         a.groups |> should(eq [Blocking.blocked_group()])
         e.groups |> should(eq [Blocking.blocked_by_group()])
       end
@@ -91,7 +91,7 @@ defmodule Wocky.BlockingSpec do
   describe "unblock/2" do
     it "should remove the blocking groups" do
       Blocking.unblock(shared.alice, shared.eve) |> should(eq :ok)
-      {a, e} = RosterItem.get_pair(shared.alice.id, shared.eve.id)
+      {a, e} = Roster.get_pair(shared.alice.id, shared.eve.id)
       a.groups |> should(eq [])
       e.groups |> should(eq [])
     end
