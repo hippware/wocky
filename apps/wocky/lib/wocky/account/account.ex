@@ -79,12 +79,12 @@ defmodule Wocky.Account do
   end
 
   @spec authenticate_with_digits(binary, binary, binary) ::
-          {:ok, User.t()} | {:error, any}
+          {:ok, User.t()} | {:error, binary}
   def authenticate_with_digits(server, external_id, phone_number) do
     if has_bypass_prefix(phone_number) do
       on_authenticated(server, "digits", external_id, phone_number)
     else
-      {:error, :invalid_user}
+      {:error, "Unsupported provider"}
     end
   end
 
@@ -96,7 +96,7 @@ defmodule Wocky.Account do
   end
 
   @spec authenticate_with_firebase(binary, binary) ::
-          {:ok, User.t()} | {:error, any}
+          {:ok, User.t()} | {:error, binary}
   def authenticate_with_firebase(server, jwt) do
     case Firebase.verify(jwt) do
       {:ok, {external_id, phone_number}} ->
