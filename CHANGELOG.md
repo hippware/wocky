@@ -5,12 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Catch and report errors in watcher CB (PR #1288)
-* Change format of conversation deep link (#1281)
-* When a bot post is deleted, referencing HS items should also be deleted (#1227)
 * Account refactoring (PR #1291)
 * Add unfriend/2 function (PR #1294)
 * Change image readiness system to use DB callbacks (#1230)
+
+
+# 2018.2.27+r3ad256c
+
+* Catch and report errors in watcher CB (PR #1288)
+* Change format of conversation deep link (#1281)
+* When a bot post is deleted, referencing HS items should also be deleted (#1227)
 
 
 # 2018.2.23+r433c862
