@@ -407,8 +407,8 @@ defmodule Wocky.User do
     User
     |> where(id: ^id)
     |> Repo.update_all(set: [phone_number: nil,
-                             provider: "disabled",
-                             external_id: "disabled"])
+                             provider: nil,
+                             external_id: nil])
     :ok
   end
 
