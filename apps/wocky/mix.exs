@@ -40,7 +40,7 @@ defmodule Wocky.Mixfile do
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:logger, :runtime_tools],
+      extra_applications: [:logger, :runtime_tools, :inets],
       included_applications: [
         # This one we use files from but don't actually want the application
         # running
