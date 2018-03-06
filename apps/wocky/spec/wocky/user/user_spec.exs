@@ -852,6 +852,30 @@ defmodule Wocky.UserSpec do
     it do: User.full_name(shared.user) |> should(be_binary())
   end
 
+  describe "remove_auth_details/1" do
+    context "valid user" do
+      before do
+        {:ok, result: User.remove_auth_details(shared.user.id)}
+      end
+
+      it "should return :ok", do: shared.result |> should(eq :ok)
+      it "should clear the user's auth details" do
+        user = Repo.get(User, shared.user.id)
+        user.phone_number |> should(eq nil)
+        user.provider |> should(eq "disabled")
+        user.external_id |> should(eq "disabled")
+      end
+    end
+
+    context "invalid user" do
+      before do
+        {:ok, result: User.remove_auth_details(ID.new)}
+      end
+
+      it "should return :ok", do: shared.result |> should(eq :ok)
+    end
+  end
+
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
   defp is_searchable_sp(user, bot),

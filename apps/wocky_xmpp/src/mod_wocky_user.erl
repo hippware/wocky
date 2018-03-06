@@ -24,7 +24,7 @@
 %% ensure that the deleting user receives the IQ response before
 %% the connection is dropped.
 -define(USER_DELETE_HOOK_DELAY, 2000).
-%% If we delete a user immeidately upon firing the hook and disconnectin the
+%% If we delete a user immeidately upon firing the hook and disconnection the
 %% client, in-flight IQs can still try to reference it, causing DB errors.
 %% Therefore we add a grace period.
 -define(USER_DELETE_DELAY, 4000).
@@ -116,6 +116,9 @@ handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
 
 handle_request(IQ, #jid{luser = LUser, lserver = LServer}, _ToJID, set,
                #xmlel{name = <<"delete">>}) ->
+    % Stop the test client reconnecting after issuing a delete but before the
+    % delete occurs:
+    ?wocky_account:disable_user(LUser),
     {ok, _Ref} = timer:apply_after(?USER_DELETE_HOOK_DELAY, ejabberd_hooks, run,
                                    [remove_user, LServer, [LUser, LServer]]),
     {ok, make_delete_response_iq(IQ)}.
