@@ -2,6 +2,7 @@ defmodule Wocky.AccountsTest do
   use Wocky.DataCase
 
   alias Wocky.Account
+  alias Wocky.Account.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -126,6 +127,26 @@ defmodule Wocky.AccountsTest do
       assert new_user.provider == "test_provider"
       assert new_user.external_id == external_id
       assert new_user.phone_number == phone_number
+    end
+  end
+
+  describe "account disabling" do
+    test "when the user does not exist" do
+      assert Account.disable_user(ID.new()) == :ok
+    end
+
+    test "when the user exists" do
+      user = Factory.insert(:user, resource: "testing")
+      {:ok, {token, _}} = Token.assign(user.id, "testing")
+      assert Token.valid?(user.id, token)
+
+      Account.disable_user(user.id)
+
+      assert not Token.valid?(user.id, token)
+      disabled_user = Repo.get(User, user.id)
+      assert disabled_user.phone_number == nil
+      assert disabled_user.provider == "disabled"
+      assert disabled_user.external_id == "disabled"
     end
   end
 end

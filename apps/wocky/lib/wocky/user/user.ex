@@ -403,6 +403,15 @@ defmodule Wocky.User do
   def no_index_role, do: @no_index_role
   def system_role, do: @system_role
 
+  def remove_auth_details(id) do
+    User
+    |> where(id: ^id)
+    |> Repo.update_all(set: [phone_number: nil,
+                             provider: "disabled",
+                             external_id: "disabled"])
+    :ok
+  end
+
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
   defp maybe_send_welcome(%User{email: nil}), do: :ok
 
