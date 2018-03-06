@@ -862,8 +862,8 @@ defmodule Wocky.UserSpec do
       it "should clear the user's auth details" do
         user = Repo.get(User, shared.user.id)
         user.phone_number |> should(eq nil)
-        user.provider |> should(eq "disabled")
-        user.external_id |> should(eq "disabled")
+        user.provider |> should(eq nil)
+        user.external_id |> should(eq nil)
       end
     end
 

@@ -145,8 +145,8 @@ defmodule Wocky.AccountsTest do
       assert not Token.valid?(user.id, token)
       disabled_user = Repo.get(User, user.id)
       assert disabled_user.phone_number == nil
-      assert disabled_user.provider == "disabled"
-      assert disabled_user.external_id == "disabled"
+      assert disabled_user.provider == nil
+      assert disabled_user.external_id == nil
     end
   end
 end
