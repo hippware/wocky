@@ -34,17 +34,28 @@ mech_new(Host, Creds) ->
 
 -spec mech_step(Creds :: mongoose_credentials:t(), ClientIn :: binary()) ->
     {ok, mongoose_credentials:t()} | {error, binary()}.
-mech_step(_, <<0:8, "register", 0:8, "$J$", JSON/binary>>) ->
-    case authenticate_user(JSON) of
+mech_step(Creds, ClientIn) ->
+    case binary:split(ClientIn, <<0:8>>, [global]) of
+        [_, <<"register">>, <<"$J$", JSON/binary>>] ->
+            authenticate_user(JSON);
+
+        [<<"register">>, <<"$J$", JSON/binary>>] ->
+            authenticate_user(JSON);
+
+        _ ->
+            cyrsasl_plain:mech_step(Creds, ClientIn)
+    end.
+
+authenticate_user(JSON) ->
+    case do_authenticate_user(JSON) of
         {ok, RegResult} ->
             make_auth_response(RegResult);
         {error, {Response, Text}} ->
-            {error, {iolist_to_binary(Response), iolist_to_binary(Text)}}
-    end;
-mech_step(Creds, ClientIn) ->
-    cyrsasl_plain:mech_step(Creds, ClientIn).
+            make_auth_error_response(Response, Text)
+    end.
 
-authenticate_user(JSON) ->
+do_authenticate_user(JSON) ->
+    lager:debug("Authenticating user with packet: ~p", [JSON]),
     do([error_m ||
         Elements <- decode_json(JSON),
         Provider <- get_required_field(Elements, <<"provider">>),
@@ -110,6 +121,12 @@ authenticate_user(<<"firebase">>, #{<<"jwt">> := JWT}) ->
 
 authenticate_user(P, _) -> {error, {"not-authorized",
                                     ["Unsupported provider: ", P]}}.
+
+make_auth_error_response(Response0, Text0) ->
+    Response = iolist_to_binary(Response0),
+    Text = iolist_to_binary(Text0),
+    lager:warning("Authentication error ~s: ~s", [Response, Text]),
+    {error, {Response, Text}}.
 
 make_auth_response({User, Provider, Token, Expiry, IsNew}) ->
     #{id := UserID,

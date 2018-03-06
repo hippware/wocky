@@ -442,7 +442,7 @@ request_stanza(Data) when is_list(Data) ->
     request_stanza(BinData);
 
 request_stanza(BinData) when is_binary(BinData) ->
-    Payload = <<0:8, "register", 0:8, "$J$", BinData/binary>>,
+    Payload = <<"gibberish", 0:8, "register", 0:8, "$J$", BinData/binary>>,
     Stanza = escalus_stanza:auth(<<"PLAIN">>, [base64_cdata(Payload)]),
     ct:log("Auth Stanza: ~p", [Stanza]),
     Stanza.
