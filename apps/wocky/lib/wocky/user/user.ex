@@ -11,6 +11,7 @@ defmodule Wocky.User do
 
   alias Ecto.Queryable
   alias Wocky.Account.Token, as: AuthToken
+  alias Wocky.Blocking
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -410,6 +411,27 @@ defmodule Wocky.User do
                              provider: nil,
                              external_id: nil])
     :ok
+  end
+
+  @spec search_by_name(binary, id, non_neg_integer) :: [User.t()]
+  def search_by_name("", _, _), do: []
+  def search_by_name(search_prefix, user_id, limit) do
+    search_term =
+      search_prefix
+      |> String.split()
+      |> Enum.map(&Kernel.<>(&1, ":*"))
+      |> Enum.join(" & ")
+
+    User
+    |> where(fragment("""
+      users_name_fts(first_name, last_name)
+      @@ to_tsquery('simple', unaccent(?))
+      """,
+      ^search_term))
+    |> Blocking.object_visible_query(user_id, :id)
+    |> where([u], u.id != ^user_id)
+    |> limit(^limit)
+    |> Repo.all()
   end
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok

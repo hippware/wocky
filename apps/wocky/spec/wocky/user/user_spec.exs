@@ -10,6 +10,7 @@ defmodule Wocky.UserSpec do
   alias Timex.Duration
   alias Wocky.Account
   alias Wocky.Account.Token
+  alias Wocky.Blocking
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Email
@@ -873,6 +874,73 @@ defmodule Wocky.UserSpec do
       end
 
       it "should return :ok", do: shared.result |> should(eq :ok)
+    end
+  end
+
+  describe "search_by_name/3" do
+    before do
+      users =
+        [{"Alice", "Sanders"},
+         {"Alison", "Smith"},
+         {"Bob", "Jones"},
+         {"acéñtîâ", "CAPITAL"}]
+         |> Enum.map(
+           fn({f, l}) ->
+             Factory.insert(:user, first_name: f, last_name: l)
+           end)
+
+      {:ok, users: users}
+    end
+
+    context "no blocking" do
+      it "should return all users with the search prefix in either name" do
+        User.search_by_name("a", shared.id, 50) |> should(have_length(3))
+        User.search_by_name("b", shared.id, 50) |> should(have_length(1))
+        User.search_by_name("s", shared.id, 50) |> should(have_length(2))
+        User.search_by_name("smi", shared.id, 50) |> should(have_length(1))
+        User.search_by_name("q", shared.id, 50) |> should(have_length(0))
+      end
+
+      it "should ignore accents in both search and data" do
+        User.search_by_name("acent", shared.id, 50) |> should(have_length(1))
+        User.search_by_name("â", shared.id, 50) |> should(have_length(3))
+      end
+
+      it "should ignore capitalisation in both search and data" do
+        User.search_by_name("A", shared.id, 50) |> should(have_length(3))
+        User.search_by_name("c", shared.id, 50) |> should(have_length(1))
+      end
+
+      it "should respect the limit parameter" do
+        User.search_by_name("a", shared.id, 2) |> should(have_length(2))
+      end
+
+      it "should ignore empty search terms and return an empty list" do
+        User.search_by_name("", shared.id, 50) |> should(have_length(0))
+      end
+
+      it "should work on multiple partial terms" do
+        User.search_by_name("ali s", shared.id, 50) |> should(have_length(2))
+        User.search_by_name("ali sm", shared.id, 50) |> should(have_length(1))
+      end
+
+    end
+
+    context "when the searcher is blocked" do
+      before do
+        blocking_user = hd(shared.users) # Alice Sanders
+        Blocking.block(blocking_user, shared.user)
+        result = User.search_by_name("a", shared.id, 50)
+        {:ok, blocking_user: blocking_user, result: result}
+      end
+
+      it "should not return the blocking user" do
+        Enum.any?(shared.result,
+                  fn(%{id: id}) -> id == shared.blocking_user.id end)
+        |> should(be_false())
+
+        shared.result |> should(have_length(2))
+      end
     end
   end
 
