@@ -98,12 +98,15 @@ defmodule Wocky.Account do
   @spec authenticate_with_firebase(binary, binary) ::
           {:ok, User.t()} | {:error, binary}
   def authenticate_with_firebase(server, jwt) do
-    case Firebase.verify(jwt) do
-      {:ok, {external_id, phone_number}} ->
+    case Firebase.decode_and_verify(jwt) do
+      {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
         on_authenticated(server, "firebase", external_id, phone_number)
 
-      {:error, _} = error ->
-        error
+      {:error, %{message: reason}} ->
+        {:error, reason}
+
+      {:error, reason} ->
+        {:error, to_string(reason)}
     end
   end
 

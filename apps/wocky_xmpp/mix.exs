@@ -88,7 +88,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:lager_logger, "~> 1.0"},
       {:ranch, "~> 1.3.2", override: true},
       {:timex, "~> 3.1"},
-      {:uuid, "~> 1.7", hex: :uuid_erl},
+      {:uuid, "~> 1.7", hex: :uuid_erl, override: true},
       {:mongooseim, github: "hippware/mongooseim", branch: "2.1.1/working"},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:erlando, github: "rabbitmq/erlando", branch: "master"},

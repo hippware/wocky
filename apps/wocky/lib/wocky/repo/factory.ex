@@ -36,7 +36,7 @@ defmodule Wocky.Repo.Factory do
       id: user_id,
       username: user_id,
       server: "localhost",
-      external_id: Code.isbn13(),
+      external_id: external_id(),
       handle: new_handle(),
       avatar: TROS.make_url("localhost", ID.new()),
       first_name: Name.first_name(),
@@ -179,6 +179,10 @@ defmodule Wocky.Repo.Factory do
 
   def phone_number do
     "+1555#{Phone.area_code()}#{Phone.extension()}"
+  end
+
+  def external_id do
+    Base.encode16(:crypto.strong_rand_bytes(10))
   end
 
   def new_jid do

@@ -50,12 +50,6 @@ config :wocky,
     Wocky.TROS.Metadata
   ]
 
-# Firebase
-config :wocky, Wocky.Account.Firebase,
-  project_id: "my-project-1480497595993",
-  load_keys_on_startup: true,
-  local_keys: []
-
 # Push notifications
 config :wocky, Wocky.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
