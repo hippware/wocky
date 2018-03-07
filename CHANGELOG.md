@@ -5,6 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.6+rcff91d2
+
+* Prevent re-authentication of a user who has been deleted (PR #1302)
+* Handle text in the 'domain' part of SASL PLAIN authentication (PR #1303)
+* Fix unique key issue with user disabling (PR #1306)
+
+
+# 2018.3.6+rc3508e6
+
 * Account refactoring (PR #1291, PR #1296)
 * Add unfriend/2 function (PR #1294)
 * Change image readiness system to use DB callbacks (#1230)
