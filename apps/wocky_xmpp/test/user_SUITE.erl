@@ -41,7 +41,9 @@ groups() ->
                   other_user_denied_field,
                   other_user_mixed_fields,
                   non_existant_user,
-                  invalid_user]},
+                  invalid_user,
+                  search
+                 ]},
      {contacts, [], [other_user_friends,
                      other_user_followers,
                      other_user_followees
@@ -213,6 +215,17 @@ invalid_user(Config) ->
         QueryStanza = get_request(<<"non-uuid-user">>,
                                   [<<"handle">>]),
         expect_iq_error(QueryStanza, Bob)
+    end).
+
+search(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        Result1 = expect_iq_success(search_request(<<"bob">>, <<"10">>), Alice),
+        check_search_result(Result1, [?BOB]),
+        Result2 = expect_iq_success(search_request(<<"ro">>, <<"10">>), Alice),
+        check_search_result(Result2, [?ROBERT]),
+        Result3 = expect_iq_success(search_request(<<"">>, <<"10">>), Alice),
+        check_search_result(Result3, []),
+        expect_iq_error(search_request(<<"">>, <<"abc">>), Alice)
     end).
 
 other_user_friends(Config) ->
@@ -524,7 +537,8 @@ handle_clash(Config) ->
         BobQueryStanza = set_request(?BOB, set_fields(), Config),
         expect_iq_error(BobQueryStanza, Bob),
 
-        #{id := ?BOB, first_name := nil} = ?wocky_repo:get(?wocky_user, ?BOB)
+        #{id := ?BOB, first_name := <<"bob">>}
+        = ?wocky_repo:get(?wocky_user, ?BOB)
     end).
 
 reserved_handle(Config) ->
@@ -676,6 +690,13 @@ users_request(BJIDs) ->
     Users = [#xmlel{name = <<"user">>, attrs = [{<<"jid">>, B}]} || B <- BJIDs],
     test_helper:iq_get(?NS_USER, #xmlel{name = <<"users">>, children = Users}).
 
+search_request(SearchTerm, Limit) ->
+    test_helper:iq_get(
+      ?NS_USER,
+      #xmlel{name = <<"search">>,
+             children = [wocky_xml:cdata_el(<<"search_term">>, SearchTerm),
+                         wocky_xml:cdata_el(<<"limit">>, Limit)]}).
+
 public_fields() ->
     [jid, user, server, handle, avatar, first_name, last_name, tagline,
      'bots+size', 'followers+size', 'followed+size', roles].
@@ -795,3 +816,17 @@ match_contacts(Contacts, [#{handle := UHandle, id := ID, server := Server,
     match_contacts(Remaining, Users);
 match_contacts(Contacts, Users) ->
     ct:fail("Failed to match ~p to ~p", [Contacts, Users]).
+
+check_search_result(Result, Users) ->
+    lists:foreach(
+      fun(U) -> ?assert(lists:any(
+                          fun(ID) -> ID =:= U end,
+                          exml_query:paths(Result, [{element, <<"results">>},
+                                                    {element, <<"user">>},
+                                                    {element, <<"user">>},
+                                                    cdata])))
+      end, Users),
+    ResultList = exml_query:paths(Result, [{element, <<"results">>},
+                                           {element, <<"user">>}]),
+
+    ?assert(length(Users) =:= length(ResultList)).
