@@ -924,6 +924,13 @@ defmodule Wocky.UserSpec do
         User.search_by_name("ali sm", shared.id, 50) |> should(have_length(1))
       end
 
+      it "should not choke on punctuation or other unicode weirdness" do
+        User.search_by_name("''ali", shared.id, 50) |> should(have_length(2))
+        User.search_by_name("al-s", shared.id, 50) |> should(have_length(0))
+        User.search_by_name("al''i", shared.id, 50) |> should(have_length(2))
+        User.search_by_name("al''i", shared.id, 50) |> should(have_length(2))
+        User.search_by_name("''-al''i", shared.id, 50) |> should(have_length(2))
+      end
     end
 
     context "when the searcher is blocked" do

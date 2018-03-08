@@ -282,21 +282,28 @@ defmodule Wocky.User do
   defp reserved_handles, do: Application.get_env(:wocky, :reserved_handles, [])
 
   defp validate_name(field, name) do
-    # regex implementing the rules at
-    # https://github.com/hippware/tr-wiki/wiki/
-    #     User-fields-validation-discussion#first-name-last-name
-    #
-    # The ?! and ?<! blocks provide negated lookaround checks for characters
-    # at the start and end of the string without consuming them.
-    # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
-    # and other characters).
-    rx = ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])|u
-
-    if Regex.run(rx, name) != [name] do
+    if Regex.run(validation_regex(), name) != [name] do
       [{field, "invalid characters"}]
     else
       []
     end
+  end
+
+  # regexs implementing the rules at
+  # https://github.com/hippware/tr-wiki/wiki/
+  #     User-fields-validation-discussion#first-name-last-name
+  #
+  # The ?! and ?<! blocks provide negated lookaround checks for characters
+  # at the start and end of the string without consuming them.
+  # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
+  # and other characters). \p{Z} maintains any whitespace in our search term
+  # (which is removed later when we split the tokens).
+  defp validation_regex do
+    ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])|u
+  end
+
+  defp search_cleanup_regex do
+    ~r|[^\-0-9\p{Ll}\p{Lu}\p{Lo}\p{Z}]|u
   end
 
   defp validate_avatar(:avatar, user, avatar) do
@@ -417,7 +424,8 @@ defmodule Wocky.User do
   def search_by_name("", _, _), do: []
   def search_by_name(search_prefix, user_id, limit) do
     search_term =
-      search_prefix
+      search_cleanup_regex()
+      |> Regex.replace(search_prefix, "")
       |> String.split()
       |> Enum.map(&Kernel.<>(&1, ":*"))
       |> Enum.join(" & ")
