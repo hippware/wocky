@@ -4,31 +4,13 @@ defmodule Wocky.Account do
   in the system (authentication, registration, deletion, etc).
   """
 
-  import Ecto.Query, warn: false
-  import Ecto.Changeset
-
-  alias Wocky.Account.{ClientJWT, Firebase, Token}
-  alias Wocky.HomeStream
-  alias Wocky.Roster
+  alias Wocky.Account.{ClientJWT, Firebase, Register, Token}
   alias Wocky.Repo
-  alias Wocky.Repo.ID
   alias Wocky.User
 
   require Logger
 
   @type token :: Token.token()
-
-  @max_register_retries 5
-
-  @changeset_fields [
-    :username,
-    :server,
-    :provider,
-    :external_id,
-    :phone_number,
-    :password,
-    :pass_details
-  ]
 
   # ====================================================================
   # User registration
@@ -40,16 +22,12 @@ defmodule Wocky.Account do
   @spec register(binary, binary, binary, binary) ::
           {:ok, User.t()} | {:error, any}
   def register(username, server, password, pass_details) do
-    %{
+    Register.create(%{
       username: username,
       server: server,
-      provider: "local",
-      external_id: username,
       password: password,
       pass_details: pass_details
-    }
-    |> changeset()
-    |> Repo.insert()
+    })
   end
 
   # ====================================================================
@@ -68,39 +46,78 @@ defmodule Wocky.Account do
   # ====================================================================
   # Authentication
 
-  @spec authenticate_with_token(User.id(), Token.token()) ::
-          {:ok, User.t()} | {:error, any}
-  def authenticate_with_token(user_id, token) do
+  @type provider :: :token | :bypass | :firebase | :client_jwt
+
+  @doc """
+  Authenticates the user using the specified provider and credentials.
+
+  Credentials may be either a binary representing a token or a 2-tuple
+  containing an ID and token/password. The provider interprets the credentials,
+  so the credential format depends on the provider being used.
+
+  Most providers will create a new account if one does not already exist.
+
+  The following providers are supported:
+
+  ### :token
+
+  Deprecated.
+
+  Authenticates the user using a server-generated token. This provider cannot
+  create a new account; it can only authenticate existing accounts.
+
+  The credentials should be the user ID and token.
+
+
+  ### :bypass
+
+  Bypass authentication only works when it is enabled on the server. This would
+  only be for test instances. When it is enabled, authentication always
+  succeeds if the phone number begins with the prefix "+1555".
+
+  The credentials for Bypass authentication are the external ID and phone
+  number of the user.
+
+
+  ### :firebase
+
+  Authenticates the user with an access token acquired from Google Firebase.
+
+  The credentials are the access token.
+
+
+  ### :client_jwt
+
+  This provider wraps another provider and allows for authentication of the
+  client and inclusion of metadata. Currently supported wrapped providers
+  are Firebase and Bypass. The credentials are a JWT token that was generated
+  by the client using the server secret.
+
+  See the Wiki for details:
+  https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
+  """
+  @spec authenticate(provider, binary, binary | {binary, binary}) ::
+  {:ok, {User.t(), boolean}} | {:error, binary}
+  def authenticate(:token, _server, {user_id, token}) do
     if Token.valid?(user_id, token) do
-      {:ok, Repo.get(User, user_id)}
+      {:ok, {Repo.get(User, user_id), false}}
     else
-      {:error, :invalid_token}
+      {:error, "Invalid token"}
     end
   end
 
-  @spec authenticate_with_digits(binary, binary, binary) ::
-          {:ok, User.t()} | {:error, binary}
-  def authenticate_with_digits(server, external_id, phone_number) do
+  def authenticate(:bypass, server, {external_id, phone_number}) do
     if has_bypass_prefix(phone_number) do
-      on_authenticated(server, "digits", external_id, phone_number)
+      Register.find_or_create(server, :bypass, external_id, phone_number)
     else
-      {:error, "Unsupported provider"}
+      provider_error(:bypass)
     end
   end
 
-  defp has_bypass_prefix(phone_number) do
-    if Application.get_env(:wocky, :enable_auth_bypass) do
-      prefixes = Application.get_env(:wocky, :auth_bypass_prefixes)
-      String.starts_with?(phone_number, prefixes)
-    end
-  end
-
-  @spec authenticate_with_firebase(binary, binary) ::
-          {:ok, User.t()} | {:error, binary}
-  def authenticate_with_firebase(server, jwt) do
-    case Firebase.decode_and_verify(jwt) do
+  def authenticate(:firebase, server, token) do
+    case Firebase.decode_and_verify(token) do
       {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
-        on_authenticated(server, "firebase", external_id, phone_number)
+        Register.find_or_create(server, :firebase, external_id, phone_number)
 
       {:error, %{message: reason}} ->
         {:error, reason}
@@ -110,93 +127,35 @@ defmodule Wocky.Account do
     end
   end
 
-  @doc """
-  Authenticates the user using an OAuth 2 access token wrapped in a
-  client-generated JWT. See the Wiki for details:
-  https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
-  """
-  @spec authenticate_with_jwt(binary, binary) :: {:ok, User.t()} | {:error, any}
-  def authenticate_with_jwt(server, jwt) do
-    case ClientJWT.verify(jwt) do
-      {:ok, {"firebase", token}} ->
-        authenticate_with_firebase(server, token)
+  def authenticate(:client_jwt, server, token) do
+    case ClientJWT.decode_and_verify(token) do
+      {:ok, %{"typ" => "firebase", "sub" => new_token}} ->
+        authenticate(:firebase, server, new_token)
 
-      {:ok, {provider, _}} ->
-        {:error, "Unknown provider: #{provider}"}
+      {:ok, %{"typ" => "bypass", "sub" => id, "phone_number" => phone}} ->
+        authenticate(:bypass, server, {id, phone})
 
-      {:error, _} = error ->
-        error
+      {:ok, _claims} ->
+        {:error, "Unable to authenticate wrapped entity"}
+
+      {:error, %{message: reason}} ->
+        {:error, reason}
+
+      {:error, reason} ->
+        {:error, to_string(reason)}
     end
   end
 
-  @doc false
-  def on_authenticated(server, provider, external_id, phone_number) do
-    on_authenticated(server, provider, external_id, phone_number, 0)
-  end
+  def authenticate(provider, _server, _creds), do: provider_error(provider)
 
-  # There's scope for a race condition here. Since the database uses "read
-  # committed"
-  # (see https://www.postgresql.org/docs/current/static/transaction-iso.html)
-  # we can't SELECT then INSERT and assume something hasn't been inserted
-  # in the interim, even in a transaction. Thus we implement a retry system
-  # here - if the user was inserted after the SELECT, the next time around it
-  # should work fine (unless it gets deleted in the interim in which case
-  # what the heck is even going on?). Either way, if we fail after 5 retries
-  # there's something seriously weird going on and raising an exception
-  # is a pretty reasonable response.
-  defp on_authenticated(_, _, _, _, @max_register_retries) do
-    raise "Exceeded maximum registration retries"
-  end
-
-  defp on_authenticated(server, provider, external_id, phone_number, retries) do
-    case Repo.get_by(User, external_id: external_id, provider: provider) do
-      nil ->
-        case Repo.get_by(User, phone_number: phone_number) do
-          nil ->
-            register_new(server, provider, external_id, phone_number, retries)
-
-          orig_user ->
-            {:ok, user} =
-              User.update(orig_user, %{
-                provider: provider,
-                external_id: external_id,
-                phone_number: phone_number
-              })
-
-            {:ok, {user, false}}
-        end
-
-      user ->
-        {:ok, {user, false}}
+  defp has_bypass_prefix(phone_number) do
+    if Application.get_env(:wocky, :enable_auth_bypass) do
+      prefixes = Application.get_env(:wocky, :auth_bypass_prefixes)
+      String.starts_with?(phone_number, prefixes)
     end
   end
 
-  defp register_new(server, provider, external_id, phone_number, retries) do
-    user_data = %{
-      username: ID.new(),
-      server: server,
-      provider: provider,
-      external_id: external_id,
-      phone_number: phone_number
-    }
-
-    case user_data |> changeset() |> Repo.insert() do
-      {:ok, user} ->
-        prepopulate_user(user.id)
-        {:ok, {user, true}}
-
-      {:error, e} ->
-        Logger.debug(fn -> "registration failed with error: #{inspect(e)}" end)
-
-        on_authenticated(
-          server,
-          provider,
-          external_id,
-          phone_number,
-          retries + 1
-        )
-    end
-  end
+  defp provider_error(p), do: {:error, "Unsupported provider: #{p}"}
 
   # ====================================================================
   # Account disabling
@@ -209,29 +168,5 @@ defmodule Wocky.Account do
   def disable_user(user_id) do
     Token.release_all(user_id)
     User.remove_auth_details(user_id)
-  end
-
-  @doc false
-  def changeset(attrs) do
-    %User{}
-    |> cast(attrs, @changeset_fields)
-    |> validate_required([:username, :server, :provider, :external_id])
-    |> validate_format(:phone_number, ~r//)
-    |> validate_change(:username, &validate_username/2)
-    |> put_change(:id, attrs[:username])
-    |> unique_constraint(:external_id)
-  end
-
-  defp validate_username(:username, username) do
-    if ID.valid?(username) do
-      []
-    else
-      [username: "not a valid UUID"]
-    end
-  end
-
-  defp prepopulate_user(user_id) do
-    Roster.add_initial_contacts_to_user(user_id)
-    HomeStream.prepopulate(user_id)
   end
 end
