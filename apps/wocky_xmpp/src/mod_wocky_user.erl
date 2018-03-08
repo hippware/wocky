@@ -31,6 +31,10 @@
 
 -define(REMOVE_USER_HOOK_PRI, 1000). % Do this after all other remove user hooks
 
+-define(DEFAULT_SEARCH_RESULTS, 50).
+%% Maximum users to return as a search result, regardless of client request
+-define(MAX_SEARCH_RESULTS, 100).
+
 %%--------------------------------------------------------------------
 %% gen_mod interface
 %%--------------------------------------------------------------------
@@ -345,10 +349,12 @@ get_resp_fields(Fields, _LServer, LUser, FromJID) ->
     end.
 
 get_search_limit(ReqEl) ->
-    {ok, LimitStr} = wocky_xml:get_subel_cdata(<<"limit">>, ReqEl, <<"50">>),
+    {ok, LimitStr} = wocky_xml:get_subel_cdata(
+                       <<"limit">>, ReqEl,
+                       integer_to_binary(?DEFAULT_SEARCH_RESULTS)),
     case wocky_util:safe_bin_to_integer(LimitStr) of
-        {ok, Limit} -> {ok, Limit};
-        {error, _} -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid limit">>)}
+        {ok, Limit} when Limit > 0 -> {ok, max(Limit, ?MAX_SEARCH_RESULTS)};
+        _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid limit">>)}
     end.
 
 build_resp_fields(Row, Fields, FromJID) ->

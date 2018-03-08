@@ -432,7 +432,7 @@ defmodule Wocky.User do
 
     User
     |> where(fragment("""
-      users_name_fts(first_name, last_name)
+      users_name_fts(first_name, last_name, handle)
       @@ to_tsquery('simple', unaccent(?))
       """,
       ^search_term))
