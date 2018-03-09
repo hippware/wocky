@@ -97,8 +97,11 @@ setup_users(Config, Users) ->
     ConfigUsers = proplists:get_value(escalus_users, Config2),
     lists:foreach(
       fun({U, Props}) ->
+              Name = atom_to_binary(U, utf8),
               ID = proplists:get_value(username, Props),
-              ?wocky_user:update(ID, #{handle => atom_to_binary(U, utf8)})
+              ?wocky_user:update(ID, #{handle => Name,
+                                       first_name => Name,
+                                       last_name => Name})
       end, ConfigUsers),
     Config2.
 

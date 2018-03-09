@@ -11,6 +11,7 @@ defmodule Wocky.User do
 
   alias Ecto.Queryable
   alias Wocky.Account.Token, as: AuthToken
+  alias Wocky.Blocking
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -281,21 +282,28 @@ defmodule Wocky.User do
   defp reserved_handles, do: Application.get_env(:wocky, :reserved_handles, [])
 
   defp validate_name(field, name) do
-    # regex implementing the rules at
-    # https://github.com/hippware/tr-wiki/wiki/
-    #     User-fields-validation-discussion#first-name-last-name
-    #
-    # The ?! and ?<! blocks provide negated lookaround checks for characters
-    # at the start and end of the string without consuming them.
-    # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
-    # and other characters).
-    rx = ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])|u
-
-    if Regex.run(rx, name) != [name] do
+    if Regex.run(validation_regex(), name) != [name] do
       [{field, "invalid characters"}]
     else
       []
     end
+  end
+
+  # regexs implementing the rules at
+  # https://github.com/hippware/tr-wiki/wiki/
+  #     User-fields-validation-discussion#first-name-last-name
+  #
+  # The ?! and ?<! blocks provide negated lookaround checks for characters
+  # at the start and end of the string without consuming them.
+  # \p{L*} cover the three unicode categories we accept (lowercase, uppercase,
+  # and other characters). \p{Z} maintains any whitespace in our search term
+  # (which is removed later when we split the tokens).
+  defp validation_regex do
+    ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])|u
+  end
+
+  defp search_cleanup_regex do
+    ~r|[^\-0-9\p{Ll}\p{Lu}\p{Lo}\p{Z}]|u
   end
 
   defp validate_avatar(:avatar, user, avatar) do
@@ -411,6 +419,28 @@ defmodule Wocky.User do
     )
 
     :ok
+  end
+
+  @spec search_by_name(binary, id, non_neg_integer) :: [User.t()]
+  def search_by_name("", _, _), do: []
+  def search_by_name(search_prefix, user_id, limit) do
+    search_term =
+      search_cleanup_regex()
+      |> Regex.replace(search_prefix, "")
+      |> String.split()
+      |> Enum.map(&Kernel.<>(&1, ":*"))
+      |> Enum.join(" & ")
+
+    User
+    |> where(fragment("""
+      users_name_fts(first_name, last_name, handle)
+      @@ to_tsquery('simple', unaccent(?))
+      """,
+      ^search_term))
+    |> Blocking.object_visible_query(user_id, :id)
+    |> where([u], u.id != ^user_id)
+    |> limit(^limit)
+    |> Repo.all()
   end
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok

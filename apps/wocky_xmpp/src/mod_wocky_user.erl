@@ -31,6 +31,10 @@
 
 -define(REMOVE_USER_HOOK_PRI, 1000). % Do this after all other remove user hooks
 
+-define(DEFAULT_SEARCH_RESULTS, 50).
+%% Maximum users to return as a search result, regardless of client request
+-define(MAX_SEARCH_RESULTS, 100).
+
 %%--------------------------------------------------------------------
 %% gen_mod interface
 %%--------------------------------------------------------------------
@@ -103,6 +107,15 @@ handle_request(IQ, _FromJID = #jid{luser = RequesterID}, _ToJID, get,
         {ok, make_contacts_response_iq(
                IQ, Contacts, Association, UserID, RSMOut)}
        ]);
+
+handle_request(IQ, FromJID = #jid{luser = FromUser}, _ToJID, get,
+               ReqEl = #xmlel{name = <<"search">>}) ->
+    do([error_m ||
+        SearchTerm <- wocky_xml:get_subel_cdata(<<"search_term">>,
+                                                ReqEl, <<>>),
+        Limit <- get_search_limit(ReqEl),
+        Users <- {ok, ?wocky_user:search_by_name(SearchTerm, FromUser, Limit)},
+        {ok, make_search_response(IQ, Users, FromJID)}]);
 
 handle_request(IQ, FromJID, #jid{lserver = LServer}, set,
                ReqEl = #xmlel{name = <<"set">>, children = Children}) ->
@@ -213,8 +226,9 @@ relationship_not_self(#jid{luser = FromUser}, #jid{luser = User}) ->
     end.
 
 
+get_field(Var) when is_binary(Var) -> get_field(binary_to_list(Var));
 get_field(Var) ->
-    case lists:keyfind(binary_to_list(Var), 1, fields()) of
+    case lists:keyfind(Var, 1, fields()) of
         false ->
             not_valid(["Unknown field name: ", Var]);
         Field ->
@@ -334,6 +348,14 @@ get_resp_fields(Fields, _LServer, LUser, FromJID) ->
         Row -> {ok, build_resp_fields(Row, Fields, FromJID)}
     end.
 
+get_search_limit(ReqEl) ->
+    {ok, LimitStr} = wocky_xml:get_subel_cdata(
+                       <<"limit">>, ReqEl,
+                       integer_to_binary(?DEFAULT_SEARCH_RESULTS)),
+    case wocky_util:safe_bin_to_integer(LimitStr) of
+        {ok, Limit} when Limit > 0 -> {ok, max(Limit, ?MAX_SEARCH_RESULTS)};
+        _ -> {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid limit">>)}
+    end.
 
 build_resp_fields(Row, Fields, FromJID) ->
     {lists:foldl(
@@ -342,7 +364,6 @@ build_resp_fields(Row, Fields, FromJID) ->
        end,
        [], Fields),
      lists:foldl(add_resp_field(Row, FromJID, _, _), [], Fields)}.
-
 
 old_build_resp_field(Row, FromJID, Field) ->
     #xmlel{name = <<"field">>,
@@ -392,6 +413,22 @@ make_contacts_response_iq(IQ, Contacts, RequestedAssociation, UserID, RSMOut) ->
                       children = make_contacts(
                                    Contacts, RequestedAssociation, UserID)
                                  ++ jlib:rsm_encode(RSMOut)}}.
+
+make_search_response(IQ, Users, FromJID) ->
+    IQ#iq{type = result,
+          sub_el = #xmlel{
+                      name = <<"results">>,
+                      children = make_search_result_users(Users, FromJID)}}.
+
+make_search_result_users(Users, FromJID) ->
+    lists:map(make_search_result_user(_, FromJID), Users).
+
+make_search_result_user(User, FromJID) ->
+    FieldNames = ["first_name", "last_name", "handle", "user", "avatar"],
+    Fields = lists:map(fun(FN) -> {ok, F} = get_field(FN), F end, FieldNames),
+    #xmlel{name = <<"user">>,
+           children =
+           lists:foldl(add_resp_field(User, FromJID, _, _), [], Fields)}.
 
 make_set_response_iq(IQ, User) ->
     IQ#iq{type = result,
