@@ -290,7 +290,9 @@ defmodule Wocky.BotSpec do
                |> should(be_false())
 
           it do:
-               user().id |> HomeStream.get() |> is_deleted()
+               user().id
+               |> HomeStream.get()
+               |> is_deleted()
                |> should(be_false())
         end
       end
