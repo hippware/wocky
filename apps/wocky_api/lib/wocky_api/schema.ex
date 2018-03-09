@@ -7,45 +7,45 @@ defmodule WockyAPI.Schema do
 
   object :current_user do
     field :profile, non_null(:profile) do
-      resolve(&UserResolver.get_profile/3)
+      resolve &UserResolver.get_profile/3
     end
 
     field :contacts_connection, :user_contacts_connection do
-      arg(:first, :integer)
-      arg(:after, :string)
-      arg(:last, :integer)
-      arg(:before, :string)
-      arg(:relationship, :user_contact_relationship)
+      arg :first, :integer
+      arg :after, :string
+      arg :last, :integer
+      arg :before, :string
+      arg :relationship, :user_contact_relationship
 
-      resolve(&UserResolver.get_contacts/3)
+      resolve &UserResolver.get_contacts/3
     end
 
     field :home_stream_connection, :user_home_stream_connection do
-      arg(:first, :integer)
-      arg(:after, :string)
-      arg(:last, :integer)
-      arg(:before, :string)
+      arg :first, :integer
+      arg :after, :string
+      arg :last, :integer
+      arg :before, :string
 
-      resolve(&UserResolver.get_home_stream/3)
+      resolve &UserResolver.get_home_stream/3
     end
 
     field :conversations_connection, :user_conversations_connection do
-      arg(:first, :integer)
-      arg(:after, :string)
-      arg(:last, :integer)
-      arg(:before, :string)
+      arg :first, :integer
+      arg :after, :string
+      arg :last, :integer
+      arg :before, :string
 
-      resolve(&UserResolver.get_conversations/3)
+      resolve &UserResolver.get_conversations/3
     end
 
     field :bots_connection, :user_bots_connection do
-      arg(:first, :integer)
-      arg(:after, :string)
-      arg(:last, :integer)
-      arg(:before, :string)
-      arg(:relationship, :user_bot_relationship)
+      arg :first, :integer
+      arg :after, :string
+      arg :last, :integer
+      arg :before, :string
+      arg :relationship, :user_bot_relationship
 
-      resolve(&UserResolver.get_bots/3)
+      resolve &UserResolver.get_bots/3
     end
   end
 
@@ -122,9 +122,9 @@ defmodule WockyAPI.Schema do
   end
 
   enum :user_bot_relationship do
-    value(:owned)
-    value(:shared)
-    value(:subscribed)
+    value :owned
+    value :shared
+    value :subscribed
   end
 
   object :user_bots_connection do
@@ -157,13 +157,13 @@ defmodule WockyAPI.Schema do
 
   query do
     field :current_user, non_null(:current_user) do
-      resolve(fn _, _, _ -> {:ok, %{}} end)
+      resolve fn _, _, _ -> {:ok, %{}} end
     end
 
     field :users, non_null(:profile) do
-      arg(:id, non_null(:string))
+      arg :id, non_null(:string)
 
-      resolve(&UserResolver.get_user/3)
+      resolve &UserResolver.get_user/3
     end
   end
 
@@ -184,9 +184,9 @@ defmodule WockyAPI.Schema do
 
   mutation do
     field :update_profile, :update_profile_payload do
-      arg(:input, non_null(:update_profile_input))
+      arg :input, non_null(:update_profile_input)
 
-      resolve(&UserResolver.update_profile/3)
+      resolve &UserResolver.update_profile/3
     end
   end
 end
