@@ -15,8 +15,8 @@ defmodule Wocky.Account.TokenTest do
   defp token_from_context(ctx) do
     Repo.one(
       from t in Token,
-      where: t.user_id == ^ctx.id,
-      where: t.resource == ^ctx.resource
+        where: t.user_id == ^ctx.id,
+        where: t.resource == ^ctx.resource
     )
   end
 

@@ -21,7 +21,8 @@ defmodule Wocky.Account.ClientJWTTest do
     end
 
     test "with any other data" do
-      assert {:error, :unknown_resource} == ClientJWT.subject_for_token(%{}, %{})
+      assert {:error, :unknown_resource} ==
+               ClientJWT.subject_for_token(%{}, %{})
     end
   end
 

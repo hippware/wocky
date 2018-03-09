@@ -25,8 +25,8 @@ defmodule Wocky.Account.ClientJWT.VerifyTest do
 
   test "iat validation" do
     assert verify_claim("iat", nil)
-    assert verify_claim("iat", Guardian.timestamp)
-    refute verify_claim("iat", Guardian.timestamp + 100)
+    assert verify_claim("iat", Guardian.timestamp())
+    refute verify_claim("iat", Guardian.timestamp() + 100)
   end
 
   test "typ validation" do

@@ -40,30 +40,33 @@ defmodule Wocky.AccountTest do
       assert {:ok, {user, false}} == authenticate(:token, {user.id, token})
 
       assert {:error, "Invalid token"} ==
-        authenticate(:token, {ID.new(), token})
+               authenticate(:token, {ID.new(), token})
 
       assert {:error, "Invalid token"} ==
-        authenticate(:token, {user.id(), Token.generate()})
+               authenticate(:token, {user.id(), Token.generate()})
     end
 
     test "bypass authentication", %{user: user} do
       assert {:error, _} =
-        authenticate(:bypass, {user.external_id, "+18005551234"})
+               authenticate(:bypass, {user.external_id, "+18005551234"})
 
       assert {:error, _} =
-        authenticate(:bypass, {Factory.external_id(), "+18005551234"})
+               authenticate(:bypass, {Factory.external_id(), "+18005551234"})
 
       assert {:ok, {_, false}} =
-        authenticate(:bypass, {user.external_id, user.phone_number})
+               authenticate(:bypass, {user.external_id, user.phone_number})
 
       assert {:ok, {_, false}} =
-        authenticate(:bypass, {user.external_id, Factory.phone_number()})
+               authenticate(:bypass, {user.external_id, Factory.phone_number()})
 
       assert {:ok, {_, false}} =
-        authenticate(:bypass, {Factory.external_id(), user.phone_number})
+               authenticate(:bypass, {Factory.external_id(), user.phone_number})
 
       assert {:ok, {_, true}} =
-        authenticate(:bypass, {Factory.external_id(), Factory.phone_number()})
+               authenticate(
+                 :bypass,
+                 {Factory.external_id(), Factory.phone_number()}
+               )
     end
 
     test "firebase authentication", %{user: user} do

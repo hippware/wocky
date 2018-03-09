@@ -19,6 +19,7 @@ defmodule Wocky.Account.ClientJWT.Verify do
 
   def verify_claim(mod, "aud", %{"aud" => aud} = claims, _opts) do
     audience = mod |> apply(:config, [:audience]) |> to_string()
+
     if is_nil(aud) || aud == audience do
       {:ok, claims}
     else
@@ -49,6 +50,7 @@ defmodule Wocky.Account.ClientJWT.Verify do
     do: Base.verify_claim(mod, claim_key, claims, opts)
 
   defp client_supported?(nil), do: false
+
   defp client_supported?(agent_str) do
     case parse_agent(agent_str) do
       {:ok, version, attrs} -> client_supported?(version, attrs)

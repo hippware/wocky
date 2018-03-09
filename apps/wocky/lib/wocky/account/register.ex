@@ -24,11 +24,12 @@ defmodule Wocky.Account.Register do
     :pass_details
   ]
 
-  @spec get_external_id(User.t, binary) :: binary
+  @spec get_external_id(User.t(), binary) :: binary
   def get_external_id(user, provider \\ "firebase") do
     case user.external_id do
       nil ->
         external_id = Factory.external_id()
+
         {:ok, _} =
           User.update(user, %{
             provider: provider,
@@ -42,9 +43,10 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec find(binary | atom, binary, binary) :: {:ok, User.t} | {:error, any}
+  @spec find(binary | atom, binary, binary) :: {:ok, User.t()} | {:error, any}
   def find(provider, external_id, phone_number) do
     provider = to_string(provider)
+
     case Repo.get_by(User, external_id: external_id, provider: provider) do
       nil ->
         case Repo.get_by(User, phone_number: phone_number) do
@@ -64,13 +66,13 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec create(map(), boolean()) :: {:ok, User.t} | {:error, any}
+  @spec create(map(), boolean()) :: {:ok, User.t()} | {:error, any}
   def create(user_data, prepop \\ false) do
     user_data =
       %{
-        username: ID.new,
+        username: ID.new(),
         provider: "local",
-        external_id: Factory.external_id
+        external_id: Factory.external_id()
       }
       |> Map.merge(user_data)
 
@@ -86,7 +88,7 @@ defmodule Wocky.Account.Register do
   end
 
   @spec find_or_create(binary, binary, binary, binary) ::
-  {:ok, {User.t, boolean}}
+          {:ok, {User.t(), boolean}}
   def find_or_create(server, provider, external_id, phone_number) do
     find_or_create(server, provider, external_id, phone_number, 0)
   end

@@ -102,7 +102,7 @@ defmodule Wocky.Account.RegisterTest do
       assert {:ok, user} = Register.create(@create_attrs)
 
       user_attrs = Map.from_struct(user)
-      for {k, v} <- @create_attrs, do: assert user_attrs[k] == v
+      for {k, v} <- @create_attrs, do: assert(user_attrs[k] == v)
     end
 
     test "with defaults" do

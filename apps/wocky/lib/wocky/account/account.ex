@@ -97,7 +97,7 @@ defmodule Wocky.Account do
   https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
   """
   @spec authenticate(provider, binary, binary | {binary, binary}) ::
-  {:ok, {User.t(), boolean}} | {:error, binary}
+          {:ok, {User.t(), boolean}} | {:error, binary}
   def authenticate(:token, _server, {user_id, token}) do
     if Token.valid?(user_id, token) do
       {:ok, {Repo.get(User, user_id), false}}
