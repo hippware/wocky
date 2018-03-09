@@ -72,9 +72,9 @@ defmodule WockyAPI.Schema do
   end
 
   enum :user_contact_relationship do
-    value(:following)
-    value(:follower)
-    value(:friend)
+    value :following
+    value :follower
+    value :friend
   end
 
   object :user_contacts_connection do
