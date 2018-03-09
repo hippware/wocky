@@ -17,10 +17,15 @@ defmodule Wocky.Account.Firebase do
     {:error, :unknown_resource}
   end
 
-  def resource_from_claims(%{sub: external_id, phone_number: phone_number}) do
-    Register.find(:firebase, external_id, phone_number)
+  def resource_from_claims(%{"sub" => external_id, "phone_number" => phone}) do
+    Register.find(:firebase, external_id, phone)
   end
   def resource_from_claims(_claims) do
     {:error, :not_possible}
   end
+
+  def build_claims(claims, %User{} = user, _opts) do
+    {:ok, Map.put(claims, "phone_number", user.phone_number)}
+  end
+  def build_claims(claims, _resource, _opts), do: {:ok, claims}
 end
