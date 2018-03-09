@@ -242,9 +242,12 @@ defmodule :mod_wocky_tros_spec do
 
   describe "wait_ready/1", async: false do
     before do
-      %{id: id} = Factory.insert(:tros_metadata,
-                                 user: shared.alice,
-                                 ready: false)
+      %{id: id} =
+        Factory.insert(
+          :tros_metadata,
+          user: shared.alice,
+          ready: false
+        )
 
       {:ok, id: id}
     end
@@ -258,6 +261,7 @@ defmodule :mod_wocky_tros_spec do
         :timer.sleep(500)
         set_ready(shared.id)
       end)
+
       wait_ready(shared.id) |> should(eq :ok)
     end
 
@@ -350,7 +354,6 @@ defmodule :mod_wocky_tros_spec do
   defp set_ready(id) do
     %Metadata{id: id}
     |> Changeset.cast(%{ready: true}, [:ready])
-    |> Repo.update!
+    |> Repo.update!()
   end
-
 end

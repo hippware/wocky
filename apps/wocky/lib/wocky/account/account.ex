@@ -183,7 +183,7 @@ defmodule Wocky.Account do
   Disable a user prior to their eventual deletion so that they cannot
   re-login before the deletion is finalised
   """
-  @spec disable_user(User.id) :: :ok
+  @spec disable_user(User.id()) :: :ok
   def disable_user(user_id) do
     Token.release_all(user_id)
     User.remove_auth_details(user_id)

@@ -25,6 +25,7 @@ defmodule :ejabberd_auth_wocky_spec do
 
     it "should return false when the user exists but the token doesn't match" do
       token = Account.generate_token()
+
       shared.user
       |> :ejabberd_auth_wocky.check_password(shared.server, token)
       |> should(be_false())

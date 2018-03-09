@@ -8,8 +8,9 @@ defmodule :rsm_util_spec do
   require Record
 
   defrecordp :rsm_in, extract(:rsm_in, from_lib: "mongooseim/include/jlib.hrl")
+
   defrecordp :rsm_out,
-    extract(:rsm_out, from_lib: "mongooseim/include/jlib.hrl")
+             extract(:rsm_out, from_lib: "mongooseim/include/jlib.hrl")
 
   @ns_rsm "http://jabber.org/protocol/rsm"
   @count 200

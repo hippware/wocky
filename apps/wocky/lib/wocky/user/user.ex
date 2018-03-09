@@ -406,9 +406,10 @@ defmodule Wocky.User do
   def remove_auth_details(id) do
     User
     |> where(id: ^id)
-    |> Repo.update_all(set: [phone_number: nil,
-                             provider: nil,
-                             external_id: nil])
+    |> Repo.update_all(
+      set: [phone_number: nil, provider: nil, external_id: nil]
+    )
+
     :ok
   end
 

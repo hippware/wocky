@@ -68,8 +68,11 @@ defmodule :mod_wocky_honeybadger do
   # ===================================================================
 
   @spec sm_register_connection_hook(
-    :mongoose_acc.t(), :ejabberd_sm.sid(), :ejabberd.jid(), any
-  ) :: :mongoose_acc.t()
+          :mongoose_acc.t(),
+          :ejabberd_sm.sid(),
+          :ejabberd.jid(),
+          any
+        ) :: :mongoose_acc.t()
   def sm_register_connection_hook(acc, sid, jid, info) do
     Honeybadger.context(%{
       user_id: jid(jid, :luser),
@@ -87,8 +90,8 @@ defmodule :mod_wocky_honeybadger do
   # Incoming packet handler
   # ===================================================================
 
-  @type filter_packet() :: {:ejabberd.jid(), :ejabberd.jid(),
-    :mongoose_acc.t(), :jlib.xmlel()}
+  @type filter_packet() ::
+          {:ejabberd.jid(), :ejabberd.jid(), :mongoose_acc.t(), :jlib.xmlel()}
   @spec filter_local_packet_hook(filter_packet | :drop) :: filter_packet
   def filter_local_packet_hook({from, to, _acc, packet} = p) do
     Honeybadger.context(%{

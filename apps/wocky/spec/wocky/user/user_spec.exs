@@ -859,6 +859,7 @@ defmodule Wocky.UserSpec do
       end
 
       it "should return :ok", do: shared.result |> should(eq :ok)
+
       it "should clear the user's auth details" do
         user = Repo.get(User, shared.user.id)
         user.phone_number |> should(eq nil)
@@ -869,7 +870,7 @@ defmodule Wocky.UserSpec do
 
     context "invalid user" do
       before do
-        {:ok, result: User.remove_auth_details(ID.new)}
+        {:ok, result: User.remove_auth_details(ID.new())}
       end
 
       it "should return :ok", do: shared.result |> should(eq :ok)
