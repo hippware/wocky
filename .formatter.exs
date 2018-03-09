@@ -9,7 +9,7 @@
   # In the future, we will be able to import DSL function names from
   # Phoenix, Ecto, and Espec. None of those libraries currently export,
   # but it is in the works for all of them.
-  # import_deps: [:phoenix, :ecto, :espec]
+  import_deps: [:absinthe, :phoenix, :ecto],
   locals_without_parens: [
     # Ecto queries
     from: 2,

@@ -20,12 +20,14 @@ defmodule :wocky_waiter_spec do
 
     it "should return :timeout if notify() is called with a different event" do
       event = Lorem.characters(20)
+
       wait(event, 200, fn -> false end)
       |> should(eq :timeout)
     end
 
     it "should return ok if the skip function returns true" do
       event = Lorem.characters(20)
+
       wait(event, 200, fn -> true end)
       |> should(eq :ok)
     end

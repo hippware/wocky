@@ -793,7 +793,8 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make the users have no relationship" do
-          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+          Roster.relationship(shared.user.id, shared.user2.id)
+          |> should(eq :none)
         end
       end
 
@@ -809,7 +810,8 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make the users have no relationship" do
-          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+          Roster.relationship(shared.user.id, shared.user2.id)
+          |> should(eq :none)
         end
       end
 
@@ -825,7 +827,8 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make the users have no relationship" do
-          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+          Roster.relationship(shared.user.id, shared.user2.id)
+          |> should(eq :none)
         end
       end
 
@@ -840,7 +843,8 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make the users have no relationship" do
-          Roster.relationship(shared.user.id, shared.user2.id) |> should(eq :none)
+          Roster.relationship(shared.user.id, shared.user2.id)
+          |> should(eq :none)
         end
       end
     end

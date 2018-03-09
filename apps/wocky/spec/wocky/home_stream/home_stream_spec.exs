@@ -266,9 +266,7 @@ defmodule Wocky.HomeStreamSpec do
         {:ok, ref_bot} = Bot.update(ref_bot, %{public: false})
 
         {:ok,
-         ref_user: ref_user,
-         ref_bot: ref_bot,
-         shared_to_user: shared_to_user}
+         ref_user: ref_user, ref_bot: ref_bot, shared_to_user: shared_to_user}
       end
 
       it "should remove referenced items from unshared-to users" do
