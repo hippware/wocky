@@ -5,7 +5,6 @@ defmodule Wocky.Repo.Factory do
   use Wocky.JID
 
   alias Faker.Address
-  alias Faker.Code
   alias Faker.Company
   alias Faker.Internet
   alias Faker.Lorem

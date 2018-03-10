@@ -119,11 +119,8 @@ defmodule Wocky.Account do
       {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
         Register.find_or_create(server, :firebase, external_id, phone_number)
 
-      {:error, %{message: reason}} ->
-        {:error, reason}
-
       {:error, reason} ->
-        {:error, to_string(reason)}
+        {:error, error_to_string(reason)}
     end
   end
 
@@ -138,11 +135,8 @@ defmodule Wocky.Account do
       {:ok, _claims} ->
         {:error, "Unable to authenticate wrapped entity"}
 
-      {:error, %{message: reason}} ->
-        {:error, reason}
-
       {:error, reason} ->
-        {:error, to_string(reason)}
+        {:error, error_to_string(reason)}
     end
   end
 
@@ -156,6 +150,11 @@ defmodule Wocky.Account do
   end
 
   defp provider_error(p), do: {:error, "Unsupported provider: #{p}"}
+
+  defp error_to_string(%{message: reason}), do: reason
+  defp error_to_string(reason) when is_binary(reason), do: reason
+  defp error_to_string(reason) when is_atom(reason), do: to_string(reason)
+  defp error_to_string(reason), do: inspect(reason)
 
   # ====================================================================
   # Account disabling

@@ -407,8 +407,8 @@ provider_data(digits, #{external_id := EID, phone_number := Phone}) ->
         "oauth_signature_method=\"HMAC-SHA1\"">>
      }];
 
-provider_data(firebase, #{phone_number := Phone} = User) ->
-    {ok, JWT, _} = ?firebase:encode_and_sign(User, #{phone_number => Phone}),
+provider_data(firebase, User) ->
+    {ok, JWT, _} = ?firebase:encode_and_sign(User),
     [{jwt, JWT}].
 
 request_stanza(Data) when is_list(Data) ->
