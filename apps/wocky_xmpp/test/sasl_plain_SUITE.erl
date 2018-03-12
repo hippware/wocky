@@ -71,36 +71,9 @@ init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
     ?wocky_repo:delete_all(?wocky_user),
 
-    InitialContacts = [setup_initial_contacts(T) ||
-                       T <- [followee, follower, friend]],
-
-    PrepopItems = setup_hs_prepop(),
-
     User = ?wocky_factory:insert(user, #{welcome_sent => true}),
 
-    escalus:init_per_suite([{initial_contacts, InitialContacts},
-                            {prepop_items, PrepopItems},
-                            {user, User} | Config]).
-
-setup_initial_contacts(Type) ->
-    Users = ?wocky_factory:insert_list(3, user),
-    lists:foreach(
-      fun(#{id := ID}) ->
-              ?wocky_factory:insert(initial_contact, [{user_id, ID},
-                                                      {type, Type}])
-      end,
-      Users),
-    Users.
-
-setup_hs_prepop() ->
-    #{id := UserID} = test_helper:insert_system_users(),
-
-    OldTS = ?timex:subtract(?datetime:utc_now(), ?duration:from_weeks(6)),
-
-    ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID,
-                                                       created_at => OldTS,
-                                                       updated_at => OldTS}),
-    ?wocky_factory:insert_list(15, home_stream_item, #{user_id => UserID}).
+    escalus:init_per_suite([{user, User} | Config]).
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
@@ -129,54 +102,15 @@ register_with_firebase(Config) ->
     User = ?wocky_factory:build(user),
     Data = provider_data(firebase, User),
     Stanza = request_stanza(request_data(firebase, Data)),
-    register_common(Config, Client, Stanza).
+    Result = escalus:send_and_wait(Client, Stanza),
+    assert_is_redirect(Result, true, true).
 
 register_with_digits_bypass(Config) ->
     Client = start_client(Config),
     User = ?wocky_factory:build(user),
     Stanza = request_stanza(request_data(digits, provider_data(digits, User))),
-    register_common(Config, Client, Stanza).
-
-register_common(Config, Client, Stanza) ->
     Result = escalus:send_and_wait(Client, Stanza),
-    {UserID, Token} = assert_is_redirect(Result, true, true),
-    NewConfig = [{escalus_users,
-                  [{thedude,
-                    [{username, UserID},
-                     {server, ?SERVER},
-                     {password, Token}]}]}
-                 | Config],
-
-    escalus:story(NewConfig, [{thedude, 1}], fun(Alice) ->
-        %% Verify that initial followees have been added
-        InitialContacts
-        = [InitialFollowees, InitialFollowers, InitialFriends]
-        = proplists:get_value(initial_contacts, NewConfig),
-        JIDs = lists:map(fun(#{id := ID}) ->
-                                 jid:to_binary(jid:make(ID, ?SERVER, <<>>))
-                         end, lists:flatten(InitialContacts)),
-
-        escalus:send(Alice, escalus_stanza:roster_get()),
-        Stanza2 = escalus:wait_for_stanza(Alice),
-        escalus_assert:is_roster_result(Stanza2),
-
-        escalus:assert(count_roster_items, [length(JIDs)], Stanza2),
-        lists:foreach(fun(JID) ->
-                              escalus:assert(roster_contains, [JID], Stanza2)
-                      end, JIDs),
-        lists:foreach(
-          fun({Users, SubType}) ->
-                  lists:foreach(check_contact(_, SubType, Stanza2), Users)
-          end,
-          [{InitialFollowees, <<"to">>},
-           {InitialFollowers, <<"from">>},
-           {InitialFriends, <<"both">>}]),
-
-        %% Verify that initial HS items have been added
-        Stanza3 = test_helper:expect_iq_success_u(
-                    test_helper:get_hs_stanza(), Alice, Alice),
-        test_helper:check_hs_result(Stanza3, 15)
-    end).
+    assert_is_redirect(Result, true, true).
 
 
 %%--------------------------------------------------------------------
@@ -349,27 +283,6 @@ assert_has_redirect_data(JSON, IsNew, HasToken) ->
                   RequiredFields),
     ?assertEqual(IsNew, proplists:get_value(<<"is_new">>, Fields)),
     {proplists:get_value(<<"user">>, Fields), check_token(Fields, HasToken)}.
-
-check_contact(#{id := ID}, SubType, Stanza2) ->
-    Query = exml_query:subelement(Stanza2, <<"query">>),
-    JID = jid:to_binary(jid:make(ID, ?SERVER, <<>>)),
-    Item = lists:filter(
-             fun(E) ->
-                     xml:get_attr(<<"jid">>, E#xmlel.attrs)
-                         =:= {value, JID}
-             end,
-             Query#xmlel.children),
-    case Item of
-        [I] ->
-            ?assertEqual({value, SubType},
-                         xml:get_attr(<<"subscription">>, I#xmlel.attrs)),
-            ?assert(lists:member(
-                      <<"__new__">>,
-                      exml_query:paths(I, [{element, <<"group">>}, cdata])));
-        X ->
-            ct:fail("Could not find item or __new__ group for jid ~p (~p)",
-                    [JID, X])
-    end.
 
 check_token(Fields, HasToken) ->
     lists:foreach(fun(F) ->
