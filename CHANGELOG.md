@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Formatting changes (PR #1315)
+* Postgres based user search (PR #1314, #1235)
+
+
 # 2018.3.6+rcff91d2
 
 * Prevent re-authentication of a user who has been deleted (PR #1302)
