@@ -94,7 +94,7 @@ defmodule Wocky.Mixfile do
       {:geocalc, "~> 0.5"},
       {:hackney, "~> 1.7"},
       {:honeybadger, "~> 0.6"},
-      {:idna, "~> 5.1.0", override: true},
+      {:idna, "~> 5.1", override: true},
       {:joken, "~> 1.1"},
       {:jsx, "~> 2.8"},
       {:kadabra, "~> 0.3"},

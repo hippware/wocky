@@ -57,6 +57,7 @@ defmodule WockyAPI.Mixfile do
       {:phoenix_pubsub, "~> 1.0"},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
+      {:idna, "~> 5.1", override: true},
       {:ranch, "~> 1.3.2", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
