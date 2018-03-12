@@ -87,7 +87,7 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec find_or_create(binary, binary, binary, binary) ::
+  @spec find_or_create(binary, atom | binary, binary, binary) ::
           {:ok, {User.t(), boolean}}
   def find_or_create(server, provider, external_id, phone_number) do
     find_or_create(server, provider, external_id, phone_number, 0)

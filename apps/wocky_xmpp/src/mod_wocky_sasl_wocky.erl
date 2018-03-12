@@ -29,7 +29,7 @@ stop(_Host) ->
 mech_new(_Host, Creds) ->
     {ok, #state{creds = Creds}}.
 
--spec mech_step(Creds :: mongoose_credentials:t(), ClientIn :: binary()) ->
+-spec mech_step(State :: tuple(), ClientIn :: binary()) ->
     {ok, mongoose_credentials:t()} | {error, binary()}.
 mech_step(#state{creds = Creds}, SerializedToken) ->
     %% SerializedToken is a token decoded from CDATA <auth/> body sent by client
