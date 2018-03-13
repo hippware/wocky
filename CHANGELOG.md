@@ -6,7 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Formatting changes (PR #1315)
-* Postgres based user search (PR #1314, #1235)
+* Postgres based user search (#1235, PR #1314, PR #1323)
 
 
 # 2018.3.6+rcff91d2
