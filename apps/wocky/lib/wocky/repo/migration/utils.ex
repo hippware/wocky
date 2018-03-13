@@ -38,11 +38,47 @@ defmodule Wocky.Repo.Migration.Utils do
           #{maybe_new(action, ",'new', #{wrap_overrides("NEW", overrides)}")}
         )::text
       );
-    RETURN NULL;
+      RETURN NULL;
     END;
     $$ LANGUAGE plpgsql;
     """
 
+    add_notify_trigger(table, action)
+  end
+
+  def update_notify(table, action_atom, overrides) do
+    action = Atom.to_string(action_atom)
+
+    execute """
+    CREATE OR REPLACE FUNCTION notify_#{table}_#{action}()
+    RETURNS trigger AS $$
+    DECLARE
+      event_id bigint;
+    BEGIN
+      INSERT INTO watcher_events (payload, created_at) VALUES (
+        json_build_object(
+          'table', TG_TABLE_NAME
+          ,'action', '#{action}'
+          #{maybe_old(action, ",'old', #{wrap_overrides("OLD", overrides)}")}
+          #{maybe_new(action, ",'new', #{wrap_overrides("NEW", overrides)}")}
+        )::text,
+        now()
+      )
+      RETURNING id INTO event_id;
+      PERFORM pg_notify(
+        'wocky_db_watcher_notify',
+        json_build_object(
+          'table', TG_TABLE_NAME,
+          'action', '#{action}',
+          'id', event_id
+        )::text
+      );
+      RETURN NULL;
+    END;
+    $$ LANGUAGE plpgsql;
+    """
+
+    execute "DROP TRIGGER IF EXISTS #{name(table, action)} ON #{table}"
     add_notify_trigger(table, action)
   end
 
