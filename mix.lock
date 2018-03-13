@@ -127,7 +127,7 @@
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [:rebar3], [], "hexpm"},
   "usec": {:git, "https://github.com/esl/usec", "f85ffd8350d7000c26392c18bdfcdbb30f3b5ee8", [branch: "master"]},
   "uuid": {:hex, :uuid_erl, "1.7.2", "d596c8dd01a4ae48b9d8d51832ccc8f8302bf67acd01336aec3fcfae6b9d2bc2", [:rebar3], [{:quickrand, "~> 1.7.2", [hex: :quickrand, repo: "hexpm", optional: false]}], "hexpm"},
-  "wocky_db_watcher": {:git, "https://github.com/hippware/wocky_db_watcher.git", "6bcd4835781b3e3dbe735664ebb5455c375f8b24", [branch: "master"]},
+  "wocky_db_watcher": {:git, "https://github.com/hippware/wocky_db_watcher.git", "adab573c0f60355aee2d001129bac3d8f91d4fe1", [branch: "master"]},
   "worker_pool": {:hex, :worker_pool, "3.1.0", "c908627e04057cf29940ad0e79b89ab161db520eebc76942efd08a187babf93a", [:rebar3], [], "hexpm"},
   "wsecli": {:git, "https://github.com/esl/wsecli.git", "a89054cf71c5ee9e780998e5acb2a78fd3419dd9", [branch: "master"]},
   "wsock": {:git, "https://github.com/esl/wsock", "251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383", [ref: "251e18b"]},
