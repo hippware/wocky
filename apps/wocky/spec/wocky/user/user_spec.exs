@@ -881,13 +881,13 @@ defmodule Wocky.UserSpec do
   describe "search_by_name/3" do
     before do
       users =
-        [{"Alice", "Sanders"},
-         {"Alison", "Smith"},
-         {"Bob", "Jones"},
-         {"acéñtîâ", "CAPITAL"}]
+        [{"Alice", "Sanders", "Xena"},
+         {"Alison", "Smith", "Yaniv"},
+         {"Bob", "Jones", "Zena"},
+         {"acéñtîâ", "CAPITAL", "1345"}]
          |> Enum.map(
-           fn({f, l}) ->
-             Factory.insert(:user, first_name: f, last_name: l)
+           fn({f, l, h}) ->
+             Factory.insert(:user, first_name: f, last_name: l, handle: h)
            end)
 
       {:ok, users: users}
@@ -900,6 +900,8 @@ defmodule Wocky.UserSpec do
         User.search_by_name("s", shared.id, 50) |> should(have_length(2))
         User.search_by_name("smi", shared.id, 50) |> should(have_length(1))
         User.search_by_name("q", shared.id, 50) |> should(have_length(0))
+        User.search_by_name("z", shared.id, 50) |> should(have_length(1))
+        User.search_by_name("13", shared.id, 50) |> should(have_length(1))
       end
 
       it "should ignore accents in both search and data" do
