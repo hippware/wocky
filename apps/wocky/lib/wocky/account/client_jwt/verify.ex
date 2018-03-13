@@ -6,7 +6,7 @@ defmodule Wocky.Account.ClientJWT.Verify do
   alias Guardian.Token.Verify
   alias Guardian.Token.Jwt.Verify, as: Base
 
-  @agent_rx ~r/TinyRobot\/(\d\.\d\.\d)(?: \((.*)\))?/
+  @agent_rx ~r/TinyRobot\/(\d+\.\d+\.\d+)(?: \((.*)\))?/
 
   @doc false
   def verify_claim(_mod, "iss", %{"iss" => iss} = claims, _opts) do

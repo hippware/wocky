@@ -215,7 +215,7 @@ defmodule Wocky.Account.RegisterTest do
     end
 
     test "when a user with the same phone number exists", %{user: user} do
-      external_id = Faker.Code.isbn13()
+      external_id = Factory.external_id()
 
       assert {:ok, {%User{} = new_user, false}} =
                Register.find_or_create(
@@ -233,7 +233,7 @@ defmodule Wocky.Account.RegisterTest do
     end
 
     test "when the user does not exist" do
-      external_id = Faker.Code.isbn13()
+      external_id = Factory.external_id()
       phone_number = Factory.phone_number()
 
       assert {:ok, {%User{} = new_user, true}} =
