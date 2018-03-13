@@ -82,16 +82,12 @@ defmodule Wocky.Account.Token do
     {:ok, {token, struct.expires_at}}
   end
 
-  def with_user(query, user_id) do
+  defp with_user(query, user_id) do
     from t in query, where: t.user_id == ^user_id
   end
 
-  def and_resource(query, resource) do
+  defp and_resource(query, resource) do
     from t in query, where: t.resource == ^resource
-  end
-
-  def select_token(query) do
-    from t in query, select: t.token
   end
 
   @doc """

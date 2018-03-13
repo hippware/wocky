@@ -31,8 +31,7 @@ config :wocky,
     {:system, :string, "SLACK_TOKEN",
      "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"},
 
-  # Firebase
-  firebase_project_id: "my-project-1480497595993",
+  # Authentication
   enable_auth_bypass: {:system, :boolean, "WOCKY_ENABLE_BYPASS", true},
   auth_bypass_prefixes: ["+1555"],
 

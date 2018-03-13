@@ -9,8 +9,8 @@ defmodule WockyAPI.Authentication do
     user_id = conn |> get_req_header("x-auth-user") |> List.first()
     token = conn |> get_req_header("x-auth-token") |> List.first()
 
-    case Account.authenticate_with_token(user_id, token) do
-      {:ok, user} ->
+    case Account.authenticate(:token, "", {user_id, token}) do
+      {:ok, {user, _}} ->
         conn
         |> assign(:current_user, user)
         |> put_private(:absinthe, %{context: %{current_user: user}})
