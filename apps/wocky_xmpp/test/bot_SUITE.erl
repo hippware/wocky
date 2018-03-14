@@ -1264,8 +1264,6 @@ check_rsm(#rsm_out{count = 0, index = undefined,
     ok;
 check_rsm(#rsm_out{count = Count, index = Index, first = F, last = L},
           ExpectedCount, ExpectedIndex, Items) ->
-    ct:pal("ExpectedCount: ~p~nExpectedIndex: ~p~nItems: ~p~n",
-           [ExpectedCount, ExpectedIndex, Items]),
     case {Count, Index, lists:member(F, Items), lists:member(L, Items)} of
         {ExpectedCount, ExpectedIndex, true, true} ->
             ok;
