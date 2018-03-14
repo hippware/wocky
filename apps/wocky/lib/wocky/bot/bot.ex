@@ -52,8 +52,6 @@ defmodule Wocky.Bot do
     field :radius, :float
     # Visibility of bot
     field :public, :boolean
-    # Whether alerts are enabled
-    field :alerts, :boolean
     # Does bot follow owner
     field :follow_me, :boolean
     # When follow me expires
@@ -106,7 +104,6 @@ defmodule Wocky.Bot do
           location: nil | Geo.Point.t(),
           radius: nil | float,
           public: nil | boolean,
-          alerts: nil | boolean,
           follow_me: nil | boolean,
           follow_me_expiry: nil | DateTime.t(),
           tags: nil | [binary],
@@ -138,7 +135,6 @@ defmodule Wocky.Bot do
     :location,
     :radius,
     :public,
-    :alerts,
     :follow_me,
     :follow_me_expiry,
     :tags,

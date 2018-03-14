@@ -570,7 +570,6 @@ retrieve_for_user(Config) ->
            {"type",        string, ?CREATE_TYPE},
            {"owner",       jid,    ?BJID(?ALICE)},
            {"visibility",  int,    ?WOCKY_BOT_VIS_OPEN},
-           {"alerts",      int,    ?WOCKY_BOT_ALERT_DISABLED},
            {"jid",         jid,    bot_jid(PublishBot)},
            {"subscribed",  bool,   false}]),
 
@@ -1218,7 +1217,6 @@ expected_create_fields() ->
      {"location",           geoloc, ?CREATE_LOCATION},
      {"radius",             float,  ?CREATE_RADIUS},
      {"visibility",         int,    ?WOCKY_BOT_VIS_OWNER},
-     {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    any},
      {"image_items",        int,    0},
      {"total_items",        int,    0},
@@ -1243,7 +1241,6 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
      {"radius",             float,  ?BOT_RADIUS},
      {"visibility",         int,    Visibility},
-     {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
      {"total_items",        int,    2},

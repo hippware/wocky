@@ -760,7 +760,6 @@ optional_fields() ->
      field(<<"address_data">>,  string, <<>>),
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
      field(<<"public">>,        bool,   false),
-     field(<<"alerts">>,        int,    0),
      field(<<"tags">>,          tags,   []),
      field(<<"geofence">>,      bool,   false)].
 
@@ -812,10 +811,6 @@ normalise_field(#field{name = <<"visibility">>, value = 100}, Acc) ->
     Acc#{public => true};
 normalise_field(#field{name = <<"visibility">>}, Acc) ->
     Acc#{public => false};
-normalise_field(#field{name = <<"alerts">>, value = 1}, Acc) ->
-    Acc#{alerts => true};
-normalise_field(#field{name = <<"alerts">>, value = 0}, Acc) ->
-    Acc#{alerts => false};
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
@@ -844,9 +839,6 @@ dynamic_fields(Bot, FromUser) ->
 vis(true) -> 100;
 vis(false) -> 0.
 
-alerts(true) -> 1;
-alerts(false) -> 0.
-
 encode_fields(Fields, FromUser) ->
     lists:foldl(fun old_encode_field/2, [], Fields) ++
     lists:foldl(encode_field(_, FromUser, _), [], Fields).
@@ -858,8 +850,6 @@ to_field(user_id, UserID, Acc) ->
     [#field{name = <<"owner">>, type = jid, value = JID} | Acc];
 to_field(public, Public, Acc) ->
     [#field{name = <<"visibility">>, type = int, value = vis(Public)} | Acc];
-to_field(alerts, Alerts, Acc) ->
-    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} | Acc];
 to_field(updated_at, Updated, Acc) ->
     [#field{name = <<"updated">>, type = timestamp, value = Updated} | Acc];
 to_field(subscribers_hash, Hash, Acc) ->
