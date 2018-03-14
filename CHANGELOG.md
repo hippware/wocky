@@ -5,8 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.13+r56c7ba1
+
 * Formatting changes (PR #1315)
 * Postgres based user search (#1235, PR #1314, PR #1323)
+* Fix 8k limit on DB notifications for watcher system (#1327)
+* New authentication protocol (#1262, PR #1316)
 
 
 # 2018.3.6+rcff91d2
