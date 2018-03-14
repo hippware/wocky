@@ -366,6 +366,10 @@ subscribers_rsm(Config) ->
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
+        % Alice cannot unsubscribe herself
+        expect_iq_error(unsubscribe_stanza(), Alice),
+
+        % But Carol can
         Stanza1 = expect_iq_success(unsubscribe_stanza(), Carol),
         check_subscriber_count(Stanza1, 1),
 

@@ -31,8 +31,13 @@ subscribe(User, Bot) ->
 %%%===================================================================
 
 unsubscribe(User, Bot) ->
-    ?wocky_bot:unsubscribe(Bot, User),
-    {ok, make_subscriber_count_element(Bot)}.
+    case wocky_bot_util:check_owner(Bot, User) of
+        {error, _} ->
+            ?wocky_bot:unsubscribe(Bot, User),
+            {ok, make_subscriber_count_element(Bot)};
+        ok ->
+            {error, ?ERR_FORBIDDEN}
+    end.
 
 %%%===================================================================
 %%% Action - retrieve subscribers
