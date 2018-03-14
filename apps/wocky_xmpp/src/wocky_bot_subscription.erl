@@ -10,7 +10,7 @@
 
 -include("wocky.hrl").
 
--export([subscribe/2,
+-export([subscribe/3,
          unsubscribe/2,
          retrieve_subscribers/2,
          adjust_exclude_owner/1
@@ -22,8 +22,14 @@
 %%% Action - subscribe
 %%%===================================================================
 
-subscribe(User, Bot) ->
-    ?wocky_bot:subscribe(Bot, User),
+subscribe(User, Bot, Guest) ->
+    case Guest of
+        nil ->
+            ?wocky_bot:subscribe(Bot, User);
+
+        Val when is_binary(Val) ->
+            ?wocky_bot:subscribe(Bot, User, binary_to_atom(Val, utf8))
+    end,
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================

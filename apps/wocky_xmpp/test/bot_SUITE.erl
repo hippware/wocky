@@ -80,6 +80,7 @@ all() ->
      subscribers_rsm,
      unsubscribe,
      subscribe,
+     subscribe_geofence,
      watch,
      unwatch,
      delete,
@@ -400,6 +401,30 @@ subscribe(Config) ->
         check_subscribers(Stanza3, [?BJID(?KAREN),
                                     ?BJID(?CAROL),
                                     ?BJID(?BOB)])
+      end).
+
+subscribe_geofence(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, _Bob, Carol) ->
+          set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
+
+          % There are no guests...
+          check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                             expected_guest_retrieve_fields(false, 0)),
+
+          % Carol becomes a guest...
+          Stanza1 = expect_iq_success(subscribe_guest_stanza(true), Carol),
+          check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                             expected_guest_retrieve_fields(true, 1)),
+
+          check_subscriber_count(Stanza1, 2),
+
+          % Carol cancels guesthood...
+          Stanza2 = expect_iq_success(subscribe_guest_stanza(false), Carol),
+          check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                             expected_guest_retrieve_fields(false, 0)),
+
+          check_subscriber_count(Stanza2, 2)
       end).
 
 watch(Config) ->
@@ -1228,6 +1253,13 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"subscribers+hash",   string, any}
     ].
 
+expected_guest_retrieve_fields(Guest, Guests) ->
+    [{"guest",       bool,   Guest},
+     {"guests+size", int,    Guests},
+     {"guests+hash", string, any}
+     | expected_retrieve_fields(true, ?BOT_DESC, ?WOCKY_BOT_VIS_OPEN, any)
+    ].
+
 expected_geosearch_fields() ->
     [{"jid",                jid,    any},
      {"owner",              jid,    any},
@@ -1506,6 +1538,10 @@ check_subscriber_count(Stanza = #xmlel{name = <<"iq">>}, ExpectedCount) ->
     Count = xml:get_path_s(Stanza, [{elem, <<"subscriber_count">>}, cdata]),
     ?assertEqual(binary_to_integer(Count), ExpectedCount).
 
+check_guest_subscriber_count(Stanza = #xmlel{name = <<"iq">>}, ExpectedCount) ->
+    Count = xml:get_path_s(Stanza, [{elem, <<"guests+size">>}, cdata]),
+    ?assertEqual(binary_to_integer(Count), ExpectedCount).
+
 is_bot_unsubscribe(#xmlel{name = <<"message">>, children = [Unsubscribed]}) ->
     Attrs = Unsubscribed#xmlel.attrs,
     <<"unsubscribed">> =:= Unsubscribed#xmlel.name andalso
@@ -1515,6 +1551,13 @@ is_bot_unsubscribe(_) -> false.
 has_standard_attrs(Attrs) ->
     {value, bot_node(?BOT)} =:= xml:get_attr(<<"node">>, Attrs)  andalso
     {value, ?NS_BOT} =:= xml:get_attr(<<"xmlns">>, Attrs).
+
+subscribe_guest_stanza(Switch) ->
+    SubEl = node_el(?BOT, <<"subscribe">>, [make_geofence_el(Switch)]),
+    test_helper:iq_set(?NS_BOT, SubEl).
+
+make_geofence_el(Switch) ->
+    cdata_el(<<"geofence">>, atom_to_binary(Switch, utf8)).
 
 unsubscribe_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).

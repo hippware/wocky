@@ -290,8 +290,9 @@ perform_access_action(item_query, Bot, #{id := FromID}, _ToJID, IQ) ->
 perform_access_action(item_images, Bot, FromUser, _ToJID, IQ) ->
     wocky_bot_item:query_images(Bot, IQ, FromUser);
 
-perform_access_action(subscribe, Bot, From, _ToJID, _IQ) ->
-    wocky_bot_subscription:subscribe(From, Bot);
+perform_access_action(subscribe, Bot, From, _ToJID, #iq{sub_el = SubEl}) ->
+    {ok, Guest} = wocky_xml:get_subel_cdata(<<"geofence">>, SubEl, nil),
+    wocky_bot_subscription:subscribe(From, Bot, Guest);
 
 perform_access_action(publish, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
     wocky_bot_item:publish(Bot, From, ToJID, SubEl);
