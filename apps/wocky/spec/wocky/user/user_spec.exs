@@ -11,8 +11,8 @@ defmodule Wocky.UserSpec do
   alias Wocky.Account
   alias Wocky.Account.Token
   alias Wocky.Blocking
+  alias Wocky.Bot
   alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription
   alias Wocky.Email
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
@@ -568,7 +568,7 @@ defmodule Wocky.UserSpec do
       unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
       Share.put(shared.user, shared_bot, other_user)
-      Subscription.put(shared.user, subscribed_bot)
+      Bot.subscribe(subscribed_bot, shared.user)
 
       {:ok,
        [

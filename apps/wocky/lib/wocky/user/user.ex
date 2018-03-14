@@ -174,7 +174,7 @@ defmodule Wocky.User do
   """
   @spec searchable?(t, Bot.t()) :: boolean
   def searchable?(user, bot) do
-    Subscription.state(user, bot) != nil
+    Bot.subscription(bot, user) != nil
   end
 
   @doc "Returns all bots that the user owns"

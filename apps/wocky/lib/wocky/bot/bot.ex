@@ -21,7 +21,6 @@ defmodule Wocky.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
-  alias __MODULE__, as: Bot
 
   require Logger
   require Record
@@ -253,6 +252,26 @@ defmodule Wocky.Bot do
   def owner(bot) do
     bot = Repo.preload(bot, :user)
     bot.user
+  end
+
+  @spec subscription(t, User.t()) :: Subscription.state()
+  def subscription(bot, user) do
+    Subscription.state(user, bot)
+  end
+
+  @spec subscribe(t, User.t(), boolean()) :: :ok | no_return
+  def subscribe(bot, user, guest \\ false) do
+    Subscription.put(user, bot, guest)
+  end
+
+  @spec unsubscribe(t, User.t()) :: :ok
+  def unsubscribe(bot, user) do
+    Subscription.delete(user, bot)
+  end
+
+  @spec clear_guests(t) :: :ok
+  def clear_guests(bot) do
+    Subscription.clear_guests(bot)
   end
 
   @spec subscribers_query(t, boolean()) :: [User.t()]

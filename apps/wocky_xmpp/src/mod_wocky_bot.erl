@@ -324,7 +324,7 @@ handle_create(From, Children) ->
         check_required_fields(Fields3, required_fields()),
         FieldsMap = normalise_fields(Fields3),
         Bot <- create_bot(ID, PendingBot, User, FieldsMap),
-        ?wocky_subscription:put(User, Bot, false),
+        ?wocky_bot:subscribe(Bot, User, false),
         FinalBot <- {ok, ?wocky_bot:get(ID)},
         BotEl <- make_bot_el(FinalBot, User),
         {ok, BotEl}
@@ -830,7 +830,7 @@ make_ret_elements(Bot, FromUser) ->
 dynamic_fields(Bot, FromUser) ->
     TotalItems = ?wocky_item:get_count(Bot),
     ImageItems = ?wocky_item:get_image_count(Bot),
-    SubscribeState = ?wocky_subscription:state(FromUser, Bot),
+    SubscribeState = ?wocky_bot:subscription(Bot, FromUser),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"total_items">>, int, TotalItems),
      make_field(<<"image_items">>, int, ImageItems),

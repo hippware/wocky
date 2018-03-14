@@ -3,7 +3,6 @@ defmodule Wocky.Watcher.Callbacks.Bot do
   Callbacks for DB bot changes
   """
   alias Wocky.Bot
-  alias Wocky.Bot.Subscription
   alias Wocky.Repo
   alias Wocky.Watcher.Client
   alias WockyDBWatcher.Event
@@ -27,7 +26,7 @@ defmodule Wocky.Watcher.Callbacks.Bot do
   end
 
   defp update_guests(%Bot{geofence: true}, %Bot{geofence: false} = bot) do
-    Subscription.clear_guests(bot)
+    Bot.clear_guests(bot)
   end
 
   defp update_guests(_, _), do: :ok
@@ -36,7 +35,7 @@ defmodule Wocky.Watcher.Callbacks.Bot do
     %{user: user} = Repo.preload(bot, [:user])
 
     if user != nil do
-      Subscription.put(user, bot, bot.geofence)
+      Bot.subscribe(bot, user, bot.geofence)
     end
   end
 end

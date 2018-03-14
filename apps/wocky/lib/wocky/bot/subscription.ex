@@ -9,7 +9,6 @@ defmodule Wocky.Bot.Subscription do
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__
 
   @foreign_key_type :binary_id
   @primary_key false

@@ -23,7 +23,7 @@
 %%%===================================================================
 
 subscribe(User, Bot) ->
-    ?wocky_subscription:put(User, Bot),
+    ?wocky_bot:subscribe(Bot, User),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
@@ -31,7 +31,7 @@ subscribe(User, Bot) ->
 %%%===================================================================
 
 unsubscribe(User, Bot) ->
-    ?wocky_subscription:delete(User, Bot),
+    ?wocky_bot:unsubscribe(Bot, User),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================

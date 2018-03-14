@@ -229,8 +229,8 @@ reset_tables(Config) ->
     ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2, false),
 
     ?wocky_share:put(Bob, Bot, Alice),
-    ?wocky_subscription:put(Carol, Bot),
-    ?wocky_subscription:put(Karen, Bot),
+    ?wocky_bot:subscribe(Bot, Carol),
+    ?wocky_bot:subscribe(Bot, Karen),
 
     ?wocky_watcher_client:resume_notifications(),
 

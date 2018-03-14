@@ -6,9 +6,9 @@ defmodule Wocky.Blocking do
   import Ecto.Query
 
   alias Ecto.Queryable
+  alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.Repo
@@ -140,7 +140,7 @@ defmodule Wocky.Blocking do
       HomeStream.delete(b, bot)
       Item.delete(bot, b)
       Share.delete(b, bot)
-      Subscription.delete(b, bot)
+      Bot.unsubscribe(bot, b)
     end)
   end
 

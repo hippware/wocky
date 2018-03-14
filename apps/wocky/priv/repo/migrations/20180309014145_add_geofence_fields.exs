@@ -4,7 +4,6 @@ defmodule Wocky.Repo.Migrations.AddGeofenceFields do
   import Ecto.Query
 
   alias Wocky.Bot
-  alias Wocky.Bot.Subscription
   alias Wocky.Repo
 
   def change do
@@ -85,6 +84,6 @@ defmodule Wocky.Repo.Migrations.AddGeofenceFields do
   end
 
   defp add_owner_subscription(bot) do
-    Subscription.put(bot.user, bot)
+    Bot.subscribe(bot, bot.user)
   end
 end
