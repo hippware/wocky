@@ -758,7 +758,8 @@ optional_fields() ->
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
      field(<<"public">>,        bool,   false),
      field(<<"alerts">>,        int,    0),
-     field(<<"tags">>,          tags,   [])].
+     field(<<"tags">>,          tags,   []),
+     field(<<"geofence">>,      bool,   false)].
 
 output_only_fields() ->
     [field(<<"server">>,        string, <<>>),

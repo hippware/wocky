@@ -60,12 +60,25 @@ defmodule Wocky.Bot do
     # When follow me expires
     field :follow_me_expiry, :utc_datetime
     field :tags, {:array, :string}
+    field :geofence, :boolean, default: false
 
     field :subscribers_hash, :string,
       # md5("")
       default: "d41d8cd98f00b204e9800998ecf8427e"
 
     field :subscribers_count, :integer, default: 0
+
+    field :guests_hash, :string,
+      # md5("")
+      default: "d41d8cd98f00b204e9800998ecf8427e"
+
+    field :guests_count, :integer, default: 0
+
+    field :visitors_hash, :string,
+      # md5("")
+      default: "d41d8cd98f00b204e9800998ecf8427e"
+
+    field :visitors_count, :integer, default: 0
 
     timestamps()
 
@@ -98,8 +111,13 @@ defmodule Wocky.Bot do
           follow_me: nil | boolean,
           follow_me_expiry: nil | DateTime.t(),
           tags: nil | [binary],
+          geofence: boolean,
           subscribers_hash: binary,
           subscribers_count: non_neg_integer,
+          guests_hash: binary,
+          guests_count: non_neg_integer,
+          visitors_hash: binary,
+          visitors_count: non_neg_integer,
           user: not_loaded | User.t(),
           items: not_loaded | [Item.t()],
           shares: not_loaded | [User.t()],
@@ -124,7 +142,8 @@ defmodule Wocky.Bot do
     :alerts,
     :follow_me,
     :follow_me_expiry,
-    :tags
+    :tags,
+    :geofence
   ]
   @required_fields [:id, :server, :user_id, :title, :location, :radius]
 
