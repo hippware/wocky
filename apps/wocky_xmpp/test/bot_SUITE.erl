@@ -558,10 +558,9 @@ get_subscribed(Config) ->
       fun(Alice, Bob, Karen) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
-        %% Alice is the owner but not subscribed so should not
-        %% see the bot in her subscribed list
+        %% Alice is the owner and so is automatically subscribed
         Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),
-        check_returned_bots(Stanza, [], undefined, 0),
+        check_returned_bots(Stanza, [?BOT], 0, 1),
 
         %% Karen is a subscriber so should get the bot
         Stanza2 = expect_iq_success(subscribed_stanza(#rsm_in{}), Karen),
@@ -1265,6 +1264,8 @@ check_rsm(#rsm_out{count = 0, index = undefined,
     ok;
 check_rsm(#rsm_out{count = Count, index = Index, first = F, last = L},
           ExpectedCount, ExpectedIndex, Items) ->
+    ct:pal("ExpectedCount: ~p~nExpectedIndex: ~p~nItems: ~p~n",
+           [ExpectedCount, ExpectedIndex, Items]),
     case {Count, Index, lists:member(F, Items), lists:member(L, Items)} of
         {ExpectedCount, ExpectedIndex, true, true} ->
             ok;
