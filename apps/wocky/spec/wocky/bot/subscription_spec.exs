@@ -44,31 +44,42 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
   describe "database operations" do
     before do
-      owner = Factory.insert(:user)
-      user = Factory.insert(:user)
+      [user, owner, guest, visitor] = Factory.insert_list(4, :user)
       bot = Factory.insert(:bot, user: owner)
-      sub = Factory.insert(:subscription, user: user, bot: bot)
+      Factory.insert(:subscription, user: user, bot: bot)
+      Factory.insert(:subscription, user: guest, bot: bot, guest: true)
+      Factory.insert(:subscription, user: visitor, bot: bot,
+                     guest: true, visitor: true)
 
-      {:ok, owner: owner, user: user, bot: bot, sub: sub}
+      {:ok, owner: owner, user: user, guest: guest, visitor: visitor, bot: bot}
     end
 
-    describe "exists?/2" do
-      it "should return true if the user is subscribed to the bot" do
-        assert Subscription.exists?(shared.user, shared.bot)
+    describe "state/2" do
+      it "should return :subscribed if the user is subscribed to the bot" do
+        Subscription.state(shared.user, shared.bot)
+        |> should(eq :subscribed)
       end
 
-      it "should return false when the user does not exist" do
+      it "should return nil when the user does not exist" do
         user = Factory.build(:user, resource: "testing")
-        refute Subscription.exists?(user, shared.bot)
+        Subscription.state(user, shared.bot) |> should(be_nil())
       end
 
-      it "should return false when the bot does not exist" do
+      it "should return nil when the bot does not exist" do
         bot = Factory.build(:bot)
-        refute Subscription.exists?(shared.user, bot)
+        Subscription.state(shared.user, bot) |> should(be_nil())
       end
 
-      it "should return false when the user is not subscribed to the bot" do
-        refute Subscription.exists?(shared.owner, shared.bot)
+      it "should return nil when the user is not subscribed to the bot" do
+        Subscription.state(shared.owner, shared.bot) |> should(be_nil())
+      end
+
+      it "should return :guest when the user is a subscribed guest" do
+        Subscription.state(shared.guest, shared.bot) |> should(eq :guest)
+      end
+
+      it "should return :visitor when the user is a visitor" do
+        Subscription.state(shared.visitor, shared.bot) |> should(eq :visitor)
       end
     end
 
@@ -105,7 +116,8 @@ defmodule Wocky.Bot.SubscriptionSpec do
         end
 
         it "should create a subscription" do
-          assert Subscription.exists?(shared.new_user, shared.bot)
+          Subscription.state(shared.new_user, shared.bot)
+          |> should(eq :subscribed)
         end
       end
 
@@ -133,7 +145,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
         end
 
         it "should remove the subscription" do
-          refute Subscription.exists?(shared.user, shared.bot)
+          Subscription.state(shared.user, shared.bot) |> should(be_nil())
         end
       end
 
@@ -206,18 +218,18 @@ defmodule Wocky.Bot.SubscriptionSpec do
       end
 
       it "should remove the subscription for a standard subscriber" do
-        Subscription.exists?(shared.subscribed_user, shared.bot)
-        |> should(eq false)
+        Subscription.state(shared.subscribed_user, shared.bot)
+        |> should(be_nil())
       end
 
       it "should not affect the subscription of a user with a share" do
-        Subscription.exists?(shared.shared_sub_user, shared.bot)
-        |> should(eq true)
+        Subscription.state(shared.shared_sub_user, shared.bot)
+        |> should(eq :subscribed)
       end
 
       it "should remove the subscription of friends" do
-        Subscription.exists?(shared.friend, shared.bot)
-        |> should(eq false)
+        Subscription.state(shared.friend, shared.bot)
+        |> should(be_nil())
       end
     end
   end

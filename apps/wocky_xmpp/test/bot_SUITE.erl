@@ -1292,7 +1292,8 @@ get_id([El = #xmlel{name = <<"field">>, attrs = Attrs} | Rest]) ->
     case xml:get_attr(<<"var">>, Attrs) of
         {value, <<"id">>} -> xml:get_path_s(El, [{elem, <<"value">>}, cdata]);
         _ -> get_id(Rest)
-    end.
+    end;
+get_id([_ | Rest]) -> get_id(Rest).
 
 check_geosearch_return(#xmlel{name = <<"iq">>, children = [BotsStanza]}) ->
     #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],

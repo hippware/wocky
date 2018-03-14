@@ -255,9 +255,13 @@ defmodule Wocky.Bot do
     bot.user
   end
 
-  @spec subscribers_query(t) :: [User.t()]
-  def subscribers_query(bot) do
-    Ecto.assoc(bot, :subscribers)
+  @spec subscribers_query(t, boolean()) :: [User.t()]
+  def subscribers_query(bot, include_owner \\ true) do
+    q = Ecto.assoc(bot, :subscribers)
+    case include_owner do
+      false -> where(q, [u], u.id != ^bot.user_id)
+      true -> q
+    end
   end
 
   @spec subscribers(t) :: [User.t()]

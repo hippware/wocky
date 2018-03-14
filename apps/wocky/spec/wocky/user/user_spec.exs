@@ -624,7 +624,6 @@ defmodule Wocky.UserSpec do
       end
 
       describe "searchable?/2" do
-        it do: assert(User.searchable?(shared.user, shared.owned_bot))
         it do: assert(User.searchable?(shared.user, shared.subscribed_bot))
         it do: refute(User.searchable?(shared.user, shared.friends_public_bot))
 
@@ -689,12 +688,6 @@ defmodule Wocky.UserSpec do
       it do: assert(User.can_access?(shared.user, shared.shared_bot))
       it do: assert(User.can_access?(shared.user, shared.public_bot))
       it do: refute(User.can_access?(shared.user, shared.unaffiliated_bot))
-    end
-
-    describe "subscribed?/2" do
-      it do: assert(User.subscribed?(shared.user, shared.owned_bot))
-      it do: assert(User.subscribed?(shared.user, shared.subscribed_bot))
-      it do: refute(User.subscribed?(shared.user, shared.unaffiliated_bot))
     end
 
     describe "get_subscriptions/1" do
