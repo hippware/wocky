@@ -413,18 +413,14 @@ subscribe_geofence(Config) ->
                              expected_guest_retrieve_fields(false, 0)),
 
           % Carol becomes a guest...
-          Stanza1 = expect_iq_success(subscribe_guest_stanza(true), Carol),
+          expect_iq_success(subscribe_guest_stanza(true), Carol),
           check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
                              expected_guest_retrieve_fields(true, 1)),
 
-          check_subscriber_count(Stanza1, 2),
-
           % Carol cancels guesthood...
-          Stanza2 = expect_iq_success(subscribe_guest_stanza(false), Carol),
+          expect_iq_success(subscribe_guest_stanza(false), Carol),
           check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
-                             expected_guest_retrieve_fields(false, 0)),
-
-          check_subscriber_count(Stanza2, 2)
+                             expected_guest_retrieve_fields(false, 0))
       end).
 
 watch(Config) ->
