@@ -221,7 +221,7 @@ defmodule Wocky.Bot.GeosearchSpec do
     before do
       5
       |> Factory.insert_list(:bot, public: true)
-      |> Enum.map(&Factory.insert(:subscription, user: shared.user, bot: &1))
+      |> Enum.map(&Bot.subscribe(&1, shared.user))
 
       bots = Geosearch.get_all(shared.lat, shared.lon, shared.user.id)
 

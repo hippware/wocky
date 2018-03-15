@@ -290,8 +290,13 @@ perform_access_action(item_query, Bot, #{id := FromID}, _ToJID, IQ) ->
 perform_access_action(item_images, Bot, FromUser, _ToJID, IQ) ->
     wocky_bot_item:query_images(Bot, IQ, FromUser);
 
-perform_access_action(subscribe, Bot, From, _ToJID, _IQ) ->
-    wocky_bot_subscription:subscribe(From, Bot);
+perform_access_action(subscribe, Bot, From, _ToJID, #iq{sub_el = SubEl}) ->
+    do([error_m ||
+            GuestBin <- wocky_xml:get_subel_cdata(
+                          <<"geofence">>, SubEl, <<"false">>),
+            Guest <- read_bool(GuestBin),
+            wocky_bot_subscription:subscribe(From, Bot, Guest)
+       ]);
 
 perform_access_action(publish, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
     wocky_bot_item:publish(Bot, From, ToJID, SubEl);
@@ -324,7 +329,9 @@ handle_create(From, Children) ->
         check_required_fields(Fields3, required_fields()),
         FieldsMap = normalise_fields(Fields3),
         Bot <- create_bot(ID, PendingBot, User, FieldsMap),
-        BotEl <- make_bot_el(Bot, User),
+        ?wocky_bot:subscribe(Bot, User, false),
+        FinalBot <- {ok, ?wocky_bot:get(ID)},
+        BotEl <- make_bot_el(FinalBot, User),
         {ok, BotEl}
        ]).
 
@@ -757,8 +764,8 @@ optional_fields() ->
      field(<<"address_data">>,  string, <<>>),
      field(<<"visibility">>,    int,    ?WOCKY_BOT_VIS_OWNER),
      field(<<"public">>,        bool,   false),
-     field(<<"alerts">>,        int,    0),
-     field(<<"tags">>,          tags,   [])].
+     field(<<"tags">>,          tags,   []),
+     field(<<"geofence">>,      bool,   false)].
 
 output_only_fields() ->
     [field(<<"server">>,        string, <<>>),
@@ -808,10 +815,6 @@ normalise_field(#field{name = <<"visibility">>, value = 100}, Acc) ->
     Acc#{public => true};
 normalise_field(#field{name = <<"visibility">>}, Acc) ->
     Acc#{public => false};
-normalise_field(#field{name = <<"alerts">>, value = 1}, Acc) ->
-    Acc#{alerts => true};
-normalise_field(#field{name = <<"alerts">>, value = 0}, Acc) ->
-    Acc#{alerts => false};
 normalise_field(#field{name = N, value = V}, Acc) ->
     Acc#{binary_to_existing_atom(N, utf8) => V}.
 
@@ -827,17 +830,18 @@ make_ret_elements(Bot, FromUser) ->
 dynamic_fields(Bot, FromUser) ->
     TotalItems = ?wocky_item:get_count(Bot),
     ImageItems = ?wocky_item:get_image_count(Bot),
-    Subscribed = ?wocky_user:'subscribed?'(FromUser, Bot),
+    SubscribeState = ?wocky_bot:subscription(Bot, FromUser),
     [make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
      make_field(<<"total_items">>, int, TotalItems),
      make_field(<<"image_items">>, int, ImageItems),
-     make_field(<<"subscribed">>, bool, Subscribed)].
+     make_field(<<"subscribed">>, bool, SubscribeState =/= nil),
+     make_field(<<"guest">>, bool,
+                SubscribeState =:= guest orelse SubscribeState =:= visitor),
+     make_field(<<"visitor">>, bool, SubscribeState =:= visitor)
+    ].
 
 vis(true) -> 100;
 vis(false) -> 0.
-
-alerts(true) -> 1;
-alerts(false) -> 0.
 
 encode_fields(Fields, FromUser) ->
     lists:foldl(fun old_encode_field/2, [], Fields) ++
@@ -850,14 +854,24 @@ to_field(user_id, UserID, Acc) ->
     [#field{name = <<"owner">>, type = jid, value = JID} | Acc];
 to_field(public, Public, Acc) ->
     [#field{name = <<"visibility">>, type = int, value = vis(Public)} | Acc];
-to_field(alerts, Alerts, Acc) ->
-    [#field{name = <<"alerts">>, type = int, value = alerts(Alerts)} | Acc];
 to_field(updated_at, Updated, Acc) ->
     [#field{name = <<"updated">>, type = timestamp, value = Updated} | Acc];
 to_field(subscribers_hash, Hash, Acc) ->
     [#field{name = <<"subscribers+hash">>, type = string, value = Hash} | Acc];
+% For ugly reasons we need to subtract one from the count here because the
+% owner is always a subscriber, but we don't want to include them in the count:
 to_field(subscribers_count, Count, Acc) ->
-    [#field{name = <<"subscribers+size">>, type = int, value = Count} | Acc];
+    [#field{name = <<"subscribers+size">>, type = int,
+            value = wocky_bot_subscription:adjust_exclude_owner(Count)}
+     | Acc];
+to_field(guests_hash, Hash, Acc) ->
+    [#field{name = <<"guests+hash">>, type = string, value = Hash} | Acc];
+to_field(guests_count, Count, Acc) ->
+    [#field{name = <<"guests+size">>, type = int, value = Count} | Acc];
+to_field(visitors_hash, Hash, Acc) ->
+    [#field{name = <<"visitors+hash">>, type = string, value = Hash} | Acc];
+to_field(visitors_count, Count, Acc) ->
+    [#field{name = <<"visitors+size">>, type = int, value = Count} | Acc];
 to_field(_, null, Acc) -> Acc;
 to_field(Key, Val, Acc) ->
     KeyBin = atom_to_binary(Key, utf8),

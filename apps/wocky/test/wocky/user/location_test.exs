@@ -6,7 +6,6 @@ defmodule Wocky.User.LocationTest do
   alias Faker.Code
   alias Timex.Duration
   alias Wocky.Bot
-  alias Wocky.Bot.Subscription
   alias Wocky.Push
   alias Wocky.Push.Sandbox
   alias Wocky.Repo.Factory
@@ -27,7 +26,7 @@ defmodule Wocky.User.LocationTest do
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)
 
-    :ok = Subscription.put(user, bot)
+    :ok = Bot.subscribe(bot, user)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end

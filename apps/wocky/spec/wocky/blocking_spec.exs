@@ -1,9 +1,9 @@
 defmodule Wocky.BlockingSpec do
   use ESpec, async: true
 
+  alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription
   alias Wocky.Blocking
   alias Wocky.HomeStream
   alias Wocky.Repo
@@ -18,9 +18,10 @@ defmodule Wocky.BlockingSpec do
 
     Enum.each([{alice, eve}, {eve, alice}], fn {a, b} ->
       bot = Factory.insert(:bot, %{user: a})
+      Bot.subscribe(bot, b)
+
       Factory.insert(:item, %{bot: bot, user: b})
       Factory.insert(:share, %{bot: bot, sharer: a, user: b})
-      Factory.insert(:subscription, %{bot: bot, user: b})
       Factory.insert(:home_stream_item, %{user: b, reference_bot: bot})
       Factory.insert(:home_stream_item, %{user: b, reference_user: a})
 
@@ -69,8 +70,8 @@ defmodule Wocky.BlockingSpec do
       end
 
       it "should delete all subscriptions to blocked user's bots" do
-        Repo.get_by(Subscription, user_id: shared.alice.id) |> should(be_nil())
-        Repo.get_by(Subscription, user_id: shared.eve.id) |> should(be_nil())
+        User.get_subscriptions(shared.alice) |> should(be_empty())
+        User.get_subscriptions(shared.eve) |> should(be_empty())
       end
 
       it "should set the apprpriate blocking groups" do

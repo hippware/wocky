@@ -143,11 +143,6 @@ defmodule Wocky.User do
     end
   end
 
-  @spec subscribed?(t, Bot.t()) :: boolean
-  def subscribed?(user, bot) do
-    owns?(user, bot) || Subscription.exists?(user, bot)
-  end
-
   @doc "Returns all bots that the user subscribes to"
   @spec get_subscriptions(t) :: [Bot.t()]
   def get_subscriptions(user) do
@@ -179,7 +174,7 @@ defmodule Wocky.User do
   """
   @spec searchable?(t, Bot.t()) :: boolean
   def searchable?(user, bot) do
-    owns?(user, bot) || Subscription.exists?(user, bot)
+    Bot.subscription(bot, user) != nil
   end
 
   @doc "Returns all bots that the user owns"

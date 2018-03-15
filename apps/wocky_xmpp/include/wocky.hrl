@@ -46,7 +46,6 @@
 -define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').
 -define(wocky_item,              'Elixir.Wocky.Bot.Item').
 -define(wocky_share,             'Elixir.Wocky.Bot.Share').
--define(wocky_subscription,      'Elixir.Wocky.Bot.Subscription').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
 -define(wocky_geo_utils,         'Elixir.Wocky.GeoUtils').
 -define(wocky_home_stream,       'Elixir.Wocky.HomeStream').

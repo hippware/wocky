@@ -6,7 +6,6 @@ defmodule Wocky.BotSpec do
 
   alias Faker.Lorem
   alias Wocky.Bot
-  alias Wocky.Bot.Subscription
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index.TestIndexer
@@ -324,7 +323,7 @@ defmodule Wocky.BotSpec do
       before do
         sub = Factory.insert(:user)
 
-        Subscription.put(sub, bot())
+        Bot.subscribe(bot(), sub)
         {:ok, sub: sub}
       end
 
@@ -424,7 +423,7 @@ defmodule Wocky.BotSpec do
     describe "after an inserted subscriber" do
       before do
         subscriber = Factory.insert(:user)
-        Subscription.put(subscriber, shared.bot)
+        Bot.subscribe(shared.bot, subscriber)
         {:ok, subscriber: subscriber, bot: Bot.get(shared.bot.id)}
       end
 
@@ -435,7 +434,7 @@ defmodule Wocky.BotSpec do
 
       describe "after removing a subscriber" do
         before do
-          Subscription.delete(shared.subscriber, shared.bot)
+          Bot.unsubscribe(shared.bot, shared.subscriber)
           {:ok, bot: Bot.get(shared.bot.id)}
         end
 

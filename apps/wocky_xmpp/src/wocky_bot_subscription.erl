@@ -10,9 +10,11 @@
 
 -include("wocky.hrl").
 
--export([subscribe/2,
+-export([subscribe/3,
          unsubscribe/2,
-         retrieve_subscribers/2]).
+         retrieve_subscribers/2,
+         adjust_exclude_owner/1
+        ]).
 
 -define(DEFAULT_MAX_SUBS, 50).
 
@@ -20,8 +22,8 @@
 %%% Action - subscribe
 %%%===================================================================
 
-subscribe(User, Bot) ->
-    ?wocky_subscription:put(User, Bot),
+subscribe(User, Bot, Guest) ->
+    ?wocky_bot:subscribe(Bot, User, Guest),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
@@ -29,8 +31,13 @@ subscribe(User, Bot) ->
 %%%===================================================================
 
 unsubscribe(User, Bot) ->
-    ?wocky_subscription:delete(User, Bot),
-    {ok, make_subscriber_count_element(Bot)}.
+    case wocky_bot_util:check_owner(Bot, User) of
+        {error, _} ->
+            ?wocky_bot:unsubscribe(Bot, User),
+            {ok, make_subscriber_count_element(Bot)};
+        ok ->
+            {error, ?ERR_FORBIDDEN}
+    end.
 
 %%%===================================================================
 %%% Action - retrieve subscribers
@@ -42,7 +49,7 @@ retrieve_subscribers(Bot, IQ) ->
 
 make_subscribers_element(Bot, RSM) ->
     {Results, RSMOut} = ?wocky_rsm_helper:rsm_query(
-                           RSM, ?wocky_bot:subscribers_query(Bot),
+                           RSM, ?wocky_bot:subscribers_query(Bot, false),
                            id, {asc, handle}),
     #xmlel{name = <<"subscribers">>,
            attrs = list_attrs(Bot),
@@ -61,12 +68,19 @@ make_subscriber_element(User) ->
 %%%===================================================================
 
 make_subscriber_count_element(Bot) ->
-    Count = ?wocky_bot:subscriber_count(Bot),
+    Count = adjust_exclude_owner(?wocky_bot:subscriber_count(Bot)),
     wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).
 
 list_attrs(Bot = #{subscribers_hash := SubscribersHash,
                    subscribers_count := SubscribersCount}) ->
     [{<<"xmlns">>, ?NS_BOT},
      {<<"node">>, ?wocky_bot:make_node(Bot)},
-     {<<"size">>, integer_to_binary(SubscribersCount)},
+     % Hack to exclude owner subscription
+     {<<"size">>, integer_to_binary(adjust_exclude_owner(SubscribersCount))},
      {<<"hash">>, SubscribersHash}].
+
+% Subtract one from the subscriber count because the client doesn't expect
+% us to include the owner's automatic subscription in the count. I've
+% encapsulated this in a function to make it easier to track down where it's
+% done if the behaviour needs to change in the future.
+adjust_exclude_owner(SubscriberCount) -> SubscriberCount - 1.

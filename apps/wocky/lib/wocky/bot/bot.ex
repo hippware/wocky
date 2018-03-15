@@ -21,7 +21,6 @@ defmodule Wocky.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
-  alias __MODULE__, as: Bot
 
   require Logger
   require Record
@@ -53,19 +52,30 @@ defmodule Wocky.Bot do
     field :radius, :float
     # Visibility of bot
     field :public, :boolean
-    # Whether alerts are enabled
-    field :alerts, :boolean
     # Does bot follow owner
     field :follow_me, :boolean
     # When follow me expires
     field :follow_me_expiry, :utc_datetime
     field :tags, {:array, :string}
+    field :geofence, :boolean, default: false
 
     field :subscribers_hash, :string,
       # md5("")
       default: "d41d8cd98f00b204e9800998ecf8427e"
 
     field :subscribers_count, :integer, default: 0
+
+    field :guests_hash, :string,
+      # md5("")
+      default: "d41d8cd98f00b204e9800998ecf8427e"
+
+    field :guests_count, :integer, default: 0
+
+    field :visitors_hash, :string,
+      # md5("")
+      default: "d41d8cd98f00b204e9800998ecf8427e"
+
+    field :visitors_count, :integer, default: 0
 
     timestamps()
 
@@ -94,12 +104,16 @@ defmodule Wocky.Bot do
           location: nil | Geo.Point.t(),
           radius: nil | float,
           public: nil | boolean,
-          alerts: nil | boolean,
           follow_me: nil | boolean,
           follow_me_expiry: nil | DateTime.t(),
           tags: nil | [binary],
+          geofence: boolean,
           subscribers_hash: binary,
           subscribers_count: non_neg_integer,
+          guests_hash: binary,
+          guests_count: non_neg_integer,
+          visitors_hash: binary,
+          visitors_count: non_neg_integer,
           user: not_loaded | User.t(),
           items: not_loaded | [Item.t()],
           shares: not_loaded | [User.t()],
@@ -121,10 +135,10 @@ defmodule Wocky.Bot do
     :location,
     :radius,
     :public,
-    :alerts,
     :follow_me,
     :follow_me_expiry,
-    :tags
+    :tags,
+    :geofence
   ]
   @required_fields [:id, :server, :user_id, :title, :location, :radius]
 
@@ -236,9 +250,33 @@ defmodule Wocky.Bot do
     bot.user
   end
 
-  @spec subscribers_query(t) :: [User.t()]
-  def subscribers_query(bot) do
-    Ecto.assoc(bot, :subscribers)
+  @spec subscription(t, User.t()) :: Subscription.state()
+  def subscription(bot, user) do
+    Subscription.state(user, bot)
+  end
+
+  @spec subscribe(t, User.t(), boolean()) :: :ok | no_return
+  def subscribe(bot, user, guest \\ false) do
+    Subscription.put(user, bot, guest)
+  end
+
+  @spec unsubscribe(t, User.t()) :: :ok
+  def unsubscribe(bot, user) do
+    Subscription.delete(user, bot)
+  end
+
+  @spec clear_guests(t) :: :ok
+  def clear_guests(bot) do
+    Subscription.clear_guests(bot)
+  end
+
+  @spec subscribers_query(t, boolean()) :: [User.t()]
+  def subscribers_query(bot, include_owner \\ true) do
+    q = Ecto.assoc(bot, :subscribers)
+    case include_owner do
+      false -> where(q, [u], u.id != ^bot.user_id)
+      true -> q
+    end
   end
 
   @spec subscribers(t) :: [User.t()]

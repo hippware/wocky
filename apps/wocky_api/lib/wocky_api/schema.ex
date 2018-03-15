@@ -153,6 +153,7 @@ defmodule WockyAPI.Schema do
     field :address, :string
     field :address_data, :string
     field :public, non_null(:boolean)
+    field :geofence, non_null(:boolean)
   end
 
   query do

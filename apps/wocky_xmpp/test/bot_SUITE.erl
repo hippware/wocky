@@ -80,6 +80,7 @@ all() ->
      subscribers_rsm,
      unsubscribe,
      subscribe,
+     subscribe_geofence,
      watch,
      unwatch,
      delete,
@@ -229,8 +230,8 @@ reset_tables(Config) ->
     ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2, false),
 
     ?wocky_share:put(Bob, Bot, Alice),
-    ?wocky_subscription:put(Carol, Bot),
-    ?wocky_subscription:put(Karen, Bot),
+    ?wocky_bot:subscribe(Bot, Carol),
+    ?wocky_bot:subscribe(Bot, Karen),
 
     ?wocky_watcher_client:resume_notifications(),
 
@@ -366,6 +367,10 @@ subscribers_rsm(Config) ->
 unsubscribe(Config) ->
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
+        % Alice cannot unsubscribe herself
+        expect_iq_error(unsubscribe_stanza(), Alice),
+
+        % But Carol can
         Stanza1 = expect_iq_success(unsubscribe_stanza(), Carol),
         check_subscriber_count(Stanza1, 1),
 
@@ -396,6 +401,26 @@ subscribe(Config) ->
         check_subscribers(Stanza3, [?BJID(?KAREN),
                                     ?BJID(?CAROL),
                                     ?BJID(?BOB)])
+      end).
+
+subscribe_geofence(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, _Bob, Carol) ->
+          set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
+
+          % There are no guests...
+          check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                             expected_guest_retrieve_fields(false, 0)),
+
+          % Carol becomes a guest...
+          expect_iq_success(subscribe_guest_stanza(true), Carol),
+          check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                             expected_guest_retrieve_fields(true, 1)),
+
+          % Carol cancels guesthood...
+          expect_iq_success(subscribe_guest_stanza(false), Carol),
+          check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
+                             expected_guest_retrieve_fields(false, 0))
       end).
 
 watch(Config) ->
@@ -541,7 +566,6 @@ retrieve_for_user(Config) ->
            {"type",        string, ?CREATE_TYPE},
            {"owner",       jid,    ?BJID(?ALICE)},
            {"visibility",  int,    ?WOCKY_BOT_VIS_OPEN},
-           {"alerts",      int,    ?WOCKY_BOT_ALERT_DISABLED},
            {"jid",         jid,    bot_jid(PublishBot)},
            {"subscribed",  bool,   false}]),
 
@@ -558,10 +582,9 @@ get_subscribed(Config) ->
       fun(Alice, Bob, Karen) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
-        %% Alice is the owner but not subscribed so should not
-        %% see the bot in her subscribed list
+        %% Alice is the owner and so is automatically subscribed
         Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),
-        check_returned_bots(Stanza, [], undefined, 0),
+        check_returned_bots(Stanza, [?BOT], 0, 1),
 
         %% Karen is a subscriber so should get the bot
         Stanza2 = expect_iq_success(subscribed_stanza(#rsm_in{}), Karen),
@@ -1190,7 +1213,6 @@ expected_create_fields() ->
      {"location",           geoloc, ?CREATE_LOCATION},
      {"radius",             float,  ?CREATE_RADIUS},
      {"visibility",         int,    ?WOCKY_BOT_VIS_OWNER},
-     {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    any},
      {"image_items",        int,    0},
      {"total_items",        int,    0},
@@ -1215,7 +1237,6 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
      {"radius",             float,  ?BOT_RADIUS},
      {"visibility",         int,    Visibility},
-     {"alerts",             int,    ?WOCKY_BOT_ALERT_DISABLED},
      {"jid",                jid,    bot_jid(?BOT)},
      {"image_items",        int,    1},
      {"total_items",        int,    2},
@@ -1223,6 +1244,13 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"subscribed",         bool,   Subscribed},
      {"subscribers+size",   int,    Subscribers},
      {"subscribers+hash",   string, any}
+    ].
+
+expected_guest_retrieve_fields(Guest, Guests) ->
+    [{"guest",       bool,   Guest},
+     {"guests+size", int,    Guests},
+     {"guests+hash", string, any}
+     | expected_retrieve_fields(true, ?BOT_DESC, ?WOCKY_BOT_VIS_OPEN, any)
     ].
 
 expected_geosearch_fields() ->
@@ -1292,7 +1320,8 @@ get_id([El = #xmlel{name = <<"field">>, attrs = Attrs} | Rest]) ->
     case xml:get_attr(<<"var">>, Attrs) of
         {value, <<"id">>} -> xml:get_path_s(El, [{elem, <<"value">>}, cdata]);
         _ -> get_id(Rest)
-    end.
+    end;
+get_id([_ | Rest]) -> get_id(Rest).
 
 check_geosearch_return(#xmlel{name = <<"iq">>, children = [BotsStanza]}) ->
     #xmlel{name = <<"bots">>, attrs = [{<<"xmlns">>, ?NS_BOT}],
@@ -1502,6 +1531,10 @@ check_subscriber_count(Stanza = #xmlel{name = <<"iq">>}, ExpectedCount) ->
     Count = xml:get_path_s(Stanza, [{elem, <<"subscriber_count">>}, cdata]),
     ?assertEqual(binary_to_integer(Count), ExpectedCount).
 
+check_guest_subscriber_count(Stanza = #xmlel{name = <<"iq">>}, ExpectedCount) ->
+    Count = xml:get_path_s(Stanza, [{elem, <<"guests+size">>}, cdata]),
+    ?assertEqual(binary_to_integer(Count), ExpectedCount).
+
 is_bot_unsubscribe(#xmlel{name = <<"message">>, children = [Unsubscribed]}) ->
     Attrs = Unsubscribed#xmlel.attrs,
     <<"unsubscribed">> =:= Unsubscribed#xmlel.name andalso
@@ -1511,6 +1544,13 @@ is_bot_unsubscribe(_) -> false.
 has_standard_attrs(Attrs) ->
     {value, bot_node(?BOT)} =:= xml:get_attr(<<"node">>, Attrs)  andalso
     {value, ?NS_BOT} =:= xml:get_attr(<<"xmlns">>, Attrs).
+
+subscribe_guest_stanza(Switch) ->
+    SubEl = node_el(?BOT, <<"subscribe">>, [make_geofence_el(Switch)]),
+    test_helper:iq_set(?NS_BOT, SubEl).
+
+make_geofence_el(Switch) ->
+    cdata_el(<<"geofence">>, atom_to_binary(Switch, utf8)).
 
 unsubscribe_stanza() ->
     test_helper:iq_set(?NS_BOT, node_el(?BOT, <<"unsubscribe">>)).
