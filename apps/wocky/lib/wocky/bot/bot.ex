@@ -49,7 +49,7 @@ defmodule Wocky.Bot do
     # Location
     field :location, Geo.Point
     # Radius of bot circle
-    field :radius, :float
+    field :radius, :float, default: 100.0
     # Visibility of bot
     field :public, :boolean
     # Does bot follow owner
@@ -320,16 +320,7 @@ defmodule Wocky.Bot do
   @doc "Returns true if the location is within the bot's radius."
   @spec contains?(Bot.t(), Point.t()) :: boolean
   def contains?(bot, loc) do
-    if bot.radius < 0 do
-      :ok =
-        Logger.warn(
-          "Bot #{bot.id} has a negative radius (#{bot.radius} meters)."
-        )
-
-      false
-    else
-      distance_from(bot, loc) <= bot.radius
-    end
+    distance_from(bot, loc) <= bot.radius
   end
 
   @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
