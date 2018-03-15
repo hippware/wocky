@@ -4,7 +4,6 @@ defmodule Wocky.User.LocationTest do
 
   alias Faker.Address
   alias Faker.Code
-  alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Push
   alias Wocky.Push.Sandbox
@@ -158,41 +157,6 @@ defmodule Wocky.User.LocationTest do
 
       assert BotEvent.get_last_event(shared.user.id, shared.bot.id) == nil
       assert Sandbox.list_notifications() == []
-    end
-  end
-
-  describe "update_bot_locations/1" do
-    setup do
-      loc = Factory.build(:location)
-      {:ok, loc: loc}
-    end
-
-    test "unexpired follow me should update the bot location", shared do
-      expiry = Timex.add(DateTime.utc_now(), Duration.from_days(1))
-
-      shared.bot
-      |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
-      |> Repo.update!()
-
-      Location.update_bot_locations(shared.loc, shared.owner)
-
-      bot = Repo.get(Bot, shared.bot.id)
-      assert Bot.lat(bot) == shared.loc.lat
-      assert Bot.lon(bot) == shared.loc.lon
-    end
-
-    test "expired follow me should not update the bot location", shared do
-      expiry = Timex.subtract(DateTime.utc_now(), Duration.from_days(1))
-
-      shared.bot
-      |> Bot.changeset(%{follow_me: true, follow_me_expiry: expiry})
-      |> Repo.update!()
-
-      Location.update_bot_locations(shared.loc, shared.owner)
-
-      bot = Repo.get(Bot, shared.bot.id)
-      refute Bot.lat(bot) == shared.loc.lat
-      refute Bot.lon(bot) == shared.loc.lon
     end
   end
 end

@@ -5,9 +5,8 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
 
-  # "Follow me" and location processing
+  # location processing
   enable_bot_event_notifications: true,
-  enable_follow_me_updates: true,
   async_location_processing: false,
 
   # TROS file storage in test storage system

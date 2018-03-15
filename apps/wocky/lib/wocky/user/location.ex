@@ -71,22 +71,6 @@ defmodule Wocky.User.Location do
     loc
   end
 
-  @doc ""
-  @spec update_bot_locations(t, User.t()) :: t
-  def update_bot_locations(%Location{} = loc, user) do
-    if Application.fetch_env!(:wocky, :enable_follow_me_updates) do
-      maybe_do_async(fn ->
-        user
-        |> User.get_owned_bots_with_follow_me()
-        |> Enum.each(
-          &Bot.update(&1, %{location: GeoUtils.point(loc.lat, loc.lon)})
-        )
-      end)
-    end
-
-    loc
-  end
-
   defp maybe_do_async(fun) do
     if Application.fetch_env!(:wocky, :async_location_processing) do
       Task.async(fun)
