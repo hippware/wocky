@@ -292,7 +292,8 @@ perform_access_action(item_images, Bot, FromUser, _ToJID, IQ) ->
 
 perform_access_action(subscribe, Bot, From, _ToJID, #iq{sub_el = SubEl}) ->
     do([error_m ||
-            GuestBin <- wocky_xml:get_subel_cdata(<<"geofence">>, SubEl, <<"false">>),
+            GuestBin <- wocky_xml:get_subel_cdata(
+                          <<"geofence">>, SubEl, <<"false">>),
             Guest <- read_bool(GuestBin),
             wocky_bot_subscription:subscribe(From, Bot, Guest)
        ]);
