@@ -23,13 +23,7 @@
 %%%===================================================================
 
 subscribe(User, Bot, Guest) ->
-    case Guest of
-        nil ->
-            ?wocky_bot:subscribe(Bot, User);
-
-        Val when is_binary(Val) ->
-            ?wocky_bot:subscribe(Bot, User, binary_to_atom(Val, utf8))
-    end,
+    ?wocky_bot:subscribe(Bot, User, Guest),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
