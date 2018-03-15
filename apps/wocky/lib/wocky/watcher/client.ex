@@ -21,7 +21,7 @@ defmodule Wocky.Watcher.Client do
 
   def start_link, do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
 
-  def send(events), do: GenServer.call(__MODULE__, {:send, events})
+  def send(events), do: GenServer.cast(__MODULE__, {:send, events})
 
   def subscribe(object, action, fun) do
     GenServer.call(__MODULE__, {:subscribe, object, action, fun})
@@ -54,13 +54,13 @@ defmodule Wocky.Watcher.Client do
     {:ok, %State{enabled: true, subscribers: %{}, table_map: get_table_map()}}
   end
 
-  def handle_call({:send, _events}, _from, %{enabled: false} = state) do
-    {:reply, :ok, state}
+  def handle_cast({:send, _events}, %{enabled: false} = state) do
+    {:noreply, state}
   end
 
-  def handle_call({:send, events}, _from, state) do
+  def handle_cast({:send, events}, state) do
     Enum.each(events, &forward_event(&1, state))
-    {:reply, :ok, state}
+    {:noreply, state}
   end
 
   def handle_call({:subscribe, object, action, fun}, _from, state) do
