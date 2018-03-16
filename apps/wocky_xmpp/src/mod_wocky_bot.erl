@@ -186,14 +186,6 @@ handle_iq_type(From, To, set, <<"retract">>, Attrs, IQ) ->
 handle_iq_type(From, To, get, <<"item_images">>, Attrs, IQ) ->
     handle_access_action(item_images, From, To, Attrs, false, IQ);
 
-% Follow me
-handle_iq_type(From, _To, set, <<"follow-me">>, Attrs, IQ) ->
-    handle_owner_action(follow_me, From, Attrs, false, IQ);
-
-% Un-follow me
-handle_iq_type(From, _To, set, <<"un-follow-me">>, Attrs, IQ) ->
-    handle_owner_action(unfollow_me, From, Attrs, false, IQ);
-
 handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
 
@@ -223,47 +215,7 @@ perform_owner_action(delete, Bot, _From, _IQ) ->
     {ok, []};
 
 perform_owner_action(subscribers, Bot, _From, IQ) ->
-    wocky_bot_subscription:retrieve_subscribers(Bot, IQ);
-
-perform_owner_action(follow_me, Bot, From, IQ) ->
-    #iq{sub_el = #xmlel{attrs = Attrs}} = IQ,
-    do([error_m ||
-        Expiry <- get_follow_me_expiry(Attrs),
-        ?wocky_bot:update(Bot, #{follow_me => true,
-                                 follow_me_expiry => Expiry}),
-        publish_follow_me(From, Bot),
-        wocky_bot_expiry_mon:follow_started(?wocky_bot:to_jid(Bot), Expiry),
-        {ok, follow_me_result(IQ)}
-       ]);
-
-perform_owner_action(unfollow_me, Bot, From, IQ) ->
-    do([error_m ||
-        ?wocky_bot:update(Bot, #{follow_me => false, follow_me_expiry => nil}),
-        publish_unfollow_me(From, Bot),
-        wocky_bot_expiry_mon:follow_stopped(?wocky_bot:to_jid(Bot)),
-        {ok, follow_me_result(IQ)}
-       ]).
-
-get_follow_me_expiry(Attrs) ->
-    case wocky_xml:get_attr(<<"expiry">>, Attrs) of
-        {error, _} = E -> E;
-        {ok, Expiry} -> ?wocky_timestamp:from_string(Expiry)
-    end.
-
-follow_me_result(#iq{sub_el = SubEl}) ->
-    SubEl.
-
-publish_follow_me(Owner, Bot) ->
-    Stanza = wocky_bot_util:follow_stanza(Bot, <<"follow on">>),
-    send_hs_notification(Owner, Bot, Stanza).
-
-publish_unfollow_me(Owner, Bot) ->
-    Stanza = wocky_bot_util:follow_stanza(Bot, <<"follow off">>),
-    send_hs_notification(Owner, Bot, Stanza).
-
-send_hs_notification(From, Bot, Stanza) ->
-    ejabberd_router:route(?wocky_bot:to_jid(Bot), From, Stanza),
-    ok.
+    wocky_bot_subscription:retrieve_subscribers(Bot, IQ).
 
 
 %%%===================================================================

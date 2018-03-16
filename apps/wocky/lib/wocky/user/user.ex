@@ -186,20 +186,6 @@ defmodule Wocky.User do
     |> Repo.all()
   end
 
-  @doc "Returns all bots that the user owns and has set to 'follow me'"
-  @spec get_owned_bots_with_follow_me(t) :: [Bot.t()]
-  def get_owned_bots_with_follow_me(user) do
-    user
-    |> Ecto.assoc(:bots)
-    |> with_follow_me()
-    |> Repo.all()
-  end
-
-  defp with_follow_me(query) do
-    from b in query,
-      where: b.follow_me == ^true and b.follow_me_expiry > ^DateTime.utc_now()
-  end
-
   @doc """
   Update the data on an existing user.
   Fields is a map containing fields to update.
@@ -334,9 +320,7 @@ defmodule Wocky.User do
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
-        loc
-        |> Location.check_for_bot_events(user)
-        |> Location.update_bot_locations(user)
+        Location.check_for_bot_events(loc, user)
 
         :ok
 

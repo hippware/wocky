@@ -65,7 +65,6 @@ defmodule Wocky.Repo.Factory do
       location: GeoUtils.point(Address.latitude(), Address.longitude()),
       radius: :rand.uniform(100),
       public: false,
-      follow_me: false,
       tags: []
     }
   end

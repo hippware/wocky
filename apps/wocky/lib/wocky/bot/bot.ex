@@ -52,10 +52,6 @@ defmodule Wocky.Bot do
     field :radius, :float, default: 100.0
     # Visibility of bot
     field :public, :boolean
-    # Does bot follow owner
-    field :follow_me, :boolean
-    # When follow me expires
-    field :follow_me_expiry, :utc_datetime
     field :tags, {:array, :string}
     field :geofence, :boolean, default: false
 
@@ -104,8 +100,6 @@ defmodule Wocky.Bot do
           location: nil | Geo.Point.t(),
           radius: nil | float,
           public: nil | boolean,
-          follow_me: nil | boolean,
-          follow_me_expiry: nil | DateTime.t(),
           tags: nil | [binary],
           geofence: boolean,
           subscribers_hash: binary,
@@ -135,8 +129,6 @@ defmodule Wocky.Bot do
     :location,
     :radius,
     :public,
-    :follow_me,
-    :follow_me_expiry,
     :tags,
     :geofence
   ]

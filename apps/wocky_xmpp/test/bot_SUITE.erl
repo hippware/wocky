@@ -14,7 +14,7 @@
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
-                      get_hs_stanza/0, bot_node/1, check_hs_result/2,
+                      get_hs_stanza/0, bot_node/1,
                       check_hs_result/3, expect_iq_success_u/3,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
@@ -22,8 +22,7 @@
                       ensure_all_clean/1, query_el/1,
                       add_to_s/2, set_notifications/2,
                       check_home_stream_sizes/2,
-                      check_home_stream_sizes/3,
-                      watch_hs/1, unwatch_hs/1
+                      check_home_stream_sizes/3
                      ]).
 
 -export([create_bot_stanza/1, set_visibility/3,
@@ -94,12 +93,9 @@ all() ->
      get_items,
      publish_image_item,
      item_images,
-     follow_me,
-     unfollow_me,
      share,
      share_multicast,
      open_visibility,
-     follow_notifications,
      geosearch,
      empty_shortname,
      explore_nearby_radius,
@@ -862,102 +858,6 @@ item_images(Config) ->
 
         %% Tim cannot since he can't see the bot
         expect_iq_error(item_image_stanza(), Tim)
-      end).
-
-follow_me(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        %% Alice can set a bot to follow her
-        expect_iq_success(follow_me_stanza(), Alice),
-
-        %% Bob cannot since he is not the bot owner
-        expect_iq_error(follow_me_stanza(), Bob)
-      end).
-
-unfollow_me(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        %% Alice can unfollow-me a bot that is following her
-        expect_iq_success(follow_me_stanza(), Alice),
-        expect_iq_success(unfollow_me_stanza(), Alice),
-
-        %% Alice can unfollow-me a bot that is not following her
-        expect_iq_success(unfollow_me_stanza(), Alice),
-
-        %% Bob cannot unfollow-me a bot that he doesn't own
-        expect_iq_error(unfollow_me_stanza(), Bob)
-      end).
-
-follow_notifications(Config) ->
-    reset_tables(Config),
-    escalus:story(Config, [{alice, 1}],
-      fun(Alice) ->
-        %% Subscribe to HS notifications after letting the reset_tables()
-        %% activity calm down
-        timer:sleep(500),
-        watch_hs(Alice),
-
-        %% Simple follow on and off tests
-        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(), Alice)),
-        escalus:assert_many(
-          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
-           is_iq_result],
-          escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:send(Alice, test_helper:add_to_s(unfollow_me_stanza(), Alice)),
-        escalus:assert_many(
-          [is_bot_action_hs_notification(?BOT, <<"follow off">>, _),
-           is_iq_result],
-          escalus:wait_for_stanzas(Alice, 2)),
-
-        wocky_bot_expiry_mon:set_warning_time(2),
-
-        %% Test the expiry notifications
-        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(5), Alice)),
-        escalus:assert_many(
-          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
-           is_iq_result],
-          escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert(
-          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
-          escalus:wait_for_stanza(Alice, 4000)),
-
-        escalus:assert(
-          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
-          escalus:wait_for_stanza(Alice, 2500)),
-
-        %% Test reset of expiry
-        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(5), Alice)),
-        escalus:assert_many(
-          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
-           is_iq_result],
-          escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert(
-          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
-          escalus:wait_for_stanza(Alice, 4000)),
-
-        escalus:send(Alice, test_helper:add_to_s(follow_me_stanza(5), Alice)),
-        escalus:assert_many(
-          [is_bot_action_hs_notification(?BOT, <<"follow on">>, _),
-           is_iq_result],
-          escalus:wait_for_stanzas(Alice, 2)),
-
-        escalus:assert(
-          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
-          escalus:wait_for_stanza(Alice, 4000)),
-
-        escalus:assert(
-          is_bot_action_hs_notification(?BOT, <<"follow expire">>, _),
-          escalus:wait_for_stanza(Alice, 2500)),
-
-        Stanza = expect_iq_success_u(test_helper:get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza, 3),
-
-        unwatch_hs(Alice)
       end).
 
 share(Config) ->
@@ -1821,23 +1721,6 @@ set_visibility(Client, Visibility, BotList) when is_list(BotList) ->
       BotList);
 set_visibility(Client, Visibility, Bot) ->
     set_visibility(Client, Visibility, [Bot]).
-
-follow_me_stanza() ->
-    follow_me_stanza(86400). % 1 Day
-follow_me_stanza(ExpiryPeriod) ->
-    Expiry = ?wocky_timestamp:to_string(
-                ?timex:add(
-                   ?datetime:utc_now(), ?duration:from_seconds(ExpiryPeriod))),
-    QueryEl = #xmlel{name = <<"follow-me">>,
-                     attrs = [
-                       {<<"node">>, bot_node(?BOT)},
-                       {<<"expiry">>, Expiry}
-                     ]},
-    test_helper:iq_set(?NS_BOT, QueryEl).
-
-unfollow_me_stanza() ->
-    QueryEl = node_el(?BOT, <<"un-follow-me">>, []),
-    test_helper:iq_set(?NS_BOT, QueryEl).
 
 watch(BotBJID, Client) ->
     Stanza = escalus_stanza:presence_direct(

@@ -7,7 +7,6 @@ defmodule Wocky.UserSpec do
   alias Faker.Internet
   alias Faker.Lorem
   alias Faker.Name
-  alias Timex.Duration
   alias Wocky.Account
   alias Wocky.Account.Token
   alias Wocky.Blocking
@@ -709,28 +708,6 @@ defmodule Wocky.UserSpec do
 
       it do: should(have_count 1)
       it do: should(have_any &same_bot(&1, shared.owned_bot))
-      it do: should_not(have_any &same_bot(&1, shared.pending_bot))
-    end
-
-    describe "get_owned_bots_with_follow_me/1" do
-      before do
-        follow_bot =
-          Factory.insert(
-            :bot,
-            user: shared.user,
-            follow_me: true,
-            follow_me_expiry:
-              Timex.add(DateTime.utc_now(), Duration.from_seconds(1000))
-          )
-
-        {:ok, follow_bot: follow_bot}
-      end
-
-      subject do: User.get_owned_bots_with_follow_me(shared.user)
-
-      it do: should(have_count 1)
-      it do: should(have_any &same_bot(&1, shared.follow_bot))
-      it do: should_not(have_any &same_bot(&1, shared.owned_bot))
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
   end
