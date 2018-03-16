@@ -2,6 +2,7 @@ defmodule WockyAPI.UserResolver do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Wocky.Repo
+  alias Wocky.Repo.ID
   alias Wocky.User
 
   def get_profile(_root, _args, %{context: %{current_user: user}}) do
@@ -61,6 +62,10 @@ defmodule WockyAPI.UserResolver do
   end
 
   def get_user(_root, args, %{context: %{current_user: _current_user}}) do
-    Repo.get(User, args[:id])
+    if ID.valid?(args[:id]) do
+      Repo.get(User, args[:id])
+    else
+      {:error, "Invalid user id: " <> args[:id]}
+    end
   end
 end
