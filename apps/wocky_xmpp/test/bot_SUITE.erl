@@ -812,6 +812,8 @@ get_items(Config) ->
 
 publish_image_item(Config) ->
     reset_tables(Config),
+    %% Wait for DB notifications to fire
+    timer:sleep(400),
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         NoteID = <<"new-item1">>,
@@ -822,7 +824,7 @@ publish_image_item(Config) ->
         publish_item(?BOT, NoteID, Title, Content, Image, Alice),
 
         Expected =
-        lists:keyreplace("image_items", 1, expected_retrieve_fields(any),
+        lists:keyreplace("image_items", 1, expected_retrieve_fields(true),
                          {"image_items", int, 2}),
         Expected2 =
         lists:keyreplace("total_items", 1, Expected,
