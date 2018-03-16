@@ -69,8 +69,7 @@ defmodule Wocky.BotSpec do
         server: "localhost",
         user_id: ID.new(),
         title: "test bot",
-        location: GeoUtils.point(5.0, 5.0),
-        radius: 1000
+        location: GeoUtils.point(5.0, 5.0)
       }
     end
 
