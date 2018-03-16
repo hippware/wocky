@@ -822,7 +822,7 @@ publish_image_item(Config) ->
         publish_item(?BOT, NoteID, Title, Content, Image, Alice),
 
         Expected =
-        lists:keyreplace("image_items", 1, expected_retrieve_fields(true),
+        lists:keyreplace("image_items", 1, expected_retrieve_fields(any),
                          {"image_items", int, 2}),
         Expected2 =
         lists:keyreplace("total_items", 1, Expected,
