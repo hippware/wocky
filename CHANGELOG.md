@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.15+rb6cb8d3
+
+* Geofence: Baseline (#1312)
+  * Adds geofence fields to bots
+
+
 # 2018.3.13+r56c7ba1
 
 * Formatting changes (PR #1315)
