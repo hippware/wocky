@@ -63,7 +63,10 @@ defmodule WockyAPI.UserResolver do
 
   def get_user(_root, args, %{context: %{current_user: _current_user}}) do
     if ID.valid?(args[:id]) do
-      Repo.get(User, args[:id])
+      case Repo.get(User, args[:id]) do
+        nil -> {:error, "User not found: " <> args[:id]}
+        user -> {:ok, user}
+      end
     else
       {:error, "Invalid user id: " <> args[:id]}
     end
