@@ -752,7 +752,8 @@ required_fields() ->
     %% Name,                    Type,   Default
     [field(<<"title">>,         string, <<>>),
      field(<<"location">>,      geoloc, <<>>),
-     field(<<"radius">>,        [int, float], 0.0)]. % Int for backwards compat
+     %% Radius also takes an int for backwards compatibility.
+     field(<<"radius">>,        [int, float], 100.0)].
 
 optional_fields() ->
     [field(<<"id">>,            string, <<>>),
