@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Geofence: Radius migration (#1317)
+* Remove the code supporting "follow me" functionality (#1334)
+* Speculative fix for missing home stream updates (PR #1340)
+* Validate user IDs in GraphQL query (PR #1341)
+
+
 # 2018.3.15+rb6cb8d3
 
 * Geofence: Baseline (#1312)
