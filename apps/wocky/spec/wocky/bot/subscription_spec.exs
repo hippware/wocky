@@ -164,6 +164,29 @@ defmodule Wocky.Bot.SubscriptionSpec do
       end
     end
 
+    describe "visit/2" do
+      it "should set the subscriber as a visitor" do
+        Subscription.visit(shared.guest, shared.bot) |> should(eq :ok)
+        Subscription.state(shared.guest, shared.bot) |> should(eq :visitor)
+      end
+    end
+
+    describe "depart/2" do
+      it "should set the visitor as a guest" do
+        Subscription.depart(shared.visitor, shared.bot) |> should(eq :ok)
+        Subscription.state(shared.visitor, shared.bot) |> should(eq :guest)
+      end
+    end
+
+    describe "clear_guests/1" do
+      it "should remove guest and visitor status from everyone" do
+        Subscription.clear_guests(shared.bot) |> should(eq :ok)
+        Subscription.state(shared.visitor, shared.bot) |> should(eq :subscribed)
+        Subscription.state(shared.guest, shared.bot) |> should(eq :subscribed)
+        Subscription.state(shared.user, shared.bot) |> should(eq :subscribed)
+      end
+    end
+
     describe "is_subscribed/2 stored procedure" do
       it "should return true if the user is subscribed to the bot" do
         assert is_subscribed_sp(shared.user, shared.bot)

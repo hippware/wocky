@@ -6,6 +6,7 @@ defmodule Wocky.Bot.Subscription do
   import Ecto.Query
 
   alias Ecto.Changeset
+  alias Ecto.Queryable
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
@@ -51,6 +52,32 @@ defmodule Wocky.Bot.Subscription do
     Repo.get_by(Subscription, user_id: user.id, bot_id: bot.id)
   end
 
+  @spec visitors_query(Bot.t()) :: Queryable.t()
+  def visitors_query(bot) do
+    Subscription
+    |> where(bot_id: ^bot.id, visitor: true)
+  end
+
+  @spec guests_query(Bot.t()) :: Queryable.t()
+  def guests_query(bot) do
+    Subscription
+    |> where(bot_id: ^bot.id, guest: true)
+  end
+
+  @spec visit(User.t(), t) :: :ok
+  def visit(user, bot), do: visit(user, bot, true)
+
+  @spec depart(User.t(), t) :: :ok
+  def depart(user, bot), do: visit(user, bot, false)
+
+  defp visit(user, bot, enter) do
+    Subscription
+    |> where(user_id: ^user.id, bot_id: ^bot.id)
+    |> Repo.update_all(set: [visitor: enter])
+
+    :ok
+  end
+
   @spec put(User.t(), Bot.t(), boolean()) :: :ok | no_return
   def put(user, bot, guest \\ false) do
     %Subscription{}
@@ -65,8 +92,7 @@ defmodule Wocky.Bot.Subscription do
   def clear_guests(bot) do
     Subscription
     |> where(bot_id: ^bot.id)
-    |> cast(%{guest: false, visitor: false}, [:guest, :visitor])
-    |> Repo.update_all([])
+    |> Repo.update_all(set: [guest: false, visitor: false])
 
     :ok
   end
