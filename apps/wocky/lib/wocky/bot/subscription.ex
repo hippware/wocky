@@ -64,10 +64,10 @@ defmodule Wocky.Bot.Subscription do
     |> where(bot_id: ^bot.id, guest: true)
   end
 
-  @spec visit(User.t(), t) :: :ok
+  @spec visit(User.t(), Bot.t()) :: :ok
   def visit(user, bot), do: visit(user, bot, true)
 
-  @spec depart(User.t(), t) :: :ok
+  @spec depart(User.t(), Bot.t()) :: :ok
   def depart(user, bot), do: visit(user, bot, false)
 
   defp visit(user, bot, enter) do

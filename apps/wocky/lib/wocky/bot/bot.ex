@@ -259,12 +259,12 @@ defmodule Wocky.Bot do
 
   @spec visit(t, User.t()) :: :ok
   def visit(bot, user) do
-    Subscription.visit(bot, user)
+    Subscription.visit(user, bot)
   end
 
   @spec depart(t, User.t()) :: :ok
   def depart(bot, user) do
-    Subscription.depart(bot, user)
+    Subscription.depart(user, bot)
   end
 
   @spec clear_guests(t) :: :ok
