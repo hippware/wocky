@@ -37,16 +37,18 @@ defmodule Wocky.Watcher.Callbacks.BotSubscription do
     sub = Repo.preload(sub, [:user, bot: [:user]])
 
     if sub.user != nil && sub.bot != nil && sub.bot.user != nil do
+      # Don't send a notification about the owner to themself
+      if sub.user.id != sub.bot.user.id do
+        event =
+          BotGeofenceShareEvent.new(%{
+            from: sub.user,
+            to: sub.bot.user,
+            bot: sub.bot,
+            type: :accept
+          })
 
-      event =
-        BotGeofenceShareEvent.new(%{
-          from: sub.user,
-          to: sub.bot.user,
-          bot: sub.bot,
-          type: :accept
-        })
-
-      Push.notify_all(sub.bot.user.id, event)
+          Push.notify_all(sub.bot.user.id, event)
+      end
     end
   end
 end
