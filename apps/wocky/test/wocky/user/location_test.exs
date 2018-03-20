@@ -81,7 +81,7 @@ defmodule Wocky.User.LocationTest do
 
   defp insert_offset_bot_event(user, bot, event, offset) do
     event = BotEvent.insert(user, bot, event)
-    timestamp = Timex.shift(Timex.now, seconds: offset)
+    timestamp = Timex.shift(Timex.now(), seconds: offset)
 
     from(be in BotEvent, where: be.id == ^event.id)
     |> Repo.update_all(set: [created_at: timestamp])
@@ -166,8 +166,8 @@ defmodule Wocky.User.LocationTest do
 
       assert Bot.subscription(shared.bot, shared.user) == :visitor
 
-     # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-     # assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
     end
 
     test "who was already inside the bot perimeter", shared do
@@ -251,8 +251,8 @@ defmodule Wocky.User.LocationTest do
 
       assert Bot.subscription(shared.bot, shared.user) == :guest
 
-      # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      # assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
     end
 
     test "who was already outside the bot perimeter", shared do

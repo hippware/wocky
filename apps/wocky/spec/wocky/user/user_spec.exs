@@ -701,7 +701,9 @@ defmodule Wocky.UserSpec do
     describe "get_guest_subscriptions/1" do
       before do
         guest = Factory.insert(:bot, user: shared.other_user, geofence: true)
-        disabled = Factory.insert(:bot, user: shared.other_user, geofence: false)
+
+        disabled =
+          Factory.insert(:bot, user: shared.other_user, geofence: false)
 
         Bot.subscribe(guest, shared.user, true)
         Bot.subscribe(disabled, shared.user, true)
