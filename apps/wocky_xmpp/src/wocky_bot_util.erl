@@ -144,15 +144,16 @@ bot_packet_action(BotStanza) ->
 
 bot_packet_action(JID, Action) ->
     case {?wocky_bot:get(JID), Action} of
-        {nil, _}                   -> {none, none};
-        {Bot, <<"show">>}          -> {Bot, show};
-        {Bot, <<"share">>}         -> {Bot, share};
-        {Bot, <<"enter">>}         -> {Bot, enter};
-        {Bot, <<"exit">>}          -> {Bot, exit};
-        {Bot, <<"follow on">>}     -> {Bot, follow_on};
-        {Bot, <<"follow off">>}    -> {Bot, follow_off};
-        {Bot, <<"follow expire">>} -> {Bot, follow_expire};
-        _                          -> {none, none}
+        {nil, _}                    -> {none, none};
+        {Bot, <<"show">>}           -> {Bot, show};
+        {Bot, <<"share">>}          -> {Bot, share};
+        {Bot, <<"geofence share">>} -> {Bot, geofence_share};
+        {Bot, <<"enter">>}          -> {Bot, enter};
+        {Bot, <<"exit">>}           -> {Bot, exit};
+        {Bot, <<"follow on">>}      -> {Bot, follow_on};
+        {Bot, <<"follow off">>}     -> {Bot, follow_off};
+        {Bot, <<"follow expire">>}  -> {Bot, follow_expire};
+        _                           -> {none, none}
     end.
 
 follow_stanza(Bot, Action) ->

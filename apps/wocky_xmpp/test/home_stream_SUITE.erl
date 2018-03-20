@@ -692,7 +692,7 @@ bot_deleted(Config) ->
         clear_home_streams(),
         watch_hs(Carol),
 
-        escalus:send(Alice, bot_SUITE:share_stanza(BotID, Alice, Carol)),
+        escalus:send(Alice, bot_SUITE:share_stanza(BotID, Alice, Carol, false)),
 
         escalus:assert(fun is_bot_share_notification/1,
                        escalus:wait_for_stanza(Carol)),

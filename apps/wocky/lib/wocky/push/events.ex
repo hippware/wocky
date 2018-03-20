@@ -28,6 +28,18 @@ defmodule Wocky.Push.Events do
     defp do_get_handle(%User{} = user), do: user.handle
 
     @doc false
+    def get_title(obj) do
+      case do_get_title(obj) do
+        nil -> "Somewhere"
+        "" -> "Somewhere"
+        title -> "@" <> title
+      end
+    end
+
+    defp do_get_title(nil), do: nil
+    defp do_get_title(%Bot{} = bot), do: bot.title
+
+    @doc false
     def make_uri(type, id \\ nil, server? \\ true) do
       "#{uri_prefix()}://#{type}"
       |> maybe_add_server(server?)
@@ -98,6 +110,32 @@ defmodule Wocky.Push.Events do
     end
 
     def uri(%BotShareEvent{bot: bot}), do: make_uri(:bot, bot.id)
+  end
+
+  defmodule BotGeofenceShareEvent do
+    @moduledoc false
+
+    defstruct [:from, :to, :bot]
+
+    @type t :: %__MODULE__{
+            from: User.t(),
+            to: User.t(),
+            bot: Bot.t()
+          }
+
+    use ExConstructor
+  end
+
+  defimpl Event, for: BotGeofenceShareEvent do
+    import Wocky.Push.Events.Utils
+
+    def message(%BotGeofenceShareEvent{from: from, bot: bot}) do
+      get_handle(from) <>
+        " wants to know when you are at " <>
+        get_title(bot)
+    end
+
+    def uri(%BotGeofenceShareEvent{bot: bot}), do: make_uri(:bot, bot.id)
   end
 
   defmodule NewMessageEvent do
