@@ -1,7 +1,6 @@
 use Mix.Config
 
 config :wocky,
-  enable_bot_event_notifications: false,
   async_location_processing: true,
   tros_backend: Wocky.TROS.S3Store
 
