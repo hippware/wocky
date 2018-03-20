@@ -326,11 +326,20 @@ handle_create(From, Children) ->
         check_required_fields(Fields3, required_fields()),
         FieldsMap = normalise_fields(Fields3),
         Bot <- create_bot(ID, PendingBot, User, FieldsMap),
-        ?wocky_bot:subscribe(Bot, User, false),
+        %% See note below:
+        ?wocky_bot:subscribe(Bot, User, maps:get(geofence, Bot)),
         FinalBot <- {ok, ?wocky_bot:get(ID)},
         BotEl <- make_bot_el(FinalBot, User),
         {ok, BotEl}
        ]).
+
+%% Note: We do the subscription in handle_create AND in
+%% the bot callback system because we're returning the bot
+%% immediately and need to have our owner show up as a
+%% subscriber.
+%% However if the bot is created through a different channel,
+%% we also want the subscription to be created so we need
+%% that system too.
 
 add_server(Fields, Server) ->
     {ok, [#field{name = <<"server">>, type = string, value = Server} | Fields]}.
