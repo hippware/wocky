@@ -56,7 +56,7 @@ send_share_notification(From, To = #{id := UserID}, Bot) ->
 send_geofence_share_notification(From, To = #{id := UserID}, Bot)
     when From =/= nil ->
     Event = ?bot_geofence_share_event:new(
-               #{from => From, to => To, bot => Bot}),
+               #{from => From, to => To, bot => Bot, type => invite}),
     ?wocky_push:notify_all(UserID, Event);
 send_geofence_share_notification(_, _, _) -> ok.
 

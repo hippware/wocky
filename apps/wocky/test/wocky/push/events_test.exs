@@ -24,14 +24,14 @@ defmodule Wocky.Push.EventsTest do
   describe "BotPerimeterEvent" do
     test "returns an appropriate message when entering", %{user: u, bot: b} do
       msg = Event.message(%BotPerimeterEvent{user: u, bot: b, event: :enter})
-      assert msg =~ "is near"
+      assert msg =~ "is at"
       assert msg =~ @test_handle
       assert msg =~ @test_title
     end
 
     test "returns an appropriate message when exiting", %{user: u, bot: b} do
       msg = Event.message(%BotPerimeterEvent{user: u, bot: b, event: :exit})
-      assert msg =~ "is leaving"
+      assert msg =~ "left"
       assert msg =~ @test_handle
       assert msg =~ @test_title
     end

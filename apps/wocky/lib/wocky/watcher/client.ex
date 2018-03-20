@@ -51,7 +51,7 @@ defmodule Wocky.Watcher.Client do
     source.init
     Poller.start_link(source, __MODULE__)
 
-    {:ok, %State{enabled: true, subscribers: %{}, table_map: get_table_map()}}
+    {:ok, %State{enabled: true, subscribers: %{}, table_map: Map.new()}}
   end
 
   def handle_cast({:send, _events}, %{enabled: false} = state) do
@@ -74,7 +74,10 @@ defmodule Wocky.Watcher.Client do
         MapSet.put(current, {fun, ref})
       )
 
-    {:reply, {:ok, ref}, %{state | subscribers: new_subscribers}}
+    new_table_map = Map.put(state.table_map, object.__schema__(:source), object)
+
+    {:reply, {:ok, ref}, %{state | subscribers: new_subscribers,
+                                   table_map: new_table_map}}
   end
 
   def handle_call({:unsubscribe, ref}, _from, state) do
@@ -112,12 +115,5 @@ defmodule Wocky.Watcher.Client do
   defp delete_ref({key, val}, ref) do
     to_delete = Enum.find(val, fn v -> elem(v, 1) == ref end)
     {key, MapSet.delete(val, to_delete)}
-  end
-
-  defp get_table_map do
-    :wocky
-    |> Confex.fetch_env!(:watched_types)
-    |> Enum.map(fn t -> {t.__schema__(:source), t} end)
-    |> Map.new()
   end
 end

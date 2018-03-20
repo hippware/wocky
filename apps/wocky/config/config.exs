@@ -38,16 +38,7 @@ config :wocky,
   welcome_email_template: "official_tr_welcome_email",
   welcome_email_from: {"tinyrobot support", "support@tinyrobot.com"},
   welcome_email_subject: "Welcome to tinyrobot!",
-  welcome_field_mappings: [{"user_handle", :handle}],
-
-  # wocky_db_watcher watched types
-  watched_types: [
-    Wocky.Bot,
-    Wocky.Bot.Item,
-    Wocky.Bot.Share,
-    Wocky.HomeStream.Item,
-    Wocky.TROS.Metadata
-  ]
+  welcome_field_mappings: [{"user_handle", :handle}]
 
 # Push notifications
 config :wocky, Wocky.Push,
