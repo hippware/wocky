@@ -294,21 +294,22 @@ publish_bot_action(From, BotEl) ->
     User = ?wocky_user:get_by_jid(From),
     Result =
     case wocky_bot_util:bot_packet_action(BotEl) of
-        {none, none}         -> {keep, ?wocky_home_stream_id:user_message_id(
-                                          User)};
-        {Bot, show}          -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
-        {Bot, share}         -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
-        {Bot, enter}         -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, User, <<"enter">>)};
-        {Bot, exit}          -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, User, <<"exit">>)};
-        {Bot, follow_on}     -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, <<"follow_on">>)};
-        {Bot, follow_off}    -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, <<"follow_off">>)};
-        {Bot, follow_expire} -> {drop, ?wocky_home_stream_id:bot_event_id(
-                                          Bot, <<"follow_expiry">>)}
-    end,
+        {none, none}          -> {keep, ?wocky_home_stream_id:user_message_id(
+                                           User)};
+        {Bot, show}           -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
+        {Bot, share}          -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
+        {Bot, geofence_share} -> {drop, ?wocky_home_stream_id:bot_id(Bot)};
+        {Bot, enter}          -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                           Bot, User, <<"enter">>)};
+        {Bot, exit}           -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                           Bot, User, <<"exit">>)};
+        {Bot, follow_on}      -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                           Bot, <<"follow_on">>)};
+        {Bot, follow_off}     -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                           Bot, <<"follow_off">>)};
+        {Bot, follow_expire}  -> {drop, ?wocky_home_stream_id:bot_event_id(
+                                           Bot, <<"follow_expiry">>)}
+    end ,
     {publish, Result}.
 
 maybe_drop({ok, drop}, _) -> drop;

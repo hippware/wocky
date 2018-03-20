@@ -81,6 +81,8 @@
 -define(new_message_event, 'Elixir.Wocky.Push.Events.NewMessageEvent').
 -define(new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(bot_share_event, 'Elixir.Wocky.Push.Events.BotShareEvent').
+-define(bot_geofence_share_event,
+        'Elixir.Wocky.Push.Events.BotGeofenceShareEvent').
 
 -define(confex, 'Elixir.Confex').
 -define(datetime, 'Elixir.DateTime').

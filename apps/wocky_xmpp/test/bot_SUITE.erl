@@ -22,7 +22,8 @@
                       ensure_all_clean/1, query_el/1,
                       add_to_s/2, set_notifications/2,
                       check_home_stream_sizes/2,
-                      check_home_stream_sizes/3
+                      check_home_stream_sizes/3,
+                      watch_hs/1, unwatch_hs/1
                      ]).
 
 -export([create_bot_stanza/1, set_visibility/3,
@@ -95,6 +96,7 @@ all() ->
      item_images,
      share,
      share_multicast,
+     geofence_share,
      open_visibility,
      geosearch,
      empty_shortname,
@@ -876,7 +878,7 @@ share(Config) ->
         [] = list_notifications(),
 
         % Alice shares the bot to him
-        escalus:send(Alice, share_stanza(?BOT, Alice, Tim)),
+        escalus:send(Alice, share_stanza(?BOT, Alice, Tim, false)),
         timer:sleep(500),
 
         % Tim can now see the bot
@@ -901,7 +903,7 @@ share_multicast(Config) ->
                    [[{<<"type">>, <<"to">>},
                      {<<"jid">>, ?BJID(?TIM)}]],
                    ?NS_ADDRESS,
-                   escalus_stanza:to(share_stanza(?BOT), ?SERVER)
+                   escalus_stanza:to(share_stanza(?BOT, false), ?SERVER)
                   ),
         escalus:send(Alice, Stanza),
         timer:sleep(500),
@@ -914,6 +916,27 @@ share_multicast(Config) ->
         test_helper:ensure_all_clean([Alice, Tim])
       end).
 
+geofence_share(Config) ->
+    reset_tables(Config),
+    clear_notifications(),
+    escalus:story(Config, [{alice, 1}, {tim, 1}],
+      fun(Alice, Tim) ->
+        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, [?BOT]),
+        set_notifications(true, Tim),
+        watch_hs(Tim),
+
+        escalus:send(Alice, share_stanza(?BOT, Alice, Tim, true)),
+
+        escalus:assert(is_message, escalus:wait_for_stanza(Tim)),
+
+        timer:sleep(500),
+
+        1 = length(list_notifications()),
+
+        unwatch_hs(Tim),
+
+        test_helper:ensure_all_clean([Alice, Tim])
+    end).
 
 open_visibility(Config) ->
     reset_tables(Config),
@@ -1733,27 +1756,30 @@ unwatch(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
     escalus:send(Client, Stanza).
 
-share_stanza(BotID, From, Target) ->
+share_stanza(BotID, From, Target, Geofence) ->
     fun_chain:first(
       BotID,
-      share_stanza(),
+      share_stanza(Geofence),
       escalus_stanza:to(Target),
       escalus_stanza:from(From)
      ).
 
-share_stanza(BotID) ->
+share_stanza(BotID, Geofence) ->
     #xmlel{name = <<"message">>,
            attrs = [{<<"type">>, <<"headline">>}],
            children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
-                       bot_el(BotID)]}.
+                       bot_el(BotID, Geofence)]}.
 
-bot_el(BotID) ->
+bot_el(BotID, Geofence) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = [cdata_el(<<"jid">>, bot_jid(BotID)),
                        cdata_el(<<"id">>, BotID),
                        cdata_el(<<"server">>, ?SERVER),
-                       cdata_el(<<"action">>, <<"share">>)]}.
+                       action_el(Geofence)]}.
+
+action_el(false) -> cdata_el(<<"action">>, <<"share">>);
+action_el(true) -> cdata_el(<<"action">>, <<"geofence share">>).
 
 is_bot_action_hs_notification(JID, Action,
                               Stanza = #xmlel{name = <<"message">>}) ->
