@@ -922,6 +922,8 @@ geofence_share(Config) ->
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, [?BOT]),
+        timer:sleep(400),
+
         set_notifications(true, Tim),
         watch_hs(Tim),
 
@@ -929,7 +931,7 @@ geofence_share(Config) ->
 
         escalus:assert(is_message, escalus:wait_for_stanza(Tim)),
 
-        timer:sleep(500),
+        timer:sleep(400),
 
         1 = length(list_notifications()),
 
