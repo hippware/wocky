@@ -11,9 +11,11 @@ defmodule Wocky.User.Location do
   alias Wocky.Repo
   alias Wocky.User
   alias Wocky.User.BotEvent
-  alias __MODULE__
 
   require Logger
+
+  @enter_debounce_seconds 120
+  @exit_debounce_seconds 60
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -63,9 +65,9 @@ defmodule Wocky.User.Location do
   def check_for_bot_events(%Location{} = loc, user) do
     maybe_do_async(fn ->
       user
-      |> User.get_subscriptions()
-      |> bots_with_events(user, loc)
-      |> Enum.each(&trigger_bot_notification(user, &1))
+      |> User.get_guest_subscriptions()
+      |> check_for_events(user, loc)
+      |> Enum.each(&process_bot_events/1)
     end)
 
     loc
@@ -79,20 +81,8 @@ defmodule Wocky.User.Location do
     end
   end
 
-  defp bots_with_events(bots, user, loc) do
+  defp check_for_events(bots, user, loc) do
     Enum.reduce(bots, [], &check_for_event(&1, user, loc, &2))
-  end
-
-  defmacrop log_check_result(user, bot, result) do
-    quote do
-      :ok =
-        Logger.debug(fn ->
-          """
-          User #{unquote(user).id} #{unquote(result)} the perimeter \
-          of #{unquote(bot).id}\
-          """
-        end)
-    end
   end
 
   defp check_for_event(bot, user, loc, acc) do
@@ -104,71 +94,111 @@ defmodule Wocky.User.Location do
         """
       end)
 
-    # Don't check bots that are owned by the user
-    if bot.user_id == user.id do
-      :ok =
-        Logger.debug(fn ->
-          "Skipping bot #{bot.id} since it is owned by #{user.id}"
-        end)
+    bot
+    |> Bot.contains?(Map.from_struct(loc))
+    |> handle_intersection(user, bot, acc)
+  end
 
-      acc
-    else
+  defp handle_intersection(inside?, user, bot, acc) do
+    event = BotEvent.get_last_event(user.id, bot.id)
+
+    case user_state_change(inside?, event) do
+      :no_change ->
+        acc
+
+      :roll_back ->
+        Repo.delete!(event)
+        acc
+
+      new_state ->
+        new_event = BotEvent.insert(user, bot, new_state)
+        [{user, bot, new_event} | acc]
+    end
+  end
+
+  defp user_state_change(true, nil), do: :transition_in
+
+  defp user_state_change(true, be) do
+    case be.event do
+      :exit ->
+        :transition_in
+
+      :enter ->
+        :no_change
+
+      :transition_out ->
+        :roll_back
+
+      :transition_in ->
+        if debounce_expired?(be.created_at, @enter_debounce_seconds) do
+          :enter
+        else
+          :no_change
+        end
+    end
+  end
+
+  defp user_state_change(false, nil), do: :no_change
+
+  defp user_state_change(false, be) do
+    case be.event do
+      :exit ->
+        :no_change
+
+      :enter ->
+        :transition_out
+
+      :transition_in ->
+        :roll_back
+
+      :transition_out ->
+        if debounce_expired?(be.created_at, @exit_debounce_seconds) do
+          :exit
+        else
+          :no_change
+        end
+    end
+  end
+
+  defp debounce_expired?(ts, wait) do
+    Timex.diff(Timex.now(), ts, :seconds) >= wait
+  end
+
+  defp process_bot_events({user, bot, be}) do
+    if transition_complete?(be) do
+      maybe_visit_bot(be.event, user, bot)
+      maybe_send_notifications(user, bot, be)
+    end
+  end
+
+  defp transition_complete?(%BotEvent{event: event}) do
+    Enum.member?([:enter, :exit], event)
+  end
+
+  defp maybe_visit_bot(:enter, user, bot), do: Bot.visit(bot, user)
+
+  defp maybe_visit_bot(:exit, user, bot), do: Bot.depart(bot, user)
+
+  defp maybe_send_notifications(visitor, bot, be) do
+    if notifications_enabled?() do
       bot
-      |> Bot.contains?(Map.from_struct(loc))
-      |> handle_intersection(user, bot, acc)
+      |> Bot.guests_query()
+      |> Repo.all()
+      |> Enum.each(&send_notification(&1, visitor, bot, be))
     end
   end
 
-  defp handle_intersection(true, user, bot, acc) do
-    if should_generate_enter_event(user, bot) do
-      log_check_result(user, bot, "has entered")
-      BotEvent.insert(user, bot, :enter)
-      [{bot, :enter} | acc]
-    else
-      log_check_result(user, bot, "is within")
-      acc
-    end
+  defp notifications_enabled? do
+    Application.fetch_env!(:wocky, :enable_bot_event_notifications)
   end
 
-  defp handle_intersection(false, user, bot, acc) do
-    if should_generate_exit_event(user, bot) do
-      log_check_result(user, bot, "has left")
-      BotEvent.insert(user, bot, :exit)
-      [{bot, :exit} | acc]
-    else
-      log_check_result(user, bot, "is outside of")
-      acc
-    end
-  end
+  defp send_notification(sub, visitor, bot, be) do
+    event = %BotPerimeterEvent{
+      user: visitor,
+      bot: bot,
+      event: be.event
+    }
 
-  defp should_generate_enter_event(user, bot) do
-    case BotEvent.get_last_event_type(user.id, bot.id) do
-      nil -> true
-      :exit -> true
-      :enter -> false
-    end
-  end
-
-  defp should_generate_exit_event(user, bot) do
-    case BotEvent.get_last_event_type(user.id, bot.id) do
-      nil -> false
-      :exit -> false
-      :enter -> true
-    end
-  end
-
-  defp trigger_bot_notification(user, {bot, event}) do
-    jid = user.username |> JID.make(user.server) |> JID.to_binary()
-    :ok = Logger.info("User #{jid} #{event}ed the perimeter of bot #{bot.id}")
-
-    if Application.fetch_env!(:wocky, :enable_bot_event_notifications) do
-      event = %BotPerimeterEvent{
-        user: user,
-        bot: bot,
-        event: event
-      }
-
-      Push.notify_all(bot.user_id, event)
-    end
+    Push.notify_all(sub.user_id, event)
   end
 end

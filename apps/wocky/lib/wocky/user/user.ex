@@ -151,6 +151,15 @@ defmodule Wocky.User do
     |> Repo.all()
   end
 
+  @spec get_guest_subscriptions(t) :: [Bot.t()]
+  def get_guest_subscriptions(user) do
+    user
+    |> subscribed_bots_query()
+    |> where([b, s], b.geofence == true)
+    |> where([b, s], s.guest == true)
+    |> Repo.all()
+  end
+
   @spec bot_count(User.t()) :: non_neg_integer
   def bot_count(user) do
     user
