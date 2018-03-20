@@ -80,8 +80,8 @@ defmodule Wocky.Push.Events do
 
     def message(%BotPerimeterEvent{user: user, bot: bot, event: event}) do
       case event do
-        :enter -> "#{user.handle} is near the bot #{bot.title}"
-        :exit -> "#{user.handle} is leaving the area for #{bot.title}"
+        :enter -> "#{get_handle(user)} is at #{get_title(bot)}"
+        :exit -> "#{get_handle(user)} left #{get_title(bot)}"
       end
     end
 
@@ -115,12 +115,15 @@ defmodule Wocky.Push.Events do
   defmodule BotGeofenceShareEvent do
     @moduledoc false
 
-    defstruct [:from, :to, :bot]
+    defstruct [:from, :to, :bot, :type]
+
+    @type type :: :invite | :accept
 
     @type t :: %__MODULE__{
             from: User.t(),
             to: User.t(),
-            bot: Bot.t()
+            bot: Bot.t(),
+            type: type()
           }
 
     use ExConstructor
@@ -129,9 +132,14 @@ defmodule Wocky.Push.Events do
   defimpl Event, for: BotGeofenceShareEvent do
     import Wocky.Push.Events.Utils
 
-    def message(%BotGeofenceShareEvent{from: from, bot: bot}) do
+    def message(%BotGeofenceShareEvent{from: from, bot: bot, type: :invite}) do
       get_handle(from) <>
         " wants to know when you are at " <>
+        get_title(bot)
+    end
+    def message(%BotGeofenceShareEvent{from: from, bot: bot, type: :accept}) do
+      get_handle(from) <>
+        " accepted your presence request for " <>
         get_title(bot)
     end
 

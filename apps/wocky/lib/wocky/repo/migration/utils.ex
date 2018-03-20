@@ -46,6 +46,12 @@ defmodule Wocky.Repo.Migration.Utils do
     add_notify_trigger(table, action)
   end
 
+  def update_notify(table, actions, overrides \\ [])
+
+  def update_notify(table, actions, overrides) when is_list(actions) do
+    Enum.each(actions, &update_notify(table, &1, overrides))
+  end
+
   def update_notify(table, action_atom, overrides) do
     action = Atom.to_string(action_atom)
 

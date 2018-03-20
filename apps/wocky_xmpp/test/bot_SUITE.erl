@@ -405,18 +405,25 @@ subscribe(Config) ->
       end).
 
 subscribe_geofence(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-      fun(Alice, _Bob, Carol) ->
+    reset_tables(Config),
+    escalus:story(Config, [{alice, 1}, {carol, 1}],
+      fun(Alice, Carol) ->
           set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
 
           % There are no guests...
           check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
                              expected_guest_retrieve_fields(false, 0)),
 
+          set_notifications(true, Alice),
+
           % Carol becomes a guest...
           expect_iq_success(subscribe_guest_stanza(true), Carol),
           check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
                              expected_guest_retrieve_fields(true, 1)),
+
+          timer:sleep(500),
+          1 = length(list_notifications()),
+          clear_notifications(),
 
           % Carol cancels guesthood...
           expect_iq_success(subscribe_guest_stanza(false), Carol),
