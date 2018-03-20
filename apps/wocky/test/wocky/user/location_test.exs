@@ -2,11 +2,14 @@ defmodule Wocky.User.LocationTest do
   use Wocky.DataCase
   use Wocky.JID
 
+  import Ecto.Query
+
   alias Faker.Address
   alias Faker.Code
   alias Wocky.Bot
   alias Wocky.Push
   alias Wocky.Push.Sandbox
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.User.BotEvent
   alias Wocky.User.Location
@@ -22,10 +25,10 @@ defmodule Wocky.User.LocationTest do
     user = Factory.insert(:user)
     Push.enable(user.id, @rsrc, Code.isbn13())
 
-    bot_list = Factory.insert_list(3, :bot, user: owner)
+    bot_list = Factory.insert_list(3, :bot, user: owner, geofence: true)
     bot = hd(bot_list)
 
-    :ok = Bot.subscribe(bot, user)
+    :ok = Bot.subscribe(bot, user, true)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end
@@ -76,6 +79,14 @@ defmodule Wocky.User.LocationTest do
     end
   end
 
+  defp insert_offset_bot_event(user, bot, event, offset) do
+    event = BotEvent.insert(user, bot, event)
+    timestamp = Timex.shift(Timex.now, seconds: offset)
+
+    from(be in BotEvent, where: be.id == ^event.id)
+    |> Repo.update_all(set: [created_at: timestamp])
+  end
+
   describe "check_for_bot_events/1 with a user inside a bot perimeter" do
     setup %{user: user, bot: bot} do
       loc = %Location{
@@ -88,13 +99,6 @@ defmodule Wocky.User.LocationTest do
       {:ok, inside_loc: loc}
     end
 
-    test "the bot owner should not generate an event", shared do
-      Location.check_for_bot_events(shared.inside_loc, shared.owner)
-
-      assert BotEvent.get_last_event(shared.owner.id, shared.bot.id) == nil
-      assert Sandbox.list_notifications() == []
-    end
-
     test "bots with a negative radius should not generate an event", shared do
       shared.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
 
@@ -104,17 +108,59 @@ defmodule Wocky.User.LocationTest do
       assert Sandbox.list_notifications() == []
     end
 
-    test "user who was outside should generate an event", shared do
+    test "with no bot perimeter events", shared do
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :transition_in
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who was outside the bot perimeter", shared do
+      BotEvent.insert(shared.user, shared.bot, :exit)
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :transition_in
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who was transitioning out of the bot perimeter", shared do
+      initial_event = BotEvent.insert(shared.user, shared.bot, :enter)
+      to_event = BotEvent.insert(shared.user, shared.bot, :transition_out)
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      refute event.id == to_event.id
+      assert event.id == initial_event.id
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who was transitioning into the bot perimeter", shared do
+      initial_event = BotEvent.insert(shared.user, shared.bot, :transition_in)
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      assert event.id == initial_event.id
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who has transitioned into the bot perimeter", shared do
+      insert_offset_bot_event(shared.user, shared.bot, :transition_in, -150)
       Location.check_for_bot_events(shared.inside_loc, shared.user)
 
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
       assert event == :enter
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      # assert Enum.count(notifications) == 1
     end
 
-    test "user who was already inside should not generate an event", shared do
+    test "who was already inside the bot perimeter", shared do
       initial_event = BotEvent.insert(shared.user, shared.bot, :enter)
       Location.check_for_bot_events(shared.inside_loc, shared.user)
 
@@ -131,19 +177,39 @@ defmodule Wocky.User.LocationTest do
       {:ok, outside_loc: loc}
     end
 
-    test "user who was inside should generate an event", shared do
+    test "with no bot perimeter events", shared do
+      Location.check_for_bot_events(shared.outside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      assert event == nil
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who was inside the bot perimeter", shared do
       BotEvent.insert(shared.user, shared.bot, :enter)
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
-      assert event == :exit
+      assert event == :transition_out
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      assert Sandbox.list_notifications() == []
     end
 
-    test "user who was already outside should not generate an event", shared do
+    test "who was transitioning into the the bot perimeter", shared do
       initial_event = BotEvent.insert(shared.user, shared.bot, :exit)
+      to_event = BotEvent.insert(shared.user, shared.bot, :transition_in)
+      Location.check_for_bot_events(shared.outside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      refute event.id == to_event.id
+      assert event.id == initial_event.id
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who was transitioning out of the bot perimeter", shared do
+      initial_event = BotEvent.insert(shared.user, shared.bot, :transition_out)
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
@@ -152,10 +218,24 @@ defmodule Wocky.User.LocationTest do
       assert Sandbox.list_notifications() == []
     end
 
-    test "unknown previous location should not generate an event", shared do
+    test "who has transitioned out of the bot perimeter", shared do
+      insert_offset_bot_event(shared.user, shared.bot, :transition_out, -80)
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
-      assert BotEvent.get_last_event(shared.user.id, shared.bot.id) == nil
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :exit
+
+      # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      # assert Enum.count(notifications) == 1
+    end
+
+    test "who was already outside the bot perimeter", shared do
+      initial_event = BotEvent.insert(shared.user, shared.bot, :exit)
+      Location.check_for_bot_events(shared.outside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      assert event.id == initial_event.id
+
       assert Sandbox.list_notifications() == []
     end
   end
