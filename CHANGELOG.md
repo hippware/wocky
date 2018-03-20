@@ -9,6 +9,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove the code supporting "follow me" functionality (#1334)
 * Speculative fix for missing home stream updates (PR #1340)
 * Validate user IDs in GraphQL query (PR #1341)
+* Test case in bot integration test suite is flapping (#1343)
+* Geofence: Bot guest and visitor lists (#1347)
 
 
 # 2018.3.15+rb6cb8d3
