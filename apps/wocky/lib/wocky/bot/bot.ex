@@ -257,9 +257,29 @@ defmodule Wocky.Bot do
     Subscription.delete(user, bot)
   end
 
+  @spec visit(t, User.t()) :: :ok
+  def visit(bot, user) do
+    Subscription.visit(user, bot)
+  end
+
+  @spec depart(t, User.t()) :: :ok
+  def depart(bot, user) do
+    Subscription.depart(user, bot)
+  end
+
   @spec clear_guests(t) :: :ok
   def clear_guests(bot) do
     Subscription.clear_guests(bot)
+  end
+
+  @spec guests_query(t) :: Queryable.t()
+  def guests_query(bot) do
+    Subscription.guests_query(bot)
+  end
+
+  @spec visitors_query(t) :: Queryable.t()
+  def visitors_query(bot) do
+    Subscription.visitors_query(bot)
   end
 
   @spec subscribers_query(t, boolean()) :: [User.t()]

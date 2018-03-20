@@ -99,7 +99,9 @@ all() ->
      geosearch,
      empty_shortname,
      explore_nearby_radius,
-     explore_nearby_rectangle
+     explore_nearby_rectangle,
+     get_guests,
+     get_visitors
     ].
 
 groups() ->
@@ -231,7 +233,7 @@ reset_tables(Config) ->
 
     ?wocky_watcher_client:resume_notifications(),
 
-    Config2.
+    [{bot, Bot}, {carol, Carol} | Config2].
 
 %%--------------------------------------------------------------------
 %% mod_wocky_bot tests
@@ -355,7 +357,8 @@ subscribers_rsm(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         % Alice can get the correct subscribers
-        Stanza = expect_iq_success(subscribers_stanza(#rsm_in{max = 1}), Alice),
+        Stanza = expect_iq_success(subscribers_stanza(
+                                     #rsm_in{max = 1}), Alice),
         check_subscribers(Stanza, [?BJID(?CAROL)], 2)
       end).
 
@@ -997,6 +1000,40 @@ explore_nearby_rectangle(Config) ->
         expect_explore_result(<<"bot-limit-reached">>, Alice)
       end).
 
+get_guests(Config) ->
+    Config2 = reset_tables(Config),
+    Bot = proplists:get_value(bot, Config2),
+    CarolU = proplists:get_value(carol, Config2),
+    ?wocky_bot:update(Bot, #{geofence => true}),
+    ?wocky_bot:subscribe(Bot, CarolU, true),
+    escalus:story(Config2, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        S = expect_iq_success(get_users_stanza(<<"guests">>, ?BOT), Alice),
+        check_users_result(S, <<"guests">>, <<"guest">>, [?ALICE, ?CAROL]),
+
+        % Non-owners can't get the guest list
+        expect_iq_error(get_users_stanza(<<"guests">>, ?BOT), Bob),
+        expect_iq_error(get_users_stanza(<<"guests">>, ?BOT), Carol)
+      end).
+
+get_visitors(Config) ->
+    Config2 = reset_tables(Config),
+    Bot = proplists:get_value(bot, Config2),
+    CarolU = proplists:get_value(carol, Config2),
+    ?wocky_bot:update(Bot, #{geofence => true}),
+    ?wocky_bot:subscribe(Bot, CarolU, true),
+    ?wocky_bot:visit(Bot, CarolU),
+    escalus:story(Config2, [{alice, 1}, {bob, 1}, {carol, 1}],
+      fun(Alice, Bob, Carol) ->
+        Results = [expect_iq_success(
+                     get_users_stanza(<<"visitors">>, ?BOT), C)
+                   || C <- [Alice, Carol]],
+        [check_users_result(R, <<"visitors">>, <<"visitor">>, [?CAROL])
+         || R <- Results],
+
+        % Non-guests can't get the visitor list
+        expect_iq_error(get_users_stanza(<<"visitors">>, ?BOT), Bob)
+      end).
 
 %%--------------------------------------------------------------------
 %% Helpers
@@ -1845,3 +1882,36 @@ expect_explore_result(Terminator, User) ->
                        [{element, <<"explore-nearby-result">>},
                         {element, Terminator}]),
        undefined).
+
+get_users_stanza(Name, BotID) ->
+    test_helper:iq_get(
+      ?NS_BOT,
+      #xmlel{name = Name,
+             attrs = [{<<"node">>, bot_node(BotID)}],
+             children = [rsm_elem(#rsm_in{})]}).
+
+check_users_result(Stanza, Name, ItemName, Users) ->
+    ?assertEqual(
+        exml_query:path(Stanza, [{element, Name},
+                                {attr, <<"size">>}]),
+        integer_to_binary(length(Users))),
+    ?assertNotEqual(
+        exml_query:path(Stanza, [{element, Name},
+                                {attr, <<"hash">>}]),
+        undefined),
+    Items = (exml_query:path(Stanza, [{element, Name}]))#xmlel.children,
+    check_users_items(ItemName, Items, Users).
+
+check_users_items(_, [], []) -> ok;
+check_users_items(ItemName, [#xmlel{name = <<"set">>} | Rest], Users) ->
+    check_users_items(ItemName, Rest, Users);
+check_users_items(ItemName, Items, [U|RestUsers]) ->
+    RestItems = lists:filter(
+                  fun(I) ->
+                      not (
+                          I#xmlel.name =:= ItemName andalso
+                          exml_query:path(I, [{attr, <<"jid">>}]) =:=
+                          jid:to_binary(jid:make(U, ?SERVER, <<>>)))
+                  end, Items),
+    ?assert(length(RestItems) =:= length(Items) - 1),
+    check_users_items(ItemName, RestItems, RestUsers).

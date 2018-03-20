@@ -186,6 +186,14 @@ handle_iq_type(From, To, set, <<"retract">>, Attrs, IQ) ->
 handle_iq_type(From, To, get, <<"item_images">>, Attrs, IQ) ->
     handle_access_action(item_images, From, To, Attrs, false, IQ);
 
+% Get a list of guests on the bot
+handle_iq_type(From, _To, get, <<"guests">>, Attrs, IQ) ->
+    handle_owner_action(guests, From, Attrs, false, IQ);
+
+% Get a list of visitors to the bot
+handle_iq_type(From, _To, get, <<"visitors">>, Attrs, IQ) ->
+    handle_guest_action(visitors, From, Attrs, IQ);
+
 handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
 
@@ -215,8 +223,45 @@ perform_owner_action(delete, Bot, _From, _IQ) ->
     {ok, []};
 
 perform_owner_action(subscribers, Bot, _From, IQ) ->
-    wocky_bot_subscription:retrieve_subscribers(Bot, IQ).
+    wocky_bot_subscription:retrieve_subscribers(Bot, IQ);
 
+perform_owner_action(guests,
+                     #{guests_count := Count, guests_hash := Hash} = Bot,
+                     _From, IQ) ->
+    do([error_m ||
+        RSMIn <- rsm_util:get_rsm(IQ),
+        Sorting <- get_sorting(IQ),
+        Query <- {ok, ?wocky_bot:guests_query(Bot)},
+        {Guests, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
+                                    RSMIn, Query, user_id, Sorting)},
+        {ok, users_result(<<"guests">>, make_guests(Guests),
+                          Count, Hash, RSMOut)}
+       ]).
+
+%%%===================================================================
+%%% Actions that require the user to be a guest of the bot
+%%%===================================================================
+
+handle_guest_action(Action, FromJID, Attrs, IQ) ->
+    do([error_m ||
+           Bot <- wocky_bot_util:get_bot_from_node(Attrs),
+           From <- wocky_bot_util:get_user_from_jid(FromJID),
+           wocky_bot_util:check_guest(From, Bot),
+           perform_guest_action(Action, Bot, IQ)
+       ]).
+
+perform_guest_action(visitors,
+                     #{visitors_count := Count, visitors_hash := Hash} = Bot,
+                     IQ) ->
+    do([error_m ||
+        RSMIn <- rsm_util:get_rsm(IQ),
+        Sorting <- get_sorting(IQ),
+        Query <- {ok, ?wocky_bot:visitors_query(Bot)},
+        {Visitors, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
+                                      RSMIn, Query, user_id, Sorting)},
+        {ok, users_result(<<"visitors">>, make_visitors(Visitors),
+                          Count, Hash, RSMOut)}
+       ]).
 
 %%%===================================================================
 %%% Actions that require the user to have access to the bot
@@ -959,6 +1004,24 @@ make_new_id_stanza(NewID) ->
     #xmlel{name = <<"new-id">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = [#xmlcdata{content = NewID}]}.
+
+make_guests(Guests) -> make_user_list(<<"guest">>, Guests).
+make_visitors(Visitors) -> make_user_list(<<"visitor">>, Visitors).
+
+make_user_list(Name, Users) ->
+    [#xmlel{name = Name,
+            attrs = [{<<"jid">>, jid:to_binary(
+                                   jid:make(
+                                     maps:get(user_id, U),
+                                     wocky_xmpp_app:server(), <<>>))}]}
+     || U <- Users].
+
+users_result(Name, UserEls, Size, Hash, RSMOut) ->
+    #xmlel{name = Name,
+           attrs = [{<<"xmlns">>, ?NS_BOT},
+                    {<<"size">>, integer_to_binary(Size)},
+                    {<<"hash">>, Hash}],
+           children = UserEls ++ jlib:rsm_encode(RSMOut)}.
 
 reply_not_allowed(Sender, Stanza) ->
     Err = jlib:make_error_reply(
