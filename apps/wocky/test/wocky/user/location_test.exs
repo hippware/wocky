@@ -114,6 +114,8 @@ defmodule Wocky.User.LocationTest do
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
       assert event == :transition_in
 
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
       assert Sandbox.list_notifications() == []
     end
 
@@ -123,6 +125,8 @@ defmodule Wocky.User.LocationTest do
 
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
       assert event == :transition_in
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
@@ -136,6 +140,8 @@ defmodule Wocky.User.LocationTest do
       refute event.id == to_event.id
       assert event.id == initial_event.id
 
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
       assert Sandbox.list_notifications() == []
     end
 
@@ -145,6 +151,8 @@ defmodule Wocky.User.LocationTest do
 
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event.id == initial_event.id
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
@@ -156,16 +164,21 @@ defmodule Wocky.User.LocationTest do
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
       assert event == :enter
 
-      # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      # assert Enum.count(notifications) == 1
+      assert Bot.subscription(shared.bot, shared.user) == :visitor
+
+     # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+     # assert Enum.count(notifications) == 1
     end
 
     test "who was already inside the bot perimeter", shared do
+      Bot.visit(shared.bot, shared.user)
       initial_event = BotEvent.insert(shared.user, shared.bot, :enter)
       Location.check_for_bot_events(shared.inside_loc, shared.user)
 
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event.id == initial_event.id
+
+      assert Bot.subscription(shared.bot, shared.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
@@ -183,15 +196,20 @@ defmodule Wocky.User.LocationTest do
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event == nil
 
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
       assert Sandbox.list_notifications() == []
     end
 
     test "who was inside the bot perimeter", shared do
+      Bot.visit(shared.user, shared.bot)
       BotEvent.insert(shared.user, shared.bot, :enter)
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
       assert event == :transition_out
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
@@ -205,25 +223,33 @@ defmodule Wocky.User.LocationTest do
       refute event.id == to_event.id
       assert event.id == initial_event.id
 
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
       assert Sandbox.list_notifications() == []
     end
 
     test "who was transitioning out of the bot perimeter", shared do
+      Bot.visit(shared.bot, shared.user)
       initial_event = BotEvent.insert(shared.user, shared.bot, :transition_out)
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event.id == initial_event.id
 
+      assert Bot.subscription(shared.bot, shared.user) == :visitor
+
       assert Sandbox.list_notifications() == []
     end
 
     test "who has transitioned out of the bot perimeter", shared do
+      Bot.visit(shared.bot, shared.user)
       insert_offset_bot_event(shared.user, shared.bot, :transition_out, -80)
       Location.check_for_bot_events(shared.outside_loc, shared.user)
 
       event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
       assert event == :exit
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
 
       # notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       # assert Enum.count(notifications) == 1
@@ -235,6 +261,8 @@ defmodule Wocky.User.LocationTest do
 
       event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
       assert event.id == initial_event.id
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end

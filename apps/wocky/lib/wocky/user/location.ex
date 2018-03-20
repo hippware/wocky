@@ -67,7 +67,7 @@ defmodule Wocky.User.Location do
       user
       |> User.get_guest_subscriptions()
       |> check_for_events(user, loc)
-      |> Enum.each(&maybe_trigger_bot_notification/1)
+      |> Enum.each(&process_bot_events/1)
     end)
 
     loc
@@ -164,8 +164,23 @@ defmodule Wocky.User.Location do
     Timex.diff(Timex.now(), ts, :seconds) >= wait
   end
 
-  defp maybe_trigger_bot_notification({_user, _bot, event}) do
-    if send_notification?(event) do
+  defp process_bot_events({user, bot, be}) do
+    if transition_complete?(be) do
+      maybe_visit_bot(be.event, user, bot)
+      maybe_trigger_bot_notification(user, bot, be)
+    end
+  end
+
+  defp transition_complete?(%BotEvent{event: event}) do
+    Enum.member?([:enter, :exit], event)
+  end
+
+  defp maybe_visit_bot(:enter, user, bot), do: Bot.visit(bot, user)
+
+  defp maybe_visit_bot(:exit, user, bot), do: Bot.depart(bot, user)
+
+  defp maybe_trigger_bot_notification(_user, _bot, _event) do
+    if notifications_enabled?() do
       # TBD
       # event = %BotPerimeterEvent{
       #   user: user,
@@ -175,10 +190,6 @@ defmodule Wocky.User.Location do
 
       # Push.notify_all(bot.user_id, event)
     end
-  end
-
-  defp send_notification?(%BotEvent{event: event}) do
-    notifications_enabled?() && Enum.member?([:enter, :exit], event)
   end
 
   defp notifications_enabled? do
