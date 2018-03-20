@@ -11,9 +11,8 @@ defmodule Wocky.User.BotEvent do
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
-  alias __MODULE__
 
-  defenum EventType, [:enter, :exit]
+  defenum EventType, [:enter, :exit, :transition_in, :transition_out]
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -26,7 +25,7 @@ defmodule Wocky.User.BotEvent do
     belongs_to :bot, Bot
   end
 
-  @type event :: :enter | :exit
+  @type event :: :enter | :exit | :transition_in | :transition_out
   @type t :: %BotEvent{
           id: binary,
           user_id: User.id(),
@@ -36,23 +35,24 @@ defmodule Wocky.User.BotEvent do
 
   @spec get_last_event(User.id(), Bot.id()) :: t | nil
   def get_last_event(user_id, bot_id) do
-    Repo.one(
-      from e in BotEvent,
-        where: e.user_id == ^user_id and e.bot_id == ^bot_id,
-        order_by: [desc: :created_at],
-        limit: 1
-    )
+    user_id
+    |> get_last_event_query(bot_id)
+    |> Repo.one()
   end
 
-  @spec get_last_event_type(User.id(), Bot.id()) :: :enter | :exit | nil
+  @spec get_last_event_type(User.id(), Bot.id()) :: event | nil
   def get_last_event_type(user_id, bot_id) do
-    Repo.one(
-      from e in BotEvent,
-        where: e.user_id == ^user_id and e.bot_id == ^bot_id,
-        select: e.event,
-        order_by: [desc: :created_at],
-        limit: 1
-    )
+    user_id
+    |> get_last_event_query(bot_id)
+    |> select([e], e.event)
+    |> Repo.one()
+  end
+
+  defp get_last_event_query(user_id, bot_id) do
+    from e in BotEvent,
+      where: e.user_id == ^user_id and e.bot_id == ^bot_id,
+      order_by: [desc: :created_at],
+      limit: 1
   end
 
   @spec insert(User.t(), Bot.t(), event) :: t
