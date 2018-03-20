@@ -698,6 +698,27 @@ defmodule Wocky.UserSpec do
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
 
+    describe "get_guest_subscriptions/1" do
+      before do
+        guest = Factory.insert(:bot, user: shared.other_user, geofence: true)
+        disabled = Factory.insert(:bot, user: shared.other_user, geofence: false)
+
+        Bot.subscribe(guest, shared.user, true)
+        Bot.subscribe(disabled, shared.user, true)
+
+        {:ok, guest_bot: guest, disabled_bot: disabled}
+      end
+
+      subject do: User.get_guest_subscriptions(shared.user)
+
+      it do: should(have_count 1)
+      it do: should(have_any &same_bot(&1, shared.guest_bot))
+      it do: should_not(have_any &same_bot(&1, shared.disabled_bot))
+      it do: should_not(have_any &same_bot(&1, shared.subscribed_bot))
+      it do: should_not(have_any &same_bot(&1, shared.owned_bot))
+      it do: should_not(have_any &same_bot(&1, shared.pending_bot))
+    end
+
     describe "bot_count/1" do
       it do: User.bot_count(shared.user) |> should(eq 1)
       it do: User.bot_count(shared.other_user) |> should(eq 4)
