@@ -5,6 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Geofence: geofence bot share (#1325)
+* Geofence: request and response push notifications (#1326)
+* When bot is geofence enabled, bot owner should be a guest (#1346)
+* Geofence: mechanics and entry/exit push notifications (#1324)
+
+
+# 2018.3.20+r483b095
+
 * Geofence: Radius migration (#1317)
 * Remove the code supporting "follow me" functionality (#1334)
 * Speculative fix for missing home stream updates (PR #1340)
