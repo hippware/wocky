@@ -21,13 +21,8 @@ defmodule WockyAPI.Router do
     plug :authenticate
   end
 
-  scope "/" do
+  scope "/graphql" do
     pipe_through :graphql
-
-    forward "/graphiql", Absinthe.Plug.GraphiQL,
-      schema: WockyAPI.Schema,
-      interface: :simple,
-      context: %{pubsub: WockyAPI.Endpoint}
 
     forward "/", Absinthe.Plug, schema: WockyAPI.Schema
   end
