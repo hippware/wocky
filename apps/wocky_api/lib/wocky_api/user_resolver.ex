@@ -9,10 +9,12 @@ defmodule WockyAPI.UserResolver do
   def get_current_user(_root, _args, %{context: %{current_user: user}}) do
     {:ok, user}
   end
+  def get_current_user(_, _, _), do: unauthenticated()
 
   def get_private_user_data(_root, _args, %{context: %{current_user: user}}) do
     {:ok, user}
   end
+  def get_private_user_data(_, _, _), do: unauthenticated()
 
   def update_user(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
@@ -25,6 +27,7 @@ defmodule WockyAPI.UserResolver do
         {:error, "Could not update user"}
     end
   end
+  def update_user(_, _, _), do: unauthenticated()
 
   def get_owned_bots(_root, args, %{context: %{current_user: user}}) do
     user
@@ -39,6 +42,7 @@ defmodule WockyAPI.UserResolver do
   def get_bots(_root, args, %{context: %{current_user: _user}}) do
     Connection.from_list([], args)
   end
+  def get_bots(_, _, _), do: unauthenticated()
 
   def get_bots_total_count(_root, _args, %{context: %{current_user: _user}}) do
     {:ok, 0}
@@ -71,10 +75,12 @@ defmodule WockyAPI.UserResolver do
   def get_home_stream(_root, args, _info) do
     Connection.from_list([], args)
   end
+  def get_home_stream(_, _, _), do: unauthenticated()
 
   def get_conversations(_root, args, _info) do
     Connection.from_list([], args)
   end
+  def get_conversations(_, _, _), do: unauthenticated()
 
   def get_user(_root, args, %{context: %{current_user: _current_user}}) do
     if ID.valid?(args[:id]) do
@@ -86,4 +92,9 @@ defmodule WockyAPI.UserResolver do
       {:error, "Invalid user id: " <> args[:id]}
     end
   end
+  def get_user(_, _, _), do: unauthenticated()
+
+
+  defp unauthenticated,
+  do: {:error, "Query not allowed for unauthenticated users"}
 end

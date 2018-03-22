@@ -4,6 +4,7 @@ defmodule WockyAPI.Schema do
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
+  alias WockyAPI.BotResolver
   alias WockyAPI.UserResolver
 
   object :user do
@@ -37,6 +38,7 @@ defmodule WockyAPI.Schema do
     value :shared
     value :subscribed
     value :guest
+    value :visitor
   end
 
   connection :owned_bots, node_type: :bot do
@@ -65,8 +67,8 @@ defmodule WockyAPI.Schema do
     field :id, non_null(:id)
     field :server, non_null(:string)
     field :title, non_null(:string)
-    field :lat, non_null(:float)
-    field :lon, non_null(:float)
+    field :lat, non_null(:float), do: resolve &BotResolver.get_lat/3
+    field :lon, non_null(:float), do: resolve &BotResolver.get_lon/3
     field :radius, non_null(:float)
     field :description, :string
     field :shortname, :string
@@ -144,10 +146,16 @@ defmodule WockyAPI.Schema do
       resolve &UserResolver.get_conversations/3
     end
 
-    field :user, non_null(:user) do
+    field :user, :user do
       arg :id, non_null(:string)
 
       resolve &UserResolver.get_user/3
+    end
+
+    field :public_bot, :bot do
+      arg :id, non_null(:string)
+
+      resolve &BotResolver.get_public_bot/3
     end
   end
 
