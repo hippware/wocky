@@ -80,13 +80,19 @@ defmodule Wocky.Bot.Subscription do
 
   @spec put(User.t(), Bot.t(), boolean()) :: :ok | no_return
   def put(user, bot, guest \\ false) do
-    %Subscription{}
-    |> changeset(%{user_id: user.id, bot_id: bot.id, guest: guest})
+    %{user_id: user.id, bot_id: bot.id, guest: guest}
+    |> maybe_set_visitor(guest)
+    |> make_changeset()
     |> Repo.insert!(on_conflict: :replace_all,
                     conflict_target: [:user_id, :bot_id])
 
     :ok
   end
+
+  defp maybe_set_visitor(changes, true), do: changes
+  defp maybe_set_visitor(changes, false), do: Map.put(changes, :visitor, false)
+
+  defp make_changeset(changes), do: changeset(%Subscription{}, changes)
 
   @spec clear_guests(Bot.t()) :: :ok
   def clear_guests(bot) do
@@ -97,7 +103,9 @@ defmodule Wocky.Bot.Subscription do
     :ok
   end
 
-  @spec delete(User.t(), Bot.t()) :: :ok
+  @spec delete(User.t(), Bot.t()) :: :ok | {:error, any}
+  def delete(%User{id: id}, %Bot{user_id: id}), do: {:error, :denied}
+
   def delete(user, bot) do
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)
