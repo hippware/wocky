@@ -31,11 +31,10 @@ subscribe(User, Bot, Guest) ->
 %%%===================================================================
 
 unsubscribe(User, Bot) ->
-    case wocky_bot_util:check_owner(Bot, User) of
-        {error, _} ->
-            ?wocky_bot:unsubscribe(Bot, User),
-            {ok, make_subscriber_count_element(Bot)};
+    case ?wocky_bot:unsubscribe(Bot, User) of
         ok ->
+            {ok, make_subscriber_count_element(Bot)};
+        {error, _} ->
             {error, ?ERR_FORBIDDEN}
     end.
 

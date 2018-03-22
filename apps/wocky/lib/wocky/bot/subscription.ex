@@ -103,7 +103,9 @@ defmodule Wocky.Bot.Subscription do
     :ok
   end
 
-  @spec delete(User.t(), Bot.t()) :: :ok
+  @spec delete(User.t(), Bot.t()) :: :ok | {:error, any}
+  def delete(%User{id: id}, %Bot{user_id: id}), do: {:error, :denied}
+
   def delete(user, bot) do
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)

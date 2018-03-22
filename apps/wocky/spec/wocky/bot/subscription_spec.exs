@@ -154,6 +154,13 @@ defmodule Wocky.Bot.SubscriptionSpec do
         end
       end
 
+      context "when the bot owner is trying to unsubscribe" do
+        it "should return an error" do
+          Subscription.delete(shared.owner, shared.bot)
+          |> should(be_error_result())
+        end
+      end
+
       it "should return :ok when the user doesn't exist" do
         user = Factory.build(:user)
 

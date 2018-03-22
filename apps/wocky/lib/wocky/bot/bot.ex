@@ -254,7 +254,7 @@ defmodule Wocky.Bot do
     Subscription.put(user, bot, guest)
   end
 
-  @spec unsubscribe(t, User.t()) :: :ok
+  @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
     Subscription.delete(user, bot)
   end
