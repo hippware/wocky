@@ -251,11 +251,19 @@ defmodule Wocky.Bot do
 
   @spec subscribe(t, User.t(), boolean()) :: :ok | no_return
   def subscribe(bot, user, guest \\ false) do
+    if guest == false && subscription(bot, user) == :visitor do
+      send_visit_notifications(user, bot, :exit)
+    end
+
     Subscription.put(user, bot, guest)
   end
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
+    if subscription(bot, user) == :visitor do
+      send_visit_notifications(user, bot, :exit)
+    end
+
     Subscription.delete(user, bot)
   end
 
