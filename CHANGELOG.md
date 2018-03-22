@@ -5,10 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.21+r9592c13
+
 * Geofence: geofence bot share (#1325)
 * Geofence: request and response push notifications (#1326)
 * When bot is geofence enabled, bot owner should be a guest (#1346)
 * Geofence: mechanics and entry/exit push notifications (#1324)
+* Move graphql endpoint to /graphql.
+  * Unbreak location upload API (#1354)
 
 
 # 2018.3.20+r483b095
