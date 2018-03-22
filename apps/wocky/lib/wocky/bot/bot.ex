@@ -18,6 +18,8 @@ defmodule Wocky.Bot do
   alias Wocky.GeoUtils
   alias Wocky.HomeStream
   alias Wocky.Index
+  alias Wocky.Push
+  alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
@@ -260,11 +262,36 @@ defmodule Wocky.Bot do
   @spec visit(t, User.t()) :: :ok
   def visit(bot, user) do
     Subscription.visit(user, bot)
+    send_visit_notifications(user, bot, :enter)
   end
 
   @spec depart(t, User.t()) :: :ok
   def depart(bot, user) do
     Subscription.depart(user, bot)
+    send_visit_notifications(user, bot, :exit)
+  end
+
+  defp send_visit_notifications(visitor, bot, event) do
+    if visit_notifications_enabled?() do
+      bot
+      |> guests_query()
+      |> Repo.all()
+      |> Enum.each(&send_visit_notification(&1, visitor, bot, event))
+    end
+  end
+
+  defp visit_notifications_enabled? do
+    Application.fetch_env!(:wocky, :enable_bot_event_notifications)
+  end
+
+  defp send_visit_notification(sub, visitor, bot, event) do
+    event = %BotPerimeterEvent{
+      user: visitor,
+      bot: bot,
+      event: event
+    }
+
+    Push.notify_all(sub.user_id, event)
   end
 
   @spec clear_guests(t) :: :ok

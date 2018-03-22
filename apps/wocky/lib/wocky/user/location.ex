@@ -6,8 +6,6 @@ defmodule Wocky.User.Location do
 
   alias Wocky.Bot
   alias Wocky.GeoUtils
-  alias Wocky.Push
-  alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Repo
   alias Wocky.User
   alias Wocky.User.BotEvent
@@ -167,7 +165,6 @@ defmodule Wocky.User.Location do
   defp process_bot_events({user, bot, be}) do
     if transition_complete?(be) do
       maybe_visit_bot(be.event, user, bot)
-      maybe_send_notifications(user, bot, be)
     end
   end
 
@@ -178,27 +175,4 @@ defmodule Wocky.User.Location do
   defp maybe_visit_bot(:enter, user, bot), do: Bot.visit(bot, user)
 
   defp maybe_visit_bot(:exit, user, bot), do: Bot.depart(bot, user)
-
-  defp maybe_send_notifications(visitor, bot, be) do
-    if notifications_enabled?() do
-      bot
-      |> Bot.guests_query()
-      |> Repo.all()
-      |> Enum.each(&send_notification(&1, visitor, bot, be))
-    end
-  end
-
-  defp notifications_enabled? do
-    Application.fetch_env!(:wocky, :enable_bot_event_notifications)
-  end
-
-  defp send_notification(sub, visitor, bot, be) do
-    event = %BotPerimeterEvent{
-      user: visitor,
-      bot: bot,
-      event: be.event
-    }
-
-    Push.notify_all(sub.user_id, event)
-  end
 end
