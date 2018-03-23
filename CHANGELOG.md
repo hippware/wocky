@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Geofence subscription tweaks (PR #1357)
+
+
 # 2018.3.21+r9592c13
 
 * Geofence: geofence bot share (#1325)
