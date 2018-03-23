@@ -1,8 +1,10 @@
 defmodule WockyAPI.Endpoint do
   use Phoenix.Endpoint, otp_app: :wocky_api
 
-  # Not using WebSockets at the moment
-  # socket "/socket", WockyAPI.UserSocket
+  use Absinthe.Phoenix.Endpoint
+
+  # Websocket to enable GraphQL subscription magic
+  socket "/graphql", WockyAPI.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -1,10 +1,15 @@
 defmodule WockyAPI.UserResolver do
   @moduledoc "GraphQL resolver for user objects"
 
+  import Ecto.Query
+
   alias Absinthe.Relay.Connection
+  alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.Repo.ID
+  alias Wocky.Roster
   alias Wocky.User
+  alias WockyAPI.UtilResolver
 
   def get_current_user(_root, _args, %{context: %{current_user: user}}) do
     {:ok, user}
@@ -29,55 +34,54 @@ defmodule WockyAPI.UserResolver do
   end
   def update_user(_, _, _), do: unauthenticated()
 
-  def get_owned_bots(_root, args, %{context: %{current_user: user}}) do
-    user
-    |> User.get_owned_bots()
-    |> Connection.from_list(args)
-  end
+  def get_bots(_root, args, %{context: %{current_user: user}}) do
+    IO.inspect args
+    query = Bot.by_relationship_query(user, args[:relationship])
 
-  def get_owned_bots_total_count(_, _, %{context: %{current_user: user}}) do
-    {:ok, User.bot_count(user)}
-  end
-
-  def get_bots(_root, args, %{context: %{current_user: _user}}) do
-    Connection.from_list([], args)
+    query
+    |> order_by(asc: :updated_at)
+    |> Connection.from_query(&Repo.all/1, args)
+    |> UtilResolver.add_query(query)
   end
   def get_bots(_, _, _), do: unauthenticated()
 
-  def get_bots_total_count(_root, _args, %{context: %{current_user: _user}}) do
-    {:ok, 0}
+  def get_bot_relationships(_root, _args,
+                            %{context: %{current_user: user}} = info) do
+    {:ok, User.get_bot_relationships(user, info.source.node)}
   end
 
-  def get_bot_relationship(_root, _args, %{context: %{current_user: _user}}) do
-    {:ok, :visible}
+  def get_contacts(_root, args,
+                   %{context: %{current_user: requestor},
+                     source: user}) do
+      query = case args[:relationship] do
+        nil -> Roster.all_contacts_query(user.id, requestor.id, false)
+        :friends -> Roster.friends_query(user.id, requestor.id, false)
+        :followers -> Roster.followers_query(user.id, requestor.id, false)
+        :followees -> Roster.followees_query(user.id, requestor.id, false)
+      end
+
+    query
+    |> order_by(asc: :updated_at)
+    |> Connection.from_query(&Repo.all/1, args)
+    |> UtilResolver.add_query(query)
+    |> UtilResolver.add_data(:contact_user, user)
   end
 
-  def get_contacts(_root, args, _info) do
-    Connection.from_list([], args)
+  def get_contact_relationship(
+    _root, _args, info = %{source: %{node: target_user}}) do
+
+      IO.inspect Map.keys(info)
+      IO.inspect info.acc
+      IO.inspect info.fields_cache
+    {:ok, :friend} #Roster.relationship(target_user, target_user)}
   end
 
-  def get_contacts_total_count(_, _args, %{context: %{current_user: _user}}) do
-    {:ok, 0}
-  end
-
-  def get_contacts_follower_count(_, _, %{context: %{current_user: _user}}) do
-    {:ok, 0}
-  end
-
-  def get_contacts_following_count(_, _, %{context: %{current_user: _user}}) do
-    {:ok, 0}
-  end
-
-  def get_contact_relationship(_, _args, %{context: %{current_user: _user}}) do
-    {:ok, :friend}
-  end
-
-  def get_home_stream(_root, args, _info) do
+  def get_home_stream(_root, args, %{context: %{current_user: _user}}) do
     Connection.from_list([], args)
   end
   def get_home_stream(_, _, _), do: unauthenticated()
 
-  def get_conversations(_root, args, _info) do
+  def get_conversations(_root, args, %{context: %{current_user: _user}}) do
     Connection.from_list([], args)
   end
   def get_conversations(_, _, _), do: unauthenticated()
@@ -93,7 +97,6 @@ defmodule WockyAPI.UserResolver do
     end
   end
   def get_user(_, _, _), do: unauthenticated()
-
 
   defp unauthenticated,
   do: {:error, "Query not allowed for unauthenticated users"}

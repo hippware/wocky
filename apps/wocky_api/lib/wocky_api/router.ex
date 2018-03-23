@@ -24,6 +24,15 @@ defmodule WockyAPI.Router do
   scope "/graphql" do
     pipe_through :graphql
 
-    forward "/", Absinthe.Plug, schema: WockyAPI.Schema
+    forward "/", Absinthe.Plug,
+      schema: WockyAPI.Schema
+
+  end
+
+  # Provide a GraphiQL interface in dev mode
+  if Mix.env == :dev do
+    forward "/graphiql", Absinthe.Plug.GraphiQL,
+      schema: WockyAPI.Schema,
+      socket: WockyAPI.UserSocket
   end
 end

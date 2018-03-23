@@ -6,6 +6,7 @@ defmodule WockyAPI.Schema do
 
   alias WockyAPI.BotResolver
   alias WockyAPI.UserResolver
+  alias WockyAPI.UtilResolver
 
   object :user do
     field :id, non_null(:id)
@@ -17,11 +18,13 @@ defmodule WockyAPI.Schema do
     field :tagline, :string
     field :roles, non_null(list_of(non_null(:string)))
 
-    connection field :owned_bots, node_type: :owned_bots do
-      resolve &UserResolver.get_owned_bots/3
+    connection field :bots, node_type: :bots do
+      arg :relationship, non_null(:user_bot_relationship)
+      resolve &UserResolver.get_bots/3
     end
 
     connection field :contacts, node_type: :contacts do
+      arg :relationship, :user_contact_relationship
       resolve &UserResolver.get_contacts/3
     end
   end
@@ -41,24 +44,13 @@ defmodule WockyAPI.Schema do
     value :visitor
   end
 
-  connection :owned_bots, node_type: :bot do
-    field :total_count, :integer do
-      resolve &UserResolver.get_owned_bots_total_count/3
-    end
-    edge do
-      field :relationship, :user_bot_relationship do
-        resolve fn _, _ -> {:ok, :owned} end
-      end
-    end
-  end
-
   connection :bots, node_type: :bot do
     field :total_count, :integer do
-      resolve &UserResolver.get_bots_total_count/3
+      resolve &UtilResolver.get_count/3
     end
     edge do
-      field :relationship, :user_bot_relationship do
-        resolve &UserResolver.get_bot_relationship/3
+      field :relationships, list_of(:user_bot_relationship) do
+        resolve &UserResolver.get_bot_relationships/3
       end
     end
   end
@@ -88,13 +80,7 @@ defmodule WockyAPI.Schema do
 
   connection :contacts, node_type: :user do
     field :total_count, :integer do
-      resolve &UserResolver.get_contacts_total_count/3
-    end
-    field :follower_count, :integer do
-      resolve &UserResolver.get_contacts_follower_count/3
-    end
-    field :following_count, :integer do
-      resolve &UserResolver.get_contacts_following_count/3
+      resolve &UtilResolver.get_count/3
     end
     edge do
       field :relationship, :user_contact_relationship do
@@ -176,6 +162,13 @@ defmodule WockyAPI.Schema do
       end
 
       resolve &UserResolver.update_user/3
+    end
+  end
+
+  subscription do
+    field :bot_added, :bot do
+      config fn _, _ -> {:ok, topic: "bot_added"} end
+      resolve fn bot, _, _ -> {:ok, bot} end
     end
   end
 end

@@ -18,14 +18,10 @@ defmodule WockyAPI.Application do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the endpoint when the application starts
-      supervisor(WockyAPI.Endpoint, [])
-      # Start your own worker by calling:
-      #  WockyAPI.Worker.start_link(arg1, arg2, arg3)
-      # worker(WockyAPI.Worker, [arg1, arg2, arg3]),
+      supervisor(WockyAPI.Endpoint, []),
+      supervisor(Absinthe.Subscription, [WockyAPI.Endpoint]),
     ]
 
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]
     Supervisor.start_link(children, opts)
   end

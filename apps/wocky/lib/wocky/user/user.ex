@@ -431,6 +431,20 @@ defmodule Wocky.User do
     |> Repo.all()
   end
 
+  def get_bot_relationships(user, bot) do
+    sub = Subscription.get(user, bot)
+
+    [:visible]
+    |> maybe_add_rel(bot.user_id == user.id, :owned)
+    |> maybe_add_rel(Share.get(user, bot) != nil, :shared)
+    |> maybe_add_rel(sub != nil, :subscribed)
+    |> maybe_add_rel(sub != nil && sub.guest, :guest)
+    |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
+  end
+
+  defp maybe_add_rel(list, true, rel), do: [rel | list]
+  defp maybe_add_rel(list, false, _rel), do: list
+
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
   defp maybe_send_welcome(%User{email: nil}), do: :ok
 
