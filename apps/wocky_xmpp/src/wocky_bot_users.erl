@@ -13,6 +13,7 @@
 -include("wocky_roster.hrl").
 
 -export([handle_share/3,
+         handle_geofence_share/3,
          notify_new_viewers/4,
          maybe_notify_desc_change/2,
          notify_subscribers_and_watchers/4,
@@ -37,6 +38,11 @@ handle_share(From, To, Bot) ->
         ok -> ok;
         _ -> drop
     end.
+
+handle_geofence_share(_From, _To, none) -> drop;
+handle_geofence_share(From, To, Bot) ->
+    wocky_bot_users:send_geofence_share_notification(
+      ?wocky_user:get_by_jid(From), ?wocky_user:get_by_jid(To), Bot).
 
 check_can_share(Sharer, Bot) ->
     case ?wocky_bot:'public?'(Bot) of

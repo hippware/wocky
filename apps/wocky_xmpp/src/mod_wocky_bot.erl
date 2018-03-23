@@ -547,6 +547,8 @@ handle_bot_stanza(From, To, BotStanza) ->
     case wocky_bot_util:bot_packet_action(BotStanza) of
         {Bot, share} ->
             wocky_bot_users:handle_share(From, To, Bot);
+        {Bot, geofence_share} ->
+            wocky_bot_users:handle_geofence_share(From, To, Bot);
         _ ->
             ok
     end.

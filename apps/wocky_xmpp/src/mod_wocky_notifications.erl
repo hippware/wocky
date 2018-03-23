@@ -76,8 +76,8 @@ make_response(IQ, State) ->
 
 %% user_send_packet --------------------------------------------------
 user_send_packet_hook(Acc, From, To, Packet) ->
-    case notify_type(From, To, Packet) of
-        chat ->
+    case should_notify(From, To, Packet) of
+        true ->
             Body = get_body(Packet),
             Image = get_image(Packet),
             Sender = ?wocky_user:get_by_jid(From),
@@ -94,37 +94,14 @@ user_send_packet_hook(Acc, From, To, Packet) ->
             Result = ?wocky_push:notify_all(To#jid.luser, Event),
             mongoose_acc:put(result, Result, Acc);
 
-        geofence_share ->
-            ID = get_bot_id(Packet),
-            Bot = ?wocky_bot:get(ID),
-            FromUser = ?wocky_user:get_by_jid(From),
-            ToUser = ?wocky_user:get_by_jid(To),
-            Result = wocky_bot_users:send_geofence_share_notification(
-              FromUser, ToUser, Bot),
-            mongoose_acc:put(result, Result, Acc);
-
         _Else ->
             mongoose_acc:put(result, ok, Acc)
     end.
 
-notify_type(_From, To, Packet) ->
-    IsChat =
-        has_destination(To) andalso
-        is_chat_message(Packet) andalso
-        (has_body(Packet) orelse has_image(Packet)),
-
-    IsGeofenceShare =
-        has_destination(To) andalso
-        is_headline_message(Packet) andalso
-        has_geofence_share(Packet) andalso
-        has_valid_bot_id(Packet),
-
-    case {IsChat, IsGeofenceShare} of
-        {true, _} -> chat;
-        {_, true} -> geofence_share;
-        _ -> undefined
-    end.
-
+should_notify(_From, To, Packet) ->
+    has_destination(To) andalso
+    is_chat_message(Packet) andalso
+    (has_body(Packet) orelse has_image(Packet)).
 
 has_destination(#jid{luser = <<>>}) -> false;
 has_destination(_) -> true.
@@ -133,21 +110,6 @@ is_chat_message(#xmlel{name = <<"message">>, attrs = Attrs}) ->
     xml:get_attr_s(<<"type">>, Attrs) =:= <<"chat">>;
 is_chat_message(_) ->
     false.
-
-is_headline_message(#xmlel{name = <<"message">>, attrs = Attrs}) ->
-    xml:get_attr_s(<<"type">>, Attrs) =:= <<"headline">>;
-is_headline_message(_) ->
-    false.
-
-has_geofence_share(Packet) ->
-    exml_query:path(Packet, [{element, <<"bot">>},
-                             {element, <<"action">>},
-                             cdata])
-    =:= <<"geofence share">>.
-
-has_valid_bot_id(Packet) ->
-    V = get_bot_id(Packet),
-    V =/= undefined andalso ?wocky_id:'valid?'(V).
 
 has_body(Packet) ->
     get_body(Packet) =/= <<"">>.
@@ -165,10 +127,6 @@ get_image(Packet) ->
                      cdata],
                     <<"">>).
 
-get_bot_id(Packet) ->
-    exml_query:path(Packet, [{element, <<"bot">>},
-                             {element, <<"id">>},
-                             cdata]).
 
 %% roster_updated ----------------------------------------------------
 roster_updated_hook(
