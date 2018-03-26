@@ -5,7 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.23+r1de2b1c
+
 * Geofence subscription tweaks (PR #1357)
+* Redo geofence share push notification to match standard share (PR #1360)
+  * Verify that multicast addressing works for bot 'geofence' shares (#1358)
 
 
 # 2018.3.21+r9592c13
