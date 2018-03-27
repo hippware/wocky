@@ -437,7 +437,7 @@ defmodule Wocky.Bot do
   end
 
   defp should_update_hs(bot1, bot2) do
-    [:title, :image, :address, :location, :public]
+    [:title, :image, :address, :location, :public, :geofence]
     |> Enum.any?(fn f -> Map.get(bot1, f) != Map.get(bot2, f) end)
   end
 end
