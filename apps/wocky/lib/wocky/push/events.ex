@@ -40,17 +40,18 @@ defmodule Wocky.Push.Events do
     defp do_get_title(%Bot{} = bot), do: bot.title
 
     @doc false
-    def make_uri(type, id \\ nil, server? \\ true) do
+    def make_uri(type, id \\ nil, server? \\ true, suffix \\ "") do
       "#{uri_prefix()}://#{type}"
       |> maybe_add_server(server?)
-      |> maybe_add_id(id)
+      |> maybe_append(id)
+      |> maybe_append(suffix)
     end
 
     defp maybe_add_server(uri, false), do: uri
     defp maybe_add_server(uri, true), do: uri <> "/" <> server()
 
-    defp maybe_add_id(uri, nil), do: uri
-    defp maybe_add_id(uri, id), do: uri <> "/" <> id
+    defp maybe_append(uri, nil), do: uri
+    defp maybe_append(uri, id), do: uri <> "/" <> id
 
     defp server do
       Confex.get_env(:wocky, :wocky_host)
@@ -85,7 +86,8 @@ defmodule Wocky.Push.Events do
       end
     end
 
-    def uri(%BotPerimeterEvent{bot: bot}), do: make_uri(:bot, bot.id)
+    def uri(%BotPerimeterEvent{bot: bot}),
+      do: make_uri(:bot, bot.id, true, "visitors")
   end
 
   defmodule BotShareEvent do

@@ -41,6 +41,7 @@ defmodule Wocky.Push.EventsTest do
       assert uri =~ "/bot"
       assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{b.id}"
+      assert uri =~ "/visitors"
     end
   end
 
