@@ -3,6 +3,7 @@ defmodule WockyAPI.Application do
 
   use Application
 
+  alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
   alias WockyAPI.PhoenixInstrumenter
   alias WockyAPI.PipelineInstrumenter
@@ -23,6 +24,9 @@ defmodule WockyAPI.Application do
     ]
 
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]
+
+    Callbacks.register()
+
     Supervisor.start_link(children, opts)
   end
 

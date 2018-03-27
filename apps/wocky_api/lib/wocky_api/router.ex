@@ -33,6 +33,7 @@ defmodule WockyAPI.Router do
   if Mix.env == :dev do
     forward "/graphiql", Absinthe.Plug.GraphiQL,
       schema: WockyAPI.Schema,
-      socket: WockyAPI.UserSocket
+      socket: WockyAPI.UserSocket,
+      interface: :playground
   end
 end

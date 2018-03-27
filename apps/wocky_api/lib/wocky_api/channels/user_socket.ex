@@ -1,8 +1,10 @@
 defmodule WockyAPI.UserSocket do
   use Phoenix.Socket
 
-   use Absinthe.Phoenix.Socket,
+  use Absinthe.Phoenix.Socket,
     schema: WockyAPI.Schema
+
+  alias Wocky.Account
 
   ## Channels
   # channel "room:*", WockyAPI.RoomChannel
@@ -22,8 +24,18 @@ defmodule WockyAPI.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
-    {:ok, socket}
+  def connect(%{"x-auth-user" => user_id, "x-auth-token" => token}, socket) do
+    case Account.authenticate(:token, "", {user_id, token}) do
+      {:ok, {user, _}} ->
+        {:ok,
+          Absinthe.Phoenix.Socket.put_options(
+            socket, context: %{current_user: user})}
+      {:error, f} ->
+        :error
+    end
+  end
+  def connect(_params, _) do
+    :error
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given

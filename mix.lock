@@ -84,6 +84,7 @@
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
   "kadabra": {:hex, :kadabra, "0.3.7", "23032c7293922df3371d359e74de7b7abd6f6af64837551cc7e72c7bdfd1e123", [:mix], [{:hpack, "~> 0.2.3", [hex: :hpack_erl, repo: "hexpm", optional: false]}, {:scribe, "~> 0.4", [hex: :scribe, repo: "hexpm", optional: true]}], "hexpm"},
   "katana_code": {:hex, :katana_code, "0.1.0", "c34f3926a258d6beacd8d21f140f3d47d175501936431c460b144339d5271a0b", [:rebar3], [{:aleppo, "1.0.0", [hex: :inaka_aleppo, repo: "hexpm", optional: false]}], "hexpm"},
+  "kronky": {:hex, :kronky, "0.5.0", "b2038c267f02b297044cb574f542fa96763278a88b32a97d0c37bde95c63c13b", [:mix], [{:absinthe, "~> 1.3", [hex: :absinthe, repo: "hexpm", optional: false]}, {:ecto, ">= 2.1.4", [hex: :ecto, repo: "hexpm", optional: false]}], "hexpm"},
   "lager": {:hex, :lager, "3.6.1", "9d29c5ff7f926d25ecd9899990867c9152dcf34eee65bac8ec0dfc0d16a26e0c", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
   "lager_logger": {:hex, :lager_logger, "1.0.4", "6b5ccf8cd4836494b5da588e2deedbab17f6703d1f5eb330c0dd918ce1755a56", [:mix], [{:lager, ">= 2.1.0", [hex: :lager, repo: "hexpm", optional: false]}], "hexpm"},
   "lasse": {:hex, :lasse, "1.1.0", "b1d8b9a528c5df4423256e52fee9b8f9a4a48096bb384fb5d4a7e483eb8dcacb", [:make], [], "hexpm"},

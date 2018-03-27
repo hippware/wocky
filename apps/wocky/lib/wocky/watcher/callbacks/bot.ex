@@ -14,7 +14,6 @@ defmodule Wocky.Watcher.Callbacks.Bot do
 
   def handle_insert(%Event{action: :insert, new: new}) do
     update_owner_subscription(new)
-    Absinthe.Subscription.publish(WockyAPI.Endpoint, new, [bot_added: "bot_added"])
   end
 
   def handle_update(%Event{action: :update, old: old, new: new}) do
