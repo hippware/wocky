@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Append /visitors to bot perimeter event url (#1363)
+
+
 # 2018.3.23+r1de2b1c
 
 * Geofence subscription tweaks (PR #1357)
