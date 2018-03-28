@@ -921,7 +921,9 @@ share_multicast(Config) ->
         % Tim can now see the bot
         expect_iq_success(retrieve_stanza(), Tim),
 
-        1 = length(list_notifications()),
+        [N] = list_notifications(),
+        ?assert(
+           binary:match(extract_alert_body(N), <<"shared a bot">>) =/= nomatch),
 
         test_helper:ensure_all_clean([Alice, Tim])
       end).
@@ -931,7 +933,7 @@ geofence_share(Config) ->
     clear_notifications(),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
-        set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, [?BOT]),
+        set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
         timer:sleep(400),
 
         set_notifications(true, Tim),
@@ -943,9 +945,15 @@ geofence_share(Config) ->
 
         timer:sleep(400),
 
-        1 = length(list_notifications()),
+        [N] = list_notifications(),
+        ?assert(
+           binary:match(extract_alert_body(N),
+                        <<"wants to know">>) =/= nomatch),
 
         unwatch_hs(Tim),
+
+        % Tim can now see the bot
+        expect_iq_success(retrieve_stanza(), Tim),
 
         test_helper:ensure_all_clean([Alice, Tim])
     end).
@@ -1950,3 +1958,8 @@ check_users_items(ItemName, Items, [U|RestUsers]) ->
                   end, Items),
     ?assert(length(RestItems) =:= length(Items) - 1),
     check_users_items(ItemName, RestItems, RestUsers).
+
+extract_alert_body(#{payload := #{<<"aps">> := #{<<"alert">> := Body}}}) ->
+    Body;
+extract_alert_body(_) ->
+    ct:fail(alert_not_found).

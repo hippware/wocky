@@ -8,7 +8,8 @@ defmodule Wocky.Bot.ShareSpec do
 
   describe "validation" do
     let :valid_attrs,
-      do: %{bot_id: ID.new(), user_id: ID.new(), sharer_id: ID.new()}
+      do: %{bot_id: ID.new(), user_id: ID.new(),
+        sharer_id: ID.new(), geofence: true}
 
     it "should pass with valid attributes" do
       %Share{}
@@ -19,7 +20,7 @@ defmodule Wocky.Bot.ShareSpec do
     it "should fail with missing attributes" do
       %Share{}
       |> Share.changeset(%{})
-      |> should(have_errors [:bot_id, :user_id, :sharer_id])
+      |> should(have_errors [:bot_id, :user_id, :sharer_id, :geofence])
     end
 
     describe "converting foreign key constraints to errors" do

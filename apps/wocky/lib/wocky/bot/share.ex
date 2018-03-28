@@ -16,6 +16,7 @@ defmodule Wocky.Bot.Share do
   schema "bot_shares" do
     field :user_id, :binary_id, primary_key: true
     field :bot_id, :binary_id, primary_key: true
+    field :geofence, :boolean
 
     timestamps()
 
@@ -29,8 +30,8 @@ defmodule Wocky.Bot.Share do
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
-    |> cast(params, [:user_id, :bot_id, :sharer_id])
-    |> validate_required([:user_id, :bot_id, :sharer_id])
+    |> cast(params, [:user_id, :bot_id, :sharer_id, :geofence])
+    |> validate_required([:user_id, :bot_id, :sharer_id, :geofence])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:bot_id)
     |> foreign_key_constraint(:sharer_id)
@@ -46,10 +47,15 @@ defmodule Wocky.Bot.Share do
     Repo.get_by(Share, user_id: user.id, bot_id: bot.id)
   end
 
-  @spec put(User.t(), Bot.t(), User.t()) :: :ok | no_return
-  def put(user, bot, from) do
+  @spec put(User.t(), Bot.t(), User.t(), boolean) :: :ok | no_return
+  def put(user, bot, from, geofence \\ false) do
     %Share{}
-    |> changeset(%{bot_id: bot.id, user_id: user.id, sharer_id: from.id})
+    |> changeset(%{
+      bot_id: bot.id,
+      user_id: user.id,
+      sharer_id: from.id,
+      geofence: geofence
+    })
     |> Repo.insert!(on_conflict: :nothing, conflict_target: [:user_id, :bot_id])
 
     :ok

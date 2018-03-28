@@ -81,7 +81,8 @@ defmodule Wocky.Repo.Factory do
     %Share{
       user: build(:user),
       bot: build(:bot),
-      sharer: build(:user)
+      sharer: build(:user),
+      geofence: false
     }
   end
 
