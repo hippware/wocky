@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Append /visitors to bot perimeter event url (#1363)
+* Notify HS if a referenced bot's geofence field changes (#1367)
 
 
 # 2018.3.23+r1de2b1c
