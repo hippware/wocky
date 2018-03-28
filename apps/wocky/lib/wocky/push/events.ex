@@ -32,7 +32,7 @@ defmodule Wocky.Push.Events do
       case do_get_title(obj) do
         nil -> "Somewhere"
         "" -> "Somewhere"
-        title -> "@" <> title
+        title -> title
       end
     end
 
