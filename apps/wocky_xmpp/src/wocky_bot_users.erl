@@ -26,23 +26,22 @@
 %%% Action - bot shared
 %%%===================================================================
 
-handle_share(_From, _To, none) -> drop;
-handle_share(From, To, Bot) ->
-    Result = do([error_m ||
-                 Sharer <- wocky_bot_util:get_user_from_jid(From),
-                 check_can_share(Sharer, Bot),
-                 Recipient <- wocky_bot_util:get_user_from_jid(To),
-                 ?wocky_share:put(Recipient, Bot, Sharer)
-                ]),
-    case Result of
+handle_share(From, To, Bot) -> share_common(From, To, Bot, false).
+
+handle_geofence_share(From, To, Bot) -> share_common(From, To, Bot, true).
+
+share_common(_From, _To, none, _Geofence) -> drop;
+share_common(From, To, Bot, Geofence) ->
+    R = do([error_m ||
+        Sharer <- wocky_bot_util:get_user_from_jid(From),
+        check_can_share(Sharer, Bot),
+        Recipient <- wocky_bot_util:get_user_from_jid(To),
+        ?wocky_share:put(Recipient, Bot, Sharer, Geofence)
+       ]),
+    case R of
         ok -> ok;
         _ -> drop
     end.
-
-handle_geofence_share(_From, _To, none) -> drop;
-handle_geofence_share(From, To, Bot) ->
-    wocky_bot_users:send_geofence_share_notification(
-      ?wocky_user:get_by_jid(From), ?wocky_user:get_by_jid(To), Bot).
 
 check_can_share(Sharer, Bot) ->
     case ?wocky_bot:'public?'(Bot) of
