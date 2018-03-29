@@ -13,7 +13,7 @@ defmodule WockyAPI.Callbacks.BotSubscription do
   end
 
   def handle_update(%Event{action: :update, old: old, new: new}) do
-    if old.visit != new.visit do
+    if old.visitor != new.visitor do
       AbsintheSub.publish(Endpoint, new, [bot_visitors: new.id])
     end
   end
