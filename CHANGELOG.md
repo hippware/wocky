@@ -5,10 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.29+r6558ce9
+
 * Append /visitors to bot perimeter event url (#1363)
 * Notify HS if a referenced bot's geofence field changes (#1367)
 * Geofence bot share should impart view access (#1368)
 * Geofence related push notifications should not prefix bot with '@' (#1373)
+* Implement full bots functionality in GraphQL (#1335)
 
 
 # 2018.3.23+r1de2b1c
