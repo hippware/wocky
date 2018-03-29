@@ -47,11 +47,11 @@ defmodule WockyAPI.Mixfile do
     [
       {:wocky, in_umbrella: true},
       {:absinthe_phoenix, "~> 1.4"},
+      {:absinthe_relay, "~> 1.4"},
       {:absinthe_ecto, "~> 0.1.3"},
       {:cowboy, "~> 1.0"},
       {:honeybadger, "~> 0.6"},
       {:httpoison, "~> 0.13"},
-      # {:ok, "~> 1.2", runtime: false},
       {:phoenix, "~> 1.3"},
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_pubsub, "~> 1.0"},
@@ -64,7 +64,8 @@ defmodule WockyAPI.Mixfile do
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
-      {:reprise, "~> 0.5", only: :dev}
+      {:reprise, "~> 0.5", only: :dev},
+      {:kronky, "~> 0.5.0"},
     ]
   end
 

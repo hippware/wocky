@@ -161,6 +161,12 @@ defmodule Wocky.Roster do
     |> Repo.all()
   end
 
+  @spec all_contacts_query(User.id(), User.id(), boolean) :: Queryable.t()
+  def all_contacts_query(user_id, requester_id, include_system \\ true) do
+    relationships_query(user_id, requester_id, [:both, :from, :to],
+                        include_system)
+  end
+
   @spec followers_query(User.id(), User.id(), boolean) :: Queryable.t()
   def followers_query(user_id, requester_id, include_system \\ true) do
     relationships_query(user_id, requester_id, [:both, :from], include_system)

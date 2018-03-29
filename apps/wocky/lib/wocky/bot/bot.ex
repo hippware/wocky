@@ -317,6 +317,37 @@ defmodule Wocky.Bot do
     Subscription.visitors_query(bot)
   end
 
+  @spec by_relationship_query(User.t(), atom()) :: Ecto.Queryable.t()
+  def by_relationship_query(user, :visible) do
+    Bot
+    |> Bot.is_visible_query(user)
+  end
+
+  def by_relationship_query(user, :owned) do
+    User.owned_bots_query(user)
+  end
+
+  def by_relationship_query(user, :shared) do
+    Bot
+    |> join(:inner, [b], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
+  end
+
+  def by_relationship_query(user, :subscribed) do
+    Bot
+    |> join(:inner, [b], s in Subscription,
+            b.id == s.bot_id and s.user_id == ^user.id)
+  end
+
+  def by_relationship_query(user, :guest) do
+    by_relationship_query(user, :subscribed)
+    |> where([..., s], s.guest)
+  end
+
+  def by_relationship_query(user, :visitor) do
+    by_relationship_query(user, :subscribed)
+    |> where([..., s], s.visitor)
+  end
+
   @spec subscribers_query(t, boolean()) :: [User.t()]
   def subscribers_query(bot, include_owner \\ true) do
     q = Ecto.assoc(bot, :subscribers)

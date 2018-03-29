@@ -52,6 +52,12 @@ defmodule Wocky.Bot.Subscription do
     Repo.get_by(Subscription, user_id: user.id, bot_id: bot.id)
   end
 
+  @spec subscribers_query(Bot.t()) :: Queryable.t()
+  def subscribers_query(bot) do
+    Subscription
+    |> where(bot_id: ^bot.id)
+  end
+
   @spec visitors_query(Bot.t()) :: Queryable.t()
   def visitors_query(bot) do
     Subscription

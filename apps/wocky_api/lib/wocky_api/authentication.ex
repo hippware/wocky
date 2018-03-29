@@ -8,7 +8,13 @@ defmodule WockyAPI.Authentication do
   def authenticate(conn, _opts \\ []) do
     user_id = conn |> get_req_header("x-auth-user") |> List.first()
     token = conn |> get_req_header("x-auth-token") |> List.first()
+    do_authenticate(conn, user_id, token)
+  end
 
+  # Anonymous user - limited access
+  defp do_authenticate(conn, nil, nil), do: conn
+
+  defp do_authenticate(conn, user_id, token) do
     case Account.authenticate(:token, "", {user_id, token}) do
       {:ok, {user, _}} ->
         conn
