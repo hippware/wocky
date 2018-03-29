@@ -37,20 +37,25 @@ defmodule WockyAPI.UserResolver do
     |> UtilResolver.add_edge_parent(user)
   end
 
-  def get_bot_relationships(_root, _args,
-                            %{context: %{current_user: user}} = info) do
+  def get_bot_relationships(
+        _root,
+        _args,
+        %{context: %{current_user: user}} = info
+      ) do
     {:ok, User.get_bot_relationships(info.source.parent, info.source.node)}
   end
 
-  def get_contacts(_root, args,
-                   %{context: %{current_user: requestor},
-                     source: user}) do
-    query = case args[:relationship] do
-      nil -> Roster.all_contacts_query(user.id, requestor.id, false)
-      :friends -> Roster.friends_query(user.id, requestor.id, false)
-      :followers -> Roster.followers_query(user.id, requestor.id, false)
-      :followees -> Roster.followees_query(user.id, requestor.id, false)
-    end
+  def get_contacts(_root, args, %{
+        context: %{current_user: requestor},
+        source: user
+      }) do
+    query =
+      case args[:relationship] do
+        nil -> Roster.all_contacts_query(user.id, requestor.id, false)
+        :friends -> Roster.friends_query(user.id, requestor.id, false)
+        :followers -> Roster.followers_query(user.id, requestor.id, false)
+        :followees -> Roster.followees_query(user.id, requestor.id, false)
+      end
 
     query
     |> order_by(asc: :updated_at)
@@ -59,9 +64,9 @@ defmodule WockyAPI.UserResolver do
     |> UtilResolver.add_edge_parent(user)
   end
 
-  def get_contact_relationship(
-    _root, _args, %{source: %{node: target_user, parent: parent}}) do
-
+  def get_contact_relationship(_root, _args, %{
+        source: %{node: target_user, parent: parent}
+      }) do
     {:ok, Roster.relationship(parent, target_user)}
   end
 

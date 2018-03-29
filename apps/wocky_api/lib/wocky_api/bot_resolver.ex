@@ -33,12 +33,14 @@ defmodule WockyAPI.BotResolver do
 
   def insert_bot(_root, args, %{context: %{current_user: user}}) do
     input = parse_lat_lon(args[:bot])
+
     case args[:id] do
       nil ->
         input
         |> Map.put(:id, ID.new())
         |> Map.put(:user_id, user.id)
         |> Bot.insert()
+
       id ->
         update_bot(id, input, user)
     end
@@ -54,6 +56,7 @@ defmodule WockyAPI.BotResolver do
   defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
     Map.put(input, :location, GeoUtils.point(lat, lon))
   end
+
   defp parse_lat_lon(input), do: input
 
   def get_items(_root, args, %{source: bot}) do
@@ -66,13 +69,12 @@ defmodule WockyAPI.BotResolver do
   end
 
   def get_subscribers(_root, args, %{source: bot}) do
-    IO.inspect _root
-    IO.inspect bot
-    subscriber_query = case args[:type] do
-      :subscriber -> Subscription.subscribers_query(bot)
-      :guest -> Subscription.guests_query(bot)
-      :visitor -> Subscription.visitors_query(bot)
-    end
+    subscriber_query =
+      case args[:type] do
+        :subscriber -> Subscription.subscribers_query(bot)
+        :guest -> Subscription.guests_query(bot)
+        :visitor -> Subscription.visitors_query(bot)
+      end
 
     subscriber_query
     |> order_by(asc: :updated_at)
@@ -81,16 +83,16 @@ defmodule WockyAPI.BotResolver do
     |> UtilResolver.extract_nodes(:user, :subscription)
     |> UtilResolver.add_query(subscriber_query)
     |> UtilResolver.add_data(:bot, bot)
-    |> IO.inspect
   end
 
   def get_subscription_type(_root, _args, %{source: %{subscription: sub}}) do
-    type = cond do
-      sub.visitor -> :visitor
-      sub.guest -> :guest
-      true -> :subscriber
-    end
+    type =
+      cond do
+        sub.visitor -> :visitor
+        sub.guest -> :guest
+        true -> :subscriber
+      end
+
     {:ok, type}
   end
-
 end
