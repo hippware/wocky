@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.3.29+r5cb3244
+
+* RuntimeError: DB Watcher callback crash (#1378, #1380)
+
+
 # 2018.3.29+r6558ce9
 
 * Append /visitors to bot perimeter event url (#1363)
