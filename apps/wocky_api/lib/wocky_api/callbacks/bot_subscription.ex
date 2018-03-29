@@ -16,7 +16,7 @@ defmodule WockyAPI.Callbacks.BotSubscription do
   def handle_update(%Event{action: :update, old: old, new: new}) do
     if old.visitor != new.visitor do
       sub = Repo.preload(new, [:bot])
-      if (sub.bot != nil) do
+      if sub.bot != nil do
         AbsintheSub.publish(Endpoint, sub.bot, [bot_visitors: sub.bot.id])
       end
     end
