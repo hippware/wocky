@@ -121,6 +121,12 @@ defmodule WockyAPI.Schema do
     # ...
   end
 
+  object :location do
+    field :lat, non_null(:float)
+    field :lon, non_null(:float)
+    field :accuracy, non_null(:float)
+  end
+
   connection :home_stream, node_type: :home_stream_item do
     field :total_count, non_null(:integer) do
       resolve &UtilResolver.get_count/3
@@ -215,6 +221,24 @@ defmodule WockyAPI.Schema do
     end
   end
 
+  input_object :set_location_params do
+    field :resource, non_null(:string)
+    field :lat, non_null(:float)
+    field :lon, non_null(:float)
+    field :accuracy, non_null(:float)
+  end
+
+  payload_object(:location_payload, :location)
+
+  object :location_mutations do
+    field :set_location, type: :location_payload do
+      arg :location, non_null(:set_location_params)
+      resolve &UserResolver.set_location/3
+      middleware &UtilResolver.fix_changeset/2
+      middleware &build_payload/2
+    end
+  end
+
   query do
     field :current_user, non_null(:user) do
       resolve &UserResolver.get_current_user/3
@@ -243,6 +267,7 @@ defmodule WockyAPI.Schema do
   mutation do
     import_fields :user_mutations
     import_fields :bot_mutations
+    import_fields :location_mutations
   end
 
   subscription do

@@ -9,6 +9,7 @@ defmodule WockyAPI.UserResolver do
   alias Wocky.Repo.ID
   alias Wocky.Roster
   alias Wocky.User
+  alias Wocky.User.Location
   alias WockyAPI.UtilResolver
 
   def get_current_user(_root, _args, %{context: %{current_user: user}}) do
@@ -37,12 +38,8 @@ defmodule WockyAPI.UserResolver do
     |> UtilResolver.add_edge_parent(user)
   end
 
-  def get_bot_relationships(
-        _root,
-        _args,
-        %{context: %{current_user: user}} = info
-      ) do
-    {:ok, User.get_bot_relationships(info.source.parent, info.source.node)}
+  def get_bot_relationships(_root, _args, %{source: source}) do
+    {:ok, User.get_bot_relationships(source.parent, source.node)}
   end
 
   def get_contacts(_root, args, %{
@@ -88,4 +85,11 @@ defmodule WockyAPI.UserResolver do
       {:error, "Invalid user id: " <> args[:id]}
     end
   end
+
+  def set_location(_root, args, %{context: %{current_user: user}}) do
+    location = args[:location]
+    Location.insert(user, location[:resource], location[:lat],
+                    location[:lon], location[:accuracy])
+  end
+
 end
