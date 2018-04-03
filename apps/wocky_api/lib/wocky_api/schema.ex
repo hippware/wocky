@@ -94,7 +94,7 @@ defmodule WockyAPI.Schema do
     end
 
     connection field :subscribers, node_type: :subscribers do
-      arg :type, :subscription_type
+      arg :type, non_null(:subscription_type)
       resolve &BotResolver.get_subscribers/3
     end
   end
@@ -106,7 +106,7 @@ defmodule WockyAPI.Schema do
   end
 
   connection :contacts, node_type: :user do
-    field :total_count, :integer do
+    field :total_count, non_null(:integer) do
       resolve &UtilResolver.get_count/3
     end
     edge do
@@ -122,7 +122,7 @@ defmodule WockyAPI.Schema do
   end
 
   connection :home_stream, node_type: :home_stream_item do
-    field :total_count, :integer do
+    field :total_count, non_null(:integer) do
       resolve &UtilResolver.get_count/3
     end
     edge do
@@ -135,7 +135,7 @@ defmodule WockyAPI.Schema do
   end
 
   connection :conversations, node_type: :conversation do
-    field :total_count, :integer do
+    field :total_count, non_null(:integer) do
       resolve &UtilResolver.get_count/3
     end
     edge do
@@ -149,7 +149,7 @@ defmodule WockyAPI.Schema do
   end
 
   connection :bot_items, node_type: :bot_item do
-    field :total_count, :integer do
+    field :total_count, non_null(:integer) do
       resolve &UtilResolver.get_count/3
     end
     edge do
@@ -157,7 +157,7 @@ defmodule WockyAPI.Schema do
   end
 
   connection :subscribers, node_type: :user do
-    field :total_count, :integer do
+    field :total_count, non_null(:integer) do
       resolve &UtilResolver.get_count/3
     end
     edge do
@@ -228,7 +228,7 @@ defmodule WockyAPI.Schema do
 
     # TODO: Implement blocking handling for this
     field :user, :user do
-      arg :id, non_null(:string)
+      arg :id, non_null(:id)
       resolve &UserResolver.get_user/3
     end
 
@@ -249,7 +249,7 @@ defmodule WockyAPI.Schema do
     field :bot_visitors, non_null(:bot) do
       arg :id, non_null(:id)
 
-      config fn args, a -> {:ok, topic: args.id} end
+      config fn args, _ -> {:ok, topic: args.id} end
     end
   end
 

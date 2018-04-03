@@ -24,7 +24,7 @@ defmodule WockyAPI.UtilResolver do
   def add_data({:ok, source}, key, value),
     do: {:ok, Map.put(source, key, value)}
 
-  def add_edge_parent({:error, _} = r, _, _), do: r
+  def add_edge_parent({:error, _} = r, _), do: r
 
   def add_edge_parent({:ok, connection}, parent) do
     {:ok,
