@@ -3,12 +3,10 @@ defmodule WockyAPI.BotTest do
 
   alias Faker.Lorem
   alias Wocky.Account
-  alias Wocky.Blocking
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
