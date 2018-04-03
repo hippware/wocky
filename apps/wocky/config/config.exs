@@ -8,6 +8,8 @@ config :wocky,
   # location processing
   enable_bot_event_notifications: true,
   async_location_processing: false,
+  enter_debounce_seconds: {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
+  exit_debounce_seconds: {:system, :integer, "WOCKY_EXIT_DEBOUNCE_SECONDS", 30},
 
   # TROS file storage in test storage system
   tros_backend: Wocky.TROS.TestStore,
