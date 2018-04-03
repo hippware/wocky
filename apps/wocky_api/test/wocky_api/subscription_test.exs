@@ -34,7 +34,7 @@ defmodule WockyAPI.SubscriptionTest do
       }
     }
     """
-
+    @tag :skip
     test "visitor count changes", %{socket: socket, user2: user2, bot: bot} do
       ref = push_doc(socket, @subscription, variables: %{id: bot.id})
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 500
