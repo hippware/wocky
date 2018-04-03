@@ -49,11 +49,11 @@ defmodule WockyAPI.SubscriptionTest do
       end
 
       Bot.visit(bot, user2)
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
       assert push == expected.(1)
 
       Bot.depart(bot, user2)
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
       assert push == expected.(0)
     end
   end
