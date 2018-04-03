@@ -15,7 +15,7 @@ defmodule WockyAPI.BotResolver do
   def get_public_bot(_root, args, _info) do
     case Bot.get(args[:id]) do
       bot = %Bot{public: true} -> {:ok, bot}
-      _ -> {:error, "Bot not found: " <> args[:id]}
+      _ -> not_found_error(args[:id])
     end
   end
 
@@ -95,4 +95,15 @@ defmodule WockyAPI.BotResolver do
 
     {:ok, type}
   end
+
+  def subscribe(_root, args, %{context: %{current_user: user}}) do
+    case Bot.get(args[:id]) do
+      nil -> not_found_error(args[:id])
+      bot ->
+        Bot.subscribe(bot, user, args[:guest] || false)
+        {:ok, true}
+    end
+  end
+
+  defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
 end
