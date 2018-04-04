@@ -30,7 +30,7 @@ defmodule WockyAPI.UserSocket do
         {:ok,
           Absinthe.Phoenix.Socket.put_options(
             socket, context: %{current_user: user})}
-      {:error, f} ->
+      {:error, _} ->
         :error
     end
   end

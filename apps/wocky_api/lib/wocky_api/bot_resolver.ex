@@ -10,18 +10,63 @@ defmodule WockyAPI.BotResolver do
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.ID
+  alias Wocky.User
   alias WockyAPI.UtilResolver
 
-  def get_public_bot(_root, args, _info) do
-    case Bot.get(args[:id]) do
-      bot = %Bot{public: true} -> {:ok, bot}
-      _ -> {:error, "Bot not found: " <> args[:id]}
-    end
+  def get_bot(_root, args, %{context: context}) do
+    {:ok,
+      args[:id]
+      |> Bot.get_query()
+      |> visible_query(Map.get(context, :current_user))
+      |> Repo.one()
+    }
   end
 
-  def get_bot(_root, args, %{context: %{current_user: _}}) do
-    {:ok, Bot.get(args[:id])}
+  def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do
+    do_get_bots(user, requestor, args)
   end
+  def get_bots(_root, args, %{context: %{current_user: user}}) do
+    do_get_bots(user, user, args)
+  end
+  def get_bots(%User{} = user, args, _info) do
+    do_get_bots(user, nil, args)
+  end
+
+  defp do_get_bots(_user, _requestor, %{id: _, relationship: _}) do
+    {:error, "Only one of 'id' or 'relationship' may be specified"}
+  end
+  defp do_get_bots(user, requestor, %{id: id} = args) do
+    query =
+      id
+      |> Bot.get_query()
+      |> visible_query(requestor)
+
+    query
+    |> order_by(asc: :updated_at)
+    |> Connection.from_query(&Repo.all/1, args)
+    |> UtilResolver.add_query(query)
+    |> UtilResolver.add_edge_parent(user)
+  end
+  defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
+    query =
+      user
+      |> Bot.by_relationship_query(relationship)
+      |> visible_query(requestor)
+
+    query
+    |> order_by(asc: :updated_at)
+    |> Connection.from_query(&Repo.all/1, args)
+    |> UtilResolver.add_query(query)
+    |> UtilResolver.add_edge_parent(user)
+  end
+  defp do_get_bots(_user, _requestor, _args) do
+    {:error, "Either 'id' or 'relationship' must be specified"}
+  end
+
+  def get_bot_relationships(source, _args, _info) do
+    {:ok, User.get_bot_relationships(source.parent, source.node)}
+  end
+
 
   def get_lat(_root, _args, info) do
     {:ok, Bot.lat(info.source)}
@@ -94,5 +139,34 @@ defmodule WockyAPI.BotResolver do
       end
 
     {:ok, type}
+  end
+
+  def subscribe(_root, args, %{context: %{current_user: user}}) do
+    case Bot.get(args[:id]) do
+      nil -> not_found_error(args[:id])
+      bot ->
+        Bot.subscribe(bot, user, args[:guest] || false)
+        {:ok, true}
+    end
+  end
+
+  def unsubscribe(_root, args, %{context: %{current_user: user}}) do
+    case Bot.get(args[:id]) do
+      nil -> not_found_error(args[:id])
+      bot ->
+        Bot.unsubscribe(bot, user)
+        {:ok, true}
+    end
+  end
+
+  defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
+
+  defp visible_query(query, nil) do
+    query
+    |> Bot.is_public_query()
+  end
+  defp visible_query(query, user) do
+    query
+    |> Bot.is_visible_query(user)
   end
 end

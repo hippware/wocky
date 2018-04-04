@@ -70,7 +70,7 @@ defmodule Wocky.Blocking do
   blocked by the supplied user.
   """
   @spec object_visible_query(Queryable.t(), User.id(), atom) :: Queryable.t()
-  def object_visible_query(query, requester_id, owner_field) do
+  def object_visible_query(query, requester_id, owner_field \\ :user_id) do
     query
     |> join(
       :left,

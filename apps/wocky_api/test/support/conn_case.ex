@@ -14,6 +14,7 @@ defmodule WockyAPI.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+  use Phoenix.ConnTest
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
@@ -23,6 +24,7 @@ defmodule WockyAPI.ConnCase do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
       import WockyAPI.Router.Helpers
+      import WockyAPI.ConnHelper
 
       # The default endpoint for testing
       @endpoint WockyAPI.Endpoint
