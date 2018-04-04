@@ -1,9 +1,11 @@
 defmodule WockyAPI.SubscriptionTest do
-  use WockyAPI.SubscriptionCase
+  use WockyAPI.SubscriptionCase, async: false
 
   alias Wocky.Bot
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Bot.Subscription
+  alias Wocky.User
   alias Wocky.Watcher.Client
 
   describe "watch for visitor count change" do
@@ -11,10 +13,15 @@ defmodule WockyAPI.SubscriptionTest do
       Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
       Application.start(:wocky_db_watcher)
       Client.start_link()
-
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot, public: true)
       Subscription.put(user2, bot)
+
+      on_exit(fn ->
+        Application.stop(:wocky_db_watcher)
+        Repo.delete_all(User)
+      end)
+
       {:ok, user2: user2, bot: bot}
     end
 
