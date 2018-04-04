@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Fix a graphql crash (#1384)
+* Make enter/exit debounce configurable and set to 0 on testing (#1383, PR #1390)
 
 
 # 2018.3.29+r5cb3244
