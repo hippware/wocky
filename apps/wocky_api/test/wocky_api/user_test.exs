@@ -87,7 +87,7 @@ defmodule WockyAPI.UserTest do
   describe "user bots" do
     setup %{user: user, user2: user2} do
       bot = Factory.insert(:bot, user: user)
-      bot2 = Factory.insert(:bot, user: user2)
+      bot2 = Factory.insert(:bot, user: user2, public: true)
 
       {:ok, bot: bot, bot2: bot2}
     end
