@@ -5,8 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.4+r9d2357b
+
 * Fix a graphql crash (#1384)
 * Make enter/exit debounce configurable and set to 0 on testing (#1383, PR #1390)
+* Other graphql changes (PR #1392).
+  * Add setLocation and subscription mutations.
 
 
 # 2018.3.29+r5cb3244
