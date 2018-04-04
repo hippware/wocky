@@ -23,6 +23,7 @@ defmodule WockyAPI.ConnCase do
     quote do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
+      import WockyAPI.Router.Helpers
       import WockyAPI.ConnHelper
 
       # The default endpoint for testing
