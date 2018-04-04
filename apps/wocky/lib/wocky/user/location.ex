@@ -12,9 +12,6 @@ defmodule Wocky.User.Location do
 
   require Logger
 
-  @enter_debounce_seconds 120
-  @exit_debounce_seconds 60
-
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_locations" do
@@ -128,7 +125,8 @@ defmodule Wocky.User.Location do
         :roll_back
 
       :transition_in ->
-        if debounce_expired?(be.created_at, @enter_debounce_seconds) do
+        debounce = Confex.get_env(:wocky, :enter_debounce_seconds)
+        if debounce_expired?(be.created_at, debounce) do
           :enter
         else
           :no_change
@@ -150,7 +148,8 @@ defmodule Wocky.User.Location do
         :roll_back
 
       :transition_out ->
-        if debounce_expired?(be.created_at, @exit_debounce_seconds) do
+        debounce = Confex.get_env(:wocky, :exit_debounce_seconds)
+        if debounce_expired?(be.created_at, debounce) do
           :exit
         else
           :no_change
