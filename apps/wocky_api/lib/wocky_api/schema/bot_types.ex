@@ -9,7 +9,6 @@ defmodule WockyAPI.Schema.BotTypes do
   import Kronky.Payload
 
   alias WockyAPI.BotResolver
-  alias WockyAPI.UserResolver
   alias WockyAPI.UtilResolver
 
   connection :bots, node_type: :bot do
@@ -18,7 +17,7 @@ defmodule WockyAPI.Schema.BotTypes do
     end
     edge do
       field :relationships, list_of(:user_bot_relationship) do
-        resolve &UserResolver.get_bot_relationships/3
+        resolve &BotResolver.get_bot_relationships/3
       end
     end
   end
@@ -80,7 +79,7 @@ defmodule WockyAPI.Schema.BotTypes do
     end
   end
 
-  input_object :create_bot_params do
+  input_object :insert_bot_params do
     field :title, :string
     field :server, :string
     field :lat, :float
@@ -99,7 +98,6 @@ defmodule WockyAPI.Schema.BotTypes do
   payload_object(:bot_payload, :bot)
 
   object :bot_queries do
-    # TODO: Add blocking support to bot resolution
     field :bot, :bot do
       arg :id, non_null(:uuid)
       resolve &BotResolver.get_bot/3
@@ -107,9 +105,9 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   object :bot_mutations do
-    field :create_bot, type: :bot_payload do
+    field :insert_bot, type: :bot_payload do
       arg :id, :uuid
-      arg :bot, non_null(:create_bot_params)
+      arg :bot, non_null(:insert_bot_params)
       resolve &BotResolver.insert_bot/3
       middleware &UtilResolver.fix_changeset/2
       middleware &build_payload/2
@@ -119,6 +117,11 @@ defmodule WockyAPI.Schema.BotTypes do
       arg :id, non_null(:uuid)
       arg :guest, :boolean
       resolve &BotResolver.subscribe/3
+    end
+
+    field :unsubscribe_bot, type: :boolean do
+      arg :id, non_null(:uuid)
+      resolve &BotResolver.unsubscribe/3
     end
   end
 

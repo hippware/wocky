@@ -24,15 +24,38 @@ defmodule WockyAPI.Schema do
     import_fields :bot_subscriptions
   end
 
-  # For now all requests must be authenticated
-  # In the future this is where we can distinguish public/private data
+  # Fields available only to the authenticated user on themself
   def middleware(middleware, %{identifier: field}, %{identifier: :user})
   when field == :external_id
     or field == :phone_number
     or field == :email do
-    [WockyAPI.Middleware.AuthSelf| middleware]
+    [WockyAPI.Middleware.AuthSelf | middleware]
   end
 
+  # Data publicly available
+  def middleware(middleware, %{identifier: field}, %{identifier: :user})
+  when field == :id
+    or field == :server
+    or field == :handle
+    or field == :avatar
+    or field == :tagline
+    or field == :roles
+    or field == :bots do
+    middleware
+  end
+  def middleware(middleware, _field, %{identifier: object})
+  when object == :query
+    or object == :bot
+    or object == :bot_item
+    or object == :subscribers_connection
+    or object == :subscribers_edge
+    or object == :bots_connection
+    or object == :bots_edge do
+    # We filter by the public flag on bot in the resolver
+    middleware
+  end
+
+  # Data requireing standard authentication
   def middleware(middleware, _field, _object) do
     [WockyAPI.Middleware.Auth | middleware]
   end

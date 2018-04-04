@@ -8,6 +8,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   import Kronky.Payload
 
+  alias WockyAPI.BotResolver
   alias WockyAPI.UserResolver
   alias WockyAPI.UtilResolver
 
@@ -25,8 +26,9 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
 
     connection field :bots, node_type: :bots do
-      arg :relationship, non_null(:user_bot_relationship)
-      resolve &UserResolver.get_bots/3
+      arg :relationship, :user_bot_relationship
+      arg :id, :uuid
+      resolve &BotResolver.get_bots/3
     end
 
     connection field :contacts, node_type: :contacts do
@@ -127,7 +129,6 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &UserResolver.get_current_user/3
     end
 
-    # TODO: Implement blocking handling for this
     field :user, :user do
       arg :id, non_null(:uuid)
       resolve &UserResolver.get_user/3

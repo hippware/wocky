@@ -178,9 +178,8 @@ defmodule Wocky.Bot do
   def get(id, include_pending \\ false)
 
   def get(id, include_pending) when is_binary(id) do
-    Bot
-    |> where(id: ^id)
-    |> maybe_filter_pending(not include_pending)
+    id
+    |> get_query(include_pending)
     |> Repo.one()
   end
 
@@ -189,6 +188,12 @@ defmodule Wocky.Bot do
       nil -> nil
       id -> get(id, include_pending)
     end
+  end
+
+  def get_query(id, include_pending \\ false) do
+    Bot
+    |> where(id: ^id)
+    |> maybe_filter_pending(not include_pending)
   end
 
   @spec preallocate(User.id(), User.server()) :: t | no_return
@@ -404,7 +409,7 @@ defmodule Wocky.Bot do
   @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     queryable
-    |> Blocking.object_visible_query(user.id, :user_id)
+    |> Blocking.object_visible_query(user.id)
     |> join(
       :left,
       [b, ...],
@@ -415,6 +420,11 @@ defmodule Wocky.Bot do
       [b, ..., s],
       b.user_id == ^user.id or b.public or not is_nil(s.user_id)
     )
+  end
+
+  @spec is_public_query(Queryable.t()) :: Queryable.t()
+  def is_public_query(queryable) do
+    queryable |> where([b, ...], b.public)
   end
 
   @spec bump_update_time(Bot.t()) :: :ok
