@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.5+r377998f
+
+* GraphQL fixes (PR #1394, PR #1395)
+
+
 # 2018.4.4+r9d2357b
 
 * Fix a graphql crash (#1384)
