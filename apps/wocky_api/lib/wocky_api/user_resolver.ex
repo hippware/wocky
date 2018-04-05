@@ -69,8 +69,8 @@ defmodule WockyAPI.UserResolver do
 
   def set_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:location]
-    Location.insert(user, location[:resource], location[:lat],
-                    location[:lon], location[:accuracy])
+    User.set_location(user, location[:resource], location[:lat],
+                      location[:lon], location[:accuracy])
   end
 
 end

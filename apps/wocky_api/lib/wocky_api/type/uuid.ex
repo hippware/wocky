@@ -9,7 +9,7 @@ defmodule WockyAPI.Type.UUID do
   alias Absinthe.Blueprint.Input.Null
   alias Wocky.Repo.ID
 
-  scalar :uuid, name: "DateTime" do
+  scalar :uuid, name: "UUID" do
     serialize fn uuid -> uuid end
     parse &parse_uuid/1
   end
