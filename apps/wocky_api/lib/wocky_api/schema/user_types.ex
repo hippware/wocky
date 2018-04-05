@@ -121,7 +121,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :accuracy, non_null(:float)
   end
 
-  payload_object(:location_payload, :location)
+  payload_object(:location_payload, :boolean)
 
 
   object :user_queries do
