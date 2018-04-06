@@ -1,19 +1,20 @@
-defmodule WockyAPI.UserResolver do
+defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   import Ecto.Query
 
   alias Absinthe.Relay.Connection
   alias Wocky.Blocking
-  alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.User
-  alias Wocky.User.Location
-  alias WockyAPI.UtilResolver
+  alias WockyAPI.Resolvers.Utils
 
   def get_current_user(_root, _args, %{context: %{current_user: user}}) do
     {:ok, user}
+  end
+  def get_current_user(_root, _args, _info) do
+    {:ok, nil}
   end
 
   def update_user(_root, args, %{context: %{current_user: user}}) do
@@ -40,8 +41,8 @@ defmodule WockyAPI.UserResolver do
     query
     |> order_by(asc: :updated_at)
     |> Connection.from_query(&Repo.all/1, args)
-    |> UtilResolver.add_query(query)
-    |> UtilResolver.add_edge_parent(user)
+    |> Utils.add_query(query)
+    |> Utils.add_edge_parent(user)
   end
 
   def get_contact_relationship(_root, _args, %{

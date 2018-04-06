@@ -8,9 +8,9 @@ defmodule WockyAPI.Schema.UserTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.BotResolver
-  alias WockyAPI.UserResolver
-  alias WockyAPI.UtilResolver
+  alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.User
+  alias WockyAPI.Resolvers.Utils
 
   object :user do
     field :id, non_null(:uuid)
@@ -28,20 +28,20 @@ defmodule WockyAPI.Schema.UserTypes do
     connection field :bots, node_type: :bots do
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
-      resolve &BotResolver.get_bots/3
+      resolve &Bot.get_bots/3
     end
 
     connection field :contacts, node_type: :contacts do
       arg :relationship, :user_contact_relationship
-      resolve &UserResolver.get_contacts/3
+      resolve &User.get_contacts/3
     end
 
     connection field :home_stream, node_type: :home_stream do
-      resolve &UserResolver.get_home_stream/3
+      resolve &User.get_home_stream/3
     end
 
     connection field :conversations, node_type: :conversations do
-      resolve &UserResolver.get_conversations/3
+      resolve &User.get_conversations/3
     end
   end
 
@@ -62,11 +62,11 @@ defmodule WockyAPI.Schema.UserTypes do
 
   connection :contacts, node_type: :user do
     field :total_count, non_null(:integer) do
-      resolve &UtilResolver.get_count/3
+      resolve &Utils.get_count/3
     end
     edge do
       field :relationship, :user_contact_relationship do
-        resolve &UserResolver.get_contact_relationship/3
+        resolve &User.get_contact_relationship/3
       end
     end
   end
@@ -84,7 +84,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   connection :home_stream, node_type: :home_stream_item do
     field :total_count, non_null(:integer) do
-      resolve &UtilResolver.get_count/3
+      resolve &Utils.get_count/3
     end
     edge do
     end
@@ -97,7 +97,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   connection :conversations, node_type: :conversation do
     field :total_count, non_null(:integer) do
-      resolve &UtilResolver.get_count/3
+      resolve &Utils.get_count/3
     end
     edge do
     end
@@ -126,20 +126,20 @@ defmodule WockyAPI.Schema.UserTypes do
 
   object :user_queries do
     field :current_user, non_null(:user) do
-      resolve &UserResolver.get_current_user/3
+      resolve &User.get_current_user/3
     end
 
     field :user, :user do
       arg :id, non_null(:uuid)
-      resolve &UserResolver.get_user/3
+      resolve &User.get_user/3
     end
   end
 
   object :user_mutations do
     field :update_user, type: :user_payload do
       arg :user, non_null(:update_user_params)
-      resolve &UserResolver.update_user/3
-      middleware &UtilResolver.fix_changeset/2
+      resolve &User.update_user/3
+      middleware &Utils.fix_changeset/2
       middleware &build_payload/2
     end
   end
@@ -147,8 +147,8 @@ defmodule WockyAPI.Schema.UserTypes do
   object :location_mutations do
     field :set_location, type: :location_payload do
       arg :location, non_null(:set_location_params)
-      resolve &UserResolver.set_location/3
-      middleware &UtilResolver.fix_changeset/2
+      resolve &User.set_location/3
+      middleware &Utils.fix_changeset/2
       middleware &build_payload/2
     end
   end

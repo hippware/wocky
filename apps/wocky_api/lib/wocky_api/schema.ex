@@ -5,9 +5,10 @@ defmodule WockyAPI.Schema do
   use Absinthe.Relay.Schema, :modern
 
   import_types Kronky.ValidationMessageTypes
+  import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BotTypes
   import_types WockyAPI.Schema.UserTypes
-  import_types WockyAPI.Type.UUID
+  import_types WockyAPI.Types.UUID
 
   query do
     import_fields :user_queries
@@ -15,6 +16,7 @@ defmodule WockyAPI.Schema do
   end
 
   mutation do
+    import_fields :auth_mutations
     import_fields :user_mutations
     import_fields :bot_mutations
     import_fields :location_mutations
@@ -45,6 +47,12 @@ defmodule WockyAPI.Schema do
   end
   def middleware(middleware, _field, %{identifier: object})
   when object == :query
+    or object == :__schema
+    or object == :__type
+    or object == :__directive
+    or object == :__inputvalue
+    or object == :__field
+    or object == :__enumvalue
     or object == :bot
     or object == :bot_item
     or object == :subscribers_connection
@@ -52,6 +60,9 @@ defmodule WockyAPI.Schema do
     or object == :bots_connection
     or object == :bots_edge do
     # We filter by the public flag on bot in the resolver
+    middleware
+  end
+  def middleware(middleware, %{identifier: :authenticate}, %{identifier: :mutation}) do
     middleware
   end
 

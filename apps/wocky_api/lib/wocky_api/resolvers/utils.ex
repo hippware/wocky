@@ -1,4 +1,4 @@
-defmodule WockyAPI.UtilResolver do
+defmodule WockyAPI.Resolvers.Utils do
   @moduledoc "Resolver utilities for GraphQL"
 
   import Ecto.Query
