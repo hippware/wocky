@@ -1,4 +1,4 @@
-defmodule WockyAPI.Type.UUID do
+defmodule WockyAPI.Types.UUID do
   @moduledoc """
   Absinthe scalar type encapsulating UUID IDs
   """

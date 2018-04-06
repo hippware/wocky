@@ -15,8 +15,6 @@ defmodule WockyAPI.ChannelCase do
 
   use ExUnit.CaseTemplate
 
-  alias Ecto.Adapters.SQL.Sandbox
-
   using do
     quote do
       # Import conveniences for testing with channels
@@ -25,15 +23,5 @@ defmodule WockyAPI.ChannelCase do
       # The default endpoint for testing
       @endpoint WockyAPI.Endpoint
     end
-  end
-
-  setup tags do
-    :ok = Sandbox.checkout(Wocky.Repo)
-
-    unless tags[:async] do
-      Sandbox.mode(Wocky.Repo, {:shared, self()})
-    end
-
-    :ok
   end
 end

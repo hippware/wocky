@@ -1,4 +1,4 @@
-defmodule WockyAPI.BotResolver do
+defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
   import Ecto.Query
@@ -11,7 +11,7 @@ defmodule WockyAPI.BotResolver do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
-  alias WockyAPI.UtilResolver
+  alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
     {:ok,
@@ -43,9 +43,11 @@ defmodule WockyAPI.BotResolver do
 
     query
     |> order_by(asc: :updated_at)
+    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
+    # arguably too tighly specced
     |> Connection.from_query(&Repo.all/1, args)
-    |> UtilResolver.add_query(query)
-    |> UtilResolver.add_edge_parent(user)
+    |> Utils.add_query(query)
+    |> Utils.add_edge_parent(user)
   end
   defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
     query =
@@ -55,9 +57,11 @@ defmodule WockyAPI.BotResolver do
 
     query
     |> order_by(asc: :updated_at)
+    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
+    # arguably too tighly specced
     |> Connection.from_query(&Repo.all/1, args)
-    |> UtilResolver.add_query(query)
-    |> UtilResolver.add_edge_parent(user)
+    |> Utils.add_query(query)
+    |> Utils.add_edge_parent(user)
   end
   defp do_get_bots(_user, _requestor, _args) do
     {:error, "Either 'id' or 'relationship' must be specified"}
@@ -110,7 +114,7 @@ defmodule WockyAPI.BotResolver do
     query
     |> order_by(asc: :updated_at)
     |> Connection.from_query(&Repo.all/1, args)
-    |> UtilResolver.add_query(query)
+    |> Utils.add_query(query)
   end
 
   def get_subscribers(_root, args, %{source: bot}) do
@@ -125,9 +129,9 @@ defmodule WockyAPI.BotResolver do
     |> order_by(asc: :updated_at)
     |> preload(:user)
     |> Connection.from_query(&Repo.all/1, args)
-    |> UtilResolver.extract_nodes(:user, :subscription)
-    |> UtilResolver.add_query(subscriber_query)
-    |> UtilResolver.add_data(:bot, bot)
+    |> Utils.extract_nodes(:user, :subscription)
+    |> Utils.add_query(subscriber_query)
+    |> Utils.add_data(:bot, bot)
   end
 
   def get_subscription_type(_root, _args, %{source: %{subscription: sub}}) do
