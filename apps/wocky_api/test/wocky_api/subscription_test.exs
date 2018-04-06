@@ -6,8 +6,10 @@ defmodule WockyAPI.SubscriptionTest do
   alias Wocky.Repo.Factory
   alias Wocky.Bot.Subscription
   alias Wocky.User
+  alias WockyAPI.Callbacks
 
   setup_all do
+    Callbacks.register()
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
     Application.start(:wocky_db_watcher)
 
