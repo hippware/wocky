@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.6+r494667c
+
+* Add authenticate mutation for websocket connections (PR #1397)
+
+
 # 2018.4.5+r377998f
 
 * GraphQL fixes (PR #1394, PR #1395)
