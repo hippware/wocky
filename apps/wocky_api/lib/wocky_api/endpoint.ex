@@ -6,6 +6,8 @@ defmodule WockyAPI.Endpoint do
   # Websocket to enable GraphQL subscription magic
   socket "/graphql", WockyAPI.UserSocket
 
+  plug CORSPlug
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest

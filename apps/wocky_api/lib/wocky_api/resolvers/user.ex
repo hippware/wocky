@@ -67,6 +67,12 @@ defmodule WockyAPI.Resolvers.User do
       _ -> {:error, "User not found: " <> args[:id]}
     end
   end
+  def get_user(_root, args, _info) do
+    case Repo.get(User, args[:id]) do
+      nil -> {:error, "User not found"}
+      user -> {:ok, user}
+    end
+  end
 
   def set_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:location]
