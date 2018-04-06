@@ -43,6 +43,8 @@ defmodule WockyAPI.Resolvers.Bot do
 
     query
     |> order_by(asc: :updated_at)
+    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
+    # arguably too tighly specced
     |> Connection.from_query(&Repo.all/1, args)
     |> Utils.add_query(query)
     |> Utils.add_edge_parent(user)
@@ -55,6 +57,8 @@ defmodule WockyAPI.Resolvers.Bot do
 
     query
     |> order_by(asc: :updated_at)
+    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
+    # arguably too tighly specced
     |> Connection.from_query(&Repo.all/1, args)
     |> Utils.add_query(query)
     |> Utils.add_edge_parent(user)

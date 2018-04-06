@@ -47,12 +47,6 @@ defmodule WockyAPI.Schema do
   end
   def middleware(middleware, _field, %{identifier: object})
   when object == :query
-    or object == :__schema
-    or object == :__type
-    or object == :__directive
-    or object == :__inputvalue
-    or object == :__field
-    or object == :__enumvalue
     or object == :bot
     or object == :bot_item
     or object == :subscribers_connection
