@@ -50,6 +50,15 @@ defmodule WockyAPI.PublicTest do
               "edges" => [
                 %{
                   "node" => %{
+                    "id" => user2_id,
+                    "bots" => %{
+                      "totalCount" => 0,
+                      "edges" => []
+                    }
+                  }
+                },
+                %{
+                  "node" => %{
                     "id" => user_id,
                     "bots" => %{
                       "totalCount" => 1,
@@ -59,15 +68,6 @@ defmodule WockyAPI.PublicTest do
                             "id" => bot_id
                           }
                         }]
-                    }
-                  }
-                },
-                %{
-                  "node" => %{
-                    "id" => user2_id,
-                    "bots" => %{
-                      "totalCount" => 0,
-                      "edges" => []
                     }
                   }
                 }]

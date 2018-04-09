@@ -1,10 +1,10 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
-  import Ecto.Query
-
-  alias Absinthe.Relay.Connection
   alias Wocky.Blocking
+  alias Wocky.Conversation
+  alias Wocky.HomeStream
+  alias Wocky.JID
   alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.User
@@ -40,11 +40,7 @@ defmodule WockyAPI.Resolvers.User do
         :followees -> Roster.followees_query(user.id, requestor.id, false)
       end
 
-    query
-    |> order_by(asc: :updated_at)
-    |> Connection.from_query(&Repo.all/1, args)
-    |> Utils.add_query(query)
-    |> Utils.add_edge_parent(user)
+    Utils.connection_from_query(query, user, args)
   end
 
   def get_contact_relationship(_root, _args, %{
@@ -53,13 +49,22 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, Roster.relationship(parent, target_user)}
   end
 
-  def get_home_stream(_root, args, %{context: %{current_user: _user}}) do
-    Connection.from_list([], args)
+  def get_home_stream(user, args, _info) do
+    user.id
+    |> HomeStream.get_query()
+    |> Utils.connection_from_query(user, args)
   end
 
-  def get_conversations(_root, args, %{context: %{current_user: _user}}) do
-    Connection.from_list([], args)
+  def get_conversations(user, args, _info) do
+    user.id
+    |> Conversation.with_user()
+    |> Utils.connection_from_query(user, args)
   end
+
+  def get_conversation_user(conversation, _args, _info) do
+    {:ok, User.get_by_jid(JID.from_binary(conversation.other_jid))}
+  end
+
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
     with %User{} = user <- Repo.get(User, id),

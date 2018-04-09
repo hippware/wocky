@@ -1,12 +1,15 @@
 defmodule WockyAPI.UserTest do
   use WockyAPI.ConnCase, async: true
 
+  alias Faker.Lorem
   alias Faker.String
   alias Wocky.Account
   alias Wocky.Blocking
   alias Wocky.Repo.Factory
   alias Wocky.Repo
   alias Wocky.Repo.ID
+  alias Wocky.JID
+  alias Wocky.User
   alias Wocky.User.Location
 
   setup do
@@ -223,7 +226,11 @@ defmodule WockyAPI.UserTest do
                          last_name: "aaa", handle: "hhh")
 
       assert post_conn(conn, @query, %{term: "b"}, 200) ==
-        expected_search_result([u.id])
+        %{
+          "data" => %{
+            "userSearch" => [%{"id" => u.id}]
+          }
+        }
     end
 
     test "search limit", %{conn: conn} do
@@ -232,14 +239,91 @@ defmodule WockyAPI.UserTest do
         post_conn(conn, @query, %{term: "a", limit: 10}, 200)
       assert length(results) == 10
     end
-
   end
 
-  defp expected_search_result(ids) do
-    %{
-      "data" => %{
-        "userSearch" => (for id <- ids, do: %{"id" => id})
+  @query """
+  query ($first: Int) {
+    currentUser {
+      homeStream (first: $first) {
+        totalCount
+        edges {
+          node {
+            key
+            reference_bot {
+              id
+            }
+          }
+        }
       }
     }
+  }
+  """
+  describe "home stream items" do
+    test "get items", %{conn: conn, user: user} do
+      bot = Factory.insert(:bot, user: user)
+      items = Factory.insert_list(20, :home_stream_item, user: user,
+                                  reference_bot: bot)
+
+      assert post_conn(conn, @query, %{first: 1}, 200) ==
+        %{
+          "data" => %{
+            "currentUser" => %{
+              "homeStream" => %{
+                "totalCount" => 20,
+                "edges" => [%{
+                  "node" => %{
+                    "key" => List.last(items).key,
+                    "reference_bot" => %{"id" => bot.id}
+                  }
+                }]
+              }
+            }
+          }
+        }
+    end
+  end
+
+  @query """
+  {
+    currentUser {
+      conversations (first: 1) {
+        totalCount
+        edges {
+          node {
+            other_jid
+            user {
+              id
+              firstName
+            }
+          }
+        }
+      }
+    }
+  }
+  """
+  describe "conversations" do
+    test "get conversations", %{conn: conn, user: user, user2: user2} do
+      other_jid = JID.to_binary(User.to_jid(user2, Lorem.word()))
+      Factory.insert(:conversation, other_jid: other_jid, user: user)
+      assert post_conn(conn, @query, 200) ==
+        %{
+          "data" => %{
+            "currentUser" => %{
+              "conversations" => %{
+                "totalCount" => 1,
+                "edges" => [%{
+                  "node" => %{
+                    "other_jid" => other_jid,
+                    "user" => %{
+                      "id" => user2.id,
+                      "firstName" => user2.first_name
+                    }
+                  }
+                }]
+              }
+            }
+          }
+        }
+    end
   end
 end

@@ -3,12 +3,14 @@ defmodule WockyAPI.Resolvers.Utils do
 
   import Ecto.Query
 
+  alias Absinthe.Relay.Connection
   alias Ecto.Changeset
   alias Wocky.Repo
 
   def get_count(_root, _args, %{source: %{parent_query: parent_query}}) do
     count =
       parent_query
+      |> exclude(:preload)
       |> select([x], count(1))
       |> Repo.one!()
 
@@ -35,15 +37,15 @@ defmodule WockyAPI.Resolvers.Utils do
      end)}
   end
 
-  def extract_nodes({:error, _} = r, _, _), do: r
+  def replace_node_with_node_field({:error, _} = r, _, _), do: r
 
-  def extract_nodes({:ok, connection}, field, orig_field) do
+  def replace_node_with_node_field({:ok, connection}, node_field, orig_field) do
     {:ok,
      Map.update!(connection, :edges, fn edges ->
        for edge <- edges do
          edge
          |> Map.put(orig_field, edge.node)
-         |> Map.put(:node, Map.get(edge.node, field))
+         |> Map.put(:node, Map.get(edge.node, node_field))
        end
      end)}
   end
@@ -52,4 +54,14 @@ defmodule WockyAPI.Resolvers.Utils do
     do: %{resolution | value: cs, errors: []}
 
   def fix_changeset(resolution, _config), do: resolution
+
+  def connection_from_query(query, parent, args) do
+    query
+    |> order_by(desc: :updated_at)
+    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
+    # arguably too tighly specced
+    |> Connection.from_query(&Repo.all/1, args)
+    |> add_query(query)
+    |> add_edge_parent(parent)
+  end
 end
