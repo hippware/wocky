@@ -135,7 +135,7 @@ defmodule Wocky.HomeStream do
   end
 
   @spec get_query(User.id(), Keyword.t()) :: Ecto.Queryable.t()
-  def get_query(user_id, opts) do
+  def get_query(user_id, opts \\ []) do
     Item
     |> with_user(user_id)
     |> preload(:reference_bot)

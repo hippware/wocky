@@ -3,9 +3,9 @@ defmodule WockyAPI.Callbacks do
   Initialisation for wocky DB watcher callbacks
   """
 
-  alias WockyAPI.Callbacks.BotSubscription
+  alias WockyAPI.Callbacks.Bot
 
-  @modules [BotSubscription]
+  @modules [Bot]
 
   def register do
     Enum.each(@modules, fn m -> m.register() end)

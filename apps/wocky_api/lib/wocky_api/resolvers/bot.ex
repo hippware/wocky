@@ -36,32 +36,17 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "Only one of 'id' or 'relationship' may be specified"}
   end
   defp do_get_bots(user, requestor, %{id: id} = args) do
-    query =
-      id
-      |> Bot.get_query()
-      |> visible_query(requestor)
+    id
+    |> Bot.get_query()
+    |> visible_query(requestor)
+    |> Utils.connection_from_query(user, args)
 
-    query
-    |> order_by(asc: :updated_at)
-    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
-    # arguably too tighly specced
-    |> Connection.from_query(&Repo.all/1, args)
-    |> Utils.add_query(query)
-    |> Utils.add_edge_parent(user)
   end
   defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
-    query =
-      user
-      |> Bot.by_relationship_query(relationship)
-      |> visible_query(requestor)
-
-    query
-    |> order_by(asc: :updated_at)
-    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
-    # arguably too tighly specced
-    |> Connection.from_query(&Repo.all/1, args)
-    |> Utils.add_query(query)
-    |> Utils.add_edge_parent(user)
+    user
+    |> Bot.by_relationship_query(relationship)
+    |> visible_query(requestor)
+    |> Utils.connection_from_query(user, args)
   end
   defp do_get_bots(_user, _requestor, _args) do
     {:error, "Either 'id' or 'relationship' must be specified"}
@@ -72,12 +57,12 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
 
-  def get_lat(_root, _args, info) do
-    {:ok, Bot.lat(info.source)}
+  def get_lat(bot, _args, _info) do
+    {:ok, Bot.lat(bot)}
   end
 
-  def get_lon(_root, _args, info) do
-    {:ok, Bot.lon(info.source)}
+  def get_lon(bot, _args, _info) do
+    {:ok, Bot.lon(bot)}
   end
 
   def insert_bot(_root, args, %{context: %{current_user: user}}) do
@@ -108,16 +93,13 @@ defmodule WockyAPI.Resolvers.Bot do
 
   defp parse_lat_lon(input), do: input
 
-  def get_items(_root, args, %{source: bot}) do
-    query = Item.items_query(bot)
-
-    query
-    |> order_by(asc: :updated_at)
-    |> Connection.from_query(&Repo.all/1, args)
-    |> Utils.add_query(query)
+  def get_items(bot, args, _info) do
+    bot
+    |> Item.items_query()
+    |> Utils.connection_from_query(bot, args)
   end
 
-  def get_subscribers(_root, args, %{source: bot}) do
+  def get_subscribers(bot, args, _info) do
     subscriber_query =
       case args[:type] do
         :subscriber -> Subscription.subscribers_query(bot)
@@ -126,12 +108,9 @@ defmodule WockyAPI.Resolvers.Bot do
       end
 
     subscriber_query
-    |> order_by(asc: :updated_at)
     |> preload(:user)
-    |> Connection.from_query(&Repo.all/1, args)
-    |> Utils.extract_nodes(:user, :subscription)
-    |> Utils.add_query(subscriber_query)
-    |> Utils.add_data(:bot, bot)
+    |> Utils.connection_from_query(bot, args)
+    |> Utils.replace_node_with_node_field(:user, :subscription)
   end
 
   def get_subscription_type(_root, _args, %{source: %{subscription: sub}}) do

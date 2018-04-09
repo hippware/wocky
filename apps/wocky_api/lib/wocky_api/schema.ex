@@ -4,6 +4,7 @@ defmodule WockyAPI.Schema do
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
+  import_types Absinthe.Type.Custom
   import_types Kronky.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BotTypes

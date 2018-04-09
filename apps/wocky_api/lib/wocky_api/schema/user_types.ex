@@ -72,8 +72,12 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :home_stream_item do
-    field :id, non_null(:string)
-    # ...
+    field :key, non_null(:string)
+    field :from_jid, non_null(:string)
+    field :stanza, non_null(:string)
+    field :user, :user
+    field :reference_bot, :bot
+    field :updated_at, :datetime
   end
 
   object :location do
@@ -91,8 +95,10 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :conversation do
-    field :id, non_null(:id)
-    # ...
+    field :other_jid, non_null(:string)
+    field :messages, non_null(:string)
+    field :outgoing, non_null(:boolean)
+    field :user, :user, do: resolve &User.get_conversation_user/3
   end
 
   connection :conversations, node_type: :conversation do
