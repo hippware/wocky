@@ -123,7 +123,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
   payload_object(:location_payload, :boolean)
 
-
   object :user_queries do
     field :current_user, non_null(:user) do
       resolve &User.get_current_user/3
@@ -132,6 +131,12 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user, :user do
       arg :id, non_null(:uuid)
       resolve &User.get_user/3
+    end
+
+    field :user_search, list_of(non_null(:user)) do
+      arg :search_term, non_null(:string)
+      arg :limit, :integer
+      resolve &User.search_users/3
     end
   end
 

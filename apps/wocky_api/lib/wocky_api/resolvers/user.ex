@@ -10,6 +10,8 @@ defmodule WockyAPI.Resolvers.User do
   alias Wocky.User
   alias WockyAPI.Resolvers.Utils
 
+  @default_search_results 50
+
   def get_current_user(_root, _args, %{context: %{current_user: user}}) do
     {:ok, user}
   end
@@ -59,13 +61,31 @@ defmodule WockyAPI.Resolvers.User do
     Connection.from_list([], args)
   end
 
-  def get_user(_root, args, %{context: %{current_user: current_user}}) do
-    with %User{id: id} = user <- Repo.get(User, args[:id]),
+  def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
+    with %User{} = user <- Repo.get(User, id),
          false <- Blocking.blocked?(current_user.id, id) do
            {:ok, user}
     else
-      _ -> {:error, "User not found: " <> args[:id]}
+      _ -> user_not_found(id)
     end
+  end
+  # This is kind of dumb - an anonymous user can see more than an authenticated
+  # but blocked user...
+  def get_user(_root, %{id: id}, _info) do
+    with %User{} = user <- Repo.get(User, id) do
+         {:ok, user}
+    else
+      _ -> user_not_found(id)
+    end
+  end
+
+  def search_users(_root, %{limit: limit}, _info) when limit < 0 do
+    {:error, "limit cannot be less than 0"}
+  end
+  def search_users(_root, %{search_term: search_term} = args,
+                   %{context: %{current_user: current_user}}) do
+    limit = args[:limit] || @default_search_results
+    {:ok, User.search_by_name(search_term, current_user.id, limit)}
   end
 
   def set_location(_root, args, %{context: %{current_user: user}}) do
@@ -76,4 +96,5 @@ defmodule WockyAPI.Resolvers.User do
                                   end
   end
 
+  defp user_not_found(id), do: {:error, "User not found: " <> id}
 end

@@ -165,40 +165,81 @@ defmodule WockyAPI.UserTest do
     }
   }
   """
-  test "set location", %{conn: conn, user: user} do
-    lat = :rand.uniform() * 89.0
-    lon = :rand.uniform() * 179.0
-    accuracy = :rand.uniform() * 10.0
-    resource = String.base64()
+  describe "location" do
+    test "set location", %{conn: conn, user: user} do
+      lat = :rand.uniform() * 89.0
+      lon = :rand.uniform() * 179.0
+      accuracy = :rand.uniform() * 10.0
+      resource = String.base64()
 
-    assert post_conn(
-      conn, @query, %{lat: lat, lon: lon,
-        accuracy: accuracy, resource: resource}, 200) ==
-        %{
-          "data" => %{
-            "setLocation" => %{
-              "successful" => true
+      assert post_conn(
+        conn, @query, %{lat: lat, lon: lon,
+          accuracy: accuracy, resource: resource}, 200) ==
+          %{
+            "data" => %{
+              "setLocation" => %{
+                "successful" => true
+              }
             }
           }
-        }
-    assert %Location{
-      lat: ^lat, lon: ^lon, resource: ^resource, accuracy: ^accuracy} =
-      Repo.get_by(Location, user_id: user.id)
+      assert %Location{
+        lat: ^lat, lon: ^lon, resource: ^resource, accuracy: ^accuracy} =
+        Repo.get_by(Location, user_id: user.id)
+    end
+    test "invalid location", %{conn: conn, user: user} do
+      lat = :rand.uniform() * 89.0
+      lon = :rand.uniform() * 179.0
+
+      assert post_conn(
+        conn, @query, %{lat: lat, lon: lon,
+          accuracy: -1.0, resource: String.base64()}, 200) ==
+          %{
+            "data" => %{
+              "setLocation" => %{
+                "successful" => false
+              }
+            }
+          }
+     assert Repo.get_by(Location, user_id: user.id) == nil
+    end
   end
-  test "invalid location", %{conn: conn, user: user} do
-    lat = :rand.uniform() * 89.0
-    lon = :rand.uniform() * 179.0
 
-    assert post_conn(
-      conn, @query, %{lat: lat, lon: lon,
-        accuracy: -1.0, resource: String.base64()}, 200) ==
-        %{
-          "data" => %{
-            "setLocation" => %{
-              "successful" => false
-            }
-          }
-        }
-   assert Repo.get_by(Location, user_id: user.id) == nil
+  @query """
+  query ($term: String!, $limit: Int) {
+    userSearch (search_term: $term, limit: $limit) {
+      id
+    }
+  }
+  """
+
+  describe "user search" do
+    setup %{user2: user2} do
+      Repo.delete(user2)
+      :ok
+    end
+
+    test "search results", %{conn: conn} do
+      u = Factory.insert(:user, first_name: "Bob",
+                         last_name: "aaa", handle: "hhh")
+
+      assert post_conn(conn, @query, %{term: "b"}, 200) ==
+        expected_search_result([u.id])
+    end
+
+    test "search limit", %{conn: conn} do
+      Factory.insert_list(20, :user, first_name: "aaa")
+      assert %{"data" => %{"userSearch" => results}} =
+        post_conn(conn, @query, %{term: "a", limit: 10}, 200)
+      assert length(results) == 10
+    end
+
+  end
+
+  defp expected_search_result(ids) do
+    %{
+      "data" => %{
+        "userSearch" => (for id <- ids, do: %{"id" => id})
+      }
+    }
   end
 end
