@@ -233,7 +233,7 @@ perform_owner_action(guests,
         Sorting <- get_sorting(IQ),
         Query <- {ok, ?wocky_bot:guests_query(Bot)},
         {Guests, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
-                                    RSMIn, Query, user_id, Sorting)},
+                                    RSMIn, Query, id, Sorting)},
         {ok, users_result(<<"guests">>, make_guests(Guests),
                           Count, Hash, RSMOut)}
        ]).
@@ -258,7 +258,7 @@ perform_guest_action(visitors,
         Sorting <- get_sorting(IQ),
         Query <- {ok, ?wocky_bot:visitors_query(Bot)},
         {Visitors, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
-                                      RSMIn, Query, user_id, Sorting)},
+                                      RSMIn, Query, id, Sorting)},
         {ok, users_result(<<"visitors">>, make_visitors(Visitors),
                           Count, Hash, RSMOut)}
        ]).
@@ -1023,7 +1023,7 @@ make_user_list(Name, Users) ->
     [#xmlel{name = Name,
             attrs = [{<<"jid">>, jid:to_binary(
                                    jid:make(
-                                     maps:get(user_id, U),
+                                     maps:get(id, U),
                                      wocky_xmpp_app:server(), <<>>))}]}
      || U <- Users].
 
