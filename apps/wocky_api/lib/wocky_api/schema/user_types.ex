@@ -139,7 +139,7 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.get_user/3
     end
 
-    field :user_search, list_of(non_null(:user)) do
+    field :users, list_of(non_null(:user)) do
       arg :search_term, non_null(:string)
       arg :limit, :integer
       resolve &User.search_users/3
