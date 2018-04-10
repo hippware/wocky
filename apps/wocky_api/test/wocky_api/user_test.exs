@@ -190,8 +190,8 @@ defmodule WockyAPI.UserTest do
   end
 
   @query """
-  mutation ($lat: Float!, $lon: Float!, $accuracy: Float!, $resource: String!) {
-    setLocation (location: {lat: $lat, lon: $lon, accuracy: $accuracy, resource: $resource}) {
+  mutation ($input: UpdateUserLocationInput!) {
+    updateUserLocation (input: $input) {
       successful
     }
   }
@@ -204,11 +204,11 @@ defmodule WockyAPI.UserTest do
       resource = String.base64()
 
       assert post_conn(
-        conn, @query, %{lat: lat, lon: lon,
-          accuracy: accuracy, resource: resource}, 200) ==
+        conn, @query, %{input: %{lat: lat, lon: lon,
+          accuracy: accuracy, resource: resource}}, 200) ==
           %{
             "data" => %{
-              "setLocation" => %{
+              "updateUserLocation" => %{
                 "successful" => true
               }
             }
@@ -222,11 +222,11 @@ defmodule WockyAPI.UserTest do
       lon = :rand.uniform() * 179.0
 
       assert post_conn(
-        conn, @query, %{lat: lat, lon: lon,
-          accuracy: -1.0, resource: String.base64()}, 200) ==
+        conn, @query, %{input: %{lat: lat, lon: lon,
+          accuracy: -1.0, resource: String.base64()}}, 200) ==
           %{
             "data" => %{
-              "setLocation" => %{
+              "updateUserLocation" => %{
                 "successful" => false
               }
             }
