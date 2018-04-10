@@ -106,7 +106,8 @@ defmodule WockyAPI.Schema.BotTypes do
     field :values, non_null(:bot_params)
   end
 
-  payload_object(:bot_payload, :bot)
+  payload_object(:create_bot_payload, :bot)
+  payload_object(:update_bot_payload, :bot)
 
   object :bot_queries do
     field :bot, :bot do
@@ -116,14 +117,14 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   object :bot_mutations do
-    field :create_bot, type: :bot_payload do
+    field :create_bot, type: :create_bot_payload do
       arg :input, non_null(:create_bot_input)
       resolve &Bot.create_bot/3
       middleware &Utils.fix_changeset/2
       middleware &build_payload/2
     end
 
-    field :update_bot, type: :bot_payload do
+    field :update_bot, type: :update_bot_payload do
       arg :input, non_null(:update_bot_input)
       resolve &Bot.update_bot/3
       middleware &Utils.fix_changeset/2
