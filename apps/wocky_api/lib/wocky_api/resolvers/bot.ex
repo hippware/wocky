@@ -65,25 +65,21 @@ defmodule WockyAPI.Resolvers.Bot do
     {:ok, Bot.lon(bot)}
   end
 
-  def insert_bot(_root, args, %{context: %{current_user: user}}) do
-    input = parse_lat_lon(args[:bot])
-
-    case args[:id] do
-      nil ->
-        input
-        |> Map.put(:id, ID.new())
-        |> Map.put(:user_id, user.id)
-        |> Bot.insert()
-
-      id ->
-        update_bot(id, input, user)
-    end
+  def create_bot(_root, args, %{context: %{current_user: user}}) do
+    args[:input][:values]
+    |> parse_lat_lon()
+    |> Map.put(:id, ID.new())
+    |> Map.put(:user_id, user.id)
+    |> Bot.insert()
   end
 
-  defp update_bot(id, input, %{id: user_id}) do
-    case Bot.get(id, true) do
-      %Bot{user_id: ^user_id} = bot -> Bot.update(bot, input)
-      nil -> {:error, "Invalid bot"}
+  def update_bot(_root, args, %{context: %{current_user: %{id: user_id}}}) do
+    case Bot.get(args[:input][:id], true) do
+      %Bot{user_id: ^user_id} = bot ->
+        updates = parse_lat_lon(args[:input][:values])
+        Bot.update(bot, updates)
+      nil ->
+        {:error, "Invalid bot"}
     end
   end
 
@@ -132,7 +128,7 @@ defmodule WockyAPI.Resolvers.Bot do
       nil -> not_found_error(args[:id])
       bot ->
         Bot.subscribe(bot, user, args[:guest] || false)
-        {:ok, true}
+        {:ok, %{result: true}}
     end
   end
 
@@ -141,7 +137,7 @@ defmodule WockyAPI.Resolvers.Bot do
       nil -> not_found_error(args[:id])
       bot ->
         Bot.unsubscribe(bot, user)
-        {:ok, true}
+        {:ok, %{result: true}}
     end
   end
 
