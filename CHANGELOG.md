@@ -5,9 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* GraphQL
+# 2018.4.10+r59b7f97
+
+* GraphQL (PR #1400, PR #1401)
   * User search, conversations, home stream items
   * Other various changes
+* Add bot to user relationships (PR #1410)
 
 
 # 2018.4.6+r494667c
