@@ -43,13 +43,15 @@ defmodule WockyAPI.Schema.BotTypes do
     field :address_data, :string
     field :public, non_null(:boolean)
     field :geofence, non_null(:boolean)
+    field :owner, non_null(:user), do: resolve &Bot.get_owner/3
 
     connection field :items, node_type: :bot_items do
       resolve &Bot.get_items/3
     end
 
     connection field :subscribers, node_type: :subscribers do
-      arg :type, non_null(:subscription_type)
+      arg :type, :subscription_type
+      arg :id, :uuid
       resolve &Bot.get_subscribers/3
     end
   end
@@ -73,8 +75,8 @@ defmodule WockyAPI.Schema.BotTypes do
       resolve &Utils.get_count/3
     end
     edge do
-      field :type, :subscription_type do
-        resolve &Bot.get_subscription_type/3
+      field :relationships, non_null(list_of(:user_bot_relationship)) do
+        resolve &Bot.get_bot_relationships/3
       end
     end
   end

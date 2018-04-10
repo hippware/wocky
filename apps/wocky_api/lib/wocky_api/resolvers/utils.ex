@@ -37,19 +37,6 @@ defmodule WockyAPI.Resolvers.Utils do
      end)}
   end
 
-  def replace_node_with_node_field({:error, _} = r, _, _), do: r
-
-  def replace_node_with_node_field({:ok, connection}, node_field, orig_field) do
-    {:ok,
-     Map.update!(connection, :edges, fn edges ->
-       for edge <- edges do
-         edge
-         |> Map.put(orig_field, edge.node)
-         |> Map.put(:node, Map.get(edge.node, node_field))
-       end
-     end)}
-  end
-
   def fix_changeset(%{errors: [%Changeset{} = cs]} = resolution, _config),
     do: %{resolution | value: cs, errors: []}
 
