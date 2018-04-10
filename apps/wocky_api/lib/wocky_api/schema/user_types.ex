@@ -118,20 +118,20 @@ defmodule WockyAPI.Schema.UserTypes do
     field :tagline, :string
   end
 
-  input_object :update_user_input do
+  input_object :user_update_input do
     field :values, non_null(:user_params)
   end
 
-  payload_object(:update_user_payload, :user)
+  payload_object(:user_update_payload, :user)
 
-  input_object :update_user_location_input do
+  input_object :user_location_update_input do
     field :resource, non_null(:string)
     field :lat, non_null(:float)
     field :lon, non_null(:float)
     field :accuracy, non_null(:float)
   end
 
-  payload_object(:update_user_location_payload, :boolean)
+  payload_object(:user_location_update_payload, :boolean)
 
   object :user_queries do
     field :current_user, non_null(:user) do
@@ -151,8 +151,8 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :user_mutations do
-    field :update_user, type: :update_user_payload do
-      arg :input, non_null(:update_user_input)
+    field :user_update, type: :user_update_payload do
+      arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
       middleware &Utils.fix_changeset/2
       middleware &build_payload/2
@@ -160,8 +160,8 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :location_mutations do
-    field :update_user_location, type: :update_user_location_payload do
-      arg :input, non_null(:update_user_location_input)
+    field :user_location_update, type: :user_location_update_payload do
+      arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
       middleware &Utils.fix_changeset/2
       middleware &build_payload/2

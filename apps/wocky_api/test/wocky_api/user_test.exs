@@ -44,8 +44,8 @@ defmodule WockyAPI.UserTest do
   end
 
   @query """
-  mutation ($input: UpdateUserInput!) {
-    updateUser (input: $input) {
+  mutation ($input: UserUpdateInput!) {
+    userUpdate (input: $input) {
       successful
       result {
         id
@@ -59,7 +59,7 @@ defmodule WockyAPI.UserTest do
                      %{input: %{values: %{first_name: new_name}}}, 200) ==
       %{
         "data" => %{
-          "updateUser" => %{
+          "userUpdate" => %{
             "successful" => true,
             "result" => %{
               "id" => user.id
@@ -190,8 +190,8 @@ defmodule WockyAPI.UserTest do
   end
 
   @query """
-  mutation ($input: UpdateUserLocationInput!) {
-    updateUserLocation (input: $input) {
+  mutation ($input: UserLocationUpdateInput!) {
+    userLocationUpdate (input: $input) {
       successful
     }
   }
@@ -208,7 +208,7 @@ defmodule WockyAPI.UserTest do
           accuracy: accuracy, resource: resource}}, 200) ==
           %{
             "data" => %{
-              "updateUserLocation" => %{
+              "userLocationUpdate" => %{
                 "successful" => true
               }
             }
@@ -226,7 +226,7 @@ defmodule WockyAPI.UserTest do
           accuracy: -1.0, resource: String.base64()}}, 200) ==
           %{
             "data" => %{
-              "updateUserLocation" => %{
+              "userLocationUpdate" => %{
                 "successful" => false
               }
             }
