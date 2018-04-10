@@ -297,29 +297,19 @@ defmodule Wocky.Bot do
     Application.fetch_env!(:wocky, :enable_bot_event_notifications)
   end
 
-  defp send_visit_notification(sub, visitor, bot, event) do
+  defp send_visit_notification(subscriber, visitor, bot, event) do
     event = %BotPerimeterEvent{
       user: visitor,
       bot: bot,
       event: event
     }
 
-    Push.notify_all(sub.user_id, event)
+    Push.notify_all(subscriber.id, event)
   end
 
   @spec clear_guests(t) :: :ok
   def clear_guests(bot) do
     Subscription.clear_guests(bot)
-  end
-
-  @spec guests_query(t) :: Queryable.t()
-  def guests_query(bot) do
-    Subscription.guests_query(bot)
-  end
-
-  @spec visitors_query(t) :: Queryable.t()
-  def visitors_query(bot) do
-    Subscription.visitors_query(bot)
   end
 
   @spec by_relationship_query(User.t(), atom()) :: Ecto.Queryable.t()
@@ -360,6 +350,27 @@ defmodule Wocky.Bot do
       false -> where(q, [u], u.id != ^bot.user_id)
       true -> q
     end
+  end
+
+  @spec subscriber_query(Bot.t(), User.id()) :: Queryable.t()
+  def subscriber_query(bot, user_id) do
+    bot
+    |> Ecto.assoc(:subscribers)
+    |> where([..., s], s.user_id == ^user_id)
+  end
+
+  @spec guests_query(Bot.t()) :: Queryable.t()
+  def guests_query(bot) do
+    bot
+    |> Ecto.assoc(:subscribers)
+    |> where([..., s], s.guest)
+  end
+
+  @spec visitors_query(Bot.t()) :: Queryable.t()
+  def visitors_query(bot) do
+    bot
+    |> Ecto.assoc(:subscribers)
+    |> where([..., s], s.visitor)
   end
 
   @spec subscribers(t) :: [User.t()]

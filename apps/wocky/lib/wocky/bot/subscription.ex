@@ -6,7 +6,6 @@ defmodule Wocky.Bot.Subscription do
   import Ecto.Query
 
   alias Ecto.Changeset
-  alias Ecto.Queryable
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
@@ -50,24 +49,6 @@ defmodule Wocky.Bot.Subscription do
   @spec get(User.t(), Bot.t()) :: t | nil
   def get(user, bot) do
     Repo.get_by(Subscription, user_id: user.id, bot_id: bot.id)
-  end
-
-  @spec subscribers_query(Bot.t()) :: Queryable.t()
-  def subscribers_query(bot) do
-    Subscription
-    |> where(bot_id: ^bot.id)
-  end
-
-  @spec visitors_query(Bot.t()) :: Queryable.t()
-  def visitors_query(bot) do
-    Subscription
-    |> where(bot_id: ^bot.id, visitor: true)
-  end
-
-  @spec guests_query(Bot.t()) :: Queryable.t()
-  def guests_query(bot) do
-    Subscription
-    |> where(bot_id: ^bot.id, guest: true)
   end
 
   @spec visit(User.t(), Bot.t()) :: :ok

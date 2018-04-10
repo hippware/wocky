@@ -100,20 +100,71 @@ defmodule WockyAPI.BotTest do
   end
 
   @query """
-  query ($id: String!) {
+  query ($id: String!, $type: SubscriptionType, $user_id: String) {
     bot (id: $id) {
       id
       title
+      owner {
+        id
+      }
+      subscribers (first: 1, type: $type, id: $user_id) {
+        totalCount
+        edges {
+          relationships
+          node {
+            id
+          }
+        }
+      }
     }
   }
   """
-  test "get a single bot", %{conn: conn, bot: %{id: id, title: title}} do
-    assert post_conn(conn, @query, %{id: id}, 200) ==
+  test "get a single bot with subscribers by type",
+  %{conn: conn, bot: %{id: id, title: title} = bot, user: user, user2: user2} do
+    Bot.subscribe(bot, user2, true)
+    assert post_conn(conn, @query, %{id: id, type: "SUBSCRIBER"}, 200) ==
       %{
         "data" => %{
           "bot" => %{
             "id" => id,
-            "title" => title
+            "title" => title,
+            "owner" => %{
+              "id" => user.id
+            },
+            "subscribers" => %{
+              "totalCount" => 1,
+              "edges" => [%{
+                "relationships" => ["GUEST", "SUBSCRIBED", "VISIBLE"],
+                "node" => %{
+                  "id" => user2.id
+                }
+              }]
+            }
+          }
+        }
+      }
+  end
+  test "get a single bot with subscribers by id",
+  %{conn: conn, bot: %{id: id, title: title} = bot, user: user} do
+    Bot.subscribe(bot, user)
+    assert post_conn(conn, @query, %{id: id, user_id: user.id}, 200) ==
+      %{
+        "data" => %{
+          "bot" => %{
+            "id" => id,
+            "title" => title,
+            "owner" => %{
+              "id" => user.id
+            },
+            "subscribers" => %{
+              "totalCount" => 1,
+              "edges" => [%{
+                "relationships" => ["SUBSCRIBED", "OWNED", "VISIBLE"],
+                "node" => %{
+                  "id" => user.id
+                }
+              }]
+            }
           }
         }
       }

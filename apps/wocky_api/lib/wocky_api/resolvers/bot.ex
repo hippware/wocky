@@ -1,12 +1,8 @@
 defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
-  import Ecto.Query
-
-  alias Absinthe.Relay.Connection
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.ID
@@ -52,10 +48,14 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "Either 'id' or 'relationship' must be specified"}
   end
 
-  def get_bot_relationships(source, _args, _info) do
-    {:ok, User.get_bot_relationships(source.parent, source.node)}
+  def get_bot_relationships(%{parent: %User{} = user,
+                              node: %Bot{} = bot}, _args, _info) do
+    {:ok, User.get_bot_relationships(user, bot)}
   end
-
+  def get_bot_relationships(%{parent: %Bot{} = bot,
+                              node: %User{} = user}, _args, _info) do
+    {:ok, User.get_bot_relationships(user, bot)}
+  end
 
   def get_lat(bot, _args, _info) do
     {:ok, Bot.lat(bot)}
@@ -99,29 +99,32 @@ defmodule WockyAPI.Resolvers.Bot do
     |> Utils.connection_from_query(bot, args)
   end
 
-  def get_subscribers(bot, args, _info) do
-    subscriber_query =
-      case args[:type] do
-        :subscriber -> Subscription.subscribers_query(bot)
-        :guest -> Subscription.guests_query(bot)
-        :visitor -> Subscription.visitors_query(bot)
+  def get_subscribers(_root, %{id: _, type: _}, _info) do
+    {:error, "Only one of 'id' or 'type' may be specified"}
+  end
+  def get_subscribers(bot, %{id: id} = args, _info) do
+    bot
+    |> Bot.subscriber_query(id)
+    |> Utils.connection_from_query(bot, args)
+  end
+  def get_subscribers(bot, %{type: type} = args, _info) do
+    subscribers_query =
+      case type do
+        :subscriber -> Bot.subscribers_query(bot)
+        :guest -> Bot.guests_query(bot)
+        :visitor -> Bot.visitors_query(bot)
       end
 
-    subscriber_query
-    |> preload(:user)
+    subscribers_query
     |> Utils.connection_from_query(bot, args)
-    |> Utils.replace_node_with_node_field(:user, :subscription)
+  end
+  def get_subscribers(_root, _args, _info) do
+    {:error, "At least one of 'id' or 'type' must be specified"}
   end
 
-  def get_subscription_type(_root, _args, %{source: %{subscription: sub}}) do
-    type =
-      cond do
-        sub.visitor -> :visitor
-        sub.guest -> :guest
-        true -> :subscriber
-      end
-
-    {:ok, type}
+  def get_owner(bot, _args, _info) do
+    bot = Repo.preload(bot, :user)
+    {:ok, bot.user}
   end
 
   def subscribe(_root, args, %{context: %{current_user: user}}) do
