@@ -22,42 +22,47 @@ defmodule WockyAPI.BotTest do
   end
 
   @query """
-  mutation ($id: String!) {
-    subscribeBot (id: $id)
+  mutation ($input: SubscribeBotInput!) {
+    subscribeBot (input: $input) {
+      result
+    }
   }
   """
   test "subscribe", %{conn: conn, user: user, bot2: bot2} do
-    assert post_conn(conn, @query, %{id: bot2.id}, 200) ==
+    assert post_conn(conn, @query, %{input: %{id: bot2.id}}, 200) ==
       %{
         "data" => %{
-          "subscribeBot" => true
+          "subscribeBot" => %{
+            "result" => true
+          }
         }
       }
     refute Subscription.get(user, bot2) == nil
   end
 
   @query """
-  mutation ($id: String!) {
-    unsubscribeBot (id: $id)
+  mutation ($input: UnsubscribeBotInput!) {
+    unsubscribeBot (input: $input) {
+      result
+    }
   }
   """
   test "unsubscribe", %{conn: conn, user: user, bot2: bot2} do
     Subscription.put(user, bot2)
-    assert post_conn(conn, @query, %{id: bot2.id}, 200) ==
+    assert post_conn(conn, @query, %{input: %{id: bot2.id}}, 200) ==
       %{
         "data" => %{
-          "unsubscribeBot" => true
+          "unsubscribeBot" => %{
+            "result" => true
+          }
         }
       }
     assert Subscription.get(user, bot2) == nil
   end
 
   @query """
-  mutation ($title: String, $server: String, $lat: Float, $lon: Float,
-  $radius: Float, $description: String, $shortname: String, $id: String) {
-  insertBot (id: $id, bot: {title: $title, server: $server,
-    lat: $lat, lon: $lon, radius: $radius, description: $description,
-    shortname: $shortname}) {
+  mutation ($input: CreateBotInput!) {
+    createBot (input: $input) {
       successful
       result {
         id
@@ -70,7 +75,7 @@ defmodule WockyAPI.BotTest do
     bot = :bot |> Factory.build() |> add_lat_lon() |> Map.take(fields)
     assert %{
       "data" => %{
-        "insertBot" => %{
+        "createBot" => %{
           "successful" => true,
           "result" => %{
             "id" => id
@@ -78,15 +83,26 @@ defmodule WockyAPI.BotTest do
         }
       }
     }
-    = post_conn(conn, @query, bot, 200)
+    = post_conn(conn, @query, %{input: %{values: bot}}, 200)
 
     assert ^bot = id |> Bot.get() |> add_lat_lon() |> Map.take(fields)
   end
+
+  @query """
+  mutation ($input: UpdateBotInput!) {
+    updateBot (input: $input) {
+      successful
+      result {
+        id
+      }
+    }
+  }
+  """
   test "update bot", %{conn: conn, bot: bot} do
     new_title = Lorem.sentence()
     assert %{
       "data" => %{
-        "insertBot" => %{
+        "updateBot" => %{
           "successful" => true,
           "result" => %{
             "id" => bot.id
@@ -94,7 +110,8 @@ defmodule WockyAPI.BotTest do
         }
       }
     }
-    == post_conn(conn, @query, %{id: bot.id, title: new_title}, 200)
+    == post_conn(conn, @query,
+                 %{input: %{id: bot.id, values: %{title: new_title}}}, 200)
 
     assert new_title == Bot.get(bot.id).title
   end

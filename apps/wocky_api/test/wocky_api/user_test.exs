@@ -2,6 +2,7 @@ defmodule WockyAPI.UserTest do
   use WockyAPI.ConnCase, async: true
 
   alias Faker.Lorem
+  alias Faker.Name
   alias Faker.String
   alias Wocky.Account
   alias Wocky.Blocking
@@ -40,6 +41,33 @@ defmodule WockyAPI.UserTest do
           }
         }
       }
+  end
+
+  @query """
+  mutation ($input: UpdateUserInput!) {
+    updateUser (input: $input) {
+      successful
+      result {
+        id
+      }
+    }
+  }
+  """
+  test "update user", %{user: user, conn: conn} do
+    new_name = Name.first_name()
+    assert post_conn(conn, @query,
+                     %{input: %{values: %{first_name: new_name}}}, 200) ==
+      %{
+        "data" => %{
+          "updateUser" => %{
+            "successful" => true,
+            "result" => %{
+              "id" => user.id
+            }
+          }
+        }
+      }
+    assert Repo.get(User, user.id).first_name == new_name
   end
 
   @query """
@@ -162,8 +190,8 @@ defmodule WockyAPI.UserTest do
   end
 
   @query """
-  mutation ($lat: Float!, $lon: Float!, $accuracy: Float!, $resource: String!) {
-    setLocation (location: {lat: $lat, lon: $lon, accuracy: $accuracy, resource: $resource}) {
+  mutation ($input: UpdateUserLocationInput!) {
+    updateUserLocation (input: $input) {
       successful
     }
   }
@@ -176,11 +204,11 @@ defmodule WockyAPI.UserTest do
       resource = String.base64()
 
       assert post_conn(
-        conn, @query, %{lat: lat, lon: lon,
-          accuracy: accuracy, resource: resource}, 200) ==
+        conn, @query, %{input: %{lat: lat, lon: lon,
+          accuracy: accuracy, resource: resource}}, 200) ==
           %{
             "data" => %{
-              "setLocation" => %{
+              "updateUserLocation" => %{
                 "successful" => true
               }
             }
@@ -194,11 +222,11 @@ defmodule WockyAPI.UserTest do
       lon = :rand.uniform() * 179.0
 
       assert post_conn(
-        conn, @query, %{lat: lat, lon: lon,
-          accuracy: -1.0, resource: String.base64()}, 200) ==
+        conn, @query, %{input: %{lat: lat, lon: lon,
+          accuracy: -1.0, resource: String.base64()}}, 200) ==
           %{
             "data" => %{
-              "setLocation" => %{
+              "updateUserLocation" => %{
                 "successful" => false
               }
             }
