@@ -109,7 +109,7 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
-  input_object :update_user_params do
+  input_object :user_params do
     field :handle, :string
     field :avatar, :string
     field :first_name, :string
@@ -118,7 +118,11 @@ defmodule WockyAPI.Schema.UserTypes do
     field :tagline, :string
   end
 
-  payload_object(:user_payload, :user)
+  input_object :update_user_input do
+    field :values, non_null(:user_params)
+  end
+
+  payload_object(:update_user_payload, :user)
 
   input_object :set_location_params do
     field :resource, non_null(:string)
@@ -147,8 +151,8 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :user_mutations do
-    field :update_user, type: :user_payload do
-      arg :user, non_null(:update_user_params)
+    field :update_user, type: :update_user_payload do
+      arg :input, non_null(:update_user_input)
       resolve &User.update_user/3
       middleware &Utils.fix_changeset/2
       middleware &build_payload/2

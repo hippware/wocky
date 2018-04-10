@@ -20,11 +20,11 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def update_user(_root, args, %{context: %{current_user: user}}) do
-    input = args[:input]
+    input = args[:input][:values]
 
     case User.update(user, input) do
       {:ok, user} ->
-        {:ok, %{user: user, private_user_data: user}}
+        {:ok, user}
 
       {:error, _} ->
         {:error, "Could not update user"}
