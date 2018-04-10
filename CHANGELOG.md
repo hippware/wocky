@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* GraphQL
+  * User search, conversations, home stream items
+  * Other various changes
+
+
 # 2018.4.6+r494667c
 
 * Add authenticate mutation for websocket connections (PR #1397)
