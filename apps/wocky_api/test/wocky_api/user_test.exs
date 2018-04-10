@@ -209,7 +209,7 @@ defmodule WockyAPI.UserTest do
 
   @query """
   query ($term: String!, $limit: Int) {
-    userSearch (search_term: $term, limit: $limit) {
+    users (search_term: $term, limit: $limit) {
       id
     }
   }
@@ -228,14 +228,14 @@ defmodule WockyAPI.UserTest do
       assert post_conn(conn, @query, %{term: "b"}, 200) ==
         %{
           "data" => %{
-            "userSearch" => [%{"id" => u.id}]
+            "users" => [%{"id" => u.id}]
           }
         }
     end
 
     test "search limit", %{conn: conn} do
       Factory.insert_list(20, :user, first_name: "aaa")
-      assert %{"data" => %{"userSearch" => results}} =
+      assert %{"data" => %{"users" => results}} =
         post_conn(conn, @query, %{term: "a", limit: 10}, 200)
       assert length(results) == 10
     end
