@@ -1,4 +1,4 @@
-defmodule WockyAPI.Authentication do
+defmodule WockyAPI.Plugs.Authentication do
   @moduledoc "Plugs for performing token authentication"
 
   import Plug.Conn
