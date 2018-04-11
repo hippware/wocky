@@ -66,6 +66,7 @@ defmodule WockyAPI.Mixfile do
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:reprise, "~> 0.5", only: :dev},
       {:kronky, "~> 0.5.0"},
+      {:cors_plug, "~> 1.5"},
     ]
   end
 
