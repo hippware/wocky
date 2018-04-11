@@ -12,6 +12,6 @@ defmodule WockyAPI.Middleware.Auth do
   def call(resolution, _config) do
     Absinthe.Resolution.put_result(
       resolution,
-      {:error, "This query requires an authenticated user"})
+      {:error, "This operation requires an authenticated user"})
   end
 end

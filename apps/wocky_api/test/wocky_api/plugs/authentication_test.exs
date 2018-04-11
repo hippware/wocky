@@ -1,21 +1,34 @@
 defmodule WockyAPI.Plugs.AuthenticationTest do
   use WockyAPI.ConnCase
 
-  import WockyAPI.Authentication
+  import WockyAPI.Plugs.Authentication
 
-  alias Faker.Lorem
   alias Wocky.Account
+  alias Wocky.Account.ClientJWT
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.User
 
-  def put_auth_headers(conn, user, token) do
+  def put_token_headers(conn, user, token) do
     conn
     |> put_req_header("x-auth-user", user)
     |> put_req_header("x-auth-token", token)
   end
 
-  describe ":authenticate plug" do
+  def put_jwt_header(conn, jwt, prefix \\ "Bearer ") do
+    put_req_header(conn, "authentication", prefix <> jwt)
+  end
+
+  describe ":check_auth_headers plug" do
+    test "no credentials", context do
+      conn = check_auth_headers(context.conn)
+
+      refute conn.assigns[:current_user]
+      refute conn.halted
+    end
+  end
+
+  describe ":check_auth_headers plug with token auth" do
     setup do
       user = Factory.insert(:user)
       resource = Faker.Code.issn()
@@ -27,8 +40,8 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     test "valid user and token", context do
       conn =
         context.conn
-        |> put_auth_headers(context.user_id, context.token)
-        |> authenticate
+        |> put_token_headers(context.user_id, context.token)
+        |> check_auth_headers
 
       assert conn.assigns.current_user
     end
@@ -36,8 +49,8 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     test "valid user, invalid token", context do
       conn =
         context.conn
-        |> put_auth_headers(context.user_id, "foo")
-        |> authenticate
+        |> put_token_headers(context.user_id, "foo")
+        |> check_auth_headers
 
       assert conn.status == 401
       assert conn.halted
@@ -47,7 +60,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       conn =
         context.conn
         |> put_req_header("x-auth-user", context.user_id)
-        |> authenticate
+        |> check_auth_headers
 
       assert conn.status == 401
       assert conn.halted
@@ -56,8 +69,8 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     test "invalid user", context do
       conn =
         context.conn
-        |> put_auth_headers("foo", context.token)
-        |> authenticate
+        |> put_token_headers("foo", context.token)
+        |> check_auth_headers
 
       assert conn.status == 401
       assert conn.halted
@@ -67,10 +80,87 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       conn =
         context.conn
         |> put_req_header("x-auth-token", context.token)
-        |> authenticate
+        |> check_auth_headers
 
       assert conn.status == 401
       assert conn.halted
+    end
+  end
+
+  describe ":check_auth_headers plug with JWT auth" do
+    setup do
+      user = Factory.insert(:user)
+      {:ok, jwt, _} = ClientJWT.encode_and_sign(user)
+
+      {:ok, jwt: jwt, user_id: user.id}
+    end
+
+    test "valid JWT header", context do
+      conn =
+        context.conn
+        |> put_jwt_header(context.jwt)
+        |> check_auth_headers
+
+      assert conn.assigns.current_user
+    end
+
+    test "invalid JWT header format", context do
+      conn =
+        context.conn
+        |> put_jwt_header(context.jwt, "")
+        |> check_auth_headers
+
+      assert conn.status == 400
+      assert conn.halted
+    end
+
+    test "invalid JWT in header", context do
+      conn =
+        context.conn
+        |> put_jwt_header("foo")
+        |> check_auth_headers
+
+      assert conn.status == 401
+      assert conn.halted
+    end
+  end
+
+  describe ":ensure_authenticated plug" do
+    test "when current_user is assigned", context do
+      conn =
+        context.conn
+        |> assign(:current_user, :foo)
+        |> ensure_authenticated
+
+      refute conn.halted
+    end
+
+    test "when current_user is not assigned", context do
+      conn =
+        context.conn
+        |> ensure_authenticated
+
+      assert conn.status == 401
+      assert conn.halted
+    end
+  end
+
+  describe ":load_graphl_context plug" do
+    test "when current_user is assigned", context do
+      conn =
+        context.conn
+        |> assign(:current_user, :foo)
+        |> load_graphql_context
+
+      assert conn.private[:absinthe] == %{context: %{current_user: :foo}}
+    end
+
+    test "when current_user is not assigned", context do
+      conn =
+        context.conn
+        |> ensure_authenticated
+
+      refute conn.private[:absinthe]
     end
   end
 
@@ -94,11 +184,11 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     :post |> build_conn(url) |> Param.call([])
   end
 
-  describe ":check_owner_access plug" do
+  describe ":ensure_owner plug" do
     test "no user ID in URL, no current user", context do
       conn =
         context.conn
-        |> check_owner_access
+        |> ensure_owner
 
       refute conn.halted
     end
@@ -107,7 +197,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       conn =
         context.conn
         |> assign(:current_user, %User{})
-        |> check_owner_access
+        |> ensure_owner
 
       refute conn.halted
     end
@@ -115,7 +205,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     test "user ID in URL, no current user", _context do
       conn =
         setup_conn()
-        |> check_owner_access
+        |> ensure_owner
 
       assert conn.status == 403
       assert conn.halted
@@ -128,7 +218,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
         "/#{user.id}"
         |> setup_conn()
         |> assign(:current_user, user)
-        |> check_owner_access
+        |> ensure_owner
 
       refute conn.halted
     end
@@ -140,7 +230,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
         "/#{ID.new()}"
         |> setup_conn()
         |> assign(:current_user, user)
-        |> check_owner_access
+        |> ensure_owner
 
       assert conn.status == 403
       assert conn.halted
