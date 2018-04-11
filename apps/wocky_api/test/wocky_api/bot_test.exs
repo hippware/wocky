@@ -22,8 +22,8 @@ defmodule WockyAPI.BotTest do
   end
 
   @query """
-  mutation ($input: SubscribeBotInput!) {
-    subscribeBot (input: $input) {
+  mutation ($input: BotSubscribeInput!) {
+    botSubscribe (input: $input) {
       result
     }
   }
@@ -32,7 +32,7 @@ defmodule WockyAPI.BotTest do
     assert post_conn(conn, @query, %{input: %{id: bot2.id}}, 200) ==
       %{
         "data" => %{
-          "subscribeBot" => %{
+          "botSubscribe" => %{
             "result" => true
           }
         }
@@ -41,8 +41,8 @@ defmodule WockyAPI.BotTest do
   end
 
   @query """
-  mutation ($input: UnsubscribeBotInput!) {
-    unsubscribeBot (input: $input) {
+  mutation ($input: BotUnsubscribeInput!) {
+    botUnsubscribe (input: $input) {
       result
     }
   }
@@ -52,7 +52,7 @@ defmodule WockyAPI.BotTest do
     assert post_conn(conn, @query, %{input: %{id: bot2.id}}, 200) ==
       %{
         "data" => %{
-          "unsubscribeBot" => %{
+          "botUnsubscribe" => %{
             "result" => true
           }
         }
@@ -61,8 +61,8 @@ defmodule WockyAPI.BotTest do
   end
 
   @query """
-  mutation ($input: CreateBotInput!) {
-    createBot (input: $input) {
+  mutation ($input: BotCreateInput!) {
+    botCreate (input: $input) {
       successful
       result {
         id
@@ -75,7 +75,7 @@ defmodule WockyAPI.BotTest do
     bot = :bot |> Factory.build() |> add_lat_lon() |> Map.take(fields)
     assert %{
       "data" => %{
-        "createBot" => %{
+        "botCreate" => %{
           "successful" => true,
           "result" => %{
             "id" => id
@@ -89,8 +89,8 @@ defmodule WockyAPI.BotTest do
   end
 
   @query """
-  mutation ($input: UpdateBotInput!) {
-    updateBot (input: $input) {
+  mutation ($input: BotUpdateInput!) {
+    botUpdate (input: $input) {
       successful
       result {
         id
@@ -102,7 +102,7 @@ defmodule WockyAPI.BotTest do
     new_title = Lorem.sentence()
     assert %{
       "data" => %{
-        "updateBot" => %{
+        "botUpdate" => %{
           "successful" => true,
           "result" => %{
             "id" => bot.id

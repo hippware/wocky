@@ -34,9 +34,11 @@ defmodule WockyAPI.SubscriptionTest do
     end
 
     @authenticate """
-    mutation ($user: String!, $token: String!) {
-      authenticate(user: $user, token: $token) {
-        id
+    mutation ($input: AuthenticateInput) {
+      authenticate(input: $input) {
+        user {
+          id
+        }
       }
     }
     """
@@ -54,8 +56,9 @@ defmodule WockyAPI.SubscriptionTest do
     %{socket: socket, user2: user2, bot: bot, user: %{id: user_id},
       token: token} do
       ref = push_doc(socket, @authenticate,
-                     variables: %{user: user_id, token: token})
-      assert_reply ref, :ok, %{data: %{"authenticate" => %{"id" => ^user_id}}}, 1000
+                     variables: %{input: %{user: user_id, token: token}})
+      assert_reply ref, :ok,
+          %{data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}}, 1000
 
       ref = push_doc(socket, @subscription, variables: %{id: bot.id})
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000

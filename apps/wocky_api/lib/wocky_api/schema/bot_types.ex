@@ -97,17 +97,17 @@ defmodule WockyAPI.Schema.BotTypes do
     field :geofence, :boolean
   end
 
-  input_object :create_bot_input do
+  input_object :bot_create_input do
     field :values, non_null(:bot_params)
   end
 
-  input_object :update_bot_input do
+  input_object :bot_update_input do
     field :id, non_null(:uuid)
     field :values, non_null(:bot_params)
   end
 
-  payload_object(:create_bot_payload, :bot)
-  payload_object(:update_bot_payload, :bot)
+  payload_object(:bot_create_payload, :bot)
+  payload_object(:bot_update_payload, :bot)
 
   object :bot_queries do
     field :bot, :bot do
@@ -117,21 +117,21 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   object :bot_mutations do
-    field :create_bot, type: :create_bot_payload do
-      arg :input, non_null(:create_bot_input)
+    field :bot_create, type: :bot_create_payload do
+      arg :input, non_null(:bot_create_input)
       resolve &Bot.create_bot/3
       middleware &Utils.fix_changeset/2
       middleware &build_payload/2
     end
 
-    field :update_bot, type: :update_bot_payload do
-      arg :input, non_null(:update_bot_input)
+    field :bot_update, type: :bot_update_payload do
+      arg :input, non_null(:bot_update_input)
       resolve &Bot.update_bot/3
       middleware &Utils.fix_changeset/2
       middleware &build_payload/2
     end
 
-    payload field :subscribe_bot do
+    payload field :bot_subscribe do
       input do
         field :id, non_null(:uuid)
         field :guest, :boolean
@@ -142,7 +142,7 @@ defmodule WockyAPI.Schema.BotTypes do
       resolve &Bot.subscribe/3
     end
 
-    payload field :unsubscribe_bot do
+    payload field :bot_unsubscribe do
       input do
         field :id, non_null(:uuid)
       end

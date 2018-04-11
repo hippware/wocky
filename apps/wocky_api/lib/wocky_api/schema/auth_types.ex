@@ -4,16 +4,22 @@ defmodule WockyAPI.Schema.AuthTypes do
   """
 
   use Absinthe.Schema.Notation
+  use Absinthe.Relay.Schema.Notation, :modern
 
   alias WockyAPI.Resolvers.Auth
 
   object :auth_mutations do
-    field :authenticate, :user do
-      arg :user, non_null(:string)
-      arg :token, non_null(:string)
+    payload field :authenticate do
+      input do
+        field :user, non_null(:string)
+        field :token, non_null(:string)
+      end
+      output do
+        field :user, non_null(:user)
+      end
       resolve &Auth.authenticate/3
       middleware fn res, _ ->
-        with %{value: user} <- res do
+        with %{value: %{user: user}} <- res do
           %{res | context: Map.put(res.context, :current_user, user)}
         end
       end
