@@ -14,7 +14,9 @@ defmodule Wocky.User do
   alias Wocky.Blocking
   alias Wocky.Bot
   alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.Subscription, as: BotSubscription
+  alias Wocky.Collection
+  alias Wocky.Collection.Subscription, as: CollectionSubscription
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.HomeStream.Item, as: HomeStreamItem
@@ -63,6 +65,7 @@ defmodule Wocky.User do
 
     has_many :bots, Bot
     has_many :bot_events, BotEvent
+    has_many :collections, Collection
     has_many :conversations, Conversation
     has_many :home_stream_items, HomeStreamItem
     has_many :locations, Location
@@ -73,7 +76,9 @@ defmodule Wocky.User do
     has_many :tros_metadatas, TROSMetadata
 
     many_to_many(:shares, Bot, join_through: Share)
-    many_to_many(:subscriptions, Bot, join_through: Subscription)
+    many_to_many(:bot_subscriptions, Bot, join_through: BotSubscription)
+    many_to_many(:collection_subscriptions, Collection,
+                 join_through: CollectionSubscription)
   end
 
   @type id :: binary
@@ -432,7 +437,7 @@ defmodule Wocky.User do
   end
 
   def get_bot_relationships(user, bot) do
-    sub = Subscription.get(user, bot)
+    sub = BotSubscription.get(user, bot)
 
     [:visible]
     |> maybe_add_rel(bot.user_id == user.id, :owned)
