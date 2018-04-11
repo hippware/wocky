@@ -1,4 +1,4 @@
-defmodule WockyAPI.UserTest do
+defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.ConnCase, async: true
 
   alias Faker.Lorem

@@ -1,4 +1,4 @@
-defmodule WockyAPI.PublicTest do
+defmodule WockyAPI.GraphQL.PublicTest do
   use WockyAPI.ConnCase, async: true
 
   alias Wocky.Bot.Subscription
@@ -77,4 +77,3 @@ defmodule WockyAPI.PublicTest do
       }
     end
 end
-
