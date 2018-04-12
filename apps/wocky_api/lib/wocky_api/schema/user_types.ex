@@ -9,6 +9,7 @@ defmodule WockyAPI.Schema.UserTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
   alias WockyAPI.Resolvers.Utils
 
@@ -16,7 +17,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :id, non_null(:uuid)
     field :server, non_null(:string)
     field :handle, :string
-    field :avatar, :string
+    field :avatar, :media, do: resolve &Media.get_media/3
     field :first_name, :string
     field :last_name, :string
     field :tagline, :string
