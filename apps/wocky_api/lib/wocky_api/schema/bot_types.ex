@@ -153,11 +153,22 @@ defmodule WockyAPI.Schema.BotTypes do
     end
   end
 
-  object :bot_subscriptions do
-    field :bot_visitors, non_null(:bot) do
-      arg :id, non_null(:uuid)
+  enum :visitor_action do
+    value :arrive
+    value :depart
+  end
 
-      config fn args, _ -> {:ok, topic: args.id} end
+  object :visitor_update do
+    field :bot, :bot
+    field :visitor, :user
+    field :action, :visitor_action
+  end
+
+  object :bot_subscriptions do
+    field :bot_guest_visitors, non_null(:visitor_update) do
+      config fn _, %{context: %{current_user: user}} ->
+        {:ok, topic: Bot.visitor_subscription_topic(user.id)}
+      end
     end
   end
 end

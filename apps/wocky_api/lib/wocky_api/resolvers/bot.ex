@@ -1,12 +1,14 @@
 defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
+  alias Absinthe.Subscription
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
@@ -139,6 +141,26 @@ defmodule WockyAPI.Resolvers.Bot do
         Bot.unsubscribe(bot, user)
         {:ok, %{result: true}}
     end
+  end
+
+  def visitor_subscription_topic(user_id) do
+    "visitor_subscription_" <> user_id
+  end
+
+  def notify_visitor_subscription(bot, subscriber, entered) do
+    to_notify = Bot.guests_query(bot) |> Repo.all()
+
+    action = case entered do
+      true -> :arrive
+      false -> :depart
+    end
+
+    notification = %{bot: bot, visitor: subscriber, action: action}
+    targets = for n <- to_notify do
+      {:bot_guest_visitors, visitor_subscription_topic(n.id)}
+    end
+
+    Subscription.publish(Endpoint, notification, targets)
   end
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
