@@ -1,4 +1,4 @@
-defmodule WockyAPI.BotTest do
+defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.ConnCase, async: true
 
   alias Faker.Lorem
@@ -7,6 +7,8 @@ defmodule WockyAPI.BotTest do
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.TROS
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -185,6 +187,93 @@ defmodule WockyAPI.BotTest do
           }
         }
       }
+  end
+
+  @query """
+  query ($id: UUID) {
+    bot (id: $id) {
+      image {
+        tros_url
+        full_url
+        thumbnail_url
+      }
+    }
+  }
+  """
+  test "bot image", %{conn: conn, bot: %{id: id, image: image}} do
+    assert %{
+        "data" => %{
+          "bot" => %{
+            "image" => %{
+              "tros_url" => ^image,
+              "full_url" => "https://" <> _,
+              "thumbnail_url" => "https://" <> _,
+            }
+          }
+        }
+      } =
+    post_conn(conn, @query, %{id: id}, 200)
+  end
+
+  @query """
+  query ($id: UUID) {
+    bot (id: $id) {
+      items (first: 1) {
+        edges {
+          node {
+            stanza
+            media {
+              tros_url
+              full_url
+              thumbnail_url
+            }
+          }
+        }
+      }
+    }
+  }
+  """
+  test "bot item image", %{conn: conn, bot: bot} do
+    tros_url = TROS.make_url("localhost", ID.new())
+    stanza = "<message><image>" <> tros_url <> "</image></message>"
+    Factory.insert(:item, bot: bot, stanza: stanza, image: true)
+    assert %{
+        "data" => %{
+          "bot" => %{
+            "items" => %{
+              "edges" => [%{
+                "node" => %{
+                  "stanza" => ^stanza,
+                  "media" => %{
+                    "tros_url" => ^tros_url,
+                    "full_url" => "https://" <> _,
+                    "thumbnail_url" => "https://" <> _,
+                  }
+                }
+              }]
+            }
+          }
+        }
+      } =
+    post_conn(conn, @query, %{id: bot.id}, 200)
+  end
+  test "bot item no image", %{conn: conn, bot: bot} do
+    %{stanza: stanza} = Factory.insert(:item, bot: bot)
+    assert %{
+        "data" => %{
+          "bot" => %{
+            "items" => %{
+              "edges" => [%{
+                "node" => %{
+                  "stanza" => ^stanza,
+                  "media" => nil
+                }
+              }]
+            }
+          }
+        }
+      } =
+    post_conn(conn, @query, %{id: bot.id}, 200)
   end
 
   defp add_lat_lon(%Bot{location: location} = bot) do

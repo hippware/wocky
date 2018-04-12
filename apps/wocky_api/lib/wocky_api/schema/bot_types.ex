@@ -9,6 +9,7 @@ defmodule WockyAPI.Schema.BotTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Utils
 
   connection :bots, node_type: :bot do
@@ -37,7 +38,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :radius, non_null(:float)
     field :description, :string
     field :shortname, :string
-    field :image, :string
+    field :image, :media, do: resolve &Media.get_media/3
     field :type, :string
     field :address, :string
     field :address_data, :string
@@ -59,7 +60,9 @@ defmodule WockyAPI.Schema.BotTypes do
   object :bot_item do
     field :id, non_null(:string)
     field :stanza, :string
+    field :media, :media, do: resolve &Media.get_media/3
     field :image, :boolean
+    field :user, :user, do: resolve &Bot.get_owner/3
   end
 
   connection :bot_items, node_type: :bot_item do
@@ -153,11 +156,22 @@ defmodule WockyAPI.Schema.BotTypes do
     end
   end
 
-  object :bot_subscriptions do
-    field :bot_visitors, non_null(:bot) do
-      arg :id, non_null(:uuid)
+  enum :visitor_action do
+    value :arrive
+    value :depart
+  end
 
-      config fn args, _ -> {:ok, topic: args.id} end
+  object :visitor_update do
+    field :bot, :bot
+    field :visitor, :user
+    field :action, :visitor_action
+  end
+
+  object :bot_subscriptions do
+    field :bot_guest_visitors, non_null(:visitor_update) do
+      config fn _, %{context: %{current_user: user}} ->
+        {:ok, topic: Bot.visitor_subscription_topic(user.id)}
+      end
     end
   end
 end

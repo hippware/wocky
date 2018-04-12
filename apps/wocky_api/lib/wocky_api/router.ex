@@ -2,12 +2,13 @@ defmodule WockyAPI.Router do
   use WockyAPI, :router
   use Honeybadger.Plug
 
-  import WockyAPI.Authentication
+  import WockyAPI.Plugs.Authentication
 
   pipeline :rest_api do
     plug :accepts, ["json"]
-    plug :authenticate
-    plug :check_owner_access
+    plug :check_auth_headers
+    plug :ensure_authenticated
+    plug :ensure_owner
   end
 
   scope "/api/v1", WockyAPI do
@@ -18,7 +19,8 @@ defmodule WockyAPI.Router do
 
   pipeline :graphql do
     plug :accepts, ["json"]
-    plug :authenticate
+    plug :check_auth_headers
+    plug :load_graphql_context
   end
 
   scope "/graphql" do
@@ -26,7 +28,6 @@ defmodule WockyAPI.Router do
 
     forward "/", Absinthe.Plug,
       schema: WockyAPI.Schema
-
   end
 
   # Provide a GraphiQL interface in dev mode

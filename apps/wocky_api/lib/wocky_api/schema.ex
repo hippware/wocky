@@ -8,6 +8,7 @@ defmodule WockyAPI.Schema do
   import_types Kronky.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BotTypes
+  import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.UUID
 
@@ -50,11 +51,24 @@ defmodule WockyAPI.Schema do
   when object == :query
     or object == :bot
     or object == :bot_item
+    or object == :bot_items_connection
+    or object == :bot_items_edge
     or object == :subscribers_connection
     or object == :subscribers_edge
     or object == :bots_connection
-    or object == :bots_edge do
+    or object == :bots_edge
+    do
     # We filter by the public flag on bot in the resolver
+    middleware
+  end
+  # Public schema
+  def middleware(middleware, _field, %{identifier: object})
+  when object == :__schema
+    or object == :__type
+    or object == :__enumvalue
+    or object == :__directive
+    or object == :__inputvalue
+    or object == :__field do
     middleware
   end
   def middleware(middleware, %{identifier: :authenticate}, %{identifier: :mutation}) do
@@ -65,5 +79,4 @@ defmodule WockyAPI.Schema do
   def middleware(middleware, _field, _object) do
     [WockyAPI.Middleware.Auth | middleware]
   end
-
 end

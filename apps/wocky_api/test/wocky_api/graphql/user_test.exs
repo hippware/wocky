@@ -1,4 +1,4 @@
-defmodule WockyAPI.UserTest do
+defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.ConnCase, async: true
 
   alias Faker.Lorem
@@ -28,6 +28,9 @@ defmodule WockyAPI.UserTest do
     currentUser {
       id
       firstName
+      avatar {
+        tros_url
+      }
     }
   }
   """
@@ -37,7 +40,10 @@ defmodule WockyAPI.UserTest do
         "data" => %{
           "currentUser" => %{
             "id" => user.id,
-            "firstName" => user.first_name
+            "firstName" => user.first_name,
+            "avatar" => %{
+              "tros_url" => user.avatar
+            }
           }
         }
       }

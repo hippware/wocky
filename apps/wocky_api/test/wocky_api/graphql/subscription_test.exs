@@ -1,4 +1,4 @@
-defmodule WockyAPI.SubscriptionTest do
+defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   alias Wocky.Bot
@@ -6,9 +6,11 @@ defmodule WockyAPI.SubscriptionTest do
   alias Wocky.Repo.Factory
   alias Wocky.Bot.Subscription
   alias Wocky.User
+  alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
 
   setup_all do
+    Client.clear_all_subscriptions()
     Callbacks.register()
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
     Application.start(:wocky_db_watcher)
@@ -44,41 +46,65 @@ defmodule WockyAPI.SubscriptionTest do
     """
 
     @subscription """
-    subscription ($id: String!) {
-      botVisitors (id: $id) {
-        subscribers (first: 0, type: VISITOR) {
-          totalCount
+    subscription {
+      botGuestVisitors {
+        bot {
+          id
+          subscribers (first: 0, type: VISITOR) {
+            totalCount
+          }
         }
+        visitor {
+          id
+        }
+        action
       }
     }
     """
     test "visitor count changes",
-    %{socket: socket, user2: user2, bot: bot, user: %{id: user_id},
+    %{socket: socket,
+      user2: user2,
+      bot: bot,
+      user: %{id: user_id} = user,
       token: token} do
+      Bot.subscribe(bot, user, true)
       ref = push_doc(socket, @authenticate,
                      variables: %{input: %{user: user_id, token: token}})
       assert_reply ref, :ok,
           %{data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}}, 1000
 
-      ref = push_doc(socket, @subscription, variables: %{id: bot.id})
+      ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      expected = fn(count) ->
+      expected = fn(count, action) ->
         %{
           result: %{
-            data:
-            %{"botVisitors" => %{"subscribers" => %{"totalCount" => count}}}},
+            data: %{
+              "botGuestVisitors" => %{
+                "bot" => %{
+                  "id" => bot.id,
+                  "subscribers" => %{
+                    "totalCount" => count
+                  }
+                },
+                "visitor" => %{
+                  "id" => user2.id
+                },
+                "action" => action
+              }
+            }
+          },
           subscriptionId: subscription_id
         }
       end
 
       Bot.visit(bot, user2)
       assert_push "subscription:data", push, 1000
-      assert push == expected.(1)
+      assert push == expected.(1, "ARRIVE")
 
       Bot.depart(bot, user2)
       assert_push "subscription:data", push, 1000
-      assert push == expected.(0)
+      assert push == expected.(0, "DEPART")
     end
   end
 
