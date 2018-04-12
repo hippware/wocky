@@ -20,6 +20,8 @@ defmodule Wocky.Repo.Migrations.AddCollections do
       timestamps()
     end
 
+    create unique_index(:collection_members, [:collection_id, :bot_id])
+
     create table(:collection_subscriptions, primary_key: false) do
       add :collection_id,
         references(:collections, on_delete: :delete_all),
@@ -30,5 +32,8 @@ defmodule Wocky.Repo.Migrations.AddCollections do
 
       timestamps()
     end
+
+    create unique_index(:collection_subscriptions,
+      [:collection_id, :user_id])
   end
 end

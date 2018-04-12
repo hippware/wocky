@@ -19,8 +19,8 @@ defmodule Wocky.Collections.Collection do
     timestamps()
 
     belongs_to :user, User
-    many_to_many(:members, Bot, join_through: Member)
-    many_to_many(:subscribers, User, join_through: Subscription)
+    many_to_many :members, Bot, join_through: Member, unique: true
+    many_to_many :subscribers, User, join_through: Subscription, unique: true
   end
 
   @type t :: %Collection{}
