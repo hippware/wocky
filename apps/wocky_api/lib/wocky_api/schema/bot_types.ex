@@ -60,6 +60,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:string)
     field :stanza, :string
     field :image, :boolean
+    field :user, :user, do: resolve &Bot.get_owner/3
   end
 
   connection :bot_items, node_type: :bot_item do

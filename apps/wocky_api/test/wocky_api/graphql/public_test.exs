@@ -8,10 +8,17 @@ defmodule WockyAPI.GraphQL.PublicTest do
     [user, user2] = Factory.insert_list(2, :user)
     bot = Factory.insert(:bot, user: user, public: true)
     bot2 = Factory.insert(:bot, user: user2)
+    item = Factory.insert(:item, bot: bot, user: user2)
     Subscription.put(user, bot)
     Subscription.put(user2, bot)
 
-    {:ok, user: user, user2: user2, bot: bot, bot2: bot2, conn: build_conn()}
+    {:ok,
+      user: user,
+      user2: user2,
+      bot: bot,
+      bot2: bot2,
+      item: item,
+      conn: build_conn()}
   end
 
   @query """
@@ -34,12 +41,26 @@ defmodule WockyAPI.GraphQL.PublicTest do
           }
         }
       }
+      items (first: 10) {
+        totalCount
+        edges {
+          node {
+            id
+            user {
+              handle
+            }
+          }
+        }
+      }
     }
   }
   """
-  test "get public bot, subscribers, and their public owned bots",
-  %{conn: conn, bot: %{id: bot_id} = bot,
-    user: %{id: user_id}, user2: %{id: user2_id}} do
+  test "get public bot, subscribers, items, and their public owned bots",
+  %{conn: conn,
+    bot: %{id: bot_id} = bot,
+    user: %{id: user_id},
+    user2: %{id: user2_id, handle: user2_handle},
+    item: %{id: item_id}} do
     assert post_conn(conn, @query, %{id: bot.id}, 200) ==
       %{
         "data" => %{
@@ -62,15 +83,25 @@ defmodule WockyAPI.GraphQL.PublicTest do
                     "id" => user_id,
                     "bots" => %{
                       "totalCount" => 1,
-                      "edges" => [
-                        %{
-                          "node" => %{
-                            "id" => bot_id
-                          }
-                        }]
+                      "edges" => [%{
+                        "node" => %{
+                          "id" => bot_id
+                        }
+                      }]
                     }
                   }
                 }]
+            },
+            "items" => %{
+              "totalCount" => 1,
+              "edges" => [%{
+                "node" => %{
+                  "id" => item_id,
+                  "user" => %{
+                    "handle" => user2_handle
+                  }
+                }
+              }]
             }
           }
         }
