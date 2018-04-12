@@ -1,12 +1,11 @@
-defmodule Wocky.Collection.Subscription do
+defmodule Wocky.Collections.Subscription do
   @moduledoc "Represents a subscription to a collection of bots"
 
   use Wocky.Repo.Schema
 
   import Ecto.Query
 
-  alias Wocky.Collection
-  alias Wocky.Collection.Subscription
+  alias Wocky.Collections.Collection
   alias Wocky.Repo
   alias Wocky.User
 

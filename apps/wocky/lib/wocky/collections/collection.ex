@@ -1,4 +1,4 @@
-defmodule Wocky.Collection do
+defmodule Wocky.Collections.Collection do
   @moduledoc "Represents a collection of bots"
 
   use Wocky.Repo.Schema
@@ -6,8 +6,8 @@ defmodule Wocky.Collection do
   import Ecto.Query
 
   alias Ecto.Changeset
-  alias Wocky.Collection.Member
-  alias Wocky.Collection.Subscription
+  alias Wocky.Collections.Member
+  alias Wocky.Collections.Subscription
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
@@ -51,26 +51,6 @@ defmodule Wocky.Collection do
     |> Repo.delete_all()
 
     :ok
-  end
-
-  @spec add_bot(id(), Bot.id()) :: {:ok, Member.t()} | {:error, Changeset.t()}
-  def add_bot(id, bot_id) do
-    Member.add(id, bot_id)
-  end
-
-  @spec remove_bot(id(), Bot.id()) :: {:ok, Member.t()} | {:error, Changeset.t()}
-  def remove_bot(id, bot_id) do
-    Member.remove(id, bot_id)
-  end
-
-  @spec subscribe(id(), User.id()) :: {:ok, t()} | {:error, Changeset.t()}
-  def subscribe(id, user_id) do
-    Subscription.add(id, user_id)
-  end
-
-  @spec unsubscribe(id(), User.id()) :: {:ok, t()} | {:error, Changeset.t()}
-  def unsubscribe(id, user_id) do
-    Subscription.remove(id, user_id)
   end
 
   def owned_query(user_id) do

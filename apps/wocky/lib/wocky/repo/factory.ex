@@ -14,7 +14,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
-  alias Wocky.Collection
+  alias Wocky.Collections.Collection
   alias Wocky.Conversation
   alias Wocky.GeoUtils
   alias Wocky.HomeStream.Item, as: HomeStreamItem

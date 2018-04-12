@@ -1,4 +1,4 @@
-defmodule Wocky.Collection.Member do
+defmodule Wocky.Collections.Member do
   @moduledoc "Represents a member of collection of bots"
 
   use Wocky.Repo.Schema
@@ -6,7 +6,7 @@ defmodule Wocky.Collection.Member do
   import Ecto.Query
 
   alias Wocky.Bot
-  alias Wocky.Collection
+  alias Wocky.Collections.Collection
   alias Wocky.Repo
 
   @primary_key false

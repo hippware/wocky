@@ -15,8 +15,8 @@ defmodule Wocky.User do
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription, as: BotSubscription
-  alias Wocky.Collection
-  alias Wocky.Collection.Subscription, as: CollectionSubscription
+  alias Wocky.Collections.Collection
+  alias Wocky.Collections.Subscription, as: CollectionSubscription
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.HomeStream.Item, as: HomeStreamItem
