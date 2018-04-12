@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.12+r0b53d08
+
+* Update GraphQL to JWT authentication system (#1406)
+* Rework bot visitor subscription (PR #1425)
+
+
 # 2018.4.11+re9f3db0
 
 * Rename GraphQL user search query to just `users` (#1408)
