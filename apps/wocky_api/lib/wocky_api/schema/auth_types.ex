@@ -11,7 +11,7 @@ defmodule WockyAPI.Schema.AuthTypes do
   object :auth_mutations do
     payload field :authenticate do
       input do
-        field :user, non_null(:string)
+        field :user, :string
         field :token, non_null(:string)
       end
       output do

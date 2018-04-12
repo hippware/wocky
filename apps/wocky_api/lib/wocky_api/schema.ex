@@ -65,5 +65,4 @@ defmodule WockyAPI.Schema do
   def middleware(middleware, _field, _object) do
     [WockyAPI.Middleware.Auth | middleware]
   end
-
 end

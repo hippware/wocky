@@ -1,4 +1,4 @@
-defmodule WockyAPI.SubscriptionTest do
+defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   alias Wocky.Bot
