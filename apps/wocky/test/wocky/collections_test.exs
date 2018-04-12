@@ -1,4 +1,4 @@
-defmodule Wocky.Collection.CollectionTest do
+defmodule Wocky.CollectionsTest do
   use Wocky.DataCase
 
   alias Faker.Lorem
@@ -12,24 +12,39 @@ defmodule Wocky.Collection.CollectionTest do
     {:ok, user: Factory.insert(:user)}
   end
 
-  test "create a collection", %{user: %{id: user_id} = user} do
-    title = Lorem.sentence()
-    assert {:ok, %Collection{id: id, title: ^title}} =
-      Collections.create(title, user)
+  describe "Basic collections operations" do
+    setup %{user: user} do
+      title = Lorem.sentence()
+      result = Collections.create(title, user)
 
-    assert %Collection{title: ^title, user_id: ^user_id} =
-      Repo.get(Collection, id)
-  end
+      {:ok, title: title, result: result}
+    end
 
-  test "delete a collection" do
-    %Collection{id: id} = Factory.insert(:collection)
+    test "create a collection", %{user: %{id: user_id}, title: title} = ctx do
+      assert {:ok, %Collection{id: id, title: ^title}} = ctx.result
 
-    assert :ok == Collections.delete(id)
-    assert nil == Repo.get(Collection, id)
-  end
+      assert %Collection{title: ^title, user_id: ^user_id} =
+        Repo.get(Collection, id)
+    end
 
-  test "delete a non-existant collection" do
-    assert :ok = Collections.delete(:rand.uniform(100))
+    test "update a collection", ctx do
+      {:ok, %Collection{id: id}} = ctx.result
+
+      new_title = Lorem.sentence()
+      assert {:ok, %Collection{id: ^id, title: ^new_title}} =
+        Collections.update(id, new_title)
+    end
+
+    test "delete a collection", ctx do
+     {:ok, %Collection{id: id}} = ctx.result
+
+      assert :ok == Collections.delete(id)
+      assert nil == Repo.get(Collection, id)
+    end
+
+    test "delete a non-existant collection" do
+      assert :ok = Collections.delete(:rand.uniform(100))
+    end
   end
 
   describe "bot addition and removal" do

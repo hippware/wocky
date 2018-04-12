@@ -29,7 +29,7 @@ defmodule Wocky.Collections.Collection do
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
-    |> cast(params, [:title, :description])
+    |> cast(params, [:title])
   end
 
   @spec create(binary(), User.t()) :: {:ok, t()}
@@ -41,7 +41,7 @@ defmodule Wocky.Collections.Collection do
   def update(id, title) do
     %Collection{id: id}
     |> changeset(%{title: title})
-    |> Repo.insert()
+    |> Repo.update()
   end
 
   @spec delete(id()) :: :ok
