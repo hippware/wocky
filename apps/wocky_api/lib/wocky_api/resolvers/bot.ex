@@ -120,9 +120,9 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "At least one of 'id' or 'type' must be specified"}
   end
 
-  def get_owner(bot, _args, _info) do
-    bot = Repo.preload(bot, :user)
-    {:ok, bot.user}
+  def get_owner(object, _args, _info) do
+    object = Repo.preload(object, :user)
+    {:ok, object.user}
   end
 
   def subscribe(_root, args, %{context: %{current_user: user}}) do

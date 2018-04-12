@@ -51,6 +51,8 @@ defmodule WockyAPI.Schema do
   when object == :query
     or object == :bot
     or object == :bot_item
+    or object == :bot_items_connection
+    or object == :bot_items_edge
     or object == :subscribers_connection
     or object == :subscribers_edge
     or object == :bots_connection
