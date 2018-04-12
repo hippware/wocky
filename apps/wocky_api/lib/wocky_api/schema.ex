@@ -8,6 +8,7 @@ defmodule WockyAPI.Schema do
   import_types Kronky.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BotTypes
+  import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.UUID
 

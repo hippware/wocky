@@ -28,6 +28,9 @@ defmodule WockyAPI.GraphQL.UserTest do
     currentUser {
       id
       firstName
+      avatar {
+        tros_url
+      }
     }
   }
   """
@@ -37,7 +40,10 @@ defmodule WockyAPI.GraphQL.UserTest do
         "data" => %{
           "currentUser" => %{
             "id" => user.id,
-            "firstName" => user.first_name
+            "firstName" => user.first_name,
+            "avatar" => %{
+              "tros_url" => user.avatar
+            }
           }
         }
       }

@@ -9,6 +9,7 @@ defmodule WockyAPI.Schema.BotTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Utils
 
   connection :bots, node_type: :bot do
@@ -37,7 +38,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :radius, non_null(:float)
     field :description, :string
     field :shortname, :string
-    field :image, :string
+    field :image, :media, do: resolve &Media.get_media/3
     field :type, :string
     field :address, :string
     field :address_data, :string
@@ -59,6 +60,7 @@ defmodule WockyAPI.Schema.BotTypes do
   object :bot_item do
     field :id, non_null(:string)
     field :stanza, :string
+    field :media, :media, do: resolve &Media.get_media/3
     field :image, :boolean
   end
 
