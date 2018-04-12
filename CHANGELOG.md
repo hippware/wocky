@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.11+re9f3db0
+
+* Rename GraphQL user search query to just `users` (#1408)
+* Rework GraphQL mutations to use standard macros and naming (#1407)
+* Add CORS support (for graphql) (PR #1418)
+
+
 # 2018.4.10+r59b7f97
 
 * GraphQL (PR #1400, PR #1401)
