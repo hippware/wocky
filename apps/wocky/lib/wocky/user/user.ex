@@ -391,7 +391,7 @@ defmodule Wocky.User do
     |> join(
       :left,
       [b],
-      s in Subscription,
+      s in BotSubscription,
       b.id == s.bot_id and s.user_id == ^user.id
     )
     |> where([b, s], not is_nil(s.user_id))
