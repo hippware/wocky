@@ -22,7 +22,7 @@ defmodule WockyAPI.Plugs.Authentication do
 
   # Server-generated token authentication
   defp authenticate(conn, nil, user_id, token)
-  when not is_nil(user_id) or not is_nil(token) do
+       when not is_nil(user_id) or not is_nil(token) do
     do_authenticate(conn, :token, {user_id, token})
   end
 

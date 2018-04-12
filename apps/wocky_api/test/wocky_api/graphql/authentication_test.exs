@@ -23,26 +23,34 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
     }
     """
     test "successful authentication", %{user: user, token: token, conn: conn} do
-      assert post_conn(conn, @query,
-                       %{input: %{user: user.id, token: token}}, 200) ==
-        %{
-          "data" => %{
-            "authenticate" => %{
-              "user" => %{
-                "id" => user.id
-              }
-            }
-          }
-        }
+      assert post_conn(
+               conn,
+               @query,
+               %{input: %{user: user.id, token: token}},
+               200
+             ) ==
+               %{
+                 "data" => %{
+                   "authenticate" => %{
+                     "user" => %{
+                       "id" => user.id
+                     }
+                   }
+                 }
+               }
     end
 
     test "unsuccessful authentication", %{user: user, conn: conn} do
       assert %{
-        "data" => %{"authenticate" => nil},
-        "errors" => [_]
-      } =
-      post_conn(conn, @query,
-                %{input: %{user: user.id, token: Lorem.word()}}, 200)
+               "data" => %{"authenticate" => nil},
+               "errors" => [_]
+             } =
+               post_conn(
+                 conn,
+                 @query,
+                 %{input: %{user: user.id, token: Lorem.word()}},
+                 200
+               )
     end
   end
 
@@ -64,24 +72,22 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
     """
     test "successful authentication", %{user: user, jwt: jwt, conn: conn} do
       assert post_conn(conn, @query, %{input: %{token: jwt}}, 200) ==
-        %{
-          "data" => %{
-            "authenticate" => %{
-              "user" => %{
-                "id" => user.id
-              }
-            }
-          }
-        }
+               %{
+                 "data" => %{
+                   "authenticate" => %{
+                     "user" => %{
+                       "id" => user.id
+                     }
+                   }
+                 }
+               }
     end
 
     test "unsuccessful authentication", %{conn: conn} do
       assert %{
-        "data" => %{"authenticate" => nil},
-        "errors" => [_]
-      } =
-      post_conn(conn, @query,
-                %{input: %{token: Lorem.word()}}, 200)
+               "data" => %{"authenticate" => nil},
+               "errors" => [_]
+             } = post_conn(conn, @query, %{input: %{token: Lorem.word()}}, 200)
     end
   end
 end
