@@ -2,104 +2,250 @@ defmodule WockyAPI.GraphQL.CollectionTest do
   use WockyAPI.ConnCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.Account
   alias Wocky.Collections
   alias Wocky.Collections.Collection
   alias Wocky.Repo
   alias Wocky.Repo.Factory
 
+  defp run_query(query, user \\ nil, variables \\ %{}) do
+    assert {:ok, %{data: data}} =
+             Absinthe.run(
+               query,
+               WockyAPI.Schema,
+               variables: variables,
+               context: %{current_user: user}
+             )
+
+    data
+  end
+
+  defp assert_data(actual, expected) do
+    assert actual == expected
+  end
+
   setup do
     [user, user2] = Factory.insert_list(2, :user)
-    {:ok, {token, _}} = Account.assign_token(user.id, "abc")
 
     bots = Factory.insert_list(5, :bot, user: user, public: true)
     coll_bots = Factory.insert_list(5, :bot, user: user, public: true)
-    collection = Factory.insert(:collection, user: user, title: Lorem.sentence())
+
+    collection =
+      Factory.insert(:collection, user: user, title: Lorem.sentence())
+
     Enum.each(coll_bots, &Collections.add_bot(collection.id, &1.id, user))
     Collections.subscribe(collection.id, user2)
 
-    conn =
-      build_conn()
-      |> put_req_header("x-auth-user", user.id)
-      |> put_req_header("x-auth-token", token)
-
     {:ok,
-      user: user,
-      user2: user2,
-      bots: bots,
-      coll_bots: coll_bots,
-      collection: collection,
-      conn: conn}
+     user: user,
+     user2: user2,
+     bots: bots,
+     coll_bots: coll_bots,
+     collection: collection}
   end
 
-  @query """
-  query ($id: AInt!) {
-    collection (id: $id) {
-      title
-      owner {
-        id
-      }
-      bots (first: 10) {
-        totalCount
-        edges {
-          node {
-            id
-          }
-        }
-      }
-      subscribers (first: 10) {
-        totalCount
-        edges {
-          node {
-            id
-          }
-        }
-      }
-    }
-  }
-  """
-  test "get collection by id",
-  %{conn: conn,
-    user: %{id: user_id},
+  test "get collection by id", %{
+    user: %{id: user_id} = user,
     user2: %{id: user2_id},
     collection: %{id: collection_id, title: title},
-    coll_bots: coll_bots}
-  do
-    assert %{
-      "data" => %{
-        "collection" => %{
-          "title" => ^title,
-          "owner" => %{
-            "id" => ^user_id
-          },
-          "bots" => %{
-            "totalCount" => 5,
-            "edges" => edges
-          },
-          "subscribers" => %{
-            "totalCount" => 1,
-            "edges" => [%{
-              "node" => %{
-                "id" => ^user2_id
+    coll_bots: coll_bots
+  } do
+    data =
+      """
+      query ($id: AInt!) {
+        collection (id: $id) {
+          title
+          owner {
+            id
+          }
+          bots (first: 10) {
+            totalCount
+            edges {
+              node {
+                id
               }
-            }]
+            }
+          }
+          subscribers (first: 10) {
+            totalCount
+            edges {
+              node {
+                id
+              }
+            }
           }
         }
       }
-    } =
-      post_conn(conn, @query, %{id: Integer.to_string(collection_id)}, 200)
+      """
+      |> run_query(user, %{"id" => to_string(collection_id)})
+
+    assert %{
+             "collection" => %{
+               "title" => ^title,
+               "owner" => %{
+                 "id" => ^user_id
+               },
+               "bots" => %{
+                 "totalCount" => 5,
+                 "edges" => edges
+               },
+               "subscribers" => %{
+                 "totalCount" => 1,
+                 "edges" => [
+                   %{
+                     "node" => %{
+                       "id" => ^user2_id
+                     }
+                   }
+                 ]
+               }
+             }
+           } = data
 
     bot_ids = Enum.map(edges, &(&1["node"]["id"]))
     assert Enum.sort(bot_ids) == ids(coll_bots)
   end
 
-  @query """
-  query ($id: UUID!) {
-    bot (id: $id) {
-      collections (first: 1) {
-        totalCount
-        edges {
-          node {
+  test "get collection through bot", %{
+    user: user,
+    collection: collection,
+    coll_bots: coll_bots
+  } do
+    """
+    query ($id: UUID!) {
+      bot (id: $id) {
+        collections (first: 1) {
+          totalCount
+          edges {
+            node {
+              id
+              title
+              owner {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    |> run_query(user, %{"id" => hd(coll_bots).id})
+    |> assert_data(%{
+      "bot" => %{
+        "collections" => %{
+          "totalCount" => 1,
+          "edges" => [
+            %{
+              "node" => %{
+                "id" => to_string(collection.id),
+                "title" => collection.title,
+                "owner" => %{
+                  "id" => user.id
+                }
+              }
+            }
+          ]
+        }
+      }
+    })
+  end
+
+  test "get owned collection through current user", %{
+    user: user,
+    collection: collection,
+    coll_bots: coll_bots
+  } do
+    """
+    {
+      currentUser {
+        collections (first: 1) {
+          totalCount
+          edges {
+            node {
+              id
+              title
+              bots (first: 0) {
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    |> run_query(user)
+    |> assert_data(%{
+      "currentUser" => %{
+        "collections" => %{
+          "totalCount" => 1,
+          "edges" => [
+            %{
+              "node" => %{
+                "id" => to_string(collection.id),
+                "title" => collection.title,
+                "bots" => %{
+                  "totalCount" => length(coll_bots)
+                }
+              }
+            }
+          ]
+        }
+      }
+    })
+  end
+
+  test "get subscribed collection through user", %{
+    user: user,
+    user2: user2,
+    collection: collection,
+    coll_bots: coll_bots
+  } do
+    """
+    query ($id: UUID!) {
+      user (id: $id) {
+        subscribedCollections (first: 1) {
+          totalCount
+          edges {
+            node {
+              id
+              title
+              bots (first: 0) {
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    |> run_query(user, %{"id" => user2.id})
+    |> assert_data(%{
+      "user" => %{
+        "subscribedCollections" => %{
+          "totalCount" => 1,
+          "edges" => [
+            %{
+              "node" => %{
+                "id" => to_string(collection.id),
+                "title" => collection.title,
+                "bots" => %{
+                  "totalCount" => length(coll_bots)
+                }
+              }
+            }
+          ]
+        }
+      }
+    })
+  end
+
+  test "create collection mutation", %{user: %{id: user_id} = user} do
+    title = Lorem.sentence()
+
+    data =
+      """
+      mutation ($title: String!) {
+        collectionCreate (input: {title: $title}) {
+          result {
             id
             title
             owner {
@@ -108,237 +254,82 @@ defmodule WockyAPI.GraphQL.CollectionTest do
           }
         }
       }
-    }
-  }
-  """
-  test "get collection through bot",
-  %{conn: conn,
-    user: %{id: user_id},
-    collection: %{id: collection_id, title: title},
-    coll_bots: coll_bots}
-  do
-    assert post_conn(conn, @query, %{id: hd(coll_bots).id}, 200) ==
-      %{
-        "data" => %{
-          "bot" => %{
-            "collections" => %{
-              "totalCount" => 1,
-              "edges" => [%{
-                "node" => %{
-                  "id" => Integer.to_string(collection_id),
-                  "title" => title,
-                  "owner" => %{
-                    "id" => user_id
-                  }
-                }
-              }]
-            }
-          }
-        }
-      }
-  end
+      """
+      |> run_query(user, %{"title" => title})
 
-  @query """
-  {
-    currentUser {
-      collections (first: 1) {
-        totalCount
-        edges {
-          node {
-            id
-            title
-            bots (first: 0) {
-              totalCount
-            }
-          }
-        }
-      }
-    }
-  }
-  """
-  test "get owned collection through current user",
-  %{conn: conn,
-    collection: %{id: collection_id, title: title},
-    coll_bots: coll_bots}
-  do
-    assert post_conn(conn, @query, %{}, 200) ==
-      %{
-        "data" => %{
-          "currentUser" => %{
-            "collections" => %{
-              "totalCount" => 1,
-              "edges" => [%{
-                "node" => %{
-                  "id" => Integer.to_string(collection_id),
-                  "title" => title,
-                  "bots" => %{
-                    "totalCount" => length(coll_bots)
-                  }
-                }
-              }]
-            }
-          }
-        }
-      }
-  end
-
-  @query """
-  query ($id: UUID!) {
-    user (id: $id) {
-      subscribedCollections (first: 1) {
-        totalCount
-        edges {
-          node {
-            id
-            title
-            bots (first: 0) {
-              totalCount
-            }
-          }
-        }
-      }
-    }
-  }
-  """
-  test "get subscribed collection through user",
-    %{conn: conn,
-      user2: user,
-      collection: %{id: collection_id, title: title},
-      coll_bots: coll_bots}
-  do
-    assert post_conn(conn, @query, %{id: user.id}, 200) ==
-      %{
-        "data" => %{
-          "user" => %{
-            "subscribedCollections" => %{
-              "totalCount" => 1,
-              "edges" => [%{
-                "node" => %{
-                  "id" => Integer.to_string(collection_id),
-                  "title" => title,
-                  "bots" => %{
-                    "totalCount" => length(coll_bots)
-                  }
-                }
-              }]
-            }
-          }
-        }
-      }
-  end
-
-  @query """
-  mutation ($input: CollectionCreateInput!) {
-    collectionCreate (input: $input) {
-      result {
-        id
-        title
-        owner {
-          id
-        }
-      }
-    }
-  }
-  """
-  test "create collection mutation",
-  %{conn: conn, user: %{id: user_id} = user} do
-    title = Lorem.sentence()
     assert %{
-        "data" => %{
-          "collectionCreate" => %{
-            "result" => %{
-              "id" => id,
-              "title" => ^title,
-              "owner" => %{
-                "id" => ^user_id
-              }
-            }
-          }
-        }
-      } =
-    post_conn(conn, @query, %{input: %{title: title}}, 200)
-
-    assert %Collection{title: ^title} =
-      id
-      |> String.to_integer()
-      |> Collections.get_query(user)
-      |> Repo.one!()
-  end
-
-  @query """
-  mutation ($input: CollectionUpdateInput!) {
-    collectionUpdate (input: $input) {
-      result {
-        title
-      }
-    }
-  }
-  """
-  test "update collection mutation",
-  %{conn: conn, collection: %{id: id}, user: user} do
-    new_title = Lorem.sentence()
-    assert %{
-        "data" => %{
-          "collectionUpdate" => %{
-            "result" => %{
-              "title" => ^new_title
-            }
-          }
-        }
-      } =
-        post_conn(conn, @query,
-                  %{input: %{id: Integer.to_string(id), title: new_title}}, 200)
-
-    assert %Collection{title: ^new_title} =
-      id
-      |> Collections.get_query(user)
-      |> Repo.one!()
-  end
-
-
-  @query """
-  mutation ($input: CollectionDeleteInput!) {
-    collectionDelete (input: $input) {
-      result
-    }
-  }
-  """
-  test "delete collection mutation",
-  %{conn: conn, collection: %{id: id}, user: user} do
-    assert %{
-        "data" => %{
-          "collectionDelete" => %{
-            "result" => true
-          }
-        }
-      } =
-    post_conn(conn, @query, %{input: %{id: Integer.to_string(id)}}, 200)
-
-    assert nil ==
-      id
-      |> Collections.get_query(user)
-      |> Repo.one()
-  end
-
-  @query """
-  mutation ($id: AInt!) {
-    collectionSubscribe (input: {id: $id}) {
-      result
-    }
-  }
-  """
-  test "subscribe collection mutation", %{
-    conn: conn,
-    collection: %{id: id} = collection,
-    user: user
-  } do
-    assert %{
-             "data" => %{
-               "collectionSubscribe" => %{
-                 "result" => true
+             "collectionCreate" => %{
+               "result" => %{
+                 "id" => id,
+                 "title" => ^title,
+                 "owner" => %{
+                   "id" => ^user_id
+                 }
                }
              }
-           } = post_conn(conn, @query, %{id: Integer.to_string(id)}, 200)
+           } = data
+
+    assert %Collection{title: ^title} =
+             id
+             |> String.to_integer()
+             |> Collections.get_query(user)
+             |> Repo.one!()
+  end
+
+  test "update collection mutation", %{collection: %{id: id}, user: user} do
+    new_title = Lorem.sentence()
+
+    """
+    mutation ($id: AInt!, $title: String!) {
+      collectionUpdate (input: {id: $id, title: $title}) {
+        result {
+          title
+        }
+      }
+    }
+    """
+    |> run_query(user, %{"id" => to_string(id), "title" => new_title})
+    |> assert_data(%{
+      "collectionUpdate" => %{
+        "result" => %{
+          "title" => new_title
+        }
+      }
+    })
+
+    assert %Collection{title: ^new_title} =
+             id
+             |> Collections.get_query(user)
+             |> Repo.one!()
+  end
+
+  test "delete collection mutation", %{collection: %{id: id}, user: user} do
+    """
+    mutation ($id: AInt!) {
+      collectionDelete (input: {id: $id}) {
+        result
+      }
+    }
+    """
+    |> run_query(user, %{"id" => to_string(id)})
+    |> assert_data(%{"collectionDelete" => %{"result" => true}})
+
+    assert nil ==
+             id
+             |> Collections.get_query(user)
+             |> Repo.one()
+  end
+
+  test "subscribe collection mutation", %{collection: collection, user: user} do
+    """
+    mutation ($id: AInt!) {
+      collectionSubscribe (input: {id: $id}) {
+        result
+      }
+    }
+    """
+    |> run_query(user, %{"id" => to_string(collection.id)})
+    |> assert_data(%{"collectionSubscribe" => %{"result" => true}})
 
     assert collection
            |> Collections.get_subscribers_query(user)
@@ -346,25 +337,19 @@ defmodule WockyAPI.GraphQL.CollectionTest do
            |> Enum.any?(&(&1.id == user.id))
   end
 
-  @query """
-  mutation ($id: AInt!) {
-    collectionUnsubscribe (input: {id: $id}) {
-      result
-    }
-  }
-  """
   test "unsubscribe collection mutation", %{
-    conn: conn,
-    collection: %{id: id} = collection,
+    collection: collection,
     user: user
   } do
-    assert %{
-             "data" => %{
-               "collectionUnsubscribe" => %{
-                 "result" => true
-               }
-             }
-           } = post_conn(conn, @query, %{id: Integer.to_string(id)}, 200)
+    """
+    mutation ($id: AInt!) {
+      collectionUnsubscribe (input: {id: $id}) {
+        result
+      }
+    }
+    """
+    |> run_query(user, %{"id" => to_string(collection.id)})
+    |> assert_data(%{"collectionUnsubscribe" => %{"result" => true}})
 
     assert collection
            |> Collections.get_subscribers_query(user)
@@ -372,32 +357,18 @@ defmodule WockyAPI.GraphQL.CollectionTest do
            |> Enum.all?(&(&1.id != user.id))
   end
 
-  @query """
-  mutation ($id: UUID!, $bot_id: UUID!) {
-    collectionAddBot (input: {id: $id, botId: $bot_id}) {
-      result
-    }
-  }
-  """
-  test "add bot collection mutation", %{
-    conn: conn,
-    collection: %{id: id} = collection,
-    user: user
-  } do
+  test "add bot collection mutation", %{collection: collection, user: user} do
     bot = Factory.insert(:bot, user: user, public: true)
-    assert %{
-             "data" => %{
-               "collectionAddBot" => %{
-                 "result" => true
-               }
-             }
-           } =
-             post_conn(
-               conn,
-               @query,
-               %{id: to_string(id), bot_id: bot.id},
-               200
-             )
+
+    """
+    mutation ($id: AInt!, $botId: UUID!) {
+      collectionAddBot (input: {id: $id, botId: $botId}) {
+        result
+      }
+    }
+    """
+    |> run_query(user, %{"id" => to_string(collection.id), "botId" => bot.id})
+    |> assert_data(%{"collectionAddBot" => %{"result" => true}})
 
     assert collection
            |> Collections.get_members_query(user)
@@ -405,32 +376,20 @@ defmodule WockyAPI.GraphQL.CollectionTest do
            |> Enum.any?(&(&1.id == bot.id))
   end
 
-  @query """
-  mutation ($id: UUID!, $bot_id: UUID!) {
-    collectionRemoveBot (input: {id: $id, botId: $bot_id}) {
-      result
-    }
-  }
-  """
   test "remove bot collection mutation", %{
-    conn: conn,
-    collection: %{id: id} = collection,
+    collection: collection,
     user: user,
     coll_bots: [bot | _]
   } do
-    assert %{
-             "data" => %{
-               "collectionRemoveBot" => %{
-                 "result" => true
-               }
-             }
-           } =
-             post_conn(
-               conn,
-               @query,
-               %{id: to_string(id), bot_id: bot.id},
-               200
-             )
+    """
+    mutation ($id: AInt!, $botId: UUID!) {
+      collectionRemoveBot (input: {id: $id, botId: $botId}) {
+        result
+      }
+    }
+    """
+    |> run_query(user, %{"id" => to_string(collection.id), "botId" => bot.id})
+    |> assert_data(%{"collectionRemoveBot" => %{"result" => true}})
 
     assert collection
            |> Collections.get_members_query(user)
