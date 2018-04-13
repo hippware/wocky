@@ -66,20 +66,20 @@ defmodule WockyAPI.Resolvers.Collection do
   def subscribe(_root, args, %{context: %{current_user: user}}) do
     id = args[:id]
     Collections.subscribe(id, user)
-    {:ok, true}
+    {:ok, %{result: true}}
   end
 
   def unsubscribe(_root, args, %{context: %{current_user: user}}) do
     id = args[:id]
     Collections.unsubscribe(id, user)
-    {:ok, true}
+    {:ok, %{result: true}}
   end
 
   def add_bot(_root, args, %{context: %{current_user: user}}) do
     id = args[:id]
     bot_id = args[:bot_id]
     with {:ok, _} <- Collections.add_bot(id, bot_id, user) do
-      {:ok, true}
+      {:ok, %{result: true}}
     end
   end
 
@@ -87,7 +87,7 @@ defmodule WockyAPI.Resolvers.Collection do
     id = args[:id]
     bot_id = args[:bot_id]
     with {:ok, _} <- Collections.remove_bot(id, bot_id, user) do
-      {:ok, true}
+      {:ok, %{result: true}}
     end
   end
 end

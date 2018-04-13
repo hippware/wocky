@@ -156,16 +156,61 @@ defmodule WockyAPI.GraphQL.CollectionTest do
     }
   }
   """
-  test "get collection through current user",
+  test "get owned collection through current user",
   %{conn: conn,
     collection: %{id: collection_id, title: title},
     coll_bots: coll_bots}
   do
-    assert post_conn(conn, @query, %{id: hd(coll_bots).id}, 200) ==
+    assert post_conn(conn, @query, %{}, 200) ==
       %{
         "data" => %{
           "currentUser" => %{
             "collections" => %{
+              "totalCount" => 1,
+              "edges" => [%{
+                "node" => %{
+                  "id" => Integer.to_string(collection_id),
+                  "title" => title,
+                  "bots" => %{
+                    "totalCount" => length(coll_bots)
+                  }
+                }
+              }]
+            }
+          }
+        }
+      }
+  end
+
+  @query """
+  query ($id: UUID!) {
+    user (id: $id) {
+      subscribedCollections (first: 1) {
+        totalCount
+        edges {
+          node {
+            id
+            title
+            bots (first: 0) {
+              totalCount
+            }
+          }
+        }
+      }
+    }
+  }
+  """
+  test "get subscribed collection through user",
+    %{conn: conn,
+      user2: user,
+      collection: %{id: collection_id, title: title},
+      coll_bots: coll_bots}
+  do
+    assert post_conn(conn, @query, %{id: user.id}, 200) ==
+      %{
+        "data" => %{
+          "user" => %{
+            "subscribedCollections" => %{
               "totalCount" => 1,
               "edges" => [%{
                 "node" => %{
@@ -273,6 +318,124 @@ defmodule WockyAPI.GraphQL.CollectionTest do
       id
       |> Collections.get_query(user)
       |> Repo.one()
+  end
+
+  @query """
+  mutation ($id: AInt!) {
+    collectionSubscribe (input: {id: $id}) {
+      result
+    }
+  }
+  """
+  test "subscribe collection mutation", %{
+    conn: conn,
+    collection: %{id: id} = collection,
+    user: user
+  } do
+    assert %{
+             "data" => %{
+               "collectionSubscribe" => %{
+                 "result" => true
+               }
+             }
+           } = post_conn(conn, @query, %{id: Integer.to_string(id)}, 200)
+
+    assert collection
+           |> Collections.get_subscribers_query(user)
+           |> Repo.all()
+           |> Enum.any?(&(&1.id == user.id))
+  end
+
+  @query """
+  mutation ($id: AInt!) {
+    collectionUnsubscribe (input: {id: $id}) {
+      result
+    }
+  }
+  """
+  test "unsubscribe collection mutation", %{
+    conn: conn,
+    collection: %{id: id} = collection,
+    user: user
+  } do
+    assert %{
+             "data" => %{
+               "collectionUnsubscribe" => %{
+                 "result" => true
+               }
+             }
+           } = post_conn(conn, @query, %{id: Integer.to_string(id)}, 200)
+
+    assert collection
+           |> Collections.get_subscribers_query(user)
+           |> Repo.all()
+           |> Enum.all?(&(&1.id != user.id))
+  end
+
+  @query """
+  mutation ($id: UUID!, $bot_id: UUID!) {
+    collectionAddBot (input: {id: $id, botId: $bot_id}) {
+      result
+    }
+  }
+  """
+  test "add bot collection mutation", %{
+    conn: conn,
+    collection: %{id: id} = collection,
+    user: user
+  } do
+    bot = Factory.insert(:bot, user: user, public: true)
+    assert %{
+             "data" => %{
+               "collectionAddBot" => %{
+                 "result" => true
+               }
+             }
+           } =
+             post_conn(
+               conn,
+               @query,
+               %{id: to_string(id), bot_id: bot.id},
+               200
+             )
+
+    assert collection
+           |> Collections.get_members_query(user)
+           |> Repo.all()
+           |> Enum.any?(&(&1.id == bot.id))
+  end
+
+  @query """
+  mutation ($id: UUID!, $bot_id: UUID!) {
+    collectionRemoveBot (input: {id: $id, botId: $bot_id}) {
+      result
+    }
+  }
+  """
+  test "remove bot collection mutation", %{
+    conn: conn,
+    collection: %{id: id} = collection,
+    user: user,
+    coll_bots: [bot | _]
+  } do
+    assert %{
+             "data" => %{
+               "collectionRemoveBot" => %{
+                 "result" => true
+               }
+             }
+           } =
+             post_conn(
+               conn,
+               @query,
+               %{id: to_string(id), bot_id: bot.id},
+               200
+             )
+
+    assert collection
+           |> Collections.get_members_query(user)
+           |> Repo.all()
+           |> Enum.all?(&(&1.id != bot.id))
   end
 
   defp ids(items), do: Enum.sort(Enum.map(items, &(&1.id)))
