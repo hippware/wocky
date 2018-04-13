@@ -2,14 +2,88 @@ defmodule Wocky.CollectionsTest do
   use Wocky.DataCase
 
   alias Faker.Lorem
+  alias Wocky.Bot
   alias Wocky.Collections
-  alias Wocky.Collections.Collection
-  alias Wocky.Collections.Member
-  alias Wocky.Collections.Subscription
+  alias Wocky.Collections.{Collection, Member, Subscription}
   alias Wocky.Repo.Factory
+  alias Wocky.User
 
   setup do
     {:ok, user: Factory.insert(:user)}
+  end
+
+  describe "Queries" do
+    setup %{user: user} do
+      user2 = Factory.insert(:user)
+      bot = Factory.insert(:bot, user: user, public: true)
+      collection =
+        Factory.insert(:collection, user: user, title: Lorem.sentence())
+
+      Collections.add_bot(collection.id, bot.id, user)
+      Collections.subscribe(collection.id, user2)
+
+      {:ok, user2: user2, bot: bot, collection: collection}
+    end
+
+    test "get_query", %{collection: collection, user: user} do
+      result =
+        collection.id
+        |> Collections.get_query(user)
+        |> Repo.one
+
+      assert %Collection{} = result
+      assert result.id == collection.id
+    end
+
+    test "get_collections_query with a user", ctx do
+      result =
+        ctx.user
+        |> Collections.get_collections_query(ctx.user)
+        |> Repo.all
+
+      assert [%Collection{}] = result
+      assert hd(result).id == ctx.collection.id
+    end
+
+    test "get_collections_query with a bot", ctx do
+      result =
+        ctx.bot
+        |> Collections.get_collections_query(ctx.user)
+        |> Repo.all
+
+      assert [%Collection{}] = result
+      assert hd(result).id == ctx.collection.id
+    end
+
+    test "get_subscribed_collections_query", ctx do
+      result =
+        ctx.user2
+        |> Collections.get_subscribed_collections_query(ctx.user)
+        |> Repo.all
+
+      assert [%Collection{}] = result
+      assert hd(result).id == ctx.collection.id
+    end
+
+    test "get_subscribers_query", ctx do
+      result =
+        ctx.collection
+        |> Collections.get_subscribers_query(ctx.user)
+        |> Repo.all
+
+      assert [%User{}] = result
+      assert hd(result).id == ctx.user2.id
+    end
+
+    test "get_members_query", ctx do
+      result =
+        ctx.collection
+        |> Collections.get_members_query(ctx.user)
+        |> Repo.all
+
+      assert [%Bot{}] = result
+      assert hd(result).id == ctx.bot.id
+    end
   end
 
   describe "Basic collections operations" do

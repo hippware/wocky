@@ -13,7 +13,7 @@ defmodule Wocky.Collections do
   @spec get_query(Collection.id(), User.t()) :: Queryable.t()
   def get_query(id, requestor) do
     Collection
-    |> where([c], c.id == ^id)
+    |> identified_by(id)
     |> is_visible_to(requestor.id)
   end
 
@@ -33,7 +33,7 @@ defmodule Wocky.Collections do
   def get_subscribed_collections_query(%User{id: user_id}, requestor) do
     Collection
     |> when_has_subscriber(user_id)
-    |> is_visible_to(requestor.id)
+    |> is_visible_to(requestor.id, :id)
   end
 
   def get_subscribers_query(collection, requestor) do
@@ -131,6 +131,7 @@ defmodule Wocky.Collections do
       Collection
       |> identified_by(id)
       |> is_visible_to(user_id)
+      |> Repo.one()
 
     case result do
       nil -> {:error, :not_found}
