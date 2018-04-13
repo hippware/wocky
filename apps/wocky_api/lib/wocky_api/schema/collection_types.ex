@@ -9,14 +9,20 @@ defmodule WockyAPI.Schema.CollectionTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Collection
+  alias WockyAPI.Resolvers.User
   alias WockyAPI.Resolvers.Utils
 
   object :collection do
-    field :id, non_null(:integer)
+    field :id, non_null(:aint)
     field :title, non_null(:string)
+    field :owner, non_null(:user), do: resolve &User.get_object_owner/3
 
     connection field :bots, node_type: :collection_bots do
       resolve &Collection.get_bots/3
+    end
+
+    connection field :subscribers, node_type: :collection_subscribers do
+      resolve &Collection.get_subscribers/3
     end
   end
 
@@ -36,6 +42,14 @@ defmodule WockyAPI.Schema.CollectionTypes do
     end
   end
 
+  connection :collection_subscribers, node_type: :user do
+    field :total_count, :integer do
+      resolve &Utils.get_count/3
+    end
+    edge do
+    end
+  end
+
   input_object :collection_create_input do
     field :title, non_null(:string)
   end
@@ -43,11 +57,18 @@ defmodule WockyAPI.Schema.CollectionTypes do
   payload_object :collection_create_payload, :collection
 
   input_object :collection_update_input do
-    field :id, non_null(:integer)
+    field :id, non_null(:aint)
     field :title, non_null(:string)
   end
 
   payload_object :collection_update_payload, :collection
+
+  object :collection_queries do
+    field :collection, :collection do
+      arg :id, non_null(:aint)
+      resolve &Collection.get_collection/3
+    end
+  end
 
   object :collection_mutations do
     field :collection_create, :collection_update_payload do
@@ -66,7 +87,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
     payload field :collection_delete do
       input do
-        field :id, non_null(:integer)
+        field :id, non_null(:aint)
       end
       output do
         field :result, :boolean
@@ -76,7 +97,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
     payload field :collection_subscribe do
       input do
-        field :id, non_null(:integer)
+        field :id, non_null(:aint)
       end
       output do
         field :result, :boolean
@@ -86,7 +107,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
     payload field :collection_unsubscribe do
       input do
-        field :id, non_null(:integer)
+        field :id, non_null(:aint)
       end
       output do
         field :result, :boolean
@@ -96,7 +117,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
     payload field :collection_add_bot do
       input do
-        field :id, non_null(:integer)
+        field :id, non_null(:aint)
         field :bot_id, non_null(:uuid)
       end
       output do
@@ -107,7 +128,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
     payload field :collection_remove_bot do
       input do
-        field :id, non_null(:integer)
+        field :id, non_null(:aint)
         field :bot_id, non_null(:uuid)
       end
       output do

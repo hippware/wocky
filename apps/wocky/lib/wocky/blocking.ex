@@ -82,6 +82,21 @@ defmodule Wocky.Blocking do
     |> where([..., b], is_nil(b.id))
   end
 
+  @spec assoc_object_visible_query(Queryable.t(), User.id(), atom)
+  :: Queryable.t()
+  def assoc_object_visible_query(
+    query, requester_id, owner_field \\ :user_id) do
+    query
+    |> join(
+      :left,
+      [o, ...],
+      b in RosterItem,
+      field(o, ^owner_field) == b.user_id and b.contact_id == ^requester_id and
+        (@blocked_group in b.groups or @blocked_by_group in b.groups)
+    )
+    |> where([..., b], is_nil(b.id))
+  end
+
   @spec blocked?(User.id(), User.id()) :: boolean
   def blocked?(a, b) do
     case Roster.get(a, b) do

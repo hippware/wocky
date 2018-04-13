@@ -32,7 +32,7 @@ defmodule WockyAPI.Resolvers.Media do
         }
       }
     else
-      x -> {:ok, nil}
+      _ -> {:ok, nil}
     end
   end
 end

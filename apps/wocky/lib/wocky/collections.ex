@@ -10,11 +10,42 @@ defmodule Wocky.Collections do
   alias Wocky.Repo
   alias Wocky.User
 
-  @spec get_collections_query(User.t(), User.t()) :: Queryable.t()
-  def get_collections_query(owner, requestor) do
+  @spec get_query(Collection.id(), User.t()) :: Queryable.t()
+  def get_query(id, requestor) do
     Collection
-    |> when_owned_by(owner.id)
+    |> where([c], c.id == ^id)
     |> is_visible_to(requestor.id)
+  end
+
+  @spec get_collections_query(User.t() | Bot.t(), User.t()) :: Queryable.t()
+  def get_collections_query(%User{id: owner_id}, requestor) do
+    Collection
+    |> when_owned_by(owner_id)
+    |> is_visible_to(requestor.id)
+  end
+
+  def get_collections_query(%Bot{id: bot_id}, requestor) do
+    Collection
+    |> when_has_member(bot_id)
+    |> is_visible_to(requestor.id)
+  end
+
+  def get_subscribed_collections_query(%User{id: user_id}, requestor) do
+    Collection
+    |> when_has_subscriber(user_id)
+    |> is_visible_to(requestor.id)
+  end
+
+  def get_subscribers_query(collection, requestor) do
+    collection
+    |> Ecto.assoc(:subscribers)
+    |> assoc_is_visible_to(requestor.id, :id)
+  end
+
+  def get_members_query(collection, requestor) do
+    collection
+    |> Ecto.assoc(:members)
+    |> assoc_is_visible_to(requestor.id)
   end
 
   @spec create(binary(), User.t()) :: {:ok, Collection.t()}
@@ -140,7 +171,23 @@ defmodule Wocky.Collections do
     where(q, [c], c.user_id == ^user_id)
   end
 
-  defp is_visible_to(q, user_id) do
-    Blocking.object_visible_query(q, user_id)
+  defp is_visible_to(q, user_id, field \\ :user_id) do
+    Blocking.object_visible_query(q, user_id, field)
+  end
+
+  defp assoc_is_visible_to(q, user_id, field \\ :user_id) do
+    Blocking.assoc_object_visible_query(q, user_id, field)
+  end
+
+  defp when_has_member(q, bot_id) do
+    q
+    |> join(:inner, [c], b in assoc(c, :members))
+    |> where([..., b], b.id == ^bot_id)
+  end
+
+  defp when_has_subscriber(q, user_id) do
+    q
+    |> join(:inner, [c], u in assoc(c, :subscribers))
+    |> where([..., u], u.id == ^user_id)
   end
 end

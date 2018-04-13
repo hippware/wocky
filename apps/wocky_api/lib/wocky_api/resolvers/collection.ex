@@ -3,22 +3,39 @@ defmodule WockyAPI.Resolvers.Collection do
 
   alias Wocky.Collections
   alias Wocky.Repo
-  alias Wocky.User
   alias WockyAPI.Resolvers.Utils
 
-  defp with_collection(id, requestor, fun) do
-    case Collections.get(id, requestor) do
-      nil ->
-        {:error, "Invalid collection"}
-
-      collection ->
-        fun.(collection)
-    end
+  def get_collection(_root, args, %{context: %{current_user: requestor}}) do
+    {:ok,
+      args[:id]
+      |> Collections.get_query(requestor)
+      |> Repo.one()
+    }
   end
 
-  def get_collections(user, args, %{context: %{current_user: requestor}}) do
-    query = Collections.get_collections_query(user, requestor)
-    Utils.connection_from_query(query, user, args)
+  def get_collections(
+    user_or_bot, args, %{context: %{current_user: requestor}}) do
+    user_or_bot
+    |> Collections.get_collections_query(requestor)
+    |> Utils.connection_from_query(user_or_bot, args)
+  end
+
+  def get_subscribed_collections(user, args, %{context: %{current_user: requestor}}) do
+    user
+    |> Collections.get_subscribed_collections_query(requestor)
+    |> Utils.connection_from_query(user, args)
+  end
+
+  def get_bots(collection, args, %{context: %{current_user: requestor}}) do
+    collection
+    |> Collections.get_members_query(requestor)
+    |> Utils.connection_from_query(collection, args)
+  end
+
+  def get_subscribers(collection, args, %{context: %{current_user: requestor}}) do
+    collection
+    |> Collections.get_subscribers_query(requestor)
+    |> Utils.connection_from_query(collection, args)
   end
 
   def create(_root, args, %{context: %{current_user: user}}) do
@@ -35,10 +52,10 @@ defmodule WockyAPI.Resolvers.Collection do
   end
 
   def delete(_root, args, %{context: %{current_user: user}}) do
-    id = args[:input][:id]
+    id = args[:id]
 
     case Collections.delete(id, user) do
-      :ok ->
+      {:ok, _} ->
         {:ok, %{result: true}}
 
       {:error, _} ->
@@ -46,63 +63,31 @@ defmodule WockyAPI.Resolvers.Collection do
     end
   end
 
-  def get_contact_relationship(_root, _args, %{
-        source: %{node: target_user, parent: parent}
-      }) do
-    {:ok, Roster.relationship(parent, target_user)}
+  def subscribe(_root, args, %{context: %{current_user: user}}) do
+    id = args[:id]
+    Collections.subscribe(id, user)
+    {:ok, true}
   end
 
-  def get_home_stream(user, args, _info) do
-    user.id
-    |> HomeStream.get_query()
-    |> Utils.connection_from_query(user, args)
+  def unsubscribe(_root, args, %{context: %{current_user: user}}) do
+    id = args[:id]
+    Collections.unsubscribe(id, user)
+    {:ok, true}
   end
 
-  def get_conversations(user, args, _info) do
-    user.id
-    |> Conversation.with_user()
-    |> Utils.connection_from_query(user, args)
-  end
-
-  def get_conversation_user(conversation, _args, _info) do
-    {:ok, User.get_by_jid(JID.from_binary(conversation.other_jid))}
-  end
-
-
-  def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
-    with %User{} = user <- Repo.get(User, id),
-         false <- Blocking.blocked?(current_user.id, id) do
-           {:ok, user}
-    else
-      _ -> user_not_found(id)
-    end
-  end
-  # This is kind of dumb - an anonymous user can see more than an authenticated
-  # but blocked user...
-  def get_user(_root, %{id: id}, _info) do
-    with %User{} = user <- Repo.get(User, id) do
-         {:ok, user}
-    else
-      _ -> user_not_found(id)
+  def add_bot(_root, args, %{context: %{current_user: user}}) do
+    id = args[:id]
+    bot_id = args[:bot_id]
+    with {:ok, _} <- Collections.add_bot(id, bot_id, user) do
+      {:ok, true}
     end
   end
 
-  def search_users(_root, %{limit: limit}, _info) when limit < 0 do
-    {:error, "limit cannot be less than 0"}
+  def remove_bot(_root, args, %{context: %{current_user: user}}) do
+    id = args[:id]
+    bot_id = args[:bot_id]
+    with {:ok, _} <- Collections.remove_bot(id, bot_id, user) do
+      {:ok, true}
+    end
   end
-  def search_users(_root, %{search_term: search_term} = args,
-                   %{context: %{current_user: current_user}}) do
-    limit = args[:limit] || @default_search_results
-    {:ok, User.search_by_name(search_term, current_user.id, limit)}
-  end
-
-  def update_location(_root, args, %{context: %{current_user: user}}) do
-    location = args[:input]
-    with :ok <- User.set_location(user, location[:resource], location[:lat],
-                                  location[:lon], location[:accuracy]) do
-                                    {:ok, true}
-                                  end
-  end
-
-  defp user_not_found(id), do: {:error, "User not found: " <> id}
 end
