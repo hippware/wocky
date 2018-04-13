@@ -12,7 +12,7 @@ defmodule Wocky.Mixfile do
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls, test_task: "espec"],
+      test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         espec: :test,
         coveralls: :test,
