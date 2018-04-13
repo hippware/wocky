@@ -1,27 +1,11 @@
 defmodule WockyAPI.GraphQL.CollectionTest do
-  use WockyAPI.ConnCase, async: true
+  use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
   alias Wocky.Collections
   alias Wocky.Collections.Collection
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-
-  defp run_query(query, user \\ nil, variables \\ %{}) do
-    assert {:ok, %{data: data}} =
-             Absinthe.run(
-               query,
-               WockyAPI.Schema,
-               variables: variables,
-               context: %{current_user: user}
-             )
-
-    data
-  end
-
-  defp assert_data(actual, expected) do
-    assert actual == expected
-  end
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
