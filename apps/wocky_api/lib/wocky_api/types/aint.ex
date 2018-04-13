@@ -19,6 +19,7 @@ defmodule WockyAPI.Types.AInt do
       _ -> :error
     end
   end
+
   defp parse_aint(%Null{}), do: {:ok, nil}
   defp parse_aint(_), do: :error
 end

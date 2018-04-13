@@ -30,6 +30,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :total_count, :integer do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -38,6 +39,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :total_count, :integer do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -46,6 +48,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :total_count, :integer do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -89,9 +92,11 @@ defmodule WockyAPI.Schema.CollectionTypes do
       input do
         field :id, non_null(:aint)
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Collection.delete/3
     end
 
@@ -99,9 +104,11 @@ defmodule WockyAPI.Schema.CollectionTypes do
       input do
         field :id, non_null(:aint)
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Collection.subscribe/3
     end
 
@@ -109,9 +116,11 @@ defmodule WockyAPI.Schema.CollectionTypes do
       input do
         field :id, non_null(:aint)
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Collection.unsubscribe/3
     end
 
@@ -120,9 +129,11 @@ defmodule WockyAPI.Schema.CollectionTypes do
         field :id, non_null(:aint)
         field :bot_id, non_null(:uuid)
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Collection.add_bot/3
     end
 
@@ -131,9 +142,11 @@ defmodule WockyAPI.Schema.CollectionTypes do
         field :id, non_null(:aint)
         field :bot_id, non_null(:uuid)
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Collection.remove_bot/3
     end
   end

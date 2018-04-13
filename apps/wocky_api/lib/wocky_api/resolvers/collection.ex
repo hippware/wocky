@@ -7,20 +7,20 @@ defmodule WockyAPI.Resolvers.Collection do
 
   def get_collection(_root, args, %{context: %{current_user: requestor}}) do
     {:ok,
-      args[:id]
-      |> Collections.get_query(requestor)
-      |> Repo.one()
-    }
+     args[:id]
+     |> Collections.get_query(requestor)
+     |> Repo.one()}
   end
 
-  def get_collections(
-    user_or_bot, args, %{context: %{current_user: requestor}}) do
+  def get_collections(user_or_bot, args, %{context: %{current_user: requestor}}) do
     user_or_bot
     |> Collections.get_collections_query(requestor)
     |> Utils.connection_from_query(user_or_bot, args)
   end
 
-  def get_subscribed_collections(user, args, %{context: %{current_user: requestor}}) do
+  def get_subscribed_collections(user, args, %{
+        context: %{current_user: requestor}
+      }) do
     user
     |> Collections.get_subscribed_collections_query(requestor)
     |> Utils.connection_from_query(user, args)
@@ -78,6 +78,7 @@ defmodule WockyAPI.Resolvers.Collection do
   def add_bot(_root, args, %{context: %{current_user: user}}) do
     id = args[:id]
     bot_id = args[:bot_id]
+
     with {:ok, _} <- Collections.add_bot(id, bot_id, user) do
       {:ok, %{result: true}}
     end
@@ -86,6 +87,7 @@ defmodule WockyAPI.Resolvers.Collection do
   def remove_bot(_root, args, %{context: %{current_user: user}}) do
     id = args[:id]
     bot_id = args[:bot_id]
+
     with {:ok, _} <- Collections.remove_bot(id, bot_id, user) do
       {:ok, %{result: true}}
     end
