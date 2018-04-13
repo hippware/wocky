@@ -44,6 +44,10 @@ defmodule WockyAPI.Schema.UserTypes do
     connection field :conversations, node_type: :conversations do
       resolve &User.get_conversations/3
     end
+
+    connection field :collections, node_type: :collections do
+      resolve &Collection.get_collections/3
+    end
   end
 
   enum :user_bot_relationship do

@@ -10,6 +10,13 @@ defmodule Wocky.Collections do
   alias Wocky.Repo
   alias Wocky.User
 
+  @spec get_collections_query(User.t(), User.t()) :: Queryable.t()
+  def get_collections_query(owner, requestor) do
+    Collection
+    |> when_owned_by(owner.id)
+    |> is_visible_to(requestor.id)
+  end
+
   @spec create(binary(), User.t()) :: {:ok, Collection.t()}
   def create(title, owner) do
     %Collection{title: title, user_id: owner.id}

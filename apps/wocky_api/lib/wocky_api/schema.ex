@@ -8,6 +8,7 @@ defmodule WockyAPI.Schema do
   import_types Kronky.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BotTypes
+  import_types WockyAPI.Schema.CollectionTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.UUID
@@ -22,6 +23,7 @@ defmodule WockyAPI.Schema do
     import_fields :user_mutations
     import_fields :bot_mutations
     import_fields :location_mutations
+    import_fields :collection_mutations
   end
 
   subscription do
