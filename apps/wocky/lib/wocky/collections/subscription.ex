@@ -3,10 +3,7 @@ defmodule Wocky.Collections.Subscription do
 
   use Wocky.Repo.Schema
 
-  import Ecto.Query
-
   alias Wocky.Collections.Collection
-  alias Wocky.Repo
   alias Wocky.User
 
   @primary_key false
@@ -22,21 +19,8 @@ defmodule Wocky.Collections.Subscription do
 
   @type t :: %Subscription{}
 
-  def add(collection_id, user_id) do
-    %Subscription{}
-    |> changeset(%{collection_id: collection_id, user_id: user_id})
-    |> Repo.insert()
-  end
-
-  def remove(collection_id, user_id) do
-    Subscription
-    |> where([s], s.collection_id == ^collection_id and s.user_id == ^user_id)
-    |> Repo.delete_all()
-
-    :ok
-  end
-
-  defp changeset(struct, params) do
+  @doc false
+  def changeset(struct, params) do
     struct
     |> cast(params, [:collection_id, :user_id])
     |> validate_required([:collection_id, :user_id])

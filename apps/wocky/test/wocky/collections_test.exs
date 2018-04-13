@@ -32,55 +32,58 @@ defmodule Wocky.CollectionsTest do
 
       new_title = Lorem.sentence()
       assert {:ok, %Collection{id: ^id, title: ^new_title}} =
-        Collections.update(id, new_title)
+        Collections.update(id, new_title, ctx.user)
     end
 
     test "delete a collection", ctx do
      {:ok, %Collection{id: id}} = ctx.result
 
-      assert :ok == Collections.delete(id)
+      assert {:ok, %Collection{}} = Collections.delete(id, ctx.user)
       assert nil == Repo.get(Collection, id)
     end
 
-    test "delete a non-existant collection" do
-      assert :ok = Collections.delete(:rand.uniform(100))
+    test "delete a non-existant collection", ctx do
+      assert {:ok, nil} = Collections.delete(:rand.uniform(100), ctx.user)
     end
   end
 
   describe "bot addition and removal" do
-    setup do
+    setup %{user: user} do
       {:ok,
-        collection: Factory.insert(:collection),
+        collection: Factory.insert(:collection, user: user),
         bots: Factory.insert_list(10, :bot, public: true)}
     end
 
-    test "add bots to a collection",
-    %{collection: %{id: collection_id} = collection, bots: bots} do
-      for bot <- bots do
+    test "add bots to a collection", ctx do
+      for bot <- ctx.bots do
         bot_id = bot.id
+        collection_id = ctx.collection.id
         assert {:ok, %Member{collection_id: ^collection_id, bot_id: ^bot_id}} =
-          Collections.add_bot(collection_id, bot_id)
+          Collections.add_bot(collection_id, bot_id, ctx.user)
       end
 
-      members = Collection.bots_query(collection) |> Repo.all()
+      members = Collection.bots_query(ctx.collection) |> Repo.all()
 
-      assert ids(members) == ids(bots)
+      assert ids(members) == ids(ctx.bots)
     end
 
-    test "remove bots from a collection",
-    %{collection: %{id: collection_id} = collection, bots: bots} do
-      for bot <- bots do
+    test "remove bots from a collection", ctx do
+      collection_id = ctx.collection.id
+
+      for bot <- ctx.bots do
         bot_id = bot.id
         assert {:ok, %Member{collection_id: ^collection_id, bot_id: ^bot_id}} =
-          Collections.add_bot(collection_id, bot_id)
+          Collections.add_bot(collection_id, bot_id, ctx.user)
       end
 
-      for bot <- Enum.slice(bots, 0..4) do
-        assert :ok == Collections.remove_bot(collection_id, bot.id)
+      for bot <- Enum.slice(ctx.bots, 0..4) do
+        bot_id = bot.id
+        assert {:ok, %Member{collection_id: ^collection_id, bot_id: ^bot_id}} =
+          Collections.remove_bot(collection_id, bot_id, ctx.user)
       end
 
-      remaining = Collection.bots_query(collection) |> Repo.all()
-      assert ids(remaining) == ids(Enum.slice(bots, 5..9))
+      remaining = Collection.bots_query(ctx.collection) |> Repo.all()
+      assert ids(remaining) == ids(Enum.slice(ctx.bots, 5..9))
     end
   end
 
@@ -92,35 +95,39 @@ defmodule Wocky.CollectionsTest do
         users: Factory.insert_list(10, :user)}
     end
 
-    test "subscribe to a collection",
-    %{collection: %{id: collection_id} = collection, users: users} do
-      for user <- users do
+    test "subscribe to a collection", ctx do
+      for user <- ctx.users do
         user_id = user.id
+        collection_id = ctx.collection.id
         assert {:ok,
           %Subscription{collection_id: ^collection_id, user_id: ^user_id}} =
-            Collections.subscribe(collection_id, user_id)
+            Collections.subscribe(collection_id, user)
       end
 
-      members = Collection.subscribers_query(collection) |> Repo.all()
+      members = Collection.subscribers_query(ctx.collection) |> Repo.all()
 
-      assert ids(members) == ids(users)
+      assert ids(members) == ids(ctx.users)
     end
 
-    test "unsubscribe from a collection",
-    %{collection: %{id: collection_id} = collection, users: users} do
-      for user <- users do
+    test "unsubscribe from a collection", ctx do
+      collection_id = ctx.collection.id
+
+      for user <- ctx.users do
         user_id = user.id
         assert {:ok,
           %Subscription{collection_id: ^collection_id, user_id: ^user_id}} =
-            Collections.subscribe(collection_id, user_id)
+            Collections.subscribe(collection_id, user)
       end
 
-      for user <- Enum.slice(users, 0..4) do
-        assert :ok == Collections.unsubscribe(collection_id, user.id)
+      for user <- Enum.slice(ctx.users, 0..4) do
+        user_id = user.id
+        assert {:ok,
+          %Subscription{collection_id: ^collection_id, user_id: ^user_id}} =
+            Collections.unsubscribe(collection_id, user)
       end
 
-      remaining = Collection.subscribers_query(collection) |> Repo.all()
-      assert ids(remaining) == ids(Enum.slice(users, 5..9))
+      remaining = Collection.subscribers_query(ctx.collection) |> Repo.all()
+      assert ids(remaining) == ids(Enum.slice(ctx.users, 5..9))
     end
   end
 

@@ -3,11 +3,8 @@ defmodule Wocky.Collections.Member do
 
   use Wocky.Repo.Schema
 
-  import Ecto.Query
-
   alias Wocky.Bot
   alias Wocky.Collections.Collection
-  alias Wocky.Repo
 
   @primary_key false
   schema "collection_members" do
@@ -22,21 +19,8 @@ defmodule Wocky.Collections.Member do
 
   @type t :: %Member{}
 
-  def add(collection_id, bot_id) do
-    %Member{}
-    |> changeset(%{collection_id: collection_id, bot_id: bot_id})
-    |> Repo.insert()
-  end
-
-  def remove(collection_id, bot_id) do
-    Member
-    |> where([m], m.collection_id == ^collection_id and m.bot_id == ^bot_id)
-    |> Repo.delete_all()
-
-    :ok
-  end
-
-  defp changeset(struct, params) do
+  @doc false
+  def changeset(struct, params) do
     struct
     |> cast(params, [:collection_id, :bot_id])
     |> validate_required([:collection_id, :bot_id])
