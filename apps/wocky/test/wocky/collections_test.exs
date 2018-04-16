@@ -205,5 +205,25 @@ defmodule Wocky.CollectionsTest do
     end
   end
 
+  describe "subscribed collections ordering" do
+    test "should be ordered by subscription time", %{user: user} do
+      collections =
+        10
+        |> Factory.insert_list(:collection)
+        |> Enum.shuffle()
+
+      Enum.each(collections, &Collections.subscribe(&1.id, user))
+
+      subscribed =
+        user
+        |> Collections.get_subscribed_collections_query(user)
+        |> preload(:user)
+        |> Repo.all()
+        |> Enum.reverse()
+
+      assert collections == subscribed
+    end
+  end
+
   defp ids(items), do: Enum.sort(Enum.map(items, &(&1.id)))
 end

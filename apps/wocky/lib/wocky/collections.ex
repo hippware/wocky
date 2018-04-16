@@ -33,19 +33,21 @@ defmodule Wocky.Collections do
   def get_subscribed_collections_query(%User{id: user_id}, requestor) do
     Collection
     |> when_has_subscriber(user_id)
-    |> is_visible_to(requestor.id, :id)
+    |> group_by([c, s], [s.created_at, c.id])
+    |> order_by([..., s], desc: s.created_at)
+    |> is_visible_to(requestor.id)
   end
 
   def get_subscribers_query(collection, requestor) do
     collection
     |> Ecto.assoc(:subscribers)
-    |> assoc_is_visible_to(requestor.id, :id)
+    |> is_visible_to(requestor.id, :id)
   end
 
   def get_members_query(collection, requestor) do
     collection
     |> Ecto.assoc(:members)
-    |> assoc_is_visible_to(requestor.id)
+    |> is_visible_to(requestor.id)
   end
 
   @spec create(binary(), User.t()) :: {:ok, Collection.t()}
@@ -173,10 +175,6 @@ defmodule Wocky.Collections do
   end
 
   defp is_visible_to(q, user_id, field \\ :user_id) do
-    Blocking.object_visible_query(q, user_id, field)
-  end
-
-  defp assoc_is_visible_to(q, user_id, field \\ :user_id) do
     Blocking.assoc_object_visible_query(q, user_id, field)
   end
 
@@ -188,7 +186,7 @@ defmodule Wocky.Collections do
 
   defp when_has_subscriber(q, user_id) do
     q
-    |> join(:inner, [c], u in assoc(c, :subscribers))
-    |> where([..., u], u.id == ^user_id)
+    |> join(:inner, [c], s in Subscription, s.collection_id == c.id)
+    |> where([..., s], s.user_id == ^user_id)
   end
 end

@@ -15,7 +15,7 @@ defmodule WockyAPI.Resolvers.Collection do
   def get_collections(user_or_bot, args, %{context: %{current_user: requestor}}) do
     user_or_bot
     |> Collections.get_collections_query(requestor)
-    |> Utils.connection_from_query(user_or_bot, args)
+    |> Utils.connection_from_query(user_or_bot, [desc: :created_at], args)
   end
 
   def get_subscribed_collections(user, args, %{
@@ -23,7 +23,7 @@ defmodule WockyAPI.Resolvers.Collection do
       }) do
     user
     |> Collections.get_subscribed_collections_query(requestor)
-    |> Utils.connection_from_query(user, args)
+    |> Utils.connection_from_query(user, nil, args)
   end
 
   def get_bots(collection, args, %{context: %{current_user: requestor}}) do
