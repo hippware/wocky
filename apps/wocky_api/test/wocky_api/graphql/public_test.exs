@@ -46,7 +46,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
         edges {
           node {
             id
-            user {
+            owner {
               handle
             }
           }
@@ -97,7 +97,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
               "edges" => [%{
                 "node" => %{
                   "id" => item_id,
-                  "user" => %{
+                  "owner" => %{
                     "handle" => user2_handle
                   }
                 }

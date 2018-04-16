@@ -9,7 +9,9 @@ defmodule WockyAPI.Schema.BotTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
+  alias WockyAPI.Resolvers.User
   alias WockyAPI.Resolvers.Utils
 
   connection :bots, node_type: :bot do
@@ -44,7 +46,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :address_data, :string
     field :public, non_null(:boolean)
     field :geofence, non_null(:boolean)
-    field :owner, non_null(:user), do: resolve &Bot.get_owner/3
+    field :owner, non_null(:user), do: resolve &User.get_object_owner/3
 
     connection field :items, node_type: :bot_items do
       resolve &Bot.get_items/3
@@ -55,6 +57,10 @@ defmodule WockyAPI.Schema.BotTypes do
       arg :id, :uuid
       resolve &Bot.get_subscribers/3
     end
+
+    connection field :collections, node_type: :collections do
+      resolve &Collection.get_collections/3
+    end
   end
 
   object :bot_item do
@@ -62,7 +68,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :stanza, :string
     field :media, :media, do: resolve &Media.get_media/3
     field :image, :boolean
-    field :user, :user, do: resolve &Bot.get_owner/3
+    field :owner, :user, do: resolve &User.get_object_owner/3
   end
 
   connection :bot_items, node_type: :bot_item do

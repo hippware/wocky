@@ -14,6 +14,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
+  alias Wocky.Collections.Collection
   alias Wocky.Conversation
   alias Wocky.GeoUtils
   alias Wocky.HomeStream.Item, as: HomeStreamItem
@@ -90,6 +91,14 @@ defmodule Wocky.Repo.Factory do
     %Subscription{
       user: build(:user),
       bot: build(:bot)
+    }
+  end
+
+  def collection_factory do
+    %Collection{
+      id: :rand.uniform(0x7FFFFFFFFFFFFFFF),
+      user: build(:user),
+      title: Lorem.sentence()
     }
   end
 

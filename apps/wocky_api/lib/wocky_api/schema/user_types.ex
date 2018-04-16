@@ -9,6 +9,7 @@ defmodule WockyAPI.Schema.UserTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
   alias WockyAPI.Resolvers.Utils
@@ -43,6 +44,14 @@ defmodule WockyAPI.Schema.UserTypes do
 
     connection field :conversations, node_type: :conversations do
       resolve &User.get_conversations/3
+    end
+
+    connection field :collections, node_type: :collections do
+      resolve &Collection.get_collections/3
+    end
+
+    connection field :subscribed_collections, node_type: :collections do
+      resolve &Collection.get_subscribed_collections/3
     end
   end
 
