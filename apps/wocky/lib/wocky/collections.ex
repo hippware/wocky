@@ -9,6 +9,8 @@ defmodule Wocky.Collections do
   alias Wocky.Collections.{Collection, Member, Subscription}
   alias Wocky.HomeStream
   alias Wocky.HomeStream.ID
+  alias Wocky.Push
+  alias Wocky.Push.Events.CollectionShareEvent
   alias Wocky.Repo
   alias Wocky.JID
   alias Wocky.User
@@ -135,11 +137,16 @@ defmodule Wocky.Collections do
 
   def share(collection, sharer, target, message) do
     with false <- Blocking.blocked?(sharer.id, target.id) do
+      # Insert home stream item
       key = ID.collection_share_id(collection)
       from_jid = sharer |> User.to_jid |> JID.to_binary
       stanza = share_stanza(collection, message)
       HomeStream.put(
         target.id, key, from_jid, stanza, ref_collection_id: collection.id)
+
+      # Send push event
+      event = %CollectionShareEvent{user: sharer, collection: collection}
+      Push.notify_all(target.id, event)
     end
   end
 

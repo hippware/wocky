@@ -2,6 +2,7 @@ defmodule Wocky.Push.Events do
   @moduledoc false
 
   alias Wocky.Bot
+  alias Wocky.Collections.Collection
   alias Wocky.Push.Event
   alias Wocky.User
 
@@ -202,6 +203,31 @@ defmodule Wocky.Push.Events do
 
     def uri(%NewFollowerEvent{} = _event) do
       make_uri(:followers, nil, false)
+    end
+  end
+
+  defmodule CollectionShareEvent do
+    @moduledoc false
+
+    defstruct [:user, :collection]
+
+    @type t :: %__MODULE__{
+            user: User.t(),
+            collection: Collection.t()
+          }
+
+    use ExConstructor
+  end
+
+  defimpl Event, for: CollectionShareEvent do
+    import Wocky.Push.Events.Utils
+
+    def message(%CollectionShareEvent{user: user}) do
+      "#{get_handle(user)} has shared a collection with you!"
+    end
+
+    def uri(%CollectionShareEvent{collection: collection}) do
+      make_uri(:collection, collection.id)
     end
   end
 end
