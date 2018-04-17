@@ -198,7 +198,7 @@ defmodule Wocky.Push.Events do
     import Wocky.Push.Events.Utils
 
     def message(%NewFollowerEvent{follower: follower} = _event) do
-      "#{get_handle(follower)} just followed you!"
+      get_handle(follower) <> " just followed you!"
     end
 
     def uri(%NewFollowerEvent{} = _event) do
@@ -223,11 +223,11 @@ defmodule Wocky.Push.Events do
     import Wocky.Push.Events.Utils
 
     def message(%CollectionShareEvent{user: user}) do
-      "#{get_handle(user)} has shared a collection with you!"
+      get_handle(user) <> " has shared a collection with you!"
     end
 
     def uri(%CollectionShareEvent{collection: collection}) do
-      make_uri(:collection, collection.id)
+      make_uri(:collection, to_string(collection.id))
     end
   end
 end
