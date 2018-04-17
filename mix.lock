@@ -136,5 +136,6 @@
   "worker_pool": {:hex, :worker_pool, "3.1.0", "c908627e04057cf29940ad0e79b89ab161db520eebc76942efd08a187babf93a", [:rebar3], [], "hexpm"},
   "wsecli": {:git, "https://github.com/esl/wsecli.git", "a89054cf71c5ee9e780998e5acb2a78fd3419dd9", [branch: "master"]},
   "wsock": {:git, "https://github.com/esl/wsock", "251e18b80c018bb5a6e2f1bbd9bcfcc92e1d9383", [ref: "251e18b"]},
+  "xml_builder": {:hex, :xml_builder, "2.0.0", "371ed27bb63bf0598dbaf3f0c466e5dc7d16cb4ecb68f06a67f953654062e21b", [:mix], [], "hexpm"},
   "zipper": {:git, "https://github.com/inaka/zipper.git", "f06f2c77d79f20571c589a31b138214cf0e4428f", [branch: "master"]},
 }

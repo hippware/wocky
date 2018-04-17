@@ -6,6 +6,7 @@ defmodule Wocky.HomeStream do
   import Ecto.Query
 
   alias Wocky.Bot
+  alias Wocky.Collections.Collection
   alias Wocky.HomeStream.{ID, Item, Prepop}
   alias Wocky.JID
   alias Wocky.Repo
@@ -25,6 +26,7 @@ defmodule Wocky.HomeStream do
       reference_user_id: Keyword.get(opts, :ref_user_id),
       reference_bot_id: Keyword.get(opts, :ref_bot_id),
       reference_bot_item_id: Keyword.get(opts, :ref_bot_item_id),
+      reference_collection_id: Keyword.get(opts, :ref_collection_id),
       class: :item,
 
       # Usually we let ecto handle these timestamps, however in this case we
@@ -63,7 +65,8 @@ defmodule Wocky.HomeStream do
     end
   end
 
-  @spec delete(User.t(), User.t() | Bot.t()) :: {:ok, Item.t() | nil}
+  @spec delete(User.t(), User.t() | Bot.t() | Collection.t())
+  :: {:ok, Item.t() | nil}
   def delete(%User{id: user_id}, %User{id: ref_user_id}) do
     Item
     |> where(user_id: ^user_id)
@@ -77,6 +80,15 @@ defmodule Wocky.HomeStream do
     Item
     |> where(user_id: ^user_id)
     |> where(reference_bot_id: ^ref_bot_id)
+    |> Repo.update_all(set: Item.delete_changes())
+
+    :ok
+  end
+
+  def delete(%User{id: user_id}, %Collection{id: ref_collection_id}) do
+    Item
+    |> where(user_id: ^user_id)
+    |> where(reference_collection_id: ^ref_collection_id)
     |> Repo.update_all(set: Item.delete_changes())
 
     :ok

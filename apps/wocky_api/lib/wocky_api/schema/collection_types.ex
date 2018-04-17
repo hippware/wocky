@@ -149,5 +149,19 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
       resolve &Collection.remove_bot/3
     end
+
+    payload field :collection_share do
+      input do
+        field :id, non_null(:aint)
+        field :user_id, non_null(:uuid)
+        field :message, :string
+      end
+
+      output do
+        field :result, :boolean
+      end
+
+      resolve &Collection.share/3
+    end
   end
 end

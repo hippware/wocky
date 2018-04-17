@@ -1,9 +1,13 @@
 defmodule WockyAPI.GraphQL.CollectionTest do
   use WockyAPI.GraphQLCase, async: true
 
+  import SweetXml
+
   alias Faker.Lorem
   alias Wocky.Collections
   alias Wocky.Collections.Collection
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.Item
   alias Wocky.Repo
   alias Wocky.Repo.Factory
 
@@ -379,6 +383,33 @@ defmodule WockyAPI.GraphQL.CollectionTest do
            |> Collections.get_members_query(user)
            |> Repo.all()
            |> Enum.all?(&(&1.id != bot.id))
+  end
+
+  test "collection sharing", %{
+    collection: collection,
+    user: user,
+    user2: user2
+  } do
+    message = Lorem.paragraph()
+    """
+    mutation ($id: AInt!, $user_id: UUID!, $message: String) {
+      collectionShare (input: {id: $id, user_id: $user_id, message: $message}) {
+        result
+      }
+    }
+    """
+    |> run_query(user, %{
+      "id" => to_string(collection.id),
+      "user_id" => user2.id,
+      "message" => message
+    })
+    |> assert_data(%{"collectionShare" => %{"result" => true}})
+
+    %Item{stanza: stanza} = user2.id |> HomeStream.get(false) |> Enum.last()
+
+    assert stanza |> xpath(~x"//message/body/text()") == message
+    assert stanza |> xpath(~x"//collection/id/text()") == collection.id
+    assert stanza |> xpath(~x"//collection/action/text()") == "share"
   end
 
   defp ids(items), do: Enum.sort(Enum.map(items, &(&1.id)))

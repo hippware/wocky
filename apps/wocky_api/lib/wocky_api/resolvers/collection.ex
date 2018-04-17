@@ -2,7 +2,9 @@ defmodule WockyAPI.Resolvers.Collection do
   @moduledoc "GraphQL resolver for collection objects"
 
   alias Wocky.Collections
+  alias Wocky.Collections.Collection
   alias Wocky.Repo
+  alias Wocky.User
   alias WockyAPI.Resolvers.Utils
 
   def get_collection(_root, args, %{context: %{current_user: requestor}}) do
@@ -90,6 +92,18 @@ defmodule WockyAPI.Resolvers.Collection do
 
     with {:ok, _} <- Collections.remove_bot(id, bot_id, user) do
       {:ok, %{result: true}}
+    end
+  end
+
+  def share(_root, args, %{context: %{current_user: user}}) do
+    with %Collection{} = c
+         <- args[:id] |> Collections.get_query(user) |> Repo.one(),
+         %User{} = target_user
+         <- Repo.get(User, args[:user_id]) do
+           Collections.share(c, user, target_user, args[:message])
+           {:ok, %{result: true}}
+    else
+      _ -> {:error, "Collection or user not found"}
     end
   end
 end

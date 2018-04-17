@@ -74,4 +74,8 @@ defmodule Wocky.HomeStream.ID do
 
     {str, user, nil, nil}
   end
+
+  @spec collection_share_id(Collection.t()) :: t()
+  def collection_share_id(collection),
+  do: "collection/" <> to_string(collection.id) <> "/share"
 end

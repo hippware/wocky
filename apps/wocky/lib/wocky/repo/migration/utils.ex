@@ -143,4 +143,68 @@ defmodule Wocky.Repo.Migration.Utils do
   end
 
   defp name(table, action), do: "notify_#{table}_#{action}"
+
+  # Add a trigger to mark home stream items as deleted when a linked
+  # object is deleted
+  def add_hs_delete_trigger_function(table, field) do
+    execute """
+    CREATE OR REPLACE FUNCTION delete_from_#{table}_trigger()
+    RETURNS trigger AS $$
+    BEGIN
+      #{set_hs_item_deleted()}
+      WHERE
+        #{field} = OLD.id
+        #{maybe_extra_condition(table)};
+      RETURN OLD;
+    END;
+    $$ LANGUAGE plpgsql;
+    """
+  end
+
+  def add_hs_delete_trigger(table) do
+    execute """
+    CREATE TRIGGER delete_from_#{table}_trigger BEFORE
+      DELETE ON #{table}
+      FOR EACH ROW
+      EXECUTE PROCEDURE delete_from_#{table}_trigger();
+    """
+  end
+
+  defp maybe_extra_condition("bot_items") do
+    "AND reference_bot_id = OLD.bot_id"
+  end
+  defp maybe_extra_condition(_), do: ""
+
+  def set_hs_item_deleted do
+    """
+      UPDATE home_stream_items SET
+        class = 'deleted',
+        stanza = '',
+        from_jid = '',
+        reference_user_id = null,
+        reference_bot_id = null,
+        reference_bot_item_id = null,
+        reference_collection_id = null,
+        updated_at = now()
+    """
+  end
+
+  def recreate_bot_private_trigger_function do
+    execute """
+    CREATE OR REPLACE FUNCTION update_bot_private_trigger()
+    RETURNS trigger AS $$
+    BEGIN
+      IF NEW.public = false AND OLD.public = true THEN
+        DELETE FROM bot_subscriptions WHERE bot_id = NEW.id
+          AND NOT is_visible(user_id, NEW);
+        #{set_hs_item_deleted()}
+        WHERE
+          reference_bot_id = NEW.id
+          AND NOT is_visible(user_id, NEW);
+      END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    """
+  end
 end
