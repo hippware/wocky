@@ -163,6 +163,7 @@ defmodule Wocky.HomeStreamSpec do
     before do
       ref_user = Factory.insert(:user)
       ref_bot = Factory.insert(:bot, %{user: ref_user})
+      ref_collection = Factory.insert(:collection)
 
       ref_user_items =
         for _ <- 1..@num_items do
@@ -186,6 +187,11 @@ defmodule Wocky.HomeStreamSpec do
         class: :ref_update
       })
 
+      ref_coll_item = Factory.insert(:home_stream_item, %{
+        user: shared.user,
+        reference_collection: ref_collection
+      })
+
       bot_ids = Enum.map(ref_bot_items, & &1.id)
       Repo.delete!(ref_bot)
 
@@ -202,11 +208,15 @@ defmodule Wocky.HomeStreamSpec do
         |> HomeStream.get()
         |> Enum.filter(&Enum.member?(user_ids, &1.id))
 
+      Repo.delete!(ref_collection)
+
       {:ok,
-       referenced_user_items: referenced_user_items,
-       ref_user_times: Enum.map(ref_user_items, & &1.updated_at),
-       referenced_bot_items: referenced_bot_items,
-       ref_bot_times: Enum.map(ref_bot_items, & &1.updated_at)}
+        referenced_user_items: referenced_user_items,
+        ref_user_times: Enum.map(ref_user_items, & &1.updated_at),
+        referenced_bot_items: referenced_bot_items,
+        ref_bot_times: Enum.map(ref_bot_items, & &1.updated_at),
+        ref_coll_item: ref_coll_item
+      }
     end
 
     it "should mark all HS entries with the referenced user as deleted" do
@@ -230,6 +240,16 @@ defmodule Wocky.HomeStreamSpec do
       Enum.each(shared.referenced_bot_items, fn i ->
         i.class |> should(eq :deleted)
       end)
+    end
+
+    it "should mark all HS entries with the referenced collection as deleted" do
+      item =
+        shared.user.id
+        |> HomeStream.get()
+        |> Enum.filter(fn i -> i.key == shared.ref_coll_item.key end)
+        |> hd()
+
+      item.class |> should(eq :deleted)
     end
 
     it "should update the updated_at timestamps on all deleted items" do

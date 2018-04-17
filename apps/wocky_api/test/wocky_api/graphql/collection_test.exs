@@ -1,9 +1,16 @@
 defmodule WockyAPI.GraphQL.CollectionTest do
   use WockyAPI.GraphQLCase, async: true
 
+  import SweetXml
+
+  alias Faker.Code
   alias Faker.Lorem
   alias Wocky.Collections
   alias Wocky.Collections.Collection
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.Item
+  alias Wocky.Push
+  alias Wocky.Push.Sandbox
   alias Wocky.Repo
   alias Wocky.Repo.Factory
 
@@ -379,6 +386,51 @@ defmodule WockyAPI.GraphQL.CollectionTest do
            |> Collections.get_members_query(user)
            |> Repo.all()
            |> Enum.all?(&(&1.id != bot.id))
+  end
+
+  describe "collection sharing" do
+    setup do
+      Sandbox.clear_notifications()
+
+      target = Factory.insert(:user, resource: "testing")
+      token = Code.isbn13()
+
+      :ok = Push.enable(target.id, target.resource, token)
+
+      {:ok, target: target}
+    end
+
+    test "collection sharing", %{
+      collection: collection,
+      user: user,
+      target: target
+    } do
+      message = Lorem.paragraph()
+      """
+      mutation ($id: AInt!, $user_id: UUID!, $message: String) {
+        collectionShare (input: {id: $id, user_id: $user_id, message: $message}) {
+          result
+        }
+      }
+      """
+      |> run_query(user, %{
+        "id" => to_string(collection.id),
+        "user_id" => target.id,
+        "message" => message
+      })
+      |> assert_data(%{"collectionShare" => %{"result" => true}})
+
+      %Item{stanza: stanza} = target.id |> HomeStream.get(false) |> List.last()
+
+      assert stanza |> xpath(~x"//message/body/text()"s) == message
+      assert stanza |> xpath(~x"//collection/id/text()"s) ==
+        to_string(collection.id)
+      assert stanza |> xpath(~x"//collection/action/text()"s) == "share"
+
+      [notification] = Sandbox.wait_notifications(timeout: 1000)
+      assert notification.payload["aps"]["alert"] ==
+        "@#{user.handle} has shared a collection with you!"
+    end
   end
 
   defp ids(items), do: Enum.sort(Enum.map(items, &(&1.id)))

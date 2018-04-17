@@ -7,8 +7,15 @@ defmodule Wocky.Collections do
   alias Wocky.Blocking
   alias Wocky.Bot
   alias Wocky.Collections.{Collection, Member, Subscription}
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.ID
+  alias Wocky.Push
+  alias Wocky.Push.Events.CollectionShareEvent
   alias Wocky.Repo
+  alias Wocky.JID
   alias Wocky.User
+
+  @xmlns "hippware.com/hxep/collection"
 
   @spec get_query(Collection.id(), User.t()) :: Queryable.t()
   def get_query(id, requestor) do
@@ -128,6 +135,21 @@ defmodule Wocky.Collections do
     end
   end
 
+  def share(collection, sharer, target, message) do
+    with false <- Blocking.blocked?(sharer.id, target.id) do
+      # Insert home stream item
+      key = ID.collection_share_id(collection)
+      from_jid = sharer |> User.to_jid |> JID.to_binary
+      stanza = share_stanza(collection, message)
+      HomeStream.put(
+        target.id, key, from_jid, stanza, ref_collection_id: collection.id)
+
+      # Send push event
+      event = %CollectionShareEvent{user: sharer, collection: collection}
+      Push.notify_all(target.id, event)
+    end
+  end
+
   defp get_visible_collection(id, user_id) do
     result =
       Collection
@@ -189,4 +211,16 @@ defmodule Wocky.Collections do
     |> join(:inner, [c], s in Subscription, s.collection_id == c.id)
     |> where([..., s], s.user_id == ^user_id)
   end
+
+  defp share_stanza(collection, message) do
+    {:message, %{type: "headline"}, [
+      {:body, nil, message || ""},
+      {:collection, %{xmlns: @xmlns}, [
+        {:id, nil, collection.id},
+        {:action, nil, "share"}
+      ]}
+    ]}
+    |> XmlBuilder.generate()
+  end
+
 end

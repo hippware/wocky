@@ -19,6 +19,8 @@ defmodule Wocky.HomeStream.Item do
     belongs_to :user, Wocky.User
     belongs_to :reference_user, Wocky.User, foreign_key: :reference_user_id
     belongs_to :reference_bot, Wocky.Bot, foreign_key: :reference_bot_id
+    belongs_to :reference_collection, Wocky.Collections.Collection,
+      foreign_key: :reference_collection_id, type: :id
     # This field points to half of a composite foreign key for Wocky.Bot.Item
     # which Ecto doesn't natively support at the moment:
     field :reference_bot_item_id, :string
@@ -38,7 +40,8 @@ defmodule Wocky.HomeStream.Item do
           updated_at: DateTime.t(),
           reference_user: Wocky.User.t(),
           reference_bot: Wocky.Bot.t(),
-          reference_bot_item_id: Wocky.Repo.ID.t()
+          reference_bot_item_id: Wocky.Repo.ID.t(),
+          reference_collection_id: integer
         }
 
   @change_fields [
@@ -50,6 +53,7 @@ defmodule Wocky.HomeStream.Item do
     :reference_user_id,
     :reference_bot_id,
     :reference_bot_item_id,
+    :reference_collection_id,
     :created_at,
     :updated_at
   ]
@@ -60,7 +64,8 @@ defmodule Wocky.HomeStream.Item do
     from_jid: "",
     reference_user_id: nil,
     reference_bot_id: nil,
-    reference_bot_item_id: nil
+    reference_bot_item_id: nil,
+    reference_collection_id: nil
   ]
 
   def writable_fields, do: @change_fields
@@ -70,6 +75,7 @@ defmodule Wocky.HomeStream.Item do
     |> cast(params, @change_fields)
     |> foreign_key_constraint(:reference_user_id)
     |> foreign_key_constraint(:reference_bot_id)
+    |> foreign_key_constraint(:reference_collection_id)
   end
 
   # `update_all` does not set the `updated_at` field so we need to do it

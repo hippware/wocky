@@ -58,5 +58,4 @@ defmodule WockyAPI.Resolvers.Utils do
     query
     |> order_by(^order)
   end
-
 end

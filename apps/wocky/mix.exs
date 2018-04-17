@@ -109,6 +109,7 @@ defmodule Wocky.Mixfile do
       {:stringprep, "~> 1.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
+      {:xml_builder, "~> 2.0.0", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:ossp_uuid,
        github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
