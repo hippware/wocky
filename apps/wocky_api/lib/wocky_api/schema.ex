@@ -51,6 +51,9 @@ defmodule WockyAPI.Schema do
     or field == :bots do
     middleware
   end
+  def middleware(middleware, _field, %{identifier: :media}) do
+    middleware
+  end
   def middleware(middleware, _field, %{identifier: object})
   when object == :query
     or object == :bot

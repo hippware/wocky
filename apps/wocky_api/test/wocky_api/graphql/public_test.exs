@@ -25,6 +25,10 @@ defmodule WockyAPI.GraphQL.PublicTest do
   query ($id: String) {
     bot (id: $id) {
       id
+      image {
+        fullUrl
+        thumbnailUrl
+      }
       subscribers (first: 10, type: SUBSCRIBER) {
         totalCount
         edges {
@@ -48,6 +52,10 @@ defmodule WockyAPI.GraphQL.PublicTest do
             id
             owner {
               handle
+              avatar {
+                fullUrl
+                thumbnailUrl
+              }
             }
           }
         }
@@ -61,17 +69,20 @@ defmodule WockyAPI.GraphQL.PublicTest do
     user: %{id: user_id},
     user2: %{id: user2_id, handle: user2_handle},
     item: %{id: item_id}} do
-    assert post_conn(conn, @query, %{id: bot.id}, 200) ==
-      %{
+    assert %{
         "data" => %{
           "bot" => %{
-            "id" => bot_id,
+            "id" => ^bot_id,
+            "image" => %{
+              "fullUrl" => u1,
+              "thumbnailUrl" => u2
+            },
             "subscribers" => %{
               "totalCount" => 2,
               "edges" => [
                 %{
                   "node" => %{
-                    "id" => user2_id,
+                    "id" => ^user2_id,
                     "bots" => %{
                       "totalCount" => 0,
                       "edges" => []
@@ -80,12 +91,12 @@ defmodule WockyAPI.GraphQL.PublicTest do
                 },
                 %{
                   "node" => %{
-                    "id" => user_id,
+                    "id" => ^user_id,
                     "bots" => %{
                       "totalCount" => 1,
                       "edges" => [%{
                         "node" => %{
-                          "id" => bot_id
+                          "id" => ^bot_id
                         }
                       }]
                     }
@@ -96,16 +107,23 @@ defmodule WockyAPI.GraphQL.PublicTest do
               "totalCount" => 1,
               "edges" => [%{
                 "node" => %{
-                  "id" => item_id,
+                  "id" => ^item_id,
                   "owner" => %{
-                    "handle" => user2_handle
+                    "handle" => ^user2_handle,
+                    "avatar" => %{
+                      "fullUrl" => u3,
+                      "thumbnailUrl" => u4
+                    }
                   }
                 }
               }]
             }
           }
         }
-      }
+      } =
+        post_conn(conn, @query, %{id: bot.id}, 200)
+
+      Enum.each([u1, u2, u3, u4], &assert is_binary(&1))
     end
 
   # GraphiQL schema query:
