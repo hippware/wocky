@@ -405,11 +405,12 @@ defmodule WockyAPI.GraphQL.CollectionTest do
     })
     |> assert_data(%{"collectionShare" => %{"result" => true}})
 
-    %Item{stanza: stanza} = user2.id |> HomeStream.get(false) |> Enum.last()
+    %Item{stanza: stanza} = user2.id |> HomeStream.get(false) |> List.last()
 
-    assert stanza |> xpath(~x"//message/body/text()") == message
-    assert stanza |> xpath(~x"//collection/id/text()") == collection.id
-    assert stanza |> xpath(~x"//collection/action/text()") == "share"
+    assert stanza |> xpath(~x"//message/body/text()"s) == message
+    assert stanza |> xpath(~x"//collection/id/text()"s) ==
+      to_string(collection.id)
+    assert stanza |> xpath(~x"//collection/action/text()"s) == "share"
   end
 
   defp ids(items), do: Enum.sort(Enum.map(items, &(&1.id)))
