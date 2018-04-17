@@ -8,6 +8,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add Image/Avatar direct download URLs to GraphQL (#1417)
 * Make bot items publicly viewable (#1420)
 * Make GraphQL schema introspection available to unauthenticated connections (#1419)
+* Collections: Baseline (#1413)
+  * Except reordering of bots
 
 
 # 2018.4.12+r0b53d08
