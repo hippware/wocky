@@ -96,12 +96,11 @@ defmodule WockyAPI.Resolvers.Collection do
   end
 
   def share(_root, args, %{context: %{current_user: user}}) do
-    with %Collection{} = c
-         <- args[:id] |> Collections.get_query(user) |> Repo.one(),
-         %User{} = target_user
-         <- Repo.get(User, args[:user_id]) do
-           Collections.share(c, user, target_user, args[:message])
-           {:ok, %{result: true}}
+    with %Collection{} = c <-
+           args[:id] |> Collections.get_query(user) |> Repo.one(),
+         %User{} = target_user <- Repo.get(User, args[:user_id]) do
+      Collections.share(c, user, target_user, args[:message])
+      {:ok, %{result: true}}
     else
       _ -> {:error, "Collection or user not found"}
     end
