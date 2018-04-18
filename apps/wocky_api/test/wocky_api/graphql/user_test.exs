@@ -5,9 +5,10 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Faker.Name
   alias Faker.String
   alias Wocky.Blocking
-  alias Wocky.Repo.Factory
   alias Wocky.Repo
+  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.Roster
   alias Wocky.JID
   alias Wocky.User
   alias Wocky.User.Location
@@ -18,189 +19,135 @@ defmodule WockyAPI.GraphQL.UserTest do
     {:ok, user: user, user2: user2}
   end
 
-  @query """
-  {
-    currentUser {
-      id
-      firstName
-      avatar {
-        tros_url
-      }
-    }
-  }
-  """
-
-  test "get basic current user info", %{user: user} do
-    result = run_query(@query, user)
-
-    refute has_errors(result)
-
-    assert result.data == %{
-             "currentUser" => %{
-               "id" => user.id,
-               "firstName" => user.first_name,
-               "avatar" => %{
-                 "tros_url" => user.avatar
-               }
-             }
-           }
-  end
-
-  @query """
-  mutation ($values: UserUpdateInput!) {
-    userUpdate (input: {values: $values}) {
-      successful
-      result {
-        id
-      }
-    }
-  }
-  """
-
-  test "update user", %{user: user} do
-    new_name = Name.first_name()
-    result = run_query(@query, user, %{"values" => %{"first_name" => new_name}})
-
-    refute has_errors(result)
-
-    assert result.data == %{
-             "userUpdate" => %{
-               "successful" => true,
-               "result" => %{
-                 "id" => user.id
-               }
-             }
-           }
-
-    assert Repo.get(User, user.id).first_name == new_name
-  end
-
-  @query """
-  query ($id: String!) {
-    user (id: $id) {
-      id
-      handle
-    }
-  }
-  """
-
-  test "get other user info", %{user: user, user2: user2} do
-    result = run_query(@query, user, %{"id" => user2.id})
-
-    refute has_errors(result)
-
-    assert result.data == %{
-             "user" => %{
-               "id" => user2.id,
-               "handle" => user2.handle
-             }
-           }
-  end
-
-  test "non-existant ID", %{user: user} do
-    result = run_query(@query, user, %{"id" => ID.new()})
-
-    assert error_count(result) == 1
-    assert error_msg(result) =~ "User not found"
-    assert result.data == %{"user" => nil}
-  end
-
-  test "invalid ID", %{user: user} do
-    result = run_query(@query, user, %{"id" => "not_an_id"})
-
-    assert error_count(result) == 1
-    assert error_msg(result) =~ "invalid value"
-    refute has_data(result)
-  end
-
-  test "blocked user", %{user: user, user2: user2} do
-    Blocking.block(user2, user)
-
-    result = run_query(@query, user, %{"id" => user2.id})
-
-    assert error_count(result) == 1
-    assert error_msg(result) =~ "User not found"
-    assert result.data == %{"user" => nil}
-  end
-
-  describe "user bots" do
-    setup %{user: user, user2: user2} do
-      bot = Factory.insert(:bot, user: user)
-      bot2 = Factory.insert(:bot, user: user2, public: true)
-
-      {:ok, bot: bot, bot2: bot2}
-    end
-
-    @query """
-    query ($id: String!) {
-      user (id: $id) {
-        bots (first: 1, relationship: OWNED) {
-          totalCount
-          edges {
-            node {
-              id
-            }
-          }
-        }
-      }
-    }
-    """
-
-    test "get by owner", %{user: user, user2: user2, bot2: bot2} do
-      result = run_query(@query, user, %{"id" => user2.id})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "user" => %{
-                 "bots" => %{
-                   "totalCount" => 1,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "id" => bot2.id
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
-    end
-
+  describe "current user" do
     @query """
     {
       currentUser {
-        bots (first: 1, relationship: OWNED) {
-          totalCount
-          edges {
-            node {
-              id
-            }
-          }
+        id
+        firstName
+        avatar {
+          tros_url
         }
       }
     }
     """
 
-    test "get own bots", %{user: user, bot: bot} do
+    test "get user info", %{user: user} do
       result = run_query(@query, user)
 
       refute has_errors(result)
 
       assert result.data == %{
                "currentUser" => %{
-                 "bots" => %{
-                   "totalCount" => 1,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "id" => bot.id
-                       }
-                     }
-                   ]
+                 "id" => user.id,
+                 "firstName" => user.first_name,
+                 "avatar" => %{
+                   "tros_url" => user.avatar
                  }
                }
              }
+    end
+
+    @query """
+    mutation ($values: UserUpdateInput!) {
+      userUpdate (input: {values: $values}) {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
+
+    test "update user info", %{user: user} do
+      new_name = Name.first_name()
+
+      result =
+        run_query(@query, user, %{"values" => %{"first_name" => new_name}})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "userUpdate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => user.id
+                 }
+               }
+             }
+
+      assert Repo.get(User, user.id).first_name == new_name
+    end
+  end
+
+  describe "other user" do
+    @query """
+    query ($id: String!) {
+      user (id: $id) {
+        id
+        handle
+      }
+    }
+    """
+
+    test "get user info", %{user: user, user2: user2} do
+      result = run_query(@query, user, %{"id" => user2.id})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "user" => %{
+                 "id" => user2.id,
+                 "handle" => user2.handle
+               }
+             }
+    end
+
+    test "get user info with non-existant ID", %{user: user} do
+      result = run_query(@query, user, %{"id" => ID.new()})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "User not found"
+      assert result.data == %{"user" => nil}
+    end
+
+    test "get user info with invalid ID", %{user: user} do
+      result = run_query(@query, user, %{"id" => "not_an_id"})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "invalid value"
+      refute has_data(result)
+    end
+
+    test "get user info for blocked user", %{user: user, user2: user2} do
+      Blocking.block(user2, user)
+
+      result = run_query(@query, user, %{"id" => user2.id})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "User not found"
+      assert result.data == %{"user" => nil}
+    end
+
+    test "get user info anonymously", %{user2: user2} do
+      result = run_query(@query, nil, %{"id" => user2.id})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "user" => %{
+                 "id" => user2.id,
+                 "handle" => user2.handle
+               }
+             }
+    end
+
+    test "get user infor anonymously with non-existant ID" do
+      result = run_query(@query, nil, %{"id" => ID.new()})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "User not found"
+      assert result.data == %{"user" => nil}
     end
   end
 
@@ -354,6 +301,51 @@ defmodule WockyAPI.GraphQL.UserTest do
                  }
                }
              }
+    end
+  end
+
+  describe "contacts" do
+    setup %{user: user, user2: user2} do
+      Roster.befriend(user.id, user2.id)
+      :ok
+    end
+
+    @query """
+    query ($rel: UserContactRelationship) {
+      currentUser {
+        contacts (first: 1, relationship: $rel) {
+          totalCount
+          edges {
+            relationship
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get contacts by relationship", %{user: user, user2: user2} do
+      for rel <- [nil, "FRIEND", "FOLLOWER", "FOLLOWING"] do
+        result = run_query(@query, user, %{"rel" => rel})
+
+        refute has_errors(result)
+
+        assert result.data == %{
+                 "currentUser" => %{
+                   "contacts" => %{
+                     "edges" => [
+                       %{
+                         "node" => %{"id" => user2.id},
+                         "relationship" => "FRIEND"
+                       }
+                     ],
+                     "totalCount" => 1
+                   }
+                 }
+               }
+      end
     end
   end
 
