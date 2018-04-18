@@ -8,9 +8,12 @@ defmodule WockyAPI.GraphQLHelper do
       query,
       WockyAPI.Schema,
       variables: variables,
-      context: %{current_user: user}
+      context: build_context(user)
     )
   end
+
+  defp build_context(%Wocky.User{} = user), do: %{current_user: user}
+  defp build_context(_), do: %{}
 
   def has_data(result) do
     Map.has_key?(result, :data)
