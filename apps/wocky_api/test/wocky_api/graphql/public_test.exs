@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.PublicTest do
-  use WockyAPI.ConnCase, async: true
+  use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory
@@ -12,13 +12,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
     Subscription.put(user, bot)
     Subscription.put(user2, bot)
 
-    {:ok,
-      user: user,
-      user2: user2,
-      bot: bot,
-      bot2: bot2,
-      item: item,
-      conn: build_conn()}
+    {:ok, user: user, user2: user2, bot: bot, bot2: bot2, item: item}
   end
 
   @query """
@@ -63,68 +57,74 @@ defmodule WockyAPI.GraphQL.PublicTest do
     }
   }
   """
-  test "get public bot, subscribers, items, and their public owned bots",
-  %{conn: conn,
+  test "get public bot, subscribers, items, and their public owned bots", %{
     bot: %{id: bot_id} = bot,
     user: %{id: user_id},
     user2: %{id: user2_id, handle: user2_handle},
-    item: %{id: item_id}} do
-    assert %{
-        "data" => %{
-          "bot" => %{
-            "id" => ^bot_id,
-            "image" => %{
-              "fullUrl" => u1,
-              "thumbnailUrl" => u2
-            },
-            "subscribers" => %{
-              "totalCount" => 2,
-              "edges" => [
-                %{
-                  "node" => %{
-                    "id" => ^user2_id,
-                    "bots" => %{
-                      "totalCount" => 0,
-                      "edges" => []
-                    }
-                  }
-                },
-                %{
-                  "node" => %{
-                    "id" => ^user_id,
-                    "bots" => %{
-                      "totalCount" => 1,
-                      "edges" => [%{
-                        "node" => %{
-                          "id" => ^bot_id
-                        }
-                      }]
-                    }
-                  }
-                }]
-            },
-            "items" => %{
-              "totalCount" => 1,
-              "edges" => [%{
-                "node" => %{
-                  "id" => ^item_id,
-                  "owner" => %{
-                    "handle" => ^user2_handle,
-                    "avatar" => %{
-                      "fullUrl" => u3,
-                      "thumbnailUrl" => u4
-                    }
-                  }
-                }
-              }]
-            }
-          }
-        }
-      } =
-        post_conn(conn, @query, %{id: bot.id}, 200)
+    item: %{id: item_id}
+  } do
+    result = run_query(@query, nil, %{"id" => bot.id})
 
-      Enum.each([u1, u2, u3, u4], &assert is_binary(&1))
-    end
+    refute has_errors(result)
+
+    assert %{
+             "bot" => %{
+               "id" => ^bot_id,
+               "image" => %{
+                 "fullUrl" => u1,
+                 "thumbnailUrl" => u2
+               },
+               "subscribers" => %{
+                 "totalCount" => 2,
+                 "edges" => [
+                   %{
+                     "node" => %{
+                       "id" => ^user2_id,
+                       "bots" => %{
+                         "totalCount" => 0,
+                         "edges" => []
+                       }
+                     }
+                   },
+                   %{
+                     "node" => %{
+                       "id" => ^user_id,
+                       "bots" => %{
+                         "totalCount" => 1,
+                         "edges" => [
+                           %{
+                             "node" => %{
+                               "id" => ^bot_id
+                             }
+                           }
+                         ]
+                       }
+                     }
+                   }
+                 ]
+               },
+               "items" => %{
+                 "totalCount" => 1,
+                 "edges" => [
+                   %{
+                     "node" => %{
+                       "id" => ^item_id,
+                       "owner" => %{
+                         "handle" => ^user2_handle,
+                         "avatar" => %{
+                           "fullUrl" => u3,
+                           "thumbnailUrl" => u4
+                         }
+                       }
+                     }
+                   }
+                 ]
+               }
+             }
+           } = result.data
+
+    Enum.each([u1, u2, u3, u4], &assert(is_binary(&1)))
+  end
 
   # GraphiQL schema query:
   @query """
@@ -220,9 +220,10 @@ defmodule WockyAPI.GraphQL.PublicTest do
       }
     }
   """
-  test "schema visibility", %{conn: conn} do
-    result = assert post_conn(conn, @query, 200)
-    assert result["data"]["__schema"] != nil
-    refute Map.has_key?(result, "errors")
+  test "schema visibility" do
+    result = run_query(@query)
+
+    refute has_errors(result)
+    assert result.data["__schema"] != nil
   end
 end

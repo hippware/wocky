@@ -15,10 +15,10 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
     Application.start(:wocky_db_watcher)
 
-    on_exit fn ->
+    on_exit(fn ->
       Application.stop(:wocky_db_watcher)
       Repo.delete_all(User)
-    end
+    end)
   end
 
   describe "watch for visitor count change" do
@@ -61,22 +61,33 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       }
     }
     """
-    test "visitor count changes",
-    %{socket: socket,
+    test "visitor count changes", %{
+      socket: socket,
       user2: user2,
       bot: bot,
       user: %{id: user_id} = user,
-      token: token} do
+      token: token
+    } do
       Bot.subscribe(bot, user, true)
-      ref = push_doc(socket, @authenticate,
-                     variables: %{input: %{user: user_id, token: token}})
-      assert_reply ref, :ok,
-          %{data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}}, 1000
+
+      ref =
+        push_doc(
+          socket,
+          @authenticate,
+          variables: %{input: %{user: user_id, token: token}}
+        )
+
+      assert_reply ref,
+                   :ok,
+                   %{
+                     data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
+                   },
+                   1000
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      expected = fn(count, action) ->
+      expected = fn count, action ->
         %{
           result: %{
             data: %{
@@ -107,5 +118,4 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert push == expected.(0, "DEPART")
     end
   end
-
 end
