@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Collections: Sharing and notifications (#1414)
+
+
 # 2018.4.16+rcb85439
 
 * Add Image/Avatar direct download URLs to GraphQL (#1417)
