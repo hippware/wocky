@@ -35,9 +35,9 @@ defmodule WockyAPI.Resolvers.User do
     query =
       case args[:relationship] do
         nil -> Roster.all_contacts_query(user.id, requestor.id, false)
-        :friends -> Roster.friends_query(user.id, requestor.id, false)
-        :followers -> Roster.followers_query(user.id, requestor.id, false)
-        :followees -> Roster.followees_query(user.id, requestor.id, false)
+        :friend -> Roster.friends_query(user.id, requestor.id, false)
+        :follower -> Roster.followers_query(user.id, requestor.id, false)
+        :following -> Roster.followees_query(user.id, requestor.id, false)
       end
 
     Utils.connection_from_query(query, user, args)
@@ -46,7 +46,7 @@ defmodule WockyAPI.Resolvers.User do
   def get_contact_relationship(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    {:ok, Roster.relationship(parent, target_user)}
+    {:ok, Roster.relationship(parent.id, target_user.id)}
   end
 
   def get_home_stream(user, args, _info) do
