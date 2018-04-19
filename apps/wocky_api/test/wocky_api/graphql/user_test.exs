@@ -215,7 +215,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get locations", %{user: user} do
-      loc = Factory.insert(:location, user_id: user.id, resource: String.base64())
+      loc = Factory.insert(:location, user_id: user.id)
       result = run_query(@query, user, %{"device" => loc.resource})
 
       refute has_errors(result)
@@ -256,7 +256,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get locations for other user", %{user: user, user2: user2} do
-      loc = Factory.insert(:location, user_id: user2.id, resource: String.base64())
+      loc = Factory.insert(:location, user_id: user2.id)
 
       result =
         run_query(@query, user, %{
