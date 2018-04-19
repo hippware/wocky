@@ -77,7 +77,7 @@ defmodule Wocky.Mixfile do
       {:comeonin, "~> 4.0"},
       {:confex, "~> 3.3"},
       {:csv, "~> 2.0"},
-      {:dawdle, "~> 0.2.0"},
+      {:dawdle, "~> 0.3.0"},
       {:ecto, "~> 2.2"},
       {:ecto_homoiconic_enum, "~> 0.1"},
       {:email_checker, "~> 0.1"},

@@ -103,7 +103,7 @@ defmodule Wocky.User.Location do
     dawdle_event = %{user_id: user.id, bot_id: bot.id, loc_id: loc.id}
     timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
 
-    Dawdle.send(&visit_timeout/1, dawdle_event, timeout * 1000)
+    Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
     true
   end
 
