@@ -98,6 +98,7 @@ defmodule Wocky.User.Location do
   end
 
   defp maybe_set_exit_timer(false, _, _, _), do: false
+
   defp maybe_set_exit_timer(true, user, bot, loc) do
     dawdle_event = %{user_id: user.id, bot_id: bot.id, loc_id: loc.id}
     timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
@@ -138,6 +139,7 @@ defmodule Wocky.User.Location do
 
       :transition_in ->
         debounce = Confex.get_env(:wocky, :enter_debounce_seconds)
+
         if debounce_expired?(be.created_at, debounce) do
           :enter
         else
@@ -161,6 +163,7 @@ defmodule Wocky.User.Location do
 
       :transition_out ->
         debounce = Confex.get_env(:wocky, :exit_debounce_seconds)
+
         if debounce_expired?(be.created_at, debounce) do
           :exit
         else
@@ -191,6 +194,7 @@ defmodule Wocky.User.Location do
     case latest_loc(user_id) do
       %{id: ^loc_id} ->
         do_visit_timeout(user_id, bot_id)
+
       _ ->
         :ok
     end

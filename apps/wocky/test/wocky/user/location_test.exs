@@ -279,8 +279,10 @@ defmodule Wocky.User.LocationTest do
   end
 
   describe "visitor timeout" do
-    test "user should exit bot if no location is received in timeout",
-    %{user: user, bot: bot} do
+    test "user should exit bot if no location is received in timeout", %{
+      user: user,
+      bot: bot
+    } do
       visit_bot(bot, user)
       {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
       Location.check_for_bot_events(loc, user)
@@ -291,8 +293,10 @@ defmodule Wocky.User.LocationTest do
       assert Bot.subscription(bot, user) == :guest
     end
 
-    test "user should remain visiting if they send subsequent updates",
-    %{user: user, bot: bot} do
+    test "user should remain visiting if they send subsequent updates", %{
+      user: user,
+      bot: bot
+    } do
       visit_bot(bot, user)
       {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
       Location.check_for_bot_events(loc, user)
@@ -309,8 +313,10 @@ defmodule Wocky.User.LocationTest do
 
     test "user should not be exited early", %{user: user, bot: bot} do
       outside_loc = Factory.build(:location, %{user: user})
-      {:ok, loc} = Location.insert(
-        user, "test", outside_loc.lat, outside_loc.lon, 10)
+
+      {:ok, loc} =
+        Location.insert(user, "test", outside_loc.lat, outside_loc.lon, 10)
+
       Location.check_for_bot_events(loc, user)
 
       :timer.sleep(1200)
