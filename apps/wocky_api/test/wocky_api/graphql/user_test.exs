@@ -25,6 +25,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       currentUser {
         id
         firstName
+        email
         avatar {
           tros_url
         }
@@ -41,6 +42,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                "currentUser" => %{
                  "id" => user.id,
                  "firstName" => user.first_name,
+                 "email" => user.email,
                  "avatar" => %{
                    "tros_url" => user.avatar
                  }
@@ -159,12 +161,39 @@ defmodule WockyAPI.GraphQL.UserTest do
              }
     end
 
-    test "get user infor anonymously with non-existant ID" do
+    test "get user info anonymously with non-existant ID" do
       result = run_query(@query, nil, %{"id" => ID.new()})
 
       assert error_count(result) == 1
       assert error_msg(result) =~ "User not found"
       assert result.data == %{"user" => nil}
+    end
+
+    @query """
+    query ($id: String!) {
+      user (id: $id) {
+        id
+        email
+        phone_number
+        external_id
+      }
+    }
+    """
+
+    test "get protected field on other user", %{user: user, user2: user2} do
+      result = run_query(@query, user, %{"id" => user2.id})
+
+      assert error_count(result) == 3
+      assert error_msg(result) =~ "authenticated user"
+
+      assert result.data == %{
+               "user" => %{
+                 "id" => user2.id,
+                 "email" => nil,
+                 "phone_number" => nil,
+                 "external_id" => nil
+               }
+             }
     end
   end
 
