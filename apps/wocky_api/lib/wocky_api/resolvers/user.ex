@@ -65,6 +65,11 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, User.get_by_jid(JID.from_binary(conversation.other_jid))}
   end
 
+  def get_locations(user, args, %{context: %{current_user: requestor}}) do
+    requestor
+    |> User.get_locations_query(args[:device])
+    |> Utils.connection_from_query(user, args)
+  end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
     with %User{} = user <- Repo.get(User, id),

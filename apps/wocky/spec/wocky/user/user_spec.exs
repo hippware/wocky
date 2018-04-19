@@ -481,7 +481,16 @@ defmodule Wocky.UserSpec do
     end
   end
 
-  describe "set_location/5" do
+  describe "location" do
+    before do
+      Factory.insert_list(5, :location, user_id: shared.id, resource: "test")
+      :ok
+    end
+
+    it "should return a query for retrieving user locations" do
+      query = User.get_locations_query(shared.user, "test")
+      query |> Repo.all() |> length() |> should(eq 5)
+    end
   end
 
   describe "add and remove roles" do

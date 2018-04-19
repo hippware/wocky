@@ -330,12 +330,18 @@ defmodule Wocky.User do
     ~>> Avatar.check_owner(user.id)
   end
 
+  @spec get_locations_query(t, resource) :: Query.t
+  def get_locations_query(user, resource) do
+    user
+    |> Ecto.assoc(:locations)
+    |> where(resource: ^resource)
+  end
+
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
         Location.check_for_bot_events(loc, user)
-
         :ok
 
       {:error, _} = error ->
