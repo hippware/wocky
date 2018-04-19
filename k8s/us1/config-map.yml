@@ -38,3 +38,5 @@ data:
   REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
   REDIS_PORT: "6379"
   REDIS_DB: "1"
+  DAWDLE_REGION: "us-west-2"
+  DAWDLE_QUEUES: "wocky-dawdle-us1"
