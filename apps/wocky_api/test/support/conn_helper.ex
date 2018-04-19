@@ -4,12 +4,4 @@ defmodule WockyAPI.ConnHelper do
   """
 
   use Phoenix.ConnTest
-
-  @endpoint WockyAPI.Endpoint
-
-  def post_conn(conn, query, variables \\ %{}, code) do
-    conn
-    |> post("/graphql", query: query, variables: variables)
-    |> json_response(code)
-  end
 end
