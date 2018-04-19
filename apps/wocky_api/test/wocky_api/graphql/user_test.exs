@@ -238,6 +238,16 @@ defmodule WockyAPI.GraphQL.UserTest do
              }
     end
 
+    test "get locations in prod", %{user: user} do
+      Application.put_env(:wocky, :wocky_inst, "us1")
+      loc = Factory.insert(:location, user_id: user.id)
+      result = run_query(@query, user, %{"device" => loc.resource})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "unavailable"
+      assert result.data == %{"currentUser" => %{"locations" => nil}}
+    end
+
     @query """
     query ($device: String!, $id: UUID!) {
       user (id: $id) {
