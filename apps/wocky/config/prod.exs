@@ -21,7 +21,7 @@ config :pigeon, :apns,
     mode: :prod
   }
 
-config :dawdle
+config :dawdle,
   backend: Dawdle.Backend.SQS
 
 config :dawdle, Dawdle.Backend.SQS,
