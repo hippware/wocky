@@ -4,6 +4,8 @@ defmodule Wocky.User.Location do
   use Wocky.JID
   use Wocky.Repo.Schema
 
+  import Ecto.Query
+
   alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Repo
@@ -62,7 +64,7 @@ defmodule Wocky.User.Location do
       user
       |> User.get_guest_subscriptions()
       |> check_for_events(user, loc)
-      |> Enum.each(&process_bot_events/1)
+      |> Enum.each(&process_bot_event/1)
     end)
 
     loc
@@ -91,7 +93,18 @@ defmodule Wocky.User.Location do
 
     bot
     |> Bot.contains?(Map.from_struct(loc))
+    |> maybe_set_exit_timer(user, bot, loc)
     |> handle_intersection(user, bot, acc)
+  end
+
+  defp maybe_set_exit_timer(false, _, _, _), do: false
+
+  defp maybe_set_exit_timer(true, user, bot, loc) do
+    dawdle_event = %{user_id: user.id, bot_id: bot.id, loc_id: loc.id}
+    timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
+
+    Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
+    true
   end
 
   defp handle_intersection(inside?, user, bot, acc) do
@@ -126,6 +139,7 @@ defmodule Wocky.User.Location do
 
       :transition_in ->
         debounce = Confex.get_env(:wocky, :enter_debounce_seconds)
+
         if debounce_expired?(be.created_at, debounce) do
           :enter
         else
@@ -149,6 +163,7 @@ defmodule Wocky.User.Location do
 
       :transition_out ->
         debounce = Confex.get_env(:wocky, :exit_debounce_seconds)
+
         if debounce_expired?(be.created_at, debounce) do
           :exit
         else
@@ -161,7 +176,7 @@ defmodule Wocky.User.Location do
     Timex.diff(Timex.now(), ts, :seconds) >= wait
   end
 
-  defp process_bot_events({user, bot, be}) do
+  defp process_bot_event({user, bot, be}) do
     if transition_complete?(be) do
       maybe_visit_bot(be.event, user, bot)
     end
@@ -174,4 +189,34 @@ defmodule Wocky.User.Location do
   defp maybe_visit_bot(:enter, user, bot), do: Bot.visit(bot, user)
 
   defp maybe_visit_bot(:exit, user, bot), do: Bot.depart(bot, user)
+
+  def visit_timeout(%{user_id: user_id, bot_id: bot_id, loc_id: loc_id}) do
+    case latest_loc(user_id) do
+      %{id: ^loc_id} ->
+        do_visit_timeout(user_id, bot_id)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp do_visit_timeout(user_id, bot_id) do
+    user = Repo.get(User, user_id)
+    bot = Bot.get(bot_id)
+
+    if user && bot do
+      if Bot.subscription(bot, user) == :visitor do
+        new_event = BotEvent.insert(user, bot, :exit)
+        process_bot_event({user, bot, new_event})
+      end
+    end
+  end
+
+  defp latest_loc(user_id) do
+    Location
+    |> where(user_id: ^user_id)
+    |> order_by(desc: :created_at)
+    |> limit(1)
+    |> Repo.one()
+  end
 end

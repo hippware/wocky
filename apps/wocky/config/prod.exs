@@ -20,3 +20,10 @@ config :pigeon, :apns,
     key: {:wocky, "certs/${WOCKY_INST}.key"},
     mode: :prod
   }
+
+config :dawdle,
+  backend: Dawdle.Backend.SQS
+
+config :dawdle, Dawdle.Backend.SQS,
+  region: {:system, "DAWDLE_REGION"},
+  queues: {:system, "DAWDLE_QUEUES"}

@@ -16,6 +16,10 @@ defmodule Wocky.User.LocationTest do
 
   @rsrc "testing"
 
+  setup_all do
+    Application.put_env(:wocky, :visit_timeout_seconds, 2)
+  end
+
   setup do
     Sandbox.clear_notifications()
 
@@ -271,6 +275,62 @@ defmodule Wocky.User.LocationTest do
       assert Bot.subscription(shared.bot, shared.user) == :guest
 
       assert Sandbox.list_notifications() == []
+    end
+  end
+
+  describe "visitor timeout" do
+    test "user should exit bot if no location is received in timeout", %{
+      user: user,
+      bot: bot
+    } do
+      visit_bot(bot, user)
+      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
+      Location.check_for_bot_events(loc, user)
+
+      :timer.sleep(1000)
+      assert Bot.subscription(bot, user) == :visitor
+      :timer.sleep(1200)
+      assert Bot.subscription(bot, user) == :guest
+    end
+
+    test "user should remain visiting if they send subsequent updates", %{
+      user: user,
+      bot: bot
+    } do
+      visit_bot(bot, user)
+      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
+      Location.check_for_bot_events(loc, user)
+
+      :timer.sleep(1000)
+      assert Bot.subscription(bot, user) == :visitor
+
+      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
+      Location.check_for_bot_events(loc, user)
+
+      :timer.sleep(1200)
+      assert Bot.subscription(bot, user) == :visitor
+    end
+
+    test "user should not be exited early", %{user: user, bot: bot} do
+      outside_loc = Factory.build(:location, %{user: user})
+
+      {:ok, loc} =
+        Location.insert(user, "test", outside_loc.lat, outside_loc.lon, 10)
+
+      Location.check_for_bot_events(loc, user)
+
+      :timer.sleep(1200)
+      assert Bot.subscription(bot, user) == :guest
+
+      visit_bot(bot, user)
+      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
+      Location.check_for_bot_events(loc, user)
+
+      :timer.sleep(1000)
+      assert Bot.subscription(bot, user) == :visitor
+
+      :timer.sleep(1200)
+      assert Bot.subscription(bot, user) == :guest
     end
   end
 end

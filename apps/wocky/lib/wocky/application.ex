@@ -25,7 +25,11 @@ defmodule Wocky.Application do
           worker(Wocky.Repo, []),
           worker(Wocky.Index, []),
           worker(Wocky.Push.Sandbox, []),
-          worker(Wocky.Watcher.Client, [])
+          worker(Wocky.Watcher.Client, []),
+          %{
+            id: Dawdle,
+            start: {Dawdle, :start_link, []}
+          }
         ],
         strategy: :one_for_one,
         name: Wocky.Supervisor
