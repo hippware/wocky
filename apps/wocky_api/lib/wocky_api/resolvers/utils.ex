@@ -12,9 +12,9 @@ defmodule WockyAPI.Resolvers.Utils do
       parent_query
       |> exclude(:preload)
       |> select([x], count(1))
-      |> Repo.one!()
+      |> Repo.one()
 
-    {:ok, count}
+    {:ok, count || 0}
   end
 
   def get_count(_, _, _), do: {:error, "No parent query found for count"}

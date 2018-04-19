@@ -23,9 +23,6 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do
     do_get_bots(user, requestor, args)
   end
-  def get_bots(_root, args, %{context: %{current_user: user}}) do
-    do_get_bots(user, user, args)
-  end
   def get_bots(%User{} = user, args, _info) do
     do_get_bots(user, nil, args)
   end
@@ -38,7 +35,6 @@ defmodule WockyAPI.Resolvers.Bot do
     |> Bot.get_query()
     |> visible_query(requestor)
     |> Utils.connection_from_query(user, args)
-
   end
   defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
     user

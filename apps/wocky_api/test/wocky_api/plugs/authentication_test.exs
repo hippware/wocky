@@ -145,7 +145,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     end
   end
 
-  describe ":load_graphl_context plug" do
+  describe ":load_graphql_context plug" do
     test "when current_user is assigned", context do
       conn =
         context.conn
@@ -158,7 +158,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     test "when current_user is not assigned", context do
       conn =
         context.conn
-        |> ensure_authenticated
+        |> load_graphql_context
 
       refute conn.private[:absinthe]
     end

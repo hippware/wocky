@@ -14,12 +14,6 @@ defmodule WockyAPI.Middleware.AuthSelf do
     resolution
   end
 
-  def call(
-    %{context: %{current_user: %User{id: id}},
-      source: %{user_id: id}} = resolution, _config) do
-    resolution
-  end
-
   def call(resolution, _config) do
     Absinthe.Resolution.put_result(
       resolution,

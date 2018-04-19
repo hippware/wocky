@@ -144,7 +144,7 @@ defmodule WockyAPI.Schema.UserTypes do
   payload_object(:user_location_update_payload, :boolean)
 
   object :user_queries do
-    field :current_user, non_null(:user) do
+    field :current_user, :user do
       resolve &User.get_current_user/3
     end
 

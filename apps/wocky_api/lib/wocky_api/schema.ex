@@ -54,17 +54,19 @@ defmodule WockyAPI.Schema do
   def middleware(middleware, _field, %{identifier: :media}) do
     middleware
   end
+  def middleware(middleware, %{identifier: field}, %{identifier: :query})
+  when field == :user or field == :bot do
+    middleware
+  end
   def middleware(middleware, _field, %{identifier: object})
-  when object == :query
-    or object == :bot
+  when object == :bot
     or object == :bot_item
     or object == :bot_items_connection
     or object == :bot_items_edge
     or object == :subscribers_connection
     or object == :subscribers_edge
     or object == :bots_connection
-    or object == :bots_edge
-    do
+    or object == :bots_edge do
     # We filter by the public flag on bot in the resolver
     middleware
   end
