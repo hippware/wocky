@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.18+r06cb8d3
+
 * Collections: Sharing and notifications (#1414)
+* Public image fields (PR #1437)
 
 
 # 2018.4.16+rcb85439
