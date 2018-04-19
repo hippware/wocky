@@ -90,6 +90,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :lat, non_null(:float)
     field :lon, non_null(:float)
     field :accuracy, non_null(:float)
+    field :created_at, non_null(:datetime)
   end
 
   connection :locations, node_type: :location do
