@@ -16,7 +16,7 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, user}
   end
   def get_current_user(_root, _args, _info) do
-    {:ok, nil}
+    {:error, "This operation requires an authenticated user"}
   end
 
   def update_user(_root, args, %{context: %{current_user: user}}) do

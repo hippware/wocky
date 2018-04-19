@@ -49,6 +49,23 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     @query """
+    {
+      currentUser {
+        id
+      }
+    }
+
+    """
+
+    test "get user info anonymously" do
+      result = run_query(@query)
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "requires an authenticated user"
+      assert result.data == %{"currentUser" => nil}
+    end
+
+    @query """
     mutation ($values: UserUpdateInput!) {
       userUpdate (input: {values: $values}) {
         successful
