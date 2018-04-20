@@ -47,7 +47,7 @@ defmodule WockyAPI.Mixfile do
     [
       {:wocky, in_umbrella: true},
       {:absinthe_phoenix, "~> 1.4"},
-      {:absinthe_relay, "~> 1.4"},
+      {:absinthe_relay, github: "hippware/absinthe_relay", branch: "master"},
       {:absinthe_ecto, "~> 0.1.3"},
       {:cowboy, "~> 1.0"},
       {:honeybadger, "~> 0.6"},
