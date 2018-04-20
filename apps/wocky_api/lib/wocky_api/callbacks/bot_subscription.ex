@@ -21,4 +21,6 @@ defmodule WockyAPI.Callbacks.BotSubscription do
     BotResolver.notify_visitor_subscription(
       subscriber.bot, subscriber.user, subscriber.visitor)
   end
+
+  def handle_update(_), do: :ok
 end
