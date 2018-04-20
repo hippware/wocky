@@ -289,7 +289,7 @@ defmodule Wocky.User.LocationTest do
 
       :timer.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
-      :timer.sleep(1200)
+      :timer.sleep(1500)
       assert Bot.subscription(bot, user) == :guest
     end
 
@@ -307,7 +307,7 @@ defmodule Wocky.User.LocationTest do
       {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
       Location.check_for_bot_events(loc, user)
 
-      :timer.sleep(1200)
+      :timer.sleep(1500)
       assert Bot.subscription(bot, user) == :visitor
     end
 
@@ -319,7 +319,7 @@ defmodule Wocky.User.LocationTest do
 
       Location.check_for_bot_events(loc, user)
 
-      :timer.sleep(1200)
+      :timer.sleep(1500)
       assert Bot.subscription(bot, user) == :guest
 
       visit_bot(bot, user)
@@ -329,7 +329,7 @@ defmodule Wocky.User.LocationTest do
       :timer.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
 
-      :timer.sleep(1200)
+      :timer.sleep(1500)
       assert Bot.subscription(bot, user) == :guest
     end
   end

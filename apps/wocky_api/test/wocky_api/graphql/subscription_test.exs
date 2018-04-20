@@ -105,11 +105,11 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       end
 
       Bot.visit(bot, user2)
-      assert_push "subscription:data", push, 1000
+      assert_push "subscription:data", push, 2000
       assert push == expected.(1, "ARRIVE")
 
       Bot.depart(bot, user2)
-      assert_push "subscription:data", push, 1000
+      assert_push "subscription:data", push, 2000
       assert push == expected.(0, "DEPART")
     end
 
