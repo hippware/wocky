@@ -100,10 +100,13 @@ defmodule Wocky.User.Location do
   defp maybe_set_exit_timer(false, _, _, _), do: false
 
   defp maybe_set_exit_timer(true, user, bot, loc) do
-    dawdle_event = %{user_id: user.id, bot_id: bot.id, loc_id: loc.id}
-    timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
+    if Confex.get_env(:wocky, :visit_timeout_enabled) do
+      dawdle_event = %{user_id: user.id, bot_id: bot.id, loc_id: loc.id}
+      timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
 
-    Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
+      Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
+    end
+
     true
   end
 

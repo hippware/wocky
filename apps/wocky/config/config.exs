@@ -11,6 +11,7 @@ config :wocky,
   enter_debounce_seconds: {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
   exit_debounce_seconds: {:system, :integer, "WOCKY_EXIT_DEBOUNCE_SECONDS", 30},
   visit_timeout_seconds: {:system, :integer, "WOCKY_VISIT_TIMEOUT_SECONDS", 300},
+  visit_timeout_enabled: {:system, :boolean, "WOCKY_VISIT_TIMEOUT_ENABLED", true},
 
   # TROS file storage in test storage system
   tros_backend: Wocky.TROS.TestStore,
