@@ -27,11 +27,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       bot = Factory.insert(:bot, public: true)
       Subscription.put(user2, bot)
 
-      on_exit(fn ->
-        Application.stop(:wocky_db_watcher)
-        Repo.delete_all(User)
-      end)
-
       {:ok, user2: user2, bot: bot}
     end
 
