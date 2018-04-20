@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Finish adding GraphQL tests for existing functionality (#1403)
+* Exit all geofences upon 5 minute timeout (#1430)
+* Retrieval of location data points (#1429)
+
+
 # 2018.4.18+r06cb8d3
 
 * Collections: Sharing and notifications (#1414)
