@@ -27,11 +27,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       bot = Factory.insert(:bot, public: true)
       Subscription.put(user2, bot)
 
-      on_exit(fn ->
-        Application.stop(:wocky_db_watcher)
-        Repo.delete_all(User)
-      end)
-
       {:ok, user2: user2, bot: bot}
     end
 
@@ -116,6 +111,18 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       Bot.depart(bot, user2)
       assert_push "subscription:data", push, 1000
       assert push == expected.(0, "DEPART")
+    end
+
+    test "unauthenticated user attempting subscription", %{socket: socket} do
+      ref = push_doc(socket, @subscription)
+      assert_reply ref,
+        :error,
+        %{
+          errors: [%{
+            message: "This operation requires an authenticated user"
+          }]
+        },
+        1000
     end
   end
 end
