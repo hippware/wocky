@@ -33,6 +33,11 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &Bot.get_bots/3
     end
 
+    connection field :locations, node_type: :locations do
+      arg :device, non_null(:string)
+      resolve &User.get_locations/3
+    end
+
     connection field :contacts, node_type: :contacts do
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
@@ -81,6 +86,21 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  object :location do
+    field :lat, non_null(:float)
+    field :lon, non_null(:float)
+    field :accuracy, non_null(:float)
+    field :created_at, non_null(:datetime)
+  end
+
+  connection :locations, node_type: :location do
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
+    edge do
+    end
+  end
+
   object :home_stream_item do
     field :key, non_null(:string)
     field :from_jid, non_null(:string)
@@ -88,12 +108,6 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user, :user
     field :reference_bot, :bot
     field :updated_at, :datetime
-  end
-
-  object :location do
-    field :lat, non_null(:float)
-    field :lon, non_null(:float)
-    field :accuracy, non_null(:float)
   end
 
   connection :home_stream, node_type: :home_stream_item do
@@ -135,7 +149,10 @@ defmodule WockyAPI.Schema.UserTypes do
   payload_object(:user_update_payload, :user)
 
   input_object :user_location_update_input do
-    field :resource, non_null(:string)
+    field :resource, :string do
+      deprecate "resource is deprecated in favor of device"
+    end
+    field :device, :string
     field :lat, non_null(:float)
     field :lon, non_null(:float)
     field :accuracy, non_null(:float)

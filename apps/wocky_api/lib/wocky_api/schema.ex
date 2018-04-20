@@ -36,7 +36,8 @@ defmodule WockyAPI.Schema do
   def middleware(middleware, %{identifier: field}, %{identifier: :user})
   when field == :external_id
     or field == :phone_number
-    or field == :email do
+    or field == :email
+    or field == :locations do
     [WockyAPI.Middleware.AuthSelf | middleware]
   end
 

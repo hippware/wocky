@@ -65,6 +65,15 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, User.get_by_jid(JID.from_binary(conversation.other_jid))}
   end
 
+  def get_locations(user, args, %{context: %{current_user: requestor}}) do
+    if Confex.get_env(:wocky, :wocky_inst) != "us1" do
+      requestor
+      |> User.get_locations_query(args[:device])
+      |> Utils.connection_from_query(user, args)
+    else
+      {:error, "unavailable"}
+    end
+  end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
     with %User{} = user <- Repo.get(User, id),
@@ -100,7 +109,8 @@ defmodule WockyAPI.Resolvers.User do
 
   def update_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:input]
-    with :ok <- User.set_location(user, location[:resource], location[:lat],
+    device = location[:device] || location[:resource]
+    with :ok <- User.set_location(user, device, location[:lat],
                                   location[:lon], location[:accuracy]) do
                                     {:ok, true}
                                   end

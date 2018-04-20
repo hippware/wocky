@@ -10,6 +10,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Lorem
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
+  alias Faker.String
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
@@ -142,6 +143,7 @@ defmodule Wocky.Repo.Factory do
 
   def location_factory do
     %Location{
+      resource: String.base64(),
       lat: Address.latitude(),
       lon: Address.longitude(),
       accuracy: 10

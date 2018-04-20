@@ -81,8 +81,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "update user info", %{user: user} do
       new_name = Name.first_name()
 
-      result =
-        run_query(@query, user, %{"values" => %{"first_name" => new_name}})
+      result = run_query(@query, user, %{"values" => %{"first_name" => new_name}})
 
       refute has_errors(result)
 
@@ -198,6 +197,88 @@ defmodule WockyAPI.GraphQL.UserTest do
   end
 
   describe "location" do
+    @query """
+    query ($device: String!) {
+      currentUser {
+        locations (device: $device, first: 1) {
+          totalCount
+          edges {
+            node {
+              lat
+              lon
+              accuracy
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get locations", %{user: user} do
+      loc = Factory.insert(:location, user_id: user.id)
+      result = run_query(@query, user, %{"device" => loc.resource})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "locations" => %{
+                   "totalCount" => 1,
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "lon" => loc.lon,
+                         "lat" => loc.lat,
+                         "accuracy" => loc.accuracy
+                       }
+                     }
+                   ]
+                 }
+               }
+             }
+    end
+
+    test "get locations in prod", %{user: user} do
+      Application.put_env(:wocky, :wocky_inst, "us1")
+      loc = Factory.insert(:location, user_id: user.id)
+      result = run_query(@query, user, %{"device" => loc.resource})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "unavailable"
+      assert result.data == %{"currentUser" => %{"locations" => nil}}
+    end
+
+    @query """
+    query ($device: String!, $id: UUID!) {
+      user (id: $id) {
+        locations (device: $device, first: 1) {
+          totalCount
+          edges {
+            node {
+              lat
+              lon
+              accuracy
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get locations for other user", %{user: user, user2: user2} do
+      loc = Factory.insert(:location, user_id: user2.id)
+
+      result =
+        run_query(@query, user, %{
+          "id" => user2.id,
+          "device" => loc.resource
+        })
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "the authenticated user"
+      assert result.data == %{"user" => %{"locations" => nil}}
+    end
+
     @query """
     mutation ($input: UserLocationUpdateInput!) {
       userLocationUpdate (input: $input) {
