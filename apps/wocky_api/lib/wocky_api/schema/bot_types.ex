@@ -175,8 +175,11 @@ defmodule WockyAPI.Schema.BotTypes do
 
   object :bot_subscriptions do
     field :bot_guest_visitors, non_null(:visitor_update) do
-      config fn _, %{context: %{current_user: user}} ->
-        {:ok, topic: Bot.visitor_subscription_topic(user.id)}
+      config fn
+        _, %{context: %{current_user: user}} ->
+          {:ok, topic: Bot.visitor_subscription_topic(user.id)}
+        _, _ ->
+          {:error, "This operation requires an authenticated user"}
       end
     end
   end

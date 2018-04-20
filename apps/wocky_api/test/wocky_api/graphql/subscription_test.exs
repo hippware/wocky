@@ -117,5 +117,17 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
       assert push == expected.(0, "DEPART")
     end
+
+    test "unauthenticated user attempting subscription", %{socket: socket} do
+      ref = push_doc(socket, @subscription)
+      assert_reply ref,
+        :error,
+        %{
+          errors: [%{
+            message: "This operation requires an authenticated user"
+          }]
+        },
+        1000
+    end
   end
 end
