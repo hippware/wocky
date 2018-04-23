@@ -175,6 +175,105 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              }
     end
+
+    @query """
+    query ($last: Int!, $before: String, $relationship: UserBotRelationship!) {
+      currentUser {
+        bots (last: $last, before: $before, relationship: $relationship) {
+          totalCount
+          edges {
+            cursor
+            node {
+              id
+            }
+          }
+          pageInfo {
+            hasPreviousPage
+            hasNextPage
+          }
+        }
+      }
+    }
+    """
+
+    test "get last items in a list", %{user: user, bot: bot} do
+
+      [b7_id, b8_id, b9_id, b10_id] =
+        [bot | Factory.insert_list(10, :bot, user: user)]
+        |> Enum.reverse()
+        |> Enum.slice(-4..-1)
+        |> Enum.map(&(&1.id))
+
+      result = run_query(@query, user,
+                         %{"last" => 3, "relationship" => "OWNED"})
+
+      refute has_errors(result)
+
+      assert %{
+        "currentUser" => %{
+          "bots" => %{
+            "totalCount" => 11,
+            "edges" => [
+              %{
+                "cursor" => c8,
+                "node" => %{
+                  "id" => ^b8_id
+                }
+              },
+              %{
+                "cursor" => c9,
+                "node" => %{
+                  "id" => ^b9_id
+                }
+              },
+              %{
+                "cursor" => _c10,
+                "node" => %{
+                  "id" => ^b10_id
+                }
+              }
+            ],
+            "pageInfo" => %{
+              "hasNextPage" => false,
+              "hasPreviousPage" => true
+            }
+          }
+        }
+      } = result.data
+
+      result = run_query(@query, user,
+                         %{"last" => 2, "before" => c9,
+                           "relationship" => "OWNED"})
+
+      refute has_errors(result)
+
+      assert %{
+        "currentUser" => %{
+          "bots" => %{
+            "totalCount" => 11,
+            "edges" => [
+              %{
+                "cursor" => _c7,
+                "node" => %{
+                  "id" => ^b7_id
+                }
+              },
+              %{
+                "cursor" => ^c8,
+                "node" => %{
+                  "id" => ^b8_id
+                }
+              },
+            ],
+            "pageInfo" => %{
+              "hasNextPage" => false, # Allowed by spec for efficency purposes
+              "hasPreviousPage" => true
+            }
+          }
+        }
+      } = result.data
+
+    end
   end
 
   describe "bot mutations" do
