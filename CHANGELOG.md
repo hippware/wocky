@@ -7,6 +7,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Finish adding GraphQL tests for existing functionality (#1403)
 * Exit all geofences upon 5 minute timeout (#1430)
+  * Disabled by: Add a flag to disable the bot visit timeout (PR #1455)
 * Retrieval of location data points (#1429)
 * Update absinthe_relay and some other deps (PR #1449)
   * [Wocky/testing] ArithmeticError: bad argument in arithmetic expression (#1386)
