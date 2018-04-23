@@ -14,6 +14,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * [Wocky/staging] FunctionClauseError: no function clause matches (#1440)
 * Add missing function clause (PR #1451)
   * [Wocky/staging] RuntimeError: DB Watcher callback crash (#1431)
+* Relax some test timeouts (PR #1453)
 
 
 # 2018.4.18+r06cb8d3
