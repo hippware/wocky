@@ -8,6 +8,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Finish adding GraphQL tests for existing functionality (#1403)
 * Exit all geofences upon 5 minute timeout (#1430)
 * Retrieval of location data points (#1429)
+* Update absinthe_relay and some other deps (PR #1449)
+  * [Wocky/testing] ArithmeticError: bad argument in arithmetic expression (#1386)
+* Fix crash on unauthenticated subscription (PR #1450)
+  * [Wocky/staging] FunctionClauseError: no function clause matches (#1440)
+* Add missing function clause (PR #1451)
+  * [Wocky/staging] RuntimeError: DB Watcher callback crash (#1431)
 
 
 # 2018.4.18+r06cb8d3
