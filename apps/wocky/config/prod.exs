@@ -26,5 +26,5 @@ config :dawdle,
   backend: Dawdle.Backend.SQS
 
 config :dawdle, Dawdle.Backend.SQS,
-  region: {:system, "DAWDLE_REGION"},
-  queues: {:system, "DAWDLE_QUEUES"}
+  region: {:system, :string, "DAWDLE_REGION"},
+  queues: {:system, :list, "DAWDLE_QUEUES"}
