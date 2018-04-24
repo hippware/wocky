@@ -5,6 +5,19 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.23+r771bcf1
+
+* Add types to Dawdle config values (PR #1458)
+
+
+# 2018.4.23+r3a1a692
+
+* Fix handling for `last` GraphQL parameter (PR #1457)
+  * 'You must supply a count (total number of records)' error on GraphQL queries (#1456)
+
+
+# 2018.4.23+r3993d0a
+
 * Finish adding GraphQL tests for existing functionality (#1403)
 * Exit all geofences upon 5 minute timeout (#1430)
   * Disabled by: Add a flag to disable the bot visit timeout (PR #1455)
