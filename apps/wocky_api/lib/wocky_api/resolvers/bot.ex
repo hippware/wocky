@@ -139,7 +139,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def notify_visitor_subscription(bot, subscriber, entered) do
-    to_notify = Bot.guests_query(bot) |> Repo.all()
+    to_notify = bot |> Bot.guests_query() |> Repo.all()
 
     action = case entered do
       true -> :arrive

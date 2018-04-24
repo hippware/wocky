@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule Wocky.HomeStream.PrepopSpec do
   use ESpec, async: true
   use ModelHelpers

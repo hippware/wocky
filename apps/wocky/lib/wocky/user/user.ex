@@ -1,5 +1,5 @@
 defmodule Wocky.User do
-  @moduledoc ""
+  @moduledoc "Schema and API for working with users."
 
   require Logger
 

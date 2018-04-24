@@ -136,7 +136,7 @@ defmodule Wocky.CollectionsTest do
           Collections.add_bot(collection_id, bot_id, ctx.user)
       end
 
-      members = Collection.bots_query(ctx.collection) |> Repo.all()
+      members = ctx.collection |> Collection.bots_query() |> Repo.all()
 
       assert ids(members) == ids(ctx.bots)
     end
@@ -156,7 +156,7 @@ defmodule Wocky.CollectionsTest do
           Collections.remove_bot(collection_id, bot_id, ctx.user)
       end
 
-      remaining = Collection.bots_query(ctx.collection) |> Repo.all()
+      remaining = ctx.collection |> Collection.bots_query() |> Repo.all()
       assert ids(remaining) == ids(Enum.slice(ctx.bots, 5..9))
     end
   end
@@ -178,7 +178,7 @@ defmodule Wocky.CollectionsTest do
             Collections.subscribe(collection_id, user)
       end
 
-      members = Collection.subscribers_query(ctx.collection) |> Repo.all()
+      members = ctx.collection |> Collection.subscribers_query() |> Repo.all()
 
       assert ids(members) == ids(ctx.users)
     end
@@ -200,7 +200,7 @@ defmodule Wocky.CollectionsTest do
             Collections.unsubscribe(collection_id, user)
       end
 
-      remaining = Collection.subscribers_query(ctx.collection) |> Repo.all()
+      remaining = ctx.collection |> Collection.subscribers_query() |> Repo.all()
       assert ids(remaining) == ids(Enum.slice(ctx.users, 5..9))
     end
   end

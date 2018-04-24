@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule :wocky_access_manager_spec do
   use ESpec, async: true
   use Wocky.JID

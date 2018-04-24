@@ -1,5 +1,5 @@
 defmodule Wocky.Bot do
-  @moduledoc ""
+  @moduledoc "Schema and API for working with Bots."
 
   use Wocky.JID
   use Wocky.Repo.Schema
@@ -334,12 +334,14 @@ defmodule Wocky.Bot do
   end
 
   def by_relationship_query(user, :guest) do
-    by_relationship_query(user, :subscribed)
+    user
+    |> by_relationship_query(:subscribed)
     |> where([..., s], s.guest)
   end
 
   def by_relationship_query(user, :visitor) do
-    by_relationship_query(user, :subscribed)
+    user
+    |> by_relationship_query(:subscribed)
     |> where([..., s], s.visitor)
   end
 

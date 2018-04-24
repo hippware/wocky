@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule :mod_wocky_tros_spec do
   use ESpec, async: false
   use IQHandlerSpec
@@ -51,7 +52,7 @@ defmodule :mod_wocky_tros_spec do
   describe "upload request" do
     example "successful request" do
       result =
-        handle_iq(shared.user_jid, @server_jid, upload_packet(10000, "all"))
+        handle_iq(shared.user_jid, @server_jid, upload_packet(10_000, "all"))
 
       assert_expected_upload_packet(shared, result)
     end
@@ -63,7 +64,7 @@ defmodule :mod_wocky_tros_spec do
         handle_iq(
           shared.user_jid,
           @server_jid,
-          upload_packet(10000, shared.bob_access)
+          upload_packet(10_000, shared.bob_access)
         )
 
       assert_expected_upload_packet(shared, result)
