@@ -42,12 +42,11 @@ defmodule WockyAPI.Resolvers.Utils do
   def connection_from_query(
     query, parent, order \\ [desc: :updated_at], args) do
 
+    args = Map.take(args, [:first, :last, :after, :before])
     opts = [count: get_count_if_needed(query, args)]
 
     query
     |> maybe_order_by(order)
-    # Failing dialyzer because Absinthe.Relay.Connection.Options.t is
-    # arguably too tighly specced
     |> Connection.from_query(&Repo.all/1, args, opts)
     |> add_data(:parent_query, query)
     |> add_data(:cached_count, opts[:count])

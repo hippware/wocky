@@ -330,7 +330,7 @@ defmodule Wocky.User do
     ~>> Avatar.check_owner(user.id)
   end
 
-  @spec get_locations_query(t, resource) :: Query.t
+  @spec get_locations_query(t, resource) :: Queryable.t
   def get_locations_query(user, resource) do
     user
     |> Ecto.assoc(:locations)
