@@ -65,8 +65,8 @@ defmodule Wocky.HomeStream do
     end
   end
 
-  @spec delete(User.t(), User.t() | Bot.t() | Collection.t())
-  :: {:ok, Item.t() | nil}
+  @spec delete(User.t(), User.t() | Bot.t() | Collection.t()) ::
+          {:ok, Item.t() | nil}
   def delete(%User{id: user_id}, %User{id: ref_user_id}) do
     Item
     |> where(user_id: ^user_id)

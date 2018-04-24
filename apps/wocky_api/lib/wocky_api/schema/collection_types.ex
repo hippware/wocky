@@ -15,7 +15,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
   object :collection do
     field :id, non_null(:aint)
     field :title, non_null(:string)
-    field :owner, non_null(:user), do: resolve &User.get_object_owner/3
+    field :owner, non_null(:user), do: resolve(&User.get_object_owner/3)
 
     connection field :bots, node_type: :collection_bots do
       resolve &Collection.get_bots/3

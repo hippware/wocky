@@ -77,8 +77,12 @@ defmodule Wocky.User do
 
     many_to_many(:shares, Bot, join_through: Share)
     many_to_many(:bot_subscriptions, Bot, join_through: BotSubscription)
-    many_to_many(:collection_subscriptions, Collection,
-                 join_through: CollectionSubscription)
+
+    many_to_many(
+      :collection_subscriptions,
+      Collection,
+      join_through: CollectionSubscription
+    )
   end
 
   @type id :: binary
@@ -330,7 +334,7 @@ defmodule Wocky.User do
     ~>> Avatar.check_owner(user.id)
   end
 
-  @spec get_locations_query(t, resource) :: Queryable.t
+  @spec get_locations_query(t, resource) :: Queryable.t()
   def get_locations_query(user, resource) do
     user
     |> Ecto.assoc(:locations)
@@ -422,6 +426,7 @@ defmodule Wocky.User do
 
   @spec search_by_name(binary, id, non_neg_integer) :: [User.t()]
   def search_by_name("", _, _), do: []
+
   def search_by_name(search_prefix, user_id, limit) do
     search_term =
       search_cleanup_regex()
@@ -431,11 +436,15 @@ defmodule Wocky.User do
       |> Enum.join(" & ")
 
     User
-    |> where(fragment("""
-      users_name_fts(first_name, last_name, handle)
-      @@ to_tsquery('simple', unaccent(?))
-      """,
-      ^search_term))
+    |> where(
+      fragment(
+        """
+        users_name_fts(first_name, last_name, handle)
+        @@ to_tsquery('simple', unaccent(?))
+        """,
+        ^search_term
+      )
+    )
     |> Blocking.object_visible_query(user_id, :id)
     |> where([u], u.id != ^user_id)
     |> limit(^limit)

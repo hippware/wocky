@@ -884,14 +884,15 @@ defmodule Wocky.UserSpec do
   describe "search_by_name/3" do
     before do
       users =
-        [{"Alice", "Sanders", "Xena"},
-         {"Alison", "Smith", "Yaniv"},
-         {"Bob", "Jones", "Zena"},
-         {"acéñtîâ", "CAPITAL", "1345"}]
-         |> Enum.map(
-           fn({f, l, h}) ->
-             Factory.insert(:user, first_name: f, last_name: l, handle: h)
-           end)
+        [
+          {"Alice", "Sanders", "Xena"},
+          {"Alison", "Smith", "Yaniv"},
+          {"Bob", "Jones", "Zena"},
+          {"acéñtîâ", "CAPITAL", "1345"}
+        ]
+        |> Enum.map(fn {f, l, h} ->
+          Factory.insert(:user, first_name: f, last_name: l, handle: h)
+        end)
 
       {:ok, users: users}
     end
@@ -941,15 +942,17 @@ defmodule Wocky.UserSpec do
 
     context "when the searcher is blocked" do
       before do
-        blocking_user = hd(shared.users) # Alice Sanders
+        # Alice Sanders
+        blocking_user = hd(shared.users)
         Blocking.block(blocking_user, shared.user)
         result = User.search_by_name("a", shared.id, 50)
         {:ok, blocking_user: blocking_user, result: result}
       end
 
       it "should not return the blocking user" do
-        Enum.any?(shared.result,
-                  fn(%{id: id}) -> id == shared.blocking_user.id end)
+        Enum.any?(shared.result, fn %{id: id} ->
+          id == shared.blocking_user.id
+        end)
         |> should(be_false())
 
         shared.result |> should(have_length(2))

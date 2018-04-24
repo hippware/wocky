@@ -14,10 +14,13 @@ defmodule WockyAPI.Schema.AuthTypes do
         field :user, :string
         field :token, non_null(:string)
       end
+
       output do
         field :user, non_null(:user)
       end
+
       resolve &Auth.authenticate/3
+
       middleware fn res, _ ->
         with %{value: %{user: user}} <- res do
           %{res | context: Map.put(res.context, :current_user, user)}

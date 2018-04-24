@@ -329,8 +329,12 @@ defmodule Wocky.Bot do
 
   def by_relationship_query(user, :subscribed) do
     Bot
-    |> join(:inner, [b], s in Subscription,
-            b.id == s.bot_id and s.user_id == ^user.id)
+    |> join(
+      :inner,
+      [b],
+      s in Subscription,
+      b.id == s.bot_id and s.user_id == ^user.id
+    )
   end
 
   def by_relationship_query(user, :guest) do
@@ -348,6 +352,7 @@ defmodule Wocky.Bot do
   @spec subscribers_query(t, boolean()) :: [User.t()]
   def subscribers_query(bot, include_owner \\ true) do
     q = Ecto.assoc(bot, :subscribers)
+
     case include_owner do
       false -> where(q, [u], u.id != ^bot.user_id)
       true -> q

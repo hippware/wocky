@@ -49,8 +49,14 @@ defmodule Wocky.Bot.SubscriptionSpec do
       bot = Factory.insert(:bot, user: owner)
       Factory.insert(:subscription, user: user, bot: bot)
       Factory.insert(:subscription, user: guest, bot: bot, guest: true)
-      Factory.insert(:subscription, user: visitor, bot: bot,
-                     guest: true, visitor: true)
+
+      Factory.insert(
+        :subscription,
+        user: visitor,
+        bot: bot,
+        guest: true,
+        visitor: true
+      )
 
       {:ok, owner: owner, user: user, guest: guest, visitor: visitor, bot: bot}
     end

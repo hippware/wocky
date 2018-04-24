@@ -10,6 +10,7 @@ defmodule WockyAPI.Resolvers.Utils do
   def get_count(%{cached_count: count}, _args, _info) do
     {:ok, count}
   end
+
   def get_count(%{parent_query: parent_query}, _args, _info) do
     {:ok, get_count(parent_query)}
   end
@@ -39,9 +40,7 @@ defmodule WockyAPI.Resolvers.Utils do
 
   def fix_changeset(resolution, _config), do: resolution
 
-  def connection_from_query(
-    query, parent, order \\ [desc: :updated_at], args) do
-
+  def connection_from_query(query, parent, order \\ [desc: :updated_at], args) do
     args = Map.take(args, [:first, :last, :after, :before])
     opts = [count: get_count_if_needed(query, args)]
 
@@ -70,6 +69,7 @@ defmodule WockyAPI.Resolvers.Utils do
   end
 
   defp maybe_order_by(query, nil), do: query
+
   defp maybe_order_by(query, order) do
     query
     |> order_by(^order)

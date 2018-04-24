@@ -82,10 +82,9 @@ defmodule Wocky.Blocking do
     |> where([..., b], is_nil(b.id))
   end
 
-  @spec assoc_object_visible_query(Queryable.t(), User.id(), atom)
-  :: Queryable.t()
-  def assoc_object_visible_query(
-    query, requester_id, owner_field \\ :user_id) do
+  @spec assoc_object_visible_query(Queryable.t(), User.id(), atom) ::
+          Queryable.t()
+  def assoc_object_visible_query(query, requester_id, owner_field \\ :user_id) do
     query
     |> join(
       :left,

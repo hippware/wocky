@@ -19,8 +19,11 @@ defmodule Wocky.HomeStream.Item do
     belongs_to :user, Wocky.User
     belongs_to :reference_user, Wocky.User, foreign_key: :reference_user_id
     belongs_to :reference_bot, Wocky.Bot, foreign_key: :reference_bot_id
+
     belongs_to :reference_collection, Wocky.Collections.Collection,
-      foreign_key: :reference_collection_id, type: :id
+      foreign_key: :reference_collection_id,
+      type: :id
+
     # This field points to half of a composite foreign key for Wocky.Bot.Item
     # which Ecto doesn't natively support at the moment:
     field :reference_bot_item_id, :string

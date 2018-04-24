@@ -188,10 +188,11 @@ defmodule Wocky.HomeStreamSpec do
         class: :ref_update
       })
 
-      ref_coll_item = Factory.insert(:home_stream_item, %{
-        user: shared.user,
-        reference_collection: ref_collection
-      })
+      ref_coll_item =
+        Factory.insert(:home_stream_item, %{
+          user: shared.user,
+          reference_collection: ref_collection
+        })
 
       bot_ids = Enum.map(ref_bot_items, & &1.id)
       Repo.delete!(ref_bot)
@@ -212,12 +213,11 @@ defmodule Wocky.HomeStreamSpec do
       Repo.delete!(ref_collection)
 
       {:ok,
-        referenced_user_items: referenced_user_items,
-        ref_user_times: Enum.map(ref_user_items, & &1.updated_at),
-        referenced_bot_items: referenced_bot_items,
-        ref_bot_times: Enum.map(ref_bot_items, & &1.updated_at),
-        ref_coll_item: ref_coll_item
-      }
+       referenced_user_items: referenced_user_items,
+       ref_user_times: Enum.map(ref_user_items, & &1.updated_at),
+       referenced_bot_items: referenced_bot_items,
+       ref_bot_times: Enum.map(ref_bot_items, & &1.updated_at),
+       ref_coll_item: ref_coll_item}
     end
 
     it "should mark all HS entries with the referenced user as deleted" do

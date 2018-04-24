@@ -9,8 +9,12 @@ defmodule Wocky.Bot.ShareSpec do
 
   describe "validation" do
     let :valid_attrs,
-      do: %{bot_id: ID.new(), user_id: ID.new(),
-        sharer_id: ID.new(), geofence: true}
+      do: %{
+        bot_id: ID.new(),
+        user_id: ID.new(),
+        sharer_id: ID.new(),
+        geofence: true
+      }
 
     it "should pass with valid attributes" do
       %Share{}

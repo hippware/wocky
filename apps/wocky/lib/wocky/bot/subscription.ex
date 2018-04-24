@@ -70,8 +70,10 @@ defmodule Wocky.Bot.Subscription do
     %{user_id: user.id, bot_id: bot.id, guest: guest}
     |> maybe_set_visitor(guest)
     |> make_changeset()
-    |> Repo.insert!(on_conflict: :replace_all,
-                    conflict_target: [:user_id, :bot_id])
+    |> Repo.insert!(
+      on_conflict: :replace_all,
+      conflict_target: [:user_id, :bot_id]
+    )
 
     :ok
   end

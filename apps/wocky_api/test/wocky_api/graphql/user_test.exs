@@ -81,7 +81,8 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "update user info", %{user: user} do
       new_name = Name.first_name()
 
-      result = run_query(@query, user, %{"values" => %{"first_name" => new_name}})
+      result =
+        run_query(@query, user, %{"values" => %{"first_name" => new_name}})
 
       refute has_errors(result)
 

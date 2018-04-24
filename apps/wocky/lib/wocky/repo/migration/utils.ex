@@ -173,6 +173,7 @@ defmodule Wocky.Repo.Migration.Utils do
   defp maybe_extra_condition("bot_items") do
     "AND reference_bot_id = OLD.bot_id"
   end
+
   defp maybe_extra_condition(_), do: ""
 
   def set_hs_item_deleted do

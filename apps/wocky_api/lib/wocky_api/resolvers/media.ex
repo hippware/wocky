@@ -25,12 +25,12 @@ defmodule WockyAPI.Resolvers.Media do
   defp get_urls(tros_url) do
     with {:ok, {server, file_id}} <- TROS.parse_url(tros_url) do
       {:ok,
-        %{
-          tros_url: tros_url,
-          full_url: TROS.get_download_url(server, file_id),
-          thumbnail_url: TROS.get_download_url(server, TROS.thumbnail_id(file_id))
-        }
-      }
+       %{
+         tros_url: tros_url,
+         full_url: TROS.get_download_url(server, file_id),
+         thumbnail_url:
+           TROS.get_download_url(server, TROS.thumbnail_id(file_id))
+       }}
     else
       _ -> {:ok, nil}
     end
