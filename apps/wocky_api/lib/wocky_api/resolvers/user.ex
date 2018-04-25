@@ -66,13 +66,9 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def get_locations(user, args, %{context: %{current_user: requestor}}) do
-    if Confex.get_env(:wocky, :wocky_inst) != "us1" do
-      requestor
-      |> User.get_locations_query(args[:device])
-      |> Utils.connection_from_query(user, args)
-    else
-      {:error, "unavailable"}
-    end
+    requestor
+    |> User.get_locations_query(args[:device])
+    |> Utils.connection_from_query(user, args)
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do

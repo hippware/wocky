@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.UserTest do
-  use WockyAPI.GraphQLCase
+  use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
   alias Faker.Name
@@ -236,19 +236,6 @@ defmodule WockyAPI.GraphQL.UserTest do
                  }
                }
              }
-    end
-
-    test "get locations in prod", %{user: user} do
-      old_inst = Confex.get_env(:wocky, :wocky_inst)
-      Application.put_env(:wocky, :wocky_inst, "us1")
-      loc = Factory.insert(:location, user_id: user.id)
-      result = run_query(@query, user, %{"device" => loc.resource})
-
-      assert error_count(result) == 1
-      assert error_msg(result) =~ "unavailable"
-      assert result.data == %{"currentUser" => %{"locations" => nil}}
-
-      Application.put_env(:wocky, :wocky_inst, old_inst)
     end
 
     @query """
