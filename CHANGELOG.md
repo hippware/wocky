@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update some dependencies. Other housekeeping and fixes (PR #1460)
+* Undisable the location retrieval API in prod (PR #1463)
+
+
 # 2018.4.23+r771bcf1
 
 * Add types to Dawdle config values (PR #1458)
