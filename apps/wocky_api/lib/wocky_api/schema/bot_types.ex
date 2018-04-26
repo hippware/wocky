@@ -18,6 +18,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :total_count, :integer do
       resolve &Utils.get_count/3
     end
+
     edge do
       field :relationships, list_of(:user_bot_relationship) do
         resolve &Bot.get_bot_relationships/3
@@ -35,18 +36,18 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:uuid)
     field :server, non_null(:string)
     field :title, non_null(:string)
-    field :lat, non_null(:float), do: resolve &Bot.get_lat/3
-    field :lon, non_null(:float), do: resolve &Bot.get_lon/3
+    field :lat, non_null(:float), do: resolve(&Bot.get_lat/3)
+    field :lon, non_null(:float), do: resolve(&Bot.get_lon/3)
     field :radius, non_null(:float)
     field :description, :string
     field :shortname, :string
-    field :image, :media, do: resolve &Media.get_media/3
+    field :image, :media, do: resolve(&Media.get_media/3)
     field :type, :string
     field :address, :string
     field :address_data, :string
     field :public, non_null(:boolean)
     field :geofence, non_null(:boolean)
-    field :owner, non_null(:user), do: resolve &User.get_object_owner/3
+    field :owner, non_null(:user), do: resolve(&User.get_object_owner/3)
 
     connection field :items, node_type: :bot_items do
       resolve &Bot.get_items/3
@@ -66,15 +67,16 @@ defmodule WockyAPI.Schema.BotTypes do
   object :bot_item do
     field :id, non_null(:string)
     field :stanza, :string
-    field :media, :media, do: resolve &Media.get_media/3
+    field :media, :media, do: resolve(&Media.get_media/3)
     field :image, :boolean
-    field :owner, :user, do: resolve &User.get_object_owner/3
+    field :owner, :user, do: resolve(&User.get_object_owner/3)
   end
 
   connection :bot_items, node_type: :bot_item do
     field :total_count, non_null(:integer) do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -83,6 +85,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :total_count, non_null(:integer) do
       resolve &Utils.get_count/3
     end
+
     edge do
       field :relationships, non_null(list_of(:user_bot_relationship)) do
         resolve &Bot.get_bot_relationships/3
@@ -145,9 +148,11 @@ defmodule WockyAPI.Schema.BotTypes do
         field :id, non_null(:uuid)
         field :guest, :boolean
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Bot.subscribe/3
     end
 
@@ -155,9 +160,11 @@ defmodule WockyAPI.Schema.BotTypes do
       input do
         field :id, non_null(:uuid)
       end
+
       output do
         field :result, :boolean
       end
+
       resolve &Bot.unsubscribe/3
     end
   end
@@ -178,6 +185,7 @@ defmodule WockyAPI.Schema.BotTypes do
       config fn
         _, %{context: %{current_user: user}} ->
           {:ok, topic: Bot.visitor_subscription_topic(user.id)}
+
         _, _ ->
           {:error, "This operation requires an authenticated user"}
       end

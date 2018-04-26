@@ -22,8 +22,7 @@ config :pigeon, :apns,
     mode: :prod
   }
 
-config :dawdle,
-  backend: Dawdle.Backend.SQS
+config :dawdle, backend: Dawdle.Backend.SQS
 
 config :dawdle, Dawdle.Backend.SQS,
   region: {:system, :string, "DAWDLE_REGION"},

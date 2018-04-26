@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule :tros_permissions_spec do
   use ESpec, async: true, sandbox: true
   use SandboxHelper

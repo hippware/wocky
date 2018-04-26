@@ -9,14 +9,17 @@ defmodule WockyAPI.Middleware.AuthSelf do
   alias Wocky.User
 
   def call(
-    %{context: %{current_user: %User{id: id}},
-      source: %User{id: id}} = resolution, _config) do
+        %{context: %{current_user: %User{id: id}}, source: %User{id: id}} =
+          resolution,
+        _config
+      ) do
     resolution
   end
 
   def call(resolution, _config) do
     Absinthe.Resolution.put_result(
       resolution,
-      {:error, "This query can only be made against the authenticated user"})
+      {:error, "This query can only be made against the authenticated user"}
+    )
   end
 end

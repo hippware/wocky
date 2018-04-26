@@ -1,5 +1,5 @@
 defmodule Wocky.Bot do
-  @moduledoc ""
+  @moduledoc "Schema and API for working with Bots."
 
   use Wocky.JID
   use Wocky.Repo.Schema
@@ -329,23 +329,30 @@ defmodule Wocky.Bot do
 
   def by_relationship_query(user, :subscribed) do
     Bot
-    |> join(:inner, [b], s in Subscription,
-            b.id == s.bot_id and s.user_id == ^user.id)
+    |> join(
+      :inner,
+      [b],
+      s in Subscription,
+      b.id == s.bot_id and s.user_id == ^user.id
+    )
   end
 
   def by_relationship_query(user, :guest) do
-    by_relationship_query(user, :subscribed)
+    user
+    |> by_relationship_query(:subscribed)
     |> where([..., s], s.guest)
   end
 
   def by_relationship_query(user, :visitor) do
-    by_relationship_query(user, :subscribed)
+    user
+    |> by_relationship_query(:subscribed)
     |> where([..., s], s.visitor)
   end
 
   @spec subscribers_query(t, boolean()) :: [User.t()]
   def subscribers_query(bot, include_owner \\ true) do
     q = Ecto.assoc(bot, :subscribers)
+
     case include_owner do
       false -> where(q, [u], u.id != ^bot.user_id)
       true -> q

@@ -173,7 +173,7 @@ defmodule Wocky.Push do
       :bad_device_token ->
         invalidate_token(user_id, resource, n.device_token)
 
-      _Else ->
+      _else ->
         :ok
     end
   end

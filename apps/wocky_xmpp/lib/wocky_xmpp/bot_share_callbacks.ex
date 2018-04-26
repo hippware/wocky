@@ -21,17 +21,18 @@ defmodule WockyXMPP.BotShareCallbacks do
   end
 
   defp send_notification(%{geofence: false} = share) do
-      :wocky_bot_users.send_share_notification(
-        share.sharer,
-        share.user,
-        share.bot
-      )
+    :wocky_bot_users.send_share_notification(
+      share.sharer,
+      share.user,
+      share.bot
+    )
   end
+
   defp send_notification(%{geofence: true} = share) do
-      :wocky_bot_users.send_geofence_share_notification(
-        share.sharer,
-        share.user,
-        share.bot
-      )
+    :wocky_bot_users.send_geofence_share_notification(
+      share.sharer,
+      share.user,
+      share.bot
+    )
   end
 end

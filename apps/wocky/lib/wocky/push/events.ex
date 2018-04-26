@@ -136,14 +136,12 @@ defmodule Wocky.Push.Events do
     import Wocky.Push.Events.Utils
 
     def message(%BotGeofenceShareEvent{from: from, bot: bot, type: :invite}) do
-      get_handle(from) <>
-        " wants to know when you are at " <>
-        get_title(bot)
+      get_handle(from) <> " wants to know when you are at " <> get_title(bot)
     end
+
     def message(%BotGeofenceShareEvent{from: from, bot: bot, type: :accept}) do
       get_handle(from) <>
-        " accepted your presence request for " <>
-        get_title(bot)
+        " accepted your presence request for " <> get_title(bot)
     end
 
     def uri(%BotGeofenceShareEvent{bot: bot}), do: make_uri(:bot, bot.id)

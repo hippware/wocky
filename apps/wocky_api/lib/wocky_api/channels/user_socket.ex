@@ -1,8 +1,7 @@
 defmodule WockyAPI.UserSocket do
   use Phoenix.Socket
 
-  use Absinthe.Phoenix.Socket,
-    schema: WockyAPI.Schema
+  use Absinthe.Phoenix.Socket, schema: WockyAPI.Schema
 
   ## Channels
   # channel "room:*", WockyAPI.RoomChannel

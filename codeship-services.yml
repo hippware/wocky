@@ -1,4 +1,4 @@
-wocky_build:
+wocky-build:
   build:
     context: .
     dockerfile: Dockerfile.build
@@ -6,7 +6,7 @@ wocky_build:
   cached: true
   volumes:
     - ./tmp/artifacts:/artifacts
-wocky_test:
+wocky-test:
   build:
     context: .
     dockerfile: Dockerfile.build
@@ -29,7 +29,7 @@ redis:
   image: redis:3.2-alpine
   ports:
     - "6379"
-wocky_rel:
+wocky-rel:
   build:
     context: .
     dockerfile: Dockerfile.release
@@ -37,7 +37,7 @@ wocky_rel:
     args:
       RELEASE_NAME: wocky
   cached: true
-aws_dockercfg:
+aws-dockercfg:
   image: codeship/aws-ecr-dockercfg-generator
   add_docker: true
   encrypted_env_file: aws.env.encrypted

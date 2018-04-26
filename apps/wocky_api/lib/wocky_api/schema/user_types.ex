@@ -18,7 +18,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :id, non_null(:uuid)
     field :server, non_null(:string)
     field :handle, :string
-    field :avatar, :media, do: resolve &Media.get_media/3
+    field :avatar, :media, do: resolve(&Media.get_media/3)
     field :first_name, :string
     field :last_name, :string
     field :tagline, :string
@@ -79,6 +79,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :total_count, non_null(:integer) do
       resolve &Utils.get_count/3
     end
+
     edge do
       field :relationship, :user_contact_relationship do
         resolve &User.get_contact_relationship/3
@@ -97,6 +98,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :total_count, non_null(:integer) do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -114,6 +116,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :total_count, non_null(:integer) do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -122,13 +125,14 @@ defmodule WockyAPI.Schema.UserTypes do
     field :other_jid, non_null(:string)
     field :messages, non_null(:string)
     field :outgoing, non_null(:boolean)
-    field :user, :user, do: resolve &User.get_conversation_user/3
+    field :user, :user, do: resolve(&User.get_conversation_user/3)
   end
 
   connection :conversations, node_type: :conversation do
     field :total_count, non_null(:integer) do
       resolve &Utils.get_count/3
     end
+
     edge do
     end
   end
@@ -152,6 +156,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :resource, :string do
       deprecate "resource is deprecated in favor of device"
     end
+
     field :device, :string
     field :lat, non_null(:float)
     field :lon, non_null(:float)

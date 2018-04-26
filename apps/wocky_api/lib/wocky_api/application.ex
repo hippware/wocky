@@ -20,7 +20,7 @@ defmodule WockyAPI.Application do
     children = [
       # Start the endpoint when the application starts
       supervisor(WockyAPI.Endpoint, []),
-      supervisor(Absinthe.Subscription, [WockyAPI.Endpoint]),
+      supervisor(Absinthe.Subscription, [WockyAPI.Endpoint])
     ]
 
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]
