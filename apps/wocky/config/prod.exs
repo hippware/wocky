@@ -1,7 +1,6 @@
 use Mix.Config
 
 config :wocky,
-  visit_timeout_enabled: false,
   async_location_processing: true,
   tros_backend: Wocky.TROS.S3Store
 
