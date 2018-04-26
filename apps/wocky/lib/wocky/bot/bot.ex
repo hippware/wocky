@@ -272,16 +272,18 @@ defmodule Wocky.Bot do
     Subscription.delete(user, bot)
   end
 
-  @spec visit(t, User.t()) :: :ok
-  def visit(bot, user) do
+  @spec visit(t, User.t(), boolean) :: :ok
+  def visit(bot, user, notify \\ true) do
     Subscription.visit(user, bot)
-    send_visit_notifications(user, bot, :enter)
+    if notify, do: send_visit_notifications(user, bot, :enter)
+    :ok
   end
 
-  @spec depart(t, User.t()) :: :ok
-  def depart(bot, user) do
+  @spec depart(t, User.t(), boolean) :: :ok
+  def depart(bot, user, notify \\ true) do
     Subscription.depart(user, bot)
-    send_visit_notifications(user, bot, :exit)
+    if notify, do: send_visit_notifications(user, bot, :exit)
+    :ok
   end
 
   defp send_visit_notifications(visitor, bot, event) do

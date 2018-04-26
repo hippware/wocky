@@ -12,7 +12,15 @@ defmodule Wocky.User.BotEvent do
   alias Wocky.Repo
   alias Wocky.User
 
-  defenum EventType, [:enter, :exit, :transition_in, :transition_out]
+  defenum EventType, [
+    :enter,
+    :exit,
+    :transition_in,
+    :transition_out,
+    :timeout,
+    :deactivate,
+    :reactivate
+  ]
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
