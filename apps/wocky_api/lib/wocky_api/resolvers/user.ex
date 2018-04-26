@@ -15,6 +15,7 @@ defmodule WockyAPI.Resolvers.User do
   def get_current_user(_root, _args, %{context: %{current_user: user}}) do
     {:ok, user}
   end
+
   def get_current_user(_root, _args, _info) do
     {:error, "This operation requires an authenticated user"}
   end
@@ -74,16 +75,17 @@ defmodule WockyAPI.Resolvers.User do
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
     with %User{} = user <- Repo.get(User, id),
          false <- Blocking.blocked?(current_user.id, id) do
-           {:ok, user}
+      {:ok, user}
     else
       _ -> user_not_found(id)
     end
   end
+
   # This is kind of dumb - an anonymous user can see more than an authenticated
   # but blocked user...
   def get_user(_root, %{id: id}, _info) do
     with %User{} = user <- Repo.get(User, id) do
-         {:ok, user}
+      {:ok, user}
     else
       _ -> user_not_found(id)
     end
@@ -92,8 +94,10 @@ defmodule WockyAPI.Resolvers.User do
   def search_users(_root, %{limit: limit}, _info) when limit < 0 do
     {:error, "limit cannot be less than 0"}
   end
-  def search_users(_root, %{search_term: search_term} = args,
-                   %{context: %{current_user: current_user}}) do
+
+  def search_users(_root, %{search_term: search_term} = args, %{
+        context: %{current_user: current_user}
+      }) do
     limit = args[:limit] || @default_search_results
     {:ok, User.search_by_name(search_term, current_user.id, limit)}
   end
@@ -106,10 +110,17 @@ defmodule WockyAPI.Resolvers.User do
   def update_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:input]
     device = location[:device] || location[:resource]
-    with :ok <- User.set_location(user, device, location[:lat],
-                                  location[:lon], location[:accuracy]) do
-                                    {:ok, true}
-                                  end
+
+    with :ok <-
+           User.set_location(
+             user,
+             device,
+             location[:lat],
+             location[:lon],
+             location[:accuracy]
+           ) do
+      {:ok, true}
+    end
   end
 
   defp user_not_found(id), do: {:error, "User not found: " <> id}

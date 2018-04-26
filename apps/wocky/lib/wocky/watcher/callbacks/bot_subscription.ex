@@ -47,7 +47,7 @@ defmodule Wocky.Watcher.Callbacks.BotSubscription do
             type: :accept
           })
 
-          Push.notify_all(sub.bot.user.id, event)
+        Push.notify_all(sub.bot.user.id, event)
       end
     end
   end

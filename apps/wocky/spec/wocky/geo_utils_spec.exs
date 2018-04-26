@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule Wocky.GeoUtilsSpec do
   use ESpec, async: true
 
@@ -30,7 +31,7 @@ defmodule Wocky.GeoUtilsSpec do
     it do: normalize_lat_lon(290.0, 1.0) |> should(eql {-70.0, 1.0})
     # Check that very large numbers don't make it choke:
     it do:
-         normalize_lat_lon(1.7976931348623157e+308, -1.6e+308)
+         normalize_lat_lon(1.797e+308, -1.6e+308)
          |> should(eql {0.0, 0.0})
   end
 end

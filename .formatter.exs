@@ -87,6 +87,9 @@
     # Phoenix.ConnTest
     assert_error_sent: 2,
 
+    # Absinthe / Kronky
+    payload_object: 2,
+
     # Espec
 
     ## Test setup

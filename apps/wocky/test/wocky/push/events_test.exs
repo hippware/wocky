@@ -126,5 +126,4 @@ defmodule Wocky.Push.EventsTest do
       assert uri =~ "/collection"
     end
   end
-
 end

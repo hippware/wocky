@@ -1,5 +1,5 @@
 defmodule Wocky.Roster.InitialContact do
-  @moduledoc ""
+  @moduledoc false
 
   use Wocky.JID
   use Wocky.Repo.Schema

@@ -63,8 +63,8 @@ defmodule Wocky.Collections do
     |> Repo.insert(returning: true)
   end
 
-  @spec update(Collection.id(), binary(), User.t())
-  :: {:ok, Collection.t()} | {:error, binary()}
+  @spec update(Collection.id(), binary(), User.t()) ::
+          {:ok, Collection.t()} | {:error, binary()}
   def update(id, title, requestor) do
     with {:ok, coll} <- get_owned_collection(id, requestor.id) do
       coll
@@ -73,8 +73,8 @@ defmodule Wocky.Collections do
     end
   end
 
-  @spec delete(Collection.id(), User.t())
-  :: {:ok, Collection.t() | nil} | {:error, Changeset.t()}
+  @spec delete(Collection.id(), User.t()) ::
+          {:ok, Collection.t() | nil} | {:error, Ecto.Changeset.t()}
   def delete(id, requestor) do
     with {:ok, coll} <- get_owned_collection(id, requestor.id) do
       Repo.delete(coll)
@@ -84,8 +84,8 @@ defmodule Wocky.Collections do
     end
   end
 
-  @spec add_bot(Collection.id(), Bot.id(), User.t())
-  :: {:ok, Member.t()} | {:error, Changeset.t() | any()}
+  @spec add_bot(Collection.id(), Bot.id(), User.t()) ::
+          {:ok, Member.t()} | {:error, Ecto.Changeset.t() | any()}
   def add_bot(id, bot_id, requestor) do
     with {:ok, _bot} <- get_public_bot(bot_id),
          {:ok, _coll} <- get_owned_collection(id, requestor.id) do
@@ -95,8 +95,8 @@ defmodule Wocky.Collections do
     end
   end
 
-  @spec remove_bot(Collection.id(), Bot.id(), User.t())
-  :: {:ok, Member.t() | nil} | {:error, any()}
+  @spec remove_bot(Collection.id(), Bot.id(), User.t()) ::
+          {:ok, Member.t() | nil} | {:error, any()}
   def remove_bot(id, bot_id, requestor) do
     with {:ok, _coll} <- get_owned_collection(id, requestor.id) do
       result =
@@ -111,8 +111,8 @@ defmodule Wocky.Collections do
     end
   end
 
-  @spec subscribe(Collection.id(), User.t())
-  :: {:ok, Subscription.t()} | {:error, Changeset.t() | any()}
+  @spec subscribe(Collection.id(), User.t()) ::
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
   def subscribe(id, requestor) do
     with {:ok, _coll} <- get_visible_collection(id, requestor.id) do
       %Subscription{}
@@ -121,8 +121,8 @@ defmodule Wocky.Collections do
     end
   end
 
-  @spec unsubscribe(Collection.id(), User.t())
-  :: {:ok, Subscription.t() | nil} | {:error, Changeset.t()}
+  @spec unsubscribe(Collection.id(), User.t()) ::
+          {:ok, Subscription.t() | nil} | {:error, Ecto.Changeset.t()}
   def unsubscribe(id, %User{id: user_id} = _requestor) do
     result =
       Subscription
@@ -135,14 +135,21 @@ defmodule Wocky.Collections do
     end
   end
 
+  @spec share(Collection.t(), User.t(), User.t(), binary) :: :ok
   def share(collection, sharer, target, message) do
     with false <- Blocking.blocked?(sharer.id, target.id) do
       # Insert home stream item
       key = ID.collection_share_id(collection)
-      from_jid = sharer |> User.to_jid |> JID.to_binary
+      from_jid = sharer |> User.to_jid() |> JID.to_binary()
       stanza = share_stanza(collection, message)
+
       HomeStream.put(
-        target.id, key, from_jid, stanza, ref_collection_id: collection.id)
+        target.id,
+        key,
+        from_jid,
+        stanza,
+        ref_collection_id: collection.id
+      )
 
       # Send push event
       event = %CollectionShareEvent{user: sharer, collection: collection}
@@ -178,7 +185,9 @@ defmodule Wocky.Collections do
 
   defp get_public_bot(bot_id) do
     case Bot.get(bot_id) do
-      nil -> {:error, :bot_not_found}
+      nil ->
+        {:error, :bot_not_found}
+
       bot ->
         if bot.public do
           {:ok, bot}
@@ -213,14 +222,15 @@ defmodule Wocky.Collections do
   end
 
   defp share_stanza(collection, message) do
-    {:message, %{type: "headline"}, [
-      {:body, nil, message || ""},
-      {:collection, %{xmlns: @xmlns}, [
-        {:id, nil, collection.id},
-        {:action, nil, "share"}
-      ]}
-    ]}
+    {:message, %{type: "headline"},
+     [
+       {:body, nil, message || ""},
+       {:collection, %{xmlns: @xmlns},
+        [
+          {:id, nil, collection.id},
+          {:action, nil, "share"}
+        ]}
+     ]}
     |> XmlBuilder.generate()
   end
-
 end

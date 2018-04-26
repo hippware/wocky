@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule Wocky.TROS.MetadataSpec do
   use ESpec, async: true
 

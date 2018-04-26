@@ -33,7 +33,7 @@ defmodule Wocky.TROS.S3StoreSpec do
       owner_id = ID.new()
       owner_jid = JID.make(owner_id, shared.server, "")
       file_id = ID.new()
-      size = :rand.uniform(10000)
+      size = :rand.uniform(10_000)
       metadata = %{"content-type": Lorem.word()}
 
       {headers, fields} =

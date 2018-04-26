@@ -20,6 +20,7 @@ defmodule WockyAPI.Types.UUID do
       false -> :error
     end
   end
+
   defp parse_uuid(%Null{}), do: {:ok, nil}
   defp parse_uuid(_), do: :error
 end

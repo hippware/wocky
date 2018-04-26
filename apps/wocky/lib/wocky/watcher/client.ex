@@ -76,8 +76,8 @@ defmodule Wocky.Watcher.Client do
 
     new_table_map = Map.put(state.table_map, object.__schema__(:source), object)
 
-    {:reply, {:ok, ref}, %{state | subscribers: new_subscribers,
-                                   table_map: new_table_map}}
+    {:reply, {:ok, ref},
+     %{state | subscribers: new_subscribers, table_map: new_table_map}}
   end
 
   def handle_call({:unsubscribe, ref}, _from, state) do

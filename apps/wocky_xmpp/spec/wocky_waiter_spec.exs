@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
 defmodule :wocky_waiter_spec do
   use ESpec, async: true
 

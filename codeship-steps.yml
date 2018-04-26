@@ -1,10 +1,10 @@
 - name: version
-  service: wocky_build
+  service: wocky-build
   command: elixir version.exs
 - type: parallel
   steps:
   - type: serial
-    service: wocky_test
+    service: wocky-test
     steps:
     - name: unit_test
       command: make unittest
@@ -14,19 +14,19 @@
     tag: master
     steps:
     - name: release
-      service: wocky_build
+      service: wocky-build
       command: make release
     - name: push_latest_image
-      service: wocky_rel
+      service: wocky-rel
       type: push
       image_tag: latest
       image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
       registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-      dockercfg_service: aws_dockercfg
+      dockercfg_service: aws-dockercfg
     - name: push_tagged_image
-      service: wocky_rel
+      service: wocky-rel
       type: push
       image_tag: "{{.CommitID}}"
       image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
       registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-      dockercfg_service: aws_dockercfg
+      dockercfg_service: aws-dockercfg
