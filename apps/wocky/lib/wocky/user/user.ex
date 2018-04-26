@@ -25,9 +25,7 @@ defmodule Wocky.User do
   alias Wocky.Repo
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.Avatar
-  alias Wocky.User.BotEvent
-  alias Wocky.User.Location
+  alias Wocky.User.{Avatar, BotEvent, GeoFence, Location}
 
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "users" do
@@ -345,7 +343,7 @@ defmodule Wocky.User do
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
-        Location.check_for_bot_events(loc, user)
+        GeoFence.check_for_bot_events(loc, user)
         :ok
 
       {:error, _} = error ->
