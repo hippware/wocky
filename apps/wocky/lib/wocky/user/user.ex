@@ -7,7 +7,6 @@ defmodule Wocky.User do
   use Wocky.Repo.Schema
 
   import Ecto.Query
-  import OK, only: [~>>: 2]
 
   alias Ecto.Queryable
   alias Wocky.Account.Token, as: AuthToken
@@ -304,7 +303,7 @@ defmodule Wocky.User do
   end
 
   defp validate_avatar(:avatar, user, avatar) do
-    case do_validate_avatar(user, avatar) do
+    case Avatar.validate(user, avatar) do
       {:ok, _} ->
         []
 
@@ -323,13 +322,6 @@ defmodule Wocky.User do
       {:error, :not_file_owner} ->
         [avatar: "is not owned by the user"]
     end
-  end
-
-  defp do_validate_avatar(user, avatar) do
-    Avatar.prepare(avatar)
-    ~>> Avatar.check_valid_filename()
-    ~>> Avatar.check_is_local(user.server)
-    ~>> Avatar.check_owner(user.id)
   end
 
   @spec get_locations_query(t, resource) :: Queryable.t()
