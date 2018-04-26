@@ -17,7 +17,7 @@ defmodule WockyXMPP.HomeStreamItemCallbacks do
   def handle_change(%Event{new: new}) do
     item = Repo.preload(new, [:user, :reference_bot])
 
-    if item.user != nil do
+    if item.user != nil && item.reference_bot do
       :mod_wocky_home_stream.send_notifications(User.to_jid(item.user), item)
     end
   end
