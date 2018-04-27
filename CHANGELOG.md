@@ -7,6 +7,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update some dependencies. Other housekeeping and fixes (PR #1460)
 * Undisable the location retrieval API in prod (PR #1463)
+* Fix ref bot deletion race crash (PR #1465)
+  * [Wocky/staging] RuntimeError: DB Watcher callback crash (#1464)
+* Extend geofence timeout to 30mins and disable PN on timeout (#1466)
 
 
 # 2018.4.23+r771bcf1
