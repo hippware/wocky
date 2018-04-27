@@ -180,6 +180,43 @@ defmodule Wocky.User.LocationTest do
       assert Enum.count(notifications) == 1
     end
 
+    test "who has timed out inside the bot permimeter", shared do
+      BotEvent.insert(shared.user, shared.bot, :timeout)
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :reactivate
+
+      assert Bot.subscription(shared.bot, shared.user) == :visitor
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who has reactivated inside the bot perimeter", shared do
+      visit_bot(shared.bot, shared.user)
+      initial_event = BotEvent.insert(shared.user, shared.bot, :reactivate)
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      assert event.id == initial_event.id
+
+      assert Bot.subscription(shared.bot, shared.user) == :visitor
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who has reactivated outside the bot perimeter", shared do
+      BotEvent.insert(shared.user, shared.bot, :deactivate)
+      Location.check_for_bot_events(shared.inside_loc, shared.user)
+
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :transition_in
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
+      assert Sandbox.list_notifications() == []
+    end
+
     test "who was already inside the bot perimeter", shared do
       visit_bot(shared.bot, shared.user)
       initial_event = BotEvent.insert(shared.user, shared.bot, :enter)
@@ -263,6 +300,43 @@ defmodule Wocky.User.LocationTest do
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
+    end
+
+    test "who has timed out inside the bot permimeter", shared do
+      BotEvent.insert(shared.user, shared.bot, :timeout)
+      Location.check_for_bot_events(shared.outside_loc, shared.user)
+
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :deactivate
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who has reactivated inside the bot perimeter", shared do
+      visit_bot(shared.bot, shared.user)
+      BotEvent.insert(shared.user, shared.bot, :reactivate)
+      Location.check_for_bot_events(shared.outside_loc, shared.user)
+
+      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      assert event == :transition_out
+
+      assert Bot.subscription(shared.bot, shared.user) == :visitor
+
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "who has reactivated outside the bot perimeter", shared do
+      initial_event = BotEvent.insert(shared.user, shared.bot, :deactivate)
+      Location.check_for_bot_events(shared.outside_loc, shared.user)
+
+      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      assert event.id == initial_event.id
+
+      assert Bot.subscription(shared.bot, shared.user) == :guest
+
+      assert Sandbox.list_notifications() == []
     end
 
     test "who was already outside the bot perimeter", shared do

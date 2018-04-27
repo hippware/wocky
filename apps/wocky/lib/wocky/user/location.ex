@@ -137,6 +137,15 @@ defmodule Wocky.User.Location do
       :enter ->
         :no_change
 
+      :timeout ->
+        :reactivate
+
+      :deactivate ->
+        :transition_in
+
+      :reactivate ->
+        :no_change
+
       :transition_out ->
         :roll_back
 
@@ -161,6 +170,15 @@ defmodule Wocky.User.Location do
       :enter ->
         :transition_out
 
+      :timeout ->
+        :deactivate
+
+      :deactivate ->
+        :no_change
+
+      :reactivate ->
+        :transition_out
+
       :transition_in ->
         :roll_back
 
@@ -180,18 +198,18 @@ defmodule Wocky.User.Location do
   end
 
   defp process_bot_event({user, bot, be}) do
-    if transition_complete?(be) do
-      maybe_visit_bot(be.event, user, bot)
-    end
-  end
-
-  defp transition_complete?(%BotEvent{event: event}) do
-    Enum.member?([:enter, :exit], event)
+    maybe_visit_bot(be.event, user, bot)
   end
 
   defp maybe_visit_bot(:enter, user, bot), do: Bot.visit(bot, user)
 
+  defp maybe_visit_bot(:reactivate, user, bot), do: Bot.visit(bot, user, false)
+
   defp maybe_visit_bot(:exit, user, bot), do: Bot.depart(bot, user)
+
+  defp maybe_visit_bot(:timeout, user, bot), do: Bot.depart(bot, user, false)
+
+  defp maybe_visit_bot(_, _, _), do: :ok
 
   def visit_timeout(%{user_id: user_id, bot_id: bot_id, loc_id: loc_id}) do
     case latest_loc(user_id) do
@@ -209,7 +227,7 @@ defmodule Wocky.User.Location do
 
     if user && bot do
       if Bot.subscription(bot, user) == :visitor do
-        new_event = BotEvent.insert(user, bot, :exit)
+        new_event = BotEvent.insert(user, bot, :timeout)
         process_bot_event({user, bot, new_event})
       end
     end
