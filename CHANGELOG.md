@@ -5,11 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.4.27+reb3df56
+
 * Update some dependencies. Other housekeeping and fixes (PR #1460)
 * Undisable the location retrieval API in prod (PR #1463)
 * Fix ref bot deletion race crash (PR #1465)
   * [Wocky/staging] RuntimeError: DB Watcher callback crash (#1464)
 * Extend geofence timeout to 30mins and disable PN on timeout (#1466)
+* Update absinthe to fix subscription distribution error (PR #1469)
+* Fix ref bot crash fix (PR #1470)
+* Temporarily change timeout back to 900 seconds due to Dawdle limitation (PR #1472, #1471)
 
 
 # 2018.4.23+r771bcf1
