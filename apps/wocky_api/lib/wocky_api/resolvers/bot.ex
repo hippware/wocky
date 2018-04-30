@@ -73,6 +73,13 @@ defmodule WockyAPI.Resolvers.Bot do
     {:ok, Bot.lon(bot)}
   end
 
+  def get_active_bots(_root, args, %{context: %{current_user: user}}) do
+    user
+    |> Bot.active_bots_query()
+    |> visible_query(user)
+    |> Utils.connection_from_query(user, args)
+  end
+
   def create_bot(_root, args, %{context: %{current_user: user}}) do
     args[:input][:values]
     |> parse_lat_lon()

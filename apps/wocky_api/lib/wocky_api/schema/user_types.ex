@@ -42,6 +42,10 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &Bot.get_bots/3
     end
 
+    connection field :active_bots, node_type: :bots do
+      resolve &Bot.get_active_bots/3
+    end
+
     @desc "The user's location history for a given device"
     connection field :locations, node_type: :locations do
       arg :device, non_null(:string)

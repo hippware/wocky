@@ -351,6 +351,19 @@ defmodule Wocky.Bot do
     |> where([..., s], s.visitor)
   end
 
+  @spec active_bots_query(User.t()) :: Ecto.Queryable.t()
+  def active_bots_query(user) do
+    user
+    |> by_relationship_query(:guest)
+    |> join(
+      :inner,
+      [b],
+      a in "bot_activity",
+      b.id == a.bot_id
+    )
+    |> order_by([..., a], desc: a.visited_at)
+  end
+
   @spec subscribers_query(t, boolean()) :: [User.t()]
   def subscribers_query(bot, include_owner \\ true) do
     q = Ecto.assoc(bot, :subscribers)
