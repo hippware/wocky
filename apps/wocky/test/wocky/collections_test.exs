@@ -119,7 +119,7 @@ defmodule Wocky.CollectionsTest do
     end
 
     test "delete a non-existant collection", ctx do
-      assert {:ok, nil} = Collections.delete(:rand.uniform(100), ctx.user)
+      assert {:ok, nil} = Collections.delete(:rand.uniform(100) + 100, ctx.user)
     end
   end
 
