@@ -349,6 +349,7 @@ defmodule Wocky.Bot do
     user
     |> by_relationship_query(:subscribed)
     |> where([..., s], s.visitor)
+    |> order_by([..., s], desc: s.visited_at)
   end
 
   @spec active_bots_query(User.t()) :: Ecto.Queryable.t()
