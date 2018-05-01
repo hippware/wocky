@@ -54,16 +54,6 @@ defmodule WockyAPI.Plugs.Authentication do
   defp fail_authentication(conn, reason \\ :unauthorized),
     do: conn |> send_resp(reason, "") |> halt()
 
-  def load_graphql_context(conn, _opts \\ []) do
-    user = Map.get(conn.assigns, :current_user)
-
-    if user do
-      put_private(conn, :absinthe, %{context: %{current_user: user}})
-    else
-      conn
-    end
-  end
-
   def ensure_owner(conn, _opts \\ []) do
     path_user = conn.path_params["user_id"]
     user = Map.get(conn.assigns, :current_user)

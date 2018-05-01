@@ -7,36 +7,36 @@ defmodule WockyAPI.PipelineLog do
   alias Wocky.User
 
   def run(blueprint, opts) do
+    context = opts[:context]
     user_id =
-      case opts[:context][:current_user] do
+      case context[:current_user] do
         %User{id: id} -> id
         _ -> nil
       end
 
     case opts[:phase] do
-      :request -> log(blueprint, user_id, false)
-      :response -> log(inspect(blueprint.result.data), user_id, true)
+      :request -> log(blueprint, user_id, context, false)
+      :response -> log(result(blueprint.result), user_id, context, true)
     end
 
     {:ok, blueprint}
   end
 
-  defp log(nil, _user_id, _incoming), do: :ok
+  defp result(result),
+    do: inspect(result[:data]) <> " / " <> inspect(result[:errors])
 
-  defp log(packet, user_id, incoming) do
+  defp log(nil, _user_id, _context, _incoming), do: :ok
+
+  defp log(packet, user_id, context, incoming) do
     %{
       user_id: user_id,
       resource: "GraphQL",
-      host: host(),
-      ip: "",
+      host: context.host,
+      ip: context.peer,
       incoming: incoming,
       packet: packet
     }
     |> TrafficLog.put()
   end
 
-  defp host() do
-    {:ok, host} = :inet.gethostname()
-    to_string(host)
-  end
 end

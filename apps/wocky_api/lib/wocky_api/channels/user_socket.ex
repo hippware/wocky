@@ -1,7 +1,9 @@
 defmodule WockyAPI.UserSocket do
   use Phoenix.Socket
 
-  use Absinthe.Phoenix.Socket, schema: WockyAPI.Schema
+  use Absinthe.Phoenix.Socket,
+    schema: WockyAPI.Schema,
+    pipeline: {WockyAPI.Pipeline, :channel_pipeline}
 
   ## Channels
   # channel "room:*", WockyAPI.RoomChannel
@@ -21,7 +23,23 @@ defmodule WockyAPI.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket), do: {:ok, socket}
+  def connect(_params, socket) do
+    socket = Absinthe.Phoenix.Socket.put_options(
+      socket, context: %{
+        host: host(),
+        # I can't figure out a good way to get the IP/port yet. Since the main
+        # point is correlating messages, though, the transport PID will suffice
+        # for now.
+        peer: inspect(socket.transport_pid)
+      })
+
+    {:ok, socket}
+  end
+
+  defp host() do
+    {:ok, host} = :inet.gethostname()
+    to_string(host)
+  end
 
   # Socket id's are topics that allow you to identify all sockets for a given
   # user:

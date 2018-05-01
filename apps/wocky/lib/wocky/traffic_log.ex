@@ -40,7 +40,7 @@ defmodule Wocky.TrafficLog do
         }
 
   @change_fields [:user_id, :resource, :host, :ip, :incoming, :packet]
-  @required_fields [:resource, :host, :incoming, :packet]
+  @required_fields [:resource, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
   @spec put(map) :: {:ok, TrafficLog.t()} | {:error, Ecto.Changeset.t()}

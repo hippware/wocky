@@ -3,6 +3,7 @@ defmodule WockyAPI.Router do
   use Honeybadger.Plug
 
   import WockyAPI.Plugs.Authentication
+  import WockyAPI.Plugs.AbsintheConnData
 
   pipeline :rest_api do
     plug :accepts, ["json"]
