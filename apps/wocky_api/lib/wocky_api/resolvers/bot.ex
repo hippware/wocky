@@ -76,7 +76,6 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_active_bots(_root, args, %{context: %{current_user: user}}) do
     user
     |> Bot.active_bots_query()
-    |> visible_query(user)
     |> Utils.connection_from_query(user, args)
   end
 

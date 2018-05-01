@@ -356,6 +356,7 @@ defmodule Wocky.Bot do
   def active_bots_query(user) do
     user
     |> by_relationship_query(:guest)
+    |> is_visible_query(user)
     |> join(
       :inner,
       [b],

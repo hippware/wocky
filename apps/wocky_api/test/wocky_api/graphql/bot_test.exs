@@ -278,6 +278,78 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
   end
 
+  describe "active bots" do
+    setup %{user: user, bot: bot, user2: user2, bot2: bot2} do
+      Bot.subscribe(bot, user, true)
+      Bot.subscribe(bot2, user, true)
+      Bot.visit(bot, user, false)
+
+      Bot.subscribe(bot2, user2, true)
+      Bot.visit(bot2, user2, false)
+
+      for b <- Factory.insert_list(3, :bot, public: true) do
+        Bot.subscribe(b, user, true)
+      end
+
+      :ok
+    end
+
+    @query """
+    {
+      currentUser {
+        activeBots(first: 5) {
+          edges {
+            node {
+              id
+              subscribers(first: 5, type: VISITOR) {
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get active bots", %{user: user, bot: bot, user2: user2, bot2: bot2} do
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+      assert result.data == %{
+        "currentUser" => %{
+          "activeBots" => %{
+            "edges" => [
+              %{
+                "node" => %{
+                  "id" => bot2.id,
+                  "subscribers" => %{
+                    "edges" => [
+                      %{"node" => %{"id" => user2.id}}
+                    ]
+                  }
+                }
+              },
+              %{
+                "node" => %{
+                  "id" => bot.id,
+                  "subscribers" => %{
+                    "edges" => [
+                      %{"node" => %{"id" => user.id}}
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    end
+  end
+
   describe "bot mutations" do
     test "create bot", %{user: user} do
       fields = [:title, :server, :lat, :lon, :radius, :description, :shortname]
