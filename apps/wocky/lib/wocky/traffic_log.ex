@@ -17,7 +17,7 @@ defmodule Wocky.TrafficLog do
   schema "traffic_logs" do
     field :resource, :binary
     field :host, :binary
-    field :ip, :binary
+    field :ip, :binary, default: ""
     field :incoming, :boolean
     field :packet, :binary
 
@@ -40,13 +40,14 @@ defmodule Wocky.TrafficLog do
         }
 
   @change_fields [:user_id, :resource, :host, :ip, :incoming, :packet]
+  @required_fields [:resource, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
   @spec put(map) :: {:ok, TrafficLog.t()} | {:error, Ecto.Changeset.t()}
   def put(fields) do
     %TrafficLog{}
     |> cast(fields, @change_fields)
-    |> validate_required(@change_fields)
+    |> validate_required(@required_fields)
     |> foreign_key_constraint(:user_id)
     |> Repo.insert()
   end
