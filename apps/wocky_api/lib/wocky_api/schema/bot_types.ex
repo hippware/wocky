@@ -3,7 +3,8 @@ defmodule WockyAPI.Schema.BotTypes do
   Absinthe types for wocky bot
   """
 
-  use WockyAPI.Schema.Notation
+  use Absinthe.Schema.Notation
+  use Absinthe.Relay.Schema.Notation, :modern
 
   import Kronky.Payload
 
@@ -11,9 +12,12 @@ defmodule WockyAPI.Schema.BotTypes do
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
+  alias WockyAPI.Resolvers.Utils
 
   connection :bots, node_type: :bot do
-    total_count_field
+    field :total_count, :integer do
+      resolve &Utils.get_count/3
+    end
 
     edge do
       field :relationships, list_of(:user_bot_relationship) do
@@ -69,14 +73,18 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   connection :bot_items, node_type: :bot_item do
-    total_count_field
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
 
     edge do
     end
   end
 
   connection :subscribers, node_type: :user do
-    total_count_field
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
 
     edge do
       field :relationships, non_null(list_of(:user_bot_relationship)) do
@@ -124,13 +132,15 @@ defmodule WockyAPI.Schema.BotTypes do
     field :bot_create, type: :bot_create_payload do
       arg :input, non_null(:bot_create_input)
       resolve &Bot.create_bot/3
-      mutation_middleware
+      middleware &Utils.fix_changeset/2
+      middleware &build_payload/2
     end
 
     field :bot_update, type: :bot_update_payload do
       arg :input, non_null(:bot_update_input)
       resolve &Bot.update_bot/3
-      mutation_middleware
+      middleware &Utils.fix_changeset/2
+      middleware &build_payload/2
     end
 
     payload field :bot_subscribe do

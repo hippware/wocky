@@ -3,7 +3,8 @@ defmodule WockyAPI.Schema.UserTypes do
   Absinthe types for wocky user
   """
 
-  use WockyAPI.Schema.Notation
+  use Absinthe.Schema.Notation
+  use Absinthe.Relay.Schema.Notation, :modern
 
   import Kronky.Payload
 
@@ -11,6 +12,7 @@ defmodule WockyAPI.Schema.UserTypes do
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
+  alias WockyAPI.Resolvers.Utils
 
   object :user do
     field :id, non_null(:uuid)
@@ -74,7 +76,9 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :contacts, node_type: :user do
-    total_count_field
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
 
     edge do
       field :relationship, :user_contact_relationship do
@@ -91,7 +95,9 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :locations, node_type: :location do
-    total_count_field
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
 
     edge do
     end
@@ -107,7 +113,9 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :home_stream, node_type: :home_stream_item do
-    total_count_field
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
 
     edge do
     end
@@ -121,7 +129,9 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :conversations, node_type: :conversation do
-    total_count_field
+    field :total_count, non_null(:integer) do
+      resolve &Utils.get_count/3
+    end
 
     edge do
     end
@@ -176,7 +186,8 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
-      mutation_middleware
+      middleware &Utils.fix_changeset/2
+      middleware &build_payload/2
     end
   end
 
@@ -184,7 +195,8 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
-      mutation_middleware
+      middleware &Utils.fix_changeset/2
+      middleware &build_payload/2
     end
   end
 end
