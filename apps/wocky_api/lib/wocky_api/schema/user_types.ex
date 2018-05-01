@@ -176,7 +176,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
-      changeset_mutation_middleware
+      mutation_middleware
     end
   end
 
@@ -184,7 +184,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
-      changeset_mutation_middleware
+      mutation_middleware
     end
   end
 end

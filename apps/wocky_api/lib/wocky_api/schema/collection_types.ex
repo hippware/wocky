@@ -69,13 +69,13 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :collection_create, :collection_update_payload do
       arg :input, non_null(:collection_create_input)
       resolve &Collection.create/3
-      changeset_mutation_middleware
+      mutation_middleware
     end
 
     field :collection_update, :collection_update_payload do
       arg :input, non_null(:collection_update_input)
       resolve &Collection.update/3
-      changeset_mutation_middleware
+      mutation_middleware
     end
 
     payload field :collection_delete do
