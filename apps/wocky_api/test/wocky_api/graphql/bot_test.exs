@@ -319,34 +319,35 @@ defmodule WockyAPI.GraphQL.BotTest do
       result = run_query(@query, user)
 
       refute has_errors(result)
+
       assert result.data == %{
-        "currentUser" => %{
-          "activeBots" => %{
-            "edges" => [
-              %{
-                "node" => %{
-                  "id" => bot2.id,
-                  "subscribers" => %{
-                    "edges" => [
-                      %{"node" => %{"id" => user2.id}}
-                    ]
-                  }
-                }
-              },
-              %{
-                "node" => %{
-                  "id" => bot.id,
-                  "subscribers" => %{
-                    "edges" => [
-                      %{"node" => %{"id" => user.id}}
-                    ]
-                  }
-                }
-              }
-            ]
-          }
-        }
-      }
+               "currentUser" => %{
+                 "activeBots" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "id" => bot2.id,
+                         "subscribers" => %{
+                           "edges" => [
+                             %{"node" => %{"id" => user2.id}}
+                           ]
+                         }
+                       }
+                     },
+                     %{
+                       "node" => %{
+                         "id" => bot.id,
+                         "subscribers" => %{
+                           "edges" => [
+                             %{"node" => %{"id" => user.id}}
+                           ]
+                         }
+                       }
+                     }
+                   ]
+                 }
+               }
+             }
     end
   end
 

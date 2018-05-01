@@ -433,8 +433,13 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "get conversations", %{user: user, user2: user2} do
       other_jid = JID.to_binary(User.to_jid(user2, Lorem.word()))
       message = Lorem.sentence()
-      Factory.insert(:conversation, other_jid: other_jid,
-                     user: user, message: message)
+
+      Factory.insert(
+        :conversation,
+        other_jid: other_jid,
+        user: user,
+        message: message
+      )
 
       result = run_query(@query, user)
 

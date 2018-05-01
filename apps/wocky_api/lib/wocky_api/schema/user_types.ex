@@ -179,6 +179,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :other_jid, non_null(:string)
     @desc "The contents of the message"
     field :message, non_null(:string)
+
     @desc """
     True if the message was sent from the user,
     false if it was received by them.
