@@ -20,12 +20,11 @@ defmodule WockyAPI.Pipeline do
 
   def add_logger(pipeline, opts) do
     pipeline
-    |> Pipeline.insert_before(
-      Absinthe.Phase.Parse,
-      [{PipelineLog, [{:phase, :request} | opts]}])
-    |> Pipeline.insert_after(
-      Absinthe.Phase.Document.Result,
-      [{PipelineLog, [{:phase, :response} | opts]}])
+    |> Pipeline.insert_before(Absinthe.Phase.Parse, [
+      {PipelineLog, [{:phase, :request} | opts]}
+    ])
+    |> Pipeline.insert_after(Absinthe.Phase.Document.Result, [
+      {PipelineLog, [{:phase, :response} | opts]}
+    ])
   end
-
 end

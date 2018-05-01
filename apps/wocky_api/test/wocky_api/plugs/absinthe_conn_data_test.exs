@@ -10,7 +10,7 @@ defmodule WockyAPI.Plugs.AbsintheConnDataTest do
         |> assign(:current_user, :foo)
         |> load_graphql_context
 
-      assert  %{context: %{current_user: :foo}} = conn.private[:absinthe]
+      assert %{context: %{current_user: :foo}} = conn.private[:absinthe]
     end
 
     test "when current_user is not assigned", context do

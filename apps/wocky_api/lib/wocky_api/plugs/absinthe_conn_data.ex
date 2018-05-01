@@ -4,10 +4,7 @@ defmodule WockyAPI.Plugs.AbsintheConnData do
   import Plug.Conn
 
   def load_graphql_context(conn, _opts \\ []) do
-    context =
-      %{peer: peer(conn),
-        host: host(),
-      }
+    context = %{peer: peer(conn), host: host()}
 
     user = Map.get(conn.assigns, :current_user)
 

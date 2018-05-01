@@ -8,6 +8,7 @@ defmodule WockyAPI.PipelineLog do
 
   def run(blueprint, opts) do
     context = opts[:context]
+
     user_id =
       case context[:current_user] do
         %User{id: id} -> id
@@ -38,5 +39,4 @@ defmodule WockyAPI.PipelineLog do
     }
     |> TrafficLog.put()
   end
-
 end

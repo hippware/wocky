@@ -24,14 +24,17 @@ defmodule WockyAPI.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   def connect(_params, socket) do
-    socket = Absinthe.Phoenix.Socket.put_options(
-      socket, context: %{
-        host: host(),
-        # I can't figure out a good way to get the IP/port yet. Since the main
-        # point is correlating messages, though, the transport PID will suffice
-        # for now.
-        peer: inspect(socket.transport_pid)
-      })
+    socket =
+      Absinthe.Phoenix.Socket.put_options(
+        socket,
+        context: %{
+          host: host(),
+          # I can't figure out a good way to get the IP/port yet. Since the main
+          # point is correlating messages, though, the transport PID will suffice
+          # for now.
+          peer: inspect(socket.transport_pid)
+        }
+      )
 
     {:ok, socket}
   end
