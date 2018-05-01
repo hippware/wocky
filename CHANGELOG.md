@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Disable geofence timeout (PR #1473, disables #1466)
+* Update Dawdle; reinstate 30 minutes presence timeout (PR #1475)
+
+
 # 2018.4.27+reb3df56
 
 * Update some dependencies. Other housekeeping and fixes (PR #1460)
