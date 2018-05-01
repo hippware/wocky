@@ -3,8 +3,7 @@ defmodule WockyAPI.Schema.UserTypes do
   Absinthe types for wocky user
   """
 
-  use Absinthe.Schema.Notation
-  use Absinthe.Relay.Schema.Notation, :modern
+  use WockyAPI.Schema.Notation
 
   import Kronky.Payload
 
@@ -12,7 +11,6 @@ defmodule WockyAPI.Schema.UserTypes do
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
-  alias WockyAPI.Resolvers.Utils
 
   @desc "The main Wocky user object"
   object :user do
@@ -113,9 +111,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :contacts, node_type: :user do
-    field :total_count, non_null(:integer) do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
       @desc "The relationship between the parent and child users"
@@ -138,9 +134,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :locations, node_type: :location do
-    field :total_count, non_null(:integer) do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
     end
@@ -165,9 +159,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :home_stream, node_type: :home_stream_item do
-    field :total_count, non_null(:integer) do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
     end
@@ -190,9 +182,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :conversations, node_type: :conversation do
-    field :total_count, non_null(:integer) do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
     end
@@ -259,8 +249,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
-      middleware &Utils.fix_changeset/2
-      middleware &build_payload/2
+      mutation_middleware
     end
   end
 
@@ -269,8 +258,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
-      middleware &Utils.fix_changeset/2
-      middleware &build_payload/2
+      mutation_middleware
     end
   end
 end
