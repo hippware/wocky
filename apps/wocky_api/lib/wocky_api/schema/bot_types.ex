@@ -124,13 +124,13 @@ defmodule WockyAPI.Schema.BotTypes do
     field :bot_create, type: :bot_create_payload do
       arg :input, non_null(:bot_create_input)
       resolve &Bot.create_bot/3
-      mutation_middleware
+      changeset_mutation_middleware
     end
 
     field :bot_update, type: :bot_update_payload do
       arg :input, non_null(:bot_update_input)
       resolve &Bot.update_bot/3
-      mutation_middleware
+      changeset_mutation_middleware
     end
 
     payload field :bot_subscribe do
