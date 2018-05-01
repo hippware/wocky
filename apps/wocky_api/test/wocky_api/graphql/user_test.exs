@@ -476,6 +476,7 @@ defmodule WockyAPI.GraphQL.UserTest do
           edges {
             node {
               other_jid
+              message
               user {
                 id
                 firstName
@@ -489,7 +490,9 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "get conversations", %{user: user, user2: user2} do
       other_jid = JID.to_binary(User.to_jid(user2, Lorem.word()))
-      Factory.insert(:conversation, other_jid: other_jid, user: user)
+      message = Lorem.sentence()
+      Factory.insert(:conversation, other_jid: other_jid,
+                     user: user, message: message)
 
       result = run_query(@query, user)
 
@@ -503,6 +506,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                      %{
                        "node" => %{
                          "other_jid" => other_jid,
+                         "message" => message,
                          "user" => %{
                            "id" => user2.id,
                            "firstName" => user2.first_name

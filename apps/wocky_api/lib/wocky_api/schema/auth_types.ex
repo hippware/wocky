@@ -9,13 +9,17 @@ defmodule WockyAPI.Schema.AuthTypes do
   alias WockyAPI.Resolvers.Auth
 
   object :auth_mutations do
+    @desc "Authenticate a user to the GraphQL interface"
     payload field :authenticate do
       input do
+        @desc "The ID of the user to authenticate"
         field :user, :string
+        @desc "The token (legacy Wocky or JWT) with which to authenticate"
         field :token, non_null(:string)
       end
 
       output do
+        @desc "The authenticated user"
         field :user, non_null(:user)
       end
 
