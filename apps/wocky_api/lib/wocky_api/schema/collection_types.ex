@@ -81,14 +81,14 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :collection_create, :collection_update_payload do
       arg :input, non_null(:collection_create_input)
       resolve &Collection.create/3
-      mutation_middleware
+      changeset_mutation_middleware
     end
 
     @desc "Update a collection"
     field :collection_update, :collection_update_payload do
       arg :input, non_null(:collection_update_input)
       resolve &Collection.update/3
-      mutation_middleware
+      changeset_mutation_middleware
     end
 
     @desc "Delete a collection"
