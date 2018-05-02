@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update Dawdle; reinstate 30 minutes presence timeout (PR #1475)
 * Add GraphQL schema documentation (#1404)
 * Add logging for GraphQL traffic (PR #1476)
+* Add active bots connection to current user (#1474)
 
 
 # 2018.4.27+reb3df56
