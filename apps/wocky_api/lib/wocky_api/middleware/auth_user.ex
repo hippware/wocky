@@ -1,6 +1,6 @@
 defmodule WockyAPI.Middleware.AuthUser do
   @moduledoc """
-  Absinthe middleware to handle standard authentication.
+  Absinthe middleware to handle standard authorization.
   """
 
   @behaviour Absinthe.Middleware

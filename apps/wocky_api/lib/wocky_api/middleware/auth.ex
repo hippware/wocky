@@ -1,6 +1,6 @@
 defmodule WockyAPI.Middleware.Auth do
   @moduledoc """
-  Helper functions for implementing scope-based authentication using
+  Helper functions for implementing scope-based authorization using
   `WockyAPI.Schema.Notation`'s `scope` macro.
   """
   @schema_fields [
