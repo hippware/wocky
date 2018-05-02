@@ -89,6 +89,7 @@
 
     # Absinthe / Kronky
     payload_object: 2,
+    scope: 1,
 
     # Espec
 

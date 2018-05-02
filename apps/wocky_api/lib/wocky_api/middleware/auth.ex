@@ -13,18 +13,14 @@ defmodule WockyAPI.Middleware.Auth do
   ]
 
   def middleware(middleware, _field, %{identifier: object})
-  when object in @schema_fields do
+      when object in @schema_fields do
     scope_middleware(middleware, :public)
   end
 
-  def middleware(
-    middleware,
-    %{__private__: field_priv},
-    %{__private__: obj_priv}
-  ) do
+  def middleware(middleware, %{__private__: field}, %{__private__: obj}) do
     scope =
-      case obj_priv[:meta][:scope] do
-        nil -> field_priv[:meta][:scope]
+      case obj[:meta][:scope] do
+        nil -> field[:meta][:scope]
         obj_scope -> obj_scope
       end
 
