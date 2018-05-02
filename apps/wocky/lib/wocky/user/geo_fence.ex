@@ -11,8 +11,11 @@ defmodule Wocky.User.GeoFence do
   require Logger
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
-  def check_for_bot_events(%Location{} = loc, user) do
+  @spec check_for_bot_events(Location.t(), User.t(), User.resource()) ::
+          Location.t()
+  def check_for_bot_events(%Location{} = loc, user, resource) do
+    user = %User{user | resource: resource}
+
     maybe_do_async(fn ->
       user
       |> User.get_guest_subscriptions()
@@ -54,7 +57,13 @@ defmodule Wocky.User.GeoFence do
 
   defp maybe_set_exit_timer(true, user, bot, loc) do
     if Confex.get_env(:wocky, :visit_timeout_enabled) do
-      dawdle_event = %{user_id: user.id, bot_id: bot.id, loc_id: loc.id}
+      dawdle_event = %{
+        user_id: user.id,
+        resource: user.resource,
+        bot_id: bot.id,
+        loc_id: loc.id
+      }
+
       timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
 
       Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
@@ -64,7 +73,7 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp handle_intersection(inside?, user, bot, loc, acc) do
-    event = BotEvent.get_last_event(user.id, bot.id)
+    event = BotEvent.get_last_event(user.id, user.resource, bot.id)
 
     case user_state_change(inside?, event) do
       :no_change ->
@@ -75,7 +84,7 @@ defmodule Wocky.User.GeoFence do
         acc
 
       new_state ->
-        new_event = BotEvent.insert(user, bot, loc, new_state)
+        new_event = BotEvent.insert(user, user.resource, bot, loc, new_state)
         [{user, bot, new_event} | acc]
     end
   end
@@ -164,23 +173,28 @@ defmodule Wocky.User.GeoFence do
 
   defp maybe_visit_bot(_, _, _), do: :ok
 
-  def visit_timeout(%{user_id: user_id, bot_id: bot_id, loc_id: loc_id}) do
+  def visit_timeout(%{
+        user_id: user_id,
+        resource: resource,
+        bot_id: bot_id,
+        loc_id: loc_id
+      }) do
     case latest_loc(user_id) do
       %{id: ^loc_id} ->
-        do_visit_timeout(user_id, bot_id)
+        do_visit_timeout(user_id, resource, bot_id)
 
       _ ->
         :ok
     end
   end
 
-  defp do_visit_timeout(user_id, bot_id) do
+  defp do_visit_timeout(user_id, resource, bot_id) do
     user = Repo.get(User, user_id)
     bot = Bot.get(bot_id)
 
     if user && bot do
       if Bot.subscription(bot, user) == :visitor do
-        new_event = BotEvent.insert(user, bot, nil, :timeout)
+        new_event = BotEvent.insert(user, resource, bot, :timeout)
         process_bot_event({user, bot, new_event})
       end
     end

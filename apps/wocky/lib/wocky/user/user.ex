@@ -335,7 +335,7 @@ defmodule Wocky.User do
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
-        GeoFence.check_for_bot_events(loc, user)
+        GeoFence.check_for_bot_events(loc, user, resource)
         :ok
 
       {:error, _} = error ->

@@ -35,7 +35,7 @@ defmodule Wocky.User.GeoFenceTest do
   end
 
   defp insert_offset_bot_event(user, bot, event, offset) do
-    event = BotEvent.insert(user, bot, event)
+    event = BotEvent.insert(user, @rsrc, bot, event)
     timestamp = Timex.shift(Timex.now(), seconds: offset)
 
     from(be in BotEvent, where: be.id == ^event.id)
@@ -60,123 +60,124 @@ defmodule Wocky.User.GeoFenceTest do
       {:ok, inside_loc: loc}
     end
 
-    test "bots with a negative radius should not generate an event", shared do
-      shared.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
+    test "bots with a negative radius should not generate an event", ctx do
+      ctx.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
 
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      assert BotEvent.get_last_event(shared.user.id, shared.bot.id) == nil
+      assert BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id) == nil
       assert Sandbox.list_notifications() == []
     end
 
-    test "with no bot perimeter events", shared do
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "with no bot perimeter events", ctx do
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :transition_in
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was outside the bot perimeter", shared do
-      BotEvent.insert(shared.user, shared.bot, :exit)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who was outside the bot perimeter", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :transition_in
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was transitioning out of the bot perimeter", shared do
-      initial_event = BotEvent.insert(shared.user, shared.bot, :enter)
-      to_event = BotEvent.insert(shared.user, shared.bot, :transition_out)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who was transitioning out of the bot perimeter", ctx do
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
+      to_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_out)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
+
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       refute event.id == to_event.id
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was transitioning into the bot perimeter", shared do
-      initial_event = BotEvent.insert(shared.user, shared.bot, :transition_in)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who was transitioning into the bot perimeter", ctx do
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_in)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who has transitioned into the bot perimeter", shared do
-      insert_offset_bot_event(shared.user, shared.bot, :transition_in, -150)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who has transitioned into the bot perimeter", ctx do
+      insert_offset_bot_event(ctx.user, ctx.bot, :transition_in, -150)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :enter
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
     end
 
-    test "who has timed out inside the bot permimeter", shared do
-      BotEvent.insert(shared.user, shared.bot, :timeout)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who has timed out inside the bot permimeter", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :timeout)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :reactivate
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who has reactivated inside the bot perimeter", shared do
-      visit_bot(shared.bot, shared.user)
-      initial_event = BotEvent.insert(shared.user, shared.bot, :reactivate)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who has reactivated inside the bot perimeter", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :reactivate)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who has reactivated outside the bot perimeter", shared do
-      BotEvent.insert(shared.user, shared.bot, :deactivate)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who has reactivated outside the bot perimeter", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :deactivate)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :transition_in
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was already inside the bot perimeter", shared do
-      visit_bot(shared.bot, shared.user)
-      initial_event = BotEvent.insert(shared.user, shared.bot, :enter)
-      GeoFence.check_for_bot_events(shared.inside_loc, shared.user)
+    test "who was already inside the bot perimeter", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
+      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
@@ -188,116 +189,116 @@ defmodule Wocky.User.GeoFenceTest do
       {:ok, outside_loc: loc}
     end
 
-    test "with no bot perimeter events", shared do
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "with no bot perimeter events", ctx do
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == nil
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was inside the bot perimeter", shared do
-      visit_bot(shared.bot, shared.user)
-      BotEvent.insert(shared.user, shared.bot, :enter)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who was inside the bot perimeter", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :transition_out
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was transitioning into the the bot perimeter", shared do
-      initial_event = BotEvent.insert(shared.user, shared.bot, :exit)
-      to_event = BotEvent.insert(shared.user, shared.bot, :transition_in)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who was transitioning into the the bot perimeter", ctx do
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
+      to_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_in)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       refute event.id == to_event.id
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was transitioning out of the bot perimeter", shared do
-      visit_bot(shared.bot, shared.user)
-      initial_event = BotEvent.insert(shared.user, shared.bot, :transition_out)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who was transitioning out of the bot perimeter", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_out)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who has transitioned out of the bot perimeter", shared do
-      visit_bot(shared.bot, shared.user)
-      insert_offset_bot_event(shared.user, shared.bot, :transition_out, -80)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who has transitioned out of the bot perimeter", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      insert_offset_bot_event(ctx.user, ctx.bot, :transition_out, -80)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :exit
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
     end
 
-    test "who has timed out inside the bot permimeter", shared do
-      BotEvent.insert(shared.user, shared.bot, :timeout)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who has timed out inside the bot permimeter", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :timeout)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :deactivate
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who has reactivated inside the bot perimeter", shared do
-      visit_bot(shared.bot, shared.user)
-      BotEvent.insert(shared.user, shared.bot, :reactivate)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who has reactivated inside the bot perimeter", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :reactivate)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event_type(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
       assert event == :transition_out
 
-      assert Bot.subscription(shared.bot, shared.user) == :visitor
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who has reactivated outside the bot perimeter", shared do
-      initial_event = BotEvent.insert(shared.user, shared.bot, :deactivate)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who has reactivated outside the bot perimeter", ctx do
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :deactivate)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was already outside the bot perimeter", shared do
-      initial_event = BotEvent.insert(shared.user, shared.bot, :exit)
-      GeoFence.check_for_bot_events(shared.outside_loc, shared.user)
+    test "who was already outside the bot perimeter", ctx do
+      initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
+      GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user, @rsrc)
 
-      event = BotEvent.get_last_event(shared.user.id, shared.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Bot.subscription(shared.bot, shared.user) == :guest
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end
@@ -309,8 +310,8 @@ defmodule Wocky.User.GeoFenceTest do
       bot: bot
     } do
       visit_bot(bot, user)
-      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user)
+      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
+      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
       :timer.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
@@ -323,14 +324,14 @@ defmodule Wocky.User.GeoFenceTest do
       bot: bot
     } do
       visit_bot(bot, user)
-      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user)
+      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
+      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
       :timer.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
 
-      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user)
+      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
+      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
       :timer.sleep(1500)
       assert Bot.subscription(bot, user) == :visitor
@@ -340,16 +341,16 @@ defmodule Wocky.User.GeoFenceTest do
       outside_loc = Factory.build(:location, %{user: user})
 
       {:ok, loc} =
-        Location.insert(user, "test", outside_loc.lat, outside_loc.lon, 10)
+        Location.insert(user, @rsrc, outside_loc.lat, outside_loc.lon, 10)
 
-      GeoFence.check_for_bot_events(loc, user)
+      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
       :timer.sleep(1500)
       assert Bot.subscription(bot, user) == :guest
 
       visit_bot(bot, user)
-      {:ok, loc} = Location.insert(user, "test", Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user)
+      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
+      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
       :timer.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
