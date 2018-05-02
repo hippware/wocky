@@ -1,7 +1,7 @@
 defmodule WockyAPI.Middleware.AuthSelf do
   @moduledoc """
-  Absinthe middlware to handle authentication where the
-  field/object is only accessible by the object's user
+  Absinthe middlware to handle authorization where the
+  field/object is only accessible by the object's owner.
   """
 
   @behaviour Absinthe.Middleware

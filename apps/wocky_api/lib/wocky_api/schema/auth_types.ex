@@ -3,14 +3,15 @@ defmodule WockyAPI.Schema.AuthTypes do
   Absinthe types for wocky authentication
   """
 
-  use Absinthe.Schema.Notation
-  use Absinthe.Relay.Schema.Notation, :modern
+  use WockyAPI.Schema.Notation
 
   alias WockyAPI.Resolvers.Auth
 
+  @desc "Authenticate a user to the GraphQL interface"
   object :auth_mutations do
-    @desc "Authenticate a user to the GraphQL interface"
     payload field :authenticate do
+      scope :public
+
       input do
         @desc "The ID of the user to authenticate"
         field :user, :string

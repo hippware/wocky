@@ -3,10 +3,12 @@ defmodule WockyAPI.Schema.MediaTypes do
   Absinthe types for media fields
   """
 
-  use Absinthe.Schema.Notation
+  use WockyAPI.Schema.Notation
 
   @desc "A Wocky TROS media object"
   object :media do
+    scope :public
+
     @desc "The TROS URL (invariant over the life of the object)"
     field :tros_url, :string
     @desc "The S3 URL for the full object (valid for 10 minutes)"

@@ -1,18 +1,45 @@
 defmodule WockyAPI.Middleware.Auth do
   @moduledoc """
-  Absinthe middleware to handle standard authentication.
+  Helper functions for implementing scope-based authorization using
+  `WockyAPI.Schema.Notation`'s `scope` macro.
   """
+  @schema_fields [
+    :__schema,
+    :__type,
+    :__enumvalue,
+    :__directive,
+    :__inputvalue,
+    :__field
+  ]
 
-  @behaviour Absinthe.Middleware
-
-  def call(%{context: %{current_user: _}} = resolution, _config) do
-    resolution
+  def middleware(middleware, _field, %{identifier: object})
+      when object in @schema_fields do
+    scope_middleware(middleware, :public)
   end
 
-  def call(resolution, _config) do
-    Absinthe.Resolution.put_result(
-      resolution,
-      {:error, "This operation requires an authenticated user"}
-    )
+  def middleware(middleware, %{__private__: field}, %{__private__: obj}) do
+    scope =
+      case obj[:meta][:scope] do
+        nil -> field[:meta][:scope]
+        obj_scope -> obj_scope
+      end
+
+    scope_middleware(middleware, scope || :authenticated)
+  end
+
+  def middleware(middleware, _field, _object) do
+    scope_middleware(middleware, :authenticated)
+  end
+
+  defp scope_middleware(middleware, :public) do
+    middleware
+  end
+
+  defp scope_middleware(middleware, :authenticated) do
+    [WockyAPI.Middleware.AuthUser | middleware]
+  end
+
+  defp scope_middleware(middleware, :private) do
+    [WockyAPI.Middleware.AuthSelf | middleware]
   end
 end

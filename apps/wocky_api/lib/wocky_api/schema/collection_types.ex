@@ -3,14 +3,12 @@ defmodule WockyAPI.Schema.CollectionTypes do
   Absinthe types for wocky collections
   """
 
-  use Absinthe.Schema.Notation
-  use Absinthe.Relay.Schema.Notation, :modern
+  use WockyAPI.Schema.Notation
 
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.User
-  alias WockyAPI.Resolvers.Utils
 
   @desc "A collection of bots"
   object :collection do
@@ -33,27 +31,21 @@ defmodule WockyAPI.Schema.CollectionTypes do
   end
 
   connection :collections, node_type: :collection do
-    field :total_count, :integer do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
     end
   end
 
   connection :collection_bots, node_type: :bot do
-    field :total_count, :integer do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
     end
   end
 
   connection :collection_subscribers, node_type: :user do
-    field :total_count, :integer do
-      resolve &Utils.get_count/3
-    end
+    total_count_field
 
     edge do
     end
@@ -89,16 +81,14 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :collection_create, :collection_update_payload do
       arg :input, non_null(:collection_create_input)
       resolve &Collection.create/3
-      middleware &Utils.fix_changeset/2
-      middleware &build_payload/2
+      changeset_mutation_middleware
     end
 
     @desc "Update a collection"
     field :collection_update, :collection_update_payload do
       arg :input, non_null(:collection_update_input)
       resolve &Collection.update/3
-      middleware &Utils.fix_changeset/2
-      middleware &build_payload/2
+      changeset_mutation_middleware
     end
 
     @desc "Delete a collection"
