@@ -5,6 +5,8 @@ defmodule WockyAPI.Router do
   import WockyAPI.Plugs.Authentication
   import WockyAPI.Plugs.AbsintheConnData
 
+  @max_graphql_complexity 100
+
   pipeline :rest_api do
     plug :accepts, ["json"]
     plug :check_auth_headers
@@ -29,7 +31,9 @@ defmodule WockyAPI.Router do
 
     forward "/", Absinthe.Plug,
       schema: WockyAPI.Schema,
-      pipeline: {WockyAPI.Pipeline, :pipeline}
+      pipeline: {WockyAPI.Pipeline, :pipeline},
+      analyze_complexity: true,
+      max_complexity: @max_graphql_complexity
   end
 
   # Provide a GraphiQL interface in dev mode

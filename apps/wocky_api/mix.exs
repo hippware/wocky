@@ -52,6 +52,7 @@ defmodule WockyAPI.Mixfile do
        github: "absinthe-graphql/absinthe_phoenix", branch: "master"},
       {:absinthe_relay, github: "hippware/absinthe_relay", branch: "master"},
       {:absinthe_ecto, "~> 0.1.3"},
+      {:absinthe_metrics, "~> 0.9.0"},
       {:cowboy, "~> 1.0"},
       {:honeybadger, "~> 0.6"},
       {:httpoison, "~> 0.13"},

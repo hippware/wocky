@@ -5,6 +5,8 @@ defmodule WockyAPI.UserSocket do
     schema: WockyAPI.Schema,
     pipeline: {WockyAPI.Pipeline, :channel_pipeline}
 
+  @max_complexity 100
+
   ## Channels
   # channel "room:*", WockyAPI.RoomChannel
 
@@ -33,7 +35,9 @@ defmodule WockyAPI.UserSocket do
           # point is correlating messages, though, the transport PID will suffice
           # for now.
           peer: inspect(socket.transport_pid)
-        }
+        },
+        analyze_complexity: true,
+        max_complexity: @max_complexity
       )
 
     {:ok, socket}
