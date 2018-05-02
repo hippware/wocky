@@ -29,7 +29,7 @@ defmodule WockyAPI.Plugs.AbsintheConnData do
     to_string(:inet.ntoa(addr)) <> ":" <> to_string(port)
   end
 
-  defp host() do
+  defp host do
     {:ok, host} = :inet.gethostname()
     to_string(host)
   end

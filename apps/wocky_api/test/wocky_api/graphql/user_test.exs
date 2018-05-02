@@ -168,33 +168,6 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert error_msg(result) =~ "User not found"
       assert result.data == %{"user" => nil}
     end
-
-    @query """
-    query ($id: String!) {
-      user (id: $id) {
-        id
-        email
-        phone_number
-        external_id
-      }
-    }
-    """
-
-    test "get protected field on other user", %{user: user, user2: user2} do
-      result = run_query(@query, user, %{"id" => user2.id})
-
-      assert error_count(result) == 3
-      assert error_msg(result) =~ "authenticated user"
-
-      assert result.data == %{
-               "user" => %{
-                 "id" => user2.id,
-                 "email" => nil,
-                 "phone_number" => nil,
-                 "external_id" => nil
-               }
-             }
-    end
   end
 
   describe "location" do
@@ -237,37 +210,6 @@ defmodule WockyAPI.GraphQL.UserTest do
                  }
                }
              }
-    end
-
-    @query """
-    query ($device: String!, $id: UUID!) {
-      user (id: $id) {
-        locations (device: $device, first: 1) {
-          totalCount
-          edges {
-            node {
-              lat
-              lon
-              accuracy
-            }
-          }
-        }
-      }
-    }
-    """
-
-    test "get locations for other user", %{user: user, user2: user2} do
-      loc = Factory.insert(:location, user_id: user2.id)
-
-      result =
-        run_query(@query, user, %{
-          "id" => user2.id,
-          "device" => loc.resource
-        })
-
-      assert error_count(result) == 1
-      assert error_msg(result) =~ "the authenticated user"
-      assert result.data == %{"user" => %{"locations" => nil}}
     end
 
     @query """
@@ -491,8 +433,13 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "get conversations", %{user: user, user2: user2} do
       other_jid = JID.to_binary(User.to_jid(user2, Lorem.word()))
       message = Lorem.sentence()
-      Factory.insert(:conversation, other_jid: other_jid,
-                     user: user, message: message)
+
+      Factory.insert(
+        :conversation,
+        other_jid: other_jid,
+        user: user,
+        message: message
+      )
 
       result = run_query(@query, user)
 

@@ -17,6 +17,8 @@ defmodule Wocky.Bot.Subscription do
     field :bot_id, :binary_id, primary_key: true
     field :guest, :boolean, default: false
     field :visitor, :boolean, default: false
+    field :visited_at, :utc_datetime
+    field :departed_at, :utc_datetime
 
     timestamps()
 
@@ -58,9 +60,16 @@ defmodule Wocky.Bot.Subscription do
   def depart(user, bot), do: visit(user, bot, false)
 
   defp visit(user, bot, enter) do
+    timestamps =
+      if enter do
+        [visited_at: DateTime.utc_now(), departed_at: nil]
+      else
+        [departed_at: DateTime.utc_now()]
+      end
+
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)
-    |> Repo.update_all(set: [visitor: enter])
+    |> Repo.update_all(set: [visitor: enter] ++ timestamps)
 
     :ok
   end
@@ -79,7 +88,13 @@ defmodule Wocky.Bot.Subscription do
   end
 
   defp maybe_set_visitor(changes, true), do: changes
-  defp maybe_set_visitor(changes, false), do: Map.put(changes, :visitor, false)
+
+  defp maybe_set_visitor(changes, false) do
+    changes
+    |> Map.put(:visitor, false)
+    |> Map.put(:visited_at, nil)
+    |> Map.put(:departed_at, nil)
+  end
 
   defp make_changeset(changes), do: changeset(%Subscription{}, changes)
 

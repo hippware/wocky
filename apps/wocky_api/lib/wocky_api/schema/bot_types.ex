@@ -30,11 +30,13 @@ defmodule WockyAPI.Schema.BotTypes do
   enum :subscription_type do
     @desc "A user who is subscribed to the bot"
     value :subscriber
+
     @desc """
     A user who is subscribed to the bot and is a guest
     (entry/exit will be reported)
     """
     value :guest
+
     @desc """
     A user who is subscribed to the bot and is a guest who is currently
     visiting the bot
@@ -188,6 +190,7 @@ defmodule WockyAPI.Schema.BotTypes do
       input do
         @desc "ID of bot to which to subscribe"
         field :id, non_null(:uuid)
+
         @desc """
         Whether to enable guest functionality for the user (default: false)
         """

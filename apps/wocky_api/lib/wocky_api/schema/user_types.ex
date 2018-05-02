@@ -29,11 +29,6 @@ defmodule WockyAPI.Schema.UserTypes do
     field :tagline, :string
     @desc "A list of roles assigned to the user"
     field :roles, non_null(list_of(non_null(:string)))
-    @desc "The user's ID for the external auth system (eg Firebase or Digits)"
-    field :external_id, :string
-    @desc "The user's phone number in E.123 international notation"
-    field :phone_number, :string
-    field :email, :string
 
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
@@ -42,18 +37,42 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &Bot.get_bots/3
     end
 
-    @desc "The user's location history for a given device"
-    connection field :locations, node_type: :locations do
-      arg :device, non_null(:string)
-      resolve &User.get_locations/3
-    end
-
     @desc """
     The user's contacts (ie the XMPP roster) optionally filtered by relationship
     """
     connection field :contacts, node_type: :contacts do
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
+    end
+
+    @desc "The user's owned bot collections"
+    connection field :collections, node_type: :collections do
+      resolve &Collection.get_collections/3
+    end
+
+    @desc "Bot collections to which the user is subscribed"
+    connection field :subscribed_collections, node_type: :collections do
+      resolve &Collection.get_subscribed_collections/3
+    end
+  end
+
+  object :current_user do
+    import_fields :user
+
+    @desc "The user's ID for the external auth system (eg Firebase or Digits)"
+    field :external_id, :string
+    @desc "The user's phone number in E.123 international notation"
+    field :phone_number, :string
+    field :email, :string
+
+    connection field :active_bots, node_type: :bots do
+      resolve &Bot.get_active_bots/3
+    end
+
+    @desc "The user's location history for a given device"
+    connection field :locations, node_type: :locations do
+      arg :device, non_null(:string)
+      resolve &User.get_locations/3
     end
 
     @desc "The user's home stream items"
@@ -66,16 +85,6 @@ defmodule WockyAPI.Schema.UserTypes do
     """
     connection field :conversations, node_type: :conversations do
       resolve &User.get_conversations/3
-    end
-
-    @desc "The user's owned bot collections"
-    connection field :collections, node_type: :collections do
-      resolve &Collection.get_collections/3
-    end
-
-    @desc "Bot collections to which the user is subscribed"
-    connection field :subscribed_collections, node_type: :collections do
-      resolve &Collection.get_subscribed_collections/3
     end
   end
 
@@ -170,6 +179,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :other_jid, non_null(:string)
     @desc "The contents of the message"
     field :message, non_null(:string)
+
     @desc """
     True if the message was sent from the user,
     false if it was received by them.
@@ -224,7 +234,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   object :user_queries do
     @desc "Retrive the currently authenticated user"
-    field :current_user, :user do
+    field :current_user, :current_user do
       resolve &User.get_current_user/3
     end
 

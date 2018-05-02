@@ -63,6 +63,7 @@ defmodule WockyAPI.Resolvers.Utils do
   defp get_count(query) do
     query
     |> exclude(:preload)
+    |> exclude(:order_by)
     |> select([x], count(1))
     |> Repo.one()
     |> Kernel.||(0)

@@ -39,7 +39,7 @@ defmodule WockyAPI.UserSocket do
     {:ok, socket}
   end
 
-  defp host() do
+  defp host do
     {:ok, host} = :inet.gethostname()
     to_string(host)
   end
