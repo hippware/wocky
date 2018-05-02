@@ -13,9 +13,11 @@ defmodule WockyAPI.Schema.BotTypes do
   alias WockyAPI.Resolvers.User
 
   connection :bots, node_type: :bot do
+    scope :public
     total_count_field
 
     edge do
+      scope :public
       @desc "The set of relationships between the user and the bot"
       field :relationships, list_of(:user_bot_relationship) do
         resolve &Bot.get_bot_relationships/3
@@ -42,6 +44,8 @@ defmodule WockyAPI.Schema.BotTypes do
 
   @desc "A Wocky bot"
   object :bot do
+    scope :public
+
     @desc "The bot's unique ID"
     field :id, non_null(:uuid)
     @desc "The server on which the bot resides"
@@ -93,6 +97,8 @@ defmodule WockyAPI.Schema.BotTypes do
 
   @desc "A post (comment, etc) to a bot"
   object :bot_item do
+    scope :public
+
     @desc "The bot-unique ID of this post"
     field :id, non_null(:string)
     @desc "The post's content"
@@ -106,16 +112,21 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   connection :bot_items, node_type: :bot_item do
+    scope :public
     total_count_field
 
     edge do
+      scope :public
     end
   end
 
   connection :subscribers, node_type: :user do
+    scope :public
     total_count_field
 
     edge do
+      scope :public
+
       @desc "The set of relationships this subscriber has to the bot"
       field :relationships, non_null(list_of(:user_bot_relationship)) do
         resolve &Bot.get_bot_relationships/3
@@ -152,9 +163,10 @@ defmodule WockyAPI.Schema.BotTypes do
   payload_object(:bot_create_payload, :bot)
   payload_object(:bot_update_payload, :bot)
 
-  @desc "Retrive a single bot by ID"
   object :bot_queries do
+    @desc "Retrive a single bot by ID"
     field :bot, :bot do
+      scope :public
       arg :id, non_null(:uuid)
       resolve &Bot.get_bot/3
     end

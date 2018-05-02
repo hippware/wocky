@@ -6,7 +6,7 @@ defmodule WockyAPI.Schema.Notation do
       use Absinthe.Schema.Notation
       use Absinthe.Relay.Schema.Notation, :modern
 
-      import unquote(__MODULE__)
+      import unquote(__MODULE__), only: :macros
     end
   end
 
@@ -22,6 +22,12 @@ defmodule WockyAPI.Schema.Notation do
       field :total_count, non_null(:integer) do
         resolve &WockyAPI.Resolvers.Utils.get_count/3
       end
+    end
+  end
+
+  defmacro scope(scope) do
+    quote do
+      meta :scope, unquote(scope)
     end
   end
 end

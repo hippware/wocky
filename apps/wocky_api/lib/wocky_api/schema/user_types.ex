@@ -15,21 +15,25 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "The main Wocky user object"
   object :user do
     @desc "The user's unique ID"
-    field :id, non_null(:uuid)
+    field :id, non_null(:uuid), do: scope :public
     @desc "The server on which the user resides"
-    field :server, non_null(:string)
+    field :server, non_null(:string), do: scope :public
     @desc "The user's unique handle"
-    field :handle, :string
-    field :avatar, :media, do: resolve(&Media.get_media/3)
+    field :handle, :string, do: scope :public
+    field :avatar, :media do
+      scope :public
+      resolve(&Media.get_media/3)
+    end
     field :first_name, :string
     field :last_name, :string
     @desc "A freeform tagline for the user"
-    field :tagline, :string
+    field :tagline, :string, do: scope :public
     @desc "A list of roles assigned to the user"
-    field :roles, non_null(list_of(non_null(:string)))
+    field :roles, non_null(list_of(non_null(:string))), do: scope :public
 
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
+      scope :public
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
       resolve &Bot.get_bots/3
@@ -55,6 +59,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :current_user do
+    scope :private
     import_fields :user
 
     @desc "The user's ID for the external auth system (eg Firebase or Digits)"
@@ -230,6 +235,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Retrive a user by ID"
     field :user, :user do
+      scope :public
       arg :id, non_null(:uuid)
       resolve &User.get_user/3
     end
