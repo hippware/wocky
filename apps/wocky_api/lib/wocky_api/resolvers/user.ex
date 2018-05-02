@@ -8,6 +8,7 @@ defmodule WockyAPI.Resolvers.User do
   alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.User
+  alias Wocky.User.Location
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
@@ -66,9 +67,25 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, User.get_by_jid(JID.from_binary(conversation.other_jid))}
   end
 
-  def get_locations(user, args, %{context: %{current_user: requestor}}) do
-    requestor
+  def get_locations(user, args, %{context: %{current_user: user}}) do
+    user
     |> User.get_locations_query(args[:device])
+    |> Utils.connection_from_query(user, args)
+  end
+
+  def get_location_events(user, args, %{context: %{current_user: user}}) do
+    user
+    |> User.get_location_events_query(args[:device])
+    |> Utils.connection_from_query(user, args)
+  end
+
+  def get_location_events(
+    %Location{} = loc,
+    args,
+    %{context: %{current_user: user}}
+  ) do
+    user
+    |> User.get_location_events_query(loc)
     |> Utils.connection_from_query(user, args)
   end
 

@@ -84,10 +84,14 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's ID for the external auth system (eg Firebase or Digits)"
     field :external_id, :string
+
     @desc "The user's phone number in E.123 international notation"
     field :phone_number, :string
+
+    @desc "The user's email address"
     field :email, :string
 
+    @desc "The active bots that a user is a guest of, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity
       resolve &Bot.get_active_bots/3
@@ -98,6 +102,12 @@ defmodule WockyAPI.Schema.UserTypes do
       connection_complexity
       arg :device, non_null(:string)
       resolve &User.get_locations/3
+    end
+
+    @desc "The user's location event history"
+    connection field :location_events, node_type: :location_events do
+      arg :device, non_null(:string)
+      resolve &User.get_location_events/3
     end
 
     @desc "The user's home stream items"
@@ -154,15 +164,69 @@ defmodule WockyAPI.Schema.UserTypes do
   object :location do
     @desc "Latitude in degrees"
     field :lat, non_null(:float)
+
     @desc "Longitude in degrees"
     field :lon, non_null(:float)
+
     @desc "Reported accuracy in metres"
     field :accuracy, non_null(:float)
+
     @desc "Time of location report"
     field :created_at, non_null(:datetime)
+
+    @desc "List of events triggered by this location update"
+    connection field :events, node_type: :location_events do
+      resolve &User.get_location_events/3
+    end
   end
 
   connection :locations, node_type: :location do
+    total_count_field
+
+    edge do
+    end
+  end
+
+  @desc "A user location event entry"
+  object :location_event do
+    @desc "The bot whose boundary was entered or exited"
+    field :bot, non_null(:bot)
+
+    @desc "The type of the event (enter, exit, etc)"
+    field :event, non_null(:location_event_type)
+
+    @desc "Time when the event was created"
+    field :created_at, non_null(:datetime)
+
+    @desc "The location update that triggered this event (if any)"
+    field :location, :location
+  end
+
+  @desc "User location event type"
+  enum :location_event_type do
+    @desc "User is inside a bot's perimeter"
+    value :enter
+
+    @desc "User is outside a bot's perimeter"
+    value :exit
+
+    @desc "User has entered a bot's perimeter and debouncing has started"
+    value :transition_in
+
+    @desc "User has exited a bot's perimeter and debouncing has started"
+    value :transition_out
+
+    @desc "User has not sent location updates in some time and is now inactive"
+    value :timeout
+
+    @desc "User has reappeared after timeout while inside a bot's perimeter"
+    value :reactivate
+
+    @desc "User has reappeared after timeout while outside a bot's perimeter"
+    value :deactivate
+  end
+
+  connection :location_events, node_type: :location_event do
     total_count_field
 
     edge do

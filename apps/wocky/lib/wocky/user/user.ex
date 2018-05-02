@@ -331,6 +331,17 @@ defmodule Wocky.User do
     |> where(resource: ^resource)
   end
 
+  @spec get_location_events_query(t, resource | Location.t()) :: Queryable.t()
+  def get_location_events_query(_user, %Location{} = loc) do
+    Ecto.assoc(loc, :events)
+  end
+
+  def get_location_events_query(user, resource) when is_binary(resource) do
+    user
+    |> Ecto.assoc(:bot_events)
+    |> where(resource: ^resource)
+  end
+
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
