@@ -6,6 +6,7 @@ defmodule Wocky.User.Location do
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.User
+  alias Wocky.User.BotEvent
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -19,6 +20,7 @@ defmodule Wocky.User.Location do
     timestamps()
 
     belongs_to :user, User, define_field: false
+    has_many :events, BotEvent
   end
 
   @type location_tuple :: {float, float, float}

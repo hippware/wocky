@@ -47,7 +47,7 @@ defmodule Wocky.User.GeoFence do
     bot
     |> Bot.contains?(Map.from_struct(loc))
     |> maybe_set_exit_timer(user, bot, loc)
-    |> handle_intersection(user, bot, acc)
+    |> handle_intersection(user, bot, loc, acc)
   end
 
   defp maybe_set_exit_timer(false, _, _, _), do: false
@@ -63,7 +63,7 @@ defmodule Wocky.User.GeoFence do
     true
   end
 
-  defp handle_intersection(inside?, user, bot, acc) do
+  defp handle_intersection(inside?, user, bot, loc, acc) do
     event = BotEvent.get_last_event(user.id, bot.id)
 
     case user_state_change(inside?, event) do
@@ -75,7 +75,7 @@ defmodule Wocky.User.GeoFence do
         acc
 
       new_state ->
-        new_event = BotEvent.insert(user, bot, new_state)
+        new_event = BotEvent.insert(user, bot, loc, new_state)
         [{user, bot, new_event} | acc]
     end
   end
@@ -180,7 +180,7 @@ defmodule Wocky.User.GeoFence do
 
     if user && bot do
       if Bot.subscription(bot, user) == :visitor do
-        new_event = BotEvent.insert(user, bot, :timeout)
+        new_event = BotEvent.insert(user, bot, nil, :timeout)
         process_bot_event({user, bot, new_event})
       end
     end

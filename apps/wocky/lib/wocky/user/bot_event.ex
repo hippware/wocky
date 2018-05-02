@@ -11,6 +11,7 @@ defmodule Wocky.User.BotEvent do
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
+  alias Wocky.User.Location
 
   defenum EventType, [
     :enter,
@@ -31,6 +32,7 @@ defmodule Wocky.User.BotEvent do
 
     belongs_to :user, User
     belongs_to :bot, Bot
+    belongs_to :location, Location
   end
 
   @type event :: :enter | :exit | :transition_in | :transition_out
@@ -38,6 +40,7 @@ defmodule Wocky.User.BotEvent do
           id: binary,
           user_id: User.id(),
           bot_id: Bot.id(),
+          location_id: binary,
           event: event
         }
 
@@ -63,18 +66,24 @@ defmodule Wocky.User.BotEvent do
       limit: 1
   end
 
-  @spec insert(User.t(), Bot.t(), event) :: t
-  def insert(user, bot, event) do
-    %BotEvent{user: user, bot: bot}
-    |> changeset(%{event: event})
+  @spec insert(User.t(), Bot.t(), Location.t(), event) :: t
+  def insert(user, bot, loc \\ nil, event) do
+    %{
+      user_id: user.id,
+      bot_id: bot.id,
+      location_id: loc && loc.id,
+      event: event
+    }
+    |> changeset()
     |> Repo.insert!()
   end
 
-  defp changeset(struct, params) do
-    struct
-    |> cast(params, [:event])
-    |> validate_required([:event])
+  defp changeset(params) do
+    %BotEvent{}
+    |> cast(params, [:user_id, :bot_id, :location_id, :event])
+    |> validate_required([:user_id, :bot_id, :event])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:bot_id)
+    |> foreign_key_constraint(:location_id)
   end
 end
