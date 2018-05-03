@@ -11,7 +11,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Roster
   alias Wocky.JID
   alias Wocky.User
-  alias Wocky.User.Location
+  alias Wocky.User.{Location, BotEvent}
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -69,7 +69,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{
                "user" => %{
                  "id" => user.id,
-                 "email" => user.email,
+                 "email" => user.email
                }
              }
     end
@@ -194,7 +194,15 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "location" do
+  describe "location queries" do
+    setup %{user: user} do
+      bot = Factory.insert(:bot, user: user)
+      loc = Factory.insert(:location, user_id: user.id)
+      BotEvent.insert(user, loc.resource, bot, loc, :enter)
+
+      {:ok, loc: loc, bot: bot}
+    end
+
     @query """
     query ($device: String!) {
       currentUser {
@@ -212,8 +220,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
 
-    test "get locations", %{user: user} do
-      loc = Factory.insert(:location, user_id: user.id)
+    test "get locations", %{user: user, loc: loc} do
       result = run_query(@query, user, %{"device" => loc.resource})
 
       refute has_errors(result)
@@ -236,6 +243,104 @@ defmodule WockyAPI.GraphQL.UserTest do
              }
     end
 
+    @query """
+    query ($device: String!) {
+      currentUser {
+        locations (device: $device, first: 1) {
+          totalCount
+          edges {
+            node {
+              events (first: 1) {
+                totalCount
+                edges {
+                  node {
+                    event
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get events from location", %{user: user, loc: loc} do
+      result = run_query(@query, user, %{"device" => loc.resource})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "locations" => %{
+                   "totalCount" => 1,
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "events" => %{
+                           "totalCount" => 1,
+                           "edges" => [%{"node" => %{"event" => "ENTER"}}]
+                         }
+                       }
+                     }
+                   ]
+                 }
+               }
+             }
+    end
+
+    @query """
+    query ($device: String!) {
+      currentUser {
+        locationEvents (device: $device, first: 1) {
+          totalCount
+          edges {
+            node {
+              event
+              location {
+                lat
+                lon
+              }
+              bot {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get all location events", %{user: user, bot: bot, loc: loc} do
+      result = run_query(@query, user, %{"device" => loc.resource})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "locationEvents" => %{
+                   "totalCount" => 1,
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "event" => "ENTER",
+                         "location" => %{
+                           "lat" => loc.lat,
+                           "lon" => loc.lon
+                         },
+                         "bot" => %{
+                           "id" => bot.id
+                         }
+                       }
+                     }
+                   ]
+                 }
+               }
+             }
+    end
+  end
+
+  describe "location mutations" do
     @query """
     mutation ($input: UserLocationUpdateInput!) {
       userLocationUpdate (input: $input) {
