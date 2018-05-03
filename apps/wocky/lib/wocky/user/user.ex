@@ -7,7 +7,6 @@ defmodule Wocky.User do
   use Wocky.Repo.Schema
 
   import Ecto.Query
-  import OK, only: [~>>: 2]
 
   alias Ecto.Queryable
   alias Wocky.Account.Token, as: AuthToken
@@ -25,9 +24,7 @@ defmodule Wocky.User do
   alias Wocky.Repo
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.Avatar
-  alias Wocky.User.BotEvent
-  alias Wocky.User.Location
+  alias Wocky.User.{Avatar, BotEvent, GeoFence, Location}
 
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "users" do
@@ -306,7 +303,7 @@ defmodule Wocky.User do
   end
 
   defp validate_avatar(:avatar, user, avatar) do
-    case do_validate_avatar(user, avatar) do
+    case Avatar.validate(user, avatar) do
       {:ok, _} ->
         []
 
@@ -327,13 +324,6 @@ defmodule Wocky.User do
     end
   end
 
-  defp do_validate_avatar(user, avatar) do
-    Avatar.prepare(avatar)
-    ~>> Avatar.check_valid_filename()
-    ~>> Avatar.check_is_local(user.server)
-    ~>> Avatar.check_owner(user.id)
-  end
-
   @spec get_locations_query(t, resource) :: Queryable.t()
   def get_locations_query(user, resource) do
     user
@@ -341,11 +331,22 @@ defmodule Wocky.User do
     |> where(resource: ^resource)
   end
 
+  @spec get_location_events_query(t, resource | Location.t()) :: Queryable.t()
+  def get_location_events_query(_user, %Location{} = loc) do
+    Ecto.assoc(loc, :events)
+  end
+
+  def get_location_events_query(user, resource) when is_binary(resource) do
+    user
+    |> Ecto.assoc(:bot_events)
+    |> where(resource: ^resource)
+  end
+
   @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
-        Location.check_for_bot_events(loc, user)
+        GeoFence.check_for_bot_events(loc, user, resource)
         :ok
 
       {:error, _} = error ->
