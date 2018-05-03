@@ -106,6 +106,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's location event history"
     connection field :location_events, node_type: :location_events do
+      connection_complexity
       arg :device, non_null(:string)
       resolve &User.get_location_events/3
     end
@@ -176,6 +177,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
+      connection_complexity
       resolve &User.get_location_events/3
     end
   end
