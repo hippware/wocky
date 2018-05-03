@@ -5,11 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.5.2+r6abd519
+
 * Disable geofence timeout (PR #1473, disables #1466)
 * Update Dawdle; reinstate 30 minutes presence timeout (PR #1475)
 * Add GraphQL schema documentation (#1404)
 * Add logging for GraphQL traffic (PR #1476)
 * Add active bots connection to current user (#1474)
+* Review and refactor GraphQL middleware/security implementation (#1405)
 
 
 # 2018.4.27+reb3df56
