@@ -13,7 +13,6 @@ defmodule WockyAPI.GraphQL.ConnTest do
     user = Factory.insert(:user)
     {:ok, {token, _}} = Account.assign_token(user.id, "abc")
 
-    Factory.insert_list(50, :bot, user: user)
     conn =
       build_conn()
       |> put_req_header("x-auth-user", user.id)
@@ -43,9 +42,9 @@ defmodule WockyAPI.GraphQL.ConnTest do
     }
     """
     test "Large sets of bots should exceed complexity limit", %{conn: conn} do
-      post_conn(conn, @query, 200)
-      |> (fn a -> a["data"]["currentUser"]["bots"]["edges"] end).()
-      |> length()
+      result = post_conn(conn, @query, 400)
+
+      assert error_msg(result, 2) =~ "Operation is too complex"
     end
   end
 
@@ -53,5 +52,12 @@ defmodule WockyAPI.GraphQL.ConnTest do
     conn
     |> post("/graphql", query: query, variables: variables)
     |> json_response(code)
+  end
+
+  defp error_msg(result, idx) do
+    result
+    |> Map.get("errors", [])
+    |> Enum.at(idx, %{})
+    |> Map.get("message", "")
   end
 end

@@ -36,6 +36,7 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
       scope :public
+      connection_complexity
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
       resolve &Bot.get_bots/3
@@ -45,17 +46,20 @@ defmodule WockyAPI.Schema.UserTypes do
     The user's contacts (ie the XMPP roster) optionally filtered by relationship
     """
     connection field :contacts, node_type: :contacts do
+      connection_complexity
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
     end
 
     @desc "The user's owned bot collections"
     connection field :collections, node_type: :collections do
+      connection_complexity
       resolve &Collection.get_collections/3
     end
 
     @desc "Bot collections to which the user is subscribed"
     connection field :subscribed_collections, node_type: :collections do
+      connection_complexity
       resolve &Collection.get_subscribed_collections/3
     end
   end
@@ -71,17 +75,20 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
 
     connection field :active_bots, node_type: :bots do
+      connection_complexity
       resolve &Bot.get_active_bots/3
     end
 
     @desc "The user's location history for a given device"
     connection field :locations, node_type: :locations do
+      connection_complexity
       arg :device, non_null(:string)
       resolve &User.get_locations/3
     end
 
     @desc "The user's home stream items"
     connection field :home_stream, node_type: :home_stream do
+      connection_complexity
       resolve &User.get_home_stream/3
     end
 
@@ -89,6 +96,7 @@ defmodule WockyAPI.Schema.UserTypes do
     The user's conversations - i.e. the last message exchanged with each contact
     """
     connection field :conversations, node_type: :conversations do
+      connection_complexity
       resolve &User.get_conversations/3
     end
   end
