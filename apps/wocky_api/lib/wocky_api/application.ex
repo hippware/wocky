@@ -8,6 +8,7 @@ defmodule WockyAPI.Application do
   alias WockyAPI.PhoenixInstrumenter
   alias WockyAPI.PipelineInstrumenter
   alias WockyAPI.PrometheusExporter
+  alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
 
   def start(_type, _args) do
     import Supervisor.Spec
@@ -15,6 +16,7 @@ defmodule WockyAPI.Application do
     PhoenixInstrumenter.setup()
     PipelineInstrumenter.setup()
     PrometheusExporter.setup()
+    AbsintheInstrumenter.install(WockyAPI.Schema)
 
     # Define workers and child supervisors to be supervised
     children = [

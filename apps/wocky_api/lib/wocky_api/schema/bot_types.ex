@@ -79,11 +79,13 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Posts made to the bot"
     connection field :items, node_type: :bot_items do
+      connection_complexity
       resolve &Bot.get_items/3
     end
 
     @desc "Subscribers to the bot, filtered by either subscription type or ID"
     connection field :subscribers, node_type: :subscribers do
+      connection_complexity
       arg :type, :subscription_type
       arg :id, :uuid
       resolve &Bot.get_subscribers/3
@@ -91,6 +93,7 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Collections of which this bot is a member"
     connection field :collections, node_type: :collections do
+      connection_complexity
       resolve &Collection.get_collections/3
     end
   end

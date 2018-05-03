@@ -21,11 +21,13 @@ defmodule WockyAPI.Schema.CollectionTypes do
 
     @desc "The set of bots comprising the collection"
     connection field :bots, node_type: :collection_bots do
+      connection_complexity
       resolve &Collection.get_bots/3
     end
 
     @desc "Subscribers to the collection"
     connection field :subscribers, node_type: :collection_subscribers do
+      connection_complexity
       resolve &Collection.get_subscribers/3
     end
   end

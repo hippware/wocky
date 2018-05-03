@@ -30,4 +30,15 @@ defmodule WockyAPI.Schema.Notation do
       meta :scope, unquote(scope)
     end
   end
+
+  defmacro connection_complexity do
+    quote do
+      complexity &unquote(__MODULE__).connection_complexity/2
+    end
+  end
+
+  def connection_complexity(params, children) do
+    count = params[:first] || params[:last] || 1
+    count * children
+  end
 end

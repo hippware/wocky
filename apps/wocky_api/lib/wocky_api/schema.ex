@@ -5,6 +5,7 @@ defmodule WockyAPI.Schema do
   use Absinthe.Relay.Schema, :modern
 
   alias WockyAPI.Middleware.Auth
+  alias WockyAPI.Middleware.Instrumenter
 
   import_types Absinthe.Type.Custom
   import_types Kronky.ValidationMessageTypes
@@ -37,5 +38,6 @@ defmodule WockyAPI.Schema do
   def middleware(middleware, field, object) do
     middleware
     |> Auth.middleware(field, object)
+    |> Instrumenter.instrument(field, object)
   end
 end
