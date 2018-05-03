@@ -6,10 +6,13 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
 
   @behaviour Absinthe.Middleware
 
-  def call(%{
-    context: %{current_user: %Wocky.User{id: id} = _} = context,
-    value: %Wocky.User{id: id} = user
-  } = resolution, _) do
+  def call(
+        %{
+          context: %{current_user: %Wocky.User{id: id} = _} = context,
+          value: %Wocky.User{id: id} = user
+        } = resolution,
+        _
+      ) do
     %{resolution | context: %{context | current_user: user}}
   end
 

@@ -232,5 +232,5 @@ defmodule Wocky.CollectionsTest do
     end
   end
 
-  defp ids(items), do: Enum.sort(Enum.map(items, &(&1.id)))
+  defp ids(items), do: Enum.sort(Enum.map(items, & &1.id))
 end

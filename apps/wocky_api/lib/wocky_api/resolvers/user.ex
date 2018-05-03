@@ -79,11 +79,9 @@ defmodule WockyAPI.Resolvers.User do
     |> Utils.connection_from_query(user, args)
   end
 
-  def get_location_events(
-    %Location{} = loc,
-    args,
-    %{context: %{current_user: user}}
-  ) do
+  def get_location_events(%Location{} = loc, args, %{
+        context: %{current_user: user}
+      }) do
     user
     |> User.get_location_events_query(loc)
     |> Utils.connection_from_query(user, args)
