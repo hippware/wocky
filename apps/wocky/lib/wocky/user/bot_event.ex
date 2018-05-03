@@ -23,8 +23,6 @@ defmodule Wocky.User.BotEvent do
     :reactivate
   ]
 
-  # TODO When the bot event entries without a resource have all expired out
-  # we need to make resource not nullable
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_bot_events" do
@@ -38,13 +36,14 @@ defmodule Wocky.User.BotEvent do
     belongs_to :location, Location
   end
 
-  @type event :: :enter
-               | :exit
-               | :transition_in
-               | :transition_out
-               | :timeout
-               | :reactivate
-               | :deactivate
+  @type event ::
+          :enter
+          | :exit
+          | :transition_in
+          | :transition_out
+          | :timeout
+          | :reactivate
+          | :deactivate
 
   @type t :: %BotEvent{
           id: binary,
@@ -70,13 +69,9 @@ defmodule Wocky.User.BotEvent do
     |> Repo.one()
   end
 
-  # TODO When the bot event entries without a resource have all expired out
-  # we need to remove the `or_where` clause below.
-  defp get_last_event_query(user_id, resource, bot_id) do
+  defp get_last_event_query(user_id, _resource, bot_id) do
     BotEvent
     |> where(user_id: ^user_id, bot_id: ^bot_id)
-    |> where([e], e.resource == ^resource)
-    |> or_where([e], is_nil(e.resource))
     |> order_by(desc: :created_at)
     |> limit(1)
   end
