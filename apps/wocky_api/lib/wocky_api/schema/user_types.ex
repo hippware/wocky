@@ -4,6 +4,7 @@ defmodule WockyAPI.Schema.UserTypes do
   """
 
   use WockyAPI.Schema.Notation
+  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 
@@ -192,7 +193,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "A user location event entry"
   object :location_event do
     @desc "The bot whose boundary was entered or exited"
-    field :bot, non_null(:bot)
+    field :bot, non_null(:bot), resolve: assoc(:bot)
 
     @desc "The type of the event (enter, exit, etc)"
     field :event, non_null(:location_event_type)
@@ -201,7 +202,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :created_at, non_null(:datetime)
 
     @desc "The location update that triggered this event (if any)"
-    field :location, :location
+    field :location, :location, resolve: assoc(:location)
   end
 
   @desc "User location event type"
