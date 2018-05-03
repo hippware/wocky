@@ -271,6 +271,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
+      middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware
     end
   end
