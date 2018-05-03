@@ -51,6 +51,30 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     @query """
+    query ($id: UUID!) {
+      user (id: $id) {
+        id
+        ... on CurrentUser {
+          email
+        }
+      }
+    }
+    """
+
+    test "get info via user query", %{user: user} do
+      result = run_query(@query, user, %{"id" => user.id})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "user" => %{
+                 "id" => user.id,
+                 "email" => user.email,
+               }
+             }
+    end
+
+    @query """
     {
       currentUser {
         id

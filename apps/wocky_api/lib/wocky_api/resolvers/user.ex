@@ -72,6 +72,10 @@ defmodule WockyAPI.Resolvers.User do
     |> Utils.connection_from_query(user, args)
   end
 
+  def get_user(_root, %{id: id}, %{context: %{current_user: %{id: id} = u}}) do
+    {:ok, u}
+  end
+
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
     with %User{} = user <- Repo.get(User, id),
          false <- Blocking.blocked?(current_user.id, id) do

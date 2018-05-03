@@ -12,8 +12,8 @@ defmodule WockyAPI.Schema.UserTypes do
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
 
-  @desc "The main Wocky user object"
-  object :user do
+  @desc "The main Wocky user interface"
+  interface :user do
     @desc "The user's unique ID"
     field :id, non_null(:uuid), do: scope(:public)
     @desc "The server on which the user resides"
@@ -62,10 +62,24 @@ defmodule WockyAPI.Schema.UserTypes do
       connection_complexity
       resolve &Collection.get_subscribed_collections/3
     end
+
+    resolve_type fn
+      %{id: id}, %{context: %{current_user: %{id: id}}} -> :current_user
+      %Wocky.User{} = _, _ -> :other_user
+      _, _ -> nil
+    end
   end
 
+  @desc "A user other than the currently authenticated user"
+  object :other_user do
+    interface :user
+    import_fields :user
+  end
+
+  @desc "The currently authenticated user"
   object :current_user do
     scope :private
+    interface :user
     import_fields :user
 
     @desc "The user's ID for the external auth system (eg Firebase or Digits)"
@@ -265,6 +279,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
+      middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware
     end
   end
