@@ -17,20 +17,28 @@ defmodule WockyAPI.Schema.UserTypes do
   interface :user do
     @desc "The user's unique ID"
     field :id, non_null(:uuid), do: scope(:public)
+
     @desc "The server on which the user resides"
     field :server, non_null(:string), do: scope(:public)
+
     @desc "The user's unique handle"
     field :handle, :string, do: scope(:public)
 
+    @desc "The user's avatar"
     field :avatar, :media do
       scope :public
-      resolve(&Media.get_media/3)
+      resolve &Media.get_media/3
     end
 
+    @desc "The user's first name"
     field :first_name, :string
+
+    @desc "The user's last name"
     field :last_name, :string
+
     @desc "A freeform tagline for the user"
     field :tagline, :string, do: scope(:public)
+
     @desc "A list of roles assigned to the user"
     field :roles, non_null(list_of(non_null(:string))), do: scope(:public)
 
@@ -130,14 +138,19 @@ defmodule WockyAPI.Schema.UserTypes do
   enum :user_bot_relationship do
     @desc "A bot is visible to the user"
     value :visible
+
     @desc "A bot is owned by the user"
     value :owned
+
     @desc "A bot has been explicitly shared to the user"
     value :shared
+
     @desc "The user has subscribed to the bot"
     value :subscribed
+
     @desc "The user is a guest of the bot (will fire entry/exit events)"
     value :guest
+
     @desc "The user is a visitor to the bot (is currently within the bot)"
     value :visitor
   end
@@ -145,8 +158,10 @@ defmodule WockyAPI.Schema.UserTypes do
   enum :user_contact_relationship do
     @desc "The parent user is following the child user"
     value :following
+
     @desc "The child user is following the parent user"
     value :follower
+
     @desc "The two users are following eachother"
     value :friend
   end
@@ -240,16 +255,23 @@ defmodule WockyAPI.Schema.UserTypes do
   object :home_stream_item do
     @desc "The stream-unique key of the item"
     field :key, non_null(:string)
+
     @desc "The JID of the object from which the item originated"
     field :from_jid, non_null(:string)
+
     @desc "The item's content"
     field :stanza, non_null(:string)
+
     @desc "The item's owner"
     field :user, :user, resolve: assoc(:user)
+
     @desc "The bot referenced by this item, if any"
     field :reference_bot, :bot, resolve: assoc(:reference_bot)
+
     @desc "The collection referenced by this item, if any"
-    field :reference_collection, :collection, resolve: assoc(:reference_collection)
+    field :reference_collection, :collection,
+      resolve: assoc(:reference_collection)
+
     @desc "The time at which the item was last updated"
     field :updated_at, :datetime
   end
@@ -265,6 +287,8 @@ defmodule WockyAPI.Schema.UserTypes do
   object :conversation do
     @desc "The JID of the remote entity"
     field :other_jid, non_null(:string)
+
+    @desc "The other participant in the conversation"
     field :other_user, :user, do: resolve(&User.get_conversation_user/3)
 
     @desc "The contents of the message"
@@ -275,6 +299,7 @@ defmodule WockyAPI.Schema.UserTypes do
     false if it was received by them.
     """
     field :outgoing, non_null(:boolean)
+
     @desc "The owner of the conversation"
     field :owner, :user, resolve: assoc(:user)
   end
@@ -310,10 +335,13 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The device (resource) sending the update"
     field :device, :string
+
     @desc "Latitude in degrees"
     field :lat, non_null(:float)
+
     @desc "Longitude in degrees"
     field :lon, non_null(:float)
+
     @desc "Accuracy in metres"
     field :accuracy, non_null(:float)
   end
@@ -337,8 +365,10 @@ defmodule WockyAPI.Schema.UserTypes do
     field :users, list_of(non_null(:user)) do
       @desc "String to match against names and handle"
       arg :search_term, non_null(:string)
+
       @desc "Maximum number of results to return"
       arg :limit, :integer
+
       resolve &User.search_users/3
     end
   end
