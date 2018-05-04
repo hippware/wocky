@@ -25,7 +25,7 @@ defmodule WockyAPI.GraphQL.ConnTest do
     @query """
     query {
       currentUser {
-        bots (first: 50, relationship: OWNED) {
+        bots (first: 300, relationship: OWNED) {
           edges {
             node {
               id
