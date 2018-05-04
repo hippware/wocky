@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.5.4+r4bdd0ed
+
 * Expose user location events in the GraphQL API (#1480)
   * Also some minor refactoring and cleanup
+* Increase graphql complexity limit to 2000 (PR #1493, PR #1494)
 
 
 # 2018.5.3+reaf3ea8
