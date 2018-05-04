@@ -5,7 +5,7 @@ defmodule WockyAPI.Router do
   import WockyAPI.Plugs.Authentication
   import WockyAPI.Plugs.AbsintheConnData
 
-  @max_graphql_complexity 200
+  @max_graphql_complexity 2000
 
   pipeline :rest_api do
     plug :accepts, ["json"]
