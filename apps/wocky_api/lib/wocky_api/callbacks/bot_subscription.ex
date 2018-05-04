@@ -20,11 +20,13 @@ defmodule WockyAPI.Callbacks.BotSubscription do
       when a != b do
     subscriber = Repo.preload(subscriber, [:bot, :user])
 
-    BotResolver.notify_visitor_subscription(
-      subscriber.bot,
-      subscriber.user,
-      subscriber.visitor
-    )
+    if subscriber.bot != nil && subscriber.user != nil do
+      BotResolver.notify_visitor_subscription(
+        subscriber.bot,
+        subscriber.user,
+        subscriber.visitor
+      )
+    end
   end
 
   def handle_update(_), do: :ok
