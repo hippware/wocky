@@ -5,6 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Expose user location events in the GraphQL API (#1480)
+  * Also some minor refactoring and cleanup
+
+
+# 2018.5.3+reaf3ea8
+
+* Implement query cost restrictions (#1427)
+* GraphQL interface for `User` (PR #1484)
+
+
 # 2018.5.2+r6abd519
 
 * Disable geofence timeout (PR #1473, disables #1466)
