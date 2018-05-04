@@ -4,13 +4,13 @@ defmodule WockyAPI.Schema.BotTypes do
   """
 
   use WockyAPI.Schema.Notation
+  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
-  alias WockyAPI.Resolvers.User
 
   connection :bots, node_type: :bot do
     scope :public
@@ -75,7 +75,7 @@ defmodule WockyAPI.Schema.BotTypes do
     @desc "Whether the bot has geofence (visitor reporting) enabled"
     field :geofence, non_null(:boolean)
     @desc "The bot's owner"
-    field :owner, non_null(:user), do: resolve(&User.get_object_owner/3)
+    field :owner, non_null(:user), resolve: assoc(:user)
 
     @desc "Posts made to the bot"
     connection field :items, node_type: :bot_items do
@@ -111,7 +111,7 @@ defmodule WockyAPI.Schema.BotTypes do
     @desc "True if the post is an image post"
     field :image, :boolean
     @desc "The post's owner"
-    field :owner, :user, do: resolve(&User.get_object_owner/3)
+    field :owner, :user, resolve: assoc(:user)
   end
 
   connection :bot_items, node_type: :bot_item do

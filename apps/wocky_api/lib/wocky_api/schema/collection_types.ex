@@ -4,11 +4,11 @@ defmodule WockyAPI.Schema.CollectionTypes do
   """
 
   use WockyAPI.Schema.Notation
+  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Collection
-  alias WockyAPI.Resolvers.User
 
   @desc "A collection of bots"
   object :collection do
@@ -17,7 +17,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
     @desc "The collection's title"
     field :title, non_null(:string)
     @desc "The collection's owner"
-    field :owner, non_null(:user), do: resolve(&User.get_object_owner/3)
+    field :owner, non_null(:user), resolve: assoc(:user)
 
     @desc "The set of bots comprising the collection"
     connection field :bots, node_type: :collection_bots do

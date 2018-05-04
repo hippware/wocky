@@ -121,11 +121,6 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, User.search_by_name(search_term, current_user.id, limit)}
   end
 
-  def get_object_owner(object, _args, _info) do
-    object = Repo.preload(object, :user)
-    {:ok, object.user}
-  end
-
   def update_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:input]
     device = location[:device] || location[:resource]

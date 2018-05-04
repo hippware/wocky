@@ -245,11 +245,11 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The item's content"
     field :stanza, non_null(:string)
     @desc "The item's owner"
-    field :user, :user
+    field :user, :user, resolve: assoc(:user)
     @desc "The bot referenced by this item, if any"
-    field :reference_bot, :bot
+    field :reference_bot, :bot, resolve: assoc(:reference_bot)
     @desc "The collection referenced by this item, if any"
-    field :reference_collection, :bot
+    field :reference_collection, :collection, resolve: assoc(:reference_collection)
     @desc "The time at which the item was last updated"
     field :updated_at, :datetime
   end
@@ -265,6 +265,8 @@ defmodule WockyAPI.Schema.UserTypes do
   object :conversation do
     @desc "The JID of the remote entity"
     field :other_jid, non_null(:string)
+    field :other_user, :user, do: resolve(&User.get_conversation_user/3)
+
     @desc "The contents of the message"
     field :message, non_null(:string)
 
@@ -274,7 +276,7 @@ defmodule WockyAPI.Schema.UserTypes do
     """
     field :outgoing, non_null(:boolean)
     @desc "The owner of the conversation"
-    field :user, :user, do: resolve(&User.get_conversation_user/3)
+    field :owner, :user, resolve: assoc(:user)
   end
 
   connection :conversations, node_type: :conversation do
