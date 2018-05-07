@@ -5,7 +5,7 @@ defmodule WockyAPI.UserSocket do
     schema: WockyAPI.Schema,
     pipeline: {WockyAPI.Pipeline, :channel_pipeline}
 
-  @max_complexity 2000
+  @max_complexity Application.fetch_env!(:wocky_api, :max_graphql_complexity)
 
   ## Channels
   # channel "room:*", WockyAPI.RoomChannel
