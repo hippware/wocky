@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix crash on DB callback (#1486, PR #1491)
+
+
 # 2018.5.4+r4bdd0ed
 
 * Expose user location events in the GraphQL API (#1480)
