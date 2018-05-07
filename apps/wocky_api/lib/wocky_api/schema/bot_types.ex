@@ -4,13 +4,13 @@ defmodule WockyAPI.Schema.BotTypes do
   """
 
   use WockyAPI.Schema.Notation
+  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
-  alias WockyAPI.Resolvers.User
 
   connection :bots, node_type: :bot do
     scope :public
@@ -48,34 +48,48 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "The bot's unique ID"
     field :id, non_null(:uuid)
+
     @desc "The server on which the bot resides"
     field :server, non_null(:string)
+
     @desc "The bot's title"
     field :title, non_null(:string)
+
     @desc "The bot's latitude in degrees"
-    field :lat, non_null(:float), do: resolve(&Bot.get_lat/3)
+    field :lat, non_null(:float), resolve: &Bot.get_lat/3
+
     @desc "The bot's longitude in degrees"
-    field :lon, non_null(:float), do: resolve(&Bot.get_lon/3)
+    field :lon, non_null(:float), resolve: &Bot.get_lon/3
+
     @desc "The bot's geofence radius in metres"
     field :radius, non_null(:float)
+
     @desc "The full description of the bot"
     field :description, :string
+
     @desc "The bot's unique short name"
     field :shortname, :string
+
     @desc "The bot's cover image"
-    field :image, :media, do: resolve(&Media.get_media/3)
+    field :image, :media, resolve: &Media.get_media/3
+
     @desc "The type of the bot (freeform string, client-side use only)"
     field :type, :string
+
     @desc "The bot's street address"
     field :address, :string
+
     @desc "Extra address data (freeform string, client-side use only)"
     field :address_data, :string
+
     @desc "Whether the bot is publicly visible"
     field :public, non_null(:boolean)
+
     @desc "Whether the bot has geofence (visitor reporting) enabled"
     field :geofence, non_null(:boolean)
+
     @desc "The bot's owner"
-    field :owner, non_null(:user), do: resolve(&User.get_object_owner/3)
+    field :owner, non_null(:user), resolve: assoc(:user)
 
     @desc "Posts made to the bot"
     connection field :items, node_type: :bot_items do
@@ -104,14 +118,18 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "The bot-unique ID of this post"
     field :id, non_null(:string)
+
     @desc "The post's content"
     field :stanza, :string
+
     @desc "Media contained in the post"
     field :media, :media, do: resolve(&Media.get_media/3)
+
     @desc "True if the post is an image post"
     field :image, :boolean
+
     @desc "The post's owner"
-    field :owner, :user, do: resolve(&User.get_object_owner/3)
+    field :owner, :user, resolve: assoc(:user)
   end
 
   connection :bot_items, node_type: :bot_item do
@@ -227,6 +245,7 @@ defmodule WockyAPI.Schema.BotTypes do
   enum :visitor_action do
     @desc "A visitor newly arriving at a bot"
     value :arrive
+
     @desc "A visitor newly departing from a bot"
     value :depart
   end
@@ -235,8 +254,10 @@ defmodule WockyAPI.Schema.BotTypes do
   object :visitor_update do
     @desc "The bot with the visitor"
     field :bot, :bot
+
     @desc "The user visiting"
     field :visitor, :user
+
     @desc "Whether the user has arrived or departed"
     field :action, :visitor_action
   end

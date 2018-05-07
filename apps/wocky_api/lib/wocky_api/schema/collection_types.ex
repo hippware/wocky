@@ -4,20 +4,22 @@ defmodule WockyAPI.Schema.CollectionTypes do
   """
 
   use WockyAPI.Schema.Notation
+  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Collection
-  alias WockyAPI.Resolvers.User
 
   @desc "A collection of bots"
   object :collection do
     @desc "The collection's unique ID"
     field :id, non_null(:aint)
+
     @desc "The collection's title"
     field :title, non_null(:string)
+
     @desc "The collection's owner"
-    field :owner, non_null(:user), do: resolve(&User.get_object_owner/3)
+    field :owner, non_null(:user), resolve: assoc(:user)
 
     @desc "The set of bots comprising the collection"
     connection field :bots, node_type: :collection_bots do
@@ -63,6 +65,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
   input_object :collection_update_input do
     @desc "ID of the collection to be updated"
     field :id, non_null(:aint)
+
     @desc "New title for the collection"
     field :title, non_null(:string)
   end
@@ -74,6 +77,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
     field :collection, :collection do
       @desc "The ID of the collection being requested"
       arg :id, non_null(:aint)
+
       resolve &Collection.get_collection/3
     end
   end
@@ -140,6 +144,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
       input do
         @desc "The ID of the collection being added to"
         field :id, non_null(:aint)
+
         @desc "The ID of the bot to add"
         field :bot_id, non_null(:uuid)
       end
@@ -156,6 +161,7 @@ defmodule WockyAPI.Schema.CollectionTypes do
       input do
         @desc "The ID of the collection being removed from"
         field :id, non_null(:aint)
+
         @desc "The ID of the bot to remove"
         field :bot_id, non_null(:uuid)
       end
@@ -172,8 +178,10 @@ defmodule WockyAPI.Schema.CollectionTypes do
       input do
         @desc "The ID of the collection to share"
         field :id, non_null(:aint)
+
         @desc "The ID of the user to whom to share"
         field :user_id, non_null(:uuid)
+
         @desc "The message accompanying the share"
         field :message, :string
       end
