@@ -93,6 +93,7 @@ handle_upload_request(Req, UR) ->
     do([error_m ||
         Fields <- extract_fields(UR, RequiredFields, OptionalFields, Defaults),
         Size <- check_upload_size(Fields),
+        check_access(Fields),
         {ok, inc_counter(wocky_tros_upload_requests_total)},
         upload_response(Req, Fields, Size)
        ]).
@@ -190,6 +191,13 @@ check_upload_size(#{<<"size">> := SizeBin}) ->
     case Size =< MaxSize andalso Size > 0 of
         true -> {ok, Size};
         false -> upload_validation_error(["Invalid size: ", SizeBin])
+    end.
+
+check_access(#{<<"access">> := Access}) ->
+    case tros_permissions:is_valid(Access) of
+        true -> ok;
+        false -> {error, ?ERRT_BAD_REQUEST(
+                            ?MYLANG, <<"Invalid access string">>)}
     end.
 
 check_download_permissions(FromJID, OwnerID, Access) ->

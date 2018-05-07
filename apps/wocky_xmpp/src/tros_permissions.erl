@@ -7,7 +7,8 @@
 
 -export([
          can_download/3,
-         access_rules_from_list/1
+         access_rules_from_list/1,
+         is_valid/1
         ]).
 
 
@@ -28,6 +29,14 @@ can_download_access(User, Access) ->
         true -> true;
         false -> {false, permission_denied}
     end.
+
+is_valid(Access) ->
+    fun_chain:last(
+      Access,
+      split_access_list(),
+      lists:map(to_rule(_)),
+      lists:all(is_valid_rule(_))
+     ).
 
 access_rules_from_list(Access) ->
     List = split_access_list(Access),
@@ -65,5 +74,15 @@ matches_rule(User, {user, RuleUser}) ->
     jid:are_bare_equal(User, RuleUser);
 matches_rule(User, {friends, RuleUser}) ->
     ?wocky_roster:is_friend(RuleUser#jid.luser, User#jid.luser);
+matches_rule(_, {members, _}) -> false; % Currently unsupported
 matches_rule(User, {redirect, Target}) ->
     wocky_access_manager:check_access(Target, User, view) =:= allow.
+
+is_valid_rule(all) -> true;
+is_valid_rule({Rel, UserJID = #jid{luser = User}})
+  when Rel =:= user orelse Rel =:= friends ->
+    ?wocky_id:'valid?'(User) andalso
+    ?wocky_user:get_by_jid(UserJID) =/= nil;
+is_valid_rule({members, _}) -> true;
+is_valid_rule({redirect, Target}) -> wocky_access_manager:is_valid(Target);
+is_valid_rule(invalid) -> false.
