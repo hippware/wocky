@@ -30,8 +30,6 @@
    iq_id/0,
    make_error_iq_response/2,
 
-   v1_uuid_order/2,
-
    remove_redundant_jids/1,
 
    remove_whitespace/1,
@@ -144,13 +142,6 @@ intersection(A, B) ->
 -spec intersection(list(T), list(T), fun((T, T) -> boolean())) -> list(T).
 intersection(A, B, EqualityFun) ->
     lists:filter(fun(E) -> lists:any(EqualityFun(E, _), B) end, A).
-
-%% Sorting function to sort v1 UUIDs by time (as is done by C*)
--spec v1_uuid_order(binary(), binary()) -> boolean().
-v1_uuid_order(UUID1, UUID2) ->
-    uuid:get_v1_time(uuid:string_to_uuid(UUID1))
-    =<
-    uuid:get_v1_time(uuid:string_to_uuid(UUID2)).
 
 % Remove non-bare jids where there is also a bare version in the list
 -spec remove_redundant_jids([jid()]) -> [jid()].
