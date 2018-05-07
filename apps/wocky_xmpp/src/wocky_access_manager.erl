@@ -10,7 +10,7 @@
 -export([init/0, register/2, unregister/2]).
 
 %% Access checking
--export([check_access/3]).
+-export([check_access/3, is_valid/1]).
 
 -record(access_manager, {
           node_prefix :: binary(),
@@ -27,6 +27,7 @@
 -define(MAX_REDIRECTS, 5).
 
 -callback check_access(binary(), ejabberd:jid(), op()) -> access_result().
+-callback is_access_valid(binary()) -> boolean().
 
 
 %%%===================================================================
@@ -95,4 +96,12 @@ handle_redirect(Node, Actor, Op, Module, Redirects) ->
 
         false ->
             check_access(Node, Actor, Op, Module, [Node | Redirects])
+    end.
+
+is_valid(#jid{resource = Node}) ->
+    case ets:lookup(?MANAGER_TABLE, node_prefix(Node)) of
+        [#access_manager{module = Module}] ->
+            Module:is_access_valid(Node);
+        [] ->
+            false
     end.

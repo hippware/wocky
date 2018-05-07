@@ -4,8 +4,9 @@ defmodule :tros_permissions_spec do
   use SandboxHelper
   use Wocky.JID
 
-  import :tros_permissions, only: [can_download: 3]
+  import :tros_permissions, only: [can_download: 3, is_valid: 1]
 
+  alias Wocky.Bot
   alias Wocky.Repo.Factory
   alias Wocky.User
 
@@ -23,14 +24,13 @@ defmodule :tros_permissions_spec do
     Factory.insert(:roster_item, user: alice, contact: karen)
 
     {:ok,
-     [
-       alice: alice,
-       bob: bob,
-       carol: carol,
-       robert: robert,
-       karen: karen,
-       tim: tim
-     ]}
+      alice: alice,
+      bob: bob,
+      carol: carol,
+      robert: robert,
+      karen: karen,
+      tim: tim
+     }
   end
 
   describe "download permissions" do
@@ -92,6 +92,40 @@ defmodule :tros_permissions_spec do
           assert can_download(User.to_jid(shared.tim), owner(), access())
         end
       end
+    end
+  end
+
+  describe "access validation" do
+    before do
+      bot_jid =
+        :bot
+        |> Factory.insert()
+        |> Bot.to_jid()
+        |> JID.to_binary()
+
+      alice_jid =
+        shared.alice
+        |> User.to_jid()
+        |> JID.to_binary()
+
+      {:ok, alice_jid: alice_jid, bot_jid: bot_jid}
+    end
+
+    it "should pass valid access rules" do
+      is_valid("all") |> should(be_true())
+      is_valid("user:" <> shared.alice_jid) |> should(be_true())
+      is_valid("friends:" <> shared.alice_jid) |> should(be_true())
+      is_valid("members:any_group_name") |> should(be_true())
+      is_valid("redirect:" <> shared.bot_jid) |> should(be_true())
+    end
+
+    it "should fail invalid rules" do
+      is_valid("allllll") |> should(be_false())
+      is_valid("user:" <> Factory.new_jid()) |> should(be_false())
+      is_valid("friends:" <> Factory.new_jid()) |> should(be_false())
+      is_valid("momber:blahblah") |> should(be_false())
+      is_valid("redirect:" <> JID.to_binary(Bot.to_jid(Factory.build(:bot))))
+      |> should(be_false())
     end
   end
 end

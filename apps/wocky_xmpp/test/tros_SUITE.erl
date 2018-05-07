@@ -35,7 +35,10 @@ groups() ->
       ]
      },
      {general,
-      [invalid_file_id]
+      [
+       invalid_file_id,
+       invalid_access
+      ]
      }
     ].
 
@@ -155,6 +158,23 @@ invalid_file_id(Config) ->
         download_failure(Alice, "Not a valid ID"),
         download_failure(Alice, "tros:localhost/file/Not a valid ID"),
         download_failure(Alice, "hello world url!-thumbnail")
+    end).
+
+invalid_access(Config) ->
+    escalus:story(Config, [{alice, 1}], fun(Alice) ->
+        BadAccess = [
+                     <<"allllll">>,
+                     <<"user:1234@here">>,
+                     <<"redirect:localhost/bot/nope">>
+                    ],
+
+        lists:foreach(
+          fun(A) ->
+                  {_, Result} = common_upload_request(100, Alice, A),
+                  escalus:assert(is_iq_error, Result)
+          end,
+          BadAccess
+         )
     end).
 
 %%--------------------------------------------------------------------

@@ -21,8 +21,8 @@
 %% IQ handler
 -export([handle_iq/3]).
 
-%% Access manager callback
--export([check_access/3]).
+%% Access manager callbacks
+-export([check_access/3, is_access_valid/1]).
 
 %% Other functions
 -export([make_bot_el/2,
@@ -579,6 +579,10 @@ check_access(BotNode, ActorJID, _) ->
 
 allow_to_result({ok, true}) -> allow;
 allow_to_result(_) -> deny.
+
+is_access_valid(BotNode) ->
+    BotID = ?wocky_bot:get_id_from_node(BotNode),
+    ?wocky_id:'valid?'(BotID) andalso ?wocky_bot:get(BotID) =/= nil.
 
 %%%===================================================================
 %%% Common helpers
