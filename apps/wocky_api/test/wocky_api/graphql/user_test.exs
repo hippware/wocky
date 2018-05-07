@@ -546,9 +546,13 @@ defmodule WockyAPI.GraphQL.UserTest do
           totalCount
           edges {
             node {
-              other_jid
+              otherJid
+              otherUser {
+                id
+                firstName
+              }
               message
-              user {
+              owner {
                 id
                 firstName
               }
@@ -581,11 +585,15 @@ defmodule WockyAPI.GraphQL.UserTest do
                    "edges" => [
                      %{
                        "node" => %{
-                         "other_jid" => other_jid,
-                         "message" => message,
-                         "user" => %{
+                         "otherJid" => other_jid,
+                         "otherUser" => %{
                            "id" => user2.id,
                            "firstName" => user2.first_name
+                         },
+                         "message" => message,
+                         "owner" => %{
+                           "id" => user.id,
+                           "firstName" => user.first_name
                          }
                        }
                      }
