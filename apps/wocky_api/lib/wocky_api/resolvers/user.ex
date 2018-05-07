@@ -24,13 +24,7 @@ defmodule WockyAPI.Resolvers.User do
   def update_user(_root, args, %{context: %{current_user: user}}) do
     input = args[:input][:values]
 
-    case User.update(user, input) do
-      {:ok, user} ->
-        {:ok, user}
-
-      {:error, _} ->
-        {:error, "Could not update user"}
-    end
+    User.update(user, input)
   end
 
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
