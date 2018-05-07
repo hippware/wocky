@@ -76,7 +76,8 @@ defmodule Wocky.User.BotEvent do
     |> limit(1)
   end
 
-  @spec insert(User.t(), User.resource(), Bot.t(), Location.t(), event) :: t
+  @spec insert(User.t(), User.resource(), Bot.t(), Location.t() | nil, event) ::
+          t
   def insert(user, resource, bot, loc \\ nil, event) do
     %{
       user_id: user.id,
