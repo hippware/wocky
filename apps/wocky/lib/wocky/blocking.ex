@@ -50,21 +50,6 @@ defmodule Wocky.Blocking do
     write_unblocked_items(blocker, blockee)
   end
 
-  @spec not_blocked_query(Queryable.t()) :: Queryable.t()
-  def not_blocked_query(query) do
-    query
-    |> where(
-      [..., r],
-      not (@blocked_group in r.groups or @blocked_by_group in r.groups)
-    )
-  end
-
-  @spec blocked_query(Queryable.t()) :: Queryable.t()
-  def blocked_query(query) do
-    from [..., r] in query,
-      where: @blocked_group in r.groups or @blocked_by_group in r.groups
-  end
-
   @doc """
   Composable query fragment to filter out objects with owners that are blocking/
   blocked by the supplied user.
