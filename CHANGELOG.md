@@ -6,6 +6,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Fix crash on DB callback (#1486, PR #1491)
+* Make graphql complexity configurable (PR #1495)
+* Validate access rule in TROS metadata (#1492)
+* User update mutation should return a useful error message (#1498)
+* Reduce N+1 queries for one-to-one relationships (PR #1500)
 
 
 # 2018.5.4+r4bdd0ed
