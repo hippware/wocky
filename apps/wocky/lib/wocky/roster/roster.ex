@@ -50,7 +50,7 @@ defmodule Wocky.Roster do
   @spec put(map) :: {:ok, Item.t()} | {:error, term}
   def put(fields) do
     %Item{}
-    |> Item.changeset(fields)
+    |> Item.changeset(remove_block_groups(fields))
     |> Repo.insert(
       on_conflict: :replace_all,
       conflict_target: [:user_id, :contact_id]
@@ -448,5 +448,9 @@ defmodule Wocky.Roster do
   defp is_block(blocker_id, blockee_id, block),
   do: block.blocker_id == blocker_id && block.blockee_id == blockee_id
 
+  defp remove_block_groups(%{groups: groups} = fields) do
+    %{fields | groups: groups -- [@blocked_group, @blocked_by_group]}
+  end
 
+  defp remove_block_groups(fields), do: fields
 end
