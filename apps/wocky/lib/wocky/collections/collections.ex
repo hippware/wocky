@@ -4,7 +4,7 @@ defmodule Wocky.Collections do
   import Ecto.Query
 
   alias Ecto.Queryable
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Collections.{Collection, Member, Subscription}
   alias Wocky.HomeStream
@@ -137,7 +137,7 @@ defmodule Wocky.Collections do
 
   @spec share(Collection.t(), User.t(), User.t(), binary) :: :ok
   def share(collection, sharer, target, message) do
-    with false <- Blocking.blocked?(sharer.id, target.id) do
+    with false <- Block.blocked?(sharer.id, target.id) do
       # Insert home stream item
       key = ID.collection_share_id(collection)
       from_jid = sharer |> User.to_jid() |> JID.to_binary()
@@ -206,7 +206,7 @@ defmodule Wocky.Collections do
   end
 
   defp is_visible_to(q, user_id, field \\ :user_id) do
-    Blocking.assoc_object_visible_query(q, user_id, field)
+    Block.assoc_object_visible_query(q, user_id, field)
   end
 
   defp when_has_member(q, bot_id) do

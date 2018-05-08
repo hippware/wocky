@@ -127,7 +127,7 @@ block(Config) ->
         escalus:assert(is_roster_set, BobPush),
         escalus_client:send(Bob, escalus_stanza:iq_result(BobPush)),
 
-        ?assert(has_group(BobPush, ?wocky_blocking:blocked_by_group()))
+        ?assert(has_group(BobPush, ?wocky_roster:blocked_by_group()))
       end).
 
 blocked_roster_access(Config) ->
@@ -139,7 +139,7 @@ blocked_roster_access(Config) ->
         AliceResult = escalus:wait_for_stanza(Alice),
         escalus_assert:is_roster_result(AliceResult),
         escalus_assert:count_roster_items(1, AliceResult),
-        ?assert(has_group(AliceResult, ?wocky_blocking:blocked_group())),
+        ?assert(has_group(AliceResult, ?wocky_roster:blocked_group())),
 
         % Bob can't see Alice since she blocked him. Any attempt to create or
         % change a roster entry for Alice will fail.
@@ -147,7 +147,7 @@ blocked_roster_access(Config) ->
         BobResult = escalus:wait_for_stanza(Bob),
         escalus_assert:is_roster_result(BobResult),
         escalus_assert:count_roster_items(1, BobResult),
-        ?assert(has_group(BobResult, ?wocky_blocking:blocked_by_group())),
+        ?assert(has_group(BobResult, ?wocky_roster:blocked_by_group())),
 
         AddStanza = escalus_stanza:roster_add_contact(Alice, [<<"frienemies">>],
                                                       <<"Please like me">>),

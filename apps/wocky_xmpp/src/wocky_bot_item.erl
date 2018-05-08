@@ -63,7 +63,7 @@ retract(Bot, From, _ToJID, SubEl) ->
 %%%===================================================================
 
 get_items(Bot, RSM, FromID) ->
-    Query = ?wocky_blocking:object_visible_query(
+    Query = ?wocky_block:object_visible_query(
                ?wocky_item:items_query(Bot), FromID, user_id),
     ?wocky_rsm_helper:rsm_query(RSM, Query, id, {asc, updated_at}).
 
@@ -80,7 +80,7 @@ make_items(Items) ->
 %%%===================================================================
 
 get_bot_item_images(Bot, #{id := FromID}, RSMIn) ->
-    Query = ?wocky_blocking:object_visible_query(
+    Query = ?wocky_block:object_visible_query(
                ?wocky_item:images_query(Bot), FromID, user_id),
     ?wocky_rsm_helper:rsm_query(RSMIn, Query, id, {asc, updated_at}).
 

@@ -142,7 +142,7 @@ make_jids(BJIDs) ->
 filter_blocked_users(JIDs, #jid{luser = User}) ->
     lists:map(
       fun(U = {{ok, #jid{luser = Target}}, BJID}) ->
-        case ?wocky_blocking:'blocked?'(User, Target) of
+        case ?wocky_block:'blocked?'(User, Target) of
             false ->
                 U;
             true ->
@@ -329,7 +329,7 @@ check_field_permissions(Relationship, Fields) ->
     end.
 
 check_blocking(#jid{luser = User}, #jid{luser = Target}) ->
-    case ?wocky_blocking:'blocked?'(User, Target) of
+    case ?wocky_block:'blocked?'(User, Target) of
         false -> ok;
         true -> {error, ?ERRT_ITEM_NOT_FOUND(?MYLANG, <<"User not found">>)}
     end.

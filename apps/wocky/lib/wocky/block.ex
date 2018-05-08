@@ -7,6 +7,7 @@ defmodule Wocky.Block do
 
   import Ecto.Query
 
+  alias Ecto.Queryable
   alias Wocky.Repo
   alias Wocky.User
 
@@ -78,6 +79,9 @@ defmodule Wocky.Block do
     |> where([..., b], is_nil(b.blocker_id))
   end
 
+  @spec blocked?(User.t(), User.t()) :: boolean
+  def blocked?(%User{id: id1}, %User{id: id2}), do: blocked?(id1, id2)
+
   @spec blocked?(User.id(), User.id()) :: boolean
   def blocked?(u1_id, u2_id) do
     Block
@@ -86,5 +90,12 @@ defmodule Wocky.Block do
              (b.blocker_id == ^u2_id and b.blockee_id == ^u1_id))
     |> Repo.all()
     != []
+  end
+
+  @spec blocks(User.id()) :: t()
+  def blocks(user_id) do
+    Block
+    |> where([b], b.blocker_id == ^user_id or b.blockee_id == ^user_id)
+    |> Repo.all()
   end
 end

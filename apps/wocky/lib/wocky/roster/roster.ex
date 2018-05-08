@@ -33,7 +33,7 @@ defmodule Wocky.Roster do
 
   alias Ecto.Adapters.SQL
   alias Ecto.{Queryable, UUID}
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Repo
   alias Wocky.Roster.{InitialContact, Item}
   alias Wocky.User
@@ -42,6 +42,9 @@ defmodule Wocky.Roster do
 
   @type version :: binary
   @type relationship :: :self | :friend | :follower | :followee | :none
+
+  @blocked_group "__blocked__"
+  @blocked_by_group "__blocked_by__"
 
   @doc "Write a roster record to the database"
   @spec put(map) :: {:ok, Item.t()} | {:error, term}
@@ -60,6 +63,7 @@ defmodule Wocky.Roster do
     |> with_user(user_id)
     |> preload(:contact)
     |> Repo.all()
+    |> add_blocking_groups(user_id)
   end
 
   @spec get(User.id(), User.id()) :: Item.t() | nil
@@ -68,6 +72,7 @@ defmodule Wocky.Roster do
     |> with_contact(contact_id)
     |> preload(:contact)
     |> Repo.get_by(user_id: user_id)
+    |> add_blocking_groups(user_id)
   end
 
   @doc """
@@ -193,7 +198,7 @@ defmodule Wocky.Roster do
     |> maybe_filter_system(not include_system)
     |> where([u, r], not is_nil(u.handle))
     |> where([u, r], r.subscription in ^sub_types)
-    |> Blocking.object_visible_query(requester_id, :contact_id)
+    |> Block.object_visible_query(requester_id, :contact_id)
   end
 
   defp maybe_filter_system(query, false), do: query
@@ -286,6 +291,9 @@ defmodule Wocky.Roster do
     :ok
   end
 
+  def blocked_group, do: @blocked_group
+  def blocked_by_group, do: @blocked_by_group
+
   defp add_relationship(user_id, contact_id, subscription) do
     %Item{}
     |> Item.changeset(%{
@@ -308,6 +316,28 @@ defmodule Wocky.Roster do
     |> Repo.update_all(set: [updated_at: NaiveDateTime.utc_now()])
 
     :ok
+  end
+
+  def write_blocked_items(a, b) do
+    [
+      %{
+        user_id: a.id,
+        contact_id: b.id,
+        name: "",
+        ask: :none,
+        subscription: :none,
+        groups: []
+      },
+      %{
+        user_id: b.id,
+        contact_id: a.id,
+        name: "",
+        ask: :none,
+        subscription: :none,
+        groups: []
+      }
+    ]
+    |> Enum.each(&put/1)
   end
 
   defp with_user(query, user_id) do
@@ -378,4 +408,45 @@ defmodule Wocky.Roster do
 
     nil
   end
+
+  defp add_blocking_groups(nil, _), do: nil
+
+  defp add_blocking_groups(%Item{} = item, user_id) do
+    [item] |> add_blocking_groups(user_id) |> hd()
+  end
+
+  defp add_blocking_groups(items, user_id) do
+    blocks = Block.blocks(user_id)
+
+    Enum.map(items, &add_blocking_groups_to_item(&1, blocks))
+  end
+
+  defp add_blocking_groups_to_item(item, blocks) do
+    item
+    |> add_blocked_group(blocks)
+    |> add_blocked_by_group(blocks)
+  end
+
+  defp add_blocked_group(
+    %Item{user_id: user_id, contact_id: contact_id, groups: groups} = item,
+    blocks) do
+    case Enum.any?(blocks, &is_block(user_id, contact_id, &1)) do
+      true -> %{item | groups: [@blocked_group | groups]}
+      false -> item
+    end
+  end
+
+  defp add_blocked_by_group(
+    %Item{user_id: user_id, contact_id: contact_id, groups: groups} = item,
+    blocks) do
+    case Enum.any?(blocks, &is_block(contact_id, user_id, &1)) do
+      true -> %{item | groups: [@blocked_by_group | groups]}
+      false -> item
+    end
+  end
+
+  defp is_block(blocker_id, blockee_id, block),
+  do: block.blocker_id == blocker_id && block.blockee_id == blockee_id
+
+
 end

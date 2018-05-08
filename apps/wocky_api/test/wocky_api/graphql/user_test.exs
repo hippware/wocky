@@ -4,7 +4,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Faker.Lorem
   alias Faker.Name
   alias Faker.String
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -163,7 +163,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "get user info for blocked user", %{user: user, user2: user2} do
-      Blocking.block(user2, user)
+      Block.block(user2, user)
 
       result = run_query(@query, user, %{"id" => user2.id})
 

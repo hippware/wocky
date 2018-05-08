@@ -77,8 +77,8 @@ defmodule Wocky.BlockingSpec do
 
       it "should set the apprpriate blocking groups" do
         {a, e} = Roster.get_pair(shared.alice.id, shared.eve.id)
-        a.groups |> should(eq [Blocking.blocked_group()])
-        e.groups |> should(eq [Blocking.blocked_by_group()])
+        a.groups |> should(eq [Roster.blocked_group()])
+        e.groups |> should(eq [Roster.blocked_by_group()])
       end
     end
 

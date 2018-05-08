@@ -114,7 +114,7 @@ check_access(NoUser, _) when NoUser =:= nil orelse NoUser =:= undefined ->
 check_access(User = #{id := UserID}, Bot = #{user_id := BotOwnerID}) ->
     case ?wocky_user:'can_access?'(User, Bot) of
         true ->
-            case ?wocky_blocking:'blocked?'(UserID, BotOwnerID) of
+            case ?wocky_block:'blocked?'(UserID, BotOwnerID) of
                 true -> {error, ?ERR_ITEM_NOT_FOUND};
                 false -> ok
             end;

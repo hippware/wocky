@@ -11,7 +11,7 @@ defmodule Wocky.Bot do
   alias Ecto.Changeset
   alias Ecto.Queryable
   alias Geocalc.Point
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -444,7 +444,7 @@ defmodule Wocky.Bot do
   @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     queryable
-    |> Blocking.object_visible_query(user.id)
+    |> Block.object_visible_query(user.id)
     |> join(
       :left,
       [b, ...],

@@ -1,7 +1,7 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.JID
@@ -87,7 +87,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
     with %User{} = user <- Repo.get(User, id),
-         false <- Blocking.blocked?(current_user.id, id) do
+         false <- Block.blocked?(current_user.id, id) do
       {:ok, user}
     else
       _ -> user_not_found(id)
