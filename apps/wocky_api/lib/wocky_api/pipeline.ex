@@ -10,6 +10,7 @@ defmodule WockyAPI.Pipeline do
     config
     |> Plug.default_pipeline(opts)
     |> add_logger(opts)
+    |> maybe_add_apollo(opts)
   end
 
   def channel_pipeline(schema_mod, opts) do
@@ -18,7 +19,7 @@ defmodule WockyAPI.Pipeline do
     |> add_logger(opts)
   end
 
-  def add_logger(pipeline, opts) do
+  defp add_logger(pipeline, opts) do
     pipeline
     |> Pipeline.insert_before(Absinthe.Phase.Parse, [
       {PipelineLog, [{:phase, :request} | opts]}
@@ -26,5 +27,14 @@ defmodule WockyAPI.Pipeline do
     |> Pipeline.insert_after(Absinthe.Phase.Document.Result, [
       {PipelineLog, [{:phase, :response} | opts]}
     ])
+  end
+
+  defp maybe_add_apollo(pipeline, opts) do
+    current_user = opts[:context][:current_user]
+    if Confex.get_env(:wocky, :wocky_inst) != "us1" && !is_nil(current_user) do
+      ApolloTracing.Pipeline.add_phases(pipeline)
+    else
+      pipeline
+    end
   end
 end
