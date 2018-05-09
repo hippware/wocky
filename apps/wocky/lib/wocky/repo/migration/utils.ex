@@ -177,7 +177,6 @@ defmodule Wocky.Repo.Migration.Utils do
     """
   end
 
-
   # NOTE `add_notify` is deprecated. Use `update_notify/2` above.
   # This is only kept around to allow old migrations to continue to work
   @spec add_notify(binary, Watcher.action() | [Watcher.action()], [override]) ::
@@ -211,6 +210,4 @@ defmodule Wocky.Repo.Migration.Utils do
 
     add_notify_trigger(table, action)
   end
-
-
 end

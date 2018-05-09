@@ -428,8 +428,9 @@ defmodule Wocky.Roster do
   end
 
   defp add_blocked_group(
-    %Item{user_id: user_id, contact_id: contact_id, groups: groups} = item,
-    blocks) do
+         %Item{user_id: user_id, contact_id: contact_id, groups: groups} = item,
+         blocks
+       ) do
     case Enum.any?(blocks, &is_block(user_id, contact_id, &1)) do
       true -> %{item | groups: [@blocked_group | groups]}
       false -> item
@@ -437,8 +438,9 @@ defmodule Wocky.Roster do
   end
 
   defp add_blocked_by_group(
-    %Item{user_id: user_id, contact_id: contact_id, groups: groups} = item,
-    blocks) do
+         %Item{user_id: user_id, contact_id: contact_id, groups: groups} = item,
+         blocks
+       ) do
     case Enum.any?(blocks, &is_block(contact_id, user_id, &1)) do
       true -> %{item | groups: [@blocked_by_group | groups]}
       false -> item
@@ -446,7 +448,7 @@ defmodule Wocky.Roster do
   end
 
   defp is_block(blocker_id, blockee_id, block),
-  do: block.blocker_id == blocker_id && block.blockee_id == blockee_id
+    do: block.blocker_id == blocker_id && block.blockee_id == blockee_id
 
   defp remove_block_groups(%{groups: groups} = fields) do
     %{fields | groups: groups -- [@blocked_group, @blocked_by_group]}

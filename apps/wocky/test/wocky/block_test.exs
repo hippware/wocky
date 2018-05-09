@@ -28,8 +28,10 @@ defmodule Wocky.BlockTest do
     refute Block.blocked?(u2.id, u1.id)
   end
 
-  test "block should remain if both users block and one unblocks",
-  %{user1: u1, user2: u2} do
+  test "block should remain if both users block and one unblocks", %{
+    user1: u1,
+    user2: u2
+  } do
     Block.block(u1, u2)
     Block.block(u2, u1)
     Block.unblock(u1, u2)
