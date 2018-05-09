@@ -14,38 +14,6 @@ defmodule Wocky.Repo.Migration.Utils do
   # $ITEM$ as the item to be overridden. For example, to override the encoding
   # of the "title" field, use:
   # {"title", "my_encoding_function($ITEM$)"}
-  @spec add_notify(binary, Watcher.action() | [Watcher.action()], [override]) ::
-          term
-  def add_notify(table, actions, overrides \\ [])
-
-  def add_notify(table, actions, overrides) when is_list(actions) do
-    Enum.each(actions, &add_notify(table, &1, overrides))
-  end
-
-  def add_notify(table, action_atom, overrides) do
-    action = Atom.to_string(action_atom)
-
-    execute """
-    CREATE FUNCTION notify_#{table}_#{action}()
-    RETURNS trigger AS $$
-    BEGIN
-      PERFORM pg_notify(
-        'wocky_db_watcher_notify',
-        json_build_object(
-          'table', TG_TABLE_NAME
-          ,'action', '#{action}'
-          #{maybe_old(action, ",'old', #{wrap_overrides("OLD", overrides)}")}
-          #{maybe_new(action, ",'new', #{wrap_overrides("NEW", overrides)}")}
-        )::text
-      );
-      RETURN NULL;
-    END;
-    $$ LANGUAGE plpgsql;
-    """
-
-    add_notify_trigger(table, action)
-  end
-
   def update_notify(table, actions, overrides \\ [])
 
   def update_notify(table, actions, overrides) when is_list(actions) do
@@ -207,5 +175,39 @@ defmodule Wocky.Repo.Migration.Utils do
     END;
     $$ LANGUAGE plpgsql;
     """
+  end
+
+  # NOTE `add_notify` is deprecated. Use `update_notify/2` above.
+  # This is only kept around to allow old migrations to continue to work
+  @spec add_notify(binary, Watcher.action() | [Watcher.action()], [override]) ::
+          term
+  def add_notify(table, actions, overrides \\ [])
+
+  def add_notify(table, actions, overrides) when is_list(actions) do
+    Enum.each(actions, &add_notify(table, &1, overrides))
+  end
+
+  def add_notify(table, action_atom, overrides) do
+    action = Atom.to_string(action_atom)
+
+    execute """
+    CREATE FUNCTION notify_#{table}_#{action}()
+    RETURNS trigger AS $$
+    BEGIN
+      PERFORM pg_notify(
+        'wocky_db_watcher_notify',
+        json_build_object(
+          'table', TG_TABLE_NAME
+          ,'action', '#{action}'
+          #{maybe_old(action, ",'old', #{wrap_overrides("OLD", overrides)}")}
+          #{maybe_new(action, ",'new', #{wrap_overrides("NEW", overrides)}")}
+        )::text
+      );
+      RETURN NULL;
+    END;
+    $$ LANGUAGE plpgsql;
+    """
+
+    add_notify_trigger(table, action)
   end
 end

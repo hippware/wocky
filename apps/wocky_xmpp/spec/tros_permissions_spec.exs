@@ -24,13 +24,12 @@ defmodule :tros_permissions_spec do
     Factory.insert(:roster_item, user: alice, contact: karen)
 
     {:ok,
-      alice: alice,
-      bob: bob,
-      carol: carol,
-      robert: robert,
-      karen: karen,
-      tim: tim
-     }
+     alice: alice,
+     bob: bob,
+     carol: carol,
+     robert: robert,
+     karen: karen,
+     tim: tim}
   end
 
   describe "download permissions" do
@@ -124,6 +123,7 @@ defmodule :tros_permissions_spec do
       is_valid("user:" <> Factory.new_jid()) |> should(be_false())
       is_valid("friends:" <> Factory.new_jid()) |> should(be_false())
       is_valid("momber:blahblah") |> should(be_false())
+
       is_valid("redirect:" <> JID.to_binary(Bot.to_jid(Factory.build(:bot))))
       |> should(be_false())
     end

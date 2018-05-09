@@ -10,7 +10,7 @@ defmodule Wocky.UserSpec do
   alias Faker.Name
   alias Wocky.Account
   alias Wocky.Account.Token
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Email
@@ -944,7 +944,7 @@ defmodule Wocky.UserSpec do
       before do
         # Alice Sanders
         blocking_user = hd(shared.users)
-        Blocking.block(blocking_user, shared.user)
+        Block.block(blocking_user, shared.user)
         result = User.search_by_name("a", shared.id, 50)
         {:ok, blocking_user: blocking_user, result: result}
       end

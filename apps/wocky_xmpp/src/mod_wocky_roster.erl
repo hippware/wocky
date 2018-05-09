@@ -50,7 +50,6 @@
 
 -define(NULL_VERSION, <<"0">>).
 
-
 %%%===================================================================
 %%% gen_mod implementation
 %%%===================================================================
@@ -163,50 +162,47 @@ process_item_set(_From, _To, _, Result) -> Result.
 do_process_item_set(error, _, _, _, Result) -> Result;
 do_process_item_set(JID1, From, To, El, Result) ->
     #jid{luser = LUser} = From,
-    #jid{luser = ContactUser, lserver = ContactServer} = JID1,
+    #jid{luser = ContactUser} = JID1,
 
     OldItem = to_wocky_roster(
                 LUser, ContactUser,
                 ?wocky_roster:get(LUser, ContactUser)),
 
-    case is_blocked_by(OldItem#wocky_roster.groups) of
-        true ->
-            {error, ?ERR_FORBIDDEN};
-        false ->
-            do_process_item_set_1(ContactUser, ContactServer,
-                                  From, To, OldItem, El, Result)
-    end.
+    User = ?wocky_repo:get(?wocky_user, LUser),
+    Contact = ?wocky_repo:get(?wocky_user, ContactUser),
+    do_process_item_set_1(Contact, User, To, OldItem, El, Result).
 
-do_process_item_set_1(ContactUser, ContactServer, From, To, OldItem,
+do_process_item_set_1(nil, _, _, _, _, _) ->
+    {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Error: Invalid contact ID">>)};
+
+do_process_item_set_1(#{id := ContactID, server := ContactServer} = Contact,
+                      #{id := UserID} = User, ToJID, OldItem,
                       #xmlel{attrs = Attrs, children = Els}, Result) ->
-    #jid{luser = LUser} = From,
-    Item1 = #wocky_roster{groups = OldGroups}
-        = process_item_attrs(OldItem, Attrs),
+    Item1 = process_item_attrs(OldItem, Attrs),
     Item2 = #wocky_roster{groups = NewGroups}
         = process_item_els(Item1#wocky_roster{groups = []}, Els),
 
     % For an unblocking action, reinitialise the items and clear the
     % blocked/blocked_by groups on both
-    is_unblock(OldGroups, NewGroups)
+    is_unblock(User, Contact, NewGroups)
     andalso
-    ?wocky_blocking:unblock(
-       ?wocky_repo:get(?wocky_user, LUser),
-       ?wocky_repo:get(?wocky_user, ContactUser)),
+    ?wocky_block:unblock(User, Contact),
 
     % For a new block, immediately mark both the roster items as blocked
     % and send the unsubscription to the blocked user
-    case is_new_block(OldGroups, NewGroups) of
+    FromJID = ?wocky_user:to_jid(User),
+    case is_new_block(User, Contact, NewGroups) of
         true ->
-            ?wocky_blocking:block(
-               ?wocky_repo:get(?wocky_user, LUser),
-               ?wocky_repo:get(?wocky_user, ContactUser)),
+            ?wocky_block:block(User, Contact),
+
             BlockNotification = to_wocky_roster(
-                                  ?wocky_roster:get(ContactUser, LUser)),
-            push_item(ContactUser, ContactServer, From,
+                                  ?wocky_roster:get(ContactID, UserID)),
+            push_item(ContactID, ContactServer, FromJID,
                       OldItem, BlockNotification),
             Result;
         false ->
-            do_process_item_set_2(Item2, OldItem, From, To, ContactUser, Result)
+            do_process_item_set_2(Item2, OldItem, FromJID,
+                                  ToJID, ContactID, Result)
     end.
 
 do_process_item_set_2(NewItem, OldItem,
@@ -233,17 +229,14 @@ do_process_item_set_2(NewItem, OldItem,
             Result
     end.
 
-is_blocked_by(Groups) ->
-    lists:member(?wocky_blocking:blocked_by_group(), Groups).
+is_new_block(User, Contact, NewGroups) ->
+    (not ?wocky_block:'blocked?'(User, Contact)) andalso has_block(NewGroups).
 
-is_new_block(OldGroups, NewGroups) ->
-    (not has_block(OldGroups)) andalso has_block(NewGroups).
-
-is_unblock(OldGroups, NewGroups) ->
-    has_block(OldGroups) andalso (not has_block(NewGroups)).
+is_unblock(User, Contact, NewGroups) ->
+    ?wocky_block:'blocked?'(User, Contact) andalso (not has_block(NewGroups)).
 
 has_block(Groups) ->
-    lists:member(?wocky_blocking:blocked_group(), Groups).
+    lists:member(?wocky_roster:blocked_group(), Groups).
 
 process_item_attrs(Item, [{<<"jid">>, Val} | Attrs]) ->
     case jid:from_binary(Val) of
@@ -691,4 +684,3 @@ populate_extra_fields(Item, ContactUID) ->
               roles          = Roles
              }
     end.
-

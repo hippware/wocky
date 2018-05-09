@@ -10,7 +10,7 @@ defmodule Wocky.User do
 
   alias Ecto.Queryable
   alias Wocky.Account.Token, as: AuthToken
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription, as: BotSubscription
@@ -446,7 +446,7 @@ defmodule Wocky.User do
         ^search_term
       )
     )
-    |> Blocking.object_visible_query(user_id, :id)
+    |> Block.object_visible_query(user_id, :id)
     |> where([u], u.id != ^user_id)
     |> limit(^limit)
     |> Repo.all()

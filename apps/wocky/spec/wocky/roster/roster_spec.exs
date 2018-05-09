@@ -4,7 +4,7 @@ defmodule Wocky.RosterSpec do
 
   alias Faker.Lorem
   alias Faker.Name
-  alias Wocky.Blocking
+  alias Wocky.Block
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -30,8 +30,8 @@ defmodule Wocky.RosterSpec do
     followee = Factory.insert(:user)
 
     blocked_viewer = Factory.insert(:user)
-    Blocking.block(follower, blocked_viewer)
-    Blocking.block(blocked_viewer, followee)
+    Block.block(follower, blocked_viewer)
+    Block.block(blocked_viewer, followee)
 
     insert_follower_pair(follower, followee)
 
@@ -321,14 +321,14 @@ defmodule Wocky.RosterSpec do
     end
 
     it "should return false if the user has blocked the contact" do
-      Blocking.block(shared.user, shared.contact)
+      Block.block(shared.user, shared.contact)
 
       Roster.is_friend(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return true if the contact has blocked the user" do
-      Blocking.block(shared.contact, shared.user)
+      Block.block(shared.contact, shared.user)
 
       Roster.is_friend(shared.user.id, shared.contact.id)
       |> should(be_false())
@@ -357,14 +357,14 @@ defmodule Wocky.RosterSpec do
     end
 
     it "should return false if the user has blocked the contact" do
-      Blocking.block(shared.user, shared.contact)
+      Block.block(shared.user, shared.contact)
 
       Roster.is_follower(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return false if the user is blocked by the contact" do
-      Blocking.block(shared.contact, shared.user)
+      Block.block(shared.contact, shared.user)
 
       Roster.is_follower(shared.user.id, shared.contact.id)
       |> should(be_false())
@@ -397,7 +397,7 @@ defmodule Wocky.RosterSpec do
     before do
       blocked_follower = Factory.insert(:user, %{server: shared.server})
       RosterHelper.follow(blocked_follower, shared.user)
-      Blocking.block(shared.user, blocked_follower)
+      Block.block(shared.user, blocked_follower)
       :ok
     end
 
@@ -480,7 +480,7 @@ defmodule Wocky.RosterSpec do
     before do
       blocked_friend = Factory.insert(:user, %{server: shared.server})
       RosterHelper.make_friends(blocked_friend, shared.user)
-      Blocking.block(shared.user, blocked_friend)
+      Block.block(shared.user, blocked_friend)
       :ok
     end
 
@@ -559,7 +559,7 @@ defmodule Wocky.RosterSpec do
     before do
       blocked_friend = Factory.insert(:user, %{first_name: "BLOCKYMCBLOCK"})
       insert_friend_pair(shared.user, blocked_friend, [Lorem.word()])
-      Blocking.block(blocked_friend, shared.blocked_viewer)
+      Block.block(blocked_friend, shared.blocked_viewer)
       {:ok, blocked_friend: blocked_friend}
     end
 

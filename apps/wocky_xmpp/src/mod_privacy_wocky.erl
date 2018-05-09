@@ -23,7 +23,6 @@
 
 -define(DEFAULT_LIST, <<"default">>).
 
-
 %%====================================================================
 %% mod_privacy callbacks
 %%====================================================================
@@ -104,10 +103,10 @@ default_list_items(LUser, LServer) ->
                          value = <<"__no_presence__">>,
                          action = deny, order = 10},
      BaseRecord#listitem{type = group,
-                         value = ?wocky_blocking:blocked_group(),
+                         value = ?wocky_roster:blocked_group(),
                          action = deny, order = 15},
      BaseRecord#listitem{type = group,
-                         value = ?wocky_blocking:blocked_by_group(),
+                         value = ?wocky_roster:blocked_by_group(),
                          action = deny, order = 20},
 
      %% Allow messages and presences between friends
