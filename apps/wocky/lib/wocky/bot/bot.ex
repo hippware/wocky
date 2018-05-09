@@ -208,7 +208,7 @@ defmodule Wocky.Bot do
   def get_bot_query(id, requestor \\ nil, include_pending \\ false) do
     id
     |> get_query(include_pending)
-    |> is_visible(requestor)
+    |> is_visible_query(requestor)
   end
 
   @spec preallocate(User.id(), User.server()) :: t | no_return
@@ -338,11 +338,11 @@ defmodule Wocky.Bot do
   def by_relationship_query(user, rel, requestor) do
     user
     |> by_relationship_query(rel)
-    |> is_visible(requestor)
+    |> is_visible_query(requestor)
   end
 
   defp by_relationship_query(user, :visible) do
-    is_visible(Bot, user)
+    is_visible_query(Bot, user)
   end
 
   defp by_relationship_query(user, :owned) do
@@ -386,7 +386,7 @@ defmodule Wocky.Bot do
   def active_bots_query(user) do
     user
     |> by_relationship_query(:guest)
-    |> is_visible(user)
+    |> is_visible_query(user)
     |> join(
       :inner,
       [b],
@@ -471,12 +471,12 @@ defmodule Wocky.Bot do
     distance_from(bot, loc) <= bot.radius
   end
 
-  @spec is_visible(Queryable.t(), User.t() | nil) :: Queryable.t()
-  def is_visible(queryable, nil) do
+  @spec is_visible_query(Queryable.t(), User.t() | nil) :: Queryable.t()
+  def is_visible_query(queryable, nil) do
     queryable |> where([b, ...], b.public)
   end
 
-  def is_visible(queryable, user) do
+  def is_visible_query(queryable, user) do
     queryable
     |> Block.object_visible_query(user.id)
     |> join(
