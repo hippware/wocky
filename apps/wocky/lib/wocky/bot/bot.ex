@@ -197,7 +197,7 @@ defmodule Wocky.Bot do
     |> maybe_filter_pending(not include_pending)
   end
 
-  @spec get_bot(id, User.t(), boolean) :: t | nil
+  @spec get_bot(id, User.t() | nil, boolean) :: t | nil
   def get_bot(id, requestor \\ nil, include_pending \\ false) do
     id
     |> get_bot_query(requestor, include_pending)
