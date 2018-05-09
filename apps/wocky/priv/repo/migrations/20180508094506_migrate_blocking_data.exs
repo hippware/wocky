@@ -1,8 +1,6 @@
 defmodule Wocky.Repo.Migrations.MigrateBlockingData do
   use Wocky.Repo.Migration
 
-  import Ecto.Query
-
   alias Wocky.Block
   alias Wocky.Repo
   alias Wocky.Roster
