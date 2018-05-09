@@ -9,6 +9,7 @@ defmodule Wocky.Block do
 
   alias Ecto.Queryable
   alias Wocky.Repo
+  alias Wocky.Roster
   alias Wocky.User
 
   @foreign_key_type :binary_id
@@ -33,6 +34,8 @@ defmodule Wocky.Block do
       blockee_id: blockee.id
     }
     |> Repo.insert(on_conflict: :nothing)
+
+    Roster.write_blocked_items(blocker, blockee)
 
     :ok
   end

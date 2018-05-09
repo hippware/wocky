@@ -194,7 +194,6 @@ do_process_item_set_1(#{id := ContactID, server := ContactServer} = Contact,
     case is_new_block(User, Contact, NewGroups) of
         true ->
             ?wocky_block:block(User, Contact),
-            ?wocky_roster:write_blocked_items(User, Contact),
 
             BlockNotification = to_wocky_roster(
                                   ?wocky_roster:get(ContactID, UserID)),
