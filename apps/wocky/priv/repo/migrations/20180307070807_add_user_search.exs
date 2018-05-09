@@ -2,7 +2,7 @@ defmodule Wocky.Repo.Migrations.AddUserSearch do
   use Ecto.Migration
 
   def up do
-    execute "CREATE EXTENSION unaccent"
+    execute "CREATE EXTENSION IF NOT EXISTS unaccent"
 
     execute """
     CREATE FUNCTION users_name_fts(first_name text, last_name text, handle text)

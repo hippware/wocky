@@ -8,8 +8,8 @@ defmodule Wocky.Repo.Migrations.AddPostgis do
   alias Wocky.Repo
 
   def up do
-    execute "CREATE EXTENSION postgis;"
-    execute "CREATE EXTENSION postgis_topology;"
+    execute "CREATE EXTENSION IF NOT EXISTS postgis;"
+    execute "CREATE EXTENSION IF NOT EXISTS postgis_topology;"
 
     execute "ALTER TABLE BOTS ADD COLUMN location geography(Point,4326);"
 
