@@ -42,7 +42,6 @@
 %% Elixir module names
 -define(wocky_account,           'Elixir.Wocky.Account').
 -define(wocky_block,             'Elixir.Wocky.Block').
--define(wocky_blocking,          'Elixir.Wocky.Blocking').
 -define(wocky_bot,               'Elixir.Wocky.Bot').
 -define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').
 -define(wocky_item,              'Elixir.Wocky.Bot.Item').
