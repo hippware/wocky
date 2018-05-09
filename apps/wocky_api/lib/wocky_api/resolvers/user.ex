@@ -1,11 +1,9 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
-  alias Wocky.Block
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.JID
-  alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.Location
@@ -86,8 +84,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
-    with %User{} = user <- Repo.get(User, id),
-         false <- Block.blocked?(current_user.id, id) do
+    with %User{} = user <- User.get_user(id, current_user) do
       {:ok, user}
     else
       _ -> user_not_found(id)
@@ -97,7 +94,7 @@ defmodule WockyAPI.Resolvers.User do
   # This is kind of dumb - an anonymous user can see more than an authenticated
   # but blocked user...
   def get_user(_root, %{id: id}, _info) do
-    with %User{} = user <- Repo.get(User, id) do
+    with %User{} = user <- User.get_user(id) do
       {:ok, user}
     else
       _ -> user_not_found(id)

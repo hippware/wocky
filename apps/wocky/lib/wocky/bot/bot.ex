@@ -190,10 +190,25 @@ defmodule Wocky.Bot do
     end
   end
 
+  @doc false
   def get_query(id, include_pending \\ false) do
     Bot
     |> where(id: ^id)
     |> maybe_filter_pending(not include_pending)
+  end
+
+  @spec get_bot(id, User.t(), boolean) :: t | nil
+  def get_bot(id, requestor \\ nil, include_pending \\ false) do
+    id
+    |> get_bot_query(requestor, include_pending)
+    |> Repo.one()
+  end
+
+  @spec get_bot_query(id, User.t() | nil, boolean) :: Ecto.Queryable.t()
+  def get_bot_query(id, requestor \\ nil, include_pending \\ false) do
+    id
+    |> get_query(include_pending)
+    |> is_visible(requestor)
   end
 
   @spec preallocate(User.id(), User.server()) :: t | no_return
@@ -314,24 +329,39 @@ defmodule Wocky.Bot do
     Subscription.clear_guests(bot)
   end
 
-  @spec by_relationship_query(User.t(), atom()) :: Ecto.Queryable.t()
-  def by_relationship_query(user, :visible) do
-    Bot
-    |> Bot.is_visible_query(user)
+  @spec by_relationship_query(User.t(), atom(), User.t() | nil) ::
+          Ecto.Queryable.t()
+  def by_relationship_query(user, rel, user) do
+    by_relationship_query(user, rel)
   end
 
-  def by_relationship_query(user, :owned) do
+  def by_relationship_query(user, rel, requestor) do
+    user
+    |> by_relationship_query(rel)
+    |> is_visible(requestor)
+  end
+
+  defp by_relationship_query(user, :visible) do
+    is_visible(Bot, user)
+  end
+
+  defp by_relationship_query(user, :owned) do
     User.owned_bots_query(user)
   end
 
-  def by_relationship_query(user, :shared) do
-    Bot
-    |> join(:inner, [b], s in Share, b.id == s.bot_id and s.user_id == ^user.id)
+  defp by_relationship_query(user, :shared) do
+    join(
+      Bot,
+      :inner,
+      [b],
+      s in Share,
+      b.id == s.bot_id and s.user_id == ^user.id
+    )
   end
 
-  def by_relationship_query(user, :subscribed) do
-    Bot
-    |> join(
+  defp by_relationship_query(user, :subscribed) do
+    join(
+      Bot,
       :inner,
       [b],
       s in Subscription,
@@ -339,13 +369,13 @@ defmodule Wocky.Bot do
     )
   end
 
-  def by_relationship_query(user, :guest) do
+  defp by_relationship_query(user, :guest) do
     user
     |> by_relationship_query(:subscribed)
     |> where([..., s], s.guest)
   end
 
-  def by_relationship_query(user, :visitor) do
+  defp by_relationship_query(user, :visitor) do
     user
     |> by_relationship_query(:subscribed)
     |> where([..., s], s.visitor)
@@ -356,7 +386,7 @@ defmodule Wocky.Bot do
   def active_bots_query(user) do
     user
     |> by_relationship_query(:guest)
-    |> is_visible_query(user)
+    |> is_visible(user)
     |> join(
       :inner,
       [b],
@@ -441,8 +471,12 @@ defmodule Wocky.Bot do
     distance_from(bot, loc) <= bot.radius
   end
 
-  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
-  def is_visible_query(queryable, user) do
+  @spec is_visible(Queryable.t(), User.t() | nil) :: Queryable.t()
+  def is_visible(queryable, nil) do
+    queryable |> where([b, ...], b.public)
+  end
+
+  def is_visible(queryable, user) do
     queryable
     |> Block.object_visible_query(user.id)
     |> join(
@@ -455,11 +489,6 @@ defmodule Wocky.Bot do
       [b, ..., s],
       b.user_id == ^user.id or b.public or not is_nil(s.user_id)
     )
-  end
-
-  @spec is_public_query(Queryable.t()) :: Queryable.t()
-  def is_public_query(queryable) do
-    queryable |> where([b, ...], b.public)
   end
 
   @spec bump_update_time(Bot.t()) :: :ok
