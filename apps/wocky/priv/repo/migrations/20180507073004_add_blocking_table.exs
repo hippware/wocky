@@ -8,5 +8,8 @@ defmodule Wocky.Repo.Migrations.AddBlockingTable do
 
       timestamps()
     end
+
+    create index("blocks", [:blocker_id])
+    create index("blocks", [:blockee_id])
   end
 end
