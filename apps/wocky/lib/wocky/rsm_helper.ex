@@ -126,6 +126,7 @@ defmodule Wocky.RSMHelper do
     queryable
     |> exclude(:preload)
     |> exclude(:select)
+    |> exclude(:order_by)
     |> select([r, ...], count(field(r, ^key_field)))
     |> Repo.one!()
   end
@@ -138,6 +139,7 @@ defmodule Wocky.RSMHelper do
     queryable
     |> exclude(:preload)
     |> exclude(:select)
+    |> exclude(:order_by)
     |> select([r], count(field(r, ^sort_field)))
     |> index_where(pivot, sorting)
     |> Repo.one!()
