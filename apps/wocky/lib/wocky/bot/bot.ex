@@ -211,6 +211,14 @@ defmodule Wocky.Bot do
     |> is_visible_query(requestor)
   end
 
+  @spec get_owned_bot(id, User.t(), boolean) :: t | nil
+  def get_owned_bot(id, %User{id: user_id}, include_pending \\ false) do
+    Bot
+    |> where(id: ^id, user_id: ^user_id)
+    |> maybe_filter_pending(include_pending)
+    |> Repo.one()
+  end
+
   @spec preallocate(User.id(), User.server()) :: t | no_return
   def preallocate(user_id, server) do
     params = %{id: ID.new(), server: server, user_id: user_id, pending: true}

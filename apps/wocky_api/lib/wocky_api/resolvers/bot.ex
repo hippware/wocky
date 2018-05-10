@@ -82,7 +82,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def update_bot(_root, args, %{context: %{current_user: requestor}}) do
-    case Bot.get_bot(args[:input][:id], requestor, true) do
+    case Bot.get_owned_bot(args[:input][:id], requestor, true) do
       nil ->
         not_found_error(args[:input][:id])
 
