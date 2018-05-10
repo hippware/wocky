@@ -14,6 +14,13 @@ defmodule Wocky.Tasks.Predeploy do
     :init.stop()
   end
 
+  def run_migrate_only do
+    :ok = Application.load(:wocky)
+
+    migrate()
+    :init.stop()
+  end
+
   defp notify do
     Application.ensure_all_started(:slack_ex)
     client = :wocky |> Confex.get_env(:slack_token) |> Slack.client()
