@@ -10,6 +10,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Validate access rule in TROS metadata (#1492)
 * User update mutation should return a useful error message (#1498)
 * Reduce N+1 queries for one-to-one relationships (PR #1500)
+* Update MIM to fix: badkey error when running ejabberd hooks (#1330)
+* Blocking rework (#1501)
 
 
 # 2018.5.4+r4bdd0ed
