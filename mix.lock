@@ -8,6 +8,7 @@
   "accept": {:hex, :accept, "0.3.3", "548ebb6fb2e8b0d170e75bb6123aea6ceecb0189bb1231eeadf52eac08384a97", [:rebar3], [], "hexpm"},
   "aleppo": {:hex, :inaka_aleppo, "1.0.0", "8db14cf16bb8c263c14ff4c3f69f64d7c849d40888944f4204d2ca74f1114ceb", [:rebar3], [], "hexpm"},
   "algolia": {:hex, :algolia, "0.6.5", "daa90ce2e3c6a3569ef97b451c617c53bc71bf4a4c6e52027fdc9d36f426b4ec", [:mix], [{:hackney, "~> 1.9 or ~> 1.10", [hex: :hackney, repo: "hexpm", optional: false]}, {:poison, "~> 2.2 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
+  "apollo_tracing": {:hex, :apollo_tracing, "0.4.1", "210d20693f88bd133a55b04dc1d990ce68ce620a804773731faf180b8b85aa4e", [:mix], [{:absinthe, "~> 1.4", [hex: :absinthe, repo: "hexpm", optional: false]}, {:absinthe_plug, "~> 1.4", [hex: :absinthe_plug, repo: "hexpm", optional: true]}], "hexpm"},
   "bamboo": {:hex, :bamboo, "0.8.0", "573889a3efcb906bb9d25a1c4caa4ca22f479235e1b8cc3260d8b88dabeb4b14", [:mix], [{:hackney, "~> 1.6", [hex: :hackney, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}, {:poison, ">= 1.5.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "base16": {:hex, :base16, "1.0.0", "283644e2b21bd5915acb7178bed7851fb07c6e5749b8fad68a53c501092176d9", [:rebar3], [], "hexpm"},
   "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},

@@ -39,5 +39,6 @@ defmodule WockyAPI.Schema do
     middleware
     |> Auth.middleware(field, object)
     |> Instrumenter.instrument(field, object)
+    |> Enum.into([ApolloTracing.Middleware.Tracing])
   end
 end
