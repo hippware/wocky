@@ -395,6 +395,7 @@ defmodule Wocky.Bot do
     bot
     |> Ecto.assoc(:subscribers)
     |> where([..., s], s.visitor)
+    |> order_by([..., s], desc: s.visited_at)
   end
 
   @spec subscribers(t) :: [User.t()]
