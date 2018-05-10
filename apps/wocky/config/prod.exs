@@ -10,7 +10,8 @@ config :wocky, Wocky.Mailer,
   api_key: {:system, :string, "MANDRILL_API_KEY"}
 
 config :wocky_db_watcher,
-  backend: {:system, :module, "WOCKY_DB_WATCHER_BACKEND", WockyDBWatcher.Backend.SQS}
+  backend:
+    {:system, :module, "WOCKY_DB_WATCHER_BACKEND", WockyDBWatcher.Backend.SQS}
 
 config :wocky_db_watcher, WockyDBWatcher.Backend.SQS,
   region: {:system, :string, "WOCKY_DB_WATCHER_REGION"},
