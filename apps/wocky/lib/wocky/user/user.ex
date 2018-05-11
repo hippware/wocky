@@ -149,6 +149,13 @@ defmodule Wocky.User do
     end
   end
 
+  @spec get_user(id, t | nil) :: t | nil
+  def get_user(id, requestor \\ nil) do
+    if is_nil(requestor) || !Block.blocked?(requestor.id, id) do
+      Repo.get(User, id)
+    end
+  end
+
   @doc "Returns all bots that the user subscribes to"
   @spec get_subscriptions(t) :: [Bot.t()]
   def get_subscriptions(user) do

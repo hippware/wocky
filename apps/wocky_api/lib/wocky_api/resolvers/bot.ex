@@ -12,11 +12,7 @@ defmodule WockyAPI.Resolvers.Bot do
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
-    {:ok,
-     args[:id]
-     |> Bot.get_query()
-     |> visible_query(Map.get(context, :current_user))
-     |> Repo.one()}
+    {:ok, Bot.get_bot(args[:id], Map.get(context, :current_user))}
   end
 
   def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do
@@ -33,15 +29,13 @@ defmodule WockyAPI.Resolvers.Bot do
 
   defp do_get_bots(user, requestor, %{id: id} = args) do
     id
-    |> Bot.get_query()
-    |> visible_query(requestor)
+    |> Bot.get_bot_query(requestor)
     |> Utils.connection_from_query(user, args)
   end
 
   defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
     user
-    |> Bot.by_relationship_query(relationship)
-    |> visible_query(requestor)
+    |> Bot.by_relationship_query(relationship, requestor)
     |> Utils.connection_from_query(user, args)
   end
 
@@ -87,14 +81,14 @@ defmodule WockyAPI.Resolvers.Bot do
     |> Bot.insert()
   end
 
-  def update_bot(_root, args, %{context: %{current_user: %{id: user_id}}}) do
-    case Bot.get(args[:input][:id], true) do
-      %Bot{user_id: ^user_id} = bot ->
+  def update_bot(_root, args, %{context: %{current_user: requestor}}) do
+    case Bot.get_owned_bot(args[:input][:id], requestor, true) do
+      nil ->
+        not_found_error(args[:input][:id])
+
+      bot ->
         updates = parse_lat_lon(args[:input][:values])
         Bot.update(bot, updates)
-
-      nil ->
-        {:error, "Invalid bot"}
     end
   end
 
@@ -136,24 +130,24 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "At least one of 'id' or 'type' must be specified"}
   end
 
-  def subscribe(_root, args, %{context: %{current_user: user}}) do
-    case Bot.get(args[:id]) do
+  def subscribe(_root, args, %{context: %{current_user: requestor}}) do
+    case Bot.get_bot(args[:id], requestor) do
       nil ->
         not_found_error(args[:id])
 
       bot ->
-        Bot.subscribe(bot, user, args[:guest] || false)
+        Bot.subscribe(bot, requestor, args[:guest] || false)
         {:ok, %{result: true}}
     end
   end
 
-  def unsubscribe(_root, args, %{context: %{current_user: user}}) do
-    case Bot.get(args[:id]) do
+  def unsubscribe(_root, args, %{context: %{current_user: requestor}}) do
+    case Bot.get_bot(args[:id], requestor) do
       nil ->
         not_found_error(args[:id])
 
       bot ->
-        Bot.unsubscribe(bot, user)
+        Bot.unsubscribe(bot, requestor)
         {:ok, %{result: true}}
     end
   end
@@ -182,14 +176,4 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
-
-  defp visible_query(query, nil) do
-    query
-    |> Bot.is_public_query()
-  end
-
-  defp visible_query(query, user) do
-    query
-    |> Bot.is_visible_query(user)
-  end
 end
