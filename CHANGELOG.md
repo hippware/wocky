@@ -12,6 +12,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Reduce N+1 queries for one-to-one relationships (PR #1500)
 * Update MIM to fix: badkey error when running ejabberd hooks (#1330)
 * Blocking rework (#1501)
+* Add Apollo tracing metadata to GraphQL (#1447)
+* Create Docker setup for Front End devs to run Wocky locally (#1336)
+  * Ensure wocky_db_watcher is started in desktop mode (PR #1510)
+* Add sorting criteria to the other visitors query (PR #1509)
+* Do visibility checking in the business logic (PR #1505)
+  * Part of: Bake permissions and blocking into standard wocky interface (#1391)
 
 
 # 2018.5.4+r4bdd0ed
