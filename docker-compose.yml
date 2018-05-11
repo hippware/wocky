@@ -27,6 +27,7 @@ services:
             WOCKY_DB_WATCHER_BACKEND: "WockyDBWatcher.Backend.Direct"
             DAWDLE_BACKEND: "Dawdle.Backend.Local"
             KUBE_POD_NS: "local-dev"
+            WOCKY_START_WATCHER: "true"
         command: ["dev_startup"]
         hostname: "wocky-private"
         domainname: "local-dev.svc.cluster.local"
