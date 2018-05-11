@@ -11,9 +11,15 @@
     - name: int_test
       command: make inttest
   - type: serial
-    tag: master
     steps:
+    - name: dockerlint_build
+      service: dockerlint
+      command: dockerlint -f Dockerfile.build
+    - name: dockerlint_release
+      service: dockerlint
+      command: dockerlint -f Dockerfile.release
     - name: release
+      tag: master
       service: wocky-build
       command: make release
     - name: push_latest_image
