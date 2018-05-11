@@ -17,6 +17,10 @@ defmodule Wocky.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    if Confex.get_env(:wocky, :start_watcher) do
+      Application.ensure_all_started(:wocky_db_watcher)
+    end
+
     Mailer.init()
 
     sup =
