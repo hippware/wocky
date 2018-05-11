@@ -8,24 +8,24 @@ ENV REFRESHED_AT=2018-01-10 \
     LANG=en_US.UTF-8 \
     HOME=/opt/app \
     SHELL=/bin/sh \
-    # Set this so that CTRL+G works properly
+    # Set this so that CTRL+G works properly \
     TERM=xterm \
-    # Minimum configuration necessary to boot Wocky
+    # Minimum configuration necessary to boot Wocky \
     WOCKY_ENV=prod \
     WOCKY_INST=testing \
     WOCKY_HOST=localhost \
     REPLACE_OS_VARS=true
 
 RUN \
-    # Create default user and home directory, set owner to default
+    # Create default user and home directory, set owner to default \
     mkdir -p ${HOME} && \
     mkdir -p ${HOME}/var/log && \
     mkdir -p ${HOME}/var/mnesia && \
     adduser -s /bin/sh -u 1001 -G root -h ${HOME} -S -D default && \
     chown -R 1001:0 ${HOME} && \
-    # Upgrade Alpine and base packages
+    # Upgrade Alpine and base packages \
     apk --no-cache upgrade && \
-    # Install necessary shared libs
+    # Install necessary shared libs \
     apk add --no-cache \
       bash \
       ca-certificates \
@@ -37,7 +37,7 @@ RUN \
       tcpdump \
       zlib && \
     chmod +s /usr/sbin/tcpdump && \
-    # Update ca certificates
+    # Update ca certificates \
     update-ca-certificates --fresh
 
 USER default
@@ -50,7 +50,7 @@ EXPOSE 8080 5222 5269 4369 9100
 VOLUME ["/opt/app/var/mnesia", "/opt/app/var/log"]
 
 # Deploy the application into the container
-ARG RELEASE_NAME
+ARG RELEASE_NAME=wocky
 COPY ./tmp/artifacts/${RELEASE_NAME}.tar.gz ./
 RUN tar xfz ${RELEASE_NAME}.tar.gz && \
     rm -f ${RELEASE_NAME}.tar.gz
