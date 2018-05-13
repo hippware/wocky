@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.5.11+r280f940
+
 * Fix crash on DB callback (#1486, PR #1491)
 * Make graphql complexity configurable (PR #1495)
 * Validate access rule in TROS metadata (#1492)
