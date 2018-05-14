@@ -36,6 +36,10 @@ dockerlint: ## Run dockerlint on the Dockerfiles
 	@echo "Checking Dockerfile.release..."
 	@docker run -it --rm -v "${PWD}/Dockerfile.release":/Dockerfile:ro redcoolbeans/dockerlint:latest
 
+kubeval: ## Run kubeval on all Kubernetes manifests
+	@echo "Checking Kubernetes manifests..."
+	@docker run -it -v "${PWD}/k8s":/k8s garethr/kubeval k8s/*/*.yml*
+
 release: ## Build the release tarball
 	MIX_ENV=prod mix release --warnings-as-errors --name $(RELEASE_NAME)
 	cp _build/prod/rel/$(RELEASE_NAME)/releases/$(VERSION)/$(RELEASE_NAME).tar.gz /artifacts
