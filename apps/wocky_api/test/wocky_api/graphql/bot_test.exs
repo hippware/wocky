@@ -268,8 +268,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                      }
                    ],
                    "pageInfo" => %{
-                     # Allowed by spec for efficency purposes
-                     "hasNextPage" => false,
+                     "hasNextPage" => true,
                      "hasPreviousPage" => true
                    }
                  }
