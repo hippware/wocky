@@ -582,7 +582,7 @@ allow_to_result(_) -> deny.
 
 is_access_valid(BotNode) ->
     BotID = ?wocky_bot:get_id_from_node(BotNode),
-    ?wocky_id:'valid?'(BotID) andalso ?wocky_bot:get(BotID) =/= nil.
+    ?wocky_id:'valid?'(BotID) andalso ?wocky_bot:get(BotID, true) =/= nil.
 
 %%%===================================================================
 %%% Common helpers
