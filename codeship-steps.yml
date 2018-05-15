@@ -11,22 +11,30 @@
     - name: int_test
       command: make inttest
   - type: serial
-    tag: master
     steps:
+    - name: dockerlint_build
+      service: dockerlint
+      command: dockerlint -f Dockerfile.build
+    - name: dockerlint_release
+      service: dockerlint
+      command: dockerlint -f Dockerfile.release
     - name: release
+      tag: master
       service: wocky-build
       command: make release
-    - name: push_latest_image
-      service: wocky-rel
-      type: push
-      image_tag: latest
-      image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
-      registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-      dockercfg_service: aws-dockercfg
-    - name: push_tagged_image
-      service: wocky-rel
-      type: push
-      image_tag: "{{.CommitID}}"
-      image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
-      registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-      dockercfg_service: aws-dockercfg
+- name: push_latest_image
+  service: wocky-rel
+  type: push
+  tag: master
+  image_tag: latest
+  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+  dockercfg_service: aws-dockercfg
+- name: push_tagged_image
+  service: wocky-rel
+  type: push
+  tag: master
+  image_tag: "{{.CommitID}}"
+  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+  dockercfg_service: aws-dockercfg

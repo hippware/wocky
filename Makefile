@@ -36,6 +36,10 @@ dockerlint: ## Run dockerlint on the Dockerfiles
 	@echo "Checking Dockerfile.release..."
 	@docker run -it --rm -v "${PWD}/Dockerfile.release":/Dockerfile:ro redcoolbeans/dockerlint:latest
 
+kubeval: ## Run kubeval on all Kubernetes manifests
+	@echo "Checking Kubernetes manifests..."
+	@docker run -it -v "${PWD}/k8s":/k8s garethr/kubeval k8s/*/*.yml*
+
 release: ## Build the release tarball
 	MIX_ENV=prod mix release --warnings-as-errors --name $(RELEASE_NAME)
 	cp _build/prod/rel/$(RELEASE_NAME)/releases/$(VERSION)/$(RELEASE_NAME).tar.gz /artifacts
@@ -60,6 +64,7 @@ push: ## Push the Docker image to ECR
 ### Cluster deployment
 
 deploy: ## Deploy the image to the cluster
+	@docker run -it -v "${PWD}/k8s":/k8s garethr/kubeval k8s/$(WOCKY_ENV)/*.yml*
 	@KUBECONFIG=~/.kube/config REVISION=$(IMAGE_TAG) \
 		kubernetes-deploy $(KUBE_NS) tectonic --template-dir=k8s/$(WOCKY_ENV) \
 			--bindings=watcher_sha=$(WATCHER_SHA)
