@@ -102,12 +102,21 @@ defmodule :tros_permissions_spec do
         |> Bot.to_jid()
         |> JID.to_binary()
 
+      pending_bot_jid =
+        :bot
+        |> Factory.insert(pending: true)
+        |> Bot.to_jid()
+        |> JID.to_binary()
+
       alice_jid =
         shared.alice
         |> User.to_jid()
         |> JID.to_binary()
 
-      {:ok, alice_jid: alice_jid, bot_jid: bot_jid}
+      {:ok,
+       alice_jid: alice_jid,
+       bot_jid: bot_jid,
+       pending_bot_jid: pending_bot_jid}
     end
 
     it "should pass valid access rules" do
@@ -116,6 +125,7 @@ defmodule :tros_permissions_spec do
       is_valid("friends:" <> shared.alice_jid) |> should(be_true())
       is_valid("members:any_group_name") |> should(be_true())
       is_valid("redirect:" <> shared.bot_jid) |> should(be_true())
+      is_valid("redirect:" <> shared.pending_bot_jid) |> should(be_true())
     end
 
     it "should fail invalid rules" do
