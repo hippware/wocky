@@ -5,9 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.5.15+ra3dbb55
+
 * Update absinthe_relay for invalid cursor fix (PR #1514)
   * "Internal server error" on bot subscribers (#1512)
 * Add dockerlint to Codeship; Make target for kubeval (PR #1516)
+* New distillery version (PR #1523)
+* Fix image uploads for pending bots (PR #1525)
 
 
 # 2018.5.11+r280f940
