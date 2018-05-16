@@ -33,9 +33,7 @@ config :wocky,
   bot_report_channel:
     {:system, :string, "WOCKY_BOT_REPORT_CHANNEL", "wocky-reports"},
   bot_report_days: {:system, :integer, "WOCKY_BOT_REPORT_DAYS", 7},
-  slack_token:
-    {:system, :string, "SLACK_TOKEN",
-     "xoxb-141728662948-FN75kAhQfnpwil6HbAi5LIQg"},
+  slack_token: {:system, :string, "SLACK_TOKEN"},
 
   # Authentication
   enable_auth_bypass: {:system, :boolean, "WOCKY_ENABLE_BYPASS", true},
