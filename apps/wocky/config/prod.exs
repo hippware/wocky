@@ -3,7 +3,7 @@ use Mix.Config
 config :wocky,
   visit_timeout_enabled: false,
   async_location_processing: true,
-  tros_backend: Wocky.TROS.S3Store,
+  tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.S3Store},
   start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false}
 
 config :wocky, Wocky.Mailer,

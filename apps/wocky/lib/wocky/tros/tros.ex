@@ -132,6 +132,6 @@ defmodule Wocky.TROS do
   def thumbnail_id(file_id), do: file_id <> @thumbnail_suffix
 
   defp backend do
-    Application.fetch_env!(:wocky, :tros_backend)
+    Confex.get_env(:wocky, :tros_backend)
   end
 end

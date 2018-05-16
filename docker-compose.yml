@@ -1,9 +1,18 @@
 version: '3'
 services:
+    s3:
+        image: mayth/simple-upload-server
+        command: ["app", "-token", "1234", "-port", "4569", "/var/root"]
+        volumes:
+            - fake-s3:/var/root
+        ports:
+            - "4569:4569"
     redis:
         image: redis:3.2-alpine
     postgres:
         image: mdillon/postgis:9.6-alpine
+        ports:
+            - "5433:5432"
         environment:
             POSTGRES_PASSWORD: "password"
             POSTGRES_DB: "wocky"
@@ -14,6 +23,7 @@ services:
         image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
         ports:
             - "5222:5222"
+            - "5280:5280"
             - "8080:8080"
         environment:
             WOCKY_DB_NAME: "wocky"
@@ -22,12 +32,18 @@ services:
             WOCKY_DB_PASSWORD: "password"
             REDIS_HOST: "redis"
             REDIS_PORT: "6379"
+            BAMBOO_ADAPTER: "Bamboo.TestAdapter"
             MANDRILL_API_KEY: ""
             HONEYBADGER_API_KEY: ""
             WOCKY_DB_WATCHER_BACKEND: "WockyDBWatcher.Backend.Direct"
             DAWDLE_BACKEND: "Dawdle.Backend.Local"
             KUBE_POD_NS: "local-dev"
+            KUBE_POD_IP: "wocky-private.local-dev.svc.cluster.local"
             WOCKY_START_WATCHER: "true"
+            WOCKY_TROS_STORE: "Wocky.TROS.SimpleStore"
         command: ["dev_startup"]
         hostname: "wocky-private"
         domainname: "local-dev.svc.cluster.local"
+
+volumes:
+    fake-s3:
