@@ -55,6 +55,13 @@ defmodule Wocky.TROS.Metadata do
     end
   end
 
+  def set_ready(id) do
+    TROSMetadata
+    |> Repo.get!(id)
+    |> changeset(%{ready: true})
+    |> Repo.update!()
+  end
+
   @spec get(id) :: t | nil
   def get(id) do
     TROSMetadata

@@ -85,7 +85,7 @@ defmodule Wocky.TROS.S3Store do
     ]
 
     url =
-      "https://#{upload_bucket()}.s3.amazonaws.com/#{path(lserver, file_id)}"
+      "https://#{upload_bucket()}.#{s3_server()}/#{path(lserver, file_id)}"
 
     {:ok, ret_headers} =
       Auth.headers(:put, url, :s3, make_config(), headers, nil)
@@ -125,6 +125,8 @@ defmodule Wocky.TROS.S3Store do
   def upload_bucket, do: "#{bucket()}-quarantine"
 
   def bucket, do: get_opt(:tros_s3_bucket)
+
+  def s3_server, do: get_opt(:tros_s3_server)
 
   def access_key_id, do: get_opt(:tros_s3_access_key_id)
 
