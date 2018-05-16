@@ -377,6 +377,12 @@ defmodule Wocky.Bot do
     )
   end
 
+  defp by_relationship_query(user, :subscribed_not_owned) do
+    user
+    |> by_relationship_query(:subscribed)
+    |> where([b, ...], b.user_id != ^user.id)
+  end
+
   defp by_relationship_query(user, :guest) do
     user
     |> by_relationship_query(:subscribed)

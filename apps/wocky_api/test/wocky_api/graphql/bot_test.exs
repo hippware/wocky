@@ -116,6 +116,40 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     @query """
+    query {
+      currentUser {
+        bots (first: 1, relationship: SUBSCRIBED_NOT_OWNED) {
+          totalCount
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get subscribed but not owned bots", %{user: user, bot2: bot2} do
+      Bot.subscribe(bot2, user)
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 1,
+                   "edges" => [
+                     %{"node" => %{"id" => bot2.id}}
+                   ]
+                 }
+               }
+             }
+    end
+
+    @query """
     query ($id: UUID!) {
       user (id: $id) {
         bots (first: 1, relationship: OWNED) {
