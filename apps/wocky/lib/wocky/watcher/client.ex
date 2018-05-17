@@ -8,7 +8,6 @@ defmodule Wocky.Watcher.Client do
     @moduledoc "State record for wocky watcher client"
 
     defstruct [
-      :enabled,
       :subscribers,
       :table_map
     ]
@@ -35,14 +34,6 @@ defmodule Wocky.Watcher.Client do
     GenServer.call(__MODULE__, :clear_all_subscriptions)
   end
 
-  def suspend_notifications do
-    GenServer.call(__MODULE__, {:enable, false})
-  end
-
-  def resume_notifications do
-    GenServer.call(__MODULE__, {:enable, true})
-  end
-
   def init(_) do
     source =
       :wocky_db_watcher
@@ -51,11 +42,7 @@ defmodule Wocky.Watcher.Client do
     source.init
     Poller.start_link(source, __MODULE__)
 
-    {:ok, %State{enabled: true, subscribers: %{}, table_map: Map.new()}}
-  end
-
-  def handle_cast({:send, _events}, %{enabled: false} = state) do
-    {:noreply, state}
+    {:ok, %State{subscribers: %{}, table_map: Map.new()}}
   end
 
   def handle_cast({:send, events}, state) do
@@ -91,10 +78,6 @@ defmodule Wocky.Watcher.Client do
 
   def handle_call(:clear_all_subscriptions, _from, state) do
     {:reply, :ok, %{state | subscribers: %{}}}
-  end
-
-  def handle_call({:enable, enable}, _from, state) do
-    {:reply, :ok, %{state | enabled: enable}}
   end
 
   defp forward_event(json_event, state) do

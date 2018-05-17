@@ -125,6 +125,12 @@ defmodule Wocky.Mixfile do
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:meck, "~> 0.8", only: :test, override: true},
       {:reprise, "~> 0.5", only: :dev},
+      {:distillery,
+        github: "hippware/distillery",
+        branch: "working",
+        runtime: false,
+        override: true
+      },
       {:wocky_db_watcher,
        git: "https://github.com/hippware/wocky_db_watcher.git",
        branch: "master",

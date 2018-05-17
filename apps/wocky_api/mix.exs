@@ -71,7 +71,12 @@ defmodule WockyAPI.Mixfile do
       {:reprise, "~> 0.5", only: :dev},
       {:kronky, "~> 0.5.0"},
       {:cors_plug, "~> 1.5"},
-      {:apollo_tracing, "~> 0.4.0"}
+      {:apollo_tracing, "~> 0.4.0"},
+      {:distillery,
+        github: "hippware/distillery",
+        branch: "working",
+        runtime: false,
+        override: true},
     ]
   end
 
