@@ -3,8 +3,6 @@ defmodule Wocky.User.Avatar do
   Validation and logic regarding user avatars.
   """
 
-  import OK, only: [~>>: 2]
-
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
@@ -14,29 +12,31 @@ defmodule Wocky.User.Avatar do
   @type t :: {User.server(), User.id()}
 
   @spec validate(User.t(), t()) :: {:ok, t()} | {:error, :atom}
-  def validate(user, avatar) do
-    prepare(avatar)
-    ~>> check_valid_filename()
-    ~>> check_is_local(user.server)
-    ~>> check_owner(user.id)
+  def validate(user, avatar_url) do
+    with {:ok, avatar} <- prepare(avatar_url),
+         :ok <- check_is_local(avatar, user.server),
+         :ok <- check_valid_filename(avatar),
+         :ok <- check_owner(avatar, user.id) do
+      {:ok, avatar}
+    end
   end
 
   defp prepare(avatar_url), do: TROS.parse_url(avatar_url)
 
-  defp check_is_local({server, _} = avatar, server), do: {:ok, avatar}
+  defp check_is_local({server, _} = _avatar, server), do: :ok
   defp check_is_local(_, _), do: {:error, :not_local_file}
 
-  defp check_valid_filename({_server, file_id} = avatar) do
+  defp check_valid_filename({_server, file_id} = _avatar) do
     if ID.valid?(file_id) do
-      {:ok, avatar}
+      :ok
     else
       {:error, :invalid_file}
     end
   end
 
-  defp check_owner({_server, id} = avatar, user_id) do
+  defp check_owner({_server, id} = _avatar, user_id) do
     case TROS.get_metadata(id) do
-      {:ok, %Metadata{user_id: ^user_id}} -> {:ok, avatar}
+      {:ok, %Metadata{user_id: ^user_id}} -> :ok
       {:ok, _} -> {:error, :not_file_owner}
       error -> error
     end
