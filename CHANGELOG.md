@@ -5,6 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Remove mod_wocky_cli (PR #1526)
+* Remove old slack token (PR #1529)
+* Some more fixes for desktop mode (PR #1528)
+* Add Rexbug and recon for runtime debugging (PR #1531)
+* Add a SUBSCRIBED_NOT_OWNED relationship for bots (PR #1530)
+  * Create new bot relationship to get all subscribed but not owned bots (#1522)
+
+
 # 2018.5.15+ra3dbb55
 
 * Update absinthe_relay for invalid cursor fix (PR #1514)
