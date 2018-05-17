@@ -49,7 +49,7 @@ defmodule Wocky.Bot do
     field :address_data, :string, default: ""
     # Opaque field containing adress related information
     # Location
-    field :location, Geo.Point
+    field :location, Geo.PostGIS.Geometry
     # Radius of bot circle
     field :radius, :float, default: 100.0
     # Visibility of bot

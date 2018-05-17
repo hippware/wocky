@@ -91,7 +91,7 @@ defmodule Wocky.Mixfile do
       {:guardian, "~> 1.0"},
       {:guardian_firebase, "~> 0.1.0"},
       {:gen_stage, "~> 0.12"},
-      {:geo_postgis, "~> 1.1"},
+      {:geo_postgis, "~> 2.0"},
       {:geocalc, "~> 0.5"},
       {:hackney, "~> 1.7"},
       {:honeybadger, "~> 0.6"},
