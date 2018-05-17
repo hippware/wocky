@@ -61,7 +61,7 @@
   "exometer_prometheus": {:git, "https://github.com/GalaxyGorilla/exometer_prometheus.git", "9eb0481b0418124145c831a4b70d942a176aa232", [branch: "master"]},
   "exvcr": {:hex, :exvcr, "0.10.0", "5150808404d9f48dbda636f70f7f8fefd93e2433cd39f695f810e73b3a9d1736", [:mix], [{:exactor, "~> 2.2", [hex: :exactor, repo: "hexpm", optional: false]}, {:exjsx, "~> 4.0", [hex: :exjsx, repo: "hexpm", optional: false]}, {:httpoison, "~> 0.13", [hex: :httpoison, repo: "hexpm", optional: true]}, {:httpotion, "~> 3.0", [hex: :httpotion, repo: "hexpm", optional: true]}, {:ibrowse, "~> 4.4", [hex: :ibrowse, repo: "hexpm", optional: true]}, {:meck, "~> 0.8.8", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
   "faker": {:hex, :faker, "0.10.0", "367c2ae47e7b4ac6410e1eaa880c07b5fe4194476f697d37ac1ce25f3058aae2", [:mix], [], "hexpm"},
-  "fast_tls": {:hex, :fast_tls, "1.0.21", "7005fe030c0472643314c9c31e7627bb296dcb96a9ce0b5dd8ccb34273f4c1ff", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
+  "fast_tls": {:hex, :fast_tls, "1.0.22", "d41d1827c436fa914436984bea0ba9a62bce60473b8d65129b6d331966fb7cfc", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "folsom": {:hex, :folsom, "0.8.5", "94a027b56fe84feed264f9b33cb4c6ac9a801fad84b87dbda0836ce83c3b8d69", [:rebar3], [{:bear, "0.8.5", [hex: :bear, repo: "hexpm", optional: false]}], "hexpm"},
   "fs": {:hex, :fs, "0.9.2", "ed17036c26c3f70ac49781ed9220a50c36775c6ca2cf8182d123b6566e49ec59", [:rebar], [], "hexpm"},
   "fun_chain": {:git, "https://github.com/sasa1977/fun_chain.git", "e6eede57b74e7588f7aadcf21602023a21c18910", [branch: "master"]},
