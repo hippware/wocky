@@ -42,11 +42,9 @@ defmodule Wocky.Block do
 
   @spec unblock(User.t(), User.t()) :: :ok
   def unblock(blocker, blockee) do
-    %Block{
-      blocker_id: blocker.id,
-      blockee_id: blockee.id
-    }
-    |> Repo.delete()
+    Block
+    |> where(blocker_id: ^blocker.id, blockee_id: ^blockee.id)
+    |> Repo.delete_all()
 
     :ok
   end
