@@ -109,7 +109,7 @@ defmodule Wocky.XMPP.Mixfile do
        manager: :rebar3},
       {:stringprep, "1.0.11", override: true},
       {:cache_tab, "1.0.13", override: true},
-      {:fast_tls, "1.0.21", override: true},
+      {:fast_tls, "1.0.22", override: true},
 
       # dev dependencies
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
