@@ -131,7 +131,6 @@ login_with_non_string_provider(Config) ->
     BrokenData = [{provider, 1000000} | proplists:delete(provider, Data)],
     BrokenStanza = request_stanza(BrokenData),
     Result = escalus:send_and_wait(Client, BrokenStanza),
-    ct:pal("~p", [Result]),
     assert_is_malformed_error(Result).
 
 login_with_missing_provider(Config) ->
