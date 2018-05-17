@@ -145,8 +145,11 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "A bot has been explicitly shared to the user"
     value :shared
 
-    @desc "The user has subscribed to the bot"
+    @desc "The user has subscribed to the bot (including owned bots)"
     value :subscribed
+
+    @desc "The user has subscribed to the bot and does not own it"
+    value :subscribed_not_owned
 
     @desc "The user is a guest of the bot (will fire entry/exit events)"
     value :guest
