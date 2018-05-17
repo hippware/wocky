@@ -58,8 +58,8 @@ do_authenticate_user(JSON) ->
     lager:debug("Authenticating user with packet: ~p", [JSON]),
     do([error_m ||
         Elements <- decode_json(JSON),
-        Provider <- get_required_field(Elements, <<"provider">>),
-        Resource <- get_required_field(Elements, <<"resource">>),
+        Provider <- get_required_string_field(Elements, <<"provider">>),
+        Resource <- get_required_string_field(Elements, <<"resource">>),
         ProviderData <- get_provider_data(Elements),
         GetToken <- get_token(Elements),
         {User, IsNew} <- authenticate_user(Provider, ProviderData),
@@ -80,9 +80,11 @@ get_field(Field, Elements) ->
         error -> {ok, <<>>}
     end.
 
-get_required_field(Elements, Field) ->
+get_required_string_field(Elements, Field) ->
     case maps:find(Field, Elements) of
-        {ok, Value} -> {ok, Value};
+        {ok, Value} when is_binary(Value) -> {ok, Value};
+        {ok, _Value} -> {error, {"malformed-request",
+                                 [Field, " field must be a string"]}};
         error -> {error, {"malformed-request",
                           ["Missing ", Field, " field"]}}
     end.

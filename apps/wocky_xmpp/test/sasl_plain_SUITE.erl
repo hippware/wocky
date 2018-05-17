@@ -41,6 +41,7 @@ new_cases() ->
 existing_cases() ->
     [
      login_with_invalid_json,
+     login_with_non_string_provider,
      login_with_missing_provider,
      login_with_invalid_provider,
      login_with_digits,
@@ -121,6 +122,16 @@ login_with_invalid_json(Config) ->
     Client = start_client(Config),
     Stanza = request_stanza(<<"Not at all valid JSON">>),
     Result = escalus:send_and_wait(Client, Stanza),
+    assert_is_malformed_error(Result).
+
+login_with_non_string_provider(Config) ->
+    Client = start_client(Config),
+    User = proplists:get_value(user, Config),
+    Data = request_data(firebase, provider_data(firebase, User)),
+    BrokenData = [{provider, 1000000} | proplists:delete(provider, Data)],
+    BrokenStanza = request_stanza(BrokenData),
+    Result = escalus:send_and_wait(Client, BrokenStanza),
+    ct:pal("~p", [Result]),
     assert_is_malformed_error(Result).
 
 login_with_missing_provider(Config) ->
