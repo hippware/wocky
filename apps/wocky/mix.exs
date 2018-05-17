@@ -99,7 +99,6 @@ defmodule Wocky.Mixfile do
       {:joken, "~> 1.1"},
       {:jsx, "~> 2.8"},
       {:kadabra, "~> 0.3"},
-      {:ok, "~> 1.2", runtime: false},
       {:peerage, "~> 1.0"},
       {:pigeon, "~> 1.1"},
       {:poolboy, "~> 1.5"},
