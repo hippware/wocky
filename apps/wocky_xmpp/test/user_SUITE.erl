@@ -389,9 +389,10 @@ bulk_get_empty(Config) ->
 %%--------------------------------------------------------------------
 
 set_fields(Config) ->
+    AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
     ?wocky_repo:delete_all(?tros_metadata),
     ?wocky_factory:insert(tros_metadata, [{id, ?AVATAR_FILE},
-                                          {user_id, ?ALICE},
+                                          {user, AliceUser},
                                           {access, <<"all">>}]),
     escalus:story(Config, [{alice, 1}, {robert, 1}], fun(Alice, Robert) ->
         test_helper:befriend(Alice, Robert),
