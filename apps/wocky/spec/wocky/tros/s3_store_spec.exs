@@ -3,6 +3,7 @@ defmodule Wocky.TROS.S3StoreSpec do
 
   alias Faker.Lorem
   alias Wocky.JID
+  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS.S3Store
 
@@ -63,6 +64,22 @@ defmodule Wocky.TROS.S3StoreSpec do
       |> should(match(@url_re))
 
       :proplists.get_value("method", shared.fields) |> should(eq "PUT")
+    end
+  end
+
+  describe "get_download_url/3" do
+    it "should return a valid URL when the file is ready" do
+      image = Factory.insert(:tros_metadata)
+
+      S3Store.get_download_url("localhost", image, image.id)
+      |> should(match(@url_re))
+    end
+
+    it "should return an empty URL when the file is not ready" do
+      image = Factory.insert(:tros_metadata, ready: false)
+
+      S3Store.get_download_url("localhost", image, image.id)
+      |> should(eq "")
     end
   end
 end
