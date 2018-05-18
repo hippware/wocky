@@ -223,7 +223,7 @@ reset_tables(Config) ->
     Bot = ?wocky_factory:insert(bot, B),
 
     ?wocky_factory:insert(tros_metadata, [{id, ?ITEM_IMAGE_ID},
-                                          {user_id, ?ALICE},
+                                          {user, Alice},
                                           {access, <<"all">>}]),
     ?wocky_item:put(Bot, Alice, ?ITEM, ?ITEM_STANZA, true),
     ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2, false),
@@ -847,10 +847,11 @@ item_images(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
         ItemIDs = lists:seq(0, 9),
+        AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
         Images =
         lists:map(
           fun(_) ->
-                  ?wocky_factory:insert(tros_metadata, [{user_id, ?ALICE},
+                  ?wocky_factory:insert(tros_metadata, [{user, AliceUser},
                                                         {access, <<"all">>}])
           end, ItemIDs),
         ImageIDs = lists:map(maps:get(id, _), Images),
