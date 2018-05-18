@@ -16,13 +16,15 @@ defmodule WockyAPI.Callbacks.HomeStreamItem do
     UserResolver.notify_home_stream(item, :insert)
   end
 
-  def handle_update(%Event{old: %Item{class: :deleted},
-    new: %Item{class: :deleted}}) do
-      :ok
-    end
+  def handle_update(%Event{
+        old: %Item{class: :deleted},
+        new: %Item{class: :deleted}
+      }) do
+    :ok
+  end
 
   def handle_update(%Event{new: %Item{class: :deleted} = item}) do
-      UserResolver.notify_home_stream(item, :delete)
+    UserResolver.notify_home_stream(item, :delete)
   end
 
   def handle_update(%Event{new: item}) do

@@ -100,27 +100,27 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     end
   end
 
-    @subscription """
-    subscription {
-      homeStream {
-        action
-        item {
-          key
-          from_jid
-          stanza
-          user {
-            id
-          }
-          referenceBot {
-            id
-          }
-          referenceUser {
-            id
-          }
+  @subscription """
+  subscription {
+    homeStream {
+      action
+      item {
+        key
+        from_jid
+        stanza
+        user {
+          id
+        }
+        referenceBot {
+          id
+        }
+        referenceUser {
+          id
         }
       }
     }
-    """
+  }
+  """
   describe "watch home stream for changes" do
     setup do
       user2 = Factory.insert(:user)
@@ -135,12 +135,10 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id},
       token: token
     } do
-
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
 
       key = Lorem.word()
       from_jid = Factory.new_jid()
@@ -167,37 +165,52 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
         }
       end
 
-      HomeStream.put(user_id, key, from_jid, stanza,
-                     ref_bot_id: bot.id, ref_user_id: user2.id)
+      HomeStream.put(
+        user_id,
+        key,
+        from_jid,
+        stanza,
+        ref_bot_id: bot.id,
+        ref_user_id: user2.id
+      )
+
       assert_push "subscription:data", push, 2000
       assert push == expected.("INSERT")
 
-      HomeStream.put(user_id, key, from_jid, stanza,
-                     ref_bot_id: bot.id, ref_user_id: user2.id)
+      HomeStream.put(
+        user_id,
+        key,
+        from_jid,
+        stanza,
+        ref_bot_id: bot.id,
+        ref_user_id: user2.id
+      )
+
       assert_push "subscription:data", push, 2000
       assert push == expected.("UPDATE")
 
       HomeStream.delete(user_id, key)
       assert_push "subscription:data", push, 2000
+
       assert push ==
-        %{
-          result: %{
-            data: %{
-              "homeStream" => %{
-                "action" => "DELETE",
-                "item" => %{
-                  "key" => key,
-                  "from_jid" => "",
-                  "stanza" => "",
-                  "user" => %{"id" => user_id},
-                  "referenceBot" => nil,
-                  "referenceUser" => nil
-                }
-              }
-            }
-          },
-          subscriptionId: subscription_id
-        }
+               %{
+                 result: %{
+                   data: %{
+                     "homeStream" => %{
+                       "action" => "DELETE",
+                       "item" => %{
+                         "key" => key,
+                         "from_jid" => "",
+                         "stanza" => "",
+                         "user" => %{"id" => user_id},
+                         "referenceBot" => nil,
+                         "referenceUser" => nil
+                       }
+                     }
+                   }
+                 },
+                 subscriptionId: subscription_id
+               }
     end
 
     test "unauthenticated user attempting subscription", %{socket: socket} do
@@ -205,7 +218,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       |> push_doc(@subscription)
       |> assert_unauthenticated_reply()
     end
-
   end
 
   @authenticate """
@@ -241,8 +253,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                  %{
                    errors: [
                      %{
-                       message:
-                         "This operation requires an authenticated user"
+                       message: "This operation requires an authenticated user"
                      }
                    ]
                  },
