@@ -23,7 +23,7 @@ defmodule Wocky.TROS do
   @callback make_upload_response(JID.t(), file_id, integer, metadata) ::
               {list, list}
   @callback make_download_response(server, file_name) :: {list, list}
-  @callback get_download_url(server, metadata, file_name) :: [url]
+  @callback get_download_url(server, metadata, file_name) :: url
 
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
@@ -118,7 +118,7 @@ defmodule Wocky.TROS do
   @spec ready?(file_id) :: boolean
   def ready?(file_id), do: Metadata.ready?(file_id)
 
-  @spec get_download_urls(server, Metadata.t(), [file_type]) :: binary
+  @spec get_download_urls(server, Metadata.t(), [file_type]) :: [url]
   def get_download_urls(server, metadata, types) do
     Enum.map(
       types,
