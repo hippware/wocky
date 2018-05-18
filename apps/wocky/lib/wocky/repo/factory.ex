@@ -203,4 +203,6 @@ defmodule Wocky.Repo.Factory do
   def new_handle do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end
+
+  def image_url(image), do: TROS.make_url("localhost", image.id)
 end

@@ -69,8 +69,9 @@ defmodule Wocky.TROS.S3Store do
     {[], resp_fields}
   end
 
-  def get_download_url(server, file_id) do
-    s3_url(server, bucket(), file_id, :get)
+  def get_download_url(_server, %{ready: false}, _file_name), do: ""
+  def get_download_url(server, _metadata, file_name) do
+    s3_url(server, bucket(), file_name, :get)
   end
 
   def make_upload_response(owner_jid, file_id, size, metadata) do

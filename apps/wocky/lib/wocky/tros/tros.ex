@@ -10,7 +10,7 @@ defmodule Wocky.TROS do
   @type owner :: JID.luser()
   @type server :: JID.lserver()
   @type file_id :: JID.lresource()
-  # <<_:40,_:_*8>>
+  @type file_name :: binary
   @type url :: binary
   # %{binary => binary}
   @type metadata :: map
@@ -22,8 +22,8 @@ defmodule Wocky.TROS do
   @callback delete(server, file_id) :: :ok
   @callback make_upload_response(JID.t(), file_id, integer, metadata) ::
               {list, list}
-  @callback make_download_response(server, file_id) :: {list, list}
-  @callback get_download_url(server, file_id) :: url
+  @callback make_download_response(server, file_name) :: {list, list}
+  @callback get_download_url(server, metadata, file_name) :: [url]
 
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
@@ -53,31 +53,25 @@ defmodule Wocky.TROS do
   @spec make_url(JID.t()) :: url
   def make_url(jid), do: "tros:#{JID.to_binary(jid)}"
 
-  @spec get_base_id(file_id) :: file_id
-  def get_base_id(file_id) do
-    file_id
+  @spec get_base_id(file_name) :: file_id
+  def get_base_id(file_name) do
+    file_name
     |> String.replace_suffix(@thumbnail_suffix, "")
     |> String.replace_suffix(@original_suffix, "")
   end
 
   @spec get_type(file_id) :: file_type
   def get_type(file_id) do
-    if String.ends_with?(file_id, @original_suffix) do
-      :original
-    else
-      if String.ends_with?(file_id, @thumbnail_suffix) do
-        :thumbnail
-      else
-        :full
-      end
+    cond do
+      String.ends_with?(file_id, @original_suffix) -> :original
+      String.ends_with?(file_id, @thumbnail_suffix) -> :thumbnail
+      true -> :full
     end
   end
 
   @spec variants(file_id) :: [binary]
   def variants(file_id) do
-    for suffix <- ["", @original_suffix, @thumbnail_suffix] do
-      file_id <> suffix
-    end
+    Enum.map([:full, :thumbnail, :original], &full_name(file_id, &1))
   end
 
   @spec get_metadata(file_id) :: result(Metadata.t())
@@ -124,12 +118,15 @@ defmodule Wocky.TROS do
   @spec ready?(file_id) :: boolean
   def ready?(file_id), do: Metadata.ready?(file_id)
 
-  @spec get_download_url(server, file_id) :: binary
-  def get_download_url(server, file_id) do
-    backend().get_download_url(server, file_id)
+  @spec get_download_urls(server, Metadata.t(), [file_type]) :: binary
+  def get_download_urls(server, metadata, types) do
+    Enum.map(types, &backend().get_download_url(
+      server, metadata, full_name(metadata.id, &1)))
   end
 
-  def thumbnail_id(file_id), do: file_id <> @thumbnail_suffix
+  defp full_name(file_id, :full), do: file_id
+  defp full_name(file_id, :thumbnail), do: file_id <> @thumbnail_suffix
+  defp full_name(file_id, :original), do: file_id <> @original_suffix
 
   defp backend do
     Confex.get_env(:wocky, :tros_backend)

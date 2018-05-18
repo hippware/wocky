@@ -6,12 +6,12 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.TROS
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
 
-    bot = Factory.insert(:bot, user: user)
+    image = Factory.insert(:tros_metadata, user: user)
+    bot = Factory.insert(:bot, image: Factory.image_url(image), user: user)
     bot2 = Factory.insert(:bot, user: user2, public: true)
 
     {:ok, user: user, user2: user2, bot: bot, bot2: bot2}
@@ -743,7 +743,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     test "bot item image", %{bot: bot, user: user} do
-      tros_url = TROS.make_url("localhost", ID.new())
+      image = Factory.insert(:tros_metadata, user: user)
+      tros_url = Factory.image_url(image)
       stanza = "<message><image>" <> tros_url <> "</image></message>"
       Factory.insert(:item, bot: bot, stanza: stanza, image: true)
 

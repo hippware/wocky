@@ -4,10 +4,19 @@ defmodule WockyAPI.GraphQL.PublicTest do
   alias Faker.Lorem
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory
+  alias Wocky.User
 
   setup do
-    [user, user2] = Factory.insert_list(2, :user)
-    bot = Factory.insert(:bot, user: user, public: true)
+    users = [user, user2] = Factory.insert_list(2, :user)
+    Enum.map(users, fn u ->
+      image = Factory.insert(:tros_metadata, user: u)
+      User.update(u, %{avatar: Factory.image_url(image)})
+    end)
+    image = Factory.insert(:tros_metadata, user: user)
+    bot = Factory.insert(:bot,
+                         user: user,
+                         image: Factory.image_url(image),
+                         public: true)
     bot2 = Factory.insert(:bot, user: user2)
     item = Factory.insert(:item, bot: bot, user: user2)
     Subscription.put(user, bot)

@@ -104,16 +104,15 @@ get_download_urls(URL, FromJID) ->
     Result =
     do([error_m ||
         {Server, FileID} <- ?tros:parse_url(URL),
-        #{user_id := OwnerID, access := Access}
+        #{user_id := OwnerID, access := Access} = Metadata
             <- expand_err(?tros:get_metadata(FileID)),
-        check_ready(FileID),
         check_download_permissions(FromJID, OwnerID, Access),
-        {ok, {Server, FileID}}
+        {ok, {Server, Metadata}}
        ]),
     case Result of
-        {ok, {Server, FileID}} ->
-            {?tros:get_download_url(Server, FileID),
-             ?tros:get_download_url(Server, ?tros:thumbnail_id(FileID))};
+        {ok, {Server, Metadata}} ->
+            list_to_tuple(
+              ?tros:get_download_urls(Server, Metadata, [full, thumbnail]));
         _ ->
             {<<>>, <<>>}
     end.
@@ -127,12 +126,6 @@ wait_ready(FileID) ->
         timeout ->
             {error, ?ERRT_INTERNAL_SERVER_ERROR(
                         ?MYLANG, <<"Timeout waiting for file to be ready">>)}
-    end.
-
-check_ready(FileID) ->
-    case ?tros:'ready?'(FileID) of
-        true -> ok;
-        false -> {error, not_ready}
     end.
 
 extract_fields(Req, RequiredFields, OptionalFields, Defaults) ->
