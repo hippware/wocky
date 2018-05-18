@@ -70,6 +70,7 @@ defmodule Wocky.TROS.S3Store do
   end
 
   def get_download_url(_server, %{ready: false}, _file_name), do: ""
+
   def get_download_url(server, _metadata, file_name) do
     s3_url(server, bucket(), file_name, :get)
   end
@@ -85,8 +86,7 @@ defmodule Wocky.TROS.S3Store do
       {@amz_content_type, Map.get(metadata, @amz_content_type)}
     ]
 
-    url =
-      "https://#{upload_bucket()}.#{s3_server()}/#{path(lserver, file_id)}"
+    url = "https://#{upload_bucket()}.#{s3_server()}/#{path(lserver, file_id)}"
 
     {:ok, ret_headers} =
       Auth.headers(:put, url, :s3, make_config(), headers, nil)

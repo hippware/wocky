@@ -49,6 +49,5 @@ defmodule Wocky.TROS.SimpleStore do
   end
 
   def url(server, file_id),
-  do: "http://localhost:4569/files/#{server}-#{file_id}?token=1234"
-
+    do: "http://localhost:4569/files/#{server}-#{file_id}?token=1234"
 end

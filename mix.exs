@@ -33,11 +33,10 @@ defmodule Wocky.Release.Mixfile do
   defp deps do
     [
       {:distillery,
-        github: "hippware/distillery",
-        branch: "working",
-        runtime: false,
-        override: true
-      },
+       github: "hippware/distillery",
+       branch: "working",
+       runtime: false,
+       override: true},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.8", only: :test},

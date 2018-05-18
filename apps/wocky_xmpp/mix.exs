@@ -120,10 +120,10 @@ defmodule Wocky.XMPP.Mixfile do
        runtime: false,
        only: [:dev, :test]},
       {:distillery,
-        github: "hippware/distillery",
-        branch: "working",
-        runtime: false,
-        override: true},
+       github: "hippware/distillery",
+       branch: "working",
+       runtime: false,
+       override: true},
 
       # test dependencies
       {:espec, "~> 1.5", only: :test},

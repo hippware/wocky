@@ -73,10 +73,10 @@ defmodule WockyAPI.Mixfile do
       {:cors_plug, "~> 1.5"},
       {:apollo_tracing, "~> 0.4.0"},
       {:distillery,
-        github: "hippware/distillery",
-        branch: "working",
-        runtime: false,
-        override: true},
+       github: "hippware/distillery",
+       branch: "working",
+       runtime: false,
+       override: true}
     ]
   end
 

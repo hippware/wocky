@@ -120,8 +120,10 @@ defmodule Wocky.TROS do
 
   @spec get_download_urls(server, Metadata.t(), [file_type]) :: binary
   def get_download_urls(server, metadata, types) do
-    Enum.map(types, &backend().get_download_url(
-      server, metadata, full_name(metadata.id, &1)))
+    Enum.map(
+      types,
+      &backend().get_download_url(server, metadata, full_name(metadata.id, &1))
+    )
   end
 
   defp full_name(file_id, :full), do: file_id

@@ -28,6 +28,7 @@ defmodule WockyAPI.Resolvers.Media do
          {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id) do
       [full_url, thumbnail_url] =
         TROS.get_download_urls(server, metadata, [:full, :thumbnail])
+
       {:ok,
        %{
          tros_url: tros_url,
