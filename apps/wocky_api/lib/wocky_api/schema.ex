@@ -33,6 +33,7 @@ defmodule WockyAPI.Schema do
 
   subscription do
     import_fields :bot_subscriptions
+    import_fields :user_subscriptions
   end
 
   def middleware(middleware, field, object) do

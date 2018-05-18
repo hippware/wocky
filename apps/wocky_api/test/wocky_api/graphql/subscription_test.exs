@@ -1,7 +1,9 @@
 defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
+  alias Faker.Lorem
   alias Wocky.Bot
+  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Bot.Subscription
@@ -30,16 +32,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       {:ok, user2: user2, bot: bot}
     end
 
-    @authenticate """
-    mutation ($input: AuthenticateInput) {
-      authenticate(input: $input) {
-        user {
-          id
-        }
-      }
-    }
-    """
-
     @subscription """
     subscription {
       botGuestVisitors {
@@ -65,19 +57,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     } do
       Bot.subscribe(bot, user, true)
 
-      ref =
-        push_doc(
-          socket,
-          @authenticate,
-          variables: %{input: %{user: user_id, token: token}}
-        )
-
-      assert_reply ref,
-                   :ok,
-                   %{
-                     data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
-                   },
-                   1000
+      authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
@@ -114,19 +94,158 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     end
 
     test "unauthenticated user attempting subscription", %{socket: socket} do
-      ref = push_doc(socket, @subscription)
-
-      assert_reply ref,
-                   :error,
-                   %{
-                     errors: [
-                       %{
-                         message:
-                           "This operation requires an authenticated user"
-                       }
-                     ]
-                   },
-                   1000
+      socket
+      |> push_doc(@subscription)
+      |> assert_unauthenticated_reply()
     end
+  end
+
+    @subscription """
+    subscription {
+      homeStream {
+        action
+        item {
+          key
+          from_jid
+          stanza
+          user {
+            id
+          }
+          referenceBot {
+            id
+          }
+          referenceUser {
+            id
+          }
+        }
+      }
+    }
+    """
+  describe "watch home stream for changes" do
+    setup do
+      user2 = Factory.insert(:user)
+      bot = Factory.insert(:bot, public: true)
+      {:ok, user2: user2, bot: bot}
+    end
+
+    test "Home Stream item updates", %{
+      socket: socket,
+      user2: user2,
+      bot: bot,
+      user: %{id: user_id},
+      token: token
+    } do
+
+      authenticate(user_id, token, socket)
+
+      ref = push_doc(socket, @subscription)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+
+      key = Lorem.word()
+      from_jid = Factory.new_jid()
+      stanza = Lorem.paragraph()
+
+      expected = fn action ->
+        %{
+          result: %{
+            data: %{
+              "homeStream" => %{
+                "action" => action,
+                "item" => %{
+                  "key" => key,
+                  "from_jid" => from_jid,
+                  "stanza" => stanza,
+                  "user" => %{"id" => user_id},
+                  "referenceBot" => %{"id" => bot.id},
+                  "referenceUser" => %{"id" => user2.id}
+                }
+              }
+            }
+          },
+          subscriptionId: subscription_id
+        }
+      end
+
+      HomeStream.put(user_id, key, from_jid, stanza,
+                     ref_bot_id: bot.id, ref_user_id: user2.id)
+      assert_push "subscription:data", push, 2000
+      assert push == expected.("INSERT")
+
+      HomeStream.put(user_id, key, from_jid, stanza,
+                     ref_bot_id: bot.id, ref_user_id: user2.id)
+      assert_push "subscription:data", push, 2000
+      assert push == expected.("UPDATE")
+
+      HomeStream.delete(user_id, key)
+      assert_push "subscription:data", push, 2000
+      assert push ==
+        %{
+          result: %{
+            data: %{
+              "homeStream" => %{
+                "action" => "DELETE",
+                "item" => %{
+                  "key" => key,
+                  "from_jid" => "",
+                  "stanza" => "",
+                  "user" => %{"id" => user_id},
+                  "referenceBot" => nil,
+                  "referenceUser" => nil
+                }
+              }
+            }
+          },
+          subscriptionId: subscription_id
+        }
+    end
+
+    test "unauthenticated user attempting subscription", %{socket: socket} do
+      socket
+      |> push_doc(@subscription)
+      |> assert_unauthenticated_reply()
+    end
+
+  end
+
+  @authenticate """
+  mutation ($input: AuthenticateInput) {
+    authenticate(input: $input) {
+      user {
+        id
+      }
+    }
+  }
+  """
+  defp authenticate(user_id, token, socket) do
+    ref =
+      push_doc(
+        socket,
+        @authenticate,
+        variables: %{input: %{user: user_id, token: token}}
+      )
+
+    assert_reply ref,
+                 :ok,
+                 %{
+                   data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
+                 },
+                 1000
+
+    ref
+  end
+
+  defp assert_unauthenticated_reply(ref) do
+    assert_reply ref,
+                 :error,
+                 %{
+                   errors: [
+                     %{
+                       message:
+                         "This operation requires an authenticated user"
+                     }
+                   ]
+                 },
+                 1000
   end
 end
