@@ -11,6 +11,13 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add Rexbug and recon for runtime debugging (PR #1531)
 * Add a SUBSCRIBED_NOT_OWNED relationship for bots (PR #1530)
   * Create new bot relationship to get all subscribed but not owned bots (#1522)
+* Fix crash when non-string field is passed to authentication (#1515, PR #1535)
+* Fix crash on unblock race (#1527, PR #1536)
+* Fix test failures, intermittent CT failure (#1534, PR #1537)
+* Updated (via Dependabot): 
+  * prometheus_ecto (PR #1539), fast_tls (PR #1540), 
+  * lager (PR #1541), excoveralls (PR #1542)
+* Update other dependencies (PR #1544)
 
 
 # 2018.5.15+ra3dbb55
