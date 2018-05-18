@@ -420,7 +420,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   object :user_subscriptions do
     @desc """
-    Receive updates when home stream items are inserted, removed or updated
+    Receive updates when home stream items are inserted, removed, or updated
     """
     field :home_stream, non_null(:home_stream_update) do
       config fn
