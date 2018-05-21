@@ -114,9 +114,7 @@ defmodule :tros_permissions_spec do
         |> JID.to_binary()
 
       {:ok,
-       alice_jid: alice_jid,
-       bot_jid: bot_jid,
-       pending_bot_jid: pending_bot_jid}
+       alice_jid: alice_jid, bot_jid: bot_jid, pending_bot_jid: pending_bot_jid}
     end
 
     it "should pass valid access rules" do

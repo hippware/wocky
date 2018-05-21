@@ -15,9 +15,9 @@ defmodule Wocky.TROS.SimpleStore do
     :ok
   end
 
-  def make_download_response(server, file_id) do
+  def make_download_response(server, file_name) do
     resp_fields = [
-      {"url", url(server, file_id)}
+      {"url", url(server, TROS.get_base_id(file_name))}
     ]
 
     {[], resp_fields}
@@ -36,8 +36,8 @@ defmodule Wocky.TROS.SimpleStore do
     {[], resp_fields}
   end
 
-  def get_download_url(server, file_id) do
-    url(server, file_id)
+  def get_download_url(server, _metadata, file_name) do
+    url(server, TROS.get_base_id(file_name))
   end
 
   defp resp_fields(method, url, reference_url) do
@@ -49,6 +49,5 @@ defmodule Wocky.TROS.SimpleStore do
   end
 
   def url(server, file_id),
-  do: "http://localhost:4569/files/#{server}-#{file_id}?token=1234"
-
+    do: "http://localhost:4569/files/#{server}-#{file_id}?token=1234"
 end

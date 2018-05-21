@@ -11,7 +11,7 @@ defmodule Wocky.TROS.TestStore do
     :ok
   end
 
-  def make_download_response(_server, _file_id) do
+  def make_download_response(_server, _file_name) do
     resp_fields = [
       {"url", "http://localhost/some/file/location"}
     ]
@@ -30,8 +30,8 @@ defmodule Wocky.TROS.TestStore do
     {[], resp_fields}
   end
 
-  def get_download_url(server, file_id) do
-    "https://" <> server <> "/" <> file_id
+  def get_download_url(server, _metadata, file_name) do
+    "https://" <> server <> "/" <> file_name
   end
 
   defp resp_fields(method, url, reference_url) do

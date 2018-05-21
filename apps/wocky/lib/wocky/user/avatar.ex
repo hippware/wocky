@@ -11,7 +11,7 @@ defmodule Wocky.User.Avatar do
   @type url :: binary
   @type t :: {User.server(), User.id()}
 
-  @spec validate(User.t(), t()) :: {:ok, t()} | {:error, :atom}
+  @spec validate(User.t(), url()) :: {:ok, t()} | {:error, atom()}
   def validate(user, avatar_url) do
     with {:ok, avatar} <- prepare(avatar_url),
          :ok <- check_is_local(avatar, user.server),
