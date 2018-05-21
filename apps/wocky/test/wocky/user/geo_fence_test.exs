@@ -355,7 +355,7 @@ defmodule Wocky.User.GeoFenceTest do
       :timer.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
 
-      :timer.sleep(1500)
+      :timer.sleep(2000)
       assert Bot.subscription(bot, user) == :guest
     end
   end
