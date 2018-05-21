@@ -4,8 +4,9 @@ defmodule WockyAPI.Callbacks do
   """
 
   alias WockyAPI.Callbacks.BotSubscription
+  alias WockyAPI.Callbacks.HomeStreamItem
 
-  @modules [BotSubscription]
+  @modules [BotSubscription, HomeStreamItem]
 
   def register do
     Enum.each(@modules, fn m -> m.register() end)

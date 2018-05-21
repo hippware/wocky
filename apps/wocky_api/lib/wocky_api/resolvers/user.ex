@@ -1,12 +1,14 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
+  alias Absinthe.Subscription
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.JID
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.Location
+  alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
@@ -126,6 +128,17 @@ defmodule WockyAPI.Resolvers.User do
            ) do
       {:ok, true}
     end
+  end
+
+  def home_stream_subscription_topic(user_id) do
+    "home_stream_subscription_" <> user_id
+  end
+
+  def notify_home_stream(item, action) do
+    notification = %{item: item, action: action}
+    topic = home_stream_subscription_topic(item.user_id)
+
+    Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
   end
 
   defp user_not_found(id), do: {:error, "User not found: " <> id}
