@@ -15,8 +15,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix crash on unblock race (#1527, PR #1536)
 * Fix test failures, intermittent CT failure (#1534, PR #1537)
 * Updated (via Dependabot): 
-  * prometheus_ecto (PR #1539), fast_tls (PR #1540), 
-  * lager (PR #1541), excoveralls (PR #1542)
+  * prometheus_ecto (PR #1539), fast_tls (PR #1540), lager (PR #1541)
+  * excoveralls (PR #1542), exml (PR #1548), ranch (PR #1550)
 * Update other dependencies (PR #1544)
 
 
