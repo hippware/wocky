@@ -128,7 +128,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
         end
       end
 
-      context "when a subscription already exists" do
+      context "when a subscription already exists and guest is 'false'" do
         before do
           result = Subscription.put(shared.visitor, shared.bot)
           {:ok, result: result}
@@ -141,6 +141,22 @@ defmodule Wocky.Bot.SubscriptionSpec do
         it "should update the visitor field" do
           Subscription.state(shared.visitor, shared.bot)
           |> should(eq :subscribed)
+        end
+      end
+
+      context "when a subscription already exists and guest is 'true'" do
+        before do
+          result = Subscription.put(shared.visitor, shared.bot, true)
+          {:ok, result: result}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should not falisfy the visitor field" do
+          Subscription.state(shared.visitor, shared.bot)
+          |> should(eq :visitor)
         end
       end
     end

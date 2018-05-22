@@ -69,31 +69,36 @@ defmodule Wocky.Bot.Subscription do
 
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)
-    |> Repo.update_all(set: [visitor: enter] ++ timestamps)
+    |> Repo.update_all(
+      set: [visitor: enter, updated_at: DateTime.utc_now()] ++ timestamps
+    )
 
     :ok
   end
 
   @spec put(User.t(), Bot.t(), boolean()) :: :ok | no_return
   def put(user, bot, guest \\ false) do
+    visitor_changes = maybe_set_visitor(guest)
+
     %{user_id: user.id, bot_id: bot.id, guest: guest}
-    |> maybe_set_visitor(guest)
+    |> Map.merge(visitor_changes)
     |> make_changeset()
     |> Repo.insert!(
-      on_conflict: :replace_all,
+      on_conflict: [
+        set:
+          [guest: guest, updated_at: DateTime.utc_now()] ++
+            Map.to_list(visitor_changes)
+      ],
       conflict_target: [:user_id, :bot_id]
     )
 
     :ok
   end
 
-  defp maybe_set_visitor(changes, true), do: changes
+  defp maybe_set_visitor(true), do: %{}
 
-  defp maybe_set_visitor(changes, false) do
-    changes
-    |> Map.put(:visitor, false)
-    |> Map.put(:visited_at, nil)
-    |> Map.put(:departed_at, nil)
+  defp maybe_set_visitor(false) do
+    %{visitor: false, visited_at: nil, departed_at: nil}
   end
 
   defp make_changeset(changes), do: changeset(%Subscription{}, changes)
@@ -102,7 +107,9 @@ defmodule Wocky.Bot.Subscription do
   def clear_guests(bot) do
     Subscription
     |> where(bot_id: ^bot.id)
-    |> Repo.update_all(set: [guest: false, visitor: false])
+    |> Repo.update_all(
+      set: [guest: false, visitor: false, updated_at: DateTime.utc_now()]
+    )
 
     :ok
   end
