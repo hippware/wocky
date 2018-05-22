@@ -240,6 +240,20 @@ defmodule WockyAPI.Schema.BotTypes do
 
       resolve &Bot.unsubscribe/3
     end
+
+    @desc "Delete a bot"
+    payload field :bot_delete do
+      input do
+        @desc "ID of bot to delete"
+        field :id, non_null(:uuid)
+      end
+
+      output do
+        field :result, :boolean
+      end
+
+      resolve &Bot.delete/3
+    end
   end
 
   enum :visitor_action do
