@@ -5,6 +5,7 @@ defmodule WockyAPI.Resolvers.Media do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
@@ -40,4 +41,36 @@ defmodule WockyAPI.Resolvers.Media do
         {:ok, %{tros_url: tros_url}}
     end
   end
+
+  def upload(_root, args, %{context: %{current_user: user}}) do
+    metadata = %{"content-type": args[:mime_type], name: args[:filename]}
+    id = ID.new()
+
+    response =
+      TROS.make_upload_response(
+        User.to_jid(user),
+        id,
+        args[:size],
+        args[:access] || "",
+        metadata
+      )
+
+    case response do
+      {:ok, {headers, fields}} ->
+        {:ok,
+         %{
+           id: id,
+           upload_url: :proplists.get_value("url", fields),
+           method: :proplists.get_value("method", fields),
+           headers: make_return_headers(headers),
+           reference_url: :proplists.get_value("reference_url", fields)
+         }}
+
+      {:error, e} ->
+        {:error, e}
+    end
+  end
+
+  defp make_return_headers(headers),
+    do: Enum.map(headers, fn {n, v} -> %{name: n, value: v} end)
 end
