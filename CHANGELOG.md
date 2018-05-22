@@ -17,7 +17,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Updated (via Dependabot): 
   * prometheus_ecto (PR #1539), fast_tls (PR #1540), lager (PR #1541)
   * excoveralls (PR #1542), exml (PR #1548), ranch (PR #1550)
+  * bcrypt_elixir (PR #1554)
 * Update other dependencies (PR #1544)
+* Return empty S3 URLs until images are marked as ready. (#1538)
+* Home stream GraphQL subscription (PR #1546)
 
 
 # 2018.5.15+ra3dbb55
