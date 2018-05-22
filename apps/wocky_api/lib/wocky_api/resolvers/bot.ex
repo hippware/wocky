@@ -152,8 +152,9 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  def delete(_root, args,
-             %{context: %{current_user: %{id: user_id} = requestor}}) do
+  def delete(_root, args, %{
+        context: %{current_user: %{id: user_id} = requestor}
+      }) do
     case Bot.get_bot(args[:id], requestor) do
       nil ->
         not_found_error(args[:id])
