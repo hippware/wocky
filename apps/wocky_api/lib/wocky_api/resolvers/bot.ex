@@ -152,6 +152,22 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
+  def delete(_root, args, %{
+        context: %{current_user: %{id: user_id} = requestor}
+      }) do
+    case Bot.get_bot(args[:id], requestor) do
+      nil ->
+        not_found_error(args[:id])
+
+      bot = %{user_id: ^user_id} ->
+        Bot.delete(bot)
+        {:ok, %{result: true}}
+
+      _ ->
+        not_owned_error()
+    end
+  end
+
   def visitor_subscription_topic(user_id) do
     "visitor_subscription_" <> user_id
   end
@@ -176,4 +192,5 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
+  defp not_owned_error(), do: {:error, "Operation only permitted on owned bots"}
 end

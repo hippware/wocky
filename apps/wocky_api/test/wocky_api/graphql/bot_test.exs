@@ -309,6 +309,41 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              } = result.data
     end
+
+    @query """
+    mutation ($id: UUID!) {
+      botDelete (input: {id: $id}) {
+        result
+      }
+    }
+    """
+    test "delete a bot", %{user: user, bot: bot} do
+      result = run_query(@query, user, %{"id" => bot.id})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "botDelete" => %{
+                 "result" => true
+               }
+             }
+
+      assert Bot.get(bot.id) == nil
+    end
+
+    test "delete a non-owned bot", %{user: user, bot2: bot} do
+      result = run_query(@query, user, %{"id" => bot.id})
+
+      assert error_msg(result) == "Operation only permitted on owned bots"
+
+      refute Bot.get(bot.id) == nil
+    end
+
+    test "delete a non-existant bot", %{user: user} do
+      result = run_query(@query, user, %{"id" => ID.new()})
+
+      assert error_msg(result) =~ "Bot not found"
+    end
   end
 
   describe "active bots" do
