@@ -28,6 +28,7 @@ defmodule WockyAPI.Schema do
     import_fields :bot_mutations
     import_fields :collection_mutations
     import_fields :location_mutations
+    import_fields :media_mutations
     import_fields :user_mutations
   end
 
