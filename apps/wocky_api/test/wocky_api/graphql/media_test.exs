@@ -27,13 +27,13 @@ defmodule WockyAPI.GraphQL.MediaTest do
     }
     """
     test "request an upload of a file", %{user: user} do
-
       input = %{
         "filename" => Lorem.word(),
         "size" => :rand.uniform(1000),
         "mimeType" => Lorem.word(),
         "access" => Lorem.sentence()
       }
+
       result = run_query(@query, user, %{"input" => input})
 
       refute has_errors(result)
@@ -47,14 +47,13 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert results["reference_url"] =~ ~r/tros:.*#{results["id"]}/
     end
 
-
     test "request upload with invalid params", %{user: user} do
-
       input = %{
         "filename" => nil,
         "size" => -50,
         "mimeType" => nil
       }
+
       result = run_query(@query, user, %{"input" => input})
 
       assert error_msg(result) =~ ~r/In field "filename"/
