@@ -147,12 +147,11 @@ defmodule WockyAPI.Resolvers.User do
 
   def has_used_geofence(_root, _args, %{context: %{current_user: user}}) do
     {:ok,
-      user
-      |> Bot.related_geofence_bots_query()
-      |> select([b], count(1))
-      |> Repo.one!()
-      |> Kernel.!=(0)
-    }
+     user
+     |> Bot.related_geofence_bots_query()
+     |> select([b], count(1))
+     |> Repo.one!()
+     |> Kernel.!=(0)}
   end
 
   defp user_not_found(id), do: {:error, "User not found: " <> id}

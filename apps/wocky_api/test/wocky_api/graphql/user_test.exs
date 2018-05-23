@@ -627,16 +627,20 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{"hasUsedGeofence" => false}
     end
 
-    test "should be true if a guest of a geofence bot",
-    %{user: user, user2: user2} do
+    test "should be true if a guest of a geofence bot", %{
+      user: user,
+      user2: user2
+    } do
       bot = Factory.insert(:bot, user: user2)
       Factory.insert(:subscription, user: user, bot: bot, guest: true)
       result = run_query(@query, user)
       assert result.data == %{"hasUsedGeofence" => true}
     end
 
-    test "should be false if not a guest of a geofence bot",
-    %{user: user, user2: user2} do
+    test "should be false if not a guest of a geofence bot", %{
+      user: user,
+      user2: user2
+    } do
       bot = Factory.insert(:bot, user: user2)
       Factory.insert(:subscription, user: user, bot: bot)
       result = run_query(@query, user)
