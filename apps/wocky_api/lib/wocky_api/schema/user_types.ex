@@ -377,6 +377,11 @@ defmodule WockyAPI.Schema.UserTypes do
 
       resolve &User.search_users/3
     end
+
+    @desc "Check whether a user has made use of any geofence features"
+    field :has_used_geofence, non_null(:boolean) do
+      resolve &User.has_used_geofence/3
+    end
   end
 
   object :user_mutations do

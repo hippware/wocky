@@ -410,6 +410,17 @@ defmodule Wocky.Bot do
     |> order_by([..., a], desc: a.visited_at)
   end
 
+  def related_geofence_bots_query(user) do
+    Bot
+    |> join(
+      :left,
+      [b],
+      s in Subscription,
+      b.id == s.bot_id and s.user_id == ^user.id
+    )
+    |> where([b, s], s.guest or (b.geofence and b.user_id == ^user.id))
+  end
+
   @spec subscribers_query(t, boolean()) :: [User.t()]
   def subscribers_query(bot, include_owner \\ true) do
     q = Ecto.assoc(bot, :subscribers)

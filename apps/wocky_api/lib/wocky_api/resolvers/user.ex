@@ -1,10 +1,14 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
+  import Ecto.Query
+
   alias Absinthe.Subscription
+  alias Wocky.Bot
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.JID
+  alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.Location
@@ -139,6 +143,15 @@ defmodule WockyAPI.Resolvers.User do
     topic = home_stream_subscription_topic(item.user_id)
 
     Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
+  end
+
+  def has_used_geofence(_root, _args, %{context: %{current_user: user}}) do
+    {:ok,
+     user
+     |> Bot.related_geofence_bots_query()
+     |> select([b], count(1))
+     |> Repo.one!()
+     |> Kernel.!=(0)}
   end
 
   defp user_not_found(id), do: {:error, "User not found: " <> id}
