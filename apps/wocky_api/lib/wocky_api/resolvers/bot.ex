@@ -191,6 +191,10 @@ defmodule WockyAPI.Resolvers.Bot do
     Subscription.publish(Endpoint, notification, targets)
   end
 
+  def publish_item(_root, args, %{context: %{current_user: requestor}}) do
+    {:ok, %{result: true}}
+  end
+
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
   defp not_owned_error(), do: {:error, "Operation only permitted on owned bots"}
 end

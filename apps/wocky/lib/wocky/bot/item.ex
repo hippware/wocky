@@ -4,6 +4,7 @@ defmodule Wocky.Bot.Item do
   use Wocky.Repo.Schema
 
   import Ecto.Query
+  import SweetXml
 
   alias Ecto.Changeset
   alias Wocky.Bot
@@ -75,24 +76,24 @@ defmodule Wocky.Bot.Item do
     Repo.get_by(Item, id: id, bot_id: bot.id)
   end
 
-  @spec put(Bot.t(), User.t(), id, binary, boolean) :: :ok | no_return
-  def put(bot, user, id, stanza, image? \\ false) do
+  @spec put(Bot.t(), User.t(), id, binary) :: :ok | no_return
+  def put(bot, user, id, stanza) do
     %Item{}
     |> changeset(%{
       id: id,
       bot_id: bot.id,
       user_id: user.id,
       stanza: stanza,
-      image: image?
+      image: has_image(stanza)
     })
     |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:id, :bot_id])
 
     Bot.bump_update_time(bot)
   end
 
-  @spec publish(Bot.t(), User.t(), id, binary, boolean) :: {:ok, t}
-  def publish(bot, user, id, stanza, image?) do
-    :ok = put(bot, user, id, stanza, image?)
+  @spec publish(Bot.t(), User.t(), id, binary) :: {:ok, t}
+  def publish(bot, user, id, stanza) do
+    :ok = put(bot, user, id, stanza)
     {:ok, get(bot, id)}
   end
 
@@ -133,5 +134,21 @@ defmodule Wocky.Bot.Item do
     bot
     |> Ecto.assoc(:items)
     |> where(image: true)
+  end
+
+  @spec has_image(binary()) :: boolean()
+  def has_image(stanza), do: get_image(stanza) != nil
+
+  @spec get_image(binary()) :: binary() | nil
+  def get_image(stanza) do
+    try do
+      stanza
+      |> parse(quiet: true)
+      |> xpath(~x"//image/text()")
+      |> List.to_string()
+    catch
+      :exit, _ -> nil # Happens on parse failure - ie, not valid XML
+      :error, _ -> nil # Happens when xpath returns nil
+    end
   end
 end

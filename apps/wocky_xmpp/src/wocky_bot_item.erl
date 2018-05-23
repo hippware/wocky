@@ -95,7 +95,7 @@ image_els(Owner, FromUser, Images) ->
     lists:map(image_el(Owner, FromJID, _), Images).
 
 image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
-    TROSURL = wocky_bot_util:get_image(S),
+    TROSURL = ?wocky_item:get_image(S),
     {Full, Thumbnail} = mod_wocky_tros:get_download_urls(TROSURL, FromJID),
     #xmlel{name = <<"image">>,
            attrs = [{<<"owner">>, jid:to_binary(Owner)},
@@ -110,14 +110,10 @@ image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 %%%===================================================================
 
 publish_item(From, ToJID, Bot, ItemID, Entry) ->
-    Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
-    {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin, Image),
+    {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin),
     Message = notification_event(Bot, make_item_element(Item)),
     wocky_bot_users:notify_subscribers_and_watchers(Bot, From, ToJID, Message).
-
-has_image(Entry) ->
-    wocky_bot_util:get_image(Entry) =/= <<>>.
 
 check_can_publish(#{id := UserID}, Bot, ItemID) ->
     case ?wocky_item:get(Bot, ItemID) of

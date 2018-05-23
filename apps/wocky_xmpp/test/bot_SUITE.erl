@@ -225,8 +225,8 @@ reset_tables(Config) ->
     ?wocky_factory:insert(tros_metadata, [{id, ?ITEM_IMAGE_ID},
                                           {user, Alice},
                                           {access, <<"all">>}]),
-    ?wocky_item:put(Bot, Alice, ?ITEM, ?ITEM_STANZA, true),
-    ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2, false),
+    ?wocky_item:put(Bot, Alice, ?ITEM, ?ITEM_STANZA),
+    ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2),
 
     ?wocky_share:put(Bob, Bot, Alice),
     ?wocky_bot:subscribe(Bot, Carol),

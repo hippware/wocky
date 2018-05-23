@@ -181,8 +181,19 @@ defmodule WockyAPI.Schema.BotTypes do
     field :values, non_null(:bot_params)
   end
 
+  input_object :bot_item_params do
+    field :id, non_null(:string)
+    field :stanza, :string
+  end
+
+  input_object :bot_item_publish_input do
+    field :bot_id, non_null(:uuid)
+    field :values, non_null(:bot_item_params)
+  end
+
   payload_object(:bot_create_payload, :bot)
   payload_object(:bot_update_payload, :bot)
+  payload_object(:bot_item_publish_payload, :boolean)
 
   object :bot_queries do
     @desc "Retrive a single bot by ID"
@@ -253,6 +264,13 @@ defmodule WockyAPI.Schema.BotTypes do
       end
 
       resolve &Bot.delete/3
+    end
+
+    @desc "Publish an item to a bot"
+    field :bot_item_publish, type: :bot_item_publish_payload do
+      arg :input, non_null(:bot_item_publish_input)
+      resolve &Bot.publish_item/3
+      changeset_mutation_middleware
     end
   end
 
