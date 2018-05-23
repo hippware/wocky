@@ -201,6 +201,32 @@ defmodule Wocky.Bot.ItemSpec do
         item.id |> should(eq new_id)
         item.image |> should(be_true())
       end
+
+      describe "permissions" do
+        before do
+          user = Factory.insert(:user)
+          item = Factory.insert(:item, user: user, bot: shared.bot)
+          {:ok, user: user, item: item}
+        end
+
+        it """
+        should refuse to publish an item that already exists
+        and is owned by another user
+        """ do
+          shared.bot
+          |> Item.publish(shared.owner, shared.item.id, Lorem.paragraph())
+          |> should(eq {:error, :permission_denied})
+        end
+
+        it """
+        should allow publication (update) of an item that already exists
+        and is owned by the same user
+        """ do
+          shared.bot
+          |> Item.publish(shared.user, shared.item.id, Lorem.paragraph())
+          |> should(be_ok_result())
+        end
+      end
     end
 
     describe "delete/1" do

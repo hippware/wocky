@@ -192,7 +192,13 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def publish_item(_root, args, %{context: %{current_user: requestor}}) do
-    {:ok, %{result: true}}
+    case Bot.get(args[:bot_id]) do
+      nil ->
+        not_found_error(args[:bot_id])
+      bot ->
+        Item.publish(bot, requestor, args[:id], args[:stanza])
+        {:ok, %{result: true}}
+    end
   end
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}

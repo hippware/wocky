@@ -77,7 +77,15 @@ defmodule Wocky.Bot.Item do
   end
 
   @spec put(Bot.t(), User.t(), id, binary) :: :ok | no_return
-  def put(bot, user, id, stanza) do
+  def put(bot, %{id: user_id} = user, id, stanza) do
+    case get(bot, id) do
+      nil -> do_put(bot, user, id, stanza)
+      %Item{user_id: ^user_id} -> do_put(bot, user, id, stanza)
+      _ -> {:error, :permission_denied}
+    end
+  end
+
+  defp do_put(bot, user, id, stanza) do
     %Item{}
     |> changeset(%{
       id: id,
@@ -93,8 +101,10 @@ defmodule Wocky.Bot.Item do
 
   @spec publish(Bot.t(), User.t(), id, binary) :: {:ok, t}
   def publish(bot, user, id, stanza) do
-    :ok = put(bot, user, id, stanza)
-    {:ok, get(bot, id)}
+    case put(bot, user, id, stanza) do
+      :ok -> {:ok, get(bot, id)}
+      error -> error
+    end
   end
 
   @spec delete(Bot.t()) :: :ok

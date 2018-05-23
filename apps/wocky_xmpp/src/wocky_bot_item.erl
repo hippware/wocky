@@ -44,7 +44,6 @@ publish(Bot, From, ToJID, SubEl) ->
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            Entry <- wocky_xml:get_subel(<<"entry">>, Item),
            wocky_xml:check_namespace(?NS_ATOM, Entry),
-           check_can_publish(From, Bot, ItemID),
            publish_item(From, ToJID, Bot, ItemID, Entry),
            {ok, []}
        ]).
@@ -111,15 +110,13 @@ image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 
 publish_item(From, ToJID, Bot, ItemID, Entry) ->
     EntryBin = exml:to_binary(Entry),
-    {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin),
-    Message = notification_event(Bot, make_item_element(Item)),
-    wocky_bot_users:notify_subscribers_and_watchers(Bot, From, ToJID, Message).
-
-check_can_publish(#{id := UserID}, Bot, ItemID) ->
-    case ?wocky_item:get(Bot, ItemID) of
-        nil -> ok;
-        #{user_id := UserID} -> ok;
-        _ -> {error, ?ERR_FORBIDDEN}
+    case ?wocky_item:publish(Bot, From, ItemID, EntryBin) of
+        {ok, Item} ->
+            Message = notification_event(Bot, make_item_element(Item)),
+            wocky_bot_users:notify_subscribers_and_watchers(
+              Bot, From, ToJID, Message);
+        {error, permission_denied} ->
+            {error, ?ERR_FORBIDDEN}
     end.
 
 %%%===================================================================
