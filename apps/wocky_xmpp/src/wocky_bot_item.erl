@@ -52,8 +52,7 @@ retract(Bot, From, _ToJID, SubEl) ->
     do([error_m ||
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
-           check_can_retract(From, Bot, ItemID),
-           ?wocky_item:delete(Bot, ItemID),
+           delete_item(Bot, ItemID, From),
            {ok, []}
        ]).
 
@@ -123,12 +122,11 @@ publish_item(From, ToJID, Bot, ItemID, Entry) ->
 %%% Helpers - retract
 %%%===================================================================
 
-check_can_retract(#{id := UserID}, Bot = #{user_id := BotOwner}, ItemID) ->
-    case ?wocky_item:get(Bot, ItemID) of
-        nil -> {error, ?ERR_ITEM_NOT_FOUND};
-        #{user_id := UserID} -> ok;
-        _ when UserID =:= BotOwner -> ok;
-        _ -> {error, ?ERR_FORBIDDEN}
+delete_item(BotID, ItemID, From) ->
+    case ?wocky_item:delete(BotID, ItemID, From) of
+        ok -> ok;
+        {error, permission_denied} -> {error, ?ERR_FORBIDDEN};
+        {error, not_found} -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
 %%%===================================================================

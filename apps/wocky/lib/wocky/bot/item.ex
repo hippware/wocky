@@ -76,7 +76,7 @@ defmodule Wocky.Bot.Item do
     Repo.get_by(Item, id: id, bot_id: bot.id)
   end
 
-  @spec put(Bot.t(), User.t(), id, binary) :: :ok | no_return
+  @spec put(Bot.t(), User.t(), id, binary) :: {:ok, t()} | {:error, term}
   def put(bot, %{id: user_id} = user, id, stanza) do
     case get(bot, id) do
       nil -> do_put(bot, user, id, stanza)
@@ -86,17 +86,22 @@ defmodule Wocky.Bot.Item do
   end
 
   defp do_put(bot, user, id, stanza) do
-    %Item{}
-    |> changeset(%{
-      id: id,
-      bot_id: bot.id,
-      user_id: user.id,
-      stanza: stanza,
-      image: has_image(stanza)
-    })
-    |> Repo.insert!(on_conflict: :replace_all, conflict_target: [:id, :bot_id])
-
-    Bot.bump_update_time(bot)
+    with {:ok, item} <-
+      %Item{}
+      |> changeset(%{
+        id: id,
+        bot_id: bot.id,
+        user_id: user.id,
+        stanza: stanza,
+        image: has_image(stanza)
+      })
+      |> Repo.insert(on_conflict: :replace_all,
+                     conflict_target: [:id, :bot_id],
+                     returning: true)
+    do
+      Bot.bump_update_time(bot)
+      {:ok, item}
+    end
   end
 
   @spec publish(Bot.t(), User.t(), id, binary) :: {:ok, t}
@@ -116,16 +121,35 @@ defmodule Wocky.Bot.Item do
     :ok
   end
 
-  @spec delete(Bot.t(), id | User.t()) :: :ok
-  def delete(bot, id) when is_binary(id) do
-    bot
-    |> Ecto.assoc(:items)
-    |> where(id: ^id)
-    |> Repo.delete_all()
+  @spec delete(Bot.t(), id, User.t()) ::
+  :ok | {:error, :not_found | :permission_denied}
+  def delete(%Bot{user_id: user_id} = bot, id, %User{id: user_id})
+  when is_binary(id) do
+    {deleted, _} =
+      bot
+      |> Ecto.assoc(:items)
+      |> where(id: ^id)
+      |> Repo.delete_all()
 
-    :ok
+    case deleted do
+      0 -> {:error, :not_found}
+      1 -> :ok
+    end
   end
 
+  def delete(bot, id, %User{id: user_id}) when is_binary(id) do
+    case get(bot, id) do
+      %Item{user_id: ^user_id} = item ->
+        Repo.delete(item)
+        :ok
+      nil ->
+        {:error, :not_found}
+      _ ->
+        {:error, :permission_denied}
+    end
+  end
+
+  @spec delete(Bot.t(), User.t()) :: :ok
   def delete(bot, %User{id: id}) do
     bot
     |> Ecto.assoc(:items)
@@ -154,11 +178,14 @@ defmodule Wocky.Bot.Item do
     try do
       stanza
       |> parse(quiet: true)
-      |> xpath(~x"//image/text()")
-      |> List.to_string()
+      |> xpath(~x"//image/text()"s)
+      |> empty_str_to_nil()
     catch
       :exit, _ -> nil # Happens on parse failure - ie, not valid XML
-      :error, _ -> nil # Happens when xpath returns nil
     end
   end
+
+  defp empty_str_to_nil(""), do: nil
+  defp empty_str_to_nil(s), do: s
+
 end

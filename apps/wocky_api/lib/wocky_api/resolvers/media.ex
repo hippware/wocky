@@ -1,8 +1,6 @@
 defmodule WockyAPI.Resolvers.Media do
   @moduledoc "GraphQL resolver for media objects"
 
-  import SweetXml
-
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo.ID
@@ -18,7 +16,7 @@ defmodule WockyAPI.Resolvers.Media do
 
   def get_media(%Item{stanza: stanza}, _args, _info) do
     stanza
-    |> xpath(~x"./image/text()"s)
+    |> Item.get_image()
     |> get_urls()
   end
 

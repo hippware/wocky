@@ -145,8 +145,9 @@ defmodule Wocky.Bot.ItemSpec do
           {:ok, new_id: new_id, result: result}
         end
 
-        it "should return :ok" do
-          shared.result |> should(eq :ok)
+        it "should return {:ok, Item}" do
+          shared.result |> should(be_ok_result())
+          shared.result |> elem(1) |> should(be_struct(Item))
         end
 
         it "should create an item" do
@@ -168,7 +169,7 @@ defmodule Wocky.Bot.ItemSpec do
         end
 
         it "should return :ok" do
-          shared.result |> should(eq :ok)
+          shared.result |> should(be_ok_result())
         end
 
         it "should update the item" do
@@ -182,6 +183,18 @@ defmodule Wocky.Bot.ItemSpec do
 
           DateTime.compare(bot.updated_at, shared.bot.updated_at)
           |> should(eq :gt)
+        end
+      end
+
+      context "with invlid input" do
+        it "should fail for a non-existant bot" do
+          Item.put(Factory.build(:bot), shared.author, ID.new(), Lorem.word())
+          |> should(be_error_result())
+        end
+
+        it "should fail for a non-existant user" do
+          Item.put(shared.bot, Factory.build(:user), ID.new(), Lorem.word())
+          |> should(be_error_result())
         end
       end
     end
@@ -254,21 +267,6 @@ defmodule Wocky.Bot.ItemSpec do
     end
 
     describe "delete/2" do
-      context "when an item exists" do
-        before do
-          result = Item.delete(shared.bot, shared.id)
-          {:ok, result: result}
-        end
-
-        it "should return :ok" do
-          shared.result |> should(eq :ok)
-        end
-
-        it "should remove the item" do
-          Item.get(shared.bot, shared.id) |> should(be_nil())
-        end
-      end
-
       context "for an author" do
         before do
           result = Item.delete(shared.bot, shared.author)
@@ -284,23 +282,71 @@ defmodule Wocky.Bot.ItemSpec do
         end
       end
 
-      it "should return :ok when the bot doesn't exist" do
-        bot = Factory.build(:bot)
-
-        Item.delete(bot, shared.id)
-        |> should(eq :ok)
-      end
-
-      it "should return :ok when the id doesn't exist" do
-        Item.delete(shared.bot, ID.new())
-        |> should(eq :ok)
-      end
-
       it "should return :ok when the user doesn't exist" do
         Item.delete(shared.bot, Factory.build(:user))
         |> should(eq :ok)
       end
     end
+
+    describe "delete/3" do
+      it "should return {:error, :not_found} when the bot doesn't exist" do
+        bot = Factory.build(:bot)
+
+        Item.delete(bot, shared.id, shared.owner)
+        |> should(eq {:error, :not_found})
+      end
+
+      it "should return {:error, :not_found} when the id doesn't exist" do
+        Item.delete(shared.bot, ID.new(), shared.owner)
+        |> should(eq {:error, :not_found})
+      end
+
+      context "when an item exists" do
+        before do
+          result = Item.delete(shared.bot, shared.item2.id, shared.author)
+          {:ok, result: result}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should remove the item" do
+          Item.get(shared.bot, shared.item2.id) |> should(be_nil())
+        end
+      end
+
+      context "when an item exists and the bot owner deletes it" do
+        before do
+          result = Item.delete(shared.bot, shared.item2.id, shared.owner)
+          {:ok, result: result}
+        end
+
+        it "should return :ok" do
+          shared.result |> should(eq :ok)
+        end
+
+        it "should remove the item" do
+          Item.get(shared.bot, shared.item2.id) |> should(be_nil())
+        end
+      end
+
+      context "when an item exists and the bot owner deletes it" do
+        before do
+          result = Item.delete(shared.bot, shared.id, shared.author)
+          {:ok, result: result}
+        end
+
+        it "should return {:error, :permission_denied}" do
+          shared.result |> should(eq {:error, :permission_denied})
+        end
+
+        it "should not remove the item" do
+          Item.get(shared.bot, shared.id) |> should_not(be_nil())
+        end
+      end
+    end
+
   end
 
   describe "image detection" do

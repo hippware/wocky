@@ -3,6 +3,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   alias Faker.Lorem
   alias Wocky.Bot
+  alias Wocky.Bot.Item
   alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -730,6 +731,12 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "items and images" do
+    setup %{bot2: bot2, user: user, user2: user2} do
+      item = Factory.insert(:item, bot: bot2, user: user)
+      item2 = Factory.insert(:item, bot: bot2, user: user2)
+      {:ok, item: item, item2: item2}
+    end
+
     test "bot image", %{bot: %{id: id, image: image}, user: user} do
       query = """
       query ($id: UUID) {
@@ -828,6 +835,99 @@ defmodule WockyAPI.GraphQL.BotTest do
                  }
                }
              } = result.data
+    end
+
+    @query """
+    mutation ($input: BotItemPublishInput!) {
+      botItemPublish (input: $input) {
+        result {
+          id
+        }
+      }
+    }
+    """
+    test "publish item", %{user: user, bot: bot} do
+      id = ID.new()
+      stanza = Lorem.paragraph()
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => bot.id,
+                           "values" => %{"id" => id, "stanza" => stanza}}})
+
+      refute has_errors(result)
+      assert result.data == %{"botItemPublish" => %{"result" => %{"id" => id}}}
+      assert %Item{stanza: ^stanza, id: ^id} = Item.get(bot, id)
+    end
+
+    test "update existing item", %{user: user, bot2: bot2, item: item} do
+      id = item.id
+      stanza = Lorem.paragraph()
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => bot2.id,
+                           "values" => %{"id" => id, "stanza" => stanza}}})
+
+      refute has_errors(result)
+      assert %Item{stanza: ^stanza, id: ^id} = Item.get(bot2, id)
+    end
+
+    test "publish item failure", %{user: user, user2: user2, bot2: bot2} do
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => bot2.id,
+                           "values" => %{"stanza" => Lorem.paragraph()}}})
+
+      %{"botItemPublish" => %{"result" => %{"id" => id}}} = result.data
+
+      result = run_query(@query, user2,
+                         %{"input" => %{"bot_id" => bot2.id,
+                           "values" => %{"id" => id, "stanza" => Lorem.paragraph()}}})
+
+      assert error_msg(result) =~ "Permission denied"
+    end
+
+    @query """
+    mutation ($input: BotItemDeleteInput!) {
+      botItemDelete (input: $input) {
+        result
+      }
+    }
+    """
+    test "delete own item", %{user: user, bot2: bot2, item: item} do
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => bot2.id, "id" => item.id}})
+
+      refute has_errors(result)
+
+      assert result.data == %{"botItemDelete" => %{"result" => true}}
+    end
+
+    test "delete unowned item", %{user: user, bot2: bot2, item2: item2} do
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => bot2.id, "id" => item2.id}})
+
+      assert error_msg(result) =~ "Permission denied"
+    end
+
+    test "delete unowned item on owned bot",
+    %{user: user2, bot2: bot2, item: item} do
+      result = run_query(@query, user2,
+                         %{"input" => %{"bot_id" => bot2.id, "id" => item.id}})
+
+      refute has_errors(result)
+
+      assert result.data == %{"botItemDelete" => %{"result" => true}}
+    end
+
+    test "delete non-existant item", %{user: user, bot2: bot2} do
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => bot2.id, "id" => ID.new()}})
+
+      assert error_msg(result) =~ "Item not found"
+    end
+
+    test "delete on non-existant bot", %{user: user} do
+      result = run_query(@query, user,
+                         %{"input" => %{"bot_id" => ID.new(), "id" => ID.new()}})
+
+      assert error_msg(result) =~ "Bot not found"
     end
   end
 

@@ -182,7 +182,8 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   input_object :bot_item_params do
-    field :id, non_null(:string)
+    @desc "ID for the item. If this is not supplied one will be generated"
+    field :id, :string
     field :stanza, :string
   end
 
@@ -191,9 +192,15 @@ defmodule WockyAPI.Schema.BotTypes do
     field :values, non_null(:bot_item_params)
   end
 
+  input_object :bot_item_delete_input do
+    field :bot_id, non_null(:uuid)
+    field :id, non_null(:uuid)
+  end
+
   payload_object(:bot_create_payload, :bot)
   payload_object(:bot_update_payload, :bot)
-  payload_object(:bot_item_publish_payload, :boolean)
+  payload_object(:bot_item_publish_payload, :bot_item)
+  payload_object(:bot_item_delete_payload, :boolean)
 
   object :bot_queries do
     @desc "Retrive a single bot by ID"
@@ -270,6 +277,13 @@ defmodule WockyAPI.Schema.BotTypes do
     field :bot_item_publish, type: :bot_item_publish_payload do
       arg :input, non_null(:bot_item_publish_input)
       resolve &Bot.publish_item/3
+      changeset_mutation_middleware
+    end
+
+    @desc "Delete an item from a bot"
+    field :bot_item_delete, type: :bot_item_delete_payload do
+      arg :input, non_null(:bot_item_delete_input)
+      resolve &Bot.delete_item/3
       changeset_mutation_middleware
     end
   end
