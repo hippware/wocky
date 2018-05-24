@@ -207,7 +207,7 @@ defmodule WockyAPI.Resolvers.Bot do
   def delete_item(_root, args, %{context: %{current_user: requestor}}) do
     with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
          :ok <- Item.delete(bot, args[:input][:id], requestor) do
-           {:ok, true}
+      {:ok, true}
     else
       nil -> not_found_error(args[:input][:bot_id])
       {:error, :permission_denied} -> {:error, "Permission denied"}

@@ -87,18 +87,19 @@ defmodule Wocky.Bot.Item do
 
   defp do_put(bot, user, id, stanza) do
     with {:ok, item} <-
-      %Item{}
-      |> changeset(%{
-        id: id,
-        bot_id: bot.id,
-        user_id: user.id,
-        stanza: stanza,
-        image: has_image(stanza)
-      })
-      |> Repo.insert(on_conflict: :replace_all,
-                     conflict_target: [:id, :bot_id],
-                     returning: true)
-    do
+           %Item{}
+           |> changeset(%{
+             id: id,
+             bot_id: bot.id,
+             user_id: user.id,
+             stanza: stanza,
+             image: has_image(stanza)
+           })
+           |> Repo.insert(
+             on_conflict: :replace_all,
+             conflict_target: [:id, :bot_id],
+             returning: true
+           ) do
       Bot.bump_update_time(bot)
       {:ok, item}
     end
@@ -122,9 +123,9 @@ defmodule Wocky.Bot.Item do
   end
 
   @spec delete(Bot.t(), id, User.t()) ::
-  :ok | {:error, :not_found | :permission_denied}
+          :ok | {:error, :not_found | :permission_denied}
   def delete(%Bot{user_id: user_id} = bot, id, %User{id: user_id})
-  when is_binary(id) do
+      when is_binary(id) do
     {deleted, _} =
       bot
       |> Ecto.assoc(:items)
@@ -142,8 +143,10 @@ defmodule Wocky.Bot.Item do
       %Item{user_id: ^user_id} = item ->
         Repo.delete(item)
         :ok
+
       nil ->
         {:error, :not_found}
+
       _ ->
         {:error, :permission_denied}
     end
@@ -181,11 +184,12 @@ defmodule Wocky.Bot.Item do
       |> xpath(~x"//image/text()"s)
       |> empty_str_to_nil()
     catch
-      :exit, _ -> nil # Happens on parse failure - ie, not valid XML
+      # Happens on parse failure - ie, not valid XML
+      :exit, _ ->
+        nil
     end
   end
 
   defp empty_str_to_nil(""), do: nil
   defp empty_str_to_nil(s), do: s
-
 end

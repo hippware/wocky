@@ -209,8 +209,10 @@ defmodule Wocky.Bot.ItemSpec do
 
       it "should set image to true when an image is present" do
         new_id = ID.new()
-        {:ok, item} = Item.publish(
-          shared.bot, shared.owner, new_id, @image_stanza)
+
+        {:ok, item} =
+          Item.publish(shared.bot, shared.owner, new_id, @image_stanza)
+
         item.id |> should(eq new_id)
         item.image |> should(be_true())
       end
@@ -346,7 +348,6 @@ defmodule Wocky.Bot.ItemSpec do
         end
       end
     end
-
   end
 
   describe "image detection" do
