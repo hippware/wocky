@@ -184,16 +184,23 @@ defmodule WockyAPI.Schema.BotTypes do
   input_object :bot_item_params do
     @desc "ID for the item. If this is not supplied one will be generated"
     field :id, :string
+
+    @desc "Content of them item"
     field :stanza, :string
   end
 
   input_object :bot_item_publish_input do
+    @desc "ID of the bot containing the item"
     field :bot_id, non_null(:uuid)
+
     field :values, non_null(:bot_item_params)
   end
 
   input_object :bot_item_delete_input do
+    @desc "ID of the bot containing the item"
     field :bot_id, non_null(:uuid)
+
+    @desc "ID of the item to delete"
     field :id, non_null(:uuid)
   end
 
