@@ -109,7 +109,7 @@ image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 
 publish_item(From, ToJID, Bot, ItemID, Entry) ->
     EntryBin = exml:to_binary(Entry),
-    case ?wocky_item:publish(Bot, From, ItemID, EntryBin) of
+    case ?wocky_item:put(Bot, From, ItemID, EntryBin) of
         {ok, Item} ->
             Message = notification_event(Bot, make_item_element(Item)),
             wocky_bot_users:notify_subscribers_and_watchers(

@@ -196,7 +196,7 @@ defmodule WockyAPI.Resolvers.Bot do
     id = values[:id] || ID.new()
 
     with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
-         {:ok, item} <- Item.publish(bot, requestor, id, values[:stanza]) do
+         {:ok, item} <- Item.put(bot, requestor, id, values[:stanza]) do
       {:ok, item}
     else
       nil -> not_found_error(args[:input][:bot_id])

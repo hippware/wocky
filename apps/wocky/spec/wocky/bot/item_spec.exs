@@ -197,21 +197,11 @@ defmodule Wocky.Bot.ItemSpec do
           |> should(be_error_result())
         end
       end
-    end
-
-    describe "publish/4" do
-      it "should return the item" do
-        new_id = ID.new()
-        {:ok, item} = Item.publish(shared.bot, shared.owner, new_id, "testing")
-        item.id |> should(eq new_id)
-        item.image |> should(be_false())
-      end
 
       it "should set image to true when an image is present" do
         new_id = ID.new()
 
-        {:ok, item} =
-          Item.publish(shared.bot, shared.owner, new_id, @image_stanza)
+        {:ok, item} = Item.put(shared.bot, shared.owner, new_id, @image_stanza)
 
         item.id |> should(eq new_id)
         item.image |> should(be_true())
@@ -229,7 +219,7 @@ defmodule Wocky.Bot.ItemSpec do
         and is owned by another user
         """ do
           shared.bot
-          |> Item.publish(shared.owner, shared.item.id, Lorem.paragraph())
+          |> Item.put(shared.owner, shared.item.id, Lorem.paragraph())
           |> should(eq {:error, :permission_denied})
         end
 
@@ -238,7 +228,7 @@ defmodule Wocky.Bot.ItemSpec do
         and is owned by the same user
         """ do
           shared.bot
-          |> Item.publish(shared.user, shared.item.id, Lorem.paragraph())
+          |> Item.put(shared.user, shared.item.id, Lorem.paragraph())
           |> should(be_ok_result())
         end
       end

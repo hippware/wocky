@@ -105,14 +105,6 @@ defmodule Wocky.Bot.Item do
     end
   end
 
-  @spec publish(Bot.t(), User.t(), id, binary) :: {:ok, t}
-  def publish(bot, user, id, stanza) do
-    case put(bot, user, id, stanza) do
-      :ok -> {:ok, get(bot, id)}
-      error -> error
-    end
-  end
-
   @spec delete(Bot.t()) :: :ok
   def delete(bot) do
     bot
@@ -124,8 +116,7 @@ defmodule Wocky.Bot.Item do
 
   @spec delete(Bot.t(), id, User.t()) ::
           :ok | {:error, :not_found | :permission_denied}
-  def delete(%Bot{user_id: user_id} = bot, id, %User{id: user_id})
-      when is_binary(id) do
+  def delete(%Bot{user_id: user_id} = bot, id, %User{id: user_id}) do
     {deleted, _} =
       bot
       |> Ecto.assoc(:items)
@@ -138,7 +129,7 @@ defmodule Wocky.Bot.Item do
     end
   end
 
-  def delete(bot, id, %User{id: user_id}) when is_binary(id) do
+  def delete(bot, id, %User{id: user_id}) do
     case get(bot, id) do
       %Item{user_id: ^user_id} = item ->
         Repo.delete(item)
