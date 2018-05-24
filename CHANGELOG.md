@@ -25,6 +25,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add media upload GraphQL query (PR #1556)
 * Ensure correct fields are/are not set during subscription updates (PR #1555)
   * Newly created private geofence bot is not part of activeBots query (#1553)
+* Add geofence `hasUsedGeofence` intro query (PR #1567)
 
 
 # 2018.5.15+ra3dbb55
