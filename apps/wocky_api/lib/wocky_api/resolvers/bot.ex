@@ -191,6 +191,31 @@ defmodule WockyAPI.Resolvers.Bot do
     Subscription.publish(Endpoint, notification, targets)
   end
 
+  def publish_item(_root, args, %{context: %{current_user: requestor}}) do
+    values = args[:input][:values]
+    id = values[:id] || ID.new()
+
+    with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
+         {:ok, item} <- Item.put(bot, requestor, id, values[:stanza]) do
+      {:ok, item}
+    else
+      nil -> not_found_error(args[:input][:bot_id])
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+    end
+  end
+
+  def delete_item(_root, args, %{context: %{current_user: requestor}}) do
+    with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
+         :ok <- Item.delete(bot, args[:input][:id], requestor) do
+      {:ok, true}
+    else
+      nil -> not_found_error(args[:input][:bot_id])
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      {:error, :not_found} -> {:error, "Item not found"}
+      error -> error
+    end
+  end
+
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
   defp not_owned_error(), do: {:error, "Operation only permitted on owned bots"}
 end

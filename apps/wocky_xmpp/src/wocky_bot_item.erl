@@ -44,7 +44,6 @@ publish(Bot, From, ToJID, SubEl) ->
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            Entry <- wocky_xml:get_subel(<<"entry">>, Item),
            wocky_xml:check_namespace(?NS_ATOM, Entry),
-           check_can_publish(From, Bot, ItemID),
            publish_item(From, ToJID, Bot, ItemID, Entry),
            {ok, []}
        ]).
@@ -53,8 +52,7 @@ retract(Bot, From, _ToJID, SubEl) ->
     do([error_m ||
            Item <- wocky_xml:get_subel(<<"item">>, SubEl),
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
-           check_can_retract(From, Bot, ItemID),
-           ?wocky_item:delete(Bot, ItemID),
+           delete_item(Bot, ItemID, From),
            {ok, []}
        ]).
 
@@ -95,7 +93,7 @@ image_els(Owner, FromUser, Images) ->
     lists:map(image_el(Owner, FromJID, _), Images).
 
 image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
-    TROSURL = wocky_bot_util:get_image(S),
+    TROSURL = ?wocky_item:get_image(S),
     {Full, Thumbnail} = mod_wocky_tros:get_download_urls(TROSURL, FromJID),
     #xmlel{name = <<"image">>,
            attrs = [{<<"owner">>, jid:to_binary(Owner)},
@@ -110,32 +108,25 @@ image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 %%%===================================================================
 
 publish_item(From, ToJID, Bot, ItemID, Entry) ->
-    Image = has_image(Entry),
     EntryBin = exml:to_binary(Entry),
-    {ok, Item} = ?wocky_item:publish(Bot, From, ItemID, EntryBin, Image),
-    Message = notification_event(Bot, make_item_element(Item)),
-    wocky_bot_users:notify_subscribers_and_watchers(Bot, From, ToJID, Message).
-
-has_image(Entry) ->
-    wocky_bot_util:get_image(Entry) =/= <<>>.
-
-check_can_publish(#{id := UserID}, Bot, ItemID) ->
-    case ?wocky_item:get(Bot, ItemID) of
-        nil -> ok;
-        #{user_id := UserID} -> ok;
-        _ -> {error, ?ERR_FORBIDDEN}
+    case ?wocky_item:put(Bot, From, ItemID, EntryBin) of
+        {ok, Item} ->
+            Message = notification_event(Bot, make_item_element(Item)),
+            wocky_bot_users:notify_subscribers_and_watchers(
+              Bot, From, ToJID, Message);
+        {error, permission_denied} ->
+            {error, ?ERR_FORBIDDEN}
     end.
 
 %%%===================================================================
 %%% Helpers - retract
 %%%===================================================================
 
-check_can_retract(#{id := UserID}, Bot = #{user_id := BotOwner}, ItemID) ->
-    case ?wocky_item:get(Bot, ItemID) of
-        nil -> {error, ?ERR_ITEM_NOT_FOUND};
-        #{user_id := UserID} -> ok;
-        _ when UserID =:= BotOwner -> ok;
-        _ -> {error, ?ERR_FORBIDDEN}
+delete_item(BotID, ItemID, From) ->
+    case ?wocky_item:delete(BotID, ItemID, From) of
+        ok -> ok;
+        {error, permission_denied} -> {error, ?ERR_FORBIDDEN};
+        {error, not_found} -> {error, ?ERR_ITEM_NOT_FOUND}
     end.
 
 %%%===================================================================

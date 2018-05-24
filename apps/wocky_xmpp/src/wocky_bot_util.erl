@@ -23,7 +23,6 @@
          check_guest/2,
          check_access/2,
          get_id_from_fields/1,
-         get_image/1,
          bot_packet_action/1,
          follow_stanza/2,
          bot_action_el/2
@@ -120,17 +119,6 @@ check_access(User = #{id := UserID}, Bot = #{user_id := BotOwnerID}) ->
             end;
         false ->
             {error, ?ERR_FORBIDDEN}
-    end.
-
-get_image(Entry) when is_binary(Entry) ->
-    case exml:parse(Entry) of
-        {ok, EntryXML} -> get_image(EntryXML);
-        _ -> <<>>
-    end;
-get_image(Entry = #xmlel{}) ->
-    case xml:get_subtag(Entry, <<"image">>) of
-        #xmlel{children = [#xmlcdata{content = C}]} -> C;
-        false -> <<>>
     end.
 
 bot_packet_action(BotStanza) ->
