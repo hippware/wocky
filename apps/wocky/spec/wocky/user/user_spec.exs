@@ -168,18 +168,19 @@ defmodule Wocky.UserSpec do
     end
 
     context "avatar validations" do
+      before do
+        %Metadata{id: file_id} =
+          Factory.insert(
+            :tros_metadata,
+            user: shared.user,
+            access: "public"
+          )
+
+        url = TROS.make_url(shared.server, file_id)
+        {:ok, file_id: file_id, url: url}
+      end
+
       context "with invalid data" do
-        before do
-          file_id = ID.new()
-          url = TROS.make_url(shared.server, file_id)
-          Metadata.put(file_id, ID.new(), "public")
-          {:ok, file_id: file_id, url: url}
-        end
-
-        finally do
-          Metadata.delete(shared.file_id)
-        end
-
         it "should fail with an invalid avatar URL" do
           shared.user
           |> User.changeset(%{avatar: "not a valid URL"})
@@ -199,29 +200,19 @@ defmodule Wocky.UserSpec do
         end
 
         it "should fail with a file owned by another user" do
-          shared.user
+          :user
+          |> Factory.insert()
           |> User.changeset(%{avatar: shared.url})
           |> should(have_errors([:avatar]))
         end
       end
-    end
 
-    context "with valid data" do
-      before do
-        file_id = ID.new()
-        url = TROS.make_url(shared.server, file_id)
-        Metadata.put(file_id, shared.user.id, "public")
-        {:ok, file_id: file_id, url: url}
-      end
-
-      finally do
-        Metadata.delete(shared.file_id)
-      end
-
-      it "should be valid" do
-        shared.user
-        |> User.changeset(%{avatar: shared.url})
-        |> should(be_valid())
+      context "with valid data" do
+        it "should be valid" do
+          shared.user
+          |> User.changeset(%{avatar: shared.url})
+          |> should(be_valid())
+        end
       end
     end
   end
@@ -312,16 +303,16 @@ defmodule Wocky.UserSpec do
 
         context "when a valid avatar is passed" do
           before do
-            avatar_id = ID.new()
-            avatar_url = TROS.make_url(shared.server, avatar_id)
+            %Metadata{id: id} =
+              Factory.insert(
+                :tros_metadata,
+                user: shared.user,
+                access: "public"
+              )
 
-            Metadata.put(avatar_id, shared.user.id, "public")
+            avatar_url = TROS.make_url(shared.server, id)
 
-            {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
-          end
-
-          finally do
-            Metadata.delete(shared.avatar_id)
+            {:ok, avatar_id: id, avatar_url: avatar_url}
           end
 
           context "and the user does not have an existing avatar" do

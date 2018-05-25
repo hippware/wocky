@@ -85,13 +85,18 @@ defmodule Wocky.TROS.Metadata do
     |> Repo.one()
   end
 
-  @spec delete(id) :: :ok
-  def delete(id) do
-    TROSMetadata
-    |> with_file(id)
-    |> Repo.delete_all()
+  @spec delete(id, User.t()) :: {:ok, t()} | {:error, term}
+  def delete(id, %User{id: user_id}) do
+    case get(id) do
+      %Metadata{user_id: ^user_id} = metadata ->
+        Repo.delete(metadata, returning: true)
 
-    :ok
+      nil ->
+        {:error, :not_found}
+
+      _ ->
+        {:error, :permission_denied}
+    end
   end
 
   @spec ready?(id) :: boolean

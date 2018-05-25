@@ -4,6 +4,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
   alias Faker.Lorem
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.TROS
 
   setup do
     {:ok, user: Factory.insert(:user)}
@@ -11,7 +12,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
 
   describe "upload" do
     @query """
-    mutation ($input: MediaUploadParams) {
+    mutation ($input: MediaUploadParams!) {
       mediaUpload (input: $input) {
         result {
           id
@@ -58,6 +59,45 @@ defmodule WockyAPI.GraphQL.MediaTest do
 
       assert error_msg(result) =~ ~r/In field "filename"/
       assert error_msg(result) =~ ~r/In field "mimeType"/
+    end
+  end
+
+  describe "delete" do
+    setup %{user: user} do
+      metadata = Factory.insert(:tros_metadata, user: user)
+      {:ok, metadata: metadata}
+    end
+
+    @query """
+    mutation ($input: MediaDeleteParams!) {
+      mediaDelete (input: $input) {
+        result
+      }
+    }
+    """
+    test "delete a file", %{user: user, metadata: metadata} do
+      result = run_query(@query, user, %{"input" => %{"id" => metadata.id}})
+
+      refute has_errors(result)
+
+      assert %{"mediaDelete" => %{"result" => true}} = result.data
+
+      assert TROS.get_metadata(metadata.id) == {:error, :not_found}
+    end
+
+    test "delete an unowned file", %{metadata: metadata} do
+      result =
+        run_query(@query, Factory.insert(:user), %{
+          "input" => %{"id" => metadata.id}
+        })
+
+      assert error_msg(result) =~ "Permission denied"
+    end
+
+    test "delete a non-existant file", %{user: user} do
+      result = run_query(@query, user, %{"input" => %{"id" => ID.new()}})
+
+      assert error_msg(result) =~ "File not found"
     end
   end
 end

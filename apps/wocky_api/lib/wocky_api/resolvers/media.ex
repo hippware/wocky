@@ -71,4 +71,13 @@ defmodule WockyAPI.Resolvers.Media do
 
   defp make_return_headers(headers),
     do: Enum.map(headers, fn {n, v} -> %{name: n, value: v} end)
+
+  def delete(_root, args, %{context: %{current_user: user}}) do
+    with {:ok, _file} <- TROS.delete(args[:input][:id], user) do
+      {:ok, true}
+    else
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      {:error, :not_found} -> {:error, "File not found"}
+    end
+  end
 end
