@@ -86,7 +86,10 @@ defmodule WockyAPI.GraphQL.MediaTest do
     end
 
     test "delete an unowned file", %{metadata: metadata} do
-      result = run_query(@query, Factory.insert(:user), %{"input" => %{"id" => metadata.id}})
+      result =
+        run_query(@query, Factory.insert(:user), %{
+          "input" => %{"id" => metadata.id}
+        })
 
       assert error_msg(result) =~ "Permission denied"
     end
@@ -97,5 +100,4 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert error_msg(result) =~ "File not found"
     end
   end
-
 end

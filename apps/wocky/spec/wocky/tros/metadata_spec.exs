@@ -10,7 +10,9 @@ defmodule Wocky.TROS.MetadataSpec do
   before do
     user = Factory.insert(:user)
     metadata = Factory.insert(:tros_metadata, user: user)
-    {:ok, id: metadata.id, user: user, access: metadata.access, metadata: metadata}
+
+    {:ok,
+     id: metadata.id, user: user, access: metadata.access, metadata: metadata}
   end
 
   describe "put/3" do

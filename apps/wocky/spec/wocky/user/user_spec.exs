@@ -169,10 +169,13 @@ defmodule Wocky.UserSpec do
 
     context "avatar validations" do
       before do
-        %Metadata{id: file_id} = Factory.insert(
-          :tros_metadata,
-          user: shared.user,
-          access: "public")
+        %Metadata{id: file_id} =
+          Factory.insert(
+            :tros_metadata,
+            user: shared.user,
+            access: "public"
+          )
+
         url = TROS.make_url(shared.server, file_id)
         {:ok, file_id: file_id, url: url}
       end
@@ -212,7 +215,6 @@ defmodule Wocky.UserSpec do
         end
       end
     end
-
   end
 
   describe "tests using TestIndexer", async: false do
@@ -301,9 +303,13 @@ defmodule Wocky.UserSpec do
 
         context "when a valid avatar is passed" do
           before do
-            %Metadata{id: id} = Factory.insert(:tros_metadata,
-                                               user: shared.user,
-                                               access: "public")
+            %Metadata{id: id} =
+              Factory.insert(
+                :tros_metadata,
+                user: shared.user,
+                access: "public"
+              )
+
             avatar_url = TROS.make_url(shared.server, id)
 
             {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
