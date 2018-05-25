@@ -42,19 +42,19 @@ defmodule Wocky.User.Avatar do
     end
   end
 
-  @spec maybe_delete_existing(url | nil, url | nil) :: :ok
+  @spec maybe_delete_existing(url | nil, User.t()) :: :ok
 
   # For this call, a `nil` in the new position means that the changeset
   # for the user is not changing the avatar, not that it is setting it
   # to be empty. Therefore we take no action in that case:
-  def maybe_delete_existing(nil, _old_avatar), do: :ok
-  def maybe_delete_existing(_new_avatar, nil), do: :ok
-  def maybe_delete_existing(avatar, avatar), do: :ok
+  def maybe_delete_existing(nil, %User{avatar: _old_avatar}), do: :ok
+  def maybe_delete_existing(_new_avatar, %User{avatar: nil}), do: :ok
+  def maybe_delete_existing(avatar, %User{avatar: avatar}), do: :ok
 
-  def maybe_delete_existing(_new_avatar, old_avatar) do
-    case TROS.parse_url(old_avatar) do
+  def maybe_delete_existing(_new_avatar, user) do
+    case TROS.parse_url(user.avatar) do
       {:ok, {file_server, file_id}} ->
-        TROS.delete(file_server, file_id)
+        TROS.delete(file_server, file_id, user)
 
       {:error, _} ->
         :ok

@@ -237,8 +237,8 @@ defmodule Wocky.User do
     end
   end
 
-  def changeset(struct, params) do
-    struct
+  def changeset(user, params) do
+    user
     |> cast(params, @update_fields)
     |> validate_change(:email, &validate_email/2)
     |> validate_length(:handle, min: @min_handle_len, max: @max_handle_len)
@@ -247,10 +247,10 @@ defmodule Wocky.User do
     |> validate_length(:last_name, max: @max_name_len)
     |> validate_change(:first_name, &validate_name/2)
     |> validate_change(:last_name, &validate_name/2)
-    |> validate_change(:avatar, &validate_avatar(&1, struct, &2))
+    |> validate_change(:avatar, &validate_avatar(&1, user, &2))
     |> unique_constraint(:handle, name: :users_lower_handle_index)
     |> prepare_changes(fn changeset ->
-      Avatar.maybe_delete_existing(changeset.changes[:avatar], struct.avatar)
+      Avatar.maybe_delete_existing(changeset.changes[:avatar], user)
       changeset
     end)
   end

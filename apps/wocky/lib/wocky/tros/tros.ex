@@ -91,10 +91,11 @@ defmodule Wocky.TROS do
     Metadata.set_access(file_id, new_access)
   end
 
-  @spec delete(server, file_id) :: :ok
-  def delete(server, file_id) do
-    Metadata.delete(file_id)
-    backend().delete(server, file_id)
+  @spec delete(server, file_id, User.t()) :: :ok
+  def delete(server, file_id, requestor) do
+    with :ok <- Metadata.delete(file_id, requestor) do
+      backend().delete(server, file_id)
+    end
   end
 
   @spec make_upload_response(JID.t(), file_id, integer, binary, metadata) ::

@@ -107,18 +107,45 @@ defmodule Wocky.TROS.MetadataSpec do
   end
 
   describe "delete/1" do
-    before do
-      result = Metadata.delete(shared.id)
-      {:ok, result: result}
+    context "when the data exists and is owned by the requestor" do
+      before do
+        result = Metadata.delete(shared.id, shared.user)
+        {:ok, result: result}
+      end
+
+      it "should return :ok" do
+        shared.result |> should(eq :ok)
+      end
+
+      it "should delete the file" do
+        Metadata.get(shared.id) |> should(be_nil())
+      end
     end
 
-    it "should return :ok" do
-      shared.result |> should(eq :ok)
+    context "when the data exists and is not owned by the requestor" do
+      before do
+        result = Metadata.delete(shared.id, Factory.insert(:user))
+        {:ok, result: result}
+      end
+
+      it "should return {:error, :permission_denied}" do
+        shared.result |> should(eq {:error, :permission_denied})
+      end
+
+      it "should delete the file" do
+        Metadata.get(shared.id) |> should_not(be_nil())
+      end
     end
 
-    it "should delete the file" do
-      Metadata.get_access(shared.id) |> should(be_nil())
-      Metadata.get_user_id(shared.id) |> should(be_nil())
+    context "when the data does not exist" do
+      before do
+        result = Metadata.delete(ID.new(), shared.user)
+        {:ok, result: result}
+      end
+
+      it "should return {:error, :not_found}" do
+        shared.result |> should(eq {:error, :not_found})
+      end
     end
   end
 end
