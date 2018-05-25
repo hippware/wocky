@@ -10,7 +10,7 @@ defmodule Wocky.TROS.MetadataSpec do
   before do
     user = Factory.insert(:user)
     metadata = Factory.insert(:tros_metadata, user: user)
-    {:ok, id: metadata.id, user: user, access: metadata.access}
+    {:ok, id: metadata.id, user: user, access: metadata.access, metadata: metadata}
   end
 
   describe "put/3" do
@@ -113,8 +113,10 @@ defmodule Wocky.TROS.MetadataSpec do
         {:ok, result: result}
       end
 
-      it "should return :ok" do
-        shared.result |> should(eq :ok)
+      it "should return {:ok, file}" do
+        shared.result |> should(be_ok_result())
+        shared.result |> elem(1) |> should(be_struct(Metadata))
+        shared.result |> elem(1) |> Map.get(:id) |> should(eq shared.id)
       end
 
       it "should delete the file" do

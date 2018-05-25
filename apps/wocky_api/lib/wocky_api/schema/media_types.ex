@@ -39,6 +39,12 @@ defmodule WockyAPI.Schema.MediaTypes do
 
   payload_object(:media_upload_payload, :media_upload_result)
 
+  input_object :media_delete_params do
+    field :id, non_null(:string)
+  end
+
+  payload_object(:media_delete_payload, :boolean)
+
   object :request_header do
     @desc "HTTP Header name"
     field :name, non_null(:string)
@@ -69,6 +75,13 @@ defmodule WockyAPI.Schema.MediaTypes do
     field :media_upload, type: :media_upload_payload do
       arg :input, non_null(:media_upload_params)
       resolve &Media.upload/3
+      changeset_mutation_middleware
+    end
+
+    @desc "Delete a file"
+    field :media_delete, type: :media_delete_payload do
+      arg :input, non_null(:media_delete_params)
+      resolve &Media.delete/3
       changeset_mutation_middleware
     end
   end

@@ -91,10 +91,11 @@ defmodule Wocky.TROS do
     Metadata.set_access(file_id, new_access)
   end
 
-  @spec delete(server, file_id, User.t()) :: :ok
-  def delete(server, file_id, requestor) do
-    with :ok <- Metadata.delete(file_id, requestor) do
-      backend().delete(server, file_id)
+  @spec delete(file_id, User.t()) :: :ok
+  def delete(file_id, requestor) do
+    with {:ok, file} <- Metadata.delete(file_id, requestor) do
+      backend().delete(Confex.get_env(:wocky, :wocky_host), file_id)
+      {:ok, file}
     end
   end
 

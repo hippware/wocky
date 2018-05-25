@@ -85,12 +85,11 @@ defmodule Wocky.TROS.Metadata do
     |> Repo.one()
   end
 
-  @spec delete(id, User.t()) :: :ok
+  @spec delete(id, User.t()) :: {:ok, t()} | {:error, term}
   def delete(id, %User{id: user_id}) do
     case get(id) do
       %Metadata{user_id: ^user_id} = metadata ->
-        Repo.delete(metadata)
-        :ok
+        Repo.delete(metadata, returning: true)
 
       nil ->
         {:error, :not_found}

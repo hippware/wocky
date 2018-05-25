@@ -53,8 +53,8 @@ defmodule Wocky.User.Avatar do
 
   def maybe_delete_existing(_new_avatar, user) do
     case TROS.parse_url(user.avatar) do
-      {:ok, {file_server, file_id}} ->
-        TROS.delete(file_server, file_id, user)
+      {:ok, {_file_server, file_id}} ->
+        TROS.delete(file_id, user)
 
       {:error, _} ->
         :ok
