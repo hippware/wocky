@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.5.24+r48e4c8d
+
 * Remove mod_wocky_cli (PR #1526)
 * Remove old slack token (PR #1529)
 * Some more fixes for desktop mode (PR #1528)
@@ -26,6 +28,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Ensure correct fields are/are not set during subscription updates (PR #1555)
   * Newly created private geofence bot is not part of activeBots query (#1553)
 * Add geofence `hasUsedGeofence` intro query (PR #1567)
+* Add GraphQL for bot item management (PR #1569)
 
 
 # 2018.5.15+ra3dbb55
