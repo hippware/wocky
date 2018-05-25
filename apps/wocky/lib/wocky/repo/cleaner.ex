@@ -26,7 +26,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d5} = clean_pending_tros_files()
     {:ok, d6} = clean_invalid_push_tokens()
     {:ok, d7} = clean_expired_auth_tokens()
-    {:ok, d8} = clean_dead_tros_links()
+    {:ok, d8} = clean_dead_tros_links(true)
 
     {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
   end
