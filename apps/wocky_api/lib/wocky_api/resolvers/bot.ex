@@ -9,6 +9,7 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Repo.ID
   alias Wocky.User
   alias WockyAPI.Endpoint
+  alias WockyAPI.Resolvers.User, as: UserResolver
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
@@ -88,9 +89,20 @@ defmodule WockyAPI.Resolvers.Bot do
 
       bot ->
         updates = parse_lat_lon(args[:input][:values])
-        Bot.update(bot, updates)
+
+        with {:ok, bot} <- Bot.update(bot, updates),
+             {:ok, true} <- maybe_update_location(args, requestor) do
+          {:ok, bot}
+        end
     end
   end
+
+  defp maybe_update_location(%{input: %{user_location: location}}, user)
+       when not is_nil(location) do
+    UserResolver.update_location(location, user, true)
+  end
+
+  defp maybe_update_location(_, _), do: {:ok, true}
 
   defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
     Map.put(input, :location, GeoUtils.point(lat, lon))

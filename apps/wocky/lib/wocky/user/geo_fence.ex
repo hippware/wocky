@@ -11,19 +11,27 @@ defmodule Wocky.User.GeoFence do
   require Logger
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t(), User.resource(), boolean()) ::
+  @spec check_for_bot_events(Location.t(), User.t(), User.resource()) ::
           Location.t()
-  def check_for_bot_events(%Location{} = loc, user, resource, debounce) do
+  def check_for_bot_events(%Location{} = loc, user, resource) do
     user = %User{user | resource: resource}
 
     maybe_do_async(fn ->
       user
       |> User.get_guest_subscriptions()
-      |> check_for_events(user, loc, debounce)
+      |> check_for_events(user, loc)
       |> Enum.each(&process_bot_event/1)
     end)
 
     loc
+  end
+
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), User.resource()) ::
+  :ok
+  def check_for_bot_event(bot, loc, user, resource) do
+    bot
+    |> check_for_event(%User{user | resource: resource}, loc, false, [])
+    |> Enum.each(&process_bot_event/1)
   end
 
   defp maybe_do_async(fun) do
@@ -34,12 +42,11 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp check_for_events(bots, user, loc, debounce) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, loc, debounce, &2))
+  defp check_for_events(bots, user, loc) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, loc, true, &2))
   end
 
-  defp check_for_event(bot, user, loc, debounce, acc) do
-    :ok =
+  defp check_for_event(bot, user, loc, debounce, acc) do :ok =
       Logger.debug(fn ->
         """
         Checking user #{user.id} for collision with bot #{bot.id} \

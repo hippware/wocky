@@ -5,6 +5,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
@@ -421,22 +422,21 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "bot mutations" do
+    @query """
+    mutation ($values: BotParams!, $location: UserLocationUpdateInput) {
+      botCreate (input: {values: $values, user_location: $location}) {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
     test "create bot", %{user: user} do
       fields = [:title, :server, :lat, :lon, :radius, :description, :shortname]
       bot = :bot |> Factory.build() |> add_lat_lon() |> Map.take(fields)
 
-      query = """
-      mutation ($values: BotParams!) {
-        botCreate (input: {values: $values}) {
-          successful
-          result {
-            id
-          }
-        }
-      }
-      """
-
-      result = run_query(query, user, %{"values" => stringify_keys(bot)})
+      result = run_query(@query, user, %{"values" => stringify_keys(bot)})
 
       refute has_errors(result)
 
@@ -450,6 +450,29 @@ defmodule WockyAPI.GraphQL.BotTest do
              } = result.data
 
       assert ^bot = id |> Bot.get() |> add_lat_lon() |> Map.take(fields)
+    end
+
+    test "create bot with location", %{user: %{id: user_id} = user} do
+      fields = [:title, :server, :lat, :lon, :radius, :description, :shortname, :geofence]
+      bot = :bot |> Factory.build(geofence: true) |> add_lat_lon() |> Map.take(fields)
+
+      result = run_query(@query, user, %{"values" => stringify_keys(bot),
+        "user_location" => %{"lat" => Bot.lat(bot), "lon" => Bot.lon(bot),
+        "accuracy" => 1, "device" => Lorem.word()}})
+
+      refute has_errors(result)
+
+      assert %{
+               "botCreate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => id
+                 }
+               }
+             } = result.data
+
+      bot = Bot.get(id)
+      assert [%{user_id: ^user_id}] = Bot.visitors_query(bot) |> Repo.all()
     end
 
     test "update bot", %{user: user, bot: bot} do

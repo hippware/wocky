@@ -179,6 +179,7 @@ defmodule WockyAPI.Schema.BotTypes do
   input_object :bot_update_input do
     field :id, non_null(:uuid)
     field :values, non_null(:bot_params)
+    field :user_location, :user_location_update_input
   end
 
   input_object :bot_item_params do
