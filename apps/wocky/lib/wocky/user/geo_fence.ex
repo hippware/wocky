@@ -11,15 +11,15 @@ defmodule Wocky.User.GeoFence do
   require Logger
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t(), User.resource()) ::
+  @spec check_for_bot_events(Location.t(), User.t(), User.resource(), boolean()) ::
           Location.t()
-  def check_for_bot_events(%Location{} = loc, user, resource) do
+  def check_for_bot_events(%Location{} = loc, user, resource, debounce) do
     user = %User{user | resource: resource}
 
     maybe_do_async(fn ->
       user
       |> User.get_guest_subscriptions()
-      |> check_for_events(user, loc)
+      |> check_for_events(user, loc, debounce)
       |> Enum.each(&process_bot_event/1)
     end)
 
@@ -34,11 +34,11 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp check_for_events(bots, user, loc) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, loc, &2))
+  defp check_for_events(bots, user, loc, debounce) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, loc, debounce, &2))
   end
 
-  defp check_for_event(bot, user, loc, acc) do
+  defp check_for_event(bot, user, loc, debounce, acc) do
     :ok =
       Logger.debug(fn ->
         """
@@ -50,7 +50,7 @@ defmodule Wocky.User.GeoFence do
     bot
     |> Bot.contains?(Map.from_struct(loc))
     |> maybe_set_exit_timer(user, bot, loc)
-    |> handle_intersection(user, bot, loc, acc)
+    |> handle_intersection(user, bot, loc, debounce, acc)
   end
 
   defp maybe_set_exit_timer(false, _, _, _), do: false
@@ -72,10 +72,10 @@ defmodule Wocky.User.GeoFence do
     true
   end
 
-  defp handle_intersection(inside?, user, bot, loc, acc) do
+  defp handle_intersection(inside?, user, bot, loc, debounce, acc) do
     event = BotEvent.get_last_event(user.id, user.resource, bot.id)
 
-    case user_state_change(inside?, event) do
+    case user_state_change(inside?, event, debounce) do
       :no_change ->
         acc
 
@@ -89,9 +89,11 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(true, nil), do: :transition_in
+  defp user_state_change(true, nil, true), do: :transition_in
+  defp user_state_change(true, nil, false), do: :enter
 
-  defp user_state_change(true, be) do
+  # Debounce version
+  defp user_state_change(true, be, true) do
     case be.event do
       :exit ->
         :transition_in
@@ -122,9 +124,37 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(false, nil), do: :no_change
+  # No debounce version
+  defp user_state_change(true, be, false) do
+    case be.event do
+      :exit ->
+        :enter
 
-  defp user_state_change(false, be) do
+      :enter ->
+        :no_change
+
+      :timeout ->
+        :reactivate
+
+      :deactivate ->
+        :enter
+
+      :reactivate ->
+        :no_change
+
+      :transition_out ->
+        :roll_back
+
+      :transition_in ->
+        :enter
+    end
+  end
+
+
+  defp user_state_change(false, nil, _debounce), do: :no_change
+
+  # Debounce version
+  defp user_state_change(false, be, true) do
     case be.event do
       :exit ->
         :no_change
@@ -152,6 +182,32 @@ defmodule Wocky.User.GeoFence do
         else
           :no_change
         end
+    end
+  end
+
+  # No-debounce version
+  defp user_state_change(false, be, false) do
+    case be.event do
+      :exit ->
+        :no_change
+
+      :enter ->
+        :exit
+
+      :timeout ->
+        :deactivate
+
+      :deactivate ->
+        :no_change
+
+      :reactivate ->
+        :exit
+
+      :transition_in ->
+        :roll_back
+
+      :transition_out ->
+        :exit
     end
   end
 
