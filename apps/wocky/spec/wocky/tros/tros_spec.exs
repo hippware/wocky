@@ -99,7 +99,7 @@ defmodule Wocky.TROSSpec do
     end
 
     describe "delete/2" do
-      it do: TROS.delete(shared.id, user) |> should(eq :ok)
+      it do: TROS.delete(shared.id, shared.user) |> should(be_ok_result())
     end
 
     describe "make_upload_response/5" do

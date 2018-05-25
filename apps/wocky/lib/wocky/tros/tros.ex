@@ -6,6 +6,7 @@ defmodule Wocky.TROS do
 
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
+  alias Wocky.User
 
   @type owner :: JID.luser()
   @type server :: JID.lserver()
@@ -91,7 +92,7 @@ defmodule Wocky.TROS do
     Metadata.set_access(file_id, new_access)
   end
 
-  @spec delete(file_id, User.t()) :: :ok
+  @spec delete(file_id, User.t()) :: {:ok, Metadata.t()}
   def delete(file_id, requestor) do
     with {:ok, file} <- Metadata.delete(file_id, requestor) do
       backend().delete(Confex.get_env(:wocky, :wocky_host), file_id)

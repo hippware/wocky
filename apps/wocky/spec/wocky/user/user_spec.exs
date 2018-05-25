@@ -312,7 +312,7 @@ defmodule Wocky.UserSpec do
 
             avatar_url = TROS.make_url(shared.server, id)
 
-            {:ok, avatar_id: avatar_id, avatar_url: avatar_url}
+            {:ok, avatar_id: id, avatar_url: avatar_url}
           end
 
           context "and the user does not have an existing avatar" do
