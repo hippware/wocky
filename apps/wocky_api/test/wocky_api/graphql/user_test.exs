@@ -607,24 +607,26 @@ defmodule WockyAPI.GraphQL.UserTest do
   describe "hasUsedGeofence" do
     @query """
     query {
-      hasUsedGeofence
+      currentUser {
+        hasUsedGeofence
+      }
     }
     """
     test "Should be false with no related bots", %{user: user} do
       result = run_query(@query, user)
-      assert result.data == %{"hasUsedGeofence" => false}
+      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
     end
 
     test "should be true if any owned geofence bots exist", %{user: user} do
       Factory.insert(:bot, user: user, geofence: true)
       result = run_query(@query, user)
-      assert result.data == %{"hasUsedGeofence" => true}
+      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
     end
 
     test "should be false if owned bots are not geofence", %{user: user} do
       Factory.insert(:bot, user: user)
       result = run_query(@query, user)
-      assert result.data == %{"hasUsedGeofence" => false}
+      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
     end
 
     test "should be true if a guest of a geofence bot", %{
@@ -634,7 +636,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       bot = Factory.insert(:bot, user: user2)
       Factory.insert(:subscription, user: user, bot: bot, guest: true)
       result = run_query(@query, user)
-      assert result.data == %{"hasUsedGeofence" => true}
+      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
     end
 
     test "should be false if not a guest of a geofence bot", %{
@@ -644,7 +646,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       bot = Factory.insert(:bot, user: user2)
       Factory.insert(:subscription, user: user, bot: bot)
       result = run_query(@query, user)
-      assert result.data == %{"hasUsedGeofence" => false}
+      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
     end
   end
 end

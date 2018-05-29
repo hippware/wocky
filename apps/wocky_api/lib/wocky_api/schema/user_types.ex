@@ -100,6 +100,9 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's email address"
     field :email, :string
 
+    @desc "Check whether a user has made use of any geofence features"
+    field :has_used_geofence, :boolean, do: resolve &User.has_used_geofence/3
+
     @desc "The active bots that a user is a guest of, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity
@@ -376,11 +379,6 @@ defmodule WockyAPI.Schema.UserTypes do
       arg :limit, :integer
 
       resolve &User.search_users/3
-    end
-
-    @desc "Check whether a user has made use of any geofence features"
-    field :has_used_geofence, non_null(:boolean) do
-      resolve &User.has_used_geofence/3
     end
   end
 
