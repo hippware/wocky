@@ -7,6 +7,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Enable dead link cleaning (PR #1575), Clean invalid tros ids (#1251)
 * Add GraphQL operation to allow user to delete uploaded image (#1570, PR #1574)
+* Updated (via Dependabot): pigeon (PR #1578)
+* Move hasUsedGeofence field to currentUser object (#1577)
 
 
 # 2018.5.24+r48e4c8d
