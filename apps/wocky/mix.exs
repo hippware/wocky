@@ -111,6 +111,7 @@ defmodule Wocky.Mixfile do
       {:stringprep, "~> 1.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
+      {:redix, "~> 0.7"},
       {:xml_builder, "~> 2.0", override: true},
       {:ranch, "~> 1.5.0", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},

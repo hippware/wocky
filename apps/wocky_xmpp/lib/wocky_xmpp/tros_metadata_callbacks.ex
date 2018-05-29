@@ -3,6 +3,7 @@ defmodule WockyXMPP.TROSMetadataCallbacks do
   Callbacks for DB bot changes
   """
   alias Wocky.TROS.Metadata
+  alias Wocky.Waiter
   alias Wocky.Watcher.Client
   alias WockyDBWatcher.Event
 
@@ -16,7 +17,7 @@ defmodule WockyXMPP.TROSMetadataCallbacks do
       }) do
     id
     |> :mod_wocky_tros.waiter_event()
-    |> :wocky_waiter.notify()
+    |> Waiter.notify()
   end
 
   def handle_update(_), do: :ok

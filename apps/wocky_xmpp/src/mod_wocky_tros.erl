@@ -120,7 +120,7 @@ get_download_urls(URL, FromJID) ->
 wait_ready(FileID) ->
     SkipFun = fun() -> ?tros:'ready?'(FileID) end,
     Event = waiter_event(FileID),
-    case wocky_waiter:wait(Event, ?PROCESSING_TIMEOUT, SkipFun) of
+    case ?wocky_waiter:wait(Event, ?PROCESSING_TIMEOUT, SkipFun) of
         ok ->
             ok;
         timeout ->

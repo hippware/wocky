@@ -63,6 +63,7 @@
 -define(wocky_rsm_helper,        'Elixir.Wocky.RSMHelper').
 -define(wocky_traffic_log,       'Elixir.Wocky.TrafficLog').
 -define(wocky_user,              'Elixir.Wocky.User').
+-define(wocky_waiter,            'Elixir.Wocky.Waiter').
 -define(wocky_watcher_client,    'Elixir.Wocky.Watcher.Client').
 
 -define(wocky_xmpp_bot_callbacks, 'Elixir.WockyXMPP.BotCallbacks').

@@ -21,6 +21,8 @@ defmodule Wocky.Application do
       Application.ensure_all_started(:wocky_db_watcher)
     end
 
+    redis_config = Confex.get_env(:wocky, :redis)
+
     Mailer.init()
 
     sup =
@@ -33,7 +35,16 @@ defmodule Wocky.Application do
           %{
             id: Dawdle,
             start: {Dawdle, :start_link, []}
-          }
+          },
+          {Redix,
+           [
+             [
+               host: redis_config[:host],
+               port: redis_config[:port],
+               database: redis_config[:db]
+             ],
+             [name: Redix]
+           ]}
         ],
         strategy: :one_for_one,
         name: Wocky.Supervisor

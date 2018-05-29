@@ -1,8 +1,8 @@
 # credo:disable-for-this-file Credo.Check.Refactor.PipeChainStart
-defmodule :wocky_waiter_spec do
+defmodule Wocky.WaiterSpec do
   use ESpec, async: true
 
-  import :wocky_waiter
+  import Wocky.Waiter
 
   alias Faker.Lorem
 
