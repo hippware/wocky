@@ -174,6 +174,7 @@ defmodule WockyAPI.Schema.BotTypes do
 
   input_object :bot_create_input do
     field :values, non_null(:bot_params)
+    field :user_location, :user_location_update_input
   end
 
   input_object :bot_update_input do
@@ -239,6 +240,7 @@ defmodule WockyAPI.Schema.BotTypes do
       input do
         @desc "ID of bot to which to subscribe"
         field :id, non_null(:uuid)
+        field :user_location, :user_location_update_input
 
         @desc """
         Whether to enable guest functionality for the user (default: false)

@@ -8,6 +8,9 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.User.GeoFence
+  alias Wocky.User.Location
+  alias Wocky.Waiter
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.User, as: UserResolver
   alias WockyAPI.Resolvers.Utils
@@ -75,11 +78,15 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def create_bot(_root, args, %{context: %{current_user: user}}) do
-    args[:input][:values]
-    |> parse_lat_lon()
-    |> Map.put(:id, ID.new())
-    |> Map.put(:user_id, user.id)
-    |> Bot.insert()
+    with {:ok, bot} <-
+      args[:input][:values]
+      |> parse_lat_lon()
+      |> Map.put(:id, ID.new())
+      |> Map.put(:user_id, user.id)
+      |> Bot.insert(),
+         :ok <- maybe_update_location(args, user, bot) do
+           {:ok, bot}
+         end
   end
 
   def update_bot(_root, args, %{context: %{current_user: requestor}}) do
@@ -91,18 +98,27 @@ defmodule WockyAPI.Resolvers.Bot do
         updates = parse_lat_lon(args[:input][:values])
 
         with {:ok, bot} <- Bot.update(bot, updates),
-             {:ok, true} <- maybe_update_location(args, requestor) do
+             :ok <- maybe_update_location(args, requestor, bot) do
           {:ok, bot}
         end
     end
   end
 
-  defp maybe_update_location(%{input: %{user_location: location}}, user)
-       when not is_nil(location) do
-    UserResolver.update_location(location, user, true)
+  defp maybe_update_location(%{input: %{user_location: location}}, user, %{geofence: true} = bot)
+  when not is_nil(location) do
+    bot
+    |> Bot.sub_setup_event()
+    |> Waiter.wait(2000,
+                   fn -> Enum.member?(User.get_bot_relationships(user, bot), :guest) end)
+    with {:ok, true} <- UserResolver.update_location(location, user) do
+      device = location[:device] || location[:resource]
+      loc = Location.new(location[:lat], location[:lon], location[:accuracy])
+      GeoFence.check_for_bot_event(bot, loc, user, device)
+      :ok
+    end
   end
 
-  defp maybe_update_location(_, _), do: {:ok, true}
+  defp maybe_update_location(_, _, _), do: :ok
 
   defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
     Map.put(input, :location, GeoUtils.point(lat, lon))

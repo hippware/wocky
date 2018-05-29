@@ -1,4 +1,8 @@
 defmodule Wocky.Waiter do
+  @type event() :: iolist()
+
+  @spec wait(event(), non_neg_integer | :infinity, (() -> boolean())) ::
+  :ok | :timeout
   def wait(event, timeout, skip_callback) do
     ref = make_ref()
     key = key(event)
@@ -19,6 +23,7 @@ defmodule Wocky.Waiter do
     end
   end
 
+  @spec notify(event()) :: :ok
   def notify(event) do
     {:ok, waiters} = Redix.command(Redix, ["SMEMBERS", key(event)])
     Enum.each(waiters, &notify_waiter(&1))
