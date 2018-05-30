@@ -65,7 +65,8 @@ defmodule WockyAPI.GraphQL.MediaTest do
   describe "delete" do
     setup %{user: user} do
       metadata = Factory.insert(:tros_metadata, user: user)
-      {:ok, metadata: metadata}
+      url = TROS.make_url("localhost", metadata.id)
+      {:ok, metadata: metadata, url: url}
     end
 
     @query """
@@ -75,8 +76,8 @@ defmodule WockyAPI.GraphQL.MediaTest do
       }
     }
     """
-    test "delete a file", %{user: user, metadata: metadata} do
-      result = run_query(@query, user, %{"input" => %{"id" => metadata.id}})
+    test "delete a file", %{user: user, metadata: metadata, url: url} do
+      result = run_query(@query, user, %{"input" => %{"url" => url}})
 
       refute has_errors(result)
 
@@ -85,17 +86,18 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert TROS.get_metadata(metadata.id) == {:error, :not_found}
     end
 
-    test "delete an unowned file", %{metadata: metadata} do
+    test "delete an unowned file", %{url: url} do
       result =
         run_query(@query, Factory.insert(:user), %{
-          "input" => %{"id" => metadata.id}
+          "input" => %{"url" => url}
         })
 
       assert error_msg(result) =~ "Permission denied"
     end
 
     test "delete a non-existant file", %{user: user} do
-      result = run_query(@query, user, %{"input" => %{"id" => ID.new()}})
+      url = TROS.make_url("localhost", ID.new())
+      result = run_query(@query, user, %{"input" => %{"url" => url}})
 
       assert error_msg(result) =~ "File not found"
     end
