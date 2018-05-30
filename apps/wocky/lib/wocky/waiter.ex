@@ -1,5 +1,5 @@
 defmodule Wocky.Waiter do
-  @type event() :: iolist()
+  @type event() :: binary()
 
   @spec wait(event(), non_neg_integer | :infinity, (() -> boolean())) ::
           :ok | :timeout
@@ -38,7 +38,7 @@ defmodule Wocky.Waiter do
     send(pid, {:waiter_event, ref})
   end
 
-  defp key(event), do: ["wait:", event]
+  defp key(event), do: "wait:" <> event
 
   defp val(pid, ref), do: :erlang.term_to_binary({pid, ref})
 end

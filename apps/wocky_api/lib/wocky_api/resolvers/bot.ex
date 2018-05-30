@@ -118,7 +118,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
     with {:ok, true} <- UserResolver.update_location(location, user) do
       device = location[:device] || location[:resource]
-      loc = Location.new(location[:lat], location[:lon], location[:accuracy])
+      loc = Location.new(user, device, location[:lat], location[:lon], location[:accuracy])
       GeoFence.check_for_bot_event(bot, loc, user, device)
       :ok
     end
