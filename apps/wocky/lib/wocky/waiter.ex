@@ -1,6 +1,15 @@
 defmodule Wocky.Waiter do
+  @moduledoc """
+  Allows processes to do a semaphore-style wait on a given event
+  """
   @type event() :: binary()
 
+  @doc """
+  Wait on an event. The `skip_callback` function is called after the wait
+  is established. If it returns `true`, the wait will immediately be aborted
+  and :ok will be returned. If the event is fired within the timeout, :ok
+  is returned; otherwise :timeout is returned.
+  """
   @spec wait(event(), non_neg_integer | :infinity, (() -> boolean())) ::
           :ok | :timeout
   def wait(event, timeout, skip_callback) do
@@ -27,6 +36,7 @@ defmodule Wocky.Waiter do
     end
   end
 
+  @doc "Notify all processes waiting on a the supplied event"
   @spec notify(event()) :: :ok
   def notify(event) do
     {:ok, waiters} = Redix.command(Redix, ["SMEMBERS", key(event)])
