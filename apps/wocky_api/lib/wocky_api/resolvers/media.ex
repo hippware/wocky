@@ -73,7 +73,8 @@ defmodule WockyAPI.Resolvers.Media do
     do: Enum.map(headers, fn {n, v} -> %{name: n, value: v} end)
 
   def delete(_root, args, %{context: %{current_user: user}}) do
-    with {:ok, _file} <- TROS.delete(args[:input][:id], user) do
+    with {:ok, {_server, file_id}} <- TROS.parse_url(args[:input][:url]),
+         {:ok, _file} <- TROS.delete(file_id, user) do
       {:ok, true}
     else
       {:error, :permission_denied} -> {:error, "Permission denied"}

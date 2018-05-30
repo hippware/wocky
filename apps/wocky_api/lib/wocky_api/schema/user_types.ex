@@ -101,7 +101,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
 
     @desc "Check whether a user has made use of any geofence features"
-    field :has_used_geofence, :boolean, do: resolve &User.has_used_geofence/3
+    field :has_used_geofence, :boolean, do: resolve(&User.has_used_geofence/3)
 
     @desc "The active bots that a user is a guest of, in last visited order"
     connection field :active_bots, node_type: :bots do
