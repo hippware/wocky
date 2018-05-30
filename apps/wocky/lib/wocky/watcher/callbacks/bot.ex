@@ -37,6 +37,7 @@ defmodule Wocky.Watcher.Callbacks.Bot do
 
     if user != nil do
       Bot.subscribe(bot, user, bot.geofence)
+
       bot
       |> Bot.sub_setup_event()
       |> Waiter.notify()

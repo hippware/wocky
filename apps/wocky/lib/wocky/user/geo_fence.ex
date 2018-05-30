@@ -27,7 +27,7 @@ defmodule Wocky.User.GeoFence do
   end
 
   @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), User.resource()) ::
-  :ok
+          :ok
   def check_for_bot_event(bot, loc, user, resource) do
     bot
     |> check_for_event(%User{user | resource: resource}, loc, false, [])
@@ -46,7 +46,8 @@ defmodule Wocky.User.GeoFence do
     Enum.reduce(bots, [], &check_for_event(&1, user, loc, true, &2))
   end
 
-  defp check_for_event(bot, user, loc, debounce, acc) do :ok =
+  defp check_for_event(bot, user, loc, debounce, acc) do
+    :ok =
       Logger.debug(fn ->
         """
         Checking user #{user.id} for collision with bot #{bot.id} \
@@ -156,7 +157,6 @@ defmodule Wocky.User.GeoFence do
         :enter
     end
   end
-
 
   defp user_state_change(false, nil, _debounce), do: :no_change
 

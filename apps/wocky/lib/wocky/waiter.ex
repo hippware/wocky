@@ -2,16 +2,19 @@ defmodule Wocky.Waiter do
   @type event() :: iolist()
 
   @spec wait(event(), non_neg_integer | :infinity, (() -> boolean())) ::
-  :ok | :timeout
+          :ok | :timeout
   def wait(event, timeout, skip_callback) do
     ref = make_ref()
     key = key(event)
     val = val(self(), ref)
     {:ok, _} = Redix.command(Redix, ["SADD", key, val])
-    result = case skip_callback.() do
-      true -> :ok
-      false -> do_wait(ref, timeout)
-    end
+
+    result =
+      case skip_callback.() do
+        true -> :ok
+        false -> do_wait(ref, timeout)
+      end
+
     {:ok, _} = Redix.command(Redix, ["SREM", key, val])
     result
   end
@@ -19,7 +22,8 @@ defmodule Wocky.Waiter do
   defp do_wait(ref, timeout) do
     receive do
       {:waiter_event, ^ref} -> :ok
-    after timeout -> :timeout
+    after
+      timeout -> :timeout
     end
   end
 

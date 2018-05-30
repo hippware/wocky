@@ -125,6 +125,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def update_location(location, user) do
     device = location[:device] || location[:resource]
+
     with :ok <-
            User.set_location(
              user,

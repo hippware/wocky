@@ -450,12 +450,33 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "create bot with location", %{user: %{id: user_id} = user} do
-      fields = [:title, :server, :lat, :lon, :radius, :description, :shortname, :geofence]
-      bot = :bot |> Factory.build(geofence: true) |> add_lat_lon() |> Map.take(fields)
+      fields = [
+        :title,
+        :server,
+        :lat,
+        :lon,
+        :radius,
+        :description,
+        :shortname,
+        :geofence
+      ]
 
-      result = run_query(@query, user, %{"values" => stringify_keys(bot),
-        "user_location" => %{"lat" => bot.lat, "lon" => bot.lon,
-        "accuracy" => 1, "device" => Lorem.word()}})
+      bot =
+        :bot
+        |> Factory.build(geofence: true)
+        |> add_lat_lon()
+        |> Map.take(fields)
+
+      result =
+        run_query(@query, user, %{
+          "values" => stringify_keys(bot),
+          "user_location" => %{
+            "lat" => bot.lat,
+            "lon" => bot.lon,
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
+        })
 
       refute has_errors(result)
 
@@ -516,8 +537,12 @@ defmodule WockyAPI.GraphQL.BotTest do
         run_query(@query, user, %{
           "id" => bot.id,
           "values" => %{"title" => new_title, "geofence" => true},
-          "user_location" => %{"lat" => Bot.lat(bot), "lon" => Bot.lon(bot),
-            "accuracy" => 1, "device" => Lorem.word()}
+          "user_location" => %{
+            "lat" => Bot.lat(bot),
+            "lon" => Bot.lon(bot),
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
         })
 
       refute has_errors(result)

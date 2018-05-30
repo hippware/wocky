@@ -79,14 +79,14 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def create_bot(_root, args, %{context: %{current_user: user}}) do
     with {:ok, bot} <-
-      args[:input][:values]
-      |> parse_lat_lon()
-      |> Map.put(:id, ID.new())
-      |> Map.put(:user_id, user.id)
-      |> Bot.insert(),
+           args[:input][:values]
+           |> parse_lat_lon()
+           |> Map.put(:id, ID.new())
+           |> Map.put(:user_id, user.id)
+           |> Bot.insert(),
          :ok <- maybe_update_location(args, user, bot) do
-           {:ok, bot}
-         end
+      {:ok, bot}
+    end
   end
 
   def update_bot(_root, args, %{context: %{current_user: requestor}}) do
@@ -104,12 +104,18 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  defp maybe_update_location(%{input: %{user_location: location}}, user, %{geofence: true} = bot)
-  when not is_nil(location) do
+  defp maybe_update_location(
+         %{input: %{user_location: location}},
+         user,
+         %{geofence: true} = bot
+       )
+       when not is_nil(location) do
     bot
     |> Bot.sub_setup_event()
-    |> Waiter.wait(2000,
-                   fn -> Enum.member?(User.get_bot_relationships(user, bot), :guest) end)
+    |> Waiter.wait(2000, fn ->
+      Enum.member?(User.get_bot_relationships(user, bot), :guest)
+    end)
+
     with {:ok, true} <- UserResolver.update_location(location, user) do
       device = location[:device] || location[:resource]
       loc = Location.new(location[:lat], location[:lon], location[:accuracy])
