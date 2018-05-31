@@ -174,12 +174,18 @@ defmodule WockyAPI.Schema.BotTypes do
 
   input_object :bot_create_input do
     field :values, non_null(:bot_params)
+
+    @desc "Optional location to immediately apply to user against bot"
     field :user_location, :user_location_update_input
   end
 
   input_object :bot_update_input do
+    @desc "ID of bot to update"
     field :id, non_null(:uuid)
+
     field :values, non_null(:bot_params)
+
+    @desc "Optional location to immediately apply to user against bot"
     field :user_location, :user_location_update_input
   end
 
@@ -199,11 +205,11 @@ defmodule WockyAPI.Schema.BotTypes do
   input_object :bot_subscribe_input do
     @desc "ID of bot to which to subscribe"
     field :id, non_null(:uuid)
+
+    @desc "Optional location to immediately apply to user against bot"
     field :user_location, :user_location_update_input
 
-    @desc """
-    Whether to enable guest functionality for the user (default: false)
-    """
+    @desc "Whether to enable guest functionality for the user (default: false)"
     field :guest, :boolean
   end
 
