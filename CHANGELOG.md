@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Updated (via Dependabot): honeybadger (PR #1580)
+* Fix media delete mutation to use URL parameter instead of ID (PR #1582, #1570)
+
+
 # 2018.5.29+r0ba814c
 
 * Enable dead link cleaning (PR #1575), Clean invalid tros ids (#1251)
