@@ -118,7 +118,16 @@ defmodule WockyAPI.Resolvers.Bot do
 
     with {:ok, true} <- UserResolver.update_location(location, user) do
       device = location[:device] || location[:resource]
-      loc = Location.new(user, device, location[:lat], location[:lon], location[:accuracy])
+
+      loc =
+        Location.new(
+          user,
+          device,
+          location[:lat],
+          location[:lon],
+          location[:accuracy]
+        )
+
       GeoFence.check_for_bot_event(bot, loc, user, device)
       :ok
     end
@@ -171,6 +180,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
       bot ->
         Bot.subscribe(bot, requestor, input[:guest] || false)
+
         with :ok <- maybe_update_subscriber_location(input, requestor, bot) do
           {:ok, true}
         end
@@ -178,11 +188,13 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   defp maybe_update_subscriber_location(%{guest: true} = input, requestor, bot),
-  do: maybe_update_location(input, requestor, bot)
+    do: maybe_update_location(input, requestor, bot)
 
   defp maybe_update_subscriber_location(_, _, _), do: :ok
 
-  def unsubscribe(_root, %{input: %{id: bot_id}}, %{context: %{current_user: requestor}}) do
+  def unsubscribe(_root, %{input: %{id: bot_id}}, %{
+        context: %{current_user: requestor}
+      }) do
     case Bot.get_bot(bot_id, requestor) do
       nil ->
         not_found_error(bot_id)

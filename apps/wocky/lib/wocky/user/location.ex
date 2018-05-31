@@ -48,7 +48,14 @@ defmodule Wocky.User.Location do
   @spec new(User.t(), User.resource(), float(), float(), float()) :: t()
   def new(user, resource, lat, lon, accuracy) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
-    %Location{user_id: user.id, resource: resource, lat: nlat, lon: nlon, accuracy: accuracy}
+
+    %Location{
+      user_id: user.id,
+      resource: resource,
+      lat: nlat,
+      lon: nlon,
+      accuracy: accuracy
+    }
   end
 
   @doc false
