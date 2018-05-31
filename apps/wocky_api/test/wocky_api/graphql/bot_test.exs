@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.BotTest do
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
   alias Wocky.Bot
@@ -563,9 +563,15 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "bot subscriptions" do
     @query """
-    mutation ($id: UUID!) {
-      botSubscribe (input: {id: $id}) {
+    mutation ($id: UUID!, $guest: Boolean,
+              $user_location: UserLocationUpdateInput) {
+      botSubscribe (input:
+        {id: $id, guest: $guest, user_location: $user_location}) {
         result
+        messages  {
+          field
+          message
+        }
       }
     }
     """
@@ -574,7 +580,9 @@ defmodule WockyAPI.GraphQL.BotTest do
       result = run_query(@query, user, %{"id" => bot2.id})
 
       refute has_errors(result)
-      assert result.data == %{"botSubscribe" => %{"result" => true}}
+      assert result.data == %{"botSubscribe" =>
+        %{"result" => true,
+          "messages" => []}}
       assert Bot.subscription(bot2, user) == :subscribed
     end
 
@@ -584,6 +592,62 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert error_count(result) == 1
       assert error_msg(result) =~ "Bot not found"
       assert result.data == %{"botSubscribe" => nil}
+    end
+
+    test "subscribe with location inside bot", %{user: user, bot2: bot2} do
+      Bot.update(bot2, %{geofence: true})
+      result = run_query(@query, user, %{
+        "id" => bot2.id,
+        "guest" => true,
+        "user_location" => %{
+          "lat" => Bot.lat(bot2),
+          "lon" => Bot.lon(bot2),
+          "accuracy" => 1,
+          "device" => Lorem.word()
+        }})
+
+      refute has_errors(result)
+      assert result.data == %{"botSubscribe" =>
+        %{"result" => true,
+          "messages" => []}}
+      assert Bot.subscription(bot2, user) == :visitor
+    end
+
+    test "subscribe with location outside bot", %{user: user, bot2: bot2} do
+      Bot.update(bot2, %{geofence: true})
+      result = run_query(@query, user, %{
+        "id" => bot2.id,
+        "guest" => true,
+        "user_location" => %{
+          "lat" => Bot.lat(bot2) + 5.0,
+          "lon" => Bot.lon(bot2) + 5.0,
+          "accuracy" => 1,
+          "device" => Lorem.word()
+        }})
+
+      refute has_errors(result)
+      assert result.data == %{"botSubscribe" =>
+        %{"result" => true,
+          "messages" => []}}
+      assert Bot.subscription(bot2, user) == :guest
+    end
+
+    test "subscribe with invalid location", %{user: user, bot2: bot2} do
+      Bot.update(bot2, %{geofence: true})
+      result = run_query(@query, user, %{
+        "id" => bot2.id,
+        "guest" => true,
+        "user_location" => %{
+          "lat" => Bot.lat(bot2),
+          "lon" => Bot.lon(bot2),
+          "accuracy" => -1,
+          "device" => Lorem.word()
+        }})
+
+      assert %{"botSubscribe" => %{"result" => nil,
+        "messages" => [%{"field" => "accuracy",
+          "message" => "must be greater than or equal to 0"
+        }]}} == result.data
     end
 
     @query """
