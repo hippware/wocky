@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.BotTest do
-  use WockyAPI.GraphQLCase, async: true
+  use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
   alias Wocky.Bot
