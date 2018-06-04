@@ -9,9 +9,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
-  setup do
-    common_setup()
-  end
+  setup :common_setup
 
   describe "basic bot queries" do
     test "get a single bot", %{user: user, bot: bot} do
@@ -416,10 +414,8 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "bot mutations" do
-    setup do
-      require_watcher()
-      common_setup()
-    end
+    setup :require_watcher
+    setup :common_setup
 
     @query """
     mutation ($values: BotParams!, $user_location: UserLocationUpdateInput) {
@@ -1131,7 +1127,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
   end
 
-  defp common_setup() do
+  defp common_setup(_) do
     [user, user2] = Factory.insert_list(2, :user)
 
     image = Factory.insert(:tros_metadata, user: user)

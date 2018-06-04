@@ -15,7 +15,7 @@ defmodule WockyAPI.WatcherHelper do
   NOTE: I haven't been able to get SQL VIEW virtual tables to function properly
   in this mode. I have no idea why.
   """
-  def require_watcher do
+  def require_watcher(_) do
     Wocky.Watcher.Client.clear_all_subscriptions()
     Wocky.Watcher.Callbacks.register()
     WockyAPI.Callbacks.register()
