@@ -8,7 +8,11 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.User.GeoFence
+  alias Wocky.User.Location
+  alias Wocky.Waiter
   alias WockyAPI.Endpoint
+  alias WockyAPI.Resolvers.User, as: UserResolver
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
@@ -73,24 +77,63 @@ defmodule WockyAPI.Resolvers.Bot do
     |> Utils.connection_from_query(user, args)
   end
 
-  def create_bot(_root, args, %{context: %{current_user: user}}) do
-    args[:input][:values]
-    |> parse_lat_lon()
-    |> Map.put(:id, ID.new())
-    |> Map.put(:user_id, user.id)
-    |> Bot.insert()
-  end
-
-  def update_bot(_root, args, %{context: %{current_user: requestor}}) do
-    case Bot.get_owned_bot(args[:input][:id], requestor, true) do
-      nil ->
-        not_found_error(args[:input][:id])
-
-      bot ->
-        updates = parse_lat_lon(args[:input][:values])
-        Bot.update(bot, updates)
+  def create_bot(_root, %{input: input}, %{context: %{current_user: user}}) do
+    with {:ok, bot} <-
+           input[:values]
+           |> parse_lat_lon()
+           |> Map.put(:id, ID.new())
+           |> Map.put(:user_id, user.id)
+           |> Bot.insert(),
+         :ok <- maybe_update_location(input, user, bot) do
+      {:ok, bot}
     end
   end
+
+  def update_bot(_root, %{input: input}, %{context: %{current_user: requestor}}) do
+    case Bot.get_owned_bot(input[:id], requestor, true) do
+      nil ->
+        not_found_error(input[:id])
+
+      bot ->
+        updates = parse_lat_lon(input[:values])
+
+        with {:ok, bot} <- Bot.update(bot, updates),
+             :ok <- maybe_update_location(input, requestor, bot) do
+          {:ok, bot}
+        end
+    end
+  end
+
+  defp maybe_update_location(
+         %{user_location: location},
+         user,
+         %{geofence: true} = bot
+       )
+       when not is_nil(location) do
+    bot
+    |> Bot.sub_setup_event()
+    |> Waiter.wait(2000, fn ->
+      Enum.member?(User.get_bot_relationships(user, bot), :guest)
+    end)
+
+    with {:ok, true} <- UserResolver.update_location(location, user) do
+      device = location[:device] || location[:resource]
+
+      loc =
+        Location.new(
+          user,
+          device,
+          location[:lat],
+          location[:lon],
+          location[:accuracy]
+        )
+
+      GeoFence.check_for_bot_event(bot, loc, user, device)
+      :ok
+    end
+  end
+
+  defp maybe_update_location(_, _, _), do: :ok
 
   defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
     Map.put(input, :location, GeoUtils.point(lat, lon))
@@ -130,38 +173,48 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "At least one of 'id' or 'type' must be specified"}
   end
 
-  def subscribe(_root, args, %{context: %{current_user: requestor}}) do
-    case Bot.get_bot(args[:id], requestor) do
+  def subscribe(_root, %{input: input}, %{context: %{current_user: requestor}}) do
+    case Bot.get_bot(input[:id], requestor) do
       nil ->
-        not_found_error(args[:id])
+        not_found_error(input[:id])
 
       bot ->
-        Bot.subscribe(bot, requestor, args[:guest] || false)
-        {:ok, %{result: true}}
+        Bot.subscribe(bot, requestor, input[:guest] || false)
+
+        with :ok <- maybe_update_subscriber_location(input, requestor, bot) do
+          {:ok, true}
+        end
     end
   end
 
-  def unsubscribe(_root, args, %{context: %{current_user: requestor}}) do
-    case Bot.get_bot(args[:id], requestor) do
+  defp maybe_update_subscriber_location(%{guest: true} = input, requestor, bot),
+    do: maybe_update_location(input, requestor, bot)
+
+  defp maybe_update_subscriber_location(_, _, _), do: :ok
+
+  def unsubscribe(_root, %{input: %{id: bot_id}}, %{
+        context: %{current_user: requestor}
+      }) do
+    case Bot.get_bot(bot_id, requestor) do
       nil ->
-        not_found_error(args[:id])
+        not_found_error(bot_id)
 
       bot ->
         Bot.unsubscribe(bot, requestor)
-        {:ok, %{result: true}}
+        {:ok, true}
     end
   end
 
-  def delete(_root, args, %{
+  def delete(_root, %{input: %{id: bot_id}}, %{
         context: %{current_user: %{id: user_id} = requestor}
       }) do
-    case Bot.get_bot(args[:id], requestor) do
+    case Bot.get_bot(bot_id, requestor) do
       nil ->
-        not_found_error(args[:id])
+        not_found_error(bot_id)
 
       bot = %{user_id: ^user_id} ->
         Bot.delete(bot)
-        {:ok, %{result: true}}
+        {:ok, true}
 
       _ ->
         not_owned_error()

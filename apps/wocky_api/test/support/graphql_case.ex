@@ -17,6 +17,9 @@ defmodule WockyAPI.GraphQLCase do
     quote do
       # Import conveniences for testing with GraphQL
       import WockyAPI.GraphQLHelper
+
+      # Import conveniences for testing with the watcher enabled
+      import WockyAPI.WatcherHelper
     end
   end
 

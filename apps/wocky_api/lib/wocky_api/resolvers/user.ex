@@ -120,6 +120,10 @@ defmodule WockyAPI.Resolvers.User do
 
   def update_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:input]
+    update_location(location, user)
+  end
+
+  def update_location(location, user) do
     device = location[:device] || location[:resource]
 
     with :ok <-

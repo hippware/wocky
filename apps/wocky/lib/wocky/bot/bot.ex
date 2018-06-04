@@ -23,6 +23,7 @@ defmodule Wocky.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.Waiter
 
   require Logger
   require Record
@@ -571,4 +572,7 @@ defmodule Wocky.Bot do
     [:title, :image, :address, :location, :public, :geofence]
     |> Enum.any?(fn f -> Map.get(bot1, f) != Map.get(bot2, f) end)
   end
+
+  @spec sub_setup_event(Bot.t()) :: Waiter.event()
+  def sub_setup_event(bot), do: "bot_sub_setup-" <> bot.id
 end

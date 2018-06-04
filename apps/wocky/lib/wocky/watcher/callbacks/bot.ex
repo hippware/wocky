@@ -4,6 +4,7 @@ defmodule Wocky.Watcher.Callbacks.Bot do
   """
   alias Wocky.Bot
   alias Wocky.Repo
+  alias Wocky.Waiter
   alias Wocky.Watcher.Client
   alias WockyDBWatcher.Event
 
@@ -36,6 +37,10 @@ defmodule Wocky.Watcher.Callbacks.Bot do
 
     if user != nil do
       Bot.subscribe(bot, user, bot.geofence)
+
+      bot
+      |> Bot.sub_setup_event()
+      |> Waiter.notify()
     end
   end
 end

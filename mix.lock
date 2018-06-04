@@ -125,6 +125,7 @@
   "ranch": {:hex, :ranch, "1.5.0", "f04166f456790fee2ac1aa05a02745cc75783c2bfb26d39faf6aefc9a3d3a58a", [:rebar3], [], "hexpm"},
   "recon": {:hex, :recon, "2.3.5", "5136eb8f8020a440f5f894f1c11e7fa9480315b2e6e398b0e46609cb963e768a", [:rebar3], [], "hexpm"},
   "redbug": {:hex, :redbug, "1.2.0", "75c09b306471cee01ac4bdb727c33ca671a48d7ab7acaf090c557f2e5bc02620", [:rebar3], [], "hexpm"},
+  "redix": {:hex, :redix, "0.7.1", "25a6c1c0d9b2d12a35aef759f9e49bd9bca00e0cd857ce766412f08fdda72163", [:mix], [{:connection, "~> 1.0", [hex: :connection, repo: "hexpm", optional: false]}], "hexpm"},
   "redo": {:hex, :redo, "2.0.1", "b895c67f4c1266db8fecca0079fbab65bdfaf7c2f5618c8edbdbf4800e7e248b", [:rebar], [], "hexpm"},
   "reprise": {:hex, :reprise, "0.5.1", "8b6e6266c46780e47f89e8e03e5fc945348dc0d5eb1e47b5ba017481d3a5f5dd", [:mix], [], "hexpm"},
   "rexbug": {:hex, :rexbug, "1.0.0", "52b5d25c423f1c31ecce6960a556cac6391f62d61945f305248b07149567456c", [:mix], [{:redbug, "~> 1.2", [hex: :redbug, repo: "hexpm", optional: false]}], "hexpm"},

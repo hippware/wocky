@@ -1,22 +1,15 @@
 defmodule WockyAPI.GraphQL.BotTest do
-  use WockyAPI.GraphQLCase, async: true
+  use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
-  setup do
-    [user, user2] = Factory.insert_list(2, :user)
-
-    image = Factory.insert(:tros_metadata, user: user)
-    bot = Factory.insert(:bot, image: Factory.image_url(image), user: user)
-    bot2 = Factory.insert(:bot, user: user2, public: true)
-
-    {:ok, user: user, user2: user2, bot: bot, bot2: bot2}
-  end
+  setup :common_setup
 
   describe "basic bot queries" do
     test "get a single bot", %{user: user, bot: bot} do
@@ -421,24 +414,24 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "bot mutations" do
+    setup :require_watcher
+    setup :common_setup
+
+    @query """
+    mutation ($values: BotParams!, $user_location: UserLocationUpdateInput) {
+      botCreate (input: {values: $values, user_location: $user_location}) {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
     test "create bot", %{user: user} do
       fields = [:title, :server, :lat, :lon, :radius, :description, :shortname]
       bot = :bot |> Factory.build() |> add_lat_lon() |> Map.take(fields)
 
-      query = """
-      mutation ($values: BotParams!) {
-        botCreate (input: {values: $values}) {
-          successful
-          result {
-            id
-          }
-        }
-      }
-      """
-
-      result = run_query(query, user, %{"values" => stringify_keys(bot)})
-
-      refute has_errors(result)
+      result = run_query(@query, user, %{"values" => stringify_keys(bot)})
 
       assert %{
                "botCreate" => %{
@@ -452,22 +445,67 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert ^bot = id |> Bot.get() |> add_lat_lon() |> Map.take(fields)
     end
 
+    test "create bot with location", %{user: %{id: user_id} = user} do
+      fields = [
+        :title,
+        :server,
+        :lat,
+        :lon,
+        :radius,
+        :description,
+        :shortname,
+        :geofence
+      ]
+
+      bot =
+        :bot
+        |> Factory.build(geofence: true)
+        |> add_lat_lon()
+        |> Map.take(fields)
+
+      result =
+        run_query(@query, user, %{
+          "values" => stringify_keys(bot),
+          "user_location" => %{
+            "lat" => bot.lat,
+            "lon" => bot.lon,
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "botCreate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => id
+                 }
+               }
+             } = result.data
+
+      bot = Bot.get(id)
+      assert [%{id: ^user_id}] = bot |> Bot.visitors_query() |> Repo.all()
+    end
+
+    @query """
+    mutation ($id: UUID!, $values: BotParams!,
+              $user_location: UserLocationUpdateInput) {
+      botUpdate (input: {id: $id, values: $values,
+                 user_location: $user_location}) {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
     test "update bot", %{user: user, bot: bot} do
       new_title = Lorem.sentence()
 
-      query = """
-      mutation ($id: UUID!, $values: BotParams!) {
-        botUpdate (input: {id: $id, values: $values}) {
-          successful
-          result {
-            id
-          }
-        }
-      }
-      """
-
       result =
-        run_query(query, user, %{
+        run_query(@query, user, %{
           "id" => bot.id,
           "values" => %{"title" => new_title}
         })
@@ -485,13 +523,51 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert new_title == Bot.get(bot.id).title
     end
+
+    test "update bot with location", %{user: %{id: user_id} = user, bot: bot} do
+      new_title = Lorem.sentence()
+
+      assert [] = bot |> Bot.visitors_query() |> Repo.all()
+
+      result =
+        run_query(@query, user, %{
+          "id" => bot.id,
+          "values" => %{"title" => new_title, "geofence" => true},
+          "user_location" => %{
+            "lat" => Bot.lat(bot),
+            "lon" => Bot.lon(bot),
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "botUpdate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => bot.id
+                 }
+               }
+             }
+
+      assert new_title == Bot.get(bot.id).title
+      assert [%{id: ^user_id}] = bot |> Bot.visitors_query() |> Repo.all()
+    end
   end
 
   describe "bot subscriptions" do
     @query """
-    mutation ($id: UUID!) {
-      botSubscribe (input: {id: $id}) {
+    mutation ($id: UUID!, $guest: Boolean,
+              $user_location: UserLocationUpdateInput) {
+      botSubscribe (input:
+        {id: $id, guest: $guest, user_location: $user_location}) {
         result
+        messages  {
+          field
+          message
+        }
       }
     }
     """
@@ -500,7 +576,11 @@ defmodule WockyAPI.GraphQL.BotTest do
       result = run_query(@query, user, %{"id" => bot2.id})
 
       refute has_errors(result)
-      assert result.data == %{"botSubscribe" => %{"result" => true}}
+
+      assert result.data == %{
+               "botSubscribe" => %{"result" => true, "messages" => []}
+             }
+
       assert Bot.subscription(bot2, user) == :subscribed
     end
 
@@ -510,6 +590,82 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert error_count(result) == 1
       assert error_msg(result) =~ "Bot not found"
       assert result.data == %{"botSubscribe" => nil}
+    end
+
+    test "subscribe with location inside bot", %{user: user, bot2: bot2} do
+      Bot.update(bot2, %{geofence: true})
+
+      result =
+        run_query(@query, user, %{
+          "id" => bot2.id,
+          "guest" => true,
+          "user_location" => %{
+            "lat" => Bot.lat(bot2),
+            "lon" => Bot.lon(bot2),
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "botSubscribe" => %{"result" => true, "messages" => []}
+             }
+
+      assert Bot.subscription(bot2, user) == :visitor
+    end
+
+    test "subscribe with location outside bot", %{user: user, bot2: bot2} do
+      Bot.update(bot2, %{geofence: true})
+
+      result =
+        run_query(@query, user, %{
+          "id" => bot2.id,
+          "guest" => true,
+          "user_location" => %{
+            "lat" => Bot.lat(bot2) + 5.0,
+            "lon" => Bot.lon(bot2) + 5.0,
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "botSubscribe" => %{"result" => true, "messages" => []}
+             }
+
+      assert Bot.subscription(bot2, user) == :guest
+    end
+
+    test "subscribe with invalid location", %{user: user, bot2: bot2} do
+      Bot.update(bot2, %{geofence: true})
+
+      result =
+        run_query(@query, user, %{
+          "id" => bot2.id,
+          "guest" => true,
+          "user_location" => %{
+            "lat" => Bot.lat(bot2),
+            "lon" => Bot.lon(bot2),
+            "accuracy" => -1,
+            "device" => Lorem.word()
+          }
+        })
+
+      assert result.data == %{
+               "botSubscribe" => %{
+                 "result" => nil,
+                 "messages" => [
+                   %{
+                     "field" => "accuracy",
+                     "message" => "must be greater than or equal to 0"
+                   }
+                 ]
+               }
+             }
     end
 
     @query """
@@ -969,5 +1125,15 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   defp stringify_keys(map) do
     Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
+  end
+
+  defp common_setup(_) do
+    [user, user2] = Factory.insert_list(2, :user)
+
+    image = Factory.insert(:tros_metadata, user: user)
+    bot = Factory.insert(:bot, image: Factory.image_url(image), user: user)
+    bot2 = Factory.insert(:bot, user: user2, public: true)
+
+    {:ok, user: user, user2: user2, bot: bot, bot2: bot2}
   end
 end

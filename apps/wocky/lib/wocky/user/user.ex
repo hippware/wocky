@@ -92,6 +92,8 @@ defmodule Wocky.User do
   @type handle :: binary
   @type role :: binary
 
+  @type bot_relationship :: :owned | :shared | :subscribed | :guest | :visitor
+
   @type t :: %User{
           id: id,
           username: username,
@@ -459,6 +461,7 @@ defmodule Wocky.User do
     |> Repo.all()
   end
 
+  @spec get_bot_relationships(t(), Bot.t()) :: [bot_relationship()]
   def get_bot_relationships(user, bot) do
     sub = BotSubscription.get(user, bot)
 

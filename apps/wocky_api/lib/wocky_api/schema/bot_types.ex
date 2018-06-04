@@ -174,11 +174,19 @@ defmodule WockyAPI.Schema.BotTypes do
 
   input_object :bot_create_input do
     field :values, non_null(:bot_params)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
   end
 
   input_object :bot_update_input do
+    @desc "ID of bot to update"
     field :id, non_null(:uuid)
+
     field :values, non_null(:bot_params)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
   end
 
   input_object :bot_item_params do
@@ -187,6 +195,27 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Content of them item"
     field :stanza, :string
+  end
+
+  input_object :bot_delete_input do
+    @desc "ID of bot to delete"
+    field :id, non_null(:uuid)
+  end
+
+  input_object :bot_subscribe_input do
+    @desc "ID of bot to which to subscribe"
+    field :id, non_null(:uuid)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
+
+    @desc "Whether to enable guest functionality for the user (default: false)"
+    field :guest, :boolean
+  end
+
+  input_object :bot_unsubscribe_input do
+    @desc "ID of the bot from which to unsubscribe"
+    field :id, non_null(:uuid)
   end
 
   input_object :bot_item_publish_input do
@@ -206,6 +235,9 @@ defmodule WockyAPI.Schema.BotTypes do
 
   payload_object(:bot_create_payload, :bot)
   payload_object(:bot_update_payload, :bot)
+  payload_object(:bot_delete_payload, :boolean)
+  payload_object(:bot_subscribe_payload, :boolean)
+  payload_object(:bot_unsubscribe_payload, :boolean)
   payload_object(:bot_item_publish_payload, :bot_item)
   payload_object(:bot_item_delete_payload, :boolean)
 
@@ -233,51 +265,25 @@ defmodule WockyAPI.Schema.BotTypes do
       changeset_mutation_middleware
     end
 
+    @desc "Delete a bot"
+    field :bot_delete, type: :bot_delete_payload do
+      arg :input, non_null(:bot_delete_input)
+      resolve &Bot.delete/3
+      changeset_mutation_middleware
+    end
+
     @desc "Subscribe the current user to a bot"
-    payload field :bot_subscribe do
-      input do
-        @desc "ID of bot to which to subscribe"
-        field :id, non_null(:uuid)
-
-        @desc """
-        Whether to enable guest functionality for the user (default: false)
-        """
-        field :guest, :boolean
-      end
-
-      output do
-        field :result, :boolean
-      end
-
+    field :bot_subscribe, type: :bot_subscribe_payload do
+      arg :input, non_null(:bot_subscribe_input)
       resolve &Bot.subscribe/3
+      changeset_mutation_middleware
     end
 
     @desc "Unsubscribe the current user from a bot"
-    payload field :bot_unsubscribe do
-      input do
-        @desc "ID of the bot from which to unsubscribe"
-        field :id, non_null(:uuid)
-      end
-
-      output do
-        field :result, :boolean
-      end
-
+    field :bot_unsubscribe, type: :bot_unsubscribe_payload do
+      arg :input, non_null(:bot_unsubscribe_input)
       resolve &Bot.unsubscribe/3
-    end
-
-    @desc "Delete a bot"
-    payload field :bot_delete do
-      input do
-        @desc "ID of bot to delete"
-        field :id, non_null(:uuid)
-      end
-
-      output do
-        field :result, :boolean
-      end
-
-      resolve &Bot.delete/3
+      changeset_mutation_middleware
     end
 
     @desc "Publish an item to a bot"

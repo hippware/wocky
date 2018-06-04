@@ -46,6 +46,11 @@ config :wocky,
   welcome_email_subject: "Welcome to tinyrobot!",
   welcome_field_mappings: [{"user_handle", :handle}]
 
+config :wocky, :redis,
+  host: {:system, :string, "REDIS_HOST", "localhost"},
+  port: {:system, :integer, "REDIS_PORT", 6379},
+  db: {:system, :integer, "REDIS_DB", 0}
+
 # Push notifications
 config :wocky, Wocky.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
