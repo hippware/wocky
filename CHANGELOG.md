@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add user location to bot creation, update and subscription with debounce skipping (#1576, PR #1583)
+* Includes: v2, Geofence entry notification, owner inside at t=0 (#1461)
+
+
 # 2018.5.30+r136aa78
 
 * Updated (via Dependabot): honeybadger (PR #1580)
