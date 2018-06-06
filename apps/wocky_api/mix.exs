@@ -46,8 +46,7 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-      {:absinthe,
-       github: "hippware/absinthe", branch: "master", override: true},
+      {:absinthe, "~> 1.4.12"},
       {:absinthe_phoenix,
        github: "absinthe-graphql/absinthe_phoenix", branch: "master"},
       {:absinthe_relay, "~> 1.4"},
