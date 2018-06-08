@@ -7,7 +7,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Add user location to bot creation, update and subscription with debounce skipping (#1576, PR #1583)
   * Includes: v2, Geofence entry notification, owner inside at t=0 (#1461)
-* Update (via Dependabot): credo (PR #1584)
+* Update (via Dependabot): credo (PR #1584), lager (PR #1589)
 * Update absinthe version (PR #1585)
 
 
