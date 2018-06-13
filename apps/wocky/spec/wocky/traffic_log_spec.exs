@@ -10,7 +10,7 @@ defmodule Wocky.TrafficLogSpec do
   @packets 100
 
   before do
-    user = Factory.insert(:user, %{server: shared.server})
+    user = Factory.insert(:user)
     resource = ID.new()
 
     traffic =
@@ -32,7 +32,7 @@ defmodule Wocky.TrafficLogSpec do
   describe "put/1" do
     it "should add a traffic entry for the user" do
       now = Timex.now()
-      user = Factory.insert(:user, %{server: shared.server})
+      user = Factory.insert(:user)
       log = Factory.params_for(:traffic_log, user_id: user.id)
       put_result = TrafficLog.put(log)
       put_result |> should(be_ok_result())

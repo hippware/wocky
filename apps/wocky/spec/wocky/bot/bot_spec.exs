@@ -29,7 +29,7 @@ defmodule Wocky.BotSpec do
       subject do: Bot.to_jid(bot())
 
       it do: jid(subject(), :luser) |> should(eq "")
-      it do: jid(subject(), :lserver) |> should(eq bot().server)
+      it do: jid(subject(), :lserver) |> should(eq Wocky.host())
       it do: jid(subject(), :lresource) |> should(eq Bot.make_node(bot()))
     end
 
@@ -41,7 +41,7 @@ defmodule Wocky.BotSpec do
 
       it do
         "bogus"
-        |> JID.make("localhost", "testing")
+        |> JID.make("testing")
         |> Bot.get_id_from_jid()
         |> should(be_nil())
       end
@@ -67,7 +67,6 @@ defmodule Wocky.BotSpec do
     let :attrs do
       %{
         id: ID.new(),
-        server: "localhost",
         user_id: ID.new(),
         title: "test bot",
         location: GeoUtils.point(5.0, 5.0)
@@ -126,7 +125,7 @@ defmodule Wocky.BotSpec do
 
       it "should return nil for invalid bot jids" do
         ""
-        |> JID.make(bot().server, "/notbot/" <> bot().id)
+        |> JID.make("/notbot/" <> bot().id)
         |> Bot.get()
         |> should(be_nil())
       end
@@ -154,7 +153,7 @@ defmodule Wocky.BotSpec do
     end
 
     describe "preallocate/2" do
-      let :preallocated, do: Bot.preallocate(user().id, user().server)
+      let :preallocated, do: Bot.preallocate(user().id)
 
       it "returns a pending bot" do
         preallocated().pending |> should(be_true())
@@ -163,7 +162,6 @@ defmodule Wocky.BotSpec do
       it "creates a bot in the database" do
         db_bot = Repo.get(Bot, preallocated().id)
 
-        db_bot.server |> should(eq preallocated().server)
         db_bot.user_id |> should(eq preallocated().user_id)
       end
 

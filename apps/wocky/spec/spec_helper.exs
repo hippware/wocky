@@ -7,7 +7,7 @@ ESpec.configure(fn config ->
         error -> error
       end
 
-    {:ok, tags: tags, server: "localhost"}
+    {:ok, tags: tags}
   end)
 
   config.finally(fn _shared ->

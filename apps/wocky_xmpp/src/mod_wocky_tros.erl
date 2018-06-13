@@ -103,16 +103,16 @@ handle_upload_request(Req, UR) ->
 get_download_urls(URL, FromJID) ->
     Result =
     do([error_m ||
-        {Server, FileID} <- ?tros:parse_url(URL),
+        FileID <- ?tros:parse_url(URL),
         #{user_id := OwnerID, access := Access} = Metadata
             <- expand_err(?tros:get_metadata(FileID)),
         check_download_permissions(FromJID, OwnerID, Access),
-        {ok, {Server, Metadata}}
+        {ok, Metadata}
        ]),
     case Result of
-        {ok, {Server, Metadata}} ->
+        {ok, Metadata} ->
             list_to_tuple(
-              ?tros:get_download_urls(Server, Metadata, [full, thumbnail]));
+              ?tros:get_download_urls(Metadata, [full, thumbnail]));
         _ ->
             {<<>>, <<>>}
     end.
@@ -213,7 +213,7 @@ upload_response(Req = #request{from_jid = FromJID},
     FileID = make_file_id(),
     case ?tros:make_upload_response(FromJID, FileID, Size, Access, Metadata) of
         {ok, {Headers, RespFields}} ->
-            FullFields = common_fields(FromJID, FileID) ++ RespFields,
+            FullFields = common_fields(FileID) ++ RespFields,
             response(Req, Headers, FullFields, <<"upload">>);
 
         {error, Errors} ->
@@ -222,9 +222,9 @@ upload_response(Req = #request{from_jid = FromJID},
                     ?wocky_errors:to_map(Errors)))
     end.
 
-download_response(Req = #request{from_jid = FromJID}, _OwnerID, FileID) ->
+download_response(Req, _OwnerID, FileID) ->
     {ok, {Headers, RespFields}} =
-        ?tros:make_download_response(FromJID#jid.lserver, FileID),
+        ?tros:make_download_response(FileID),
 
     response(Req, Headers, RespFields, <<"download">>).
 
@@ -243,9 +243,9 @@ response(#request{iq = IQ}, Headers, RespFields, RespType) ->
 error_response(IQ = #iq{sub_el = SubEl}, Error) ->
     IQ#iq{type = error, sub_el = [SubEl, Error]}.
 
-common_fields(#jid{lserver = Server}, FileID) ->
+common_fields(FileID) ->
     [{<<"id">>, FileID},
-     {<<"jid">>, jid:to_binary(?tros:make_jid(Server, FileID))}].
+     {<<"jid">>, jid:to_binary(?tros:make_jid(FileID))}].
 
 to_header_element({Name, Value}) ->
     #xmlel{name = <<"header">>,
@@ -282,7 +282,7 @@ setup_metrics() ->
     ok.
 
 inc_counter(Name) ->
-    _ = prometheus_counter:inc(Name, [wocky_xmpp_app:server()]),
+    _ = prometheus_counter:inc(Name, [?wocky:host()]),
     ok.
 
 waiter_event(ID) -> <<"tros_waiter_", ID/binary>>.

@@ -7,11 +7,11 @@ defmodule Wocky.TROS.TestStore do
 
   @behaviour TROS
 
-  def delete(_lserver, _file_id) do
+  def delete(_file_id) do
     :ok
   end
 
-  def make_download_response(_server, _file_name) do
+  def make_download_response(_file_name) do
     resp_fields = [
       {"url", "http://localhost/some/file/location"}
     ]
@@ -20,8 +20,8 @@ defmodule Wocky.TROS.TestStore do
   end
 
   def make_upload_response(owner_jid, file_id, _size, _metadata) do
-    jid(luser: owner, lserver: lserver) = owner_jid
-    file_jid = TROS.make_jid(owner, lserver, file_id)
+    jid(luser: owner) = owner_jid
+    file_jid = TROS.make_jid(owner, file_id)
     reference_url = TROS.make_url(file_jid)
     url = "http://localhost/some/file/location"
 
@@ -30,8 +30,8 @@ defmodule Wocky.TROS.TestStore do
     {[], resp_fields}
   end
 
-  def get_download_url(server, _metadata, file_name) do
-    "https://" <> server <> "/" <> file_name
+  def get_download_url(_metadata, file_name) do
+    "https://" <> Wocky.host() <> "/" <> file_name
   end
 
   defp resp_fields(method, url, reference_url) do

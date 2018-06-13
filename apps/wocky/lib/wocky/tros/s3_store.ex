@@ -14,26 +14,26 @@ defmodule Wocky.TROS.S3Store do
   # 10 minute expiry on upload/download links.
   @link_expiry 60 * 10
 
-  def delete(lserver, file_id) do
+  def delete(file_id) do
     for file <- TROS.variants(file_id) do
-      do_delete(lserver, file)
+      do_delete(file)
     end
 
     :ok
   end
 
-  def do_delete(lserver, file_id) do
-    with {:ok, result} <- do_request(lserver, file_id, :delete) do
+  def do_delete(file_id) do
+    with {:ok, result} <- do_request(file_id, :delete) do
       check_result_get_headers(result, 204)
     else
       {:error, _} = error -> error
     end
   end
 
-  defp do_request(lserver, file_id, type) do
+  defp do_request(file_id, type) do
     url =
-      lserver
-      |> s3_url(bucket(), file_id, type, [])
+      bucket()
+      |> s3_url(file_id, type, [])
       |> String.to_charlist()
 
     case :httpc.request(type, {url, []}, [], []) do
@@ -61,23 +61,23 @@ defmodule Wocky.TROS.S3Store do
     {:error, {:retrieve_error, text}}
   end
 
-  def make_download_response(server, file_id) do
+  def make_download_response(file_id) do
     resp_fields = [
-      {"url", s3_url(server, bucket(), file_id, :get)}
+      {"url", s3_url(bucket(), file_id, :get)}
     ]
 
     {[], resp_fields}
   end
 
-  def get_download_url(_server, %{ready: false}, _file_name), do: ""
+  def get_download_url(%{ready: false}, _file_name), do: ""
 
-  def get_download_url(server, _metadata, file_name) do
-    s3_url(server, bucket(), file_name, :get)
+  def get_download_url(_metadata, file_name) do
+    s3_url(bucket(), file_name, :get)
   end
 
   def make_upload_response(owner_jid, file_id, size, metadata) do
-    jid(luser: owner, lserver: lserver) = owner_jid
-    file_jid = TROS.make_jid(owner, lserver, file_id)
+    jid(luser: owner) = owner_jid
+    file_jid = TROS.make_jid(owner, file_id)
     reference_url = TROS.make_url(file_jid)
 
     headers = [
@@ -86,7 +86,7 @@ defmodule Wocky.TROS.S3Store do
       {@amz_content_type, Map.get(metadata, @amz_content_type)}
     ]
 
-    url = "https://#{upload_bucket()}.#{s3_server()}/#{path(lserver, file_id)}"
+    url = "https://#{upload_bucket()}.#{s3_server()}/#{path(file_id)}"
 
     {:ok, ret_headers} =
       Auth.headers(:put, url, :s3, make_config(), headers, nil)
@@ -104,7 +104,7 @@ defmodule Wocky.TROS.S3Store do
     ]
   end
 
-  defp s3_url(server, bucket, file_id, method, url_params \\ []) do
+  defp s3_url(bucket, file_id, method, url_params \\ []) do
     options = [
       expires_in: @link_expiry,
       virtual_host: false,
@@ -116,7 +116,7 @@ defmodule Wocky.TROS.S3Store do
         make_config(),
         method,
         bucket,
-        path(server, file_id),
+        path(file_id),
         options
       )
 
@@ -137,7 +137,7 @@ defmodule Wocky.TROS.S3Store do
 
   defp get_opt(opt, default \\ nil), do: Confex.get_env(:wocky, opt, default)
 
-  defp path(server, file_id), do: "#{server}-#{hash_prefix(file_id)}/#{file_id}"
+  defp path(file_id), do: "#{Wocky.host()}-#{hash_prefix(file_id)}/#{file_id}"
 
   def hash_prefix(file_id) do
     file_id

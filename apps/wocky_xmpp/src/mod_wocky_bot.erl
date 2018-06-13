@@ -213,7 +213,7 @@ perform_owner_action(update, Bot, _From, IQ) ->
     #iq{sub_el = #xmlel{children = Children}} = IQ,
     do([error_m ||
         Fields <- get_fields(Children),
-        FieldsMap = normalise_fields(Fields),
+        FieldsMap <- normalise_fields(Fields),
         ?wocky_bot:update(Bot, FieldsMap),
         {ok, []}
        ]);
@@ -306,8 +306,7 @@ perform_access_action(retract, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
 %%%===================================================================
 
 handle_preallocate(#jid{luser = UserID}) ->
-    Server = wocky_xmpp_app:server(),
-    #{id := ID} = ?wocky_bot:preallocate(UserID, Server),
+    #{id := ID} = ?wocky_bot:preallocate(UserID),
     {ok, make_new_id_stanza(ID)}.
 
 %%%===================================================================
@@ -315,16 +314,15 @@ handle_preallocate(#jid{luser = UserID}) ->
 %%%===================================================================
 
 handle_create(From, Children) ->
-    Server = wocky_xmpp_app:server(),
     do([error_m ||
         Fields <- get_fields(Children),
         {ID, PendingBot} <- get_pending_id_and_bot(Fields),
         wocky_bot_util:check_owner(ID, From),
         User <- wocky_bot_util:get_user_from_jid(From),
-        Fields2 <- add_server(Fields, Server),
+        Fields2 <- add_server(Fields),
         Fields3 <- add_defaults(Fields2),
         check_required_fields(Fields3, required_fields()),
-        FieldsMap = normalise_fields(Fields3),
+        FieldsMap <- normalise_fields(Fields3),
         Bot <- create_bot(ID, PendingBot, User, FieldsMap),
         %% See note below:
         ?wocky_bot:subscribe(Bot, User, maps:get(geofence, Bot)),
@@ -341,8 +339,9 @@ handle_create(From, Children) ->
 %% we also want the subscription to be created so we need
 %% that system too.
 
-add_server(Fields, Server) ->
-    {ok, [#field{name = <<"server">>, type = string, value = Server} | Fields]}.
+add_server(Fields) ->
+    {ok, [#field{name = <<"server">>, type = string, value = ?wocky:host()}
+          | Fields]}.
 
 add_defaults(Fields) ->
     {ok, lists:foldl(fun maybe_add_default/2, Fields, optional_fields())}.
@@ -781,7 +780,7 @@ optional_fields() ->
      field(<<"geofence">>,      bool,   false)].
 
 output_only_fields() ->
-    [field(<<"server">>,        string, <<>>),
+    [field(<<"server">>,        string, ?wocky:host()),
      field(<<"owner">>,         jid,    <<>>),
      field(<<"updated">>,       timestamp, <<>>),
      field(<<"subscribed">>,    bool,   false),
@@ -818,7 +817,7 @@ not_valid(Message) ->
 %%     BaseStanza#xmlel{children = [ConflictEl | BaseStanza#xmlel.children]}.
 
 normalise_fields(Fields) ->
-    lists:foldl(fun normalise_field/2, #{}, Fields).
+    {ok, lists:foldl(fun normalise_field/2, #{}, Fields)}.
 
 normalise_field(#field{type = geoloc, value = {Lat, Lon}}, Acc) ->
     Acc#{location => ?wocky_geo_utils:point(Lat, Lon)};
@@ -837,7 +836,7 @@ make_bot_el(Bot, FromUser) ->
 
 make_ret_elements(Bot, FromUser) ->
     DynamicFields = dynamic_fields(Bot, FromUser),
-    Fields = maps:fold(fun to_field/3, [], Bot),
+    Fields = maps:fold(fun to_field/3, [], Bot#{server => ?wocky:host()}),
     encode_fields(Fields ++ DynamicFields, FromUser).
 
 dynamic_fields(Bot, FromUser) ->
@@ -1028,7 +1027,7 @@ make_user_list(Name, Users) ->
             attrs = [{<<"jid">>, jid:to_binary(
                                    jid:make(
                                      maps:get(id, U),
-                                     wocky_xmpp_app:server(), <<>>))}]}
+                                     ?wocky:host(), <<>>))}]}
      || U <- Users].
 
 users_result(Name, UserEls, Size, Hash, RSMOut) ->
@@ -1043,4 +1042,4 @@ reply_not_allowed(Sender, Stanza) ->
             Stanza,
             ?ERRT_NOT_ALLOWED(
                ?MYLANG, <<"Bot action not allowed to this user">>)),
-    ejabberd_router:route(#jid{lserver = wocky_xmpp_app:server()}, Sender, Err).
+    ejabberd_router:route(#jid{lserver = ?wocky:host()}, Sender, Err).

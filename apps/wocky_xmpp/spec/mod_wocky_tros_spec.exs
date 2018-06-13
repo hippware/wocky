@@ -108,7 +108,7 @@ defmodule :mod_wocky_tros_spec do
     example "successful request on own avatar using a URL" do
       url =
         shared.alice.id
-        |> TROS.make_jid(shared.server, shared.avatar.id)
+        |> TROS.make_jid(shared.avatar.id)
         |> TROS.make_url()
 
       packet = download_packet(url)
@@ -327,13 +327,13 @@ defmodule :mod_wocky_tros_spec do
         )
     ) = packet
 
-    shared.server
-    |> TROS.make_jid(file_id)
+    file_id
+    |> TROS.make_jid()
     |> JID.to_binary()
     |> should(eq jid)
 
     shared.alice.id
-    |> TROS.make_jid(shared.server, file_id)
+    |> TROS.make_jid(file_id)
     |> TROS.make_url()
     |> should(eq ref_url)
   end

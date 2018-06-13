@@ -31,8 +31,6 @@ defmodule Wocky.Bot do
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "bots" do
-    # Bot server
-    field :server, :string
     # Bot title
     field :title, :string, default: ""
     # True if this is a preallocated bot ID
@@ -91,7 +89,6 @@ defmodule Wocky.Bot do
 
   @type t :: %Bot{
           id: nil | id,
-          server: nil | binary,
           title: binary,
           pending: nil | boolean,
           shortname: nil | binary,
@@ -120,7 +117,6 @@ defmodule Wocky.Bot do
   @bot_prefix "bot/"
   @change_fields [
     :id,
-    :server,
     :user_id,
     :title,
     :shortname,
@@ -135,7 +131,7 @@ defmodule Wocky.Bot do
     :tags,
     :geofence
   ]
-  @required_fields [:id, :server, :user_id, :title, :location, :radius]
+  @required_fields [:id, :user_id, :title, :location, :radius]
 
   # ----------------------------------------------------------------------
   # Helpers
@@ -147,7 +143,7 @@ defmodule Wocky.Bot do
 
   @spec to_jid(t) :: JID.t()
   def to_jid(bot) do
-    JID.make("", bot.server, make_node(bot))
+    JID.make("", Wocky.host(), make_node(bot))
   end
 
   @spec get_id_from_jid(JID.t()) :: id | nil
@@ -220,12 +216,12 @@ defmodule Wocky.Bot do
     |> Repo.one()
   end
 
-  @spec preallocate(User.id(), User.server()) :: t | no_return
-  def preallocate(user_id, server) do
-    params = %{id: ID.new(), server: server, user_id: user_id, pending: true}
+  @spec preallocate(User.id()) :: t | no_return
+  def preallocate(user_id) do
+    params = %{id: ID.new(), user_id: user_id, pending: true}
 
     %Bot{}
-    |> cast(params, [:id, :server, :user_id, :pending])
+    |> cast(params, [:id, :user_id, :pending])
     |> foreign_key_constraint(:user_id)
     |> Repo.insert!()
   end

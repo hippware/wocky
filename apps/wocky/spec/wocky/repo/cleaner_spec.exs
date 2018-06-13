@@ -263,12 +263,12 @@ defmodule Wocky.Repo.CleanerSpec do
   describe "clean_dead_tros_links" do
     before do
       md = Factory.insert(:tros_metadata, user: shared.user)
-      {:ok, md: md, file_url: TROS.make_url("localhost", md.id)}
+      {:ok, md: md, file_url: TROS.make_url(md.id)}
     end
 
     describe "clean_bot_item_image_links" do
       before do
-        bad_url = TROS.make_url("localhost", ID.new())
+        bad_url = TROS.make_url(ID.new())
         bot = Factory.insert(:bot, user: shared.user)
 
         good_with_content =

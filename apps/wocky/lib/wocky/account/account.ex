@@ -19,12 +19,11 @@ defmodule Wocky.Account do
   Creates a new user with a password.
   Used for testing only.
   """
-  @spec register(binary, binary, binary, binary) ::
+  @spec register(binary, binary, binary) ::
           {:ok, User.t()} | {:error, any}
-  def register(username, server, password, pass_details) do
+  def register(username, password, pass_details) do
     Register.create(%{
       username: username,
-      server: server,
       password: password,
       pass_details: pass_details
     })
@@ -96,9 +95,9 @@ defmodule Wocky.Account do
   See the Wiki for details:
   https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
   """
-  @spec authenticate(provider, binary, binary | {binary, binary}) ::
+  @spec authenticate(provider, binary | {binary, binary}) ::
           {:ok, {User.t(), boolean}} | {:error, binary}
-  def authenticate(:token, _server, {user_id, token}) do
+  def authenticate(:token, {user_id, token}) do
     if Token.valid?(user_id, token) do
       {:ok, {Repo.get(User, user_id), false}}
     else
@@ -106,31 +105,31 @@ defmodule Wocky.Account do
     end
   end
 
-  def authenticate(:bypass, server, {external_id, phone_number}) do
+  def authenticate(:bypass, {external_id, phone_number}) do
     if has_bypass_prefix(phone_number) do
-      Register.find_or_create(server, :bypass, external_id, phone_number)
+      Register.find_or_create(:bypass, external_id, phone_number)
     else
       provider_error(:bypass)
     end
   end
 
-  def authenticate(:firebase, server, token) do
+  def authenticate(:firebase, token) do
     case Firebase.decode_and_verify(token) do
       {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
-        Register.find_or_create(server, :firebase, external_id, phone_number)
+        Register.find_or_create(:firebase, external_id, phone_number)
 
       {:error, reason} ->
         {:error, error_to_string(reason)}
     end
   end
 
-  def authenticate(:client_jwt, server, token) do
+  def authenticate(:client_jwt, token) do
     case ClientJWT.decode_and_verify(token) do
       {:ok, %{"typ" => "firebase", "sub" => new_token}} ->
-        authenticate(:firebase, server, new_token)
+        authenticate(:firebase, new_token)
 
       {:ok, %{"typ" => "bypass", "sub" => id, "phone_number" => phone}} ->
-        authenticate(:bypass, server, {id, phone})
+        authenticate(:bypass, {id, phone})
 
       {:ok, _claims} ->
         {:error, "Unable to authenticate wrapped entity"}
@@ -140,7 +139,7 @@ defmodule Wocky.Account do
     end
   end
 
-  def authenticate(provider, _server, _creds), do: provider_error(provider)
+  def authenticate(provider, _creds), do: provider_error(provider)
 
   defp has_bypass_prefix(phone_number) do
     if Application.get_env(:wocky, :enable_auth_bypass) do

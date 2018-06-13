@@ -106,17 +106,15 @@ maybe_get_token(true, #{id := UserID}, Resource) ->
 
 %% The digits provider exists only to support auth bypass
 authenticate_user(<<"digits">>, Fields) ->
-    Server = wocky_xmpp_app:server(),
     {ok, UserID} = get_field(<<"userID">>, Fields),
     {ok, PhoneNumber} = get_field(<<"phoneNumber">>, Fields),
-    case ?wocky_account:authenticate(bypass, Server, {UserID, PhoneNumber}) of
+    case ?wocky_account:authenticate(bypass, {UserID, PhoneNumber}) of
       {ok, Result} -> {ok, Result};
       {error, Error} -> {error, {"not-authorized", Error}}
     end;
 
 authenticate_user(<<"firebase">>, #{<<"jwt">> := JWT}) ->
-    Server = wocky_xmpp_app:server(),
-    case ?wocky_account:authenticate(firebase, Server, JWT) of
+    case ?wocky_account:authenticate(firebase, JWT) of
         {ok, Result} -> {ok, Result};
         {error, Error} -> {error, {"not-authorized", Error}}
     end;
@@ -132,12 +130,11 @@ make_auth_error_response(Response0, Text0) ->
 
 make_auth_response({User, Provider, Token, Expiry, IsNew}) ->
     #{id := UserID,
-      server := Server,
       external_id := ExternalID,
       handle := Handle} = User,
 
     JSONFields = [{user, UserID},
-                  {server, Server},
+                  {server, ?wocky:host()},
                   {handle, safe_handle(Handle)},
                   {provider, Provider},
                   {external_id, ExternalID},

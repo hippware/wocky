@@ -276,7 +276,7 @@ defmodule :mod_wocky_notifications_spec do
     describe "handling the remove_user hook" do
       before do
         _ = enable_notifications(shared.user_jid)
-        result = remove_user_hook(:ok, shared.user.username, shared.user.server)
+        result = remove_user_hook(:ok, shared.user.username, Wocky.host())
         {:ok, result: result}
       end
 

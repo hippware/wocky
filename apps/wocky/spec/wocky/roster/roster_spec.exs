@@ -109,7 +109,7 @@ defmodule Wocky.RosterSpec do
   describe "put/6" do
     context "when there is no existing entry for the contact" do
       before do
-        contact = Factory.insert(:user, %{server: shared.server})
+        contact = Factory.insert(:user)
         {:ok, contact: contact}
       end
 
@@ -290,7 +290,7 @@ defmodule Wocky.RosterSpec do
     end
 
     it "should return [] for a user with no contacts" do
-      user = Factory.insert(:user, %{server: shared.server})
+      user = Factory.insert(:user)
       Roster.find_users_with_contact(user.id) |> should(eq [])
     end
   end
@@ -395,7 +395,7 @@ defmodule Wocky.RosterSpec do
 
   describe "followers/1" do
     before do
-      blocked_follower = Factory.insert(:user, %{server: shared.server})
+      blocked_follower = Factory.insert(:user)
       RosterHelper.follow(blocked_follower, shared.user)
       Block.block(shared.user, blocked_follower)
       :ok
@@ -432,9 +432,9 @@ defmodule Wocky.RosterSpec do
 
   describe "followees/1" do
     before do
-      following_none = Factory.insert(:user, %{server: shared.server})
-      following_one = Factory.insert(:user, %{server: shared.server})
-      following_two = Factory.insert(:user, %{server: shared.server})
+      following_none = Factory.insert(:user)
+      following_one = Factory.insert(:user)
+      following_two = Factory.insert(:user)
       insert_follower_pair(following_two, following_one)
       insert_follower_pair(following_two, following_none)
       insert_follower_pair(following_one, following_none)
@@ -478,7 +478,7 @@ defmodule Wocky.RosterSpec do
 
   describe "friends/1" do
     before do
-      blocked_friend = Factory.insert(:user, %{server: shared.server})
+      blocked_friend = Factory.insert(:user)
       RosterHelper.make_friends(blocked_friend, shared.user)
       Block.block(shared.user, blocked_friend)
       :ok

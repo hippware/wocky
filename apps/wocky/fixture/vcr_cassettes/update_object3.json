@@ -1,7 +1,7 @@
 [
   {
     "request": {
-      "body": "{\"requests\":[{\"objectID\":\"92ec75ce-5c9c-11e7-a6fc-6bc2ef6cf59f\",\"body\":{\"title\":\"title1\",\"server\":\"localhost\",\"radius\":1000,\"public\":true,\"objectID\":\"92ec75ce-5c9c-11e7-a6fc-6bc2ef6cf59f\",\"lon\":2.0,\"lat\":1.0,\"image\":\"image1\",\"_geoloc\":{\"lng\":2.0,\"lat\":1.0}},\"action\":\"partialUpdateObject\"}]}",
+      "body": "{\"requests\":[{\"objectID\":\"92ec75ce-5c9c-11e7-a6fc-6bc2ef6cf59f\",\"body\":{\"title\":\"title1\",\"radius\":1000,\"public\":true,\"objectID\":\"92ec75ce-5c9c-11e7-a6fc-6bc2ef6cf59f\",\"lon\":2.0,\"lat\":1.0,\"image\":\"image1\",\"_geoloc\":{\"lng\":2.0,\"lat\":1.0}},\"action\":\"partialUpdateObject\"}]}",
       "headers": {
         "X-Algolia-API-Key": "ffd47f99438c5dfe778a307d9a58e29a",
         "X-Algolia-Application-Id": "765J3YW5XN"
@@ -38,7 +38,7 @@
   },
   {
     "request": {
-      "body": "{\"requests\":[{\"objectID\":\"9992ad9e-5c9c-11e7-be21-8bd16ebc6dce\",\"body\":{\"title\":\"title2\",\"server\":\"localhost\",\"radius\":1000,\"public\":true,\"objectID\":\"9992ad9e-5c9c-11e7-be21-8bd16ebc6dce\",\"lon\":6.0,\"lat\":5.0,\"image\":\"image2\",\"_geoloc\":{\"lng\":6.0,\"lat\":5.0}},\"action\":\"partialUpdateObject\"}]}",
+      "body": "{\"requests\":[{\"objectID\":\"9992ad9e-5c9c-11e7-be21-8bd16ebc6dce\",\"body\":{\"title\":\"title2\",\"radius\":1000,\"public\":true,\"objectID\":\"9992ad9e-5c9c-11e7-be21-8bd16ebc6dce\",\"lon\":6.0,\"lat\":5.0,\"image\":\"image2\",\"_geoloc\":{\"lng\":6.0,\"lat\":5.0}},\"action\":\"partialUpdateObject\"}]}",
       "headers": {
         "X-Algolia-API-Key": "ffd47f99438c5dfe778a307d9a58e29a",
         "X-Algolia-Application-Id": "765J3YW5XN"

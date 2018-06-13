@@ -151,13 +151,13 @@ follow_stanza(Bot, Action) ->
 
 -spec bot_action_el(?wocky_bot:t(), binary() | {binary(), binary()}) ->
     jlib:xmlel().
-bot_action_el(#{id := ID, server := Server} = Bot, Action) ->
+bot_action_el(#{id := ID} = Bot, Action) ->
     #xmlel{name = <<"bot">>,
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = [wocky_xml:cdata_el(
                          <<"jid">>, jid:to_binary(?wocky_bot:to_jid(Bot))),
                        wocky_xml:cdata_el(<<"id">>, ID),
-                       wocky_xml:cdata_el(<<"server">>, Server) |
+                       wocky_xml:cdata_el(<<"server">>, ?wocky:host()) |
                        action_els(Action)]}.
 
 action_els({Action = <<"follow expire">>, Expiry}) ->

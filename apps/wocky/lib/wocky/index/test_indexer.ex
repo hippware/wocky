@@ -53,7 +53,6 @@ defmodule Wocky.Index.TestIndexer do
 
     %{
       "objectID" => bot.id,
-      "server" => bot.server,
       "user_id" => bot.user_id,
       "title" => bot.title,
       "image" => bot.image,

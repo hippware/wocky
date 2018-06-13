@@ -40,9 +40,12 @@ defmodule Wocky.JID do
   defmacro __using__(_) do
     quote do
       alias unquote(__MODULE__)
-      import unquote(__MODULE__), only: :macros
+      import unquote(__MODULE__)
     end
   end
+
+  @spec make(user) :: t | :error
+  def make(user), do: make(user, Wocky.host())
 
   @spec make(user, server, resource) :: t | :error
   def make(user, server, resource \\ "") do
@@ -100,7 +103,7 @@ defmodule Wocky.JID do
   end
 
   defp binary_to_jid1(<<>>, n) do
-    make("", to_string(Enum.reverse(n)), "")
+    make(to_string(Enum.reverse(n)), "")
   end
 
   # Only one "@" is admitted per JID

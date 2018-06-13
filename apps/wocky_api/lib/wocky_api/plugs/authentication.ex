@@ -34,7 +34,7 @@ defmodule WockyAPI.Plugs.Authentication do
   defp parse_jwt_header(_header), do: {:error, :bad_jwt_header}
 
   defp do_authenticate(conn, method, creds) do
-    case Account.authenticate(method, "", creds) do
+    case Account.authenticate(method, creds) do
       {:ok, {user, _}} ->
         assign(conn, :current_user, user)
 

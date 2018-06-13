@@ -39,10 +39,10 @@ user_updated(Acc, LUser, _LServer) ->
     lists:foreach(notify_user_update(User, _), WithContact),
     Acc.
 
-notify_user_update(Item = #{id := User, server := Server},
+notify_user_update(Item = #{id := User},
                    #{id := WithContact})  ->
-    ejabberd_router:route(jid:make(User, Server, <<>>),
-                          jid:make(WithContact, Server, <<>>),
+    ejabberd_router:route(jid:make(User, ?wocky:host(), <<>>),
+                          jid:make(WithContact, ?wocky:host(), <<>>),
                           user_change_packet(Item)).
 
 user_change_packet(Item) ->
@@ -55,6 +55,7 @@ make_user_changed_el(Item) ->
            attrs = [{<<"xmlns">>, ?NS_USER}],
            children = [make_item_el(Item)]}.
 
-make_item_el(#{id := User, server := Server}) ->
+make_item_el(#{id := User}) ->
     #xmlel{name = <<"item">>,
-           attrs = [{<<"jid">>, jid:to_binary(jid:make(User, Server, <<>>))}]}.
+           attrs = [{<<"jid">>,
+                     jid:to_binary(jid:make(User, ?wocky:host(), <<>>))}]}.

@@ -77,7 +77,7 @@ check_ns(AddressesEl) ->
 
 check_to(#jid{lserver = LServer},
          #jid{luser = <<>>, lserver = LServer, lresource = <<>>}) ->
-    case wocky_xmpp_app:server() of
+    case ?wocky:host() of
         LServer -> ok;
         _ -> {error, not_local_server}
     end;

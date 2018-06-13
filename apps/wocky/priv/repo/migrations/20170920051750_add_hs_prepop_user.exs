@@ -13,14 +13,10 @@ defmodule Wocky.Repo.Migrations.AddHsPrepopUser do
 
   def up do
     id = ID.new
-    %User{
-      id: id,
-      username: id,
-      server: "",
-      external_id: "",
-      handle: @handle
-    }
-    |> Repo.insert
+    execute """
+    INSERT INTO users (id, username, server, external_id, handle, created_at, updated_at) VALUES
+    ('#{id}', '#{id}', '', '', '#{@handle}', now(), now());
+    """
 
     InitialContact
     |> where([i], i.type == "friend" or i.type == "followee")

@@ -9,24 +9,18 @@ defmodule Wocky.User.Avatar do
   alias Wocky.User
 
   @type url :: binary
-  @type t :: {User.server(), User.id()}
+  @type t :: TROS.file_id
 
   @spec validate(User.t(), url()) :: {:ok, t()} | {:error, atom()}
   def validate(user, avatar_url) do
-    with {:ok, avatar} <- prepare(avatar_url),
-         :ok <- check_is_local(avatar, user.server),
+    with {:ok, avatar} <- TROS.parse_url(avatar_url),
          :ok <- check_valid_filename(avatar),
          :ok <- check_owner(avatar, user.id) do
       {:ok, avatar}
     end
   end
 
-  defp prepare(avatar_url), do: TROS.parse_url(avatar_url)
-
-  defp check_is_local({server, _} = _avatar, server), do: :ok
-  defp check_is_local(_, _), do: {:error, :not_local_file}
-
-  defp check_valid_filename({_server, file_id} = _avatar) do
+  defp check_valid_filename(file_id) do
     if ID.valid?(file_id) do
       :ok
     else
@@ -34,7 +28,7 @@ defmodule Wocky.User.Avatar do
     end
   end
 
-  defp check_owner({_server, id} = _avatar, user_id) do
+  defp check_owner(id, user_id) do
     case TROS.get_metadata(id) do
       {:ok, %Metadata{user_id: ^user_id}} -> :ok
       {:ok, _} -> {:error, :not_file_owner}
@@ -53,7 +47,7 @@ defmodule Wocky.User.Avatar do
 
   def maybe_delete_existing(_new_avatar, user) do
     case TROS.parse_url(user.avatar) do
-      {:ok, {_file_server, file_id}} ->
+      {:ok, file_id} ->
         TROS.delete(file_id, user)
 
       {:error, _} ->

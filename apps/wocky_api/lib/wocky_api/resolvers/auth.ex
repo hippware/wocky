@@ -12,7 +12,7 @@ defmodule WockyAPI.Resolvers.Auth do
   end
 
   defp do_authenticate(method, creds) do
-    case Account.authenticate(method, "", creds) do
+    case Account.authenticate(method, creds) do
       {:ok, {user, _}} ->
         {:ok, %{user: user}}
 

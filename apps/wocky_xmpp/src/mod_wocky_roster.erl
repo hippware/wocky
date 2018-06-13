@@ -175,7 +175,7 @@ do_process_item_set(JID1, From, To, El, Result) ->
 do_process_item_set_1(nil, _, _, _, _, _) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Error: Invalid contact ID">>)};
 
-do_process_item_set_1(#{id := ContactID, server := ContactServer} = Contact,
+do_process_item_set_1(#{id := ContactID} = Contact,
                       #{id := UserID} = User, ToJID, OldItem,
                       #xmlel{attrs = Attrs, children = Els}, Result) ->
     Item1 = process_item_attrs(OldItem, Attrs),
@@ -197,7 +197,7 @@ do_process_item_set_1(#{id := ContactID, server := ContactServer} = Contact,
 
             BlockNotification = to_wocky_roster(
                                   ?wocky_roster:get(ContactID, UserID)),
-            push_item(ContactID, ContactServer, FromJID,
+            push_item(ContactID, ?wocky:host(), FromJID,
                       OldItem, BlockNotification),
             Result;
         false ->

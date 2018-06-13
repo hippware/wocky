@@ -25,7 +25,7 @@
 
 -define(BOB_HANDLE, <<"Bob">>).
 -define(AVATAR_ID, <<"ba191e16-8c87-11e7-8372-5f4e6ef88769">>).
--define(BOB_AVATAR, ?tros:make_url(?SERVER, ?AVATAR_ID)).
+-define(BOB_AVATAR, ?tros:make_url(?AVATAR_ID)).
 -define(BOB_FIRST_NAME, <<"Bobble">>).
 -define(BOB_LAST_NAME, <<"Robertson">>).
 -define(ROLE1, <<"a role">>).

@@ -33,8 +33,7 @@ mech_new(_Host, Creds) ->
     {ok, mongoose_credentials:t()} | {error, binary()}.
 mech_step(#state{creds = Creds}, SerializedToken) ->
     %% SerializedToken is a token decoded from CDATA <auth/> body sent by client
-    Server = wocky_xmpp_app:server(),
-    case ?wocky_account:authenticate(client_jwt, Server, SerializedToken) of
+    case ?wocky_account:authenticate(client_jwt, SerializedToken) of
         {ok, {#{id := UserID}, _}} ->
             {ok, mongoose_credentials:extend(Creds, creds(UserID))};
         {error, _Reason} ->

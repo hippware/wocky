@@ -10,17 +10,17 @@ defmodule Wocky.TROSSpec do
   alias Wocky.User
 
   let :id, do: ID.new()
-  let :tros_jid, do: TROS.make_jid("server", "file_id")
-  let :tros_jid_u, do: TROS.make_jid("user", "server", "file_id")
+  let :tros_jid, do: TROS.make_jid("file_id")
+  let :tros_jid_u, do: TROS.make_jid("user", "file_id")
 
   describe "make_jid/2" do
     subject do: JID.to_binary(tros_jid())
-    it do: should(eq "server/file/file_id")
+    it do: should(eq "#{Wocky.host()}/file/file_id")
   end
 
   describe "make_jid/3" do
     subject do: JID.to_binary(tros_jid_u())
-    it do: should(eq "user@server/file/file_id")
+    it do: should(eq "user@#{Wocky.host()}/file/file_id")
   end
 
   describe "parse_url/1" do
@@ -33,20 +33,20 @@ defmodule Wocky.TROSSpec do
   describe "make_url/1" do
     context "when passed a JID with no user" do
       subject do: TROS.make_url(tros_jid())
-      it do: should(eq TROS.make_url("server", "file_id"))
-      it do: should(eq "tros:server/file/file_id")
+      it do: should(eq TROS.make_url("file_id"))
+      it do: should(eq "tros:#{Wocky.host()}/file/file_id")
     end
 
     context "when passed a JID with a user" do
       subject do: TROS.make_url(tros_jid_u())
-      it do: should(eq "tros:user@server/file/file_id")
+      it do: should(eq "tros:user@#{Wocky.host()}/file/file_id")
     end
   end
 
   describe "make_url/2" do
-    subject do: TROS.make_url("server", "file_id")
+    subject do: TROS.make_url("file_id")
     it do: should(eq TROS.make_url(tros_jid()))
-    it do: should(eq "tros:server/file/file_id")
+    it do: should(eq "tros:#{Wocky.host()}/file/file_id")
   end
 
   describe "get_base_id/1" do
@@ -111,10 +111,10 @@ defmodule Wocky.TROSSpec do
       it do: assert({:ok, {_, _}} = subject())
     end
 
-    describe "make_download_response/2" do
+    describe "make_download_response/1" do
       let :owner_jid, do: User.to_jid(shared.user)
-      subject do: TROS.make_download_response("localhost", shared.id)
-      it do: assert({:ok, {_, _}} = subject())
+      subject do: TROS.make_download_response(shared.id)
+      it do: assert({:ok, _} = subject())
     end
   end
 end

@@ -36,10 +36,9 @@ defmodule Wocky.Repo.Factory do
     %User{
       id: user_id,
       username: user_id,
-      server: "localhost",
       external_id: external_id(),
       handle: new_handle(),
-      avatar: TROS.make_url("localhost", ID.new()),
+      avatar: TROS.make_url(ID.new()),
       first_name: Name.first_name(),
       last_name: Name.last_name(),
       phone_number: phone_number(),
@@ -54,13 +53,12 @@ defmodule Wocky.Repo.Factory do
   def bot_factory do
     %Bot{
       id: ID.new(),
-      server: "localhost",
       user: build(:user),
       pending: false,
       title: Company.name(),
       shortname: Lorem.sentence(),
       description: Lorem.paragraph(%Range{first: 1, last: 2}),
-      image: TROS.make_url("localhost", ID.new()),
+      image: TROS.make_url(ID.new()),
       type: "test",
       address: Address.street_address(),
       address_data: "{name: foo}",
@@ -205,5 +203,5 @@ defmodule Wocky.Repo.Factory do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end
 
-  def image_url(image), do: TROS.make_url("localhost", image.id)
+  def image_url(image), do: TROS.make_url(image.id)
 end

@@ -8,7 +8,6 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
   import Wocky.Index.AlgoliaIndexer
 
   @index "test_wocky_bots"
-  @server "localhost"
   @object_id1 "92ec75ce-5c9c-11e7-a6fc-6bc2ef6cf59f"
   @object_id2 "9992ad9e-5c9c-11e7-be21-8bd16ebc6dce"
 
@@ -21,7 +20,6 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
     use_cassette "update_object3", match_requests_on: [:request_body] do
       :ok =
         update_object(@index, @object_id1, %{
-          "server" => @server,
           "title" => "title1",
           "image" => "image1",
           "location" => GeoUtils.point(1.0, 2.0),
@@ -31,7 +29,6 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
 
       :ok =
         update_object(@index, @object_id2, %{
-          "server" => @server,
           "title" => "title2",
           "image" => "image2",
           "location" => GeoUtils.point(5.0, 6.0),
@@ -49,7 +46,6 @@ defmodule Wocky.TROS.AlgoliaIndexerTest do
       [bot, bot2] = bots
       assert bot[:id] == @object_id1
       assert bot[:distance] == 0
-      assert bot[:server] == @server
       assert bot2[:id] == @object_id2
       assert bot2[:distance] != nil
       assert bot2[:distance] > 0

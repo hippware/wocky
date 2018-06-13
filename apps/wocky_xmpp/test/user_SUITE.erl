@@ -741,15 +741,14 @@ has_field(Fields, Field, CheckNew) ->
 fix_name(Name) -> hd(binary:split(Name, <<"+">>)).
 
 seed_contacts() ->
-    NilHandleUser = ?wocky_factory:insert(user,
-                                          #{server => ?SERVER, handle => nil}),
-    Friends = ?wocky_factory:insert_list(4, user, #{server => ?SERVER}),
+    NilHandleUser = ?wocky_factory:insert(user, #{handle => nil}),
+    Friends = ?wocky_factory:insert_list(4, user),
     lists:foreach(insert_friend_pair(?BOB, _), ids([NilHandleUser | Friends])),
 
-    Followers = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
+    Followers = ?wocky_factory:insert_list(5, user),
     lists:foreach(insert_follower_pair(_, ?BOB), ids(Followers)),
 
-    Followees = ?wocky_factory:insert_list(5, user, #{server => ?SERVER}),
+    Followees = ?wocky_factory:insert_list(5, user),
     lists:foreach(insert_follower_pair(?BOB, _), ids(Followees)),
 
     SystemUser = test_helper:insert_system_users(),
@@ -800,9 +799,9 @@ extract_contact(#xmlel{name = <<"contact">>, attrs = Attrs}, Acc) ->
 extract_contact(_, Acc) -> lists:reverse(Acc).
 
 match_contacts([], []) -> ok;
-match_contacts(Contacts, [#{handle := UHandle, id := ID, server := Server,
+match_contacts(Contacts, [#{handle := UHandle, id := ID,
                             association := UAssociation} | Users]) ->
-    CJID = jid:to_binary(jid:make(ID, Server, <<>>)),
+    CJID = jid:to_binary(jid:make(ID, ?wocky:host(), <<>>)),
     CAssociation = atom_to_binary(UAssociation, utf8),
     Remaining = lists:filter(
                   fun(#{handle := H, jid := J, association := A}) ->

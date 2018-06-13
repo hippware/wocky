@@ -14,7 +14,7 @@ defmodule Wocky.TROS.S3StoreTest do
   describe "do_delete/2" do
     setup do
       bypass = Bypass.open()
-      {:ok, bypass: bypass, server: "localhost"}
+      {:ok, bypass: bypass}
     end
 
     test "should succeed with valid credentials", context do
@@ -25,7 +25,7 @@ defmodule Wocky.TROS.S3StoreTest do
         Conn.resp(conn, 204, "")
       end)
 
-      {:ok, _} = S3Store.do_delete(context.server, @test_file)
+      {:ok, _} = S3Store.do_delete(@test_file)
     end
 
     test "should return an error if the server rejects the auth", context do
@@ -35,7 +35,7 @@ defmodule Wocky.TROS.S3StoreTest do
         Conn.resp(conn, 401, "")
       end)
 
-      {:error, _} = S3Store.do_delete(context.server, @test_file)
+      {:error, _} = S3Store.do_delete(@test_file)
     end
   end
 

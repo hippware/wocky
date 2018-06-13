@@ -16,7 +16,6 @@ defmodule Wocky.Account.Register do
 
   @changeset_fields [
     :username,
-    :server,
     :provider,
     :external_id,
     :phone_number,
@@ -87,10 +86,10 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec find_or_create(binary, atom | binary, binary, binary) ::
+  @spec find_or_create(atom | binary, binary, binary) ::
           {:ok, {User.t(), boolean}}
-  def find_or_create(server, provider, external_id, phone_number) do
-    find_or_create(server, provider, external_id, phone_number, 0)
+  def find_or_create(provider, external_id, phone_number) do
+    find_or_create(provider, external_id, phone_number, 0)
   end
 
   # There's scope for a race condition here. Since the database uses "read
@@ -103,23 +102,22 @@ defmodule Wocky.Account.Register do
   # what the heck is even going on?). Either way, if we fail after 5 retries
   # there's something seriously weird going on and raising an exception
   # is a pretty reasonable response.
-  defp find_or_create(_, _, _, _, @max_register_retries) do
+  defp find_or_create(_, _, _, @max_register_retries) do
     raise "Exceeded maximum registration retries"
   end
 
-  defp find_or_create(server, provider, external_id, phone_number, retries) do
+  defp find_or_create(provider, external_id, phone_number, retries) do
     case find(provider, external_id, phone_number) do
       {:ok, user} ->
         {:ok, {user, false}}
 
       {:error, :not_found} ->
-        create_new(server, provider, external_id, phone_number, retries)
+        create_new(provider, external_id, phone_number, retries)
     end
   end
 
-  defp create_new(server, provider, external_id, phone_number, retries) do
+  defp create_new(provider, external_id, phone_number, retries) do
     user_data = %{
-      server: server,
       provider: to_string(provider),
       external_id: external_id,
       phone_number: phone_number
@@ -130,7 +128,7 @@ defmodule Wocky.Account.Register do
         {:ok, {user, true}}
 
       {:error, _} ->
-        find_or_create(server, provider, external_id, phone_number, retries + 1)
+        find_or_create(provider, external_id, phone_number, retries + 1)
     end
   end
 
@@ -138,7 +136,7 @@ defmodule Wocky.Account.Register do
   def changeset(attrs) do
     %User{}
     |> cast(attrs, @changeset_fields)
-    |> validate_required([:username, :server, :provider, :external_id])
+    |> validate_required([:username, :provider, :external_id])
     |> validate_format(:phone_number, ~r//)
     |> validate_change(:username, &validate_username/2)
     |> put_change(:id, attrs[:username])
