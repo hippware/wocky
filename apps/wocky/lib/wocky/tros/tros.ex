@@ -4,8 +4,6 @@ defmodule Wocky.TROS do
 
   use Wocky.JID
 
-  require Record
-
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
   alias Wocky.User

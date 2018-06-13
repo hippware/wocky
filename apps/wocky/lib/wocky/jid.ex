@@ -40,7 +40,7 @@ defmodule Wocky.JID do
   defmacro __using__(_) do
     quote do
       alias unquote(__MODULE__)
-      import unquote(__MODULE__)
+      import unquote(__MODULE__), only: :macros
     end
   end
 
