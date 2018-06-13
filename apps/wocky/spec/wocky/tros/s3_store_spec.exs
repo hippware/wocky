@@ -16,8 +16,7 @@ defmodule Wocky.TROS.S3StoreSpec do
 
   describe "make_download_response/2" do
     before do
-      {headers, fields} =
-        S3Store.make_download_response(ID.new())
+      {headers, fields} = S3Store.make_download_response(ID.new())
 
       {:ok, headers: headers, fields: fields}
     end

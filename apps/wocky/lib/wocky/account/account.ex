@@ -19,8 +19,7 @@ defmodule Wocky.Account do
   Creates a new user with a password.
   Used for testing only.
   """
-  @spec register(binary, binary, binary) ::
-          {:ok, User.t()} | {:error, any}
+  @spec register(binary, binary, binary) :: {:ok, User.t()} | {:error, any}
   def register(username, password, pass_details) do
     Register.create(%{
       username: username,

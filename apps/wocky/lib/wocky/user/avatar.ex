@@ -9,7 +9,7 @@ defmodule Wocky.User.Avatar do
   alias Wocky.User
 
   @type url :: binary
-  @type t :: TROS.file_id
+  @type t :: TROS.file_id()
 
   @spec validate(User.t(), url()) :: {:ok, t()} | {:error, atom()}
   def validate(user, avatar_url) do

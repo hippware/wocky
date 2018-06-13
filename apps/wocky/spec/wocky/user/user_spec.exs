@@ -781,10 +781,7 @@ defmodule Wocky.UserSpec do
       user = Factory.insert(:user, avatar: nil)
       avatar = Factory.insert(:tros_metadata, user: user)
 
-      {:ok,
-       user: user,
-       avatar: avatar,
-       avatar_url: TROS.make_url(avatar.id)}
+      {:ok, user: user, avatar: avatar, avatar_url: TROS.make_url(avatar.id)}
     end
 
     context "when no avatar is set" do
@@ -816,8 +813,7 @@ defmodule Wocky.UserSpec do
         new_avatar = Factory.insert(:tros_metadata, user: shared.user)
 
         {:ok,
-         new_avatar: new_avatar,
-         new_avatar_url: TROS.make_url(new_avatar.id)}
+         new_avatar: new_avatar, new_avatar_url: TROS.make_url(new_avatar.id)}
       end
 
       it "should delete the avatar when a new one is set" do

@@ -51,8 +51,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:uuid)
 
     @desc "The server on which the bot resides"
-    field :server, non_null(:string), do:
-      resolve &Utils.server_resolver/3
+    field :server, non_null(:string), do: resolve(&Utils.server_resolver/3)
 
     @desc "The bot's title"
     field :title, non_null(:string)

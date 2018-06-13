@@ -43,7 +43,7 @@ defmodule Wocky.TROS do
     server = Wocky.host()
 
     case {resource, url_server} do
-      {"file/" <> file_id, ^server}  -> {:ok, file_id}
+      {"file/" <> file_id, ^server} -> {:ok, file_id}
       _ -> {:error, :invalid_url}
     end
   end
@@ -52,7 +52,7 @@ defmodule Wocky.TROS do
 
   @spec make_url(file_id | JID.t()) :: url
   def make_url(file_id) when is_binary(file_id),
-  do: file_id |> make_jid() |> make_url
+    do: file_id |> make_jid() |> make_url
 
   def make_url(jid), do: "tros:#{JID.to_binary(jid)}"
 
