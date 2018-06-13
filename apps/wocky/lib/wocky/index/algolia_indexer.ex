@@ -61,7 +61,6 @@ defmodule Wocky.Index.AlgoliaIndexer do
   defp object_to_bot(obj) do
     %{
       id: obj["objectID"],
-      server: obj["server"],
       user_id: obj["user_id"],
       title: obj["title"],
       image: obj["image"],

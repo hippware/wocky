@@ -10,11 +10,11 @@ defmodule Wocky.ConversationSpec do
 
   before do
     # A simple user with one conversation
-    user = Factory.insert(:user, %{server: shared.server})
+    user = Factory.insert(:user)
     conversation = Factory.insert(:conversation, user: user)
 
     # A user with 10 conversations
-    user2 = Factory.insert(:user, %{server: shared.server})
+    user2 = Factory.insert(:user)
 
     conversations =
       for _ <- 1..10 do
@@ -76,7 +76,7 @@ defmodule Wocky.ConversationSpec do
   describe "put/4" do
     context "when there is no existing entry for the other user" do
       before do
-        user = Factory.insert(:user, %{server: shared.server})
+        user = Factory.insert(:user)
         conversation = Factory.build(:conversation, user_id: user.id)
 
         result =

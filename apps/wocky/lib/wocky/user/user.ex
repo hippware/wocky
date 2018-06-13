@@ -30,8 +30,6 @@ defmodule Wocky.User do
   schema "users" do
     # User ID (userpart of JID)
     field :username, :string
-    # User Server (domainpart of JID)
-    field :server, :string
     field :resource, :string, virtual: true
     # The external auth provider
     field :provider, :string
@@ -84,7 +82,6 @@ defmodule Wocky.User do
 
   @type id :: binary
   @type username :: binary
-  @type server :: binary
   @type resource :: binary
   @type provider :: binary
   @type external_id :: binary
@@ -97,7 +94,6 @@ defmodule Wocky.User do
   @type t :: %User{
           id: id,
           username: username,
-          server: server,
           handle: nil | handle,
           avatar: nil | binary,
           first_name: nil | binary,
@@ -137,8 +133,8 @@ defmodule Wocky.User do
   end
 
   @spec to_jid(t, binary | nil) :: JID.t()
-  def to_jid(%User{id: user, server: server} = u, resource \\ nil) do
-    JID.make(user, server, resource || (u.resource || ""))
+  def to_jid(%User{id: user} = u, resource \\ nil) do
+    JID.make(user, Wocky.host(), resource || (u.resource || ""))
   end
 
   @spec get_by_jid(JID.t()) :: t | nil
@@ -324,9 +320,6 @@ defmodule Wocky.User do
 
       {:error, :invalid_url} ->
         [avatar: "is an invalid file URL"]
-
-      {:error, :not_local_file} ->
-        [avatar: "is not a local file"]
 
       {:error, :not_file_owner} ->
         [avatar: "is not owned by the user"]

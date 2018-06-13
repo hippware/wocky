@@ -17,7 +17,7 @@ defmodule Wocky.JIDSpec do
   end
 
   describe "from_binary/1" do
-    it do: JID.from_binary("b") |> should(eq JID.make("", "b"))
+    it do: JID.from_binary("b") |> should(eq JID.make("b", ""))
     it do: JID.from_binary("a@b") |> should(eq JID.make("a", "b"))
     it do: JID.from_binary("a@b/c") |> should(eq JID.make("a", "b", "c"))
   end

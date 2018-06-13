@@ -238,11 +238,12 @@ get_field(Var) ->
 fields() ->
      % Field name     % Type    % Visibility % Access   % Accessor
     [{"jid",          "jid",    public,      read_only,
-      fun(_, #{id := LUser, server := LServer}, _) ->
-              jid:to_binary(jid:make(LUser, LServer, <<>>)) end},
+      fun(_, #{id := LUser}, _) ->
+              jid:to_binary(jid:make(LUser, ?wocky:host(), <<>>)) end},
      {"user",         "uuid",   public,      read_only,
       fun(_, #{id := User}, _) -> User end},
-     {"server",       "string", public,      read_only, default},
+     {"server",       "string", public,      read_only,
+              fun(_, _, _) -> ?wocky:host() end},
      {"handle",       "string", public,      write,     default},
      {"phone_number", "string", private,     read_only, default},
      {"avatar",       "file",   public,      write,     fun make_avatar/3},
@@ -470,10 +471,11 @@ make_avatar(new, #{avatar := Avatar}, FromJID) ->
 make_contacts(Contacts, RequestedAssociation, UserID) ->
     lists:map(make_contact(_, RequestedAssociation, UserID), Contacts).
 
-make_contact(#{id := UserID, server := Server, handle := Handle},
+make_contact(#{id := UserID, handle := Handle},
              RequestedAssociation, TargetID) ->
     #xmlel{name = <<"contact">>,
-           attrs = [{<<"jid">>, jid:to_binary(jid:make(UserID, Server, <<>>))},
+           attrs = [{<<"jid">>, jid:to_binary(
+                                  jid:make(UserID, ?wocky:host(), <<>>))},
                     {<<"handle">>, Handle},
                     {<<"association">>,
                      association(UserID, TargetID, RequestedAssociation)}]}.

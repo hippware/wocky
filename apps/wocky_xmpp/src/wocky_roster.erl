@@ -20,7 +20,7 @@ to_wocky_roster(LUser, ContactBJID, nil) when is_binary(ContactBJID) ->
 to_wocky_roster(LUser, ContactJID = {_, _, _}, nil) ->
     #wocky_roster{
        user = LUser,
-       server = wocky_xmpp_app:server(),
+       server = ?wocky:host(),
        contact_jid = ContactJID,
        created_at = ?datetime:utc_now()
       };
@@ -41,14 +41,14 @@ to_wocky_roster(#{user_id := UserID,
                   created_at := CreatedAt
                  }) ->
     ContactJID =
-        jid:to_lower(jid:make(ContactID, wocky_xmpp_app:server(), <<>>)),
+        jid:to_lower(jid:make(ContactID, ?wocky:host(), <<>>)),
     #{avatar := Avatar,
       handle := Handle,
       first_name := FirstName,
       last_name := LastName} = Contact,
     #wocky_roster{
        user = UserID,
-       server = wocky_xmpp_app:server(),
+       server = ?wocky:host(),
        contact_jid = ContactJID,
        name = Name,
        subscription = Subscription,

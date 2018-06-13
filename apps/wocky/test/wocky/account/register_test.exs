@@ -10,11 +10,10 @@ defmodule Wocky.Account.RegisterTest do
   alias Wocky.Roster.Item
   alias Wocky.User
 
-  @required_attrs [:username, :server, :external_id]
+  @required_attrs [:username, :external_id]
 
   @create_attrs %{
     username: "bed9f0d7-2db2-47df-88a1-830749a44f5a",
-    server: "localhost",
     provider: "test_provider",
     external_id: "1234567890",
     phone_number: "+12104445484",
@@ -29,7 +28,6 @@ defmodule Wocky.Account.RegisterTest do
       changeset =
         Register.changeset(%{
           username: id,
-          server: "foo",
           provider: "local",
           external_id: "bar"
         })
@@ -52,7 +50,6 @@ defmodule Wocky.Account.RegisterTest do
       changeset =
         Register.changeset(%{
           username: "alice",
-          server: "foo",
           external_id: "bar"
         })
 
@@ -109,14 +106,10 @@ defmodule Wocky.Account.RegisterTest do
     end
 
     test "with defaults" do
-      assert {:ok, user} = Register.create(%{server: "localhost"})
+      assert {:ok, user} = Register.create(%{})
       assert user.username
       assert user.external_id
       assert user.provider == "local"
-    end
-
-    test "with invalid attributes" do
-      assert {:error, _} = Register.create(%{})
     end
   end
 
@@ -201,14 +194,12 @@ defmodule Wocky.Account.RegisterTest do
     test "when a user with the same provider/ID exists", %{user: user} do
       assert {:ok, {%User{} = new_user, false}} =
                Register.find_or_create(
-                 "a_server",
                  user.provider,
                  user.external_id,
                  Factory.phone_number()
                )
 
       assert new_user.id == user.id
-      assert new_user.server == user.server
       assert new_user.provider == user.provider
       assert new_user.external_id == user.external_id
       assert new_user.phone_number == user.phone_number
@@ -219,14 +210,12 @@ defmodule Wocky.Account.RegisterTest do
 
       assert {:ok, {%User{} = new_user, false}} =
                Register.find_or_create(
-                 "a_server",
                  "test_provider",
                  external_id,
                  user.phone_number
                )
 
       assert new_user.id == user.id
-      assert new_user.server == user.server
       assert new_user.provider == "test_provider"
       assert new_user.external_id == external_id
       assert new_user.phone_number == user.phone_number
@@ -238,13 +227,11 @@ defmodule Wocky.Account.RegisterTest do
 
       assert {:ok, {%User{} = new_user, true}} =
                Register.find_or_create(
-                 "a_server",
                  "test_provider",
                  external_id,
                  phone_number
                )
 
-      assert new_user.server == "a_server"
       assert new_user.provider == "test_provider"
       assert new_user.external_id == external_id
       assert new_user.phone_number == phone_number

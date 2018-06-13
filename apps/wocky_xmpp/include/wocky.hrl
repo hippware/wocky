@@ -40,6 +40,7 @@
 -define(NS_USER,          <<"hippware.com/hxep/user">>).
 
 %% Elixir module names
+-define(wocky,                   'Elixir.Wocky').
 -define(wocky_account,           'Elixir.Wocky.Account').
 -define(wocky_block,             'Elixir.Wocky.Block').
 -define(wocky_bot,               'Elixir.Wocky.Bot').

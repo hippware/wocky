@@ -8,24 +8,21 @@ defmodule Wocky.AccountTest do
   alias Wocky.Repo.ID
   alias Wocky.User
 
-  @test_server "localhost"
-
   describe "password registration" do
     test "should create a user" do
       id = ID.new()
-      {:ok, _} = Account.register(id, @test_server, "password", "password")
+      {:ok, _} = Account.register(id, "password", "password")
 
       new_user = Repo.get(User, id)
 
       assert new_user
-      assert new_user.server == @test_server
       assert new_user.password == "password"
       assert new_user.pass_details == "password"
     end
   end
 
   defp authenticate(type, creds) do
-    Account.authenticate(type, @test_server, creds)
+    Account.authenticate(type, creds)
   end
 
   describe "authentication" do

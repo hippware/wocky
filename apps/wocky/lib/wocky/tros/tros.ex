@@ -9,7 +9,6 @@ defmodule Wocky.TROS do
   alias Wocky.User
 
   @type owner :: JID.luser()
-  @type server :: JID.lserver()
   @type file_id :: JID.lresource()
   @type file_name :: binary
   @type url :: binary
@@ -20,38 +19,39 @@ defmodule Wocky.TROS do
   @type error :: :not_found | :metadata_not_found | {:retrieve_error, binary}
   @type result(type) :: {:ok, type} | {:error, error}
 
-  @callback delete(server, file_id) :: :ok
+  @callback delete(file_id) :: :ok
   @callback make_upload_response(JID.t(), file_id, integer, metadata) ::
               {list, list}
-  @callback make_download_response(server, file_name) :: {list, list}
-  @callback get_download_url(server, metadata, file_name) :: url
+  @callback make_download_response(file_name) :: {list, list}
+  @callback get_download_url(metadata, file_name) :: url
 
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
 
-  @spec make_jid(server, file_id) :: JID.t()
-  def make_jid(server, file_id), do: make_jid("", server, file_id)
+  @spec make_jid(file_id) :: JID.t()
+  def make_jid(file_id), do: make_jid("", file_id)
 
-  @spec make_jid(owner, server, file_id) :: JID.t()
-  def make_jid(owner, server, file_id),
-    do: JID.make(owner, server, "file/#{file_id}")
+  @spec make_jid(owner, file_id) :: JID.t()
+  def make_jid(owner, file_id),
+    do: JID.make(owner, Wocky.host(), "file/#{file_id}")
 
-  @spec parse_url(url) :: {:ok, {server, file_id}} | {:error, :invalid_url}
+  @spec parse_url(url) :: {:ok, file_id} | {:error, :invalid_url}
   def parse_url("tros:" <> jid) do
-    jid(lserver: server, lresource: resource) = JID.from_binary(jid)
+    jid(lserver: url_server, lresource: resource) = JID.from_binary(jid)
+    server = Wocky.host()
 
-    case resource do
-      "file/" <> file_id -> {:ok, {server, file_id}}
+    case {resource, url_server} do
+      {"file/" <> file_id, ^server} -> {:ok, file_id}
       _ -> {:error, :invalid_url}
     end
   end
 
   def parse_url(_), do: {:error, :invalid_url}
 
-  @spec make_url(server, file_id) :: url
-  def make_url(server, file_id), do: server |> make_jid(file_id) |> make_url
+  @spec make_url(file_id | JID.t()) :: url
+  def make_url(file_id) when is_binary(file_id),
+    do: file_id |> make_jid() |> make_url
 
-  @spec make_url(JID.t()) :: url
   def make_url(jid), do: "tros:#{JID.to_binary(jid)}"
 
   @spec get_base_id(file_name) :: file_id
@@ -95,7 +95,7 @@ defmodule Wocky.TROS do
   @spec delete(file_id, User.t()) :: {:ok, Metadata.t()}
   def delete(file_id, requestor) do
     with {:ok, file} <- Metadata.delete(file_id, requestor) do
-      backend().delete(Confex.get_env(:wocky, :wocky_host), file_id)
+      backend().delete(file_id)
       {:ok, file}
     end
   end
@@ -114,18 +114,18 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec make_download_response(server, file_id) :: {:ok, {list, list}}
-  def make_download_response(server, file_id),
-    do: {:ok, backend().make_download_response(server, file_id)}
+  @spec make_download_response(file_id) :: {:ok, {list, list}}
+  def make_download_response(file_id),
+    do: {:ok, backend().make_download_response(file_id)}
 
   @spec ready?(file_id) :: boolean
   def ready?(file_id), do: Metadata.ready?(file_id)
 
-  @spec get_download_urls(server, Metadata.t(), [file_type]) :: [url]
-  def get_download_urls(server, metadata, types) do
+  @spec get_download_urls(Metadata.t(), [file_type]) :: [url]
+  def get_download_urls(metadata, types) do
     Enum.map(
       types,
-      &backend().get_download_url(server, metadata, full_name(metadata.id, &1))
+      &backend().get_download_url(metadata, full_name(metadata.id, &1))
     )
   end
 

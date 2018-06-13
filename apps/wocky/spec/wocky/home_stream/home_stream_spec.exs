@@ -13,7 +13,7 @@ defmodule Wocky.HomeStreamSpec do
   @num_items 10
 
   before do
-    user = Factory.insert(:user, %{server: shared.server})
+    user = Factory.insert(:user)
     bot = Factory.insert(:bot, %{user: user})
 
     items =
@@ -336,7 +336,7 @@ defmodule Wocky.HomeStreamSpec do
     end
 
     it "should reutrn an empty list for a user with no items" do
-      Factory.insert(:user, %{server: shared.server}).id
+      Factory.insert(:user).id
       |> HomeStream.get()
       |> should(eq [])
     end

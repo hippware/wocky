@@ -44,6 +44,6 @@ send_explore_message(ID, FromJID, Child) ->
                                        {<<"xmlns">>, ?NS_BOT}],
                               children = [Child]}]},
 
-    ejabberd_router:route(jid:make(<<>>, wocky_xmpp_app:server(), <<>>),
+    ejabberd_router:route(jid:make(<<>>, ?wocky:host(), <<>>),
                           FromJID,
                           Message).

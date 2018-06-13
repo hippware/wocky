@@ -381,7 +381,7 @@ send_notification(JID, Item) ->
       JID, jid:replace_resource(JID, ?HOME_STREAM_NODE), Item).
 
 check_server(Server) ->
-    case wocky_xmpp_app:server() of
+    case ?wocky:host() of
         Server -> ok;
         _ -> {error, not_local_server}
     end.

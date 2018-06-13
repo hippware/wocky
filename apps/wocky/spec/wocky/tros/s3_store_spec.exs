@@ -16,8 +16,7 @@ defmodule Wocky.TROS.S3StoreSpec do
 
   describe "make_download_response/2" do
     before do
-      {headers, fields} =
-        S3Store.make_download_response(shared.server, ID.new())
+      {headers, fields} = S3Store.make_download_response(ID.new())
 
       {:ok, headers: headers, fields: fields}
     end
@@ -32,7 +31,7 @@ defmodule Wocky.TROS.S3StoreSpec do
   describe "make_upload_response/4" do
     before do
       owner_id = ID.new()
-      owner_jid = JID.make(owner_id, shared.server, "")
+      owner_jid = JID.make(owner_id)
       file_id = ID.new()
       size = :rand.uniform(10_000)
       metadata = %{"content-type": Lorem.word()}
@@ -57,7 +56,7 @@ defmodule Wocky.TROS.S3StoreSpec do
 
       :proplists.get_value("reference_url", shared.fields)
       |> should(
-        eq "tros:#{shared.owner_id}@#{shared.server}/file/#{shared.file_id}"
+        eq "tros:#{shared.owner_id}@#{Wocky.host()}/file/#{shared.file_id}"
       )
 
       :proplists.get_value("url", shared.fields)
@@ -67,18 +66,20 @@ defmodule Wocky.TROS.S3StoreSpec do
     end
   end
 
-  describe "get_download_url/3" do
+  describe "get_download_url/2" do
     it "should return a valid URL when the file is ready" do
       image = Factory.insert(:tros_metadata)
 
-      S3Store.get_download_url("localhost", image, image.id)
+      image
+      |> S3Store.get_download_url(image.id)
       |> should(match(@url_re))
     end
 
     it "should return an empty URL when the file is not ready" do
       image = Factory.insert(:tros_metadata, ready: false)
 
-      S3Store.get_download_url("localhost", image, image.id)
+      image
+      |> S3Store.get_download_url(image.id)
       |> should(eq "")
     end
   end

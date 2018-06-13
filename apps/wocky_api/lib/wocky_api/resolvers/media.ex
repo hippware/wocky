@@ -23,10 +23,10 @@ defmodule WockyAPI.Resolvers.Media do
   defp get_urls(nil), do: {:ok, nil}
 
   defp get_urls(tros_url) do
-    with {:ok, {server, file_id}} <- TROS.parse_url(tros_url),
+    with {:ok, file_id} <- TROS.parse_url(tros_url),
          {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id) do
       [full_url, thumbnail_url] =
-        TROS.get_download_urls(server, metadata, [:full, :thumbnail])
+        TROS.get_download_urls(metadata, [:full, :thumbnail])
 
       {:ok,
        %{
@@ -73,10 +73,11 @@ defmodule WockyAPI.Resolvers.Media do
     do: Enum.map(headers, fn {n, v} -> %{name: n, value: v} end)
 
   def delete(_root, args, %{context: %{current_user: user}}) do
-    with {:ok, {_server, file_id}} <- TROS.parse_url(args[:input][:url]),
+    with {:ok, file_id} <- TROS.parse_url(args[:input][:url]),
          {:ok, _file} <- TROS.delete(file_id, user) do
       {:ok, true}
     else
+      {:error, :invalid_url} -> {:error, "Invalid URL"}
       {:error, :permission_denied} -> {:error, "Permission denied"}
       {:error, :not_found} -> {:error, "File not found"}
     end

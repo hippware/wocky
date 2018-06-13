@@ -99,8 +99,8 @@ user_to_xml({Number, UserData}) ->
     #xmlel{name = <<"item">>,
            attrs = [{<<"id">>, Number} | xml_user_attrs(UserData)]}.
 
-xml_user_attrs(#{id := ID, server := Server} = User) ->
-    [{<<"jid">>, jid:to_binary({ID, Server, <<>>})},
+xml_user_attrs(#{id := ID} = User) ->
+    [{<<"jid">>, jid:to_binary({ID, ?wocky:host(), <<>>})},
      {<<"handle">>, get_safe(handle, User)},
      {<<"first_name">>, get_safe(first_name, User)},
      {<<"last_name">>, get_safe(last_name, User)},

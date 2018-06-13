@@ -153,7 +153,7 @@ defmodule Wocky.Repo.Cleaner do
 
   defp image_missing?(image_url) do
     case TROS.parse_url(image_url) do
-      {:ok, {_, file_id}} -> Metadata.get(file_id) == nil
+      {:ok, file_id} -> Metadata.get(file_id) == nil
       {:error, _} -> true
     end
   end

@@ -12,6 +12,7 @@ defmodule WockyAPI.Schema.UserTypes do
   alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
+  alias WockyAPI.Resolvers.Utils
 
   @desc "The main Wocky user interface"
   interface :user do
@@ -19,7 +20,10 @@ defmodule WockyAPI.Schema.UserTypes do
     field :id, non_null(:uuid), do: scope(:public)
 
     @desc "The server on which the user resides"
-    field :server, non_null(:string), do: scope(:public)
+    field :server, non_null(:string) do
+      scope(:public)
+      resolve &Utils.server_resolver/3
+    end
 
     @desc "The user's unique handle"
     field :handle, :string, do: scope(:public)

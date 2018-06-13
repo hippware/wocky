@@ -41,7 +41,7 @@ defmodule Wocky.UserSpec do
   describe "to_jid/1" do
     it "should return the user's JID" do
       jid1 = User.to_jid(shared.user)
-      jid2 = JID.make(shared.user.id, shared.user.server, shared.user.resource)
+      jid2 = JID.make(shared.user.id, Wocky.host(), shared.user.resource)
       jid1 |> JID.equal?(jid2) |> should(be_true())
     end
   end
@@ -55,13 +55,13 @@ defmodule Wocky.UserSpec do
     end
 
     context "when the user does not exist" do
-      subject do: ID.new() |> JID.make(shared.server) |> User.get_by_jid()
+      subject do: ID.new() |> JID.make() |> User.get_by_jid()
 
       it do: should(be_nil())
     end
 
     context "when the jid has no user ID" do
-      subject do: "" |> JID.make(shared.server) |> User.get_by_jid()
+      subject do: "" |> JID.make() |> User.get_by_jid()
 
       it do: should(be_nil())
     end
@@ -176,7 +176,7 @@ defmodule Wocky.UserSpec do
             access: "public"
           )
 
-        url = TROS.make_url(shared.server, file_id)
+        url = TROS.make_url(file_id)
         {:ok, file_id: file_id, url: url}
       end
 
@@ -189,13 +189,13 @@ defmodule Wocky.UserSpec do
 
         it "should fail with a non-existing avatar URL" do
           shared.user
-          |> User.changeset(%{avatar: TROS.make_url(shared.server, ID.new())})
+          |> User.changeset(%{avatar: TROS.make_url(ID.new())})
           |> should(have_errors([:avatar]))
         end
 
         it "should fail with a non-local avatar URL" do
           shared.user
-          |> User.changeset(%{avatar: TROS.make_url("otherhost", ID.new())})
+          |> User.changeset(%{avatar: TROS.make_url(ID.new())})
           |> should(have_errors([:avatar]))
         end
 
@@ -310,7 +310,7 @@ defmodule Wocky.UserSpec do
                 access: "public"
               )
 
-            avatar_url = TROS.make_url(shared.server, id)
+            avatar_url = TROS.make_url(id)
 
             {:ok, avatar_id: id, avatar_url: avatar_url}
           end
@@ -358,7 +358,7 @@ defmodule Wocky.UserSpec do
           context "and the user has a valid avatar" do
             before do
               avatar_id = ID.new()
-              avatar_url = TROS.make_url(shared.server, avatar_id)
+              avatar_url = TROS.make_url(avatar_id)
               Metadata.put(avatar_id, shared.user.id, "public")
 
               shared.user
@@ -781,10 +781,7 @@ defmodule Wocky.UserSpec do
       user = Factory.insert(:user, avatar: nil)
       avatar = Factory.insert(:tros_metadata, user: user)
 
-      {:ok,
-       user: user,
-       avatar: avatar,
-       avatar_url: TROS.make_url(user.server, avatar.id)}
+      {:ok, user: user, avatar: avatar, avatar_url: TROS.make_url(avatar.id)}
     end
 
     context "when no avatar is set" do
@@ -816,8 +813,7 @@ defmodule Wocky.UserSpec do
         new_avatar = Factory.insert(:tros_metadata, user: shared.user)
 
         {:ok,
-         new_avatar: new_avatar,
-         new_avatar_url: TROS.make_url(shared.user.server, new_avatar.id)}
+         new_avatar: new_avatar, new_avatar_url: TROS.make_url(new_avatar.id)}
       end
 
       it "should delete the avatar when a new one is set" do

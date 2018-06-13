@@ -8,7 +8,7 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start/1, start/0, stop/0, ensure_loaded/1, server/0]).
+-export([start/1, start/0, stop/0, ensure_loaded/1]).
 
 -define(system, 'Elixir.System').
 -define(confex_resolver, 'Elixir.Confex.Resolver').
@@ -43,11 +43,6 @@ ensure_loaded(App) ->
 -spec version() -> binary().
 version() ->
     element(2, application:get_key(wocky_xmpp, vsn)).
-
--spec server() -> ejabberd:server().
-server() ->
-    hd(ejabberd_config:get_global_option(hosts)).
-
 
 %%%===================================================================
 %%% Application callbacks

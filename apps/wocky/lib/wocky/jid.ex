@@ -44,6 +44,9 @@ defmodule Wocky.JID do
     end
   end
 
+  @spec make(user) :: t | :error
+  def make(user), do: make(user, Wocky.host())
+
   @spec make(user, server, resource) :: t | :error
   def make(user, server, resource \\ "") do
     with {:ok, luser} <- nodeprep(user),
@@ -100,7 +103,7 @@ defmodule Wocky.JID do
   end
 
   defp binary_to_jid1(<<>>, n) do
-    make("", to_string(Enum.reverse(n)), "")
+    make(to_string(Enum.reverse(n)), "")
   end
 
   # Only one "@" is admitted per JID

@@ -65,7 +65,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
   describe "delete" do
     setup %{user: user} do
       metadata = Factory.insert(:tros_metadata, user: user)
-      url = TROS.make_url("localhost", metadata.id)
+      url = TROS.make_url(metadata.id)
       {:ok, metadata: metadata, url: url}
     end
 
@@ -96,7 +96,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
     end
 
     test "delete a non-existant file", %{user: user} do
-      url = TROS.make_url("localhost", ID.new())
+      url = TROS.make_url(ID.new())
       result = run_query(@query, user, %{"input" => %{"url" => url}})
 
       assert error_msg(result) =~ "File not found"

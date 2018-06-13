@@ -181,7 +181,7 @@ defmodule Wocky.HomeStream do
     fields = %{
       user_id: user.id,
       key: bot |> ID.bot_changed_id() |> elem(0),
-      from_jid: "" |> JID.make(bot.server, "") |> JID.to_binary(),
+      from_jid: "" |> JID.make() |> JID.to_binary(),
       class: :ref_update,
       reference_bot_id: bot.id
     }
