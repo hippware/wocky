@@ -41,12 +41,14 @@ defmodule Wocky.Bot do
     field :description, :string, default: ""
     # Bot graphical image
     field :image, :string
-    field :type, :string, default: ""
     # Bot type (freeform string from server's perspective)
-    field :address, :string, default: ""
+    field :type, :string, default: ""
+    # Bot icon (freeform string from server's perspective)
+    field :icon, :string
     # Free-form string field describing bot's location
-    field :address_data, :string, default: ""
+    field :address, :string, default: ""
     # Opaque field containing adress related information
+    field :address_data, :string, default: ""
     # Location
     field :location, Geo.PostGIS.Geometry
     # Radius of bot circle
@@ -95,6 +97,7 @@ defmodule Wocky.Bot do
           description: binary,
           image: nil | binary,
           type: binary,
+          icon: binary,
           address: binary,
           address_data: binary,
           location: nil | Geo.Point.t(),
@@ -123,6 +126,7 @@ defmodule Wocky.Bot do
     :description,
     :image,
     :type,
+    :icon,
     :address,
     :address_data,
     :location,

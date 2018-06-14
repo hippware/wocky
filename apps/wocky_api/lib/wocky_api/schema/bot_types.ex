@@ -77,6 +77,9 @@ defmodule WockyAPI.Schema.BotTypes do
     @desc "The type of the bot (freeform string, client-side use only)"
     field :type, :string
 
+    @desc "The icon for the bot (freeform string, client-side use only)"
+    field :icon, :string
+
     @desc "The bot's street address"
     field :address, :string
 
@@ -167,6 +170,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :shortname, :string
     field :image, :string
     field :type, :string
+    field :icon, :string
     field :address, :string
     field :address_data, :string
     field :public, :boolean

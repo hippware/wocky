@@ -60,6 +60,7 @@ defmodule Wocky.Repo.Factory do
       description: Lorem.paragraph(%Range{first: 1, last: 2}),
       image: TROS.make_url(ID.new()),
       type: "test",
+      icon: Lorem.word(),
       address: Address.street_address(),
       address_data: "{name: foo}",
       location: GeoUtils.point(Address.latitude(), Address.longitude()),
