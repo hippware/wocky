@@ -1,8 +1,6 @@
 defmodule Wocky.Repo.Timestamp do
   @moduledoc "Timestamp helper functions"
 
-  alias __MODULE__, as: Timestamp
-
   @format "{ISO:Extended:Z}"
   @regex ~r/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\.\d?\d?\d?\d?\d?\d?Z/
 
@@ -36,11 +34,10 @@ defmodule Wocky.Repo.Timestamp do
   @spec less_than_eq?(DateTime.t(), DateTime.t()) :: boolean
   def less_than_eq?(dt1, dt2), do: DateTime.compare(dt1, dt2) != :gt
 
-  @doc "Gives a timestamp string shifted from the current UTC time"
-  @spec shift(Keyword.t()) :: String.t()
+  @doc "Gives a timestamp shifted from the current UTC time"
+  @spec shift(Keyword.t()) :: DateTime.t()
   def shift(modifier) do
     DateTime.utc_now()
     |> Timex.shift(modifier)
-    |> Timestamp.to_string()
   end
 end

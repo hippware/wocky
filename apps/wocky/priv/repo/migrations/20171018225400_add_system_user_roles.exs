@@ -23,8 +23,8 @@ defmodule Wocky.Repo.Migrations.AddSystemUserRoles do
   defp get_id do
     User
     |> where([u], u.handle == ^@handle)
+    |> select([u], u.id)
     |> Repo.one!
-    |> Map.get(:id)
   end
 
 end
