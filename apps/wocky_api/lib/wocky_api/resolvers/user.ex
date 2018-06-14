@@ -118,6 +118,11 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, User.search_by_name(search_term, current_user.id, limit)}
   end
 
+  def get_hidden(user, _args, _info) do
+    {hidden, until} = User.hidden_state(user)
+    {:ok, %{enabled: hidden, expires: until}}
+  end
+
   def update_location(_root, args, %{context: %{current_user: user}}) do
     location = args[:input]
     update_location(location, user)
@@ -156,6 +161,23 @@ defmodule WockyAPI.Resolvers.User do
      |> select([b], count(1))
      |> Repo.one!()
      |> Kernel.!=(0)}
+  end
+
+  def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
+    with {:ok, _} <- do_hide(user, input) do
+      {:ok, true}
+    end
+
+  end
+
+  defp do_hide(user, input) do
+    param =
+      case {input[:enable], input[:expire]} do
+        {false, _} -> false
+        {true, nil} -> true
+        {true, expire} -> expire
+      end
+    User.hide(user, param)
   end
 
   defp user_not_found(id), do: {:error, "User not found: " <> id}
