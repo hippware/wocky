@@ -76,14 +76,16 @@ defmodule Wocky.Repo.Migrations.AddGeofenceFields do
     """
 
     # Explicitly set all owners as subscribers/guests
-    Bot
-    |> preload(:user)
+    from(b in Bot, select: {b.id, b.user_id})
     |> Repo.stream
     |> Stream.each(&add_owner_subscription/1)
     |> Stream.run()
   end
 
-  defp add_owner_subscription(bot) do
-    Bot.subscribe(bot, bot.user)
+  defp add_owner_subscription({bot_id, owner_id}) do
+    execute """
+    INSERT INTO bot_subscriptions (bot_id, user_id, created_at, updated_at)
+    VALUES (#{bot_id}, #{owner_id}, now(), now())
+    """
   end
 end
