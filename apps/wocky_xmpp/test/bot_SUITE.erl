@@ -36,6 +36,7 @@
 -define(BOT_ADDRESS, <<"260 Tinakori Road, Thorndon, Wellington">>).
 -define(BOT_ADDRESS_DATA, <<"{name: foo}">>).
 -define(BOT_TYPE, <<"LucyLiuBot">>).
+-define(BOT_ICON, <<"Paint.ico">>).
 -define(BOT_LAT, 55.0).
 -define(BOT_LON, 60.1).
 -define(BOT_RADIUS, 10000.0).
@@ -50,6 +51,7 @@
 -define(CREATE_IMAGE,
         <<"tros:localhost/file/231d325e-bde7-11e7-aeea-e3fd897704af">>).
 -define(CREATE_TYPE,        <<"floatbot">>).
+-define(CREATE_ICON,        <<"Notepad.ico">>).
 -define(CREATE_TAGS,        [<<"tag1">>, <<"tag2">>]).
 
 -define(NEW_DESCRIPTION,    <<"New bot description!">>).
@@ -219,7 +221,9 @@ reset_tables(Config) ->
           address => ?BOT_ADDRESS,
           address_data => ?BOT_ADDRESS_DATA,
           image => ?AVATAR_FILE,
-          type => ?BOT_TYPE},
+          type => ?BOT_TYPE,
+          icon => ?BOT_ICON
+         },
     Bot = ?wocky_factory:insert(bot, B),
 
     ?wocky_factory:insert(tros_metadata, [{id, ?ITEM_IMAGE_ID},
@@ -569,6 +573,7 @@ retrieve_for_user(Config) ->
            {"radius",      float,  ?CREATE_RADIUS},
            {"image",       string, ?CREATE_IMAGE},
            {"type",        string, ?CREATE_TYPE},
+           {"icon",        string, ?CREATE_ICON},
            {"owner",       jid,    ?BJID(?ALICE)},
            {"visibility",  int,    ?WOCKY_BOT_VIS_OPEN},
            {"jid",         jid,    bot_jid(PublishBot)},
@@ -1105,6 +1110,7 @@ default_fields() ->
      {"radius",        "float",  ?CREATE_RADIUS},
      {"image",         "string", ?CREATE_IMAGE},
      {"type",          "string", ?CREATE_TYPE},
+     {"icon",          "string", ?CREATE_ICON},
      {"tags",          "tags",   ?CREATE_TAGS}
     ].
 
@@ -1185,6 +1191,7 @@ expected_create_fields() ->
      {"address_data",       string, ?CREATE_ADDRESS_DATA},
      {"image",              string, ?CREATE_IMAGE},
      {"type",               string, ?CREATE_TYPE},
+     {"icon",               string, ?CREATE_ICON},
      {"location",           geoloc, ?CREATE_LOCATION},
      {"radius",             float,  ?CREATE_RADIUS},
      {"visibility",         int,    ?WOCKY_BOT_VIS_OWNER},
@@ -1209,6 +1216,7 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"address_data",       string, ?BOT_ADDRESS_DATA},
      {"image",              string, ?AVATAR_FILE},
      {"type",               string, ?BOT_TYPE},
+     {"icon",               string, ?BOT_ICON},
      {"location",           geoloc, {?BOT_LAT, ?BOT_LON}},
      {"radius",             float,  ?BOT_RADIUS},
      {"visibility",         int,    Visibility},
