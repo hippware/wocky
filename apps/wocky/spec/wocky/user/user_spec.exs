@@ -958,8 +958,6 @@ defmodule Wocky.UserSpec do
       User.hide(user, ts)
       Repo.get(User, shared.id).hidden_until |> should(eq ts)
     end
-
-
   end
 
   describe "hidden_state/1" do

@@ -167,7 +167,6 @@ defmodule WockyAPI.Resolvers.User do
     with {:ok, _} <- do_hide(user, input) do
       {:ok, true}
     end
-
   end
 
   defp do_hide(user, input) do
@@ -177,6 +176,7 @@ defmodule WockyAPI.Resolvers.User do
         {true, nil} -> true
         {true, expire} -> expire
       end
+
     User.hide(user, param)
   end
 

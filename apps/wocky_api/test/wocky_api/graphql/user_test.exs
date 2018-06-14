@@ -159,7 +159,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{"userHide" => %{"result" => true}}
 
       assert User.hidden_state(Repo.get(User, user.id)) ==
-        {true, Timestamp.from_string!(ts)}
+               {true, Timestamp.from_string!(ts)}
     end
   end
 
