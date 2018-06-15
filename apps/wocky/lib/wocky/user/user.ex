@@ -338,7 +338,7 @@ defmodule Wocky.User do
   def hide(user, expiry), do: User.update(user, %{hidden_until: expiry})
 
   @spec hidden?(t()) :: boolean()
-  def hidden?(user), do: hidden_state(user) |> elem(0)
+  def hidden?(user), do: user |> hidden_state() |> elem(0)
 
   @spec hidden_state(t()) :: {boolean(), DateTime.t()}
   def hidden_state(user) do
@@ -372,7 +372,7 @@ defmodule Wocky.User do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
         if !hidden?(user),
-        do: GeoFence.check_for_bot_events(loc, user, resource)
+          do: GeoFence.check_for_bot_events(loc, user, resource)
 
         :ok
 
@@ -438,8 +438,10 @@ defmodule Wocky.User do
   @spec filter_hidden(Queryable.t()) :: Queryable.t()
   def filter_hidden(query) do
     query
-    |> where([u, ...],
-             is_nil(u.hidden_until) or u.hidden_until < ^DateTime.utc_now())
+    |> where(
+      [u, ...],
+      is_nil(u.hidden_until) or u.hidden_until < ^DateTime.utc_now()
+    )
   end
 
   @doc "Generate a full name for anywhere it needs pretty-printing"

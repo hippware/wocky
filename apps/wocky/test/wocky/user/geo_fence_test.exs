@@ -608,7 +608,7 @@ defmodule Wocky.User.GeoFenceTest do
   end
 
   describe "exit_all_bots/1" do
-    test "should un-visit all visited bots and send no notifiations" , %{
+    test "should un-visit all visited bots and send no notifiations", %{
       user: user,
       bot: bot
     } do
