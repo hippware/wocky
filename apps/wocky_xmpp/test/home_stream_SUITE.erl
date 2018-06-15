@@ -728,15 +728,21 @@ no_auto_publish_pep_item(Config) ->
 catchup_command_limits(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
-        expect_iq_error_u(
-          catchup_stanza(?wocky_timestamp:shift([{days, -1}])),
-          Alice, Alice)
+        fun_chain:first([{days, -1}],
+                        ?wocky_timestamp:shift(),
+                        ?wocky_timestamp:to_string(),
+                        catchup_stanza(),
+                        expect_iq_error_u(Alice, Alice)
+                       )
       end).
 
 subscribe_command_limits(Config) ->
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
-        watch_hs(Alice, ?wocky_timestamp:shift([{days, -1}])),
+        fun_chain:last([{days, -1}],
+                       ?wocky_timestamp:shift(),
+                       ?wocky_timestamp:to_string(),
+                       watch_hs(Alice)),
 
         escalus:assert(is_presence_error(_), escalus:wait_for_stanza(Alice))
       end).
