@@ -33,8 +33,6 @@ spec:
                     values:
                       - us1
               topologyKey: "kubernetes.io/hostname"
-      imagePullSecrets:
-        - name: amazonecr
       containers:
         - name: wocky
           image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:<%= current_sha %>
