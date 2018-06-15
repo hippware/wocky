@@ -11,6 +11,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * idna (PR #1592), excoveralls (PR #1592), guardian (PR #1593)
 * Update absinthe version (PR #1585)
 * Clean up/remove `server` field from data (#1573)
+* New icon field for bots (#1590)
 
 
 # 2018.5.30+r136aa78
