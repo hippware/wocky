@@ -12,6 +12,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update absinthe version (PR #1585)
 * Clean up/remove `server` field from data (#1573)
 * New icon field for bots (#1590)
+* Disable weekly bot reports (#1599)
+* Remove imagePullSecrets from K8s manifests (PR #1602)
 
 
 # 2018.5.30+r136aa78
