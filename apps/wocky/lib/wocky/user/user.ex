@@ -26,6 +26,8 @@ defmodule Wocky.User do
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User.{Avatar, BotEvent, GeoFence, Location}
 
+  @forever "2200-01-01T00:00:00.000000Z" |> DateTime.from_iso8601() |> elem(1)
+
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "users" do
     # User ID (userpart of JID)
@@ -55,6 +57,7 @@ defmodule Wocky.User do
     field :pass_details, :string
     field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
+    field :hidden_until, :utc_datetime
 
     timestamps()
 
@@ -88,6 +91,7 @@ defmodule Wocky.User do
   @type phone_number :: binary
   @type handle :: binary
   @type role :: binary
+  @type hidden_state :: nil | DateTime.t()
 
   @type bot_relationship :: :owned | :shared | :subscribed | :guest | :visitor
 
@@ -104,7 +108,8 @@ defmodule Wocky.User do
           external_id: nil | external_id,
           phone_number: nil | phone_number,
           roles: [role],
-          welcome_sent: boolean
+          welcome_sent: boolean,
+          hidden_until: hidden_state
         }
 
   @update_fields [
@@ -116,7 +121,8 @@ defmodule Wocky.User do
     :tagline,
     :roles,
     :external_id,
-    :provider
+    :provider,
+    :hidden_until
   ]
 
   @min_handle_len 3
@@ -326,6 +332,23 @@ defmodule Wocky.User do
     end
   end
 
+  @spec hide(t(), boolean() | DateTime.t()) :: {:ok, t()} | {:error, term}
+  def hide(user, false), do: User.update(user, %{hidden_until: nil})
+  def hide(user, true), do: User.update(user, %{hidden_until: @forever})
+  def hide(user, expiry), do: User.update(user, %{hidden_until: expiry})
+
+  @spec hidden?(t()) :: boolean()
+  def hidden?(user), do: user |> hidden_state() |> elem(0)
+
+  @spec hidden_state(t()) :: {boolean(), DateTime.t()}
+  def hidden_state(user) do
+    case user.hidden_until do
+      nil -> {false, nil}
+      @forever -> {true, nil}
+      until -> {DateTime.compare(DateTime.utc_now(), until) != :gt, until}
+    end
+  end
+
   @spec get_locations_query(t, resource) :: Queryable.t()
   def get_locations_query(user, resource) do
     user
@@ -348,7 +371,9 @@ defmodule Wocky.User do
   def set_location(user, resource, lat, lon, accuracy) do
     case Location.insert(user, resource, lat, lon, accuracy) do
       {:ok, loc} ->
-        GeoFence.check_for_bot_events(loc, user, resource)
+        if !hidden?(user),
+          do: GeoFence.check_for_bot_events(loc, user, resource)
+
         :ok
 
       {:error, _} = error ->
@@ -410,6 +435,15 @@ defmodule Wocky.User do
     |> where([b, s], not is_nil(s.user_id))
   end
 
+  @spec filter_hidden(Queryable.t()) :: Queryable.t()
+  def filter_hidden(query) do
+    query
+    |> where(
+      [u, ...],
+      is_nil(u.hidden_until) or u.hidden_until < ^DateTime.utc_now()
+    )
+  end
+
   @doc "Generate a full name for anywhere it needs pretty-printing"
   @spec full_name(User.t()) :: String.t()
   def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
@@ -465,6 +499,8 @@ defmodule Wocky.User do
     |> maybe_add_rel(sub != nil && sub.guest, :guest)
     |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
   end
+
+  def forever_ts(), do: @forever
 
   defp maybe_add_rel(list, true, rel), do: [rel | list]
   defp maybe_add_rel(list, false, _rel), do: list

@@ -9,6 +9,7 @@ defmodule Wocky.User.GeoFenceTest do
   alias Wocky.Push.Sandbox
   alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.User
   alias Wocky.User.{BotEvent, Location, GeoFence}
 
   @rsrc "testing"
@@ -26,10 +27,16 @@ defmodule Wocky.User.GeoFenceTest do
     user = Factory.insert(:user)
     Push.enable(user.id, @rsrc, Code.isbn13())
 
+    # This user should never get notified in spite of being a guest
+    hidden_user = Factory.insert(:user)
+    User.hide(hidden_user, true)
+    Push.enable(hidden_user.id, @rsrc, Code.isbn13())
+
     bot_list = Factory.insert_list(3, :bot, user: owner, geofence: true)
     bot = hd(bot_list)
 
     :ok = Bot.subscribe(bot, user, true)
+    :ok = Bot.subscribe(bot, hidden_user, true)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end
@@ -597,6 +604,21 @@ defmodule Wocky.User.GeoFenceTest do
 
       :timer.sleep(2000)
       assert Bot.subscription(bot, user) == :guest
+    end
+  end
+
+  describe "exit_all_bots/1" do
+    test "should un-visit all visited bots and send no notifiations", %{
+      user: user,
+      bot: bot
+    } do
+      visit_bot(bot, user)
+
+      GeoFence.exit_all_bots(user)
+
+      assert Bot.subscription(bot, user) == :guest
+
+      assert Sandbox.list_notifications() == []
     end
   end
 end

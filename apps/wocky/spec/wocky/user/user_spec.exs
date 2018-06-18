@@ -16,8 +16,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.Email
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
+  alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
@@ -35,7 +34,7 @@ defmodule Wocky.UserSpec do
   describe "valid_update_fields/0" do
     subject do: User.valid_update_fields()
 
-    it do: should(have_count 9)
+    it do: should(have_count 10)
   end
 
   describe "to_jid/1" do
@@ -947,6 +946,38 @@ defmodule Wocky.UserSpec do
     end
   end
 
+  describe "hide/2" do
+    it "should set the user's hidden field correctly" do
+      {:ok, user} = User.hide(shared.user, true)
+      Repo.get(User, shared.id).hidden_until |> should(eq User.forever_ts())
+
+      {:ok, user} = User.hide(user, false)
+      Repo.get(User, shared.id).hidden_until |> should(be_nil())
+
+      ts = Timestamp.shift(days: 1)
+      User.hide(user, ts)
+      Repo.get(User, shared.id).hidden_until |> should(eq ts)
+    end
+  end
+
+  describe "hidden_state/1" do
+    it "should report the user's state correctly" do
+      {:ok, user} = User.hide(shared.user, true)
+      User.hidden_state(Repo.get(User, shared.id)) |> should(eq {true, nil})
+
+      {:ok, user} = User.hide(user, false)
+      User.hidden_state(Repo.get(User, shared.id)) |> should(eq {false, nil})
+
+      expire = Timestamp.shift(days: -1)
+      {:ok, user} = User.hide(user, expire)
+      User.hidden_state(Repo.get(User, shared.id)) |> should(eq {false, expire})
+
+      expire = Timestamp.shift(days: 1)
+      {:ok, _} = User.hide(user, expire)
+      User.hidden_state(Repo.get(User, shared.id)) |> should(eq {true, expire})
+    end
+  end
+
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
   defp is_searchable_sp(user, bot),
@@ -957,7 +988,6 @@ defmodule Wocky.UserSpec do
   defp run_stored_proc(user, bot, proc) do
     {:ok, u} = Ecto.UUID.dump(user.id)
     {:ok, b} = Ecto.UUID.dump(bot.id)
-    Repo
 
     result =
       SQL.query!(

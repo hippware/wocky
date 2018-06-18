@@ -66,13 +66,11 @@ defmodule Wocky.Repo.TimestampSpec do
   describe "shift/1" do
     it do:
          Timestamp.shift(days: -1)
-         |> Timestamp.from_string!()
          |> DateTime.compare(DateTime.utc_now())
          |> should(eq :lt)
 
     it do:
          Timestamp.shift(days: 1)
-         |> Timestamp.from_string!()
          |> DateTime.compare(DateTime.utc_now())
          |> should(eq :gt)
   end

@@ -46,6 +46,9 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "A list of roles assigned to the user"
     field :roles, non_null(list_of(non_null(:string))), do: scope(:public)
 
+    @desc "The user's hidden state"
+    field :hidden, :hidden, do: resolve(&User.get_hidden/3)
+
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
       scope :public
@@ -324,6 +327,18 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  @desc "The state of the user's hidden mode"
+  object :hidden do
+    @desc "Whether the user is currently hidden"
+    field :enabled, non_null(:boolean)
+
+    @desc """
+    When the current or last hidden state expires/expired. Null if no
+    expiry is/was scheduled.
+    """
+    field :expires, :datetime
+  end
+
   @desc "Parameters for modifying a user"
   input_object :user_params do
     field :handle, :string
@@ -338,7 +353,19 @@ defmodule WockyAPI.Schema.UserTypes do
     field :values, non_null(:user_params)
   end
 
+  input_object :user_hide_input do
+    @desc "Enable or disable hidden/invisible mode"
+    field :enable, non_null(:boolean)
+
+    @desc """
+    Timestamp of when to expire hidden mode, if enabled. If not present,
+    hidden mode will remain on until explicitly disabled.
+    """
+    field :expire, :datetime
+  end
+
   payload_object(:user_update_payload, :user)
+  payload_object(:user_hide_payload, :boolean)
 
   @desc "Parameters for sending a location update"
   input_object :user_location_update_input do
@@ -391,6 +418,13 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
+      middleware WockyAPI.Middleware.RefreshCurrentUser
+      changeset_mutation_middleware
+    end
+
+    field :user_hide, type: :user_hide_payload do
+      arg :input, non_null(:user_hide_input)
+      resolve &User.hide/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware
     end

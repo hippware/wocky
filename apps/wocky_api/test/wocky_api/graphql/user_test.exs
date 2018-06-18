@@ -6,8 +6,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Faker.String
   alias Wocky.Block
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
+  alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
   alias Wocky.JID
   alias Wocky.User
@@ -120,6 +119,46 @@ defmodule WockyAPI.GraphQL.UserTest do
              }
 
       assert Repo.get(User, user.id).first_name == new_name
+    end
+
+    @query """
+    mutation ($enable: Boolean!, $expire: DateTime) {
+      userHide (input: {enable: $enable, expire: $expire}) {
+        result
+      }
+    }
+    """
+
+    test "set user as permanently hidden", %{user: user} do
+      result = run_query(@query, user, %{"enable" => true})
+
+      refute has_errors(result)
+
+      assert result.data == %{"userHide" => %{"result" => true}}
+
+      assert User.hidden_state(Repo.get(User, user.id)) == {true, nil}
+    end
+
+    test "set user as not hidden", %{user: user} do
+      result = run_query(@query, user, %{"enable" => false})
+
+      refute has_errors(result)
+
+      assert result.data == %{"userHide" => %{"result" => true}}
+
+      assert User.hidden_state(Repo.get(User, user.id)) == {false, nil}
+    end
+
+    test "set user as temporarally hidden", %{user: user} do
+      ts = Timestamp.shift(days: 1) |> Timestamp.to_string()
+      result = run_query(@query, user, %{"enable" => true, "expire" => ts})
+
+      refute has_errors(result)
+
+      assert result.data == %{"userHide" => %{"result" => true}}
+
+      assert User.hidden_state(Repo.get(User, user.id)) ==
+               {true, Timestamp.from_string!(ts)}
     end
   end
 

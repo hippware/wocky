@@ -34,6 +34,17 @@ defmodule Wocky.User.GeoFence do
     |> Enum.each(&process_bot_event/1)
   end
 
+  @spec exit_all_bots(User.t()) :: :ok
+  def exit_all_bots(user) do
+    user
+    |> Bot.by_relationship_query(:visitor, user)
+    |> Repo.all()
+    |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
+    |> Enum.each(fn {bot, event} ->
+      process_bot_event({user, bot, event}, false)
+    end)
+  end
+
   defp maybe_do_async(fun) do
     if Application.fetch_env!(:wocky, :async_location_processing) do
       Task.async(fun)
@@ -222,19 +233,33 @@ defmodule Wocky.User.GeoFence do
     Timex.diff(Timex.now(), ts, :seconds) >= wait
   end
 
-  defp process_bot_event({user, bot, be}) do
-    maybe_visit_bot(be.event, user, bot)
+  defp process_bot_event({user, bot, be}, notify) do
+    maybe_visit_bot(be.event, user, bot, notify)
   end
 
-  defp maybe_visit_bot(:enter, user, bot), do: Bot.visit(bot, user)
+  defp process_bot_event({user, bot, be}) do
+    maybe_visit_bot(be.event, user, bot, default_notify(be.event))
+  end
 
-  defp maybe_visit_bot(:reactivate, user, bot), do: Bot.visit(bot, user, false)
+  defp maybe_visit_bot(:enter, user, bot, notify),
+    do: Bot.visit(bot, user, notify)
 
-  defp maybe_visit_bot(:exit, user, bot), do: Bot.depart(bot, user)
+  defp maybe_visit_bot(:reactivate, user, bot, notify),
+    do: Bot.visit(bot, user, notify)
 
-  defp maybe_visit_bot(:timeout, user, bot), do: Bot.depart(bot, user, false)
+  defp maybe_visit_bot(:exit, user, bot, notify),
+    do: Bot.depart(bot, user, notify)
 
-  defp maybe_visit_bot(_, _, _), do: :ok
+  defp maybe_visit_bot(:timeout, user, bot, notify),
+    do: Bot.depart(bot, user, notify)
+
+  defp maybe_visit_bot(_, _, _, _), do: :ok
+
+  defp default_notify(:enter), do: true
+  defp default_notify(:reactivate), do: false
+  defp default_notify(:exit), do: true
+  defp default_notify(:timeout), do: false
+  defp default_notify(_), do: false
 
   def visit_timeout(%{
         user_id: user_id,

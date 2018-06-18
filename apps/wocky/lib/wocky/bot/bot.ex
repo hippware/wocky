@@ -314,6 +314,7 @@ defmodule Wocky.Bot do
     if visit_notifications_enabled?() do
       bot
       |> guests_query()
+      |> User.filter_hidden()
       |> Repo.all()
       |> Enum.each(&send_visit_notification(&1, visitor, bot, event))
     end
