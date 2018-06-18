@@ -97,7 +97,7 @@ defmodule Wocky.Bot do
           description: binary,
           image: nil | binary,
           type: binary,
-          icon: binary,
+          icon: nil | binary,
           address: binary,
           address_data: binary,
           location: nil | Geo.Point.t(),
