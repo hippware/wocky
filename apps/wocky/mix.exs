@@ -72,7 +72,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:algolia, "~> 0.6"},
-      {:bamboo, "~> 0.8"},
+      {:bamboo, "~> 1.0"},
       {:bcrypt_elixir, "~> 1.0"},
       {:comeonin, "~> 4.0"},
       {:confex, "~> 3.3"},
