@@ -23,6 +23,8 @@ defmodule Wocky.GeoUtils do
   end
 
   def get_lat_lon(%Point{coordinates: {lon, lat}}), do: {lat, lon}
+  def get_lat(%Point{coordinates: {_, lat}}), do: lat
+  def get_lon(%Point{coordinates: {lon, _}}), do: lon
 
   @doc "Normalize latitude and logitude to the range [-90,90], (-180, 180]"
   @spec normalize_lat_lon(float, float) :: {float, float}
