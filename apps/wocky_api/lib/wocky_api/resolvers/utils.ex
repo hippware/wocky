@@ -7,7 +7,7 @@ defmodule WockyAPI.Resolvers.Utils do
   alias Ecto.Changeset
   alias Wocky.Repo
 
-  def server_resolver(_, _, _), do: Wocky.host()
+  def server_resolver(_, _, _), do: {:ok, Wocky.host()}
 
   def get_count(%{cached_count: count}, _args, _info) do
     {:ok, count}
