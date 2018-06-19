@@ -44,7 +44,7 @@ defmodule Wocky.Bot do
     # Bot type (freeform string from server's perspective)
     field :type, :string, default: ""
     # Bot icon (freeform string from server's perspective)
-    field :icon, :string
+    field :icon, :string, default: ""
     # Free-form string field describing bot's location
     field :address, :string, default: ""
     # Opaque field containing adress related information
