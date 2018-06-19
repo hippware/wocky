@@ -521,13 +521,15 @@ defmodule Wocky.Bot do
 
   def filter_by_location(query, point_a, point_b) do
     query
-    |> where(fragment(
-      "location && ST_MakeEnvelope(?, ?, ?, ?, 4326)::geography",
-      ^GeoUtils.get_lon(point_a),
-      ^GeoUtils.get_lat(point_a),
-      ^GeoUtils.get_lon(point_b),
-      ^GeoUtils.get_lat(point_b)
-    ))
+    |> where(
+      fragment(
+        "location && ST_MakeEnvelope(?, ?, ?, ?, 4326)::geography",
+        ^GeoUtils.get_lon(point_a),
+        ^GeoUtils.get_lat(point_a),
+        ^GeoUtils.get_lon(point_b),
+        ^GeoUtils.get_lat(point_b)
+      )
+    )
   end
 
   @spec bump_update_time(Bot.t()) :: :ok

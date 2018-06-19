@@ -416,6 +416,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   describe "local bots" do
     setup %{user: user, user2: user2} do
       Repo.delete_all(Bot)
+
       {owned, subscribed, unrelated} =
         Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
           loc = GeoUtils.point(x, x)
@@ -426,7 +427,11 @@ defmodule WockyAPI.GraphQL.BotTest do
           unrelated = Factory.insert(:bot, user: user2, location: loc)
           {[owned.id | o], [subscribed.id | s], [unrelated.id | u]}
         end)
-      {:ok, owned: Enum.reverse(owned), subscribed: Enum.reverse(subscribed), unrelated: Enum.reverse(unrelated)}
+
+      {:ok,
+       owned: Enum.reverse(owned),
+       subscribed: Enum.reverse(subscribed),
+       unrelated: Enum.reverse(unrelated)}
     end
 
     @query """
@@ -437,10 +442,17 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
 
-    test "basic local bots",
-    %{user: user, owned: owned, subscribed: subscribed, unrelated: unrelated} do
-      result = run_query(@query, user, %{"pointA" => point_arg(0.0, 0.0),
-                                         "pointB" => point_arg(5.0, 5.0)})
+    test "basic local bots", %{
+      user: user,
+      owned: owned,
+      subscribed: subscribed,
+      unrelated: unrelated
+    } do
+      result =
+        run_query(@query, user, %{
+          "pointA" => point_arg(0.0, 0.0),
+          "pointB" => point_arg(5.0, 5.0)
+        })
 
       refute has_errors(result)
 
@@ -448,16 +460,22 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert length(local_bots) == 8
 
-      ids = Enum.map(local_bots, &(Map.get(&1, "id")))
+      ids = Enum.map(local_bots, &Map.get(&1, "id"))
 
       assert Enum.all?(ids, &Enum.member?(owned ++ subscribed, &1))
       refute Enum.any?(ids, &Enum.member?(unrelated, &1))
     end
 
-    test "restricted area local bots",
-    %{user: user, owned: [_, o | _], subscribed: [_, s | _]} do
-      result = run_query(@query, user, %{"pointA" => point_arg(1.5, 1.5),
-                                         "pointB" => point_arg(2.5, 2.5)})
+    test "restricted area local bots", %{
+      user: user,
+      owned: [_, o | _],
+      subscribed: [_, s | _]
+    } do
+      result =
+        run_query(@query, user, %{
+          "pointA" => point_arg(1.5, 1.5),
+          "pointB" => point_arg(2.5, 2.5)
+        })
 
       refute has_errors(result)
 
@@ -465,11 +483,10 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert length(local_bots) == 2
 
-      ids = Enum.map(local_bots, &(Map.get(&1, "id")))
+      ids = Enum.map(local_bots, &Map.get(&1, "id"))
 
       assert Enum.all?(ids, &Enum.member?([o, s], &1))
     end
-
   end
 
   describe "bot mutations" do
