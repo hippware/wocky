@@ -27,6 +27,19 @@ defmodule WockyAPI.Resolvers.Bot do
     do_get_bots(user, nil, args)
   end
 
+  def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
+    point_a = GeoUtils.point(args[:point_a][:lat], args[:point_a][:lon])
+    point_b = GeoUtils.point(args[:point_b][:lat], args[:point_b][:lon])
+
+    bots =
+      requestor
+      |> Bot.by_relationship_query(:subscribed, requestor)
+      |> Bot.filter_by_location(point_a, point_b)
+      |> Repo.all()
+
+    {:ok, bots}
+  end
+
   defp do_get_bots(_user, _requestor, %{id: _, relationship: _}) do
     {:error, "Only one of 'id' or 'relationship' may be specified"}
   end

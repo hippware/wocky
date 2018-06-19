@@ -247,11 +247,22 @@ defmodule WockyAPI.Schema.BotTypes do
   payload_object(:bot_item_delete_payload, :boolean)
 
   object :bot_queries do
-    @desc "Retrive a single bot by ID"
+    @desc "Retrieve a single bot by ID"
     field :bot, :bot do
       scope :public
       arg :id, non_null(:uuid)
       resolve &Bot.get_bot/3
+    end
+
+    @desc "Retrieve owned and subscribed bots in a given region"
+    field :local_bots, list_of(:bot) do
+      @desc "Top left of the rectangle in which to search"
+      arg :point_a, non_null(:point)
+
+      @desc "Bottom right point of the rectangle in which to search"
+      arg :point_b, non_null(:point)
+
+      resolve &Bot.get_local_bots/3
     end
   end
 
