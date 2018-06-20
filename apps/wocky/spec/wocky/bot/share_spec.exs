@@ -46,7 +46,7 @@ defmodule Wocky.Bot.ShareSpec do
             sharer_id: {"does not exist", []}
           ]
 
-          expect(new_changeset().errors).to(have_any(&Enum.member?(errors, &1)))
+          new_changeset().errors |> should(have_any(&Enum.member?(errors, &1)))
         end
       end
     end
