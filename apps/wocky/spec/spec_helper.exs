@@ -1,5 +1,5 @@
 ESpec.configure(fn config ->
-  config.before(fn tags ->
+  ESpec.Configuration.before(fn tags ->
     :ok =
       case Ecto.Adapters.SQL.Sandbox.checkout(Wocky.Repo) do
         :ok -> :ok
@@ -7,12 +7,14 @@ ESpec.configure(fn config ->
         error -> error
       end
 
-    {:ok, tags: tags}
-  end)
+      {:ok, tags: tags}
+  end,
+  config)
 
-  config.finally(fn _shared ->
+  ESpec.Configuration.finally(fn _shared ->
     Ecto.Adapters.SQL.Sandbox.checkin(Wocky.Repo, [])
-  end)
+  end,
+  config)
 end)
 
 Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :manual)
