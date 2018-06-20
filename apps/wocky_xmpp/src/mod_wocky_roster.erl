@@ -104,10 +104,10 @@ process_iq_get(From, To, #iq{sub_el = SubEl} = IQ) ->
         IQ#iq{type = result,
               sub_el = create_sub_el(ItemsToSend, VersionToSend)}
     catch
-        Class:Reason ->
+        Class:Reason:Stacktrace ->
             ok = lager:error("Error retrieving roster for user '~ts': ~ts",
                              [jid:to_binary(From),
-                              lager:pr_stacktrace(erlang:get_stacktrace(),
+                              lager:pr_stacktrace(Stacktrace,
                                                   {Class, Reason})]),
             IQ#iq{type = error,
                   sub_el = [SubEl, ?ERR_INTERNAL_SERVER_ERROR]}
