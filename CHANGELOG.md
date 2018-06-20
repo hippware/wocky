@@ -5,17 +5,22 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.6.19+r7c97339
+
+(Includes 2018.6.19+ree2a071 and 2018.6.19+r9435c83)
+
 * Add user location to bot creation, update and subscription with debounce skipping (#1576, PR #1583)
   * Includes: v2, Geofence entry notification, owner inside at t=0 (#1461)
 * Update (via Dependabot): credo (PR #1584), lager (PR #1589), 
   * idna (PR #1592), excoveralls (PR #1592, PR #1607), guardian (PR #1593)
   * bamboo (PR #1600), distillery (PR #1608	)
 * Update absinthe version (PR #1585)
-* Clean up/remove `server` field from data (#1573)
-* New icon field for bots (#1590)
+* Clean up/remove `server` field from data (#1573, #1613)
+* New icon field for bots (#1590, #1611)
 * Disable weekly bot reports (#1599)
 * Remove imagePullSecrets from K8s manifests (PR #1602)
 * New user field: 'geo-invisible' / `hide` (#1596)
+* Add `localBots` query (#1609)
 
 
 # 2018.5.30+r136aa78
