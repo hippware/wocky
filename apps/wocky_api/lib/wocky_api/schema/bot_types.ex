@@ -95,6 +95,12 @@ defmodule WockyAPI.Schema.BotTypes do
     @desc "The bot's owner"
     field :owner, non_null(:user), resolve: assoc(:user)
 
+    @desc "Initial creation time of the bot"
+    field :created_at, non_null(:datetime)
+
+    @desc "Last time the bot was updated"
+    field :updated_at, non_null(:datetime)
+
     @desc "Posts made to the bot"
     connection field :items, node_type: :bot_items do
       connection_complexity
