@@ -8,6 +8,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
 
   setup :common_setup
 
@@ -17,6 +18,9 @@ defmodule WockyAPI.GraphQL.BotTest do
       query ($id: UUID!) {
         bot (id: $id) {
           id
+          server
+          createdAt
+          updatedAt
         }
       }
       """
@@ -27,7 +31,10 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert result.data == %{
                "bot" => %{
-                 "id" => bot.id
+                 "id" => bot.id,
+                 "server" => Wocky.host(),
+                 "createdAt" => Timestamp.to_string(bot.created_at),
+                 "updatedAt" => Timestamp.to_string(bot.updated_at),
                }
              }
     end
