@@ -19,7 +19,6 @@ data:
   WOCKY_INDEXING_SYSTEM: test
   WOCKY_USER_INDEX_NAME: ""
   WOCKY_BOT_INDEX_NAME: ""
-  WOCKY_ENABLE_BOT_REPORT: "false"
   WOCKY_ENABLE_BYPASS: "false"
   WOCKY_DB_HOST: wocky-load.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_load
