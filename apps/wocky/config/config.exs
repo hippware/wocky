@@ -55,6 +55,7 @@ config :wocky, :redis,
 config :wocky, Wocky.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
   sandbox: {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
+  reflect: {:system, :boolean, "WOCKY_PUSH_REFLECT", false},
   topic: {:system, :string, "WOCKY_PUSH_TOPIC", "app"},
   uri_prefix: {:system, :string, "WOCKY_PUSH_URI_PREFIX", "tinyrobot"}
 

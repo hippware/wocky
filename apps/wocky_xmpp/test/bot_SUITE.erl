@@ -132,6 +132,7 @@ suite() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
+    test_helper:disable_push_reflection(),
     NewConfig = reset_tables(Config),
     [{interface, new} | NewConfig].
 
@@ -186,6 +187,9 @@ local_tables() ->
     [bot_name, bot_item, home_stream].
 
 reset_tables(Config) ->
+    % Allow any pending callbacks to be flushed
+    timer:sleep(500),
+
     Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users([alice, bob, carol, karen, robert, tim])
@@ -591,6 +595,7 @@ get_subscribed(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {karen, 1}],
       fun(Alice, Bob, Karen) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_OPEN, ?BOT),
+        timer:sleep(500),
 
         %% Alice is the owner and so is automatically subscribed
         Stanza = expect_iq_success(subscribed_stanza(#rsm_in{}), Alice),

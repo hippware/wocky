@@ -2,6 +2,7 @@
 %%% @doc Helper functions for Wocky integration test suites
 -module(test_helper).
 
+-compile({parse_transform, fun_chain}).
 -compile({parse_transform, cut}).
 -compile({parse_transform, do}).
 
@@ -73,7 +74,9 @@
 
          watch_hs/1,
          watch_hs/2,
-         unwatch_hs/1
+         unwatch_hs/1,
+
+         disable_push_reflection/0
         ]).
 
 
@@ -621,3 +624,13 @@ unwatch_hs(Client) ->
                    hs_node(escalus_client:username(Client)),
                    <<"unavailable">>,
                    [query_el(undefined)])).
+
+disable_push_reflection() ->
+    fun_chain:last(
+      ?wocky_push,
+      application:get_env(wocky),
+      element(2),
+      proplists:delete(reflect),
+      lists:append([{reflect, false}]),
+      application:set_env(wocky, ?wocky_push)
+     ).

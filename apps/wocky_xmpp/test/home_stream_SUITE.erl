@@ -86,6 +86,7 @@ users() ->
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
+    test_helper:disable_push_reflection(),
     fun_chain:first(Config,
         escalus:init_per_suite(),
         test_helper:setup_users(users()),
