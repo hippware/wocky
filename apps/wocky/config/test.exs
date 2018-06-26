@@ -67,6 +67,7 @@ config :guardian_firebase,
 config :wocky, Wocky.Push,
   enabled: true,
   sandbox: true,
+  reflect: true,
   logging: false
 
 # Configure your database

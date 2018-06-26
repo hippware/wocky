@@ -144,12 +144,18 @@ defmodule Wocky.Push do
       end
 
     Sandbox.record_notification(notif, self())
-    send(self(), notif)
+
+    if reflect?(), do: send(self(), notif)
+
     notif
   end
 
   defp sandbox? do
     Confex.get_env(:wocky, Wocky.Push)[:sandbox]
+  end
+
+  defp reflect? do
+    Confex.get_env(:wocky, Wocky.Push)[:reflect]
   end
 
   defp topic do
