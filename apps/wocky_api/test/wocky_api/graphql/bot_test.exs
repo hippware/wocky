@@ -34,7 +34,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                  "id" => bot.id,
                  "server" => Wocky.host(),
                  "createdAt" => Timestamp.to_string(bot.created_at),
-                 "updatedAt" => Timestamp.to_string(bot.updated_at),
+                 "updatedAt" => Timestamp.to_string(bot.updated_at)
                }
              }
     end

@@ -252,6 +252,7 @@ defmodule WockyAPI.GraphQL.UserTest do
               lat
               lon
               accuracy
+              isFetch
             }
           }
         }
@@ -273,7 +274,8 @@ defmodule WockyAPI.GraphQL.UserTest do
                        "node" => %{
                          "lon" => loc.lon,
                          "lat" => loc.lat,
-                         "accuracy" => loc.accuracy
+                         "accuracy" => loc.accuracy,
+                         "isFetch" => false
                        }
                      }
                    ]
@@ -398,7 +400,8 @@ defmodule WockyAPI.GraphQL.UserTest do
         "lat" => lat,
         "lon" => lon,
         "accuracy" => accuracy,
-        "resource" => resource
+        "resource" => resource,
+        "isFetch" => true
       }
 
       result = run_query(@query, user, %{"input" => location_input})
@@ -415,7 +418,8 @@ defmodule WockyAPI.GraphQL.UserTest do
                lat: ^lat,
                lon: ^lon,
                resource: ^resource,
-               accuracy: ^accuracy
+               accuracy: ^accuracy,
+               is_fetch: true
              } = Repo.get_by(Location, user_id: user.id)
     end
 

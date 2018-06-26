@@ -137,7 +137,8 @@ defmodule WockyAPI.Resolvers.User do
              device,
              location[:lat],
              location[:lon],
-             location[:accuracy]
+             location[:accuracy],
+             location[:is_fetch] || false
            ) do
       {:ok, true}
     end

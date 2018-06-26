@@ -53,6 +53,17 @@ defmodule WockyAPI.LocationControllerTest do
       assert response(conn, 201)
     end
 
+    test "returns 201 when data is valid with fetch", %{conn: conn, user: user} do
+      loc_with_fetch = @create_attrs.location |> hd |> Map.put(:isFetch, true)
+
+      conn =
+        post conn,
+             location_path(conn, :create, user.id),
+             Map.put(@create_attrs, :location, [loc_with_fetch])
+
+      assert response(conn, 201)
+    end
+
     test "returns 400 when latitude is missing", %{conn: conn, user: user} do
       invalid_attrs = %{
         location: %{

@@ -367,9 +367,10 @@ defmodule Wocky.User do
     |> where(resource: ^resource)
   end
 
-  @spec set_location(t, resource, float, float, float) :: :ok | {:error, any}
-  def set_location(user, resource, lat, lon, accuracy) do
-    case Location.insert(user, resource, lat, lon, accuracy) do
+  @spec set_location(t, resource, float, float, float, boolean) ::
+          :ok | {:error, any}
+  def set_location(user, resource, lat, lon, accuracy, is_fetch) do
+    case Location.insert(user, resource, lat, lon, accuracy, is_fetch) do
       {:ok, loc} ->
         if !hidden?(user),
           do: GeoFence.check_for_bot_events(loc, user, resource)
