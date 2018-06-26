@@ -13,7 +13,6 @@ data:
   WOCKY_HOST: us1.prod.tinyrobot.com
   WOCKY_IQ_CRASH_RESPONSE: error
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-us1
-  WOCKY_S3_REGION: us-west-2
   WOCKY_S3_ACCESS_KEY_ID: AKIAIQVQFTQKAOOY6Y6A
   WOCKY_PUSH_ENABLED: "true"
   WOCKY_PUSH_TOPIC: "com.hippware.ios.Chat"
@@ -23,16 +22,11 @@ data:
   WOCKY_ENABLE_BYPASS: "false"
   WOCKY_DB_HOST: wocky-us1.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_us1
-  WOCKY_DB_USER: postgres
   WOCKY_DB_WATCHER_QUEUE: wocky-us1-db-watcher.fifo
-  WOCKY_DB_WATCHER_REGION: "us-west-2"
   AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
   HONEYBADGER_ENV: us1
   REPLACE_OS_VARS: "true"
   BAMBOO_ADAPTER: Bamboo.MandrillAdapter
-  REDIS_POOL_SIZE: "10"
   REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
-  REDIS_PORT: "6379"
   REDIS_DB: "1"
-  DAWDLE_REGION: "us-west-2"
   DAWDLE_QUEUES: "wocky-dawdle-us1"
