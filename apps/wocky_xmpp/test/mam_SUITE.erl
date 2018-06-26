@@ -218,8 +218,7 @@ wait_message_range(P, Client, TotalCount, Offset, FromN, ToN) ->
         ?ASSERT_EQUAL(TotalCount, ParsedIQ#result_iq.count),
         ?ASSERT_EQUAL(Offset, ParsedIQ#result_iq.first_index),
         ok
-    catch Class:Reason ->
-        Stacktrace = erlang:get_stacktrace(),
+    catch Class:Reason:Stacktrace ->
         ct:pal("IQ: ~p~n"
                "Messages: ~p~n"
                "Parsed messages: ~p~n",
@@ -533,8 +532,7 @@ assert_respond_size(ExpectedSize, Respond) ->
 
 parse_messages(Messages) ->
     try [parse_forwarded_message(M) || M <- Messages]
-    catch Class:Reason ->
-        Stacktrace = erlang:get_stacktrace(),
+    catch Class:Reason:Stacktrace ->
         ct:pal("Messages: ~p~n", [Messages]),
         erlang:raise(Class, Reason, Stacktrace)
     end.

@@ -91,7 +91,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:uuid, "~> 1.7", hex: :uuid_erl, override: true},
       {:mongooseim, github: "hippware/mongooseim", branch: "2.1.1/working"},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
-      {:erlando, github: "rabbitmq/erlando", branch: "master"},
+      {:erlando, github: "hippware/erlando", branch: "master"},
       {:exml,
        github: "esl/exml", tag: "3.0.1", manager: :rebar3, override: true},
       {:exometer,

@@ -91,7 +91,7 @@ defmodule Wocky.Watcher.Client do
       Honeybadger.notify(
         "DB Watcher callback crash",
         %{event: inspect(json_event), error: inspect(error)},
-        :erlang.get_stacktrace()
+        self() |> Process.info(:current_stacktrace) |> elem(1)
       )
   end
 

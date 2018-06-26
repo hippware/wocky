@@ -24,7 +24,7 @@
                       unwatch_hs/1]).
 
 -define(NS_TEST, <<"test-item-ns">>).
--define(BOB_HS_ITEM_COUNT, 250).
+-define(BOB_HS_ITEM_COUNT, 25).
 -define(BOT_UPDATE_STANZA, <<"<bot_update>A thing happened</bot_update>">>).
 
 
@@ -411,6 +411,7 @@ auto_publish_newly_public_bot(Config) ->
         % owner, also gets notified:
         set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
         set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
+        timer:sleep(500),
         check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
         check_home_stream_sizes(4, [Alice]),
         check_home_stream_sizes(1, [Carol, Tim]),

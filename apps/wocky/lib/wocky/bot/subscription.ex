@@ -27,7 +27,7 @@ defmodule Wocky.Bot.Subscription do
   end
 
   @type t :: %Subscription{}
-  @type state :: nil | :subscribed | :guest | :visiting
+  @type state :: nil | :subscribed | :guest | :visitor
 
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do

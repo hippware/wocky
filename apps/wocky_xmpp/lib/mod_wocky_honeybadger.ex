@@ -119,8 +119,6 @@ defmodule :mod_wocky_honeybadger do
           any
         ) :: :ok
   def iq_handler_crash_hook(acc, from, to, iq, exception) do
-    stacktrace = :erlang.get_stacktrace()
-
     Honeybadger.notify(
       "IQ handler crash: #{iq(iq, :xmlns)}",
       %{
@@ -135,7 +133,7 @@ defmodule :mod_wocky_honeybadger do
           payload: :exml.to_binary(iq(iq, :sub_el))
         }
       },
-      stacktrace
+      self() |> Process.info(:current_stacktrace) |> elem(1)
     )
 
     acc
