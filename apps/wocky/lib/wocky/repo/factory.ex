@@ -146,7 +146,8 @@ defmodule Wocky.Repo.Factory do
       resource: String.base64(),
       lat: Address.latitude(),
       lon: Address.longitude(),
-      accuracy: 10
+      accuracy: 10,
+      is_fetch: false
     }
   end
 

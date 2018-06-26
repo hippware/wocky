@@ -204,6 +204,9 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Time of location report"
     field :created_at, non_null(:datetime)
 
+    @desc "True if the update is the result of a background fetch"
+    field :is_fetch, non_null(:boolean)
+
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
       connection_complexity
@@ -384,6 +387,9 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Accuracy in metres"
     field :accuracy, non_null(:float)
+
+    @desc "True if the update is the result of a background fetch"
+    field :is_fetch, :boolean
   end
 
   payload_object(:user_location_update_payload, :boolean)

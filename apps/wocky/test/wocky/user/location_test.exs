@@ -54,7 +54,27 @@ defmodule Wocky.User.LocationTest do
     end
 
     test "should return a successful result", %{result: result} do
-      assert {:ok, %Location{}} = result
+      assert {:ok, %Location{is_fetch: false}} = result
+    end
+  end
+
+  describe "insert/6" do
+    setup %{user: user} do
+      result =
+        Location.insert(
+          user,
+          "testing",
+          Address.latitude(),
+          Address.longitude(),
+          10,
+          true
+        )
+
+      {:ok, result: result}
+    end
+
+    test "should return a successful result", %{result: result} do
+      assert {:ok, %Location{is_fetch: true}} = result
     end
   end
 end

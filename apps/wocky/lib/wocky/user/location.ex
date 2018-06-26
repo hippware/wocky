@@ -16,6 +16,7 @@ defmodule Wocky.User.Location do
     field :lat, :float, null: false
     field :lon, :float, null: false
     field :accuracy, :float
+    field :is_fetch, :boolean, default: false
 
     timestamps()
 
@@ -29,15 +30,23 @@ defmodule Wocky.User.Location do
           resource: User.resource(),
           lat: float,
           lon: float,
-          accuracy: float
+          accuracy: float,
+          is_fetch: boolean
         }
 
   @doc "Store a user location datapoint"
-  @spec insert(User.t(), User.resource(), float, float, float) ::
+  @spec insert(User.t(), User.resource(), float(), float(), float(), boolean()) ::
           {:ok, t} | {:error, any}
-  def insert(user, resource, lat, lon, accuracy) do
+  def insert(user, resource, lat, lon, accuracy, is_fetch \\ false) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
-    data = %{resource: resource, lat: nlat, lon: nlon, accuracy: accuracy}
+
+    data = %{
+      resource: resource,
+      lat: nlat,
+      lon: nlon,
+      accuracy: accuracy,
+      is_fetch: is_fetch
+    }
 
     user
     |> Ecto.build_assoc(:locations)
@@ -45,8 +54,9 @@ defmodule Wocky.User.Location do
     |> Repo.insert()
   end
 
-  @spec new(User.t(), User.resource(), float(), float(), float()) :: t()
-  def new(user, resource, lat, lon, accuracy) do
+  @spec new(User.t(), User.resource(), float(), float(), float(), boolean()) ::
+          t()
+  def new(user, resource, lat, lon, accuracy, is_fetch \\ false) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
 
     %Location{
@@ -54,14 +64,15 @@ defmodule Wocky.User.Location do
       resource: resource,
       lat: nlat,
       lon: nlon,
-      accuracy: accuracy
+      accuracy: accuracy,
+      is_fetch: is_fetch
     }
   end
 
   @doc false
   def changeset(struct, params) do
     struct
-    |> cast(params, [:resource, :lat, :lon, :accuracy])
+    |> cast(params, [:resource, :lat, :lon, :accuracy, :is_fetch])
     |> validate_required([:resource, :lat, :lon, :accuracy])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
   end
