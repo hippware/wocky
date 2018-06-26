@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add createdAt to Bot fields returned via GraphQL (#1617)
+* Speculative attempt to fix bot/sub locking (PR #1622)
+* Update (via Dependabot): ex_aws_s3 (PR #1621)
+* Update the ECR credentials used by Codeship (PR #1624)
+
+
 # 2018.6.19+r7c97339
 
 (Includes 2018.6.19+ree2a071 and 2018.6.19+r9435c83)
