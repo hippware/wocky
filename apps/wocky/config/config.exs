@@ -19,7 +19,7 @@ config :wocky,
   # TROS file storage in test storage system
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.TestStore},
   tros_s3_bucket: {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
-  tros_s3_region: {:system, "WOCKY_S3_REGION"},
+  tros_s3_region: {:system, "WOCKY_S3_REGION", "us-west-2"},
   tros_s3_server: {:system, "WOCKY_S3_SERVER", "s3.amazonaws.com"},
   tros_s3_access_key_id: {:system, "WOCKY_S3_ACCESS_KEY_ID"},
   tros_s3_secret_key: {:system, "WOCKY_S3_SECRET_KEY"},
@@ -29,11 +29,7 @@ config :wocky,
   user_index_name: {:system, "WOCKY_USER_INDEX_NAME"},
   bot_index_name: {:system, "WOCKY_BOT_INDEX_NAME"},
 
-  # Bot reports
-  enable_bot_report: {:system, :boolean, "WOCKY_ENABLE_BOT_REPORT", false},
-  bot_report_channel:
-    {:system, :string, "WOCKY_BOT_REPORT_CHANNEL", "wocky-reports"},
-  bot_report_days: {:system, :integer, "WOCKY_BOT_REPORT_DAYS", 7},
+  # Deployment notifications
   slack_token: {:system, :string, "SLACK_TOKEN"},
 
   # Authentication
