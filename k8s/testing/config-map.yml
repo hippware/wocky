@@ -13,7 +13,6 @@ data:
   WOCKY_HOST: testing.dev.tinyrobot.com
   WOCKY_IQ_CRASH_RESPONSE: error_with_dump
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-testing
-  WOCKY_S3_ACCESS_KEY_ID: AKIAJOOG6KJT7K4EHNCA
   WOCKY_PUSH_ENABLED: "false"
   WOCKY_INDEXING_SYSTEM: test
   WOCKY_USER_INDEX_NAME: ""
@@ -24,7 +23,7 @@ data:
   WOCKY_DB_WATCHER_QUEUE: wocky-testing-db-watcher.fifo
   WOCKY_ENTER_DEBOUNCE_SECONDS: "0"
   WOCKY_EXIT_DEBOUNCE_SECONDS: "0"
-  AWS_ACCESS_KEY_ID: AKIAJF36QNVCKI2EWLLQ
+  AWS_ACCESS_KEY_ID: AKIAISCBKX42EUVSVXAQ
   HONEYBADGER_ENV: testing
   REPLACE_OS_VARS: "true"
   REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com

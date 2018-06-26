@@ -21,8 +21,8 @@ config :wocky,
   tros_s3_bucket: {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
   tros_s3_region: {:system, "WOCKY_S3_REGION", "us-west-2"},
   tros_s3_server: {:system, "WOCKY_S3_SERVER", "s3.amazonaws.com"},
-  tros_s3_access_key_id: {:system, "WOCKY_S3_ACCESS_KEY_ID"},
-  tros_s3_secret_key: {:system, "WOCKY_S3_SECRET_KEY"},
+  tros_s3_access_key_id: {:system, "AWS_ACCESS_KEY_ID"},
+  tros_s3_secret_key: {:system, "AWS_SECRET_ACCESS_KEY"},
 
   # FTS indexing (Algolia)
   indexing_system: {:system, "WOCKY_INDEXING_SYSTEM", "test"},
