@@ -13,7 +13,9 @@
 -export([subscribe/3,
          unsubscribe/2,
          retrieve_subscribers/2,
-         adjust_exclude_owner/1
+         get_sub_count/1,
+         get_visitor_count/1,
+         get_guest_count/1
         ]).
 
 -define(DEFAULT_MAX_SUBS, 50).
@@ -67,19 +69,20 @@ make_subscriber_element(User) ->
 %%%===================================================================
 
 make_subscriber_count_element(Bot) ->
-    Count = adjust_exclude_owner(?wocky_bot:subscriber_count(Bot)),
+    Count = get_sub_count(Bot),
     wocky_xml:cdata_el(<<"subscriber_count">>, integer_to_binary(Count)).
 
-list_attrs(Bot = #{subscribers_hash := SubscribersHash,
-                   subscribers_count := SubscribersCount}) ->
+list_attrs(Bot) ->
     [{<<"xmlns">>, ?NS_BOT},
      {<<"node">>, ?wocky_bot:make_node(Bot)},
-     % Hack to exclude owner subscription
-     {<<"size">>, integer_to_binary(adjust_exclude_owner(SubscribersCount))},
-     {<<"hash">>, SubscribersHash}].
+     {<<"size">>, integer_to_binary(get_sub_count(Bot))}].
 
-% Subtract one from the subscriber count because the client doesn't expect
-% us to include the owner's automatic subscription in the count. I've
-% encapsulated this in a function to make it easier to track down where it's
-% done if the behaviour needs to change in the future.
-adjust_exclude_owner(SubscriberCount) -> SubscriberCount - 1.
+get_sub_count(Bot) ->
+    ?wocky_query_utils:get_count(
+       ?wocky_bot:subscribers_query(Bot, false), user_id).
+
+get_visitor_count(Bot) ->
+    ?wocky_query_utils:get_count(?wocky_bot:visitors_query(Bot), user_id).
+
+get_guest_count(Bot) ->
+    ?wocky_query_utils:get_count(?wocky_bot:guests_query(Bot), user_id).

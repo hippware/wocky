@@ -406,44 +406,6 @@ defmodule Wocky.BotSpec do
     end
   end
 
-  describe "Subscribers hash and count generation" do
-    before do
-      user = Factory.insert(:user)
-      bot = Factory.insert(:bot, user: user)
-      {:ok, user: user, bot: bot}
-    end
-
-    it "should have correct initial values" do
-      shared.bot.subscribers_hash |> should(eq default_sub_hash())
-      shared.bot.subscribers_count |> should(eq 0)
-    end
-
-    describe "after an inserted subscriber" do
-      before do
-        subscriber = Factory.insert(:user)
-        Bot.subscribe(shared.bot, subscriber)
-        {:ok, subscriber: subscriber, bot: Bot.get(shared.bot.id)}
-      end
-
-      it "should correctly update the values" do
-        shared.bot.subscribers_hash |> should_not(eq default_sub_hash())
-        shared.bot.subscribers_count |> should(eq 1)
-      end
-
-      describe "after removing a subscriber" do
-        before do
-          Bot.unsubscribe(shared.bot, shared.subscriber)
-          {:ok, bot: Bot.get(shared.bot.id)}
-        end
-
-        it "should go back to the initial values" do
-          shared.bot.subscribers_hash |> should(eq default_sub_hash())
-          shared.bot.subscribers_count |> should(eq 0)
-        end
-      end
-    end
-  end
-
   defp run_query(bot, user) do
     Bot
     |> where(id: ^bot.id)
@@ -453,7 +415,4 @@ defmodule Wocky.BotSpec do
   end
 
   defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted
-
-  defp default_sub_hash,
-    do: :md5 |> :crypto.hash("") |> Base.encode16(case: :lower)
 end
