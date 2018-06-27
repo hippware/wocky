@@ -5,10 +5,17 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
+
 * Add createdAt to Bot fields returned via GraphQL (#1617)
 * Speculative attempt to fix bot/sub locking (PR #1622)
 * Update (via Dependabot): ex_aws_s3 (PR #1621)
 * Update the ECR credentials used by Codeship (PR #1624)
+* Config cleanup (PR #1625)
+* Various tweaks to improve test stability and error output (PR #1626)
+* Add isFetch field to location updates (PR #1627)
+* Update to Erlang 21/Elixir 1.6.6 (PR #1630)
+* Consolidate AWS user credentials in Wocky (#1631)
 
 
 # 2018.6.19+r7c97339
