@@ -25,7 +25,7 @@ defmodule WockyAPI.Plugs.AbsintheConnData do
   end
 
   defp peer(conn) do
-    {addr, port} = conn.peer
+    %{address: addr, port: port} = get_peer_data(conn)
     to_string(:inet.ntoa(addr)) <> ":" <> to_string(port)
   end
 
