@@ -1070,6 +1070,7 @@ get_visitors(Config) ->
     ?wocky_bot:update(Bot, #{geofence => true}),
     ?wocky_bot:subscribe(Bot, CarolU, true),
     ?wocky_bot:visit(Bot, CarolU),
+    timer:sleep(500),
     escalus:story(Config2, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
         Results = [expect_iq_success(
