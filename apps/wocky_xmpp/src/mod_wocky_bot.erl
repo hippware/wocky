@@ -225,17 +225,14 @@ perform_owner_action(delete, Bot, _From, _IQ) ->
 perform_owner_action(subscribers, Bot, _From, IQ) ->
     wocky_bot_subscription:retrieve_subscribers(Bot, IQ);
 
-perform_owner_action(guests,
-                     #{guests_count := Count, guests_hash := Hash} = Bot,
-                     _From, IQ) ->
+perform_owner_action(guests, Bot, _From, IQ) ->
     do([error_m ||
         RSMIn <- rsm_util:get_rsm(IQ),
         Sorting <- get_sorting(IQ),
         Query <- {ok, ?wocky_bot:guests_query(Bot)},
         {Guests, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
                                     RSMIn, Query, id, Sorting)},
-        {ok, users_result(<<"guests">>, make_guests(Guests),
-                          Count, Hash, RSMOut)}
+        {ok, users_result(<<"guests">>, make_guests(Guests), RSMOut)}
        ]).
 
 %%%===================================================================
@@ -250,17 +247,14 @@ handle_guest_action(Action, FromJID, Attrs, IQ) ->
            perform_guest_action(Action, Bot, IQ)
        ]).
 
-perform_guest_action(visitors,
-                     #{visitors_count := Count, visitors_hash := Hash} = Bot,
-                     IQ) ->
+perform_guest_action(visitors, Bot, IQ) ->
     do([error_m ||
         RSMIn <- rsm_util:get_rsm(IQ),
         Sorting <- get_sorting(IQ),
         Query <- {ok, ?wocky_bot:visitors_query(Bot)},
         {Visitors, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
                                       RSMIn, Query, id, Sorting)},
-        {ok, users_result(<<"visitors">>, make_visitors(Visitors),
-                          Count, Hash, RSMOut)}
+        {ok, users_result(<<"visitors">>, make_visitors(Visitors), RSMOut)}
        ]).
 
 %%%===================================================================
@@ -837,7 +831,14 @@ make_bot_el(Bot, FromUser) ->
 
 make_ret_elements(Bot, FromUser) ->
     DynamicFields = dynamic_fields(Bot, FromUser),
-    Fields = maps:fold(fun to_field/3, [], Bot#{server => ?wocky:host()}),
+    Fields = maps:fold(fun to_field/3, [],
+                       Bot#{server => ?wocky:host(),
+                            subscribers_count =>
+                            wocky_bot_subscription:get_sub_count(Bot),
+                            visitors_count =>
+                            wocky_bot_subscription:get_visitor_count(Bot),
+                            guests_count =>
+                            wocky_bot_subscription:get_guest_count(Bot)}),
     encode_fields(Fields ++ DynamicFields, FromUser).
 
 dynamic_fields(Bot, FromUser) ->
@@ -869,20 +870,10 @@ to_field(public, Public, Acc) ->
     [#field{name = <<"visibility">>, type = int, value = vis(Public)} | Acc];
 to_field(updated_at, Updated, Acc) ->
     [#field{name = <<"updated">>, type = timestamp, value = Updated} | Acc];
-to_field(subscribers_hash, Hash, Acc) ->
-    [#field{name = <<"subscribers+hash">>, type = string, value = Hash} | Acc];
-% For ugly reasons we need to subtract one from the count here because the
-% owner is always a subscriber, but we don't want to include them in the count:
 to_field(subscribers_count, Count, Acc) ->
-    [#field{name = <<"subscribers+size">>, type = int,
-            value = wocky_bot_subscription:adjust_exclude_owner(Count)}
-     | Acc];
-to_field(guests_hash, Hash, Acc) ->
-    [#field{name = <<"guests+hash">>, type = string, value = Hash} | Acc];
+    [#field{name = <<"subscribers+size">>, type = int, value = Count} | Acc];
 to_field(guests_count, Count, Acc) ->
     [#field{name = <<"guests+size">>, type = int, value = Count} | Acc];
-to_field(visitors_hash, Hash, Acc) ->
-    [#field{name = <<"visitors+hash">>, type = string, value = Hash} | Acc];
 to_field(visitors_count, Count, Acc) ->
     [#field{name = <<"visitors+size">>, type = int, value = Count} | Acc];
 to_field(_, null, Acc) -> Acc;
@@ -1031,11 +1022,10 @@ make_user_list(Name, Users) ->
                                      ?wocky:host(), <<>>))}]}
      || U <- Users].
 
-users_result(Name, UserEls, Size, Hash, RSMOut) ->
+users_result(Name, UserEls, RSMOut) ->
     #xmlel{name = Name,
            attrs = [{<<"xmlns">>, ?NS_BOT},
-                    {<<"size">>, integer_to_binary(Size)},
-                    {<<"hash">>, Hash}],
+                    {<<"size">>, integer_to_binary(RSMOut#rsm_out.count)}],
            children = UserEls ++ jlib:rsm_encode(RSMOut)}.
 
 reply_not_allowed(Sender, Stanza) ->

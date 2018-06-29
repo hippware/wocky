@@ -58,6 +58,7 @@
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
 -define(wocky_id,                'Elixir.Wocky.Repo.ID').
+-define(wocky_query_utils,       'Elixir.Wocky.Repo.QueryUtils').
 -define(wocky_timestamp,         'Elixir.Wocky.Repo.Timestamp').
 -define(wocky_roster,            'Elixir.Wocky.Roster').
 -define(wocky_roster_item,       'Elixir.Wocky.Roster.Item').

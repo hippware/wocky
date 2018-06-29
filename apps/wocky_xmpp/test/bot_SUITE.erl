@@ -1052,6 +1052,7 @@ get_guests(Config) ->
     CarolU = proplists:get_value(carol, Config2),
     ?wocky_bot:update(Bot, #{geofence => true}),
     ?wocky_bot:subscribe(Bot, CarolU, true),
+    timer:sleep(500),
     escalus:story(Config2, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
         S = expect_iq_success(get_users_stanza(<<"guests">>, ?BOT), Alice),
@@ -1069,6 +1070,7 @@ get_visitors(Config) ->
     ?wocky_bot:update(Bot, #{geofence => true}),
     ?wocky_bot:subscribe(Bot, CarolU, true),
     ?wocky_bot:visit(Bot, CarolU),
+    timer:sleep(500),
     escalus:story(Config2, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
         Results = [expect_iq_success(
@@ -1204,8 +1206,8 @@ expected_create_fields() ->
      {"image_items",        int,    0},
      {"total_items",        int,    0},
      {"updated",            timestamp, any},
-     {"subscribers+size",   int,    0}, % Owner is always a subscriber
-     {"subscribers+hash",   string, any}].
+     {"subscribers+size",   int,    0}
+    ].
 
 expected_retrieve_fields(Subscribed) ->
     expected_retrieve_fields(Subscribed, ?BOT_DESC,
@@ -1230,14 +1232,12 @@ expected_retrieve_fields(Subscribed, Description, Visibility, Subscribers) ->
      {"total_items",        int,    2},
      {"updated",            timestamp, any},
      {"subscribed",         bool,   Subscribed},
-     {"subscribers+size",   int,    Subscribers},
-     {"subscribers+hash",   string, any}
+     {"subscribers+size",   int,    Subscribers}
     ].
 
 expected_guest_retrieve_fields(Guest, Guests) ->
     [{"guest",       bool,   Guest},
-     {"guests+size", int,    Guests},
-     {"guests+hash", string, any}
+     {"guests+size", int,    Guests}
      | expected_retrieve_fields(true, ?BOT_DESC, ?WOCKY_BOT_VIS_OPEN, any)
     ].
 
@@ -1947,10 +1947,6 @@ check_users_result(Stanza, Name, ItemName, Users) ->
         exml_query:path(Stanza, [{element, Name},
                                 {attr, <<"size">>}]),
         integer_to_binary(length(Users))),
-    ?assertNotEqual(
-        exml_query:path(Stanza, [{element, Name},
-                                {attr, <<"hash">>}]),
-        undefined),
     Items = (exml_query:path(Stanza, [{element, Name}]))#xmlel.children,
     check_users_items(ItemName, Items, Users).
 
