@@ -1052,6 +1052,7 @@ get_guests(Config) ->
     CarolU = proplists:get_value(carol, Config2),
     ?wocky_bot:update(Bot, #{geofence => true}),
     ?wocky_bot:subscribe(Bot, CarolU, true),
+    timer:sleep(500),
     escalus:story(Config2, [{alice, 1}, {bob, 1}, {carol, 1}],
       fun(Alice, Bob, Carol) ->
         S = expect_iq_success(get_users_stanza(<<"guests">>, ?BOT), Alice),
