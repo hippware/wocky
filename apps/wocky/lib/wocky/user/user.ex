@@ -392,7 +392,7 @@ defmodule Wocky.User do
     case insert_location(user, nloc) do
       {:ok, loc} = result ->
         if !hidden?(user),
-          do: GeoFence.check_for_bot_events(loc, user, loc.resource)
+          do: GeoFence.check_for_bot_events(loc, user)
 
         result
 
@@ -415,7 +415,7 @@ defmodule Wocky.User do
   @spec check_location_for_bot(t, Location.t(), Bot.t()) :: :ok
   def check_location_for_bot(user, loc, bot) do
     if !hidden?(user),
-      do: GeoFence.check_for_bot_event(bot, loc, user, loc.resource)
+      do: GeoFence.check_for_bot_event(bot, loc, user)
 
     :ok
   end

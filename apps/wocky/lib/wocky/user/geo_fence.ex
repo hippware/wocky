@@ -11,11 +11,8 @@ defmodule Wocky.User.GeoFence do
   require Logger
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t(), User.resource()) ::
-          Location.t()
-  def check_for_bot_events(%Location{} = loc, user, resource) do
-    user = %User{user | resource: resource}
-
+  @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
+  def check_for_bot_events(%Location{} = loc, user) do
     maybe_do_async(fn ->
       user
       |> User.get_guest_subscriptions()
@@ -26,11 +23,10 @@ defmodule Wocky.User.GeoFence do
     loc
   end
 
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), User.resource()) ::
-          :ok
-  def check_for_bot_event(bot, loc, user, resource) do
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
+  def check_for_bot_event(bot, loc, user) do
     bot
-    |> check_for_event(%User{user | resource: resource}, loc, false, [])
+    |> check_for_event(user, loc, false, [])
     |> Enum.each(&process_bot_event/1)
   end
 
@@ -78,7 +74,7 @@ defmodule Wocky.User.GeoFence do
     if Confex.get_env(:wocky, :visit_timeout_enabled) do
       dawdle_event = %{
         user_id: user.id,
-        resource: user.resource,
+        resource: loc.resource,
         bot_id: bot.id,
         loc_id: loc.id
       }
@@ -92,7 +88,7 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp handle_intersection(inside?, user, bot, loc, debounce, acc) do
-    event = BotEvent.get_last_event(user.id, user.resource, bot.id)
+    event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
 
     case user_state_change(inside?, event, debounce) do
       :no_change ->
@@ -103,7 +99,7 @@ defmodule Wocky.User.GeoFence do
         acc
 
       new_state ->
-        new_event = BotEvent.insert(user, user.resource, bot, loc, new_state)
+        new_event = BotEvent.insert(user, loc.resource, bot, loc, new_state)
         [{user, bot, new_event} | acc]
     end
   end
