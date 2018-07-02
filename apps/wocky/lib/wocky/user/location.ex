@@ -54,21 +54,6 @@ defmodule Wocky.User.Location do
     |> Repo.insert()
   end
 
-  @spec new(User.t(), User.resource(), float(), float(), float(), boolean()) ::
-          t()
-  def new(user, resource, lat, lon, accuracy, is_fetch \\ false) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
-
-    %Location{
-      user_id: user.id,
-      resource: resource,
-      lat: nlat,
-      lon: nlon,
-      accuracy: accuracy,
-      is_fetch: is_fetch
-    }
-  end
-
   @doc false
   def changeset(struct, params) do
     struct
