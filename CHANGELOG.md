@@ -10,7 +10,7 @@ Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 * Add createdAt to Bot fields returned via GraphQL (#1617)
 * Speculative attempt to fix bot/sub locking (PR #1622)
 * Update (via Dependabot): ex_aws_s3 (PR #1621)
-  * wocky_db_watcher (PR #1633), honeybadger (PR #1635)
+  * wocky_db_watcher (PR #1633, PR #1638), honeybadger (PR #1635)
 * Update the ECR credentials used by Codeship (PR #1624)
 * Config cleanup (PR #1625)
 * Various tweaks to improve test stability and error output (PR #1626)
@@ -18,6 +18,7 @@ Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 * Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 * Consolidate AWS user credentials in Wocky (#1631)
 * Update distillery for Erlang 21 (PR #1636)
+* Remove auto-gen sub count; remove bot subscribers hash (#1628)
 
 
 # 2018.6.19+r7c97339
