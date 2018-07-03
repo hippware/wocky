@@ -36,12 +36,26 @@ defmodule Wocky.User.Location do
 
   @type location_tuple :: {float, float, float}
   @type t :: %Location{
-          user_id: User.id(),
+          user_id: User.id() | nil,
           resource: User.resource(),
           lat: float,
           lon: float,
           accuracy: float,
-          is_fetch: boolean
+          speed: float | nil,
+          heading: float | nil,
+          altitude: float | nil,
+          altitude_accuracy: float | nil,
+          captured_at: DateTime.t() | nil,
+          uuid: String.t() | nil,
+          is_moving: boolean | nil,
+          odometer: float | nil,
+          activity: String.t() | nil,
+          activity_confidence: integer | nil,
+          battery_level: float | nil,
+          battery_charging: boolean | nil,
+          is_fetch: boolean | nil,
+          created_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
         }
 
   @insert_fields [
