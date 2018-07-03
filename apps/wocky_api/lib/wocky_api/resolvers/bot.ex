@@ -123,13 +123,8 @@ defmodule WockyAPI.Resolvers.Bot do
       Enum.member?(User.get_bot_relationships(user, bot), :guest)
     end)
 
-    location = %Location{
-      lat: l[:lat],
-      lon: l[:lon],
-      accuracy: l[:accuracy],
-      is_fetch: l[:is_fetch] || false,
-      resource: l[:device] || l[:resource]
-    }
+    params = Map.put(l, :resource, l[:device] || l[:resource])
+    location = struct(Location, params)
 
     with {:ok, loc} <- User.set_location(user, location) do
       User.check_location_for_bot(user, loc, bot)
