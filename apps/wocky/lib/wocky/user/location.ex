@@ -14,6 +14,18 @@ defmodule Wocky.User.Location do
     field :lat, :float, null: false
     field :lon, :float, null: false
     field :accuracy, :float
+    field :speed, :float
+    field :heading, :float
+    field :altitude, :float
+    field :altitude_accuracy, :float
+    field :captured_at, :utc_datetime
+    field :uuid, :string
+    field :is_moving, :boolean
+    field :odometer, :float
+    field :activity, :string
+    field :activity_confidence, :integer
+    field :battery_level, :float
+    field :battery_charging, :boolean
     field :is_fetch, :boolean, default: false
 
     timestamps()
@@ -32,11 +44,41 @@ defmodule Wocky.User.Location do
           is_fetch: boolean
         }
 
+  @insert_fields [
+    :resource,
+    :lat,
+    :lon,
+    :accuracy,
+    :speed,
+    :heading,
+    :altitude,
+    :altitude_accuracy,
+    :captured_at,
+    :uuid,
+    :is_moving,
+    :odometer,
+    :activity,
+    :activity_confidence,
+    :battery_level,
+    :battery_charging,
+    :is_fetch
+  ]
+
   @doc false
   def changeset(struct, params) do
     struct
-    |> cast(params, [:resource, :lat, :lon, :accuracy, :is_fetch])
+    |> cast(params, @insert_fields)
     |> validate_required([:resource, :lat, :lon, :accuracy])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
+    |> validate_number(
+      :lat,
+      greater_than_or_equal_to: -90,
+      less_than_or_equal_to: 90
+    )
+    |> validate_number(
+      :lon,
+      greater_than_or_equal_to: -180,
+      less_than_or_equal_to: 180
+    )
   end
 end
