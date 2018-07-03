@@ -10,5 +10,5 @@ lib/wocky/index/algolia_indexer.ex:48: Function geosearch/3 has no local return
 lib/wocky/repo/migration/utils.ex:50: The call 'Elixir.String':replace
 lib/wocky/push/push.ex:170: The pattern 'timeout' can never match
 lib/wocky/push/push.ex:176: The variable _else@1 can never match
-lib/wocky/push/push.ex:181: Function send_honeybadger/1 has no local return
+lib/wocky/push/push.ex:187: Function send_honeybadger/1 has no local return
 lib/wocky_api/schema.ex:4: The pattern [] can never match the type nonempty_maybe_improper_list()
