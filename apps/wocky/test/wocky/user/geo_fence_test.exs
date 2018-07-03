@@ -557,12 +557,13 @@ defmodule Wocky.User.GeoFenceTest do
       bot: bot
     } do
       visit_bot(bot, user)
-      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
-      :timer.sleep(1000)
+      :ok = User.set_location(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
+
+      Process.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
-      :timer.sleep(1500)
+
+      Process.sleep(1500)
       assert Bot.subscription(bot, user) == :guest
     end
 
@@ -571,38 +572,37 @@ defmodule Wocky.User.GeoFenceTest do
       bot: bot
     } do
       visit_bot(bot, user)
-      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
-      :timer.sleep(1000)
+      lat = Bot.lat(bot)
+      lon = Bot.lon(bot)
+
+      :ok = User.set_location(user, @rsrc, lat, lon, 10)
+
+      Process.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
 
-      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user, @rsrc)
+      :ok = User.set_location(user, @rsrc, lat, lon, 10)
 
-      :timer.sleep(1500)
+      Process.sleep(1500)
       assert Bot.subscription(bot, user) == :visitor
     end
 
     test "user should not be exited early", %{user: user, bot: bot} do
       outside_loc = Factory.build(:location, %{user: user})
 
-      {:ok, loc} =
-        Location.insert(user, @rsrc, outside_loc.lat, outside_loc.lon, 10)
+      :ok = User.set_location(user, @rsrc, outside_loc.lat, outside_loc.lon, 10)
 
-      GeoFence.check_for_bot_events(loc, user, @rsrc)
-
-      :timer.sleep(1500)
+      Process.sleep(1500)
       assert Bot.subscription(bot, user) == :guest
 
       visit_bot(bot, user)
-      {:ok, loc} = Location.insert(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
-      GeoFence.check_for_bot_events(loc, user, @rsrc)
 
-      :timer.sleep(1000)
+      :ok = User.set_location(user, @rsrc, Bot.lat(bot), Bot.lon(bot), 10)
+
+      Process.sleep(1000)
       assert Bot.subscription(bot, user) == :visitor
 
-      :timer.sleep(2000)
+      Process.sleep(2000)
       assert Bot.subscription(bot, user) == :guest
     end
   end

@@ -1,8 +1,6 @@
 defmodule Wocky.User.LocationTest do
   use Wocky.DataCase
-  use Wocky.JID
 
-  alias Faker.Address
   alias Wocky.Repo.Factory
   alias Wocky.User.Location
 
@@ -36,45 +34,6 @@ defmodule Wocky.User.LocationTest do
       data = %{resource: "testing", lat: 1.0, lon: 1.0, accuracy: -1}
       changeset = Location.changeset(loc, data)
       assert errors_on(changeset)[:accuracy]
-    end
-  end
-
-  describe "insert/5" do
-    setup %{user: user} do
-      result =
-        Location.insert(
-          user,
-          "testing",
-          Address.latitude(),
-          Address.longitude(),
-          10
-        )
-
-      {:ok, result: result}
-    end
-
-    test "should return a successful result", %{result: result} do
-      assert {:ok, %Location{is_fetch: false}} = result
-    end
-  end
-
-  describe "insert/6" do
-    setup %{user: user} do
-      result =
-        Location.insert(
-          user,
-          "testing",
-          Address.latitude(),
-          Address.longitude(),
-          10,
-          true
-        )
-
-      {:ok, result: result}
-    end
-
-    test "should return a successful result", %{result: result} do
-      assert {:ok, %Location{is_fetch: true}} = result
     end
   end
 end

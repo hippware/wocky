@@ -3,8 +3,6 @@ defmodule Wocky.User.Location do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.GeoUtils
-  alias Wocky.Repo
   alias Wocky.User
   alias Wocky.User.BotEvent
 
@@ -33,26 +31,6 @@ defmodule Wocky.User.Location do
           accuracy: float,
           is_fetch: boolean
         }
-
-  @doc "Store a user location datapoint"
-  @spec insert(User.t(), User.resource(), float(), float(), float(), boolean()) ::
-          {:ok, t} | {:error, any}
-  def insert(user, resource, lat, lon, accuracy, is_fetch \\ false) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
-
-    data = %{
-      resource: resource,
-      lat: nlat,
-      lon: nlon,
-      accuracy: accuracy,
-      is_fetch: is_fetch
-    }
-
-    user
-    |> Ecto.build_assoc(:locations)
-    |> changeset(data)
-    |> Repo.insert()
-  end
 
   @doc false
   def changeset(struct, params) do
