@@ -16,7 +16,7 @@ defmodule WockyAPI.LocationController do
           c["latitude"],
           c["longitude"],
           c["accuracy"],
-          c["isFetch"] || false
+          params["isFetch"] || false
         )
 
       send_resp(conn, :created, "")
