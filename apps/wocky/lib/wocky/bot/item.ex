@@ -169,16 +169,14 @@ defmodule Wocky.Bot.Item do
 
   @spec get_image(binary()) :: binary() | nil
   def get_image(stanza) do
-    try do
-      stanza
-      |> parse(quiet: true)
-      |> xpath(~x"//image/text()"s)
-      |> empty_str_to_nil()
-    catch
-      # Happens on parse failure - ie, not valid XML
-      :exit, _ ->
-        nil
-    end
+    stanza
+    |> parse(quiet: true)
+    |> xpath(~x"//image/text()"s)
+    |> empty_str_to_nil()
+  catch
+    # Happens on parse failure - ie, not valid XML
+    :exit, _ ->
+      nil
   end
 
   defp empty_str_to_nil(""), do: nil
