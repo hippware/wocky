@@ -16,4 +16,3 @@ defmodule Wocky.Repo.QueryUtils do
     |> Repo.one!()
   end
 end
-
