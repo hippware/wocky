@@ -8,8 +8,8 @@ defmodule Wocky.HomeStream.Prepop do
   alias Timex.Duration
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Item
-  alias Wocky.Roster
   alias Wocky.Repo
+  alias Wocky.Roster
   alias Wocky.User
 
   @spec handle :: User.handle() | nil

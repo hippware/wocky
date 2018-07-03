@@ -3,10 +3,10 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
   alias Faker.Lorem
   alias Wocky.Bot
+  alias Wocky.Bot.Subscription
   alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Bot.Subscription
   alias Wocky.User
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks

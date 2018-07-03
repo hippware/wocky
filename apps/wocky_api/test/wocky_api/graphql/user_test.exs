@@ -5,12 +5,12 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Faker.Name
   alias Faker.String
   alias Wocky.Block
+  alias Wocky.JID
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
-  alias Wocky.JID
   alias Wocky.User
-  alias Wocky.User.{Location, BotEvent}
+  alias Wocky.User.{BotEvent, Location}
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)

@@ -9,10 +9,10 @@ defmodule Wocky.Collections do
   alias Wocky.Collections.{Collection, Member, Subscription}
   alias Wocky.HomeStream
   alias Wocky.HomeStream.ID
+  alias Wocky.JID
   alias Wocky.Push
   alias Wocky.Push.Events.CollectionShareEvent
   alias Wocky.Repo
-  alias Wocky.JID
   alias Wocky.User
 
   @xmlns "hippware.com/hxep/collection"
