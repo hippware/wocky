@@ -19,7 +19,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  creationTimestamp: 2018-06-01T22:46:21Z
   name: prometheus-k8s
   namespace: wocky-testing
 roleRef:
