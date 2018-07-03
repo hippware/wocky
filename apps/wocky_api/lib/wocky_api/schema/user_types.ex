@@ -198,14 +198,50 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Longitude in degrees"
     field :lon, non_null(:float)
 
-    @desc "Reported accuracy in metres"
+    @desc "Reported accuracy in meters"
     field :accuracy, non_null(:float)
 
-    @desc "Time of location report"
-    field :created_at, non_null(:datetime)
+    @desc "Reported speed in meters"
+    field :speed, :float
+
+    @desc "Reported heading in degrees"
+    field :heading, :float
+
+    @desc "Reported altitude in meters"
+    field :altitude, :float
+
+    @desc "Accuracy of altitude in meters"
+    field :altitude_accuracy, :float
+
+    @desc "Timestamp when the report was captured on the device"
+    field :captured_at, :datetime
+
+    @desc "Unique ID of the location report"
+    field :uuid, :string
+
+    @desc "Whether the device is moving"
+    field :is_moving, :boolean
+
+    @desc "Reported total distance in meters"
+    field :odometer, :float
+
+    @desc "Reported activity when the report was captured"
+    field :activity, :string
+
+    @desc "Percentage confidence in the activity"
+    field :activity_confidence, :integer
+
+    @desc "Battery level 0-100%"
+    field :battery_level, :float
+
+    @desc "Is the device plugged in?"
+    field :battery_charging, :boolean
 
     @desc "True if the update is the result of a background fetch"
     field :is_fetch, non_null(:boolean)
+
+    @desc "Time of location report"
+    field :created_at, non_null(:datetime)
 
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
@@ -387,6 +423,42 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Accuracy in metres"
     field :accuracy, non_null(:float)
+
+    @desc "Reported speed in meters"
+    field :speed, :float
+
+    @desc "Reported heading in degrees"
+    field :heading, :float
+
+    @desc "Reported altitude in meters"
+    field :altitude, :float
+
+    @desc "Accuracy of altitude in meters"
+    field :altitude_accuracy, :float
+
+    @desc "Timestamp when the report was captured on the device"
+    field :captured_at, :datetime
+
+    @desc "Unique ID of the location report"
+    field :uuid, :string
+
+    @desc "Whether the device is moving"
+    field :is_moving, :boolean
+
+    @desc "Reported total distance in meters"
+    field :odometer, :float
+
+    @desc "Reported activity when the report was captured"
+    field :activity, :string
+
+    @desc "Percentage confidence in the activity"
+    field :activity_confidence, :integer
+
+    @desc "Battery level 0-100%"
+    field :battery_level, :float
+
+    @desc "Is the device plugged in?"
+    field :battery_charging, :boolean
 
     @desc "True if the update is the result of a background fetch"
     field :is_fetch, :boolean

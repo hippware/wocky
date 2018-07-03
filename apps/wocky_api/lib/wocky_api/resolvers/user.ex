@@ -123,23 +123,11 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{enabled: hidden, expires: until}}
   end
 
-  def update_location(_root, args, %{context: %{current_user: user}}) do
-    location = args[:input]
-    update_location(location, user)
-  end
+  def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do
+    params = Map.put(i, :resource, i[:device] || i[:resource])
+    location = struct(Location, params)
 
-  def update_location(location, user) do
-    device = location[:device] || location[:resource]
-
-    with :ok <-
-           User.set_location(
-             user,
-             device,
-             location[:lat],
-             location[:lon],
-             location[:accuracy],
-             location[:is_fetch] || false
-           ) do
+    with {:ok, _} <- User.set_location(user, location) do
       {:ok, true}
     end
   end
