@@ -501,7 +501,7 @@ defmodule Wocky.User do
     |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
   end
 
-  def forever_ts(), do: @forever
+  def forever_ts, do: @forever
 
   defp maybe_add_rel(list, true, rel), do: [rel | list]
   defp maybe_add_rel(list, false, _rel), do: list
