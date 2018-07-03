@@ -57,3 +57,35 @@ spec:
     app: wocky
     env: staging
   type: LoadBalancer
++---
++apiVersion: v1
++kind: Service
++metadata:
++  name: prometheus-wocky
++  namespace: wocky-testing
++  labels:
++    env: testing
++    role: metrics
++    prometheus: wocky
++spec:
++  selector:
++    app: wocky
++  ports:
++    - name: exometer-prometheus
++      port: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-wocky
+  namespace: wocky-staging
+  labels:
+    env: staging
+    role: metrics
+    prometheus: wocky
+spec:
+  selector:
+    app: wocky
+  ports:
+    - name: exometer-prometheus
+      port: 8081
