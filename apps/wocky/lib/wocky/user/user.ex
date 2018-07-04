@@ -18,6 +18,7 @@ defmodule Wocky.User do
   alias Wocky.Collections.Subscription, as: CollectionSubscription
   alias Wocky.Conversation
   alias Wocky.Email
+  alias Wocky.GeoUtils
   alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index
   alias Wocky.Push.Token, as: PushToken
@@ -369,17 +370,54 @@ defmodule Wocky.User do
 
   @spec set_location(t, resource, float, float, float, boolean) ::
           :ok | {:error, any}
-  def set_location(user, resource, lat, lon, accuracy, is_fetch) do
-    case Location.insert(user, resource, lat, lon, accuracy, is_fetch) do
-      {:ok, loc} ->
-        if !hidden?(user),
-          do: GeoFence.check_for_bot_events(loc, user, resource)
+  def set_location(user, resource, lat, lon, accuracy, is_fetch \\ false) do
+    location = %Location{
+      lat: lat,
+      lon: lon,
+      accuracy: accuracy,
+      is_fetch: is_fetch,
+      resource: resource
+    }
 
-        :ok
+    with {:ok, _} <- set_location(user, location) do
+      :ok
+    end
+  end
+
+  @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
+  def set_location(user, location) do
+    {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
+    nloc = %Location{location | lat: nlat, lon: nlon}
+
+    case insert_location(user, nloc) do
+      {:ok, loc} = result ->
+        if !hidden?(user),
+          do: GeoFence.check_for_bot_events(loc, user)
+
+        result
 
       {:error, _} = error ->
         error
     end
+  end
+
+  def insert_location(user, location) do
+    user
+    |> Ecto.build_assoc(:locations)
+    |> Location.changeset(Map.from_struct(location))
+    |> Repo.insert()
+  end
+
+  @doc """
+  Runs the geofence calculation, but for only one bot and without
+  debouncing enabled.
+  """
+  @spec check_location_for_bot(t, Location.t(), Bot.t()) :: :ok
+  def check_location_for_bot(user, loc, bot) do
+    if !hidden?(user),
+      do: GeoFence.check_for_bot_event(bot, loc, user)
+
+    :ok
   end
 
   @doc "Removes the user from the database"

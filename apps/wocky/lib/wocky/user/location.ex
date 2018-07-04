@@ -3,8 +3,6 @@ defmodule Wocky.User.Location do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.GeoUtils
-  alias Wocky.Repo
   alias Wocky.User
   alias Wocky.User.BotEvent
 
@@ -16,6 +14,18 @@ defmodule Wocky.User.Location do
     field :lat, :float, null: false
     field :lon, :float, null: false
     field :accuracy, :float
+    field :speed, :float
+    field :heading, :float
+    field :altitude, :float
+    field :altitude_accuracy, :float
+    field :captured_at, :utc_datetime
+    field :uuid, :string
+    field :is_moving, :boolean
+    field :odometer, :float
+    field :activity, :string
+    field :activity_confidence, :integer
+    field :battery_level, :float
+    field :battery_charging, :boolean
     field :is_fetch, :boolean, default: false
 
     timestamps()
@@ -26,54 +36,63 @@ defmodule Wocky.User.Location do
 
   @type location_tuple :: {float, float, float}
   @type t :: %Location{
-          user_id: User.id(),
+          user_id: User.id() | nil,
           resource: User.resource(),
           lat: float,
           lon: float,
           accuracy: float,
-          is_fetch: boolean
+          speed: float | nil,
+          heading: float | nil,
+          altitude: float | nil,
+          altitude_accuracy: float | nil,
+          captured_at: DateTime.t() | nil,
+          uuid: String.t() | nil,
+          is_moving: boolean | nil,
+          odometer: float | nil,
+          activity: String.t() | nil,
+          activity_confidence: integer | nil,
+          battery_level: float | nil,
+          battery_charging: boolean | nil,
+          is_fetch: boolean | nil,
+          created_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
         }
 
-  @doc "Store a user location datapoint"
-  @spec insert(User.t(), User.resource(), float(), float(), float(), boolean()) ::
-          {:ok, t} | {:error, any}
-  def insert(user, resource, lat, lon, accuracy, is_fetch \\ false) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
-
-    data = %{
-      resource: resource,
-      lat: nlat,
-      lon: nlon,
-      accuracy: accuracy,
-      is_fetch: is_fetch
-    }
-
-    user
-    |> Ecto.build_assoc(:locations)
-    |> changeset(data)
-    |> Repo.insert()
-  end
-
-  @spec new(User.t(), User.resource(), float(), float(), float(), boolean()) ::
-          t()
-  def new(user, resource, lat, lon, accuracy, is_fetch \\ false) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(lat, lon)
-
-    %Location{
-      user_id: user.id,
-      resource: resource,
-      lat: nlat,
-      lon: nlon,
-      accuracy: accuracy,
-      is_fetch: is_fetch
-    }
-  end
+  @insert_fields [
+    :resource,
+    :lat,
+    :lon,
+    :accuracy,
+    :speed,
+    :heading,
+    :altitude,
+    :altitude_accuracy,
+    :captured_at,
+    :uuid,
+    :is_moving,
+    :odometer,
+    :activity,
+    :activity_confidence,
+    :battery_level,
+    :battery_charging,
+    :is_fetch
+  ]
 
   @doc false
   def changeset(struct, params) do
     struct
-    |> cast(params, [:resource, :lat, :lon, :accuracy, :is_fetch])
+    |> cast(params, @insert_fields)
     |> validate_required([:resource, :lat, :lon, :accuracy])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
+    |> validate_number(
+      :lat,
+      greater_than_or_equal_to: -90,
+      less_than_or_equal_to: 90
+    )
+    |> validate_number(
+      :lon,
+      greater_than_or_equal_to: -180,
+      less_than_or_equal_to: 180
+    )
   end
 end

@@ -14,9 +14,8 @@ defmodule WockyAPI.LocationControllerTest do
           accuracy: 3000,
           heading: -1,
           altitude: 271.4361267089844,
-          altitudeAccuracy: 10
+          altitude_accuracy: 10
         },
-        is_heartbeat: false,
         is_moving: true,
         odometer: 38_876_926.28380141,
         uuid: "3B30B2EA-4EF7-4B0F-927A-089921DA86FC",

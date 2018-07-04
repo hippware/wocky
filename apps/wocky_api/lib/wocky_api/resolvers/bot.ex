@@ -8,11 +8,9 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
-  alias Wocky.User.GeoFence
   alias Wocky.User.Location
   alias Wocky.Waiter
   alias WockyAPI.Endpoint
-  alias WockyAPI.Resolvers.User, as: UserResolver
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
@@ -117,31 +115,19 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  defp maybe_update_location(
-         %{user_location: location},
-         user,
-         %{geofence: true} = bot
-       )
-       when not is_nil(location) do
+  defp maybe_update_location(%{user_location: l}, user, %{geofence: true} = bot)
+       when not is_nil(l) do
     bot
     |> Bot.sub_setup_event()
     |> Waiter.wait(2000, fn ->
       Enum.member?(User.get_bot_relationships(user, bot), :guest)
     end)
 
-    with {:ok, true} <- UserResolver.update_location(location, user) do
-      device = location[:device] || location[:resource]
+    params = Map.put(l, :resource, l[:device] || l[:resource])
+    location = struct(Location, params)
 
-      loc =
-        Location.new(
-          user,
-          device,
-          location[:lat],
-          location[:lon],
-          location[:accuracy]
-        )
-
-      GeoFence.check_for_bot_event(bot, loc, user, device)
+    with {:ok, loc} <- User.set_location(user, location) do
+      User.check_location_for_bot(user, loc, bot)
       :ok
     end
   end
