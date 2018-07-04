@@ -5,7 +5,7 @@ defmodule Wocky.Account.RegisterTest do
   alias Wocky.Account.Register
   alias Wocky.HomeStream
   alias Wocky.Repo
-  alias Wocky.Repo.{ID, Factory}
+  alias Wocky.Repo.{Factory, ID}
   alias Wocky.Roster
   alias Wocky.Roster.Item
   alias Wocky.User

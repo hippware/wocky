@@ -5,8 +5,8 @@ defmodule WockyAPI.Types.UUID do
 
   use Absinthe.Schema.Notation
 
-  alias Absinthe.Blueprint.Input.String
   alias Absinthe.Blueprint.Input.Null
+  alias Absinthe.Blueprint.Input.String
   alias Wocky.Repo.ID
 
   scalar :uuid, name: "UUID" do

@@ -2,8 +2,8 @@ defmodule Wocky.Roster.InitialContactSpec do
   use ESpec, async: true
   use ModelHelpers
 
-  alias Wocky.Roster.InitialContact
   alias Wocky.Repo
+  alias Wocky.Roster.InitialContact
 
   before do
     init_contacts =

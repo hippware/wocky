@@ -7,10 +7,10 @@ defmodule Wocky.BotSpec do
 
   alias Faker.Lorem
   alias Wocky.Bot
+  alias Wocky.GeoUtils
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index.TestIndexer
-  alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID

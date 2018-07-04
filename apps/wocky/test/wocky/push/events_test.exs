@@ -2,13 +2,13 @@ defmodule Wocky.Push.EventsTest do
   use ExUnit.Case, async: true
   use Wocky.DataCase
 
-  alias Wocky.Repo.Factory
   alias Wocky.Push.Event
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Push.Events.BotShareEvent
   alias Wocky.Push.Events.CollectionShareEvent
-  alias Wocky.Push.Events.NewMessageEvent
   alias Wocky.Push.Events.NewFollowerEvent
+  alias Wocky.Push.Events.NewMessageEvent
+  alias Wocky.Repo.Factory
 
   @test_handle "test_handle"
   @test_title "test_title"

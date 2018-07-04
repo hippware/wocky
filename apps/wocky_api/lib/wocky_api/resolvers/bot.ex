@@ -269,5 +269,5 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
-  defp not_owned_error(), do: {:error, "Operation only permitted on owned bots"}
+  defp not_owned_error, do: {:error, "Operation only permitted on owned bots"}
 end

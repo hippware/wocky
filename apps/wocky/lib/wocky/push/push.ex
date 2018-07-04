@@ -8,11 +8,11 @@ defmodule Wocky.Push do
   alias Pigeon.APNS
   alias Pigeon.APNS.Error
   alias Pigeon.APNS.Notification
-  alias Wocky.Repo
   alias Wocky.Push.Event
   alias Wocky.Push.Log
   alias Wocky.Push.Sandbox
   alias Wocky.Push.Token
+  alias Wocky.Repo
 
   require Logger
 

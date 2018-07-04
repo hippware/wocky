@@ -10,7 +10,7 @@ defmodule Wocky.User.GeoFenceTest do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.User
-  alias Wocky.User.{BotEvent, Location, GeoFence}
+  alias Wocky.User.{BotEvent, GeoFence, Location}
 
   @rsrc "testing"
 
