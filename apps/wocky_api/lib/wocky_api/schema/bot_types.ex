@@ -122,6 +122,15 @@ defmodule WockyAPI.Schema.BotTypes do
     end
   end
 
+  @desc "A newly created or deleted bot"
+  object :discover_bot do
+    @desc "The bot itself"
+    field :bot, non_null(:bot)
+
+    @desc "The action that caused the bot to be reported in the discover list"
+    field :action, non_null(:discover_bot_action)
+  end
+
   @desc "A post (comment, etc) to a bot"
   object :bot_item do
     scope :public
@@ -270,6 +279,14 @@ defmodule WockyAPI.Schema.BotTypes do
 
       resolve &Bot.get_local_bots/3
     end
+
+    @desc "Retrieve a list of discoverable bots created after a given time"
+    field :discover_bots, list_of(:discover_bot) do
+      @desc "Optional time after which bots must have been created"
+      arg :since, :datetime
+
+      resolve &Bot.get_discover_bots/3
+    end
   end
 
   object :bot_mutations do
@@ -331,6 +348,20 @@ defmodule WockyAPI.Schema.BotTypes do
     value :depart
   end
 
+  enum :discover_bot_action do
+    @desc "The bot was newly created"
+    value :created
+
+    @desc "The bot was deleted"
+    value :deleted
+
+    @desc "The bot was made newly public"
+    value :publicized
+
+    @desc "The bot was made newly private"
+    value :privatized
+  end
+
   @desc "An update on the state of a visitor to a bot"
   object :visitor_update do
     @desc "The bot with the visitor"
@@ -357,5 +388,17 @@ defmodule WockyAPI.Schema.BotTypes do
           {:error, "This operation requires an authenticated user"}
       end
     end
+
+    @desc "Subscribe to a live stream of created, discoverable bots"
+    field :discover_bots, non_null(:discover_bot) do
+      config fn
+        _, %{context: %{current_user: user}} ->
+          {:ok, topic: Bot.discover_bots_topic(user.id)}
+
+        _, _ ->
+          {:error, "This operation requires an authenticated user"}
+      end
+    end
+
   end
 end

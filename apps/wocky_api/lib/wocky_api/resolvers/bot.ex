@@ -38,6 +38,16 @@ defmodule WockyAPI.Resolvers.Bot do
     {:ok, bots}
   end
 
+  def get_discover_bots(_root, args, %{context: %{current_user: requestor}}) do
+    bots =
+      requestor
+      |> Bot.discover_query(args[:since])
+      |> Repo.all()
+      |> Enum.map(fn b -> %{bot: b, action: :created} end)
+
+    {:ok, bots}
+  end
+
   defp do_get_bots(_user, _requestor, %{id: _, relationship: _}) do
     {:error, "Only one of 'id' or 'relationship' may be specified"}
   end
@@ -224,6 +234,10 @@ defmodule WockyAPI.Resolvers.Bot do
     "visitor_subscription_" <> user_id
   end
 
+  def discover_bots_topic(user_id) do
+    "visitor_subscription_" <> user_id
+  end
+
   def notify_visitor_subscription(bot, subscriber, entered) do
     to_notify = bot |> Bot.guests_query() |> Repo.all()
 
@@ -235,10 +249,15 @@ defmodule WockyAPI.Resolvers.Bot do
 
     notification = %{bot: bot, visitor: subscriber, action: action}
 
-    targets =
-      for n <- to_notify do
-        {:bot_guest_visitors, visitor_subscription_topic(n.id)}
-      end
+    targets = Enum.map(
+      to_notify, &({:bot_guest_visitors, visitor_subscription_topic(&1.id)}))
+
+    Subscription.publish(Endpoint, notification, targets)
+  end
+
+  def notify_discover_subscriptions(user_ids, bot, action) do
+    notification = %{bot: bot, action: action}
+    targets = Enum.map(user_ids, &({:discover_bots, discover_bots_topic(&1)}))
 
     Subscription.publish(Endpoint, notification, targets)
   end

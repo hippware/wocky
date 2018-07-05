@@ -2,10 +2,8 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.Bot
+  alias Wocky.{Bot, GeoUtils, Repo, Roster}
   alias Wocky.Bot.Item
-  alias Wocky.GeoUtils
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
@@ -493,6 +491,42 @@ defmodule WockyAPI.GraphQL.BotTest do
       ids = Enum.map(local_bots, &Map.get(&1, "id"))
 
       assert Enum.all?(ids, &Enum.member?([o, s], &1))
+    end
+  end
+
+  describe "bot discovery" do
+    setup %{user: user, user2: user2} do
+      Roster.befriend(user.id, user2.id)
+      :ok
+    end
+
+    @query """
+    query ($since: DateTime) {
+      discoverBots (since: $since) {
+        bot {id}
+        action
+      }
+    }
+    """
+    test "gets created bots", %{user: user, bot2: bot2} do
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+        "discoverBots" => [%{
+          "bot" => %{"id" => bot2.id},
+          "action" => "CREATED"
+        }]
+      } == result.data
+    end
+
+    test "returns empty list where no discover bots exist", %{user2: user2} do
+      result = run_query(@query, user2)
+
+      refute has_errors(result)
+
+      assert %{"discoverBots" => []} == result.data
     end
   end
 
