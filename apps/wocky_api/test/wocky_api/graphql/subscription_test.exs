@@ -2,12 +2,10 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.Bot
+  alias Wocky.{Bot, HomeStream, Repo, Roster, User}
   alias Wocky.Bot.Subscription
   alias Wocky.HomeStream
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.User
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
 
@@ -217,6 +215,69 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       socket
       |> push_doc(@subscription)
       |> assert_unauthenticated_reply()
+    end
+  end
+
+  @subscription """
+  subscription {
+    discoverBots {
+      bot {
+        id
+      }
+      action
+    }
+  }
+  """
+  describe "discovered bots list" do
+    setup %{user: user} do
+      friend = Factory.insert(:user)
+      Roster.befriend(friend.id, user.id)
+      {:ok, friend: friend}
+    end
+
+    test "get updates", %{
+      socket: socket,
+      friend: friend,
+      token: token,
+      user: %{id: user_id}
+    } do
+      authenticate(user_id, token, socket)
+
+      ref = push_doc(socket, @subscription)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+      expected = fn id, action ->
+        %{
+          result: %{
+            data: %{
+              "discoverBots" => %{
+                "action" => action,
+                "bot" => %{"id" => id}
+              }
+            }
+          },
+          subscriptionId: subscription_id
+        }
+      end
+
+      bot = Factory.insert(:bot, user: friend, public: true)
+      assert_push "subscription:data", push, 2000
+      assert push == expected.(bot.id, "CREATED")
+
+      private_bot = Factory.insert(:bot, user: friend)
+      refute_push "subscription:data", _push
+
+      Bot.update(bot, %{public: false})
+      assert_push "subscription:data", push, 2000
+      assert push == expected.(bot.id, "PRIVATIZED")
+
+      Bot.update(private_bot, %{public: true})
+      assert_push "subscription:data", push, 2000
+      assert push == expected.(private_bot.id, "PUBLICIZED")
+
+      Bot.delete(private_bot)
+      assert_push "subscription:data", push, 2000
+      assert push == expected.(private_bot.id, "DELETED")
     end
   end
 

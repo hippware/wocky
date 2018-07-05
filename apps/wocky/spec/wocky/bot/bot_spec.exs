@@ -12,8 +12,8 @@ defmodule Wocky.BotSpec do
   alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
+  alias Wocky.Repo.{Factory, ID, Timestamp}
+  alias Wocky.Roster
   alias Wocky.User
 
   describe "helper functions" do
@@ -385,33 +385,104 @@ defmodule Wocky.BotSpec do
       end
 
       it "should allow owned bots" do
-        run_query(shared.owned_bot, shared.user)
+        run_is_visible_query(shared.owned_bot, shared.user)
         |> should(eq shared.owned_bot)
       end
 
       it "should allow public bots" do
-        run_query(shared.public_bot, shared.user)
+        run_is_visible_query(shared.public_bot, shared.user)
         |> should(eq shared.public_bot)
       end
 
       it "should allow shared bots" do
-        run_query(shared.shared_bot, shared.user)
+        run_is_visible_query(shared.shared_bot, shared.user)
         |> should(eq shared.shared_bot)
       end
 
       it "should refuse private bots" do
-        run_query(shared.private_bot, shared.user)
+        run_is_visible_query(shared.private_bot, shared.user)
         |> should(be_nil())
+      end
+    end
+
+    describe "discover_bots_query/2" do
+      before do
+        [owner, friend, follower, followee, stranger] =
+          Factory.insert_list(5, :user)
+
+        Roster.befriend(owner.id, friend.id)
+        Roster.follow(follower.id, owner.id)
+        Roster.follow(owner.id, followee.id)
+
+        private_bot = Factory.insert(:bot, user: owner)
+        public_bot = Factory.insert(:bot, user: owner, public: true)
+
+        old_public_bot =
+          Factory.insert(
+            :bot,
+            user: owner,
+            public: true,
+            created_at: Timestamp.from_string!("1980-01-01T00:00:00.000000")
+          )
+
+        {:ok,
+         owner: owner,
+         friend: friend,
+         follower: follower,
+         followee: followee,
+         stranger: stranger,
+         public_bot: public_bot,
+         old_public_bot: old_public_bot}
+      end
+
+      it "should return public bots for friends" do
+        run_discover_query(shared.friend)
+        |> should(eq [shared.old_public_bot.id, shared.public_bot.id])
+      end
+
+      it "should return public bots for followers" do
+        run_discover_query(shared.follower)
+        |> should(eq [shared.old_public_bot.id, shared.public_bot.id])
+      end
+
+      it "should return nothing for followees" do
+        run_discover_query(shared.followee)
+        |> should(eq [])
+      end
+
+      it "should return nothing for strangers" do
+        run_discover_query(shared.stranger)
+        |> should(eq [])
+      end
+
+      it "should return nothing for the owner" do
+        run_discover_query(shared.owner)
+        |> should(eq [])
+      end
+
+      it "should limit bots to after the supplied timestamp" do
+        run_discover_query(
+          shared.friend,
+          Timestamp.from_string!("2010-01-01T00:00:00")
+        )
+        |> should(eq [shared.public_bot.id])
       end
     end
   end
 
-  defp run_query(bot, user) do
+  defp run_is_visible_query(bot, user) do
     Bot
     |> where(id: ^bot.id)
     |> Bot.is_visible_query(user)
     |> preload(:user)
     |> Repo.one()
+  end
+
+  defp run_discover_query(user, since \\ nil) do
+    user
+    |> Bot.discover_query(since)
+    |> Repo.all()
+    |> Enum.map(& &1.id)
   end
 
   defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted

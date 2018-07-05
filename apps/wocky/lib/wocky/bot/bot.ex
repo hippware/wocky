@@ -8,8 +8,7 @@ defmodule Wocky.Bot do
   import Ecto.Query
 
   alias Ecto.Association.NotLoaded
-  alias Ecto.Changeset
-  alias Ecto.Queryable
+  alias Ecto.{Changeset, Queryable, UUID}
   alias Geocalc.Point
   alias Wocky.Block
   alias Wocky.Bot.Item
@@ -181,7 +180,7 @@ defmodule Wocky.Bot do
     |> Repo.one()
   end
 
-  @spec get_bot_query(id, User.t() | nil, boolean) :: Ecto.Queryable.t()
+  @spec get_bot_query(id, User.t() | nil, boolean) :: Queryable.t()
   def get_bot_query(id, requestor \\ nil, include_pending \\ false) do
     id
     |> get_query(include_pending)
@@ -388,6 +387,18 @@ defmodule Wocky.Bot do
     |> order_by([..., a], desc: a.visited_at)
   end
 
+  @spec discover_query(User.t(), DateTime.t() | nil) :: Queryable.t()
+  def discover_query(user, since) do
+    {:ok, user_id_bin} = UUID.dump(user.id)
+
+    Bot
+    |> join(:left, [b], u in User, b.user_id == u.id)
+    |> where([b, u], b.public)
+    |> where([b, u], fragment("is_follower(?, ?)", ^user_id_bin, u.id))
+    |> maybe_add_since(since)
+    |> order_by([b], asc: b.created_at)
+  end
+
   def related_geofence_bots_query(user) do
     Bot
     |> join(
@@ -565,4 +576,10 @@ defmodule Wocky.Bot do
 
   @spec sub_setup_event(Bot.t()) :: Waiter.event()
   def sub_setup_event(bot), do: "bot_sub_setup-" <> bot.id
+
+  defp maybe_add_since(queryable, nil), do: queryable
+
+  defp maybe_add_since(queryable, since) do
+    queryable |> where([b, ...], b.created_at > ^since)
+  end
 end

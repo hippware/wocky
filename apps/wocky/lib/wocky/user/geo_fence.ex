@@ -176,6 +176,7 @@ defmodule Wocky.User.GeoFence do
   defp maybe_exit(false), do: :exit
 
   defp debounce_expired?(false, _), do: true
+
   defp debounce_expired?(true, ts) do
     Timex.diff(Timex.now(), ts, :seconds) >= @debounce_secs
   end
