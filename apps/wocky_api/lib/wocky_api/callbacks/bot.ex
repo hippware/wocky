@@ -1,4 +1,7 @@
 defmodule WockyAPI.Callbacks.Bot do
+  @moduledoc """
+  Callbacks for DB bot changes
+  """
 
   import Ecto.Query
 

@@ -249,15 +249,18 @@ defmodule WockyAPI.Resolvers.Bot do
 
     notification = %{bot: bot, visitor: subscriber, action: action}
 
-    targets = Enum.map(
-      to_notify, &({:bot_guest_visitors, visitor_subscription_topic(&1.id)}))
+    targets =
+      Enum.map(
+        to_notify,
+        &{:bot_guest_visitors, visitor_subscription_topic(&1.id)}
+      )
 
     Subscription.publish(Endpoint, notification, targets)
   end
 
   def notify_discover_subscriptions(user_ids, bot, action) do
     notification = %{bot: bot, action: action}
-    targets = Enum.map(user_ids, &({:discover_bots, discover_bots_topic(&1)}))
+    targets = Enum.map(user_ids, &{:discover_bots, discover_bots_topic(&1)})
 
     Subscription.publish(Endpoint, notification, targets)
   end

@@ -24,6 +24,7 @@ defmodule Wocky.Repo.QueryUtils do
   # Helper function for sticking inline in query pipe chains to show raw SQL
   @spec dump_sql(Queryable.t()) :: Queryable.t()
   def dump_sql(query) do
+    # credo:disable-for-next-line Credo.Check.Warning.IoInspect
     IO.inspect(get_sql(query))
     query
   end

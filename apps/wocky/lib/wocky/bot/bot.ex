@@ -578,6 +578,7 @@ defmodule Wocky.Bot do
   def sub_setup_event(bot), do: "bot_sub_setup-" <> bot.id
 
   defp maybe_add_since(queryable, nil), do: queryable
+
   defp maybe_add_since(queryable, since) do
     queryable |> where([b, ...], b.created_at > ^since)
   end

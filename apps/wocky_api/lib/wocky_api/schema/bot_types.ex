@@ -399,6 +399,5 @@ defmodule WockyAPI.Schema.BotTypes do
           {:error, "This operation requires an authenticated user"}
       end
     end
-
   end
 end

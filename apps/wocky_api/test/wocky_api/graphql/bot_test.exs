@@ -514,11 +514,13 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %{
-        "discoverBots" => [%{
-          "bot" => %{"id" => bot2.id},
-          "action" => "CREATED"
-        }]
-      } == result.data
+               "discoverBots" => [
+                 %{
+                   "bot" => %{"id" => bot2.id},
+                   "action" => "CREATED"
+                 }
+               ]
+             } == result.data
     end
 
     test "returns empty list where no discover bots exist", %{user2: user2} do

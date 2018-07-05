@@ -407,8 +407,8 @@ defmodule Wocky.BotSpec do
 
     describe "discover_bots_query/2" do
       before do
-        [owner, friend, follower, followee, stranger]
-        = Factory.insert_list(5, :user)
+        [owner, friend, follower, followee, stranger] =
+          Factory.insert_list(5, :user)
 
         Roster.befriend(owner.id, friend.id)
         Roster.follow(follower.id, owner.id)
@@ -416,14 +416,23 @@ defmodule Wocky.BotSpec do
 
         private_bot = Factory.insert(:bot, user: owner)
         public_bot = Factory.insert(:bot, user: owner, public: true)
-        old_public_bot = Factory.insert(
-          :bot, user: owner, public: true,
-          created_at: Timestamp.from_string!("1980-01-01T00:00:00.000000"))
+
+        old_public_bot =
+          Factory.insert(
+            :bot,
+            user: owner,
+            public: true,
+            created_at: Timestamp.from_string!("1980-01-01T00:00:00.000000")
+          )
 
         {:ok,
-          owner: owner, friend: friend, follower: follower, followee: followee,
-          stranger: stranger, public_bot: public_bot,
-          old_public_bot: old_public_bot}
+         owner: owner,
+         friend: friend,
+         follower: follower,
+         followee: followee,
+         stranger: stranger,
+         public_bot: public_bot,
+         old_public_bot: old_public_bot}
       end
 
       it "should return public bots for friends" do
@@ -452,8 +461,10 @@ defmodule Wocky.BotSpec do
       end
 
       it "should limit bots to after the supplied timestamp" do
-        run_discover_query(shared.friend,
-                           Timestamp.from_string!("2010-01-01T00:00:00"))
+        run_discover_query(
+          shared.friend,
+          Timestamp.from_string!("2010-01-01T00:00:00")
+        )
         |> should(eq [shared.public_bot.id])
       end
     end
@@ -471,7 +482,7 @@ defmodule Wocky.BotSpec do
     user
     |> Bot.discover_query(since)
     |> Repo.all()
-    |> Enum.map(&(&1.id))
+    |> Enum.map(& &1.id)
   end
 
   defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted
