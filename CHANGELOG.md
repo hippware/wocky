@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.7.5+rfff6dfc
+
 Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 
 * Add createdAt to Bot fields returned via GraphQL (#1617)
