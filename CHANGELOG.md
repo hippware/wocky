@@ -11,7 +11,7 @@ Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 * Speculative attempt to fix bot/sub locking (PR #1622)
 * Update (via Dependabot): 
   * ex_aws_s3 (PR #1621), wocky_db_watcher (PR #1633, PR #1638), 
-  * honeybadger (PR #1635, PR #1648), recon (PR #1644)
+  * honeybadger (PR #1635, PR #1648), recon (PR #1644), peerage (PR #1653)
 * Update the ECR credentials used by Codeship (PR #1624)
 * Config cleanup (PR #1625)
 * Various tweaks to improve test stability and error output (PR #1626)
@@ -24,6 +24,7 @@ Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 * Capture all fields from location updates (#1634)
   * ... and some refactoring and fixes (PR #1649)
 * Code cleanup (PR #1650)
+* Implement 'discover mode' list of bots (#1651)
 
 
 # 2018.6.19+r7c97339
