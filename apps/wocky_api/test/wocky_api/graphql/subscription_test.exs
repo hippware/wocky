@@ -1,6 +1,8 @@
 defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
+  import WockyAPI.ChannelHelper
+
   alias Faker.Lorem
   alias Wocky.{Bot, HomeStream, Repo, Roster, User}
   alias Wocky.Bot.Subscription
@@ -279,33 +281,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 2000
       assert push == expected.(private_bot.id, "DELETED")
     end
-  end
-
-  @authenticate """
-  mutation ($input: AuthenticateInput) {
-    authenticate(input: $input) {
-      user {
-        id
-      }
-    }
-  }
-  """
-  defp authenticate(user_id, token, socket) do
-    ref =
-      push_doc(
-        socket,
-        @authenticate,
-        variables: %{input: %{user: user_id, token: token}}
-      )
-
-    assert_reply ref,
-                 :ok,
-                 %{
-                   data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
-                 },
-                 1000
-
-    ref
   end
 
   defp assert_unauthenticated_reply(ref) do
