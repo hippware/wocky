@@ -41,6 +41,8 @@ services:
             KUBE_POD_IP: "wocky-private.local-dev.svc.cluster.local"
             WOCKY_START_WATCHER: "true"
             WOCKY_TROS_STORE: "Wocky.TROS.SimpleStore"
+            WOCKY_ENTER_DEBOUNCE_SECONDS: "0"
+            WOCKY_EXIT_DEBOUNCE_SECONDS: "0"
         command: ["dev_startup"]
         hostname: "wocky-private"
         domainname: "local-dev.svc.cluster.local"
