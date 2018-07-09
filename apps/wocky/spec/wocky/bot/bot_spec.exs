@@ -414,7 +414,7 @@ defmodule Wocky.BotSpec do
         Roster.follow(follower.id, owner.id)
         Roster.follow(owner.id, followee.id)
 
-        private_bot = Factory.insert(:bot, user: owner)
+        _private_bot = Factory.insert(:bot, user: owner)
         public_bot = Factory.insert(:bot, user: owner, public: true)
 
         old_public_bot =
