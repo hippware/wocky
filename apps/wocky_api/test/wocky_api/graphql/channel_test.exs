@@ -3,8 +3,11 @@ defmodule WockyAPI.GraphQL.ChannelTest do
 
   import WockyAPI.ChannelHelper
 
+  alias Ecto.Adapters.SQL.Sandbox
+
   setup_all do
-    Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
+    :ok = Sandbox.checkout(Wocky.Repo)
+    Sandbox.mode(Wocky.Repo, {:shared, self()})
   end
 
   describe "hide and check user" do
