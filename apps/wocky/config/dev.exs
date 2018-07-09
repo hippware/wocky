@@ -1,5 +1,9 @@
 use Mix.Config
 
+config :wocky,
+  enter_debounce_seconds: 0,
+  exit_debounce_seconds: 0
+
 config :wocky, Wocky.Repo,
   database: "wocky_dev",
   pool_size: 10
