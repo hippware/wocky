@@ -6,17 +6,25 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
 
   @behaviour Absinthe.Middleware
 
+  alias Wocky.User
+
+  # If the mutation provided a new user object, just drop that in
   def call(
         %{
-          context: %{current_user: %Wocky.User{id: id} = _} = context,
-          value: %Wocky.User{id: id} = user
+          context: %{current_user: %User{id: id}} = context,
+          value: %User{id: id} = user
         } = resolution,
         _
       ) do
     %{resolution | context: %{context | current_user: user}}
   end
 
-  def call(resolution, _) do
-    resolution
+  # For all other user mutation types, reload the user from the DB
+  def call(
+    %{
+      context: %{current_user: %User{id: id} = user} = context
+    } = resolution,
+    _) do
+    %{resolution | context: %{context | current_user: User.get_user(id, user)}}
   end
 end
