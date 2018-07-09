@@ -1,4 +1,8 @@
 defmodule WockyAPI.ChannelHelper do
+  @moduledoc """
+  Helper functions for graphql channel tests
+  """
+
   use Phoenix.ChannelTest
 
   import Absinthe.Phoenix.SubscriptionTest

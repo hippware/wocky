@@ -21,10 +21,11 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
 
   # For all other user mutation types, reload the user from the DB
   def call(
-    %{
-      context: %{current_user: %User{id: id} = user} = context
-    } = resolution,
-    _) do
+        %{
+          context: %{current_user: %User{id: id} = user} = context
+        } = resolution,
+        _
+      ) do
     %{resolution | context: %{context | current_user: User.get_user(id, user)}}
   end
 end

@@ -9,8 +9,10 @@ defmodule WockyAPI.GraphQL.ChannelTest do
 
   describe "hide and check user" do
     test "set user as permanently hidden", %{
-      socket: socket, token: token, user: %{id: user_id}} do
-
+      socket: socket,
+      token: token,
+      user: %{id: user_id}
+    } do
       authenticate(user_id, token, socket)
 
       query = """
@@ -20,6 +22,7 @@ defmodule WockyAPI.GraphQL.ChannelTest do
         }
       }
       """
+
       ref = push_doc(socket, query, variables: %{enable: true})
       assert_reply ref, :ok, %{data: %{"userHide" => %{"result" => true}}}, 1000
 
@@ -29,12 +32,12 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       assert_reply ref, :ok, result, 1000
 
       assert result.data == %{
-        "currentUser" => %{
-          "hidden" => %{
-            "enabled" => true
-          }
-        }
-      }
+               "currentUser" => %{
+                 "hidden" => %{
+                   "enabled" => true
+                 }
+               }
+             }
     end
   end
 end
