@@ -205,5 +205,11 @@ defmodule Wocky.Repo.Factory do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end
 
+  def make_login do
+    user = insert(:user)
+    {:ok, {token, _}} = Wocky.Account.assign_token(user.id, "testing")
+    {:ok, user.id, token}
+  end
+
   def image_url(image), do: TROS.make_url(image.id)
 end
