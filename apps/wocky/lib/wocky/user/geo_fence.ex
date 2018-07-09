@@ -10,8 +10,6 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
-  @debounce_secs Confex.get_env(:wocky, :exit_debounce_seconds)
-
   @doc false
   @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
   def check_for_bot_events(%Location{} = loc, user) do
@@ -130,7 +128,9 @@ defmodule Wocky.User.GeoFence do
         :roll_back
 
       :transition_in ->
-        if debounce_expired?(debounce?, be.created_at) do
+        debounce_secs = Confex.get_env(:wocky, :enter_debounce_seconds)
+
+        if debounce_expired?(debounce?, be.created_at, debounce_secs) do
           :enter
         else
           :no_change
@@ -161,7 +161,9 @@ defmodule Wocky.User.GeoFence do
         :roll_back
 
       :transition_out ->
-        if debounce_expired?(debounce?, be.created_at) do
+        debounce_secs = Confex.get_env(:wocky, :exit_debounce_seconds)
+
+        if debounce_expired?(debounce?, be.created_at, debounce_secs) do
           :exit
         else
           :no_change
@@ -175,10 +177,10 @@ defmodule Wocky.User.GeoFence do
   defp maybe_exit(true), do: :transition_out
   defp maybe_exit(false), do: :exit
 
-  defp debounce_expired?(false, _), do: true
+  defp debounce_expired?(false, _, _), do: true
 
-  defp debounce_expired?(true, ts) do
-    Timex.diff(Timex.now(), ts, :seconds) >= @debounce_secs
+  defp debounce_expired?(true, ts, debounce_secs) do
+    Timex.diff(Timex.now(), ts, :seconds) >= debounce_secs
   end
 
   defp process_bot_event({user, bot, be}, notify) do
