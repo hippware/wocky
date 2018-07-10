@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add test for botGuestVisitors (PR #1658)
+
+
 # 2018.7.9+r7386f6f
 
 * Update (via Dependabot): pigeon (PR #1656)
