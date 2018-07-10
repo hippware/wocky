@@ -10,6 +10,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   alias Wocky.Repo.Factory
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
+  alias Wocky.GeoUtils
 
   setup_all do
     Client.clear_all_subscriptions()
@@ -280,6 +281,64 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       Bot.delete(private_bot)
       assert_push "subscription:data", push, 2000
       assert push == expected.(private_bot.id, "DELETED")
+    end
+  end
+
+  describe "client test analogs" do
+    test "botGuestVisitors subscription", %{
+      socket: socket,
+      token: token,
+      user: %{id: user_id} = user
+    } do
+      :os.putenv('WOCKY_ENTER_DEBOUNCE_SECONDS', '0')
+      bot = Factory.insert(:bot, user: user, geofence: true, public: true)
+      Bot.subscribe(bot, user, true)
+
+      authenticate(user_id, token, socket)
+
+      sub = """
+      subscription {
+        botGuestVisitors {
+          bot {
+            id
+          }
+          visitor {
+            id
+          }
+          action
+        }
+      }
+      """
+
+      ref = push_doc(socket, sub)
+      assert_reply ref, :ok, %{subscriptionId: _subscription_id}, 1000
+
+      mut = """
+      mutation ($input: UserLocationUpdateInput!) {
+        userLocationUpdate (input: $input) {
+          successful
+        }
+      }
+      """
+
+      {lat, lon} = GeoUtils.get_lat_lon(bot.location)
+
+      location_input = %{
+        "input" => %{
+          "lat" => lat,
+          "lon" => lon,
+          "accuracy" => 1.0,
+          "resource" => Faker.String.base64(),
+          "isFetch" => true
+        }
+      }
+
+      ref = push_doc(socket, mut, variables: location_input)
+      assert_reply ref, :ok, _, 1000
+      ref = push_doc(socket, mut, variables: location_input)
+      assert_reply ref, :ok, _, 1000
+
+      assert_push "subscription:data", _push, 2000
     end
   end
 
