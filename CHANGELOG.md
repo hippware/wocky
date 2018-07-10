@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.7.9+r7386f6f
+
+* Update (via Dependabot): pigeon (PR #1656)
+* Fix: hideUser mutation doesn't change profile hidden value (#1654)
+* Fix debounce override (PR #1657)
+
+
 # 2018.7.5+rfff6dfc
 
 Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
