@@ -108,10 +108,11 @@ defmodule Wocky.Push do
   end
 
   defp do_notify(token, user_id, resource, event) do
+    on_response = fn r -> handle_response(r, user_id, resource) end
+
     event
     |> make_payload(token)
-    |> maybe_push(sandbox?())
-    |> handle_response(user_id, resource)
+    |> maybe_push(on_response, sandbox?())
   end
 
   defp maybe_truncate_message(message) do
@@ -133,9 +134,11 @@ defmodule Wocky.Push do
     |> Notification.put_custom(%{"uri" => uri})
   end
 
-  defp maybe_push(n, false), do: APNS.push(n)
+  defp maybe_push(n, on_response, false) do
+    APNS.push(n, on_response: on_response, timeout: timeout())
+  end
 
-  defp maybe_push(n, true) do
+  defp maybe_push(n, on_response, true) do
     notif =
       if n.payload["aps"]["alert"] == "bad token" do
         %Notification{n | id: "testing", response: :bad_device_token}
@@ -147,20 +150,20 @@ defmodule Wocky.Push do
 
     if reflect?(), do: send(self(), notif)
 
+    on_response.(notif)
+
     notif
   end
 
-  defp sandbox? do
-    Confex.get_env(:wocky, Wocky.Push)[:sandbox]
-  end
+  defp sandbox?, do: get_conf(:sandbox)
 
-  defp reflect? do
-    Confex.get_env(:wocky, Wocky.Push)[:reflect]
-  end
+  defp reflect?, do: get_conf(:reflect)
 
-  defp topic do
-    Confex.get_env(:wocky, Wocky.Push)[:topic]
-  end
+  defp topic(), do: get_conf(:topic)
+
+  defp timeout(), do: get_conf(:timeout)
+
+  defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
 
   defp handle_response(%Notification{response: resp} = n, user_id, resource) do
     maybe_handle_error(resp, n, user_id, resource)
