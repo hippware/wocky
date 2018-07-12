@@ -23,4 +23,4 @@ config :exometer_core,
 
 config :elixometer,
   reporter: :exometer_report_prometheus,
-  env: Mix.env
+  env: Mix.env()

@@ -21,8 +21,7 @@ config :wocky_api, WockyAPI.Endpoint,
   render_errors: [view: WockyAPI.ErrorView, accepts: ~w(json)],
   pubsub: [name: WockyAPI.PubSub, adapter: Phoenix.PubSub.PG2]
 
-config :wocky_api, WockyAPI.MetricsEndpoint,
-  http: [port: 8082]
+config :wocky_api, WockyAPI.MetricsEndpoint, http: [port: 8082]
 
 config :prometheus, WockyAPI.PhoenixInstrumenter,
   controller_call_labels: [:controller, :action],

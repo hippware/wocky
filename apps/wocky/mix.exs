@@ -127,7 +127,7 @@ defmodule Wocky.Mixfile do
       {:meck, "~> 0.8", only: :test, override: true},
       {:reprise, "~> 0.5", only: :dev},
       {:exometer,
-        github: "hippware/exometer", branch: "working", override: true},
+       github: "hippware/exometer", branch: "working", override: true},
       {:elixometer, github: "hippware/elixometer", branch: "working"},
       {:exometer_prometheus,
        github: "GalaxyGorilla/exometer_prometheus",

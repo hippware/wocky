@@ -206,7 +206,8 @@ defmodule Wocky.Push do
   end
 
   defp update_metric(resp),
-  do: Elixometer.update_counter("wocky.push_notfications.#{to_string(resp)}", 1)
+    do:
+      Elixometer.update_counter("wocky.push_notfications.#{to_string(resp)}", 1)
 
   defp do_db_log(%Notification{} = n, user_id, resource) do
     %{

@@ -46,9 +46,7 @@ defmodule Wocky.Release.Mixfile do
       # in at least one). We pin the version here to make sure they agree on
       # one.
       {:exometer_core,
-        github: "hippware/exometer_core",
-        branch: "working",
-        override: true},
+       github: "hippware/exometer_core", branch: "working", override: true},
       {:lager, "~> 3.6", override: true}
     ]
   end
