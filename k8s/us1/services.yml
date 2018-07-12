@@ -73,3 +73,5 @@ spec:
   ports:
     - name: exometer-prometheus
       port: 8081
+    - name: wocky-api-prometheus
+      port: 8082

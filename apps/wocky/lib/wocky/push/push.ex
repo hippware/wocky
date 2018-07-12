@@ -167,6 +167,7 @@ defmodule Wocky.Push do
 
   defp handle_response(%Notification{response: resp} = n, user_id, resource) do
     maybe_handle_error(resp, n, user_id, resource)
+    update_metric(resp)
     do_db_log(n, user_id, resource)
   end
 
@@ -203,6 +204,9 @@ defmodule Wocky.Push do
       set: [valid: false, invalidated_at: DateTime.utc_now()]
     )
   end
+
+  defp update_metric(resp),
+  do: Elixometer.update_counter("wocky.push_notfications.#{to_string(resp)}", 1)
 
   defp do_db_log(%Notification{} = n, user_id, resource) do
     %{

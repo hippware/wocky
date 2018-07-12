@@ -17,3 +17,10 @@ config :wocky_db_watcher, :db,
   port: {:system, :integer, "WOCKY_DB_PORT", 5432},
   pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15},
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :exometer_core,
+  report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
+
+config :elixometer,
+  reporter: :exometer_report_prometheus,
+  env: Mix.env

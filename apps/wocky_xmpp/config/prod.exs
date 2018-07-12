@@ -8,9 +8,4 @@ config :honeybadger, environment_name: "${HONEYBADGER_ENV}"
 
 config :exometer,
   # 1 minute
-  mongooseim_report_interval: 60_000,
-  report: [
-    reporters: [
-      exometer_report_prometheus: [:enable_httpd]
-    ]
-  ]
+  mongooseim_report_interval: 60_000
