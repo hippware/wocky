@@ -1,6 +1,8 @@
 defmodule WockyAPI.Resolvers.Media do
   @moduledoc "GraphQL resolver for media objects"
 
+  use Elixometer
+
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Repo.ID
@@ -55,6 +57,8 @@ defmodule WockyAPI.Resolvers.Media do
 
     case response do
       {:ok, {headers, fields}} ->
+        update_counter("tros.upload.requests.graphql", 1)
+
         {:ok,
          %{
            id: id,

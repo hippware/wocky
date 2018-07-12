@@ -78,6 +78,7 @@ handle_iq_type(_From, _To, _IQ) ->
                           ) -> ok.
 archive_message_hook(_Result, _Host, MessID, _ArcID,
                 LocJID, RemJID, _SrcJID, Dir, Packet) ->
+  Dir =:= incoming andalso ?elixometer:update_counter(<<"messages.sent">>, 1),
   ok = ?wocky_conversation:put(MessID,
                                LocJID#jid.luser,
                                jid:to_binary(jid:to_bare(RemJID)),

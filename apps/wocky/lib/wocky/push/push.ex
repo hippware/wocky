@@ -2,6 +2,7 @@ defmodule Wocky.Push do
   @moduledoc """
   The Push context. Single interface for push notifications.
   """
+  use Elixometer
 
   import Ecto.Query, warn: false
 
@@ -206,8 +207,7 @@ defmodule Wocky.Push do
   end
 
   defp update_metric(resp),
-    do:
-      Elixometer.update_counter("wocky.push_notfications.#{to_string(resp)}", 1)
+    do: update_counter("push_notfications.#{to_string(resp)}", 1)
 
   defp do_db_log(%Notification{} = n, user_id, resource) do
     %{

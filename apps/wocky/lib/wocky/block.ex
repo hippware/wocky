@@ -3,6 +3,7 @@ defmodule Wocky.Block do
   DB interface module for blocks
   """
 
+  use Elixometer
   use Wocky.Repo.Schema
 
   import Ecto.Query
@@ -37,6 +38,8 @@ defmodule Wocky.Block do
 
     Roster.write_blocked_items(blocker, blockee)
 
+    update_counter("blocking.blocked", 1)
+
     :ok
   end
 
@@ -45,6 +48,8 @@ defmodule Wocky.Block do
     Block
     |> where(blocker_id: ^blocker.id, blockee_id: ^blockee.id)
     |> Repo.delete_all()
+
+    update_counter("blocking.unblocked", 1)
 
     :ok
   end

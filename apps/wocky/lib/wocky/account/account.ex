@@ -4,6 +4,8 @@ defmodule Wocky.Account do
   in the system (authentication, registration, deletion, etc).
   """
 
+  use Elixometer
+
   alias Wocky.Account.{ClientJWT, Firebase, Register, Token}
   alias Wocky.Repo
   alias Wocky.User
@@ -98,8 +100,10 @@ defmodule Wocky.Account do
           {:ok, {User.t(), boolean}} | {:error, binary}
   def authenticate(:token, {user_id, token}) do
     if Token.valid?(user_id, token) do
+      update_counter("auth.token.success", 1)
       {:ok, {Repo.get(User, user_id), false}}
     else
+      update_counter("auth.token.fail", 1)
       {:error, "Invalid token"}
     end
   end
@@ -115,9 +119,11 @@ defmodule Wocky.Account do
   def authenticate(:firebase, token) do
     case Firebase.decode_and_verify(token) do
       {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
+        update_counter("auth.firebase.success", 1)
         Register.find_or_create(:firebase, external_id, phone_number)
 
       {:error, reason} ->
+        update_counter("auth.firebase.fail", 1)
         {:error, error_to_string(reason)}
     end
   end
@@ -125,20 +131,26 @@ defmodule Wocky.Account do
   def authenticate(:client_jwt, token) do
     case ClientJWT.decode_and_verify(token) do
       {:ok, %{"typ" => "firebase", "sub" => new_token}} ->
+        update_counter("auth.jwt.firebase.success", 1)
         authenticate(:firebase, new_token)
 
       {:ok, %{"typ" => "bypass", "sub" => id, "phone_number" => phone}} ->
         authenticate(:bypass, {id, phone})
 
       {:ok, _claims} ->
+        update_counter("auth.jwt.fail", 1)
         {:error, "Unable to authenticate wrapped entity"}
 
       {:error, reason} ->
+        update_counter("auth.jwt.fail", 1)
         {:error, error_to_string(reason)}
     end
   end
 
-  def authenticate(provider, _creds), do: provider_error(provider)
+  def authenticate(provider, _creds) do
+    update_counter("auth.unknown.fail", 1)
+    provider_error(provider)
+  end
 
   defp has_bypass_prefix(phone_number) do
     if Application.get_env(:wocky, :enable_auth_bypass) do

@@ -73,6 +73,7 @@
         'Elixir.WockyXMPP.BotShareCallbacks').
 -define(wocky_xmpp_home_stream_item_callbacks,
         'Elixir.WockyXMPP.HomeStreamItemCallbacks').
+-define(wocky_xmpp_metrics, 'Elixir.WockyXMPP.Metrics').
 -define(wocky_xmpp_tros_metadata_callbacks,
         'Elixir.WockyXMPP.TROSMetadataCallbacks').
 
@@ -90,6 +91,7 @@
 -define(confex, 'Elixir.Confex').
 -define(datetime, 'Elixir.DateTime').
 -define(duration, 'Elixir.Timex.Duration').
+-define(elixometer, 'Elixir.Elixometer').
 -define(timex, 'Elixir.Timex').
 
 -endif. % ifdef WOCKY_HRL
