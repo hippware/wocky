@@ -20,9 +20,10 @@ defmodule WockyAPI.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      # Start the endpoint when the application starts
+      # Start the endpoints when the application starts
       supervisor(WockyAPI.Endpoint, []),
-      supervisor(Absinthe.Subscription, [WockyAPI.Endpoint])
+      supervisor(Absinthe.Subscription, [WockyAPI.Endpoint]),
+      supervisor(WockyAPI.MetricsEndpoint, [])
     ]
 
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]

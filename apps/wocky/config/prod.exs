@@ -35,3 +35,10 @@ config :wocky_db_watcher, :db,
   username: {:system, :string, "WOCKY_DB_USER"},
   password: {:system, :string, "WOCKY_DB_PASSWORD"},
   hostname: {:system, :string, "WOCKY_DB_HOST"}
+
+config :exometer_core,
+  report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
+
+config :elixometer,
+  reporter: :exometer_report_prometheus,
+  env: Mix.env()
