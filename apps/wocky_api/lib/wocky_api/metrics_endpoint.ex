@@ -1,4 +1,6 @@
 defmodule WockyAPI.MetricsEndpoint do
+  @moduledoc "Endpoint for Prometheus metrics"
+
   use Phoenix.Endpoint, otp_app: :wocky_api
 
   # Code reloading can be explicitly enabled under the
