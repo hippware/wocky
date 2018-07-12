@@ -6,6 +6,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Add test for botGuestVisitors (PR #1658)
+* Update (via Dependabot): ex_guard (PR #1660)
+* Move APNS call to async/on_response mode (PR #1663)
+  * [Wocky/us1] RuntimeError: The SSL connection timed out (#1337)
+* Fix staging services deploy file (PR #1664)
 
 
 # 2018.7.9+r7386f6f
