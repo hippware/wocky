@@ -1,5 +1,6 @@
 defmodule Wocky.Account.Register do
   @moduledoc "Logic for finding or creating an account post authentication."
+  use Elixometer
 
   import Ecto.Changeset
 
@@ -78,6 +79,7 @@ defmodule Wocky.Account.Register do
     case user_data |> changeset() |> Repo.insert() do
       {:ok, user} ->
         if prepop, do: prepopulate_user(user)
+        update_counter("user.create", 1)
         {:ok, user}
 
       {:error, e} = error ->

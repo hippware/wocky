@@ -2,6 +2,9 @@ defmodule WockyXMPP.TROSMetadataCallbacks do
   @moduledoc """
   Callbacks for DB bot changes
   """
+
+  use Elixometer
+
   alias Wocky.TROS.Metadata
   alias Wocky.Waiter
   alias Wocky.Watcher.Client
@@ -15,6 +18,8 @@ defmodule WockyXMPP.TROSMetadataCallbacks do
         old: %Metadata{ready: false},
         new: %Metadata{id: id, ready: true}
       }) do
+    update_counter("tros.upload.complete", 1)
+
     id
     |> :mod_wocky_tros.waiter_event()
     |> Waiter.notify()

@@ -41,4 +41,5 @@ config :exometer_core,
 
 config :elixometer,
   reporter: :exometer_report_prometheus,
-  env: Mix.env()
+  metric_prefix: "wocky",
+  env: {:system, :string, "WOCKY_ENV"}

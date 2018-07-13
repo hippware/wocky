@@ -1,6 +1,7 @@
 defmodule Wocky.Bot.Subscription do
   @moduledoc "Represents a subscription relationship between a User and a Bot"
 
+  use Elixometer
   use Wocky.Repo.Schema
 
   import Ecto.Query
@@ -54,10 +55,16 @@ defmodule Wocky.Bot.Subscription do
   end
 
   @spec visit(User.t(), Bot.t()) :: :ok
-  def visit(user, bot), do: visit(user, bot, true)
+  def visit(user, bot) do
+    update_counter("bot.geofence.visit", 1)
+    visit(user, bot, true)
+  end
 
   @spec depart(User.t(), Bot.t()) :: :ok
-  def depart(user, bot), do: visit(user, bot, false)
+  def depart(user, bot) do
+    update_counter("bot.geofence.depart", 1)
+    visit(user, bot, false)
+  end
 
   defp visit(user, bot, enter) do
     timestamps =
@@ -92,6 +99,8 @@ defmodule Wocky.Bot.Subscription do
       conflict_target: [:user_id, :bot_id]
     )
 
+    update_counter("bot.subscription.subscribe", 1)
+
     :ok
   end
 
@@ -121,6 +130,8 @@ defmodule Wocky.Bot.Subscription do
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)
     |> Repo.delete_all()
+
+    update_counter("bot.subscription.unsubscribe", 1)
 
     :ok
   end

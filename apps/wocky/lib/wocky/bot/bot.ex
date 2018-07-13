@@ -1,6 +1,7 @@
 defmodule Wocky.Bot do
   @moduledoc "Schema and API for working with Bots."
 
+  use Elixometer
   use Wocky.JID
   use Wocky.Repo.Schema
   use Wocky.RSMHelper
@@ -217,7 +218,12 @@ defmodule Wocky.Bot do
   end
 
   @spec insert(map) :: {:ok, t} | {:error, any}
-  def insert(params), do: do_update(%Bot{}, params, &Repo.insert/1)
+  def insert(params) do
+    with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
+      update_counter("bot.created", 1)
+      {:ok, t}
+    end
+  end
 
   @spec update(t, map) :: {:ok, t} | {:error, any}
   def update(bot, params) do
@@ -239,6 +245,7 @@ defmodule Wocky.Bot do
   def delete(bot) do
     Repo.delete(bot)
     Index.remove(:bot, bot.id)
+    update_counter("bot.deleted", 1)
     :ok
   end
 

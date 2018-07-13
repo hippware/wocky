@@ -213,6 +213,7 @@ upload_response(Req = #request{from_jid = FromJID},
     FileID = make_file_id(),
     case ?tros:make_upload_response(FromJID, FileID, Size, Access, Metadata) of
         {ok, {Headers, RespFields}} ->
+            ?elixometer:update_counter(<<"tros.upload.requests.xmpp">>, 1),
             FullFields = common_fields(FileID) ++ RespFields,
             response(Req, Headers, FullFields, <<"upload">>);
 
