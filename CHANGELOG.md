@@ -11,7 +11,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * [Wocky/us1] RuntimeError: The SSL connection timed out (#1337)
 * Fix staging services deploy file (PR #1664)
 * Update (via Dependabot): bcrypt_elixir (PR #1667), lager (PR #1668)
-* Metrics rework (PR #1665)
+* Metrics / Application metrics instrumentation (#1000)
+  * Rework (PR #1665), Add some metrics (PR #1670)
 
 
 # 2018.7.9+r7386f6f
