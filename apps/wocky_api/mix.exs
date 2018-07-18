@@ -47,8 +47,7 @@ defmodule WockyAPI.Mixfile do
     [
       {:wocky, in_umbrella: true},
       {:absinthe, "~> 1.4.12"},
-      {:absinthe_phoenix,
-       github: "absinthe-graphql/absinthe_phoenix", branch: "master"},
+      {:absinthe_phoenix, "~> 1.4"},
       {:absinthe_relay, "~> 1.4"},
       {:absinthe_ecto, "~> 0.1.3"},
       {:absinthe_metrics, "~> 0.9.0"},
