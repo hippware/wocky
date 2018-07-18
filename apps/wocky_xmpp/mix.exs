@@ -84,6 +84,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:honeybadger, "~> 0.6"},
       {:idna, "~> 5.1", override: true},
       {:joken, "~> 1.1"},
+      {:lager, "~> 3.6", override: true},
       {:lager_logger, "~> 1.0"},
       {:ranch, "~> 1.5.0", override: true},
       {:timex, "~> 3.1"},
@@ -101,6 +102,8 @@ defmodule Wocky.XMPP.Mixfile do
       {:stringprep, "1.0.11", override: true},
       {:cache_tab, "1.0.13", override: true},
       {:fast_tls, "1.0.22", override: true},
+      {:exometer_core,
+       github: "hippware/exometer_core", branch: "working", override: true},
 
       # dev dependencies
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
