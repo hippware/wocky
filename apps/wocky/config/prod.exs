@@ -42,4 +42,4 @@ config :exometer_core,
 config :elixometer,
   reporter: :exometer_report_prometheus,
   metric_prefix: "wocky",
-  env: {:system, :string, "WOCKY_ENV"}
+  env: "${WOCKY_INST}"
