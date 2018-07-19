@@ -537,7 +537,32 @@ defmodule WockyAPI.GraphQL.BotTest do
     setup :common_setup
 
     @query """
-    mutation ($values: BotParams!, $user_location: UserLocationUpdateInput) {
+    mutation {
+      botCreate {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
+    test "preallocate bot", %{user: user} do
+      result = run_query(@query, user)
+
+      assert %{
+               "botCreate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => id
+                 }
+               }
+             } = result.data
+
+      assert %Bot{pending: true} = Bot.get(id, true)
+    end
+
+    @query """
+    mutation ($values: BotParams, $user_location: UserLocationUpdateInput) {
       botCreate (input: {values: $values, user_location: $user_location}) {
         successful
         result {
