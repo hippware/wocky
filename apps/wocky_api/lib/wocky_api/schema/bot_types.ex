@@ -292,7 +292,7 @@ defmodule WockyAPI.Schema.BotTypes do
   object :bot_mutations do
     @desc "Create a new bot"
     field :bot_create, type: :bot_create_payload do
-      arg :input, non_null(:bot_create_input)
+      arg :input, :bot_create_input
       resolve &Bot.create_bot/3
       changeset_mutation_middleware
     end

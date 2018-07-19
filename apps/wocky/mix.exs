@@ -100,7 +100,7 @@ defmodule Wocky.Mixfile do
       {:joken, "~> 1.1"},
       {:jsx, "~> 2.8"},
       {:kadabra, "~> 0.3"},
-      {:lager,  "~> 3.6", override: true},
+      {:lager, "~> 3.6", override: true},
       {:peerage, "~> 1.0"},
       {:pigeon, "~> 1.1"},
       {:poolboy, "~> 1.5"},
