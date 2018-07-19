@@ -192,7 +192,7 @@ defmodule Wocky.Bot do
   def get_owned_bot(id, %User{id: user_id}, include_pending \\ false) do
     Bot
     |> where(id: ^id, user_id: ^user_id)
-    |> maybe_filter_pending(include_pending)
+    |> maybe_filter_pending(not include_pending)
     |> Repo.one()
   end
 

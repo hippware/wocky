@@ -542,23 +542,29 @@ defmodule WockyAPI.GraphQL.BotTest do
         successful
         result {
           id
+          owner {
+            id
+          }
         }
       }
     }
     """
-    test "preallocate bot", %{user: user} do
+    test "preallocate bot", %{user: %{id: user_id} = user} do
       result = run_query(@query, user)
 
       assert %{
                "botCreate" => %{
                  "successful" => true,
                  "result" => %{
-                   "id" => id
+                   "id" => id,
+                   "owner" => %{
+                     "id" => ^user_id
+                   }
                  }
                }
              } = result.data
 
-      assert %Bot{pending: true} = Bot.get(id, true)
+      assert %Bot{pending: true, user_id: ^user_id} = Bot.get(id, true)
     end
 
     @query """
@@ -577,6 +583,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       result = run_query(@query, user, %{"values" => stringify_keys(bot)})
 
+      refute has_errors(result)
+
       assert %{
                "botCreate" => %{
                  "successful" => true,
@@ -590,22 +598,11 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "create bot with location", %{user: %{id: user_id} = user} do
-      fields = [
-        :title,
-        :server,
-        :lat,
-        :lon,
-        :radius,
-        :description,
-        :shortname,
-        :geofence
-      ]
-
       bot =
         :bot
         |> Factory.build(geofence: true)
         |> add_lat_lon()
-        |> Map.take(fields)
+        |> Map.take(create_fields())
 
       result =
         run_query(@query, user, %{
@@ -666,6 +663,36 @@ defmodule WockyAPI.GraphQL.BotTest do
              }
 
       assert new_title == Bot.get(bot.id).title
+    end
+
+    test "update pending bot", %{user: user} do
+      bot = Bot.preallocate(user.id)
+
+      values =
+        :bot
+        |> Factory.build(geofence: true)
+        |> add_lat_lon()
+        |> Map.take(create_fields())
+        |> stringify_keys()
+
+
+      result = run_query(@query, user, %{
+        "id" => bot.id,
+        "values" => values
+      })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "botUpdate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => bot.id
+                 }
+               }
+             }
+
+      assert values["title"] == Bot.get(bot.id).title
     end
 
     test "update bot with location", %{user: %{id: user_id} = user, bot: bot} do
@@ -1282,4 +1309,17 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   defp point_arg(lat, lon), do: %{"lat" => lat, "lon" => lon}
+
+  defp create_fields() do
+    [
+      :title,
+      :server,
+      :lat,
+      :lon,
+      :radius,
+      :description,
+      :shortname,
+      :geofence
+    ]
+  end
 end
