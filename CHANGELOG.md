@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.7.19+r0da9d8d
+
+Fix update of pending bots; add more tests (PR #1690)
+
+
 # 2018.7.19+r273a9c7
 
 (Incorporates 2018.7.19+r87c6f60)
