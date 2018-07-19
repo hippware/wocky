@@ -13,6 +13,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update (via Dependabot): bcrypt_elixir (PR #1667), lager (PR #1668)
 * Metrics / Application metrics instrumentation (#1000)
   * Rework (PR #1665), Add some metrics (PR #1670)
+* Update absinthe_phoenix (PR #1683)
+* Fix dependencies (PR #1684)
 
 
 # 2018.7.9+r7386f6f
