@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.7.19+r87c6f60
+
 * Add test for botGuestVisitors (PR #1658)
 * Update (via Dependabot): ex_guard (PR #1660)
 * Move APNS call to async/on_response mode (PR #1663)
@@ -15,6 +17,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Rework (PR #1665), Add some metrics (PR #1670)
 * Update absinthe_phoenix (PR #1683)
 * Fix dependencies (PR #1684)
+* Add mutation support for bot preallocation (PR #1686)
+  * Fixes: Cannot create 'empty' bot via GraphQL (#1682)
 
 
 # 2018.7.9+r7386f6f
