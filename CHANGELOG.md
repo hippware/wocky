@@ -5,7 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-# 2018.7.19+r87c6f60
+# 2018.7.19+r273a9c7
+
+(Incorporates 2018.7.19+r87c6f60)
 
 * Add test for botGuestVisitors (PR #1658)
 * Update (via Dependabot): ex_guard (PR #1660)
@@ -19,6 +21,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix dependencies (PR #1684)
 * Add mutation support for bot preallocation (PR #1686)
   * Fixes: Cannot create 'empty' bot via GraphQL (#1682)
+* Fix elixometer config (#1687, #1688, PR #1689)
 
 
 # 2018.7.9+r7386f6f
