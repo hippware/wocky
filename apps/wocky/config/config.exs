@@ -33,6 +33,7 @@ config :wocky,
   slack_token: {:system, :string, "SLACK_TOKEN"},
 
   # Authentication
+  token_expiry_days: {:system, :integer, "WOCKY_TOKEN_EXPIRY_DAYS", 60},
   enable_auth_bypass: {:system, :boolean, "WOCKY_ENABLE_BYPASS", true},
   auth_bypass_prefixes: ["+1555"],
 

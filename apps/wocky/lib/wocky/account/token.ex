@@ -36,7 +36,6 @@ defmodule Wocky.Account.Token do
 
   @token_bytes 32
   @token_marker "$T$"
-  @token_expire Duration.from_weeks(2)
   @assign_fields [:user_id, :resource, :token_hash, :expires_at]
 
   @doc "Generates a token"
@@ -76,7 +75,11 @@ defmodule Wocky.Account.Token do
     |> handle_assign_result(token)
   end
 
-  defp expiry, do: Timex.add(DateTime.utc_now(), @token_expire)
+  defp expiry, do: Timex.add(DateTime.utc_now(), expiry_duration())
+
+  defp expiry_duration, do: Duration.from_days(expiry_days())
+
+  defp expiry_days, do: Confex.get_env(:wocky, :token_expiry_days)
 
   defp handle_assign_result(struct, token) do
     {:ok, {token, struct.expires_at}}
