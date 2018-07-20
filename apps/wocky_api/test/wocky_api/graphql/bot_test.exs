@@ -675,11 +675,11 @@ defmodule WockyAPI.GraphQL.BotTest do
         |> Map.take(create_fields())
         |> stringify_keys()
 
-
-      result = run_query(@query, user, %{
-        "id" => bot.id,
-        "values" => values
-      })
+      result =
+        run_query(@query, user, %{
+          "id" => bot.id,
+          "values" => values
+        })
 
       refute has_errors(result)
 
