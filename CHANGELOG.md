@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update (via Dependabot): absinthe (PR #1693)
+* Extend auth token expiry to 60 days (#1680)
+
+
 # 2018.7.19+r0da9d8d
 
 Fix update of pending bots; add more tests (PR #1690)
