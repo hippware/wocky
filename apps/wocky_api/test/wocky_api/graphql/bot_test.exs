@@ -579,7 +579,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
     test "create bot", %{user: user} do
       fields = [:title, :server, :lat, :lon, :radius, :description, :shortname]
-      bot = :bot |> Factory.build() |> add_lat_lon() |> Map.take(fields)
+      bot = :bot |> Factory.build() |> add_bot_lat_lon() |> Map.take(fields)
 
       result = run_query(@query, user, %{"values" => stringify_keys(bot)})
 
@@ -594,15 +594,15 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              } = result.data
 
-      assert ^bot = id |> Bot.get() |> add_lat_lon() |> Map.take(fields)
+      assert ^bot = id |> Bot.get() |> add_bot_lat_lon() |> Map.take(fields)
     end
 
     test "create bot with location", %{user: %{id: user_id} = user} do
       bot =
         :bot
         |> Factory.build(geofence: true)
-        |> add_lat_lon()
-        |> Map.take(create_fields())
+        |> add_bot_lat_lon()
+        |> Map.take(bot_create_fields())
 
       result =
         run_query(@query, user, %{
@@ -671,8 +671,8 @@ defmodule WockyAPI.GraphQL.BotTest do
       values =
         :bot
         |> Factory.build(geofence: true)
-        |> add_lat_lon()
-        |> Map.take(create_fields())
+        |> add_bot_lat_lon()
+        |> Map.take(bot_create_fields())
         |> stringify_keys()
 
       result =
@@ -1289,15 +1289,6 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
   end
 
-  defp add_lat_lon(%Bot{location: location} = bot) do
-    {lat, lon} = GeoUtils.get_lat_lon(location)
-    bot |> Map.put(:lat, lat) |> Map.put(:lon, lon)
-  end
-
-  defp stringify_keys(map) do
-    Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
-  end
-
   defp common_setup(_) do
     [user, user2] = Factory.insert_list(2, :user)
 
@@ -1309,17 +1300,4 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   defp point_arg(lat, lon), do: %{"lat" => lat, "lon" => lon}
-
-  defp create_fields() do
-    [
-      :title,
-      :server,
-      :lat,
-      :lon,
-      :radius,
-      :description,
-      :shortname,
-      :geofence
-    ]
-  end
 end

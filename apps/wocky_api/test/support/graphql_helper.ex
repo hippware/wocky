@@ -3,6 +3,9 @@ defmodule WockyAPI.GraphQLHelper do
   Helper functions for Wocky API GraphQL tests
   """
 
+  alias Wocky.Bot
+  alias Wocky.GeoUtils
+
   def run_query(query, user \\ nil, variables \\ %{}) do
     Absinthe.run!(
       query,
@@ -34,5 +37,27 @@ defmodule WockyAPI.GraphQLHelper do
       |> Enum.at(idx, %{})
 
     error[:message]
+  end
+
+  def stringify_keys(map) do
+    Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
+  end
+
+  def bot_create_fields() do
+    [
+      :title,
+      :server,
+      :lat,
+      :lon,
+      :radius,
+      :description,
+      :shortname,
+      :geofence
+    ]
+  end
+
+  def add_bot_lat_lon(%Bot{location: location} = bot) do
+    {lat, lon} = GeoUtils.get_lat_lon(location)
+    bot |> Map.put(:lat, lat) |> Map.put(:lon, lon)
   end
 end
