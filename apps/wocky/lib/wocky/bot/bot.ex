@@ -4,6 +4,7 @@ defmodule Wocky.Bot do
   use Elixometer
   use Wocky.JID
   use Wocky.Repo.Schema
+  use Wocky.Repo.Changeset
   use Wocky.RSMHelper
 
   import Ecto.Query
@@ -212,6 +213,7 @@ defmodule Wocky.Bot do
     |> cast(params, @change_fields)
     |> validate_required(@required_fields)
     |> validate_number(:radius, greater_than: 0)
+    |> validate_not_nil([:description])
     |> put_change(:pending, false)
     |> unique_constraint(:shortname)
     |> foreign_key_constraint(:user_id)
