@@ -95,6 +95,11 @@ defmodule Wocky.BotSpec do
       changeset = Bot.changeset(%Bot{}, attrs())
       changeset.changes.pending |> should(be_false())
     end
+
+    it "should fail with a nil description" do
+      Bot.changeset(%Bot{}, Map.put(attrs(), :description, nil))
+      |> should(have_errors([:description]))
+    end
   end
 
   describe "database interactions", async: false do
