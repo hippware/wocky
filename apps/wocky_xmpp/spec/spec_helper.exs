@@ -2,23 +2,17 @@ Code.require_file("spec/support/custom_assertions.ex")
 Code.require_file("spec/support/assertions/cause_exit_assertion.ex")
 
 ESpec.configure(fn config ->
-  ESpec.Configuration.before(
-    fn tags ->
-      if tags[:sandbox], do: SandboxHelper.checkout()
+  config.before(fn tags ->
+    if tags[:sandbox], do: SandboxHelper.checkout()
 
-      {:ok, tags: tags, server: "localhost"}
-    end,
-    config
-  )
+    {:ok, tags: tags, server: "localhost"}
+  end)
 
-  ESpec.Configuration.finally(
-    fn shared ->
-      if shared.tags[:sandbox], do: SandboxHelper.checkin()
+  config.finally(fn shared ->
+    if shared.tags[:sandbox], do: SandboxHelper.checkin()
 
-      :ok
-    end,
-    config
-  )
+    :ok
+  end)
 end)
 
 defmodule SandboxHelper do
