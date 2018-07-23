@@ -1,15 +1,9 @@
 ESpec.configure(fn config ->
-  ESpec.Configuration.before(
-    fn tags ->
-      {:ok, tags: tags, server: "local.test"}
-    end,
-    config
-  )
+  config.before(fn tags ->
+    {:ok, tags: tags, server: "localhost"}
+  end)
 
-  ESpec.Configuration.finally(
-    fn _shared ->
-      :ok
-    end,
-    config
-  )
+  config.finally(fn _shared ->
+    :ok
+  end)
 end)
