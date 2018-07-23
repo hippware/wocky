@@ -1,4 +1,5 @@
 defmodule Wocky.Repo.Changeset do
+  @moduledoc "Helper functions for Ecto changeset management"
 
   import Ecto.Changeset
 
