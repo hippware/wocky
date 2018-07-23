@@ -23,6 +23,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :server, non_null(:string) do
       scope(:public)
       resolve &Utils.server_resolver/3
+      deprecate "server is deprecated and should be ignored"
     end
 
     @desc "The user's unique handle"
