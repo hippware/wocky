@@ -27,7 +27,7 @@ defmodule WockyAPI.PipelineLogTest do
       packet = Lorem.sentence()
       run(packet, Map.put(opts, :phase, :request))
 
-      match(opts, false, packet)
+      match(opts, false, packet <> " / " <> inspect(nil))
     end
 
     test "should log outgoing requests", %{opts: opts} do

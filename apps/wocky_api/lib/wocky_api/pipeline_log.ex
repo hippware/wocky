@@ -16,12 +16,18 @@ defmodule WockyAPI.PipelineLog do
       end
 
     case opts[:phase] do
-      :request -> log(blueprint, user_id, context, false)
-      :response -> log(result(blueprint.result), user_id, context, true)
+      :request ->
+        log(request(blueprint, opts[:variables]), user_id, context, false)
+
+      :response ->
+        log(result(blueprint.result), user_id, context, true)
     end
 
     {:ok, blueprint}
   end
+
+  defp request(query, variables),
+    do: query <> " / " <> inspect(variables)
 
   defp result(result),
     do: inspect(result[:data]) <> " / " <> inspect(result[:errors])
