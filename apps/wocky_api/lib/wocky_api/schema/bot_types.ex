@@ -51,7 +51,10 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:uuid)
 
     @desc "The server on which the bot resides"
-    field :server, non_null(:string), do: resolve(&Utils.server_resolver/3)
+    field :server, non_null(:string) do
+      resolve &Utils.server_resolver/3
+      deprecate "server is deprecated and should be ignored"
+    end
 
     @desc "The bot's title"
     field :title, non_null(:string)
@@ -177,7 +180,9 @@ defmodule WockyAPI.Schema.BotTypes do
   @desc "Parameters for creating and updating a bot"
   input_object :bot_params do
     field :title, :string
-    field :server, :string
+    field :server, :string do
+      deprecate "server field is deprecated and will be ignored"
+    end
     field :lat, :float
     field :lon, :float
     field :radius, :float
