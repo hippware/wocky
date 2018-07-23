@@ -5,8 +5,6 @@ defmodule WockyAPI.UserSocket do
     schema: WockyAPI.Schema,
     pipeline: {WockyAPI.Pipeline, :channel_pipeline}
 
-  @max_complexity Application.fetch_env!(:wocky_api, :max_graphql_complexity)
-
   ## Channels
   # channel "room:*", WockyAPI.RoomChannel
 
@@ -37,7 +35,7 @@ defmodule WockyAPI.UserSocket do
           peer: inspect(socket.transport_pid)
         },
         analyze_complexity: true,
-        max_complexity: @max_complexity
+        max_complexity: max_complexity()
       )
 
     {:ok, socket}
@@ -60,4 +58,8 @@ defmodule WockyAPI.UserSocket do
   #
   # Returning `nil` makes this socket anonymous.
   def id(_socket), do: nil
+
+  defp max_complexity,
+    do: Application.fetch_env!(:wocky_api, :max_graphql_complexity)
+
 end
