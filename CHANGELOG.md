@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update (via Dependabot): absinthe (PR #1693)
+* Update: absinthe (PR #1693), espec (PR #1702)
 * Extend auth token expiry to 60 days (#1680)
+* Fix crash on nil description (#1691, PR #1701)
+* Mark server fields as deprecated (PR #1700)
+* Bot query tweaks (PR #1696)
 
 
 # 2018.7.19+r0da9d8d
