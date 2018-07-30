@@ -43,7 +43,7 @@ defmodule Wocky.User.GeoFence do
 
   defp maybe_do_async(fun) do
     if Application.fetch_env!(:wocky, :async_location_processing) do
-      Task.async(fun)
+      Task.start_link(fun)
     else
       fun.()
     end
