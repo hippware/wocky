@@ -5,8 +5,8 @@ defmodule Wocky.Repo.Migrations.AddHsPrepopUser do
 
   alias Wocky.Repo
   alias Wocky.Repo.ID
-  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.Roster.InitialContact
+  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.User
 
   @handle "__new_user_hs_archive__"
@@ -14,8 +14,10 @@ defmodule Wocky.Repo.Migrations.AddHsPrepopUser do
   def up do
     id = ID.new
     execute """
-    INSERT INTO users (id, username, server, external_id, handle, created_at, updated_at) VALUES
-    ('#{id}', '#{id}', '', '', '#{@handle}', now(), now());
+    INSERT INTO users
+      (id, username, server, external_id, handle, created_at, updated_at)
+    VALUES
+      ('#{id}', '#{id}', '', '', '#{@handle}', now(), now());
     """
 
     InitialContact

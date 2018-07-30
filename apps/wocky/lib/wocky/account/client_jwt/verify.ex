@@ -3,8 +3,8 @@ defmodule Wocky.Account.ClientJWT.Verify do
 
   use Guardian.Token.Verify
 
-  alias Guardian.Token.Verify
   alias Guardian.Token.Jwt.Verify, as: Base
+  alias Guardian.Token.Verify
 
   @agent_rx ~r/TinyRobot\/(\d+\.\d+\.\d+)(?: \((.*)\))?/
 
