@@ -66,7 +66,7 @@ push: ## Push the Docker image to ECR
 deploy: ## Deploy the image to the cluster
 	@docker run -it -v "${PWD}/k8s":/k8s garethr/kubeval k8s/$(WOCKY_ENV)/*.yml*
 	@KUBECONFIG=~/.kube/config REVISION=$(IMAGE_TAG) \
-		kubernetes-deploy $(KUBE_NS) tectonic --template-dir=k8s/$(WOCKY_ENV) \
+		kubernetes-deploy $(KUBE_NS) aws --template-dir=k8s/$(WOCKY_ENV) \
 			--bindings=watcher_sha=$(WATCHER_SHA)
 
 shipit: build push deploy ## Build, push and deploy the image
