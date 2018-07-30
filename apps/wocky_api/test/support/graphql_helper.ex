@@ -43,7 +43,7 @@ defmodule WockyAPI.GraphQLHelper do
     Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
   end
 
-  def bot_create_fields() do
+  def bot_create_fields do
     [
       :title,
       :server,

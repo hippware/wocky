@@ -160,9 +160,9 @@ defmodule Wocky.Push do
 
   defp reflect?, do: get_conf(:reflect)
 
-  defp topic(), do: get_conf(:topic)
+  defp topic, do: get_conf(:topic)
 
-  defp timeout(), do: get_conf(:timeout)
+  defp timeout, do: get_conf(:timeout)
 
   defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
 

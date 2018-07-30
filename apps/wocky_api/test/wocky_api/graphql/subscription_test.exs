@@ -4,13 +4,14 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   import WockyAPI.ChannelHelper
 
   alias Faker.Lorem
-  alias Wocky.{Bot, HomeStream, Repo, Roster, User}
+  alias Wocky.Bot
   alias Wocky.Bot.Subscription
-  alias Wocky.HomeStream
+  alias Wocky.{GeoUtils, HomeStream}
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.{Roster, User}
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
-  alias Wocky.GeoUtils
 
   setup_all do
     Client.clear_all_subscriptions()

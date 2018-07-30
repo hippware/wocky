@@ -2,11 +2,14 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.{Bot, GeoUtils, Repo, Roster}
+  alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
 
   setup :common_setup
 

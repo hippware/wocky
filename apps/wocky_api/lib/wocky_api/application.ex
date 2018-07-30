@@ -5,10 +5,10 @@ defmodule WockyAPI.Application do
 
   alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
+  alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
   alias WockyAPI.PhoenixInstrumenter
   alias WockyAPI.PipelineInstrumenter
   alias WockyAPI.PrometheusExporter
-  alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
 
   def start(_type, _args) do
     import Supervisor.Spec

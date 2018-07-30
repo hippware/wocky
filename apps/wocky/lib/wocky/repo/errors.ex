@@ -7,8 +7,7 @@ defmodule Wocky.Repo.Errors do
   @spec to_map(Changeset.t()) :: map
   def to_map(changeset) do
     changeset.errors
-    |> Enum.map(fn {field, detail} -> {field, render_detail(detail)} end)
-    |> Enum.into(%{})
+    |> Enum.into(%{}, fn {field, detail} -> {field, render_detail(detail)} end)
   end
 
   @doc "Render changeset error details to a string"
