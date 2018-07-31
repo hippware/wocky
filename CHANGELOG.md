@@ -47,7 +47,7 @@ Fix update of pending bots; add more tests (PR #1690)
 
 # 2018.7.5+rfff6dfc
 
-Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
+Important: Update to Erlang 21/Elixir 1.6.6 (#1619, PR #1630)
 
 * Add createdAt to Bot fields returned via GraphQL (#1617)
 * Speculative attempt to fix bot/sub locking (PR #1622)
@@ -58,7 +58,7 @@ Important: Update to Erlang 21/Elixir 1.6.6 (PR #1630)
 * Config cleanup (PR #1625)
 * Various tweaks to improve test stability and error output (PR #1626)
 * Add isFetch field to location updates (PR #1627)
-* Update to Erlang 21/Elixir 1.6.6 (PR #1630)
+* Update to Erlang 21/Elixir 1.6.6 (#1619, PR #1630)
 * Consolidate AWS user credentials in Wocky (#1631)
 * Update distillery for Erlang 21 (PR #1636)
 * Remove auto-gen sub count; remove bot subscribers hash (#1628)
