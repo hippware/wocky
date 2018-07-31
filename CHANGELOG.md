@@ -6,10 +6,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: absinthe (PR #1693), espec (PR #1702)
+  * kadabra (PR #1721), credo (PR #1720), algolia (PR #1717)
 * Extend auth token expiry to 60 days (#1680)
 * Fix crash on nil description (#1691, PR #1701)
 * Mark server fields as deprecated (PR #1700)
 * Bot query tweaks (PR #1696)
+* Replace Task.async with Task.start_link (PR #1719)
 
 
 # 2018.7.19+r0da9d8d
