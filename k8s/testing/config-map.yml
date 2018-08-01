@@ -21,6 +21,7 @@ data:
   WOCKY_DB_HOST: wocky-testing.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_testing
   WOCKY_DB_WATCHER_QUEUE: wocky-testing-db-watcher.fifo
+  WOCKY_DB_WATCHER_REGION: us-west-2
   WOCKY_ENTER_DEBOUNCE_SECONDS: "0"
   WOCKY_EXIT_DEBOUNCE_SECONDS: "0"
   AWS_ACCESS_KEY_ID: AKIAISCBKX42EUVSVXAQ
