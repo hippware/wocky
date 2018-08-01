@@ -5,13 +5,22 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: credo (PR #1720), algolia (PR #1717)
+
+
+# 2018.7.30+re04463a
+
+* Replace Task.async with Task.start_link (PR #1719)
+* Update: kadabra (PR #1721)
+
+
+# 2018.7.23+r95ccfc3
+
 * Update: absinthe (PR #1693), espec (PR #1702)
-  * kadabra (PR #1721), credo (PR #1720), algolia (PR #1717)
 * Extend auth token expiry to 60 days (#1680)
 * Fix crash on nil description (#1691, PR #1701)
 * Mark server fields as deprecated (PR #1700)
 * Bot query tweaks (PR #1696)
-* Replace Task.async with Task.start_link (PR #1719)
 
 
 # 2018.7.19+r0da9d8d
