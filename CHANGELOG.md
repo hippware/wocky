@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.8.1+rea1193b
+
 * Update: credo (PR #1720), algolia (PR #1717)
+* Add missing watcher region config
 
 
 # 2018.7.30+re04463a
