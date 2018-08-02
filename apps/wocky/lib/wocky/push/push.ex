@@ -109,7 +109,11 @@ defmodule Wocky.Push do
   end
 
   defp do_notify(token, user_id, resource, event) do
-    on_response = fn r -> handle_response(r, user_id, resource) end
+    # Don't start_link here - we want the timeout to fire even if we crash
+    {:ok, timeout_pid} =
+      Task.start(fn -> push_timeout(token, user_id, resource, event) end)
+
+    on_response = fn r -> handle_response(r, user_id, resource, timeout_pid) end
 
     event
     |> make_payload(token)
@@ -141,10 +145,15 @@ defmodule Wocky.Push do
 
   defp maybe_push(n, on_response, true) do
     notif =
-      if n.payload["aps"]["alert"] == "bad token" do
-        %Notification{n | id: "testing", response: :bad_device_token}
-      else
-        %Notification{n | id: "testing", response: :success}
+      case n.payload["aps"]["alert"] do
+        "bad token" ->
+          %Notification{n | id: "testing", response: :bad_device_token}
+
+        "raise" ->
+          raise "requested_raise"
+
+        _ ->
+          %Notification{n | id: "testing", response: :success}
       end
 
     Sandbox.record_notification(notif, self())
@@ -166,7 +175,13 @@ defmodule Wocky.Push do
 
   defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
 
-  defp handle_response(%Notification{response: resp} = n, user_id, resource) do
+  defp handle_response(
+         %Notification{response: resp} = n,
+         user_id,
+         resource,
+         timeout_pid
+       ) do
+    send(timeout_pid, :push_complete)
     maybe_handle_error(resp, n, user_id, resource)
     update_metric(resp)
     do_db_log(n, user_id, resource)
@@ -218,6 +233,32 @@ defmodule Wocky.Push do
       payload: inspect(n.payload),
       response: to_string(n.response),
       details: Error.msg(n.response)
+    }
+    |> Log.insert_changeset()
+    |> Repo.insert!()
+  end
+
+  defp push_timeout(token, user_id, resource, event) do
+    timeout = timeout() * 2
+
+    receive do
+      :push_complete -> :ok
+    after
+      timeout -> log_timeout(token, user_id, resource, event)
+    end
+  end
+
+  defp log_timeout(token, user_id, resource, event) do
+    Logger.error("PN Error: timeout expired")
+
+    %{
+      user_id: user_id,
+      resource: resource,
+      token: token,
+      message_id: nil,
+      payload: Event.message(event),
+      response: "timeout",
+      details: "Timeout waiting for response from Pigeon"
     }
     |> Log.insert_changeset()
     |> Repo.insert!()

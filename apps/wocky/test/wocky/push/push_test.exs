@@ -20,12 +20,28 @@ defmodule Wocky.PushTest do
   setup do
     Sandbox.clear_notifications()
 
+    original_timeout = Confex.get_env(:wocky, Wocky.Push)[:timeout]
+    set_timeout(200)
+
     user = Factory.insert(:user, resource: "testing")
     token = Code.isbn13()
 
     :ok = Push.enable(user.id, user.resource, token)
 
+    on_exit(fn ->
+      set_timeout(original_timeout)
+    end)
+
     {:ok, user_id: user.id, resource: user.resource, token: token}
+  end
+
+  defp set_timeout(timeout) do
+    config =
+      :wocky
+      |> Application.get_env(Wocky.Push)
+      |> Keyword.replace!(:timeout, timeout)
+
+    Application.put_env(:wocky, Wocky.Push, config)
   end
 
   defp get_user_token(user_id, resource) do
@@ -146,6 +162,19 @@ defmodule Wocky.PushTest do
     test "should send a push notification to each endpoint" do
       notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
       assert Enum.count(notifications) == 2
+    end
+  end
+
+  describe "push timeout" do
+    test "should log an error when the push request fails and times out",
+         shared do
+      assert capture_log(fn ->
+               assert_raise RuntimeError, "requested_raise", fn ->
+                 Push.notify(shared.user_id, shared.resource, "raise")
+               end
+             end) == ""
+
+      assert capture_log(fn -> Process.sleep(500) end) =~ "timeout expired"
     end
   end
 end
