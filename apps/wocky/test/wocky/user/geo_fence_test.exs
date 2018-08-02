@@ -15,7 +15,12 @@ defmodule Wocky.User.GeoFenceTest do
   @rsrc "testing"
 
   setup_all do
-    Application.put_env(:wocky, :visit_timeout_seconds, 2)
+    config =
+      :wocky
+      |> Application.get_env(Wocky.User.GeoFence)
+      |> Keyword.replace!(:visit_timeout_seconds, 2)
+
+    Application.put_env(:wocky, Wocky.User.GeoFence, config)
   end
 
   setup do
@@ -57,13 +62,13 @@ defmodule Wocky.User.GeoFenceTest do
 
   describe "check_for_bot_events/1 with bad data" do
     test "location with insufficient accuracy", %{user: user, bot: bot} do
-      accuracy = Confex.get_env(:wocky, :max_accuracy_threshold) + 10
+      config = Confex.get_env(:wocky, Wocky.User.GeoFence)
 
       loc = %Location{
         user: user,
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
-        accuracy: accuracy,
+        accuracy: config[:max_accuracy_threshold] + 10,
         resource: @rsrc
       }
 

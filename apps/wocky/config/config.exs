@@ -5,17 +5,8 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
 
-  # location processing
+  # Push notifications for bot events
   enable_bot_event_notifications: true,
-  async_location_processing: false,
-  enter_debounce_seconds:
-    {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
-  exit_debounce_seconds: {:system, :integer, "WOCKY_EXIT_DEBOUNCE_SECONDS", 30},
-  visit_timeout_seconds:
-    {:system, :integer, "WOCKY_VISIT_TIMEOUT_SECONDS", 1_800},
-  visit_timeout_enabled:
-    {:system, :boolean, "WOCKY_VISIT_TIMEOUT_ENABLED", true},
-  max_accuracy_threshold: {:system, :integer, "WOCKY_MAX_ACCURACY_THRESHOLD", 30},
 
   # TROS file storage in test storage system
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.TestStore},
@@ -48,6 +39,20 @@ config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
   db: {:system, :integer, "REDIS_DB", 0}
+
+# location processing
+config :wocky, Wocky.User.GeoFence,
+  async_processing: false,
+  debounce: true,
+  enter_debounce_seconds:
+    {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
+  exit_debounce_seconds: {:system, :integer, "WOCKY_EXIT_DEBOUNCE_SECONDS", 30},
+  visit_timeout_seconds:
+    {:system, :integer, "WOCKY_VISIT_TIMEOUT_SECONDS", 1_800},
+  visit_timeout_enabled:
+    {:system, :boolean, "WOCKY_VISIT_TIMEOUT_ENABLED", true},
+  max_accuracy_threshold:
+    {:system, :integer, "WOCKY_MAX_ACCURACY_THRESHOLD", 30}
 
 # Push notifications
 config :wocky, Wocky.Push,

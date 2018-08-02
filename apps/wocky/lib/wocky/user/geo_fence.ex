@@ -24,9 +24,11 @@ defmodule Wocky.User.GeoFence do
   @doc false
   @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
   def check_for_bot_event(bot, loc, user) do
-    if location_valid?(loc) do
+    config = get_config(debounce: false)
+
+    if location_valid?(loc, config) do
       bot
-      |> check_for_event(user, loc, false, [])
+      |> check_for_event(user, loc, config, [])
       |> Enum.each(&process_bot_event/1)
     end
 
@@ -36,35 +38,42 @@ defmodule Wocky.User.GeoFence do
   @doc false
   @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
   def check_for_bot_events(%Location{} = loc, user) do
-    if location_valid?(loc) do
-      maybe_do_async(fn ->
-        user
-        |> User.get_guest_subscriptions()
-        |> check_for_events(user, loc)
-        |> Enum.each(&process_bot_event/1)
-      end)
+    config = get_config()
+
+    if location_valid?(loc, config) do
+      maybe_do_async(
+        fn ->
+          user
+          |> User.get_guest_subscriptions()
+          |> check_for_events(user, loc, config)
+          |> Enum.each(&process_bot_event/1)
+        end,
+        config
+      )
     end
 
     loc
   end
 
-  defp location_valid?(%Location{accuracy: accuracy}) do
-    accuracy < Confex.get_env(:wocky, :max_accuracy_threshold)
+  defp get_config(opts \\ []) do
+    Confex.fetch_env!(:wocky, __MODULE__)
+    |> Keyword.merge(opts)
+    |> Enum.into(%{})
   end
 
-  defp maybe_do_async(fun) do
-    if Application.fetch_env!(:wocky, :async_location_processing) do
-      Task.start_link(fun)
-    else
-      fun.()
-    end
+  defp location_valid?(%Location{accuracy: accuracy}, config) do
+    accuracy < config.max_accuracy_threshold
   end
 
-  defp check_for_events(bots, user, loc) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, loc, true, &2))
+  defp maybe_do_async(fun, %{async_processing: true}), do: Task.start_link(fun)
+
+  defp maybe_do_async(fun, _), do: fun.()
+
+  defp check_for_events(bots, user, loc, config) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, loc, config, &2))
   end
 
-  defp check_for_event(bot, user, loc, debounce, acc) do
+  defp check_for_event(bot, user, loc, config, acc) do
     :ok =
       Logger.debug(fn ->
         """
@@ -75,33 +84,34 @@ defmodule Wocky.User.GeoFence do
 
     bot
     |> Bot.contains?(Map.from_struct(loc))
-    |> maybe_set_exit_timer(user, bot, loc)
-    |> handle_intersection(user, bot, loc, debounce, acc)
+    |> maybe_set_exit_timer(user, bot, loc, config)
+    |> handle_intersection(user, bot, loc, config, acc)
   end
 
-  defp maybe_set_exit_timer(false, _, _, _), do: false
+  defp maybe_set_exit_timer(false, _, _, _, _), do: false
 
-  defp maybe_set_exit_timer(true, user, bot, loc) do
-    if Confex.get_env(:wocky, :visit_timeout_enabled) do
-      dawdle_event = %{
-        user_id: user.id,
-        resource: loc.resource,
-        bot_id: bot.id,
-        loc_id: loc.id
-      }
+  defp maybe_set_exit_timer(true, _, _, _, %{visit_timeout_enabled: false}),
+    do: true
 
-      timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
+  defp maybe_set_exit_timer(true, user, bot, loc, config) do
+    dawdle_event = %{
+      user_id: user.id,
+      resource: loc.resource,
+      bot_id: bot.id,
+      loc_id: loc.id
+    }
 
-      Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
-    end
+    timeout = config.visit_timeout_seconds * 1000
+
+    Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout)
 
     true
   end
 
-  defp handle_intersection(inside?, user, bot, loc, debounce, acc) do
+  defp handle_intersection(inside?, user, bot, loc, config, acc) do
     event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
 
-    case user_state_change(inside?, event, debounce) do
+    case user_state_change(inside?, event, config) do
       :no_change ->
         acc
 
@@ -115,13 +125,13 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(true, nil, true), do: :transition_in
-  defp user_state_change(true, nil, false), do: :enter
+  defp user_state_change(true, nil, %{debounce: true}), do: :transition_in
+  defp user_state_change(true, nil, %{debounce: false}), do: :enter
 
-  defp user_state_change(true, be, debounce?) do
+  defp user_state_change(true, be, config) do
     case be.event do
       :exit ->
-        maybe_enter(debounce?)
+        maybe_enter(config.debounce)
 
       :enter ->
         :no_change
@@ -130,7 +140,7 @@ defmodule Wocky.User.GeoFence do
         :reactivate
 
       :deactivate ->
-        maybe_enter(debounce?)
+        maybe_enter(config.debounce)
 
       :reactivate ->
         :no_change
@@ -139,9 +149,9 @@ defmodule Wocky.User.GeoFence do
         :roll_back
 
       :transition_in ->
-        debounce_secs = Confex.get_env(:wocky, :enter_debounce_seconds)
+        debounce_secs = config.enter_debounce_seconds
 
-        if debounce_expired?(debounce?, be.created_at, debounce_secs) do
+        if debounce_expired?(config.debounce, be.created_at, debounce_secs) do
           :enter
         else
           :no_change
@@ -149,15 +159,15 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(false, nil, _debounce), do: :no_change
+  defp user_state_change(false, nil, _config), do: :no_change
 
-  defp user_state_change(false, be, debounce?) do
+  defp user_state_change(false, be, config) do
     case be.event do
       :exit ->
         :no_change
 
       :enter ->
-        maybe_exit(debounce?)
+        maybe_exit(config.debounce)
 
       :timeout ->
         :deactivate
@@ -166,15 +176,15 @@ defmodule Wocky.User.GeoFence do
         :no_change
 
       :reactivate ->
-        maybe_exit(debounce?)
+        maybe_exit(config.debounce)
 
       :transition_in ->
         :roll_back
 
       :transition_out ->
-        debounce_secs = Confex.get_env(:wocky, :exit_debounce_seconds)
+        debounce_secs = config.exit_debounce_seconds
 
-        if debounce_expired?(debounce?, be.created_at, debounce_secs) do
+        if debounce_expired?(config.debounce, be.created_at, debounce_secs) do
           :exit
         else
           :no_change
