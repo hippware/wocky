@@ -10,6 +10,25 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
+  @spec exit_all_bots(User.t()) :: :ok
+  def exit_all_bots(user) do
+    user
+    |> Bot.by_relationship_query(:visitor, user)
+    |> Repo.all()
+    |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
+    |> Enum.each(fn {bot, event} ->
+      process_bot_event({user, bot, event}, false)
+    end)
+  end
+
+  @doc false
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
+  def check_for_bot_event(bot, loc, user) do
+    bot
+    |> check_for_event(user, loc, false, [])
+    |> Enum.each(&process_bot_event/1)
+  end
+
   @doc false
   @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
   def check_for_bot_events(%Location{} = loc, user) do
@@ -21,24 +40,6 @@ defmodule Wocky.User.GeoFence do
     end)
 
     loc
-  end
-
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
-  def check_for_bot_event(bot, loc, user) do
-    bot
-    |> check_for_event(user, loc, false, [])
-    |> Enum.each(&process_bot_event/1)
-  end
-
-  @spec exit_all_bots(User.t()) :: :ok
-  def exit_all_bots(user) do
-    user
-    |> Bot.by_relationship_query(:visitor, user)
-    |> Repo.all()
-    |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
-    |> Enum.each(fn {bot, event} ->
-      process_bot_event({user, bot, event}, false)
-    end)
   end
 
   defp maybe_do_async(fun) do
