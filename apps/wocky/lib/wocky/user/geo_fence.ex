@@ -111,7 +111,7 @@ defmodule Wocky.User.GeoFence do
   defp handle_intersection(inside?, user, bot, loc, config, acc) do
     event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
 
-    case user_state_change(inside?, event, config) do
+    case user_state_change(inside?, event, loc, config) do
       :no_change ->
         acc
 
@@ -125,13 +125,13 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(true, nil, %{debounce: true}), do: :transition_in
-  defp user_state_change(true, nil, %{debounce: false}), do: :enter
+  defp user_state_change(true, nil, _, %{debounce: true}), do: :transition_in
+  defp user_state_change(true, nil, _, %{debounce: false}), do: :enter
 
-  defp user_state_change(true, be, config) do
+  defp user_state_change(true, be, loc, config) do
     case be.event do
       :exit ->
-        maybe_enter(config.debounce)
+        maybe_enter(loc, config)
 
       :enter ->
         :no_change
@@ -140,7 +140,7 @@ defmodule Wocky.User.GeoFence do
         :reactivate
 
       :deactivate ->
-        maybe_enter(config.debounce)
+        maybe_enter(loc, config)
 
       :reactivate ->
         :no_change
@@ -151,7 +151,7 @@ defmodule Wocky.User.GeoFence do
       :transition_in ->
         debounce_secs = config.enter_debounce_seconds
 
-        if debounce_expired?(config.debounce, be.created_at, debounce_secs) do
+        if debounce_complete?(loc, be.created_at, config, debounce_secs) do
           :enter
         else
           :no_change
@@ -159,15 +159,15 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(false, nil, _config), do: :no_change
+  defp user_state_change(false, nil, _loc, _config), do: :no_change
 
-  defp user_state_change(false, be, config) do
+  defp user_state_change(false, be, loc, config) do
     case be.event do
       :exit ->
         :no_change
 
       :enter ->
-        maybe_exit(config.debounce)
+        maybe_exit(loc, config)
 
       :timeout ->
         :deactivate
@@ -176,7 +176,7 @@ defmodule Wocky.User.GeoFence do
         :no_change
 
       :reactivate ->
-        maybe_exit(config.debounce)
+        maybe_exit(loc, config)
 
       :transition_in ->
         :roll_back
@@ -184,7 +184,7 @@ defmodule Wocky.User.GeoFence do
       :transition_out ->
         debounce_secs = config.exit_debounce_seconds
 
-        if debounce_expired?(config.debounce, be.created_at, debounce_secs) do
+        if debounce_complete?(loc, be.created_at, config, debounce_secs) do
           :exit
         else
           :no_change
@@ -192,15 +192,37 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp maybe_enter(true), do: :transition_in
-  defp maybe_enter(false), do: :enter
+  defp maybe_enter(_, %{debounce: false}), do: :enter
 
-  defp maybe_exit(true), do: :transition_out
-  defp maybe_exit(false), do: :exit
+  defp maybe_enter(loc, config) do
+    if moving_slowly?(loc, config) do
+      :enter
+    else
+      :transition_in
+    end
+  end
 
-  defp debounce_expired?(false, _, _), do: true
+  defp maybe_exit(_, %{debounce: false}), do: :exit
 
-  defp debounce_expired?(true, ts, debounce_secs) do
+  defp maybe_exit(loc, config) do
+    if moving_slowly?(loc, config) do
+      :exit
+    else
+      :transition_out
+    end
+  end
+
+  defp moving_slowly?(loc, config) do
+    !loc.is_moving || (loc.speed >= 0 && loc.speed <= config.max_slow_speed)
+  end
+
+  defp debounce_complete?(_, _, %{debounce: false}, _), do: true
+
+  defp debounce_complete?(loc, ts, config, debounce_secs) do
+    moving_slowly?(loc, config) || debounce_expired?(ts, debounce_secs)
+  end
+
+  defp debounce_expired?(ts, debounce_secs) do
     Timex.diff(Timex.now(), ts, :seconds) >= debounce_secs
   end
 

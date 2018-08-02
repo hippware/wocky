@@ -60,45 +60,54 @@ defmodule Wocky.User.GeoFenceTest do
     Sandbox.clear_notifications()
   end
 
-  describe "check_for_bot_events/1 with bad data" do
-    test "location with insufficient accuracy", %{user: user, bot: bot} do
-      config = Confex.get_env(:wocky, Wocky.User.GeoFence)
-
-      loc = %Location{
-        user: user,
-        lat: Bot.lat(bot),
-        lon: Bot.lon(bot),
-        accuracy: config[:max_accuracy_threshold] + 10,
-        resource: @rsrc
-      }
-
-      GeoFence.check_for_bot_events(loc, user)
-
-      assert BotEvent.get_last_event(user.id, @rsrc, bot.id) == nil
-      assert Sandbox.list_notifications() == []
-    end
-  end
-
-  describe "check_for_bot_events/1 with a user inside a bot perimeter" do
+  describe "check_for_bot_events/2 with bad data" do
     setup %{user: user, bot: bot} do
       loc = %Location{
         user: user,
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
         accuracy: 10,
+        is_moving: true,
+        speed: 3,
         resource: @rsrc
       }
 
       {:ok, inside_loc: loc}
     end
 
-    test "bots with a negative radius should not generate an event", ctx do
+    test "location with insufficient accuracy", ctx do
+      config = Confex.get_env(:wocky, Wocky.User.GeoFence)
+      loc = %Location{ctx.inside_loc | config[:max_accuracy_threshold] + 10}
+
+      GeoFence.check_for_bot_events(loc, ctx.user)
+
+      assert BotEvent.get_last_event(user.id, @rsrc, bot.id) == nil
+      assert Sandbox.list_notifications() == []
+    end
+
+    test "bots with a negative radius", ctx do
       ctx.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
 
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
       assert BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id) == nil
       assert Sandbox.list_notifications() == []
+    end
+  end
+
+  describe "check_for_bot_events/2 with a user inside a bot perimeter" do
+    setup %{user: user, bot: bot} do
+      loc = %Location{
+        user: user,
+        lat: Bot.lat(bot),
+        lon: Bot.lon(bot),
+        accuracy: 10,
+        is_moving: true,
+        speed: 3,
+        resource: @rsrc
+      }
+
+      {:ok, inside_loc: loc}
     end
 
     test "with no bot perimeter events", ctx do
@@ -112,7 +121,7 @@ defmodule Wocky.User.GeoFenceTest do
       assert Sandbox.list_notifications() == []
     end
 
-    test "who was outside the bot perimeter", ctx do
+    test "who was outside the bot perimeter and is moving quickly", ctx do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
@@ -122,6 +131,36 @@ defmodule Wocky.User.GeoFenceTest do
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
+    end
+
+    test "who was outside the bot perimeter and is moving slowly", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
+
+      loc = %Location{ctx.inside_loc | speed: 1}
+      GeoFence.check_for_bot_events(loc, ctx.user)
+
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      assert event == :enter
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
+
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
+    end
+
+    test "who was outside the bot perimeter and is not moving", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
+
+      loc = %Location{ctx.inside_loc | is_moving: false}
+      GeoFence.check_for_bot_events(loc, ctx.user)
+
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      assert event == :enter
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
+
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
@@ -216,7 +255,7 @@ defmodule Wocky.User.GeoFenceTest do
   end
 
   describe """
-  check_for_bot_events/1 with a user inside a bot perimeter - no debounce
+  check_for_bot_event/3 with a user inside a bot perimeter - no debounce
   """ do
     setup %{user: user, bot: bot} do
       loc = %Location{
@@ -344,7 +383,7 @@ defmodule Wocky.User.GeoFenceTest do
     end
   end
 
-  describe "check_for_bot_events/1 with a user outside a bot perimeter" do
+  describe "check_for_bot_events/2 with a user outside a bot perimeter" do
     setup %{user: user} do
       loc = Factory.build(:location, %{user: user, resource: @rsrc})
       {:ok, outside_loc: loc}
@@ -466,7 +505,7 @@ defmodule Wocky.User.GeoFenceTest do
   end
 
   describe """
-  check_for_bot_events/1 with a user outside a bot perimeter - no debounce
+  check_for_bot_event/3 with a user outside a bot perimeter - no debounce
   """ do
     setup %{user: user} do
       loc = Factory.build(:location, %{user: user, resource: @rsrc})
