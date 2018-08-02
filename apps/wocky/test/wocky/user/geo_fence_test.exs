@@ -55,6 +55,25 @@ defmodule Wocky.User.GeoFenceTest do
     Sandbox.clear_notifications()
   end
 
+  describe "check_for_bot_events/1 with bad data" do
+    test "location with insufficient accuracy", %{user: user, bot: bot} do
+      accuracy = Confex.get_env(:wocky, :max_accuracy_threshold) + 10
+
+      loc = %Location{
+        user: user,
+        lat: Bot.lat(bot),
+        lon: Bot.lon(bot),
+        accuracy: accuracy,
+        resource: @rsrc
+      }
+
+      GeoFence.check_for_bot_events(loc, user)
+
+      assert BotEvent.get_last_event(user.id, @rsrc, bot.id) == nil
+      assert Sandbox.list_notifications() == []
+    end
+  end
+
   describe "check_for_bot_events/1 with a user inside a bot perimeter" do
     setup %{user: user, bot: bot} do
       loc = %Location{

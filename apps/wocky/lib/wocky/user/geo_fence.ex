@@ -24,22 +24,32 @@ defmodule Wocky.User.GeoFence do
   @doc false
   @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
   def check_for_bot_event(bot, loc, user) do
-    bot
-    |> check_for_event(user, loc, false, [])
-    |> Enum.each(&process_bot_event/1)
+    if location_valid?(loc) do
+      bot
+      |> check_for_event(user, loc, false, [])
+      |> Enum.each(&process_bot_event/1)
+    end
+
+    loc
   end
 
   @doc false
   @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
   def check_for_bot_events(%Location{} = loc, user) do
-    maybe_do_async(fn ->
-      user
-      |> User.get_guest_subscriptions()
-      |> check_for_events(user, loc)
-      |> Enum.each(&process_bot_event/1)
-    end)
+    if location_valid?(loc) do
+      maybe_do_async(fn ->
+        user
+        |> User.get_guest_subscriptions()
+        |> check_for_events(user, loc)
+        |> Enum.each(&process_bot_event/1)
+      end)
+    end
 
     loc
+  end
+
+  defp location_valid?(%Location{accuracy: accuracy}) do
+    accuracy < Confex.get_env(:wocky, :max_accuracy_threshold)
   end
 
   defp maybe_do_async(fun) do

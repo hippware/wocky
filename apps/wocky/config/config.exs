@@ -15,6 +15,7 @@ config :wocky,
     {:system, :integer, "WOCKY_VISIT_TIMEOUT_SECONDS", 1_800},
   visit_timeout_enabled:
     {:system, :boolean, "WOCKY_VISIT_TIMEOUT_ENABLED", true},
+  max_accuracy_threshold: {:system, :integer, "WOCKY_MAX_ACCURACY_THRESHOLD", 30},
 
   # TROS file storage in test storage system
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.TestStore},
