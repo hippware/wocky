@@ -388,15 +388,16 @@ defmodule Wocky.User.GeoFenceTest do
   end
 
   describe "check_for_bot_events/2 with a user outside a bot perimeter" do
-    setup %{user: user} do
-      loc =
-        Factory.build(:location, %{
-          user: user,
-          accuracy: 10,
-          is_moving: true,
-          speed: 3,
-          resource: @rsrc
-        })
+    setup %{user: user, bot: bot} do
+      loc = %Location{
+        user: user,
+        lat: Bot.lat(bot) + 0.0015,
+        lon: Bot.lon(bot),
+        accuracy: 10,
+        is_moving: true,
+        speed: 3,
+        resource: @rsrc
+      }
 
       {:ok, outside_loc: loc}
     end
@@ -446,6 +447,22 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
 
       loc = %Location{ctx.outside_loc | is_moving: false}
+      GeoFence.check_for_bot_events(loc, ctx.user)
+
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      assert event == :exit
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
+
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
+    end
+
+    test "who was inside the bot perimeter and is now far away", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
+
+      loc = %Location{ctx.outside_loc | lat: Bot.lat(ctx.bot) + 0.0025}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)

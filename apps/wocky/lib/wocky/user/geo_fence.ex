@@ -111,7 +111,7 @@ defmodule Wocky.User.GeoFence do
   defp handle_intersection(inside?, user, bot, loc, config, acc) do
     event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
 
-    case user_state_change(inside?, event, loc, config) do
+    case user_state_change(inside?, event, bot, loc, config) do
       :no_change ->
         acc
 
@@ -125,10 +125,10 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(true, nil, _, %{debounce: true}), do: :transition_in
-  defp user_state_change(true, nil, _, %{debounce: false}), do: :enter
+  defp user_state_change(true, nil, _, _, %{debounce: true}), do: :transition_in
+  defp user_state_change(true, nil, _, _, %{debounce: false}), do: :enter
 
-  defp user_state_change(true, be, loc, config) do
+  defp user_state_change(true, be, _bot, loc, config) do
     case be.event do
       :exit ->
         maybe_enter(loc, config)
@@ -159,15 +159,15 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(false, nil, _loc, _config), do: :no_change
+  defp user_state_change(false, nil, _bot, _loc, _config), do: :no_change
 
-  defp user_state_change(false, be, loc, config) do
+  defp user_state_change(false, be, bot, loc, config) do
     case be.event do
       :exit ->
         :no_change
 
       :enter ->
-        maybe_exit(loc, config)
+        maybe_exit(loc, bot, config)
 
       :timeout ->
         :deactivate
@@ -176,7 +176,7 @@ defmodule Wocky.User.GeoFence do
         :no_change
 
       :reactivate ->
-        maybe_exit(loc, config)
+        maybe_exit(loc, bot, config)
 
       :transition_in ->
         :roll_back
@@ -202,10 +202,10 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp maybe_exit(_, %{debounce: false}), do: :exit
+  defp maybe_exit(_, _, %{debounce: false}), do: :exit
 
-  defp maybe_exit(loc, config) do
-    if moving_slowly?(loc, config) do
+  defp maybe_exit(loc, bot, config) do
+    if too_far?(bot, loc, config) || moving_slowly?(loc, config) do
       :exit
     else
       :transition_out
@@ -214,6 +214,10 @@ defmodule Wocky.User.GeoFence do
 
   defp moving_slowly?(loc, config) do
     !loc.is_moving || (loc.speed >= 0 && loc.speed <= config.max_slow_speed)
+  end
+
+  defp too_far?(bot, loc, config) do
+    Bot.distance_from(bot, Map.from_struct(loc)) > config.max_exit_distance
   end
 
   defp debounce_complete?(_, _, %{debounce: false}, _), do: true
