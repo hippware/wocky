@@ -73,7 +73,7 @@ matches_rule(_, all) -> true;
 matches_rule(User, {user, RuleUser}) ->
     jid:are_bare_equal(User, RuleUser);
 matches_rule(User, {friends, RuleUser}) ->
-    ?wocky_roster:is_friend(RuleUser#jid.luser, User#jid.luser);
+    ?wocky_roster:'friend?'(RuleUser#jid.luser, User#jid.luser);
 matches_rule(_, {members, _}) -> false; % Currently unsupported
 matches_rule(User, {redirect, Target}) ->
     wocky_access_manager:check_access(Target, User, view) =:= allow.

@@ -314,81 +314,81 @@ defmodule Wocky.RosterSpec do
     end
   end
 
-  describe "is_friend/2" do
+  describe "friend?/2" do
     it "should return true when a user is subscribed" do
-      Roster.is_friend(shared.user.id, shared.contact.id)
+      Roster.friend?(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
     it "should return false if the user has blocked the contact" do
       Block.block(shared.user, shared.contact)
 
-      Roster.is_friend(shared.user.id, shared.contact.id)
+      Roster.friend?(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return true if the contact has blocked the user" do
       Block.block(shared.contact, shared.user)
 
-      Roster.is_friend(shared.user.id, shared.contact.id)
+      Roster.friend?(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return false if the contact does not have 'both' subscription" do
       Roster.put(default_item(shared, subscription: :from))
 
-      Roster.is_friend(shared.user.id, shared.contact.id)
+      Roster.friend?(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return false for non-existant contacts" do
-      Roster.is_friend(shared.user.id, ID.new())
+      Roster.friend?(shared.user.id, ID.new())
       |> should(be_false())
 
-      Roster.is_friend(shared.user.id, shared.rosterless_user.id)
+      Roster.friend?(shared.user.id, shared.rosterless_user.id)
       |> should(be_false())
     end
   end
 
-  describe "is_follower/2" do
+  describe "follower?/2" do
     it "should return true when a user is subscribed" do
-      Roster.is_follower(shared.user.id, shared.contact.id)
+      Roster.follower?(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
     it "should return false if the user has blocked the contact" do
       Block.block(shared.user, shared.contact)
 
-      Roster.is_follower(shared.user.id, shared.contact.id)
+      Roster.follower?(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return false if the user is blocked by the contact" do
       Block.block(shared.contact, shared.user)
 
-      Roster.is_follower(shared.user.id, shared.contact.id)
+      Roster.follower?(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return true if the user has 'to' subscription" do
       Roster.put(default_item(shared, subscription: :to))
 
-      Roster.is_follower(shared.user.id, shared.contact.id)
+      Roster.follower?(shared.user.id, shared.contact.id)
       |> should(be_true())
     end
 
     it "should return false if the user does not have 'both' or 'to' subscription" do
       Roster.put(default_item(shared, subscription: :from))
 
-      Roster.is_follower(shared.user.id, shared.contact.id)
+      Roster.follower?(shared.user.id, shared.contact.id)
       |> should(be_false())
     end
 
     it "should return false for non-existant contacts" do
-      Roster.is_follower(shared.user.id, ID.new())
+      Roster.follower?(shared.user.id, ID.new())
       |> should(be_false())
 
-      Roster.is_follower(shared.user.id, shared.rosterless_user.id)
+      Roster.follower?(shared.user.id, shared.rosterless_user.id)
       |> should(be_false())
     end
   end
@@ -664,7 +664,7 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make the users friends" do
-          Roster.is_friend(shared.user.id, shared.user2.id)
+          Roster.friend?(shared.user.id, shared.user2.id)
           |> should(be_true())
         end
       end
@@ -700,7 +700,7 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make the users friends" do
-          Roster.is_friend(shared.user.id, shared.user2.id)
+          Roster.friend?(shared.user.id, shared.user2.id)
           |> should(be_true())
         end
 
@@ -726,12 +726,12 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make user1 follow user2" do
-          Roster.is_follower(shared.user.id, shared.user2.id)
+          Roster.follower?(shared.user.id, shared.user2.id)
           |> should(be_true())
         end
 
         it "should not make the users friends" do
-          Roster.is_friend(shared.user.id, shared.user2.id)
+          Roster.friend?(shared.user.id, shared.user2.id)
           |> should(be_false())
         end
       end
@@ -767,7 +767,7 @@ defmodule Wocky.RosterSpec do
         end
 
         it "should make user1 follow user 2" do
-          Roster.is_follower(shared.user.id, shared.user2.id)
+          Roster.follower?(shared.user.id, shared.user2.id)
           |> should(be_true())
         end
 

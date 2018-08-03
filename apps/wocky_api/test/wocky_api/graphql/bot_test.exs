@@ -2,8 +2,10 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
+  alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Bot.Invitation
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -1288,6 +1290,107 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       assert error_msg(result) =~ "Bot not found"
+    end
+  end
+
+  describe "invitations" do
+    @query """
+    mutation ($input: BotInviteInput!) {
+      botInvite (input: $input) {
+        result
+      }
+    }
+    """
+    test "invite a user to a bot", %{bot: bot, user: user, user2: user2} do
+      result =
+        run_query(@query, user, %{
+          "input" => %{"bot_id" => bot.id, "user_id" => user2.id}
+        })
+
+      refute has_errors(result)
+
+      assert %{"botInvite" => %{"result" => id}} = result.data
+      assert %Invitation{accepted: nil} = Repo.get_by(Invitation, id: id)
+    end
+
+    test "invite a user to an unowned bot",
+         %{bot2: bot2, user: user, user2: user2} do
+      result =
+        run_query(@query, user, %{
+          "input" => %{"bot_id" => bot2.id, "user_id" => user2.id}
+        })
+
+      assert error_msg(result) =~ "Invalid bot"
+    end
+
+    test "invite a blocked user", %{bot: bot, user: user, user2: user2} do
+      Block.block(user2, user)
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{"bot_id" => bot.id, "user_id" => user2.id}
+        })
+
+      assert error_msg(result) =~ "Invalid user"
+    end
+
+    @query """
+    mutation ($input: BotInvitationReplyInput) {
+      botInvitationReply (input: $input) {
+        result
+      }
+    }
+    """
+    test "accept an invitation", shared do
+      %{id: id} =
+        Factory.insert(:invitation,
+          user: shared.user,
+          bot: shared.bot,
+          invitee: shared.user2
+        )
+
+      result =
+        run_query(@query, shared.user2, %{
+          "input" => %{"invitation_id" => to_string(id), "accept" => true}
+        })
+
+      refute has_errors(result)
+
+      assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
+    end
+
+    test "decline an invitation", shared do
+      %{id: id} =
+        Factory.insert(:invitation,
+          user: shared.user,
+          bot: shared.bot,
+          invitee: shared.user2
+        )
+
+      result =
+        run_query(@query, shared.user2, %{
+          "input" => %{"invitation_id" => to_string(id), "accept" => false}
+        })
+
+      refute has_errors(result)
+
+      assert %Invitation{accepted: false} = Repo.get_by(Invitation, id: id)
+    end
+
+    test "can't accept an invitation to someone else", shared do
+      %{id: id} =
+        Factory.insert(:invitation,
+          user: shared.user,
+          bot: shared.bot,
+          invitee: shared.user2
+        )
+
+      result =
+        run_query(@query, shared.user, %{
+          "input" => %{"invitation_id" => to_string(id), "accept" => true}
+        })
+
+      assert error_msg(result) =~ "Permission denied"
     end
   end
 

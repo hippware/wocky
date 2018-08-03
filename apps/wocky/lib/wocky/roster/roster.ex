@@ -212,9 +212,9 @@ defmodule Wocky.Roster do
   Returns true if `user_id` is a friend of `contact_id`, regardless of
   whether contact_id has blocked `user_id`
   """
-  @spec is_friend(User.id(), User.id()) :: boolean
-  def is_friend(user_id, contact_id) do
-    user_id |> get(contact_id) |> is_friend
+  @spec friend?(User.id(), User.id()) :: boolean
+  def friend?(user_id, contact_id) do
+    user_id |> get(contact_id) |> friend?
   end
 
   def call_stored_relationship_proc(user1, user2, proc) do
@@ -229,9 +229,9 @@ defmodule Wocky.Roster do
   end
 
   @doc "Returns true if `user_id` is a follower of contact_id"
-  @spec is_follower(User.id(), User.id()) :: boolean
-  def is_follower(user_id, contact_id) do
-    user_id |> get(contact_id) |> is_followee
+  @spec follower?(User.id(), User.id()) :: boolean
+  def follower?(user_id, contact_id) do
+    user_id |> get(contact_id) |> followee?
   end
 
   @doc "Returns the relationship of a to b"
@@ -245,13 +245,13 @@ defmodule Wocky.Roster do
 
       {a_to_b, b_to_a} ->
         cond do
-          is_friend(a_to_b) ->
+          friend?(a_to_b) ->
             :friend
 
-          is_follower(a_to_b) ->
+          follower?(a_to_b) ->
             :followee
 
-          is_follower(b_to_a) ->
+          follower?(b_to_a) ->
             :follower
 
           true ->
@@ -374,20 +374,20 @@ defmodule Wocky.Roster do
     verstr <> "-" <> Integer.to_string(count)
   end
 
-  defp is_friend(%Item{subscription: :both}), do: true
-  defp is_friend(_), do: false
+  def friend?(%Item{subscription: :both}), do: true
+  def friend?(_), do: false
 
   # Returns true if the roster item referrs to a follower of the item owner
-  defp is_follower(%Item{subscription: subscription}) do
+  def follower?(%Item{subscription: subscription}) do
     subscription == :both || subscription == :from
   end
 
   # Returns true if the roster item referrs to a followee of the item owner
-  defp is_followee(%Item{subscription: subscription}) do
+  def followee?(%Item{subscription: subscription}) do
     subscription == :both || subscription == :to
   end
 
-  defp is_followee(_), do: false
+  def followee?(_), do: false
 
   defp maybe_sort_pair([], _, _), do: nil
   defp maybe_sort_pair([_], _, _), do: nil

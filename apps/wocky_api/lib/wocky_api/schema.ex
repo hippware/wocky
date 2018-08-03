@@ -14,6 +14,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.CollectionTypes
   import_types WockyAPI.Schema.LocationTypes
   import_types WockyAPI.Schema.MediaTypes
+  import_types WockyAPI.Schema.NotificationTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.AInt
   import_types WockyAPI.Types.UUID
@@ -22,6 +23,7 @@ defmodule WockyAPI.Schema do
     import_fields :bot_queries
     import_fields :collection_queries
     import_fields :user_queries
+    import_fields :notification_queries
   end
 
   mutation do
@@ -36,6 +38,7 @@ defmodule WockyAPI.Schema do
   subscription do
     import_fields :bot_subscriptions
     import_fields :user_subscriptions
+    import_fields :notification_subscriptions
   end
 
   def middleware(middleware, field, object) do

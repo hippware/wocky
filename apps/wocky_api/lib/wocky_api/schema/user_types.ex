@@ -543,13 +543,7 @@ defmodule WockyAPI.Schema.UserTypes do
     Receive updates when home stream items are inserted, removed, or updated
     """
     field :home_stream, non_null(:home_stream_update) do
-      config fn
-        _, %{context: %{current_user: user}} ->
-          {:ok, topic: User.home_stream_subscription_topic(user.id)}
-
-        _, _ ->
-          {:error, "This operation requires an authenticated user"}
-      end
+      user_subscription_config(&User.home_stream_subscription_topic/1)
     end
   end
 end

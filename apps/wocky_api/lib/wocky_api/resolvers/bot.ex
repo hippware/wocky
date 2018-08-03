@@ -2,14 +2,11 @@ defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
   alias Absinthe.Subscription
-  alias Wocky.Bot
-  alias Wocky.Bot.Item
+  alias Wocky.{Bot, Repo, User, Waiter}
+  alias Wocky.Bot.{Invitation, Item}
   alias Wocky.GeoUtils
-  alias Wocky.Repo
   alias Wocky.Repo.ID
-  alias Wocky.User
   alias Wocky.User.Location
-  alias Wocky.Waiter
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -288,6 +285,36 @@ defmodule WockyAPI.Resolvers.Bot do
       nil -> not_found_error(args[:input][:bot_id])
       {:error, :permission_denied} -> {:error, "Permission denied"}
       {:error, :not_found} -> {:error, "Item not found"}
+      error -> error
+    end
+  end
+
+  def invite(_root, args, %{context: %{current_user: requestor}}) do
+    with %Bot{} = bot <- Bot.get_owned_bot(args[:input][:bot_id], requestor) do
+      with %User{} = invitee <-
+             User.get_user(args[:input][:user_id], requestor),
+           {:ok, %Invitation{id: id}} <- Invitation.put(invitee, bot, requestor) do
+        {:ok, id}
+      else
+        nil -> {:error, "Invalid user"}
+        {:error, :permission_denied} -> {:error, "Permission denied"}
+        error -> error
+      end
+    else
+      nil -> {:error, "Invalid bot"}
+    end
+  end
+
+  def invitation_reply(_root, args, %{context: %{current_user: requestor}}) do
+    input = args[:input]
+
+    with %Invitation{} = invitation <-
+           Invitation.get(input[:invitation_id], requestor),
+         {:ok, _} <- Invitation.respond(invitation, input[:accept], requestor) do
+      {:ok, true}
+    else
+      nil -> {:error, "Invalid invitation"}
+      {:error, :permission_denied} -> {:error, "Permission denied"}
       error -> error
     end
   end

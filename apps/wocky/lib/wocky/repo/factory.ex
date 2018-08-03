@@ -12,6 +12,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Faker.String
   alias Wocky.Bot
+  alias Wocky.Bot.Invitation
   alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
@@ -29,6 +30,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
   alias Wocky.User.Location
+  alias Wocky.User.Notification
 
   def user_factory do
     user_id = ID.new()
@@ -184,6 +186,78 @@ defmodule Wocky.Repo.Factory do
       token: ID.new(),
       valid: true,
       enabled_at: DateTime.utc_now()
+    }
+  end
+
+  def invitation_factory do
+    %Invitation{
+      user: build(:user),
+      invitee: build(:user),
+      bot: build(:bot),
+      accepted: nil
+    }
+  end
+
+  def notification_factory do
+    %Notification{
+      user: build(:user),
+      other_user: build(:user),
+      bot: nil,
+      bot_item: nil,
+      invitation: nil,
+      geofence_event: nil,
+      invitation_accepted: nil
+    }
+  end
+
+  def bot_item_notification_factory do
+    owner = build(:user)
+    bot = build(:bot, user: owner)
+
+    %Notification{
+      type: :bot_item,
+      user: owner,
+      other_user: build(:user),
+      bot: bot,
+      bot_item: build(:item)
+    }
+  end
+
+  def geofence_event_notification_factory do
+    %Notification{
+      type: :geofence_event,
+      user: build(:user),
+      other_user: build(:user),
+      bot: build(:bot),
+      geofence_event: :enter
+    }
+  end
+
+  def invitation_notification_factory do
+    inviter = build(:user)
+    bot = build(:bot, user: inviter)
+
+    %Notification{
+      type: :invitation,
+      user: build(:user),
+      other_user: inviter,
+      bot: bot
+    }
+  end
+
+  def invitation_response_notification_factory do
+    %{
+      invitation_notification_factory()
+      | type: :invitation_response,
+        invitation_accepted: true
+    }
+  end
+
+  def user_follow_notification_factory do
+    %Notification{
+      type: :user_follow,
+      user: build(:user),
+      other_user: build(:user)
     }
   end
 

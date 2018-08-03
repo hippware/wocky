@@ -24,6 +24,8 @@ defmodule Wocky.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.User.Notification
+  alias Wocky.User.Notification.GeofenceEvent
   alias Wocky.Waiter
 
   require Logger
@@ -295,14 +297,20 @@ defmodule Wocky.Bot do
   end
 
   defp send_visit_notifications(visitor, bot, event) do
+    # Push notifications
     bot
     |> guests_query()
     |> User.filter_hidden()
     |> Repo.all()
+    |> Enum.each(&send_visit_push_notification(&1, visitor, bot, event))
+
+    # Notification stream notifications
+    bot
+    |> notification_recipients(visitor)
     |> Enum.each(&send_visit_notification(&1, visitor, bot, event))
   end
 
-  defp send_visit_notification(subscriber, visitor, bot, event) do
+  defp send_visit_push_notification(subscriber, visitor, bot, event) do
     event = %BotPerimeterEvent{
       user: visitor,
       bot: bot,
@@ -310,6 +318,16 @@ defmodule Wocky.Bot do
     }
 
     Push.notify_all(subscriber.id, event)
+  end
+
+  defp send_visit_notification(subscriber, visitor, bot, event) do
+    %GeofenceEvent{
+      user_id: subscriber.id,
+      other_user_id: visitor.id,
+      bot_id: bot.id,
+      event: event
+    }
+    |> Notification.notify()
   end
 
   @spec clear_guests(t) :: :ok
@@ -456,15 +474,20 @@ defmodule Wocky.Bot do
     |> Enum.uniq_by(& &1.id)
   end
 
-  @spec notification_recipients(Bot.t(), User.t()) :: [JID.t()]
+  @spec notification_recipients(Bot.t(), User.t()) :: [User.t()]
   def notification_recipients(bot, sender) do
     bot = Repo.preload(bot, [:user])
 
     bot
     |> subscribers()
-    |> Enum.concat([bot.user])
     |> tidy_subscribers()
     |> Enum.filter(&(&1.id != sender.id))
+  end
+
+  @spec notification_recipient_jids(Bot.t(), User.t()) :: [JID.t()]
+  def notification_recipient_jids(bot, sender) do
+    bot
+    |> notification_recipients(sender)
     |> Enum.map(&User.to_jid(&1))
   end
 

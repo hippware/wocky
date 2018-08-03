@@ -156,7 +156,7 @@ desc_change_stanza(NewBot, OldDesc, User) ->
                                       ejabberd:jid(), jlib:xmlel()) -> ok.
 notify_subscribers_and_watchers(Bot, Actor, FromJID, Message) ->
     % Subscribers
-    Recipients = ?wocky_bot:notification_recipients(Bot, Actor),
+    Recipients = ?wocky_bot:notification_recipient_jids(Bot, Actor),
     lists:foreach(notify_subscriber(_, FromJID, Message), Recipients),
 
     % Watchers
