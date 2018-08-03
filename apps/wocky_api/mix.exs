@@ -57,6 +57,7 @@ defmodule WockyAPI.Mixfile do
       {:phoenix, "~> 1.3"},
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_pubsub, "~> 1.0"},
+      {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
       {:idna, "~> 5.1", override: true},

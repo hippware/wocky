@@ -106,7 +106,7 @@ defmodule Wocky.Mixfile do
       {:poolboy, "~> 1.5"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus_ecto, "~> 1.0"},
-      {:prometheus_ex, "~> 1.4"},
+      {:prometheus_ex, "~> 3.0"},
       {:recon, "~> 2.3"},
       {:slack_ex, "~> 0.1"},
       {:stringprep, "~> 1.0"},

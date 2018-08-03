@@ -47,12 +47,10 @@ defmodule WockyAPI.Endpoint do
   plug WockyAPI.PipelineInstrumenter
   plug WockyAPI.Router
 
-  @doc """
-  Callback invoked for dynamically configuring the endpoint.
-
-  It receives the endpoint configuration and checks if
-  configuration should be loaded from the system environment.
-  """
+  # Callback invoked for dynamically configuring the endpoint.
+  #
+  # It receives the endpoint configuration and checks if
+  # configuration should be loaded from the system environment.
   def init(_key, config) do
     if config[:load_from_system_env] do
       port =
