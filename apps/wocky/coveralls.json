@@ -7,6 +7,7 @@
   ],
 
   "custom_stop_words": [
+    " *use ",
     "defenum",
     "defstruct",
     "schema.+\".+\".+do"
