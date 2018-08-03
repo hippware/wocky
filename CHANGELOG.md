@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add logging for failed push notification requests (PR #1723)
+
+
 # 2018.8.1+rea1193b
 
 * Update: credo (PR #1720), algolia (PR #1717)
