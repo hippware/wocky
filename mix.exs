@@ -32,11 +32,7 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:distillery,
-       github: "hippware/distillery",
-       branch: "working",
-       runtime: false,
-       override: true},
+      {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.8", only: :test},

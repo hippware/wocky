@@ -43,9 +43,9 @@ release :wocky do
     {:copy, "etc", "etc"}
   ]
   set commands: [
-    "predeploy": "rel/commands/predeploy.sh",
-    "weekly": "rel/commands/weekly.sh",
-    "dev_startup": "rel/commands/dev_startup.sh"
+    predeploy: "rel/commands/predeploy.sh",
+    weekly: "rel/commands/weekly.sh",
+    dev_startup: "rel/commands/dev_startup.sh"
   ]
 end
 
