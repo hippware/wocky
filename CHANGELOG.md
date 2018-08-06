@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.8.3+r7321aad
+
 * Add logging for failed push notification requests (PR #1723)
+* Update: ranch (PR #1725)
 
 
 # 2018.8.1+rea1193b
