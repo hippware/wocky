@@ -4,6 +4,7 @@ defmodule Wocky.User.GeoFenceTest do
   import Ecto.Query
 
   alias Faker.Code
+  alias Timex.Duration
   alias Wocky.Bot
   alias Wocky.Push
   alias Wocky.Push.Sandbox
@@ -69,6 +70,7 @@ defmodule Wocky.User.GeoFenceTest do
         accuracy: 10,
         is_moving: true,
         speed: 3,
+        captured_at: DateTime.utc_now,
         resource: @rsrc
       }
 
@@ -108,6 +110,7 @@ defmodule Wocky.User.GeoFenceTest do
         accuracy: 10,
         is_moving: true,
         speed: 3,
+        captured_at: DateTime.utc_now,
         resource: @rsrc
       }
 
@@ -165,6 +168,21 @@ defmodule Wocky.User.GeoFenceTest do
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
+    end
+
+    test "who was outside the bot perimeter and is not moving (stale)", ctx do
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
+
+      ts = Timex.subtract(Timex.now(), Duration.from_minutes(6))
+      loc = %Location{ctx.inside_loc | is_moving: false, captured_at: ts}
+      GeoFence.check_for_bot_events(loc, ctx.user)
+
+      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      assert event == :enter
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :visitor
+
+      assert Sandbox.list_notifications() == []
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
@@ -267,6 +285,7 @@ defmodule Wocky.User.GeoFenceTest do
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
         accuracy: 10,
+        captured_at: DateTime.utc_now,
         resource: @rsrc
       }
 
@@ -396,6 +415,7 @@ defmodule Wocky.User.GeoFenceTest do
         accuracy: 10,
         is_moving: true,
         speed: 3,
+        captured_at: DateTime.utc_now,
         resource: @rsrc
       }
 

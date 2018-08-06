@@ -5,9 +5,6 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
 
-  # Push notifications for bot events
-  enable_bot_event_notifications: true,
-
   # TROS file storage in test storage system
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.TestStore},
   tros_s3_bucket: {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
@@ -42,6 +39,7 @@ config :wocky, :redis,
 
 # location processing
 config :wocky, Wocky.User.GeoFence,
+  enable_notifications: true,
   async_processing: false,
   debounce: true,
   enter_debounce_seconds:
@@ -55,7 +53,9 @@ config :wocky, Wocky.User.GeoFence,
     {:system, :integer, "WOCKY_GEOFENCE_MAX_ACCURACY_THRESHOLD", 30},
   max_slow_speed: {:system, :integer, "WOCKY_GEOFENCE_MAX_SLOW_SPEED", 2},
   max_exit_distance:
-    {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200}
+    {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200},
+  stale_update_seconds:
+    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300}
 
 # Push notifications
 config :wocky, Wocky.Push,

@@ -12,12 +12,14 @@ defmodule Wocky.User.GeoFence do
 
   @spec exit_all_bots(User.t()) :: :ok
   def exit_all_bots(user) do
+    config = get_config(enable_notifications: false)
+
     user
     |> Bot.by_relationship_query(:visitor, user)
     |> Repo.all()
     |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
     |> Enum.each(fn {bot, event} ->
-      process_bot_event({user, bot, event}, false)
+      process_bot_event({user, bot, event}, config)
     end)
   end
 
@@ -29,7 +31,7 @@ defmodule Wocky.User.GeoFence do
     if location_valid?(loc, config) do
       bot
       |> check_for_event(user, loc, config, [])
-      |> Enum.each(&process_bot_event/1)
+      |> Enum.each(&process_bot_event(&1, config))
     end
 
     loc
@@ -46,7 +48,7 @@ defmodule Wocky.User.GeoFence do
           user
           |> User.get_guest_subscriptions()
           |> check_for_events(user, loc, config)
-          |> Enum.each(&process_bot_event/1)
+          |> Enum.each(&process_bot_event(&1, config))
         end,
         config
       )
@@ -232,12 +234,16 @@ defmodule Wocky.User.GeoFence do
     Timex.diff(Timex.now(), ts, :seconds) >= debounce_secs
   end
 
-  defp process_bot_event({user, bot, be}, notify) do
-    maybe_visit_bot(be.event, user, bot, notify)
+  defp process_bot_event({user, bot, be}, config) do
+    maybe_visit_bot(be.event, user, bot, notify?(be, config))
   end
 
-  defp process_bot_event({user, bot, be}) do
-    maybe_visit_bot(be.event, user, bot, default_notify(be.event))
+  defp notify?(be, %{enable_notifications: enabled?} = config) do
+    enabled? && default_notify(be.event) && !stale?(be, config)
+  end
+
+  defp stale?(%BotEvent{occurred_at: ts}, config) do
+    Timex.diff(Timex.now(), ts, :seconds) >= config.stale_update_seconds
   end
 
   defp maybe_visit_bot(:enter, user, bot, notify),
@@ -276,13 +282,14 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp do_visit_timeout(user_id, resource, bot_id) do
+    config = get_config()
     user = Repo.get(User, user_id)
     bot = Bot.get(bot_id)
 
     if user && bot do
       if Bot.subscription(bot, user) == :visitor do
         new_event = BotEvent.insert(user, resource, bot, :timeout)
-        process_bot_event({user, bot, new_event})
+        process_bot_event({user, bot, new_event}, config)
       end
     end
   end

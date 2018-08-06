@@ -28,8 +28,9 @@ defmodule Wocky.User.BotEvent do
   schema "user_bot_events" do
     field :resource, :string
     field :event, EventType, null: false
+    field :occurred_at, :utc_datetime, null: false
 
-    timestamps()
+    timestamps(updated_at: false)
 
     belongs_to :user, User
     belongs_to :bot, Bot
@@ -51,8 +52,18 @@ defmodule Wocky.User.BotEvent do
           resource: User.resource(),
           bot_id: Bot.id(),
           location_id: binary,
-          event: event
+          event: event,
+          occurred_at: DateTime.t()
         }
+
+  @insert_fields [
+    :user_id,
+    :resource,
+    :bot_id,
+    :location_id,
+    :event,
+    :occurred_at
+  ]
 
   @spec get_last_event(User.id(), User.resource(), Bot.id()) :: t | nil
   def get_last_event(user_id, resource, bot_id) do
@@ -84,7 +95,8 @@ defmodule Wocky.User.BotEvent do
       resource: resource,
       bot_id: bot.id,
       location_id: loc && loc.id,
-      event: event
+      event: event,
+      occurred_at: (loc && loc.captured_at) || DateTime.utc_now
     }
     |> changeset()
     |> Repo.insert!()
@@ -92,7 +104,7 @@ defmodule Wocky.User.BotEvent do
 
   defp changeset(params) do
     %BotEvent{}
-    |> cast(params, [:user_id, :resource, :bot_id, :location_id, :event])
+    |> cast(params, @insert_fields)
     |> validate_required([:user_id, :resource, :bot_id, :event])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:bot_id)
