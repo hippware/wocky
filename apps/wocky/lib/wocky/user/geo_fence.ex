@@ -213,7 +213,9 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp moving_slowly?(loc, config) do
-    !loc.is_moving || (loc.speed >= 0 && loc.speed <= config.max_slow_speed)
+    loc.is_moving == false ||
+      (!is_nil(loc.speed) && loc.speed >= 0 &&
+         loc.speed <= config.max_slow_speed)
   end
 
   defp too_far?(bot, loc, config) do
