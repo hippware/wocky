@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: bcrypt_elixir (PR #1729)
+* Update to Elixir 1.7.1 (PR #1727, PR #1731)
+
+
 # 2018.8.3+r7321aad
 
 * Add logging for failed push notification requests (PR #1723)
