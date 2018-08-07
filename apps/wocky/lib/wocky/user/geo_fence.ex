@@ -64,7 +64,7 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp location_valid?(%Location{accuracy: accuracy}, config) do
-    accuracy < config.max_accuracy_threshold
+    accuracy <= config.max_accuracy_threshold
   end
 
   defp maybe_do_async(fun, %{async_processing: true}), do: Task.start_link(fun)
