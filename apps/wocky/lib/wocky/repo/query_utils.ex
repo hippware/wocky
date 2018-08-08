@@ -6,6 +6,7 @@ defmodule Wocky.Repo.QueryUtils do
   import Ecto.Query
 
   alias Ecto.Adapters.SQL
+  alias Ecto.Queryable
   alias Wocky.Repo
 
   def get_count(queryable, field \\ :id) do
