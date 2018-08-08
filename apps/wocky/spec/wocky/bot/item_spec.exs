@@ -184,6 +184,18 @@ defmodule Wocky.Bot.ItemSpec do
         end
       end
 
+      context "when a non-UUID id is supplied" do
+        before do
+          result = Item.put(Lorem.word(), shared.bot, shared.owner, "testing")
+          {:ok, result: result}
+        end
+
+        it "should succeed, creating a new UUID ID" do
+          shared.result |> should(be_ok_result())
+          shared.result |> elem(1) |> Map.get(:id) |> ID.valid?() |> should(be_true())
+        end
+      end
+
       context "with invlid input" do
         it "should fail for a non-existant bot" do
           ID.new()
