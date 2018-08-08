@@ -113,11 +113,7 @@ defmodule Wocky.XMPP.Mixfile do
        branch: "master",
        runtime: false,
        only: [:dev, :test]},
-      {:distillery,
-       github: "hippware/distillery",
-       branch: "working",
-       runtime: false,
-       override: true},
+      {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
 
       # test dependencies
       {:espec, "~> 1.5", only: :test},
