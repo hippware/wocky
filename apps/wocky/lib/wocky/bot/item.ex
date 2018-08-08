@@ -78,6 +78,8 @@ defmodule Wocky.Bot.Item do
   end
 
   @spec put(id, Bot.t(), User.t(), binary) :: {:ok, t()} | {:error, term}
+  def put(nil, bot, user, stanza), do: put(ID.new(), bot, user, stanza)
+
   def put(id, %{id: bot_id} = bot, %{id: user_id} = user, stanza) do
     case Repo.get_by(Item, id: id) do
       nil -> do_put(ID.new(), bot, user, stanza)
