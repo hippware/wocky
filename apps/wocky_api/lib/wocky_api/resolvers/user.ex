@@ -68,13 +68,13 @@ defmodule WockyAPI.Resolvers.User do
   def get_locations(user, args, %{context: %{current_user: user}}) do
     user
     |> User.get_locations_query(args[:device])
-    |> Utils.connection_from_query(user, args)
+    |> Utils.connection_from_query(user, [desc: :captured_at], args)
   end
 
   def get_location_events(user, args, %{context: %{current_user: user}}) do
     user
     |> User.get_location_events_query(args[:device])
-    |> Utils.connection_from_query(user, args)
+    |> Utils.connection_from_query(user, [desc: :occurred_at], args)
   end
 
   def get_location_events(%Location{} = loc, args, %{
@@ -82,7 +82,7 @@ defmodule WockyAPI.Resolvers.User do
       }) do
     user
     |> User.get_location_events_query(loc)
-    |> Utils.connection_from_query(user, args)
+    |> Utils.connection_from_query(user, [desc: :occurred_at], args)
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: %{id: id} = u}}) do

@@ -295,17 +295,11 @@ defmodule Wocky.Bot do
   end
 
   defp send_visit_notifications(visitor, bot, event) do
-    if visit_notifications_enabled?() do
-      bot
-      |> guests_query()
-      |> User.filter_hidden()
-      |> Repo.all()
-      |> Enum.each(&send_visit_notification(&1, visitor, bot, event))
-    end
-  end
-
-  defp visit_notifications_enabled? do
-    Application.fetch_env!(:wocky, :enable_bot_event_notifications)
+    bot
+    |> guests_query()
+    |> User.filter_hidden()
+    |> Repo.all()
+    |> Enum.each(&send_visit_notification(&1, visitor, bot, event))
   end
 
   defp send_visit_notification(subscriber, visitor, bot, event) do

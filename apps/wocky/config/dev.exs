@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :wocky,
+config :wocky, Wocky.User.GeoFence,
   enter_debounce_seconds: 0,
   exit_debounce_seconds: 0
 

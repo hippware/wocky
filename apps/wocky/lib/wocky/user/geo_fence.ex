@@ -10,50 +10,72 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
-  @doc false
-  @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
-  def check_for_bot_events(%Location{} = loc, user) do
-    maybe_do_async(fn ->
-      user
-      |> User.get_guest_subscriptions()
-      |> check_for_events(user, loc)
-      |> Enum.each(&process_bot_event/1)
-    end)
-
-    loc
-  end
-
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
-  def check_for_bot_event(bot, loc, user) do
-    bot
-    |> check_for_event(user, loc, false, [])
-    |> Enum.each(&process_bot_event/1)
-  end
-
   @spec exit_all_bots(User.t()) :: :ok
   def exit_all_bots(user) do
+    config = get_config(enable_notifications: false)
+
     user
     |> Bot.by_relationship_query(:visitor, user)
     |> Repo.all()
     |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
     |> Enum.each(fn {bot, event} ->
-      process_bot_event({user, bot, event}, false)
+      process_bot_event({user, bot, event}, config)
     end)
   end
 
-  defp maybe_do_async(fun) do
-    if Application.fetch_env!(:wocky, :async_location_processing) do
-      Task.start_link(fun)
-    else
-      fun.()
+  @doc false
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
+  def check_for_bot_event(bot, loc, user) do
+    config = get_config(debounce: false)
+
+    if location_valid?(loc, config) do
+      bot
+      |> check_for_event(user, loc, config, [])
+      |> Enum.each(&process_bot_event(&1, config))
     end
+
+    loc
   end
 
-  defp check_for_events(bots, user, loc) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, loc, true, &2))
+  @doc false
+  @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
+  def check_for_bot_events(%Location{} = loc, user) do
+    config = get_config()
+
+    if location_valid?(loc, config) do
+      maybe_do_async(
+        fn ->
+          user
+          |> User.get_guest_subscriptions()
+          |> check_for_events(user, loc, config)
+          |> Enum.each(&process_bot_event(&1, config))
+        end,
+        config
+      )
+    end
+
+    loc
   end
 
-  defp check_for_event(bot, user, loc, debounce, acc) do
+  defp get_config(opts \\ []) do
+    Confex.fetch_env!(:wocky, __MODULE__)
+    |> Keyword.merge(opts)
+    |> Enum.into(%{})
+  end
+
+  defp location_valid?(%Location{accuracy: accuracy}, config) do
+    accuracy <= config.max_accuracy_threshold
+  end
+
+  defp maybe_do_async(fun, %{async_processing: true}), do: Task.start_link(fun)
+
+  defp maybe_do_async(fun, _), do: fun.()
+
+  defp check_for_events(bots, user, loc, config) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, loc, config, &2))
+  end
+
+  defp check_for_event(bot, user, loc, config, acc) do
     :ok =
       Logger.debug(fn ->
         """
@@ -64,33 +86,34 @@ defmodule Wocky.User.GeoFence do
 
     bot
     |> Bot.contains?(Map.from_struct(loc))
-    |> maybe_set_exit_timer(user, bot, loc)
-    |> handle_intersection(user, bot, loc, debounce, acc)
+    |> maybe_set_exit_timer(user, bot, loc, config)
+    |> handle_intersection(user, bot, loc, config, acc)
   end
 
-  defp maybe_set_exit_timer(false, _, _, _), do: false
+  defp maybe_set_exit_timer(false, _, _, _, _), do: false
 
-  defp maybe_set_exit_timer(true, user, bot, loc) do
-    if Confex.get_env(:wocky, :visit_timeout_enabled) do
-      dawdle_event = %{
-        user_id: user.id,
-        resource: loc.resource,
-        bot_id: bot.id,
-        loc_id: loc.id
-      }
+  defp maybe_set_exit_timer(true, _, _, _, %{visit_timeout_enabled: false}),
+    do: true
 
-      timeout = Confex.get_env(:wocky, :visit_timeout_seconds)
+  defp maybe_set_exit_timer(true, user, bot, loc, config) do
+    dawdle_event = %{
+      user_id: user.id,
+      resource: loc.resource,
+      bot_id: bot.id,
+      loc_id: loc.id
+    }
 
-      Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout * 1000)
-    end
+    timeout = config.visit_timeout_seconds * 1000
+
+    Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout)
 
     true
   end
 
-  defp handle_intersection(inside?, user, bot, loc, debounce, acc) do
+  defp handle_intersection(inside?, user, bot, loc, config, acc) do
     event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
 
-    case user_state_change(inside?, event, debounce) do
+    case user_state_change(inside?, event, bot, loc, config) do
       :no_change ->
         acc
 
@@ -104,13 +127,13 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(true, nil, true), do: :transition_in
-  defp user_state_change(true, nil, false), do: :enter
+  defp user_state_change(true, nil, _, _, %{debounce: true}), do: :transition_in
+  defp user_state_change(true, nil, _, _, %{debounce: false}), do: :enter
 
-  defp user_state_change(true, be, debounce?) do
+  defp user_state_change(true, be, _bot, loc, config) do
     case be.event do
       :exit ->
-        maybe_enter(debounce?)
+        maybe_enter(loc, config)
 
       :enter ->
         :no_change
@@ -119,7 +142,7 @@ defmodule Wocky.User.GeoFence do
         :reactivate
 
       :deactivate ->
-        maybe_enter(debounce?)
+        maybe_enter(loc, config)
 
       :reactivate ->
         :no_change
@@ -128,9 +151,9 @@ defmodule Wocky.User.GeoFence do
         :roll_back
 
       :transition_in ->
-        debounce_secs = Confex.get_env(:wocky, :enter_debounce_seconds)
+        debounce_secs = config.enter_debounce_seconds
 
-        if debounce_expired?(debounce?, be.created_at, debounce_secs) do
+        if debounce_complete?(loc, be.created_at, config, debounce_secs) do
           :enter
         else
           :no_change
@@ -138,15 +161,15 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp user_state_change(false, nil, _debounce), do: :no_change
+  defp user_state_change(false, nil, _bot, _loc, _config), do: :no_change
 
-  defp user_state_change(false, be, debounce?) do
+  defp user_state_change(false, be, bot, loc, config) do
     case be.event do
       :exit ->
         :no_change
 
       :enter ->
-        maybe_exit(debounce?)
+        maybe_exit(loc, bot, config)
 
       :timeout ->
         :deactivate
@@ -155,15 +178,15 @@ defmodule Wocky.User.GeoFence do
         :no_change
 
       :reactivate ->
-        maybe_exit(debounce?)
+        maybe_exit(loc, bot, config)
 
       :transition_in ->
         :roll_back
 
       :transition_out ->
-        debounce_secs = Confex.get_env(:wocky, :exit_debounce_seconds)
+        debounce_secs = config.exit_debounce_seconds
 
-        if debounce_expired?(debounce?, be.created_at, debounce_secs) do
+        if debounce_complete?(loc, be.created_at, config, debounce_secs) do
           :exit
         else
           :no_change
@@ -171,24 +194,56 @@ defmodule Wocky.User.GeoFence do
     end
   end
 
-  defp maybe_enter(true), do: :transition_in
-  defp maybe_enter(false), do: :enter
+  defp maybe_enter(_, %{debounce: false}), do: :enter
 
-  defp maybe_exit(true), do: :transition_out
-  defp maybe_exit(false), do: :exit
+  defp maybe_enter(loc, config) do
+    if moving_slowly?(loc, config) do
+      :enter
+    else
+      :transition_in
+    end
+  end
 
-  defp debounce_expired?(false, _, _), do: true
+  defp maybe_exit(_, _, %{debounce: false}), do: :exit
 
-  defp debounce_expired?(true, ts, debounce_secs) do
+  defp maybe_exit(loc, bot, config) do
+    if too_far?(bot, loc, config) || moving_slowly?(loc, config) do
+      :exit
+    else
+      :transition_out
+    end
+  end
+
+  defp moving_slowly?(loc, config) do
+    loc.is_moving == false ||
+      (!is_nil(loc.speed) && loc.speed >= 0 &&
+         loc.speed <= config.max_slow_speed)
+  end
+
+  defp too_far?(bot, loc, config) do
+    Bot.distance_from(bot, Map.from_struct(loc)) > config.max_exit_distance
+  end
+
+  defp debounce_complete?(_, _, %{debounce: false}, _), do: true
+
+  defp debounce_complete?(loc, ts, config, debounce_secs) do
+    moving_slowly?(loc, config) || debounce_expired?(ts, debounce_secs)
+  end
+
+  defp debounce_expired?(ts, debounce_secs) do
     Timex.diff(Timex.now(), ts, :seconds) >= debounce_secs
   end
 
-  defp process_bot_event({user, bot, be}, notify) do
-    maybe_visit_bot(be.event, user, bot, notify)
+  defp process_bot_event({user, bot, be}, config) do
+    maybe_visit_bot(be.event, user, bot, notify?(be, config))
   end
 
-  defp process_bot_event({user, bot, be}) do
-    maybe_visit_bot(be.event, user, bot, default_notify(be.event))
+  defp notify?(be, %{enable_notifications: enabled?} = config) do
+    enabled? && default_notify(be.event) && !stale?(be, config)
+  end
+
+  defp stale?(%BotEvent{occurred_at: ts}, config) do
+    Timex.diff(Timex.now(), ts, :seconds) >= config.stale_update_seconds
   end
 
   defp maybe_visit_bot(:enter, user, bot, notify),
@@ -227,13 +282,14 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp do_visit_timeout(user_id, resource, bot_id) do
+    config = get_config()
     user = Repo.get(User, user_id)
     bot = Bot.get(bot_id)
 
     if user && bot do
       if Bot.subscription(bot, user) == :visitor do
         new_event = BotEvent.insert(user, resource, bot, :timeout)
-        process_bot_event({user, bot, new_event})
+        process_bot_event({user, bot, new_event}, config)
       end
     end
   end
