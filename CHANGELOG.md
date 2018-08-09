@@ -7,6 +7,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update: bcrypt_elixir (PR #1729), phoenix (PR #1732)
 * Update to Elixir 1.7.1 (PR #1727, PR #1731)
+* Add unique bot item key (PR #1734)
+* First iteration of Geofence/Debounce algorithm changes (PR #1726)
+  * Geofence mechanics algorithm shortcomings (#1713)
 
 
 # 2018.8.3+r7321aad
