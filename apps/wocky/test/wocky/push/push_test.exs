@@ -66,6 +66,33 @@ defmodule Wocky.PushTest do
       assert row.token == shared.token
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
     end
+
+    test "should disable old tokens", %{
+      user_id: user_id,
+      resource: resource,
+      token: old_token
+    } do
+      new_token = Code.isbn13()
+      :ok = Push.enable(user_id, resource, new_token)
+
+      old_row =
+        Repo.one(
+          from Token,
+            where: [user_id: ^user_id, resource: ^resource, valid: false]
+        )
+
+      assert old_row
+      assert old_row.token == old_token
+
+      new_row =
+        Repo.one(
+          from Token,
+            where: [user_id: ^user_id, resource: ^resource, valid: true]
+        )
+
+      assert new_row
+      assert new_row.token == new_token
+    end
   end
 
   describe "disable/2" do

@@ -33,6 +33,12 @@ defmodule Wocky.Push do
       conflict_target: [:user_id, :resource, :token]
     )
 
+    Token
+    |> where([t], t.user_id == ^user_id)
+    |> where([t], t.resource == ^resource)
+    |> where([t], t.token != ^token)
+    |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
+
     :ok
   end
 
