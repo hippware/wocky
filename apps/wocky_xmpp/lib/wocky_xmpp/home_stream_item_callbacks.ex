@@ -3,18 +3,16 @@ defmodule WockyXMPP.HomeStreamItemCallbacks do
   Callbacks for HomeStreamItem callbacks
   """
 
-  alias Wocky.HomeStream.Item, as: HomeStreamItem
+  use Wocky.Watcher, type: Wocky.HomeStream.Item, events: [:insert, :update]
+
   alias Wocky.Repo
   alias Wocky.User
-  alias Wocky.Watcher.Client
-  alias WockyDBWatcher.Event
 
-  def register do
-    Client.subscribe(HomeStreamItem, :insert, &handle_change/1)
-    Client.subscribe(HomeStreamItem, :update, &handle_change/1)
-  end
+  def handle_insert(event), do: handle_change(event)
 
-  def handle_change(%Event{new: new}) do
+  def handle_update(event), do: handle_change(event)
+
+  defp handle_change(%Event{new: new}) do
     item = Repo.preload(new, [:user, :reference_bot])
 
     if item.user != nil &&

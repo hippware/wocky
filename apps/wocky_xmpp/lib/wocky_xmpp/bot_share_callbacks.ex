@@ -3,14 +3,9 @@ defmodule WockyXMPP.BotShareCallbacks do
   Callbacks for DB bot share changes
   """
 
-  alias Wocky.Bot.Share
-  alias Wocky.Repo
-  alias Wocky.Watcher.Client
-  alias WockyDBWatcher.Event
+  use Wocky.Watcher, type: Wocky.Bot.Share, events: [:insert]
 
-  def register do
-    Client.subscribe(Share, :insert, &handle_insert/1)
-  end
+  alias Wocky.Repo
 
   def handle_insert(%Event{action: :insert, new: new}) do
     share = Repo.preload(new, [:user, :sharer, :bot])

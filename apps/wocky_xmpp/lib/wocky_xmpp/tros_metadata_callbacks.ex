@@ -4,15 +4,10 @@ defmodule WockyXMPP.TROSMetadataCallbacks do
   """
 
   use Elixometer
+  use Wocky.Watcher, type: Wocky.TROS.Metadata, events: [:update]
 
   alias Wocky.TROS.Metadata
   alias Wocky.Waiter
-  alias Wocky.Watcher.Client
-  alias WockyDBWatcher.Event
-
-  def register do
-    Client.subscribe(Metadata, :update, &handle_update/1)
-  end
 
   def handle_update(%Event{
         old: %Metadata{ready: false},

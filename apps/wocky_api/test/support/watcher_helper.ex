@@ -17,7 +17,7 @@ defmodule WockyAPI.WatcherHelper do
   """
   def require_watcher(_) do
     Wocky.Watcher.Client.clear_all_subscriptions()
-    Wocky.Watcher.Callbacks.register()
+    Wocky.Callbacks.register()
     WockyAPI.Callbacks.register()
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
     Application.start(:wocky_db_watcher)

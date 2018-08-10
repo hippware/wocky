@@ -1,18 +1,12 @@
-defmodule Wocky.Watcher.Callbacks.BotItem do
+defmodule Wocky.Callbacks.BotItem do
   @moduledoc """
   Callbacks for DB bot item changes
   """
 
-  alias Wocky.Bot.Item
+  use Wocky.Watcher, type: Wocky.Bot.Item, events: [:insert, :delete]
+
   alias Wocky.HomeStream
   alias Wocky.Repo
-  alias Wocky.Watcher.Client
-  alias WockyDBWatcher.Event
-
-  def register do
-    Client.subscribe(Item, :insert, &handle_insert/1)
-    Client.subscribe(Item, :delete, &handle_delete/1)
-  end
 
   def handle_insert(%Event{new: new}) do
     maybe_update_hs(new)
