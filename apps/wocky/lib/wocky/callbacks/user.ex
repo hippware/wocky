@@ -1,16 +1,12 @@
-defmodule Wocky.Watcher.Callbacks.User do
+defmodule Wocky.Callbacks.User do
   @moduledoc """
   Callbacks for DB user changes
   """
 
+  use Wocky.Watcher, type: Wocky.User, events: [:update]
+
   alias Wocky.User
   alias Wocky.User.GeoFence
-  alias Wocky.Watcher.Client
-  alias WockyDBWatcher.Event
-
-  def register do
-    Client.subscribe(User, :update, &handle_update/1)
-  end
 
   # No change to hidden timeout - nothing to do
   def handle_update(%Event{action: :update, old: old, new: new}) do

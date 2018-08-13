@@ -3,18 +3,12 @@ defmodule WockyAPI.Callbacks.Bot do
   Callbacks for DB bot changes
   """
 
+  use Wocky.Watcher, type: Wocky.Bot, events: [:insert, :update, :delete]
+
   import Ecto.Query
 
   alias Wocky.{Bot, Repo, Roster}
-  alias Wocky.Watcher.Client
   alias WockyAPI.Resolvers.Bot, as: BotResolver
-  alias WockyDBWatcher.Event
-
-  def register do
-    Client.subscribe(Bot, :insert, &handle_insert/1)
-    Client.subscribe(Bot, :update, &handle_update/1)
-    Client.subscribe(Bot, :delete, &handle_delete/1)
-  end
 
   def handle_update(%Event{
         action: :update,

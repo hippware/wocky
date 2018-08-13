@@ -10,7 +10,7 @@ defmodule Wocky.Application do
   use Application
 
   alias Wocky.Mailer
-  alias Wocky.Watcher.Callbacks
+  alias Wocky.Callbacks
 
   require Prometheus.Registry
 

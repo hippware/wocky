@@ -1,7 +1,10 @@
-defmodule Wocky.Watcher.Callbacks.Block do
+defmodule Wocky.Callbacks.Block do
   @moduledoc """
   Callbacks for Block opertaions
   """
+
+  use Wocky.Watcher, type: Wocky.Block, events: [:insert]
+
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Item
@@ -10,12 +13,6 @@ defmodule Wocky.Watcher.Callbacks.Block do
   alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.User
-  alias Wocky.Watcher.Client
-  alias WockyDBWatcher.Event
-
-  def register do
-    Client.subscribe(Block, :insert, &handle_insert/1)
-  end
 
   def handle_insert(%Event{action: :insert, new: new}) do
     %Block{blocker: blocker, blockee: blockee} =
