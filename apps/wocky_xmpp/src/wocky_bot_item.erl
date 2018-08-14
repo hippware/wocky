@@ -44,8 +44,8 @@ publish(Bot, From, ToJID, SubEl) ->
            ItemID <- wocky_xml:get_attr(<<"id">>, Item#xmlel.attrs),
            Entry <- wocky_xml:get_subel(<<"entry">>, Item),
            wocky_xml:check_namespace(?NS_ATOM, Entry),
-           ItemResult <- publish_item(From, ToJID, Bot, ItemID, Entry),
-           {ok, publish_result(ItemResult)}
+           publish_item(From, ToJID, Bot, ItemID, Entry),
+           {ok, []}
        ]).
 
 retract(Bot, From, _ToJID, SubEl) ->
@@ -88,9 +88,6 @@ images_result(Owner, FromUser, Images, RSMOut) ->
            attrs = [{<<"xmlns">>, ?NS_BOT}],
            children = ImageEls ++ jlib:rsm_encode(RSMOut)}.
 
-publish_result(#{id := ID}) ->
-    wocky_xml:cdata_el(<<"item_id">>, ID).
-
 image_els(Owner, FromUser, Images) ->
     FromJID = ?wocky_user:to_jid(FromUser),
     lists:map(image_el(Owner, FromJID, _), Images).
@@ -112,12 +109,11 @@ image_el(Owner, FromJID, #{id := ID, stanza := S, updated_at := UpdatedAt}) ->
 
 publish_item(From, ToJID, Bot, ItemID, Entry) ->
     EntryBin = exml:to_binary(Entry),
-    case ?wocky_item:put(ItemID, Bot, From, EntryBin) of
+    case ?wocky_item:put(Bot, From, ItemID, EntryBin) of
         {ok, Item} ->
             Message = notification_event(Bot, make_item_element(Item)),
             wocky_bot_users:notify_subscribers_and_watchers(
-              Bot, From, ToJID, Message),
-            {ok, Item};
+              Bot, From, ToJID, Message);
         {error, permission_denied} ->
             {error, ?ERR_FORBIDDEN}
     end.
@@ -127,7 +123,7 @@ publish_item(From, ToJID, Bot, ItemID, Entry) ->
 %%%===================================================================
 
 delete_item(BotID, ItemID, From) ->
-    case ?wocky_item:delete(ItemID, BotID, From) of
+    case ?wocky_item:delete(BotID, ItemID, From) of
         ok -> ok;
         {error, permission_denied} -> {error, ?ERR_FORBIDDEN};
         {error, not_found} -> {error, ?ERR_ITEM_NOT_FOUND}

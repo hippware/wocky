@@ -233,8 +233,8 @@ reset_tables(Config) ->
     ?wocky_factory:insert(tros_metadata, [{id, ?ITEM_IMAGE_ID},
                                           {user, Alice},
                                           {access, <<"all">>}]),
-    ?wocky_item:put(?ITEM, Bot, Alice, ?ITEM_STANZA),
-    ?wocky_item:put(?ITEM2, Bot, Alice, ?ITEM_STANZA2),
+    ?wocky_item:put(Bot, Alice, ?ITEM, ?ITEM_STANZA),
+    ?wocky_item:put(Bot, Alice, ?ITEM2, ?ITEM_STANZA2),
 
     ?wocky_share:put(Bob, Bot, Alice),
     ?wocky_bot:subscribe(Bot, Carol),
@@ -693,22 +693,21 @@ publish_item(Config) ->
                   [{alice, 1}, {bob, 1}, {carol, 1},
                    {karen, 1}, {robert, 1}],
       fun(Alice, Bob, Carol, Karen, Robert) ->
+        NoteID = <<"item1">>,
         Content = <<"content ZZZ">>,
         Title = <<"title ZZZ">>,
 
         watch(?BOT_B_JID, Bob),
 
         % Alice publishes an item to her bot
-        NoteID = publish_item(
-                   ?BOT, <<"ignored">>, Title, Content, undefined, Alice),
-
+        publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
         expect_item_pub_notification(Bob),
         % Carol and Karen are subscribers, and so receive a notification
         % Bob is a viewer (via share) but not subscribed,
         % so does not receive anything
         lists:foreach(
-          expect_item_publication(_, ?BOT, Title, Content),
+          expect_item_publication(_, ?BOT, NoteID, Title, Content),
           [Carol, Karen]),
 
         % As the publisher, Alice should *not* get a notification,
@@ -721,7 +720,7 @@ publish_item(Config) ->
         publish_item_watching(
           ?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
         lists:foreach(
-          expect_item_publication(_, ?BOT, Title, Content),
+          expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, Content),
           [Alice, Carol, Karen]),
 
         % Bob can update his own item and subscribers will be informed.
@@ -729,7 +728,7 @@ publish_item(Config) ->
         publish_item_watching(
           ?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
         lists:foreach(
-          expect_item_publication(_, ?BOT, Title, NewContent),
+          expect_item_publication(_, ?BOT, ?BOBS_ITEM_ID, Title, NewContent),
           [Alice, Carol, Karen]),
 
         % Robert can't view the bot so can't publish a note to it:
@@ -741,6 +740,9 @@ publish_item(Config) ->
         expect_iq_error(
           publish_item_stanza(?BOT, NoteID, Title, Content),
           Bob),
+        expect_iq_error(
+          publish_item_stanza(?BOT, ?BOBS_ITEM_ID, Title, Content),
+          Alice),
 
         % Alice cannot publish to a non-existant bot
         expect_iq_error(
@@ -754,7 +756,7 @@ publish_item(Config) ->
 retract_item(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
-        % Nobody else can retract an item from the bot besides the item or bot
+        % Nobody else can publish an item to the bot besides the item or bot
         % owners
         expect_iq_error(
           retract_item_stanza(?BOT, ?ITEM),
@@ -764,12 +766,10 @@ retract_item(Config) ->
           Carol),
 
         % Alice can retract the item as its owner
-        NoteID = publish_item(?BOT, Alice),
-        retract_item(?BOT, NoteID, Alice),
+        retract_item(?BOT, ?ITEM, Alice),
 
         % Bob can retract his own item
-        BobNoteID = publish_item(?BOT, Bob),
-        retract_item(?BOT, BobNoteID, Bob),
+        retract_item(?BOT, ?BOBS_ITEM_ID, Bob),
 
         test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
       end).
@@ -778,17 +778,16 @@ edit_item(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
+        NoteID = ?ITEM,
         Content = <<"updated content">>,
         Title = <<"updated title">>,
-
         % Alice updates an item on her bot
-        NoteID = publish_item(?BOT, Alice),
         publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
         % Carol and Karen are subscribers, and so receive a notification
         % Bob is an affiliate but not subscribed, so does not receive anything
-        expect_item_publication(Carol, ?BOT, Title, Content),
-        expect_item_publication(Karen, ?BOT, Title, Content),
+        expect_item_publication(Carol, ?BOT, NoteID, Title, Content),
+        expect_item_publication(Karen, ?BOT, NoteID, Title, Content),
 
         % Nobody else can edit an item to the bot besides the owner
         expect_iq_error(
@@ -806,20 +805,18 @@ get_items(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
       fun(Alice, Bob, Carol, Karen) ->
         % Alice publishes a bunch of items on her bot
-        IDs = lists:map(
+        lists:foreach(
           add_item(Alice, [Carol, Karen], _), lists:seq(0, ?CREATED_ITEMS-1)),
 
         % Bob can get items because he has the bot shared to him
-        get_items(Bob, #rsm_in{max = 10}, IDs, 0, 9),
+        get_items(Bob, #rsm_in{max = 10}, 0, 9),
         get_items(Bob, #rsm_in{index = 5},
-                  IDs, 5, ?CREATED_ITEMS-1),
-        get_items(Bob,
-                  #rsm_in{max = 2, direction = before, id = lists:nth(6, IDs)},
-                  IDs, 3, 4),
-        get_items(Bob,
-                  #rsm_in{max = 3, direction = aft, id = lists:nth(49, IDs)},
-                  IDs, 49, min(?CREATED_ITEMS-1, 51)),
-        get_items(Bob, #rsm_in{max = 3, direction = before}, IDs,
+                  5, ?CREATED_ITEMS-1),
+        get_items(Bob, #rsm_in{max = 2, direction = before, id = item_id(5)},
+                  3, 4),
+        get_items(Bob, #rsm_in{max = 3, direction = aft, id = item_id(48)},
+                  49, min(?CREATED_ITEMS-1, 51)),
+        get_items(Bob, #rsm_in{max = 3, direction = before},
                   ?CREATED_ITEMS-3, ?CREATED_ITEMS-1),
 
         % Carol can't because she hasn't
@@ -859,15 +856,17 @@ item_images(Config) ->
     reset_tables(Config),
     escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
       fun(Alice, Bob, Tim) ->
+        ItemIDs = lists:seq(0, 9),
         AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
         Images =
         lists:map(
           fun(_) ->
                   ?wocky_factory:insert(tros_metadata, [{user, AliceUser},
                                                         {access, <<"all">>}])
-          end, lists:seq(0, 9)),
+          end, ItemIDs),
         ImageIDs = lists:map(maps:get(id, _), Images),
-        IDPairs = lists:map(publish_item_with_image(_, Alice), ImageIDs),
+        IDPairs = lists:zip(ItemIDs, ImageIDs),
+        lists:map(publish_item_with_image(_, Alice), IDPairs),
 
         %% Alice can see all the images
         Stanza = expect_iq_success(item_image_stanza(), Alice),
@@ -1548,20 +1547,21 @@ delete_stanza() -> delete_stanza(?BOT).
 delete_stanza(Bot) ->
     test_helper:iq_set(?NS_BOT, node_el(Bot, <<"delete">>)).
 
-expect_item_publication(Client, BotID, Title, Content) ->
+expect_item_publication(Client, BotID, NoteID, Title, Content) ->
     S = expect_iq_success_u(get_hs_stanza(), Client, Client),
     I = check_hs_result(S, any, false),
     escalus:assert(
-      is_publication_update(BotID, Title, Content, _),
+      is_publication_update(BotID, NoteID, Title, Content, _),
       hd((lists:last(I))#item.stanzas)).
 
-is_publication_update(BotID, Title, Content, Stanza) ->
+is_publication_update(BotID, NoteID, Title, Content, Stanza) ->
     R = do([error_m ||
             [Event] <- check_get_children(Stanza, <<"message">>),
             [Item] <- check_get_children(Event, <<"event">>,
                                          [{<<"xmlns">>, ?NS_BOT_EVENT},
                                           {<<"node">>, bot_node(BotID)}]),
-            [Entry] <- {ok, Item#xmlel.children},
+            [Entry] <- check_get_children(Item, <<"item">>,
+                                          [{<<"id">>, NoteID}]),
             check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
             check_children_cdata(Entry, [{<<"title">>, Title},
                                          {<<"content">>, Content}]),
@@ -1634,21 +1634,20 @@ is_retraction_update(BotID, NoteID, Stanza) ->
     R =:= ok.
 
 add_item(Client, Subs, N) ->
+    NoteID = item_id(N),
     Title = item_title(N),
     Content = item_content(N),
-    NoteID = publish_item(
-               ?BOT, <<"ignored">>, Title, Content, undefined, Client),
+    publish_item(?BOT, NoteID, Title, Content, undefined, Client),
 
     lists:foreach(
-        expect_item_publication(_, ?BOT, Title, Content),
-        Subs),
-    NoteID.
+        expect_item_publication(_, ?BOT, NoteID, Title, Content),
+        Subs).
 
-get_items(Client, RSM, IDs, First, Last) ->
+get_items(Client, RSM, First, Last) ->
     Result = expect_iq_success(
                test_helper:iq_get(?NS_BOT, item_query_el(RSM)), Client),
 
-    ?assertEqual(ok, check_result(Result, IDs, First, Last)).
+    ?assertEqual(ok, check_result(Result, First, Last)).
 
 item_query_el(RSM) -> item_query_el(RSM, ?BOT).
 item_query_el(RSM, BotID) ->
@@ -1656,7 +1655,7 @@ item_query_el(RSM, BotID) ->
            attrs = [{<<"node">>, bot_node(BotID)}],
            children = [rsm_elem(RSM)]}.
 
-check_result(Stanza, IDs, First, Last) ->
+check_result(Stanza, First, Last) ->
     do([error_m ||
         [Query] <- check_get_children(Stanza, <<"iq">>),
         Children <- check_get_children(Query, <<"query">>,
@@ -1664,9 +1663,8 @@ check_result(Stanza, IDs, First, Last) ->
         RSM <- check_get_children(Children, <<"set">>,
                                   [{<<"xmlns">>, ?NS_RSM}]),
         RSMOut <- decode_rsm(RSM),
-        check_rsm(RSMOut, ?CREATED_ITEMS, First,
-                  lists:nth(First+1, IDs), lists:nth(Last+1, IDs)),
-        check_items(Children, IDs, First, Last),
+        check_rsm(RSMOut, ?CREATED_ITEMS, First, item_id(First), item_id(Last)),
+        check_items(Children, First, Last),
         ok
        ]).
 
@@ -1674,27 +1672,27 @@ item_image_stanza() ->
     QueryEl = node_el(?BOT, <<"item_images">>, [rsm_elem(#rsm_in{})]),
     test_helper:iq_get(?NS_BOT, QueryEl).
 
-check_items(Children, IDs, First, Last) ->
+check_items(Children, First, Last) ->
     Expected = lists:seq(First, Last),
-    check_items(Children, IDs, Expected).
+    check_items(Children, Expected).
 
 % Should be exactly one element left - the RSM set (which we already checked)
-check_items([_RSM], _IDs, []) -> ok;
-check_items(Children, _IDs, []) -> {error, {extra_items, Children}};
-check_items(Children, IDs, [I | Rest]) ->
+check_items([_RSM], []) -> ok;
+check_items(Children, []) -> {error, {extra_items, Children}};
+check_items(Children, [I | Rest]) ->
     ExpectedLen = length(Children) - 1,
     Remaining = lists:filter(
-                  fun(C) -> not is_item(I, IDs, C) end,
+                  fun(C) -> not is_item(I, C) end,
                   Children),
     case length(Remaining) of
-        ExpectedLen -> check_items(Remaining, IDs, Rest);
+        ExpectedLen -> check_items(Remaining, Rest);
         _ -> {error, {not_found, I}}
     end.
 
-is_item(I, IDs, #xmlel{name = <<"item">>,
-                       attrs = Attrs,
-                       children = [Entry]}) ->
-    ID = lists:nth(I+1, IDs),
+is_item(I, #xmlel{name = <<"item">>,
+                  attrs = Attrs,
+                  children = [Entry]}) ->
+    ID = item_id(I),
     AliceBJID = ?BJID(?ALICE),
 
     lists:all(
@@ -1710,7 +1708,7 @@ is_item(I, IDs, #xmlel{name = <<"item">>,
        {<<"author_last_name">>, ?ALICE_LAST_NAME},
        is_item_entry(I, Entry)
       ]);
-is_item(_, _, _) -> false.
+is_item(_, _) -> false.
 
 is_item_entry(I, El = #xmlel{name = <<"entry">>,
                              attrs = [{<<"xmlns">>, ?NS_ATOM}]}) ->
@@ -1719,6 +1717,10 @@ is_item_entry(I, El = #xmlel{name = <<"entry">>,
     item_content(I) =:= xml:get_path_s(El, [{elem, <<"content">>}, cdata]);
 is_item_entry(_, _) -> false.
 
+item_id(undefined) -> undefined;
+item_id(ItemID) when is_binary(ItemID) -> ItemID;
+item_id(ItemID) ->
+    <<"ID_", (integer_to_binary(ItemID))/binary>>.
 item_title(ItemID) ->
     <<"Title_", (integer_to_binary(ItemID))/binary>>.
 item_content(ItemID) ->
@@ -1760,39 +1762,29 @@ publish_item_watching(BotID, NoteID, Title, Content, Image, Client) ->
     escalus:assert_many([is_iq_result, fun is_item_pub_notification/1],
                         Results).
 
-publish_item(BotID, Client) ->
-    publish_item(
-      BotID, <<"ignored">>, <<"title">>, <<"content">>, undefined, Client).
-
 publish_item(BotID, NoteID, Title, Content, Image, Client) ->
-    Response = expect_iq_success(
-                 publish_item_stanza(BotID, NoteID, Title, Content, Image),
-                 Client),
-    xml:get_path_s(Response, [{elem, <<"item_id">>}, cdata]).
+    expect_iq_success(publish_item_stanza(BotID, NoteID, Title, Content, Image),
+                      Client).
 
 retract_item(BotID, NoteID, Client) ->
     expect_iq_success(retract_item_stanza(BotID, NoteID), Client).
 
-publish_item_with_image(ImageID, Client) ->
-    ItemID = publish_item(?BOT, <<"ignored">>, <<"Title">>, <<"Content">>,
-                          item_image_url(ImageID), Client),
-    {ItemID, ImageID}.
+publish_item_with_image({ItemID, ImageID}, Client) ->
+    publish_item(?BOT, item_id(ItemID), <<"Title">>, <<"Content">>,
+                 item_image_url(ImageID), Client).
 
 check_returned_images(#xmlel{name = <<"iq">>, children = Children}, IDPairs) ->
     [#xmlel{name = <<"item_images">>, children = ImageList}] = Children,
     Remaining = check_image(?BJID(?ALICE), ?ITEM, ?ITEM_IMAGE_ID, ImageList),
     RSMXML = lists:foldl(
                fun({ItemID, ImageID}, S) ->
-                       check_image(?BJID(?ALICE), ItemID, ImageID, S)
+                       check_image(?BJID(?ALICE), item_id(ItemID), ImageID, S)
                end, Remaining, IDPairs),
     {ok, RSMEls} = check_get_children(hd(RSMXML), <<"set">>,
                                       [{<<"xmlns">>, ?NS_RSM}]),
     {ok, RSM} = decode_rsm(RSMEls),
     ItemCount = length(IDPairs),
-    ok = check_rsm(RSM, ItemCount + 1, 0, ?ITEM,
-                   item_id_at(IDPairs, ItemCount)).
-
-item_id_at(IDPairs, N) -> element(1, lists:nth(N, IDPairs)).
+    ok = check_rsm(RSM, ItemCount + 1, 0, ?ITEM, item_id(ItemCount-1)).
 
 check_image(Owner, Item, ImageID,
             [#xmlel{name = <<"image">>, attrs = Attrs} | Rest]) ->

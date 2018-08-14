@@ -81,23 +81,10 @@ defmodule Wocky.Bot.Item do
   def put(nil, bot, user, stanza), do: put(ID.new(), bot, user, stanza)
 
   def put(id, %{id: bot_id} = bot, %{id: user_id} = user, stanza) do
-    id_valid = ID.valid?(id)
-
-    case id_valid do
-      false ->
-        do_put(ID.new(), bot, user, stanza)
-
-      true ->
-        case Repo.get_by(Item, id: id) do
-          nil ->
-            do_put(id, bot, user, stanza)
-
-          %Item{user_id: ^user_id, bot_id: ^bot_id} ->
-            do_put(id, bot, user, stanza)
-
-          _ ->
-            {:error, :permission_denied}
-        end
+    case Repo.get_by(Item, id: id) do
+      nil -> do_put(ID.new(), bot, user, stanza)
+      %Item{user_id: ^user_id, bot_id: ^bot_id} -> do_put(id, bot, user, stanza)
+      _ -> {:error, :permission_denied}
     end
   end
 
