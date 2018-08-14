@@ -192,7 +192,12 @@ defmodule Wocky.Bot.ItemSpec do
 
         it "should succeed, creating a new UUID ID" do
           shared.result |> should(be_ok_result())
-          shared.result |> elem(1) |> Map.get(:id) |> ID.valid?() |> should(be_true())
+
+          shared.result
+          |> elem(1)
+          |> Map.get(:id)
+          |> ID.valid?()
+          |> should(be_true())
         end
       end
 
@@ -211,7 +216,8 @@ defmodule Wocky.Bot.ItemSpec do
       end
 
       it "should set image to true when an image is present" do
-        {:ok, item} = Item.put(ID.new(), shared.bot, shared.owner, @image_stanza)
+        {:ok, item} =
+          Item.put(ID.new(), shared.bot, shared.owner, @image_stanza)
 
         item.image |> should(be_true())
       end

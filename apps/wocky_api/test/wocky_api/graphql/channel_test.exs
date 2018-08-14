@@ -52,7 +52,6 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       token: token,
       user: %{id: user_id}
     } do
-
       authenticate(user_id, token, socket)
       query = "mutation { botCreate { successful, result { id } } }"
 
@@ -85,10 +84,13 @@ defmodule WockyAPI.GraphQL.ChannelTest do
         |> add_bot_lat_lon()
         |> Map.take(bot_create_fields())
 
-      ref = push_doc(socket, query, variables: %{
-        "id" => id,
-        "values" => values
-      })
+      ref =
+        push_doc(socket, query,
+          variables: %{
+            "id" => id,
+            "values" => values
+          }
+        )
 
       assert_reply ref, :ok, _result, 1000
 
@@ -100,10 +102,10 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       title = values[:title]
 
       assert %{
-        "bot" => %{
-          "title" => ^title
-        }
-      } = result.data
+               "bot" => %{
+                 "title" => ^title
+               }
+             } = result.data
     end
   end
 end

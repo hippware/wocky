@@ -180,9 +180,11 @@ defmodule WockyAPI.Schema.BotTypes do
   @desc "Parameters for creating and updating a bot"
   input_object :bot_params do
     field :title, :string
+
     field :server, :string do
       deprecate "server field is deprecated and will be ignored"
     end
+
     field :lat, :float
     field :lon, :float
     field :radius, :float
@@ -257,7 +259,7 @@ defmodule WockyAPI.Schema.BotTypes do
   input_object :bot_item_delete_input do
     @desc "ID of the bot containing the item"
     field :bot_id, non_null(:uuid) do
-      deprecated "The bot ID is no longer required for deleting items"
+      deprecated("The bot ID is no longer required for deleting items")
     end
 
     @desc "ID of the item to delete"
