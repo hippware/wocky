@@ -96,7 +96,7 @@ defmodule Wocky.User.BotEvent do
       bot_id: bot.id,
       location_id: loc && loc.id,
       event: event,
-      occurred_at: (loc && loc.captured_at) || DateTime.utc_now
+      occurred_at: (loc && loc.captured_at) || DateTime.utc_now()
     }
     |> changeset()
     |> Repo.insert!()

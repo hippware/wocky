@@ -19,7 +19,9 @@ defmodule Wocky.HomeStream.Item do
     belongs_to :user, Wocky.User
     belongs_to :reference_user, Wocky.User, foreign_key: :reference_user_id
     belongs_to :reference_bot, Wocky.Bot, foreign_key: :reference_bot_id
-    belongs_to :reference_bot_item, Wocky.Bot.Item, foreign_key: :reference_bot_item_id
+
+    belongs_to :reference_bot_item, Wocky.Bot.Item,
+      foreign_key: :reference_bot_item_id
 
     belongs_to :reference_collection, Wocky.Collections.Collection,
       foreign_key: :reference_collection_id,

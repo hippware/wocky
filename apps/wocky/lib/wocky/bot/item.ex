@@ -86,6 +86,7 @@ defmodule Wocky.Bot.Item do
     case id_valid do
       false ->
         do_put(ID.new(), bot, user, stanza)
+
       true ->
         case Repo.get_by(Item, id: id) do
           nil ->

@@ -70,7 +70,7 @@ defmodule Wocky.User.GeoFenceTest do
         accuracy: 10,
         is_moving: true,
         speed: 3,
-        captured_at: DateTime.utc_now,
+        captured_at: DateTime.utc_now(),
         resource: @rsrc
       }
 
@@ -110,7 +110,7 @@ defmodule Wocky.User.GeoFenceTest do
         accuracy: 10,
         is_moving: true,
         speed: 3,
-        captured_at: DateTime.utc_now,
+        captured_at: DateTime.utc_now(),
         resource: @rsrc
       }
 
@@ -285,7 +285,7 @@ defmodule Wocky.User.GeoFenceTest do
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
         accuracy: 10,
-        captured_at: DateTime.utc_now,
+        captured_at: DateTime.utc_now(),
         resource: @rsrc
       }
 
@@ -415,7 +415,7 @@ defmodule Wocky.User.GeoFenceTest do
         accuracy: 10,
         is_moving: true,
         speed: 3,
-        captured_at: DateTime.utc_now,
+        captured_at: DateTime.utc_now(),
         resource: @rsrc
       }
 
