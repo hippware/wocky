@@ -6,7 +6,7 @@ defmodule Wocky.Tasks.Predeploy do
   alias Wocky.Repo
 
   def run do
-    :ok = Application.load(:wocky)
+    Application.load(:wocky)
 
     notify()
     migrate()
@@ -15,7 +15,7 @@ defmodule Wocky.Tasks.Predeploy do
   end
 
   def run_migrate_only do
-    :ok = Application.load(:wocky)
+    Application.load(:wocky)
 
     migrate()
     :init.stop()
