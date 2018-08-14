@@ -202,7 +202,6 @@ defmodule Wocky.Bot.ItemSpec do
         {:ok, item} =
           Item.put(ID.new(), shared.bot, shared.owner, @image_stanza)
 
-        item.id |> should(eq new_id)
         item.image |> should(be_true())
       end
 
