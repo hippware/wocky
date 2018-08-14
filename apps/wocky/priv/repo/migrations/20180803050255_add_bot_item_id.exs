@@ -5,8 +5,8 @@ defmodule Wocky.Repo.Migrations.AddBotItemId do
 
   import Ecto.Query
 
-  alias Wocky.ID
   alias Wocky.Repo
+  alias Wocky.Repo.ID
 
   def change do
     execute """
