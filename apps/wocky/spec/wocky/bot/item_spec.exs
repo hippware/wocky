@@ -200,7 +200,7 @@ defmodule Wocky.Bot.ItemSpec do
 
       it "should set image to true when an image is present" do
         {:ok, item} =
-          Item.put(ID.new(), shared.bot, shared.owner, @image_stanza)
+          Item.put(shared.bot, shared.owner, ID.new(), @image_stanza)
 
         item.image |> should(be_true())
       end
