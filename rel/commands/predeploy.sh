@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/wocky command Elixir.Wocky.Tasks.Predeploy run
+bin/wocky eval 'Wocky.Tasks.Predeploy.run()'

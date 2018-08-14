@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/wocky command Elixir.Wocky.Tasks.Weekly run
+bin/wocky eval 'Wocky.Tasks.Weekly.run()'
