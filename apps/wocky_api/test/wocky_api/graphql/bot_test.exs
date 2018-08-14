@@ -1177,19 +1177,20 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
     test "publish item", %{user: user, bot: bot} do
+      id = ID.new()
       stanza = Lorem.paragraph()
 
       result =
         run_query(@query, user, %{
           "input" => %{
             "bot_id" => bot.id,
-            "values" => %{"stanza" => stanza}
+            "values" => %{"id" => id, "stanza" => stanza}
           }
         })
 
       refute has_errors(result)
-      assert %{"botItemPublish" => %{"result" => %{"id" => id}}} = result.data
-      assert %Item{stanza: ^stanza, id: ^id} = Item.get(id, bot)
+      assert result.data == %{"botItemPublish" => %{"result" => %{"id" => id}}}
+      assert %Item{stanza: ^stanza, id: ^id} = Item.get(bot, id)
     end
 
     test "update existing item", %{user: user, bot2: bot2, item: item} do
@@ -1205,7 +1206,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       refute has_errors(result)
-      assert %Item{stanza: ^stanza, id: ^id} = Item.get(id, bot2)
+      assert %Item{stanza: ^stanza, id: ^id} = Item.get(bot2, id)
     end
 
     test "publish item failure", %{user: user, user2: user2, bot2: bot2} do

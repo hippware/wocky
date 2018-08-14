@@ -24,8 +24,8 @@
 -define(BOT_B_JID, <<?SERVER/binary, "/bot/", ?BOT/binary>>).
 -define(BOT_JID, jid:from_binary(?BOT_B_JID)).
 
--define(ITEM, <<"6517ceda-d829-4323-a183-441a6d72843d">>).
--define(ITEM2, <<"2c6662ad-9ca3-4220-921d-3a408684f693">>).
+-define(ITEM, <<"test-item-id">>).
+-define(ITEM2, <<"test-item-id2">>).
 -define(ITEM_IMAGE_ID, <<"afafab50-f4e9-11e7-a13e-c72167c50ae4">>).
 -define(ITEM_IMAGE, <<"tros:", ?ALICE/binary, "@", ?SERVER/binary, "/file/",
                       ?ITEM_IMAGE_ID/binary>>).

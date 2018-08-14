@@ -4,6 +4,7 @@ defmodule Wocky.Repo.Migrations.AddItemAuthor do
 
   import Ecto.Query
 
+  alias Wocky.Bot.Item
   alias Wocky.Repo
 
   def up do
@@ -13,10 +14,13 @@ defmodule Wocky.Repo.Migrations.AddItemAuthor do
 
     flush()
 
-    from(b in "bots")
-    |> select([:id, :user_id])
-    |> Repo.stream()
-    |> Stream.each(&set_user(&1))
+    Repo.transaction fn ->
+      Item
+      |> preload(:bot)
+      |> Repo.stream
+      |> Stream.map(&set_user(&1))
+      |> Enum.to_list
+    end
   end
 
   def down do
@@ -25,7 +29,9 @@ defmodule Wocky.Repo.Migrations.AddItemAuthor do
     end
   end
 
-  defp set_user(%{user_id: user_id, id: bot_id}) do
-    execute "UPDATE bot_items SET user_id = #{user_id} WHERE bot_id = #{bot_id}"
+  defp set_user(%Item{id: id, bot: bot}) do
+    Item
+    |> where([i], i.id == ^id)
+    |> Repo.update_all(set: [user_id: bot.user_id])
   end
 end
