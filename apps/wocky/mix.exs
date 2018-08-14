@@ -90,7 +90,7 @@ defmodule Wocky.Mixfile do
       {:exrun, "~> 0.1.6"},
       {:faker, "~> 0.9"},
       {:guardian, "~> 1.0"},
-      {:guardian_firebase, "~> 0.1.0"},
+      {:guardian_firebase, "~> 0.2.1"},
       {:gen_stage, "~> 0.12"},
       {:geo_postgis, "~> 2.0"},
       {:geocalc, "~> 0.5"},
