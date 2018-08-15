@@ -5,15 +5,20 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.8.14+r3c0b954
+
 * Update: bcrypt_elixir (PR #1729), phoenix (PR #1732)
   * exometer_prometheus (PR #1737), distillery (PR #1742)
   * excoveralls (PR #1740), espec (PR #1741), phoenix_pubsub (PR #1743)
+  * distillery (PR #1749), guardian_firebase (PR #1750)
 * Update to Elixir 1.7.1 (PR #1727, PR #1731)
-* Add unique bot item key (PR #1734)
 * First iteration of Geofence/Debounce algorithm changes (PR #1726)
   * Geofence mechanics algorithm shortcomings (#1713)
 * Disable old push notification tokens (#1714, PR #1736)
 * Clean up and refactor DB callback handlers (PR #1739)
+* Fix predeploy commands and migrations (PR #1751, PR #1752, PR #1754)
+* Add unique bot item key (PR #1734)
+  * Then reverted (PR #1753)
 
 
 # 2018.8.3+r7321aad
