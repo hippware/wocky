@@ -22,7 +22,7 @@ data:
   WOCKY_ENABLE_BYPASS: "true"
   WOCKY_DB_HOST: wocky-staging.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_staging
-  WOCKY_DB_WATCHER_QUEUE: wocky-staging-db-watcher.fifo
+  WOCKY_DB_WATCHER_QUEUE: wocky-db-watcher-staging.fifo
   WOCKY_DB_WATCHER_REGION: us-west-2
   AWS_ACCESS_KEY_ID: AKIAJMLYSEVWGEF7C7CQ
   HONEYBADGER_ENV: staging
