@@ -270,10 +270,9 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def publish_item(_root, args, %{context: %{current_user: requestor}}) do
     values = args[:input][:values]
-    id = values[:id] || ID.new()
 
     with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
-         {:ok, item} <- Item.put(bot, requestor, id, values[:stanza]) do
+         {:ok, item} <- Item.put(values[:id], bot, requestor, values[:stanza]) do
       {:ok, item}
     else
       nil -> not_found_error(args[:input][:bot_id])
@@ -283,7 +282,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def delete_item(_root, args, %{context: %{current_user: requestor}}) do
     with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
-         :ok <- Item.delete(bot, args[:input][:id], requestor) do
+         :ok <- Item.delete(args[:input][:id], bot, requestor) do
       {:ok, true}
     else
       nil -> not_found_error(args[:input][:bot_id])

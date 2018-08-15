@@ -138,7 +138,7 @@ defmodule WockyAPI.Schema.BotTypes do
   object :bot_item do
     scope :public
 
-    @desc "The bot-unique ID of this post"
+    @desc "The unique ID of this post"
     field :id, non_null(:string)
 
     @desc "The post's content"
@@ -217,7 +217,11 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   input_object :bot_item_params do
-    @desc "ID for the item. If this is not supplied one will be generated"
+    @desc """
+    ID for the item. If this is not supplied, a new one will be generated.
+    NOTE: For backwards compatability, supplying a non-existant ID will
+    create a new item with an unrelated ID different from the one provided.
+    """
     field :id, :string
 
     @desc "Content of them item"
@@ -254,7 +258,9 @@ defmodule WockyAPI.Schema.BotTypes do
 
   input_object :bot_item_delete_input do
     @desc "ID of the bot containing the item"
-    field :bot_id, non_null(:uuid)
+    field :bot_id, non_null(:uuid) do
+      deprecated("The bot ID is no longer required for deleting items")
+    end
 
     @desc "ID of the item to delete"
     field :id, non_null(:uuid)

@@ -9,20 +9,19 @@ defmodule Wocky.Bot.Item do
   alias Ecto.Changeset
   alias Wocky.Bot
   alias Wocky.Repo
+  alias Wocky.Repo.ID
   alias Wocky.User
   alias __MODULE__, as: Item
 
   @foreign_key_type :binary_id
-  @primary_key false
+  @primary_key {:id, :binary_id, autogenerate: false}
   schema "bot_items" do
-    field :id, :string, primary_key: true
-    field :bot_id, :binary_id, primary_key: true
     field :stanza, :string
     field :image, :boolean, default: false
 
     timestamps()
 
-    belongs_to :bot, Bot, define_field: false
+    belongs_to :bot, Bot
     belongs_to :user, User
   end
 
@@ -71,21 +70,38 @@ defmodule Wocky.Bot.Item do
     |> Repo.one()
   end
 
-  @spec get(Bot.t(), id) :: t | nil
-  def get(bot, id) do
-    Repo.get_by(Item, id: id, bot_id: bot.id)
+  @spec get(id, Bot.t()) :: t | nil
+  def get(id, bot) do
+    Item
+    |> where(id: ^id, bot_id: ^bot.id)
+    |> Repo.one()
   end
 
-  @spec put(Bot.t(), User.t(), id, binary) :: {:ok, t()} | {:error, term}
-  def put(bot, %{id: user_id} = user, id, stanza) do
-    case get(bot, id) do
-      nil -> do_put(bot, user, id, stanza)
-      %Item{user_id: ^user_id} -> do_put(bot, user, id, stanza)
-      _ -> {:error, :permission_denied}
+  @spec put(id, Bot.t(), User.t(), binary) :: {:ok, t()} | {:error, term}
+  def put(nil, bot, user, stanza), do: put(ID.new(), bot, user, stanza)
+
+  def put(id, %{id: bot_id} = bot, %{id: user_id} = user, stanza) do
+    id_valid = ID.valid?(id)
+
+    case id_valid do
+      false ->
+        do_put(ID.new(), bot, user, stanza)
+
+      true ->
+        case Repo.get_by(Item, id: id) do
+          nil ->
+            do_put(id, bot, user, stanza)
+
+          %Item{user_id: ^user_id, bot_id: ^bot_id} ->
+            do_put(id, bot, user, stanza)
+
+          _ ->
+            {:error, :permission_denied}
+        end
     end
   end
 
-  defp do_put(bot, user, id, stanza) do
+  defp do_put(id, bot, user, stanza) do
     with {:ok, item} <-
            %Item{}
            |> changeset(%{
@@ -97,7 +113,7 @@ defmodule Wocky.Bot.Item do
            })
            |> Repo.insert(
              on_conflict: :replace_all,
-             conflict_target: [:id, :bot_id],
+             conflict_target: [:id],
              returning: true
            ) do
       Bot.bump_update_time(bot)
@@ -114,9 +130,9 @@ defmodule Wocky.Bot.Item do
     :ok
   end
 
-  @spec delete(Bot.t(), id, User.t()) ::
+  @spec delete(id, Bot.t(), User.t()) ::
           :ok | {:error, :not_found | :permission_denied}
-  def delete(%Bot{user_id: user_id} = bot, id, %User{id: user_id}) do
+  def delete(id, %Bot{user_id: user_id} = bot, %User{id: user_id}) do
     {deleted, _} =
       bot
       |> Ecto.assoc(:items)
@@ -129,8 +145,8 @@ defmodule Wocky.Bot.Item do
     end
   end
 
-  def delete(bot, id, %User{id: user_id}) do
-    case get(bot, id) do
+  def delete(id, bot, %User{id: user_id}) do
+    case get(id, bot) do
       %Item{user_id: ^user_id} = item ->
         Repo.delete(item)
         :ok
@@ -144,10 +160,10 @@ defmodule Wocky.Bot.Item do
   end
 
   @spec delete(Bot.t(), User.t()) :: :ok
-  def delete(bot, %User{id: id}) do
+  def delete(bot, %User{id: user_id}) do
     bot
     |> Ecto.assoc(:items)
-    |> where(user_id: ^id)
+    |> where(user_id: ^user_id)
     |> Repo.delete_all()
 
     :ok

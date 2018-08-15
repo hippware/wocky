@@ -476,13 +476,15 @@ auto_publish_bot_item(Config) ->
 
         expect_iq_success(test_helper:subscribe_stanza(), Carol),
 
-        expect_iq_success(
-          publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
-          Alice),
+        ItemID = get_item_id(
+          expect_iq_success(
+            publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
+            Alice)
+         ),
 
         check_home_stream_sizes(2, [Carol], false),
 
-        expect_iq_success(retract_item_stanza(?BOT, <<"ID">>), Alice),
+        expect_iq_success(retract_item_stanza(?BOT, ItemID), Alice),
         timer:sleep(400),
         check_home_stream_sizes(1, [Carol], false)
 
@@ -568,7 +570,7 @@ bot_change_notification(Config) ->
         ensure_all_clean([Alice, Carol]),
 
         % Publish item
-        bot_SUITE:publish_item(?BOT, <<"BrandNewID">>, <<"title">>,
+        ItemID = bot_SUITE:publish_item(?BOT, <<"ignored">>, <<"title">>,
                                <<"content">>, undefined, Alice),
         escalus:assert_many([fun is_bot_ref_change_notification/1,
                              fun is_item_publish_notification/1],
@@ -577,7 +579,7 @@ bot_change_notification(Config) ->
         ensure_all_clean([Alice, Carol]),
 
         % Retract item
-        bot_SUITE:retract_item(?BOT, <<"BrandNewID">>, Alice),
+        bot_SUITE:retract_item(?BOT, ItemID, Alice),
         escalus:assert_many([fun is_hs_item_deleted_notification/1,
                              fun is_bot_ref_change_notification/1],
                             escalus:wait_for_stanzas(Carol, 2)),
@@ -910,3 +912,6 @@ catchup_stanza(Version) ->
                        #xmlel{name = <<"catchup">>,
                               attrs = [{<<"node">>, ?HOME_STREAM_NODE},
                                        {<<"version">>, Version}]}).
+
+get_item_id(Stanza) ->
+    xml:get_path_s(Stanza, [{elem, <<"item_id">>}, cdata]).
