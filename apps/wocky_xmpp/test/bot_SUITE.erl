@@ -63,7 +63,7 @@
 -define(ALICE_LAST_NAME, <<"Alison">>).
 
 -define(CREATED_BOTS,       30).
--define(CREATED_ITEMS,      50).
+-define(CREATED_ITEMS,      15).
 
 -define(BOBS_ITEM_ID, <<"item2">>).
 
@@ -188,7 +188,7 @@ local_tables() ->
 
 reset_tables(Config) ->
     % Allow any pending callbacks to be flushed
-    timer:sleep(500),
+    timer:sleep(400),
 
     Config2 = fun_chain:first(Config,
         escalus:init_per_suite(),
@@ -817,8 +817,8 @@ get_items(Config) ->
                   #rsm_in{max = 2, direction = before, id = lists:nth(6, IDs)},
                   IDs, 3, 4),
         get_items(Bob,
-                  #rsm_in{max = 3, direction = aft, id = lists:nth(49, IDs)},
-                  IDs, 49, min(?CREATED_ITEMS-1, 51)),
+                  #rsm_in{max = 3, direction = aft, id = lists:nth(14, IDs)},
+                  IDs, 14, min(?CREATED_ITEMS-1, 16)),
         get_items(Bob, #rsm_in{max = 3, direction = before}, IDs,
                   ?CREATED_ITEMS-3, ?CREATED_ITEMS-1),
 
