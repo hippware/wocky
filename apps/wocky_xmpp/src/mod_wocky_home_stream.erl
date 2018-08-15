@@ -282,7 +282,7 @@ check_publish_event(_From, Stanza) ->
 
     case EventNS of
         ?NS_BOT_EVENT when Result =:= ok ->
-            Item = ?wocky_item:get(Bot, ItemID),
+            Item = ?wocky_item:get(ItemID, Bot),
             {publish, {drop, ?wocky_home_stream_id:bot_event_id(Bot, Item)}};
         ?NS_PUBSUB_EVENT ->
             dont_publish;
