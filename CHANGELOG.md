@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* EKS deployment configuration (PR #1738)
+* Reinstate new bot item IDs (PR #1756)
+* Update: distillery (PR #1758)
+* Sprinkle magic kube pixie dust on external services (PR #1759)
+
+
 # 2018.8.14+r3c0b954
 
 * Update: bcrypt_elixir (PR #1729), phoenix (PR #1732)
