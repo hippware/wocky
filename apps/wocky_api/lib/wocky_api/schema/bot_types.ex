@@ -154,10 +154,18 @@ defmodule WockyAPI.Schema.BotTypes do
     field :owner, :user, resolve: assoc(:user)
   end
 
+  @desc "An invitation to subscribe to a bot"
   object :bot_invitation do
+    @desc "The unique ID of the invitation"
     field :id, non_null(:id)
+
+    @desc "The user who sent the invitation"
     field :user, non_null(:user), resolve: assoc(:user)
+
+    @desc "The recipient of the invitation"
     field :invitee, non_null(:user), resolve: assoc(:invitee)
+
+    @desc "The bot to which the recipient has been invited"
     field :bot, non_null(:bot), resolve: assoc(:bot)
   end
 
