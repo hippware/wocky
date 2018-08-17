@@ -48,11 +48,11 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "The bot to which the item belongs"
     field :bot, non_null(:bot), resolve: assoc(:bot)
 
-    @desc "The bot to which the item belongs"
+    @desc "The bot item that has been posted or edited"
     field :bot_item, non_null(:bot_item), resolve: assoc(:bot_item)
   end
 
-  @desc "A notification that a user has entered or exited a subsribed bot"
+  @desc "A notification that a user has entered or exited a subscribed bot"
   object :geofence_event_notification do
     @desc "The user who entered or exited"
     field :user, non_null(:user), resolve: assoc(:other_user)
