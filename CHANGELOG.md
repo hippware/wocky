@@ -10,6 +10,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update: distillery (PR #1758, PR #1762), bamboo (PR #1761)
 * Sprinkle magic kube pixie dust on external services (PR #1759)
 * Re-enable cross zone load balancing (PR #1760)
+* [New feature] Notifications list (#1711)
 
 
 # 2018.8.14+r3c0b954
