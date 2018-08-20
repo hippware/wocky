@@ -132,9 +132,11 @@ defmodule WockyAPI.Resolvers.User do
     end
   end
 
-  def home_stream_subscription_topic(user_id) do
-    "home_stream_subscription_" <> user_id
-  end
+  def home_stream_subscription_topic(user_id),
+    do: "home_stream_subscription_" <> user_id
+
+  def notification_subscription_topic(user_id),
+    do: "notification_subscription_" <> user_id
 
   def notify_home_stream(item, action) do
     notification = %{item: item, action: action}

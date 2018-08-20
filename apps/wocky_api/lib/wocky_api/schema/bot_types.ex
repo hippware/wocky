@@ -154,6 +154,21 @@ defmodule WockyAPI.Schema.BotTypes do
     field :owner, :user, resolve: assoc(:user)
   end
 
+  @desc "An invitation to subscribe to a bot"
+  object :bot_invitation do
+    @desc "The unique ID of the invitation"
+    field :id, non_null(:id)
+
+    @desc "The user who sent the invitation"
+    field :user, non_null(:user), resolve: assoc(:user)
+
+    @desc "The recipient of the invitation"
+    field :invitee, non_null(:user), resolve: assoc(:invitee)
+
+    @desc "The bot to which the recipient has been invited"
+    field :bot, non_null(:bot), resolve: assoc(:bot)
+  end
+
   connection :bot_items, node_type: :bot_item do
     scope :public
     total_count_field
@@ -266,6 +281,22 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:uuid)
   end
 
+  input_object :bot_invite_input do
+    @desc "ID of the bot to which the user is invited"
+    field :bot_id, non_null(:uuid)
+
+    @desc "User to invite"
+    field :user_id, non_null(:uuid)
+  end
+
+  input_object :bot_invitation_reply_input do
+    @desc "ID of the invitation being replied to"
+    field :invitation_id, non_null(:aint)
+
+    @desc "Whether the invitation is accepted (true) or declined (false)"
+    field :accept, non_null(:boolean)
+  end
+
   payload_object(:bot_create_payload, :bot)
   payload_object(:bot_update_payload, :bot)
   payload_object(:bot_delete_payload, :boolean)
@@ -273,6 +304,8 @@ defmodule WockyAPI.Schema.BotTypes do
   payload_object(:bot_unsubscribe_payload, :boolean)
   payload_object(:bot_item_publish_payload, :bot_item)
   payload_object(:bot_item_delete_payload, :boolean)
+  payload_object(:bot_invite_payload, :aint)
+  payload_object(:bot_invitation_reply_payload, :boolean)
 
   object :bot_queries do
     @desc "Retrieve a single bot by ID"
@@ -351,6 +384,20 @@ defmodule WockyAPI.Schema.BotTypes do
       resolve &Bot.delete_item/3
       changeset_mutation_middleware
     end
+
+    @desc "Invite a user to a bot"
+    field :bot_invite, type: :bot_invite_payload do
+      arg :input, non_null(:bot_invite_input)
+      resolve &Bot.invite/3
+      changeset_mutation_middleware
+    end
+
+    @desc "Respond to an invititation"
+    field :bot_invitation_reply, type: :bot_invitation_reply_payload do
+      arg :input, non_null(:bot_invitation_reply_input)
+      resolve &Bot.invitation_reply/3
+      changeset_mutation_middleware
+    end
   end
 
   enum :visitor_action do
@@ -393,24 +440,12 @@ defmodule WockyAPI.Schema.BotTypes do
     a guest
     """
     field :bot_guest_visitors, non_null(:visitor_update) do
-      config fn
-        _, %{context: %{current_user: user}} ->
-          {:ok, topic: Bot.visitor_subscription_topic(user.id)}
-
-        _, _ ->
-          {:error, "This operation requires an authenticated user"}
-      end
+      user_subscription_config(&Bot.visitor_subscription_topic/1)
     end
 
     @desc "Subscribe to a live stream of created, discoverable bots"
     field :discover_bots, non_null(:discover_bot) do
-      config fn
-        _, %{context: %{current_user: user}} ->
-          {:ok, topic: Bot.discover_bots_topic(user.id)}
-
-        _, _ ->
-          {:error, "This operation requires an authenticated user"}
-      end
+      user_subscription_config(&Bot.discover_bots_topic/1)
     end
   end
 end

@@ -481,7 +481,7 @@ make_contact(#{id := UserID, handle := Handle},
                      association(UserID, TargetID, RequestedAssociation)}]}.
 
 association(UserID, TargetID, RequestedAssociation) ->
-    case ?wocky_roster:is_friend(UserID, TargetID) of
+    case ?wocky_roster:'friend?'(UserID, TargetID) of
         true -> <<"friend">>;
         false -> RequestedAssociation
     end.

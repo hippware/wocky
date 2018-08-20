@@ -77,4 +77,9 @@ defmodule WockyAPI.Resolvers.Utils do
     query
     |> order_by(^order)
   end
+
+  def map_edges({:error, _} = r, _), do: r
+
+  def map_edges({:ok, %{edges: edges} = result}, fun),
+    do: {:ok, %{result | edges: Enum.map(edges, &update_in(&1[:node], fun))}}
 end

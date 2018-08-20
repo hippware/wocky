@@ -37,6 +37,18 @@ defmodule WockyAPI.Schema.Notation do
     end
   end
 
+  defmacro user_subscription_config(topic_fun) do
+    quote do
+      config fn
+        _, %{context: %{current_user: user}} ->
+          {:ok, topic: unquote(topic_fun).(user.id)}
+
+        _, _ ->
+          {:error, "This operation requires an authenticated user"}
+      end
+    end
+  end
+
   def connection_complexity(params, children) do
     count = params[:first] || params[:last] || 1
     count * children
