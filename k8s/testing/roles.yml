@@ -16,16 +16,16 @@ rules:
   - list
   - watch
 ---
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: prometheus-k8s
   namespace: wocky-testing
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: prometheus
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: prometheus-k8s
-subjects:
-- kind: ServiceAccount
-  name: prometheus-k8s
-  namespace: tectonic-system
