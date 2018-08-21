@@ -5,12 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.8.20+r5001d7d
+
 * EKS deployment configuration (PR #1738)
 * Reinstate new bot item IDs (PR #1756)
-* Update: distillery (PR #1758, PR #1762), bamboo (PR #1761)
+* Update: distillery (PR #1758, PR #1762, PR #1768), bamboo (PR #1761)
+  * ranch (PR #1767)
 * Sprinkle magic kube pixie dust on external services (PR #1759)
 * Re-enable cross zone load balancing (PR #1760)
 * [New feature] Notifications list (#1711)
+* Add role bindings for new Prometheus setup (PR #1766)
 
 
 # 2018.8.14+r3c0b954
