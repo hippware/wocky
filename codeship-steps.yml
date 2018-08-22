@@ -41,5 +41,5 @@
 - name: deploy_to_testing
   tag: master
   service: eks-deploy
-  command: ./deploy.sh wocky-testing k8s/testing
+  command: make deploy WOCKY_ENV=testing KUBECONFIG=/root/.kube/config
   dockercfg_service: aws-dockercfg
