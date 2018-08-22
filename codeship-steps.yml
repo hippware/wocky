@@ -41,5 +41,5 @@
 - name: deploy_to_testing
   tag: master
   service: eks-deploy
-  command: make deploy WOCKY_ENV=testing KUBECONFIG=/root/.kube/config
+  command: make deploy-only WOCKY_ENV=testing KUBECONFIG=/root/.kube/config
   dockercfg_service: aws-dockercfg

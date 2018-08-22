@@ -65,8 +65,12 @@ push: ## Push the Docker image to ECR
 ########################################################################
 ### Cluster deployment
 
-deploy: ## Deploy the image to the cluster
+deploy: deploy-check deploy-only ## Deploy the image to the cluster
+
+deploy-check:
 	@docker run -it --rm -v "${PWD}/k8s":/k8s garethr/kubeval k8s/$(WOCKY_ENV)/*.yml*
+
+deploy-only:
 	@KUBECONFIG=$(KUBECONFIG) REVISION=$(IMAGE_TAG) \
 		kubernetes-deploy $(KUBE_NS) $(CONTEXT) --template-dir=k8s/$(WOCKY_ENV) \
 			--bindings=watcher_sha=$(WATCHER_SHA)
