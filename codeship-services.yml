@@ -46,6 +46,7 @@ eks-deploy:
   encrypted_env_file: aws.env.encrypted
   volumes:
     - k8s:/k8s
+    - Makefile:/Makefile
 dockerlint:
   image: redcoolbeans/dockerlint
   volumes:
