@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: distillery (PR #1771)
+* Automatically deploy wocky to testing when tests pass (#1764)
+
+
 # 2018.8.20+r5001d7d
 
 * EKS deployment configuration (PR #1738)
