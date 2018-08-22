@@ -37,12 +37,22 @@ spec:
         - name: wocky
           image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:<%= current_sha %>
           ports:
-            - containerPort: 5222
-            - containerPort: 8080
-            - containerPort: 5269
-            - containerPort: 5280
             - containerPort: 4369
+              name: epmd
+            - containerPort: 5222
+              name: xmpp
+            - containerPort: 5269
+              name: xmpp-s2s
+            - containerPort: 5280
+              name: xmpp-ws
+            - containerPort: 8080
+              name: http
+            - containerPort: 8081
+              name: prometheus
+            - containerPort: 8082
+              name: api-prometheus
             - containerPort: 9100
+              name: erlang-dist
           args: ["foreground"]
           envFrom:
             - configMapRef:

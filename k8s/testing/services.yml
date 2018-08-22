@@ -66,21 +66,3 @@ spec:
     app: wocky
     env: testing
   type: LoadBalancer
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: prometheus-wocky
-  namespace: wocky-testing
-  labels:
-    env: testing
-    role: metrics
-    prometheus: wocky
-spec:
-  selector:
-    app: wocky
-  ports:
-    - name: exometer-prometheus
-      port: 8081
-    - name: wocky-api-prometheus
-      port: 8082
