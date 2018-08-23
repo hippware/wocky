@@ -293,8 +293,8 @@ defmodule WockyAPI.Resolvers.Bot do
     with %Bot{} = bot <- Bot.get_owned_bot(args[:input][:bot_id], requestor) do
       with %User{} = invitee <-
              User.get_user(args[:input][:user_id], requestor),
-           {:ok, %Invitation{id: id}} <- Invitation.put(invitee, bot, requestor) do
-        {:ok, id}
+           {:ok, invitation} <- Invitation.put(invitee, bot, requestor) do
+        {:ok, invitation}
       else
         nil -> {:error, "Invalid user"}
         {:error, :permission_denied} -> {:error, "Permission denied"}

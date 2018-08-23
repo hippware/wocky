@@ -1297,7 +1297,10 @@ defmodule WockyAPI.GraphQL.BotTest do
     @query """
     mutation ($input: BotInviteInput!) {
       botInvite (input: $input) {
-        result
+        result {
+          id
+          accepted
+        }
       }
     }
     """
@@ -1309,7 +1312,9 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
 
-      assert %{"botInvite" => %{"result" => id}} = result.data
+      assert %{"botInvite" => %{"result" => %{"id" => id, "accepted" => nil}}} =
+               result.data
+
       assert %Invitation{accepted: nil} = Repo.get_by(Invitation, id: id)
     end
 

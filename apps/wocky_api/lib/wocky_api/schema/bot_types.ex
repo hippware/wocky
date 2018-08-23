@@ -157,7 +157,7 @@ defmodule WockyAPI.Schema.BotTypes do
   @desc "An invitation to subscribe to a bot"
   object :bot_invitation do
     @desc "The unique ID of the invitation"
-    field :id, non_null(:id)
+    field :id, non_null(:aint)
 
     @desc "The user who sent the invitation"
     field :user, non_null(:user), resolve: assoc(:user)
@@ -167,6 +167,12 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "The bot to which the recipient has been invited"
     field :bot, non_null(:bot), resolve: assoc(:bot)
+
+    @desc """
+    Whether the invitation has been accepted (true), declined (false), or
+    not yet responded to (null)
+    """
+    field :accepted, :boolean
   end
 
   connection :bot_items, node_type: :bot_item do
@@ -304,7 +310,7 @@ defmodule WockyAPI.Schema.BotTypes do
   payload_object(:bot_unsubscribe_payload, :boolean)
   payload_object(:bot_item_publish_payload, :bot_item)
   payload_object(:bot_item_delete_payload, :boolean)
-  payload_object(:bot_invite_payload, :aint)
+  payload_object(:bot_invite_payload, :bot_invitation)
   payload_object(:bot_invitation_respond_payload, :boolean)
 
   object :bot_queries do
