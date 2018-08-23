@@ -3,13 +3,13 @@
   command: elixir version.exs
 - type: parallel
   steps:
-  - type: serial
-    service: wocky-test
-    steps:
-    - name: unit_test
-      command: make unittest
-    - name: int_test
-      command: make inttest
+#   - type: serial
+#     service: wocky-test
+#     steps:
+#     - name: unit_test
+#       command: make unittest
+#     - name: int_test
+#       command: make inttest
   - type: serial
     steps:
     - name: dockerlint_build
@@ -19,13 +19,13 @@
       service: dockerlint
       command: dockerlint -f Dockerfile.release
     - name: release
-      tag: master
+      # tag: master
       service: wocky-build
       command: make release
 - name: push_latest_image
   service: wocky-rel
   type: push
-  tag: master
+  # tag: master
   image_tag: latest
   image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
   registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
@@ -33,8 +33,13 @@
 - name: push_tagged_image
   service: wocky-rel
   type: push
-  tag: master
+  # tag: master
   image_tag: "{{.CommitID}}"
   image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
   registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+  dockercfg_service: aws-dockercfg
+- name: deploy_to_testing
+  # tag: master
+  service: eks-deploy
+  command: ./deploy.sh wocky-testing k8s/testing --bindings=watcher_sha=9d178c20031390ac6d77c5c47356a4cba7012349
   dockercfg_service: aws-dockercfg
