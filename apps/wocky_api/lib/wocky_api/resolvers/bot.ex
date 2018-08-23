@@ -305,7 +305,7 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  def invitation_reply(_root, args, %{context: %{current_user: requestor}}) do
+  def invitation_respond(_root, args, %{context: %{current_user: requestor}}) do
     input = args[:input]
 
     with %Invitation{} = invitation <-

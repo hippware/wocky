@@ -1335,8 +1335,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     @query """
-    mutation ($input: BotInvitationReplyInput) {
-      botInvitationReply (input: $input) {
+    mutation ($input: BotInvitationRespondInput) {
+      botInvitationRespond (input: $input) {
         result
       }
     }

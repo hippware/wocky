@@ -289,7 +289,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :user_id, non_null(:uuid)
   end
 
-  input_object :bot_invitation_reply_input do
+  input_object :bot_invitation_respond_input do
     @desc "ID of the invitation being replied to"
     field :invitation_id, non_null(:aint)
 
@@ -305,7 +305,7 @@ defmodule WockyAPI.Schema.BotTypes do
   payload_object(:bot_item_publish_payload, :bot_item)
   payload_object(:bot_item_delete_payload, :boolean)
   payload_object(:bot_invite_payload, :aint)
-  payload_object(:bot_invitation_reply_payload, :boolean)
+  payload_object(:bot_invitation_respond_payload, :boolean)
 
   object :bot_queries do
     @desc "Retrieve a single bot by ID"
@@ -393,9 +393,9 @@ defmodule WockyAPI.Schema.BotTypes do
     end
 
     @desc "Respond to an invititation"
-    field :bot_invitation_reply, type: :bot_invitation_reply_payload do
-      arg :input, non_null(:bot_invitation_reply_input)
-      resolve &Bot.invitation_reply/3
+    field :bot_invitation_respond, type: :bot_invitation_respond_payload do
+      arg :input, non_null(:bot_invitation_respond_input)
+      resolve &Bot.invitation_respond/3
       changeset_mutation_middleware
     end
   end
