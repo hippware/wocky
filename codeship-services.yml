@@ -41,12 +41,6 @@ aws-dockercfg:
   image: codeship/aws-ecr-dockercfg-generator
   add_docker: true
   encrypted_env_file: aws.env.encrypted
-eks-deploy:
-  image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/eks-deploy:latest
-  encrypted_env_file: aws.env.encrypted
-  volumes:
-    - k8s:/k8s
-    - Makefile:/Makefile
 dockerlint:
   image: redcoolbeans/dockerlint
   volumes:

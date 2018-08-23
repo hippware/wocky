@@ -38,8 +38,3 @@
   image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
   registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
   dockercfg_service: aws-dockercfg
-- name: deploy_to_testing
-  tag: master
-  service: eks-deploy
-  command: make deploy-only WOCKY_ENV=testing KUBECONFIG=/root/.kube/config
-  dockercfg_service: aws-dockercfg
