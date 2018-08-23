@@ -6,7 +6,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: distillery (PR #1771)
-* Automatically deploy wocky to testing when tests pass (#1764)
+* Deployment and infrastructure stuff
+  * Automatically deploy wocky to testing when tests pass (#1764)
+  * Add names for ports; remove non-required service (PR #1773)
+  * Update logging location for service LBs (PR #1776)
+  * Use the makefile to deploy instead of the script (PR #1777)
+  * Split deploy task for running from CI (PR #1779)
 
 
 # 2018.8.20+r5001d7d
