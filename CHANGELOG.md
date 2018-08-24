@@ -5,13 +5,20 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: distillery (PR #1771)
+* Move prometheus role management to infrastructure (PR #1789)
+* Notification tweaks (ie. Rename "reply" to "respond" etc.) (PR #1788)
+
+# 2018.8.23+r04159a0
+
+* Update: distillery (PR #1771), guardian (PR #1781)
 * Deployment and infrastructure stuff
   * Automatically deploy wocky to testing when tests pass (#1764)
+    * Then reverted (PR #1782)
   * Add names for ports; remove non-required service (PR #1773)
   * Update logging location for service LBs (PR #1776)
   * Use the makefile to deploy instead of the script (PR #1777)
   * Split deploy task for running from CI (PR #1779)
+* Bump the accuracy threshold on staging to 90 (PR #1786)
 
 
 # 2018.8.20+r5001d7d
