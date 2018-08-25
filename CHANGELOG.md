@@ -5,8 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: distillery (PR #1791)
+
+
+# 2018.8.24+r43aa7c9
+
+
 * Move prometheus role management to infrastructure (PR #1789)
 * Notification tweaks (ie. Rename "reply" to "respond" etc.) (PR #1788)
+
 
 # 2018.8.23+r04159a0
 
