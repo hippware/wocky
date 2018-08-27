@@ -387,7 +387,8 @@ defmodule Wocky.User do
   @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
   def set_location(user, location) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
-    nloc = %Location{location | lat: nlat, lon: nlon}
+    captured_at = normalize_captured_at(location)
+    nloc = %Location{location | lat: nlat, lon: nlon, captured_at: captured_at}
 
     case insert_location(user, nloc) do
       {:ok, loc} = result ->
@@ -400,6 +401,11 @@ defmodule Wocky.User do
         error
     end
   end
+
+  defp normalize_captured_at(%Location{captured_at: time})
+    when not is_nil(time), do: time
+
+  defp normalize_captured_at(_), do: DateTime.utc_now()
 
   def insert_location(user, location) do
     user
