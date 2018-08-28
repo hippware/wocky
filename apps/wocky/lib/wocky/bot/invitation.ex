@@ -56,12 +56,21 @@ defmodule Wocky.Bot.Invitation do
         accepted?,
         %User{id: invitee_id}
       ) do
+    invitation = Repo.preload(invitation, [:bot, :invitee])
+
+    with {:ok, result} <- do_respond(invitation, accepted?),
+         :ok <- Bot.subscribe(invitation.bot, invitation.invitee, true) do
+      {:ok, result}
+    end
+  end
+
+  def respond(_, _, _), do: {:error, :permission_denied}
+
+  defp do_respond(invitation, accepted?) do
     invitation
     |> changeset(%{accepted: accepted?})
     |> Repo.update()
   end
-
-  def respond(_, _, _), do: {:error, :permission_denied}
 
   @spec changeset(t(), map()) :: Changeset.t()
   defp changeset(struct, params) do
