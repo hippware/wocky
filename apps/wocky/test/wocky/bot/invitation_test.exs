@@ -1,6 +1,7 @@
 defmodule Wocky.Bot.InvitationTest do
   use Wocky.DataCase
 
+  alias Wocky.Bot
   alias Wocky.Bot.Invitation
   alias Wocky.Repo.Factory
 
@@ -69,7 +70,8 @@ defmodule Wocky.Bot.InvitationTest do
       invitation =
         Factory.insert(:invitation,
           user: shared.user,
-          invitee: shared.invitee
+          invitee: shared.invitee,
+          bot: shared.bot
         )
 
       {:ok, invitation: invitation}
@@ -80,6 +82,15 @@ defmodule Wocky.Bot.InvitationTest do
                Invitation.respond(shared.invitation, true, shared.invitee)
 
       assert invitation.accepted == true
+    end
+
+    test "Invitee becomes subscribed", shared do
+      assert Bot.subscription(shared.bot, shared.invitee) == nil
+
+      assert {:ok, invitation} =
+               Invitation.respond(shared.invitation, true, shared.invitee)
+
+      assert Bot.subscription(shared.bot, shared.invitee) == :guest
     end
 
     test "Invitee can decline", shared do
