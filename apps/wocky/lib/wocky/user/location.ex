@@ -82,7 +82,7 @@ defmodule Wocky.User.Location do
   def changeset(struct, params) do
     struct
     |> cast(params, @insert_fields)
-    |> validate_required([:resource, :lat, :lon, :accuracy])
+    |> validate_required([:resource, :lat, :lon, :accuracy, :captured_at])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
     |> validate_number(
       :lat,
