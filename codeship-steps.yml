@@ -41,5 +41,5 @@
 - name: deploy_to_testing
   # tag: master
   service: eks-deploy
-  command: ./wocky-deploy testing $CI_COMMIT_ID
+  command: ./wocky-deploy testing
   dockercfg_service: aws-dockercfg
