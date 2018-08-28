@@ -1,0 +1,28 @@
+#!/bin/sh
+
+if [ "${1}" = "" ] || [ "${2}" = "" ]; then
+  script=$(basename $0)
+  echo "Usage: ${script} <namespace> <revision> [extra_args]"
+  echo "  namespace - the Kubernetes namespace (required)"
+  echo "  revision - the revision for this deployment (required)"
+  echo "  extra_args - if supplied, this is passed directly to kubernetes-deploy"
+  exit
+fi
+
+wocky_env="${1}"
+shift
+
+context="${CONTEXT:-"aws"}"
+namespace="wocky-${wocky_env}"
+template_dir="k8s/${wocky_env}"
+watcher_sha="$(cat DB_WATCHER_VERSION)"
+
+export REVISION="${1}"
+shift
+
+export KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
+
+kubernetes-deploy "${namespace}" "${context}" \
+  --template-dir="${template_dir}" \
+  --bindings=watcher_sha="${watcher_sha}" \
+  "$@"
