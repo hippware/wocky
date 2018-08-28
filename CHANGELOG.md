@@ -5,7 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: distillery (PR #1791)
+* Update: distillery (PR #1791, PR #1792), excoveralls (PR #1794)
+  * bcrypt_elixir (PR #1793)
+* Set location captured_at to now if not provided by client (#1795)
 
 
 # 2018.8.24+r43aa7c9
