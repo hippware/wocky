@@ -72,7 +72,7 @@
   "fusco": {:hex, :fusco, "0.1.0", "9e37b660a55690f687ace2143316f7998587529be2580f1ae54245acd1ad3d40", [:rebar3], [], "hexpm"},
   "gen_stage": {:hex, :gen_stage, "0.14.0", "65ae78509f85b59d360690ce3378d5096c3130a0694bab95b0c4ae66f3008fad", [:mix], [], "hexpm"},
   "geo": {:hex, :geo, "3.0.0", "bb1e9baac6031c5bbddcde4937af1c1ab1cbfbbe2f7870038fdfc93a9cad4359", [:mix], [], "hexpm"},
-  "geo_postgis": {:hex, :geo_postgis, "2.0.0", "daefab887bd377c20c8da2ad7921c8fa8af06cf28ce13a7f66e1cc1b6f019d9c", [:mix], [{:geo, "~> 3.0", [hex: :geo, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:poison, "~> 2.2 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.13", [hex: :postgrex, repo: "hexpm", optional: false]}], "hexpm"},
+  "geo_postgis": {:hex, :geo_postgis, "2.1.0", "e0640d18276cb1dd58aeae3f5eed9a61641a5110901e1e35d0d662031d936b33", [:mix], [{:geo, "~> 3.0", [hex: :geo, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:poison, "~> 2.2 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.13", [hex: :postgrex, repo: "hexpm", optional: false]}], "hexpm"},
   "geocalc": {:hex, :geocalc, "0.6.1", "97a78913efc5c880803743a363d4748233b6a973093840322a77cd38cd4fabe5", [:mix], [], "hexpm"},
   "gettext": {:hex, :gettext, "0.15.0", "40a2b8ce33a80ced7727e36768499fc9286881c43ebafccae6bab731e2b2b8ce", [:mix], [], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
