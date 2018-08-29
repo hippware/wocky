@@ -1,0 +1,5 @@
+#!/bin/sh
+
+curl --user eb43c69c072a9b5b1b87d5e915bc85654ff925ce: \
+  --data "build_parameters[CIRCLE_JOB]=build" \
+  https://circleci.com/api/v1.1/project/github/hippware/wocky-client/tree/master

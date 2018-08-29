@@ -53,3 +53,7 @@ eks-deploy:
     - k8s:/k8s
     - wocky-deploy:/wocky-deploy
     - DB_WATCHER_VERSION:/DB_WATCHER_VERSION
+curl-ssl-jq:
+  image: paasmule/curl-ssl-jq:latest
+  volumes:
+    - kick-circleci:/kick-circleci
