@@ -8,6 +8,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update: distillery (PR #1791, PR #1792), excoveralls (PR #1794)
   * bcrypt_elixir (PR #1793)
 * Set location captured_at to now if not provided by client (#1795)
+* Change GraphQL metrics buckets to better reflect actual values (PR #1798)
+* Subscribe user upon invitation acceptance (PR #1797)
 
 
 # 2018.8.24+r43aa7c9
