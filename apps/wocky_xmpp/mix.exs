@@ -82,7 +82,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:base16, "~> 1.0"},
       {:confex, "~> 3.3"},
       {:honeybadger, "~> 0.6"},
-      {:idna, "~> 5.1", override: true},
+      {:idna, "~> 6.0", override: true},
       {:joken, "~> 1.1"},
       {:lager, "~> 3.6", override: true},
       {:lager_logger, "~> 1.0"},
