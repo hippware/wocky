@@ -55,5 +55,6 @@ eks-deploy:
     - DB_WATCHER_VERSION:/DB_WATCHER_VERSION
 curl-ssl-jq:
   image: paasmule/curl-ssl-jq:latest
+  encrypted_env_file: circleci.env.encrypted
   volumes:
     - kick-circleci:/kick-circleci
