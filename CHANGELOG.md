@@ -5,8 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: distillery (PR #1791, PR #1792), excoveralls (PR #1794)
-  * bcrypt_elixir (PR #1793)
+* Update: distillery (PR #1791, PR #1792, PR #1801), excoveralls (PR #1794)
+  * bcrypt_elixir (PR #1793, PR #1802), geo_postgis (PR #1800)
 * Set location captured_at to now if not provided by client (#1795)
 * Change GraphQL metrics buckets to better reflect actual values (PR #1798)
 * Subscribe user upon invitation acceptance (PR #1797)
