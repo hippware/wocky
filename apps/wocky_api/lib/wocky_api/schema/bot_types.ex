@@ -9,7 +9,6 @@ defmodule WockyAPI.Schema.BotTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
-  alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Utils
 
@@ -116,12 +115,6 @@ defmodule WockyAPI.Schema.BotTypes do
       arg :type, :subscription_type
       arg :id, :uuid
       resolve &Bot.get_subscribers/3
-    end
-
-    @desc "Collections of which this bot is a member"
-    connection field :collections, node_type: :collections do
-      connection_complexity
-      resolve &Collection.get_collections/3
     end
   end
 

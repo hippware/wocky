@@ -5,7 +5,6 @@ defmodule Wocky.Push.EventsTest do
   alias Wocky.Push.Event
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Push.Events.BotShareEvent
-  alias Wocky.Push.Events.CollectionShareEvent
   alias Wocky.Push.Events.NewFollowerEvent
   alias Wocky.Push.Events.NewMessageEvent
   alias Wocky.Repo.Factory
@@ -107,23 +106,6 @@ defmodule Wocky.Push.EventsTest do
     test "returns an appropriate uri", %{user: u, follower: f} do
       uri = Event.uri(%NewFollowerEvent{user: u, follower: f})
       assert uri =~ "/followers"
-    end
-  end
-
-  describe "CollectionShareEvent" do
-    setup do
-      {:ok, collection: Factory.build(:collection)}
-    end
-
-    test "returns an appropriate message", %{user: u, collection: c} do
-      msg = Event.message(%CollectionShareEvent{user: u, collection: c})
-      assert msg =~ @test_handle
-      assert msg =~ "has shared a collection with you!"
-    end
-
-    test "returns an appropriate uri", %{user: u, collection: c} do
-      uri = Event.uri(%CollectionShareEvent{user: u, collection: c})
-      assert uri =~ "/collection"
     end
   end
 end

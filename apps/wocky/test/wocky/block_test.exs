@@ -3,7 +3,6 @@ defmodule Wocky.BlockTest do
 
   alias Wocky.Block
   alias Wocky.Bot
-  alias Wocky.Collections
   alias Wocky.Repo.Factory
 
   setup do
@@ -53,23 +52,5 @@ defmodule Wocky.BlockTest do
     Block.unblock(shared.user1, shared.user2)
 
     refute is_nil(Repo.one(query))
-  end
-
-  test "assoc_object_visible_query/3", shared do
-    collection = Factory.insert(:collection, user: shared.user3)
-    Collections.subscribe(collection.id, shared.user1)
-
-    Block.block(shared.user1, shared.user2)
-
-    query =
-      collection
-      |> Ecto.assoc(:subscribers)
-      |> Block.assoc_object_visible_query(shared.user2.id, :id)
-
-    assert Repo.all(query) == []
-
-    Block.unblock(shared.user1, shared.user2)
-
-    assert length(Repo.all(query)) == 1
   end
 end
