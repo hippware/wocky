@@ -1,0 +1,36 @@
+#!/bin/sh
+
+wocky_env="${1}"
+shift
+
+REVISION="${1:-"${CI_COMMIT_ID}"}"
+shift
+
+if [ "${wocky_env}" = "" ] || [ "${REVISION}" = "" ]; then
+  script=$(basename "${0}")
+  echo "Usage: ${script} <namespace> <revision> [extra_args]"
+  echo "  namespace - the Kubernetes namespace (required)"
+  echo "  revision - the revision for this deployment (required)"
+  echo "  extra_args - if supplied, this is passed directly to kubernetes-deploy"
+  exit
+fi
+
+context="${CONTEXT:-"aws"}"
+namespace="wocky-${wocky_env}"
+template_dir="k8s/${wocky_env}"
+watcher_sha="$(cat DB_WATCHER_VERSION)"
+
+export REVISION
+export KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
+
+kubernetes-deploy "${namespace}" "${context}" \
+  --template-dir="${template_dir}" \
+  --bindings=watcher_sha="${watcher_sha}" \
+  "$@"
+
+pod=$(kubectl get pods \
+  -n "${namespace}" \
+  -l 'app=wocky' \
+  -o jsonpath='{.items[0].metadata.name}')
+
+kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete

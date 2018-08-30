@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-bin/wocky eval 'Wocky.Tasks.Predeploy.run_migrate_only()'
+release_ctl eval 'Wocky.Tasks.Migrate.run()'
 bin/wocky foreground

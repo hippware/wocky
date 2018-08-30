@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "${CIRCLE_TOKEN}" = "" ] && [ -r "circleci.env" ]; then
+  source circleci.env
+fi
+
+curl --user "${CIRCLE_TOKEN}": --data "build_parameters[CIRCLE_JOB]=build" \
+  https://circleci.com/api/v1.1/project/github/hippware/wocky-client/tree/master

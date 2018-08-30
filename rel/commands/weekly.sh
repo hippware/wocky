@@ -1,3 +1,3 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-bin/wocky eval 'Wocky.Tasks.Weekly.run()'
+release_ctl eval 'Wocky.Tasks.Weekly.run()'

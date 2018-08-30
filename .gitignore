@@ -14,4 +14,5 @@ erl_crash.dump
 codeship.aes
 dockercfg
 aws.env
+circleci.env
 .tool-versions*

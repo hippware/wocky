@@ -46,3 +46,15 @@ dockerlint:
   volumes:
     - ./Dockerfile.build:/Dockerfile.build
     - ./Dockerfile.release:/Dockerfile.release
+eks-deploy:
+  image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/eks-deploy:latest
+  encrypted_env_file: aws.env.encrypted
+  volumes:
+    - k8s:/k8s
+    - wocky-deploy:/wocky-deploy
+    - DB_WATCHER_VERSION:/DB_WATCHER_VERSION
+curl-ssl-jq:
+  image: paasmule/curl-ssl-jq:latest
+  encrypted_env_file: circleci.env.encrypted
+  volumes:
+    - kick-circleci:/kick-circleci

@@ -7,10 +7,7 @@ IMAGE_REPO   ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
 IMAGE_NAME   ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
 IMAGE_TAG    ?= $(shell git rev-parse HEAD)
 WOCKY_ENV    ?= testing
-CONTEXT      ?= aws
-KUBECONFIG   ?= ~/.kube/config
 KUBE_NS      := wocky-$(WOCKY_ENV)
-WATCHER_SHA  := 9d178c20031390ac6d77c5c47356a4cba7012349
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
@@ -65,15 +62,9 @@ push: ## Push the Docker image to ECR
 ########################################################################
 ### Cluster deployment
 
-deploy: deploy-check deploy-only ## Deploy the image to the cluster
-
-deploy-check:
+deploy: ## Deploy the image to the cluster
 	@docker run -it --rm -v "${PWD}/k8s":/k8s garethr/kubeval k8s/$(WOCKY_ENV)/*.yml*
-
-deploy-only:
-	@KUBECONFIG=$(KUBECONFIG) REVISION=$(IMAGE_TAG) \
-		kubernetes-deploy $(KUBE_NS) $(CONTEXT) --template-dir=k8s/$(WOCKY_ENV) \
-			--bindings=watcher_sha=$(WATCHER_SHA)
+	@./wocky-deploy $(WOCKY_ENV) $(IMAGE_TAG)
 
 shipit: build push deploy ## Build, push and deploy the image
 
