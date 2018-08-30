@@ -50,7 +50,7 @@ config :wocky, Wocky.User.GeoFence,
   visit_timeout_enabled:
     {:system, :boolean, "WOCKY_VISIT_TIMEOUT_ENABLED", true},
   max_accuracy_threshold:
-    {:system, :integer, "WOCKY_GEOFENCE_MAX_ACCURACY_THRESHOLD", 30},
+    {:system, :integer, "WOCKY_GEOFENCE_MAX_ACCURACY_THRESHOLD", 90},
   max_slow_speed: {:system, :integer, "WOCKY_GEOFENCE_MAX_SLOW_SPEED", 2},
   max_exit_distance:
     {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200},
