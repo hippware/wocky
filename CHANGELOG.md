@@ -5,11 +5,20 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.8.30+r5c75ca6
+
+* Set the accuracy threshold to 90m across the board (PR #1806)
+
+
+# 2018.8.30+r5280dc0
+
 * Update: distillery (PR #1791, PR #1792, PR #1801), excoveralls (PR #1794)
-  * bcrypt_elixir (PR #1793, PR #1802), geo_postgis (PR #1800)
+  * bcrypt_elixir (PR #1793, PR #1802), geo_postgis (PR #1800), idna (PR #1805)
 * Set location captured_at to now if not provided by client (#1795)
 * Change GraphQL metrics buckets to better reflect actual values (PR #1798)
 * Subscribe user upon invitation acceptance (PR #1797)
+* Deploy to testing on successful build (PR #1803)
+  * Automatically deploy wocky to testing when tests pass (#1764)
 
 
 # 2018.8.24+r43aa7c9
