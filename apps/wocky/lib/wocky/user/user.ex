@@ -394,7 +394,8 @@ defmodule Wocky.User do
   end
 
   defp normalize_captured_at(%Location{captured_at: time})
-    when not is_nil(time), do: time
+       when not is_nil(time),
+       do: time
 
   defp normalize_captured_at(_), do: DateTime.utc_now()
 
