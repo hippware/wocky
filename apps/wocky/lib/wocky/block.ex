@@ -72,21 +72,6 @@ defmodule Wocky.Block do
     |> where([..., b], is_nil(b.blocker_id))
   end
 
-  @spec assoc_object_visible_query(Queryable.t(), User.id(), atom) ::
-          Queryable.t()
-  def assoc_object_visible_query(query, requester_id, owner_field \\ :user_id) do
-    query
-    |> join(
-      :left,
-      [o, ...],
-      b in Block,
-      (field(o, ^owner_field) == b.blocker_id and b.blockee_id == ^requester_id) or
-        (field(o, ^owner_field) == b.blockee_id and
-           b.blocker_id == ^requester_id)
-    )
-    |> where([..., b], is_nil(b.blocker_id))
-  end
-
   @spec blocked?(User.t(), User.t()) :: boolean
   def blocked?(%User{id: id1}, %User{id: id2}), do: blocked?(id1, id2)
 

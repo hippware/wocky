@@ -9,7 +9,6 @@ defmodule WockyAPI.Schema.UserTypes do
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.Bot
-  alias WockyAPI.Resolvers.Collection
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.User
   alias WockyAPI.Resolvers.Utils
@@ -66,18 +65,6 @@ defmodule WockyAPI.Schema.UserTypes do
       connection_complexity
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
-    end
-
-    @desc "The user's owned bot collections"
-    connection field :collections, node_type: :collections do
-      connection_complexity
-      resolve &Collection.get_collections/3
-    end
-
-    @desc "Bot collections to which the user is subscribed"
-    connection field :subscribed_collections, node_type: :collections do
-      connection_complexity
-      resolve &Collection.get_subscribed_collections/3
     end
 
     resolve_type fn
@@ -323,10 +310,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The bot referenced by this item, if any"
     field :reference_bot, :bot, resolve: assoc(:reference_bot)
-
-    @desc "The collection referenced by this item, if any"
-    field :reference_collection, :collection,
-      resolve: assoc(:reference_collection)
 
     @desc "The time at which the item was last updated"
     field :updated_at, :datetime

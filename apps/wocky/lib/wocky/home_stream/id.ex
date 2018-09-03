@@ -3,7 +3,6 @@ defmodule Wocky.HomeStream.ID do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Collections.Collection
   alias Wocky.Repo.ID
   alias Wocky.User
 
@@ -75,8 +74,4 @@ defmodule Wocky.HomeStream.ID do
 
     {str, user, nil, nil}
   end
-
-  @spec collection_share_id(Collection.t()) :: binary
-  def collection_share_id(collection),
-    do: "collection/" <> to_string(collection.id) <> "/share"
 end

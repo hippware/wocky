@@ -1,7 +1,6 @@
 defmodule WockyAPI.GraphQL.PublicTest do
   use WockyAPI.GraphQLCase, async: true
 
-  alias Faker.Lorem
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory
   alias Wocky.User
@@ -141,25 +140,6 @@ defmodule WockyAPI.GraphQL.PublicTest do
            } = result.data
 
     Enum.each([u1, u2, u3, u4], &assert(is_binary(&1)))
-  end
-
-  @query """
-  query ($id: AInt!) {
-    collection (id: $id) {
-      title
-    }
-  }
-
-  """
-  test "get protected object", %{user: user} do
-    collection =
-      Factory.insert(:collection, user: user, title: Lorem.sentence())
-
-    result = run_query(@query, nil, %{"id" => to_string(collection.id)})
-
-    assert error_count(result) == 1
-    assert error_msg(result) =~ "requires an authenticated user"
-    assert result.data == %{"collection" => nil}
   end
 
   # GraphiQL schema query:

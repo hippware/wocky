@@ -14,8 +14,6 @@ defmodule Wocky.User do
   alias Wocky.Bot
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription, as: BotSubscription
-  alias Wocky.Collections.Collection
-  alias Wocky.Collections.Subscription, as: CollectionSubscription
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.GeoUtils
@@ -64,7 +62,6 @@ defmodule Wocky.User do
 
     has_many :bots, Bot
     has_many :bot_events, BotEvent
-    has_many :collections, Collection
     has_many :conversations, Conversation
     has_many :home_stream_items, HomeStreamItem
     has_many :locations, Location
@@ -76,12 +73,6 @@ defmodule Wocky.User do
 
     many_to_many(:shares, Bot, join_through: Share)
     many_to_many(:bot_subscriptions, Bot, join_through: BotSubscription)
-
-    many_to_many(
-      :collection_subscriptions,
-      Collection,
-      join_through: CollectionSubscription
-    )
   end
 
   @type id :: binary

@@ -153,7 +153,6 @@ defmodule Wocky.Repo.Migration.Utils do
         reference_user_id = null,
         reference_bot_id = null,
         reference_bot_item_id = null,
-        reference_collection_id = null,
         updated_at = now()
     """
   end

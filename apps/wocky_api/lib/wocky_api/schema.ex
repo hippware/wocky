@@ -11,7 +11,6 @@ defmodule WockyAPI.Schema do
   import_types Kronky.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BotTypes
-  import_types WockyAPI.Schema.CollectionTypes
   import_types WockyAPI.Schema.LocationTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.NotificationTypes
@@ -21,7 +20,6 @@ defmodule WockyAPI.Schema do
 
   query do
     import_fields :bot_queries
-    import_fields :collection_queries
     import_fields :user_queries
     import_fields :notification_queries
   end
@@ -29,7 +27,6 @@ defmodule WockyAPI.Schema do
   mutation do
     import_fields :auth_mutations
     import_fields :bot_mutations
-    import_fields :collection_mutations
     import_fields :location_mutations
     import_fields :media_mutations
     import_fields :user_mutations
