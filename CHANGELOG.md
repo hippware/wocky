@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Remove Collections code (#1804)
+
+
 # 2018.8.30+r5c75ca6
 
 * Set the accuracy threshold to 90m across the board (PR #1806)
