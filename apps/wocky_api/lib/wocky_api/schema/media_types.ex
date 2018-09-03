@@ -75,14 +75,14 @@ defmodule WockyAPI.Schema.MediaTypes do
     field :media_upload, type: :media_upload_payload do
       arg :input, non_null(:media_upload_params)
       resolve &Media.upload/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete a file"
     field :media_delete, type: :media_delete_payload do
       arg :input, non_null(:media_delete_params)
       resolve &Media.delete/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 end

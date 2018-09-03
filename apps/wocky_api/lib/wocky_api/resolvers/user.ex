@@ -5,6 +5,7 @@ defmodule WockyAPI.Resolvers.User do
   alias Wocky.{Conversation, JID, Message, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
+  alias WockyAPI.Presence
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
@@ -124,6 +125,10 @@ defmodule WockyAPI.Resolvers.User do
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
+  def presence_subscription_topic(user_id) do
+    "presence_subscription_" <> user_id
+  end
+
   def notify_contact(item, relationship) do
     notification = %{
       user: item.contact,
@@ -189,6 +194,7 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{successful: result, result: result}}
   end
 
+<<<<<<< HEAD
   def follow(_root, args, %{context: %{current_user: user}}),
     do: roster_action(user, args[:input][:user_id], &Roster.become_follower/2)
 
@@ -208,4 +214,17 @@ defmodule WockyAPI.Resolvers.User do
 
   defp map_relationship(:followee), do: :following
   defp map_relationship(r), do: r
+=======
+  def presence_catchup(user) do
+    user
+    |> Presence.connect()
+    |> Enum.each(&Presence.publish(user.id, &1, :online))
+  end
+
+  def get_presence_status(other_user, _args, _context) do
+    Presence.user_status(other_user)
+  end
+
+  def presence_notification(user, status), do: %{user: user, status: status}
+>>>>>>> GraphQL presence implementation
 end

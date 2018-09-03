@@ -13,7 +13,7 @@ defmodule WockyAPI.Schema.BotTypes do
   alias WockyAPI.Resolvers.Utils
 
   connection :bots, node_type: :bot do
-    total_count_field
+    total_count_field()
 
     edge do
       @desc "The set of relationships between the user and the bot"
@@ -98,13 +98,13 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Posts made to the bot"
     connection field :items, node_type: :bot_items do
-      connection_complexity
+      connection_complexity()
       resolve &Bot.get_items/3
     end
 
     @desc "Subscribers to the bot, filtered by either subscription type or ID"
     connection field :subscribers, node_type: :subscribers do
-      connection_complexity
+      connection_complexity()
       arg :type, :subscription_type
       arg :id, :uuid
       resolve &Bot.get_subscribers/3
@@ -151,14 +151,14 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   connection :bot_items, node_type: :bot_item do
-    total_count_field
+    total_count_field()
 
     edge do
     end
   end
 
   connection :subscribers, node_type: :user do
-    total_count_field
+    total_count_field()
 
     edge do
       @desc "The set of relationships this subscriber has to the bot"
@@ -322,63 +322,63 @@ defmodule WockyAPI.Schema.BotTypes do
     field :bot_create, type: :bot_create_payload do
       arg :input, :bot_create_input
       resolve &Bot.create_bot/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Update an existing bot"
     field :bot_update, type: :bot_update_payload do
       arg :input, non_null(:bot_update_input)
       resolve &Bot.update_bot/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete a bot"
     field :bot_delete, type: :bot_delete_payload do
       arg :input, non_null(:bot_delete_input)
       resolve &Bot.delete/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Subscribe the current user to a bot"
     field :bot_subscribe, type: :bot_subscribe_payload do
       arg :input, non_null(:bot_subscribe_input)
       resolve &Bot.subscribe/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Unsubscribe the current user from a bot"
     field :bot_unsubscribe, type: :bot_unsubscribe_payload do
       arg :input, non_null(:bot_unsubscribe_input)
       resolve &Bot.unsubscribe/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Publish an item to a bot"
     field :bot_item_publish, type: :bot_item_publish_payload do
       arg :input, non_null(:bot_item_publish_input)
       resolve &Bot.publish_item/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete an item from a bot"
     field :bot_item_delete, type: :bot_item_delete_payload do
       arg :input, non_null(:bot_item_delete_input)
       resolve &Bot.delete_item/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Invite users to a bot"
     field :bot_invite, type: list_of(:bot_invite_payload) do
       arg :input, non_null(:bot_invite_input)
       resolve &Bot.invite/3
-      changeset_list_mutation_middleware
+      changeset_list_mutation_middleware()
     end
 
     @desc "Respond to an invititation"
     field :bot_invitation_respond, type: :bot_invitation_respond_payload do
       arg :input, non_null(:bot_invitation_respond_input)
       resolve &Bot.invitation_respond/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 

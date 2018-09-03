@@ -74,7 +74,7 @@ defmodule Wocky.Mixfile do
       {:bamboo, "~> 1.0"},
       {:bcrypt_elixir, "~> 1.0"},
       {:comeonin, "~> 4.0"},
-      {:confex, "~> 3.3"},
+      {:confex, github: "Nebo15/confex", branch: "master", override: true},
       {:csv, "~> 2.0"},
       {:dawdle, "~> 0.4.0"},
       {:ecto, "~> 2.2"},

@@ -46,9 +46,13 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-      {:absinthe, "~> 1.4.12"},
-      {:absinthe_phoenix, "~> 1.4"},
-      {:absinthe_relay, "~> 1.4"},
+      {:absinthe,
+       github: "hippware/absinthe",
+       branch: "subscription-catchup",
+       override: true},
+      {:absinthe_phoenix,
+       github: "hippware/absinthe_phoenix", branch: "subscription-catchup"},
+      {:absinthe_relay, "~> 1.5.0-alpha.0"},
       {:absinthe_ecto, "~> 0.1.3"},
       {:absinthe_metrics, "~> 0.9.0"},
       {:cowboy, "~> 1.0"},
@@ -58,6 +62,11 @@ defmodule WockyAPI.Mixfile do
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_pubsub, "~> 1.0"},
       {:prometheus_ex, "~> 3.0", override: true},
+      {:phoenix_pubsub_redis,
+       github: "phoenixframework/phoenix_pubsub_redis", branch: "master"},
+      {:redix_pubsub, "~> 0.5", override: true},
+      {:redix, "~> 0.8", override: true},
+      {:redlock, github: "hippware/redlock", branch: "dialyzer-fixes"},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
       {:idna, "~> 6.0", override: true},
@@ -68,10 +77,12 @@ defmodule WockyAPI.Mixfile do
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:reprise, "~> 0.5", only: :dev},
-      {:kronky, "~> 0.5.0"},
+      {:kronky, github: "mirego/kronky", branch: "master"},
       {:cors_plug, "~> 1.5"},
       {:apollo_tracing, "~> 0.4.0"},
-      {:distillery, "~> 2.0-rc.8", runtime: false, override: true}
+      {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
+      {:bimap, "~> 0.1"},
+      {:lager, "~> 3.6", override: true}
     ]
   end
 

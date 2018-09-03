@@ -37,6 +37,8 @@ defmodule Wocky.Release.Mixfile do
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
       {:mix_ct, github: "hippware/mix_ct", branch: "master", only: :test},
+      {:confex,
+       github: "hippware/confex", branch: "fix-nested-lists", override: true},
 
       # The apps below are required by multiple child apps (usually transitively
       # in at least one). We pin the version here to make sure they agree on

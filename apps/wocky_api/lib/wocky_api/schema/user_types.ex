@@ -51,7 +51,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
-      connection_complexity
+      connection_complexity()
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
       resolve &Bot.get_bots/3
@@ -61,9 +61,13 @@ defmodule WockyAPI.Schema.UserTypes do
     The user's contacts (ie the XMPP roster) optionally filtered by relationship
     """
     connection field :contacts, node_type: :contacts do
-      connection_complexity
+      connection_complexity()
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
+    end
+
+    field :presence_status, :presence_status do
+      resolve &User.get_presence_status/3
     end
 
     resolve_type fn
@@ -74,7 +78,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's archive of messages sorted from oldest to newest"
     connection field :messages, node_type: :messages do
-      connection_complexity
+      connection_complexity()
 
       @desc "Optional other user to filter messages on"
       arg :other_user, :uuid
@@ -111,20 +115,20 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
-      connection_complexity
+      connection_complexity()
       resolve &Bot.get_active_bots/3
     end
 
     @desc "The user's location history for a given device"
     connection field :locations, node_type: :locations do
-      connection_complexity
+      connection_complexity()
       arg :device, non_null(:string)
       resolve &User.get_locations/3
     end
 
     @desc "The user's location event history"
     connection field :location_events, node_type: :location_events do
-      connection_complexity
+      connection_complexity()
       arg :device, non_null(:string)
       resolve &User.get_location_events/3
     end
@@ -133,7 +137,7 @@ defmodule WockyAPI.Schema.UserTypes do
     The user's conversations - i.e. the last message exchanged with each contact
     """
     connection field :conversations, node_type: :conversations do
-      connection_complexity
+      connection_complexity()
       resolve &User.get_conversations/3
     end
   end
@@ -185,7 +189,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :contacts, node_type: :user do
-    total_count_field
+    total_count_field()
 
     edge do
       @desc "The relationship between the parent and child users"
@@ -208,7 +212,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :messages, node_type: :message do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -269,13 +273,13 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
-      connection_complexity
+      connection_complexity()
       resolve &User.get_location_events/3
     end
   end
 
   connection :locations, node_type: :location do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -321,7 +325,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :location_events, node_type: :location_event do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -349,7 +353,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :conversations, node_type: :conversation do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -365,6 +369,11 @@ defmodule WockyAPI.Schema.UserTypes do
     expiry is/was scheduled.
     """
     field :expires, :datetime
+  end
+
+  object :presence do
+    field :status, non_null(:presence_status)
+    field :user, non_null(:user)
   end
 
   @desc "Parameters for modifying a user"
@@ -517,21 +526,21 @@ defmodule WockyAPI.Schema.UserTypes do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete the current user"
     field :user_delete, type: :user_delete_payload do
       resolve &User.delete/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     field :user_hide, type: :user_hide_payload do
       arg :input, non_null(:user_hide_input)
       resolve &User.hide/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 
@@ -577,8 +586,18 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
+  end
+
+  enum :presence_status do
+    @desc "Online"
+    value :online
+
+    @desc "Offline"
+    value :offline
+
+    # Maybe other items here such as 'DND'
   end
 
   object :user_subscriptions do
@@ -587,6 +606,19 @@ defmodule WockyAPI.Schema.UserTypes do
     """
     field :contacts, non_null(:contact) do
       user_subscription_config(&User.contacts_subscription_topic/1)
+    end
+
+    @desc ""
+    field :presence, non_null(:presence) do
+      config fn
+        _, %{context: %{current_user: user}} ->
+          {:ok,
+           topic: User.presence_subscription_topic(user.id),
+           catchup: fn -> User.presence_catchup(user) end}
+
+        _, _ ->
+          {:error, "This operation requires an authenticated user"}
+      end
     end
   end
 end
