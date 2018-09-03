@@ -1297,6 +1297,10 @@ defmodule WockyAPI.GraphQL.BotTest do
     @query """
     mutation ($input: BotInviteInput!) {
       botInvite (input: $input) {
+        successful
+        messages {
+          message
+        }
         result {
           id
           accepted
@@ -1307,12 +1311,12 @@ defmodule WockyAPI.GraphQL.BotTest do
     test "invite a user to a bot", %{bot: bot, user: user, user2: user2} do
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot.id, "user_id" => user2.id}
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id]}
         })
 
       refute has_errors(result)
 
-      assert %{"botInvite" => %{"result" => %{"id" => id, "accepted" => nil}}} =
+      assert %{"botInvite" => [%{"result" => %{"id" => id, "accepted" => nil}}]} =
                result.data
 
       assert %Invitation{accepted: nil} = Repo.get_by(Invitation, id: id)
@@ -1322,7 +1326,7 @@ defmodule WockyAPI.GraphQL.BotTest do
          %{bot2: bot2, user: user, user2: user2} do
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot2.id, "user_id" => user2.id}
+          "input" => %{"bot_id" => bot2.id, "user_ids" => [user2.id]}
         })
 
       assert error_msg(result) =~ "Invalid bot"
@@ -1333,10 +1337,33 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot.id, "user_id" => user2.id}
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id]}
         })
 
-      assert error_msg(result) =~ "Invalid user"
+      r = hd(result.data["botInvite"])
+      assert failure_msg(r) =~ "Invalid user"
+      refute successful?(r)
+    end
+
+    test "multiple invitations", %{bot: bot, user: user, user2: user2} do
+      user3 = Factory.insert(:user)
+      Block.block(user3, user)
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id, user3.id]}
+        })
+
+      refute has_errors(result)
+
+      [r1, r2] = result.data["botInvite"]
+
+      assert %{"result" => %{"id" => id}} = r1
+      assert successful?(r1)
+      assert %Invitation{accepted: nil} = Repo.get_by(Invitation, id: id)
+
+      assert failure_msg(r2) =~ "Invalid user"
+      refute successful?(r2)
     end
 
     @query """
