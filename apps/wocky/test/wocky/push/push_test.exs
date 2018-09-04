@@ -204,4 +204,23 @@ defmodule Wocky.PushTest do
       assert capture_log(fn -> Process.sleep(500) end) =~ "timeout expired"
     end
   end
+
+  describe "retry success" do
+    test "should retry and succeed even if the first attempt fails", shared do
+      # Two retries will give us three chunks of log
+      assert fn ->
+               Push.notify(shared.user_id, shared.resource, "retry test")
+             end
+             |> capture_log()
+             |> String.split("PN Error")
+             |> length() == 3
+
+      assert_receive %Notification{
+                       payload: %{
+                         "aps" => %{"alert" => "retry test"}
+                       }
+                     },
+                     5000
+    end
+  end
 end

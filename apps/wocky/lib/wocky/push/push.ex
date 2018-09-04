@@ -14,12 +14,33 @@ defmodule Wocky.Push do
   alias Wocky.Push.Sandbox
   alias Wocky.Push.Token
   alias Wocky.Repo
+  alias Wocky.User
 
   require Logger
 
   @type message :: binary
 
   @message_limit 512
+
+  @max_retries 5
+
+  defstruct [
+    :token,
+    :user_id,
+    :resource,
+    :event,
+    retries: 0,
+    resp: nil
+  ]
+
+  @type t :: %__MODULE__{
+          token: binary(),
+          user_id: User.id(),
+          resource: User.resource(),
+          event: Event.t(),
+          retries: non_neg_integer(),
+          resp: APNS.response()
+        }
 
   # ===================================================================
   # Push Token API
@@ -65,9 +86,14 @@ defmodule Wocky.Push do
   @spec notify(Wocky.User.id(), Wocky.User.resource(), any) :: :ok
   def notify(user_id, resource, event) do
     if enabled?() do
-      user_id
-      |> get_token(resource)
-      |> do_notify(user_id, resource, event)
+      token = get_token(user_id, resource)
+
+      do_notify(%__MODULE__{
+        user_id: user_id,
+        resource: resource,
+        token: token,
+        event: event
+      })
     end
 
     :ok
@@ -77,7 +103,12 @@ defmodule Wocky.Push do
   def notify_all(user_id, event) do
     if enabled?() do
       for {resource, token} <- get_all_tokens(user_id) do
-        do_notify(token, user_id, resource, event)
+        do_notify(%__MODULE__{
+          token: token,
+          user_id: user_id,
+          resource: resource,
+          event: event
+        })
       end
     end
 
@@ -107,23 +138,29 @@ defmodule Wocky.Push do
     )
   end
 
-  defp do_notify(nil, user_id, resource, _event) do
+  defp do_notify(%__MODULE__{token: nil, user_id: user_id, resource: resource}) do
     Logger.error(
       "Attempted to send notification to user " <>
         "#{user_id}/#{resource} but they have no token."
     )
   end
 
-  defp do_notify(token, user_id, resource, event) do
-    # Don't start_link here - we want the timeout to fire even if we crash
-    {:ok, timeout_pid} =
-      Task.start(fn -> push_timeout(token, user_id, resource, event) end)
+  defp do_notify(%__MODULE__{resp: resp, retries: @max_retries} = params) do
+    log_failure(params)
+    send_honeybadger(Error.msg(resp))
+  end
 
-    on_response = fn r -> handle_response(r, user_id, resource, timeout_pid) end
+  defp do_notify(
+         %__MODULE__{token: token, event: event, retries: retries} = params
+       ) do
+    # Don't start_link here - we want the timeout to fire even if we crash
+    {:ok, timeout_pid} = Task.start(fn -> push_timeout(params) end)
+
+    on_response = fn r -> handle_response(r, timeout_pid, params) end
 
     event
     |> make_payload(token)
-    |> maybe_push(on_response, sandbox?())
+    |> maybe_push(on_response, retries, sandbox?())
   end
 
   defp maybe_truncate_message(message) do
@@ -145,11 +182,11 @@ defmodule Wocky.Push do
     |> Notification.put_custom(%{"uri" => uri})
   end
 
-  defp maybe_push(n, on_response, false) do
+  defp maybe_push(n, on_response, _, false) do
     APNS.push(n, on_response: on_response, timeout: timeout())
   end
 
-  defp maybe_push(n, on_response, true) do
+  defp maybe_push(n, on_response, retries, true) do
     notif =
       case n.payload["aps"]["alert"] do
         "bad token" ->
@@ -157,6 +194,9 @@ defmodule Wocky.Push do
 
         "raise" ->
           raise "requested_raise"
+
+        "retry test" when retries < 2 ->
+          %Notification{n | id: "testing", response: :failed}
 
         _ ->
           %Notification{n | id: "testing", response: :success}
@@ -183,30 +223,32 @@ defmodule Wocky.Push do
 
   defp handle_response(
          %Notification{response: resp} = n,
-         user_id,
-         resource,
-         timeout_pid
+         timeout_pid,
+         %__MODULE__{user_id: user_id, resource: resource} = params
        ) do
     send(timeout_pid, :push_complete)
-    maybe_handle_error(resp, n, user_id, resource)
     update_metric(resp)
     do_db_log(n, user_id, resource)
+    maybe_handle_error(n, %{params | resp: resp})
   end
 
-  defp maybe_handle_error(:success, _n, _user_id, _resource), do: :ok
+  defp maybe_handle_error(_n, %__MODULE__{resp: :success}), do: :ok
 
-  defp maybe_handle_error(resp, n, user_id, resource) do
+  defp maybe_handle_error(
+         n,
+         %__MODULE__{
+           user_id: user_id,
+           resource: resource,
+           retries: retries,
+           resp: resp
+         } = params
+       ) do
     Logger.error("PN Error: #{Error.msg(resp)}")
 
-    case resp do
-      :timeout ->
-        send_honeybadger(Error.msg(resp))
-
-      :bad_device_token ->
-        invalidate_token(user_id, resource, n.device_token)
-
-      _else ->
-        :ok
+    if resp == :bad_device_token do
+      invalidate_token(user_id, resource, n.device_token)
+    else
+      do_notify(%{params | retries: retries + 1})
     end
   end
 
@@ -244,17 +286,24 @@ defmodule Wocky.Push do
     |> Repo.insert!()
   end
 
-  defp push_timeout(token, user_id, resource, event) do
+  defp push_timeout(%__MODULE__{retries: retries} = params) do
     timeout = timeout() * 2
 
     receive do
       :push_complete -> :ok
     after
-      timeout -> log_timeout(token, user_id, resource, event)
+      timeout ->
+        log_timeout(params)
+        do_notify(%{params | retries: retries + 1})
     end
   end
 
-  defp log_timeout(token, user_id, resource, event) do
+  defp log_timeout(%__MODULE__{
+         token: token,
+         user_id: user_id,
+         resource: resource,
+         event: event
+       }) do
     Logger.error("PN Error: timeout expired")
 
     %{
@@ -265,6 +314,26 @@ defmodule Wocky.Push do
       payload: Event.message(event),
       response: "timeout",
       details: "Timeout waiting for response from Pigeon"
+    }
+    |> Log.insert_changeset()
+    |> Repo.insert!()
+  end
+
+  defp log_failure(%__MODULE__{
+         token: token,
+         user_id: user_id,
+         resource: resource,
+         event: event
+       }) do
+    %{
+      user_id: user_id,
+      resource: resource,
+      token: token,
+      message_id: nil,
+      payload: Event.message(event),
+      response: "max retries reached",
+      details:
+        "Maximum number of #{@max_retries} retries sending push notification."
     }
     |> Log.insert_changeset()
     |> Repo.insert!()
