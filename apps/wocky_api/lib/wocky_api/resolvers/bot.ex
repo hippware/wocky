@@ -291,17 +291,20 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def invite(_root, args, %{context: %{current_user: requestor}}) do
     with %Bot{} = bot <- Bot.get_owned_bot(args[:input][:bot_id], requestor) do
-      with %User{} = invitee <-
-             User.get_user(args[:input][:user_id], requestor),
-           {:ok, invitation} <- Invitation.put(invitee, bot, requestor) do
-        {:ok, invitation}
-      else
-        nil -> {:error, "Invalid user"}
-        {:error, :permission_denied} -> {:error, "Permission denied"}
-        error -> error
-      end
+      {:ok, Enum.map(args[:input][:user_ids], &do_invite(&1, bot, requestor))}
     else
       nil -> {:error, "Invalid bot"}
+    end
+  end
+
+  defp do_invite(invitee, bot, requestor) do
+    with %User{} = invitee <- User.get_user(invitee, requestor),
+         {:ok, invitation} <- Invitation.put(invitee, bot, requestor) do
+      invitation
+    else
+      nil -> {:error, "Invalid user"}
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      error -> error
     end
   end
 

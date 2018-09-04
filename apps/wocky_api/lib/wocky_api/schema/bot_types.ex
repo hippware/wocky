@@ -284,8 +284,8 @@ defmodule WockyAPI.Schema.BotTypes do
     @desc "ID of the bot to which the user is invited"
     field :bot_id, non_null(:uuid)
 
-    @desc "User to invite"
-    field :user_id, non_null(:uuid)
+    @desc "Users to invite"
+    field :user_ids, non_null(list_of(non_null(:uuid)))
   end
 
   input_object :bot_invitation_respond_input do
@@ -384,11 +384,11 @@ defmodule WockyAPI.Schema.BotTypes do
       changeset_mutation_middleware
     end
 
-    @desc "Invite a user to a bot"
-    field :bot_invite, type: :bot_invite_payload do
+    @desc "Invite users to a bot"
+    field :bot_invite, type: list_of(:bot_invite_payload) do
       arg :input, non_null(:bot_invite_input)
       resolve &Bot.invite/3
-      changeset_mutation_middleware
+      changeset_list_mutation_middleware
     end
 
     @desc "Respond to an invititation"

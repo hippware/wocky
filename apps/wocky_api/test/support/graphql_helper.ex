@@ -39,6 +39,11 @@ defmodule WockyAPI.GraphQLHelper do
     error[:message]
   end
 
+  def successful?(%{"successful" => successful}), do: successful
+
+  def failure_msg(%{"messages" => [%{"message" => message} | _]}),
+    do: message
+
   def stringify_keys(map) do
     Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
   end

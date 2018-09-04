@@ -5,6 +5,7 @@ defmodule WockyAPI.Resolvers.Utils do
 
   alias Absinthe.Relay.Connection
   alias Ecto.Changeset
+  alias Kronky.Payload
   alias Wocky.Repo
 
   def server_resolver(_, _, _), do: {:ok, Wocky.host()}
@@ -41,6 +42,17 @@ defmodule WockyAPI.Resolvers.Utils do
     do: %{resolution | value: cs, errors: []}
 
   def fix_changeset(resolution, _config), do: resolution
+
+  def fix_changeset_list(%{errors: []} = resolutions, config) do
+    new_value =
+      resolutions.value
+      |> Enum.map(&fix_changeset(&1, config))
+      |> Enum.map(&Payload.convert_to_payload/1)
+
+    %{resolutions | value: new_value}
+  end
+
+  def fix_changeset_list(resolutions, _config), do: resolutions
 
   def connection_from_query(query, parent, order \\ [desc: :updated_at], args) do
     args = Map.take(args, [:first, :last, :after, :before])

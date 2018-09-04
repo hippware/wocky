@@ -17,6 +17,12 @@ defmodule WockyAPI.Schema.Notation do
     end
   end
 
+  defmacro changeset_list_mutation_middleware do
+    quote do
+      middleware &WockyAPI.Resolvers.Utils.fix_changeset_list/2
+    end
+  end
+
   defmacro total_count_field do
     quote do
       field :total_count, non_null(:integer) do
