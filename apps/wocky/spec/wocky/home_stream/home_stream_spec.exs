@@ -203,7 +203,6 @@ defmodule Wocky.HomeStreamSpec do
         |> HomeStream.get()
         |> Enum.filter(&Enum.member?(user_ids, &1.id))
 
-
       {:ok,
        referenced_user_items: referenced_user_items,
        ref_user_times: Enum.map(ref_user_items, & &1.updated_at),
