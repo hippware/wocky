@@ -15,6 +15,11 @@ if [ "${wocky_env}" = "" ] || [ "${REVISION}" = "" ]; then
   exit
 fi
 
+if echo "${CI_COMMIT_DESCRIPTION}" | fgrep -qi "[skip deploy]"; then
+  echo "Skipping deployment."
+  exit
+fi
+
 context="${CONTEXT:-"aws"}"
 namespace="wocky-${wocky_env}"
 template_dir="k8s/${wocky_env}"
