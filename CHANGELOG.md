@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Remove Collections code (#1804)
+* Remove Collections code (#1804, PR #1807, PR #1815)
+* Update: prometheus_ex (PR #1816), lager (PR #1818)
+* Add retry system to push notifications (PR #1814)
+* Change `botInvite` mutation to accept an array of user ids (#1808)
 
 
 # 2018.8.30+r5c75ca6
