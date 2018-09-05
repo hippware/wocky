@@ -540,6 +540,14 @@ defmodule Wocky.User do
   defp maybe_send_welcome(%User{email: nil}), do: :ok
 
   defp maybe_send_welcome(%User{} = user) do
+    if Confex.get_env(:wocky, :send_welcome_email) do
+      send_welcome_email(user)
+    else
+      :ok
+    end
+  end
+
+  defp send_welcome_email(user) do
     Email.send_welcome_email(user)
 
     user
