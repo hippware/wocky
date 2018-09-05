@@ -93,7 +93,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:erlando, github: "hippware/erlando", branch: "master"},
       {:exml,
-       github: "esl/exml", tag: "3.0.1", manager: :rebar3, override: true},
+       github: "esl/exml", tag: "3.0.2", manager: :rebar3, override: true},
       {:fun_chain,
        github: "sasa1977/fun_chain",
        branch: "master",
