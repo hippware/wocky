@@ -54,13 +54,20 @@ defmodule WockyAPI.Resolvers.Utils do
 
   def fix_changeset_list(resolutions, _config), do: resolutions
 
-  def connection_from_query(query, parent, order \\ [desc: :updated_at], args) do
+  def connection_from_query(
+        query,
+        parent,
+        order \\ [desc: :updated_at],
+        post_process \\ nil,
+        args
+      ) do
     args = Map.take(args, [:first, :last, :after, :before])
     opts = [count: get_count_if_needed(query, args)]
 
     query
     |> maybe_order_by(order)
     |> Connection.from_query(&Repo.all/1, args, opts)
+    |> maybe_post_process(post_process)
     |> add_data(:parent_query, query)
     |> add_data(:cached_count, opts[:count])
     |> add_edge_parent(parent)
@@ -89,6 +96,17 @@ defmodule WockyAPI.Resolvers.Utils do
     query
     |> order_by(^order)
   end
+
+  defp maybe_post_process({:ok, %{edges: edges} = connection}, fun)
+       when not is_nil(fun) do
+    {:ok,
+     %{
+       connection
+       | edges: Enum.map(edges, fn e -> %{e | node: fun.(e.node)} end)
+     }}
+  end
+
+  defp maybe_post_process(connection, nil), do: connection
 
   def map_edges({:error, _} = r, _), do: r
 

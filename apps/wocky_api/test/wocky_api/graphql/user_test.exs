@@ -692,4 +692,94 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
     end
   end
+
+  describe "message archive" do
+    @query """
+    query ($other_user: UUID) {
+      currentUser {
+        messages (other_user: $other_user, first: 50){
+          total_count
+          edges {
+            node {
+              other_user {
+                id
+              }
+              message
+            }
+          }
+        }
+      }
+    }
+    """
+    setup shared do
+      user3 = Factory.insert(:user)
+
+      messages2 =
+        Enum.map(1..5, fn _ ->
+          Factory.insert_message(shared.user, shared.user2)
+        end)
+
+      messages3 =
+        Enum.map(1..3, fn _ -> Factory.insert_message(shared.user, user3) end)
+
+      {:ok, user3: user3, messages2: messages2, messages3: messages3}
+    end
+
+    test "should successfully retrieve all messages", %{
+      user: user,
+      user2: user2,
+      user3: user3
+    } do
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "messages" => %{
+                   "total_count" => 8,
+                   "edges" => edges
+                 }
+               }
+             } = result.data
+
+      assert length(edges) == 8
+
+      assert edges
+             |> Enum.map(& &1["node"]["other_user"]["id"])
+             |> Enum.uniq()
+             |> Enum.sort() == Enum.sort([user2.id, user3.id])
+    end
+
+    test "should retrieve all messages for a given user", %{
+      user: user,
+      user2: user2
+    } do
+      result = run_query(@query, user, %{"other_user" => user2.id})
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "messages" => %{
+                   "total_count" => 5,
+                   "edges" => edges
+                 }
+               }
+             } = result.data
+
+      assert length(edges) == 5
+
+      assert edges |> Enum.map(& &1["node"]["other_user"]["id"]) |> Enum.uniq() ==
+               Enum.sort([user2.id])
+    end
+
+    test "should return an error for a non-existant user", %{user: user} do
+      result = run_query(@query, user, %{"other_user" => ID.new()})
+
+      assert has_errors(result)
+
+      assert error_msg(result) =~ "User not found"
+    end
+  end
 end

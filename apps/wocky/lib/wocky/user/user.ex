@@ -19,6 +19,7 @@ defmodule Wocky.User do
   alias Wocky.GeoUtils
   alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index
+  alias Wocky.Message
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Roster.Item, as: RosterItem
@@ -70,6 +71,7 @@ defmodule Wocky.User do
     has_many :roster_items, RosterItem
     has_many :tokens, AuthToken
     has_many :tros_metadatas, TROSMetadata
+    has_many :messages, Message
 
     many_to_many(:shares, Bot, join_through: Share)
     many_to_many(:bot_subscriptions, Bot, join_through: BotSubscription)
