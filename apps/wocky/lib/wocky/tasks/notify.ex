@@ -8,7 +8,7 @@ defmodule Wocky.Tasks.Notify do
   end
 
   def complete(extra \\ "") do
-    initial_msg = "Deployment of Wocky to `#{instance_name()}` complete."
+    initial_msg = "Deployment of Wocky to #{instance_name()} complete."
 
     msg =
       if extra != "" do
@@ -22,13 +22,13 @@ defmodule Wocky.Tasks.Notify do
 
   defp wocky_version_and_target do
     version = Application.spec(:wocky, :vsn)
-    "Wocky version `#{version}` to `#{instance_name()}`"
+    "Wocky version `#{version}` to #{instance_name()}"
   end
 
   defp instance_name do
     wocky_env = Confex.get_env(:wocky, :wocky_env)
     wocky_inst = Confex.get_env(:wocky, :wocky_inst)
-    "#{wocky_inst}.#{wocky_env}"
+    "`#{wocky_inst}.#{wocky_env}`"
   end
 
   defp do_notify(message) do
