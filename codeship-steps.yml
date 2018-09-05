@@ -27,7 +27,7 @@
       command: make release
 - name: deploy
   type: serial
-  tag: master
+  tag: ^master$
   steps:
   - name: wait_for_previous_builds
     service: waiter
