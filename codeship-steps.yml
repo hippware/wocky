@@ -1,16 +1,19 @@
 - name: version
   service: wocky-build
   command: elixir version.exs
-- type: parallel
+- name: build_and_test
+  type: parallel
   steps:
-  - type: serial
+  - name: run_tests
+    type: serial
     service: wocky-test
     steps:
     - name: unit_test
       command: make unittest
     - name: int_test
       command: make inttest
-  - type: serial
+  - name: build_release
+    type: serial
     steps:
     - name: dockerlint_build
       service: dockerlint
@@ -19,31 +22,31 @@
       service: dockerlint
       command: dockerlint -f Dockerfile.release
     - name: release
-      tag: master
+      tag: ^master$
       service: wocky-build
       command: make release
-- name: push_latest_image
-  service: wocky-rel
-  type: push
+- name: deploy
+  type: serial
   tag: master
-  image_tag: latest
-  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
-  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-  dockercfg_service: aws-dockercfg
-- name: push_tagged_image
-  service: wocky-rel
-  type: push
-  tag: master
-  image_tag: "{{.CommitID}}"
-  image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
-  registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
-  dockercfg_service: aws-dockercfg
-- name: deploy_to_testing
-  tag: master
-  service: eks-deploy
-  command: ./wocky-deploy testing
-  dockercfg_service: aws-dockercfg
-- name: kick_circleci
-  tag: master
-  service: curl-ssl-jq
-  command: ./kick-circleci
+  steps:
+  - name: push_latest_image
+    service: wocky-rel
+    type: push
+    image_tag: latest
+    image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+    registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+    dockercfg_service: aws-dockercfg
+  - name: push_tagged_image
+    service: wocky-rel
+    type: push
+    image_tag: "{{.CommitID}}"
+    image_name: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky
+    registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
+    dockercfg_service: aws-dockercfg
+  - name: deploy_to_testing
+    service: eks-deploy
+    command: ./wocky-deploy testing
+    dockercfg_service: aws-dockercfg
+  - name: kick_circleci
+    service: curl-ssl-jq
+    command: ./kick-circleci
