@@ -8,7 +8,7 @@ defmodule Wocky.Tasks.Notify do
   end
 
   def complete(extra \\ "") do
-    initial_msg = "Deployment of Wocky to #{instance_name()} complete."
+    initial_msg = "Deployment of Wocky to `#{instance_name()}` complete."
 
     msg =
       if extra != "" do

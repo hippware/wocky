@@ -15,7 +15,7 @@ if [ "${wocky_env}" = "" ] || [ "${REVISION}" = "" ]; then
   exit
 fi
 
-if echo "${CI_COMMIT_DESCRIPTION}" | fgrep -qi "[skip deploy]"; then
+if echo "${CI_COMMIT_MESSAGE}" | fgrep -qi "[skip deploy]"; then
   echo "Skipping deployment."
   exit
 fi
@@ -38,12 +38,8 @@ pod=$(kubectl get pods \
   -l 'app=wocky' \
   -o jsonpath='{.items[0].metadata.name}')
 
-if [ "${CI_COMMIT_DESCRIPTION}" != "" ]; then
-  msg="Last commit:\n${CI_COMMIT_DESCRIPTION}"
-
-  if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
-    msg="${msg}\n${CI_COMMIT_MESSAGE}"
-  fi
+if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
+  msg="Last commit: ${CI_COMMIT_MESSAGE}"
 fi
 
 kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${msg}"

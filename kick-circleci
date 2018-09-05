@@ -4,7 +4,7 @@ if [ "${CIRCLE_TOKEN}" = "" ] && [ -r "circleci.env" ]; then
   source circleci.env
 fi
 
-if echo "${CI_COMMIT_DESCRIPTION}" | fgrep -qi "[skip deploy]"; then
+if echo "${CI_COMMIT_MESSAGE}" | fgrep -qi "[skip deploy]"; then
   exit
 fi
 
