@@ -27,6 +27,7 @@ config :wocky,
   auth_bypass_prefixes: ["+1555"],
 
   # Welcome email
+  send_welcome_email: {:system, :boolean, "SEND_WELCOME_EMAIL", false},
   welcome_email_template: "official_tr_welcome_email",
   welcome_email_from: {"tinyrobot support", "support@tinyrobot.com"},
   welcome_email_subject: "Welcome to tinyrobot!",

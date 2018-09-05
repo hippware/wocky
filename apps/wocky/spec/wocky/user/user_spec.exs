@@ -223,6 +223,7 @@ defmodule Wocky.UserSpec do
 
     describe "update/2", async: false do
       before do
+        Application.put_env(:wocky, :send_welcome_email, true)
         :meck.new(Email)
         :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
       end
