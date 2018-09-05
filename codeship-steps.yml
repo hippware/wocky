@@ -29,6 +29,9 @@
   type: serial
   tag: master
   steps:
+  - name: wait_for_previous_builds
+    service: waiter
+    command: build-waiter
   - name: push_latest_image
     service: wocky-rel
     type: push

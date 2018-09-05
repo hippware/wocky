@@ -58,3 +58,6 @@ curl-ssl-jq:
   encrypted_env_file: circleci.env.encrypted
   volumes:
     - kick-circleci:/kick-circleci
+waiter:
+  image: codeship/build-waiter
+  encrypted_env_file: waitercfg.encrypted

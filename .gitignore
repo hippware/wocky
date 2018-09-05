@@ -15,4 +15,5 @@ codeship.aes
 dockercfg
 aws.env
 circleci.env
+waiter.cfg
 .tool-versions*
