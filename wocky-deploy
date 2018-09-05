@@ -38,4 +38,12 @@ pod=$(kubectl get pods \
   -l 'app=wocky' \
   -o jsonpath='{.items[0].metadata.name}')
 
-kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete
+if [ "${CI_COMMIT_DESCRIPTION}" != "" ]; then
+  msg="Last commit:\n${CI_COMMIT_DESCRIPTION}"
+
+  if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
+    msg="${msg}\n${CI_COMMIT_MESSAGE}"
+  fi
+fi
+
+kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${msg}"

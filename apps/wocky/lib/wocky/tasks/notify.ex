@@ -7,8 +7,17 @@ defmodule Wocky.Tasks.Notify do
     do_notify("Beginning deployment of #{wocky_version_and_target()}...")
   end
 
-  def complete do
-    do_notify("Deployment of Wocky to #{instance_name()} complete.")
+  def complete(extra \\ "") do
+    initial_msg = "Deployment of Wocky to #{instance_name()} complete."
+
+    msg =
+      if extra != "" do
+        initial_msg <> "\n" <> extra
+      else
+        initial_msg
+      end
+
+    do_notify(msg)
   end
 
   defp wocky_version_and_target do
