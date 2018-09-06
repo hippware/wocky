@@ -2,16 +2,12 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.Block
-  alias Wocky.Bot
+  alias Wocky.{Block, Bot, GeoUtils, Repo, Roster, User}
   alias Wocky.Bot.Item
   alias Wocky.Bot.Invitation
-  alias Wocky.GeoUtils
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
-  alias Wocky.Roster
 
   setup :common_setup
 
@@ -1381,6 +1377,8 @@ defmodule WockyAPI.GraphQL.BotTest do
           invitee: shared.user2
         )
 
+      refute User.can_access?(shared.user2, shared.bot)
+
       result =
         run_query(@query, shared.user2, %{
           "input" => %{"invitation_id" => to_string(id), "accept" => true}
@@ -1389,6 +1387,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
+      assert User.can_access?(shared.user2, shared.bot)
     end
 
     test "decline an invitation", shared do

@@ -13,7 +13,7 @@ defmodule Wocky.User do
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription, as: BotSubscription
+  alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.GeoUtils
@@ -72,7 +72,7 @@ defmodule Wocky.User do
     has_many :tros_metadatas, TROSMetadata
 
     many_to_many(:shares, Bot, join_through: Share)
-    many_to_many(:bot_subscriptions, Bot, join_through: BotSubscription)
+    many_to_many(:bot_subscriptions, Bot, join_through: Subscription)
   end
 
   @type id :: binary
@@ -183,7 +183,9 @@ defmodule Wocky.User do
 
   @spec can_access?(t, Bot.t()) :: boolean
   def can_access?(user, bot),
-    do: owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot)
+    do:
+      owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot) ||
+        Subscription.state(user, bot) != nil
 
   @doc """
     Returns true if a bot should appear in a user's geosearch results. Criteria:
@@ -460,7 +462,7 @@ defmodule Wocky.User do
     |> join(
       :left,
       [b],
-      s in BotSubscription,
+      s in Subscription,
       b.id == s.bot_id and s.user_id == ^user.id
     )
     |> where([b, s], not is_nil(s.user_id))
@@ -521,7 +523,7 @@ defmodule Wocky.User do
 
   @spec get_bot_relationships(t(), Bot.t()) :: [bot_relationship()]
   def get_bot_relationships(user, bot) do
-    sub = BotSubscription.get(user, bot)
+    sub = Subscription.get(user, bot)
 
     [:visible]
     |> maybe_add_rel(bot.user_id == user.id, :owned)
