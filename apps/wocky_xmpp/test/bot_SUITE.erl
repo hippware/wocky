@@ -312,8 +312,8 @@ new_id(Config) ->
 
 retrieve(Config) ->
     reset_tables(Config),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-      fun(Alice, Bob, Carol) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}, {tim, 1}],
+      fun(Alice, Bob, Tim) ->
         % Alice can retrieve her own bot
         Stanza = expect_iq_success(retrieve_stanza(), Alice),
         check_returned_bot(Stanza, expected_retrieve_fields(true)),
@@ -322,8 +322,8 @@ retrieve(Config) ->
         Stanza2 = expect_iq_success(retrieve_stanza(), Bob),
         check_returned_bot(Stanza2, expected_retrieve_fields(false)),
 
-        % Carol cannot retrive since the bot is not public
-        expect_iq_error(retrieve_stanza(), Carol),
+        % Tim cannot retrive since the bot is not public
+        expect_iq_error(retrieve_stanza(), Tim),
 
         % Invalid IDs should fail but not crash
         expect_iq_error(
@@ -803,8 +803,9 @@ edit_item(Config) ->
 
 get_items(Config) ->
     ?wocky_repo:delete_all(?wocky_item),
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}],
-      fun(Alice, Bob, Carol, Karen) ->
+    escalus:story(Config,
+                  [{alice, 1}, {bob, 1}, {carol, 1}, {karen, 1}, {tim, 1}],
+      fun(Alice, Bob, Carol, Karen, Tim) ->
         % Alice publishes a bunch of items on her bot
         IDs = lists:map(
           add_item(Alice, [Carol, Karen], _), lists:seq(0, ?CREATED_ITEMS-1)),
@@ -822,12 +823,15 @@ get_items(Config) ->
         get_items(Bob, #rsm_in{max = 3, direction = before}, IDs,
                   ?CREATED_ITEMS-3, ?CREATED_ITEMS-1),
 
-        % Carol can't because she hasn't
+        % Carol also can because she's a subscriber
+        get_items(Carol, #rsm_in{max = 10}, IDs, 0, 9),
+
+        % Tim can't because he's nothin'
         expect_iq_error(
                test_helper:iq_get(
-                 ?NS_BOT, item_query_el(#rsm_in{max = 10})), Carol),
+                 ?NS_BOT, item_query_el(#rsm_in{max = 10})), Tim),
 
-        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen])
+        test_helper:ensure_all_clean([Alice, Bob, Carol, Karen, Tim])
       end).
 
 publish_image_item(Config) ->
