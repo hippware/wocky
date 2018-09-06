@@ -23,4 +23,8 @@ defmodule WockyAPI.Resolvers.Notification do
       :user_follow -> :user_follow_notification
     end
   end
+
+  def resolve_update_type(%{data: _}, _), do: :notification
+
+  def resolve_update_type(_, _), do: :notification_deleted
 end

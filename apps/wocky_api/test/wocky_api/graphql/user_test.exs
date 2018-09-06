@@ -782,4 +782,14 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert error_msg(result) =~ "User not found"
     end
   end
+
+  describe "delete user mutation" do
+    test "Should be false with no related bots", %{user: user} do
+      query = "mutation { userDelete { result } }"
+      result = run_query(query, user)
+      refute has_errors(result)
+      assert result.data == %{"userDelete" => %{"result" => true}}
+      assert User.get_user(user.id) == nil
+    end
+  end
 end

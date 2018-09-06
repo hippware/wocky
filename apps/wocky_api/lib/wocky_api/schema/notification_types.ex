@@ -40,6 +40,21 @@ defmodule WockyAPI.Schema.NotificationTypes do
     resolve_type &Notification.resolve_type/2
   end
 
+  union :notification_update do
+    types [
+      :notification,
+      :notification_deleted
+    ]
+
+    resolve_type &Notification.resolve_update_type/2
+  end
+
+  @desc "Deletion of a notification"
+  object :notification_deleted do
+    @desc "The id of the deleted notification"
+    field :id, non_null(:aint)
+  end
+
   @desc "A notification for posting or updating a bot item"
   object :bot_item_notification do
     @desc "The user who made the change"
@@ -119,7 +134,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
   object :notification_subscriptions do
     @desc "Subscribe to newly created notifications for a user"
-    field :notifications, non_null(:notification) do
+    field :notifications, non_null(:notification_update) do
       user_subscription_config(&User.notification_subscription_topic/1)
     end
   end

@@ -37,34 +37,40 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   @subscription """
   subscription {
     notifications {
-      data {
-        __typename
-        ... on BotItemNotification {
-          user { id }
-          bot { id }
-          bot_item { id }
+      __typename
+      ... on Notification {
+        data {
+          __typename
+          ... on BotItemNotification {
+            user { id }
+            bot { id }
+            bot_item { id }
+          }
+          ... on GeofenceEventNotification {
+            user { id }
+            bot { id }
+            event
+          }
+          ... on InvitationNotification {
+            invitation { id }
+            user { id }
+            bot { id }
+          }
+          ... on InvitationResponseNotification {
+            invitation { id }
+            user { id }
+            bot { id }
+            accepted
+          }
+          ... on UserFollowNotification {
+            user { id }
+          }
         }
-        ... on GeofenceEventNotification {
-          user { id }
-          bot { id }
-          event
-        }
-        ... on InvitationNotification {
-          invitation { id }
-          user { id }
-          bot { id }
-        }
-        ... on InvitationResponseNotification {
-          invitation { id }
-          user { id }
-          bot { id }
-          accepted
-        }
-        ... on UserFollowNotification {
-          user { id }
-        }
+        created_at
       }
-      created_at
+      ... on NotificationDeleted {
+        id
+      }
     }
   }
   """
@@ -188,11 +194,48 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     end
   end
 
+  describe "notification deletion" do
+    setup %{
+      socket: socket,
+      user: user,
+      token: token
+    } do
+      notification = Factory.insert(:bot_item_notification, user: user)
+      authenticate(user.id, token, socket)
+      ref = push_doc(socket, @subscription)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+      {:ok,
+       ref: ref, subscription_id: subscription_id, notification: notification}
+    end
+
+    test "notification deleted", %{
+      notification: notification,
+      subscription_id: subscription_id
+    } do
+      Repo.delete(notification)
+      assert_push "subscription:data", push, 2000
+
+      assert push == %{
+               result: %{
+                 data: %{
+                   "notifications" => %{
+                     "__typename" => "NotificationDeleted",
+                     "id" => to_string(notification.id)
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             }
+    end
+  end
+
   defp assert_notification_update(push, subscription_id, data) do
     assert %{
              result: %{
                data: %{
                  "notifications" => %{
+                   "__typename" => "Notification",
                    "created_at" => _,
                    "data" => ^data
                  }

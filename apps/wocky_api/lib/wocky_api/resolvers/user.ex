@@ -183,5 +183,10 @@ defmodule WockyAPI.Resolvers.User do
     end
   end
 
+  def delete(_root, _args, %{context: %{current_user: user}}) do
+    User.delete(user.id)
+    {:ok, true}
+  end
+
   defp user_not_found(id), do: {:error, "User not found: " <> id}
 end
