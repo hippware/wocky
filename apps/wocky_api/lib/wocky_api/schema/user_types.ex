@@ -388,6 +388,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   payload_object(:user_update_payload, :user)
+  payload_object(:user_delete_payload, :boolean)
   payload_object(:user_hide_payload, :boolean)
 
   @desc "Parameters for sending a location update"
@@ -480,6 +481,13 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
+      middleware WockyAPI.Middleware.RefreshCurrentUser
+      changeset_mutation_middleware
+    end
+
+    @desc "Delete the current user"
+    field :user_delete, type: :user_delete_payload do
+      resolve &User.delete/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware
     end
