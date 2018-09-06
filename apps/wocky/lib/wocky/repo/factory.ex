@@ -19,8 +19,10 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Conversation
   alias Wocky.GeoUtils
   alias Wocky.HomeStream.Item, as: HomeStreamItem
+  alias Wocky.Message
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
+  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Roster.InitialContact
   alias Wocky.Roster.Item, as: RosterItem
@@ -262,6 +264,61 @@ defmodule Wocky.Repo.Factory do
 
   def new_jid do
     ID.new() |> JID.make(Lorem.word(), Lorem.word()) |> JID.to_binary()
+  end
+
+  def insert_message(owner, other) do
+    query = "SELECT id FROM mam_server_user WHERE user_name = $1"
+
+    id =
+      case Ecto.Adapters.SQL.query!(Repo, query, [owner.id]).rows do
+        [] ->
+          query = """
+          INSERT INTO mam_server_user (user_name, server)
+          VALUES ($1, $2)
+          RETURNING id
+          """
+
+          Ecto.Adapters.SQL.query!(Repo, query, [owner.id, "test"]).rows
+          |> hd
+          |> hd
+
+        rows ->
+          hd(hd(rows))
+      end
+
+    query = """
+    INSERT INTO mam_message (id, user_id, from_jid, remote_bare_jid, remote_resource, direction, message)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING id
+    """
+
+    message =
+      ("<message>" <> Lorem.paragraph() <> "</message>")
+      |> :exml.parse()
+      |> elem(1)
+      |> :erlang.term_to_binary()
+
+    id =
+      Ecto.Adapters.SQL.query!(Repo, query, [
+        :erlang.unique_integer([:monotonic, :positive]),
+        id,
+        "",
+        other.id,
+        "",
+        "I",
+        message
+      ]).rows
+      |> hd
+      |> hd
+
+    %Message{
+      id: id,
+      incoming: true,
+      user_id: owner.id,
+      other_user_id: other.id,
+      message: message
+    }
+    |> Message.fix()
   end
 
   # Handles have a more restricted set of characters than any of the Faker

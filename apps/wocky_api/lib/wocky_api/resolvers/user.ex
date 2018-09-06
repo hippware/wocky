@@ -4,13 +4,7 @@ defmodule WockyAPI.Resolvers.User do
   import Ecto.Query
 
   alias Absinthe.Subscription
-  alias Wocky.Bot
-  alias Wocky.Conversation
-  alias Wocky.HomeStream
-  alias Wocky.JID
-  alias Wocky.Repo
-  alias Wocky.Roster
-  alias Wocky.User
+  alias Wocky.{Bot, Conversation, HomeStream, JID, Message, Repo, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
@@ -169,6 +163,24 @@ defmodule WockyAPI.Resolvers.User do
       end
 
     User.hide(user, param)
+  end
+
+  def get_messages(_root, args, %{context: %{current_user: user}}) do
+    with {:ok, query} <- get_messages_query(args[:other_user], user) do
+      query
+      |> Utils.connection_from_query(user, [desc: :id], &Message.fix/1, args)
+    end
+  end
+
+  defp get_messages_query(nil, requestor),
+    do: {:ok, Message.get_query(requestor)}
+
+  defp get_messages_query(other_user_id, requestor) do
+    with %User{} = other_user <- User.get_user(other_user_id, requestor) do
+      {:ok, Message.get_query(requestor, other_user)}
+    else
+      _ -> user_not_found(other_user_id)
+    end
   end
 
   def delete(_root, _args, %{context: %{current_user: user}}) do

@@ -72,6 +72,15 @@ defmodule WockyAPI.Schema.UserTypes do
       %Wocky.User{} = _, _ -> :other_user
       _, _ -> nil
     end
+
+    @desc "The user's archive of messages sorted from oldest to newest"
+    connection field :messages, node_type: :messages do
+      connection_complexity
+
+      @desc "Optional other user to filter messages on"
+      arg :other_user, :uuid
+      resolve &User.get_messages/3
+    end
   end
 
   @desc "A user other than the currently authenticated user"
@@ -175,6 +184,25 @@ defmodule WockyAPI.Schema.UserTypes do
       field :relationship, :user_contact_relationship do
         resolve &User.get_contact_relationship/3
       end
+    end
+  end
+
+  @desc "A message to a user"
+  object :message do
+    @desc "The user who sent or received the message"
+    field :other_user, non_null(:user), resolve: assoc(:other_user)
+
+    @desc "The message stanza itself"
+    field :message, non_null(:string)
+
+    @desc "True if the message was sent to us, false if we sent it"
+    field :incoming, non_null(:boolean)
+  end
+
+  connection :messages, node_type: :message do
+    total_count_field
+
+    edge do
     end
   end
 
