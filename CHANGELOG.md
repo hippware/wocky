@@ -5,6 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add deletion of notification to notification subscription (#1828)
+* Add GraphQL `deleteUser` mutation (#1824)
+* Add message archive interface to GraphQL (#1673)
+* Attempting to load bot items on an accepted bot causes 403 error (#1830)
+
+
+# 2018.9.5+r832450f
+
 * Remove Collections code (#1804, PR #1807, PR #1815)
 * Update: prometheus_ex (PR #1816), lager (PR #1818), exml (PR #1821)
 * Add retry system to push notifications (PR #1814)
