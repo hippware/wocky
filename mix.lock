@@ -41,7 +41,7 @@
   "ecto_homoiconic_enum": {:hex, :ecto_homoiconic_enum, "0.1.2", "8d5a894c8da5be100e449c2f3f2f75a57a5ae74be8b1c4d91d5e56a863c7eb9c", [:mix], [{:ecto, "~> 2.2", [hex: :ecto, repo: "hexpm", optional: false]}, {:postgrex, "~> 0.13", [hex: :postgrex, repo: "hexpm", optional: true]}], "hexpm"},
   "edown": {:hex, :edown, "0.7.0", "6803599606b10f8e328d6d60c44cd16244cd2429908894c415fce4211c3bfefd", [:make, :rebar], [], "hexpm"},
   "elixir_make": {:hex, :elixir_make, "0.4.2", "332c649d08c18bc1ecc73b1befc68c647136de4f340b548844efc796405743bf", [:mix], [], "hexpm"},
-  "elixometer": {:git, "https://github.com/hippware/elixometer.git", "ac2d6874be2111bbb9af2c1ac2ae0337a29786ab", [branch: "working"]},
+  "elixometer": {:git, "https://github.com/hippware/elixometer.git", "c5f294bc04192d93a057d55ac1734facd81e2063", [branch: "working"]},
   "elvis": {:hex, :elvis_core, "0.3.9", "6b3c18e1e1cc9bc5684282f59a95b6b42898c1a27e0e2f3cfe9b384af76a7629", [:rebar3], [{:katana_code, "0.1.0", [hex: :katana_code, repo: "hexpm", optional: false]}, {:zipper, "1.0.1", [hex: :zipper, repo: "hexpm", optional: false]}], "hexpm"},
   "email_checker": {:hex, :email_checker, "0.1.2", "05b3121c71b69f1ab5df7d8b4844046898bf218031998ef53f20c6b8bfd219e9", [:mix], [{:socket, "~> 0.3.1", [hex: :socket, repo: "hexpm", optional: false]}], "hexpm"},
   "epgsql": {:hex, :epgsql, "3.4.0", "39d473b83d74329a88f8fb1f99ad24c7a2329fd753957c488808cb7c0fc8164e", [:rebar3], [], "hexpm"},
