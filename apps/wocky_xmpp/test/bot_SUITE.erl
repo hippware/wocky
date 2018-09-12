@@ -196,6 +196,23 @@ reset_tables(Config) ->
     ),
 
     Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+
+    % Create the bot as early as possible to allow owner subscription to fire
+    B = #{id => ?BOT,
+          title => ?BOT_TITLE,
+          shortname => ?BOT_NAME,
+          user => Alice,
+          description => ?BOT_DESC,
+          location => ?wocky_geo_utils:point(?BOT_LAT, ?BOT_LON),
+          radius => ?BOT_RADIUS,
+          address => ?BOT_ADDRESS,
+          address_data => ?BOT_ADDRESS_DATA,
+          image => ?AVATAR_FILE,
+          type => ?BOT_TYPE,
+          icon => ?BOT_ICON
+         },
+    Bot = ?wocky_factory:insert(bot, B),
+
     Bob = ?wocky_repo:get(?wocky_user, ?BOB),
     Carol = ?wocky_repo:get(?wocky_user, ?CAROL),
     Karen = ?wocky_repo:get(?wocky_user, ?KAREN),
@@ -214,21 +231,6 @@ reset_tables(Config) ->
                                            avatar => ?AVATAR_URL,
                                            first_name => ?ALICE_FIRST_NAME,
                                            last_name => ?ALICE_LAST_NAME}),
-
-    B = #{id => ?BOT,
-          title => ?BOT_TITLE,
-          shortname => ?BOT_NAME,
-          user => Alice,
-          description => ?BOT_DESC,
-          location => ?wocky_geo_utils:point(?BOT_LAT, ?BOT_LON),
-          radius => ?BOT_RADIUS,
-          address => ?BOT_ADDRESS,
-          address_data => ?BOT_ADDRESS_DATA,
-          image => ?AVATAR_FILE,
-          type => ?BOT_TYPE,
-          icon => ?BOT_ICON
-         },
-    Bot = ?wocky_factory:insert(bot, B),
 
     ?wocky_factory:insert(tros_metadata, [{id, ?ITEM_IMAGE_ID},
                                           {user, Alice},
@@ -837,7 +839,7 @@ get_items(Config) ->
 publish_image_item(Config) ->
     reset_tables(Config),
     %% Wait for DB notifications to fire
-    timer:sleep(400),
+    timer:sleep(500),
     escalus:story(Config, [{alice, 1}],
       fun(Alice) ->
         NoteID = <<"new-item1">>,
