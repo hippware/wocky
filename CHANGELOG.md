@@ -9,7 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add GraphQL `deleteUser` mutation (#1824)
 * Add message archive interface to GraphQL (#1673)
 * Attempting to load bot items on an accepted bot causes 403 error (#1830)
-* Update: phoenix_ecto (PR #1835)
+* Update: phoenix_ecto (PR #1835), elixometer (PR #1837)
 
 
 # 2018.9.5+r832450f
