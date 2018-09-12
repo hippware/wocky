@@ -60,7 +60,7 @@
   "exjsx": {:hex, :exjsx, "4.0.0", "60548841e0212df401e38e63c0078ec57b33e7ea49b032c796ccad8cde794b5c", [:mix], [{:jsx, "~> 2.8.0", [hex: :jsx, repo: "hexpm", optional: false]}], "hexpm"},
   "exml": {:git, "https://github.com/esl/exml.git", "82e93c3eac5197a57b40b6b01c17b9a8729bc2ee", [tag: "3.0.2"]},
   "exometer": {:git, "https://github.com/hippware/exometer.git", "eb522a29ce115acba1914b35a83923dbd49393ee", [branch: "working"]},
-  "exometer_core": {:git, "https://github.com/hippware/exometer_core.git", "0f1f65e7b8a265501561081d3899e04611f15b1d", [branch: "working"]},
+  "exometer_core": {:git, "https://github.com/hippware/exometer_core.git", "263adb7a42acc04109e30cbf2134e9cddded7328", [branch: "working"]},
   "exometer_prometheus": {:git, "https://github.com/GalaxyGorilla/exometer_prometheus.git", "5c37df514fa04f8fed4359ff5e5561fe5a0fb97d", [branch: "master"]},
   "exrun": {:hex, :exrun, "0.1.6", "036fd2418ad9701ab90446c3245c383fa6723e12badccafb172bba8bf835ab9b", [:mix], [], "hexpm"},
   "exvcr": {:hex, :exvcr, "0.10.0", "5150808404d9f48dbda636f70f7f8fefd93e2433cd39f695f810e73b3a9d1736", [:mix], [{:exactor, "~> 2.2", [hex: :exactor, repo: "hexpm", optional: false]}, {:exjsx, "~> 4.0", [hex: :exjsx, repo: "hexpm", optional: false]}, {:httpoison, "~> 0.13", [hex: :httpoison, repo: "hexpm", optional: true]}, {:httpotion, "~> 3.0", [hex: :httpotion, repo: "hexpm", optional: true]}, {:ibrowse, "~> 4.4", [hex: :ibrowse, repo: "hexpm", optional: true]}, {:meck, "~> 0.8.8", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
