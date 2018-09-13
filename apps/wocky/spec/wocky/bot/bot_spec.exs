@@ -384,6 +384,8 @@ defmodule Wocky.BotSpec do
         Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
         private_bot = Factory.insert(:bot, user: user2)
         pending_bot = Factory.insert(:bot, user: user1, pending: true)
+        subscribed_bot = Factory.insert(:bot, user: user2)
+        Factory.insert(:subscription, bot: subscribed_bot, user: user1)
 
         {:ok,
          user: user1,
@@ -391,7 +393,9 @@ defmodule Wocky.BotSpec do
          public_bot: public_bot,
          shared_bot: shared_bot,
          private_bot: private_bot,
-         pending_bot: pending_bot}
+         pending_bot: pending_bot,
+         subscribed_bot: subscribed_bot
+        }
       end
 
       it "should allow owned bots" do
@@ -412,6 +416,11 @@ defmodule Wocky.BotSpec do
       it "should refuse private bots" do
         run_is_visible_query(shared.private_bot, shared.user)
         |> should(be_nil())
+      end
+
+      it "should allow subscribed bots" do
+        run_is_visible_query(shared.subscribed_bot, shared.user)
+        |> should(eq shared.subscribed_bot)
       end
     end
 

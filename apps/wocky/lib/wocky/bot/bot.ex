@@ -523,12 +523,21 @@ defmodule Wocky.Bot do
     |> join(
       :left,
       [b, ...],
-      s in Share,
-      b.id == s.bot_id and s.user_id == ^user.id
+      share in Share,
+      b.id == share.bot_id and share.user_id == ^user.id
+    )
+    |> join(
+      :left,
+      [b, ...],
+      sub in Subscription,
+      b.id == sub.bot_id and sub.user_id == ^user.id
     )
     |> where(
-      [b, ..., s],
-      b.user_id == ^user.id or b.public or not is_nil(s.user_id)
+      [b, ..., sub, share],
+      b.user_id == ^user.id
+      or b.public
+      or not is_nil(sub.user_id)
+      or not is_nil(share.user_id)
     )
   end
 
