@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.9.13+r90cb411
+
+* Make bots visible whenever a user is subscribed to them (PR #1841)
+
+
+# 2018.9.12+r0531a1e
+
 * Add deletion of notification to notification subscription (#1828)
 * Add GraphQL `deleteUser` mutation (#1824)
 * Add message archive interface to GraphQL (#1673)
