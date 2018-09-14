@@ -416,8 +416,26 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   payload_object(:user_update_payload, :user)
-  payload_object(:user_delete_payload, :boolean)
   payload_object(:user_hide_payload, :boolean)
+
+  # This definition is an almost straight copy from the payload_object macro.
+  # However we need to make the scope public because the object permissions
+  # get checked after the user is deleted, and the macro doesn't allow us to do
+  # that
+  object :user_delete_payload do
+    scope :public
+
+    @desc "Indicates if the mutation completed successfully or not. "
+    field :successful, non_null(:boolean)
+
+    @desc """
+    A list of failed validations. May be blank or null if mutation succeeded.
+    """
+    field :messages, list_of(:validation_message)
+
+    @desc "The object created/updated/deleted by the mutation"
+    field :result, :boolean
+  end
 
   @desc "Parameters for sending a location update"
   input_object :user_location_update_input do

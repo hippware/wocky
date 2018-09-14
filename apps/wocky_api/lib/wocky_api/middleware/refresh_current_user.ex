@@ -26,6 +26,13 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
         } = resolution,
         _
       ) do
-    %{resolution | context: %{context | current_user: User.get_user(id, user)}}
+    %{
+      resolution
+      | context:
+          case User.get_user(id, user) do
+            nil -> Map.delete(context, :current_user)
+            updated_user -> %{context | current_user: updated_user}
+          end
+    }
   end
 end
