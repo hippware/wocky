@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix crash with further requests after user deletion (PR #1842)
+* Update push notification certificates (#1843)
+
+
 # 2018.9.13+r90cb411
 
 * Make bots visible whenever a user is subscribed to them (PR #1841)
