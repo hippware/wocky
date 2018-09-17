@@ -1,23 +1,44 @@
 defmodule Wocky.Bot.InvitationTest do
-  use Wocky.DataCase
+  use Wocky.WatcherHelper
 
+  alias Faker.Code
+  alias Pigeon.APNS.Notification
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
+  alias Wocky.Push
+  alias Wocky.Push.Sandbox
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
 
   setup do
-    [user, invitee] = Factory.insert_list(2, :user)
+    [user, invitee] = Factory.insert_list(2, :user, resource: "testing")
     bot = Factory.insert(:bot, user: user)
+
+    Sandbox.clear_notifications(global: true)
+
     {:ok, user: user, invitee: invitee, bot: bot}
   end
 
   describe "put/3" do
     test "insert", shared do
+      token = Code.isbn13()
+      :ok = Push.enable(shared.invitee.id, shared.invitee.resource, token)
       assert {:ok, invitation} =
                Invitation.put(shared.invitee, shared.bot, shared.user)
 
       assert invitation == Repo.get_by(Invitation, id: invitation.id)
       assert invitation.accepted == nil
+
+      msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
+      assert length(msgs) == 1
+
+      assert %Notification{
+               payload: %{
+                 "aps" => %{"alert" => message}
+               }
+             } = hd(msgs)
+
+      assert message == "@#{shared.user.handle} invited you to their bot"
     end
 
     test "refuse invitation to non-owned bot", shared do

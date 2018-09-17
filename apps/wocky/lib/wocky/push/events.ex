@@ -202,4 +202,28 @@ defmodule Wocky.Push.Events do
       make_uri(:followers, nil, false)
     end
   end
+
+  defmodule BotInviteEvent do
+    @moduledoc false
+
+    defstruct [:from, :to, :bot]
+
+    @type t :: %__MODULE__{
+            from: User.t(),
+            to: User.t(),
+            bot: Bot.t()
+          }
+
+    use ExConstructor
+  end
+
+  defimpl Event, for: BotInviteEvent do
+    import Wocky.Push.Events.Utils
+
+    def message(%BotInviteEvent{from: from}) do
+      get_handle(from) <> " invited you to their bot"
+    end
+
+    def uri(%BotInviteEvent{bot: bot}), do: make_uri(:bot, bot.id)
+  end
 end
