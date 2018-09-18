@@ -16,9 +16,7 @@
          handle_geofence_share/3,
          notify_new_viewers/3,
          maybe_notify_desc_change/2,
-         notify_subscribers_and_watchers/4,
-         send_share_notification/3,
-         send_geofence_share_notification/3
+         notify_subscribers_and_watchers/4
         ]).
 
 
@@ -53,18 +51,6 @@ check_can_share(Sharer, Bot) ->
                 false -> {error, cant_share}
             end
     end.
-
-send_share_notification(From, To = #{id := UserID}, Bot) ->
-    Event = ?bot_share_event:new(#{from => From, to => To, bot => Bot}),
-    ?wocky_push:notify_all(UserID, Event).
-
-send_geofence_share_notification(From, To = #{id := UserID}, Bot)
-    when From =/= nil ->
-    Event = ?bot_geofence_share_event:new(
-               #{from => From, to => To, bot => Bot, type => invite}),
-    ?wocky_push:notify_all(UserID, Event);
-send_geofence_share_notification(_, _, _) -> ok.
-
 
 %%%===================================================================
 %%% Access change notifications

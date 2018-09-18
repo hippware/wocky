@@ -90,62 +90,6 @@ defmodule Wocky.Push.Events do
       do: make_uri(:bot, bot.id, true, "visitors")
   end
 
-  defmodule BotShareEvent do
-    @moduledoc false
-
-    defstruct [:from, :to, :bot]
-
-    @type t :: %__MODULE__{
-            from: User.t(),
-            to: User.t(),
-            bot: Bot.t()
-          }
-
-    use ExConstructor
-  end
-
-  defimpl Event, for: BotShareEvent do
-    import Wocky.Push.Events.Utils
-
-    def message(%BotShareEvent{from: from}) do
-      get_handle(from) <> " shared a bot with you!"
-    end
-
-    def uri(%BotShareEvent{bot: bot}), do: make_uri(:bot, bot.id)
-  end
-
-  defmodule BotGeofenceShareEvent do
-    @moduledoc false
-
-    defstruct [:from, :to, :bot, :type]
-
-    @type type :: :invite | :accept
-
-    @type t :: %__MODULE__{
-            from: User.t(),
-            to: User.t(),
-            bot: Bot.t(),
-            type: type()
-          }
-
-    use ExConstructor
-  end
-
-  defimpl Event, for: BotGeofenceShareEvent do
-    import Wocky.Push.Events.Utils
-
-    def message(%BotGeofenceShareEvent{from: from, bot: bot, type: :invite}) do
-      get_handle(from) <> " wants to know when you are at " <> get_title(bot)
-    end
-
-    def message(%BotGeofenceShareEvent{from: from, bot: bot, type: :accept}) do
-      get_handle(from) <>
-        " accepted your presence request for " <> get_title(bot)
-    end
-
-    def uri(%BotGeofenceShareEvent{bot: bot}), do: make_uri(:bot, bot.id)
-  end
-
   defmodule NewMessageEvent do
     @moduledoc false
 
@@ -220,10 +164,34 @@ defmodule Wocky.Push.Events do
   defimpl Event, for: BotInviteEvent do
     import Wocky.Push.Events.Utils
 
-    def message(%BotInviteEvent{from: from}) do
-      get_handle(from) <> " invited you to their bot"
+    def message(%BotInviteEvent{from: from, bot: bot}) do
+      get_handle(from) <> " invited you to follow " <> get_title(bot)
     end
 
     def uri(%BotInviteEvent{bot: bot}), do: make_uri(:bot, bot.id)
+  end
+
+  defmodule BotInvitationAcceptEvent do
+    @moduledoc false
+
+    defstruct [:from, :to, :bot]
+
+    @type t :: %__MODULE__{
+            from: User.t(),
+            to: User.t(),
+            bot: Bot.t()
+          }
+
+    use ExConstructor
+  end
+
+  defimpl Event, for: BotInvitationAcceptEvent do
+    import Wocky.Push.Events.Utils
+
+    def message(%BotInvitationAcceptEvent{from: from, bot: bot}) do
+      get_handle(from) <> " accepted your invitation to " <> get_title(bot)
+    end
+
+    def uri(%BotInvitationAcceptEvent{bot: bot}), do: make_uri(:bot, bot.id)
   end
 end

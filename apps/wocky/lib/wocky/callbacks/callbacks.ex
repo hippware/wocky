@@ -7,7 +7,6 @@ defmodule Wocky.Callbacks do
   alias Wocky.Callbacks.Bot
   alias Wocky.Callbacks.BotInvitation
   alias Wocky.Callbacks.BotItem
-  alias Wocky.Callbacks.BotSubscription
   alias Wocky.Callbacks.RosterItem
   alias Wocky.Callbacks.User
 
@@ -16,7 +15,6 @@ defmodule Wocky.Callbacks do
     Bot,
     BotInvitation,
     BotItem,
-    BotSubscription,
     RosterItem,
     User
   ]

@@ -428,10 +428,6 @@ subscribe_geofence(Config) ->
           check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
                              expected_guest_retrieve_fields(true, 1)),
 
-          timer:sleep(500),
-          1 = length(list_notifications()),
-          clear_notifications(),
-
           % Carol cancels guesthood...
           expect_iq_success(subscribe_guest_stanza(false), Carol),
           check_returned_bot(expect_iq_success(retrieve_stanza(), Carol),
@@ -893,12 +889,8 @@ share(Config) ->
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
 
-        set_notifications(true, Tim),
-
         % Tim can't see the private bot because it's not shared to him
         expect_iq_error(retrieve_stanza(), Tim),
-
-        [] = list_notifications(),
 
         % Alice shares the bot to him
         escalus:send(Alice, share_stanza(?BOT, Alice, Tim, false)),
@@ -907,19 +899,14 @@ share(Config) ->
         % Tim can now see the bot
         expect_iq_success(retrieve_stanza(), Tim),
 
-        1 = length(list_notifications()),
-
         test_helper:ensure_all_clean([Alice, Tim])
       end).
 
 share_multicast(Config) ->
     reset_tables(Config),
-    clear_notifications(),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
-
-        set_notifications(true, Tim),
 
         % Alice shares the bot to him
         Stanza = multicast_SUITE:multicast_stanza(
@@ -934,16 +921,11 @@ share_multicast(Config) ->
         % Tim can now see the bot
         expect_iq_success(retrieve_stanza(), Tim),
 
-        [N] = list_notifications(),
-        ?assert(
-           binary:match(extract_alert_body(N), <<"shared a bot">>) =/= nomatch),
-
         test_helper:ensure_all_clean([Alice, Tim])
       end).
 
 geofence_share(Config) ->
     reset_tables(Config),
-    clear_notifications(),
     escalus:story(Config, [{alice, 1}, {tim, 1}],
       fun(Alice, Tim) ->
         set_visibility(Alice, ?WOCKY_BOT_VIS_FRIENDS, [?BOT]),
@@ -955,13 +937,6 @@ geofence_share(Config) ->
         escalus:send(Alice, share_stanza(?BOT, Alice, Tim, true)),
 
         escalus:assert(is_message, escalus:wait_for_stanza(Tim)),
-
-        timer:sleep(400),
-
-        [N] = list_notifications(),
-        ?assert(
-           binary:match(extract_alert_body(N),
-                        <<"wants to know">>) =/= nomatch),
 
         unwatch_hs(Tim),
 
@@ -1093,12 +1068,6 @@ get_visitors(Config) ->
 %%--------------------------------------------------------------------
 %% Helpers
 %%--------------------------------------------------------------------
-
-clear_notifications() ->
-    ?wocky_push_sandbox:clear_notifications([{global, true}]).
-
-list_notifications() ->
-    ?wocky_push_sandbox:wait_notifications([{count, 1}, {global, true}]).
 
 new_id_stanza() ->
     test_helper:iq_set(?NS_BOT, #xmlel{name = <<"new-id">>}).
