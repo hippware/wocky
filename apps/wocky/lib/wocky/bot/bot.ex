@@ -534,10 +534,8 @@ defmodule Wocky.Bot do
     )
     |> where(
       [b, ..., sub, share],
-      b.user_id == ^user.id
-      or b.public
-      or not is_nil(sub.user_id)
-      or not is_nil(share.user_id)
+      b.user_id == ^user.id or b.public or not is_nil(sub.user_id) or
+        not is_nil(share.user_id)
     )
   end
 
