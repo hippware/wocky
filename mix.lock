@@ -129,7 +129,7 @@
   "quickrand": {:hex, :quickrand, "1.7.3", "0e4fb48fac904fe0c6e21d7e8c31a288a0700e1e81a35b38b649fc119079755d", [:rebar3], [], "hexpm"},
   "ranch": {:hex, :ranch, "1.6.2", "6db93c78f411ee033dbb18ba8234c5574883acb9a75af0fb90a9b82ea46afa00", [:rebar3], [], "hexpm"},
   "recon": {:hex, :recon, "2.3.6", "2bcad0cf621fb277cabbb6413159cd3aa30265c2dee42c968697988b30108604", [:rebar3], [], "hexpm"},
-  "redix": {:hex, :redix, "0.7.1", "25a6c1c0d9b2d12a35aef759f9e49bd9bca00e0cd857ce766412f08fdda72163", [:mix], [{:connection, "~> 1.0", [hex: :connection, repo: "hexpm", optional: false]}], "hexpm"},
+  "redix": {:hex, :redix, "0.8.0", "4e5a849856b33fe1d6163afe1ca9345a03a134cbf0258e44251a8378ab647fec", [:mix], [], "hexpm"},
   "redo": {:hex, :redo, "2.0.1", "b895c67f4c1266db8fecca0079fbab65bdfaf7c2f5618c8edbdbf4800e7e248b", [:rebar], [], "hexpm"},
   "reprise": {:hex, :reprise, "0.5.1", "8b6e6266c46780e47f89e8e03e5fc945348dc0d5eb1e47b5ba017481d3a5f5dd", [:mix], [], "hexpm"},
   "slack_ex": {:hex, :slack_ex, "0.1.0", "64e819c1e874cb053f097d3b5989f4cd839761b10bab9c4e41cc45865853ad38", [:mix], [{:httpoison, "~> 0.11", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
