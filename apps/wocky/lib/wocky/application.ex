@@ -32,19 +32,12 @@ defmodule Wocky.Application do
           worker(Wocky.Index, []),
           worker(Wocky.Push.Sandbox, []),
           worker(Wocky.Watcher.Client, []),
-          %{
-            id: Dawdle,
-            start: {Dawdle, :start_link, []}
-          },
+          %{id: Dawdle, start: {Dawdle, :start_link, []}},
           {Redix,
-           [
-             [
-               host: redis_config[:host],
-               port: redis_config[:port],
-               database: redis_config[:db]
-             ],
-             [name: Redix]
-           ]}
+           host: redis_config[:host],
+           port: redis_config[:port],
+           database: redis_config[:db],
+           name: Redix}
         ],
         strategy: :one_for_one,
         name: Wocky.Supervisor
