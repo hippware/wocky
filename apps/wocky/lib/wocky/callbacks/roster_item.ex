@@ -5,6 +5,8 @@ defmodule Wocky.Callbacks.RosterItem do
 
   use Wocky.Watcher, type: Wocky.Roster.Item, events: [:insert, :update]
 
+  alias Wocky.Push
+  alias Wocky.Push.Events.NewFollowerEvent
   alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.User.Notification.UserFollow
@@ -26,6 +28,9 @@ defmodule Wocky.Callbacks.RosterItem do
 
     if not (is_nil(item.user) or is_nil(item.contact)) do
       UserFollow.notify(item.contact, item.user)
+
+      event = NewFollowerEvent.new(user: item.user, follower: item.contact)
+      Push.notify_all(item.user.id, event)
     end
   end
 end

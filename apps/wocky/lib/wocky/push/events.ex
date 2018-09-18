@@ -195,7 +195,7 @@ defmodule Wocky.Push.Events do
     import Wocky.Push.Events.Utils
 
     def message(%NewFollowerEvent{follower: follower} = _event) do
-      get_handle(follower) <> " just followed you!"
+      get_handle(follower) <> " started following you"
     end
 
     def uri(%NewFollowerEvent{} = _event) do

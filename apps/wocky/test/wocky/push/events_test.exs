@@ -101,7 +101,7 @@ defmodule Wocky.Push.EventsTest do
     test "returns an appropriate message", %{user: u, follower: f} do
       msg = Event.message(%NewFollowerEvent{user: u, follower: f})
       assert msg =~ @test_handle
-      assert msg =~ "just followed you!"
+      assert msg =~ "started following you"
     end
 
     test "returns an appropriate uri", %{user: u, follower: f} do

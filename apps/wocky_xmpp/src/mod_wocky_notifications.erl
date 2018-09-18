@@ -13,7 +13,6 @@
 
 %% Hook callbacks
 -export([user_send_packet_hook/4,
-         roster_updated_hook/5,
          remove_user_hook/3]).
 
 %% IQ handler
@@ -37,7 +36,6 @@ stop(Host) ->
 
 hooks() ->
     [{user_send_packet, user_send_packet_hook},
-     {roster_updated,   roster_updated_hook},
      {remove_user,      remove_user_hook}].
 
 
@@ -126,26 +124,6 @@ get_image(Packet) ->
                      {element, <<"url">>},
                      cdata],
                     <<"">>).
-
-
-%% roster_updated ----------------------------------------------------
-roster_updated_hook(
-  Acc,
-  UserID,
-  _Server,
-  #wocky_roster{subscription = OldSubscription},
-  #wocky_roster{subscription = NewSubscription, contact_jid = ContactJID}) ->
-    case {OldSubscription, NewSubscription} of
-        {none, from} ->
-            User = ?wocky_repo:get(?wocky_user, UserID),
-            Follower = ?wocky_user:get_by_jid(jid:make(ContactJID)),
-            Event = ?new_follower_event:new(#{user => User,
-                                              follower => Follower}),
-            Result = ?wocky_push:notify_all(UserID, Event),
-            mongoose_acc:put(result, Result, Acc);
-        _ ->
-            mongoose_acc:put(result, ok, Acc)
-    end.
 
 %% remove_user -------------------------------------------------------
 remove_user_hook(Acc, User, _Server) ->

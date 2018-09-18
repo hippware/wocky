@@ -53,7 +53,6 @@
 -define(wocky_home_stream_id,    'Elixir.Wocky.HomeStream.ID').
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStream.Item').
 -define(wocky_index,             'Elixir.Wocky.Index').
--define(wocky_new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
@@ -83,7 +82,6 @@
 
 -define(wocky_push, 'Elixir.Wocky.Push').
 -define(new_message_event, 'Elixir.Wocky.Push.Events.NewMessageEvent').
--define(new_follower_event, 'Elixir.Wocky.Push.Events.NewFollowerEvent').
 -define(bot_share_event, 'Elixir.Wocky.Push.Events.BotShareEvent').
 -define(bot_geofence_share_event,
         'Elixir.Wocky.Push.Events.BotGeofenceShareEvent').
