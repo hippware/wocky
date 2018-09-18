@@ -394,8 +394,7 @@ defmodule Wocky.BotSpec do
          shared_bot: shared_bot,
          private_bot: private_bot,
          pending_bot: pending_bot,
-         subscribed_bot: subscribed_bot
-        }
+         subscribed_bot: subscribed_bot}
       end
 
       it "should allow owned bots" do
