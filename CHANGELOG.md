@@ -7,6 +7,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Fix crash with further requests after user deletion (PR #1842)
 * Update push notification certificates (#1843)
+* Update: credo (PR #1846), pigeon (PR #1849), redix (PR #1851)
 
 
 # 2018.9.13+r90cb411
