@@ -3,8 +3,8 @@ defmodule Wocky.Push.EventsTest do
   use Wocky.DataCase
 
   alias Wocky.Push.Event
+  alias Wocky.Push.Events.BotInviteEvent
   alias Wocky.Push.Events.BotPerimeterEvent
-  alias Wocky.Push.Events.BotShareEvent
   alias Wocky.Push.Events.NewFollowerEvent
   alias Wocky.Push.Events.NewMessageEvent
   alias Wocky.Repo.Factory
@@ -45,25 +45,6 @@ defmodule Wocky.Push.EventsTest do
     end
   end
 
-  describe "BotShareEvent" do
-    test "uses 'Someone' when there is no user handle" do
-      assert Event.message(%BotShareEvent{}) =~ "Someone"
-    end
-
-    test "returns an appropriate message", %{user: u} do
-      msg = Event.message(%BotShareEvent{from: u})
-      assert msg =~ "shared a bot with you!"
-      assert msg =~ @test_handle
-    end
-
-    test "returns an appropriate URI", %{user: u, bot: b} do
-      uri = Event.uri(%BotShareEvent{from: u, bot: b})
-      assert uri =~ "/bot"
-      assert uri =~ "/#{@test_server}"
-      assert uri =~ "/#{b.id}"
-    end
-  end
-
   describe "NewMessageEvent" do
     setup do
       {:ok, sender: Factory.build(:user)}
@@ -100,12 +81,31 @@ defmodule Wocky.Push.EventsTest do
     test "returns an appropriate message", %{user: u, follower: f} do
       msg = Event.message(%NewFollowerEvent{user: u, follower: f})
       assert msg =~ @test_handle
-      assert msg =~ "just followed you!"
+      assert msg =~ "started following you"
     end
 
     test "returns an appropriate uri", %{user: u, follower: f} do
       uri = Event.uri(%NewFollowerEvent{user: u, follower: f})
       assert uri =~ "/followers"
+    end
+  end
+
+  describe "BotInviteEvent" do
+    test "uses 'Someone' when there is no user handle" do
+      assert Event.message(%BotInviteEvent{}) =~ "Someone"
+    end
+
+    test "returns an appropriate message", %{user: u} do
+      msg = Event.message(%BotInviteEvent{from: u})
+      assert msg =~ "invited you to follow"
+      assert msg =~ @test_handle
+    end
+
+    test "returns an appropriate URI", %{user: u, bot: b} do
+      uri = Event.uri(%BotInviteEvent{from: u, bot: b})
+      assert uri =~ "/bot"
+      assert uri =~ "/#{@test_server}"
+      assert uri =~ "/#{b.id}"
     end
   end
 end

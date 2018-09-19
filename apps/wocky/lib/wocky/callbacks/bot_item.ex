@@ -10,7 +10,11 @@ defmodule Wocky.Callbacks.BotItem do
   alias Wocky.User.Notification.BotItem
 
   def handle_insert(%Event{new: new}) do
-    maybe_notify(new)
+    item = maybe_notify(new)
+
+    if item.bot != nil do
+      BotItem.notify(item)
+    end
   end
 
   def handle_delete(%Event{old: old}) do
@@ -22,7 +26,8 @@ defmodule Wocky.Callbacks.BotItem do
 
     if bot != nil do
       HomeStream.update_ref_bot(bot)
-      BotItem.notify(item)
     end
+
+    item
   end
 end

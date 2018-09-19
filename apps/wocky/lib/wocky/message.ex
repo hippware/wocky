@@ -8,7 +8,6 @@ defmodule Wocky.Message do
   import Ecto.Query
 
   alias Ecto.Queryable
-  alias Wocky.Repo
   alias Wocky.User
 
   @foreign_key_type :binary_id

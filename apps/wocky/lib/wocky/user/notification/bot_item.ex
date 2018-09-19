@@ -5,6 +5,8 @@ defmodule Wocky.User.Notification.BotItem do
   """
 
   alias Wocky.Bot
+  alias Wocky.Push
+  alias Wocky.Push.Events.NewBotItemEvent
   alias Wocky.Repo
   alias Wocky.User.Notification
 
@@ -35,6 +37,9 @@ defmodule Wocky.User.Notification.BotItem do
       bot_item_id: item.id
     }
     |> Notification.notify()
+
+    event = NewBotItemEvent.new(author: item.user, to: user, item: item)
+    Push.notify_all(user.id, event)
   end
 end
 

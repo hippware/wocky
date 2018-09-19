@@ -1,12 +1,11 @@
 defmodule Wocky.Wachter.ClientTest do
-  use ExUnit.Case, async: false
+  use Wocky.WatcherHelper
 
   alias Ecto.Changeset
   alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.User
   alias Wocky.Watcher.Client
   alias WockyDBWatcher.Event
 
@@ -26,22 +25,6 @@ defmodule Wocky.Wachter.ClientTest do
       send(pid, event)
       {:reply, :ok, state}
     end
-  end
-
-  setup_all do
-    Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
-    # Give any DB notifications still in the system from previous tests
-    # a grace period to finish up before we start the watcher
-    :timer.sleep(500)
-    Application.start(:wocky_db_watcher)
-    Client.start_link()
-
-    # Because we can't use the Sandbox in its :manual mode (because it doesn't
-    # cause the NOTIFY actions in the DB to fire) we have to do our own cleanup
-    on_exit(fn ->
-      Application.stop(:wocky_db_watcher)
-      Repo.delete_all(User)
-    end)
   end
 
   setup do

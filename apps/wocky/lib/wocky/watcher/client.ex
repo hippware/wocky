@@ -15,6 +15,7 @@ defmodule Wocky.Watcher.Client do
 
   use GenServer
 
+  alias Pigeon.APNS.Notification
   alias Wocky.Watcher.EventDecoder
   alias Wocky.Watcher.Poller
 
@@ -79,6 +80,8 @@ defmodule Wocky.Watcher.Client do
   def handle_call(:clear_all_subscriptions, _from, state) do
     {:reply, :ok, %{state | subscribers: %{}}}
   end
+
+  def handle_info(%Notification{}, state), do: {:noreply, state}
 
   defp forward_event(json_event, state) do
     {object, event} = EventDecoder.from_json(json_event, state.table_map)
