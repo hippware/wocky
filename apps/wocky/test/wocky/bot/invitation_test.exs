@@ -39,7 +39,8 @@ defmodule Wocky.Bot.InvitationTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{shared.user.handle} invited you to follow #{shared.bot.title}"
+      assert message ==
+               "@#{shared.user.handle} invited you to follow #{shared.bot.title}"
 
       clear_expected_notifications(1)
     end
@@ -141,7 +142,11 @@ defmodule Wocky.Bot.InvitationTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{shared.invitee.handle} accepted your invitation to #{shared.bot.title}"
+      assert message ==
+               "@#{shared.invitee.handle} accepted your invitation to #{
+                 shared.bot.title
+               }"
+
       clear_expected_notifications(1)
     end
 

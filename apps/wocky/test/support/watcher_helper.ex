@@ -35,7 +35,11 @@ defmodule Wocky.WatcherHelper do
   end
 
   def clear_expected_notifications(count) do
-    result = length(Sandbox.wait_notifications(global: true, timeout: 500, count: count)) == count
+    result =
+      length(
+        Sandbox.wait_notifications(global: true, timeout: 500, count: count)
+      ) == count
+
     Sandbox.clear_notifications(global: true)
     result
   end

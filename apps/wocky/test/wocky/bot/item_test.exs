@@ -35,7 +35,8 @@ defmodule Wocky.Bot.ItemTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{shared.author.handle} commented on #{shared.bot.title}"
+      assert message ==
+               "@#{shared.author.handle} commented on #{shared.bot.title}"
 
       clear_expected_notifications(1)
     end

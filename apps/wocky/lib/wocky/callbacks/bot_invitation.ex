@@ -18,7 +18,8 @@ defmodule Wocky.Callbacks.BotInvitation do
     if new.user != nil && new.invitee != nil && new.bot != nil do
       InvNotification.notify(new)
 
-      event = BotInviteEvent.new(%{from: new.user, to: new.invitee, bot: new.bot})
+      event =
+        BotInviteEvent.new(%{from: new.user, to: new.invitee, bot: new.bot})
 
       Push.notify_all(new.invitee.id, event)
     end
@@ -29,14 +30,18 @@ defmodule Wocky.Callbacks.BotInvitation do
         new: %Invitation{accepted: accepted?} = new
       })
       when not is_nil(accepted?) do
-
     new = Repo.preload(new, [:user, :invitee, :bot])
 
     if new.user != nil && new.invitee != nil && new.bot != nil do
       InvitationResponse.notify(new)
 
-      if (accepted?) do
-        event = BotInvitationAcceptEvent.new(%{from: new.invitee, to: new.user, bot: new.bot})
+      if accepted? do
+        event =
+          BotInvitationAcceptEvent.new(%{
+            from: new.invitee,
+            to: new.user,
+            bot: new.bot
+          })
 
         Push.notify_all(new.user.id, event)
       end
