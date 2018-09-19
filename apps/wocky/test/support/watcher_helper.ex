@@ -2,10 +2,12 @@ defmodule Wocky.WatcherHelper do
   @moduledoc """
   Module to set up the db watcher/callback system for test cases that require it
   """
+  alias Wocky.Push.Sandbox
 
   defmacro __using__(_) do
     quote do
       use ExUnit.Case, async: false
+      import unquote(__MODULE__)
 
       setup_all do
         Wocky.Watcher.Client.clear_all_subscriptions()
@@ -25,5 +27,16 @@ defmodule Wocky.WatcherHelper do
         end)
       end
     end
+  end
+
+  def no_more_push_notifications() do
+    msgs = Sandbox.wait_notifications(global: true)
+    length(msgs) == 0
+  end
+
+  def clear_expected_notifications(count) do
+    result = length(Sandbox.wait_notifications(global: true, timeout: 500, count: count)) == count
+    Sandbox.clear_notifications(global: true)
+    result
   end
 end

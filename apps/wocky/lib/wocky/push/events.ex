@@ -2,6 +2,7 @@ defmodule Wocky.Push.Events do
   @moduledoc false
 
   alias Wocky.Bot
+  alias Wocky.Bot.Item
   alias Wocky.Push.Event
   alias Wocky.User
 
@@ -193,5 +194,29 @@ defmodule Wocky.Push.Events do
     end
 
     def uri(%BotInvitationAcceptEvent{bot: bot}), do: make_uri(:bot, bot.id)
+  end
+
+  defmodule NewBotItemEvent do
+    @moduledoc false
+
+    defstruct [:author, :to, :item]
+
+    @type t :: %__MODULE__{
+            author: User.t(),
+            to: User.t(),
+            item: Item.t()
+          }
+
+    use ExConstructor
+  end
+
+  defimpl Event, for: NewBotItemEvent do
+    import Wocky.Push.Events.Utils
+
+    def message(%NewBotItemEvent{author: author, item: item}) do
+      get_handle(author) <> " commented on " <> get_title(item.bot)
+    end
+
+    def uri(%NewBotItemEvent{item: item}), do: make_uri(:bot, item.bot.id)
   end
 end

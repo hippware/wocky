@@ -172,14 +172,4 @@ defmodule Wocky.Bot.InvitationTest do
       assert no_more_push_notifications()
     end
   end
-
-  defp no_more_push_notifications() do
-    msgs = Sandbox.wait_notifications(global: true)
-    assert length(msgs) == 0
-  end
-
-  defp clear_expected_notifications(count) do
-    assert length(Sandbox.wait_notifications(global: true, timeout: 500, count: count)) == count
-    Sandbox.clear_notifications(global: true)
-  end
 end
