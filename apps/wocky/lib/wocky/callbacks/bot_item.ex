@@ -22,7 +22,7 @@ defmodule Wocky.Callbacks.BotItem do
   end
 
   defp maybe_notify(item) do
-    %{bot: bot} = item = Repo.preload(item, [:bot, :user])
+    %{bot: bot} = item = Repo.preload(item, [:bot])
 
     if bot != nil do
       HomeStream.update_ref_bot(bot)

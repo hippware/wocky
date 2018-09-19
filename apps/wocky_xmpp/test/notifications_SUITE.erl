@@ -48,6 +48,7 @@ new_follower(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}],
       fun (Alice, Bob) ->
         test_helper:follow(Alice, Bob),
+        timer:sleep(500),
 
         [{_, {?wocky_push, notify_all,
               [?BOB, #{user := EUser, follower := EFollower}]}, _}]
