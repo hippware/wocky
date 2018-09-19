@@ -1,0 +1,29 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: wocky-deploy
+  namespace: wocky-staging
+  labels:
+    app: wocky
+    mod: deploy
+    env: staging
+spec:
+  schedule: "0 16 * * 3"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: wocky
+            mod: deploy
+            env: staging
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: eks-deploy
+              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/eks-deploy:latest
+              imagePullPolicy: Always
+              args: ["./promote-build", "testing", "staging"]
+              envFrom:
+                - secretRef:
+                    name: wocky-deploy-secrets
