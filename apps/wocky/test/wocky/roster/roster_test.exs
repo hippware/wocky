@@ -23,7 +23,7 @@ defmodule Wocky.Bot.RosterTest do
     test "start following", shared do
       Roster.follow(shared.user2.id, shared.user1.id)
 
-      msgs = Sandbox.wait_notifications(count: 1, timeout: 10000, global: true)
+      msgs = Sandbox.wait_notifications(count: 1, timeout: 10_000, global: true)
       assert length(msgs) == 1
 
       assert %Notification{
