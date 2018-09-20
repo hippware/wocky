@@ -392,18 +392,10 @@ get_location_from_attrs(Attrs) ->
        ]).
 
 % Old-style (Algolia-based) explore-nearby
-get_bots_near_location(From, Lat, Lon) ->
-    case ?wocky_index:geosearch(Lat, Lon) of
-        {ok, AllBots} ->
-            User = ?wocky_user:get_by_jid(From),
-            VisibleBots = lists:filter(
-                            ?wocky_user:'searchable?'(User, _), AllBots),
-            {ok, make_geosearch_result(VisibleBots, User)};
-        {error, indexing_disabled} ->
-            {error,
-             ?ERRT_FEATURE_NOT_IMPLEMENTED(
-                ?MYLANG, <<"Index search is not configured on this server">>)}
-    end.
+get_bots_near_location(_From, _Lat, _Lon) ->
+        {error,
+         ?ERRT_FEATURE_NOT_IMPLEMENTED(
+            ?MYLANG, <<"Algolia-based geosearch has been removed">>)}.
 
 get_subscribed_bots(QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
     {ok,
@@ -415,24 +407,6 @@ get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
     FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
-
-make_geosearch_result(Bots, FromUser) ->
-    #xmlel{name = <<"bots">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = make_geosearch_els(Bots, FromUser)}.
-
-make_geosearch_els(Bots, FromUser) ->
-    [make_geosearch_el(Bot, FromUser) || Bot <- Bots].
-
-geosearch_el_fields() ->
-    [id, server, user_id, title, image, location, radius, distance].
-
-make_geosearch_el(Bot, FromUser) ->
-    JidField = make_field(<<"jid">>, jid, ?wocky_bot:to_jid(Bot)),
-    MapFields = maps:fold(fun to_field/3, [],
-                          maps:with(geosearch_el_fields(), Bot)),
-    RetFields = encode_fields([JidField | MapFields], FromUser),
-    make_ret_stanza(RetFields).
 
 get_bots_for_owner(From, IQ, OwnerBin) ->
     do([error_m ||

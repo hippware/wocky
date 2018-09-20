@@ -14,7 +14,6 @@ defmodule Wocky.UserSpec do
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
   alias Wocky.Email
-  alias Wocky.Index.TestIndexer
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.TROS
@@ -216,260 +215,238 @@ defmodule Wocky.UserSpec do
     end
   end
 
-  describe "tests using TestIndexer", async: false do
+  describe "update/2", async: false do
     before do
-      TestIndexer.reset()
+      Application.put_env(:wocky, :send_welcome_email, true)
+      :meck.new(Email)
+      :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
     end
 
-    describe "update/2", async: false do
+    finally do
+      :meck.unload(Email)
+    end
+
+    context "when the user does not exist" do
       before do
-        Application.put_env(:wocky, :send_welcome_email, true)
-        :meck.new(Email)
-        :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
+        fields = %{
+          resource: ID.new(),
+          handle: Factory.new_handle(),
+          first_name: Name.first_name(),
+          last_name: Name.last_name(),
+          email: Internet.email(),
+          tagline: Lorem.sentence()
+        }
+
+        result = User.update(ID.new(), fields)
+        {:ok, fields: fields, result: result}
       end
 
-      finally do
-        :meck.unload(Email)
-      end
-
-      context "when the user does not exist" do
-        before do
-          fields = %{
-            resource: ID.new(),
-            handle: Factory.new_handle(),
-            first_name: Name.first_name(),
-            last_name: Name.last_name(),
-            email: Internet.email(),
-            tagline: Lorem.sentence()
-          }
-
-          result = User.update(ID.new(), fields)
-          {:ok, fields: fields, result: result}
-        end
-
-        it "should return an error" do
-          shared.result |> should(be_error_result())
-        end
-      end
-
-      context "standard update" do
-        before do
-          fields = %{
-            resource: ID.new(),
-            handle: Factory.new_handle(),
-            first_name: Name.first_name(),
-            last_name: Name.last_name(),
-            email: Internet.email(),
-            tagline: Lorem.sentence()
-          }
-
-          result = User.update(shared.id, fields)
-          {:ok, fields: fields, result: result}
-        end
-
-        it "should return :ok" do
-          shared.result |> should(be_ok_result())
-        end
-
-        it "should update the user's attributes" do
-          new_user = Repo.get(User, shared.id)
-          new_user.handle |> should(eq shared.fields.handle)
-          new_user.first_name |> should(eq shared.fields.first_name)
-          new_user.last_name |> should(eq shared.fields.last_name)
-          new_user.email |> should(eq shared.fields.email)
-          new_user.tagline |> should(eq shared.fields.tagline)
-        end
-
-        it "should not update the user's resource" do
-          new_user = Repo.get(User, shared.id)
-          new_user.resource |> should(be_nil())
-        end
-
-        context "full text search index" do
-          it "should be updated" do
-            TestIndexer.get_index_operations() |> should_not(be_empty())
-          end
-        end
-
-        it "should trigger the sending of a welcome email" do
-          :meck.validate(Email) |> should(be_true())
-          :meck.called(Email, :send_welcome_email, :_) |> should(be_true())
-        end
-
-        it "should mark the welcome email as sent" do
-          new_user = Repo.get(User, shared.id)
-          new_user.welcome_sent |> should(be_true())
-        end
-
-        context "when a valid avatar is passed" do
-          before do
-            %Metadata{id: id} =
-              Factory.insert(
-                :tros_metadata,
-                user: shared.user,
-                access: "public"
-              )
-
-            avatar_url = TROS.make_url(id)
-
-            {:ok, avatar_id: id, avatar_url: avatar_url}
-          end
-
-          context "and the user does not have an existing avatar" do
-            before do
-              result = User.update(shared.id, %{avatar: shared.avatar_url})
-              {:ok, result: result}
-            end
-
-            it "should return :ok" do
-              shared.result |> should(be_ok_result())
-            end
-
-            it "should update the user's avatar" do
-              new_user = Repo.get(User, shared.id)
-              new_user.avatar |> should(eq shared.avatar_url)
-            end
-          end
-
-          context "and the user already has that avatar" do
-            before do
-              shared.user
-              |> cast(%{avatar: shared.avatar_url}, [:avatar])
-              |> Repo.update!()
-
-              result = User.update(shared.id, %{avatar: shared.avatar_url})
-              {:ok, result: result}
-            end
-
-            it "should return :ok" do
-              shared.result |> should(be_ok_result())
-            end
-
-            it "should not change the user's avatar" do
-              new_user = Repo.get(User, shared.id)
-              new_user.avatar |> should(eq shared.avatar_url)
-            end
-
-            it "should not try to delete the avatar" do
-              Metadata.get(shared.avatar_id) |> should_not(be_nil())
-            end
-          end
-
-          context "and the user has a valid avatar" do
-            before do
-              avatar_id = ID.new()
-              avatar_url = TROS.make_url(avatar_id)
-              Metadata.put(avatar_id, shared.user.id, "public")
-
-              shared.user
-              |> cast(%{avatar: avatar_url}, [:avatar])
-              |> Repo.update!()
-
-              result = User.update(shared.id, %{avatar: shared.avatar_url})
-              {:ok, result: result, old_avatar_id: avatar_id}
-            end
-
-            it "should return :ok" do
-              shared.result |> should(be_ok_result())
-            end
-
-            it "should update the user's avatar" do
-              new_user = Repo.get(User, shared.id)
-              new_user.avatar |> should(eq shared.avatar_url)
-            end
-
-            it "should delete the old avatar" do
-              Metadata.get(shared.old_avatar_id) |> should(be_nil())
-            end
-          end
-        end
-      end
-
-      context "non-indexed user" do
-        before do
-          user = Factory.insert(:user, %{roles: [User.no_index_role()]})
-
-          fields = %{
-            resource: ID.new(),
-            handle: Factory.new_handle(),
-            first_name: Name.first_name(),
-            last_name: Name.last_name(),
-            email: Internet.email(),
-            tagline: Lorem.sentence()
-          }
-
-          User.update(user.id, fields)
-          :ok
-        end
-
-        it "should not update the index" do
-          TestIndexer.get_index_operations() |> should(be_empty())
-        end
-      end
-
-      context "update to an already-welcomed user" do
-        before do
-          user = Factory.insert(:user, %{welcome_sent: true})
-
-          fields = %{
-            email: Internet.email()
-          }
-
-          User.update(user.id, fields)
-          :ok
-        end
-
-        it "should not re-send the welcome email" do
-          :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
-        end
-      end
-
-      context "update to an un-welcomed user that leaves the email unset" do
-        before do
-          user = Factory.insert(:user, %{email: nil})
-
-          fields = %{
-            first_name: Name.first_name()
-          }
-
-          User.update(user.id, fields)
-          :ok
-        end
-
-        it "should not send a welcome email" do
-          :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
-        end
+      it "should return an error" do
+        shared.result |> should(be_error_result())
       end
     end
 
-    describe "delete/1" do
+    context "standard update" do
       before do
-        {:ok, _} = Account.assign_token(shared.id, ID.new())
-        result = User.delete(shared.id)
-        {:ok, result: result}
+        fields = %{
+          resource: ID.new(),
+          handle: Factory.new_handle(),
+          first_name: Name.first_name(),
+          last_name: Name.last_name(),
+          email: Internet.email(),
+          tagline: Lorem.sentence()
+        }
+
+        result = User.update(shared.id, fields)
+        {:ok, fields: fields, result: result}
       end
 
       it "should return :ok" do
-        shared.result |> should(eq :ok)
+        shared.result |> should(be_ok_result())
       end
 
-      it "should remove the user from the database" do
-        User |> Repo.get(shared.id) |> should(be_nil())
+      it "should update the user's attributes" do
+        new_user = Repo.get(User, shared.id)
+        new_user.handle |> should(eq shared.fields.handle)
+        new_user.first_name |> should(eq shared.fields.first_name)
+        new_user.last_name |> should(eq shared.fields.last_name)
+        new_user.email |> should(eq shared.fields.email)
+        new_user.tagline |> should(eq shared.fields.tagline)
       end
 
-      it "should succeed if the user does not exist" do
-        ID.new() |> User.delete() |> should(eq :ok)
+      it "should not update the user's resource" do
+        new_user = Repo.get(User, shared.id)
+        new_user.resource |> should(be_nil())
       end
 
-      context "full text search index" do
-        it "should be updated" do
-          TestIndexer.get_index_operations() |> should_not(be_empty())
+      it "should trigger the sending of a welcome email" do
+        :meck.validate(Email) |> should(be_true())
+        :meck.called(Email, :send_welcome_email, :_) |> should(be_true())
+      end
+
+      it "should mark the welcome email as sent" do
+        new_user = Repo.get(User, shared.id)
+        new_user.welcome_sent |> should(be_true())
+      end
+
+      context "when a valid avatar is passed" do
+        before do
+          %Metadata{id: id} =
+            Factory.insert(
+              :tros_metadata,
+              user: shared.user,
+              access: "public"
+            )
+
+          avatar_url = TROS.make_url(id)
+
+          {:ok, avatar_id: id, avatar_url: avatar_url}
+        end
+
+        context "and the user does not have an existing avatar" do
+          before do
+            result = User.update(shared.id, %{avatar: shared.avatar_url})
+            {:ok, result: result}
+          end
+
+          it "should return :ok" do
+            shared.result |> should(be_ok_result())
+          end
+
+          it "should update the user's avatar" do
+            new_user = Repo.get(User, shared.id)
+            new_user.avatar |> should(eq shared.avatar_url)
+          end
+        end
+
+        context "and the user already has that avatar" do
+          before do
+            shared.user
+            |> cast(%{avatar: shared.avatar_url}, [:avatar])
+            |> Repo.update!()
+
+            result = User.update(shared.id, %{avatar: shared.avatar_url})
+            {:ok, result: result}
+          end
+
+          it "should return :ok" do
+            shared.result |> should(be_ok_result())
+          end
+
+          it "should not change the user's avatar" do
+            new_user = Repo.get(User, shared.id)
+            new_user.avatar |> should(eq shared.avatar_url)
+          end
+
+          it "should not try to delete the avatar" do
+            Metadata.get(shared.avatar_id) |> should_not(be_nil())
+          end
+        end
+
+        context "and the user has a valid avatar" do
+          before do
+            avatar_id = ID.new()
+            avatar_url = TROS.make_url(avatar_id)
+            Metadata.put(avatar_id, shared.user.id, "public")
+
+            shared.user
+            |> cast(%{avatar: avatar_url}, [:avatar])
+            |> Repo.update!()
+
+            result = User.update(shared.id, %{avatar: shared.avatar_url})
+            {:ok, result: result, old_avatar_id: avatar_id}
+          end
+
+          it "should return :ok" do
+            shared.result |> should(be_ok_result())
+          end
+
+          it "should update the user's avatar" do
+            new_user = Repo.get(User, shared.id)
+            new_user.avatar |> should(eq shared.avatar_url)
+          end
+
+          it "should delete the old avatar" do
+            Metadata.get(shared.old_avatar_id) |> should(be_nil())
+          end
         end
       end
+    end
 
-      it "should remove any tokens associated with the user" do
-        Token |> Repo.get_by(user_id: shared.id) |> should(be_nil())
+    context "non-indexed user" do
+      before do
+        user = Factory.insert(:user, %{roles: [User.no_index_role()]})
+
+        fields = %{
+          resource: ID.new(),
+          handle: Factory.new_handle(),
+          first_name: Name.first_name(),
+          last_name: Name.last_name(),
+          email: Internet.email(),
+          tagline: Lorem.sentence()
+        }
+
+        User.update(user.id, fields)
+        :ok
       end
+    end
+
+    context "update to an already-welcomed user" do
+      before do
+        user = Factory.insert(:user, %{welcome_sent: true})
+
+        fields = %{
+          email: Internet.email()
+        }
+
+        User.update(user.id, fields)
+        :ok
+      end
+
+      it "should not re-send the welcome email" do
+        :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
+      end
+    end
+
+    context "update to an un-welcomed user that leaves the email unset" do
+      before do
+        user = Factory.insert(:user, %{email: nil})
+
+        fields = %{
+          first_name: Name.first_name()
+        }
+
+        User.update(user.id, fields)
+        :ok
+      end
+
+      it "should not send a welcome email" do
+        :meck.called(Email, :send_welcome_email, :_) |> should(be_false())
+      end
+    end
+  end
+
+  describe "delete/1" do
+    before do
+      {:ok, _} = Account.assign_token(shared.id, ID.new())
+      result = User.delete(shared.id)
+      {:ok, result: result}
+    end
+
+    it "should return :ok" do
+      shared.result |> should(eq :ok)
+    end
+
+    it "should remove the user from the database" do
+      User |> Repo.get(shared.id) |> should(be_nil())
+    end
+
+    it "should succeed if the user does not exist" do
+      ID.new() |> User.delete() |> should(eq :ok)
+    end
+
+    it "should remove any tokens associated with the user" do
+      Token |> Repo.get_by(user_id: shared.id) |> should(be_nil())
     end
   end
 

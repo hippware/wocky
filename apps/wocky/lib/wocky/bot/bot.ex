@@ -19,7 +19,6 @@ defmodule Wocky.Bot do
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
   alias Wocky.HomeStream
-  alias Wocky.Index
   alias Wocky.Push
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Repo
@@ -142,13 +141,8 @@ defmodule Wocky.Bot do
   def get_id_from_node(@bot_prefix <> id), do: id
   def get_id_from_node(_), do: nil
 
-  # public? takes a bare map rather than requiring a %Bot struct because it's
-  # used by the bot geosearch. The geosearch retrives partially complete bots
-  # from algolia and stores them in a map. Rather than hitting the DB and
-  # fililng out the Bot struct, we just allow those maps to be used directly
-  # here.
-  @spec public?(map) :: boolean
-  def public?(%{public: is_public}), do: is_public
+  @spec public?(Bot.t()) :: boolean
+  def public?(%Bot{public: is_public}), do: is_public
 
   # ----------------------------------------------------------------------
   # Database interaction
@@ -234,20 +228,12 @@ defmodule Wocky.Bot do
   end
 
   defp do_update(struct, params, op) do
-    case struct |> changeset(params) |> op.() do
-      {:ok, bot} = result ->
-        Index.update(:bot, bot.id, bot)
-        result
-
-      {:error, _} = error ->
-        error
-    end
+    struct |> changeset(params) |> op.()
   end
 
   @spec delete(t) :: :ok
   def delete(bot) do
     Repo.delete(bot)
-    Index.remove(:bot, bot.id)
     update_counter("bot.deleted", 1)
     :ok
   end
