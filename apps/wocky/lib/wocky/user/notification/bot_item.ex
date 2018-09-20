@@ -17,7 +17,7 @@ defmodule Wocky.User.Notification.BotItem do
     :bot_item_id
   ]
 
-  @type t :: __MODULE__
+  @type t :: %__MODULE__{}
 
   def notify(%{bot: bot} = item) do
     %{user: user} = item = Repo.preload(item, :user)

@@ -7,6 +7,7 @@ defmodule Wocky.TrafficLog do
 
   import Ecto.Query
 
+  alias Ecto.Changeset
   alias Timex.Duration
   alias Wocky.JID
   alias Wocky.Repo
@@ -43,7 +44,7 @@ defmodule Wocky.TrafficLog do
   @required_fields [:resource, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
-  @spec put(map) :: {:ok, TrafficLog.t()} | {:error, Ecto.Changeset.t()}
+  @spec put(map) :: {:ok, TrafficLog.t()} | {:error, Changeset.t()}
   def put(fields) do
     %TrafficLog{}
     |> cast(fields, @change_fields)

@@ -32,8 +32,6 @@ defmodule WockyAPI.PipelineLog do
   defp result(result),
     do: inspect(result[:data]) <> " / " <> inspect(result[:errors])
 
-  defp log(nil, _user_id, _context, _incoming), do: :ok
-
   defp log(packet, user_id, context, incoming) do
     %{
       user_id: user_id,

@@ -21,6 +21,7 @@ defmodule Wocky.RSMHelper do
 
   require Record
 
+  alias Ecto.Queryable
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
 
@@ -84,8 +85,7 @@ defmodule Wocky.RSMHelper do
   to retrive the RSM set requested, run the query, and return
   `{objects, rsm_out}`.
   """
-  @spec rsm_query(rsm_in, Ecto.Queryable.t(), atom, sorting) ::
-          {[struct], rsm_out}
+  @spec rsm_query(rsm_in, Queryable.t(), atom, sorting) :: {[struct], rsm_out}
   def rsm_query(rsm_in, queryable, key_field, sorting) do
     rsm_in = sanitise_rsm_in(rsm_in)
     dir = direction(rsm_in(rsm_in, :direction))

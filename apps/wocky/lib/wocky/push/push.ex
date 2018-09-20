@@ -39,7 +39,7 @@ defmodule Wocky.Push do
           resource: User.resource(),
           event: Event.t(),
           retries: non_neg_integer(),
-          resp: APNS.response()
+          resp: Notification.response()
         }
 
   # ===================================================================

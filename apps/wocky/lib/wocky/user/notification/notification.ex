@@ -6,6 +6,7 @@ defmodule Wocky.User.Notification do
   import EctoHomoiconicEnum, only: [defenum: 2]
   import Ecto.Query
 
+  alias Ecto.Queryable
   alias Wocky.{Bot, Repo, User}
 
   alias Wocky.User.Notification.{
@@ -69,7 +70,7 @@ defmodule Wocky.User.Notification do
     Notifier.decode(struct, params)
   end
 
-  @spec put(t(), NotificationType, [atom]) :: {:ok, base()} | {:error, any()}
+  @spec put(map, atom, [atom]) :: {:ok, base()} | {:error, any()}
   def put(params, type, required) do
     params =
       params

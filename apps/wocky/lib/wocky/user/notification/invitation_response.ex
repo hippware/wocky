@@ -11,7 +11,7 @@ defmodule Wocky.User.Notification.InvitationResponse do
     :accepted
   ]
 
-  @type t :: __MODULE__
+  @type t :: %__MODULE__{}
 
   def notify(invitation) do
     Notification.notify(%__MODULE__{

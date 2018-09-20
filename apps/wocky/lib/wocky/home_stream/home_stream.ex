@@ -5,6 +5,7 @@ defmodule Wocky.HomeStream do
 
   import Ecto.Query
 
+  alias Ecto.Queryable
   alias Wocky.Bot
   alias Wocky.HomeStream.{ID, Item, Prepop}
   alias Wocky.JID
@@ -134,7 +135,7 @@ defmodule Wocky.HomeStream do
     end
   end
 
-  @spec get_query(User.id(), Keyword.t()) :: Ecto.Queryable.t()
+  @spec get_query(User.id(), Keyword.t()) :: Queryable.t()
   def get_query(user_id, opts \\ []) do
     Item
     |> with_user(user_id)

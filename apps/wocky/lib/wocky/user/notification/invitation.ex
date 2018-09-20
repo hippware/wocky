@@ -10,7 +10,7 @@ defmodule Wocky.User.Notification.Invitation do
     :bot_id
   ]
 
-  @type t :: __MODULE__
+  @type t :: %__MODULE__{}
 
   def notify(invitation) do
     Notification.notify(%__MODULE__{
