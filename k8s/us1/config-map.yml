@@ -15,9 +15,6 @@ data:
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-us1
   WOCKY_PUSH_ENABLED: "true"
   WOCKY_PUSH_TOPIC: "com.hippware.tinyrobot"
-  WOCKY_INDEXING_SYSTEM: algolia
-  WOCKY_USER_INDEX_NAME: prod_wocky_users
-  WOCKY_BOT_INDEX_NAME: prod_wocky_bots
   WOCKY_ENABLE_BYPASS: "false"
   WOCKY_DB_HOST: wocky-us1.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_us1

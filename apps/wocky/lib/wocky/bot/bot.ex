@@ -15,7 +15,6 @@ defmodule Wocky.Bot do
   alias Wocky.Block
   alias Wocky.Bot.{Invitation, Item, Subscription}
   alias Wocky.GeoUtils
-  alias Wocky.Index
   alias Wocky.Push
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Repo
@@ -219,20 +218,12 @@ defmodule Wocky.Bot do
   end
 
   defp do_update(struct, params, op) do
-    case struct |> changeset(params) |> op.() do
-      {:ok, bot} = result ->
-        Index.update(:bot, bot.id, bot)
-        result
-
-      {:error, _} = error ->
-        error
-    end
+    struct |> changeset(params) |> op.()
   end
 
   @spec delete(t) :: :ok
   def delete(bot) do
     Repo.delete(bot)
-    Index.remove(:bot, bot.id)
     update_counter("bot.deleted", 1)
     :ok
   end

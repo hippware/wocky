@@ -16,7 +16,6 @@ defmodule Wocky.User do
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.GeoUtils
-  alias Wocky.Index
   alias Wocky.Message
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
@@ -213,7 +212,6 @@ defmodule Wocky.User do
     case Repo.update(changeset) do
       {:ok, user} ->
         maybe_send_welcome(user)
-        maybe_update_index(user)
         {:ok, user}
 
       {:error, _} = error ->
@@ -465,7 +463,7 @@ defmodule Wocky.User do
     user = Repo.get(User, id)
 
     user && Repo.delete!(user)
-    :ok = Index.remove(:user, id)
+    :ok
   end
 
   @spec add_role(id, role) :: :ok
@@ -594,10 +592,5 @@ defmodule Wocky.User do
     user
     |> cast(%{welcome_sent: true}, [:welcome_sent])
     |> Repo.update()
-  end
-
-  defp maybe_update_index(user) do
-    Enum.member?(user.roles, @no_index_role) ||
-      Index.update(:user, user.id, user)
   end
 end

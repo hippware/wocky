@@ -7,7 +7,6 @@ defmodule Wocky.BotSpec do
 
   alias Wocky.Bot
   alias Wocky.GeoUtils
-  alias Wocky.Index.TestIndexer
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
   alias Wocky.User
@@ -98,10 +97,6 @@ defmodule Wocky.BotSpec do
     let :user, do: Factory.insert(:user)
     let! :bot, do: Factory.insert(:bot, user: user())
 
-    before do
-      TestIndexer.reset()
-    end
-
     describe "get/2" do
       let! :pending, do: Factory.insert(:bot, user: user(), pending: true)
 
@@ -179,17 +174,6 @@ defmodule Wocky.BotSpec do
       it "returns an error result on failure" do
         %{} |> Bot.insert() |> should(be_error_result())
       end
-
-      context "full text search index" do
-        before do
-          :bot |> Factory.params_for(user: user()) |> Bot.insert()
-          :ok
-        end
-
-        it "should be updated" do
-          TestIndexer.get_index_operations() |> should_not(be_empty())
-        end
-      end
     end
 
     describe "update/2" do
@@ -201,17 +185,6 @@ defmodule Wocky.BotSpec do
 
       it "returns an error result on failure" do
         %Bot{} |> Bot.update(%{}) |> should(be_error_result())
-      end
-
-      context "full text search index" do
-        before do
-          Bot.update(bot(), %{title: "updated bot"})
-          :ok
-        end
-
-        it "should be updated" do
-          TestIndexer.get_index_operations() |> should_not(be_empty())
-        end
       end
 
       context "out of range location" do
@@ -233,10 +206,6 @@ defmodule Wocky.BotSpec do
 
       it "should remove the bot" do
         Repo.get(Bot, bot().id) |> should(be_nil())
-      end
-
-      it "should remove the bot from the full text search index" do
-        TestIndexer.get_index_operations() |> should_not(be_empty())
       end
     end
 

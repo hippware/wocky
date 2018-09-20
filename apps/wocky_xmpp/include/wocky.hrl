@@ -47,7 +47,6 @@
 -define(wocky_invitation,        'Elixir.Wocky.Bot.Invitation').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').
 -define(wocky_geo_utils,         'Elixir.Wocky.GeoUtils').
--define(wocky_index,             'Elixir.Wocky.Index').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
