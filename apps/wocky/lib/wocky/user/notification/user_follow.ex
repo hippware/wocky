@@ -8,7 +8,7 @@ defmodule Wocky.User.Notification.UserFollow do
     :other_user_id
   ]
 
-  @type t :: __MODULE__
+  @type t :: %__MODULE__{}
 
   def notify(follower, followee) do
     Notification.notify(%__MODULE__{

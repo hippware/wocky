@@ -5,6 +5,7 @@ defmodule Wocky.Bot.Invitation do
 
   import Ecto.Query
 
+  alias Ecto.Changeset
   alias Wocky.{Bot, Repo, User}
   alias __MODULE__, as: Invitation
 

@@ -15,7 +15,7 @@ defmodule Wocky.User.Notification.GeofenceEvent do
     :event
   ]
 
-  @type t :: __MODULE__
+  @type t :: %__MODULE__{}
 end
 
 defimpl Wocky.User.Notifier, for: Wocky.User.Notification.GeofenceEvent do

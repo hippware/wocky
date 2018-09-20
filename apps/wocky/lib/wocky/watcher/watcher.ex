@@ -21,16 +21,19 @@ defmodule Wocky.Watcher do
         end)
       end
 
+      @spec handle_insert(Event.t()) :: no_return()
       def handle_insert(event) do
         raise UndefinedFunctionError,
               "#{inspect(__MODULE__)} handle_insert/1 not defined"
       end
 
+      @spec handle_update(Event.t()) :: no_return()
       def handle_update(event) do
         raise UndefinedFunctionError,
               "#{inspect(__MODULE__)} handle_update/1 not defined"
       end
 
+      @spec handle_delete(Event.t()) :: no_return()
       def handle_delete(event) do
         raise UndefinedFunctionError,
               "#{inspect(__MODULE__)} handle_delete/1 not defined"

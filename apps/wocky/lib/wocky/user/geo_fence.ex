@@ -24,7 +24,7 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: :ok
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: Location.t()
   def check_for_bot_event(bot, loc, user) do
     config = get_config(debounce: false)
 
