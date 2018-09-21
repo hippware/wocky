@@ -6,7 +6,7 @@ defmodule WockyAPI.Resolvers.Notification do
 
   def get_notifications(parent, args, %{context: %{current_user: requestor}}) do
     requestor
-    |> Notification.user_query()
+    |> Notification.user_query(args[:after_id])
     |> Utils.connection_from_query(parent, args)
     |> Utils.map_edges(&to_graphql/1)
   end
