@@ -51,7 +51,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
-      scope :public
       connection_complexity
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
@@ -105,9 +104,12 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
 
     @desc "Check whether a user has made use of any geofence features"
-    field :has_used_geofence, :boolean, do: resolve(&User.has_used_geofence/3)
+    field :has_used_geofence, :boolean do
+      deprecate "All users now always use geofence"
+      resolve fn _, _ -> {:ok, true} end
+    end
 
-    @desc "The active bots that a user is a guest of, in last visited order"
+    @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity
       resolve &Bot.get_active_bots/3
@@ -149,8 +151,8 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "A bot is owned by the user"
     value :owned
 
-    @desc "A bot has been explicitly shared to the user"
-    value :shared
+    @desc "A user has been invited to a bot"
+    value :invited
 
     @desc "The user has subscribed to the bot (including owned bots)"
     value :subscribed
@@ -159,7 +161,7 @@ defmodule WockyAPI.Schema.UserTypes do
     value :subscribed_not_owned
 
     @desc "The user is a guest of the bot (will fire entry/exit events)"
-    value :guest
+    value :guest, deprecate: "All subscribers are now guests"
 
     @desc "The user is a visitor to the bot (is currently within the bot)"
     value :visitor

@@ -16,7 +16,6 @@ defmodule Wocky.Bot.Subscription do
   schema "bot_subscriptions" do
     field :user_id, :binary_id, primary_key: true
     field :bot_id, :binary_id, primary_key: true
-    field :guest, :boolean, default: true, virtual: true
     field :visitor, :boolean, default: false
     field :visited_at, :utc_datetime
     field :departed_at, :utc_datetime
@@ -28,7 +27,7 @@ defmodule Wocky.Bot.Subscription do
   end
 
   @type t :: %Subscription{}
-  @type state :: nil | :subscribed | :guest | :visitor
+  @type state :: nil | :subscribed | :visiting
 
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
@@ -43,8 +42,7 @@ defmodule Wocky.Bot.Subscription do
   def state(user, bot) do
     case get(user, bot) do
       nil -> nil
-      %Subscription{visitor: true} -> :visitor
-      %Subscription{guest: true} -> :guest
+      %Subscription{visitor: true} -> :visiting
       %Subscription{} -> :subscribed
     end
   end
@@ -83,12 +81,14 @@ defmodule Wocky.Bot.Subscription do
     :ok
   end
 
-  @spec put(User.t(), Bot.t(), boolean()) :: :ok | no_return
-  def put(user, bot, _guest \\ false) do
+  @spec put(User.t(), Bot.t()) :: :ok | no_return
+  def put(user, bot) do
     %{user_id: user.id, bot_id: bot.id}
     |> make_changeset()
     |> Repo.insert!(
-      on_conflict: [set: [updated_at: DateTime.utc_now()]],
+      on_conflict: [
+        set: [updated_at: DateTime.utc_now()]
+      ],
       conflict_target: [:user_id, :bot_id]
     )
 
@@ -98,15 +98,6 @@ defmodule Wocky.Bot.Subscription do
   end
 
   defp make_changeset(changes), do: changeset(%Subscription{}, changes)
-
-  @spec clear_guests(Bot.t()) :: :ok
-  def clear_guests(bot) do
-    Subscription
-    |> where(bot_id: ^bot.id)
-    |> Repo.update_all(set: [visitor: false, updated_at: DateTime.utc_now()])
-
-    :ok
-  end
 
   @spec delete(User.t(), Bot.t()) :: :ok | {:error, any}
   def delete(%User{id: id}, %Bot{user_id: id}), do: {:error, :denied}

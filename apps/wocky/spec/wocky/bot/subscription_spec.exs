@@ -43,26 +43,24 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
   describe "database operations" do
     before do
-      [user, owner, guest, visitor] = Factory.insert_list(4, :user)
+      [user, owner, visitor] = Factory.insert_list(3, :user)
       bot = Factory.insert(:bot, user: owner)
       Factory.insert(:subscription, user: user, bot: bot)
-      Factory.insert(:subscription, user: guest, bot: bot, guest: true)
 
       Factory.insert(
         :subscription,
         user: visitor,
         bot: bot,
-        guest: true,
         visitor: true
       )
 
-      {:ok, owner: owner, user: user, guest: guest, visitor: visitor, bot: bot}
+      {:ok, owner: owner, user: user, visitor: visitor, bot: bot}
     end
 
     describe "state/2" do
       it "should return :subscribed if the user is subscribed to the bot" do
         Subscription.state(shared.user, shared.bot)
-        |> should(eq :guest)
+        |> should(eq :subscribed)
       end
 
       it "should return nil when the user does not exist" do
@@ -79,12 +77,8 @@ defmodule Wocky.Bot.SubscriptionSpec do
         Subscription.state(shared.owner, shared.bot) |> should(be_nil())
       end
 
-      it "should return :guest when the user is a subscribed guest" do
-        Subscription.state(shared.guest, shared.bot) |> should(eq :guest)
-      end
-
       it "should return :visitor when the user is a visitor" do
-        Subscription.state(shared.visitor, shared.bot) |> should(eq :visitor)
+        Subscription.state(shared.visitor, shared.bot) |> should(eq :visiting)
       end
     end
 
@@ -122,13 +116,13 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
         it "should create a subscription" do
           Subscription.state(shared.new_user, shared.bot)
-          |> should(eq :guest)
+          |> should(eq :subscribed)
         end
       end
 
       context "when a subscription already exists" do
         before do
-          result = Subscription.put(shared.visitor, shared.bot, true)
+          result = Subscription.put(shared.visitor, shared.bot)
           {:ok, result: result}
         end
 
@@ -138,7 +132,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
         it "should not falisfy the visitor field" do
           Subscription.state(shared.visitor, shared.bot)
-          |> should(eq :visitor)
+          |> should(eq :visiting)
         end
       end
     end
@@ -183,24 +177,15 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
     describe "visit/2" do
       it "should set the subscriber as a visitor" do
-        Subscription.visit(shared.guest, shared.bot) |> should(eq :ok)
-        Subscription.state(shared.guest, shared.bot) |> should(eq :visitor)
+        Subscription.visit(shared.user, shared.bot) |> should(eq :ok)
+        Subscription.state(shared.user, shared.bot) |> should(eq :visiting)
       end
     end
 
     describe "depart/2" do
-      it "should set the visitor as a guest" do
+      it "should set the visitor as a subscriber" do
         Subscription.depart(shared.visitor, shared.bot) |> should(eq :ok)
-        Subscription.state(shared.visitor, shared.bot) |> should(eq :guest)
-      end
-    end
-
-    describe "clear_guests/1" do
-      it "should remove visitor status from everyone" do
-        Subscription.clear_guests(shared.bot) |> should(eq :ok)
-        Subscription.state(shared.visitor, shared.bot) |> should(eq :guest)
-        Subscription.state(shared.guest, shared.bot) |> should(eq :guest)
-        Subscription.state(shared.user, shared.bot) |> should(eq :guest)
+        Subscription.state(shared.visitor, shared.bot) |> should(eq :subscribed)
       end
     end
 

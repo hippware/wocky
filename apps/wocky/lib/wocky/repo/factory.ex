@@ -14,7 +14,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
   alias Wocky.Bot.Item
-  alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.GeoUtils
@@ -77,15 +76,6 @@ defmodule Wocky.Repo.Factory do
       id: ID.new(),
       bot: build(:bot),
       stanza: "<text>" <> Lorem.sentence() <> "</text>"
-    }
-  end
-
-  def share_factory do
-    %Share{
-      user: build(:user),
-      bot: build(:bot),
-      sharer: build(:user),
-      geofence: false
     }
   end
 

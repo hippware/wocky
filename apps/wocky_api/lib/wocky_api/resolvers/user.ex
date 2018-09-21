@@ -137,8 +137,6 @@ defmodule WockyAPI.Resolvers.User do
     Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
   end
 
-  def has_used_geofence(_root, _args, _context), do: {:ok, true}
-
   def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
     with {:ok, _} <- do_hide(user, input) do
       {:ok, true}

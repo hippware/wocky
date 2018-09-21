@@ -5,9 +5,12 @@ defmodule Wocky.BotSpec do
   use Wocky.JID
   use Wocky.RSMHelper
 
+  alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Index.TestIndexer
+  alias Wocky.HomeStream
+  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
   alias Wocky.User
@@ -52,10 +55,6 @@ defmodule Wocky.BotSpec do
       end
 
       it do: "bogus" |> Bot.get_id_from_node() |> should(be_nil())
-    end
-
-    describe "public?" do
-      it do: bot() |> Bot.public?() |> should(eq bot().public)
     end
   end
 
@@ -226,6 +225,45 @@ defmodule Wocky.BotSpec do
           Repo.get(Bot, id).location |> should(eq GeoUtils.point(-85, 175))
         end
       end
+
+      context "home stream cleanup" do
+        before do
+          bot = Factory.insert(:bot, %{user: user()})
+          invited_user = Factory.insert(:user)
+
+          Enum.each(
+            [user(), invited_user],
+            &Factory.insert(:home_stream_item, %{reference_bot: bot, user: &1})
+          )
+
+          Factory.insert(:invitation, %{
+            user: user(),
+            invitee: invited_user,
+            bot: bot
+          })
+
+          {:ok, bot: bot, invited_user: invited_user}
+        end
+
+        context "bot's description changes" do
+          before do
+            Bot.update(shared.bot, %{description: Lorem.sentence()})
+            :ok
+          end
+
+          it do:
+               shared.invited_user.id
+               |> HomeStream.get()
+               |> is_deleted()
+               |> should(be_false())
+
+          it do:
+               user().id
+               |> HomeStream.get()
+               |> is_deleted()
+               |> should(be_false())
+        end
+      end
     end
 
     describe "delete/1" do
@@ -307,9 +345,14 @@ defmodule Wocky.BotSpec do
       before do
         [user1, user2] = Factory.insert_list(2, :user)
         owned_bot = Factory.insert(:bot, user: user1)
-        public_bot = Factory.insert(:bot, user: user2, public: true)
-        shared_bot = Factory.insert(:bot, user: user2)
-        Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
+        invited_bot = Factory.insert(:bot, user: user2)
+
+        Factory.insert(:invitation,
+          invitee: user1,
+          bot: invited_bot,
+          user: user2
+        )
+
         private_bot = Factory.insert(:bot, user: user2)
         pending_bot = Factory.insert(:bot, user: user1, pending: true)
         subscribed_bot = Factory.insert(:bot, user: user2)
@@ -318,8 +361,7 @@ defmodule Wocky.BotSpec do
         {:ok,
          user: user1,
          owned_bot: owned_bot,
-         public_bot: public_bot,
-         shared_bot: shared_bot,
+         invited_bot: invited_bot,
          private_bot: private_bot,
          pending_bot: pending_bot,
          subscribed_bot: subscribed_bot}
@@ -330,9 +372,9 @@ defmodule Wocky.BotSpec do
         |> should(eq shared.owned_bot)
       end
 
-      it "should allow shared bots" do
-        run_is_visible_query(shared.shared_bot, shared.user)
-        |> should(eq shared.shared_bot)
+      it "should allow invited bots" do
+        run_is_visible_query(shared.invited_bot, shared.user)
+        |> should(eq shared.invited_bot)
       end
 
       it "should refuse private bots" do
@@ -354,4 +396,6 @@ defmodule Wocky.BotSpec do
     |> preload(:user)
     |> Repo.one()
   end
+
+  defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted
 end

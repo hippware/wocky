@@ -8,7 +8,6 @@ defmodule Wocky.Callbacks.Block do
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Bot.Share
   alias Wocky.Conversation
   alias Wocky.HomeStream
   alias Wocky.Repo
@@ -42,7 +41,6 @@ defmodule Wocky.Callbacks.Block do
     |> Enum.each(fn bot ->
       HomeStream.delete(b, bot)
       Item.delete(bot, b)
-      Share.delete(b, bot)
       Bot.unsubscribe(bot, b)
     end)
   end

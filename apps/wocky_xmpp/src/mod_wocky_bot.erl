@@ -43,8 +43,6 @@
           value :: value_type()
          }).
 
--define(PACKET_FILTER_PRIORITY, 40).
-
 -define(DEFAULT_SORTING, {asc, updated_at}).
 
 %%%===================================================================
@@ -59,17 +57,11 @@ start(Host, _Opts) ->
     gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_BOT,
                                   ?MODULE, handle_iq, parallel),
     mod_disco:register_feature(Host, ?NS_BOT),
-    ejabberd_hooks:add(filter_local_packet, Host,
-                       fun filter_local_packet_hook/1,
-                       ?PACKET_FILTER_PRIORITY),
     wocky_access_manager:register(<<"bot">>, ?MODULE).
 
 stop(Host) ->
     mod_disco:unregister_feature(Host, ?NS_BOT),
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_BOT),
-    ejabberd_hooks:delete(filter_local_packet, Host,
-                          fun filter_local_packet_hook/1,
-                          ?PACKET_FILTER_PRIORITY),
     wocky_access_manager:unregister(<<"bot">>, ?MODULE),
 
     wocky_publishing_handler:unregister(<<"bot">>, wocky_bot_publishing),
@@ -137,8 +129,8 @@ handle_iq_type(From, To, get, Name, Attrs, IQ)
             get_bots_for_owner(From, IQ, UserBin);
         {_, _, _, {ok, OwnerBin}, _} ->
             get_bots_for_owner(From, IQ, OwnerBin);
-        {_, _, _, _, {ok, ExploreNearbyEl}} ->
-            explore_nearby(From, IQ, ExploreNearbyEl);
+        {_, _, _, _, {ok, _ExploreNearbyEl}} ->
+            explore_nearby();
         _ ->
             {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}
     end;
@@ -190,8 +182,8 @@ handle_iq_type(From, _To, get, <<"guests">>, Attrs, IQ) ->
     handle_owner_action(guests, From, Attrs, false, IQ);
 
 % Get a list of visitors to the bot
-handle_iq_type(From, _To, get, <<"visitors">>, Attrs, IQ) ->
-    handle_guest_action(visitors, From, Attrs, IQ);
+handle_iq_type(From, To, get, <<"visitors">>, Attrs, IQ) ->
+    handle_access_action(visitors, From, To, Attrs, false, IQ);
 
 handle_iq_type(_From, _To, _Type, _Op, _Attrs, _IQ) ->
     {error, ?ERRT_BAD_REQUEST(?MYLANG, <<"Invalid query">>)}.
@@ -228,32 +220,10 @@ perform_owner_action(guests, Bot, _From, IQ) ->
     do([error_m ||
         RSMIn <- rsm_util:get_rsm(IQ),
         Sorting <- get_sorting(IQ),
-        Query <- {ok, ?wocky_bot:guests_query(Bot)},
+        Query <- {ok, ?wocky_bot:subscribers_query(Bot)},
         {Guests, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
                                     RSMIn, Query, id, Sorting)},
         {ok, users_result(<<"guests">>, make_guests(Guests), RSMOut)}
-       ]).
-
-%%%===================================================================
-%%% Actions that require the user to be a guest of the bot
-%%%===================================================================
-
-handle_guest_action(Action, FromJID, Attrs, IQ) ->
-    do([error_m ||
-           Bot <- wocky_bot_util:get_bot_from_node(Attrs),
-           From <- wocky_bot_util:get_user_from_jid(FromJID),
-           wocky_bot_util:check_guest(From, Bot),
-           perform_guest_action(Action, Bot, IQ)
-       ]).
-
-perform_guest_action(visitors, Bot, IQ) ->
-    do([error_m ||
-        RSMIn <- rsm_util:get_rsm(IQ),
-        Sorting <- get_sorting(IQ),
-        Query <- {ok, ?wocky_bot:visitors_query(Bot)},
-        {Visitors, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
-                                      RSMIn, Query, id, Sorting)},
-        {ok, users_result(<<"visitors">>, make_visitors(Visitors), RSMOut)}
        ]).
 
 %%%===================================================================
@@ -280,19 +250,24 @@ perform_access_action(item_query, Bot, #{id := FromID}, _ToJID, IQ) ->
 perform_access_action(item_images, Bot, FromUser, _ToJID, IQ) ->
     wocky_bot_item:query_images(Bot, IQ, FromUser);
 
-perform_access_action(subscribe, Bot, From, _ToJID, #iq{sub_el = SubEl}) ->
-    do([error_m ||
-            GuestBin <- wocky_xml:get_subel_cdata(
-                          <<"geofence">>, SubEl, <<"false">>),
-            Guest <- read_bool(GuestBin),
-            wocky_bot_subscription:subscribe(From, Bot, Guest)
-       ]);
+perform_access_action(subscribe, Bot, From, _ToJID, _IQ) ->
+    wocky_bot_subscription:subscribe(From, Bot);
 
 perform_access_action(publish, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
     wocky_bot_item:publish(Bot, From, ToJID, SubEl);
 
 perform_access_action(retract, Bot, From, ToJID, #iq{sub_el = SubEl}) ->
-    wocky_bot_item:retract(Bot, From, ToJID, SubEl).
+    wocky_bot_item:retract(Bot, From, ToJID, SubEl);
+
+perform_access_action(visitors, Bot, _From, _ToJID, IQ) ->
+    do([error_m ||
+        RSMIn <- rsm_util:get_rsm(IQ),
+        Sorting <- get_sorting(IQ),
+        Query <- {ok, ?wocky_bot:visitors_query(Bot)},
+        {Visitors, RSMOut} <- {ok, ?wocky_rsm_helper:rsm_query(
+                                      RSMIn, Query, id, Sorting)},
+        {ok, users_result(<<"visitors">>, make_visitors(Visitors), RSMOut)}
+       ]).
 
 %%%===================================================================
 %%% Action - new-id
@@ -318,7 +293,7 @@ handle_create(From, Children) ->
         FieldsMap <- normalise_fields(Fields3),
         Bot <- create_bot(ID, PendingBot, User, FieldsMap),
         %% See note below:
-        ?wocky_bot:subscribe(Bot, User, maps:get(geofence, Bot)),
+        ?wocky_bot:subscribe(Bot, User),
         FinalBot <- {ok, ?wocky_bot:get(ID)},
         BotEl <- make_bot_el(FinalBot, User),
         {ok, BotEl}
@@ -405,12 +380,6 @@ get_bots_near_location(From, Lat, Lon) ->
                 ?MYLANG, <<"Index search is not configured on this server">>)}
     end.
 
-get_subscribed_bots(QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
-    {ok,
-     ?wocky_geosearch:subscribed_distance_query(Lat, Lon,
-                                                maps:get(id, QueryingUser),
-                                                RSMIn)};
-
 get_subscribed_bots(User, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:subscribed_bots_query(User),
     FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, User),
@@ -446,45 +415,15 @@ get_bots_for_owner(From, IQ, OwnerBin) ->
         {ok, users_bots_result(FilteredBots, FromUser, RSMOut)}
        ]).
 
-get_bots_for_owner_rsm(Owner, QueryingUser, {asc, distance, Lat, Lon}, RSMIn) ->
-    {ok,
-     ?wocky_geosearch:user_distance_query(Lat, Lon,
-                                          maps:get(id, QueryingUser),
-                                          maps:get(id, Owner),
-                                          RSMIn)};
-
 get_bots_for_owner_rsm(Owner, QueryingUser, Sorting, RSMIn) ->
     BaseQuery = ?wocky_user:owned_bots_query(Owner),
     FilteredQuery = ?wocky_bot:is_visible_query(BaseQuery, QueryingUser),
     {ok, ?wocky_rsm_helper:rsm_query(RSMIn, FilteredQuery, id, Sorting)}.
 
-explore_nearby(From, IQ, ExploreNearby) ->
-    do([error_m ||
-        {Lat, Lon} <- get_location_from_attrs(ExploreNearby#xmlel.attrs),
-        AreaConstraint <- get_area_constraint(ExploreNearby),
-        LimitBin <- wocky_xml:get_attr(<<"limit">>, ExploreNearby),
-        Limit <- wocky_util:safe_bin_to_integer(LimitBin),
-        wocky_explore_worker:start(
-          Lat, Lon, AreaConstraint, From, Limit, IQ#iq.id),
-        {ok, []}
-       ]).
-
-get_area_constraint(ExploreNearby) ->
-    case wocky_xml:get_attr(<<"radius">>, ExploreNearby) of
-        {ok, RadiusBin} ->
-            wocky_util:safe_bin_to_float(RadiusBin);
-        _ ->
-            get_lat_lon_delta(ExploreNearby)
-    end.
-
-get_lat_lon_delta(ExploreNearby) ->
-    do([error_m ||
-        LatDeltaBin <- wocky_xml:get_attr(<<"lat_delta">>, ExploreNearby),
-        LonDeltaBin <- wocky_xml:get_attr(<<"lon_delta">>, ExploreNearby),
-        LatDelta <- wocky_util:safe_bin_to_float(LatDeltaBin),
-        LonDelta <- wocky_util:safe_bin_to_float(LonDeltaBin),
-        {ok, ?wocky_geo_utils:point(LatDelta, LonDelta)}
-       ]).
+explore_nearby() ->
+    {error,
+     ?ERRT_FEATURE_NOT_IMPLEMENTED(
+        ?MYLANG, <<"explore-nearby has been deprecated and removed">>)}.
 
 users_bots_result(Bots, FromUser, RSMOut) ->
     BotEls = make_bot_els(Bots, FromUser),
@@ -498,52 +437,6 @@ make_bot_els(Bots, FromUser) ->
 do_make_bot_els(Bot, FromUser) ->
     {ok, El} = make_bot_el(Bot, FromUser),
     El.
-
-
-%%%===================================================================
-%%% Incoming packet handler
-%%%===================================================================
-
--type filter_packet() :: {ejabberd:jid(), ejabberd:jid(),
-                          mongoose_acc:t(), jlib:xmlel()}.
--spec filter_local_packet_hook(filter_packet() | drop) ->
-    filter_packet() | drop.
-
-%% Packets to another entity which reference a bot. Passed through unless
-%% they hit a condition to block them.
-filter_local_packet_hook(P = {From, To, _Acc,
-                              Stanza = #xmlel{name = <<"message">>,
-                                              attrs = Attrs}}) ->
-    Result = case xml:get_attr(<<"type">>, Attrs) of
-        {value, <<"headline">>} -> handle_headline_packet(From, To, Stanza);
-        _ -> ok
-    end,
-    case Result of
-        drop ->
-            reply_not_allowed(From, Stanza),
-            drop;
-        ok -> P
-    end;
-
-%% Ignore all other packets
-filter_local_packet_hook(Other) ->
-    Other.
-
-handle_headline_packet(From, To, Stanza) ->
-    case xml:get_subtag(Stanza, <<"bot">>) of
-        false -> ok;
-        BotStanza -> handle_bot_stanza(From, To, BotStanza)
-    end.
-
-handle_bot_stanza(From, To, BotStanza) ->
-    case wocky_bot_util:bot_packet_action(BotStanza) of
-        {Bot, share} ->
-            wocky_bot_users:handle_share(From, To, Bot);
-        {Bot, geofence_share} ->
-            wocky_bot_users:handle_geofence_share(From, To, Bot);
-        _ ->
-            ok
-    end.
 
 %%%===================================================================
 %%% Access manager callback
@@ -832,12 +725,15 @@ make_ret_elements(Bot, FromUser) ->
     DynamicFields = dynamic_fields(Bot, FromUser),
     Fields = maps:fold(fun to_field/3, [],
                        Bot#{server => ?wocky:host(),
+                            visibility => ?WOCKY_BOT_VIS_OWNER,
+                            public => false,
+                            geofence => true,
                             subscribers_count =>
                             wocky_bot_subscription:get_sub_count(Bot),
                             visitors_count =>
                             wocky_bot_subscription:get_visitor_count(Bot),
                             guests_count =>
-                            wocky_bot_subscription:get_guest_count(Bot)}),
+                            wocky_bot_subscription:get_sub_count(Bot)}),
     encode_fields(Fields ++ DynamicFields, FromUser).
 
 dynamic_fields(Bot, FromUser) ->
@@ -848,9 +744,8 @@ dynamic_fields(Bot, FromUser) ->
      make_field(<<"total_items">>, int, TotalItems),
      make_field(<<"image_items">>, int, ImageItems),
      make_field(<<"subscribed">>, bool, SubscribeState =/= nil),
-     make_field(<<"guest">>, bool,
-                SubscribeState =:= guest orelse SubscribeState =:= visitor),
-     make_field(<<"visitor">>, bool, SubscribeState =:= visitor)
+     make_field(<<"guest">>, bool, SubscribeState =/= nil),
+     make_field(<<"visitor">>, bool, SubscribeState =:= visiting)
     ].
 
 vis(true) -> 100;
@@ -1011,6 +906,7 @@ make_new_id_stanza(NewID) ->
            children = [#xmlcdata{content = NewID}]}.
 
 make_guests(Guests) -> make_user_list(<<"guest">>, Guests).
+
 make_visitors(Visitors) -> make_user_list(<<"visitor">>, Visitors).
 
 make_user_list(Name, Users) ->
@@ -1026,10 +922,3 @@ users_result(Name, UserEls, RSMOut) ->
            attrs = [{<<"xmlns">>, ?NS_BOT},
                     {<<"size">>, integer_to_binary(RSMOut#rsm_out.count)}],
            children = UserEls ++ jlib:rsm_encode(RSMOut)}.
-
-reply_not_allowed(Sender, Stanza) ->
-    Err = jlib:make_error_reply(
-            Stanza,
-            ?ERRT_NOT_ALLOWED(
-               ?MYLANG, <<"Bot action not allowed to this user">>)),
-    ejabberd_router:route(#jid{lserver = ?wocky:host()}, Sender, Err).
