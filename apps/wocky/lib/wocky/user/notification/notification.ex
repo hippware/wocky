@@ -44,6 +44,8 @@ defmodule Wocky.User.Notification do
     timestamps()
   end
 
+  @type id() :: non_neg_integer()
+
   @type t() ::
           BotItem.t()
           | GeofenceEvent.t()
@@ -82,10 +84,17 @@ defmodule Wocky.User.Notification do
     |> Repo.insert()
   end
 
-  @spec user_query(User.t()) :: Queryable.t()
-  def user_query(user) do
+  @spec user_query(User.t(), id() | nil) :: Queryable.t()
+  def user_query(user, after_id) do
     Notification
     |> where(user_id: ^user.id)
+    |> maybe_add_after_id(after_id)
+  end
+
+  defp maybe_add_after_id(queryable, nil), do: queryable
+  defp maybe_add_after_id(queryable, id) do
+    queryable
+    |> where([n], n.id > ^id)
   end
 
   defp changeset(struct, params, required) do

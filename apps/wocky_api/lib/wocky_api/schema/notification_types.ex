@@ -127,6 +127,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :notification_queries do
     @desc "Get the notifications for the current user"
     connection field :notifications, node_type: :notifications do
+      @desc "ID which all results should be newer than"
+      arg :after_id, :aint
+
       connection_complexity
       resolve &Notification.get_notifications/3
     end
