@@ -59,7 +59,7 @@ defmodule Wocky.Index.TestIndexer do
       "lat" => Bot.lat(bot),
       "lon" => Bot.lon(bot),
       "radius" => bot.radius,
-      "public" => bot.public,
+      "public" => false,
       # meters
       "_rankingInfo" => %{"geoDistance" => distance / 1000}
     }

@@ -6,7 +6,7 @@ defmodule Wocky.Callbacks.Block do
   use Wocky.Watcher, type: Wocky.Block, events: [:insert]
 
   alias Wocky.{Block, Bot}
-  alias Wocky.Bot.{Invitation, Item, Share}
+  alias Wocky.Bot.{Invitation, Item}
   alias Wocky.{Conversation, HomeStream, Repo, User}
   alias Wocky.User.Notification
 
@@ -46,7 +46,6 @@ defmodule Wocky.Callbacks.Block do
     |> Enum.each(fn bot ->
       HomeStream.delete(b, bot)
       Item.delete(bot, b)
-      Share.delete(b, bot)
       Bot.unsubscribe(bot, b)
     end)
   end

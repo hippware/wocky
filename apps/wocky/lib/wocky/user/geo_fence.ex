@@ -23,15 +23,16 @@ defmodule Wocky.User.GeoFence do
     :ok
   end
 
-  @spec exit_all_bots(User.t(), String.t()) :: :ok
-  def exit_all_bots(user, reason) do
-    user.id
-    |> BotEvent.get_last_events()
-    |> Enum.each(fn last_event ->
-      if inside?(last_event.event) do
-        last_event = Repo.preload(last_event, :bot)
-        BotEvent.insert_system(user, last_event.bot, :exit, reason)
-      end
+  @spec exit_all_bots(User.t()) :: :ok
+  def exit_all_bots(user) do
+    config = get_config(enable_notifications: false)
+
+    user
+    |> Bot.by_relationship_query(:visiting, user)
+    |> Repo.all()
+    |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
+    |> Enum.each(fn {bot, event} ->
+      process_bot_event({user, bot, event}, config)
     end)
 
     Bot.depart_all_quietly(user)
@@ -63,7 +64,7 @@ defmodule Wocky.User.GeoFence do
       maybe_do_async(
         fn ->
           user
-          |> User.get_guest_subscriptions()
+          |> User.get_subscriptions()
           |> check_for_events(user, loc, config)
           |> Enum.each(&process_bot_event(&1, config))
         end,
@@ -296,7 +297,7 @@ defmodule Wocky.User.GeoFence do
     bot = Bot.get(bot_id)
 
     if user && bot do
-      if Bot.subscription(bot, user) == :visitor do
+      if Bot.subscription(bot, user) == :visiting do
         new_event = BotEvent.insert(user, resource, bot, :timeout)
         process_bot_event({user, bot, new_event}, config)
       end

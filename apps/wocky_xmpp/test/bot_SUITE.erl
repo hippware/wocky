@@ -1478,31 +1478,6 @@ unwatch(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
     escalus:send(Client, Stanza).
 
-share_stanza(BotID, From, Target, Geofence) ->
-    fun_chain:first(
-      BotID,
-      share_stanza(Geofence),
-      escalus_stanza:to(Target),
-      escalus_stanza:from(From)
-     ).
-
-share_stanza(BotID, Geofence) ->
-    #xmlel{name = <<"message">>,
-           attrs = [{<<"type">>, <<"headline">>}],
-           children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
-                       bot_el(BotID, Geofence)]}.
-
-bot_el(BotID, Geofence) ->
-    #xmlel{name = <<"bot">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = [cdata_el(<<"jid">>, bot_jid(BotID)),
-                       cdata_el(<<"id">>, BotID),
-                       cdata_el(<<"server">>, ?SERVER),
-                       action_el(Geofence)]}.
-
-action_el(false) -> cdata_el(<<"action">>, <<"share">>);
-action_el(true) -> cdata_el(<<"action">>, <<"geofence share">>).
-
 is_bot_action_hs_notification(JID, Action,
                               Stanza = #xmlel{name = <<"message">>}) ->
     case xml:get_path_s(Stanza,

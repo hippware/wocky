@@ -125,7 +125,7 @@ defmodule Wocky.Bot.InvitationTest do
       assert {:ok, invitation} =
                Invitation.respond(shared.invitation, true, shared.invitee)
 
-      assert Bot.subscription(shared.bot, shared.invitee) == :guest
+      assert Bot.subscription(shared.bot, shared.invitee) == :subscribed
       clear_expected_notifications(1)
     end
 

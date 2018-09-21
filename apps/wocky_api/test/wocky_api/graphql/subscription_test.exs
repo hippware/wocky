@@ -25,7 +25,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   describe "watch for visitor count change" do
     setup do
       user2 = Factory.insert(:user)
-      bot = Factory.insert(:bot, public: true)
+      bot = Factory.insert(:bot)
       Subscription.put(user2, bot)
 
       {:ok, user2: user2, bot: bot}
@@ -54,7 +54,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user,
       token: token
     } do
-      Bot.subscribe(bot, user, true)
+      Bot.subscribe(bot, user)
 
       authenticate(user_id, token, socket)
 
@@ -123,7 +123,9 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   describe "watch home stream for changes" do
     setup do
       user2 = Factory.insert(:user)
-      bot = Factory.insert(:bot, public: true)
+      bot = Factory.insert(:bot)
+      Factory.insert(:subscription, bot: bot, user: user2)
+
       {:ok, user2: user2, bot: bot}
     end
 
@@ -226,8 +228,8 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user
     } do
       :os.putenv('WOCKY_ENTER_DEBOUNCE_SECONDS', '0')
-      bot = Factory.insert(:bot, user: user, geofence: true, public: true)
-      Bot.subscribe(bot, user, true)
+      bot = Factory.insert(:bot, user: user)
+      Factory.insert(:subscription, bot: bot, user: user)
 
       authenticate(user_id, token, socket)
 

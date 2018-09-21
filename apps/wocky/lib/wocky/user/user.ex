@@ -12,9 +12,7 @@ defmodule Wocky.User do
   alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Block
   alias Wocky.Bot
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.{Invitation, Subscription}
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.GeoUtils
@@ -75,8 +73,9 @@ defmodule Wocky.User do
     has_many :tros_metadatas, TROSMetadata
     has_many :messages, Message
     has_many :invite_codes, InviteCode
+    has_many :sent_invitations, Invitation
+    has_many :received_invitations, Invitation, foreign_key: :invitee_id
 
-    many_to_many(:shares, Bot, join_through: Share)
     many_to_many(:bot_subscriptions, Bot, join_through: Subscription)
   end
 
@@ -90,7 +89,8 @@ defmodule Wocky.User do
   @type role :: binary
   @type hidden_state :: nil | DateTime.t()
 
-  @type bot_relationship :: :owned | :shared | :subscribed | :guest | :visitor
+  @type bot_relationship ::
+          :owned | :invited | :subscribed | :visitor | :visible
 
   @type t :: %User{
           id: id,
@@ -167,9 +167,6 @@ defmodule Wocky.User do
     |> Repo.all()
   end
 
-  @spec get_guest_subscriptions(t) :: [Bot.t()]
-  def get_guest_subscriptions(user), do: get_subscriptions(user)
-
   @spec bot_count(User.t()) :: non_neg_integer
   def bot_count(user) do
     user
@@ -185,8 +182,8 @@ defmodule Wocky.User do
   @spec can_access?(t, Bot.t()) :: boolean
   def can_access?(user, bot),
     do:
-      owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot) ||
-        Subscription.state(user, bot) != nil || Invitation.exists?(bot, user)
+      owns?(user, bot) || Invitation.exists?(bot, user) ||
+        Subscription.state(user, bot) != nil
 
   @doc """
     Returns true if a bot should appear in a user's geosearch results. Criteria:
@@ -571,10 +568,10 @@ defmodule Wocky.User do
 
     [:visible]
     |> maybe_add_rel(bot.user_id == user.id, :owned)
-    |> maybe_add_rel(Share.get(user, bot) != nil, :shared)
-    |> maybe_add_rel(sub != nil, :subscribed)
-    |> maybe_add_rel(sub != nil && sub.guest, :guest)
+    |> maybe_add_rel(Invitation.get(bot, user) != nil, :invited)
+    |> maybe_add_rel(sub != nil, [:guest, :subscribed])
     |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
+    |> List.flatten()
   end
 
   def forever_ts, do: @forever
