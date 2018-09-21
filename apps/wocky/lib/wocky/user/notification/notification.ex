@@ -92,6 +92,7 @@ defmodule Wocky.User.Notification do
   end
 
   defp maybe_add_after_id(queryable, nil), do: queryable
+
   defp maybe_add_after_id(queryable, id) do
     queryable
     |> where([n], n.id > ^id)
