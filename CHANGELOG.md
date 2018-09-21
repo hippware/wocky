@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Schedule `staging` deployments (#1852)
+* Update: timex (PR #1869), honeybadger (PR #1868), distillery (PR #1867)
+  * redix (PR #1866)
+* Fix up all the dialyzer warnings (PR #1865)
+
+
 # 2018.9.19+r826f473
 
 * Fix crash with further requests after user deletion (PR #1842)
