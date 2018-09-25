@@ -23,8 +23,9 @@ defmodule WockyAPI.GraphQL.NotificationTest do
     end
 
     @query """
-    query ($first: Int, $last: Int, $afterId: AInt) {
-      notifications (first: $first, last: $last afterId: $afterId) {
+    query ($first: Int, $last: Int, $beforeId: AInt, $afterId: AInt) {
+      notifications (first: $first, last: $last,
+                     beforeId: $beforeId, afterId: $afterId) {
         edges {
           node {
             id
@@ -76,11 +77,11 @@ defmodule WockyAPI.GraphQL.NotificationTest do
     end
 
     test "get after a particular id", shared do
-      last_id = to_string(Enum.at(shared.notifications, 2).id)
+      pivot_id = to_string(Enum.at(shared.notifications, 2).id)
       expected_id = to_string(Enum.at(shared.notifications, 3).id)
 
       result =
-        run_query(@query, shared.user, %{"afterId" => last_id, "last" => 1})
+        run_query(@query, shared.user, %{"afterId" => pivot_id, "last" => 1})
 
       refute has_errors(result)
 
@@ -93,6 +94,34 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                          "created_at" => _,
                          "data" => %{
                            "__typename" => "InvitationResponseNotification"
+                         },
+                         "id" => ^expected_id
+                       }
+                     }
+                   ]
+                 }
+               }
+             } = result
+    end
+
+    test "get before a particular id", shared do
+      pivot_id = to_string(Enum.at(shared.notifications, 2).id)
+      expected_id = to_string(Enum.at(shared.notifications, 1).id)
+
+      result =
+        run_query(@query, shared.user, %{"beforeId" => pivot_id, "first" => 1})
+
+      refute has_errors(result)
+
+      assert %{
+               data: %{
+                 "notifications" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "created_at" => _,
+                         "data" => %{
+                           "__typename" => "GeofenceEventNotification"
                          },
                          "id" => ^expected_id
                        }
