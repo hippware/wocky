@@ -16,7 +16,6 @@ defmodule Wocky.User do
   alias Wocky.Conversation
   alias Wocky.Email
   alias Wocky.GeoUtils
-  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Index
   alias Wocky.Message
   alias Wocky.Push.Token, as: PushToken
@@ -64,7 +63,6 @@ defmodule Wocky.User do
     has_many :bots, Bot
     has_many :bot_events, BotEvent
     has_many :conversations, Conversation
-    has_many :home_stream_items, HomeStreamItem
     has_many :locations, Location
     has_many :push_tokens, PushToken
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id

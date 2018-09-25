@@ -3,7 +3,7 @@ defmodule Wocky.Callbacks.Bot do
   Callbacks for DB bot changes
   """
 
-  use Wocky.Watcher, type: Wocky.Bot, events: [:insert, :update]
+  use Wocky.Watcher, type: Wocky.Bot, events: [:insert]
 
   alias Wocky.Bot
   alias Wocky.Repo
@@ -11,10 +11,6 @@ defmodule Wocky.Callbacks.Bot do
 
   def handle_insert(%Event{action: :insert, new: new}) do
     update_owner_subscription(new)
-  end
-
-  def handle_update(%Event{action: :update, old: old, new: new}) do
-    Bot.maybe_update_hs_items(old, new)
   end
 
   defp update_owner_subscription(bot) do

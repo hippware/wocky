@@ -1,11 +1,6 @@
 defmodule Wocky.Repo.Migrations.AddOrderingFields do
   use Wocky.Repo.Migration
 
-  import Ecto.Query
-
-  alias Wocky.HomeStream.Item
-  alias Wocky.Repo
-
   def up do
     alter table(:home_stream_items) do
       add :ordering, :timestamp
@@ -13,9 +8,7 @@ defmodule Wocky.Repo.Migrations.AddOrderingFields do
 
     flush()
 
-    Item
-    |> update([i], set: [ordering: i.updated_at])
-    |> Repo.update_all([])
+    execute "UPDATE home_stream_items SET ordering = updated_at"
 
     alter table(:home_stream_items) do
       modify :ordering, :timestamp, null: false

@@ -484,58 +484,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "home stream items" do
-    @query """
-    query ($first: Int) {
-      currentUser {
-        homeStream (first: $first) {
-          totalCount
-          edges {
-            node {
-              key
-              reference_bot {
-                id
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    test "get items", %{user: user} do
-      bot = Factory.insert(:bot, user: user)
-
-      items =
-        Factory.insert_list(
-          20,
-          :home_stream_item,
-          user: user,
-          reference_bot: bot
-        )
-
-      result = run_query(@query, user, %{"first" => 1})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "currentUser" => %{
-                 "homeStream" => %{
-                   "totalCount" => 20,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "key" => List.last(items).key,
-                         "reference_bot" => %{"id" => bot.id}
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
-    end
-  end
-
   describe "contacts" do
     setup %{user: user, user2: user2} do
       Roster.befriend(user.id, user2.id)
