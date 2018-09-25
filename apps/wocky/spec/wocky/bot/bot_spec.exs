@@ -5,12 +5,9 @@ defmodule Wocky.BotSpec do
   use Wocky.JID
   use Wocky.RSMHelper
 
-  alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Index.TestIndexer
-  alias Wocky.HomeStream
-  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
   alias Wocky.User
@@ -225,45 +222,6 @@ defmodule Wocky.BotSpec do
           Repo.get(Bot, id).location |> should(eq GeoUtils.point(-85, 175))
         end
       end
-
-      context "home stream cleanup" do
-        before do
-          bot = Factory.insert(:bot, %{user: user()})
-          invited_user = Factory.insert(:user)
-
-          Enum.each(
-            [user(), invited_user],
-            &Factory.insert(:home_stream_item, %{reference_bot: bot, user: &1})
-          )
-
-          Factory.insert(:invitation, %{
-            user: user(),
-            invitee: invited_user,
-            bot: bot
-          })
-
-          {:ok, bot: bot, invited_user: invited_user}
-        end
-
-        context "bot's description changes" do
-          before do
-            Bot.update(shared.bot, %{description: Lorem.sentence()})
-            :ok
-          end
-
-          it do:
-               shared.invited_user.id
-               |> HomeStream.get()
-               |> is_deleted()
-               |> should(be_false())
-
-          it do:
-               user().id
-               |> HomeStream.get()
-               |> is_deleted()
-               |> should(be_false())
-        end
-      end
     end
 
     describe "delete/1" do
@@ -396,6 +354,4 @@ defmodule Wocky.BotSpec do
     |> preload(:user)
     |> Repo.one()
   end
-
-  defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted
 end

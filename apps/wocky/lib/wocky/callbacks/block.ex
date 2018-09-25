@@ -9,7 +9,6 @@ defmodule Wocky.Callbacks.Block do
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Conversation
-  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.User
 
@@ -18,13 +17,7 @@ defmodule Wocky.Callbacks.Block do
       Repo.preload(new, [:blocker, :blockee])
 
     if blocker != nil && blockee != nil do
-      # Delete HS message items
-      HomeStream.delete(blocker, blockee)
-      HomeStream.delete(blockee, blocker)
-
-      # Delete HS bot items for bots owned by blocked user
-      # and bot shares of blocked user's bots
-      # and content items on owned bots by blocker/blockee
+      # Delete content items on owned bots by blocker/blockee
       delete_bot_references(blocker, blockee)
       delete_bot_references(blockee, blocker)
 
@@ -39,7 +32,6 @@ defmodule Wocky.Callbacks.Block do
     a
     |> User.get_owned_bots()
     |> Enum.each(fn bot ->
-      HomeStream.delete(b, bot)
       Item.delete(bot, b)
       Bot.unsubscribe(bot, b)
     end)

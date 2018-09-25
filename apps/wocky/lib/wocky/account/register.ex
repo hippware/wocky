@@ -4,7 +4,6 @@ defmodule Wocky.Account.Register do
 
   import Ecto.Changeset
 
-  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -155,6 +154,5 @@ defmodule Wocky.Account.Register do
 
   defp prepopulate_user(user) do
     Roster.add_initial_contacts_to_user(user.id)
-    HomeStream.prepopulate(user.id)
   end
 end

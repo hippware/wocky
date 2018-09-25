@@ -1,9 +1,7 @@
 defmodule Wocky.Account.RegisterTest do
   use Wocky.DataCase
 
-  alias Timex.Duration
   alias Wocky.Account.Register
-  alias Wocky.HomeStream
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
   alias Wocky.Roster
@@ -137,32 +135,9 @@ defmodule Wocky.Account.RegisterTest do
           setup_initial_contacts(type)
         end
 
-      prepop_user =
-        Factory.insert(
-          :user,
-          handle: HomeStream.prepopulation_user(),
-          roles: [User.no_index_role(), User.system_role()]
-        )
-
-      old_ts = Timex.subtract(DateTime.utc_now(), Duration.from_weeks(6))
-
-      Factory.insert_list(
-        15,
-        :home_stream_item,
-        user_id: prepop_user.id,
-        created_at: old_ts,
-        updated_at: old_ts
-      )
-
-      prepop_items =
-        Factory.insert_list(15, :home_stream_item, user_id: prepop_user.id)
-
       {:ok, user} = Register.create(@create_attrs, true)
 
-      {:ok,
-       user: user,
-       initial_contacts: List.flatten(initial_contacts),
-       prepop_items: prepop_items}
+      {:ok, user: user, initial_contacts: List.flatten(initial_contacts)}
     end
 
     test "initial contacts", %{user: user, initial_contacts: init_contacts} do
@@ -177,11 +152,6 @@ defmodule Wocky.Account.RegisterTest do
         assert item.subscription == sub
         assert Enum.member?(item.groups, "__new__")
       end
-    end
-
-    test "home stream", %{user: user, prepop_items: prepop_items} do
-      hs = HomeStream.get(user.id)
-      assert length(hs) == length(prepop_items)
     end
   end
 

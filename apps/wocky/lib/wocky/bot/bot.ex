@@ -15,7 +15,6 @@ defmodule Wocky.Bot do
   alias Wocky.Block
   alias Wocky.Bot.{Invitation, Item, Subscription}
   alias Wocky.GeoUtils
-  alias Wocky.HomeStream
   alias Wocky.Index
   alias Wocky.Push
   alias Wocky.Push.Events.BotPerimeterEvent
@@ -535,17 +534,6 @@ defmodule Wocky.Bot do
   defp maybe_filter_pending(queryable, true) do
     queryable
     |> where(pending: false)
-  end
-
-  def maybe_update_hs_items(old, new) do
-    if should_update_hs(old, new) do
-      HomeStream.update_ref_bot(new)
-    end
-  end
-
-  defp should_update_hs(bot1, bot2) do
-    [:title, :image, :address, :location]
-    |> Enum.any?(fn f -> Map.get(bot1, f) != Map.get(bot2, f) end)
   end
 
   @spec sub_setup_event(Bot.t()) :: Waiter.event()
