@@ -16,7 +16,7 @@ defmodule Wocky.Bot.Subscription do
   schema "bot_subscriptions" do
     field :user_id, :binary_id, primary_key: true
     field :bot_id, :binary_id, primary_key: true
-    field :guest, :boolean, default: false
+    field :guest, :boolean, default: true, virtual: true
     field :visitor, :boolean, default: false
     field :visited_at, :utc_datetime
     field :departed_at, :utc_datetime
@@ -33,7 +33,7 @@ defmodule Wocky.Bot.Subscription do
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
-    |> cast(params, [:user_id, :bot_id, :guest])
+    |> cast(params, [:user_id, :bot_id])
     |> validate_required([:user_id, :bot_id])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:bot_id)
@@ -84,18 +84,11 @@ defmodule Wocky.Bot.Subscription do
   end
 
   @spec put(User.t(), Bot.t(), boolean()) :: :ok | no_return
-  def put(user, bot, guest \\ false) do
-    visitor_changes = maybe_set_visitor(guest)
-
-    %{user_id: user.id, bot_id: bot.id, guest: guest}
-    |> Map.merge(visitor_changes)
+  def put(user, bot, _guest \\ false) do
+    %{user_id: user.id, bot_id: bot.id}
     |> make_changeset()
     |> Repo.insert!(
-      on_conflict: [
-        set:
-          [guest: guest, updated_at: DateTime.utc_now()] ++
-            Map.to_list(visitor_changes)
-      ],
+      on_conflict: [set: [updated_at: DateTime.utc_now()]],
       conflict_target: [:user_id, :bot_id]
     )
 
@@ -104,21 +97,13 @@ defmodule Wocky.Bot.Subscription do
     :ok
   end
 
-  defp maybe_set_visitor(true), do: %{}
-
-  defp maybe_set_visitor(false) do
-    %{visitor: false, visited_at: nil, departed_at: nil}
-  end
-
   defp make_changeset(changes), do: changeset(%Subscription{}, changes)
 
   @spec clear_guests(Bot.t()) :: :ok
   def clear_guests(bot) do
     Subscription
     |> where(bot_id: ^bot.id)
-    |> Repo.update_all(
-      set: [guest: false, visitor: false, updated_at: DateTime.utc_now()]
-    )
+    |> Repo.update_all(set: [visitor: false, updated_at: DateTime.utc_now()])
 
     :ok
   end

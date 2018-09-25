@@ -73,73 +73,14 @@ defmodule WockyAPI.GraphQL.PublicTest do
     }
   }
   """
-  test "get public bot, subscribers, items, and their public owned bots", %{
-    bot: %{id: bot_id} = bot,
-    user: %{id: user_id},
-    user2: %{id: user2_id, handle: user2_handle},
-    item: %{id: item_id}
+  test "There are no public bots any more so nothing should be returned", %{
+    bot: %{id: bot_id}
   } do
-    result = run_query(@query, nil, %{"id" => bot.id})
+    result = run_query(@query, nil, %{"id" => bot_id})
 
     refute has_errors(result)
 
-    assert %{
-             "bot" => %{
-               "id" => ^bot_id,
-               "image" => %{
-                 "fullUrl" => u1,
-                 "thumbnailUrl" => u2
-               },
-               "subscribers" => %{
-                 "totalCount" => 2,
-                 "edges" => [
-                   %{
-                     "node" => %{
-                       "id" => ^user2_id,
-                       "bots" => %{
-                         "totalCount" => 0,
-                         "edges" => []
-                       }
-                     }
-                   },
-                   %{
-                     "node" => %{
-                       "id" => ^user_id,
-                       "bots" => %{
-                         "totalCount" => 1,
-                         "edges" => [
-                           %{
-                             "node" => %{
-                               "id" => ^bot_id
-                             }
-                           }
-                         ]
-                       }
-                     }
-                   }
-                 ]
-               },
-               "items" => %{
-                 "totalCount" => 1,
-                 "edges" => [
-                   %{
-                     "node" => %{
-                       "id" => ^item_id,
-                       "owner" => %{
-                         "handle" => ^user2_handle,
-                         "avatar" => %{
-                           "fullUrl" => u3,
-                           "thumbnailUrl" => u4
-                         }
-                       }
-                     }
-                   }
-                 ]
-               }
-             }
-           } = result.data
-
-    Enum.each([u1, u2, u3, u4], &assert(is_binary(&1)))
+    assert %{"bot" => nil} == result.data
   end
 
   # GraphiQL schema query:
