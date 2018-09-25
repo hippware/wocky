@@ -84,11 +84,19 @@ defmodule Wocky.User.Notification do
     |> Repo.insert()
   end
 
-  @spec user_query(User.t(), id() | nil) :: Queryable.t()
-  def user_query(user, after_id) do
+  @spec user_query(User.t(), id() | nil, id() | nil) :: Queryable.t()
+  def user_query(user, before_id, after_id) do
     Notification
     |> where(user_id: ^user.id)
+    |> maybe_add_before_id(before_id)
     |> maybe_add_after_id(after_id)
+  end
+
+  defp maybe_add_before_id(queryable, nil), do: queryable
+
+  defp maybe_add_before_id(queryable, id) do
+    queryable
+    |> where([n], n.id < ^id)
   end
 
   defp maybe_add_after_id(queryable, nil), do: queryable

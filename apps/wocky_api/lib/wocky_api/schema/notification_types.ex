@@ -129,6 +129,8 @@ defmodule WockyAPI.Schema.NotificationTypes do
     connection field :notifications, node_type: :notifications do
       @desc "ID which all results should be newer than"
       arg :after_id, :aint
+      @desc "ID which all results should be older than"
+      arg :before_id, :aint
 
       connection_complexity
       resolve &Notification.get_notifications/3
