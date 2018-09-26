@@ -7,9 +7,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Schedule `staging` deployments (#1852)
 * Update: timex (PR #1869), honeybadger (PR #1868), distillery (PR #1867)
-  * redix (PR #1866), absinthe_relay (PR #1873)
+  * redix (PR #1866), absinthe_relay (PR #1873), lager (PR #1875)
+  * credo (PR #1882), excoveralls (PR #1883)
 * Fix up all the dialyzer warnings (PR #1865)
 * Integrate GraphQL notification queries + subscriptions (#1871)
+* Add beforeID to match afterID on notification query (PR #1877)
 
 
 # 2018.9.19+r826f473
