@@ -8,12 +8,11 @@ defmodule Wocky.BotSpec do
   alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.GeoUtils
+  alias Wocky.Index.TestIndexer
   alias Wocky.HomeStream
   alias Wocky.HomeStream.Item, as: HomeStreamItem
-  alias Wocky.Index.TestIndexer
   alias Wocky.Repo
-  alias Wocky.Repo.{Factory, ID, Timestamp}
-  alias Wocky.Roster
+  alias Wocky.Repo.{Factory, ID}
   alias Wocky.User
 
   describe "helper functions" do
@@ -56,10 +55,6 @@ defmodule Wocky.BotSpec do
       end
 
       it do: "bogus" |> Bot.get_id_from_node() |> should(be_nil())
-    end
-
-    describe "public?" do
-      it do: bot() |> Bot.public?() |> should(eq bot().public)
     end
   end
 
@@ -233,60 +228,31 @@ defmodule Wocky.BotSpec do
 
       context "home stream cleanup" do
         before do
-          bot = Factory.insert(:bot, %{public: true, user: user()})
-          shared_user = Factory.insert(:user)
-          unshared_user = Factory.insert(:user)
+          bot = Factory.insert(:bot, %{user: user()})
+          invited_user = Factory.insert(:user)
 
           Enum.each(
-            [user(), shared_user, unshared_user],
+            [user(), invited_user],
             &Factory.insert(:home_stream_item, %{reference_bot: bot, user: &1})
           )
 
-          Factory.insert(:share, %{sharer: user(), user: shared_user, bot: bot})
+          Factory.insert(:invitation, %{
+            user: user(),
+            invitee: invited_user,
+            bot: bot
+          })
 
-          {:ok,
-           bot: bot, shared_user: shared_user, unshared_user: unshared_user}
+          {:ok, bot: bot, invited_user: invited_user}
         end
 
-        context "bot becomes private" do
-          before do
-            Bot.update(shared.bot, %{public: false})
-            :ok
-          end
-
-          it do:
-               shared.shared_user.id
-               |> HomeStream.get()
-               |> is_deleted()
-               |> should(be_false())
-
-          it do:
-               shared.unshared_user.id
-               |> HomeStream.get()
-               |> is_deleted()
-               |> should(be_true())
-
-          it do:
-               user().id
-               |> HomeStream.get()
-               |> is_deleted()
-               |> should(be_false())
-        end
-
-        context "bot remains public" do
+        context "bot's description changes" do
           before do
             Bot.update(shared.bot, %{description: Lorem.sentence()})
             :ok
           end
 
           it do:
-               shared.shared_user.id
-               |> HomeStream.get()
-               |> is_deleted()
-               |> should(be_false())
-
-          it do:
-               shared.unshared_user.id
+               shared.invited_user.id
                |> HomeStream.get()
                |> is_deleted()
                |> should(be_false())
@@ -379,9 +345,14 @@ defmodule Wocky.BotSpec do
       before do
         [user1, user2] = Factory.insert_list(2, :user)
         owned_bot = Factory.insert(:bot, user: user1)
-        public_bot = Factory.insert(:bot, user: user2, public: true)
-        shared_bot = Factory.insert(:bot, user: user2)
-        Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
+        invited_bot = Factory.insert(:bot, user: user2)
+
+        Factory.insert(:invitation,
+          invitee: user1,
+          bot: invited_bot,
+          user: user2
+        )
+
         private_bot = Factory.insert(:bot, user: user2)
         pending_bot = Factory.insert(:bot, user: user1, pending: true)
         subscribed_bot = Factory.insert(:bot, user: user2)
@@ -390,8 +361,7 @@ defmodule Wocky.BotSpec do
         {:ok,
          user: user1,
          owned_bot: owned_bot,
-         public_bot: public_bot,
-         shared_bot: shared_bot,
+         invited_bot: invited_bot,
          private_bot: private_bot,
          pending_bot: pending_bot,
          subscribed_bot: subscribed_bot}
@@ -402,14 +372,9 @@ defmodule Wocky.BotSpec do
         |> should(eq shared.owned_bot)
       end
 
-      it "should allow public bots" do
-        run_is_visible_query(shared.public_bot, shared.user)
-        |> should(eq shared.public_bot)
-      end
-
-      it "should allow shared bots" do
-        run_is_visible_query(shared.shared_bot, shared.user)
-        |> should(eq shared.shared_bot)
+      it "should allow invited bots" do
+        run_is_visible_query(shared.invited_bot, shared.user)
+        |> should(eq shared.invited_bot)
       end
 
       it "should refuse private bots" do
@@ -422,70 +387,6 @@ defmodule Wocky.BotSpec do
         |> should(eq shared.subscribed_bot)
       end
     end
-
-    describe "discover_bots_query/2" do
-      before do
-        [owner, friend, follower, followee, stranger] =
-          Factory.insert_list(5, :user)
-
-        Roster.befriend(owner.id, friend.id)
-        Roster.follow(follower.id, owner.id)
-        Roster.follow(owner.id, followee.id)
-
-        _private_bot = Factory.insert(:bot, user: owner)
-        public_bot = Factory.insert(:bot, user: owner, public: true)
-
-        old_public_bot =
-          Factory.insert(
-            :bot,
-            user: owner,
-            public: true,
-            created_at: Timestamp.from_string!("1980-01-01T00:00:00.000000")
-          )
-
-        {:ok,
-         owner: owner,
-         friend: friend,
-         follower: follower,
-         followee: followee,
-         stranger: stranger,
-         public_bot: public_bot,
-         old_public_bot: old_public_bot}
-      end
-
-      it "should return public bots for friends" do
-        run_discover_query(shared.friend)
-        |> should(eq [shared.old_public_bot.id, shared.public_bot.id])
-      end
-
-      it "should return public bots for followers" do
-        run_discover_query(shared.follower)
-        |> should(eq [shared.old_public_bot.id, shared.public_bot.id])
-      end
-
-      it "should return nothing for followees" do
-        run_discover_query(shared.followee)
-        |> should(eq [])
-      end
-
-      it "should return nothing for strangers" do
-        run_discover_query(shared.stranger)
-        |> should(eq [])
-      end
-
-      it "should return nothing for the owner" do
-        run_discover_query(shared.owner)
-        |> should(eq [])
-      end
-
-      it "should limit bots to after the supplied timestamp" do
-        run_discover_query(
-          shared.friend,
-          Timestamp.from_string!("2010-01-01T00:00:00")
-        )
-        |> should(eq [shared.public_bot.id])
-      end
-    end
   end
 
   defp run_is_visible_query(bot, user) do
@@ -494,13 +395,6 @@ defmodule Wocky.BotSpec do
     |> Bot.is_visible_query(user)
     |> preload(:user)
     |> Repo.one()
-  end
-
-  defp run_discover_query(user, since \\ nil) do
-    user
-    |> Bot.discover_query(since)
-    |> Repo.all()
-    |> Enum.map(& &1.id)
   end
 
   defp is_deleted([%HomeStreamItem{class: class}]), do: class == :deleted

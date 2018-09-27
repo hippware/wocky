@@ -11,15 +11,14 @@ defmodule WockyAPI.Resolvers.Bot do
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
-    {:ok, Bot.get_bot(args[:id], Map.get(context, :current_user))}
+    case Map.get(context, :current_user) do
+      nil -> {:ok, nil}
+      user -> {:ok, Bot.get_bot(args[:id], user)}
+    end
   end
 
   def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do
     do_get_bots(user, requestor, args)
-  end
-
-  def get_bots(%User{} = user, args, _info) do
-    do_get_bots(user, nil, args)
   end
 
   def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
@@ -31,16 +30,6 @@ defmodule WockyAPI.Resolvers.Bot do
       |> Bot.by_relationship_query(:subscribed, requestor)
       |> Bot.filter_by_location(point_a, point_b)
       |> Repo.all()
-
-    {:ok, bots}
-  end
-
-  def get_discover_bots(_root, args, %{context: %{current_user: requestor}}) do
-    bots =
-      requestor
-      |> Bot.discover_query(args[:since])
-      |> Repo.all()
-      |> Enum.map(fn b -> %{bot: b, action: :created} end)
 
     {:ok, bots}
   end
@@ -125,12 +114,12 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  defp maybe_update_location(%{user_location: l}, user, %{geofence: true} = bot)
+  defp maybe_update_location(%{user_location: l}, user, bot)
        when not is_nil(l) do
     bot
     |> Bot.sub_setup_event()
     |> Waiter.wait(2000, fn ->
-      Enum.member?(User.get_bot_relationships(user, bot), :guest)
+      Enum.member?(User.get_bot_relationships(user, bot), :subscribed)
     end)
 
     params = Map.put(l, :resource, l[:device] || l[:resource])
@@ -170,7 +159,7 @@ defmodule WockyAPI.Resolvers.Bot do
     subscribers_query =
       case type do
         :subscriber -> Bot.subscribers_query(bot)
-        :guest -> Bot.guests_query(bot)
+        :guest -> Bot.subscribers_query(bot)
         :visitor -> Bot.visitors_query(bot)
       end
 
@@ -188,18 +177,13 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(input[:id])
 
       bot ->
-        Bot.subscribe(bot, requestor, input[:guest] || false)
+        Bot.subscribe(bot, requestor)
 
-        with :ok <- maybe_update_subscriber_location(input, requestor, bot) do
+        with :ok <- maybe_update_location(input, requestor, bot) do
           {:ok, true}
         end
     end
   end
-
-  defp maybe_update_subscriber_location(%{guest: true} = input, requestor, bot),
-    do: maybe_update_location(input, requestor, bot)
-
-  defp maybe_update_subscriber_location(_, _, _), do: :ok
 
   def unsubscribe(_root, %{input: %{id: bot_id}}, %{
         context: %{current_user: requestor}
@@ -234,12 +218,8 @@ defmodule WockyAPI.Resolvers.Bot do
     "visitor_subscription_" <> user_id
   end
 
-  def discover_bots_topic(user_id) do
-    "visitor_subscription_" <> user_id
-  end
-
   def notify_visitor_subscription(bot, subscriber, entered) do
-    to_notify = bot |> Bot.guests_query() |> Repo.all()
+    to_notify = bot |> Bot.subscribers_query() |> Repo.all()
 
     action =
       case entered do
@@ -254,13 +234,6 @@ defmodule WockyAPI.Resolvers.Bot do
         to_notify,
         &{:bot_guest_visitors, visitor_subscription_topic(&1.id)}
       )
-
-    Subscription.publish(Endpoint, notification, targets)
-  end
-
-  def notify_discover_subscriptions(user_ids, bot, action) do
-    notification = %{bot: bot, action: action}
-    targets = Enum.map(user_ids, &{:discover_bots, discover_bots_topic(&1)})
 
     Subscription.publish(Endpoint, notification, targets)
   end

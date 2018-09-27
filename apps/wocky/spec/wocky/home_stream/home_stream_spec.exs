@@ -242,13 +242,13 @@ defmodule Wocky.HomeStreamSpec do
 
     context "deletion of items for users who can no longer see the bot" do
       before do
-        shared_to_user = Factory.insert(:user)
+        invited_user = Factory.insert(:user)
         ref_user = Factory.insert(:user)
         ref_bot = Factory.insert(:bot, user: ref_user)
 
         for _ <- 1..@num_items do
           Factory.insert(:home_stream_item, %{
-            user: shared_to_user,
+            user: invited_user,
             reference_bot: ref_bot
           })
 
@@ -258,16 +258,15 @@ defmodule Wocky.HomeStreamSpec do
           })
         end
 
-        Factory.insert(:share, %{
+        Factory.insert(:invitation, %{
           bot: ref_bot,
-          sharer: ref_user,
-          user: shared_to_user
+          user: ref_user,
+          invitee: invited_user
         })
 
         {:ok, ref_bot} = Bot.update(ref_bot, %{public: false})
 
-        {:ok,
-         ref_user: ref_user, ref_bot: ref_bot, shared_to_user: shared_to_user}
+        {:ok, ref_user: ref_user, ref_bot: ref_bot, invited_user: invited_user}
       end
 
       it "should remove referenced items from unshared-to users" do
@@ -278,7 +277,7 @@ defmodule Wocky.HomeStreamSpec do
       end
 
       it "should not affect the items of users to whom the bot is shared" do
-        shared.shared_to_user.id
+        shared.invited_user.id
         |> HomeStream.get()
         |> Enum.filter(&(&1.reference_bot_id == shared.ref_bot.id))
         |> should(have_length(@num_items))

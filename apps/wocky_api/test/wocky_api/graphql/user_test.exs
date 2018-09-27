@@ -655,41 +655,9 @@ defmodule WockyAPI.GraphQL.UserTest do
       }
     }
     """
-    test "Should be false with no related bots", %{user: user} do
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
-    end
-
-    test "should be true if any owned geofence bots exist", %{user: user} do
-      Factory.insert(:bot, user: user, geofence: true)
+    test "Should always be true", %{user: user} do
       result = run_query(@query, user)
       assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be false if owned bots are not geofence", %{user: user} do
-      Factory.insert(:bot, user: user)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
-    end
-
-    test "should be true if a guest of a geofence bot", %{
-      user: user,
-      user2: user2
-    } do
-      bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:subscription, user: user, bot: bot, guest: true)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be false if not a guest of a geofence bot", %{
-      user: user,
-      user2: user2
-    } do
-      bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:subscription, user: user, bot: bot)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
     end
   end
 

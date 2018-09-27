@@ -20,7 +20,6 @@
          get_bot/2,
          owner_jid/1,
          check_owner/2,
-         check_guest/2,
          check_access/2,
          get_id_from_fields/1,
          bot_packet_action/1,
@@ -101,12 +100,6 @@ check_owner(#{user_id := UserID}, #{id := UserID}) -> ok;
 check_owner(#{user_id := UserID}, #jid{luser = UserID}) -> ok;
 check_owner(#{user_id := UserID}, UserID) -> ok;
 check_owner(_, _) -> {error, ?ERR_FORBIDDEN}.
-
-check_guest(User, Bot) ->
-    case ?wocky_bot:subscription(Bot, User) of
-        X when X =:= guest orelse X =:= visitor -> ok;
-        _ -> {error, ?ERR_FORBIDDEN}
-    end.
 
 check_access(NoUser, _) when NoUser =:= nil orelse NoUser =:= undefined ->
     {error, ?ERR_FORBIDDEN};

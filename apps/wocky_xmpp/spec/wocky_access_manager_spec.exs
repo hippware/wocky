@@ -4,7 +4,7 @@ defmodule :wocky_access_manager_spec do
   use Wocky.JID
 
   alias Wocky.Bot
-  alias Wocky.Bot.Share
+  alias Wocky.Bot.Invitation
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -20,7 +20,7 @@ defmodule :wocky_access_manager_spec do
     bob = Factory.insert(:user)
     bot = Factory.insert(:bot, user: alice)
 
-    Share.put(bob, bot, alice)
+    Invitation.put(bob, bot, alice)
     Subscription.put(bob, bot)
 
     {:ok, alice: alice, bob: bob, bot: bot}

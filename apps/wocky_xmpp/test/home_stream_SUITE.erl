@@ -56,16 +56,9 @@ groups() ->
 
 publish_bot_cases() ->
     [
-     auto_publish_newly_public_bot,
-     auto_publish_new_bot_friends,
-     auto_publish_new_bot_non_friends,
-     auto_publish_shared_private_bot,
      auto_publish_bot_item,
-     auto_publish_to_system_user,
      bot_description_update,
-     bot_change_notification,
-     bot_becomes_private,
-     bot_deleted
+     bot_change_notification
     ].
 
 catchup_limits_cases() ->
@@ -82,7 +75,7 @@ suite() ->
 %%--------------------------------------------------------------------
 
 users() ->
-    [alice, bob, carol, karen, tim].
+    [alice, bob, carol, tim].
 
 init_per_suite(Config) ->
     ok = test_helper:ensure_wocky_is_running(),
@@ -375,104 +368,13 @@ get_item(Config) ->
         expect_iq_error_u(get_hs_stanza(?wocky_id:new()), Alice, Alice)
       end).
 
-auto_publish_newly_public_bot(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1},
-                           {karen, 1}, {tim, 1}],
-      fun(Alice, Bob, Carol, Karen, Tim) ->
-        %% This is not a good way to drop the Alice/Tim friendship, however
-        %% I think our de-friend system is a bit broken at the moment -
-        %% test_helper:remove_contact/2 results in an asymmetric pair of rosters
-        %% whcih should never happpen. This workaround will suffice until
-        %% that gets fixed.
-        ?wocky_roster:delete(?ALICE, ?TIM),
-        ?wocky_roster:delete(?TIM, ?ALICE),
-        ?wocky_roster:delete(?ALICE, ?KAREN),
-        ?wocky_roster:delete(?KAREN, ?ALICE),
-        ?wocky_roster:delete(?KAREN, ?TIM),
-        ?wocky_roster:delete(?TIM, ?KAREN),
-
-        test_helper:follow(Tim, Alice),
-
-        check_home_stream_sizes(?BOB_HS_ITEM_COUNT, [Bob], false),
-        check_home_stream_sizes(3, [Alice], false),
-        check_home_stream_sizes(0, [Carol, Tim]),
-
-        Stanza = escalus_stanza:to(share_bot_stanza(), ?BJID(?BOB)),
-        escalus_client:send(Alice, Stanza),
-        timer:sleep(400),
-        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
-
-        escalus_client:send(Alice, Stanza),
-        timer:sleep(400),
-        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
-
-        % Bob and Carol are friends and Tim is a follower so they all get
-        % notified of the bot's new publicness - additionally Alice, as the
-        % owner, also gets notified:
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
-        timer:sleep(500),
-        check_home_stream_sizes(?BOB_HS_ITEM_COUNT + 1, [Bob]),
-        check_home_stream_sizes(4, [Alice]),
-        check_home_stream_sizes(1, [Carol, Tim]),
-
-        % Karen is neither a friend nor subscriber, so gets nothing.
-        check_home_stream_sizes(0, [Karen]),
-
-        ensure_all_clean([Alice, Bob, Carol, Karen, Tim])
-      end).
-
-auto_publish_new_bot_friends(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
-      fun(Alice, Bob, Carol) ->
-        clear_home_streams(),
-        expect_iq_success(bot_SUITE:create_bot_stanza(safe_fields()), Alice),
-        timer:sleep(400),
-        check_home_stream_sizes(0, [Alice, Bob, Carol]),
-
-        Fields = [{"public", "bool", true} | safe_fields()],
-        expect_iq_success(bot_SUITE:create_bot_stanza(Fields), Alice),
-        timer:sleep(400),
-        check_home_stream_sizes(1, [Alice, Bob, Carol], false)
-      end).
-
-auto_publish_new_bot_non_friends(Config) ->
-    escalus:story(Config -- [{everyone_is_friends, true}],
-                  [{alice, 1}, {karen, 1}, {tim, 1}],
-      fun(Alice, Karen, Tim) ->
-        clear_home_streams(),
-        expect_iq_success(bot_SUITE:create_bot_stanza(safe_fields()), Alice),
-        timer:sleep(400),
-        check_home_stream_sizes(0, [Alice, Karen, Tim]),
-
-        Fields = [{"public", "bool", true} | safe_fields()],
-        expect_iq_success(bot_SUITE:create_bot_stanza(Fields), Alice),
-        timer:sleep(400),
-        check_home_stream_sizes(1, [Alice, Tim], false),
-        check_home_stream_sizes(0, [Karen])
-      end).
-
-
-auto_publish_shared_private_bot(Config) ->
-    escalus:story(Config -- [{everyone_is_friends, true}],
-                  [{alice, 1}, {karen, 1}],
-      fun(Alice, Karen) ->
-        clear_home_streams(),
-        check_home_stream_sizes(0, [Karen]),
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        Stanza = escalus_stanza:to(share_bot_stanza(), ?BJID(?KAREN)),
-        escalus_client:send(Alice, Stanza),
-        timer:sleep(400),
-        check_home_stream_sizes(1, [Karen])
-      end).
-
 auto_publish_bot_item(Config) ->
+    test_helper:add_invitation(?BOT, ?CAROL, ?ALICE),
     escalus:story(Config, [{alice, 1}, {carol, 1}],
       fun(Alice, Carol) ->
         clear_home_streams(),
-        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
         timer:sleep(400),
-        check_home_stream_sizes(1, [Carol]),
+        check_home_stream_sizes(0, [Carol]),
 
         expect_iq_success(test_helper:subscribe_stanza(), Carol),
 
@@ -482,34 +384,13 @@ auto_publish_bot_item(Config) ->
             Alice)
          ),
 
-        check_home_stream_sizes(2, [Carol], false),
+        check_home_stream_sizes(1, [Carol], false),
 
         expect_iq_success(retract_item_stanza(?BOT, ItemID), Alice),
         timer:sleep(400),
-        check_home_stream_sizes(1, [Carol], false)
+        check_home_stream_sizes(0, [Carol], false)
 
       end).
-
-auto_publish_to_system_user(Config) ->
-    ?wocky_user:add_role(?CAROL, ?wocky_user:system_role()),
-    escalus:story(Config, [{alice, 1}, {carol, 1}],
-      fun(Alice, Carol) ->
-        clear_home_streams(),
-        set_bot_vis(?WOCKY_BOT_VIS_OWNER, Alice),
-        set_bot_vis(?WOCKY_BOT_VIS_OPEN, Alice),
-        timer:sleep(400),
-        check_home_stream_sizes(1, [Carol]),
-
-        expect_iq_success(test_helper:subscribe_stanza(), Carol),
-
-        expect_iq_success(
-          publish_item_stanza(?BOT, <<"ID">>, <<"Title">>, <<"Content">>),
-          Alice),
-
-        check_home_stream_sizes(2, [Carol], false)
-
-      end),
-    ?wocky_user:remove_role(?CAROL, ?wocky_user:system_role()).
 
 bot_description_update(Config) ->
     escalus:story(Config, [{alice, 1}, {bob, 1}, {carol, 1}],
@@ -598,18 +479,6 @@ bot_change_notification(Config) ->
         expect_iq_success(
           update_field_stanza("address_data", "string", "hereabouts"), Alice),
         timer:sleep(400),
-        ensure_all_clean([Alice, Carol]),
-
-        % Bot privatisation notification
-        set_public(false, Alice),
-        lists:foreach(
-          fun(_) ->
-                  escalus:assert(fun is_hs_item_deleted_notification/1,
-                                 escalus:wait_for_stanza(Carol))
-          end,
-          lists:seq(1, 2)),
-
-        set_public(true, Alice),
 
         unwatch_hs(Alice),
         ensure_all_clean([Alice, Carol])
@@ -630,17 +499,6 @@ is_bot_desc_change_notification(S) ->
                                 {elem, <<"message">>},
                                 {elem, <<"bot-description-changed">>}]).
 
-is_bot_share_notification(S) ->
-    escalus_pred:is_message(S)
-    andalso
-    <<"share">> =:= xml:get_path_s(S, [{elem, <<"notification">>},
-                                       {elem, <<"item">>},
-                                       {elem, <<"message">>},
-                                       {elem, <<"bot">>},
-                                       {elem, <<"action">>},
-                                       cdata]).
-
-
 is_item_publish_notification(S) ->
     escalus_pred:is_message(S)
     andalso
@@ -656,58 +514,6 @@ is_hs_item_deleted_notification(S) ->
     andalso
     <<>> =/= xml:get_path_s(S, [{elem, <<"notification">>},
                                 {elem, <<"delete">>}]).
-
-bot_becomes_private(Config) ->
-    escalus:story(Config, [{alice, 1}, {carol, 1}],
-      fun(Alice, Carol) ->
-        set_public(true, Alice),
-        timer:sleep(500),
-        clear_home_streams(),
-
-        watch_hs(Carol),
-
-        expect_iq_success(subscribe_stanza(), Carol),
-
-        % Place an item in Carol's HS about the bot
-        expect_iq_success(update_bot_desc_stanza("Re-Updated Description"),
-                          Alice),
-
-        escalus:assert(fun is_bot_desc_change_notification/1,
-                       escalus:wait_for_stanza(Carol)),
-        expect_home_stream_bot_desc(Carol, false),
-
-        % Make the bot private
-        set_public(false, Alice),
-
-        % The item should have been deleted on Carol's HS
-        escalus:assert(fun is_hs_item_deleted_notification/1,
-                       escalus:wait_for_stanza(Carol)),
-        Stanza2 = expect_iq_success_u(get_hs_stanza(), Carol, Carol),
-        check_hs_result(Stanza2, 0),
-
-        unwatch_hs(Carol)
-      end).
-
-bot_deleted(Config) ->
-    User = ?wocky_repo:get(?wocky_user, ?ALICE),
-    #{id := BotID} = ?wocky_factory:insert(bot, #{user => User}),
-    escalus:story(Config, [{alice, 1}, {carol, 1}],
-      fun(Alice, Carol) ->
-        clear_home_streams(),
-        watch_hs(Carol),
-
-        escalus:send(Alice, bot_SUITE:share_stanza(BotID, Alice, Carol, false)),
-
-        escalus:assert(fun is_bot_share_notification/1,
-                       escalus:wait_for_stanza(Carol)),
-
-        expect_iq_success(bot_SUITE:delete_stanza(BotID), Alice),
-
-        escalus:assert(fun is_hs_item_deleted_notification/1,
-                       escalus:wait_for_stanza(Carol)),
-
-        unwatch_hs(Carol)
-      end).
 
 no_auto_publish_pep_item(Config) ->
     mod_wocky_pep:register_handler(?NS_TEST, whitelist, ?MODULE),
@@ -890,13 +696,6 @@ update_field_stanza(Name, Type, Value) ->
 safe_fields() ->
     lists:keyreplace("shortname", 1, bot_SUITE:default_fields(),
                      {"shortname", "string", ""}).
-
-set_public(Public, Client) ->
-    Stanza = test_helper:iq_set(
-               ?NS_BOT, node_el(?BOT, <<"fields">>,
-                                [bot_SUITE:old_create_field(
-                                   {"public", "bool", Public})])),
-    expect_iq_success(Stanza, Client).
 
 check_is_deletion(Stanzas) ->
     Stanza = get_message_stanza(Stanzas),

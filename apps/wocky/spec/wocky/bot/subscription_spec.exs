@@ -4,10 +4,8 @@ defmodule Wocky.Bot.SubscriptionSpec do
   use ModelHelpers
 
   alias Ecto.Adapters.SQL
-  alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.ID
-  alias Wocky.Roster
 
   describe "validation" do
     let :valid_attrs, do: %{bot_id: ID.new(), user_id: ID.new()}
@@ -45,20 +43,18 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
   describe "database operations" do
     before do
-      [user, owner, guest, visitor] = Factory.insert_list(4, :user)
+      [user, owner, visitor] = Factory.insert_list(3, :user)
       bot = Factory.insert(:bot, user: owner)
       Factory.insert(:subscription, user: user, bot: bot)
-      Factory.insert(:subscription, user: guest, bot: bot, guest: true)
 
       Factory.insert(
         :subscription,
         user: visitor,
         bot: bot,
-        guest: true,
         visitor: true
       )
 
-      {:ok, owner: owner, user: user, guest: guest, visitor: visitor, bot: bot}
+      {:ok, owner: owner, user: user, visitor: visitor, bot: bot}
     end
 
     describe "state/2" do
@@ -81,12 +77,8 @@ defmodule Wocky.Bot.SubscriptionSpec do
         Subscription.state(shared.owner, shared.bot) |> should(be_nil())
       end
 
-      it "should return :guest when the user is a subscribed guest" do
-        Subscription.state(shared.guest, shared.bot) |> should(eq :guest)
-      end
-
       it "should return :visitor when the user is a visitor" do
-        Subscription.state(shared.visitor, shared.bot) |> should(eq :visitor)
+        Subscription.state(shared.visitor, shared.bot) |> should(eq :visiting)
       end
     end
 
@@ -128,7 +120,7 @@ defmodule Wocky.Bot.SubscriptionSpec do
         end
       end
 
-      context "when a subscription already exists and guest is 'false'" do
+      context "when a subscription already exists" do
         before do
           result = Subscription.put(shared.visitor, shared.bot)
           {:ok, result: result}
@@ -138,25 +130,9 @@ defmodule Wocky.Bot.SubscriptionSpec do
           shared.result |> should(eq :ok)
         end
 
-        it "should update the visitor field" do
-          Subscription.state(shared.visitor, shared.bot)
-          |> should(eq :subscribed)
-        end
-      end
-
-      context "when a subscription already exists and guest is 'true'" do
-        before do
-          result = Subscription.put(shared.visitor, shared.bot, true)
-          {:ok, result: result}
-        end
-
-        it "should return :ok" do
-          shared.result |> should(eq :ok)
-        end
-
         it "should not falisfy the visitor field" do
           Subscription.state(shared.visitor, shared.bot)
-          |> should(eq :visitor)
+          |> should(eq :visiting)
         end
       end
     end
@@ -201,24 +177,15 @@ defmodule Wocky.Bot.SubscriptionSpec do
 
     describe "visit/2" do
       it "should set the subscriber as a visitor" do
-        Subscription.visit(shared.guest, shared.bot) |> should(eq :ok)
-        Subscription.state(shared.guest, shared.bot) |> should(eq :visitor)
+        Subscription.visit(shared.user, shared.bot) |> should(eq :ok)
+        Subscription.state(shared.user, shared.bot) |> should(eq :visiting)
       end
     end
 
     describe "depart/2" do
-      it "should set the visitor as a guest" do
+      it "should set the visitor as a subscriber" do
         Subscription.depart(shared.visitor, shared.bot) |> should(eq :ok)
-        Subscription.state(shared.visitor, shared.bot) |> should(eq :guest)
-      end
-    end
-
-    describe "clear_guests/1" do
-      it "should remove guest and visitor status from everyone" do
-        Subscription.clear_guests(shared.bot) |> should(eq :ok)
         Subscription.state(shared.visitor, shared.bot) |> should(eq :subscribed)
-        Subscription.state(shared.guest, shared.bot) |> should(eq :subscribed)
-        Subscription.state(shared.user, shared.bot) |> should(eq :subscribed)
       end
     end
 
@@ -251,44 +218,6 @@ defmodule Wocky.Bot.SubscriptionSpec do
       |> Map.get(:rows)
       |> hd
       |> hd
-    end
-
-    describe "update_bot_public_trigger trigger and stored procedure" do
-      before do
-        bot = Factory.insert(:bot, public: true)
-
-        users =
-          [subscribed_user, shared_sub_user, friend] =
-          Factory.insert_list(3, :user)
-
-        Enum.each(users, &Factory.insert(:subscription, bot: bot, user: &1))
-
-        Factory.insert(:share, bot: bot, user: shared_sub_user)
-        Roster.befriend(bot.user.id, friend.id)
-
-        Bot.update(bot, %{public: false})
-
-        {:ok,
-         bot: bot,
-         subscribed_user: subscribed_user,
-         shared_sub_user: shared_sub_user,
-         friend: friend}
-      end
-
-      it "should remove the subscription for a standard subscriber" do
-        Subscription.state(shared.subscribed_user, shared.bot)
-        |> should(be_nil())
-      end
-
-      it "should not affect the subscription of a user with a share" do
-        Subscription.state(shared.shared_sub_user, shared.bot)
-        |> should(eq :subscribed)
-      end
-
-      it "should remove the subscription of friends" do
-        Subscription.state(shared.friend, shared.bot)
-        |> should(be_nil())
-      end
     end
   end
 end
