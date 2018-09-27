@@ -20,7 +20,7 @@ wocky-test:
     - postgres
     - redis
 postgres:
-  image: mdillon/postgis:9.6-alpine
+  image: hippware/postgis-healthcheck:9.6-alpine
   environment:
     POSTGRES_PASSWORD: "password"
   ports:

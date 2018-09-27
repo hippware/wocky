@@ -20,10 +20,10 @@ help:
 ### Run tests in CI
 
 unittest: ## Run the unit tests locally
-	mix do lint, ecto.wait, ecto.reset, test, espec
+	mix do lint, ecto.reset, test, espec
 
 inttest: ## Run the integration tests locally
-	mix do ecto.wait, ecto.reset, epmd
+	mix do ecto.reset, epmd
 	mix ct
 
 ########################################################################
