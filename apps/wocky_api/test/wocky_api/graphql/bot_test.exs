@@ -2,7 +2,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.{Block, Bot, GeoUtils, Repo, Roster, User}
+  alias Wocky.{Block, Bot, GeoUtils, Repo, User}
   alias Wocky.Bot.Item
   alias Wocky.Bot.Invitation
   alias Wocky.Repo.Factory
@@ -189,25 +189,12 @@ defmodule WockyAPI.GraphQL.BotTest do
              }
     end
 
-    test "get bots anonymously", %{user2: user2, bot2: bot2} do
+    test "get bots anonymously", %{user2: user2} do
       result = run_query(@query, nil, %{"id" => user2.id})
 
-      refute has_errors(result)
+      assert has_errors(result)
 
-      assert result.data == %{
-               "user" => %{
-                 "bots" => %{
-                   "totalCount" => 1,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "id" => bot2.id
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
+      assert error_msg(result) =~ "requires an authenticated user"
     end
 
     @query """
@@ -348,15 +335,15 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "active bots" do
     setup %{user: user, bot: bot, user2: user2, bot2: bot2} do
-      Bot.subscribe(bot, user, true)
-      Bot.subscribe(bot2, user, true)
+      Bot.subscribe(bot, user)
+      Bot.subscribe(bot2, user)
       Bot.visit(bot, user, false)
 
-      Bot.subscribe(bot2, user2, true)
+      Bot.subscribe(bot2, user2)
       Bot.visit(bot2, user2, false)
 
-      for b <- Factory.insert_list(3, :bot, public: true) do
-        Bot.subscribe(b, user, true)
+      for b <- Factory.insert_list(3, :bot) do
+        Bot.subscribe(b, user)
       end
 
       :ok
@@ -495,44 +482,6 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
   end
 
-  describe "bot discovery" do
-    setup %{user: user, user2: user2} do
-      Roster.befriend(user.id, user2.id)
-      :ok
-    end
-
-    @query """
-    query ($since: DateTime) {
-      discoverBots (since: $since) {
-        bot {id}
-        action
-      }
-    }
-    """
-    test "gets created bots", %{user: user, bot2: bot2} do
-      result = run_query(@query, user)
-
-      refute has_errors(result)
-
-      assert %{
-               "discoverBots" => [
-                 %{
-                   "bot" => %{"id" => bot2.id},
-                   "action" => "CREATED"
-                 }
-               ]
-             } == result.data
-    end
-
-    test "returns empty list where no discover bots exist", %{user2: user2} do
-      result = run_query(@query, user2)
-
-      refute has_errors(result)
-
-      assert %{"discoverBots" => []} == result.data
-    end
-  end
-
   describe "bot mutations" do
     setup :require_watcher
     setup :common_setup
@@ -601,7 +550,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     test "create bot with location", %{user: %{id: user_id} = user} do
       bot =
         :bot
-        |> Factory.build(geofence: true)
+        |> Factory.build()
         |> add_bot_lat_lon()
         |> Map.take(bot_create_fields())
 
@@ -671,7 +620,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       values =
         :bot
-        |> Factory.build(geofence: true)
+        |> Factory.build()
         |> add_bot_lat_lon()
         |> Map.take(bot_create_fields())
         |> stringify_keys()
@@ -704,7 +653,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "id" => bot.id,
-          "values" => %{"title" => new_title, "geofence" => true},
+          "values" => %{"title" => new_title},
           "user_location" => %{
             "lat" => Bot.lat(bot),
             "lon" => Bot.lon(bot),
@@ -765,8 +714,6 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "subscribe with location inside bot", %{user: user, bot2: bot2} do
-      Bot.update(bot2, %{geofence: true})
-
       result =
         run_query(@query, user, %{
           "id" => bot2.id,
@@ -785,12 +732,10 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Bot.subscription(bot2, user) == :visitor
+      assert Bot.subscription(bot2, user) == :visiting
     end
 
     test "subscribe with location outside bot", %{user: user, bot2: bot2} do
-      Bot.update(bot2, %{geofence: true})
-
       result =
         run_query(@query, user, %{
           "id" => bot2.id,
@@ -809,12 +754,10 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Bot.subscription(bot2, user) == :guest
+      assert Bot.subscription(bot2, user) == :subscribed
     end
 
     test "subscribe with invalid location", %{user: user, bot2: bot2} do
-      Bot.update(bot2, %{geofence: true})
-
       result =
         run_query(@query, user, %{
           "id" => bot2.id,
@@ -909,35 +852,6 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "totalCount" => 1,
                    "edges" => [
                      %{
-                       "relationships" => ["SUBSCRIBED", "VISIBLE"],
-                       "node" => %{
-                         "id" => user2.id
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
-    end
-
-    test "get bot guests", %{bot: bot, user: user, user2: user2} do
-      Bot.subscribe(bot, user2, true)
-
-      result = run_query(@query, user, %{"id" => bot.id, "type" => "GUEST"})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "bot" => %{
-                 "id" => bot.id,
-                 "title" => bot.title,
-                 "owner" => %{
-                   "id" => user.id
-                 },
-                 "subscribers" => %{
-                   "totalCount" => 1,
-                   "edges" => [
-                     %{
                        "relationships" => ["GUEST", "SUBSCRIBED", "VISIBLE"],
                        "node" => %{
                          "id" => user2.id
@@ -950,7 +864,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "get bot visitors", %{bot: bot, user: user, user2: user2} do
-      Bot.subscribe(bot, user2, true)
+      Bot.subscribe(bot, user2)
       Bot.visit(bot, user2)
 
       result = run_query(@query, user, %{"id" => bot.id, "type" => "VISITOR"})
@@ -986,7 +900,6 @@ defmodule WockyAPI.GraphQL.BotTest do
 
     test "get bot subscribers by id", %{bot: bot, user: user} do
       Bot.subscribe(bot, user)
-
       result = run_query(@query, user, %{"id" => bot.id, "user_id" => user.id})
 
       refute has_errors(result)
@@ -1002,7 +915,12 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "totalCount" => 1,
                    "edges" => [
                      %{
-                       "relationships" => ["SUBSCRIBED", "OWNED", "VISIBLE"],
+                       "relationships" => [
+                         "GUEST",
+                         "SUBSCRIBED",
+                         "OWNED",
+                         "VISIBLE"
+                       ],
                        "node" => %{
                          "id" => user.id
                        }
@@ -1018,7 +936,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         run_query(@query, user, %{
           "id" => bot.id,
           "user_id" => user.id,
-          "type" => "GUEST"
+          "type" => "SUBSCRIBER"
         })
 
       assert error_count(result) == 1
@@ -1290,6 +1208,11 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "invitations" do
+    setup do
+      Repo.delete_all(Invitation)
+      :ok
+    end
+
     @query """
     mutation ($input: BotInviteInput!) {
       botInvite (input: $input) {
@@ -1304,10 +1227,10 @@ defmodule WockyAPI.GraphQL.BotTest do
       }
     }
     """
-    test "invite a user to a bot", %{bot: bot, user: user, user2: user2} do
+    test "invite a user to a bot", %{bot: bot, user: user, user3: user3} do
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id]}
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user3.id]}
         })
 
       refute has_errors(result)
@@ -1319,21 +1242,21 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "invite a user to an unowned bot",
-         %{bot2: bot2, user: user, user2: user2} do
+         %{bot2: bot2, user: user, user3: user3} do
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot2.id, "user_ids" => [user2.id]}
+          "input" => %{"bot_id" => bot2.id, "user_ids" => [user3.id]}
         })
 
       assert error_msg(result) =~ "Invalid bot"
     end
 
-    test "invite a blocked user", %{bot: bot, user: user, user2: user2} do
-      Block.block(user2, user)
+    test "invite a blocked user", %{bot: bot, user: user, user3: user3} do
+      Block.block(user3, user)
 
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id]}
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user3.id]}
         })
 
       r = hd(result.data["botInvite"])
@@ -1341,13 +1264,13 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute successful?(r)
     end
 
-    test "multiple invitations", %{bot: bot, user: user, user2: user2} do
-      user3 = Factory.insert(:user)
-      Block.block(user3, user)
+    test "multiple invitations", %{bot: bot, user: user, user3: user3} do
+      user4 = Factory.insert(:user)
+      Block.block(user4, user)
 
       result =
         run_query(@query, user, %{
-          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id, user3.id]}
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user3.id, user4.id]}
         })
 
       refute has_errors(result)
@@ -1370,24 +1293,26 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
     test "accept an invitation", shared do
+      refute User.can_access?(shared.user3, shared.bot)
+
       %{id: id} =
         Factory.insert(:invitation,
           user: shared.user,
           bot: shared.bot,
-          invitee: shared.user2
+          invitee: shared.user3
         )
 
-      refute User.can_access?(shared.user2, shared.bot)
+      assert User.can_access?(shared.user3, shared.bot)
 
       result =
-        run_query(@query, shared.user2, %{
+        run_query(@query, shared.user3, %{
           "input" => %{"invitation_id" => to_string(id), "accept" => true}
         })
 
       refute has_errors(result)
 
       assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
-      assert User.can_access?(shared.user2, shared.bot)
+      assert User.can_access?(shared.user3, shared.bot)
     end
 
     test "decline an invitation", shared do
@@ -1395,18 +1320,18 @@ defmodule WockyAPI.GraphQL.BotTest do
         Factory.insert(:invitation,
           user: shared.user,
           bot: shared.bot,
-          invitee: shared.user2
+          invitee: shared.user3
         )
 
       result =
-        run_query(@query, shared.user2, %{
+        run_query(@query, shared.user3, %{
           "input" => %{"invitation_id" => to_string(id), "accept" => false}
         })
 
       refute has_errors(result)
 
       assert %Invitation{accepted: false} = Repo.get_by(Invitation, id: id)
-      assert Bot.subscription(shared.bot, shared.user2) == :guest
+      assert Bot.subscription(shared.bot, shared.user3) == :subscribed
     end
 
     test "can't accept an invitation to someone else", shared do
@@ -1414,7 +1339,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         Factory.insert(:invitation,
           user: shared.user,
           bot: shared.bot,
-          invitee: shared.user2
+          invitee: shared.user3
         )
 
       result =
@@ -1427,13 +1352,15 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   defp common_setup(_) do
-    [user, user2] = Factory.insert_list(2, :user)
+    [user, user2, user3] = Factory.insert_list(3, :user)
 
     image = Factory.insert(:tros_metadata, user: user)
     bot = Factory.insert(:bot, image: Factory.image_url(image), user: user)
-    bot2 = Factory.insert(:bot, user: user2, public: true)
+    bot2 = Factory.insert(:bot, user: user2)
+    Factory.insert(:subscription, bot: bot, user: user2)
+    Factory.insert(:subscription, bot: bot2, user: user)
 
-    {:ok, user: user, user2: user2, bot: bot, bot2: bot2}
+    {:ok, user: user, user2: user2, user3: user3, bot: bot, bot2: bot2}
   end
 
   defp point_arg(lat, lon), do: %{"lat" => lat, "lon" => lon}

@@ -115,8 +115,7 @@ publish_item(From, ToJID, Bot, ItemID, Entry) ->
     case ?wocky_item:put(ItemID, Bot, From, EntryBin) of
         {ok, Item} ->
             Message = notification_event(Bot, make_item_element(Item)),
-            wocky_bot_users:notify_subscribers_and_watchers(
-              Bot, From, ToJID, Message),
+            wocky_bot_users:notify_watchers(Bot, ToJID, Message),
             {ok, Item};
         {error, permission_denied} ->
             {error, ?ERR_FORBIDDEN}

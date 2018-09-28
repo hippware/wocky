@@ -51,7 +51,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
-      scope :public
       connection_complexity
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
@@ -105,9 +104,12 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
 
     @desc "Check whether a user has made use of any geofence features"
-    field :has_used_geofence, :boolean, do: resolve(&User.has_used_geofence/3)
+    field :has_used_geofence, :boolean do
+      deprecate "All users now always use geofence"
+      resolve fn _, _ -> {:ok, true} end
+    end
 
-    @desc "The active bots that a user is a guest of, in last visited order"
+    @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity
       resolve &Bot.get_active_bots/3
@@ -127,12 +129,6 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.get_location_events/3
     end
 
-    @desc "The user's home stream items"
-    connection field :home_stream, node_type: :home_stream do
-      connection_complexity
-      resolve &User.get_home_stream/3
-    end
-
     @desc """
     The user's conversations - i.e. the last message exchanged with each contact
     """
@@ -149,8 +145,8 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "A bot is owned by the user"
     value :owned
 
-    @desc "A bot has been explicitly shared to the user"
-    value :shared
+    @desc "A user has been invited to a bot"
+    value :invited
 
     @desc "The user has subscribed to the bot (including owned bots)"
     value :subscribed
@@ -159,7 +155,7 @@ defmodule WockyAPI.Schema.UserTypes do
     value :subscribed_not_owned
 
     @desc "The user is a guest of the bot (will fire entry/exit events)"
-    value :guest
+    value :guest, deprecate: "All subscribers are now guests"
 
     @desc "The user is a visitor to the bot (is currently within the bot)"
     value :visitor
@@ -313,37 +309,6 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :location_events, node_type: :location_event do
-    total_count_field
-
-    edge do
-    end
-  end
-
-  @desc "An item within a user's home stream"
-  object :home_stream_item do
-    @desc "The stream-unique key of the item"
-    field :key, non_null(:string)
-
-    @desc "The JID of the object from which the item originated"
-    field :from_jid, non_null(:string)
-
-    @desc "The item's content"
-    field :stanza, non_null(:string)
-
-    @desc "The item's owner"
-    field :user, :user, resolve: assoc(:user)
-
-    @desc "The user referenced by this item, if any"
-    field :reference_user, :bot, resolve: assoc(:reference_user)
-
-    @desc "The bot referenced by this item, if any"
-    field :reference_bot, :bot, resolve: assoc(:reference_bot)
-
-    @desc "The time at which the item was last updated"
-    field :updated_at, :datetime
-  end
-
-  connection :home_stream, node_type: :home_stream_item do
     total_count_field
 
     edge do
@@ -552,35 +517,6 @@ defmodule WockyAPI.Schema.UserTypes do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
       changeset_mutation_middleware
-    end
-  end
-
-  enum :home_stream_item_action do
-    @desc "A newly inserted item"
-    value :insert
-
-    @desc "A update to an existing item"
-    value :update
-
-    @desc "Deletion of an existing item"
-    value :delete
-  end
-
-  @desc "An update to a user's home stream"
-  object :home_stream_update do
-    @desc "The home stream item that has been updated"
-    field :item, :home_stream_item
-
-    @desc "The type of change that has occurred"
-    field :action, :home_stream_item_action
-  end
-
-  object :user_subscriptions do
-    @desc """
-    Receive updates when home stream items are inserted, removed, or updated
-    """
-    field :home_stream, non_null(:home_stream_update) do
-      user_subscription_config(&User.home_stream_subscription_topic/1)
     end
   end
 end

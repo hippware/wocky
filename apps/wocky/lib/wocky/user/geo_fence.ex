@@ -15,7 +15,7 @@ defmodule Wocky.User.GeoFence do
     config = get_config(enable_notifications: false)
 
     user
-    |> Bot.by_relationship_query(:visitor, user)
+    |> Bot.by_relationship_query(:visiting, user)
     |> Repo.all()
     |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
     |> Enum.each(fn {bot, event} ->
@@ -46,7 +46,7 @@ defmodule Wocky.User.GeoFence do
       maybe_do_async(
         fn ->
           user
-          |> User.get_guest_subscriptions()
+          |> User.get_subscriptions()
           |> check_for_events(user, loc, config)
           |> Enum.each(&process_bot_event(&1, config))
         end,
@@ -287,7 +287,7 @@ defmodule Wocky.User.GeoFence do
     bot = Bot.get(bot_id)
 
     if user && bot do
-      if Bot.subscription(bot, user) == :visitor do
+      if Bot.subscription(bot, user) == :visiting do
         new_event = BotEvent.insert(user, resource, bot, :timeout)
         process_bot_event({user, bot, new_event}, config)
       end

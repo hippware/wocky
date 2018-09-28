@@ -3,13 +3,12 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
   import WockyAPI.ChannelHelper
 
-  alias Faker.Lorem
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
-  alias Wocky.{GeoUtils, HomeStream}
+  alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.{Roster, User}
+  alias Wocky.User
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
 
@@ -28,7 +27,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   describe "watch for visitor count change" do
     setup do
       user2 = Factory.insert(:user)
-      bot = Factory.insert(:bot, public: true)
+      bot = Factory.insert(:bot)
       Subscription.put(user2, bot)
 
       {:ok, user2: user2, bot: bot}
@@ -57,7 +56,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user,
       token: token
     } do
-      Bot.subscribe(bot, user, true)
+      Bot.subscribe(bot, user)
 
       authenticate(user_id, token, socket)
 
@@ -102,189 +101,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     end
   end
 
-  @subscription """
-  subscription {
-    homeStream {
-      action
-      item {
-        key
-        from_jid
-        stanza
-        user {
-          id
-        }
-        referenceBot {
-          id
-        }
-        referenceUser {
-          id
-        }
-      }
-    }
-  }
-  """
-  describe "watch home stream for changes" do
-    setup do
-      user2 = Factory.insert(:user)
-      bot = Factory.insert(:bot, public: true)
-      {:ok, user2: user2, bot: bot}
-    end
-
-    test "Home Stream item updates", %{
-      socket: socket,
-      user2: user2,
-      bot: bot,
-      user: %{id: user_id},
-      token: token
-    } do
-      authenticate(user_id, token, socket)
-
-      ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
-      key = Lorem.word()
-      from_jid = Factory.new_jid()
-      stanza = Lorem.paragraph()
-
-      expected = fn action ->
-        %{
-          result: %{
-            data: %{
-              "homeStream" => %{
-                "action" => action,
-                "item" => %{
-                  "key" => key,
-                  "from_jid" => from_jid,
-                  "stanza" => stanza,
-                  "user" => %{"id" => user_id},
-                  "referenceBot" => %{"id" => bot.id},
-                  "referenceUser" => %{"id" => user2.id}
-                }
-              }
-            }
-          },
-          subscriptionId: subscription_id
-        }
-      end
-
-      HomeStream.put(
-        user_id,
-        key,
-        from_jid,
-        stanza,
-        ref_bot_id: bot.id,
-        ref_user_id: user2.id
-      )
-
-      assert_push "subscription:data", push, 2000
-      assert push == expected.("INSERT")
-
-      HomeStream.put(
-        user_id,
-        key,
-        from_jid,
-        stanza,
-        ref_bot_id: bot.id,
-        ref_user_id: user2.id
-      )
-
-      assert_push "subscription:data", push, 2000
-      assert push == expected.("UPDATE")
-
-      HomeStream.delete(user_id, key)
-      assert_push "subscription:data", push, 2000
-
-      assert push ==
-               %{
-                 result: %{
-                   data: %{
-                     "homeStream" => %{
-                       "action" => "DELETE",
-                       "item" => %{
-                         "key" => key,
-                         "from_jid" => "",
-                         "stanza" => "",
-                         "user" => %{"id" => user_id},
-                         "referenceBot" => nil,
-                         "referenceUser" => nil
-                       }
-                     }
-                   }
-                 },
-                 subscriptionId: subscription_id
-               }
-    end
-
-    test "unauthenticated user attempting subscription", %{socket: socket} do
-      socket
-      |> push_doc(@subscription)
-      |> assert_unauthenticated_reply()
-    end
-  end
-
-  @subscription """
-  subscription {
-    discoverBots {
-      bot {
-        id
-      }
-      action
-    }
-  }
-  """
-  describe "discovered bots list" do
-    setup %{user: user} do
-      friend = Factory.insert(:user)
-      Roster.befriend(friend.id, user.id)
-      {:ok, friend: friend}
-    end
-
-    test "get updates", %{
-      socket: socket,
-      friend: friend,
-      token: token,
-      user: %{id: user_id}
-    } do
-      authenticate(user_id, token, socket)
-
-      ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
-      expected = fn id, action ->
-        %{
-          result: %{
-            data: %{
-              "discoverBots" => %{
-                "action" => action,
-                "bot" => %{"id" => id}
-              }
-            }
-          },
-          subscriptionId: subscription_id
-        }
-      end
-
-      bot = Factory.insert(:bot, user: friend, public: true)
-      assert_push "subscription:data", push, 2000
-      assert push == expected.(bot.id, "CREATED")
-
-      private_bot = Factory.insert(:bot, user: friend)
-      refute_push "subscription:data", _push
-
-      Bot.update(bot, %{public: false})
-      assert_push "subscription:data", push, 2000
-      assert push == expected.(bot.id, "PRIVATIZED")
-
-      Bot.update(private_bot, %{public: true})
-      assert_push "subscription:data", push, 2000
-      assert push == expected.(private_bot.id, "PUBLICIZED")
-
-      Bot.delete(private_bot)
-      assert_push "subscription:data", push, 2000
-      assert push == expected.(private_bot.id, "DELETED")
-    end
-  end
-
   describe "client test analogs" do
     test "botGuestVisitors subscription", %{
       socket: socket,
@@ -292,8 +108,8 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user
     } do
       :os.putenv('WOCKY_ENTER_DEBOUNCE_SECONDS', '0')
-      bot = Factory.insert(:bot, user: user, geofence: true, public: true)
-      Bot.subscribe(bot, user, true)
+      bot = Factory.insert(:bot, user: user)
+      Factory.insert(:subscription, bot: bot, user: user)
 
       authenticate(user_id, token, socket)
 

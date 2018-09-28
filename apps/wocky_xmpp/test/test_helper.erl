@@ -43,14 +43,6 @@
 
          check_attr/3,
 
-         get_hs_stanza/0,
-         get_hs_stanza/1,
-         check_hs_result/2,
-         check_hs_result/3,
-         check_hs_result/4,
-         check_single_hs_result/2,
-         get_items_el/1,
-
          publish_item_stanza/4,
          publish_item_stanza/5,
          retract_item_stanza/2,
@@ -58,7 +50,6 @@
          is_bot_action/2,
          is_bot_action/3,
 
-         hs_node/1,
          bot_node/1,
          node_el/2,
          node_el/3,
@@ -67,16 +58,8 @@
 
          set_notifications/2,
 
-         check_home_stream_sizes/2,
-         check_home_stream_sizes/3,
-
-         insert_system_users/0,
-
-         watch_hs/1,
-         watch_hs/2,
-         unwatch_hs/1,
-
-         disable_push_reflection/0
+         disable_push_reflection/0,
+         add_invitation/3
         ]).
 
 
@@ -366,79 +349,6 @@ timeout() ->
         _:_ -> 30000
     end.
 
-check_hs_result(Stanza, NumItems) ->
-    check_hs_result(Stanza, NumItems, true).
-check_hs_result(Stanza, NumItems, CheckVersion) ->
-    check_hs_result(Stanza, NumItems, CheckVersion, 1).
-check_hs_result(Stanza, NumItems, CheckVersion, RSMCount) ->
-    {ok, L} = do([error_m ||
-                  ItemsEl <- get_items_el(Stanza),
-                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
-                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
-                  maybe(CheckVersion, check_attr(<<"version">>, any, ItemsEl)),
-                  ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, NumItems, RSMCount),
-                  check_extra(ItemList, Stanza),
-                  {ok, ItemList}
-                 ]),
-    L.
-
-maybe(false, _) -> ok;
-maybe(true, X) -> X.
-
-get_items_el(Stanza) ->
-    case xml:get_subtag(Stanza, <<"items">>) of
-        false -> {error, no_items};
-        El -> {ok, El}
-    end.
-
-check_single_hs_result(Stanza, ID) ->
-    {ok, L} = do([error_m ||
-                  ItemsEl <- test_helper:get_items_el(Stanza),
-                  check_attr(<<"node">>, ?HOME_STREAM_NODE, ItemsEl),
-                  check_attr(<<"xmlns">>, ?NS_PUBLISHING, ItemsEl),
-                  check_attr(<<"version">>, any, ItemsEl),
-                  ItemList <- get_items(ItemsEl),
-                  check_elements(ItemsEl, 1, 0),
-                  check_extra(ItemList, Stanza),
-                  {ok, ?assertEqual(ID, (hd(ItemList))#item.id)},
-                  {ok, hd(ItemList)}
-                 ]),
-    L.
-
-get_items(Stanza) ->
-    {ok, lists:reverse(lists:foldl(get_item(_, _), [], Stanza#xmlel.children))}.
-
-get_item(#xmlel{name = <<"item">>, attrs = Attrs, children = Children}, Acc) ->
-    {value, ID} = xml:get_attr(<<"id">>, Attrs),
-    {value, Version} = xml:get_attr(<<"version">>, Attrs),
-    {value, From} = xml:get_attr(<<"from">>, Attrs),
-    [#item{id = ID,
-           version = Version,
-           from = From,
-           stanzas = Children}
-     | Acc];
-get_item(#xmlel{name = <<"delete">>, attrs = Attrs, children = []}, Acc) ->
-    {value, ID} = xml:get_attr(<<"id">>, Attrs),
-    [{delete, ID} | Acc];
-get_item(_, Acc) ->
-    Acc.
-
-check_elements(Items, NumItems, NumRSM) ->
-    case NumItems of
-        any -> ok;
-        _ -> ?assertEqual(NumItems, count_elements(Items, <<"item">>))
-    end,
-    ?assertEqual(NumRSM, count_elements(Items, <<"set">>)),
-    ok.
-
-count_elements(#xmlel{name = <<"items">>, children = Children}, Type) ->
-    length(
-      lists:filter(fun(#xmlel{name = T}) when T =:= Type -> true;
-                      (_) -> false
-                   end,
-                   Children)).
-
 publish_item_stanza(BotID, NoteID, Title, Content) ->
     publish_item_stanza(BotID, NoteID, Title, Content, undefined).
 publish_item_stanza(BotID, NoteID, Title, Content, Image) ->
@@ -527,26 +437,6 @@ query_el(Version) ->
 maybe_version_attr(undefined) -> [];
 maybe_version_attr(Version) -> [{<<"version">>, Version}].
 
-hs_node(User) ->
-    jid:to_binary(
-      jid:make(User, ?SERVER, <<"home_stream">>)).
-
-get_hs_stanza() ->
-    get_hs_stanza(#rsm_in{max = 500}).
-
-get_hs_stanza(RSM = #rsm_in{}) ->
-    test_helper:iq_get(?NS_PUBLISHING,
-                       #xmlel{name = <<"items">>,
-                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [rsm_elem(RSM)]});
-
-get_hs_stanza(ID) when is_binary(ID) ->
-    test_helper:iq_get(?NS_PUBLISHING,
-                       #xmlel{name = <<"items">>,
-                              attrs = [{<<"node">>, ?HOME_STREAM_NODE}],
-                              children = [#xmlel{name = <<"item">>,
-                                                 attrs = [{<<"id">>, ID}]}]}).
-
 set_notifications(Enabled, Client) ->
     Stanza = notifications_stanza(Enabled, Client),
     expect_iq_success(Stanza, Client).
@@ -559,72 +449,6 @@ notifications_stanza(true, _Client) ->
 notifications_stanza(false, _Client) ->
     iq_set(?NS_NOTIFICATIONS, #xmlel{name = <<"disable">>}).
 
-check_home_stream_sizes(ExpectedSize, Clients) ->
-    check_home_stream_sizes(ExpectedSize, Clients, true).
-check_home_stream_sizes(ExpectedSize, Clients, CheckLastContent) ->
-    lists:map(
-      fun(Client) ->
-              S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-              I = check_hs_result(S, ExpectedSize, ExpectedSize =/= 0),
-              ExpectedSize =:= 0 orelse not CheckLastContent orelse
-              escalus:assert(is_bot_action(?BOT, _),
-                             hd((lists:last(I))#item.stanzas)),
-              S
-      end, Clients).
-
-insert_system_users() ->
-    ?wocky_factory:insert(
-       user, #{handle => ?wocky_home_stream:prepopulation_user(),
-               roles => [?wocky_user:no_index_role(),
-                         ?wocky_user:system_role()]}).
-
-check_extra(ItemList, Stanza) ->
-    BotIDs = get_bot_ids(ItemList),
-
-    ProvidedBots = exml_query:paths(Stanza, [{element, <<"items">>},
-                                             {element, <<"extra-data">>},
-                                             {element, <<"bot">>}]),
-
-    ProvidedBotIDFields = lists:map(
-                            wocky_xml:path_by_attr(_, [{element, <<"field">>}],
-                                                   <<"var">>, <<"id">>),
-                            ProvidedBots),
-
-    ProvidedBotIDs =
-    lists:map(
-      fun(F) ->
-              {ok, V} = wocky_xml:get_subel_cdata(<<"value">>, F),
-              V
-      end, ProvidedBotIDFields),
-
-    ?assertEqual(lists:sort(ProvidedBotIDs), BotIDs),
-    ok.
-
-get_bot_ids(ItemList) ->
-    lists:usort(
-      lists:foldl(fun(Item, Acc) ->
-                          case binary:split(Item#item.id, <<"/">>, [global]) of
-                              [?SERVER, <<"bot">>, ID | _] -> [ID | Acc];
-                              _ -> Acc
-                          end
-                  end,
-                  [], ItemList)).
-
-watch_hs(Client) -> watch_hs(Client, undefined).
-watch_hs(Client, Version) ->
-    escalus:send(Client,
-                 escalus_stanza:presence_direct(
-                   hs_node(escalus_client:username(Client)),
-                   <<"available">>,
-                   [query_el(Version)])).
-
-unwatch_hs(Client) ->
-    escalus:send(Client,
-                 escalus_stanza:presence_direct(
-                   hs_node(escalus_client:username(Client)),
-                   <<"unavailable">>,
-                   [query_el(undefined)])).
-
 disable_push_reflection() ->
     fun_chain:last(
       ?wocky_push,
@@ -634,3 +458,10 @@ disable_push_reflection() ->
       lists:append([{reflect, false}]),
       application:set_env(wocky, ?wocky_push)
      ).
+
+add_invitation(BotID, UserID, InviteeID) ->
+    Bot = ?wocky_bot:get(BotID),
+    User = ?wocky_user:get_user(UserID),
+    Invitee = ?wocky_user:get_user(InviteeID),
+    ?wocky_factory:insert(invitation,
+                          #{bot => Bot, user => User, invitee => Invitee}).

@@ -10,14 +10,11 @@ defmodule Wocky.Bot do
   import Ecto.Query
 
   alias Ecto.Association.NotLoaded
-  alias Ecto.{Changeset, Queryable, UUID}
+  alias Ecto.{Changeset, Queryable}
   alias Geocalc.Point
   alias Wocky.Block
-  alias Wocky.Bot.Item
-  alias Wocky.Bot.Share
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.{Invitation, Item, Subscription}
   alias Wocky.GeoUtils
-  alias Wocky.HomeStream
   alias Wocky.Index
   alias Wocky.Push
   alias Wocky.Push.Events.BotPerimeterEvent
@@ -57,17 +54,15 @@ defmodule Wocky.Bot do
     # Radius of bot circle
     field :radius, :float, default: 100.0
     # Visibility of bot
-    field :public, :boolean
     field :tags, {:array, :string}
-    field :geofence, :boolean, default: false
 
     timestamps()
 
     belongs_to :user, User
 
     has_many :items, Item
+    has_many :invitations, Invitation
 
-    many_to_many(:shares, User, join_through: Share)
     many_to_many(:subscribers, User, join_through: Subscription)
   end
 
@@ -87,12 +82,10 @@ defmodule Wocky.Bot do
           address_data: binary,
           location: nil | Geo.Point.t(),
           radius: nil | float,
-          public: nil | boolean,
           tags: nil | [binary],
-          geofence: boolean,
           user: not_loaded | User.t(),
           items: not_loaded | [Item.t()],
-          shares: not_loaded | [User.t()],
+          invitations: not_loaded | [Invitation.t()],
           subscribers: not_loaded | [User.t()]
         }
 
@@ -110,9 +103,7 @@ defmodule Wocky.Bot do
     :address_data,
     :location,
     :radius,
-    :public,
-    :tags,
-    :geofence
+    :tags
   ]
   @required_fields [:id, :user_id, :title, :location, :radius]
 
@@ -143,14 +134,6 @@ defmodule Wocky.Bot do
   def get_id_from_node(@bot_prefix <> id), do: id
   def get_id_from_node(_), do: nil
 
-  # public? takes a bare map rather than requiring a %Bot struct because it's
-  # used by the bot geosearch. The geosearch retrives partially complete bots
-  # from algolia and stores them in a map. Rather than hitting the DB and
-  # fililng out the Bot struct, we just allow those maps to be used directly
-  # here.
-  @spec public?(map) :: boolean
-  def public?(%{public: is_public}), do: is_public
-
   # ----------------------------------------------------------------------
   # Database interaction
 
@@ -177,15 +160,15 @@ defmodule Wocky.Bot do
     |> maybe_filter_pending(not include_pending)
   end
 
-  @spec get_bot(id, User.t() | nil, boolean) :: t | nil
-  def get_bot(id, requestor \\ nil, include_pending \\ false) do
+  @spec get_bot(id, User.t(), boolean) :: t | nil
+  def get_bot(id, requestor, include_pending \\ false) do
     id
     |> get_bot_query(requestor, include_pending)
     |> Repo.one()
   end
 
-  @spec get_bot_query(id, User.t() | nil, boolean) :: Queryable.t()
-  def get_bot_query(id, requestor \\ nil, include_pending \\ false) do
+  @spec get_bot_query(id, User.t(), boolean) :: Queryable.t()
+  def get_bot_query(id, requestor, include_pending \\ false) do
     id
     |> get_query(include_pending)
     |> is_visible_query(requestor)
@@ -264,18 +247,14 @@ defmodule Wocky.Bot do
     Subscription.state(user, bot)
   end
 
-  @spec subscribe(t, User.t(), boolean()) :: :ok | no_return
-  def subscribe(bot, user, guest \\ false) do
-    if guest == false && subscription(bot, user) == :visitor do
-      send_visit_notifications(user, bot, :exit)
-    end
-
-    Subscription.put(user, bot, guest)
+  @spec subscribe(t, User.t()) :: :ok | no_return
+  def subscribe(bot, user) do
+    Subscription.put(user, bot)
   end
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
-    if subscription(bot, user) == :visitor do
+    if subscription(bot, user) == :visiting do
       send_visit_notifications(user, bot, :exit)
     end
 
@@ -299,7 +278,7 @@ defmodule Wocky.Bot do
   defp send_visit_notifications(visitor, bot, event) do
     # Push notifications
     bot
-    |> guests_query()
+    |> Ecto.assoc(:subscribers)
     |> User.filter_hidden()
     |> Repo.all()
     |> Enum.each(&send_visit_push_notification(&1, visitor, bot, event))
@@ -330,11 +309,6 @@ defmodule Wocky.Bot do
     |> Notification.notify()
   end
 
-  @spec clear_guests(t) :: :ok
-  def clear_guests(bot) do
-    Subscription.clear_guests(bot)
-  end
-
   @spec by_relationship_query(User.t(), atom(), User.t() | nil) ::
           Ecto.Queryable.t()
   def by_relationship_query(user, rel, user) do
@@ -355,13 +329,13 @@ defmodule Wocky.Bot do
     User.owned_bots_query(user)
   end
 
-  defp by_relationship_query(user, :shared) do
+  defp by_relationship_query(user, :invited) do
     join(
       Bot,
       :inner,
       [b],
-      s in Share,
-      b.id == s.bot_id and s.user_id == ^user.id
+      i in Invitation,
+      b.id == i.bot_id and i.invitee_id == ^user.id
     )
   end
 
@@ -381,13 +355,7 @@ defmodule Wocky.Bot do
     |> where([b, ...], b.user_id != ^user.id)
   end
 
-  defp by_relationship_query(user, :guest) do
-    user
-    |> by_relationship_query(:subscribed)
-    |> where([..., s], s.guest)
-  end
-
-  defp by_relationship_query(user, :visitor) do
+  defp by_relationship_query(user, :visiting) do
     user
     |> by_relationship_query(:subscribed)
     |> where([..., s], s.visitor)
@@ -397,7 +365,7 @@ defmodule Wocky.Bot do
   @spec active_bots_query(User.t()) :: Ecto.Queryable.t()
   def active_bots_query(user) do
     user
-    |> by_relationship_query(:guest)
+    |> by_relationship_query(:subscribed)
     |> is_visible_query(user)
     |> join(
       :inner,
@@ -406,29 +374,6 @@ defmodule Wocky.Bot do
       b.id == a.bot_id
     )
     |> order_by([..., a], desc: a.visited_at)
-  end
-
-  @spec discover_query(User.t(), DateTime.t() | nil) :: Queryable.t()
-  def discover_query(user, since) do
-    {:ok, user_id_bin} = UUID.dump(user.id)
-
-    Bot
-    |> join(:left, [b], u in User, b.user_id == u.id)
-    |> where([b, u], b.public)
-    |> where([b, u], fragment("is_follower(?, ?)", ^user_id_bin, u.id))
-    |> maybe_add_since(since)
-    |> order_by([b], asc: b.created_at)
-  end
-
-  def related_geofence_bots_query(user) do
-    Bot
-    |> join(
-      :left,
-      [b],
-      s in Subscription,
-      b.id == s.bot_id and s.user_id == ^user.id
-    )
-    |> where([b, s], s.guest or (b.geofence and b.user_id == ^user.id))
   end
 
   @spec subscribers_query(t, boolean()) :: [User.t()]
@@ -446,13 +391,6 @@ defmodule Wocky.Bot do
     bot
     |> Ecto.assoc(:subscribers)
     |> where([..., s], s.user_id == ^user_id)
-  end
-
-  @spec guests_query(Bot.t()) :: Queryable.t()
-  def guests_query(bot) do
-    bot
-    |> Ecto.assoc(:subscribers)
-    |> where([..., s], s.guest)
   end
 
   @spec visitors_query(Bot.t()) :: Queryable.t()
@@ -512,19 +450,21 @@ defmodule Wocky.Bot do
     distance_from(bot, loc) <= bot.radius
   end
 
-  @spec is_visible_query(Queryable.t(), User.t() | nil) :: Queryable.t()
-  def is_visible_query(queryable, nil) do
-    queryable |> where([b, ...], b.public)
-  end
-
+  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     queryable
     |> Block.object_visible_query(user.id)
     |> join(
       :left,
       [b, ...],
-      share in Share,
-      b.id == share.bot_id and share.user_id == ^user.id
+      invitation in Invitation,
+      b.id == invitation.bot_id and invitation.invitee_id == ^user.id
+    )
+    |> join(
+      :left,
+      [b, ...],
+      invitation in Invitation,
+      b.id == invitation.bot_id and invitation.invitee_id == ^user.id
     )
     |> join(
       :left,
@@ -533,9 +473,9 @@ defmodule Wocky.Bot do
       b.id == sub.bot_id and sub.user_id == ^user.id
     )
     |> where(
-      [b, ..., sub, share],
-      b.user_id == ^user.id or b.public or not is_nil(sub.user_id) or
-        not is_nil(share.user_id)
+      [b, ..., invitation, sub],
+      b.user_id == ^user.id or not is_nil(sub.user_id) or
+        not is_nil(invitation.user_id)
     )
   end
 
@@ -596,23 +536,6 @@ defmodule Wocky.Bot do
     |> where(pending: false)
   end
 
-  def maybe_update_hs_items(old, new) do
-    if should_update_hs(old, new) do
-      HomeStream.update_ref_bot(new)
-    end
-  end
-
-  defp should_update_hs(bot1, bot2) do
-    [:title, :image, :address, :location, :public, :geofence]
-    |> Enum.any?(fn f -> Map.get(bot1, f) != Map.get(bot2, f) end)
-  end
-
   @spec sub_setup_event(Bot.t()) :: Waiter.event()
   def sub_setup_event(bot), do: "bot_sub_setup-" <> bot.id
-
-  defp maybe_add_since(queryable, nil), do: queryable
-
-  defp maybe_add_since(queryable, since) do
-    queryable |> where([b, ...], b.created_at > ^since)
-  end
 end

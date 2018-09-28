@@ -484,58 +484,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "home stream items" do
-    @query """
-    query ($first: Int) {
-      currentUser {
-        homeStream (first: $first) {
-          totalCount
-          edges {
-            node {
-              key
-              reference_bot {
-                id
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    test "get items", %{user: user} do
-      bot = Factory.insert(:bot, user: user)
-
-      items =
-        Factory.insert_list(
-          20,
-          :home_stream_item,
-          user: user,
-          reference_bot: bot
-        )
-
-      result = run_query(@query, user, %{"first" => 1})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "currentUser" => %{
-                 "homeStream" => %{
-                   "totalCount" => 20,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "key" => List.last(items).key,
-                         "reference_bot" => %{"id" => bot.id}
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
-    end
-  end
-
   describe "contacts" do
     setup %{user: user, user2: user2} do
       Roster.befriend(user.id, user2.id)
@@ -655,41 +603,9 @@ defmodule WockyAPI.GraphQL.UserTest do
       }
     }
     """
-    test "Should be false with no related bots", %{user: user} do
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
-    end
-
-    test "should be true if any owned geofence bots exist", %{user: user} do
-      Factory.insert(:bot, user: user, geofence: true)
+    test "Should always be true", %{user: user} do
       result = run_query(@query, user)
       assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be false if owned bots are not geofence", %{user: user} do
-      Factory.insert(:bot, user: user)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
-    end
-
-    test "should be true if a guest of a geofence bot", %{
-      user: user,
-      user2: user2
-    } do
-      bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:subscription, user: user, bot: bot, guest: true)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be false if not a guest of a geofence bot", %{
-      user: user,
-      user2: user2
-    } do
-      bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:subscription, user: user, bot: bot)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => false}}
     end
   end
 

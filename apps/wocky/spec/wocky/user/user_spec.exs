@@ -12,7 +12,7 @@ defmodule Wocky.UserSpec do
   alias Wocky.Account.Token
   alias Wocky.Block
   alias Wocky.Bot
-  alias Wocky.Bot.Share
+  alias Wocky.Bot.Invitation
   alias Wocky.Email
   alias Wocky.Index.TestIndexer
   alias Wocky.Repo
@@ -562,12 +562,11 @@ defmodule Wocky.UserSpec do
 
       owned_bot = Factory.insert(:bot, user: shared.user)
       pending_bot = Factory.insert(:bot, user: shared.user, pending: true)
-      public_bot = Factory.insert(:bot, user: other_user, public: true)
-      shared_bot = Factory.insert(:bot, user: other_user)
+      invited_bot = Factory.insert(:bot, user: other_user)
       subscribed_bot = Factory.insert(:bot, user: other_user)
       unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
-      Share.put(shared.user, shared_bot, other_user)
+      Invitation.put(shared.user, invited_bot, other_user)
       Bot.subscribe(subscribed_bot, shared.user)
 
       {:ok,
@@ -575,8 +574,7 @@ defmodule Wocky.UserSpec do
          other_user: other_user,
          owned_bot: owned_bot,
          pending_bot: pending_bot,
-         public_bot: public_bot,
-         shared_bot: shared_bot,
+         invited_bot: invited_bot,
          subscribed_bot: subscribed_bot,
          unaffiliated_bot: unaffiliated_bot
        ]}
@@ -595,48 +593,33 @@ defmodule Wocky.UserSpec do
         followee = Factory.insert(:user)
         RosterHelper.follow(shared.user, followee)
 
-        friends_public_bot = Factory.insert(:bot, user: friend, public: true)
         friends_private_bot = Factory.insert(:bot, user: friend)
-        friends_shared_private_bot = Factory.insert(:bot, user: friend)
-
-        following_public_bot =
-          Factory.insert(
-            :bot,
-            user: followee,
-            public: true
-          )
+        friends_invited_private_bot = Factory.insert(:bot, user: friend)
 
         following_private_bot = Factory.insert(:bot, user: followee)
-        following_shared_private_bot = Factory.insert(:bot, user: followee)
+        following_invited_private_bot = Factory.insert(:bot, user: followee)
 
-        Share.put(shared.user, friends_shared_private_bot, friend)
-        Share.put(shared.user, following_shared_private_bot, followee)
+        Invitation.put(shared.user, friends_invited_private_bot, friend)
+        Invitation.put(shared.user, following_invited_private_bot, followee)
 
         {:ok,
          [
-           friends_public_bot: friends_public_bot,
            friends_private_bot: friends_private_bot,
-           friends_shared_private_bot: friends_shared_private_bot,
-           following_public_bot: following_public_bot,
+           friends_invited_private_bot: friends_invited_private_bot,
            following_private_bot: following_private_bot,
-           following_shared_private_bot: following_shared_private_bot
+           following_invited_private_bot: following_invited_private_bot
          ]}
       end
 
       describe "searchable?/2" do
         it do: assert(User.searchable?(shared.user, shared.subscribed_bot))
-        it do: refute(User.searchable?(shared.user, shared.friends_public_bot))
 
         it do:
              refute(
-               User.searchable?(shared.user, shared.friends_shared_private_bot)
+               User.searchable?(shared.user, shared.friends_invited_private_bot)
              )
 
-        it do:
-             refute(User.searchable?(shared.user, shared.following_public_bot))
-
-        it do: refute(User.searchable?(shared.user, shared.public_bot))
-        it do: refute(User.searchable?(shared.user, shared.shared_bot))
+        it do: refute(User.searchable?(shared.user, shared.invited_bot))
         it do: refute(User.searchable?(shared.user, shared.unaffiliated_bot))
         it do: refute(User.searchable?(shared.user, shared.friends_private_bot))
 
@@ -647,7 +630,7 @@ defmodule Wocky.UserSpec do
              refute(
                User.searchable?(
                  shared.user,
-                 shared.following_shared_private_bot
+                 shared.following_invited_private_bot
                )
              )
       end
@@ -655,18 +638,13 @@ defmodule Wocky.UserSpec do
       describe "searchable stored procedure" do
         it do: assert(is_searchable_sp(shared.user, shared.owned_bot))
         it do: assert(is_searchable_sp(shared.user, shared.subscribed_bot))
-        it do: refute(is_searchable_sp(shared.user, shared.friends_public_bot))
 
         it do:
              refute(
-               is_searchable_sp(shared.user, shared.friends_shared_private_bot)
+               is_searchable_sp(shared.user, shared.friends_invited_private_bot)
              )
 
-        it do:
-             refute(is_searchable_sp(shared.user, shared.following_public_bot))
-
-        it do: refute(is_searchable_sp(shared.user, shared.public_bot))
-        it do: refute(is_searchable_sp(shared.user, shared.shared_bot))
+        it do: refute(is_searchable_sp(shared.user, shared.invited_bot))
         it do: refute(is_searchable_sp(shared.user, shared.unaffiliated_bot))
         it do: refute(is_searchable_sp(shared.user, shared.friends_private_bot))
 
@@ -677,7 +655,7 @@ defmodule Wocky.UserSpec do
              refute(
                is_searchable_sp(
                  shared.user,
-                 shared.following_shared_private_bot
+                 shared.following_invited_private_bot
                )
              )
       end
@@ -685,8 +663,7 @@ defmodule Wocky.UserSpec do
 
     describe "can_access?/2" do
       it do: assert(User.can_access?(shared.user, shared.owned_bot))
-      it do: assert(User.can_access?(shared.user, shared.shared_bot))
-      it do: assert(User.can_access?(shared.user, shared.public_bot))
+      it do: assert(User.can_access?(shared.user, shared.invited_bot))
       it do: refute(User.can_access?(shared.user, shared.unaffiliated_bot))
     end
 
@@ -699,32 +676,9 @@ defmodule Wocky.UserSpec do
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
     end
 
-    describe "get_guest_subscriptions/1" do
-      before do
-        guest = Factory.insert(:bot, user: shared.other_user, geofence: true)
-
-        disabled =
-          Factory.insert(:bot, user: shared.other_user, geofence: false)
-
-        Bot.subscribe(guest, shared.user, true)
-        Bot.subscribe(disabled, shared.user, true)
-
-        {:ok, guest_bot: guest, disabled_bot: disabled}
-      end
-
-      subject do: User.get_guest_subscriptions(shared.user)
-
-      it do: should(have_count 1)
-      it do: should(have_any &same_bot(&1, shared.guest_bot))
-      it do: should_not(have_any &same_bot(&1, shared.disabled_bot))
-      it do: should_not(have_any &same_bot(&1, shared.subscribed_bot))
-      it do: should_not(have_any &same_bot(&1, shared.owned_bot))
-      it do: should_not(have_any &same_bot(&1, shared.pending_bot))
-    end
-
     describe "bot_count/1" do
       it do: User.bot_count(shared.user) |> should(eq 1)
-      it do: User.bot_count(shared.other_user) |> should(eq 4)
+      it do: User.bot_count(shared.other_user) |> should(eq 3)
     end
 
     describe "get_owned_bots/1" do
@@ -733,46 +687,6 @@ defmodule Wocky.UserSpec do
       it do: should(have_count 1)
       it do: should(have_any &same_bot(&1, shared.owned_bot))
       it do: should_not(have_any &same_bot(&1, shared.pending_bot))
-    end
-  end
-
-  describe "is_visible_query/2" do
-    before do
-      user1 = shared.user
-      user2 = Factory.insert(:user)
-      owned_bot = Factory.insert(:bot, user: user1)
-      public_bot = Factory.insert(:bot, user: user2, public: true)
-      shared_bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
-      private_bot = Factory.insert(:bot, user: user2)
-      pending_bot = Factory.insert(:bot, user: user1, pending: true)
-
-      {:ok,
-       owned_bot: owned_bot,
-       public_bot: public_bot,
-       shared_bot: shared_bot,
-       private_bot: private_bot,
-       pending_bot: pending_bot}
-    end
-
-    it "should allow owned bots" do
-      is_visible_sp(shared.user, shared.owned_bot)
-      |> should(be_true())
-    end
-
-    it "should allow public bots" do
-      is_visible_sp(shared.user, shared.public_bot)
-      |> should(be_true())
-    end
-
-    it "should allow shared bots" do
-      is_visible_sp(shared.user, shared.shared_bot)
-      |> should(be_true())
-    end
-
-    it "should refuse private bots" do
-      is_visible_sp(shared.user, shared.private_bot)
-      |> should(be_false())
     end
   end
 
@@ -983,8 +897,6 @@ defmodule Wocky.UserSpec do
 
   defp is_searchable_sp(user, bot),
     do: run_stored_proc(user, bot, "is_searchable")
-
-  defp is_visible_sp(user, bot), do: run_stored_proc(user, bot, "is_visible")
 
   defp run_stored_proc(user, bot, proc) do
     {:ok, u} = Ecto.UUID.dump(user.id)
