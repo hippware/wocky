@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: faker (PR #1890)
+* Reduce logging (PR #1893)
+
+
 # 2018.9.25+r50db3a0
 
 * Schedule `staging` deployments (#1852)
