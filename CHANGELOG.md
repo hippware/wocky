@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Use a version of PostgreSQL with Healthcheck for tests (#1892)
+* Update: hackney (PR #1894)
+
+
+# 2018.9.27+r9c0bbaa
+
 * Update: faker (PR #1890)
 * Reduce logging (PR #1893)
 
