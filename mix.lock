@@ -16,7 +16,7 @@
   "bcrypt_elixir": {:hex, :bcrypt_elixir, "1.1.1", "6b5560e47a02196ce5f0ab3f1d8265db79a23868c137e973b27afef928ed8006", [:make, :mix], [{:elixir_make, "~> 0.4", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm"},
   "bear": {:hex, :bear, "0.8.5", "e95fca1627cd9e15baf93ce0a52aff16917baf325f0ee65b88cd715376cd2344", [:rebar3], [], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
-  "bypass": {:hex, :bypass, "0.8.1", "16d409e05530ece4a72fabcf021a3e5c7e15dcc77f911423196a0c551f2a15ca", [:mix], [{:cowboy, "~> 1.0", [hex: :cowboy, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
+  "bypass": {:hex, :bypass, "0.9.0", "4cedcd326eeec497e0090a73d351cbd0f11e39329ddf9095931b03da9b6dc417", [:mix], [{:cowboy, "~> 1.0 or ~> 2.0", [hex: :cowboy, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
   "cache_tab": {:hex, :cache_tab, "1.0.13", "e09857af9b7ba89428227d3801256852cb0d51a4de47e4edcb160d96cc96f8eb", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "certifi": {:hex, :certifi, "2.4.2", "75424ff0f3baaccfd34b1214184b6ef616d89e420b258bb0a5ea7d7bc628f7f0", [:rebar3], [{:parse_trans, "~>3.3", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm"},
   "cf": {:hex, :cf, "0.3.1", "5cb902239476e141ea70a740340233782d363a31eea8ad37049561542e6cd641", [:rebar3], [], "hexpm"},
