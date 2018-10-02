@@ -189,4 +189,14 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   defp user_not_found(id), do: {:error, "User not found: " <> id}
+
+  def make_invite_code(_root, _args, %{context: %{current_user: user}}) do
+    code = User.make_invite_code(user)
+    {:ok, %{successful: true, result: code}}
+  end
+
+  def redeem_invite_code(_root, args, %{context: %{current_user: user}}) do
+    result = User.redeem_invite_code(user, args[:input][:code])
+    {:ok, %{successful: result, result: result}}
+  end
 end

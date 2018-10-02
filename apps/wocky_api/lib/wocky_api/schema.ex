@@ -30,6 +30,7 @@ defmodule WockyAPI.Schema do
     import_fields :location_mutations
     import_fields :media_mutations
     import_fields :user_mutations
+    import_fields :user_invite_code_mutations
   end
 
   subscription do
