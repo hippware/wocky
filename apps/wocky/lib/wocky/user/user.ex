@@ -22,9 +22,10 @@ defmodule Wocky.User do
   alias Wocky.Message
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo
+  alias Wocky.Roster
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.{Avatar, BotEvent, GeoFence, Location}
+  alias Wocky.User.{Avatar, BotEvent, GeoFence, InviteCode, Location}
 
   @forever "2200-01-01T00:00:00.000000Z" |> DateTime.from_iso8601() |> elem(1)
 
@@ -72,6 +73,7 @@ defmodule Wocky.User do
     has_many :tokens, AuthToken
     has_many :tros_metadatas, TROSMetadata
     has_many :messages, Message
+    has_many :invite_codes, InviteCode
 
     many_to_many(:shares, Bot, join_through: Share)
     many_to_many(:bot_subscriptions, Bot, join_through: Subscription)
@@ -125,6 +127,8 @@ defmodule Wocky.User do
 
   @no_index_role "__no_index__"
   @system_role "__system__"
+
+  @invite_code_expire_days 30
 
   @doc "Return the list of fields that can be updated on an existing user."
   @spec valid_update_fields :: [binary]
@@ -342,6 +346,49 @@ defmodule Wocky.User do
       nil -> {false, nil}
       @forever -> {true, nil}
       until -> {DateTime.compare(DateTime.utc_now(), until) != :gt, until}
+    end
+  end
+
+  @spec make_invite_code(User.t) :: binary
+  def make_invite_code(user) do
+    code = InviteCode.generate()
+
+    user
+    |> Ecto.build_assoc(:invite_codes)
+    |> InviteCode.changeset(%{code: code})
+    |> Repo.insert!()
+
+    code
+  end
+
+  @spec redeem_invite_code(User.t, binary) :: boolean
+  def redeem_invite_code(redeemer, code) do
+    invitation =
+      InviteCode
+      |> where(code: ^code)
+      |> preload(:user)
+      |> Block.object_visible_query(redeemer.id)
+      |> Repo.one()
+
+    do_redeem_invite_code(redeemer, invitation)
+  end
+
+  defp do_redeem_invite_code(_, nil), do: false
+
+  defp do_redeem_invite_code(redeemer, %InviteCode{user: inviter} = invitation),
+    do: do_redeem_invite_code(redeemer, inviter, invitation)
+
+  defp do_redeem_invite_code(%User{id: id}, %User{id: id}, _), do: true
+
+  defp do_redeem_invite_code(redeemer, inviter, invitation) do
+    ts = Timex.shift(invitation.created_at, days: @invite_code_expire_days)
+
+    if Timex.after?(DateTime.utc_now(), ts) do
+      # Code has expired
+      false
+    else
+      :ok = Roster.befriend(redeemer.id, inviter.id)
+      true
     end
   end
 
