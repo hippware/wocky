@@ -19,6 +19,18 @@ wocky-test:
   depends_on:
     - postgres
     - redis
+wocky-migration-test:
+  build:
+    context: .
+    dockerfile: Dockerfile.migrationtest
+    image: hippware/wocky:migrationtest
+  cached: true
+  environment:
+    WOCKY_DB_HOST: "postgres"
+    WOCKY_DB_PASSWORD: "password"
+  depends_on:
+    - postgres
+  encrypted_env_file: codeship/migration_test.env.encrypted
 postgres:
   image: hippware/postgis-healthcheck:9.6-alpine
   environment:
@@ -40,7 +52,7 @@ wocky-rel:
 aws-dockercfg:
   image: codeship/aws-ecr-dockercfg-generator
   add_docker: true
-  encrypted_env_file: aws.env.encrypted
+  encrypted_env_file: codeship/aws.env.encrypted
 dockerlint:
   image: redcoolbeans/dockerlint
   volumes:
@@ -48,16 +60,16 @@ dockerlint:
     - ./Dockerfile.release:/Dockerfile.release
 eks-deploy:
   image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/eks-deploy:latest
-  encrypted_env_file: aws.env.encrypted
+  encrypted_env_file: codeship/aws.env.encrypted
   volumes:
     - k8s:/k8s
     - wocky-deploy:/wocky-deploy
     - DB_WATCHER_VERSION:/DB_WATCHER_VERSION
 curl-ssl-jq:
   image: paasmule/curl-ssl-jq:latest
-  encrypted_env_file: circleci.env.encrypted
+  encrypted_env_file: codeship/circleci.env.encrypted
   volumes:
     - kick-circleci:/kick-circleci
 waiter:
   image: codeship/build-waiter
-  encrypted_env_file: waiter.cfg.encrypted
+  encrypted_env_file: codeship/waiter.cfg.encrypted

@@ -1,0 +1,43 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: db-dump
+  namespace: wocky-staging
+  labels:
+    app: db-dumper
+    env: staging
+spec:
+  schedule: "0 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: db-dumper
+            env: staging
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: db-dumper
+              image: hippware/db-dumper:latest
+              imagePullPolicy: Always
+              env:
+                - name: DB_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: wocky-config
+                      key: WOCKY_DB_NAME
+                - name: DB_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: wocky-config
+                      key: WOCKY_DB_HOST
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: wocky-secrets
+                      key: WOCKY_DB_PASSWORD
+                - name: S3_BUCKET
+                  value: wocky-db-dumps
+                - name: S3_PATH
+                  value: staging

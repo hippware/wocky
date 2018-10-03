@@ -1,13 +1,14 @@
 # vim: set noexpandtab ts=2 sw=2:
-.PHONY: help unittest inttest release build push deploy migrate shipit restart pods status top exec console shell describe logs follow cp
+.PHONY: help unittest inttest migrationtest release build push deploy shipit restart pods status top exec console shell describe logs follow cp
 
-VERSION      ?= $(shell elixir ./version.exs)
-RELEASE_NAME ?= wocky
-IMAGE_REPO   ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
-IMAGE_NAME   ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
-IMAGE_TAG    ?= $(shell git rev-parse HEAD)
-WOCKY_ENV    ?= testing
-KUBE_NS      := wocky-$(WOCKY_ENV)
+VERSION       ?= $(shell elixir ./version.exs)
+RELEASE_NAME  ?= wocky
+IMAGE_REPO    ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
+IMAGE_NAME    ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
+IMAGE_TAG     ?= $(shell git rev-parse HEAD)
+WOCKY_ENV     ?= testing
+KUBE_NS       := wocky-$(WOCKY_ENV)
+WOCKY_DB_USER ?= postgres
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
@@ -25,6 +26,12 @@ unittest: ## Run the unit tests locally
 inttest: ## Run the integration tests locally
 	mix do ecto.reset, epmd
 	mix ct
+
+migrationtest:
+	aws s3 cp s3://wocky-db-dumps/staging/wocky_staging.dump.gz db_dump.gz
+	echo "CREATE DATABASE wocky_${MIX_ENV}" | PGPASSWORD=${WOCKY_DB_PASSWORD} psql -U ${WOCKY_DB_USER} -h ${WOCKY_DB_HOST} -w
+	gunzip -c db_dump.gz | PGPASSWORD=${WOCKY_DB_PASSWORD} psql -U ${WOCKY_DB_USER} -h ${WOCKY_DB_HOST} -w wocky_${MIX_ENV}
+	mix ecto.migrate
 
 ########################################################################
 ### Build release images

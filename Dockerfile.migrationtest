@@ -1,0 +1,6 @@
+FROM hippware/wocky:build
+
+ENV MIX_ENV=test
+
+RUN apk add py2-pip
+RUN pip install awscli --upgrade
