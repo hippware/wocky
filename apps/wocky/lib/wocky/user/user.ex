@@ -349,7 +349,7 @@ defmodule Wocky.User do
     end
   end
 
-  @spec make_invite_code(User.t) :: binary
+  @spec make_invite_code(User.t()) :: binary
   def make_invite_code(user) do
     code = InviteCode.generate()
 
@@ -361,7 +361,7 @@ defmodule Wocky.User do
     code
   end
 
-  @spec redeem_invite_code(User.t, binary) :: boolean
+  @spec redeem_invite_code(User.t(), binary) :: boolean
   def redeem_invite_code(redeemer, code) do
     invitation =
       InviteCode

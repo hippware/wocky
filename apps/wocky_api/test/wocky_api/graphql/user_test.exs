@@ -799,11 +799,11 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert %{
-        "userInviteMakeCode" => %{
-          "successful" => true,
-          "result" => code
-        }
-      } = result.data
+               "userInviteMakeCode" => %{
+                 "successful" => true,
+                 "result" => code
+               }
+             } = result.data
 
       assert is_binary(code)
       assert byte_size(code) > 1
