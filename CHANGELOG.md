@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.10.3+ra0dc575
+
 * Use a version of PostgreSQL with Healthcheck for tests (#1892)
 * Update: hackney (PR #1894, PR #1895), bypass (PR #1896)
   * prometheus_ecto (PR #1897)
