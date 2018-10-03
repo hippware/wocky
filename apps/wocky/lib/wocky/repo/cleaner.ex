@@ -15,6 +15,7 @@ defmodule Wocky.Repo.Cleaner do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
+  alias Wocky.User.InviteCode
 
   require Logger
 
@@ -26,9 +27,10 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d5} = clean_pending_tros_files()
     {:ok, d6} = clean_invalid_push_tokens()
     {:ok, d7} = clean_expired_auth_tokens()
-    {:ok, d8} = clean_dead_tros_links(true)
+    {:ok, d8} = clean_expired_invite_codes()
+    {:ok, d9} = clean_dead_tros_links(true)
 
-    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9}
   end
 
   def clean_pending_bots do
@@ -96,6 +98,19 @@ defmodule Wocky.Repo.Cleaner do
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} expired authentication tokens")
+
+    {:ok, deleted}
+  end
+
+  def clean_expired_invite_codes do
+    expire_date = Timestamp.shift(weeks: -5)
+
+    {deleted, nil} =
+      InviteCode
+      |> where([c], c.created_at <= ^expire_date)
+      |> Repo.delete_all(timeout: :infinity)
+
+    Logger.info("Deleted #{deleted} expired invitation codes")
 
     {:ok, deleted}
   end

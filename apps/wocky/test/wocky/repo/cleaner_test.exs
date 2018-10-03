@@ -19,6 +19,7 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
+  alias Wocky.User.InviteCode
 
   setup do
     user = Factory.insert(:user)
@@ -148,6 +149,46 @@ defmodule Wocky.Repo.CleanerTest do
         from t in AuthToken,
           where: t.user_id == ^user.id,
           where: t.resource == ^"new_token"
+
+      assert Repo.one(query)
+    end
+  end
+
+  describe "clean_expired_invite_codes" do
+    setup %{user: user} do
+      old_code = User.make_invite_code(user)
+      new_code = User.make_invite_code(user)
+
+      invitation = Repo.get_by(InviteCode, code: old_code)
+      ts = Timex.shift(invitation.created_at, weeks: -6)
+
+      invitation
+      |> Ecto.Changeset.change(created_at: ts)
+      |> Repo.update!()
+
+      {:ok, result} = Cleaner.clean_expired_invite_codes()
+
+      {:ok, old_code: old_code, new_code: new_code, result: result}
+    end
+
+    test "should return the number of codes removed", %{result: result} do
+      assert result == 1
+    end
+
+    test "should remove the old code", %{user: user, old_code: code} do
+      query =
+        from c in InviteCode,
+          where: c.user_id == ^user.id,
+          where: c.code == ^code
+
+      refute Repo.one(query)
+    end
+
+    test "should not remove the recent code", %{user: user, new_code: code} do
+      query =
+        from c in InviteCode,
+          where: c.user_id == ^user.id,
+          where: c.code == ^code
 
       assert Repo.one(query)
     end
