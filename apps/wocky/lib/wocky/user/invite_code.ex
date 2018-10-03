@@ -4,6 +4,7 @@ defmodule Wocky.User.InviteCode do
   use Wocky.Repo.Schema
 
   alias Ecto.Changeset
+  alias Wocky.Repo.ID
   alias Wocky.User
   alias __MODULE__
 
@@ -18,8 +19,6 @@ defmodule Wocky.User.InviteCode do
 
   @type t :: %InviteCode{}
 
-  @code_bytes 16
-
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
@@ -30,8 +29,8 @@ defmodule Wocky.User.InviteCode do
 
   @spec generate :: binary
   def generate do
-    @code_bytes
-    |> :crypto.strong_rand_bytes()
+    ID.new()
+    |> ID.to_binary!()
     |> Base.encode64()
   end
 end
