@@ -8,6 +8,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Use a version of PostgreSQL with Healthcheck for tests (#1892)
 * Update: hackney (PR #1894, PR #1895), bypass (PR #1896)
   * prometheus_ecto (PR #1897)
+* User invite and redeem functionality (#1889)
 
 
 # 2018.9.27+r9c0bbaa
