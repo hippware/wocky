@@ -546,6 +546,27 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  input_object :user_invite_redeem_code_input do
+    @desc "The invite code to redeem"
+    field :code, non_null(:string)
+  end
+
+  payload_object(:user_invite_make_code_payload, :string)
+  payload_object(:user_invite_redeem_code_payload, :boolean)
+
+  object :user_invite_code_mutations do
+    @desc "Generate a user invite code"
+    field :user_invite_make_code, type: :user_invite_make_code_payload do
+      resolve &User.make_invite_code/3
+    end
+
+    @desc "Redeem a user invite code"
+    field :user_invite_redeem_code, type: :user_invite_redeem_code_payload do
+      arg :input, non_null(:user_invite_redeem_code_input)
+      resolve &User.redeem_invite_code/3
+    end
+  end
+
   object :location_mutations do
     @desc "Update a user's current location"
     field :user_location_update, type: :user_location_update_payload do

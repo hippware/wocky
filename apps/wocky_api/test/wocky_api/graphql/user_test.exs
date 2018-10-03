@@ -783,6 +783,50 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
+  describe "invitation codes" do
+    @query """
+    mutation {
+      userInviteMakeCode {
+        successful
+        result
+      }
+    }
+    """
+
+    test "get invitation code", %{user: user} do
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteMakeCode" => %{
+                 "successful" => true,
+                 "result" => code
+               }
+             } = result.data
+
+      assert is_binary(code)
+      assert byte_size(code) > 1
+    end
+
+    @query """
+    mutation ($code: String!) {
+      userInviteRedeemCode(input: {code: $code}) {
+        result
+      }
+    }
+    """
+
+    test "redeem invitation code", %{user: user} do
+      inviter = Factory.insert(:user)
+      code = User.make_invite_code(inviter)
+
+      result = run_query(@query, user, %{"code" => code})
+      refute has_errors(result)
+      assert result.data == %{"userInviteRedeemCode" => %{"result" => true}}
+    end
+  end
+
   describe "delete user mutation" do
     test "Should be false with no related bots", %{user: user} do
       query = "mutation { userDelete { result } }"
