@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ecto (PR #1902)
+* Tidy up expired user invitation codes (#1901)
+
+
 # 2018.10.3+ra0dc575
 
 * Use a version of PostgreSQL with Healthcheck for tests (#1892)
