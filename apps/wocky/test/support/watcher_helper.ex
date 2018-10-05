@@ -8,6 +8,7 @@ defmodule Wocky.WatcherHelper do
     quote do
       use ExUnit.Case, async: false
       import unquote(__MODULE__)
+      import Wocky.Eventually
 
       setup_all do
         Wocky.Watcher.Client.clear_all_subscriptions()

@@ -73,6 +73,15 @@ defmodule Wocky.Bot.Invitation do
     |> Repo.update()
   end
 
+  @spec delete(User.t(), User.t()) :: :ok
+  def delete(user, invitee) do
+    Invitation
+    |> where([i], i.user_id == ^user.id and i.invitee_id == ^invitee.id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
   @spec changeset(t(), map()) :: Changeset.t()
   defp changeset(struct, params) do
     struct

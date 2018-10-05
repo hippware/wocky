@@ -5,14 +5,10 @@ defmodule Wocky.Callbacks.Block do
 
   use Wocky.Watcher, type: Wocky.Block, events: [:insert]
 
-  alias Wocky.Block
-  alias Wocky.Bot
-  alias Wocky.Bot.Item
-  alias Wocky.Bot.Share
-  alias Wocky.Conversation
-  alias Wocky.HomeStream
-  alias Wocky.Repo
-  alias Wocky.User
+  alias Wocky.{Block, Bot}
+  alias Wocky.Bot.{Invitation, Item, Share}
+  alias Wocky.{Conversation, HomeStream, Repo, User}
+  alias Wocky.User.Notification
 
   def handle_insert(%Event{action: :insert, new: new}) do
     %Block{blocker: blocker, blockee: blockee} =
@@ -32,6 +28,14 @@ defmodule Wocky.Callbacks.Block do
       # Delete conversations and MAM entries between the users
       delete_message_logs(blocker, blockee)
       delete_message_logs(blockee, blocker)
+
+      # Delete invitations
+      Invitation.delete(blocker, blockee)
+      Invitation.delete(blockee, blocker)
+
+      # Delete notifications
+      Notification.delete(blocker, blockee)
+      Notification.delete(blockee, blocker)
       :ok
     end
   end

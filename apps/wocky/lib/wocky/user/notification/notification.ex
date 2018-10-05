@@ -7,7 +7,7 @@ defmodule Wocky.User.Notification do
   import Ecto.Query
 
   alias Ecto.Queryable
-  alias Wocky.{Bot, Repo, User}
+  alias Wocky.{Block, Bot, Repo, User}
 
   alias Wocky.User.Notification.{
     BotItem,
@@ -56,7 +56,13 @@ defmodule Wocky.User.Notification do
   @type base() :: %__MODULE__{}
 
   @spec notify(t()) :: {:ok, t()} | {:error, any()}
-  def notify(notification), do: Notifier.notify(notification)
+  def notify(notification) do
+    if Block.blocked?(notification.user_id, notification.other_user_id) do
+      {:error, :invalid_user}
+    else
+      Notifier.notify(notification)
+    end
+  end
 
   @spec decode(base()) :: t()
   def decode(%Notification{type: type} = params) do
@@ -90,6 +96,15 @@ defmodule Wocky.User.Notification do
     |> where(user_id: ^user.id)
     |> maybe_add_before_id(before_id)
     |> maybe_add_after_id(after_id)
+  end
+
+  @spec delete(User.t(), User.t()) :: :ok
+  def delete(user, other_user) do
+    Notification
+    |> where([i], i.user_id == ^user.id and i.other_user_id == ^other_user.id)
+    |> Repo.delete_all()
+
+    :ok
   end
 
   defp maybe_add_before_id(queryable, nil), do: queryable

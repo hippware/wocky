@@ -1,5 +1,5 @@
 defmodule Wocky.Bot.InvitationTest do
-  use Wocky.WatcherHelper
+  use Wocky.WatcherHelper, async: false
 
   alias Faker.Code
   alias Pigeon.APNS.Notification
@@ -175,6 +175,26 @@ defmodule Wocky.Bot.InvitationTest do
                )
 
       assert no_more_push_notifications()
+    end
+  end
+
+  describe "delete/2" do
+    setup %{user: user, invitee: invitee} do
+      invitation = Factory.insert(:invitation, user: user, invitee: invitee)
+      invitation2 = Factory.insert(:invitation, invitee: invitee)
+      Sandbox.wait_notifications(count: 2, timeout: 500, global: true)
+
+      Invitation.delete(user, invitee)
+
+      {:ok, invitation: invitation, invitation2: invitation2}
+    end
+
+    test "it should delete the invitation between the users", shared do
+      refute Repo.get(Invitation, shared.invitation.id)
+    end
+
+    test "it should not delete other invitations to the user", shared do
+      assert Repo.get(Invitation, shared.invitation2.id)
     end
   end
 end

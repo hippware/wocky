@@ -1,6 +1,7 @@
 defmodule Wocky.User.NotificationTest do
   use Wocky.DataCase
 
+  alias Wocky.Block
   alias Wocky.Repo.Factory
   alias Wocky.User.Notification
 
@@ -87,6 +88,88 @@ defmodule Wocky.User.NotificationTest do
 
       assert %Notification{type: :user_follow} =
                Repo.get_by(Notification, id: notification.id)
+    end
+  end
+
+  describe "blocked user notification should fail" do
+    setup shared do
+      Block.block(shared.user, shared.user2)
+      :ok
+    end
+
+    test "bot item", shared do
+      item = Factory.insert(:item, bot: shared.bot, user: shared.user2)
+
+      assert {:error, :invalid_user} ==
+               Notification.notify(%BotItem{
+                 user_id: shared.user.id,
+                 other_user_id: shared.user2.id,
+                 bot_id: shared.bot.id,
+                 bot_item_id: item.id
+               })
+    end
+
+    test "geofence event", shared do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%GeofenceEvent{
+                 user_id: shared.user.id,
+                 other_user_id: shared.user2.id,
+                 bot_id: shared.bot.id,
+                 event: :enter
+               })
+    end
+
+    test "invitation", shared do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%Invitation{
+                 user_id: shared.user.id,
+                 other_user_id: shared.user2.id,
+                 bot_id: shared.bot.id,
+                 invitation_id: shared.invitation.id
+               })
+    end
+
+    test "invitation response", shared do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%InvitationResponse{
+                 user_id: shared.user.id,
+                 other_user_id: shared.user2.id,
+                 bot_id: shared.bot.id,
+                 invitation_id: shared.invitation.id,
+                 accepted: true
+               })
+    end
+
+    test "user follow", shared do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%UserFollow{
+                 user_id: shared.user.id,
+                 other_user_id: shared.user2.id
+               })
+    end
+  end
+
+  describe "delete/2" do
+    setup %{user: user, user2: user2} do
+      user3 = Factory.insert(:user)
+
+      notification =
+        Factory.insert(:invitation_notification, user: user, other_user: user2)
+
+      notification2 =
+        Factory.insert(:invitation_notification, user: user, other_user: user3)
+
+      Notification.delete(user, user2)
+
+      {:ok, notification: notification, notification2: notification2}
+    end
+
+    test "it should delete the notification between the users", shared do
+      refute Repo.get(Notification, shared.notification.id)
+    end
+
+    test "it should not delete other notifications to the user", shared do
+      assert Repo.get(Notification, shared.notification2.id)
     end
   end
 
