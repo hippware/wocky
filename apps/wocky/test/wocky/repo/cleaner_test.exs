@@ -55,12 +55,11 @@ defmodule Wocky.Repo.CleanerTest do
       {:ok, result} = Cleaner.clean_pending_bots()
 
       {:ok,
-         new_pending: new_pending,
-         old_pending: old_pending,
-         new_nonpending: new_nonpending,
-         old_nonpending: old_nonpending,
-         result: result
-       }
+       new_pending: new_pending,
+       old_pending: old_pending,
+       new_nonpending: new_nonpending,
+       old_nonpending: old_nonpending,
+       result: result}
     end
 
     test "should return the number of bots removed", %{result: result} do
@@ -197,8 +196,7 @@ defmodule Wocky.Repo.CleanerTest do
   describe "clean_pending_tros_files" do
     setup %{user: user} do
       # Pending file, recent create date
-      new_pending =
-        Factory.insert(:tros_metadata, user: user, ready: false)
+      new_pending = Factory.insert(:tros_metadata, user: user, ready: false)
 
       # Pending file, older create date
       old_pending =
@@ -210,8 +208,7 @@ defmodule Wocky.Repo.CleanerTest do
         )
 
       # Non-pending file, recent create date
-      new_nonpending =
-        Factory.insert(:tros_metadata, user: user, ready: true)
+      new_nonpending = Factory.insert(:tros_metadata, user: user, ready: true)
 
       # Non-pending file, older create date
       old_nonpending =
@@ -225,12 +222,11 @@ defmodule Wocky.Repo.CleanerTest do
       {:ok, result} = Cleaner.clean_pending_tros_files()
 
       {:ok,
-         new_pending: new_pending,
-         old_pending: old_pending,
-         new_nonpending: new_nonpending,
-         old_nonpending: old_nonpending,
-         result: result
-       }
+       new_pending: new_pending,
+       old_pending: old_pending,
+       new_nonpending: new_nonpending,
+       old_nonpending: old_nonpending,
+       result: result}
     end
 
     test "should return the number of metadatas removed", %{result: result} do
@@ -335,14 +331,13 @@ defmodule Wocky.Repo.CleanerTest do
     {:ok, result} = Cleaner.clean_bot_item_image_links(true)
 
     {:ok,
-       bot: bot,
-       good_with_content: good_with_content,
-       bad_with_content: bad_with_content,
-       good_no_content: good_no_content,
-       bad_no_content: bad_no_content,
-       only_content: only_content,
-       result: result
-     }
+     bot: bot,
+     good_with_content: good_with_content,
+     bad_with_content: bad_with_content,
+     good_no_content: good_no_content,
+     bad_no_content: bad_no_content,
+     only_content: only_content,
+     result: result}
   end
 
   describe "clean_bot_item_image_links" do
@@ -360,10 +355,10 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should not delete an item with an invalid image link", ctx do
       assert Repo.one(
-        Item
-        |> where(id: ^ctx.bad_with_content.id)
-        |> where(bot_id: ^ctx.bot.id)
-      )
+               Item
+               |> where(id: ^ctx.bad_with_content.id)
+               |> where(bot_id: ^ctx.bot.id)
+             )
     end
 
     test "should remove the invalid image link from the item", ctx do
@@ -406,18 +401,18 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should delete an item with an invalid image link", ctx do
       refute Repo.one(
-        Item
-        |> where(id: ^ctx.bad_no_content.id)
-        |> where(bot_id: ^ctx.bot.id)
-      )
+               Item
+               |> where(id: ^ctx.bad_no_content.id)
+               |> where(bot_id: ^ctx.bot.id)
+             )
     end
 
     test "should not delete an item with a valid image link", ctx do
       assert Repo.one(
-        Item
-        |> where(id: ^ctx.good_no_content.id)
-        |> where(bot_id: ^ctx.bot.id)
-      )
+               Item
+               |> where(id: ^ctx.good_no_content.id)
+               |> where(bot_id: ^ctx.bot.id)
+             )
     end
   end
 
@@ -438,10 +433,10 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should nillify non-existing images", ctx do
       refute Repo.one(
-        Bot
-        |> where(id: ^ctx.invalid_bot.id)
-        |> select([b], b.image)
-      )
+               Bot
+               |> where(id: ^ctx.invalid_bot.id)
+               |> select([b], b.image)
+             )
     end
 
     test "should leave existing images", ctx do
@@ -470,10 +465,10 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should nillify non-existing avatars", ctx do
       refute Repo.one(
-        User
-        |> where(id: ^ctx.user.id)
-        |> select([u], u.avatar)
-      )
+               User
+               |> where(id: ^ctx.user.id)
+               |> select([u], u.avatar)
+             )
     end
 
     test "should leave existing avatars", ctx do
@@ -510,12 +505,11 @@ defmodule Wocky.Repo.CleanerTest do
       {:ok, result} = Cleaner.clean_pending_users()
 
       {:ok,
-         new_pending: new_pending,
-         old_pending: old_pending,
-         new_nonpending: new_nonpending,
-         old_nonpending: old_nonpending,
-         result: result
-       }
+       new_pending: new_pending,
+       old_pending: old_pending,
+       new_nonpending: new_nonpending,
+       old_nonpending: old_nonpending,
+       result: result}
     end
 
     test "should return the number of users removed", %{result: result} do
@@ -566,12 +560,11 @@ defmodule Wocky.Repo.CleanerTest do
       {:ok, result} = Cleaner.clean_invalid_push_tokens()
 
       {:ok,
-         new_invalid: new_invalid,
-         old_invalid: old_invalid,
-         new_valid: new_valid,
-         old_valid: old_valid,
-         result: result
-       }
+       new_invalid: new_invalid,
+       old_invalid: old_invalid,
+       new_valid: new_valid,
+       old_valid: old_valid,
+       result: result}
     end
 
     test "should return the number of push tokens removed", %{result: result} do
