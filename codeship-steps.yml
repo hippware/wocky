@@ -12,6 +12,12 @@
       command: make unittest
     - name: int_test
       command: make inttest
+  - name: test_migration
+    type: serial
+    service: wocky-migration-test
+    steps:
+    - name: migration_test
+      command: make migrationtest
   - name: build_release
     type: serial
     steps:
