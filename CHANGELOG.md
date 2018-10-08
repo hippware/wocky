@@ -7,6 +7,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update: ecto (PR #1902)
 * Tidy up expired user invitation codes (#1901)
+* Full support for blocking on notifications and invitations (#1880, PR #1905)
+* Add db-dump cronjob and db migration test step (PR #1904)
 
 
 # 2018.10.3+ra0dc575
