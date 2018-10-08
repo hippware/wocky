@@ -1,10 +1,8 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
-  import Ecto.Query
-
   alias Absinthe.Subscription
-  alias Wocky.{Bot, Conversation, HomeStream, JID, Message, Repo, Roster, User}
+  alias Wocky.{Conversation, HomeStream, JID, Message, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
@@ -139,14 +137,7 @@ defmodule WockyAPI.Resolvers.User do
     Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
   end
 
-  def has_used_geofence(_root, _args, %{context: %{current_user: user}}) do
-    {:ok,
-     user
-     |> Bot.related_geofence_bots_query()
-     |> select([b], count(1))
-     |> Repo.one!()
-     |> Kernel.!=(0)}
-  end
+  def has_used_geofence(_root, _args, _context), do: {:ok, true}
 
   def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
     with {:ok, _} <- do_hide(user, input) do

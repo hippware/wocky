@@ -8,6 +8,7 @@ defmodule Wocky.Bot.GeosearchSpec do
   alias Faker.Address
   alias Wocky.Bot
   alias Wocky.Bot.Geosearch
+  alias Wocky.Bot.Share
   alias Wocky.GeoUtils
 
   before do
@@ -120,8 +121,7 @@ defmodule Wocky.Bot.GeosearchSpec do
 
         other_user = Factory.insert(:user)
 
-        _public_bots = Factory.insert_list(5, :bot, public: true, user: owner)
-        shared_bots = Factory.insert_list(5, :bot, user: owner)
+        shared_bots = Factory.insert_list(10, :bot, user: owner)
 
         Enum.each(
           shared_bots,
@@ -220,9 +220,9 @@ defmodule Wocky.Bot.GeosearchSpec do
 
   describe "subscribed_distance_query/4" do
     before do
-      5
-      |> Factory.insert_list(:bot, public: true)
-      |> Enum.map(&Bot.subscribe(&1, shared.user))
+      bots = Factory.insert_list(5, :bot, public: true)
+      Enum.each(bots, &Bot.subscribe(&1, shared.user))
+      Enum.each(bots, &Share.put(shared.user, &1, &1.user))
 
       bots = Geosearch.get_all(shared.lat, shared.lon, shared.user.id)
 

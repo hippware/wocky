@@ -1,4 +1,4 @@
-%%% @copyright 2017+ Hippware, Inc.
+%%% @copyright 2017+ Hippware, Inc
 %%% @doc Integration test suite for blocking functionality
 -module(blocking_SUITE).
 
@@ -80,14 +80,22 @@ init_per_suite(Config) ->
     ?wocky_user:update(?CAROL, #{handle => <<"Carol">>}),
 
     AlicesBot = ?wocky_factory:insert(
-                   bot, #{user => Alice, public => true,
+                   bot, #{user => Alice,
                           location => ?wocky_geo_utils:point(1.0, 1.0)}),
+    ?wocky_invitation:put(Carol, AlicesBot, Alice),
+    ?wocky_invitation:put(Bob, AlicesBot, Alice),
+
     BobsBot = ?wocky_factory:insert(
-                 bot, #{user => Bob, public => true,
+                 bot, #{user => Bob,
                         location => ?wocky_geo_utils:point(2.0, 2.0)}),
+    ?wocky_invitation:put(Alice, BobsBot, Bob),
+    ?wocky_invitation:put(Carol, BobsBot, Bob),
+
     CarolsBot = ?wocky_factory:insert(
-                   bot, #{user => Carol, public => true,
+                   bot, #{user => Carol,
                           location => ?wocky_geo_utils:point(3.0, 3.0)}),
+    ?wocky_invitation:put(Alice, CarolsBot, Carol),
+    ?wocky_invitation:put(Bob, CarolsBot, Carol),
 
     ?wocky_factory:insert(item, #{user => Alice, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Bob, bot => CarolsBot}),

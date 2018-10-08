@@ -76,7 +76,8 @@
          watch_hs/2,
          unwatch_hs/1,
 
-         disable_push_reflection/0
+         disable_push_reflection/0,
+         add_invitation/3
         ]).
 
 
@@ -634,3 +635,10 @@ disable_push_reflection() ->
       lists:append([{reflect, false}]),
       application:set_env(wocky, ?wocky_push)
      ).
+
+add_invitation(BotID, UserID, InviteeID) ->
+    Bot = ?wocky_bot:get(BotID),
+    User = ?wocky_user:get_user(UserID),
+    Invitee = ?wocky_user:get_user(InviteeID),
+    ?wocky_factory:insert(invitation,
+                          #{bot => Bot, user => User, invitee => Invitee}).

@@ -45,6 +45,7 @@
 -define(wocky_block,             'Elixir.Wocky.Block').
 -define(wocky_bot,               'Elixir.Wocky.Bot').
 -define(wocky_geosearch,         'Elixir.Wocky.Bot.Geosearch').
+-define(wocky_invitation,        'Elixir.Wocky.Bot.Invitation').
 -define(wocky_item,              'Elixir.Wocky.Bot.Item').
 -define(wocky_share,             'Elixir.Wocky.Bot.Share').
 -define(wocky_conversation,      'Elixir.Wocky.Conversation').

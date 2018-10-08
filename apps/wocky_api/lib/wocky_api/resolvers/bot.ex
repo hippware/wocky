@@ -11,7 +11,10 @@ defmodule WockyAPI.Resolvers.Bot do
   alias WockyAPI.Resolvers.Utils
 
   def get_bot(_root, args, %{context: context}) do
-    {:ok, Bot.get_bot(args[:id], Map.get(context, :current_user))}
+    case Map.get(context, :current_user) do
+      nil -> {:ok, nil}
+      user -> {:ok, Bot.get_bot(args[:id], user)}
+    end
   end
 
   def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do

@@ -14,6 +14,7 @@ defmodule Wocky.Bot do
   alias Geocalc.Point
   alias Wocky.Block
   alias Wocky.Bot.Item
+  alias Wocky.Bot.Invitation
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
@@ -57,9 +58,9 @@ defmodule Wocky.Bot do
     # Radius of bot circle
     field :radius, :float, default: 100.0
     # Visibility of bot
-    field :public, :boolean
+    field :public, :boolean, default: false, virtual: true
     field :tags, {:array, :string}
-    field :geofence, :boolean, default: false
+    field :geofence, :boolean, default: true, virtual: true
 
     timestamps()
 
@@ -110,9 +111,7 @@ defmodule Wocky.Bot do
     :address_data,
     :location,
     :radius,
-    :public,
-    :tags,
-    :geofence
+    :tags
   ]
   @required_fields [:id, :user_id, :title, :location, :radius]
 
@@ -177,15 +176,15 @@ defmodule Wocky.Bot do
     |> maybe_filter_pending(not include_pending)
   end
 
-  @spec get_bot(id, User.t() | nil, boolean) :: t | nil
-  def get_bot(id, requestor \\ nil, include_pending \\ false) do
+  @spec get_bot(id, User.t(), boolean) :: t | nil
+  def get_bot(id, requestor, include_pending \\ false) do
     id
     |> get_bot_query(requestor, include_pending)
     |> Repo.one()
   end
 
-  @spec get_bot_query(id, User.t() | nil, boolean) :: Queryable.t()
-  def get_bot_query(id, requestor \\ nil, include_pending \\ false) do
+  @spec get_bot_query(id, User.t(), boolean) :: Queryable.t()
+  def get_bot_query(id, requestor, include_pending \\ false) do
     id
     |> get_query(include_pending)
     |> is_visible_query(requestor)
@@ -265,12 +264,8 @@ defmodule Wocky.Bot do
   end
 
   @spec subscribe(t, User.t(), boolean()) :: :ok | no_return
-  def subscribe(bot, user, guest \\ false) do
-    if guest == false && subscription(bot, user) == :visitor do
-      send_visit_notifications(user, bot, :exit)
-    end
-
-    Subscription.put(user, bot, guest)
+  def subscribe(bot, user, _guest \\ false) do
+    Subscription.put(user, bot, true)
   end
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
@@ -384,7 +379,6 @@ defmodule Wocky.Bot do
   defp by_relationship_query(user, :guest) do
     user
     |> by_relationship_query(:subscribed)
-    |> where([..., s], s.guest)
   end
 
   defp by_relationship_query(user, :visitor) do
@@ -452,7 +446,6 @@ defmodule Wocky.Bot do
   def guests_query(bot) do
     bot
     |> Ecto.assoc(:subscribers)
-    |> where([..., s], s.guest)
   end
 
   @spec visitors_query(Bot.t()) :: Queryable.t()
@@ -512,11 +505,7 @@ defmodule Wocky.Bot do
     distance_from(bot, loc) <= bot.radius
   end
 
-  @spec is_visible_query(Queryable.t(), User.t() | nil) :: Queryable.t()
-  def is_visible_query(queryable, nil) do
-    queryable |> where([b, ...], b.public)
-  end
-
+  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     queryable
     |> Block.object_visible_query(user.id)
@@ -529,13 +518,19 @@ defmodule Wocky.Bot do
     |> join(
       :left,
       [b, ...],
+      invitation in Invitation,
+      b.id == invitation.bot_id and invitation.invitee_id == ^user.id
+    )
+    |> join(
+      :left,
+      [b, ...],
       sub in Subscription,
       b.id == sub.bot_id and sub.user_id == ^user.id
     )
     |> where(
-      [b, ..., sub, share],
-      b.user_id == ^user.id or b.public or not is_nil(sub.user_id) or
-        not is_nil(share.user_id)
+      [b, ..., share, invitation, sub],
+      b.user_id == ^user.id or not is_nil(sub.user_id) or
+        not is_nil(share.user_id) or not is_nil(invitation.user_id)
     )
   end
 

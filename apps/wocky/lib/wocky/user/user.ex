@@ -12,6 +12,7 @@ defmodule Wocky.User do
   alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Block
   alias Wocky.Bot
+  alias Wocky.Bot.Invitation
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
@@ -167,13 +168,7 @@ defmodule Wocky.User do
   end
 
   @spec get_guest_subscriptions(t) :: [Bot.t()]
-  def get_guest_subscriptions(user) do
-    user
-    |> subscribed_bots_query()
-    |> where([b, s], b.geofence == true)
-    |> where([b, s], s.guest == true)
-    |> Repo.all()
-  end
+  def get_guest_subscriptions(user), do: get_subscriptions(user)
 
   @spec bot_count(User.t()) :: non_neg_integer
   def bot_count(user) do
@@ -191,7 +186,7 @@ defmodule Wocky.User do
   def can_access?(user, bot),
     do:
       owns?(user, bot) || Bot.public?(bot) || Share.exists?(user, bot) ||
-        Subscription.state(user, bot) != nil
+        Subscription.state(user, bot) != nil || Invitation.exists?(bot, user)
 
   @doc """
     Returns true if a bot should appear in a user's geosearch results. Criteria:

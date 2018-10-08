@@ -40,7 +40,17 @@ defmodule Wocky.Bot.Invitation do
 
   def put(_, _, _), do: {:error, :permission_denied}
 
-  @spec get(id(), User.t()) :: nil | t()
+  @spec get(id() | Bot.t(), User.t()) :: nil | t()
+  def get(%Bot{} = bot, requestor) do
+    Invitation
+    |> where(
+      [i],
+      i.bot_id == ^bot.id and
+        (i.user_id == ^requestor.id or i.invitee_id == ^requestor.id)
+    )
+    |> Repo.one()
+  end
+
   def get(id, requestor) do
     Invitation
     |> where(
@@ -51,6 +61,9 @@ defmodule Wocky.Bot.Invitation do
     |> Repo.one()
   end
 
+  @spec exists?(id() | Bot.t(), User.t()) :: boolean()
+  def exists?(bot_or_id, requestor), do: get(bot_or_id, requestor) != nil
+
   @spec respond(t(), boolean(), User.t()) :: {:ok, t()} | {:error, any()}
   def respond(
         %Invitation{invitee_id: invitee_id} = invitation,
@@ -60,7 +73,7 @@ defmodule Wocky.Bot.Invitation do
     invitation = Repo.preload(invitation, [:bot, :invitee])
 
     with {:ok, result} <- do_respond(invitation, accepted?),
-         :ok <- Bot.subscribe(invitation.bot, invitation.invitee, true) do
+         :ok <- Bot.subscribe(invitation.bot, invitation.invitee) do
       {:ok, result}
     end
   end
