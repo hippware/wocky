@@ -273,7 +273,7 @@ defmodule WockyAPI.Schema.BotTypes do
   input_object :bot_item_delete_input do
     @desc "ID of the bot containing the item"
     field :bot_id, non_null(:uuid) do
-      deprecated("The bot ID is no longer required for deleting items")
+      deprecate "The bot ID is no longer required for deleting items"
     end
 
     @desc "ID of the item to delete"
