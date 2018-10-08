@@ -70,7 +70,7 @@
   "fs": {:hex, :fs, "0.9.2", "ed17036c26c3f70ac49781ed9220a50c36775c6ca2cf8182d123b6566e49ec59", [:rebar], [], "hexpm"},
   "fun_chain": {:git, "https://github.com/sasa1977/fun_chain.git", "e6eede57b74e7588f7aadcf21602023a21c18910", [branch: "master"]},
   "fusco": {:hex, :fusco, "0.1.0", "9e37b660a55690f687ace2143316f7998587529be2580f1ae54245acd1ad3d40", [:rebar3], [], "hexpm"},
-  "gen_stage": {:hex, :gen_stage, "0.14.0", "65ae78509f85b59d360690ce3378d5096c3130a0694bab95b0c4ae66f3008fad", [:mix], [], "hexpm"},
+  "gen_stage": {:hex, :gen_stage, "0.14.1", "9d46723fda072d4f4bb31a102560013f7960f5d80ea44dcb96fd6304ed61e7a4", [:mix], [], "hexpm"},
   "geo": {:hex, :geo, "3.0.0", "bb1e9baac6031c5bbddcde4937af1c1ab1cbfbbe2f7870038fdfc93a9cad4359", [:mix], [], "hexpm"},
   "geo_postgis": {:hex, :geo_postgis, "2.1.0", "e0640d18276cb1dd58aeae3f5eed9a61641a5110901e1e35d0d662031d936b33", [:mix], [{:geo, "~> 3.0", [hex: :geo, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:poison, "~> 2.2 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.13", [hex: :postgrex, repo: "hexpm", optional: false]}], "hexpm"},
   "geocalc": {:hex, :geocalc, "0.6.1", "97a78913efc5c880803743a363d4748233b6a973093840322a77cd38cd4fabe5", [:mix], [], "hexpm"},
