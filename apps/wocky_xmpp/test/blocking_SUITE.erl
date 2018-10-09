@@ -82,20 +82,20 @@ init_per_suite(Config) ->
     AlicesBot = ?wocky_factory:insert(
                    bot, #{user => Alice,
                           location => ?wocky_geo_utils:point(1.0, 1.0)}),
-    ?wocky_invitation:put(Carol, AlicesBot, Alice),
-    ?wocky_invitation:put(Bob, AlicesBot, Alice),
+    {ok, _} = ?wocky_invitation:put(Carol, AlicesBot, Alice),
+    {ok, _} = ?wocky_invitation:put(Bob, AlicesBot, Alice),
 
     BobsBot = ?wocky_factory:insert(
                  bot, #{user => Bob,
                         location => ?wocky_geo_utils:point(2.0, 2.0)}),
-    ?wocky_invitation:put(Alice, BobsBot, Bob),
-    ?wocky_invitation:put(Carol, BobsBot, Bob),
+    {ok, _} = ?wocky_invitation:put(Alice, BobsBot, Bob),
+    {ok, _} = ?wocky_invitation:put(Carol, BobsBot, Bob),
 
     CarolsBot = ?wocky_factory:insert(
                    bot, #{user => Carol,
                           location => ?wocky_geo_utils:point(3.0, 3.0)}),
-    ?wocky_invitation:put(Alice, CarolsBot, Carol),
-    ?wocky_invitation:put(Bob, CarolsBot, Carol),
+    {ok, _} = ?wocky_invitation:put(Alice, CarolsBot, Carol),
+    {ok, _} = ?wocky_invitation:put(Bob, CarolsBot, Carol),
 
     ?wocky_factory:insert(item, #{user => Alice, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Bob, bot => CarolsBot}),
@@ -113,6 +113,21 @@ init_per_suite(Config) ->
 
 end_per_suite(Config) ->
     escalus:end_per_suite(Config).
+
+init_per_group(unblocked, Config) ->
+    Alice = ?wocky_repo:get(?wocky_user, ?ALICE),
+    Bob = ?wocky_repo:get(?wocky_user, ?BOB),
+    AlicesBot = proplists:get_value(alices_bot, Config),
+    BobsBot = proplists:get_value(bobs_bot, Config),
+    {ok, _} = ?wocky_invitation:put(Bob, AlicesBot, Alice),
+    {ok, _} = ?wocky_invitation:put(Alice, BobsBot, Bob),
+    Config;
+
+init_per_group(_, Config) ->
+    Config.
+
+end_per_group(_, Config) ->
+    Config.
 
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
