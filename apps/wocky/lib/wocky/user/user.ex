@@ -179,7 +179,7 @@ defmodule Wocky.User do
   @spec can_access?(t, Bot.t()) :: boolean
   def can_access?(user, bot),
     do:
-      owns?(user, bot) || Invitation.exists?(bot, user) ||
+      owns?(user, bot) || Invitation.invited?(bot, user) ||
         Subscription.state(user, bot) != nil
 
   @doc """
@@ -564,7 +564,7 @@ defmodule Wocky.User do
 
     [:visible]
     |> maybe_add_rel(bot.user_id == user.id, :owned)
-    |> maybe_add_rel(Invitation.get(bot, user) != nil, :invited)
+    |> maybe_add_rel(Invitation.invited?(user, bot), :invited)
     |> maybe_add_rel(sub != nil, [:guest, :subscribed])
     |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
     |> List.flatten()
