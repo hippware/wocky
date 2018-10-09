@@ -1,4 +1,4 @@
-defmodule Wocky.Repo.Migrations.RemoveObsolteBotFields do
+defmodule Wocky.Repo.Migrations.RemoveBotShares do
   use Wocky.Repo.Migration
 
   def up do
