@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.Migrations.HardcodePrivateAndGeofence do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
   def up do
     execute "DROP TRIGGER update_bot_private_trigger on bots"
@@ -25,11 +25,5 @@ defmodule Wocky.Repo.Migrations.HardcodePrivateAndGeofence do
     alter table(:bot_subscriptions) do
       remove :guest
     end
-
-    # Clean out all the existing data so that we start afresh with the
-    # new client version
-    execute "DELETE FROM bot_subscriptions"
-    execute "DELETE FROM bot_shares"
-    execute "DELETE FROM bot_invitations"
   end
 end
