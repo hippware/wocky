@@ -16,9 +16,6 @@ data:
   WOCKY_PUSH_ENABLED: "true"
   WOCKY_PUSH_TOPIC: "com.hippware.ios.ChatStaging"
   WOCKY_PUSH_URI_PREFIX: "tinyrobotStaging"
-  WOCKY_INDEXING_SYSTEM: algolia
-  WOCKY_USER_INDEX_NAME: dev_wocky_users
-  WOCKY_BOT_INDEX_NAME: dev_wocky_bots
   WOCKY_ENABLE_BYPASS: "true"
   WOCKY_DB_HOST: wocky-staging.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_staging

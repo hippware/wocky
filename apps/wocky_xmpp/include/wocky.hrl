@@ -53,7 +53,6 @@
 -define(wocky_home_stream,       'Elixir.Wocky.HomeStream').
 -define(wocky_home_stream_id,    'Elixir.Wocky.HomeStream.ID').
 -define(wocky_home_stream_item,  'Elixir.Wocky.HomeStream.Item').
--define(wocky_index,             'Elixir.Wocky.Index').
 -define(wocky_repo,              'Elixir.Wocky.Repo').
 -define(wocky_errors,            'Elixir.Wocky.Repo.Errors').
 -define(wocky_factory,           'Elixir.Wocky.Repo.Factory').
