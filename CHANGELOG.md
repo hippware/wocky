@@ -5,10 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: ecto (PR #1902)
+# 2018.10.9+r5fba208
+
+* Update: ecto (PR #1902), ex_guard (PR #1909), gen_stage (PR #1910)
 * Tidy up expired user invitation codes (#1901)
 * Full support for blocking on notifications and invitations (#1880, PR #1905)
 * Add db-dump cronjob and db migration test step (PR #1904)
+* Minimal changes to hard-wire public and geofence fields on bots (PR #1881)
+* Fix blocking tests (PR #1911)
 
 
 # 2018.10.3+ra0dc575
