@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.10.9+r3399de5
+
+* Migrate bot shares to invitations (PR #1914)
+
+
 # 2018.10.9+r5fba208
 
 * Update: ecto (PR #1902), ex_guard (PR #1909), gen_stage (PR #1910)
