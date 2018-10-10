@@ -1235,7 +1235,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
   end
 
-  describe "invitations" do
+  describe "sending invitations" do
     setup do
       Repo.delete_all(Invitation)
       :ok
@@ -1313,15 +1313,22 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute successful?(r2)
     end
 
-    @query """
-    mutation ($input: BotInvitationRespondInput) {
-      botInvitationRespond (input: $input) {
-        result
-      }
-    }
-    """
-    test "accept an invitation", shared do
+    test "gives users access to the bot", shared do
       refute User.can_access?(shared.user2, shared.bot)
+
+      Factory.insert(:invitation,
+        user: shared.user,
+        bot: shared.bot,
+        invitee: shared.user2
+      )
+
+      assert User.can_access?(shared.user2, shared.bot)
+    end
+  end
+
+  describe "responding to invitations" do
+    setup shared do
+      Repo.delete_all(Invitation)
 
       %{id: id} =
         Factory.insert(:invitation,
@@ -1330,8 +1337,18 @@ defmodule WockyAPI.GraphQL.BotTest do
           invitee: shared.user2
         )
 
-      assert User.can_access?(shared.user2, shared.bot)
+      {:ok, id: id}
+    end
 
+    @query """
+    mutation ($input: BotInvitationRespondInput) {
+      botInvitationRespond (input: $input) {
+        result
+      }
+    }
+    """
+
+    test "accepting", %{id: id} = shared do
       result =
         run_query(@query, shared.user2, %{
           "input" => %{"invitation_id" => to_string(id), "accept" => true}
@@ -1343,14 +1360,31 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert User.can_access?(shared.user2, shared.bot)
     end
 
-    test "decline an invitation", shared do
-      %{id: id} =
-        Factory.insert(:invitation,
-          user: shared.user,
-          bot: shared.bot,
-          invitee: shared.user2
-        )
+    test "accepting with location", %{id: id} = shared do
+      {lat, lon} = GeoUtils.get_lat_lon(shared.bot.location)
 
+      result =
+        run_query(@query, shared.user2, %{
+          "input" => %{
+            "invitation_id" => to_string(id),
+            "accept" => true,
+            "user_location" => %{
+              "lat" => lat,
+              "lon" => lon,
+              "accuracy" => 1,
+              "device" => Lorem.word()
+            }
+          }
+        })
+
+      refute has_errors(result)
+
+      user_id = shared.user2.id
+      assert [%{id: ^user_id}] =
+        shared.bot |> Bot.visitors_query() |> Repo.all()
+    end
+
+    test "declining", %{id: id} = shared do
       result =
         run_query(@query, shared.user2, %{
           "input" => %{"invitation_id" => to_string(id), "accept" => false}
@@ -1362,14 +1396,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute Bot.subscription(shared.bot, shared.user2)
     end
 
-    test "can't accept an invitation to someone else", shared do
-      %{id: id} =
-        Factory.insert(:invitation,
-          user: shared.user,
-          bot: shared.bot,
-          invitee: shared.user2
-        )
-
+    test "accepting an invitation to someone else", %{id: id} = shared do
       result =
         run_query(@query, shared.user, %{
           "input" => %{"invitation_id" => to_string(id), "accept" => true}
