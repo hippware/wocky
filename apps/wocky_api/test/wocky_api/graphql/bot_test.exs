@@ -1359,7 +1359,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: false} = Repo.get_by(Invitation, id: id)
-      assert Bot.subscription(shared.bot, shared.user2) == :guest
+      refute Bot.subscription(shared.bot, shared.user2)
     end
 
     test "can't accept an invitation to someone else", shared do

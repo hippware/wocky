@@ -119,7 +119,7 @@ defmodule Wocky.Bot.InvitationTest do
       clear_expected_notifications(1)
     end
 
-    test "Invitee becomes subscribed", shared do
+    test "Invitee becomes subscribed if they accept", shared do
       assert Bot.subscription(shared.bot, shared.invitee) == nil
 
       assert {:ok, invitation} =
@@ -156,6 +156,16 @@ defmodule Wocky.Bot.InvitationTest do
 
       assert invitation.accepted == false
 
+      assert no_more_push_notifications()
+    end
+
+    test "Invitee does not become subscribed if they decline", shared do
+      assert Bot.subscription(shared.bot, shared.invitee) == nil
+
+      assert {:ok, invitation} =
+               Invitation.respond(shared.invitation, false, shared.invitee)
+
+      assert Bot.subscription(shared.bot, shared.invitee) == nil
       assert no_more_push_notifications()
     end
 
