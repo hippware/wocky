@@ -73,7 +73,7 @@ defmodule Wocky.Bot.Invitation do
     invitation = Repo.preload(invitation, [:bot, :invitee])
 
     with {:ok, result} <- do_respond(invitation, accepted?),
-         :ok <- Bot.subscribe(invitation.bot, invitation.invitee) do
+         :ok <- maybe_subscribe(invitation, accepted?) do
       {:ok, result}
     end
   end
@@ -84,6 +84,12 @@ defmodule Wocky.Bot.Invitation do
     invitation
     |> changeset(%{accepted: accepted?})
     |> Repo.update()
+  end
+
+  defp maybe_subscribe(_, false), do: :ok
+
+  defp maybe_subscribe(invitation, true) do
+    Bot.subscribe(invitation.bot, invitation.invitee)
   end
 
   @spec delete(User.t(), User.t()) :: :ok

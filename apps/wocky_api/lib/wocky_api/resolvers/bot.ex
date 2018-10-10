@@ -311,12 +311,14 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  def invitation_respond(_root, args, %{context: %{current_user: requestor}}) do
-    input = args[:input]
-
-    with %Invitation{} = invitation <-
-           Invitation.get(input[:invitation_id], requestor),
-         {:ok, _} <- Invitation.respond(invitation, input[:accept], requestor) do
+  def invitation_respond(
+        _root,
+        %{input: %{invitation_id: id, accept: accept?} = input},
+        %{context: %{current_user: requestor}}
+      ) do
+    with %Invitation{} = invitation <- Invitation.get(id, requestor),
+         {:ok, result} <- Invitation.respond(invitation, accept?, requestor),
+         :ok <- maybe_update_location(input, requestor, result.bot) do
       {:ok, true}
     else
       nil -> {:error, "Invalid invitation"}
