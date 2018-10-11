@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.10.10+r7a88abd
+
+* Enable connection draining for all environments (PR #1916, 2018.10.10+r2052921)
+* Accept a location update as part of invitation acceptance (#1921)
+
+
 # 2018.10.9+r3399de5
 
 * Migrate bot shares to invitations (PR #1914)
