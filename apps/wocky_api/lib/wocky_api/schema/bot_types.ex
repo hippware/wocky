@@ -296,7 +296,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :accept, non_null(:boolean)
 
     @desc "Optional location to immediately apply to user against bot"
-    field :user_location, :user_location_update_input
+    field :user_location, non_null(:user_location_update_input)
   end
 
   payload_object(:bot_create_payload, :bot)
