@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.10.11+raebd3f3
+
+* Update us1/Production APNS certificate (PR #1925)
+
+
 # 2018.10.10+r7a88abd
 
 * Enable connection draining for all environments (PR #1916, 2018.10.10+r2052921)
