@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update the bundle ID for push notifications (PR #1928)
+  * ... already applied to us1.
+
+
 # 2018.10.11+raebd3f3
 
 * Update us1/Production APNS certificate (PR #1925)
