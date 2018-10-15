@@ -1348,18 +1348,6 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
 
-    test "accepting", %{id: id} = shared do
-      result =
-        run_query(@query, shared.user2, %{
-          "input" => %{"invitation_id" => to_string(id), "accept" => true}
-        })
-
-      refute has_errors(result)
-
-      assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
-      assert User.can_access?(shared.user2, shared.bot)
-    end
-
     test "accepting with location", %{id: id} = shared do
       {lat, lon} = GeoUtils.get_lat_lon(shared.bot.location)
 
@@ -1378,6 +1366,9 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       refute has_errors(result)
+
+      assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
+      assert User.can_access?(shared.user2, shared.bot)
 
       user_id = shared.user2.id
       assert [%{id: ^user_id}] =
