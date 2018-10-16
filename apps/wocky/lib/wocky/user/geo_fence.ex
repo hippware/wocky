@@ -117,8 +117,8 @@ defmodule Wocky.User.GeoFence do
       :no_change ->
         acc
 
-      :roll_back ->
-        Repo.delete!(event)
+      {:roll_back, old_state} ->
+        BotEvent.insert(user, loc.resource, bot, loc, old_state)
         acc
 
       new_state ->
@@ -148,7 +148,7 @@ defmodule Wocky.User.GeoFence do
         :no_change
 
       :transition_out ->
-        :roll_back
+        {:roll_back, :enter}
 
       :transition_in ->
         debounce_secs = config.enter_debounce_seconds
@@ -181,7 +181,7 @@ defmodule Wocky.User.GeoFence do
         maybe_exit(loc, bot, config)
 
       :transition_in ->
-        :roll_back
+        {:roll_back, :exit}
 
       :transition_out ->
         debounce_secs = config.exit_debounce_seconds
