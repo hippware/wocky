@@ -271,7 +271,7 @@ defmodule Wocky.Bot do
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
-    GeoFence.exit_bot(user, bot)
+    GeoFence.exit_bot(user, bot, "unsubscribe")
     Subscription.delete(user, bot)
   end
 

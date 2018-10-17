@@ -758,7 +758,7 @@ defmodule Wocky.User.GeoFenceTest do
   end
 
   describe "exit_bot/3" do
-    test "should exit the bot and send no notifiations", ctx do
+    test "should exit the bot and send a notifiation", ctx do
       visit_bot(ctx.bot, ctx.user)
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
 
@@ -769,7 +769,8 @@ defmodule Wocky.User.GeoFenceTest do
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
-      assert Sandbox.list_notifications() == []
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
     end
   end
 
