@@ -25,6 +25,7 @@ defmodule Wocky.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
+  alias Wocky.User.GeoFence
   alias Wocky.User.Notification
   alias Wocky.User.Notification.GeofenceEvent
   alias Wocky.Waiter
@@ -270,6 +271,7 @@ defmodule Wocky.Bot do
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
+    GeoFence.exit_bot(user, bot)
     Subscription.delete(user, bot)
   end
 

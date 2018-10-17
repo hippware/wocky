@@ -6,7 +6,7 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Bot.{Invitation, Item}
   alias Wocky.GeoUtils
   alias Wocky.Repo.ID
-  alias Wocky.User.{GeoFence, Location}
+  alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -212,7 +212,6 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(bot_id)
 
       bot ->
-        GeoFence.exit_bot(requestor, bot)
         Bot.unsubscribe(bot, requestor)
         {:ok, true}
     end
