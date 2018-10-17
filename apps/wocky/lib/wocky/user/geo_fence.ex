@@ -128,7 +128,7 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp handle_intersection(inside?, user, bot, loc, config, acc) do
-    event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
+    event = BotEvent.get_last_event(user.id, bot.id)
 
     case user_state_change(inside?, event, bot, loc, config) do
       :no_change ->

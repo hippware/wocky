@@ -74,20 +74,12 @@ defmodule Wocky.User.BotEvent do
     |> Repo.all()
   end
 
-  @spec get_last_event(User.id(), User.resource(), Bot.id()) :: t | nil
-  def get_last_event(user_id, _resource, bot_id),
-    do: get_last_event(user_id, bot_id)
-
   @spec get_last_event(User.id(), Bot.id()) :: t | nil
   def get_last_event(user_id, bot_id) do
     user_id
     |> get_last_event_query(bot_id)
     |> Repo.one()
   end
-
-  @spec get_last_event_type(User.id(), User.resource(), Bot.id()) :: event | nil
-  def get_last_event_type(user_id, _resource, bot_id),
-    do: get_last_event_type(user_id, bot_id)
 
   @spec get_last_event_type(User.id(), Bot.id()) :: event | nil
   def get_last_event_type(user_id, bot_id) do
