@@ -46,6 +46,9 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
+
+      # TODO: Move these back to the offical absinthe repo once all the changes
+      # are merged.
       {:absinthe,
        github: "hippware/absinthe",
        branch: "subscription-catchup",
@@ -66,6 +69,8 @@ defmodule WockyAPI.Mixfile do
        github: "phoenixframework/phoenix_pubsub_redis", branch: "master"},
       {:redix_pubsub, "~> 0.5", override: true},
       {:redix, "~> 0.8", override: true},
+
+      # TODO: Move back to the official redlock repo once the changes are merged
       {:redlock, github: "hippware/redlock", branch: "dialyzer-fixes"},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
