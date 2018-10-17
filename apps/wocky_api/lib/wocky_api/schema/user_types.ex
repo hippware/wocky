@@ -174,6 +174,14 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The two users are following eachother"
     value :friend
+
+    @desc "The users have no relationship"
+    value :none
+  end
+
+  object :contact do
+    field :user, non_null(:user)
+    field :relationship, :user_contact_relationship
   end
 
   connection :contacts, node_type: :user do
@@ -415,8 +423,18 @@ defmodule WockyAPI.Schema.UserTypes do
     field :expire, :datetime
   end
 
+  input_object :follow_input do
+    field :user_id, non_null(:uuid)
+  end
+
+  input_object :unfollow_input do
+    field :user_id, non_null(:uuid)
+  end
+
   payload_object(:user_update_payload, :user)
   payload_object(:user_hide_payload, :boolean)
+  payload_object(:follow_payload, :contact)
+  payload_object(:unfollow_payload, :contact)
 
   # This definition is an almost straight copy from the payload_object macro.
   # However we need to make the scope public because the object permissions
@@ -546,6 +564,20 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  object :contact_mutations do
+    field :follow, type: :follow_payload do
+      arg :input, non_null(:follow_input)
+      resolve &User.follow/3
+      changeset_mutation_middleware
+    end
+
+    field :unfollow, type: :unfollow_payload do
+      arg :input, non_null(:unfollow_input)
+      resolve &User.unfollow/3
+      changeset_mutation_middleware
+    end
+  end
+
   input_object :user_invite_redeem_code_input do
     @desc "The invite code to redeem"
     field :code, non_null(:string)
@@ -602,6 +634,10 @@ defmodule WockyAPI.Schema.UserTypes do
     """
     field :home_stream, non_null(:home_stream_update) do
       user_subscription_config(&User.home_stream_subscription_topic/1)
+    end
+
+    field :contacts, non_null(:contact) do
+      user_subscription_config(&User.contacts_subscription_topic/1)
     end
   end
 end

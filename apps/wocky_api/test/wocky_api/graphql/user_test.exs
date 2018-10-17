@@ -836,4 +836,139 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert User.get_user(user.id) == nil
     end
   end
+
+  describe "follow mutation" do
+    @query """
+    mutation ($userId: UUID!) {
+      follow(input: {userId: $userId}) {
+        successful
+        result {
+          relationship
+          user { id }
+        }
+      }
+    }
+    """
+    test "should make a follower from a non-relationship", shared do
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      refute has_errors(result)
+
+      assert result.data == %{
+               "follow" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "relationship" => "FOLLOWER",
+                   "user" => %{"id" => shared.user2.id}
+                 }
+               }
+             }
+
+      assert Roster.relationship(shared.user.id, shared.user2.id) == :follower
+    end
+
+    test "should make a friend from a follower", shared do
+      Roster.follow(shared.user2.id, shared.user.id)
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      refute has_errors(result)
+
+      assert result.data == %{
+               "follow" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "relationship" => "FRIEND",
+                   "user" => %{"id" => shared.user2.id}
+                 }
+               }
+             }
+
+      assert Roster.relationship(shared.user.id, shared.user2.id) == :friend
+    end
+
+    test "should return an error for a blocked user", shared do
+      Block.block(shared.user2, shared.user)
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      assert has_errors(result)
+      assert error_msg(result) =~ "Invalid user"
+    end
+
+    test "should return an error if you try to follow yourself", shared do
+      result = run_query(@query, shared.user, %{"userId" => shared.user.id})
+      assert has_errors(result)
+      assert error_msg(result) =~ "Invalid user"
+    end
+
+    test "should return an error for a non-existant", shared do
+      result = run_query(@query, shared.user, %{"userId" => ID.new()})
+      assert has_errors(result)
+      assert error_msg(result) =~ "Invalid user"
+    end
+  end
+
+  describe "unfollow mutation" do
+    @query """
+    mutation ($userId: UUID!) {
+      unfollow(input: {userId: $userId}) {
+        successful
+        result {
+          relationship
+          user { id }
+        }
+      }
+    }
+    """
+    test "should make a follower from a friendship", shared do
+      Roster.befriend(shared.user.id, shared.user2.id)
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      refute has_errors(result)
+
+      assert result.data == %{
+               "unfollow" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "relationship" => "FOLLOWING",
+                   "user" => %{"id" => shared.user2.id}
+                 }
+               }
+             }
+
+      assert Roster.relationship(shared.user.id, shared.user2.id) == :followee
+    end
+
+    test "should make a non-contact from a followee", shared do
+      Roster.follow(shared.user.id, shared.user2.id)
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      refute has_errors(result)
+
+      assert result.data == %{
+               "unfollow" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "relationship" => "NONE",
+                   "user" => %{"id" => shared.user2.id}
+                 }
+               }
+             }
+
+      assert Roster.relationship(shared.user.id, shared.user2.id) == :none
+    end
+
+    test "should return an error for a blocked user", shared do
+      Block.block(shared.user2, shared.user)
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      assert has_errors(result)
+      assert error_msg(result) =~ "Invalid user"
+    end
+
+    test "should return an error if you try to unfollow yourself", shared do
+      result = run_query(@query, shared.user, %{"userId" => shared.user.id})
+      assert has_errors(result)
+      assert error_msg(result) =~ "Invalid user"
+    end
+
+    test "should return an error for a non-existant", shared do
+      result = run_query(@query, shared.user, %{"userId" => ID.new()})
+      assert has_errors(result)
+      assert error_msg(result) =~ "Invalid user"
+    end
+  end
 end

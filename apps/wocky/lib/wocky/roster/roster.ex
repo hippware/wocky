@@ -260,12 +260,64 @@ defmodule Wocky.Roster do
     end
   end
 
+  @spec relationship(Item.t()) :: relationship
+  def relationship(item) do
+    cond do
+      friend?(item) -> :friend
+      follower?(item) -> :follower
+      followee?(item) -> :followee
+      true -> :none
+    end
+  end
+
   @spec add_initial_contact(User.t(), InitialContact.type()) :: :ok
   def add_initial_contact(user, type), do: InitialContact.put(user, type)
 
   @spec add_initial_contacts_to_user(User.id()) :: :ok
   def add_initial_contacts_to_user(user_id),
     do: InitialContact.add_to_user(user_id)
+
+  # Makes a user a follower of another user but does not remove them as a
+  # friend, nor the other user as a follower if they are already.
+  @spec become_follower(User.id(), User.id()) :: relationship()
+  def become_follower(user_id, contact_id) do
+    case relationship(user_id, contact_id) do
+      :none ->
+        :ok = follow(user_id, contact_id)
+        :follower
+
+      :followee ->
+        :ok = befriend(user_id, contact_id)
+        :friend
+
+      :follower ->
+        :follower
+
+      :friend ->
+        :friend
+    end
+  end
+
+  # Removes a user as a follower of another user but does not change the other
+  # user's following state of the first user.
+  @spec stop_following(User.id(), User.id()) :: relationship()
+  def stop_following(user_id, contact_id) do
+    case relationship(user_id, contact_id) do
+      :none ->
+        :none
+
+      :followee ->
+        :followee
+
+      :follower ->
+        :ok = unfriend(user_id, contact_id)
+        :none
+
+      :friend ->
+        :ok = follow(contact_id, user_id)
+        :followee
+    end
+  end
 
   @spec befriend(User.id(), User.id()) :: :ok
   def befriend(u1, u2) do
