@@ -27,16 +27,17 @@ defmodule WockyAPI.Schema do
   mutation do
     import_fields :auth_mutations
     import_fields :bot_mutations
+    import_fields :contact_mutations
     import_fields :location_mutations
     import_fields :media_mutations
-    import_fields :user_mutations
     import_fields :user_invite_code_mutations
+    import_fields :user_mutations
   end
 
   subscription do
     import_fields :bot_subscriptions
-    import_fields :user_subscriptions
     import_fields :notification_subscriptions
+    import_fields :user_subscriptions
   end
 
   def middleware(middleware, field, object) do

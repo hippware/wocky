@@ -562,7 +562,9 @@ defmodule WockyAPI.Schema.UserTypes do
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware
     end
+  end
 
+  object :contact_mutations do
     field :follow, type: :follow_payload do
       arg :input, non_null(:follow_input)
       resolve &User.follow/3
@@ -634,8 +636,8 @@ defmodule WockyAPI.Schema.UserTypes do
       user_subscription_config(&User.home_stream_subscription_topic/1)
     end
 
-    field :roster, non_null(:contact) do
-      user_subscription_contig(&User.roster_subscription_topic/1)
+    field :contacts, non_null(:contact) do
+      user_subscription_config(&User.contacts_subscription_topic/1)
     end
   end
 end

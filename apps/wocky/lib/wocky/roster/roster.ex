@@ -260,6 +260,16 @@ defmodule Wocky.Roster do
     end
   end
 
+  @spec relationship(Item.t()) :: relationship
+  def relationship(item) do
+    cond do
+      friend?(item) -> :friend
+      follower?(item) -> :follower
+      followee?(item) -> :followee
+      true -> :none
+    end
+  end
+
   @spec add_initial_contact(User.t(), InitialContact.type()) :: :ok
   def add_initial_contact(user, type), do: InitialContact.put(user, type)
 

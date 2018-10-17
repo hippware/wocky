@@ -130,11 +130,24 @@ defmodule WockyAPI.Resolvers.User do
   def notification_subscription_topic(user_id),
     do: "notification_subscription_" <> user_id
 
+  def contacts_subscription_topic(user_id),
+    do: "contacts_subscription_" <> user_id
+
   def notify_home_stream(item, action) do
     notification = %{item: item, action: action}
     topic = home_stream_subscription_topic(item.user_id)
 
     Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
+  end
+
+  def notify_contact(item, relationship) do
+    notification = %{
+      user: item.contact,
+      relationship: map_relationship(relationship)
+    }
+    topic = contacts_subscription_topic(item.user_id)
+
+    Subscription.publish(Endpoint, notification, [{:contacts, topic}])
   end
 
   def has_used_geofence(_root, _args, _context), do: {:ok, true}

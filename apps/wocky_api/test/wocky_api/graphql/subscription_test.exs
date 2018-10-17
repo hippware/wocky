@@ -4,12 +4,9 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   import WockyAPI.ChannelHelper
 
   alias Faker.Lorem
-  alias Wocky.Bot
+  alias Wocky.{Bot, GeoUtils, HomeStream, Repo, Roster, User}
   alias Wocky.Bot.Subscription
-  alias Wocky.{GeoUtils, HomeStream}
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.User
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
 
@@ -277,6 +274,112 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_reply ref, :ok, _, 1000
 
       assert_push "subscription:data", _push, 2000
+    end
+  end
+
+  describe "contacts subscription" do
+    setup do
+      user2 = Factory.insert(:user)
+      {:ok, user2: user2}
+    end
+
+    @subscription """
+    subscription {
+      contacts {
+        user {
+          id
+        }
+        relationship
+      }
+    }
+    """
+
+    test "should notify when a new contact is created", %{
+      socket: socket,
+      token: token,
+      user: %{id: user_id},
+      user2: user2
+    } do
+      authenticate(user_id, token, socket)
+
+      ref = push_doc(socket, @subscription)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+      Roster.befriend(user_id, user2.id)
+
+      assert_push "subscription:data", push, 1000
+
+      assert %{
+        result: %{
+          data: %{
+            "contacts" => %{
+              "relationship" => "FRIEND",
+              "user" => %{"id" => user2.id}
+            }
+          }
+        },
+        subscriptionId: subscription_id
+      } == push
+    end
+
+    test "should notify when a contact type is changed", %{
+      socket: socket,
+      token: token,
+      user: %{id: user_id},
+      user2: user2
+    } do
+      Roster.follow(user2.id, user_id)
+
+      authenticate(user_id, token, socket)
+
+      ref = push_doc(socket, @subscription)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+      Roster.befriend(user_id, user2.id)
+
+      assert_push "subscription:data", push, 1000
+
+      assert %{
+        result: %{
+          data: %{
+            "contacts" => %{
+              "relationship" => "FRIEND",
+              "user" => %{"id" => user2.id}
+            }
+          }
+        },
+        subscriptionId: subscription_id
+      } == push
+    end
+
+    test "should notify when a contact is removed", %{
+      socket: socket,
+      token: token,
+      user: %{id: user_id},
+      user2: user2
+    } do
+      Roster.befriend(user2.id, user_id)
+
+      authenticate(user_id, token, socket)
+
+      ref = push_doc(socket, @subscription)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+      Roster.unfriend(user_id, user2.id)
+
+      assert_push "subscription:data", push, 1000
+
+      assert %{
+        result: %{
+          data: %{
+            "contacts" => %{
+              "relationship" => "NONE",
+              "user" => %{"id" => user2.id}
+            }
+          }
+        },
+        subscriptionId: subscription_id
+      } == push
     end
   end
 
