@@ -190,4 +190,24 @@ defmodule WockyAPI.Resolvers.User do
     result = User.redeem_invite_code(user, args[:input][:code])
     {:ok, %{successful: result, result: result}}
   end
+
+  def follow(_root, args, %{context: %{current_user: user}}),
+    do: roster_action(user, args[:input][:user_id], &Roster.become_follower/2)
+
+  def unfollow(_root, args, %{context: %{current_user: user}}),
+    do: roster_action(user, args[:input][:user_id], &Roster.stop_following/2)
+
+  defp roster_action(%User{id: id}, id, _), do: {:error, "Invalid user"}
+
+  defp roster_action(user, contact_id, roster_fun) do
+    with %User{} = contact <- User.get_user(contact_id, user) do
+      relationship = roster_fun.(user.id, contact.id)
+      {:ok, %{relationship: map_relationship(relationship), user: contact}}
+    else
+      _ -> {:error, "Invalid user"}
+    end
+  end
+
+  defp map_relationship(:followee), do: :following
+  defp map_relationship(r), do: r
 end
