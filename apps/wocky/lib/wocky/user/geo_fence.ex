@@ -93,14 +93,6 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp check_for_event(bot, user, loc, config, acc) do
-    :ok =
-      Logger.debug(fn ->
-        """
-        Checking user #{user.id} for collision with bot #{bot.id} \
-        at location (#{loc.lat},#{loc.lon})...\
-        """
-      end)
-
     bot
     |> Bot.contains?(Map.from_struct(loc))
     |> maybe_set_exit_timer(user, bot, loc, config)
