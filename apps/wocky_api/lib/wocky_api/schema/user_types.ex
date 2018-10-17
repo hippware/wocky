@@ -179,8 +179,12 @@ defmodule WockyAPI.Schema.UserTypes do
     value :none
   end
 
+  @desc "Another user with whom a relationship exists"
   object :contact do
+    @desc "The other user"
     field :user, non_null(:user)
+
+    @desc "The current user's relationship with the other user"
     field :relationship, :user_contact_relationship
   end
 
@@ -424,10 +428,12 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   input_object :follow_input do
+    @desc "The ID of the user to start following"
     field :user_id, non_null(:uuid)
   end
 
   input_object :unfollow_input do
+    @desc "The ID of the user to stop following"
     field :user_id, non_null(:uuid)
   end
 
@@ -565,12 +571,14 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   object :contact_mutations do
+    @desc "Start following another user"
     field :follow, type: :follow_payload do
       arg :input, non_null(:follow_input)
       resolve &User.follow/3
       changeset_mutation_middleware
     end
 
+    @desc "Stop following another user"
     field :unfollow, type: :unfollow_payload do
       arg :input, non_null(:unfollow_input)
       resolve &User.unfollow/3
@@ -636,6 +644,9 @@ defmodule WockyAPI.Schema.UserTypes do
       user_subscription_config(&User.home_stream_subscription_topic/1)
     end
 
+    @desc """
+    Receive an update when a contact's state (following, friend etc) changes
+    """
     field :contacts, non_null(:contact) do
       user_subscription_config(&User.contacts_subscription_topic/1)
     end
