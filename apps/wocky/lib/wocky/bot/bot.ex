@@ -270,10 +270,6 @@ defmodule Wocky.Bot do
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
-    if subscription(bot, user) == :visitor do
-      send_visit_notifications(user, bot, :exit)
-    end
-
     Subscription.delete(user, bot)
   end
 
@@ -289,6 +285,11 @@ defmodule Wocky.Bot do
     Subscription.depart(user, bot)
     if notify, do: send_visit_notifications(user, bot, :exit)
     :ok
+  end
+
+  @spec depart_all_quietly(User.t()) :: :ok
+  def depart_all_quietly(user) do
+    Subscription.depart_all(user)
   end
 
   defp send_visit_notifications(visitor, bot, event) do

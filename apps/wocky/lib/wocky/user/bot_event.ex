@@ -65,27 +65,52 @@ defmodule Wocky.User.BotEvent do
     :occurred_at
   ]
 
+  @spec get_last_events(User.id()) :: [t]
+  def get_last_events(user_id) do
+    BotEvent
+    |> distinct(:bot_id)
+    |> where(user_id: ^user_id)
+    |> order_by(desc: :created_at)
+    |> Repo.all()
+  end
+
   @spec get_last_event(User.id(), User.resource(), Bot.id()) :: t | nil
-  def get_last_event(user_id, resource, bot_id) do
+  def get_last_event(user_id, _resource, bot_id),
+    do: get_last_event(user_id, bot_id)
+
+  @spec get_last_event(User.id(), Bot.id()) :: t | nil
+  def get_last_event(user_id, bot_id) do
     user_id
-    |> get_last_event_query(resource, bot_id)
+    |> get_last_event_query(bot_id)
     |> Repo.one()
   end
 
   @spec get_last_event_type(User.id(), User.resource(), Bot.id()) :: event | nil
-  def get_last_event_type(user_id, resource, bot_id) do
+  def get_last_event_type(user_id, _resource, bot_id),
+    do: get_last_event_type(user_id, bot_id)
+
+  @spec get_last_event_type(User.id(), Bot.id()) :: event | nil
+  def get_last_event_type(user_id, bot_id) do
     user_id
-    |> get_last_event_query(resource, bot_id)
+    |> get_last_event_query(bot_id)
     |> select([e], e.event)
     |> Repo.one()
   end
 
-  defp get_last_event_query(user_id, _resource, bot_id) do
+  defp get_last_event_query(user_id, bot_id) do
     BotEvent
     |> where(user_id: ^user_id, bot_id: ^bot_id)
     |> order_by(desc: :created_at)
     |> limit(1)
   end
+
+  @doc """
+  Insert a system-generated event; i.e., one that is not tied to the user
+  changing location.
+  """
+  @spec insert_system(User.t(), Bot.t(), event, String.t()) :: t
+  def insert_system(user, bot, event, reason),
+    do: insert(user, "System/#{reason}", bot, nil, event)
 
   @spec insert(User.t(), User.resource(), Bot.t(), Location.t() | nil, event) ::
           t

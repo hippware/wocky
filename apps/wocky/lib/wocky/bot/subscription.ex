@@ -66,19 +66,28 @@ defmodule Wocky.Bot.Subscription do
     visit(user, bot, false)
   end
 
+  @spec depart_all(User.t()) :: :ok
+  def depart_all(user) do
+    now = DateTime.utc_now()
+
+    Subscription
+    |> where(user_id: ^user.id, visitor: true)
+    |> Repo.update_all(set: [visitor: false, departed_at: now, updated_at: now])
+  end
+
   defp visit(user, bot, enter) do
+    now = DateTime.utc_now()
+
     timestamps =
       if enter do
-        [visited_at: DateTime.utc_now(), departed_at: nil]
+        [visited_at: now, departed_at: nil]
       else
-        [departed_at: DateTime.utc_now()]
+        [departed_at: now]
       end
 
     Subscription
     |> where(user_id: ^user.id, bot_id: ^bot.id)
-    |> Repo.update_all(
-      set: [visitor: enter, updated_at: DateTime.utc_now()] ++ timestamps
-    )
+    |> Repo.update_all(set: [visitor: enter, updated_at: now] ++ timestamps)
 
     :ok
   end

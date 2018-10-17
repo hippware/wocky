@@ -10,18 +10,35 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
-  @spec exit_all_bots(User.t()) :: :ok
-  def exit_all_bots(user) do
-    config = get_config(enable_notifications: false)
+  @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
+  def exit_bot(user, bot, reason) do
+    config = get_config()
+    last_event = BotEvent.get_last_event_type(user, bot)
 
-    user
-    |> Bot.by_relationship_query(:visitor, user)
-    |> Repo.all()
-    |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
-    |> Enum.each(fn {bot, event} ->
-      process_bot_event({user, bot, event}, config)
-    end)
+    if inside?(last_event) do
+      BotEvent.insert_system(user, bot, :exit, reason)
+      Bot.depart(bot, user, config.enable_notifications)
+    end
+
+    :ok
   end
+
+  @spec exit_all_bots(User.t(), String.t()) :: :ok
+  def exit_all_bots(user, reason) do
+    user.id
+    |> BotEvent.get_last_events()
+    |> Enum.each(fn last_event ->
+      if inside?(last_event.event) do
+        last_event = Repo.preload(last_event, :bot)
+        BotEvent.insert_system(user, last_event.bot, :exit, reason)
+      end
+    end)
+
+    Bot.depart_all_quietly(user)
+  end
+
+  defp inside?(last_event_type),
+    do: Enum.member?([:enter, :transition_in], last_event_type)
 
   @doc false
   @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: Location.t()

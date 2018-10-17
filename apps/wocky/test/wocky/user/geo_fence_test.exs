@@ -193,7 +193,8 @@ defmodule Wocky.User.GeoFenceTest do
 
       event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -334,7 +335,8 @@ defmodule Wocky.User.GeoFenceTest do
 
       event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -501,7 +503,8 @@ defmodule Wocky.User.GeoFenceTest do
 
       event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -625,7 +628,8 @@ defmodule Wocky.User.GeoFenceTest do
 
       event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -760,7 +764,7 @@ defmodule Wocky.User.GeoFenceTest do
     } do
       visit_bot(bot, user)
 
-      GeoFence.exit_all_bots(user)
+      GeoFence.exit_all_bots(user, "test")
 
       assert Bot.subscription(bot, user) == :guest
 
