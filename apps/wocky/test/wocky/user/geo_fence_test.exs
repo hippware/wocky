@@ -757,16 +757,33 @@ defmodule Wocky.User.GeoFenceTest do
     end
   end
 
-  describe "exit_all_bots/1" do
-    test "should un-visit all visited bots and send no notifiations", %{
-      user: user,
-      bot: bot
-    } do
-      visit_bot(bot, user)
+  describe "exit_bot/3" do
+    test "should exit the bot and send no notifiations", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
 
-      GeoFence.exit_all_bots(user, "test")
+      GeoFence.exit_bot(ctx.user, ctx.bot, "test")
 
-      assert Bot.subscription(bot, user) == :guest
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
+      assert event == :exit
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
+
+      assert Sandbox.list_notifications() == []
+    end
+  end
+
+  describe "exit_all_bots/2" do
+    test "should exit all bots and send no notifiations", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
+
+      GeoFence.exit_all_bots(ctx.user, "test")
+
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
+      assert event == :exit
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end

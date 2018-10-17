@@ -12,12 +12,11 @@ defmodule Wocky.User.GeoFence do
 
   @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
   def exit_bot(user, bot, reason) do
-    config = get_config()
-    last_event = BotEvent.get_last_event_type(user, bot)
+    last_event = BotEvent.get_last_event_type(user.id, bot.id)
 
     if inside?(last_event) do
       BotEvent.insert_system(user, bot, :exit, reason)
-      Bot.depart(bot, user, config.enable_notifications)
+      Bot.depart(bot, user, false)
     end
 
     :ok
