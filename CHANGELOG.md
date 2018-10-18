@@ -10,6 +10,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update: espec (PR #1930), redix (PR #1931), kadabra (PR #1932)
   * lager (PR #1933), pigeon (PR #1938), geocalc (PR #1936)
   * phoenix_ecto (PR #1937)
+* GraphQL roster management (#1832)
+* Add schema docs for contacts (PR #1943)
 
 
 # 2018.10.11+raebd3f3
