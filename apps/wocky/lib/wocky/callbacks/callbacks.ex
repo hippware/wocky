@@ -3,18 +3,22 @@ defmodule Wocky.Callbacks do
   Initialisation for wocky DB watcher callbacks
   """
 
-  alias Wocky.Callbacks.Block
-  alias Wocky.Callbacks.Bot
-  alias Wocky.Callbacks.BotInvitation
-  alias Wocky.Callbacks.BotItem
-  alias Wocky.Callbacks.RosterItem
-  alias Wocky.Callbacks.User
+  alias Wocky.Callbacks.{
+    Block,
+    Bot,
+    BotInvitation,
+    BotItem,
+    Message,
+    RosterItem,
+    User
+  }
 
   @modules [
     Block,
     Bot,
     BotInvitation,
     BotItem,
+    Message,
     RosterItem,
     User
   ]

@@ -57,6 +57,7 @@ defmodule Wocky.Roster do
     )
   end
 
+  @doc "Get all roster items for a given user"
   @spec get(User.id()) :: [Item.t()]
   def get(user_id) do
     Item
@@ -66,6 +67,7 @@ defmodule Wocky.Roster do
     |> add_blocking_groups(user_id)
   end
 
+  @doc "Get the roster item for a given user pertaining to another user"
   @spec get(User.id(), User.id()) :: Item.t() | nil
   def get(user_id, contact_id) do
     Item
@@ -231,7 +233,13 @@ defmodule Wocky.Roster do
   @doc "Returns true if `user_id` is a follower of contact_id"
   @spec follower?(User.id(), User.id()) :: boolean
   def follower?(user_id, contact_id) do
-    user_id |> get(contact_id) |> followee?
+    contact_id |> get(user_id) |> follower?
+  end
+
+  @doc "Returns true if `user_id` is a followee of contact_id"
+  @spec followee?(User.id(), User.id()) :: boolean
+  def followee?(user_id, contact_id) do
+    contact_id |> get(user_id) |> followee?
   end
 
   @doc "Returns the relationship of a to b"
@@ -321,15 +329,15 @@ defmodule Wocky.Roster do
 
   @spec befriend(User.id(), User.id()) :: :ok
   def befriend(u1, u2) do
-    add_relationship(u1, u2, :both)
-    add_relationship(u2, u1, :both)
+    {:ok, _} = add_relationship(u1, u2, :both)
+    {:ok, _} = add_relationship(u2, u1, :both)
     :ok
   end
 
   @spec follow(User.id(), User.id()) :: :ok
   def follow(follower, followee) do
-    add_relationship(followee, follower, :from)
-    add_relationship(follower, followee, :to)
+    {:ok, _} = add_relationship(followee, follower, :from)
+    {:ok, _} = add_relationship(follower, followee, :to)
     :ok
   end
 
@@ -433,6 +441,8 @@ defmodule Wocky.Roster do
   def follower?(%Item{subscription: subscription}) do
     subscription == :both || subscription == :from
   end
+
+  def follower?(_), do: false
 
   # Returns true if the roster item referrs to a followee of the item owner
   def followee?(%Item{subscription: subscription}) do

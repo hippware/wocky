@@ -234,6 +234,7 @@ defmodule Wocky.User.UserTest do
       on_exit(fn ->
         Application.put_env(:wocky, :send_welcome_email, false)
       end)
+
       :ok
     end
 

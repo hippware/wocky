@@ -68,10 +68,11 @@ defmodule Wocky.User do
     has_many :roster_items, RosterItem
     has_many :tokens, AuthToken
     has_many :tros_metadatas, TROSMetadata
-    has_many :messages, Message
     has_many :invite_codes, InviteCode
     has_many :sent_invitations, Invitation
     has_many :received_invitations, Invitation, foreign_key: :invitee_id
+    has_many :sent_messages, Message, foreign_key: :sender_id
+    has_many :received_messages, Message, foreign_key: :recipient_id
 
     many_to_many(:bot_subscriptions, Bot, join_through: Subscription)
   end

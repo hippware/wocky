@@ -2,7 +2,7 @@ defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, JID, Message, Roster, User}
+  alias Wocky.{Conversation, Message, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Presence
@@ -44,12 +44,8 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_conversations(user, args, _info) do
     user.id
-    |> Conversation.with_user()
+    |> Conversation.by_user_query()
     |> Utils.connection_from_query(user, args)
-  end
-
-  def get_conversation_user(conversation, _args, _info) do
-    {:ok, User.get_by_jid(JID.from_binary(conversation.other_jid))}
   end
 
   def get_locations(user, args, %{context: %{current_user: user}}) do
@@ -125,9 +121,11 @@ defmodule WockyAPI.Resolvers.User do
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
-  def presence_subscription_topic(user_id) do
-    "presence_subscription_" <> user_id
-  end
+  def presence_subscription_topic(user_id),
+    do: "presence_subscription_" <> user_id
+
+  def messages_subscription_topic(user_id),
+    do: "messages_subscription_" <> user_id
 
   def notify_contact(item, relationship) do
     notification = %{
@@ -162,7 +160,7 @@ defmodule WockyAPI.Resolvers.User do
   def get_messages(_root, args, %{context: %{current_user: user}}) do
     with {:ok, query} <- get_messages_query(args[:other_user], user) do
       query
-      |> Utils.connection_from_query(user, [desc: :id], &Message.fix/1, args)
+      |> Utils.connection_from_query(user, [desc: :id], args)
     end
   end
 
@@ -182,7 +180,7 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, true}
   end
 
-  defp user_not_found(id), do: {:error, "User not found: " <> id}
+  def user_not_found(id), do: {:error, "User not found: " <> id}
 
   def make_invite_code(_root, _args, %{context: %{current_user: user}}) do
     code = User.make_invite_code(user)

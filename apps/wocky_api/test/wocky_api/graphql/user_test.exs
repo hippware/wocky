@@ -1,11 +1,9 @@
 defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.GraphQLCase, async: true
 
-  alias Faker.Lorem
   alias Faker.Name
   alias Faker.String
   alias Wocky.Block
-  alias Wocky.JID
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
@@ -529,72 +527,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "conversations" do
-    @query """
-    {
-      currentUser {
-        conversations (first: 1) {
-          totalCount
-          edges {
-            node {
-              otherJid
-              otherUser {
-                id
-                firstName
-              }
-              message
-              owner {
-                id
-                firstName
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    test "get conversations", %{user: user, user2: user2} do
-      other_jid = JID.to_binary(User.to_jid(user2, Lorem.word()))
-      message = Lorem.sentence()
-
-      Factory.insert(
-        :conversation,
-        other_jid: other_jid,
-        user: user,
-        message: message
-      )
-
-      result = run_query(@query, user)
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "currentUser" => %{
-                 "conversations" => %{
-                   "totalCount" => 1,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "otherJid" => other_jid,
-                         "otherUser" => %{
-                           "id" => user2.id,
-                           "firstName" => user2.first_name
-                         },
-                         "message" => message,
-                         "owner" => %{
-                           "id" => user.id,
-                           "firstName" => user.first_name
-                         }
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
-    end
-  end
-
   describe "hasUsedGeofence" do
     @query """
     query {
@@ -606,96 +538,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "Should always be true", %{user: user} do
       result = run_query(@query, user)
       assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-  end
-
-  describe "message archive" do
-    @query """
-    query ($other_user: UUID) {
-      currentUser {
-        messages (other_user: $other_user, first: 50){
-          total_count
-          edges {
-            node {
-              other_user {
-                id
-              }
-              message
-            }
-          }
-        }
-      }
-    }
-    """
-    setup shared do
-      user3 = Factory.insert(:user)
-
-      messages2 =
-        Enum.map(1..5, fn _ ->
-          Factory.insert_message(shared.user, shared.user2)
-        end)
-
-      messages3 =
-        Enum.map(1..3, fn _ -> Factory.insert_message(shared.user, user3) end)
-
-      {:ok, user3: user3, messages2: messages2, messages3: messages3}
-    end
-
-    test "should successfully retrieve all messages", %{
-      user: user,
-      user2: user2,
-      user3: user3
-    } do
-      result = run_query(@query, user)
-
-      refute has_errors(result)
-
-      assert %{
-               "currentUser" => %{
-                 "messages" => %{
-                   "total_count" => 8,
-                   "edges" => edges
-                 }
-               }
-             } = result.data
-
-      assert length(edges) == 8
-
-      assert edges
-             |> Enum.map(& &1["node"]["other_user"]["id"])
-             |> Enum.uniq()
-             |> Enum.sort() == Enum.sort([user2.id, user3.id])
-    end
-
-    test "should retrieve all messages for a given user", %{
-      user: user,
-      user2: user2
-    } do
-      result = run_query(@query, user, %{"other_user" => user2.id})
-
-      refute has_errors(result)
-
-      assert %{
-               "currentUser" => %{
-                 "messages" => %{
-                   "total_count" => 5,
-                   "edges" => edges
-                 }
-               }
-             } = result.data
-
-      assert length(edges) == 5
-
-      assert edges |> Enum.map(& &1["node"]["other_user"]["id"]) |> Enum.uniq() ==
-               Enum.sort([user2.id])
-    end
-
-    test "should return an error for a non-existant user", %{user: user} do
-      result = run_query(@query, user, %{"other_user" => ID.new()})
-
-      assert has_errors(result)
-
-      assert error_msg(result) =~ "User not found"
     end
   end
 

@@ -5,7 +5,7 @@ defmodule Wocky.Release.Mixfile do
     [
       apps_path: "apps",
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls, test_task: "espec"],
+      test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         espec: :test,
         ct: :test,
