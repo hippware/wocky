@@ -5,14 +5,19 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* GraphQL roster management (#1832)
+* Add schema docs for contacts (PR #1943)
+* Update: phoenix_pubsub (PR #1944)
+* Geofence not triggering on location embedded within botInvitationRespond (#1939)
+
+
+# 2018.10.17+r06b8c08
+
 * Update the bundle ID for push notifications (PR #1928)
   * ... already applied to us1.
 * Update: espec (PR #1930), redix (PR #1931), kadabra (PR #1932)
   * lager (PR #1933), pigeon (PR #1938), geocalc (PR #1936)
-  * phoenix_ecto (PR #1937), phoenix_pubsub (PR #1944)
-* GraphQL roster management (#1832)
-* Add schema docs for contacts (PR #1943)
-* Geofence not triggering on location embedded within botInvitationRespond (#1939)
+  * phoenix_ecto (PR #1937)
 
 
 # 2018.10.11+raebd3f3
