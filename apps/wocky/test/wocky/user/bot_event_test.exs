@@ -1,5 +1,5 @@
-defmodule Wocky.User.BotEventSpec do
-  use ESpec, async: true
+defmodule Wocky.User.BotEventTest do
+  use Wocky.DataCase, async: true
 
   describe "get_last_event_type/2" do
   end

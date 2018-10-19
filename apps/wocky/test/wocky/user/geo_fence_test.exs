@@ -87,7 +87,7 @@ defmodule Wocky.User.GeoFenceTest do
 
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      assert BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id) == nil
+      assert BotEvent.get_last_event(ctx.user.id, ctx.bot.id) == nil
       assert Sandbox.list_notifications() == []
     end
 
@@ -96,7 +96,7 @@ defmodule Wocky.User.GeoFenceTest do
 
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      assert BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id) == nil
+      assert BotEvent.get_last_event(ctx.user.id, ctx.bot.id) == nil
       assert Sandbox.list_notifications() == []
     end
   end
@@ -120,7 +120,7 @@ defmodule Wocky.User.GeoFenceTest do
     test "with no bot perimeter events", ctx do
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_in
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -132,7 +132,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_in
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -146,7 +146,7 @@ defmodule Wocky.User.GeoFenceTest do
       loc = %Location{ctx.inside_loc | speed: 1}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -161,7 +161,7 @@ defmodule Wocky.User.GeoFenceTest do
       loc = %Location{ctx.inside_loc | is_moving: false}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -177,7 +177,7 @@ defmodule Wocky.User.GeoFenceTest do
       loc = %Location{ctx.inside_loc | is_moving: false, captured_at: ts}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -191,9 +191,10 @@ defmodule Wocky.User.GeoFenceTest do
 
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -204,7 +205,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_in)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -216,7 +217,7 @@ defmodule Wocky.User.GeoFenceTest do
       insert_offset_bot_event(ctx.user, ctx.bot, :transition_in, -150)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -229,7 +230,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :timeout)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :reactivate
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -242,7 +243,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :reactivate)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -254,7 +255,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :deactivate)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_in
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -267,7 +268,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -297,14 +298,14 @@ defmodule Wocky.User.GeoFenceTest do
 
       GeoFence.check_for_bot_event(bot, ctx.inside_loc, ctx.user)
 
-      assert BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id) == nil
+      assert BotEvent.get_last_event(ctx.user.id, ctx.bot.id) == nil
       assert Sandbox.list_notifications() == []
     end
 
     test "with no bot perimeter events", ctx do
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -317,7 +318,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -332,9 +333,10 @@ defmodule Wocky.User.GeoFenceTest do
 
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -345,7 +347,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_in)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -358,7 +360,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :timeout)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :reactivate
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -371,7 +373,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :reactivate)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -383,7 +385,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :deactivate)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -397,7 +399,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -425,7 +427,7 @@ defmodule Wocky.User.GeoFenceTest do
     test "with no bot perimeter events", ctx do
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event == nil
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -438,7 +440,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_out
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -453,7 +455,7 @@ defmodule Wocky.User.GeoFenceTest do
       loc = %Location{ctx.outside_loc | speed: 1}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -469,7 +471,7 @@ defmodule Wocky.User.GeoFenceTest do
       loc = %Location{ctx.outside_loc | is_moving: false}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -485,7 +487,7 @@ defmodule Wocky.User.GeoFenceTest do
       loc = %Location{ctx.outside_loc | lat: Bot.lat(ctx.bot) + 0.0025}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -499,9 +501,10 @@ defmodule Wocky.User.GeoFenceTest do
       to_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_in)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -513,7 +516,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_out)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -526,7 +529,7 @@ defmodule Wocky.User.GeoFenceTest do
       insert_offset_bot_event(ctx.user, ctx.bot, :transition_out, -80)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -539,7 +542,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :timeout)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :deactivate
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -552,7 +555,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :reactivate)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_out
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visitor
@@ -564,7 +567,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :deactivate)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -576,7 +579,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -596,7 +599,7 @@ defmodule Wocky.User.GeoFenceTest do
     test "with no bot perimeter events", ctx do
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event == nil
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -609,7 +612,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -623,9 +626,10 @@ defmodule Wocky.User.GeoFenceTest do
       to_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_in)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       refute event.id == to_event.id
-      assert event.id == initial_event.id
+      refute event.id == initial_event.id
+      assert event.event == initial_event.event
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
@@ -637,7 +641,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :transition_out)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -650,7 +654,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :timeout)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :deactivate
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -663,7 +667,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @rsrc, ctx.bot, :reactivate)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event_type(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -676,7 +680,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :deactivate)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -688,7 +692,7 @@ defmodule Wocky.User.GeoFenceTest do
       initial_event = BotEvent.insert(ctx.user, @rsrc, ctx.bot, :exit)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
-      event = BotEvent.get_last_event(ctx.user.id, @rsrc, ctx.bot.id)
+      event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
       assert Bot.subscription(ctx.bot, ctx.user) == :guest
@@ -753,16 +757,34 @@ defmodule Wocky.User.GeoFenceTest do
     end
   end
 
-  describe "exit_all_bots/1" do
-    test "should un-visit all visited bots and send no notifiations", %{
-      user: user,
-      bot: bot
-    } do
-      visit_bot(bot, user)
+  describe "exit_bot/3" do
+    test "should exit the bot and send a notifiation", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
 
-      GeoFence.exit_all_bots(user)
+      GeoFence.exit_bot(ctx.user, ctx.bot, "test")
 
-      assert Bot.subscription(bot, user) == :guest
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
+      assert event == :exit
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
+
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
+    end
+  end
+
+  describe "exit_all_bots/2" do
+    test "should exit all bots and send no notifiations", ctx do
+      visit_bot(ctx.bot, ctx.user)
+      BotEvent.insert(ctx.user, @rsrc, ctx.bot, :enter)
+
+      GeoFence.exit_all_bots(ctx.user, "test")
+
+      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
+      assert event == :exit
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :guest
 
       assert Sandbox.list_notifications() == []
     end

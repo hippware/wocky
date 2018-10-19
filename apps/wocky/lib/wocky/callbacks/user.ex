@@ -15,7 +15,7 @@ defmodule Wocky.Callbacks.User do
 
   # Newly hidden
   defp handle_hidden(user, false, true) do
-    GeoFence.exit_all_bots(user)
+    GeoFence.exit_all_bots(user, "hide")
   end
 
   defp handle_hidden(_, _, _), do: :ok

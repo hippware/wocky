@@ -10,18 +10,35 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
-  @spec exit_all_bots(User.t()) :: :ok
-  def exit_all_bots(user) do
-    config = get_config(enable_notifications: false)
+  @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
+  def exit_bot(user, bot, reason) do
+    config = get_config()
+    last_event = BotEvent.get_last_event_type(user.id, bot.id)
 
-    user
-    |> Bot.by_relationship_query(:visitor, user)
-    |> Repo.all()
-    |> Enum.map(fn b -> {b, BotEvent.insert(user, "hide", b, nil, :exit)} end)
-    |> Enum.each(fn {bot, event} ->
-      process_bot_event({user, bot, event}, config)
-    end)
+    if inside?(last_event) do
+      BotEvent.insert_system(user, bot, :exit, reason)
+      Bot.depart(bot, user, config.enable_notifications)
+    end
+
+    :ok
   end
+
+  @spec exit_all_bots(User.t(), String.t()) :: :ok
+  def exit_all_bots(user, reason) do
+    user.id
+    |> BotEvent.get_last_events()
+    |> Enum.each(fn last_event ->
+      if inside?(last_event.event) do
+        last_event = Repo.preload(last_event, :bot)
+        BotEvent.insert_system(user, last_event.bot, :exit, reason)
+      end
+    end)
+
+    Bot.depart_all_quietly(user)
+  end
+
+  defp inside?(last_event_type),
+    do: Enum.member?([:enter, :transition_in], last_event_type)
 
   @doc false
   @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: Location.t()
@@ -76,14 +93,6 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp check_for_event(bot, user, loc, config, acc) do
-    :ok =
-      Logger.debug(fn ->
-        """
-        Checking user #{user.id} for collision with bot #{bot.id} \
-        at location (#{loc.lat},#{loc.lon})...\
-        """
-      end)
-
     bot
     |> Bot.contains?(Map.from_struct(loc))
     |> maybe_set_exit_timer(user, bot, loc, config)
@@ -111,14 +120,14 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp handle_intersection(inside?, user, bot, loc, config, acc) do
-    event = BotEvent.get_last_event(user.id, loc.resource, bot.id)
+    event = BotEvent.get_last_event(user.id, bot.id)
 
     case user_state_change(inside?, event, bot, loc, config) do
       :no_change ->
         acc
 
-      :roll_back ->
-        Repo.delete!(event)
+      {:roll_back, old_state} ->
+        BotEvent.insert(user, loc.resource, bot, loc, old_state)
         acc
 
       new_state ->
@@ -148,7 +157,7 @@ defmodule Wocky.User.GeoFence do
         :no_change
 
       :transition_out ->
-        :roll_back
+        {:roll_back, :enter}
 
       :transition_in ->
         debounce_secs = config.enter_debounce_seconds
@@ -181,7 +190,7 @@ defmodule Wocky.User.GeoFence do
         maybe_exit(loc, bot, config)
 
       :transition_in ->
-        :roll_back
+        {:roll_back, :exit}
 
       :transition_out ->
         debounce_secs = config.exit_debounce_seconds
