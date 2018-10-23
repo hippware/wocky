@@ -63,5 +63,6 @@
     command: ./wocky-deploy next
     dockercfg_service: aws-dockercfg
   - name: kick_circleci
+    tag: ^master$
     service: curl-ssl-jq
     command: ./kick-circleci
