@@ -852,7 +852,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "totalCount" => 1,
                    "edges" => [
                      %{
-                       "relationships" => ["GUEST", "SUBSCRIBED", "VISIBLE"],
+                       "relationships" => ["SUBSCRIBED", "VISIBLE"],
                        "node" => %{
                          "id" => user2.id
                        }
@@ -884,7 +884,6 @@ defmodule WockyAPI.GraphQL.BotTest do
                      %{
                        "relationships" => [
                          "VISITOR",
-                         "GUEST",
                          "SUBSCRIBED",
                          "VISIBLE"
                        ],
@@ -916,7 +915,6 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "edges" => [
                      %{
                        "relationships" => [
-                         "GUEST",
                          "SUBSCRIBED",
                          "OWNED",
                          "VISIBLE"
