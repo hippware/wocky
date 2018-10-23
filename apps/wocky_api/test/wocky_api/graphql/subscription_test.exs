@@ -192,16 +192,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
 
       assert %{
-        result: %{
-          data: %{
-            "contacts" => %{
-              "relationship" => "FRIEND",
-              "user" => %{"id" => user2.id}
-            }
-          }
-        },
-        subscriptionId: subscription_id
-      } == push
+               result: %{
+                 data: %{
+                   "contacts" => %{
+                     "relationship" => "FRIEND",
+                     "user" => %{"id" => user2.id}
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             } == push
     end
 
     test "should notify when a contact type is changed", %{
@@ -222,16 +222,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
 
       assert %{
-        result: %{
-          data: %{
-            "contacts" => %{
-              "relationship" => "FRIEND",
-              "user" => %{"id" => user2.id}
-            }
-          }
-        },
-        subscriptionId: subscription_id
-      } == push
+               result: %{
+                 data: %{
+                   "contacts" => %{
+                     "relationship" => "FRIEND",
+                     "user" => %{"id" => user2.id}
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             } == push
     end
 
     test "should notify when a contact is removed", %{
@@ -252,16 +252,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
 
       assert %{
-        result: %{
-          data: %{
-            "contacts" => %{
-              "relationship" => "NONE",
-              "user" => %{"id" => user2.id}
-            }
-          }
-        },
-        subscriptionId: subscription_id
-      } == push
+               result: %{
+                 data: %{
+                   "contacts" => %{
+                     "relationship" => "NONE",
+                     "user" => %{"id" => user2.id}
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             } == push
     end
   end
 
