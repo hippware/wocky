@@ -1,0 +1,37 @@
+---
+kind: Deployment
+apiVersion: apps/v1beta2
+metadata:
+  name: wocky-db-watcher
+  labels:
+    app: wocky_db_watcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wocky_db_watcher
+      env: next
+  template:
+    metadata:
+      labels:
+        app: wocky_db_watcher
+        env: next
+    spec:
+      containers:
+        - name: wocky
+          image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky_db_watcher:<%= watcher_sha %>
+          args: ["foreground"]
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bin/wocky_db_watcher", "stop"]
+          envFrom:
+            - configMapRef:
+                name: wocky-config
+            - secretRef:
+                name: wocky-secrets
+          env:
+            - name: KUBE_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
