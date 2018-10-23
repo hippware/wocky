@@ -1208,11 +1208,6 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "sending invitations" do
-    setup do
-      Repo.delete_all(Invitation)
-      :ok
-    end
-
     @query """
     mutation ($input: BotInviteInput!) {
       botInvite (input: $input) {
@@ -1286,20 +1281,19 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "gives users access to the bot", shared do
-      refute User.can_access?(shared.user2, shared.bot)
+      refute User.can_access?(shared.user3, shared.bot)
       Factory.insert(:invitation,
         user: shared.user,
         bot: shared.bot,
-        invitee: shared.user2
+        invitee: shared.user3
       )
 
-      assert User.can_access?(shared.user2, shared.bot)
+      assert User.can_access?(shared.user3, shared.bot)
     end
+  end
 
   describe "responding to invitations" do
     setup shared do
-      Repo.delete_all(Invitation)
-
       %{id: id} =
         Factory.insert(:invitation,
           user: shared.user,
@@ -1334,7 +1328,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       {lat, lon} = GeoUtils.get_lat_lon(shared.bot.location)
 
       result =
-        run_query(@query, shared.user2, %{
+        run_query(@query, shared.user3, %{
           "input" => %{
             "invitation_id" => to_string(id),
             "accept" => true,
@@ -1349,7 +1343,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
 
-      user_id = shared.user2.id
+      user_id = shared.user3.id
 
       assert [%{id: ^user_id}] =
                shared.bot |> Bot.visitors_query() |> Repo.all()
@@ -1364,15 +1358,16 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: false} = Repo.get_by(Invitation, id: id)
-      refute Bot.subscription(shared.bot, shared.user2)
+      refute Bot.subscription(shared.bot, shared.user3)
     end
 
     test "can't accept an invitation to someone else", shared do
+      user4 = Factory.insert(:user)
       %{id: id} =
         Factory.insert(:invitation,
           user: shared.user,
           bot: shared.bot,
-          invitee: shared.user3
+          invitee: user4
         )
 
       result =

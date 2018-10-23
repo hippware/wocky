@@ -1,8 +1,10 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
+  alias Absinthe.Subscription
   alias Wocky.{Conversation, JID, Message, Roster, User}
   alias Wocky.User.Location
+  alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
