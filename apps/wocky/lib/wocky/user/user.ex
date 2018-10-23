@@ -564,8 +564,8 @@ defmodule Wocky.User do
 
     [:visible]
     |> maybe_add_rel(bot.user_id == user.id, :owned)
-    |> maybe_add_rel(Invitation.invited?(user, bot), :invited)
-    |> maybe_add_rel(sub != nil, [:guest, :subscribed])
+    |> maybe_add_rel(Invitation.invited?(bot, user), :invited)
+    |> maybe_add_rel(sub != nil, [:subscribed])
     |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
     |> List.flatten()
   end
