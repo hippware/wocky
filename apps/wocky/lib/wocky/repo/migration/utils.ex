@@ -104,6 +104,9 @@ defmodule Wocky.Repo.Migration.Utils do
 
   ### Remove function/trigger
   @spec remove_notify(binary, Watcher.action()) :: term
+  def remove_notify(table, actions) when is_list(actions),
+    do: Enum.each(actions, &remove_notify(table, &1))
+
   def remove_notify(table, action_atom) do
     action = Atom.to_string(action_atom)
     execute "DROP TRIGGER IF EXISTS #{name(table, action)} ON #{table}"
@@ -154,6 +157,16 @@ defmodule Wocky.Repo.Migration.Utils do
         reference_bot_id = null,
         reference_bot_item_id = null,
         updated_at = now()
+    """
+  end
+
+  def drop_hs_delete_function_and_trigger(table) do
+    execute """
+    DROP TRIGGER delete_from_#{table}_trigger ON #{table}
+    """
+
+    execute """
+    DROP FUNCTION delete_from_#{table}_trigger()
     """
   end
 

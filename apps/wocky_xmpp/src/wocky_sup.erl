@@ -32,12 +32,4 @@ init([]) ->
                  intensity => 1,
                  period    => 5},
 
-    ExploreNearbyWorkerSup =
-    #{id       => wocky_explore_worker_sup,
-      start    => {wocky_explore_worker_sup, start_link, []},
-      restart  => permanent,
-      shutdown => 5000,
-      type     => supervisor,
-      modules  => []},
-
-    {ok, {SupFlags, [ExploreNearbyWorkerSup]}}.
+    {ok, {SupFlags, []}}.

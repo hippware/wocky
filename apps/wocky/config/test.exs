@@ -1,7 +1,6 @@
 use Mix.Config
 
 config :wocky,
-  indexing_system: "test",
   firebase_load_on_startup: false,
   bot_report_channel: "report-testing"
 

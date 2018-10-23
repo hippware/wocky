@@ -2,7 +2,7 @@ defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, HomeStream, JID, Message, Roster, User}
+  alias Wocky.{Conversation, JID, Message, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
@@ -39,12 +39,6 @@ defmodule WockyAPI.Resolvers.User do
         source: %{node: target_user, parent: parent}
       }) do
     {:ok, Roster.relationship(parent.id, target_user.id)}
-  end
-
-  def get_home_stream(user, args, _info) do
-    user.id
-    |> HomeStream.get_query()
-    |> Utils.connection_from_query(user, args)
   end
 
   def get_conversations(user, args, _info) do
@@ -124,27 +118,18 @@ defmodule WockyAPI.Resolvers.User do
     end
   end
 
-  def home_stream_subscription_topic(user_id),
-    do: "home_stream_subscription_" <> user_id
-
   def notification_subscription_topic(user_id),
     do: "notification_subscription_" <> user_id
 
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
-  def notify_home_stream(item, action) do
-    notification = %{item: item, action: action}
-    topic = home_stream_subscription_topic(item.user_id)
-
-    Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
-  end
-
   def notify_contact(item, relationship) do
     notification = %{
       user: item.contact,
       relationship: map_relationship(relationship)
     }
+
     topic = contacts_subscription_topic(item.user_id)
 
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])

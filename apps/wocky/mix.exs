@@ -71,7 +71,6 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
-      {:algolia, "~> 0.6"},
       {:bamboo, "~> 1.0"},
       {:bcrypt_elixir, "~> 1.0"},
       {:comeonin, "~> 4.0"},
@@ -123,7 +122,6 @@ defmodule Wocky.Mixfile do
       {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
-      {:exvcr, "~> 0.8", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:meck, "~> 0.8", only: :test, override: true},
       {:reprise, "~> 0.5", only: :dev},

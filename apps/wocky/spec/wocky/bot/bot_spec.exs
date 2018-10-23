@@ -7,7 +7,6 @@ defmodule Wocky.BotSpec do
 
   alias Wocky.Bot
   alias Wocky.GeoUtils
-  alias Wocky.Index.TestIndexer
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
   alias Wocky.User
@@ -53,10 +52,6 @@ defmodule Wocky.BotSpec do
 
       it do: "bogus" |> Bot.get_id_from_node() |> should(be_nil())
     end
-
-    describe "public?" do
-      it do: bot() |> Bot.public?() |> should(eq bot().public)
-    end
   end
 
   describe "validations" do
@@ -101,10 +96,6 @@ defmodule Wocky.BotSpec do
   describe "database interactions", async: false do
     let :user, do: Factory.insert(:user)
     let! :bot, do: Factory.insert(:bot, user: user())
-
-    before do
-      TestIndexer.reset()
-    end
 
     describe "get/2" do
       let! :pending, do: Factory.insert(:bot, user: user(), pending: true)
@@ -183,17 +174,6 @@ defmodule Wocky.BotSpec do
       it "returns an error result on failure" do
         %{} |> Bot.insert() |> should(be_error_result())
       end
-
-      context "full text search index" do
-        before do
-          :bot |> Factory.params_for(user: user()) |> Bot.insert()
-          :ok
-        end
-
-        it "should be updated" do
-          TestIndexer.get_index_operations() |> should_not(be_empty())
-        end
-      end
     end
 
     describe "update/2" do
@@ -205,17 +185,6 @@ defmodule Wocky.BotSpec do
 
       it "returns an error result on failure" do
         %Bot{} |> Bot.update(%{}) |> should(be_error_result())
-      end
-
-      context "full text search index" do
-        before do
-          Bot.update(bot(), %{title: "updated bot"})
-          :ok
-        end
-
-        it "should be updated" do
-          TestIndexer.get_index_operations() |> should_not(be_empty())
-        end
       end
 
       context "out of range location" do
@@ -237,10 +206,6 @@ defmodule Wocky.BotSpec do
 
       it "should remove the bot" do
         Repo.get(Bot, bot().id) |> should(be_nil())
-      end
-
-      it "should remove the bot from the full text search index" do
-        TestIndexer.get_index_operations() |> should_not(be_empty())
       end
     end
 
@@ -307,9 +272,14 @@ defmodule Wocky.BotSpec do
       before do
         [user1, user2] = Factory.insert_list(2, :user)
         owned_bot = Factory.insert(:bot, user: user1)
-        public_bot = Factory.insert(:bot, user: user2, public: true)
-        shared_bot = Factory.insert(:bot, user: user2)
-        Factory.insert(:share, user: user1, bot: shared_bot, sharer: user2)
+        invited_bot = Factory.insert(:bot, user: user2)
+
+        Factory.insert(:invitation,
+          invitee: user1,
+          bot: invited_bot,
+          user: user2
+        )
+
         private_bot = Factory.insert(:bot, user: user2)
         pending_bot = Factory.insert(:bot, user: user1, pending: true)
         subscribed_bot = Factory.insert(:bot, user: user2)
@@ -318,8 +288,7 @@ defmodule Wocky.BotSpec do
         {:ok,
          user: user1,
          owned_bot: owned_bot,
-         public_bot: public_bot,
-         shared_bot: shared_bot,
+         invited_bot: invited_bot,
          private_bot: private_bot,
          pending_bot: pending_bot,
          subscribed_bot: subscribed_bot}
@@ -330,9 +299,9 @@ defmodule Wocky.BotSpec do
         |> should(eq shared.owned_bot)
       end
 
-      it "should allow shared bots" do
-        run_is_visible_query(shared.shared_bot, shared.user)
-        |> should(eq shared.shared_bot)
+      it "should allow invited bots" do
+        run_is_visible_query(shared.invited_bot, shared.user)
+        |> should(eq shared.invited_bot)
       end
 
       it "should refuse private bots" do

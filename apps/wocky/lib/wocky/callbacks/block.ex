@@ -6,8 +6,8 @@ defmodule Wocky.Callbacks.Block do
   use Wocky.Watcher, type: Wocky.Block, events: [:insert]
 
   alias Wocky.{Block, Bot}
-  alias Wocky.Bot.{Invitation, Item, Share}
-  alias Wocky.{Conversation, HomeStream, Repo, User}
+  alias Wocky.Bot.{Invitation, Item}
+  alias Wocky.{Conversation, Repo, User}
   alias Wocky.User.Notification
 
   def handle_insert(%Event{action: :insert, new: new}) do
@@ -15,13 +15,7 @@ defmodule Wocky.Callbacks.Block do
       Repo.preload(new, [:blocker, :blockee])
 
     if blocker != nil && blockee != nil do
-      # Delete HS message items
-      HomeStream.delete(blocker, blockee)
-      HomeStream.delete(blockee, blocker)
-
-      # Delete HS bot items for bots owned by blocked user
-      # and bot shares of blocked user's bots
-      # and content items on owned bots by blocker/blockee
+      # Delete content items on owned bots by blocker/blockee
       delete_bot_references(blocker, blockee)
       delete_bot_references(blockee, blocker)
 
@@ -44,9 +38,7 @@ defmodule Wocky.Callbacks.Block do
     a
     |> User.get_owned_bots()
     |> Enum.each(fn bot ->
-      HomeStream.delete(b, bot)
       Item.delete(bot, b)
-      Share.delete(b, bot)
       Bot.unsubscribe(bot, b)
     end)
   end
