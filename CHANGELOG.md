@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add schema docs for contacts (PR #1943)
 * Update: phoenix_pubsub (PR #1944)
 * Geofence not triggering on location embedded within botInvitationRespond (#1939)
+* Update: espec (PR #1949), geocalc (PR #1950)
 
 
 # 2018.10.17+r06b8c08
