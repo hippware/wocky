@@ -620,9 +620,5 @@ defmodule WockyAPI.Schema.UserTypes do
           {:error, "This operation requires an authenticated user"}
       end
     end
-
-    field :contacts, non_null(:contact) do
-      user_subscription_config(&User.contacts_subscription_topic/1)
-    end
   end
 end
