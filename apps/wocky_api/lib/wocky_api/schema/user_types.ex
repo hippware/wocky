@@ -549,14 +549,14 @@ defmodule WockyAPI.Schema.UserTypes do
     field :follow, type: :follow_payload do
       arg :input, non_null(:follow_input)
       resolve &User.follow/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Stop following another user"
     field :unfollow, type: :unfollow_payload do
       arg :input, non_null(:unfollow_input)
       resolve &User.unfollow/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 

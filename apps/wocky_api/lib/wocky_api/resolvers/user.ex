@@ -194,7 +194,6 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{successful: result, result: result}}
   end
 
-<<<<<<< HEAD
   def follow(_root, args, %{context: %{current_user: user}}),
     do: roster_action(user, args[:input][:user_id], &Roster.become_follower/2)
 
@@ -214,7 +213,7 @@ defmodule WockyAPI.Resolvers.User do
 
   defp map_relationship(:followee), do: :following
   defp map_relationship(r), do: r
-=======
+
   def presence_catchup(user) do
     user
     |> Presence.connect()
@@ -226,5 +225,4 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def presence_notification(user, status), do: %{user: user, status: status}
->>>>>>> GraphQL presence implementation
 end
