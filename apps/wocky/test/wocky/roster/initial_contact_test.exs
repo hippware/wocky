@@ -1,11 +1,11 @@
-defmodule Wocky.Roster.InitialContactSpec do
-  use ESpec, async: true
-  use ModelHelpers
+defmodule Wocky.Roster.InitialContactTest do
+  use Wocky.DataCase, async: true
 
   alias Wocky.Repo
+  alias Wocky.Repo.Factory
   alias Wocky.Roster.InitialContact
 
-  before do
+  setup do
     init_contacts =
       5
       |> Factory.insert_list(:user)
@@ -20,26 +20,25 @@ defmodule Wocky.Roster.InitialContactSpec do
   end
 
   describe "get/0" do
-    it "should return all initial contacts" do
-      InitialContact.get() |> Enum.sort() |> should(eq shared.init_contacts)
+    test "should return all initial contacts", ctx do
+      assert Enum.sort(InitialContact.get()) == ctx.init_contacts
     end
   end
 
   describe "put/2" do
-    before do
+    setup do
       user = Factory.insert(:user)
       result = InitialContact.put(user, :friend)
       {:ok, user: user, result: result}
     end
 
-    it "should return :ok" do
-      shared.result |> should(eq :ok)
+    test "should return :ok", ctx do
+      assert ctx.result == :ok
     end
 
-    it "should insert an item into the db" do
-      new_contact = (InitialContact.get() -- shared.init_contacts) |> hd
-      new_contact |> should(have user: shared.user)
-      new_contact |> should(have type: :friend)
+    test "should insert an item into the db", %{user: user} = ctx do
+      assert %{user: ^user, type: :friend} =
+               hd(InitialContact.get() -- ctx.init_contacts)
     end
   end
 end
