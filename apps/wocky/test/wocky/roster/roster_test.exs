@@ -222,7 +222,7 @@ defmodule Wocky.RosterTest do
     test "should remove all contacts from the user", ctx do
       assert Roster.delete(ctx.user.id) == :ok
       refute Roster.get(ctx.user.id, ctx.contact.id)
-      assert length(Roster.get(ctx.user.id)) == 0
+      assert Roster.get(ctx.user.id) == []
     end
 
     test "should change the roster version", ctx do
