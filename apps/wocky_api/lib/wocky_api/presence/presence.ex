@@ -43,6 +43,7 @@ defmodule WockyAPI.Presence do
       UserResolver.presence_notification(contact, status),
       [{:presence, UserResolver.presence_subscription_topic(recipient_id)}]
     )
+
     :ok
   end
 end
