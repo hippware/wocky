@@ -4,6 +4,7 @@ defmodule Wocky.Repo.Factory do
   use ExMachina.Ecto, repo: Wocky.Repo
   use Wocky.JID
 
+  alias Ecto.Adapters.SQL
   alias Faker.Address
   alias Faker.Company
   alias Faker.Internet
@@ -249,7 +250,7 @@ defmodule Wocky.Repo.Factory do
     query = "SELECT id FROM mam_server_user WHERE user_name = $1"
 
     id =
-      case Ecto.Adapters.SQL.query!(Repo, query, [owner.id]).rows do
+      case SQL.query!(Repo, query, [owner.id]).rows do
         [] ->
           query = """
           INSERT INTO mam_server_user (user_name, server)
@@ -257,7 +258,7 @@ defmodule Wocky.Repo.Factory do
           RETURNING id
           """
 
-          Ecto.Adapters.SQL.query!(Repo, query, [owner.id, "test"]).rows
+          SQL.query!(Repo, query, [owner.id, "test"]).rows
           |> hd
           |> hd
 
@@ -278,7 +279,7 @@ defmodule Wocky.Repo.Factory do
       |> :erlang.term_to_binary()
 
     id =
-      Ecto.Adapters.SQL.query!(Repo, query, [
+      SQL.query!(Repo, query, [
         :erlang.unique_integer([:monotonic, :positive]),
         id,
         "",

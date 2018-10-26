@@ -4,10 +4,10 @@ defmodule WockyAPI.Presence do
   """
 
   alias Absinthe.Subscription
+  alias Wocky.User
   alias WockyAPI.Endpoint
   alias WockyAPI.Presence.{Manager, Store}
   alias WockyAPI.Resolvers.User, as: UserResolver
-  alias Wocky.User
 
   @type status() :: :offline | :online
 
@@ -43,6 +43,7 @@ defmodule WockyAPI.Presence do
       UserResolver.presence_notification(contact, status),
       [{:presence, UserResolver.presence_subscription_topic(recipient_id)}]
     )
+
     :ok
   end
 end

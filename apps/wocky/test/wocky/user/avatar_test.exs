@@ -1,5 +1,5 @@
-defmodule Wocky.User.AvatarSpec do
-  use ESpec, async: true
+defmodule Wocky.User.AvatarTest do
+  use ExUnit.Case, async: true
 
   describe "prepare/1" do
   end

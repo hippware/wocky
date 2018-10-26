@@ -49,21 +49,21 @@ defmodule Wocky.PushTest do
   end
 
   describe "enable/4" do
-    test "should insert the token into the database", shared do
-      row = get_user_token(shared.user_id, shared.resource)
+    test "should insert the token into the database", ctx do
+      row = get_user_token(ctx.user_id, ctx.resource)
       assert row.valid
-      assert row.token == shared.token
+      assert row.token == ctx.token
       refute is_nil(row.enabled_at)
       assert Timex.diff(row.enabled_at, row.created_at, :seconds) == 0
     end
 
-    test "should overwrite rows when a token is re-enabled", shared do
-      old_row = get_user_token(shared.user_id, shared.resource)
-      :ok = Push.enable(shared.user_id, shared.resource, shared.token)
+    test "should overwrite rows when a token is re-enabled", ctx do
+      old_row = get_user_token(ctx.user_id, ctx.resource)
+      :ok = Push.enable(ctx.user_id, ctx.resource, ctx.token)
 
-      row = get_user_token(shared.user_id, shared.resource)
+      row = get_user_token(ctx.user_id, ctx.resource)
       assert row.valid
-      assert row.token == shared.token
+      assert row.token == ctx.token
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
     end
 
@@ -100,8 +100,8 @@ defmodule Wocky.PushTest do
       :ok = Push.disable(user_id, resource)
     end
 
-    test "should invalidate the database record", shared do
-      row = get_user_token(shared.user_id, shared.resource)
+    test "should invalidate the database record", ctx do
+      row = get_user_token(ctx.user_id, ctx.resource)
       refute is_nil(row)
       refute row.valid
     end
@@ -113,15 +113,15 @@ defmodule Wocky.PushTest do
       :ok = Push.purge(user_id)
     end
 
-    test "should remove all database records", shared do
-      refute get_user_token(shared.user_id, shared.resource)
-      refute get_user_token(shared.user_id, "other")
+    test "should remove all database records", ctx do
+      refute get_user_token(ctx.user_id, ctx.resource)
+      refute get_user_token(ctx.user_id, "other")
     end
   end
 
   describe "notify/3" do
-    test "should send a push notification", shared do
-      :ok = Push.notify(shared.user_id, shared.resource, @message)
+    test "should send a push notification", ctx do
+      :ok = Push.notify(ctx.user_id, ctx.resource, @message)
 
       assert_receive %Notification{
                        payload: %{
@@ -131,9 +131,9 @@ defmodule Wocky.PushTest do
                      5000
     end
 
-    test "should truncate long messages", shared do
+    test "should truncate long messages", ctx do
       sent_message = Lorem.paragraph(100)
-      :ok = Push.notify(shared.user_id, shared.resource, sent_message)
+      :ok = Push.notify(ctx.user_id, ctx.resource, sent_message)
 
       assert_receive %Notification{
                        payload: %{
@@ -146,35 +146,35 @@ defmodule Wocky.PushTest do
       assert String.slice(rcvd_message, -3..-1) == "..."
     end
 
-    test "should create a db log entry", shared do
-      :ok = Push.notify(shared.user_id, shared.resource, @message)
+    test "should create a db log entry", ctx do
+      :ok = Push.notify(ctx.user_id, ctx.resource, @message)
       assert_receive %Notification{}, 5000
 
       log =
         Repo.one(
           from Log,
-            where: [user_id: ^shared.user_id, resource: ^shared.resource]
+            where: [user_id: ^ctx.user_id, resource: ^ctx.resource]
         )
 
       refute is_nil(log)
     end
 
-    test "should log an error when there is no push token", shared do
-      :ok = Push.disable(shared.user_id, shared.resource)
+    test "should log an error when there is no push token", ctx do
+      :ok = Push.disable(ctx.user_id, ctx.resource)
 
       assert capture_log(fn ->
-               :ok = Push.notify(shared.user_id, shared.resource, @message)
+               :ok = Push.notify(ctx.user_id, ctx.resource, @message)
              end) =~ "no token"
     end
 
-    test "token is invalidated when the service returns an error", shared do
+    test "token is invalidated when the service returns an error", ctx do
       assert capture_log(fn ->
-               :ok = Push.notify(shared.user_id, shared.resource, "bad token")
+               :ok = Push.notify(ctx.user_id, ctx.resource, "bad token")
              end) =~ "device token was bad"
 
       assert_receive %Notification{response: :bad_device_token}, 5000
 
-      row = get_user_token(shared.user_id, shared.resource)
+      row = get_user_token(ctx.user_id, ctx.resource)
       refute row.valid
       refute is_nil(row.invalidated_at)
     end
@@ -194,10 +194,10 @@ defmodule Wocky.PushTest do
 
   describe "push timeout" do
     test "should log an error when the push request fails and times out",
-         shared do
+         ctx do
       assert capture_log(fn ->
                assert_raise RuntimeError, "requested_raise", fn ->
-                 Push.notify(shared.user_id, shared.resource, "raise")
+                 Push.notify(ctx.user_id, ctx.resource, "raise")
                end
              end) == ""
 
@@ -206,10 +206,10 @@ defmodule Wocky.PushTest do
   end
 
   describe "retry success" do
-    test "should retry and succeed even if the first attempt fails", shared do
+    test "should retry and succeed even if the first attempt fails", ctx do
       # Two retries will give us three chunks of log
       assert fn ->
-               Push.notify(shared.user_id, shared.resource, "retry test")
+               Push.notify(ctx.user_id, ctx.resource, "retry test")
              end
              |> capture_log()
              |> String.split("PN Error")

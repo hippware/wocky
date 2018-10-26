@@ -24,14 +24,14 @@ defmodule Wocky.User.NotificationTest do
   end
 
   describe "create notification" do
-    test "bot item", shared do
-      item = Factory.insert(:item, bot: shared.bot, user: shared.user2)
+    test "bot item", ctx do
+      item = Factory.insert(:item, bot: ctx.bot, user: ctx.user2)
 
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%BotItem{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
                  bot_item_id: item.id
                })
 
@@ -39,12 +39,12 @@ defmodule Wocky.User.NotificationTest do
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "geofence event", shared do
+    test "geofence event", ctx do
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%GeofenceEvent{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
                  event: :enter
                })
 
@@ -52,26 +52,26 @@ defmodule Wocky.User.NotificationTest do
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "invitation", shared do
+    test "invitation", ctx do
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%Invitation{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
-                 invitation_id: shared.invitation.id
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 invitation_id: ctx.invitation.id
                })
 
       assert %Notification{type: :invitation} =
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "invitation response", shared do
+    test "invitation response", ctx do
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%InvitationResponse{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
-                 invitation_id: shared.invitation.id,
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 invitation_id: ctx.invitation.id,
                  accepted: true
                })
 
@@ -79,11 +79,11 @@ defmodule Wocky.User.NotificationTest do
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "user follow", shared do
+    test "user follow", ctx do
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%UserFollow{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id
                })
 
       assert %Notification{type: :user_follow} =
@@ -92,59 +92,59 @@ defmodule Wocky.User.NotificationTest do
   end
 
   describe "blocked user notification should fail" do
-    setup shared do
-      Block.block(shared.user, shared.user2)
+    setup ctx do
+      Block.block(ctx.user, ctx.user2)
       :ok
     end
 
-    test "bot item", shared do
-      item = Factory.insert(:item, bot: shared.bot, user: shared.user2)
+    test "bot item", ctx do
+      item = Factory.insert(:item, bot: ctx.bot, user: ctx.user2)
 
       assert {:error, :invalid_user} ==
                Notification.notify(%BotItem{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
                  bot_item_id: item.id
                })
     end
 
-    test "geofence event", shared do
+    test "geofence event", ctx do
       assert {:error, :invalid_user} ==
                Notification.notify(%GeofenceEvent{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
                  event: :enter
                })
     end
 
-    test "invitation", shared do
+    test "invitation", ctx do
       assert {:error, :invalid_user} ==
                Notification.notify(%Invitation{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
-                 invitation_id: shared.invitation.id
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 invitation_id: ctx.invitation.id
                })
     end
 
-    test "invitation response", shared do
+    test "invitation response", ctx do
       assert {:error, :invalid_user} ==
                Notification.notify(%InvitationResponse{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id,
-                 bot_id: shared.bot.id,
-                 invitation_id: shared.invitation.id,
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 invitation_id: ctx.invitation.id,
                  accepted: true
                })
     end
 
-    test "user follow", shared do
+    test "user follow", ctx do
       assert {:error, :invalid_user} ==
                Notification.notify(%UserFollow{
-                 user_id: shared.user.id,
-                 other_user_id: shared.user2.id
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id
                })
     end
   end
@@ -164,12 +164,12 @@ defmodule Wocky.User.NotificationTest do
       {:ok, notification: notification, notification2: notification2}
     end
 
-    test "it should delete the notification between the users", shared do
-      refute Repo.get(Notification, shared.notification.id)
+    test "it should delete the notification between the users", ctx do
+      refute Repo.get(Notification, ctx.notification.id)
     end
 
-    test "it should not delete other notifications to the user", shared do
-      assert Repo.get(Notification, shared.notification2.id)
+    test "it should not delete other notifications to the user", ctx do
+      assert Repo.get(Notification, ctx.notification2.id)
     end
   end
 

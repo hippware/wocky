@@ -43,17 +43,17 @@ defmodule Wocky.BlockTest do
       assert Block.blocked?(u2.id, u1.id)
     end
 
-    test "object_visible_query/3", shared do
-      Block.block(shared.user1, shared.user2)
+    test "object_visible_query/3", ctx do
+      Block.block(ctx.user1, ctx.user2)
 
       query =
-        shared.bot.id
+        ctx.bot.id
         |> Bot.get_query()
-        |> Block.object_visible_query(shared.user2.id)
+        |> Block.object_visible_query(ctx.user2.id)
 
       assert is_nil(Repo.one(query))
 
-      Block.unblock(shared.user1, shared.user2)
+      Block.unblock(ctx.user1, ctx.user2)
 
       refute is_nil(Repo.one(query))
     end
@@ -79,14 +79,14 @@ defmodule Wocky.BlockTest do
        notification2: notification2}
     end
 
-    test "should delete invitations between the two users", shared do
-      refute_eventually(Repo.get(Invitation, shared.invitation1.id), 500, 10)
-      refute_eventually(Repo.get(Invitation, shared.invitation2.id))
+    test "should delete invitations between the two users", ctx do
+      refute_eventually(Repo.get(Invitation, ctx.invitation1.id), 500, 10)
+      refute_eventually(Repo.get(Invitation, ctx.invitation2.id))
     end
 
-    test "should delete notifications between the two users", shared do
-      refute_eventually(Repo.get(Notification, shared.notification1.id))
-      refute_eventually(Repo.get(Notification, shared.notification2.id))
+    test "should delete notifications between the two users", ctx do
+      refute_eventually(Repo.get(Notification, ctx.notification1.id))
+      refute_eventually(Repo.get(Notification, ctx.notification2.id))
     end
   end
 end

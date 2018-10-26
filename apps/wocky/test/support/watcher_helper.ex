@@ -30,7 +30,7 @@ defmodule Wocky.WatcherHelper do
     end
   end
 
-  def no_more_push_notifications() do
+  def no_more_push_notifications do
     msgs = Sandbox.wait_notifications(global: true)
     Enum.empty?(msgs)
   end

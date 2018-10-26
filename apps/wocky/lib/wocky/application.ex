@@ -9,8 +9,8 @@ defmodule Wocky.Application do
   """
   use Application
 
-  alias Wocky.Mailer
   alias Wocky.Callbacks
+  alias Wocky.Mailer
 
   require Prometheus.Registry
 
