@@ -91,7 +91,7 @@
   "jiffy": {:hex, :jiffy, "0.14.11", "919a87d491c5a6b5e3bbc27fafedc3a0761ca0b4c405394f121f582fd4e3f0e5", [:rebar3], [], "hexpm"},
   "joken": {:hex, :joken, "1.5.0", "42a0953e80bd933fc98a0874e156771f78bf0e92abe6c3a9c22feb6da28efb0b", [:mix], [{:jose, "~> 1.8", [hex: :jose, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}, {:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: true]}], "hexpm"},
   "jose": {:hex, :jose, "1.8.4", "7946d1e5c03a76ac9ef42a6e6a20001d35987afd68c2107bcd8f01a84e75aa73", [:mix, :rebar3], [{:base64url, "~> 0.0.1", [hex: :base64url, repo: "hexpm", optional: false]}], "hexpm"},
-  "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
+  "jsx": {:hex, :jsx, "2.9.0", "d2f6e5f069c00266cad52fb15d87c428579ea4d7d73a33669e12679e203329dd", [:mix, :rebar3], [], "hexpm"},
   "kadabra": {:hex, :kadabra, "0.4.4", "29d7f4c231d44a59d99b550fa75489a80a572140b3316809f326bf608bce33d8", [:mix], [{:hpack, "~> 0.2.3", [hex: :hpack_erl, repo: "hexpm", optional: false]}], "hexpm"},
   "katana_code": {:hex, :katana_code, "0.1.0", "c34f3926a258d6beacd8d21f140f3d47d175501936431c460b144339d5271a0b", [:rebar3], [{:aleppo, "1.0.0", [hex: :inaka_aleppo, repo: "hexpm", optional: false]}], "hexpm"},
   "kronky": {:git, "https://github.com/mirego/kronky.git", "80344f7cfe2c14b5a08ce408653cf795405b13c3", [branch: "master"]},
