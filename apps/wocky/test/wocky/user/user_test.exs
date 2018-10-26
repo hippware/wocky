@@ -231,6 +231,9 @@ defmodule Wocky.User.UserTest do
       :meck.new(Email)
       :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
 
+      on_exit(fn ->
+        Application.put_env(:wocky, :send_welcome_email, false)
+      end)
       :ok
     end
 

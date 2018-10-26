@@ -10,6 +10,11 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
+
+    on_exit(fn ->
+      Application.stop(:wocky_db_watcher)
+      Wocky.Repo.delete_all(Wocky.User)
+    end)
   end
 
   setup shared do
