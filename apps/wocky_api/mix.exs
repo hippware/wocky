@@ -86,7 +86,7 @@ defmodule WockyAPI.Mixfile do
       {:cors_plug, "~> 1.5"},
       {:apollo_tracing, "~> 0.4.0"},
       {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
-      {:bimap, "~> 0.1"},
+      {:bimap, "~> 1.0"},
       {:lager, "~> 3.6", override: true}
     ]
   end
