@@ -12,7 +12,6 @@ defmodule Wocky.User.UserTest do
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
-  alias Wocky.Email
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
@@ -221,61 +220,6 @@ defmodule Wocky.User.UserTest do
       assert new_user.email == fields.email
       assert new_user.tagline == fields.tagline
       refute new_user.resource
-    end
-  end
-
-  describe "welcome emails" do
-    setup do
-      Application.put_env(:wocky, :send_welcome_email, true)
-
-      :meck.new(Email)
-      :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
-
-      on_exit(fn ->
-        Application.put_env(:wocky, :send_welcome_email, false)
-      end)
-
-      :ok
-    end
-
-    test "should be sent on user update" do
-      user = Factory.insert(:user)
-
-      fields = %{
-        first_name: Name.first_name()
-      }
-
-      User.update(user.id, fields)
-
-      assert :meck.validate(Email)
-      assert :meck.called(Email, :send_welcome_email, :_)
-
-      new_user = Repo.get(User, user.id)
-      assert new_user.welcome_sent
-    end
-
-    test "should not be resent to an already welcomed user" do
-      user = Factory.insert(:user, %{welcome_sent: true})
-
-      fields = %{
-        email: Internet.email()
-      }
-
-      User.update(user.id, fields)
-
-      refute :meck.called(Email, :send_welcome_email, :_)
-    end
-
-    test "should not be sent to an unwelcomed user that has no email" do
-      user = Factory.insert(:user, %{email: nil})
-
-      fields = %{
-        first_name: Name.first_name()
-      }
-
-      User.update(user.id, fields)
-
-      refute :meck.called(Email, :send_welcome_email, :_)
     end
   end
 
