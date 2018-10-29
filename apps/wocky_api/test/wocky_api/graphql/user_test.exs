@@ -445,45 +445,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "user search" do
-    setup %{user2: user2} do
-      Repo.delete(user2)
-      :ok
-    end
-
-    @query """
-    query ($term: String!, $limit: Int) {
-      users (search_term: $term, limit: $limit) {
-        id
-      }
-    }
-    """
-
-    test "search results", %{user: user} do
-      u =
-        Factory.insert(
-          :user,
-          first_name: "Bob",
-          last_name: "aaa",
-          handle: "hhh"
-        )
-
-      result = run_query(@query, user, %{"term" => "b"})
-
-      refute has_errors(result)
-      assert result.data == %{"users" => [%{"id" => u.id}]}
-    end
-
-    test "search limit", %{user: user} do
-      Factory.insert_list(20, :user, first_name: "aaa")
-
-      result = run_query(@query, user, %{"term" => "a", "limit" => 10})
-
-      assert %{"users" => results} = result.data
-      assert length(results) == 10
-    end
-  end
-
   describe "contacts" do
     setup %{user: user, user2: user2} do
       Roster.befriend(user.id, user2.id)
