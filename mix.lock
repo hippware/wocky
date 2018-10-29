@@ -64,7 +64,7 @@
   "exometer_core": {:git, "https://github.com/hippware/exometer_core.git", "263adb7a42acc04109e30cbf2134e9cddded7328", [branch: "working"]},
   "exometer_prometheus": {:git, "https://github.com/GalaxyGorilla/exometer_prometheus.git", "5c37df514fa04f8fed4359ff5e5561fe5a0fb97d", [branch: "master"]},
   "exrun": {:hex, :exrun, "0.1.6", "036fd2418ad9701ab90446c3245c383fa6723e12badccafb172bba8bf835ab9b", [:mix], [], "hexpm"},
-  "faker": {:hex, :faker, "0.11.0", "57a712b0261123f0475fdadda359a57488429cb9f5bf4fbf973da2d8848cc2c6", [:mix], [], "hexpm"},
+  "faker": {:hex, :faker, "0.11.1", "0dcf151bef21cb27e289ae7418fd15c6a278dad676d5996b75d1d309b155c205", [:mix], [], "hexpm"},
   "fast_tls": {:hex, :fast_tls, "1.0.22", "d41d1827c436fa914436984bea0ba9a62bce60473b8d65129b6d331966fb7cfc", [:rebar3], [{:p1_utils, "1.0.11", [hex: :p1_utils, repo: "hexpm", optional: false]}], "hexpm"},
   "fastglobal": {:hex, :fastglobal, "1.0.0", "f3133a0cda8e9408aac7281ec579c4b4a8386ce0e99ca55f746b9f58192f455b", [:mix], [], "hexpm"},
   "folsom": {:hex, :folsom, "0.8.5", "94a027b56fe84feed264f9b33cb4c6ac9a801fad84b87dbda0836ce83c3b8d69", [:rebar3], [{:bear, "0.8.5", [hex: :bear, repo: "hexpm", optional: false]}], "hexpm"},
