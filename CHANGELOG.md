@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.10.23+r14cec96
+
 * GraphQL roster management (#1832)
 * Add schema docs for contacts (PR #1943)
 * Update: phoenix_pubsub (PR #1944)
