@@ -22,7 +22,7 @@ defmodule WockyAPI.SubscriptionCase do
     end
   end
 
-  defmacro setup_watcher() do
+  defmacro setup_watcher do
     quote do
       Wocky.Watcher.Client.clear_all_subscriptions()
       Wocky.Callbacks.register()

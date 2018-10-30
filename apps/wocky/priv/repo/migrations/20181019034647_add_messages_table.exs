@@ -34,7 +34,7 @@ defmodule Wocky.Repo.Migrations.AddMessagesTable do
     Utils.update_notify(:messages, [:insert])
   end
 
-  defp migrate_messages() do
+  defp migrate_messages do
     from(m in "mam_message",
       inner_join: su in "mam_server_user", on: m.user_id == su.id,
       inner_join: sender in "users", on: fragment("uuid(?)", su.user_name) == sender.id,

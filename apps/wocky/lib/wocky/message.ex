@@ -79,10 +79,8 @@ defmodule Wocky.Message do
   defp parse_xml(text) do
     # Wrap the whole body in <xml> tags so we can parse multiple tags at the
     # top level
-    try do
-      {:ok, parse("<xml>" <> text <> "</xml>", quiet: true)}
-    catch
-      :exit, _ -> nil
-    end
+    {:ok, parse("<xml>" <> text <> "</xml>", quiet: true)}
+  catch
+    :exit, _ -> nil
   end
 end
