@@ -347,14 +347,14 @@ defmodule Wocky.User.UserTest do
 
     test "should save the location to the database", ctx do
       assert {:ok, %Location{id: id}} =
-        User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
+               User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
 
       assert Repo.get(Location, id)
     end
 
     test "should initiate geofence processing for that bot", ctx do
       assert {:ok, _} =
-        User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
+               User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visiting
     end
