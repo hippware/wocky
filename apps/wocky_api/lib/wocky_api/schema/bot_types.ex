@@ -13,11 +13,9 @@ defmodule WockyAPI.Schema.BotTypes do
   alias WockyAPI.Resolvers.Utils
 
   connection :bots, node_type: :bot do
-    scope :public
-    total_count_field
+    total_count_field()
 
     edge do
-      scope :public
       @desc "The set of relationships between the user and the bot"
       field :relationships, list_of(:user_bot_relationship) do
         resolve &Bot.get_bot_relationships/3
@@ -30,22 +28,16 @@ defmodule WockyAPI.Schema.BotTypes do
     value :subscriber
 
     @desc """
-    A user who is subscribed to the bot and is a guest
-    (entry/exit will be reported)
-    """
-    value :guest
-
-    @desc """
-    A user who is subscribed to the bot and is a guest who is currently
-    visiting the bot
+    A user who is subscribed to the bot and who is currently visiting it
     """
     value :visitor
+
+    @desc "Deprecated"
+    value :guest, deprecate: "All subscribers are now guests"
   end
 
   @desc "A Wocky bot"
   object :bot do
-    scope :public
-
     @desc "The bot's unique ID"
     field :id, non_null(:uuid)
 
@@ -89,10 +81,11 @@ defmodule WockyAPI.Schema.BotTypes do
     field :address_data, :string
 
     @desc "Whether the bot is publicly visible"
-    field :public, non_null(:boolean)
+    field :public, non_null(:boolean), do: deprecate("All bots are now private")
 
     @desc "Whether the bot has geofence (visitor reporting) enabled"
-    field :geofence, non_null(:boolean)
+    field :geofence, non_null(:boolean),
+      do: deprecate("All bots are now geofence-enabled")
 
     @desc "The bot's owner"
     field :owner, non_null(:user), resolve: assoc(:user)
@@ -105,32 +98,21 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Posts made to the bot"
     connection field :items, node_type: :bot_items do
-      connection_complexity
+      connection_complexity()
       resolve &Bot.get_items/3
     end
 
     @desc "Subscribers to the bot, filtered by either subscription type or ID"
     connection field :subscribers, node_type: :subscribers do
-      connection_complexity
+      connection_complexity()
       arg :type, :subscription_type
       arg :id, :uuid
       resolve &Bot.get_subscribers/3
     end
   end
 
-  @desc "A newly created or deleted bot"
-  object :discover_bot do
-    @desc "The bot itself"
-    field :bot, non_null(:bot)
-
-    @desc "The action that caused the bot to be reported in the discover list"
-    field :action, non_null(:discover_bot_action)
-  end
-
   @desc "A post (comment, etc) to a bot"
   object :bot_item do
-    scope :public
-
     @desc "The unique ID of this post"
     field :id, non_null(:string)
 
@@ -169,21 +151,16 @@ defmodule WockyAPI.Schema.BotTypes do
   end
 
   connection :bot_items, node_type: :bot_item do
-    scope :public
-    total_count_field
+    total_count_field()
 
     edge do
-      scope :public
     end
   end
 
   connection :subscribers, node_type: :user do
-    scope :public
-    total_count_field
+    total_count_field()
 
     edge do
-      scope :public
-
       @desc "The set of relationships this subscriber has to the bot"
       field :relationships, non_null(list_of(:user_bot_relationship)) do
         resolve &Bot.get_bot_relationships/3
@@ -209,8 +186,10 @@ defmodule WockyAPI.Schema.BotTypes do
     field :icon, :string
     field :address, :string
     field :address_data, :string
-    field :public, :boolean
-    field :geofence, :boolean
+    field :public, :boolean, do: deprecate("All bots are now private")
+
+    field :geofence, :boolean,
+      do: deprecate("All bots are now geofence-enabled")
   end
 
   input_object :bot_create_input do
@@ -312,7 +291,6 @@ defmodule WockyAPI.Schema.BotTypes do
   object :bot_queries do
     @desc "Retrieve a single bot by ID"
     field :bot, :bot do
-      scope :public
       arg :id, non_null(:uuid)
       resolve &Bot.get_bot/3
     end
@@ -329,11 +307,13 @@ defmodule WockyAPI.Schema.BotTypes do
     end
 
     @desc "Retrieve a list of discoverable bots created after a given time"
-    field :discover_bots, list_of(:discover_bot) do
+    field :discover_bots, list_of(:string) do
       @desc "Optional time after which bots must have been created"
       arg :since, :datetime
 
-      resolve &Bot.get_discover_bots/3
+      deprecate "This operation is no longer supported"
+
+      resolve fn _, _, _ -> {:ok, []} end
     end
   end
 
@@ -342,63 +322,63 @@ defmodule WockyAPI.Schema.BotTypes do
     field :bot_create, type: :bot_create_payload do
       arg :input, :bot_create_input
       resolve &Bot.create_bot/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Update an existing bot"
     field :bot_update, type: :bot_update_payload do
       arg :input, non_null(:bot_update_input)
       resolve &Bot.update_bot/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete a bot"
     field :bot_delete, type: :bot_delete_payload do
       arg :input, non_null(:bot_delete_input)
       resolve &Bot.delete/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Subscribe the current user to a bot"
     field :bot_subscribe, type: :bot_subscribe_payload do
       arg :input, non_null(:bot_subscribe_input)
       resolve &Bot.subscribe/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Unsubscribe the current user from a bot"
     field :bot_unsubscribe, type: :bot_unsubscribe_payload do
       arg :input, non_null(:bot_unsubscribe_input)
       resolve &Bot.unsubscribe/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Publish an item to a bot"
     field :bot_item_publish, type: :bot_item_publish_payload do
       arg :input, non_null(:bot_item_publish_input)
       resolve &Bot.publish_item/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete an item from a bot"
     field :bot_item_delete, type: :bot_item_delete_payload do
       arg :input, non_null(:bot_item_delete_input)
       resolve &Bot.delete_item/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Invite users to a bot"
     field :bot_invite, type: list_of(:bot_invite_payload) do
       arg :input, non_null(:bot_invite_input)
       resolve &Bot.invite/3
-      changeset_list_mutation_middleware
+      changeset_list_mutation_middleware()
     end
 
     @desc "Respond to an invititation"
     field :bot_invitation_respond, type: :bot_invitation_respond_payload do
       arg :input, non_null(:bot_invitation_respond_input)
       resolve &Bot.invitation_respond/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 
@@ -408,20 +388,6 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "A visitor newly departing from a bot"
     value :depart
-  end
-
-  enum :discover_bot_action do
-    @desc "The bot was newly created"
-    value :created
-
-    @desc "The bot was deleted"
-    value :deleted
-
-    @desc "The bot was made newly public"
-    value :publicized
-
-    @desc "The bot was made newly private"
-    value :privatized
   end
 
   @desc "An update on the state of a visitor to a bot"
@@ -443,11 +409,6 @@ defmodule WockyAPI.Schema.BotTypes do
     """
     field :bot_guest_visitors, non_null(:visitor_update) do
       user_subscription_config(&Bot.visitor_subscription_topic/1)
-    end
-
-    @desc "Subscribe to a live stream of created, discoverable bots"
-    field :discover_bots, non_null(:discover_bot) do
-      user_subscription_config(&Bot.discover_bots_topic/1)
     end
   end
 end

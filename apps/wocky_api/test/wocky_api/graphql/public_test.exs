@@ -19,8 +19,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
       Factory.insert(
         :bot,
         user: user,
-        image: Factory.image_url(image),
-        public: true
+        image: Factory.image_url(image)
       )
 
     bot2 = Factory.insert(:bot, user: user2)
@@ -73,14 +72,13 @@ defmodule WockyAPI.GraphQL.PublicTest do
     }
   }
   """
-  test "There are no public bots any more so nothing should be returned", %{
+  test "get public bot, subscribers, items, and their public owned bots", %{
     bot: %{id: bot_id}
   } do
     result = run_query(@query, nil, %{"id" => bot_id})
 
-    refute has_errors(result)
-
-    assert %{"bot" => nil} == result.data
+    assert has_errors(result)
+    assert error_msg(result) =~ "requires an authenticated user"
   end
 
   # GraphiQL schema query:

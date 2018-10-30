@@ -2,9 +2,10 @@ defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, HomeStream, JID, Message, Roster, User}
+  alias Wocky.{Conversation, JID, Message, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
+  alias WockyAPI.Presence
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
@@ -39,12 +40,6 @@ defmodule WockyAPI.Resolvers.User do
         source: %{node: target_user, parent: parent}
       }) do
     {:ok, Roster.relationship(parent.id, target_user.id)}
-  end
-
-  def get_home_stream(user, args, _info) do
-    user.id
-    |> HomeStream.get_query()
-    |> Utils.connection_from_query(user, args)
   end
 
   def get_conversations(user, args, _info) do
@@ -124,20 +119,14 @@ defmodule WockyAPI.Resolvers.User do
     end
   end
 
-  def home_stream_subscription_topic(user_id),
-    do: "home_stream_subscription_" <> user_id
-
   def notification_subscription_topic(user_id),
     do: "notification_subscription_" <> user_id
 
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
-  def notify_home_stream(item, action) do
-    notification = %{item: item, action: action}
-    topic = home_stream_subscription_topic(item.user_id)
-
-    Subscription.publish(Endpoint, notification, [{:home_stream, topic}])
+  def presence_subscription_topic(user_id) do
+    "presence_subscription_" <> user_id
   end
 
   def notify_contact(item, relationship) do
@@ -145,6 +134,7 @@ defmodule WockyAPI.Resolvers.User do
       user: item.contact,
       relationship: map_relationship(relationship)
     }
+
     topic = contacts_subscription_topic(item.user_id)
 
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])
@@ -223,4 +213,16 @@ defmodule WockyAPI.Resolvers.User do
 
   defp map_relationship(:followee), do: :following
   defp map_relationship(r), do: r
+
+  def presence_catchup(user) do
+    user
+    |> Presence.connect()
+    |> Enum.each(&Presence.publish(user.id, &1, :online))
+  end
+
+  def get_presence_status(other_user, _args, _context) do
+    Presence.user_status(other_user)
+  end
+
+  def presence_notification(user, status), do: %{user: user, status: status}
 end

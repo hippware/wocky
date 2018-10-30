@@ -51,8 +51,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
-      scope :public
-      connection_complexity
+      connection_complexity()
       arg :relationship, :user_bot_relationship
       arg :id, :uuid
       resolve &Bot.get_bots/3
@@ -62,9 +61,13 @@ defmodule WockyAPI.Schema.UserTypes do
     The user's contacts (ie the XMPP roster) optionally filtered by relationship
     """
     connection field :contacts, node_type: :contacts do
-      connection_complexity
+      connection_complexity()
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
+    end
+
+    field :presence_status, :presence_status do
+      resolve &User.get_presence_status/3
     end
 
     resolve_type fn
@@ -75,7 +78,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's archive of messages sorted from oldest to newest"
     connection field :messages, node_type: :messages do
-      connection_complexity
+      connection_complexity()
 
       @desc "Optional other user to filter messages on"
       arg :other_user, :uuid
@@ -105,39 +108,36 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
 
     @desc "Check whether a user has made use of any geofence features"
-    field :has_used_geofence, :boolean, do: resolve(&User.has_used_geofence/3)
+    field :has_used_geofence, :boolean do
+      deprecate "All users now always use geofence"
+      resolve fn _, _ -> {:ok, true} end
+    end
 
-    @desc "The active bots that a user is a guest of, in last visited order"
+    @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
-      connection_complexity
+      connection_complexity()
       resolve &Bot.get_active_bots/3
     end
 
     @desc "The user's location history for a given device"
     connection field :locations, node_type: :locations do
-      connection_complexity
+      connection_complexity()
       arg :device, non_null(:string)
       resolve &User.get_locations/3
     end
 
     @desc "The user's location event history"
     connection field :location_events, node_type: :location_events do
-      connection_complexity
+      connection_complexity()
       arg :device, non_null(:string)
       resolve &User.get_location_events/3
-    end
-
-    @desc "The user's home stream items"
-    connection field :home_stream, node_type: :home_stream do
-      connection_complexity
-      resolve &User.get_home_stream/3
     end
 
     @desc """
     The user's conversations - i.e. the last message exchanged with each contact
     """
     connection field :conversations, node_type: :conversations do
-      connection_complexity
+      connection_complexity()
       resolve &User.get_conversations/3
     end
   end
@@ -149,8 +149,8 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "A bot is owned by the user"
     value :owned
 
-    @desc "A bot has been explicitly shared to the user"
-    value :shared
+    @desc "A user has been invited to a bot"
+    value :invited
 
     @desc "The user has subscribed to the bot (including owned bots)"
     value :subscribed
@@ -159,7 +159,7 @@ defmodule WockyAPI.Schema.UserTypes do
     value :subscribed_not_owned
 
     @desc "The user is a guest of the bot (will fire entry/exit events)"
-    value :guest
+    value :guest, deprecate: "All subscribers are now guests"
 
     @desc "The user is a visitor to the bot (is currently within the bot)"
     value :visitor
@@ -189,7 +189,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :contacts, node_type: :user do
-    total_count_field
+    total_count_field()
 
     edge do
       @desc "The relationship between the parent and child users"
@@ -212,7 +212,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :messages, node_type: :message do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -273,13 +273,13 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
-      connection_complexity
+      connection_complexity()
       resolve &User.get_location_events/3
     end
   end
 
   connection :locations, node_type: :location do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -325,38 +325,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :location_events, node_type: :location_event do
-    total_count_field
-
-    edge do
-    end
-  end
-
-  @desc "An item within a user's home stream"
-  object :home_stream_item do
-    @desc "The stream-unique key of the item"
-    field :key, non_null(:string)
-
-    @desc "The JID of the object from which the item originated"
-    field :from_jid, non_null(:string)
-
-    @desc "The item's content"
-    field :stanza, non_null(:string)
-
-    @desc "The item's owner"
-    field :user, :user, resolve: assoc(:user)
-
-    @desc "The user referenced by this item, if any"
-    field :reference_user, :bot, resolve: assoc(:reference_user)
-
-    @desc "The bot referenced by this item, if any"
-    field :reference_bot, :bot, resolve: assoc(:reference_bot)
-
-    @desc "The time at which the item was last updated"
-    field :updated_at, :datetime
-  end
-
-  connection :home_stream, node_type: :home_stream_item do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -384,7 +353,7 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :conversations, node_type: :conversation do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -400,6 +369,11 @@ defmodule WockyAPI.Schema.UserTypes do
     expiry is/was scheduled.
     """
     field :expires, :datetime
+  end
+
+  object :presence do
+    field :status, non_null(:presence_status)
+    field :user, non_null(:user)
   end
 
   @desc "Parameters for modifying a user"
@@ -552,21 +526,21 @@ defmodule WockyAPI.Schema.UserTypes do
       arg :input, non_null(:user_update_input)
       resolve &User.update_user/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Delete the current user"
     field :user_delete, type: :user_delete_payload do
       resolve &User.delete/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     field :user_hide, type: :user_hide_payload do
       arg :input, non_null(:user_hide_input)
       resolve &User.hide/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 
@@ -575,14 +549,14 @@ defmodule WockyAPI.Schema.UserTypes do
     field :follow, type: :follow_payload do
       arg :input, non_null(:follow_input)
       resolve &User.follow/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
 
     @desc "Stop following another user"
     field :unfollow, type: :unfollow_payload do
       arg :input, non_null(:unfollow_input)
       resolve &User.unfollow/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 
@@ -612,43 +586,39 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
-      changeset_mutation_middleware
+      changeset_mutation_middleware()
     end
   end
 
-  enum :home_stream_item_action do
-    @desc "A newly inserted item"
-    value :insert
+  enum :presence_status do
+    @desc "Online"
+    value :online
 
-    @desc "A update to an existing item"
-    value :update
+    @desc "Offline"
+    value :offline
 
-    @desc "Deletion of an existing item"
-    value :delete
-  end
-
-  @desc "An update to a user's home stream"
-  object :home_stream_update do
-    @desc "The home stream item that has been updated"
-    field :item, :home_stream_item
-
-    @desc "The type of change that has occurred"
-    field :action, :home_stream_item_action
+    # Maybe other items here such as 'DND'
   end
 
   object :user_subscriptions do
-    @desc """
-    Receive updates when home stream items are inserted, removed, or updated
-    """
-    field :home_stream, non_null(:home_stream_update) do
-      user_subscription_config(&User.home_stream_subscription_topic/1)
-    end
-
     @desc """
     Receive an update when a contact's state (following, friend etc) changes
     """
     field :contacts, non_null(:contact) do
       user_subscription_config(&User.contacts_subscription_topic/1)
+    end
+
+    @desc ""
+    field :presence, non_null(:presence) do
+      config fn
+        _, %{context: %{current_user: user}} ->
+          {:ok,
+           topic: User.presence_subscription_topic(user.id),
+           catchup: fn -> User.presence_catchup(user) end}
+
+        _, _ ->
+          {:error, "This operation requires an authenticated user"}
+      end
     end
   end
 end

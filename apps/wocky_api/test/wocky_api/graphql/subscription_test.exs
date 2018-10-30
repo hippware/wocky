@@ -3,9 +3,11 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
   import WockyAPI.ChannelHelper
 
-  alias Faker.Lorem
-  alias Wocky.{Bot, GeoUtils, HomeStream, Repo, Roster, User}
+  alias Wocky.{Bot, GeoUtils, Repo, Roster, User}
+  alias Wocky.Bot
   alias Wocky.Bot.Subscription
+  alias Wocky.GeoUtils
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Watcher.Client
   alias WockyAPI.Callbacks
@@ -25,7 +27,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   describe "watch for visitor count change" do
     setup do
       user2 = Factory.insert(:user)
-      bot = Factory.insert(:bot, public: true)
+      bot = Factory.insert(:bot)
       Subscription.put(user2, bot)
 
       {:ok, user2: user2, bot: bot}
@@ -54,7 +56,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user,
       token: token
     } do
-      Bot.subscribe(bot, user, true)
+      Bot.subscribe(bot, user)
 
       authenticate(user_id, token, socket)
 
@@ -99,126 +101,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     end
   end
 
-  @subscription """
-  subscription {
-    homeStream {
-      action
-      item {
-        key
-        from_jid
-        stanza
-        user {
-          id
-        }
-        referenceBot {
-          id
-        }
-        referenceUser {
-          id
-        }
-      }
-    }
-  }
-  """
-  describe "watch home stream for changes" do
-    setup do
-      user2 = Factory.insert(:user)
-      bot = Factory.insert(:bot, public: true)
-      {:ok, user2: user2, bot: bot}
-    end
-
-    test "Home Stream item updates", %{
-      socket: socket,
-      user2: user2,
-      bot: bot,
-      user: %{id: user_id},
-      token: token
-    } do
-      authenticate(user_id, token, socket)
-
-      ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
-      key = Lorem.word()
-      from_jid = Factory.new_jid()
-      stanza = Lorem.paragraph()
-
-      expected = fn action ->
-        %{
-          result: %{
-            data: %{
-              "homeStream" => %{
-                "action" => action,
-                "item" => %{
-                  "key" => key,
-                  "from_jid" => from_jid,
-                  "stanza" => stanza,
-                  "user" => %{"id" => user_id},
-                  "referenceBot" => %{"id" => bot.id},
-                  "referenceUser" => %{"id" => user2.id}
-                }
-              }
-            }
-          },
-          subscriptionId: subscription_id
-        }
-      end
-
-      HomeStream.put(
-        user_id,
-        key,
-        from_jid,
-        stanza,
-        ref_bot_id: bot.id,
-        ref_user_id: user2.id
-      )
-
-      assert_push "subscription:data", push, 2000
-      assert push == expected.("INSERT")
-
-      HomeStream.put(
-        user_id,
-        key,
-        from_jid,
-        stanza,
-        ref_bot_id: bot.id,
-        ref_user_id: user2.id
-      )
-
-      assert_push "subscription:data", push, 2000
-      assert push == expected.("UPDATE")
-
-      HomeStream.delete(user_id, key)
-      assert_push "subscription:data", push, 2000
-
-      assert push ==
-               %{
-                 result: %{
-                   data: %{
-                     "homeStream" => %{
-                       "action" => "DELETE",
-                       "item" => %{
-                         "key" => key,
-                         "from_jid" => "",
-                         "stanza" => "",
-                         "user" => %{"id" => user_id},
-                         "referenceBot" => nil,
-                         "referenceUser" => nil
-                       }
-                     }
-                   }
-                 },
-                 subscriptionId: subscription_id
-               }
-    end
-
-    test "unauthenticated user attempting subscription", %{socket: socket} do
-      socket
-      |> push_doc(@subscription)
-      |> assert_unauthenticated_reply()
-    end
-  end
-
   describe "client test analogs" do
     test "botGuestVisitors subscription", %{
       socket: socket,
@@ -226,8 +108,8 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user
     } do
       :os.putenv('WOCKY_ENTER_DEBOUNCE_SECONDS', '0')
-      bot = Factory.insert(:bot, user: user, geofence: true, public: true)
-      Bot.subscribe(bot, user, true)
+      bot = Factory.insert(:bot, user: user)
+      Factory.insert(:subscription, bot: bot, user: user)
 
       authenticate(user_id, token, socket)
 
@@ -310,16 +192,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
 
       assert %{
-        result: %{
-          data: %{
-            "contacts" => %{
-              "relationship" => "FRIEND",
-              "user" => %{"id" => user2.id}
-            }
-          }
-        },
-        subscriptionId: subscription_id
-      } == push
+               result: %{
+                 data: %{
+                   "contacts" => %{
+                     "relationship" => "FRIEND",
+                     "user" => %{"id" => user2.id}
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             } == push
     end
 
     test "should notify when a contact type is changed", %{
@@ -340,16 +222,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
 
       assert %{
-        result: %{
-          data: %{
-            "contacts" => %{
-              "relationship" => "FRIEND",
-              "user" => %{"id" => user2.id}
-            }
-          }
-        },
-        subscriptionId: subscription_id
-      } == push
+               result: %{
+                 data: %{
+                   "contacts" => %{
+                     "relationship" => "FRIEND",
+                     "user" => %{"id" => user2.id}
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             } == push
     end
 
     test "should notify when a contact is removed", %{
@@ -370,16 +252,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       assert_push "subscription:data", push, 1000
 
       assert %{
-        result: %{
-          data: %{
-            "contacts" => %{
-              "relationship" => "NONE",
-              "user" => %{"id" => user2.id}
-            }
-          }
-        },
-        subscriptionId: subscription_id
-      } == push
+               result: %{
+                 data: %{
+                   "contacts" => %{
+                     "relationship" => "NONE",
+                     "user" => %{"id" => user2.id}
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             } == push
     end
   end
 

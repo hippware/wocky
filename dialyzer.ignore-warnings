@@ -2,11 +2,6 @@
 :0: Unknown function 'Elixir.Wocky.User.Notifier.
 lib/wocky/repo/intrumenter.ex:3:
 lib/wocky/repo/factory.ex:4:
-lib/wocky/index/algolia_indexer.ex:17: Function update_object/3 has no local return
-lib/wocky/index/algolia_indexer.ex:38: Function do_update_object/2 has no local return
-lib/wocky/index/algolia_indexer.ex:43: Function delete_object/2 has no local return
-lib/wocky/index/algolia_indexer.ex:44: The pattern {'ok', _} can never match the type
-lib/wocky/index/algolia_indexer.ex:48: Function geosearch/3 has no local return
 lib/wocky/push/push.ex:255: Function send_honeybadger/1 has no local return
 lib/wocky_api/phoenix_instrumenter.ex:3: Guard test tuple_size
 lib/wocky_api/pipeline_instrumenter.ex:3: Guard test tuple_size

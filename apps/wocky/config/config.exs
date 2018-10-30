@@ -13,11 +13,6 @@ config :wocky,
   tros_s3_access_key_id: {:system, "AWS_ACCESS_KEY_ID"},
   tros_s3_secret_key: {:system, "AWS_SECRET_ACCESS_KEY"},
 
-  # FTS indexing (Algolia)
-  indexing_system: {:system, "WOCKY_INDEXING_SYSTEM", "test"},
-  user_index_name: {:system, "WOCKY_USER_INDEX_NAME"},
-  bot_index_name: {:system, "WOCKY_BOT_INDEX_NAME"},
-
   # Deployment notifications
   slack_token: {:system, :string, "SLACK_TOKEN"},
 
@@ -37,6 +32,21 @@ config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
   db: {:system, :integer, "REDIS_DB", 0}
+
+config :wocky, :redlock,
+  pool_size: 2,
+  drift_factor: 0.01,
+  max_retry: 3,
+  retry_interval_base: 300,
+  retry_interval_max: 3_000,
+  reconnection_interval_base: 500,
+  reconnection_interval_max: 5_000,
+  servers: [
+    [
+      host: {:system, :string, "REDIS_HOST", "localhost"},
+      port: {:system, :integer, "REDIS_PORT", 6379}
+    ]
+  ]
 
 # location processing
 config :wocky, Wocky.User.GeoFence,
@@ -99,8 +109,6 @@ config :ex_aws,
     {:awscli, "default", 30},
     :instance_role
   ]
-
-config :algolia, application_id: "HIE75ZR7Q7"
 
 config :pigeon, :debug_log, true
 

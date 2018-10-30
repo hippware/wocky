@@ -3,7 +3,7 @@ defmodule Wocky.Callbacks.Bot do
   Callbacks for DB bot changes
   """
 
-  use Wocky.Watcher, type: Wocky.Bot, events: [:insert, :update]
+  use Wocky.Watcher, type: Wocky.Bot, events: [:insert]
 
   alias Wocky.Bot
   alias Wocky.Repo
@@ -13,26 +13,11 @@ defmodule Wocky.Callbacks.Bot do
     update_owner_subscription(new)
   end
 
-  def handle_update(%Event{action: :update, old: old, new: new}) do
-    Bot.maybe_update_hs_items(old, new)
-    update_guests(old, new)
-  end
-
-  defp update_guests(%Bot{geofence: false}, %Bot{geofence: true} = bot) do
-    update_owner_subscription(bot)
-  end
-
-  defp update_guests(%Bot{geofence: true}, %Bot{geofence: false} = bot) do
-    Bot.clear_guests(bot)
-  end
-
-  defp update_guests(_, _), do: :ok
-
   defp update_owner_subscription(bot) do
     %{user: user} = Repo.preload(bot, [:user])
 
     if user != nil do
-      Bot.subscribe(bot, user, bot.geofence)
+      Bot.subscribe(bot, user)
 
       bot
       |> Bot.sub_setup_event()

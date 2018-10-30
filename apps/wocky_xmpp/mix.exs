@@ -80,7 +80,6 @@ defmodule Wocky.XMPP.Mixfile do
     [
       {:wocky, in_umbrella: true},
       {:base16, "~> 1.0"},
-      {:confex, "~> 3.3"},
       {:honeybadger, "~> 0.6"},
       {:idna, "~> 6.0", override: true},
       {:joken, "~> 1.1"},

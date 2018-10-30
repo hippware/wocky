@@ -5,12 +5,12 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   alias Wocky.Bot
   alias Wocky.Bot.{Invitation, Subscription}
+  alias Wocky.Callbacks, as: WockyCallbacks
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.Watcher.Client
-  alias Wocky.Callbacks, as: WockyCallbacks
   alias WockyAPI.Callbacks
 
   setup_all do

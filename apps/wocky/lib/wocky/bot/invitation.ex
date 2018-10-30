@@ -61,6 +61,16 @@ defmodule Wocky.Bot.Invitation do
     |> Repo.one()
   end
 
+  @spec invited?(Bot.t(), User.t()) :: boolean()
+  def invited?(bot, requestor) do
+    result =
+      Invitation
+      |> where([i], i.bot_id == ^bot.id and i.invitee_id == ^requestor.id)
+      |> Repo.one()
+
+    result != nil
+  end
+
   @spec exists?(id() | Bot.t(), User.t()) :: boolean()
   def exists?(bot_or_id, requestor), do: get(bot_or_id, requestor) != nil
 

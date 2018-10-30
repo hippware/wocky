@@ -445,97 +445,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "user search" do
-    setup %{user2: user2} do
-      Repo.delete(user2)
-      :ok
-    end
-
-    @query """
-    query ($term: String!, $limit: Int) {
-      users (search_term: $term, limit: $limit) {
-        id
-      }
-    }
-    """
-
-    test "search results", %{user: user} do
-      u =
-        Factory.insert(
-          :user,
-          first_name: "Bob",
-          last_name: "aaa",
-          handle: "hhh"
-        )
-
-      result = run_query(@query, user, %{"term" => "b"})
-
-      refute has_errors(result)
-      assert result.data == %{"users" => [%{"id" => u.id}]}
-    end
-
-    test "search limit", %{user: user} do
-      Factory.insert_list(20, :user, first_name: "aaa")
-
-      result = run_query(@query, user, %{"term" => "a", "limit" => 10})
-
-      assert %{"users" => results} = result.data
-      assert length(results) == 10
-    end
-  end
-
-  describe "home stream items" do
-    @query """
-    query ($first: Int) {
-      currentUser {
-        homeStream (first: $first) {
-          totalCount
-          edges {
-            node {
-              key
-              reference_bot {
-                id
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    test "get items", %{user: user} do
-      bot = Factory.insert(:bot, user: user)
-
-      items =
-        Factory.insert_list(
-          20,
-          :home_stream_item,
-          user: user,
-          reference_bot: bot
-        )
-
-      result = run_query(@query, user, %{"first" => 1})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "currentUser" => %{
-                 "homeStream" => %{
-                   "totalCount" => 20,
-                   "edges" => [
-                     %{
-                       "node" => %{
-                         "key" => List.last(items).key,
-                         "reference_bot" => %{"id" => bot.id}
-                       }
-                     }
-                   ]
-                 }
-               }
-             }
-    end
-  end
-
   describe "contacts" do
     setup %{user: user, user2: user2} do
       Roster.befriend(user.id, user2.id)
@@ -655,39 +564,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       }
     }
     """
-    test "Should be true with no related bots", %{user: user} do
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be true if any owned geofence bots exist", %{user: user} do
-      Factory.insert(:bot, user: user, geofence: true)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be false if owned bots are not geofence", %{user: user} do
-      Factory.insert(:bot, user: user)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be true if a guest of a geofence bot", %{
-      user: user,
-      user2: user2
-    } do
-      bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:subscription, user: user, bot: bot, guest: true)
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-
-    test "should be true if not a guest of a geofence bot", %{
-      user: user,
-      user2: user2
-    } do
-      bot = Factory.insert(:bot, user: user2)
-      Factory.insert(:subscription, user: user, bot: bot)
+    test "Should always be true", %{user: user} do
       result = run_query(@query, user)
       assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
     end

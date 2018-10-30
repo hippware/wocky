@@ -1,0 +1,60 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wocky-private
+  namespace: wocky-next
+  labels:
+    app: wocky
+    env: next
+spec:
+  ports:
+    - port: 8080
+      name: http
+    - port: 5222
+      name: xmpp
+    - port: 5269
+      name: xmpp-s2s
+    - port: 4369
+      name: epmd
+    - port: 9100
+      name: distribution
+  selector:
+    app: wocky
+    env: next
+  clusterIP: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wocky-public
+  namespace: wocky-next
+  labels:
+    app: wocky
+    env: next
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '300'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: '5'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: 'hippware-logs'
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: 'wocky-next/elb'
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: 'tcp'
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: 'arn:aws:acm:us-west-2:773488857071:certificate/0342584c-d783-4f1f-bfb1-f437c11b53e9'
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '443,5223'
+spec:
+  externalTrafficPolicy: Local
+  ports:
+    - port: 443
+      targetPort: 8080
+      protocol: TCP
+      name: https
+    - port: 5223
+      targetPort: 5222
+      protocol: TCP
+      name: xmpps
+  selector:
+    app: wocky
+    env: next
+  type: LoadBalancer

@@ -10,7 +10,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   alias WockyAPI.Resolvers.User
 
   connection :notifications, node_type: :notification do
-    total_count_field
+    total_count_field()
 
     edge do
     end
@@ -132,7 +132,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       @desc "ID which all results should be older than"
       arg :before_id, :aint
 
-      connection_complexity
+      connection_complexity()
       resolve &Notification.get_notifications/3
     end
   end

@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wocky-config
+  namespace: wocky-next
+  labels:
+    app: wocky
+    env: next
+data:
+  WOCKY_ENV: prod
+  WOCKY_INST: next
+  WOCKY_HOST: next.dev.tinyrobot.com
+  WOCKY_IQ_CRASH_RESPONSE: error
+  WOCKY_TROS_S3_BUCKET: wocky-kube-tros-next
+  WOCKY_PUSH_ENABLED: "true"
+  WOCKY_PUSH_TOPIC: "com.hippware.ios.ChatNet"
+  WOCKY_PUSH_URI_PREFIX: "tinyrobotNext"
+  WOCKY_ENABLE_BYPASS: "true"
+  WOCKY_DB_HOST: wocky-next.cx7fev3pluk8.us-west-2.rds.amazonaws.com
+  WOCKY_DB_NAME: wocky_next
+  WOCKY_DB_WATCHER_QUEUE: wocky-db-watcher-next.fifo
+  WOCKY_DB_WATCHER_REGION: us-west-2
+  AWS_ACCESS_KEY_ID: AKIAJYPIJ4FONNTYC3RQ
+  HONEYBADGER_ENV: next
+  REPLACE_OS_VARS: "true"
+  BAMBOO_ADAPTER: Bamboo.MandrillAdapter
+  REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
+  REDIS_DB: "4"
+  DAWDLE_QUEUES: "wocky-dawdle-next"

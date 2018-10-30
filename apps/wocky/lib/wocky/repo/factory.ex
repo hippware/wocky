@@ -4,6 +4,7 @@ defmodule Wocky.Repo.Factory do
   use ExMachina.Ecto, repo: Wocky.Repo
   use Wocky.JID
 
+  alias Ecto.Adapters.SQL
   alias Faker.Address
   alias Faker.Company
   alias Faker.Internet
@@ -14,11 +15,9 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
   alias Wocky.Bot.Item
-  alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.Conversation
   alias Wocky.GeoUtils
-  alias Wocky.HomeStream.Item, as: HomeStreamItem
   alias Wocky.Message
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
@@ -80,15 +79,6 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def share_factory do
-    %Share{
-      user: build(:user),
-      bot: build(:bot),
-      sharer: build(:user),
-      geofence: false
-    }
-  end
-
   def subscription_factory do
     %Subscription{
       user: build(:user),
@@ -142,15 +132,6 @@ defmodule Wocky.Repo.Factory do
       lon: Address.longitude(),
       accuracy: 10,
       is_fetch: false
-    }
-  end
-
-  def home_stream_item_factory do
-    %HomeStreamItem{
-      key: new_jid(),
-      from_jid: new_jid(),
-      stanza: Lorem.paragraph(),
-      class: :item
     }
   end
 
@@ -269,7 +250,7 @@ defmodule Wocky.Repo.Factory do
     query = "SELECT id FROM mam_server_user WHERE user_name = $1"
 
     id =
-      case Ecto.Adapters.SQL.query!(Repo, query, [owner.id]).rows do
+      case SQL.query!(Repo, query, [owner.id]).rows do
         [] ->
           query = """
           INSERT INTO mam_server_user (user_name, server)
@@ -277,7 +258,7 @@ defmodule Wocky.Repo.Factory do
           RETURNING id
           """
 
-          Ecto.Adapters.SQL.query!(Repo, query, [owner.id, "test"]).rows
+          SQL.query!(Repo, query, [owner.id, "test"]).rows
           |> hd
           |> hd
 
@@ -298,7 +279,7 @@ defmodule Wocky.Repo.Factory do
       |> :erlang.term_to_binary()
 
     id =
-      Ecto.Adapters.SQL.query!(Repo, query, [
+      SQL.query!(Repo, query, [
         :erlang.unique_integer([:monotonic, :positive]),
         id,
         "",

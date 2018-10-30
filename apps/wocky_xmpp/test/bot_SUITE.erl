@@ -14,13 +14,12 @@
 
 -import(test_helper, [expect_iq_success/2, expect_iq_error/2,
                       rsm_elem/1, decode_rsm/1, check_rsm/5,
-                      get_hs_stanza/0, bot_node/1,
-                      check_hs_result/3, expect_iq_success_u/3,
+                      bot_node/1,
                       publish_item_stanza/4, publish_item_stanza/5,
                       retract_item_stanza/2, subscribe_stanza/0,
                       node_el/2, node_el/3, cdata_el/2,
                       ensure_all_clean/1, query_el/1,
-                      add_to_s/2, check_home_stream_sizes/2
+                      add_to_s/2
                      ]).
 
 -export([create_bot_stanza/1,
@@ -207,15 +206,11 @@ reset_tables(Config) ->
 %%--------------------------------------------------------------------
 
 create(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
+    escalus:story(Config, [{alice, 1}],
+      fun(Alice) ->
         % Successfully create a bot
         Stanza = expect_iq_success(create_stanza(Config), Alice),
         check_returned_bot(Stanza, expected_create_fields()),
-
-        % No home stream updates should occur for private bots
-        timer:sleep(400),
-        check_home_stream_sizes(0, [Alice, Bob]),
 
         % Check functionality of deprecated integer radius
         CreateFields2 = [{"radius", "int", 10} |
@@ -493,7 +488,6 @@ get_subscribed(Config) ->
 
 sorting(Config) ->
     AliceUser = ?wocky_repo:get(?wocky_user, ?ALICE),
-    ?wocky_repo:delete_all(?wocky_home_stream_item),
     ?wocky_repo:delete_all(?wocky_bot),
     Bots = ?wocky_factory:insert_list(10, bot,
                                       #{user => AliceUser, shortname => nil}),
@@ -569,35 +563,17 @@ publish_item(Config) ->
         NoteID = publish_item(
                    ?BOT, <<"ignored">>, Title, Content, undefined, Alice),
 
-
         expect_item_pub_notification(Bob),
-        % Carol and Karen are subscribers, and so receive a notification
-        % Bob is a viewer (via share) but not subscribed,
-        % so does not receive anything
-        lists:foreach(
-          expect_item_publication(_, ?BOT, Title, Content),
-          [Carol, Karen]),
-
-        % As the publisher, Alice should *not* get a notification,
-        % so her HS should be empty
-        Stanza = expect_iq_success_u(get_hs_stanza(), Alice, Alice),
-        check_hs_result(Stanza, 0, false),
 
         % As someone to whom the bot has been shared, Bob can publish items
-        % to the bot and all the subscribers are notified.
+        % to the bot
         publish_item_watching(
           ?BOT, ?BOBS_ITEM_ID, Title, Content, undefined, Bob),
-        lists:foreach(
-          expect_item_publication(_, ?BOT, Title, Content),
-          [Alice, Carol, Karen]),
 
-        % Bob can update his own item and subscribers will be informed.
+        % Bob can update his own item
         NewContent = <<"New Content">>,
         publish_item_watching(
           ?BOT, ?BOBS_ITEM_ID, Title, NewContent, undefined, Bob),
-        lists:foreach(
-          expect_item_publication(_, ?BOT, Title, NewContent),
-          [Alice, Carol, Karen]),
 
         % Robert can't view the bot so can't publish a note to it:
         expect_iq_error(
@@ -652,11 +628,6 @@ edit_item(Config) ->
         NoteID = publish_item(?BOT, Alice),
         publish_item(?BOT, NoteID, Title, Content, undefined, Alice),
 
-        % Carol and Karen are subscribers, and so receive a notification
-        % Bob is an affiliate but not subscribed, so does not receive anything
-        expect_item_publication(Carol, ?BOT, Title, Content),
-        expect_item_publication(Karen, ?BOT, Title, Content),
-
         % Nobody else can edit an item to the bot besides the owner
         expect_iq_error(
           publish_item_stanza(?BOT, NoteID, Title, Content),
@@ -675,7 +646,7 @@ get_items(Config) ->
       fun(Alice, Bob, Carol, Karen, Tim) ->
         % Alice publishes a bunch of items on her bot
         IDs = lists:map(
-          add_item(Alice, [Carol, Karen], _), lists:seq(0, ?CREATED_ITEMS-1)),
+          add_item(Alice, _), lists:seq(0, ?CREATED_ITEMS-1)),
 
         % Bob can get items because he has the bot shared to him
         get_items(Bob, #rsm_in{max = 10}, IDs, 0, 9),
@@ -1209,27 +1180,6 @@ delete_stanza() -> delete_stanza(?BOT).
 delete_stanza(Bot) ->
     test_helper:iq_set(?NS_BOT, node_el(Bot, <<"delete">>)).
 
-expect_item_publication(Client, BotID, Title, Content) ->
-    S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-    I = check_hs_result(S, any, false),
-    escalus:assert(
-      is_publication_update(BotID, Title, Content, _),
-      hd((lists:last(I))#item.stanzas)).
-
-is_publication_update(BotID, Title, Content, Stanza) ->
-    R = do([error_m ||
-            [Event] <- check_get_children(Stanza, <<"message">>),
-            [Item] <- check_get_children(Event, <<"event">>,
-                                         [{<<"xmlns">>, ?NS_BOT_EVENT},
-                                          {<<"node">>, bot_node(BotID)}]),
-            [Entry] <- {ok, Item#xmlel.children},
-            check_get_children(Entry, <<"entry">>, [{<<"xmlns">>, ?NS_ATOM}]),
-            check_children_cdata(Entry, [{<<"title">>, Title},
-                                         {<<"content">>, Content}]),
-            ok
-           ]),
-    R =:= ok.
-
 check_get_children(Els, Name) -> check_get_children(Els, Name, []).
 
 check_get_children([], Name, _CheckAttrs) -> {error, {el_not_found, Name}};
@@ -1275,34 +1225,11 @@ is_item_pub_notification(Stanza = #xmlel{name = <<"message">>}) ->
     end;
 is_item_pub_notification(_) -> false.
 
-expect_item_retraction(Client, BotID, NoteID) ->
-    S = expect_iq_success_u(get_hs_stanza(), Client, Client),
-    I = check_hs_result(S, any, false),
-    escalus:assert(
-      is_retraction_update(BotID, NoteID, _),
-      hd((lists:last(I))#item.stanzas)).
-
-is_retraction_update(BotID, NoteID, Stanza) ->
-    R = do([error_m ||
-            [Event] <- check_get_children(Stanza, <<"message">>),
-            [Item] <- check_get_children(Event, <<"event">>,
-                                         [{<<"xmlns">>, ?NS_BOT_EVENT},
-                                          {<<"node">>, bot_node(BotID)}]),
-            [] <- check_get_children(Item, <<"retract">>,
-                                     [{<<"id">>, NoteID}]),
-            ok
-           ]),
-    R =:= ok.
-
-add_item(Client, Subs, N) ->
+add_item(Client, N) ->
     Title = item_title(N),
     Content = item_content(N),
     NoteID = publish_item(
                ?BOT, <<"ignored">>, Title, Content, undefined, Client),
-
-    lists:foreach(
-        expect_item_publication(_, ?BOT, Title, Content),
-        Subs),
     NoteID.
 
 get_items(Client, RSM, IDs, First, Last) ->
@@ -1477,41 +1404,6 @@ watch(BotBJID, Client) ->
 unwatch(Bot, Client) ->
     Stanza = escalus_stanza:presence_direct(Bot, <<"unavailable">>),
     escalus:send(Client, Stanza).
-
-share_stanza(BotID, From, Target, Geofence) ->
-    fun_chain:first(
-      BotID,
-      share_stanza(Geofence),
-      escalus_stanza:to(Target),
-      escalus_stanza:from(From)
-     ).
-
-share_stanza(BotID, Geofence) ->
-    #xmlel{name = <<"message">>,
-           attrs = [{<<"type">>, <<"headline">>}],
-           children = [cdata_el(<<"body">>, <<"Here's a bot!">>),
-                       bot_el(BotID, Geofence)]}.
-
-bot_el(BotID, Geofence) ->
-    #xmlel{name = <<"bot">>,
-           attrs = [{<<"xmlns">>, ?NS_BOT}],
-           children = [cdata_el(<<"jid">>, bot_jid(BotID)),
-                       cdata_el(<<"id">>, BotID),
-                       cdata_el(<<"server">>, ?SERVER),
-                       action_el(Geofence)]}.
-
-action_el(false) -> cdata_el(<<"action">>, <<"share">>);
-action_el(true) -> cdata_el(<<"action">>, <<"geofence share">>).
-
-is_bot_action_hs_notification(JID, Action,
-                              Stanza = #xmlel{name = <<"message">>}) ->
-    case xml:get_path_s(Stanza,
-                        [{elem, <<"notification">>},
-                         {elem, <<"item">>}, {elem, <<"message">>}]) of
-        <<>> -> false;
-        SubStanza -> test_helper:is_bot_action(JID, Action, SubStanza)
-    end;
-is_bot_action_hs_notification(_, _, _) -> false.
 
 is_bot_update_notification(Stanza = #xmlel{name = <<"message">>}) ->
     case xml:get_path_s(Stanza,

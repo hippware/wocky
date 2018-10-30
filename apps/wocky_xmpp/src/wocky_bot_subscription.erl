@@ -10,7 +10,7 @@
 
 -include("wocky.hrl").
 
--export([subscribe/3,
+-export([subscribe/2,
          unsubscribe/2,
          retrieve_subscribers/2,
          get_sub_count/1,
@@ -24,8 +24,8 @@
 %%% Action - subscribe
 %%%===================================================================
 
-subscribe(User, Bot, Guest) ->
-    ?wocky_bot:subscribe(Bot, User, Guest),
+subscribe(User, Bot) ->
+    ?wocky_bot:subscribe(Bot, User),
     {ok, make_subscriber_count_element(Bot)}.
 
 %%%===================================================================
@@ -85,4 +85,4 @@ get_visitor_count(Bot) ->
     ?wocky_query_utils:get_count(?wocky_bot:visitors_query(Bot), user_id).
 
 get_guest_count(Bot) ->
-    ?wocky_query_utils:get_count(?wocky_bot:guests_query(Bot), user_id).
+    ?wocky_query_utils:get_count(?wocky_bot:subscribers_query(Bot), user_id).
