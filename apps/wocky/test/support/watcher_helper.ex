@@ -7,7 +7,7 @@ defmodule Wocky.WatcherHelper do
   alias Wocky.Callbacks
   alias Wocky.Push.Sandbox, as: PushSandbox
   alias Wocky.Repo
-  alias WOcky.User
+  alias Wocky.User
   alias Wocky.Watcher.Client, as: WatcherClient
 
   defmacro __using__(_) do
