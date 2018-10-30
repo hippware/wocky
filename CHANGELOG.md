@@ -5,10 +5,30 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+--------
+# `NEXT`
+
+* Set up 'Next' server environment (#1948)
+* Remove old features (PR #1913)
+* GraphQL presence management (#1671, PR #1934)
+* Migrate all unit tests to ExUnit (#1885)
+* Update: jsx (PR #1962), bimap (PR #1963)
+* Add checkpoint migration and remove bot_shares (PR #1964)
+* Make some parts of the users tests synchronous (PR #1965)
+* Update: faker (PR #1968), excoveralls (PR #1967)
+
+
+----------
+# `MASTER`
+
+
+# 2018.10.23+r14cec96
+
 * GraphQL roster management (#1832)
 * Add schema docs for contacts (PR #1943)
 * Update: phoenix_pubsub (PR #1944)
 * Geofence not triggering on location embedded within botInvitationRespond (#1939)
+* Update: espec (PR #1949), geocalc (PR #1950)
 
 
 # 2018.10.17+r06b8c08
