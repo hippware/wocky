@@ -105,7 +105,7 @@ defmodule WockyAPI.Resolvers.Bot do
            |> Map.put(:id, ID.new())
            |> Map.put(:user_id, user.id)
            |> Bot.insert(),
-         :ok <- maybe_update_location(input, user, bot) do
+         {:ok, _} <- maybe_update_location(input, user, bot) do
       {:ok, bot}
     end
   end
@@ -122,13 +122,13 @@ defmodule WockyAPI.Resolvers.Bot do
         updates = parse_lat_lon(input[:values])
 
         with {:ok, bot} <- Bot.update(bot, updates),
-             :ok <- maybe_update_location(input, requestor, bot) do
+             {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, bot}
         end
     end
   end
 
-  defp maybe_update_location(%{user_location: l}, user, %{geofence: true} = bot)
+  defp maybe_update_location(%{user_location: l}, user, bot)
        when not is_nil(l) do
     bot
     |> Bot.sub_setup_event()
@@ -139,13 +139,10 @@ defmodule WockyAPI.Resolvers.Bot do
     params = Map.put(l, :resource, l[:device] || l[:resource])
     location = struct(Location, params)
 
-    with {:ok, loc} <- User.set_location(user, location) do
-      User.check_location_for_bot(user, loc, bot)
-      :ok
-    end
+    User.set_location_for_bot(user, location, bot)
   end
 
-  defp maybe_update_location(_, _, _), do: :ok
+  defp maybe_update_location(_, _, _), do: {:ok, :skip}
 
   defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
     Map.put(input, :location, GeoUtils.point(lat, lon))
@@ -193,16 +190,11 @@ defmodule WockyAPI.Resolvers.Bot do
       bot ->
         Bot.subscribe(bot, requestor, input[:guest] || false)
 
-        with :ok <- maybe_update_subscriber_location(input, requestor, bot) do
+        with {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, true}
         end
     end
   end
-
-  defp maybe_update_subscriber_location(%{guest: true} = input, requestor, bot),
-    do: maybe_update_location(input, requestor, bot)
-
-  defp maybe_update_subscriber_location(_, _, _), do: :ok
 
   def unsubscribe(_root, %{input: %{id: bot_id}}, %{
         context: %{current_user: requestor}
@@ -318,7 +310,7 @@ defmodule WockyAPI.Resolvers.Bot do
       ) do
     with %Invitation{} = invitation <- Invitation.get(id, requestor),
          {:ok, result} <- Invitation.respond(invitation, accept?, requestor),
-         :ok <- maybe_update_location(input, requestor, result.bot) do
+         {:ok, _} <- maybe_update_location(input, requestor, result.bot) do
       {:ok, true}
     else
       nil -> {:error, "Invalid invitation"}

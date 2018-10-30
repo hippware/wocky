@@ -421,22 +421,44 @@ defmodule Wocky.User do
     end
   end
 
+  @doc """
+  Sets the user's current location to the provided Location struct and runs the
+  geofence calculation for all of the user's subscribed bots.
+  """
   @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
   def set_location(user, location) do
+    with {:ok, loc} = result <- insert_location(user, location) do
+      if !hidden?(user),
+        do: GeoFence.check_for_bot_events(loc, user)
+
+      result
+    end
+  end
+
+  @doc """
+  Sets the user's current location to the provided Location struct and runs the
+  geofence calculation for the specified bot only and with debouncing disabled.
+  """
+  @spec set_location_for_bot(t, Location.t(), Bot.t()) ::
+          {:ok, Location.t()} | {:error, any}
+  def set_location_for_bot(user, location, bot) do
+    with {:ok, loc} = result <- insert_location(user, location) do
+      if !hidden?(user),
+        do: GeoFence.check_for_bot_event(bot, loc, user)
+
+      result
+    end
+  end
+
+  def insert_location(user, location) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
     captured_at = normalize_captured_at(location)
     nloc = %Location{location | lat: nlat, lon: nlon, captured_at: captured_at}
 
-    case insert_location(user, nloc) do
-      {:ok, loc} = result ->
-        if !hidden?(user),
-          do: GeoFence.check_for_bot_events(loc, user)
-
-        result
-
-      {:error, _} = error ->
-        error
-    end
+    user
+    |> Ecto.build_assoc(:locations)
+    |> Location.changeset(Map.from_struct(nloc))
+    |> Repo.insert()
   end
 
   defp normalize_captured_at(%Location{captured_at: time})
@@ -444,25 +466,6 @@ defmodule Wocky.User do
        do: time
 
   defp normalize_captured_at(_), do: DateTime.utc_now()
-
-  def insert_location(user, location) do
-    user
-    |> Ecto.build_assoc(:locations)
-    |> Location.changeset(Map.from_struct(location))
-    |> Repo.insert()
-  end
-
-  @doc """
-  Runs the geofence calculation, but for only one bot and without
-  debouncing enabled.
-  """
-  @spec check_location_for_bot(t, Location.t(), Bot.t()) :: :ok
-  def check_location_for_bot(user, loc, bot) do
-    if !hidden?(user),
-      do: GeoFence.check_for_bot_event(bot, loc, user)
-
-    :ok
-  end
 
   @doc "Removes the user from the database"
   @spec delete(id) :: :ok | no_return
