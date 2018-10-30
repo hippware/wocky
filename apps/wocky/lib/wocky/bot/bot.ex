@@ -13,8 +13,8 @@ defmodule Wocky.Bot do
   alias Ecto.{Changeset, Queryable, UUID}
   alias Geocalc.Point
   alias Wocky.Block
-  alias Wocky.Bot.Item
   alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
   alias Wocky.Bot.Share
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils

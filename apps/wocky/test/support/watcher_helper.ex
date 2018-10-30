@@ -2,46 +2,53 @@ defmodule Wocky.WatcherHelper do
   @moduledoc """
   Module to set up the db watcher/callback system for test cases that require it
   """
-  alias Wocky.Push.Sandbox
+
+  alias Ecto.Adapters.SQL.Sandbox, as: SQLSandbox
+  alias Wocky.Callbacks
+  alias Wocky.Push.Sandbox, as: PushSandbox
+  alias Wocky.Repo
+  alias WOcky.User
+  alias Wocky.Watcher.Client, as: WatcherClient
 
   defmacro __using__(_) do
     quote do
       use ExUnit.Case, async: false
+
       import unquote(__MODULE__)
       import Wocky.Eventually
 
       setup_all do
-        Wocky.Watcher.Client.clear_all_subscriptions()
-        Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
+        WatcherClient.clear_all_subscriptions()
+        SQLSandbox.mode(Wocky.Repo, :auto)
         # Give any DB notifications still in the system from previous tests
         # a grace period to finish up before we start the watcher
-        :timer.sleep(500)
-        Wocky.Callbacks.register()
+        Process.sleep(500)
+        Callbacks.register()
         Application.start(:wocky_db_watcher)
-        Wocky.Watcher.Client.start_link()
+        WatcherClient.start_link()
 
         # Because we can't use the Sandbox in its :manual mode (because it doesn't
         # cause the NOTIFY actions in the DB to fire) we have to do our own cleanup
         on_exit(fn ->
           Application.stop(:wocky_db_watcher)
-          Wocky.Repo.delete_all(Wocky.User)
+          Repo.delete_all(User)
         end)
       end
     end
   end
 
-  def no_more_push_notifications() do
-    msgs = Sandbox.wait_notifications(global: true)
+  def no_more_push_notifications do
+    msgs = PushSandbox.wait_notifications(global: true)
     Enum.empty?(msgs)
   end
 
   def clear_expected_notifications(count) do
     result =
       length(
-        Sandbox.wait_notifications(global: true, timeout: 500, count: count)
+        PushSandbox.wait_notifications(global: true, timeout: 500, count: count)
       ) == count
 
-    Sandbox.clear_notifications(global: true)
+    PushSandbox.clear_notifications(global: true)
     result
   end
 end
