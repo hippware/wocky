@@ -51,7 +51,7 @@ defmodule Wocky.Release.Mixfile do
     [
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "recompile"],
-      lint: ["elvis", "credo --strict"],
+      lint: ["elvis", "credo"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       epmd: &run_epmd/1
