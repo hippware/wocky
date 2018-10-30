@@ -18,7 +18,9 @@ defmodule Wocky.User.UserTest do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
+  alias Wocky.User.BotEvent
   alias Wocky.User.InviteCode
+  alias Wocky.User.Location
 
   setup do
     user = Factory.insert(:user, resource: "testing")
@@ -57,6 +59,20 @@ defmodule Wocky.User.UserTest do
 
     test "when the jid has no user ID" do
       refute "" |> JID.make() |> User.get_by_jid()
+    end
+  end
+
+  describe "get_user/2" do
+    test "should return the requested user", ctx do
+      assert %User{} = User.get_user(ctx.id)
+      refute User.get_user(ID.new())
+    end
+
+    test "should not return a blocked user", ctx do
+      user2 = Factory.insert(:user)
+      Block.block(ctx.user, user2)
+
+      refute User.get_user(user2.id, ctx.user)
     end
   end
 
@@ -272,6 +288,82 @@ defmodule Wocky.User.UserTest do
       assert new_user.avatar == ctx.avatar_url
 
       refute Metadata.get(old_avatar_id)
+    end
+  end
+
+  describe "set_location/2" do
+    setup ctx do
+      user2 = Factory.insert(:user)
+      bot = Factory.insert(:bot, user: user2)
+
+      Bot.subscribe(bot, ctx.user)
+
+      {:ok, bot: bot, lat: Bot.lat(bot), lon: Bot.lon(bot)}
+    end
+
+    test "should save the location to the database", ctx do
+      location = %Location{
+        lat: ctx.lat,
+        lon: ctx.lon,
+        accuracy: 10,
+        resource: "testing",
+        captured_at: DateTime.utc_now()
+      }
+
+      assert {:ok, %Location{id: id}} = User.set_location(ctx.user, location)
+      assert Repo.get(Location, id)
+    end
+
+    test "should initiate geofence processing", ctx do
+      assert User.set_location(ctx.user, "testing", ctx.lat, ctx.lon, 10) == :ok
+      assert BotEvent.get_last_event_type(ctx.id, ctx.bot.id) == :transition_in
+    end
+
+    test "should not initiate geofence processing if the user is hidden", ctx do
+      {:ok, user} = User.hide(ctx.user, true)
+
+      assert User.set_location(user, "testing", ctx.lat, ctx.lon, 10) == :ok
+      refute BotEvent.get_last_event(user.id, ctx.bot.id)
+    end
+  end
+
+  describe "set_location_for_bot/3" do
+    setup ctx do
+      user2 = Factory.insert(:user)
+      bot = Factory.insert(:bot, user: user2)
+
+      Bot.subscribe(bot, ctx.user)
+
+      location = %Location{
+        lat: Bot.lat(bot),
+        lon: Bot.lon(bot),
+        accuracy: 10,
+        resource: "testing",
+        captured_at: DateTime.utc_now()
+      }
+
+      {:ok, bot: bot, location: location}
+    end
+
+    test "should save the location to the database", ctx do
+      assert {:ok, %Location{id: id}} =
+        User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
+
+      assert Repo.get(Location, id)
+    end
+
+    test "should initiate geofence processing for that bot", ctx do
+      assert {:ok, _} =
+        User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
+
+      assert Bot.subscription(ctx.bot, ctx.user) == :visiting
+    end
+
+    test "should not initiate geofence processing if the user is hidden", ctx do
+      {:ok, user} = User.hide(ctx.user, true)
+
+      assert {:ok, _} = User.set_location_for_bot(user, ctx.location, ctx.bot)
+      assert Bot.subscription(ctx.bot, ctx.user) == :subscribed
     end
   end
 
@@ -631,35 +723,55 @@ defmodule Wocky.User.UserTest do
     end
   end
 
-  describe "hide/2" do
-    test "should set the user's hidden field correctly", ctx do
+  describe "hiding" do
+    test "should set the user hidden forever", ctx do
       {:ok, user} = User.hide(ctx.user, true)
-      assert Repo.get(User, ctx.id).hidden_until == User.forever_ts()
 
-      {:ok, user} = User.hide(user, false)
-      refute Repo.get(User, ctx.id).hidden_until
+      assert user.hidden_until == User.forever_ts()
+      assert User.hidden_state(user) == {true, nil}
+      assert User.hidden?(user)
 
-      ts = Timestamp.shift(days: 1)
-      User.hide(user, ts)
-      assert Repo.get(User, ctx.id).hidden_until == ts
+      id = ctx.id
+      query = User |> where(id: ^id) |> User.filter_hidden()
+      assert Repo.all(query) == []
     end
-  end
 
-  describe "hidden_state/1" do
-    test "should report the user's state correctly", ctx do
-      {:ok, user} = User.hide(ctx.user, true)
-      assert User.hidden_state(Repo.get(User, ctx.id)) == {true, nil}
-
-      {:ok, user} = User.hide(user, false)
-      assert User.hidden_state(Repo.get(User, ctx.id)) == {false, nil}
-
-      expire = Timestamp.shift(days: -1)
-      {:ok, user} = User.hide(user, expire)
-      assert User.hidden_state(Repo.get(User, ctx.id)) == {false, expire}
-
+    test "should set the user hidden for a limited time", ctx do
       expire = Timestamp.shift(days: 1)
-      {:ok, _} = User.hide(user, expire)
-      assert User.hidden_state(Repo.get(User, ctx.id)) == {true, expire}
+      {:ok, user} = User.hide(ctx.user, expire)
+
+      assert user.hidden_until == expire
+      assert User.hidden_state(user) == {true, expire}
+      assert User.hidden?(user)
+
+      id = ctx.id
+      query = User |> where(id: ^id) |> User.filter_hidden()
+      assert Repo.all(query) == []
+    end
+
+    test "should unhide a hidden user", ctx do
+      {:ok, user} = User.hide(ctx.user, false)
+
+      refute user.hidden_until
+      assert User.hidden_state(user) == {false, nil}
+      refute User.hidden?(user)
+
+      id = ctx.id
+      query = User |> where(id: ^id) |> User.filter_hidden()
+      refute Repo.all(query) == []
+    end
+
+    test "should unhide a user whose hiding expired", ctx do
+      expire = Timestamp.shift(days: -1)
+      {:ok, user} = User.hide(ctx.user, expire)
+
+      assert user.hidden_until == expire
+      assert User.hidden_state(user) == {false, expire}
+      refute User.hidden?(user)
+
+      id = ctx.id
+      query = User |> where(id: ^id) |> User.filter_hidden()
+      refute Repo.all(query) == []
     end
   end
 

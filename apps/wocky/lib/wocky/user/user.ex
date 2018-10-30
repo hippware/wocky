@@ -210,13 +210,9 @@ defmodule Wocky.User do
   def update(%User{} = user, fields) do
     changeset = changeset(user, fields)
 
-    case Repo.update(changeset) do
-      {:ok, user} ->
-        maybe_send_welcome(user)
-        {:ok, user}
-
-      {:error, _} = error ->
-        error
+    with {:ok, updated_user} <- Repo.update(changeset) do
+      maybe_send_welcome(updated_user)
+      {:ok, updated_user}
     end
   end
 
