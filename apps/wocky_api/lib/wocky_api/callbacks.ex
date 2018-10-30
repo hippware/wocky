@@ -3,7 +3,13 @@ defmodule WockyAPI.Callbacks do
   Initialisation for wocky DB watcher callbacks
   """
 
-  alias WockyAPI.Callbacks.{Bot, BotSubscription, HomeStreamItem, Notification, RosterItem}
+  alias WockyAPI.Callbacks.{
+    Bot,
+    BotSubscription,
+    HomeStreamItem,
+    Notification,
+    RosterItem
+  }
 
   @modules [Bot, BotSubscription, HomeStreamItem, Notification, RosterItem]
 

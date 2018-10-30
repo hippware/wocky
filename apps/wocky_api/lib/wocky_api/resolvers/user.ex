@@ -145,6 +145,7 @@ defmodule WockyAPI.Resolvers.User do
       user: item.contact,
       relationship: map_relationship(relationship)
     }
+
     topic = contacts_subscription_topic(item.user_id)
 
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])
