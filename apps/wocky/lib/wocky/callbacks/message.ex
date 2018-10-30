@@ -1,6 +1,6 @@
 defmodule Wocky.Callbacks.Message do
   @moduledoc """
-  Callbacks for DB bot changes
+  Callbacks for DB message changes
   """
 
   use Wocky.Watcher, type: Wocky.Message, events: [:insert]
