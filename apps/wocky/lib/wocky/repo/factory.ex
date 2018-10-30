@@ -4,7 +4,6 @@ defmodule Wocky.Repo.Factory do
   use ExMachina.Ecto, repo: Wocky.Repo
   use Wocky.JID
 
-  alias Ecto.Adapters.SQL
   alias Faker.Address
   alias Faker.Company
   alias Faker.Internet
@@ -16,12 +15,10 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Invitation
   alias Wocky.Bot.Item
   alias Wocky.Bot.Subscription
-  alias Wocky.Conversation
   alias Wocky.GeoUtils
   alias Wocky.Message
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
-  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Roster.InitialContact
   alias Wocky.Roster.Item, as: RosterItem
@@ -86,14 +83,11 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def conversation_factory do
-    message = "<message>" <> Lorem.sentence() <> "</message>"
-
-    %Conversation{
-      id: :rand.uniform(0x7FFFFFFFFFFFFFFF),
-      other_jid: new_jid(),
-      message: message,
-      outgoing: true
+  def message_factory do
+    %Message{
+      sender: build(:user),
+      recipient: build(:user),
+      message: Lorem.paragraph()
     }
   end
 
@@ -244,61 +238,6 @@ defmodule Wocky.Repo.Factory do
 
   def new_jid do
     ID.new() |> JID.make(Lorem.word(), Lorem.word()) |> JID.to_binary()
-  end
-
-  def insert_message(owner, other) do
-    query = "SELECT id FROM mam_server_user WHERE user_name = $1"
-
-    id =
-      case SQL.query!(Repo, query, [owner.id]).rows do
-        [] ->
-          query = """
-          INSERT INTO mam_server_user (user_name, server)
-          VALUES ($1, $2)
-          RETURNING id
-          """
-
-          SQL.query!(Repo, query, [owner.id, "test"]).rows
-          |> hd
-          |> hd
-
-        rows ->
-          hd(hd(rows))
-      end
-
-    query = """
-    INSERT INTO mam_message (id, user_id, from_jid, remote_bare_jid, remote_resource, direction, message)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING id
-    """
-
-    message =
-      ("<message>" <> Lorem.paragraph() <> "</message>")
-      |> :exml.parse()
-      |> elem(1)
-      |> :erlang.term_to_binary()
-
-    id =
-      SQL.query!(Repo, query, [
-        :erlang.unique_integer([:monotonic, :positive]),
-        id,
-        "",
-        other.id,
-        "",
-        "I",
-        message
-      ]).rows
-      |> hd
-      |> hd
-
-    %Message{
-      id: id,
-      incoming: true,
-      user_id: owner.id,
-      other_user_id: other.id,
-      message: message
-    }
-    |> Message.fix()
   end
 
   # Handles have a more restricted set of characters than any of the Faker

@@ -329,21 +329,49 @@ defmodule Wocky.RosterTest do
     end
 
     test "should return true if the user has 'to' subscription", ctx do
-      Roster.put(default_item(ctx, subscription: :to))
-
-      assert Roster.follower?(ctx.user.id, ctx.contact.id)
+      assert Roster.follower?(ctx.follower.id, ctx.followee.id)
     end
 
     test "should return false if the user does not have 'both' or 'to' subscription",
          ctx do
-      Roster.put(default_item(ctx, subscription: :from))
-
-      refute Roster.follower?(ctx.user.id, ctx.contact.id)
+      refute Roster.follower?(ctx.followee.id, ctx.follower.id)
     end
 
     test "should return false for non-existant contacts", ctx do
       refute Roster.follower?(ctx.user.id, ID.new())
       refute Roster.follower?(ctx.user.id, ctx.rosterless_user.id)
+    end
+  end
+
+  describe "followee?/2" do
+    test "should return true when a user is subscribed", ctx do
+      assert Roster.followee?(ctx.user.id, ctx.contact.id)
+    end
+
+    test "should return false if the user has blocked the contact", ctx do
+      Block.block(ctx.user, ctx.contact)
+
+      refute Roster.followee?(ctx.user.id, ctx.contact.id)
+    end
+
+    test "should return false if the user is blocked by the contact", ctx do
+      Block.block(ctx.contact, ctx.user)
+
+      refute Roster.followee?(ctx.user.id, ctx.contact.id)
+    end
+
+    test "should return true if the user has 'from' subscription", ctx do
+      assert Roster.followee?(ctx.followee.id, ctx.follower.id)
+    end
+
+    test "should return false if the user does not have 'both' or 'from' subscription",
+         ctx do
+      refute Roster.followee?(ctx.follower.id, ctx.followee.id)
+    end
+
+    test "should return false for non-existant contacts", ctx do
+      refute Roster.followee?(ctx.user.id, ID.new())
+      refute Roster.followee?(ctx.user.id, ctx.rosterless_user.id)
     end
   end
 

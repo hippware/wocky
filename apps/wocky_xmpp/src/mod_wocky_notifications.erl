@@ -12,8 +12,7 @@
 -export([start/2, stop/1]).
 
 %% Hook callbacks
--export([user_send_packet_hook/4,
-         remove_user_hook/3]).
+-export([remove_user_hook/3]).
 
 %% IQ handler
 -export([handle_iq/3]).
@@ -34,9 +33,7 @@ stop(Host) ->
     gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_NOTIFICATIONS),
     wocky_util:delete_hooks(hooks(), Host, ?MODULE, 100).
 
-hooks() ->
-    [{user_send_packet, user_send_packet_hook},
-     {remove_user,      remove_user_hook}].
+hooks() -> [{remove_user, remove_user_hook}].
 
 
 %%%===================================================================
@@ -66,64 +63,6 @@ make_response(IQ, State) ->
     IQ#iq{type = result,
           sub_el = #xmlel{name = State,
                           attrs = [{<<"xmlns">>, ?NS_NOTIFICATIONS}]}}.
-
-
-%%%===================================================================
-%%% Hook callbacks
-%%%===================================================================
-
-%% user_send_packet --------------------------------------------------
-user_send_packet_hook(Acc, From, To, Packet) ->
-    case should_notify(From, To, Packet) of
-        true ->
-            Body = get_body(Packet),
-            Image = get_image(Packet),
-            Sender = ?wocky_user:get_by_jid(From),
-            Recipient = ?wocky_user:get_by_jid(To),
-            ConversationID =
-                ?wocky_conversation:get_id(To#jid.luser,
-                                           jid:to_binary(jid:to_bare(From))),
-            Event = ?new_message_event:new(
-                       #{to => Recipient,
-                         from => Sender,
-                         body => Body,
-                         image => Image,
-                         conversation_id => ConversationID}),
-            Result = ?wocky_push:notify_all(To#jid.luser, Event),
-            mongoose_acc:put(result, Result, Acc);
-
-        _Else ->
-            mongoose_acc:put(result, ok, Acc)
-    end.
-
-should_notify(_From, To, Packet) ->
-    has_destination(To) andalso
-    is_chat_message(Packet) andalso
-    (has_body(Packet) orelse has_image(Packet)).
-
-has_destination(#jid{luser = <<>>}) -> false;
-has_destination(_) -> true.
-
-is_chat_message(#xmlel{name = <<"message">>, attrs = Attrs}) ->
-    xml:get_attr_s(<<"type">>, Attrs) =:= <<"chat">>;
-is_chat_message(_) ->
-    false.
-
-has_body(Packet) ->
-    get_body(Packet) =/= <<"">>.
-
-has_image(Packet) ->
-    get_image(Packet) =/= <<"">>.
-
-get_body(Packet) ->
-    exml_query:path(Packet, [{element, <<"body">>}, cdata], <<"">>).
-
-get_image(Packet) ->
-    exml_query:path(Packet,
-                    [{element, <<"image">>},
-                     {element, <<"url">>},
-                     cdata],
-                    <<"">>).
 
 %% remove_user -------------------------------------------------------
 remove_user_hook(Acc, User, _Server) ->

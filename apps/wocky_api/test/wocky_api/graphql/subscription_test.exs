@@ -3,25 +3,14 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
   import WockyAPI.ChannelHelper
 
-  alias Wocky.{Bot, GeoUtils, Repo, Roster, User}
+  alias Wocky.{Bot, GeoUtils, Roster}
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Watcher.Client
-  alias WockyAPI.Callbacks
 
   setup_all do
-    Client.clear_all_subscriptions()
-    Callbacks.register()
-    Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
-    Application.start(:wocky_db_watcher)
-
-    on_exit(fn ->
-      Application.stop(:wocky_db_watcher)
-      Repo.delete_all(User)
-    end)
+    setup_watcher()
   end
 
   describe "watch for visitor count change" do

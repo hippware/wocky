@@ -5,25 +5,12 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   alias Wocky.Bot
   alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.Callbacks, as: WockyCallbacks
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.User
-  alias Wocky.Watcher.Client
-  alias WockyAPI.Callbacks
 
   setup_all do
-    Client.clear_all_subscriptions()
-    WockyCallbacks.register()
-    Callbacks.register()
-    Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
-    Application.start(:wocky_db_watcher)
-
-    on_exit(fn ->
-      Application.stop(:wocky_db_watcher)
-      Repo.delete_all(User)
-    end)
+    setup_watcher()
   end
 
   setup %{user: user} do

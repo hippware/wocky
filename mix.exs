@@ -5,7 +5,7 @@ defmodule Wocky.Release.Mixfile do
     [
       apps_path: "apps",
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls, test_task: "espec"],
+      test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         espec: :test,
         ct: :test,
@@ -51,7 +51,7 @@ defmodule Wocky.Release.Mixfile do
     [
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "recompile"],
-      lint: ["elvis", "credo"],
+      lint: ["elvis", "credo --strict"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       epmd: &run_epmd/1

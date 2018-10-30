@@ -6,13 +6,11 @@ defmodule :mod_wocky_notifications_spec do
 
   import :mod_wocky_notifications
 
-  alias Pigeon.APNS.Notification
   alias Wocky.Push.Sandbox
   alias Wocky.Repo.Factory
   alias Wocky.User
 
   @test_id "123456789"
-  @notify_timeout 10_000
 
   def enable_notifications(user_jid, device \\ @test_id) do
     iq_set =
@@ -132,143 +130,6 @@ defmodule :mod_wocky_notifications_spec do
 
         it "should return an IQ result" do
           iq(shared.result, :type) |> should(eq :result)
-        end
-      end
-    end
-
-    describe "handling the user_send_packet hook" do
-      before do
-        Sandbox.clear_notifications()
-
-        _ = enable_notifications(shared.user_jid)
-        :ok
-      end
-
-      context "with a message packet" do
-        before do
-          %{result: :ok} =
-            user_send_packet_hook(
-              %{},
-              shared.sender_jid,
-              shared.user_jid,
-              packet()
-            )
-        end
-
-        it "should send a notification" do
-          notifications =
-            Sandbox.wait_notifications(count: 1, timeout: @notify_timeout)
-
-          notifications |> should(have_size 1)
-
-          [%Notification{payload: payload}] = notifications
-          payload["aps"]["alert"] |> should(end_with "Message content")
-        end
-      end
-
-      context "with an image message packet" do
-        before do
-          %{result: :ok} =
-            user_send_packet_hook(
-              %{},
-              shared.sender_jid,
-              shared.user_jid,
-              image_packet()
-            )
-        end
-
-        it "should send a notification" do
-          notifications =
-            Sandbox.wait_notifications(count: 1, timeout: @notify_timeout)
-
-          notifications |> should(have_size 1)
-
-          [%Notification{payload: payload}] = notifications
-          payload["aps"]["alert"] |> should(end_with "sent you an image!")
-        end
-      end
-
-      context "with a message that contains both a body and an image" do
-        before do
-          %{result: :ok} =
-            user_send_packet_hook(
-              %{},
-              shared.sender_jid,
-              shared.user_jid,
-              combo_packet()
-            )
-        end
-
-        it "should send a notification" do
-          notifications =
-            Sandbox.wait_notifications(count: 1, timeout: @notify_timeout)
-
-          notifications |> should(have_size 1)
-
-          [%Notification{payload: payload}] = notifications
-          payload["aps"]["alert"] |> should(end_with "Message content")
-        end
-      end
-
-      context "with a non-message packet" do
-        before do
-          %{result: :ok} =
-            user_send_packet_hook(
-              %{},
-              shared.sender_jid,
-              shared.user_jid,
-              packet("parlay")
-            )
-        end
-
-        it "should not send a notification" do
-          Sandbox.list_notifications() |> should(eq [])
-        end
-      end
-
-      context "with a non-chat message packet" do
-        before do
-          %{result: :ok} =
-            user_send_packet_hook(
-              %{},
-              shared.sender_jid,
-              shared.user_jid,
-              packet("message", "parlay")
-            )
-        end
-
-        it "should not send a notification" do
-          Sandbox.list_notifications() |> should(eq [])
-        end
-      end
-
-      context "with a packet with no body and no image" do
-        before do
-          no_body =
-            xmlel(
-              name: "message",
-              attrs: [{"type", "chat"}],
-              children: [
-                xmlel(
-                  name: "content",
-                  children: [xmlcdata(content: "Message content")]
-                )
-              ]
-            )
-
-          result =
-            user_send_packet_hook(
-              %{},
-              shared.sender_jid,
-              shared.user_jid,
-              no_body
-            )
-
-          {:ok, result: result}
-        end
-
-        it "should not send a notification" do
-          Sandbox.list_notifications() |> should(eq [])
         end
       end
     end

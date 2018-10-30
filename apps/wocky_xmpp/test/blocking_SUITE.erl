@@ -19,7 +19,6 @@
                      public_fields/0]).
 -import(bot_SUITE, [retrieve_stanza/1, retrieve_stanza/2,
                     item_query_el/2, check_returned_bots/4]).
--import(conversation_SUITE, [query_stanza/4, check_ret/4]).
 
 %%--------------------------------------------------------------------
 %% Suite configuration
@@ -43,7 +42,6 @@ groups() ->
                     blocked_publish_access,
                     blocked_item_access,
                     blocked_contact_access,
-                    blocked_conversation_access,
                     blocked_messages
                    ]},
      {unblocked, [], [
@@ -100,11 +98,6 @@ init_per_suite(Config) ->
     ?wocky_factory:insert(item, #{user => Alice, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Bob, bot => CarolsBot}),
     ?wocky_factory:insert(item, #{user => Carol, bot => CarolsBot}),
-
-    ?wocky_factory:insert(conversation,
-                          #{user => Alice, other_jid => ?BJID(?BOB)}),
-    ?wocky_factory:insert(conversation,
-                          #{user => Bob, other_jid => ?BJID(?ALICE)}),
 
     [{alices_bot, AlicesBot},
      {bobs_bot, BobsBot},
@@ -267,18 +260,6 @@ blocked_contact_access(Config) ->
         [friend, follower, following]),
 
         remove_friend(Bob, Carol)
-      end).
-
-blocked_conversation_access(Config) ->
-    escalus:story(Config, [{alice, 1}, {bob, 1}],
-      fun(Alice, Bob) ->
-        Stanza = query_stanza(undefined, undefined, undefined, undefined),
-        Result = test_helper:expect_iq_success_u(Stanza, Alice),
-        check_ret(Result, 0, 0, undefined),
-
-        Stanza2 = query_stanza(undefined, undefined, undefined, undefined),
-        Result2 = test_helper:expect_iq_success_u(Stanza2, Bob),
-        check_ret(Result2, 0, 0, undefined)
       end).
 
 blocked_messages(Config) ->

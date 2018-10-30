@@ -10,6 +10,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Media
+  alias WockyAPI.Resolvers.Message
   alias WockyAPI.Resolvers.User
   alias WockyAPI.Resolvers.Utils
 
@@ -75,15 +76,6 @@ defmodule WockyAPI.Schema.UserTypes do
       %Wocky.User{} = _, _ -> :other_user
       _, _ -> nil
     end
-
-    @desc "The user's archive of messages sorted from oldest to newest"
-    connection field :messages, node_type: :messages do
-      connection_complexity()
-
-      @desc "Optional other user to filter messages on"
-      arg :other_user, :uuid
-      resolve &User.get_messages/3
-    end
   end
 
   @desc "A user other than the currently authenticated user"
@@ -133,12 +125,30 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.get_location_events/3
     end
 
+    @desc "The user's archive of messages sorted from oldest to newest"
+    connection field :messages, node_type: :messages do
+      connection_complexity()
+
+      @desc "Optional other user to filter messages on"
+      arg :other_user, :uuid
+      resolve &Message.get_messages/3
+    end
+
     @desc """
     The user's conversations - i.e. the last message exchanged with each contact
     """
     connection field :conversations, node_type: :conversations do
       connection_complexity()
-      resolve &User.get_conversations/3
+      resolve &Message.get_conversations/3
+    end
+
+    @desc """
+    The user's contacts (ie the XMPP roster) optionally filtered by relationship
+    """
+    connection field :contacts, node_type: :contacts do
+      connection_complexity()
+      arg :relationship, :user_contact_relationship
+      resolve &User.get_contacts/3
     end
   end
 
@@ -196,25 +206,6 @@ defmodule WockyAPI.Schema.UserTypes do
       field :relationship, :user_contact_relationship do
         resolve &User.get_contact_relationship/3
       end
-    end
-  end
-
-  @desc "A message to a user"
-  object :message do
-    @desc "The user who sent or received the message"
-    field :other_user, non_null(:user), resolve: assoc(:other_user)
-
-    @desc "The message stanza itself"
-    field :message, non_null(:string)
-
-    @desc "True if the message was sent to us, false if we sent it"
-    field :incoming, non_null(:boolean)
-  end
-
-  connection :messages, node_type: :message do
-    total_count_field()
-
-    edge do
     end
   end
 
@@ -325,34 +316,6 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   connection :location_events, node_type: :location_event do
-    total_count_field()
-
-    edge do
-    end
-  end
-
-  @desc "The most recent message sent between two users"
-  object :conversation do
-    @desc "The JID of the remote entity"
-    field :other_jid, non_null(:string)
-
-    @desc "The other participant in the conversation"
-    field :other_user, :user, do: resolve(&User.get_conversation_user/3)
-
-    @desc "The contents of the message"
-    field :message, non_null(:string)
-
-    @desc """
-    True if the message was sent from the user,
-    false if it was received by them.
-    """
-    field :outgoing, non_null(:boolean)
-
-    @desc "The owner of the conversation"
-    field :owner, :user, resolve: assoc(:user)
-  end
-
-  connection :conversations, node_type: :conversation do
     total_count_field()
 
     edge do
