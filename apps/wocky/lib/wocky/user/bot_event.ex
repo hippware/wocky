@@ -26,7 +26,7 @@ defmodule Wocky.User.BotEvent do
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_bot_events" do
-    field :resource, :string
+    field :device, :string
     field :event, EventType, null: false
     field :occurred_at, :utc_datetime, null: false
 
@@ -49,7 +49,7 @@ defmodule Wocky.User.BotEvent do
   @type t :: %BotEvent{
           id: binary,
           user_id: User.id(),
-          resource: User.resource(),
+          device: User.device(),
           bot_id: Bot.id(),
           location_id: binary,
           event: event,
@@ -58,7 +58,7 @@ defmodule Wocky.User.BotEvent do
 
   @insert_fields [
     :user_id,
-    :resource,
+    :device,
     :bot_id,
     :location_id,
     :event,
@@ -104,12 +104,12 @@ defmodule Wocky.User.BotEvent do
   def insert_system(user, bot, event, reason),
     do: insert(user, "System/#{reason}", bot, nil, event)
 
-  @spec insert(User.t(), User.resource(), Bot.t(), Location.t() | nil, event) ::
+  @spec insert(User.t(), User.device(), Bot.t(), Location.t() | nil, event) ::
           t
-  def insert(user, resource, bot, loc \\ nil, event) do
+  def insert(user, device, bot, loc \\ nil, event) do
     %{
       user_id: user.id,
-      resource: resource,
+      device: device,
       bot_id: bot.id,
       location_id: loc && loc.id,
       event: event,
@@ -122,7 +122,7 @@ defmodule Wocky.User.BotEvent do
   defp changeset(params) do
     %BotEvent{}
     |> cast(params, @insert_fields)
-    |> validate_required([:user_id, :resource, :bot_id, :event])
+    |> validate_required([:user_id, :device, :bot_id, :event])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:bot_id)
     |> foreign_key_constraint(:location_id)

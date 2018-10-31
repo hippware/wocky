@@ -11,13 +11,13 @@ defmodule Wocky.Bot.InvitationTest do
   alias Wocky.Repo.Factory
 
   setup do
-    [user, invitee] = Factory.insert_list(2, :user, resource: "testing")
+    [user, invitee] = Factory.insert_list(2, :user, device: "testing")
     bot = Factory.insert(:bot, user: user)
 
     Sandbox.clear_notifications(global: true)
 
-    :ok = Push.enable(invitee.id, invitee.resource, Code.isbn13())
-    :ok = Push.enable(user.id, user.resource, Code.isbn13())
+    :ok = Push.enable(invitee.id, invitee.device, Code.isbn13())
+    :ok = Push.enable(user.id, user.device, Code.isbn13())
 
     {:ok, user: user, invitee: invitee, bot: bot}
   end

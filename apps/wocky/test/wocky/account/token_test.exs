@@ -8,15 +8,15 @@ defmodule Wocky.Account.TokenTest do
 
   setup do
     user = Factory.insert(:user)
-    resource = Faker.Code.issn()
-    {:ok, id: user.id, resource: resource}
+    device = Factory.device()
+    {:ok, id: user.id, device: device}
   end
 
   defp token_from_context(ctx) do
     Repo.one(
       from t in Token,
         where: t.user_id == ^ctx.id,
-        where: t.resource == ^ctx.resource
+        where: t.device == ^ctx.device
     )
   end
 
@@ -28,38 +28,38 @@ defmodule Wocky.Account.TokenTest do
 
   describe "assign/2" do
     test "should return the token and expiry", ctx do
-      {:ok, {token, expiry}} = Token.assign(ctx.id, ctx.resource)
+      {:ok, {token, expiry}} = Token.assign(ctx.id, ctx.device)
 
       assert String.starts_with?(token, "$T$")
       assert %DateTime{} = expiry
     end
 
     test "should store the token for the user", ctx do
-      {:ok, {token, expiry}} = Token.assign(ctx.id, ctx.resource)
+      {:ok, {token, expiry}} = Token.assign(ctx.id, ctx.device)
 
       data = token_from_context(ctx)
 
       assert data.user_id == ctx.id
-      assert data.resource == ctx.resource
+      assert data.device == ctx.device
       assert data.expires_at == expiry
       assert Bcrypt.checkpw(token, data.token_hash)
     end
 
     test "should return a different token every time", ctx do
-      {:ok, {token1, _}} = Token.assign(ctx.id, ctx.resource)
-      {:ok, {token2, _}} = Token.assign(ctx.id, ctx.resource)
+      {:ok, {token1, _}} = Token.assign(ctx.id, ctx.device)
+      {:ok, {token2, _}} = Token.assign(ctx.id, ctx.device)
 
       refute token1 == token2
     end
 
     test "should overwrite tokens when there are multiple requests", ctx do
-      {:ok, {token, expiry}} = Token.assign(ctx.id, ctx.resource)
-      {:ok, _} = Token.assign(ctx.id, ctx.resource)
+      {:ok, {token, expiry}} = Token.assign(ctx.id, ctx.device)
+      {:ok, _} = Token.assign(ctx.id, ctx.device)
 
       data = token_from_context(ctx)
 
       assert data.user_id == ctx.id
-      assert data.resource == ctx.resource
+      assert data.device == ctx.device
       refute data.expires_at == to_string(expiry)
       refute Bcrypt.checkpw(token, data.token_hash)
     end
@@ -67,7 +67,7 @@ defmodule Wocky.Account.TokenTest do
 
   describe "valid?/2" do
     setup ctx do
-      {:ok, {token, _}} = Token.assign(ctx.id, ctx.resource)
+      {:ok, {token, _}} = Token.assign(ctx.id, ctx.device)
       {:ok, token: token}
     end
 
@@ -95,23 +95,23 @@ defmodule Wocky.Account.TokenTest do
 
   describe "release/2" do
     setup ctx do
-      {:ok, {_, _}} = Token.assign(ctx.id, ctx.resource)
+      {:ok, {_, _}} = Token.assign(ctx.id, ctx.device)
       :ok
     end
 
     test "should remove the token from the database", ctx do
-      assert :ok == Token.release(ctx.id, ctx.resource)
+      assert :ok == Token.release(ctx.id, ctx.device)
 
       refute token_from_context(ctx)
     end
 
     test "should return :ok if the token has already been removed", ctx do
-      assert :ok == Token.release(ctx.id, ctx.resource)
-      assert :ok == Token.release(ctx.id, ctx.resource)
+      assert :ok == Token.release(ctx.id, ctx.device)
+      assert :ok == Token.release(ctx.id, ctx.device)
     end
 
     test "should return :ok if there never was a token", ctx do
-      assert :ok == Token.release(ctx.id, "nosuchresource")
+      assert :ok == Token.release(ctx.id, "nosuchdevice")
     end
   end
 

@@ -23,16 +23,16 @@ defmodule Wocky.PushTest do
     original_timeout = Confex.get_env(:wocky, Wocky.Push)[:timeout]
     set_timeout(200)
 
-    user = Factory.insert(:user, resource: "testing")
+    user = Factory.insert(:user, device: "testing")
     token = Code.isbn13()
 
-    :ok = Push.enable(user.id, user.resource, token)
+    :ok = Push.enable(user.id, user.device, token)
 
     on_exit(fn ->
       set_timeout(original_timeout)
     end)
 
-    {:ok, user_id: user.id, resource: user.resource, token: token}
+    {:ok, user_id: user.id, device: user.device, token: token}
   end
 
   defp set_timeout(timeout) do
@@ -44,13 +44,13 @@ defmodule Wocky.PushTest do
     Application.put_env(:wocky, Wocky.Push, config)
   end
 
-  defp get_user_token(user_id, resource) do
-    Repo.one(from Token, where: [user_id: ^user_id, resource: ^resource])
+  defp get_user_token(user_id, device) do
+    Repo.one(from Token, where: [user_id: ^user_id, device: ^device])
   end
 
   describe "enable/4" do
     test "should insert the token into the database", ctx do
-      row = get_user_token(ctx.user_id, ctx.resource)
+      row = get_user_token(ctx.user_id, ctx.device)
       assert row.valid
       assert row.token == ctx.token
       refute is_nil(row.enabled_at)
@@ -58,10 +58,10 @@ defmodule Wocky.PushTest do
     end
 
     test "should overwrite rows when a token is re-enabled", ctx do
-      old_row = get_user_token(ctx.user_id, ctx.resource)
-      :ok = Push.enable(ctx.user_id, ctx.resource, ctx.token)
+      old_row = get_user_token(ctx.user_id, ctx.device)
+      :ok = Push.enable(ctx.user_id, ctx.device, ctx.token)
 
-      row = get_user_token(ctx.user_id, ctx.resource)
+      row = get_user_token(ctx.user_id, ctx.device)
       assert row.valid
       assert row.token == ctx.token
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
@@ -69,16 +69,16 @@ defmodule Wocky.PushTest do
 
     test "should disable old tokens", %{
       user_id: user_id,
-      resource: resource,
+      device: device,
       token: old_token
     } do
       new_token = Code.isbn13()
-      :ok = Push.enable(user_id, resource, new_token)
+      :ok = Push.enable(user_id, device, new_token)
 
       old_row =
         Repo.one(
           from Token,
-            where: [user_id: ^user_id, resource: ^resource, valid: false]
+            where: [user_id: ^user_id, device: ^device, valid: false]
         )
 
       assert old_row
@@ -87,7 +87,7 @@ defmodule Wocky.PushTest do
       new_row =
         Repo.one(
           from Token,
-            where: [user_id: ^user_id, resource: ^resource, valid: true]
+            where: [user_id: ^user_id, device: ^device, valid: true]
         )
 
       assert new_row
@@ -96,12 +96,12 @@ defmodule Wocky.PushTest do
   end
 
   describe "disable/2" do
-    setup %{user_id: user_id, resource: resource} do
-      :ok = Push.disable(user_id, resource)
+    setup %{user_id: user_id, device: device} do
+      :ok = Push.disable(user_id, device)
     end
 
     test "should invalidate the database record", ctx do
-      row = get_user_token(ctx.user_id, ctx.resource)
+      row = get_user_token(ctx.user_id, ctx.device)
       refute is_nil(row)
       refute row.valid
     end
@@ -114,14 +114,14 @@ defmodule Wocky.PushTest do
     end
 
     test "should remove all database records", ctx do
-      refute get_user_token(ctx.user_id, ctx.resource)
+      refute get_user_token(ctx.user_id, ctx.device)
       refute get_user_token(ctx.user_id, "other")
     end
   end
 
   describe "notify/3" do
     test "should send a push notification", ctx do
-      :ok = Push.notify(ctx.user_id, ctx.resource, @message)
+      :ok = Push.notify(ctx.user_id, ctx.device, @message)
 
       assert_receive %Notification{
                        payload: %{
@@ -133,7 +133,7 @@ defmodule Wocky.PushTest do
 
     test "should truncate long messages", ctx do
       sent_message = Lorem.paragraph(100)
-      :ok = Push.notify(ctx.user_id, ctx.resource, sent_message)
+      :ok = Push.notify(ctx.user_id, ctx.device, sent_message)
 
       assert_receive %Notification{
                        payload: %{
@@ -147,34 +147,34 @@ defmodule Wocky.PushTest do
     end
 
     test "should create a db log entry", ctx do
-      :ok = Push.notify(ctx.user_id, ctx.resource, @message)
+      :ok = Push.notify(ctx.user_id, ctx.device, @message)
       assert_receive %Notification{}, 5000
 
       log =
         Repo.one(
           from Log,
-            where: [user_id: ^ctx.user_id, resource: ^ctx.resource]
+            where: [user_id: ^ctx.user_id, device: ^ctx.device]
         )
 
       refute is_nil(log)
     end
 
     test "should log an error when there is no push token", ctx do
-      :ok = Push.disable(ctx.user_id, ctx.resource)
+      :ok = Push.disable(ctx.user_id, ctx.device)
 
       assert capture_log(fn ->
-               :ok = Push.notify(ctx.user_id, ctx.resource, @message)
+               :ok = Push.notify(ctx.user_id, ctx.device, @message)
              end) =~ "no token"
     end
 
     test "token is invalidated when the service returns an error", ctx do
       assert capture_log(fn ->
-               :ok = Push.notify(ctx.user_id, ctx.resource, "bad token")
+               :ok = Push.notify(ctx.user_id, ctx.device, "bad token")
              end) =~ "device token was bad"
 
       assert_receive %Notification{response: :bad_device_token}, 5000
 
-      row = get_user_token(ctx.user_id, ctx.resource)
+      row = get_user_token(ctx.user_id, ctx.device)
       refute row.valid
       refute is_nil(row.invalidated_at)
     end
@@ -197,7 +197,7 @@ defmodule Wocky.PushTest do
          ctx do
       assert capture_log(fn ->
                assert_raise RuntimeError, "requested_raise", fn ->
-                 Push.notify(ctx.user_id, ctx.resource, "raise")
+                 Push.notify(ctx.user_id, ctx.device, "raise")
                end
              end) == ""
 
@@ -209,7 +209,7 @@ defmodule Wocky.PushTest do
     test "should retry and succeed even if the first attempt fails", ctx do
       # Two retries will give us three chunks of log
       assert fn ->
-               Push.notify(ctx.user_id, ctx.resource, "retry test")
+               Push.notify(ctx.user_id, ctx.device, "retry test")
              end
              |> capture_log()
              |> String.split("PN Error")

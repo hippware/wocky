@@ -3,7 +3,7 @@ defmodule Wocky.Push.TokenTest do
 
   alias Wocky.Push.Token
 
-  @attrs [:user_id, :resource, :token]
+  @attrs [:user_id, :device, :token]
 
   test "required attributes" do
     changeset = Token.register_changeset(%{})

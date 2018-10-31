@@ -7,12 +7,8 @@ defmodule Wocky.Push do
   import Ecto.Query, warn: false
 
   alias Pigeon.APNS
-  alias Pigeon.APNS.Error
-  alias Pigeon.APNS.Notification
-  alias Wocky.Push.Event
-  alias Wocky.Push.Log
-  alias Wocky.Push.Sandbox
-  alias Wocky.Push.Token
+  alias Pigeon.APNS.{Error, Notification}
+  alias Wocky.Push.{Event, Log, Sandbox, Token}
   alias Wocky.Repo
   alias Wocky.User
 
@@ -27,7 +23,7 @@ defmodule Wocky.Push do
   defstruct [
     :token,
     :user_id,
-    :resource,
+    :device,
     :event,
     retries: 0,
     resp: nil
@@ -36,7 +32,7 @@ defmodule Wocky.Push do
   @type t :: %__MODULE__{
           token: binary(),
           user_id: User.id(),
-          resource: User.resource(),
+          device: User.device(),
           event: Event.t(),
           retries: non_neg_integer(),
           resp: Notification.response()
@@ -45,28 +41,28 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Token API
 
-  @spec enable(Wocky.User.id(), Wocky.User.resource(), Token.token()) :: :ok
-  def enable(user_id, resource, token) do
-    %{user_id: user_id, resource: resource, token: token}
+  @spec enable(Wocky.User.id(), Wocky.User.device(), Token.token()) :: :ok
+  def enable(user_id, device, token) do
+    %{user_id: user_id, device: device, token: token}
     |> Token.register_changeset()
     |> Repo.insert!(
       on_conflict: [set: [valid: true, enabled_at: DateTime.utc_now()]],
-      conflict_target: [:user_id, :resource, :token]
+      conflict_target: [:user_id, :device, :token]
     )
 
     Token
     |> where([t], t.user_id == ^user_id)
-    |> where([t], t.resource == ^resource)
+    |> where([t], t.device == ^device)
     |> where([t], t.token != ^token)
     |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
 
     :ok
   end
 
-  @spec disable(Wocky.User.id(), Wocky.User.resource()) :: :ok
-  def disable(user_id, resource) do
+  @spec disable(Wocky.User.id(), Wocky.User.device()) :: :ok
+  def disable(user_id, device) do
     Repo.update_all(
-      from(Token, where: [user_id: ^user_id, resource: ^resource, valid: true]),
+      from(Token, where: [user_id: ^user_id, device: ^device, valid: true]),
       set: [valid: false, disabled_at: DateTime.utc_now()]
     )
 
@@ -83,14 +79,14 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Notification API
 
-  @spec notify(Wocky.User.id(), Wocky.User.resource(), any) :: :ok
-  def notify(user_id, resource, event) do
+  @spec notify(Wocky.User.id(), Wocky.User.device(), any) :: :ok
+  def notify(user_id, device, event) do
     if enabled?() do
-      token = get_token(user_id, resource)
+      token = get_token(user_id, device)
 
       do_notify(%__MODULE__{
         user_id: user_id,
-        resource: resource,
+        device: device,
         token: token,
         event: event
       })
@@ -102,11 +98,11 @@ defmodule Wocky.Push do
   @spec notify_all(Wocky.User.id(), any) :: :ok
   def notify_all(user_id, event) do
     if enabled?() do
-      for {resource, token} <- get_all_tokens(user_id) do
+      for {device, token} <- get_all_tokens(user_id) do
         do_notify(%__MODULE__{
           token: token,
           user_id: user_id,
-          resource: resource,
+          device: device,
           event: event
         })
       end
@@ -122,10 +118,10 @@ defmodule Wocky.Push do
     Confex.get_env(:wocky, Wocky.Push)[:enabled]
   end
 
-  defp get_token(user_id, resource) do
+  defp get_token(user_id, device) do
     Repo.one(
       from t in Token,
-        where: [user_id: ^user_id, resource: ^resource, valid: true],
+        where: [user_id: ^user_id, device: ^device, valid: true],
         select: t.token
     )
   end
@@ -134,14 +130,14 @@ defmodule Wocky.Push do
     Repo.all(
       from t in Token,
         where: [user_id: ^user_id, valid: true],
-        select: {t.resource, t.token}
+        select: {t.device, t.token}
     )
   end
 
-  defp do_notify(%__MODULE__{token: nil, user_id: user_id, resource: resource}) do
+  defp do_notify(%__MODULE__{token: nil, user_id: user_id, device: device}) do
     Logger.error(
       "Attempted to send notification to user " <>
-        "#{user_id}/#{resource} but they have no token."
+        "#{user_id}/#{device} but they have no token."
     )
   end
 
@@ -224,11 +220,11 @@ defmodule Wocky.Push do
   defp handle_response(
          %Notification{response: resp} = n,
          timeout_pid,
-         %__MODULE__{user_id: user_id, resource: resource} = params
+         %__MODULE__{user_id: user_id, device: device} = params
        ) do
     send(timeout_pid, :push_complete)
     update_metric(resp)
-    do_db_log(n, user_id, resource)
+    do_db_log(n, user_id, device)
     maybe_handle_error(n, %{params | resp: resp})
   end
 
@@ -238,7 +234,7 @@ defmodule Wocky.Push do
          n,
          %__MODULE__{
            user_id: user_id,
-           resource: resource,
+           device: device,
            retries: retries,
            resp: resp
          } = params
@@ -246,7 +242,7 @@ defmodule Wocky.Push do
     Logger.error("PN Error: #{Error.msg(resp)}")
 
     if resp == :bad_device_token do
-      invalidate_token(user_id, resource, n.device_token)
+      invalidate_token(user_id, device, n.device_token)
     else
       do_notify(%{params | retries: retries + 1})
     end
@@ -259,11 +255,11 @@ defmodule Wocky.Push do
       Honeybadger.notify(exception)
   end
 
-  defp invalidate_token(user_id, resource, token) do
+  defp invalidate_token(user_id, device, token) do
     Repo.update_all(
       from(
         Token,
-        where: [user_id: ^user_id, resource: ^resource, token: ^token]
+        where: [user_id: ^user_id, device: ^device, token: ^token]
       ),
       set: [valid: false, invalidated_at: DateTime.utc_now()]
     )
@@ -272,10 +268,10 @@ defmodule Wocky.Push do
   defp update_metric(resp),
     do: update_counter("push_notfications.#{to_string(resp)}", 1)
 
-  defp do_db_log(%Notification{} = n, user_id, resource) do
+  defp do_db_log(%Notification{} = n, user_id, device) do
     %{
       user_id: user_id,
-      resource: resource,
+      device: device,
       token: n.device_token,
       message_id: n.id,
       payload: inspect(n.payload),
@@ -301,14 +297,14 @@ defmodule Wocky.Push do
   defp log_timeout(%__MODULE__{
          token: token,
          user_id: user_id,
-         resource: resource,
+         device: device,
          event: event
        }) do
     Logger.error("PN Error: timeout expired")
 
     %{
       user_id: user_id,
-      resource: resource,
+      device: device,
       token: token,
       message_id: nil,
       payload: Event.message(event),
@@ -322,12 +318,12 @@ defmodule Wocky.Push do
   defp log_failure(%__MODULE__{
          token: token,
          user_id: user_id,
-         resource: resource,
+         device: device,
          event: event
        }) do
     %{
       user_id: user_id,
-      resource: resource,
+      device: device,
       token: token,
       message_id: nil,
       payload: Event.message(event),

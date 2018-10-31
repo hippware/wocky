@@ -111,7 +111,7 @@ defmodule Wocky.Repo.Factory do
 
   def traffic_log_factory do
     %TrafficLog{
-      resource: Lorem.word(),
+      device: device(),
       ip: Internet.ip_v6_address() <> ":5020",
       host: Internet.domain_name(),
       packet: Lorem.paragraph(),
@@ -121,7 +121,7 @@ defmodule Wocky.Repo.Factory do
 
   def location_factory do
     %Location{
-      resource: String.base64(),
+      device: device(),
       lat: Address.latitude(),
       lon: Address.longitude(),
       accuracy: 10,
@@ -132,7 +132,7 @@ defmodule Wocky.Repo.Factory do
   def push_log_factory do
     %PushLog{
       user: build(:user),
-      resource: Lorem.word(),
+      device: device(),
       token: ID.new(),
       message_id: ID.new(),
       payload: ~s(%{"aps" => %{"alert" => #{Lorem.sentence()}}}),
@@ -149,7 +149,7 @@ defmodule Wocky.Repo.Factory do
   def push_token_factory do
     %PushToken{
       user: build(:user),
-      resource: ID.new(),
+      device: device(),
       token: ID.new(),
       valid: true,
       enabled_at: DateTime.utc_now()
@@ -234,6 +234,10 @@ defmodule Wocky.Repo.Factory do
 
   def external_id do
     Base.encode16(:crypto.strong_rand_bytes(10))
+  end
+
+  def device do
+    String.base64()
   end
 
   def new_jid do

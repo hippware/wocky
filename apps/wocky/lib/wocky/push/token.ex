@@ -8,7 +8,7 @@ defmodule Wocky.Push.Token do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "push_tokens" do
-    field :resource, :string, null: false
+    field :device, :string, null: false
     field :token, :string, null: false
     field :valid, :boolean, null: false, default: true
     field :enabled_at, :utc_datetime
@@ -24,7 +24,7 @@ defmodule Wocky.Push.Token do
 
   @type t :: %Token{
           user_id: Wocky.User.id(),
-          resource: Wocky.User.resource(),
+          device: Wocky.User.device(),
           token: token,
           valid: boolean,
           enabled_at: DateTime,
@@ -32,7 +32,7 @@ defmodule Wocky.Push.Token do
           invalidated_at: DateTime
         }
 
-  @register_attrs [:user_id, :resource, :token]
+  @register_attrs [:user_id, :device, :token]
 
   @doc false
   def register_changeset(attrs) do

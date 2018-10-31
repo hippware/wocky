@@ -36,12 +36,12 @@ defmodule Wocky.Account do
   @spec generate_token() :: Token.token()
   defdelegate generate_token, to: Token, as: :generate
 
-  @spec assign_token(User.id(), User.resource()) ::
+  @spec assign_token(User.id(), User.device()) ::
           {:ok, {Token.token(), Token.expiry()}}
-  defdelegate assign_token(user_id, resource), to: Token, as: :assign
+  defdelegate assign_token(user_id, device), to: Token, as: :assign
 
-  @spec release_token(User.id(), User.resource()) :: :ok
-  defdelegate release_token(user_id, resource), to: Token, as: :release
+  @spec release_token(User.id(), User.device()) :: :ok
+  defdelegate release_token(user_id, device), to: Token, as: :release
 
   # ====================================================================
   # Authentication

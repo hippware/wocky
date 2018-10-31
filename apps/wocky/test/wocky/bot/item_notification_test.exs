@@ -10,14 +10,14 @@ defmodule Wocky.Bot.ItemNotificationTest do
   alias Wocky.Repo.Factory
 
   setup do
-    [user, author, sub] = Factory.insert_list(3, :user, resource: "testing")
+    [user, author, sub] = Factory.insert_list(3, :user, device: "testing")
     bot = Factory.insert(:bot, user: user)
     Bot.subscribe(bot, author)
     Bot.subscribe(bot, sub)
 
     Sandbox.clear_notifications(global: true)
 
-    :ok = Push.enable(sub.id, user.resource, Code.isbn13())
+    :ok = Push.enable(sub.id, user.device, Code.isbn13())
 
     {:ok, user: user, author: author, sub: sub, bot: bot}
   end

@@ -10,19 +10,19 @@ defmodule Wocky.TrafficLogTest do
 
   setup do
     user = Factory.insert(:user)
-    resource = ID.new()
+    device = ID.new()
 
     traffic =
       for _ <- 1..@packets do
-        Factory.insert(:traffic_log, user: user, resource: resource)
+        Factory.insert(:traffic_log, user: user, device: device)
       end
 
-    Factory.insert(:traffic_log, user: user, resource: ID.new())
+    Factory.insert(:traffic_log, user: user, device: ID.new())
 
     {:ok,
      user: user,
      traffic: traffic,
-     resource: resource,
+     device: device,
      first: hd(traffic).created_at,
      middle: Enum.at(traffic, div(@packets, 2) - 1).created_at,
      last: List.last(traffic).created_at}
@@ -85,13 +85,13 @@ defmodule Wocky.TrafficLogTest do
     end
   end
 
-  describe "get_by_resource/4" do
-    test "should get all traffic from the specified resource/time/duration",
+  describe "get_by_device/4" do
+    test "should get all traffic from the specified device/time/duration",
          ctx do
       packets =
-        TrafficLog.get_by_resource(
+        TrafficLog.get_by_device(
           ctx.user.id,
-          ctx.resource,
+          ctx.device,
           default_start(),
           default_duration()
         )
@@ -99,9 +99,9 @@ defmodule Wocky.TrafficLogTest do
       assert length(packets) == @packets
     end
 
-    test "should get nothing from a different resource", ctx do
+    test "should get nothing from a different device", ctx do
       packets =
-        TrafficLog.get_by_resource(
+        TrafficLog.get_by_device(
           ctx.user.id,
           "fnord",
           default_start(),
@@ -113,9 +113,9 @@ defmodule Wocky.TrafficLogTest do
 
     test "should get no traffic for a non-existant user", ctx do
       packets =
-        TrafficLog.get_by_resource(
+        TrafficLog.get_by_device(
           ID.new(),
-          ctx.resource,
+          ctx.device,
           default_start(),
           default_duration()
         )

@@ -52,7 +52,7 @@ defmodule Wocky.Bot.SubscriptionTest do
     end
 
     test "should return nil when the user does not exist", ctx do
-      user = Factory.build(:user, resource: "testing")
+      user = Factory.build(:user, device: "testing")
       refute Subscription.state(user, ctx.bot)
     end
 
@@ -152,7 +152,7 @@ defmodule Wocky.Bot.SubscriptionTest do
     end
 
     test "should return false when the user does not exist", ctx do
-      user = Factory.build(:user, resource: "testing")
+      user = Factory.build(:user, device: "testing")
       refute is_subscribed_sp(user, ctx.bot)
     end
 

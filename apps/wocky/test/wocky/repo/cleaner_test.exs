@@ -119,7 +119,7 @@ defmodule Wocky.Repo.CleanerTest do
       query =
         from t in AuthToken,
           where: t.user_id == ^user.id,
-          where: t.resource == ^"old_token"
+          where: t.device == ^"old_token"
 
       query
       |> Repo.one()
@@ -138,7 +138,7 @@ defmodule Wocky.Repo.CleanerTest do
       query =
         from t in AuthToken,
           where: t.user_id == ^user.id,
-          where: t.resource == ^"old_token"
+          where: t.device == ^"old_token"
 
       refute Repo.one(query)
     end
@@ -147,7 +147,7 @@ defmodule Wocky.Repo.CleanerTest do
       query =
         from t in AuthToken,
           where: t.user_id == ^user.id,
-          where: t.resource == ^"new_token"
+          where: t.device == ^"new_token"
 
       assert Repo.one(query)
     end

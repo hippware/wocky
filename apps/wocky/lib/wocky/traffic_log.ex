@@ -16,7 +16,7 @@ defmodule Wocky.TrafficLog do
 
   @foreign_key_type :binary_id
   schema "traffic_logs" do
-    field :resource, :binary
+    field :device, :binary
     field :host, :binary
     field :ip, :binary, default: ""
     field :incoming, :boolean
@@ -32,7 +32,7 @@ defmodule Wocky.TrafficLog do
 
   @type t :: %TrafficLog{
           user_id: User.id(),
-          resource: User.resource(),
+          device: User.device(),
           host: binary,
           ip: ip,
           incoming: boolean,
@@ -40,8 +40,8 @@ defmodule Wocky.TrafficLog do
           created_at: DateTime.t()
         }
 
-  @change_fields [:user_id, :resource, :host, :ip, :incoming, :packet]
-  @required_fields [:resource, :host, :ip, :incoming, :packet]
+  @change_fields [:user_id, :device, :host, :ip, :incoming, :packet]
+  @required_fields [:device, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
   @spec put(map) :: {:ok, TrafficLog.t()} | {:error, Changeset.t()}
@@ -60,11 +60,11 @@ defmodule Wocky.TrafficLog do
     |> Repo.all()
   end
 
-  @spec get_by_resource(User.id(), JID.resource(), DateTime.t(), Duration.t()) ::
+  @spec get_by_device(User.id(), JID.device(), DateTime.t(), Duration.t()) ::
           [t]
-  def get_by_resource(user_id, resource, start, duration) do
+  def get_by_device(user_id, device, start, duration) do
     TrafficLog
-    |> resource_traffic(user_id, resource, start, duration)
+    |> device_traffic(user_id, device, start, duration)
     |> Repo.all()
   end
 
@@ -79,8 +79,8 @@ defmodule Wocky.TrafficLog do
       order_by: [asc: :created_at]
   end
 
-  defp resource_traffic(query, user_id, resource, startt, duration) do
+  defp device_traffic(query, user_id, device, startt, duration) do
     query = users_traffic(query, user_id, startt, duration)
-    from t in query, where: t.resource == ^resource
+    from t in query, where: t.device == ^device
   end
 end

@@ -112,8 +112,8 @@ defmodule Wocky.AccountTest do
     end
 
     test "when the user exists" do
-      user = Factory.insert(:user, resource: "testing")
-      {:ok, {token, _}} = Token.assign(user.id, "testing")
+      user = Factory.insert(:user, device: "testing")
+      {:ok, {token, _}} = Token.assign(user.id, user.device)
 
       Account.disable_user(user.id)
 
