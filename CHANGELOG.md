@@ -6,6 +6,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: ex_machina (PR #1956)
+* Geofence anomalies for embedded location points (#1959)
+  * Fix: Double processing
+  * Fix: Sometimes the user's hidden status was ignored
 
 
 # 2018.10.23+r14cec96
