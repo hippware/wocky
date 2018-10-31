@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Name
-  alias Faker.String
   alias Wocky.Block
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
@@ -235,7 +234,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     setup %{user: user} do
       bot = Factory.insert(:bot, user: user)
       loc = Factory.insert(:location, user_id: user.id)
-      BotEvent.insert(user, loc.resource, bot, loc, :enter)
+      BotEvent.insert(user, loc.device, bot, loc, :enter)
 
       {:ok, loc: loc, bot: bot}
     end
@@ -259,7 +258,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get locations", %{user: user, loc: loc} do
-      result = run_query(@query, user, %{"device" => loc.resource})
+      result = run_query(@query, user, %{"device" => loc.device})
 
       refute has_errors(result)
 
@@ -305,7 +304,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get events from location", %{user: user, loc: loc} do
-      result = run_query(@query, user, %{"device" => loc.resource})
+      result = run_query(@query, user, %{"device" => loc.device})
 
       refute has_errors(result)
 
@@ -351,7 +350,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get all location events", %{user: user, bot: bot, loc: loc} do
-      result = run_query(@query, user, %{"device" => loc.resource})
+      result = run_query(@query, user, %{"device" => loc.device})
 
       refute has_errors(result)
 
@@ -392,13 +391,13 @@ defmodule WockyAPI.GraphQL.UserTest do
       lat = :rand.uniform() * 89.0
       lon = :rand.uniform() * 179.0
       accuracy = :rand.uniform() * 10.0
-      resource = String.base64()
+      device = Factory.device()
 
       location_input = %{
         "lat" => lat,
         "lon" => lon,
         "accuracy" => accuracy,
-        "resource" => resource,
+        "device" => device,
         "isFetch" => true
       }
 
@@ -415,7 +414,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert %Location{
                lat: ^lat,
                lon: ^lon,
-               resource: ^resource,
+               device: ^device,
                accuracy: ^accuracy,
                is_fetch: true
              } = Repo.get_by(Location, user_id: user.id)
@@ -426,7 +425,7 @@ defmodule WockyAPI.GraphQL.UserTest do
         "lat" => :rand.uniform() * 89.0,
         "lon" => :rand.uniform() * 179.0,
         "accuracy" => -1.0,
-        "resource" => String.base64()
+        "device" => Factory.device()
       }
 
       result = run_query(@query, user, %{"input" => location_input})

@@ -134,7 +134,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
           "lat" => lat,
           "lon" => lon,
           "accuracy" => 1.0,
-          "resource" => Faker.String.base64(),
+          "device" => Factory.device(),
           "isFetch" => true
         }
       }

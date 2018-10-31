@@ -30,12 +30,12 @@ defmodule WockyAPI.LocationControllerTest do
         timestamp: "2016-10-24T09:45:05.621Z"
       }
     ],
-    resource: "testing"
+    device: "testing"
   }
 
   setup %{conn: conn} do
-    user = Factory.insert(:user, resource: "testing")
-    {:ok, {token, _}} = Account.assign_token(user.id, user.resource)
+    user = Factory.insert(:user, device: "testing")
+    {:ok, {token, _}} = Account.assign_token(user.id, user.device)
 
     conn =
       conn
@@ -71,7 +71,7 @@ defmodule WockyAPI.LocationControllerTest do
             accuracy: 3000
           }
         },
-        resource: "testing"
+        device: "testing"
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
@@ -86,7 +86,7 @@ defmodule WockyAPI.LocationControllerTest do
             accuracy: 3000
           }
         },
-        resource: "testing"
+        device: "testing"
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
@@ -101,14 +101,14 @@ defmodule WockyAPI.LocationControllerTest do
             latitude: 35.17448497921099
           }
         },
-        resource: "testing"
+        device: "testing"
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
       assert json_response(conn, 400)["errors"] != %{}
     end
 
-    test "returns 400 when resource is missing", %{conn: conn, user: user} do
+    test "returns 400 when device is missing", %{conn: conn, user: user} do
       invalid_attrs = %{
         location: %{
           coords: %{

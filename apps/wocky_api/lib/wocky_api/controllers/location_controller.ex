@@ -20,7 +20,7 @@ defmodule WockyAPI.LocationController do
   defp extract_values(params) do
     {
       normalize_location(params["location"]),
-      params["resource"],
+      params["device"],
       params["isFetch"] || false
     }
     |> check_required_keys()
@@ -29,22 +29,22 @@ defmodule WockyAPI.LocationController do
   defp normalize_location([location | _]), do: location
   defp normalize_location(location), do: location
 
-  defp check_required_keys({location, resource, is_fetch}) do
-    if has_required_keys(location, resource) do
-      {:ok, location, resource, is_fetch}
+  defp check_required_keys({location, device, is_fetch}) do
+    if has_required_keys(location, device) do
+      {:ok, location, device, is_fetch}
     else
       {:error, :missing_keys}
     end
   end
 
-  defp has_required_keys(%{"coords" => coords}, resource) do
+  defp has_required_keys(%{"coords" => coords}, device) do
     Map.get(coords, "latitude") && Map.get(coords, "longitude") &&
-      Map.get(coords, "accuracy") && resource
+      Map.get(coords, "accuracy") && device
   end
 
   defp has_required_keys(_, _), do: false
 
-  defp make_location(%{"coords" => c} = l, resource, is_fetch) do
+  defp make_location(%{"coords" => c} = l, device, is_fetch) do
     %Location{
       lat: c["latitude"],
       lon: c["longitude"],
@@ -57,7 +57,7 @@ defmodule WockyAPI.LocationController do
       uuid: l["uuid"],
       odometer: l["odometer"],
       is_moving: l["is_moving"],
-      resource: resource,
+      device: device,
       is_fetch: is_fetch
     }
     |> maybe_add_activity(l["activity"])

@@ -107,8 +107,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do
-    params = Map.put(i, :resource, i[:device] || i[:resource])
-    location = struct(Location, params)
+    location = struct(Location, i)
 
     with {:ok, _} <- User.set_location(user, location) do
       {:ok, true}

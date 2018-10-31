@@ -35,7 +35,7 @@ defmodule WockyAPI.PipelineLog do
   defp log(packet, user_id, context, incoming) do
     %{
       user_id: user_id,
-      resource: "GraphQL",
+      device: "GraphQL",
       host: context.host,
       ip: context.peer,
       incoming: incoming,

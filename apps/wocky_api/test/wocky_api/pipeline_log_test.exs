@@ -61,7 +61,7 @@ defmodule WockyAPI.PipelineLogTest do
     user_id = opts.context.current_user.id
 
     assert %{
-             resource: "GraphQL",
+             device: "GraphQL",
              host: ^host,
              ip: ^peer,
              incoming: ^incoming,

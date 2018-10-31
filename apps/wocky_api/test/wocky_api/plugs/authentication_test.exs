@@ -31,8 +31,8 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
   describe ":check_auth_headers plug with token auth" do
     setup do
       user = Factory.insert(:user)
-      resource = Faker.Code.issn()
-      {:ok, {token, _}} = Account.assign_token(user.id, resource)
+      device = Factory.device()
+      {:ok, {token, _}} = Account.assign_token(user.id, device)
 
       {:ok, token: token, user_id: user.id}
     end
