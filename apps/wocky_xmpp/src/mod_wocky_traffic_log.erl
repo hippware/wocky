@@ -59,7 +59,7 @@ log_packet(JID, IP, Port, Element, Incoming) ->
     {ok, Hostname} = inet:gethostname(),
     ?wocky_traffic_log:put(
        #{user_id => JID#jid.luser,
-         resource => JID#jid.resource,
+         device => JID#jid.resource,
          host => list_to_binary(Hostname),
          ip => ip_port_str(IP, Port),
          packet => exml:to_binary(Element),
