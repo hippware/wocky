@@ -92,4 +92,10 @@ defmodule Wocky.Block do
     |> where([b], b.blocker_id == ^user_id or b.blockee_id == ^user_id)
     |> Repo.all()
   end
+
+  @spec blocks_query(User.id()) :: Queryable.t()
+  def blocks_query(user_id) do
+    Block
+    |> where(blocker_id: ^user_id)
+  end
 end
