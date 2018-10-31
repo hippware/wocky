@@ -104,8 +104,7 @@ defmodule Wocky.User.BotEvent do
   def insert_system(user, bot, event, reason),
     do: insert(user, "System/#{reason}", bot, nil, event)
 
-  @spec insert(User.t(), User.device(), Bot.t(), Location.t() | nil, event) ::
-          t
+  @spec insert(User.t(), User.device(), Bot.t(), Location.t() | nil, event) :: t
   def insert(user, device, bot, loc \\ nil, event) do
     %{
       user_id: user.id,

@@ -29,7 +29,6 @@ defmodule WockyAPI.Schema.BlockTypes do
     end
   end
 
-
   input_object :user_block_input do
     @desc "The ID of the user to block"
     field :user_id, non_null(:uuid)
