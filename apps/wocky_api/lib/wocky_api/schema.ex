@@ -10,6 +10,7 @@ defmodule WockyAPI.Schema do
   import_types Absinthe.Type.Custom
   import_types Kronky.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
+  import_types WockyAPI.Schema.BlockTypes
   import_types WockyAPI.Schema.BotTypes
   import_types WockyAPI.Schema.LocationTypes
   import_types WockyAPI.Schema.MediaTypes
@@ -27,6 +28,7 @@ defmodule WockyAPI.Schema do
 
   mutation do
     import_fields :auth_mutations
+    import_fields :block_mutations
     import_fields :bot_mutations
     import_fields :contact_mutations
     import_fields :location_mutations

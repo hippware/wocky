@@ -8,11 +8,14 @@ defmodule WockyAPI.Schema.UserTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.Bot
-  alias WockyAPI.Resolvers.Media
-  alias WockyAPI.Resolvers.Message
-  alias WockyAPI.Resolvers.User
-  alias WockyAPI.Resolvers.Utils
+  alias WockyAPI.Resolvers.{
+    Block,
+    Bot,
+    Media,
+    Message,
+    User,
+    Utils
+  }
 
   @desc "The main Wocky user interface"
   interface :user do
@@ -67,6 +70,7 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.get_contacts/3
     end
 
+    @desc "The user's current presence status"
     field :presence_status, :presence_status do
       resolve &User.get_presence_status/3
     end
@@ -149,6 +153,12 @@ defmodule WockyAPI.Schema.UserTypes do
       connection_complexity()
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
+    end
+
+    @desc "Other users that this user has blocked"
+    connection field :blocks, node_type: :blocks do
+      connection_complexity()
+      resolve &Block.get_blocks/3
     end
   end
 
