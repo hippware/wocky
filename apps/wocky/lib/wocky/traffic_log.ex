@@ -60,7 +60,7 @@ defmodule Wocky.TrafficLog do
     |> Repo.all()
   end
 
-  @spec get_by_device(User.id(), JID.device(), DateTime.t(), Duration.t()) ::
+  @spec get_by_device(User.id(), JID.resource(), DateTime.t(), Duration.t()) ::
           [t]
   def get_by_device(user_id, device, start, duration) do
     TrafficLog
