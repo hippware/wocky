@@ -3,7 +3,9 @@ defmodule WockyAPI.Callbacks.RosterItem do
   Callbacks for roster item changes
   """
 
-  use Wocky.Watcher, type: Wocky.Roster.Item, events: [:insert, :update, :delete]
+  use Wocky.Watcher,
+    type: Wocky.Roster.Item,
+    events: [:insert, :update, :delete]
 
   alias Wocky.{Repo, Roster}
   alias WockyAPI.Resolvers.User
@@ -19,6 +21,7 @@ defmodule WockyAPI.Callbacks.RosterItem do
 
   defp send_update(item, relationship) do
     item = Repo.preload(item, [:contact])
+
     if item.contact != nil do
       User.notify_contact(item, relationship)
     end

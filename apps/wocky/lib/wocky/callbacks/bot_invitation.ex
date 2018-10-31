@@ -5,7 +5,7 @@ defmodule Wocky.Callbacks.BotInvitation do
 
   alias Wocky.Bot.Invitation
   alias Wocky.Push
-  alias Wocky.Push.Events.{BotInviteEvent, BotInvitationAcceptEvent}
+  alias Wocky.Push.Events.{BotInvitationAcceptEvent, BotInviteEvent}
   alias Wocky.Repo
   alias Wocky.User.Notification.Invitation, as: InvNotification
   alias Wocky.User.Notification.InvitationResponse

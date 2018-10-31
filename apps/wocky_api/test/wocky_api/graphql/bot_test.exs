@@ -3,8 +3,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   alias Faker.Lorem
   alias Wocky.{Block, Bot, GeoUtils, Repo, User}
-  alias Wocky.Bot.Item
   alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
