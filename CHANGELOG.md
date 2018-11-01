@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: phoenix_ecto (PR #1977)
+
+
+# 2018.10.31+r5b9eb3f
+
 * Update: ex_machina (PR #1956)
 * Geofence anomalies for embedded location points (#1959)
   * Fix: Double processing
