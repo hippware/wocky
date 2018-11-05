@@ -8,7 +8,7 @@ defmodule Wocky.Push.Log do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "push_logs" do
-    field :resource, :string, null: false
+    field :device, :string, null: false
     field :token, :string, null: false
     field :message_id, :string
     field :payload, :string, null: false
@@ -22,7 +22,7 @@ defmodule Wocky.Push.Log do
 
   @type t :: %Log{
           user_id: Wocky.User.id(),
-          resource: Wocky.User.resource(),
+          device: Wocky.User.device(),
           token: binary,
           message_id: binary,
           payload: binary,
@@ -32,7 +32,7 @@ defmodule Wocky.Push.Log do
 
   @insert_attrs [
     :user_id,
-    :resource,
+    :device,
     :token,
     :message_id,
     :payload,

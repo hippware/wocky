@@ -23,7 +23,7 @@ defmodule Wocky.User.UserTest do
   alias Wocky.User.Location
 
   setup do
-    user = Factory.insert(:user, resource: "testing")
+    user = Factory.insert(:user, device: "testing")
 
     {:ok,
      user: user,
@@ -39,7 +39,7 @@ defmodule Wocky.User.UserTest do
   describe "to_jid/1" do
     test "should return the user's JID", ctx do
       jid1 = User.to_jid(ctx.user)
-      jid2 = JID.make(ctx.user.id, Wocky.host(), ctx.user.resource)
+      jid2 = JID.make(ctx.user.id, Wocky.host(), ctx.user.device)
 
       assert JID.equal?(jid1, jid2)
     end
@@ -50,7 +50,7 @@ defmodule Wocky.User.UserTest do
       result = ctx.user |> User.to_jid() |> User.get_by_jid()
 
       assert result.id == ctx.user.id
-      assert result.resource == ctx.user.resource
+      assert result.device == ctx.user.device
     end
 
     test "when the user does not exist" do
@@ -206,7 +206,7 @@ defmodule Wocky.User.UserTest do
   describe "update/2" do
     test "should fail when the user does not exist" do
       fields = %{
-        resource: ID.new(),
+        device: ID.new(),
         handle: Factory.new_handle(),
         first_name: Name.first_name(),
         last_name: Name.last_name(),
@@ -219,7 +219,7 @@ defmodule Wocky.User.UserTest do
 
     test "should update the user's attributes", ctx do
       fields = %{
-        resource: ID.new(),
+        device: ID.new(),
         handle: Factory.new_handle(),
         first_name: Name.first_name(),
         last_name: Name.last_name(),
@@ -235,7 +235,7 @@ defmodule Wocky.User.UserTest do
       assert new_user.last_name == fields.last_name
       assert new_user.email == fields.email
       assert new_user.tagline == fields.tagline
-      refute new_user.resource
+      refute new_user.device
     end
   end
 
@@ -306,7 +306,7 @@ defmodule Wocky.User.UserTest do
         lat: ctx.lat,
         lon: ctx.lon,
         accuracy: 10,
-        resource: "testing",
+        device: "testing",
         captured_at: DateTime.utc_now()
       }
 
@@ -338,7 +338,7 @@ defmodule Wocky.User.UserTest do
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
         accuracy: 10,
-        resource: "testing",
+        device: "testing",
         captured_at: DateTime.utc_now()
       }
 
@@ -383,7 +383,7 @@ defmodule Wocky.User.UserTest do
 
   describe "get_locations_query/2" do
     setup ctx do
-      Factory.insert_list(5, :location, user_id: ctx.id, resource: "test")
+      Factory.insert_list(5, :location, user_id: ctx.id, device: "test")
 
       :ok
     end

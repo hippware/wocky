@@ -30,7 +30,10 @@ defmodule Wocky.User do
   schema "users" do
     # User ID (userpart of JID)
     field :username, :string
-    field :resource, :string, virtual: true
+    # Unique ID of the currently logged-in device.
+    # I am not sure if this is the right place to track this information,
+    # but it is currently the path of least resistance.
+    field :device, :string, virtual: true
     # The external auth provider
     field :provider, :string
     # The user ID received from the provider
@@ -79,7 +82,7 @@ defmodule Wocky.User do
 
   @type id :: binary
   @type username :: binary
-  @type resource :: binary
+  @type device :: binary
   @type provider :: binary
   @type external_id :: binary
   @type phone_number :: binary
@@ -137,7 +140,7 @@ defmodule Wocky.User do
 
   @spec to_jid(t, binary | nil) :: JID.t()
   def to_jid(%User{id: user} = u, resource \\ nil) do
-    JID.make(user, Wocky.host(), resource || (u.resource || ""))
+    JID.make(user, Wocky.host(), resource || (u.device || ""))
   end
 
   @spec get_by_jid(JID.t()) :: t | nil
@@ -146,7 +149,7 @@ defmodule Wocky.User do
   def get_by_jid(jid(luser: id, lresource: resource)) do
     case Repo.get(User, id) do
       nil -> nil
-      user -> %User{user | resource: resource}
+      user -> %User{user | device: resource}
     end
   end
 
@@ -377,33 +380,33 @@ defmodule Wocky.User do
     end
   end
 
-  @spec get_locations_query(t, resource) :: Queryable.t()
-  def get_locations_query(user, resource) do
+  @spec get_locations_query(t, device) :: Queryable.t()
+  def get_locations_query(user, device) do
     user
     |> Ecto.assoc(:locations)
-    |> where(resource: ^resource)
+    |> where(device: ^device)
   end
 
-  @spec get_location_events_query(t, resource | Location.t()) :: Queryable.t()
+  @spec get_location_events_query(t, device | Location.t()) :: Queryable.t()
   def get_location_events_query(_user, %Location{} = loc) do
     Ecto.assoc(loc, :events)
   end
 
-  def get_location_events_query(user, resource) when is_binary(resource) do
+  def get_location_events_query(user, device) when is_binary(device) do
     user
     |> Ecto.assoc(:bot_events)
-    |> where(resource: ^resource)
+    |> where(device: ^device)
   end
 
-  @spec set_location(t, resource, float, float, float, boolean) ::
+  @spec set_location(t, device, float, float, float, boolean) ::
           :ok | {:error, any}
-  def set_location(user, resource, lat, lon, accuracy, is_fetch \\ false) do
+  def set_location(user, device, lat, lon, accuracy, is_fetch \\ false) do
     location = %Location{
       lat: lat,
       lon: lon,
       accuracy: accuracy,
       is_fetch: is_fetch,
-      resource: resource
+      device: device
     }
 
     with {:ok, _} <- set_location(user, location) do

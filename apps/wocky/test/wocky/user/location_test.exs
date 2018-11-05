@@ -17,7 +17,7 @@ defmodule Wocky.User.LocationTest do
 
     test "should pass with valid attributes", %{loc: loc} do
       data = %{
-        resource: "testing",
+        device: "testing",
         lat: 1.0,
         lon: 1.0,
         accuracy: 10,
@@ -32,13 +32,13 @@ defmodule Wocky.User.LocationTest do
       changeset = Location.changeset(loc, %{})
       refute changeset.valid?
 
-      for a <- [:resource, :lat, :lon, :accuracy, :captured_at] do
+      for a <- [:device, :lat, :lon, :accuracy, :captured_at] do
         assert "can't be blank" in errors_on(changeset)[a]
       end
     end
 
     test "should fail if the accuracy is negative", %{loc: loc} do
-      data = %{resource: "testing", lat: 1.0, lon: 1.0, accuracy: -1}
+      data = %{device: "testing", lat: 1.0, lon: 1.0, accuracy: -1}
       changeset = Location.changeset(loc, data)
       assert errors_on(changeset)[:accuracy]
     end

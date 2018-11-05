@@ -11,7 +11,11 @@ defmodule WockyAPI.Resolvers.Block do
     |> Block.blocks_query()
     |> preload([:blockee])
     |> Utils.connection_from_query(
-      user, [desc: :created_at], &map_to_block_user/1, args)
+      user,
+      [desc: :created_at],
+      &map_to_block_user/1,
+      args
+    )
   end
 
   def block(_root, args, %{context: %{current_user: blocker}}),

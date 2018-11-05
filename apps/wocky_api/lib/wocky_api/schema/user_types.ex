@@ -410,12 +410,8 @@ defmodule WockyAPI.Schema.UserTypes do
 
   @desc "Parameters for sending a location update"
   input_object :user_location_update_input do
-    field :resource, :string do
-      deprecate "resource is deprecated in favor of device"
-    end
-
-    @desc "The device (resource) sending the update"
-    field :device, :string
+    @desc "The unique ID for the device sending the update"
+    field :device, non_null(:string)
 
     @desc "Latitude in degrees"
     field :lat, non_null(:float)

@@ -25,7 +25,7 @@ defmodule :mod_wocky_token_spec do
   end
 
   before do
-    user = Factory.insert(:user, resource: "testing")
+    user = Factory.insert(:user, device: "testing")
     {:ok, user: user, user_jid: User.to_jid(user)}
   end
 

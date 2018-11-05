@@ -10,7 +10,7 @@ defmodule Wocky.User.Location do
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_locations" do
     field :user_id, :binary_id, null: false
-    field :resource, :string, null: false
+    field :device, :string, null: false
     field :lat, :float, null: false
     field :lon, :float, null: false
     field :accuracy, :float
@@ -37,7 +37,7 @@ defmodule Wocky.User.Location do
   @type location_tuple :: {float, float, float}
   @type t :: %Location{
           user_id: User.id() | nil,
-          resource: User.resource(),
+          device: User.device(),
           lat: float,
           lon: float,
           accuracy: float,
@@ -59,7 +59,7 @@ defmodule Wocky.User.Location do
         }
 
   @insert_fields [
-    :resource,
+    :device,
     :lat,
     :lon,
     :accuracy,
@@ -82,7 +82,7 @@ defmodule Wocky.User.Location do
   def changeset(struct, params) do
     struct
     |> cast(params, @insert_fields)
-    |> validate_required([:resource, :lat, :lon, :accuracy, :captured_at])
+    |> validate_required([:device, :lat, :lon, :accuracy, :captured_at])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
     |> validate_number(
       :lat,

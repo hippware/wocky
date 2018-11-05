@@ -8,7 +8,7 @@ defmodule Wocky.Roster.RosterNotificationTest do
   alias Wocky.Repo.Factory
 
   setup do
-    [user1, user2] = Factory.insert_list(2, :user, resource: "testing")
+    [user1, user2] = Factory.insert_list(2, :user, device: "testing")
     Sandbox.clear_notifications(global: true)
 
     {:ok, user1: user1, user2: user2}
@@ -17,7 +17,7 @@ defmodule Wocky.Roster.RosterNotificationTest do
   describe "follow notification" do
     setup ctx do
       token = Code.isbn13()
-      :ok = Push.enable(ctx.user1.id, ctx.user1.resource, token)
+      :ok = Push.enable(ctx.user1.id, ctx.user1.device, token)
     end
 
     test "start following", ctx do

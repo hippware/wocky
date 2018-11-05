@@ -3,7 +3,7 @@ defmodule Wocky.Push.LogTest do
 
   alias Wocky.Push.Log
 
-  @attrs [:user_id, :resource, :token, :payload, :response]
+  @attrs [:user_id, :device, :token, :payload, :response]
 
   test "required attributes" do
     changeset = Log.insert_changeset(%{})

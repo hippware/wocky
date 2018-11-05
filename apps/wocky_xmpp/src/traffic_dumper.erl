@@ -54,15 +54,15 @@ apply_unit(N, "w") -> ?duration:from_weeks(N).
 get_traffic(User, any, Start, Duration) ->
     {ok, ?wocky_traffic_log:get_by_period(User, Start, Duration)};
 get_traffic(User, Resource, Start, Duration) ->
-    {ok, ?wocky_traffic_log:get_by_resource(User, Resource, Start, Duration)}.
+    {ok, ?wocky_traffic_log:get_by_device(User, Resource, Start, Duration)}.
 
 display_result(Result) ->
     lists:foreach(format_row(_), Result).
 
-format_row(#{user_id := User, resource := Resource, created_at := Timestamp,
+format_row(#{user_id := User, device := Device, created_at := Timestamp,
              ip := IP, incoming := Incoming, packet := Packet}) ->
     io:fwrite("~s@~s/~s (~s) ~s ~s @ ~s\n~s~s~s\n",
-              [User, ?wocky:host(), Resource, IP,
+              [User, ?wocky:host(), Device, IP,
                direction_arrow(Incoming),
                ?wocky:host(),
                format_timestamp(Timestamp),

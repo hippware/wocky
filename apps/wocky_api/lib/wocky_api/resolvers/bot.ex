@@ -122,8 +122,7 @@ defmodule WockyAPI.Resolvers.Bot do
       Enum.member?(User.get_bot_relationships(user, bot), :subscribed)
     end)
 
-    params = Map.put(l, :resource, l[:device] || l[:resource])
-    location = struct(Location, params)
+    location = struct(Location, l)
 
     User.set_location_for_bot(user, location, bot)
   end

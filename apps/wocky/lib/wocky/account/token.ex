@@ -15,7 +15,7 @@ defmodule Wocky.Account.Token do
   @primary_key false
   schema "tokens" do
     field :user_id, :binary_id, null: false, primary_key: true
-    field :resource, :string, null: false, primary_key: true
+    field :device, :string, null: false, primary_key: true
     field :token_hash, :string, null: false
     field :expires_at, :utc_datetime, null: false
 
@@ -29,14 +29,14 @@ defmodule Wocky.Account.Token do
   @type expiry :: DateTime.t()
   @type entry :: %Token{
           user_id: pos_integer,
-          resource: User.resource(),
+          device: User.device(),
           token_hash: token_hash,
           expires_at: expiry
         }
 
   @token_bytes 32
   @token_marker "$T$"
-  @assign_fields [:user_id, :resource, :token_hash, :expires_at]
+  @assign_fields [:user_id, :device, :token_hash, :expires_at]
 
   @doc "Generates a token"
   @spec generate :: token
@@ -53,24 +53,24 @@ defmodule Wocky.Account.Token do
     struct
     |> cast(params, @assign_fields)
     |> validate_required(@assign_fields)
-    |> unique_constraint(:resource, name: :PRIMARY)
+    |> unique_constraint(:device, name: :PRIMARY)
   end
 
-  @doc "Generates a token and assigns it to the specified user and resource."
-  @spec assign(User.id(), User.resource()) :: {:ok, {token, expiry}}
-  def assign(user_id, resource) do
+  @doc "Generates a token and assigns it to the specified user and device."
+  @spec assign(User.id(), User.device()) :: {:ok, {token, expiry}}
+  def assign(user_id, device) do
     token = generate()
 
     %Token{}
     |> changeset(%{
       user_id: user_id,
-      resource: resource,
+      device: device,
       token_hash: Bcrypt.hashpwsalt(token),
       expires_at: expiry()
     })
     |> Repo.insert!(
       on_conflict: :replace_all,
-      conflict_target: [:user_id, :resource]
+      conflict_target: [:user_id, :device]
     )
     |> handle_assign_result(token)
   end
@@ -89,8 +89,8 @@ defmodule Wocky.Account.Token do
     from t in query, where: t.user_id == ^user_id
   end
 
-  defp and_resource(query, resource) do
-    from t in query, where: t.resource == ^resource
+  defp and_device(query, device) do
+    from t in query, where: t.device == ^device
   end
 
   @doc """
@@ -125,13 +125,13 @@ defmodule Wocky.Account.Token do
   end
 
   @doc """
-  Releases any token currently assigned to the specified user and resource.
+  Releases any token currently assigned to the specified user and device.
   """
-  @spec release(User.id(), User.resource()) :: :ok
-  def release(user_id, resource) do
+  @spec release(User.id(), User.device()) :: :ok
+  def release(user_id, device) do
     Token
     |> with_user(user_id)
-    |> and_resource(resource)
+    |> and_device(device)
     |> Repo.delete_all()
 
     :ok

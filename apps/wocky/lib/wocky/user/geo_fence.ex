@@ -107,7 +107,7 @@ defmodule Wocky.User.GeoFence do
   defp maybe_set_exit_timer(true, user, bot, loc, config) do
     dawdle_event = %{
       user_id: user.id,
-      resource: loc.resource,
+      device: loc.device,
       bot_id: bot.id,
       loc_id: loc.id
     }
@@ -127,11 +127,11 @@ defmodule Wocky.User.GeoFence do
         acc
 
       {:roll_back, old_state} ->
-        BotEvent.insert(user, loc.resource, bot, loc, old_state)
+        BotEvent.insert(user, loc.device, bot, loc, old_state)
         acc
 
       new_state ->
-        new_event = BotEvent.insert(user, loc.resource, bot, loc, new_state)
+        new_event = BotEvent.insert(user, loc.device, bot, loc, new_state)
         [{user, bot, new_event} | acc]
     end
   end
@@ -277,27 +277,27 @@ defmodule Wocky.User.GeoFence do
 
   def visit_timeout(%{
         user_id: user_id,
-        resource: resource,
+        device: device,
         bot_id: bot_id,
         loc_id: loc_id
       }) do
     case latest_loc(user_id) do
       %{id: ^loc_id} ->
-        do_visit_timeout(user_id, resource, bot_id)
+        do_visit_timeout(user_id, device, bot_id)
 
       _ ->
         :ok
     end
   end
 
-  defp do_visit_timeout(user_id, resource, bot_id) do
+  defp do_visit_timeout(user_id, device, bot_id) do
     config = get_config()
     user = Repo.get(User, user_id)
     bot = Bot.get(bot_id)
 
     if user && bot do
       if Bot.subscription(bot, user) == :visiting do
-        new_event = BotEvent.insert(user, resource, bot, :timeout)
+        new_event = BotEvent.insert(user, device, bot, :timeout)
         process_bot_event({user, bot, new_event}, config)
       end
     end

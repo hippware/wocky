@@ -29,7 +29,7 @@ defmodule :mod_wocky_tros_spec do
   end
 
   before do
-    alice = Factory.insert(:user, resource: "testing")
+    alice = Factory.insert(:user, device: "testing")
     bob = Factory.insert(:user)
     carol = Factory.insert(:user)
 

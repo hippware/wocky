@@ -91,8 +91,8 @@ defmodule :mod_wocky_notifications_spec do
 
   before do
     Sandbox.start_link()
-    sender = Factory.insert(:user, resource: "testing")
-    user = Factory.insert(:user, resource: "testing")
+    sender = Factory.insert(:user, device: "testing")
+    user = Factory.insert(:user, device: "testing")
 
     {:ok,
      user: user,
