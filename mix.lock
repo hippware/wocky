@@ -54,7 +54,7 @@
   "ex_guard": {:hex, :ex_guard, "1.3.3", "941acb390979a1ef40ed0ef10d07035ce7d98b9d0089cecca132f9c0744ac620", [:mix], [{:fs, "~> 0.9", [hex: :fs, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_hash_ring": {:hex, :ex_hash_ring, "3.0.0", "da32c83d7c6d964b9537eb52f27bad0a3a6f7012efdc2749e11a5f268b120b6b", [:mix], [], "hexpm"},
   "ex_json_logger": {:hex, :ex_json_logger, "1.0.0", "413f747706c2e4769b08c7b63aea08f5b3ef28da02dd5a0b6509dc28e1f77d57", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}, {:poison, ">= 1.4.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
-  "ex_machina": {:hex, :ex_machina, "2.2.0", "fec496331e04fc2db2a1a24fe317c12c0c4a50d2beb8ebb3531ed1f0d84be0ed", [:mix], [{:ecto, "~> 2.1", [hex: :ecto, repo: "hexpm", optional: true]}], "hexpm"},
+  "ex_machina": {:hex, :ex_machina, "2.2.2", "d84217a6fb7840ff771d2561b8aa6d74a0d8968e4b10ecc0d7e9890dc8fb1c6a", [:mix], [{:ecto, "~> 2.2 or ~> 3.0", [hex: :ecto, repo: "hexpm", optional: true]}, {:ecto_sql, "~> 3.0", [hex: :ecto_sql, repo: "hexpm", optional: true]}], "hexpm"},
   "exactor": {:hex, :exactor, "2.2.4", "5efb4ddeb2c48d9a1d7c9b465a6fffdd82300eb9618ece5d34c3334d5d7245b1", [:mix], [], "hexpm"},
   "exconstructor": {:hex, :exconstructor, "1.1.0", "272623a7b203cb2901c20cbb92c5c3ab103cc0087ff7c881979e046043346752", [:mix], [], "hexpm"},
   "excoveralls": {:hex, :excoveralls, "0.10.2", "fb4abd5b8a1b9d52d35e1162e7e2ea8bfb84b47ae07c38d39aa8ce64be0b0794", [:mix], [{:hackney, "~> 1.13", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
