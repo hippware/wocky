@@ -8,7 +8,6 @@ defmodule Wocky.Release.Mixfile do
       test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         espec: :test,
-        ct: :test,
         coveralls: :test,
         "coveralls.html": :test
       ],
@@ -36,7 +35,6 @@ defmodule Wocky.Release.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
-      {:mix_ct, github: "hippware/mix_ct", branch: "master", only: :test},
 
       # The apps below are required by multiple child apps (usually transitively
       # in at least one). We pin the version here to make sure they agree on
@@ -51,7 +49,7 @@ defmodule Wocky.Release.Mixfile do
     [
       recompile: ["clean", "compile"],
       prepare: ["deps.get", "recompile"],
-      lint: ["elvis", "credo"],
+      lint: ["credo"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       epmd: &run_epmd/1

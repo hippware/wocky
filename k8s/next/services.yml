@@ -11,10 +11,6 @@ spec:
   ports:
     - port: 8080
       name: http
-    - port: 5222
-      name: xmpp
-    - port: 5269
-      name: xmpp-s2s
     - port: 4369
       name: epmd
     - port: 9100
@@ -42,7 +38,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: 'wocky-next/elb'
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: 'tcp'
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: 'arn:aws:acm:us-west-2:773488857071:certificate/0342584c-d783-4f1f-bfb1-f437c11b53e9'
-    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '443,5223'
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: '443'
 spec:
   externalTrafficPolicy: Local
   ports:
@@ -50,10 +46,6 @@ spec:
       targetPort: 8080
       protocol: TCP
       name: https
-    - port: 5223
-      targetPort: 5222
-      protocol: TCP
-      name: xmpps
   selector:
     app: wocky
     env: next

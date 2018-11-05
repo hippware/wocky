@@ -10,8 +10,6 @@
     steps:
     - name: unit_test
       command: make unittest
-    - name: int_test
-      command: make inttest
   - name: test_migration
     type: serial
     service: wocky-migration-test
