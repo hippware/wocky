@@ -34,7 +34,6 @@ defmodule Wocky.Repo.Factory do
 
     %User{
       id: user_id,
-      username: user_id,
       external_id: external_id(),
       handle: new_handle(),
       avatar: TROS.make_url(ID.new()),

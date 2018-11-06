@@ -8,10 +8,9 @@ defmodule Wocky.Account.RegisterTest do
   alias Wocky.Roster.Item
   alias Wocky.User
 
-  @required_attrs [:username, :external_id]
+  @required_attrs [:external_id]
 
   @create_attrs %{
-    username: "bed9f0d7-2db2-47df-88a1-830749a44f5a",
     provider: "test_provider",
     external_id: "1234567890",
     phone_number: "+12104445484",
@@ -25,13 +24,12 @@ defmodule Wocky.Account.RegisterTest do
 
       changeset =
         Register.changeset(%{
-          username: id,
+          id: id,
           provider: "local",
           external_id: "bar"
         })
 
       assert changeset.valid?
-      assert changeset.changes.id == changeset.changes.username
       assert changeset.changes.id == id
     end
 
@@ -42,17 +40,6 @@ defmodule Wocky.Account.RegisterTest do
       for a <- @required_attrs do
         assert "can't be blank" in errors_on(changeset)[a]
       end
-    end
-
-    test "should fail with an invalid username" do
-      changeset =
-        Register.changeset(%{
-          username: "alice",
-          external_id: "bar"
-        })
-
-      refute changeset.valid?
-      assert errors_on(changeset)[:username]
     end
   end
 
@@ -105,7 +92,6 @@ defmodule Wocky.Account.RegisterTest do
 
     test "with defaults" do
       assert {:ok, user} = Register.create(%{})
-      assert user.username
       assert user.external_id
       assert user.provider == "local"
     end

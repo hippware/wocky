@@ -6,7 +6,7 @@ defmodule WockyAPI.ChannelHelper do
   use Phoenix.ChannelTest
 
   import Absinthe.Phoenix.SubscriptionTest
-  import ESpec.AssertReceive
+  import ExUnit.Assertions
 
   def authenticate(user_id, token, socket) do
     authenticate = """

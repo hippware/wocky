@@ -12,6 +12,10 @@ defmodule Wocky.Repo.Migrations.RemoveXmpp do
     drop table ("privacy_list")
     drop table ("privacy_list_data")
     drop table ("private_storage")
+
+    alter table("users") do
+      remove :username
+    end
   end
 
   defp drop_hs_del_triggers(t) do

@@ -15,7 +15,6 @@ defmodule WockyAPI.Mixfile do
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
-        espec: :test,
         coveralls: :test,
         "coveralls.html": :test
       ],
@@ -76,7 +75,6 @@ defmodule WockyAPI.Mixfile do
       {:ranch, "~> 1.7.0", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:reprise, "~> 0.5", only: :dev},
@@ -94,7 +92,6 @@ defmodule WockyAPI.Mixfile do
       recompile: ["clean", "compile"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      espec: ["ecto.create --quiet", "ecto.migrate", "espec"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
