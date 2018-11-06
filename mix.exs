@@ -7,7 +7,6 @@ defmodule Wocky.Release.Mixfile do
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
-        espec: :test,
         coveralls: :test,
         "coveralls.html": :test
       ],
@@ -33,7 +32,6 @@ defmodule Wocky.Release.Mixfile do
     [
       {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
 
       # The apps below are required by multiple child apps (usually transitively
