@@ -16,6 +16,15 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add checkpoint migration and remove bot_shares (PR #1964)
 * Make some parts of the users tests synchronous (PR #1965)
 * Update: faker (PR #1968), excoveralls (PR #1967)
+* GraphQL messaging (#1672)
+* Geofence anomalies for embedded location points (#1959)
+  * Fix: Double processing
+  * Fix: Sometimes the user's hidden status was ignored
+* GraphQL support for (un)blocking (#1940)
+* Update: phoenix_ecto (PR #1978), ex_machina (PR #1981), 
+  * distillery (PR #1982), timex (PR #1983), cors_plug (PR #1990)
+* Rename resource to device (PR #1979)
+* Push notification token registration for GraphQL (#1917)
 
 
 ----------
