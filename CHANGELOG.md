@@ -22,7 +22,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Fix: Sometimes the user's hidden status was ignored
 * GraphQL support for (un)blocking (#1940)
 * Update: phoenix_ecto (PR #1978), ex_machina (PR #1981), 
-  * distillery (PR #1982), timex (PR #1983), cors_plug (PR #1990)
+  * distillery (PR #1982, PR #1989), timex (PR #1983), cors_plug (PR #1990)
 * Rename resource to device (PR #1979)
 * Push notification token registration for GraphQL (#1917)
 
