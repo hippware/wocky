@@ -41,12 +41,24 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Token API
 
-  @spec enable(Wocky.User.id(), Wocky.User.device(), Token.token()) :: :ok
-  def enable(user_id, device, token) do
-    %{user_id: user_id, device: device, token: token}
+  @spec enable(
+          User.id(),
+          User.device(),
+          Token.token(),
+          binary | nil,
+          boolean | nil
+        ) :: :ok
+  def enable(user_id, device, token, platform \\ nil, dev_mode \\ nil) do
+    %{
+      user_id: user_id,
+      device: device,
+      token: token,
+      platform: platform,
+      dev_mode: dev_mode
+    }
     |> Token.register_changeset()
     |> Repo.insert!(
-      on_conflict: [set: [valid: true, enabled_at: DateTime.utc_now()]],
+      on_conflict: [set: conflict_updates(dev_mode)],
       conflict_target: [:user_id, :device, :token]
     )
 
@@ -57,6 +69,14 @@ defmodule Wocky.Push do
     |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
 
     :ok
+  end
+
+  defp conflict_updates, do: [valid: true, enabled_at: DateTime.utc_now()]
+
+  defp conflict_updates(nil), do: conflict_updates()
+
+  defp conflict_updates(dev_mode) do
+    [dev_mode: dev_mode] ++ conflict_updates()
   end
 
   @spec disable(Wocky.User.id(), Wocky.User.device()) :: :ok
