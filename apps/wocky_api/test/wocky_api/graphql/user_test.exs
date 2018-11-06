@@ -3,6 +3,8 @@ defmodule WockyAPI.GraphQL.UserTest do
 
   alias Faker.Name
   alias Wocky.Block
+  alias Wocky.Push
+  alias Wocky.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
@@ -227,6 +229,103 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert error_count(result) == 1
       assert error_msg(result) =~ "User not found"
       assert result.data == %{"user" => nil}
+    end
+  end
+
+  describe "push notification mutations" do
+    @query """
+    mutation ($input: PushNotificationsEnableInput!) {
+      pushNotificationsEnable (input: $input) {
+        successful
+      }
+    }
+    """
+
+    test "enable notifications with defaults", %{user: user} do
+      device = Factory.device()
+      token = ID.new()
+
+      input = %{
+        "device" => device,
+        "token" => token
+      }
+
+      result = run_query(@query, user, %{"input" => input})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "pushNotificationsEnable" => %{
+                 "successful" => true
+               }
+             }
+
+      assert %Token{
+               device: ^device,
+               token: ^token,
+               platform: :apns,
+               dev_mode: false,
+               valid: true
+             } = Repo.get_by(Token, user_id: user.id)
+    end
+
+    test "enable notifications with no defaults", %{user: user} do
+      device = Factory.device()
+      token = ID.new()
+
+      input = %{
+        "device" => device,
+        "token" => token,
+        "platform" => "APNS",
+        "devMode" => true
+      }
+
+      result = run_query(@query, user, %{"input" => input})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "pushNotificationsEnable" => %{
+                 "successful" => true
+               }
+             }
+
+      assert %Token{
+               device: ^device,
+               token: ^token,
+               platform: :apns,
+               dev_mode: true,
+               valid: true
+             } = Repo.get_by(Token, user_id: user.id)
+    end
+
+    @query """
+    mutation ($input: PushNotificationsDisableInput!) {
+      pushNotificationsDisable (input: $input) {
+        successful
+      }
+    }
+    """
+
+    test "disable notifications", %{user: user} do
+      device = Factory.device()
+
+      Push.enable(user.id, device, ID.new())
+
+      result = run_query(@query, user, %{"input" =>  %{"device" => device}})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "pushNotificationsDisable" => %{
+                 "successful" => true
+               }
+             }
+
+      assert %Token{
+               device: ^device,
+               valid: false
+             } = Repo.get_by(Token, user_id: user.id)
     end
   end
 

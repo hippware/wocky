@@ -107,12 +107,15 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def enable_notifications(%{input: i}, %{context: %{current_user: user}}) do
-    :ok = Push.enable(user, i.device, i.token, i.platform, i.dev_mode)
+    platform = Map.get(i, :platform)
+    dev_mode = Map.get(i, :dev_mode)
+
+    :ok = Push.enable(user.id, i.device, i.token, platform, dev_mode)
     {:ok, true}
   end
 
   def disable_notifications(%{input: i}, %{context: %{current_user: user}}) do
-    :ok = Push.disable(user, i.device)
+    :ok = Push.disable(user.id, i.device)
     {:ok, true}
   end
 

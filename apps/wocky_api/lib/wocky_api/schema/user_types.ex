@@ -590,7 +590,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Disable push notifications for this device"
     field :push_notifications_disable, type: :push_notifications_disable_payload do
-      arg :input, non_null(:push_notifications_enable_input)
+      arg :input, non_null(:push_notifications_disable_input)
       resolve &User.disable_notifications/2
       changeset_mutation_middleware()
     end
