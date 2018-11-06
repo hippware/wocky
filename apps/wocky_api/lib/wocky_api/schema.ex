@@ -31,6 +31,7 @@ defmodule WockyAPI.Schema do
     import_fields :block_mutations
     import_fields :bot_mutations
     import_fields :contact_mutations
+    import_fields :push_notifications_mutations
     import_fields :location_mutations
     import_fields :media_mutations
     import_fields :message_mutations

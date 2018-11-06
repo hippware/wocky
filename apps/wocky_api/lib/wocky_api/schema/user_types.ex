@@ -550,6 +550,52 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  enum :notification_platform do
+    @desc "Apple Push Notification service"
+    value :apns
+
+    # Android services TBD
+  end
+
+  input_object :push_notifications_enable_input do
+    @desc "The unique ID for this device"
+    field :device, non_null(:string)
+
+    @desc "The notification platform for this device. Defaults to 'apns'."
+    field :platform, :notification_platform
+
+    @desc "The platform-specific device token"
+    field :token, non_null(:string)
+
+    @desc "Whether to use the dev mode sandbox. Defaults to false."
+    field :dev_mode, :boolean
+  end
+
+  payload_object(:push_notifications_enable_payload, :boolean)
+
+  input_object :push_notifications_disable_input do
+    @desc "The unique ID for this device"
+    field :device, non_null(:string)
+  end
+
+  payload_object(:push_notifications_disable_payload, :boolean)
+
+  object :push_notifications_mutations do
+    @desc "Enable push notifications for this device"
+    field :push_notifications_enable, type: :push_notifications_enable_payload do
+      arg :input, non_null(:push_notifications_enable_input)
+      resolve &User.enable_notifications/2
+      changeset_mutation_middleware()
+    end
+
+    @desc "Disable push notifications for this device"
+    field :push_notifications_disable, type: :push_notifications_disable_payload do
+      arg :input, non_null(:push_notifications_disable_input)
+      resolve &User.disable_notifications/2
+      changeset_mutation_middleware()
+    end
+  end
+
   object :location_mutations do
     @desc "Update a user's current location"
     field :user_location_update, type: :user_location_update_payload do

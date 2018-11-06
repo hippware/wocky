@@ -2,7 +2,7 @@ defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, Message, Roster, User}
+  alias Wocky.{Conversation, Message, Push, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Presence
@@ -104,6 +104,19 @@ defmodule WockyAPI.Resolvers.User do
   def get_hidden(user, _args, _info) do
     {hidden, until} = User.hidden_state(user)
     {:ok, %{enabled: hidden, expires: until}}
+  end
+
+  def enable_notifications(%{input: i}, %{context: %{current_user: user}}) do
+    platform = Map.get(i, :platform)
+    dev_mode = Map.get(i, :dev_mode)
+
+    :ok = Push.enable(user.id, i.device, i.token, platform, dev_mode)
+    {:ok, true}
+  end
+
+  def disable_notifications(%{input: i}, %{context: %{current_user: user}}) do
+    :ok = Push.disable(user.id, i.device)
+    {:ok, true}
   end
 
   def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do

@@ -67,6 +67,16 @@ defmodule Wocky.PushTest do
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
     end
 
+    test "should update dev mode on existing tokens", ctx do
+      old_row = get_user_token(ctx.user_id, ctx.device)
+      :ok = Push.enable(ctx.user_id, ctx.device, ctx.token, :apns, true)
+
+      row = get_user_token(ctx.user_id, ctx.device)
+      assert row.valid
+      assert row.dev_mode
+      assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
+    end
+
     test "should disable old tokens", %{
       user_id: user_id,
       device: device,
