@@ -21,7 +21,7 @@ help:
 ### Run tests in CI
 
 unittest: ## Run the unit tests locally
-	mix do lint, ecto.reset, test, espec
+	mix do lint, ecto.reset, test
 
 inttest: ## Run the integration tests locally
 	mix do ecto.reset, epmd
