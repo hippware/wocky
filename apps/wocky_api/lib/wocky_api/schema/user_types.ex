@@ -344,11 +344,6 @@ defmodule WockyAPI.Schema.UserTypes do
     field :expires, :datetime
   end
 
-  object :presence do
-    field :status, non_null(:presence_status)
-    field :user, non_null(:user)
-  end
-
   @desc "Parameters for modifying a user"
   input_object :user_params do
     field :handle, :string
@@ -624,12 +619,12 @@ defmodule WockyAPI.Schema.UserTypes do
     end
 
     @desc ""
-    field :presence, non_null(:presence) do
+    field :followees, non_null(:user) do
       config fn
         _, %{context: %{current_user: user}} ->
           {:ok,
-           topic: User.presence_subscription_topic(user.id),
-           catchup: fn -> User.presence_catchup(user) end}
+           topic: User.followees_subscription_topic(user.id),
+           catchup: fn -> User.followees_catchup(user) end}
 
         _, _ ->
           {:error, "This operation requires an authenticated user"}

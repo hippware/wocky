@@ -312,7 +312,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       Push.enable(user.id, device, ID.new())
 
-      result = run_query(@query, user, %{"input" =>  %{"device" => device}})
+      result = run_query(@query, user, %{"input" => %{"device" => device}})
 
       refute has_errors(result)
 
