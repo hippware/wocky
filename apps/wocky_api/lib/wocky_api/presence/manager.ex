@@ -17,7 +17,7 @@ defmodule WockyAPI.Presence.Manager do
   use GenServer
 
   alias Phoenix.PubSub
-  alias Wocky.{Roster, User}
+  alias Wocky.{Repo, Roster, User}
   alias WockyAPI.Presence
   alias WockyAPI.Presence.Store
 
@@ -41,10 +41,14 @@ defmodule WockyAPI.Presence.Manager do
     PubSub.subscribe(:presence, pubsub_topic(user))
     Store.add_self(user.id)
 
-    user.id
-    |> Roster.followers(false)
-    |> Enum.each(fn u ->
-      PubSub.broadcast(:presence, pubsub_topic(u), {:online, user, self()})
+    Repo.transaction(fn ->
+      user.id
+      |> Roster.followers_query(user.id, false)
+      |> Repo.stream()
+      |> Stream.each(fn u ->
+        PubSub.broadcast(:presence, pubsub_topic(u), {:online, user, self()})
+      end)
+      |> Stream.run()
     end)
 
     contact_refs =
@@ -87,7 +91,7 @@ defmodule WockyAPI.Presence.Manager do
         nil ->
           # We had them marked as offline - set up tracking for their presence
           ref = Process.monitor(pid)
-          Presence.publish(s.user_id, contact, :online)
+          Presence.publish(s.user_id, contact)
           BiMap.put(s.contact_refs, contact.id, ref)
 
         _ref ->
@@ -152,7 +156,7 @@ defmodule WockyAPI.Presence.Manager do
         :ok
 
       contact ->
-        Presence.publish(user_id, contact, :offline)
+        Presence.publish(user_id, contact)
     end
   end
 end

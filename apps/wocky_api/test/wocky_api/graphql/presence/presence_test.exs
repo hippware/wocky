@@ -65,11 +65,9 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
   @subscription """
   subscription {
-    presence {
-      user {
-        id
-      }
-      status
+    followees {
+      id
+      presence_status
     }
   }
   """
@@ -213,9 +211,9 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
   defp assert_presence_notification(data, user_id, type) do
     assert %{
-             "presence" => %{
-               "status" => type |> to_string() |> String.upcase(),
-               "user" => %{"id" => user_id}
+             "followees" => %{
+               "id" => user_id,
+               "presence_status" => type |> to_string() |> String.upcase()
              }
            } == data
   end

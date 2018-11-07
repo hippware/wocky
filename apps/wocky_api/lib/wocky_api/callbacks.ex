@@ -3,9 +3,15 @@ defmodule WockyAPI.Callbacks do
   Initialisation for wocky DB watcher callbacks
   """
 
-  alias WockyAPI.Callbacks.{BotSubscription, Message, Notification, RosterItem}
+  alias WockyAPI.Callbacks.{
+    BotSubscription,
+    Message,
+    Notification,
+    RosterItem,
+    User
+  }
 
-  @modules [BotSubscription, Message, Notification, RosterItem]
+  @modules [BotSubscription, Message, Notification, RosterItem, User]
 
   def register do
     Enum.each(@modules, fn m -> m.register() end)

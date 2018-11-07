@@ -2,7 +2,7 @@ defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, Message, Push, Roster, User}
+  alias Wocky.{Conversation, Message, Push, Repo, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Presence
@@ -133,8 +133,8 @@ defmodule WockyAPI.Resolvers.User do
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
-  def presence_subscription_topic(user_id),
-    do: "presence_subscription_" <> user_id
+  def followees_subscription_topic(user_id),
+    do: "followees_subscription_" <> user_id
 
   def messages_subscription_topic(user_id),
     do: "messages_subscription_" <> user_id
@@ -148,6 +148,20 @@ defmodule WockyAPI.Resolvers.User do
     topic = contacts_subscription_topic(item.user_id)
 
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])
+  end
+
+  def notify_followers(user) do
+    Repo.transaction(fn ->
+      user.id
+      |> Roster.followers_query(user.id, false)
+      |> Repo.stream()
+      |> Stream.each(fn f ->
+        Subscription.publish(Endpoint, user, [
+          {:followees, followees_subscription_topic(f.id)}
+        ])
+      end)
+      |> Stream.run()
+    end)
   end
 
   def has_used_geofence(_root, _args, _context), do: {:ok, true}
@@ -224,15 +238,13 @@ defmodule WockyAPI.Resolvers.User do
   defp map_relationship(:followee), do: :following
   defp map_relationship(r), do: r
 
-  def presence_catchup(user) do
+  def followees_catchup(user) do
     user
     |> Presence.connect()
-    |> Enum.each(&Presence.publish(user.id, &1, :online))
+    |> Enum.each(&Presence.publish(user.id, &1))
   end
 
   def get_presence_status(other_user, _args, _context) do
-    Presence.user_status(other_user)
+    {:ok, Presence.user_status(other_user)}
   end
-
-  def presence_notification(user, status), do: %{user: user, status: status}
 end

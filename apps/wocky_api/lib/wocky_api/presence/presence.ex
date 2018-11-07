@@ -36,12 +36,12 @@ defmodule WockyAPI.Presence do
   Publish given online status of a user (`contact`) to another user
   (`recipient`)
   """
-  @spec publish(User.id(), User.t(), status()) :: :ok
-  def publish(recipient_id, contact, status) do
+  @spec publish(User.id(), User.t()) :: :ok
+  def publish(recipient_id, contact) do
     Subscription.publish(
       Endpoint,
-      UserResolver.presence_notification(contact, status),
-      [{:presence, UserResolver.presence_subscription_topic(recipient_id)}]
+      contact,
+      [{:followees, UserResolver.followees_subscription_topic(recipient_id)}]
     )
 
     :ok
