@@ -39,7 +39,19 @@ defmodule WockyAPI.Resolvers.User do
   def get_contact_relationship(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    {:ok, Roster.relationship(parent.id, target_user.id)}
+    rel =
+      parent.id
+      |> Roster.relationship(target_user.id)
+      |> map_relationship()
+
+    {:ok, rel}
+  end
+
+  def get_contact_created_at(_root, _args, %{
+        source: %{node: target_user, parent: parent}
+      }) do
+    item = Roster.get(parent.id, target_user.id)
+    {:ok, item.created_at}
   end
 
   def get_conversations(user, args, _info) do
@@ -142,7 +154,8 @@ defmodule WockyAPI.Resolvers.User do
   def notify_contact(item, relationship) do
     notification = %{
       user: item.contact,
-      relationship: map_relationship(relationship)
+      relationship: map_relationship(relationship),
+      created_at: item.created_at
     }
 
     topic = contacts_subscription_topic(item.user_id)
