@@ -6,7 +6,9 @@ use Mix.Config
 config :wocky_api,
   namespace: WockyAPI,
   ecto_repos: [Wocky.Repo],
-  max_graphql_complexity: 2000
+  max_graphql_complexity: 2000,
+  max_local_bots_search_radius:
+    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000}
 
 config :wocky_api, :generators,
   context_app: :wocky,

@@ -421,6 +421,8 @@ defmodule WockyAPI.GraphQL.BotTest do
           {[owned.id | o], [subscribed.id | s], [unrelated.id | u]}
         end)
 
+      Application.put_env(:wocky_api, :max_local_bots_search_radius, 1_000_000)
+
       {:ok,
        owned: Enum.reverse(owned),
        subscribed: Enum.reverse(subscribed),
@@ -428,8 +430,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     @query """
-    query ($pointA: Point!, $pointB: Point!) {
-      localBots (pointA: $pointA, pointB: $pointB) {
+    query ($pointA: Point!, $pointB: Point!, $limit: Int) {
+      localBots (pointA: $pointA, pointB: $pointB, limit: $limit) {
         id
       }
     }
@@ -479,6 +481,41 @@ defmodule WockyAPI.GraphQL.BotTest do
       ids = Enum.map(local_bots, &Map.get(&1, "id"))
 
       assert Enum.all?(ids, &Enum.member?([o, s], &1))
+    end
+
+    test "limit returned bots", %{
+      user: user,
+      owned: owned,
+      subscribed: subscribed
+    } do
+      result =
+        run_query(@query, user, %{
+          "pointA" => point_arg(0.0, 0.0),
+          "pointB" => point_arg(5.0, 5.0),
+          "limit" => 2
+        })
+
+      refute has_errors(result)
+
+      %{"localBots" => local_bots} = result.data
+
+      assert length(local_bots) == 2
+
+      ids = Enum.map(local_bots, &Map.get(&1, "id"))
+      assert ids == [List.last(subscribed), List.last(owned)]
+    end
+
+    test "exceed search area", %{user: user} do
+      result =
+        run_query(@query, user, %{
+          "pointA" => point_arg(0.0, 0.0),
+          "pointB" => point_arg(10.0, 10.0)
+        })
+
+      refute has_errors(result)
+
+      %{"localBots" => local_bots} = result.data
+      assert local_bots == []
     end
   end
 
