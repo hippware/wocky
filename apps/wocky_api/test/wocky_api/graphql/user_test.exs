@@ -537,11 +537,6 @@ defmodule WockyAPI.GraphQL.UserTest do
   end
 
   describe "contacts" do
-    setup %{user: user, user2: user2} do
-      Roster.befriend(user.id, user2.id)
-      :ok
-    end
-
     @query """
     query ($rel: UserContactRelationship) {
       currentUser {
@@ -549,6 +544,7 @@ defmodule WockyAPI.GraphQL.UserTest do
           totalCount
           edges {
             relationship
+            created_at
             node {
               id
             }
@@ -558,26 +554,49 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
 
-    test "get contacts by relationship", %{user: user, user2: user2} do
+    test "get contacts by relationship", %{user: user, user2: %User{id: id2}} do
+      Roster.befriend(user.id, id2)
       for rel <- [nil, "FRIEND", "FOLLOWER", "FOLLOWING"] do
         result = run_query(@query, user, %{"rel" => rel})
 
         refute has_errors(result)
 
-        assert result.data == %{
+        assert %{
                  "currentUser" => %{
                    "contacts" => %{
                      "edges" => [
                        %{
-                         "node" => %{"id" => user2.id},
-                         "relationship" => "FRIEND"
+                         "node" => %{"id" => ^id2},
+                         "relationship" => "FRIEND",
+                         "created_at" => _
                        }
                      ],
                      "totalCount" => 1
                    }
                  }
-               }
+               } = result.data
       end
+    end
+
+    test "following/followee mapping", %{user: user, user2: %User{id: id2}} do
+      Roster.follow(id2, user.id)
+      result = run_query(@query, user, %{"rel" => "FOLLOWER"})
+      refute has_errors(result)
+
+      assert %{
+        "currentUser" => %{
+          "contacts" => %{
+            "edges" => [
+              %{
+                "node" => %{"id" => ^id2},
+                "relationship" => "FOLLOWING",
+                "created_at" => _
+              }
+            ],
+            "totalCount" => 1
+          }
+        }
+      } = result.data
     end
   end
 
