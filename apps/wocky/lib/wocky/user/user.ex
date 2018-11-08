@@ -427,7 +427,7 @@ defmodule Wocky.User do
   """
   @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
   def set_location(user, location) do
-    with {:ok, loc} = result <- insert_location(user, location) do
+    with {:ok, loc} = result <- maybe_insert_location(user, location) do
       if !hidden?(user),
         do: GeoFence.check_for_bot_events(loc, user)
 
@@ -442,12 +442,26 @@ defmodule Wocky.User do
   @spec set_location_for_bot(t, Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any}
   def set_location_for_bot(user, location, bot) do
-    with {:ok, loc} = result <- insert_location(user, location) do
+    with {:ok, loc} = result <- maybe_insert_location(user, location) do
       if !hidden?(user),
         do: GeoFence.check_for_bot_event(bot, loc, user)
 
       result
     end
+  end
+
+  defp maybe_insert_location(user, location) do
+    if should_save_location?(user) do
+      insert_location(user, location)
+    else
+      {:ok, location}
+    end
+  end
+
+  def hippware?(user), do: String.ends_with?(user.email, "@hippware.com")
+
+  def should_save_location?(user) do
+    GeoFence.save_locations?() || hippware?(user)
   end
 
   def insert_location(user, location) do
