@@ -457,12 +457,6 @@ defmodule Wocky.Bot do
     |> join(
       :left,
       [b, ...],
-      invitation in Invitation,
-      b.id == invitation.bot_id and invitation.invitee_id == ^user.id
-    )
-    |> join(
-      :left,
-      [b, ...],
       sub in Subscription,
       b.id == sub.bot_id and sub.user_id == ^user.id
     )

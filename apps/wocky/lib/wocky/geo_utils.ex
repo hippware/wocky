@@ -63,3 +63,10 @@ defmodule Wocky.GeoUtils do
     a - multiple * b
   end
 end
+
+defimpl Geocalc.Point, for: Geo.Point do
+  alias Wocky.GeoUtils
+
+  def latitude(p), do: GeoUtils.get_lat(p)
+  def longitude(p), do: GeoUtils.get_lon(p)
+end

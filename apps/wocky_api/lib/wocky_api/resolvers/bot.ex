@@ -10,6 +10,11 @@ defmodule WockyAPI.Resolvers.Bot do
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
+  import Ecto.Query
+
+  @max_local_bots 50
+  @default_local_bots 15
+
   def get_bot(_root, args, %{context: context}) do
     case Map.get(context, :current_user) do
       nil -> {:ok, nil}
@@ -21,15 +26,29 @@ defmodule WockyAPI.Resolvers.Bot do
     do_get_bots(user, requestor, args)
   end
 
+  def get_local_bots(_root, %{limit: n}, _info) when n > @max_local_bots,
+    do: {:error, "Maximum local bots is #{@max_local_bots}"}
+
   def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
     point_a = GeoUtils.point(args[:point_a][:lat], args[:point_a][:lon])
     point_b = GeoUtils.point(args[:point_b][:lat], args[:point_b][:lon])
 
+    diagonal =
+      Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
+
     bots =
+    if diagonal > max_local_bots_search_radius() do
+      []
+    else
+      limit = args[:limit] || @default_local_bots
+
       requestor
       |> Bot.by_relationship_query(:subscribed, requestor)
       |> Bot.filter_by_location(point_a, point_b)
+      |> limit(^limit)
+      |> order_by(desc: :created_at)
       |> Repo.all()
+    end
 
     {:ok, bots}
   end
@@ -292,6 +311,13 @@ defmodule WockyAPI.Resolvers.Bot do
       error -> error
     end
   end
+
+  def default_local_bots, do: @default_local_bots
+
+  def max_local_bots, do: @max_local_bots
+
+  def max_local_bots_search_radius,
+    do: Confex.get_env(:wocky_api, :max_local_bots_search_radius)
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
   defp not_owned_error, do: {:error, "Operation only permitted on owned bots"}

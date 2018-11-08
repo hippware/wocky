@@ -295,13 +295,23 @@ defmodule WockyAPI.Schema.BotTypes do
       resolve &Bot.get_bot/3
     end
 
-    @desc "Retrieve owned and subscribed bots in a given region"
+    @desc """
+    Retrieve owned and subscribed bots in a given region. The query will return
+    an empty list of bots if the search radius (the diagonal of the rectangle)
+    exceeds #{Bot.max_local_bots_search_radius()} meters.
+    """
     field :local_bots, list_of(:bot) do
       @desc "Top left of the rectangle in which to search"
       arg :point_a, non_null(:point)
 
       @desc "Bottom right point of the rectangle in which to search"
       arg :point_b, non_null(:point)
+
+      @desc """
+      Maximum bots to return (default is #{Bot.default_local_bots()},
+      maximum is #{Bot.max_local_bots()})
+      """
+      arg :limit, :integer
 
       resolve &Bot.get_local_bots/3
     end
