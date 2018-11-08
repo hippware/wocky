@@ -10,6 +10,11 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
+  @spec save_locations? :: boolean
+  def save_locations? do
+    get_config().save_locations
+  end
+
   @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
   def exit_bot(user, bot, reason) do
     config = get_config()

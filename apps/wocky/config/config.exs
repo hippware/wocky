@@ -56,7 +56,8 @@ config :wocky, Wocky.User.GeoFence,
   max_exit_distance:
     {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200},
   stale_update_seconds:
-    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300}
+    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300},
+  save_locations: {:system, :boolean, "WOCKY_GEOFENCE_SAVE_LOCATIONS", true}
 
 # Push notifications
 config :wocky, Wocky.Push,
