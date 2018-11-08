@@ -161,6 +161,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
           id
         }
         relationship
+        created_at
       }
     }
     """
@@ -169,14 +170,14 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       socket: socket,
       token: token,
       user: %{id: user_id},
-      user2: user2
+      user2: %{id: user2_id}
     } do
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.befriend(user_id, user2.id)
+      Roster.befriend(user_id, user2_id)
 
       assert_push "subscription:data", push, 1000
 
@@ -185,28 +186,29 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                  data: %{
                    "contacts" => %{
                      "relationship" => "FRIEND",
-                     "user" => %{"id" => user2.id}
+                     "created_at" => _,
+                     "user" => %{"id" => ^user2_id}
                    }
                  }
                },
-               subscriptionId: subscription_id
-             } == push
+               subscriptionId: ^subscription_id
+             } = push
     end
 
     test "should notify when a contact type is changed", %{
       socket: socket,
       token: token,
       user: %{id: user_id},
-      user2: user2
+      user2: %{id: user2_id}
     } do
-      Roster.follow(user2.id, user_id)
+      Roster.follow(user2_id, user_id)
 
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.befriend(user_id, user2.id)
+      Roster.befriend(user_id, user2_id)
 
       assert_push "subscription:data", push, 1000
 
@@ -215,28 +217,29 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                  data: %{
                    "contacts" => %{
                      "relationship" => "FRIEND",
-                     "user" => %{"id" => user2.id}
+                     "created_at" => _,
+                     "user" => %{"id" => ^user2_id}
                    }
                  }
                },
-               subscriptionId: subscription_id
-             } == push
+               subscriptionId: ^subscription_id
+             } = push
     end
 
     test "should notify when a contact is removed", %{
       socket: socket,
       token: token,
       user: %{id: user_id},
-      user2: user2
+      user2: %{id: user2_id}
     } do
-      Roster.befriend(user2.id, user_id)
+      Roster.befriend(user2_id, user_id)
 
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.unfriend(user_id, user2.id)
+      Roster.unfriend(user_id, user2_id)
 
       assert_push "subscription:data", push, 1000
 
@@ -245,12 +248,13 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                  data: %{
                    "contacts" => %{
                      "relationship" => "NONE",
-                     "user" => %{"id" => user2.id}
+                     "created_at" => _,
+                     "user" => %{"id" => ^user2_id}
                    }
                  }
                },
-               subscriptionId: subscription_id
-             } == push
+               subscriptionId: ^subscription_id
+             } = push
     end
   end
 
