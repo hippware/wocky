@@ -217,11 +217,11 @@ defmodule WockyAPI.Schema.UserTypes do
     edge do
       @desc "The relationship between the parent and child users"
       field :relationship, :user_contact_relationship,
-        do: resolve &User.get_contact_relationship/3
+        do: resolve(&User.get_contact_relationship/3)
 
       @desc "When the relationship was created"
       field :created_at, non_null(:datetime),
-        do: resolve &User.get_contact_created_at/3
+        do: resolve(&User.get_contact_created_at/3)
     end
   end
 

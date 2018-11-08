@@ -561,6 +561,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "get contacts by relationship", %{user: user, user2: %User{id: id2}} do
       Roster.befriend(user.id, id2)
+
       for rel <- [nil, "FRIEND", "FOLLOWER", "FOLLOWING"] do
         result = run_query(@query, user, %{"rel" => rel})
 
@@ -589,19 +590,19 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert %{
-        "currentUser" => %{
-          "contacts" => %{
-            "edges" => [
-              %{
-                "node" => %{"id" => ^id2},
-                "relationship" => "FOLLOWING",
-                "created_at" => _
-              }
-            ],
-            "totalCount" => 1
-          }
-        }
-      } = result.data
+               "currentUser" => %{
+                 "contacts" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{"id" => ^id2},
+                       "relationship" => "FOLLOWING",
+                       "created_at" => _
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
     end
   end
 

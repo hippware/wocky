@@ -36,21 +36,21 @@ defmodule WockyAPI.Resolvers.Bot do
     diagonal =
       Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
 
-    bots =
     if diagonal > max_local_bots_search_radius() do
-      []
+      {:ok, %{bots: [], area_too_large: true}}
     else
       limit = args[:limit] || @default_local_bots
 
-      requestor
-      |> Bot.by_relationship_query(:subscribed, requestor)
-      |> Bot.filter_by_location(point_a, point_b)
-      |> limit(^limit)
-      |> order_by(desc: :created_at)
-      |> Repo.all()
-    end
+      bots =
+        requestor
+        |> Bot.by_relationship_query(:subscribed, requestor)
+        |> Bot.filter_by_location(point_a, point_b)
+        |> limit(^limit)
+        |> order_by(desc: :created_at)
+        |> Repo.all()
 
-    {:ok, bots}
+      {:ok, %{bots: bots, area_too_large: false}}
+    end
   end
 
   defp do_get_bots(_user, _requestor, %{id: _, relationship: _}) do
