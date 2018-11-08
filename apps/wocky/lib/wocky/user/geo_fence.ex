@@ -46,7 +46,9 @@ defmodule Wocky.User.GeoFence do
     config = get_config(debounce: false)
 
     if location_valid?(loc, config) do
-      bot
+      event = BotEvent.get_last_event(user.id, bot.id)
+
+      {bot, event}
       |> check_for_event(user, loc, config, [])
       |> Enum.each(&process_bot_event(&1, config))
     end
@@ -89,14 +91,22 @@ defmodule Wocky.User.GeoFence do
   defp maybe_do_async(fun, _), do: fun.()
 
   defp check_for_events(bots, user, loc, config) do
-    Enum.reduce(bots, [], &check_for_event(&1, user, loc, config, &2))
+    events = BotEvent.get_last_events(user.id)
+
+    bot_events =
+      Enum.map(bots, fn bot ->
+        event = Enum.find(events, fn e -> bot.id == e.bot_id end)
+        {bot, event}
+      end)
+
+    Enum.reduce(bot_events, [], &check_for_event(&1, user, loc, config, &2))
   end
 
-  defp check_for_event(bot, user, loc, config, acc) do
+  defp check_for_event({bot, _} = be, user, loc, config, acc) do
     bot
     |> Bot.contains?(Map.from_struct(loc))
     |> maybe_set_exit_timer(user, bot, loc, config)
-    |> handle_intersection(user, bot, loc, config, acc)
+    |> handle_intersection(user, be, loc, config, acc)
   end
 
   defp maybe_set_exit_timer(false, _, _, _, _), do: false
@@ -119,9 +129,7 @@ defmodule Wocky.User.GeoFence do
     true
   end
 
-  defp handle_intersection(inside?, user, bot, loc, config, acc) do
-    event = BotEvent.get_last_event(user.id, bot.id)
-
+  defp handle_intersection(inside?, user, {bot, event}, loc, config, acc) do
     case user_state_change(inside?, event, bot, loc, config) do
       :no_change ->
         acc
