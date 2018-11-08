@@ -1,5 +1,5 @@
 # vim: set noexpandtab ts=2 sw=2:
-.PHONY: help unittest inttest migrationtest release build push deploy shipit restart pods status top exec console shell describe logs follow cp
+.PHONY: help unittest migrationtest release build push deploy shipit restart pods status top exec console shell describe logs follow cp
 
 VERSION       ?= $(shell elixir ./version.exs)
 RELEASE_NAME  ?= wocky
@@ -22,10 +22,6 @@ help:
 
 unittest: ## Run the unit tests locally
 	mix do lint, ecto.reset, test
-
-inttest: ## Run the integration tests locally
-	mix do ecto.reset, epmd
-	mix ct
 
 migrationtest:
 	aws s3 cp s3://wocky-db-dumps/staging/wocky_staging.dump.gz db_dump.gz
