@@ -44,13 +44,17 @@ defmodule Wocky.TrafficLog do
   @required_fields [:device, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
-  @spec put(map) :: {:ok, TrafficLog.t()} | {:error, Changeset.t()}
-  def put(fields) do
-    %TrafficLog{}
-    |> cast(fields, @change_fields)
-    |> validate_required(@required_fields)
-    |> foreign_key_constraint(:user_id)
-    |> Repo.insert()
+  @spec put(map, boolean) :: {:ok, TrafficLog.t() | nil} | {:error, Changeset.t()}
+  def put(fields, force? \\ false) do
+    if force? || Confex.get_env(:wocky, :log_traffic) do
+      %TrafficLog{}
+      |> cast(fields, @change_fields)
+      |> validate_required(@required_fields)
+      |> foreign_key_constraint(:user_id)
+      |> Repo.insert()
+    else
+      {:ok, nil}
+    end
   end
 
   @spec get_by_period(User.id(), DateTime.t(), Duration.t()) :: [t]

@@ -9,18 +9,12 @@ defmodule WockyAPI.PipelineLog do
   def run(blueprint, opts) do
     context = opts[:context]
 
-    user_id =
-      case context[:current_user] do
-        %User{id: id} -> id
-        _ -> nil
-      end
-
     case opts[:phase] do
       :request ->
-        log(request(blueprint, opts[:variables]), user_id, context, false)
+        log(request(blueprint, opts[:variables]), context, false)
 
       :response ->
-        log(result(blueprint.result), user_id, context, true)
+        log(result(blueprint.result), context, true)
     end
 
     {:ok, blueprint}
@@ -32,7 +26,13 @@ defmodule WockyAPI.PipelineLog do
   defp result(result),
     do: inspect(result[:data]) <> " / " <> inspect(result[:errors])
 
-  defp log(packet, user_id, context, incoming) do
+  defp log(packet, %{current_user: %User{} = user} = context, incoming),
+    do: log(packet, user.id, context, incoming, User.hippware?(user))
+
+  defp log(packet, context, incoming),
+    do: log(packet, nil, context, incoming, false)
+
+  defp log(packet, user_id, context, incoming, force) do
     %{
       user_id: user_id,
       device: "GraphQL",
@@ -41,6 +41,6 @@ defmodule WockyAPI.PipelineLog do
       incoming: incoming,
       packet: packet
     }
-    |> TrafficLog.put()
+    |> TrafficLog.put(force)
   end
 end
