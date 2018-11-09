@@ -31,7 +31,10 @@ config :wocky,
   welcome_email_template: "official_tr_welcome_email",
   welcome_email_from: {"tinyrobot support", "support@tinyrobot.com"},
   welcome_email_subject: "Welcome to tinyrobot!",
-  welcome_field_mappings: [{"user_handle", :handle}]
+  welcome_field_mappings: [{"user_handle", :handle}],
+
+  # Diagnostics
+  log_traffic: {:system, :boolean, "WOCKY_LOG_TRAFFIC", true}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
