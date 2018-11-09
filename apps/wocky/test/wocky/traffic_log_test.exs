@@ -1,5 +1,5 @@
 defmodule Wocky.TrafficLogTest do
-  use Wocky.DataCase, async: true
+  use Wocky.DataCase, async: false
 
   alias Timex.Duration
   alias Wocky.Repo.Factory
@@ -29,12 +29,44 @@ defmodule Wocky.TrafficLogTest do
   end
 
   describe "put/1" do
-    test "should add a traffic entry for the user" do
+    setup do
+      {:ok, user: Factory.insert(:user)}
+
+      on_exit(fn -> Application.put_env(:wocky, :log_traffic, true) end)
+    end
+
+    test "should add a traffic entry for the user", %{user: user} do
       now = Timex.now()
-      user = Factory.insert(:user)
       log = Factory.params_for(:traffic_log, user_id: user.id)
 
       put_result = TrafficLog.put(log)
+      assert {:ok, _} = put_result
+
+      entry = Kernel.elem(put_result, 1)
+      assert %{__struct__: TrafficLog} = entry
+
+      assert TrafficLog.get_by_period(user.id, now, default_duration()) == [
+               entry
+             ]
+    end
+
+    test "should not log when :log_traffic is false", %{user: user} do
+      Application.put_env(:wocky, :log_traffic, false)
+
+      now = Timex.now()
+      log = Factory.params_for(:traffic_log, user_id: user.id)
+
+      assert {:ok, nil} = TrafficLog.put(log)
+      assert TrafficLog.get_by_period(user.id, now, default_duration()) == []
+    end
+
+    test "`force` param should override log disabling", %{user: user} do
+      Application.put_env(:wocky, :log_traffic, false)
+
+      now = Timex.now()
+      log = Factory.params_for(:traffic_log, user_id: user.id)
+
+      put_result = TrafficLog.put(log, true)
       assert {:ok, _} = put_result
 
       entry = Kernel.elem(put_result, 1)
