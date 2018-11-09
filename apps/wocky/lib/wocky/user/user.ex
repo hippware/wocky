@@ -451,7 +451,8 @@ defmodule Wocky.User do
     end
   end
 
-  def hippware?(user), do: String.ends_with?(user.email, "@hippware.com")
+  def hippware?(%User{email: email}),
+    do: email && String.ends_with?(email, "@hippware.com")
 
   def should_save_location?(user) do
     GeoFence.save_locations?() || hippware?(user)
