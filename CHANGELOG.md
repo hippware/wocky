@@ -5,6 +5,19 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Don't save user locations on us1 unless hippware (PR #2010)
+* Increase allowed query complexity (PR #2012)
+* Disable tracing on staging (PR #2012)
+* Disable traffic log on us1 unless hippware (PR #1998)
+* Fix the user Hippware check when email is nil (PR #2020)
+
+
+# 2018.11.8+r9cae413
+
+* Pull all bot events at once during geofence calculation (PR #1999)
+* Fix followee/following bug; add created_at to contacts (#2007, PR #2008)
+
+
 # 2018.11.1+re797d7f
 
 * Update: phoenix_ecto (PR #1977)
