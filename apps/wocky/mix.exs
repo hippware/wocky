@@ -102,6 +102,10 @@ defmodule Wocky.Mixfile do
       {:lager, "~> 3.6", override: true},
       {:peerage, "~> 1.0"},
       {:pigeon, "~> 1.1"},
+      # The plug and plug_cowboy deps are necessary for tests to work
+      # consistently when running in the apps/wocky directory.
+      {:plug, "~> 1.0"},
+      {:plug_cowboy, "~> 1.0"},
       {:poolboy, "~> 1.5"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus_ecto, "~> 1.0"},

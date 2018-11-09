@@ -376,6 +376,17 @@ defmodule Wocky.User.UserTest do
       refute Repo.get_by(Token, user_id: ctx.id)
     end
 
+    test "should delete the user's TROS files", ctx do
+      files = Factory.insert_list(5, :tros_metadata, user: ctx.user)
+
+      assert User.delete(ctx.id) == :ok
+
+      actions = TROS.Store.Test.get_actions() |> Enum.sort()
+      expected = files |> Enum.map(&{:delete, &1.id}) |> Enum.sort()
+
+      assert actions == expected
+    end
+
     test "should succeed if the user does not exist" do
       assert User.delete(ID.new()) == :ok
     end

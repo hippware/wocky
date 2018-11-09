@@ -26,8 +26,9 @@ defmodule Wocky.TROS.MetadataTest do
     end
 
     test "should set the user_id and access values", ctx do
-      assert Metadata.get_access(ctx.id) == ctx.access
-      assert Metadata.get_user_id(ctx.id) == ctx.user.id
+      metadata = Metadata.get(ctx.id)
+      assert metadata.access == ctx.access
+      assert metadata.user_id == ctx.user.id
     end
   end
 
@@ -60,27 +61,7 @@ defmodule Wocky.TROS.MetadataTest do
     end
 
     test "should update the access value", ctx do
-      assert Metadata.get_access(ctx.id) == ctx.access
-    end
-  end
-
-  describe "get_user_id/1" do
-    test "should get the user_id of an existing file", ctx do
-      assert Metadata.get_user_id(ctx.id) == ctx.user.id
-    end
-
-    test "should return `nil` for a non-existant file" do
-      refute Metadata.get_user_id(ID.new())
-    end
-  end
-
-  describe "get_access/1" do
-    test "should get the access data for an existing file", ctx do
-      assert Metadata.get_access(ctx.id) == ctx.access
-    end
-
-    test "should return `nil` for a non-existant file" do
-      refute Metadata.get_access(ID.new())
+      assert Metadata.get(ctx.id).access == ctx.access
     end
   end
 

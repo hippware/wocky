@@ -1,4 +1,4 @@
-defmodule Wocky.TROS.SimpleStore do
+defmodule Wocky.TROS.Store.Simple do
   @moduledoc """
   Simple backend for the TROS file management system using
   https://hub.docker.com/r/mayth/simple-upload-server/

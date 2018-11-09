@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :wocky,
-  tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.S3Store},
+  tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.Store.S3},
   start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false}
 
 config :wocky, Wocky.User.GeoFence,

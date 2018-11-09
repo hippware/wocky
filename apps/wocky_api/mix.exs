@@ -69,8 +69,6 @@ defmodule WockyAPI.Mixfile do
        github: "phoenixframework/phoenix_pubsub_redis", branch: "master"},
       {:redix_pubsub, "~> 0.5", override: true},
       {:redix, "~> 0.8", override: true},
-
-      # TODO: Move back to the official redlock repo once the changes are merged
       {:redlock, "~> 1.0.6"},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},

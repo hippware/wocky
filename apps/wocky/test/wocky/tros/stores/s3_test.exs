@@ -1,4 +1,4 @@
-defmodule Wocky.TROS.S3StoreTest do
+defmodule Wocky.TROS.Store.S3Test do
   use Wocky.DataCase, async: true
 
   alias Faker.Lorem
@@ -6,7 +6,7 @@ defmodule Wocky.TROS.S3StoreTest do
   alias Wocky.JID
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.TROS.S3Store
+  alias Wocky.TROS.Store.S3, as: S3Store
 
   @test_file "d49ff638-4736-11e7-8017-0e6514633f23"
   @url_re ~r/https?:\/\/.*/

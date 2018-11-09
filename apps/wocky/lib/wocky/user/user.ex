@@ -10,16 +10,21 @@ defmodule Wocky.User do
 
   alias Ecto.Queryable
   alias Wocky.Account.Token, as: AuthToken
-  alias Wocky.Block
-  alias Wocky.Bot
+
+  alias Wocky.{
+    Block,
+    Bot,
+    Conversation,
+    Email,
+    GeoUtils,
+    Message,
+    Repo,
+    Roster,
+    TROS
+  }
+
   alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.Conversation
-  alias Wocky.Email
-  alias Wocky.GeoUtils
-  alias Wocky.Message
   alias Wocky.Push.Token, as: PushToken
-  alias Wocky.Repo
-  alias Wocky.Roster
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User.{Avatar, BotEvent, GeoFence, InviteCode, Location}
@@ -476,11 +481,15 @@ defmodule Wocky.User do
   defp normalize_captured_at(_), do: DateTime.utc_now()
 
   @doc "Removes the user from the database"
-  @spec delete(id) :: :ok | no_return
+  @spec delete(id) :: :ok
   def delete(id) do
     user = Repo.get(User, id)
 
-    user && Repo.delete!(user)
+    if user do
+      delete_tros_files(user)
+      Repo.delete!(user)
+    end
+
     :ok
   end
 
@@ -610,5 +619,15 @@ defmodule Wocky.User do
     user
     |> cast(%{welcome_sent: true}, [:welcome_sent])
     |> Repo.update()
+  end
+
+  defp delete_tros_files(user) do
+    Repo.transaction(fn ->
+      user
+      |> TROSMetadata.owned_query()
+      |> Repo.stream()
+      |> Stream.each(&TROS.delete(&1.id, user))
+      |> Stream.run()
+    end)
   end
 end
