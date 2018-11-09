@@ -150,6 +150,17 @@ defmodule WockyAPI.Schema.BotTypes do
     field :accepted, :boolean
   end
 
+  object :local_bots do
+    @desc "The bots found in the requested area"
+    field :bots, non_null(list_of(:bot))
+
+    @desc """
+    If true, the area requested was too large to search and no bots will be
+    returned
+    """
+    field :area_too_large, :boolean
+  end
+
   connection :bot_items, node_type: :bot_item do
     total_count_field()
 
@@ -300,7 +311,7 @@ defmodule WockyAPI.Schema.BotTypes do
     an empty list of bots if the search radius (the diagonal of the rectangle)
     exceeds #{Bot.max_local_bots_search_radius()} meters.
     """
-    field :local_bots, list_of(:bot) do
+    field :local_bots, non_null(:local_bots) do
       @desc "Top left of the rectangle in which to search"
       arg :point_a, non_null(:point)
 

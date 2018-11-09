@@ -432,7 +432,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     @query """
     query ($pointA: Point!, $pointB: Point!, $limit: Int) {
       localBots (pointA: $pointA, pointB: $pointB, limit: $limit) {
-        id
+        bots { id }
+        areaTooLarge
       }
     }
     """
@@ -451,7 +452,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
 
-      %{"localBots" => local_bots} = result.data
+      %{"localBots" => %{"areaTooLarge" => false, "bots" => local_bots}} =
+        result.data
 
       assert length(local_bots) == 8
 
@@ -474,7 +476,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
 
-      %{"localBots" => local_bots} = result.data
+      %{"localBots" => %{"areaTooLarge" => false, "bots" => local_bots}} =
+        result.data
 
       assert length(local_bots) == 2
 
@@ -497,7 +500,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
 
-      %{"localBots" => local_bots} = result.data
+      %{"localBots" => %{"areaTooLarge" => false, "bots" => local_bots}} =
+        result.data
 
       assert length(local_bots) == 2
 
@@ -514,8 +518,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
 
-      %{"localBots" => local_bots} = result.data
-      assert local_bots == []
+      assert %{"localBots" => %{"areaTooLarge" => true, "bots" => []}} ==
+               result.data
     end
   end
 
