@@ -25,6 +25,16 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * distillery (PR #1982, PR #1989), timex (PR #1983), cors_plug (PR #1990)
 * Rename resource to device (PR #1979)
 * Push notification token registration for GraphQL (#1917)
+* Replace presence subscription with followee subscription (PR #1995)
+* Add limits to localBots query (PR #1996)
+* Pull all bot events at once during geofence calculation (PR #2000)
+* Fix followee/following bug; add created_at to contacts (PR #2009)
+* Don't save user locations on us1 unless hippware (PR #2011)
+* Increase allowed query complexity (PR #2013)
+* Disable tracing on staging (PR #2013)
+* Rework localBots query to report if the query area is too large (PR #2018)
+* Disable traffic log on us1 unless hippware (PR #1997)
+* Fix the user Hippware check when email is nil (PR #2021)
 
 
 ----------
