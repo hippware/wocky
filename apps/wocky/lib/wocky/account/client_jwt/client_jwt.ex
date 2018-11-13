@@ -3,13 +3,14 @@ defmodule Wocky.Account.ClientJWT do
   Validates the client-generated JWT used to wrap OAuth 2 tokens.
   See https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
   """
+  @audience "Wocky"
+
   use Guardian,
     otp_app: :wocky,
     issuer: "TinyRobot/0.0.0 (Wocky)",
-    audience: "Wocky",
+    audience: @audience,
     secret_key:
       "0xszZmLxKWdYjvjXOxchnV+ttjVYkU1ieymigubkJZ9dqjnl7WPYLYqLhvC10TaH",
-    token_module: Wocky.Account.ClientJWT.Token,
     token_verify_module: Wocky.Account.ClientJWT.Verify
 
   alias Wocky.Account.{Firebase, Register}
@@ -27,18 +28,6 @@ defmodule Wocky.Account.ClientJWT do
     {:error, :unknown_resource}
   end
 
-  def type_for_token(%User{} = _user, _claims) do
-    {:ok, "bypass"}
-  end
-
-  def type_for_token(token, _claims) when is_binary(token) do
-    {:ok, "firebase"}
-  end
-
-  def type_for_token(_, _) do
-    {:error, :unknown_resource}
-  end
-
   def resource_from_claims(%{"typ" => "firebase", "sub" => token}) do
     {:ok, user, _claims} = Firebase.resource_from_token(token)
     {:ok, user}
@@ -53,7 +42,22 @@ defmodule Wocky.Account.ClientJWT do
   end
 
   def build_claims(claims, %User{} = user, _opts) do
-    {:ok, Map.put(claims, "phone_number", user.phone_number)}
+    claims =
+      claims
+      |> Map.put("phone_number", user.phone_number)
+      |> Map.put("typ", "bypass")
+      |> Map.put("aud", @audience)
+
+    {:ok, claims}
+  end
+
+  def build_claims(claims, token, _opts) when is_binary(token) do
+    claims =
+      claims
+      |> Map.put("typ", "firebase")
+      |> Map.put("aud", @audience)
+
+    {:ok, claims}
   end
 
   def build_claims(claims, _resource, _opts), do: {:ok, claims}

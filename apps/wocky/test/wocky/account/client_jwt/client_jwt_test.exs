@@ -26,22 +26,6 @@ defmodule Wocky.Account.ClientJWTTest do
     end
   end
 
-  describe "type_for_token/2" do
-    test "with a valid user", %{user: user} do
-      {:ok, type} = ClientJWT.type_for_token(user, %{})
-      assert type == "bypass"
-    end
-
-    test "with a Firebase token" do
-      {:ok, type} = ClientJWT.type_for_token("ThisIsAToken", %{})
-      assert type == "firebase"
-    end
-
-    test "with any other data" do
-      assert {:error, :unknown_resource} == ClientJWT.type_for_token(%{}, %{})
-    end
-  end
-
   describe "encode_and_sign/1" do
     test "should include external_id and phone_number for bypass", %{user: u} do
       {:ok, _, claims} = ClientJWT.encode_and_sign(u)
