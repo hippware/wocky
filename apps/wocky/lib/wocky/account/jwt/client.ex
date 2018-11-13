@@ -1,4 +1,4 @@
-defmodule Wocky.Account.ClientJWT do
+defmodule Wocky.Account.JWT.Client do
   @moduledoc """
   Validates the client-generated JWT used to wrap OAuth 2 tokens.
   See https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
@@ -11,9 +11,10 @@ defmodule Wocky.Account.ClientJWT do
     audience: @audience,
     secret_key:
       "0xszZmLxKWdYjvjXOxchnV+ttjVYkU1ieymigubkJZ9dqjnl7WPYLYqLhvC10TaH",
-    token_verify_module: Wocky.Account.ClientJWT.Verify
+    token_verify_module: Wocky.Account.JWT.Verify
 
-  alias Wocky.Account.{Firebase, Register}
+  alias Wocky.Account.JWT.Firebase
+  alias Wocky.Account.Register
   alias Wocky.User
 
   def subject_for_token(%User{} = user, _claims) do
