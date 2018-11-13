@@ -1,8 +1,8 @@
-defmodule Wocky.Account.ClientJWT.VerifyTest do
+defmodule Wocky.Account.JWT.VerifyTest do
   use ExUnit.Case
 
-  alias Wocky.Account.ClientJWT
-  alias Wocky.Account.ClientJWT.Verify
+  alias Wocky.Account.JWT.Client, as: ClientJWT
+  alias Wocky.Account.JWT.Verify
 
   defp verify_claim(name, value) do
     claims = %{name => value}

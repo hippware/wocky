@@ -1,4 +1,4 @@
-defmodule Wocky.Account.ClientJWT.Verify do
+defmodule Wocky.Account.JWT.Verify do
   @moduledoc "Verifies the claims in a client-generated JWT token."
 
   use Guardian.Token.Verify

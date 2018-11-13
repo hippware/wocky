@@ -2,7 +2,9 @@ defmodule Wocky.AccountTest do
   use Wocky.DataCase
 
   alias Wocky.Account
-  alias Wocky.Account.{ClientJWT, Firebase, Token}
+  alias Wocky.Account.JWT.Client, as: ClientJWT
+  alias Wocky.Account.JWT.Firebase
+  alias Wocky.Account.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID

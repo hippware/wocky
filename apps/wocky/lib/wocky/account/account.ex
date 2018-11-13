@@ -6,7 +6,9 @@ defmodule Wocky.Account do
 
   use Elixometer
 
-  alias Wocky.Account.{ClientJWT, Firebase, Register, Token}
+  alias Wocky.Account.JWT.Client, as: ClientJWT
+  alias Wocky.Account.JWT.Firebase
+  alias Wocky.Account.{Register, Token}
   alias Wocky.Repo
   alias Wocky.User
 

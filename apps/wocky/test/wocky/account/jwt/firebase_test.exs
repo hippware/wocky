@@ -1,7 +1,7 @@
-defmodule Wocky.Account.FirebaseTest do
+defmodule Wocky.Account.JWT.FirebaseTest do
   use Wocky.DataCase
 
-  alias Wocky.Account.Firebase
+  alias Wocky.Account.JWT.Firebase
   alias Wocky.Repo.Factory
 
   setup do

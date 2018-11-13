@@ -1,4 +1,4 @@
-defmodule Wocky.Account.Firebase do
+defmodule Wocky.Account.JWT.Firebase do
   @moduledoc """
   Module for verifying Firebase JWT tokens
   """
