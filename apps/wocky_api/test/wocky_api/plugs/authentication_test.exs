@@ -4,7 +4,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
   import WockyAPI.Plugs.Authentication
 
   alias Wocky.Account
-  alias Wocky.Account.ClientJWT
+  alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.User
