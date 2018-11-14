@@ -3,11 +3,13 @@ defmodule Wocky.Account.JWT.Client do
   Validates the client-generated JWT used to wrap OAuth 2 tokens.
   See https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
   """
+
+  @signing_key "0xszZmLxKWdYjvjXOxchnV+ttjVYkU1ieymigubkJZ9dqjnl7WPYLYqLhvC10TaH"
+
   use Guardian,
     otp_app: :wocky,
     issuer: "TinyRobot/0.0.0 (Wocky)",
-    secret_key:
-      "0xszZmLxKWdYjvjXOxchnV+ttjVYkU1ieymigubkJZ9dqjnl7WPYLYqLhvC10TaH",
+    secret_key: @signing_key,
     token_verify_module: Wocky.Account.JWT.Verify
 
   alias Wocky.Account.JWT.Firebase
@@ -16,6 +18,8 @@ defmodule Wocky.Account.JWT.Client do
 
   @audience "Wocky"
   @agent_rx ~r/TinyRobot\/(\d+\.\d+\.\d+)(?: \((.*)\))?/
+
+  def signing_key, do: @signing_key
 
   def subject_for_token(%User{} = user, _claims) do
     {:ok, Register.get_external_id(user, "bypass")}
