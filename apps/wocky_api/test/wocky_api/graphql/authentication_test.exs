@@ -3,7 +3,7 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
 
   alias Faker.Lorem
   alias Wocky.Account
-  alias Wocky.Account.ClientJWT
+  alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Repo.Factory
 
   @query """
