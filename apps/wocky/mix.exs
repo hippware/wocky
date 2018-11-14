@@ -113,7 +113,7 @@ defmodule Wocky.Mixfile do
       {:timex, "~> 3.1"},
       {:redix, "~> 0.7"},
       {:xml_builder, "~> 2.0", override: true},
-      {:ranch, "~> 1.6.0", override: true},
+      {:ranch, "~> 1.7.0", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
       {:ossp_uuid,
        github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
