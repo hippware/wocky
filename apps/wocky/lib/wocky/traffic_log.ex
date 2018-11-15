@@ -44,7 +44,8 @@ defmodule Wocky.TrafficLog do
   @required_fields [:resource, :host, :ip, :incoming, :packet]
 
   @doc "Write a packet record to the database"
-  @spec put(map, boolean) :: {:ok, TrafficLog.t() | nil} | {:error, Changeset.t()}
+  @spec put(map, boolean) ::
+          {:ok, TrafficLog.t() | nil} | {:error, Changeset.t()}
   def put(fields, force? \\ false) do
     if force? || Confex.get_env(:wocky, :log_traffic) do
       %TrafficLog{}
