@@ -443,6 +443,30 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert Repo.get_by(Location, user_id: user.id) == nil
     end
+
+    @query """
+    mutation {
+      userLocationGetToken {
+        successful
+        result
+      }
+    }
+    """
+
+    test "get location token", %{user: user} do
+      result = run_query(@query, user, %{})
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationGetToken" => %{
+                 "successful" => true,
+                 "result" => token
+               }
+             } = result.data
+
+      assert is_binary(token)
+    end
   end
 
   describe "user search" do
@@ -556,6 +580,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "get contacts by relationship", %{user: user, user2: %User{id: id2}} do
       Roster.befriend(user.id, id2)
+
       for rel <- [nil, "FRIEND", "FOLLOWER", "FOLLOWING"] do
         result = run_query(@query, user, %{"rel" => rel})
 
@@ -584,19 +609,19 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert %{
-        "currentUser" => %{
-          "contacts" => %{
-            "edges" => [
-              %{
-                "node" => %{"id" => ^id2},
-                "relationship" => "FOLLOWING",
-                "created_at" => _
-              }
-            ],
-            "totalCount" => 1
-          }
-        }
-      } = result.data
+               "currentUser" => %{
+                 "contacts" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{"id" => ^id2},
+                       "relationship" => "FOLLOWING",
+                       "created_at" => _
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
     end
   end
 

@@ -2,7 +2,7 @@ defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, HomeStream, JID, Message, Roster, User}
+  alias Wocky.{Account, Conversation, HomeStream, JID, Message, Roster, User}
   alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
@@ -134,6 +134,12 @@ defmodule WockyAPI.Resolvers.User do
     with {:ok, _} <- User.set_location(user, location) do
       {:ok, true}
     end
+  end
+
+  def get_location_token(_root, _args, %{context: %{current_user: user}}) do
+    {:ok, token} = Account.get_location_jwt(user)
+
+    {:ok, %{successful: true, result: token}}
   end
 
   def home_stream_subscription_topic(user_id),

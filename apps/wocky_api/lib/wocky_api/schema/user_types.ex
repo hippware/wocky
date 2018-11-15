@@ -197,11 +197,11 @@ defmodule WockyAPI.Schema.UserTypes do
     edge do
       @desc "The relationship between the parent and child users"
       field :relationship, :user_contact_relationship,
-        do: resolve &User.get_contact_relationship/3
+        do: resolve(&User.get_contact_relationship/3)
 
       @desc "When the relationship was created"
       field :created_at, non_null(:datetime),
-        do: resolve &User.get_contact_created_at/3
+        do: resolve(&User.get_contact_created_at/3)
     end
   end
 
@@ -525,8 +525,6 @@ defmodule WockyAPI.Schema.UserTypes do
     field :is_fetch, :boolean
   end
 
-  payload_object(:user_location_update_payload, :boolean)
-
   object :user_queries do
     @desc "Retrive the currently authenticated user"
     field :current_user, :current_user do
@@ -568,6 +566,7 @@ defmodule WockyAPI.Schema.UserTypes do
       changeset_mutation_middleware
     end
 
+    @desc "Hide the current user"
     field :user_hide, type: :user_hide_payload do
       arg :input, non_null(:user_hide_input)
       resolve &User.hide/3
@@ -613,12 +612,20 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  payload_object(:user_location_update_payload, :boolean)
+  payload_object(:user_location_get_token_payload, :string)
+
   object :location_mutations do
     @desc "Update a user's current location"
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
       resolve &User.update_location/3
       changeset_mutation_middleware
+    end
+
+    @desc "Generate a new token for location updates"
+    field :user_location_get_token, type: :user_location_get_token_payload do
+      resolve &User.get_location_token/3
     end
   end
 
