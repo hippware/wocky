@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.11.9+re16de00
+
 * Don't save user locations on us1 unless hippware (PR #2010)
 * Increase allowed query complexity (PR #2012)
 * Disable tracing on staging (PR #2012)
