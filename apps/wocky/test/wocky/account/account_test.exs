@@ -45,14 +45,14 @@ defmodule Wocky.AccountTest do
 
     test "existing user with invalid credentials", %{user: user} do
       assert {:error, _} =
-        authenticate(:token, {user.id(), Account.generate_token()})
+               authenticate(:token, {user.id(), Account.generate_token()})
     end
 
     test "non-existant user", %{user: user, token: token} do
       assert {:error, _} = authenticate(:token, {ID.new(), token})
 
       assert {:error, _} =
-        authenticate(:token, {user.id, Account.generate_token()})
+               authenticate(:token, {user.id, Account.generate_token()})
     end
 
     test "token revocation", %{user: user, token: token} do
@@ -162,6 +162,7 @@ defmodule Wocky.AccountTest do
   describe "server_jwt authentication" do
     test "existing user", %{user: user} do
       {:ok, token} = Account.get_location_jwt(user)
+
       assert {:ok, {_, false}} = authenticate(:server_jwt, token)
     end
 
@@ -174,6 +175,42 @@ defmodule Wocky.AccountTest do
 
     test "bogus token" do
       assert {:error, _} = authenticate(:server_jwt, "bogus")
+    end
+  end
+
+  describe "generic jwt authentication" do
+    test "server_jwt token", %{user: user} do
+      {:ok, token} = Account.get_location_jwt(user)
+
+      assert {:ok, {_, false}} = authenticate(:jwt, token)
+    end
+
+    test "client_jwt firebase token", %{user: user} do
+      {:ok, fb, _} = Firebase.encode_and_sign(user)
+      {:ok, token, _} = ClientJWT.encode_and_sign(fb)
+
+      assert {:ok, {_, false}} = authenticate(:jwt, token)
+    end
+
+    test "client_jwt bypass token", %{user: user} do
+      {:ok, token, _} = ClientJWT.encode_and_sign(user)
+
+      assert {:ok, {_, false}} = authenticate(:jwt, token)
+    end
+
+    test "unrecognized token" do
+      jwk = %{"kty" => "oct", "k" => Base.encode64(ClientJWT.signing_key())}
+      jws = %{"alg" => "HS512"}
+      jwt = %{"iss" => "TinyRobot/1.0.0", "typ" => "bogus"}
+
+      signed = JOSE.JWT.sign(jwk, jws, jwt)
+      {_, token} = JOSE.JWS.compact(signed)
+
+      assert {:error, _} = authenticate(:jwt, token)
+    end
+
+    test "bad token" do
+      assert {:error, _} = authenticate(:jwt, "bogus")
     end
   end
 

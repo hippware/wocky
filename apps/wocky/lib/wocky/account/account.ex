@@ -178,6 +178,20 @@ defmodule Wocky.Account do
     end
   end
 
+  def authenticate(:jwt, token) do
+    provider =
+      case JOSE.JWT.peek_payload(token).fields do
+        %{"typ" => "location"} -> :server_jwt
+        %{"typ" => "firebase"} -> :client_jwt
+        %{"typ" => "bypass"} -> :client_jwt
+        _else -> :unknown
+      end
+
+    authenticate(provider, token)
+  rescue
+    ArgumentError -> {:error, :bad_token}
+  end
+
   def authenticate(provider, _creds) do
     update_counter("auth.unknown.fail", 1)
     provider_error(provider)
