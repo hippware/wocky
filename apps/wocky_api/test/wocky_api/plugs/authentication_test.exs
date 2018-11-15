@@ -5,6 +5,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
 
   alias Wocky.Account
   alias Wocky.Account.JWT.Client, as: ClientJWT
+  alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.User
@@ -92,13 +93,24 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       user = Factory.insert(:user)
       {:ok, jwt, _} = ClientJWT.encode_and_sign(user)
 
-      {:ok, jwt: jwt, user_id: user.id}
+      {:ok, jwt: jwt, user: user, user_id: user.id}
     end
 
-    test "valid JWT header", context do
+    test "valid client JWT header", context do
       conn =
         context.conn
         |> put_jwt_header(context.jwt)
+        |> check_auth_headers
+
+      assert conn.assigns.current_user
+    end
+
+    test "valid server JWT header", context do
+      {:ok, jwt, _} = ServerJWT.encode_and_sign(context.user)
+
+      conn =
+        context.conn
+        |> put_jwt_header(jwt)
         |> check_auth_headers
 
       assert conn.assigns.current_user
