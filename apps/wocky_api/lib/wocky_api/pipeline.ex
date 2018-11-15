@@ -34,8 +34,8 @@ defmodule WockyAPI.Pipeline do
   defp maybe_add_apollo(pipeline, opts) do
     current_user = opts[:context][:current_user]
 
-    if Confex.get_env(:wocky, :wocky_inst) in @trace_environments
-       && !is_nil(current_user) do
+    if Confex.get_env(:wocky, :wocky_inst) in @trace_environments &&
+         !is_nil(current_user) do
       ApolloTracing.Pipeline.add_phases(pipeline)
     else
       pipeline
