@@ -85,7 +85,7 @@ defmodule Wocky.XMPP.Mixfile do
       {:joken, "~> 1.1"},
       {:lager, "~> 3.6", override: true},
       {:lager_logger, "~> 1.0"},
-      {:ranch, "~> 1.6.0", override: true},
+      {:ranch, "~> 1.7.0", override: true},
       {:timex, "~> 3.1"},
       {:uuid, "~> 1.7", hex: :uuid_erl, override: true},
       {:mongooseim, github: "hippware/mongooseim", branch: "2.1.1/working"},
