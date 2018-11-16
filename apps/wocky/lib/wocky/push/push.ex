@@ -118,9 +118,19 @@ defmodule Wocky.Push do
   # ===================================================================
   # Helpers
 
-  defp enabled? do
-    Confex.get_env(:wocky, Wocky.Push)[:enabled]
-  end
+  defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
+
+  defp sandbox?, do: get_conf(:sandbox)
+
+  defp reflect?, do: get_conf(:reflect)
+
+  defp topic, do: get_conf(:topic)
+
+  defp timeout, do: get_conf(:timeout)
+
+  defp enabled?, do: get_conf(:enabled)
+
+  defp log_payload?, do: get_conf(:log_payload)
 
   defp get_token(user_id, resource) do
     Repo.one(
@@ -211,16 +221,6 @@ defmodule Wocky.Push do
     notif
   end
 
-  defp sandbox?, do: get_conf(:sandbox)
-
-  defp reflect?, do: get_conf(:reflect)
-
-  defp topic, do: get_conf(:topic)
-
-  defp timeout, do: get_conf(:timeout)
-
-  defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
-
   defp handle_response(
          %Notification{response: resp} = n,
          timeout_pid,
@@ -278,12 +278,18 @@ defmodule Wocky.Push do
       resource: resource,
       token: n.device_token,
       message_id: n.id,
-      payload: inspect(n.payload),
+      payload: maybe_extract_payload(n, user),
       response: to_string(n.response),
       details: Error.msg(n.response)
     }
     |> Log.insert_changeset()
     |> Repo.insert!()
+  end
+
+  defp maybe_extract_payload(n, user) do
+    if User.hippware?(user) || log_payload?() do
+      inspect(n.payload)
+    end
   end
 
   defp push_timeout(%__MODULE__{retries: retries} = params) do

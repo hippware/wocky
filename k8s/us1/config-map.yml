@@ -15,6 +15,7 @@ data:
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-us1
   WOCKY_PUSH_ENABLED: "true"
   WOCKY_PUSH_TOPIC: "com.hippware.tinyrobot"
+  WOCKY_PUSH_LOG_PAYLOAD: false
   WOCKY_GEOFENCE_SAVE_LOCATIONS: false
   WOCKY_INDEXING_SYSTEM: algolia
   WOCKY_USER_INDEX_NAME: prod_wocky_users
