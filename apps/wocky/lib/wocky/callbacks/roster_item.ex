@@ -30,7 +30,7 @@ defmodule Wocky.Callbacks.RosterItem do
       UserFollow.notify(item.contact, item.user)
 
       event = NewFollowerEvent.new(user: item.user, follower: item.contact)
-      Push.notify_all(item.user.id, event)
+      Push.notify_all(item.user, event)
     end
   end
 end
