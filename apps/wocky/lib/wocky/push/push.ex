@@ -26,7 +26,7 @@ defmodule Wocky.Push do
 
   defstruct [
     :token,
-    :user_id,
+    :user,
     :resource,
     :event,
     retries: 0,
@@ -35,7 +35,7 @@ defmodule Wocky.Push do
 
   @type t :: %__MODULE__{
           token: binary(),
-          user_id: User.id(),
+          user: User.t(),
           resource: User.resource(),
           event: Event.t(),
           retries: non_neg_integer(),
@@ -83,13 +83,13 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Notification API
 
-  @spec notify(Wocky.User.id(), Wocky.User.resource(), any) :: :ok
-  def notify(user_id, resource, event) do
+  @spec notify(Wocky.User.t(), Wocky.User.resource(), any) :: :ok
+  def notify(user, resource, event) do
     if enabled?() do
-      token = get_token(user_id, resource)
+      token = get_token(user.id, resource)
 
       do_notify(%__MODULE__{
-        user_id: user_id,
+        user: user,
         resource: resource,
         token: token,
         event: event
@@ -99,13 +99,13 @@ defmodule Wocky.Push do
     :ok
   end
 
-  @spec notify_all(Wocky.User.id(), any) :: :ok
-  def notify_all(user_id, event) do
+  @spec notify_all(Wocky.User.t(), any) :: :ok
+  def notify_all(user, event) do
     if enabled?() do
-      for {resource, token} <- get_all_tokens(user_id) do
+      for {resource, token} <- get_all_tokens(user.id) do
         do_notify(%__MODULE__{
           token: token,
-          user_id: user_id,
+          user: user,
           resource: resource,
           event: event
         })
@@ -138,10 +138,10 @@ defmodule Wocky.Push do
     )
   end
 
-  defp do_notify(%__MODULE__{token: nil, user_id: user_id, resource: resource}) do
+  defp do_notify(%__MODULE__{token: nil, user: user, resource: resource}) do
     Logger.error(
       "Attempted to send notification to user " <>
-        "#{user_id}/#{resource} but they have no token."
+        "#{user.id}/#{resource} but they have no token."
     )
   end
 
@@ -224,11 +224,11 @@ defmodule Wocky.Push do
   defp handle_response(
          %Notification{response: resp} = n,
          timeout_pid,
-         %__MODULE__{user_id: user_id, resource: resource} = params
+         %__MODULE__{user: user, resource: resource} = params
        ) do
     send(timeout_pid, :push_complete)
     update_metric(resp)
-    do_db_log(n, user_id, resource)
+    do_db_log(n, user, resource)
     maybe_handle_error(n, %{params | resp: resp})
   end
 
@@ -237,7 +237,7 @@ defmodule Wocky.Push do
   defp maybe_handle_error(
          n,
          %__MODULE__{
-           user_id: user_id,
+           user: user,
            resource: resource,
            retries: retries,
            resp: resp
@@ -246,7 +246,7 @@ defmodule Wocky.Push do
     Logger.error("PN Error: #{Error.msg(resp)}")
 
     if resp == :bad_device_token do
-      invalidate_token(user_id, resource, n.device_token)
+      invalidate_token(user.id, resource, n.device_token)
     else
       do_notify(%{params | retries: retries + 1})
     end
@@ -272,9 +272,9 @@ defmodule Wocky.Push do
   defp update_metric(resp),
     do: update_counter("push_notfications.#{to_string(resp)}", 1)
 
-  defp do_db_log(%Notification{} = n, user_id, resource) do
+  defp do_db_log(%Notification{} = n, user, resource) do
     %{
-      user_id: user_id,
+      user_id: user.id,
       resource: resource,
       token: n.device_token,
       message_id: n.id,
@@ -300,14 +300,14 @@ defmodule Wocky.Push do
 
   defp log_timeout(%__MODULE__{
          token: token,
-         user_id: user_id,
+         user: user,
          resource: resource,
          event: event
        }) do
     Logger.error("PN Error: timeout expired")
 
     %{
-      user_id: user_id,
+      user_id: user.id,
       resource: resource,
       token: token,
       message_id: nil,
@@ -321,12 +321,12 @@ defmodule Wocky.Push do
 
   defp log_failure(%__MODULE__{
          token: token,
-         user_id: user_id,
+         user: user,
          resource: resource,
          event: event
        }) do
     %{
-      user_id: user_id,
+      user_id: user.id,
       resource: resource,
       token: token,
       message_id: nil,
