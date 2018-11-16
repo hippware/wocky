@@ -79,7 +79,8 @@ config :wocky, Wocky.Push,
   reflect: {:system, :boolean, "WOCKY_PUSH_REFLECT", false},
   topic: {:system, :string, "WOCKY_PUSH_TOPIC", "app"},
   uri_prefix: {:system, :string, "WOCKY_PUSH_URI_PREFIX", "tinyrobot"},
-  timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000}
+  timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000},
+  log_payload: {:system, :boolean, "WOCKY_PUSH_LOG_PAYLOAD", true}
 
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
