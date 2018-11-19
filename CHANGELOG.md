@@ -35,6 +35,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Rework localBots query to report if the query area is too large (PR #2018)
 * Disable traffic log on us1 unless hippware (PR #1997)
 * Fix the user Hippware check when email is nil (PR #2021)
+* Update: ranch (PR #2026), xml_builder (PR #2031)
 
 
 ----------
