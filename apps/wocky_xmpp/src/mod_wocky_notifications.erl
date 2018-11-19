@@ -52,10 +52,12 @@ handle_iq(_From, _To, IQ) ->
 
 handle_request(J, #xmlel{name = <<"enable">>, attrs = Attrs}) ->
     {value, DeviceId} = xml:get_attr(<<"device">>, Attrs),
-    ok = ?wocky_push:enable(J#jid.luser, J#jid.lresource, DeviceId),
+    User = ?wocky_user:get_by_jid(J),
+    ok = ?wocky_push:enable(User, J#jid.lresource, DeviceId),
     {ok, <<"enabled">>};
 handle_request(J, #xmlel{name = <<"disable">>}) ->
-    ok = ?wocky_push:disable(J#jid.luser, J#jid.lresource),
+    User = ?wocky_user:get_by_jid(J),
+    ok = ?wocky_push:disable(User, J#jid.lresource),
     {ok, <<"disabled">>}.
 
 make_error_response(IQ, ErrStanza) ->
@@ -89,7 +91,7 @@ user_send_packet_hook(Acc, From, To, Packet) ->
                          body => Body,
                          image => Image,
                          conversation_id => ConversationID}),
-            Result = ?wocky_push:notify_all(To#jid.luser, Event),
+            Result = ?wocky_push:notify_all(Recipient, Event),
             mongoose_acc:put(result, Result, Acc);
 
         _Else ->
@@ -126,6 +128,7 @@ get_image(Packet) ->
                     <<"">>).
 
 %% remove_user -------------------------------------------------------
-remove_user_hook(Acc, User, _Server) ->
+remove_user_hook(Acc, UserID, _Server) ->
+    User = ?wocky_user:get_user(UserID),
     ?wocky_push:purge(User),
     Acc.

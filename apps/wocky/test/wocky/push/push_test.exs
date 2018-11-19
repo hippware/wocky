@@ -26,7 +26,7 @@ defmodule Wocky.PushTest do
     user = Factory.insert(:user, resource: "testing")
     token = Code.isbn13()
 
-    :ok = Push.enable(user.id, user.resource, token)
+    :ok = Push.enable(user, user.resource, token)
 
     on_exit(fn ->
       set_timeout(original_timeout)
@@ -44,13 +44,13 @@ defmodule Wocky.PushTest do
     Application.put_env(:wocky, Wocky.Push, config)
   end
 
-  defp get_user_token(user_id, resource) do
-    Repo.one(from Token, where: [user_id: ^user_id, resource: ^resource])
+  defp get_user_token(user, resource) do
+    Repo.one(from Token, where: [user_id: ^user.id, resource: ^resource])
   end
 
   describe "enable/4" do
     test "should insert the token into the database", shared do
-      row = get_user_token(shared.user.id, shared.resource)
+      row = get_user_token(shared.user, shared.resource)
       assert row.valid
       assert row.token == shared.token
       refute is_nil(row.enabled_at)
@@ -58,10 +58,10 @@ defmodule Wocky.PushTest do
     end
 
     test "should overwrite rows when a token is re-enabled", shared do
-      old_row = get_user_token(shared.user.id, shared.resource)
-      :ok = Push.enable(shared.user.id, shared.resource, shared.token)
+      old_row = get_user_token(shared.user, shared.resource)
+      :ok = Push.enable(shared.user, shared.resource, shared.token)
 
-      row = get_user_token(shared.user.id, shared.resource)
+      row = get_user_token(shared.user, shared.resource)
       assert row.valid
       assert row.token == shared.token
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
@@ -73,7 +73,7 @@ defmodule Wocky.PushTest do
       token: old_token
     } do
       new_token = Code.isbn13()
-      :ok = Push.enable(user.id, resource, new_token)
+      :ok = Push.enable(user, resource, new_token)
 
       old_row =
         Repo.one(
@@ -97,11 +97,11 @@ defmodule Wocky.PushTest do
 
   describe "disable/2" do
     setup %{user: user, resource: resource} do
-      :ok = Push.disable(user.id, resource)
+      :ok = Push.disable(user, resource)
     end
 
     test "should invalidate the database record", shared do
-      row = get_user_token(shared.user.id, shared.resource)
+      row = get_user_token(shared.user, shared.resource)
       refute is_nil(row)
       refute row.valid
     end
@@ -109,13 +109,13 @@ defmodule Wocky.PushTest do
 
   describe "purge/2" do
     setup %{user: user} do
-      :ok = Push.enable(user.id, "other", "987654321")
-      :ok = Push.purge(user.id)
+      :ok = Push.enable(user, "other", "987654321")
+      :ok = Push.purge(user)
     end
 
     test "should remove all database records", shared do
-      refute get_user_token(shared.user.id, shared.resource)
-      refute get_user_token(shared.user.id, "other")
+      refute get_user_token(shared.user, shared.resource)
+      refute get_user_token(shared.user, "other")
     end
   end
 
@@ -160,7 +160,7 @@ defmodule Wocky.PushTest do
     end
 
     test "should log an error when there is no push token", shared do
-      :ok = Push.disable(shared.user.id, shared.resource)
+      :ok = Push.disable(shared.user, shared.resource)
 
       assert capture_log(fn ->
                :ok = Push.notify(shared.user, shared.resource, @message)
@@ -174,7 +174,7 @@ defmodule Wocky.PushTest do
 
       assert_receive %Notification{response: :bad_device_token}, 5000
 
-      row = get_user_token(shared.user.id, shared.resource)
+      row = get_user_token(shared.user, shared.resource)
       refute row.valid
       refute is_nil(row.invalidated_at)
     end
@@ -182,7 +182,7 @@ defmodule Wocky.PushTest do
 
   describe "notify_all/2" do
     setup %{user: user} do
-      :ok = Push.enable(user.id, "other", "987654321")
+      :ok = Push.enable(user, "other", "987654321")
       :ok = Push.notify_all(user, @message)
     end
 

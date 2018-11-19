@@ -45,9 +45,9 @@ defmodule Wocky.Push do
   # ===================================================================
   # Push Token API
 
-  @spec enable(Wocky.User.id(), Wocky.User.resource(), Token.token()) :: :ok
-  def enable(user_id, resource, token) do
-    %{user_id: user_id, resource: resource, token: token}
+  @spec enable(Wocky.User.t(), Wocky.User.resource(), Token.token()) :: :ok
+  def enable(user, resource, token) do
+    %{user_id: user.id, resource: resource, token: token}
     |> Token.register_changeset()
     |> Repo.insert!(
       on_conflict: [set: [valid: true, enabled_at: DateTime.utc_now()]],
@@ -55,7 +55,7 @@ defmodule Wocky.Push do
     )
 
     Token
-    |> where([t], t.user_id == ^user_id)
+    |> where([t], t.user_id == ^user.id)
     |> where([t], t.resource == ^resource)
     |> where([t], t.token != ^token)
     |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
@@ -63,19 +63,19 @@ defmodule Wocky.Push do
     :ok
   end
 
-  @spec disable(Wocky.User.id(), Wocky.User.resource()) :: :ok
-  def disable(user_id, resource) do
+  @spec disable(Wocky.User.t(), Wocky.User.resource()) :: :ok
+  def disable(user, resource) do
     Repo.update_all(
-      from(Token, where: [user_id: ^user_id, resource: ^resource, valid: true]),
+      from(Token, where: [user_id: ^user.id, resource: ^resource, valid: true]),
       set: [valid: false, disabled_at: DateTime.utc_now()]
     )
 
     :ok
   end
 
-  @spec purge(Wocky.User.id()) :: :ok
-  def purge(user_id) do
-    Repo.delete_all(from Token, where: [user_id: ^user_id])
+  @spec purge(Wocky.User.t()) :: :ok
+  def purge(user) do
+    Repo.delete_all(from Token, where: [user_id: ^user.id])
 
     :ok
   end

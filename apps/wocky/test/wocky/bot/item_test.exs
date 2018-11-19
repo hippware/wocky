@@ -17,7 +17,7 @@ defmodule Wocky.Bot.ItemTest do
 
     Sandbox.clear_notifications(global: true)
 
-    :ok = Push.enable(sub.id, user.resource, Code.isbn13())
+    :ok = Push.enable(sub, user.resource, Code.isbn13())
 
     {:ok, user: user, author: author, sub: sub, bot: bot}
   end
