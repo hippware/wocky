@@ -77,7 +77,7 @@ defmodule WockyAPI.Mixfile do
       {:idna, "~> 6.0", override: true},
       {:ranch, "~> 1.7.0", override: true},
       {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
-      {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},

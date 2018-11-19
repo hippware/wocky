@@ -119,7 +119,7 @@ defmodule Wocky.Mixfile do
        github: "hippware/erlang-ossp-uuid", tag: "v1.0.1", manager: :rebar3},
       {:uuid, "~> 1.7", hex: :uuid_erl, override: true},
       {:bypass, "~> 0.7", only: :test, runtime: false},
-      {:credo, "~> 0.6", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
