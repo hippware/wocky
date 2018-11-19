@@ -170,7 +170,7 @@ defmodule Wocky.MessageTest do
     setup do
       user = Factory.insert(:user, device: "testing")
       Sandbox.clear_notifications(global: true)
-      Push.enable(user.id, user.device, Code.isbn13())
+      Push.enable(user, user.device, Code.isbn13())
       {:ok, user: user}
     end
 

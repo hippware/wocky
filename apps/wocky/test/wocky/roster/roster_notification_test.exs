@@ -17,7 +17,7 @@ defmodule Wocky.Roster.RosterNotificationTest do
   describe "follow notification" do
     setup ctx do
       token = Code.isbn13()
-      :ok = Push.enable(ctx.user1.id, ctx.user1.device, token)
+      :ok = Push.enable(ctx.user1, ctx.user1.device, token)
     end
 
     test "start following", ctx do

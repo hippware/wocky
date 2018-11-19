@@ -42,15 +42,15 @@ defmodule Wocky.Push do
   # Push Token API
 
   @spec enable(
-          User.id(),
+          User.t(),
           User.device(),
           Token.token(),
           binary | nil,
           boolean | nil
         ) :: :ok
-  def enable(user_id, device, token, platform \\ nil, dev_mode \\ nil) do
+  def enable(user, device, token, platform \\ nil, dev_mode \\ nil) do
     %{
-      user_id: user_id,
+      user_id: user.id,
       device: device,
       token: token,
       platform: platform,
@@ -63,7 +63,7 @@ defmodule Wocky.Push do
     )
 
     Token
-    |> where([t], t.user_id == ^user_id)
+    |> where([t], t.user_id == ^user.id)
     |> where([t], t.device == ^device)
     |> where([t], t.token != ^token)
     |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
@@ -79,19 +79,19 @@ defmodule Wocky.Push do
     [dev_mode: dev_mode] ++ conflict_updates()
   end
 
-  @spec disable(Wocky.User.id(), Wocky.User.device()) :: :ok
-  def disable(user_id, device) do
+  @spec disable(Wocky.User.t(), Wocky.User.device()) :: :ok
+  def disable(user, device) do
     Repo.update_all(
-      from(Token, where: [user_id: ^user_id, device: ^device, valid: true]),
+      from(Token, where: [user_id: ^user.id, device: ^device, valid: true]),
       set: [valid: false, disabled_at: DateTime.utc_now()]
     )
 
     :ok
   end
 
-  @spec purge(Wocky.User.id()) :: :ok
-  def purge(user_id) do
-    Repo.delete_all(from Token, where: [user_id: ^user_id])
+  @spec purge(Wocky.User.t()) :: :ok
+  def purge(user) do
+    Repo.delete_all(from Token, where: [user_id: ^user.id])
 
     :ok
   end

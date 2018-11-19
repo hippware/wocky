@@ -25,6 +25,6 @@ defmodule Wocky.Callbacks.Message do
       conversation_id: msg.id
     }
 
-    Push.notify_all(msg.recipient.id, event)
+    Push.notify_all(msg.recipient, event)
   end
 end

@@ -26,7 +26,7 @@ defmodule Wocky.PushTest do
     user = Factory.insert(:user, device: "testing")
     token = Code.isbn13()
 
-    :ok = Push.enable(user.id, user.device, token)
+    :ok = Push.enable(user, user.device, token)
 
     on_exit(fn ->
       set_timeout(original_timeout)
@@ -44,13 +44,13 @@ defmodule Wocky.PushTest do
     Application.put_env(:wocky, Wocky.Push, config)
   end
 
-  defp get_user_token(user_id, device) do
-    Repo.one(from Token, where: [user_id: ^user_id, device: ^device])
+  defp get_user_token(user, device) do
+    Repo.one(from Token, where: [user_id: ^user.id, device: ^device])
   end
 
   describe "enable/4" do
     test "should insert the token into the database", ctx do
-      row = get_user_token(ctx.user.id, ctx.device)
+      row = get_user_token(ctx.user, ctx.device)
       assert row.valid
       assert row.token == ctx.token
       refute is_nil(row.enabled_at)
@@ -58,20 +58,20 @@ defmodule Wocky.PushTest do
     end
 
     test "should overwrite rows when a token is re-enabled", ctx do
-      old_row = get_user_token(ctx.user.id, ctx.device)
-      :ok = Push.enable(ctx.user.id, ctx.device, ctx.token)
+      old_row = get_user_token(ctx.user, ctx.device)
+      :ok = Push.enable(ctx.user, ctx.device, ctx.token)
 
-      row = get_user_token(ctx.user.id, ctx.device)
+      row = get_user_token(ctx.user, ctx.device)
       assert row.valid
       assert row.token == ctx.token
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
     end
 
     test "should update dev mode on existing tokens", ctx do
-      old_row = get_user_token(ctx.user.id, ctx.device)
-      :ok = Push.enable(ctx.user.id, ctx.device, ctx.token, :apns, true)
+      old_row = get_user_token(ctx.user, ctx.device)
+      :ok = Push.enable(ctx.user, ctx.device, ctx.token, :apns, true)
 
-      row = get_user_token(ctx.user.id, ctx.device)
+      row = get_user_token(ctx.user, ctx.device)
       assert row.valid
       assert row.dev_mode
       assert Timex.diff(row.enabled_at, old_row.enabled_at) > 0
@@ -83,7 +83,7 @@ defmodule Wocky.PushTest do
       token: old_token
     } do
       new_token = Code.isbn13()
-      :ok = Push.enable(user.id, device, new_token)
+      :ok = Push.enable(user, device, new_token)
 
       old_row =
         Repo.one(
@@ -107,11 +107,11 @@ defmodule Wocky.PushTest do
 
   describe "disable/2" do
     setup %{user: user, device: device} do
-      :ok = Push.disable(user.id, device)
+      :ok = Push.disable(user, device)
     end
 
     test "should invalidate the database record", ctx do
-      row = get_user_token(ctx.user.id, ctx.device)
+      row = get_user_token(ctx.user, ctx.device)
       refute is_nil(row)
       refute row.valid
     end
@@ -119,13 +119,13 @@ defmodule Wocky.PushTest do
 
   describe "purge/2" do
     setup %{user: user} do
-      :ok = Push.enable(user.id, "other", "987654321")
-      :ok = Push.purge(user.id)
+      :ok = Push.enable(user, "other", "987654321")
+      :ok = Push.purge(user)
     end
 
     test "should remove all database records", ctx do
-      refute get_user_token(ctx.user.id, ctx.device)
-      refute get_user_token(ctx.user.id, "other")
+      refute get_user_token(ctx.user, ctx.device)
+      refute get_user_token(ctx.user, "other")
     end
   end
 
@@ -170,7 +170,7 @@ defmodule Wocky.PushTest do
     end
 
     test "should log an error when there is no push token", ctx do
-      :ok = Push.disable(ctx.user.id, ctx.device)
+      :ok = Push.disable(ctx.user, ctx.device)
 
       assert capture_log(fn ->
                :ok = Push.notify(ctx.user, ctx.device, @message)
@@ -184,7 +184,7 @@ defmodule Wocky.PushTest do
 
       assert_receive %Notification{response: :bad_device_token}, 5000
 
-      row = get_user_token(ctx.user.id, ctx.device)
+      row = get_user_token(ctx.user, ctx.device)
       refute row.valid
       refute is_nil(row.invalidated_at)
     end
@@ -192,7 +192,7 @@ defmodule Wocky.PushTest do
 
   describe "notify_all/2" do
     setup %{user: user} do
-      :ok = Push.enable(user.id, "other", "987654321")
+      :ok = Push.enable(user, "other", "987654321")
       :ok = Push.notify_all(user, @message)
     end
 
