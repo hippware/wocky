@@ -17,7 +17,7 @@ defmodule Wocky.Bot.RosterTest do
   describe "follow notification" do
     setup shared do
       token = Code.isbn13()
-      :ok = Push.enable(shared.user1.id, shared.user1.resource, token)
+      :ok = Push.enable(shared.user1, shared.user1.resource, token)
     end
 
     test "start following", shared do
