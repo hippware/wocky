@@ -71,7 +71,7 @@ defmodule WockyAPI.Mixfile do
       {:redix, "~> 0.8", override: true},
 
       # TODO: Move back to the official redlock repo once the changes are merged
-      {:redlock, github: "hippware/redlock", branch: "dialyzer-fixes"},
+      {:redlock, "~> 1.0.6"},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
       {:idna, "~> 6.0", override: true},
