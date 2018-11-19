@@ -51,7 +51,7 @@ new_follower(Config) ->
         timer:sleep(500),
 
         [{_, {?wocky_push, notify_all,
-              [?BOB, #{user := EUser, follower := EFollower}]}, _}]
+              [EUser, #{user := EUser, follower := EFollower}]}, _}]
         = meck:history(?wocky_push),
 
         ?assertEqual(maps:get(id, EUser), ?BOB),
