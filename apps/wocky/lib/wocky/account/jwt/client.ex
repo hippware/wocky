@@ -4,22 +4,20 @@ defmodule Wocky.Account.JWT.Client do
   See https://github.com/hippware/tr-wiki/wiki/Authentication-proposal
   """
 
-  @signing_key "0xszZmLxKWdYjvjXOxchnV+ttjVYkU1ieymigubkJZ9dqjnl7WPYLYqLhvC10TaH"
-
   use Guardian,
     otp_app: :wocky,
     issuer: "TinyRobot/0.0.0 (Wocky)",
-    secret_key: @signing_key,
+    secret_key: {Wocky.Account.JWT.SigningKey, :fetch, [:client]},
     token_verify_module: Wocky.Account.JWT.Verify
 
-  alias Wocky.Account.JWT.Firebase
+  alias Wocky.Account.JWT.{Firebase, SigningKey}
   alias Wocky.Account.Register
   alias Wocky.User
 
   @audience "Wocky"
   @agent_rx ~r/TinyRobot\/(\d+\.\d+\.\d+)(?: \((.*)\))?/
 
-  def signing_key, do: @signing_key
+  def signing_key, do: SigningKey.fetch(:client)
 
   def subject_for_token(%User{} = user, _claims) do
     {:ok, Register.get_external_id(user, "bypass")}

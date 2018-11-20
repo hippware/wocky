@@ -6,9 +6,8 @@ defmodule Wocky.Account.JWT.Server do
     otp_app: :wocky,
     issuer: "Wocky",
     verify_issuer: true,
-    secret_key:
-      "+K+XxznYgxCGLa5hZo9Qyb7QtpmmRPOgNXM4UYfKViYnuiIjTySItwSk7rH+Uv2g",
     ttl: {4, :weeks},
+    secret_key: {Wocky.Account.JWT.SigningKey, :fetch, [:server]},
     token_verify_module: Wocky.Account.JWT.Verify
 
   alias Wocky.Repo
