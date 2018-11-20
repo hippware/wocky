@@ -1,4 +1,4 @@
-defmodule Wocky.TROS.S3Store do
+defmodule Wocky.TROS.Store.S3 do
   @moduledoc "S3 backend for the TROS file management system"
 
   use Wocky.JID

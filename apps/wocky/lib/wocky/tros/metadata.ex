@@ -69,20 +69,10 @@ defmodule Wocky.TROS.Metadata do
     |> Repo.one()
   end
 
-  @spec get_user_id(id) :: User.id() | nil
-  def get_user_id(id) do
+  @spec owned_query(User.t()) :: Queryable.t()
+  def owned_query(user) do
     TROSMetadata
-    |> with_file(id)
-    |> select_user_id()
-    |> Repo.one()
-  end
-
-  @spec get_access(id) :: access | nil
-  def get_access(id) do
-    TROSMetadata
-    |> with_file(id)
-    |> select_access()
-    |> Repo.one()
+    |> where(user_id: ^user.id)
   end
 
   @spec delete(id, User.t()) :: {:ok, t()} | {:error, term}
@@ -104,7 +94,7 @@ defmodule Wocky.TROS.Metadata do
     # Return false for nil result
     TROSMetadata
     |> with_file(id)
-    |> select_ready()
+    |> select([m], m.ready)
     |> Repo.one()
     |> Kernel.==(true)
   end
@@ -117,8 +107,4 @@ defmodule Wocky.TROS.Metadata do
   end
 
   defp with_file(query, id), do: from(f in query, where: f.id == ^id)
-
-  defp select_user_id(query), do: from(f in query, select: f.user_id)
-  defp select_access(query), do: from(f in query, select: f.access)
-  defp select_ready(query), do: from(f in query, select: f.ready)
 end
