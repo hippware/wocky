@@ -631,7 +631,10 @@ defmodule WockyAPI.Schema.UserTypes do
       user_subscription_config(&User.contacts_subscription_topic/1)
     end
 
-    @desc ""
+    @desc """
+    Recieve an update when anything about a followee changes (either their
+    user data or their presence status)
+    """
     field :followees, non_null(:user) do
       config fn
         _, %{context: %{current_user: user}} ->
