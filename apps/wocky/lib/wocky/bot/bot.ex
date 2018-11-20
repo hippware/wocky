@@ -290,7 +290,7 @@ defmodule Wocky.Bot do
       event: event
     }
 
-    Push.notify_all(subscriber.id, event)
+    Push.notify_all(subscriber, event)
   end
 
   defp send_visit_notification(subscriber, visitor, bot, event) do

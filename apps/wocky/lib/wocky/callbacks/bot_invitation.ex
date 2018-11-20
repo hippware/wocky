@@ -21,7 +21,7 @@ defmodule Wocky.Callbacks.BotInvitation do
       event =
         BotInviteEvent.new(%{from: new.user, to: new.invitee, bot: new.bot})
 
-      Push.notify_all(new.invitee.id, event)
+      Push.notify_all(new.invitee, event)
     end
   end
 
@@ -43,7 +43,7 @@ defmodule Wocky.Callbacks.BotInvitation do
             bot: new.bot
           })
 
-        Push.notify_all(new.user.id, event)
+        Push.notify_all(new.user, event)
       end
     end
   end

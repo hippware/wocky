@@ -39,7 +39,7 @@ defmodule Wocky.User.Notification.BotItem do
     |> Notification.notify()
 
     event = NewBotItemEvent.new(author: item.user, to: user, item: item)
-    Push.notify_all(user.id, event)
+    Push.notify_all(user, event)
   end
 end
 

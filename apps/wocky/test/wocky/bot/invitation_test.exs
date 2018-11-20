@@ -16,8 +16,8 @@ defmodule Wocky.Bot.InvitationTest do
 
     Sandbox.clear_notifications(global: true)
 
-    :ok = Push.enable(invitee.id, invitee.device, Code.isbn13())
-    :ok = Push.enable(user.id, user.device, Code.isbn13())
+    :ok = Push.enable(invitee, invitee.device, Code.isbn13())
+    :ok = Push.enable(user, user.device, Code.isbn13())
 
     {:ok, user: user, invitee: invitee, bot: bot}
   end

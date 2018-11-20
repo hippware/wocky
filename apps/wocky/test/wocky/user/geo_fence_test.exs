@@ -28,15 +28,15 @@ defmodule Wocky.User.GeoFenceTest do
     Sandbox.clear_notifications()
 
     owner = Factory.insert(:user)
-    Push.enable(owner.id, @device, Code.isbn13())
+    Push.enable(owner, @device, Code.isbn13())
 
     user = Factory.insert(:user)
-    Push.enable(user.id, @device, Code.isbn13())
+    Push.enable(user, @device, Code.isbn13())
 
     # This user should never get notified in spite of being a subscriber
     hidden_user = Factory.insert(:user)
     User.hide(hidden_user, true)
-    Push.enable(hidden_user.id, @device, Code.isbn13())
+    Push.enable(hidden_user, @device, Code.isbn13())
 
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)
