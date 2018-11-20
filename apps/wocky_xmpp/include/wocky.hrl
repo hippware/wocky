@@ -69,7 +69,7 @@
         'Elixir.WockyXMPP.TROSMetadataCallbacks').
 
 -define(tros, 'Elixir.Wocky.TROS').
--define(tros_s3, 'Elixir.Wocky.TROS.S3Store').
+-define(tros_s3, 'Elixir.Wocky.TROS.Store.S3').
 -define(tros_metadata, 'Elixir.Wocky.TROS.Metadata').
 
 -define(wocky_push, 'Elixir.Wocky.Push').
