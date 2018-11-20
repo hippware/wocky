@@ -310,7 +310,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "disable notifications", %{user: user} do
       device = Factory.device()
 
-      Push.enable(user.id, device, ID.new())
+      Push.enable(user, device, ID.new())
 
       result = run_query(@query, user, %{"input" => %{"device" => device}})
 
