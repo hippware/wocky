@@ -11,7 +11,7 @@
 -include_lib("stdlib/include/assert.hrl").
 -include("test_helper.hrl").
 
--define(firebase, 'Elixir.Wocky.Account.Firebase').
+-define(firebase, 'Elixir.Wocky.Account.JWT.Firebase').
 -define(PHONE, <<"+15551234567">>).
 
 %%--------------------------------------------------------------------

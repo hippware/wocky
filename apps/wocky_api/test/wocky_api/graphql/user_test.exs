@@ -539,6 +539,30 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert Repo.get_by(Location, user_id: user.id) == nil
     end
+
+    @query """
+    mutation {
+      userLocationGetToken {
+        successful
+        result
+      }
+    }
+    """
+
+    test "get location token", %{user: user} do
+      result = run_query(@query, user, %{})
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationGetToken" => %{
+                 "successful" => true,
+                 "result" => token
+               }
+             } = result.data
+
+      assert is_binary(token)
+    end
   end
 
   describe "contacts" do

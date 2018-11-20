@@ -1,7 +1,8 @@
-defmodule Wocky.Account.ClientJWTTest do
+defmodule Wocky.Account.JWT.ClientTest do
   use Wocky.DataCase
 
-  alias Wocky.Account.{ClientJWT, Firebase}
+  alias Wocky.Account.JWT.Client, as: ClientJWT
+  alias Wocky.Account.JWT.Firebase
   alias Wocky.Repo.Factory
 
   setup do
@@ -23,22 +24,6 @@ defmodule Wocky.Account.ClientJWTTest do
     test "with any other data" do
       assert {:error, :unknown_resource} ==
                ClientJWT.subject_for_token(%{}, %{})
-    end
-  end
-
-  describe "type_for_token/2" do
-    test "with a valid user", %{user: user} do
-      {:ok, type} = ClientJWT.type_for_token(user, %{})
-      assert type == "bypass"
-    end
-
-    test "with a Firebase token" do
-      {:ok, type} = ClientJWT.type_for_token("ThisIsAToken", %{})
-      assert type == "firebase"
-    end
-
-    test "with any other data" do
-      assert {:error, :unknown_resource} == ClientJWT.type_for_token(%{}, %{})
     end
   end
 
@@ -113,6 +98,40 @@ defmodule Wocky.Account.ClientJWTTest do
       assert new_user.id == user.id
       assert new_user.external_id == user.external_id
       assert new_user.phone_number == user.phone_number
+    end
+  end
+
+  describe "verify_claims/3" do
+    @valid_claims %{
+      "iss" => "TinyRobot/1.0.0",
+      "typ" => "firebase",
+      "aud" => "Wocky"
+    }
+
+    defp verify_claim(key, value) do
+      claims = Map.put(@valid_claims, key, value)
+      {:ok, claims} == ClientJWT.verify_claims(claims, %{})
+    end
+
+    test "iss validation" do
+      assert verify_claim("iss", "TinyRobot/1.0.0")
+      assert verify_claim("iss", "TinyRobot/1.0.0 (Testing)")
+      assert verify_claim("iss", "TinyRobot/1.0.0 (Wocky; Testing)")
+      refute verify_claim("iss", "Foo")
+      refute verify_claim("iss", nil)
+    end
+
+    test "aud validation" do
+      assert verify_claim("aud", nil)
+      assert verify_claim("aud", "Wocky")
+      refute verify_claim("aud", "Anything Else")
+    end
+
+    test "typ validation" do
+      assert verify_claim("typ", "bypass")
+      assert verify_claim("typ", "firebase")
+      refute verify_claim("typ", "foo")
+      refute verify_claim("typ", nil)
     end
   end
 end

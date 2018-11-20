@@ -15,7 +15,7 @@ defmodule WockyAPI.Plugs.Authentication do
   # Client JWT authentication
   defp authenticate(conn, auth, nil, nil) when not is_nil(auth) do
     case parse_jwt_header(auth) do
-      {:ok, token} -> do_authenticate(conn, :client_jwt, token)
+      {:ok, token} -> do_authenticate(conn, :jwt, token)
       {:error, _} -> fail_authentication(conn, :bad_request)
     end
   end
