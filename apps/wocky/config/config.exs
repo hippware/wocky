@@ -97,7 +97,7 @@ config :wocky, Wocky.Repo,
   hostname: {:system, :string, "WOCKY_DB_HOST", "localhost"},
   port: {:system, :integer, "WOCKY_DB_PORT", 5432},
   pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15},
-  loggers: [{ExJsonLogger.Ecto.Logger, :log, [:debug]}, Wocky.Repo.Instrumenter]
+  migration_timestamps: [type: :utc_datetime_usec]
 
 config :wocky, Wocky.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},

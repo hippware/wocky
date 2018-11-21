@@ -1,9 +1,11 @@
 defmodule Wocky.Repo do
-  use Ecto.Repo, otp_app: :wocky
+  use Ecto.Repo,
+    otp_app: :wocky,
+    adapter: Ecto.Adapters.Postgres
 
   alias Confex.Resolver
   alias Ecto.Repo.Supervisor
-  alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
+  # alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
 
   @doc """
   Dynamically loads the repository configuration from the environment variables.
@@ -13,7 +15,9 @@ defmodule Wocky.Repo do
     # to ensure that PrometheusEx is started and setup the Ecto instrumenter's
     # internal state.
     Application.ensure_all_started(:prometheus_ex)
-    RepoInstrumenter.setup()
+
+    # TODO: Re-enable when prometheus_ecto supports Ecto 3
+    # RepoInstrumenter.setup()
 
     url = System.get_env("DATABASE_URL")
 

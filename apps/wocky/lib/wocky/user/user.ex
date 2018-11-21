@@ -62,7 +62,7 @@ defmodule Wocky.User do
     field :pass_details, :string
     field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
-    field :hidden_until, :utc_datetime
+    field :hidden_until, :utc_datetime_usec
 
     timestamps()
 
@@ -528,7 +528,7 @@ defmodule Wocky.User do
       :left,
       [b],
       s in Subscription,
-      b.id == s.bot_id and s.user_id == ^user.id
+      on: b.id == s.bot_id and s.user_id == ^user.id
     )
     |> where([b, s], not is_nil(s.user_id))
   end

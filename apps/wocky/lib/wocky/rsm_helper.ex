@@ -182,7 +182,7 @@ defmodule Wocky.RSMHelper do
       :inner,
       [r, ...],
       p in subquery(subquery),
-      field(p, ^key_field) == ^key and
+      on: field(p, ^key_field) == ^key and
         field(r, ^sort_field) > field(p, ^sort_field)
     )
   end
@@ -195,7 +195,7 @@ defmodule Wocky.RSMHelper do
       :inner,
       [r, ...],
       p in subquery(subquery),
-      field(p, ^key_field) == ^key and
+      on: field(p, ^key_field) == ^key and
         field(r, ^sort_field) < field(p, ^sort_field)
     )
   end

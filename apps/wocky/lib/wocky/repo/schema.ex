@@ -11,8 +11,7 @@ defmodule Wocky.Repo.Schema do
 
       @timestamps_opts [
         inserted_at: :created_at,
-        type: :utc_datetime,
-        usec: true
+        type: :utc_datetime_usec
       ]
     end
   end

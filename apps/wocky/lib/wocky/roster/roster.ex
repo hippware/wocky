@@ -195,7 +195,7 @@ defmodule Wocky.Roster do
 
   defp relationships_query(user_id, requester_id, sub_types, include_system) do
     User
-    |> join(:left, [u], r in Item, u.id == r.contact_id)
+    |> join(:left, [u], r in Item, on: u.id == r.contact_id)
     |> where([u, r], r.user_id == ^user_id)
     |> maybe_filter_system(not include_system)
     |> where([u, r], not is_nil(u.handle))

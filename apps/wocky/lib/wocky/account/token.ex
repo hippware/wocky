@@ -17,7 +17,7 @@ defmodule Wocky.Account.Token do
     field :user_id, :binary_id, null: false, primary_key: true
     field :device, :string, null: false, primary_key: true
     field :token_hash, :string, null: false
-    field :expires_at, :utc_datetime, null: false
+    field :expires_at, :utc_datetime_usec, null: false
 
     timestamps()
 

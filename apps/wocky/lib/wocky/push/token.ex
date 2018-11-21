@@ -19,9 +19,9 @@ defmodule Wocky.Push.Token do
     field :platform, PushServicePlatform, null: false, default: :apns
     field :dev_mode, :boolean, null: false, default: false
     field :valid, :boolean, null: false, default: true
-    field :enabled_at, :utc_datetime
-    field :disabled_at, :utc_datetime
-    field :invalidated_at, :utc_datetime
+    field :enabled_at, :utc_datetime_usec
+    field :disabled_at, :utc_datetime_usec
+    field :invalidated_at, :utc_datetime_usec
 
     timestamps(updated_at: false)
 

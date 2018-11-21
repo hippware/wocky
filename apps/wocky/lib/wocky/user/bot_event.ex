@@ -28,7 +28,7 @@ defmodule Wocky.User.BotEvent do
   schema "user_bot_events" do
     field :device, :string
     field :event, EventType, null: false
-    field :occurred_at, :utc_datetime, null: false
+    field :occurred_at, :utc_datetime_usec, null: false
 
     timestamps(updated_at: false)
 

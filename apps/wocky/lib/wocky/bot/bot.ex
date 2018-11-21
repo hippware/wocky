@@ -329,7 +329,7 @@ defmodule Wocky.Bot do
       :inner,
       [b],
       i in Invitation,
-      b.id == i.bot_id and i.invitee_id == ^user.id
+      on: b.id == i.bot_id and i.invitee_id == ^user.id
     )
   end
 
@@ -339,7 +339,7 @@ defmodule Wocky.Bot do
       :inner,
       [b],
       s in Subscription,
-      b.id == s.bot_id and s.user_id == ^user.id
+      on: b.id == s.bot_id and s.user_id == ^user.id
     )
   end
 
@@ -365,7 +365,7 @@ defmodule Wocky.Bot do
       :inner,
       [b],
       a in "bot_activity",
-      b.id == a.bot_id
+      on: b.id == a.bot_id
     )
     |> order_by([..., a], desc: a.visited_at)
   end
@@ -452,13 +452,13 @@ defmodule Wocky.Bot do
       :left,
       [b, ...],
       invitation in Invitation,
-      b.id == invitation.bot_id and invitation.invitee_id == ^user.id
+      on: b.id == invitation.bot_id and invitation.invitee_id == ^user.id
     )
     |> join(
       :left,
       [b, ...],
       sub in Subscription,
-      b.id == sub.bot_id and sub.user_id == ^user.id
+      on: b.id == sub.bot_id and sub.user_id == ^user.id
     )
     |> where(
       [b, ..., invitation, sub],

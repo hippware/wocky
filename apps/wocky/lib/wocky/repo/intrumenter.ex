@@ -1,4 +1,5 @@
 defmodule Wocky.Repo.Instrumenter do
   @moduledoc false
-  use Prometheus.EctoInstrumenter
+  # TODO: Re-enable when prometheus_ecto supports Ecto 3
+  # use Prometheus.EctoInstrumenter
 end

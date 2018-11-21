@@ -76,8 +76,10 @@ defmodule Wocky.Mixfile do
       {:confex, github: "Nebo15/confex", branch: "master", override: true},
       {:csv, "~> 2.0"},
       {:dawdle, "~> 0.4.0"},
-      {:ecto, "~> 2.2"},
-      {:ecto_homoiconic_enum, "~> 0.1"},
+      {:ecto, "~> 3.0"},
+      {:ecto_sql, "~> 3.0"},
+      {:ecto_homoiconic_enum,
+       github: "hippware/ecto_homoiconic_enum", branch: "master"},
       {:email_checker, "~> 0.1"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_s3, "~> 2.0"},
@@ -112,7 +114,8 @@ defmodule Wocky.Mixfile do
       {:plug_cowboy, "~> 1.0"},
       {:poolboy, "~> 1.5"},
       {:postgrex, ">= 0.0.0"},
-      {:prometheus_ecto, "~> 1.0"},
+      # TODO: Re-enable when prometheus_ecto supports Ecto 3
+      # {:prometheus_ecto, "~> 1.0"},
       {:prometheus_ex, "~> 3.0"},
       {:recon, "~> 2.3"},
       # TODO: go back to hex version once changes are merged
