@@ -36,6 +36,13 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Disable traffic log on us1 unless hippware (PR #1997)
 * Fix the user Hippware check when email is nil (PR #2021)
 * Update: ranch (PR #2026), xml_builder (PR #2031)
+  * redlock (PR #2032), credo (PR #2033), excoveralls (PR #2034)
+* Delete a user's S3 images when they delete their account (#2006)
+* Restrict push notification logs on us1 (#2016)
+* Allow using a server-generated JWT for location updates (PR #2028)
+  * The auth mechanism for location uploads needs to be long lived (#1695)
+* A couple of TROS store renamings (PR #2041)
+* Update: exrun (PR #2043)
 
 
 ----------
