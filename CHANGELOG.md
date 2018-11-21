@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Restrict push notification logs on us1 (#2016)
+
+
 # 2018.11.9+re16de00
 
 * Don't save user locations on us1 unless hippware (PR #2010)
