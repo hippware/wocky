@@ -11,6 +11,7 @@
   # but it is in the works for all of them.
   import_deps: [:absinthe, :phoenix, :ecto],
   locals_without_parens: [
+    execute: 1,
     defenum: 2,
 
     # Absinthe / Kronky

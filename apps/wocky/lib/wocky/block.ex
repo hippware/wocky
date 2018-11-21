@@ -65,9 +65,11 @@ defmodule Wocky.Block do
       :left,
       [..., o],
       b in Block,
-      on: (field(o, ^owner_field) == b.blocker_id and b.blockee_id == ^requester_id) or
-        (field(o, ^owner_field) == b.blockee_id and
-           b.blocker_id == ^requester_id)
+      on:
+        (field(o, ^owner_field) == b.blocker_id and
+           b.blockee_id == ^requester_id) or
+          (field(o, ^owner_field) == b.blockee_id and
+             b.blocker_id == ^requester_id)
     )
     |> where([..., b], is_nil(b.blocker_id))
   end
