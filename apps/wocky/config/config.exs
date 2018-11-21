@@ -130,4 +130,20 @@ config :pigeon, :apns,
     mode: :dev
   }
 
+config :goth,
+  json: """
+  {
+    "type": "service_account",
+    "project_id": "my-project-1480497595993",
+    "private_key_id": "b9d64bc1a6d8edda824eb2ab984c8238701818ea",
+    "private_key": "#{System.get_env("FIREBASE_PRIVATE_KEY") || "dummy_key"}",
+    "client_email": "firebase-adminsdk-xrj66@my-project-1480497595993.iam.gserviceaccount.com",
+    "client_id": "107308386875224786877",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xrj66%40my-project-1480497595993.iam.gserviceaccount.com"
+  }
+  """
+
 import_config "#{Mix.env()}.exs"
