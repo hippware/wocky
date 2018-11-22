@@ -34,8 +34,7 @@ release :wocky do
   set version: current_version(:wocky)
   set applications: [
     :wocky,
-    :wocky_api,
-    :wocky_xmpp
+    :wocky_api
   ]
   set vm_args: "rel/vm.args"
   set overlays: [
