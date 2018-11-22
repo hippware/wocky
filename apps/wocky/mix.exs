@@ -14,7 +14,6 @@ defmodule Wocky.Mixfile do
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
-        espec: :test,
         coveralls: :test,
         "coveralls.html": :test,
         vcr: :test,
@@ -34,7 +33,7 @@ defmodule Wocky.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support", "spec/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   def application do
@@ -124,7 +123,6 @@ defmodule Wocky.Mixfile do
       {:uuid, "~> 1.7", hex: :uuid_erl, override: true},
       {:bypass, "~> 0.7", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:espec, "~> 1.5", only: :test},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:meck, "~> 0.8", only: :test, override: true},
@@ -152,7 +150,6 @@ defmodule Wocky.Mixfile do
       recompile: ["clean", "compile"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      espec: ["ecto.create --quiet", "ecto.migrate", "espec"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end

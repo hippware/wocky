@@ -33,8 +33,6 @@ defmodule Wocky.User do
 
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "users" do
-    # User ID (userpart of JID)
-    field :username, :string
     # Unique ID of the currently logged-in device.
     # I am not sure if this is the right place to track this information,
     # but it is currently the path of least resistance.
@@ -86,7 +84,6 @@ defmodule Wocky.User do
   end
 
   @type id :: binary
-  @type username :: binary
   @type device :: binary
   @type provider :: binary
   @type external_id :: binary
@@ -100,7 +97,6 @@ defmodule Wocky.User do
 
   @type t :: %User{
           id: id,
-          username: username,
           handle: nil | handle,
           avatar: nil | binary,
           first_name: nil | binary,
@@ -496,7 +492,7 @@ defmodule Wocky.User do
   @spec add_role(id, role) :: :ok
   def add_role(id, role) do
     User
-    |> where(username: ^id)
+    |> where(id: ^id)
     |> where([q], ^role not in q.roles)
     |> Repo.update_all(push: [roles: role])
 
@@ -506,7 +502,7 @@ defmodule Wocky.User do
   @spec remove_role(id, role) :: :ok
   def remove_role(id, role) do
     User
-    |> where(username: ^id)
+    |> where(id: ^id)
     |> Repo.update_all(pull: [roles: role])
 
     :ok

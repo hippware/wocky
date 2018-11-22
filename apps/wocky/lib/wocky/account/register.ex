@@ -15,7 +15,7 @@ defmodule Wocky.Account.Register do
   @max_register_retries 5
 
   @changeset_fields [
-    :username,
+    :id,
     :provider,
     :external_id,
     :phone_number,
@@ -69,7 +69,7 @@ defmodule Wocky.Account.Register do
   def create(user_data, prepop \\ false) do
     user_data =
       %{
-        username: ID.new(),
+        id: ID.new(),
         provider: "local",
         external_id: Factory.external_id()
       }
@@ -137,18 +137,17 @@ defmodule Wocky.Account.Register do
   def changeset(attrs) do
     %User{}
     |> cast(attrs, @changeset_fields)
-    |> validate_required([:username, :provider, :external_id])
+    |> validate_required([:id, :provider, :external_id])
     |> validate_format(:phone_number, ~r//)
-    |> validate_change(:username, &validate_username/2)
-    |> put_change(:id, attrs[:username])
+    |> validate_change(:id, &validate_id/2)
     |> unique_constraint(:external_id)
   end
 
-  defp validate_username(:username, username) do
-    if ID.valid?(username) do
+  defp validate_id(:id, id) do
+    if ID.valid?(id) do
       []
     else
-      [username: "not a valid UUID"]
+      [id: "not a valid UUID"]
     end
   end
 
