@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.11.19+r4cf6cf2
+
 * Restrict push notification logs on us1 (#2016)
 
 
