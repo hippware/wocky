@@ -127,7 +127,7 @@ defmodule Wocky.Mixfile do
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:meck, "~> 0.8", only: :test, override: true},
       {:reprise, "~> 0.5", only: :dev},
-      {:exml, github: "esl/exml", tag: "3.0.2", manager: :rebar3},
+      {:exml, github: "esl/exml", tag: "3.0.3", manager: :rebar3},
       {:exometer,
        github: "hippware/exometer", branch: "working", override: true},
       {:exometer_core,
