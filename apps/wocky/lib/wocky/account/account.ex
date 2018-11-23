@@ -59,7 +59,8 @@ defmodule Wocky.Account do
   # ====================================================================
   # Authentication
 
-  @type provider :: :token | :bypass | :firebase | :client_jwt | :server_jwt
+  @type provider ::
+          :token | :bypass | :firebase | :client_jwt | :server_jwt | :jwt
 
   @doc """
   Authenticates the user using the specified provider and credentials.

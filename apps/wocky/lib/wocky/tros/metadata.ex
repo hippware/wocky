@@ -7,6 +7,7 @@ defmodule Wocky.TROS.Metadata do
 
   import Ecto.Query
 
+  alias Ecto.Queryable
   alias Wocky.Repo
   alias Wocky.User
   alias __MODULE__, as: TROSMetadata

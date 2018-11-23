@@ -7,9 +7,7 @@ defmodule Wocky.Account.JWT.SigningKey do
   def fetch(key_id) do
     varname = varname(key_id)
 
-    if varname do
-      Confex.get_env(:wocky, varname)
-    end
+    Confex.get_env(:wocky, varname)
   end
 
   defp varname(:client), do: :client_jwt_signing_key
