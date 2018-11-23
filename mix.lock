@@ -134,7 +134,7 @@
   "quickrand": {:hex, :quickrand, "1.7.3", "0e4fb48fac904fe0c6e21d7e8c31a288a0700e1e81a35b38b649fc119079755d", [:rebar3], [], "hexpm"},
   "ranch": {:hex, :ranch, "1.7.0", "9583f47160ca62af7f8d5db11454068eaa32b56eeadf984d4f46e61a076df5f2", [:rebar3], [], "hexpm"},
   "recon": {:hex, :recon, "2.3.6", "2bcad0cf621fb277cabbb6413159cd3aa30265c2dee42c968697988b30108604", [:rebar3], [], "hexpm"},
-  "redix": {:hex, :redix, "0.8.2", "c25158f905bcf8842e9a11411d65b9257ac70057c4330521d1a4d2a44b4f7ecf", [:mix], [], "hexpm"},
+  "redix": {:hex, :redix, "0.9.0", "c631c921354587e054bf1e2a6b7d0120d617352fc42b624b9ca79ea484d0326c", [:mix], [], "hexpm"},
   "redix_pubsub": {:hex, :redix_pubsub, "0.5.0", "ce238708d8c0c98a13e912e1d5ff093fc7958816e3cdffae5763c33a439f7701", [:mix], [{:redix, "~> 0.8", [hex: :redix, repo: "hexpm", optional: false]}], "hexpm"},
   "redlock": {:hex, :redlock, "1.0.6", "c5e6a84ef08d63acb7fc0a7eef161146c513bf7a7fc510bda39a0e139b29637a", [:mix], [{:ex_hash_ring, "~> 3.0", [hex: :ex_hash_ring, repo: "hexpm", optional: false]}, {:fastglobal, "~> 1.0.0", [hex: :fastglobal, repo: "hexpm", optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, repo: "hexpm", optional: false]}, {:redix, "~> 0.8.1", [hex: :redix, repo: "hexpm", optional: false]}, {:secure_random, "~> 0.5.1", [hex: :secure_random, repo: "hexpm", optional: false]}], "hexpm"},
   "redo": {:hex, :redo, "2.0.1", "b895c67f4c1266db8fecca0079fbab65bdfaf7c2f5618c8edbdbf4800e7e248b", [:rebar], [], "hexpm"},
