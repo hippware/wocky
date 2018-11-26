@@ -21,7 +21,7 @@ help:
 ### Run tests in CI
 
 unittest: ## Run the unit tests locally
-	mix do lint, ecto.reset, test
+	mix do credo, ecto.reset, test
 
 migrationtest:
 	aws s3 cp s3://wocky-db-dumps/staging/wocky_staging.dump.gz db_dump.gz
