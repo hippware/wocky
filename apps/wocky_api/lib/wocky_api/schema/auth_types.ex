@@ -6,6 +6,7 @@ defmodule WockyAPI.Schema.AuthTypes do
   use WockyAPI.Schema.Notation
 
   alias WockyAPI.Resolvers.Auth
+  alias WockyAPI.Transports.LoggingWebSocket
 
   @desc "Authenticate a user to the GraphQL interface"
   object :auth_mutations do
@@ -29,6 +30,9 @@ defmodule WockyAPI.Schema.AuthTypes do
 
       middleware fn res, _ ->
         with %{value: %{user: user}} <- res do
+          transport_pid = res.context[:transport_pid]
+          if transport_pid, do: LoggingWebSocket.set_user(transport_pid, user)
+
           %{res | context: Map.put(res.context, :current_user, user)}
         end
       end
