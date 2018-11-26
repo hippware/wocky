@@ -42,7 +42,7 @@ defmodule WockyAPI.GraphQL.ConnTest do
     }
     """
     test "Large sets of bots should exceed complexity limit", %{conn: conn} do
-      result = post_conn(conn, @query, 400)
+      result = post_conn(conn, @query, 200)
 
       assert error_msg(result, 2) =~ "Operation is too complex"
     end
