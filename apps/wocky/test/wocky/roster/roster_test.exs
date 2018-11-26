@@ -43,7 +43,7 @@ defmodule Wocky.RosterTest do
      user: user,
      all_contacts: Enum.sort([system_user, nil_handle_user | contacts]),
      visible_contacts: visible_contacts,
-     contact: hd(visible_contacts),
+     contact: hd(contacts),
      roster_pairs: roster_pairs,
      roster_pair: hd(roster_pairs),
      rosterless_user: rosterless_user,

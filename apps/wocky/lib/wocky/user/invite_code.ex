@@ -4,7 +4,7 @@ defmodule Wocky.User.InviteCode do
   use Wocky.Repo.Schema
 
   alias Ecto.Changeset
-  alias Wocky.Repo.ID
+  alias Ecto.UUID
   alias Wocky.User
   alias __MODULE__
 
@@ -29,8 +29,6 @@ defmodule Wocky.User.InviteCode do
 
   @spec generate :: binary
   def generate do
-    ID.new()
-    |> ID.to_binary!()
-    |> Base.encode64()
+    Base.encode64(UUID.bingenerate())
   end
 end
