@@ -11,7 +11,7 @@ defmodule WockyAPI.UserSocket do
   # channel "room:*", WockyAPI.RoomChannel
 
   ## Transports
-  transport :websocket, WockyAPI.Transports.LoggingWebSocket
+  transport :websocket, Phoenix.Transports.WebSocket
   # transport :longpoll, Phoenix.Transports.LongPoll
 
   # Socket params are passed from the client and can
@@ -31,7 +31,10 @@ defmodule WockyAPI.UserSocket do
         socket,
         context: %{
           host: host(),
-          transport_pid: socket.transport_pid
+          # I can't figure out a good way to get the IP/port yet. Since the main
+          # point is correlating messages, though, the transport PID will suffice
+          # for now.
+          peer: inspect(socket.transport_pid)
         },
         analyze_complexity: true,
         max_complexity: @max_complexity
