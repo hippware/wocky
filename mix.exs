@@ -30,16 +30,9 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
+      {:distillery, "~> 2.0", runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.8", only: :test},
-
-      # The apps below are required by multiple child apps (usually transitively
-      # in at least one). We pin the version here to make sure they agree on
-      # one.
-      {:exometer_core,
-       github: "hippware/exometer_core", branch: "working", override: true},
-      {:lager, "~> 3.6", override: true}
+      {:excoveralls, "~> 0.8", only: :test}
     ]
   end
 
