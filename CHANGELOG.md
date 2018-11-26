@@ -42,7 +42,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Allow using a server-generated JWT for location updates (PR #2028)
   * The auth mechanism for location uploads needs to be long lived (#1695)
 * A couple of TROS store renamings (PR #2041)
-* Update: exrun (PR #2043)
+* Remove XMPP/MongooseIM (PR #1985, PR #2048)
+* Update: exrun (PR #2043), faker (PR #2045), redix (PR #2047)
 
 
 ----------
