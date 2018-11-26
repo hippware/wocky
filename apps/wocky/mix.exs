@@ -87,6 +87,9 @@ defmodule Wocky.Mixfile do
       {:ex_json_logger, "~> 1.0"},
       {:ex_machina, "~> 2.1"},
       {:exconstructor, "~> 1.0"},
+      # TODO: This dependency is only used in one migration. We should remove
+      # it after checkpointing the database schema.
+      {:exml, github: "esl/exml", tag: "3.0.3", manager: :rebar3},
       {:exometer_core,
        github: "hippware/exometer_core", branch: "working", override: true},
       {:exometer_prometheus,
@@ -120,6 +123,7 @@ defmodule Wocky.Mixfile do
       # TODO: go back to hex version once changes are merged
       {:slack_ex, github: "hippware/slack_ex", branch: "master"},
       {:stringprep, "~> 1.0"},
+      {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
       {:wocky_db_watcher,
        git: "https://github.com/hippware/wocky_db_watcher.git",
