@@ -87,6 +87,10 @@ defmodule Wocky.Mixfile do
       {:exconstructor, "~> 1.0"},
       {:exrun, "~> 0.1.6"},
       {:faker, "~> 0.9"},
+      # TODO: go back to hex version once changes are merged
+      {:firebase_admin_ex,
+        github: "hippware/firebase-admin-ex",
+        branch: "master"},
       {:guardian, "~> 1.0"},
       {:guardian_firebase, "~> 0.2.1"},
       {:gen_stage, "~> 0.12"},
@@ -99,6 +103,7 @@ defmodule Wocky.Mixfile do
       {:jsx, "~> 2.8"},
       {:kadabra, "~> 0.3"},
       {:lager, "~> 3.6", override: true},
+      {:mock, "~> 0.3.0", only: :test},
       {:peerage, "~> 1.0"},
       {:pigeon, "~> 1.1"},
       # The plug and plug_cowboy deps are necessary for tests to work
@@ -110,7 +115,8 @@ defmodule Wocky.Mixfile do
       {:prometheus_ecto, "~> 1.0"},
       {:prometheus_ex, "~> 3.0"},
       {:recon, "~> 2.3"},
-      {:slack_ex, "~> 0.1"},
+      # TODO: go back to hex version once changes are merged
+      {:slack_ex, github: "hippware/slack_ex", branch: "master"},
       {:stringprep, "~> 1.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},

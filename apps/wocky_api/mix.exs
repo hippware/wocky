@@ -58,7 +58,6 @@ defmodule WockyAPI.Mixfile do
       {:absinthe_ecto, "~> 0.1.3"},
       {:absinthe_metrics, "~> 0.9.0"},
       {:honeybadger, "~> 0.6"},
-      {:httpoison, "~> 0.13"},
       {:phoenix, "~> 1.3"},
       {:phoenix_ecto, "~> 3.6"},
       {:phoenix_pubsub, "~> 1.0"},

@@ -9,6 +9,7 @@ defmodule Wocky.User do
   import Ecto.Query
 
   alias Ecto.Queryable
+  alias FirebaseAdminEx.Auth, as: FirebaseAuth
   alias Wocky.Account.Token, as: AuthToken
 
   alias Wocky.{
@@ -483,6 +484,10 @@ defmodule Wocky.User do
 
     if user do
       delete_tros_files(user)
+
+      if user.provider == "firebase",
+      do: FirebaseAuth.delete_user(user.external_id)
+
       Repo.delete!(user)
     end
 
