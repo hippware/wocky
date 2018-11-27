@@ -6,7 +6,7 @@ defmodule Wocky.Tasks.Migrate do
 
   def run do
     Enum.each([:postgrex, :ecto], &Application.ensure_all_started/1)
-    Repo.start_link(pool_size: 1)
+    Repo.start_link(pool_size: 2)
 
     Migrator.run(Repo, migrations_path(:wocky), :up, all: true)
 
