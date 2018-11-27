@@ -17,3 +17,4 @@ aws.env
 circleci.env
 waiter.cfg
 .tool-versions*
+/db_dump.gz
