@@ -3,6 +3,9 @@
 use Mix.Config
 
 # General application configuration
+
+config :phoenix, :json_library, Jason
+
 config :wocky_api,
   namespace: WockyAPI,
   ecto_repos: [Wocky.Repo],

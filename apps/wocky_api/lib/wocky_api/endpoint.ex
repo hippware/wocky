@@ -4,7 +4,7 @@ defmodule WockyAPI.Endpoint do
   use Absinthe.Phoenix.Endpoint
 
   # Websocket to enable GraphQL subscription magic
-  socket "/graphql", WockyAPI.UserSocket
+  socket "/graphql", WockyAPI.UserSocket, websocket: true
 
   plug CORSPlug
 

@@ -46,6 +46,7 @@ defmodule WockyAPI.Mixfile do
     [
       {:wocky, in_umbrella: true},
 
+      {:bimap, "~> 1.0"},
       # TODO: Move these back to the offical absinthe repo once all the changes
       # are merged.
       {:absinthe,
@@ -54,35 +55,34 @@ defmodule WockyAPI.Mixfile do
        override: true},
       {:absinthe_phoenix,
        github: "hippware/absinthe_phoenix", branch: "subscription-catchup"},
-      {:absinthe_relay, "~> 1.5.0-alpha.0"},
+      {:absinthe_relay,
+       github: "absinthe-graphql/absinthe_relay", branch: "master"},
       {:absinthe_ecto, "~> 0.1.3"},
       {:absinthe_metrics, "~> 0.9.0"},
+      {:apollo_tracing, "~> 0.4.0"},
+      {:cors_plug, "~> 2.0"},
+      {:ecto_sql, "~> 3.0"},
       {:honeybadger, "~> 0.6"},
-      {:phoenix, "~> 1.3"},
-      {:phoenix_ecto, "~> 3.6"},
+      {:jason, "~> 1.0"},
+      {:kronky, github: "mirego/kronky", branch: "master"},
+      {:phoenix, "~> 1.4"},
+      {:phoenix_ecto, "~> 4.0"},
       {:phoenix_pubsub, "~> 1.0"},
-      {:plug_cowboy, "~> 1.0"},
-      {:prometheus_ex, "~> 3.0", override: true},
       # TODO: Back to the phoenixframework/ version once the update is merged
       {:phoenix_pubsub_redis,
        github: "hippware/phoenix_pubsub_redis", branch: "redix-0.9"},
-      {:redix, "~> 0.9.0", override: true},
-      {:redlock, "~> 1.0.6"},
+      {:plug_cowboy, "~> 2.0"},
+      {:plug, "~> 1.7"},
+      {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
-      {:idna, "~> 6.0", override: true},
-      {:ranch, "~> 1.7.0", override: true},
-      {:cowlib, github: "hippware/cowlib", branch: "working", override: true},
+      {:redix, "~> 0.9", override: true},
+      {:redlock, "~> 1.0.6"},
+
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
-      {:reprise, "~> 0.5", only: :dev},
-      {:kronky, github: "mirego/kronky", branch: "master"},
-      {:cors_plug, "~> 2.0"},
-      {:apollo_tracing, "~> 0.4.0"},
-      {:distillery, "~> 2.0-rc.8", runtime: false, override: true},
-      {:bimap, "~> 1.0"},
-      {:lager, "~> 3.6", override: true}
+      {:reprise, "~> 0.5", only: :dev}
     ]
   end
 

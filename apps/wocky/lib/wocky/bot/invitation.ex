@@ -33,7 +33,7 @@ defmodule Wocky.Bot.Invitation do
     })
     |> Repo.insert(
       returning: true,
-      on_conflict: :replace_all,
+      on_conflict: [set: [updated_at: DateTime.utc_now(), accepted: false]],
       conflict_target: [:user_id, :bot_id, :invitee_id]
     )
   end

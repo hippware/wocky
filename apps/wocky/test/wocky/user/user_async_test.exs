@@ -1,4 +1,4 @@
-defmodule Wocky.User.UserTest do
+defmodule Wocky.User.UserAsyncTest do
   use Wocky.DataCase, async: false
 
   import Mock

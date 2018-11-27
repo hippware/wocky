@@ -38,7 +38,6 @@ defmodule Wocky.Repo.Migrations.UTCTimestamps do
     upgrade table(:privacy_list), [:created_at]
     upgrade table(:private_storage), [:created_at]
     upgrade table(:roster_items)
-    upgrade table(:schema_migrations), [:inserted_at]
     upgrade table(:tokens), [:created_at, :updated_at, :expires_at]
     upgrade table(:traffic_logs), [:created_at]
     upgrade table(:tros_metadatas)
@@ -60,7 +59,6 @@ defmodule Wocky.Repo.Migrations.UTCTimestamps do
     downgrade table(:privacy_list), [:created_at]
     downgrade table(:private_storage), [:created_at]
     downgrade table(:roster_items)
-    downgrade table(:schema_migrations), [:inserted_at]
     downgrade table(:tokens), [:created_at, :updated_at, :expires_at]
     downgrade table(:traffic_logs), [:created_at]
     downgrade table(:tros_metadatas)

@@ -17,8 +17,8 @@ defmodule Wocky.Bot.Subscription do
     field :user_id, :binary_id, primary_key: true
     field :bot_id, :binary_id, primary_key: true
     field :visitor, :boolean, default: false
-    field :visited_at, :utc_datetime
-    field :departed_at, :utc_datetime
+    field :visited_at, :utc_datetime_usec
+    field :departed_at, :utc_datetime_usec
 
     timestamps()
 
