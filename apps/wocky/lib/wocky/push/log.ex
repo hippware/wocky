@@ -11,7 +11,7 @@ defmodule Wocky.Push.Log do
     field :resource, :string, null: false
     field :token, :string, null: false
     field :message_id, :string
-    field :payload, :string, null: false
+    field :payload, :string
     field :response, :string, null: false
     field :details, :string
 
