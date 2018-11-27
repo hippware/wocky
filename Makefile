@@ -26,12 +26,20 @@ unittest: ## Run the unit tests locally
 migrationtest: undumpdb
 	mix ecto.migrate
 
+########################################################################
+### Local database helpers
+
 db_dump.gz:
 	aws s3 cp s3://wocky-db-dumps/staging/wocky_staging.dump.gz db_dump.gz
 
 undumpdb: db_dump.gz
 	echo "CREATE DATABASE wocky_${MIX_ENV}" | PGPASSWORD=${WOCKY_DB_PASSWORD} psql -U ${WOCKY_DB_USER} -h ${WOCKY_DB_HOST} -w
 	gunzip -c db_dump.gz | PGPASSWORD=${WOCKY_DB_PASSWORD} psql -U ${WOCKY_DB_USER} -h ${WOCKY_DB_HOST} -w wocky_${MIX_ENV}
+
+dropdb:
+	mix ecto.drop
+
+resetdb: dropdb undumpdb
 
 ########################################################################
 ### Build release images
