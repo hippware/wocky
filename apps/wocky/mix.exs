@@ -110,6 +110,7 @@ defmodule Wocky.Mixfile do
       {:honeybadger, "~> 0.6"},
       {:joken, "~> 1.1"},
       {:kadabra, "~> 0.3"},
+      {:lager_logger, "~> 1.0"},
       {:peerage, "~> 1.0"},
       {:pigeon, "~> 1.1"},
       {:plug, "~> 1.0"},
