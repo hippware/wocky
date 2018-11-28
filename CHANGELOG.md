@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2018.11.27+re9365be
+
+* Change the migration timestamp to naive_datetime (PR #2056)
+* Make push payload nullable at schema level (PR #2058, PR #2061)
+
+
 # 2018.11.19+r4cf6cf2
 
 * Restrict push notification logs on us1 (#2016)
