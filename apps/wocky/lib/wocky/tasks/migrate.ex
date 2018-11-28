@@ -1,9 +1,6 @@
 defmodule Wocky.Tasks.Migrate do
   @moduledoc "Run migrations during deployment"
 
-  alias Ecto.Migrator
-  alias Wocky.Repo
-
   @start_apps [
     :crypto,
     :ssl,
