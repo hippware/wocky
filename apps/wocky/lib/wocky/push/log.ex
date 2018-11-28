@@ -44,7 +44,7 @@ defmodule Wocky.Push.Log do
   def insert_changeset(attrs) do
     %Log{}
     |> cast(attrs, @insert_attrs)
-    |> validate_required(@insert_attrs -- [:message_id, :details])
+    |> validate_required(@insert_attrs -- [:message_id, :payload, :details])
     |> foreign_key_constraint(:user_id)
   end
 end
