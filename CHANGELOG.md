@@ -44,6 +44,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * A couple of TROS store renamings (PR #2041)
 * Remove XMPP/MongooseIM (PR #1985, PR #2048)
 * Update: exrun (PR #2043), faker (PR #2045), redix (PR #2047)
+* Delete Firebase data when a user deletes their account (#2005)
+* Update: bypass (PR #2055)
+* Upgrade to Phoenix 1.4 and Ecto 3.0 (#2003, PR #2044)
+* Make push payload schema nullable (PR #2062)
+* The Ecto pool size is not set correctly on deploy (#2060)
 
 
 ----------
