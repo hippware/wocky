@@ -45,6 +45,8 @@ config :lager, :handlers, [{LagerLogger, [level: :info]}]
 # Exometer uses Hut as a logging abstraction
 config :hut, :level, :info
 
+config :honeybadger, use_logger: true
+
 # Configure release generation
 config :distillery,
   no_warn_missing: [
