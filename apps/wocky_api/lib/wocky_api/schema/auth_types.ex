@@ -15,7 +15,8 @@ defmodule WockyAPI.Schema.AuthTypes do
 
       input do
         @desc "The ID of the user to authenticate"
-        field :user, :string
+        field :user, :string,
+          deprecate: "Authentication that takes a user is deprecated."
 
         @desc "The token (legacy Wocky or JWT) with which to authenticate"
         field :token, non_null(:string)
