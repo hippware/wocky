@@ -1,5 +1,5 @@
 defmodule WockyAPI.UserSocket do
-  use Phoenix.Socket
+  use WockyAPI.LoggingSocket
 
   use Absinthe.Phoenix.Socket,
     schema: WockyAPI.Schema,
@@ -21,16 +21,24 @@ defmodule WockyAPI.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
+  def connect(_params, socket, opts) do
+    peer =
+      if opts[:peer_data] do
+        opts.peer_data.address
+        |> :inet.ntoa()
+        |> to_string()
+        |> Kernel.<>(":")
+        |> Kernel.<>(to_string(opts.peer_data.port))
+      else
+        ""
+      end
+
     socket =
       Absinthe.Phoenix.Socket.put_options(
         socket,
         context: %{
           host: host(),
-          # I can't figure out a good way to get the IP/port yet. Since the main
-          # point is correlating messages, though, the transport PID will suffice
-          # for now.
-          peer: inspect(socket.transport_pid)
+          peer: peer
         },
         analyze_complexity: true,
         max_complexity: @max_complexity
