@@ -6,6 +6,7 @@ defmodule Wocky.Account do
 
   use Elixometer
 
+  alias Wocky.Account.ClientVersion
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.Server, as: ServerJWT
@@ -128,34 +129,22 @@ defmodule Wocky.Account do
   end
 
   def authenticate(:bypass, {external_id, phone_number}) do
-    if has_bypass_prefix(phone_number) do
-      Register.find_or_create(:bypass, external_id, phone_number)
-    else
-      provider_error(:bypass)
-    end
+    authenticate_with(:bypass, {external_id, phone_number}, %{})
   end
 
   def authenticate(:firebase, token) do
-    case Firebase.decode_and_verify(token) do
-      {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
-        update_counter("auth.firebase.success", 1)
-        Register.find_or_create(:firebase, external_id, phone_number)
-
-      {:error, reason} ->
-        update_counter("auth.firebase.fail", 1)
-        {:error, error_to_string(reason)}
-    end
+    authenticate_with(:firebase, token, %{})
   end
 
   def authenticate(:client_jwt, token) do
     case ClientJWT.decode_and_verify(token) do
-      {:ok, %{"typ" => "firebase", "sub" => new_token}} ->
+      {:ok, %{"typ" => "firebase", "sub" => new_token} = claims} ->
         update_counter("auth.client_jwt.firebase.success", 1)
-        authenticate(:firebase, new_token)
+        authenticate_with(:firebase, new_token, claims)
 
-      {:ok, %{"typ" => "bypass", "sub" => id, "phone_number" => phone}} ->
+      {:ok, %{"typ" => "bypass", "sub" => id, "phone_number" => phone} = claims} ->
         update_counter("auth.client_jwt.bypass.success", 1)
-        authenticate(:bypass, {id, phone})
+        authenticate_with(:bypass, {id, phone}, claims)
 
       {:ok, _claims} ->
         update_counter("auth.client_jwt.fail", 1)
@@ -197,6 +186,38 @@ defmodule Wocky.Account do
     update_counter("auth.unknown.fail", 1)
     provider_error(provider)
   end
+
+  defp authenticate_with(:bypass, {external_id, phone_number}, opts) do
+    if has_bypass_prefix(phone_number) do
+      find_or_create(:bypass, external_id, phone_number, opts)
+    else
+      provider_error(:bypass)
+    end
+  end
+
+  defp authenticate_with(:firebase, token, opts) do
+    case Firebase.decode_and_verify(token) do
+      {:ok, %{"sub" => external_id, "phone_number" => phone_number}} ->
+        update_counter("auth.firebase.success", 1)
+        find_or_create(:firebase, external_id, phone_number, opts)
+
+      {:error, reason} ->
+        update_counter("auth.firebase.fail", 1)
+        {:error, error_to_string(reason)}
+    end
+  end
+
+  defp find_or_create(method, id, phone, opts) do
+    with {:ok, {user, new?}} = Register.find_or_create(method, id, phone) do
+      maybe_record_client_version(user, opts)
+      {:ok, {user, new?}}
+    end
+  end
+
+  defp maybe_record_client_version(user, %{"dvc" => device, "iss" => agent}),
+    do: ClientVersion.record(user, device, agent)
+
+  defp maybe_record_client_version(_, _), do: :ok
 
   defp has_bypass_prefix(phone_number) do
     if Application.get_env(:wocky, :enable_auth_bypass) do
