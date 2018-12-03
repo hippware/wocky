@@ -18,22 +18,6 @@ defmodule Wocky.Account do
   @type token :: Token.token()
 
   # ====================================================================
-  # User registration
-
-  @doc """
-  Creates a new user with a password.
-  Used for testing only.
-  """
-  @spec register(User.id(), binary, binary) :: {:ok, User.t()} | {:error, any}
-  def register(id, password, pass_details) do
-    Register.create(%{
-      id: id,
-      password: password,
-      pass_details: pass_details
-    })
-  end
-
-  # ====================================================================
   # JWT generation
 
   @spec get_location_jwt(User.t()) :: {:ok, binary} | {:error, any}
