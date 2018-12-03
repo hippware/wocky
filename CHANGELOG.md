@@ -49,6 +49,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Upgrade to Phoenix 1.4 and Ecto 3.0 (#2003, PR #2044)
 * Make push payload schema nullable (PR #2062)
 * The Ecto pool size is not set correctly on deploy (#2060)
+* Add JWT signing keys to next (PR #2070)
+* Update: confex (PR #2068), absinthe (PR #2075), ecto_sql (PR #2078)
+* Remove the push payload validation (#2057, PR #2067)
+* Fix the Honeybadger environment (#2065, PR #2071)
+* Add websocket-level logging to graphQL (#1970, PR #2077)
 
 
 ----------
