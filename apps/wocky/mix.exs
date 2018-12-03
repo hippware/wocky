@@ -103,7 +103,7 @@ defmodule Wocky.Mixfile do
         github: "hippware/firebase-admin-ex",
         branch: "master"},
       {:gen_stage, "~> 0.12"},
-      {:geo_postgis, "~> 2.0"},
+      {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
       {:guardian, "~> 1.0"},
       {:guardian_firebase, "~> 0.2.1"},
