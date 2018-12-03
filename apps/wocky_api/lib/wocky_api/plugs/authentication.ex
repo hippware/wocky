@@ -7,34 +7,26 @@ defmodule WockyAPI.Plugs.Authentication do
 
   def check_auth_headers(conn, _opts \\ []) do
     auth = conn |> get_req_header("authentication") |> List.first()
-    user_id = conn |> get_req_header("x-auth-user") |> List.first()
-    token = conn |> get_req_header("x-auth-token") |> List.first()
-    authenticate(conn, auth, user_id, token)
-  end
-
-  # Client JWT authentication
-  defp authenticate(conn, auth, nil, nil) when not is_nil(auth) do
-    case parse_jwt_header(auth) do
-      {:ok, token} -> do_authenticate(conn, :jwt, token)
-      {:error, _} -> fail_authentication(conn, :bad_request)
-    end
-  end
-
-  # Server-generated token authentication
-  defp authenticate(conn, nil, user_id, token)
-       when not is_nil(user_id) or not is_nil(token) do
-    do_authenticate(conn, :token, {user_id, token})
+    authenticate(conn, auth)
   end
 
   # Anonymous user - limited access
-  defp authenticate(conn, _, _, _), do: conn
+  defp authenticate(conn, nil), do: conn
+
+  # Client JWT authentication
+  defp authenticate(conn, auth) do
+    case parse_jwt_header(auth) do
+      {:ok, token} -> do_authenticate(conn, token)
+      {:error, _} -> fail_authentication(conn, :bad_request)
+    end
+  end
 
   defp parse_jwt_header("Bearer " <> token), do: {:ok, String.trim(token)}
 
   defp parse_jwt_header(_header), do: {:error, :bad_jwt_header}
 
-  defp do_authenticate(conn, method, creds) do
-    case Account.authenticate(method, creds) do
+  defp do_authenticate(conn, creds) do
+    case Account.authenticate(:jwt, creds) do
       {:ok, {user, _}} ->
         assign(conn, :current_user, user)
 

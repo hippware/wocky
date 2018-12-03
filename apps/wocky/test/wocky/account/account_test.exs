@@ -5,7 +5,6 @@ defmodule Wocky.AccountTest do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.Server, as: ServerJWT
-  alias Wocky.Account.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -31,35 +30,6 @@ defmodule Wocky.AccountTest do
 
   defp authenticate(type, creds) do
     Account.authenticate(type, creds)
-  end
-
-  describe "legacy token authentication" do
-    setup %{user: user} do
-      {:ok, {token, _}} = Token.assign(user.id, "testing")
-      {:ok, token: token}
-    end
-
-    test "existing user with valid credentials", %{user: user, token: token} do
-      assert {:ok, {^user, false}} = authenticate(:token, {user.id, token})
-    end
-
-    test "existing user with invalid credentials", %{user: user} do
-      assert {:error, _} =
-               authenticate(:token, {user.id(), Account.generate_token()})
-    end
-
-    test "non-existant user", %{user: user, token: token} do
-      assert {:error, _} = authenticate(:token, {ID.new(), token})
-
-      assert {:error, _} =
-               authenticate(:token, {user.id, Account.generate_token()})
-    end
-
-    test "token revocation", %{user: user, token: token} do
-      Account.release_token(user.id, "testing")
-
-      assert {:error, _} = authenticate(:token, {user.id, token})
-    end
   end
 
   describe "bypass authentication" do
@@ -227,11 +197,8 @@ defmodule Wocky.AccountTest do
 
     test "when the user exists" do
       user = Factory.insert(:user, device: "testing")
-      {:ok, {token, _}} = Token.assign(user.id, user.device)
 
       Account.disable_user(user.id)
-
-      refute Token.valid?(user.id, token)
 
       disabled_user = Repo.get(User, user.id)
       assert disabled_user.phone_number == nil

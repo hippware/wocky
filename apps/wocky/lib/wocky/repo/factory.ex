@@ -11,6 +11,8 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Faker.String
+  alias Wocky.Account.JWT.Client, as: ClientJWT
+  alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
   alias Wocky.Bot.Item
@@ -249,11 +251,15 @@ defmodule Wocky.Repo.Factory do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end
 
-  def make_login do
-    user = insert(:user)
-    {:ok, {token, _}} = Wocky.Account.assign_token(user.id, "testing")
-    {:ok, user.id, token}
+  def image_url(image), do: TROS.make_url(image.id)
+
+  def get_test_token(user) do
+    {:ok, token, _} = ClientJWT.encode_and_sign(user)
+    token
   end
 
-  def image_url(image), do: TROS.make_url(image.id)
+  def get_test_location_token(user) do
+    {:ok, token, _} = ServerJWT.encode_and_sign(user)
+    token
+  end
 end

@@ -23,7 +23,7 @@ defmodule WockyAPI.ChannelHelper do
       push_doc(
         socket,
         authenticate,
-        variables: %{input: %{user: user_id, token: token}}
+        variables: %{input: %{token: token}}
       )
 
     assert_reply ref,

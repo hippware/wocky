@@ -3,95 +3,18 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
 
   import WockyAPI.Plugs.Authentication
 
-  alias Wocky.Account
-  alias Wocky.Account.JWT.Client, as: ClientJWT
-  alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.User
-
-  def put_token_headers(conn, user, token) do
-    conn
-    |> put_req_header("x-auth-user", user)
-    |> put_req_header("x-auth-token", token)
-  end
 
   def put_jwt_header(conn, jwt, prefix \\ "Bearer ") do
     put_req_header(conn, "authentication", prefix <> jwt)
   end
 
-  describe ":check_auth_headers plug" do
-    test "no credentials", context do
-      conn = check_auth_headers(context.conn)
-
-      refute conn.assigns[:current_user]
-      refute conn.halted
-    end
-  end
-
-  describe ":check_auth_headers plug with token auth" do
-    setup do
-      user = Factory.insert(:user)
-      device = Factory.device()
-      {:ok, {token, _}} = Account.assign_token(user.id, device)
-
-      {:ok, token: token, user_id: user.id}
-    end
-
-    test "valid user and token", context do
-      conn =
-        context.conn
-        |> put_token_headers(context.user_id, context.token)
-        |> check_auth_headers
-
-      assert conn.assigns.current_user
-    end
-
-    test "valid user, invalid token", context do
-      conn =
-        context.conn
-        |> put_token_headers(context.user_id, "foo")
-        |> check_auth_headers
-
-      assert conn.status == 401
-      assert conn.halted
-    end
-
-    test "valid user, no token", context do
-      conn =
-        context.conn
-        |> put_req_header("x-auth-user", context.user_id)
-        |> check_auth_headers
-
-      assert conn.status == 401
-      assert conn.halted
-    end
-
-    test "invalid user", context do
-      conn =
-        context.conn
-        |> put_token_headers("foo", context.token)
-        |> check_auth_headers
-
-      assert conn.status == 401
-      assert conn.halted
-    end
-
-    test "no user", context do
-      conn =
-        context.conn
-        |> put_req_header("x-auth-token", context.token)
-        |> check_auth_headers
-
-      assert conn.status == 401
-      assert conn.halted
-    end
-  end
-
   describe ":check_auth_headers plug with JWT auth" do
     setup do
       user = Factory.insert(:user)
-      {:ok, jwt, _} = ClientJWT.encode_and_sign(user)
+      jwt = Factory.get_test_token(user)
 
       {:ok, jwt: jwt, user: user, user_id: user.id}
     end
@@ -106,7 +29,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     end
 
     test "valid server JWT header", context do
-      {:ok, jwt, _} = ServerJWT.encode_and_sign(context.user)
+      jwt = Factory.get_test_location_token(context.user)
 
       conn =
         context.conn

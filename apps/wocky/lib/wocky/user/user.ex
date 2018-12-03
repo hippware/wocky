@@ -11,7 +11,6 @@ defmodule Wocky.User do
   alias Ecto.Queryable
   alias FirebaseAdminEx.Auth, as: FirebaseAuth
   alias Wocky.Account.ClientVersion
-  alias Wocky.Account.Token, as: AuthToken
 
   alias Wocky.{
     Block,
@@ -74,7 +73,6 @@ defmodule Wocky.User do
     has_many :push_tokens, PushToken
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id
     has_many :roster_items, RosterItem
-    has_many :tokens, AuthToken
     has_many :client_versions, ClientVersion
     has_many :tros_metadatas, TROSMetadata
     has_many :invite_codes, InviteCode

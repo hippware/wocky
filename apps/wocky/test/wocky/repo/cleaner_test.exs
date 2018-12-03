@@ -4,8 +4,6 @@ defmodule Wocky.Repo.CleanerTest do
   import Ecto.Query
   import SweetXml
 
-  alias Wocky.Account
-  alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Push.Log, as: PushLog
@@ -108,48 +106,6 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should not remove the recent log entry", %{new: new} do
       assert Repo.get(TrafficLog, new.id)
-    end
-  end
-
-  describe "clean_expired_auth_tokens" do
-    setup %{user: user} do
-      {:ok, {_, _}} = Account.assign_token(user.id, "old_token")
-      {:ok, {_, _}} = Account.assign_token(user.id, "new_token")
-
-      query =
-        from t in AuthToken,
-          where: t.user_id == ^user.id,
-          where: t.device == ^"old_token"
-
-      query
-      |> Repo.one()
-      |> AuthToken.changeset(%{expires_at: Timestamp.shift(weeks: -1)})
-      |> Repo.update!()
-
-      {:ok, result} = Cleaner.clean_expired_auth_tokens()
-      {:ok, result: result}
-    end
-
-    test "should return the number of tokens removed", %{result: result} do
-      assert result == 1
-    end
-
-    test "should remove the old token", %{user: user} do
-      query =
-        from t in AuthToken,
-          where: t.user_id == ^user.id,
-          where: t.device == ^"old_token"
-
-      refute Repo.one(query)
-    end
-
-    test "should not remove the recent token", %{user: user} do
-      query =
-        from t in AuthToken,
-          where: t.user_id == ^user.id,
-          where: t.device == ^"new_token"
-
-      assert Repo.one(query)
     end
   end
 

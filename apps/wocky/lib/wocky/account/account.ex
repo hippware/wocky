@@ -10,8 +10,7 @@ defmodule Wocky.Account do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.Server, as: ServerJWT
-  alias Wocky.Account.{Register, Token}
-  alias Wocky.Repo
+  alias Wocky.Account.Register
   alias Wocky.User
 
   require Logger
@@ -33,19 +32,6 @@ defmodule Wocky.Account do
       pass_details: pass_details
     })
   end
-
-  # ====================================================================
-  # Token management
-
-  @spec generate_token() :: Token.token()
-  defdelegate generate_token, to: Token, as: :generate
-
-  @spec assign_token(User.id(), User.device()) ::
-          {:ok, {Token.token(), Token.expiry()}}
-  defdelegate assign_token(user_id, device), to: Token, as: :assign
-
-  @spec release_token(User.id(), User.device()) :: :ok
-  defdelegate release_token(user_id, device), to: Token, as: :release
 
   # ====================================================================
   # JWT generation
@@ -74,16 +60,6 @@ defmodule Wocky.Account do
 
   The following providers are supported:
 
-  ### :token
-
-  Deprecated.
-
-  Authenticates the user using a server-generated token. This provider cannot
-  create a new account; it can only authenticate existing accounts.
-
-  The credentials should be the user ID and token.
-
-
   ### :bypass
 
   Bypass authentication only works when it is enabled on the server. This would
@@ -93,13 +69,11 @@ defmodule Wocky.Account do
   The credentials for Bypass authentication are the external ID and phone
   number of the user.
 
-
   ### :firebase
 
   Authenticates the user with an access token acquired from Google Firebase.
 
   The credentials are the access token.
-
 
   ### :client_jwt
 
@@ -118,16 +92,6 @@ defmodule Wocky.Account do
   """
   @spec authenticate(provider, binary | {binary, binary}) ::
           {:ok, {User.t(), boolean}} | {:error, binary}
-  def authenticate(:token, {user_id, token}) do
-    if Token.valid?(user_id, token) do
-      update_counter("auth.token.success", 1)
-      {:ok, {Repo.get(User, user_id), false}}
-    else
-      update_counter("auth.token.fail", 1)
-      {:error, "Invalid token"}
-    end
-  end
-
   def authenticate(:bypass, {external_id, phone_number}) do
     authenticate_with(:bypass, {external_id, phone_number}, %{})
   end
@@ -242,7 +206,6 @@ defmodule Wocky.Account do
   """
   @spec disable_user(User.id()) :: :ok
   def disable_user(user_id) do
-    Token.release_all(user_id)
     User.remove_auth_details(user_id)
   end
 end

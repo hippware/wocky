@@ -7,8 +7,6 @@ defmodule Wocky.User.UserTest do
   alias Faker.Internet
   alias Faker.Lorem
   alias Faker.Name
-  alias Wocky.Account
-  alias Wocky.Account.Token
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
@@ -369,11 +367,9 @@ defmodule Wocky.User.UserTest do
 
   describe "delete/1" do
     test "should remove the user from the database", ctx do
-      {:ok, _} = Account.assign_token(ctx.id, ID.new())
 
       assert User.delete(ctx.id) == :ok
       refute Repo.get(User, ctx.id)
-      refute Repo.get_by(Token, user_id: ctx.id)
     end
 
     test "should delete the user's TROS files", ctx do
