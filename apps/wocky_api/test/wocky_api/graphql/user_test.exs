@@ -608,6 +608,14 @@ defmodule WockyAPI.GraphQL.UserTest do
       end
     end
 
+    test "get contacts by relationship 'none'", %{user: user} do
+      result = run_query(@query, user, %{"rel" => "NONE"})
+
+      assert has_errors(result)
+
+      assert [%{message: "unsupported"}] = result.errors
+    end
+
     test "following/followee mapping", %{user: user, user2: %User{id: id2}} do
       Roster.follow(id2, user.id)
       result = run_query(@query, user, %{"rel" => "FOLLOWER"})
