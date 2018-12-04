@@ -24,6 +24,10 @@ defmodule WockyAPI.Resolvers.User do
     User.update(user, input)
   end
 
+  def get_contacts(_, %{relationship: :none}, _) do
+    {:error, :unsupported}
+  end
+
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
     query =
       case args[:relationship] do
