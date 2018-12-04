@@ -12,96 +12,64 @@ defmodule Wocky.AccountTest do
 
   setup do
     user = Factory.insert(:user)
-    {:ok, user: user}
+    {:ok, id: user.id, user: user}
   end
 
-  defp authenticate(type, creds) do
-    Account.authenticate(type, creds)
+  defp make_client_token(sub) do
+    {:ok, token, _} = ClientJWT.encode_and_sign(sub, %{"dvc" => "testing"})
+    token
   end
 
   describe "bypass authentication" do
-    test "mismatched external id and phone number", %{user: user} do
-      assert {:error, _} =
-               authenticate(:bypass, {user.external_id, "+18005551234"})
+    test "existing user with bypass number", %{user: user, id: id} do
+      token = make_client_token(user)
 
-      assert {:error, _} =
-               authenticate(:bypass, {Factory.external_id(), "+18005551234"})
+      assert {:ok, %User{id: ^id}} = Account.authenticate(token)
     end
 
-    test "existing user", %{user: user} do
-      assert {:ok, {_, false}} =
-               authenticate(:bypass, {user.external_id, user.phone_number})
+    test "existing user without bypass number" do
+      user = Factory.insert(:user, phone_number: "+18001234567")
+      token = make_client_token(user)
 
-      assert {:ok, {_, false}} =
-               authenticate(:bypass, {user.external_id, Factory.phone_number()})
-
-      assert {:ok, {_, false}} =
-               authenticate(:bypass, {Factory.external_id(), user.phone_number})
+      assert {:error, _} = Account.authenticate(token)
     end
 
     test "non-existant user" do
-      assert {:ok, {_, true}} =
-               authenticate(
-                 :bypass,
-                 {Factory.external_id(), Factory.phone_number()}
-               )
+      new_user = Factory.build(:user)
+      token = make_client_token(new_user)
+
+      id = new_user.external_id
+      assert {:ok, %User{external_id: ^id}} = Account.authenticate(token)
     end
   end
 
   describe "firebase authentication" do
-    test "existing user", %{user: user} do
-      {:ok, token, _} = Firebase.encode_and_sign(user)
-
-      assert {:ok, {_, false}} = authenticate(:firebase, token)
-    end
-
-    test "non-existant user" do
-      new_user = Factory.build(:user)
-      {:ok, token, _} = Firebase.encode_and_sign(new_user)
-
-      assert {:ok, {_, true}} = authenticate(:firebase, token)
-    end
-
-    test "bogus token" do
-      assert {:error, _} = authenticate(:firebase, "bogus")
-    end
-  end
-
-  describe "client_jwt/bypass authentication" do
-    test "existing user", %{user: user} do
-      {:ok, token, _} = ClientJWT.encode_and_sign(user)
-
-      assert {:ok, {_, false}} = authenticate(:client_jwt, token)
-    end
-
-    test "non-existant user" do
-      new_user = Factory.build(:user)
-      {:ok, token, _} = ClientJWT.encode_and_sign(new_user)
-
-      assert {:ok, {_, true}} = authenticate(:client_jwt, token)
-    end
-  end
-
-  describe "client_jwt/firebase authentication" do
-    test "existing user", %{user: user} do
+    test "existing user", %{user: user, id: id} do
       {:ok, fb, _} = Firebase.encode_and_sign(user)
-      {:ok, token, _} = ClientJWT.encode_and_sign(fb)
+      token = make_client_token(fb)
 
-      assert {:ok, {_, false}} = authenticate(:client_jwt, token)
+      assert {:ok, %User{id: ^id}} = Account.authenticate(token)
     end
 
     test "non-existant user" do
       new_user = Factory.build(:user)
       {:ok, fb, _} = Firebase.encode_and_sign(new_user)
-      {:ok, token, _} = ClientJWT.encode_and_sign(fb)
+      token = make_client_token(fb)
 
-      assert {:ok, {_, true}} = authenticate(:client_jwt, token)
+      id = new_user.external_id
+      assert {:ok, %User{external_id: ^id}} = Account.authenticate(token)
+    end
+
+    test "bogus token" do
+      token = make_client_token("bogus")
+
+      assert {:error, _} = Account.authenticate(token)
     end
   end
 
-  describe "client_jwt authentication" do
+  describe "authentication errors" do
     test "bogus token" do
-      assert {:error, _} = authenticate(:client_jwt, "bogus")
+      assert {:error, _} = Account.authenticate("bogus")
     end
 
     test "unknown wrapped credential" do
@@ -112,47 +80,35 @@ defmodule Wocky.AccountTest do
       signed = JOSE.JWT.sign(jwk, jws, jwt)
       {_, token} = JOSE.JWS.compact(signed)
 
-      assert {:error, _} = authenticate(:client_jwt, token)
+      assert {:error, _} = Account.authenticate(token)
     end
   end
 
-  describe "server_jwt authentication" do
-    test "existing user", %{user: user} do
+  describe "location authentication" do
+    test "existing user with server_jwt token", %{user: user, id: id} do
       {:ok, token} = Account.get_location_jwt(user)
 
-      assert {:ok, {_, false}} = authenticate(:server_jwt, token)
+      assert {:ok, %User{id: ^id}} = Account.authenticate_for_location(token)
     end
 
     test "non-existant user" do
       user = Factory.build(:user)
       {:ok, token, _} = ServerJWT.encode_and_sign(user)
 
-      assert {:error, _} = authenticate(:server_jwt, token)
+      assert {:error, _} = Account.authenticate_for_location(token)
     end
 
-    test "bogus token" do
-      assert {:error, _} = authenticate(:server_jwt, "bogus")
-    end
-  end
-
-  describe "generic jwt authentication" do
-    test "server_jwt token", %{user: user} do
-      {:ok, token} = Account.get_location_jwt(user)
-
-      assert {:ok, {_, false}} = authenticate(:jwt, token)
-    end
-
-    test "client_jwt firebase token", %{user: user} do
+    test "client_jwt firebase token", %{user: user, id: id} do
       {:ok, fb, _} = Firebase.encode_and_sign(user)
-      {:ok, token, _} = ClientJWT.encode_and_sign(fb)
+      token = make_client_token(fb)
 
-      assert {:ok, {_, false}} = authenticate(:jwt, token)
+      assert {:ok, %User{id: ^id}} = Account.authenticate_for_location(token)
     end
 
-    test "client_jwt bypass token", %{user: user} do
-      {:ok, token, _} = ClientJWT.encode_and_sign(user)
+    test "client_jwt bypass token", %{user: user, id: id} do
+      token = make_client_token(user)
 
-      assert {:ok, {_, false}} = authenticate(:jwt, token)
+      assert {:ok, %User{id: ^id}} = Account.authenticate_for_location(token)
     end
 
     test "unrecognized token" do
@@ -163,17 +119,11 @@ defmodule Wocky.AccountTest do
       signed = JOSE.JWT.sign(jwk, jws, jwt)
       {_, token} = JOSE.JWS.compact(signed)
 
-      assert {:error, _} = authenticate(:jwt, token)
+      assert {:error, _} = Account.authenticate_for_location(token)
     end
 
     test "bad token" do
-      assert {:error, _} = authenticate(:jwt, "bogus")
-    end
-  end
-
-  describe "unknown authentication" do
-    test "fails" do
-      assert {:error, _} = authenticate(:bogus, "")
+      assert {:error, _} = Account.authenticate_for_location("bogus")
     end
   end
 

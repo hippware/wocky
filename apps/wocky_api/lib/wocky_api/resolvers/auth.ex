@@ -4,12 +4,8 @@ defmodule WockyAPI.Resolvers.Auth do
   alias Wocky.Account
 
   def authenticate(_root, %{token: token}, _info) do
-    do_authenticate(:client_jwt, token)
-  end
-
-  defp do_authenticate(method, creds) do
-    case Account.authenticate(method, creds) do
-      {:ok, {user, _}} ->
+    case Account.authenticate(token) do
+      {:ok, user} ->
         {:ok, %{user: user}}
 
       {:error, _} ->

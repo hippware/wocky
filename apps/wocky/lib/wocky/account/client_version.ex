@@ -67,7 +67,7 @@ defmodule Wocky.Account.ClientVersion do
   defp parse_attrs(attrs) do
     attrs
     |> String.split(";", trim: true)
-    |> Enum.each(&String.trim/1)
+    |> Enum.map(&String.trim/1)
   end
 
   defp supported?(_version, _attrs) do

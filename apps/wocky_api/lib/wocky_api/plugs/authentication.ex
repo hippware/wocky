@@ -5,29 +5,33 @@ defmodule WockyAPI.Plugs.Authentication do
 
   alias Wocky.Account
 
-  def check_auth_headers(conn, _opts \\ []) do
-    auth = conn |> get_req_header("authentication") |> List.first()
-    authenticate(conn, auth)
+  def check_location_auth(conn, _opts \\ []) do
+    authenticate(conn, &Account.authenticate_for_location/1)
   end
 
-  # Anonymous user - limited access
-  defp authenticate(conn, nil), do: conn
+  def check_auth(conn, _opts \\ []) do
+    authenticate(conn, &Account.authenticate/1)
+  end
 
-  # Client JWT authentication
   defp authenticate(conn, auth) do
-    case parse_jwt_header(auth) do
-      {:ok, token} -> do_authenticate(conn, token)
-      {:error, _} -> fail_authentication(conn, :bad_request)
+    header = conn |> get_req_header("authentication") |> List.first()
+
+    case parse_jwt_header(header) do
+      {:ok, nil} -> conn
+      {:ok, token} -> do_authenticate(conn, token, auth)
+      {:error, error} -> fail_authentication(conn, error)
     end
   end
 
+  defp parse_jwt_header(nil), do: {:ok, nil}
+
   defp parse_jwt_header("Bearer " <> token), do: {:ok, String.trim(token)}
 
-  defp parse_jwt_header(_header), do: {:error, :bad_jwt_header}
+  defp parse_jwt_header(_header), do: {:error, :bad_request}
 
-  defp do_authenticate(conn, creds) do
-    case Account.authenticate(:jwt, creds) do
-      {:ok, {user, _}} ->
+  defp do_authenticate(conn, token, auth) do
+    case auth.(token) do
+      {:ok, user} ->
         assign(conn, :current_user, user)
 
       {:error, _} ->

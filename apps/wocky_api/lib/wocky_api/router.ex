@@ -12,7 +12,7 @@ defmodule WockyAPI.Router do
 
   pipeline :rest_api do
     plug :accepts, ["json"]
-    plug :check_auth_headers
+    plug :check_location_auth
     plug :ensure_authenticated
     plug :ensure_owner
   end
@@ -25,7 +25,7 @@ defmodule WockyAPI.Router do
 
   pipeline :graphql do
     plug :accepts, ["json"]
-    plug :check_auth_headers
+    plug :check_auth
     plug :load_graphql_context
   end
 

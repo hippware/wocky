@@ -5,8 +5,8 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
   alias Wocky.Repo.Factory
 
   @query """
-  mutation ($user: UUID, $token: String!) {
-  authenticate (input: {user: $user, token: $token}) {
+  mutation ($token: String!) {
+  authenticate (input: {token: $token}) {
       user {
         id
       }

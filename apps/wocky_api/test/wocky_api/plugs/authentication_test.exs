@@ -11,19 +11,20 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     put_req_header(conn, "authentication", prefix <> jwt)
   end
 
-  describe ":check_auth_headers plug with JWT auth" do
+  describe ":check_location_auth plug" do
     setup do
       user = Factory.insert(:user)
-      jwt = Factory.get_test_token(user)
 
-      {:ok, jwt: jwt, user: user, user_id: user.id}
+      {:ok, user: user}
     end
 
     test "valid client JWT header", context do
+      jwt = Factory.get_test_token(context.user)
+
       conn =
         context.conn
-        |> put_jwt_header(context.jwt)
-        |> check_auth_headers
+        |> put_jwt_header(jwt)
+        |> check_location_auth
 
       assert conn.assigns.current_user
     end
@@ -34,16 +35,18 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       conn =
         context.conn
         |> put_jwt_header(jwt)
-        |> check_auth_headers
+        |> check_location_auth
 
       assert conn.assigns.current_user
     end
 
     test "invalid JWT header format", context do
+      jwt = Factory.get_test_token(context.user)
+
       conn =
         context.conn
-        |> put_jwt_header(context.jwt, "")
-        |> check_auth_headers
+        |> put_jwt_header(jwt, "")
+        |> check_location_auth
 
       assert conn.status == 400
       assert conn.halted
@@ -53,7 +56,48 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       conn =
         context.conn
         |> put_jwt_header("foo")
-        |> check_auth_headers
+        |> check_location_auth
+
+      assert conn.status == 401
+      assert conn.halted
+    end
+  end
+
+  describe ":check_auth plug" do
+    setup do
+      user = Factory.insert(:user)
+
+      {:ok, user: user}
+    end
+
+    test "valid JWT header", context do
+      jwt = Factory.get_test_token(context.user)
+
+      conn =
+        context.conn
+        |> put_jwt_header(jwt)
+        |> check_auth
+
+      assert conn.assigns.current_user
+    end
+
+    test "invalid JWT header format", context do
+      jwt = Factory.get_test_token(context.user)
+
+      conn =
+        context.conn
+        |> put_jwt_header(jwt, "")
+        |> check_auth
+
+      assert conn.status == 400
+      assert conn.halted
+    end
+
+    test "invalid JWT in header", context do
+      conn =
+        context.conn
+        |> put_jwt_header("foo")
+        |> check_auth
 
       assert conn.status == 401
       assert conn.halted
