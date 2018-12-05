@@ -14,8 +14,8 @@ data:
   WOCKY_IQ_CRASH_RESPONSE: error
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-next
   WOCKY_PUSH_ENABLED: "true"
-  WOCKY_PUSH_TOPIC: "com.hippware.ios.ChatNet"
-  WOCKY_PUSH_URI_PREFIX: "tinyrobotNext"
+  WOCKY_PUSH_TOPIC: "com.hippware.ios.ChatStaging"
+  WOCKY_PUSH_URI_PREFIX: "tinyrobotStaging"
   WOCKY_ENABLE_BYPASS: "true"
   WOCKY_DB_HOST: wocky-next.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_next
