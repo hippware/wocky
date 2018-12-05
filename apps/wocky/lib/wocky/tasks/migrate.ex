@@ -6,7 +6,8 @@ defmodule Wocky.Tasks.Migrate do
     :ssl,
     :postgrex,
     :ecto,
-    :ecto_sql # If using Ecto 3.0 or higher
+    # If using Ecto 3.0 or higher
+    :ecto_sql
   ]
 
   @repos Application.get_env(:wocky, :ecto_repos, [])

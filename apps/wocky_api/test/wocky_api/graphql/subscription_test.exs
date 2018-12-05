@@ -249,16 +249,16 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     assert_push "subscription:data", push, 1000
 
     assert %{
-      result: %{
-        data: %{
-          "contacts" => %{
-            "relationship" => ^relationship,
-            "created_at" => _,
-            "user" => %{"id" => ^user_id}
-          }
-        }
-      },
-      subscriptionId: ^subscription_id
-    } = push
+             result: %{
+               data: %{
+                 "contacts" => %{
+                   "relationship" => ^relationship,
+                   "created_at" => _,
+                   "user" => %{"id" => ^user_id}
+                 }
+               }
+             },
+             subscriptionId: ^subscription_id
+           } = push
   end
 end

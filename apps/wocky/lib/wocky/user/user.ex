@@ -488,7 +488,7 @@ defmodule Wocky.User do
       delete_tros_files(user)
 
       if user.provider == "firebase",
-      do: FirebaseAuth.delete_user(user.external_id)
+        do: FirebaseAuth.delete_user(user.external_id)
 
       Repo.delete!(user)
     end

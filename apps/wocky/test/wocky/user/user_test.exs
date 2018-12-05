@@ -367,7 +367,6 @@ defmodule Wocky.User.UserTest do
 
   describe "delete/1" do
     test "should remove the user from the database", ctx do
-
       assert User.delete(ctx.id) == :ok
       refute Repo.get(User, ctx.id)
     end

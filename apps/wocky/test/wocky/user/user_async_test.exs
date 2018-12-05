@@ -7,7 +7,13 @@ defmodule Wocky.User.UserAsyncTest do
   alias Wocky.Repo.Factory
 
   setup do
-    user = Factory.insert(:user, device: "testing", first_name: "first", last_name: "last", handle: "handle")
+    user =
+      Factory.insert(:user,
+        device: "testing",
+        first_name: "first",
+        last_name: "last",
+        handle: "handle"
+      )
 
     {:ok,
      user: user,
@@ -27,14 +33,14 @@ defmodule Wocky.User.UserAsyncTest do
       user = Factory.insert(:user, provider: "firebase")
       assert User.delete(user.id) == :ok
 
-      assert_called FirebaseAdminEx.Auth.delete_user(user.external_id)
+      assert_called(FirebaseAdminEx.Auth.delete_user(user.external_id))
     end
 
     test "should not delete user's firebase account if they don't have one" do
       user = Factory.insert(:user)
       assert User.delete(user.id) == :ok
 
-      refute called FirebaseAdminEx.Auth.delete_user(user.external_id)
+      refute called(FirebaseAdminEx.Auth.delete_user(user.external_id))
     end
   end
 
@@ -107,4 +113,3 @@ defmodule Wocky.User.UserAsyncTest do
     end
   end
 end
-

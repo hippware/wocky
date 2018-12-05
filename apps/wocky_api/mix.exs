@@ -45,7 +45,6 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-
       {:bimap, "~> 1.0"},
       # TODO: Move these back to the offical absinthe repo once all the changes
       # are merged.
@@ -78,7 +77,6 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       {:redix, "~> 0.9", override: true},
       {:redlock, "~> 1.0.6"},
-
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},

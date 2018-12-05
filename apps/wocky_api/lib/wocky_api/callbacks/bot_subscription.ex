@@ -15,7 +15,6 @@ defmodule WockyAPI.Callbacks.BotSubscription do
         new: %Subscription{visitor: b} = subscriber
       })
       when a != b do
-
     subscriber = Repo.preload(subscriber, [:bot, :user])
 
     if subscriber.bot != nil && subscriber.user != nil do
