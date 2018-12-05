@@ -12,9 +12,9 @@ defmodule WockyAPI.Resolvers.Block do
     |> preload([:blockee])
     |> Utils.connection_from_query(
       user,
-      [desc: :created_at],
-      &map_to_block_user/1,
-      args
+      args,
+      order_by: [desc: :created_at],
+      postprocess: &map_to_block_user/1
     )
   end
 

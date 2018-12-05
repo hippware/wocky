@@ -99,22 +99,22 @@ defmodule WockyAPI.Resolvers.User do
     |> query.(requestor)
     |> Utils.connection_from_query(
       user,
-      [desc: :updated_at],
-      post_process,
-      args
+      args,
+      desc: :updated_at,
+      post_process: post_process
     )
   end
 
   def get_locations(user, args, %{context: %{current_user: user}}) do
     user
     |> User.get_locations_query(args[:device])
-    |> Utils.connection_from_query(user, [desc: :captured_at], args)
+    |> Utils.connection_from_query(user, args, order_by: [desc: :captured_at])
   end
 
   def get_location_events(user, args, %{context: %{current_user: user}}) do
     user
     |> User.get_location_events_query(args[:device])
-    |> Utils.connection_from_query(user, [desc: :occurred_at], args)
+    |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
   def get_location_events(%Location{} = loc, args, %{
@@ -122,7 +122,7 @@ defmodule WockyAPI.Resolvers.User do
       }) do
     user
     |> User.get_location_events_query(loc)
-    |> Utils.connection_from_query(user, [desc: :occurred_at], args)
+    |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: %{id: id} = u}}) do
