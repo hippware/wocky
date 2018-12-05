@@ -10,7 +10,7 @@ defmodule Wocky.User do
 
   alias Ecto.Queryable
   alias FirebaseAdminEx.Auth, as: FirebaseAuth
-  alias Wocky.Account.Token, as: AuthToken
+  alias Wocky.Account.ClientVersion
 
   alias Wocky.{
     Block,
@@ -73,7 +73,7 @@ defmodule Wocky.User do
     has_many :push_tokens, PushToken
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id
     has_many :roster_items, RosterItem
-    has_many :tokens, AuthToken
+    has_many :client_versions, ClientVersion
     has_many :tros_metadatas, TROSMetadata
     has_many :invite_codes, InviteCode
     has_many :sent_invitations, Invitation
@@ -488,7 +488,7 @@ defmodule Wocky.User do
       delete_tros_files(user)
 
       if user.provider == "firebase",
-      do: FirebaseAuth.delete_user(user.external_id)
+        do: FirebaseAuth.delete_user(user.external_id)
 
       Repo.delete!(user)
     end

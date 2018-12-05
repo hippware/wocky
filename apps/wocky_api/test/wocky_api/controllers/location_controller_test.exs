@@ -1,7 +1,6 @@
 defmodule WockyAPI.LocationControllerTest do
   use WockyAPI.ConnCase
 
-  alias Wocky.Account
   alias Wocky.Repo.Factory
 
   @create_attrs %{
@@ -35,13 +34,12 @@ defmodule WockyAPI.LocationControllerTest do
 
   setup %{conn: conn} do
     user = Factory.insert(:user, device: "testing")
-    {:ok, {token, _}} = Account.assign_token(user.id, user.device)
+    token = Factory.get_test_location_token(user)
 
     conn =
       conn
       |> put_req_header("accept", "application/json")
-      |> put_req_header("x-auth-user", user.id)
-      |> put_req_header("x-auth-token", token)
+      |> put_req_header("authentication", "Bearer #{token}")
 
     {:ok, conn: conn, user: user}
   end

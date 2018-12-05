@@ -10,12 +10,12 @@ defmodule Wocky.Account.JWT.Client do
     secret_key: {Wocky.Account.JWT.SigningKey, :fetch, [:client]},
     token_verify_module: Wocky.Account.JWT.Verify
 
+  alias Wocky.Account.ClientVersion
   alias Wocky.Account.JWT.{Firebase, SigningKey}
   alias Wocky.Account.Register
   alias Wocky.User
 
   @audience "Wocky"
-  @agent_rx ~r/TinyRobot\/(\d+\.\d+\.\d+)(?: \((.*)\))?/
 
   def signing_key, do: SigningKey.fetch(:client)
 
@@ -90,40 +90,10 @@ defmodule Wocky.Account.JWT.Client do
   end
 
   defp verify_iss(iss) do
-    if client_supported?(iss) do
+    if ClientVersion.supported?(iss) do
       :ok
     else
       {:error, :invalid_issuer}
     end
-  end
-
-  defp client_supported?(nil), do: false
-
-  defp client_supported?(agent_str) do
-    case parse_agent(agent_str) do
-      {:ok, version, attrs} -> client_supported?(version, attrs)
-      {:error, _} -> false
-    end
-  end
-
-  defp parse_agent(agent_str) do
-    case Regex.run(@agent_rx, agent_str) do
-      nil -> {:error, :unknown_client}
-      [_, version] -> {:ok, version, []}
-      [_, version, attrs] -> {:ok, version, parse_attrs(attrs)}
-    end
-  end
-
-  defp parse_attrs(""), do: []
-
-  defp parse_attrs(attrs) do
-    attrs
-    |> String.split(";", trim: true)
-    |> Enum.each(&String.trim/1)
-  end
-
-  defp client_supported?(_version, _attrs) do
-    # Always return true for now
-    true
   end
 end

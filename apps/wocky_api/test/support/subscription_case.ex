@@ -14,7 +14,7 @@ defmodule WockyAPI.SubscriptionCase do
 
       setup do
         user = Wocky.Repo.Factory.insert(:user)
-        {:ok, {token, _}} = Wocky.Account.assign_token(user.id, "abc")
+        token = Wocky.Repo.Factory.get_test_token(user)
         {:ok, socket} = Phoenix.ChannelTest.connect(WockyAPI.UserSocket, %{})
         {:ok, socket} = Absinthe.Phoenix.SubscriptionTest.join_absinthe(socket)
         {:ok, socket: socket, user: user, token: token}

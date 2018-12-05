@@ -4,7 +4,6 @@ defmodule Wocky.Repo.Cleaner do
   import Ecto.Query
   import SweetXml
 
-  alias Wocky.Account.Token, as: AuthToken
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Push.Log, as: PushLog
@@ -26,11 +25,10 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d4} = clean_pending_bots()
     {:ok, d5} = clean_pending_tros_files()
     {:ok, d6} = clean_invalid_push_tokens()
-    {:ok, d7} = clean_expired_auth_tokens()
-    {:ok, d8} = clean_expired_invite_codes()
-    {:ok, d9} = clean_dead_tros_links(true)
+    {:ok, d7} = clean_expired_invite_codes()
+    {:ok, d8} = clean_dead_tros_links(true)
 
-    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
   end
 
   def clean_pending_bots do
@@ -87,17 +85,6 @@ defmodule Wocky.Repo.Cleaner do
     Logger.info(
       "Deleted #{deleted} invalid push tokens registered before #{expire_date}"
     )
-
-    {:ok, deleted}
-  end
-
-  def clean_expired_auth_tokens do
-    {deleted, nil} =
-      AuthToken
-      |> where([t], t.expires_at < ^DateTime.utc_now())
-      |> Repo.delete_all(timeout: :infinity)
-
-    Logger.info("Deleted #{deleted} expired authentication tokens")
 
     {:ok, deleted}
   end

@@ -72,7 +72,6 @@ defmodule Wocky.Mixfile do
     [
       {:bamboo, "~> 1.0"},
       {:bcrypt_elixir, "~> 1.0"},
-      {:comeonin, "~> 4.0"},
       {:confex, github: "Nebo15/confex", branch: "master", override: true},
       {:csv, "~> 2.0"},
       {:dawdle, "~> 0.4.0"},
@@ -100,8 +99,7 @@ defmodule Wocky.Mixfile do
       {:faker, "~> 0.9"},
       # TODO: go back to hex version once changes are merged
       {:firebase_admin_ex,
-        github: "hippware/firebase-admin-ex",
-        branch: "master"},
+       github: "hippware/firebase-admin-ex", branch: "master"},
       {:gen_stage, "~> 0.12"},
       {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
@@ -130,7 +128,6 @@ defmodule Wocky.Mixfile do
        git: "https://github.com/hippware/wocky_db_watcher.git",
        branch: "master",
        app: false},
-
       {:bypass, "~> 1.0", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},

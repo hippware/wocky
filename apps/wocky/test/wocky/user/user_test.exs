@@ -7,8 +7,6 @@ defmodule Wocky.User.UserTest do
   alias Faker.Internet
   alias Faker.Lorem
   alias Faker.Name
-  alias Wocky.Account
-  alias Wocky.Account.Token
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
@@ -369,11 +367,8 @@ defmodule Wocky.User.UserTest do
 
   describe "delete/1" do
     test "should remove the user from the database", ctx do
-      {:ok, _} = Account.assign_token(ctx.id, ID.new())
-
       assert User.delete(ctx.id) == :ok
       refute Repo.get(User, ctx.id)
-      refute Repo.get_by(Token, user_id: ctx.id)
     end
 
     test "should delete the user's TROS files", ctx do
@@ -662,75 +657,6 @@ defmodule Wocky.User.UserTest do
 
     test "invalid user" do
       assert User.remove_auth_details(ID.new()) == :ok
-    end
-  end
-
-  describe "search_by_name/3" do
-    setup do
-      users =
-        [
-          {"Alice", "Sanders", "Xena"},
-          {"Alison", "Smith", "Yaniv"},
-          {"Bob", "Jones", "Zena"},
-          {"acéñtîâ", "CAPITAL", "1345"}
-        ]
-        |> Enum.map(fn {f, l, h} ->
-          Factory.insert(:user, first_name: f, last_name: l, handle: h)
-        end)
-
-      {:ok, users: users}
-    end
-
-    test "should return all users with the search prefix in either name", ctx do
-      assert User.search_by_name("a", ctx.id, 50) |> length() == 3
-      assert User.search_by_name("b", ctx.id, 50) |> length() == 1
-      assert User.search_by_name("s", ctx.id, 50) |> length() == 2
-      assert User.search_by_name("smi", ctx.id, 50) |> length() == 1
-      assert User.search_by_name("q", ctx.id, 50) |> length() == 0
-      assert User.search_by_name("z", ctx.id, 50) |> length() == 1
-      assert User.search_by_name("13", ctx.id, 50) |> length() == 1
-    end
-
-    test "should ignore accents in both search and data", ctx do
-      assert User.search_by_name("acent", ctx.id, 50) |> length() == 1
-      assert User.search_by_name("â", ctx.id, 50) |> length() == 3
-    end
-
-    test "should ignore capitalisation in both search and data", ctx do
-      assert User.search_by_name("A", ctx.id, 50) |> length() == 3
-      assert User.search_by_name("c", ctx.id, 50) |> length() == 1
-    end
-
-    test "should respect the limit parameter", ctx do
-      assert User.search_by_name("a", ctx.id, 2) |> length() == 2
-    end
-
-    test "should ignore empty search terms and return an empty list", ctx do
-      assert User.search_by_name("", ctx.id, 50) |> length() == 0
-    end
-
-    test "should work on multiple partial terms", ctx do
-      assert User.search_by_name("ali s", ctx.id, 50) |> length() == 2
-      assert User.search_by_name("ali sm", ctx.id, 50) |> length() == 1
-    end
-
-    test "should not choke on punctuation or other unicode weirdness", ctx do
-      assert User.search_by_name("''ali", ctx.id, 50) |> length() == 2
-      assert User.search_by_name("al-s", ctx.id, 50) |> length() == 0
-      assert User.search_by_name("al''i", ctx.id, 50) |> length() == 2
-      assert User.search_by_name("al''i", ctx.id, 50) |> length() == 2
-      assert User.search_by_name("''-al''i", ctx.id, 50) |> length() == 2
-    end
-
-    test "should not return a blocking user", ctx do
-      # Alice Sanders
-      blocking_user = hd(ctx.users)
-      Block.block(blocking_user, ctx.user)
-
-      result = User.search_by_name("a", ctx.id, 50)
-
-      assert length(result) == 2
-      refute Enum.any?(result, fn %{id: id} -> id == blocking_user.id end)
     end
   end
 
