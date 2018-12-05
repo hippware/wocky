@@ -1,6 +1,7 @@
 defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
+  import Wocky.Eventually
   import WockyAPI.ChannelHelper
 
   alias Wocky.Bot
@@ -11,14 +12,6 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   setup_all do
     setup_watcher()
-  end
-
-  setup %{user: user} do
-    user2 = Factory.insert(:user)
-    bot = Factory.insert(:bot, user: user)
-    Subscription.put(user2, bot)
-
-    {:ok, user2: user2, bot: bot}
   end
 
   @subscription """
@@ -61,19 +54,21 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     }
   }
   """
+  setup %{user: user, socket: socket, token: token} do
+    authenticate(user.id, token, socket)
+    ref = push_doc(socket, @subscription)
+    assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+    user2 = Factory.insert(:user)
+    bot = Factory.insert(:bot, user: user)
+    Subscription.put(user2, bot)
+
+    assert_eventually(Subscription.state(user, bot) == :subscribed)
+
+    {:ok, user2: user2, bot: bot, ref: ref, subscription_id: subscription_id}
+  end
+
   describe "event notifications" do
-    setup %{
-      socket: socket,
-      user: %{id: user_id},
-      token: token
-    } do
-      authenticate(user_id, token, socket)
-      ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
-      {:ok, ref: ref, subscription_id: subscription_id}
-    end
-
     test "user posts item to bot", %{
       user2: user2,
       bot: bot,
@@ -182,18 +177,11 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   end
 
   describe "notification deletion" do
-    setup %{
-      socket: socket,
-      user: user,
-      token: token
-    } do
+    setup %{user: user} do
       notification = Factory.insert(:bot_item_notification, user: user)
-      authenticate(user.id, token, socket)
-      ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_push "subscription:data", _push, 2000
 
-      {:ok,
-       ref: ref, subscription_id: subscription_id, notification: notification}
+      {:ok, notification: notification}
     end
 
     test "notification deleted", %{
