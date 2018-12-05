@@ -29,12 +29,16 @@ defmodule WockyAPI.LoggingSocket do
       @doc false
       def init(state) do
         with {:ok, {channels, socket}} <- Socket.__init__(state) do
-          absinthe_assigns =
-            socket.assigns
-            |> Map.get(:absinthe, %{})
-            |> put_in([:opts, :context, :transport_pid], socket.transport_pid)
+          if socket.transport == :websocket do
+            absinthe_assigns =
+              socket.assigns
+              |> Map.get(:absinthe, %{})
+              |> put_in([:opts, :context, :transport_pid], socket.transport_pid)
 
-          {:ok, {channels, assign(socket, :absinthe, absinthe_assigns)}}
+            {:ok, {channels, assign(socket, :absinthe, absinthe_assigns)}}
+          else
+            {:ok, {channels, socket}}
+          end
         end
       end
 
