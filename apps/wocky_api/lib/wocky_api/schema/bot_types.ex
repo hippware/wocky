@@ -117,13 +117,16 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:string)
 
     @desc "The post's content"
-    field :stanza, :string
+    field :content, :string
 
     @desc "Media contained in the post"
     field :media, :media, do: resolve(&Media.get_media/3)
 
-    @desc "True if the post is an image post"
-    field :image, :boolean
+    @desc "Initial creation time of the post"
+    field :created_at, non_null(:datetime)
+
+    @desc "Last time the post was updated"
+    field :updated_at, non_null(:datetime)
 
     @desc "The post's owner"
     field :owner, :user, resolve: assoc(:user)
@@ -220,18 +223,6 @@ defmodule WockyAPI.Schema.BotTypes do
     field :user_location, :user_location_update_input
   end
 
-  input_object :bot_item_params do
-    @desc """
-    ID for the item. If this is not supplied, a new one will be generated.
-    NOTE: For backwards compatability, supplying a non-existant ID will
-    create a new item with an unrelated ID different from the one provided.
-    """
-    field :id, :string
-
-    @desc "Content of them item"
-    field :stanza, :string
-  end
-
   input_object :bot_delete_input do
     @desc "ID of bot to delete"
     field :id, non_null(:uuid)
@@ -257,7 +248,18 @@ defmodule WockyAPI.Schema.BotTypes do
     @desc "ID of the bot containing the item"
     field :bot_id, non_null(:uuid)
 
-    field :values, non_null(:bot_item_params)
+    @desc """
+    ID for the item. If this is not supplied, a new one will be generated.
+    NOTE: For backwards compatability, supplying a non-existant ID will
+    create a new item with an unrelated ID different from the one provided.
+    """
+    field :id, :string
+
+    @desc "Content of the item"
+    field :content, :string
+
+    @desc "URL for an image attached to the item"
+    field :image_url, :string
   end
 
   input_object :bot_item_delete_input do
