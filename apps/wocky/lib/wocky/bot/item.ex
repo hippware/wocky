@@ -4,20 +4,18 @@ defmodule Wocky.Bot.Item do
   use Wocky.Repo.Schema
 
   import Ecto.Query
-  import SweetXml
 
   alias Ecto.Changeset
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.User
-  alias __MODULE__, as: Item
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "bot_items" do
-    field :stanza, :string
-    field :image, :boolean, default: false
+    field :content, :string
+    field :image_url, :string
 
     timestamps()
 
@@ -31,10 +29,30 @@ defmodule Wocky.Bot.Item do
   @spec changeset(t, map) :: Changeset.t()
   def changeset(struct, params) do
     struct
-    |> cast(params, [:id, :bot_id, :user_id, :stanza, :image])
-    |> validate_required([:id, :bot_id, :user_id, :stanza])
+    |> cast(params, [:id, :bot_id, :user_id, :content, :image_url])
+    |> validate_required([:id, :bot_id, :user_id])
+    |> validate_required_inclusion([:content, :image_url])
     |> foreign_key_constraint(:bot_id)
     |> foreign_key_constraint(:user_id)
+  end
+
+  defp validate_required_inclusion(changeset, fields) do
+    if Enum.any?(fields, &present?(changeset, &1)) do
+      changeset
+    else
+      # Add the error to the first field only since Ecto requires
+      # a field name for each error.
+      add_error(
+        changeset,
+        hd(fields),
+        "one of these fields must be present: #{inspect(fields)}"
+      )
+    end
+  end
+
+  defp present?(changeset, field) do
+    value = get_field(changeset, field)
+    value && value != ""
   end
 
   @spec get(Bot.t()) :: [t]
@@ -65,7 +83,7 @@ defmodule Wocky.Bot.Item do
   def get_image_count(bot) do
     bot
     |> Ecto.assoc(:items)
-    |> where(image: true)
+    |> where([i], not is_nil(i.image_url))
     |> select([i], count(i.bot_id))
     |> Repo.one()
   end
@@ -77,49 +95,52 @@ defmodule Wocky.Bot.Item do
     |> Repo.one()
   end
 
-  @spec put(id, Bot.t(), User.t(), binary) :: {:ok, t()} | {:error, term}
-  def put(nil, bot, user, stanza), do: put(ID.new(), bot, user, stanza)
+  @spec put(id, Bot.t(), User.t(), binary, binary) ::
+          {:ok, t()} | {:error, term}
+  def put(id, %{id: bot_id} = bot, %{id: user_id} = user, content, image_url) do
+    id_valid? = ID.valid?(id)
+    id = if id_valid?, do: id, else: ID.new()
 
-  def put(id, %{id: bot_id} = bot, %{id: user_id} = user, stanza) do
-    id_valid = ID.valid?(id)
+    case id_valid? && Repo.get(Item, id) do
+      x when is_nil(x) or x == false ->
+        id
+        |> do_insert(bot, user, content, image_url)
+        |> maybe_update_bot(bot)
 
-    case id_valid do
-      false ->
-        do_put(ID.new(), bot, user, stanza)
+      %Item{user_id: ^user_id, bot_id: ^bot_id} = old_item ->
+        old_item
+        |> do_update(content, image_url)
+        |> maybe_update_bot(bot)
 
-      true ->
-        case Repo.get_by(Item, id: id) do
-          nil ->
-            do_put(id, bot, user, stanza)
-
-          %Item{user_id: ^user_id, bot_id: ^bot_id} ->
-            do_put(id, bot, user, stanza)
-
-          _ ->
-            {:error, :permission_denied}
-        end
+      _ ->
+        {:error, :permission_denied}
     end
   end
 
-  defp do_put(id, bot, user, stanza) do
-    with {:ok, item} <-
-           %Item{}
-           |> changeset(%{
-             id: id,
-             bot_id: bot.id,
-             user_id: user.id,
-             stanza: stanza,
-             image: has_image(stanza)
-           })
-           |> Repo.insert(
-             on_conflict: :replace_all,
-             conflict_target: [:id],
-             returning: true
-           ) do
-      Bot.bump_update_time(bot)
-      {:ok, item}
-    end
+  defp do_update(item, content, image_url) do
+    item
+    |> changeset(%{content: content, image_url: image_url})
+    |> Repo.update()
   end
+
+  defp do_insert(id, bot, user, content, image_url) do
+    %Item{}
+    |> changeset(%{
+      id: id,
+      bot_id: bot.id,
+      user_id: user.id,
+      content: content,
+      image_url: image_url
+    })
+    |> Repo.insert()
+  end
+
+  defp maybe_update_bot({:ok, _} = result, bot) do
+    Bot.bump_update_time(bot)
+    result
+  end
+
+  defp maybe_update_bot(result, _), do: result
 
   @spec delete(Bot.t()) :: :ok
   def delete(bot) do
@@ -177,24 +198,6 @@ defmodule Wocky.Bot.Item do
   def images_query(bot) do
     bot
     |> Ecto.assoc(:items)
-    |> where(image: true)
+    |> where([i], not is_nil(i.image_url))
   end
-
-  @spec has_image(binary()) :: boolean()
-  def has_image(stanza), do: get_image(stanza) != nil
-
-  @spec get_image(binary()) :: binary() | nil
-  def get_image(stanza) do
-    stanza
-    |> parse(quiet: true)
-    |> xpath(~x"//image/text()"s)
-    |> empty_str_to_nil()
-  catch
-    # Happens on parse failure - ie, not valid XML
-    :exit, _ ->
-      nil
-  end
-
-  defp empty_str_to_nil(""), do: nil
-  defp empty_str_to_nil(s), do: s
 end

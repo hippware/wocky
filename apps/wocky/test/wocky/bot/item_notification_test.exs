@@ -24,7 +24,7 @@ defmodule Wocky.Bot.ItemNotificationTest do
 
   describe "put/3" do
     test "should trigger a notification", ctx do
-      {:ok, _} = Item.put(nil, ctx.bot, ctx.author, Lorem.sentence())
+      {:ok, _} = Item.put(nil, ctx.bot, ctx.author, Lorem.sentence(), nil)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
@@ -41,7 +41,7 @@ defmodule Wocky.Bot.ItemNotificationTest do
     end
 
     test "should not trigger a notification to the author", ctx do
-      {:ok, _} = Item.put(nil, ctx.bot, ctx.sub, Lorem.sentence())
+      {:ok, _} = Item.put(nil, ctx.bot, ctx.sub, Lorem.sentence(), nil)
 
       assert no_more_push_notifications()
     end

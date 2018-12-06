@@ -14,13 +14,8 @@ defmodule WockyAPI.Resolvers.Media do
 
   def get_media(%Bot{image: tros_url}, _args, _info), do: get_urls(tros_url)
 
-  def get_media(%Item{image: false}, _args, _info), do: {:ok, nil}
-
-  def get_media(%Item{stanza: stanza}, _args, _info) do
-    stanza
-    |> Item.get_image()
-    |> get_urls()
-  end
+  def get_media(%Item{image_url: tros_url}, _args, _info),
+    do: get_urls(tros_url)
 
   defp get_urls(nil), do: {:ok, nil}
 

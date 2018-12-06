@@ -1056,11 +1056,14 @@ defmodule WockyAPI.GraphQL.BotTest do
         items (first: 1) {
           edges {
             node {
-              stanza
+              content
               media {
                 tros_url
                 full_url
                 thumbnail_url
+              }
+              owner {
+                id
               }
             }
           }
@@ -1069,15 +1072,17 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
 
-    test "bot item image", %{bot: bot, user: user} do
+    test "bot item with content and image", %{bot: bot, user: user} do
       image = Factory.insert(:tros_metadata, user: user)
       tros_url = Factory.image_url(image)
-      stanza = "<message><image>" <> tros_url <> "</image></message>"
-      Factory.insert(:item, bot: bot, stanza: stanza, image: true)
+      item = Factory.insert(:item, user: user, bot: bot, image_url: tros_url)
 
       result = run_query(@query, user, %{"id" => bot.id})
 
       refute has_errors(result)
+
+      user_id = user.id
+      content = item.content
 
       assert %{
                "bot" => %{
@@ -1085,12 +1090,13 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "edges" => [
                      %{
                        "node" => %{
-                         "stanza" => ^stanza,
+                         "content" => ^content,
                          "media" => %{
                            "tros_url" => ^tros_url,
                            "full_url" => "https://" <> _,
                            "thumbnail_url" => "https://" <> _
-                         }
+                         },
+                         "owner" => %{"id" => ^user_id}
                        }
                      }
                    ]
@@ -1099,8 +1105,8 @@ defmodule WockyAPI.GraphQL.BotTest do
              } = result.data
     end
 
-    test "bot item no image", %{bot: bot, user: user} do
-      %{stanza: stanza} = Factory.insert(:item, bot: bot)
+    test "bot item with content and no image", %{bot: bot, user: user} do
+      %{content: content} = Factory.insert(:item, bot: bot)
 
       result = run_query(@query, user, %{"id" => bot.id})
 
@@ -1112,7 +1118,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "edges" => [
                      %{
                        "node" => %{
-                         "stanza" => ^stanza,
+                         "content" => ^content,
                          "media" => nil
                        }
                      }
@@ -1132,43 +1138,64 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
     test "publish item", %{user: user, bot: bot} do
-      stanza = Lorem.paragraph()
+      content = Lorem.paragraph()
+      image_url = "tros://testing"
 
       result =
         run_query(@query, user, %{
           "input" => %{
             "bot_id" => bot.id,
-            "values" => %{"stanza" => stanza}
+            "content" => content,
+            "imageUrl" => image_url
           }
         })
 
       refute has_errors(result)
       assert %{"botItemPublish" => %{"result" => %{"id" => id}}} = result.data
-      assert %Item{stanza: ^stanza, id: ^id} = Item.get(id, bot)
+
+      assert %Item{id: ^id, content: ^content, image_url: ^image_url} =
+               Item.get(id, bot)
     end
 
     test "update existing item", %{user: user, bot2: bot2, item: item} do
       id = item.id
-      stanza = Lorem.paragraph()
+      content = Lorem.paragraph()
 
       result =
         run_query(@query, user, %{
           "input" => %{
             "bot_id" => bot2.id,
-            "values" => %{"id" => id, "stanza" => stanza}
+            "id" => id,
+            "content" => content
           }
         })
 
       refute has_errors(result)
-      assert %Item{stanza: ^stanza, id: ^id} = Item.get(id, bot2)
+      assert %Item{content: ^content, id: ^id} = Item.get(id, bot2)
     end
 
-    test "publish item failure", %{user: user, user2: user2, bot2: bot2} do
+    test "publish item with invalid bot id", %{user: user} do
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "bot_id" => ID.new(),
+            "content" => Lorem.paragraph()
+          }
+        })
+
+      assert error_msg(result) =~ "Bot not found"
+    end
+
+    test "publish item permission error", %{
+      user: user,
+      user2: user2,
+      bot2: bot2
+    } do
       result =
         run_query(@query, user, %{
           "input" => %{
             "bot_id" => bot2.id,
-            "values" => %{"stanza" => Lorem.paragraph()}
+            "content" => Lorem.paragraph()
           }
         })
 
@@ -1178,7 +1205,8 @@ defmodule WockyAPI.GraphQL.BotTest do
         run_query(@query, user2, %{
           "input" => %{
             "bot_id" => bot2.id,
-            "values" => %{"id" => id, "stanza" => Lorem.paragraph()}
+            "id" => id,
+            "content" => Lorem.paragraph()
           }
         })
 

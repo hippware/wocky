@@ -7,33 +7,35 @@ defmodule Wocky.Bot.ItemTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
-  @image_stanza """
-  <entry xmlns='some_namespace'>
-  <content>blah blah</content>
-  <image>some_image</image>
-  </entry>
-  """
-
-  @no_image_stanza """
-  <entry xmlns='some_namespace'>
-  <content>blah blah</content>
-  </entry>
-  """
-
   describe "validation" do
     setup do
       valid_attrs = %{
         bot_id: ID.new(),
         user_id: ID.new(),
         id: ID.new(),
-        stanza: "testing"
+        content: "testing"
       }
 
       {:ok, valid_attrs: valid_attrs}
     end
 
-    test "should pass with valid attributes", ctx do
+    test "should pass with valid attributes and content", ctx do
       assert Item.changeset(%Item{}, ctx.valid_attrs).valid?
+    end
+
+    test "should pass with valid attributes and image_url", ctx do
+      attrs =
+        ctx.valid_attrs
+        |> Map.delete(:content)
+        |> Map.put(:image_url, "testing")
+
+      assert Item.changeset(%Item{}, attrs).valid?
+    end
+
+    test "should pass with both content and image_url", ctx do
+      attrs = Map.put(ctx.valid_attrs, :image_url, "testing")
+
+      assert Item.changeset(%Item{}, attrs).valid?
     end
 
     test "should fail with missing attributes", ctx do
@@ -75,20 +77,20 @@ defmodule Wocky.Bot.ItemTest do
     end
 
     test "get_count/1", %{bot: bot} do
-      Factory.insert(:item, bot: bot, image: true)
-      Factory.insert(:item, bot: bot, image: false)
+      Factory.insert(:item, bot: bot, image_url: "foo")
+      Factory.insert(:item, bot: bot, image_url: nil)
 
       assert Item.get_count(bot) == 4
     end
 
     test "get_images/1", %{bot: bot, owner: owner} do
-      Factory.insert(:item, bot: bot, user: owner, image: true)
+      Factory.insert(:item, bot: bot, user: owner, image_url: "foo")
 
       assert length(Item.get_images(bot)) == 1
     end
 
     test "get_image_count/1", %{bot: bot, owner: owner} do
-      Factory.insert(:item, bot: bot, user: owner, image: true)
+      Factory.insert(:item, bot: bot, user: owner, image_url: "foo")
 
       assert Item.get_image_count(bot) == 1
     end
@@ -99,9 +101,9 @@ defmodule Wocky.Bot.ItemTest do
       refute Item.get(ID.new(), bot)
     end
 
-    test "put/4 when an item does not already exist", ctx do
+    test "put/5 when an item does not already exist", ctx do
       assert {:ok, %Item{id: new_id}} =
-               Item.put(ID.new(), ctx.bot, ctx.owner, "testing")
+               Item.put(ID.new(), ctx.bot, ctx.owner, "testing", nil)
 
       assert Item.get(new_id, ctx.bot)
 
@@ -109,37 +111,43 @@ defmodule Wocky.Bot.ItemTest do
       assert DateTime.compare(bot.updated_at, ctx.bot.updated_at) == :gt
     end
 
-    test "put/4 when an item already exists", ctx do
-      assert {:ok, %Item{}} = Item.put(ctx.id, ctx.bot, ctx.owner, "testing")
+    test "put/5 when an item already exists", ctx do
+      assert {:ok, %Item{}} =
+               Item.put(ctx.id, ctx.bot, ctx.owner, "testing", "image")
 
       item = Item.get(ctx.id, ctx.bot)
-      assert item.stanza == "testing"
-      refute item.image
+      assert item.content == "testing"
+      assert item.image_url == "image"
 
       bot = Repo.get(Bot, ctx.bot.id)
       assert DateTime.compare(bot.updated_at, ctx.bot.updated_at) == :gt
     end
 
-    test "put/4 when a non-UUID id is supplied", ctx do
+    test "put/5 when a non-UUID id is supplied", ctx do
       assert {:ok, %Item{id: id}} =
-               Item.put(Lorem.word(), ctx.bot, ctx.owner, "testing")
+               Item.put(Lorem.word(), ctx.bot, ctx.owner, "testing", nil)
 
       assert ID.valid?(id)
     end
 
-    test "put/4 with invalid input", ctx do
+    test "put/5 with invalid input", ctx do
       assert {:error, _} =
-               Item.put(ID.new(), Factory.build(:bot), ctx.author, Lorem.word())
+               Item.put(
+                 ID.new(),
+                 Factory.build(:bot),
+                 ctx.author,
+                 Lorem.word(),
+                 nil
+               )
 
       assert {:error, _} =
-               Item.put(ID.new(), ctx.bot, Factory.build(:user), Lorem.word())
-    end
-
-    test "put/4 should set image to true when an image is present", ctx do
-      assert {:ok, %Item{} = item} =
-               Item.put(ID.new(), ctx.bot, ctx.owner, @image_stanza)
-
-      assert item.image
+               Item.put(
+                 ID.new(),
+                 ctx.bot,
+                 Factory.build(:user),
+                 Lorem.word(),
+                 nil
+               )
     end
 
     test "permissions", ctx do
@@ -148,12 +156,12 @@ defmodule Wocky.Bot.ItemTest do
 
       # should refuse to publish an item that already exists
       # and is owned by another user
-      assert Item.put(item.id, ctx.bot, ctx.owner, Lorem.paragraph()) ==
+      assert Item.put(item.id, ctx.bot, ctx.owner, Lorem.paragraph(), nil) ==
                {:error, :permission_denied}
 
       # should allow publication (update) of an item that already exists
       # and is owned by the same user
-      assert {:ok, _} = Item.put(item.id, ctx.bot, user, Lorem.paragraph())
+      assert {:ok, _} = Item.put(item.id, ctx.bot, user, Lorem.paragraph(), nil)
     end
 
     test "delete/1", ctx do
@@ -196,21 +204,6 @@ defmodule Wocky.Bot.ItemTest do
                {:error, :permission_denied}
 
       assert Item.get(ctx.id, ctx.bot)
-    end
-  end
-
-  describe "image detection" do
-    test "has_image/1" do
-      assert Item.has_image(@image_stanza)
-      refute Item.has_image(@no_image_stanza)
-      refute Item.has_image(Lorem.paragraph())
-    end
-
-    test "get_image/1" do
-      assert Item.get_image(@image_stanza) == "some_image"
-
-      refute Item.get_image(@no_image_stanza)
-      refute Item.get_image(Lorem.paragraph())
     end
   end
 end

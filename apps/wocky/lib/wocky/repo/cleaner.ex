@@ -2,7 +2,6 @@ defmodule Wocky.Repo.Cleaner do
   @moduledoc "Functions that keep the database nice and clean."
 
   import Ecto.Query
-  import SweetXml
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
@@ -131,10 +130,9 @@ defmodule Wocky.Repo.Cleaner do
       Repo.transaction(
         fn ->
           Item
-          |> where(image: true)
+          |> where([i], not is_nil(i.image_url))
           |> Repo.stream()
-          |> Stream.map(&extract_item_image/1)
-          |> Stream.filter(fn {_, image} -> image_missing?(image) end)
+          |> Stream.filter(&image_missing?(&1.image_url))
           |> Stream.each(&purge_missing_item_image(do_clean, &1))
           |> Enum.count()
         end,
@@ -146,11 +144,6 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, cleaned}
   end
 
-  defp extract_item_image(item) do
-    image = xpath(item.stanza, ~x"/entry/image/text()"S)
-    {item, image}
-  end
-
   defp image_missing?(""), do: false
 
   defp image_missing?(image_url) do
@@ -160,17 +153,12 @@ defmodule Wocky.Repo.Cleaner do
     end
   end
 
-  defp purge_missing_item_image(false, {_, _}), do: :ok
+  defp purge_missing_item_image(false, _), do: :ok
 
-  defp purge_missing_item_image(true, {item, image}) do
-    content = xpath(item.stanza, ~x"/entry/content/text()"S)
-
-    if String.length(content) > 0 do
-      image_tag = "<image>#{image}</image>"
-      new_stanza = String.replace(item.stanza, image_tag, "")
-
+  defp purge_missing_item_image(true, item) do
+    if item.content do
       item
-      |> Item.changeset(%{stanza: new_stanza, image: false})
+      |> Item.changeset(%{image_url: nil})
       |> Repo.update!()
     else
       Repo.delete!(item)

@@ -253,14 +253,13 @@ defmodule WockyAPI.Resolvers.Bot do
     Subscription.publish(Endpoint, notification, targets)
   end
 
-  def publish_item(_root, args, %{context: %{current_user: requestor}}) do
-    values = args[:input][:values]
-
-    with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
-         {:ok, item} <- Item.put(values[:id], bot, requestor, values[:stanza]) do
+  def publish_item(_root, %{input: args}, %{context: %{current_user: requestor}}) do
+    with %Bot{} = bot <- Bot.get_bot(args.bot_id, requestor),
+         {:ok, item} <-
+           Item.put(args[:id], bot, requestor, args[:content], args[:image_url]) do
       {:ok, item}
     else
-      nil -> not_found_error(args[:input][:bot_id])
+      nil -> not_found_error(args.bot_id)
       {:error, :permission_denied} -> {:error, "Permission denied"}
     end
   end
