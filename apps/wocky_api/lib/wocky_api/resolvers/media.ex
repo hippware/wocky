@@ -38,7 +38,7 @@ defmodule WockyAPI.Resolvers.Media do
   end
 
   def upload(_root, %{input: args}, %{context: %{current_user: user}}) do
-    metadata = %{"content-type": args[:mime_type], name: args[:filename]}
+    metadata = %{content_type: args[:mime_type], name: args[:filename]}
     id = ID.new()
 
     response =

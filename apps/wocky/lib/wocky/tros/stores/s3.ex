@@ -10,7 +10,6 @@ defmodule Wocky.TROS.Store.S3 do
 
   @behaviour TROS
 
-  @amz_content_type "content-type"
   # 10 minute expiry on upload/download links.
   @link_expiry 60 * 10
 
@@ -83,7 +82,7 @@ defmodule Wocky.TROS.Store.S3 do
     headers = [
       {"x-amz-content-sha256", "UNSIGNED-PAYLOAD"},
       {"content-length", Integer.to_string(size)},
-      {@amz_content_type, Map.get(metadata, @amz_content_type)}
+      {"content-type", metadata.content_type}
     ]
 
     url = "https://#{upload_bucket()}.#{s3_server()}/#{path(file_id)}"

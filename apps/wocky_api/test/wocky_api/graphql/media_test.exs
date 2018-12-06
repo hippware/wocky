@@ -42,7 +42,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert %{"mediaUpload" => %{"result" => results}} = result.data
 
       assert ID.valid?(results["id"])
-      assert results["upload_url"] =~ ~r"http://.*"
+      assert results["upload_url"] =~ ~r"https?://.*"
       assert results["method"] in ["PUT", "POST"]
       assert is_list(results["headers"])
       assert results["reference_url"] =~ ~r/tros:.*#{results["id"]}/

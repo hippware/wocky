@@ -36,7 +36,7 @@ defmodule Wocky.TROS.Store.S3Test do
       owner_jid = JID.make(owner_id)
       file_id = ID.new()
       size = :rand.uniform(10_000)
-      metadata = %{"content-type": Lorem.word()}
+      metadata = %{content_type: Lorem.word()}
 
       {headers, fields} =
         S3Store.make_upload_response(owner_jid, file_id, size, metadata)
