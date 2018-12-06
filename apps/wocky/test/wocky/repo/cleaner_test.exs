@@ -2,7 +2,6 @@ defmodule Wocky.Repo.CleanerTest do
   use Wocky.DataCase
 
   import Ecto.Query
-  import SweetXml
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
@@ -206,22 +205,6 @@ defmodule Wocky.Repo.CleanerTest do
     end
   end
 
-  defp item_stanza(opts) do
-    """
-    <entry xmlns='http://www.w3.org/2005/Atom'>
-      <title/>
-      #{content_tag(opts[:content])}
-      #{image_tag(opts[:image])}
-    </entry>
-    """
-  end
-
-  defp image_tag(nil), do: ""
-  defp image_tag(image), do: "<image>#{image}</image>"
-
-  defp content_tag(nil), do: ""
-  defp content_tag(text), do: "<content>#{text}</content>"
-
   defp setup_file_metadata(%{user: user}) do
     md = Factory.insert(:tros_metadata, user: user)
     {:ok, md: md, file_url: TROS.make_url(md.id)}
@@ -236,12 +219,8 @@ defmodule Wocky.Repo.CleanerTest do
         :item,
         bot: bot,
         user: ctx.user,
-        image: true,
-        stanza:
-          item_stanza(
-            image: ctx.file_url,
-            content: "testing"
-          )
+        image_url: ctx.file_url,
+        content: "testing"
       )
 
     bad_with_content =
@@ -249,12 +228,8 @@ defmodule Wocky.Repo.CleanerTest do
         :item,
         bot: bot,
         user: ctx.user,
-        image: true,
-        stanza:
-          item_stanza(
-            image: bad_url,
-            content: "testing"
-          )
+        image_url: bad_url,
+        content: "testing"
       )
 
     good_no_content =
@@ -262,8 +237,8 @@ defmodule Wocky.Repo.CleanerTest do
         :item,
         bot: bot,
         user: ctx.user,
-        image: true,
-        stanza: item_stanza(image: ctx.file_url)
+        image_url: ctx.file_url,
+        content: nil
       )
 
     bad_no_content =
@@ -271,8 +246,8 @@ defmodule Wocky.Repo.CleanerTest do
         :item,
         bot: bot,
         user: ctx.user,
-        image: true,
-        stanza: item_stanza(image: bad_url)
+        image_url: bad_url,
+        content: nil
       )
 
     only_content =
@@ -280,8 +255,8 @@ defmodule Wocky.Repo.CleanerTest do
         :item,
         bot: bot,
         user: ctx.user,
-        image: false,
-        stanza: item_stanza(content: "testing")
+        image_url: nil,
+        content: "testing"
       )
 
     {:ok, result} = Cleaner.clean_bot_item_image_links(true)
@@ -305,70 +280,37 @@ defmodule Wocky.Repo.CleanerTest do
     end
   end
 
-  describe "clean_bot_item_image_links when the item stanza has content" do
+  describe "clean_bot_item_image_links when the item has content" do
     setup :setup_file_metadata
     setup :setup_bot_item_image_links
 
     test "should not delete an item with an invalid image link", ctx do
-      assert Repo.one(
-               Item
-               |> where(id: ^ctx.bad_with_content.id)
-               |> where(bot_id: ^ctx.bot.id)
-             )
+      assert Repo.get(Item, ctx.bad_with_content.id)
     end
 
     test "should remove the invalid image link from the item", ctx do
-      stanza =
-        Item
-        |> where(id: ^ctx.bad_with_content.id)
-        |> where(bot_id: ^ctx.bot.id)
-        |> select([i], i.stanza)
-        |> Repo.one()
+      item = Repo.get(Item, ctx.bad_with_content.id)
 
-      assert xpath(stanza, ~x"/entry/image/text()"S) == ""
+      refute item.image_url
     end
 
-    test "should not change a stanza with valid image link", ctx do
-      stanza =
-        Item
-        |> where(id: ^ctx.good_with_content.id)
-        |> where(bot_id: ^ctx.bot.id)
-        |> select([i], i.stanza)
-        |> Repo.one()
+    test "should not change an item with valid image link", ctx do
+      item = Repo.get(Item, ctx.good_with_content.id)
 
-      assert stanza == ctx.good_with_content.stanza
-    end
-
-    test "should not change a stanza with no image link", ctx do
-      stanza =
-        Item
-        |> where(id: ^ctx.only_content.id)
-        |> where(bot_id: ^ctx.bot.id)
-        |> select([i], i.stanza)
-        |> Repo.one()
-
-      assert stanza == ctx.only_content.stanza
+      assert item.image_url == ctx.good_with_content.image_url
     end
   end
 
-  describe "clean_bot_item_image_links when the item stanza has no content" do
+  describe "clean_bot_item_image_links when the item has no content" do
     setup :setup_file_metadata
     setup :setup_bot_item_image_links
 
     test "should delete an item with an invalid image link", ctx do
-      refute Repo.one(
-               Item
-               |> where(id: ^ctx.bad_no_content.id)
-               |> where(bot_id: ^ctx.bot.id)
-             )
+      refute Repo.get(Item, ctx.bad_no_content.id)
     end
 
     test "should not delete an item with a valid image link", ctx do
-      assert Repo.one(
-               Item
-               |> where(id: ^ctx.good_no_content.id)
-               |> where(bot_id: ^ctx.bot.id)
-             )
+      assert Repo.get(Item, ctx.good_no_content.id)
     end
   end
 
