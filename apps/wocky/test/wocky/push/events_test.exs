@@ -52,7 +52,7 @@ defmodule Wocky.Push.EventsTest do
 
     test "uses 'Someone' when there is no user handle" do
       assert Event.message(%NewMessageEvent{}) =~ "Someone"
-      assert Event.message(%NewMessageEvent{body: "foo"}) =~ "From: Someone"
+      assert Event.message(%NewMessageEvent{content: "foo"}) =~ "From: Someone"
     end
 
     test "assumes sending an image when there is no body" do
@@ -60,7 +60,7 @@ defmodule Wocky.Push.EventsTest do
     end
 
     test "returns an appropriate message", %{user: u} do
-      msg = Event.message(%NewMessageEvent{from: u, body: @test_body})
+      msg = Event.message(%NewMessageEvent{from: u, content: @test_body})
       assert msg =~ @test_handle
       assert msg =~ @test_body
     end

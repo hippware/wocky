@@ -19,7 +19,8 @@ defmodule Wocky.Conversation do
 
   @foreign_key_type :binary_id
   schema "conversations" do
-    field :message, :binary
+    field :content, :binary
+    field :image_url, :binary
     field :direction, MessageDirection
 
     belongs_to :user, User
@@ -32,7 +33,8 @@ defmodule Wocky.Conversation do
           id: integer,
           user_id: User.id(),
           other_user_id: User.id(),
-          message: binary,
+          content: binary,
+          image_url: binary,
           direction: MessageDirection,
           created_at: DateTime.t()
         }

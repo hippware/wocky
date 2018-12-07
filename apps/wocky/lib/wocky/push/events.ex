@@ -94,13 +94,13 @@ defmodule Wocky.Push.Events do
   defmodule NewMessageEvent do
     @moduledoc false
 
-    defstruct [:from, :to, :body, :image, :conversation_id]
+    defstruct [:from, :to, :content, :image_url, :conversation_id]
 
     @type t :: %__MODULE__{
             from: User.t(),
             to: User.t(),
-            body: nil | binary,
-            image: nil | binary,
+            content: nil | binary,
+            image_url: nil | binary,
             conversation_id: binary
           }
 
@@ -110,11 +110,11 @@ defmodule Wocky.Push.Events do
   defimpl Event, for: NewMessageEvent do
     import Wocky.Push.Events.Utils
 
-    def message(%NewMessageEvent{from: from, body: body}) do
-      if blank?(body) do
+    def message(%NewMessageEvent{from: from, content: content}) do
+      if blank?(content) do
         get_handle(from) <> " sent you an image!"
       else
-        "From: #{get_handle(from)}\n#{body}"
+        "From: #{get_handle(from)}\n#{content}"
       end
     end
 

@@ -63,7 +63,8 @@ defmodule Wocky.ConversationTest do
     %{
       c
       | id: message.id,
-        message: message.message,
+        content: message.content,
+        image_url: message.image_url,
         user: user,
         user_id: user.id,
         created_at: message.created_at
