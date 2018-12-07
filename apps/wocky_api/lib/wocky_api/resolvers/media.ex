@@ -36,7 +36,7 @@ defmodule WockyAPI.Resolvers.Media do
 
     response =
       TROS.make_upload_response(
-        User.to_jid(user),
+        user,
         id,
         args[:size],
         args[:access] || "",
