@@ -22,7 +22,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
               other_user {
                 id
               }
-              message
+              content
             }
           }
         }
@@ -114,7 +114,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
                 id
                 firstName
               }
-              message
+              content
+              media {
+                tros_url
+                full_url
+                thumbnail_url
+              }
               direction
             }
           }
@@ -124,18 +129,26 @@ defmodule WockyAPI.GraphQL.MessageTest do
     """
 
     test "get conversations", %{user: user, user2: user2} do
+      image = Factory.insert(:tros_metadata, user: user)
+      tros_url = Factory.image_url(image)
+
       message =
         Factory.insert(
           :message,
           sender: user,
-          recipient: user2
+          recipient: user2,
+          image_url: tros_url
         )
 
       result = run_query(@query, user)
 
       refute has_errors(result)
 
-      assert result.data == %{
+      user_id = user2.id
+      first_name = user2.first_name
+      content = message.content
+
+      assert %{
                "currentUser" => %{
                  "conversations" => %{
                    "totalCount" => 1,
@@ -143,24 +156,29 @@ defmodule WockyAPI.GraphQL.MessageTest do
                      %{
                        "node" => %{
                          "otherUser" => %{
-                           "id" => user2.id,
-                           "firstName" => user2.first_name
+                           "id" => ^user_id,
+                           "firstName" => ^first_name
                          },
-                         "message" => message.message,
+                         "content" => ^content,
+                         "media" => %{
+                           "tros_url" => ^tros_url,
+                           "full_url" => "https://" <> _,
+                           "thumbnail_url" => "https://" <> _
+                         },
                          "direction" => "OUTGOING"
                        }
                      }
                    ]
                  }
                }
-             }
+             } = result.data
     end
   end
 
   describe "send message mutation" do
     @query """
-    mutation ($recipientId: UUID!, $message: String!) {
-      sendMessage (input: {recipientId: $recipientId, message: $message}) {
+    mutation ($recipientId: UUID!, $content: String!) {
+      sendMessage (input: {recipientId: $recipientId, content: $content}) {
         result
       }
     }
@@ -174,11 +192,11 @@ defmodule WockyAPI.GraphQL.MessageTest do
       Roster.befriend(user.id, user2.id)
 
       result =
-        run_query(@query, user, %{"recipientId" => user2.id, "message" => text})
+        run_query(@query, user, %{"recipientId" => user2.id, "content" => text})
 
       refute has_errors(result)
 
-      assert [%Message{message: ^text}] =
+      assert [%Message{content: ^text}] =
                user2 |> Message.get_query() |> Repo.all()
     end
   end

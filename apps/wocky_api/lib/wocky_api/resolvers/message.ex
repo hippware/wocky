@@ -43,11 +43,12 @@ defmodule WockyAPI.Resolvers.Message do
     end
   end
 
-  def send_message(_root, args, %{context: %{current_user: user}}) do
-    recipient_id = args[:input][:recipient_id]
+  def send_message(_root, %{input: args}, %{context: %{current_user: user}}) do
+    recipient_id = args[:recipient_id]
 
     with %User{} = recipient <- User.get_user(recipient_id, user),
-         {:ok, _} <- Message.send(args[:input][:message], recipient, user) do
+         {:ok, _} <-
+           Message.send(recipient, user, args[:content], args[:image_url]) do
       {:ok, true}
     else
       _ -> UserResolver.user_not_found(recipient_id)
@@ -77,7 +78,8 @@ defmodule WockyAPI.Resolvers.Message do
       end
 
     data
-    |> Map.put(:message, message.message)
+    |> Map.put(:content, message.content)
+    |> Map.put(:image_url, message.image_url)
     |> Map.put(:created_at, message.created_at)
   end
 end

@@ -14,7 +14,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
     subscription {
       messages {
         other_user { id }
-        message
+        content
         direction
       }
     }
@@ -43,7 +43,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
                      "other_user" => %{
                        "id" => m.sender.id
                      },
-                     "message" => m.message,
+                     "content" => m.content,
                      "direction" => "INCOMING"
                    }
                  }

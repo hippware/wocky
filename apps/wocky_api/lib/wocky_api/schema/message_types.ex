@@ -8,15 +8,18 @@ defmodule WockyAPI.Schema.MessageTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.Message
+  alias WockyAPI.Resolvers.{Media, Message}
 
   @desc "A message to a user"
   object :message do
     @desc "The user who sent or received the message"
     field :other_user, non_null(:user), resolve: assoc(:other_user)
 
-    @desc "The message stanza itself"
-    field :message, non_null(:string)
+    @desc "The message content"
+    field :content, :string
+
+    @desc "Media contained in the media"
+    field :media, :media, do: resolve(&Media.get_media/3)
 
     @desc "Direction of the message was sent with respect to the requesting user"
     field :direction, non_null(:message_direction)
@@ -49,7 +52,8 @@ defmodule WockyAPI.Schema.MessageTypes do
 
   input_object :send_message_input do
     field :recipient_id, non_null(:uuid)
-    field :message, non_null(:string)
+    field :content, :string
+    field :image_url, :string
   end
 
   payload_object(:send_message_payload, :boolean)
