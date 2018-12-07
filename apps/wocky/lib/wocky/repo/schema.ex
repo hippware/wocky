@@ -6,6 +6,7 @@ defmodule Wocky.Repo.Schema do
       use Ecto.Schema
 
       import Ecto.Changeset
+      import Wocky.Repo.Validations
 
       alias __MODULE__
 

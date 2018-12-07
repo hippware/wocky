@@ -60,6 +60,8 @@ defmodule Wocky.Message do
   defp changeset(params) do
     %Message{}
     |> cast(params, [:sender_id, :recipient_id, :content, :image_url])
+    |> validate_required([:sender_id, :recipient_id])
+    |> validate_required_inclusion([:content, :image_url])
     |> foreign_key_constraint(:sender_id)
     |> foreign_key_constraint(:recipient_id)
   end
