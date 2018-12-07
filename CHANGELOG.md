@@ -54,6 +54,16 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove the push payload validation (#2057, PR #2067)
 * Fix the Honeybadger environment (#2065, PR #2071)
 * Add websocket-level logging to graphQL (#1970, PR #2077)
+* Update: geo_postgis (PR #2080)
+* Return error when contact relationship is none (PR #2084)
+* Only call set_user on actual websocket connections (PR #2086)
+* Authentication clean up and features (PR #2085)
+  * Track user agent details in the database (#1923)
+* Configure APNS certificate for 'next' server (#1955)
+* Fix GQL file upload parameters (#2089, PR #2091)
+* Remove XML from bot item API (#2081)
+* Fix the generation of file upload headers (PR #2094)
+  * Upload requests returning error regarding null headers (#2093)
 
 
 ----------
