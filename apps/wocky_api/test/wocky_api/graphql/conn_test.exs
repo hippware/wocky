@@ -26,7 +26,7 @@ defmodule WockyAPI.GraphQL.ConnTest do
               id
               title
               description
-              image {
+              media {
                 tros_url
                 full_url
               }

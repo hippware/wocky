@@ -24,7 +24,7 @@ defmodule WockyAPI.GraphQL.UserTest do
         id
         firstName
         email
-        avatar {
+        media {
           tros_url
         }
       }
@@ -41,8 +41,8 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "id" => user.id,
                  "firstName" => user.first_name,
                  "email" => user.email,
-                 "avatar" => %{
-                   "tros_url" => user.avatar
+                 "media" => %{
+                   "tros_url" => user.image_url
                  }
                }
              }

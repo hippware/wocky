@@ -41,12 +41,12 @@ defmodule Wocky.User.Avatar do
   # For this call, a `nil` in the new position means that the changeset
   # for the user is not changing the avatar, not that it is setting it
   # to be empty. Therefore we take no action in that case:
-  def maybe_delete_existing(nil, %User{avatar: _old_avatar}), do: :ok
-  def maybe_delete_existing(_new_avatar, %User{avatar: nil}), do: :ok
-  def maybe_delete_existing(avatar, %User{avatar: avatar}), do: :ok
+  def maybe_delete_existing(nil, %User{image_url: _old_avatar}), do: :ok
+  def maybe_delete_existing(_new_avatar, %User{image_url: nil}), do: :ok
+  def maybe_delete_existing(avatar, %User{image_url: avatar}), do: :ok
 
   def maybe_delete_existing(_new_avatar, user) do
-    case TROS.parse_url(user.avatar) do
+    case TROS.parse_url(user.image_url) do
       {:ok, file_id} ->
         TROS.delete(file_id, user)
 

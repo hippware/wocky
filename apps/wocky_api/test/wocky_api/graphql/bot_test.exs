@@ -1022,11 +1022,11 @@ defmodule WockyAPI.GraphQL.BotTest do
       {:ok, item: item, item2: item2}
     end
 
-    test "bot image", %{bot: %{id: id, image: image}, user: user} do
+    test "bot image", %{bot: %{id: id, image_url: image_url}, user: user} do
       query = """
       query ($id: UUID) {
         bot (id: $id) {
-          image {
+          media {
             tros_url
             full_url
             thumbnail_url
@@ -1041,8 +1041,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert %{
                "bot" => %{
-                 "image" => %{
-                   "tros_url" => ^image,
+                 "media" => %{
+                   "tros_url" => ^image_url,
                    "full_url" => "https://" <> _,
                    "thumbnail_url" => "https://" <> _
                  }
@@ -1452,7 +1452,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     [user, user2, user3] = Factory.insert_list(3, :user)
 
     image = Factory.insert(:tros_metadata, user: user)
-    bot = Factory.insert(:bot, image: Factory.image_url(image), user: user)
+    bot = Factory.insert(:bot, image_url: Factory.image_url(image), user: user)
     bot2 = Factory.insert(:bot, user: user2)
     Factory.insert(:subscription, bot: bot, user: user2)
     Factory.insert(:subscription, bot: bot2, user: user)

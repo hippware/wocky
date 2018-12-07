@@ -181,10 +181,10 @@ defmodule Wocky.Repo.Cleaner do
       Repo.transaction(
         fn ->
           Bot
-          |> where([b], not is_nil(b.image))
-          |> where([b], b.image != "")
+          |> where([b], not is_nil(b.image_url))
+          |> where([b], b.image_url != "")
           |> Repo.stream()
-          |> Stream.filter(&image_missing?(&1.image))
+          |> Stream.filter(&image_missing?(&1.image_url))
           |> Stream.each(&purge_missing_bot_image(do_clean, &1))
           |> Enum.count()
         end,
@@ -200,7 +200,7 @@ defmodule Wocky.Repo.Cleaner do
 
   defp purge_missing_bot_image(true, bot) do
     bot
-    |> Bot.changeset(%{image: nil})
+    |> Bot.changeset(%{image_url: nil})
     |> Repo.update!()
   end
 
@@ -209,10 +209,10 @@ defmodule Wocky.Repo.Cleaner do
       Repo.transaction(
         fn ->
           User
-          |> where([u], not is_nil(u.avatar))
-          |> where([u], u.avatar != "")
+          |> where([u], not is_nil(u.image_url))
+          |> where([u], u.image_url != "")
           |> Repo.stream()
-          |> Stream.filter(&image_missing?(&1.avatar))
+          |> Stream.filter(&image_missing?(&1.image_url))
           |> Stream.each(&purge_missing_user_image(do_clean, &1))
           |> Enum.count()
         end,
@@ -228,7 +228,7 @@ defmodule Wocky.Repo.Cleaner do
 
   defp purge_missing_user_image(true, user) do
     user
-    |> User.changeset(%{avatar: nil})
+    |> User.changeset(%{image_url: nil})
     |> Repo.update!()
   end
 

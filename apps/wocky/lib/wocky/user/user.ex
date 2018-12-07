@@ -44,8 +44,8 @@ defmodule Wocky.User do
     field :external_id, :string
     # User handle (as seen by other users)
     field :handle, :string
-    # ID of file containing user's avatar
-    field :avatar, :string
+    # TROS URL of file containing user's avatar
+    field :image_url, :string
     # User's first name
     field :first_name, :string
     # User's last name
@@ -99,7 +99,7 @@ defmodule Wocky.User do
   @type t :: %User{
           id: id,
           handle: nil | handle,
-          avatar: nil | binary,
+          image_url: nil | binary,
           first_name: nil | binary,
           last_name: nil | binary,
           email: nil | binary,
@@ -114,7 +114,7 @@ defmodule Wocky.User do
 
   @update_fields [
     :handle,
-    :avatar,
+    :image_url,
     :first_name,
     :last_name,
     :email,
@@ -241,10 +241,10 @@ defmodule Wocky.User do
     |> validate_length(:last_name, max: @max_name_len)
     |> validate_change(:first_name, &validate_name/2)
     |> validate_change(:last_name, &validate_name/2)
-    |> validate_change(:avatar, &validate_avatar(&1, user, &2))
+    |> validate_change(:image_url, &validate_avatar(&1, user, &2))
     |> unique_constraint(:handle, name: :users_lower_handle_index)
     |> prepare_changes(fn changeset ->
-      Avatar.maybe_delete_existing(changeset.changes[:avatar], user)
+      Avatar.maybe_delete_existing(changeset.changes[:image_url], user)
       changeset
     end)
   end
@@ -303,22 +303,22 @@ defmodule Wocky.User do
     ~r|[^\-0-9\p{Ll}\p{Lu}\p{Lo}\p{Z}]|u
   end
 
-  defp validate_avatar(:avatar, user, avatar) do
+  defp validate_avatar(:image_url, user, avatar) do
     case Avatar.validate(user, avatar) do
       {:ok, _} ->
         []
 
       {:error, :not_found} ->
-        [avatar: "does not exist"]
+        [image_url: "does not exist"]
 
       {:error, :invalid_file} ->
-        [avatar: "has an invalid file name (must be UUID)"]
+        [image_url: "has an invalid file name (must be UUID)"]
 
       {:error, :invalid_url} ->
-        [avatar: "is an invalid file URL"]
+        [image_url: "is an invalid file URL"]
 
       {:error, :not_file_owner} ->
-        [avatar: "is not owned by the user"]
+        [image_url: "is not owned by the user"]
     end
   end
 

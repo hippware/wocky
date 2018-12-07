@@ -66,7 +66,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :shortname, :string
 
     @desc "The bot's cover image"
-    field :image, :media, resolve: &Media.get_media/3
+    field :media, :media, resolve: &Media.get_media/3
 
     @desc "The type of the bot (freeform string, client-side use only)"
     field :type, :string
@@ -195,7 +195,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :radius, :float
     field :description, :string
     field :shortname, :string
-    field :image, :string
+    field :image_url, :string
     field :type, :string
     field :icon, :string
     field :address, :string
