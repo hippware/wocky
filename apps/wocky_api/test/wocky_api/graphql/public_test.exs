@@ -19,7 +19,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
       Factory.insert(
         :bot,
         user: user,
-        image: Factory.image_url(image)
+        image_url: Factory.image_url(image)
       )
 
     bot2 = Factory.insert(:bot, user: user2)
@@ -34,7 +34,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
   query ($id: String) {
     bot (id: $id) {
       id
-      image {
+      media {
         fullUrl
         thumbnailUrl
       }
@@ -61,7 +61,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
             id
             owner {
               handle
-              avatar {
+              media {
                 fullUrl
                 thumbnailUrl
               }

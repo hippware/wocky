@@ -173,31 +173,31 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should fail with an invalid avatar URL", ctx do
-      changeset = User.changeset(ctx.user, %{avatar: "not a valid URL"})
-      assert errors_on(changeset).avatar
+      changeset = User.changeset(ctx.user, %{image_url: "not a valid URL"})
+      assert errors_on(changeset).image_url
     end
 
     test "should fail with a non-existing avatar URL", ctx do
-      changeset = User.changeset(ctx.user, %{avatar: TROS.make_url(ID.new())})
-      assert errors_on(changeset).avatar
+      changeset = User.changeset(ctx.user, %{image_url: TROS.make_url(ID.new())})
+      assert errors_on(changeset).image_url
     end
 
     test "should fail with a non-local avatar URL", ctx do
-      changeset = User.changeset(ctx.user, %{avatar: TROS.make_url(ID.new())})
-      assert errors_on(changeset).avatar
+      changeset = User.changeset(ctx.user, %{image_url: TROS.make_url(ID.new())})
+      assert errors_on(changeset).image_url
     end
 
     test "should fail with a file owned by another user", ctx do
       changeset =
         :user
         |> Factory.insert()
-        |> User.changeset(%{avatar: ctx.url})
+        |> User.changeset(%{image_url: ctx.url})
 
-      assert errors_on(changeset).avatar
+      assert errors_on(changeset).image_url
     end
 
     test "should be valid with valid data", ctx do
-      assert User.changeset(ctx.user, %{avatar: ctx.url}).valid?
+      assert User.changeset(ctx.user, %{image_url: ctx.url}).valid?
     end
   end
 
@@ -252,21 +252,21 @@ defmodule Wocky.User.UserTest do
     end
 
     test "and the user does not have an existing avatar", ctx do
-      assert {:ok, _} = User.update(ctx.id, %{avatar: ctx.avatar_url})
+      assert {:ok, _} = User.update(ctx.id, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
-      assert new_user.avatar == ctx.avatar_url
+      assert new_user.image_url == ctx.avatar_url
     end
 
     test "and the user already has that avatar", ctx do
       ctx.user
-      |> cast(%{avatar: ctx.avatar_url}, [:avatar])
+      |> cast(%{image_url: ctx.avatar_url}, [:image_url])
       |> Repo.update!()
 
-      assert {:ok, _} = User.update(ctx.id, %{avatar: ctx.avatar_url})
+      assert {:ok, _} = User.update(ctx.id, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
-      assert new_user.avatar == ctx.avatar_url
+      assert new_user.image_url == ctx.avatar_url
 
       assert Metadata.get(ctx.avatar_id)
     end
@@ -277,13 +277,13 @@ defmodule Wocky.User.UserTest do
       Metadata.put(old_avatar_id, ctx.user.id, "public")
 
       ctx.user
-      |> cast(%{avatar: old_avatar_url}, [:avatar])
+      |> cast(%{image_url: old_avatar_url}, [:image_url])
       |> Repo.update!()
 
-      assert {:ok, _} = User.update(ctx.id, %{avatar: ctx.avatar_url})
+      assert {:ok, _} = User.update(ctx.id, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
-      assert new_user.avatar == ctx.avatar_url
+      assert new_user.image_url == ctx.avatar_url
 
       refute Metadata.get(old_avatar_id)
     end
@@ -581,14 +581,14 @@ defmodule Wocky.User.UserTest do
 
   describe "avatar deletion when no avatar is set" do
     setup do
-      user = Factory.insert(:user, avatar: nil)
+      user = Factory.insert(:user, image_url: nil)
       avatar = Factory.insert(:tros_metadata, user: user)
 
       {:ok, user: user, avatar: avatar, avatar_url: TROS.make_url(avatar.id)}
     end
 
     test "should not delete the avatar when a new one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{avatar: ctx.avatar_url})
+      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.avatar_url})
       assert Metadata.get(ctx.avatar.id)
     end
 
@@ -600,18 +600,18 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not delete the avatar when the same one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{avatar: ctx.user.avatar})
+      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.user.image_url})
       assert Metadata.get(ctx.avatar.id)
     end
   end
 
   describe "avatar deletion when an avatar is set" do
     setup do
-      user = Factory.insert(:user, avatar: nil)
+      user = Factory.insert(:user, image_url: nil)
       avatar = Factory.insert(:tros_metadata, user: user)
       avatar_url = TROS.make_url(avatar.id)
 
-      User.update(user.id, %{avatar: avatar_url})
+      User.update(user.id, %{image_url: avatar_url})
 
       new_avatar = Factory.insert(:tros_metadata, user: user)
 
@@ -624,7 +624,7 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should delete the avatar when a new one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{avatar: ctx.new_avatar_url})
+      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.new_avatar_url})
       refute Metadata.get(ctx.avatar.id)
     end
 
@@ -636,7 +636,7 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not delete the avatar when the same one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{avatar: ctx.user.avatar})
+      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.user.image_url})
       assert Metadata.get(ctx.avatar.id)
     end
   end

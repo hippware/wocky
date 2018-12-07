@@ -319,7 +319,7 @@ defmodule Wocky.Repo.CleanerTest do
 
     setup %{user: user, file_url: file_url} do
       invalid_bot = Factory.insert(:bot, user: user)
-      valid_bot = Factory.insert(:bot, user: user, image: file_url)
+      valid_bot = Factory.insert(:bot, user: user, image_url: file_url)
 
       {:ok, result} = Cleaner.clean_bot_image_links(true)
       {:ok, result: result, invalid_bot: invalid_bot, valid_bot: valid_bot}
@@ -333,7 +333,7 @@ defmodule Wocky.Repo.CleanerTest do
       refute Repo.one(
                Bot
                |> where(id: ^ctx.invalid_bot.id)
-               |> select([b], b.image)
+               |> select([b], b.image_url)
              )
     end
 
@@ -341,7 +341,7 @@ defmodule Wocky.Repo.CleanerTest do
       image =
         Bot
         |> where(id: ^ctx.valid_bot.id)
-        |> select([b], b.image)
+        |> select([b], b.image_url)
         |> Repo.one()
 
       assert image == ctx.file_url
@@ -352,7 +352,7 @@ defmodule Wocky.Repo.CleanerTest do
     setup :setup_file_metadata
 
     setup %{file_url: file_url} do
-      valid_user = Factory.insert(:user, avatar: file_url)
+      valid_user = Factory.insert(:user, image_url: file_url)
       {:ok, result} = Cleaner.clean_user_avatar_links(true)
       {:ok, result: result, valid_user: valid_user}
     end
@@ -365,7 +365,7 @@ defmodule Wocky.Repo.CleanerTest do
       refute Repo.one(
                User
                |> where(id: ^ctx.user.id)
-               |> select([u], u.avatar)
+               |> select([u], u.image_url)
              )
     end
 
@@ -373,7 +373,7 @@ defmodule Wocky.Repo.CleanerTest do
       avatar =
         User
         |> where(id: ^ctx.valid_user.id)
-        |> select([u], u.avatar)
+        |> select([u], u.image_url)
         |> Repo.one()
 
       assert avatar == ctx.file_url

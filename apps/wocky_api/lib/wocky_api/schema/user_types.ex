@@ -33,7 +33,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :handle, :string, do: scope(:public)
 
     @desc "The user's avatar"
-    field :avatar, :media do
+    field :media, :media do
       scope :public
       resolve &Media.get_media/3
     end
@@ -353,7 +353,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "Parameters for modifying a user"
   input_object :user_params do
     field :handle, :string
-    field :avatar, :string
+    field :image_url, :string
     field :first_name, :string
     field :last_name, :string
     field :email, :string

@@ -39,8 +39,8 @@ defmodule Wocky.Bot do
     field :shortname, :string
     # User-supplied description
     field :description, :string, default: ""
-    # Bot graphical image
-    field :image, :string
+    # Bot graphical image TROS url
+    field :image_url, :string
     # Bot type (freeform string from server's perspective)
     field :type, :string, default: ""
     # Bot icon (freeform string from server's perspective)
@@ -75,7 +75,7 @@ defmodule Wocky.Bot do
           pending: nil | boolean,
           shortname: nil | binary,
           description: binary,
-          image: nil | binary,
+          image_url: nil | binary,
           type: binary,
           icon: nil | binary,
           address: binary,
@@ -96,7 +96,7 @@ defmodule Wocky.Bot do
     :title,
     :shortname,
     :description,
-    :image,
+    :image_url,
     :type,
     :icon,
     :address,
