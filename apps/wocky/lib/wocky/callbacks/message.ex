@@ -5,9 +5,9 @@ defmodule Wocky.Callbacks.Message do
 
   use Wocky.Watcher, type: Wocky.Message, events: [:insert]
 
-  alias Wocky.{Message, Repo}
   alias Wocky.Push
   alias Wocky.Push.Events.NewMessageEvent
+  alias Wocky.Repo
 
   def handle_insert(%Event{action: :insert, new: new}) do
     new = Repo.preload(new, [:sender, :recipient])
@@ -20,8 +20,8 @@ defmodule Wocky.Callbacks.Message do
     event = %NewMessageEvent{
       to: msg.recipient,
       from: msg.sender,
-      body: Message.get_body(msg),
-      image: Message.get_image(msg),
+      content: msg.content,
+      image_url: msg.image_url,
       conversation_id: msg.id
     }
 

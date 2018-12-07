@@ -4,7 +4,6 @@ defmodule WockyAPI.Resolvers.Media do
   use Elixometer
 
   alias Wocky.Bot
-  alias Wocky.Bot.Item
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
@@ -14,8 +13,7 @@ defmodule WockyAPI.Resolvers.Media do
 
   def get_media(%Bot{image: tros_url}, _args, _info), do: get_urls(tros_url)
 
-  def get_media(%Item{image_url: tros_url}, _args, _info),
-    do: get_urls(tros_url)
+  def get_media(%{image_url: tros_url}, _args, _info), do: get_urls(tros_url)
 
   defp get_urls(nil), do: {:ok, nil}
 

@@ -88,7 +88,7 @@ defmodule Wocky.Repo.Factory do
     %Message{
       sender: build(:user),
       recipient: build(:user),
-      message: Lorem.paragraph()
+      content: Lorem.paragraph()
     }
   end
 

@@ -70,7 +70,7 @@ defmodule Wocky.MessageTest do
     end
   end
 
-  describe "send/3" do
+  describe "send/4" do
     setup do
       [user, follower, friend, followee, stranger] =
         Factory.insert_list(5, :user)
@@ -89,80 +89,37 @@ defmodule Wocky.MessageTest do
 
     test "should send a message to a friend", %{user: u, friend: f} do
       text = Lorem.paragraph()
-      assert {:ok, _} = Message.send(text, f, u)
+      assert {:ok, _} = Message.send(f, u, text)
 
-      assert [%Message{message: ^text}] =
+      assert [%Message{content: ^text}] =
                f |> Message.get_query(u) |> Repo.all()
     end
 
     test "should send a message to a follower", %{user: u, follower: f} do
       text = Lorem.paragraph()
-      assert {:ok, _} = Message.send(text, f, u)
+      assert {:ok, _} = Message.send(f, u, text)
 
-      assert [%Message{message: ^text}] =
+      assert [%Message{content: ^text}] =
                f |> Message.get_query(u) |> Repo.all()
     end
 
     test "should fail sending to an followee", %{user: u, followee: f} do
       assert {:error, :permission_denied} =
-               Message.send(Lorem.paragraph(), f, u)
+               Message.send(f, u, Lorem.paragraph())
 
       assert [] = f |> Message.get_query(u) |> Repo.all()
     end
 
     test "should fail sending to an stranger", %{user: u, stranger: s} do
       assert {:error, :permission_denied} =
-               Message.send(Lorem.paragraph(), s, s)
+               Message.send(s, s, Lorem.paragraph())
 
       assert [] = s |> Message.get_query(u) |> Repo.all()
     end
 
     test "should fail sending to an non-existant user", %{user: u} do
       assert {:error, _} =
-               Message.send(Lorem.paragraph(), Factory.build(:user), u)
-    end
-  end
-
-  describe "get_body/1" do
-    test "extract a body if one exists" do
-      assert "body value" ==
-               %Message{message: "<tag>afdsa</tag><body>body value</body>"}
-               |> Message.get_body()
-    end
-
-    test "return an empty string if no body exists" do
-      assert "" ==
-               %Message{message: "<tag>blah</tag>"}
-               |> Message.get_body()
-    end
-
-    test "return nil for non-XML" do
-      assert nil ==
-               %Message{message: "<bodyyyyyy>body value</body>"}
-               |> Message.get_body()
-    end
-  end
-
-  describe "get_image/1" do
-    test "extract an image if one exists" do
-      assert "http://image.com" ==
-               %Message{
-                 message:
-                   "<tag>afdsa</tag><image><url>http://image.com</url></image><other>xxx</other>"
-               }
-               |> Message.get_image()
-    end
-
-    test "return an empty string if no image exists" do
-      assert "" ==
-               %Message{message: "<tag>blah</tag>"}
-               |> Message.get_image()
-    end
-
-    test "return nil for non-XML" do
-      assert nil ==
-               %Message{message: "<image><url>body value</url></imasdfs>"}
-               |> Message.get_image()
+               Message.send(Factory.build(:user), u, Lorem.paragraph())
     end
   end
 
@@ -175,9 +132,8 @@ defmodule Wocky.MessageTest do
     end
 
     test "on message receipt", %{user: user} do
-      body = Lorem.paragraph()
-      text = "<body>" <> body <> "</body>"
-      m = Factory.insert(:message, message: text, recipient: user)
+      text = Lorem.paragraph()
+      m = Factory.insert(:message, content: text, recipient: user)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
@@ -188,13 +144,14 @@ defmodule Wocky.MessageTest do
                }
              } = hd(msgs)
 
-      assert message == "From: @#{m.sender.handle}\n#{body}"
+      assert message == "From: @#{m.sender.handle}\n#{text}"
     end
 
     test "on image receipt", %{user: user} do
-      body = Lorem.paragraph()
-      text = "<image>" <> body <> "</image>"
-      m = Factory.insert(:message, message: text, recipient: user)
+      text = Lorem.sentence()
+
+      m =
+        Factory.insert(:message, content: nil, image_url: text, recipient: user)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
