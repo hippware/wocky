@@ -2,7 +2,6 @@ defmodule Wocky.Repo.Factory do
   @moduledoc false
 
   use ExMachina.Ecto, repo: Wocky.Repo
-  use Wocky.JID
 
   alias Faker.Address
   alias Faker.Company
@@ -239,10 +238,6 @@ defmodule Wocky.Repo.Factory do
 
   def device do
     String.base64()
-  end
-
-  def new_jid do
-    ID.new() |> JID.make(Lorem.word(), Lorem.word()) |> JID.to_binary()
   end
 
   # Handles have a more restricted set of characters than any of the Faker

@@ -1,8 +1,6 @@
 defmodule Wocky.User.UserTest do
   use Wocky.DataCase
 
-  use Wocky.JID
-
   alias Ecto.Adapters.SQL
   alias Faker.Internet
   alias Faker.Lorem
@@ -32,32 +30,6 @@ defmodule Wocky.User.UserTest do
 
   describe "valid_update_fields/0" do
     assert length(User.valid_update_fields()) == 10
-  end
-
-  describe "to_jid/1" do
-    test "should return the user's JID", ctx do
-      jid1 = User.to_jid(ctx.user)
-      jid2 = JID.make(ctx.user.id, Wocky.host(), ctx.user.device)
-
-      assert JID.equal?(jid1, jid2)
-    end
-  end
-
-  describe "get_by_jid/1" do
-    test "when the user exists", ctx do
-      result = ctx.user |> User.to_jid() |> User.get_by_jid()
-
-      assert result.id == ctx.user.id
-      assert result.device == ctx.user.device
-    end
-
-    test "when the user does not exist" do
-      refute ID.new() |> JID.make() |> User.get_by_jid()
-    end
-
-    test "when the jid has no user ID" do
-      refute "" |> JID.make() |> User.get_by_jid()
-    end
   end
 
   describe "get_user/2" do
