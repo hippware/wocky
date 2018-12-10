@@ -4,7 +4,6 @@ defmodule Wocky.Bot do
   use Elixometer
   use Wocky.Repo.Schema
   use Wocky.Repo.Changeset
-  use Wocky.RSMHelper
 
   import Ecto.Query
 

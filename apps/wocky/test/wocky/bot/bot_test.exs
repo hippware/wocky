@@ -1,8 +1,6 @@
 defmodule Wocky.BotTest do
   use Wocky.DataCase, async: true
 
-  use Wocky.RSMHelper
-
   alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Repo
