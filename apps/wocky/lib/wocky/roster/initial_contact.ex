@@ -1,7 +1,6 @@
 defmodule Wocky.Roster.InitialContact do
   @moduledoc false
 
-  use Wocky.JID
   use Wocky.Repo.Schema
 
   import Ecto.Query

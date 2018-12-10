@@ -8,8 +8,8 @@ defmodule Wocky.TROS do
   alias Wocky.TROS.Metadata
   alias Wocky.User
 
-  @type owner :: JID.luser()
-  @type file_id :: JID.lresource()
+  @type owner :: binary
+  @type file_id :: binary
   @type file_name :: binary
   @type url :: binary
   # %{binary => binary}
@@ -20,20 +20,13 @@ defmodule Wocky.TROS do
   @type result(type) :: {:ok, type} | {:error, error}
 
   @callback delete(file_id) :: :ok
-  @callback make_upload_response(JID.t(), file_id, integer, metadata) ::
+  @callback make_upload_response(User.t(), file_id, integer, metadata) ::
               {list, list}
   @callback make_download_response(file_name) :: {list, list}
   @callback get_download_url(metadata, file_name) :: url
 
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
-
-  @spec make_jid(file_id) :: JID.t()
-  def make_jid(file_id), do: make_jid("", file_id)
-
-  @spec make_jid(owner, file_id) :: JID.t()
-  def make_jid(owner, file_id),
-    do: JID.make(owner, Wocky.host(), "file/#{file_id}")
 
   @spec parse_url(url) :: {:ok, file_id} | {:error, :invalid_url}
   def parse_url("tros:" <> jid) do
@@ -48,11 +41,17 @@ defmodule Wocky.TROS do
 
   def parse_url(_), do: {:error, :invalid_url}
 
-  @spec make_url(file_id | JID.t()) :: url
-  def make_url(file_id) when is_binary(file_id),
-    do: file_id |> make_jid() |> make_url
+  @spec make_url(User.t(), file_id) :: url
+  def make_url(owner, file_id),
+    do: file_id |> make_jid(owner.id) |> url_from_jid()
 
-  def make_url(jid), do: "tros:#{JID.to_binary(jid)}"
+  @spec make_url(file_id) :: url
+  def make_url(file_id), do: file_id |> make_jid("") |> url_from_jid()
+
+  defp make_jid(file_id, owner_id),
+    do: JID.make(owner_id, Wocky.host(), "file/#{file_id}")
+
+  defp url_from_jid(jid), do: "tros:#{JID.to_binary(jid)}"
 
   @spec get_base_id(file_name) :: file_id
   def get_base_id(file_name) do
@@ -100,14 +99,13 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec make_upload_response(JID.t(), file_id, integer, binary, metadata) ::
+  @spec make_upload_response(User.t(), file_id, integer, binary, metadata) ::
           {:ok, {list, list}} | {:error, term}
-  def make_upload_response(owner_jid, file_id, size, access, meta) do
-    jid(luser: owner_id) = owner_jid
-
-    case Metadata.put(file_id, owner_id, access) do
+  def make_upload_response(owner, file_id, size, access, meta) do
+    case Metadata.put(file_id, owner.id, access) do
       {:ok, _} ->
-        {:ok, backend().make_upload_response(owner_jid, file_id, size, meta)}
+        reference_url = make_url(owner, file_id)
+        {:ok, backend().make_upload_response(reference_url, file_id, size, meta)}
 
       {:error, _} = error ->
         error

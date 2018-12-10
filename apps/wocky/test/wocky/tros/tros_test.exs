@@ -1,27 +1,10 @@
 defmodule Wocky.TROSTest do
   use Wocky.DataCase, async: true
-  use Wocky.JID
 
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
-  alias Wocky.User
-
-  setup do
-    {:ok,
-     id: ID.new(),
-     tros_jid: TROS.make_jid("file_id"),
-     tros_jid_u: TROS.make_jid("user", "file_id")}
-  end
-
-  test "make_jid/2", ctx do
-    assert JID.to_binary(ctx.tros_jid) == "#{Wocky.host()}/file/file_id"
-  end
-
-  test "make_jid/3", ctx do
-    assert JID.to_binary(ctx.tros_jid_u) == "user@#{Wocky.host()}/file/file_id"
-  end
 
   describe "parse_url/1" do
     assert {:error, _} = TROS.parse_url("bogus")
@@ -31,23 +14,14 @@ defmodule Wocky.TROSTest do
     assert {:ok, _} = TROS.parse_url("tros:localhost/file/foo")
   end
 
-  describe "make_url/1" do
-    test "when passed a JID with no user", ctx do
-      url = TROS.make_url(ctx.tros_jid)
-      assert url == TROS.make_url("file_id")
-      assert url == "tros:#{Wocky.host()}/file/file_id"
-    end
-
-    test "when passed a JID with a user", ctx do
-      assert TROS.make_url(ctx.tros_jid_u) ==
-               "tros:user@#{Wocky.host()}/file/file_id"
-    end
+  test "make_url/1" do
+    assert TROS.make_url("file_id") == "tros:#{Wocky.host()}/file/file_id"
   end
 
-  test "make_url/2", ctx do
-    url = TROS.make_url("file_id")
-    assert url == TROS.make_url(ctx.tros_jid)
-    assert url == "tros:#{Wocky.host()}/file/file_id"
+  test "make_url/2" do
+    user = Factory.build(:user)
+    assert TROS.make_url(user, "file_id") ==
+             "tros:#{user.id}@#{Wocky.host()}/file/file_id"
   end
 
   test "get_base_id/1" do
@@ -94,10 +68,8 @@ defmodule Wocky.TROSTest do
     end
 
     test "make_upload_response/5", ctx do
-      owner_jid = User.to_jid(ctx.user)
-
       assert {:ok, {_, _}} =
-               TROS.make_upload_response(owner_jid, ID.new(), 100, "all", [])
+               TROS.make_upload_response(ctx.user, ID.new(), 100, "all", [])
     end
 
     test "make_download_response/1", ctx do

@@ -3,7 +3,6 @@ defmodule Wocky.User do
 
   require Logger
 
-  use Wocky.JID
   use Wocky.Repo.Schema
 
   import Ecto.Query
@@ -138,21 +137,6 @@ defmodule Wocky.User do
   @spec valid_update_fields :: [binary]
   def valid_update_fields do
     for field <- @update_fields, do: to_string(field)
-  end
-
-  @spec to_jid(t, binary | nil) :: JID.t()
-  def to_jid(%User{id: user} = u, resource \\ nil) do
-    JID.make(user, Wocky.host(), resource || (u.device || ""))
-  end
-
-  @spec get_by_jid(JID.t()) :: t | nil
-  def get_by_jid(jid(luser: "")), do: nil
-
-  def get_by_jid(jid(luser: id, lresource: resource)) do
-    case Repo.get(User, id) do
-      nil -> nil
-      user -> %User{user | device: resource}
-    end
   end
 
   @spec get_user(id, t | nil) :: t | nil

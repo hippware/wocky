@@ -1,8 +1,6 @@
 defmodule Wocky.TROS.Store.Test do
   @moduledoc "Test backend for the TROS file management system"
 
-  use Wocky.JID
-
   alias Wocky.TROS
 
   @behaviour TROS
@@ -28,11 +26,8 @@ defmodule Wocky.TROS.Store.Test do
     {[], resp_fields}
   end
 
-  def make_upload_response(owner_jid, file_id, _size, _metadata) do
+  def make_upload_response(reference_url, file_id, _size, _metadata) do
     record(file_id)
-    jid(luser: owner) = owner_jid
-    file_jid = TROS.make_jid(owner, file_id)
-    reference_url = TROS.make_url(file_jid)
     url = "http://localhost/some/file/location"
 
     resp_fields = resp_fields(:put, url, reference_url)

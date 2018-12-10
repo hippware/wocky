@@ -1,8 +1,6 @@
 defmodule Wocky.TROS.Store.S3 do
   @moduledoc "S3 backend for the TROS file management system"
 
-  use Wocky.JID
-
   alias ExAws.Auth
   alias ExAws.Config
   alias ExAws.S3
@@ -74,11 +72,7 @@ defmodule Wocky.TROS.Store.S3 do
     s3_url(bucket(), file_name, :get)
   end
 
-  def make_upload_response(owner_jid, file_id, size, metadata) do
-    jid(luser: owner) = owner_jid
-    file_jid = TROS.make_jid(owner, file_id)
-    reference_url = TROS.make_url(file_jid)
-
+  def make_upload_response(reference_url, file_id, size, metadata) do
     headers = [
       {"x-amz-content-sha256", "UNSIGNED-PAYLOAD"},
       {"content-length", Integer.to_string(size)},

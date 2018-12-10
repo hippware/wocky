@@ -1,7 +1,6 @@
 defmodule Wocky.BotTest do
   use Wocky.DataCase, async: true
 
-  use Wocky.JID
   use Wocky.RSMHelper
 
   alias Wocky.Bot
@@ -15,32 +14,6 @@ defmodule Wocky.BotTest do
     bot = Factory.insert(:bot, user: user)
 
     {:ok, user: user, bot: bot}
-  end
-
-  describe "helper functions" do
-    test "make_node/1", %{bot: bot} do
-      assert Bot.make_node(bot) == "bot/" <> bot.id
-    end
-
-    test "to_jid/1", %{bot: bot} do
-      jid = Bot.to_jid(bot)
-
-      assert jid(jid, :luser) == ""
-      assert jid(jid, :lserver) == Wocky.host()
-      assert jid(jid, :lresource) == Bot.make_node(bot)
-    end
-
-    test "get_id_from_jid/1", %{bot: bot} do
-      assert bot |> Bot.to_jid() |> Bot.get_id_from_jid() == bot.id
-
-      refute Bot.get_id_from_jid("bogus")
-      refute "bogus" |> JID.make("testing") |> Bot.get_id_from_jid()
-    end
-
-    test "get_id_from_node/1", %{bot: bot} do
-      assert bot |> Bot.make_node() |> Bot.get_id_from_node() == bot.id
-      refute Bot.get_id_from_node("bogus")
-    end
   end
 
   describe "validations" do
@@ -97,14 +70,6 @@ defmodule Wocky.BotTest do
 
     test "should return the requested bot", %{bot: bot} do
       assert bot.id |> Bot.get() |> Repo.preload(:user) == bot
-    end
-
-    test "should work for retrieving by jid", %{bot: bot} do
-      assert bot |> Bot.to_jid() |> Bot.get() |> Repo.preload(:user) == bot
-    end
-
-    test "should return nil for invalid bot jids", %{bot: bot} do
-      refute "" |> JID.make("/notbot/" <> bot.id) |> Bot.get()
     end
 
     test "should return nil for non-existant bots" do
@@ -219,25 +184,6 @@ defmodule Wocky.BotTest do
 
     test "subscriber_count/1", %{bot: bot} do
       assert Bot.subscriber_count(bot) == 1
-    end
-
-    test "notification_recipient_jids/2", %{user: user, bot: bot, sub: sub} do
-      # In the real world this is done by the db callbacks:
-      Factory.insert(:subscription, user: user, bot: bot)
-
-      user_jid = User.to_jid(user)
-      sub_jid = User.to_jid(sub)
-
-      # recipients should not include the specified user
-      result = Bot.notification_recipient_jids(bot, user)
-      assert length(result) == 1
-      assert Enum.member?(result, sub_jid)
-      refute Enum.member?(result, user_jid)
-
-      result = Bot.notification_recipient_jids(bot, sub)
-      assert length(result) == 1
-      assert Enum.member?(result, user_jid)
-      refute Enum.member?(result, sub_jid)
     end
   end
 

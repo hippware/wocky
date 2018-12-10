@@ -3,9 +3,9 @@ defmodule Wocky.TROS.Store.S3Test do
 
   alias Faker.Lorem
   alias Plug.Conn
-  alias Wocky.JID
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.TROS
   alias Wocky.TROS.Store.S3, as: S3Store
 
   @test_file "d49ff638-4736-11e7-8017-0e6514633f23"
@@ -32,20 +32,20 @@ defmodule Wocky.TROS.Store.S3Test do
 
   describe "make_upload_response/4" do
     setup do
-      owner_id = ID.new()
-      owner_jid = JID.make(owner_id)
+      owner = Factory.build(:user)
       file_id = ID.new()
       size = :rand.uniform(10_000)
       metadata = %{content_type: Lorem.word()}
+      reference_url = TROS.make_url(owner, file_id)
 
       {headers, fields} =
-        S3Store.make_upload_response(owner_jid, file_id, size, metadata)
+        S3Store.make_upload_response(reference_url, file_id, size, metadata)
 
       {:ok,
        headers: headers,
        fields: fields,
        size: size,
-       owner_id: owner_id,
+       owner_id: owner.id,
        file_id: file_id}
     end
 

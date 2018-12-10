@@ -4,8 +4,6 @@ defmodule Wocky.TROS.Store.Simple do
   https://hub.docker.com/r/mayth/simple-upload-server/
   """
 
-  use Wocky.JID
-
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
@@ -23,11 +21,7 @@ defmodule Wocky.TROS.Store.Simple do
     {[], resp_fields}
   end
 
-  def make_upload_response(owner_jid, file_id, _size, _metadata) do
-    jid(luser: owner) = owner_jid
-    file_jid = TROS.make_jid(owner, file_id)
-    reference_url = TROS.make_url(file_jid)
-
+  def make_upload_response(reference_url, file_id, _size, _metadata) do
     resp_fields = resp_fields(:put, url(file_id), reference_url)
 
     # No S3 callbacks to set the file ready, so just assume it is

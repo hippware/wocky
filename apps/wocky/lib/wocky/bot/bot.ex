@@ -2,7 +2,6 @@ defmodule Wocky.Bot do
   @moduledoc "Schema and API for working with Bots."
 
   use Elixometer
-  use Wocky.JID
   use Wocky.Repo.Schema
   use Wocky.Repo.Changeset
   use Wocky.RSMHelper
@@ -89,7 +88,6 @@ defmodule Wocky.Bot do
           subscribers: not_loaded | [User.t()]
         }
 
-  @bot_prefix "bot/"
   @change_fields [
     :id,
     :user_id,
@@ -108,49 +106,15 @@ defmodule Wocky.Bot do
   @required_fields [:id, :user_id, :title, :location, :radius]
 
   # ----------------------------------------------------------------------
-  # Helpers
-
-  @spec make_node(t) :: binary
-  def make_node(bot) do
-    @bot_prefix <> bot.id
-  end
-
-  @spec to_jid(t) :: JID.t()
-  def to_jid(bot) do
-    JID.make("", Wocky.host(), make_node(bot))
-  end
-
-  @spec get_id_from_jid(JID.t()) :: id | nil
-  def get_id_from_jid(jid(lresource: @bot_prefix <> id)) do
-    case ID.valid?(id) do
-      true -> id
-      false -> nil
-    end
-  end
-
-  def get_id_from_jid(_), do: nil
-
-  @spec get_id_from_node(binary) :: id | nil
-  def get_id_from_node(@bot_prefix <> id), do: id
-  def get_id_from_node(_), do: nil
-
-  # ----------------------------------------------------------------------
   # Database interaction
 
-  @spec get(Bot.id() | JID.t(), boolean) :: t | nil
+  @spec get(Bot.id(), boolean) :: t | nil
   def get(id, include_pending \\ false)
 
   def get(id, include_pending) when is_binary(id) do
     id
     |> get_query(include_pending)
     |> Repo.one()
-  end
-
-  def get(jid, include_pending) when Record.is_record(jid, :jid) do
-    case get_id_from_jid(jid) do
-      nil -> nil
-      id -> get(id, include_pending)
-    end
   end
 
   @doc false
@@ -414,13 +378,6 @@ defmodule Wocky.Bot do
     |> subscribers()
     |> tidy_subscribers()
     |> Enum.filter(&(&1.id != sender.id))
-  end
-
-  @spec notification_recipient_jids(Bot.t(), User.t()) :: [JID.t()]
-  def notification_recipient_jids(bot, sender) do
-    bot
-    |> notification_recipients(sender)
-    |> Enum.map(&User.to_jid(&1))
   end
 
   @doc "Count of all subscribers"
