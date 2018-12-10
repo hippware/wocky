@@ -64,6 +64,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove XML from bot item API (#2081)
 * Fix the generation of file upload headers (PR #2094)
   * Upload requests returning error regarding null headers (#2093)
+* Replace the XML message envelope (#2024)
+* Make the naming of attached images consistent across objects (#2098)
 
 
 ----------
