@@ -6,7 +6,6 @@ defmodule WockyAPI.Resolvers.Media do
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
-  alias Wocky.User
 
   def get_media(%{image_url: tros_url}, _args, _info), do: get_urls(tros_url)
 

@@ -105,7 +105,9 @@ defmodule Wocky.TROS do
     case Metadata.put(file_id, owner.id, access) do
       {:ok, _} ->
         reference_url = make_url(owner, file_id)
-        {:ok, backend().make_upload_response(reference_url, file_id, size, meta)}
+
+        {:ok,
+         backend().make_upload_response(reference_url, file_id, size, meta)}
 
       {:error, _} = error ->
         error

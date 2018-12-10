@@ -150,12 +150,16 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should fail with a non-existing avatar URL", ctx do
-      changeset = User.changeset(ctx.user, %{image_url: TROS.make_url(ID.new())})
+      changeset =
+        User.changeset(ctx.user, %{image_url: TROS.make_url(ID.new())})
+
       assert errors_on(changeset).image_url
     end
 
     test "should fail with a non-local avatar URL", ctx do
-      changeset = User.changeset(ctx.user, %{image_url: TROS.make_url(ID.new())})
+      changeset =
+        User.changeset(ctx.user, %{image_url: TROS.make_url(ID.new())})
+
       assert errors_on(changeset).image_url
     end
 
@@ -572,7 +576,9 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not delete the avatar when the same one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.user.image_url})
+      assert {:ok, _} =
+               User.update(ctx.user.id, %{image_url: ctx.user.image_url})
+
       assert Metadata.get(ctx.avatar.id)
     end
   end
@@ -596,7 +602,9 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should delete the avatar when a new one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.new_avatar_url})
+      assert {:ok, _} =
+               User.update(ctx.user.id, %{image_url: ctx.new_avatar_url})
+
       refute Metadata.get(ctx.avatar.id)
     end
 
@@ -608,7 +616,9 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not delete the avatar when the same one is set", ctx do
-      assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.user.image_url})
+      assert {:ok, _} =
+               User.update(ctx.user.id, %{image_url: ctx.user.image_url})
+
       assert Metadata.get(ctx.avatar.id)
     end
   end

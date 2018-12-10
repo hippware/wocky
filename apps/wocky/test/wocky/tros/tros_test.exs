@@ -20,6 +20,7 @@ defmodule Wocky.TROSTest do
 
   test "make_url/2" do
     user = Factory.build(:user)
+
     assert TROS.make_url(user, "file_id") ==
              "tros:#{user.id}@#{Wocky.host()}/file/file_id"
   end
