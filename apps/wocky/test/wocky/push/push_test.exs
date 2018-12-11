@@ -117,21 +117,9 @@ defmodule Wocky.PushTest do
     end
   end
 
-  describe "purge/2" do
-    setup %{user: user} do
-      :ok = Push.enable(user, "other", "987654321")
-      :ok = Push.purge(user)
-    end
-
-    test "should remove all database records", ctx do
-      refute get_user_token(ctx.user, ctx.device)
-      refute get_user_token(ctx.user, "other")
-    end
-  end
-
-  describe "notify/3" do
+  describe "notify_all/2" do
     test "should send a push notification", ctx do
-      :ok = Push.notify(ctx.user, ctx.device, @message)
+      :ok = Push.notify_all(ctx.user, @message)
 
       assert_receive %Notification{
                        payload: %{
@@ -141,9 +129,17 @@ defmodule Wocky.PushTest do
                      5000
     end
 
+    test "should send a push notification to each endpoint", ctx do
+      :ok = Push.enable(ctx.user, "other", "987654321")
+      :ok = Push.notify_all(ctx.user, @message)
+
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
+    end
+
     test "should truncate long messages", ctx do
       sent_message = Lorem.paragraph(100)
-      :ok = Push.notify(ctx.user, ctx.device, sent_message)
+      :ok = Push.notify_all(ctx.user, sent_message)
 
       assert_receive %Notification{
                        payload: %{
@@ -157,7 +153,7 @@ defmodule Wocky.PushTest do
     end
 
     test "should create a db log entry", ctx do
-      :ok = Push.notify(ctx.user, ctx.device, @message)
+      :ok = Push.notify_all(ctx.user, @message)
       assert_receive %Notification{}, 5000
 
       log =
@@ -169,17 +165,9 @@ defmodule Wocky.PushTest do
       refute is_nil(log)
     end
 
-    test "should log an error when there is no push token", ctx do
-      :ok = Push.disable(ctx.user, ctx.device)
-
-      assert capture_log(fn ->
-               :ok = Push.notify(ctx.user, ctx.device, @message)
-             end) =~ "no token"
-    end
-
     test "token is invalidated when the service returns an error", ctx do
       assert capture_log(fn ->
-               :ok = Push.notify(ctx.user, ctx.device, "bad token")
+               :ok = Push.notify_all(ctx.user, "bad token")
              end) =~ "device token was bad"
 
       assert_receive %Notification{response: :bad_device_token}, 5000
@@ -190,24 +178,12 @@ defmodule Wocky.PushTest do
     end
   end
 
-  describe "notify_all/2" do
-    setup %{user: user} do
-      :ok = Push.enable(user, "other", "987654321")
-      :ok = Push.notify_all(user, @message)
-    end
-
-    test "should send a push notification to each endpoint" do
-      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
-      assert Enum.count(notifications) == 2
-    end
-  end
-
   describe "push timeout" do
     test "should log an error when the push request fails and times out",
          ctx do
       assert capture_log(fn ->
                assert_raise RuntimeError, "requested_raise", fn ->
-                 Push.notify(ctx.user, ctx.device, "raise")
+                 Push.notify_all(ctx.user, "raise")
                end
              end) == ""
 
@@ -219,7 +195,7 @@ defmodule Wocky.PushTest do
     test "should retry and succeed even if the first attempt fails", ctx do
       # Two retries will give us three chunks of log
       assert fn ->
-               Push.notify(ctx.user, ctx.device, "retry test")
+               Push.notify_all(ctx.user, "retry test")
              end
              |> capture_log()
              |> String.split("PN Error")
