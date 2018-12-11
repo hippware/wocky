@@ -15,7 +15,6 @@ defmodule Wocky.User do
     Block,
     Bot,
     Conversation,
-    Email,
     GeoUtils,
     Message,
     Repo,
@@ -27,7 +26,14 @@ defmodule Wocky.User do
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.{Avatar, BotEvent, GeoFence, InviteCode, Location}
+  alias Wocky.User.{
+    Avatar,
+    BotEvent,
+    GeoFence,
+    InviteCode,
+    Location,
+    WelcomeEmail
+  }
 
   @forever "2200-01-01T00:00:00.000000Z" |> DateTime.from_iso8601() |> elem(1)
 
@@ -190,18 +196,14 @@ defmodule Wocky.User do
 
   defp maybe_send_welcome(%User{} = user) do
     if Confex.get_env(:wocky, :send_welcome_email) do
-      send_welcome_email(user)
+      WelcomeEmail.send(user)
+
+      user
+      |> cast(%{welcome_sent: true}, [:welcome_sent])
+      |> Repo.update()
     else
       :ok
     end
-  end
-
-  defp send_welcome_email(user) do
-    Email.send_welcome_email(user)
-
-    user
-    |> cast(%{welcome_sent: true}, [:welcome_sent])
-    |> Repo.update()
   end
 
   def remove_auth_details(id) do

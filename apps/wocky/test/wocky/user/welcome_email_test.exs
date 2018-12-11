@@ -1,61 +1,73 @@
 defmodule Wocky.User.WelcomeEmailTest do
   use Wocky.DataCase, async: false
+  use Bamboo.Test
 
   alias Faker.{Internet, Name}
-  alias Wocky.{Email, Repo, User}
+  alias Wocky.{Repo, User}
   alias Wocky.Repo.Factory
+  alias Wocky.User.WelcomeEmail
 
-  setup do
-    Application.put_env(:wocky, :send_welcome_email, true)
+  test "send/1" do
+    user = Factory.build(:user)
 
-    :meck.new(Email)
-    :meck.expect(Email, :send_welcome_email, fn %User{} -> :ok end)
+    assert WelcomeEmail.send(user) == :ok
 
-    on_exit(fn ->
-      :meck.unload()
-      Application.put_env(:wocky, :send_welcome_email, false)
-    end)
-
-    :ok
+    assert_email_delivered_with(to: [{User.full_name(user), user.email}])
   end
 
-  test "should be sent on user update" do
-    user = Factory.insert(:user)
+  describe "Email sending on user update" do
+    setup do
+      Application.put_env(:wocky, :send_welcome_email, true)
 
-    fields = %{
-      first_name: Name.first_name()
-    }
+      :meck.new(WelcomeEmail)
+      :meck.expect(WelcomeEmail, :send, fn %User{} -> :ok end)
 
-    User.update(user.id, fields)
+      on_exit(fn ->
+        :meck.unload()
+        Application.put_env(:wocky, :send_welcome_email, false)
+      end)
 
-    assert :meck.validate(Email)
-    assert :meck.called(Email, :send_welcome_email, :_)
+      :ok
+    end
 
-    new_user = Repo.get(User, user.id)
-    assert new_user.welcome_sent
-  end
+    test "should be sent on user update" do
+      user = Factory.insert(:user)
 
-  test "should not be resent to an already welcomed user" do
-    user = Factory.insert(:user, %{welcome_sent: true})
+      fields = %{
+        first_name: Name.first_name()
+      }
 
-    fields = %{
-      email: Internet.email()
-    }
+      User.update(user.id, fields)
 
-    User.update(user.id, fields)
+      assert :meck.validate(WelcomeEmail)
+      assert :meck.called(WelcomeEmail, :send, :_)
 
-    refute :meck.called(Email, :send_welcome_email, :_)
-  end
+      new_user = Repo.get(User, user.id)
+      assert new_user.welcome_sent
+    end
 
-  test "should not be sent to an unwelcomed user that has no email" do
-    user = Factory.insert(:user, %{email: nil})
+    test "should not be resent to an already welcomed user" do
+      user = Factory.insert(:user, %{welcome_sent: true})
 
-    fields = %{
-      first_name: Name.first_name()
-    }
+      fields = %{
+        email: Internet.email()
+      }
 
-    User.update(user.id, fields)
+      User.update(user.id, fields)
 
-    refute :meck.called(Email, :send_welcome_email, :_)
+      refute :meck.called(WelcomeEmail, :send, :_)
+    end
+
+    test "should not be sent to an unwelcomed user that has no email" do
+      user = Factory.insert(:user, %{email: nil})
+
+      fields = %{
+        first_name: Name.first_name()
+      }
+
+      User.update(user.id, fields)
+
+      refute :meck.called(WelcomeEmail, :send, :_)
+    end
   end
 end
