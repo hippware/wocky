@@ -3,7 +3,6 @@ defmodule Wocky.Bot do
 
   use Elixometer
   use Wocky.Repo.Schema
-  use Wocky.Repo.Changeset
 
   import Ecto.Query
 
