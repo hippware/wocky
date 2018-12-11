@@ -66,6 +66,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Upload requests returning error regarding null headers (#2093)
 * Replace the XML message envelope (#2024)
 * Make the naming of attached images consistent across objects (#2098)
+* Update: recon (PR #2102), confex (PR #2101)
+* Remove remaining uses of JIDs (#2090, PR #2099)
 
 
 ----------
