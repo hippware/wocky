@@ -36,39 +36,6 @@ defmodule Wocky.Bot.Item do
     |> foreign_key_constraint(:user_id)
   end
 
-  @spec get(Bot.t()) :: [t]
-  def get(bot) do
-    bot
-    |> items_query()
-    |> order_by(asc: :updated_at)
-    |> Repo.all()
-  end
-
-  @spec get_count(Bot.t()) :: non_neg_integer
-  def get_count(bot) do
-    bot
-    |> Ecto.assoc(:items)
-    |> select([i], count(i.bot_id))
-    |> Repo.one()
-  end
-
-  @spec get_images(Bot.t()) :: [t]
-  def get_images(bot) do
-    bot
-    |> images_query()
-    |> order_by(asc: :updated_at)
-    |> Repo.all()
-  end
-
-  @spec get_image_count(Bot.t()) :: non_neg_integer
-  def get_image_count(bot) do
-    bot
-    |> Ecto.assoc(:items)
-    |> where([i], not is_nil(i.image_url))
-    |> select([i], count(i.bot_id))
-    |> Repo.one()
-  end
-
   @spec get(id, Bot.t()) :: t | nil
   def get(id, bot) do
     Item
@@ -123,15 +90,6 @@ defmodule Wocky.Bot.Item do
 
   defp maybe_update_bot(result, _), do: result
 
-  @spec delete(Bot.t()) :: :ok
-  def delete(bot) do
-    bot
-    |> Ecto.assoc(:items)
-    |> Repo.delete_all()
-
-    :ok
-  end
-
   @spec delete(id, Bot.t(), User.t()) ::
           :ok | {:error, :not_found | :permission_denied}
   def delete(id, %Bot{user_id: user_id} = bot, %User{id: user_id}) do
@@ -174,11 +132,5 @@ defmodule Wocky.Bot.Item do
   def items_query(bot) do
     bot
     |> Ecto.assoc(:items)
-  end
-
-  def images_query(bot) do
-    bot
-    |> Ecto.assoc(:items)
-    |> where([i], not is_nil(i.image_url))
   end
 end
