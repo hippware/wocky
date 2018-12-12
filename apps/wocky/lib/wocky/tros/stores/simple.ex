@@ -4,6 +4,7 @@ defmodule Wocky.TROS.Store.Simple do
   https://hub.docker.com/r/mayth/simple-upload-server/
   """
 
+  alias Wocky.Repo
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
@@ -13,21 +14,20 @@ defmodule Wocky.TROS.Store.Simple do
     :ok
   end
 
-  def make_download_response(file_name) do
-    resp_fields = [
-      {"url", url(TROS.get_base_id(file_name))}
-    ]
-
-    {[], resp_fields}
-  end
-
   def make_upload_response(reference_url, file_id, _size, _metadata) do
     resp_fields = resp_fields(:put, url(file_id), reference_url)
 
     # No S3 callbacks to set the file ready, so just assume it is
-    Metadata.set_ready(file_id)
+    set_ready(file_id)
 
     {[], resp_fields}
+  end
+
+  defp set_ready(id) do
+    Metadata
+    |> Repo.get!(id)
+    |> Metadata.changeset(%{ready: true})
+    |> Repo.update!()
   end
 
   def get_download_url(_metadata, file_name) do

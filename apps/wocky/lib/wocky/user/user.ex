@@ -26,6 +26,7 @@ defmodule Wocky.User do
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
+
   alias Wocky.User.{
     Avatar,
     BotEvent,
@@ -222,7 +223,7 @@ defmodule Wocky.User do
     user = Repo.get(User, id)
 
     if user do
-      delete_tros_files(user)
+      TROS.delete_all(user)
 
       if user.provider == "firebase",
         do: FirebaseAuth.delete_user(user.external_id)
@@ -231,16 +232,6 @@ defmodule Wocky.User do
     end
 
     :ok
-  end
-
-  defp delete_tros_files(user) do
-    Repo.transaction(fn ->
-      user
-      |> TROSMetadata.owned_query()
-      |> Repo.stream()
-      |> Stream.each(&TROS.delete(&1.id, user))
-      |> Stream.run()
-    end)
   end
 
   # ----------------------------------------------------------------------

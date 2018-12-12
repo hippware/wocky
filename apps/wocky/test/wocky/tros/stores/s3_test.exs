@@ -16,20 +16,6 @@ defmodule Wocky.TROS.Store.S3Test do
     Application.put_env(:wocky, :tros_s3_access_key_id, "1234")
   end
 
-  describe "make_download_response/2" do
-    setup do
-      {headers, fields} = S3Store.make_download_response(ID.new())
-
-      {:ok, headers: headers, fields: fields}
-    end
-
-    test "should return an empty header list and a url", ctx do
-      assert ctx.headers == []
-      assert length(ctx.fields) == 1
-      assert :proplists.get_value("url", ctx.fields) =~ @url_re
-    end
-  end
-
   describe "make_upload_response/4" do
     setup do
       owner = Factory.build(:user)

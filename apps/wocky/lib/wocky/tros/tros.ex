@@ -4,6 +4,9 @@ defmodule Wocky.TROS do
 
   use Wocky.JID
 
+  import Ecto.Query
+
+  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
   alias Wocky.User
@@ -12,21 +15,19 @@ defmodule Wocky.TROS do
   @type file_id :: binary
   @type file_name :: binary
   @type url :: binary
-  # %{binary => binary}
   @type metadata :: map
   @type file_type :: :full | :original | :thumbnail
-
-  @type error :: :not_found | :metadata_not_found | {:retrieve_error, binary}
-  @type result(type) :: {:ok, type} | {:error, error}
 
   @callback delete(file_id) :: :ok
   @callback make_upload_response(User.t(), file_id, integer, metadata) ::
               {list, list}
-  @callback make_download_response(file_name) :: {list, list}
   @callback get_download_url(metadata, file_name) :: url
 
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
+
+  # ----------------------------------------------------------------------
+  # Names and URLs
 
   @spec parse_url(url) :: {:ok, file_id} | {:error, :invalid_url}
   def parse_url("tros:" <> jid) do
@@ -60,24 +61,18 @@ defmodule Wocky.TROS do
     |> String.replace_suffix(@original_suffix, "")
   end
 
-  @spec get_type(file_id) :: file_type
-  def get_type(file_id) do
-    cond do
-      String.ends_with?(file_id, @original_suffix) -> :original
-      String.ends_with?(file_id, @thumbnail_suffix) -> :thumbnail
-      true -> :full
-    end
-  end
-
   @spec variants(file_id) :: [binary]
   def variants(file_id) do
     Enum.map([:full, :thumbnail, :original], &full_name(file_id, &1))
   end
 
-  @spec get_metadata(file_id) :: result(Metadata.t())
+  # ----------------------------------------------------------------------
+  # Data management
+
+  @spec get_metadata(file_id) :: {:ok, Metadata.t()} | {:error, any}
   def get_metadata(id) do
     if ID.valid?(id) do
-      case Metadata.get(id) do
+      case Repo.get(Metadata, id) do
         nil -> {:error, :not_found}
         value -> {:ok, value}
       end
@@ -86,15 +81,36 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec update_access(file_id, binary) :: result(Metadata.t())
-  def update_access(file_id, new_access) do
-    Metadata.set_access(file_id, new_access)
-  end
-
   @spec delete(file_id, User.t()) :: {:ok, Metadata.t()}
   def delete(file_id, requestor) do
-    with {:ok, file} <- Metadata.delete(file_id, requestor) do
-      backend().delete(file_id)
+    user_id = requestor.id
+
+    case Repo.get(Metadata, file_id) do
+      %Metadata{user_id: ^user_id} = metadata ->
+        do_delete(metadata)
+
+      nil ->
+        {:error, :not_found}
+
+      _ ->
+        {:error, :permission_denied}
+    end
+  end
+
+  @spec delete_all(User.t()) :: :ok
+  def delete_all(user) do
+    Repo.transaction(fn ->
+      Metadata
+      |> where(user_id: ^user.id)
+      |> Repo.stream()
+      |> Stream.each(&do_delete/1)
+      |> Stream.run()
+    end)
+  end
+
+  defp do_delete(md) do
+    with {:ok, file} <- Repo.delete(md, returning: true) do
+      backend().delete(md.id)
       {:ok, file}
     end
   end
@@ -102,24 +118,30 @@ defmodule Wocky.TROS do
   @spec make_upload_response(User.t(), file_id, integer, binary, metadata) ::
           {:ok, {list, list}} | {:error, term}
   def make_upload_response(owner, file_id, size, access, meta) do
-    case Metadata.put(file_id, owner.id, access) do
+    case put_metadata(file_id, owner.id, access) do
       {:ok, _} ->
         reference_url = make_url(owner, file_id)
 
-        {:ok,
-         backend().make_upload_response(reference_url, file_id, size, meta)}
+        result =
+          backend().make_upload_response(reference_url, file_id, size, meta)
+
+        {:ok, result}
 
       {:error, _} = error ->
         error
     end
   end
 
-  @spec make_download_response(file_id) :: {:ok, {list, list}}
-  def make_download_response(file_id),
-    do: {:ok, backend().make_download_response(file_id)}
-
-  @spec ready?(file_id) :: boolean
-  def ready?(file_id), do: Metadata.ready?(file_id)
+  def put_metadata(id, user_id, access) do
+    %Metadata{}
+    |> Metadata.changeset(%{
+      id: id,
+      user_id: user_id,
+      access: access,
+      ready: false
+    })
+    |> Repo.insert()
+  end
 
   @spec get_download_urls(Metadata.t(), [file_type]) :: [url]
   def get_download_urls(metadata, types) do
@@ -133,7 +155,5 @@ defmodule Wocky.TROS do
   defp full_name(file_id, :thumbnail), do: file_id <> @thumbnail_suffix
   defp full_name(file_id, :original), do: file_id <> @original_suffix
 
-  defp backend do
-    Confex.get_env(:wocky, :tros_backend)
-  end
+  defp backend, do: Confex.get_env(:wocky, :tros_backend)
 end

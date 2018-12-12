@@ -244,13 +244,20 @@ defmodule Wocky.User.UserTest do
       new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
 
-      assert Metadata.get(ctx.avatar_id)
+      assert Repo.get(Metadata, ctx.avatar_id)
     end
 
     test "and the user has a valid avatar", ctx do
       old_avatar_id = ID.new()
       old_avatar_url = TROS.make_url(old_avatar_id)
-      Metadata.put(old_avatar_id, ctx.user.id, "public")
+
+      %Metadata{}
+      |> Metadata.changeset(%{
+        id: old_avatar_id,
+        user_id: ctx.user.id,
+        access: "public"
+      })
+      |> Repo.insert!()
 
       ctx.user
       |> cast(%{image_url: old_avatar_url}, [:image_url])
@@ -261,7 +268,7 @@ defmodule Wocky.User.UserTest do
       new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
 
-      refute Metadata.get(old_avatar_id)
+      refute Repo.get(Metadata, old_avatar_id)
     end
   end
 
@@ -275,21 +282,21 @@ defmodule Wocky.User.UserTest do
 
     test "should not delete the avatar when a new one is set", ctx do
       assert {:ok, _} = User.update(ctx.user.id, %{image_url: ctx.avatar_url})
-      assert Metadata.get(ctx.avatar.id)
+      assert Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when a new one is not set", ctx do
       assert {:ok, _} =
                User.update(ctx.user.id, %{first_name: Name.first_name()})
 
-      assert Metadata.get(ctx.avatar.id)
+      assert Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when the same one is set", ctx do
       assert {:ok, _} =
                User.update(ctx.user.id, %{image_url: ctx.user.image_url})
 
-      assert Metadata.get(ctx.avatar.id)
+      assert Repo.get(Metadata, ctx.avatar.id)
     end
   end
 
@@ -315,21 +322,21 @@ defmodule Wocky.User.UserTest do
       assert {:ok, _} =
                User.update(ctx.user.id, %{image_url: ctx.new_avatar_url})
 
-      refute Metadata.get(ctx.avatar.id)
+      refute Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when one is not set", ctx do
       assert {:ok, _} =
                User.update(ctx.user.id, %{first_name: Name.first_name()})
 
-      assert Metadata.get(ctx.avatar.id)
+      assert Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when the same one is set", ctx do
       assert {:ok, _} =
                User.update(ctx.user.id, %{image_url: ctx.user.image_url})
 
-      assert Metadata.get(ctx.avatar.id)
+      assert Repo.get(Metadata, ctx.avatar.id)
     end
   end
 

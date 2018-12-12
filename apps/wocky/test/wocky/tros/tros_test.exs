@@ -31,12 +31,6 @@ defmodule Wocky.TROSTest do
     assert TROS.get_base_id("file") == "file"
   end
 
-  test "get_type/1" do
-    assert TROS.get_type("file-original") == :original
-    assert TROS.get_type("file-thumbnail") == :thumbnail
-    assert TROS.get_type("file") == :full
-  end
-
   test "variants/1" do
     variants = TROS.variants("file")
 
@@ -60,10 +54,6 @@ defmodule Wocky.TROSTest do
       assert {:error, _} = TROS.get_metadata(ID.new())
     end
 
-    test "update_access/2", ctx do
-      assert {:ok, _} = TROS.update_access(ctx.id, "access")
-    end
-
     test "delete/2", ctx do
       assert {:ok, _} = TROS.delete(ctx.id, ctx.user)
     end
@@ -71,10 +61,6 @@ defmodule Wocky.TROSTest do
     test "make_upload_response/5", ctx do
       assert {:ok, {_, _}} =
                TROS.make_upload_response(ctx.user, ID.new(), 100, "all", [])
-    end
-
-    test "make_download_response/1", ctx do
-      assert {:ok, _} = TROS.make_download_response(ctx.id)
     end
   end
 end
