@@ -21,7 +21,7 @@ help:
 ### Run tests in CI
 
 unittest: ## Run the unit tests locally
-	mix do credo, ecto.reset, test
+	mix do credo, ecto.reset, coveralls
 
 migrationtest: undumpdb
 	mix ecto.migrate
