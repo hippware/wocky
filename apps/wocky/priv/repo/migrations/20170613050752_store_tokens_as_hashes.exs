@@ -1,10 +1,10 @@
 defmodule Wocky.Repo.Migrations.StoreTokensAsHashes do
   use Wocky.Repo.Migration
 
-  import Ecto.Query
+  # import Ecto.Query
 
   # alias Comeonin.Bcrypt
-  alias Wocky.Repo
+  # alias Wocky.Repo
 
   def up do
     rename table(:tokens), :token, to: :token_hash
