@@ -55,11 +55,6 @@
     service: eks-deploy
     command: ./wocky-deploy testing
     dockercfg_service: aws-dockercfg
-  - name: deploy_to_next
-    tag: ^next$
-    service: eks-deploy
-    command: ./wocky-deploy next
-    dockercfg_service: aws-dockercfg
   - name: kick_circleci
     tag: ^master$
     service: curl-ssl-jq
