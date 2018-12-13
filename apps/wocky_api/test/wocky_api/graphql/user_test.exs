@@ -638,20 +638,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "hasUsedGeofence" do
-    @query """
-    query {
-      currentUser {
-        hasUsedGeofence
-      }
-    }
-    """
-    test "Should always be true", %{user: user} do
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
-    end
-  end
-
   describe "invitation codes" do
     @query """
     mutation {

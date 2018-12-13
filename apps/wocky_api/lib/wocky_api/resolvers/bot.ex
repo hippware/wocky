@@ -174,7 +174,6 @@ defmodule WockyAPI.Resolvers.Bot do
     subscribers_query =
       case type do
         :subscriber -> Bot.subscribers_query(bot)
-        :guest -> Bot.subscribers_query(bot)
         :visitor -> Bot.visitors_query(bot)
       end
 
