@@ -19,16 +19,16 @@ defmodule Wocky.BlockTest do
     test "block/2 should be bi-directional", %{user1: u1, user2: u2} do
       Block.block(u1, u2)
 
-      assert Block.blocked?(u1.id, u2.id)
-      assert Block.blocked?(u2.id, u1.id)
+      assert Block.blocked?(u1, u2)
+      assert Block.blocked?(u2, u1)
     end
 
     test "unblock/2 should remove a block", %{user1: u1, user2: u2} do
       Block.block(u1, u2)
       Block.unblock(u1, u2)
 
-      refute Block.blocked?(u1.id, u2.id)
-      refute Block.blocked?(u2.id, u1.id)
+      refute Block.blocked?(u1, u2)
+      refute Block.blocked?(u2, u1)
     end
 
     test "block should remain if both users block and one unblocks", %{
@@ -39,8 +39,16 @@ defmodule Wocky.BlockTest do
       Block.block(u2, u1)
       Block.unblock(u1, u2)
 
-      assert Block.blocked?(u1.id, u2.id)
-      assert Block.blocked?(u2.id, u1.id)
+      assert Block.blocked?(u1, u2)
+      assert Block.blocked?(u2, u1)
+    end
+
+    test "blocks_query/1", %{user1: u1, user2: u2} do
+      Block.block(u1, u2)
+
+      assert [block] = u1.id |> Block.blocks_query() |> Repo.all()
+      assert block.blocker_id == u1.id
+      assert block.blockee_id == u2.id
     end
 
     test "object_visible_query/3", ctx do
