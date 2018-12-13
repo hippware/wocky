@@ -247,14 +247,14 @@ defmodule Wocky.Bot do
   end
 
   @spec visit(t, User.t(), boolean) :: :ok
-  def visit(bot, user, notify \\ true) do
+  def visit(bot, user, notify) do
     Subscription.visit(user, bot)
     if notify, do: send_visit_notifications(user, bot, :enter)
     :ok
   end
 
   @spec depart(t, User.t(), boolean) :: :ok
-  def depart(bot, user, notify \\ true) do
+  def depart(bot, user, notify) do
     Subscription.depart(user, bot)
     if notify, do: send_visit_notifications(user, bot, :exit)
     :ok
@@ -366,14 +366,9 @@ defmodule Wocky.Bot do
     |> order_by([..., a], desc: a.visited_at)
   end
 
-  @spec subscribers_query(t, boolean()) :: [User.t()]
-  def subscribers_query(bot, include_owner \\ true) do
-    q = Ecto.assoc(bot, :subscribers)
-
-    case include_owner do
-      false -> where(q, [u], u.id != ^bot.user_id)
-      true -> q
-    end
+  @spec subscribers_query(t) :: [User.t()]
+  def subscribers_query(bot) do
+    Ecto.assoc(bot, :subscribers)
   end
 
   @spec subscriber_query(Bot.t(), User.id()) :: Queryable.t()

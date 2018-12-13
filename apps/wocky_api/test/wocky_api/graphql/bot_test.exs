@@ -904,7 +904,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
     test "get bot visitors", %{bot: bot, user: user, user2: user2} do
       Bot.subscribe(bot, user2)
-      Bot.visit(bot, user2)
+      Bot.visit(bot, user2, false)
 
       result = run_query(@query, user, %{"id" => bot.id, "type" => "VISITOR"})
 

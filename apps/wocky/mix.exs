@@ -60,10 +60,7 @@ defmodule Wocky.Mixfile do
           "www",
           "support",
           "null"
-        ],
-        hs_prepopulation_user: "__new_user_hs_archive__",
-        hs_prepopulation_days: 28,
-        hs_prepopulation_min_items: 10
+        ]
       ]
     ]
   end
