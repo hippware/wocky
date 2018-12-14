@@ -21,7 +21,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo.ID
-  alias Wocky.Roster.InitialContact
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TrafficLog
   alias Wocky.TROS
@@ -137,12 +136,6 @@ defmodule Wocky.Repo.Factory do
       message_id: ID.new(),
       payload: ~s(%{"aps" => %{"alert" => #{Lorem.sentence()}}}),
       response: "success"
-    }
-  end
-
-  def initial_contact_factory do
-    %InitialContact{
-      type: Enum.random(["follower", "followee", "friend"])
     }
   end
 
