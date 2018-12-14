@@ -34,6 +34,9 @@ config :wocky,
   welcome_email_subject: "Welcome to tinyrobot!",
   welcome_field_mappings: [{"user_handle", :handle}],
 
+  # SMS messaging
+  twilio_number: "+18329373533",
+
   # Diagnostics
   log_traffic: {:system, :boolean, "WOCKY_LOG_TRAFFIC", true}
 
@@ -129,6 +132,10 @@ config :pigeon, :apns,
     key: {:wocky, "certs/testing.key"},
     mode: :dev
   }
+
+config :ex_twilio,
+  account_sid: {:system, "TWILIO_ACCOUNT_SID"},
+  auth_token: {:system, "TWILIO_AUTH_TOKEN"}
 
 config :goth,
   json: """
