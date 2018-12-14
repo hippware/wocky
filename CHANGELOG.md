@@ -5,9 +5,6 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
---------
-# `NEXT`
-
 * Set up 'Next' server environment (#1948)
 * Remove old features (PR #1913)
 * GraphQL presence management (#1671, PR #1934)
@@ -68,10 +65,13 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Make the naming of attached images consistent across objects (#2098)
 * Update: recon (PR #2102), confex (PR #2101)
 * Remove remaining uses of JIDs (#2090, PR #2099)
-
+* Make next mainline (#2110)
 
 ----------
-# `MASTER`
+
+# DISCONTINUITY
+
+After `2018.10.23+r14cec96`, the source code tree split into two branches. For releases on the old branch, please see https://github.com/hippware/wocky/blob/xmpp-stable/CHANGELOG.md
 
 
 # 2018.10.23+r14cec96
