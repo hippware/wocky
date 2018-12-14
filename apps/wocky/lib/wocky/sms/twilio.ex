@@ -6,7 +6,7 @@ defmodule Wocky.SMS.Twilio do
   alias ExTwilio.Message
 
   def send(recipient, body) do
-    sender = Application.fetch_env!(:wocky, :twilio_number)
+    sender = Confex.get_env(:wocky, :twilio_number)
 
     with {:ok, _} <- Message.create(to: recipient, from: sender, body: body) do
       :ok

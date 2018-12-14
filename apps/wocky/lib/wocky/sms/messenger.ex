@@ -5,7 +5,7 @@ defmodule Wocky.SMS.Messenger do
 
   @spec send(binary, binary) :: :ok
   def send(recipient, body) do
-    backend = Application.fetch_env!(:wocky, :sms_backend)
+    backend = Confex.get_env(:wocky, :sms_backend)
     backend.send(recipient, body)
   end
 end
