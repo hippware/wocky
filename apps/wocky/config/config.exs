@@ -35,6 +35,7 @@ config :wocky,
   welcome_field_mappings: [{"user_handle", :handle}],
 
   # SMS messaging
+  sms_backend: {:system, :module, "WOCKY_SMS_BACKEND", Wocky.SMS.Sandbox},
   twilio_number: "+18329373533",
 
   # Diagnostics
