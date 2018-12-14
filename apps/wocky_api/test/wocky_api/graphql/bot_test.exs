@@ -17,7 +17,6 @@ defmodule WockyAPI.GraphQL.BotTest do
       query ($id: UUID!) {
         bot (id: $id) {
           id
-          server
           createdAt
           updatedAt
         }
@@ -31,9 +30,8 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert result.data == %{
                "bot" => %{
                  "id" => bot.id,
-                 "server" => Wocky.host(),
-                 "createdAt" => Timestamp.to_string(bot.created_at),
-                 "updatedAt" => Timestamp.to_string(bot.updated_at)
+                 "createdAt" => Timestamp.to_string!(bot.created_at),
+                 "updatedAt" => Timestamp.to_string!(bot.updated_at)
                }
              }
     end
@@ -906,7 +904,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
     test "get bot visitors", %{bot: bot, user: user, user2: user2} do
       Bot.subscribe(bot, user2)
-      Bot.visit(bot, user2)
+      Bot.visit(bot, user2, false)
 
       result = run_query(@query, user, %{"id" => bot.id, "type" => "VISITOR"})
 

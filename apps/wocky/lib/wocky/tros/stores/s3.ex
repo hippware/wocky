@@ -58,14 +58,6 @@ defmodule Wocky.TROS.Store.S3 do
     {:error, {:retrieve_error, text}}
   end
 
-  def make_download_response(file_id) do
-    resp_fields = [
-      {"url", s3_url(bucket(), file_id, :get)}
-    ]
-
-    {[], resp_fields}
-  end
-
   def get_download_url(%{ready: false}, _file_name), do: ""
 
   def get_download_url(_metadata, file_name) do

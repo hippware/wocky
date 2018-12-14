@@ -13,21 +13,13 @@ defmodule WockyAPI.Schema.UserTypes do
     Bot,
     Media,
     Message,
-    User,
-    Utils
+    User
   }
 
   @desc "The main Wocky user interface"
   interface :user do
     @desc "The user's unique ID"
     field :id, non_null(:uuid), do: scope(:public)
-
-    @desc "The server on which the user resides"
-    field :server, non_null(:string) do
-      scope(:public)
-      resolve &Utils.server_resolver/3
-      deprecate "server is deprecated and should be ignored"
-    end
 
     @desc "The user's unique handle"
     field :handle, :string, do: scope(:public)
@@ -102,12 +94,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's email address"
     field :email, :string
-
-    @desc "Check whether a user has made use of any geofence features"
-    field :has_used_geofence, :boolean do
-      deprecate "All users now always use geofence"
-      resolve fn _, _ -> {:ok, true} end
-    end
 
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do

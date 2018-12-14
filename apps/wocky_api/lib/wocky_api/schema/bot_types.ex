@@ -8,9 +8,7 @@ defmodule WockyAPI.Schema.BotTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.Bot
-  alias WockyAPI.Resolvers.Media
-  alias WockyAPI.Resolvers.Utils
+  alias WockyAPI.Resolvers.{Bot, Media}
 
   connection :bots, node_type: :bot do
     total_count_field()
@@ -31,21 +29,12 @@ defmodule WockyAPI.Schema.BotTypes do
     A user who is subscribed to the bot and who is currently visiting it
     """
     value :visitor
-
-    @desc "Deprecated"
-    value :guest, deprecate: "All subscribers are now guests"
   end
 
   @desc "A Wocky bot"
   object :bot do
     @desc "The bot's unique ID"
     field :id, non_null(:uuid)
-
-    @desc "The server on which the bot resides"
-    field :server, non_null(:string) do
-      resolve &Utils.server_resolver/3
-      deprecate "server is deprecated and should be ignored"
-    end
 
     @desc "The bot's title"
     field :title, non_null(:string)
@@ -79,13 +68,6 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Extra address data (freeform string, client-side use only)"
     field :address_data, :string
-
-    @desc "Whether the bot is publicly visible"
-    field :public, non_null(:boolean), do: deprecate("All bots are now private")
-
-    @desc "Whether the bot has geofence (visitor reporting) enabled"
-    field :geofence, non_null(:boolean),
-      do: deprecate("All bots are now geofence-enabled")
 
     @desc "The bot's owner"
     field :owner, non_null(:user), resolve: assoc(:user)
@@ -186,10 +168,6 @@ defmodule WockyAPI.Schema.BotTypes do
   input_object :bot_params do
     field :title, :string
 
-    field :server, :string do
-      deprecate "server field is deprecated and will be ignored"
-    end
-
     field :lat, :float
     field :lon, :float
     field :radius, :float
@@ -200,10 +178,6 @@ defmodule WockyAPI.Schema.BotTypes do
     field :icon, :string
     field :address, :string
     field :address_data, :string
-    field :public, :boolean, do: deprecate("All bots are now private")
-
-    field :geofence, :boolean,
-      do: deprecate("All bots are now geofence-enabled")
   end
 
   input_object :bot_create_input do
@@ -264,9 +238,7 @@ defmodule WockyAPI.Schema.BotTypes do
 
   input_object :bot_item_delete_input do
     @desc "ID of the bot containing the item"
-    field :bot_id, non_null(:uuid) do
-      deprecate "The bot ID is no longer required for deleting items"
-    end
+    field :bot_id, non_null(:uuid)
 
     @desc "ID of the item to delete"
     field :id, non_null(:uuid)
@@ -327,16 +299,6 @@ defmodule WockyAPI.Schema.BotTypes do
       arg :limit, :integer
 
       resolve &Bot.get_local_bots/3
-    end
-
-    @desc "Retrieve a list of discoverable bots created after a given time"
-    field :discover_bots, list_of(:string) do
-      @desc "Optional time after which bots must have been created"
-      arg :since, :datetime
-
-      deprecate "This operation is no longer supported"
-
-      resolve fn _, _, _ -> {:ok, []} end
     end
   end
 

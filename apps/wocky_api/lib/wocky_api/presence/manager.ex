@@ -53,7 +53,8 @@ defmodule WockyAPI.Presence.Manager do
 
     contact_refs =
       user.id
-      |> Roster.followees(false)
+      |> Roster.followees_query(user.id, false)
+      |> Repo.all()
       |> Enum.reduce(BiMap.new(), &maybe_monitor/2)
 
     {:ok, %{mon_refs: [mon_ref], user_id: user.id, contact_refs: contact_refs}}

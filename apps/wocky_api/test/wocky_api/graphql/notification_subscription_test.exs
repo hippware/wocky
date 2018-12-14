@@ -91,7 +91,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Bot.visit(bot, user2)
+      Bot.visit(bot, user2, true)
 
       assert_push "subscription:data", push, 2000
 
@@ -108,7 +108,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Bot.depart(bot, user2)
+      Bot.depart(bot, user2, true)
 
       assert_push "subscription:data", push, 2000
 

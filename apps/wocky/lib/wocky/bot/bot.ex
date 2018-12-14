@@ -3,8 +3,6 @@ defmodule Wocky.Bot do
 
   use Elixometer
   use Wocky.Repo.Schema
-  use Wocky.Repo.Changeset
-  use Wocky.RSMHelper
 
   import Ecto.Query
 
@@ -124,6 +122,11 @@ defmodule Wocky.Bot do
     |> maybe_filter_pending(not include_pending)
   end
 
+  defp maybe_filter_pending(queryable, false), do: queryable
+
+  defp maybe_filter_pending(queryable, true),
+    do: where(queryable, pending: false)
+
   @spec get_bot(id, User.t(), boolean) :: t | nil
   def get_bot(id, requestor, include_pending \\ false) do
     id
@@ -136,6 +139,29 @@ defmodule Wocky.Bot do
     id
     |> get_query(include_pending)
     |> is_visible_query(requestor)
+  end
+
+  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
+  def is_visible_query(queryable, user) do
+    queryable
+    |> Block.object_visible_query(user.id)
+    |> join(
+      :left,
+      [b, ...],
+      invitation in Invitation,
+      on: b.id == invitation.bot_id and invitation.invitee_id == ^user.id
+    )
+    |> join(
+      :left,
+      [b, ...],
+      sub in Subscription,
+      on: b.id == sub.bot_id and sub.user_id == ^user.id
+    )
+    |> where(
+      [b, ..., invitation, sub],
+      b.user_id == ^user.id or not is_nil(sub.user_id) or
+        not is_nil(invitation.user_id)
+    )
   end
 
   @spec get_owned_bot(id, User.t(), boolean) :: t | nil
@@ -156,18 +182,6 @@ defmodule Wocky.Bot do
     |> Repo.insert!()
   end
 
-  @spec changeset(t, map) :: Changeset.t()
-  def changeset(struct, params) do
-    struct
-    |> cast(params, @change_fields)
-    |> validate_required(@required_fields)
-    |> validate_number(:radius, greater_than: 0)
-    |> validate_not_nil([:description])
-    |> put_change(:pending, false)
-    |> unique_constraint(:shortname)
-    |> foreign_key_constraint(:user_id)
-  end
-
   @spec insert(map) :: {:ok, t} | {:error, any}
   def insert(params) do
     with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
@@ -185,6 +199,15 @@ defmodule Wocky.Bot do
     struct |> changeset(params) |> op.()
   end
 
+  @spec bump_update_time(Bot.t()) :: :ok
+  def bump_update_time(bot) do
+    bot
+    |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
+    |> Repo.update!()
+
+    :ok
+  end
+
   @spec delete(t) :: :ok
   def delete(bot) do
     Repo.delete(bot)
@@ -192,11 +215,20 @@ defmodule Wocky.Bot do
     :ok
   end
 
-  @spec owner(t) :: User.t()
-  def owner(bot) do
-    bot = Repo.preload(bot, :user)
-    bot.user
+  @spec changeset(t, map) :: Changeset.t()
+  def changeset(struct, params) do
+    struct
+    |> cast(params, @change_fields)
+    |> validate_required(@required_fields)
+    |> validate_number(:radius, greater_than: 0)
+    |> validate_not_nil([:description])
+    |> put_change(:pending, false)
+    |> unique_constraint(:shortname)
+    |> foreign_key_constraint(:user_id)
   end
+
+  # ----------------------------------------------------------------------
+  # Bot relationships
 
   @spec subscription(t, User.t()) :: Subscription.state()
   def subscription(bot, user) do
@@ -215,14 +247,14 @@ defmodule Wocky.Bot do
   end
 
   @spec visit(t, User.t(), boolean) :: :ok
-  def visit(bot, user, notify \\ true) do
+  def visit(bot, user, notify) do
     Subscription.visit(user, bot)
     if notify, do: send_visit_notifications(user, bot, :enter)
     :ok
   end
 
   @spec depart(t, User.t(), boolean) :: :ok
-  def depart(bot, user, notify \\ true) do
+  def depart(bot, user, notify) do
     Subscription.depart(user, bot)
     if notify, do: send_visit_notifications(user, bot, :exit)
     :ok
@@ -334,14 +366,9 @@ defmodule Wocky.Bot do
     |> order_by([..., a], desc: a.visited_at)
   end
 
-  @spec subscribers_query(t, boolean()) :: [User.t()]
-  def subscribers_query(bot, include_owner \\ true) do
-    q = Ecto.assoc(bot, :subscribers)
-
-    case include_owner do
-      false -> where(q, [u], u.id != ^bot.user_id)
-      true -> q
-    end
+  @spec subscribers_query(t) :: [User.t()]
+  def subscribers_query(bot) do
+    Ecto.assoc(bot, :subscribers)
   end
 
   @spec subscriber_query(Bot.t(), User.id()) :: Queryable.t()
@@ -359,35 +386,32 @@ defmodule Wocky.Bot do
     |> order_by([..., s], desc: s.visited_at)
   end
 
-  @spec subscribers(t) :: [User.t()]
-  def subscribers(bot) do
-    Repo.preload(bot, [:subscribers]).subscribers
-  end
-
-  defp tidy_subscribers(subscribers) do
-    subscribers
-    |> Enum.sort_by(& &1.id)
-    |> Enum.uniq_by(& &1.id)
-  end
-
   @spec notification_recipients(Bot.t(), User.t()) :: [User.t()]
   def notification_recipients(bot, sender) do
-    bot = Repo.preload(bot, [:user])
+    bot =
+      bot
+      |> Repo.preload([:subscribers])
+      |> Repo.preload([:user])
 
-    bot
-    |> subscribers()
-    |> tidy_subscribers()
+    bot.subscribers
+    |> Enum.sort_by(& &1.id)
+    |> Enum.uniq_by(& &1.id)
     |> Enum.filter(&(&1.id != sender.id))
   end
 
-  @doc "Count of all subscribers"
-  @spec subscriber_count(Bot.t()) :: pos_integer
-  def subscriber_count(bot) do
-    bot
-    |> Ecto.assoc(:subscribers)
-    |> select([s], count(s.id))
-    |> Repo.one()
-  end
+  @spec sub_setup_event(Bot.t()) :: Waiter.event()
+  def sub_setup_event(bot), do: "bot_sub_setup-" <> bot.id
+
+  # ----------------------------------------------------------------------
+  # Location
+
+  @spec lat(Bot.t()) :: float | nil
+  def lat(%Bot{location: %Geo.Point{coordinates: {_, lat}}}), do: lat
+  def lat(_), do: nil
+
+  @spec lon(Bot.t()) :: float | nil
+  def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
+  def lon(_), do: nil
 
   @doc "Returns the bot's distance from the specified location in meters."
   @spec distance_from(Bot.t(), Point.t()) :: float
@@ -399,29 +423,6 @@ defmodule Wocky.Bot do
   @spec contains?(Bot.t(), Point.t()) :: boolean
   def contains?(bot, loc) do
     distance_from(bot, loc) <= bot.radius
-  end
-
-  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
-  def is_visible_query(queryable, user) do
-    queryable
-    |> Block.object_visible_query(user.id)
-    |> join(
-      :left,
-      [b, ...],
-      invitation in Invitation,
-      on: b.id == invitation.bot_id and invitation.invitee_id == ^user.id
-    )
-    |> join(
-      :left,
-      [b, ...],
-      sub in Subscription,
-      on: b.id == sub.bot_id and sub.user_id == ^user.id
-    )
-    |> where(
-      [b, ..., invitation, sub],
-      b.user_id == ^user.id or not is_nil(sub.user_id) or
-        not is_nil(invitation.user_id)
-    )
   end
 
   def filter_by_location(query, point_a, point_b) do
@@ -436,51 +437,4 @@ defmodule Wocky.Bot do
       )
     )
   end
-
-  @spec bump_update_time(Bot.t()) :: :ok
-  def bump_update_time(bot) do
-    bot
-    |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
-    |> Repo.update!()
-
-    :ok
-  end
-
-  @spec lat(Bot.t()) :: float | nil
-  def lat(%Bot{location: %Geo.Point{coordinates: {_, lat}}}), do: lat
-  def lat(_), do: nil
-
-  @spec lon(Bot.t()) :: float | nil
-  def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
-  def lon(_), do: nil
-
-  @spec fix_from_json(Bot.t()) :: Bot.t()
-  def fix_from_json(%Bot{location: nil} = bot), do: bot
-
-  def fix_from_json(%Bot{location: location} = bot) do
-    new_loc =
-      location
-      |> GeoUtils.get_lat_lon()
-      |> Tuple.to_list()
-      |> Enum.map(&ensure_float/1)
-      |> List.to_tuple()
-      |> GeoUtils.point()
-
-    Map.put(bot, :location, new_loc)
-  end
-
-  defp ensure_float(i) when is_integer(i), do: i / 1
-  defp ensure_float(f) when is_float(f), do: f
-
-  defp maybe_filter_pending(queryable, false) do
-    queryable
-  end
-
-  defp maybe_filter_pending(queryable, true) do
-    queryable
-    |> where(pending: false)
-  end
-
-  @spec sub_setup_event(Bot.t()) :: Waiter.event()
-  def sub_setup_event(bot), do: "bot_sub_setup-" <> bot.id
 end

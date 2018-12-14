@@ -16,16 +16,6 @@ defmodule Wocky.TROS.Store.Test do
     :ok
   end
 
-  def make_download_response(file_name) do
-    record(file_name)
-
-    resp_fields = [
-      {"url", "http://localhost/some/file/location"}
-    ]
-
-    {[], resp_fields}
-  end
-
   def make_upload_response(reference_url, file_id, _size, _metadata) do
     record(file_id)
     url = "http://localhost/some/file/location"

@@ -71,30 +71,6 @@ defmodule Wocky.Bot.ItemTest do
        item2: item2}
     end
 
-    test "get/1", %{bot: bot} do
-      assert length(Item.get(bot)) == 2
-      assert Item.get(Factory.build(:bot)) == []
-    end
-
-    test "get_count/1", %{bot: bot} do
-      Factory.insert(:item, bot: bot, image_url: "foo")
-      Factory.insert(:item, bot: bot, image_url: nil)
-
-      assert Item.get_count(bot) == 4
-    end
-
-    test "get_images/1", %{bot: bot, owner: owner} do
-      Factory.insert(:item, bot: bot, user: owner, image_url: "foo")
-
-      assert length(Item.get_images(bot)) == 1
-    end
-
-    test "get_image_count/1", %{bot: bot, owner: owner} do
-      Factory.insert(:item, bot: bot, user: owner, image_url: "foo")
-
-      assert Item.get_image_count(bot) == 1
-    end
-
     test "get/2", %{id: id, bot: bot} do
       assert Item.get(id, bot)
       refute Item.get(id, Factory.build(:bot))
@@ -162,15 +138,6 @@ defmodule Wocky.Bot.ItemTest do
       # should allow publication (update) of an item that already exists
       # and is owned by the same user
       assert {:ok, _} = Item.put(item.id, ctx.bot, user, Lorem.paragraph(), nil)
-    end
-
-    test "delete/1", ctx do
-      assert Item.delete(ctx.bot) == :ok
-
-      refute Item.get(ctx.id, ctx.bot)
-
-      # should return :ok when the bot doesn't exist
-      assert Item.delete(Factory.build(:bot)) == :ok
     end
 
     test "delete/2", ctx do

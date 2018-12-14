@@ -54,6 +54,26 @@ defmodule Wocky.Block do
     :ok
   end
 
+  @spec blocked?(User.t(), User.t()) :: boolean
+  def blocked?(%User{id: id1}, %User{id: id2}), do: blocked?(id1, id2)
+
+  @spec blocked?(User.id(), User.id()) :: boolean
+  def blocked?(u1_id, u2_id) do
+    Block
+    |> where(
+      [b],
+      (b.blocker_id == ^u1_id and b.blockee_id == ^u2_id) or
+        (b.blocker_id == ^u2_id and b.blockee_id == ^u1_id)
+    )
+    |> Repo.all() != []
+  end
+
+  @spec blocks_query(User.id()) :: Queryable.t()
+  def blocks_query(user_id) do
+    Block
+    |> where(blocker_id: ^user_id)
+  end
+
   @doc """
   Composable query fragment to filter out objects with owners that are blocking/
   blocked by the supplied user.
@@ -72,32 +92,5 @@ defmodule Wocky.Block do
              b.blocker_id == ^requester_id)
     )
     |> where([..., b], is_nil(b.blocker_id))
-  end
-
-  @spec blocked?(User.t(), User.t()) :: boolean
-  def blocked?(%User{id: id1}, %User{id: id2}), do: blocked?(id1, id2)
-
-  @spec blocked?(User.id(), User.id()) :: boolean
-  def blocked?(u1_id, u2_id) do
-    Block
-    |> where(
-      [b],
-      (b.blocker_id == ^u1_id and b.blockee_id == ^u2_id) or
-        (b.blocker_id == ^u2_id and b.blockee_id == ^u1_id)
-    )
-    |> Repo.all() != []
-  end
-
-  @spec blocks(User.id()) :: t()
-  def blocks(user_id) do
-    Block
-    |> where([b], b.blocker_id == ^user_id or b.blockee_id == ^user_id)
-    |> Repo.all()
-  end
-
-  @spec blocks_query(User.id()) :: Queryable.t()
-  def blocks_query(user_id) do
-    Block
-    |> where(blocker_id: ^user_id)
   end
 end

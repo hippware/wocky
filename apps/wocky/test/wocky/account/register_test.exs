@@ -4,7 +4,6 @@ defmodule Wocky.Account.RegisterTest do
   alias Wocky.Account.Register
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
-  alias Wocky.Roster
   alias Wocky.Roster.Item
   alias Wocky.User
 
@@ -127,7 +126,11 @@ defmodule Wocky.Account.RegisterTest do
     end
 
     test "initial contacts", %{user: user, initial_contacts: init_contacts} do
-      roster = Roster.get(user.id)
+      roster =
+        Item
+        |> where(user_id: ^user.id)
+        |> preload(:contact)
+        |> Repo.all()
 
       assert length(init_contacts) == length(roster)
 

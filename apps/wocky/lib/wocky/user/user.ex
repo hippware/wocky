@@ -15,7 +15,6 @@ defmodule Wocky.User do
     Block,
     Bot,
     Conversation,
-    Email,
     GeoUtils,
     Message,
     Repo,
@@ -27,7 +26,15 @@ defmodule Wocky.User do
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.{Avatar, BotEvent, GeoFence, InviteCode, Location}
+
+  alias Wocky.User.{
+    Avatar,
+    BotEvent,
+    GeoFence,
+    InviteCode,
+    Location,
+    WelcomeEmail
+  }
 
   @forever "2200-01-01T00:00:00.000000Z" |> DateTime.from_iso8601() |> elem(1)
 
@@ -133,62 +140,32 @@ defmodule Wocky.User do
 
   @invite_code_expire_days 30
 
-  @doc "Return the list of fields that can be updated on an existing user."
-  @spec valid_update_fields :: [binary]
-  def valid_update_fields do
-    for field <- @update_fields, do: to_string(field)
-  end
+  # ----------------------------------------------------------------------
+  # Utilities
+
+  @doc "Returns true if the user is a Hippware employee"
+  @spec hippware?(t) :: boolean
+  def hippware?(%User{email: email}),
+    do: email && String.ends_with?(email, "@hippware.com")
+
+  def hippware?(_), do: false
+
+  @doc "Generate a full name for anywhere it needs pretty-printing"
+  @spec full_name(t) :: String.t()
+  def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
+
+  def no_index_role, do: @no_index_role
+  def system_role, do: @system_role
+  def forever_ts, do: @forever
+
+  # ----------------------------------------------------------------------
+  # Database interaction
 
   @spec get_user(id, t | nil) :: t | nil
   def get_user(id, requestor \\ nil) do
     if is_nil(requestor) || !Block.blocked?(requestor.id, id) do
       Repo.get(User, id)
     end
-  end
-
-  @doc "Returns all bots that the user subscribes to"
-  @spec get_subscriptions(t) :: [Bot.t()]
-  def get_subscriptions(user) do
-    user
-    |> subscribed_bots_query()
-    |> Repo.all()
-  end
-
-  @spec bot_count(User.t()) :: non_neg_integer
-  def bot_count(user) do
-    user
-    |> Ecto.assoc(:bots)
-    |> where(pending: false)
-    |> select([b], count(b.id))
-    |> Repo.one!()
-  end
-
-  @spec owns?(t, Bot.t()) :: boolean
-  def owns?(user, bot), do: user.id == bot.user_id
-
-  @spec can_access?(t, Bot.t()) :: boolean
-  def can_access?(user, bot),
-    do:
-      owns?(user, bot) || Invitation.invited?(bot, user) ||
-        Subscription.state(user, bot) != nil
-
-  @doc """
-    Returns true if a bot should appear in a user's geosearch results. Criteria:
-      * Bots user owns
-      * Bots user is subscribed to
-  """
-  @spec searchable?(t, Bot.t()) :: boolean
-  def searchable?(user, bot) do
-    Bot.subscription(bot, user) != nil
-  end
-
-  @doc "Returns all bots that the user owns"
-  @spec get_owned_bots(t) :: [Bot.t()]
-  def get_owned_bots(user) do
-    user
-    |> owned_bots_query()
-    |> order_by(asc: :updated_at)
-    |> Repo.all()
   end
 
   @doc """
@@ -214,6 +191,51 @@ defmodule Wocky.User do
         User.update(struct, fields)
     end
   end
+
+  defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
+  defp maybe_send_welcome(%User{email: nil}), do: :ok
+
+  defp maybe_send_welcome(%User{} = user) do
+    if Confex.get_env(:wocky, :send_welcome_email) do
+      WelcomeEmail.send(user)
+
+      user
+      |> cast(%{welcome_sent: true}, [:welcome_sent])
+      |> Repo.update()
+    else
+      :ok
+    end
+  end
+
+  def remove_auth_details(id) do
+    User
+    |> where(id: ^id)
+    |> Repo.update_all(
+      set: [phone_number: nil, provider: nil, external_id: nil]
+    )
+
+    :ok
+  end
+
+  @doc "Removes the user from the database"
+  @spec delete(id) :: :ok
+  def delete(id) do
+    user = Repo.get(User, id)
+
+    if user do
+      TROS.delete_all(user)
+
+      if user.provider == "firebase",
+        do: FirebaseAuth.delete_user(user.external_id)
+
+      Repo.delete!(user)
+    end
+
+    :ok
+  end
+
+  # ----------------------------------------------------------------------
+  # Validations
 
   def changeset(user, params) do
     user
@@ -306,6 +328,9 @@ defmodule Wocky.User do
     end
   end
 
+  # ----------------------------------------------------------------------
+  # Hiding
+
   @spec hide(t(), boolean() | DateTime.t()) :: {:ok, t()} | {:error, term}
   def hide(user, false), do: User.update(user, %{hidden_until: nil})
   def hide(user, true), do: User.update(user, %{hidden_until: @forever})
@@ -322,6 +347,75 @@ defmodule Wocky.User do
       until -> {DateTime.compare(DateTime.utc_now(), until) != :gt, until}
     end
   end
+
+  @spec filter_hidden(Queryable.t()) :: Queryable.t()
+  def filter_hidden(query) do
+    query
+    |> where(
+      [u, ...],
+      is_nil(u.hidden_until) or u.hidden_until < ^DateTime.utc_now()
+    )
+  end
+
+  # ----------------------------------------------------------------------
+  # Bot relationships
+
+  @doc "Returns all bots that the user owns"
+  @spec get_owned_bots(t) :: [Bot.t()]
+  def get_owned_bots(user) do
+    user
+    |> owned_bots_query()
+    |> order_by(asc: :updated_at)
+    |> Repo.all()
+  end
+
+  @spec owned_bots_query(User.t()) :: Queryable.t()
+  def owned_bots_query(user) do
+    user
+    |> Ecto.assoc(:bots)
+    |> where(pending: false)
+  end
+
+  @doc "Returns all bots that the user subscribes to"
+  @spec get_subscriptions(t) :: [Bot.t()]
+  def get_subscriptions(user) do
+    Bot
+    |> where(pending: false)
+    |> join(
+      :left,
+      [b],
+      s in Subscription,
+      on: b.id == s.bot_id and s.user_id == ^user.id
+    )
+    |> where([b, s], not is_nil(s.user_id))
+    |> Repo.all()
+  end
+
+  @spec can_access?(t, Bot.t()) :: boolean
+  def can_access?(user, bot) do
+    owns?(user, bot) || Invitation.invited?(bot, user) ||
+      Subscription.state(user, bot) != nil
+  end
+
+  defp owns?(user, bot), do: user.id == bot.user_id
+
+  @spec get_bot_relationships(t(), Bot.t()) :: [bot_relationship()]
+  def get_bot_relationships(user, bot) do
+    sub = Subscription.get(user, bot)
+
+    [:visible]
+    |> maybe_add_rel(bot.user_id == user.id, :owned)
+    |> maybe_add_rel(Invitation.invited?(bot, user), :invited)
+    |> maybe_add_rel(sub != nil, [:subscribed])
+    |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
+    |> List.flatten()
+  end
+
+  defp maybe_add_rel(list, true, rel), do: [rel | list]
+  defp maybe_add_rel(list, false, _rel), do: list
+
+  # ----------------------------------------------------------------------
+  # Invite codes
 
   @spec make_invite_code(User.t()) :: binary
   def make_invite_code(user) do
@@ -365,6 +459,9 @@ defmodule Wocky.User do
       true
     end
   end
+
+  # ----------------------------------------------------------------------
+  # Location
 
   @spec get_locations_query(t, device) :: Queryable.t()
   def get_locations_query(user, device) do
@@ -437,12 +534,7 @@ defmodule Wocky.User do
     end
   end
 
-  def hippware?(%User{email: email}),
-    do: email && String.ends_with?(email, "@hippware.com")
-
-  def hippware?(_), do: false
-
-  def should_save_location?(user) do
+  defp should_save_location?(user) do
     GeoFence.save_locations?() || hippware?(user)
   end
 
@@ -463,87 +555,8 @@ defmodule Wocky.User do
 
   defp normalize_captured_at(_), do: DateTime.utc_now()
 
-  @doc "Removes the user from the database"
-  @spec delete(id) :: :ok
-  def delete(id) do
-    user = Repo.get(User, id)
-
-    if user do
-      delete_tros_files(user)
-
-      if user.provider == "firebase",
-        do: FirebaseAuth.delete_user(user.external_id)
-
-      Repo.delete!(user)
-    end
-
-    :ok
-  end
-
-  @spec add_role(id, role) :: :ok
-  def add_role(id, role) do
-    User
-    |> where(id: ^id)
-    |> where([q], ^role not in q.roles)
-    |> Repo.update_all(push: [roles: role])
-
-    :ok
-  end
-
-  @spec remove_role(id, role) :: :ok
-  def remove_role(id, role) do
-    User
-    |> where(id: ^id)
-    |> Repo.update_all(pull: [roles: role])
-
-    :ok
-  end
-
-  @spec owned_bots_query(User.t()) :: Queryable.t()
-  def owned_bots_query(user) do
-    user
-    |> Ecto.assoc(:bots)
-    |> where(pending: false)
-  end
-
-  @spec subscribed_bots_query(User.t()) :: Queryable.t()
-  def subscribed_bots_query(user) do
-    Bot
-    |> where(pending: false)
-    |> join(
-      :left,
-      [b],
-      s in Subscription,
-      on: b.id == s.bot_id and s.user_id == ^user.id
-    )
-    |> where([b, s], not is_nil(s.user_id))
-  end
-
-  @spec filter_hidden(Queryable.t()) :: Queryable.t()
-  def filter_hidden(query) do
-    query
-    |> where(
-      [u, ...],
-      is_nil(u.hidden_until) or u.hidden_until < ^DateTime.utc_now()
-    )
-  end
-
-  @doc "Generate a full name for anywhere it needs pretty-printing"
-  @spec full_name(User.t()) :: String.t()
-  def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
-
-  def no_index_role, do: @no_index_role
-  def system_role, do: @system_role
-
-  def remove_auth_details(id) do
-    User
-    |> where(id: ^id)
-    |> Repo.update_all(
-      set: [phone_number: nil, provider: nil, external_id: nil]
-    )
-
-    :ok
-  end
+  # ----------------------------------------------------------------------
+  # Searching
 
   @spec search_by_name(binary, id, non_neg_integer) :: [User.t()]
   def search_by_name("", _, _), do: []
@@ -570,51 +583,5 @@ defmodule Wocky.User do
     |> where([u], u.id != ^user_id)
     |> limit(^limit)
     |> Repo.all()
-  end
-
-  @spec get_bot_relationships(t(), Bot.t()) :: [bot_relationship()]
-  def get_bot_relationships(user, bot) do
-    sub = Subscription.get(user, bot)
-
-    [:visible]
-    |> maybe_add_rel(bot.user_id == user.id, :owned)
-    |> maybe_add_rel(Invitation.invited?(bot, user), :invited)
-    |> maybe_add_rel(sub != nil, [:subscribed])
-    |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
-    |> List.flatten()
-  end
-
-  def forever_ts, do: @forever
-
-  defp maybe_add_rel(list, true, rel), do: [rel | list]
-  defp maybe_add_rel(list, false, _rel), do: list
-
-  defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
-  defp maybe_send_welcome(%User{email: nil}), do: :ok
-
-  defp maybe_send_welcome(%User{} = user) do
-    if Confex.get_env(:wocky, :send_welcome_email) do
-      send_welcome_email(user)
-    else
-      :ok
-    end
-  end
-
-  defp send_welcome_email(user) do
-    Email.send_welcome_email(user)
-
-    user
-    |> cast(%{welcome_sent: true}, [:welcome_sent])
-    |> Repo.update()
-  end
-
-  defp delete_tros_files(user) do
-    Repo.transaction(fn ->
-      user
-      |> TROSMetadata.owned_query()
-      |> Repo.stream()
-      |> Stream.each(&TROS.delete(&1.id, user))
-      |> Stream.run()
-    end)
   end
 end

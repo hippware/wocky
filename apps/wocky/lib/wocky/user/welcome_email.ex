@@ -1,4 +1,4 @@
-defmodule Wocky.Email do
+defmodule Wocky.User.WelcomeEmail do
   @moduledoc """
   Generates and sends emails for various situations
   """
@@ -9,8 +9,8 @@ defmodule Wocky.Email do
   alias Wocky.Mailer
   alias Wocky.User
 
-  @spec send_welcome_email(User.t()) :: :ok
-  def send_welcome_email(user) do
+  @spec send(User.t()) :: :ok
+  def send(user) do
     new_email()
     |> to({User.full_name(user), user.email})
     |> from(Confex.get_env(:wocky, :welcome_email_from))

@@ -21,4 +21,17 @@ defmodule Wocky.Repo.Validations do
     value = get_field(changeset, field)
     value && value != ""
   end
+
+  def validate_not_nil(changeset, fields) when is_list(fields) do
+    Enum.reduce(fields, changeset, fn field, changeset ->
+      if get_field(changeset, field) == nil do
+        add_error(changeset, field, "nil")
+      else
+        changeset
+      end
+    end)
+  end
+
+  def validate_not_nil(changeset, field),
+    do: validate_not_nil(changeset, [field])
 end

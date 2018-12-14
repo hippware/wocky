@@ -1,8 +1,6 @@
 defmodule Wocky.BotTest do
   use Wocky.DataCase, async: true
 
-  use Wocky.RSMHelper
-
   alias Wocky.Bot
   alias Wocky.GeoUtils
   alias Wocky.Repo
@@ -154,10 +152,6 @@ defmodule Wocky.BotTest do
     end
   end
 
-  test "owner/1", %{bot: bot, user: user} do
-    assert Bot.owner(bot) == user
-  end
-
   describe "subscribers" do
     setup ctx do
       sub = Factory.insert(:user)
@@ -166,24 +160,12 @@ defmodule Wocky.BotTest do
       {:ok, sub: sub}
     end
 
-    test "subscribers/1", %{bot: bot, user: user} do
-      subscribers = Bot.subscribers(bot)
-
-      assert length(subscribers) == 1
-      assert %User{} = hd(subscribers)
-      refute Enum.member?(subscribers, user)
-    end
-
     test "subscribers_query/1", %{bot: bot, user: user} do
       subscribers = bot |> Bot.subscribers_query() |> Repo.all()
 
       assert length(subscribers) == 1
       assert %User{} = hd(subscribers)
       refute Enum.member?(subscribers, user)
-    end
-
-    test "subscriber_count/1", %{bot: bot} do
-      assert Bot.subscriber_count(bot) == 1
     end
   end
 

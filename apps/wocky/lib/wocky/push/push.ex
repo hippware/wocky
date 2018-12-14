@@ -89,31 +89,8 @@ defmodule Wocky.Push do
     :ok
   end
 
-  @spec purge(Wocky.User.t()) :: :ok
-  def purge(user) do
-    Repo.delete_all(from Token, where: [user_id: ^user.id])
-
-    :ok
-  end
-
   # ===================================================================
   # Push Notification API
-
-  @spec notify(Wocky.User.t(), Wocky.User.device(), any) :: :ok
-  def notify(user, device, event) do
-    if enabled?() do
-      token = get_token(user.id, device)
-
-      do_notify(%__MODULE__{
-        user: user,
-        device: device,
-        token: token,
-        event: event
-      })
-    end
-
-    :ok
-  end
 
   @spec notify_all(Wocky.User.t(), any) :: :ok
   def notify_all(user, event) do
@@ -147,14 +124,6 @@ defmodule Wocky.Push do
   defp enabled?, do: get_conf(:enabled)
 
   defp log_payload?, do: get_conf(:log_payload)
-
-  defp get_token(user_id, device) do
-    Repo.one(
-      from t in Token,
-        where: [user_id: ^user_id, device: ^device, valid: true],
-        select: t.token
-    )
-  end
 
   defp get_all_tokens(user_id) do
     Repo.all(

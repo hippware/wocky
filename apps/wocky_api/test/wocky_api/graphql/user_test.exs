@@ -149,7 +149,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "set user as temporarally hidden", %{user: user} do
-      ts = Timestamp.shift(days: 1) |> Timestamp.to_string()
+      ts = Timestamp.shift(days: 1) |> Timestamp.to_string!()
       result = run_query(@query, user, %{"enable" => true, "expire" => ts})
 
       refute has_errors(result)
@@ -635,20 +635,6 @@ defmodule WockyAPI.GraphQL.UserTest do
                  }
                }
              } = result.data
-    end
-  end
-
-  describe "hasUsedGeofence" do
-    @query """
-    query {
-      currentUser {
-        hasUsedGeofence
-      }
-    }
-    """
-    test "Should always be true", %{user: user} do
-      result = run_query(@query, user)
-      assert result.data == %{"currentUser" => %{"hasUsedGeofence" => true}}
     end
   end
 
