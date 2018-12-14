@@ -104,7 +104,7 @@ defmodule WockyAPI.Resolvers.Utils do
      }}
   end
 
-  defp maybe_post_process(connection, nil), do: connection
+  defp maybe_post_process(connection, _), do: connection
 
   def map_edges({:error, _} = r, _), do: r
 
