@@ -18,12 +18,14 @@ data:
   WOCKY_PUSH_LOG_PAYLOAD: "false"
   WOCKY_GEOFENCE_SAVE_LOCATIONS: "false"
   WOCKY_ENABLE_BYPASS: "false"
+  WOCKY_SMS_BACKEND: Wocky.SMS.Twilio
   WOCKY_DB_HOST: wocky-us1.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_us1
   WOCKY_DB_WATCHER_QUEUE: wocky-db-watcher-us1.fifo
   WOCKY_DB_WATCHER_REGION: us-west-2
   WOCKY_LOG_TRAFFIC: "false"
   AWS_ACCESS_KEY_ID: AKIAJBP24HT7F7HCD7GQ
+  TWILIO_ACCOUNT_SID: ACf2a5b389b54d6c0b385d5470d4c4bfc8
   HONEYBADGER_ENV: us1
   REPLACE_OS_VARS: "true"
   BAMBOO_ADAPTER: Bamboo.MandrillAdapter

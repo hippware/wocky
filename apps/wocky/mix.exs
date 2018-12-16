@@ -82,6 +82,7 @@ defmodule Wocky.Mixfile do
       {:ex_aws_sqs, "~> 2.0"},
       {:ex_json_logger, "~> 1.0"},
       {:ex_machina, "~> 2.1"},
+      {:ex_twilio, "~> 0.6"},
       {:exconstructor, "~> 1.0"},
       # TODO: This dependency is only used in one migration. We should remove
       # it after checkpointing the database schema.
