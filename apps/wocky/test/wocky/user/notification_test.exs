@@ -199,4 +199,56 @@ defmodule Wocky.User.NotificationTest do
       assert %UserFollow{} = Notification.decode(notification)
     end
   end
+
+  describe "user_query/3" do
+    setup ctx do
+      n = Factory.insert_list(5, :geofence_event_notification, user: ctx.user)
+      {:ok, notifications: Enum.reverse(n)}
+    end
+
+    test "get all notifications", ctx do
+      assert ids_match(
+               ctx.user
+               |> Notification.user_query(nil, nil)
+               |> order_by(desc: :updated_at)
+               |> Repo.all(),
+               ctx.notifications
+             )
+    end
+
+    test "get head notifications", ctx do
+      assert ids_match(
+               ctx.user
+               |> Notification.user_query(nil, List.last(ctx.notifications).id)
+               |> order_by(desc: :updated_at)
+               |> Repo.all(),
+               Enum.slice(ctx.notifications, 0..3)
+             )
+    end
+
+    test "get tail notifications", ctx do
+      assert ids_match(
+               ctx.user
+               |> Notification.user_query(hd(ctx.notifications).id, nil)
+               |> order_by(desc: :updated_at)
+               |> Repo.all(),
+               tl(ctx.notifications)
+             )
+    end
+
+    test "get middle notifications", ctx do
+      assert ids_match(
+               ctx.user
+               |> Notification.user_query(
+                 hd(ctx.notifications).id,
+                 List.last(ctx.notifications).id
+               )
+               |> order_by(desc: :updated_at)
+               |> Repo.all(),
+               Enum.slice(ctx.notifications, 1..3)
+             )
+    end
+
+    defp ids_match(a, b), do: Enum.map(a, & &1.id) == Enum.map(b, & &1.id)
+  end
 end

@@ -67,45 +67,62 @@ defmodule Wocky.Bot.InvitationTest do
     end
   end
 
-  describe "get/3" do
-    setup ctx do
-      %{id: id} =
-        Factory.insert(:invitation,
-          user: ctx.user,
-          invitee: ctx.invitee
-        )
-
-      clear_expected_notifications(1)
-
-      {:ok, id: id}
-    end
+  describe "get/2 by id" do
+    setup :setup_invitation
 
     test "User can get their own invitation", ctx do
-      assert %Invitation{} = Invitation.get(ctx.id, ctx.user)
+      assert %Invitation{} = Invitation.get(ctx.invitation.id, ctx.user)
     end
 
     test "Invitee can get their own invitation", ctx do
-      assert %Invitation{} = Invitation.get(ctx.id, ctx.invitee)
+      assert %Invitation{} = Invitation.get(ctx.invitation.id, ctx.invitee)
     end
 
     test "Unrelated user cannot get the invitation", ctx do
-      assert nil == Invitation.get(ctx.id, Factory.insert(:user))
+      assert nil == Invitation.get(ctx.invitation.id, Factory.insert(:user))
+    end
+  end
+
+  describe "get/2 by bot id" do
+    setup :setup_invitation
+
+    test "User can get their own invitation", ctx do
+      assert %Invitation{} = Invitation.get(ctx.bot, ctx.user)
+    end
+
+    test "Invitee can get their own invitation", ctx do
+      assert %Invitation{} = Invitation.get(ctx.bot, ctx.invitee)
+    end
+
+    test "Unrelated user cannot get the invitation", ctx do
+      assert nil == Invitation.get(ctx.bot, Factory.insert(:user))
+    end
+  end
+
+  describe "exists?/2 - true" do
+    setup :setup_invitation
+
+    test "exists by id", ctx do
+      assert Invitation.exists?(ctx.invitation.id, ctx.user)
+    end
+
+    test "exists by bot", ctx do
+      assert Invitation.exists?(ctx.bot, ctx.user)
+    end
+  end
+
+  describe "exists?/2 - false" do
+    test "does not exist by id", ctx do
+      refute Invitation.exists?(1, ctx.user)
+    end
+
+    test "does not exist by bot", ctx do
+      refute Invitation.exists?(ctx.bot, ctx.user)
     end
   end
 
   describe "respond/3" do
-    setup ctx do
-      invitation =
-        Factory.insert(:invitation,
-          user: ctx.user,
-          invitee: ctx.invitee,
-          bot: ctx.bot
-        )
-
-      clear_expected_notifications(1)
-
-      {:ok, invitation: invitation}
-    end
+    setup :setup_invitation
 
     test "Invitee can accept", ctx do
       assert {:ok, invitation} =
@@ -203,5 +220,18 @@ defmodule Wocky.Bot.InvitationTest do
     test "it should not delete other invitations to the user", ctx do
       assert Repo.get(Invitation, ctx.invitation2.id)
     end
+  end
+
+  defp setup_invitation(ctx) do
+    invitation =
+      Factory.insert(:invitation,
+        user: ctx.user,
+        invitee: ctx.invitee,
+        bot: ctx.bot
+      )
+
+    clear_expected_notifications(1)
+
+    {:ok, invitation: invitation}
   end
 end

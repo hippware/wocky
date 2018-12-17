@@ -84,7 +84,9 @@ defmodule WockyAPI.Schema.BotTypes do
       resolve &Bot.get_items/3
     end
 
-    @desc "Subscribers to the bot, filtered by either subscription type or ID"
+    @desc """
+    Subscribers to the bot, filtered by either subscription type or user ID
+    """
     connection field :subscribers, node_type: :subscribers do
       connection_complexity()
       arg :type, :subscription_type

@@ -15,7 +15,7 @@ defmodule Wocky.Account do
 
   require Logger
 
-  @type token :: Token.token()
+  @type token :: binary()
 
   # ====================================================================
   # JWT generation

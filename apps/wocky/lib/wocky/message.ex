@@ -23,7 +23,8 @@ defmodule Wocky.Message do
 
   @type t :: %Message{}
 
-  @spec send(User.t(), User.t(), binary, binary) :: {:ok, t()} | {:error, any}
+  @spec send(User.t(), User.t(), binary, binary | nil) ::
+          {:ok, t()} | {:error, any}
   def send(recipient, sender, content, image_url \\ nil) do
     if can_send?(sender, recipient) do
       %{

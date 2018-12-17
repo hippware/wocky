@@ -66,6 +66,14 @@ defmodule Wocky.Bot do
   @type id :: binary
   @type not_loaded :: %NotLoaded{}
 
+  @type relationship ::
+          :visible
+          | :owned
+          | :subscribed
+          | :subscribed_not_owned
+          | :invited
+          | :visiting
+
   @type t :: %Bot{
           id: nil | id,
           title: binary,
@@ -299,7 +307,7 @@ defmodule Wocky.Bot do
     |> Notification.notify()
   end
 
-  @spec by_relationship_query(User.t(), atom(), User.t() | nil) ::
+  @spec by_relationship_query(User.t(), relationship(), User.t() | nil) ::
           Ecto.Queryable.t()
   def by_relationship_query(user, rel, user) do
     by_relationship_query(user, rel)
