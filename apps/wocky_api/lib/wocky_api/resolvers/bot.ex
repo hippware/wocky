@@ -137,7 +137,7 @@ defmodule WockyAPI.Resolvers.Bot do
        when not is_nil(l) do
     bot
     |> Bot.sub_setup_event()
-    |> Waiter.wait(2000, fn ->
+    |> Waiter.wait(5000, fn ->
       Enum.member?(User.get_bot_relationships(user, bot), :subscribed)
     end)
 
