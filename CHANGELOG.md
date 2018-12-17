@@ -5,6 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: plug_cowboy (PR #2113)
+* Post-XMPP audit and code cleanup (#2103, PR #2107)
+* Fix a crash when there is a certain GQL error (#2106, PR #2109)
+* Twilio integration (#1974, PR #2117)
+
+
+# 2018.12.13+rb32e32f
+
+This is the first release on the 'non-XMPP' (formerly `next`) branch.
+
 * Set up 'Next' server environment (#1948)
 * Remove old features (PR #1913)
 * GraphQL presence management (#1671, PR #1934)
