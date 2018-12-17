@@ -4,7 +4,6 @@ defmodule Wocky.Account.RegisterTest do
   alias Wocky.Account.Register
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID}
-  alias Wocky.Roster.Item
   alias Wocky.User
 
   @required_attrs [:external_id]
@@ -93,54 +92,6 @@ defmodule Wocky.Account.RegisterTest do
       assert {:ok, user} = Register.create(%{})
       assert user.external_id
       assert user.provider == "local"
-    end
-  end
-
-  defp setup_initial_contacts(type) do
-    3
-    |> Factory.insert_list(:user)
-    |> Enum.map(fn u ->
-      Factory.insert(:initial_contact, user_id: u.id, type: type)
-
-      sub =
-        case type do
-          :followee -> :to
-          :follower -> :from
-          :friend -> :both
-        end
-
-      {u, sub}
-    end)
-  end
-
-  describe "create/2 user prepopulation" do
-    setup do
-      initial_contacts =
-        for type <- [:followee, :follower, :friend] do
-          setup_initial_contacts(type)
-        end
-
-      {:ok, user} = Register.create(@create_attrs, true)
-
-      {:ok, user: user, initial_contacts: List.flatten(initial_contacts)}
-    end
-
-    test "initial contacts", %{user: user, initial_contacts: init_contacts} do
-      roster =
-        Item
-        |> where(user_id: ^user.id)
-        |> preload(:contact)
-        |> Repo.all()
-
-      assert length(init_contacts) == length(roster)
-
-      for {contact, sub} <- init_contacts do
-        item = Enum.find(roster, fn %Item{contact: c} -> contact.id == c.id end)
-
-        assert item
-        assert item.subscription == sub
-        assert Enum.member?(item.groups, "__new__")
-      end
     end
   end
 

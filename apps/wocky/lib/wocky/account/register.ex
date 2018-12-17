@@ -7,7 +7,6 @@ defmodule Wocky.Account.Register do
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Roster
   alias Wocky.User
 
   require Logger
@@ -65,8 +64,8 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec create(map(), boolean()) :: {:ok, User.t()} | {:error, any}
-  def create(user_data, prepop \\ false) do
+  @spec create(map()) :: {:ok, User.t()} | {:error, any}
+  def create(user_data) do
     user_data =
       %{
         id: ID.new(),
@@ -77,7 +76,6 @@ defmodule Wocky.Account.Register do
 
     case user_data |> changeset() |> Repo.insert() do
       {:ok, user} ->
-        if prepop, do: prepopulate_user(user)
         update_counter("user.create", 1)
         {:ok, user}
 
@@ -124,7 +122,7 @@ defmodule Wocky.Account.Register do
       phone_number: phone_number
     }
 
-    case create(user_data, true) do
+    case create(user_data) do
       {:ok, user} ->
         {:ok, {user, true}}
 
@@ -149,9 +147,5 @@ defmodule Wocky.Account.Register do
     else
       [id: "not a valid UUID"]
     end
-  end
-
-  defp prepopulate_user(user) do
-    Roster.add_initial_contacts_to_user(user.id)
   end
 end

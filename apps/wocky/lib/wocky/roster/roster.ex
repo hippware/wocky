@@ -33,7 +33,7 @@ defmodule Wocky.Roster do
 
   alias Ecto.Queryable
   alias Wocky.{Block, Repo}
-  alias Wocky.Roster.{InitialContact, Item}
+  alias Wocky.Roster.Item
   alias Wocky.User
 
   require Logger
@@ -239,13 +239,6 @@ defmodule Wocky.Roster do
       conflict_target: [:user_id, :contact_id]
     )
   end
-
-  @spec add_initial_contact(User.t(), InitialContact.type()) :: :ok
-  def add_initial_contact(user, type), do: InitialContact.put(user, type)
-
-  @spec add_initial_contacts_to_user(User.id()) :: :ok
-  def add_initial_contacts_to_user(user_id),
-    do: InitialContact.add_to_user(user_id)
 
   def write_blocked_items(a, b) do
     [
