@@ -55,7 +55,7 @@ defmodule Wocky.RosterTest do
   describe "get/2" do
     test "should return the roster item for the specified contact", ctx do
       Enum.map(ctx.all_contacts, fn c ->
-        assert ctx.user.id |> Roster.get(c.id) |> Map.get(:contact) == c
+        assert ctx.user |> Roster.get(c) |> Map.get(:contact) == c
       end)
     end
   end
@@ -80,7 +80,7 @@ defmodule Wocky.RosterTest do
                  subscription: :both
                })
 
-      item = Roster.get(ctx.user.id, ctx.contact.id)
+      item = Roster.get(ctx.user, ctx.contact)
       assert item.contact == ctx.contact
       assert item.name == name
       assert item.ask == :out
@@ -142,7 +142,7 @@ defmodule Wocky.RosterTest do
                  subscription: :both
                })
 
-      item = Roster.get(ctx.user.id, ctx.contact.id)
+      item = Roster.get(ctx.user, ctx.contact)
       assert item.contact == ctx.contact
       assert item.name == new_name
       assert item.ask == :out
@@ -153,19 +153,19 @@ defmodule Wocky.RosterTest do
 
   describe "friend?/1" do
     test "should return true when a user is subscribed", ctx do
-      assert friend?(ctx.user.id, ctx.contact.id)
+      assert friend?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user has blocked the contact", ctx do
       Block.block(ctx.user, ctx.contact)
 
-      refute friend?(ctx.user.id, ctx.contact.id)
+      refute friend?(ctx.user, ctx.contact)
     end
 
     test "should return true if the contact has blocked the user", ctx do
       Block.block(ctx.contact, ctx.user)
 
-      refute friend?(ctx.user.id, ctx.contact.id)
+      refute friend?(ctx.user, ctx.contact)
     end
 
     test "should return false if the contact does not have 'both' subscription",
@@ -179,95 +179,95 @@ defmodule Wocky.RosterTest do
         subscription: :from
       })
 
-      refute friend?(ctx.user.id, ctx.contact.id)
+      refute friend?(ctx.user, ctx.contact)
     end
 
     test "should return false for non-existant contacts", ctx do
-      refute friend?(ctx.user.id, ID.new())
-      refute friend?(ctx.user.id, ctx.rosterless_user.id)
+      refute friend?(ctx.user, Factory.build(:user))
+      refute friend?(ctx.user, ctx.rosterless_user)
     end
   end
 
   describe "follower?/1" do
     test "should return true when a user is subscribed", ctx do
-      assert follower?(ctx.user.id, ctx.contact.id)
+      assert follower?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user has blocked the contact", ctx do
       Block.block(ctx.user, ctx.contact)
 
-      refute follower?(ctx.user.id, ctx.contact.id)
+      refute follower?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user is blocked by the contact", ctx do
       Block.block(ctx.contact, ctx.user)
 
-      refute follower?(ctx.user.id, ctx.contact.id)
+      refute follower?(ctx.user, ctx.contact)
     end
 
     test "should return true if the user has 'to' subscription", ctx do
-      assert follower?(ctx.follower.id, ctx.followee.id)
+      assert follower?(ctx.follower, ctx.followee)
     end
 
     test "should return false if the user does not have 'both' or 'to' subscription",
          ctx do
-      refute follower?(ctx.followee.id, ctx.follower.id)
+      refute follower?(ctx.followee, ctx.follower)
     end
 
     test "should return false for non-existant contacts", ctx do
-      refute follower?(ctx.user.id, ID.new())
-      refute follower?(ctx.user.id, ctx.rosterless_user.id)
+      refute follower?(ctx.user, Factory.build(:user))
+      refute follower?(ctx.user, ctx.rosterless_user)
     end
   end
 
   describe "followee?/2" do
     test "should return true when a user is subscribed", ctx do
-      assert followee?(ctx.user.id, ctx.contact.id)
+      assert followee?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user has blocked the contact", ctx do
       Block.block(ctx.user, ctx.contact)
 
-      refute followee?(ctx.user.id, ctx.contact.id)
+      refute followee?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user is blocked by the contact", ctx do
       Block.block(ctx.contact, ctx.user)
 
-      refute followee?(ctx.user.id, ctx.contact.id)
+      refute followee?(ctx.user, ctx.contact)
     end
 
     test "should return true if the user has 'from' subscription", ctx do
-      assert followee?(ctx.followee.id, ctx.follower.id)
+      assert followee?(ctx.followee, ctx.follower)
     end
 
     test "should return false if the user does not have 'both' or 'from' subscription",
          ctx do
-      refute followee?(ctx.follower.id, ctx.followee.id)
+      refute followee?(ctx.follower, ctx.followee)
     end
 
     test "should return false for non-existant contacts", ctx do
-      refute followee?(ctx.user.id, ID.new())
-      refute followee?(ctx.user.id, ctx.rosterless_user.id)
+      refute followee?(ctx.user, Factory.build(:user))
+      refute followee?(ctx.user, ctx.rosterless_user)
     end
   end
 
   describe "followers_query/2" do
     test "should return all followers", ctx do
-      query = Roster.followers_query(ctx.followee.id, ctx.user.id)
+      query = Roster.followers_query(ctx.followee, ctx.user)
 
       assert Repo.all(query) == [ctx.follower]
     end
 
     test "should exclude system users when set to do so", ctx do
-      query = Roster.followers_query(ctx.user.id, ctx.user.id, false)
+      query = Roster.followers_query(ctx.user, ctx.user, false)
 
       assert Enum.sort(Repo.all(query)) ==
                ctx.visible_contacts -- [ctx.system_user]
     end
 
     test "should not return entries blocked by the requester", ctx do
-      query = Roster.followers_query(ctx.followee.id, ctx.blocked_viewer.id)
+      query = Roster.followers_query(ctx.followee, ctx.blocked_viewer)
 
       assert Repo.all(query) == []
     end
@@ -275,20 +275,20 @@ defmodule Wocky.RosterTest do
 
   describe "followees_query/2" do
     test "should return all followees", ctx do
-      query = Roster.followees_query(ctx.follower.id, ctx.user.id)
+      query = Roster.followees_query(ctx.follower, ctx.user)
 
       assert Repo.all(query) == [ctx.followee]
     end
 
     test "should exclude system users when set to do so", ctx do
-      query = Roster.followees_query(ctx.user.id, ctx.user.id, false)
+      query = Roster.followees_query(ctx.user, ctx.user, false)
 
       assert Enum.sort(Repo.all(query)) ==
                ctx.visible_contacts -- [ctx.system_user]
     end
 
     test "should not return entries blocked by the requester", ctx do
-      query = Roster.followees_query(ctx.follower.id, ctx.blocked_viewer.id)
+      query = Roster.followees_query(ctx.follower, ctx.blocked_viewer)
 
       assert Repo.all(query) == []
     end
@@ -303,14 +303,14 @@ defmodule Wocky.RosterTest do
     end
 
     test "should return all friends", ctx do
-      query = Roster.friends_query(ctx.user.id, ctx.follower.id)
+      query = Roster.friends_query(ctx.user, ctx.follower)
 
       assert Enum.sort(Repo.all(query)) ==
                Enum.sort([ctx.blocked_friend | ctx.visible_contacts])
     end
 
     test "should exclude system users when set to do so", ctx do
-      query = Roster.friends_query(ctx.user.id, ctx.user.id, false)
+      query = Roster.friends_query(ctx.user, ctx.user, false)
 
       assert Enum.sort(Repo.all(query)) ==
                Enum.sort([ctx.blocked_friend | ctx.visible_contacts]) --
@@ -318,7 +318,7 @@ defmodule Wocky.RosterTest do
     end
 
     test "should not return entries blocked by the requester", ctx do
-      query = Roster.friends_query(ctx.user.id, ctx.blocked_viewer.id)
+      query = Roster.friends_query(ctx.user, ctx.blocked_viewer)
 
       assert Enum.sort(Repo.all(query)) == ctx.visible_contacts
     end
@@ -326,25 +326,25 @@ defmodule Wocky.RosterTest do
 
   describe "relationship/2" do
     test "should return :self when both user IDs are equal", ctx do
-      assert Roster.relationship(ctx.user.id, ctx.user.id) == :self
+      assert Roster.relationship(ctx.user, ctx.user) == :self
     end
 
     test "should return :friend where the two users are friends", ctx do
-      assert Roster.relationship(ctx.user.id, ctx.contact.id) == :friend
-      assert Roster.relationship(ctx.contact.id, ctx.user.id) == :friend
+      assert Roster.relationship(ctx.user, ctx.contact) == :friend
+      assert Roster.relationship(ctx.contact, ctx.user) == :friend
     end
 
     test "should return :follower where user a is following user b", ctx do
-      assert Roster.relationship(ctx.follower.id, ctx.followee.id) == :follower
+      assert Roster.relationship(ctx.follower, ctx.followee) == :follower
     end
 
     test "should return :followee where user b is following user a", ctx do
-      assert Roster.relationship(ctx.followee.id, ctx.follower.id) == :followee
+      assert Roster.relationship(ctx.followee, ctx.follower) == :followee
     end
 
     test "should return :none if the users have no relationship", ctx do
-      assert Roster.relationship(ctx.user.id, ctx.rosterless_user.id) == :none
-      assert Roster.relationship(ctx.rosterless_user.id, ctx.user.id) == :none
+      assert Roster.relationship(ctx.user, ctx.rosterless_user) == :none
+      assert Roster.relationship(ctx.rosterless_user, ctx.user) == :none
     end
   end
 
@@ -355,8 +355,8 @@ defmodule Wocky.RosterTest do
     end
 
     test "befriend/2 when there is no existing relationship", ctx do
-      assert :ok = Roster.befriend(ctx.user.id, ctx.user2.id)
-      assert friend?(ctx.user.id, ctx.user2.id)
+      assert :ok = Roster.befriend(ctx.user, ctx.user2)
+      assert friend?(ctx.user, ctx.user2)
     end
 
     test "befriend/2 when there is an existing relationship", ctx do
@@ -380,17 +380,17 @@ defmodule Wocky.RosterTest do
         name: name2
       )
 
-      assert :ok = Roster.befriend(ctx.user.id, ctx.user2.id)
-      assert friend?(ctx.user.id, ctx.user2.id)
-      assert Roster.get(ctx.user.id, ctx.user2.id).name == name
-      assert Roster.get(ctx.user2.id, ctx.user.id).name == name2
+      assert :ok = Roster.befriend(ctx.user, ctx.user2)
+      assert friend?(ctx.user, ctx.user2)
+      assert Roster.get(ctx.user, ctx.user2).name == name
+      assert Roster.get(ctx.user2, ctx.user).name == name2
     end
 
     test "follow/2 when there is no existing relationship", ctx do
-      assert :ok = Roster.follow(ctx.user.id, ctx.user2.id)
+      assert :ok = Roster.follow(ctx.user, ctx.user2)
 
-      assert follower?(ctx.user.id, ctx.user2.id)
-      refute friend?(ctx.user.id, ctx.user2.id)
+      assert follower?(ctx.user, ctx.user2)
+      refute friend?(ctx.user, ctx.user2)
     end
 
     test "follow/2 when there is an existing relationship", ctx do
@@ -414,36 +414,36 @@ defmodule Wocky.RosterTest do
         name: name2
       )
 
-      assert :ok = Roster.follow(ctx.user.id, ctx.user2.id)
-      assert follower?(ctx.user.id, ctx.user2.id)
-      assert Roster.get(ctx.user.id, ctx.user2.id).name == name
-      assert Roster.get(ctx.user2.id, ctx.user.id).name == name2
+      assert :ok = Roster.follow(ctx.user, ctx.user2)
+      assert follower?(ctx.user, ctx.user2)
+      assert Roster.get(ctx.user, ctx.user2).name == name
+      assert Roster.get(ctx.user2, ctx.user).name == name2
     end
 
     test "unfriend/2 when users are friends", ctx do
-      Roster.befriend(ctx.user.id, ctx.user2.id)
+      Roster.befriend(ctx.user, ctx.user2)
 
-      assert :ok = Roster.unfriend(ctx.user.id, ctx.user2.id)
-      assert Roster.relationship(ctx.user.id, ctx.user2.id) == :none
+      assert :ok = Roster.unfriend(ctx.user, ctx.user2)
+      assert Roster.relationship(ctx.user, ctx.user2) == :none
     end
 
     test "unfriend/2 when a is following b", ctx do
-      Roster.follow(ctx.user.id, ctx.user2.id)
+      Roster.follow(ctx.user, ctx.user2)
 
-      assert :ok = Roster.unfriend(ctx.user.id, ctx.user2.id)
-      assert Roster.relationship(ctx.user.id, ctx.user2.id) == :none
+      assert :ok = Roster.unfriend(ctx.user, ctx.user2)
+      assert Roster.relationship(ctx.user, ctx.user2) == :none
     end
 
     test "unfriend/2 when b is following a", ctx do
-      Roster.follow(ctx.user.id, ctx.user2.id)
+      Roster.follow(ctx.user, ctx.user2)
 
-      assert :ok = Roster.unfriend(ctx.user.id, ctx.user2.id)
-      assert Roster.relationship(ctx.user.id, ctx.user2.id) == :none
+      assert :ok = Roster.unfriend(ctx.user, ctx.user2)
+      assert Roster.relationship(ctx.user, ctx.user2) == :none
     end
 
     test "unfriend/2 when there is no existing relationship", ctx do
-      assert :ok = Roster.unfriend(ctx.user.id, ctx.user2.id)
-      assert Roster.relationship(ctx.user.id, ctx.user2.id) == :none
+      assert :ok = Roster.unfriend(ctx.user, ctx.user2)
+      assert Roster.relationship(ctx.user, ctx.user2) == :none
     end
   end
 

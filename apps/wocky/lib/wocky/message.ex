@@ -68,5 +68,5 @@ defmodule Wocky.Message do
   end
 
   defp can_send?(sender, recipient),
-    do: recipient.id |> Roster.get(sender.id) |> Roster.followee?()
+    do: recipient |> Roster.get(sender) |> Roster.followee?()
 end

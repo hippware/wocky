@@ -44,8 +44,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     setup %{user: user, socket: socket} do
       [follower, followee, stranger] = Factory.insert_list(3, :user)
 
-      Roster.follow(follower.id, user.id)
-      Roster.follow(user.id, followee.id)
+      Roster.follow(follower, user)
+      Roster.follow(user, followee)
 
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000

@@ -169,15 +169,15 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     test "should notify when a new contact is created", %{
       socket: socket,
       token: token,
-      user: %{id: user_id},
-      user2: %{id: user2_id}
+      user: user,
+      user2: user2 = %{id: user2_id}
     } do
-      authenticate(user_id, token, socket)
+      authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.befriend(user_id, user2_id)
+      Roster.befriend(user, user2)
 
       assert_push "subscription:data", push, 1000
 
@@ -198,37 +198,37 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     test "should notify when a contact type is changed", %{
       socket: socket,
       token: token,
-      user: %{id: user_id},
-      user2: %{id: user2_id}
+      user: user,
+      user2: user2
     } do
-      authenticate(user_id, token, socket)
+      authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.follow(user2_id, user_id)
-      assert_relationship_notification("FOLLOWER", user2_id, subscription_id)
+      Roster.follow(user2, user)
+      assert_relationship_notification("FOLLOWER", user2, subscription_id)
 
-      Roster.befriend(user_id, user2_id)
-      assert_relationship_notification("FRIEND", user2_id, subscription_id)
+      Roster.befriend(user, user2)
+      assert_relationship_notification("FRIEND", user2, subscription_id)
     end
 
     test "should notify when a contact is removed", %{
       socket: socket,
       token: token,
-      user: %{id: user_id},
-      user2: %{id: user2_id}
+      user: user,
+      user2: user2
     } do
-      authenticate(user_id, token, socket)
+      authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.befriend(user2_id, user_id)
-      assert_relationship_notification("FRIEND", user2_id, subscription_id)
+      Roster.befriend(user2, user)
+      assert_relationship_notification("FRIEND", user2, subscription_id)
 
-      Roster.unfriend(user_id, user2_id)
-      assert_relationship_notification("NONE", user2_id, subscription_id)
+      Roster.unfriend(user, user2)
+      assert_relationship_notification("NONE", user2, subscription_id)
     end
   end
 
@@ -245,8 +245,9 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                  1000
   end
 
-  defp assert_relationship_notification(relationship, user_id, subscription_id) do
+  defp assert_relationship_notification(relationship, user, subscription_id) do
     assert_push "subscription:data", push, 1000
+    id = user.id
 
     assert %{
              result: %{
@@ -254,7 +255,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                  "contacts" => %{
                    "relationship" => ^relationship,
                    "created_at" => _,
-                   "user" => %{"id" => ^user_id}
+                   "user" => %{"id" => ^id}
                  }
                }
              },

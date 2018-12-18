@@ -57,7 +57,7 @@ defmodule Wocky.BlockTest do
       query =
         ctx.bot.id
         |> Bot.get_query()
-        |> Block.object_visible_query(ctx.user2.id)
+        |> Block.object_visible_query(ctx.user2)
 
       assert is_nil(Repo.one(query))
 

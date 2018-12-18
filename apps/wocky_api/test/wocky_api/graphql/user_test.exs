@@ -583,8 +583,9 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
 
-    test "get contacts by relationship", %{user: user, user2: %User{id: id2}} do
-      Roster.befriend(user.id, id2)
+    test "get contacts by relationship", %{user: user, user2: user2} do
+      Roster.befriend(user, user2)
+      id2 = user2.id
 
       for rel <- [nil, "FRIEND", "FOLLOWER", "FOLLOWING"] do
         result = run_query(@query, user, %{"rel" => rel})
@@ -616,10 +617,12 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert [%{message: "unsupported"}] = result.errors
     end
 
-    test "following/followee mapping", %{user: user, user2: %User{id: id2}} do
-      Roster.follow(id2, user.id)
+    test "following/followee mapping", %{user: user, user2: user2} do
+      Roster.follow(user2, user)
       result = run_query(@query, user, %{"rel" => "FOLLOWER"})
       refute has_errors(result)
+
+      id2 = user2.id
 
       assert %{
                "currentUser" => %{
@@ -718,11 +721,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user.id, shared.user2.id) == :follower
+      assert Roster.relationship(shared.user, shared.user2) == :follower
     end
 
     test "should make a friend from a follower", shared do
-      Roster.follow(shared.user2.id, shared.user.id)
+      Roster.follow(shared.user2, shared.user)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -736,7 +739,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user.id, shared.user2.id) == :friend
+      assert Roster.relationship(shared.user, shared.user2) == :friend
     end
 
     test "should return an error for a blocked user", shared do
@@ -772,7 +775,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
     test "should make a follower from a friendship", shared do
-      Roster.befriend(shared.user.id, shared.user2.id)
+      Roster.befriend(shared.user, shared.user2)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -786,11 +789,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user.id, shared.user2.id) == :followee
+      assert Roster.relationship(shared.user, shared.user2) == :followee
     end
 
     test "should make a non-contact from a followee", shared do
-      Roster.follow(shared.user.id, shared.user2.id)
+      Roster.follow(shared.user, shared.user2)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -804,7 +807,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user.id, shared.user2.id) == :none
+      assert Roster.relationship(shared.user, shared.user2) == :none
     end
 
     test "should return an error for a blocked user", shared do

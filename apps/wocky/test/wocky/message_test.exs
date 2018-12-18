@@ -75,9 +75,9 @@ defmodule Wocky.MessageTest do
       [user, follower, friend, followee, stranger] =
         Factory.insert_list(5, :user)
 
-      Roster.befriend(user.id, friend.id)
-      Roster.follow(follower.id, user.id)
-      Roster.follow(user.id, followee.id)
+      Roster.befriend(user, friend)
+      Roster.follow(follower, user)
+      Roster.follow(user, followee)
 
       {:ok,
        user: user,

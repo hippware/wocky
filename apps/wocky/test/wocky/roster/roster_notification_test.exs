@@ -21,7 +21,7 @@ defmodule Wocky.Roster.RosterNotificationTest do
     end
 
     test "start following", ctx do
-      Roster.follow(ctx.user2.id, ctx.user1.id)
+      Roster.follow(ctx.user2, ctx.user1)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 10_000, global: true)
       assert length(msgs) == 1
