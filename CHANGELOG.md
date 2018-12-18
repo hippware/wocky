@@ -9,6 +9,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Post-XMPP audit and code cleanup (#2103, PR #2107)
 * Fix a crash when there is a certain GQL error (#2106, PR #2109)
 * Twilio integration (#1974, PR #2117)
+* Remove the "initial contacts" code (#2114)
+* Fix waiter msg crash (#2116, PR #2119)
+* Improve test coverage (#2118, PR #2120)
 
 
 # 2018.12.13+rb32e32f
