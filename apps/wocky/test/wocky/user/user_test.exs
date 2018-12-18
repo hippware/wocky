@@ -539,7 +539,7 @@ defmodule Wocky.User.UserTest do
 
     test "it should friend the current user and the owner of the code", ctx do
       assert User.redeem_invite_code(ctx.redeemer, ctx.code)
-      assert ctx.user.id |> Roster.get(ctx.redeemer.id) |> Roster.friend?()
+      assert ctx.user |> Roster.get(ctx.redeemer) |> Roster.friend?()
     end
 
     test "it should return true if the redeemer created the code", ctx do

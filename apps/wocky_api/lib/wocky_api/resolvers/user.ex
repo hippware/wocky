@@ -31,10 +31,10 @@ defmodule WockyAPI.Resolvers.User do
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
     query =
       case args[:relationship] do
-        nil -> Roster.all_contacts_query(user.id, requestor.id, false)
-        :friend -> Roster.friends_query(user.id, requestor.id, false)
-        :follower -> Roster.followers_query(user.id, requestor.id, false)
-        :following -> Roster.followees_query(user.id, requestor.id, false)
+        nil -> Roster.all_contacts_query(user, requestor, false)
+        :friend -> Roster.friends_query(user, requestor, false)
+        :follower -> Roster.followers_query(user, requestor, false)
+        :following -> Roster.followees_query(user, requestor, false)
       end
 
     Utils.connection_from_query(query, user, args)
@@ -44,8 +44,8 @@ defmodule WockyAPI.Resolvers.User do
         source: %{node: target_user, parent: parent}
       }) do
     rel =
-      parent.id
-      |> Roster.relationship(target_user.id)
+      parent
+      |> Roster.relationship(target_user)
       |> map_relationship()
 
     {:ok, rel}
@@ -54,7 +54,7 @@ defmodule WockyAPI.Resolvers.User do
   def get_contact_created_at(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    item = Roster.get(parent.id, target_user.id)
+    item = Roster.get(parent, target_user)
     {:ok, item.created_at}
   end
 
@@ -114,7 +114,7 @@ defmodule WockyAPI.Resolvers.User do
         context: %{current_user: current_user}
       }) do
     limit = args[:limit] || @default_search_results
-    {:ok, User.search_by_name(search_term, current_user.id, limit)}
+    {:ok, User.search_by_name(search_term, current_user, limit)}
   end
 
   def get_hidden(user, _args, _info) do
@@ -175,8 +175,8 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_followers(user) do
     Repo.transaction(fn ->
-      user.id
-      |> Roster.followers_query(user.id, false)
+      user
+      |> Roster.followers_query(user, false)
       |> Repo.stream()
       |> Stream.each(fn f ->
         Subscription.publish(Endpoint, user, [
@@ -251,7 +251,7 @@ defmodule WockyAPI.Resolvers.User do
 
   defp roster_action(user, contact_id, roster_fun) do
     with %User{} = contact <- User.get_user(contact_id, user) do
-      relationship = roster_fun.(user.id, contact.id)
+      relationship = roster_fun.(user, contact)
       {:ok, %{relationship: map_relationship(relationship), user: contact}}
     else
       _ -> {:error, "Invalid user"}

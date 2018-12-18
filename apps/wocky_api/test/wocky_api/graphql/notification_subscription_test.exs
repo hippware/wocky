@@ -165,7 +165,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Roster.follow(user2.id, user.id)
+      Roster.follow(user2, user)
 
       assert_push "subscription:data", push, 2000
 

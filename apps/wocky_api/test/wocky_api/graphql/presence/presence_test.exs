@@ -20,9 +20,9 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   setup shared do
     [friend, follower, followee, stranger] = Factory.insert_list(4, :user)
 
-    Roster.befriend(shared.user.id, friend.id)
-    Roster.follow(follower.id, shared.user.id)
-    Roster.follow(shared.user.id, followee.id)
+    Roster.befriend(shared.user, friend)
+    Roster.follow(follower, shared.user)
+    Roster.follow(shared.user, followee)
 
     {:ok,
      friend: friend, follower: follower, followee: followee, stranger: stranger}

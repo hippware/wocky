@@ -55,11 +55,11 @@ defmodule Wocky.Roster do
   end
 
   @doc "Get the roster item for a given user pertaining to another user"
-  @spec get(User.id(), User.id()) :: Item.t() | nil
-  def get(user_id, contact_id) do
+  @spec get(User.t(), User.t()) :: Item.t() | nil
+  def get(user, contact) do
     Item
-    |> where(contact_id: ^contact_id)
-    |> where(user_id: ^user_id)
+    |> where(contact_id: ^contact.id)
+    |> where(user_id: ^user.id)
     |> preload(:contact)
     |> Repo.one()
   end
@@ -96,8 +96,8 @@ defmodule Wocky.Roster do
   def followee?(_), do: false
 
   @doc "Returns the relationship of a to b"
-  @spec relationship(User.id(), User.id()) :: relationship
-  def relationship(a, a), do: :self
+  @spec relationship(User.t(), User.t()) :: relationship
+  def relationship(%User{id: id}, %User{id: id}), do: :self
 
   def relationship(a, b) do
     case get_pair(a, b) do
@@ -131,14 +131,14 @@ defmodule Wocky.Roster do
   defp with_pair(query, a, b) do
     from r in query,
       where:
-        (r.user_id == ^a and r.contact_id == ^b) or
-          (r.user_id == ^b and r.contact_id == ^a)
+        (r.user_id == ^a.id and r.contact_id == ^b.id) or
+          (r.user_id == ^b.id and r.contact_id == ^a.id)
   end
 
   defp maybe_sort_pair([], _, _), do: nil
   defp maybe_sort_pair([_], _, _), do: nil
 
-  defp maybe_sort_pair([first = %Item{user_id: id}, second], id, _) do
+  defp maybe_sort_pair([first = %Item{user_id: id}, second], %User{id: id}, _) do
     {first, second}
   end
 
@@ -159,15 +159,15 @@ defmodule Wocky.Roster do
   Makes a user a follower of another user but does not remove them as a
   friend, nor the other user as a follower if they are already.
   """
-  @spec become_follower(User.id(), User.id()) :: relationship()
-  def become_follower(user_id, contact_id) do
-    case relationship(user_id, contact_id) do
+  @spec become_follower(User.t(), User.t()) :: relationship()
+  def become_follower(user, contact) do
+    case relationship(user, contact) do
       :none ->
-        :ok = follow(user_id, contact_id)
+        :ok = follow(user, contact)
         :follower
 
       :followee ->
-        :ok = befriend(user_id, contact_id)
+        :ok = befriend(user, contact)
         :friend
 
       :follower ->
@@ -182,9 +182,9 @@ defmodule Wocky.Roster do
   Removes a user as a follower of another user but does not change the other
   user's following state of the first user.
   """
-  @spec stop_following(User.id(), User.id()) :: relationship()
-  def stop_following(user_id, contact_id) do
-    case relationship(user_id, contact_id) do
+  @spec stop_following(User.t(), User.t()) :: relationship()
+  def stop_following(user, contact) do
+    case relationship(user, contact) do
       :none ->
         :none
 
@@ -192,23 +192,23 @@ defmodule Wocky.Roster do
         :followee
 
       :follower ->
-        :ok = unfriend(user_id, contact_id)
+        :ok = unfriend(user, contact)
         :none
 
       :friend ->
-        :ok = follow(contact_id, user_id)
+        :ok = follow(contact, user)
         :followee
     end
   end
 
-  @spec befriend(User.id(), User.id()) :: :ok
+  @spec befriend(User.t(), User.t()) :: :ok
   def befriend(u1, u2) do
     {:ok, _} = add_relationship(u1, u2, :both)
     {:ok, _} = add_relationship(u2, u1, :both)
     :ok
   end
 
-  @spec follow(User.id(), User.id()) :: :ok
+  @spec follow(User.t(), User.t()) :: :ok
   def follow(follower, followee) do
     {:ok, _} = add_relationship(followee, follower, :from)
     {:ok, _} = add_relationship(follower, followee, :to)
@@ -216,7 +216,7 @@ defmodule Wocky.Roster do
   end
 
   @doc "Removes all relationships (friend + follow) between the two users"
-  @spec unfriend(User.id(), User.id()) :: :ok
+  @spec unfriend(User.t(), User.t()) :: :ok
   def unfriend(a, b) do
     Item
     |> with_pair(a, b)
@@ -225,11 +225,11 @@ defmodule Wocky.Roster do
     :ok
   end
 
-  defp add_relationship(user_id, contact_id, subscription) do
+  defp add_relationship(user, contact, subscription) do
     %Item{}
     |> Item.changeset(%{
-      user_id: user_id,
-      contact_id: contact_id,
+      user_id: user.id,
+      contact_id: contact.id,
       subscription: subscription,
       ask: :none,
       groups: []
@@ -265,39 +265,39 @@ defmodule Wocky.Roster do
   # ----------------------------------------------------------------------
   # Queries
 
-  @spec all_contacts_query(User.id(), User.id(), boolean) :: Queryable.t()
-  def all_contacts_query(user_id, requester_id, include_system \\ true) do
+  @spec all_contacts_query(User.t(), User.t(), boolean) :: Queryable.t()
+  def all_contacts_query(user, requester, include_system \\ true) do
     relationships_query(
-      user_id,
-      requester_id,
+      user,
+      requester,
       [:both, :from, :to],
       include_system
     )
   end
 
-  @spec followers_query(User.id(), User.id(), boolean) :: Queryable.t()
-  def followers_query(user_id, requester_id, include_system \\ true) do
-    relationships_query(user_id, requester_id, [:both, :from], include_system)
+  @spec followers_query(User.t(), User.t(), boolean) :: Queryable.t()
+  def followers_query(user, requester, include_system \\ true) do
+    relationships_query(user, requester, [:both, :from], include_system)
   end
 
-  @spec followees_query(User.id(), User.id(), boolean) :: Queryable.t()
-  def followees_query(user_id, requester_id, include_system \\ true) do
-    relationships_query(user_id, requester_id, [:both, :to], include_system)
+  @spec followees_query(User.t(), User.t(), boolean) :: Queryable.t()
+  def followees_query(user, requester, include_system \\ true) do
+    relationships_query(user, requester, [:both, :to], include_system)
   end
 
-  @spec friends_query(User.id(), User.id(), boolean) :: Queryable.t()
-  def friends_query(user_id, requester_id, include_system \\ true) do
-    relationships_query(user_id, requester_id, [:both], include_system)
+  @spec friends_query(User.t(), User.t(), boolean) :: Queryable.t()
+  def friends_query(user, requester, include_system \\ true) do
+    relationships_query(user, requester, [:both], include_system)
   end
 
-  defp relationships_query(user_id, requester_id, sub_types, include_system) do
+  defp relationships_query(user, requester, sub_types, include_system) do
     User
     |> join(:left, [u], r in Item, on: u.id == r.contact_id)
-    |> where([u, r], r.user_id == ^user_id)
+    |> where([u, r], r.user_id == ^user.id)
     |> maybe_filter_system(not include_system)
     |> where([u, r], not is_nil(u.handle))
     |> where([u, r], r.subscription in ^sub_types)
-    |> Block.object_visible_query(requester_id, :contact_id)
+    |> Block.object_visible_query(requester, :contact_id)
   end
 
   defp maybe_filter_system(query, false), do: query

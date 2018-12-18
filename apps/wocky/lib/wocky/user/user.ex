@@ -435,7 +435,7 @@ defmodule Wocky.User do
       InviteCode
       |> where(code: ^code)
       |> preload(:user)
-      |> Block.object_visible_query(redeemer.id)
+      |> Block.object_visible_query(redeemer)
       |> Repo.one()
 
     do_redeem_invite_code(redeemer, invitation)
@@ -455,7 +455,7 @@ defmodule Wocky.User do
       # Code has expired
       false
     else
-      :ok = Roster.befriend(redeemer.id, inviter.id)
+      :ok = Roster.befriend(redeemer, inviter)
       true
     end
   end
@@ -558,10 +558,10 @@ defmodule Wocky.User do
   # ----------------------------------------------------------------------
   # Searching
 
-  @spec search_by_name(binary, id, non_neg_integer) :: [User.t()]
+  @spec search_by_name(binary, t(), non_neg_integer) :: [User.t()]
   def search_by_name("", _, _), do: []
 
-  def search_by_name(search_prefix, user_id, limit) do
+  def search_by_name(search_prefix, user, limit) do
     search_term =
       search_cleanup_regex()
       |> Regex.replace(search_prefix, "")
@@ -579,8 +579,8 @@ defmodule Wocky.User do
         ^search_term
       )
     )
-    |> Block.object_visible_query(user_id, :id)
-    |> where([u], u.id != ^user_id)
+    |> Block.object_visible_query(user, :id)
+    |> where([u], u.id != ^user.id)
     |> limit(^limit)
     |> Repo.all()
   end

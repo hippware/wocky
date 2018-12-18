@@ -42,8 +42,8 @@ defmodule WockyAPI.Presence.Manager do
     Store.add_self(user.id)
 
     Repo.transaction(fn ->
-      user.id
-      |> Roster.followers_query(user.id, false)
+      user
+      |> Roster.followers_query(user, false)
       |> Repo.stream()
       |> Stream.each(fn u ->
         PubSub.broadcast(:presence, pubsub_topic(u), {:online, user, self()})
@@ -52,8 +52,8 @@ defmodule WockyAPI.Presence.Manager do
     end)
 
     contact_refs =
-      user.id
-      |> Roster.followees_query(user.id, false)
+      user
+      |> Roster.followees_query(user, false)
       |> Repo.all()
       |> Enum.reduce(BiMap.new(), &maybe_monitor/2)
 

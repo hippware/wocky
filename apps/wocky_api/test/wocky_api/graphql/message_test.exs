@@ -189,7 +189,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
       user2: user2
     } do
       text = Lorem.paragraph()
-      Roster.befriend(user.id, user2.id)
+      Roster.befriend(user, user2)
 
       result =
         run_query(@query, user, %{"recipientId" => user2.id, "content" => text})

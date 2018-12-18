@@ -152,7 +152,7 @@ defmodule Wocky.Bot do
   @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     queryable
-    |> Block.object_visible_query(user.id)
+    |> Block.object_visible_query(user)
     |> join(
       :left,
       [b, ...],
