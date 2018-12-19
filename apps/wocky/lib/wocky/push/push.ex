@@ -135,14 +135,14 @@ defmodule Wocky.Push do
 
   defp do_notify(%__MODULE__{token: nil, user: user, device: device}) do
     Logger.error(
-      "Attempted to send notification to user " <>
+      "PN Error: Attempted to send notification to user " <>
         "#{user.id}/#{device} but they have no token."
     )
   end
 
   defp do_notify(%__MODULE__{resp: resp, retries: @max_retries} = params) do
     log_failure(params)
-    send_honeybadger(Error.msg(resp))
+    Logger.error("PN Error: #{Error.msg(resp)}")
   end
 
   defp do_notify(
@@ -235,13 +235,6 @@ defmodule Wocky.Push do
     else
       do_notify(%{params | retries: retries + 1})
     end
-  end
-
-  defp send_honeybadger(message) do
-    raise RuntimeError, message
-  rescue
-    exception ->
-      Honeybadger.notify(exception)
   end
 
   defp invalidate_token(user_id, device, token) do
