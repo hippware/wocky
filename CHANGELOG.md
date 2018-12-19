@@ -12,6 +12,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove the "initial contacts" code (#2114)
 * Fix waiter msg crash (#2116, PR #2119)
 * Improve test coverage (#2118, PR #2120)
+* Refactor roster et al to use full user structs (PR #2123)
 
 
 # 2018.12.13+rb32e32f
