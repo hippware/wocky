@@ -72,19 +72,11 @@ defmodule Wocky.MessageTest do
 
   describe "send/4" do
     setup do
-      [user, follower, friend, followee, stranger] =
-        Factory.insert_list(5, :user)
+      [user, friend, stranger] = Factory.insert_list(3, :user)
 
       Roster.befriend(user, friend)
-      Roster.follow(follower, user)
-      Roster.follow(user, followee)
 
-      {:ok,
-       user: user,
-       friend: friend,
-       follower: follower,
-       followee: followee,
-       stranger: stranger}
+      {:ok, user: user, friend: friend, stranger: stranger}
     end
 
     test "should send a message to a friend", %{user: u, friend: f} do
@@ -93,21 +85,6 @@ defmodule Wocky.MessageTest do
 
       assert [%Message{content: ^text}] =
                f |> Message.get_query(u) |> Repo.all()
-    end
-
-    test "should send a message to a follower", %{user: u, follower: f} do
-      text = Lorem.paragraph()
-      assert {:ok, _} = Message.send(f, u, text)
-
-      assert [%Message{content: ^text}] =
-               f |> Message.get_query(u) |> Repo.all()
-    end
-
-    test "should fail sending to an followee", %{user: u, followee: f} do
-      assert {:error, :permission_denied} =
-               Message.send(f, u, Lorem.paragraph())
-
-      assert [] = f |> Message.get_query(u) |> Repo.all()
     end
 
     test "should fail sending to an stranger", %{user: u, stranger: s} do

@@ -587,7 +587,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       Roster.befriend(user, user2)
       id2 = user2.id
 
-      for rel <- [nil, "FRIEND", "FOLLOWER", "FOLLOWING"] do
+      for rel <- [nil, "FRIEND"] do
         result = run_query(@query, user, %{"rel" => rel})
 
         refute has_errors(result)
@@ -615,29 +615,6 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert has_errors(result)
 
       assert [%{message: "unsupported"}] = result.errors
-    end
-
-    test "following/followee mapping", %{user: user, user2: user2} do
-      Roster.follow(user2, user)
-      result = run_query(@query, user, %{"rel" => "FOLLOWER"})
-      refute has_errors(result)
-
-      id2 = user2.id
-
-      assert %{
-               "currentUser" => %{
-                 "contacts" => %{
-                   "edges" => [
-                     %{
-                       "node" => %{"id" => ^id2},
-                       "relationship" => "FOLLOWING",
-                       "created_at" => _
-                     }
-                   ],
-                   "totalCount" => 1
-                 }
-               }
-             } = result.data
     end
   end
 
@@ -695,47 +672,38 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "follow mutation" do
+  describe "friend invite mutation" do
     @query """
     mutation ($userId: UUID!) {
-      follow(input: {userId: $userId}) {
+      friendInvite(input: {userId: $userId}) {
         successful
-        result {
-          relationship
-          user { id }
-        }
+        result
       }
     }
     """
-    test "should make a follower from a non-relationship", shared do
+    test "should make a invited user from a non-relationship", shared do
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
       assert result.data == %{
-               "follow" => %{
+               "friendInvite" => %{
                  "successful" => true,
-                 "result" => %{
-                   "relationship" => "FOLLOWER",
-                   "user" => %{"id" => shared.user2.id}
-                 }
+                 "result" => "INVITED"
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :follower
+      assert Roster.relationship(shared.user, shared.user2) == :invited
     end
 
-    test "should make a friend from a follower", shared do
-      Roster.follow(shared.user2, shared.user)
+    test "should make a friend from a invited_by", shared do
+      Roster.invite(shared.user2, shared.user)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
       assert result.data == %{
-               "follow" => %{
+               "friendInvite" => %{
                  "successful" => true,
-                 "result" => %{
-                   "relationship" => "FRIEND",
-                   "user" => %{"id" => shared.user2.id}
-                 }
+                 "result" => "FRIEND"
                }
              }
 
@@ -762,48 +730,54 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "unfollow mutation" do
+  describe "unfriend mutation" do
     @query """
     mutation ($userId: UUID!) {
-      unfollow(input: {userId: $userId}) {
+      unfriend(input: {userId: $userId}) {
         successful
-        result {
-          relationship
-          user { id }
-        }
+        result
       }
     }
     """
-    test "should make a follower from a friendship", shared do
+    test "should remove all relationship with a friend", shared do
       Roster.befriend(shared.user, shared.user2)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
       assert result.data == %{
-               "unfollow" => %{
+               "unfriend" => %{
                  "successful" => true,
-                 "result" => %{
-                   "relationship" => "FOLLOWING",
-                   "user" => %{"id" => shared.user2.id}
-                 }
+                 "result" => true
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :followee
+      assert Roster.relationship(shared.user, shared.user2) == :none
     end
 
-    test "should make a non-contact from a followee", shared do
-      Roster.follow(shared.user, shared.user2)
+    test "should remove all relationship with an invitee", shared do
+      Roster.invite(shared.user, shared.user2)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
       assert result.data == %{
-               "unfollow" => %{
+               "unfriend" => %{
                  "successful" => true,
-                 "result" => %{
-                   "relationship" => "NONE",
-                   "user" => %{"id" => shared.user2.id}
-                 }
+                 "result" => true
+               }
+             }
+
+      assert Roster.relationship(shared.user, shared.user2) == :none
+    end
+
+    test "should remove all relationship with an invited_by", shared do
+      Roster.invite(shared.user2, shared.user)
+      result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
+      refute has_errors(result)
+
+      assert result.data == %{
+               "unfriend" => %{
+                 "successful" => true,
+                 "result" => true
                }
              }
 
@@ -817,7 +791,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert error_msg(result) =~ "Invalid user"
     end
 
-    test "should return an error if you try to unfollow yourself", shared do
+    test "should return an error if you try to unfriend yourself", shared do
       result = run_query(@query, shared.user, %{"userId" => shared.user.id})
       assert has_errors(result)
       assert error_msg(result) =~ "Invalid user"
@@ -827,6 +801,198 @@ defmodule WockyAPI.GraphQL.UserTest do
       result = run_query(@query, shared.user, %{"userId" => ID.new()})
       assert has_errors(result)
       assert error_msg(result) =~ "Invalid user"
+    end
+  end
+
+  describe "freinds connection" do
+    @query """
+    query {
+      currentUser {
+        friends (first: 1) {
+          totalCount
+          edges {
+            node {
+              user { id }
+              name
+              created_at
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get friends", %{user: user, user2: user2} do
+      Roster.befriend(user, user2)
+      name = Name.name()
+      Roster.set_name(user, user2, name)
+      id2 = user2.id
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "friends" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "user" => %{"id" => ^id2},
+                         "name" => ^name,
+                         "created_at" => _
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+  end
+
+  describe "sent_invitations connection" do
+    @query """
+    query {
+      currentUser {
+        sentInvitations (first: 1) {
+          totalCount
+          edges {
+            node {
+              sender { id }
+              recipient { id }
+              created_at
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get sent_invitations", %{user: user, user2: user2} do
+      Roster.invite(user, user2)
+      id = user.id
+      id2 = user2.id
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "sentInvitations" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "sender" => %{"id" => ^id},
+                         "recipient" => %{"id" => ^id2},
+                         "created_at" => _
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+  end
+
+  describe "received_invitations connection" do
+    @query """
+    query {
+      currentUser {
+        receivedInvitations (first: 1) {
+          totalCount
+          edges {
+            node {
+              sender { id }
+              recipient { id }
+              created_at
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get received_invitations", %{user: user, user2: user2} do
+      Roster.invite(user2, user)
+      id = user.id
+      id2 = user2.id
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "receivedInvitations" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "sender" => %{"id" => ^id2},
+                         "recipient" => %{"id" => ^id},
+                         "created_at" => _
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+  end
+
+  describe "naming a friend" do
+    @query """
+    mutation ($user_id: UUID!, $name: String!) {
+      friendName (input: {user_id: $user_id, name: $name}) {
+        successful
+        result
+      }
+    }
+    """
+
+    test "assign a name to a friend", %{user: user, user2: user2} do
+      Roster.befriend(user, user2)
+      new_name = Name.name()
+
+      result =
+        run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "friendName" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             }
+
+      assert Roster.get_item(user, user2).name == new_name
+    end
+
+    test "should fail when the user doesn't exist", %{user: user} do
+      new_name = Name.name()
+
+      result =
+        run_query(@query, user, %{"user_id" => ID.new(), "name" => new_name})
+
+      assert has_errors(result)
+      assert error_msg(result) =~ "User not found"
+    end
+
+    test "should fail when the user is not a friend", %{
+      user: user,
+      user2: user2
+    } do
+      new_name = Name.name()
+
+      result =
+        run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
+
+      assert has_errors(result)
+      assert error_msg(result) =~ "User not found"
     end
   end
 end

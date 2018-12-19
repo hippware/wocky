@@ -67,6 +67,5 @@ defmodule Wocky.Message do
     |> foreign_key_constraint(:recipient_id)
   end
 
-  defp can_send?(sender, recipient),
-    do: recipient |> Roster.get(sender) |> Roster.followee?()
+  defp can_send?(sender, recipient), do: Roster.friend?(sender, recipient)
 end

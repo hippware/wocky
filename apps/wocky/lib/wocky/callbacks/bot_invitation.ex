@@ -7,8 +7,8 @@ defmodule Wocky.Callbacks.BotInvitation do
   alias Wocky.Push
   alias Wocky.Push.Events.{BotInvitationAcceptEvent, BotInviteEvent}
   alias Wocky.Repo
-  alias Wocky.User.Notification.Invitation, as: InvNotification
-  alias Wocky.User.Notification.InvitationResponse
+  alias Wocky.User.Notification.BotInvitation, as: InvNotification
+  alias Wocky.User.Notification.BotInvitationResponse
 
   use Wocky.Watcher, type: Wocky.Bot.Invitation, events: [:insert, :update]
 
@@ -33,7 +33,7 @@ defmodule Wocky.Callbacks.BotInvitation do
     new = Repo.preload(new, [:user, :invitee, :bot])
 
     if new.user != nil && new.invitee != nil && new.bot != nil do
-      InvitationResponse.notify(new)
+      BotInvitationResponse.notify(new)
 
       if accepted? do
         event =

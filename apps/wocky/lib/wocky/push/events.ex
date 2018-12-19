@@ -123,28 +123,28 @@ defmodule Wocky.Push.Events do
     end
   end
 
-  defmodule NewFollowerEvent do
+  defmodule UserInvitationEvent do
     @moduledoc false
 
-    defstruct [:user, :follower]
+    defstruct [:user, :from]
 
     @type t :: %__MODULE__{
             user: User.t(),
-            follower: User.t()
+            from: User.t()
           }
 
     use ExConstructor
   end
 
-  defimpl Event, for: NewFollowerEvent do
+  defimpl Event, for: UserInvitationEvent do
     import Wocky.Push.Events.Utils
 
-    def message(%NewFollowerEvent{follower: follower} = _event) do
-      get_handle(follower) <> " started following you"
+    def message(%UserInvitationEvent{from: from} = _event) do
+      get_handle(from) <> " invited you to be their friend"
     end
 
-    def uri(%NewFollowerEvent{} = _event) do
-      make_uri(:followers, nil, false)
+    def uri(%UserInvitationEvent{from: from} = _event) do
+      make_uri(:invitations, from.id)
     end
   end
 

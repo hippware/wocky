@@ -32,9 +32,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
     types [
       :bot_item_notification,
       :geofence_event_notification,
-      :invitation_notification,
-      :invitation_response_notification,
-      :user_follow_notification
+      :bot_invitation_notification,
+      :bot_invitation_response_notification,
+      :user_invitation_notification
     ]
 
     resolve_type &Notification.resolve_type/2
@@ -81,9 +81,10 @@ defmodule WockyAPI.Schema.NotificationTypes do
   end
 
   @desc "A notification that a user has invited the recipient to a bot"
-  object :invitation_notification do
+  object :bot_invitation_notification do
     @desc "The invitation object itself"
-    field :invitation, non_null(:bot_invitation), resolve: assoc(:invitation)
+    field :invitation, non_null(:bot_invitation),
+      resolve: assoc(:bot_invitation)
 
     @desc "The sender of the invitation"
     field :user, non_null(:user), resolve: assoc(:other_user)
@@ -95,9 +96,10 @@ defmodule WockyAPI.Schema.NotificationTypes do
   @desc """
   A notification that a user has responded to an invitation from the recipient
   """
-  object :invitation_response_notification do
+  object :bot_invitation_response_notification do
     @desc "The invitation object"
-    field :invitation, non_null(:bot_invitation), resolve: assoc(:invitation)
+    field :invitation, non_null(:bot_invitation),
+      resolve: assoc(:bot_invitation)
 
     @desc "The user who replied to the invitation"
     field :user, non_null(:user), resolve: assoc(:other_user)
@@ -107,12 +109,14 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "Whether the invitation was accepted or not"
     field :accepted, non_null(:boolean),
-      resolve: fn n, _, _ -> {:ok, n.invitation_accepted} end
+      resolve: fn n, _, _ -> {:ok, n.bot_invitation_accepted} end
   end
 
-  @desc "A notification that a user has started following the recipient"
-  object :user_follow_notification do
-    @desc "The user who started following"
+  @desc """
+  A notification that a user has invited the receipied to be their friend
+  """
+  object :user_invitation_notification do
+    @desc "The user who sent the invitation"
     field :user, non_null(:user), resolve: assoc(:other_user)
   end
 

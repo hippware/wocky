@@ -30,10 +30,10 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     assert error_msg(reply) =~ "This operation requires an authenticated user"
   end
 
-  describe "followee subscription" do
+  describe "friends subscription" do
     @query """
     subscription {
-      followees {
+      friends {
         id
         handle
         presence_status
@@ -42,36 +42,32 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     """
 
     setup %{user: user, socket: socket} do
-      [follower, followee, stranger] = Factory.insert_list(3, :user)
+      [friend, stranger] = Factory.insert_list(2, :user)
 
-      Roster.follow(follower, user)
-      Roster.follow(user, followee)
+      Roster.befriend(friend, user)
 
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
       {:ok,
-       follower: follower,
-       followee: followee,
-       stranger: stranger,
-       subscription_id: subscription_id}
+       friend: friend, stranger: stranger, subscription_id: subscription_id}
     end
 
-    test "updating a followee sends a message", %{
-      followee: followee,
+    test "updating a friend sends a message", %{
+      friend: friend,
       subscription_id: subscription_id
     } do
-      new_handle = Factory.new_handle()
-      User.update(followee, %{handle: new_handle})
+      new_handle = Factory.handle()
+      User.update(friend, %{handle: new_handle})
 
       assert_push "subscription:data", push, 2000
 
       assert push == %{
                result: %{
                  data: %{
-                   "followees" => %{
+                   "friends" => %{
                      "handle" => new_handle,
-                     "id" => followee.id,
+                     "id" => friend.id,
                      "presence_status" => "OFFLINE"
                    }
                  }
@@ -80,20 +76,14 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
              }
     end
 
-    test "updating a follower sends no message", %{follower: follower} do
-      User.update(follower, %{handle: Factory.new_handle()})
-
-      refute_push "subscription:data", _push, 500
-    end
-
     test "updating a stranger sends no message", %{stranger: stranger} do
-      User.update(stranger, %{handle: Factory.new_handle()})
+      User.update(stranger, %{handle: Factory.handle()})
 
       refute_push "subscription:data", _push, 500
     end
 
     test "updating ourself sends no message", %{user: user} do
-      User.update(user, %{handle: Factory.new_handle()})
+      User.update(user, %{handle: Factory.handle()})
 
       refute_push "subscription:data", _push, 500
     end

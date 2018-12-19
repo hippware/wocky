@@ -1,10 +1,10 @@
-defmodule Wocky.User.Notification.Invitation do
+defmodule Wocky.User.Notification.BotInvitation do
   @moduledoc "New invitation sent to the notified user"
 
   alias Wocky.User.Notification
 
   defstruct [
-    :invitation_id,
+    :bot_invitation_id,
     :user_id,
     :other_user_id,
     :bot_id
@@ -14,7 +14,7 @@ defmodule Wocky.User.Notification.Invitation do
 
   def notify(invitation) do
     Notification.notify(%__MODULE__{
-      invitation_id: invitation.id,
+      bot_invitation_id: invitation.id,
       user_id: invitation.invitee_id,
       other_user_id: invitation.user_id,
       bot_id: invitation.bot_id
@@ -22,21 +22,21 @@ defmodule Wocky.User.Notification.Invitation do
   end
 end
 
-defimpl Wocky.User.Notifier, for: Wocky.User.Notification.Invitation do
+defimpl Wocky.User.Notifier, for: Wocky.User.Notification.BotInvitation do
   alias Wocky.User.Notification
 
   def notify(invitation) do
     Notification.put(
       invitation,
-      :invitation,
-      [:invitation_id, :user_id, :other_user_id, :bot_id]
+      :bot_invitation,
+      [:bot_invitation_id, :user_id, :other_user_id, :bot_id]
     )
   end
 
   def decode(invitation, params) do
     %{
       invitation
-      | invitation_id: params.invitation_id,
+      | bot_invitation_id: params.bot_invitation_id,
         user_id: params.user_id,
         other_user_id: params.other_user_id,
         bot_id: params.bot_id

@@ -69,14 +69,23 @@ defmodule Wocky.BlockTest do
 
   describe "block-triggered item deletion" do
     setup %{user1: user1, user2: user2} do
-      invitation1 = Factory.insert(:invitation, user: user1, invitee: user2)
-      invitation2 = Factory.insert(:invitation, user: user2, invitee: user1)
+      invitation1 =
+        Factory.insert(:user_invitation, user: user1, invitee: user2)
+
+      invitation2 =
+        Factory.insert(:user_invitation, user: user2, invitee: user1)
 
       notification1 =
-        Factory.insert(:invitation_notification, user: user1, other_user: user2)
+        Factory.insert(:bot_invitation_notification,
+          user: user1,
+          other_user: user2
+        )
 
       notification2 =
-        Factory.insert(:invitation_notification, user: user2, other_user: user1)
+        Factory.insert(:bot_invitation_notification,
+          user: user2,
+          other_user: user1
+        )
 
       Block.block(user1, user2)
 

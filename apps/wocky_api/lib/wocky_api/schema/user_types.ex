@@ -134,11 +134,32 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc """
     The user's contacts (ie the XMPP roster) optionally filtered by relationship
+    DEPRECATED. Use "friends" connection instead.
     """
-    connection field :contacts, node_type: :contacts do
+    connection field :contacts,
+                 node_type: :contacts,
+                 deprecate: """
+                 Use the 'friends', 'sent_invitations',
+                 and 'received_invitations' fields instead
+                 """ do
       connection_complexity()
       arg :relationship, :user_contact_relationship
       resolve &User.get_contacts/3
+    end
+
+    connection field :friends, node_type: :friends do
+      connection_complexity()
+      resolve &User.get_friends/3
+    end
+
+    connection field :sent_invitations, node_type: :invitations do
+      connection_complexity()
+      resolve &User.get_sent_invitations/3
+    end
+
+    connection field :received_invitations, node_type: :invitations do
+      connection_complexity()
+      resolve &User.get_received_invitations/3
     end
 
     @desc "Other users that this user has blocked"
@@ -172,26 +193,35 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   enum :user_contact_relationship do
-    @desc "The parent user is following the child user"
-    value :following
+    @desc "The parent user has invited the child user to be a friend"
+    value :invited
 
-    @desc "The child user is following the parent user"
-    value :follower
+    @desc "The child user has invited the user to be a friend"
+    value :invited_by
 
-    @desc "The two users are following eachother"
+    @desc "The two users are friends"
     value :friend
 
     @desc "The users have no relationship"
     value :none
+
+    @desc "DEPRECATED - use INVITED instead"
+    value :follower
+
+    @desc "DEPRECATED - use INVITED_BY instead"
+    value :following
   end
 
   @desc "Another user with whom a relationship exists"
   object :contact do
     @desc "The other user"
-    field :user, non_null(:user)
+    field :user, non_null(:user), resolve: &User.get_contact_user/3
 
     @desc "The current user's relationship with the other user"
     field :relationship, :user_contact_relationship
+
+    @desc "The current user's nickname for the other user"
+    field :name, :string
 
     @desc "The creation time of the contact"
     field :created_at, non_null(:datetime)
@@ -209,6 +239,32 @@ defmodule WockyAPI.Schema.UserTypes do
       field :created_at, non_null(:datetime),
         do: resolve(&User.get_contact_created_at/3)
     end
+  end
+
+  connection :friends, node_type: :contact do
+    total_count_field()
+
+    edge do
+    end
+  end
+
+  connection :invitations, node_type: :invitation do
+    total_count_field()
+
+    edge do
+    end
+  end
+
+  @desc "An invitation from one user to another to become a friend"
+  object :invitation do
+    @desc "The sender"
+    field :sender, :user, resolve: assoc(:user)
+
+    @desc "The recipient"
+    field :recipient, :user, resolve: assoc(:invitee)
+
+    @desc "When the invitation was created"
+    field :created_at, non_null(:datetime)
   end
 
   @desc "A user location update entry"
@@ -366,15 +422,39 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_id, non_null(:uuid)
   end
 
-  input_object :unfollow_input do
-    @desc "The ID of the user to stop following"
+  input_object :unfriend_input do
+    @desc "The ID of the user to unfriend"
     field :user_id, non_null(:uuid)
+  end
+
+  input_object :friend_invite_input do
+    @desc "The ID of the user to invite to be a friend"
+    field :user_id, non_null(:uuid)
+  end
+
+  input_object :friend_delete_input do
+    @desc """
+    The ID of the user remove as a friend or whose invitation to decline
+    or cancel
+    """
+    field :user_id, non_null(:uuid)
+  end
+
+  input_object :friend_name_input do
+    @desc "The ID of the user to whom to assign a name"
+    field :user_id, non_null(:uuid)
+
+    @desc "The name to assign to the specified user"
+    field :name, non_null(:string)
   end
 
   payload_object(:user_update_payload, :user)
   payload_object(:user_hide_payload, :boolean)
   payload_object(:follow_payload, :contact)
-  payload_object(:unfollow_payload, :contact)
+  payload_object(:unfriend_payload, :boolean)
+  payload_object(:friend_invite_payload, :user_contact_relationship)
+  payload_object(:friend_delete_payload, :boolean)
+  payload_object(:friend_name_payload, :boolean)
 
   # This definition is an almost straight copy from the payload_object macro.
   # However we need to make the scope public because the object permissions
@@ -501,16 +581,47 @@ defmodule WockyAPI.Schema.UserTypes do
 
   object :contact_mutations do
     @desc "Start following another user"
-    field :follow, type: :follow_payload do
+    field :follow,
+      type: :follow_payload,
+      deprecate: "Use friendInvite instead" do
       arg :input, non_null(:follow_input)
-      resolve &User.follow/3
+      resolve &User.invite/3
       changeset_mutation_middleware()
     end
 
-    @desc "Stop following another user"
-    field :unfollow, type: :unfollow_payload do
-      arg :input, non_null(:unfollow_input)
-      resolve &User.unfollow/3
+    @desc "Remove all relationships with a user"
+    field :unfriend,
+      type: :unfriend_payload,
+      deprecate: "Use friendDelete instead" do
+      arg :input, non_null(:unfriend_input)
+      resolve &User.unfriend/3
+      changeset_mutation_middleware()
+    end
+
+    @desc """
+    Invite another user to be your friend or accept an existing invitation from
+    them
+    """
+    field :friend_invite, type: :friend_invite_payload do
+      arg :input, non_null(:friend_invite_input)
+      resolve &User.invite/3
+      changeset_mutation_middleware()
+    end
+
+    @desc """
+    Remove the friendship between the sender and another user or decline
+    or cancel an invitation from or to them
+    """
+    field :friend_delete, type: :friend_delete_payload do
+      arg :input, non_null(:friend_delete_input)
+      resolve &User.unfriend/3
+      changeset_mutation_middleware()
+    end
+
+    @desc "Sets the nickname for a friend"
+    field :friend_name, type: :friend_name_payload do
+      arg :input, non_null(:friend_name_input)
+      resolve &User.name_friend/3
       changeset_mutation_middleware()
     end
   end
@@ -611,26 +722,32 @@ defmodule WockyAPI.Schema.UserTypes do
 
   object :user_subscriptions do
     @desc """
-    Receive an update when a contact's state (following, friend etc) changes
+    Receive an update when a contact's state (friended/unfriended) changes
     """
     field :contacts, non_null(:contact) do
       user_subscription_config(&User.contacts_subscription_topic/1)
     end
 
     @desc """
-    Recieve an update when anything about a followee changes (either their
-    user data or their presence status)
+    Recieve an update when a friend's presence status changes
     """
-    field :followees, non_null(:user) do
+    field :presence, non_null(:user) do
       config fn
         _, %{context: %{current_user: user}} ->
           {:ok,
-           topic: User.followees_subscription_topic(user.id),
-           catchup: fn -> User.followees_catchup(user) end}
+           topic: User.presence_subscription_topic(user.id),
+           catchup: fn -> User.presence_catchup(user) end}
 
         _, _ ->
           {:error, "This operation requires an authenticated user"}
       end
+    end
+
+    @desc """
+    Receive an update when a friend's data (eg name, handle) changes
+    """
+    field :friends, non_null(:user) do
+      user_subscription_config(&User.friends_subscription_topic/1)
     end
   end
 end

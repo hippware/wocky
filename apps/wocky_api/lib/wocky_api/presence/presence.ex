@@ -41,7 +41,7 @@ defmodule WockyAPI.Presence do
     Subscription.publish(
       Endpoint,
       contact,
-      [{:followees, UserResolver.followees_subscription_topic(recipient_id)}]
+      [{:presence, UserResolver.presence_subscription_topic(recipient_id)}]
     )
 
     :ok

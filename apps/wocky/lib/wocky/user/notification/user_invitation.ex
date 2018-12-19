@@ -1,5 +1,5 @@
-defmodule Wocky.User.Notification.UserFollow do
-  @moduledoc "Notification for a new user following the notified user"
+defmodule Wocky.User.Notification.UserInvitation do
+  @moduledoc "Notification for a user inviting another user to be their friend"
 
   alias Wocky.User.Notification
 
@@ -10,19 +10,19 @@ defmodule Wocky.User.Notification.UserFollow do
 
   @type t :: %__MODULE__{}
 
-  def notify(follower, followee) do
+  def notify(user, invitee) do
     Notification.notify(%__MODULE__{
-      user_id: followee.id,
-      other_user_id: follower.id
+      user_id: invitee.id,
+      other_user_id: user.id
     })
   end
 end
 
-defimpl Wocky.User.Notifier, for: Wocky.User.Notification.UserFollow do
+defimpl Wocky.User.Notifier, for: Wocky.User.Notification.UserInvitation do
   alias Wocky.User.Notification
 
   def notify(user_follow) do
-    Notification.put(user_follow, :user_follow, [:user_id, :other_user_id])
+    Notification.put(user_follow, :user_invitation, [:user_id, :other_user_id])
   end
 
   def decode(user_follow, params) do

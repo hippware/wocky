@@ -7,14 +7,15 @@ defmodule Wocky.User.Notification do
   import Ecto.Query
 
   alias Ecto.Queryable
+
   alias Wocky.{Block, Bot, Repo, User}
 
   alias Wocky.User.Notification.{
+    BotInvitation,
+    BotInvitationResponse,
     BotItem,
     GeofenceEvent,
-    Invitation,
-    InvitationResponse,
-    UserFollow
+    UserInvitation
   }
 
   alias Wocky.User.Notifier
@@ -24,22 +25,22 @@ defmodule Wocky.User.Notification do
   defenum NotificationType, [
     :bot_item,
     :geofence_event,
-    :invitation,
-    :invitation_response,
-    :user_follow
+    :bot_invitation,
+    :bot_invitation_response,
+    :user_invitation
   ]
 
   @foreign_key_type :binary_id
   schema "notifications" do
     field :type, NotificationType, null: false
     field :geofence_event, GeofenceEvent.GeofenceEventType
-    field :invitation_accepted, :boolean
+    field :bot_invitation_accepted, :boolean
 
     belongs_to :user, User
     belongs_to :other_user, User
     belongs_to :bot, Bot
     belongs_to :bot_item, Bot.Item
-    belongs_to :invitation, Bot.Invitation, type: :integer
+    belongs_to :bot_invitation, Bot.Invitation, type: :integer
 
     timestamps()
   end
@@ -49,9 +50,9 @@ defmodule Wocky.User.Notification do
   @type t() ::
           BotItem.t()
           | GeofenceEvent.t()
-          | Invitation.t()
-          | InvitationResponse.t()
-          | UserFollow.t()
+          | BotInvitation.t()
+          | BotInvitationResponse.t()
+          | UserInvitation.t()
 
   @type base() :: %__MODULE__{}
 
@@ -70,9 +71,9 @@ defmodule Wocky.User.Notification do
       case type do
         :bot_item -> %BotItem{}
         :geofence_event -> %GeofenceEvent{}
-        :invitation -> %Invitation{}
-        :invitation_response -> %InvitationResponse{}
-        :user_follow -> %UserFollow{}
+        :bot_invitation -> %BotInvitation{}
+        :bot_invitation_response -> %BotInvitationResponse{}
+        :user_invitation -> %UserInvitation{}
       end
 
     Notifier.decode(struct, params)
@@ -129,8 +130,8 @@ defmodule Wocky.User.Notification do
       :other_user_id,
       :bot_id,
       :bot_item_id,
-      :invitation_id,
-      :invitation_accepted,
+      :bot_invitation_id,
+      :bot_invitation_accepted,
       :geofence_event
     ])
     |> validate_required([:type | required])
@@ -138,6 +139,6 @@ defmodule Wocky.User.Notification do
     |> foreign_key_constraint(:other_user_id)
     |> foreign_key_constraint(:bot_id)
     |> foreign_key_constraint(:bot_item_id)
-    |> foreign_key_constraint(:invitation_id)
+    |> foreign_key_constraint(:bot_invitation_id)
   end
 end

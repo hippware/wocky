@@ -1,11 +1,12 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
+  alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
-  alias Wocky.{Account, Conversation, Message, Push, Repo, Roster, User}
+  alias Wocky.{Account, Push, Repo, Roster, User}
+  alias Wocky.Roster.Item
   alias Wocky.User.Location
-  alias WockyAPI.Endpoint
-  alias WockyAPI.Presence
+  alias WockyAPI.{Endpoint, Presence}
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
@@ -29,39 +30,72 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
-    query =
-      case args[:relationship] do
-        nil -> Roster.all_contacts_query(user, requestor, false)
-        :friend -> Roster.friends_query(user, requestor, false)
-        :follower -> Roster.followers_query(user, requestor, false)
-        :following -> Roster.followees_query(user, requestor, false)
-      end
+    with {:query, query} <- contacts_query(user, args, requestor) do
+      Utils.connection_from_query(query, user, args)
+    end
+  end
 
-    Utils.connection_from_query(query, user, args)
+  defp contacts_query(user, args, requestor) do
+    case args[:relationship] do
+      nil ->
+        {:query, Roster.friends_query(user, requestor)}
+
+      :friend ->
+        {:query, Roster.friends_query(user, requestor)}
+
+      :invited ->
+        {:query, Roster.sent_invitations_query(user, requestor)}
+
+      :invited_by ->
+        {:query, Roster.received_invitations_query(user, requestor)}
+
+      :follower ->
+        {:ok, Connection.from_list([], args)}
+
+      :following ->
+        {:ok, Connection.from_list([], args)}
+    end
   end
 
   def get_contact_relationship(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    rel =
-      parent
-      |> Roster.relationship(target_user)
-      |> map_relationship()
-
-    {:ok, rel}
+    {:ok, Roster.relationship(parent, target_user)}
   end
 
   def get_contact_created_at(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    item = Roster.get(parent, target_user)
+    item = Roster.get_item(parent, target_user)
     {:ok, item.created_at}
   end
 
-  def get_conversations(user, args, _info) do
-    user.id
-    |> Conversation.by_user_query()
-    |> Utils.connection_from_query(user, args)
+  def get_friends(user, args, %{context: %{current_user: requestor}}),
+    do: roster_query(user, args, requestor, &Roster.items_query/2)
+
+  def get_sent_invitations(user, args, %{context: %{current_user: requestor}}),
+    do: roster_query(user, args, requestor, &Roster.sent_invitations_query/2)
+
+  def get_received_invitations(user, args, %{
+        context: %{current_user: requestor}
+      }),
+      do:
+        roster_query(
+          user,
+          args,
+          requestor,
+          &Roster.received_invitations_query/2
+        )
+
+  defp roster_query(user, args, requestor, query, post_process \\ nil) do
+    user
+    |> query.(requestor)
+    |> Utils.connection_from_query(
+      user,
+      [desc: :updated_at],
+      post_process,
+      args
+    )
   end
 
   def get_locations(user, args, %{context: %{current_user: user}}) do
@@ -155,16 +189,17 @@ defmodule WockyAPI.Resolvers.User do
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
-  def followees_subscription_topic(user_id),
-    do: "followees_subscription_" <> user_id
+  def friends_subscription_topic(user_id),
+    do: "friends_subscription_" <> user_id
 
-  def messages_subscription_topic(user_id),
-    do: "messages_subscription_" <> user_id
+  def presence_subscription_topic(user_id),
+    do: "presence_subscription_" <> user_id
 
   def notify_contact(item, relationship) do
     notification = %{
       user: item.contact,
-      relationship: map_relationship(relationship),
+      relationship: relationship,
+      name: item.name,
       created_at: item.created_at
     }
 
@@ -173,18 +208,20 @@ defmodule WockyAPI.Resolvers.User do
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])
   end
 
-  def notify_followers(user) do
+  def notify_friends(user) do
     Repo.transaction(fn ->
       user
-      |> Roster.followers_query(user, false)
+      |> Roster.items_query(user)
       |> Repo.stream()
-      |> Stream.each(fn f ->
-        Subscription.publish(Endpoint, user, [
-          {:followees, followees_subscription_topic(f.id)}
-        ])
-      end)
+      |> Stream.each(&notify_friend(&1, user))
       |> Stream.run()
     end)
+  end
+
+  defp notify_friend(friend_item, user) do
+    topic = friends_subscription_topic(friend_item.contact_id)
+
+    Subscription.publish(Endpoint, user, [{:friends, topic}])
   end
 
   def has_used_geofence(_root, _args, _context), do: {:ok, true}
@@ -206,24 +243,6 @@ defmodule WockyAPI.Resolvers.User do
     User.hide(user, param)
   end
 
-  def get_messages(_root, args, %{context: %{current_user: user}}) do
-    with {:ok, query} <- get_messages_query(args[:other_user], user) do
-      query
-      |> Utils.connection_from_query(user, [desc: :id], args)
-    end
-  end
-
-  defp get_messages_query(nil, requestor),
-    do: {:ok, Message.get_query(requestor)}
-
-  defp get_messages_query(other_user_id, requestor) do
-    with %User{} = other_user <- User.get_user(other_user_id, requestor) do
-      {:ok, Message.get_query(requestor, other_user)}
-    else
-      _ -> user_not_found(other_user_id)
-    end
-  end
-
   def delete(_root, _args, %{context: %{current_user: user}}) do
     User.delete(user.id)
     {:ok, true}
@@ -241,27 +260,43 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{successful: result, result: result}}
   end
 
-  def follow(_root, args, %{context: %{current_user: user}}),
-    do: roster_action(user, args[:input][:user_id], &Roster.become_follower/2)
+  def invite(_root, args, %{context: %{current_user: user}}) do
+    with {:ok, %{relationship: r}} <-
+           roster_action(user, args[:input][:user_id], &Roster.invite/2) do
+      {:ok, r}
+    end
+  end
 
-  def unfollow(_root, args, %{context: %{current_user: user}}),
-    do: roster_action(user, args[:input][:user_id], &Roster.stop_following/2)
+  def unfriend(_root, args, %{context: %{current_user: user}}) do
+    with {:ok, _} <-
+           roster_action(user, args[:input][:user_id], &Roster.unfriend/2) do
+      {:ok, true}
+    end
+  end
+
+  def name_friend(_root, args, %{context: %{current_user: user}}) do
+    with %User{} = other_user <- User.get_user(args[:input][:user_id], user),
+         %Item{} <- Roster.get_item(user, other_user) do
+      Roster.set_name(user, other_user, args[:input][:name])
+      {:ok, true}
+    else
+      nil -> user_not_found(args[:input][:user_id])
+      error -> error
+    end
+  end
 
   defp roster_action(%User{id: id}, id, _), do: {:error, "Invalid user"}
 
   defp roster_action(user, contact_id, roster_fun) do
     with %User{} = contact <- User.get_user(contact_id, user) do
       relationship = roster_fun.(user, contact)
-      {:ok, %{relationship: map_relationship(relationship), user: contact}}
+      {:ok, %{relationship: relationship, user: contact}}
     else
       _ -> {:error, "Invalid user"}
     end
   end
 
-  defp map_relationship(:followee), do: :following
-  defp map_relationship(r), do: r
-
-  def followees_catchup(user) do
+  def presence_catchup(user) do
     user
     |> Presence.connect()
     |> Enum.each(&Presence.publish(user.id, &1))
@@ -270,4 +305,14 @@ defmodule WockyAPI.Resolvers.User do
   def get_presence_status(other_user, _args, _context) do
     {:ok, Presence.user_status(other_user)}
   end
+
+  def get_contact_user(%Item{} = c, _args, _context) do
+    {:ok,
+     c
+     |> Repo.preload([:contact])
+     |> Map.get(:contact)}
+  end
+
+  # Explicitly built map - user should already be in place
+  def get_contact_user(x, _args, _context), do: {:ok, x.user}
 end
