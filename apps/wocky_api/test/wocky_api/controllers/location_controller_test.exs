@@ -73,7 +73,7 @@ defmodule WockyAPI.LocationControllerTest do
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
-      assert json_response(conn, 400)["errors"] != %{}
+      assert conn.status == 400
     end
 
     test "returns 400 when longitude is missing", %{conn: conn, user: user} do
@@ -88,7 +88,7 @@ defmodule WockyAPI.LocationControllerTest do
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
-      assert json_response(conn, 400)["errors"] != %{}
+      assert conn.status == 400
     end
 
     test "returns 400 when accuracy is missing", %{conn: conn, user: user} do
@@ -103,7 +103,7 @@ defmodule WockyAPI.LocationControllerTest do
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
-      assert json_response(conn, 400)["errors"] != %{}
+      assert conn.status == 400
     end
 
     test "returns 400 when device is missing", %{conn: conn, user: user} do
@@ -118,7 +118,7 @@ defmodule WockyAPI.LocationControllerTest do
       }
 
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
-      assert json_response(conn, 400)["errors"] != %{}
+      assert conn.status == 400
     end
   end
 end
