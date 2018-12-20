@@ -5,7 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: plug_cowboy (PR #2113)
+# 2018.12.20+r40b03e3
+
+* Update: plug_cowboy (PR #2113), absinthe_relay (PR #2124)
 * Post-XMPP audit and code cleanup (#2103, PR #2107)
 * Fix a crash when there is a certain GQL error (#2106, PR #2109)
 * Twilio integration (#1974, PR #2117)
@@ -13,6 +15,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix waiter msg crash (#2116, PR #2119)
 * Improve test coverage (#2118, PR #2120)
 * Refactor roster et al to use full user structs (PR #2123)
+* Log push notification errors instead of sending Honeybadgers (#2126)
+* Fix rendering of HTTP errors (#2111, PR #2125)
+* Fix crash on invalid bot item publication changeset (#1953, PR #2128)
+* Improve errors on message sending (PR #2129)
 
 
 # 2018.12.13+rb32e32f
