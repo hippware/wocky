@@ -260,6 +260,7 @@ defmodule WockyAPI.Resolvers.Bot do
     else
       nil -> not_found_error(args.bot_id)
       {:error, :permission_denied} -> {:error, "Permission denied"}
+      error -> error
     end
   end
 
