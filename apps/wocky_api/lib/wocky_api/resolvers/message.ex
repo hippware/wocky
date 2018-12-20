@@ -39,7 +39,7 @@ defmodule WockyAPI.Resolvers.Message do
     with %User{} = other_user <- User.get_user(other_user_id, requestor) do
       {:ok, Message.get_query(requestor, other_user)}
     else
-      _ -> UserResolver.user_not_found(other_user_id)
+      nil -> UserResolver.user_not_found(other_user_id)
     end
   end
 
@@ -51,7 +51,9 @@ defmodule WockyAPI.Resolvers.Message do
            Message.send(recipient, user, args[:content], args[:image_url]) do
       {:ok, true}
     else
-      _ -> UserResolver.user_not_found(recipient_id)
+      nil -> UserResolver.user_not_found(recipient_id)
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      error -> error
     end
   end
 
