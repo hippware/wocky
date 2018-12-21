@@ -4,6 +4,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
+* Preload message sender/receiver as part of query 
+  * Fixes new crash (#1287)
 
 # 2018.12.20+r40b03e3
 
