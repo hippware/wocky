@@ -57,7 +57,7 @@ defmodule WockyAPI.Mixfile do
       {:absinthe_relay,
        github: "absinthe-graphql/absinthe_relay", branch: "master"},
       {:absinthe_ecto, "~> 0.1.3"},
-      {:absinthe_metrics, "~> 0.9.0"},
+      {:absinthe_metrics, "~> 1.0.0"},
       {:apollo_tracing, "~> 0.4.0"},
       {:cors_plug, "~> 2.0"},
       {:ecto_sql, "~> 3.0"},
