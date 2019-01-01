@@ -19,7 +19,7 @@ defmodule Wocky.Account.ClientVersion do
     belongs_to :user, User, define_field: false
   end
 
-  @agent_rx ~r/TinyRobot\/(\d+\.\d+\.\d+)(?: \((.*)\))?/
+  @agent_rx ~r/TinyRobot\/((?:\d+\.?)+)(?: \((.*)\))?/
   @record_fields [:user_id, :device, :version, :attributes]
 
   def record(user, device, agent_str) do
