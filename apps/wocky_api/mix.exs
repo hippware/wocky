@@ -67,9 +67,7 @@ defmodule WockyAPI.Mixfile do
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_pubsub, "~> 1.0"},
-      # TODO: Back to the phoenixframework/ version once the update is merged
-      {:phoenix_pubsub_redis,
-       github: "hippware/phoenix_pubsub_redis", branch: "redix-0.9"},
+      {:phoenix_pubsub_redis, "~> 2.1.5"},
       {:plug_cowboy, "~> 2.0"},
       {:plug, "~> 1.7"},
       {:prometheus_ex, "~> 3.0", override: true},
