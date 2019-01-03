@@ -4,8 +4,17 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
+
+* Update: absinthe_metrics (PR #2132), geocalc (PR #2133)
+  * ecto_sql (PR #2134)
+* Allow client versions with more than 3 digit groups (#2130, PR #2131)
+
+
+# 2018.12.20+r9697983
+
 * Preload message sender/receiver as part of query 
   * Fixes new crash (#1287)
+
 
 # 2018.12.20+r40b03e3
 
