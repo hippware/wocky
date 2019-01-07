@@ -6,7 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: absinthe_metrics (PR #2132), geocalc (PR #2133)
-  * ecto_sql (PR #2134)
+  * ecto_sql (PR #2134), phoenix_pubsub_redis (PR #2135)
 * Allow client versions with more than 3 digit groups (#2130, PR #2131)
 
 
