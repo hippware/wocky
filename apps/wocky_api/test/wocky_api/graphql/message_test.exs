@@ -19,6 +19,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
           total_count
           edges {
             node {
+              id
               other_user {
                 id
               }

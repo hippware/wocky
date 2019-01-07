@@ -80,9 +80,6 @@ defmodule WockyAPI.Resolvers.Message do
         }
       end
 
-    data
-    |> Map.put(:content, message.content)
-    |> Map.put(:image_url, message.image_url)
-    |> Map.put(:created_at, message.created_at)
+    message |> Map.merge(data)
   end
 end
