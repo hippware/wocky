@@ -422,11 +422,6 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_id, non_null(:uuid)
   end
 
-  input_object :unfriend_input do
-    @desc "The ID of the user to unfriend"
-    field :user_id, non_null(:uuid)
-  end
-
   input_object :friend_invite_input do
     @desc "The ID of the user to invite to be a friend"
     field :user_id, non_null(:uuid)
@@ -451,7 +446,6 @@ defmodule WockyAPI.Schema.UserTypes do
   payload_object(:user_update_payload, :user)
   payload_object(:user_hide_payload, :boolean)
   payload_object(:follow_payload, :contact)
-  payload_object(:unfriend_payload, :boolean)
   payload_object(:friend_invite_payload, :user_contact_relationship)
   payload_object(:friend_delete_payload, :boolean)
   payload_object(:friend_name_payload, :boolean)
@@ -586,15 +580,6 @@ defmodule WockyAPI.Schema.UserTypes do
       deprecate: "Use friendInvite instead" do
       arg :input, non_null(:follow_input)
       resolve &User.invite/3
-      changeset_mutation_middleware()
-    end
-
-    @desc "Remove all relationships with a user"
-    field :unfriend,
-      type: :unfriend_payload,
-      deprecate: "Use friendDelete instead" do
-      arg :input, non_null(:unfriend_input)
-      resolve &User.unfriend/3
       changeset_mutation_middleware()
     end
 

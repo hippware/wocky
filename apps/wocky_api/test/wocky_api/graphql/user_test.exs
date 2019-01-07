@@ -730,10 +730,10 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "unfriend mutation" do
+  describe "friendDelete mutation" do
     @query """
     mutation ($userId: UUID!) {
-      unfriend(input: {userId: $userId}) {
+      friendDelete(input: {userId: $userId}) {
         successful
         result
       }
@@ -745,7 +745,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert result.data == %{
-               "unfriend" => %{
+               "friendDelete" => %{
                  "successful" => true,
                  "result" => true
                }
@@ -760,7 +760,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert result.data == %{
-               "unfriend" => %{
+               "friendDelete" => %{
                  "successful" => true,
                  "result" => true
                }
@@ -775,7 +775,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert result.data == %{
-               "unfriend" => %{
+               "friendDelete" => %{
                  "successful" => true,
                  "result" => true
                }
