@@ -12,6 +12,9 @@ defmodule WockyAPI.Schema.MessageTypes do
 
   @desc "A message to a user"
   object :message do
+    @desc "The ID of this message"
+    field :id, non_null(:integer)
+
     @desc "The user who sent or received the message"
     field :other_user, non_null(:user), resolve: assoc(:other_user)
 
