@@ -18,9 +18,10 @@ defmodule WockyAPI.Resolvers.Notification do
     case type do
       :bot_item -> :bot_item_notification
       :geofence_event -> :geofence_event_notification
-      :invitation -> :invitation_notification
-      :invitation_response -> :invitation_response_notification
+      :bot_invitation -> :bot_invitation_notification
+      :bot_invitation_response -> :bot_invitation_response_notification
       :user_follow -> :user_follow_notification
+      :user_invitation -> :user_invitation_notification
     end
   end
 

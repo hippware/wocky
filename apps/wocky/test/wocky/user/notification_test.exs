@@ -6,21 +6,22 @@ defmodule Wocky.User.NotificationTest do
   alias Wocky.User.Notification
 
   alias Wocky.User.Notification.{
+    BotInvitation,
+    BotInvitationResponse,
     BotItem,
     GeofenceEvent,
-    Invitation,
-    InvitationResponse,
-    UserFollow
+    UserInvitation
   }
+
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
     bot = Factory.insert(:bot, user: user)
 
-    invitation =
-      Factory.insert(:invitation, user: user, invitee: user2, bot: bot)
+    bot_invitation =
+      Factory.insert(:bot_invitation, user: user, invitee: user2, bot: bot)
 
-    {:ok, user: user, user2: user2, bot: bot, invitation: invitation}
+    {:ok, user: user, user2: user2, bot: bot, bot_invitation: bot_invitation}
   end
 
   describe "create notification" do
@@ -52,41 +53,41 @@ defmodule Wocky.User.NotificationTest do
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "invitation", ctx do
+    test "bot invitation", ctx do
       assert {:ok, %Notification{} = notification} =
-               Notification.notify(%Invitation{
+               Notification.notify(%BotInvitation{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id,
                  bot_id: ctx.bot.id,
-                 invitation_id: ctx.invitation.id
+                 bot_invitation_id: ctx.bot_invitation.id
                })
 
-      assert %Notification{type: :invitation} =
+      assert %Notification{type: :bot_invitation} =
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "invitation response", ctx do
+    test "bot invitation response", ctx do
       assert {:ok, %Notification{} = notification} =
-               Notification.notify(%InvitationResponse{
+               Notification.notify(%BotInvitationResponse{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id,
                  bot_id: ctx.bot.id,
-                 invitation_id: ctx.invitation.id,
-                 accepted: true
+                 bot_invitation_id: ctx.bot_invitation.id,
+                 bot_invitation_accepted: true
                })
 
-      assert %Notification{type: :invitation_response} =
+      assert %Notification{type: :bot_invitation_response} =
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "user follow", ctx do
+    test "user invitation", ctx do
       assert {:ok, %Notification{} = notification} =
-               Notification.notify(%UserFollow{
+               Notification.notify(%UserInvitation{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id
                })
 
-      assert %Notification{type: :user_follow} =
+      assert %Notification{type: :user_invitation} =
                Repo.get_by(Notification, id: notification.id)
     end
   end
@@ -121,28 +122,28 @@ defmodule Wocky.User.NotificationTest do
 
     test "invitation", ctx do
       assert {:error, :invalid_user} ==
-               Notification.notify(%Invitation{
+               Notification.notify(%BotInvitation{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id,
                  bot_id: ctx.bot.id,
-                 invitation_id: ctx.invitation.id
+                 bot_invitation_id: ctx.bot_invitation.id
                })
     end
 
     test "invitation response", ctx do
       assert {:error, :invalid_user} ==
-               Notification.notify(%InvitationResponse{
+               Notification.notify(%BotInvitationResponse{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id,
                  bot_id: ctx.bot.id,
-                 invitation_id: ctx.invitation.id,
-                 accepted: true
+                 bot_invitation_id: ctx.bot_invitation.id,
+                 bot_invitation_accepted: true
                })
     end
 
-    test "user follow", ctx do
+    test "user invitation", ctx do
       assert {:error, :invalid_user} ==
-               Notification.notify(%UserFollow{
+               Notification.notify(%UserInvitation{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id
                })
@@ -154,10 +155,16 @@ defmodule Wocky.User.NotificationTest do
       user3 = Factory.insert(:user)
 
       notification =
-        Factory.insert(:invitation_notification, user: user, other_user: user2)
+        Factory.insert(:bot_invitation_notification,
+          user: user,
+          other_user: user2
+        )
 
       notification2 =
-        Factory.insert(:invitation_notification, user: user, other_user: user3)
+        Factory.insert(:bot_invitation_notification,
+          user: user,
+          other_user: user3
+        )
 
       Notification.delete(user, user2)
 
@@ -185,18 +192,18 @@ defmodule Wocky.User.NotificationTest do
     end
 
     test "invitation" do
-      notification = Factory.build(:invitation_notification)
-      assert %Invitation{} = Notification.decode(notification)
+      notification = Factory.build(:bot_invitation_notification)
+      assert %BotInvitation{} = Notification.decode(notification)
     end
 
     test "invitation response" do
-      notification = Factory.build(:invitation_response_notification)
-      assert %InvitationResponse{} = Notification.decode(notification)
+      notification = Factory.build(:bot_invitation_response_notification)
+      assert %BotInvitationResponse{} = Notification.decode(notification)
     end
 
-    test "user follow" do
-      notification = Factory.build(:user_follow_notification)
-      assert %UserFollow{} = Notification.decode(notification)
+    test "user invitation" do
+      notification = Factory.build(:user_invitation_notification)
+      assert %UserInvitation{} = Notification.decode(notification)
     end
   end
 

@@ -1,309 +1,130 @@
 defmodule Wocky.Roster do
   @moduledoc """
   DB interface module for roster items
-
-  NOTE (Because I'm forever messing this up):
-
-  Roster item subscriptions should be read in the following way:
-
-  [contact_id] sends/gets presences [suscription] [user_id]
-
-  eg:
-  %Item{
-    user_id: A
-    contact_id: B
-    subscription: :from
-  }
-
-  reads as: "B gets presences from A" (ie B is a follower of A).
-
-  The corresponding entry for B:
-
-  %Item{
-    user_id: B
-    contact_id: A
-    subscription: :to
-  }
-
-  reads as: "A sends presences to B" (ie A is a followee of B).
-
   """
 
   import Ecto.Query
 
   alias Ecto.Queryable
-  alias Wocky.{Block, Repo}
-  alias Wocky.Roster.Item
-  alias Wocky.User
+  alias Wocky.{Repo, User}
+  alias Wocky.Roster.{Invitation, Item}
 
   require Logger
 
-  @type relationship :: :self | :friend | :follower | :followee | :none
+  @type relationship :: :self | :friend | :invited | :invited_by | :none
+  @type error :: {:error, term()}
 
   # ----------------------------------------------------------------------
   # Database interaction
 
-  @doc "Write a roster record to the database"
-  @spec put(map) :: {:ok, Item.t()} | {:error, term}
-  def put(fields) do
-    %Item{}
-    |> Item.changeset(fields)
-    |> Repo.insert(
-      on_conflict: :replace_all,
-      conflict_target: [:user_id, :contact_id]
-    )
-  end
+  @spec get_item(User.t(), User.t()) :: Item.t() | nil
+  def get_item(a, b), do: Item.get(a, b)
 
-  @doc "Get the roster item for a given user pertaining to another user"
-  @spec get(User.t(), User.t()) :: Item.t() | nil
-  def get(user, contact) do
-    Item
-    |> where(contact_id: ^contact.id)
-    |> where(user_id: ^user.id)
-    |> preload(:contact)
-    |> Repo.one()
-  end
+  @spec set_name(User.t(), User.t(), binary()) :: {:ok, Item.t()} | error()
+  def set_name(user, contact, name), do: Item.set_name(user, contact, name)
 
-  @spec relationship(Item.t()) :: relationship
-  def relationship(item) do
+  @doc "Returns the relationship of user to target"
+  @spec relationship(User.t(), User.t()) :: relationship
+  def relationship(%User{id: id}, %User{id: id}), do: :self
+
+  def relationship(user, target) do
+    # TODO: This can be optimised into a single query with some JOIN magic,
+    # but I'm going for "simple and working" first.
     cond do
-      friend?(item) -> :friend
-      follower?(item) -> :follower
-      followee?(item) -> :followee
+      friend?(user, target) -> :friend
+      invited?(user, target) -> :invited
+      invited_by?(user, target) -> :invited_by
       true -> :none
     end
   end
 
-  @doc "Returns true if the roster item refers to a friend of the item owner"
-  @spec friend?(Item.t()) :: boolean
-  def friend?(%Item{subscription: :both}), do: true
-  def friend?(_), do: false
-
-  @doc "Returns true if the roster item refers to a follower of the item owner"
-  @spec follower?(Item.t()) :: boolean
-  def follower?(%Item{subscription: subscription}) do
-    subscription == :both || subscription == :from
+  @doc "Returns true if the two users are friends"
+  @spec friend?(User.t(), User.t()) :: boolean
+  def friend?(user_a, user_b) do
+    Item
+    |> where(user_id: ^user_a.id)
+    |> where(contact_id: ^user_b.id)
+    |> Repo.one()
+    |> Kernel.!=(nil)
   end
 
-  def follower?(_), do: false
+  @doc "Returns true if the first user has invited the second to be friends"
+  @spec invited?(User.t(), User.t()) :: boolean
+  def invited?(user, target) do
+    Invitation
+    |> where(user_id: ^user.id)
+    |> where(invitee_id: ^target.id)
+    |> Repo.one()
+    |> Kernel.!=(nil)
+  end
 
   @doc "Returns true if the roster item refers to a followee of the item owner"
-  @spec followee?(Item.t()) :: boolean
-  def followee?(%Item{subscription: subscription}) do
-    subscription == :both || subscription == :to
-  end
-
-  def followee?(_), do: false
-
-  @doc "Returns the relationship of a to b"
-  @spec relationship(User.t(), User.t()) :: relationship
-  def relationship(%User{id: id}, %User{id: id}), do: :self
-
-  def relationship(a, b) do
-    case get_pair(a, b) do
-      nil ->
-        :none
-
-      {a_to_b, b_to_a} ->
-        cond do
-          friend?(a_to_b) ->
-            :friend
-
-          follower?(a_to_b) ->
-            :followee
-
-          follower?(b_to_a) ->
-            :follower
-
-          true ->
-            :none
-        end
-    end
-  end
-
-  defp get_pair(a, b) do
-    Item
-    |> with_pair(a, b)
-    |> Repo.all()
-    |> maybe_sort_pair(a, b)
-  end
-
-  defp with_pair(query, a, b) do
-    from r in query,
-      where:
-        (r.user_id == ^a.id and r.contact_id == ^b.id) or
-          (r.user_id == ^b.id and r.contact_id == ^a.id)
-  end
-
-  defp maybe_sort_pair([], _, _), do: nil
-  defp maybe_sort_pair([_], _, _), do: nil
-
-  defp maybe_sort_pair([first = %Item{user_id: id}, second], %User{id: id}, _) do
-    {first, second}
-  end
-
-  defp maybe_sort_pair([first, second], _, _) do
-    {second, first}
-  end
-
-  defp maybe_sort_pair(list, a, b) do
-    :ok =
-      Logger.warn(
-        "Expected a roster pair but got #{inspect(list)} for #{a}, #{b}"
-      )
-
-    nil
-  end
+  @spec invited_by?(User.t(), User.t()) :: boolean
+  def invited_by?(user, target), do: invited?(target, user)
 
   @doc """
-  Makes a user a follower of another user but does not remove them as a
-  friend, nor the other user as a follower if they are already.
+  Invites `contact` to become a friend of `user`
   """
-  @spec become_follower(User.t(), User.t()) :: relationship()
-  def become_follower(user, contact) do
-    case relationship(user, contact) do
+  @spec invite(User.t(), User.t()) :: relationship()
+  def invite(user, target) do
+    case relationship(user, target) do
       :none ->
-        :ok = follow(user, contact)
-        :follower
+        :ok = Invitation.add(user, target)
+        :invited
 
-      :followee ->
-        :ok = befriend(user, contact)
+      :invited_by ->
+        befriend(user, target)
         :friend
 
-      :follower ->
-        :follower
+      :invited ->
+        :invited
 
       :friend ->
         :friend
-    end
-  end
-
-  @doc """
-  Removes a user as a follower of another user but does not change the other
-  user's following state of the first user.
-  """
-  @spec stop_following(User.t(), User.t()) :: relationship()
-  def stop_following(user, contact) do
-    case relationship(user, contact) do
-      :none ->
-        :none
-
-      :followee ->
-        :followee
-
-      :follower ->
-        :ok = unfriend(user, contact)
-        :none
-
-      :friend ->
-        :ok = follow(contact, user)
-        :followee
     end
   end
 
   @spec befriend(User.t(), User.t()) :: :ok
-  def befriend(u1, u2) do
-    {:ok, _} = add_relationship(u1, u2, :both)
-    {:ok, _} = add_relationship(u2, u1, :both)
-    :ok
-  end
-
-  @spec follow(User.t(), User.t()) :: :ok
-  def follow(follower, followee) do
-    {:ok, _} = add_relationship(followee, follower, :from)
-    {:ok, _} = add_relationship(follower, followee, :to)
+  def befriend(a, b) do
+    {:ok, _} = Item.add(a, b)
+    {:ok, _} = Item.add(b, a)
+    Invitation.delete_pair(a, b)
     :ok
   end
 
   @doc "Removes all relationships (friend + follow) between the two users"
   @spec unfriend(User.t(), User.t()) :: :ok
   def unfriend(a, b) do
-    Item
-    |> with_pair(a, b)
-    |> Repo.delete_all()
-
+    Item.delete_pair(a, b)
+    Invitation.delete_pair(a, b)
     :ok
-  end
-
-  defp add_relationship(user, contact, subscription) do
-    %Item{}
-    |> Item.changeset(%{
-      user_id: user.id,
-      contact_id: contact.id,
-      subscription: subscription,
-      ask: :none,
-      groups: []
-    })
-    |> Repo.insert(
-      on_conflict: [set: [subscription: subscription, ask: :none]],
-      conflict_target: [:user_id, :contact_id]
-    )
-  end
-
-  def write_blocked_items(a, b) do
-    [
-      %{
-        user_id: a.id,
-        contact_id: b.id,
-        name: "",
-        ask: :none,
-        subscription: :none,
-        groups: []
-      },
-      %{
-        user_id: b.id,
-        contact_id: a.id,
-        name: "",
-        ask: :none,
-        subscription: :none,
-        groups: []
-      }
-    ]
-    |> Enum.each(&put/1)
   end
 
   # ----------------------------------------------------------------------
   # Queries
 
-  @spec all_contacts_query(User.t(), User.t(), boolean) :: Queryable.t()
-  def all_contacts_query(user, requester, include_system \\ true) do
-    relationships_query(
-      user,
-      requester,
-      [:both, :from, :to],
-      include_system
-    )
-  end
+  @spec friends_query(User.t(), User.t()) :: Queryable.t() | error()
+  def friends_query(%User{id: id} = user, %User{id: id}),
+    do: Item.friends_query(user)
 
-  @spec followers_query(User.t(), User.t(), boolean) :: Queryable.t()
-  def followers_query(user, requester, include_system \\ true) do
-    relationships_query(user, requester, [:both, :from], include_system)
-  end
+  def friends_query(_, _), do: {:error, :permission_denied}
 
-  @spec followees_query(User.t(), User.t(), boolean) :: Queryable.t()
-  def followees_query(user, requester, include_system \\ true) do
-    relationships_query(user, requester, [:both, :to], include_system)
-  end
+  @spec sent_invitations_query(User.t(), User.t()) :: Queryable.t() | error()
+  def sent_invitations_query(%User{id: id} = user, %User{id: id}),
+    do: Invitation.sent_query(user)
 
-  @spec friends_query(User.t(), User.t(), boolean) :: Queryable.t()
-  def friends_query(user, requester, include_system \\ true) do
-    relationships_query(user, requester, [:both], include_system)
-  end
+  def sent_invitations_query(_, _), do: {:error, :permission_denied}
 
-  defp relationships_query(user, requester, sub_types, include_system) do
-    User
-    |> join(:left, [u], r in Item, on: u.id == r.contact_id)
-    |> where([u, r], r.user_id == ^user.id)
-    |> maybe_filter_system(not include_system)
-    |> where([u, r], not is_nil(u.handle))
-    |> where([u, r], r.subscription in ^sub_types)
-    |> Block.object_visible_query(requester, :contact_id)
-  end
+  @spec received_invitations_query(User.t(), User.t()) ::
+          Queryable.t() | error()
+  def received_invitations_query(%User{id: id} = user, %User{id: id}),
+    do: Invitation.received_query(user)
 
-  defp maybe_filter_system(query, false), do: query
+  def received_invitations_query(_, _), do: {:error, :permission_denied}
 
-  defp maybe_filter_system(query, true) do
-    query
-    |> where([u, r], ^User.system_role() not in u.roles)
-  end
+  @spec items_query(User.t(), User.t()) :: Queryable.t() | error()
+  def items_query(%User{id: id} = user, %User{id: id}),
+    do: Item.items_query(user)
+
+  def items_query(_, _), do: {:error, :permission_denied}
 end

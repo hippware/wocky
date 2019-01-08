@@ -5,8 +5,8 @@ defmodule Wocky.Push.EventsTest do
   alias Wocky.Push.Event
   alias Wocky.Push.Events.BotInviteEvent
   alias Wocky.Push.Events.BotPerimeterEvent
-  alias Wocky.Push.Events.NewFollowerEvent
   alias Wocky.Push.Events.NewMessageEvent
+  alias Wocky.Push.Events.UserInvitationEvent
   alias Wocky.Repo.Factory
 
   @test_handle "test_handle"
@@ -73,20 +73,20 @@ defmodule Wocky.Push.EventsTest do
     end
   end
 
-  describe "NewFollowerEvent" do
-    setup %{user: follower} do
-      {:ok, user: Factory.build(:user), follower: follower}
+  describe "UserInvitationEvent" do
+    setup %{user: inviter} do
+      {:ok, user: Factory.build(:user), inviter: inviter}
     end
 
-    test "returns an appropriate message", %{user: u, follower: f} do
-      msg = Event.message(%NewFollowerEvent{user: u, follower: f})
+    test "returns an appropriate message", %{user: u, inviter: i} do
+      msg = Event.message(%UserInvitationEvent{user: u, from: i})
       assert msg =~ @test_handle
-      assert msg =~ "started following you"
+      assert msg =~ "invited you to be their friend"
     end
 
-    test "returns an appropriate uri", %{user: u, follower: f} do
-      uri = Event.uri(%NewFollowerEvent{user: u, follower: f})
-      assert uri =~ "/followers"
+    test "returns an appropriate uri", %{user: u, inviter: i} do
+      uri = Event.uri(%UserInvitationEvent{user: u, from: i})
+      assert uri =~ "/invitations"
     end
   end
 

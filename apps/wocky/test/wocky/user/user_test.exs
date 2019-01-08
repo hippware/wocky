@@ -181,7 +181,7 @@ defmodule Wocky.User.UserTest do
     test "should fail when the user does not exist" do
       fields = %{
         device: ID.new(),
-        handle: Factory.new_handle(),
+        handle: Factory.handle(),
         first_name: Name.first_name(),
         last_name: Name.last_name(),
         email: Internet.email(),
@@ -194,7 +194,7 @@ defmodule Wocky.User.UserTest do
     test "should update the user's attributes", ctx do
       fields = %{
         device: ID.new(),
-        handle: Factory.new_handle(),
+        handle: Factory.handle(),
         first_name: Name.first_name(),
         last_name: Name.last_name(),
         email: Internet.email(),
@@ -484,23 +484,14 @@ defmodule Wocky.User.UserTest do
       friend = Factory.insert(:user)
       RosterHelper.make_friends(friend, ctx.user)
 
-      followee = Factory.insert(:user)
-      RosterHelper.follow(ctx.user, followee)
-
       friends_private_bot = Factory.insert(:bot, user: friend)
       friends_invited_private_bot = Factory.insert(:bot, user: friend)
 
-      following_private_bot = Factory.insert(:bot, user: followee)
-      following_invited_private_bot = Factory.insert(:bot, user: followee)
-
       Invitation.put(ctx.user, friends_invited_private_bot, friend)
-      Invitation.put(ctx.user, following_invited_private_bot, followee)
 
       {:ok,
        friends_private_bot: friends_private_bot,
-       friends_invited_private_bot: friends_invited_private_bot,
-       following_private_bot: following_private_bot,
-       following_invited_private_bot: following_invited_private_bot}
+       friends_invited_private_bot: friends_invited_private_bot}
     end
 
     test "searchable stored procedure", ctx do
@@ -510,8 +501,6 @@ defmodule Wocky.User.UserTest do
       refute is_searchable_sp(ctx.user, ctx.invited_bot)
       refute is_searchable_sp(ctx.user, ctx.unaffiliated_bot)
       refute is_searchable_sp(ctx.user, ctx.friends_private_bot)
-      refute is_searchable_sp(ctx.user, ctx.following_private_bot)
-      refute is_searchable_sp(ctx.user, ctx.following_invited_private_bot)
     end
   end
 
@@ -539,7 +528,7 @@ defmodule Wocky.User.UserTest do
 
     test "it should friend the current user and the owner of the code", ctx do
       assert User.redeem_invite_code(ctx.redeemer, ctx.code)
-      assert ctx.user |> Roster.get(ctx.redeemer) |> Roster.friend?()
+      assert Roster.friend?(ctx.user, ctx.redeemer)
     end
 
     test "it should return true if the redeemer created the code", ctx do

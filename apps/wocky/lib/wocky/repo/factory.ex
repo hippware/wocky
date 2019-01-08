@@ -13,7 +13,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Bot
-  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Invitation, as: BotInvitation
   alias Wocky.Bot.Item
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
@@ -21,6 +21,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo.ID
+  alias Wocky.Roster.Invitation, as: RosterInvitation
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TrafficLog
   alias Wocky.TROS
@@ -35,7 +36,7 @@ defmodule Wocky.Repo.Factory do
     %User{
       id: user_id,
       external_id: external_id(),
-      handle: new_handle(),
+      handle: handle(),
       image_url: TROS.make_url(ID.new()),
       first_name: Name.first_name(),
       last_name: Name.last_name(),
@@ -101,10 +102,14 @@ defmodule Wocky.Repo.Factory do
 
   def roster_item_factory do
     %RosterItem{
-      name: Name.first_name(),
-      ask: :none,
-      subscription: :both,
-      groups: []
+      name: Name.first_name()
+    }
+  end
+
+  def user_invitation_factory do
+    %RosterInvitation{
+      user: build(:user),
+      invitee: build(:user)
     }
   end
 
@@ -149,8 +154,8 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def invitation_factory do
-    %Invitation{
+  def bot_invitation_factory do
+    %BotInvitation{
       user: build(:user),
       invitee: build(:user),
       bot: build(:bot),
@@ -164,9 +169,9 @@ defmodule Wocky.Repo.Factory do
       other_user: build(:user),
       bot: nil,
       bot_item: nil,
-      invitation: nil,
+      bot_invitation: nil,
       geofence_event: nil,
-      invitation_accepted: nil
+      bot_invitation_accepted: nil
     }
   end
 
@@ -193,29 +198,29 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def invitation_notification_factory do
+  def bot_invitation_notification_factory do
     inviter = build(:user)
     bot = build(:bot, user: inviter)
 
     %Notification{
-      type: :invitation,
+      type: :bot_invitation,
       user: build(:user),
       other_user: inviter,
       bot: bot
     }
   end
 
-  def invitation_response_notification_factory do
+  def bot_invitation_response_notification_factory do
     %{
-      invitation_notification_factory()
-      | type: :invitation_response,
-        invitation_accepted: true
+      bot_invitation_notification_factory()
+      | type: :bot_invitation_response,
+        bot_invitation_accepted: true
     }
   end
 
-  def user_follow_notification_factory do
+  def user_invitation_notification_factory do
     %Notification{
-      type: :user_follow,
+      type: :user_invitation,
       user: build(:user),
       other_user: build(:user)
     }
@@ -235,7 +240,7 @@ defmodule Wocky.Repo.Factory do
 
   # Handles have a more restricted set of characters than any of the Faker
   # functions provide, so we provide our own function for constructing them
-  def new_handle do
+  def handle do
     Base.encode32(:crypto.strong_rand_bytes(10))
   end
 

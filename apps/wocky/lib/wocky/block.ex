@@ -36,7 +36,7 @@ defmodule Wocky.Block do
     }
     |> Repo.insert(on_conflict: :nothing)
 
-    Roster.write_blocked_items(blocker, blockee)
+    Roster.unfriend(blocker, blockee)
 
     update_counter("blocking.blocked", 1)
 
