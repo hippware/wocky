@@ -7,7 +7,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update: absinthe_metrics (PR #2132), geocalc (PR #2133)
   * ecto_sql (PR #2134), phoenix_pubsub_redis (PR #2135)
+  * excoveralls (PR #2143), confex (PR #2144)
 * Allow client versions with more than 3 digit groups (#2130, PR #2131)
+* Add id field to message object (PR #2142)
 
 
 # 2018.12.20+r9697983
