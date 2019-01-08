@@ -36,6 +36,7 @@ defmodule WockyAPI.Resolvers.Media do
     else
       :timeout ->
         {:error, "Timeout waiting for file to become ready"}
+
       _ ->
         {:ok, %{tros_url: tros_url}}
     end
@@ -95,7 +96,8 @@ defmodule WockyAPI.Resolvers.Media do
   end
 
   defp file_ready(file_id) do
-  TROS.get_metadata(file_id)
+    TROS.get_metadata(file_id)
+
     case TROS.get_metadata(file_id) do
       {:ok, %Metadata{ready: true}} -> true
       _ -> false
