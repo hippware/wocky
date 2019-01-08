@@ -1,19 +1,29 @@
 defmodule WockyAPI.Resolvers.Media do
   @moduledoc "GraphQL resolver for media objects"
 
+  @ready_timeout 10_000
+
   use Elixometer
 
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
+  alias Wocky.Waiter
+
+  def get_media_urls(_root, args, %{context: %{current_user: _user}}) do
+    get_urls(args[:tros_url], true, args[:timeout] || @ready_timeout)
+  end
 
   def get_media(%{image_url: tros_url}, _args, _info), do: get_urls(tros_url)
 
-  defp get_urls(nil), do: {:ok, nil}
+  defp get_urls(tros_url, wait? \\ false, timeout \\ nil)
 
-  defp get_urls(tros_url) do
+  defp get_urls(nil, _, _), do: {:ok, nil}
+
+  defp get_urls(tros_url, wait?, timeout) do
     with {:ok, file_id} <- TROS.parse_url(tros_url),
-         {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id) do
+         {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id),
+         :ok <- maybe_wait(wait?, file_id, timeout) do
       [full_url, thumbnail_url] =
         TROS.get_download_urls(metadata, [:full, :thumbnail])
 
@@ -24,6 +34,8 @@ defmodule WockyAPI.Resolvers.Media do
          thumbnail_url: thumbnail_url
        }}
     else
+      :timeout ->
+        {:error, "Timeout waiting for file to become ready"}
       _ ->
         {:ok, %{tros_url: tros_url}}
     end
@@ -71,6 +83,22 @@ defmodule WockyAPI.Resolvers.Media do
       {:error, :invalid_url} -> {:error, "Invalid URL"}
       {:error, :permission_denied} -> {:error, "Permission denied"}
       {:error, :not_found} -> {:error, "File not found"}
+    end
+  end
+
+  defp maybe_wait(false, _, _), do: :ok
+
+  defp maybe_wait(true, file_id, timeout) do
+    file_id
+    |> TROS.file_ready_event()
+    |> Waiter.wait(timeout, fn -> file_ready(file_id) end)
+  end
+
+  defp file_ready(file_id) do
+  TROS.get_metadata(file_id)
+    case TROS.get_metadata(file_id) do
+      {:ok, %Metadata{ready: true}} -> true
+      _ -> false
     end
   end
 end

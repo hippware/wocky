@@ -1,10 +1,12 @@
 defmodule WockyAPI.GraphQL.MediaTest do
-  use WockyAPI.GraphQLCase, async: true
+  use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
+  alias Wocky.TROS.Metadata
 
   setup do
     {:ok, user: Factory.insert(:user)}
@@ -100,6 +102,72 @@ defmodule WockyAPI.GraphQL.MediaTest do
       result = run_query(@query, user, %{"input" => %{"url" => url}})
 
       assert error_msg(result) =~ "File not found"
+    end
+  end
+
+  describe "mediaUrls query" do
+    setup :require_watcher
+    setup do
+      metadata = Factory.insert(:tros_metadata, ready: false)
+      tros_url = TROS.make_url(metadata.id)
+      user = Factory.insert(:user)
+
+      {:ok, user: user, metadata: metadata, tros_url: tros_url}
+    end
+
+    @query """
+    query ($tros_url: String!, $timeout: Int) {
+      media_urls (tros_url: $tros_url, timeout: $timeout) {
+        full_url
+        thumbnail_url
+      }
+    }
+    """
+    test "it should return URLs when the file is already ready", ctx do
+      ctx.metadata |> Metadata.changeset(%{ready: true}) |> Repo.update()
+
+      result = run_query(@query, ctx.user, %{"tros_url" => ctx.tros_url, "timeout" => 0})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+        "media_urls" => %{
+          "full_url" => "https://localhost/" <> ctx.metadata.id,
+          "thumbnail_url" => "https://localhost/" <> ctx.metadata.id <> "-thumbnail"
+        }
+      }
+    end
+
+    test """
+    it should return URLs when the file becomes ready in the timeout preiod
+    """, ctx do
+      parent = self()
+      Task.start(fn ->
+        Ecto.Adapters.SQL.Sandbox.allow(Repo, parent, self())
+        Process.sleep(500)
+        ctx.metadata |> Metadata.changeset(%{ready: true}) |> Repo.update!()
+      end)
+
+      result = run_query(@query, ctx.user, %{"tros_url" => ctx.tros_url, "timeout" => 2000})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+        "media_urls" => %{
+          "full_url" => "https://localhost/" <> ctx.metadata.id,
+          "thumbnail_url" => "https://localhost/" <> ctx.metadata.id <> "-thumbnail"
+        }
+      }
+    end
+
+    test """
+    it should return a timeout if the file does not become ready in the
+    timeout period
+    """, ctx do
+      result = run_query(@query, ctx.user, %{"tros_url" => ctx.tros_url, "timeout" => 5})
+
+      assert has_errors(result)
+      assert error_msg(result) =~ "Timeout"
     end
   end
 end
