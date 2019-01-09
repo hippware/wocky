@@ -31,7 +31,10 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
     with {:query, query} <- contacts_query(user, args, requestor) do
-      Utils.connection_from_query(query, user, args)
+      case query do
+        {:error, _} = error -> error
+        _ -> Utils.connection_from_query(query, user, args)
+      end
     end
   end
 

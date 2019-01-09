@@ -616,6 +616,24 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert [%{message: "unsupported"}] = result.errors
     end
+
+    test "should fail for other users", ctx do
+      query = """
+        query  {
+          user (id: "#{ctx.user2.id}") {
+            contacts (first: 1, relationship: FRIEND) {
+              totalCount
+            }
+          }
+        }
+        """
+
+      result = run_query(query, ctx.user)
+
+      assert has_errors(result)
+
+      assert [%{message: "permission_denied"}] = result.errors
+    end
   end
 
   describe "invitation codes" do
