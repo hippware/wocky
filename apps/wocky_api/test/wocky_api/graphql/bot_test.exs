@@ -1348,7 +1348,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     test "gives users access to the bot", shared do
       refute User.can_access?(shared.user3, shared.bot)
 
-      Factory.insert(:invitation,
+      Factory.insert(:bot_invitation,
         user: shared.user,
         bot: shared.bot,
         invitee: shared.user3
@@ -1361,7 +1361,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   describe "responding to invitations" do
     setup shared do
       %{id: id} =
-        Factory.insert(:invitation,
+        Factory.insert(:bot_invitation,
           user: shared.user,
           bot: shared.bot,
           invitee: shared.user3
@@ -1431,7 +1431,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       user4 = Factory.insert(:user)
 
       %{id: id} =
-        Factory.insert(:invitation,
+        Factory.insert(:bot_invitation,
           user: shared.user,
           bot: shared.bot,
           invitee: user4

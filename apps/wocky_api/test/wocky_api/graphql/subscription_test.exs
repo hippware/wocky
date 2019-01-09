@@ -206,25 +206,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      Roster.follow(user2, user)
-      assert_relationship_notification("FOLLOWER", user2, subscription_id)
-
       Roster.befriend(user, user2)
-      assert_relationship_notification("FRIEND", user2, subscription_id)
-    end
-
-    test "should notify when a contact is removed", %{
-      socket: socket,
-      token: token,
-      user: user,
-      user2: user2
-    } do
-      authenticate(user.id, token, socket)
-
-      ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
-      Roster.befriend(user2, user)
       assert_relationship_notification("FRIEND", user2, subscription_id)
 
       Roster.unfriend(user, user2)

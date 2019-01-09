@@ -204,8 +204,8 @@ defmodule Wocky.Bot.InvitationTest do
 
   describe "delete/2" do
     setup %{user: user, invitee: invitee} do
-      invitation = Factory.insert(:invitation, user: user, invitee: invitee)
-      invitation2 = Factory.insert(:invitation, invitee: invitee)
+      invitation = Factory.insert(:bot_invitation, user: user, invitee: invitee)
+      invitation2 = Factory.insert(:bot_invitation, invitee: invitee)
       Sandbox.wait_notifications(count: 2, timeout: 500, global: true)
 
       Invitation.delete(user, invitee)
@@ -224,7 +224,7 @@ defmodule Wocky.Bot.InvitationTest do
 
   defp setup_invitation(ctx) do
     invitation =
-      Factory.insert(:invitation,
+      Factory.insert(:bot_invitation,
         user: ctx.user,
         invitee: ctx.invitee,
         bot: ctx.bot

@@ -1,38 +1,47 @@
-defmodule Wocky.User.Notification.InvitationResponse do
+defmodule Wocky.User.Notification.BotInvitationResponse do
   @moduledoc "Notification for response to the notified user's invitation"
 
   alias Wocky.User.Notification
 
   defstruct [
-    :invitation_id,
+    :bot_invitation_id,
     :user_id,
     :other_user_id,
     :bot_id,
-    :accepted
+    :bot_invitation_accepted
   ]
 
   @type t :: %__MODULE__{}
 
   def notify(invitation) do
     Notification.notify(%__MODULE__{
-      invitation_id: invitation.id,
+      bot_invitation_id: invitation.id,
       user_id: invitation.user_id,
       other_user_id: invitation.invitee_id,
       bot_id: invitation.bot_id,
-      accepted: invitation.accepted
+      bot_invitation_accepted: invitation.accepted
     })
   end
 end
 
-defimpl Wocky.User.Notifier, for: Wocky.User.Notification.InvitationResponse do
+defimpl Wocky.User.Notifier, for: Wocky.User.Notification.BotInvitationResponse do
   alias Wocky.User.Notification
 
   def notify(invitation_response) do
     invitation_response
-    |> Map.put(:invitation_accepted, invitation_response.accepted)
+    |> Map.put(
+      :bot_invitation_accepted,
+      invitation_response.bot_invitation_accepted
+    )
     |> Notification.put(
-      :invitation_response,
-      [:invitation_id, :user_id, :other_user_id, :bot_id, :invitation_accepted]
+      :bot_invitation_response,
+      [
+        :bot_invitation_id,
+        :user_id,
+        :other_user_id,
+        :bot_id,
+        :bot_invitation_accepted
+      ]
     )
   end
 
@@ -42,8 +51,8 @@ defimpl Wocky.User.Notifier, for: Wocky.User.Notification.InvitationResponse do
       | user_id: params.user_id,
         other_user_id: params.other_user_id,
         bot_id: params.bot_id,
-        invitation_id: params.invitation_id,
-        accepted: params.invitation_accepted
+        bot_invitation_id: params.bot_invitation_id,
+        bot_invitation_accepted: params.bot_invitation_accepted
     }
   end
 end

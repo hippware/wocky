@@ -18,14 +18,11 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   end
 
   setup shared do
-    [friend, follower, followee, stranger] = Factory.insert_list(4, :user)
+    [friend, stranger] = Factory.insert_list(2, :user)
 
     Roster.befriend(shared.user, friend)
-    Roster.follow(follower, shared.user)
-    Roster.follow(shared.user, followee)
 
-    {:ok,
-     friend: friend, follower: follower, followee: followee, stranger: stranger}
+    {:ok, friend: friend, stranger: stranger}
   end
 
   describe "basic presence registration/deregistration" do
@@ -46,26 +43,20 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
   describe "initial connection state" do
     setup shared do
-      Enum.each(
-        [shared.friend, shared.follower, shared.followee, shared.stranger],
-        &connect/1
-      )
-
-      :ok
+      Enum.each([shared.friend, shared.stranger], &connect/1)
     end
 
-    test "set should include online friends and followees", shared do
+    test "set should include online friends", shared do
       {_, online_contacts} = connect(shared.user)
 
-      assert length(online_contacts) == 2
+      assert length(online_contacts) == 1
       assert includes_user(online_contacts, shared.friend)
-      assert includes_user(online_contacts, shared.followee)
     end
   end
 
   @subscription """
   subscription {
-    followees {
+    presence {
       id
       presence_status
     }
@@ -84,7 +75,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
       refute_push "subscription:data", _push, 500
     end
 
-    test "should notify when a friend or followee comes online", shared do
+    test "should notify when a friend comes online", shared do
       connect(shared.friend)
 
       assert_push "subscription:data", push, 500
@@ -106,8 +97,8 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
       refute_push "subscription:data", _push, 500
     end
 
-    test "should notify when a friend or followee go offline", shared do
-      {conn, _} = connect(shared.followee)
+    test "should notify when a friend goes offline", shared do
+      {conn, _} = connect(shared.friend)
 
       assert_push "subscription:data", push, 500
 
@@ -117,13 +108,13 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
       assert_presence_notification(
         push.result.data,
-        shared.followee.id,
+        shared.friend.id,
         :offline
       )
     end
 
     test "should not notify when other users go offline", shared do
-      {conn, _} = connect(shared.follower)
+      {conn, _} = connect(shared.stranger)
 
       refute_push "subscription:data", _push, 500
 
@@ -211,7 +202,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
   defp assert_presence_notification(data, user_id, type) do
     assert %{
-             "followees" => %{
+             "presence" => %{
                "id" => user_id,
                "presence_status" => type |> to_string() |> String.upcase()
              }

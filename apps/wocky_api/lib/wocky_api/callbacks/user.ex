@@ -9,7 +9,7 @@ defmodule WockyAPI.Callbacks.User do
   alias WockyAPI.Resolvers.User, as: UserResolver
 
   def handle_update(%Event{new: %User{} = user}) do
-    UserResolver.notify_followers(user)
+    UserResolver.notify_friends(user)
   end
 
   def handle_update(_), do: :ok

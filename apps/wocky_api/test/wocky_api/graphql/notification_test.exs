@@ -11,9 +11,9 @@ defmodule WockyAPI.GraphQL.NotificationTest do
         [
           :bot_item_notification,
           :geofence_event_notification,
-          :invitation_notification,
-          :invitation_response_notification,
-          :user_follow_notification
+          :bot_invitation_notification,
+          :bot_invitation_response_notification,
+          :user_invitation_notification
         ]
         |> Enum.map(
           &Factory.insert(&1, user: user, other_user: Factory.insert(:user))
@@ -50,15 +50,8 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                      %{
                        "node" => %{
                          "created_at" => _,
-                         "data" => %{"__typename" => "UserFollowNotification"},
-                         "id" => _
-                       }
-                     },
-                     %{
-                       "node" => %{
-                         "created_at" => _,
                          "data" => %{
-                           "__typename" => "InvitationResponseNotification"
+                           "__typename" => "UserInvitationNotification"
                          },
                          "id" => _
                        }
@@ -66,7 +59,18 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                      %{
                        "node" => %{
                          "created_at" => _,
-                         "data" => %{"__typename" => "InvitationNotification"},
+                         "data" => %{
+                           "__typename" => "BotInvitationResponseNotification"
+                         },
+                         "id" => _
+                       }
+                     },
+                     %{
+                       "node" => %{
+                         "created_at" => _,
+                         "data" => %{
+                           "__typename" => "BotInvitationNotification"
+                         },
                          "id" => _
                        }
                      }
@@ -93,7 +97,7 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                        "node" => %{
                          "created_at" => _,
                          "data" => %{
-                           "__typename" => "InvitationResponseNotification"
+                           "__typename" => "BotInvitationResponseNotification"
                          },
                          "id" => ^expected_id
                        }

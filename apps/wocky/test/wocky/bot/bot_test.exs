@@ -497,7 +497,7 @@ defmodule Wocky.BotTest do
       owned_bot = Factory.insert(:bot, user: user1)
       invited_bot = Factory.insert(:bot, user: user2)
 
-      Factory.insert(:invitation,
+      Factory.insert(:bot_invitation,
         invitee: user1,
         bot: invited_bot,
         user: user2

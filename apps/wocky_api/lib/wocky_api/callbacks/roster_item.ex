@@ -5,16 +5,13 @@ defmodule WockyAPI.Callbacks.RosterItem do
 
   use Wocky.Watcher,
     type: Wocky.Roster.Item,
-    events: [:insert, :update, :delete]
+    events: [:insert, :delete]
 
-  alias Wocky.{Repo, Roster}
+  alias Wocky.Repo
   alias WockyAPI.Resolvers.User
 
   def handle_insert(%Event{new: new}),
-    do: send_update(new, Roster.relationship(new))
-
-  def handle_update(%Event{new: new}),
-    do: send_update(new, Roster.relationship(new))
+    do: send_update(new, :friend)
 
   def handle_delete(%Event{old: old}),
     do: send_update(old, :none)

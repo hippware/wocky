@@ -5,19 +5,13 @@ defmodule Wocky.Roster.Item do
 
   use Wocky.Repo.Schema
 
-  import EctoHomoiconicEnum, only: [defenum: 2]
+  import Ecto.Query
 
-  alias Wocky.User
-
-  defenum AskEnum, [:in, :out, :both, :none]
-  defenum SubscriptionEnum, [:none, :from, :to, :both]
+  alias Wocky.{Repo, Roster, User}
 
   @foreign_key_type :binary_id
   schema "roster_items" do
     field :name, :binary, default: ""
-    field :ask, AskEnum
-    field :subscription, SubscriptionEnum
-    field :groups, {:array, :string}
 
     belongs_to :user, User
     belongs_to :contact, User
@@ -26,26 +20,75 @@ defmodule Wocky.Roster.Item do
   end
 
   @type name :: binary
-  @type ask :: :in | :out | :both | :none
-  @type subscription :: :both | :from | :to | :none | :remove
-  @type group :: binary
 
-  @type t :: %Item{
+  @type t :: %__MODULE__{
           user: User.t(),
           contact: User.t(),
           name: name,
-          ask: ask,
-          subscription: subscription,
-          groups: [group],
           updated_at: DateTime.t()
         }
 
-  @change_fields [:user_id, :contact_id, :name, :ask, :subscription, :groups]
+  @change_fields [:user_id, :contact_id, :name]
 
-  def changeset(struct, params) do
+  @spec get(User.t(), User.t()) :: t() | nil
+  def get(user, contact) do
+    __MODULE__
+    |> where([i], i.user_id == ^user.id and i.contact_id == ^contact.id)
+    |> Repo.one()
+  end
+
+  def add(user, contact) do
+    %__MODULE__{}
+    |> changeset(%{
+      user_id: user.id,
+      contact_id: contact.id
+    })
+    |> Repo.insert(
+      on_conflict: :nothing,
+      conflict_target: [:user_id, :contact_id]
+    )
+  end
+
+  @spec set_name(User.t(), User.t(), binary) :: {:ok, t()} | Roster.error()
+  def set_name(user, contact, name) do
+    __MODULE__
+    |> where([i], i.user_id == ^user.id and i.contact_id == ^contact.id)
+    |> select([i], i)
+    |> Repo.update_all([{:set, [name: name]}])
+    |> case do
+      {1, [i]} -> {:ok, i}
+      {0, _} -> {:error, :not_found}
+    end
+  end
+
+  def delete_pair(a, b) do
+    __MODULE__
+    |> with_pair(a, b)
+    |> Repo.delete_all()
+  end
+
+  def friends_query(user) do
+    User
+    |> join(:left, [u], i in __MODULE__, on: u.id == i.contact_id)
+    |> where([..., i], i.user_id == ^user.id)
+  end
+
+  def items_query(user) do
+    Item
+    |> where([i], i.user_id == ^user.id)
+  end
+
+  defp changeset(struct, params) do
     struct
     |> cast(params, @change_fields)
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:contact_id)
+  end
+
+  defp with_pair(query, a, b) do
+    from r in query,
+      where:
+        (r.user_id == ^a.id and r.contact_id == ^b.id) or
+          (r.user_id == ^b.id and r.contact_id == ^a.id)
   end
 end

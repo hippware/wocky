@@ -14,14 +14,14 @@ defmodule Wocky.Roster.RosterNotificationTest do
     {:ok, user1: user1, user2: user2}
   end
 
-  describe "follow notification" do
+  describe "invitation notification" do
     setup ctx do
       token = Code.isbn13()
       :ok = Push.enable(ctx.user1, ctx.user1.device, token)
     end
 
-    test "start following", ctx do
-      Roster.follow(ctx.user2, ctx.user1)
+    test "invite user", ctx do
+      Roster.invite(ctx.user2, ctx.user1)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 10_000, global: true)
       assert length(msgs) == 1
@@ -32,7 +32,7 @@ defmodule Wocky.Roster.RosterNotificationTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{ctx.user2.handle} started following you"
+      assert message == "@#{ctx.user2.handle} invited you to be their friend"
     end
   end
 end

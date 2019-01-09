@@ -49,7 +49,7 @@ defmodule WockyAPI.Presence.Store do
 
   defp value(pid), do: :erlang.term_to_binary(pid)
 
-  defp check_valid_presence(pid, user_id) do
+  defp check_valid_presence(pid, user_id) when is_pid(pid) do
     if Process.alive?(pid) do
       pid
     else
@@ -57,6 +57,14 @@ defmodule WockyAPI.Presence.Store do
       remove(user_id)
       nil
     end
+  end
+
+  # process_id could not be parsed back to a valid pid - maybe a node died or
+  # there was a version upgrade or a bug. Whatever, we can't do anything with
+  # it besides clean up.
+  defp check_valid_presence(_, user_id) do
+    remove(user_id)
+    nil
   end
 
   def transaction(user_id, fun) do

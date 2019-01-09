@@ -9,9 +9,9 @@ defmodule Wocky.Callbacks do
     BotInvitation,
     BotItem,
     Message,
-    RosterItem,
     TROSMetadata,
-    User
+    User,
+    UserInvitation
   }
 
   @modules [
@@ -20,9 +20,9 @@ defmodule Wocky.Callbacks do
     BotInvitation,
     BotItem,
     Message,
-    RosterItem,
     TROSMetadata,
-    User
+    User,
+    UserInvitation
   ]
 
   def register do

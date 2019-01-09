@@ -31,18 +31,18 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
             bot { id }
             event
           }
-          ... on InvitationNotification {
+          ... on BotInvitationNotification {
             invitation { id }
             user { id }
             bot { id }
           }
-          ... on InvitationResponseNotification {
+          ... on BotInvitationResponseNotification {
             invitation { id }
             user { id }
             bot { id }
             accepted
           }
-          ... on UserFollowNotification {
+          ... on UserInvitationNotification {
             user { id }
           }
         }
@@ -131,7 +131,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       assert_push "subscription:data", push, 2000
 
       assert_notification_update(push, subscription_id, %{
-        "__typename" => "InvitationNotification",
+        "__typename" => "BotInvitationNotification",
         "invitation" => %{"id" => to_string(invitation.id)},
         "bot" => %{"id" => bot2.id},
         "user" => %{"id" => user2.id}
@@ -145,14 +145,14 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       subscription_id: subscription_id
     } do
       invitation =
-        Factory.insert(:invitation, user: user, invitee: user2, bot: bot)
+        Factory.insert(:bot_invitation, user: user, invitee: user2, bot: bot)
 
       Invitation.respond(invitation, true, user2)
 
       assert_push "subscription:data", push, 2000
 
       assert_notification_update(push, subscription_id, %{
-        "__typename" => "InvitationResponseNotification",
+        "__typename" => "BotInvitationResponseNotification",
         "invitation" => %{"id" => to_string(invitation.id)},
         "bot" => %{"id" => bot.id},
         "user" => %{"id" => user2.id},
@@ -160,17 +160,17 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       })
     end
 
-    test "user follows", %{
+    test "user invites", %{
       user: user,
       user2: user2,
       subscription_id: subscription_id
     } do
-      Roster.follow(user2, user)
+      Roster.invite(user2, user)
 
       assert_push "subscription:data", push, 2000
 
       assert_notification_update(push, subscription_id, %{
-        "__typename" => "UserFollowNotification",
+        "__typename" => "UserInvitationNotification",
         "user" => %{"id" => user2.id}
       })
     end
