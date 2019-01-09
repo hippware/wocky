@@ -12,6 +12,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BlockTypes
   import_types WockyAPI.Schema.BotTypes
+  import_types WockyAPI.Schema.BulkUserTypes
   import_types WockyAPI.Schema.LocationTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.MessageTypes
@@ -22,6 +23,7 @@ defmodule WockyAPI.Schema do
 
   query do
     import_fields :bot_queries
+    import_fields :bulk_user_queries
     import_fields :media_queries
     import_fields :notification_queries
     import_fields :user_queries
@@ -31,6 +33,7 @@ defmodule WockyAPI.Schema do
     import_fields :auth_mutations
     import_fields :block_mutations
     import_fields :bot_mutations
+    import_fields :bulk_user_mutations
     import_fields :contact_mutations
     import_fields :push_notifications_mutations
     import_fields :location_mutations

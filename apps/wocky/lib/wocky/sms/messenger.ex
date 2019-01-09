@@ -3,9 +3,15 @@ defmodule Wocky.SMS.Messenger do
 
   @callback send(binary, binary) :: :ok
 
-  @spec send(binary, binary) :: :ok
-  def send(recipient, body) do
-    backend = Confex.get_env(:wocky, :sms_backend)
-    backend.send(recipient, body)
+  alias Wocky.User
+
+  @spec send(binary, binary, User.t()) :: :ok | {:error, term()}
+  def send(recipient, body, sender) do
+    if User.sms_allowed_inc?(sender) do
+      backend = Confex.get_env(:wocky, :sms_backend)
+      backend.send(recipient, body)
+    else
+      {:error, :user_sms_limit_reached}
+    end
   end
 end

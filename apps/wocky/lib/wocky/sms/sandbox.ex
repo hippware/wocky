@@ -4,6 +4,9 @@ defmodule Wocky.SMS.Sandbox do
   @behaviour Wocky.SMS.Messenger
 
   def send(_recipient, _body) do
-    :ok
+    Confex.get_env(:wocky, :sms_send_result, :ok)
   end
+
+  def set_result(result),
+    do: Application.put_env(:wocky, :sms_send_result, result)
 end

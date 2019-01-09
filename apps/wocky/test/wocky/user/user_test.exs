@@ -46,6 +46,56 @@ defmodule Wocky.User.UserTest do
     end
   end
 
+  describe "get_by_phone_number/2" do
+    setup do
+      users = Factory.insert_list(5, :user)
+      {:ok, users: users, phone_numbers: Enum.map(users, & &1.phone_number)}
+    end
+
+    test "should return all requested users", ctx do
+      assert ctx.phone_numbers
+             |> User.get_by_phone_number(ctx.user)
+             |> Enum.sort() == Enum.sort(ctx.users)
+    end
+
+    test "should return a single user when requested", ctx do
+      assert User.get_by_phone_number([hd(ctx.users).phone_number], ctx.user) ==
+               [hd(ctx.users)]
+    end
+
+    test "should not return any elements for unknown phone numbers", ctx do
+      assert User.get_by_phone_number(unused_numbers(ctx.users), ctx.user) == []
+    end
+
+    test "should return only used numbers for a mix", ctx do
+      assert ctx.phone_numbers
+             |> Enum.concat(unused_numbers(ctx.users))
+             |> User.get_by_phone_number(ctx.user)
+             |> Enum.sort() == Enum.sort(ctx.users)
+    end
+
+    test "should not return blocked users", ctx do
+      ctx.users |> tl() |> Enum.each(&Block.block(&1, ctx.user))
+
+      assert ctx.phone_numbers
+             |> User.get_by_phone_number(ctx.user) == [hd(ctx.users)]
+    end
+
+    test "should only return one item even for multiple phone numbers", ctx do
+      assert ctx.phone_numbers
+             |> hd()
+             |> List.duplicate(5)
+             |> User.get_by_phone_number(ctx.user) == [hd(ctx.users)]
+    end
+
+    defp unused_numbers(phone_numbers) do
+      1..5
+      |> Enum.map(fn _ -> Factory.phone_number() end)
+      |> Enum.uniq()
+      |> Kernel.--(phone_numbers)
+    end
+  end
+
   describe "changeset/1 validations" do
     test "should pass with valid attributes", ctx do
       attrs = %{handle: "new_handle", email: "foo@bar.com"}
@@ -646,6 +696,30 @@ defmodule Wocky.User.UserTest do
       query = User.get_locations_query(ctx.user, "test")
 
       assert query |> Repo.all() |> length() == 5
+    end
+  end
+
+  describe "sms_allowed_inc?" do
+    test "should allow SMS for a new user", ctx do
+      assert User.sms_allowed_inc?(ctx.user)
+    end
+
+    test "should increment the amount sent", ctx do
+      assert User.get_user(ctx.user.id).smss_sent == 0
+      User.sms_allowed_inc?(ctx.user)
+      assert User.get_user(ctx.user.id).smss_sent == 1
+    end
+
+    test "should reject a non-existant user" do
+      u = Factory.build(:user)
+      refute User.sms_allowed_inc?(u)
+    end
+
+    test "should reject when the user has sent the max SMSs" do
+      max = Confex.get_env(:wocky, :max_sms_per_user)
+      u = Factory.insert(:user, smss_sent: max)
+      refute User.sms_allowed_inc?(u)
+      assert User.get_user(u.id).smss_sent == max
     end
   end
 

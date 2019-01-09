@@ -31,10 +31,8 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.User.Notification
 
   def user_factory do
-    user_id = ID.new()
-
     %User{
-      id: user_id,
+      id: ID.new(),
       external_id: external_id(),
       handle: handle(),
       image_url: TROS.make_url(ID.new()),
@@ -45,7 +43,8 @@ defmodule Wocky.Repo.Factory do
       tagline: Lorem.sentence(),
       provider: "local",
       roles: [],
-      welcome_sent: false
+      welcome_sent: false,
+      smss_sent: 0
     }
   end
 

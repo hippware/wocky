@@ -36,7 +36,17 @@ config :wocky,
 
   # SMS messaging
   sms_backend: {:system, :module, "WOCKY_SMS_BACKEND", Wocky.SMS.Sandbox},
-  twilio_number: "+18329373533",
+  twilio_number: "+12133401134",
+  country_code_lookup_method: {:hardwire, "US"},
+  max_sms_per_user: {:system, :integer, "WOCKY_MAX_SMS_PER_USER", 100},
+
+  # Dynamic links
+  dynamic_link_backend:
+    {:system, :module, "WOCKY_DYN_LINK_BACKEND", Wocky.DynamicLink.Sandbox},
+  app_store_id: "1295678402",
+  ios_bundle_id: "com.hippware.tinyrobot",
+  firebase_domain_url_prefix: "https://tinyrobot.page.link",
+  firebase_link_prefix: "https://tinyrobot.com/?inviteCode=",
 
   # Diagnostics
   log_traffic: {:system, :boolean, "WOCKY_LOG_TRAFFIC", true}
