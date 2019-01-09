@@ -22,8 +22,9 @@ defmodule WockyAPI.Schema do
 
   query do
     import_fields :bot_queries
-    import_fields :user_queries
+    import_fields :media_queries
     import_fields :notification_queries
+    import_fields :user_queries
   end
 
   mutation do

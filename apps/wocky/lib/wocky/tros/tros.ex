@@ -26,6 +26,8 @@ defmodule Wocky.TROS do
   @thumbnail_suffix "-thumbnail"
   @original_suffix "-original"
 
+  @file_ready_event_prefix "tros-file-ready-"
+
   # ----------------------------------------------------------------------
   # Names and URLs
 
@@ -150,6 +152,8 @@ defmodule Wocky.TROS do
       &backend().get_download_url(metadata, full_name(metadata.id, &1))
     )
   end
+
+  def file_ready_event(file_id), do: @file_ready_event_prefix <> file_id
 
   defp full_name(file_id, :full), do: file_id
   defp full_name(file_id, :thumbnail), do: file_id <> @thumbnail_suffix

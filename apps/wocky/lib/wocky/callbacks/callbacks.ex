@@ -9,6 +9,7 @@ defmodule Wocky.Callbacks do
     BotInvitation,
     BotItem,
     Message,
+    TROSMetadata,
     User,
     UserInvitation
   }
@@ -19,6 +20,7 @@ defmodule Wocky.Callbacks do
     BotInvitation,
     BotItem,
     Message,
+    TROSMetadata,
     User,
     UserInvitation
   ]

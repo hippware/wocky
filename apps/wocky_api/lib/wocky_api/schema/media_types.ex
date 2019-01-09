@@ -70,6 +70,22 @@ defmodule WockyAPI.Schema.MediaTypes do
     field :reference_url, non_null(:string)
   end
 
+  object :media_queries do
+    @desc "Request the newest retrieval URLS for a TROS file"
+    field :media_urls, :media do
+      @desc "The TROS URL of the object for which to retrieve URLs"
+      arg :tros_url, non_null(:string)
+
+      @desc """
+      Time (in milliseconds) to wait before returning an error if the
+      file has not become ready
+      """
+      arg :timeout, :integer
+
+      resolve &Media.get_media_urls/3
+    end
+  end
+
   object :media_mutations do
     @desc "Request upload of a file"
     field :media_upload, type: :media_upload_payload do
