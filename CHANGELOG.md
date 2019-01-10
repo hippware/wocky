@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.1.9+r47ead10
+
 * Update: absinthe_metrics (PR #2132), geocalc (PR #2133)
   * ecto_sql (PR #2134), phoenix_pubsub_redis (PR #2135)
   * excoveralls (PR #2143), confex (PR #2144), meck (PR #2148)
@@ -14,6 +16,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Rework relationship system (#2122)
   * Fix handling for contacts permission error (#2149, PR #2150)
   * Add handler for invalid pid construction (#2138, PR #2151)
+* Create a way to get source/thumbnail url from `trosUrl` (#2136)
 
 
 # 2018.12.20+r9697983
