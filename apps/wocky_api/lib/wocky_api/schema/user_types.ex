@@ -471,60 +471,6 @@ defmodule WockyAPI.Schema.UserTypes do
     field :result, :boolean
   end
 
-  @desc "Parameters for sending a location update"
-  input_object :user_location_update_input do
-    @desc "The unique ID for the device sending the update"
-    field :device, non_null(:string)
-
-    @desc "Latitude in degrees"
-    field :lat, non_null(:float)
-
-    @desc "Longitude in degrees"
-    field :lon, non_null(:float)
-
-    @desc "Accuracy in metres"
-    field :accuracy, non_null(:float)
-
-    @desc "Reported speed in meters"
-    field :speed, :float
-
-    @desc "Reported heading in degrees"
-    field :heading, :float
-
-    @desc "Reported altitude in meters"
-    field :altitude, :float
-
-    @desc "Accuracy of altitude in meters"
-    field :altitude_accuracy, :float
-
-    @desc "Timestamp when the report was captured on the device"
-    field :captured_at, :datetime
-
-    @desc "Unique ID of the location report"
-    field :uuid, :string
-
-    @desc "Whether the device is moving"
-    field :is_moving, :boolean
-
-    @desc "Reported total distance in meters"
-    field :odometer, :float
-
-    @desc "Reported activity when the report was captured"
-    field :activity, :string
-
-    @desc "Percentage confidence in the activity"
-    field :activity_confidence, :integer
-
-    @desc "Battery level 0-100%"
-    field :battery_level, :float
-
-    @desc "Is the device plugged in?"
-    field :battery_charging, :boolean
-
-    @desc "True if the update is the result of a background fetch"
-    field :is_fetch, :boolean
-  end
-
   object :user_queries do
     @desc "Retrive the currently authenticated user"
     field :current_user, :current_user do
@@ -679,8 +625,82 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  @desc "Parameters for sending a location update"
+  input_object :user_location_update_input do
+    @desc "The unique ID for the device sending the update"
+    field :device, non_null(:string)
+
+    @desc "Latitude in degrees"
+    field :lat, non_null(:float)
+
+    @desc "Longitude in degrees"
+    field :lon, non_null(:float)
+
+    @desc "Accuracy in metres"
+    field :accuracy, non_null(:float)
+
+    @desc "Reported speed in meters"
+    field :speed, :float
+
+    @desc "Reported heading in degrees"
+    field :heading, :float
+
+    @desc "Reported altitude in meters"
+    field :altitude, :float
+
+    @desc "Accuracy of altitude in meters"
+    field :altitude_accuracy, :float
+
+    @desc "Timestamp when the report was captured on the device"
+    field :captured_at, :datetime
+
+    @desc "Unique ID of the location report"
+    field :uuid, :string
+
+    @desc "Whether the device is moving"
+    field :is_moving, :boolean
+
+    @desc "Reported total distance in meters"
+    field :odometer, :float
+
+    @desc "Reported activity when the report was captured"
+    field :activity, :string
+
+    @desc "Percentage confidence in the activity"
+    field :activity_confidence, :integer
+
+    @desc "Battery level 0-100%"
+    field :battery_level, :float
+
+    @desc "Is the device plugged in?"
+    field :battery_charging, :boolean
+
+    @desc "True if the update is the result of a background fetch"
+    field :is_fetch, :boolean
+  end
+
   payload_object(:user_location_update_payload, :boolean)
+
   payload_object(:user_location_get_token_payload, :string)
+
+  @desc "Parameters for starting a live location share"
+  input_object :user_location_live_share_input do
+    @desc "The user with whom to share location"
+    field :user_id, non_null(:string)
+
+    @desc "The expiry for the share"
+    field :expires_at, non_null(:datetime)
+  end
+
+  payload_object(:user_location_live_share_payload, :boolean)
+
+  @desc "Parameters for canceling a live location share"
+  input_object :user_location_cancel_share_input do
+    @desc "The user whose location sharing to cancel"
+    field :user_id, non_null(:string)
+  end
+
+  payload_object(:user_location_cancel_share_payload, :boolean)
 
   object :location_mutations do
     @desc "Update a user's current location"
@@ -693,6 +713,18 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Generate a new token for location updates"
     field :user_location_get_token, type: :user_location_get_token_payload do
       resolve &User.get_location_token/3
+    end
+
+    @desc "Share the user's location"
+    field :user_location_live_share, type: :user_location_live_share_payload do
+      arg :input, non_null(:user_location_live_share_input)
+      resolve &User.live_share_location/3
+    end
+
+    @desc "Cancel a live location share"
+    field :user_location_cancel_share, type: :user_location_cancel_share_payload do
+      arg :input, non_null(:user_location_cancel_share_input)
+      resolve &User.cancel_location_share/3
     end
   end
 

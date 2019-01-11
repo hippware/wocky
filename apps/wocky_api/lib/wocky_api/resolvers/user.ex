@@ -186,6 +186,14 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{successful: true, result: token}}
   end
 
+  def live_share_location(_root, _args, %{context: %{current_user: _user}}) do
+    {:ok, %{successful: true, result: true}}
+  end
+
+  def cancel_location_share(_root, _args, %{context: %{current_user: _user}}) do
+    {:ok, %{successful: true, result: true}}
+  end
+
   def notification_subscription_topic(user_id),
     do: "notification_subscription_" <> user_id
 
