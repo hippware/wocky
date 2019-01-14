@@ -8,18 +8,35 @@ defmodule WockyAPI.Schema.BlockTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.Block
+  alias WockyAPI.Resolvers.{Block, Media}
 
-  @desc "A blocked user"
+  @desc "A block on a user"
   object :block do
-    @desc "The blocked user's ID"
-    field :user_id, non_null(:uuid)
-
-    @desc "The blocked user's handle"
-    field :handle, non_null(:string)
+    @desc "The blocked user"
+    field :user, non_null(:blocked_user)
 
     @desc "When the user was blocked"
     field :created_at, non_null(:datetime)
+  end
+
+  @desc "A user that has been blocked by the requesting user"
+  object :blocked_user do
+    @desc "The user's ID"
+    field :id, non_null(:uuid)
+
+    @desc "The user's handle"
+    field :handle, non_null(:string)
+
+    @desc "The user's first name"
+    field :first_name, :string
+
+    @desc "The user's last name"
+    field :last_name, :string
+
+    @desc "The user's avatar"
+    field :media, :media do
+      resolve &Media.get_media/3
+    end
   end
 
   connection :blocks, node_type: :block do

@@ -99,8 +99,10 @@ defmodule WockyAPI.GraphQL.BlockTest do
           blocks (first: 10) {
             edges {
               node {
-                user_id
-                handle
+                user {
+                  id
+                  handle
+                }
               }
             }
           }
@@ -123,14 +125,18 @@ defmodule WockyAPI.GraphQL.BlockTest do
                    "edges" => [
                      %{
                        "node" => %{
-                         "handle" => user3.handle,
-                         "user_id" => user3.id
+                         "user" => %{
+                           "handle" => user3.handle,
+                           "id" => user3.id
+                         }
                        }
                      },
                      %{
                        "node" => %{
-                         "handle" => user2.handle,
-                         "user_id" => user2.id
+                         "user" => %{
+                           "handle" => user2.handle,
+                           "id" => user2.id
+                         }
                        }
                      }
                    ]
@@ -147,7 +153,9 @@ defmodule WockyAPI.GraphQL.BlockTest do
           blocks (first: 10) {
             edges {
               node {
-                avatar
+                user {
+                  tagline
+                }
               }
             }
           }
