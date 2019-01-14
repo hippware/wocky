@@ -109,14 +109,14 @@ defmodule WockyAPI.Resolvers.Bot do
            |> parse_lat_lon()
            |> Map.put(:id, ID.new())
            |> Map.put(:user_id, user.id)
-           |> Bot.insert(),
+           |> Bot.insert(user),
          {:ok, _} <- maybe_update_location(input, user, bot) do
       {:ok, bot}
     end
   end
 
   def create_bot(_root, %{}, %{context: %{current_user: user}}),
-    do: {:ok, Bot.preallocate(user.id)}
+    do: {:ok, Bot.preallocate(user)}
 
   def update_bot(_root, %{input: input}, %{context: %{current_user: requestor}}) do
     case Bot.get_owned_bot(input[:id], requestor, true) do

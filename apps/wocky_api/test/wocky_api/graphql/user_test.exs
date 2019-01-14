@@ -619,14 +619,14 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "should fail for other users", ctx do
       query = """
-        query  {
-          user (id: "#{ctx.user2.id}") {
-            contacts (first: 1, relationship: FRIEND) {
-              totalCount
-            }
+      query  {
+        user (id: "#{ctx.user2.id}") {
+          contacts (first: 1, relationship: FRIEND) {
+            totalCount
           }
         }
-        """
+      }
+      """
 
       result = run_query(query, ctx.user)
 

@@ -95,6 +95,9 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's email address"
     field :email, :string
 
+    @desc "Whether the user has ever created a bot"
+    field :bot_created, :boolean
+
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity()
