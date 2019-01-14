@@ -21,6 +21,7 @@ data:
   WOCKY_DB_NAME: wocky_staging
   WOCKY_DB_WATCHER_QUEUE: wocky-db-watcher-staging.fifo
   WOCKY_DB_WATCHER_REGION: us-west-2
+  TWILIO_ACCOUNT_SID: ACbfbd3863ab87b6d00d37de65e99dacd1
   AWS_ACCESS_KEY_ID: AKIAJMLYSEVWGEF7C7CQ
   HONEYBADGER_ENV: staging
   REPLACE_OS_VARS: "true"
