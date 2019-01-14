@@ -26,7 +26,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's avatar"
     field :media, :media do
-      scope :public
       resolve &Media.get_media/3
     end
 
@@ -531,7 +530,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Retrive a user by ID"
     field :user, :user do
-      scope :public
       arg :id, non_null(:uuid)
       resolve &User.get_user/3
     end
