@@ -519,6 +519,107 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert %{"localBots" => %{"areaTooLarge" => true, "bots" => []}} ==
                result.data
     end
+
+    test "search area straddling 180th meridian", ctx do
+      loc = GeoUtils.point(0.0, -179.0)
+      bot = Factory.insert(:bot, user: ctx.user, location: loc)
+      Bot.subscribe(bot, ctx.user)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "pointA" => point_arg(1.0, 178.0),
+          "pointB" => point_arg(-1.0, -178.0)
+        })
+
+      refute has_errors(result)
+
+      %{"localBots" => %{"areaTooLarge" => false, "bots" => local_bots}} =
+        result.data
+
+      assert length(local_bots) == 1
+
+      assert hd(local_bots)["id"] == bot.id
+    end
+  end
+
+  describe "localBotsCluster search" do
+    @query """
+    query ($pointA: Point!, $pointB: Point!, $latDivs: Int!, $lonDivs: Int!) {
+      localBotsCluster (pointA: $pointA, pointB: $pointB,
+                        latDivs: $latDivs, lonDivs: $lonDivs) {
+        bots { id }
+        clusters {
+          count
+          lat
+          lon
+        }
+        areaTooLarge
+      }
+    }
+    """
+    setup ctx do
+      Application.put_env(:wocky_api, :max_local_bots_search_radius, 1_000_000)
+
+      locations = [
+        {1.5, 1.5},
+        {0.1, 0.1},
+        {0.2, 0.2},
+        {0.3, 0.3},
+        {0.67, 0.67},
+        {0.68, 0.68},
+        {3.0, 3.0}
+      ]
+
+      b =
+        Enum.map(locations, fn {lat, lon} ->
+          l = GeoUtils.point(lat, lon)
+          Factory.insert(:bot, location: l, user: ctx.user)
+        end)
+
+      Enum.each(b, &Bot.subscribe(&1, ctx.user))
+
+      {:ok, bots: b}
+    end
+
+    test "localBotsCluster search", ctx do
+      result =
+        run_query(@query, ctx.user, %{
+          "pointA" => point_arg(0.0, 0.0),
+          "pointB" => point_arg(2.0, 2.0),
+          "latDivs" => 3,
+          "lonDivs" => 3
+        })
+
+      refute has_errors(result)
+
+      %{
+        "localBotsCluster" => %{
+          "areaTooLarge" => false,
+          "bots" => bots,
+          "clusters" => clusters
+        }
+      } = result.data
+
+      assert length(bots) == 1
+      assert hd(bots)["id"] == hd(ctx.bots).id
+
+      assert length(clusters) == 2
+
+      assert has_clusters(clusters, [
+               {2, 1.0, 1.0},
+               {3, 0.3333333333333333, 0.3333333333333333}
+             ])
+    end
+
+    defp has_clusters(clusters, expected) do
+      expected
+      |> Enum.map(fn {count, lat, lon} ->
+        %{"count" => count, "lat" => lat, "lon" => lon}
+      end)
+      |> Enum.sort()
+      |> Enum.zip(Enum.sort(clusters))
+      |> Enum.all?(fn {x, y} -> x == y end)
+    end
   end
 
   describe "bot mutations" do
