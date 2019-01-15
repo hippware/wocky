@@ -567,6 +567,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
     test "create bot", %{user: user} do
+      refute Repo.get(User, user.id).bot_created
+
       fields = [:title, :server, :lat, :lon, :radius, :description, :shortname]
       bot = :bot |> Factory.build() |> add_bot_lat_lon() |> Map.take(fields)
 
@@ -584,6 +586,8 @@ defmodule WockyAPI.GraphQL.BotTest do
              } = result.data
 
       assert ^bot = id |> Bot.get() |> add_bot_lat_lon() |> Map.take(fields)
+
+      assert Repo.get(User, user.id).bot_created
     end
 
     test "create bot with location", %{user: %{id: user_id} = user} do
@@ -655,7 +659,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "update pending bot", %{user: user} do
-      bot = Bot.preallocate(user.id)
+      bot = Bot.preallocate(user)
 
       values =
         :bot

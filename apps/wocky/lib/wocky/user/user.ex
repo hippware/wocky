@@ -69,6 +69,7 @@ defmodule Wocky.User do
     field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
     field :hidden_until, :utc_datetime_usec
+    field :bot_created, :boolean
 
     timestamps()
 
@@ -115,7 +116,8 @@ defmodule Wocky.User do
           phone_number: nil | phone_number,
           roles: [role],
           welcome_sent: boolean,
-          hidden_until: hidden_state
+          hidden_until: hidden_state,
+          bot_created: boolean
         }
 
   @update_fields [
@@ -128,7 +130,8 @@ defmodule Wocky.User do
     :roles,
     :external_id,
     :provider,
-    :hidden_until
+    :hidden_until,
+    :bot_created
   ]
 
   @min_handle_len 3
@@ -230,6 +233,18 @@ defmodule Wocky.User do
 
       Repo.delete!(user)
     end
+
+    :ok
+  end
+
+  @doc "Mark the user as having created a bot at some point in their life"
+  @spec flag_bot_created(t) :: :ok
+  def flag_bot_created(%{bot_created: true}), do: :ok
+
+  def flag_bot_created(user) do
+    user
+    |> changeset(%{bot_created: true})
+    |> Repo.update()
 
     :ok
   end

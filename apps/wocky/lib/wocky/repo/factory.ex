@@ -45,7 +45,8 @@ defmodule Wocky.Repo.Factory do
       tagline: Lorem.sentence(),
       provider: "local",
       roles: [],
-      welcome_sent: false
+      welcome_sent: false,
+      bot_created: false
     }
   end
 

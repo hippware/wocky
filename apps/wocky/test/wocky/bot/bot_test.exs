@@ -384,7 +384,7 @@ defmodule Wocky.BotTest do
 
   describe "preallocate/2" do
     setup ctx do
-      preallocated = Bot.preallocate(ctx.user.id)
+      preallocated = Bot.preallocate(ctx.user)
 
       {:ok, preallocated: preallocated}
     end
@@ -401,7 +401,7 @@ defmodule Wocky.BotTest do
 
     test "raises on error" do
       assert_raise Ecto.InvalidChangesetError, fn ->
-        Bot.preallocate(ID.new())
+        Bot.preallocate(Factory.build(:user))
       end
     end
   end
@@ -410,11 +410,11 @@ defmodule Wocky.BotTest do
     test "returns an ok result on success", %{user: user} do
       bot_params = Factory.params_for(:bot, user: user)
 
-      assert {:ok, _} = Bot.insert(bot_params)
+      assert {:ok, _} = Bot.insert(bot_params, user)
     end
 
-    test "returns an error result on failure" do
-      assert {:error, _} = Bot.insert(%{})
+    test "returns an error result on failure", %{user: user} do
+      assert {:error, _} = Bot.insert(%{}, user)
     end
   end
 
