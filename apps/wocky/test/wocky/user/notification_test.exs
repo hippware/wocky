@@ -13,7 +13,6 @@ defmodule Wocky.User.NotificationTest do
     UserInvitation
   }
 
-
   setup do
     [user, user2] = Factory.insert_list(2, :user)
     bot = Factory.insert(:bot, user: user)
