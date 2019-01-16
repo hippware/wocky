@@ -35,8 +35,7 @@ defmodule WockyAPI.Resolvers.Block do
 
   def map_to_block_user(%Block{blockee: blockee, created_at: created_at}) do
     %{
-      user_id: blockee.id,
-      handle: blockee.handle,
+      user: blockee,
       created_at: created_at
     }
   end
