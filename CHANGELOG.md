@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Remove all public-scope graphql (#2156)
+* Add bot_created flag to remember if user created a bot/location (#2153)
+* Change `Block` type to include a sub-type of user (#2152)
+
+
 # 2019.1.9+r47ead10
 
 * Update: absinthe_metrics (PR #2132), geocalc (PR #2133)
