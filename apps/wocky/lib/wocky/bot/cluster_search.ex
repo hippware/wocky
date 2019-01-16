@@ -30,6 +30,8 @@ defmodule Wocky.Bot.ClusterSearch do
     lon_origin = lon_a + lon_grid / 2.0
 
     query = """
+    -- Select relevant bots in the search area and add a column with their
+    -- location snapped to a grid of potential cluster points
     WITH snapped AS
       (SELECT
           bots.*, ST_SnapToGrid(location::geometry, $1, $2, $3, $4) snapped_loc
@@ -37,19 +39,23 @@ defmodule Wocky.Bot.ClusterSearch do
         WHERE bot_subscriptions.user_id = $5
         AND bots.location && ST_MakeEnvelope($6, $7, $8, $9, 4326)::geography),
 
+    -- Count bots at each cluster point
     counts AS
       (SELECT count(*) loc_count, snapped_loc
         FROM snapped GROUP BY snapped_loc),
 
+    -- Merge the count value for the relevant cluster point into each bot
     aggregate AS
       (SELECT * FROM snapped
        JOIN counts ON snapped.snapped_loc = counts.snapped_loc)
 
+    -- Select bots where they are the only one near their cluster point
     SELECT #{field_list("aggregate.")}, Null loc_count, Null snapped_loc
       FROM aggregate WHERE loc_count = 1
 
     UNION
 
+    -- Select clusters where there is more than one bot at the cluster point
     SELECT #{null_field_list()}, loc_count, snapped_loc
       FROM counts WHERE loc_count > 1
     """
