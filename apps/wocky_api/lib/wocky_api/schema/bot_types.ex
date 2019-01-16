@@ -309,6 +309,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :bot_create, type: :bot_create_payload do
       arg :input, :bot_create_input
       resolve &Bot.create_bot/3
+      middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware()
     end
 

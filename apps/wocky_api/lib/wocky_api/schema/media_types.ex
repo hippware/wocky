@@ -11,8 +11,6 @@ defmodule WockyAPI.Schema.MediaTypes do
 
   @desc "A Wocky TROS media object"
   object :media do
-    scope :public
-
     @desc "The TROS URL (invariant over the life of the object)"
     field :tros_url, :string
 

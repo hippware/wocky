@@ -44,7 +44,8 @@ defmodule Wocky.Repo.Factory do
       provider: "local",
       roles: [],
       welcome_sent: false,
-      smss_sent: 0
+      smss_sent: 0,
+      bot_created: false
     }
   end
 

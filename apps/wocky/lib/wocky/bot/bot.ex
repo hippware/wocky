@@ -180,9 +180,9 @@ defmodule Wocky.Bot do
     |> Repo.one()
   end
 
-  @spec preallocate(User.id()) :: t | no_return
-  def preallocate(user_id) do
-    params = %{id: ID.new(), user_id: user_id, pending: true}
+  @spec preallocate(User.t()) :: t | no_return
+  def preallocate(user) do
+    params = %{id: ID.new(), user_id: user.id, pending: true}
 
     %Bot{}
     |> cast(params, [:id, :user_id, :pending])
@@ -190,10 +190,11 @@ defmodule Wocky.Bot do
     |> Repo.insert!()
   end
 
-  @spec insert(map) :: {:ok, t} | {:error, any}
-  def insert(params) do
+  @spec insert(map, User.t()) :: {:ok, t} | {:error, any}
+  def insert(params, requestor) do
     with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
       update_counter("bot.created", 1)
+      User.flag_bot_created(requestor)
       {:ok, t}
     end
   end

@@ -26,7 +26,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's avatar"
     field :media, :media do
-      scope :public
       resolve &Media.get_media/3
     end
 
@@ -94,6 +93,9 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's email address"
     field :email, :string
+
+    @desc "Whether the user has ever created a bot"
+    field :bot_created, :boolean
 
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
@@ -531,7 +533,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Retrive a user by ID"
     field :user, :user do
-      scope :public
       arg :id, non_null(:uuid)
       resolve &User.get_user/3
     end

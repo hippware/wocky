@@ -723,6 +723,20 @@ defmodule Wocky.User.UserTest do
     end
   end
 
+  describe "flag_bot_created/1" do
+    test "should set the user as having a created bot", ctx do
+      refute Repo.get(User, ctx.user.id).bot_created
+      assert :ok == User.flag_bot_created(ctx.user)
+      assert Repo.get(User, ctx.user.id).bot_created
+    end
+
+    test "should have no effect if the flag is already set" do
+      user = Factory.insert(:user, bot_created: true)
+      assert :ok == User.flag_bot_created(user)
+      assert Repo.get(User, user.id).bot_created
+    end
+  end
+
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
   defp is_searchable_sp(user, bot),

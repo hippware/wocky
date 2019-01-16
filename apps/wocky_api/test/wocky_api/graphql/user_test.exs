@@ -210,24 +210,14 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{"user" => nil}
     end
 
-    test "get user info anonymously", %{user2: user2} do
-      result = run_query(@query, nil, %{"id" => user2.id})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "user" => %{
-                 "id" => user2.id,
-                 "handle" => user2.handle
-               }
-             }
-    end
-
     test "get user info anonymously with non-existant ID" do
       result = run_query(@query, nil, %{"id" => ID.new()})
 
       assert error_count(result) == 1
-      assert error_msg(result) =~ "User not found"
+
+      assert error_msg(result) =~
+               "This operation requires an authenticated user"
+
       assert result.data == %{"user" => nil}
     end
   end
@@ -619,14 +609,14 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "should fail for other users", ctx do
       query = """
-        query  {
-          user (id: "#{ctx.user2.id}") {
-            contacts (first: 1, relationship: FRIEND) {
-              totalCount
-            }
+      query  {
+        user (id: "#{ctx.user2.id}") {
+          contacts (first: 1, relationship: FRIEND) {
+            totalCount
           }
         }
-        """
+      }
+      """
 
       result = run_query(query, ctx.user)
 
