@@ -69,6 +69,7 @@ defmodule Wocky.User do
     field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
     field :hidden_until, :utc_datetime_usec
+    field :smss_sent, :integer
     field :bot_created, :boolean
 
     timestamps()
@@ -116,6 +117,7 @@ defmodule Wocky.User do
           phone_number: nil | phone_number,
           roles: [role],
           welcome_sent: boolean,
+          smss_sent: integer,
           hidden_until: hidden_state,
           bot_created: boolean
         }
@@ -131,6 +133,7 @@ defmodule Wocky.User do
     :external_id,
     :provider,
     :hidden_until,
+    :smss_sent,
     :bot_created
   ]
 
@@ -171,6 +174,14 @@ defmodule Wocky.User do
     end
   end
 
+  @spec get_by_phone_number([String.t()], t) :: [t]
+  def get_by_phone_number(phone_numbers, requestor) do
+    User
+    |> where([u], u.phone_number in ^phone_numbers)
+    |> Block.object_visible_query(requestor, :id)
+    |> Repo.all()
+  end
+
   @doc """
   Update the data on an existing user.
   Fields is a map containing fields to update.
@@ -192,6 +203,24 @@ defmodule Wocky.User do
 
       struct ->
         User.update(struct, fields)
+    end
+  end
+
+  @doc """
+  Check if the user is allowed to send an SMS and increment the count
+  of those sent
+  """
+  @spec sms_allowed_inc?(t()) :: boolean()
+  def sms_allowed_inc?(user) do
+    with %User{} = u <- get_user(user.id) do
+      if u.smss_sent < Confex.get_env(:wocky, :max_sms_per_user) do
+        __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
+        true
+      else
+        false
+      end
+    else
+      _ -> false
     end
   end
 

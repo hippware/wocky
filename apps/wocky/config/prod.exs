@@ -2,7 +2,10 @@ use Mix.Config
 
 config :wocky,
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.Store.S3},
-  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false}
+  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false},
+  dynamic_link_backend:
+    {:system, :module, "WOCKY_DYN_LINK_BACKEND", Wocky.DynamicLink.Firebase},
+  country_code_lookup_method: :twilio
 
 config :wocky, Wocky.User.GeoFence,
   async_processing: true,

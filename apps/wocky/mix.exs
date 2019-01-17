@@ -82,6 +82,7 @@ defmodule Wocky.Mixfile do
       {:ex_aws_sqs, "~> 2.0"},
       {:ex_json_logger, "~> 1.0"},
       {:ex_machina, "~> 2.1"},
+      {:ex_phone_number, "~> 0.1"},
       {:ex_twilio, "~> 0.6"},
       {:exconstructor, "~> 1.0"},
       # TODO: This dependency is only used in one migration. We should remove
@@ -97,7 +98,7 @@ defmodule Wocky.Mixfile do
       {:faker, "~> 0.9"},
       # TODO: go back to hex version once changes are merged
       {:firebase_admin_ex,
-       github: "hippware/firebase-admin-ex", branch: "master"},
+       github: "hippware/firebase-admin-ex", branch: "add-dynamic-link-support"},
       {:gen_stage, "~> 0.12"},
       {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
