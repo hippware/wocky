@@ -148,6 +148,31 @@ defmodule WockyAPI.Schema.BotTypes do
     field :area_too_large, :boolean
   end
 
+  object :local_bots_cluster do
+    @desc "Individual bots that have not been clustered"
+    field :bots, non_null(list_of(:bot))
+
+    @desc "Clusters of geographically proximate bots"
+    field :clusters, non_null(list_of(:bot_cluster))
+
+    @desc """
+    If true, the area requested was too large to search and no bots will be
+    returned
+    """
+    field :area_too_large, :boolean
+  end
+
+  object :bot_cluster do
+    @desc "The number of bots in this cluster"
+    field :count, non_null(:integer)
+
+    @desc "The cluster's latitude in degrees"
+    field :lat, non_null(:float), resolve: &Bot.get_lat/3
+
+    @desc "The cluster's longitude in degrees"
+    field :lon, non_null(:float), resolve: &Bot.get_lon/3
+  end
+
   connection :bot_items, node_type: :bot_item do
     total_count_field()
 
@@ -301,6 +326,40 @@ defmodule WockyAPI.Schema.BotTypes do
       arg :limit, :integer
 
       resolve &Bot.get_local_bots/3
+    end
+
+    @desc """
+    Similar to localBots, however multiple geographically proximate bots are
+    clustered into single results. Clustering is controlled by the latDivs and
+    lonDivs arguments. The search area is divided up into a grid of
+    latDivs by lonDivs points and bots are grouped to the nearest point to them.
+    Points that have more than one grouped bot are reported as clusters, while
+    bots that were the only ones grouped to their point are reported
+    individually.
+
+    Like localBots, the search radius is limited to
+    #{Bot.max_local_bots_search_radius()} meters.
+    """
+    field :local_bots_cluster, non_null(:local_bots_cluster) do
+      @desc "Top left of the rectangle in which to search"
+      arg :point_a, non_null(:point)
+
+      @desc "Bottom right point of the rectangle in which to search"
+      arg :point_b, non_null(:point)
+
+      @desc """
+      The number of divisions along the latitudinal axis into which to group
+      clusters
+      """
+      arg :lat_divs, non_null(:integer)
+
+      @desc """
+      The number of divisions along the longitudinal axis into which to group
+      clusters
+      """
+      arg :lon_divs, non_null(:integer)
+
+      resolve &Bot.get_local_bots_cluster/3
     end
   end
 

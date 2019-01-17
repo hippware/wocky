@@ -5,8 +5,9 @@ defmodule WockyAPI.Resolvers.Utils do
 
   alias Absinthe.Relay.Connection
   alias Ecto.Changeset
+  alias Geo.Point
   alias Kronky.Payload
-  alias Wocky.Repo
+  alias Wocky.{GeoUtils, Repo}
 
   def get_count(%{cached_count: count}, _args, _info) do
     {:ok, count}
@@ -69,6 +70,12 @@ defmodule WockyAPI.Resolvers.Utils do
     |> add_data(:parent_query, query)
     |> add_data(:cached_count, opts[:count])
     |> add_edge_parent(parent)
+  end
+
+  @spec map_point(map()) :: Point.t()
+  def map_point(point_arg) do
+    {lat, lon} = GeoUtils.normalize_lat_lon(point_arg[:lat], point_arg[:lon])
+    GeoUtils.point(lat, lon)
   end
 
   defp get_count_if_needed(query, args) do

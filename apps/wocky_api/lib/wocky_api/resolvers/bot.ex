@@ -3,7 +3,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   alias Absinthe.Subscription
   alias Wocky.{Bot, Repo, User, Waiter}
-  alias Wocky.Bot.{Invitation, Item}
+  alias Wocky.Bot.{Cluster, ClusterSearch, Invitation, Item}
   alias Wocky.GeoUtils
   alias Wocky.Repo.ID
   alias Wocky.User.Location
@@ -30,15 +30,10 @@ defmodule WockyAPI.Resolvers.Bot do
     do: {:error, "Maximum local bots is #{@max_local_bots}"}
 
   def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
-    point_a = GeoUtils.point(args[:point_a][:lat], args[:point_a][:lon])
-    point_b = GeoUtils.point(args[:point_b][:lat], args[:point_b][:lon])
+    point_a = Utils.map_point(args[:point_a])
+    point_b = Utils.map_point(args[:point_b])
 
-    diagonal =
-      Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
-
-    if diagonal > max_local_bots_search_radius() do
-      {:ok, %{bots: [], area_too_large: true}}
-    else
+    with :ok <- check_area(point_a, point_b) do
       limit = args[:limit] || @default_local_bots
 
       bots =
@@ -50,6 +45,30 @@ defmodule WockyAPI.Resolvers.Bot do
         |> Repo.all()
 
       {:ok, %{bots: bots, area_too_large: false}}
+    end
+  end
+
+  def get_local_bots_cluster(_root, args, %{context: %{current_user: requestor}}) do
+    point_a = Utils.map_point(args[:point_a])
+    point_b = Utils.map_point(args[:point_b])
+
+    with :ok <- check_area(point_a, point_b) do
+      results =
+        ClusterSearch.search(
+          point_a,
+          point_b,
+          args[:lat_divs],
+          args[:lon_divs],
+          requestor
+        )
+
+      {bots, clusters} =
+        Enum.split_with(results, fn
+          %Bot{} -> true
+          %Cluster{} -> false
+        end)
+
+      {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
     end
   end
 
@@ -89,12 +108,12 @@ defmodule WockyAPI.Resolvers.Bot do
     {:ok, User.get_bot_relationships(user, bot)}
   end
 
-  def get_lat(bot, _args, _info) do
-    {:ok, Bot.lat(bot)}
+  def get_lat(%{location: l}, _args, _info) do
+    {:ok, GeoUtils.get_lat(l)}
   end
 
-  def get_lon(bot, _args, _info) do
-    {:ok, Bot.lon(bot)}
+  def get_lon(%{location: l}, _args, _info) do
+    {:ok, GeoUtils.get_lon(l)}
   end
 
   def get_active_bots(_root, args, %{context: %{current_user: user}}) do
@@ -308,6 +327,17 @@ defmodule WockyAPI.Resolvers.Bot do
       nil -> {:error, "Invalid invitation"}
       {:error, :permission_denied} -> {:error, "Permission denied"}
       error -> error
+    end
+  end
+
+  defp check_area(point_a, point_b) do
+    diagonal =
+      Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
+
+    if diagonal > max_local_bots_search_radius() do
+      {:ok, %{bots: [], clusters: [], area_too_large: true}}
+    else
+      :ok
     end
   end
 
