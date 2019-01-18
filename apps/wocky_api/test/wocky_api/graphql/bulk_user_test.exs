@@ -180,7 +180,7 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
   """
   describe "bulk invitations" do
     setup_with_mocks([
-      {SMSSandbox, [], [send: fn _, _ -> :ok end]}
+      {SMSSandbox, [:passthrough], [send: fn _, _ -> :ok end]}
     ]) do
       :ok
     end
