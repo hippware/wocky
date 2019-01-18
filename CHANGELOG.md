@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: guardian (PR #2164, PR #2167)
+* New APIs for bulk phone number query, sms invite, user relation (#2121)
+* Bot clustering search (#1986, PR #2163)
+* Fix auth error formatting (PR #2168)
+* Fix mock use (PR #2172)
+
+
 # 2019.1.16+r9a91d02
 
 * Remove all public-scope graphql (#2156)
