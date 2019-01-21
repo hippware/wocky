@@ -36,6 +36,7 @@ defmodule Wocky.Application do
            host: redis_config[:host],
            port: redis_config[:port],
            database: redis_config[:db],
+           password: redis_config[:password],
            name: Redix}
         ],
         strategy: :one_for_one,
