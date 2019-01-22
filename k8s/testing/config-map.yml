@@ -24,6 +24,6 @@ data:
   AWS_ACCESS_KEY_ID: AKIAISCBKX42EUVSVXAQ
   HONEYBADGER_ENV: testing
   REPLACE_OS_VARS: "true"
-  REDIS_HOST: master.wocky-redis.byxmud.usw2.cache.amazonaws.com
+  REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
   REDIS_DB: "3"
   DAWDLE_QUEUES: "wocky-dawdle-testing"
