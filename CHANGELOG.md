@@ -5,11 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: guardian (PR #2164, PR #2167)
+* Update: guardian (PR #2164, PR #2167), timex (PR #2174)
 * New APIs for bulk phone number query, sms invite, user relation (#2121)
 * Bot clustering search (#1986, PR #2163)
 * Fix auth error formatting (PR #2168)
 * Fix mock use (PR #2172)
+* Use secure redis cluster (PR #2169), then reverted (PR #2175)
 
 
 # 2019.1.16+r9a91d02
