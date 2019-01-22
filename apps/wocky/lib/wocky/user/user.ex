@@ -33,6 +33,7 @@ defmodule Wocky.User do
     GeoFence,
     InviteCode,
     Location,
+    LocationShare,
     WelcomeEmail
   }
 
@@ -598,6 +599,42 @@ defmodule Wocky.User do
        do: time
 
   defp normalize_captured_at(_), do: DateTime.utc_now()
+
+  @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
+          {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}
+  def start_sharing_location(user, shared_to, expiry) do
+    if Roster.friend?(user, shared_to) do
+      %LocationShare{}
+      |> LocationShare.changeset(%{
+        user_id: user.id,
+        shared_to_id: shared_to.id,
+        expires_at: expiry
+      })
+      |> Repo.insert()
+    else
+      {:error, :not_friends}
+    end
+  end
+
+  @spec stop_sharing_location(User.t(), User.t()) :: :ok
+  def stop_sharing_location(%User{id: user_id}, %User{id: shared_to_id}) do
+    LocationShare
+    |> where(user_id: ^user_id, shared_to_id: ^shared_to_id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  @spec get_location_shares(User.t()) :: [LocationShare.t()]
+  def get_location_shares(%User{id: user_id}) do
+    now = DateTime.utc_now()
+
+    LocationShare
+    |> preload([:user, :shared_to])
+    |> where([ls], ls.user_id == ^user_id)
+    |> where([ls], ls.expires_at > ^now)
+    |> Repo.all()
+  end
 
   # ----------------------------------------------------------------------
   # Searching
