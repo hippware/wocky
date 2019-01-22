@@ -50,12 +50,14 @@ defmodule WockyAPI.Presence.Store do
   defp value(pid), do: :erlang.term_to_binary(pid)
 
   defp check_valid_presence(pid, user_id) when is_pid(pid) do
-    if Process.alive?(pid) do
-      pid
-    else
-      # Process is dead; take the opportunity to remove it
-      remove(user_id)
-      nil
+    case :rpc.call(node(pid), Process, :alive?, [pid], 2000) do
+      true ->
+        pid
+      _ ->
+        # Process is dead or node is unreachable;
+        # take the opportunity to remove it
+        remove(user_id)
+        nil
     end
   end
 
