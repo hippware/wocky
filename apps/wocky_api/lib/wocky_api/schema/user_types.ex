@@ -692,7 +692,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "Parameters for starting a live location share"
   input_object :user_location_live_share_input do
     @desc "The user with whom to share location"
-    field :shared_to_id, non_null(:string)
+    field :shared_with_id, non_null(:string)
 
     @desc "The expiry for the share"
     field :expires_at, non_null(:datetime)
@@ -704,7 +704,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :id, non_null(:string)
 
     @desc "The user with whom to share location"
-    field :shared_to, non_null(:other_user)
+    field :shared_with, non_null(:other_user)
 
     @desc "When the share was created"
     field :created_at, non_null(:datetime)
@@ -725,7 +725,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "Parameters for canceling a live location share"
   input_object :user_location_cancel_share_input do
     @desc "The user whose location sharing to cancel"
-    field :shared_to_id, non_null(:string)
+    field :shared_with_id, non_null(:string)
   end
 
   payload_object(:user_location_cancel_share_payload, :boolean)

@@ -13,12 +13,12 @@ defmodule Wocky.User.LocationShare do
     timestamps()
 
     belongs_to :user, User
-    belongs_to :shared_to, User, foreign_key: :shared_to_id
+    belongs_to :shared_with, User, foreign_key: :shared_with_id
   end
 
   @type t :: %LocationShare{
           user_id: User.id(),
-          shared_to_id: User.id(),
+          shared_with_id: User.id(),
           expires_at: DateTime.t(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -27,10 +27,10 @@ defmodule Wocky.User.LocationShare do
   @doc false
   def changeset(struct, params) do
     struct
-    |> cast(params, [:user_id, :shared_to_id, :expires_at])
-    |> validate_required([:user_id, :shared_to_id, :expires_at])
+    |> cast(params, [:user_id, :shared_with_id, :expires_at])
+    |> validate_required([:user_id, :shared_with_id, :expires_at])
     |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:shared_to_id)
+    |> foreign_key_constraint(:shared_with_id)
     |> validate_change(:expires_at, fn :expires_at, expiry ->
       if Timex.before?(expiry, Timex.now()) do
         [expires_at: "must be in the future"]

@@ -576,7 +576,7 @@ defmodule WockyAPI.GraphQL.UserTest do
           edges {
             node {
               id
-              sharedTo { id }
+              sharedWith { id }
               expiresAt
             }
           }
@@ -586,7 +586,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get sharing sessions", %{user: user, user2: user2} do
-      shared_to = user2.id
+      shared_with = user2.id
       expiry = sharing_expiry()
 
       {:ok, share} = User.start_sharing_location(user, user2, expiry)
@@ -603,7 +603,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                      %{
                        "node" => %{
                          "id" => ^id,
-                         "sharedTo" => %{"id" => ^shared_to},
+                         "sharedWith" => %{"id" => ^shared_with},
                          "expiresAt" => ^expiry
                        }
                      }
@@ -619,7 +619,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       userLocationLiveShare (input: $input) {
         successful
         result {
-          sharedTo { id }
+          sharedWith { id }
           expiresAt
         }
       }
@@ -627,13 +627,13 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "start sharing location", %{user: user, user2: user2} do
-      shared_to = user2.id
+      shared_with = user2.id
       expiry = sharing_expiry()
 
       result =
         run_query(@query, user, %{
           "input" => %{
-            "sharedToId" => shared_to,
+            "sharedWithId" => shared_with,
             "expiresAt" => expiry
           }
         })
@@ -644,7 +644,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                "userLocationLiveShare" => %{
                  "successful" => true,
                  "result" => %{
-                   "sharedTo" => %{"id" => ^shared_to},
+                   "sharedWith" => %{"id" => ^shared_with},
                    "expiresAt" => ^expiry
                  }
                }
@@ -652,13 +652,13 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "start sharing location with a stranger", %{user: user} do
-      shared_to = Factory.insert(:user).id
+      shared_with = Factory.insert(:user).id
       expiry = sharing_expiry()
 
       result =
         run_query(@query, user, %{
           "input" => %{
-            "sharedToId" => shared_to,
+            "sharedWithId" => shared_with,
             "expiresAt" => expiry
           }
         })
@@ -686,7 +686,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       result =
         run_query(@query, user, %{
           "input" => %{
-            "sharedToId" => user2.id
+            "sharedWithId" => user2.id
           }
         })
 

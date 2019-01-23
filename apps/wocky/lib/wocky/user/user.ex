@@ -602,17 +602,17 @@ defmodule Wocky.User do
 
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
           {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}
-  def start_sharing_location(user, shared_to, expiry) do
-    if Roster.friend?(user, shared_to) do
+  def start_sharing_location(user, shared_with, expiry) do
+    if Roster.friend?(user, shared_with) do
       %LocationShare{}
       |> LocationShare.changeset(%{
         user_id: user.id,
-        shared_to_id: shared_to.id,
+        shared_with_id: shared_with.id,
         expires_at: expiry
       })
       |> Repo.insert(
         on_conflict: [set: [expires_at: expiry, updated_at: DateTime.utc_now()]],
-        conflict_target: [:user_id, :shared_to_id]
+        conflict_target: [:user_id, :shared_with_id]
       )
     else
       {:error, :not_friends}
@@ -620,9 +620,9 @@ defmodule Wocky.User do
   end
 
   @spec stop_sharing_location(User.t(), User.t()) :: :ok
-  def stop_sharing_location(%User{id: user_id}, %User{id: shared_to_id}) do
+  def stop_sharing_location(%User{id: user_id}, %User{id: shared_with_id}) do
     LocationShare
-    |> where(user_id: ^user_id, shared_to_id: ^shared_to_id)
+    |> where(user_id: ^user_id, shared_with_id: ^shared_with_id)
     |> Repo.delete_all()
 
     :ok
@@ -640,7 +640,7 @@ defmodule Wocky.User do
     now = DateTime.utc_now()
 
     LocationShare
-    |> preload([:user, :shared_to])
+    |> preload([:user, :shared_with])
     |> where([ls], ls.user_id == ^user_id)
     |> where([ls], ls.expires_at > ^now)
   end

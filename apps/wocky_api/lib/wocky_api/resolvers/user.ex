@@ -189,12 +189,12 @@ defmodule WockyAPI.Resolvers.User do
   def live_share_location(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_to <- User.get_user(input.shared_to_id, user),
+    with %User{} = shared_with <- User.get_user(input.shared_with_id, user),
          {:ok, share} <-
-           User.start_sharing_location(user, shared_to, input.expires_at) do
-      {:ok, Repo.preload(share, :shared_to)}
+           User.start_sharing_location(user, shared_with, input.expires_at) do
+      {:ok, Repo.preload(share, :shared_with)}
     else
-      nil -> user_not_found(input.shared_to_id)
+      nil -> user_not_found(input.shared_with_id)
       {:error, :not_friends} -> {:error, "Can't share location with a stranger"}
       error -> error
     end
@@ -203,8 +203,8 @@ defmodule WockyAPI.Resolvers.User do
   def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_to <- User.get_user(input.shared_to_id, user) do
-      :ok = User.stop_sharing_location(user, shared_to)
+    with %User{} = shared_with <- User.get_user(input.shared_with_id, user) do
+      :ok = User.stop_sharing_location(user, shared_with)
     end
 
     {:ok, true}
