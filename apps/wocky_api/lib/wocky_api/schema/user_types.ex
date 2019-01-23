@@ -117,6 +117,12 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.get_location_events/3
     end
 
+    @desc "The user's live location sharing sessions"
+    connection field :location_shares, node_type: :user_location_live_shares do
+      connection_complexity()
+      resolve &User.get_location_shares/3
+    end
+
     @desc "The user's archive of messages sorted from oldest to newest"
     connection field :messages, node_type: :messages do
       connection_complexity()
@@ -705,6 +711,13 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The expiry for the share"
     field :expires_at, non_null(:datetime)
+  end
+
+  connection :user_location_live_shares, node_type: :user_location_live_share do
+    total_count_field()
+
+    edge do
+    end
   end
 
   payload_object(:user_location_live_share_payload, :user_location_live_share)

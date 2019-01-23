@@ -626,14 +626,20 @@ defmodule Wocky.User do
   end
 
   @spec get_location_shares(User.t()) :: [LocationShare.t()]
-  def get_location_shares(%User{id: user_id}) do
+  def get_location_shares(user) do
+    user
+    |> get_location_shares_query()
+    |> Repo.all()
+  end
+
+  @spec get_location_shares_query(User.t()) :: Queryable.t()
+  def get_location_shares_query(%User{id: user_id}) do
     now = DateTime.utc_now()
 
     LocationShare
     |> preload([:user, :shared_to])
     |> where([ls], ls.user_id == ^user_id)
     |> where([ls], ls.expires_at > ^now)
-    |> Repo.all()
   end
 
   # ----------------------------------------------------------------------

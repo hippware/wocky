@@ -210,6 +210,12 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, true}
   end
 
+  def get_location_shares(_root, args, %{context: %{current_user: user}}) do
+    user
+    |> User.get_location_shares_query()
+    |> Utils.connection_from_query(user, args)
+  end
+
   def notification_subscription_topic(user_id),
     do: "notification_subscription_" <> user_id
 

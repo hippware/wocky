@@ -562,6 +562,58 @@ defmodule WockyAPI.GraphQL.UserTest do
       :ok
     end
 
+    defp sharing_expiry(days \\ 5) do
+      Timestamp.shift(days: days)
+      |> DateTime.truncate(:second)
+      |> Timestamp.to_string!()
+    end
+
+    @query """
+    query {
+      currentUser {
+        locationShares (first: 1) {
+          totalCount
+          edges {
+            node {
+              id
+              sharedTo { id }
+              expiresAt
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get sharing sessions", %{user: user, user2: user2} do
+      shared_to = user2.id
+      expiry = sharing_expiry()
+
+      {:ok, share} = User.start_sharing_location(user, user2, expiry)
+      id = share.id
+
+      result = run_query(@query, user, %{})
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "locationShares" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "id" => ^id,
+                         "sharedTo" => %{"id" => ^shared_to},
+                         "expiresAt" => ^expiry
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+
     @query """
     mutation ($input: UserLocationLiveShareInput!) {
       userLocationLiveShare (input: $input) {
@@ -576,11 +628,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "start sharing location", %{user: user, user2: user2} do
       shared_to = user2.id
-
-      expiry =
-        Timestamp.shift(days: 5)
-        |> DateTime.truncate(:second)
-        |> Timestamp.to_string!()
+      expiry = sharing_expiry()
 
       result =
         run_query(@query, user, %{
@@ -605,11 +653,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "start sharing location with a stranger", %{user: user} do
       shared_to = Factory.insert(:user).id
-
-      expiry =
-        Timestamp.shift(days: 5)
-        |> DateTime.truncate(:second)
-        |> Timestamp.to_string!()
+      expiry = sharing_expiry()
 
       result =
         run_query(@query, user, %{
@@ -635,10 +679,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "stop sharing location", %{user: user, user2: user2} do
-      expiry =
-        Timestamp.shift(days: 5)
-        |> DateTime.truncate(:second)
-        |> Timestamp.to_string!()
+      expiry = sharing_expiry()
 
       {:ok, _} = User.start_sharing_location(user, user2, expiry)
 
