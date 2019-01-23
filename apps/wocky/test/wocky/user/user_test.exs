@@ -704,19 +704,38 @@ defmodule Wocky.User.UserTest do
     {:ok, user2: user2}
   end
 
+  defp sharing_expiry(days \\ 5) do
+    Timestamp.shift(days: days)
+    |> DateTime.truncate(:second)
+  end
+
   describe "start_sharing_location/3" do
     setup :setup_location_sharing
 
     test "should create a share record", ctx do
-      expiry = Timestamp.shift(days: 5)
+      expiry = sharing_expiry()
 
       assert {:ok, _} = User.start_sharing_location(ctx.user, ctx.user2, expiry)
       assert [%LocationShare{} = share] = User.get_location_shares(ctx.user)
       assert share.shared_to_id == ctx.user2.id
+      assert share.expires_at == expiry
+    end
+
+    test "should update an existing share record", ctx do
+      expiry1 = sharing_expiry(5)
+      User.start_sharing_location(ctx.user, ctx.user2, expiry1)
+
+      expiry2 = sharing_expiry(6)
+
+      assert {:ok, _} =
+               User.start_sharing_location(ctx.user, ctx.user2, expiry2)
+
+      assert [%LocationShare{} = share] = User.get_location_shares(ctx.user)
+      assert share.expires_at == expiry2
     end
 
     test "should not share location with a stranger", ctx do
-      expiry = Timestamp.shift(days: 5)
+      expiry = sharing_expiry()
       stranger = Factory.insert(:user)
 
       assert {:error, :not_friends} =
@@ -726,7 +745,7 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not create an expired share", ctx do
-      expiry = Timestamp.shift(days: -1)
+      expiry = sharing_expiry(-1)
 
       assert {:error, _} =
                User.start_sharing_location(ctx.user, ctx.user2, expiry)
@@ -735,7 +754,7 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not share with self", ctx do
-      expiry = Timestamp.shift(days: 5)
+      expiry = sharing_expiry()
 
       assert {:error, :not_friends} =
                User.start_sharing_location(ctx.user, ctx.user, expiry)
@@ -748,7 +767,7 @@ defmodule Wocky.User.UserTest do
     setup :setup_location_sharing
 
     test "should remove existing location share", ctx do
-      expiry = Timestamp.shift(days: 5)
+      expiry = sharing_expiry()
       User.start_sharing_location(ctx.user, ctx.user2, expiry)
 
       assert :ok = User.stop_sharing_location(ctx.user, ctx.user2)
@@ -769,7 +788,7 @@ defmodule Wocky.User.UserTest do
       share = %LocationShare{
         user: ctx.user,
         shared_to: ctx.user2,
-        expires_at: DateTime.truncate(Timestamp.shift(days: -1), :second)
+        expires_at: sharing_expiry(-1)
       }
 
       Repo.insert!(share)

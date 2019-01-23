@@ -610,7 +610,10 @@ defmodule Wocky.User do
         shared_to_id: shared_to.id,
         expires_at: expiry
       })
-      |> Repo.insert()
+      |> Repo.insert(
+        on_conflict: [set: [expires_at: expiry, updated_at: DateTime.utc_now()]],
+        conflict_target: [:user_id, :shared_to_id]
+      )
     else
       {:error, :not_friends}
     end
