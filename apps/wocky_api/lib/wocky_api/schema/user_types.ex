@@ -698,7 +698,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :id, non_null(:string)
 
     @desc "The user with whom to share location"
-    field :shared_to_id, non_null(:string)
+    field :shared_to, non_null(:other_user)
 
     @desc "When the share was created"
     field :created_at, non_null(:datetime)

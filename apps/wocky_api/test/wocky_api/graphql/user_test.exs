@@ -567,7 +567,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       userLocationLiveShare (input: $input) {
         successful
         result {
-          sharedToId
+          sharedTo { id }
           expiresAt
         }
       }
@@ -596,7 +596,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                "userLocationLiveShare" => %{
                  "successful" => true,
                  "result" => %{
-                   "sharedToId" => ^shared_to,
+                   "sharedTo" => %{"id" => ^shared_to},
                    "expiresAt" => ^expiry
                  }
                }

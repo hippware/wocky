@@ -190,9 +190,9 @@ defmodule WockyAPI.Resolvers.User do
     input = args[:input]
 
     with %User{} = shared_to <- User.get_user(input.shared_to_id, user),
-         {:ok, _} = result <-
+         {:ok, share} <-
            User.start_sharing_location(user, shared_to, input.expires_at) do
-      result
+      {:ok, Repo.preload(share, :shared_to)}
     else
       nil -> user_not_found(input.shared_to_id)
       {:error, :not_friends} -> {:error, "Can't share location with a stranger"}
