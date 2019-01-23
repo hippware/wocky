@@ -555,6 +555,111 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
+  describe "live location sharing" do
+    setup %{user: user, user2: user2} do
+      Roster.befriend(user, user2)
+
+      :ok
+    end
+
+    @query """
+    mutation ($input: UserLocationLiveShareInput!) {
+      userLocationLiveShare (input: $input) {
+        successful
+        result {
+          sharedToId
+          expiresAt
+        }
+      }
+    }
+    """
+
+    test "start sharing location", %{user: user, user2: user2} do
+      shared_to = user2.id
+
+      expiry =
+        Timestamp.shift(days: 5)
+        |> DateTime.truncate(:second)
+        |> Timestamp.to_string!()
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedToId" => shared_to,
+            "expiresAt" => expiry
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationLiveShare" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "sharedToId" => ^shared_to,
+                   "expiresAt" => ^expiry
+                 }
+               }
+             } = result.data
+    end
+
+    test "start sharing location with a stranger", %{user: user} do
+      shared_to = Factory.insert(:user).id
+
+      expiry =
+        Timestamp.shift(days: 5)
+        |> DateTime.truncate(:second)
+        |> Timestamp.to_string!()
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedToId" => shared_to,
+            "expiresAt" => expiry
+          }
+        })
+
+      assert has_errors(result)
+
+      assert [%{message: "Can't share location with a stranger"}] =
+               result.errors
+    end
+
+    @query """
+    mutation ($input: UserLocationCancelShareInput!) {
+      userLocationCancelShare (input: $input) {
+        successful
+        result
+      }
+    }
+    """
+
+    test "stop sharing location", %{user: user, user2: user2} do
+      expiry =
+        Timestamp.shift(days: 5)
+        |> DateTime.truncate(:second)
+        |> Timestamp.to_string!()
+
+      {:ok, _} = User.start_sharing_location(user, user2, expiry)
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedToId" => user2.id
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationCancelShare" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             } = result.data
+    end
+  end
+
   describe "contacts" do
     @query """
     query ($rel: UserContactRelationship) {

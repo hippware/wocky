@@ -686,18 +686,33 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "Parameters for starting a live location share"
   input_object :user_location_live_share_input do
     @desc "The user with whom to share location"
-    field :user_id, non_null(:string)
+    field :shared_to_id, non_null(:string)
 
     @desc "The expiry for the share"
     field :expires_at, non_null(:datetime)
   end
 
-  payload_object(:user_location_live_share_payload, :boolean)
+  @desc "Attributes of a user location live sharing session"
+  object :user_location_live_share do
+    @desc "ID for this sharing session"
+    field :id, non_null(:string)
+
+    @desc "The user with whom to share location"
+    field :shared_to_id, non_null(:string)
+
+    @desc "When the share was created"
+    field :created_at, non_null(:datetime)
+
+    @desc "The expiry for the share"
+    field :expires_at, non_null(:datetime)
+  end
+
+  payload_object(:user_location_live_share_payload, :user_location_live_share)
 
   @desc "Parameters for canceling a live location share"
   input_object :user_location_cancel_share_input do
     @desc "The user whose location sharing to cancel"
-    field :user_id, non_null(:string)
+    field :shared_to_id, non_null(:string)
   end
 
   payload_object(:user_location_cancel_share_payload, :boolean)
@@ -719,12 +734,14 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_live_share, type: :user_location_live_share_payload do
       arg :input, non_null(:user_location_live_share_input)
       resolve &User.live_share_location/3
+      changeset_mutation_middleware()
     end
 
     @desc "Cancel a live location share"
     field :user_location_cancel_share, type: :user_location_cancel_share_payload do
       arg :input, non_null(:user_location_cancel_share_input)
       resolve &User.cancel_location_share/3
+      changeset_mutation_middleware()
     end
   end
 

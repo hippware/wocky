@@ -186,12 +186,28 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{successful: true, result: token}}
   end
 
-  def live_share_location(_root, _args, %{context: %{current_user: _user}}) do
-    {:ok, %{successful: true, result: true}}
+  def live_share_location(_root, args, %{context: %{current_user: user}}) do
+    input = args[:input]
+
+    with %User{} = shared_to <- User.get_user(input.shared_to_id, user),
+         {:ok, _} = result <-
+           User.start_sharing_location(user, shared_to, input.expires_at) do
+      result
+    else
+      nil -> user_not_found(input.shared_to_id)
+      {:error, :not_friends} -> {:error, "Can't share location with a stranger"}
+      error -> error
+    end
   end
 
-  def cancel_location_share(_root, _args, %{context: %{current_user: _user}}) do
-    {:ok, %{successful: true, result: true}}
+  def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
+    input = args[:input]
+
+    with %User{} = shared_to <- User.get_user(input.shared_to_id, user) do
+      :ok = User.stop_sharing_location(user, shared_to)
+    end
+
+    {:ok, true}
   end
 
   def notification_subscription_topic(user_id),
