@@ -5,7 +5,8 @@ config :wocky,
   start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false},
   dynamic_link_backend:
     {:system, :module, "WOCKY_DYN_LINK_BACKEND", Wocky.DynamicLink.Firebase},
-  country_code_lookup_method: :twilio
+  country_code_lookup_method:
+    {:system, :atom, "WOCKY_CC_LOOKUP_METHOD", :twilio}
 
 config :wocky, Wocky.User.GeoFence,
   async_processing: true,
