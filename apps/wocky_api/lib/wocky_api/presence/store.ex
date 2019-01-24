@@ -53,6 +53,7 @@ defmodule WockyAPI.Presence.Store do
     case :rpc.call(node(pid), Process, :alive?, [pid], 2000) do
       true ->
         pid
+
       _ ->
         # Process is dead or node is unreachable;
         # take the opportunity to remove it

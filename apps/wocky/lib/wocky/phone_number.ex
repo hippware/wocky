@@ -32,5 +32,6 @@ defmodule Wocky.PhoneNumber do
   defp get_country_code(:faker, _phone_number),
     do: {:ok, Address.country_code()}
 
-  defp get_country_code({:hardwire, code}, _phone_number), do: {:ok, code}
+  defp get_country_code(:hardwire, _phone_number),
+    do: {:ok, Confex.get_env(:wocky, :country_code_hardwire_value)}
 end

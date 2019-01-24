@@ -123,6 +123,7 @@ defmodule Wocky.Account do
   defp error_to_string(%{message: reason}), do: reason
   defp error_to_string(reason) when is_atom(reason), do: to_string(reason)
   defp error_to_string(reason) when is_binary(reason), do: reason
+
   defp error_to_string(reason) do
     if Exception.exception?(reason) do
       Exception.message(reason)

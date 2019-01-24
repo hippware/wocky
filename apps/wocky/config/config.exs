@@ -37,8 +37,13 @@ config :wocky,
   # SMS messaging
   sms_backend: {:system, :module, "WOCKY_SMS_BACKEND", Wocky.SMS.Sandbox},
   twilio_number: "+12133401134",
-  country_code_lookup_method: {:hardwire, "US"},
   max_sms_per_user: {:system, :integer, "WOCKY_MAX_SMS_PER_USER", 100},
+
+  # Country code
+  country_code_lookup_method:
+    {:system, :atom, "WOCKY_CC_LOOKUP_METHOD", :hardwire},
+  country_code_hardwire_value:
+    {:system, :string, "WOCKY_CC_HARDWIRE_VAL", "US"},
 
   # Dynamic links
   dynamic_link_backend:
