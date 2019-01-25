@@ -797,5 +797,12 @@ defmodule WockyAPI.Schema.UserTypes do
     field :friends, non_null(:user) do
       user_subscription_config(&User.friends_subscription_topic/1)
     end
+
+    @desc """
+    Receive an update when a friend's shared location changes
+    """
+    field :shared_locations, non_null(:user) do
+      user_subscription_config(&User.location_subscription_topic/1)
+    end
   end
 end

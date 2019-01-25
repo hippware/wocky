@@ -228,6 +228,9 @@ defmodule WockyAPI.Resolvers.User do
   def presence_subscription_topic(user_id),
     do: "presence_subscription_" <> user_id
 
+  def location_subscription_topic(user_id),
+    do: "location_subscription_" <> user_id
+
   def notify_contact(item, relationship) do
     notification = %{
       user: item.contact,
@@ -256,8 +259,6 @@ defmodule WockyAPI.Resolvers.User do
 
     Subscription.publish(Endpoint, user, [{:friends, topic}])
   end
-
-  def has_used_geofence(_root, _args, _context), do: {:ok, true}
 
   def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
     with {:ok, _} <- do_hide(user, input) do
