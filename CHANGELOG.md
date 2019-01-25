@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix bulk user crash (PR #2179)
+* Update: prometheus_ex (PR #2180)
+
+
 # 2019.1.22+r07e6454
 
 * Update: guardian (PR #2164, PR #2167), timex (PR #2174), redix (PR #2177)
