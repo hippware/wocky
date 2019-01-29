@@ -555,6 +555,166 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
+  describe "live location sharing" do
+    setup %{user: user, user2: user2} do
+      Roster.befriend(user, user2)
+
+      :ok
+    end
+
+    defp sharing_expiry(days \\ 5) do
+      Timestamp.shift(days: days)
+      |> DateTime.truncate(:second)
+      |> Timestamp.to_string!()
+    end
+
+    @query """
+    query {
+      currentUser {
+        locationShares (first: 1) {
+          totalCount
+          edges {
+            node {
+              id
+              sharedWith { id }
+              expiresAt
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get sharing sessions", %{user: user, user2: user2} do
+      shared_with = user2.id
+      expiry = sharing_expiry()
+
+      {:ok, share} = User.start_sharing_location(user, user2, expiry)
+      id = share.id
+
+      result = run_query(@query, user, %{})
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "locationShares" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "id" => ^id,
+                         "sharedWith" => %{"id" => ^shared_with},
+                         "expiresAt" => ^expiry
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+
+    @query """
+    mutation ($input: UserLocationLiveShareInput!) {
+      userLocationLiveShare (input: $input) {
+        successful
+        messages {
+          field
+          message
+        }
+        result {
+          sharedWith { id }
+          expiresAt
+        }
+      }
+    }
+    """
+
+    test "start sharing location", %{user: user, user2: user2} do
+      shared_with = user2.id
+      expiry = sharing_expiry()
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedWithId" => shared_with,
+            "expiresAt" => expiry
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationLiveShare" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "sharedWith" => %{"id" => ^shared_with},
+                   "expiresAt" => ^expiry
+                 }
+               }
+             } = result.data
+    end
+
+    test "start sharing location with a stranger", %{user: user} do
+      shared_with = Factory.insert(:user).id
+      expiry = sharing_expiry()
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedWithId" => shared_with,
+            "expiresAt" => expiry
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationLiveShare" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{
+                     "field" => "sharedWithId",
+                     "message" => "must be a friend"
+                   }
+                 ]
+               }
+             } = result.data
+    end
+
+    @query """
+    mutation ($input: UserLocationCancelShareInput!) {
+      userLocationCancelShare (input: $input) {
+        successful
+        result
+      }
+    }
+    """
+
+    test "stop sharing location", %{user: user, user2: user2} do
+      expiry = sharing_expiry()
+
+      {:ok, _} = User.start_sharing_location(user, user2, expiry)
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedWithId" => user2.id
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationCancelShare" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             } = result.data
+    end
+  end
+
   describe "contacts" do
     @query """
     query ($rel: UserContactRelationship) {

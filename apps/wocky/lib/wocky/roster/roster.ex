@@ -39,11 +39,14 @@ defmodule Wocky.Roster do
   end
 
   @doc "Returns true if the two users are friends"
-  @spec friend?(User.t(), User.t()) :: boolean
-  def friend?(user_a, user_b) do
+  @spec friend?(User.t() | User.id(), User.t() | User.id()) :: boolean
+  def friend?(%User{id: user_a_id}, %User{id: user_b_id}),
+    do: friend?(user_a_id, user_b_id)
+
+  def friend?(user_a_id, user_b_id) do
     Item
-    |> where(user_id: ^user_a.id)
-    |> where(contact_id: ^user_b.id)
+    |> where(user_id: ^user_a_id)
+    |> where(contact_id: ^user_b_id)
     |> Repo.one()
     |> Kernel.!=(nil)
   end

@@ -186,6 +186,35 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, %{successful: true, result: token}}
   end
 
+  def live_share_location(_root, args, %{context: %{current_user: user}}) do
+    input = args[:input]
+
+    with %User{} = shared_with <- User.get_user(input.shared_with_id, user),
+         {:ok, share} <-
+           User.start_sharing_location(user, shared_with, input.expires_at) do
+      {:ok, Repo.preload(share, :shared_with)}
+    else
+      nil -> user_not_found(input.shared_with_id)
+      error -> error
+    end
+  end
+
+  def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
+    input = args[:input]
+
+    with %User{} = shared_with <- User.get_user(input.shared_with_id, user) do
+      :ok = User.stop_sharing_location(user, shared_with)
+    end
+
+    {:ok, true}
+  end
+
+  def get_location_shares(_root, args, %{context: %{current_user: user}}) do
+    user
+    |> User.get_location_shares_query()
+    |> Utils.connection_from_query(user, args)
+  end
+
   def notification_subscription_topic(user_id),
     do: "notification_subscription_" <> user_id
 
@@ -197,6 +226,9 @@ defmodule WockyAPI.Resolvers.User do
 
   def presence_subscription_topic(user_id),
     do: "presence_subscription_" <> user_id
+
+  def location_subscription_topic(user_id),
+    do: "location_subscription_" <> user_id
 
   def notify_contact(item, relationship) do
     notification = %{
@@ -226,8 +258,6 @@ defmodule WockyAPI.Resolvers.User do
 
     Subscription.publish(Endpoint, user, [{:friends, topic}])
   end
-
-  def has_used_geofence(_root, _args, _context), do: {:ok, true}
 
   def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
     with {:ok, _} <- do_hide(user, input) do
