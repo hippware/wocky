@@ -195,7 +195,6 @@ defmodule WockyAPI.Resolvers.User do
       {:ok, Repo.preload(share, :shared_with)}
     else
       nil -> user_not_found(input.shared_with_id)
-      {:error, :not_friends} -> {:error, "Can't share location with a stranger"}
       error -> error
     end
   end

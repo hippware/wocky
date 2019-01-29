@@ -603,20 +603,16 @@ defmodule Wocky.User do
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
           {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}
   def start_sharing_location(user, shared_with, expiry) do
-    if Roster.friend?(user, shared_with) do
-      %LocationShare{}
-      |> LocationShare.changeset(%{
-        user_id: user.id,
-        shared_with_id: shared_with.id,
-        expires_at: expiry
-      })
-      |> Repo.insert(
-        on_conflict: [set: [expires_at: expiry, updated_at: DateTime.utc_now()]],
-        conflict_target: [:user_id, :shared_with_id]
-      )
-    else
-      {:error, :not_friends}
-    end
+    %LocationShare{}
+    |> LocationShare.changeset(%{
+      user_id: user.id,
+      shared_with_id: shared_with.id,
+      expires_at: expiry
+    })
+    |> Repo.insert(
+      on_conflict: [set: [expires_at: expiry, updated_at: DateTime.utc_now()]],
+      conflict_target: [:user_id, :shared_with_id]
+    )
   end
 
   @spec stop_sharing_location(User.t(), User.t()) :: :ok

@@ -3,6 +3,7 @@ defmodule Wocky.User.LocationShare do
 
   use Wocky.Repo.Schema
 
+  alias Wocky.Roster
   alias Wocky.User
 
   @foreign_key_type :binary_id
@@ -33,6 +34,13 @@ defmodule Wocky.User.LocationShare do
     |> validate_change(:expires_at, fn :expires_at, expiry ->
       if Timex.before?(expiry, Timex.now()) do
         [expires_at: "must be in the future"]
+      else
+        []
+      end
+    end)
+    |> validate_change(:shared_with_id, fn :shared_with_id, shared_with_id ->
+      if !Roster.friend?(params[:user_id], shared_with_id) do
+        [shared_with_id: "must be a friend"]
       else
         []
       end

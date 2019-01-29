@@ -738,7 +738,7 @@ defmodule Wocky.User.UserTest do
       expiry = sharing_expiry()
       stranger = Factory.insert(:user)
 
-      assert {:error, :not_friends} =
+      assert {:error, _} =
                User.start_sharing_location(ctx.user, stranger, expiry)
 
       assert User.get_location_shares(ctx.user) == []
@@ -756,7 +756,7 @@ defmodule Wocky.User.UserTest do
     test "should not share with self", ctx do
       expiry = sharing_expiry()
 
-      assert {:error, :not_friends} =
+      assert {:error, _} =
                User.start_sharing_location(ctx.user, ctx.user, expiry)
 
       assert User.get_location_shares(ctx.user) == []

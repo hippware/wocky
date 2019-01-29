@@ -618,6 +618,10 @@ defmodule WockyAPI.GraphQL.UserTest do
     mutation ($input: UserLocationLiveShareInput!) {
       userLocationLiveShare (input: $input) {
         successful
+        messages {
+          field
+          message
+        }
         result {
           sharedWith { id }
           expiresAt
@@ -663,10 +667,20 @@ defmodule WockyAPI.GraphQL.UserTest do
           }
         })
 
-      assert has_errors(result)
+      refute has_errors(result)
 
-      assert [%{message: "Can't share location with a stranger"}] =
-               result.errors
+      assert %{
+               "userLocationLiveShare" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{
+                     "field" => "sharedWithId",
+                     "message" => "must be a friend"
+                   }
+                 ]
+               }
+             } = result.data
     end
 
     @query """
