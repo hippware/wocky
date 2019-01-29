@@ -39,10 +39,10 @@ defmodule Wocky.User.LocationShare do
       end
     end)
     |> validate_change(:shared_with_id, fn :shared_with_id, shared_with_id ->
-      if !Roster.friend?(params[:user_id], shared_with_id) do
-        [shared_with_id: "must be a friend"]
-      else
+      if Roster.friend?(params[:user_id], shared_with_id) do
         []
+      else
+        [shared_with_id: "must be a friend"]
       end
     end)
   end
