@@ -227,7 +227,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def phone_number do
-    "+1555#{Phone.area_code()}#{Phone.extension()}"
+    "+1555#{Phone.exchange_code()}#{Phone.extension()}"
   end
 
   def external_id do
