@@ -23,15 +23,36 @@ defmodule Wocky.PhoneNumber do
     |> get_country_code(phone_number)
   end
 
-  defp get_country_code(:twilio, phone_number) do
-    with {:ok, info} <- Lookup.retrieve(phone_number, type: :phoneNumber) do
-      {:ok, info.country_code}
+  @spec bypass?(t()) :: boolean()
+  def bypass?(phone_number) do
+    if Application.get_env(:wocky, :enable_auth_bypass) do
+      prefixes = Application.get_env(:wocky, :auth_bypass_prefixes)
+      String.starts_with?(phone_number, prefixes)
+    else
+      false
     end
   end
 
-  defp get_country_code(:faker, _phone_number),
+  defp get_country_code(method, phone_number) do
+    if bypass?(phone_number) do
+      do_get_country_code(:hardwire, phone_number)
+    else
+      do_get_country_code(method, phone_number)
+    end
+  end
+
+  defp do_get_country_code(:twilio, phone_number) do
+    with {:ok, info} <- Lookup.retrieve(phone_number, type: :phoneNumber) do
+      {:ok, info.country_code}
+    else
+      {:error, error, code} ->
+        {:error, "Twillio error: #{inspect(error)} #{inspect(code)}"}
+    end
+  end
+
+  defp do_get_country_code(:faker, _phone_number),
     do: {:ok, Address.country_code()}
 
-  defp get_country_code(:hardwire, _phone_number),
+  defp do_get_country_code(:hardwire, _phone_number),
     do: {:ok, Confex.get_env(:wocky, :country_code_hardwire_value)}
 end

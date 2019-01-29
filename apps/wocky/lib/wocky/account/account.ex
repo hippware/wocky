@@ -11,7 +11,7 @@ defmodule Wocky.Account do
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.Register
-  alias Wocky.User
+  alias Wocky.{PhoneNumber, User}
 
   require Logger
 
@@ -68,7 +68,7 @@ defmodule Wocky.Account do
   end
 
   defp authenticate_with(:bypass, {external_id, phone_number}, opts) do
-    if has_bypass_prefix(phone_number) do
+    if PhoneNumber.bypass?(phone_number) do
       find_or_create(:bypass, external_id, phone_number, opts)
     else
       provider_error(:bypass)
@@ -110,13 +110,6 @@ defmodule Wocky.Account do
     do: ClientVersion.record(user, device, agent)
 
   defp maybe_record_client_version(_, _), do: :ok
-
-  defp has_bypass_prefix(phone_number) do
-    if Application.get_env(:wocky, :enable_auth_bypass) do
-      prefixes = Application.get_env(:wocky, :auth_bypass_prefixes)
-      String.starts_with?(phone_number, prefixes)
-    end
-  end
 
   defp provider_error(p), do: {:error, "Unsupported provider: #{p}"}
 
