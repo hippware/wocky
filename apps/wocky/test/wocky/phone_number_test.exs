@@ -5,8 +5,16 @@ defmodule Wocky.PhoneNumberTest do
   alias Wocky.PhoneNumber
 
   setup do
+    orig_lm = Confex.get_env(:wocky, :country_code_lookup_method)
+    orig_cc = Confex.get_env(:wocky, :country_code_hardwire_value)
     Application.put_env(:wocky, :country_code_lookup_method, :faker)
     Application.put_env(:wocky, :country_code_hardwire_value, "XX")
+
+    on_exit(fn ->
+      Application.put_env(:wocky, :country_code_lookup_method, orig_lm)
+      Application.put_env(:wocky, :country_code_hardwire_value, orig_cc)
+    end)
+
     :ok
   end
 
