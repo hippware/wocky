@@ -768,6 +768,15 @@ defmodule WockyAPI.Schema.UserTypes do
     # Maybe other items here such as 'DND'
   end
 
+  @desc "Data that is sent when a user's shared location changes"
+  object :user_location_update do
+    @desc "The user whose location has changed"
+    field :user, non_null(:user)
+
+    @desc "The user's new location"
+    field :location, non_null(:location)
+  end
+
   object :user_subscriptions do
     @desc """
     Receive an update when a contact's state (friended/unfriended) changes
@@ -801,7 +810,7 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc """
     Receive an update when a friend's shared location changes
     """
-    field :shared_locations, non_null(:user) do
+    field :shared_locations, non_null(:user_location_update) do
       user_subscription_config(&User.location_subscription_topic/1)
     end
   end
