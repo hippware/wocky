@@ -15,7 +15,6 @@ defmodule Wocky.User do
     Block,
     Bot,
     Conversation,
-    GeoUtils,
     Message,
     Repo,
     Roster,
@@ -31,7 +30,6 @@ defmodule Wocky.User do
     Avatar,
     BotEvent,
     CurrentLocation,
-    GeoFence,
     InviteCode,
     Location,
     LocationShare,
@@ -550,12 +548,8 @@ defmodule Wocky.User do
   geofence calculation for all of the user's subscribed bots.
   """
   @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
-  def set_location(user, location) do
-    with {:ok, loc} = result <- prepare_location(user, location) do
-      GeoFence.check_for_bot_events(loc, user)
-      result
-    end
-  end
+  def set_location(user, location),
+    do: Location.set_location(user, location)
 
   @doc """
   Sets the user's current location to the provided Location struct and runs the
@@ -563,61 +557,8 @@ defmodule Wocky.User do
   """
   @spec set_location_for_bot(t, Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any}
-  def set_location_for_bot(user, location, bot) do
-    with {:ok, loc} = result <- prepare_location(user, location) do
-      GeoFence.check_for_bot_event(bot, loc, user)
-      result
-    end
-  end
-
-  defp prepare_location(user, location) do
-    with nloc <- normalize_location(location),
-         {:ok, loc} <- maybe_save_location(user, nloc),
-         {:ok, _} <- save_current_location(user, nloc) do
-      {:ok, loc}
-    end
-  end
-
-  defp normalize_location(location) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
-    captured_at = normalize_captured_at(location)
-    %Location{location | lat: nlat, lon: nlon, captured_at: captured_at}
-  end
-
-  defp normalize_captured_at(%Location{captured_at: time})
-       when not is_nil(time),
-       do: time
-
-  defp normalize_captured_at(_), do: DateTime.utc_now()
-
-  defp maybe_save_location(user, location) do
-    if should_save_location?(user) do
-      save_location(user, location)
-    else
-      {:ok, location}
-    end
-  end
-
-  defp should_save_location?(user) do
-    GeoFence.save_locations?() || hippware?(user)
-  end
-
-  def save_location(user, location) do
-    user
-    |> Ecto.build_assoc(:locations)
-    |> Location.changeset(Map.from_struct(location))
-    |> Repo.insert()
-  end
-
-  defp save_current_location(user, location) do
-    user
-    |> Ecto.build_assoc(:current_location)
-    |> Location.changeset(Map.from_struct(location))
-    |> Repo.insert(
-      on_conflict: {:replace, Location.fields() ++ [:updated_at]},
-      conflict_target: :user_id
-    )
-  end
+  def set_location_for_bot(user, location, bot),
+    do: Location.set_location_for_bot(user, location, bot)
 
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
           {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}

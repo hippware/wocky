@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.UserTest do
-  use WockyAPI.GraphQLCase, async: true
+  use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Name
   alias Wocky.Block
@@ -475,6 +475,12 @@ defmodule WockyAPI.GraphQL.UserTest do
       }
     }
     """
+
+    setup do
+      # Location updates are handled in separate processes for serialisation
+      # so we need to share the sandbox
+      Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
+    end
 
     test "set location", %{user: user} do
       lat = :rand.uniform() * 89.0
