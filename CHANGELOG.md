@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.1.28+r69b1e67
+
+* Update: credo (PR #2187)
+* Add missing Twilio auth token to next (PR #2188)
+
+
 # 2019.1.25+r518bc7d
 
 * Fix bulk user crash (PR #2179, PR #2182)
