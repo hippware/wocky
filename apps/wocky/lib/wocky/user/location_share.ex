@@ -6,7 +6,6 @@ defmodule Wocky.User.LocationShare do
   alias Wocky.User
 
   @foreign_key_type :binary_id
-  @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_location_shares" do
     field :expires_at, :utc_datetime, null: false
 

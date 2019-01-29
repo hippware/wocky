@@ -701,7 +701,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "Attributes of a user location live sharing session"
   object :user_location_live_share do
     @desc "ID for this sharing session"
-    field :id, non_null(:string)
+    field :id, non_null(:integer)
 
     @desc "The user with whom to share location"
     field :shared_with, non_null(:other_user)
