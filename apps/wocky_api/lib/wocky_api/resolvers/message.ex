@@ -63,6 +63,7 @@ defmodule WockyAPI.Resolvers.Message do
   def get_conversations(user, args, _info) do
     user.id
     |> Conversation.by_user_query()
+    |> preload([:other_user])
     |> Utils.connection_from_query(user, [desc: :created_at], args)
   end
 

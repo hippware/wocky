@@ -22,6 +22,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
               id
               other_user {
                 id
+                handle
               }
               content
             }
@@ -69,6 +70,11 @@ defmodule WockyAPI.GraphQL.MessageTest do
              |> Enum.map(& &1["node"]["other_user"]["id"])
              |> Enum.uniq()
              |> Enum.sort() == Enum.sort([user2.id, user3.id])
+
+      assert edges
+             |> Enum.map(& &1["node"]["other_user"]["handle"])
+             |> Enum.uniq()
+             |> Enum.sort() == Enum.sort([user2.handle, user3.handle])
     end
 
     test "should retrieve all messages for a given user", %{
@@ -91,7 +97,11 @@ defmodule WockyAPI.GraphQL.MessageTest do
       assert length(edges) == 5
 
       assert edges |> Enum.map(& &1["node"]["other_user"]["id"]) |> Enum.uniq() ==
-               Enum.sort([user2.id])
+               [user2.id]
+
+      assert edges
+             |> Enum.map(& &1["node"]["other_user"]["handle"])
+             |> Enum.uniq() == [user2.handle]
     end
 
     test "should return an error for a non-existant user", %{user: user} do

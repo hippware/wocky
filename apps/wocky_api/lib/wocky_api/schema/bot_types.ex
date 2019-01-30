@@ -4,8 +4,8 @@ defmodule WockyAPI.Schema.BotTypes do
   """
 
   use WockyAPI.Schema.Notation
-  use Absinthe.Ecto, repo: Wocky.Repo
 
+  import Absinthe.Resolution.Helpers
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.{Bot, Media}
@@ -70,7 +70,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :address_data, :string
 
     @desc "The bot's owner"
-    field :owner, non_null(:user), resolve: assoc(:user)
+    field :owner, non_null(:user), resolve: dataloader(Wocky, :user)
 
     @desc "Initial creation time of the bot"
     field :created_at, non_null(:datetime)
@@ -113,7 +113,7 @@ defmodule WockyAPI.Schema.BotTypes do
     field :updated_at, non_null(:datetime)
 
     @desc "The post's owner"
-    field :owner, :user, resolve: assoc(:user)
+    field :owner, :user, resolve: dataloader(Wocky, :user)
   end
 
   @desc "An invitation to subscribe to a bot"
@@ -122,13 +122,13 @@ defmodule WockyAPI.Schema.BotTypes do
     field :id, non_null(:aint)
 
     @desc "The user who sent the invitation"
-    field :user, non_null(:user), resolve: assoc(:user)
+    field :user, non_null(:user), resolve: dataloader(Wocky)
 
     @desc "The recipient of the invitation"
-    field :invitee, non_null(:user), resolve: assoc(:invitee)
+    field :invitee, non_null(:user), resolve: dataloader(Wocky)
 
     @desc "The bot to which the recipient has been invited"
-    field :bot, non_null(:bot), resolve: assoc(:bot)
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
 
     @desc """
     Whether the invitation has been accepted (true), declined (false), or

@@ -4,7 +4,8 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
 
   use WockyAPI.Schema.Notation
-  use Absinthe.Ecto, repo: Wocky.Repo
+
+  import Absinthe.Resolution.Helpers
 
   alias WockyAPI.Resolvers.Notification
   alias WockyAPI.Resolvers.User
@@ -75,22 +76,22 @@ defmodule WockyAPI.Schema.NotificationTypes do
   @desc "A notification for posting or updating a bot item"
   object :bot_item_notification do
     @desc "The user who made the change"
-    field :user, non_null(:user), resolve: assoc(:other_user)
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
 
     @desc "The bot to which the item belongs"
-    field :bot, non_null(:bot), resolve: assoc(:bot)
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
 
     @desc "The bot item that has been posted or edited"
-    field :bot_item, non_null(:bot_item), resolve: assoc(:bot_item)
+    field :bot_item, non_null(:bot_item), resolve: dataloader(Wocky)
   end
 
   @desc "A notification that a user has entered or exited a subscribed bot"
   object :geofence_event_notification do
     @desc "The user who entered or exited"
-    field :user, non_null(:user), resolve: assoc(:other_user)
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
 
     @desc "The bot that was entered or exited"
-    field :bot, non_null(:bot), resolve: assoc(:bot)
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
 
     @desc "The action that occurred"
     field :event, :geofence_event,
@@ -101,13 +102,13 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :bot_invitation_notification do
     @desc "The invitation object itself"
     field :invitation, non_null(:bot_invitation),
-      resolve: assoc(:bot_invitation)
+      resolve: dataloader(Wocky, :bot_invitation)
 
     @desc "The sender of the invitation"
-    field :user, non_null(:user), resolve: assoc(:other_user)
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
 
     @desc "The bot to which the recipient was invited"
-    field :bot, non_null(:bot), resolve: assoc(:bot)
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
   end
 
   @desc """
@@ -116,13 +117,13 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :bot_invitation_response_notification do
     @desc "The invitation object"
     field :invitation, non_null(:bot_invitation),
-      resolve: assoc(:bot_invitation)
+      resolve: dataloader(Wocky, :bot_invitation)
 
     @desc "The user who replied to the invitation"
-    field :user, non_null(:user), resolve: assoc(:other_user)
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
 
     @desc "The bot to which the user was invited"
-    field :bot, non_null(:bot), resolve: assoc(:bot)
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
 
     @desc "Whether the invitation was accepted or not"
     field :accepted, non_null(:boolean),
@@ -134,7 +135,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :user_invitation_notification do
     @desc "The user who sent the invitation"
-    field :user, non_null(:user), resolve: assoc(:other_user)
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
   end
 
   enum :geofence_event do
