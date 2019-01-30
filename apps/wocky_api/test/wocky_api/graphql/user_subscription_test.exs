@@ -4,7 +4,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
-  alias Wocky.Repo.Factory
+  alias Wocky.Repo.{Factory, Timestamp}
   alias Wocky.{Roster, User}
 
   setup_all do
@@ -86,6 +86,65 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       User.update(user, %{handle: Factory.handle()})
 
       refute_push "subscription:data", _push, 500
+    end
+  end
+
+  describe "shared_locations subscription" do
+    @query """
+    subscription {
+      sharedLocations {
+        user {
+          id
+        }
+        location {
+          lat
+          lon
+          accuracy
+        }
+      }
+    }
+    """
+
+    setup %{user: user, socket: socket} do
+      expiry = Timestamp.shift(days: 5)
+      [friend, stranger] = Factory.insert_list(2, :user)
+
+      Roster.befriend(friend, user)
+      User.start_sharing_location(user, friend, expiry)
+
+      ref = push_doc(socket, @query)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+
+      {:ok,
+       friend: friend, stranger: stranger, subscription_id: subscription_id}
+    end
+
+    test "updating location sends a message", %{
+      friend: friend,
+      subscription_id: subscription_id
+    } do
+      location = Factory.build(:location)
+      User.set_location(friend, location)
+
+      assert_push "subscription:data", push, 2000
+
+      assert push == %{
+               result: %{
+                 data: %{
+                   "sharedLocations" => %{
+                     "user" => %{
+                       "id" => friend.id
+                     },
+                     "location" => %{
+                       "lat" => location.lat,
+                       "lon" => location.lon,
+                       "accuracy" => location.accuracy
+                     }
+                   }
+                 }
+               },
+               subscriptionId: subscription_id
+             }
     end
   end
 end
