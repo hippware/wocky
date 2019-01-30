@@ -1,8 +1,6 @@
 defmodule Wocky.User.GeoFence do
   @moduledoc false
 
-  import Ecto.Query
-
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.User
@@ -110,28 +108,7 @@ defmodule Wocky.User.GeoFence do
   defp check_for_event({bot, _} = be, user, loc, config, acc) do
     bot
     |> Bot.contains?(Map.from_struct(loc))
-    |> maybe_set_exit_timer(user, bot, loc, config)
     |> handle_intersection(user, be, loc, config, acc)
-  end
-
-  defp maybe_set_exit_timer(false, _, _, _, _), do: false
-
-  defp maybe_set_exit_timer(true, _, _, _, %{visit_timeout_enabled: false}),
-    do: true
-
-  defp maybe_set_exit_timer(true, user, bot, loc, config) do
-    dawdle_event = %{
-      user_id: user.id,
-      device: loc.device,
-      bot_id: bot.id,
-      loc_id: loc.id
-    }
-
-    timeout = config.visit_timeout_seconds * 1000
-
-    Dawdle.call_after(&visit_timeout/1, dawdle_event, timeout)
-
-    true
   end
 
   defp handle_intersection(inside?, user, {bot, event}, loc, config, acc) do
@@ -287,40 +264,4 @@ defmodule Wocky.User.GeoFence do
   defp default_notify(:exit), do: true
   defp default_notify(:timeout), do: false
   defp default_notify(_), do: false
-
-  def visit_timeout(%{
-        user_id: user_id,
-        device: device,
-        bot_id: bot_id,
-        loc_id: loc_id
-      }) do
-    case latest_loc(user_id) do
-      %{id: ^loc_id} ->
-        do_visit_timeout(user_id, device, bot_id)
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp do_visit_timeout(user_id, device, bot_id) do
-    config = get_config()
-    user = Repo.get(User, user_id)
-    bot = Bot.get(bot_id)
-
-    if user && bot do
-      if Bot.subscription(bot, user) == :visiting do
-        new_event = BotEvent.insert(user, device, bot, :timeout)
-        process_bot_event({user, bot, new_event}, config)
-      end
-    end
-  end
-
-  defp latest_loc(user_id) do
-    Location
-    |> where(user_id: ^user_id)
-    |> order_by(desc: :created_at)
-    |> limit(1)
-    |> Repo.one()
-  end
 end
