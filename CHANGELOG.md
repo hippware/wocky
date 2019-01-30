@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix Twilio error handling; Use hardwired CC for bypass numbers (#2189)
+  * Fixes crash #2181
+* Live location sharing, part 1 (PR #2185)
+  * Part of: New APIs for live location sharing (#2146)
+
+
 # 2019.1.28+r69b1e67
 
 * Update: credo (PR #2187)
