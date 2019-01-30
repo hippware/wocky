@@ -48,7 +48,7 @@ defmodule Wocky.User.GeoFence do
   def check_for_bot_event(bot, loc, user) do
     config = get_config(debounce: false)
 
-    if location_valid?(loc, config) do
+    if should_process?(loc, user, config) do
       event = BotEvent.get_last_event(user.id, bot.id)
 
       {bot, event}
@@ -64,7 +64,7 @@ defmodule Wocky.User.GeoFence do
   def check_for_bot_events(%Location{} = loc, user) do
     config = get_config()
 
-    if location_valid?(loc, config) do
+    if should_process?(loc, user, config) do
       maybe_do_async(
         fn ->
           user
@@ -85,9 +85,8 @@ defmodule Wocky.User.GeoFence do
     |> Enum.into(%{})
   end
 
-  defp location_valid?(%Location{accuracy: accuracy}, config) do
-    accuracy <= config.max_accuracy_threshold
-  end
+  defp should_process?(%Location{accuracy: accuracy}, user, config),
+    do: !User.hidden?(user) && accuracy <= config.max_accuracy_threshold
 
   defp maybe_do_async(fun, %{async_processing: true}), do: Task.start_link(fun)
 
