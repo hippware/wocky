@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.1.31+r43318c4
+
 * Update: bamboo (PR #2193)
+* Add types filter to Notifications retrieval (#2194)
 
 
 # 2019.1.29+r24a524e
