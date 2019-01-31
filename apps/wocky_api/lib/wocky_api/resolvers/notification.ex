@@ -32,7 +32,7 @@ defmodule WockyAPI.Resolvers.Notification do
 
   def resolve_update_type(_, _), do: :notification_deleted
 
-  defp map_types(nil), do: Enum.map(@type_map, &elem(&1, 0))
+  defp map_types(nil), do: nil
 
   defp map_types(types) do
     Enum.reduce(@type_map, [], fn {t, gqlt}, acc ->

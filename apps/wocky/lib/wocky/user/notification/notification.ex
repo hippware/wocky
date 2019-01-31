@@ -91,12 +91,12 @@ defmodule Wocky.User.Notification do
     |> Repo.insert()
   end
 
-  @spec user_query(User.t(), id() | nil, id() | nil, [NotificationType.t()]) ::
+  @spec user_query(User.t(), id() | nil, id() | nil, [NotificationType.t()] | nil) ::
           Queryable.t()
-  def user_query(user, before_id, after_id, types) do
+  def user_query(user, before_id, after_id, types \\ nil) do
     Notification
     |> where(user_id: ^user.id)
-    |> where([n], n.type in ^types)
+    |> maybe_add_type_filter(types)
     |> maybe_add_before_id(before_id)
     |> maybe_add_after_id(after_id)
   end
@@ -122,6 +122,13 @@ defmodule Wocky.User.Notification do
   defp maybe_add_after_id(queryable, id) do
     queryable
     |> where([n], n.id > ^id)
+  end
+
+  defp maybe_add_type_filter(queryable, nil), do: queryable
+
+  defp maybe_add_type_filter(queryable, types) do
+    queryable
+    |> where([n], n.type in ^types)
   end
 
   defp changeset(struct, params, required) do
