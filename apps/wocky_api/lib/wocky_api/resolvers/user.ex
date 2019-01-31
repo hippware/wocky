@@ -261,6 +261,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(location) do
     location = Repo.preload(location, :user)
+    Repo.delete(location)
 
     location.user
     |> User.get_location_shares()
