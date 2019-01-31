@@ -262,13 +262,9 @@ defmodule WockyAPI.Resolvers.User do
   def notify_location(location) do
     location = Repo.preload(location, :user)
 
-    Repo.transaction(fn ->
-      location.user
-      |> User.get_location_shares_query()
-      |> Repo.stream()
-      |> Stream.each(&do_notify_location(&1, location))
-      |> Stream.run()
-    end)
+    location.user
+    |> User.get_location_shares()
+    |> Enum.each(&do_notify_location(&1, location))
   end
 
   defp do_notify_location(share, location) do

@@ -124,27 +124,33 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       subscription_id: subscription_id
     } do
       location = Factory.build(:location)
-      User.set_location(friend, location)
+      {:ok, loc} = User.set_location(friend, location)
 
       assert_push "subscription:data", push, 2000
 
-      assert push == %{
+      id = friend.id
+      accuracy = loc.accuracy
+
+      assert %{
                result: %{
                  data: %{
                    "sharedLocations" => %{
                      "user" => %{
-                       "id" => friend.id
+                       "id" => ^id
                      },
                      "location" => %{
-                       "lat" => location.lat,
-                       "lon" => location.lon,
-                       "accuracy" => location.accuracy
+                       "lat" => lat,
+                       "lon" => lon,
+                       "accuracy" => ^accuracy
                      }
                    }
                  }
                },
-               subscriptionId: subscription_id
-             }
+               subscriptionId: ^subscription_id
+             } = push
+
+      assert Float.round(lat, 10) == Float.round(loc.lat, 10)
+      assert Float.round(lon, 10) == Float.round(loc.lon, 10)
     end
   end
 end
