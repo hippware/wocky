@@ -1,15 +1,14 @@
-defmodule Wocky.User.Location do
+defmodule Wocky.User.CurrentLocation do
   @moduledoc false
 
   use Wocky.Repo.Schema
 
   alias Wocky.User
-  alias Wocky.User.BotEvent
 
   @foreign_key_type :binary_id
-  @primary_key {:id, :binary_id, autogenerate: true}
-  schema "user_locations" do
-    field :user_id, :binary_id, null: false
+  @primary_key false
+  schema "user_current_location" do
+    field :user_id, :binary_id, null: false, primary_key: true
     field :device, :string, null: false
     field :lat, :float, null: false
     field :lon, :float, null: false
@@ -31,7 +30,6 @@ defmodule Wocky.User.Location do
     timestamps()
 
     belongs_to :user, User, define_field: false
-    has_many :events, BotEvent
   end
 
   @type t :: %__MODULE__{
@@ -56,45 +54,4 @@ defmodule Wocky.User.Location do
           created_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
-
-  @insert_fields [
-    :device,
-    :lat,
-    :lon,
-    :accuracy,
-    :speed,
-    :heading,
-    :altitude,
-    :altitude_accuracy,
-    :captured_at,
-    :uuid,
-    :is_moving,
-    :odometer,
-    :activity,
-    :activity_confidence,
-    :battery_level,
-    :battery_charging,
-    :is_fetch
-  ]
-
-  @doc false
-  def fields, do: @insert_fields
-
-  @doc false
-  def changeset(struct, params) do
-    struct
-    |> cast(params, @insert_fields)
-    |> validate_required([:device, :lat, :lon, :accuracy, :captured_at])
-    |> validate_number(:accuracy, greater_than_or_equal_to: 0)
-    |> validate_number(
-      :lat,
-      greater_than_or_equal_to: -90,
-      less_than_or_equal_to: 90
-    )
-    |> validate_number(
-      :lon,
-      greater_than_or_equal_to: -180,
-      less_than_or_equal_to: 180
-    )
-  end
 end

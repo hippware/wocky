@@ -259,6 +259,22 @@ defmodule WockyAPI.Resolvers.User do
     Subscription.publish(Endpoint, user, [{:friends, topic}])
   end
 
+  def notify_location(location) do
+    location = Repo.preload(location, :user)
+    Repo.delete(location)
+
+    location.user
+    |> User.get_location_shares()
+    |> Enum.each(&do_notify_location(&1, location))
+  end
+
+  defp do_notify_location(share, location) do
+    topic = location_subscription_topic(share.shared_with.id)
+    data = %{user: location.user, location: location}
+
+    Subscription.publish(Endpoint, data, [{:shared_locations, topic}])
+  end
+
   def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
     with {:ok, _} <- do_hide(user, input) do
       {:ok, true}

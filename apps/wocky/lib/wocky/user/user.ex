@@ -30,6 +30,7 @@ defmodule Wocky.User do
   alias Wocky.User.{
     Avatar,
     BotEvent,
+    CurrentLocation,
     GeoFence,
     InviteCode,
     Location,
@@ -74,6 +75,8 @@ defmodule Wocky.User do
     field :bot_created, :boolean
 
     timestamps()
+
+    has_one :current_location, CurrentLocation
 
     has_many :bots, Bot
     has_many :bot_events, BotEvent
@@ -548,10 +551,8 @@ defmodule Wocky.User do
   """
   @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
   def set_location(user, location) do
-    with {:ok, loc} = result <- maybe_insert_location(user, location) do
-      if !hidden?(user),
-        do: GeoFence.check_for_bot_events(loc, user)
-
+    with {:ok, loc} = result <- prepare_location(user, location) do
+      GeoFence.check_for_bot_events(loc, user)
       result
     end
   end
@@ -563,17 +564,35 @@ defmodule Wocky.User do
   @spec set_location_for_bot(t, Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any}
   def set_location_for_bot(user, location, bot) do
-    with {:ok, loc} = result <- maybe_insert_location(user, location) do
-      if !hidden?(user),
-        do: GeoFence.check_for_bot_event(bot, loc, user)
-
+    with {:ok, loc} = result <- prepare_location(user, location) do
+      GeoFence.check_for_bot_event(bot, loc, user)
       result
     end
   end
 
-  defp maybe_insert_location(user, location) do
+  defp prepare_location(user, location) do
+    with nloc <- normalize_location(location),
+         {:ok, loc} <- maybe_save_location(user, nloc),
+         {:ok, _} <- save_current_location(user, nloc) do
+      {:ok, loc}
+    end
+  end
+
+  defp normalize_location(location) do
+    {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
+    captured_at = normalize_captured_at(location)
+    %Location{location | lat: nlat, lon: nlon, captured_at: captured_at}
+  end
+
+  defp normalize_captured_at(%Location{captured_at: time})
+       when not is_nil(time),
+       do: time
+
+  defp normalize_captured_at(_), do: DateTime.utc_now()
+
+  defp maybe_save_location(user, location) do
     if should_save_location?(user) do
-      insert_location(user, location)
+      save_location(user, location)
     else
       {:ok, location}
     end
@@ -583,22 +602,22 @@ defmodule Wocky.User do
     GeoFence.save_locations?() || hippware?(user)
   end
 
-  def insert_location(user, location) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
-    captured_at = normalize_captured_at(location)
-    nloc = %Location{location | lat: nlat, lon: nlon, captured_at: captured_at}
-
+  def save_location(user, location) do
     user
     |> Ecto.build_assoc(:locations)
-    |> Location.changeset(Map.from_struct(nloc))
+    |> Location.changeset(Map.from_struct(location))
     |> Repo.insert()
   end
 
-  defp normalize_captured_at(%Location{captured_at: time})
-       when not is_nil(time),
-       do: time
-
-  defp normalize_captured_at(_), do: DateTime.utc_now()
+  defp save_current_location(user, location) do
+    user
+    |> Ecto.build_assoc(:current_location)
+    |> Location.changeset(Map.from_struct(location))
+    |> Repo.insert(
+      on_conflict: {:replace, Location.fields() ++ [:updated_at]},
+      conflict_target: :user_id
+    )
+  end
 
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
           {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}

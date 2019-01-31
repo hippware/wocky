@@ -15,15 +15,6 @@ defmodule Wocky.User.GeoFenceTest do
 
   @device "testing"
 
-  setup_all do
-    config =
-      :wocky
-      |> Application.get_env(Wocky.User.GeoFence)
-      |> Keyword.replace!(:visit_timeout_seconds, 2)
-
-    Application.put_env(:wocky, Wocky.User.GeoFence, config)
-  end
-
   setup do
     Sandbox.clear_notifications()
 
@@ -697,63 +688,6 @@ defmodule Wocky.User.GeoFenceTest do
       assert Bot.subscription(ctx.bot, ctx.user) == :subscribed
 
       assert Sandbox.list_notifications() == []
-    end
-  end
-
-  describe "visitor timeout" do
-    test "user should exit bot if no location is received in timeout", %{
-      user: user,
-      bot: bot
-    } do
-      Bot.visit(bot, user, false)
-
-      :ok = User.set_location(user, @device, Bot.lat(bot), Bot.lon(bot), 10)
-
-      Process.sleep(1000)
-      assert Bot.subscription(bot, user) == :visiting
-
-      Process.sleep(1500)
-      assert Bot.subscription(bot, user) == :subscribed
-    end
-
-    test "user should remain visiting if they send subsequent updates", %{
-      user: user,
-      bot: bot
-    } do
-      Bot.visit(bot, user, false)
-
-      lat = Bot.lat(bot)
-      lon = Bot.lon(bot)
-
-      :ok = User.set_location(user, @device, lat, lon, 10)
-
-      Process.sleep(1000)
-      assert Bot.subscription(bot, user) == :visiting
-
-      :ok = User.set_location(user, @device, lat, lon, 10)
-
-      Process.sleep(1500)
-      assert Bot.subscription(bot, user) == :visiting
-    end
-
-    test "user should not be exited early", %{user: user, bot: bot} do
-      outside_loc = Factory.build(:location, %{user: user})
-
-      :ok =
-        User.set_location(user, @device, outside_loc.lat, outside_loc.lon, 10)
-
-      Process.sleep(1500)
-      assert Bot.subscription(bot, user) == :subscribed
-
-      Bot.visit(bot, user, false)
-
-      :ok = User.set_location(user, @device, Bot.lat(bot), Bot.lon(bot), 10)
-
-      Process.sleep(1000)
-      assert Bot.subscription(bot, user) == :visiting
-
-      Process.sleep(2000)
-      assert Bot.subscription(bot, user) == :subscribed
     end
   end
 
