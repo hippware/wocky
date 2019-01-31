@@ -7,7 +7,7 @@ defmodule Wocky.User do
 
   import Ecto.Query
 
-  alias Ecto.Queryable
+  alias Ecto.{Changeset, Queryable}
   alias FirebaseAdminEx.Auth, as: FirebaseAuth
   alias Wocky.Account.ClientVersion
 

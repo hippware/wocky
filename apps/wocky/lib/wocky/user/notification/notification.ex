@@ -91,8 +91,12 @@ defmodule Wocky.User.Notification do
     |> Repo.insert()
   end
 
-  @spec user_query(User.t(), id() | nil, id() | nil, [NotificationType.t()] | nil) ::
-          Queryable.t()
+  @spec user_query(
+          User.t(),
+          id() | nil,
+          id() | nil,
+          [NotificationType.t()] | nil
+        ) :: Queryable.t()
   def user_query(user, before_id, after_id, types \\ nil) do
     Notification
     |> where(user_id: ^user.id)
